@@ -14,30 +14,10 @@
  ******************************************************************************/
 package oscar.algebra
 
-/**Abstract class for variables*/
-abstract class Var extends LinearExpression {
-
-  def name: String
-
-  val cte = 0.0
-  val coef = scala.collection.immutable.Map(this -> 1.0)
-
-  override def toString = name
-
-  override def derive(v: Var): Expression = {
-    if (v equals this) One
-    else Zero
-  }
-
-  def *(cons: Const): LinearExpression = new CstVar(cons, this)
-
-  override def equals(that: Any) = {
-    that match {
-      case other: Var =>
-        other.name equals this.name
-      case _ => false
-    }
-  }
-
-  override def hashCode: Int = name.hashCode
+sealed abstract class ConstraintSense(val symbol: String, val name: String) {
+  override def toString = symbol
 }
+
+case object LQ extends ConstraintSense("<=", "LQ")
+case object GQ extends ConstraintSense(">=", "GQ")
+case object EQ extends ConstraintSense("==", "EQ")
