@@ -219,11 +219,31 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
       touchedVar = -1
     }
 
+    var varIndex = 0
+    while (varIndex < arity) {
+      domainArraySize = X(varIndex).fillArray(domainArray)
+      var i = 0
+      var value = 0
+      while (i < domainArraySize) {
+        value = domainArray(i)
+        if (!supported(varIndex, value - originalMins(varIndex))) {
+          if (X(varIndex).removeValue(value) == Failure) {
+            return Failure
+          }
+        }
+        i += 1
+      }
+      varIndex += 1
+    }
+
+
     /* For each variable value (x,a), check if a is supported. Unsupported values are removed from their respective
      * domains */
+    /*
     var varIndex = 0
     while (varIndex < arity) {
       /* No need to check the values of a variable if it was the only modified since last check */
+
       if (touchedVar == varIndex) {
         touchedVar = -1
       } else {
@@ -287,7 +307,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
       }
       varIndex += 1
     }
-
+    */
     needPropagate.setFalse()
 
     // Trail reversibles

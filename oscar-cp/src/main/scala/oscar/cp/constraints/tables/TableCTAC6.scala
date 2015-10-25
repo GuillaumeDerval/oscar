@@ -17,7 +17,7 @@
 
 package oscar.cp.constraints.tables
 
-import oscar.algo.array.ArrayStackInt
+
 import oscar.algo.reversible.{TrailEntry, ReversibleInt, ReversibleBoolean}
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.{ Constraint, CPStore, CPOutcome, CPPropagStrength }
@@ -68,6 +68,29 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
   private[this] val nValidLongsRev = new ReversibleInt(s, 0)
   private[this] var nValidLongs: Int = 0
 
+
+  // sparseSet for valid Longs
+  private[this] var nValidLongsToCheck: Int = 0
+  private[this] var validLongstoCheck: Array[Int] = null
+  private[this] var validLongstoCheckMap: Array[Int] = null
+
+  @inline private def initValidLongsToCheckSparseSet(n: Int): Unit = {
+    validLongstoCheck = Array.tabulate(n)(i => i)
+    validLongstoCheckMap = Array.tabulate(n)(i => i)
+  }
+
+  @inline private def insertValidLongToCheck(v: Int): Unit = {
+    if (validLongstoCheckMap(v) >= nValidLongsToCheck) {
+      val i1 = validLongstoCheckMap(v)
+      val v2 = validLongstoCheck(nValidLongsToCheck)
+      validLongstoCheck(nValidLongsToCheck) = v
+      validLongstoCheckMap(v) = nValidLongsToCheck
+      validLongstoCheck(i1) = v2
+      validLongstoCheckMap(v2) = i1
+      nValidLongsToCheck += 1
+    }
+  }
+
   /* Structures for the improvements */
   private[this] var touchedVar = -1
   private[this] val lastSizes = Array.fill(arity)(new ReversibleInt(store, 0))
@@ -91,21 +114,14 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
       // and add it as first element in its new list
       prev = null
       val newNext = inverseLastSupports(wordIndex)
-      //println("restore:"+this)
-      //println("inList ? should be false = "+inList)
-      //if (newNext == this) println("problem create cycle")
       next = newNext
-
       if (newNext != null) newNext.prev = this
       inverseLastSupports(wordIndex) = this
-      //if (!noSelfLoops()) println("problem restore selfloops")
-
-      //if (isInfinite()) println("problem restore")
       inList = true
     }
 
     /* remove it from the reverse support list where it is in a reversible way */
-    def reversibleRemove() = {
+    @inline def reversibleRemove() = {
       //println("remove:"+this)
       if (wordIndex >= 0) { // check if the node is already in a list
         // remove the node from its current list
@@ -120,15 +136,9 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
             next.prev = prev
           }
         }
-      } else {
-        println("what is this")
       }
-
       next = null
       prev = null
-      //if (!noSelfLoops()) println("problem reversibleRemove selfloops")
-
-      //if (isInfinite()) println("problem reversibleRemove")
       inList = false
       store.trail(this)
     }
@@ -137,8 +147,6 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
   }
   private[this] val lastSupports = Array.tabulate(arity)(i => Array.tabulate(spans(i))(j => new NodeSupport(i,j,-1,null,null)))
   private[this] var inverseLastSupports: Array[NodeSupport] = null // first node is a dummy node
-  private[this] var supportsAddedToCheck: Array[Boolean] = null
-  private[this] var toCheck = new oscar.algo.array.ArrayStack[NodeSupport]()
 
 
   def printInverseLastSupportsLists() {
@@ -157,23 +165,6 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
     }
   }
 
-
-  @inline private def addAllToCheck(wordIndex: Int): Unit = {
-    //println("add all to check for word "+wordIndex)
-    if (!supportsAddedToCheck(wordIndex)) {
-      var curr = inverseLastSupports(wordIndex)
-      var i = 0
-      while (curr != null) {
-        toCheck.append(curr)
-        curr = curr.next
-        i += 1
-      }
-      supportsAddedToCheck(wordIndex) = true
-    }
-
-
-
-  }
 
   /* Move the corresponding node in the appropriate list */
   @inline private def updateWordSupport(variableIndex: Int, valueIndex: Int, wordIndex: Int): Unit = {
@@ -245,8 +236,6 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
     var i = 0
     while (i < arity) {
       val x = X(i)
-      //x.callOnChanges(i, s => updateDelta(s))
-      //x.callPropagateWhenDomainChanges(this)
       deltas(i) = x.callPropagateOnChangesWithDelta(this)
       lastSizes(i).setValue(x.size)
       i += 1
@@ -267,6 +256,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
     val intVar = X(varIndex)//delta.variable
 
 
+
     /* No need to update validTuples if there was no modification since last propagate() */
     if (intVar.size == lastSizes(varIndex).value) return Suspend
 
@@ -277,6 +267,18 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
     val originalMin = originalMins(varIndex)
     val varSize = intVar.size
     val varMin = intVar.min
+
+
+    /*
+    domainArraySize = delta.fillArray(domainArray)
+    var i = 0
+    while (i < domainArraySize) {
+      val valueIndex = domainArray(i) - originalMin
+      lastSupports(varIndex)(valueIndex).reversibleRemove()
+    }*/
+
+
+
 
     /* Update the value of validTuples by considering D(x) or delta */
     lastSizes(varIndex).setValue(varSize)
@@ -298,7 +300,10 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
           domainArraySize = delta.fillArray(domainArray)
           var i = 0
           while (i < domainArraySize) {
-            orTempMask(varIndex, domainArray(i) - originalMin)
+            val valueIndex = domainArray(i) - originalMin
+            // remove from the support list and trail this removal
+            lastSupports(varIndex)(valueIndex).reversibleRemove()
+            orTempMask(varIndex, valueIndex)
             i += 1
           }
           changed = substractTempMaskFromValid()
@@ -329,7 +334,6 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
     if (changed) {
       /* Failure if there are no more valid tuples */
       if (nValidLongs == 0) {
-        resetToCheck()
         return Failure
       }
 
@@ -346,17 +350,6 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
     Suspend
   }
 
-  private def resetToCheck(): Unit = {
-    needPropagate.setFalse()
-    toCheck.clear()
-    var i = 0
-
-    while (i < nbLongs) {
-      supportsAddedToCheck(i) = false
-      i += 1
-    }
-
-  }
 
   /**
    * Perform a consistency check : for each variable value pair (x,a), we check if a has at least one valid support.
@@ -364,31 +357,47 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
    * @return the outcome i.e. Failure or Success.
    */
   override def propagate(): CPOutcome = {
-    //println("propagate")
-    resetToCheck()
+    //println("propagate"+scala.util.Random.nextInt(10))
+
+    // Cache reversible values
+    val nValidLongsTmp = nValidLongsRev.value
+    nValidLongs = nValidLongsTmp
 
 
-
+    // reset
+    needPropagate.setFalse()
+    //toCheck.clear()
+    nValidLongsToCheck = 0
     var i = 0
 
+
+
+    // do the update delta
+    i = 0
     while (i < arity) {
       if (deltas(i).size > 0) {
         if (updateDelta(i,deltas(i)) == Failure) return Failure
       }
-
       i += 1
     }
 
+  /*
+    var cpt = 0
+    i =  nValidLongsTmp
+    while (i > 0) {
+      i -= 1
+      val offset = validLongs(i)
+      if (supportsAddedToCheck(offset)) cpt += 1
+    }
+    println(cpt+"/"+nValidLongsTmp)
+*/
 
     // No need for the check if validTuples has not changed
     if (!needPropagate.value) {
       return Suspend
     }
 
-    //println(toCheck.size)
 
-    // Cache reversible values
-    nValidLongs = nValidLongsRev.value
 
     if (touchedVar == -2) {
       touchedVar = -1
@@ -398,22 +407,27 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
      * domains */
     //println(toCheck.size)
 
+
     i = 0
+    while (i < nValidLongsToCheck) {
 
+        val offset = validLongstoCheck(i)
+        var curr = inverseLastSupports(offset)
 
-    while (i < toCheck.size) {
-      val node = toCheck(i)
-
-      val varIdx = node.varIndex
-      val valIdx = node.valIndex
-      if (X(varIdx).hasValue(valIdx+originalMins(varIdx)) && !supported(varIdx, valIdx)) {
-        if (X(varIdx).removeValue(valIdx + originalMins(varIdx)) == Failure) {
-          resetToCheck()
-          return Failure
+        while (curr != null) {
+          val node = curr
+          curr = curr.next
+          val varIdx = node.varIndex
+          val valIdx = node.valIndex
+          if (X(varIdx).hasValue(valIdx+originalMins(varIdx)) && !supported(varIdx, valIdx)) {
+            if (X(varIdx).removeValue(valIdx + originalMins(varIdx)) == Failure) {
+              return Failure
+            }
+          }
         }
-      }
-      i += 1
+        i += 1
     }
+
 
 
     /*
@@ -422,19 +436,18 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
       for (v <- X(i).toArray) {
         val valIdx = v-originalMins(i)
         if (!supported(i, valIdx)) {
-          println("===============>should have been filtered "+(i,valIdx))
-          printInverseLastSupportsLists()
-          println(toCheck.toArray.mkString(","))
+          //println("===============>should have been filtered "+(i,valIdx))
+          //printInverseLastSupportsLists()
+          //println(toCheck.toArray.mkString(","))
           if (X(i).removeValue(v) == Failure) {
-            resetToCheck()
             return Failure
           }
         }
 
       }
       i += 1
-    }
-    */
+    }*/
+
 
     i = 0
     while (i < X.length) {
@@ -445,7 +458,6 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
 
     // Trail reversibles
     nValidLongsRev.value = nValidLongs
-    resetToCheck()
     Suspend
 
   }
@@ -475,9 +487,8 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
     /* We check the equations
      *         mask(x,a) & validTuples != 0
      * only for the relevant parts of the bitsets. */
-    var i = nValidLongs
-    while (i > 0) {
-      i -= 1
+    var i = 0 //nValidLongs
+    while (i < nValidLongs) {
       val offset = validLongs(i)
       if ((mask(offset) & validTuples(offset)) != 0) {
         /* We found a new support, we update it */
@@ -485,6 +496,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
 
         return true
       }
+      i += 1
     }
 
     // remove from the support list and trail this removal
@@ -548,7 +560,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
       val tempMaskOffset = tempMask(offset)
       if ((~tempMaskOffset & validTuples(offset)) != 0) {
         andValidTuples(i, offset, tempMaskOffset)
-        addAllToCheck(offset)
+        insertValidLongToCheck(offset)
         changed = true
       }
     }
@@ -569,7 +581,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
       val tempMaskOffset = tempMask(offset)
       if ((tempMaskOffset & validTuples(offset)) != 0) {
         andValidTuples(i, offset, ~tempMaskOffset)
-        addAllToCheck(offset)
+        insertValidLongToCheck(offset)
         changed = true
       }
     }
@@ -680,7 +692,8 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
 
 
     inverseLastSupports = new Array[NodeSupport](nbLongs)
-    supportsAddedToCheck = new Array[Boolean](nbLongs)
+
+    initValidLongsToCheckSparseSet(nbLongs)
 
 
     tempMask = Array.fill(nbLongs)(0L)
