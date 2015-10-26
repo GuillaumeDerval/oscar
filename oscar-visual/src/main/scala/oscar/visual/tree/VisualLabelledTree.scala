@@ -25,14 +25,10 @@ class VisualLabelledTree[T](var tree: PositionedNode[T]) extends VisualDrawing(f
 
   private def baseOffset = tree.getMaxStringWidth(this) + tree.minOffset
 
-  val levelHeights = Array.fill(tree.getMaxDepth + 1)(1)
-  val maxLinesPerLevel = tree.getMaxLinesPerLevel
+  var levelHeights = Array.fill(tree.getMaxDepth + 1)(1)
+  var maxLinesPerLevel = tree.getMaxLinesPerLevel
 
-  levelHeights(0) = 0
-
-  for (level <- 1 until levelHeights.length) {
-    levelHeights(level) = levelHeights(level - 1) + (3 + maxLinesPerLevel(level - 1)) * this.getFontMetrics(this.getFont).getHeight
-  }
+  computeLevelHeights()
 
   var rectSet = Set[VisualLabelledRoundRectangle]()
   var branchSet = Set[VisualLabelledBranch]()
@@ -49,12 +45,23 @@ class VisualLabelledTree[T](var tree: PositionedNode[T]) extends VisualDrawing(f
         clear()
         rectSet = Set[VisualLabelledRoundRectangle]()
         branchSet = Set[VisualLabelledBranch]()
+        computeLevelHeights()
         computeRectangles()
         revalidate()
         repaint()
       }
     })
 
+  }
+
+  def computeLevelHeights(): Unit = {
+    levelHeights = Array.fill(tree.getMaxDepth + 1)(1)
+    maxLinesPerLevel = tree.getMaxLinesPerLevel
+
+    levelHeights(0) = 0
+    for (level <- 1 until levelHeights.length) {
+      levelHeights(level) = levelHeights(level - 1) + (3 + maxLinesPerLevel(level - 1)) * this.getFontMetrics(this.getFont).getHeight
+    }
   }
   
   def computeRectangles() = {
