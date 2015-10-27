@@ -1,19 +1,17 @@
-/**
- * *****************************************************************************
- * OscaR is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 2.1 of the License, or
- * (at your option) any later version.
- *
- * OscaR is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License  for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License along with OscaR.
- * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
- * ****************************************************************************
- */
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
 
 package oscar.cp.constraints.tables
 
@@ -242,6 +240,50 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
     Suspend
   }
 
+
+  /*
+  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): CPOutcome = {
+    //println("delta size:"+delta.size)
+    val intVar = X(varIndex)//delta.variable
+
+    // Cache reversible values
+    nValidLongs = nValidLongsRev.value
+
+    var changed = false
+    val originalMin = originalMins(varIndex)
+
+    clearTempMask()
+    domainArraySize = delta.fillArray(domainArray)
+    var i = 0
+    while (i < domainArraySize) {
+      val valueIndex = domainArray(i) - originalMin
+      lastSupports(varIndex)(valueIndex).reversibleRemove()
+      orTempMask(varIndex, valueIndex)
+
+      i += 1
+    }
+    changed = substractTempMaskFromValid()
+
+    /* If validTuples has changed, we need to perform a consistency check by propagate() */
+    if (changed) {
+      /* Failure if there are no more valid tuples */
+      if (nValidLongs == 0) {
+        return Failure
+      }
+
+      /* We check if x was the only modified variable since last propagate() */
+      if (touchedVar == -1 || touchedVar == varIndex) touchedVar = varIndex
+      else touchedVar = -2
+
+      needPropagate.setTrue()
+    }
+
+    // Trail reversibles
+    nValidLongsRev.value = nValidLongs
+
+    Suspend
+  }*/
+
   /**
    * Invalidates tuples by handling delta, the set of values removed from D(x) since the last call to this function.
    * @param intVar the CPIntVar associated to x.
@@ -249,6 +291,8 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
    * @param delta the set of values removed since the last call.
    * @return the outcome i.e. Failure or Success.
    */
+
+
   @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): CPOutcome = {
     //println("delta size:"+delta.size)
     val intVar = X(varIndex)//delta.variable
@@ -262,64 +306,36 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
     val varMin = intVar.min
 
 
-    /*
-    domainArraySize = delta.fillArray(domainArray)
-    var i = 0
-    while (i < domainArraySize) {
-      val valueIndex = domainArray(i) - originalMin
-      lastSupports(varIndex)(valueIndex).reversibleRemove()
-    }*/
-
-
-
-
     /* Update the value of validTuples by considering D(x) or delta */
     if (varSize == 1) {
       /* The variable is assigned */
       setTempMask(varIndex, varMin - originalMin)
       changed = andTempMaskWithValid()
     } else {
-      val varMax = intVar.max
-      if (varSize == 2) {
-        /* The variable has only two values */
-        setTempMask(varIndex, varMin - originalMin)
-        orTempMask(varIndex, varMax - originalMin)
-        changed = andTempMaskWithValid()
-      } else {
-        clearTempMask()
-        if (delta.size < varSize /*never do the reset*/) {
-          /* Use delta to update validTuples */
-          domainArraySize = delta.fillArray(domainArray)
-          var i = 0
-          while (i < domainArraySize) {
-            val valueIndex = domainArray(i) - originalMin
-            // remove from the support list and trail this removal
-            lastSupports(varIndex)(valueIndex).reversibleRemove()
-            orTempMask(varIndex, valueIndex)
-            i += 1
-          }
-          changed = substractTempMaskFromValid()
-        } else {
-          /* Use domain to update validTuples */
-          if (varMax - varMin + 1 == varSize) {
-            /* The domain is an interval */
-            var value = varMin
-            while (value <= varMax) {
-              orTempMask(varIndex, value - originalMin)
-              value += 1
-            }
-          } else {
-            /* The domain is sparse */
-            domainArraySize = intVar.fillArray(domainArray)
-            var i = 0
-            while (i < domainArraySize) {
-              orTempMask(varIndex, domainArray(i) - originalMin)
-              i += 1
-            }
-          }
-          changed = andTempMaskWithValid()
+      clearTempMask()
+      if (delta.size < varSize /*never do the reset*/ ) {
+        /* Use delta to update validTuples */
+        domainArraySize = delta.fillArray(domainArray)
+        var i = 0
+        while (i < domainArraySize) {
+          val valueIndex = domainArray(i) - originalMin
+          // remove from the support list and trail this removal
+          lastSupports(varIndex)(valueIndex).reversibleRemove()
+          orTempMask(varIndex, valueIndex)
+          i += 1
         }
+        changed = substractTempMaskFromValid()
+      } else {
+        /* Use domain to update validTuples */
+        domainArraySize = intVar.fillArray(domainArray)
+        var i = 0
+        while (i < domainArraySize) {
+          orTempMask(varIndex, domainArray(i) - originalMin)
+          i += 1
+        }
+        changed = andTempMaskWithValid()
       }
+
     }
 
     /* If validTuples has changed, we need to perform a consistency check by propagate() */
@@ -411,7 +427,12 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
           val varIdx = node.varIndex
           val valIdx = node.valIndex
           nCheck += 1
-          if (/*X(varIdx).hasValue(valIdx+originalMins(varIdx)) &&*/ !supported(varIdx, valIdx)) {
+
+          if (!X(varIdx).hasValue(valIdx+originalMins(varIdx))) {
+            //println("problem")
+            lastSupports(varIdx)(valIdx).reversibleRemove()
+          }
+          else if (/*X(varIdx).hasValue(valIdx+originalMins(varIdx)) &&*/ !supported(varIdx, valIdx)) {
             if (X(varIdx).removeValue(valIdx + originalMins(varIdx)) == Failure) {
               return Failure
             }

@@ -1,19 +1,17 @@
-/**
- * *****************************************************************************
- * OscaR is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 2.1 of the License, or
- * (at your option) any later version.
- *
- * OscaR is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License  for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License along with OscaR.
- * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
- * ****************************************************************************
- */
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
 
 package oscar.cp.constraints.tables
 
@@ -68,9 +66,8 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
   private[this] var nValidLongs: Int = 0
 
   /* Structures for the improvements */
-  private[this] var touchedVar = -1
   private[this] val lastSupports = Array.tabulate(arity)(i => new Array[Int](spans(i)))
-  private[this] val needPropagate = new ReversibleBoolean(store, false)
+  private[this] var needPropagate = false
 
   var deltas: Array[DeltaIntVar] = new Array[DeltaIntVar](arity)
 
@@ -124,13 +121,6 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
       setTempMask(varIndex, varMin - originalMin)
       changed = andTempMaskWithValid()
     } else {
-      val varMax = intVar.max
-      if (varSize == 2) {
-        /* The variable has only two values */
-        setTempMask(varIndex, varMin - originalMin)
-        orTempMask(varIndex, varMax - originalMin)
-        changed = andTempMaskWithValid()
-      } else {
         clearTempMask()
         if (delta.size < varSize) {
           /* Use delta to update validTuples */
@@ -142,25 +132,13 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
           }
           changed = substractTempMaskFromValid()
         } else {
-          /* Use domain to update validTuples */
-          if (varMax - varMin + 1 == varSize) {
-            /* The domain is an interval */
-            var value = varMin
-            while (value <= varMax) {
-              orTempMask(varIndex, value - originalMin)
-              value += 1
-            }
-          } else {
-            /* The domain is sparse */
-            domainArraySize = intVar.fillArray(domainArray)
-            var i = 0
-            while (i < domainArraySize) {
-              orTempMask(varIndex, domainArray(i) - originalMin)
-              i += 1
-            }
+          domainArraySize = intVar.fillArray(domainArray)
+          var i = 0
+          while (i < domainArraySize) {
+            orTempMask(varIndex, domainArray(i) - originalMin)
+            i += 1
           }
           changed = andTempMaskWithValid()
-        }
       }
     }
 
@@ -168,12 +146,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
     if (changed) {
       /* Failure if there are no more valid tuples */
       if (nValidLongs == 0) return Failure
-
-      /* We check if x was the only modified variable since last propagate() */
-      if (touchedVar == -1 || touchedVar == varIndex) touchedVar = varIndex
-      else touchedVar = -2
-
-      needPropagate.setTrue()
+      needPropagate = true
     }
 
     // Trail reversibles
@@ -192,47 +165,49 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
 
   override def propagate(): CPOutcome = {
 
-    needPropagate.setFalse()
-
+    needPropagate = false
 
     var i = 0
 
+    var nChanged = 0
+    var changedVarIdx = 0
+
     while (i < arity) {
       if (deltas(i).size > 0) {
+        nChanged += 1
+        changedVarIdx = i
         if (updateDelta(i,deltas(i)) == Failure) return Failure
       }
       i += 1
     }
 
-
     // No need for the check if validTuples has not changed
-    if (!needPropagate.value) return Suspend
+    if (!needPropagate) return Suspend
 
     // Cache reversible values
     nValidLongs = nValidLongsRev.value
 
-    if (touchedVar == -2) {
-      touchedVar = -1
-    }
 
     var varIndex = 0
     while (varIndex < arity) {
-      domainArraySize = X(varIndex).fillArray(domainArray)
-      var i = 0
-      var value = 0
-      while (i < domainArraySize) {
-        value = domainArray(i)
-        nCheck += 1
-        if (!supported(varIndex, value - originalMins(varIndex))) {
-          if (X(varIndex).removeValue(value) == Failure) {
-            return Failure
+      // no need to check a variable if it was the only one modified
+      if (nChanged > 1 || changedVarIdx != varIndex) {
+        domainArraySize = X(varIndex).fillArray(domainArray)
+        var i = 0
+        var value = 0
+        while (i < domainArraySize) {
+          value = domainArray(i)
+          nCheck += 1
+          if (!supported(varIndex, value - originalMins(varIndex))) {
+            if (X(varIndex).removeValue(value) == Failure) {
+              return Failure
+            }
           }
+          i += 1
         }
-        i += 1
       }
       varIndex += 1
     }
-
     // Trail reversibles
     nValidLongsRev.value = nValidLongs
 
