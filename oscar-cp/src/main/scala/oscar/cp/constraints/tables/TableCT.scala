@@ -70,7 +70,6 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
   /* Structures for the improvements */
   private[this] var touchedVar = -1
   private[this] val lastSupports = Array.tabulate(arity)(i => new Array[Int](spans(i)))
-  private[this] val lastSizes = Array.fill(arity)(new ReversibleInt(store, 0))
   private[this] val needPropagate = new ReversibleBoolean(store, false)
 
   var deltas: Array[DeltaIntVar] = new Array[DeltaIntVar](arity)
@@ -94,7 +93,6 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
     while (i < arity) {
       val x = X(i)
       deltas(i) = x.callPropagateOnChangesWithDelta(this)
-      lastSizes(i).setValue(x.size)
       i += 1
     }
 
@@ -112,10 +110,6 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
 
     val intVar = X(varIndex)
 
-
-    /* No need to update validTuples if there was no modification since last propagate() */
-    if (intVar.size == lastSizes(varIndex).value) return Suspend
-
     // Cache reversible values
     nValidLongs = nValidLongsRev.value
 
@@ -125,7 +119,6 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
     val varMin = intVar.min
 
     /* Update the value of validTuples by considering D(x) or delta */
-    lastSizes(varIndex).setValue(varSize)
     if (varSize == 1) {
       /* The variable is assigned */
       setTempMask(varIndex, varMin - originalMin)
@@ -194,6 +187,9 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
    * Unsupported values are removed.
    * @return the outcome i.e. Failure or Success.
    */
+
+  var nCheck = 0
+
   override def propagate(): CPOutcome = {
 
     needPropagate.setFalse()
@@ -226,6 +222,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
       var value = 0
       while (i < domainArraySize) {
         value = domainArray(i)
+        nCheck += 1
         if (!supported(varIndex, value - originalMins(varIndex))) {
           if (X(varIndex).removeValue(value) == Failure) {
             return Failure
@@ -235,80 +232,6 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
       }
       varIndex += 1
     }
-
-
-    /* For each variable value (x,a), check if a is supported. Unsupported values are removed from their respective
-     * domains */
-    /*
-    var varIndex = 0
-    while (varIndex < arity) {
-      /* No need to check the values of a variable if it was the only modified since last check */
-
-      if (touchedVar == varIndex) {
-        touchedVar = -1
-      } else {
-        val intVar = X(varIndex)
-        val originalMin = originalMins(varIndex)
-        val varSize = intVar.size
-
-        if (varSize == 1) {
-          if (!supported(varIndex, intVar.min - originalMin)) {
-            return Failure
-          }
-        } else if (varSize == 2) {
-          val varMin = intVar.min
-          val varMax = intVar.max
-          val minSupported = supported(varIndex, varMin - originalMin)
-          val maxSupported = supported(varIndex, varMax - originalMin)
-          if (!minSupported) {
-            if (!maxSupported) {
-              return Failure
-            } else {
-              intVar.assign(varMax)
-              lastSizes(varIndex).setValue(1)
-            }
-          } else if (!maxSupported) {
-            intVar.assign(varMin)
-            lastSizes(varIndex).setValue(1)
-          }
-        } else {
-          val varMin = intVar.min
-          val varMax = intVar.max
-
-          /* Domain of the variable is an interval */
-          if (varMax - varMin + 1 == varSize) {
-            var value = varMin
-            while (value <= varMax) {
-              if (!supported(varIndex, value - originalMin)) {
-                if (intVar.removeValue(value) == Failure) {
-                  return Failure
-                }
-              }
-              value += 1
-            }
-          } else { /* Domain is sparse */
-            domainArraySize = intVar.fillArray(domainArray)
-            var i = 0
-            var value = 0
-            while (i < domainArraySize) {
-              value = domainArray(i)
-              if (!supported(varIndex, value - originalMin)) {
-                if (intVar.removeValue(value) == Failure) {
-                  return Failure
-                }
-              }
-              i += 1
-            }
-          }
-
-          lastSizes(varIndex).setValue(intVar.size)
-        }
-
-      }
-      varIndex += 1
-    }
-    */
-    needPropagate.setFalse()
 
     // Trail reversibles
     nValidLongsRev.value = nValidLongs

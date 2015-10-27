@@ -93,7 +93,6 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
 
   /* Structures for the improvements */
   private[this] var touchedVar = -1
-  private[this] val lastSizes = Array.fill(arity)(new ReversibleInt(store, 0))
   private[this] val needPropagate = new ReversibleBoolean(store, false)
 
   var deltas: Array[DeltaIntVar] = new Array[DeltaIntVar](arity)
@@ -237,7 +236,6 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
     while (i < arity) {
       val x = X(i)
       deltas(i) = x.callPropagateOnChangesWithDelta(this)
-      lastSizes(i).setValue(x.size)
       i += 1
     }
 
@@ -254,11 +252,6 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
   @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): CPOutcome = {
     //println("delta size:"+delta.size)
     val intVar = X(varIndex)//delta.variable
-
-
-
-    /* No need to update validTuples if there was no modification since last propagate() */
-    if (intVar.size == lastSizes(varIndex).value) return Suspend
 
     // Cache reversible values
     nValidLongs = nValidLongsRev.value
@@ -281,7 +274,6 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
 
 
     /* Update the value of validTuples by considering D(x) or delta */
-    lastSizes(varIndex).setValue(varSize)
     if (varSize == 1) {
       /* The variable is assigned */
       setTempMask(varIndex, varMin - originalMin)
@@ -356,6 +348,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
    * Unsupported values are removed.
    * @return the outcome i.e. Failure or Success.
    */
+  var nCheck = 0
   override def propagate(): CPOutcome = {
     //println("propagate"+scala.util.Random.nextInt(10))
 
@@ -369,8 +362,6 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
     //toCheck.clear()
     nValidLongsToCheck = 0
     var i = 0
-
-
 
     // do the update delta
     i = 0
@@ -419,7 +410,8 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
           curr = curr.next
           val varIdx = node.varIndex
           val valIdx = node.valIndex
-          if (X(varIdx).hasValue(valIdx+originalMins(varIdx)) && !supported(varIdx, valIdx)) {
+          nCheck += 1
+          if (/*X(varIdx).hasValue(valIdx+originalMins(varIdx)) &&*/ !supported(varIdx, valIdx)) {
             if (X(varIdx).removeValue(valIdx + originalMins(varIdx)) == Failure) {
               return Failure
             }
@@ -429,31 +421,25 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
     }
 
 
-
-    /*
-    i = 0
-    while (i < X.size) {
-      for (v <- X(i).toArray) {
-        val valIdx = v-originalMins(i)
-        if (!supported(i, valIdx)) {
-          //println("===============>should have been filtered "+(i,valIdx))
-          //printInverseLastSupportsLists()
-          //println(toCheck.toArray.mkString(","))
-          if (X(i).removeValue(v) == Failure) {
+  /*
+    var varIndex = 0
+    while (varIndex < arity) {
+      domainArraySize = X(varIndex).fillArray(domainArray)
+      var i = 0
+      var value = 0
+      while (i < domainArraySize) {
+        value = domainArray(i)
+        if (!supported(varIndex, value - originalMins(varIndex))) {
+          if (X(varIndex).removeValue(value) == Failure) {
             return Failure
           }
         }
-
+        i += 1
       }
-      i += 1
+      varIndex += 1
     }*/
 
 
-    i = 0
-    while (i < X.length) {
-      lastSizes(i).setValue(X(i).size)
-      i += 1
-    }
 
 
     // Trail reversibles
