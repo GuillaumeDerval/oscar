@@ -52,7 +52,7 @@ object RCPSP extends CPModel with App {
   // Cumulative
   val tt = new SweepMaxCumulative(starts, durations, ends, demands, resources, capa, resourceid)
   val erch = new EnergeticChecker(starts, durations, ends, demands, resources, capa, resourceid)
-  val erTracked = new {val decisionVariables = (starts ++ ends) toSeq } with EnergeticReasoning(starts, durations, ends, demands, resources, capa, resourceid) with Tracking
+  val erTracked = new {val decisionVariables = (starts ++ ends).toSeq } with EnergeticReasoning(starts, durations, ends, demands, resources, capa, resourceid) with Tracking
 
   erTracked.deactivate()
   add(tt)

@@ -44,6 +44,7 @@ class GCCVar(x: Array[CPIntVar], val minVal: Int, val cards: Array[CPIntVar]) ex
       case CPPropagStrength.Strong => {
         s.post(new GCCVarAC(x.toArray, minVal, cards))
       }
+
       
     }
     if (ok == CPOutcome.Failure) return CPOutcome.Failure;
