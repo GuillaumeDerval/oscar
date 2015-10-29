@@ -1,3 +1,18 @@
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  *******************************************************************************/
+
 package oscar.cp.constraints
 
 import oscar.algo.SortUtils._
@@ -7,49 +22,55 @@ import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.{CPOutcome, CPPropagStrength, Constraint}
 
 /**
- * Created by saschavancauwelaert on 09/10/15.
+ *
+ * Counting-based all-different propagation,
+ * from "A Parallel, Backjumping Subgraph Isomorphism Algorithm using Supplemental Graphs" (Prosser et alCP2015)
+ * @author Sascha vancauwelaert
  */
-
-//Counting-based all-different propagation, from "A Parallel, Backjumping Subgraph Isomorphism Algorithm using Supplemental Graphs" (CP2015)
 class CountingBasedAllDifferent(constrainedVariables: Array[CPIntVar]) extends Constraint(constrainedVariables(0).store){
 
   //TODO : incremental mapping of bits using a sparse set (no need of the second table maintaining the positions of the values)
 
   //general variables
-  private[this] val numberOfVariables = constrainedVariables.length
+  private[this] val nVariables = constrainedVariables.length
   private[this] val minValueOfAllDomains = constrainedVariables.map(_.min).min
   private[this] val maxValueOfAllDomains = constrainedVariables.map(_.max).max
   private[this] val maximumDomainCardinality = maxValueOfAllDomains - minValueOfAllDomains + 1
-  private[this] val numberOfBuckets : Int = maximumDomainCardinality/64 + 1 //bucketIndexForValue(maximumDomainCardinality) + 1
-  private[this] var currentVariableIndex : Int = -1
-  private[this] var currentBucketIndex : Int = -1
 
-  //set variables
-  private[this] val detectedHallSetUnion : Array[Long] = Array.fill(numberOfBuckets)(0L) //H in the paper
-  private[this] val currentUnionOfDomains : Array[Long] = Array.fill(numberOfBuckets)(0L) //A in the paper
-  private[this] var numberOfDomainsContributingToUnion : Int = 0 //n in the paper
-  private[this] var currentUnionDomainCardinality : Int = -1
+  private[this] val nBuckets : Int = maximumDomainCardinality/64 + 1
+  private[this] var varIdx : Int = -1
+  private[this] var bucketIdx : Int = -1
 
-  //internal domain variable (i.e. domain as bit sets)
-  private[this] val bitSetDomains = Array.fill(numberOfVariables,numberOfBuckets)(0L) //domains with a bitset representation
-  private[this] val bitSetDomainsBeforePropagation = Array.fill(numberOfVariables,numberOfBuckets)(0L) //domains before propagation, used to prevent removal of values already removed
+  // --- set variables ---
+  // H in the paper ---
+  private[this] val detectedHallSetUnion : Array[Long] = Array.fill(nBuckets)(0L)
+  // A in the paper
+  private[this] val currUnionOfDomains : Array[Long] = Array.fill(nBuckets)(0L)
+  private[this] var nDomainsContributingToUnion : Int = 0 //n in the paper
+  private[this] var currUnionDomainCardinality : Int = -1
+
+  // --- internal domain variable (i.e. domain as bit sets) ---
+  private[this] val bitSetDomains = Array.fill(nVariables,nBuckets)(0L) //domains with a bitset representation
+  private[this] val bitSetDomainsBeforePropagation = Array.fill(nVariables,nBuckets)(0L) //domains before propagation, used to prevent removal of values already removed
   private[this] val temporalDomainValues = Array.ofDim[Int](maximumDomainCardinality) //temporal array used to fill the internal bit sets as well as to get the values to remove from the real domains
-  private[this] var currentDomainElementIndex = -1
-  private[this] var currentDomain : Array[Long] = null
-  private[this] var isCurrentDomainEmpty : Boolean = false
+  private[this] var bitIdx = -1
+  private[this] var domain : Array[Long] = null
+  private[this] var domainEmpty : Boolean = false
 
-  //variables for ordering
-  private[this] val orderedVariablesIds : Array[Int] = Array.tabulate(numberOfVariables)(i => i)
-  private[this] val domainSizes = Array.tabulate(numberOfVariables)(constrainedVariables(_).size)
-  private[this] var currentOrderedVariableId : Int = -1
+  // --- variables for ordering ---
+  private[this] val orderedVariablesIds : Array[Int] = Array.tabulate(nVariables)(i => i)
+  private[this] val domainSizes = Array.tabulate(nVariables)(constrainedVariables(_).size)
+  private[this] var currOrderedVariableId : Int = -1
 
-  //used to prevent using already processed variables
-  private[this] val numberOfBoundAndProcessedVariables = new ReversibleInt(constrainedVariables(0).store, 0) //keep track of number of variables to be skipped, because their value is already removed from the other domains
-
+  /* used to prevent using already processed variables
+     keep track of number of variables to be skipped, 
+     because their value is already removed from the other domains */
+  private[this] val nBoundAndProcessedVariables = new ReversibleInt(constrainedVariables(0).store, 0) 
+  
   final override def setup(l: CPPropagStrength): CPOutcome = {
     if (propagate() == Failure) Failure
     else {
-      var i = numberOfVariables
+      var i = nVariables
       while (i > 0) {
         i -= 1
         constrainedVariables(i).callPropagateWhenDomainChanges(this)
@@ -60,136 +81,155 @@ class CountingBasedAllDifferent(constrainedVariables: Array[CPIntVar]) extends C
 
   final override def propagate(): CPOutcome = {
 
-    val currentNumberOfBoundAndProcessedVariables = numberOfBoundAndProcessedVariables.value
-    var newNumberOfBoundAndProcessedVariables = 0
+    val nBoundAndProcessedVars = nBoundAndProcessedVariables.value
+    var newnBoundAndProcessedVariables = 0
 
     //initialization
-    numberOfDomainsContributingToUnion = 0
+    nDomainsContributingToUnion = 0
     clearUnionSets()
 
     //sort by cardinality and set bit set domains as variable domains
-    currentVariableIndex = numberOfVariables
-    while (currentVariableIndex > 0) {
-    //while (currentVariableIndex > currentNumberOfBoundAndProcessedVariables) {
-      currentVariableIndex -= 1
-      val domainSize = constrainedVariables(currentVariableIndex).size
-      domainSizes(currentVariableIndex) = domainSize
+    varIdx = nVariables
+    while (varIdx > 0) {
+      varIdx -= 1
+      val domainSize = constrainedVariables(varIdx).size
+      domainSizes(varIdx) = domainSize
 
-      if(domainSize == 1)
-        newNumberOfBoundAndProcessedVariables += 1
+      if (domainSize == 1)
+        newnBoundAndProcessedVariables += 1
 
       //TODO : do not clearAndFill if domain size did not change compared to last call
-      currentDomain = bitSetDomains(currentVariableIndex)
-      clearAndFillCurrentBitSetDomain()
+      domain = bitSetDomains(varIdx)
+      clearAndFillBitSetDomain()
     }
 
-    mergeSort(orderedVariablesIds, domainSizes,  currentNumberOfBoundAndProcessedVariables, numberOfVariables)
+    mergeSort(orderedVariablesIds, domainSizes,  nBoundAndProcessedVars, nVariables)
 
     //loop on variables by non-decreasing domain cardinality
-    currentVariableIndex = currentNumberOfBoundAndProcessedVariables
-    while(currentVariableIndex < numberOfVariables) {
-      currentOrderedVariableId = orderedVariablesIds(currentVariableIndex)
-      currentDomain = bitSetDomains(currentOrderedVariableId)
-      numberOfDomainsContributingToUnion += 1
-      removeHallSetFromCurrentDomainAndUpdateDomainUnion()
+    varIdx = nBoundAndProcessedVars
+    while (varIdx < nVariables) {
+      currOrderedVariableId = orderedVariablesIds(varIdx)
+      domain = bitSetDomains(currOrderedVariableId)
+      nDomainsContributingToUnion += 1
+      removeHallSetFromdomainAndUpdateDomainUnion()
 
-      if(isCurrentDomainEmpty || currentUnionDomainCardinality < numberOfDomainsContributingToUnion)
+      if (domainEmpty || currUnionDomainCardinality < nDomainsContributingToUnion)
         return CPOutcome.Failure
 
-      if(currentUnionDomainCardinality == numberOfDomainsContributingToUnion) {
+      if (currUnionDomainCardinality == nDomainsContributingToUnion) {
         updateHallSetAndClearDomainUnion()
-        numberOfDomainsContributingToUnion = 0
+        nDomainsContributingToUnion = 0
       }
 
-      currentVariableIndex += 1
+      varIdx += 1
     }
 
     updateDomainsWithBitSetDomains()
 
     //update number of bound and processed variables
-    numberOfBoundAndProcessedVariables.setValue(newNumberOfBoundAndProcessedVariables)
+    nBoundAndProcessedVariables.setValue(newnBoundAndProcessedVariables)
 
     CPOutcome.Suspend
   }
 
   /* Bits operations */
   @inline private def bucketIndexForValue(value : Int) = (value - minValueOfAllDomains) >>> 6
+  
   @inline private def bitNumberInBucketForValue(value : Int) = (value - minValueOfAllDomains) & 63
 
-  @inline private def clearAndFillCurrentBitSetDomain() : Unit = {
-    currentBucketIndex = numberOfBuckets
+  @inline private def clearAndFillBitSetDomain() : Unit = {
+    bucketIdx = nBuckets
     //clear domains
-    while(currentBucketIndex > 0) {
-      currentBucketIndex -= 1
-      currentDomain(currentBucketIndex) = 0L
+    while (bucketIdx > 0) {
+      bucketIdx -= 1
+      domain(bucketIdx) = 0L
     }
-    //fill domains with current values
-    currentDomainElementIndex = constrainedVariables(currentVariableIndex).fillArray(temporalDomainValues)
-    while(currentDomainElementIndex > 0) {
-      currentDomainElementIndex -= 1
-      addToBitSetDomain(temporalDomainValues(currentDomainElementIndex))
+    //fill domains with curr values
+    bitIdx = constrainedVariables(varIdx).fillArray(temporalDomainValues)
+
+    while (bitIdx > 0) {
+      bitIdx -= 1
+      addToBitSetDomain(temporalDomainValues(bitIdx))
     }
 
     //save the domains before propagation to prevent removal of values already removed
-    currentBucketIndex = numberOfBuckets
+    bucketIdx = nBuckets
     //clear domains
-    while(currentBucketIndex > 0) {
-      currentBucketIndex -= 1
-      bitSetDomainsBeforePropagation(currentVariableIndex)(currentBucketIndex) = currentDomain(currentBucketIndex)
+    while (bucketIdx > 0) {
+      bucketIdx -= 1
+      bitSetDomainsBeforePropagation(varIdx)(bucketIdx) = domain(bucketIdx)
     }
   }
+  
   @inline private def clearUnionSets() : Unit = {
-    currentBucketIndex = numberOfBuckets
+    bucketIdx = nBuckets
     //clear H and A sets
-    while(currentBucketIndex > 0) {
-      currentBucketIndex -= 1
-      detectedHallSetUnion(currentBucketIndex) = 0L
-      currentUnionOfDomains(currentBucketIndex) = 0L
+    while (bucketIdx > 0) {
+      bucketIdx -= 1
+      detectedHallSetUnion(bucketIdx) = 0L
+      currUnionOfDomains(bucketIdx) = 0L
     }
   }
-  @inline private def addToBitSetDomain(value : Int) : Unit = currentDomain(bucketIndexForValue(value)) |= (1L << bitNumberInBucketForValue(value))
+  
+  @inline private def addToBitSetDomain(value : Int) : Unit = {
+    domain(bucketIndexForValue(value)) |= (1L << bitNumberInBucketForValue(value))
+  }
 
-  @inline private def removeHallSetFromCurrentDomainAndUpdateDomainUnion() : Unit = {
-    isCurrentDomainEmpty = true
-    currentUnionDomainCardinality = 0
-    currentBucketIndex = numberOfBuckets
-    while(currentBucketIndex > 0) {
-      currentBucketIndex -= 1
-      currentDomain(currentBucketIndex) &= ~detectedHallSetUnion(currentBucketIndex) //update domain
-      if(currentDomain(currentBucketIndex) != 0)
-        isCurrentDomainEmpty = false
-      currentUnionOfDomains(currentBucketIndex) |= currentDomain(currentBucketIndex) //update domain union
-      currentUnionDomainCardinality += java.lang.Long.bitCount(currentUnionOfDomains(currentBucketIndex))
+  @inline private def removeHallSetFromdomainAndUpdateDomainUnion() : Unit = {
+    
+    domainEmpty = true
+    currUnionDomainCardinality = 0
+    bucketIdx = nBuckets
+    
+    while (bucketIdx > 0) {
+      bucketIdx -= 1
+      
+      //update domain
+      domain(bucketIdx) &= ~detectedHallSetUnion(bucketIdx) 
+      if (domain(bucketIdx) != 0)
+        domainEmpty = false
+      
+      //update domain union
+      currUnionOfDomains(bucketIdx) |= domain(bucketIdx) 
+      currUnionDomainCardinality += java.lang.Long.bitCount(currUnionOfDomains(bucketIdx))
     }
   }
 
   @inline private def updateHallSetAndClearDomainUnion() : Unit = {
-    currentBucketIndex = numberOfBuckets
-    while(currentBucketIndex > 0) {
-      currentBucketIndex -= 1
-      detectedHallSetUnion(currentBucketIndex) |= currentUnionOfDomains(currentBucketIndex) //update hall set with current domain union
-      currentUnionOfDomains(currentBucketIndex) = 0L //clear domain union
+    bucketIdx = nBuckets
+    
+    while (bucketIdx > 0) {
+      
+      bucketIdx -= 1
+      //update hall set with curr domain union
+      detectedHallSetUnion(bucketIdx) |= currUnionOfDomains(bucketIdx)
+      //clear domain union
+      currUnionOfDomains(bucketIdx) = 0L 
+      
     }
   }
 
   @inline private def updateDomainsWithBitSetDomains() : Unit = {
 
-    val currentNumberOfBoundAndProcessedVariables = numberOfBoundAndProcessedVariables.value
+    val nBoundAndProcessedVars = nBoundAndProcessedVariables.value
 
-    currentVariableIndex = numberOfVariables
-    while(currentVariableIndex > currentNumberOfBoundAndProcessedVariables) {
-      currentVariableIndex -= 1
+    varIdx = nVariables
+    
+    while (varIdx > nBoundAndProcessedVars) {
+      
+      varIdx -= 1
+      currOrderedVariableId = orderedVariablesIds(varIdx)
+      domain = bitSetDomains(currOrderedVariableId)
 
-      currentOrderedVariableId = orderedVariablesIds(currentVariableIndex)
-      currentDomain = bitSetDomains(currentOrderedVariableId)
+      //get the values by bucket and remove them from the real domain of the curr variable
+      bucketIdx = nBuckets
+      var nValuesToRemove = 0
+      
+      while(bucketIdx > 0) {
+        
+        bucketIdx -= 1
 
-      //get the values by bucket and remove them from the real domain of the current variable
-      currentBucketIndex = numberOfBuckets
-      var numberOfValuesToRemove = 0
-      while(currentBucketIndex > 0) {
-        currentBucketIndex -= 1
-
-        var valuesToBeRemovedBitSet = currentDomain(currentBucketIndex) ^ bitSetDomainsBeforePropagation(currentOrderedVariableId)(currentBucketIndex)
+        var valuesToBeRemovedBitSet = domain(bucketIdx) ^ bitSetDomainsBeforePropagation(currOrderedVariableId)(bucketIdx)
 
         //TODO : for now, linear to get the values, could be done more efficiently with a lookup table
         var bitIndex = 0
@@ -198,16 +238,19 @@ class CountingBasedAllDifferent(constrainedVariables: Array[CPIntVar]) extends C
         while(valuesToBeRemovedBitSet != 0) {
           unaryBitSet = 1L << bitIndex
           if((valuesToBeRemovedBitSet & unaryBitSet) != 0) {
-            temporalDomainValues(numberOfValuesToRemove) = minValueOfAllDomains + 64 * currentBucketIndex + bitIndex
-            numberOfValuesToRemove += 1
+            temporalDomainValues(nValuesToRemove) = minValueOfAllDomains + 64 * bucketIdx + bitIndex
+            nValuesToRemove += 1
             valuesToBeRemovedBitSet ^= unaryBitSet
           }
           bitIndex += 1
         }
       }
 
-      if(numberOfValuesToRemove > 0)
-        constrainedVariables(currentOrderedVariableId).removeValues(temporalDomainValues, numberOfValuesToRemove) //do not have to check for failure as domain wipe out would have been detected before
+      if(nValuesToRemove > 0) {
+        //do not have to check for failure as domain wipe out would have been detected before
+        constrainedVariables(currOrderedVariableId).removeValues(temporalDomainValues, nValuesToRemove)
+      }
+
     }
   }
 }
