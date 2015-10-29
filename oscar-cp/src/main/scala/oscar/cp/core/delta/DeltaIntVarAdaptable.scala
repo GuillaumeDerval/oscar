@@ -63,10 +63,11 @@ final class DeltaIntVarAdaptable(x: CPIntVar, final override val id: Int) extend
   }
   
   final override def update(): Unit = {
-    trail()
+    val xs = x.size
+    if (xs != _oldSize) trail()
     _oldMin = x.min
     _oldMax = x.max
-    _oldSize = x.size
+    _oldSize = xs
   }
 
 

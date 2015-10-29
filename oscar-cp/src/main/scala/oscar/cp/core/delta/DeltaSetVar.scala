@@ -55,7 +55,9 @@ final class DeltaSetVar(x: CPSetVar, idx: Int) extends Delta {
 
   
   final override def update() {
-    trail()
+    val xps = x.possibleSize
+    val xrs = x.requiredSize
+    if (xps != _oldSizePossible || xrs != _oldSizeRequired) trail()
     _oldSizePossible = x.possibleSize
     _oldSizeRequired = x.requiredSize
   }
