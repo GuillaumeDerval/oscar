@@ -102,7 +102,7 @@ object SimpleSudoku extends SearchEngine with StopWatch {
         	vinit=k
     	    squareSet += k
     	}  
-        grid(i)=CBLSIntVar(m, 1, N, vinit, "v_"+i)
+        grid(i)=CBLSIntVar(m, vinit, 1 to N, "v_"+i)
       }
     }
     showGrid(grid,N)
@@ -118,7 +118,7 @@ object SimpleSudoku extends SearchEngine with StopWatch {
     for (i <- LinearIndexes) { c.violation(grid(i)) }
 
     // working variables
-    val Tabu:Array[CBLSIntVar] = (for (i <- LinearIndexes) yield CBLSIntVar(m, 0, Int.MaxValue, 0, "Tabu_"+i)).toArray
+    val Tabu:Array[CBLSIntVar] = (for (i <- LinearIndexes) yield CBLSIntVar(m, 0, 0 to Int.MaxValue, "Tabu_"+i)).toArray
     var it:Int=1
     
     // closing model

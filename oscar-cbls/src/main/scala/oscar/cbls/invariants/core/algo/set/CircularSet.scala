@@ -22,9 +22,7 @@
 
 package oscar.cbls.invariants.core.algo.set
 
-import collection.mutable.SortedSet
-
-import collection.Iterator
+import scala.collection.Iterator
 
 /**Circular set is a dedicated data structure to represent set of integers in an efficient way
  * although the memory footprint will not be efficient at all

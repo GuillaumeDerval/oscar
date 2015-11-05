@@ -51,8 +51,8 @@ class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[In
   // The number of bounds that are respected
   private[this] var nBoundsOkRev: ReversibleInt = null
   // The sparse set to memorize the variables having a value that is unbound
-  private[this] val unboundSet = Array.tabulate(nValues)(vi => new Array[Int](nVariables))
-  private[this] val unboundIndex = Array.tabulate(nValues)(vi => new Array[Int](nVariables))
+  private[this] val unboundSet = Array.ofDim[Int](nValues, nVariables)
+  private[this] val unboundIndex = Array.ofDim[Int](nValues, nVariables)
 
   // Change buffer to load the deltas
   private[this] var changeBuffer: Array[Int] = null
@@ -187,7 +187,7 @@ class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[In
             return Success
           }
         }
-        // If the number of variables that have the value decreases to the lower bound, that's worrying!
+        // If the number of variables that have the value decreases to the lower bound, assign the unbound
         if (nPossible == lower(vi) && whenMinPossible(vi, v, nUnbound) == Failure) {
           return Failure
         }
@@ -214,7 +214,7 @@ class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[In
             return Success
           }
         }
-        // If the number of variables that are bound to the value increases to the upper bound, that's worrying!
+        // If the number of variables that are bound to the value increases to the upper bound, remove the unbound
         if (nMandatory == upper(vi) && whenMaxMandatory(vi, v, nUnbound) == Failure) {
           return Failure
         }

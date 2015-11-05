@@ -230,21 +230,13 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
 
           // Restrict the bounding to what is possible
           val bound = boundingVar(vi)
-          var upper = bound.max
-          if (upper > possible) {
-            if (bound.updateMax(possible) == Failure) {
-              return Failure
-            }
-            upper = possible
-          }
-
-          // Too few variables have the value
-          val lower = bound.min
-          if (possible < lower) {
+          if (bound.updateMax(possible) == Failure) {
             return Failure
           }
+
           // Just enough variables have the value
-          else if (possible == lower) {
+          val lower = bound.min
+          if (possible == lower) {
 
             // Try to bind them all
             if (whenMinPossible(vi, v, unbound) == Failure) {
@@ -252,13 +244,11 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
             }
 
             // The correct number of variables have the value, and we have bound them all
-            if (lower == upper) {
-              valueOkRev(vi).setTrue()
-              nValuesOkVar += 1
-              if (nValuesOkVar == nValues) {
-                nValuesOkRev.setValue(nValues)
-                return Success
-              }
+            valueOkRev(vi).setTrue()
+            nValuesOkVar += 1
+            if (nValuesOkVar == nValues) {
+              nValuesOkRev.setValue(nValues)
+              return Success
             }
           }
         }
@@ -281,21 +271,13 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
 
           // Restrict the bounding to what is possible
           val bound = boundingVar(vi)
-          var lower = bound.min
-          if (lower < mandatory) {
-            if (bound.updateMin(mandatory) == Failure) {
+          if (bound.updateMin(mandatory) == Failure) {
               return Failure
-            }
-            lower = mandatory
           }
 
-          // Too many variables are bound to the value
-          val upper = bound.max
-          if (mandatory > upper) {
-            return Failure
-          }
           // Just few enough variables are bound to the value
-          else if (mandatory == upper) {
+          val upper = bound.max
+          if (mandatory == upper) {
 
             // Try to remove the unbound
             if (whenMaxMandatory(vi, v, unbound) == Failure) {
@@ -303,13 +285,11 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
             }
 
             // The correct number of variables are bound to the value, and we have removed the unbound
-            if (lower == upper) {
-              valueOkRev(vi).setTrue()
-              nValuesOkVar += 1
-              if (nValuesOkVar == nValues) {
-                nValuesOkRev.setValue(nValues)
-                return Success
-              }
+            valueOkRev(vi).setTrue()
+            nValuesOkVar += 1
+            if (nValuesOkVar == nValues) {
+              nValuesOkRev.setValue(nValues)
+              return Success
             }
           }
         }
@@ -330,12 +310,8 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
     val mandatory = nMandatoryRev(vi).value
     val unbound = possible - mandatory
 
-    // Too few variables have the value
-    if (possible < lower) {
-      return Failure
-    }
     // Just enough variables have the value
-    else if (possible == lower) {
+    if (possible == lower) {
 
       // Try to bind them all
       if (whenMinPossible(vi, v, unbound) == Failure) {
@@ -343,19 +319,13 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
       }
 
       // The correct number of variables have the value, and we have bound them all
-      if (lower == upper) {
-        nValuesOkRev.incr()
-        valueOkRev(vi).setTrue()
-        return Success
-      }
+      nValuesOkRev.incr()
+      valueOkRev(vi).setTrue()
+      return Success
     }
 
-    // Too many variables are bound to the value
-    if (mandatory > upper) {
-      return Failure
-    }
     // Just few enough variables are bound to the value
-    else if (mandatory == upper) {
+    if (mandatory == upper) {
 
       // Try to remove the unbound
       if (whenMaxMandatory(vi, v, unbound) == Failure) {
@@ -363,11 +333,9 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
       }
 
       // The correct number of variables are bound to the value, and we have removed the unbound
-      if (lower == upper) {
-        nValuesOkRev.incr()
-        valueOkRev(vi).setTrue()
-        return Success
-      }
+      nValuesOkRev.incr()
+      valueOkRev(vi).setTrue()
+      return Success
     }
 
     Suspend

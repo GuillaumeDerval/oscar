@@ -21,12 +21,13 @@
 
 package oscar.cbls.constraints.lib.global
 
-import collection.immutable.SortedMap
 import oscar.cbls.constraints.core.Constraint
-import oscar.cbls.modeling.Algebra._
-import oscar.cbls.invariants.core.computation.{ Variable, CBLSIntVar }
 import oscar.cbls.invariants.core.computation.CBLSIntVar._
+import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
+import oscar.cbls.modeling.Algebra._
+
+import scala.collection.immutable.SortedMap
 
 /**
  * Implement the AllDiff constraint on IntVars: all variables must have a different value.
@@ -35,28 +36,28 @@ import oscar.cbls.invariants.core.propagation.Checker
  * @param variables the variable whose values should all be different.
  * @author renaud.delandtsheer@cetic.be
  */
-case class AllDiff(variables: Iterable[CBLSIntVar]) extends Constraint {
+case class AllDiff(variables: Iterable[IntValue]) extends Invariant with Constraint{
 
   registerStaticAndDynamicDependencyAllNoID(variables)
   registerConstrainedVariables(variables)
   finishInitialization()
+  val (minValueOfVars,maxValueOfVars) = InvariantHelper.getMinMaxBounds(variables)
 
   //le degre global de violation est la somme des tailles -1 des ensembles de var ayant meme value
   // et on ne prend que les ensembles de cardinalite > 1
-  private val Violation: CBLSIntVar = new CBLSIntVar(model, (0 to Int.MaxValue), 0, "ViolationsOfAllDiff")
+  private val Violation: CBLSIntVar = new CBLSIntVar(model, 0, (0 to variables.size), "ViolationsOfAllDiff")
   Violation.setDefiningInvariant(this)
 
-  private val N0: Int = variables.foldLeft(0)(
-    (acc: Int, intvar: CBLSIntVar) => (if (intvar.maxVal > acc) intvar.maxVal else acc))
 
-  private val offset: Int = -variables.foldLeft(0)(
-    (acc: Int, intvar: CBLSIntVar) => (if (intvar.minVal < acc) intvar.minVal else acc))
+  private val N0: Int = maxValueOfVars
+
+  private val offset: Int = -minValueOfVars
 
   private val N = N0 + offset
   private val range = 0 to N
 
   private val ValueCount: Array[CBLSIntVar] = Array.tabulate[CBLSIntVar](N + 1)((i: Int) => {
-    val tmp = new CBLSIntVar(model, (0 to 1), 0, "alldiff_count_of_value_" + (i - offset))
+    val tmp = new CBLSIntVar(model,0, (0 to variables.size), "alldiff_count_of_value_" + (i - offset))
     tmp.setDefiningInvariant(this)
     tmp
   })
@@ -71,22 +72,22 @@ case class AllDiff(variables: Iterable[CBLSIntVar]) extends Constraint {
   }
 
   /**the degree of violation of a variable is the number of other variables that have the same value as it. */
-  private val Violations: SortedMap[CBLSIntVar, CBLSIntVar] = {
-    def accumulate(acc:SortedMap[CBLSIntVar,CBLSIntVar], variable:CBLSIntVar, violation:CBLSIntVar):SortedMap[CBLSIntVar,CBLSIntVar] =
+  private val Violations: SortedMap[IntValue, IntValue] = {
+    def accumulate(acc:SortedMap[IntValue,IntValue], variable:IntValue, violation:IntValue):SortedMap[IntValue,IntValue] =
       acc + (acc.get(variable) match{
-        case Some(oldViolation) => ((variable,(violation + oldViolation).toIntVar(violation.name)))
-        case None => ((variable,violation))})
+        case Some(oldViolation) => (variable,violation + oldViolation)
+        case None => (variable,violation)})
 
     variables.foldLeft(
-      SortedMap.empty[CBLSIntVar, CBLSIntVar])(
+      SortedMap.empty[IntValue, IntValue])(
         (acc, intvar) => {
-          val newvar = (ValueCount.element((intvar + offset).toIntVar) - 1).toIntVar("Violation_AllDiff_" + intvar.name)
+          val newvar = ValueCount.element((intvar + offset)) - 1
           accumulate(acc , intvar, newvar)
         })
   }
 
   @inline
-  override def notifyIntChanged(v: CBLSIntVar, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
     ValueCount(OldVal + offset) :-= 1
     ValueCount(NewVal + offset) :+= 1
 
@@ -106,8 +107,8 @@ case class AllDiff(variables: Iterable[CBLSIntVar]) extends Constraint {
    * The degree of violation of a variable is the number of other variables that have the same value
    * @return an IntVar that can be incorporated in an invariant.
    */
-  override def violation(v: Variable): CBLSIntVar = {
-    val tmp: CBLSIntVar = Violations.getOrElse(v.asInstanceOf[CBLSIntVar], null)
+  override def violation(v: Value): IntValue = {
+    val tmp: IntValue = Violations.getOrElse(v.asInstanceOf[IntValue], null)
     assert(tmp != null)
     tmp
   }

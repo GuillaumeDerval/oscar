@@ -80,7 +80,7 @@ public class GCCVarAC extends Constraint {
      * @param minval
      * @param o
      * @see  GCC
-     * @see  SoftGCC
+     * @see  SoftGCCAC
      */
 	public GCCVarAC(CPIntVar[] x, int minval,CPIntVar [] o) {
 		super(x[0].store(),"GCCVar");

@@ -25,7 +25,6 @@ import oscar.cbls.search._
 import oscar.cbls.invariants.core.computation._
 import oscar.cbls.constraints.core._
 import oscar.cbls.modeling.Algebra._
-import oscar.cbls.invariants.core.computation.CBLSIntVar.int2IntVar
 
 /**
  * Very simple example showing how to use Asteroid on the basic pigeon hole problem
@@ -57,7 +56,7 @@ object PigeonHoles extends SearchEngine with StopWatch {
     val m: Store = new Store(false,None,true)
        
     // holes
-    val holes:Array[CBLSIntVar] = (for(i <- range) yield CBLSIntVar(m, 0, N, 0, "h" + (i+1))).toArray
+    val holes:Array[CBLSIntVar] = (for(i <- range) yield CBLSIntVar(m, 0, 0 to N, "h" + (i+1))).toArray
     
     // initially all pigeons are in the first hole...
     holes(0).setValue(N)

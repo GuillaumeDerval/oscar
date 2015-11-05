@@ -26,10 +26,8 @@
 
 package oscar.cbls.routing.neighborhood
 
-import oscar.cbls.search.SearchEngine
-import oscar.cbls.modeling.Algebra._
 import oscar.cbls.routing.model._
-import oscar.cbls.search.SearchEngineTrait
+import oscar.cbls.search.algo.HotRestart
 
 /**
  * Removes three edges of routes, and rebuilds routes from the segments.
@@ -42,25 +40,96 @@ import oscar.cbls.search.SearchEngineTrait
  * @author yoann.guyot@cetic.be
  * @author Florent Ghilain (UMONS)
  */
-object ThreeOpt extends Neighborhood with SearchEngineTrait {
+case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int],
+                    relevantNeighbors:()=>Int=>Iterable[Int],
+                    vrp: VRP with PositionInRouteAndRouteNr,
+                    neighborhoodName:String = null,
+                    best:Boolean = false,
+                    hotRestart:Boolean = true,
+                    KKIterationScheme:Boolean = true) extends EasyRoutingNeighborhood(best,vrp,neighborhoodName) {
+
   val REVERSE = true // this is a constant used for readability
 
-  // PRE-CONDITION: all nodes of search zone must be routed
-  override protected def doSearch(s: SearchZone,
-                                  moveAcceptor: (Int) => (Int) => Boolean,
-                                  returnMove: Boolean): SearchResult = {
-    val vrp = s.vrp
-    val startObj: Int = vrp.getObjective()
+  //the indice to start with for the exploration
+  var startIndice: Int = 0
 
-    /**
-     * The insertion point is picked from the primaryNodeIterator.
-     */
-    while (s.primaryNodeIterator.hasNext) {
-      val insertionPoint: Int = s.primaryNodeIterator.next()
-      assert(vrp.isRouted(insertionPoint),
-        "ThreeOpt should be applied to routed nodes only.")
-        
-      /**
+  override def exploreNeighborhood() {
+    if (KKIterationScheme) {
+      exploreNeighborhoodKK()
+    } else {
+      exploreNeighborhoodRouteExtension()
+    }
+  }
+
+  def exploreNeighborhoodKK(): Unit ={
+    val iterationSchemeOnZone =
+      if (hotRestart && !best) HotRestart(potentialInsertionPoints(), startIndice)
+      else potentialInsertionPoints()
+
+    cleanRecordedMoves()
+
+    val relevantNeighborsNow = relevantNeighbors()
+
+    for (insertionPoint <- iterationSchemeOnZone
+         if vrp.isRouted(insertionPoint)) {
+
+      require(isRecording, "VRP should be recording")
+
+      val otherNodes:List[List[Int]] = relevantNeighborsNow(insertionPoint)
+        .filter((neighbor:Int) => vrp.isRouted(neighbor) && neighbor != insertionPoint)
+        .groupBy(vrp.routeNr(_).value)
+        .toList
+        .map(_._2.toList)
+
+      for(nodeList <- otherNodes){
+        for((a,b) <- makeAllUnsortedPairs(nodeList)){
+          val (first,second) = if(vrp.positionInRoute(a).value < vrp.positionInRoute(b).value) (a,b) else (b,a)
+
+          if(!vrp.isBetween(insertionPoint, first, second)
+            && !(vrp.next(insertionPoint).value == first)){
+
+            if(chooseBest3Opt(first, vrp.next(first).value, second, insertionPoint)){
+              startIndice = insertionPoint + 1
+              return
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * @param l a list
+   * @return a list of all pairs of element made from the elements in l
+   */
+  private def makeAllUnsortedPairs(l:List[Int]):List[(Int,Int)] = {
+    def makeAllUnsortedPairsWithHead(head:Int, tail:List[Int], toAppend:List[(Int,Int)]):List[(Int,Int)] = {
+      tail match{
+        case other :: newTail => makeAllUnsortedPairsWithHead(head, newTail, (head,other) :: toAppend)
+        case Nil => toAppend
+      }
+    }
+
+    l match{
+      case Nil => List.empty
+      case head :: tail => makeAllUnsortedPairsWithHead(head,tail,makeAllUnsortedPairs(tail))
+    }
+  }
+
+  def exploreNeighborhoodRouteExtension(){
+    val iterationSchemeOnZone =
+      if (hotRestart && !best) HotRestart(potentialInsertionPoints(), startIndice)
+      else potentialInsertionPoints()
+
+    cleanRecordedMoves()
+
+    val relevantNeighborsNow = relevantNeighbors()
+
+    // The insertion point is picked from the primaryNodeIterator.
+    for (insertionPoint <- iterationSchemeOnZone
+         if vrp.isRouted(insertionPoint)) {
+
+      /*
        * The segment predecessor point (beforeStart) is picked from the insertion point
        * neighbors. It must not be the same as the insertion point, because the move would
        * not change the route.
@@ -68,13 +137,11 @@ object ThreeOpt extends Neighborhood with SearchEngineTrait {
        * The segment start point is the successor of beforeStart, it must not be a depot, neither
        * the same point.
        */
-      // format: OFF (to prevent eclipse from formatting the following lines)
-      for (beforeStart <- s.relevantNeighbors(insertionPoint)) {
-           if (beforeStart != insertionPoint) {
-           val segStartPoint = vrp.next(beforeStart).value
-           if (segStartPoint != beforeStart && !vrp.isADepot(segStartPoint)) {
-            // format: ON
-             
+      for (beforeStart <- relevantNeighborsNow(insertionPoint)) {
+        if (beforeStart != insertionPoint) {
+          val segStartPoint = vrp.next(beforeStart).value
+          if (segStartPoint != beforeStart && !vrp.isADepot(segStartPoint)) {
+
             /**
              * The segment end point is picked from the next nodes of its start point route.
              */
@@ -86,12 +153,11 @@ object ThreeOpt extends Neighborhood with SearchEngineTrait {
               // when afterEnd = beforeStart
               if (!vrp.isBetween(insertionPoint, beforeStart, segEndPoint)
                 && insertionPoint != segEndPoint) {
-                
-                chooseBest3Opt(beforeStart, segStartPoint, segEndPoint, insertionPoint,
-                  startObj, returnMove, moveAcceptor, vrp) match {
-                    case NoMoveFound() => ()
-                    case moveResult => return moveResult
-                  }
+
+                if (chooseBest3Opt(beforeStart, segStartPoint, segEndPoint, insertionPoint)){
+                  startIndice = insertionPoint + 1
+                  return
+                }
               }
 
               segEndPoint = afterEnd
@@ -101,7 +167,46 @@ object ThreeOpt extends Neighborhood with SearchEngineTrait {
         }
       }
     }
-    NoMoveFound()
+  }
+
+  /**
+   * returns true if search can be stopped
+   */
+  def chooseBest3Opt(beforeStart: Int, segStartPoint: Int, segEndPoint: Int,
+                     insertionPoint: Int): Boolean = {
+
+    /**
+     * FIRST, we do a simple 3-opt move,
+     * with UNDO DEACTIVATED,
+     * and we save if such a move is improving.
+     */
+    encodeMove(beforeStart, segEndPoint, insertionPoint, !REVERSE)
+    commit(false)
+    val objAfterFirstMove = obj()
+
+    /**
+     * SECOND, we reverse the moved segment, in place,
+     * with UNDO ACTIVATED, so that we can go back to the previous move if necessary
+     */
+    reverseSegmentInPlace(insertionPoint, segEndPoint) // REVERSE
+    commit(false)
+    val objAfterSecondMove = obj()
+
+    val FirstMoveIsBestMove = objAfterFirstMove < objAfterSecondMove
+    val bestObjAfter = if(FirstMoveIsBestMove) objAfterFirstMove else objAfterSecondMove
+
+    //put everything back to place, since we three-opted and reversed, the rollback performs the reverse
+    encodeMove(insertionPoint, segStartPoint, beforeStart, REVERSE)
+    commit(false)
+
+    (moveRequested(bestObjAfter)
+      && submitFoundMove(ThreeOptMove(beforeStart, segEndPoint, insertionPoint,
+      !FirstMoveIsBestMove, bestObjAfter, this, neighborhoodNameToString)))
+  }
+
+  //this resets the internal state of the Neighborhood
+  override def reset(){
+    startIndice = 0
   }
 
   /**
@@ -114,109 +219,17 @@ object ThreeOpt extends Neighborhood with SearchEngineTrait {
    * or
    * insertionPoint->[segEndPoint->...]
    */
-  def do3opt(beforeStart: Int, segEndPoint: Int, insertionPoint: Int,
-             reverseSegment: Boolean, vrp: VRP with MoveDescription) {
-    var seg = vrp.cut(beforeStart, segEndPoint)
+  def encodeMove(beforeStart: Int, segEndPoint: Int, insertionPoint: Int,
+                 reverseSegment: Boolean) {
+    cleanRecordedMoves()
+    var seg = cut(beforeStart, segEndPoint)
     if (reverseSegment) {
-      seg = vrp.reverse(seg)
+      seg = reverse(seg)
     }
-    vrp.insert(seg, insertionPoint)
+    insert(seg, insertionPoint)
   }
-
-  /**
-   * Reverse a routed segment in its right place.
-   */
-  def reverseSegment(beforeStart: Int, segEndPoint: Int, vrp: VRP with MoveDescription) {
-    val seg = vrp.cut(beforeStart, segEndPoint)
-    val revSeg = vrp.reverse(seg)
-    vrp.insert(revSeg, beforeStart)
-  }
-
-  /**
-   * Tries a 3-opt move, then reverses the cut segment, and returns the best of the two moves,
-   * or nothing if none was improving.
-   */
-  def chooseBest3Opt(beforeStart: Int, segStartPoint: Int, segEndPoint: Int,
-                     insertionPoint: Int, startObj: Int, returnMove: Boolean,
-                     moveAcceptor: (Int) => (Int) => Boolean,
-                     vrp: VRPObjective with MoveDescription): SearchResult = {
-    var obj = startObj
-    var simple3OptImproves = false
-
-    /**
-     * Function for rolling back.
-     * Rolling back from a 3-opt move with inversion, is a 3-opt move with inversion.
-     */
-    def rollback() {
-      vrp.cleanRecordedMoves
-      do3opt(insertionPoint, segStartPoint, beforeStart, REVERSE, vrp)
-      vrp.commit(false)
-    }
-
-    /**
-     * Function for returning the move corresponding to the selected points.
-     * It is either a 3-opt or a reverse 3-opt.
-     */
-    def threeOptFound(reverse: Boolean) = {
-      MoveFound(ThreeOpt(beforeStart, segEndPoint, insertionPoint, reverse, vrp, obj))
-    }
-
-    /**
-     * FIRST, we do a simple 3-opt move,
-     * with UNDO DEACTIVATED,
-     * and we save if such a move is improving.
-     */
-    do3opt(beforeStart, segEndPoint, insertionPoint, !REVERSE, vrp)
-    vrp.commit(false)
-
-    if (moveAcceptor(obj)(vrp.getObjective)) {
-      simple3OptImproves = true
-      obj = vrp.getObjective
-    }
-
-    /**
-     * SECOND, we reverse the moved segment, in place,
-     * with UNDO ACTIVATED, so that we can go back to the previous move if necessary
-     */
-    reverseSegment(insertionPoint, segEndPoint, vrp) // REVERSE
-    vrp.commit(true)
-
-    if (moveAcceptor(obj)(vrp.getObjective)) {
-      /**
-       * Case reverse 3-opt move is better
-       */
-      obj = vrp.getObjective
-      if (returnMove) {
-        rollback()
-        threeOptFound(REVERSE)
-      } else {
-        vrp.cleanRecordedMoves
-        MovePerformed()
-      }
-
-    } else if (simple3OptImproves) {
-      /**
-       * Case simple 3-opt move is better
-       */
-      if (returnMove) {
-        rollback()
-        threeOptFound(!REVERSE)
-      } else {
-        vrp.undo()
-        MovePerformed()
-      }
-
-    } else {
-      /**
-       * Case no improving 3-opt move with these points
-       */
-      rollback()
-      NoMoveFound()
-    }
-  }
-
-  override def toString: String = "3-opt"
 }
+
 
 /**
  * Models a three-opt-move operator of a given VRP problem.
@@ -225,19 +238,23 @@ object ThreeOpt extends Neighborhood with SearchEngineTrait {
  * @param insertionPoint the place where to insert the moved segment.
  * @param reverseSegment true if the segment will be inverted before being inserted
  * @param objAfter the objective value if we performed this three-opt-move operator.
- * @param vrp the given VRP problem.
+ * @param neighborhood the originating neighborhood
  * @author renaud.delandtsheer@cetic.be
  * @author yoann.guyot@cetic.be
  * @author Florent Ghilain (UMONS)
  */
-case class ThreeOpt(beforeStart: Int, segEndPoint: Int, insertionPoint: Int,
-                    reverseSegment: Boolean, override val vrp: MoveDescription,
-                    override val objAfter: Int) extends Move(objAfter, vrp) {
+case class ThreeOptMove(beforeStart: Int,
+                        segEndPoint: Int,
+                        insertionPoint: Int,
+                        reverseSegment: Boolean,
+                        override val objAfter: Int,
+                        override val neighborhood:ThreeOpt,
+                        override val neighborhoodName:String = null)
+  extends VRPMove(objAfter, neighborhood, neighborhoodName) {
 
   // overriding methods
   override def encodeMove() {
-    ThreeOpt.do3opt(beforeStart, segEndPoint, insertionPoint,
-      reverseSegment, vrp)
+    neighborhood.encodeMove(beforeStart, segEndPoint, insertionPoint, reverseSegment)
   }
 
   override def toString: String =

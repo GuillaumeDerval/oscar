@@ -24,7 +24,7 @@ import java.util.Iterator;
  */
 public abstract class AbstractOrderedSet implements Iterable<Integer> {
 
-	
+
 	private int min;
 	private int max;
 

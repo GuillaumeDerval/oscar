@@ -1,19 +1,17 @@
-/**
- * *****************************************************************************
- * OscaR is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 2.1 of the License, or
- * (at your option) any later version.
- *
- * OscaR is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License  for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License along with OscaR.
- * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
- * ****************************************************************************
- */
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
 
 package oscar.cp.constraints.tables
 
@@ -30,6 +28,7 @@ import oscar.cp.core.delta.DeltaIntVar
  * @param table the list of tuples composing the table.
  * @author Jordan Demeulenaere j.demeulenaere1@gmail.com
  * @author Renaud Hartert ren.hartert@gmail.com
+ * @author Pierre Schaus pschaus@gmail.com
  */
 
 /* Trailable entry to restore the value of the ith Long of the valid tuples */
@@ -67,10 +66,11 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
   private[this] var nValidLongs: Int = 0
 
   /* Structures for the improvements */
-  private[this] var touchedVar = -1
   private[this] val lastSupports = Array.tabulate(arity)(i => new Array[Int](spans(i)))
-  private[this] val lastSizes = Array.fill(arity)(new ReversibleInt(store, 0))
-  private[this] val needPropagate = new ReversibleBoolean(store, false)
+  private[this] var needPropagate = false
+
+  var deltas: Array[DeltaIntVar] = new Array[DeltaIntVar](arity)
+
 
   override def setup(l: CPPropagStrength): CPOutcome = {
 
@@ -89,9 +89,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
     var i = 0
     while (i < arity) {
       val x = X(i)
-      x.callOnChanges(i, s => updateDelta(s))
-      x.callPropagateWhenDomainChanges(this)
-      lastSizes(i).setValue(x.size)
+      deltas(i) = x.callPropagateOnChangesWithDelta(this)
       i += 1
     }
 
@@ -105,13 +103,9 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
    * @param delta the set of values removed since the last call.
    * @return the outcome i.e. Failure or Success.
    */
-  @inline private def updateDelta(delta: DeltaIntVar): CPOutcome = {
+  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): CPOutcome = {
 
-    val intVar = delta.variable
-    val varIndex = delta.id
-    
-    /* No need to update validTuples if there was no modification since last propagate() */
-    if (intVar.size == lastSizes(varIndex).value) return Suspend
+    val intVar = X(varIndex)
 
     // Cache reversible values
     nValidLongs = nValidLongsRev.value
@@ -122,19 +116,11 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
     val varMin = intVar.min
 
     /* Update the value of validTuples by considering D(x) or delta */
-    lastSizes(varIndex).setValue(varSize)
     if (varSize == 1) {
       /* The variable is assigned */
       setTempMask(varIndex, varMin - originalMin)
       changed = andTempMaskWithValid()
     } else {
-      val varMax = intVar.max
-      if (varSize == 2) {
-        /* The variable has only two values */
-        setTempMask(varIndex, varMin - originalMin)
-        orTempMask(varIndex, varMax - originalMin)
-        changed = andTempMaskWithValid()
-      } else {
         clearTempMask()
         if (delta.size < varSize) {
           /* Use delta to update validTuples */
@@ -146,25 +132,13 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
           }
           changed = substractTempMaskFromValid()
         } else {
-          /* Use domain to update validTuples */
-          if (varMax - varMin + 1 == varSize) {
-            /* The domain is an interval */
-            var value = varMin
-            while (value <= varMax) {
-              orTempMask(varIndex, value - originalMin)
-              value += 1
-            }
-          } else {
-            /* The domain is sparse */
-            domainArraySize = intVar.fillArray(domainArray)
-            var i = 0
-            while (i < domainArraySize) {
-              orTempMask(varIndex, domainArray(i) - originalMin)
-              i += 1
-            }
+          domainArraySize = intVar.fillArray(domainArray)
+          var i = 0
+          while (i < domainArraySize) {
+            orTempMask(varIndex, domainArray(i) - originalMin)
+            i += 1
           }
           changed = andTempMaskWithValid()
-        }
       }
     }
 
@@ -172,12 +146,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
     if (changed) {
       /* Failure if there are no more valid tuples */
       if (nValidLongs == 0) return Failure
-
-      /* We check if x was the only modified variable since last propagate() */
-      if (touchedVar == -1 || touchedVar == varIndex) touchedVar = varIndex
-      else touchedVar = -2
-      
-      needPropagate.setTrue()
+      needPropagate = true
     }
 
     // Trail reversibles
@@ -191,89 +160,54 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
    * Unsupported values are removed.
    * @return the outcome i.e. Failure or Success.
    */
+
+  var nCheck = 0
+
   override def propagate(): CPOutcome = {
 
-    // No need for the check if validTuples has not changed 
-    if (!needPropagate.value) return Suspend
+    needPropagate = false
+
+    var i = 0
+
+    var nChanged = 0
+    var changedVarIdx = 0
+
+    while (i < arity) {
+      if (deltas(i).size > 0) {
+        nChanged += 1
+        changedVarIdx = i
+        if (updateDelta(i,deltas(i)) == Failure) return Failure
+      }
+      i += 1
+    }
+
+    // No need for the check if validTuples has not changed
+    if (!needPropagate) return Suspend
 
     // Cache reversible values
     nValidLongs = nValidLongsRev.value
 
-    if (touchedVar == -2) {
-      touchedVar = -1
-    }
 
-    /* For each variable value (x,a), check if a is supported. Unsupported values are removed from their respective
-     * domains */
     var varIndex = 0
     while (varIndex < arity) {
-      /* No need to check the values of a variable if it was the only modified since last check */
-      if (touchedVar == varIndex) {
-        touchedVar = -1
-      } else {
-        val intVar = X(varIndex)
-        val originalMin = originalMins(varIndex)
-        val varSize = intVar.size
-
-        if (varSize == 1) {
-          if (!supported(varIndex, intVar.min - originalMin)) {
-            return Failure
-          }
-        } else if (varSize == 2) {
-          val varMin = intVar.min
-          val varMax = intVar.max
-          val minSupported = supported(varIndex, varMin - originalMin)
-          val maxSupported = supported(varIndex, varMax - originalMin)
-          if (!minSupported) {
-            if (!maxSupported) {
+      // no need to check a variable if it was the only one modified
+      if (nChanged > 1 || changedVarIdx != varIndex) {
+        domainArraySize = X(varIndex).fillArray(domainArray)
+        var i = 0
+        var value = 0
+        while (i < domainArraySize) {
+          value = domainArray(i)
+          nCheck += 1
+          if (!supported(varIndex, value - originalMins(varIndex))) {
+            if (X(varIndex).removeValue(value) == Failure) {
               return Failure
-            } else {
-              intVar.assign(varMax)
-              lastSizes(varIndex).setValue(1)
-            }
-          } else if (!maxSupported) {
-            intVar.assign(varMin)
-            lastSizes(varIndex).setValue(1)
-          }
-        } else {
-          val varMin = intVar.min
-          val varMax = intVar.max
-
-          /* Domain of the variable is an interval */
-          if (varMax - varMin + 1 == varSize) {
-            var value = varMin
-            while (value <= varMax) {
-              if (!supported(varIndex, value - originalMin)) {
-                if (intVar.removeValue(value) == Failure) {
-                  return Failure
-                }
-              }
-              value += 1
-            }
-          } else { /* Domain is sparse */
-            domainArraySize = intVar.fillArray(domainArray)
-            var i = 0
-            var value = 0
-            while (i < domainArraySize) {
-              value = domainArray(i)
-              if (!supported(varIndex, value - originalMin)) {
-                if (intVar.removeValue(value) == Failure) {
-                  return Failure
-                }
-              }
-              i += 1
             }
           }
-
-          lastSizes(varIndex).setValue(intVar.size)
+          i += 1
         }
-
       }
       varIndex += 1
     }
-
-    needPropagate.setFalse()
-
     // Trail reversibles
     nValidLongsRev.value = nValidLongs
 
@@ -401,13 +335,13 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
    * @param mask the mask to apply.
    */
   @inline private def andValidTuples(position: Int, offset: Int, mask: Long): Unit = {
-    
+
     val storeMagic = store.magic
     if (lastMagics(offset) != storeMagic) {
       lastMagics(offset) = storeMagic
       trail(offset)
     }
-    
+
     val newLong = validTuples(offset) & mask
     validTuples(offset) = newLong
 

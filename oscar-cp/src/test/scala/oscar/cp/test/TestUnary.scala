@@ -138,11 +138,13 @@ abstract class TestUnary(name: String, nTests: Int) extends TestSuite {
       //println(s"nSolutionsDecomp = $nSolutionsDecomp, nSolutionsUnary = $nSolutionsUnary")
       val ok = nSolutionsDecomp == nSolutionsUnary
       
+      val debug = true
+      
       if (!ok) {
         val nTasks = problem.starts.length
-        //println("Test failed, tasks were:")
+        if (debug) println("Test failed, tasks were:")
         for (i <- 0 until nTasks) {
-          //println(s"$i: start = ${problem.starts(i)} -- duration = ${problem.durations(i)} --> end = ${problem.ends(i)} in resource = ${problem.resources(i)}")
+          if (debug) println(s"$i: start = ${problem.starts(i)} -- duration = ${problem.durations(i)} --> end = ${problem.ends(i)} in resource = ${problem.resources(i)}")
         }
         
         // get the set of solutions
@@ -153,7 +155,7 @@ abstract class TestUnary(name: String, nTests: Int) extends TestSuite {
           decompSolutions.add(sol)
         }
         val nDecomp = testConstrainer(problem, dfsDecomp, br, decomp)
-        //println(s"decomp has $nDecomp solutions on recount")
+        if (debug) println(s"decomp has $nDecomp solutions on recount")
         
         val dfsUnary = new DFSearch(S)
         val unarySolutions = new TreeSet[Solution]()(solOrdering)
@@ -162,23 +164,23 @@ abstract class TestUnary(name: String, nTests: Int) extends TestSuite {
           unarySolutions.add(sol)
         }
         val nUnary = testConstrainer(problem, dfsUnary, br, unary)
-        //println(s"unary has $nUnary solutions on recount")
+        if (debug) println(s"unary has $nUnary solutions on recount")
         
         val instanceOption = if (nDecomp > nUnary) {
           val du = decompSolutions -- unarySolutions
-          //println(s"${du.size} solutions in decomp not in unary, example:")
+          if (debug) println(s"${du.size} solutions in decomp not in unary, example:")
           Some(du.head)          
         }
         else if (nUnary > nDecomp) {
           val ud = unarySolutions -- decompSolutions
-          //println(s"${ud.size} solutions in unary not in decomp, example:")
+          if (debug) println(s"${ud.size} solutions in unary not in decomp, example:")
           Some(ud.head)
         }
         else None
         
         instanceOption foreach { instance =>
           for (i <- 0 until nTasks) {
-            //println(s"$i: [ ${instance.ss(i)} ; ${instance.es(i)} [  in resource ${instance.rs(i)}")
+            if (debug) println(s"$i: [ ${instance.ss(i)} ; ${instance.es(i)} [  in resource ${instance.rs(i)}")
           }
         }
       }

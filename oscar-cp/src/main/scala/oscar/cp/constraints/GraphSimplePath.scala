@@ -51,7 +51,7 @@ class GraphSimplePath(val g : CPGraphVar, src : Int, dest : Int) extends Constra
       for (e <- g.possibleOutEdges(dest)) if (g.removeEdgeFromGraph(e) == Failure) return Failure
       
 	  // add filter when domain changes
-	  g.callPropagateWhenDomainChanges(this, false)
+	  g.callPropagateWhenDomainChanges(this)
 	  
 	  // launch initial propagation
 	  propagate()

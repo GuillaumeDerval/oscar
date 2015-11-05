@@ -28,9 +28,6 @@ import oscar.cbls.invariants.core.computation._
 import oscar.cbls.modeling.Algebra._
 import oscar.cbls.invariants.lib.logic._
 import oscar.cbls.invariants.lib.minmax._
-import oscar.cbls.invariants.core.computation.IntInvariant.toIntVar
-import oscar.cbls.invariants.core.computation.SetInvariant.toIntSetVar
-import oscar.cbls.invariants.core.computation.CBLSIntVar.int2IntVar
 
 /**
  * Very simple example showing how to use Asteroid on the basic SEND+MORE=MONEY
@@ -75,8 +72,8 @@ object SendMoreMoney extends SearchEngine with StopWatch {
         
     // letter and carriage values
     // d initialised with 0..10, r with 0
-    val d:Array[CBLSIntVar]= (for(l <- Letter.list) yield CBLSIntVar(m, 0, 9, l.id, l+"")).toArray
-    val r:Array[CBLSIntVar]= (for(c <- Carry.values) yield CBLSIntVar(m, 0, 9, 0, c+"")).toArray
+    val d:Array[CBLSIntVar]= (for(l <- Letter.list) yield CBLSIntVar(m, l.id, 0 to 9, l+"")).toArray
+    val r:Array[CBLSIntVar]= (for(c <- Carry.values) yield CBLSIntVar(m, 0, 0 to 9, c+"")).toArray
           
     // constraint system
     val c = ConstraintSystem(m)
@@ -97,11 +94,11 @@ object SendMoreMoney extends SearchEngine with StopWatch {
     r(Carry.c4.id) <== ((d(Letter.S.id) + d(Letter.M.id) + r(Carry.c3.id)) / 10)
 
     // search variables
-    val ViolationArray:Array[CBLSIntVar] = (for(l <- Letter.list) yield c.violation(d(l.id))).toArray
-    val Tabu:Array[CBLSIntVar] = (for (i <- Letter.list) yield CBLSIntVar(m, 0, Int.MaxValue, 0, "Tabu_" + i)).toArray
-    val It = CBLSIntVar(m,0,Int.MaxValue,0,"it")
-    val NonTabuLetter:CBLSSetVar = SelectLESetQueue(Tabu, It)
-    val NonTabuMaxViolLetter:CBLSSetVar = new ArgMaxArray(ViolationArray, NonTabuLetter)
+    val ViolationArray = (for(l <- Letter.list) yield c.violation(d(l.id))).toArray
+    val Tabu = (for (i <- Letter.list) yield CBLSIntVar(m, 0, 0 to Int.MaxValue, "Tabu_" + i)).toArray
+    val It = CBLSIntVar(m,0, 0 to Int.MaxValue,"it")
+    val NonTabuLetter = SelectLESetQueue(Tabu, It)
+    val NonTabuMaxViolLetter = new ArgMax(ViolationArray, NonTabuLetter)
     
     // closing model
     m.close()

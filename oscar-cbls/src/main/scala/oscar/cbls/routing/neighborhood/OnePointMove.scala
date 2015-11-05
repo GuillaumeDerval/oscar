@@ -25,83 +25,71 @@
 
 package oscar.cbls.routing.neighborhood
 
-import oscar.cbls.search.SearchEngineTrait
-import oscar.cbls.modeling.Algebra._
-import oscar.cbls.routing.model.{ MoveDescription, VRP }
+import oscar.cbls.routing.model.PositionInRouteAndRouteNr
+import oscar.cbls.routing.model.VRP
+import oscar.cbls.search.algo.HotRestart
 
 /**
  * Moves a point of a route to another place in the same or in an other route.
- * The search complexity is O(n²).
+ * The search complexity is O(nk).
  * @author renaud.delandtsheer@cetic.be
  * @author yoann.guyot@cetic.be
  * @author Florent Ghilain (UMONS)
- * */
-object OnePointMove extends Neighborhood with SearchEngineTrait {
+ */
+case class OnePointMove(nodesPrecedingNodesToMove: () => Iterable[Int],
+                        relevantNeighbors: () => Int => Iterable[Int],
+                        vrp: VRP with PositionInRouteAndRouteNr,
+                        neighborhoodName: String = null,
+                        best: Boolean = false,
+                        hotRestart: Boolean = true) extends EasyRoutingNeighborhood(best, vrp, neighborhoodName) {
 
-  /**
-   * Does the search and stops at first improving move.
-   * @param s the search zone, including the VRP that we are examining
-   * @param returnMove true: returns first improving move, false: performs first improving move
-   * @return
-   */
-  override protected def doSearch(
-    s: SearchZone,
-    moveAcceptor: (Int) => (Int) => Boolean,
-    returnMove: Boolean): SearchResult = {
+  //the indice to start with for the exploration
+  var startIndice: Int = 0
 
-    val startObj: Int = s.vrp.getObjective()
-    s.vrp.cleanRecordedMoves()
-    val vrp = s.vrp
+  override def exploreNeighborhood() {
 
-    while (s.primaryNodeIterator.hasNext) {
-      val beforeMovedPoint: Int = s.primaryNodeIterator.next()
-      //      println("BOUCLE1: beforeMovedPoint = " + beforeMovedPoint)
-      if (vrp.isRouted(beforeMovedPoint)) {
+    val iterationSchemeOnZone =
+      if (hotRestart && !best) HotRestart(nodesPrecedingNodesToMove(), startIndice)
+      else nodesPrecedingNodesToMove()
 
-        val movedPoint = vrp.next(beforeMovedPoint).value
-        //        println("movedPoint = " + movedPoint)
+    cleanRecordedMoves()
 
-        for (
-          insertionPoint <- s.relevantNeighbors(movedPoint)
-          //format: OFF (to prevent eclipse from formatting the following lines)
-          if (vrp.isRouted(insertionPoint)
-              && beforeMovedPoint != insertionPoint
-              && movedPoint != insertionPoint
-              && beforeMovedPoint != vrp.next(insertionPoint).value)
-              && (!vrp.isADepot(movedPoint)
-                  || (vrp.onTheSameRoute(movedPoint, insertionPoint)))
-        //format: ON
-        ) {
-          //          println("BOUCLE2: insertionPoint = " + insertionPoint)
-          //          print("VRP before encode dans la boucle de recherche: ")
-          //          println(vrp)
+    val relevantNeighborsNow = relevantNeighbors()
 
-          encode(beforeMovedPoint, insertionPoint, vrp)
+    for (
+      beforeMovedPoint <- iterationSchemeOnZone if vrp.isRouted(beforeMovedPoint)
+    ) {
 
-          checkEncodedMove(moveAcceptor(startObj), !returnMove, vrp) match {
-            case (true, newObj: Int) => { //this improved
-              if (returnMove) return MoveFound(
-                OnePointMove(beforeMovedPoint, insertionPoint, newObj, vrp))
-              else {
-                return MovePerformed()
-              }
-            }
-            case (false, _) => ()
-          }
+      val movedPoint = vrp.next(beforeMovedPoint).value
+
+      for (
+        insertionPoint <- relevantNeighborsNow(movedPoint) if (vrp.isRouted(insertionPoint)
+          && beforeMovedPoint != insertionPoint
+          && movedPoint != insertionPoint
+          && beforeMovedPoint != vrp.next(insertionPoint).value)
+          && (!vrp.isADepot(movedPoint) || vrp.onTheSameRoute(movedPoint, insertionPoint))
+      ) {
+
+        encode(beforeMovedPoint, insertionPoint)
+        val newObj = evalObjOnEncodedMove()
+
+        if (moveRequested(newObj)
+          && submitFoundMove(OnePointMoveMove(beforeMovedPoint, movedPoint, insertionPoint, newObj, this, neighborhoodNameToString))) {
+          startIndice = beforeMovedPoint + 1
+          return
         }
       }
     }
-    NoMoveFound()
   }
 
-  def encode(predOfMovedPoint: Int,
-             insertionPoint: Int,
-             vrp: VRP with MoveDescription) {
-    val s = vrp.cutNodeAfter(predOfMovedPoint)
-    vrp.insert(s, insertionPoint)
+  override def reset(): Unit = {
+    startIndice = 0
   }
 
-  override def toString: String = "1-pt"
+  def encode(predOfMovedPoint: Int, insertionPoint: Int) {
+    val s = cutNodeAfter(predOfMovedPoint)
+    insert(s, insertionPoint)
+  }
 }
 
 /**
@@ -109,23 +97,24 @@ object OnePointMove extends Neighborhood with SearchEngineTrait {
  * @param predOfMovedPoint the predecessor of the point that moves.
  * @param insertionPoint the place where insert the moving point.
  * @param objAfter the objective value if we performed this one-point-move operator.
- * @param vrp the given VRP problem.
+ * @param neighborhood the originating neighborhood
  * @author renaud.delandtsheer@cetic.be
  * @author yoann.guyot@cetic.be
  * @author Florent Ghilain (UMONS)
  */
-case class OnePointMove(
-  predOfMovedPoint: Int,
-  insertionPoint: Int,
-  override val objAfter: Int,
-  override val vrp: VRP with MoveDescription) extends Move(objAfter, vrp) {
+case class OnePointMoveMove(predOfMovedPoint: Int,
+                            movedPoint: Int,
+                            insertionPoint: Int,
+                            override val objAfter: Int,
+                            override val neighborhood: OnePointMove,
+                            override val neighborhoodName: String = null) extends VRPMove(objAfter, neighborhood, neighborhoodName) {
 
-  // overriding methods
   override def encodeMove() {
-    OnePointMove.encode(predOfMovedPoint, insertionPoint, vrp)
+    neighborhood.encode(predOfMovedPoint, insertionPoint)
   }
 
   override def toString: String = (
-    "OnePointMove(Moved point = " + vrp.next(predOfMovedPoint).value
-    + ", inserted after = " + insertionPoint + " )")
+    neighborhoodNameToString + "OnePointMove(Moved point " + movedPoint
+    + " after " + insertionPoint + objToString + " )")
 }
+

@@ -29,10 +29,10 @@ class VisualLabelledBranch(d: VisualDrawing, shapes: (VisualLine, VisualLine, Vi
   def branch: (VisualLine, VisualLine, VisualLine, VisualText) = shapes
   
   def this(d: VisualDrawing, xorig: Double, yorig: Double, xdest: Double, ydest: Double, label: String) {
-	this(d, (new VisualLine(d, new Line2D.Double(xorig, yorig, xorig, (ydest + 2 * yorig)/3)),
-	    new VisualLine(d, new Line2D.Double(xorig, (ydest + 2 * yorig)/3, xdest, (ydest + 2*yorig)/3)),
-	    new VisualLine(d, new Line2D.Double(xdest, (ydest + 2*yorig)/3, xdest, ydest)),
-	    new VisualText(d, (4 + xdest).toInt, ((d.getFontMetrics(d.getFont()).getHeight()) / 2 + (ydest + 2 * (ydest + 2*yorig)/3) / 3).toInt, label)))
+	this(d, (new VisualLine(d, new Line2D.Double(xorig, yorig, xorig, (ydest + 2 * yorig) / 3)),
+	    new VisualLine(d, new Line2D.Double(xorig, (ydest + 2 * yorig) / 3, xdest, (ydest + 2 * yorig) / 3)),
+	    new VisualLine(d, new Line2D.Double(xdest, (ydest + 2 * yorig) / 3, xdest, ydest)),
+	    new VisualText(d, (4 + xdest).toInt, (d.getFontMetrics(d.getFont).getHeight / 2 + (ydest + 2 * (ydest + 2 * yorig) / 3) / 3).toInt, label)))
   }
   
   /**
@@ -41,10 +41,10 @@ class VisualLabelledBranch(d: VisualDrawing, shapes: (VisualLine, VisualLine, Vi
 	*/
   def move(xorig: Double, yorig: Double, xdest: Double, ydest: Double) {
     branch._1.orig_=(xorig, yorig)
-    branch._1.dest_=(xorig, (ydest + 2*yorig) / 3)
-    branch._2.orig_=(xorig, (ydest + 2*yorig) / 3)
-    branch._2.dest_=(xdest, (ydest + 2*yorig) / 3)
-    branch._3.orig_=(xdest, (ydest + 2*yorig) / 3)
+    branch._1.dest_=(xorig, (ydest + 2 * yorig) / 3)
+    branch._2.orig_=(xorig, (ydest + 2 * yorig) / 3)
+    branch._2.dest_=(xdest, (ydest + 2 * yorig) / 3)
+    branch._3.orig_=(xdest, (ydest + 2 * yorig) / 3)
     branch._3.dest_=(xdest, ydest)
     branch._4.move(xText, yText)
   }
@@ -59,20 +59,20 @@ class VisualLabelledBranch(d: VisualDrawing, shapes: (VisualLine, VisualLine, Vi
 	* Y coordinates of bottom left corner
 	* @return
 	*/
-  def yText = ((d.getFontMetrics(d.getFont()).getHeight()) / 2 + (branch._3.dest._2 + 2 * branch._3.orig._2) / 3).toInt
+  def yText = (d.getFontMetrics(d.getFont).getHeight / 2 + (branch._3.dest._2 + 2 * branch._3.orig._2) / 3).toInt
 }
 
 object VisualLabelledBranch {
   	
   def main(args : Array[String]) {
-	val f = VisualFrame("toto");
-	val d = VisualDrawing(false);
-	val inf = f.createFrame("Drawing");
-	inf.add(d);
-	f.pack();
-	
-	val line = new VisualLabelledBranch(d, 200, 200, 300, 300, "I'm a branch! Yeepee^^");
-	
-	Thread.sleep(5000);
+    val f = VisualFrame("toto")
+    val d = VisualDrawing(flipped=false)
+    val inf = f.createFrame("Drawing")
+    inf.add(d)
+    f.pack()
+
+    val line = new VisualLabelledBranch(d, 200, 200, 300, 300, "I'm a branch! Yeepee^^")
+    Thread.sleep(2000)
+    line.move(200, 300, 100, 200)
   }
 }

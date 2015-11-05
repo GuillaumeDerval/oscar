@@ -20,14 +20,15 @@
 
 package oscar.cbls.constraints.lib.global
 
-import collection.immutable.SortedMap
 import oscar.cbls.constraints.core.Constraint
-import oscar.cbls.invariants.core.computation.{IdentityInt, InvariantHelper, Variable, CBLSIntVar}
-import oscar.cbls.invariants.lib.logic.{DenseCount, IntElement, Int2Int}
-import oscar.cbls.modeling.Algebra._
+import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
+import oscar.cbls.invariants.lib.logic.DenseCount
 import oscar.cbls.invariants.lib.minmax.Max2
 import oscar.cbls.invariants.lib.numeric.Sum
+import oscar.cbls.modeling.Algebra._
+
+import scala.collection.immutable.SortedMap
 
 /**Implements the AtMost constraint on IntVar.
   * There is a set of bounds, defined in the parameter bound as pair (value,bound).
@@ -38,57 +39,51 @@ import oscar.cbls.invariants.lib.numeric.Sum
   *               We use a map to ensure that there is no two bounds on the same value.
   * @author renaud.delandtsheer@cetic.be
   */
-case class AtMost(variables:Iterable[CBLSIntVar], bounds:SortedMap[Int, CBLSIntVar]) extends Constraint {
-
+case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue]) extends Constraint {
    assert(variables.size < Int.MaxValue)
 
-  model = InvariantHelper.findModel(variables)
   registerConstrainedVariables(variables)
   registerConstrainedVariables(bounds.values)
-  finishInitialization()
 
   private val countInvariant = DenseCount.makeDenseCount(variables.toArray)
   private val offset:Int = countInvariant.offset
   private val valueCount = countInvariant.counts //v => #occurrence of v+offset in variables
 
-  private val noViolation:CBLSIntVar = 0
+  private val noViolation:IntValue = 0
   private val violationByVal=Array.tabulate(valueCount.length)(_ => noViolation)
 
   for((value,bound) <- bounds){
-    violationByVal(value) = Max2(noViolation,valueCount(value) - bound).toIntVar
+    violationByVal(value+offset) = Max2(noViolation,valueCount(value+offset) - bound)
   }
 
   //the violation of each input variable
-  private val Violations:SortedMap[CBLSIntVar,CBLSIntVar] = {
-    def accumulate(acc:SortedMap[CBLSIntVar,CBLSIntVar], variable:CBLSIntVar, violation:CBLSIntVar):SortedMap[CBLSIntVar,CBLSIntVar] =
+  private val Violations:SortedMap[IntValue,IntValue] = {
+    def accumulate(acc:SortedMap[IntValue,IntValue], variable:IntValue, violation:IntValue):SortedMap[IntValue,IntValue] =
       acc + (acc.get(variable) match{
-            case Some(oldViolation) => ((variable,(violation + oldViolation).toIntVar(violation.name)))
-            case None => ((variable,violation))})
+            case Some(oldViolation) => (variable,(violation + oldViolation).setName(violation.name))
+            case None => (variable,violation)})
 
-    val violationForArray = variables.foldLeft(SortedMap.empty[CBLSIntVar,CBLSIntVar])(
-      (acc,intvar) => accumulate(acc,intvar, violationByVal.element(intvar + offset).toIntVar("Violation_AtMost_"+intvar.name))
+    val violationForArray = variables.foldLeft(SortedMap.empty[IntValue,IntValue])(
+      (acc,intvar) => accumulate(acc,intvar, violationByVal.element(intvar + offset).setName("Violation_AtMost_"+intvar.name))
     )
     bounds.foldLeft(violationForArray)(
       (acc,boundAndVariable) => {
-        val viol = violationByVal.element(boundAndVariable._1).toIntVar("Violation_AtMost_"+bounds(boundAndVariable._1).name)
+        val viol = violationByVal.element(boundAndVariable._1 +offset).setName("Violation_AtMost_"+bounds(boundAndVariable._1).name)
         accumulate(acc,boundAndVariable._2, viol)
       })
   }
-
-  private val Violation:CBLSIntVar = new CBLSIntVar(model,(0 to Int.MaxValue), 0,"ViolationsOfAtMost")
-  Violation <== Sum(bounds.keys.map(violationByVal))
 
   /**The violation of the constraint is the sum on all bound of the number of variable that are in excess.
     * the number of variable in excess is the max between zero and
     * (the number of variable that have the value of the bound minus the bound).
     */
-  override def violation = Violation
+  val violation = Sum(bounds.keys.map(bound => violationByVal(bound+offset))).setName("ViolationsOfAtMost")
 
   /**The violation of a variable is zero if its value is not the one of a bound.
     * If the variable has the value of a bound, its violation is the number of variable in excess for that bound.
     */
-  override def violation(v: Variable):CBLSIntVar = {
-    Violations(v.asInstanceOf[CBLSIntVar])
+  override def violation(v: Value):IntValue = {
+    Violations(v.asInstanceOf[IntValue])
   }
 
   override def checkInternals(c: Checker) {

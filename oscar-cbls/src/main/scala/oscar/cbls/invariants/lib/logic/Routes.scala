@@ -24,8 +24,8 @@
 
 package oscar.cbls.invariants.lib.logic
 
-import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.algo.heap.BinomialHeap
+import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
 
 /**
@@ -42,12 +42,12 @@ import oscar.cbls.invariants.core.propagation.Checker
  * @param lastInRoute the last point in each route.
  * @author renaud.delandtsheer@cetic.be
  * */
-case class Routes(V: Int,
-  next: Array[CBLSIntVar],
-  positionInRoute: Array[CBLSIntVar],
-  routeNr: Array[CBLSIntVar],
-  routeLength: Array[CBLSIntVar],
-  lastInRoute: Array[CBLSIntVar]) extends Invariant {
+class Routes(V: Int,
+  val next: Array[IntValue],
+  val positionInRoute: Array[CBLSIntVar],
+  val routeNr: Array[CBLSIntVar],
+  val routeLength: Array[CBLSIntVar],
+  val lastInRoute: Array[CBLSIntVar]) extends VaryingDependencies {
   val UNROUTED = next.length
   val arrayOfUnregisterKeys = registerStaticAndDynamicDependencyArrayIndex(next)
   finishInitialization()
@@ -99,8 +99,8 @@ case class Routes(V: Int,
   var ToUpdate: List[Int] = List.empty
   var ToUpdateCount: Int = 0
 
-  override def notifyIntChanged(v: CBLSIntVar, i: Int, OldVal: Int, NewVal: Int) {
-    unregisterDynamicallyListenedElement(arrayOfUnregisterKeys(i))
+  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Int, NewVal: Int) {
+    arrayOfUnregisterKeys(i).performRemove()
     arrayOfUnregisterKeys(i) = null
     ToUpdate = i :: ToUpdate
     ToUpdateCount += 1
@@ -113,7 +113,7 @@ case class Routes(V: Int,
       && ((positionInRoute(node).getValue(true) + 1) % next.length == positionInRoute(next(node).value).getValue(true)))
   }
 
-  override def performPropagation() {
+  override def performInvariantPropagation() {
     //le numéro de noeud, son ancienne position dans le circuit
     val heap = new BinomialHeap[(Int, Int)]((a: (Int, Int)) => a._2, ToUpdateCount)
     for (node <- ToUpdate) {
@@ -183,14 +183,14 @@ case class Routes(V: Int,
 
 
 object Routes {
-  def buildRoutes(next: Array[CBLSIntVar], V: Int): Routes = {
+  def buildRoutes(next: Array[IntValue], V: Int) = {
     val m: Store = InvariantHelper.findModel(next)
 
-    val positionInRoute = Array.tabulate(next.length)(i => CBLSIntVar(m, 0, next.length, next.length, "PositionInRouteOfPt" + i))
-    val routeNr = Array.tabulate(next.length)(i => CBLSIntVar(m, 0, V, V, "RouteNrOfPt" + i))
-    val routeLength = Array.tabulate(V)(i => CBLSIntVar(m, 0, next.length, 0, "Route " + i + "-Lenght"))
-    val lastInRoute = Array.tabulate(V)(i => CBLSIntVar(m, 0, next.length, i, "LastInRoute " + i))
+    val positionInRoute = Array.tabulate(next.length)(i => CBLSIntVar(m, next.length, 0 to next.length, "PositionInRouteOfPt" + i))
+    val routeNr = Array.tabulate(next.length)(i => CBLSIntVar(m, V, 0 to V, "RouteNrOfPt" + i))
+    val routeLength = Array.tabulate(V)(i => CBLSIntVar(m, 0, 0 to next.length, "Route " + i + "-Lenght"))
+    val lastInRoute = Array.tabulate(V)(i => CBLSIntVar(m, i, 0 to next.length, "LastInRoute " + i))
 
-    Routes(V, next, positionInRoute, routeNr, routeLength, lastInRoute)
+    new Routes(V, next, positionInRoute, routeNr, routeLength, lastInRoute)
   }
 }

@@ -1,32 +1,33 @@
 /*******************************************************************************
- * OscaR is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 2.1 of the License, or
- * (at your option) any later version.
- *   
- * OscaR is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License  for more details.
- *   
- * You should have received a copy of the GNU Lesser General Public License along with OscaR.
- * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
- ******************************************************************************/
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
 /*******************************************************************************
- * Contributors:
- *     This code has been initially developed by CETIC www.cetic.be
- *         by Renaud De Landtsheer
- *            Yoann Guyot
- ******************************************************************************/
+  * Contributors:
+  *     This code has been initially developed by CETIC www.cetic.be
+  *         by Renaud De Landtsheer
+  *            Yoann Guyot
+  ******************************************************************************/
 
 
 package oscar.cbls.invariants.lib.logic
 
-import collection.immutable.SortedSet
-import collection.mutable.Queue
+import oscar.cbls.invariants.core.algo.heap.{BinomialHeap, BinomialHeapWithMove}
 import oscar.cbls.invariants.core.computation._
-import oscar.cbls.invariants.core.algo.heap.{ BinomialHeap, BinomialHeapWithMove }
 import oscar.cbls.invariants.core.propagation.Checker
+
+import scala.collection.immutable.SortedSet
+import scala.collection.mutable.Queue
 
 /**
  * {i in index of values | values[i] <= boundary}
@@ -35,30 +36,22 @@ import oscar.cbls.invariants.core.propagation.Checker
  * @param boundary the boundary for comparison
  * @author renaud.delandtsheer@cetic.be
  * */
-case class SelectLEHeapHeap(values: Array[CBLSIntVar], boundary: CBLSIntVar) extends SetInvariant {
-  var output: CBLSSetVar = null
+case class SelectLEHeapHeap(values: Array[IntValue], boundary: IntValue)
+  extends SetInvariant(SortedSet.empty[Int], values.indices.start to values.indices.end) {
 
   for (v <- values.indices) registerStaticAndDynamicDependency(values(v), v)
   registerStaticAndDynamicDependency(boundary)
   finishInitialization()
 
-  def myMin = values.indices.start
-  def myMax = values.indices.end
-
   val HeapAbove: BinomialHeapWithMove[Int] = new BinomialHeapWithMove((i: Int) => values(i).value, values.size)
-  val HeapBelowOrEqual: BinomialHeapWithMove[Int] = new BinomialHeapWithMove((i: Int) => -(values(i).value), values.size)
+  val HeapBelowOrEqual: BinomialHeapWithMove[Int] = new BinomialHeapWithMove((i: Int) => -values(i).value, values.size)
 
-  override def setOutputVar(v: CBLSSetVar) {
-    output = v
-    output.setDefiningInvariant(this)
-    output := SortedSet.empty[Int]
-    for(v <- values.indices){
-      if(values(v).value <= boundary.value){
-        HeapBelowOrEqual.insert(v)
-        output.insertValue(v)
-      } else {
-        HeapAbove.insert(v)
-      }
+  for(v <- values.indices){
+    if(values(v).value <= boundary.value){
+      HeapBelowOrEqual.insert(v)
+      this.insertValue(v)
+    } else {
+      HeapAbove.insert(v)
     }
   }
 
@@ -68,7 +61,7 @@ case class SelectLEHeapHeap(values: Array[CBLSIntVar], boundary: CBLSIntVar) ext
     while (!HeapAbove.isEmpty && values(HeapAbove.getFirst).value <= boundary.value) {
       val v = HeapAbove.removeFirst()
       HeapBelowOrEqual.insert(v)
-      output.insertValue(v)
+      this.insertValue(v)
     }
   }
 
@@ -79,12 +72,12 @@ case class SelectLEHeapHeap(values: Array[CBLSIntVar], boundary: CBLSIntVar) ext
     while (!HeapBelowOrEqual.isEmpty && values(HeapBelowOrEqual.getFirst).value > boundary.value) {
       val v = HeapBelowOrEqual.removeFirst()
       HeapAbove.insert(v)
-      output.deleteValue(v)
+      this.deleteValue(v)
     }
   }
 
   @inline
-  override def notifyIntChanged(v: CBLSIntVar, i: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Int, NewVal: Int) {
     if (v == boundary) {
       //c'est le boundary
       if (NewVal > OldVal) {
@@ -103,7 +96,7 @@ case class SelectLEHeapHeap(values: Array[CBLSIntVar], boundary: CBLSIntVar) ext
   }
 
   override def checkInternals(c: Checker) {
-    for (v <- output.value) {
+    for (v <- this.value) {
       c.check(values(v).value <= boundary.value,
         Some("values(" + v + ").value (" + values(v).value
           + ") <= boundary.value (" + boundary.value + ")"))
@@ -113,8 +106,8 @@ case class SelectLEHeapHeap(values: Array[CBLSIntVar], boundary: CBLSIntVar) ext
       if (v.value <= boundary.value)
         count += 1
     }
-    c.check(count == output.value.size, Some("count (" + count
-      + ") == output.value.size (" + output.value.size + ")"))
+    c.check(count == this.value.size, Some("count (" + count
+      + ") == output.value.size (" + this.value.size + ")"))
     c.check(HeapAbove.size + HeapBelowOrEqual.size == values.size,
       Some("HeapAbove.size + HeapBelowOrEqual.size ("
         + HeapAbove.size + "+" + HeapBelowOrEqual.size
@@ -132,11 +125,8 @@ case class SelectLEHeapHeap(values: Array[CBLSIntVar], boundary: CBLSIntVar) ext
  * @param boundary: the boundary for comparison
  * @author renaud.delandtsheer@cetic.be
  * */
-case class SelectLESetQueue(values: Array[CBLSIntVar], boundary: CBLSIntVar) extends SetInvariant {
-  var output: CBLSSetVar = null
-
-  def myMin = values.indices.start
-  def myMax = values.indices.end
+case class SelectLESetQueue(values: Array[IntValue], boundary: IntValue)
+  extends SetInvariant(initialDomain = values.indices.start to values.indices.end) {
 
   for (v <- values.indices) registerStaticAndDynamicDependency(values(v), v)
   registerStaticAndDynamicDependency(boundary)
@@ -144,38 +134,35 @@ case class SelectLESetQueue(values: Array[CBLSIntVar], boundary: CBLSIntVar) ext
 
   val QueueAbove: Queue[Int] = new Queue[Int]
 
-  override def setOutputVar(v: CBLSSetVar) {
-    output = v
-    output.setDefiningInvariant(this)
-    output := SortedSet.empty[Int]
-    val HeapAbove: BinomialHeap[Int] = new BinomialHeap((i: Int) => values(i).value, values.size)
-    for (v <- values.indices) {
-      if (values(v).value <= boundary.value) {
-        output.insertValue(v)
-      } else {
-        HeapAbove.insert(v)
-      }
+
+  this := SortedSet.empty[Int]
+  val HeapAbove: BinomialHeap[Int] = new BinomialHeap((i: Int) => values(i).value, values.size)
+  for (v <- values.indices) {
+    if (values(v).value <= boundary.value) {
+      this.insertValue(v)
+    } else {
+      HeapAbove.insert(v)
     }
-    while (!HeapAbove.isEmpty) {
-      QueueAbove.enqueue(HeapAbove.popFirst())
-    }
+  }
+  while (!HeapAbove.isEmpty) {
+    QueueAbove.enqueue(HeapAbove.popFirst())
   }
 
   @inline
-  override def notifyIntChanged(v: CBLSIntVar, index: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
     if (v == boundary) {
       //c'est le boundary
       assert(NewVal > OldVal, "SelectLESetQueue does not allow boundary to decrease")
       while (!QueueAbove.isEmpty && values(QueueAbove.head).value <= boundary.value) {
         val v = QueueAbove.dequeue()
-        output.insertValue(v)
+        this.insertValue(v)
       }
     } else { //il est dans BelowOrEqual
-      //     println("SelectLEnotify " + v + " index: " + index +  " OldVal: " + OldVal + " NewVal: " + NewVal + " boundary: " + boundary + " output " + output)
+      //     println("SelectLEnotify " + v + " index: " + index +  " OldVal: " + OldVal + " NewVal: " + NewVal + " boundary: " + boundary + " this " + this)
       assert(OldVal <= boundary.value, "SelectLESetQueue does not allow elements above boundary to change: " + v + "(new: " + NewVal + ", old: " + OldVal + ") pivot: " + boundary)
       assert(QueueAbove.isEmpty || values(QueueAbove.last).value <= NewVal, "SelectLESetQueue requires latest variables passing above boundary to be the biggest one: " + v)
       QueueAbove.enqueue(index)
-      output.deleteValue(index)
+      this.deleteValue(index)
     }
   }
 
@@ -183,12 +170,12 @@ case class SelectLESetQueue(values: Array[CBLSIntVar], boundary: CBLSIntVar) ext
     var count: Int = 0
     for (i <- values.indices) {
       if (values(i).value <= boundary.value) {
-        c.check(output.value.contains(i), Some("output.value.contains(" + i + ")"))
+        c.check(this.value.contains(i), Some("this.value.contains(" + i + ")"))
         count += 1
       }
     }
-    c.check(output.value.size == count,
-      Some("output.value.size (" + output.value.size
-          + ") == count (" + count + ")"))
+    c.check(this.value.size == count,
+      Some("this.value.size (" + this.value.size
+        + ") == count (" + count + ")"))
   }
 }

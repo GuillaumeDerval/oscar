@@ -29,22 +29,23 @@ object IdenticalAggregator{
    * @return a maximal subset of l such that
    *         all items are of different class according to itemClass (with Int.MinValue exception)
    */
-  def removeIdenticalClasses[T](l:List[T], itemClass:T => Int):List[T] = {
+  def removeIdenticalClasses[T](l:Iterable[T], itemClass:T => Int):List[T] = {
     val a: Set[Int] = SortedSet.empty
-    removeIdenticalClasses[T](l, itemClass, Nil, a)
+    removeIdenticalClasses[T](l.toIterator, itemClass, Nil, a)
   }
 
-  private def removeIdenticalClasses[T](l:List[T],
+  private def removeIdenticalClasses[T](l:Iterator[T],
                                         itemClass:T => Int,
                                         canonicals:List[T],
                                         classes:Set[Int]):List[T] = {
-    l match{
-      case Nil => canonicals
-      case h :: t =>
-        val classOfH:Int = itemClass(h)
-        if(classOfH != Int.MinValue && classes.contains(classOfH))
-          removeIdenticalClasses(t, itemClass, canonicals,classes)
-        else removeIdenticalClasses(t, itemClass, h::canonicals, classes+classOfH)
+    if (l.hasNext) {
+      val h = l.next()
+      val classOfH:Int = itemClass(h)
+      if(classOfH != Int.MinValue && classes.contains(classOfH))
+        removeIdenticalClasses(l, itemClass, canonicals,classes)
+      else removeIdenticalClasses(l, itemClass, h::canonicals, classes+classOfH)
+    }else {
+      canonicals
     }
   }
 

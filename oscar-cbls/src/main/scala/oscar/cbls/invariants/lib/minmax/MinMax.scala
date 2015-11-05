@@ -25,23 +25,23 @@
 package oscar.cbls.invariants.lib.minmax
 /**This package proposes a set of logic invariants, which are used to define the structure of the problem*/
 
-import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.algo.heap._
-import collection.immutable.SortedSet
-import oscar.cbls.invariants.lib.logic._
+import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
+import oscar.cbls.invariants.lib.logic._
 
-abstract class MiaxLin(vars: SortedSet[CBLSIntVar]) extends IntInvariant {
-  require(vars.size > 0, "Invariant " + name + " declared with zero vars to max")
+import scala.collection.immutable.SortedSet
 
-  def name: String
-  var output: CBLSIntVar = null
+abstract class MiaxLin(vars: SortedSet[IntValue])
+  extends IntInvariant(initialValue = 0) {
+  require(vars.size > 0, "Invariant " + this + " declared with zero vars to max")
 
   for (v <- vars) registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def myMax = vars.foldLeft(vars.head.maxVal)((acc, intvar) => if (better(intvar.maxVal, acc)) intvar.maxVal else acc)
-  override def myMin = vars.foldLeft(vars.head.minVal)((acc, intvar) => if (better(intvar.minVal, acc)) intvar.minVal else acc)
+  restrictDomain(vars.foldLeft((vars.head.min, vars.head.max))((acc, intvar) =>
+    (if (better(intvar.min, acc._1)) intvar.min else acc._1,
+      if (better(intvar.max, acc._2)) intvar.max else acc._2)))
 
   var MiaxCount: Int = 0
 
@@ -58,32 +58,28 @@ abstract class MiaxLin(vars: SortedSet[CBLSIntVar]) extends IntInvariant {
         CurrentMiax = v.value
       }
     })
-    output := CurrentMiax
+    this := CurrentMiax
   }
 
-  override def setOutputVar(v: CBLSIntVar) {
-    output = v
-    output.setDefiningInvariant(this)
-    LoadNewMiax()
-  }
+  LoadNewMiax()
 
-  override def notifyIntChanged(v: CBLSIntVar, OldVal: Int, NewVal: Int) {
-    assert(vars.contains(v), name + " notified for not interesting var")
-    val MiaxVal = output.getValue(true)
+  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
+    assert(vars.contains(v), this + " notified for not interesting var")
+    val MiaxVal = this.getValue(true)
     if (OldVal == MiaxVal && better(MiaxVal, NewVal)) {
       MiaxCount -= 1
       if (MiaxCount == 0) LoadNewMiax() //this is where we pay the price.
     } else if (better(NewVal, MiaxVal)) {
       MiaxCount = 1
-      output := NewVal
+      this := NewVal
     } else if (better(MiaxVal, OldVal) && NewVal == MiaxVal) {
       MiaxCount += 1
     }
   }
 
   override def checkInternals(c: Checker) {
-    vars.foreach(v => c.check(better(output.value, v.value) || output.value == v.value,
-      Some("better(output.value (" + output.value + "), " + v.value
+    vars.foreach(v => c.check(better(this.value, v.value) || this.value == v.value,
+      Some("better(output.value (" + this.value + "), " + v.value
         + ") || output.value == " + v.value)))
   }
 }
@@ -96,10 +92,9 @@ abstract class MiaxLin(vars: SortedSet[CBLSIntVar]) extends IntInvariant {
  * update is O(n)
  * @author renaud.delandtsheer@cetic.be
  * */
-case class MaxLin(vars: SortedSet[CBLSIntVar]) extends MiaxLin(vars) {
-  override def name = "MaxLin"
+case class MaxLin(vars: SortedSet[IntValue]) extends MiaxLin(vars) {
 
-  override def better(a: Int, b: Int): Boolean = (a > b)
+  override def better(a: Int, b: Int): Boolean = a > b
 }
 
 /**
@@ -110,48 +105,41 @@ case class MaxLin(vars: SortedSet[CBLSIntVar]) extends MiaxLin(vars) {
  * update is O(n)
  * @author renaud.delandtsheer@cetic.be
  * */
-case class MinLin(vars: SortedSet[CBLSIntVar]) extends MiaxLin(vars) {
-  override def name = "MinLin"
+case class MinLin(vars: SortedSet[IntValue]) extends MiaxLin(vars) {
 
-  override def better(a: Int, b: Int): Boolean = (a < b)
+  override def better(a: Int, b: Int): Boolean = a < b
 }
 
-abstract class Miax(vars: SortedSet[CBLSIntVar]) extends IntInvariant {
-  def name: String
-
-  override def myMax = vars.foldLeft(vars.head.maxVal)((acc, intvar) => if (better(intvar.maxVal, acc)) intvar.maxVal else acc)
-  override def myMin = vars.foldLeft(vars.head.minVal)((acc, intvar) => if (better(intvar.minVal, acc)) intvar.minVal else acc)
+abstract class Miax(vars: SortedSet[IntValue])
+  extends IntInvariant {
 
   for (v <- vars) registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  def ord(v: CBLSIntVar): Int
+  restrictDomain(vars.foldLeft((vars.head.min, vars.head.max))((acc, intvar) =>
+    (if (better(intvar.min, acc._1)) intvar.min else acc._1,
+      if (better(intvar.max, acc._2)) intvar.max else acc._2)))
+
+  def ord(v: IntValue): Int
   def better(a: Int, b: Int): Boolean
 
-  //TODO: this is awfully slow, but what can you do with a SortedSet?
-  val h: BinomialHeapWithMove[CBLSIntVar] = new BinomialHeapWithMove[CBLSIntVar](ord, vars.size)
+  val h: BinomialHeapWithMove[IntValue] = new BinomialHeapWithMove[IntValue](ord, vars.size)
 
   for (v <- vars) { h.insert(v) }
 
-  var output: CBLSIntVar = null
+  this := h.getFirst.value
 
-  override def setOutputVar(v: CBLSIntVar) {
-    output = v
-    output.setDefiningInvariant(this)
-    output := h.getFirst.value
-  }
-
-  override def notifyIntChanged(v: CBLSIntVar, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
     assert(vars.contains(v), name + " notified for not interesting var")
     h.notifyChange(v)
-    output := h.getFirst.value
+    this := h.getFirst.value
   }
 
   override def checkInternals(c: Checker) {
-    vars.foreach(v => c.check(better(output.value, v.value)
-      || output.value == v.value,
-      Some("better(output.value (" + output.value + "), " + v.value
-        + ") || output.value == " + v.value)))
+    vars.foreach(v => c.check(better(this.value, v.value)
+      || this.value == v.value,
+      Some("better(this.value (" + this.value + "), " + v.value
+        + ") || this.value == " + v.value)))
   }
 }
 
@@ -164,14 +152,16 @@ abstract class Miax(vars: SortedSet[CBLSIntVar]) extends IntInvariant {
  * @author renaud.delandtsheer@cetic.be
  * */
 @deprecated("use the MinArray instead", "always")
-case class Min(vars: SortedSet[CBLSIntVar]) extends Miax(vars) {
+case class Min(vars: SortedSet[IntValue]) extends Miax(vars) {
   assert(vars.size > 0, "Invariant Min declared with zero vars to min")
 
-  override def name = "Min"
-
-  override def ord(v: CBLSIntVar): Int = v.value
+  override def ord(v: IntValue): Int = v.value
 
   override def better(a: Int, b: Int): Boolean = a < b
+}
+
+object Min{
+  def apply(varss: Array[IntValue], ccond: SetValue, default: Int = Int.MaxValue) = MinArray(varss, ccond, default)
 }
 
 /**
@@ -183,13 +173,16 @@ case class Min(vars: SortedSet[CBLSIntVar]) extends Miax(vars) {
  * @author renaud.delandtsheer@cetic.be
  * */
 @deprecated("use the MaxArray instead", "always")
-case class Max(vars: SortedSet[CBLSIntVar]) extends Miax(vars) {
+case class Max(vars: SortedSet[IntValue]) extends Miax(vars) {
   assert(vars.size > 0, "Invariant Max declared with zero vars to max")
-  override def name = "Max"
 
-  override def ord(v: CBLSIntVar): Int = -v.value
+  override def ord(v: IntValue): Int = -v.value
 
   override def better(a: Int, b: Int): Boolean = a > b
+}
+
+object Max{
+  def apply(varss: Array[IntValue], ccond: SetValue = null, default: Int = Int.MinValue) = MaxArray(varss, ccond, default)
 }
 
 /**
@@ -198,8 +191,8 @@ case class Max(vars: SortedSet[CBLSIntVar]) extends Miax(vars) {
  * use this if you only have two variables to max, otherwise, refer to log implementations
  * @author renaud.delandtsheer@cetic.be
  * */
-case class Max2(a: CBLSIntVar, b: CBLSIntVar)
-  extends IntInt2Int(a, b, ((x: Int, y: Int) => x.max(y)), a.minVal.max(b.minVal), a.maxVal.max(b.maxVal))
+case class Max2(a: IntValue, b: IntValue)
+  extends IntInt2Int(a, b, (x: Int, y: Int) => x.max(y), a.min.max(b.min) to a.max.max(b.max))
 
 /**
  * maintains output = Min(a,b)
@@ -207,5 +200,5 @@ case class Max2(a: CBLSIntVar, b: CBLSIntVar)
  * use this if you only have two variables to max, otherwise, refer to log implementations
  * @author renaud.delandtsheer@cetic.be
  * */
-case class Min2(a: CBLSIntVar, b: CBLSIntVar)
-  extends IntInt2Int(a, b, ((x: Int, y: Int) => x.min(y)), a.minVal.min(b.minVal), a.maxVal.min(b.maxVal))
+case class Min2(a: IntValue, b: IntValue)
+  extends IntInt2Int(a, b, (x: Int, y: Int) => x.min(y), a.min.min(b.min) to a.max.min(b.max))

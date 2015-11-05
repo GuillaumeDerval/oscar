@@ -24,9 +24,9 @@ package oscar.cbls.invariants.lib.numeric
  * ****************************************************************************
  */
 
-import oscar.cbls.invariants.core.computation.{ Store, IntInvariant, CBLSIntVar }
-import oscar.cbls.invariants.lib.logic.LazyIntInt2Int
+import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
+import oscar.cbls.invariants.lib.logic.LazyIntInt2Int
 
 /**
  * Maintains output to the smallest value such that
@@ -52,7 +52,7 @@ import oscar.cbls.invariants.core.propagation.Checker
  * @param shift the first period starts later than zero. it starts at shift. the duration before its start is allowed.
  * @author renaud.delandtsheer@cetic.be
  */
-case class RoundUpModulo(from: CBLSIntVar, duration: CBLSIntVar, period: Int, zone: Int, shift: Int)
+case class RoundUpModulo(from: IntValue, duration: IntValue, period: Int, zone: Int, shift: Int)
   extends LazyIntInt2Int(from, duration, (from: Int, duration: Int) => {
     require(duration <= period - zone, "duration " + duration + "<= period " + period + "- zone " + zone)
     require(period != 0)
@@ -63,7 +63,7 @@ case class RoundUpModulo(from: CBLSIntVar, duration: CBLSIntVar, period: Int, zo
       from + (period + zone - reducedfrom)
     else
       from
-  }, from.minVal, from.maxVal + zone) {
+  }, from.min to from.max + zone) {
 }
 
 object TestRoundUpModulo extends App {
@@ -81,10 +81,10 @@ object TestRoundUpModulo extends App {
     }
   val m = new Store()
 
-  val from = CBLSIntVar(m, 0, "from")
-  val duration = CBLSIntVar(m, 2, "duration")
+  val from = CBLSIntVar(m, 0, FullRange, "from")
+  val duration = CBLSIntVar(m, 2, FullRange, "duration")
 
-  val r = RoundUpModulo(from, duration, 7, 2, 0).toIntVar
+  val r = RoundUpModulo(from, duration, 7, 2, 0)
 
   m.close()
 
@@ -109,29 +109,26 @@ object TestRoundUpModulo extends App {
  * @param forbiddenZones
  * @author renaud.delandtsheer@cetic.be
  */
-case class RoundUpCustom(from: CBLSIntVar, duration: CBLSIntVar, forbiddenZones: List[(Int, Int)]) extends IntInvariant {
+case class RoundUpCustom(from: IntValue, duration: IntValue, forbiddenZones: List[(Int, Int)])
+  extends IntInvariant(initialDomain = from.min to forbiddenZones.maxBy(_._2)._2 + 1) {
+  /**
+   * These must be computed first.
+   */
+  private val sortedRegularizedZones = regularizeZones(forbiddenZones.sortBy(_._1))
+  private val forbiddenStarts: Array[Int] = sortedRegularizedZones.map(_._1).toArray
+  private val forbiddenEnds: Array[Int] = sortedRegularizedZones.map(_._2).toArray
 
-  def myMax = forbiddenZones.maxBy(_._2)._2 + 1
-
-  def myMin = from.minVal
-
-  var output: CBLSIntVar = null
   registerStaticAndDynamicDependenciesNoID(from, duration)
   finishInitialization()
-
-  override def setOutputVar(v: CBLSIntVar) {
-    output = v
-    output.setDefiningInvariant(this)
-    output := roundup()
-  }
+  this := roundup()
 
   @inline
-  override def notifyIntChanged(v: CBLSIntVar, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
     scheduleForPropagation()
   }
 
-  override def performPropagation() {
-    output := roundup()
+  override def performInvariantPropagation() {
+    this := roundup()
   }
 
   /**
@@ -160,11 +157,6 @@ case class RoundUpCustom(from: CBLSIntVar, duration: CBLSIntVar, forbiddenZones:
       case newTail => (a, b) :: newTail
     }
   }
-
-  private val sortedRegularizedZones = regularizeZones(forbiddenZones.sortBy(_._1))
-
-  private val forbiddenStarts: Array[Int] = sortedRegularizedZones.map(_._1).toArray
-  private val forbiddenEnds: Array[Int] = sortedRegularizedZones.map(_._2).toArray
 
   def roundup(): Int = {
     var newStart: Int = from.value
@@ -207,12 +199,12 @@ case class RoundUpCustom(from: CBLSIntVar, duration: CBLSIntVar, forbiddenZones:
   }
 
   override def checkInternals(c: Checker) {
-    c.check(from.value <= output.value)
+    c.check(from.value <= this.value)
     for ((a, b) <- forbiddenZones) {
-      c.check((output.value > b) || (output.value + duration.value - 1 < a), Some("from.value = " + from.value + " (output.value " + output.value + " > zoneEnd " + b + ") || (output.value " + output.value + "+ duration.value " + duration.value + " -1 < zoneStart " + a + ")"))
+      c.check((this.value > b) || (this.value + duration.value - 1 < a), Some("from.value = " + from.value + " (this.value " + this.value + " > zoneEnd " + b + ") || (this.value " + this.value + "+ duration.value " + duration.value + " -1 < zoneStart " + a + ")"))
     }
 
-    for (i <- from.value until output.value) {
+    for (i <- from.value until this.value) {
       c.check(forbiddenZones.exists(ab =>
         !((i + duration.value - 1 < ab._1) || (ab._2 < i))),
         Some("should be not suitable at position " + i + " " + duration + " exists:"
@@ -239,10 +231,10 @@ object TestRoundUpCustom extends App {
     }
   val m = new Store()
 
-  val from = CBLSIntVar(m, 0, "from")
-  val duration = CBLSIntVar(m, 2, "duration")
+  val from = CBLSIntVar(m, 0, FullRange, "from")
+  val duration = CBLSIntVar(m, 2, FullRange, "duration")
 
-  val r = new RoundUpCustom(from, duration, List((3, 4), (9, 12))).toIntVar
+  val r = new RoundUpCustom(from, duration, List((3, 4), (9, 12)))
 
   m.close()
 
@@ -266,7 +258,7 @@ object TestRoundUpCustom extends App {
  * @param resume is true if the task must be resumed after the pre-emptive task
  * @author yoann.guyot@cetic.be
  */
-case class PreEmption(startTime: CBLSIntVar, duration: CBLSIntVar,
+case class PreEmption(startTime: IntValue, duration: IntValue,
                       preEmptStartTime: Int, preEmptDuration: Int, resume: Boolean)
   extends LazyIntInt2Int(startTime, duration,
     (startTime: Int, duration: Int) => {
@@ -285,10 +277,10 @@ case class PreEmption(startTime: CBLSIntVar, duration: CBLSIntVar,
         }
       }
       newDuration
-    }, duration.minVal, (if (resume) {
-      duration.maxVal + preEmptDuration
+    }, duration.min to (if (resume) {
+      duration.max + preEmptDuration
     } else {
-      (preEmptStartTime - startTime.minVal) + preEmptDuration
+      (preEmptStartTime - startTime.min) + preEmptDuration
     })) {
 }
 
@@ -296,17 +288,17 @@ case class PreEmption(startTime: CBLSIntVar, duration: CBLSIntVar,
 object TestPreEmption extends App {
   val m = new Store()
 
-  val from = CBLSIntVar(m, 0, "from")
-  val duration = CBLSIntVar(m, 4, "duration")
+  val from = CBLSIntVar(m, 0, FullRange, "from")
+  val duration = CBLSIntVar(m, 4, FullRange, "duration")
 
   val preEmptionFrom = 2
   val preEmptionDuration = 3
 
   val durationResumed = PreEmption(from, duration,
-    preEmptionFrom, preEmptionDuration, true).toIntVar
+    preEmptionFrom, preEmptionDuration, true)
 
   val durationNotResumed = PreEmption(from, duration,
-    preEmptionFrom, preEmptionDuration, false).toIntVar
+    preEmptionFrom, preEmptionDuration, false)
 
   m.close()
 

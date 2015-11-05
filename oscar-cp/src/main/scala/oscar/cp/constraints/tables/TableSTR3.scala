@@ -27,20 +27,21 @@ import scala.collection.mutable.{ArrayBuffer, HashSet}
  * @param X the variables restricted by the constraint.
  * @param table the list of tuples composing the table.
  * @author Jordan Demeulenaere j.demeulenaere1@gmail.com
+ * @author Guillaume Perez memocop@gmail.com
  */
 class TableSTR3(val X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableSTR3") {
 
   /* Basic information */
   private[this] val arity = X.length
   private[this] val store = X(0).store
-  
+
   /* Temp arrays to fill domain values */
   private[this] val domainsFillArray = Array.fill(X.map(_.size).max)(0)
   private[this] var domainSize = 0
-  
+
   /* Invalid tuples */
   private[this] val invalidTuples: ReversibleSharedSparseSet = new ReversibleSharedSparseSet(store, table.length)
-  
+
   /* Supports for each (variable, value) pair */
   private[this] val originalMins = X.map(_.min)
   private[this] val spans = Array.tabulate(arity)(i => X(i).max - X(i).min + 1)
@@ -67,7 +68,7 @@ class TableSTR3(val X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
     }
     true
   }
-  
+
   override def setup(l: CPPropagStrength): CPOutcome = {
     /* Fill temporary supports for each (x,a) pair */
     val tempSupport = Array.tabulate(arity)(i => Array.fill(spans(i))(new ArrayBuffer[Int]()))
@@ -108,11 +109,11 @@ class TableSTR3(val X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
       i += 1
     }
     depArray = Array.fill(dep.map(_.size).max)(0)
-    
+
     Suspend
   }
-  
- @inline override def valRemoveIdx(x: CPIntVar, idx: Int, value: Int): CPOutcome = {
+
+  @inline override def valRemoveIdx(x: CPIntVar, idx: Int, value: Int): CPOutcome = {
     /* Invalidate supports of (x, a) */
     val prevInvSize = invalidTuples.size
     val originalMin = value - originalMins(idx)
@@ -126,13 +127,13 @@ class TableSTR3(val X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
       }
       supportIndex += 1
     }
-    
+
     /* No tuple has been invalidated */
     val newInvSize = invalidTuples.size
     if (newInvSize == prevInvSize) {
       return Suspend
     }
-    
+
     /* Handle each invalidated tuple */
     var i = prevInvSize
     while (i < newInvSize) {
@@ -148,20 +149,21 @@ class TableSTR3(val X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
           /* Looking for a support for (yIndex, tuple(yIndex)) */
           val rowY = row(yIndex)(value - originalMins(yIndex))
           val currY = curr(yIndex)(value - originalMins(yIndex))
-          
+
           val currValue = currY.value
           var p = currValue
           while (p >= 0 && invalidTuples.hasValue(rowY(p))) {
             p -= 1
           }
-          
+
           /* If value has no more supports, delete from domain */
           if (p < 0) {
             if (X(yIndex).removeValue(value) == Failure) {
               return Failure
             }
+            currY.value = -1
           }
-          else { 
+          else {
             /* Check if we have to change curr value */
             if (p != currValue) {
               currY.setValue(p)
@@ -174,7 +176,7 @@ class TableSTR3(val X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
       }
       i += 1
     }
-    
+
     Suspend
   }
 

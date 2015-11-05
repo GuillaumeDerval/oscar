@@ -136,3 +136,12 @@ class TestTT extends TestCumulativeConstraint("TT") {
     )
   }
 }
+
+class TestTTEF extends TestCumulativeConstraint("TTEF") {
+  override def cumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], demands: Array[CPIntVar], resources: Array[CPIntVar], capacity: CPIntVar, id: Int): Array[Constraint] = {
+    Array(
+        new CumulativeDecomp(starts, durations, ends, demands, resources, capacity, id),
+        TimeTableEdgeFinding(starts, durations, ends, demands, resources, capacity, id)
+    )
+  }
+}

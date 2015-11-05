@@ -16,6 +16,7 @@ oscar.eml
 .idea
 */.project
 LPParam.ini
+*.DS_Store
 
 syntax: regexp
 \.jardesc$

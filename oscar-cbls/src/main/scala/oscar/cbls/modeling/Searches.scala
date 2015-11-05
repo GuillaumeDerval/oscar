@@ -1,7 +1,7 @@
 package oscar.cbls.modeling
 
-import oscar.cbls.invariants.core.computation.{CBLSSetVar, CBLSIntVar}
-import oscar.cbls.search.{SwapsNeighborhood, RandomSwapNeighborhood, RandomizeNeighborhood, AssignNeighborhood}
+import oscar.cbls.invariants.core.computation.{CBLSIntVar, CBLSSetVar}
+import oscar.cbls.search.{AssignNeighborhood, RandomSwapNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
 
 /** A trait that interfaces some of the neighborhoods of OScaR.CBLS
   *

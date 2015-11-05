@@ -16,8 +16,9 @@
 package oscar.examples.cp.scheduling
 
 import oscar.cp._
-import oscar.cp.constraints.UnaryResourceWithTransitionTimes
+import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPIntVar
+import oscar.cp.searches.ConflictOrderingSearch
 
 import scala.io.Source
 
@@ -88,12 +89,12 @@ object JobShopWithTransitionTimes extends CPModel with App {
   for(m <- 0 until nMachines) {
     def filter(x: Array[CPIntVar]) = (0 until nActivities).filter(machines(_) == m).map(x(_))
     val (s,d,e) = (filter(startsVar), filter(durationsVar), filter(endsVar))
-    post(new UnaryResourceWithTransitionTimes(s, d, e, ttMatrices(m)))
+    post(unaryResource(s, d, e, ttMatrices(m)),Medium)
   }
 
   minimize(makespan)
 
-  search(setTimes(startsVar, durationsVar, endsVar))//binaryFirstFail(startsVar))
+  search(conflictOrderingSearch(startsVar,startsVar(_).min,startsVar(_).min))
 
   val startTime = System.currentTimeMillis()
 

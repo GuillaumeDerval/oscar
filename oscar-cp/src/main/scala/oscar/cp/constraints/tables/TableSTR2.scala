@@ -26,6 +26,7 @@ import oscar.cp.core.CPStore
 import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPOutcome._
 import oscar.cp.core.variables.CPIntVarAdaptable
+import scala.util.control._
 
 /**
  * @author Cyrille Dejemeppe cyrille.dejemeppe@gmail.com
@@ -33,6 +34,7 @@ import oscar.cp.core.variables.CPIntVarAdaptable
  * @author Jordan Demeulenaere
  * @author Pierre Schaus pschaus@gmail.com
  * @author Renaud Hartert ren.hartert@gmail.com
+ * @author Guillaume Perez memocop@gmail.com
  */
 final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(variables(0).store, "TableSTR2") {
 
@@ -60,6 +62,11 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
   private[this] val toRemovePositions = Array.tabulate(arity)(i => new Array[Int](variables(i).max - variables(i).min + 1))
   private[this] val offsets = Array.tabulate(arity)(i => variables(i).min)
   private[this] val sizes = new Array[Int](arity)
+
+  /////////
+  // POUR V2
+  /////////
+  private[this] var valModified  = false
 
   // Last size of the domain
   private[this] val lastSize = Array.fill(arity)(new ReversibleInt(s, -1))
@@ -102,8 +109,51 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
       }
     }
 
+    //////
+    // V2
+    /////
+    //    var irs = 0
+    //    i = 0
+    //    while (i < nActiveTuples && sSupSize != 0) {
+    //      val tau = table(activeTuples(i))
+    //      val isInvalid = isInvalidTuple(tau)
+    //      if (isInvalid) {
+    //        deactivateTuple(i)
+    //        i -= 1
+    //      }
+    //      else {
+    //        var j = sSupSize
+    //        valModified = false
+    //        while (j > 0) {
+    //          j -= 1
+    //          val varId = sSup(j)
+    //          val newSize = removeFromSet(varId, tau(varId))
+    //          if (newSize == 0) {
+    //            removeFromSSup(j)
+    //          }
+    //        }
+    //        if(valModified){
+    //          swapTuple(irs,i)
+    //          irs += 1
+    //        }
+    //      }
+    //      i += 1
+    //    }
+    //    while (i < nActiveTuples) {
+    //      val tau = table(activeTuples(i))
+    //      val isInvalid = isInvalidTuple(tau)
+    //      if (isInvalid) {
+    //        deactivateTuple(i)
+    //        i -= 1
+    //      }
+    //      i += 1
+    //    }
+
+    ///////
+    // V1
+    ///////
     i = nActiveTuples
-    while (i > 0) {
+    while (i > 0 && sSupSize != 0) {
       i -= 1
       val tau = table(activeTuples(i))
       val isInvalid = isInvalidTuple(tau)
@@ -114,10 +164,38 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
           j -= 1
           val varId = sSup(j)
           val newSize = removeFromSet(varId, tau(varId))
-          if (newSize == 0) removeFromSSup(j)
+          if (newSize == 0) {
+            removeFromSSup(j)
+          }
         }
       }
     }
+    while (i > 0) {
+      i -= 1
+      val tau = table(activeTuples(i))
+      if (isInvalidTuple(tau)) deactivateTuple(i)
+    }
+
+    ////////
+    // V0
+    ///////
+    //    i = nActiveTuples
+    //    while (i > 0) {
+    //      i -= 1
+    //      val tau = table(activeTuples(i))
+    //      val isInvalid = isInvalidTuple(tau)
+    //      if (isInvalid) deactivateTuple(i)
+    //      else {
+    //        var j = sSupSize
+    //        while (j > 0) {
+    //          j -= 1
+    //          val varId = sSup(j)
+    //          val newSize = removeFromSet(varId, tau(varId))
+    //          if (newSize == 0) removeFromSSup(j)
+    //        }
+    //      }
+    //    }
+
 
     i = sSupSize
     while (i > 0) {
@@ -131,7 +209,7 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
       if (nValues == varSize) return Failure
       else {
         if (nValues > 0) {
-          var i = nValues 
+          var i = nValues
           while (i > 0) {
             i -= 1
             val value = values(i)
@@ -181,6 +259,7 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
       positions(val1 - offset) = pos2
       positions(val2 - offset) = pos1
       sizes(varId) = pos2
+      valModified = true
       pos2
     }
   }
@@ -200,6 +279,12 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
     sSupSize -= 1
     sSup(id) = sSup(sSupSize)
     sSup(sSupSize) = tmp
+  }
+
+  @inline private def swapTuple(id1: Int,id2: Int): Unit = {
+    val tmpPosition = activeTuples(id1)
+    activeTuples(id1) = activeTuples(id2)
+    activeTuples(id2) = tmpPosition
   }
 
   @inline private def deactivateTuple(id: Int): Unit = {

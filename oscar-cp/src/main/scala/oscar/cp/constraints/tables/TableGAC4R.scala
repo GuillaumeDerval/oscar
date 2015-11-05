@@ -105,6 +105,7 @@ class TableGAC4R(X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Const
   private[this] val store = X(0).store
   private[this] val originalMins = Array.tabulate(arity)(i => X(i).min)
   private[this] val spans = Array.tabulate(arity)(i => X(i).max - X(i).min + 1)
+  private[this] val dom = Array.ofDim[Int](spans.max)
   
   /* Reversible supports */
   private[this] val supports = Array.fill(arity)(null: VariableSupports)
@@ -315,8 +316,10 @@ class TableGAC4R(X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Const
       val x = X(indexMax)
       val supportsX = supports(indexMax)
       val originalMinX = originalMins(indexMax)
-      for (a <- x.iterator) {
-        val aIndex = a - originalMinX
+      val nVals = x.fillArray(dom)
+      var j = 0
+      while (j < nVals) {
+        val aIndex = dom(j) - originalMinX
         val supportsXa = supportsX(aIndex)
         val nbSupportsXa = supportsX.size(aIndex)
         i = 0
@@ -324,6 +327,7 @@ class TableGAC4R(X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Const
           validTuples.restore(supportsXa(i))
           i += 1
         }
+        j += 1
       }
       
       /* Clear the supports */
@@ -332,8 +336,11 @@ class TableGAC4R(X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Const
         val y = X(i)
         val supportsY = supports(i)
         val originalMinY = originalMins(i)
-        for (b <- y.iterator) {
-          supportsY.clear(b - originalMinY)
+        val nVals = y.fillArray(dom)
+        j = 0
+        while (j < nVals) {
+          supportsY.clear(dom(j) - originalMinY)
+          j += 1
         }
         i += 1
       }
@@ -355,7 +362,7 @@ class TableGAC4R(X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Const
       
       /* Remove unsupported values */
       i = 0
-      var j = -1
+      j = -1
       var b = 0
       while (i < arity) {
         val y = X(i)

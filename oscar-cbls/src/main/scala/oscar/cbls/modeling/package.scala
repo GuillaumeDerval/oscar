@@ -15,12 +15,13 @@
 package oscar.cbls
 
 //this import is necessary, evan trough ide claim that it is not
-import oscar.cbls.modeling._
 
 /**This package proposes an interface to the primitive of the CBLS engine.
  * that is as similar as possible to the one exhibited by the other engines of OScar.
  */
-package object modeling extends Constraints
+package object modeling
+//TODO: reset this
+  /*extends Constraints
 with ClusterInvariants
 with ComplexLogicInvariants
 with ElementInvariants
@@ -30,4 +31,4 @@ with SetInvariants {
 
 
 }
-
+*/

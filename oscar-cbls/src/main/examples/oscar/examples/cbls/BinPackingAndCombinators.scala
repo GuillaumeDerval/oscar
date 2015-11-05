@@ -35,7 +35,7 @@ object BinPackingAndCombinators extends CBLSModel with App{
   val x =  ((MoveItem(problem) exhaustBack SwapItems(problem))
     exhaust (MoveItem(problem, true) exhaustBack SwapItems(problem, true)
     orElse (JumpSwapItems(problem) maxMoves 3 beforeMove println("Jump"))
-    orElse (EmptyMostViolatedBin(problem) beforeMove println("BigJump")))) protectBest problem.overallViolation.objective
+    orElse (EmptyMostViolatedBin(problem) beforeMove println("BigJump")))) saveBest problem.overallViolation
 
   x.verbose = 1
   x.doAllMoves(_ >= 200 || problem.overallViolation.value == 0, problem.overallViolation)

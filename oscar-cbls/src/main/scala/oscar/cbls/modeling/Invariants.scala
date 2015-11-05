@@ -16,19 +16,22 @@
 
 package oscar.cbls.modeling
 
-import oscar.cbls.invariants.lib.logic._
 import oscar.cbls.invariants.core.computation._
+import oscar.cbls.invariants.lib.logic._
 import oscar.cbls.invariants.lib.minmax._
 import oscar.cbls.invariants.lib.numeric._
-import collection.immutable.{SortedSet, SortedMap}
 import oscar.cbls.invariants.lib.set._
 
-trait Invariants extends ClusterInvariants
+import scala.collection.immutable.{SortedMap, SortedSet}
+
+trait Invariants
+  extends ClusterInvariants
 with ComplexLogicInvariants
 with ElementInvariants
 with MinMaxInvariants
 with NumericInvariants
 with SetInvariants
+
 
 /**
  * modeling interface presenting the cluster invariants
@@ -36,30 +39,30 @@ with SetInvariants
 */
 trait ClusterInvariants{
 
-  def makeSparseCluster(values:Array[CBLSIntVar], clusters: Iterable[Int]):SparseCluster = Cluster.MakeSparse(values, clusters)
+  def makeSparseCluster[T<:IntValue](values:Array[T], clusters: Iterable[Int]) = Cluster.MakeSparse(values, clusters)
 
-  def makeDenseCluster(values:Array[CBLSIntVar]):DenseCluster = Cluster.MakeDense(values)
+  def makeDenseCluster[T<:IntValue](values:Array[T]) = Cluster.MakeDense(values)
 
-  def makeDenseClusterAssumingMinMax(values:Array[CBLSIntVar],themin:Int,themax:Int):DenseCluster = Cluster.MakeDenseAssumingMinMax(values,themin,themax)
+  def makeDenseClusterAssumingMinMax[T<:IntValue](values:Array[T],themin:Int,themax:Int) = Cluster.MakeDenseAssumingMinMax(values,themin,themax)
 
   /**maintains a cluster of the indexes of array:  cluster(j) = {i in index of values | values[i] == j}
    * This is considered as a sparse cluster because Cluster is a map and must not cover all possibles values of the values in the array ''values''
    * */
-  def sparseCluster(values:Array[CBLSIntVar], Clusters:SortedMap[Int,CBLSSetVar]) = SparseCluster(values:Array[CBLSIntVar], Clusters:SortedMap[Int,CBLSSetVar])
+  def sparseCluster[T<:IntValue](values:Array[T], Clusters:SortedMap[Int,CBLSSetVar]) = SparseCluster(values, Clusters)
 
   /**Maintains a cluster of the indexes of array: cluster(j) = {i in index of values | values[i] == j}
    * This is considered as a dense cluster because Cluster is an array and must cover all the possibles values of the values in the array ''values''
    * */
-  def denseCluster(values:Array[CBLSIntVar], clusters:Array[CBLSSetVar]) = DenseCluster(values:Array[CBLSIntVar], clusters:Array[CBLSSetVar])
+  def denseCluster[T<:IntValue](values:Array[T], clusters:Array[CBLSSetVar]) = DenseCluster(values, clusters)
 
   /**Maintains a count of the indexes of array: count(j) = #{i in index of values | values[i] == j}
    * This is considered as a dense count because counts is an array and must cover all the possibles values of the values in the array ''values''
    * */
-  def denseCount(values:Array[CBLSIntVar], counts:Array[CBLSIntVar]) = DenseCount(values:Array[CBLSIntVar], counts:Array[CBLSIntVar])
+  def denseCount(values:Array[IntValue], counts:Array[CBLSIntVar]) = DenseCount(values, counts)
 
   /**maintains the reverse references. Referencing(i) = {j | Reference(j) includes i}
    * */
-  def denseRef(references:Array[CBLSSetVar], referencing:Array[CBLSSetVar]) = DenseRef(references:Array[CBLSSetVar], referencing:Array[CBLSSetVar])
+  def denseRef(references:Array[SetValue], referencing:Array[CBLSSetVar]) = DenseRef(references, referencing)
 
   /**
    * Maintains a resource usage profile.
@@ -70,8 +73,8 @@ trait ClusterInvariants{
    * @param profile the usage profile of the resource maintained to profile(time) <== sum(task.amount | task.start <= time <= t.start+t.duration)
    * @param active the tasks that are active maintained to active(time) <== (task.indices | task.start <= time <= t.start+t.duration)
    */
-  def cumulative(indices:Array[Int], start:Array[CBLSIntVar], duration:Array[CBLSIntVar], amount:Array[CBLSIntVar], profile:Array[CBLSIntVar], active:Array[CBLSSetVar])  =
-    Cumulative(indices:Array[Int], start:Array[CBLSIntVar], duration:Array[CBLSIntVar], amount:Array[CBLSIntVar], profile:Array[CBLSIntVar], active:Array[CBLSSetVar])
+  def cumulative(indices:Array[Int], start:Array[IntValue], duration:Array[IntValue], amount:Array[IntValue], profile:Array[CBLSIntVar], active:Array[CBLSSetVar])  =
+    Cumulative(indices:Array[Int], start, duration, amount, profile, active)
 
 
   /** { i in index(values) | cond(values[i] }
@@ -79,14 +82,14 @@ trait ClusterInvariants{
    * @param cond is a function that selects values to be includes in the output set.
    * This ''cond'' function cannot depend on any IntVar, as updates to these IntVars will not trigger propagation of this invariant.
    */
-  def filter(values:Array[CBLSIntVar], cond:(Int=>Boolean)) = Filter(values:Array[CBLSIntVar], cond:(Int=>Boolean))
+  def filter(values:Array[IntValue], cond:(Int=>Boolean)) = Filter(values:Array[IntValue], cond:(Int=>Boolean))
 
   /** {i in index of values | values[i] <= boundary}
    * It is based on two heap data structure, hence updates are log(n) and all updates are allowed
    * @param values an array of intvar
    * @param boundary the boundary for comparison
    */
-  def selectLEHeapHeap(values:Array[CBLSIntVar], boundary: CBLSIntVar) = SelectLEHeapHeap(values:Array[CBLSIntVar], boundary: CBLSIntVar)
+  def selectLEHeapHeap(values:Array[IntValue], boundary: IntValue) = SelectLEHeapHeap(values:Array[IntValue], boundary: IntValue)
 
 
   /**{i \in index of values | values[i] <= boundary}
@@ -97,7 +100,7 @@ trait ClusterInvariants{
    * @param values: an array of intvar
    * @param boundary: the boundary for comparison
    */
-  def selectLESetQueue(values:Array[CBLSIntVar], boundary: CBLSIntVar) = SelectLESetQueue(values:Array[CBLSIntVar], boundary: CBLSIntVar)
+  def selectLESetQueue(values:Array[IntValue], boundary: IntValue) = SelectLESetQueue(values, boundary)
 
 }
 
@@ -115,18 +118,18 @@ trait ComplexLogicInvariants{
    *
    * @param V the number of vrp to consider V>=1 and V<=N
    */
-  def routes(V: Int, Next:Array[CBLSIntVar]) = Routes.buildRoutes(Next, V)
+  def routes(V: Int, Next:Array[IntValue]) = Routes.buildRoutes(Next, V)
 
   /**maintains a sorting of the ''values'' array:
    * @param ReversePerm   i < j => values(ReversePerm(i)) < values(ReversePerm(j))
    * see method GetForwardPerm() for the forward permutation: ReversePerm(ForwardPerm(i)) == i
    * */
-  def sort(values:Array[CBLSIntVar], ReversePerm:Array[CBLSIntVar]) = Sort(values:Array[CBLSIntVar], ReversePerm:Array[CBLSIntVar])
+  def sort(values:Array[IntValue], ReversePerm:Array[CBLSIntVar]) = new Sort(values, ReversePerm)
 
   /**returns the ForwardPerm for a given array
    * It instantiates an array of the appropriate size and populates it with IntVar.
    */
-  def makeSort(values:Array[CBLSIntVar]):Sort = Sort.MakeSort(values:Array[CBLSIntVar])
+  def makeSort(values:Array[IntValue]) = Sort.MakeSort(values)
 }
 
 
@@ -140,24 +143,24 @@ trait ElementInvariants{
    * @param thenVar the returned value if ifVar > 0
    * @param elseVar the returned value if ifVar <= 0
    * */
-  def intITE(ifVar:CBLSIntVar, thenVar:CBLSIntVar, elseVar:CBLSIntVar) = IntITE(ifVar, thenVar, elseVar)
+  def intITE(ifVar:IntValue, thenVar:IntValue, elseVar:IntValue, pivot: Int = 0) = IntITE(ifVar, thenVar, elseVar, pivot)
 
   /** inputarray[index]
    * @param inputarray is an array of IntVar
    * @param index is the index accessing the array*/
-  def intElement(index:CBLSIntVar, inputarray:Array[CBLSIntVar]) = IntElement(index:CBLSIntVar, inputarray:Array[CBLSIntVar])
+  def intElement(index:IntValue, inputarray:Array[IntValue]) = IntElement(index:IntValue, inputarray:Array[IntValue])
 
   /**Union(i in index) (array[i])
    * @param index is an IntSetVar denoting the set of positions in the array to consider
    * @param inputarray is the array of intvar that can be selected by the index
    */
-  def intElements(index:CBLSSetVar, inputarray:Array[CBLSIntVar]) = Elements(index, inputarray)
+  def intElements(index:SetValue, inputarray:Array[IntValue]) = Elements(index, inputarray)
 
   /** inputarray[index] on an array of IntSetVar
    * @param inputarray is the array of intsetvar
    * @param index is the index of the array access
    **/
-  def intSetElement(index:CBLSIntVar, inputarray:Array[CBLSSetVar]) = SetElement(index, inputarray)
+  def intSetElement(index:IntValue, inputarray:Array[SetValue]) = SetElement(index, inputarray)
 }
 
 /**
@@ -172,7 +175,7 @@ trait MinMaxInvariants{
    * @param default is the value returned when cond is empty
    * update is O(log(n))
    * */
-  def argMax(vars: Array[CBLSIntVar], cond: CBLSSetVar = null,default:Int = Int.MinValue) = ArgMaxArray(vars, cond,default)
+  def argMax(vars: Array[IntValue], cond: SetValue = null,default:Int = Int.MinValue) = ArgMax(vars, cond,default)
 
 
   /** Maintains {i in indices of (varss Inter cond) | varss[i] == min(varss(i in indices of (varss Inter cond))}
@@ -181,33 +184,33 @@ trait MinMaxInvariants{
    * @param default is the value returned when cond is empty
    * update is O(log(n))
    * */
-  def argMin(varss: Array[CBLSIntVar], ccond: CBLSSetVar = null, default:Int = Int.MaxValue) = ArgMinArray(varss, ccond, default)
+  def argMin(varss: Array[IntValue], ccond: SetValue = null, default:Int = Int.MaxValue) = ArgMin(varss, ccond, default)
 
   /** maintains output = Max(a,b)
    * where output, a, and b are an IntVar
    * use this if you only have two variables to max, otherwise, refer to log iplementations
    * */
-  def max2(a: CBLSIntVar, b: CBLSIntVar) = Max2(a, b)
+  def max2(a: IntValue, b: IntValue) = Max2(a, b)
 
   /** maintains output = Min(a,b)
    * where output, a, and b are an IntVar
    * use this if you only have two variables to max, otherwise, refer to log iplementations
    * */
-  def min2(a: CBLSIntVar, b: CBLSIntVar) = Min2(a: CBLSIntVar, b: CBLSIntVar)
+  def min2(a: IntValue, b: IntValue) = Min2(a: IntValue, b: IntValue)
 
   /** Maintains Max(Var(i) | i in cond)
    * @param varss is an array of IntVar, which can be bulked
    * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
    * update is O(log(n))
    * */
-  def maxArray(varss: Array[CBLSIntVar], ccond: CBLSSetVar = null, default: Int = Int.MinValue) = MaxArray(varss, ccond, default)
+  def maxArray(varss: Array[IntValue], ccond: SetValue = null, default: Int = Int.MinValue) = MaxArray(varss, ccond, default)
 
   /** Maintains Min(Var(i) | i in cond)
    * @param varss is an array of IntVar, which can be bulked
    * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
    * update is O(log(n))
    * */
-  def minArray(varss: Array[CBLSIntVar], ccond: CBLSSetVar = null, default: Int = Int.MaxValue) = MinArray(varss, ccond, default)
+  def minArray(varss: Array[IntValue], ccond: SetValue = null, default: Int = Int.MaxValue) = MinArray(varss, ccond, default)
 
   /** maintains output = Min(v)
    * where
@@ -216,7 +219,7 @@ trait MinMaxInvariants{
    * @param default is the default value if v is empty
    * update is O(log(n))
    * */
-  def minSet(v: CBLSSetVar, default: Int = Int.MaxValue) = MinSet(v, default)
+  def minSet(v: SetValue, default: Int = Int.MaxValue) = MinSet(v, default)
 
   /** maintains output = Max(v)
    * where
@@ -225,7 +228,7 @@ trait MinMaxInvariants{
    * @param default is the default value if v is empty
    * update is O(log(n))
    * */
-  def maxSet(v: CBLSSetVar, default: Int = Int.MinValue) = new MaxSet(v, default)
+  def maxSet(v: SetValue, default: Int = Int.MinValue) = new MaxSet(v, default)
 }
 
 /**
@@ -236,38 +239,38 @@ trait NumericInvariants{
   /** sum(vars)
    * @param vars is an iterable of IntVars
    * */
-  def sum(vars:Iterable[CBLSIntVar]) = Sum(vars:Iterable[CBLSIntVar])
+  def sum(vars:Iterable[IntValue]) = Sum(vars:Iterable[IntValue])
 
   /** prod(vars)
    * @param vars is a set of IntVars
    * */
-  def prod(vars:Iterable[CBLSIntVar]) = Prod(vars:Iterable[CBLSIntVar])
+  def prod(vars:Iterable[IntValue]) = Prod(vars:Iterable[IntValue])
 
   /** left - right
    * where left, right, and output are IntVar*/
-  def minus(left:CBLSIntVar, right:CBLSIntVar) = Minus(left:CBLSIntVar, right:CBLSIntVar)
+  def minus(left:IntValue, right:IntValue) = Minus(left:IntValue, right:IntValue)
 
   /** left + right
    * where left, right, and output are IntVar*/
-  def sum2(left:CBLSIntVar, right:CBLSIntVar) = Sum2(left:CBLSIntVar, right:CBLSIntVar)
+  def sum2(left:IntValue, right:IntValue) = Sum2(left:IntValue, right:IntValue)
 
   /** left * right
    * where left, right, and output are IntVar*/
-  def prod2(left:CBLSIntVar, right:CBLSIntVar) = Prod2(left:CBLSIntVar, right:CBLSIntVar)
+  def prod2(left:IntValue, right:IntValue) = Prod2(left:IntValue, right:IntValue)
 
   /**left / right
    * where left, right, and output are IntVar
    * do not set right to zero, as usual... */
-  def div(left:CBLSIntVar, right:CBLSIntVar) = Div(left:CBLSIntVar, right:CBLSIntVar)
+  def div(left:IntValue, right:IntValue) = Div(left:IntValue, right:IntValue)
 
   /**left / right
    * where left, right, and output are IntVar
    * do not set right to zero, as usual... */
-  def mod(left:CBLSIntVar, right:CBLSIntVar) = Mod(left:CBLSIntVar, right:CBLSIntVar)
+  def mod(left:IntValue, right:IntValue) = Mod(left:IntValue, right:IntValue)
 
   /**abs(v) (absolute value)
    * where output and v are IntVar*/
-  def abs(v:CBLSIntVar) = Abs(v:CBLSIntVar)
+  def abs(v:IntValue) = Abs(v:IntValue)
 
 
   /**
@@ -279,7 +282,7 @@ trait NumericInvariants{
    * @param min
    * @param max
    */
-  def  bound(x: CBLSIntVar, min:Int, max:Int) = Bound(x, min, max)
+  def  bound(x: IntValue, min:Int, max:Int) = Bound(x, min, max)
 
   /**Maintains output to the smallest value such that
     * output >= from
@@ -304,7 +307,7 @@ trait NumericInvariants{
     * @param shift the first period starts later than zero. it starts at shift. the duration before its start is allowed.
     */
 
-    def roundUpModulo(from: CBLSIntVar, duration: CBLSIntVar, period: Int, zone: Int, shift: Int) = RoundUpModulo(from: CBLSIntVar, duration: CBLSIntVar, period: Int, zone: Int, shift: Int)
+    def roundUpModulo(from: IntValue, duration: IntValue, period: Int, zone: Int, shift: Int) = RoundUpModulo(from: IntValue, duration: IntValue, period: Int, zone: Int, shift: Int)
 
   /**Maintains output to the smallest value such that
     * output >= from
@@ -314,7 +317,7 @@ trait NumericInvariants{
     * @param duration
     * @param ForbiddenZones
     */
-  def roundUpCustom(from: CBLSIntVar, duration: CBLSIntVar, ForbiddenZones: List[(Int, Int)]) = RoundUpCustom(from: CBLSIntVar, duration: CBLSIntVar, ForbiddenZones: List[(Int, Int)])
+  def roundUpCustom(from: IntValue, duration: IntValue, ForbiddenZones: List[(Int, Int)]) = RoundUpCustom(from: IntValue, duration: IntValue, ForbiddenZones: List[(Int, Int)])
 
   /**
    * This invariant implements a step function. Values higher than pivot are mapped to ifval
@@ -326,21 +329,21 @@ trait NumericInvariants{
    * @param thenval the value returned when x > pivot
    * @param elseval the value returned when x <= pivot
    */
-  def step(x:CBLSIntVar,pivot:Int = 0,thenval:Int = 1,elseval:Int = 0) = Step(x:CBLSIntVar,pivot:Int,thenval:Int ,elseval:Int)
+  def step(x:IntValue,pivot:Int = 0,thenval:Int = 1,elseval:Int = 0) = Step(x:IntValue,pivot:Int,thenval:Int ,elseval:Int)
 
   /** sum(i in cond) vars(i)
    * This invariant might modify vars array by cloning some variables to ensure that each variable only appears once.
    * @param vars is a set of IntVars
    * @param cond is the condition for selecting variables in the set of summed ones, cannot be null
    */
-  def sumElements(vars: Array[CBLSIntVar], cond: CBLSSetVar) = SumElements(vars: Array[CBLSIntVar], cond: CBLSSetVar)
+  def sumElements(vars: Array[IntValue], cond: SetValue) = SumElements(vars: Array[IntValue], cond: SetValue)
 
   /** prod(i in cond) vars(i)
    * This invariant might modify vars array by cloning some variables to ensure that each variable only appears once.
    * @param vars is a set of IntVars
    * @param cond is the condition for selecting variables in the set of summed ones.
    */
-  def prodElements(vars: Array[CBLSIntVar], cond: CBLSSetVar) = ProdElements(vars: Array[CBLSIntVar], cond: CBLSSetVar)
+  def prodElements(vars: Array[IntValue], cond: SetValue) = ProdElements(vars: Array[IntValue], cond: SetValue)
 
 }
 
@@ -353,52 +356,52 @@ trait SetInvariants{
    * @param left is an intvarset
    * @param right is an intvarset
    * */
-  def union(left:CBLSSetVar, right:CBLSSetVar) = Union(left:CBLSSetVar, right:CBLSSetVar)
+  def union(left:SetValue, right:SetValue) = Union(left:SetValue, right:SetValue)
 
   /** left INTER right
    * @param left is an intvarset
    * @param right is an intvarset
    * */
-  def inter(left:CBLSSetVar, right:CBLSSetVar) = Inter(left:CBLSSetVar, right:CBLSSetVar)
+  def inter(left:SetValue, right:SetValue) = Inter(left:SetValue, right:SetValue)
 
   /** left MINUS right, the set diff operator
    * @param left is the base set
    * @param right is the set that is removed from left
    * */
-  def diff(left:CBLSSetVar, right:CBLSSetVar) = Diff(left:CBLSSetVar, right:CBLSSetVar)
+  def diff(left:SetValue, right:SetValue) = Diff(left:SetValue, right:SetValue)
 
   /** #(v) (cardinality)
    * @param v is an IntSetVar, the set of integers to count
    */
-  def cardinality(v:CBLSSetVar) = Cardinality(v:CBLSSetVar)
+  def cardinality(v:SetValue) = Cardinality(v:SetValue)
 
   /** makes an IntSetVar out of a set of IntVar. If several variables have the same value, the value is present only once in the resulting set
    * @param on is a set of IntVar
    * */
-  def makeSet(on:SortedSet[CBLSIntVar]) = MakeSet(on:SortedSet[CBLSIntVar])
+  def makeSet(on:SortedSet[IntValue]) = MakeSet(on:SortedSet[IntValue])
 
   /** makes a set out of an interval specified by a lower bound and an upper bound. if lb > ub, the set is empty.
    * @param lb is the lower bound of the interval
    * @param ub is the upper bound of the interval
    * */
-  def interval(lb:CBLSIntVar,ub:CBLSIntVar) = Interval(lb:CBLSIntVar,ub:CBLSIntVar)
+  def interval(lb:IntValue,ub:IntValue) = Interval(lb:IntValue,ub:IntValue)
 
   /**maintains the output as any value taken from the intset var parameter.
    * if this set is empty, puts the default value ni output.
    * @param from
    * @param default
    */
-  def takeAny(from:CBLSSetVar,  default:Int) = TakeAny(from:CBLSSetVar,  default:Int)
+  def takeAny(from:SetValue,  default:Int) = TakeAny(from:SetValue,  default:Int)
 
   /** Sum(i in on)(fun(i))
    * @param on is the set of integers to add
    * @param fun is an optional function Int -> Int to apply before summing elements. It is expected not to rely on any variable of the model.
    * */
-  def setSum(on:CBLSSetVar, fun:(Int => Int) = ((a:Int) => a)) = SetSum(on, fun)
+  def setSum(on:SetValue, fun:(Int => Int) = ((a:Int) => a)) = SetSum(on, fun)
 
   /** PRod(i in on)(fun(i))
    * @param on is the set of integers to multiply
    * @param fun is an optional function Int -> Int to apply before multiplying elements. It is expected not to rely on any variable of the model.
    * */
-  def setProd(on:CBLSSetVar, fun:(Int => Int) = ((a:Int) => a)) = SetProd(on, fun)
+  def setProd(on:SetValue, fun:(Int => Int) = ((a:Int) => a)) = SetProd(on, fun)
 }
