@@ -738,24 +738,10 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
               unboundI = list.nextRev(unboundI).value
             }
 
-            // Merge with next if possible
+            // Mark right neighbor if it exists as new leftmost segment
             if (middleLimit != lastIdx) {
               val next = findParent(parentRev, intervalOf(middleLimit))
-
-              // Compute limits to guess the preferable merge side
-              val rightLimit = rightLimitRev(next).value
-
-              // Left merge
-              if (2 * middleLimit > rightLimit) {
-                parentRev(next).setValue(inter)
-                untilCriticalRev(inter).setValue(untilCriticalRev(next).value)
-                rightLimitRev(inter).setValue(rightLimit)
-              }
-              // Right merge
-              else {
-                parentRev(inter).setValue(next)
-                prevRev(next).setValue(-1)
-              }
+              prevRev(next).setValue(-1)
             }
           }
 
