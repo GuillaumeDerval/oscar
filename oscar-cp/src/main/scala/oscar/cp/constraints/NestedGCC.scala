@@ -27,16 +27,12 @@ import oscar.cp.core.variables.CPIntVar
  *   https://github.com/vlecomte/prefixcc-tech-report/blob/master/perf-comparison.pdf
  * @author Victor Lecomte
  */
-class PrefixCC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int, Int)]],
+class NestedGCC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int, Int)]],
                upperLists: Array[Array[(Int, Int)]])
   extends Constraint(X(0).store) {
 
   override def setup(l: CPPropagStrength): CPOutcome = {
-    val ok = l match {
-      case CPPropagStrength.Strong => s.post(new PrefixCCFenwick(X, minVal, lowerLists, upperLists))
-      case _ => s.post(new PrefixCCSegments(X, minVal, lowerLists, upperLists))
-    }
-
+    val ok = s.post(new NestedGCCFWC(X, minVal, lowerLists, upperLists))
     if (ok == CPOutcome.Failure) CPOutcome.Failure
     else CPOutcome.Success
   }

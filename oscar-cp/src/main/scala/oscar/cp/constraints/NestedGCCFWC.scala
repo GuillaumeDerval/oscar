@@ -35,7 +35,7 @@ import CPOutcome._
  *                   three occurrences of the value in the first six variables
  * @author Victor Lecomte
  */
-class PrefixCCSegments(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int, Int)]],
+class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int, Int)]],
                   upperLists: Array[Array[(Int, Int)]])
   extends Constraint(X(0).store, "PrefixCCSegment") {
 
@@ -128,6 +128,16 @@ class PrefixCCSegments(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
   /** Change buffer used when copying value removals from a delta */
   private[this] var changeBuffer: Array[Int] = null
 
+
+  private[this] val Remove = 0
+  private[this] val Assign = 1
+  /*
+  private[this] object DomOperation extends Enumeration {
+    type DomOperation = Value
+    val Remove, Assign = Value
+  }
+  import DomOperation._
+  */
 
   // ============
   // INIT METHODS
@@ -590,7 +600,8 @@ class PrefixCCSegments(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
       // If the value removed is one we track
       if (minVal <= v && v <= maxVal) {
         val vi = v - minVal
-        if (onUpdate(i, lower(vi), unbound(vi), otherVar => otherVar.assign(v)) == Failure) return Failure
+        if (onUpdate_(i, lower(vi), unbound(vi), otherVar => otherVar.assign(v)) == Failure) return Failure
+        //if (onUpdate(i, lower(vi), unbound(vi), Assign, v) == Failure) return Failure
       }
     }
 
@@ -599,7 +610,8 @@ class PrefixCCSegments(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
       // If the value removed is one we track
       if (minVal <= v && v <= maxVal) {
         val vi = v - minVal
-        if (onUpdate(i, upper(vi), unbound(vi), otherVar => otherVar.removeValue(v)) == Failure) return Failure
+        if (onUpdate_(i, upper(vi), unbound(vi), otherVar => otherVar.removeValue(v)) == Failure) return Failure
+        //if (onUpdate(i, upper(vi), unbound(vi), Remove, v) == Failure) return Failure
       }
     }
 
@@ -614,7 +626,91 @@ class PrefixCCSegments(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
    * @param action The action to be performed when the critical value of a leftmost segment is reached
    * @return [[Failure]] if the pruning caused a failure, [[Suspend]] otherwise
    */
+
   @inline private def onUpdate(i: Int, st: SegmentStructure, list: UnboundList,
+                               domOp: Int, v: Int): CPOutcome = {
+    import st._
+
+    // If this variable is in one of the segments
+    if (i < lastIdx) {
+      removeUnbound(list, i)
+
+      // Find the segment this variable is in
+      val inter = findParent(parentRev, intervalOf(i))
+      if (inter != -1) {
+        val untilCritical = untilCriticalRev(inter).decr()
+
+        // If the critical value is reached
+        if (untilCritical == 0) {
+          val directPrev = prevRev(inter).value
+
+          // If this is the leftmost segment, we eliminate unbound and merge with the next interval
+          if (directPrev == -1) {
+
+            // Assign or remove every unbound
+            val middleLimit = rightLimitRev(inter).value
+            var unboundI = list.firstRev.value
+            while (unboundI < middleLimit) {
+              if (domOp == Remove) {
+                if (X(unboundI).removeValue(v) == Failure) return Failure
+              } else { // assign
+                if (X(unboundI).assign(v) == Failure) return Failure
+              }
+              unboundI = list.nextRev(unboundI).value
+            }
+
+            // Merge with next if possible
+            if (middleLimit != lastIdx) {
+              val next = findParent(parentRev, intervalOf(middleLimit))
+
+              // Compute limits to guess the preferable merge side
+              val rightLimit = rightLimitRev(next).value
+
+              // Left merge
+              if (2 * middleLimit > rightLimit) {
+                parentRev(next).setValue(inter)
+                untilCriticalRev(inter).setValue(untilCriticalRev(next).value)
+                rightLimitRev(inter).setValue(rightLimit)
+              }
+              // Right merge
+              else {
+                parentRev(inter).setValue(next)
+                prevRev(next).setValue(-1)
+              }
+            }
+          }
+
+          // Otherwise, we merge with the previous interval
+          else {
+            val prev = findParent(parentRev, directPrev)
+
+            // Compute limits to guess the preferable merge side
+            val prevPrev = prevRev(prev).value
+            val leftLimit = boundIdx(prevPrev + 1)
+            val middleLimit = boundIdx(directPrev + 1)
+            val rightLimit = rightLimitRev(inter).value
+
+            // Left merge
+            if (2 * middleLimit >= leftLimit + rightLimit) {
+              parentRev(inter).setValue(prev)
+              rightLimitRev(prev).setValue(rightLimit)
+            }
+            // Right merge
+            else {
+              parentRev(prev).setValue(inter)
+              untilCriticalRev(inter).setValue(untilCriticalRev(prev).value)
+              prevRev(inter).setValue(prevPrev)
+            }
+          }
+        }
+      }
+    }
+
+    Suspend
+  }
+
+
+  @inline private def onUpdate_(i: Int, st: SegmentStructure, list: UnboundList,
                                action: CPIntVar => CPOutcome): CPOutcome = {
     import st._
 
