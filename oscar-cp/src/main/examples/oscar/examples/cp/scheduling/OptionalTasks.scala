@@ -25,7 +25,7 @@ object OptionalTasks extends CPModel with App {
   val demandsData = Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
   val capaMax = 2
 
-  val nTasks = durationsData.size
+  val nTasks = durationsData.length
   val Tasks = 0 until nTasks
 
   val durations = Array.tabulate(nTasks)(t => CPIntVar(durationsData(t)))
@@ -53,7 +53,9 @@ object OptionalTasks extends CPModel with App {
   // Cumulative
   add(maxCumulativeResource(starts, durations, ends, demands, resources, CPIntVar(capaMax), 1))
 
-  maximize(totalProfit) search {
+  maximize(totalProfit)
+
+  search {
     binaryFirstFail(resources) ++ binaryFirstFail(starts)
   }
   

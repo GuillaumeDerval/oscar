@@ -35,10 +35,10 @@ class ReversibleContext {
   private[this] val levelStack: ArrayStackInt = new ArrayStackInt(128)
   
   // Actions to execute when a pop occurs 
-  private[this] val popListeners = new ReversibleArrayStack[() => Unit](this,2)
+  private[this] val popListeners = new ReversibleArrayStack[() => Unit](this, 8)
   
   // Actions to execute when a pop occurs 
-  private[this] val pushListeners = new ReversibleArrayStack[() => Unit](this,2) 
+  private[this] val pushListeners = new ReversibleArrayStack[() => Unit](this, 8) 
   
   /** Returns the magic number of the context */
   final def magic: Long = magicNumber

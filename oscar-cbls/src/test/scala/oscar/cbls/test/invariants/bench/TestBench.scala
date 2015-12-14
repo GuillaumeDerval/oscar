@@ -62,7 +62,7 @@ object InvGen {
       v <- Gen.choose(range.min, range.max) suchThat (constraint(_))
       c <- Gen.alphaChar
     } yield new RandomIntVar(
-      new CBLSIntVar(model, range, v, c.toString.toLowerCase), constraint)
+      new CBLSIntVar(model, v, range, c.toString.toLowerCase), constraint)
 
   /**
    * Method to generate a list of nbVars random IntVar. Uses randomIntVar
@@ -84,8 +84,7 @@ object InvGen {
     c <- Gen.alphaChar
     v <- Gen.containerOfN[List, Int](nbVars, Gen.choose(range.min, range.max))
   } yield new RandomIntSetVar(
-      new CBLSSetVar(model, range.min, range.max, c.toString.toUpperCase,
-        SortedSet(v: _*)))
+      new CBLSSetVar(model, SortedSet(v: _*), range, c.toString.toUpperCase))
 
   /**
    * Method to generate a random IntSetVar of size less or equal to the given
@@ -95,8 +94,8 @@ object InvGen {
     c <- Gen.alphaChar
     s <- Gen.choose(1, upToSize)
     v <- Gen.containerOfN[List, Int](s, Gen.choose(range.min, range.max))
-  } yield new RandomIntSetVar(new CBLSSetVar(model, range.min, range.max,
-      c.toString.toUpperCase, SortedSet(v: _*)))
+  } yield new RandomIntSetVar(new CBLSSetVar(model, SortedSet(v: _*), range,
+      c.toString.toUpperCase))
 
   /**
    * Method to generate a list of IntSetVars. Uses randomIntSetVar.
@@ -147,27 +146,27 @@ case class RandomIntVar(intVar: CBLSIntVar,
       case PlusOne() => {
         val newVal = randomVar.value + 1
         if (randomVar.domain.contains(newVal)) applyConstraint(newVal)
-        else applyConstraint(randomVar.minVal)
+        else applyConstraint(randomVar.min)
       }
       case MinusOne() => {
         val newVal = randomVar.value - 1
         if (randomVar.domain.contains(newVal)) applyConstraint(newVal)
-        else applyConstraint(randomVar.maxVal)
+        else applyConstraint(randomVar.max)
       }
       case ToZero() => {
         if (randomVar.domain.contains(0)) applyConstraint(0)
       }
       case ToMax() => {
-        applyConstraint(randomVar.maxVal)
+        applyConstraint(randomVar.max)
       }
       case ToMin() => {
-        applyConstraint(randomVar.minVal)
+        applyConstraint(randomVar.min)
       }
       case Random() => {
-        applyConstraint(Gen.choose(randomVar.minVal, randomVar.maxVal).sample.get)
+        applyConstraint(Gen.choose(randomVar.min, randomVar.max).sample.get)
       }
       case RandomDiff() => {
-        val randomOpt = (Gen.choose(randomVar.minVal, randomVar.maxVal)
+        val randomOpt = (Gen.choose(randomVar.min, randomVar.max)
           suchThat (_ != randomVar.value)).sample
         if (randomOpt.isDefined) applyConstraint(randomOpt.get)
       }
@@ -195,7 +194,7 @@ case class RandomIntSetVar(intSetVar: CBLSSetVar) extends RandomVar {
   override def move(move: Move) = {
     move match {
       case PlusOne() => { // Adds an element to the set
-        randomVar :+= Gen.choose(randomVar.getMinVal, randomVar.getMaxVal).sample.get
+        randomVar :+= Gen.choose(randomVar.min, randomVar.max).sample.get
       }
       case MinusOne() => { // Removes an element from the set
         if (!randomVar.value.isEmpty) randomVar :-= Gen.oneOf(randomVar.value.toSeq).sample.get
@@ -205,16 +204,16 @@ case class RandomIntSetVar(intSetVar: CBLSSetVar) extends RandomVar {
         randomVar.value.foreach(value => randomVar.deleteValue(value))
       }
       case ToMax() => { // Adds all elements between min and max to the set
-        (randomVar.getMinVal to randomVar.getMaxVal).foreach(v => randomVar :+= v)
+        (randomVar.min to randomVar.max).foreach(v => randomVar :+= v)
       }
       case ToMin() => { // Reduces the set to a singleton
         randomVar.value.foreach(value => randomVar.deleteValue(value))
-        randomVar :+= Gen.choose(randomVar.getMinVal, randomVar.getMaxVal).sample.get
+        randomVar :+= Gen.choose(randomVar.min, randomVar.max).sample.get
       }
       case Random() => { // Replaces the set with a randomly generated one
       val newSize = Gen.choose(1, randomVar.value.size + 1).sample.get
         val newVal = Gen.containerOfN[List, Int](newSize,
-          Gen.choose(randomVar.getMinVal, randomVar.getMaxVal)).sample.get
+          Gen.choose(randomVar.min, randomVar.max)).sample.get
         randomVar := SortedSet(newVal: _*)
       }
       case RandomDiff() => {
@@ -222,7 +221,7 @@ case class RandomIntSetVar(intSetVar: CBLSSetVar) extends RandomVar {
         // with which intersection is empty
         val newSize = Gen.choose(1, randomVar.value.size + 1).sample.get
         val newValOpt = Gen.containerOfN[List, Int](newSize,
-          Gen.choose(randomVar.getMinVal, randomVar.getMaxVal)
+          Gen.choose(randomVar.min, randomVar.max)
             suchThat (!randomVar.value.contains(_))).sample
         if (newValOpt.isDefined) randomVar := SortedSet(newValOpt.get: _*)
       }

@@ -18,7 +18,6 @@ package oscar.examples.cp.scheduling
 import oscar.cp._
 
 import oscar.visual._
-import oscar.util._
 import scala.io.Source
 import oscar.cp.scheduling.visual.VisualGanttChart
 
@@ -35,13 +34,14 @@ import oscar.cp.scheduling.visual.VisualGanttChart
  *
  *  @author Pierre Schaus  pschaus@gmail.com
  *  @author Renaud Hartert ren.hartert@gmail.com
+ *  @author Cyrille Dejemeppe cyrille.dejemeppe@gmail.com
  */
 object JobShop extends CPModel with App {
 
   // Parsing    
   // -----------------------------------------------------------------------
 
-  var lines = Source.fromFile("data/ft07.txt").getLines.toList
+  var lines = Source.fromFile("data/ft07.txt").getLines().toList
 
   val nJobs = lines.head.trim().split(" ")(0).toInt
   val nTasksPerJob = lines.head.trim().split(" ")(1).toInt
@@ -61,7 +61,7 @@ object JobShop extends CPModel with App {
 
   for (i <- Activities) {
 
-    val l = lines.head.trim().split("[ ,\t]+").map(_.toInt).toArray
+    val l = lines.head.trim().split("[ ,\t]+").map(_.toInt)
 
     jobs(i) = l(0)
     resources(i) = l(1)
@@ -87,7 +87,7 @@ object JobShop extends CPModel with App {
   // Visualization  
   // -----------------------------------------------------------------------
 
-  val frame = new VisualFrame("Cumulative JobShop Problem", nResources + 1, 1)
+  val frame = new VisualFrame("JobShop Problem", 2, 1)
   val colors = VisualUtil.getRandomColors(nResources, true)
   val gantt1 = new VisualGanttChart(startsVar, durationsVar, endsVar, i => jobs(i), colors = i => colors(resources(i)))
   val gantt2 = new VisualGanttChart(startsVar, durationsVar, endsVar, i => resources(i), colors = i => colors(resources(i)))
@@ -97,7 +97,7 @@ object JobShop extends CPModel with App {
   }
   frame.createFrame("Gantt chart").add(gantt1)
   frame.createFrame("Gantt chart").add(gantt2)
-  frame.pack
+  frame.pack()
 
   // Constraints & Search
   // -----------------------------------------------------------------------
@@ -119,16 +119,12 @@ object JobShop extends CPModel with App {
   }
   
   minimize(makespan) 
-  
 
-  import oscar.algo.search._
   val rankBranching = rankBranchings.reduce{_++_}
     
   solver.search {
     rankBranchings.reduce{_++_} ++ binaryStatic(startsVar)
   }
   println(start())
-  
-  
 }
 

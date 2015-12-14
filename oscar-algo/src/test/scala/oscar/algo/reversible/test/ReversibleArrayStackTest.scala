@@ -18,7 +18,6 @@ package oscar.algo.reversible.test
 import org.scalatest.FunSuite
 import oscar.algo.search._
 import oscar.algo.reversible._
-import scala.collection.JavaConversions._
 import oscar.algo.reversible.ReversibleArrayStack
 
 /**
@@ -29,7 +28,6 @@ class ReversibleArrayStackTest extends FunSuite {
   test("test ReversibleArrayStack 1") {
 
     val rc = new ReversibleContext()
-
     val s = new ReversibleArrayStack[Int](rc)
     
     s.push(1)
@@ -60,11 +58,6 @@ class ReversibleArrayStackTest extends FunSuite {
     assert(s(1) == 2)
     assert(s(2) == 3)
     assert(s.size == 3)    
-    
-    //
-
   }
-  
-
 }
 

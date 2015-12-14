@@ -3,22 +3,35 @@ package oscar.cp.core.watcher
 import oscar.algo.reversible.TrailEntry
 import oscar.cp.core.CPStore
 import oscar.cp.core.Constraint
-import oscar.cp.core.Watcher
 
 class WatcherListL2(store: CPStore) {
   
   private[this] var lastMagic = -1L
-  private[this] var stack: Array[Constraint] = new Array[Constraint](4)
   private[this] var watchers: Array[Watcher] = new Array[Watcher](4)
   private[this] var index: Int = 0
 
   @inline final def length: Int = index
   
   @inline final def isEmpty = index == 0
+  
+  final def register(constraint: Constraint, cond: => Boolean): Unit = {
+    val watcher = new WatcherL2Garded(constraint, cond)
+    if (index == watchers.length) growStack()
+    watchers(index) = watcher
+    trail()
+    index += 1
+  }
 
-  @inline final def register(constraint: Constraint, watcher: Watcher = null): Unit = {
-    if (index == stack.length) growStack()
-    stack(index) = constraint
+  final def register(constraint: Constraint): Unit = {
+    val watcher = new WatcherL2(constraint)
+    if (index == watchers.length) growStack()
+    watchers(index) = watcher
+    trail()
+    index += 1
+  }
+  
+  final def register(watcher: Watcher): Unit = {
+    if (index == watchers.length) growStack()
     watchers(index) = watcher
     trail()
     index += 1
@@ -33,10 +46,7 @@ class WatcherListL2(store: CPStore) {
     var i = index
     while (i > 0) { 
       i -= 1
-      val watcher = watchers(i)
-      if (watcher == null || watcher.shouldEnqueue()) {
-        store.enqueueL2(stack(i))
-      }
+      watchers(i).awake()
     }
   }  
   
@@ -51,12 +61,8 @@ class WatcherListL2(store: CPStore) {
   
   // Double the size of the stack
   @inline private def growStack(): Unit = {
-    val newStack = new Array[Constraint](stack.length * 2)
-    System.arraycopy(stack, 0, newStack, 0, stack.length)
-    stack = newStack
     val newWatchers = new Array[Watcher](watchers.length * 2)
     System.arraycopy(watchers, 0, newWatchers, 0, watchers.length)
-    watchers = newWatchers
-    
+    watchers = newWatchers   
   }
 }

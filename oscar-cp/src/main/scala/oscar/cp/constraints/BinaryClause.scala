@@ -11,8 +11,7 @@ class BinaryClause(x: CPBoolVar, y: CPBoolVar, name: String) extends Constraint(
 
   final override def setup(l: CPPropagStrength): CPOutcome = {
     val outcome = propagate()
-    if (outcome == Failure) Failure
-    else if (outcome == Success) Success
+    if (outcome != Suspend) outcome
     else {
       x.callPropagateWhenBind(this)
       y.callPropagateWhenBind(this)

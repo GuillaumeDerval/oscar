@@ -15,13 +15,12 @@
 
 package oscar.cbls.search.core
 
-import oscar.cbls.invariants.core.computation.CBLSIntVar
-import oscar.cbls.objective.Objective
+import oscar.cbls.invariants.core.computation.Store
+import oscar.cbls.objective.{LoggingObjective, FunctionObjective, Objective}
 import oscar.cbls.search.combinators._
 import oscar.cbls.search.move.{CallBackMove, Move}
 
-import scala.language.implicitConversions
-import scala.language.postfixOps
+import scala.language.{implicitConversions, postfixOps}
 
 abstract sealed class SearchResult
 case object NoMoveFound extends SearchResult
@@ -55,7 +54,7 @@ abstract class JumpNeighborhood extends Neighborhood{
 
   def shortDescription():String
 
-  override def getMove(obj:()=>Int, acceptanceCriterion: (Int, Int) => Boolean = (oldObj,newObj) => oldObj > newObj): SearchResult = {
+  override def getMove(obj: Objective, acceptanceCriterion: (Int, Int) => Boolean = (oldObj,newObj) => oldObj > newObj): SearchResult = {
     if (canDoIt) CallBackMove(() => doIt, valueAfter, this.getClass.getSimpleName, shortDescription)
     else NoMoveFound
   }
@@ -80,7 +79,7 @@ abstract class JumpNeighborhoodParam[T] extends Neighborhood{
   def getParam:T
   def getShortDescription(param:T):String
 
-  override def getMove(obj:()=>Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+  override def getMove(obj: Objective, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
     val param:T = getParam
     if(param == null) NoMoveFound
     else CallBackMove((param:T) => doIt(param), Int.MaxValue, this.getClass.getSimpleName, () => getShortDescription(param),param)
@@ -91,6 +90,14 @@ abstract class JumpNeighborhoodParam[T] extends Neighborhood{
  * @author renaud.delandtsheer@cetic.be
  */
 abstract class Neighborhood{
+
+  /** collects and returns the statistics that have been requested in the neighborhood.
+    * use the Statistics combinator to activate the collection of statistics
+    * @return
+    */
+  final def statistics:String = Statistics.statisticsHeader + "\n" + collectStatistics
+  def collectStatistics:String = ""
+
   /**
    * the method that returns a move from the neighborhood.
    * The returned move should typically be accepted by the acceptance criterion over the objective function.
@@ -99,7 +106,7 @@ abstract class Neighborhood{
    * @param acceptanceCriterion
    * @return
    */
-  def getMove(obj:()=>Int, acceptanceCriterion:(Int,Int) => Boolean = (oldObj,newObj) => oldObj > newObj):SearchResult
+  def getMove(obj: Objective, acceptanceCriterion: (Int, Int) => Boolean = (oldObj,newObj) => oldObj > newObj):SearchResult
 
   //this resets the internal state of the Neighborhood
   def reset(){}
@@ -107,13 +114,25 @@ abstract class Neighborhood{
   override def toString: String = this.getClass.getSimpleName
 
   /** verbosity: 0: none
-    * 1: combinators
-    * 2: combinators + neighborhoods
+    * 1: moves
+    * 2: moves + failed searches
+    * 3: moves + explored neighborhoods
     */
   var _verbose:Int = 0
   def verbose:Int = _verbose
   def verbose_=(i:Int){
     _verbose = i
+    additionalStringGenerator = null
+  }
+
+  var additionalStringGenerator:()=>String = null
+
+    /** sets the verbosity level with an additiojnal string generator that ins called eieher on eahc move (level = 1)
+      *   or for each explored neighbor (level = 2)
+      */
+  def verboseWithExtraInfo(verbosity:Int,additionalString:()=>String){
+    verbose = verbosity
+    additionalStringGenerator = additionalString
   }
 
   //the number of characters to display in case a verbose approach is deployed.
@@ -123,9 +142,9 @@ abstract class Neighborhood{
   /**
    * @return true if a move has been performed, false otherwise
    */
-  def doImprovingMove(obj:()=>Int):Boolean = 0 != doAllMoves(_ >= 1, obj)
+  def doImprovingMove(obj:Objective):Boolean = 0 != doAllMoves(_ >= 1, obj)
 
-    /**
+  /**
    * @param shouldStop a function that takes the iteration number and returns true if search should be stopped
    *                   eg if the problem is considered as solved
    *                   you can evaluate some objective function there such as a violation degree
@@ -136,13 +155,14 @@ abstract class Neighborhood{
    *                            because their purpose is to randomize the current solution.
    * @return the number of moves performed
    */
-  def doAllMoves(shouldStop:Int => Boolean = _ => false, obj:()=>Int, acceptanceCriterion:(Int,Int) => Boolean = (oldObj,newObj) => oldObj > newObj):Int = {
+  def doAllMoves(shouldStop:Int => Boolean = _ => false, obj:Objective, acceptanceCriterion:(Int,Int) => Boolean = (oldObj,newObj) => oldObj > newObj):Int = {
     var bestObj = Int.MaxValue
     var prevObj = Int.MaxValue
     var toReturn = 0
     var moveCount = 0
+    val enrichedObj = if(additionalStringGenerator == null) obj else new ObjWithStringGenerator(obj,additionalStringGenerator)
     while(!shouldStop(moveCount)){
-      getMove(obj, acceptanceCriterion) match {
+      getMove(enrichedObj, acceptanceCriterion) match {
         case NoMoveFound =>
           if (verbose >= 1) println("no more move found after " + toReturn + " it")
           return toReturn;
@@ -174,6 +194,8 @@ abstract class Neighborhood{
           }
 
           m.commit()
+          if(additionalStringGenerator != null) println(additionalStringGenerator())
+          if (obj.value == Int.MaxValue) println("Warning : objective == MaxInt, maybe you have some strong constraint violated?")
           true
       }
       toReturn += 1
@@ -199,8 +221,8 @@ abstract class Neighborhood{
     */
   def orElse(b:Neighborhood):Neighborhood = new OrElse(this,b)
 
-  /** alias for this maxMoves1 exhaust b
-    *
+  /** alias for (this maxMoves 1) exhaust b
+    * this wil be queried once, and then, queries will be forwarded to b.
     * @param b
     * @return
     */
@@ -277,7 +299,7 @@ abstract class Neighborhood{
     */
   def onceEvery(n:Int, retryOnNoMoveFound:Boolean = false) = new OnceEvery(this, n, retryOnNoMoveFound)
 
-    /**bounds the number of tolerated moves without improvements over the best value
+  /**bounds the number of tolerated moves without improvements over the best value
     * the count is reset by the reset action.
     * @author renaud.delandtsheer@cetic.be
     */
@@ -302,13 +324,13 @@ abstract class Neighborhood{
     */
   def beforeMove(proc: => Unit) = new DoOnMove(this,procBeforeMove = (_) => proc)
 
-    /** this combinator attaches a custom code to a given neighborhood.
-      * the code is called whenever a move from this neighborhood is taken
-      * is gets the applied move in input.
-      * The callBack is performed before the move is actually taken.
-      * @param procOnMove a procedure that inputs the move that is applied;
-      *                   use this to update a Tabu for instance
-      */
+  /** this combinator attaches a custom code to a given neighborhood.
+    * the code is called whenever a move from this neighborhood is taken
+    * is gets the applied move in input.
+    * The callBack is performed before the move is actually taken.
+    * @param procOnMove a procedure that inputs the move that is applied;
+    *                   use this to update a Tabu for instance
+    */
   def beforeMove(procOnMove:Move => Unit) = new DoOnMove(this,procBeforeMove = procOnMove)
 
   /** this combinator attaches a custom code to a given neighborhood.
@@ -334,13 +356,13 @@ abstract class Neighborhood{
     */
   def onFirstMove(proc: => Unit) = new  DoOnFirstMove(this,() => proc)
 
-  def protectBest(i:CBLSIntVar) = new ProtectBest(this, i)
+  def saveBest(o: Objective) = new SaveBest(this, o)
 
-  /** retries n times the move before concluding to noMove can be found
-    * resets o nhe first found move, or on reset
-    * @param n the maximal number of retries on a before concluding it is dead
+  /** retries the move before concluding to noMove can be found
+    * @param cond condition that takes the number of consecutive NoMoveFound, and says if we should try again returns true if yes, false otherwise
+    *             by default, we allow a single retry.
     */
-  def retry(n:Int = 1) = new Retry(this,n)
+  def retry(cond: Int => Boolean = (n:Int) => n<=1) = new Retry(this, cond)
 
   /** to prevent resetting the internal state of this neighborhood
     * @return
@@ -355,36 +377,29 @@ abstract class Neighborhood{
     */
   def name(name:String) = new Name(this,name)
 
-  /**to build a composite neighborhood.
-    * the first neighborhood is used only to provide a round robin exploration on its possible moves
-    * you must ensure that this first neighborhood will perform a hotRestart, so that it will enumerate all its moves
-    * internally, this neighborhood will be called with a fully acceptant acceptanceCriteria,
-    *
-    * the move combinator for every move provided by the first neighborhood, the combinator calls the second one
-    * and we consider the composition of the two moves for the acceptance criteria.
-    * the returned move is the composition of the two found moves
-    *
-    * you must also ensure that the two neighborhood evaluate the same objective function,
-    * since this combinator needs to evaluate the whole composite move, and not only the last part of the composition
-    *
-    * A native composite neighborhood will probably be much faster than this combinator, so use this for prototyping
-    * for instance, this combinator does not allow for some form of symmetry breaking, unless you are really doing it the hard way.
-    *
-    * this move will reset the first neighborhood on every call, since it is probably bounded by the number of moves it can provide
-    *
-    * notice that you can use the following better syntax:
-    * {{{
-    *   myFirstNeighborhood maxMoves 5 andThen mySecondNeighborhood
-    * }}}
-    *
-    * since the proper mechanism is built into Neighborhood.maxMoves; see [[oscar.cbls.search.combinators.MaxMoves]]
-    *
-    * @param b given that the move returned by the first neighborhood is committed, we explore the globally improving moves of this one
-    * @param maxFirstStep the maximal number of moves to consider to the first neighborhood
-    *
-    * @author renaud.delandtsheer@cetic.be
-    */
-  def andThen(b:Neighborhood, maxFirstStep:Int) = new AndThen(this, b, maxFirstStep)
+  /**
+   * to build a composite neighborhood.
+   * the first neighborhood is used only to provide a round robin exploration on its possible moves
+   * you must ensure that this first neighborhood will perform a hotRestart, so that it will enumerate all its moves
+   * internally, this neighborhood will be called with a fully acceptant acceptanceCriteria,
+   *
+   * the move combinator for every move provided by the first neighborhood, the combinator calls the second one
+   * and we consider the composition of the two moves for the acceptance criteria.
+   * the returned move is the composition of the two found moves
+   *
+   * you must also ensure that the two neighborhood evaluate the same objective function,
+   * since this combinator needs to evaluate the whole composite move, and not only the last part of the composition
+   *
+   * A native composite neighborhood will probably be much faster than this combinator, so use this for prototyping
+   * for instance, this combinator does not allow for some form of symmetry breaking, unless you are really doing it the hard way.
+   *
+   * this move will reset the first neighborhood on every call, since it is probably bounded by the number of moves it can provide
+   *
+   * @param b given that the move returned by the first neighborhood is committed, we explore the globally improving moves of this one
+   *
+   * @author renaud.delandtsheer@cetic.be
+   */
+  def andThen(b:Neighborhood) = new AndThen(this, b)
 
   /**
    * tis combinator overrides the acceptance criterion given to the whole neighborhood
@@ -440,16 +455,16 @@ abstract class Neighborhood{
    * this overrides the one that you might pass in the higher level
    * @param overridingObjective the objective to use instead of the given one
    */
-  def overrideObjective(a:Neighborhood, overridingObjective:()=>Int) = new OverrideObjective(a, overridingObjective)
+  def overrideObjective(a:Neighborhood, overridingObjective:Objective) = new OverrideObjective(a, overridingObjective)
 
-    /**
-     * This represents a guided local search where a series of objective criterion are optimized one after the other
-     * the switching is performed on exhaustion, and a is reset on switching.
-     * Notice that if you want to use different neighborhoods depending on the objective function, you should rather use a series of neighborhood with the objectiveFucntion combinator
-     * @param objectives the list of objective to consider
-     * @param resetOnExhaust  on exhaustion of the current objective, restores the best value for this objective before switching to the next objective
-     */
-    def guidedLocalSearch(a:Neighborhood, objectives:List[Objective], resetOnExhaust:Boolean) = new GuidedLocalSearch(a, objectives, resetOnExhaust)
+  /**
+   * This represents a guided local search where a series of objective criterion are optimized one after the other
+   * the switching is performed on exhaustion, and a is reset on switching.
+   * Notice that if you want to use different neighborhoods depending on the objective function, you should rather use a series of neighborhood with the objectiveFucntion combinator
+   * @param objectives the list of objective to consider
+   * @param resetOnExhaust  on exhaustion of the current objective, restores the best value for this objective before switching to the next objective
+   */
+  def guidedLocalSearch(a:Neighborhood, objectives:List[Objective], resetOnExhaust:Boolean) = new GuidedLocalSearch(a, objectives, resetOnExhaust)
 
   /**
    * This represents an accumulatingSearch: it searches on a given objective until this objective gets to zero,
@@ -464,7 +479,7 @@ abstract class Neighborhood{
 /** a neighborhood that never finds any move (quite useless, actually)
   */
 case object NoMoveNeighborhood extends Neighborhood{
-  override def getMove(obj:()=>Int, acceptanceCriterion:(Int,Int) => Boolean): SearchResult = NoMoveFound
+  override def getMove(obj: Objective, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = NoMoveFound
 }
 
 /**
@@ -472,7 +487,7 @@ case object NoMoveNeighborhood extends Neighborhood{
  * @param m the move to return when the neighborhood is queried for a move
  */
 case class ConstantMoveNeighborhood(m:Move) extends Neighborhood{
-  override def getMove(obj:()=>Int, acceptanceCriterion:(Int,Int) => Boolean): SearchResult = m
+  override def getMove(obj: Objective, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = m
 }
 
 /**
@@ -510,32 +525,41 @@ case class ConstantMoveNeighborhood(m:Move) extends Neighborhood{
  */
 abstract class EasyNeighborhood(best:Boolean = false, neighborhoodName:String=null) extends Neighborhood{
 
+  protected def neighborhoodNameToString:String = if (neighborhoodName != null) neighborhoodName else this.getClass.getSimpleName()
+
+  override def toString: String = neighborhoodNameToString
+
   //passing parameters, and getting return values from the search
   private var oldObj:Int=0
   private var acceptanceCriterion:(Int,Int) => Boolean=null
   private var toReturnMove:Move = null
   private var bestNewObj:Int = Int.MaxValue
-  protected var obj:()=>Int = null
+  protected var obj:Objective = null
 
-  override final def getMove(obj:()=>Int, acceptanceCriterion:(Int,Int) => Boolean):SearchResult = {
+  override final def getMove(obj:Objective, acceptanceCriterion:(Int,Int) => Boolean):SearchResult = {
     oldObj = obj()
     this.acceptanceCriterion = acceptanceCriterion
     toReturnMove = null
     bestNewObj = Int.MaxValue
-    this.obj = obj
+    this.obj = if(amIVerbose) new LoggingObjective(obj) else obj
+    if(amIVerbose) println(neighborhoodNameToString + ": start exploration")
 
     exploreNeighborhood()
 
     if(toReturnMove == null || (best && !acceptanceCriterion(oldObj,bestNewObj))) {
-      if (amIVerbose) println(neighborhoodName + ": no move found")
+      if (amIVerbose){
+        println(neighborhoodNameToString + ": no move found")
+      }
       NoMoveFound
     }else {
-      if (amIVerbose) println(neighborhoodName + ": move found")
+      if (amIVerbose){
+        println(neighborhoodNameToString + ": move found")
+      }
       toReturnMove
     }
   }
 
-  /** This is the method you ust implement and that performs the search of your neighborhood.
+  /** This is the method you must implement and that performs the search of your neighborhood.
     * every time you explore a neighbor, you must perform the calls to notifyMoveExplored or moveRequested(newObj) && submitFoundMove(myMove)){
     * as explained in the documentation of this class
     */
@@ -543,29 +567,29 @@ abstract class EasyNeighborhood(best:Boolean = false, neighborhoodName:String=nu
 
   /**
    * @param newObj the new value of the objective function if we perform the move
-   * @param m a function that returns the found move. We expect a function here because the move might not need to be instantiated
+   * @param m the explored move.
    * @return true if the search must be stopped right now
    */
-  def notifyMoveExplored(newObj:Int, m: =>Move):Boolean = {
-
-    if (best) {
-      if (newObj < bestNewObj) {
-        bestNewObj = newObj
-        toReturnMove = m
-      }
-    } else if (acceptanceCriterion(oldObj, newObj)) {
-      toReturnMove = m
-      return true
-    }
-    false
+  def notifyMoveExplored(newObj:Int, m:Move):Boolean = {
+    moveRequested(newObj) && submitFoundMove(m)
   }
 
+  var tmpNewObj:Int = 0
 
   /**
    * @param newObj the new value of the objective function
    * @return true if the move is requested, then you should call submitFoundMove
    */
   def moveRequested(newObj:Int):Boolean = {
+    if (amIVerbose){
+      tmpNewObj = newObj
+      return true
+    }
+    myMoveRequested(newObj)
+  }
+
+  @inline
+  private def myMoveRequested(newObj:Int):Boolean = {
     if (best) {
       if (newObj < bestNewObj) {
         bestNewObj = newObj
@@ -578,20 +602,48 @@ abstract class EasyNeighborhood(best:Boolean = false, neighborhoodName:String=nu
     false
   }
 
-  /** you can only, and must call this method when you called moveRequested and it returned true
+  /** You can only, and must call this method when you called moveRequested and it returned true
     * @param m the move. notice that the obj must be accurate
     * @return true if the search must be stopped right now (you can save some internal state by the way if you need  to, e.g. for a hotRestart
     */
   def submitFoundMove(m:Move):Boolean = {
+    val moveIsActuallyRequested:Boolean = if(amIVerbose){
+      //in this case we always ask for the move, but we decide here if it is actually needed,
+      // so we somewhat repeat the normal process of moveRequested here
+      val moveIsActuallyRequested = myMoveRequested(tmpNewObj)
 
-    if (best) {
-      bestNewObj = m.objAfter
-      toReturnMove = m
-      false
-    } else{ //we do not check acceptance criterion here anymore since it was tested in moveRequested, and it could be non-deterministic
-      toReturnMove = m
+      println("Explored " + m + (if(moveIsActuallyRequested) ", saved" else ", not saved"))
+      println(obj.asInstanceOf[LoggingObjective].getAndCleanEvaluationLog.mkString("\n"))
+
+      moveIsActuallyRequested
+    }else{
       true
     }
+
+    if(moveIsActuallyRequested) {
+      if (best) {
+        bestNewObj = m.objAfter
+        toReturnMove = m
+        false
+      } else {
+        //we do not check acceptance criterion here anymore since it was tested in moveRequested, and it could be non-deterministic
+        toReturnMove = m
+        true
+      }
+    }else{
+      false
+    }
   }
+
+//  def exploreMove(moveEvaluator:Objective => Int, moveInstancier:Int => Move):Boolean
 }
 
+class ObjWithStringGenerator(obj:Objective,additionalStringGenerator:()=>String) extends Objective{
+  override def detailedString(short: Boolean, indent: Int): String = {
+    obj.detailedString(short,indent)+ "\n" + nSpace(indent) + additionalStringGenerator()
+  }
+
+  override def model: Store = obj.model
+
+  override def value: Int = obj.value
+}

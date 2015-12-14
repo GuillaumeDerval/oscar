@@ -20,8 +20,7 @@
 
 package oscar.cbls.invariants.core.algo.tarjan
 
-import collection.immutable.SortedSet
-import collection.immutable.SortedMap
+import scala.collection.immutable.{SortedMap, SortedSet}
 
 /** The Tarjan algorithm for detecting SCC is graphs
  * @author renaud.delandtsheer@cetic.be

@@ -21,14 +21,16 @@
 
 package oscar.cbls.invariants.core.computation
 
-import oscar.cbls.invariants.core.propagation.BulkPropagator
-import collection.immutable.SortedMap
-import oscar.cbls.invariants.core.propagation.Checker
+import oscar.cbls.invariants.core.propagation.{BulkPropagator, Checker}
 
+import scala.collection.immutable.SortedMap
+
+//TODO: we cannot have constants in bulked arrays, actually.
 /**Invariants over arrays can implement this trait to make it possible to bulk load their dependencies
+  *
   * @author renaud.delandtsheer@cetic.be
   * */
-trait Bulked[VarType <: Variable, BulkedComputationResult] extends Invariant {
+trait Bulked[VarType <: Value, BulkedComputationResult] extends Invariant {
 
   /**
    * registers a static dependency to all variables mentioned in the bulkedVars.
@@ -40,25 +42,25 @@ trait Bulked[VarType <: Variable, BulkedComputationResult] extends Invariant {
   final def bulkRegister(bulkedVars: Array[VarType], id: Int = 0, noBulk: Boolean = false): BulkedComputationResult = {
 
     if (noBulk) {
-      this.registerStaticDependencyAll(bulkedVars)
+      this.registerStaticDependencies(bulkedVars:_*)
       return performBulkComputation(bulkedVars)
     }
 
-    val m = this.preFinishInitialization(bulkedVars(0).model)
+    val m = this.preFinishInitialization()
     if (m == null) {
       //no bulking possible
-      this.registerStaticDependencyAll(bulkedVars)
+      this.registerStaticDependencies(bulkedVars:_*)
       performBulkComputationID(bulkedVars, id)
     } else {
       //check for existing bulk
       val identifyingString = this.getClass.getName + "/" + id
 
-      val incredibleBulk = m.getBulk(identifyingString, bulkedVars.asInstanceOf[Array[Variable]])
+      val incredibleBulk = m.getBulk(identifyingString, bulkedVars.asInstanceOf[Array[Value]])
 
       if (incredibleBulk == null) {
         //create a new bulk
         val bcr = performBulkComputation(bulkedVars)
-        val newBulk = new Bulk(m, bulkedVars.asInstanceOf[Array[Variable]], bcr)
+        val newBulk = new Bulk(m, bulkedVars.asInstanceOf[Array[Value]], bcr)
         this.registerStaticallyListenedElement(newBulk)
         m.registerBulk(identifyingString, newBulk)
         bcr
@@ -80,7 +82,7 @@ trait Bulked[VarType <: Variable, BulkedComputationResult] extends Invariant {
  * used by BulkLoad only
  * @author renaud.delandtsheer@cetic.be
  */
-class Bulk(m: Store, val bulkedVars: Array[Variable], val bulkedComputationResult: Any)
+class Bulk(m: Store, val bulkedVars: Array[Value], val bulkedComputationResult: Any)
   extends Invariant with BulkPropagator {
 
   for (dd <- bulkedVars) registerStaticallyListenedElement(dd)
@@ -97,7 +99,7 @@ trait Bulker {
 
   private var Bulked: SortedMap[String, List[Bulk]] = SortedMap.empty
 
-  def getBulk(identifyingName: String, bulkedVars: Array[Variable]): Bulk = {
+  def getBulk(identifyingName: String, bulkedVars: Array[Value]): Bulk = {
     val bulks = Bulked.getOrElse(identifyingName, null)
 
     if (bulks == null) return null

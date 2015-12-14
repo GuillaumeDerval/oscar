@@ -4,6 +4,9 @@ import oscar.cp.testUtils._
 import oscar.cp.core.CPOutcome._
 import scala.util.Random
 import oscar.cp.core.CPStore
+import oscar.cp.core.Constraint
+import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.CPOutcome
 
 class CPIntVarAdaptableSuite extends TestSuite {
 
@@ -342,7 +345,7 @@ class CPIntVarAdaptableSuite extends TestSuite {
     val values = Set(10, 11, 15, 16, 17, 20, 21, 25)
     val domain = new CPIntVarAdaptable(context, 10, 25, true)
     (10 to 25).foreach(v => if (!values.contains(v)) domain.removeValue(v))
-    println("iterator " + domain.iterator.mkString(" "))
+    //println("iterator " + domain.iterator.mkString(" "))
     assert(domain.iterator.size == 8)
     assert(domain.iterator.min == 10)
     assert(domain.iterator.max == 25)
@@ -405,7 +408,6 @@ class CPIntVarAdaptableSuite extends TestSuite {
     assert(s == values.size)
     assert(valuesArray.toSet == values)
     assert(domain.toArray.toSet == values)
-    
   }
   
   test("Copy domain and to Array with pop") {
@@ -432,10 +434,192 @@ class CPIntVarAdaptableSuite extends TestSuite {
     val s = domain.fillArray(valuesArray)
     assert(s == 3)
     assert(valuesArray.take(s).toSet == Set(2,5,7))
-    assert(domain.toArray.toSet == Set(2,5,7))
-    
+    assert(domain.toArray.toSet == Set(2,5,7))   
   }  
   
-
+  test("Restrict should restrict the domain") {
+    val context = new CPStore()
+    val variable = new CPIntVarAdaptable(context, 0, 10, true)
+    val values = Array(1, 6, 8, 7)
+    variable.restrict(values, 4)
+    variable shouldContain values
+    assert(variable.size == 4)
+    variable.restrict(values, 2)
+    variable shouldContain 1
+    variable shouldContain 6
+    assert(variable.size == 2)
+    variable.restrict(values, 1)
+    variable shouldContain 1
+    assert(variable.size == 1)
+  }
+  
+  test("Restrict should recompute min and max.") {
+    val context = new CPStore()
+    val variable = new CPIntVarAdaptable(context, 0, 10, true)
+    val values = Array(6, 3, 8, 2)
+    variable.restrict(values, 4)
+    assert(variable.min == 2)
+    assert(variable.max == 8)
+    variable.restrict(values, 2)
+    assert(variable.min == 3)
+    assert(variable.max == 6)
+    variable.restrict(values, 1)
+    assert(variable.min == 6)
+    assert(variable.max == 6)
+  }
+  
+  test("The domain should be correctly restored after using restrict") {
+    val context = new CPStore()
+    val variable = new CPIntVarAdaptable(context, 0, 10, true)
+    val values1 = Array(1, 7, 6, 8, 3)
+    val values2 = Array(1, 7, 6)
+    val values3 = Array(1)
+    context.pushState()
+    variable.restrict(values1, values1.length)
+    context.pushState()
+    variable.restrict(values2, values2.length)
+    context.pushState()
+    variable.restrict(values3, values3.length)
+    variable shouldContain values3
+    assert(variable.size == 1)
+    context.pop()
+    variable shouldContain values2
+    assert(variable.size == 3)
+    context.pop()
+    variable shouldContain values1
+    assert(variable.size == 5)
+    context.pop()
+    variable shouldContain (0 to 10)
+  }
+  
+  test("Restrict should notify removed value events") { 
+    
+    val context = new CPStore()
+    val variable = new CPIntVarAdaptable(context, 0, 10, true)
+    val removedValues = scala.collection.mutable.Set[Int]()
+    
+    class TestConstraint extends Constraint(context, "valRemoveTester") {
+      override def setup(l: CPPropagStrength): CPOutcome = {
+        variable.callValRemoveWhenValueIsRemoved(this)
+        Suspend
+      }
+      override def valRemove(x: CPIntVar, value: Int): CPOutcome = {
+        removedValues.add(value)
+        Suspend
+      }
+    }
+    
+    context.add(new TestConstraint)
+    val values1 = Array(1, 7, 6, 8, 3)
+    val values2 = Array(1, 7, 6)
+    val values3 = Array(1)
+    variable.restrict(values1, values1.length)
+    context.propagate()
+    assert(removedValues == Set(0, 2, 4, 5, 9, 10))
+    variable.restrict(values2, values2.length)
+    context.propagate()
+    assert(removedValues == Set(0, 2, 3, 4, 5, 8, 9, 10))
+    variable.restrict(values3, values3.length)
+    context.propagate()
+    assert(removedValues == Set(0, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+  }
+  
+  test("Restrict should notify on domain events") { 
+    
+    val context = new CPStore()
+    val variable = new CPIntVarAdaptable(context, 0, 10, true)
+    var n = 0
+    
+    class TestConstraint extends Constraint(context, "valRemoveTester") {
+      override def setup(l: CPPropagStrength): CPOutcome = {
+        variable.callPropagateWhenDomainChanges(this)
+        Suspend
+      }
+      override def propagate(): CPOutcome = {
+        n += 1
+        Suspend
+      }
+    }
+    
+    context.add(new TestConstraint)
+    val values1 = Array(1, 7, 6, 8, 3)
+    val values2 = Array(1, 7, 6)
+    val values3 = Array(1)
+    variable.restrict(values1, values1.length)
+    context.propagate()
+    assert(n == 1)
+    variable.restrict(values2, values2.length)
+    context.propagate()
+    assert(n == 2)
+    variable.restrict(values3, values3.length)
+    context.propagate()
+    assert(n == 3)
+  }
+  
+  test("Restrict should notify on bind events") { 
+    
+    val context = new CPStore()
+    val variable = new CPIntVarAdaptable(context, 0, 10, true)
+    var n = 0
+    
+    class TestConstraint extends Constraint(context, "valRemoveTester") {
+      override def setup(l: CPPropagStrength): CPOutcome = {
+        variable.callPropagateWhenBind(this)
+        Suspend
+      }
+      override def propagate(): CPOutcome = {
+        n += 1
+        Suspend
+      }
+    }
+    
+    context.add(new TestConstraint)
+    val values1 = Array(1, 7, 6, 8, 3)
+    val values2 = Array(1, 7, 6)
+    val values3 = Array(1)
+    variable.restrict(values1, values1.length)
+    context.propagate()
+    assert(n == 0)
+    variable.restrict(values2, values2.length)
+    context.propagate()
+    assert(n == 0)
+    variable.restrict(values3, values3.length)
+    context.propagate()
+    assert(n == 1)
+  }
+  
+  test("Restrict should notify on bound events") { 
+    
+    val context = new CPStore()
+    val variable = new CPIntVarAdaptable(context, 0, 10, true)
+    var n = 0
+    
+    class TestConstraint extends Constraint(context, "valRemoveTester") {
+      override def setup(l: CPPropagStrength): CPOutcome = {
+        variable.callPropagateWhenBoundsChange(this); Suspend
+      }
+      override def propagate(): CPOutcome = {
+        n += 1; Suspend
+      }
+    }
+    
+    context.add(new TestConstraint)
+    val values1 = Array(1, 7, 6, 8, 3)
+    val values2 = Array(1, 7, 6)
+    val values3 = Array(1, 7)
+    val values4 = Array(1)
+    variable.restrict(values1, values1.length)
+    context.propagate()
+    assert(n == 1)
+    variable.restrict(values2, values2.length)
+    context.propagate()
+    assert(n == 2)
+    variable.restrict(values3, values3.length)
+    context.propagate()
+    assert(n == 2)
+    variable.restrict(values4, values4.length)
+    context.propagate()
+    assert(n == 3)
+  }
   
 }

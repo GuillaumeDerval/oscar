@@ -50,7 +50,7 @@ class TestCubes extends TestSuite  {
       }
       cp.start().nSols
     }
-    for (cons <- CPPropagStrength.values) {
+    for (cons <- CPPropagStrength.values) {     
       assert(nSol(cons) == 24)
     }
     

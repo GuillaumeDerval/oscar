@@ -36,26 +36,26 @@ object test extends SearchEngine {
     val m: Store = new Store
 
     val min = 0
-    val max = 100
+    val max = 10000
 
-    val a:CBLSIntVar = CBLSIntVar(m, min, max, 9, "a")
-    val b:CBLSIntVar = CBLSIntVar(m, min, max, 5, "b")
-    val c:CBLSIntVar = CBLSIntVar(m, min, max, 6, "c")
-    val d:CBLSIntVar = CBLSIntVar(m, min, max, 6, "d")
-    val e:CBLSSetVar = new CBLSSetVar(m, min, max, "e", SortedSet.empty[Int])
+    val a:CBLSIntVar = CBLSIntVar(m, 9, min to max, "a")
+    val b:CBLSIntVar = CBLSIntVar(m, 5, min to max, "b")
+    val c:CBLSIntVar = CBLSIntVar(m, 6, min to max, "c")
+    val d:CBLSIntVar = CBLSIntVar(m, 6, min to max, "d")
+    val e:CBLSSetVar = new CBLSSetVar(m, SortedSet.empty[Int], min to max, "e")
 
     d <== (5 + c + 5 + (b * (4 - 3)))
     c <== a + b //Sum(SortedSet(a, b))
     e <== Inter(MakeSet(SortedSet(a, b)), MakeSet(SortedSet(b, c)))
     val Const5 = CBLSIntConst(5)
-    val f:CBLSIntVar = MaxArray(SortedSet(a,b,c,d).toArray) + MinLin(SortedSet(Abs(a),b,Const5,d))
-    val g:CBLSIntVar = MaxLin(SortedSet(a,b,c,d))
+    val f = MaxArray(SortedSet(a,b,c,d).toArray) + MinLin(SortedSet(Abs(a),b,Const5,d))
+    val g = MaxLin(SortedSet(a,b,c,d))
 
-    val h:CBLSSetVar = ArgMinArray(Array(a,d,b,d,c,d - 1))
+    val h = ArgMin(Array(a,d,b,d,c,d - 1))
   
-    Event(h,{println("Trigger: h changed: " + h)})
-    val k:CBLSIntVar = Cardinality(h)
-    Event(k,{println("Trigger: k changed: " + k)})
+//    Event(h,{println("Trigger: h changed: " + h)})
+    val k = Cardinality(h)
+//    Event(k,{println("Trigger: k changed: " + k)})
 
     Event(c,{println("Trigger: c changed: " + c)})
 

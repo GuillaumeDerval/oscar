@@ -49,6 +49,8 @@ class TestRostering extends FunSuite with ShouldMatchers  {
 
     val cp = CPSolver()
 
+    cp.silent=true
+
     val activities = Array.tabulate(nbPersons, nbSlots)((p, t) => CPIntVar(possibleActivities(p))(cp))
 
     val underDemand = Array.tabulate(nbSlots)(t => CPIntVar(0 to nbPersons)(cp))
@@ -64,7 +66,7 @@ class TestRostering extends FunSuite with ShouldMatchers  {
     val maxCap = Array.fill(nbActivities)(nbPersons)
     for (t <- 0 until nbSlots) {
       val act_t = Array.tabulate(nbPersons)(p => activities(p)(t))
-      cp.add(new oscar.cp.constraints.SoftGCC(act_t, 0, demand(t), maxCap, totUnderDemand))
+      cp.add(new oscar.cp.constraints.SoftGCCAC(act_t, 0, demand(t), maxCap, totUnderDemand))
     }
 
     cp.minimize(totUnderDemand) search {

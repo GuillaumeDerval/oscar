@@ -22,10 +22,8 @@
 
 package oscar.cbls.invariants.lib.logic
 
-import collection.immutable.SortedSet
 import oscar.cbls.invariants.core.computation._
-import oscar.cbls.invariants.core.propagation.{ Checker, KeyForElementRemoval }
-import scala.collection.immutable.Set
+import oscar.cbls.invariants.core.propagation.{Checker, KeyForElementRemoval}
 
 /**
  * if (ifVar > pivot) then thenVar else elveVar
@@ -34,41 +32,33 @@ import scala.collection.immutable.Set
  * @param elseVar the returned value if ifVar <= pivot
  * @author renaud.delandtsheer@cetic.be
  * */
-case class IntITE(ifVar: CBLSIntVar, thenVar: CBLSIntVar, elseVar: CBLSIntVar, pivot: Int = 0) extends IntInvariant {
+case class IntITE(ifVar: IntValue, thenVar: IntValue, elseVar: IntValue, pivot: Int = 0)
+  extends IntInvariant(if(ifVar.value > pivot) thenVar.value else elseVar.value, thenVar.domain union elseVar.domain)
+  with VaryingDependencies {
 
-  var output: CBLSIntVar = null
   var KeyToCurrentVar: KeyForElementRemoval = null
 
   registerStaticDependencies(ifVar, thenVar, elseVar)
   registerDeterminingDependency(ifVar)
-  KeyToCurrentVar = registerDynamicDependency((if (ifVar.value > pivot) thenVar else elseVar))
+  KeyToCurrentVar = registerDynamicDependency(if (ifVar.value > pivot) thenVar else elseVar)
   finishInitialization()
 
-  def myMax = thenVar.maxVal.max(elseVar.maxVal)
-  def myMin = thenVar.minVal.min(elseVar.minVal)
-
-  override def setOutputVar(v: CBLSIntVar) {
-    output = v
-    output.setDefiningInvariant(this)
-    output := (if (ifVar.value > pivot) thenVar else elseVar).value
-  }
-
   @inline
-  override def notifyIntChanged(v: CBLSIntVar, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
     if (v == ifVar) {
-      if (NewVal > 0 && OldVal <= 0) {
+      if (NewVal > pivot && OldVal <= pivot) {
         //modifier le graphe de dependances
-        unregisterDynamicDependency(KeyToCurrentVar)
+        KeyToCurrentVar.performRemove()
         KeyToCurrentVar = registerDynamicDependency(thenVar)
-        output := thenVar.value
-      } else if (NewVal <= 0 && OldVal > 0) {
+        this := thenVar.value
+      } else if (NewVal <= pivot && OldVal > pivot) {
         //modifier le graphe de dependances
-        unregisterDynamicDependency(KeyToCurrentVar)
+        KeyToCurrentVar.performRemove()
         KeyToCurrentVar = registerDynamicDependency(elseVar)
-        output := elseVar.value
+        this := elseVar.value
       }
     } else { //si c'est justement celui qui est affiche.
-      output := NewVal
+      this := NewVal
     }
   }
 
@@ -77,12 +67,15 @@ case class IntITE(ifVar: CBLSIntVar, thenVar: CBLSIntVar, elseVar: CBLSIntVar, p
   }
 
   override def checkInternals(c: Checker) {
-    c.check(output.value == (if (ifVar.value <= 0) elseVar.value else thenVar.value),
-      Some("output.value (" + output.value
-        + ") == (if (ifVar.value (" + ifVar.value + ") <= 0) elseVar.value (" + elseVar.value
+    c.check(this.value == (if (ifVar.value <= pivot) elseVar.value else thenVar.value),
+      Some("output.value (" + this.value
+        + ") == (if (ifVar.value (" + ifVar.value + ") <= " + pivot + ") elseVar.value (" + elseVar.value
         + ") else thenVar.value (" + thenVar.value + "))"))
   }
 }
+
+case class ConstantIntElement(index: IntValue, inputArray: Array[Int])
+  extends Int2Int(index, inputArray(_), InvariantHelper.getMinMaxRangeInt(inputArray))
 
 /**
  * inputarray[index]
@@ -90,49 +83,40 @@ case class IntITE(ifVar: CBLSIntVar, thenVar: CBLSIntVar, elseVar: CBLSIntVar, p
  * @param index is the index accessing the array
  * @author renaud.delandtsheer@cetic.be
  * */
-case class IntElement(index: CBLSIntVar, inputarray: Array[CBLSIntVar])
-  extends IntInvariant with Bulked[CBLSIntVar, ((Int, Int))] {
-
-  var output: CBLSIntVar = null
-  var KeyToCurrentVar: KeyForElementRemoval = null
+case class IntElement(index: IntValue, inputarray: Array[IntValue])
+  extends IntInvariant(initialValue = inputarray(index.value).value)
+  with Bulked[IntValue, Domain]
+  with VaryingDependencies {
 
   registerStaticDependency(index)
   registerDeterminingDependency(index)
 
-  val (myMin, myMax) = bulkRegister(inputarray)
+  restrictDomain(bulkRegister(inputarray))
 
-  KeyToCurrentVar = registerDynamicDependency(inputarray(index.value))
+  var KeyToCurrentVar = registerDynamicDependency(inputarray(index.value))
 
   finishInitialization()
 
-  override def performBulkComputation(bulkedVar: Array[CBLSIntVar]): (Int, Int) = {
-    InvariantHelper.getMinMaxBounds(bulkedVar)
-  }
-
-  override def setOutputVar(v: CBLSIntVar) {
-    v.minVal = myMin;
-    v.maxVal = myMax;
-    output = v
-    output.setDefiningInvariant(this)
-    output := inputarray.apply(index.value).value
+  override def performBulkComputation(bulkedVar: Array[IntValue]): Domain = {
+    InvariantHelper.getMinMaxRange(bulkedVar)
   }
 
   @inline
-  override def notifyIntChanged(v: CBLSIntVar, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
     if (v == index) {
       //modifier le graphe de dependances
-      unregisterDynamicDependency(KeyToCurrentVar)
+      KeyToCurrentVar.performRemove()
       KeyToCurrentVar = registerDynamicDependency(inputarray(NewVal))
-      output := inputarray(NewVal).value
+      this := inputarray(NewVal).value
     } else { //si c'est justement celui qui est affiche.
       assert(v == inputarray.apply(index.value), "access notified for non listened var")
-      output := NewVal
+      this := NewVal
     }
   }
 
   override def checkInternals(c: Checker) {
-    c.check(output.value == inputarray(index.value).value,
-      Some("output.value (" + output.value + ") == inputarray(index.value ("
+    c.check(this.value == inputarray(index.value).value,
+      Some("output.value (" + this.value + ") == inputarray(index.value ("
         + index.value + ")).value (" + inputarray(index.value).value + ")"))
   }
 
@@ -147,52 +131,81 @@ case class IntElement(index: CBLSIntVar, inputarray: Array[CBLSIntVar])
 }
 
 /**
+ * inputarray[index]
+ * @param inputarray is an array of Int
+ * @param index is the index accessing the array (its value must be always inside the array range)
+ * @author renaud.delandtsheer@cetic.be
+ * @author jean-noel.monette@it.uu.se
+ * */
+case class IntElementNoVar(index: IntValue, inputarray: Array[Int])
+  extends IntInvariant(initialValue = inputarray(index.value),DomainRange(inputarray.min,inputarray.max)) {
+
+  registerStaticAndDynamicDependency(index)
+  finishInitialization()
+
+  @inline
+  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
+   // println(OldVal + " "+ NewVal)
+    this := inputarray(NewVal)
+  }
+
+  override def checkInternals(c: Checker) {
+    c.check(this.value == inputarray(index.value),
+      Some("output.value (" + this.value + ") == inputarray(index.value ("
+        + index.value + ")) (" + inputarray(index.value) + ")"))
+  }
+
+  override def toString: String = {
+    val inputs = inputarray.toList
+    if(inputs.length > 4){
+      "Array(" +inputs.take(4).map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "] = " + this.value
+    }else{
+      "Array(" +inputs.map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "] = " + this.value
+    }
+  }
+}
+
+/**
  * Union(i in index) (array[i])
  * @param index is an IntSetVar denoting the set of positions in the array to consider
  * @param inputarray is the array of intvar that can be selected by the index
  * @author renaud.delandtsheer@cetic.be
  * */
-case class Elements(index: CBLSSetVar, inputarray: Array[CBLSIntVar])
-  extends SetInvariant with Bulked[CBLSIntVar, ((Int, Int))] {
+case class Elements[T <:IntValue](index: SetValue, inputarray: Array[T])
+  extends SetInvariant
+  with Bulked[T, Domain]
+  with VaryingDependencies {
 
-  var output: CBLSSetVar = null
-  val KeysToInputArray: Array[KeyForElementRemoval] = new Array(inputarray.size)
-
-  //this array is the number of elements with value i-myMin
-  var ValueCount: Array[Int] = null
+  val KeysToInputArray: Array[KeyForElementRemoval] = new Array(inputarray.length)
 
   registerStaticDependency(index)
   registerDeterminingDependency(index)
 
-  val (myMin, myMax) = bulkRegister(inputarray)
+  restrictDomain(bulkRegister(inputarray))
+
   for (v <- index.value) KeysToInputArray(v) = registerDynamicDependency(inputarray(v), v)
 
   finishInitialization()
 
-  override def performBulkComputation(bulkedVar: Array[CBLSIntVar]): (Int, Int) =
-    InvariantHelper.getMinMaxBounds(bulkedVar)
+  //this array is the number of elements with value i-myMin
+  var ValueCount: Array[Int] = Array.tabulate(max-min+1)(_ => 0)
 
-  override def setOutputVar(v: CBLSSetVar) {
-    output = v
-    output.setDefiningInvariant(this)
-
-    ValueCount = Array.tabulate(myMax - myMin + 1)(_ => 0)
-
-    output := SortedSet.empty
-    for (arrayPosition <- index.value) {
-      val value = inputarray(arrayPosition).value
-      internalInsert(value)
-    }
+  for (arrayPosition <- index.value) {
+    val value = inputarray(arrayPosition).value
+    internalInsert(value)
   }
 
+  override def performBulkComputation(bulkedVar: Array[T]): Domain =
+    InvariantHelper.getMinMaxRange(bulkedVar)
+
   @inline
-  override def notifyIntChanged(v:CBLSIntVar,OldVal:Int,NewVal:Int){
+  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
     internalDelete(OldVal)
     internalInsert(NewVal)
   }
 
   @inline
-  override def notifyInsertOn(v: CBLSSetVar, value: Int) {
+  override def notifyInsertOn(v: ChangingSetValue, value: Int) {
     assert(index == v)
     KeysToInputArray(value) = registerDynamicDependency(inputarray(value))
     val NewVal: Int = inputarray(value).value
@@ -201,11 +214,11 @@ case class Elements(index: CBLSSetVar, inputarray: Array[CBLSIntVar])
   }
 
   @inline
-  override def notifyDeleteOn(v: CBLSSetVar, value: Int) {
+  override def notifyDeleteOn(v: ChangingSetValue, value: Int) {
     assert(index == v)
     assert(KeysToInputArray(value) != null)
 
-    unregisterDynamicDependency(KeysToInputArray(value))
+    KeysToInputArray(value).performRemove()
     KeysToInputArray(value) = null
 
     val OldVal:Int = inputarray(value).value
@@ -214,33 +227,33 @@ case class Elements(index: CBLSSetVar, inputarray: Array[CBLSIntVar])
   }
 
   private def internalInsert(value:Int){
-    if (ValueCount(value - myMin) == 0){
-      ValueCount(value - myMin) = 1
-      output :+= value
+    if (ValueCount(value - min) == 0){
+      ValueCount(value - min) = 1
+      this :+= value
     }else{
-      ValueCount(value - myMin) += 1
+      ValueCount(value - min) += 1
     }
-    assert(ValueCount(value - myMin) > 0)
+    assert(ValueCount(value - min) > 0)
   }
 
   private def internalDelete(value:Int){
-    assert(ValueCount(value - myMin) > 0)
-    if (ValueCount(value - myMin) == 1){
-      ValueCount(value - myMin) = 0
-      output :-= value
+    assert(ValueCount(value - min) > 0)
+    if (ValueCount(value - min) == 1){
+      ValueCount(value - min) = 0
+      this :-= value
     }else{
-      ValueCount(value - myMin) -= 1
+      ValueCount(value - min) -= 1
     }
   }
 
   override def checkInternals(c: Checker) {
-    c.check(KeysToInputArray.indices.forall(i => ((KeysToInputArray(i) != null) == index.value.contains(i))),
+    c.check(KeysToInputArray.indices.forall(i => (KeysToInputArray(i) != null) == index.value.contains(i)),
       Some("KeysToInputArray.indices.forall(i => ((KeysToInputArray(i) != null) == index.value.contains(i)))"))
     c.check(index.value.forall((i: Int) =>
-      output.value.contains(inputarray(i).value)),
+      this.value.contains(inputarray(i).value)),
       Some("index.value.forall((i: Int) => output.value.contains(inputarray(i).value))"))
-    c.check(output.value.size <= index.value.size,
-      Some("output.value.size (" + output.value.size + ") <= index.value.size (" + index.value.size + ")"))
+    c.check(this.value.size <= index.value.size,
+      Some("output.value.size (" + this.value.size + ") <= index.value.size (" + index.value.size + ")"))
   }
 
   override def toString: String = {
@@ -259,57 +272,50 @@ case class Elements(index: CBLSSetVar, inputarray: Array[CBLSIntVar])
  * @param index is the index of the array access
  * @author renaud.delandtsheer@cetic.be
  * */
-case class SetElement(index: CBLSIntVar, inputarray: Array[CBLSSetVar])
-  extends SetInvariant with Bulked[CBLSSetVar, ((Int, Int))] {
+case class SetElement(index: IntValue, inputarray: Array[SetValue])
+  extends SetInvariant(inputarray.apply(index.value).value) with Bulked[SetValue, Domain] with VaryingDependencies {
 
-  var output: CBLSSetVar = null
   var KeyToCurrentVar: KeyForElementRemoval = null
 
   registerStaticDependency(index)
   registerDeterminingDependency(index)
 
-  val (myMin, myMax) = bulkRegister(inputarray)
+  restrictDomain(bulkRegister(inputarray))
 
   KeyToCurrentVar = registerDynamicDependency(inputarray(index.value))
 
   finishInitialization()
 
-  override def performBulkComputation(bulkedVar: Array[CBLSSetVar]): (Int, Int) =
-    InvariantHelper.getMinMaxBoundsIntSetVar(bulkedVar)
-
-  override def setOutputVar(v: CBLSSetVar) {
-    output = v
-    output.setDefiningInvariant(this)
-    output := inputarray.apply(index.value).value
-  }
+  override def performBulkComputation(bulkedVar: Array[SetValue]): Domain =
+    InvariantHelper.getMinMaxBoundsSet(bulkedVar)
 
   @inline
-  override def notifyIntChanged(v: CBLSIntVar, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
     assert(v == index)
     //modifier le graphe de dependances
-    unregisterDynamicDependency(KeyToCurrentVar)
+    KeyToCurrentVar.performRemove()
     KeyToCurrentVar = registerDynamicDependency(inputarray(NewVal))
-    output := inputarray(NewVal).value
+    this := inputarray(NewVal).value
   }
 
   @inline
-  override def notifyDeleteOn(v: CBLSSetVar, value: Int) {
+  override def notifyDeleteOn(v: ChangingSetValue, value: Int) {
     assert(v == inputarray.apply(index.value))
-    output.deleteValue(value)
+    this.deleteValue(value)
   }
 
   @inline
-  override def notifyInsertOn(v: CBLSSetVar, value: Int) {
+  override def notifyInsertOn(v: ChangingSetValue, value: Int) {
     assert(v == inputarray.apply(index.value))
-    output.insertValue(value)
+    this.insertValue(value)
   }
 
   override def checkInternals(c: Checker) {
-    c.check(output.value.intersect(inputarray(index.value).value).size == output.value.size,
+    c.check(this.value.intersect(inputarray(index.value).value).size == this.value.size,
       Some("output.value.intersect(inputarray(index.value (" + index.value + ")).value ("
         + inputarray(index.value).value + ")).size ("
-        + output.value.intersect(inputarray(index.value).value).size
-        + ") == output.value.size (" + output.value.size + ")"))
+        + this.value.intersect(inputarray(index.value).value).size
+        + ") == output.value.size (" + this.value.size + ")"))
   }
 
   override def toString: String = {

@@ -24,99 +24,39 @@
 
 package oscar.cbls.routing.neighborhood
 
-import oscar.cbls.search.SearchEngineTrait
-import oscar.cbls.search.SearchEngine
-import oscar.cbls.modeling.Algebra._
 import oscar.cbls.routing.model._
+import oscar.cbls.search.combinators.AndThen
+import oscar.cbls.search.move.Move
+
+import scala.collection.immutable.SortedSet
 
 /**
- * Swaps a routed point and an unrouted point.
+ * inserts a non routed point, and removes a routed point from the same route
+ *
  * The search complexity is O(n²).
  * @author yoann.guyot@cetic.be
+ *
+ *         THIS IS EXPERIMENTAL
  */
-object SwapInsert extends Neighborhood with SearchEngineTrait {
-  /**
-   * Does the search and stops at first improving move.
-   * @param s the search zone, including the VRP that we are examining
-   * @param returnMove true: returns first improving move, false: performs first improving move
-   * @return
-   */
-  override protected def doSearch(
-    s: SearchZone,
-    moveAcceptor: (Int) => (Int) => Boolean,
-    returnMove: Boolean): SearchResult = {
+case class SwapInsert(unroutedNodesToInsert:()=>Iterable[Int],
+                      relevantNeighbors:()=>Int=>Iterable[Int],
+                      val vrp: VRP with NodesOfVehicle,
+                      val neighborhoodName:String = null,
+                      val best:Boolean = false,
+                      var insertionPoints:SortedSet[Int] = null)
+  extends AndThen(
+    new InsertPoint(unroutedNodesToInsert, relevantNeighbors, vrp, "SwapInsert.Insert"),
+    new RemovePoint(() => insertionPoints,vrp, "SwapInsert.Remove", false, false)){
 
-    val startObj: Int = s.vrp.getObjective()
-    s.vrp.cleanRecordedMoves()
-    val vrp = s.vrp
-
-    while (s.primaryNodeIterator.hasNext) {
-      val beforeMovedPoint: Int = s.primaryNodeIterator.next()
-      //      println("BOUCLE1: beforeMovedPoint = " + beforeMovedPoint)
-      if (vrp.isRouted(beforeMovedPoint)) {
-
-        val movedPoint = vrp.next(beforeMovedPoint).value
-        //        println("movedPoint = " + movedPoint)
-
-        for (
-          unroutedPoint <- (s.relevantNeighbors(beforeMovedPoint) ++ s.relevantNeighbors(movedPoint))
-          //format: OFF (to prevent eclipse from formatting the following lines)
-          if (!vrp.isRouted(unroutedPoint)
-              && (!vrp.isADepot(movedPoint)))
-        //format: ON
-        ) {
-          //          println("BOUCLE2: unroutedPoint = " + unroutedPoint)
-          //          print("VRP before encode dans la boucle de recherche: ")
-          //          println(vrp)
-
-          encode(beforeMovedPoint, unroutedPoint, vrp)
-
-          checkEncodedMove(moveAcceptor(startObj), !returnMove, vrp) match {
-            case (true, newObj: Int) => { //this improved
-              if (returnMove) {
-                val move = SwapInsert(beforeMovedPoint, unroutedPoint, newObj, vrp)
-                return MoveFound(move)
-              } else {
-                return MovePerformed()
-              }
-            }
-            case (false, _) => ()
-          }
-        }
-      }
+  /** this method is called by AndThen to notify the first step, and that it is now exploring successors of this step.
+    * this method is called before the step is actually taken.
+    * @param m
+    */
+  override def notifyFirstStep(m: Move){
+    m match{
+      case i:InsertPointMove =>
+        val vehicle = vrp.routeNr(i.beforeInsertedPoint).value
+        insertionPoints = vrp.nodesOfVehicle(vehicle).value
     }
-    NoMoveFound()
   }
-
-  def encode(beforeMovedPoint: Int, unroutedPoint: Int, vrp: VRP with MoveDescription) {
-    val cutSeg = vrp.cutNodeAfter(beforeMovedPoint)
-    vrp.unroute(cutSeg)
-    val newSeg = vrp.segmentFromUnrouted(unroutedPoint)
-    vrp.insert(newSeg, beforeMovedPoint)
-  }
-
-  override def toString: String = "swap-insert"
-}
-
-/**
- * Models a swap-insert move of a given VRP problem.
- * @param beforeMovedPoint the predecessor of the point that will be unrouted.
- * @param unroutedPoint the point that will be routed.
- * @param objAfter the objective value if we performed this swap-insert move.
- * @param vrp the given VRP problem.
- * @author yoann.guyot@cetic.be
- * */
-case class SwapInsert(
-  beforeMovedPoint: Int,
-  unroutedPoint: Int,
-  override val objAfter: Int,
-  override val vrp: VRP with MoveDescription) extends Move(objAfter, vrp) {
-  // overriding methods
-  def encodeMove() {
-    SwapInsert.encode(beforeMovedPoint, unroutedPoint, vrp)
-  }
-
-  override def toString: String = (
-    "SwapInsert(first point predecessor = " + beforeMovedPoint
-    + ", point to be routed = " + unroutedPoint + " )")
 }

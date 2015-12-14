@@ -43,8 +43,8 @@ class TestArithmetics extends FunSuite with ShouldMatchers  {
     cp.add(jb >= 0)
     cp.add(jb <  n)
 
-    println(ia)
-    println(jb)
+    //println(ia)
+    //println(jb)
     val ix2 = (ia)*n + (jb) // what is the index of k+1
     
     //println(ix2)

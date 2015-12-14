@@ -25,7 +25,7 @@ import oscar.cbls.objective.Objective
   *                 you must set it to Int.MaxValue or just do not specify it, as it is the default value
   *                 we did not use an option there because there would anyway be a need
   *                 for arithmetic on this option in combinators suh as [[oscar.cbls.search.combinators.Best]]
-  *                 Many combinators actually rely on this value to take decisions (eg: [[oscar.cbls.search.combinators.ProtectBest]] and [[oscar.cbls.search.combinators.Best]]
+  *                 Many combinators actually rely on this value to take decisions (eg: [[oscar.cbls.search.combinators.SaveBest]] and [[oscar.cbls.search.combinators.Best]]
   * @param neighborhoodName the name of the neighborhood that generated this move, used for pretty printing purpose.
   *                         Notice that the name is not the type of the neighborhood.
   * @author renaud.delandtsheer@cetic.be
@@ -48,7 +48,7 @@ abstract class Move(val objAfter:Int = Int.MaxValue, val neighborhoodName:String
    */
   def objToString:String = if(objAfter == Int.MaxValue) "" else "; objAfter:" +objAfter
 
-  protected def neighborhoodNameToString:String = if (neighborhoodName != null) neighborhoodName + ": " else ""
+  protected def neighborhoodNameToString:String = if (neighborhoodName != null) neighborhoodName + ":" else ""
 
   /** this performs the move, evaluates he objective function, and backtracks the move
     *notice that the objAfter is supposed to carry the proper value, so you generally do not need to call this
@@ -58,11 +58,11 @@ abstract class Move(val objAfter:Int = Int.MaxValue, val neighborhoodName:String
     * @return the value of the objective function if the move were taken
     */
   def evaluate(obj:Objective):Int = {
-    val model = obj.objective.model
+    val model = obj.model
     val snapshot = model.saveValues(touchedVariables:_*)
     commit()
     val toReturn = obj.value
-    model.restoreSnapshot(snapshot)
+    model.restoreSolution(snapshot)
     toReturn
   }
 }
@@ -220,7 +220,7 @@ object CallBackMove{
   *                 you must set it to Int.MaxValue or just do not specify it, as it is the default value
   *                 we did not use an option there because there would anyway be a need
   *                 for arithmetic on this option in combinators suh as [[oscar.cbls.search.combinators.Best]]
-  *                 Many combinators actually rely on this value to take decisions (eg: [[oscar.cbls.search.combinators.ProtectBest]] and [[oscar.cbls.search.combinators.Best]]
+  *                 Many combinators actually rely on this value to take decisions (eg: [[oscar.cbls.search.combinators.SaveBest]] and [[oscar.cbls.search.combinators.Best]]
   * @param neighborhoodName the name of the neighborhood that generated this move, used for pretty printing purpose.
   *                         Notice that the name is not the type of the neighborhood.
   * @param shortDescription a description of whet the move does (since it cannot be inferred from the name of the neighborhood as for [[AssignMove]] for instance)

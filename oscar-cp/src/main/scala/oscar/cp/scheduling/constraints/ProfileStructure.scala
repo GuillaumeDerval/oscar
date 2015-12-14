@@ -12,7 +12,7 @@ import oscar.algo.array.ArrayStack
 // Then rebuild profile
 // Finally sweep all relevant activities
 
-class ProfileStructure(
+final class ProfileStructure(
    smin: Array[Int], 
    smax: Array[Int], 
    dmin: Array[Int],
@@ -22,8 +22,7 @@ class ProfileStructure(
    required: Array[Boolean], 
    possible: Array[Boolean])(implicit val store: CPStore) {
 
-  private[this] final val nTasks = smax.length
-//  private final val Tasks = 0 until nTasks
+  private[this] val nTasks = smax.length
 
   private[this] val pointTimes = Array.ofDim[Int](nTasks * 2 + 2)  // one point for origin of times, one for ending
   private[this] val pointHeights = Array.ofDim[Int](nTasks * 2 + 2)
@@ -33,165 +32,180 @@ class ProfileStructure(
   pointTimes(0) = Int.MinValue
   pointHeights(0) = 0
 
-  private[this] val sortedByStarts = Array.tabulate(nTasks)(i => i)
-  private[this] val sortedByEnds   = Array.tabulate(nTasks)(i => i)
-  private var nSorted = 0
-
-  private[this] val startVals = Array.ofDim[Int](nTasks)
-  private[this] val endVals = Array.ofDim[Int](nTasks)
-  
   // for mergeSort
-  private val temp1 = Array.ofDim[Int](nTasks + 1)
-  private val temp2 = Array.ofDim[Int](nTasks + 1)
+  private[this] val temp1 = Array.ofDim[Int](nTasks + 1)
+  private[this] val temp2 = Array.ofDim[Int](nTasks + 1)
+
+  // events
+  private[this] val sortedBySMax = Array.tabulate(nTasks)(i => i)
+  private[this] val sortedByEMin = Array.tabulate(nTasks)(i => i)
+  private var nSorted = 0
   
-  private[this] val sortedByStartsStart = new ReversibleInt(store, 0)
-  private[this] val sortedByStartsEnd   = new ReversibleInt(store, nTasks)
-  private[this] val sortedByEndsStart   = new ReversibleInt(store, 0)
-  private[this] val sortedByEndsEnd     = new ReversibleInt(store, nTasks)
-
-  def rebuild2(toConsider: OpenSparseSet): Unit = {
-    // Reset
-    nPoints = 1
-    
-    val smax = this.smax
-    val emin = this.emin
-
-    // Sort all tasks, useful or not
-    var startsStart = sortedByStartsStart.value
-    var endsStart   = sortedByEndsStart.value
-    
-    SortUtils.mergeSort(sortedByStarts, smax, startsStart, nTasks, temp1, temp2)
-    SortUtils.mergeSort(sortedByEnds,   emin, endsStart,   nTasks, temp1, temp2)
-
-    val status = toConsider.status
-    val limit  = toConsider.limit.value
-    
-    while (startsStart < nTasks && 
-           status(sortedByStarts(startsStart)) >= limit)
-      startsStart += 1
-    sortedByStartsStart.setValue(startsStart)
-
-    while (endsStart < nTasks && 
-           status(sortedByEnds(endsStart)) >= limit)
-      endsStart += 1
-    sortedByEndsStart.setValue(endsStart)
-
-    var s = startsStart // next start
-    var e = endsStart // next end
-    var t = Int.MinValue // sweep-line
-    var h = 0 // profile height
-    
-    while (e < nTasks) {
-      val prevH = h
-
-      // Move the sweep-line
-      t = emin(sortedByEnds(e))
-      if (s < nTasks) {
-        val start = smax(sortedByStarts(s))
-        if (start < t) t = start
-      }
-
-      // Process SCP
-      while (s < nTasks && smax(sortedByStarts(s)) == t) {
-        val ss = sortedByStarts(s)
-        if (required(ss) && status(ss) < limit && smax(ss) < emin(ss))  h += hmin(ss)
-        s += 1
-      }
-
-      // Process ECP
-      while (e < nTasks && emin(sortedByEnds(e)) == t) {
-        val ee = sortedByEnds(e)
-        if (required(ee) && status(ee) < limit && smax(ee) < emin(ee))  h -= hmin(ee)
-        e += 1
-      }
-
-      // If the profile has changed
-      if (h != prevH) {
-        pointTimes(nPoints) = t
-        pointHeights(nPoints) = h
-        nPoints += 1
-      }
-    }
-    // add end of time
-    pointTimes(nPoints) = Int.MaxValue
-    pointHeights(nPoints) = 0
-    nPoints += 1
-  }
-
+  private[this] val filteredBySMax = new Array[Int](nTasks)
+  private[this] val filteredByEMin = new Array[Int](nTasks)
+  private[this] val location = new Array[Int](nTasks)
+  
+  // range of indexes of interest in sortedBySMax = [smaxMin, smaxMax[
+  // indexes outside are in toConsider
+  // this is kept incrementally
+  private[this] val smaxMinToConsider = new ReversibleInt(store, 0)
+  private[this] val smaxMaxToConsider = new ReversibleInt(store, nTasks)
+  
+  // same for emin
+  private[this] val eminMinToConsider = new ReversibleInt(store, 0)
+  private[this] val eminMaxToConsider = new ReversibleInt(store, nTasks)
+  
   
   def rebuild(toConsider: OpenSparseSet): Unit = {
+    /*
+     *  Filter tasks by toConsider + has mandatory part, sort, then generate events
+     */
+    
     // Reset
     nPoints = 1
     nSorted = 0
-
-    // TODO: remove need for sorting here if mergesort becomes a bottleneck/costly
-        
-    // Compute only profile events to consider
-    val acts = toConsider.sortedByStatus
-    var p = toConsider.limit.value - 1
-    while (p >= 0) {
-      val i = acts(p)
-      if (required(i) && hmin(i) > 0) {
-        val start = smax(i)
-        val end = emin(i)
-      
-        if (start < end) {
-          sortedByStarts(nSorted) = i
-          sortedByEnds(nSorted) = i
-          startVals(i) = start
-          endVals(i) = end
-          nSorted += 1
-        }
-      }
+    
+    val status = toConsider.status
+    val limit = toConsider.limit.value
+    
+    // filter and sort smax events
+    var smaxMin = smaxMinToConsider.value
+    var smaxMax = smaxMaxToConsider.value
+    val oldSMaxMin = smaxMin
+    var continue = true
+    
+    while (smaxMin < smaxMax && continue) {
+      val task = sortedBySMax(smaxMin)
+      if (status(task) < limit) continue = false
+      else smaxMin += 1
+    }
+    if (smaxMin > oldSMaxMin) smaxMinToConsider.setValue(smaxMin)
+    
+    val oldSMaxMax = smaxMax
+    continue = true
+    smaxMax -= 1
+    while (smaxMin < smaxMax && continue) {
+      val task = sortedBySMax(smaxMax)
+      if (status(task) < limit) continue = false
+      else smaxMax -= 1
+    }
+    smaxMax += 1
+    if (smaxMax < oldSMaxMax) smaxMaxToConsider.setValue(smaxMax)
+    
+    var p = smaxMin 
+    var q = 0
+    
+    // filter
+    while (p < smaxMax) {
+      val task = sortedBySMax(p)
+      if (status(task) < limit && smax(task) < emin(task) && required(task) && hmin(task) > 0) {
+        filteredBySMax(q) = task
+        location(q) = p
+        q += 1        
+      } 
+     p += 1
+    }    
+    
+    // sort 
+    SortUtils.mergeSort(filteredBySMax, smax, 0, q, temp1, temp2)
+    
+    // put tasks back sorted for mergeSort's incremental behaviour
+    p = q
+    while (p > 0) {
       p -= 1
+      sortedBySMax(location(p)) = filteredBySMax(p) 
     }
 
-    // Sort events
-    SortUtils.mergeSort(sortedByStarts, startVals, 0, nSorted, temp1, temp2)
-    SortUtils.mergeSort(sortedByEnds,   endVals,   0, nSorted, temp1, temp2)
+    // filter and sort emin events
+    var eminMin = eminMinToConsider.value
+    var eminMax = eminMaxToConsider.value
+    val oldEMinMin = eminMin
+    continue = true
+    
+    while (eminMin < eminMax && continue) {
+      val task = sortedByEMin(eminMin)
+      if (status(task) < limit) continue = false
+      else eminMin += 1
+    }
+    if (eminMin > oldEMinMin) eminMinToConsider.setValue(eminMin)
+    
+    val oldEMinMax = eminMax
+    continue = true
+    eminMax -= 1
+    while (eminMin < eminMax && continue) {
+      val task = sortedByEMin(eminMax)
+      if (status(task) < limit) continue = false
+      else eminMax -= 1
+    }
+    eminMax += 1
+    if (eminMax < oldEMinMax) eminMaxToConsider.setValue(eminMax)
+    
+    p = eminMin 
+    q = 0
+    
+    // filter
+    while (p < eminMax) {
+      val task = sortedByEMin(p)
+      if (status(task) < limit && smax(task) < emin(task) && required(task) && hmin(task) > 0) {
+        filteredByEMin(q) = task
+        location(q) = p
+        q += 1        
+      } 
+     p += 1
+    }    
+    
+    // sort
+    SortUtils.mergeSort(filteredByEMin, emin, 0, q, temp1, temp2)
+    
+    // put tasks back sorted for mergeSort's incremental behaviour
+    p = q
+    while (p > 0) {
+      p -= 1
+      sortedByEMin(location(p)) = filteredByEMin(p) 
+    }
+    
+    nSorted = q
 
+    // generate events
     var s = 0 // next start
     var e = 0 // next end
-    var t = 0 // sweep-line
     var h = 0 // height
+    
     while (e < nSorted) {
-
-      val end = endVals(sortedByEnds(e))
       val prevH = h
 
-      // Move the sweep-line
-      if (s == nSorted) t = end
-      else {
-        val start = startVals(sortedByStarts(s))
-        if (start < end) t = start
-        else t = end
-      }
-
-      // Process SCP
-      while (s < nSorted && startVals(sortedByStarts(s)) == t) {
-        h += hmin(sortedByStarts(s))
+      // find next event
+      var tSweepLine = emin(filteredByEMin(e))
+      if (s < nSorted) tSweepLine = min(tSweepLine, smax(filteredBySMax(s)))
+      val t = tSweepLine
+      
+      // add all tasks at smax
+      while (s < nSorted && smax(filteredBySMax(s)) == t) {
+        h += hmin(filteredBySMax(s))
         s += 1
       }
 
-      // Process ECP
-      while (e < nSorted && endVals(sortedByEnds(e)) == t) {
-        h -= hmin(sortedByEnds(e))
+      // remove all tasks at emin
+      while (e < nSorted && emin(filteredByEMin(e)) == t) {
+        h -= hmin(filteredByEMin(e))
         e += 1
       }
 
-      // If the profile has changed
+      // if the profile has changed, register new profile point
       if (h != prevH) {
         pointTimes(nPoints) = t
         pointHeights(nPoints) = h
         nPoints += 1
       }
     }
+    
     // add end of time
     pointTimes(nPoints) = Int.MaxValue
     pointHeights(nPoints) = 0
     nPoints += 1
   }
-
+  
+  
   /*
    * Functions to manage sweeping.
    * Tasks are sweep left to right (right to left) to find left (right) support.
@@ -202,8 +216,8 @@ class ProfileStructure(
    * We expect that in many cases, the cache will have the exact index.
    */
   
-  val lastIndexBefore = Array.fill(nTasks)(0)
-  val lastIndexAfter = Array.fill(nTasks)(0)
+  private[this] val lastIndexBefore = Array.fill(nTasks)(0)
+  private[this] val lastIndexAfter = Array.fill(nTasks)(0)
   
     // returns the profile event at t or the closest before
   @inline private final def indexBefore(a: Int, t: Int): Int = {
@@ -332,8 +346,6 @@ class ProfileStructure(
     
     checkFrom
   }
-
-
   
   
   // reverse of sweepLR, watch out for < that become >= and the such, since e is not in [s ; e)
@@ -400,29 +412,6 @@ class ProfileStructure(
     max
   }
   
-  // return the first profile event to happen striclty after t, sweeps right to left
-  def pointStrictlyAfter(t: Int) = {
-    var et = Int.MaxValue // must be correct if point is at +infinity
-    var i = nPoints - 1
-    while (i >= 0 && pointTimes(i) > t) {
-      et = pointTimes(i)
-      i -= 1
-    }
-    et
-  }
-  
-  
-  // return the first profile event to happen striclty after t, sweeps right to left
-  def pointStrictlyBefore(t: Int) = {
-    var et = Int.MinValue // must be correct if point is at +infinity
-    var i = 0
-    while (i < nPoints && pointTimes(i) < t) {
-      et = pointTimes(i)
-      i += 1
-    }
-    et
-  }
-  
   
   // returns the maximal height of the whole profile
   def maxHeight(): Int = {
@@ -436,46 +425,49 @@ class ProfileStructure(
   }
 
 
-  val hStack = new ArrayStack[Int](nTasks + 1)
-  val dStack = new ArrayStack[Int](nTasks + 1)
+  // stacks for height and dates, these actually represent one stack of (height, date) pairs
+  private[this] val hStack = new Array[Int](nTasks + 1)
+  private[this] val dStack = new Array[Int](nTasks + 1)
+  private[this] var sPointer = -1
   
   @inline private def unstack(time: Int, height: Int, dur: Int) = {
     var minHeight = Int.MaxValue
     var lastD = time
-    while (hStack.top <= height) {
-      val h = hStack.pop()
-      lastD = dStack.pop()
+    while (hStack(sPointer) <= height) {
+      val h = hStack(sPointer) // pop
+      lastD = dStack(sPointer) // pop
+      sPointer -= 1
+      
       if (time - lastD >= dur) minHeight = min(minHeight, h)
     }
-    hStack.push(height)
-    dStack.push(lastD)
+    
+    sPointer += 1
+    hStack(sPointer) = height  // push height
+    dStack(sPointer) = lastD   // push date  
     minHeight
   }
   
-  // when task a is placed anywhere on [first, last[, what is the minimum height on which it will stand? With d its duration,
-  // min_{ t \in [first, last-d[ } max_{ u \in { [t, t+d[ } } profile(u)
+  hStack(0) = Int.MaxValue
   def minHeightOf(a: Int) = {
-    val first = smin(a)
-    val last  = emax(a)
+    val first = emin(a) // this is only used for tasks with no mandatory part
+    val last  = smax(a)
     val d = dmin(a)
     
-    var i = indexBefore(a, first)  // find plateau where a can start
-    hStack.clear
-    dStack.clear
+    var i = indexBefore(a, smin(a))  // find plateau where a can start
+//    sPointer = 0
+//    hStack(0) = Int.MaxValue
+    dStack(0) = first
     
-    hStack.push(Int.MaxValue)
-    dStack.push(first)
-    
-    hStack.push(pointHeights(i))
-    dStack.push(first)
+    sPointer = 1
+    hStack(1) = pointHeights(i)
+    dStack(1) = first
     
     i += 1
     
     var minHeight = Int.MaxValue
     
     while (pointTimes(i) < last) {    
-      val thispoint = math.min(pointTimes(i), last)
-      minHeight = math.min(minHeight, unstack(thispoint, pointHeights(i), d))
+      minHeight = math.min(minHeight, unstack(pointTimes(i), pointHeights(i), d))
       i += 1
     }
       
@@ -483,7 +475,6 @@ class ProfileStructure(
     
     minHeight
   }
-  
   
   def printProfile: Unit = {
     var i = 0

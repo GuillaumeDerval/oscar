@@ -10,22 +10,21 @@ import oscar.cp.core.CPOutcome.Failure
 import oscar.cp.core.CPOutcome.Suspend
 import oscar.cp.core.CPStore
 import oscar.cp.core.Constraint
-import oscar.cp.core.ConstraintQueue
 import oscar.cp.core.watcher.WatcherListL2
 import oscar.cp.core.watcher.WatcherListL1
+import oscar.cp.core.watcher.Watcher
+import oscar.cp.core.delta.DeltaIntVar
 
 /**
  * @author Renaud Hartert ren.hartert@gmail.com
  */
 
-class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, final override val name: String = "") extends CPBoolVar {
+class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, final override val name: String = "") extends CPBoolVar with TrailEntry {
   
   import CPBoolVarImpl._
   
   // Registered constraints
-  private[this] val onBoundsL2 = new WatcherListL2(store)
   private[this] val onBindL2 = new WatcherListL2(store)
-  private[this] val onDomainL2 = new WatcherListL2(store)
   private[this] val onBoundsL1 = new WatcherListL1(store)
   private[this] val onBindL1 = new WatcherListL1(store)
   private[this] val onDomainL1 = new WatcherListL1(store)
@@ -38,11 +37,9 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
   // 10 : Unassigned
   // 01 : Empty
   private[this] var domain: Int = initDomain
-
-  // A Boolean variable only needs one pre-instantiated trail entry
-  private[this] val trailEntry = new TrailEntry { 
-    final override def restore(): Unit = domain = UNASSIGNED 
-  }
+  
+  // Domain to restore when a backtrack occurs
+  private[this] var trailedDomain: Int = UNASSIGNED
 
   final override def transform(v: Int) = v
 
@@ -143,37 +140,39 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     else if (value == 1) assignFalse()
     else Suspend
   }
+  
+  final override def restore(): Unit = {
+    domain = trailedDomain
+    trailedDomain = UNASSIGNED
+  }
 
   @inline private def setDomainTrue(): CPOutcome = {
-    store.trail(trailEntry)
+    store.trail(this)
+    trailedDomain = domain
     domain = TRUE
     // Notify constraints
     onDomainL1.enqueueRemove(0)
     onBoundsL1.enqueueBounds()
     onBindL1.enqueueBind()
-    onDomainL2.enqueue()
-    onBoundsL2.enqueue()
     onBindL2.enqueue()
     Suspend
   }
 
   @inline private def setDomainFalse(): CPOutcome = {
-    store.trail(trailEntry)
+    store.trail(this)
+    trailedDomain = domain
     domain = FALSE
     // Notify constraints
     onDomainL1.enqueueRemove(1)
     onBoundsL1.enqueueBounds()
     onBindL1.enqueueBind()
-    onDomainL2.enqueue()
-    onBoundsL2.enqueue()
     onBindL2.enqueue()
     Suspend
   }
 
   @inline private def setDomainEmpty(): CPOutcome = {
-    // FIXME
-    val value = domain
-    store.trail(new TrailEntry { final override def restore(): Unit = domain = value })
+    store.trail(this)
+    trailedDomain = domain
     domain = EMPTY
     Failure
   }
@@ -184,6 +183,22 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     else if (domain == TRUE) Iterator(1)
     else Iterator.empty
   }
+  
+  final override def restrict(newDomain: Array[Int], newSize: Int): Unit = {
+    assert(newSize > 0 && newSize <= size )
+    if (newSize == 1) {
+      val value = newDomain(0)
+      assert(value == 1 || value == 0)
+      if (value == 0) {
+        assert(domain == FALSE)
+        setDomainFalse()
+      } else {
+        assert(domain == TRUE)
+        setDomainTrue()
+      }
+    }   
+  }
+
     
   final override def constraintTrue(): Constraint = new oscar.cp.constraints.EqCons(this, 1)
 
@@ -210,17 +225,42 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
 
   final override def callPropagateWhenBoundsChange(c: Constraint) {
     degree.incr()
-    onBoundsL2.register(c)
+    onBindL2.register(c)
   }
 
-  final override def callPropagateWhenDomainChanges(c: Constraint, trackDelta: Boolean = false) {
+  final override def callPropagateWhenBoundsChange(c: Constraint, cond: => Boolean) {
     degree.incr()
-    onDomainL2.register(c)
-    if (trackDelta) c.addSnapshot(this)
+    onBindL2.register(c, cond)
+  }
+
+  final override def callPropagateWhenDomainChanges(c: Constraint) {
+    degree.incr()
+    onBindL2.register(c)
   }
   
-  def callPropagateWhenDomainChanges(c: Constraint, watcher: oscar.cp.core.Watcher): Unit = ???
+  final override def callPropagateOnChangesWithDelta(c: Constraint): DeltaIntVar = {
+    val snap = delta(c)
+    degree.incr()
+    onBindL2.register(c)
+    snap
+  }
+  
+  final override def callPropagateOnChangesWithDelta(c: Constraint, cond: => Boolean): DeltaIntVar = {
+    val snap = delta(c)
+    degree.incr()
+    onBindL2.register(c, cond)
+    snap
+  }
+  
+  def callPropagateWhenDomainChanges(c: Constraint, cond: => Boolean): Unit = {
+    degree.incr()
+    onBindL2.register(c, cond)
+  }
 
+  def awakeOnChanges(watcher: Watcher): Unit = {
+    degree.incr()
+    onBindL2.register(watcher)
+  }
 
   final override def callValBindWhenBind(c: Constraint) {
     callValBindWhenBind(c, this)
@@ -281,24 +321,6 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
   final override def fillDeltaArray(oldMin: Int, oldMax: Int, oldSize: Int, arr: Array[Int]): Int = ???
 
   final override def delta(oldMin: Int, oldMax: Int, oldSize: Int): Iterator[Int] = ???
-
-  final override def changed(c: Constraint): Boolean = ???
-
-  final override def minChanged(c: Constraint): Boolean = ???
-
-  final override def maxChanged(c: Constraint): Boolean = ???
-
-  final override def boundsChanged(c: Constraint): Boolean = ???
-
-  final override def oldMin(c: Constraint): Int = ???
-
-  final override def oldMax(c: Constraint): Int = ???
-
-  final override def oldSize(c: Constraint): Int = ???
-
-  final override def deltaSize(c: Constraint): Int = ???
-
-  final override def delta(c: Constraint): Iterator[Int] = ???
 }
 
 object CPBoolVarImpl {

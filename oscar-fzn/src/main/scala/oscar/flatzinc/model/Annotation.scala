@@ -24,7 +24,7 @@ class Annotation (
 	){
     def this(name: String) = this(name,List.empty[Any]);
     def add(e: Any){
-      args = e :: args;
+      args = args ++ List(e);
     }
 	override def toString() = name + " " + args
 }

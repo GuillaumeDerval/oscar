@@ -20,11 +20,12 @@
 
 package oscar.cbls.constraints.lib.global
 
-import collection.immutable.SortedMap
 import oscar.cbls.constraints.core.Constraint
-import oscar.cbls.invariants.core.computation.{InvariantHelper, Variable, CBLSIntVar}
+import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
 import oscar.cbls.invariants.lib.numeric.Sum2
+
+import scala.collection.immutable.SortedMap
 
 /**Implements the Exactly constraint on IntVar.
   * There is a set of bounds, defined in the parameter bound as pair (value,bound).
@@ -34,27 +35,25 @@ import oscar.cbls.invariants.lib.numeric.Sum2
   * @param bounds map(value,bound) the bounds on the variables. We use a map to ensure that there is no two bounds on the same value.
   * @author gael.thouvenin@student.umons.ac.be
   */
-case class Exactly(variables:Iterable[CBLSIntVar], bounds:SortedMap[Int, CBLSIntVar]) extends Constraint {
-  model = InvariantHelper.findModel(variables)
+case class Exactly(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue]) extends Constraint {
+
   registerConstrainedVariables(variables)
   registerConstrainedVariables(bounds.values)
-  finishInitialization()
-
 
   private val least = AtLeast(variables, bounds)
   private val most = AtMost(variables, bounds)
 
   private val violationsByVal =
-    Map[CBLSIntVar, CBLSIntVar]() ++
-      (for(v <- variables) yield v -> Sum2(least.violation(v), most.violation(v)).toIntVar)
+    Map[IntValue, IntValue]() ++
+      (for(v <- variables) yield v -> Sum2(least.violation(v), most.violation(v)))
 
 
   /** returns the violation associated with variable v in this constraint
     * all variables that are declared as constraint should have an associated violation degree. */
-  override def violation(v: Variable): CBLSIntVar = violationsByVal(v.asInstanceOf[CBLSIntVar])
+  override def violation(v: Value): IntValue = violationsByVal(v.asInstanceOf[IntValue])
 
   /** returns the degree of violation of the constraint */
-  override val violation: CBLSIntVar =  Sum2(least.violation, most.violation)
+  override val violation: IntValue =  Sum2(least.violation, most.violation)
 
   override def checkInternals(c: Checker) { least.checkInternals(c); most.checkInternals(c)}
 }

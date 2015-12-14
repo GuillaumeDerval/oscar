@@ -14,11 +14,11 @@
  ******************************************************************************/
 package oscar.cbls.modeling
 
-import oscar.cbls.invariants.core.computation.{CBLSSetVar, CBLSIntVar}
-import collection.immutable.SortedMap
-import oscar.cbls.constraints.lib.global.{MultiKnapsack, AtMost, AtLeast, AllDiff, Sequence}
-import oscar.cbls.constraints.core.Constraint
 import oscar.cbls.constraints.lib.basic.BelongsTo
+import oscar.cbls.constraints.lib.global.{AllDiff, AtLeast, AtMost, MultiKnapsack, Sequence}
+import oscar.cbls.invariants.core.computation.{CBLSIntVar, IntValue, SetValue}
+
+import scala.collection.immutable.SortedMap
 
 /** modeling interface for all the constraints
 * @author renaud.delandtsheer@cetic.be
@@ -29,17 +29,17 @@ trait Constraints {
   /**
    * implements v \in set
    */
-  def belongsTo(v: CBLSIntVar, set: CBLSSetVar) =  BelongsTo(v: CBLSIntVar, set: CBLSSetVar)
+  def belongsTo(v: IntValue, set: SetValue) =  BelongsTo(v, set)
 
   /**Implement the AllDiff constraint on IntVars: all variables must have a different value.
    * @param variables the variable whose values should all be different.
    */
-  def allDifferent(variables:Iterable[CBLSIntVar]) = AllDiff(variables)
+  def allDifferent(variables:Iterable[IntValue]) = AllDiff(variables)
 
   /**Implement the AllDiff constraint on IntVars: all variables must have a different value.
     * @param variables the variable whose values should all be different.
     */
-  def allDiff(variables:Iterable[CBLSIntVar]) = AllDiff(variables)
+  def allDiff(variables:Iterable[IntValue]) = AllDiff(variables)
 
   /**Implement the AtLeast constraint on IntVars.
    * There is a set of minbounds, defined in the parameter bound as pair (value,minbound).
@@ -49,7 +49,7 @@ trait Constraints {
    * @param bounds map(value,minbound) specifying the minimal number of occurrence of ''value'' among the variables.
    * We use a map to ensure that there is no two bounds on the same value.
    */
-  def atLeast(variables:Iterable[CBLSIntVar], bounds:SortedMap[Int, CBLSIntVar]) = AtLeast(variables, bounds)
+  def atLeast(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue]) = AtLeast(variables, bounds)
 
 
   /**Implements the AtMost constraint on IntVar.
@@ -59,7 +59,7 @@ trait Constraints {
    * @param variables the variables that should be bounded
    * @param bounds map(value,bound) the bounds on the variables. We use a map to ensure that there is no two bounds on the same value.
    */
-  def atMost(variables:Iterable[CBLSIntVar], bounds:SortedMap[Int, CBLSIntVar]) = AtMost(variables, bounds)
+  def atMost(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue]) = AtMost(variables, bounds)
 
 
   /**This is the standard bin packing constraint
@@ -67,7 +67,7 @@ trait Constraints {
    * @param itemsizes the size of the items
    * @param binsizes the max size of the available bins
    */
-  def multiKnapsack(items: Array[CBLSIntVar], itemsizes: Array[CBLSIntVar], binsizes:Array[CBLSIntVar]) = MultiKnapsack(items, itemsizes, binsizes)
+  def multiKnapsack(items: Array[CBLSIntVar], itemsizes: Array[IntValue], binsizes:Array[IntValue]) = MultiKnapsack(items, itemsizes, binsizes)
 
 
   /**implements the sequence constraint:
@@ -77,6 +77,6 @@ trait Constraints {
    * @param Max the max number of elements matching pred in all sequences of the history
    * @param predicate a predicate to say which values belong to the constraint
    */
-  def sequence(variables: Array[CBLSIntVar], length:Int, Max:Int, predicate:(Int=>Boolean)) = Sequence(variables, length, Max, predicate)
+  def sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:(Int=>Boolean)) = Sequence(variables, length, Max, predicate)
 
 }

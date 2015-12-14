@@ -1,201 +1,281 @@
 /*******************************************************************************
- * OscaR is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 2.1 of the License, or
- * (at your option) any later version.
- *   
- * OscaR is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License  for more details.
- *   
- * You should have received a copy of the GNU Lesser General Public License along with OscaR.
- * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
- ******************************************************************************/
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
 package oscar.cp.constraints
 
 import oscar.algo.reversible._
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.Constraint
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.delta._
+import oscar.cp.core.variables._
+import oscar.cp.core.CPOutcome._
 
 /**
  * Global Cardinality Constraint
  *
- * Constraint the values minval+i to appear between low[i] and up[i] times in x
- * @param x
- * @param minval
- * @param low
- * @param up
+ * Constraint the values minVal+i to appear between low[i] and up[i] times in X
+ * @param X The variables to constraint (at least one)
+ * @param minVal The smallest value in the interval; its size is determined by the size of lower and upper
+ * @param lower The lower bounds for the occurrences of the values of the interval, in order
+ * @param upper The upper bounds for the occurrences of the values of the interval, in order
  * @see SoftGCC
  * @see GCCVar
  *
- * @author Pierre Schaus pschaus@gmail.com and Bertrand Cornelusse bcr@n-side.com
+ * @author Victor Lecomte
  */
-class GCCFWC(val X: Array[CPIntVar], val minVal: Int, val low: Array[Int], val up: Array[Int]) extends Constraint(X(0).store, "GCCFWC") {
+class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[Int])
+  extends Constraint(X(0).store, "GCCFWC") {
 
-  val nbBound = Array.tabulate(low.size)(i => new ReversibleInt(s, 0))
-  val nbVarWithValue = Array.tabulate(low.size)(i => new ReversibleInt(s, 0))
-  val constrainedValues = minVal until minVal + low.length toArray
+  idempotent = false
 
-  /**
-   * Initialization, input checks and registration to events
-   */
+  private[this] val nValues = lower.length
+  private[this] val maxVal = minVal + nValues - 1
+  private[this] val nBounds = 2 * nValues
+  private[this] val nVariables = X.length
+
+  // MEMORIZATION STRUCTURE:
+  // The number of variables that are bound to the value
+  private[this] var nMandatoryRev: Array[ReversibleInt] = null
+  // The number of variables that have the value
+  private[this] var nPossibleRev: Array[ReversibleInt] = null
+  // The number of bounds that are respected
+  private[this] var nBoundsOkRev: ReversibleInt = null
+  // The sparse set to memorize the variables having a value that is unbound
+  private[this] val unboundSet = Array.ofDim[Int](nValues, nVariables)
+  private[this] val unboundIndex = Array.ofDim[Int](nValues, nVariables)
+
+  // Change buffer to load the deltas
+  private[this] var changeBuffer: Array[Int] = null
+
   override def setup(l: CPPropagStrength): CPOutcome = {
-    
-    //println("chez beber")
-    var outcome: CPOutcome = CPOutcome.Suspend
-    
-    // initialize correctly nbBound and nbVarWithValue
 
-    // Input checks
-    assert(low.length == up.length)
-    for (i <- 0 until low.length) {
-      assert(!(low(i) > up(i)))
-    }
+    // Temporary variables to avoid using reversible variables too much
+    val nMandatory = new Array[Int](nValues)
+    val nPossible = new Array[Int](nValues)
+    var nBoundsOk = 0
 
-    outcome = propagate()
-    if (outcome == CPOutcome.Suspend) {
-      for (i <- 0 until X.length; if (!X(i).isBound)) {
-        X(i).callPropagateWhenDomainChanges(this);
-        //X(i).callValBindWhenBind(this);
-        //X(i).callValRemoveWhenValueIsRemoved(this);
-      }
-    }
+    // Initial counting (the rest is done in the update functions)
+    var bufferSize = 0
+    var i = nVariables
+    while (i > 0) {
+      i -= 1
+      val x = X(i)
 
-    outcome
-  }
-  
-  override def valBind(x:CPIntVar): CPOutcome = {
-    val idx = x.min - minVal
-    if (idx >= 0 && idx < low.size) {
-      nbBound(idx).incr()
-      if (nbBound(idx).value == up(idx)) {
-        //remove this value from other domains
-      }
-    }
-    CPOutcome.Suspend
-  }
-  
-   override def valRemove(x:CPIntVar,v: Int): CPOutcome = {
-    
-    CPOutcome.Suspend
-  }
-  
-  
-  
-
-  /**
-   * TODO Ensure idempotent
-   * TODO Persistence and ReversibleInt
-   * TODO Implement other listeners
-   * TODO Efficiency, dataStructures
-   */
-  override def propagate(): CPOutcome = {
-    var outcome: CPOutcome = CPOutcome.Suspend
-
-    // DEBUG 
-    //    println("something changed:" + X.mkString(","));
-
-    // Set of variables that have at least one value in the set of cardinality constrained values 
-    var X2 = Set[CPIntVar]()
-    constrainedValues foreach (v => X2 = X2 union (X filter (x => x.hasValue(v)) toSet))
-
-    // Process constrained values one by one
-    val skipList = Array.tabulate(low.length)(x => true) // Change skipList(i) to false if you do not want to consider value i anymore 
-    var restart = true // Restart the loop each time a domain is changed...
-    while (outcome != CPOutcome.Failure && restart) {
-      restart = false
-
-      for { i <- 0 until low.length; if (skipList(i)) } {
-        // i is the index of the value to process
-
-        val candidates = X2 filter (_.hasValue(constrainedValues(i))) toSet
-        val boundCandidates = candidates filter (x => x.isBound)
-
-        if (candidates.size < low(i)) {
-          // Not enough candidates to satisfy ith cardinality constraint
-          outcome = CPOutcome.Failure
-        } else if (candidates.size == low(i)) {
-          // Exactly enough candidates to satisfy ith cardinality constraint= 
-          for (x <- candidates diff boundCandidates) {
-            outcome = x.assign(constrainedValues(i))
-            restart = true
-            skipList(i) = false // Stop considering this value in the loop
-          }
-        } else if (boundCandidates.size >= low(i) && candidates.size < up(i)) {
-          skipList(i) = false // Stop considering this value in the loop
-        } else if (boundCandidates.size == up(i)) {
-          for (x <- candidates diff boundCandidates) {
-            outcome = x.removeValue(constrainedValues(i))
-            restart = true
-            skipList(i) = false // Stop considering this value in the loop
-          }
-        } else if (boundCandidates.size > up(i)) {
-          // Too many candidates to satisfy ith cardinality constraint
-          outcome = CPOutcome.Failure
-        } else {
-          // Can we do sth locally?              
+      // Count the number of variables that are bound to the value
+      if (x.isBound) {
+        val v = x.min
+        if (minVal <= v && v <= maxVal) {
+          val vi = v - minVal
+          nMandatory(vi) += 1
         }
+      }
+      // Count the number of variables that have the value
+      var vi = nValues
+      while (vi > 0) {
+        vi -= 1
+        if (x.hasValue(vi + minVal)) {
+          nPossible(vi) += 1
 
-        // Reevaluate X2 and X3
-        constrainedValues foreach (v => X2 = X2 union (X filter (x => x.hasValue(v)) toSet))
+          // If x is unbound, add it to the value's sparse set
+          if (!x.isBound) {
+            val index = nPossible(vi) - nMandatory(vi) - 1
+            unboundSet(vi)(index) = i
+            unboundIndex(vi)(i) = index
+          }
+        }
+      }
+
+      // Adapt the change buffer size
+      if (bufferSize < x.size) {
+        bufferSize = x.size
+      }
+
+      // Register before the first check loop so that we receive information on what we changed there
+      x.callOnChanges(i, delta => {
+        val nBoundsOk = nBoundsOkRev.value
+        if (nBoundsOk == nBounds) Success
+        else whenDomainChanges(delta, x, nBoundsOk)
+      })
+    }
+
+    // First check loop (according to the counts in the initial counting)
+    var vi = nValues
+    while (vi > 0) {
+      vi -= 1
+      val v = vi + minVal
+      val mandatory = nMandatory(vi)
+      val possible = nPossible(vi)
+      val unbound = possible - mandatory
+      val thisLower = lower(vi)
+      val thisUpper = upper(vi)
+
+      // Few enough variables have the value
+      if (possible <= thisUpper) {
+        nBoundsOk += 1
+      }
+      // Too few variables have the value
+      if (possible < thisLower ||
+        (possible == thisLower && whenMinPossible(vi, v, unbound) == Failure)) {
+        return Failure
+      }
+
+      // Enough variables are bound to the value
+      if (mandatory >= thisLower) {
+        nBoundsOk += 1
+      }
+      // Too many variables are bound to the value
+      if (mandatory > thisUpper ||
+        (mandatory == thisUpper && whenMaxMandatory(vi, v, unbound) == Failure)) {
+        return Failure
       }
     }
 
-    // Check overall feasibility after potential changes
+    // This one has to be initialized in any case
+    nBoundsOkRev = new ReversibleInt(s, nBoundsOk)
+    
+    // If the constraint is not okay yet
+    if (nBoundsOk != nBounds) {
 
-    // Subset of X2 such that each variable has some values out of the set of cardinality constrained values 
-    val X3 = X2 filter (x => x.min < constrainedValues.head || x.max > constrainedValues.last)
-    if (low.sum > X2.size) {
-      // DEBUG
-      println("Too few variables to satisfy the lower bounds of CC")
-      outcome = CPOutcome.Failure
-    } else if (X2.size - up.sum > X3.size) {
-      // DEBUG
-      println("Too many variables to satisfy the upper bounds of CC")
-      outcome = CPOutcome.Failure
+      // Initialize the memorization structure
+      nMandatoryRev = Array.tabulate(nValues)(vi => new ReversibleInt(s, nMandatory(vi)))
+      nPossibleRev = Array.tabulate(nValues)(vi => new ReversibleInt(s, nPossible(vi)))
+
+      // Create the buffer
+      changeBuffer = new Array(bufferSize)
     }
 
-    val candidatesByValue = constrainedValues map (v => X filter (_.hasValue(v)) toList) toArray
-    // DEBUG
-    //    println("something changed:" + X.mkString(","));
-
-    outcome
-  }
-
-//  def low():Array[Int] = low
-//  def up():Array[Int] = up
-  
-  /**
-   * check a solution
-   */
-  def check(): Boolean = {
-    check(List.tabulate(low.size)(v => v))
+    // Everything is up to the closures now
+    Success
   }
 
   /**
-   * check a solution
+   * Update the structure when values are removed from a variable.
    */
-  def check(indexes: List[Int]): Boolean = {
-    indexes.isEmpty match {
-      case false =>
-        val i = indexes.head
-        val histogram = X count (_.min == constrainedValues(i))
-        val outcome = (histogram >= low(i) && histogram <= up(i))
-        // DEBUG 
-        if (!outcome) { println("" + low(i) + "<?>" + histogram + "<?>" + up(i)) }
-        outcome && check(indexes.tail)
-      case true => true
+  @inline private def whenDomainChanges(delta: DeltaIntVar, x: CPIntVar, nBoundsOk: Int): CPOutcome = {
+    val i = delta.id
+    var nBoundsOkVar = nBoundsOk
+
+    // Treat the value removals
+    var c = delta.fillArray(changeBuffer)
+    while (c > 0) {
+      c -= 1
+      val v = changeBuffer(c)
+      // If the value removed is one we track
+      if (minVal <= v && v <= maxVal) {
+        val vi = v - minVal
+        val nPossible = nPossibleRev(vi).decr()
+        val nUnbound = nPossible - nMandatoryRev(vi).value
+
+        removeUnbound(i, vi, nUnbound)
+
+        // If the number of variables that have the value decreases to the upper bound, all good!
+        if (nPossible == upper(vi)) {
+          nBoundsOkVar += 1
+          if (nBoundsOkVar == nBounds)
+          {
+            nBoundsOkRev.setValue(nBounds)
+            return Success
+          }
+        }
+        // If the number of variables that have the value decreases to the lower bound, assign the unbound
+        if (nPossible == lower(vi) && whenMinPossible(vi, v, nUnbound) == Failure) {
+          return Failure
+        }
+      }
     }
+
+    // Treat the value assignments
+    if (x.isBound) {
+      val v = x.min
+      // If the value assigned is one we track
+      if (minVal <= v && v <= maxVal) {
+        val vi = v - minVal
+        val nMandatory = nMandatoryRev(vi).incr()
+        val nUnbound = nPossibleRev(vi).value - nMandatory
+
+        removeUnbound(i, vi, nUnbound)
+
+        // If the number of variables that are bound to the value increases to the lower bound, all good!
+        if (nMandatory == lower(vi)) {
+          nBoundsOkVar += 1
+          if (nBoundsOkVar == nBounds)
+          {
+            nBoundsOkRev.setValue(nBounds)
+            return Success
+          }
+        }
+        // If the number of variables that are bound to the value increases to the upper bound, remove the unbound
+        if (nMandatory == upper(vi) && whenMaxMandatory(vi, v, nUnbound) == Failure) {
+          return Failure
+        }
+      }
+    }
+
+    if (nBoundsOkVar != nBoundsOk) {
+      nBoundsOkRev.setValue(nBoundsOkVar)
+    }
+    Suspend
   }
-  
-  override def toString(): String = {
-    println("Values: "+ constrainedValues.mkString(" "))
-    println("Low   : "+low.mkString(" "))
-    println("Up    : "+up.mkString(" "))
-	""	  
+
+  /**
+   * Remove a variable from a value's unbound sparse set
+   */
+  @inline private def removeUnbound(i: Int, vi: Int, last: Int): Unit = {
+
+    val thisUnboundSet = unboundSet(vi)
+    val thisUnboundIndex = unboundIndex(vi)
+    val atLast = thisUnboundSet(last)
+    val index = thisUnboundIndex(i)
+
+    thisUnboundSet(index) = atLast
+    thisUnboundIndex(atLast) = index
+    thisUnboundSet(last) = i
+    thisUnboundIndex(i) = last
+  }
+
+  /**
+   * When the number of possible variables drops to the lower bound, bind the unbound.
+   */
+  @inline private def whenMinPossible(vi: Int, v: Int, nUnbound: Int): CPOutcome = {
+    val thisUnboundSet = unboundSet(vi)
+
+    // Bind all the unbound variables that have this value
+    var i = nUnbound
+    while (i > 0) {
+      i -= 1
+      if (X(thisUnboundSet(i)).assign(v) == Failure) {
+        return Failure
+      }
+    }
+
+    Suspend
+  }
+
+  /**
+   * When the number of mandatory variables reaches the upper bound, drop the unbound.
+   */
+  @inline private def whenMaxMandatory(vi: Int, v: Int, nUnbound: Int): CPOutcome = {
+    val thisUnboundSet = unboundSet(vi)
+
+    // Remove the value from the unbound variables that have this value
+    var i = nUnbound
+    while (i > 0) {
+      i -= 1
+      if (X(thisUnboundSet(i)).removeValue(v) == Failure) {
+        return Failure
+      }
+    }
+
+    Suspend
   }
 }
-

@@ -44,17 +44,17 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
 {
   priorityL2 = 3
   
-  
-  val dminF = Array.ofDim[Int](n)
-  val smaxF = Array.ofDim[Int](n)
-  val eminF = Array.ofDim[Int](n)
+  private[this] val nTasks = starts.length
+  private[this] val dminF = Array.ofDim[Int](nTasks)
+  private[this] val smaxF = Array.ofDim[Int](nTasks)
+  private[this] val eminF = Array.ofDim[Int](nTasks)
     
-  var dminFmax = 0
-  var hminmax = 0
+  private[this] var dminFmax = 0
+  private[this] var hminmax = 0
 
-  val profile = new ProfileStructure(smin, smax, dmin, emin, emax, hmin, required, possible)  
+  private[this] val profile = new ProfileStructure(smin, smax, dmin, emin, emax, hmin, required, possible)  
   
-  def updateFreeAndMaxs(limit: Int) = {
+  @inline private def updateFreeAndMaxs(limit: Int) = {
     dminFmax = 0
     hminmax = 0
     
@@ -79,10 +79,11 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   }
   
   
-  val pushers = Array.ofDim[Int](n)
-  val hPushers = Array.ofDim[Int](n)  // height of the MOI, i.e. min of profile on MOI + hmin(a)
+  private[this] val pushers = Array.ofDim[Int](nTasks)
+  private[this] val hPushers = Array.ofDim[Int](nTasks)  // height of the MOI, i.e. min of profile on MOI + hmin(a)
   
-  def introducePushers0(limit: Int, C: Int): Int = {
+  
+  @inline private def introducePushers(limit: Int, C: Int): Int = {
     var q = 0
     var p = 0
     
@@ -94,51 +95,20 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
       // and some activity may not fit strictly inside its MOI
       if (required(a) && dminF(a) > 0 && smaxF(a) - eminF(a) < dminFmax) {
         // compute height at which a would push
-        if (smax(a) < emin(a) || smaxF(a) - eminF(a) < dminF(a)) {
-          // the free part of a cannot be inside its "moi" 
-          hPushers(a) = hmin(a) + 
-            min(profile.minInterval(a, eminF(a) - 1, eminF(a)),
-                profile.minInterval(a, smaxF(a), smaxF(a) + 1))
-        }
-        else {
-          hPushers(a) = hmin(a) + profile.minInterval(a, eminF(a) - 1, smaxF(a) + 1)
-        }
         
-        // add only if some activity could be pushed using that height
-        if (hPushers(a) > gapmin) {
-          pushers(q) = a
-          q += 1
-        }
-      }
-      p += 1
-    }
-    q
-  }
-  
-  def introducePushers(limit: Int, C: Int): Int = {
-    var q = 0
-    var p = 0
-    
-    val gapmin = C - hminmax
-
-    while (p < limit) {
-      val a = activitiesToConsider(p)
-      // an activity can push with its free part if its duration is not 0
-      // and some activity may not fit strictly inside its MOI
-      if (required(a) && dminF(a) > 0 && smaxF(a) - eminF(a) < dminFmax) {
-        // compute height at which a would push
         // extremities of moi
         hPushers(a) = min(profile.minInterval(a, eminF(a) - 1, eminF(a)),
                           profile.minInterval(a, smaxF(a), smaxF(a) + 1))
- 
-        if (smax(a) >= emin(a) && smaxF(a) - eminF(a) >= dminF(a)) {    // the free part of a can be inside its "moi" 
+
+        // inside of moi, when a has no mandatory part and a can fit inside
+        if (smax(a) >= emin(a) && smaxF(a) - eminF(a) >= dminF(a)) { 
           hPushers(a) = min(hPushers(a), profile.minHeightOf(a))
-          // hPushers(a) = profile.minInterval(a, eminF(a) - 1, smaxF(a) + 1)
         }
         
+        // height at which a pushes includes the height of a
         hPushers(a) += hmin(a)
           
-        if (hPushers(a) > C) throw Inconsistency  // a cannot fit in its domain, TT should have taken care of it          
+        if (hPushers(a) > C) throw Inconsistency  // a has no support, TT should have taken care of it          
         
         // add only if some activity could be pushed using that height
         if (hPushers(a) > gapmin) {
@@ -155,10 +125,10 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
 
 
   
-  var maxPushersEMinF = 0
-  var minPushersSMaxF = 0
+  private[this] var maxPushersEMinF = 0
+  private[this] var minPushersSMaxF = 0
   
-  def updatePushersTimeBounds(nPushers: Int) = {
+  @inline private def updatePushersTimeBounds(nPushers: Int) = {
     maxPushersEMinF = Int.MinValue
     minPushersSMaxF = Int.MaxValue
     
@@ -171,7 +141,7 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
     }
   }
   
-  def introducePushees(limit: Int): Int = {
+  @inline private def introducePushees(limit: Int): Int = {
     var q = 0
     var p = 0
     while (p < limit) {
@@ -188,7 +158,7 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
     q
   }
   
-  val pushees = Array.ofDim[Int](n)
+  private[this] val pushees = Array.ofDim[Int](nTasks)
   
   final override def propagate(): CPOutcome = {
     updateCache()
@@ -198,11 +168,11 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
     if (C == capacity.min) removeExtremal()
     else removeImpossible()
 
-    
-    profile.rebuild(toConsider)  
+    // TODO: building the profile is expensive, redo prefiltering to opt out when there are 0 pushers
+    // This happens when moi of tasks are all larger than durations, i.e. often near the root.
+    profile.rebuild(toConsider)    
     
     val limit = toConsider.limit.value
-    
     
     // Step 1: we will not consider all n^2 pairs, we want to filter out some pairs where no update can happen
     // Step 1.1: get the maximum dmin and hmin of pushees

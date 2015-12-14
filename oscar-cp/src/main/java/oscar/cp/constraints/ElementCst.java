@@ -91,7 +91,7 @@ public class ElementCst extends Constraint {
 			z.callValRemoveWhenValueIsRemoved(this);
 		}
 		z.callPropagateWhenBoundsChange(this);
-		x.callPropagateWhenDomainChanges(this,false);		
+		x.callPropagateWhenDomainChanges(this);		
 		x.callValBindWhenBind(this);
 
 		return CPOutcome.Suspend;

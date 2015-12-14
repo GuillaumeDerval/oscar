@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * *****************************************************************************
  * OscaR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 2.1 of the License, or
@@ -11,7 +12,8 @@
  *
  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
- *******************************************************************************/
+ * *****************************************************************************
+ */
 
 package oscar.cp.constraints
 
@@ -28,11 +30,11 @@ import scala.collection.mutable.ArrayBuffer
 /**
  * @author Pierre Schaus pschaus@gmail.com
  */
-class AsymetricHeldKarp(succ: Array[CPIntVar], distMatrix: Array[Array[Int]], cost: CPIntVar)  extends ChannelTSP(succ,distMatrix) {
-  
-    override def setup(l: CPPropagStrength): CPOutcome = {
-      if (s.post(new HeldKarp(edgeVar,edges ,cost)) == Failure) return Failure
-      super.setup(l)
-    }
-  
+class AsymetricHeldKarp(succ: Array[CPIntVar], distMatrix: Array[Array[Int]], cost: CPIntVar) extends ChannelTSP(succ, distMatrix) {
+
+  override def setup(l: CPPropagStrength): CPOutcome = {
+    if (s.post(new HeldKarp(edgeVar, edges, cost)) == Failure) return Failure
+    super.setup(l)
+  }
+
 }

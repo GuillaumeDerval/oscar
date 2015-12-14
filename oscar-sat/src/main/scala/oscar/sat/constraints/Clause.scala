@@ -36,7 +36,7 @@ class Clause(solver: CDCLStore, literals: Array[Int], learnt: Boolean) {
 
   def propagate(literal: Int): Boolean = {
     // Make sure the false literal is literals(1)
-    if (literals(0) == (literal ^ 1)) {
+    if (literals(0) == (literal ^ 1)) { // literals(0) has been falsified
       literals(0) = literals(1)
       literals(1) = literal ^ 1
     }

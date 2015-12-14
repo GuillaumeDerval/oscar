@@ -21,6 +21,8 @@ import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPOutcome._
+import oscar.cp.core.delta.DeltaIntVar
+import oscar.cp.core.CPStore
 
 /**
  * Inverse
@@ -37,27 +39,53 @@ class Inverse(prev: Array[CPIntVar], next: Array[CPIntVar]) extends Constraint(p
   // Checks the consistency of the arguments
   require(prev.length == next.length, "input arrays must have the same size")
 
+  // Structure used to collect removed values
+  private[this] val removedValues = new Array[Int](prev.length)
+
   override def setup(l: CPPropagStrength): CPOutcome = {
     if (init() == Failure) Failure
     else {
-      var i = 0
-      while (i < prev.length) {
-        if (!prev(i).isBound) {
-          prev(i).callValRemoveIdxWhenValueIsRemoved(this, i)
-          prev(i).callValBindIdxWhenBind(this, i)
-        }
-        if (!next(i).isBound) {
-          next(i).callValRemoveIdxWhenValueIsRemoved(this, i)
-          next(i).callValBindIdxWhenBind(this, i)
-        }
-        i += 1
+      var i = prev.length
+      while (i > 0) {
+        i -= 1
+        if (!prev(i).isBound) prev(i).callOnChanges(i, s => propagatePrev(s))
+        if (!next(i).isBound) next(i).callOnChanges(i, s => propagateNext(s))   
       }
       Suspend
     }
   }
 
-  @inline
-  private def init(): CPOutcome = {
+  @inline private def propagatePrev(delta: DeltaIntVar): CPOutcome = {
+    val varId = delta.id
+    val intVar = prev(varId)
+    if (intVar.isBound) next(intVar.min).assign(varId)
+    else {
+      var i = delta.fillArray(removedValues)
+      while (i > 0) {
+        i -= 1
+        val value = removedValues(i)
+        if (next(value).removeValue(varId) == Failure) return Failure
+      }
+      Suspend
+    }
+  }
+
+  @inline private def propagateNext(delta: DeltaIntVar): CPOutcome = {
+    val varId = delta.id
+    val intVar = next(varId)
+    if (intVar.isBound) prev(intVar.min).assign(varId)
+    else {
+      var i = delta.fillArray(removedValues)
+      while (i > 0) {
+        i -= 1
+        val value = removedValues(i)
+        if (prev(value).removeValue(varId) == Failure) return Failure
+      }
+      Suspend
+    }
+  }
+  
+  @inline private def init(): CPOutcome = {
     var i = 0
     while (i < prev.length) {
       // Initializes the bounds of the variables
@@ -77,29 +105,17 @@ class Inverse(prev: Array[CPIntVar], next: Array[CPIntVar]) extends Constraint(p
     Suspend
   }
 
-  @inline
-  private def initBounds(intVar: CPIntVar): Boolean = {
+  @inline private def initBounds(intVar: CPIntVar): Boolean = {
     if (intVar.updateMin(0) == Failure) false
     else if (intVar.updateMax(prev.length - 1) == Failure) false
     else true
   }
 
-  @inline
-  private def init(vector1: Array[CPIntVar], vector2: Array[CPIntVar], i: Int, j: Int): Boolean = {
+  @inline private def init(vector1: Array[CPIntVar], vector2: Array[CPIntVar], i: Int, j: Int): Boolean = {
     if (!vector1(i).hasValue(j)) true
     else if (vector1(i).isBound) vector2(j).assign(i) != Failure
     else if (!vector2(j).hasValue(i)) vector1(i).removeValue(j) != Failure
     else true
-  }
-
-  override def valRemoveIdx(intVar: CPIntVar, id: Int, value: Int): CPOutcome = {
-    if (intVar == next(id)) prev(value).removeValue(id)
-    else next(value).removeValue(id)
-  }
-  
-  override def valBindIdx(intVar: CPIntVar, id: Int): CPOutcome = {
-    if (intVar == next(id)) prev(next(id).min).assign(id)
-    else next(prev(id).min).assign(id)
   }
 }
 

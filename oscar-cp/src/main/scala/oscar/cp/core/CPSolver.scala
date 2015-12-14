@@ -32,8 +32,11 @@ import java.util.Collection
 class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStrength) {
 
   private[this] val searchStrategy = new DFSearch(this)
-
   private[this] var heuristic: Branching = null
+  
+  def this() = this(CPPropagStrength.Weak)
+  
+  final def searchEngine: DFSearch = searchStrategy
 
   final def onSolution(action: => Unit): CPSolver = {
     searchStrategy.onSolution(action); this
@@ -103,7 +106,6 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
     heuristic = branching; this
   }
 
-  def this() = this(CPPropagStrength.Weak)
 
   private val decVariables = scala.collection.mutable.Set[CPIntVar]()
 
@@ -185,22 +187,7 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
     }
     return outcome
   }
-
-  /**
-   * Add a set of constraints to the store in a reversible way and trigger the fix-point algorithm afterwards.
-   * In a reversible way means that the posted constraints are present in the store only for descendant nodes.
-   * @param constraints
-   * @param st the propagation strength asked for the constraint. Will be used only if available for the constraint (see specs of the constraint)
-   * @throws NoSolutionException if the fix point detects a failure that is one of the domain became empty, Suspend otherwise.
-   */
-  override def add(constraints: Collection[Constraint], st: CPPropagStrength): CPOutcome = {
-    val outcome = post(constraints, st);
-    if ((outcome == Failure || isFailed) && throwNoSolExceptions) {
-      throw new NoSolutionException(s"the stored failed when adding constraint $constraints");
-    }
-    return outcome
-  }
-
+    
   override def addCut(c: Constraint): CPOutcome = {
     val outcome = postCut(c)
     if ((outcome == Failure || isFailed) && throwNoSolExceptions) {
@@ -209,15 +196,26 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
     outcome
   }
 
-  override def add(constraints: Collection[Constraint]): CPOutcome = add(constraints, propagStrength)
-
-  override def add(constraints: Iterable[Constraint], st: CPPropagStrength): CPOutcome = {
-    val cs = new LinkedList[Constraint]()
-    constraints.foreach(cs.add(_))
-    add(cs, st)
+  /**
+   * Add a set of constraints to the store in a reversible way and trigger the fix-point algorithm afterwards.
+   * In a reversible way means that the posted constraints are present in the store only for descendant nodes.
+   * @param constraints
+   * @param st the propagation strength asked for the constraint. Will be used only if available for the constraint (see specs of the constraint)
+   * @throws NoSolutionException if the fix point detects a failure that is one of the domain became empty, Suspend otherwise.
+   */
+  override def add(constraints: Array[Constraint], st: CPPropagStrength): CPOutcome = {
+    val outcome = post(constraints, st);
+    if ((outcome == Failure || isFailed) && throwNoSolExceptions) {
+      throw new NoSolutionException(s"the stored failed when adding constraint $constraints");
+    }
+    return outcome
   }
+  
+  override def add(constraints: Array[Constraint]): CPOutcome = add(constraints, propagStrength)
 
-  override def add(constraints: Iterable[Constraint]): CPOutcome = add(constraints, propagStrength)
+  override def add(constraints: Iterable[Constraint], st: CPPropagStrength): CPOutcome = add(constraints.toArray, st)
+
+  override def add(constraints: Iterable[Constraint]): CPOutcome = add(constraints.toArray, propagStrength)
 
   override def +=(c: Constraint, st: CPPropagStrength): CPOutcome = add(c, st)
   override def +=(c: Constraint): CPOutcome = add(c, propagStrength)

@@ -16,9 +16,7 @@
  */
 import oscar.cp._
 import oscar.util._
-
 import scala.io.Source
-import java.lang._
 
 /**
  * Quadratic Assignment Problem:
@@ -31,44 +29,39 @@ import java.lang._
  *
  * @author Pierre Schaus pschaus@gmail.com
  */
-object QuadraticAssignment {
-  def main(args: Array[String]) {
+object QuadraticAssignment extends CPModel with App {
 
-    // Read the data
-    var lines = Source.fromFile("../data/qap.txt").getLines.toList.filter(_ != "")
-    val n = lines.head.toInt
-    val N = 0 until n
+  // Read the data
+  var lines = Source.fromFile("../data/qap.txt").getLines.toList.filter(_ != "")
+  val n = lines.head.toInt
+  val N = 0 until n
+  lines = lines.drop(1)
+  var w: Array[Array[Int]] = Array() //weight matrix
+  var d: Array[Array[Int]] = Array() //distance matrix
+  for (i <- N) {
+    w = w :+ lines.head.split("[ ,\t]+").filter(_ != "").map(_ toInt).toArray
     lines = lines.drop(1)
-    var w: Array[Array[Int]] = Array() //weight matrix
-    var d: Array[Array[Int]] = Array() //distance matrix
-    for (i <- N) {
-      w = w :+ lines.head.split("[ ,\t]+").filter(_ != "").map(_ toInt).toArray
-      lines = lines.drop(1)
-    }
-    for (i <- N) {
-      d = d :+ lines.head.split("[ ,\t]+").filter(_ != "").map(_ toInt).toArray
-      lines = lines.drop(1)
-    }
-
-    // State the model and solve it
-    val cp = CPSolver()
-    cp.silent = true
-    val x = N map (v => CPIntVar(cp, 0 until n))
-    val D = Array.tabulate(n, n)((i, j) => element(d, x(i), x(j))) //matrix of variables representing the distances
-
-    cp.minimize(sum(N, N)((i, j) => D(i)(j) * w(i)(j)))
-    cp.add(allDifferent(x), Strong)
-    cp.search {
-      selectMin(x)(y => !y.isBound)(y => y.size) match {
-        case None => noAlternative
-        case Some(y) => {
-          val v = y.min
-          branch(cp.add(y == v))(cp.add(y != v))
-        }
-      }
-    }
-    println(cp.start())
-
+  }
+  for (i <- N) {
+    d = d :+ lines.head.split("[ ,\t]+").filter(_ != "").map(_ toInt).toArray
+    lines = lines.drop(1)
   }
 
+  // State the model and solve it
+  solver.silent = true
+  val x = N map (v => CPIntVar.sparse(0 until n))
+  val D = Array.tabulate(n, n)((i, j) => element(d, x(i), x(j))) //matrix of variables representing the distances
+
+  minimize(sum(N, N)((i, j) => D(i)(j) * w(i)(j)))
+  add(allDifferent(x), Strong)
+  search {
+    selectMin(x)(y => !y.isBound)(y => y.size) match {
+      case None => noAlternative
+      case Some(y) => {
+        val v = y.min
+        branch(post(y == v))(post(y != v))
+      }
+    }
+  }
+  println(start())
 }

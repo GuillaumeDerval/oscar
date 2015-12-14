@@ -23,9 +23,10 @@ package oscar.cbls.invariants.lib.logic
 /**This package proposes a set of logic invariants, which are used to define the structure of the problem*/
 
 
-import collection.immutable.SortedSet
 import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
+
+import scala.collection.immutable.SortedSet
 
 /** { i in index(values) | cond(values[i] }
  * @param values is an array of IntVar
@@ -35,35 +36,27 @@ import oscar.cbls.invariants.core.propagation.Checker
   *             By default, cond is "_ > 0"
   * @author renaud.delandtsheer@cetic.be
   * */
-case class Filter(values:Array[CBLSIntVar], cond:(Int=>Boolean)=_>0) extends SetInvariant {
-  var output:CBLSSetVar=null
+case class Filter(values:Array[IntValue], cond:(Int=>Boolean)=_>0)
+  extends SetInvariant(values.indices.foldLeft(SortedSet.empty[Int])((acc:SortedSet[Int],indice:Int) => if(cond(values(indice).value)){acc+indice}else acc),
+    values.indices.start to values.indices.end) {
 
   for (v <- values.indices) registerStaticAndDynamicDependency(values(v),v)
   finishInitialization()
 
-  def myMin = values.indices.start
-  def myMax = values.indices.end
-
-  override def setOutputVar(v:CBLSSetVar){
-    output = v
-    output.setDefiningInvariant(this)
-    output := values.indices.foldLeft(SortedSet.empty[Int])((acc:SortedSet[Int],indice:Int) => if(cond(values(indice).value)){acc+indice}else acc)
-  }
-
   @inline
-  override def notifyIntChanged(v:CBLSIntVar,index:Int, OldVal:Int,NewVal:Int){
+  override def notifyIntChanged(v:ChangingIntValue,index:Int, OldVal:Int,NewVal:Int){
     val OldCond = cond(OldVal)
     val NewCond = cond(NewVal)
-    if(OldCond  && !NewCond) output.deleteValue(index)
-    else if(NewCond && !OldCond) output.insertValue(index)
+    if(OldCond  && !NewCond) this.deleteValue(index)
+    else if(NewCond && !OldCond) this.insertValue(index)
   }
 
   override def checkInternals(c:Checker){
     for(i <- values.indices){
-      c.check(!cond(values(i).value) || output.value.contains(i),
-          Some("!cond(values(i).value) || output.value.contains(i)"))
-      c.check(cond(values(i).value) || !output.value.contains(i), 
-          Some("cond(values(i).value) || !output.value.contains(i)"))
+      c.check(!cond(values(i).value) || this.value.contains(i),
+          Some("!cond(values(i).value) || this.value.contains(i)"))
+      c.check(cond(values(i).value) || !this.value.contains(i),
+          Some("cond(values(i).value) || !this.value.contains(i)"))
     }
   }
 }

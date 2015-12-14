@@ -29,7 +29,7 @@ class GraphWeaklyConnected(val g : CPGraphVar) extends Constraint(g.s, "Weakly C
   
 	override def setup(l: CPPropagStrength): CPOutcome = {
 	  // create undirected version of g
-	  val gu = CPGraphVar(s, g.possibleNodes.size)
+	  val gu = CPGraphVar(g.possibleNodes.size)(s)
 	  // link g and gu
 	  if (s.post(new GraphUndirected(g,gu)) == Failure) return Failure // should not happen
 	  // post connected constraint on gu

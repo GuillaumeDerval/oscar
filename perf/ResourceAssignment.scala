@@ -36,10 +36,9 @@ import oscar.cp.constraints.ElementVarAC
  * 
  * @author Pierre Schaus pschaus@gmail.com
  */
-object ResourceAssignment extends App {
+object ResourceAssignment extends CPModel with App {
 
-  val cp = CPSolver()
-  cp.silent = true
+  solver.silent = true
   val binCapa = 20
   val partition = Array(Set(2, 3, 7), Set(0, 4), Set(5, 6), Set(1, 8))
 
@@ -48,45 +47,31 @@ object ResourceAssignment extends App {
     (2, 2), (2, 2), (2, 3), (2, 2), (2, 1),
     (3, 3), (3, 2), (3, 2), (3, 2), (3, 1),
     (4, 3), (4, 2), (4, 1)) // for each subtask: (super task, weight)
+    
   val nbBins = partition.flatten.max + 1
   val nbTasks = taskWeight.map(_._1).max + 1
 
   // p(t) is the partition chosen for task i
-  var p = Array.fill(nbTasks)(CPIntVar(cp, 0 until partition.size))
+  val p = Array.fill(nbTasks)(CPIntVar(0 until partition.size))
 
   // x(i) is the bin chosen for subtask i
   val x: Array[CPIntVar] = for ((i, j) <- taskWeight) yield {
-    var possbin = Array.tabulate(partition.size)(i => CPIntVar(cp, partition(i)))
-    var xij = CPIntVar(cp, 0 until nbBins)
+    val possbin = Array.tabulate(partition.size)(i => CPIntVar(partition(i)))
+    val xij = CPIntVar(0 until nbBins)
     possbin(p(i))
   }
 
-  val load = Array.fill(nbBins)(CPIntVar(cp, 0 to binCapa))
+  val load = Array.fill(nbBins)(CPIntVar(0 to binCapa))
 
-  cp.add(maximum((0 until nbBins).map(load(_))) <= 6)
-  cp.add(binPacking(x, taskWeight.map(_._2), load))
+  add(maximum((0 until nbBins).map(load(_))) <= 6)
+  add(binPacking(x, taskWeight.map(_._2), load))
 
   // some stupid constraints to make it tractable
   for(i <- 1 until 9) {
-    cp.add(x(i-1) <= x(i))
+    add(x(i-1) <= x(i))
   }
-  cp.add(gcc(x,0 to 8,2,3))
-
+  add(gcc(x,0 to 8,2,3))
   
-  /*
-  cp.onSolution {
-    println(load.mkString(","))
-    println(x.mkString(","))
-  }*/
-
-  //cp.add(load(7) == 3)
-  //cp.add(x(0) == 1)
- 
-  
-  cp.search {
-    binaryFirstFail(x, _.min)
-  }
-
-  println(cp.start())
-
+  search { binaryFirstFail(x, _.min) }
+  println(start())
 }

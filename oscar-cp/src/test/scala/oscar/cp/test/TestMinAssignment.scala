@@ -89,7 +89,7 @@ class TestMinAssignment extends FunSuite with ShouldMatchers {
     cp.post(new MinAssignment(x, w, cost))
     cost.min should be(7)
     cp.post(cost <= 7)
-    println(x.mkString(","))
+    //println(x.mkString(","))
     x(0).value should be(0)
     //x(1).value should be(1) // if we do AC
     x(2).value should be(2)

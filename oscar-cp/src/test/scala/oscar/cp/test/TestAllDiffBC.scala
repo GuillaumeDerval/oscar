@@ -23,11 +23,7 @@ import oscar.cp.constraints.AllDiffBC
 class TestAllDiffBC extends FunSuite with ShouldMatchers  {
   
   
-  test("test1") { 
-	  val cp = CPSolver()
-	  val x = Array(CPIntVar(3 to 4)(cp),CPIntVar(2 to 4)(cp),CPIntVar(3 to 4)(cp),CPIntVar(2 to 5)(cp),CPIntVar(1 to 6)(cp))
-	  cp.add(new AllDiffBC(x))
-  }
+
   
   val rand = new scala.util.Random(0)
   
@@ -52,9 +48,14 @@ class TestAllDiffBC extends FunSuite with ShouldMatchers  {
         cp.add(allDifferent(x), Strong)
       }
       val stat2 = cp.startSubjectTo() {
-        cp.add(new AllDiffBC(x))
+        cp.add(allDifferent(x), Medium)
       }
-      stat1.nSols should be(stat2.nSols)
+      val stat3 = cp.startSubjectTo() {
+        cp.add(allDifferent(x), Weak)
+      }      
+      assert(stat1.nSols  == stat2.nSols)
+      assert(stat1.nSols  == stat3.nSols)
+      
     }
 
     

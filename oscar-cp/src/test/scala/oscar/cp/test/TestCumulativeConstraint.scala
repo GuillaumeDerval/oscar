@@ -2,18 +2,12 @@ package oscar.cp.test
 
 
 import oscar.cp.core.Constraint
-import oscar.cp.constraints.SweepMaxCumulative
+import oscar.cp.scheduling.constraints._
 import oscar.cp._
 import oscar.cp.testUtils._
-import oscar.cp.constraints.CumulativeDecomp
 import oscar.cp.searches.BinaryStaticOrderBranching
-import oscar.cp.constraints.EnergeticReasoning
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.CPOutcome._
-import oscar.cp.scheduling.constraints.TimeTableDisjunctiveReasoning
-import oscar.cp.scheduling.constraints.TTPerTask
-
-
 
 
 abstract class TestCumulativeConstraint(val cumulativeName: String, val nTests: Int = 1000, val minDuration: Int = 0, val k: Int = 5) extends TestSuite {
@@ -139,6 +133,15 @@ class TestTT extends TestCumulativeConstraint("TT") {
   override def cumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], demands: Array[CPIntVar], resources: Array[CPIntVar], capacity: CPIntVar, id: Int): Array[Constraint] = {
     Array(
         TTPerTask(starts, durations, ends, demands, resources, capacity, id)
+    )
+  }
+}
+
+class TestTTEF extends TestCumulativeConstraint("TTEF") {
+  override def cumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], demands: Array[CPIntVar], resources: Array[CPIntVar], capacity: CPIntVar, id: Int): Array[Constraint] = {
+    Array(
+        new CumulativeDecomp(starts, durations, ends, demands, resources, capacity, id),
+        TimeTableEdgeFinding(starts, durations, ends, demands, resources, capacity, id)
     )
   }
 }

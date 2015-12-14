@@ -14,19 +14,18 @@
  ******************************************************************************/
 package oscar.cp.test
 
-import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{Matchers, FunSuite}
 import oscar.cp._
 import oscar.cp.constraints.{UnaryResourceWithOptionalActivities, UnaryResource}
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
  */
-class TestUnaryResource extends FunSuite with ShouldMatchers {
+class TestUnaryResource extends FunSuite with Matchers {
 
   // decomp without resource variables
   def decomp(cp: CPSolver, starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar]): Unit = {
-    val n = starts.size
+    val n = starts.length
     for (i <- 0 until n; j <- i + 1 until n) {
       cp.add((ends(i) <== starts(j)) || (ends(j) <== starts(i)))
     }
@@ -34,7 +33,7 @@ class TestUnaryResource extends FunSuite with ShouldMatchers {
   
   // decomp with resource variables
   def decomp(cp: CPSolver, starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar],resources: Array[CPIntVar], id: Int ): Unit = {
-    val n = starts.size
+    val n = starts.length
     for (i <- 0 until n; j <- i + 1 until n) {
       cp.add((ends(i) <== starts(j)) || (ends(j) <== starts(i)) || (resources(i) !== id) || (resources(j) !== id))
     }
@@ -51,7 +50,7 @@ class TestUnaryResource extends FunSuite with ShouldMatchers {
   
   def randomInstance(n: Int, seed: Int = 0) = {
     val rand = new scala.util.Random(seed)
-    Array.tabulate(n)(i => (1 + rand.nextInt(3),rand.nextBoolean))
+    Array.tabulate(n)(i => (1 + rand.nextInt(3),rand.nextBoolean()))
   }
 
   
@@ -62,9 +61,9 @@ class TestUnaryResource extends FunSuite with ShouldMatchers {
       val starts = Array(CPIntVar(2 to 4), CPIntVar(2 to 4))
       val durations = Array(1,1)
       val durs = durations.map(d => CPIntVar(d))
-      val ends = Array.tabulate(starts.size)(i => starts(i) + durations(i))
+      val ends = Array.tabulate(starts.length)(i => starts(i) + durations(i))
       add(new UnaryResource(starts,durs,ends))
-      cp.isFailed should be(false)
+      cp.isFailed shouldBe false
   }   
 
   test("decomp vs global, permutations") {
@@ -81,10 +80,6 @@ class TestUnaryResource extends FunSuite with ShouldMatchers {
       val durs = Array.tabulate(n)(i => CPIntVar(durations(i)))
       val ends = Array.tabulate(n)(i => starts(i) + durations(i))
 
-      cp.onSolution {
-        val p = (0 until n).sortBy(i => starts(i).value)
-      }
-
       cp.search {
         binaryFirstFail(starts)
       }
@@ -97,8 +92,8 @@ class TestUnaryResource extends FunSuite with ShouldMatchers {
         unary(cp, starts, durs, ends)
       }
       
-      statDecomp.nSols should be(statGlobal.nSols)
-      statDecomp.nSols should be(factorial(n))
+      statDecomp.nSols shouldBe statGlobal.nSols
+      statDecomp.nSols shouldBe factorial(n)
     }
     for (i <- 0 until 100) {
       testPermutations(i)
@@ -112,8 +107,8 @@ class TestUnaryResource extends FunSuite with ShouldMatchers {
 		val horizon = 5
 		implicit val cp = new CPSolver()
 		cp.silent = true
-        val starts = Array.fill(4)(CPIntVar(0 to 5))
-        val ends = Array.fill(4)(CPIntVar(0 to 5))
+        val starts = Array.fill(4)(CPIntVar(0 to horizon))
+        val ends = Array.fill(4)(CPIntVar(0 to horizon))
         val durs = Array(CPIntVar(3),CPIntVar(1),CPIntVar(2),CPIntVar(2))
         for (i <- 0 until 4) {
           add(starts(i) + durs(i) == ends(i))
@@ -126,19 +121,17 @@ class TestUnaryResource extends FunSuite with ShouldMatchers {
 		
 		add(new UnaryResource(r1.map(starts(_)),r1.map(durs(_)),r1.map(ends(_))))
 		add(new UnaryResource(r2.map(starts(_)),r2.map(durs(_)),r2.map(ends(_))))
-		
-		var nSol = 0
-		
+
 		val expectedSol = Set((0, 3, 0, 3), (0, 4, 0, 3), (0, 3, 1, 3), (0, 4, 1, 3))
 		cp.search {
 			binaryStatic(starts)
 
 		} onSolution {
 		  	val sol = (starts(0).value,starts(1).value,starts(2).value,starts(3).value)
-			expectedSol.contains(sol) should be(true)
+			expectedSol.contains(sol) shouldBe true
 		}
 		
-		start().nSols should be(4)
+		start().nSols shouldBe 4
 	}
 	
 	test("Test 2: durations") {	
@@ -146,8 +139,8 @@ class TestUnaryResource extends FunSuite with ShouldMatchers {
 		val horizon = 5
 		implicit val cp = new CPSolver()
 		cp.silent = true
-        val starts = Array.fill(4)(CPIntVar(0 to 5))
-        val ends = Array.fill(4)(CPIntVar(0 to 5))
+        val starts = Array.fill(4)(CPIntVar(0 to horizon))
+        val ends = Array.fill(4)(CPIntVar(0 to horizon))
         val durs = Array(CPIntVar(3 to 4),CPIntVar(1),CPIntVar(2),CPIntVar(2))
         for (i <- 0 until 4) {
           add(starts(i) + durs(i) == ends(i))
@@ -160,21 +153,19 @@ class TestUnaryResource extends FunSuite with ShouldMatchers {
 		
 		add(new UnaryResource(r1.map(starts(_)),r1.map(durs(_)),r1.map(ends(_))))
 		add(new UnaryResource(r2.map(starts(_)),r2.map(durs(_)),r2.map(ends(_))))
-		
-		var nSol = 0
-		
+
 		val expectedSol = Set((0, 3, 0, 3), (0, 4, 0, 3), (0, 3, 1, 3), (0, 4, 1, 3))
 		cp.search {
 			binaryStatic(starts)
 
 		} onSolution {
-		    durs(0).value should be(3)
-		    durs(0).isBound should be(true)
+		    durs(0).value shouldBe 3
+		    durs(0).isBound shouldBe true
 		  	val sol = (starts(0).value,starts(1).value,starts(2).value,starts(3).value)
-			expectedSol.contains(sol) should be(true)
+			expectedSol.contains(sol) shouldBe true
 		}
 		
-		start().nSols should be(4)
+		start().nSols shouldBe 4
 	}
 	
 
@@ -182,8 +173,8 @@ class TestUnaryResource extends FunSuite with ShouldMatchers {
 		val horizon = 5
 		implicit val cp = new CPSolver()
 		cp.silent = true
-        val starts = Array.fill(4)(CPIntVar(0 to 5))
-        val ends = Array.fill(4)(CPIntVar(0 to 5))
+        val starts = Array.fill(4)(CPIntVar(0 to horizon))
+        val ends = Array.fill(4)(CPIntVar(0 to horizon))
         val durs = Array(CPIntVar(3 to 4),CPIntVar(2),CPIntVar(2),CPIntVar(1))
         for (i <- 0 until 4) {
           add(starts(i) + durs(i) == ends(i))
@@ -195,9 +186,7 @@ class TestUnaryResource extends FunSuite with ShouldMatchers {
 		
 		add(new UnaryResource(r1.map(starts(_)),r1.map(durs(_)),r1.map(ends(_))))
 		add(new UnaryResource(r2.map(starts(_)),r2.map(durs(_)),r2.map(ends(_))))
-		
-		var nSol = 0
-		
+
 		val expectedSol = Set((0, 3, 0, 2),
 							  (0, 3, 0, 3),
 							  (0, 3, 0, 4), 
@@ -226,13 +215,13 @@ class TestUnaryResource extends FunSuite with ShouldMatchers {
 			binaryStatic(starts)
 
 		} onSolution {
-		    durs(0).value should be(3)
-		    durs(0).isBound should be(true)
+		    durs(0).value shouldBe 3
+		    durs(0).isBound shouldBe true
 		  	val sol = (starts(0).value,starts(1).value,starts(2).value,starts(3).value)
-			expectedSol.contains(sol) should be(true)
+			expectedSol.contains(sol) shouldBe true
 		}
 		
-		start().nSols should be(24)
+		start().nSols shouldBe 24
 	}
 
   test("Test 4: 7 random activities") {

@@ -1,19 +1,17 @@
-/**
- * *****************************************************************************
+/*******************************************************************************
  * OscaR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 2.1 of the License, or
  * (at your option) any later version.
- *
+ *   
  * OscaR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License  for more details.
- *
+ *   
  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
- * ****************************************************************************
- */
+ *******************************************************************************/
 
 package oscar.cp.core.variables
 
@@ -24,15 +22,12 @@ import scala.util.Random
 import oscar.cp.core.domains.SparseSetDomain
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.SnapshotVarInt
-import oscar.cp.core.DeltaVarInt
+import oscar.cp.core.delta.PropagatorIntVar
 import oscar.cp.core.CPOutcome
-import oscar.cp.core.Watcher
-
-trait DomainIterator extends Iterator[Int] {
-  def removeValue: CPOutcome
-  def execute()
-}
+import oscar.cp.core.CPOutcome._
+import oscar.cp.core.watcher.Watcher
+import oscar.cp.core.delta.DeltaIntVar
+import oscar.cp.core.delta.DeltaIntVarAdaptable
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
@@ -146,6 +141,8 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
    */
   def callPropagateWhenBoundsChange(c: Constraint): Unit
 
+  def callPropagateWhenBoundsChange(c: Constraint, cond: => Boolean): Unit
+
   /**
    * Level 1 registration: ask that the valBind(CPIntVar) method of the constraint c is called whenever
    * the domain of the variable is a singleton (i.e. isBound).
@@ -210,45 +207,11 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
   def iterator: Iterator[Int]
   
   final override def foreach[@specialized(Int) U](f: Int => U): Unit = iterator.foreach(f)
-
-  def domainIterator: DomainIterator = {
-    new DomainIterator {
-      private val it = iterator
-      private var ok = false
-      private var v = Int.MinValue
-      private var collect: List[Int] = Nil
-      private var maxRemove = CPIntVar.this.size
-
-      def next(): Int = {
-        v = it.next()
-        ok = true
-        v
-      }
-      def hasNext: Boolean = {
-        it.hasNext
-      }
-
-      def removeValue(): CPOutcome = {
-        assert(ok == true)
-        ok = false
-        collect = v :: collect
-        maxRemove -= 1
-        if (maxRemove <= 0)
-          CPOutcome.Failure
-        else
-          CPOutcome.Suspend
-      }
-
-      def execute() = {
-        for (v <- collect) CPIntVar.this.removeValue(v)
-      }
-    }
-  }
   
   /**
    * @return an (not sorted) array representation of the domain.
    */
-  def toArray: Array[Int] = domainIterator.toArray
+  def toArray: Array[Int] = iterator.toArray
 
   /**
    *  @param array.length >= this.size
@@ -257,14 +220,14 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
    *          The array is not sorted.
    */
   def fillArray(array: Array[Int]): Int = {
-    val ite = domainIterator
+    val ite = iterator
     var i = 0
     while (ite.hasNext) {
       array(i) = ite.next
       i += 1
     }
     i
-  }  
+  } 
 
   /**
    * Level 2 registration: ask that the propagate() method of the constraint c is called whenever
@@ -272,61 +235,74 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
    * @param c
    * @see oscar.cp.core.Constraint#propagate()
    */
-  def callPropagateWhenDomainChanges(c: Constraint, trackDelta: Boolean = false): Unit
+  def callPropagateWhenDomainChanges(c: Constraint): Unit
+  def callPropagateWhenDomainChanges(c: Constraint, cond: => Boolean): Unit
 
-  def callPropagateWhenDomainChanges(c: Constraint, watcher: Watcher): Unit
+  def callPropagateOnChangesWithDelta(c: Constraint): DeltaIntVar
+  def callPropagateOnChangesWithDelta(c: Constraint, cond: => Boolean): DeltaIntVar
   
-  def filterWhenDomainChangesWithDelta(idempotent: Boolean = false, priority: Int = CPStore.MaxPriorityL2-2) (filter: DeltaVarInt => CPOutcome) {
-    store.post(
-      new DeltaVarInt(this,filter,idempotent,priority) {
-        def setup(l: CPPropagStrength) = {
-          callPropagateWhenDomainChanges(this)
-          CPOutcome.Suspend
-        }
-      }) // should not fail
+  def awakeOnChanges(watcher: Watcher): Unit
+
+  def callOnChanges(propagate: DeltaIntVar => CPOutcome): PropagatorIntVar = {
+    val propagator = new PropagatorIntVar(this, 0, propagate)
+    propagator.idempotent = true
+    callPropagateWhenDomainChanges(propagator)
+    propagator
+  }
+  
+  def callOnChanges(id: Int, propagate: DeltaIntVar => CPOutcome): PropagatorIntVar = {
+    val propagator = new PropagatorIntVar(this, id, propagate)
+    propagator.idempotent = true
+    propagator.priority = CPStore.MaxPriorityL2
+    callPropagateWhenDomainChanges(propagator)
+    propagator
+  }
+  
+  def filterWhenDomainChangesWithDelta(idempotent: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: DeltaIntVar => CPOutcome): DeltaIntVar = {
+    val propagator = new PropagatorIntVar(this, 0, filter)
+    propagator.idempotent = idempotent
+    propagator.priorityL2 = priority
+    callPropagateWhenDomainChanges(propagator)
+    propagator.snapshot
   }
 
-  def filterWhenDomainChanges(idempot: Boolean = true, priority: Int = CPStore.MaxPriorityL2-2) (filter: => CPOutcome) {
-    store.post(
-      new Constraint(this.store, "filterWhenDomainChanges on  " + this) {
-        idempotent = idempot
-        priorityL2 = priority
+  def filterWhenDomainChanges(idempot: Boolean = true, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: => CPOutcome) {
+    (new Constraint(this.store, "filterWhenDomainChanges on  " + this) {
+      idempotent = idempot
+      priorityL2 = priority
 
-        def setup(l: CPPropagStrength) = {
-          callPropagateWhenDomainChanges(this)
-          CPOutcome.Suspend
-        }
-        override def propagate() = filter
-      })
-  } 
-  
+      def setup(l: CPPropagStrength) = {
+        callPropagateWhenDomainChanges(this)
+        CPOutcome.Suspend
+      }
+      override def propagate() = filter
+    }).setup(store.propagStrength)
+  }
 
-  def filterWhenBoundsChange(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2-2)(filter: => CPOutcome) {
-    store.post(
-      new Constraint(this.store, "filterWhenBoundsChange on  " + this) {
-        idempotent = idempot
-        priorityL2 = priority
+  def filterWhenBoundsChange(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: => CPOutcome) {
+    (new Constraint(this.store, "filterWhenBoundsChange on  " + this) {
+      idempotent = idempot
+      priorityL2 = priority
 
-        def setup(l: CPPropagStrength) = {
-          callPropagateWhenBoundsChange(this)
-          CPOutcome.Suspend
-        }
-        override def propagate() = filter
-      })
+      def setup(l: CPPropagStrength) = {
+        callPropagateWhenBoundsChange(this)
+        CPOutcome.Suspend
+      }
+      override def propagate() = filter
+    }).setup(store.propagStrength)
   }
 
   def filterWhenBind(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2-2)(filter: => CPOutcome) {
-    store.post(
-      new Constraint(this.store, "filterWhenBind on  " + this) {
-        idempotent = idempot
-        priorityL2 = priority        
-        
-        def setup(l: CPPropagStrength) = {
-          callPropagateWhenBind(this)
-          CPOutcome.Suspend
-        }
-        override def propagate() = filter
-      })
+    (new Constraint(this.store, "filterWhenBind on  " + this) {
+      idempotent = idempot
+      priorityL2 = priority
+
+      def setup(l: CPPropagStrength) = {
+        callPropagateWhenBind(this)
+        CPOutcome.Suspend
+      }
+      override def propagate() = filter
+    }).setup(store.propagStrength)
   }
 
   /**
@@ -356,79 +332,33 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
    * @return  Suspend if the domain is not equal to the singleton {val}, Failure otherwise
    */
   def removeValue(value: Int): CPOutcome
-
-  // ------ delta methods to be called in propagate -------
-
-  def changed(sn: SnapshotVarInt): Boolean = {
-    sn.oldSize != size
+  
+  def removeValues(values: Array[Int], nValues: Int): CPOutcome = {
+    var i = nValues
+    while (i > 0) {
+      i -= 1
+      if (removeValue(values(i)) == Failure) return Failure
+    }
+    Suspend
   }
-
-  def minChanged(sn: SnapshotVarInt): Boolean = {
-    assert(sn.oldMin <= min)
-    sn.oldMin < min
-  }
-
-  def maxChanged(sn: SnapshotVarInt): Boolean = {
-    assert(sn.oldMax >= max)
-    sn.oldMax > max
-  }
-
-  def boundsChanged(sn: SnapshotVarInt): Boolean = {
-    sn.oldMax == max
-  }
-
-  def oldMin(sn: SnapshotVarInt): Int = {
-    assert(sn.oldMin <= min)
-    sn.oldMin
-  }
-
-  def oldMax(sn: SnapshotVarInt): Int = {
-    assert(sn.oldMax >= max)
-    sn.oldMax
-  }
-
-  def oldSize(sn: SnapshotVarInt): Int = {
-    assert(sn.oldSize >= size)
-    sn.oldSize
-  }
-
-  def deltaSize(sn: SnapshotVarInt): Int = {
-    sn.oldSize - size
-  }
+  
+  final def removeValues(values: Array[Int]): CPOutcome = removeValues(values, values.length)
+  
+  /** 
+   *  Restrict the domain to be equal to the `newSize` first values contained in `newDomain`.
+   *  Observe that the restricted new domain must be a subset of the actual domain of the variable.
+   */
+  def restrict(newDomain: Array[Int], newSize: Int): Unit
   
   def delta(oldMin: Int, oldMax: Int, oldSize: Int): Iterator[Int]
   
   def fillDeltaArray(oldMin: Int, oldMax: Int, oldSize: Int, arr: Array[Int]): Int
 
-  // --------------------------------------------
-
-  def changed(c: Constraint): Boolean
-
-  def minChanged(c: Constraint): Boolean
-
-  def maxChanged(c: Constraint): Boolean
-
-  def boundsChanged(c: Constraint): Boolean
-
-  def oldMin(c: Constraint): Int
-
-  def oldMax(c: Constraint): Int
-
-  def oldSize(c: Constraint): Int
-
-  def deltaSize(c: Constraint): Int
-
-  def delta(c: Constraint): Iterator[Int]
-
-  def fillDeltaArray(c: Constraint, arr: Array[Int]): Int = {
-    val ite = delta(c)
-    var i = 0
-    while (ite.hasNext) {
-      arr(i) = ite.next()
-      i += 1
-    }
-    i
-  }  
+  def delta(constraint: Constraint,id: Int = 0): DeltaIntVar = {
+    val delta = new DeltaIntVarAdaptable(this, id)
+    constraint.registerDelta(delta)
+    delta
+  }
 
   // ------------------------ some useful methods for java -------------------------
 

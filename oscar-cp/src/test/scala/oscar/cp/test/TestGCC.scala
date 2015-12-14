@@ -35,7 +35,7 @@ class TestGCC extends FunSuite with ShouldMatchers {
     if (gccvar) {
       cp.post(new oscar.cp.constraints.GCCVar(x, -1, o));
     } else {
-      cp.post(new oscar.cp.constraints.SoftGCC(x, -1, randomOcc(0), randomOcc(1), CPIntVar(0)(cp)));
+      cp.post(new oscar.cp.constraints.SoftGCCAC(x, -1, randomOcc(0), randomOcc(1), CPIntVar(0)(cp)));
     }
     if (cp.isFailed()) {
       return -1;
@@ -70,7 +70,7 @@ class TestGCC extends FunSuite with ShouldMatchers {
 
     val o = Array.fill(10)(CPIntVar(0 to 10)(cp))
 
-    cp.post(new oscar.cp.constraints.GCCVar(x, 0, o));
+    cp.post(new oscar.cp.constraints.GCCVarAC(x, 0, o));
 
     cp.isFailed() should be(false)
 

@@ -56,8 +56,8 @@ public class DiffReifVar extends Constraint {
 			return valBind(y);
 		}
 		else {
-			x.callPropagateWhenDomainChanges(this,false);
-			y.callPropagateWhenDomainChanges(this,false);	
+			x.callPropagateWhenDomainChanges(this);
+			y.callPropagateWhenDomainChanges(this);	
 			b.callValBindWhenBind(this);
 			x.callValBindWhenBind(this);
 			y.callValBindWhenBind(this);

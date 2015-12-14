@@ -17,6 +17,7 @@
 
 import oscar.cp._
 import oscar.algo.search.Branching
+import oscar.cp.core.CPPropagStrength
 
 /**
  * n-queens model: place n-queens on a chess-board such that they don't attack each other.
@@ -31,11 +32,11 @@ object QueensJC extends CPModel with App {
 
   // Variables
   val queens = Array.fill(nQueens)(CPIntVar(0, nQueens - 1))
-
+  val cl = CPPropagStrength.Weak
   // Constraints
-  add(allDifferent(queens))
-  add(allDifferent(Queens.map(i => queens(i) + i)))
-  add(allDifferent(Queens.map(i => queens(i) - i)))
+  add(allDifferent(queens),cl)
+  add(allDifferent(Queens.map(i => queens(i) + i)),cl)
+  add(allDifferent(Queens.map(i => queens(i) - i)),cl)
 
   // Search heuristic
   search(binaryFirstFail(queens))

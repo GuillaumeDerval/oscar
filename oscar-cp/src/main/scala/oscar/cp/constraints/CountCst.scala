@@ -31,7 +31,7 @@ class CountCst(val N: CPIntVar, val X: Array[CPIntVar], val Y: Int) extends Cons
   val n = X.size
 
   override def setup(l: CPPropagStrength): CPOutcome = {
-    X.foreach(_.callPropagateWhenDomainChanges(this,false))
+    X.foreach(_.callPropagateWhenDomainChanges(this))
     N.callPropagateWhenBoundsChange(this)
     CPOutcome.Suspend
   }

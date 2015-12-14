@@ -26,8 +26,8 @@ import oscar.cp.core.variables.CPBoolVar
  * @author Pierre Schaus pschaus@gmail.com
  */
 class UnaryResourceWithOptionalActivities(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], required: Array[CPBoolVar]) extends Constraint(starts(0).store) {
-  
-  idempotent = true
+  priorityL2 = 1
+  idempotent = false
   def this(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], resources: Array[CPIntVar], id: Int) = this(starts,durations,ends,resources.map(_.isEq(id)))
   
   def this(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar]) = {
@@ -101,7 +101,7 @@ class UnaryResourceWithOptionalActivities(starts: Array[CPIntVar], durations: Ar
     
     
     failure = false
-    do {
+//    do {
       do {
         do {
           if (!overloadChecking()) {
@@ -109,7 +109,7 @@ class UnaryResourceWithOptionalActivities(starts: Array[CPIntVar], durations: Ar
           }
         } while (!failure && detectablePrecedences())
       } while (!failure && notFirstNotLast() && !failure)
-    } while (!failure && edgeFinder())
+//    } while (!failure && edgeFinder())
 
     if (failure) {
       return CPOutcome.Failure
@@ -280,6 +280,7 @@ class UnaryResourceWithOptionalActivities(starts: Array[CPIntVar], durations: Ar
       if (required(i).isTrue) {
         if (activities(i).lct > newLct(i) || activities(i).est < newEst(i)) {
           modified = true
+          // println("NFNL pushed")
 
           if (activities(i).start.updateMin(newEst(i)) == CPOutcome.Failure) {
             failure = true
@@ -389,6 +390,7 @@ class UnaryResourceWithOptionalActivities(starts: Array[CPIntVar], durations: Ar
 			if (required(i).isTrue) {
 				if (newEst(i) != Int.MinValue) {
 					modified = true
+          // println("DP pushed")
 					if (activities(i).start.updateMin(newEst(i)) == CPOutcome.Failure) {
 						failure = true
 					}
@@ -514,6 +516,7 @@ class UnaryResourceWithOptionalActivities(starts: Array[CPIntVar], durations: Ar
       if (required(i).isTrue) {
         
         if (activities(i).est < newEst(i)) {
+          println("EF pushed")
           modified = true
           if (activities(i).start.updateMin(newEst(i)) == CPOutcome.Failure) {
             failure = true
@@ -522,6 +525,7 @@ class UnaryResourceWithOptionalActivities(starts: Array[CPIntVar], durations: Ar
         }
         
         if (activities(i).lct > newLct(i)) {
+          println("EF pushed")
           modified = true
           if (activities(i).end.updateMax(newLct(i)) == CPOutcome.Failure) {
             failure = true

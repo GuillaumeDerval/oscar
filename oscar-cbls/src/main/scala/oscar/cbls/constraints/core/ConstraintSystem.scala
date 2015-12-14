@@ -20,53 +20,53 @@
 
 package oscar.cbls.constraints.core
 
-import oscar.cbls.invariants.core.computation.{Variable, CBLSIntVar, Store}
-import oscar.cbls.objective.ObjectiveTrait
-import collection.immutable.{SortedSet, SortedMap}
-import oscar.cbls.invariants.lib.numeric.{Prod2, Prod, Sum}
+import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
+import oscar.cbls.invariants.lib.numeric.{ExtendableSum, Prod, Prod2, Sum}
+import oscar.cbls.objective.Objective
 
 /** A constraint system is a composition of constraints.
  * It is itself a constraint, offering the same features, namely, a global violation and a violation specific to each variable.
  * monitoring the violation of a variable requires that the ConstraintSystem has been notified that the variable should have an associated violation degree.
  * This is achieved by calling the method registerForViolation(v:Variable).
- * @param _model is the model in which all the variables referenced by the constraints are declared.
+ * @param model is the model in which all the variables referenced by the constraints are declared.
  * @author renaud.delandtsheer@cetic.be
  */
-case class ConstraintSystem(val _model:Store) extends Constraint with ObjectiveTrait{
-  //ConstraintSystems do not act as invariant because everything is subcontracted.
-
-  model = _model
-
-  finishInitialization(_model)
+case class ConstraintSystem(model:Store) extends Constraint with Objective{
+  //ConstraintSystems do not act as invariant because everything is subcontracted
 
   model.addToCallBeforeClose(() => this.close())
 
-  class GlobalViolationDescriptor(val Violation:CBLSIntVar){
-    var AggregatedViolation:List[CBLSIntVar] = List.empty
+  class GlobalViolationDescriptor(val Violation:ExtendableSum){
+    var AggregatedViolation:List[IntValue] = List.empty
   }
 
-  val IndexForLocalViolationINSU = model.getStorageKey
-  val IndexForGlobalViolationINSU = model.getStorageKey
+  val IndexForLocalViolationINSU = model.newStorageKey()
+  val IndexForGlobalViolationINSU = model.newStorageKey()
 
-  private val Violation:CBLSIntVar = CBLSIntVar(this.model,0,Int.MaxValue,0,"Violation")
+  var Violation:ChangingIntValue = null
 
-  private var PostedConstraints:List[(Constraint,CBLSIntVar)] = List.empty
+  private var PostedConstraints:List[(Constraint,IntValue)] = List.empty
   //private var AllVars:SortedMap[Variable,List[(Constraint,IntVar)]]=SortedMap.empty
 
-  private var VarInConstraints:List[Variable] = List.empty
-  private var VarsWatchedForViolation:List[Variable] = List.empty
+  private var VarInConstraints:List[AbstractVariable] = List.empty
+  private var VarsWatchedForViolation:List[AbstractVariable] = List.empty
 
-  override def toString() = {
-    val constraints = PostedConstraints.map(_._1)
-    val sortedConstraints = constraints.sortBy(c => c.violation.value)
-    val sortedConstraintsStrings = sortedConstraints.map(c => "" + c.violation + " " + c)
-    "ConstraintSystem{" + this.Violation + "\n " + sortedConstraintsStrings.mkString("\n  ") + "}\n"
+  override def detailedString(short: Boolean, indent:Int = 0): String = {
+    val displayedConstraints = (if(short) violatedConstraints
+      else PostedConstraints.map(_._1)).sortBy(c => c.violation.value).map(c => c + " " + "viol:" + c.violation.value)
+
+    val displayedConstraintsString = displayedConstraints.mkString("\n" + nSpace(indent+4)) + (if (displayedConstraints.isEmpty) "" else ("\n" + nSpace(indent)))
+    val constraintExplanationString = if(short) "violated constraints" else "all constraints"
+
+    "ConstraintSystem(" + this.Violation + " " + constraintExplanationString + ":\n" +
+      nSpace(indent+4) + displayedConstraintsString  + ")"
   }
+
   /**
    * @return the constraints posted in the constraint system, together with their weighting factor.
    */
-  def getPostedConstraints:List[(Constraint,CBLSIntVar)] = PostedConstraints
+  def getPostedConstraints:List[(Constraint,IntValue)] = PostedConstraints
 
   /**Method used to post a constraint in the constraint system. (synonym of post)
     * Cannot be called after the constraint system has been closed.
@@ -75,7 +75,7 @@ case class ConstraintSystem(val _model:Store) extends Constraint with ObjectiveT
     * @param c is the posted constraint.
     * @param weight is the weight that is used in the weighted sum of the violation degrees.
     */
-  def add(c:Constraint,weight:CBLSIntVar=null) = post(c,weight)
+  def add(c:Constraint,weight:IntValue=null) = post(c,weight)
 
   /**Method used to post a constraint in the constraint system. (synonym of add)
    * Cannot be called after the constraint system has been closed.
@@ -84,39 +84,37 @@ case class ConstraintSystem(val _model:Store) extends Constraint with ObjectiveT
    * @param c is the posted constraint.
    * @param weight is the weight that is used in the weighted sum of the violation degrees.
    */
-  def post(c:Constraint,weight:CBLSIntVar=null){
+  def post(c:Constraint,weight:IntValue=null){
 
-    assert(c.getPropagationStructure == this.model || c.getPropagationStructure == null,
-      "constraints must be registered to same propagation structure as constraint system")
     PostedConstraints = (c,weight) :: PostedConstraints
 
-    for(variable <- c.constrainedVariables){
-      val oldConstrAndWeightList:List[(Constraint,CBLSIntVar)] = variable.getStorageAt(IndexForLocalViolationINSU,List.empty)
+    for(variable:AbstractVariable <- c.constrainedVariables){
+      val oldConstrAndWeightList:List[(Constraint,IntValue)] = variable.getStorageAt(IndexForLocalViolationINSU,List.empty)
       if (oldConstrAndWeightList.isEmpty) VarInConstraints = variable :: VarInConstraints
-      variable.storeAt(IndexForLocalViolationINSU,((c,weight)::oldConstrAndWeightList))
+      variable.storeAt(IndexForLocalViolationINSU,(c,weight)::oldConstrAndWeightList)
     }
   }
 
   private def aggregateLocalViolations(){
     for (variable <- VarInConstraints){
-      val ConstrAndWeightList:List[(Constraint,CBLSIntVar)] = variable.getStorageAt(IndexForLocalViolationINSU,null)
+      val ConstrAndWeightList:List[(Constraint,IntValue)] = variable.getStorageAt(IndexForLocalViolationINSU,null)
 
-      val product:List[CBLSIntVar] = ConstrAndWeightList.map((ConstrAndWeight) => {
+      val product:List[IntValue] = ConstrAndWeightList.map((ConstrAndWeight) => {
         val constr = ConstrAndWeight._1
         val weight = ConstrAndWeight._2
         if(weight == null) constr.violation(variable)
-        else Prod2(constr.violation(variable),weight).toIntVar
+        else Prod2(constr.violation(variable),weight)
       })
-      val LocalViolation = (if (!product.isEmpty && product.tail.isEmpty) product.head
-                            else Sum(product).toIntVar)
+      val LocalViolation = if (!product.isEmpty && product.tail.isEmpty) product.head
+                            else Sum(product)
       variable.storeAt(IndexForLocalViolationINSU,LocalViolation)
     }
   }
 
   private def PropagateLocalToGlobalViolations(){
     for(varWithLocalViol <- VarInConstraints){
-      val localViol:CBLSIntVar = varWithLocalViol.getAndFreeStorageAt(IndexForLocalViolationINSU)
-      val sources = model.getSourceVariables(varWithLocalViol)
+      val localViol:IntValue = varWithLocalViol.getAndFreeStorageAt(IndexForLocalViolationINSU)
+      val sources = model.sourceVariables(varWithLocalViol)
       //TODO: this seems a bit inefficient
       for(sourcevar <- sources){
         val GlobalViol:GlobalViolationDescriptor = sourcevar.getStorageAt(IndexForGlobalViolationINSU,null)
@@ -128,7 +126,7 @@ case class ConstraintSystem(val _model:Store) extends Constraint with ObjectiveT
   private def aggregateGlobalViolations(){
     for (variable <- VarsWatchedForViolation){
       val ElementsAndViol:GlobalViolationDescriptor = variable.getStorageAt(IndexForGlobalViolationINSU)
-      ElementsAndViol.Violation <== Sum(ElementsAndViol.AggregatedViolation)
+      ElementsAndViol.Violation.addTerms(ElementsAndViol.AggregatedViolation)
       ElementsAndViol.AggregatedViolation = null
     }
   }
@@ -141,65 +139,57 @@ case class ConstraintSystem(val _model:Store) extends Constraint with ObjectiveT
   def close(){
     if(!isClosed){
       isClosed = true
-      Violation <== Sum(PostedConstraints.map((constraintANDintvar) => {
+      Violation = new Sum(PostedConstraints.map((constraintANDintvar) => {
         if(constraintANDintvar._2 == null) constraintANDintvar._1.violation
-        else Prod(SortedSet(constraintANDintvar._1.violation,constraintANDintvar._2)).toIntVar
-      }))
+        else Prod(List(constraintANDintvar._1.violation,constraintANDintvar._2))
+      })).setName("violation")
+      if(Violation.model==null){
+        assert(PostedConstraints.size==0,"Null model but has constraints")
+        Violation.model = model
+      }
+      model.registerForPartialPropagation(Violation)
 
-      setObjectiveVar(Violation)
-
-      aggregateLocalViolations()
-      PropagateLocalToGlobalViolations()
-      aggregateGlobalViolations()
+      if(VarsWatchedForViolation.nonEmpty) {
+        aggregateLocalViolations()
+        PropagateLocalToGlobalViolations()
+        aggregateGlobalViolations()
+      }
     }
-  }
-
-  /**Call this method to notify that the variable should have a violation degree computed for the whole constraint system.
-   * it is not compulsory that the variable is directly involved in the constraints. It can be involved indirectly, even through invariants.
-   * The variables registered here are the ones and only ones that are considered as constrained by the constraint system, and returned by the method constrainedVariables
-   * The violation mechanism will be instantiated as many times as the variable is registered for violation. 
-   * @param v the variable that is registered
-   */
-  @deprecated("you can directly ask for a violation, just that you need to to it before constraint system is closed","1.0")
-  def registerForViolation(v:Variable){
-    violation(v:Variable)
-  }
-
-  /**performs the same operation as registerForViolation on the given variables*/
-  @deprecated("you can directly ask for a violation, just that you need to to it before constraint system is closed","1.0")
-  def registerForViolation(vit:Iterable[Variable]){
-    for (v <- vit) registerForViolation(_:Variable)
   }
   
   /**The degree of violation associated with the variable v.
    * The constraint system must have been closed prior to calling this method.
    * @param v must have been previously declared through the registerForViolation(v:Variable) method
    */
-  override def violation(v:Variable):CBLSIntVar = {
-    val CPStoredRecord:GlobalViolationDescriptor = v.getStorageAt(IndexForGlobalViolationINSU,null)
-    if (CPStoredRecord == null){
-      if (model.isClosed) throw new Exception("cannot create new violation after model is closed.")
-      //not registered yet
-      VarsWatchedForViolation = v :: VarsWatchedForViolation
-      val violationVariable = CBLSIntVar(model,0,Int.MaxValue,0,"global violation of " + v.name)
-      v.storeAt(IndexForGlobalViolationINSU,new GlobalViolationDescriptor(violationVariable))
-      registerConstrainedVariable(v)
-      violationVariable
-    }else{
-      //already registered
-      CPStoredRecord.Violation
+  override def violation(v:Value):IntValue= {
+    v match {
+      case a: AbstractVariable =>
+        val CPStoredRecord: GlobalViolationDescriptor = a.getStorageAt(IndexForGlobalViolationINSU, null)
+        if (CPStoredRecord == null) {
+          if (model.isClosed) throw new Exception("cannot create new violation after model is closed.")
+          //not registered yet
+          VarsWatchedForViolation = a :: VarsWatchedForViolation
+          val violationVariable = new ExtendableSum(model, 0 to Int.MaxValue)
+          violationVariable.setName("global violation of " + a.name)
+          a.storeAt(IndexForGlobalViolationINSU, new GlobalViolationDescriptor(violationVariable))
+          registerConstrainedVariable(v)
+          violationVariable
+        } else {
+          //already registered
+          CPStoredRecord.Violation
+        }
+      case _ => 0
     }
   }
 
-  def violations[V<:Variable](vs:Array[V]):Array[CBLSIntVar] = {
-    vs.map(violation(_))
+  def violations[V<:Value](vs:Array[V]):Array[IntValue] = {
+    Array.tabulate(vs.length)(i => violation(vs(i)))
   }
-
 
   /**Returns the global violation of the constraint system, that is the weighted sum of the violation of the posted constraints
    *close() should have been called prior to calling this method.
    */
-  override def violation:CBLSIntVar = Violation
+  override def violation:IntValue = Violation
 
   /** to get the violated constraints, for debugging purpose
     * @return the constraints that are violated, and whose ponderation factor is not zero
@@ -212,5 +202,12 @@ case class ConstraintSystem(val _model:Store) extends Constraint with ObjectiveT
     * It requires that the Model is instantiated with the variable debug set to true.
     */
   override def checkInternals(c: Checker): Unit = {}
+
+  /**
+   * This method returns the actual objective value.
+   * It is easy to override it, and perform a smarter propagation if needed.
+   * @return the actual objective value.
+   */
+  override def value: Int = Violation.value
 }
 

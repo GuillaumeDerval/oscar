@@ -32,13 +32,13 @@ import oscar.cbls.invariants.core.propagation.Checker
  * see method GetForwardPerm() for the forward permutation: ReversePerm(ForwardPerm(i)) == i
  * @author renaud.delandtsheer@cetic.be
  * */
-case class Sort(var values:Array[CBLSIntVar], ReversePerm:Array[CBLSIntVar]) extends Invariant {
+class Sort(var values:Array[IntValue], ReversePerm:Array[CBLSIntVar]) extends Invariant {
   for (v <- values.indices) registerStaticAndDynamicDependency(values(v),v)
 
   finishInitialization()
 
   //position in initial array -> position in sort
-  val ForwardPerm:Array[CBLSIntVar]=ReversePerm.map(i => CBLSIntVar(this.model,0,values.size,0,"ForwardPerm"))
+  val ForwardPerm:Array[CBLSIntVar]=ReversePerm.map(i => CBLSIntVar(this.model,0,0 to values.size,"ForwardPerm"))
 
   //reverse perm: position in sort -> position in initial array
 
@@ -61,13 +61,13 @@ case class Sort(var values:Array[CBLSIntVar], ReversePerm:Array[CBLSIntVar]) ext
   def GetForwardPerm(): Array[CBLSIntVar] = ForwardPerm
 
   @inline
-  override def notifyIntChanged(v: CBLSIntVar, index: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
     if (NewVal > OldVal) BubbleUp(v, index)
     else BubbleDown(v, index)
   }
 
   @inline
-  private def BubbleUp(v: CBLSIntVar, PositionInInitialArray: Int) {
+  private def BubbleUp(v: ChangingIntValue, PositionInInitialArray: Int) {
     while (true) {
       val PositionInSorting: Int = ForwardPerm(PositionInInitialArray).getValue(true)
       if (PositionInSorting == values.indices.last) return //last position
@@ -78,7 +78,7 @@ case class Sort(var values:Array[CBLSIntVar], ReversePerm:Array[CBLSIntVar]) ext
   }
 
   @inline
-  private def BubbleDown(v: CBLSIntVar, PositionInInitialArray: Int) {
+  private def BubbleDown(v: ChangingIntValue, PositionInInitialArray: Int) {
     while (true) {
       val PositionInSorting: Int = ForwardPerm(PositionInInitialArray).getValue(true)
       if (PositionInSorting == 0) return //first position
@@ -128,9 +128,11 @@ object Sort {
    * returns the ForwardPerm for a given array
    * It instantiates an array of the appropriate size and populates it with IntVar.
    */
-  def MakeSort(values: Array[CBLSIntVar]): Sort = {
+  def MakeSort(values: Array[IntValue])  = {
     val m: Store = InvariantHelper.findModel(values)
-    val ReversePerm: Array[CBLSIntVar] = values.map(v => CBLSIntVar(m, values.indices.start, values.indices.end, 0, "reverse_perm"))
-    Sort(values, ReversePerm)
+    val ReversePerm: Array[CBLSIntVar] = values.map(v => CBLSIntVar(m, 0, values.indices.start to values.indices.end, "reverse_perm"))
+    new Sort(values, ReversePerm)
   }
+
+  def apply(values:Array[IntValue], reversePerm:Array[CBLSIntVar]) = new Sort(values,reversePerm)
 }

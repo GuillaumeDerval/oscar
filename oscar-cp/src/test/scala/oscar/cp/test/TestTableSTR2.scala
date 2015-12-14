@@ -112,7 +112,7 @@ class TestTableSTR2 extends FunSuite with ShouldMatchers  {
     cp.post(new TableSTR2(x,tuples))
     cp.search(binaryStatic(x))
     cp.onSolution {
-      println(x.mkString(", "))
+      //println(x.mkString(", "))
       nbSol += 1
     }
     cp.start()
@@ -136,7 +136,7 @@ class TestTableSTR2 extends FunSuite with ShouldMatchers  {
     cp.post(new TableSTR2(x,tuples))
     cp.search(binaryStatic(x))
     cp.onSolution {
-      println(x.mkString(", "))
+      //println(x.mkString(", "))
       nbSol += 1
     }
     cp.start()
@@ -159,7 +159,7 @@ class TestTableSTR2 extends FunSuite with ShouldMatchers  {
     cp.post(new TableSTR2(x,tuples))
     cp.search(binaryStatic(x))
     cp.onSolution {
-      println(x.mkString(", "))
+      //println(x.mkString(", "))
       nbSol += 1
     }
     cp.start()

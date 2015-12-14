@@ -21,14 +21,15 @@
 
 package oscar.cbls.invariants.lib.logic
 
-import collection.immutable.SortedSet
-import oscar.cbls.invariants.core.computation.{Store, InvariantHelper, Invariant, CBLSSetVar}
+import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
+
+import scala.collection.immutable.SortedSet
 
 /**maintains the reverse references. Referencing(i) = {j | Reference(j) includes i}
   * @author renaud.delandtsheer@cetic.be
   * */
-case class DenseRef(references:Array[CBLSSetVar], referencing:Array[CBLSSetVar]) extends Invariant {
+case class DenseRef(references:Array[SetValue], referencing:Array[CBLSSetVar]) extends Invariant {
 
   for (v <- references.indices) registerStaticAndDynamicDependency(references(v),v)
 
@@ -43,12 +44,12 @@ case class DenseRef(references:Array[CBLSSetVar], referencing:Array[CBLSSetVar])
   }
 
   @inline
-  override def notifyInsertOn(v: CBLSSetVar, i: Int, value: Int){
+  override def notifyInsertOn(v: ChangingSetValue, i: Int, value: Int){
     referencing(value).insertValue(i)
   }
 
   @inline
-  override def notifyDeleteOn(v: CBLSSetVar, i: Int, value: Int){
+  override def notifyDeleteOn(v: ChangingSetValue, i: Int, value: Int){
     referencing(value).deleteValue(i)
   }
 
@@ -69,11 +70,11 @@ case class DenseRef(references:Array[CBLSSetVar], referencing:Array[CBLSSetVar])
 }
 
 object DenseRef{
-  def makeDenseRef(references:Array[CBLSSetVar]):DenseRef = {
-    val (minMin,maxMax) = InvariantHelper.getMinMaxBoundsIntSetVar(references)
+  def makeDenseRef(references:Array[SetValue]) = {
+    val (minMin,maxMax) = InvariantHelper.getMinMaxBoundsSet(references)
     val m:Store = InvariantHelper.findModel(references)
     assert(minMin == 0)
-    val referencing = Array.tabulate(maxMax + 1)(i => new CBLSSetVar(m,0,references.length - 1, "referencing_" + i))
-    DenseRef(references,referencing)
+    val referencing = Array.tabulate(maxMax + 1)(i => new CBLSSetVar(m,SortedSet.empty, 0 to references.length - 1, "referencing_" + i))
+    new DenseRef(references,referencing)
   }
 }

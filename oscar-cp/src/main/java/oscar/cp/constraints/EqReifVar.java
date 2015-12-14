@@ -16,10 +16,9 @@ package oscar.cp.constraints;
 
 import oscar.cp.core.CPOutcome;
 import oscar.cp.core.CPPropagStrength;
+import oscar.cp.core.Constraint;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
-import oscar.cp.core.variables.CPIntVar;
-import oscar.cp.core.Constraint;
 
 /**
  * Reified constraint.
@@ -57,8 +56,8 @@ public class EqReifVar extends Constraint {
 			return valBind(y);
 		}
 		else {
-			x.callPropagateWhenDomainChanges(this,false);
-			y.callPropagateWhenDomainChanges(this,false);	
+			x.callPropagateWhenDomainChanges(this);
+			y.callPropagateWhenDomainChanges(this);	
 			b.callValBindWhenBind(this);
 			x.callValBindWhenBind(this);
 			y.callValBindWhenBind(this);

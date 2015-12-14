@@ -23,7 +23,6 @@ import oscar.cp.core.CPStore
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPOutcome._
-import oscar.algo.reversible.ReversibleIntWithCache
 
 /**
  * Implementation of AllDifferent
@@ -38,7 +37,7 @@ class AllDiffFWC(x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffFWC"
   // Active variables
   private[this] val variables = x.clone()
   private[this] val nVariables = variables.length
-  private[this] val nBoundsRev = new ReversibleIntWithCache(s, 0, nVariables)
+  private[this] val nBoundsRev = new ReversibleInt(s, 0)
   private[this] var nBounds = 0
 
   final override def setup(l: CPPropagStrength): CPOutcome = {

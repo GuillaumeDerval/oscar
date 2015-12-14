@@ -44,11 +44,28 @@ class DoublyLinkedList[T] extends Iterable[T]{
     toReturn
   }
 
+  /**adds the element at the start of the DLL*/
   def addElem(elem:T):DLLStorageElement[T] = {
     val d = new DLLStorageElement[T](elem)
     d.setNext(phantom.next)
     phantom.setNext(d)
     d
+  }
+
+
+  /**adds the element at the end of the DLL*/
+  def enqueue(elem:T):DLLStorageElement[T] = {
+    val d = new DLLStorageElement[T](elem)
+    phantom.prev.setNext(d)
+    d.setNext(phantom)
+    d
+  }
+
+  def dequeue():T = {
+    val d = phantom.next
+    assert(d != phantom)
+    d.delete()
+    d.elem
   }
 
   def +(elem:T){addElem(elem)}
@@ -61,6 +78,14 @@ class DoublyLinkedList[T] extends Iterable[T]{
   override def isEmpty = phantom.next == phantom
 
   override def iterator = new DLLIterator[T](phantom, phantom)
+
+  override def foreach[U](f: (T) => U): Unit = {
+    var currentPos = phantom.next
+    while(currentPos != phantom){
+      f(currentPos.elem)
+      currentPos = currentPos.next
+    }
+  }
 }
 
 /**
