@@ -106,6 +106,8 @@ class ArrayStackInt(initialSize: Int = 100) {
     else stack(idx) = entry
   }
   
+  @inline def innerArray(): Array[Int] = stack
+  
   // Double the size of the stack
   @inline private def growStack(): Unit = {
     val newStack = new Array[Int](stack.length * 2)

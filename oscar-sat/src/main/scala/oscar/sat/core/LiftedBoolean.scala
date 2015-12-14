@@ -4,17 +4,17 @@ abstract sealed class LiftedBoolean {
   def opposite: LiftedBoolean 
 }
 
-object False extends LiftedBoolean { 
-  final override val opposite: LiftedBoolean = True 
-  final override val toString: String = "False"
+final object False extends LiftedBoolean { 
+  override val opposite: LiftedBoolean = True 
+  override val toString: String = "False"
 }
 
-object True extends LiftedBoolean { 
-  final override val opposite: LiftedBoolean = False 
-  final override val toString: String = "True"
+final object True extends LiftedBoolean { 
+  override val opposite: LiftedBoolean = False 
+  override val toString: String = "True"
 }
 
-object Unassigned extends LiftedBoolean { 
-  final override val opposite: LiftedBoolean = this
-  final override val toString: String = "Unassigned"
+final object Unassigned extends LiftedBoolean { 
+  override val opposite: LiftedBoolean = this
+  override val toString: String = "Unassigned"
 }

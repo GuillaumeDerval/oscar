@@ -3,20 +3,24 @@ package oscar.sat.utils
 import scala.io.Source
 import oscar.sat.core.CDCLStore
 import oscar.sat.heuristics.ActivityHeuristic
+import oscar.sat.core.CDCLSolver
+import scala.collection.mutable.ArrayBuffer
 
-class DimacsFile(final val nClauses: Int, final val nVariables: Int, final val clauses: Array[Array[Int]]) {
+class DimacsFile(final val nVariables: Int, final val clauses: Array[Array[Int]]) {
   
-  final def model: CDCLStore = {
-    val solver = new CDCLStore()
+  final val nClauses: Int = clauses.length
+  
+  final def model: CDCLSolver = {
+    val solver = new CDCLSolver()
     // Creates literals
-    val literals = Array.tabulate(nVariables)(i => solver.newVar((i+1).toString))
+    val literals = Array.tabulate(nVariables)(i => solver.newVar())
     // Creates clauses
     Array.tabulate(nClauses)(c => {
       val clause = clauses(c).map(i => {
         if (i < 0) (-i-1) * 2 + 1
         else (i - 1) * 2
       })
-      solver.newClause(clause)
+      solver.addClause(clause)
     })
     // Return the model
     solver
@@ -52,30 +56,29 @@ object DimacsFile {
     val lines = Source.fromFile(dimacsFile).getLines
     if (lines.isEmpty) null
     else {
+      
       // Data
-      var nClauses = 0
-      var nVariables = 0
-      // Comment lines
-      var comments = true
-      while (lines.hasNext && comments) {
+      val clauses = ArrayBuffer[Array[Int]]()
+      var maxLitId = 0
+      
+      while (lines.hasNext) {
         val line = lines.next.replaceAll("\\s+", " ")
-        if (line.charAt(0) == 'p') {
+        val firstChar = line.charAt(0)
+        if (firstChar != 'p' && firstChar != 'c') {
           val data = line.trim.split("\\s+")
-          nVariables = data(2).toInt
-          nClauses = data(3).toInt
-          comments = false
+          val clause = new Array[Int](data.length - 1)
+          var i = clause.length
+          while (i > 0) {
+            i -= 1
+            val litId = java.lang.Integer.parseInt(data(i))
+            maxLitId = Math.max(maxLitId, litId)
+            clause(i) = litId
+          }
+          clauses.append(clause)
         }
       }
-      // Problem data
-      val clauses = new Array[Array[Int]](nClauses)
-      var i = 0
-      while (i < nClauses) {
-        val line = lines.next.replaceAll("\\s+", " ")
-        val data = line.trim.split("\\s+").dropRight(1)
-        clauses(i) = data.map(_.toInt)
-        i += 1
-      }
-      new DimacsFile(nClauses, nVariables, clauses)
+      
+      new DimacsFile(maxLitId, clauses.toArray)
     }
   }
 }

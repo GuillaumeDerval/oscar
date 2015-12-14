@@ -112,9 +112,9 @@ class ArrayStackDouble(initialSize: Int = 100) {
     System.arraycopy(stack, 0, newStack, 0, stack.length)
     stack = newStack
   }
-  
-  @inline final def toArray: Array[Double] = {
-    val array = new Array[Double](index)
+
+  @inline final def toArray: Array[Int] = {
+    val array = new Array[Int](index)
     System.arraycopy(stack, 0, array, 0, index)
     array
   }

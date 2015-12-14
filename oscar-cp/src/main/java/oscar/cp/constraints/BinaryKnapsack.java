@@ -109,7 +109,7 @@ public class BinaryKnapsack extends Constraint {
 	@Override
 	public CPOutcome setup(CPPropagStrength l) {
 		if (n > 0) {
-            if (s().post(new BinaryKnapsackWithCardinality(x,w,c,n)) == CPOutcome.Failure) {
+            if (s().post(new oscar.cp.constraints.BinaryKnapsackWithCardinality(x,w,c,n)) == CPOutcome.Failure) {
                 return CPOutcome.Failure;
             }
         }
