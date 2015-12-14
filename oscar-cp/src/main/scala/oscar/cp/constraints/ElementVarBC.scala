@@ -1,19 +1,21 @@
-/*******************************************************************************
+/**
+ * *****************************************************************************
  * OscaR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 2.1 of the License, or
  * (at your option) any later version.
- *   
+ *
  * OscaR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License  for more details.
- *   
+ *
  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
- ******************************************************************************/
+ * ****************************************************************************
+ */
 
-package oscar.cp.constraints;
+package oscar.cp.constraints
 
 import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPPropagStrength
@@ -26,127 +28,87 @@ import scala.math.max
 import oscar.cp.core._
 import oscar.cp.core.CPOutcome._
 import oscar.cp.core.CPSolver
-import oscar.algo.reversible.ReversibleInt
-import oscar.algo.reversible.ReversibleIntWithCache
+import oscar.cp.core.delta.DeltaIntVar
 
 /**
  * Bound Consistent Element Constraint: y(x) == z
  *
- * @author Pierre Schaus - pschaus@gmail.com
+ * @author Pierre Schaus pschaus@gmail.com
+ * @author Renaud Hartert ren.hartert@gmail.com
  */
-class ElementVarBC(val y: Array[CPIntVar], val x: CPIntVar, val z: CPIntVar) extends Constraint(y(0).store, "BCElementVar") {
+final class ElementVarBC(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constraint(y(0).store, "ElementVarBC") {
 
+  priorityL2 = CPStore.MaxPriorityL2 - 1
+  
+  private[this] var supMin: CPIntVar = null
+  private[this] var supMax: CPIntVar = null
+  private[this] var zMin: Int = 0
+  private[this] var zMax: Int = 0
 
-  private val zminSup = new ReversibleIntWithCache(s,0,y.size)
-  private val zmaxSup = new ReversibleIntWithCache(s,0,y.size)
-
+  private[this] val xValues = new Array[Int](x.size)
   
   override def setup(l: CPPropagStrength): CPOutcome = {
-    if (z.updateMax((y.map(_.max).max)) == Failure) return Failure
-    if (z.updateMin((y.map(_.min).min)) == Failure) return Failure
-    if (x.updateMin(0) == Failure) return Failure
-    if (x.updateMax(y.size - 1) == Failure) return Failure
-
-    updateSupport()
-    if (filterZ() == Failure) return Failure
-    for (i <- x) {
-      y(i).callUpdateBoundsIdxWhenBoundsChange(this, i)
+    if (init() == Failure) Failure
+    else {
+      for (i <- x) y(i).callPropagateWhenBoundsChange(this)
+      x.callPropagateWhenDomainChanges(this)
+      z.callPropagateWhenBoundsChange(this)
+      propagate()
     }
-    x.callValRemoveWhenValueIsRemoved(this)
-    x.callValBindWhenBind(this)
-    z.callUpdateBoundsWhenBoundsChange(this)
-    Suspend
-
   }
 
-  def filterZ() = {
-    if (z.updateMin(y(zminSup.value).min) == Failure) Failure
-    else if (z.updateMax(y(zmaxSup.value).max) == Failure) Failure
+  @inline private def init(): CPOutcome = {
+    if (x.updateMin(0) == Failure) Failure
+    else if (x.updateMax(y.length - 1) == Failure) Failure
+    else propagate()
+  }
+
+  override def propagate(): CPOutcome = {
+    zMin = z.min
+    zMax = z.max
+    if (x.isBound) equalityPropagate()
+    else {
+      if (filterX() == Failure) Failure
+      else if (x.isBound) equalityPropagate()
+      else if (z.updateMin(supMin.min) == Failure) Failure
+      else if (z.updateMax(supMax.max) == Failure) Failure
+      else Suspend
+    }
+  }
+
+  @inline private def equalityPropagate(): CPOutcome = {
+    val id = x.min
+    val yVar = y(id)
+    if (yVar.updateMin(zMin) == Failure) Failure
+    else if (yVar.updateMax(zMax) == Failure) Failure
+    else if (z.updateMin(yVar.min) == Failure) Failure
+    else if (z.updateMax(yVar.max) == Failure) Failure
     else Suspend
   }
 
-  def filterX(): CPOutcome = {
-
-    val toRemove = x.filter(i => y(i).max < z.min || y(i).min > z.max)
-    for (v <- toRemove) {
-      if (x.removeValue(v) == Failure) return Failure
-    }
-
-    /*  
-	var i = x.min	
-	while (i <= x.max) {
-	  if (x.hasValue(i) && y(i).max < z.min || y(i).min > z.max) {
-	    if (x.removeValue(i) == Failure) return Failure
-	  }
-	  i += 1
-	}*/
-
-    Suspend
-  }
-
-  override def updateBounds(cpvar: CPIntVar): CPOutcome = {
-    // bounds of z changed
-    if (filterX() == Failure) Failure
-    else if (x.isBound) valBind(x)
-    else Suspend
-  }
-
-  override def valBind(cpvar: CPIntVar): CPOutcome = {
-    // x is bind
-    val i = x.min
-    zminSup.setValue(i)
-    zmaxSup.setValue(i)
-    if (y(i).updateMax(z.max) == Failure) Failure
-    else if (y(i).updateMin(z.min) == Failure) Failure
-    else filterZ()
-  }
-
-  override def updateBoundsIdx(cpvar: CPIntVar, i: Int): CPOutcome = {
-    // bound of y(i) changed
-    if (y(i).max < z.min || y(i).min > z.max) {
-      if (x.removeValue(i) == Failure) return Failure
-    }
-    // bound of y(i) has changed, if i was a support, we must update the supports
-    if (zminSup.value == i || zmaxSup.value == i) {
-      updateSupport()
-      filterZ()
-    } else {
-      Suspend
-    }
-  }
-
-  override def valRemove(cpvar: CPIntVar, v: Int): CPOutcome = {
-    // x lost value v
-    if (zminSup.value == v || zmaxSup.value == v) {
-      updateSupport()
-      filterZ()
-    } else {
-      Suspend
-    }
-  }
-
-  private[this] val xvalues = Array.ofDim[Int](x.size)
-  def updateSupport() {
-    var supmin = 0
-    var supmax = 0
+  @inline private def filterX(): CPOutcome = {
     var min = Int.MaxValue
     var max = Int.MinValue
-    val m = x.fillArray(xvalues)
-    var i = 0
-    while (i < m) {
-      val v = xvalues(i)
-      if (y(v).min < min) {
-        min = y(v).min
-        supmin = v
+    var i = x.fillArray(xValues)
+    while (i > 0) {
+      i -= 1
+      val id = xValues(i)
+      val yVar = y(id)
+      val yMin = yVar.min
+      val yMax = yVar.max
+      if (yMax < zMin || yMin > zMax) {
+        if (x.removeValue(id) == Failure) return Failure
+      } else {
+        if (yMin < min) {
+          min = yMin
+          supMin = yVar
+        }
+        if (yMax > max) {
+          max = yMax
+          supMax = yVar
+        }
       }
-      if (y(v).max > max) {
-        max = y(v).max
-        supmax = v
-      }
-      i += 1
     }
-    zminSup.setValue(supmin)
-    zmaxSup.setValue(supmax)
+    Suspend
   }
-
 }

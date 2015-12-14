@@ -29,6 +29,7 @@ import oscar.cbls.invariants.core.computation.{ CBLSIntVar, Store }
 import oscar.cbls.invariants.lib.logic.Routes
 import scala.language.reflectiveCalls
 
+import oscar.cbls.modeling.Algebra._
 /**
  * The tests marked with a star (*) require the assertion mechanism of IntVar in ComputationStructure file, which
  * verifies the domain of a variable variable.
@@ -44,8 +45,8 @@ class TestRouteOneVehicle extends FunSuite with Matchers {
       val nbCars = 1
       val model = new Store(false, None, false, false)
       val next = Array.tabulate(nbPoints)(i =>
-        if (i < nbCars) CBLSIntVar(model, i, nbPoints - 1, i, "next" + i)
-        else CBLSIntVar(model, 0, nbPoints, i, "next" + i))
+        if (i < nbCars) CBLSIntVar(model, i, i to nbPoints - 1, "next" + i)
+        else CBLSIntVar(model, i, 0 to nbPoints, "next" + i))
       // 0->1->2->3->4->5(->0)
       next(0) := 1
       next(1) := 2

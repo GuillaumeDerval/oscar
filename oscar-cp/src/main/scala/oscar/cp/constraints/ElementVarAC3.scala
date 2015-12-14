@@ -28,7 +28,7 @@ import oscar.cp.core.CPOutcome._
 import oscar.cp.core.CPSolver
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.reversible.ReversibleSparseSet
-import oscar.algo.reversible.ReversibleIntWithCache
+import oscar.cp.core.watcher.Watcher
 
 
 /**
@@ -92,11 +92,7 @@ class ElementVarAC3(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constr
         z.callPropagateWhenDomainChanges(this)
         for (i <- x.min to x.max; if x hasValue i) {
           if (z.size > 50) {
-            // seems like watchers pay off for larger size of the domains
-            val watcher = new Watcher {
-              override def shouldEnqueue(): Boolean = x.hasValue(i)
-            }
-            y(i).callPropagateWhenDomainChanges(this, watcher)
+            y(i).callPropagateWhenDomainChanges(this, x.hasValue(i))
           } else {
             y(i).callPropagateWhenDomainChanges(this)
           }

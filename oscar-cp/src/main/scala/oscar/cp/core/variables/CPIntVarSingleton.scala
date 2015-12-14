@@ -7,6 +7,9 @@ import oscar.cp.core.CPOutcome._
 import oscar.cp.core.CPOutcome
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
+import oscar.cp.core.delta.DeltaIntVarEmpty
+import oscar.cp.core.watcher.Watcher
+import oscar.cp.core.delta.DeltaIntVar
 
 final class CPIntVarSingleton(final override val store: CPStore, initValue: Int, final override val name: String = "") extends CPIntVar {
   
@@ -132,18 +135,14 @@ final class CPIntVarSingleton(final override val store: CPStore, initValue: Int,
     Failure
   }
   
+  @inline final def restrict(newDomain: Array[Int], newSize: Int): Unit = {
+    assert(newSize <= 1)
+    assert(initValue == newDomain(0))
+  }
+  
     
-  final override def delta(oldMin: Int, oldMax: Int, oldSize: Int): Iterator[Int] = ???
-  final override def fillDeltaArray(oldMin: Int, oldMax: Int, oldSize: Int, arr: Array[Int]): Int = ??? 
-  final override def changed(c: Constraint): Boolean = ???
-  final override def minChanged(c: Constraint): Boolean = ???
-  final override def maxChanged(c: Constraint): Boolean = ???
-  final override def boundsChanged(c: Constraint): Boolean = ???
-  final override def oldMin(c: Constraint): Int = ???
-  final override def oldMax(c: Constraint): Int = ???
-  final override def oldSize(c: Constraint): Int = ???
-  final override def deltaSize(c: Constraint): Int = ???
-  final override def delta(c: Constraint): Iterator[Int] = ??? 
+  final override def delta(oldMin: Int, oldMax: Int, oldSize: Int): Iterator[Int] = Iterator.empty
+  final override def fillDeltaArray(oldMin: Int, oldMax: Int, oldSize: Int, arr: Array[Int]): Int = 0
 
   /**
    * Level 2 registration: ask that the propagate() method of the constraint c is called whenever
@@ -160,6 +159,8 @@ final class CPIntVarSingleton(final override val store: CPStore, initValue: Int,
    * @see oscar.cp.core.Constraint#propagate()
    */
   final override def callPropagateWhenBoundsChange(c: Constraint): Unit = degree.incr()
+  
+  final override def callPropagateWhenBoundsChange(c: Constraint, cond: => Boolean): Unit = degree.incr()
 
   /**
    * Level 2 registration: ask that the propagate() method of the constraint c is called whenever
@@ -167,9 +168,24 @@ final class CPIntVarSingleton(final override val store: CPStore, initValue: Int,
    * @param c
    * @see oscar.cp.core.Constraint#propagate()
    */
-  final override def callPropagateWhenDomainChanges(c: Constraint, trackDelta: Boolean = false): Unit = degree.incr()
+  final override def callPropagateWhenDomainChanges(c: Constraint): Unit = degree.incr()
   
-  final override def callPropagateWhenDomainChanges(c: Constraint, watcher: oscar.cp.core.Watcher) = degree.incr()
+  final override def callPropagateWhenDomainChanges(c: Constraint, cond: => Boolean) = degree.incr()
+  
+  final override def callPropagateOnChangesWithDelta(c: Constraint): DeltaIntVar = {
+    degree.incr()
+    delta(c)
+  }
+  
+  final override def delta(c: Constraint,id: Int): DeltaIntVar = new DeltaIntVarEmpty(this,id)
+
+
+  final override def callPropagateOnChangesWithDelta(c: Constraint, cond: => Boolean): DeltaIntVar = {
+    degree.incr()
+    delta(c)
+  }
+  
+  final override def awakeOnChanges(watcher: Watcher): Unit = degree.incr()
 
 
   /**

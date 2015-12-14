@@ -20,137 +20,64 @@
 package oscar.flatzinc.model
 
 import scala.Array.canBuildFrom
+import scala.collection.mutable.{Map => MMap}
+import scala.collection.mutable.{Set => MSet}
 import scala.collection.immutable.Range
 import oscar.flatzinc.UnsatException
+import scala.collection.immutable.SortedSet
 
 class FZProblem {
+  val variables: MSet[Variable] = MSet.empty[Variable]
+  val constraints: MSet[Constraint] = MSet.empty[Constraint]
 
-  var map: Map[String,Variable] = Map.empty[String,Variable]
-  
-  var constraints: Set[Constraint] = Set.empty[Constraint]//TODO: might as well replace it by a list...
-  
   val solution:FZSolution = new FZSolution();
-  
   val search = new Search();
   
-  /*def addOutputVariable(obj:FZObject) = {
-    solution.outputObjects = solution.outputObjects :+ obj
-  }*/
-  //Removed and replaced by the code in FZTransformations
-  /*def fixDomains() = {
-    for(constraint <- constraints){
-      constraint match{
-        case int_le(a: ConcreteVariable, b: ConcreteConstant, ann ) =>
-          a.dom = DomainRange(a.min,b.value)
-          constraints -= constraint;
-        case int_le(b: ConcreteConstant, a: ConcreteVariable, ann ) =>
-          a.dom = DomainRange(b.value,a.max)
-          constraints -= constraint;
-        case c => ()
-      }
-    }
-  }*/
-  def addVariable(id: String, dom: Domain, annotations: List[Annotation] = List.empty[Annotation]): Variable = {
-   // println("% added var: "+id+ " with dom "+dom)
-    val variable: Variable =
-      if (dom.min == dom.max) {
-        new ConcreteConstant(id,dom.min,annotations)
-      } else {
-        map += id -> new ConcreteVariable(id, dom,annotations)
-        map(id)
-      }    
+  def addVariable(id: String, dom: Domain, bool: Boolean): Variable = {
+    if(bool) addBooleanVariable(id,dom)
+    else addIntegerVariable(id,dom)
+  }
+  def addIntegerVariable(id: String, dom: Domain): Variable = {
+    val variable: Variable = new IntegerVariable(id, dom)
+    variables += variable
     variable
   }
-
-  
-  //TODO: I don't like that we are multiplying the variables (and this is not done for arrays of variables... strange...)
-  //And the original domain is lost...
-  def addVariable(id: String, v:ConcreteVariable, annotations: List[Annotation]): Variable = {
-    println("% mapping: "+ id +" to "+v)
-    val variable = addVariable(id,v.dom,annotations);
-    variable.isDefined = true;
-    val constrain_eq = int_eq(variable,v);
-    constrain_eq.definedVar = Some(variable);
-    addConstraint(constrain_eq);
-    v
-  }
-  
-  def addVariable(id: String, v: Boolean, annotations: List[Annotation]): Variable = {
-    addVariable(id,if (v) 1 else 0, annotations)
-  }
-  
-  def addVariable(v: Boolean, annotations: List[Annotation]): Variable = {
-    if (v) addVariable("1",v, annotations)
-    else addVariable("0",v, annotations)
-  }
-  
-  def addVariable(v: Int, annotations: List[Annotation]): Variable = {
-    addVariable(v.toString,v, annotations)
-  }    
-  
-  def addVariable(id: String, v: Int, annotations: List[Annotation]): Variable = {
-    addVariable(id,v,v, annotations)
-  }    
-  
-  def addVariable(id: String, min: Int,max: Int, annotations: List[Annotation]): Variable = {
-    addVariable(id,DomainRange(min,max), annotations)
-  }
-  
-  def addVariable(id: String, values: Set[Int], annotations: List[Annotation]): Variable = {
-    addVariable(id,DomainSet(values), annotations)
-  }
-  
-  def addBoolVariable(id: String, annotations: List[Annotation]): Variable = {
-    addVariable(id,DomainRange(0,1), annotations)
-  } 
-  
-  def setVariable(id: String, x: Variable) {
-    assert(id == x.id)
-    map += id -> x
+  def addBooleanVariable(id: String, dom: Domain): Variable = {
+    val variable: Variable = new BooleanVariable(id, dom)
+    variables += variable
+    variable
   }
   
   def addConstraint(c: Constraint) {
     constraints += c
   }
   
-  
-  def satisfy() {
+  def satisfy(anns:Iterable[Annotation]) {
     search.obj = Objective.SATISFY
+    search.anns = anns
   }
-  
-  def minimize(obj: Variable) {
+  def minimize(obj: IntegerVariable,anns:Iterable[Annotation]) {
     search.obj = Objective.MINIMIZE
     search.variable = Some(obj)
+    search.anns = anns
   }
-  
-  def maximize(obj: Variable) {
+  def maximize(obj: IntegerVariable,anns:Iterable[Annotation]) {
     search.obj = Objective.MAXIMIZE
     search.variable = Some(obj)
+    search.anns = anns
   }
   
-  def addSearch(s: Array[Variable],vrh: VariableHeuristic.Value,vh: ValueHeuristic.Value) {
-    //println("search "+vrh+" "+vh+ " variables:"+s.mkString(","))
-    search.heuristics =  search.heuristics :+ (s,vrh,vh)
-  }
-  
-  def nSols(n: Int) {
-    search.nSols = n
-  }
-  //better to put it separately
-  /*
-  def simplify() {
-    constraints.foreach(_.simplify(this))
-  }*/
-
-  
-
+//  def addSearch(s: Array[Variable],vrh: VariableHeuristic.Value,vh: ValueHeuristic.Value) {
+//    //println("search "+vrh+" "+vh+ " variables:"+s.mkString(","))
+//    search.heuristics =  search.heuristics :+ (s,vrh,vh)
+//  }
+//  
+//  def nSols(n: Int) {
+//    search.nSols = n
+//  }
 }
 
-//abstract class Annotat
-
-//case class DefinesVar(id: String) extends Annotat
-
-abstract class Domain {
+sealed abstract class Domain {
   def min: Int
   def max: Int
   def contains(v:Int): Boolean
@@ -158,56 +85,112 @@ abstract class Domain {
   def boundTo(v: Int) = min == v && max == v
   def geq(v:Int);
   def leq(v:Int);
+  def inter(d:Domain):Unit = {
+    if(d.isInstanceOf[DomainRange])inter(d.asInstanceOf[DomainRange])
+    else inter(d.asInstanceOf[DomainSet])
+  }
+  def inter(d:DomainRange):Unit = {
+    geq(d.min);
+    leq(d.max);
+  }
+  def inter(d:DomainSet):Unit = {
+    throw new UnsupportedOperationException("Inter of a Set")
+  }
   def checkEmpty() = {
     if (min > max) throw new UnsatException("Empty Domain");
   }
+  def toSortedSet: SortedSet[Int]
 }
 
 case class DomainRange(var mi: Int, var ma: Int) extends Domain {
+  //
   def min = mi
   def max = ma
   def contains(v:Int): Boolean = mi <= v && ma >= v
-  def size = ma-mi+1
+  def size = if(ma==Int.MaxValue && mi==Int.MinValue) Int.MaxValue else ma-mi+1
   def geq(v:Int) = { mi = math.max(v,mi); checkEmpty() }
   def leq(v:Int) = { ma = math.min(v,ma); checkEmpty() }
   def toRange = mi to ma
+  def toSortedSet: SortedSet[Int] = SortedSet[Int]() ++ (mi to ma)
 }
 
 case class DomainSet(var values: Set[Int]) extends Domain {
+  override def checkEmpty() = {
+    if (values.isEmpty) throw new UnsatException("Empty Domain");
+  }
   def min = values.min
   def max = values.max
   def size = values.size
   def contains(v:Int): Boolean = values.contains(v)
   def geq(v:Int) = {values = values.filter(x => x>=v); checkEmpty() }
   def leq(v:Int) = {values = values.filter(x => x<=v); checkEmpty() }
+  override def inter(d:DomainSet) = {values = values.intersect(d.values); checkEmpty() }
+  def toSortedSet: SortedSet[Int] = SortedSet[Int]() ++ values
 }
 
-
+//TODO: CheckEmpty should go to the variables, as the domains are also used for normal sets that can be empty.
 //TODO: differentiate between Int and Bool
 //TODO: Add set variables
-abstract class Variable(val id: String, val annotations: List[Annotation] = List.empty[Annotation]) {
-  val isIntroduced = annotations.foldLeft(false)((acc,x) => x.name=="var_is_introduced" || acc)
-  var isDefined = annotations.foldLeft(false)((acc,x) => x.name=="is_defined_var" || acc)
-  def min: Int
-  def max: Int
-  def is01: Boolean = min >= 0 && max <= 1
-  def isTrue: Boolean = this.is01 && min == 1
-  def isFalse: Boolean = this.is01 && max == 0 
-  override def toString = this.id
-  var cstrs:List[Constraint] = List.empty[Constraint]
-  def addConstraint(c:Constraint) = {
-    cstrs = c :: cstrs
+abstract class Variable(val id: String) {
+  def isDefined: Boolean = {
+    definingConstraint.isDefined//annotations.foldLeft(false)((acc,x) => x.name=="is_defined_var" || acc)
   }
+  var definingConstraint: Option[Constraint] = Option.empty[Constraint]
+  var cstrs:Set[Constraint] = Set.empty[Constraint]
+  def addConstraint(c:Constraint) = {
+    cstrs = cstrs + c
+  }
+  def removeConstraint(c:Constraint) = {
+    cstrs = cstrs - c
+   //cstrs = cstrs.filterNot(c.eq(_))//might be made more efficient if cstrs was a set.
+  }
+  def domainSize: Int;
+  def isBound: Boolean;
 }
 
-case class ConcreteVariable(i: String,val dom: Domain, anno: List[Annotation] = List.empty[Annotation]) extends Variable(i,anno) {  
+case class BooleanVariable(i: String, private var _value: Option[Boolean] = None) extends Variable(i) {
+  def this(s:String, dom: Domain) = this(s, {if (dom.min==dom.max) Some(dom.min==1) else None})
+  def isTrue: Boolean = _value.getOrElse(false)
+  def isFalse: Boolean = !_value.getOrElse(true) 
+  override def isBound: Boolean = _value.isDefined
+  override def domainSize: Int = if(isBound) 1 else 2
+  def bind(v: Boolean) = if(isBound && v!=_value.get) throw new UnsatException("Empty Domain"); else _value = Some(v)
+  def boolValue: Boolean = _value.get
+  def intValue: Int = if(_value.get) 1 else 0
+  override def toString = {this.id + (if(isBound) "="+_value.get else "");}
+}
+
+case class IntegerVariable(i: String, private var dom: Domain) extends Variable(i) {
+  def this(i: String, v: Int) = this(i,DomainRange(v,v));
+  def domain = dom
+  override def domainSize = dom.size
   def min = dom.min
   def max = dom.max
-}
-
-case class ConcreteConstant(i: String,val value:Int, anno: List[Annotation] = List.empty[Annotation]) extends Variable(i,anno){
-  def min = value;
-  def max = value;
+  def geq(v:Int) = dom.geq(v)
+  def leq(v:Int) = dom.leq(v)
+  def inter(d:Domain) = (dom,d) match {
+    case (DomainRange(_,_),DomainRange(_,_)) => dom.inter(d)
+    case (DomainSet(_),DomainRange(_,_)) => dom.inter(d)
+    case (DomainSet(_),DomainSet(_)) => dom.inter(d)
+    case (DomainRange(l,u),DomainSet(values)) => dom = DomainSet(values.filter(v => v>=l && v <= u)); dom.checkEmpty();
+  }
+  def neq(v:Int) = {
+    if(v==min) geq(v+1) 
+    else if(v==max) leq(v-1) 
+    else if(v >min && v < max){
+     dom match {
+       case DomainSet(values) => dom = DomainSet(values - v); dom.checkEmpty();
+       case DomainRange(l,u) => dom = DomainSet((l to u).toSet - v); dom.checkEmpty();
+     }
+    }
+  }
+  /*def is01: Boolean = min >= 0 && max <= 1
+  def isTrue: Boolean = this.is01 && min == 1
+  def isFalse: Boolean = this.is01 && max == 0 */
+  override def isBound: Boolean = min == max
+  def bind(v: Int) = {geq(v); leq(v);}
+  def value:Int = {if(isBound) min else throw new Exception("Asking for the value of an unbound variable")}
+  override def toString = {this.id + (if(isBound) "="+value else "");}
 }
 
 
@@ -244,8 +227,9 @@ object Objective extends Enumeration {
 
 
 class Search() {
-  var nSols = 0
+  //var nSols = 0
   var obj: Objective.Value = Objective.SATISFY
-  var variable: Option[Variable] = None
-  var heuristics: Vector[(Array[Variable],VariableHeuristic.Value,ValueHeuristic.Value)] = Vector.empty 
+  var variable: Option[IntegerVariable] = None
+  //var heuristics: Vector[(Array[Variable],VariableHeuristic.Value,ValueHeuristic.Value)] = Vector.empty 
+  var anns: Iterable[Annotation] = List.empty[Annotation]
 }

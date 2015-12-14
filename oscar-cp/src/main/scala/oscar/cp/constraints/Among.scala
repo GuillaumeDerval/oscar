@@ -60,11 +60,10 @@ class Among(val N: CPIntVar, val X: Array[CPIntVar], val S: Set[Int]) extends Co
       // if ub = min(N), it mean all the values still with non empty intersection must be in the set. 
       // every variable with non empty intersection must only keep values from the set
       for (i <- nonEmptyInterIdx) {
-    	  var Dxi = X(i).domainIterator
+    	  var Dxi = X(i).iterator
     	  for (v <- Dxi; if !S.contains(v)) {
-    	    if (Dxi.removeValue == CPOutcome.Failure) return CPOutcome.Failure
+    	    if (X(i).removeValue(v) == CPOutcome.Failure) return CPOutcome.Failure
     	  }
-    	  Dxi.execute()
       }
       return CPOutcome.Success
     }

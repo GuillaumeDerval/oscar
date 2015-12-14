@@ -52,13 +52,13 @@ object Golomb extends CPModel with App {
   differences.foreach(d => add(d > 0))
 
   search { binaryStatic(mark, _.min) }
-  
+  /*
   onSolution {
     println("\nSolution:")
     print("mark: " + mark.mkString(""))
-    println("\ndifferences: " + differences.mkString(""))
+    println("\ndifferences: " + differences.mkString(","))
     println()
-  }
+  }*/
 
   println(start())
 }

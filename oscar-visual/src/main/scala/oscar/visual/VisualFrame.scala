@@ -23,7 +23,7 @@ import java.awt.Color
 import java.awt.Toolkit
 import java.awt.BorderLayout
 
-class VisualFrame(title: String, nbLines: Int = 1, nbCols: Int = 1) extends JFrame(title) {
+class VisualFrame(title: String, val nbLines: Int = 1, val nbCols: Int = 1) extends JFrame(title) {
 
   val desktop = new JDesktopPane()
 
@@ -40,10 +40,14 @@ class VisualFrame(title: String, nbLines: Int = 1, nbCols: Int = 1) extends JFra
   setSize(screenSize)
   setMinimumSize(new Dimension(400, 300))
   setVisible(true)
+  
+  def onWindowClosing(): Unit = {
+    System.exit(0)
+  }
 
   addWindowListener(new WindowAdapter() {
     override def windowClosing(event: WindowEvent) {
-      System.exit(0);
+      onWindowClosing()
     }
   })
 

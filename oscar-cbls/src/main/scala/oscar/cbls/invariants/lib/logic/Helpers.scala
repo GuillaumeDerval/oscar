@@ -21,7 +21,7 @@
 
 package oscar.cbls.invariants.lib.logic
 
-import oscar.cbls.invariants.core.computation.{IntInvariant, CBLSIntVar}
+import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
 
 /** This is a helper to define an invariant from an Int -> Int function.
@@ -29,32 +29,23 @@ import oscar.cbls.invariants.core.propagation.Checker
   * it maintains output = fun(a)
   * @param a the parameter of the function
   * @param fun the function to maintain, it is supposed not to listen to any variable in the model
-  * @param myMin the min value of the output
-  * @param myMax the max value of the output
+  * @param domain the expected domain of the output
   * @author renaud.delandtsheer@cetic.be
   * */
-class Int2Int(a:CBLSIntVar, fun:Int => Int, override val myMin:Int = Int.MinValue, override val myMax:Int=Int.MaxValue) extends IntInvariant {
-  var output:CBLSIntVar=null
+class Int2Int(a:IntValue, fun:Int => Int, domain:Domain = FullRange) extends IntInvariant(fun(a.value),domain) {
 
   registerStaticAndDynamicDependency(a)
   finishInitialization()
-
-  //This method is called by the IntVar when the method <== is applied
-  //Example: MyVar <== my_IntInvariant
-  override def setOutputVar(v:CBLSIntVar){
-    output = v
-    output.setDefiningInvariant(this)
-    output := fun(a.value)
-  }
+  this := fun(a.value)
 
   @inline
-  override def notifyIntChanged(v:CBLSIntVar,OldVal:Int,NewVal:Int){
+  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
     assert(v == a)
-    output := fun(NewVal)
+    this := fun(NewVal)
   }
 
   override def checkInternals(c:Checker){
-    c.check(output.value == fun(a.value), Some("output.value == fun(a.value)"))
+    c.check(this.value == fun(a.value), Some("output.value == fun(a.value)"))
   }
 }
 
@@ -64,31 +55,21 @@ class Int2Int(a:CBLSIntVar, fun:Int => Int, override val myMin:Int = Int.MinValu
   * @param a the first parameter of the function
   * @param b the second parameter of the function
   * @param fun the function to maintain, it is supposed not to listen to any variable in the model
-  * @param myMin the min value of the output
-  * @param myMax the max value of the output
+  * @param domain the expected domain of the output
   * @author renaud.delandtsheer@cetic.be
   * */
-class IntInt2Int(a:CBLSIntVar, b:CBLSIntVar, fun:((Int, Int) => Int), override val myMin:Int = Int.MinValue, override val myMax:Int=Int.MaxValue) extends IntInvariant {
+class IntInt2Int(a:IntValue, b:IntValue, fun:((Int, Int) => Int), domain:Domain = FullRange) extends IntInvariant(fun(a.value,b.value),domain) {
 
-  var output:CBLSIntVar=null
   registerStaticAndDynamicDependenciesNoID(a,b)
   finishInitialization()
 
-  override def setOutputVar(v:CBLSIntVar){
-    v.minVal = myMin;
-    v.maxVal = myMax;
-    output = v
-    output.setDefiningInvariant(this)
-    output := fun(a.value,b.value)
-  }
-
   @inline
-  override def notifyIntChanged(v:CBLSIntVar,OldVal:Int,NewVal:Int){
-    output := fun(a.value,b.value)
+  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
+    this := fun(a.value,b.value)
   }
 
   override def checkInternals(c:Checker){
-    c.check(output.value == fun(a.value,b.value), Some("output.value == fun(a.value,b.value)"))
+    c.check(this.value == fun(a.value,b.value), Some("output.value == fun(a.value,b.value)"))
   }
 }
 
@@ -98,33 +79,24 @@ class IntInt2Int(a:CBLSIntVar, b:CBLSIntVar, fun:((Int, Int) => Int), override v
   * @param a the first parameter of the function
   * @param b the second parameter of the function
   * @param fun the function to maintain, it is supposed not to listen to any variable in the model
-  * @param myMin the min value of the output
-  * @param myMax the max value of the output
+  * @param domain the expected domain of the output
   * @author renaud.delandtsheer@cetic.be
   * */
-class LazyIntInt2Int(a:CBLSIntVar, b:CBLSIntVar, fun:((Int, Int) => Int), override val myMin:Int = Int.MinValue, override val myMax:Int=Int.MaxValue) extends IntInvariant {
+class LazyIntInt2Int(a:IntValue, b:IntValue, fun:((Int, Int) => Int), domain:Domain = FullRange) extends IntInvariant(fun(a.value,b.value),domain) {
 
-  var output:CBLSIntVar=null
   registerStaticAndDynamicDependenciesNoID(a,b)
   finishInitialization()
 
-  override def setOutputVar(v:CBLSIntVar){
-    output = v
-    output.setDefiningInvariant(this)
-    output := fun(a.value,b.value)
-  }
-
   @inline
-  override def notifyIntChanged(v:CBLSIntVar,OldVal:Int,NewVal:Int){
+  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
     scheduleForPropagation()
   }
 
-  override def performPropagation(){
-    output := fun(a.value,b.value)
+  override def performInvariantPropagation(){
+    this := fun(a.value,b.value)
   }
 
   override def checkInternals(c: Checker){
-    c.check(output.value == fun(a.value,b.value), Some("checking output of LazyIntVarIntVar2IntVarFun"))
+    c.check(this.value == fun(a.value,b.value), Some("checking output of LazyIntVarIntVar2IntVarFun"))
   }
 }
-

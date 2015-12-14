@@ -16,7 +16,7 @@ object Clause {
     if (literals.length == 2) binary(solver, literals(0), literals(1))
     else watchLiterals(solver, literals)
   }
-  
+
   def apply(solver: CDCLStore, literals: ArrayStackInt): Clause = {
     if (literals.length == 2) binary(solver, literals(0), literals(1))
     else watchLiterals(solver, literals.toArray)

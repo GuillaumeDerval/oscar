@@ -16,6 +16,7 @@ package oscar.algo
 
 import scala.reflect.ClassManifest
 import scala.math.Ordering
+import scala.math.{min, max}
 
 object SortUtils {
   
@@ -100,11 +101,43 @@ object SortUtils {
 	    } while(el < topExcluded)
 	    runs(rP) = 0
 	      
-	    // println(runs.mkString(", "))
-	    
-	    if (rP > 1) {
-	      val whichArray = mergeSort1(elements, aux, keys, runs, rP + 1, base, 0)
-	      if (whichArray == 1) System.arraycopy(aux, base, elements, base, topExcluded - base)
+      if (rP > 1) {  // array is not sorted
+        var finalBase = base
+        var finalTop = topExcluded
+        
+        // if there are little runs, surely we can find elements that do not need to be sorted
+        // typically useful when rP == 2, which is the case targeted by this sorting procedure
+        if (rP <= 4) {  
+          // maybe 
+          var minLocation = base + runs(0)
+          var minUnsorted = keys(elements(minLocation))
+          
+          var runP = 1
+          while (runP < rP - 1) {
+            minLocation += runs(runP)
+            minUnsorted = min(minUnsorted, keys(elements(minLocation)))
+            runP += 1
+          }
+        
+          var maxLocation = minLocation - 1
+          var maxUnsorted = keys(elements(maxLocation))          
+          
+          runP -= 1  // runP = rP - 2
+          
+          while (runP > 0) {
+            maxLocation -= runs(runP)
+            maxUnsorted = max(maxUnsorted, keys(elements(maxLocation)))
+            runP -= 1  // we don't want 0!
+          }
+
+          while(keys(elements(finalBase)) < minUnsorted) finalBase += 1
+          while(keys(elements(finalTop - 1)) > maxUnsorted) finalTop -= 1
+          runs(0) -= finalBase - base
+          runs(rP - 1) -= topExcluded - finalTop
+        } 
+        
+	      val whichArray = mergeSort1(elements, aux, keys, runs, rP + 1, finalBase, 0)
+	      if (whichArray == 1) System.arraycopy(aux, finalBase, elements, finalBase, finalTop - finalBase)
 	    }
 	  }
 	}

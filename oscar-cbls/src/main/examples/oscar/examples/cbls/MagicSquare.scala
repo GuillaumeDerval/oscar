@@ -26,8 +26,6 @@ import oscar.cbls.constraints.core._
 import oscar.cbls.constraints.lib.basic._
 import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.lib.numeric._
-import oscar.cbls.invariants.core.computation.IntInvariant.toIntVar
-import oscar.cbls.invariants.core.computation.CBLSIntVar.int2IntVar
 
 /**
  * Example showing how to use Asteroid on the magic square problem  
@@ -63,7 +61,7 @@ object MagicSquare extends SearchEngine with StopWatch {
     val perm:Iterator[Int] = getRandomPermutation(M)
     var v:Int=1
     for(i <- Dim; j <-Dim) { 
-      magic(i)(j)=CBLSIntVar(m, 1, N, perm.next+1, "v_"+i+"_"+j) // init with random permutation (ensuring all diff)
+      magic(i)(j)=CBLSIntVar(m, perm.next+1, 1 to M, "v_"+i+"_"+j) // init with random permutation (ensuring all diff)
       v=v+1
     }
     showSquare(magic)
@@ -84,7 +82,7 @@ object MagicSquare extends SearchEngine with StopWatch {
     // conversion is: i=v/N, j=v%N
     // TODO - can we work with multidimensional arrays here ?
     //val ViolationArray:Array[IntVar] = (for(i <- Dim; j <- Dim) yield c.violation(magic(i)(j))).toArray
-    val Tabu:Array[CBLSIntVar] = (for (i <- Dim; j <- Dim) yield CBLSIntVar(m, 0, Int.MaxValue, 0, "Tabu_"+i+"_"+j)).toArray
+    val Tabu:Array[CBLSIntVar] = (for (i <- Dim; j <- Dim) yield CBLSIntVar(m, 0, 0 to Int.MaxValue, "Tabu_"+i+"_"+j)).toArray
     var it:Int=1
     
     // closing model

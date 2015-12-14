@@ -12,73 +12,35 @@
  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
+
 package oscar.linprog
 
 import oscar.algebra._
+import oscar.linprog.interface.MPSolverInterface
 
+/**
+ * Helper functions to build models within the context of an implicit solver
+ */
 package object modeling {
-  
-  val rand = new scala.util.Random(12)
-    
-  object LPSolverLib extends Enumeration {
-    val lp_solve = Value("lp_solve")
-    val glpk = Value("glpk")
-    val gurobi = Value("gurobi")
-  }
-  
-  // solvers used for test
-  lazy val solvers = List(LPSolverLib.lp_solve, LPSolverLib.glpk, LPSolverLib.gurobi).filter(canInstantiateSolver(_))
 
-  def canInstantiateSolver(s: LPSolverLib.Value): Boolean = {
-	  try {
-      val solver = s match {
-        case LPSolverLib.lp_solve => new LPSolverLPSolve()
-        case LPSolverLib.glpk => new LPSolverGLPK()
-        case LPSolverLib.gurobi => new LPSolverGurobi()
-        case _ => new LPSolverLPSolve()
-      }
-	  } catch {
-	    case e: UnsatisfiedLinkError => { 
-        System.out.println("PATH : "+ System.getProperty("java.library.path"));
-        System.err.println(e.getMessage()); return false }
-	    case e: NoClassDefFoundError => { System.err.println(e.getMessage()); return false }
-	  }
-	  true
-  }
-  
-  def instantiateLPSolver(s: LPSolverLib.Value): LPSolver = {
-	  s match {
-        case LPSolverLib.lp_solve => new LPSolverLPSolve()
-        case LPSolverLib.glpk => new LPSolverGLPK()
-        case LPSolverLib.gurobi => new LPSolverGurobi()
-        case _ => new LPSolverLPSolve()
-      }
-  } 
-  
-  def instantiateMIPSolver(s: LPSolverLib.Value): MIPSolver = {
-	  s match {
-        case LPSolverLib.lp_solve => new MIPSolverLPSolve()
-        case LPSolverLib.glpk => new MIPSolverGLPK()
-        case LPSolverLib.gurobi => new MIPSolverGurobi()
-        case _ => new MIPSolverLPSolve()
-      }
-  }  
-  
-  
-  
-  // helper functions to model with an implicit LP/MIPSolver
-  def add(constr: LinearConstraint, name: String = "")(implicit linearSolver: AbstractLPSolver) = linearSolver.add(constr,name)
-  def addAll(constraints: LinearConstraint*)(implicit linearSolver: AbstractLPSolver) {
-    constraints.foreach(add(_))
-  }
-  
-  def start()(implicit linearSolver: AbstractLPSolver) = linearSolver.start()
-  def minimize(expr: LinearExpression)(implicit linearSolver: AbstractLPSolver) = linearSolver.minimize(expr)
-  def maximize(expr: LinearExpression)(implicit linearSolver: AbstractLPSolver) = linearSolver.maximize(expr)
-  def release()(implicit linearSolver: AbstractLPSolver) = linearSolver.release()
-  def objectiveValue(implicit linearSolver: AbstractLPSolver) = linearSolver.objectiveValue()
-  def status(implicit linearSolver: AbstractLPSolver) = linearSolver.status
-  def checkConstraints(tol: Double = 10e-6)(implicit linearSolver: AbstractLPSolver) = linearSolver.checkConstraints(tol)
+  def minimize[I <: MPSolverInterface](expr: LinearExpression)(implicit solver: MPSolver[I]) = solver.setObjective(expr, min = true)
+  def maximize[I <: MPSolverInterface](expr: LinearExpression)(implicit solver: MPSolver[I]) = solver.setObjective(expr, min = false)
 
-  
+  def add[I <: MPSolverInterface](cstr: LinearConstraintExpression, name: String = "")(implicit solver: MPSolver[I]): LinearConstraint[I] = {
+    val n =
+      if(name == "") "cstr" + solver.getNumberOfLinearConstraints
+      else name
+
+    LinearConstraint(n, cstr)
+  }
+
+  def subjectTo[I <: MPSolverInterface](cstrs: (String, LinearConstraintExpression)*)(implicit solver: MPSolver[I]): Seq[(String, LinearConstraint[I])] =
+    cstrs.toSeq map { case (name, cstr) =>
+      name -> add(cstr, name)
+    }
+
+  def subjectTo[I <: MPSolverInterface](cstrs: LinearConstraintExpression*)(implicit solver: MPSolver[I]): IndexedSeq[LinearConstraint[I]] =
+    cstrs.toIndexedSeq map { cstr =>
+      add(cstr)
+    }
 }

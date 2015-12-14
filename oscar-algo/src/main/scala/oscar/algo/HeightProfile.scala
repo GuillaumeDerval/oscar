@@ -43,7 +43,7 @@ object HeightProfile extends App {
     
     def topTime = - heap.head._1
     
-    var t = topTime
+    var t = if (heap.isEmpty) 0 else topTime
     var h = 0
     var res = new ArrayBuffer[(Int,Int,Int)]()
     
@@ -60,7 +60,7 @@ object HeightProfile extends App {
         assert(h == 0)
       }
     }
-    res.toArray
+    if (res.isEmpty) Array((0, 0, 0)) else res.toArray
   }
   
   

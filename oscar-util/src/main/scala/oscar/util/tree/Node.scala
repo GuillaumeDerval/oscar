@@ -17,7 +17,6 @@ package oscar.util.tree
 import java.awt.Color
 
 class Node[T](val label: T, val sons: List[Node[T]], val edgeLabels: List[T], val col: Color= Color.white, val action: () => Unit = () => Unit) {
-	
 	override def toString = {
 	  label.toString + (sons match {
 	    case Nil => ""
@@ -45,7 +44,7 @@ object Node {
       val pTrees = trees.zip(positions).map(e => e._1.moveTree(e._2))
       val pExtents = extents.zip(positions).map(e => e._1.moveExtent(e._2))
       val resultExtent = Extent ((0.0, 0.0) :: Extent.mergeList(pExtents).extentList)
-      val resultTree = PositionedNode(node.label, 0.0, pTrees, node.edgeLabels, node.col,node.action)
+      val resultTree = PositionedNode(node.label, 0.0, pTrees, node.edgeLabels, node.col, node.action)
       (resultTree, resultExtent)
     }
     val treeToRet = designAux(tree)._1

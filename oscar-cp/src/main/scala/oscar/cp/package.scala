@@ -158,6 +158,23 @@ package object cp extends Constraints with Branchings with ElementBuilder with C
       min2 - min1
     }
     
+    def maxRegret(costFunction: Int => Int): Int = {
+      val values = x.toArray
+      var min1 = costFunction(values(0))
+      var min2 = Int.MaxValue
+      var i = values.length
+      while (i > 1) {
+        i -= 1
+        val value = values(i)
+        val cost = costFunction(value)
+        if (cost <= min1) {
+          min2 = min1
+          min1 = cost 
+        } else if (cost < min2) min2 = cost
+      }
+      min2 - min1
+    }
+    
     def minBy(costs: Array[Int]): Int = {
       val values = x.toArray
       var i = values.length

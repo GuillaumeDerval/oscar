@@ -1,35 +1,45 @@
-/*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
-/******************************************************************************
-  * Contributors:
-  *     This code has been initially developed by CETIC www.cetic.be
-  *         by Gaël Thouvenin
-  ******************************************************************************/
+/**
+ * *****************************************************************************
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ * ****************************************************************************
+ */
+/**
+ * ****************************************************************************
+ * Contributors:
+ *     This code has been initially developed by CETIC www.cetic.be
+ *         by Gaël Thouvenin
+ * ****************************************************************************
+ */
 
 package oscar.cbls.binPacking.model
 
-import oscar.cbls.constraints.core.{Constraint, ConstraintSystem}
+import oscar.cbls.constraints.core.Constraint
+import oscar.cbls.constraints.core.ConstraintSystem
 import oscar.cbls.constraints.lib.basic.LE
-import oscar.cbls.invariants.core.computation.{Store, CBLSSetVar, CBLSIntVar}
+import oscar.cbls.invariants.core.computation.CBLSIntVar
+import oscar.cbls.invariants.core.computation.CBLSSetVar
+import oscar.cbls.invariants.core.computation.Domain.rangeToDomain
+import oscar.cbls.invariants.core.computation.IntValue
+import oscar.cbls.invariants.core.computation.IntValue.int2IntValue
+import oscar.cbls.invariants.core.computation.Store
 import oscar.cbls.invariants.lib.logic.DenseCluster
 import oscar.cbls.invariants.lib.set.SetSum
 
 /**
  * @author gael.thouvenin@student.umons.ac.be
  */
-case class BinPackingStandardized(itemSizes:Array[Int], binSizes:Array[Int], initialBin:Int)(implicit s:Store) {
+case class BinPackingStandardized(itemSizes: Array[Int], binSizes: Array[Int], initialBin: Int)(implicit s: Store) {
   val itemsCount = itemSizes.size
 
   val binsCount = binSizes.size
@@ -38,23 +48,31 @@ case class BinPackingStandardized(itemSizes:Array[Int], binSizes:Array[Int], ini
 
   val binsRange = 0 until binsCount
 
-  /**Assigned bin for each item -> the list of CBLSIntVar to apply the Neighborhoods on*/
-  val itemAssignments = Array.tabulate(itemsCount)(x => CBLSIntVar(binsRange, initialBin, "Bin of item %d".format(x))(s))
+  /**
+   * Assigned bin for each item -> the array of CBLSIntVar to apply the Neighborhoods on
+   */
+  val itemAssignments = Array.tabulate(itemsCount)(x =>
+    CBLSIntVar(s, initialBin, binsRange, "Bin of item %d".format(x)))
 
-  /**Assigned items for each bin*/
-  val binAssignments = DenseCluster(itemAssignments, Array.tabulate(binsCount)(x => CBLSSetVar(itemsRange, name = "Contents of bin %d".format(x))(s))).clusters
+  /**
+   * Assigned items for each bin
+   */
+  val binAssignments = DenseCluster(itemAssignments, Array.tabulate(binsCount)(x =>
+    CBLSSetVar(itemsRange, name = "Contents of bin %d".format(x))(s))).clusters
 
-  /**Amount of space used for each bin*/
-  val contentsByBin = (for (i <- binsRange) yield SetSum(binAssignments(i), itemSizes(_)).toIntVar).toArray
+  /**
+   * Amount of space used for each bin
+   */
+  val binUseAmounts = (for (i <- binsRange) yield SetSum(binAssignments(i), itemSizes(_))).toArray
 
   /**
    * Posts the binPacking Constraint
    * @param c the constraintSystem
    * @param filter index => boolean : a function that returns true if a constraint should be applied on the given bin, false otherwise
    */
-  def withSizeConstraints(filter:Int => Boolean = _ => true, weight:CBLSIntVar = 1)(implicit c:ConstraintSystem) = {
+  def withSizeConstraints(filter: Int => Boolean = _ => true, weight: IntValue = 1)(implicit c: ConstraintSystem) = {
     val cs = new ConstraintSystem(s)
-    for (bId <- binsRange if filter(bId)) cs.post(LE(contentsByBin(bId), binSizes(bId)))
+    for (bId <- binsRange if filter(bId)) cs.post(LE(binUseAmounts(bId), binSizes(bId)))
     cs.close()
     c.post(cs, weight.value)
     for (assignation <- itemAssignments) c.violation(assignation)
@@ -67,13 +85,13 @@ case class BinPackingStandardized(itemSizes:Array[Int], binSizes:Array[Int], ini
    * @param c the constraintSystem
    * @return
    */
-  def withConstraintsOnBins(fct : (Int, CBLSSetVar) => Option[Constraint], weight:CBLSIntVar = 1)(implicit c: ConstraintSystem): Unit =  {
+  def withConstraintsOnBins(fct: (Int, CBLSSetVar) => Option[Constraint], weight: IntValue = 1)(implicit c: ConstraintSystem): Unit = {
     val cs = ConstraintSystem(s)
     for (bId <- binsRange) {
       val optConst = fct(bId, binAssignments(bId))
       optConst match {
         case Some(const) => cs.post(const)
-        case None => Nil
+        case None => ()
       }
     }
     cs.close()
@@ -88,9 +106,9 @@ case class BinPackingStandardized(itemSizes:Array[Int], binSizes:Array[Int], ini
    * @param c the constraintSystem
    * @return
    */
-  def withConstraintOnItems(fct : (Int, CBLSIntVar) => Option[Constraint], weight:CBLSIntVar = 1)(implicit c: ConstraintSystem): Unit = {
+  def withConstraintOnItems(fct: (Int, CBLSIntVar) => Option[Constraint], weight: IntValue = 1)(implicit c: ConstraintSystem): Unit = {
     val cs = ConstraintSystem(s)
-    for (iId <- itemsRange){
+    for (iId <- itemsRange) {
       val optConst = fct(iId, itemAssignments(iId))
       optConst match {
         case Some(const) => cs.post(const)
@@ -101,14 +119,13 @@ case class BinPackingStandardized(itemSizes:Array[Int], binSizes:Array[Int], ini
     c.post(cs, weight)
     for (i <- itemAssignments) c.violation(i)
   }
-
 }
 
 /**
  * @author gael.thouvenin@student.umons.ac.be
  */
-object BinPackingStandardized{
-  def apply(itemSizes:Traversable[Int], binSizes:Traversable[Int], initialBin:Int = 0)(implicit s:Store) = {
+object BinPackingStandardized {
+  def apply(itemSizes: Traversable[Int], binSizes: Traversable[Int], initialBin: Int = 0)(implicit s: Store) = {
     new BinPackingStandardized(itemSizes.toArray, binSizes.toArray, initialBin)(s)
   }
 }

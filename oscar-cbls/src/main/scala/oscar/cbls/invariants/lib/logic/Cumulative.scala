@@ -23,8 +23,9 @@
 
 package oscar.cbls.invariants.lib.logic
 
-import oscar.cbls.invariants.core.computation.{ Invariant, CBLSSetVar, CBLSIntVar }
-import collection.immutable.SortedSet
+import oscar.cbls.invariants.core.computation._
+
+import scala.collection.immutable.SortedSet
 
 /**
  * Maintains a resource usage profile.
@@ -37,9 +38,9 @@ import collection.immutable.SortedSet
  * @author renaud.delandtsheer@cetic.be
  */
 case class Cumulative(indices: Array[Int],
-                      start: Array[CBLSIntVar],
-                      duration: Array[CBLSIntVar],
-                      amount: Array[CBLSIntVar],
+                      start: Array[IntValue],
+                      duration: Array[IntValue],
+                      amount: Array[IntValue],
                       profile: Array[CBLSIntVar],
                       active: Array[CBLSSetVar]) extends Invariant {
 
@@ -82,7 +83,7 @@ case class Cumulative(indices: Array[Int],
   }
 
   @inline
-  override def notifyIntChanged(v: CBLSIntVar, index: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
     if (start(index) == v) {
       //start
       remove(OldVal, duration(index).value, amount(index).value, index)

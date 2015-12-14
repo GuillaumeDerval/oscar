@@ -62,7 +62,7 @@ class TestObjective extends FunSuite with ShouldMatchers {
     cp.search {
       binaryStatic(Array(x1, x2), _.max)
     } onSolution {
-      println("=>"+x1+" "+x2)
+      //println("=>"+x1+" "+x2)
     }
     cp.start().nSols should be(4)
   }

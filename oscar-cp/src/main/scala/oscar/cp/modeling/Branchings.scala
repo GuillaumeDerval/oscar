@@ -19,16 +19,10 @@ import oscar.algo.search.Branching
 import oscar.algo.search.BranchingUtils
 import oscar.cp.scheduling.search.SetTimesBranching
 import oscar.cp.scheduling.search.RankBranching
-import oscar.cp.searches.BinaryDomainSplitBranching
-import oscar.cp.searches.BinarySetBranching
-import oscar.cp.searches.BinaryBranching
-import oscar.cp.searches.BinaryStaticOrderBranching
+import oscar.cp.searches._
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.variables.CPSetVar
-import oscar.cp.searches.BinaryLastConflict
-import oscar.cp.searches.SplitLastConflict
 import oscar.algo.reversible.ReversibleContext
-import oscar.cp.searches.DiscrepancyBranching
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
@@ -76,6 +70,11 @@ trait Branchings extends BranchingUtils {
   def splitLastConflict(variables: Array[CPIntVar], varHeuristic: (Int => Int), valHeuristic: (Int => Int)): Branching = {
     new SplitLastConflict(variables, varHeuristic, valHeuristic)
   }
+
+  def conflictOrderingSearch(variables: Array[CPIntVar], varHeuristic: (Int) => Int, valHeuristic: (Int) => Int, doReset: Boolean = false): Branching = {
+    new ConflictOrderingSearch(variables, varHeuristic, valHeuristic, doReset)
+  }
+
 
   /**
    * Binary Search on the decision variables vars with fixed static ordering.

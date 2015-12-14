@@ -64,10 +64,10 @@ class CPGraphVar(val s: CPStore, nNodes: Int, inputEdges: List[(Int,Int)], val n
    * @param c
    * @see oscar.cp.core.Constraint#propagate()
    */
-  def callPropagateWhenDomainChanges(c: Constraint, trackDelta: Boolean = false) {
+  def callPropagateWhenDomainChanges(c: Constraint) {
     // call propagator of the two CPVarSet
-    N.callPropagateWhenDomainChanges(c, trackDelta)
-    E.callPropagateWhenDomainChanges(c, trackDelta)
+    N.callPropagateWhenDomainChanges(c)
+    E.callPropagateWhenDomainChanges(c)
   }
   
   /**

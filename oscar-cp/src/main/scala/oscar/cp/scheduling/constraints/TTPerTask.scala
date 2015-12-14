@@ -16,87 +16,111 @@ import java.lang.Math._
  * It is generalized to variable durations and optional activities.
  */
 
-class TTPerTask(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], heights: Array[CPIntVar], resources: Array[CPIntVar], capacity: CPIntVar, id: Int)
+final class TTPerTask(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], heights: Array[CPIntVar], resources: Array[CPIntVar], capacity: CPIntVar, id: Int)
 extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity, id, "TTPerTask")
 {
   priorityL2 = 4
   idempotent = true
-
+  
+  // Fast access to cache  
+  private[this] val nTasks = starts.length
+  private[this] val sMin = smin
+  private[this] val sMax = smax
+  private[this] val dMin = dmin
+  private[this] val dMax = dmax
+  private[this] val eMin = emin
+  private[this] val eMax = emax
+  private[this] val hMin = hmin
+  private[this] val hMax = hmax
+  private[this] val requiredTasks = required
+  private[this] val possibleTasks = possible
+  private[this] val actives = activitiesToConsider
+  private[this] var C = 0
+  
+  // Used for inner fixed-point
+  private[this] var hasChanged = true
+  
   // Profile
-  private final val profile = new ProfileStructure(smin, smax, dmin, emin, emax, hmin, required, possible)  
+  private[this] val profile = new ProfileStructure(sMin, sMax, dMin, eMin, eMax, hMin, requiredTasks, possibleTasks)  
   
-  var C = 0
-
-  var hasChanged = true
-  
-  final override def propagate(): CPOutcome = {
-    
-    
+  final override def propagate(): CPOutcome = { 
     updateCache()
     C = capacity.max
-    hasChanged = true
-    while (hasChanged) {
+
+    do {
       hasChanged = false
       if (oneSweep()) return Failure
-    }
+    } while (hasChanged)
     
     if (C == capacity.min) removeExtremal()
     else removeImpossible()
     
-    if (filterPossibleActivities()) return Failure
-    
-    Suspend 
+    if (filterPossibleActivities()) Failure
+    else Suspend 
   }
   
-  final def oneSweep(): Boolean = {
+  @inline private def oneSweep(): Boolean = {
     profile.rebuild(toConsider)
-    
     val maxHeight = profile.maxHeight()
-    if (maxHeight > C) return true  // check overload 
-   
-    pushAll(maxHeight)
+    if (maxHeight > C) true // Check overload 
+    else pushAll(maxHeight)
   }
-
   
-  final def pushAll(maxHeight: Int): Boolean = {
+  @inline private def pushAll(maxHeight: Int): Boolean = {
+    
     val minPushable = C - maxHeight
-    var p = toConsider.limit.value - 1
-    while (p >= 0) {
-      val i = activitiesToConsider(p)
-      if (required(i) && hmin(i) > minPushable) {
-        val aContributes = smax(i) < emin(i)   // compute this before changing bounds
+    var p = toConsider.limit.value
+    
+    while (p > 0) {
+      
+      p -= 1
+      val taskId = actives(p)   
+      val hMinTask = hMin(taskId)
+      val sMinTask = sMin(taskId)
+      val sMaxTask = sMax(taskId)
+      val dMinTask = dMin(taskId)
+      
+      if (requiredTasks(taskId) && hMinTask > minPushable) {
+        val aContributes = sMaxTask < eMin(taskId)   // compute this before changing bounds
         
-        if (smin(i) < smax(i)) {   // push i to the right
-          val profileSMin = profile.sweepLR(i, C - hmin(i), aContributes)
-          if (!aContributes && profileSMin > smax(i)) return true
-          val newSMin = min(profileSMin, smax(i))
+        if (sMinTask < sMaxTask) {   // push i to the right
+          val profileSMin = profile.sweepLR(taskId, C - hMinTask, aContributes)
+          if (!aContributes && profileSMin > sMaxTask) return true
+          val newSMin = min(profileSMin, sMaxTask)
 
-          if (newSMin > smin(i)) {
-            if (starts(i).updateMin(newSMin) == Failure) return true
-            val newEMin = max(newSMin + dmin(i), emin(i))  // emin might already be later if duration is not constant
-            if (newEMin > emin(i) && ends(i).updateMin(newEMin) == Failure) return true
-            smin(i) = newSMin
-            emin(i) = newEMin
-            hasChanged |= smax(i) < emin(i)  // do fixed point only if profile changes
+          if (newSMin > sMinTask) {
+            if (starts(taskId).updateMin(newSMin) == Failure) return true
+            val eMinTask = eMin(taskId)
+            val newEMin = max(newSMin + dMinTask, eMinTask)  // eMin might already be later if duration is not constant
+            if (newEMin > eMinTask && ends(taskId).updateMin(newEMin) == Failure) return true
+            
+            sMin(taskId) = newSMin
+            eMin(taskId) = newEMin
+            
+            hasChanged |= sMaxTask < newEMin  // do fixed point only if profile changes
           } 
         }
-
-        if (emin(i) < emax(i)) {   // push i to the left
-          val profileEMax = profile.sweepRL(i, C - hmin(i), aContributes)
-          if (!aContributes && profileEMax < emin(i)) return true
-          val newEMax = max(profileEMax, emin(i))
         
-          if (newEMax < emax(i)) {
-            if (ends(i)  .updateMax(newEMax) == Failure) return true
-            val newSMax = min(newEMax - dmin(i), smax(i))
-            if (newSMax < smax(i) && starts(i).updateMax(newSMax) == Failure) return true
-            emax(i) = newEMax
-            smax(i) = newSMax
-            hasChanged |= smax(i) < emin(i)
+        val eMinTask = eMin(taskId)
+        val eMaxTask = eMax(taskId)
+
+        if (eMinTask < eMaxTask) {   // push i to the left
+          val profileEMax = profile.sweepRL(taskId, C - hMinTask, aContributes)
+          if (!aContributes && profileEMax < eMinTask) return true
+          val newEMax = max(profileEMax, eMinTask)
+        
+          if (newEMax < eMaxTask) {
+            if (ends(taskId).updateMax(newEMax) == Failure) return true
+            val newSMax = min(newEMax - dMinTask, sMaxTask)
+            if (newSMax < sMaxTask && starts(taskId).updateMax(newSMax) == Failure) return true
+            
+            eMax(taskId) = newEMax
+            sMax(taskId) = newSMax
+            
+            hasChanged |= newSMax < eMinTask
           }
         }
       }
-      p -= 1
     }
     false
   }
@@ -106,45 +130,44 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   // TODO: actually only one sweep is enough to know whether the activity can hold or not,
   // we don't care about having two witnesses.
   // TODO: separate possible from required (in cumulative template?)
-  final def filterPossibleActivities(): Boolean = {
-    var p = toConsider.limit.value - 1
-    while (p >= 0) {
+  
+  
+  @inline private def filterPossibleActivities(): Boolean = {
+    var p = toConsider.limit.value
+    while (p > 0) {
+      p -= 1
       val i = activitiesToConsider(p)
-      if (possible(i) && !required(i) && hmin(i) > 0) { // && dmin(i) > 0
+      if (possibleTasks(i) && !requiredTasks(i) && hMin(i) > 0) { // && dMin(i) > 0
         
-        val newEMin: Int = if (smin(i) < smax(i)) {
-          val profileSMin = profile.sweepLR(i, C - hmin(i), false)  // push i to the right
-          val newSMin = min(profileSMin, smax(i))
+        val newEMin: Int = if (sMin(i) < sMax(i)) {
+          val profileSMin = profile.sweepLR(i, C - hMin(i), false)  // push i to the right
+          val newSMin = min(profileSMin, sMax(i))
 
           // if (profileSMin == Int.MaxValue) Int.MinValue else            
-          if (newSMin > smin(i)) max(newSMin + dmin(i), emin(i))            
-          else emin(i)
+          if (newSMin > sMin(i)) max(newSMin + dMin(i), eMin(i))            
+          else eMin(i)
           
         }
-        else emin(i)
+        else eMin(i)
         
-        val newSMax: Int = if (emin(i) < emax(i)) {
-          val profileEMax = profile.sweepRL(i, C - hmin(i), false)  // push i to the left
-          val newEMax = max(profileEMax, emin(i))
+        val newSMax: Int = if (eMin(i) < emax(i)) {
+          val profileEMax = profile.sweepRL(i, C - hMin(i), false)  // push i to the left
+          val newEMax = max(profileEMax, eMin(i))
           
           // if (profileEMax == Int.MinValue) Int.MaxValue else            
-          if (newEMax < emax(i)) min(newEMax - dmin(i), smax(i))            
-          else smax(i)
+          if (newEMax < emax(i)) min(newEMax - dMin(i), sMax(i))            
+          else sMax(i)
         }
-        else smax(i)
+        else sMax(i)
         
-        if (newSMax < newEMin && profile.maxInterval(newSMax, newEMin) + hmin(i) > C){
+        if (newSMax < newEMin && profile.maxInterval(newSMax, newEMin) + hMin(i) > C){
           if (resources(i).removeValue(id) == Failure) return true
-          possible(i) = false
+          possibleTasks(i) = false
         } 
       }
-      p -= 1
     }
     false
   }
-  
-  
-
 }
 
 

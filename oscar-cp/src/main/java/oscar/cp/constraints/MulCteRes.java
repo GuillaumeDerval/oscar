@@ -55,8 +55,8 @@ public class MulCteRes extends Constraint {
 		}
 		
 		if (c == 0 && x.hasValue(0) && y.hasValue(0)) {
-			x.callPropagateWhenDomainChanges(this,false);
-			y.callPropagateWhenDomainChanges(this,false);
+			x.callPropagateWhenDomainChanges(this);
+			y.callPropagateWhenDomainChanges(this);
 		} else {
 			x.callPropagateWhenBoundsChange(this);
 			y.callPropagateWhenBoundsChange(this);

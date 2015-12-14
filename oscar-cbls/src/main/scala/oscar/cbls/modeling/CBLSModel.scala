@@ -1,12 +1,10 @@
 package oscar.cbls.modeling
 
+import oscar.cbls.constraints.core.{Constraint, ConstraintSystem}
 import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
-import oscar.cbls.search.{StopWatch, SearchEngineTrait}
-import oscar.cbls.modeling._
-import oscar.cbls.constraints.core.{ConstraintSystem, Constraint}
-import oscar.cbls.objective.ObjectiveTrait
-import scala.collection.immutable.SortedSet
+import oscar.cbls.objective.Objective
+import oscar.cbls.search.{SearchEngineTrait, StopWatch}
 
 
 /** this is a helper object that you can extend to implement your solver with the minimal syntactic overhead.
@@ -50,6 +48,8 @@ class CBLSModel(val verbose:Boolean = false,
 
   def solution()(implicit s:Store) = s.solution()
 
-  def swapVal(a:CBLSIntVar, b:CBLSIntVar)(implicit o:ObjectiveTrait) = o.swapVal(a,b)
-  def assignVal(a: CBLSIntVar, v: Int)(implicit o:ObjectiveTrait) = o.assignVal(a, v)
+  def swapVal(a:CBLSIntVar, b:CBLSIntVar)(implicit o:Objective) = o.swapVal(a,b)
+  def assignVal(a: CBLSIntVar, v: Int)(implicit o:Objective) = o.assignVal(a, v)
+
+  def CBLSIntVar(value:Int = 0, d:Domain = FullRange, name:String = null)(implicit s:Store) = new CBLSIntVar(s,value, d,name)
 }

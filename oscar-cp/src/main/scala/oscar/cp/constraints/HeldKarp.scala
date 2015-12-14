@@ -17,31 +17,35 @@
 
 package oscar.cp.constraints
 
-import oscar.algo.reversible.ReversibleDouble
-import oscar.cp._
-import scala.io.Source
-import oscar.algo.reversible.ReversibleInt
+import scala.annotation.elidable
+import scala.annotation.elidable.ASSERTION
+
 import oscar.algo.DisjointSets
-import scala.collection.mutable.ArrayBuffer
 import oscar.algo.RangeMinQuery
-import oscar.cp.core.CPPropagStrength
+import oscar.algo.SortUtils
+import oscar.algo.reversible.ReversibleInt
+import oscar.cp.CPIntVar
+import oscar.cp.CPIntVarOps
+import oscar.cp.CPSetVar
+import oscar.cp.Constraint
 import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.cp.core.CPOutcome.Failure
+import oscar.cp.core.CPOutcome.Suspend
+import oscar.cp.core.CPPropagStrength
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
  */
-class HeldKarp(val edges: CPSetVar,val edgeData: Array[(Int,Int,Int)], val cost: CPIntVar) extends Constraint(edges.store) {
+class HeldKarp(edges: CPSetVar, edgeData: Array[(Int,Int,Int)], cost: CPIntVar) extends Constraint(edges.store) {
 
-  val epsilon = 10e-6
-  val n = (edgeData.map(_._1).max max (edgeData.map(_._2).max)) +1
-  val component = new DisjointSets[CCTreeNode](0,n-1)
-  val cctree = new CCTree(n-1)
-  val distMatrix = Array.fill(n,n)(new ReversibleInt(s,Int.MaxValue)) 
+  private[this] val epsilon = 10e-6
+  private[this] val n = (edgeData.map(_._1).max max (edgeData.map(_._2).max)) +1
+  private[this] val component = new DisjointSets[CCTreeNode](0,n-1)
+  private[this] val cctree = new CCTree(n-1)
+  private[this] val distMatrix = Array.fill(n,n)(new ReversibleInt(s,Int.MaxValue)) 
   
-  val edgeIndex = Array.fill(n,n)(-1)
-  val y = Array.fill(n)(0.0)
-  
+  private[this] val edgeIndex = Array.fill(n,n)(-1)
+  private[this] val y = Array.fill(n)(0.0)
   
   for (((i,j,w),idx) <- edgeData.zipWithIndex) {
     edgeIndex(i)(j) = idx
@@ -49,25 +53,25 @@ class HeldKarp(val edges: CPSetVar,val edgeData: Array[(Int,Int,Int)], val cost:
     distMatrix(i min j)(i max j) := w
   }
   
-  def edgeWeight(i: Int, j: Int): Int = {
+  @inline private def edgeWeight(i: Int, j: Int): Int = {
     distMatrix(i min j)(i max j).value
   }
   
 
-  def removeEdge(i: Int,j: Int): CPOutcome = {
+  @inline private def removeEdge(i: Int,j: Int): CPOutcome = {
     distMatrix(i min j)(i max j) := Int.MaxValue
     edges.excludes(edgeIndex(i)(j))
   }
   
-  def forceEdge(i: Int,j: Int): CPOutcome = {
+  @inline private def forceEdge(i: Int,j: Int): CPOutcome = {
     edges.requires(edgeIndex(i)(j))
   }  
   
-  def isEdgePossible(i: Int,j: Int): Boolean = {
+  @inline private def isEdgePossible(i: Int,j: Int): Boolean = {
     edges.isPossible(edgeIndex(i)(j))
   }
   
-  def isEdgeRequired(i: Int,j: Int): Boolean = {
+  @inline private def isEdgeRequired(i: Int,j: Int): Boolean = {
     edges.isRequired(edgeIndex(i)(j))
   }  
 
@@ -85,7 +89,7 @@ class HeldKarp(val edges: CPSetVar,val edgeData: Array[(Int,Int,Int)], val cost:
     propagateNumSteps(5)
   }
   
-  def propagateNumSteps(nSteps: Int): CPOutcome = {
+  @inline private def propagateNumSteps(nSteps: Int): CPOutcome = {
     var iter = 0
     var improvement = true
     var lb = 0
@@ -94,7 +98,9 @@ class HeldKarp(val edges: CPSetVar,val edgeData: Array[(Int,Int,Int)], val cost:
     var beta = 0.5
     val excluded = n-1
     val nMetaIter = 2
-    for (metaiter <- 0 until nMetaIter) {
+    
+    var metaIter = 0
+    while (metaIter < nMetaIter) {
       iter = 0
       while (iter < nSteps) {
         //println("iter---")
@@ -142,7 +148,8 @@ class HeldKarp(val edges: CPSetVar,val edgeData: Array[(Int,Int,Int)], val cost:
         }
         var heaviestWeightAdjacentToExcluded = Double.MaxValue 
         // then complete the minimum spanning tree with Kruskal
-        val possible = edges.possibleNotRequiredValues.toArray.sortBy(i => edgeWeight(i))
+        val possibleValues = edges.possibleNotRequiredValues.toArray
+        val possible = possibleValues.sortBy(i => edgeWeight(i))
         for (idx <- possible) {
           val (i, j, w) = edgeData(idx)
           if (i != excluded && j != excluded) {
@@ -189,7 +196,7 @@ class HeldKarp(val edges: CPSetVar,val edgeData: Array[(Int,Int,Int)], val cost:
         }
 
         // filtering of the edges
-        if ((iter == nSteps) && (nMetaIter-1 == metaiter)) {
+        if ((iter == nSteps) && (nMetaIter-1 == metaIter)) {
           val inorder = cctree.inorderCollect()
           val pos = Array.fill(inorder.length)(0)
           for (i <- 0 until inorder.length) {
@@ -231,10 +238,10 @@ class HeldKarp(val edges: CPSetVar,val edgeData: Array[(Int,Int,Int)], val cost:
       // end of iters, can do edge filtering here
 
 
-      alpha *= beta;
-      beta /= 2;
+      alpha *= beta
+      beta /= 2
       
-
+      metaIter += 1
     }
     if (cost.updateMin(lb) == Failure) {
       //println("failure lb:"+lb)

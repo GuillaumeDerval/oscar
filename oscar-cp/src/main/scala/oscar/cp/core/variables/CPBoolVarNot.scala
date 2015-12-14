@@ -4,6 +4,8 @@ import scala.util.Random
 import oscar.cp.core.CPOutcome
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
+import oscar.cp.core.watcher.Watcher
+import oscar.cp.core.delta.DeltaIntVar
 
 /** 
  *  A not view on a boolean variable. 
@@ -69,12 +71,20 @@ class CPBoolVarNot(final override val not: CPBoolVar) extends CPBoolVar {
 
   final override def callPropagateWhenBind(c: Constraint): Unit = not.callPropagateWhenBind(c)
 
-  final override def callPropagateWhenBoundsChange(c: Constraint): Unit = callPropagateWhenBoundsChange(c)
+  final override def callPropagateWhenBoundsChange(c: Constraint): Unit = not.callPropagateWhenBoundsChange(c)
+
+  final override def callPropagateWhenBoundsChange(c: Constraint, cond: => Boolean): Unit = not.callPropagateWhenBoundsChange(c, cond)
+
+  final override def callPropagateWhenDomainChanges(c: Constraint): Unit = not.callPropagateWhenDomainChanges(c)
   
-  final override def  callPropagateWhenDomainChanges(c: Constraint, watcher: oscar.cp.core.Watcher): Unit = ???
+  final override def callPropagateWhenDomainChanges(c: Constraint, cond: => Boolean): Unit = not.callPropagateWhenDomainChanges(c, cond)
 
-  final override def callPropagateWhenDomainChanges(c: Constraint, trackDelta: Boolean = false): Unit = not.callPropagateWhenDomainChanges(c, trackDelta)
-
+  final override def callPropagateOnChangesWithDelta(c: Constraint): DeltaIntVar = not.callPropagateOnChangesWithDelta(c)
+  
+  final override def callPropagateOnChangesWithDelta(c: Constraint, cond: => Boolean): DeltaIntVar = not.callPropagateOnChangesWithDelta(c, cond)
+  
+  final override def awakeOnChanges(watcher: Watcher): Unit = not.awakeOnChanges(watcher)
+  
   final override def callValBindWhenBind(c: Constraint): Unit = not.callValBindWhenBind(c, this) 
   
   final override def callValBindWhenBind(c: Constraint, variable: CPIntVar): Unit = not.callValBindWhenBind(c, variable)
@@ -103,27 +113,24 @@ class CPBoolVarNot(final override val not: CPBoolVar) extends CPBoolVar {
 
   final override def delta(oldMin: Int, oldMax: Int, oldSize: Int): Iterator[Int] = ???
 
-  final override def changed(c: Constraint): Boolean = ???
-
-  final override def minChanged(c: Constraint): Boolean = ???
-
-  final override def maxChanged(c: Constraint): Boolean = ???
-
-  final override def boundsChanged(c: Constraint): Boolean = ???
-
-  final override def oldMin(c: Constraint): Int = ???
-
-  final override def oldMax(c: Constraint): Int = ???
-
-  final override def oldSize(c: Constraint): Int = ???
-
-  final override def deltaSize(c: Constraint): Int = ???
-
-  final override def delta(c: Constraint): Iterator[Int] = ???
-
   final override def constraintTrue(): Constraint = not.constraintFalse
 
   final override def constraintFalse(): Constraint = not.constraintTrue
+  
+  final override def restrict(newDomain: Array[Int], newSize: Int): Unit = {
+    assert(newSize > 0 && newSize <= size)
+    if (newSize == 1) {
+      val value = newDomain(0)
+      if (value == 1) {
+        assert(!not.isTrue) 
+        not.assignFalse()
+      } else {
+        assert(!not.isFalse) 
+        not.assignTrue()    
+      }
+    }
+  }
+
 
   final override def toString: String = {
     if (not.isEmpty) "empty"

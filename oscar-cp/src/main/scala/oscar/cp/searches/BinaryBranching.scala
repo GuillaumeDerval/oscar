@@ -18,7 +18,6 @@ package oscar.cp.searches
 import oscar.cp._
 import oscar.algo.search.Branching
 import oscar.algo.reversible.ReversibleInt
-import oscar.algo.reversible.ReversibleIntWithCache
 
 /**
  * Abstract Binary Branching:

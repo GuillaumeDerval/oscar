@@ -30,11 +30,11 @@ abstract class LinearExpression extends Expression {
 
   def unary_- : LinearExpression = new LinearExpressionDiff(0, this)
 
-  def <=(linExpr: LinearExpression) = new LinearConstraint(this - linExpr, ConstraintType.LQ)
+  def <:=(linExpr: LinearExpression) = new LinearConstraintExpression(this - linExpr, LQ)
 
-  def >=(linExpr: LinearExpression) = new LinearConstraint(this - linExpr, ConstraintType.GQ)
+  def >:=(linExpr: LinearExpression) = new LinearConstraintExpression(this - linExpr, GQ)
 
-  def ==(linExpr: LinearExpression) = new LinearConstraint(this - linExpr, ConstraintType.EQ)
+  def =:=(linExpr: LinearExpression) = new LinearConstraintExpression(this - linExpr, EQ)
 
   /**
    * Test if two linear expressions are logically equivalent

@@ -5,7 +5,7 @@ import oscar.cp._
 /** @author Pierre Schaus */
 object LargeScaleGreedyCumulative extends CPModel with App {
 
-  val nTasks = 6000
+  val nTasks = 10000
   val rand = new scala.util.Random(0)
 
   val durations = Array.fill(nTasks)(rand.nextInt(200) + 5)

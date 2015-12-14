@@ -21,11 +21,12 @@
 
 package oscar.cbls.constraints.lib.global
 
-import collection.immutable.SortedMap
 import oscar.cbls.constraints.core.Constraint
-import oscar.cbls.invariants.lib.numeric.Sum
 import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
+import oscar.cbls.invariants.lib.numeric.Sum
+
+import scala.collection.immutable.SortedMap
 ;
 
 /**implments the sequence constraint:
@@ -36,8 +37,8 @@ import oscar.cbls.invariants.core.propagation.Checker
  * @param predicate a predicate to say which values belong to the constraint
   * @author renaud.delandtsheer@cetic.be
  */
-case class Sequence(variables: Array[CBLSIntVar], length:Int, Max:Int, predicate:(Int=>Boolean))
-  extends Constraint {
+case class Sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:(Int=>Boolean))
+  extends Invariant with Constraint{
 
   assert(Max <= length, "Sequence: Max > length")
 
@@ -50,18 +51,18 @@ case class Sequence(variables: Array[CBLSIntVar], length:Int, Max:Int, predicate
   val count:Array[Int] = Array.tabulate(sequences.size)(i => 0)
 
   /**the violation of the sequence starting here*/
-  val violated = Array.tabulate(sequences.size)(i => CBLSIntVar(model,0, length - Max, 0 ,"is_violated_sequence" + i))
+  val violated = Array.tabulate(sequences.size)(i => CBLSIntVar(model,0, 0 to length - Max, "is_violated_sequence" + i))
 
   for(v <- violated) v.setDefiningInvariant(this)
 
   /**the violation of a variable is the sum of the violation of each sequence it is involved in*/
-  var Violations = SortedMap.empty[Variable, CBLSIntVar]
+  var Violations = SortedMap.empty[IntValue, IntValue]
 
   for(i <- 0 to variables.length - length){
-    Violations = Violations + ((variables(i),Sum(sequencesInvolving(i).map(violated(_))).toIntVar))
+    Violations = Violations + ((variables(i),Sum(sequencesInvolving(i).map(violated(_)))))
   }
 
-  val Violation = CBLSIntVar(model,0, variables.length * length, 0 ,"sequence_violations")
+  val Violation = CBLSIntVar(model,0, 0 to variables.length * length ,"sequence_violations")
   Violation.setDefiningInvariant(this)
 
   for(i <- variables.indices){
@@ -90,7 +91,7 @@ case class Sequence(variables: Array[CBLSIntVar], length:Int, Max:Int, predicate
   }
 
   @inline
-  override def notifyIntChanged(v: CBLSIntVar, i: Int, OldVal: Int, NewVal: Int){
+  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Int, NewVal: Int){
     if (predicate(OldVal)){
       if(!predicate(NewVal)){
         //decrease the count
@@ -118,7 +119,7 @@ case class Sequence(variables: Array[CBLSIntVar], length:Int, Max:Int, predicate
 
   private def min(a:Int, b:Int):Int = if (a>b) b else a
 
-  def violation(v: Variable): CBLSIntVar = Violations.getOrElse(v,null)
+  def violation(v: Value): IntValue = Violations.getOrElse(v.asInstanceOf[IntValue],null)
 
   def violation: CBLSIntVar = Violation
 

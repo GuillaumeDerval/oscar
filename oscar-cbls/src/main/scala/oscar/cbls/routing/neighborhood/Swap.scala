@@ -24,10 +24,9 @@
 
 package oscar.cbls.routing.neighborhood
 
-import oscar.cbls.search.SearchEngineTrait
-import oscar.cbls.search.SearchEngine
-import oscar.cbls.modeling.Algebra._
 import oscar.cbls.routing.model._
+import oscar.cbls.search.algo.HotRestart
+import oscar.cbls.search.core.EasyNeighborhood
 
 /**
  * Swaps two points of the same or different routes.
@@ -36,73 +35,64 @@ import oscar.cbls.routing.model._
  * @author yoann.guyot@cetic.be
  * @author Florent Ghilain (UMONS)
  */
-object Swap extends Neighborhood with SearchEngineTrait {
-  /**
-   * Does the search and stops at first improving move.
-   * @param s the search zone, including the VRP that we are examining
-   * @param returnMove true: returns first improving move, false: performs first improving move
-   * @return
-   */
-  override protected def doSearch(
-    s: SearchZone,
-    moveAcceptor: (Int) => (Int) => Boolean,
-    returnMove: Boolean): SearchResult = {
+case class Swap(nodesPrecedingNodesToMove:()=>Iterable[Int],
+           relevantNeighbors:()=>Int=>Iterable[Int],
+           val vrp: VRP with PositionInRouteAndRouteNr,
+           neighborhoodName:String = null,
+           val best:Boolean = false,
+           val hotRestart:Boolean = true) extends EasyRoutingNeighborhood(best,vrp,neighborhoodName) {
 
-    val startObj: Int = s.vrp.getObjective()
-    s.vrp.cleanRecordedMoves()
-    val vrp = s.vrp
+  //the indice to start with for the exploration
+  var startIndice:Int = 0
 
-    while (s.primaryNodeIterator.hasNext) {
-      val beforeMovedPoint: Int = s.primaryNodeIterator.next()
-      //      println("BOUCLE1: beforeMovedPoint = " + beforeMovedPoint)
-      if (vrp.isRouted(beforeMovedPoint)) {
+  override def exploreNeighborhood(){
 
-        val movedPoint = vrp.next(beforeMovedPoint).value
-        //        println("movedPoint = " + movedPoint)
+    val iterationSchemeOnZone =
+      if (hotRestart && !best) HotRestart(nodesPrecedingNodesToMove(), startIndice)
+      else nodesPrecedingNodesToMove()
 
-        for (
-          insertionPoint <- s.relevantNeighbors(movedPoint)
-          //format: OFF (to prevent eclipse from formatting the following lines)
-          if (vrp.isRouted(insertionPoint)
-              && (!vrp.isADepot(vrp.next(insertionPoint).value))
-              && beforeMovedPoint != insertionPoint
-              && movedPoint != insertionPoint
-              && beforeMovedPoint != vrp.next(insertionPoint).value)
-              && (!vrp.isADepot(movedPoint)
-                  || (vrp.onTheSameRoute(movedPoint, insertionPoint)))
-        //format: ON
-        ) {
-          //          println("BOUCLE2: insertionPoint = " + insertionPoint)
-          //          print("VRP before encode dans la boucle de recherche: ")
-          //          println(vrp)
+    cleanRecordedMoves()
 
-          encode(beforeMovedPoint, insertionPoint, vrp)
+    val relevantNeighborsNow = relevantNeighbors()
 
-          checkEncodedMove(moveAcceptor(startObj), !returnMove, vrp) match {
-            case (true, newObj: Int) => { //this improved
-              if (returnMove) {
-                val move = Swap(beforeMovedPoint, insertionPoint, newObj, vrp)
-                return MoveFound(move)
-              } else {
-                return MovePerformed()
-              }
-            }
-            case (false, _) => ()
-          }
+    for (beforeMovedPoint <- iterationSchemeOnZone
+         if vrp.isRouted(beforeMovedPoint)) {
+
+      val movedPoint = vrp.next(beforeMovedPoint).value
+
+      for (
+        insertionPoint <- relevantNeighborsNow(movedPoint)
+        if (vrp.isRouted(insertionPoint)
+          && (!vrp.isADepot(vrp.next(insertionPoint).value))
+          && beforeMovedPoint != insertionPoint
+          && movedPoint != insertionPoint
+          && beforeMovedPoint != vrp.next(insertionPoint).value)
+          && (!vrp.isADepot(movedPoint)
+          || vrp.onTheSameRoute(movedPoint, insertionPoint))
+      ) {
+
+        encode(beforeMovedPoint, insertionPoint)
+        val newObj = evalObjOnEncodedMove()
+
+        if (moveRequested(newObj)
+          && submitFoundMove(SwapMove(beforeMovedPoint, insertionPoint, newObj, this, neighborhoodNameToString))) {
+          startIndice = beforeMovedPoint + 1
+          return
         }
       }
     }
-    NoMoveFound()
   }
 
-  def encode(fstPred: Int, sndPred: Int, vrp: VRP with MoveDescription) {
-    val fstSeg = vrp.cutNodeAfter(fstPred)
-    val sndSeg = vrp.cutNodeAfter(sndPred)
-    vrp.insert(fstSeg, sndPred)
-    vrp.insert(sndSeg, fstPred)
+  def encode(fstPred: Int, sndPred: Int) {
+    val fstSeg = cutNodeAfter(fstPred)
+    val sndSeg = cutNodeAfter(sndPred)
+    insert(fstSeg, sndPred)
+    insert(sndSeg, fstPred)
   }
 
-  override def toString: String = "swap"
+  override def reset(): Unit = {
+    startIndice = 0
+  }
 }
 
 /**
@@ -110,22 +100,22 @@ object Swap extends Neighborhood with SearchEngineTrait {
  * @param fstPred the predecessor of the first point that will be swapped.
  * @param sndPred the predecessor of the second point that will be swapped.
  * @param objAfter the objective value if we performed this swap move.
- * @param vrp the given VRP problem.
+ * @param neighborhood the originating neighborhood.
  * @author renaud.delandtsheer@cetic.be
  * @author yoann.guyot@cetic.be
  * @author Florent Ghilain (UMONS)
  * */
-case class Swap(
-  fstPred: Int,
-  sndPred: Int,
-  override val objAfter: Int,
-  override val vrp: VRP with MoveDescription) extends Move(objAfter, vrp) {
-  // overriding methods
+case class SwapMove(fstPred: Int,
+                    sndPred: Int,
+                    override val objAfter: Int,
+                    override val neighborhood:Swap,
+                    override val neighborhoodName:String = null) extends VRPMove(objAfter, neighborhood, neighborhoodName) {
+
   def encodeMove() {
-    Swap.encode(fstPred, sndPred, vrp)
+    neighborhood.encode(fstPred, sndPred)
   }
 
   override def toString: String = (
     "Swap(first point predecessor = " + fstPred
-    + ", second point predecessor = " + sndPred + " )")
+      + ", second point predecessor = " + sndPred + " )")
 }

@@ -40,7 +40,7 @@ import scala.util.Random
  * @author Pierre Schaus pschaus@gmail.com
  * @author Renaud Hartert ren.hartert@gmail.com
  */
-class CPStore( final val propagStrength: CPPropagStrength) extends DFSearchNode {
+class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode {
 
   def this() = this(CPPropagStrength.Weak)
   
@@ -96,17 +96,17 @@ class CPStore( final val propagStrength: CPPropagStrength) extends DFSearchNode 
   @inline protected def cleanQueues(): Unit = {
     // Clean queue L1
     highestPriorL1 = -1
-    var i = 0
-    while (i < propagQueueL1.length) {
+    var i = propagQueueL1.length
+    while (i > 0) {
+      i -= 1
       propagQueueL1(i).clear()
-      i += 1
     }
     // Clean queue L2
     highestPriorL2 = -1
-    i = 0
-    while (i < propagQueueL2.length) {
+    i = propagQueueL2.length
+    while (i > 0) {
+      i -= 1
       propagQueueL2(i).clear()
-      i += 1
     }
   }
 
@@ -245,35 +245,35 @@ class CPStore( final val propagStrength: CPPropagStrength) extends DFSearchNode 
     // Adds the cut constraints
     cutConstraints.foreach(c => enqueueL2(c))
 
-    var isFailed = false
-    while (!isFailed && (highestPriorL1 >= 0 || highestPriorL2 >= 0)) {
+    var isNotFailed = true
+    while (isNotFailed && (highestPriorL1 >= 0 || highestPriorL2 >= 0)) {
 
       // Propagate L1
-      while (highestPriorL1 >= 0 && !isFailed) {
+      while (highestPriorL1 >= 0 && isNotFailed) {
         val queue = propagQueueL1(highestPriorL1)
         if (queue.isEmpty) highestPriorL1 -= 1
         else {
           nCallsL1 += 1
           val event = queue.removeFirst()
-          isFailed = event() == Failure
+          isNotFailed = event() != Failure
         }
       }
 
       // Propagate L2 if no constraint in L1
-      while (highestPriorL1 < 0 && highestPriorL2 >= 0 && !isFailed) {
+      while (highestPriorL1 < 0 && highestPriorL2 >= 0 && isNotFailed) {
         val queue = propagQueueL2(highestPriorL2)
         if (queue.isEmpty) highestPriorL2 -= 1
         else {
           nCallsL2 += 1
           val constraint = queue.removeFirst()
           lastConstraint = constraint
-          isFailed = constraint.execute() == Failure
+          isNotFailed = constraint.execute() != Failure
         }
       }
     }
 
-    if (isFailed) Failure
-    else Suspend
+    if (isNotFailed) Suspend
+    else Failure
   }
 
   def printQueues(): Unit = {
@@ -472,6 +472,8 @@ class CPStore( final val propagStrength: CPPropagStrength) extends DFSearchNode 
   def add(c: Constraint): CPOutcome = add(c, propagStrength)
 
   def add(b: CPBoolVar): CPOutcome = post(new EqCons(b, 1))
+  
+  def addCut(c: Constraint): CPOutcome = postCut(c)
 
   /**
    * Add a set of constraints to the store in a reversible way and trigger the fix-point algorithm afterwards.
@@ -480,19 +482,13 @@ class CPStore( final val propagStrength: CPPropagStrength) extends DFSearchNode 
    * @param st the propagation strength asked for the constraint. Will be used only if available for the constraint (see specs of the constraint)
    * @throws NoSolutionException if the fix point detects a failure that is one of the domain became empty, Suspend otherwise.
    */
-  def add(constraints: Collection[Constraint], st: CPPropagStrength): CPOutcome = post(constraints, st);
+  def add(constraints: Array[Constraint], st: CPPropagStrength): CPOutcome = post(constraints, st)
 
-  def addCut(c: Constraint): CPOutcome = postCut(c)
+  def add(constraints: Array[Constraint]): CPOutcome = add(constraints, propagStrength)
 
-  def add(constraints: Collection[Constraint]): CPOutcome = add(constraints, propagStrength)
+  def add(constraints: Iterable[Constraint], st: CPPropagStrength): CPOutcome = add(constraints.toArray, st)
 
-  def add(constraints: Iterable[Constraint], st: CPPropagStrength): CPOutcome = {
-    val cs = new LinkedList[Constraint]()
-    constraints.foreach(cs.add(_))
-    add(cs, st)
-  }
-
-  def add(constraints: Iterable[Constraint]): CPOutcome = add(constraints, propagStrength)
+  def add(constraints: Iterable[Constraint]): CPOutcome = add(constraints.toArray, propagStrength)
 
   def +=(c: Constraint, st: CPPropagStrength): CPOutcome = add(c, st)
   def +=(c: Constraint): CPOutcome = add(c, propagStrength)

@@ -22,19 +22,18 @@
 package oscar.cbls.invariants.lib.logic
 /**This package proposes a set of logic invariants, which are used to define the structure of the problem*/
 
-import collection.immutable.SortedSet
-import collection.immutable.SortedMap
 import oscar.cbls.invariants.core.computation.CBLSIntVar._
-
 import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
+
+import scala.collection.immutable.{SortedMap, SortedSet}
 ;
 
 /**maintains a cluster of the indexes of array:  cluster(j) = {i in index of values | values[i] == j}
   * This is considered as a sparse cluster because Cluster is a map and must not cover all possibles values of the values in the array ''values''
   * @author renaud.delandtsheer@cetic.be
   * */
-case class SparseCluster(values:Array[CBLSIntVar], Clusters:SortedMap[Int,CBLSSetVar]) extends Invariant {
+case class SparseCluster[T<:IntValue](values:Array[T], Clusters:SortedMap[Int,CBLSSetVar]) extends Invariant {
 
   for (v <- values.indices) registerStaticAndDynamicDependency(values(v),v)
 
@@ -48,7 +47,7 @@ case class SparseCluster(values:Array[CBLSIntVar], Clusters:SortedMap[Int,CBLSSe
   }
 
   @inline
-  override def notifyIntChanged(v:CBLSIntVar,index:Int, OldVal:Int,NewVal:Int){
+  override def notifyIntChanged(v:ChangingIntValue,index:Int, OldVal:Int,NewVal:Int){
     val x:CBLSSetVar = Clusters.getOrElse(OldVal,null)
     if(x != null) x.deleteValue(index)
     val y:CBLSSetVar = Clusters.getOrElse(NewVal,null)
@@ -75,7 +74,7 @@ case class SparseCluster(values:Array[CBLSIntVar], Clusters:SortedMap[Int,CBLSSe
   * This is considered as a dense cluster because Cluster is an array and must cover all the possibles values of the values in the array ''values''
   * @author renaud.delandtsheer@cetic.be
   * */
-case class DenseCluster(values:Array[CBLSIntVar], clusters:Array[CBLSSetVar]) extends Invariant {
+case class DenseCluster[T<:IntValue](values:Array[T], clusters:Array[CBLSSetVar]) extends Invariant {
 
   //We register the static and dynamic dependencies.
   //Dynamic dependencies are the ones considered for the notifications.
@@ -100,7 +99,7 @@ case class DenseCluster(values:Array[CBLSIntVar], clusters:Array[CBLSSetVar]) ex
 
   //This method is called by each IntVar that is registered to the dynamic dependency graph.
   //We update the output variables incrementally based on this update.
-  override def notifyIntChanged(v:CBLSIntVar,index:Int,OldVal:Int,NewVal:Int){
+  override def notifyIntChanged(v:ChangingIntValue,index:Int,OldVal:Int,NewVal:Int){
     assert(values(index) == v)
     clusters(OldVal).deleteValue(index)
     clusters(NewVal).insertValue(index)
@@ -152,7 +151,7 @@ case class TranslatedDenseCluster(values:Array[CBLSIntVar],  indicesArray:Array[
 
   //This method is called by each IntVar that is registered to the dynamic dependency graph.
   //We update the output variables incrementally based on this update.
-  override def notifyIntChanged(v:CBLSIntVar,index:Int,OldVal:Int,NewVal:Int){
+  override def notifyIntChanged(v:ChangingIntValue,index:Int,OldVal:Int,NewVal:Int){
     assert(values(index) == v)
     clusters(OldVal).deleteValue(indicesArray(index))
     clusters(NewVal).insertValue(indicesArray(index))
@@ -181,24 +180,24 @@ case class TranslatedDenseCluster(values:Array[CBLSIntVar],  indicesArray:Array[
   * */
 object Cluster{
 
-  def MakeSparse(values:Array[CBLSIntVar], clusters: Iterable[Int]):SparseCluster = {
+  def MakeSparse[T<:IntValue](values:Array[T], clusters: Iterable[Int]):SparseCluster[T] = {
     val m:Store = InvariantHelper.findModel(values)
-    val Clusters:SortedMap[Int,CBLSSetVar] = clusters.foldLeft(SortedMap.empty[Int, CBLSSetVar])((acc,c) => acc + ((c,new CBLSSetVar(m,values.indices.start,values.indices.end,"cluster_"+c))))
+    val Clusters:SortedMap[Int,CBLSSetVar] = clusters.foldLeft(SortedMap.empty[Int, CBLSSetVar])((acc,c) => acc + ((c,new CBLSSetVar(m,SortedSet.empty, values.indices.start to values.indices.end,"cluster_"+c))))
     SparseCluster(values,Clusters)
   }
 
-  def MakeDense(values:Array[CBLSIntVar]):DenseCluster = {
+  def MakeDense[T<:IntValue](values:Array[T]):DenseCluster[T] = {
     val (themin,themax) = InvariantHelper.getMinMaxBounds(values)
     assert(themin == 0, "dense clusters must start at zero")
     val m:Store = InvariantHelper.findModel(values)
-    val Clusters:Array[CBLSSetVar] = (for(c <- 0 to themax) yield new CBLSSetVar(m,values.indices.start,values.indices.end,"cluster_"+c)).toArray
+    val Clusters:Array[CBLSSetVar] = (for(c <- 0 to themax) yield new CBLSSetVar(m,SortedSet.empty, values.indices.start to values.indices.end,"cluster_"+c)).toArray
     DenseCluster(values,Clusters)
   }
 
-  def MakeDenseAssumingMinMax(values:Array[CBLSIntVar],themin:Int,themax:Int):DenseCluster = {
+  def MakeDenseAssumingMinMax[T<:IntValue](values:Array[T],themin:Int,themax:Int):DenseCluster[T] = {
     assert(themin == 0, "dense clusters must start at zero")
     val m:Store = InvariantHelper.findModel(values)
-    val Clusters:Array[CBLSSetVar] = (for(c <- 0 to themax) yield new CBLSSetVar(m,values.indices.start,values.indices.end,"cluster_"+c)).toArray
+    val Clusters:Array[CBLSSetVar] = (for(c <- 0 to themax) yield new CBLSSetVar(m,SortedSet.empty, values.indices.start to values.indices.end,"cluster_"+c)).toArray
     DenseCluster(values,Clusters)
   }
 }

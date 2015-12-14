@@ -38,7 +38,7 @@ class BinPackingFlowExtended(val x: Array[CPIntVar], val sizes: Array[Int], val 
 
     if (x.exists(_.updateMax(l.length - 1) == CPOutcome.Failure)
       || x.exists(_.updateMin(0) == CPOutcome.Failure)
-      || s.post(new GCCVar(x, 0, c), CPPropagStrength.Strong) == CPOutcome.Failure) {
+      || s.post(new GCCVarAC(x, 0, c), CPPropagStrength.Strong) == CPOutcome.Failure) {
       CPOutcome.Failure
     } else {
       for (lt <- l)

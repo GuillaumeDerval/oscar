@@ -1,17 +1,19 @@
-/*******************************************************************************
+/**
+ * *****************************************************************************
  * OscaR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 2.1 of the License, or
  * (at your option) any later version.
- *   
+ *
  * OscaR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License  for more details.
- *   
+ *
  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package oscar.cp.test
 
 import org.scalatest.FunSuite
@@ -22,102 +24,91 @@ import oscar.cp.core.CPPropagStrength
 import oscar.cp._
 
 class TestCPIntVar extends FunSuite with Matchers {
-	
-	test("Test1 : Median") {
 
-		val cp = CPSolver()
-		
-		val a = CPIntVar(Array(0, 1, 2, 3, 4))(cp)
+  test("Test1 : Median") {
 
-		
-		a.median should be(2)
-		
-		a.removeValue(1)
-		
-		a.median should be(3)
-		
-		a.removeValue(4)
-		
-		a.median should be(2)
-	
-	}
-	
+    val cp = CPSolver()
 
+    val a = CPIntVar(Array(0, 1, 2, 3, 4))(cp)
 
-	
-	
-	test("Iterator1") {
-	  val cp = CPSolver()
-	  val x = CPIntVar(Set(0,1,3,2))(cp)
-	  x.toSet should be(Set(0,1,2,3))
-	}	
-	
-	test("Iterator2") {
-	  val cp = CPSolver()
-	  val x = CPIntVar(Set(0,1,3,2))(cp)+1
-	  x.toSet should be(Set(1,2,3,4))
-	}	
-	
-  
-  	test("Iterator3a") {
-	  val cp = CPSolver()
-	  val x = CPIntVar(Set(1,3))(cp)
-	  x.toSet should be(Set(1,3))
-	}
-	
+    a.median should be(2)
 
-	
-	
-	test("Iterator3") {
-	  val cp = CPSolver()
-	  val x = CPIntVar(Set(1,3))(cp)-1
-	  x.toSet should be(Set(0,2))
-	}
-	
-	
-	test("Iterator4") {
-	  val cp = CPSolver()
-	  val x = CPIntVar(Set(1,3,5))(cp)-1
-	  cp.add(x != 2)
-	  x.toSet should be(Set(0,4))
-	}
-	
-	test("Iterator5") {
-	  val cp = CPSolver()
-	  val x = CPIntVar(1 to 5)(cp)-1
-	  
-	  x.toSet should be(Set(0,1,2,3,4))
-	  cp.add(x != 2)
-	  x.toSet should be(Set(0,1,3,4))
-	}
-	
-	test("isBound test - var does get bound") {
-		val cp = CPSolver()
-		val a = CPIntVar(Array(10, 20, 30))(cp)
-		a.isBound should be(false)
-		cp.add(a == 10)
-		a.isBound should be(true)
-	}
-	
-	test("isBound test - var doesn't get bound") {
-		val cp = CPSolver()
-		val a = CPIntVar(Array(10, 20, 30))(cp)
-		a.isBound should be(false)
-		
-		evaluating {
-			cp.add(a < 10)
-		} should produce [NoSolutionException]
-	}
-	
+    a.removeValue(1)
+
+    a.median should be(3)
+
+    a.removeValue(4)
+
+    a.median should be(2)
+
+  }
+
+  test("Iterator1") {
+    val cp = CPSolver()
+    val x = CPIntVar(Set(0, 1, 3, 2))(cp)
+    x.toSet should be(Set(0, 1, 2, 3))
+  }
+
+  test("Iterator2") {
+    val cp = CPSolver()
+    val x = CPIntVar(Set(0, 1, 3, 2))(cp) + 1
+    x.toSet should be(Set(1, 2, 3, 4))
+  }
+
+  test("Iterator3a") {
+    val cp = CPSolver()
+    val x = CPIntVar(Set(1, 3))(cp)
+    x.toSet should be(Set(1, 3))
+  }
+
+  test("Iterator3") {
+    val cp = CPSolver()
+    val x = CPIntVar(Set(1, 3))(cp) - 1
+    x.toSet should be(Set(0, 2))
+  }
+
+  test("Iterator4") {
+    val cp = CPSolver()
+    val x = CPIntVar(Set(1, 3, 5))(cp) - 1
+    cp.add(x != 2)
+    x.toSet should be(Set(0, 4))
+  }
+
+  test("Iterator5") {
+    val cp = CPSolver()
+    val x = CPIntVar(1 to 5)(cp) - 1
+
+    x.toSet should be(Set(0, 1, 2, 3, 4))
+    cp.add(x != 2)
+    x.toSet should be(Set(0, 1, 3, 4))
+  }
+
+  test("isBound test - var does get bound") {
+    val cp = CPSolver()
+    val a = CPIntVar(Array(10, 20, 30))(cp)
+    a.isBound should be(false)
+    cp.add(a == 10)
+    a.isBound should be(true)
+  }
+
+  test("isBound test - var doesn't get bound") {
+    val cp = CPSolver()
+    val a = CPIntVar(Array(10, 20, 30))(cp)
+    a.isBound should be(false)
+
+    evaluating {
+      cp.add(a < 10)
+    } should produce[NoSolutionException]
+  }
+
   test("min max size methods test") {
 
     val cp = CPSolver()
 
     var x = CPIntVar(-2 to 4)(cp)
-    
+
     x.min should be(-2)
     x.max should be(4)
-    
 
     for (i <- 0 to 5) {
 
@@ -144,55 +135,48 @@ class TestCPIntVar extends FunSuite with Matchers {
     }
 
   }
-  
+
   test("domain iterator 1") {
     val cp = CPSolver()
-    var x = CPIntVar(Set(1,3,5))(cp)
-  
-    val d = x.domainIterator
-    d.next
-    d.removeValue should be(CPOutcome.Suspend)
-    d.next
-    d.removeValue should be(CPOutcome.Suspend)
-    d.next
-    d.removeValue should be(CPOutcome.Failure)
+    var x = CPIntVar(Set(1, 3, 5))(cp)
+
+    val d = x.iterator
+    assert(x.removeValue(d.next) == CPOutcome.Suspend)
+    assert(x.removeValue(d.next) == CPOutcome.Suspend)
+    assert(x.removeValue(d.next) == CPOutcome.Failure)
     d.hasNext should be(false)
   }
-  
-  
+
   test("domain iterator 2") {
     val cp = CPSolver()
-    var x = CPIntVar(Set(1,3,5,11))(cp)
+    var x = CPIntVar(Set(1, 3, 5, 11))(cp)
     val initVals = x.toSet
-    val d = x.domainIterator
-    val removed = (for (i <- 1 to x.size-1) yield {
+    val d = x.iterator
+    val removed = (for (i <- 1 to x.size - 1) yield {
       val v = d.next
-      d.removeValue should be(CPOutcome.Suspend)
+      assert(x.removeValue(v) == CPOutcome.Suspend)
       v
     }).toSet
-    
-    
-    removed.size should be(x.size-1)
-    d.execute()
+
+    removed.size should be(3)
     x.size should be(1)
     x.isBound should be(true)
-    (initVals -- removed).contains(x.value) should be (true)
-  }  
-  
+    (initVals -- removed).contains(x.value) should be(true)
+  }
+
   test("domain iterator 3") {
     val cp = CPSolver()
-    var x = CPIntVar(Set(1,3,5,11,15,17))(cp)
+    var x = CPIntVar(Set(1, 3, 5, 11, 15, 17))(cp)
     x.removeValue(15)
-    val d = x.domainIterator
-    val toRemove = Set(3,11,17)
-    for (v <- d; if (toRemove.contains(v))) {
-      d.removeValue
-    }
-    d.execute
-    x.toSet should be(Set(1,5))
+    val d = x.iterator
+    val toRemove = Set(3, 11, 17)
+    d.foreach(v => {
+      if (toRemove(v)) x.removeValue(v)
+    })
+
+    x.toSet should be(Set(1, 5))
   }
-  
-  
+
   test("test propagate call") {
     var propagCalled = 0
     var valBindCalled = 0
@@ -204,13 +188,13 @@ class TestCPIntVar extends FunSuite with Matchers {
         X.callValBindWhenBind(this)
         CPOutcome.Suspend
       }
-      
+
       override def propagate(): CPOutcome = {
         i += 1
         propagCalled = i
         CPOutcome.Suspend
       }
-      
+
       override def valBind(x: CPIntVar): CPOutcome = {
         i += 1
         valBindCalled = i
@@ -224,7 +208,7 @@ class TestCPIntVar extends FunSuite with Matchers {
     cp.add(x == 3)
     valBindCalled should be(1)
     propagCalled should be(2)
-    
-  }  
+
+  }
 
 }

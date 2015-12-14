@@ -29,16 +29,18 @@ import oscar.visual.VisualFrame
 class VisualLabelledRoundRectangle(d: VisualDrawing, s: RoundRectangle2D.Double, label: String, _marginWidth: Double = 0) extends VisualRoundRectangle(d, s) {
 
   def rect: RoundRectangle2D.Double = shape
-  val textDraw = new VisualText(d, (x + marginWidth).toInt, (y + marginWidth + d.getFontMetrics(d.getFont()).getHeight()).toInt, label)
   var marginWidth = _marginWidth
+  val textDraw = new VisualText(d, (x + marginWidth).toInt, (y + marginWidth + d.getFontMetrics(d.getFont).getHeight).toInt, label)
+  shape.height = (textDraw.nLines * d.getFontMetrics(d.getFont).getHeight) + marginWidth * 2
+  shape.width = getWidth(label)
   
   textDraw.move(xText, yText)
 
   def this(d: VisualDrawing, x: Double, y: Double, label: String, marginWidth: Double, arcw: Double, arch: Double) = {
     this(d, new RoundRectangle2D.Double(x,
         y,
-        d.getFontMetrics(d.getFont()).stringWidth(label) + marginWidth * 2,
-        d.getFontMetrics(d.getFont()).getHeight() + marginWidth * 2,
+        d.getFontMetrics(d.getFont).stringWidth(label) + marginWidth * 2,
+        d.getFontMetrics(d.getFont).getHeight + marginWidth * 2,
         arcw,
         arch),
       label,
@@ -59,7 +61,7 @@ class VisualLabelledRoundRectangle(d: VisualDrawing, s: RoundRectangle2D.Double,
    * Y coordinates of bottom left corner
    * @return
    */
-  def yText = (y + marginWidth + d.getFontMetrics(d.getFont()).getHeight()).toInt
+  def yText = (y + marginWidth + d.getFontMetrics(d.getFont).getHeight).toInt
 
   /**
    * Move the specified left corner
@@ -71,31 +73,32 @@ class VisualLabelledRoundRectangle(d: VisualDrawing, s: RoundRectangle2D.Double,
   }
 
   def getWidth(newLabel: String) = {
-    d.getFontMetrics(d.getFont()).stringWidth(newLabel) + marginWidth * 2
+    newLabel.trim.split("\n").map(l => d.getFontMetrics(d.getFont).stringWidth(l)).max + marginWidth * 2
   }
 }
 
 object VisualLabelledRoundRectangle {
 
   def main(args: Array[String]) {
-    val f = VisualFrame("toto");
-    val d = VisualDrawing(false);
-    val inf = f.createFrame("Drawing");
+    val f = VisualFrame("toto")
+    val d = VisualDrawing(flipped=false)
+    val inf = f.createFrame("Drawing")
 
-    val rect = new VisualLabelledRoundRectangle(d, 50, 50, "I'm a rectangle. Just a rectangle...", marginWidth=10);
-    rect.toolTip = ("Hello");
+    val rect = new VisualLabelledRoundRectangle(d, 50, 50, "I'm a rectangle.\nJust a rectangle...", marginWidth=10)
+    val lol = VisualLine(d, 50, 25, 50, 150)
+    rect.toolTip = "Hello"
 
-    inf.add(d);
-    f.pack();
+    inf.add(d)
+    f.pack()
 
-    Thread.sleep(1000);
-    rect.innerCol = (Color.red);
-    rect.textDraw.innerCol = (Color.BLUE)
-    Thread.sleep(1000);
-    rect.move(100, 20);
+    Thread.sleep(1000)
+    rect.innerCol = Color.red
+    rect.textDraw.innerCol = Color.BLUE
+    Thread.sleep(1000)
+    rect.move(100, 20)
     for (i <- 0 until 20) {
-      Thread.sleep(50);
-      rect.move(rect.x + 5, rect.y);
+      Thread.sleep(50)
+      rect.move(rect.x + 5, rect.y)
     }
   }
 }

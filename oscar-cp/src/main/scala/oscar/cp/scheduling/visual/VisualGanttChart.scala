@@ -26,26 +26,26 @@ import scala.Array.canBuildFrom
 
 class VisualGanttChart(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], f: (Int) => Int, colors: (Int) => Color = i => Color.WHITE) extends VisualDrawing(false, false) {
 
-  private val rectangles: Array[VisualRectangle] = Array.tabulate(starts.size)(a => {
+  private val rectangles: Array[VisualRectangle] = Array.tabulate(starts.length)(a => {
     val rect = new VisualRectangle(this, 0, 0, 0, 0)
     rect.innerCol = colors(a)
     rect
   })
 
-  private val max = (0 until starts.size).map(i => f(i)).max
+  private val max = starts.indices.map(i => f(i)).max
 
   private val text: VisualText = new VisualText(this, 50, 50, "")
   text.innerCol = Color.RED
   text.centered = true
 
   private val makespanLine: VisualLine = VisualLine(this, 0, 0, 0, 0)
-  makespanLine.outerCol = Color.RED;
+  makespanLine.outerCol = Color.RED
 
   def update(xScale: Double, yScale: Double) {
 
-    for (i <- 0 until starts.size) {
+    for (i <- starts.indices) {
 
-      rectangles(i).width = (durations(i).max) * xScale
+      rectangles(i).width = durations(i).max * xScale
       rectangles(i).height = yScale
 
       rectangles(i).move(starts(i).min * xScale, f(i) * yScale)
@@ -59,7 +59,7 @@ class VisualGanttChart(starts: Array[CPIntVar], durations: Array[CPIntVar], ends
     makespanLine.dest = (makespan * xScale, (max + 1) * yScale)
 
     text.text = makespan.toString
-    text.move(makespan * xScale, (max + 2) * yScale);
+    text.move(makespan * xScale, (max + 2) * yScale)
     repaint()
   }
 }

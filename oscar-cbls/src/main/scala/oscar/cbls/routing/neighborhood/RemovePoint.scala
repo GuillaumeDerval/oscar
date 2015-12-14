@@ -23,11 +23,9 @@
  */
 
 package oscar.cbls.routing.neighborhood
-import oscar.cbls.search.SearchEngine
-import oscar.cbls.modeling.Algebra._
-import scala.util.Random
-import oscar.cbls.search.SearchEngineTrait
-import oscar.cbls.routing.model.{ MoveDescription, VRP }
+
+import oscar.cbls.routing.model.VRP
+import oscar.cbls.search.algo.HotRestart
 
 /**
  * Removes a point of route.
@@ -36,59 +34,68 @@ import oscar.cbls.routing.model.{ MoveDescription, VRP }
  * @author yoann.guyot@cetic.be
  * @author Florent Ghilain (UMONS)
  */
-object RemovePoint extends Neighborhood with SearchEngineTrait {
+case class RemovePoint(predecessorsOfRoutedPointsToRemove:()=>Iterable[Int],
+                       vrp: VRP,
+                       neighborhoodName:String = null,
+                       best:Boolean = false,
+                       hotRestart:Boolean = true) extends EasyRoutingNeighborhood(best,vrp, neighborhoodName) {
 
-  override protected def doSearch(s: SearchZone, moveAcceptor: (Int) => (Int) => Boolean, returnMove: Boolean): SearchResult = {
-    val startObj: Int = s.vrp.getObjective()
-    val vrp = s.vrp
+  //the indice to start with for the exploration
+  var startIndice: Int = 0
 
-    while (s.primaryNodeIterator.hasNext) {
-      val beforeRemovedPoint: Int = s.primaryNodeIterator.next()
-      if (vrp.isRouted(beforeRemovedPoint)) {
+  override def exploreNeighborhood(): Unit = {
 
-        val removedPoint = vrp.next(beforeRemovedPoint).value
+    val iterationSchemeOnZone =
+      if (hotRestart && !best) HotRestart(predecessorsOfRoutedPointsToRemove(), startIndice)
+      else predecessorsOfRoutedPointsToRemove()
 
-        if (vrp.isRouted(removedPoint)
-          && (!vrp.isADepot(removedPoint))) {
+    cleanRecordedMoves()
 
-          encode(beforeRemovedPoint, vrp)
+    for (beforeRemovedPoint <- iterationSchemeOnZone) {
+      assert(vrp.isRouted(beforeRemovedPoint),
+        "The search zone should be restricted to before routed nodes when removing.")
+      val removedPoint = vrp.next(beforeRemovedPoint).value
+      require(!vrp.isADepot(removedPoint),
+        "a point to remove is a depot: beforeRemovedPoint:" + beforeRemovedPoint + " removedPoint:" + removedPoint)
 
-          checkEncodedMove(moveAcceptor(startObj), !returnMove, vrp) match {
-            case (true, newObj: Int) => { //this improved
-              if (returnMove) return MoveFound(RemovePoint(beforeRemovedPoint, newObj, vrp))
-              else return MovePerformed()
-            }
-            case _ => ()
-          }
-        }
+      encode(beforeRemovedPoint)
+      val newObj = evalObjOnEncodedMove()
+
+      if (moveRequested(newObj)
+        && submitFoundMove(RemovePointMove(beforeRemovedPoint, newObj, this, neighborhoodNameToString))) {
+        startIndice = beforeRemovedPoint + 1
+        return
       }
+
     }
-    NoMoveFound()
   }
 
-  def encode(beforeRemovedPoint: Int, vrp: VRP with MoveDescription) {
-    vrp.unroute(vrp.cutNodeAfter(beforeRemovedPoint))
+  def encode(beforeRemovedPoint: Int) {
+    unroute(cutNodeAfter(beforeRemovedPoint))
   }
 
-  override def toString: String = "unrouting"
+  //this resets the internal state of the Neighborhood
+  override def reset(){startIndice = 0}
 }
 
 /**
  * Models a remove-point operator of a given VRP problem.
  * @param beforeRemovedPoint the predecessor of the point that will be removed.
  * @param objAfter the objective value if we performed this remove-point operator.
- * @param vrp the given VRP problem.
+ * @param neighborhood the originating neighborhood
  * @author renaud.delandtsheer@cetic.be
  * @author yoann.guyot@cetic.be
  * @author Florent Ghilain (UMONS)
  */
-case class RemovePoint(
-  beforeRemovedPoint: Int,
-  override val objAfter: Int,
-  override val vrp: VRP with MoveDescription) extends Move(objAfter, vrp) {
-  // overriding methods
+case class RemovePointMove(
+                        beforeRemovedPoint: Int,
+                        override val objAfter: Int,
+                        override val neighborhood:RemovePoint,
+                        override val neighborhoodName:String = null)
+  extends VRPMove(objAfter, neighborhood, neighborhoodName) {
+
   override def encodeMove() {
-    RemovePoint.encode(beforeRemovedPoint, vrp)
+    neighborhood.encode(beforeRemovedPoint)
   }
-  override def toString: String = "RemovePoint(point = " + vrp.next(beforeRemovedPoint).value + " )"
+  override def toString: String = "RemovePoint(point = " + neighborhood.vrp.next(beforeRemovedPoint).value + " )"
 }

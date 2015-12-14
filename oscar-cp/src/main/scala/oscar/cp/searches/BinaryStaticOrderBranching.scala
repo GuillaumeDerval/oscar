@@ -2,7 +2,7 @@ package oscar.cp.searches
 
 import oscar.cp._
 import oscar.algo.search.Branching
-import oscar.algo.reversible.ReversibleIntWithCache
+import oscar.algo.reversible.ReversibleInt
 
 class BinaryStaticOrderBranching(variables: Array[CPIntVar], valHeuris: (Int => Int)) extends Branching {
 
@@ -10,7 +10,7 @@ class BinaryStaticOrderBranching(variables: Array[CPIntVar], valHeuris: (Int => 
 
   private[this] val store = variables(0).store
   private[this] val nVariables = variables.length
-  private[this] val depthRev = new ReversibleIntWithCache(store, 0, nVariables + 1)
+  private[this] val depthRev = new ReversibleInt(store, 0)
   private[this] var depth = 0
 
   final override def alternatives(): Seq[Alternative] = {

@@ -36,13 +36,13 @@ object NQueensEasy1 extends CBLSModel with App{
   val range:Range = Range(0,N)
 
   val init = Random.shuffle(range.toList).iterator
-  val queens = Array.tabulate(N)((q:Int) => CBLSIntVar(0 to N-1,init.next(), "queen" + q))
+  val queens = Array.tabulate(N)((q:Int) => CBLSIntVar(init.next(),0 to N-1, "queen" + q))
 
   //c.post(AllDiff(Queens)) //enforced because we swap queens and they are always allDiff
-  post(allDiff(for (q <- range) yield (queens(q) + q).toIntVar))
-  post(allDiff(for (q <- range) yield (q - queens(q)).toIntVar))
+  post(allDiff(for (q <- range) yield (queens(q) + q)))
+  post(allDiff(for (q <- range) yield (q - queens(q))))
 
-  val maxViolQueens = argMax(violations(queens)).toSetVar("most violated queens")
+  val maxViolQueens = argMax(violations(queens)).setName("most violated queens")
 
   close()
 
@@ -51,7 +51,7 @@ object NQueensEasy1 extends CBLSModel with App{
       searchZone2 = maxViolQueens, //much faster than using searchZone1, since hotRestart is on Zone1, and not on zone2, and would be log(n)
       symmetryCanBeBrokenOnIndices = false) //since one search zone has been specified, and the other is the full range
 
-  val it = neighborhood.doAllMoves(_ >= N || c.violation.value == 0, c.violation)
+  val it = neighborhood.doAllMoves(_ >= N || c.violation.value == 0, c)
 
   println("it: " + it)
   println(queens.mkString(","))

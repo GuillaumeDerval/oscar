@@ -77,7 +77,7 @@ class TestUnaryResourceWithOptionalActivities extends FunSuite with ShouldMatche
       val required = Array(CPBoolVar(true),CPBoolVar(true))
       add(unaryResource(starts,durs,ends, required))
       cp.isFailed should be(false)
-      println(starts.mkString(","))
+      //println(starts.mkString(","))
   }   
   
   

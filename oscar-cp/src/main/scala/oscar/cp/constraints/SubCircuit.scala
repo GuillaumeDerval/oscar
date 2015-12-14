@@ -28,12 +28,12 @@ import oscar.cp.core.CPOutcome._
  *
  * @author Renaud Hartert ren.hartert@gmail.com
  */
-class SubCircuit(val successors: Array[CPIntVar]) extends Constraint(successors.head.store, "SubCircuit") {
+final class SubCircuit(successors: Array[CPIntVar]) extends Constraint(successors(0).store, "SubCircuit") {
 
-  private val Succs = 0 until successors.size
-  private val dest: Array[ReversibleInt] = Array.tabulate(successors.size)(new ReversibleInt(s, _))
-  private val src: Array[ReversibleInt] = Array.tabulate(successors.size)(new ReversibleInt(s, _))
-  private val nSubCircuits: ReversibleInt = new ReversibleInt(s, 0)
+  private[this] val nSuccessors = successors.length
+  private[this] val dest: Array[ReversibleInt] = Array.tabulate(nSuccessors)(new ReversibleInt(s, _))
+  private[this] val src: Array[ReversibleInt] = Array.tabulate(nSuccessors)(new ReversibleInt(s, _))
+  private[this] val nSubCircuits: ReversibleInt = new ReversibleInt(s, 0)
 
   override def setup(l: CPPropagStrength): CPOutcome = {
     if (s.post(new AllDifferent(successors: _*), l) == Failure) Failure
@@ -41,29 +41,30 @@ class SubCircuit(val successors: Array[CPIntVar]) extends Constraint(successors.
     else Suspend
   }
 
-  private def init(): CPOutcome = {
-    Succs.foreach(s => {
-      if (!successors(s).isBound) successors(s).callValBindIdxWhenBind(this, s)
-      else {
-        if (valBindIdx(successors(s), s) == Failure) return Failure
-      }
-    })
+  @inline private def init(): CPOutcome = {
+    var i = nSuccessors
+    while (i > 0) {
+      i -= 1
+      val successor = successors(i)
+      if (!successor.isBound) successor.callValBindIdxWhenBind(this, i)
+      else if (valBindIdx(successors(i), i) == Failure) return Failure
+    }
     Suspend
   }
 
-  @inline
-  private def close(): CPOutcome = {
-    Succs.foreach(s => {
-      if (!successors(s).isBound) {
-        if (successors(s).assign(s) == Failure) return Failure
-      }
-    })
+  @inline private def close(): CPOutcome = {
+    var i = nSuccessors
+    while (i > 0) {
+      i -= 1
+      val successor = successors(i)
+      if (!successor.isBound && successor.assign(i) == Failure) return Failure
+    }
     Success // All the variables are bound
   }
 
   override def valBindIdx(cpvar: CPIntVar, u: Int): CPOutcome = {
     // s ->* u -> v ->* d
-    val v = cpvar.value
+    val v = cpvar.min
     if (u == v) Suspend
     else {    
       val s = src(u).value

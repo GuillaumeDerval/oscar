@@ -1,6 +1,8 @@
 package oscar.cp.linearizedDFS.examples
 
-import oscar.cp.constraints.{CPObjective, CPObjectiveUnitMinimize, EnergeticReasoning, SweepMaxCumulative}
+import oscar.cp.constraints.{CPObjective, CPObjectiveUnitMinimize}
+import oscar.cp.scheduling.constraints.SweepMaxCumulative
+import oscar.cp.scheduling.constraints.EnergeticReasoning
 import oscar.cp.linearizedDFS.{DFSLinearizerSearch, DFSReplayer, Tracking}
 import oscar.cp.linearizedDFS.branching.SetTimesBranchingToReplay
 import oscar.cp._
@@ -50,7 +52,7 @@ object RCPSP extends CPModel with App {
   // Cumulative
   val tt = new SweepMaxCumulative(starts, durations, ends, demands, resources, capa, resourceid)
   val erch = new EnergeticChecker(starts, durations, ends, demands, resources, capa, resourceid)
-  val erTracked = new {val decisionVariables = (starts ++ ends) toSeq } with EnergeticReasoning(starts, durations, ends, demands, resources, capa, resourceid) with Tracking
+  val erTracked = new {val decisionVariables = (starts ++ ends).toSeq } with EnergeticReasoning(starts, durations, ends, demands, resources, capa, resourceid) with Tracking
 
   erTracked.deactivate()
   add(tt)

@@ -21,14 +21,15 @@
 
 package oscar.cbls.constraints.lib.global
 
-import collection.immutable.SortedMap
 import oscar.cbls.constraints.core.Constraint
-import oscar.cbls.invariants.core.computation.{IdentityInt, InvariantHelper, Variable, CBLSIntVar}
-import oscar.cbls.invariants.lib.logic.{DenseCount, IntITE}
-import oscar.cbls.modeling.Algebra._
+import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
+import oscar.cbls.invariants.lib.logic.{DenseCount, IntITE}
 import oscar.cbls.invariants.lib.minmax.Max2
 import oscar.cbls.invariants.lib.numeric.Sum
+import oscar.cbls.modeling.Algebra._
+
+import scala.collection.immutable.SortedMap
 
 /**
  * Implement the AtLeast constraint on IntVars.
@@ -40,43 +41,41 @@ import oscar.cbls.invariants.lib.numeric.Sum
  *                We use a map to ensure that there is no two bounds on the same value.
  * @author renaud.delandtsheer@cetic.be
  */
-case class AtLeast(variables: Iterable[CBLSIntVar], bounds: SortedMap[Int, CBLSIntVar]) extends Constraint {
+case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Int, IntValue]) extends Constraint {
 
-  model = InvariantHelper.findModel(variables)
   registerConstrainedVariables(variables)
   registerConstrainedVariables(bounds.values)
-  finishInitialization()
 
   private val countInvariant = DenseCount.makeDenseCount(variables.toArray)
   private val offset:Int = countInvariant.offset
   private val valueCount = countInvariant.counts //v => #occurrence of v+offset in variables
 
-  private val noViolation:CBLSIntVar = 0
+  private val noViolation:IntValue = 0
 
   private val Violation =
-    Sum(bounds.toList.map((value_bound) => Max2(noViolation,value_bound._2 - valueCount(value_bound._1)).toIntVar))
-    .toIntVar("ViolationsOfAtLeast")
+    Sum(bounds.toList.map((value_bound) => Max2(noViolation,value_bound._2 - valueCount(value_bound._1+offset))))
+    .setName("ViolationsOfAtLeast")
 
   private val violationByVal=Array.tabulate(valueCount.length)(value => {
     if(bounds.contains(value + offset))
-      IntITE(valueCount(value + offset) - bounds(value + offset), Violation, noViolation).toIntVar
+      IntITE(valueCount(value + offset) - bounds(value + offset), Violation, noViolation)
     else Violation
     })
 
   //the violation of each input variable
-  private val Violations:SortedMap[CBLSIntVar,CBLSIntVar] = {
-    def accumulate(acc:SortedMap[CBLSIntVar,CBLSIntVar], variable:CBLSIntVar, violation:CBLSIntVar):SortedMap[CBLSIntVar,CBLSIntVar] =
+  private val Violations:SortedMap[IntValue,IntValue] = {
+    def accumulate(acc:SortedMap[IntValue,IntValue], variable:IntValue, violation:IntValue):SortedMap[IntValue,IntValue] =
       acc + (acc.get(variable) match{
-        case Some(oldViolation) => ((variable,(violation + oldViolation).toIntVar(violation.name)))
-        case None => ((variable,violation))})
+        case Some(oldViolation) => (variable,(violation + oldViolation).setName(violation.name))
+        case None => (variable,violation)})
 
 
-    val violationForArray = variables.foldLeft(SortedMap.empty[CBLSIntVar, CBLSIntVar])(
-      (acc, intvar) => accumulate(acc, intvar, violationByVal.element(intvar + offset).toIntVar("Violation_AtLeast_" + intvar.name)))
+    val violationForArray = variables.foldLeft(SortedMap.empty[IntValue,IntValue])(
+      (acc, intvar) => accumulate(acc, intvar, violationByVal.element(intvar + offset).setName("Violation_AtLeast_" + intvar.name)))
 
     bounds.foldLeft(violationForArray)(
       (acc,boundAndVariable) => {
-        val viol = Max2(noViolation,boundAndVariable._2 - valueCount(boundAndVariable._1)).toIntVar("Violation_AtLeast_" + boundAndVariable._2.name)
+        val viol = Max2(noViolation,boundAndVariable._2 - valueCount(boundAndVariable._1+offset)).setName("Violation_AtLeast_" + boundAndVariable._2.name)
         accumulate(acc, boundAndVariable._2, viol)
       })
   }
@@ -89,7 +88,7 @@ case class AtLeast(variables: Iterable[CBLSIntVar], bounds: SortedMap[Int, CBLSI
    * The violation of a variable is zero if the value of the variable is the one of a bound that is not reached,
    * otherwise, it is equal to the global violation degree.
    */
-  override def violation(v: Variable): CBLSIntVar = Violations(v.asInstanceOf[CBLSIntVar])
+  override def violation(v: Value) = Violations(v.asInstanceOf[IntValue])
 
   override def checkInternals(c: Checker) {
     val (minMin,maxMax) = InvariantHelper.getMinMaxBounds(variables)

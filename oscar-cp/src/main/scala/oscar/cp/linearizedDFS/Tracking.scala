@@ -32,14 +32,19 @@ trait Tracking extends Constraint {
   protected var pruningOccurred = false
   protected var timeBeforePropagate = 0.0
   protected var propagationTime = 0.0
+  protected var isStoreAlreadyFailed = false
 
   override def propagate() : CPOutcome = {
 
     pruningOccurred = false
+    isStoreAlreadyFailed = decisionVariables(0).store.isFailed()
+
     //keep domain sizes before propagate
     i = 0
-    while(i<numDecisionVariables) {
+    while(i<numDecisionVariables && !isStoreAlreadyFailed) {
       oldDomainSizes(i)=decisionVariables(i).size
+      if(decisionVariables(i).size == 0)
+        isStoreAlreadyFailed = true
       i += 1
     }
     timeBeforePropagate = timeThreadBean.getCurrentThreadUserTime
@@ -53,7 +58,7 @@ trait Tracking extends Constraint {
         pruningOccurred = true
       i += 1
     }
-    if(pruningOccurred) {
+    if(pruningOccurred && !isStoreAlreadyFailed) {
       currentVarianceTimeSpentOnUsefulCalls = (currentVarianceTimeSpentOnUsefulCalls + currentAverageTimeSpentOnUsefulCalls * currentAverageTimeSpentOnUsefulCalls) * (numUsefulCalls)
       numUsefulCalls+= 1
       timeSpentOnUsefulCalls += propagationTime

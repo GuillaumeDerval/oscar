@@ -21,13 +21,14 @@
 
 package oscar.cbls.constraints.lib.global
 
-import collection.immutable.SortedMap
 import oscar.cbls.constraints.core.Constraint
-import oscar.cbls.invariants.lib.logic.{Cluster, IntElement}
-import oscar.cbls.invariants.lib.numeric.{Sum, SumElements}
-import oscar.cbls.modeling.Algebra._
 import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
+import oscar.cbls.invariants.lib.logic.Cluster
+import oscar.cbls.invariants.lib.numeric.Sum
+import oscar.cbls.modeling.Algebra._
+
+import scala.collection.immutable.SortedMap
 ;
 
 /**This is the standard bin packing constraint
@@ -37,34 +38,32 @@ import oscar.cbls.invariants.core.propagation.Checker
  * @param binsizes the max size of the available bins
   * @author renaud.delandtsheer@cetic.be
  */
-case class MultiKnapsack(items: Array[CBLSIntVar], itemsizes: Array[CBLSIntVar], binsizes:Array[CBLSIntVar])
+case class MultiKnapsack(items: Array[CBLSIntVar], itemsizes: Array[IntValue], binsizes:Array[IntValue])
   extends Constraint {
 
-  model = InvariantHelper.findModel(items)
-
-  assert(items.map(_.minVal).min == 0, "bin 0 must be included in possible bins of items")
-  assert(items.map(_.minVal).max <= binsizes.length-1, "the range of item bins should be not bigger than the available bins")
+  assert(items.map(_.min).min == 0, "bin 0 must be included in possible bins of items")
+  assert(items.map(_.min).max <= binsizes.length-1, "the range of item bins should be not bigger than the available bins")
   assert(items.length == itemsizes.length)
 
   registerConstrainedVariables(items)
   registerConstrainedVariables(itemsizes)
   registerConstrainedVariables(binsizes)
 
-  finishInitialization()
+  private val bincontents = Cluster.MakeDense(items).clusters
+  private val binfilling = bincontents.map(bincontent => Sum(itemsizes,bincontent))
 
-  private val bincontents:Array[CBLSSetVar] = Cluster.MakeDense(items).clusters
-  private val binfilling:Array[CBLSIntVar] = bincontents.map(bincontent => Sum(itemsizes,bincontent).toIntVar)
-
-  private val binviolations:Array[CBLSIntVar] = (
+  private val binviolations = (
     for (binid <- binsizes.indices)
     yield (binfilling(binid) le binsizes(binid)).violation).toArray
 
-  private val itemviolations:Array[CBLSIntVar] = items.map(itemval =>  binviolations.element(itemval).toIntVar)
+  private val itemviolations = items.map(itemval =>  binviolations.element(itemval))
 
-  private val Violation:CBLSIntVar = Sum(binviolations).toIntVar
+  /**The violation of the constraint is the sum on all excess in all bins.
+    */
+  override val violation = Sum(binviolations)
 
-  val Violations:SortedMap[CBLSIntVar,CBLSIntVar] = {
-    var acc = SortedMap.empty[CBLSIntVar,CBLSIntVar]
+  val Violations:SortedMap[IntValue,IntValue] = {
+    var acc = SortedMap.empty[IntValue,IntValue]
     for(itemid <- items.indices){
       acc += ((items(itemid),itemviolations(itemid)))
       acc += ((itemsizes(itemid),itemviolations(itemid)))
@@ -75,20 +74,16 @@ case class MultiKnapsack(items: Array[CBLSIntVar], itemsizes: Array[CBLSIntVar],
     acc
   }
 
-  /**The violation of the constraint is the sum on all excess in all bins.
-   */
-  override def violation = Violation
-
   /**The violation of an item is the excess of the bin it is located into,
    * The violation of a bin is the excess in the bin
    */
-  override def violation(v: Variable): CBLSIntVar = {
-    val tmp:CBLSIntVar = Violations.getOrElse(v.asInstanceOf[CBLSIntVar],null)
+  override def violation(v: Value): IntValue = {
+    val tmp = Violations.getOrElse(v.asInstanceOf[IntValue],null)
     assert(tmp != null)
     tmp
   }
 
-  def violationOfBin(binNumber:Int):CBLSIntVar = binviolations(binNumber)
+  def violationOfBin(binNumber:Int) = binviolations(binNumber)
   def itemsInBin(binNumber:Int) = bincontents(binNumber)
   def fillingOfBin(binNumber:Int) = binfilling(binNumber)
 

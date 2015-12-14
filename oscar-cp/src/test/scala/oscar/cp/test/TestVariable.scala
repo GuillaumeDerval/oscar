@@ -110,7 +110,7 @@ class TestVariable extends FunSuite with ShouldMatchers {
     for (i <- 0 until 4) {
       assert(freq(i) > 0)
     }
-    println(freq.mkString(", "))
+    //println(freq.mkString(", "))
   }
 
   test("test f") {

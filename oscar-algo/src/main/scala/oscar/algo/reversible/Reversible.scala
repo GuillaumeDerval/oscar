@@ -36,7 +36,3 @@ abstract class Reversible {
   
   def trailEntry: TrailEntry
 }
-
-abstract class TrailEntry { 
-  def restore(): Unit
-}

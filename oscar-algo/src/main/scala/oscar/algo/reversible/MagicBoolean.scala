@@ -33,4 +33,14 @@ class MagicBoolean(context: ReversibleContext, default: Boolean) {
     if (magic == context.magic) b
     else default
   }
+  
+  @inline final def setTrue(): Unit = {
+    magic = context.magic
+    this.b = true
+  }
+  
+  @inline final def setFalse(): Unit = {
+    magic = context.magic
+    this.b = false
+  }
 }

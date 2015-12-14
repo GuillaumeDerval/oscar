@@ -17,7 +17,8 @@ import oscar.cp.core.Constraint
 class CumulativeTemplate(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar],
                          heights: Array[CPIntVar], resources: Array[CPIntVar], capacity: CPIntVar, id: Int, name: String = "Cumulative")
 extends Constraint(capacity.store, name) {
-  val n = starts.length
+  
+  private[this] val n = starts.length
   require(n == durations.length)
   require(n == ends.length)
   require(n == heights.length)
@@ -25,49 +26,68 @@ extends Constraint(capacity.store, name) {
 
     
   def setup(strength: CPPropagStrength): CPOutcome = {
-    def callbacks(a: Int) = {
-      if (!resources(a).isBound) resources(a).callPropagateWhenBind(this)
-      
-      if (!starts(a).isBound)    starts(a)   .callPropagateWhenBoundsChange(this)
-      if (!durations(a).isBound) durations(a).callPropagateWhenBoundsChange(this)
-      if (!ends(a).isBound)      ends(a)     .callPropagateWhenBoundsChange(this)
-      if (!heights(a).isBound)   heights(a)  .callPropagateWhenBoundsChange(this)
+    for (a <- 0 until n) {
+      if (resources(a).hasValue(id) && heights(a).max > 0) {
+        if (!resources(a).isBound) {
+          resources(a).callPropagateWhenBind(this)
+          val cond = { resources(a).hasValue(id) }
+          if (!starts(a).isBound)    starts(a)   .callPropagateWhenBoundsChange(this, cond)
+          if (!durations(a).isBound) durations(a).callPropagateWhenBoundsChange(this, cond)
+          if (!ends(a).isBound)      ends(a)     .callPropagateWhenBoundsChange(this, cond)
+          if (!heights(a).isBound)   heights(a)  .callPropagateWhenBoundsChange(this, cond)
+        }
+        else {
+          if (!starts(a).isBound)    starts(a)   .callPropagateWhenBoundsChange(this)
+          if (!durations(a).isBound) durations(a).callPropagateWhenBoundsChange(this)
+          if (!ends(a).isBound)      ends(a)     .callPropagateWhenBoundsChange(this)
+          if (!heights(a).isBound)   heights(a)  .callPropagateWhenBoundsChange(this)
+        }
+      }
+      else toConsider.exclude(a)
     }
-    
-    val myActs = (0 until n) filter { a => resources(a).hasValue(id) && heights(a).max > 0 }
-    myActs foreach callbacks
     
     if (!capacity.isBound) capacity.callPropagateWhenBoundsChange(this)
     
     propagate()
   }
   
+  // Access to inner structure
+  final def smin: Array[Int] = sMin
+  final def smax: Array[Int] = sMax
+  final def emin: Array[Int] = eMin
+  final def emax: Array[Int] = eMax
+  final def dmin: Array[Int] = dMin
+  final def dmax: Array[Int] = dMax
+  final def hmin: Array[Int] = hMin
+  final def hmax: Array[Int] = hMax
+  final def required: Array[Boolean] = requiredTasks
+  final def possible: Array[Boolean] = possibleTasks
+  
+  private[this] val sMin = new Array[Int](n)
+  private[this] val sMax = new Array[Int](n)
+  private[this] val eMin = new Array[Int](n)
+  private[this] val eMax = new Array[Int](n)
+  private[this] val hMin = new Array[Int](n)
+  private[this] val hMax = new Array[Int](n)
+  private[this] val dMin = new Array[Int](n)
+  private[this] val dMax = new Array[Int](n)
+  private[this] val requiredTasks = new Array[Boolean](n)
+  private[this] val possibleTasks = new Array[Boolean](n)
+  
   implicit val store = capacity.store
+  private[this] val rToUpdate = new OpenSparseSet(n)
+  private[this] val rByStatus = rToUpdate.sortedByStatus
   
-  protected[this] final val smin = Array.fill(n)(0)
-  protected[this] final val smax = Array.fill(n)(0)
-  protected[this] final val emin = Array.fill(n)(0)
-  protected[this] final val emax = Array.fill(n)(0)
-  protected[this] final val hmin = Array.fill(n)(0)
-  protected[this] final val hmax = Array.fill(n)(0)
-  protected[this] final val dmin = Array.fill(n)(0)
-  protected[this] final val dmax = Array.fill(n)(0)
-  protected[this] final val required = Array.fill(n)(false)
-  protected[this] final val possible = Array.fill(n)(false)
+  private[this] val hToUpdate = new OpenSparseSet(n)
+  private[this] val hByStatus = hToUpdate.sortedByStatus
   
-  protected[this] final val rToUpdate = new OpenSparseSet(n)
-  protected[this] final val rByStatus = rToUpdate.sortedByStatus
+  private[this] val dToUpdate = new OpenSparseSet(n)  // durations decoupled from s/e
+  private[this] val dByStatus = dToUpdate.sortedByStatus
   
-  protected[this] final val hToUpdate = new OpenSparseSet(n)
-  protected[this] final val hByStatus = hToUpdate.sortedByStatus
+  private[this] val tToUpdate = new OpenSparseSet(n)  // time variables: s/e coupled since constant durations are common
+  private[this] val tByStatus = tToUpdate.sortedByStatus
   
-  protected[this] final val dToUpdate = new OpenSparseSet(n)  // durations decoupled from s/e
-  protected[this] final val dByStatus = dToUpdate.sortedByStatus
-  
-  protected[this] final val tToUpdate = new OpenSparseSet(n)  // time variables: s/e coupled since constant durations are common
-  protected[this] final val tByStatus = tToUpdate.sortedByStatus
-  
-  class OpenSparseSetMod(n: Int) extends OpenSparseSet(n: Int) {
+  final class OpenSparseSetMod(n: Int) extends OpenSparseSet(n: Int) {
     override def exclude(a: Int) = {
       super.exclude(a)
       rToUpdate.exclude(a)
@@ -79,24 +99,26 @@ extends Constraint(capacity.store, name) {
   
   val toConsider = new OpenSparseSetMod(n)
   val activitiesToConsider = toConsider.sortedByStatus
+  
+  // final def nToConsider = toConsider.limit.value
 
 
   final def updateResource() = {
     var p = rToUpdate.limit.value - 1
     while (p >= 0) {
       val a = rByStatus(p)
-      required(a) = resources(a).isBoundTo(id)
+      requiredTasks(a) = resources(a).isBoundTo(id)
       
-      if (required(a)) {
+      if (requiredTasks(a)) {
         rToUpdate.exclude(a)
-        possible(a) = true
+        possibleTasks(a) = true
       }
       else if (!resources(a).hasValue(id)) {
         toConsider.exclude(a)
-        possible(a) = false
+        possibleTasks(a) = false
       }
       else {
-        possible(a) = true
+        possibleTasks(a) = true
       }
       p -= 1
     }
@@ -107,14 +129,14 @@ extends Constraint(capacity.store, name) {
     var p = hToUpdate.limit.value - 1
     while (p >= 0) {
       val a = hByStatus(p)
-      hmax(a) = heights(a).max
+      hMax(a) = heights(a).max
       
-      if (hmax(a) == 0) {
+      if (hMax(a) == 0) {
         toConsider.exclude(a)
       }
       else {
-        hmin(a) = heights(a).min
-        if (hmin(a) == hmax(a)) hToUpdate.exclude(a)
+        hMin(a) = heights(a).min
+        if (hMin(a) == hMax(a)) hToUpdate.exclude(a)
       }
       p -= 1
     }
@@ -125,14 +147,14 @@ extends Constraint(capacity.store, name) {
     var p = dToUpdate.limit.value - 1
     while (p >= 0) {
       val a = dByStatus(p)
-      dmax(a) = durations(a).max
+      dMax(a) = durations(a).max
       
-      if (dmax(a) == 0) {
+      if (dMax(a) == 0) {
         toConsider.exclude(a)
       }
       else {
-        dmin(a) = durations(a).min
-        if (dmin(a) == dmax(a)) dToUpdate.exclude(a)
+        dMin(a) = durations(a).min
+        if (dMin(a) == dMax(a)) dToUpdate.exclude(a)
       }
       p -= 1
     }
@@ -140,31 +162,36 @@ extends Constraint(capacity.store, name) {
   
   val identity = Array.tabulate(n)(i => i)
   
-  final def updateStartsEnds() = {
-    var p = tToUpdate.limit.value - 1
+  @inline private def updateStartsEnds() = {
+    var p = tToUpdate.limit.value
     
-    while (p >= 0) {
-      val a = tByStatus(p)
-
-      if (dmin(a) == dmax(a)) { // s and e are strongly linked
-        smin(a) = starts(a).min
-        emax(a) = ends(a).max
+    while (p > 0) {
       
-        smax(a) = emax(a) - dmin(a) 
-        emin(a) = smin(a) + dmin(a)
+      p -= 1
+      val taskId = tByStatus(p)
+      val dMinTask = dMin(taskId)
+
+      if (dMinTask == dMax(taskId)) { // s and e are strongly linked
+        val sMinTask = starts(taskId).min
+        val eMaxTask = ends(taskId).max
+        val eMinTask = sMinTask + dMinTask
+        sMin(taskId) = sMinTask
+        eMax(taskId) = eMaxTask  
+        sMax(taskId) = eMaxTask - dMinTask
+        eMin(taskId) = eMinTask   
+        if (eMinTask == eMaxTask) tToUpdate.exclude(taskId)
       }
       else {
-        smin(a) = starts(a).min
-        emax(a) = ends(a).max
-      
-        smax(a) = starts(a).max 
-        emin(a) = ends(a).min
+        val startVar = starts(taskId)
+        val endVar = ends(taskId)
+        val sMinTask = startVar.min
+        val eMaxTask = endVar.max
+        sMin(taskId) = sMinTask
+        eMax(taskId) = eMaxTask     
+        sMax(taskId) = startVar.max 
+        eMin(taskId) = endVar.min       
+        if (sMinTask + dMinTask == eMaxTask) tToUpdate.exclude(taskId)
       }
-      
-      if (smin(a) + dmin(a) == emax(a)) {
-        tToUpdate.exclude(a)
-      }
-      p -= 1
     }
   }
   
@@ -191,25 +218,25 @@ extends Constraint(capacity.store, name) {
   
   // remove extremal activities from consideration, TT dominance.
   final def removeExtremal() = {
-    // get smin and emax of the task set formed by unfixed activities.  
+    // get sMin and emax of the task set formed by unfixed activities.  
     var minSMinNotFixed = Int.MaxValue
     var maxEMaxNotFixed = Int.MinValue
     val limit = toConsider.limit.value - 1
     var p = limit
     while (p >= 0) {
       val a = activitiesToConsider(p)
-      if (smin(a) + dmin(a) < emax(a) || hmin(a) < hmax(a) || !required(a)) {  // a not fixed. With variable durations, we can't test it with smin == smax 
-        minSMinNotFixed = min(minSMinNotFixed, smin(a))
-        maxEMaxNotFixed = max(maxEMaxNotFixed, emax(a))
+      if (sMin(a) + dMin(a) < eMax(a) || hMin(a) < hMax(a) || !requiredTasks(a)) {  // a not fixed. With variable durations, we can't test it with sMin == sMax 
+        minSMinNotFixed = min(minSMinNotFixed, sMin(a))
+        maxEMaxNotFixed = max(maxEMaxNotFixed, eMax(a))
       }
       p -= 1
     }
       
-    // exclude from consideration all activities that are strictly before min smin(unbound) or after max emax(unbound)
+    // exclude from consideration all activities that are strictly before min sMin(unbound) or after max eMax(unbound)
     p = limit
     while (p >= 0) {
       val a = activitiesToConsider(p)
-      if (emax(a) <= minSMinNotFixed || smin(a) >= maxEMaxNotFixed) toConsider.exclude(a)
+      if (eMax(a) <= minSMinNotFixed || sMin(a) >= maxEMaxNotFixed) toConsider.exclude(a)
       p -= 1
     }
   }
@@ -230,34 +257,34 @@ extends Constraint(capacity.store, name) {
       p -= 1
     }
     
-    mergeSort(tcBySMin, smin, 0, q)
-    mergeSort(tcByEMax, emax, 0, q)
+    mergeSort(tcBySMin, sMin, 0, q)
+    mergeSort(tcByEMax, eMax, 0, q)
     
-    var sminp = 0
-    var emaxp = 0
+    var sMinp = 0
+    var eMaxp = 0
     var lastOver = Int.MinValue
     var lastUnder = Int.MinValue + 1
     var height = 0
     
     // build possible profile
-    while (emaxp < q) {
+    while (eMaxp < q) {
       val oldHeight = height
-      var date = emax(tcByEMax(emaxp))
-      if (sminp < q) date = min(date, smin(tcBySMin(sminp)))
+      var date = eMax(tcByEMax(eMaxp))
+      if (sMinp < q) date = min(date, sMin(tcBySMin(sMinp)))
       
       // down events, check if task was under limit during its domain, lower height
-      while (emaxp < q && emax(tcByEMax(emaxp)) == date) {
-        val a = tcByEMax(emaxp)
-        if (lastUnder > lastOver && lastUnder <= smin(a)) toConsider.exclude(a)        
-        height -= hmax(a)
-        emaxp += 1
+      while (eMaxp < q && eMax(tcByEMax(eMaxp)) == date) {
+        val a = tcByEMax(eMaxp)
+        if (lastUnder > lastOver && lastUnder <= sMin(a)) toConsider.exclude(a)        
+        height -= hMax(a)
+        eMaxp += 1
       }
       
       // up events, raise height
-      while (sminp < q && smin(tcBySMin(sminp)) == date) {
-        val a = tcBySMin(sminp)
-        height += hmax(a)
-        sminp += 1
+      while (sMinp < q && sMin(tcBySMin(sMinp)) == date) {
+        val a = tcBySMin(sMinp)
+        height += hMax(a)
+        sMinp += 1
       }
       
       // remember last time profile was under/over limit
@@ -265,47 +292,112 @@ extends Constraint(capacity.store, name) {
       if (oldHeight >  C && height <= C) lastUnder = date
     }
   }
+  
+  
+  private val indices = new Array[Int](n)
+  private val temp1   = new Array[Int](n + 1)
+  private val temp2   = new Array[Int](n + 1)
+  
+  // filters out tasks that should not be considered, then sorts them. Returns the number of items in filtered list.
+  final def filterFreeSort(byKey: Array[Int], filtered: Array[Int], keys: Array[Int]): Int = {
+    val nKeys = byKey.length
+    val limit = toConsider.limit.value
+    val status = toConsider.status
+    
+    var p = 0 
+    var count = 0
+    
+    // extract only tasks to consider, that are optional or have a free part
+    while (p < nKeys) {
+      val task = byKey(p)
+      if (status(task) < limit && 
+          (!required(task) || smin(task) + dmin(task) < emax(task))) {
+        filtered(count) = task
+        indices(count) = p
+        count += 1
+      }
+      p += 1
+    }
+    
+    // sort them
+    mergeSort(filtered, keys, 0, count, temp1, temp2)
+    
+    // put them back for mergeSort's incremental behaviour
+    p = count
+    while (p > 0) {
+      p -= 1
+      byKey(indices(p)) = filtered(p) 
+    }
+    
+    count
+  }
+  
+  // filters out tasks that should not be considered, then sorts them. Returns the number of items in filtered list.
+  final def filterActiveSort(byKey: Array[Int], filtered: Array[Int], keys: Array[Int]): Int = {
+    val nKeys = byKey.length
+    val limit = toConsider.limit.value
+    val status = toConsider.status
+    
+    var p = 0 
+    var count = 0
+    
+    // extract only tasks to consider
+    while (p < nKeys) {
+      val task = byKey(p)
+      if (status(task) < limit) {
+        filtered(count) = task
+        indices(count) = p
+        count += 1
+      }
+      p += 1
+    }
+    
+    // sort them
+    mergeSort(filtered, keys, 0, count, temp1, temp2)
+    
+    // put them back for mergeSort's incremental behaviour
+    p = count
+    while (p > 0) {
+      p -= 1
+      byKey(indices(p)) = filtered(p) 
+    }
+    
+    count
+  }
+  
+  final def filterMandatorySort(byKey: Array[Int], filtered: Array[Int], keys: Array[Int]): Int = {
+    val nKeys = byKey.length
+    val limit = toConsider.limit.value
+    val status = toConsider.status
+    
+    var p = 0 
+    var count = 0
+    
+    // extract only tasks to consider, that are required and have a fixed part
+    while (p < nKeys) {
+      val task = byKey(p)
+      if (status(task) < limit && required(task) && smax(task) < emin(task)) {
+        filtered(count) = task
+        indices(count) = p
+        count += 1
+      }
+      p += 1
+    }
+    
+    // sort them
+    mergeSort(filtered, keys, 0, count, temp1, temp2)
+    
+    // put them back for mergeSort's incremental behaviour
+    p = count
+    while (p > 0) {
+      p -= 1
+      byKey(indices(p)) = filtered(p) 
+    }
+    
+    count
+  }
+
 
   
-  final def removeOneStepExtremal() =  {
-    val limit = toConsider.limit.value 
-    
-    var minSMinNotFixed = Int.MaxValue
-    var maxEMaxNotFixed = Int.MinValue
-    
-    var p = limit - 1
-    while (p >= 0) {
-      val a = activitiesToConsider(p)
-      if (smin(a) + dmin(a) < emax(a)) {
-        minSMinNotFixed = min(minSMinNotFixed, smin(a))
-        maxEMaxNotFixed = max(maxEMaxNotFixed, emax(a))
-      }
-      p -= 1
-    }
-    
-    // Step 4.2: get minimal smin of activities that overlap minSMinFixed
-    var minSMin = minSMinNotFixed
-    var maxEMax = maxEMaxNotFixed
-    p = limit - 1
-    while (p >= 0) {
-      val a = activitiesToConsider(p)
-      if (smin(a) < minSMinNotFixed && minSMinNotFixed < emax(a))
-        minSMin = min(minSMin, smin(a))
-        
-      if (smin(a) < maxEMaxNotFixed && maxEMaxNotFixed < emax(a))
-        maxEMax = max(maxEMax, emax(a))
-      p -= 1
-    }
-        
-    // Step 4.3: exclude from consideration all activities that are strictly before minSMin
-    p = limit - 1
-    while (p >= 0) {
-      val a = activitiesToConsider(p)
-      if (emax(a) <= minSMin) toConsider.exclude(a)
-      else if (smin(a) >= maxEMax) toConsider.exclude(a)
-      p -= 1
-    }
-    
-  }
 
 }

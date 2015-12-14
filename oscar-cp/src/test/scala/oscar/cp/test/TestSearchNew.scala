@@ -44,6 +44,8 @@ class TestSearchNew extends FunSuite with ShouldMatchers {
     implicit val cp = CPSolver()
     val x = Array.fill(40)(CPIntVar(0 to 1)(cp))
 
+    cp.silent = true
+
     var t0 = System.currentTimeMillis()
     search {
       binaryStatic(x)
@@ -61,6 +63,7 @@ class TestSearchNew extends FunSuite with ShouldMatchers {
 
     val cp = new CPSolver()
     val x = CPIntVar(Array(1, 5, 9, 10))(cp)
+    cp.silent = true
     cp.minimize(x)
     var best = 0
     cp.onSolution { best = x.value }

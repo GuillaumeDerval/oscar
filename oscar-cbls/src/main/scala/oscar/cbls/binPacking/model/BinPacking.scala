@@ -14,13 +14,12 @@
   ******************************************************************************/
 package oscar.cbls.binPacking.model
 
-import oscar.cbls.invariants.core.computation._
-import oscar.cbls.invariants.core.computation.CBLSIntConst
-import oscar.cbls.objective.Objective
-import oscar.cbls.constraints.lib.global.MultiKnapsack
-import oscar.cbls.invariants.core.computation.Store
 import oscar.cbls.constraints.core.ConstraintSystem
-import oscar.cbls.invariants.lib.minmax.ArgMaxArray
+import oscar.cbls.constraints.lib.global.MultiKnapsack
+import oscar.cbls.invariants.core.computation.{CBLSIntConst, Store, _}
+import oscar.cbls.invariants.lib.minmax.ArgMax
+import oscar.cbls.objective.{IntVarObjective, Objective}
+
 import scala.collection.immutable.SortedMap
 
 /**
@@ -58,28 +57,28 @@ object Bin{
 class Bin(val number:Int,
                val size:Int,
                var items:CBLSSetVar = null,
-               var violation:CBLSIntVar = null,
-               var content:CBLSIntVar = null){
+               var violation:IntValue = null,
+               var content:IntValue = null){
   override def toString: String = "Bin(nr:" + number + " size:" + size + " content:" + content.value + " items:" + items.valueString + " viol:" + violation.value +")"
 }
 
 /**
  * @author renaud.delandtsheer@cetic.be
  */
-case class BinPackingProblem(items:Map[Int,Item],
-                             bins: Map[Int,Bin],
-                             var overallViolation:Objective,
-                             var mostViolatedBins:CBLSSetVar){
+class BinPackingProblem(val items:Map[Int,Item],
+                        val  bins: Map[Int,Bin],
+                        var overallViolation:IntVarObjective,
+                        var mostViolatedBins:SetValue){
   override def toString: String =
     "BinPackingProblem(\n\titems:{" + items.values.mkString(",") +"}\n" +
       "\tbins:{" +bins.values.mkString(",") + "}\n" +
-      "\toverallViolation:" + overallViolation.objective.value + "\n" +
+      "\toverallViolation:" + overallViolation.value + "\n" +
       "\tmostViolatedBins:" + mostViolatedBins.valueString+")"
 
   def itemCount = items.size
   def binCount = bins.size
 
-  def store = overallViolation.objective.model
+  def store = overallViolation.model
 }
 
 /**
@@ -107,21 +106,23 @@ object BinPackingProblem{
 
   def apply(items:Array[Item],
             bins:Array[Bin],
-            overallViolation:Objective,
-            mostViolatedBins:CBLSSetVar):BinPackingProblem = {
-
-
+            overallViolation:IntVarObjective,
+            mostViolatedBins:SetValue)= {
     new BinPackingProblem(arrayToIndexElementList(items),
       arrayToIndexElementList(bins),
       overallViolation,
       mostViolatedBins)
-
   }
-
 
   def apply(itemSize:Iterable[Int], binSizes:Iterable[Int], s:Store, c:ConstraintSystem, initialBin:Int):BinPackingProblem = {
     apply(itemSize.toArray, binSizes.toArray, s, c, initialBin)
   }
+
+  def apply(items: Map[Int,Item],
+            bins: Map[Int,Bin],
+            overallViolation:IntVarObjective,
+            mostViolatedBins:SetValue) =
+    new BinPackingProblem(items, bins,overallViolation,mostViolatedBins)
 
   /** this method also posts the constraints and invariants involved in the BinPackingProblem
     *
@@ -140,7 +141,7 @@ object BinPackingProblem{
     val itemArray = Array.tabulate(itemSizeArray.size)(
       itemNumber => Item(itemNumber,
         itemSizeArray(itemNumber),
-        CBLSIntVar(s, 0 to (binArray.size-1), initialBin, "bin of item " + itemNumber)))
+        CBLSIntVar(s, initialBin, 0 to (binArray.size-1), "bin of item " + itemNumber)))
 
     val mkp = MultiKnapsack(itemArray.map(_.bin),
       itemSizeArray.map(itemSize => CBLSIntConst(itemSize)),
@@ -157,6 +158,6 @@ object BinPackingProblem{
     BinPackingProblem(itemArray,
       binArray,
       Objective(mkp.violation),
-      ArgMaxArray(binArray.map(_.violation)))
+      ArgMax(binArray.map(_.violation)))
   }
 }

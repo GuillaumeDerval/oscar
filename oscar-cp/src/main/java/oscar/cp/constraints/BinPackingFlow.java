@@ -62,7 +62,7 @@ public class BinPackingFlow extends Constraint {
 				return CPOutcome.Failure;
 			}
 		}
-		if(s().post(new GCCVar(x, 0, c), CPPropagStrength.Strong) == CPOutcome.Failure) {
+		if(s().post(new GCCVarAC(x, 0, c), CPPropagStrength.Strong) == CPOutcome.Failure) {
 			return CPOutcome.Failure;
 		}
 		for (int j = 0; j < l.length; j++) {

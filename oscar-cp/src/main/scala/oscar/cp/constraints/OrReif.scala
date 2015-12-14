@@ -40,7 +40,7 @@ class OrReif(val X: Array[CPBoolVar], y: CPBoolVar) extends Constraint(y.store, 
     x(i) = tmp
     nFalse.incr()
   }
-  priorityL2 = CPStore.MAXPRIORL2
+  priorityL2 = CPStore.MaxPriorityL2
   
   override def setup(l: CPPropagStrength): CPOutcome = {
 	  if (x.size == 2) {

@@ -12,8 +12,7 @@ final class DiffVar(x: CPIntVar, y: CPIntVar) extends Constraint(x.store, "DiffV
 
   final override def setup(l: CPPropagStrength): CPOutcome = {
     val outcome = init()
-    if (outcome == Failure) Failure
-    else if (outcome == Success) Suspend // no need to success
+    if (outcome != Suspend) outcome
     else {
       x.callPropagateWhenBind(this)
       y.callPropagateWhenBind(this)

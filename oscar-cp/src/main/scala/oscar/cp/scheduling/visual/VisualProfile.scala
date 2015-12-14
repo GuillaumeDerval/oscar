@@ -36,7 +36,7 @@ class VisualProfile(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: A
                     capa: Int, id: Int, color: Color = Color.WHITE) extends VisualDrawing(true, false) {
   
   def this(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], 
-                    demands: Array[CPIntVar],capa: Int, color: Color) = this(starts,durations,ends,demands,Array.fill(starts.size)(CPIntVar(starts(0).store,0)),capa,0,color)  
+                    demands: Array[CPIntVar],capa: Int, color: Color) = this(starts,durations,ends,demands,Array.fill(starts.length)(CPIntVar(0)(starts(0).store)),capa,0,color)
   
 
   def compulsary(i: Int): Option[(Int,Int,Int)] = {
@@ -52,18 +52,17 @@ class VisualProfile(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: A
 
   // The capacity limit
   private val capaLine: VisualLine = VisualLine(this, 0, 0, 0, 0)
-  capaLine.outerCol = Color.RED;
+  capaLine.outerCol = Color.RED
 
   // The zero line
   private val zeroLine: VisualLine = VisualLine(this, 0, 0, 0, 0)
-  zeroLine.outerCol = Color.BLUE;
-
+  zeroLine.outerCol = Color.BLUE
 
 
   def update(xScale: Int, yScale: Int) {
     
 
-    val rectangles = (for (i <- 0 until starts.size;j <- compulsary(i)) yield j).toArray
+    val rectangles = (for (i <- starts.indices; j <- compulsary(i)) yield j).toArray
     
     val profile = HeightProfile.computeProfile(rectangles)
     val start = profile(0)._1 
@@ -82,8 +81,8 @@ class VisualProfile(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: A
     capaLine.orig = (0, (capa + min) * yScale)
     capaLine.dest = (xScale * max, (capa + min) * yScale)
 
-    zeroLine.orig = (0, (min) * yScale)
-    zeroLine.dest = (xScale * max, (min) * yScale)
+    zeroLine.orig = (0, min * yScale)
+    zeroLine.dest = (xScale * max, min * yScale)
 
     repaint()
   }

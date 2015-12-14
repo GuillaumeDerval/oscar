@@ -9,8 +9,8 @@ abstract class CPObjectiveGeometric(objVar: CPIntVar, name: String, ratio: Doubl
 extends CPObjectiveUnit(objVar, name) {
   require(0 < ratio && ratio < 1)
   
-  override protected val lb = math.floor(objVar.min * (1 / (1 + ratio))) toInt
-  override protected val ub = math.ceil( objVar.max * (1 / (1 - ratio))) toInt
+  override protected val lb = math.floor(objVar.min * (1 / (1 + ratio))).toInt
+  override protected val ub = math.ceil( objVar.max * (1 / (1 - ratio))).toInt
 }
 
 
@@ -25,10 +25,10 @@ extends CPObjectiveGeometric(objVar, name, ratio) {
   def isMin: Boolean = true 
   
   def updateWorstBound(newBound: Int, delta: Int = 0): CPOutcome = 
-    objVar.updateMax(newBound - math.ceil(ratio * newBound * delta) toInt) 
+    objVar.updateMax(newBound - math.ceil(ratio * newBound * delta).toInt) 
   
   def updateBestBound(newBound: Int, delta: Int = 0): CPOutcome = 
-    objVar.updateMin(newBound + math.ceil(ratio * newBound * delta) toInt) 
+    objVar.updateMin(newBound + math.ceil(ratio * newBound * delta).toInt) 
     
   def worstBound: Int = ub
   def bestBound: Int = lb
@@ -48,10 +48,10 @@ extends CPObjectiveGeometric(objVar, name, ratio) {
   def isMax: Boolean = true
   def isMin: Boolean = false
   def updateWorstBound(newBound: Int, delta: Int = 0): CPOutcome = 
-    objVar.updateMin(newBound + math.ceil(ratio * newBound * delta) toInt) 
+    objVar.updateMin(newBound + math.ceil(ratio * newBound * delta).toInt) 
   
   def updateBestBound(newBound: Int, delta: Int = 0): CPOutcome = 
-    objVar.updateMax(newBound - math.ceil(ratio * newBound * delta) toInt)
+    objVar.updateMax(newBound - math.ceil(ratio * newBound * delta).toInt)
     
   def worstBound: Int = lb
   def bestBound: Int = ub
