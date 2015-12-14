@@ -14,7 +14,7 @@ import oscar.cp.searches.BinaryLastConflict
  */
 object Queens extends CPModel with App {
 
-  val nQueens = 10 // Number of queens
+  val nQueens = 100 // Number of queens
   val Queens = 0 until nQueens
 
   // Variables
@@ -30,6 +30,6 @@ object Queens extends CPModel with App {
 
   
   // Execution
-  val stats = start()
+  val stats = start(1)
   println(stats)
 }
