@@ -19,7 +19,7 @@ class CDCLStore {
   protected var heuristic: Heuristic = null
 
   // Constraints
-  protected[this] val constraints: ArrayStack[Constraint] = new ArrayStack(128)
+  private[this] val constraints: ArrayStack[Constraint] = new ArrayStack(128)
 
   // Nogoods
   private[this] var _nogoods: Array[Nogood] = new Array(128)
@@ -74,6 +74,8 @@ class CDCLStore {
   @inline final def assignReason(varId: Int): Constraint = _reasons(varId)
 
   @inline final def nNogoods: Int = _nNogoods
+  
+  @inline final def nConstraints: Int = constraints.length
   
   @inline final def isAssigned(varId: Int): Boolean = _values(varId) != Unassigned
 
@@ -220,9 +222,10 @@ class CDCLStore {
       _nogoods(i).activity /= scaleLimit
       i += 1
     }
+    activityStep /= scaleLimit
   }
 
-  final def claDecayActivity(): Unit = activityStep *= activityDecay
+  final def claDecayActivity(): Unit = activityStep /= activityDecay
 
   final def varBumpActivity(literal: Int): Unit = {
     val varId = literal / 2

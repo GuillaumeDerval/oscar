@@ -11,7 +11,7 @@ class CDCLSolver extends CDCLStore {
   final def solve(h: Heuristic): Boolean = {
     heuristic = h
     var nofConflicts = 100
-    var nofLearnts = constraints.size / 3
+    var nofLearnts = nConstraints / 3
     var status: LiftedBoolean = Unassigned
 
     while (status == Unassigned) {
