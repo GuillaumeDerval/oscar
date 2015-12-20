@@ -190,6 +190,45 @@ object SortUtils {
 	  if (newRunsSize == 1)  1 - which
 	  else                   mergeSort1(tab2, tab1, keys, runs, newRunsSize, base, 1 - which)
 	}
+  
+  final def insertionSort(elements: Array[Int], keys: Array[Double]): Unit = {
+    insertionSort(elements, elements.length, keys)
+  }
+  
+  final def insertionSort(elements: Array[Int], keys: Array[Int]): Unit = {
+    insertionSort(elements, elements.length, keys)
+  }
+  
+  final def insertionSort(elements: Array[Int], nElements: Int, keys: Array[Double]): Unit = {
+    var i = 0
+    var j = 0
+    while (i < nElements) {
+      val tmp = elements(i)
+      val key = keys(tmp)
+      j = i 
+      while (j > 0 && key < keys(elements(j - 1))) {
+        elements(j) = elements(j - 1)
+        j -= 1
+      }
+      elements(j) = tmp
+    }
+  }
+  
+  final def insertionSort(elements: Array[Int], nElements: Int, keys: Array[Int]): Unit = {
+    var i = 0
+    var j = 0
+    while (i < nElements) {
+      val tmp = elements(i)
+      val key = keys(tmp)
+      j = i 
+      while (j > 0 && key < keys(elements(j - 1))) {
+        elements(j) = elements(j - 1)
+        j -= 1
+      }
+      elements(j) = tmp
+    }
+  }
+  
 	
 	
 	
