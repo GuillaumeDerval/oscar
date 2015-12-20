@@ -32,7 +32,7 @@ final class Watchers(initialSize: Int = 16) {
     tail = 0
   }
   
-  @inline final def clearDeleted(): Unit = {
+  @inline final def filterDeleted(): Unit = {
     var i = head
     var j = head
     while (i != tail) {

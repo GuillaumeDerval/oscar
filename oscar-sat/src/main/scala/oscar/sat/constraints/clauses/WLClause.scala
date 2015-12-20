@@ -8,21 +8,11 @@ import oscar.algo.array.ArrayStackInt
 
 class WLClause(store: CDCLStore, literals: Array[Int]) extends Clause {
 
-  final override def remove(): Unit = Unit
-
-  final override def simplify(): Boolean = true
+  final override def nLiterals = literals.length
   
   final override def explain(litId: Int, outReason: ArrayStackInt): Unit = {
     assert(litId == literals(0), s"$litId has not been propagated by this clause.")
     var i = 1
-    while (i < literals.length) {
-      outReason.append(literals(i) ^ 1)
-      i += 1
-    }
-  }
-  
-  final override def explainAll(outReason: ArrayStackInt): Unit = {
-    var i = 0
     while (i < literals.length) {
       outReason.append(literals(i) ^ 1)
       i += 1

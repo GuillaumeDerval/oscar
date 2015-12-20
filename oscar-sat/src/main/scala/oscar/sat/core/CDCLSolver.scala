@@ -15,7 +15,7 @@ class CDCLSolver extends CDCLStore {
     var status: LiftedBoolean = Unassigned
 
     while (status == Unassigned) {
-      status = search(nofConflicts, 0.98, 0.999)
+      status = search(nofConflicts, nofLearnts, 0.98, 0.999)
       nofConflicts += nofConflicts / 2
       nofLearnts += nofLearnts / 10
     }
@@ -24,7 +24,7 @@ class CDCLSolver extends CDCLStore {
     status == True
   }
   
-  final def search(nofConflict: Int, initVarDecay: Double, initClaDecay: Double): LiftedBoolean = {
+  final def search(nofConflict: Int, nofNogoods: Int, initVarDecay: Double, initClaDecay: Double): LiftedBoolean = {
     
     var conflictC = 0
     variableDecay = initVarDecay
@@ -35,20 +35,24 @@ class CDCLSolver extends CDCLStore {
     var complete = false
     
     while (!complete) {
-      val conflict = propagate()
       
+      val success = propagate()
       // Conflict to learn
-      if (conflict != null) {
+      if (!success) {
         conflictC += 1
         totalConfict += 1
         if (level == 0) return False
-        else handleConflict(conflict) 
+        else handleConflict() 
       }
       // No conflict
       else {
       
         // No root simplification
         // No filtering of learnt clause
+        
+        if (nNogoods - nAssigns() >= nofNogoods) {
+          reduceDb()
+        }
         
         if (nAssigns() == nVars) {
           // Model found
@@ -71,6 +75,4 @@ class CDCLSolver extends CDCLStore {
     
     Unassigned
   }
-
-  
 }

@@ -6,6 +6,12 @@ import oscar.sat.core.CDCLStore
 
 abstract class Nogood extends Clause {
   
+  private[this] var _deleted = false;
+  
+  final def delete(): Unit = _deleted = true
+  
+  override def isDeleted: Boolean = _deleted
+  
   def activity: Double
   
   def activity_=(d: Double): Unit

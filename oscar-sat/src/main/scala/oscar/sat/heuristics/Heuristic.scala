@@ -1,9 +1,6 @@
 package oscar.sat.heuristics
 
-import oscar.algo.array.ArrayHeapDouble
-import oscar.sat.core.CDCLStore
-
-abstract class Heuristic {
+trait Heuristic {
 
   def undo(varId: Int): Unit
 

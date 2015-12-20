@@ -12,22 +12,11 @@ final class WLNogood(store: CDCLStore, literals: Array[Int]) extends Nogood {
 
   override def locked: Boolean = store.assignReason(literals(0) / 2) == this
 
-  override def remove(): Unit = Unit
-
-  override def simplify(): Boolean = true
-
+  final override def nLiterals = literals.length
+  
   override def explain(litId: Int, outReason: ArrayStackInt): Unit = {
     assert(litId == literals(0), s"$litId has not been propagated by this clause.")
     var i = 1
-    while (i < literals.length) {
-      outReason.append(literals(i) ^ 1)
-      i += 1
-    }
-    store.claBumpActivity(this)
-  }
-
-  override def explainAll(outReason: ArrayStackInt): Unit = {
-    var i = 0
     while (i < literals.length) {
       outReason.append(literals(i) ^ 1)
       i += 1

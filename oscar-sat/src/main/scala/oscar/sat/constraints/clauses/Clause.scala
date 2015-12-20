@@ -5,9 +5,9 @@ import oscar.sat.core.CDCLStore
 import oscar.sat.constraints.Constraint
 
 abstract class Clause extends Constraint {
-
-  def remove(): Unit
-
+  
+  def nLiterals: Int
+  
 }
 
 object Clause {

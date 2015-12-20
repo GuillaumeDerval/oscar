@@ -8,18 +8,11 @@ class BinaryClause(store: CDCLStore, _lit1: Int, _lit2: Int) extends Clause {
 
   private[this] var lit1: Int = _lit1 // the unit literal
   private[this] var lit2: Int = _lit2
-
-  final override def remove(): Unit = Unit
-
-  final override def simplify(): Boolean = true
   
+  final override val nLiterals: Int = 2
+
   final override def explain(litId: Int, outReason: ArrayStackInt): Unit = {
     assert(litId == lit1, s"$litId has not been propagated by this clause.")
-    outReason.append(lit2 ^ 1)
-  }
-  
-  final override def explainAll(outReason: ArrayStackInt): Unit = {
-    outReason.append(lit1 ^ 1)
     outReason.append(lit2 ^ 1)
   }
   

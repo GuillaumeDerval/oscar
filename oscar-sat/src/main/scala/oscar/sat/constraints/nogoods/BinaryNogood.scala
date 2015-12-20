@@ -11,18 +11,11 @@ final class BinaryNogood(store: CDCLStore, _lit1: Int, _lit2: Int) extends Nogoo
 
   private[this] var lit1: Int = _lit1 // the unit literal
   private[this] var lit2: Int = _lit2
-
-  override def remove(): Unit = Unit
-
-  override def simplify(): Boolean = true
+  
+  final override val nLiterals = 2
 
   override def explain(litId: Int, outReason: ArrayStackInt): Unit = {
     assert(litId == lit1, s"$litId has not been propagated by this clause.")
-    outReason.append(lit2 ^ 1)
-  }
-
-  override def explainAll(outReason: ArrayStackInt): Unit = {
-    outReason.append(lit1 ^ 1)
     outReason.append(lit2 ^ 1)
   }
 

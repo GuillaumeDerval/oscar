@@ -7,7 +7,7 @@ import oscar.sat.constraints.clauses.Clause
 object TestGraph extends App {
 
   // Data
-  val instance = DimacsFile.parse("data/sat/dimacs/queens10.cnf")
+  val instance = DimacsFile.parse("data/dimacs/queens10.cnf")
   val solver = instance.model
   val heuristic = new ActivityHeuristic(instance.nVariables, solver)
 
@@ -17,10 +17,7 @@ object TestGraph extends App {
   
   // Solve
   val t0 = System.nanoTime()
-  val solved = solver.solve(heuristic)
-  val t1 = System.nanoTime() - t0
 
-  
   var nSols = 0  
   while (solver.solve(heuristic)) {
     
@@ -42,6 +39,8 @@ object TestGraph extends App {
       else i * 2
     })))
   }
+  
+  val t1 = System.nanoTime() - t0
   
     // Out
   println("#solutions  : " + nSols)
