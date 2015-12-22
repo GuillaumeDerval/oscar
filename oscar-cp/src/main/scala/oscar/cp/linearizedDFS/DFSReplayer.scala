@@ -50,7 +50,7 @@ class DFSReplayer(node: CPSolver, decisionVariables : Seq[CPIntVar]) {
 
     def panic(panicInvariant : () => Boolean) = {
       val beforePanicTime = timeThreadBean.getCurrentThreadUserTime
-      while (panicInvariant()) {
+      while (panicInvariant() && i < searchStateModifications.size - 1) {
         i += 1
         searchStateModifications(i) match {
           case Pop(_) => searchStateModifications(i)()
