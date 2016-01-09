@@ -25,6 +25,7 @@ import oscar.cp.core.CPOutcome._
 object TableAlgo extends Enumeration {
   type TableAlgo = Value
   val CompactTable = Value("CompactTable (Perron)")
+  val CompactTableGAC6 = Value("CompactTable GAC6 (Régin,Perrez,Schaus)")
   val GAC4 = Value("GAC4 (Regin)")
   val GAC4R = Value("GAC4R (Perez and Regin")
   val STR2 = Value("STR2 (Lecoutre)")
@@ -40,6 +41,7 @@ object table {
 
     algo match {
       case CompactTable => compactTable(X, table)
+      case CompactTableGAC6 => compactTableGAC6(X, table)
       case GAC4         => gac4(X, table)
       case GAC4R        => gac4r(X, table)
       case MDD4R        => mdd4r(X, table)
@@ -51,6 +53,8 @@ object table {
   }
 
   def compactTable(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableCT(X, table)
+
+  def compactTableGAC6(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableCTAC6(X, table)
 
   def gac4(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableGAC4(X, table)
 

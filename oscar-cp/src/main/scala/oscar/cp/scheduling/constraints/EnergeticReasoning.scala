@@ -29,7 +29,7 @@ class EnergeticReasoning(starts: Array[CPIntVar], durations: Array[CPIntVar], en
   var cmin = -1
   var cmax = -1
   
-  val tasksId = 0 until starts.length toArray 
+  val tasksId = Array.tabulate(starts.length)(i => i)
   
   def setup(l: CPPropagStrength): CPOutcome = {
     priorityL2 = 0

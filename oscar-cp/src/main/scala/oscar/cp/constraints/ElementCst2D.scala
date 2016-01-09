@@ -24,6 +24,7 @@ import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
 import oscar.cp.util.ArrayUtils;
 import oscar.algo.reversible.ReversibleInt
+import oscar.cp.constraints.tables.TableAlgo
 
 /**
  * AC Element Constraint on a 2D array
@@ -32,17 +33,22 @@ import oscar.algo.reversible.ReversibleInt
 object ElementCst2D {
 
   private var prevT: Array[Array[Int]] = null
-  private var prevData: TableData = null
 
-  def apply(T: Array[Array[Int]], x: CPIntVar, y: CPIntVar, z: CPIntVar) = {
+  private var prevData: Array[Array[Int]] = null
+
+  def apply(T: Array[Array[Int]], x: CPIntVar, y: CPIntVar, z: CPIntVar): Constraint = {
+    apply(T,x,y,z,TableAlgo.CompactTable)
+  }
+
+  def apply(T: Array[Array[Int]], x: CPIntVar, y: CPIntVar, z: CPIntVar, algo: TableAlgo.Value): Constraint = {
     if (prevT != T) {
       prevT = T;
-      prevData = new TableData(3);
-      for (i <- 0 until T.size; j <- 0 until T(i).size) {
-        prevData.add(i, j, T(i)(j));
-      }
+      prevData =
+      (for (i <- 0 until T.size; j <- 0 until T(i).size) yield {
+        Array(i, j, T(i)(j))
+      }).toArray
     }
-    new TableAC5TCRecomp(prevData, x, y, z)
+    oscar.cp.constraints.tables.table(Array(x,y,z), prevData, algo)
   }
 }
 

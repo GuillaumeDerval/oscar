@@ -353,14 +353,8 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
   def delta(oldMin: Int, oldMax: Int, oldSize: Int): Iterator[Int]
   
   def fillDeltaArray(oldMin: Int, oldMax: Int, oldSize: Int, arr: Array[Int]): Int
-  
-  def delta(constraint: Constraint): DeltaIntVar = {
-    val delta = new DeltaIntVarAdaptable(this, 0)
-    constraint.registerDelta(delta)
-    delta
-  }
-  
-  def delta(id: Int, constraint: Constraint): DeltaIntVar = {
+
+  def delta(constraint: Constraint,id: Int = 0): DeltaIntVar = {
     val delta = new DeltaIntVarAdaptable(this, id)
     constraint.registerDelta(delta)
     delta

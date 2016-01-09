@@ -7,7 +7,13 @@ abstract class NogoodDB {
   
   /** Remove entailed nogoods from the data base. */
   def reduceEntailed(): Unit
-  
+
+  /** Returns an array with all nogoods **/
+  def allNogoods(): Array[Nogood]
+
+  /** Remove all nogoods from the DB **/
+  def clear(): Unit
+
   /** Add a new nogood in the data base. */
   def add(nogood: Nogood): Unit 
   
@@ -40,7 +46,11 @@ class NogoodDBImpl extends NogoodDB {
   
   /** Remove entailed nogoods from the data base. */
   def reduceEntailed(): Unit = ()
-  
+
+  def clear() = nNogoods = 0
+
+
+
   /** Add a new nogood in the data base. */
   def add(nogood: Nogood): Unit = {
     if (nNogoods == nogoods.length) growDB()
@@ -100,7 +110,10 @@ class NogoodDBImpl extends NogoodDB {
       f(nogoods(i))
     }
   }
-  
+
+  def allNogoods(): Array[Nogood] = nogoods.take(nNogoods)
+
+
   @inline private def growDB(): Unit = {
     val newStack = new Array[Nogood](nogoods.length * 2)
     System.arraycopy(nogoods, 0, newStack, 0, nogoods.length)

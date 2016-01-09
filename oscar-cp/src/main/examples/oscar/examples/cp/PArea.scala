@@ -20,7 +20,7 @@ import scala.io.Source
  */
 object PArea extends CPModel with App {
 
-  val lines = Source.fromFile("data/Parea/PArea_100_8.txt").getLines.reduceLeft(_ + " " + _)
+  val lines = Source.fromFile("data/Parea/PArea_100_9.txt").getLines.reduceLeft(_ + " " + _)
   val vals = lines.split("[ ,\t]").toList.filterNot(_ == "").map(_.toInt)
   var index = 0
   def next() = {
@@ -54,8 +54,13 @@ object PArea extends CPModel with App {
 
   // dominance rules (see PhD thesis of Q.T. Bui)
   for (j <- 0 until nFields) {
+
+
     add(l(j) > c(j)-h.max)
-    add(l(j) < c(j)+h.min)
+
+
+    add(l(j) < c(j)+h.max) // we would like to have c(j) + min_{h(i): x(i) = j} (need global constraint to express it efficiently)
+
   }
 
   // Search

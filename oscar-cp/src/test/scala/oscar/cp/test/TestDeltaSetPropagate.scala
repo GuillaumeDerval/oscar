@@ -20,6 +20,7 @@ import org.scalatest.matchers.ShouldMatchers
 import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPPropagStrength
 import oscar.cp._
+import oscar.cp.core.delta.DeltaSetVar
 import scala.collection.mutable.ArrayBuffer
 
 
@@ -35,10 +36,10 @@ class TestDeltaSetPropagate extends FunSuite with ShouldMatchers {
     var propag = false
     
     class MyCons(val X: CPSetVar) extends Constraint(X.store, "TestDelta") {
-      priorityL2 = CPStore.MAXPRIORL2-5 
+      priorityL2 = CPStore.MaxPriorityL2-5
       override def setup(l: CPPropagStrength): CPOutcome = {
         //println("setup")
-        X.filterWhenDomainChanges { delta =>
+        X.filterWhenDomainChangesWithDelta(){ delta =>
           propag = true
           
           delta.changed should be(true)
@@ -78,20 +79,21 @@ class TestDeltaSetPropagate extends FunSuite with ShouldMatchers {
     var propag = false
     
     class MyCons(val X: CPSetVar) extends Constraint(X.store, "TestDelta") {
-      priorityL2 = CPStore.MAXPRIORL2-5 
+      priorityL2 = CPStore.MaxPriorityL2-5
+      var delta: DeltaSetVar = null
       override def setup(l: CPPropagStrength): CPOutcome = {
-        X.callPropagateWhenDomainChanges(this, true)
+        delta = X.callPropagateOnChangesWithDelta(this)
         CPOutcome.Suspend
       }
       override def propagate(): CPOutcome = {
           propag = true
-          X.changed(this) should be(true)
-          X.requiredChanged(this) should be(true)
-          X.possibleChanged(this) should be(true)
-          X.deltaRequiredSize(this) should be(2)
-          X.deltaRequired(this).toSet should be(Set(1,3))
-          X.deltaPossibleSize(this) should be(2)
-          X.deltaPossible(this).toSet should be(Set(2,4))
+          delta.changed() should be(true)
+          delta.requiredChanged should be(true)
+          delta.possibleChanged should be(true)
+          delta.deltaRequiredSize should be(2)
+          delta.deltaRequired().toSet should be(Set(1,3))
+          delta.deltaPossibleSize() should be(2)
+          delta.deltaPossible().toSet should be(Set(2,4))
         
           CPOutcome.Suspend
       }
