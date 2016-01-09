@@ -24,6 +24,8 @@ abstract class LinearExpression extends Expression {
   val cte: Double
   val coef: scala.collection.immutable.Map[Var, Double]
 
+  def uses[V <: Var](v: V) = coef.contains(v)
+
   def +(expr: LinearExpression): LinearExpression = new LinearExpressionSum(expr, this)
 
   def -(expr: LinearExpression): LinearExpression = new LinearExpressionDiff(this, expr)

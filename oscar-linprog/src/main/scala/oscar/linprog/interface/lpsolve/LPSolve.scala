@@ -112,6 +112,12 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
     objCoef: Option[Double] = None, cstrCoefs: Option[Array[Double]] = None, cstrIds: Option[Array[Int]] = None): Int =
     addVariable(name, 0.0, 1.0, objCoef, cstrCoefs, cstrIds, integer = true, binary = true)
 
+  def removeVariable(varId: Int): Unit = {
+    this.nCols -= 1
+    if(pendingVars.exists(v => v._1 == varId)) pendingVars = pendingVars.filter(p => p._1 != varId)
+    else rawSolver.delColumn(varId + 1)
+  }
+
   def getVariableLowerBound(varId: Int): Double = rawSolver.getLowbo(varId + 1)
   def setVariableLowerBound(varId: Int, lb: Double) = rawSolver.setLowbo(varId + 1, lb)
 
@@ -155,6 +161,12 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
     cstrId
   }
 
+  def removeConstraint(cstrId: Int): Unit = {
+    this.nRows -= 1
+    if(pendingCstrs.exists(c => c._1 == cstrId)) pendingCstrs = pendingCstrs.filter(c => c._1 != cstrId)
+    else rawSolver.delConstraint(cstrId + 1)
+  }
+
   def setConstraintCoefficient(cstrId: Int, varId: Int, coef: Double): Unit = rawSolver.setMat(cstrId + 1, varId + 1, coef)
 
   def setConstraintRightHandSide(cstrId: Int, rhs: Double): Unit = rawSolver.setRh(cstrId + 1, rhs)
@@ -190,13 +202,6 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
     assert(rawSolver.getNorigRows == getNumberOfLinearConstraints,
       s"$solverName: the number of constraints contained by the raw solver does not correspond to the number of constraints added.")
   }
-
-  def exportModel(filepath: Path, format: ModelExportFormat): Unit =
-    format match {
-      case LP => rawSolver.writeLp(filepath.toString) // Note: this is lp_solve's own lp format which is different from CPLEX's one.
-      case MPS => rawSolver.writeFreeMps(filepath.toString)
-      case _ => println(s"Unrecognised export format $format")
-    }
 
   private var _endStatus: Option[EndStatus] = None
 
@@ -253,14 +258,31 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
 
   def abort(): Unit = aborted = true
 
-  var _released = false
-
-  def release(): Unit = {
-    _released = true
+  override def release(): Unit = {
     rawSolver.deleteLp()
+    super.release()
   }
 
-  def released: Boolean = _released
+
+  /* LOGGING */
+
+  def exportModel(filepath: Path, format: ModelExportFormat): Unit =
+    format match {
+      case LP => rawSolver.writeLp(filepath.toString) // Note: this is lp_solve's own lp format which is different from CPLEX's one.
+      case MPS => rawSolver.writeFreeMps(filepath.toString)
+      case _ => println(s"Unrecognised export format $format")
+    }
+
+  override def setLogOutput(logOutput: LogOutput): Unit = {
+    super.setLogOutput(logOutput)
+
+    logOutput match {
+      case DisabledLogOutput => throw new IllegalArgumentException("Impossible to disable the log output of lp_solve. Try changing the verbosity.")
+      case StandardLogOutput => rawSolver.setOutputfile("")
+      case FileLogOutput(path) => rawSolver.setOutputfile(path.toString)
+      case _ => println(s"Unrecognised log output $logOutput")
+    }
+  }
 
 
   /* CONFIGURATION */

@@ -15,7 +15,16 @@
 
 package oscar.linprog.enums
 
-sealed abstract class ModelExportFormat(val extension: String)
+sealed abstract class ModelExportFormat(val extension: String) {
+  /**
+   * Returns true if the given [[java.nio.file.Path]] has the correct file extension
+   */
+  def checkExtension(filepath: java.nio.file.Path): Boolean = {
+    import oscar.linprog._
+
+    filepath.extension.equals(extension)
+  }
+}
 
 case object LP extends ModelExportFormat("lp")
 case object MPS extends ModelExportFormat("mps")

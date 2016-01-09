@@ -22,4 +22,13 @@ sealed abstract class SolveStatus(val name: String) {
 case object NotSolved extends SolveStatus("NOT_SOLVED")
 case object Solved extends SolveStatus("SOLVED")
 
+object SolveStatus {
+  val values = Seq(NotSolved, Solved)
+
+  def fromString(str: String): SolveStatus = values.find(ss => ss.name == str.toUpperCase) match {
+    case Some(ss) => ss
+    case None     => throw new IllegalArgumentException(s"Unrecognized solve status: $str")
+  }
+}
+
 case object NotSolvedYetException extends Exception("Problem is not solved yet.")

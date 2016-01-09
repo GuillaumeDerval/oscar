@@ -17,7 +17,7 @@ package oscar.linprog.interface
 
 import java.nio.file.Path
 
-import oscar.linprog.enums.{EndStatus, ModelExportFormat, SolutionQuality}
+import oscar.linprog.enums._
 
 /**
  * Solver-independent low-level interface describing a solver for mathematical programming problems
@@ -27,8 +27,8 @@ import oscar.linprog.enums.{EndStatus, ModelExportFormat, SolutionQuality}
  */
 abstract class MPSolverInterface {
   // NOTE:
-  // "varId" refers the column (starting at 0) representing the variable in the matrix of the problem.
-  // "cstrId" refers the row (starting at 0) representing the constraint in the matrix of the problem.
+  // "varId" refers to the column (starting at 0) representing the variable in the matrix of the problem.
+  // "cstrId" refers to the row (starting at 0) representing the constraint in the matrix of the problem.
 
   /**
    * The type of the underlying solver
@@ -44,6 +44,8 @@ abstract class MPSolverInterface {
    * Returns the name of the solver implementing this interface.
    */
   def solverName: String
+
+  override def toString = solverName
 
   /**
    * Returns the name of the model.
@@ -89,6 +91,11 @@ abstract class MPSolverInterface {
    */
   def addVariable(name: String, lb: Double = -Double.MaxValue, ub: Double = Double.MaxValue,
     objCoef: Option[Double] = None, cstrCoefs: Option[Array[Double]] = None, cstrIds: Option[Array[Int]] = None): Int
+
+  /**
+   * Removes the variable with the given index from the model.
+   */
+  def removeVariable(varId: Int): Unit
 
   /**
    * Returns the lower bound of the variable.
@@ -147,6 +154,11 @@ abstract class MPSolverInterface {
   def addConstraint(name: String, coefs: Array[Double], varIds: Array[Int], sense: String, rhs: Double): Int
 
   /**
+   * Removes the constraint with the given index from the model.
+   */
+  def removeConstraint(cstrId: Int): Unit
+
+  /**
    * Sets the coefficient of the variable in the corresponding constraint to the specified value.
    */
   def setConstraintCoefficient(cstrId: Int, varId: Int, coef: Double): Unit
@@ -170,13 +182,6 @@ abstract class MPSolverInterface {
    * Commits to the solver the last changes done to the model.
    */
   def updateModel()
-
-  /**
-   * Saves the problem to the file at the given path in the given format.
-   */
-  def exportModel(filepath: Path, format: ModelExportFormat): Unit
-
-  // TODO exportSolution
 
   /**
    * Returns the status after termination of the optimization.
@@ -233,15 +238,37 @@ abstract class MPSolverInterface {
    */
   def abort(): Unit
 
+  protected var _released = false
+
   /**
    * Releases the memory of this solver.
    */
-  def release(): Unit
+  def release(): Unit = {
+    _released = true
+    _logOutput.close
+  }
 
   /**
    * Returns true if the solver has been released.
    */
-  def released: Boolean
+  def released: Boolean = _released
+
+  /**
+   * Saves the problem to the file at the given path in the given format.
+   */
+  def exportModel(filePath: Path, format: ModelExportFormat): Unit
+
+  // TODO exportSolution
+
+  protected var _logOutput: LogOutput = LogOutput.standard
+
+  /**
+   * Sets the log output of the solver to the given [[LogOutput]]
+   */
+  def setLogOutput(logOutput: LogOutput): Unit = {
+    _logOutput.close
+    _logOutput = logOutput
+  }
 
   /**
    * Configure the solver using the configuration file located at the given ''absolute'' path.

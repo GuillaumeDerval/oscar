@@ -2,10 +2,10 @@ package oscar.linprog.test
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
+import oscar.algebra._
 import oscar.linprog.enums.{Optimal, SolutionFound}
 import oscar.linprog.interface.MPSolverLib
 import oscar.linprog.modeling._
-import oscar.algebra._
 
 import scala.util.Success
 
