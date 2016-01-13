@@ -114,8 +114,30 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
 
   def removeVariable(varId: Int): Unit = {
     this.nCols -= 1
-    if(pendingVars.exists(v => v._1 == varId)) pendingVars = pendingVars.filter(p => p._1 != varId)
-    else rawSolver.delColumn(varId + 1)
+    if(pendingVars.exists(v => v._1 == varId)) {
+      pendingVars = pendingVars.flatMap { v =>
+        if (v._1 > varId) {
+          Some((v._1 - 1, v._2, v._3, v._4, v._5, v._6))
+        } else if (v._1 < varId) {
+          Some(v)
+        } else {
+          None
+        }
+      }
+
+      def computeShiftedVardIds(varIds: Array[Int]): Array[Int] =
+        varIds.map { vId =>
+          if(vId > varId) vId-1
+          else vId
+        }
+
+      pendingCstrs = pendingCstrs.map { case (cstrId, name, coefs, varIds, sense, rhs) =>
+        (cstrId, name, coefs, computeShiftedVardIds(varIds), sense, rhs)
+      }
+      pendingObj = pendingObj.map { case (minimize, coefs, varIds) =>
+        (minimize, coefs, computeShiftedVardIds(varIds))
+      }
+    } else rawSolver.delColumn(varId + 1)
   }
 
   def getVariableLowerBound(varId: Int): Double = rawSolver.getLowbo(varId + 1)
@@ -151,7 +173,7 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
     }
 
     rawSolver.addConstraintex(coefs.length, coefs, varIds.map(_ + 1), sen, rhs)
-    rawSolver.setRowName(cstrId, name)
+    rawSolver.setRowName(cstrId + 1, name)
   }
 
   def addConstraint(name: String, coefs: Array[Double], varIds: Array[Int], sense: String, rhs: Double): Int = {
@@ -163,8 +185,13 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
 
   def removeConstraint(cstrId: Int): Unit = {
     this.nRows -= 1
-    if(pendingCstrs.exists(c => c._1 == cstrId)) pendingCstrs = pendingCstrs.filter(c => c._1 != cstrId)
-    else rawSolver.delConstraint(cstrId + 1)
+    if(pendingCstrs.exists(c => c._1 == cstrId)) {
+      pendingCstrs = pendingCstrs.flatMap { c =>
+        if (c._1 > cstrId) Some((c._1 - 1, c._2, c._3, c._4, c._5, c._6))
+        else if (c._1 < cstrId) Some(c)
+        else None
+      }
+    } else rawSolver.delConstraint(cstrId + 1)
   }
 
   def setConstraintCoefficient(cstrId: Int, varId: Int, coef: Double): Unit = rawSolver.setMat(cstrId + 1, varId + 1, coef)
