@@ -16,8 +16,7 @@
 package oscar.linprog.modeling
 
 import java.nio.file.Path
-
-import oscar.algebra.{Const, LinearExpression}
+import oscar.algebra.linear.{Const, LinearExpression}
 import oscar.linprog.enums._
 import oscar.linprog.interface._
 

@@ -14,10 +14,26 @@
  ******************************************************************************/
 package oscar.algebra
 
+import oscar.algebra.linear.Var
+
+/**
+ * Abstract class for algebraic expressions
+ */
 abstract class Expression {
 
+  /**
+   * Returns true if this [[Expression]] uses the given [[Var]]
+   */
+  def uses[V <: Var](v: V): Boolean
+
+  /**
+   * Returns the value of this [[Expression]] if it has any
+   */
   def value: Option[Double]
 
+  /**
+   * Evaluates this [[Expression]] for the given assignment of the [[Var]]
+   */
   def eval(env: Var => Double): Double
 
   def +(expr: Expression): Expression = new Sum(this, expr)
@@ -28,8 +44,11 @@ abstract class Expression {
 
   def /(expr: Expression): Expression = new Frac(this, expr)
 
-  def derive(x: Var): Expression
+  /**
+   * Derives this [[Expression]] with respect to the given [[Var]]
+   */
+  def derive(v: Var): Expression
 
-  def isZero(): Boolean = false
+  def isZero: Boolean = false
 }
   

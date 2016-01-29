@@ -14,12 +14,17 @@
  ******************************************************************************/
 package oscar.algebra
 
-class Prod(val a: Expression, val b: Expression) extends BinaryOp {
-  val symb = "*"
-  val op = (a: Double, b: Double) => a * b
-  def derive(v: Var): Expression = {
-    a * b.derive(v) + b * a.derive(v)
-  }
-  override def toString = "(" + a + ")*(" + b + ")"
-  override def isZero() = a.isZero() || b.isZero()
+import oscar.algebra.linear.{Zero, Var}
+
+/**
+ * Represents the product of two [[Expression]]: left * right
+ */
+class Prod(left: Expression, right: Expression)
+  extends BinaryOp(left, right, "*", (a: Double, b: Double) => a * b) {
+
+  override def derive(v: Var): Expression = left * right.derive(v) + right * left.derive(v)
+
+  override def isZero = left.isZero || right.isZero
+
+  override def toString = s"($left) $symbol ($right)" // TODO improve me
 }

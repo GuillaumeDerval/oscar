@@ -14,15 +14,16 @@
  ******************************************************************************/
 package oscar.algebra
 
-//Unary operators
+import oscar.algebra.linear.Var
+
+/**
+ * Abstract class used to represent a unary operation on an [[Expression]]
+ */
 abstract class UnaryOp(expr: Expression, name: String, f: Double => Double) extends Expression {
 
+  override def value = expr.value.map(v => f(v))
+
+  override def eval(env: Var => Double) = f(expr.eval(env))
+
   override def toString = name + "(" + expr + ")"
-
-  def value = expr.value match {
-    case Some(v) => Some(f(v))
-    case None => None
-  }
-
-  def eval(env: Var => Double) = f(expr.eval(env))
 }

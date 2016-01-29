@@ -14,6 +14,8 @@
  ******************************************************************************/
 package oscar
 
+import oscar.algebra.linear.{Zero, Var, Const, LinearExpression}
+
 
 package object algebra {
   

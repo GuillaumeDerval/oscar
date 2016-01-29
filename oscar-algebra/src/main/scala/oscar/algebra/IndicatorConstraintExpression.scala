@@ -14,6 +14,8 @@
   ******************************************************************************/
 package oscar.algebra
 
+import oscar.algebra.linear.LinearExpression
+
 /**
  * An indicator constraint is a linear constraint that is active or relaxed
  * based on the value of a combination of binary variables (the indicators).

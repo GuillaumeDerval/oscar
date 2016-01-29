@@ -14,22 +14,27 @@
  ******************************************************************************/
 package oscar.algebra
 
-abstract class BinaryOp extends Expression {
-  val a: Expression
-  val b: Expression
-  val symb: String
-  val op: (Double, Double) => Double
-  override def toString = "(" + a + symb + b + ")"
+import oscar.algebra.linear.Var
 
-  def eval(env: Var => Double) = {
-    op(a.eval(env), b.eval(env))
+/**
+ * Abstract class used to represent a binary operation on two [[Expression]]
+ */
+abstract class BinaryOp(
+  val left: Expression,
+  val right: Expression,
+  val symbol: String,
+  operation: (Double, Double) => Double) extends Expression {
 
+  override def uses[V <: Var](v: V) = left.uses(v) || right.uses(v)
+
+  override def eval(env: Var => Double) = operation(left.eval(env), right.eval(env))
+
+  override def value = (left.value, right.value) match {
+    case (Some(leftValue), Some(rightValue)) => Some(operation(leftValue, rightValue))
+    case _ => None
   }
 
-  def value = {
-    (a.value, b.value) match {
-      case (Some(va), Some(vb)) => Some(op(va, vb))
-      case _ => None
-    }
-  }
+  override def isZero = left.isZero && right.isZero
+
+  override def toString = s"$left $symbol $right"
 }

@@ -16,6 +16,7 @@
 package oscar.linprog
 
 import oscar.algebra._
+import oscar.algebra.linear.LinearExpression
 import oscar.linprog.interface.{MIPSolverInterface, MPSolverInterface}
 
 /**

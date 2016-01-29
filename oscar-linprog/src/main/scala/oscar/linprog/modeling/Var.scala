@@ -15,6 +15,7 @@
 
 package oscar.linprog.modeling
 
+import oscar.algebra.linear.Var
 import oscar.linprog.interface.{InfeasibilityAnalysisInterface, MIPSolverInterface, MPSolverInterface}
 
 import scala.language.implicitConversions
@@ -71,7 +72,7 @@ case object Binary extends MPVarType("binary") {
  *
  * @author acrucifix acr@n-side.com
  */
-class MPVar[+I <: MPSolverInterface] private (val initialVarType: MPVarType, val name: String, val initialLowerBound: Double, val initialUpperBound: Double)(implicit solver: MPSolver[I]) extends oscar.algebra.Var {
+class MPVar[+I <: MPSolverInterface] private (val initialVarType: MPVarType, val name: String, val initialLowerBound: Double, val initialUpperBound: Double)(implicit solver: MPSolver[I]) extends Var {
   initialVarType.createVar(this)
 
   /**

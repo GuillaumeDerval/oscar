@@ -14,6 +14,8 @@
  ******************************************************************************/
 package oscar.algebra
 
+import oscar.algebra.linear.LinearExpression
+
 /**
  * A linear constraint has the form (linearExpression REL 0) with REL in {<=, ==, >=}
  */

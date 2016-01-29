@@ -14,6 +14,8 @@
  ******************************************************************************/
 package oscar.algebra
 
+import oscar.algebra.linear.Var
+
 class Tan(expr: Expression) extends UnaryOp(expr: Expression, "tan", math.tan _) {
   def derive(v: Var): Expression = {
     expr.derive(v) / (cos(expr) * cos(expr))

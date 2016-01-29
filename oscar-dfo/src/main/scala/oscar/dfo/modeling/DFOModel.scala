@@ -14,6 +14,8 @@
  ******************************************************************************/
 package oscar.dfo.modeling
 
+import oscar.algebra.linear.Var
+
 import scala.collection._
 import oscar.dfo.singleobjective.algos._
 import oscar.dfo.utils._

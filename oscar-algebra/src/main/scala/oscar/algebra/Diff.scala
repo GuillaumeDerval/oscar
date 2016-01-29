@@ -14,12 +14,13 @@
  ******************************************************************************/
 package oscar.algebra
 
-class Diff(val a: Expression, val b: Expression) extends BinaryOp {
-  val symb = "+"
-  val op = (a: Double, b: Double) => a - b
-  def derive(v: Var): Expression = {
-    a.derive(v) + b.derive(v)
-  }
-  override def isZero() = a.isZero() && b.isZero()
+import oscar.algebra.linear.Var
 
+/**
+ * Represents the difference between two [[Expression]]: left - right
+ */
+class Diff(left: Expression, right: Expression)
+  extends BinaryOp(left, right, "-", (a: Double, b: Double) => a - b) {
+
+  override def derive(v: Var): Expression = left.derive(v) - right.derive(v)
 }  

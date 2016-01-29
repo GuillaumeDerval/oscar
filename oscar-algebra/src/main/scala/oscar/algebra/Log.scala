@@ -14,6 +14,8 @@
  ******************************************************************************/
 package oscar.algebra
 
+import oscar.algebra.linear.{Var, Const}
+
 class Log(expr: Expression) extends UnaryOp(expr: Expression, "log", math.log _) {
   def derive(v: Var): Expression = {
     expr.derive(v) / expr
