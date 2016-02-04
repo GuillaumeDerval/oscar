@@ -20,7 +20,6 @@ import java.nio.file.Path
 import oscar.algebra.{Const, LinearExpression}
 import oscar.linprog.enums._
 import oscar.linprog.interface._
-import oscar.linprog.modeling.LinearConstraint
 
 import scala.util.{Failure, Success, Try}
 

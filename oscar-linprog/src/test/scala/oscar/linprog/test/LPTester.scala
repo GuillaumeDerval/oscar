@@ -271,8 +271,8 @@ class LPTester extends OscarLinprogTester {
   testForAllSolvers(MPSolverLib.lpSolvers, "Remove unused variable before solve") { implicit solver =>
     val x = MPFloatVar("x", 0, 100)
     val y = MPFloatVar("y", 0, 100)
-    val z = MPFloatVar("z", 0, 100)
     val w = MPFloatVar("w", 0, 100)
+    val z = MPFloatVar("z", 0, 100)
 
     maximize(1 * x + 2 * y + 3 * z)
     add(x + y <:= 75, "cstr0")
@@ -293,8 +293,8 @@ class LPTester extends OscarLinprogTester {
   testForAllSolvers(MPSolverLib.lpSolvers, "Remove unused variable after solve") { implicit solver =>
     val x = MPFloatVar("x", 0, 100)
     val y = MPFloatVar("y", 0, 100)
-    val z = MPFloatVar("z", 0, 100)
     val w = MPFloatVar("w", 0, 100)
+    val z = MPFloatVar("z", 0, 100)
 
     maximize(1 * x + 2 * y + 3 * z)
     add(x + y <:= 75, "cstr0")
