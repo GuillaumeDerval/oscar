@@ -14,13 +14,52 @@
  ******************************************************************************/
 package oscar.algebra
 
-import oscar.algebra.linear.{Var, Const}
+import oscar.algebra.linear.{Const, Var}
 
-class Log(expr: Expression) extends UnaryOp(expr: Expression, "log", math.log _) {
-  def derive(v: Var): Expression = {
-    expr.derive(v) / expr
+/**
+ * Represents a logarithm base
+ */
+sealed class LogBase(val b: Double) {
+  require(b > 0.0, "The logarithm base should be a positive real.")
+  require(b != 1.0, "The logarithm base should not be 1.")
+}
+
+object LogBase {
+  def apply(b: Double): LogBase = new LogBase(b)
+  def unapply(logBase: LogBase): Option[Double] = Some(logBase.b)
+}
+
+/**
+ * The natural logarithm base: e
+ * "e" being Euler's constant, an irrational number approximately equal to 2.718281828459
+ */
+case object NaturalBase extends LogBase(2.718281828459)
+
+case object Base10 extends LogBase(10)
+
+/**
+ * Represents the logarithm in the given base: log_b(x)
+ */
+case class Log(operand: Expression, base: LogBase = NaturalBase) extends Expression with UnaryOp[Expression] {
+
+  val symbol = "log"
+
+  override protected def operation(operandValue: Double): Double = base match {
+    case NaturalBase => math.log(operandValue)
+    case Base10 => math.log10(operandValue)
+    case LogBase(b) => math.log(operandValue) / math.log(b)
   }
-  override def isZero() = expr match {
+
+  override def derive(v: Var): Expression = {
+    val dln = operand.derive(v) / operand
+
+    base match {
+      case NaturalBase => dln
+      case LogBase(b) => dln / math.log(b)
+    }
+  }
+
+  override def isZero = operand match {
     case Const(1) => true
     case _ => false
   }

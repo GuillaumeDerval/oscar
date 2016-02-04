@@ -35,7 +35,7 @@ package object modeling {
   def maximize[I <: MPSolverInterface](expr: LinearExpression)(implicit solver: MPSolver[I]) = solver.setObjective(expr, min = false)
 
   /**
-   * Adds the constraints described by the given [[LinearConstraintExpression]] to the model and returns the corresponding [[LinearConstraint]].
+   * Adds the constraints described by the given [[ConstraintExpression]] to the model and returns the corresponding [[LinearConstraint]].
    *
    * In case no name is given to the constraint, params name equals to the empty string,
    * a default name is created by appending to "cstr" the row number of the linear constraint in the matrix of the problem.
@@ -49,7 +49,7 @@ package object modeling {
   }
 
   /**
-   * Adds the given [[LinearConstraintExpression]] to the model with given names.
+   * Adds the given [[ConstraintExpression]] to the model with given names.
    */
   def subjectTo[I <: MPSolverInterface](cstrs: (String, LinearConstraintExpression)*)(implicit solver: MPSolver[I]): Seq[(String, LinearConstraint[I])] =
     cstrs.toSeq map { case (name, cstr) =>
@@ -57,7 +57,7 @@ package object modeling {
     }
 
   /**
-   * Adds the given [[LinearConstraintExpression]] to the model with default names.
+   * Adds the given [[ConstraintExpression]] to the model with default names.
    */
   def subjectTo[I <: MPSolverInterface](cstrs: LinearConstraintExpression*)(implicit solver: MPSolver[I]): IndexedSeq[LinearConstraint[I]] =
     cstrs.toIndexedSeq map { cstr =>

@@ -17,13 +17,32 @@ package oscar.algebra
 import oscar.algebra.linear.Var
 
 /**
- * Abstract class used to represent a unary operation on an [[Expression]]
+ * Represents unary operations on an [[Expression]]
  */
-abstract class UnaryOp(expr: Expression, name: String, f: Double => Double) extends Expression {
+trait UnaryOp[O <: Expression] { self: Expression =>
 
-  override def value = expr.value.map(v => f(v))
+  /**
+   * The operand of the unary operation
+   */
+  val operand: O
 
-  override def eval(env: Var => Double) = f(expr.eval(env))
+  /**
+   * The symbol representing the operation (i.e. 'cos' for the cosine)
+   */
+  val symbol: String
 
-  override def toString = name + "(" + expr + ")"
+  /**
+   * Returns the result of applying the unary operation on the value of the operand
+   */
+  protected def operation(operandValue: Double): Double
+
+  override def uses[V <: Var](v: V) = operand.uses(v)
+
+  override def value = operand.value.map(v => operation(v))
+
+  override def eval(env: Var => Double) = operation(operand.eval(env))
+
+  override def isZero = operand.isZero
+
+  override def toString = s"$symbol( $operand )" // TODO improve me !
 }

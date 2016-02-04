@@ -12,9 +12,9 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-package oscar.algebra
+package oscar.algebra.linear
 
-import oscar.algebra.linear.LinearExpression
+import oscar.algebra._
 
 /**
  * An indicator constraint is a linear constraint that is active or relaxed

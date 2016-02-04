@@ -21,6 +21,12 @@ import oscar.algebra.linear.Var
  */
 abstract class Expression {
 
+  def +(expr: Expression) = ExpressionSum(this, expr)
+  def -(expr: Expression) = ExpressionDiff(this, expr)
+  def *(expr: Expression) = ExpressionProd(this, expr)
+  def /(expr: Expression) = ExpressionFrac(this, expr)
+
+
   /**
    * Returns true if this [[Expression]] uses the given [[Var]]
    */
@@ -36,19 +42,18 @@ abstract class Expression {
    */
   def eval(env: Var => Double): Double
 
-  def +(expr: Expression): Expression = new Sum(this, expr)
-
-  def -(expr: Expression): Expression = new Diff(this, expr)
-
-  def *(expr: Expression): Expression = new Prod(this, expr)
-
-  def /(expr: Expression): Expression = new Frac(this, expr)
-
   /**
    * Derives this [[Expression]] with respect to the given [[Var]]
    */
   def derive(v: Var): Expression
 
+  /**
+   * Return true if this [[Expression]] evaluates to zero whatever the assignment
+   */
   def isZero: Boolean = false
 }
-  
+
+case class ExpressionSum(lhs: Expression, rhs: Expression) extends Expression with SumOp[Expression, Expression]
+case class ExpressionDiff(lhs: Expression, rhs: Expression) extends Expression with DiffOp[Expression, Expression]
+case class ExpressionProd(lhs: Expression, rhs: Expression) extends Expression with ProdOp[Expression, Expression]
+case class ExpressionFrac(lhs: Expression, rhs: Expression) extends Expression with FracOp[Expression, Expression]

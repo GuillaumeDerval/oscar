@@ -14,32 +14,34 @@
  ******************************************************************************/
 package oscar.algebra.linear
 
-import oscar.algebra.Expression
+import oscar.algebra._
 
-/**Abstract class for variables*/
-abstract class Var extends LinearExpression {
+/**
+ * Represents a named variable: v_i
+ */
+class Var(val name: String) extends LinearExpression {
 
-  def name: String
+  val constant = 0.0
+  val coefficients: Map[Var, Double] = Map(this -> 1.0)
 
-  val cte = 0.0
-  val coef = scala.collection.immutable.Map(this -> 1.0)
 
-  override def toString = name
+  override def *(c: Const): ConstVar = ConstVar(c, this)
 
-  override def derive(v: Var): Expression = {
-    if (v equals this) One
-    else Zero
-  }
 
-  def *(cons: Const): LinearExpression = new CstVar(cons, this)
+  override def derive(v: Var): Expression =
+    if (v equals this) one
+    else zero
 
-  override def equals(that: Any) = {
-    that match {
-      case other: Var =>
-        other.name equals this.name
-      case _ => false
-    }
+  override def equals(that: Any) = that match {
+    case other: Var => other.name equals this.name
+    case _ => false
   }
 
   override def hashCode: Int = name.hashCode
+
+  override def toString = name
+}
+
+object Var {
+  def apply(name: String) = new Var(name)
 }

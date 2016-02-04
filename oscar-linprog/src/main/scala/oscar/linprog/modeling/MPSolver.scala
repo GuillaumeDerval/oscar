@@ -16,6 +16,7 @@
 package oscar.linprog.modeling
 
 import java.nio.file.Path
+
 import oscar.algebra.linear.{Const, LinearExpression}
 import oscar.linprog.enums._
 import oscar.linprog.interface._
@@ -66,7 +67,7 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
 
     _objective = obj
 
-    val (varIds, coefs) = obj.coef.map { case(vari, coef) => (variableColumn(vari.name), coef)}.unzip
+    val (varIds, coefs) = obj.coefficients.map { case(vari, coef) => (variableColumn(vari.name), coef)}.unzip
     solverInterface.setObjective(min, coefs.toArray, varIds.toArray)
   }
 
@@ -111,7 +112,7 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
       val v = variable(varName)
       require(
         !objective.uses(v) &&
-        linearConstraints.values.forall(c => !c.expression.linExpr.uses(v)),
+        linearConstraints.values.forall(c => !c.expression.expression.uses(v)),
         s"Cannot remove variable $varName because it is either used in the objective or in a constraint. Please remove the objective or the constraint first."
       )
 
@@ -301,11 +302,11 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
    * Adds the given [[LinearConstraint]] to the model
    */
   def addLinearConstraint(linearConstraint: LinearConstraint[I]) = {
-    val (varIds, coefs) = linearConstraint.expression.linExpr.coef.map {
+    val (varIds, coefs) = linearConstraint.expression.expression.coefficients.map {
       case (vari, coef) => (variableColumn(vari.name), coef)
     }.unzip
 
-    val rowId = solverInterface.addConstraint(linearConstraint.name, coefs.toArray, varIds.toArray, linearConstraint.expression.sense.symbol, -linearConstraint.expression.linExpr.cte)
+    val rowId = solverInterface.addConstraint(linearConstraint.name, coefs.toArray, varIds.toArray, linearConstraint.expression.sense.symbol, -linearConstraint.expression.expression.constant)
 
     register(linearConstraint, rowId)
   }

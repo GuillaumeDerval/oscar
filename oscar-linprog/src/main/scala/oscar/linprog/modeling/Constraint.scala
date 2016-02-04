@@ -15,6 +15,8 @@
 
 package oscar.linprog.modeling
 
+import oscar.algebra.LinearConstraintExpression
+import oscar.algebra.linear.IndicatorConstraintExpression
 import oscar.linprog.interface.{InfeasibilityAnalysisInterface, MPSolverInterface}
 
 /**
@@ -35,7 +37,7 @@ abstract class AbstractMPConstraint[+I <: MPSolverInterface](val name: String)(i
 
 class LinearConstraint[+I <: MPSolverInterface] protected (
   name: String,
-  val expression: oscar.algebra.LinearConstraintExpression
+  val expression: LinearConstraintExpression
   )(implicit solver: MPSolver[I]) extends AbstractMPConstraint[I](name) {
 
   protected def addToSolver(): Unit = solver.addLinearConstraint(this)
@@ -49,14 +51,14 @@ class LinearConstraint[+I <: MPSolverInterface] protected (
 }
 
 object LinearConstraint {
-  def apply[I <: MPSolverInterface](name: String, expression: oscar.algebra.LinearConstraintExpression)(implicit solver: MPSolver[I]) =
+  def apply[I <: MPSolverInterface](name: String, expression: LinearConstraintExpression)(implicit solver: MPSolver[I]) =
     new LinearConstraint[I](name, expression)
 }
 
 
 class IndicatorConstraint[+I <: MPSolverInterface] private (
   name: String,
-  override val expression : oscar.algebra.IndicatorConstraintExpression
+  override val expression : IndicatorConstraintExpression
   )(implicit solver: MPSolver[I]) extends LinearConstraint[I](name, expression) {
 
   override protected def addToSolver(): Unit = solver.addIndicatorConstraint(this)
@@ -68,6 +70,6 @@ class IndicatorConstraint[+I <: MPSolverInterface] private (
 }
 
 object IndicatorConstraint {
-  def apply[I <: MPSolverInterface](name: String, expression : oscar.algebra.IndicatorConstraintExpression)(implicit solver: MPSolver[I]) =
+  def apply[I <: MPSolverInterface](name: String, expression : IndicatorConstraintExpression)(implicit solver: MPSolver[I]) =
     new IndicatorConstraint[I](name, expression)
 }

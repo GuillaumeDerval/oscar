@@ -16,32 +16,30 @@ package oscar.algebra.linear
 
 import oscar.algebra._
 
-class Const(val d: Double) extends LinearExpression {
+/**
+ * Represents a constant with the given value d
+ */
+case class Const(constant: Double) extends LinearExpression {
 
-  val cte = d
-  val coef = scala.collection.immutable.Map[Var, Double]()
+  val coefficients: Map[Var, Double] = Map()
 
-  def *(expr: LinearExpression): LinearExpression = new LinearExpressionProd(this, expr)
 
-  def *(c2: Const) = new Const(d * c2.d)
+  override def *(c2: Const) = Const(constant * c2.constant)
+  def +(c2: Const) = Const(constant + c2.constant)
+  def -(c2: Const) = Const(constant - c2.constant)
 
-  def +(c2: Const) = new Const(d + c2.d)
+  def *(x: Var) = ConstVar(this, x)
 
-  def -(c2: Const) = new Const(d - c2.d)
+  def *(expr: LinearExpression) = LinearExpressionProd(this, expr)
 
-  def *(x: Var) = new CstVar(this, x)
 
-  override def toString = d.toString
+  override def uses[V <: Var](v: V) = false
 
-  override def derive(v: Var): Expression = Zero
+  override def eval(env: Var => Double): Double = constant
 
+  override def value: Option[Double] = Some(constant)
+
+  override def derive(v: Var): Expression = Const(0.0)
+
+  override def toString = constant.toString
 }
-
-object Const {
-  def apply(d: Double): Const = d match {
-    case 0.0 => Zero
-    case 1.0 => One
-    case _ => new Const(d)
-  }
-  def unapply(c: Const): Option[Double] = Some(c.d)
-}  

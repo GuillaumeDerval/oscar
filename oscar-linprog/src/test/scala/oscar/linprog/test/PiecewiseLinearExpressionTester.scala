@@ -1,8 +1,10 @@
 package oscar.linprog.test
 
+import java.nio.file.Paths
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import oscar.linprog.enums.{SolutionFound, Optimal}
+import oscar.linprog.enums.{LP, Optimal, SolutionFound}
 import oscar.linprog.interface.MPSolverLib
 import oscar.linprog.modeling._
 
@@ -10,7 +12,7 @@ import scala.util.Success
 
 @RunWith(classOf[JUnitRunner])
 class PiecewiseLinearExpressionTester extends OscarLinprogTester {
-
+/*
   testForAllSolvers(MPSolverLib.mipSolvers, "Minimize |x|") { implicit solver =>
     val x = MPFloatVar("x", -100, 100)
 
@@ -36,11 +38,14 @@ class PiecewiseLinearExpressionTester extends OscarLinprogTester {
     solver.objectiveValue.toOption should equalWithTolerance(Some(0.0))
     solver.solutionQuality should equal(Success(Optimal))
   }
-
+*/
   testForAllSolvers(MPSolverLib.mipSolvers, "Maximize |x| in [-100; 50]") { implicit solver =>
     val x = MPFloatVar("x", -100, 50)
 
-    maximize(abs(x, -100, 50))
+    maximize(abs(x, -100, 100))
+
+    val path = Paths.get("/Users/acr/Workspaces/oscar/test.lp")
+    solver.exportModel(path, LP)
 
     solver.solve should equal(SolutionFound)
 
@@ -49,11 +54,11 @@ class PiecewiseLinearExpressionTester extends OscarLinprogTester {
     solver.objectiveValue.toOption should equalWithTolerance(Some(100.0))
     solver.solutionQuality should equal(Success(Optimal))
   }
-
+/*
   testForAllSolvers(MPSolverLib.mipSolvers, "Maximize |x| in [-50; 100]") { implicit solver =>
     val x = MPFloatVar("x", -50, 100)
 
-    maximize(abs(x, -50, 100))
+    maximize(abs(x, -100, 100))
 
     solver.solve should equal(SolutionFound)
 
@@ -167,4 +172,5 @@ class PiecewiseLinearExpressionTester extends OscarLinprogTester {
     solver.objectiveValue.toOption should equalWithTolerance(Some(102.0))
     solver.solutionQuality should equal(Success(Optimal))
   }
+  */
 }

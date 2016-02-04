@@ -29,10 +29,9 @@ import oscar.util.Interval
 /**
  * @author Pierre Schaus pschaus@gmail.com
  */
-class DFOFloatVar(val solver: DFOSolver, val varName: String, val lb: Double = 0.0, val ub: Double = Double.PositiveInfinity) extends Var {
+class DFOFloatVar(val solver: DFOSolver, name: String, val lb: Double = 0.0, val ub: Double = Double.PositiveInfinity) extends Var(name) {
     val index = solver.register(this)
     override def value = solver.getValue(index)
-    def name = varName
     def randVal = rand.nextDouble() * (ub - lb) + lb
 }
 

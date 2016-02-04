@@ -72,7 +72,7 @@ case object Binary extends MPVarType("binary") {
  *
  * @author acrucifix acr@n-side.com
  */
-class MPVar[+I <: MPSolverInterface] private (val initialVarType: MPVarType, val name: String, val initialLowerBound: Double, val initialUpperBound: Double)(implicit solver: MPSolver[I]) extends Var {
+class MPVar[+I <: MPSolverInterface] private (val initialVarType: MPVarType, name: String, val initialLowerBound: Double, val initialUpperBound: Double)(implicit solver: MPSolver[I]) extends Var(name) {
   initialVarType.createVar(this)
 
   /**
