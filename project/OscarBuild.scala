@@ -206,7 +206,7 @@ object OscarBuild extends Build {
           resolvers ++= Seq(xypron, leadoperations, cogcomp),
           libraryDependencies ++= testDeps :+ glpk :+ gurobi :+ lpsolve :+ scalaXml
         ),
-    dependencies = Seq(oscarAlgebra, oscarVisual)
+    dependencies = Seq(oscarAlgebra)
   )
 
   lazy val oscarUtil = Project(
