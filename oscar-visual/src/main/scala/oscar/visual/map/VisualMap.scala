@@ -145,6 +145,7 @@ object VisualMap {
     f.pack();
 
     try {
+      /*
       val countries = List("Albania", "Andorra", "Austria", "Belgium", "Bulgaria", "Croatia", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Ireland", "Latvia", "Luxembourg", "Portugal", "Spain", "United Kingdom")
       for (c <- countries) {
 
@@ -162,9 +163,11 @@ object VisualMap {
       val ny = Geocoder.getLocation("New York")
       val be = Geocoder.getLocation("Brussels")
 
-      //MapLine l = map.createLine(ny.lat,ny.lon,be.lat,be.lon);
+      */
+      val l = map.createLine((50.294603, 4.800819), (50.844972, 4.357246))
+      l.color = Color.blue
 
-      val pa = map.createPath((50.294603, 4.800819), (50.844972, 4.357246))
+      //val pa = map.createPath((50.294603, 4.800819), (50.844972, 4.357246))
 
     } catch {
       case e1: IOException => e1.printStackTrace()
