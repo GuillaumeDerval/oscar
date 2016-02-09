@@ -26,6 +26,7 @@ object TableAlgo extends Enumeration {
   type TableAlgo = Value
   val CompactTable = Value("CompactTable (Perron)")
   val CompactTableGAC6 = Value("CompactTable GAC6 (Régin,Perrez,Schaus)")
+  val CompactTableRefactored = Value("CompactTable Refactored")
   val GAC4 = Value("GAC4 (Regin)")
   val GAC4R = Value("GAC4R (Perez and Regin")
   val STR2 = Value("STR2 (Lecoutre)")

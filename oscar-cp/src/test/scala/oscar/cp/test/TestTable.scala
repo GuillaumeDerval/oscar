@@ -28,14 +28,15 @@ import org.scalatest.matchers.ShouldMatchers
  */
 
 //@RunWith(classOf[JUnitRunner])
-class TestTable extends FunSuite with ShouldMatchers  {
+class TestTable extends FunSuite with ShouldMatchers {
 
 
   val rand = new scala.util.Random(16)
-  
+
   def randomTuples(dim: Int, n: Int, minValue: Int, maxValue: Int) = {
-     Array.fill(n,dim)(rand.nextInt(maxValue-minValue)+minValue)
+    Array.fill(n, dim)(rand.nextInt(maxValue - minValue) + minValue)
   }
+
 
   test("Table Test") {
     for (i <- 0 until 1000) {
@@ -67,49 +68,18 @@ class TestTable extends FunSuite with ShouldMatchers  {
           cp.add(cons)
 
         }
-        assert(stat.nSols == statRef.nSols)
-        assert(stat.nFails == statRef.nFails)
-      }
-
-    }
-  }
-
-/*
-  test("Table Test Debug") {
-    for (i <- 0 until 1000) {
-
-      val cp = CPSolver()
-      var x = Array.fill(3)(CPIntVar(3 to 8)(cp))
-
-      val tuples1 = randomTuples(3, 10, 3, 8)
-
-
-      cp.add(allDifferent(x))
-
-      cp.search {
-        binaryFirstFail(x, _.max)
-      }
-
-
-
-      val statRef = cp.startSubjectTo() {
-
-        val cons = Seq(new TableDecomp(Array(x(0), x(1), x(2)),tuples1))
-        cp.add(cons)
-      }
-      val algo =  TableAlgo.CompactTableGAC6
-        val stat = cp.startSubjectTo() {
-          val cons = Seq(table(Array(x(0), x(1), x(2)), tuples1, algo))
-          cp.add(cons)
-
+        if (stat.nSols != statRef.nSols) {
+          println(algo+ " "+ stat.nSols+" "+statRef.nSols)
+          tuples1.foreach(a => println(a.mkString(",")))
+          println("")
         }
-        println("nSols:"+stat.nSols+" nFails"+stat.nFails)
         assert(stat.nSols == statRef.nSols)
         assert(stat.nFails == statRef.nFails)
-
+      }
 
     }
   }
-*/
+
 
 }
+
