@@ -14,6 +14,8 @@
  ******************************************************************************/
 package oscar.algo.reversible.test
 
+import java.util
+
 import org.scalatest.FunSuite
 import oscar.algo.reversible._
 
@@ -137,6 +139,8 @@ class ReversibleSparseBitSetTest extends FunSuite {
 
 
   test("test4") {
+
+
 
     val r = new ReversibleContext()
     val b = new ReversibleSparseBitSet(r,65,Set(1,2,63,64))

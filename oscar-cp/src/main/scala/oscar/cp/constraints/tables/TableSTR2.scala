@@ -35,6 +35,9 @@ import scala.util.control._
  * @author Pierre Schaus pschaus@gmail.com
  * @author Renaud Hartert ren.hartert@gmail.com
  * @author Guillaume Perez memocop@gmail.com
+ *
+ * Implem of: STR2: optimized simple tabular reduction for table constraints, Christophe Lecoutre
+ *
  */
 final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(variables(0).store, "TableSTR2") {
 
@@ -51,8 +54,11 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
 
   private[this] val isBoundAndChecked = Array.fill(arity)(new ReversibleBoolean(s, false))
 
-  // Stacks used to represent SSup et SVal
+  // Stacks used to represent sSup et SVal
+  // sSup is the uninstanciated variables whose domain contains at leat one value for which a support has not yet been found
+  // sVAL is the uninstanciated variables whose domain has been reduced since the previous invocation of STR2
   private[this] val sSup = new Array[Int](arity)
+
   private[this] val sVal = new Array[Int](arity)
   private[this] var sSupSize = 0
   private[this] var sValSize = 0
@@ -155,14 +161,17 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
     i = nActiveTuples
     while (i > 0 && sSupSize != 0) {
       i -= 1
-      val tau = table(activeTuples(i))
+      val tau: Array[Int] = table(activeTuples(i)) // the tuple
       val isInvalid = isInvalidTuple(tau)
       if (isInvalid) deactivateTuple(i)
       else {
+        // tuple i is thus valid, we need to check every variable
+        // for which at least one value has not a support yet (the ones in sSup)
         var j = sSupSize
         while (j > 0) {
           j -= 1
           val varId = sSup(j)
+          // remove value tau(varId) from the value to be removed
           val newSize = removeFromSet(varId, tau(varId))
           if (newSize == 0) {
             removeFromSSup(j)
@@ -170,6 +179,7 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
         }
       }
     }
+    // not in Christophe paper, Guillaume Perez improvement
     while (i > 0) {
       i -= 1
       val tau = table(activeTuples(i))
@@ -206,8 +216,12 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
       val variable = variables(varId)
       val varSize = variable.size
 
-      if (nValues == varSize) return Failure
+      if (nValues == varSize) {
+        // all the values should be removed, fail immediately
+        return Failure
+      }
       else {
+        // TODO: improvement, if all but one must be removed, do a assign instead of one by one removal
         if (nValues > 0) {
           var i = nValues
           while (i > 0) {
