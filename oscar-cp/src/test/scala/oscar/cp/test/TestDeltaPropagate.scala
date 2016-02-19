@@ -475,6 +475,12 @@ class TestDeltaPropagate extends TestSuite {
       priorityL2 = CPStore.MaxPriorityL2 - 5
       override def setup(l: CPPropagStrength): CPOutcome = {
         X.callOnChanges(delta => {
+          if (nPropag == 0) {
+            assert(delta.size == 1)
+          }
+          if (nPropag == 1) {
+            assert(delta.size == 0)
+          }
           nPropag += 1
           X.updateMin(-1)
           CPOutcome.Suspend
@@ -490,7 +496,7 @@ class TestDeltaPropagate extends TestSuite {
     cp.add(new MyCons(x))
 
     cp.add(x > -4)
-    nPropag should be(0)
+    nPropag should be(2)
     assert(x.min == 0)
 
     //println("x dom:"+x.toSet)
