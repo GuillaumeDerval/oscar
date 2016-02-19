@@ -16,6 +16,7 @@ package oscar.cp.test
 
 import oscar.cp.constraints._
 import oscar.cp._
+import oscar.cp.core.CPOutcome._
 import collection.immutable.SortedSet
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.CPOutcome
@@ -433,7 +434,68 @@ class TestDeltaPropagate extends TestSuite {
     
     //println("x dom:"+x.toSet)
     nPropag should be(1)
-  }   
-  
+  }
+
+
+  test("test delta 10 filterNotIdempotent not idempotent") {
+    var nPropag = 0
+
+    class MyCons(val X: CPIntVar) extends Constraint(X.store, "TestDelta") {
+      priorityL2 = CPStore.MaxPriorityL2 - 5
+      override def setup(l: CPPropagStrength): CPOutcome = {
+        X.filterWhenDomainChangesWithDelta(idempotent = false) { delta =>
+          nPropag += 1
+
+          X.updateMin(-1)
+
+          CPOutcome.Suspend
+        }
+        CPOutcome.Suspend
+      }
+    }
+
+    val cp = CPSolver()
+    val x = CPIntVar(Array(-4,-2,0,2))(cp) // -4,-2,0,2  //-(CPIntVar(Array(1, 3, 5, 7))(cp) -2 -3 + 2) // -4,-2,0,2
+    cp.add(new MyCons(x))
+
+
+    cp.add(x > -4)
+    println(x)
+    assert(x.min == 0)
+
+    //println("x dom:"+x.toSet)
+    nPropag should be(2)
+  }
+
+  test("test delta 11 filterNotIdempotent not idempotent") {
+    var nPropag = 0
+
+
+    class MyCons(val X: CPIntVar) extends Constraint(X.store, "TestDelta") {
+      priorityL2 = CPStore.MaxPriorityL2 - 5
+      override def setup(l: CPPropagStrength): CPOutcome = {
+        X.callOnChanges(delta => {
+          nPropag += 1
+          X.updateMin(-1)
+          CPOutcome.Suspend
+        },idempotent=false);
+
+        CPOutcome.Suspend
+
+      }
+    }
+
+    val cp = CPSolver()
+    val x = CPIntVar(Array(-4,-2,0,2))(cp) // -4,-2,0,2  //-(CPIntVar(Array(1, 3, 5, 7))(cp) -2 -3 + 2) // -4,-2,0,2
+    cp.add(new MyCons(x))
+
+    cp.add(x > -4)
+    nPropag should be(0)
+    assert(x.min == 0)
+
+    //println("x dom:"+x.toSet)
+    nPropag should be(2)
+  }
+
 
 }

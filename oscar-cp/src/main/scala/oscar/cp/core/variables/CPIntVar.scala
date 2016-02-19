@@ -243,16 +243,17 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
   
   def awakeOnChanges(watcher: Watcher): Unit
 
-  def callOnChanges(propagate: DeltaIntVar => CPOutcome): PropagatorIntVar = {
+
+  def callOnChanges(propagate: DeltaIntVar => CPOutcome,idempotent: Boolean = true): PropagatorIntVar = {
     val propagator = new PropagatorIntVar(this, 0, propagate)
-    propagator.idempotent = true
+    propagator.idempotent = idempotent
     callPropagateWhenDomainChanges(propagator)
     propagator
   }
   
-  def callOnChanges(id: Int, propagate: DeltaIntVar => CPOutcome): PropagatorIntVar = {
+  def callOnChangesIdx(id: Int, propagate: DeltaIntVar => CPOutcome, idempotent: Boolean = true): PropagatorIntVar = {
     val propagator = new PropagatorIntVar(this, id, propagate)
-    propagator.idempotent = true
+    propagator.idempotent = idempotent
     propagator.priority = CPStore.MaxPriorityL2
     callPropagateWhenDomainChanges(propagator)
     propagator

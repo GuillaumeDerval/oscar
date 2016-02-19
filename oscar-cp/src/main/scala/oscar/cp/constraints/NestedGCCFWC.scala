@@ -431,7 +431,7 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
       }
 
       // Register before the first check loop so that we receive information on what we changed there
-      x.callOnChanges(i, delta => whenDomainChanges(delta, x))
+      x.callOnChangesIdx(i, delta => whenDomainChanges(delta, x))
       i += 1
     }
   }
