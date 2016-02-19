@@ -31,6 +31,10 @@ import scala.collection.mutable.ArrayBuffer
  * @author Pierre Schaus pschaus@gmail.com
  * @author Jordan Demeulenaere j.demeulenaere1@gmail.com
  */
+
+object cpt {
+  var c = 0
+}
 final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableCT") {
 
   /* Setting idempotency & lower priority for propagate() */
@@ -50,8 +54,10 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
 
   private[this] val validTuples: ReversibleSparseBitSet = new ReversibleSparseBitSet(s,table.size,0 until table.size)
   private[this] val variableValueSupports = Array.tabulate(arity)(i => new Array[validTuples.BitSet](spans(i)))
-  private[this] var needPropagate = false
   private[this] val deltas: Array[DeltaIntVar] = new Array[DeltaIntVar](arity)
+
+  private[this] val unBoundVars = Array.tabulate(arity)(i => i)
+  private[this] val unBoundVarsSize = new ReversibleInt(s,arity)
 
 
   override def setup(l: CPPropagStrength): CPOutcome = {
@@ -141,12 +147,9 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
       }
     }
 
-    /* If validTuples has changed, we need to perform a consistency check by propagate() */
-    if (changed) {
-      /* Failure if there are no more valid tuples */
-      if (validTuples.isEmpty) return Failure
-      needPropagate = true
-    }
+
+    /* Failure if there are no more valid tuples */
+    if (validTuples.isEmpty) return Failure
 
     Suspend
   }
@@ -157,28 +160,35 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
    * @return the outcome i.e. Failure or Success.
    */
   override def propagate(): CPOutcome = {
+    /*
+    cpt.c += 1
+    if (cpt.c % 1000 == 0) {
+      println("ct:"+cpt.c)
+    }*/
 
-    needPropagate = false
-    var i = 0
     var nChanged = 0
     var changedVarIdx = 0
 
-    while (i < arity) {
-      if (deltas(i).size > 0) {
+    var j = unBoundVarsSize.value
+    while (j > 0) {
+      j -= 1
+      val varIndex = unBoundVars(j)
+      if (deltas(varIndex).size > 0) {
         nChanged += 1
-        changedVarIdx = i
-        if (updateDelta(i,deltas(i)) == Failure) {
+        changedVarIdx = varIndex
+        if (updateDelta(varIndex,deltas(varIndex)) == Failure) {
           return Failure
         }
       }
-      i += 1
     }
-    // No need for the check if validTuples has not changed
-    if (!needPropagate) return Suspend
 
-    var varIndex = 0
-    while (varIndex < arity) {
-      // no need to check a variable if it was the only one modified
+    // since we are AC we know some valid tuples have disappeared
+
+    j = unBoundVarsSize.value
+    while (j > 0) {
+      j -= 1
+      val varIndex = unBoundVars(j)
+      // No need to check a variable if it was the only one modified
       if (nChanged > 1 || changedVarIdx != varIndex) {
         domainArraySize = X(varIndex).fillArray(domainArray)
         var i = 0
@@ -192,9 +202,18 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
           }
           i += 1
         }
+
       }
-      varIndex += 1
+      if (X(varIndex).isBound) {
+        unBoundVarsSize.decr()
+        unBoundVars(j) = unBoundVars(unBoundVarsSize.value)
+        unBoundVars(unBoundVarsSize.value) = varIndex
+      }
     }
+
+
+    // If the variable is bound, we never need to consider it any more (put them in a sparse-set)
+
     Suspend
   }
 

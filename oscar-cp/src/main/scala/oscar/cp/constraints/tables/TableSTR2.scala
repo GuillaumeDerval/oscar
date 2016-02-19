@@ -39,6 +39,11 @@ import scala.util.control._
  * Implem of: STR2: optimized simple tabular reduction for table constraints, Christophe Lecoutre
  *
  */
+
+
+object cpt {
+  var c = 0
+}
 final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(variables(0).store, "TableSTR2") {
 
   idempotent = true
@@ -52,10 +57,9 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
   private[this] val nActiveTuplesRev = new ReversibleInt(s, nTuples)
   private[this] var nActiveTuples = 0
 
-  private[this] val isBoundAndChecked = Array.fill(arity)(new ReversibleBoolean(s, false))
 
   // Stacks used to represent sSup et SVal
-  // sSup is the uninstanciated variables whose domain contains at leat one value for which a support has not yet been found
+  // sSup is the uninstanciated variables whose domain contains at least one value for which a support has not yet been found
   // sVAL is the uninstanciated variables whose domain has been reduced since the previous invocation of STR2
   private[this] val sSup = new Array[Int](arity)
 
@@ -66,8 +70,16 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
   // Sparse sets for values to remove
   private[this] val toRemoveValues = Array.tabulate(arity)(i => new Array[Int](variables(i).size))
   private[this] val toRemovePositions = Array.tabulate(arity)(i => new Array[Int](variables(i).max - variables(i).min + 1))
+
   private[this] val offsets = Array.tabulate(arity)(i => variables(i).min)
   private[this] val sizes = new Array[Int](arity)
+
+  private[this] val gac = Array.tabulate(arity)(i => new Array[Int](variables(i).max - variables(i).min + 1))
+  private[this] var timeStamp = 0
+
+  private[this] val unBoundVars = Array.tabulate(arity)(i => i)
+  private[this] val unBoundVarsSize = new ReversibleInt(s,arity)
+
 
   /////////
   // POUR V2
@@ -76,6 +88,7 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
 
   // Last size of the domain
   private[this] val lastSize = Array.fill(arity)(new ReversibleInt(s, -1))
+  //private[this] val lastSize = Array.fill(arity)(-1)
 
   override def setup(l: CPPropagStrength): CPOutcome = {
     if (propagate() == Failure) Failure
@@ -89,76 +102,81 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
     }
   }
 
-  override def propagate(): CPOutcome = {
-
+  def initStructure(): Unit = {
     // Reset SSup and SVal
     sSupSize = 0
     sValSize = 0
 
     // Cache
     nActiveTuples = nActiveTuplesRev.value
-
     var i = arity
     while (i > 0) {
       i -= 1
-      if (!isBoundAndChecked(i).value) {
         updateSet(i) // Copy the domain of the variable
         sSup(sSupSize) = i
         sSupSize += 1 // push
         val varSize = variables(i).size
         val inSVal = lastSize(i).value != varSize // changed since last propagate
-        lastSize(i).value = varSize
+        lastSize(i).setValue(varSize)
         if (inSVal) {
           sVal(sValSize) = i
           sValSize += 1 // push
         }
+    }
+  }
+
+
+  override def propagate(): CPOutcome = {
+
+    //println(arity)
+
+    // side effect of increasing the timestamp is to invalidate all the gac
+    /*
+    cpt.c += 1
+    if (cpt.c % 3000 == 0) {
+      println(cpt.c)
+    }*/
+
+    timeStamp += 1
+
+
+    initStructure()
+
+    ////////
+    // V0
+    ///////
+    var i = nActiveTuples
+    while (i > 0) {
+      i -= 1
+      val tau = table(activeTuples(i))
+      val isInvalid = isInvalidTuple(tau)
+      if (isInvalid) deactivateTuple(i)
+      else {
+        // tuple i is thus valid, we need to check every variable
+        // for which at least one value has not a support yet (the ones in sSup)
+        var j = sSupSize
+        while (j > 0) {
+          j -= 1
+          val varId = sSup(j)
+          // remove value tau(varId) from the value to be removed
+          if (gac(varId)(tau(varId)-offsets(varId)) != timeStamp) {
+            gac(varId)(tau(varId)-offsets(varId)) = timeStamp
+            // warning: we should not remove it if it was already removed
+            val newSize = removeFromSet(varId, tau(varId))
+            //val newSize1 = removeFromSet(varId, tau(varId))
+            if (newSize == 0) removeFromSSup(j)
+          }
+
+        }
       }
     }
 
-    //////
-    // V2
-    /////
-    //    var irs = 0
-    //    i = 0
-    //    while (i < nActiveTuples && sSupSize != 0) {
-    //      val tau = table(activeTuples(i))
-    //      val isInvalid = isInvalidTuple(tau)
-    //      if (isInvalid) {
-    //        deactivateTuple(i)
-    //        i -= 1
-    //      }
-    //      else {
-    //        var j = sSupSize
-    //        valModified = false
-    //        while (j > 0) {
-    //          j -= 1
-    //          val varId = sSup(j)
-    //          val newSize = removeFromSet(varId, tau(varId))
-    //          if (newSize == 0) {
-    //            removeFromSSup(j)
-    //          }
-    //        }
-    //        if(valModified){
-    //          swapTuple(irs,i)
-    //          irs += 1
-    //        }
-    //      }
-    //      i += 1
-    //    }
-    //    while (i < nActiveTuples) {
-    //      val tau = table(activeTuples(i))
-    //      val isInvalid = isInvalidTuple(tau)
-    //      if (isInvalid) {
-    //        deactivateTuple(i)
-    //        i -= 1
-    //      }
-    //      i += 1
-    //    }
 
     ///////
     // V1
     ///////
-    i = nActiveTuples
+    /*
+    var i = nActiveTuples
     while (i > 0 && sSupSize != 0) {
       i -= 1
       val tau: Array[Int] = table(activeTuples(i)) // the tuple
@@ -180,33 +198,14 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
       }
     }
     // not in Christophe paper, Guillaume Perez improvement
+
     while (i > 0) {
       i -= 1
       val tau = table(activeTuples(i))
       if (isInvalidTuple(tau)) deactivateTuple(i)
-    }
+    }*/
 
-    ////////
-    // V0
-    ///////
-    //    i = nActiveTuples
-    //    while (i > 0) {
-    //      i -= 1
-    //      val tau = table(activeTuples(i))
-    //      val isInvalid = isInvalidTuple(tau)
-    //      if (isInvalid) deactivateTuple(i)
-    //      else {
-    //        var j = sSupSize
-    //        while (j > 0) {
-    //          j -= 1
-    //          val varId = sSup(j)
-    //          val newSize = removeFromSet(varId, tau(varId))
-    //          if (newSize == 0) removeFromSSup(j)
-    //        }
-    //      }
-    //    }
-
-
+    // Do the actual filtering of the domains
     i = sSupSize
     while (i > 0) {
       i -= 1
@@ -215,33 +214,42 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
       val nValues = sizes(varId)
       val variable = variables(varId)
       val varSize = variable.size
-
-      if (nValues == varSize) {
-        // all the values should be removed, fail immediately
-        return Failure
-      }
-      else {
-        // TODO: improvement, if all but one must be removed, do a assign instead of one by one removal
-        if (nValues > 0) {
+      if (nValues > 0) {
+        if (nValues == varSize) {
+          // all the values should be removed, fail immediately
+          return Failure
+        }
+        else if (nValues == varSize-1) {
+          // If all but one must be removed, do a, assign instead of one by one removal.
+          // To retrieve the only value to keep => the one at the last position of sparse-set
+          variable.assign(values(varSize-1))
+          //lastSize(varId).setValue(varSize)
+          lastSize(varId).setValue(1)
+        }
+        else {
           var i = nValues
           while (i > 0) {
             i -= 1
             val value = values(i)
             variable.removeValue(value)
           }
+          //lastSize(varId).setValue(varSize)
+          lastSize(varId).setValue(varSize-nValues)
         }
-        if (variable.isBound) isBoundAndChecked(varId).setTrue()
-        lastSize(varId).setValue(varSize)
       }
+
+
+
     }
 
     // Trail only if no Failure
     nActiveTuplesRev.value = nActiveTuples
 
-    Suspend
+    return Suspend
   }
 
-  @inline private def updateSet(varId: Int): Unit = {
+
+  def updateSet(varId: Int): Unit = {
     val variable = variables(varId)
     // Copy the values
     val size = variable.fillArray(toRemoveValues(varId))
@@ -258,50 +266,49 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
     }
   }
 
-  @inline private def removeFromSet(varId: Int, val1: Int): Int = {
+  def removeFromSet(varId: Int, val1: Int): Int = {
     val positions = toRemovePositions(varId)
     val offset = offsets(varId)
     val pos1 = positions(val1 - offset)
     val size = sizes(varId)
-    if (pos1 >= size) size
-    else {
-      val values = toRemoveValues(varId)
-      val pos2 = size - 1
-      val val2 = values(pos2)
-      values(pos1) = val2
-      values(pos2) = val1
-      positions(val1 - offset) = pos2
-      positions(val2 - offset) = pos1
-      sizes(varId) = pos2
-      valModified = true
-      pos2
-    }
+
+    val values = toRemoveValues(varId)
+    val pos2 = size - 1
+    val val2 = values(pos2)
+    values(pos1) = val2
+    values(pos2) = val1
+    positions(val1 - offset) = pos2
+    positions(val2 - offset) = pos1
+    sizes(varId) = pos2
+    valModified = true
+    pos2
   }
 
-  @inline private def isInvalidTuple(tuple: Array[Int]): Boolean = {
+  def isInvalidTuple(tuple: Array[Int]): Boolean = {
     var i = sValSize
     while (i > 0) {
       i -= 1
       val varId = sVal(i)
+      //val k = !variables(varId).hasValue(tuple(varId))
       if (!variables(varId).hasValue(tuple(varId))) return true
     }
     false
   }
 
-  @inline private def removeFromSSup(id: Int): Unit = {
+  def removeFromSSup(id: Int): Unit = {
     val tmp = sSup(id)
     sSupSize -= 1
     sSup(id) = sSup(sSupSize)
     sSup(sSupSize) = tmp
   }
 
-  @inline private def swapTuple(id1: Int,id2: Int): Unit = {
+  def swapTuple(id1: Int,id2: Int): Unit = {
     val tmpPosition = activeTuples(id1)
     activeTuples(id1) = activeTuples(id2)
     activeTuples(id2) = tmpPosition
   }
 
-  @inline private def deactivateTuple(id: Int): Unit = {
+ def deactivateTuple(id: Int): Unit = {
     nActiveTuples -= 1
     val tmpPosition = activeTuples(id)
     activeTuples(id) = activeTuples(nActiveTuples)

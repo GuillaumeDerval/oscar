@@ -222,6 +222,7 @@ class ReversibleSparseBitSet(context: ReversibleContext, val n: Int, val initial
    * @return true if set has a non empty intersection with the bit-set
    */
   def intersect(set: BitSet): Boolean = {
+
     val support = set.lastSupport
 
     if ((words(support) & set.words(support)) != 0L) {
