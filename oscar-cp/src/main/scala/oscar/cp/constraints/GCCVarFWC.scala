@@ -108,8 +108,23 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
       })
     }
 
-    // INITIAL CHECK LOOP
+    // Register for changes in the bounding variables (also important in case there are common elements between `X` and
+    //  `boundingVar`)
     var vi = nValues
+    while (vi > 0) {
+      vi -= 1
+      // Do array indexing in advance
+      val bound = boundingVar(vi)
+      // Since using a variable in the closure is probably not a good idea
+      val vi_fixed = vi
+      bound.filterWhenBoundsChange()({
+        if (valueOkRev(vi_fixed).value) Success
+        else whenBoundsChange(bound, vi_fixed)
+      })
+    }
+
+    // INITIAL CHECK LOOP
+    vi = nValues
     while (vi > 0) {
       vi -= 1
 
@@ -190,15 +205,6 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
 
       // Create the buffer
       changeBuffer = new Array(bufferSize)
-
-      var vi = nValues
-      while (vi > 0) {
-        vi -= 1
-        boundingVar(vi).filterWhenBoundsChange()({
-          if (valueOkRev(vi).value) Success
-          else whenBoundsChange(boundingVar(vi), vi)
-        })
-      }
     }
 
     // Everything is up to the closures now
@@ -220,6 +226,7 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
 
       // If the value removed is one we track
       if (minVal <= v && v <= maxVal) {
+        //if (v == -2) println("Removing -2 from " + i)
         val vi = v - minVal
         if (!valueOkRev(vi).value) {
 
@@ -230,8 +237,16 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
 
           // Restrict the bounding to what is possible
           val bound = boundingVar(vi)
-          if (bound.updateMax(possible) == Failure) {
-            return Failure
+          if (bound.max > possible) {
+            if (bound.updateMax(possible) == Failure) {
+              return Failure
+            }
+            // Tricky case when `bound` is the same variable as `x` and we still want to process the value removal.
+            // See "Magic Sequence" example.
+            if (bound.==(x)) {
+              changeBuffer(c) = possible + 1
+              c += 1
+            }
           }
 
           // Just enough variables have the value
@@ -272,7 +287,7 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
           // Restrict the bounding to what is possible
           val bound = boundingVar(vi)
           if (bound.updateMin(mandatory) == Failure) {
-              return Failure
+            return Failure
           }
 
           // Just few enough variables are bound to the value
