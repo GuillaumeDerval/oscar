@@ -31,7 +31,7 @@ import oscar.cp.core.variables.CPIntVar
 class GCCVar(x: Array[CPIntVar], val minVal: Int, val cards: Array[CPIntVar]) extends Constraint(x(0).store) {
   
   override def setup(l: CPPropagStrength): CPOutcome = {
-    
+
     val ok = l match {
       case CPPropagStrength.Weak => {
         //s.post(new GCCVarAC(x.toArray, minVal, cards))
