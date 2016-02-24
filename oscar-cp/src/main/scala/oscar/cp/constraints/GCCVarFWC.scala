@@ -192,20 +192,14 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
     }
     // END OF INITIAL CHECK LOOP
 
-    // This one has to be initialized in any case
+    // Initialize the memorization structure
+    nMandatoryRev = Array.tabulate(nValues)(vi => new ReversibleInt(s, nMandatory(vi)))
+    nPossibleRev = Array.tabulate(nValues)(vi => new ReversibleInt(s, nPossible(vi)))
+    valueOkRev = Array.tabulate(nValues)(vi => new ReversibleBoolean(s, valueOk(vi)))
     nValuesOkRev = new ReversibleInt(s, nValuesOk)
 
-    // If the constraint is not okay yet
-    if (nValuesOk != nValues) {
-
-      // Initialize the memorization structure
-      nMandatoryRev = Array.tabulate(nValues)(vi => new ReversibleInt(s, nMandatory(vi)))
-      nPossibleRev = Array.tabulate(nValues)(vi => new ReversibleInt(s, nPossible(vi)))
-      valueOkRev = Array.tabulate(nValues)(vi => new ReversibleBoolean(s, valueOk(vi)))
-
-      // Create the buffer
-      changeBuffer = new Array(bufferSize)
-    }
+    // Create the buffer
+    changeBuffer = new Array(bufferSize)
 
     // Everything is up to the closures now
     Success
