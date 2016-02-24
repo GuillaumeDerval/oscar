@@ -128,7 +128,7 @@ class DFSearch(node: DFSearchNode) {
       else alternativesStack.pop() // no more alternative in the sequence
 
       if(searchListener != null)
-        searchListener.onBranch(node, alternative)
+        searchListener.onBranch(alternative)
       alternative() // apply the alternative
 
       if (!node.isFailed()) {

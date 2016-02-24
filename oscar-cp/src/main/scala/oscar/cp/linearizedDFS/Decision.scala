@@ -27,14 +27,14 @@ object Decision {
 sealed trait DomainDecision extends Decision {}
 sealed trait ControlDecision extends Decision {}
 
-case class Push(cp : CPStore) extends ControlDecision {
+case class Push(cp : DFSearchNode) extends ControlDecision {
   val name : String = Decision.push
   def apply() = {
     cp.pushState()
   }
 }
 
-case class Pop(cp : CPStore) extends ControlDecision {
+case class Pop(cp : DFSearchNode) extends ControlDecision {
   val name : String = Decision.pop
   def apply() = {
     cp.pop()

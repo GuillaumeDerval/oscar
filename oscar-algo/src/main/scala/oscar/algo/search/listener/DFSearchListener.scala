@@ -12,5 +12,5 @@ trait DFSearchListener {
   // called on Pop events
   def onPop(node : DFSearchNode) : Unit
   // called on branching
-  def onBranch(node : DFSearchNode, alternative : Alternative) : Unit
+  def onBranch(alternative : Alternative) : Unit
 }
