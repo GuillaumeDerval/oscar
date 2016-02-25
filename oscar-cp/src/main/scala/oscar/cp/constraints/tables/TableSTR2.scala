@@ -24,8 +24,7 @@ import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
 import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPOutcome._
-import oscar.cp.core.variables.CPIntVarAdaptable
-import scala.util.control._
+
 
 /**
  * @author Cyrille Dejemeppe cyrille.dejemeppe@gmail.com
@@ -59,16 +58,26 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
   private[this] val sVal = new Array[Int](arity)
   private[this] var sValSize = 0
 
-  private[this] val gacValues = Array.tabulate(arity)(i => new SparseSet(variables(i).min,variables(i).max,true))
+  // Global time-stamp increased at each propagate
+  private[this] var timeStamp = 0
+
+  // gacValues and domValues contains at index v-offset(varIdx) the timeStamp at which this value was "set"
+  private[this] val gacValues = Array.tabulate(arity)(i => Array.fill(variables(i).max-variables(i).min+1)(-1))
+  private[this] val nGacValues = Array.tabulate(arity)(i => 0)
+  private[this] val lastGacValue = Array.tabulate(arity)(i => 0)
+  private[this] val domValues = Array.tabulate(arity)(i => Array.fill(variables(i).max-variables(i).min+1)(-1))
 
   private[this] val offsets = Array.tabulate(arity)(i => variables(i).min)
   private[this] val sizes = new Array[Int](arity)
 
   private[this] val unBoundVars = new ReversibleSparseSet(s,0,arity-1)
+
   private[this] val varIndices = Array.ofDim[Int](arity)
   private[this] val values = Array.ofDim[Int](variables.map(_.size).max)
-  
+
+  // Number of variables changed since last propagate
   private[this] var nChanged = 0
+  // If number of nChanged = 0, changeIdx is the id of the one that has changed
   private[this] var changedIdx = 0
 
   // Last size of the domain
@@ -87,6 +96,8 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
   }
 
   override def propagate(): CPOutcome = {
+    // Increasing the timeStamp implicitely removes all dom and gac values
+    timeStamp += 1
 
     // Step1: ----- Initialize and reset GAC values -------
 
@@ -102,7 +113,14 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
       i -= 1
       val varIdx = varIndices(i)
       val varSize = variables(varIdx).size
-      gacValues(varIdx).empty()
+      val nValues = variables(varIdx).fillArray(values)
+      nGacValues(varIdx) = 0
+      var k = nValues
+      while (k > 0) {
+        k -= 1
+        domValues(varIdx)(values(k)-offsets(varIdx)) = timeStamp
+      }
+
       sSup.insert(varIdx)
       val inSVal = lastSize(varIdx).value != varSize // changed since last propagate
       lastSize(varIdx).setValue(varSize)
@@ -123,16 +141,18 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
       val isInvalid = isInvalidTuple(tau)
       if (isInvalid) deactivateTuple(i)
       else {
-        // tuple i is thus valid, we need to check every variable
+        // Tuple i is thus valid, we need to check every variable
         // for which at least one value has not a support yet (the ones in sSup)
         var j = sSup.fillArray(varIndices)
         while (j > 0) {
           j -= 1
           val varId = varIndices(j)
-          // remove value tau(varId) from the value to be removed
-          if (!gacValues(varId).hasValue(tau(varId))) {
-            gacValues(varId).insert(tau(varId))
-            if (gacValues(varId).getSize == variables(varId).size) {
+          // remove value tau(varId) is GAC
+          if (gacValues(varId)(tau(varId)-offsets(varId)) != timeStamp) {
+            gacValues(varId)(tau(varId)-offsets(varId)) = timeStamp
+            nGacValues(varId) += 1
+            lastGacValue(varId) = tau(varId)
+            if (nGacValues(varId) == variables(varId).size) {
               sSup.removeValue(varId)
             }
           }
@@ -153,26 +173,22 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
       // Not in STR2: if varId was the only one that has changed, all its values are still consistant
       if (nChanged > 1 || changedIdx != varId) {
         val variable = variables(varId)
-        val nGacValues = gacValues(varId).fillArray(values)
-        if (nGacValues == 0) return Failure
-        else if (nGacValues == 1) {
-          variable.assign(values(0))
+        val nGac = nGacValues(varId)
+        if (nGac == 0) return Failure
+        else if (nGac == 1) {
+          variable.assign(lastGacValue(varId))
           unBoundVars.removeValue(varId)
-        } else {
-          var varSize = variable.fillArray(values)
-          var j = varSize
+        }
+        else {
+          var j = variable.fillArray(values)
           while (j > 0) {
             j -= 1
             val v = values(j)
-            if (!gacValues(varId).hasValue(v)) {
+            if (gacValues(varId)(v-offsets(varId)) != timeStamp) {
               variable.removeValue(v)
-              varSize -= 1
             }
           }
-          lastSize(varId).setValue(varSize)
-          if (varSize == 1) {
-            unBoundVars.removeValue(varId)
-          }
+          lastSize(varId).setValue(nGac)
         }
       }
     }
@@ -184,25 +200,26 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
   }
 
 
-  def isInvalidTuple(tuple: Array[Int]): Boolean = {
+  private[this] def isInvalidTuple(tuple: Array[Int]): Boolean = {
     var i = sValSize
     while (i > 0) {
       i -= 1
       val varId = sVal(i)
-      if (!variables(varId).hasValue(tuple(varId))) return true
+      //if (!variables(varId).hasValue(tuple(varId))) return true
+      if (domValues(varId)(tuple(varId)-offsets(varId)) != timeStamp) return true
     }
     false
   }
 
 
 
-  def swapTuple(id1: Int,id2: Int): Unit = {
+  private[this] def swapTuple(id1: Int,id2: Int): Unit = {
     val tmpPosition = activeTuples(id1)
     activeTuples(id1) = activeTuples(id2)
     activeTuples(id2) = tmpPosition
   }
 
- def deactivateTuple(id: Int): Unit = {
+ private[this] def deactivateTuple(id: Int): Unit = {
     nActiveTuples -= 1
     val tmpPosition = activeTuples(id)
     activeTuples(id) = activeTuples(nActiveTuples)
