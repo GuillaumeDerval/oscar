@@ -190,13 +190,7 @@ class TestTableSTR2Reif extends FunSuite with ShouldMatchers  {
     b.isTrue should be(true)
   }
     
-  test("Table Test 7") {
-    /*
-     * 
-     * 
-     * 
-     */
-    
+  test("Table Test 7") {    
     val cp = CPSolver()
     var x = Array.fill(2)(CPIntVar(5 to 7)(cp))
     var b = CPBoolVar()(cp)
