@@ -9,6 +9,12 @@ import oscar.algo.reversible.ReversibleInt
 
 /**
  * @author ThanhKM thanhkhongminh@gmail.com
+ * 
+ * Class for Negative Table Constraint
+ * 
+ * Implementation follows https://www.aaai.org/ocs/index.php/AAAI/AAAI13/paper/viewFile/6141/6825 
+ * and improves with ideas of STR2 (Sval, Ssup)
+ * 
  */
 class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(variables(0).store, "TableSTRNe") {
   idempotent = true
@@ -19,7 +25,7 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
   private[this] val position = Array.tabulate(table.length)(i => i)
   private[this] val revLimit = new ReversibleInt(s, table.length - 1)
 
-  // Dense + sparse set for (variable, value)
+  // Dense + sparse set for (variable, value) (unsupported set)
   private[this] val unsDense = Array.tabulate(arity)(i => new Array[Int](variables(i).size)) // store values
   private[this] val unsSparse = Array.tabulate(arity)(i => new Array[Int](variables(i).max - variables(i).min + 1)) // sparse
   private[this] val minValues = Array.tabulate(arity)(i => variables(i).min) // min values of each variables 
@@ -38,7 +44,7 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
   private[this] val count = Array.fill(arity)(Array[Int]())
   
   override def setup(l: CPPropagStrength): CPOutcome = {
-    if (propagate() == CPOutcome.Failure) return CPOutcome.Failure
+    if (propagate() == Failure) return Failure
     variables.filter(!_.isBound).foreach(_.callPropagateWhenDomainChanges(this))
     CPOutcome.Suspend
   }
@@ -71,7 +77,6 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
       nTuplePossibles *= variables(i).size
       i += 1
     }
-    
     // calculate count(x,a) for each variable. count(x,a) = nTuplePossibles / dom(x)
     // if count(x,a) > tableSize, it means (x,a) is GAC
     i = arity - 1
@@ -89,8 +94,22 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
     i = 0
     while (i <= limit) {
       val tau = table(position(i))
+      
+      /*
+      if (isValidTuple(tau) != isValidTupleWithSVal(tau)) {
+        println("------------\ntuple:")
+        printArray(tau)
+        println("variables: " + variables.toSeq)
+        println("table:")
+        for (j <- 0 to limit) {
+          print(position(j) + ": ")
+          printArray(table(position(j)))
+        }
+      }
+      */
+        
       // if the tuple is valid
-      if (isValidTupleWithSVal(tau)) {
+      if (isValidTupleWithSVal(tau)) {//if (isValidTuple(tau)) {
         unsupport(tau, limit+1)
         i += 1
       } else { // remove tuple
@@ -148,6 +167,7 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
       val varId = sSup(i)
       val value = tau(varId)
       val valIndex = unsSparse(varId)(value - minValues(varId))
+      
       count(varId)(valIndex) -= 1
       
       // when count(x,a) > tbSize, it means (x,a) is GAC, we have to remove it
@@ -182,11 +202,13 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
           if (variables(varId).size == 1)
             return Failure
           variables(varId).removeValue(value)
+          // println("variables: " + (varId) + " removeValue " +value)
         }
         j += 1
       }
-      
-      lastSizes(varId).setValue(variables(varId).size)
+      // Can not do like STR2 because after remove some values, the global table is not GAC
+      // i.e. not all tuple are GAC.
+      // lastSizes(varId).setValue(variables(varId).size)
       i += 1
     }
     
@@ -208,6 +230,9 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
       true
   }
 
+  /**
+   *  Check valid tuple by presence of all values in variables' domain
+   */
   @inline private def isValidTuple(tau: Array[Int]): Boolean = {
       var varId = 0
       while (varId < arity) {
@@ -224,4 +249,8 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
     arrays(i2) = tmp
   }
   
+  @inline private def printArray(arrays: Array[Int]) = {
+    for (a <- arrays) print(a + " ")
+    println
+  }
 }

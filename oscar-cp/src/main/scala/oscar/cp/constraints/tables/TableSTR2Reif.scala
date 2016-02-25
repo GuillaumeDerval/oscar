@@ -12,6 +12,9 @@ import oscar.cp.constraints.TableSTR2
 
 /**
  * @author ThanhKM thanhkhongminh@gmail.com
+ * 
+ * Reification for positive table constraint
+ * 
  */
 class TableSTR2Reif(val variables: Array[CPIntVar], table: Array[Array[Int]], val b: CPBoolVar) extends Constraint(variables(0).store, "TableSTR2Reif") {
   idempotent = true
