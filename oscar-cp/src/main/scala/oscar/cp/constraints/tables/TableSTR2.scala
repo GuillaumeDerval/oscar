@@ -17,8 +17,7 @@
 
 package oscar.cp.constraints
 
-import oscar.algo.reversible.ReversibleInt
-import oscar.algo.reversible.ReversibleBoolean
+import oscar.algo.reversible.{ReversibleSparseSet, ReversibleInt, ReversibleBoolean}
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
@@ -77,8 +76,8 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
   private[this] val gac = Array.tabulate(arity)(i => new Array[Int](variables(i).max - variables(i).min + 1))
   private[this] var timeStamp = 0
 
-  private[this] val unBoundVars = Array.tabulate(arity)(i => i)
-  private[this] val unBoundVarsSize = new ReversibleInt(s,arity)
+  private[this] val unBoundVars = new ReversibleSparseSet(s,0,arity-1)
+  private[this] val varIndices = Array.ofDim[Int](arity)
 
 
   /////////
@@ -109,19 +108,23 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
 
     // Cache
     nActiveTuples = nActiveTuplesRev.value
-    var i = arity
+
+    var i = unBoundVars.fillArray(varIndices)
     while (i > 0) {
       i -= 1
-        updateSet(i) // Copy the domain of the variable
-        sSup(sSupSize) = i
-        sSupSize += 1 // push
-        val varSize = variables(i).size
-        val inSVal = lastSize(i).value != varSize // changed since last propagate
-        lastSize(i).setValue(varSize)
-        if (inSVal) {
-          sVal(sValSize) = i
-          sValSize += 1 // push
-        }
+      val varIdx = varIndices(i)
+      val varSize = variables(varIdx).size
+
+      updateSet(varIdx) // Copy the domain of the variable
+      sSup(sSupSize) = varIdx
+      sSupSize += 1 // push
+
+      val inSVal = lastSize(varIdx).value != varSize // changed since last propagate
+      lastSize(varIdx).setValue(varSize)
+      if (inSVal) {
+        sVal(sValSize) = varIdx
+        sValSize += 1 // push
+      }
     }
   }
 
@@ -237,9 +240,9 @@ final class TableSTR2(variables: Array[CPIntVar], table: Array[Array[Int]]) exte
           lastSize(varId).setValue(varSize-nValues)
         }
       }
-
-
-
+      if(varSize-nValues == 1) {
+        unBoundVars.removeValue(varId)
+      }
     }
 
     // Trail only if no Failure
