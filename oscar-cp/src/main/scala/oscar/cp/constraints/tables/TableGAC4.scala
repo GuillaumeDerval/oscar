@@ -16,6 +16,7 @@
 package oscar.cp.constraints.tables
 
 import oscar.algo.reversible.{ReversibleContext, TrailEntry}
+import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.{Constraint, CPOutcome, CPPropagStrength}
 import oscar.cp.core.CPOutcome._
@@ -27,6 +28,7 @@ import scala.collection.mutable.ArrayBuffer
  * @param X the variables restricted by the constraint.
  * @param initTable the list of tuples composing the table.
  * @author Jordan Demeulenaere j.demeulenaere1@gmail.com
+ * @author Pierre Schaus pschaus@gmail.com
  */
 class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Constraint(X(0).store, "TableGAC4") {
 
@@ -115,10 +117,11 @@ class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Co
       return Failure
     }
 
-    /* AC5 propagator (valRemoveIdx) */
     X.zipWithIndex.foreach { case (x, index) =>
-      x.callValRemoveIdxWhenValueIsRemoved(this, index)
+      x.callOnChangesIdx(index, delta => valuesRemoved(delta))
     }
+
+
 
     Suspend
   }
@@ -213,7 +216,7 @@ class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Co
    * @param varIndex the index of x.
    * @return the outcome i.e. Failure or Success.
    */
-  @inline private final def removeTupleFromSupports(tuple: Array[Int], tupleIndex: Int, varIndex: Int): CPOutcome = {
+  private final def removeTupleFromSupports(tuple: Array[Int], tupleIndex: Int, varIndex: Int): CPOutcome = {
     val valueTuple = tuple(varIndex)
     val valueIndex = valueTuple - originalMins(varIndex)
     val variableSupports = supports(varIndex)
@@ -230,14 +233,13 @@ class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Co
    * @param varIndex the index of the variable for which the invalidation is not necessary.
    * @return the outcome i.e. Failure or Success.
    */
-  @inline private final def invalidateTuple(tupleIndex: Int, varIndex: Int): CPOutcome = {
+  private final def invalidateTuple(tupleIndex: Int, varIndex: Int): CPOutcome = {
     val tuple = tuples(tupleIndex)
     var i = 0
     while (i < varIndex) {
       if (removeTupleFromSupports(tuple, tupleIndex, i) == Failure) {
           return Failure
       }
-
       i += 1
     }
     
@@ -246,29 +248,34 @@ class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Co
       if (removeTupleFromSupports(tuple, tupleIndex, i) == Failure) {
           return Failure
       }
-
       i += 1
     }
     Suspend
   }
 
-  @inline override def valRemoveIdx(x: CPIntVar, idx: Int, value: Int): CPOutcome = {
-    /* When a value a is removed from D(x), we invalidate all tuples in supports(x,a) */
-    val valueIndex = value - originalMins(idx)
-    val variableSupports = supports(idx)
-    val valueSupports = variableSupports(valueIndex)
-    val nbSupports = variableSupports.size(valueIndex)
-    
-    var indexSupport = 0
-    while (indexSupport < nbSupports) {
-      val tupleIndex = valueSupports(indexSupport)
-      if (invalidateTuple(tupleIndex, idx) == Failure) {
-        return Failure
+  private final def valuesRemoved(delta: DeltaIntVar): CPOutcome = {
+    val idx = delta.id
+    var i = delta.fillArray(domainsFillArray)
+    /* Iterate all the values removed in x(idx) */
+    while (i > 0) {
+      i -= 1
+      val value = domainsFillArray(i)
+      /* When a value a is removed from D(x), we invalidate all tuples in supports(x,a) */
+      val valueIndex = value - originalMins(idx)
+      val variableSupports = supports(idx)
+      val valueSupports = variableSupports(valueIndex)
+      val nbSupports = variableSupports.size(valueIndex)
+
+      var indexSupport = 0
+      while (indexSupport < nbSupports) {
+        val tupleIndex = valueSupports(indexSupport)
+        if (invalidateTuple(tupleIndex, idx) == Failure) {
+          return Failure
+        }
+        indexSupport += 1
       }
-      indexSupport += 1
+      variableSupports.clear(valueIndex)
     }
-    variableSupports.clear(valueIndex)
-    
     Suspend
   }
 
