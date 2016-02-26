@@ -27,6 +27,7 @@ import oscar.cp.core.delta.DeltaIntVar
  * @param X the variables restricted by the constraint.
  * @param initTable the list of tuples composing the table.
  * @author Jordan Demeulenaere j.demeulenaere1@gmail.com
+ * @author Pierre Schaus pschaus@gmail.com
  */
 class TableGAC4R(X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Constraint(X(0).store, "TableGAC4R") {
 

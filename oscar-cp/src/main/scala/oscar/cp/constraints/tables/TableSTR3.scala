@@ -15,6 +15,7 @@
 
 package oscar.cp.constraints.tables
 
+import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.{Constraint, CPOutcome, CPPropagStrength}
 import oscar.cp.core.CPOutcome._
@@ -28,6 +29,7 @@ import scala.collection.mutable.{ArrayBuffer, HashSet}
  * @param table the list of tuples composing the table.
  * @author Jordan Demeulenaere j.demeulenaere1@gmail.com
  * @author Guillaume Perez memocop@gmail.com
+ * @author Pierre Schaus (pschaus@gmail.com)
  */
 class TableSTR3(val X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableSTR3") {
 
@@ -105,15 +107,29 @@ class TableSTR3(val X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
         }
         j += 1
       }
-      X(i).callValRemoveIdxWhenValueIsRemoved(this, i)
+
+      X(i).callOnChangesIdx(i, delta => valuesRemoved(delta))
+
       i += 1
     }
     depArray = Array.fill(dep.map(_.size).max)(0)
-
     Suspend
   }
 
-  @inline override def valRemoveIdx(x: CPIntVar, idx: Int, value: Int): CPOutcome = {
+  private final def valuesRemoved(delta: DeltaIntVar): CPOutcome = {
+    val idx = delta.id
+    var i = delta.fillArray(domainsFillArray)
+    while (i > 0) {
+      i -= 1
+      val value = domainsFillArray(i)
+      if (valueRemoved(X(idx),idx,value) == Failure) {
+        return Failure
+      }
+    }
+    Suspend
+  }
+
+  private final def valueRemoved(x: CPIntVar, idx: Int, value: Int): CPOutcome = {
     /* Invalidate supports of (x, a) */
     val prevInvSize = invalidTuples.size
     val originalMin = value - originalMins(idx)
