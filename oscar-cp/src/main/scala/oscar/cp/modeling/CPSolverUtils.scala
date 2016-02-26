@@ -1,15 +1,9 @@
 package oscar.cp.modeling
 
-import oscar.cp.core.CPSolver
-import oscar.cp.core.Constraint
-import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPPropagStrength._
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPBoolVar
-import oscar.algo.search.SearchNode
-import oscar.algo.search.SearchStatistics
-import oscar.algo.search.Branching
-import oscar.algo.search.Alternative
+import oscar.algo.search.{Alternative, Branching, SearchStatistics}
+import oscar.cp.core.CPPropagStrength.Weak
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar}
+import oscar.cp.core.{CPPropagStrength, CPSolver, Constraint}
 
 trait CPSolverUtils {
   
@@ -39,5 +33,13 @@ trait CPSolverUtils {
 
   def startSubjectTo(nSols: Int = Int.MaxValue, failureLimit: Int = Int.MaxValue, timeLimit: Int = Int.MaxValue)(reversibleBlock: => Unit = {})(implicit cp: CPSolver): SearchStatistics = {
     cp.startSubjectTo(nSols, failureLimit, timeLimit)(reversibleBlock)
+  }
+
+  def listen()(implicit cp: CPSolver): Unit = {
+    cp.listen()
+  }
+
+  def replay(solutionVariables : Seq[CPIntVar])(implicit cp: CPSolver) : (Long,Int,Int,Int) =  {
+    cp.replay(solutionVariables)
   }
 }

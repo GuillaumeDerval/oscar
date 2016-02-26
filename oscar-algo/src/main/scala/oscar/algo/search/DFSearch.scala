@@ -45,10 +45,13 @@ class DFSearch(node: DFSearchNode) {
   // Actions to execute in case of failed node
   private[this] var failureActions = List.empty[() => Unit]
 
-  private[this] var searchListener : DFSearchListener = null
+  private[this] var searchListener_ : DFSearchListener = null
+
+  /** Gets the DFSearch listener */
+  def searchListener : DFSearchListener = searchListener_
 
   /** Sets the DFSearch listener */
-  def searchListener(listener : DFSearchListener) : Unit = searchListener = listener
+  def searchListener(listener : DFSearchListener) : Unit = searchListener_ = listener
 
   /** Returns the number of backtracks in the previous search */
   final def nBacktracks: Int = nbBkts
@@ -94,14 +97,14 @@ class DFSearch(node: DFSearchNode) {
     nbNodes = 0
     completed = false
 
-    if(searchListener != null)
-      searchListener.onPush(node)
+    if(searchListener_ != null)
+      searchListener_.onPush(node)
     node.pushState()
 
     // Expand the root node
     if (!node.isFailed) {
-      if(searchListener != null)
-        searchListener.onPush(node)
+      if(searchListener_ != null)
+        searchListener_.onPush(node)
       node.pushState()
       val isExpandable = expand(branching)
       if (!isExpandable) {
@@ -121,14 +124,14 @@ class DFSearch(node: DFSearchNode) {
       val isLast = !alternatives.hasNext
       
       if (!isLast) {
-        if(searchListener != null)
-          searchListener.onPush(node)
+        if(searchListener_ != null)
+          searchListener_.onPush(node)
         node.pushState()
       }
       else alternativesStack.pop() // no more alternative in the sequence
 
-      if(searchListener != null)
-        searchListener.onBranch(alternative)
+      if(searchListener_ != null)
+        searchListener_.onBranch(alternative)
       alternative() // apply the alternative
 
       if (!node.isFailed()) {
@@ -138,15 +141,15 @@ class DFSearch(node: DFSearchNode) {
           solutionActions.foreach(_())
           nbSols += 1
           nbBkts += 1
-          if(searchListener != null)
-            searchListener.onPop(node)
+          if(searchListener_ != null)
+            searchListener_.onPop(node)
           node.pop()
         }
       } else {
         failureActions.foreach(_())
         nbBkts += 1
-        if(searchListener != null)
-          searchListener.onPop(node)
+        if(searchListener_ != null)
+          searchListener_.onPop(node)
         node.pop()
       }
     }
@@ -155,13 +158,13 @@ class DFSearch(node: DFSearchNode) {
     var i = alternativesStack.size
     if (i == 0) completed = true
     else while (i != 0) {
-      if(searchListener != null)
-        searchListener.onPop(node)
+      if(searchListener_ != null)
+        searchListener_.onPop(node)
       node.pop()
       i -= 1
     }
-    if(searchListener != null)
-      searchListener.onPop(node)
+    if(searchListener_ != null)
+      searchListener_.onPop(node)
     node.pop()
   }
 }

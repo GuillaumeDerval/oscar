@@ -19,6 +19,8 @@ import oscar.algo.search._
 import oscar.cp._
 import oscar.cp.core._
 import oscar.cp.constraints._
+import oscar.cp.linearizedDFS.{DFSReplayer, DFSLinearizer}
+import oscar.cp.linearizedDFS.examples.Queens._
 import scala.collection.mutable.Stack
 import oscar.algo.reversible._
 import oscar.util._
@@ -81,6 +83,25 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
       this.maxSize,
       searchStrategy.nSolutions
     )
+  }
+
+  final def listen() : Unit = {
+    val dFSListener = new DFSLinearizer
+    searchEngine.searchListener(dFSListener)
+  }
+
+  //the solution variables are the variables that must be assigned to have a solution
+  final def replay(solutionVariables : Seq[CPIntVar]) : (Long,Int,Int,Int) = {
+    if(searchEngine.searchListener != null) {
+      searchEngine.searchListener match {
+        case listener : DFSLinearizer => {
+          val replayer = new DFSReplayer(solver, solutionVariables)
+          replayer.replay(Array(listener.searchStateModifications))
+        }
+        case _ => throw new RuntimeException("To replay, the listener must be a linearizer.")
+      }
+    }
+    else throw new RuntimeException("To replay, the listener cannot be null.")
   }
 
   @inline private def buildStopCondition(nSols: Int, failureLimit: Int, timeLimit: Int): Function1[DFSearch, Boolean] = {
@@ -177,7 +198,8 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
   /**
    * Add a constraint to the store (b == true) in a reversible way and trigger the fix-point algorithm. <br>
    * In a reversible way means that the constraint is present in the store only for descendant nodes.
-   * @param c
+    *
+    * @param c
    * @throws NoSolutionException if the fix point detects a failure that is one of the domain became empty
    */
   override def add(b: CPBoolVar): CPOutcome = {
@@ -199,7 +221,8 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
   /**
    * Add a set of constraints to the store in a reversible way and trigger the fix-point algorithm afterwards.
    * In a reversible way means that the posted constraints are present in the store only for descendant nodes.
-   * @param constraints
+    *
+    * @param constraints
    * @param st the propagation strength asked for the constraint. Will be used only if available for the constraint (see specs of the constraint)
    * @throws NoSolutionException if the fix point detects a failure that is one of the domain became empty, Suspend otherwise.
    */
