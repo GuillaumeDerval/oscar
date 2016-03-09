@@ -320,4 +320,13 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
   def configure(absPath: Path) = env.readParams(absPath.toString)
 
   def setTimeout(t: Long): Unit = env.set(GRB.DoubleParam.TimeLimit, t.toDouble)
+
+
+  /* CALLBACK */
+
+  // All progress events need to be covered in the callback. It is a global callback, responsible
+  // for logging everything.
+  // Example: http://www.gurobi.com/documentation/6.5/examples/callback_java.html
+  def addGapCallback() = throw new NotImplementedError("Gap callback is not implemented for Gurobi")
+  def getCurrentGap: Double = throw new NotImplementedError("Gap callback is not implemented for Gurobi")
 }
