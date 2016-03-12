@@ -317,4 +317,14 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
   def configure(absPath: Path) = rawSolver.readParams(absPath.toString, "[Default]")
 
   def setTimeout(nSeconds: Long) = rawSolver.setTimeout(nSeconds)
+
+
+  /* CALLBACK */
+
+  // The only information that is available during the run is the "working objective".
+  // Also, it is not easy to identify the cases where the callback function should be called to have
+  // one update per node (MSG_LPOPTIMAL?)
+  // Example: http://lp-solve.2324885.n4.nabble.com/Re-implementation-of-MsgListener-in-java-td4434.html
+  def addGapCallback() = throw new NotImplementedError("Gap callback is not implemented for LPSolve")
+  def getCurrentGap: Double = throw new NotImplementedError("Gap callback is not implemented for LPSolve")
 }

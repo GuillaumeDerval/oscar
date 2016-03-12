@@ -13,7 +13,7 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-package oscar.examples.linprog
+package oscar.linprog.examples
 
 import oscar.algebra._
 import oscar.linprog.interface.lpsolve.LPSolveLib

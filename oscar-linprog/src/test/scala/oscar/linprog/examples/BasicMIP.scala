@@ -13,20 +13,18 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-package oscar.examples.linprog
+package oscar.linprog.examples
 
 import oscar.algebra._
 import oscar.linprog.interface.lpsolve.LPSolveLib
 import oscar.linprog.modeling._
 
-object BasicLP extends MPModel(LPSolveLib) with App {
+object BasicMIP extends MPModel(LPSolveLib) with App {
 
-  val x0 = MPFloatVar("x0", 0, 40)
-  val x1 = MPFloatVar("x1", 0, 1000)
-  val x2 = MPFloatVar("x2", 0, 17)
-  val x3 = MPFloatVar("x3", 2, 3)
-
-  var cons = Array[LinearConstraint[_]]()
+  val x0 = MPFloatVar("x0", 0.0, 40.0)
+  val x1 = MPIntVar("x1", 0 to 1000)
+  val x2 = MPIntVar("x2", 0 until 18)
+  val x3 = MPFloatVar("x3", 2.0, 3.0)
 
   maximize(x0 + 2 * x1 + 3 * x2 + x3)
   subjectTo(

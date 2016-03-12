@@ -612,6 +612,18 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
    */
   def setLogOutput(logOutput: LogOutput): Unit = solverInterface.setLogOutput(logOutput)
 
+  /* CALLBACK */
+
+  /**
+   * Adds an informational callback to track solving progress (gap) without actually changing
+   * the algorithm
+   * */
+  def addGapCallback()(implicit ev: I => MIPSolverInterface) = solverInterface.addGapCallback
+
+  /**
+   * Retrieves the current gap value
+   * */
+  def currentGap(implicit ev: I => MIPSolverInterface): Double = solverInterface.getCurrentGap
 
   /* INFEASIBILITY ANALYSIS */
 

@@ -79,4 +79,15 @@ trait MIPSolverInterface extends MPSolverInterface {
    * Set the specified variable as a float variable.
    */
   def setFloat(varId: Int)
+
+  /**
+   * Adds an informational callback to track solving progress (gap) without actually changing
+   * the algorithm
+   * */
+  def addGapCallback()
+
+  /**
+   * Retrieves the current gap value
+   * */
+  def getCurrentGap: Double
 }
