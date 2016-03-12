@@ -15,7 +15,6 @@
 
 package oscar.linprog.interface
 
-import oscar.linprog.enums.ModelExportFormat
 import oscar.linprog.interface.gurobi.GurobiLib
 import oscar.linprog.interface.lpsolve.LPSolveLib
 
@@ -28,9 +27,9 @@ abstract class MPSolverLib[+I <: MPSolverInterface](val name: String) {
   def createSolver: I
 
   /**
-   * Returns the list of [[ModelExportFormat]] supported by this solver library
+   * Returns the list of model formats supported by this solver library
    */
-  def supportedModelExportFormats: Seq[ModelExportFormat]
+  def supportedModelExportFormats: Seq[String]
 }
 
 object MPSolverLib {

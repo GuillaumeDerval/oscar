@@ -278,21 +278,14 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
 
   /* LOGGING */
 
-  /**
-   * Gurobi's export file handling is a little different. The format is defined by the fileName passed to model.write:
-   *  - for LP  the file should end with .lp
-   *  - for MPS the file should end with .mps
-   *
-   * Therefore, the file extension is checked against the given format to make sure it matches.
-   */
-  def exportModel(filePath: java.nio.file.Path, format: ModelExportFormat): Unit = {
-    require(format.checkExtension(filePath), s"Unexpected file extension (${filePath.extension}) for the given model export format ($format)")
+  def exportModel(filePath: java.nio.file.Path): Unit = {
+    val format = getExtension(filePath)
+    require(
+      format.equals("lp") || format.equals("mps"),
+      s"Unexpected file extension: $format"
+    )
 
-    format match {
-      case MPS => rawSolver.write(filePath.toString)
-      case LP => rawSolver.write(filePath.toString)
-      case _  => println(s"Unrecognised export format $format")
-    }
+    rawSolver.write(filePath.toString)
   }
 
   override def setLogOutput(logOutput: LogOutput): Unit = {
@@ -311,7 +304,7 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
         env.set(GRB.IntParam.OutputFlag, 1)
         env.set(GRB.IntParam.LogToConsole, 0)
         env.set(GRB.StringParam.LogFile, path.toString)
-      case _ => println(s"Unrecognised log output $logOutput")
+      case _ => throw new IllegalArgumentException(s"Unrecognised log output $logOutput")
     }
   }
 

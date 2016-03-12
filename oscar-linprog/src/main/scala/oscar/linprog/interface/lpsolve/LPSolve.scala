@@ -293,11 +293,11 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
 
   /* LOGGING */
 
-  def exportModel(filepath: Path, format: ModelExportFormat): Unit =
-    format match {
-      case LP => rawSolver.writeLp(filepath.toString) // Note: this is lp_solve's own lp format which is different from CPLEX's one.
-      case MPS => rawSolver.writeFreeMps(filepath.toString)
-      case _ => println(s"Unrecognised export format $format")
+  def exportModel(filePath: Path): Unit =
+    getExtension(filePath) match {
+      case "lp"  => rawSolver.writeLp(filePath.toString) // Note: this is lp_solve's own lp format which is different from CPLEX's one.
+      case "mps" => rawSolver.writeFreeMps(filePath.toString)
+      case f     => throw new IllegalArgumentException(s"Unrecognised export format $f")
     }
 
   override def setLogOutput(logOutput: LogOutput): Unit = {
@@ -307,7 +307,7 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
       case DisabledLogOutput => rawSolver.setOutputfile("") // write to empty file to effectively disable the log output
       case StandardLogOutput => rawSolver.setOutputfile(null) // null makes lp_solve default to the standard output
       case FileLogOutput(path) => rawSolver.setOutputfile(path.toString)
-      case _ => println(s"Unrecognised log output $logOutput")
+      case _ => throw new IllegalArgumentException(s"Unrecognised log output $logOutput")
     }
   }
 

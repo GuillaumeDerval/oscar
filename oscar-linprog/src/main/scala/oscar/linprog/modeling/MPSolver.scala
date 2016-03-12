@@ -598,13 +598,14 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
 
   /* LOGGING */
 
+
   /**
-   * Saves the problem to the file at the given path in the given format.
+   * Saves the problem to the file at the given path.
    */
-  def exportModel(filepath: Path, format: ModelExportFormat): Unit = {
+  def exportModel(filepath: Path): Unit = {
     if(dirty) solverInterface.updateModel()
 
-    solverInterface.exportModel(filepath, format)
+    solverInterface.exportModel(filepath)
   }
 
   /**
@@ -618,7 +619,7 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
    * Adds an informational callback to track solving progress (gap) without actually changing
    * the algorithm
    * */
-  def addGapCallback()(implicit ev: I => MIPSolverInterface) = solverInterface.addGapCallback
+  def addGapCallback()(implicit ev: I => MIPSolverInterface) = solverInterface.addGapCallback()
 
   /**
    * Retrieves the current gap value

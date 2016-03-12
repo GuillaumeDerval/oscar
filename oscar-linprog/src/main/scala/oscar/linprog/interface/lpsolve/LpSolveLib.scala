@@ -15,10 +15,9 @@
 
 package oscar.linprog.interface.lpsolve
 
-import oscar.linprog.enums.{LP, MPS}
 import oscar.linprog.interface.MPSolverLib
 
 case object LPSolveLib extends MPSolverLib[LPSolve]("lp_solve") {
   def createSolver = new LPSolve
-  def supportedModelExportFormats = Seq(LP, MPS)
+  def supportedModelExportFormats = Seq("lp", "mps")
 }

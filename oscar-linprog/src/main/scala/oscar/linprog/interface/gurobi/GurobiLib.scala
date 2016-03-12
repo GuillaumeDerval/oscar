@@ -15,10 +15,9 @@
 
 package oscar.linprog.interface.gurobi
 
-import oscar.linprog.enums.{LP, MPS}
 import oscar.linprog.interface.MPSolverLib
 
 object GurobiLib extends MPSolverLib[Gurobi]("gurobi") {
   def createSolver = new Gurobi()
-  def supportedModelExportFormats = Seq(LP, MPS)
+  def supportedModelExportFormats = Seq("lp", "mps")
 }

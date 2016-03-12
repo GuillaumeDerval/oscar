@@ -4,18 +4,16 @@ import java.nio.file.Paths
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import oscar.linprog.enums.{LP, MPS, ModelExportFormat}
 import oscar.linprog.interface.MPSolverLib
-import oscar.linprog.interface.gurobi.GurobiLib
 import oscar.linprog.modeling._
 
 @RunWith(classOf[JUnitRunner])
 class ModelExportTester extends OscarLinprogTester {
 
-  def exportPath(format: ModelExportFormat) = Paths.get(s"test.${format.extension}")
+  def exportPath(format: String) = Paths.get(s"test.$format")
 
   after {
-    for (format <- ModelExportFormat.formats) {
+    for (format <- Seq("lp", "mps")) {
       exportPath(format).toFile.delete()
     }
   }
@@ -33,7 +31,7 @@ class ModelExportTester extends OscarLinprogTester {
       maximize(-2 * x + 5 * y)
       add(x + y <:= 200)
 
-      solver.exportModel(exportPath(format), format)
+      solver.exportModel(exportPath(format))
     }
   }
 
@@ -52,15 +50,17 @@ class ModelExportTester extends OscarLinprogTester {
 
       solver.solve
 
-      solver.exportModel(exportPath(format), format)
+      solver.exportModel(exportPath(format))
     }
   }
 
-  if(MPSolverLib.canInstantiate(GurobiLib)) {
-    test("Export model should fail for Gurobi if the file does not have the correct extension") {
+  test("Export model should fail if the file does not have the correct extension") {
+    for {
+      solverLib <- MPSolverLib.solvers
+      format <- solverLib.supportedModelExportFormats
+    } {
       intercept[IllegalArgumentException] {
-
-        implicit val solver = new MPSolver(GurobiLib.createSolver)
+        implicit val solver = new MPSolver(solverLib.createSolver)
 
         val x = MPFloatVar("x", 100, 150)
         val y = MPFloatVar("y", 80, 170)
@@ -68,7 +68,7 @@ class ModelExportTester extends OscarLinprogTester {
         maximize(-2 * x + 5 * y)
         add(x + y <:= 200)
 
-        solver.exportModel(exportPath(MPS), LP)
+        solver.exportModel(exportPath("wrongFormat"))
       }
     }
   }

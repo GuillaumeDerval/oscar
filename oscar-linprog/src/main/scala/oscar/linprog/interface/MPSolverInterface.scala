@@ -245,7 +245,7 @@ abstract class MPSolverInterface {
    */
   def release(): Unit = {
     _released = true
-    _logOutput.close
+    _logOutput.close()
   }
 
   /**
@@ -253,10 +253,22 @@ abstract class MPSolverInterface {
    */
   def released: Boolean = _released
 
+  /*
+   * Returns a String with the extension of the given [[java.nio.file.Path]]
+   */
+  protected def getExtension(filePath: java.nio.file.Path): String = {
+    val name = filePath.getFileName.toString
+    name.substring(name.lastIndexOf('.')+1, name.length)
+  }
+
   /**
    * Saves the problem to the file at the given path in the given format.
+   *
+   * The format is defined by the extension of filePath:
+   *  - for LP  the file should end with .lp
+   *  - for MPS the file should end with .mps
    */
-  def exportModel(filePath: Path, format: ModelExportFormat): Unit
+  def exportModel(filePath: Path): Unit
 
   // TODO exportSolution
 
@@ -266,7 +278,7 @@ abstract class MPSolverInterface {
    * Sets the log output of the solver to the given [[LogOutput]]
    */
   def setLogOutput(logOutput: LogOutput): Unit = {
-    _logOutput.close
+    _logOutput.close()
     _logOutput = logOutput
   }
 
