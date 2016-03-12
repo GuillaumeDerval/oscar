@@ -304,8 +304,8 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
     super.setLogOutput(logOutput)
 
     logOutput match {
-      case DisabledLogOutput => throw new IllegalArgumentException("Impossible to disable the log output of lp_solve. Try changing the verbosity.")
-      case StandardLogOutput => rawSolver.setOutputfile("")
+      case DisabledLogOutput => rawSolver.setOutputfile("") // write to empty file to effectively disable the log output
+      case StandardLogOutput => rawSolver.setOutputfile(null) // null makes lp_solve default to the standard output
       case FileLogOutput(path) => rawSolver.setOutputfile(path.toString)
       case _ => println(s"Unrecognised log output $logOutput")
     }
