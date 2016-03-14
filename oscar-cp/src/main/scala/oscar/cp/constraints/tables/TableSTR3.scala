@@ -1,27 +1,17 @@
-/*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
 
 package oscar.cp.constraints.tables
 
-import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{Constraint, CPOutcome, CPPropagStrength}
+import oscar.algo.reversible.ReversibleInt
+import oscar.algo.reversible.ReversibleSparseSetManual
+import oscar.algo.array.ArraySet
+import scala.collection.mutable.ArrayBuffer
+import oscar.cp.core.delta.DeltaIntVar
+import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.Constraint
+import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPOutcome._
-import oscar.algo.reversible.{ReversibleInt, ReversibleSharedSparseSet}
-
-import scala.collection.mutable.{ArrayBuffer, HashSet}
+import oscar.cp.core.CPStore
 
 /**
  * Implementation of the STR3 algorithm for the table constraint.
@@ -30,170 +20,150 @@ import scala.collection.mutable.{ArrayBuffer, HashSet}
  * @author Jordan Demeulenaere j.demeulenaere1@gmail.com
  * @author Guillaume Perez memocop@gmail.com
  * @author Pierre Schaus (pschaus@gmail.com)
+ * @author Renaud Hartert 
  */
-class TableSTR3(val X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableSTR3") {
+class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(vars(0).store, "TableSTR3") {
 
-  /* Basic information */
-  private[this] val arity = X.length
-  private[this] val store = X(0).store
+  private[this] val arity = vars.length
+  private[this] val store = vars(0).store
 
-  /* Temp arrays to fill domain values */
-  private[this] val domainsFillArray = Array.fill(X.map(_.size).max)(0)
-  private[this] var domainSize = 0
+  // Array used to copy variable's domain for fast iterations
+  private[this] val tmpArray = new Array[Int](vars.map(_.size).max)
 
-  /* Invalid tuples */
-  private[this] val invalidTuples: ReversibleSharedSparseSet = new ReversibleSharedSparseSet(store, table.length)
+  // Invalid tuples 
+  private[this] val invalidTuples = new ReversibleSparseSetManual(store, table.length)
+  private[this] val invalidTuplesArray = invalidTuples.exposeArray
+  private[this] val maxValue = vars.map(_.max).max + 1
 
-  /* Supports for each (variable, value) pair */
-  private[this] val originalMins = X.map(_.min)
-  private[this] val spans = Array.tabulate(arity)(i => X(i).max - X(i).min + 1)
-  private[this] val row = Array.tabulate(arity)(i => Array.fill(spans(i))(null: Array[Int]))
-  private[this] val curr = Array.tabulate(arity)(i => Array.fill(spans(i))(null: ReversibleInt))
-  private[this] val dep: Array[HashSet[Int]] = Array.fill(table.length)(HashSet[Int]())
-  private[this] var depArray: Array[Int] = null
-  private[this] val maxValue = X.map(_.max).max + 1
-
-  /* ----- Setup ----- */
-
-  /**
-   * Check if a tuple is valid.
-   * @param tuple the tuple.
-   * @return true if the tuple is valid, false otherwise.
-   */
-  private final def isTupleValid(tuple: Array[Int]): Boolean = {
-    var i = 0
-    while (i < arity) {
-      if (!X(i).hasValue(tuple(i))) {
-        return false
-      }
-      i += 1
-    }
-    true
-  }
+  // Subtables and separators
+  private[this] val initMins = Array.tabulate(arity)(i => vars(i).min)
+  private[this] val subtables = Array.tabulate(arity)(i => Array.fill(vars(i).max - initMins(i) + 1)(null: Array[Int]))
+  private[this] val separators = Array.tabulate(arity)(i => Array.fill(vars(i).max - initMins(i) + 1)(null: ReversibleInt))
+  private[this] val deps: Array[ArraySet] = Array.fill(table.length)(new ArraySet(arity * maxValue + maxValue, true))
 
   override def setup(l: CPPropagStrength): CPOutcome = {
-    /* Fill temporary supports for each (x,a) pair */
-    val tempSupport = Array.tabulate(arity)(i => Array.fill(spans(i))(new ArrayBuffer[Int]()))
+    invalidTuples.trail() // save state
+
+    val tempSupport = Array.tabulate(arity)(i => {
+      Array.fill(vars(i).max - initMins(i) + 1)(new ArrayBuffer[Int]())
+    })
+
     var t = 0
     while (t < table.length) {
-      if (isTupleValid(table(t))) {
+      if (isValidTuple(table(t))) {
         var i = 0
         while (i < arity) {
           val a = table(t)(i)
-          tempSupport(i)(a - originalMins(i)) += t
+          tempSupport(i)(a - initMins(i)) += t
           i += 1
         }
       }
       t += 1
     }
 
-    /* Fill row(x,a) and curr(x,a) for each variable value pair */
     var i = 0
     while (i < arity) {
-      domainSize = X(i).fillArray(domainsFillArray)
-      var j = 0
-      while (j < domainSize) {
-        val a = domainsFillArray(j)
-        if (tempSupport(i)(a - originalMins(i)).isEmpty) {
-          if (X(i).removeValue(a) == Failure) {
+      var j = vars(i).fillArray(tmpArray)
+      while (j > 0) {
+        j -= 1
+        val value = tmpArray(j)
+        val valueId = value - initMins(i)
+        if (tempSupport(i)(valueId).isEmpty) {
+          if (vars(i).removeValue(value) == Failure) {
             return Failure
           }
+        } else {
+          separators(i)(valueId) = new ReversibleInt(store, tempSupport(i)(valueId).size - 1)
+          val subtable = tempSupport(i)(valueId).toArray
+          subtables(i)(valueId) = subtable
+          deps(subtable(0)).add(i * maxValue + value)
         }
-        else {
-          curr(i)(a - originalMins(i)) = new ReversibleInt(store, tempSupport(i)(a - originalMins(i)).size - 1)
-          val s = tempSupport(i)(a - originalMins(i)).toArray
-          row(i)(a - originalMins(i)) = s
-          dep(s(0)).add(i * maxValue + a)
-        }
-        j += 1
       }
-
-      X(i).callOnChangesIdx(i, delta => valuesRemoved(delta))
-
+      vars(i).callOnChangesIdx(i, delta => valuesRemoved(delta), true)
       i += 1
     }
-    depArray = Array.fill(dep.map(_.size).max)(0)
+
     Suspend
   }
 
-  private final def valuesRemoved(delta: DeltaIntVar): CPOutcome = {
-    val idx = delta.id
-    var i = delta.fillArray(domainsFillArray)
+  private def valuesRemoved(delta: DeltaIntVar): CPOutcome = {
+    invalidTuples.trail() // save state
+    val varId = delta.id
+    var i = delta.fillArray(tmpArray)
     while (i > 0) {
       i -= 1
-      val value = domainsFillArray(i)
-      if (valueRemoved(X(idx),idx,value) == Failure) {
-        return Failure
-      }
+      val value = tmpArray(i)
+      if (valueRemoved(varId, value) == Failure) return Failure
     }
     Suspend
   }
 
-  private final def valueRemoved(x: CPIntVar, idx: Int, value: Int): CPOutcome = {
-    /* Invalidate supports of (x, a) */
-    val prevInvSize = invalidTuples.size
-    val originalMin = value - originalMins(idx)
-    val currValue = curr(idx)(originalMin)
-    val supports = row(idx)(originalMin)
+  private def valueRemoved(varId: Int, value: Int): CPOutcome = {
+
+    val x = vars(varId)
+    val membersBefore = invalidTuples.size
+    val valueId = value - initMins(varId)
+    val subtable = subtables(varId)(valueId)
+    val separator = separators(varId)(valueId).value
+
+    // Seek for new invalid tuples
     var supportIndex = 0
-    while (supportIndex <= currValue) {
-      val tupleIndex = supports(supportIndex)
-      if (!invalidTuples.hasValue(tupleIndex)) {
-        invalidTuples.insert(tupleIndex)
-      }
+    while (supportIndex <= separator) {
+      val tupleId = subtable(supportIndex)
+      invalidTuples.add(tupleId)
       supportIndex += 1
     }
 
-    /* No tuple has been invalidated */
-    val newInvSize = invalidTuples.size
-    if (newInvSize == prevInvSize) {
-      return Suspend
-    }
+    // All tuples remain valid
+    val membersAfter = invalidTuples.size
+    if (membersAfter == membersBefore) return Suspend
 
-    /* Handle each invalidated tuple */
-    var i = prevInvSize
-    while (i < newInvSize) {
-      val tupleIndex = invalidTuples(i)
-      dep(tupleIndex).copyToArray(depArray)
-      val depSize = dep(tupleIndex).size
-      var depIndex = 0
-      while (depIndex < depSize) {
-        val depEntry = depArray(depIndex)
-        val yIndex: Int = depEntry / maxValue
+    var i = membersBefore
+    while (i < membersAfter) {
+
+      val tupleId = invalidTuplesArray(i)
+      val depArray = deps(tupleId).values
+      val depSize = deps(tupleId).size
+
+      var j = depSize
+      while (j > 0) {
+        j -= 1
+
+        val depEntry = depArray(j)
+        val varId = depEntry / maxValue
         val value = depEntry % maxValue
-        if (X(yIndex).hasValue(value)) {
-          /* Looking for a support for (yIndex, tuple(yIndex)) */
-          val rowY = row(yIndex)(value - originalMins(yIndex))
-          val currY = curr(yIndex)(value - originalMins(yIndex))
+        val valueId = value - initMins(varId)
 
-          val currValue = currY.value
-          var p = currValue
-          while (p >= 0 && invalidTuples.hasValue(rowY(p))) {
-            p -= 1
-          }
+        if (vars(varId).hasValue(value)) {
 
-          /* If value has no more supports, delete from domain */
+          val subtable = subtables(varId)(valueId)
+          val separatorRev = separators(varId)(valueId)
+          val separator = separatorRev.value
+
+          var p = separator
+          while (p >= 0 && invalidTuples.contains(subtable(p))) p -= 1
+
           if (p < 0) {
-            if (X(yIndex).removeValue(value) == Failure) {
-              return Failure
-            }
-            currY.value = -1
-          }
-          else {
-            /* Check if we have to change curr value */
-            if (p != currValue) {
-              currY.setValue(p)
-            }
-            dep(tupleIndex).remove(depEntry)
-            dep(rowY(p)).add(depEntry)
+            if (vars(varId).removeValue(value) == Failure) return Failure
+          } else {
+            separatorRev.setValue(p)
+            deps(tupleId).remove(depEntry)
+            deps(subtable(p)).add(depEntry)
           }
         }
-        depIndex += 1
       }
       i += 1
     }
-
     Suspend
   }
 
+  // Return true if the tuple is valid
+  @inline private def isValidTuple(tuple: Array[Int]): Boolean = {
+    var i = arity
+    while (i > 0) {
+      i -= 1
+      if (!vars(i).hasValue(tuple(i))) return false
+    }
+    true
+  }
 }
