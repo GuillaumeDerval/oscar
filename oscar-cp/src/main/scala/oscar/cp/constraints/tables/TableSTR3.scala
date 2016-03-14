@@ -107,11 +107,11 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
     val separator = separators(varId)(valueId).value
 
     // Seek for new invalid tuples
-    var supportIndex = 0
-    while (supportIndex <= separator) {
-      val tupleId = subtable(supportIndex)
+    var supportId = 0
+    while (supportId <= separator) {
+      val tupleId = subtable(supportId)
       invalidTuples.add(tupleId)
-      supportIndex += 1
+      supportId += 1
     }
 
     // All tuples remain valid
@@ -123,9 +123,8 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
 
       val tupleId = invalidTuplesArray(i)
       val depArray = deps(tupleId).values
-      val depSize = deps(tupleId).size
 
-      var j = depSize
+      var j = deps(tupleId).size
       while (j > 0) {
         j -= 1
 
@@ -134,7 +133,7 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
         val value = depEntry % maxValue
         val valueId = value - initMins(varId)
 
-        if (vars(varId).hasValue(value)) {
+        if (x.hasValue(value)) {
 
           val subtable = subtables(varId)(valueId)
           val separatorRev = separators(varId)(valueId)
@@ -144,11 +143,11 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
           while (p >= 0 && invalidTuples.contains(subtable(p))) p -= 1
 
           if (p < 0) {
-            if (vars(varId).removeValue(value) == Failure) return Failure
+            if (x.removeValue(value) == Failure) return Failure
           } else {
             separatorRev.setValue(p)
-            deps(tupleId).remove(depEntry)
-            deps(subtable(p)).add(depEntry)
+            deps(tupleId).removeIncluded(depEntry)
+            deps(subtable(p)).addExcluded(depEntry)
           }
         }
       }
