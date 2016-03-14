@@ -37,8 +37,8 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
 
   // Subtables and separators
   private[this] val initMins = Array.tabulate(arity)(i => vars(i).min)
-  private[this] val subtables = Array.tabulate(arity)(i => Array.fill(vars(i).max - initMins(i) + 1)(null: Array[Int]))
-  private[this] val separators = Array.tabulate(arity)(i => Array.fill(vars(i).max - initMins(i) + 1)(null: ReversibleInt))
+  private[this] val subtables = Array.tabulate(arity)(i => new Array[Array[Int]](vars(i).max - initMins(i) + 1))
+  private[this] val separators = Array.tabulate(arity)(i => new Array[ReversibleInt](vars(i).max - initMins(i) + 1))
   private[this] val deps: Array[ArraySet] = Array.fill(table.length)(new ArraySet(arity * maxValue + maxValue, true))
 
   override def setup(l: CPPropagStrength): CPOutcome = {
