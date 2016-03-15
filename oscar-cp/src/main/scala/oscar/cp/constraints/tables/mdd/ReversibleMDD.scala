@@ -15,6 +15,7 @@
 
 package oscar.cp.constraints.tables.mdd
 
+
 import scala.collection.mutable.ArrayBuffer
 
 import oscar.algo.reversible.{ReversibleContext, ReversibleInt, ReversibleSharedSparseSet}
@@ -179,10 +180,12 @@ class ReversibleMDD(context: ReversibleContext, table: Array[Array[Int]]) {
     var cptUp = 0
     val eStart = edges(edge).start
     
-    nodes(eStart).removeEdgeOut(edge)
-    if (nodes(eStart).nbOut == 0) {
+    if (nodes(eStart).nbOut == 1) {
       cptUp += nodes(eStart).nbIn
       nodesLvl(nodes(eStart).indexVar).remove(eStart)
+    }else{
+      nodes(eStart).removeEdgeOut(edge)
+
     }
     cptUp
   }
@@ -196,10 +199,11 @@ class ReversibleMDD(context: ReversibleContext, table: Array[Array[Int]]) {
     var cptDown = 0
     val eEnd = edges(edge).end
     
-    nodes(eEnd).removeEdgeIn(edge)
-    if (nodes(eEnd).nbIn == 0) {
+    if (nodes(eEnd).nbIn == 1) {
       cptDown += nodes(eEnd).nbOut
       nodesLvl(nodes(eEnd).indexVar).remove(eEnd)
+    }else{
+      nodes(eEnd).removeEdgeIn(edge)
     }
     cptDown
   }
@@ -257,9 +261,13 @@ class ReversibleMDD(context: ReversibleContext, table: Array[Array[Int]]) {
     val eStart = edges(edge).start
     var cptUp = 0
     if (!nodesLvl(nodes(eStart).indexVar).hasValue(eStart)) {
-      nodes(eStart).clearEdgesOut()
       nodesLvl(nodes(eStart).indexVar).restore(eStart)
       cptUp += nodes(eStart).nbIn
+      if(nodes(eStart).nbOut == 1){
+        return cptUp
+      }
+      nodes(eStart).clearEdgesOut()
+
     }
     nodes(eStart).restoreEdgeOut(edge)
     cptUp
@@ -274,9 +282,13 @@ class ReversibleMDD(context: ReversibleContext, table: Array[Array[Int]]) {
     val eEnd = edges(edge).end
     var cptDown = 0
     if (!nodesLvl(nodes(eEnd).indexVar).hasValue(eEnd)) {
-      nodes(eEnd).clearEdgesIn()
       nodesLvl(nodes(eEnd).indexVar).restore(eEnd)
       cptDown += nodes(eEnd).nbOut
+      if(nodes(eEnd).nbIn == 1){
+        return cptDown
+      }
+      nodes(eEnd).clearEdgesIn()
+
     }
     nodes(eEnd).restoreEdgeIn(edge)
     cptDown
