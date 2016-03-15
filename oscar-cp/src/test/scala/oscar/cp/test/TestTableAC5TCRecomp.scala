@@ -15,14 +15,12 @@
 
 package oscar.cp.test
 
-import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
-
-import oscar.cp.constraints._
-
+import oscar.cp.constraints.tables.TableAC5TCRecomp
+import oscar.cp.constraints.tables.TableSTR2
+import oscar.cp.testUtils._
 import oscar.cp._
 
-class TestTableAC5TCRecomp extends FunSuite with ShouldMatchers {
+class TestTableAC5TCRecomp extends TestSuite {
 
   test("TableAC5 Test 1") {
     val cp = CPSolver()

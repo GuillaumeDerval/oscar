@@ -13,7 +13,7 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   *******************************************************************************/
 
-package oscar.cp.constraints
+package oscar.cp.constraints.tables
 
 import oscar.algo.reversible.{SparseSet, ReversibleSparseSet, ReversibleInt, ReversibleBoolean}
 import oscar.cp.core.variables.{CPIntVarViewOffset, CPIntVar}

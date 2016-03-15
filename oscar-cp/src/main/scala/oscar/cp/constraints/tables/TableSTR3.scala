@@ -15,12 +15,12 @@ import oscar.cp.core.CPStore
 
 /**
  * Implementation of the STR3 algorithm for the table constraint.
- * @param X the variables restricted by the constraint.
+ * @param vars the variables restricted by the constraint.
  * @param table the list of tuples composing the table.
  * @author Jordan Demeulenaere j.demeulenaere1@gmail.com
  * @author Guillaume Perez memocop@gmail.com
- * @author Pierre Schaus (pschaus@gmail.com)
- * @author Renaud Hartert 
+ * @author Pierre Schaus pschaus@gmail.com
+ * @author Renaud Hartert ren.hartert@gmail.com
  */
 class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(vars(0).store, "TableSTR3") {
 
@@ -100,7 +100,6 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
 
   private def valueRemoved(varId: Int, value: Int): CPOutcome = {
 
-    val x = vars(varId)
     val membersBefore = invalidTuples.size
     val valueId = value - initMins(varId)
     val subtable = subtables(varId)(valueId)
@@ -132,6 +131,7 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
         val varId = depEntry / maxValue
         val value = depEntry % maxValue
         val valueId = value - initMins(varId)
+        val x = vars(varId)
 
         if (x.hasValue(value)) {
 

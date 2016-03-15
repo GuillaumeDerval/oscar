@@ -14,7 +14,7 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  * ****************************************************************************
  */
-package oscar.cp.constraints
+package oscar.cp.constraints.tables
 
 import oscar.cp.core.CPOutcome._
 import oscar.cp.core._

@@ -15,30 +15,30 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import oscar.cp.constraints._
-import oscar.cp._
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import oscar.cp.constraints.tables.TableAlgo
-import org.scalatest.matchers.Matcher
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.constraints.tables.table
+import oscar.cp.constraints.tables.TableDecomp
+import oscar.cp.testUtils._
+import oscar.cp._
 
 /**
- * @author: Pierre Schaus (pschaus@gmail.com)
+ * @author Pierre Schaus  pschaus@gmail.com
+ * @author Renaud Hartert ren.hartert@gmail.com
  */
+class TestTable extends TestSuite {
 
-//@RunWith(classOf[JUnitRunner])
-class TestTable extends FunSuite with ShouldMatchers {
-
-
-  val rand = new scala.util.Random(16)
-
-  def randomTuples(dim: Int, n: Int, minValue: Int, maxValue: Int) = {
+  private val rand = new scala.util.Random(16)
+  
+  private def randomTuples(dim: Int, n: Int, minValue: Int, maxValue: Int) = {
     Array.fill(n, dim)(rand.nextInt(maxValue - minValue) + minValue)
   }
 
+  private def testTable(algo: TableAlgo.Value): Unit = {
+    
+  }
 
   test("Table Test") {
+    
     for (i <- 0 until 1000) {
 
       val cp = CPSolver()
