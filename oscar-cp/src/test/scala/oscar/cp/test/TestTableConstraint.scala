@@ -4,9 +4,7 @@ import oscar.cp.core.Constraint
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
 import oscar.cp._
-import oscar.cp.constraints.TableDecomp
-import oscar.cp.constraints.TableSTR2
-import oscar.cp.constraints.TableData
+import oscar.cp.constraints.tables.{TableDecomp,TableSTR2,TableData,TableAC5TCRecomp}
 
 abstract class TestTableConstraint(val tableConstraintName: String, val nTests: Int = 100) extends FunSuite with ShouldMatchers {
 
@@ -101,7 +99,7 @@ class TestAC5TCRecompAgainstDecomp extends TestTableConstraint("TestAC5TCRecompA
   override def table(X: Array[CPIntVar], table: Array[Array[Int]]) : Constraint = {
     val data = new TableData(X.size)
     table.foreach(t => data.add(t: _*))
-    new oscar.cp.constraints.TableAC5TCRecomp(data, X: _*)
+    new TableAC5TCRecomp(data, X: _*)
   }
 }
 

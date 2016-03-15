@@ -15,6 +15,7 @@
 
 package oscar.cp.constraints.tables
 
+
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.{Constraint, CPOutcome, CPPropagStrength}
 import oscar.cp.core.CPOutcome._
@@ -147,7 +148,6 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
       resetDown = true
       
       edgesSize = tableVar.getEdgesToKeep(edgesArray)
-      tableVar.clearSupports()
       
       mdd.clearAndSaveNodesSet(lvlUp)
       mdd.clearAndSaveNodesSet(lvlDown)
@@ -159,12 +159,8 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
         val b = mdd.resetRestoreEdgeDown(edge)
         cptUp += a
         cptDown += b
-        tableVar.restoreEdge(edge, mdd.valueOfEdge(edge))
         i += 1
       }
-      
-      if (tableVar.removeUnsupportedValues() == Failure) 
-        return Failure
     }
     
     /* We delete the values from the active ones */

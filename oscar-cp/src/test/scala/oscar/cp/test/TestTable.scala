@@ -16,10 +16,10 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import oscar.cp.constraints._
+import oscar.cp.constraints.tables.{TableDecomp,TableAlgo}
 import oscar.cp._
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import oscar.cp.constraints.tables.TableAlgo
 import org.scalatest.matchers.Matcher
 import org.scalatest.matchers.ShouldMatchers
 

@@ -15,9 +15,7 @@
 
 package oscar.cp.constraints.tables
 
-import oscar.cp.constraints.TableSTR2
-import oscar.cp.constraints.TableAC5TCRecomp
-import oscar.cp.constraints.TableData
+
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPOutcome._

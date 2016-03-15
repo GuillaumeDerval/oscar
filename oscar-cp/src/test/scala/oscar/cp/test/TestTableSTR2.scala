@@ -18,6 +18,7 @@ import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
 import oscar.cp.constraints._
 import oscar.cp._
+import oscar.cp.constraints.tables.{TableSTR2}
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
