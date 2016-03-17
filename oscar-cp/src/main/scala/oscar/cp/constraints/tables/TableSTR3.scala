@@ -12,6 +12,7 @@ import oscar.cp.core.Constraint
 import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPOutcome._
 import oscar.cp.core.CPStore
+import oscar.algo.array.ArrayMap
 
 /**
  * Implementation of the STR3 algorithm for the table constraint.
@@ -39,7 +40,7 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
   private[this] val initMins = Array.tabulate(arity)(i => vars(i).min)
   private[this] val subtables = Array.tabulate(arity)(i => new Array[Array[Int]](vars(i).max - initMins(i) + 1))
   private[this] val separators = Array.tabulate(arity)(i => new Array[ReversibleInt](vars(i).max - initMins(i) + 1))
-  private[this] val deps: Array[ArraySet] = Array.fill(table.length)(new ArraySet(arity * maxValue + maxValue, true))
+  private[this] val deps: Array[ArrayMap] = Array.fill(table.length)(new ArrayMap(maxValue, true))
 
   override def setup(l: CPPropagStrength): CPOutcome = {
     invalidTuples.trail() // save state
@@ -76,7 +77,7 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
           separators(i)(valueId) = new ReversibleInt(store, tempSupport(i)(valueId).size - 1)
           val subtable = tempSupport(i)(valueId).toArray
           subtables(i)(valueId) = subtable
-          deps(subtable(0)).add(i * maxValue + value)
+          deps(subtable(0)).add(i, value)
         }
       }
       vars(i).callOnChangesIdx(i, delta => valuesRemoved(delta), true)
@@ -121,15 +122,16 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
     while (i < membersAfter) {
 
       val tupleId = invalidTuplesArray(i)
-      val depArray = deps(tupleId).values
-
-      var j = deps(tupleId).size
+      val dep = deps(tupleId)
+      val depVars = dep.keys
+      val depVals = dep.values
+      
+      var j = dep.size
       while (j > 0) {
         j -= 1
 
-        val depEntry = depArray(j)
-        val varId = depEntry / maxValue
-        val value = depEntry % maxValue
+        val varId = depVars(j)
+        val value = depVals(j)
         val valueId = value - initMins(varId)
         val x = vars(varId)
 
@@ -146,8 +148,8 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
             if (x.removeValue(value) == Failure) return Failure
           } else {
             separatorRev.setValue(p)
-            deps(tupleId).removeIncluded(depEntry)
-            deps(subtable(p)).addExcluded(depEntry)
+            deps(tupleId).removeIncluded(varId)
+            deps(subtable(p)).addExcluded(varId, value)
           }
         }
       }
