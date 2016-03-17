@@ -326,5 +326,5 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
   // one update per node (MSG_LPOPTIMAL?)
   // Example: http://lp-solve.2324885.n4.nabble.com/Re-implementation-of-MsgListener-in-java-td4434.html
   def addGapCallback() = throw new NotImplementedError("Gap callback is not implemented for LPSolve")
-  def getCurrentGap: Double = throw new NotImplementedError("Gap callback is not implemented for LPSolve")
+  def getCurrentGap: Option[Double] = None
 }

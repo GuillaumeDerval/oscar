@@ -89,5 +89,5 @@ trait MIPSolverInterface extends MPSolverInterface {
   /**
    * Retrieves the current gap value
    * */
-  def getCurrentGap: Double
+  def getCurrentGap: Option[Double]
 }

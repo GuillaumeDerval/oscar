@@ -321,5 +321,5 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
   // for logging everything.
   // Example: http://www.gurobi.com/documentation/6.5/examples/callback_java.html
   def addGapCallback() = throw new NotImplementedError("Gap callback is not implemented for Gurobi")
-  def getCurrentGap: Double = throw new NotImplementedError("Gap callback is not implemented for Gurobi")
+  def getCurrentGap: Option[Double] = None
 }

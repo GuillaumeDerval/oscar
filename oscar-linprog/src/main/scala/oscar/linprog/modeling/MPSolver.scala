@@ -624,7 +624,7 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
   /**
    * Retrieves the current gap value
    * */
-  def currentGap(implicit ev: I => MIPSolverInterface): Double = solverInterface.getCurrentGap
+  def currentGap(implicit ev: I => MIPSolverInterface): Option[Double] = solverInterface.getCurrentGap
 
   /* INFEASIBILITY ANALYSIS */
 
