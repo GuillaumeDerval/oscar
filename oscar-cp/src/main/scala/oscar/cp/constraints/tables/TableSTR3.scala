@@ -34,13 +34,12 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
   // Invalid tuples 
   private[this] val invalidTuples = new ReversibleSparseSetManual(store, table.length)
   private[this] val invalidTuplesArray = invalidTuples.exposeArray
-  private[this] val maxValue = vars.map(_.max).max + 1
 
   // Subtables and separators
   private[this] val initMins = Array.tabulate(arity)(i => vars(i).min)
   private[this] val subtables = Array.tabulate(arity)(i => new Array[Array[Int]](vars(i).max - initMins(i) + 1))
   private[this] val separators = Array.tabulate(arity)(i => new Array[ReversibleInt](vars(i).max - initMins(i) + 1))
-  private[this] val deps: Array[ArrayMap] = Array.fill(table.length)(new ArrayMap(maxValue, true))
+  private[this] val deps: Array[ArrayMap] = Array.fill(table.length)(new ArrayMap(arity, true))
 
   override def setup(l: CPPropagStrength): CPOutcome = {
     invalidTuples.trail() // save state
