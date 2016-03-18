@@ -14,12 +14,14 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  * ****************************************************************************
  */
-package oscar.cp.constraints
+package oscar.cp.constraints.tables
 
+import oscar.cp.core.CPOutcome._
 import oscar.cp.core._
 import oscar.algo.reversible._
 import oscar.cp.core.CPOutcome
 import oscar.cp._
+import oscar.cp.core.delta.DeltaIntVar
 
 /**
  * Implementation of the table algorithm described in :
@@ -53,9 +55,11 @@ class TableAC5TCRecomp(val data: TableData, val x: CPIntVar*) extends Constraint
 
   assert(data.arity == x.size, { println("TableAC5TCRecomp: mismatch table data arity and x.size") })
 
-  val support = Array.fill(x.size)(Array[ReversibleInt]()) // for each variable-value the tuple id that supports it
+  private[this] val domainsFillArray = Array.fill(x.map(_.size).max)(0)
 
-  def sup(i: Int)(v: Int) = support(i)(v - data.min(i))
+  private[this] val support = Array.fill(x.size)(Array[ReversibleInt]()) // for each variable-value the tuple id that supports it
+
+  private[this] def sup(i: Int)(v: Int) = support(i)(v - data.min(i))
 
   /**
    * Initialization, input checks and registration to events
@@ -67,20 +71,8 @@ class TableAC5TCRecomp(val data: TableData, val x: CPIntVar*) extends Constraint
     for ((y, i) <- x.zipWithIndex) {
       if (!filterAndInitSupport(i)) return CPOutcome.Failure
       if (!y.isBound) {
-        y.callValRemoveIdxWhenValueIsRemoved(this, i);
-        /*
-	    y.filterWhenDomainChanges{ d =>
-	      var it = d.values
-	      var ok = true
-	      while (it.hasNext && ok) {
-	        val v = it.next
-	        if ( valRemoveIdx(y, i, v) == CPOutcome.Failure) 
-	          ok = false
-	      }
-	      if (!ok) CPOutcome.Failure
-	      else CPOutcome.Suspend
-	    }
-	    */
+        //y.callValRemoveIdxWhenValueIsRemoved(this, i)
+        y.callOnChangesIdx(i, delta => valuesRemoved(delta))
 
       }
     }
@@ -145,7 +137,20 @@ class TableAC5TCRecomp(val data: TableData, val x: CPIntVar*) extends Constraint
     true
   }
 
-  override def valRemoveIdx(y: CPIntVar, i: Int, v: Int): CPOutcome = {
+  private final def valuesRemoved(delta: DeltaIntVar): CPOutcome = {
+    val idx = delta.id
+    var i = delta.fillArray(domainsFillArray)
+    while (i > 0) {
+      i -= 1
+      val value = domainsFillArray(i)
+      if (valueRemoved(x(idx),idx,value) == Failure) {
+        return Failure
+      }
+    }
+    Suspend
+  }
+
+  private final def valueRemoved(y: CPIntVar, i: Int, v: Int): CPOutcome = {
     // all the supports using a tuple with v at index i are not support any more
     // we iterate on these and try to find new support in case they were used as support
     var t = sup(i)(v).value

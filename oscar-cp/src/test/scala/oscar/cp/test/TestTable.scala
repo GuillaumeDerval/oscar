@@ -15,71 +15,72 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import oscar.cp.constraints._
-import oscar.cp._
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import oscar.cp.constraints.tables.TableAlgo
-import org.scalatest.matchers.Matcher
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.constraints.tables.table
+import oscar.cp.constraints.tables.TableDecomp
+import oscar.cp.testUtils._
+import oscar.cp._
 
 /**
- * @author: Pierre Schaus (pschaus@gmail.com)
+ * @author Pierre Schaus  pschaus@gmail.com
+ * @author Renaud Hartert ren.hartert@gmail.com
  */
+class TestTable extends TestSuite {
 
-//@RunWith(classOf[JUnitRunner])
-class TestTable extends FunSuite with ShouldMatchers {
+  private val rand = new scala.util.Random(16)
 
-
-  val rand = new scala.util.Random(16)
-
-  def randomTuples(dim: Int, n: Int, minValue: Int, maxValue: Int) = {
+  private def randomTuples(dim: Int, n: Int, minValue: Int, maxValue: Int) = {
     Array.fill(n, dim)(rand.nextInt(maxValue - minValue) + minValue)
   }
-
-
-  test("Table Test") {
-    for (i <- 0 until 1000) {
-
-      val cp = CPSolver()
-      var x = Array.fill(5)(CPIntVar(1 to 8)(cp))
-
-      val tuples1 = randomTuples(3, 100, 3, 8)
-      val tuples2 = randomTuples(3, 100, 2, 7)
-      val tuples3 = randomTuples(3, 100, 1, 6)
-
-      cp.add(allDifferent(x))
-      
-      cp.search {
-        binaryFirstFail(x, _.max)
+  
+  // Create the unit tests
+  for (i <- 1 to 1000) {
+    
+    val tuples1 = randomTuples(3, 100, 3, 8)
+    val tuples2 = randomTuples(3, 100, 2, 7)
+    val tuples3 = randomTuples(3, 100, 1, 6)
+    
+    for (algo <- TableAlgo.values) {
+      test("Test random tables " + i + " (" + algo.toString + ")") {
+        testTable(Array(tuples1, tuples2, tuples3), algo)
       }
-
-      
-      
-      val statRef = cp.startSubjectTo() {
-        
-        val cons = Seq(new TableDecomp(Array(x(0), x(1), x(2)), tuples1),new TableDecomp(Array(x(2), x(3), x(4)), tuples2),new TableDecomp(Array(x(0), x(2), x(4)), tuples3))
-        cp.add(cons)
-      }
-
-      for (algo <- TableAlgo.values) {
-        val stat = cp.startSubjectTo() {
-          val cons = Seq(table(Array(x(0), x(1), x(2)), tuples1, algo), table(Array(x(2), x(3), x(4)), tuples2, algo), table(Array(x(0), x(2), x(4)), tuples3, algo))
-          cp.add(cons)
-
-        }
-        if (stat.nSols != statRef.nSols) {
-          println(algo+ " "+ stat.nSols+" "+statRef.nSols)
-          tuples1.foreach(a => println(a.mkString(",")))
-          println("")
-        }
-        assert(stat.nSols == statRef.nSols)
-        assert(stat.nFails == statRef.nFails)
-      }
-
     }
   }
 
+  private def testTable(tables: Array[Array[Array[Int]]], algo: TableAlgo.Value): Unit = {
 
+    implicit val solver = CPSolver()
+    val x = Array.fill(5)(CPIntVar(1 to 8))
+
+    solver.add(allDifferent(x))
+    solver.search(binaryFirstFail(x, _.max))
+
+    val statRef = solver.startSubjectTo() {
+      val cons = Seq(
+        new TableDecomp(Array(x(0), x(1), x(2)), tables(0)),
+        new TableDecomp(Array(x(2), x(3), x(4)), tables(1)),
+        new TableDecomp(Array(x(0), x(2), x(4)), tables(2))
+      )
+      solver.add(cons)
+    }
+
+    val stat = solver.startSubjectTo() {
+      val cons = Seq(
+        table(Array(x(0), x(1), x(2)), tables(0), algo),
+        table(Array(x(2), x(3), x(4)), tables(1), algo),
+        table(Array(x(0), x(2), x(4)), tables(2), algo)
+      )
+      solver.add(cons)
+    }
+
+    if (stat.nSols != statRef.nSols) {
+      println(algo + " " + stat.nSols + " " + statRef.nSols)
+      tables(0).foreach(a => println(a.mkString(",")))
+      println("")
+    }
+
+    assert(stat.nSols == statRef.nSols)
+    assert(stat.nFails == statRef.nFails)
+  }
 }
 
