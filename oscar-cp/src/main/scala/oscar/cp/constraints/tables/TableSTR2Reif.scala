@@ -8,7 +8,6 @@ import oscar.cp.core.CPOutcome._
 import oscar.cp.core.CPPropagStrength
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.core.CPStore
-import oscar.cp.constraints.TableSTR2
 
 /**
  * @author ThanhKM thanhkhongminh@gmail.com
@@ -28,6 +27,8 @@ class TableSTR2Reif(val variables: Array[CPIntVar], table: Array[Array[Int]], va
   private[this] var sValLimit = -1
 
   private[this] val lastSizes = Array.tabulate(variables.length)(i => new ReversibleInt(s, -1))
+  private[this] var posConstraint: Constraint = new TableSTR2(variables, table)
+  private[this] var neConstraint: Constraint = new TableSTRNe(variables, table)
   
   override def setup(l: CPPropagStrength): CPOutcome = {
     val outcome = propagate()
@@ -43,10 +44,10 @@ class TableSTR2Reif(val variables: Array[CPIntVar], table: Array[Array[Int]], va
     // check if b is bound
     if (b.isBound) {
       if (b.min == 1) {
-        if (s.post(new TableSTR2(variables, table)) == Failure)
+        if (s.post(posConstraint) == Failure)
           return Failure
       } else if (b.min == 0) {
-        if (s.post(new TableSTRNe(variables, table)) == Failure)
+        if (s.post(neConstraint) == Failure)
           return Failure
       }
       return Success
