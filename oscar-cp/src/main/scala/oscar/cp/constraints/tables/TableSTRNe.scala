@@ -6,6 +6,7 @@ import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPOutcome._
 import oscar.cp.core.CPPropagStrength
 import oscar.algo.reversible.ReversibleInt
+import java.util.Arrays
 
 /**
  * @author ThanhKM thanhkhongminh@gmail.com
@@ -41,7 +42,7 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
   private[this] val lastSizes = Array.tabulate(variables.length)(i => new ReversibleInt(s, -1))
   
   // count(x,a): number of support possibles for each literal (x,a)
-  private[this] val count = Array.fill(arity)(Array[Int]())
+  private[this] val count = Array.tabulate(arity)(i => new Array[Int](variables(i).size))
   
   override def setup(l: CPPropagStrength): CPOutcome = {
     if (propagate() == Failure) return Failure
@@ -86,7 +87,8 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
         sSup(i) = sSup(sSupLimit)
         sSupLimit -= 1
       } else
-        count(i) = Array.fill(variables(i).size)(nTuples)
+        //count(i) = Array.fill(variables(i).size)(nTuples)
+        Arrays.fill(count(i), 0, variables(i).size, nTuples)
       i -= 1
     }
     
