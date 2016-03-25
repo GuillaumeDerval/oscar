@@ -13,10 +13,9 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   * *****************************************************************************/
 
-
 package oscar.algo.reversible
 
-
+import oscar.algo.reversible.{SparseSet, ReversibleContext, TrailEntry}
 
 object BitSetOp {
 
@@ -42,8 +41,8 @@ object BitSetOp {
 import BitSetOp._
 
 /* Trailable entry to restore the value of the ith Long of the valid tuples */
-final class ReversibleSparseBitSetLongTrailEntry(set: ReversibleSparseBitSet, i: Int, value: Long, nNonZero: Int) extends TrailEntry {
-  @inline override def restore(): Unit = set.restore(i, value,nNonZero)
+final class ReversibleSparseBitSetEntry(set: ReversibleSparseBitSet, numberOfValues: Int) extends TrailEntry {
+  @inline override def restore(): Unit = set.restore(numberOfValues)
 }
 
 /**
@@ -53,8 +52,9 @@ final class ReversibleSparseBitSetLongTrailEntry(set: ReversibleSparseBitSet, i:
  * @param context
  * @param n initial values must be taken from {0,...,n-1}
  * @param initialValues the initial values contained in the set
+ * @author Pierre Schaus pschaus@gmail.com
  */
-class ReversibleSparseBitSet(context: ReversibleContext, val n: Int, val initialValues: Iterable[Int]) {
+class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val initialValues: Iterable[Int]) {
 
   /**
    * Immutable bit-set that can be used to remove/intersect
@@ -75,9 +75,13 @@ class ReversibleSparseBitSet(context: ReversibleContext, val n: Int, val initial
 
 
 
+  private[this] var timeStamp = -1L
+
 
   /* Compute number of Long in a bitset */
   private[this] var nWords = bitLength(n)
+
+  val wordIndicesToTrail = new oscar.algo.reversible.SparseSet(0,nWords,true)
 
   private[this] val words: Array[Long] = Array.fill(nWords)(0L)
   private[this] val lastMagics = Array.fill(nWords)(-1L)
@@ -92,6 +96,25 @@ class ReversibleSparseBitSet(context: ReversibleContext, val n: Int, val initial
   assert(initialValues.forall(v => v < n && v >= 0))
 
   initialValues.foreach(v => setBit(words, v))
+
+
+
+  private[this] var innerTrailSize = 1000
+  private[this] var nTrailEntries = 0
+  private[this] var wordIndex = Array.ofDim[Int](innerTrailSize)
+  private[this] var wordValue = Array.ofDim[Long](innerTrailSize)
+
+
+  @inline private[this] def growInnerTrail(): Unit = {
+    val newWordIndex = new Array[Int](innerTrailSize*2)
+    val newWordValue = new Array[Long](innerTrailSize*2)
+    System.arraycopy(wordIndex, 0,newWordIndex, 0, innerTrailSize)
+    System.arraycopy(wordValue, 0,newWordValue, 0, innerTrailSize)
+    wordIndex = newWordIndex
+    wordValue = newWordValue
+    innerTrailSize *= 2
+  }
+
 
 
   // Remove the zero words from sparse set
@@ -119,13 +142,30 @@ class ReversibleSparseBitSet(context: ReversibleContext, val n: Int, val initial
   }
 
 
-  @inline final def restore(offset: Int, value: Long, nNonNull: Int): Unit = {
-    words(offset) = value
-    nNonZero = nNonNull
+  @inline final def restore(numberOfValues: Int): Unit = {
+    var k = numberOfValues
+    while (k > 0) {
+      var pos = nTrailEntries - k
+      words(wordIndex(pos)) = wordValue(pos)
+      k -= 1
+    }
+    nTrailEntries -= numberOfValues
+    nNonZero = numberOfValues
   }
 
-  @inline private def trail(offset: Int): Unit = {
-    val trailEntry = new ReversibleSparseBitSetLongTrailEntry(this, offset, words(offset),nNonZero)
+
+  private[this] def trail(): Unit = {
+    if (nTrailEntries+nNonZero > innerTrailSize) growInnerTrail()
+    var i: Int = nNonZero
+    while (i > 0) {
+      i -= 1
+      val offset = nonZeroIdx(i)
+      val word = words(offset)
+      wordIndex(nTrailEntries) = offset
+      wordValue(nTrailEntries) = word
+      nTrailEntries += 1
+    }
+    val trailEntry = new ReversibleSparseBitSetEntry(this, nNonZero)
     context.trail(trailEntry)
   }
 
@@ -133,7 +173,7 @@ class ReversibleSparseBitSet(context: ReversibleContext, val n: Int, val initial
    * Clear all the collected elements
    */
   def clearCollected(): Unit = {
-
+    wordIndicesToTrail.empty()
     var i: Int = nNonZero
     while (i > 0) {
       i -= 1
@@ -161,6 +201,12 @@ class ReversibleSparseBitSet(context: ReversibleContext, val n: Int, val initial
    * @return true if the set has changed, false otherwise.
    */
   def intersectCollected(): Boolean = {
+    if (context.magic != timeStamp) {
+      trail()
+      timeStamp = context.magic
+    }
+
+
     var changed = false
     var i: Int = nNonZero
     while (i > 0) {
@@ -183,6 +229,11 @@ class ReversibleSparseBitSet(context: ReversibleContext, val n: Int, val initial
    * @return true if the set has changed, false otherwise.
    */
   def removeCollected(): Boolean = {
+    if (context.magic != timeStamp) {
+      trail()
+      timeStamp = context.magic
+    }
+
     var changed = false
     var i: Int = nNonZero
     while (i > 0) {
@@ -201,12 +252,10 @@ class ReversibleSparseBitSet(context: ReversibleContext, val n: Int, val initial
   @inline private def andWordWithMask(position: Int, offset: Int, mask: Long): Unit = {
 
     val storeMagic = context.magic
-    if (lastMagics(offset) != storeMagic) {
-      lastMagics(offset) = storeMagic
-      trail(offset)
-    }
 
-    val newLong: Long = words(offset) & mask
+    val oldLong: Long = words(offset)
+    val newLong: Long = oldLong & mask
+
     words(offset) = newLong
 
     /* Remove the word from the sparse set if equal to 0 */

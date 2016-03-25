@@ -16,10 +16,10 @@
 package oscar.cp.constraints.tables
 
 
-import oscar.algo.reversible.{ReversibleSparseBitSet, ReversibleInt, TrailEntry}
+import oscar.algo.reversible.{ReversibleInt, TrailEntry, ReversibleSparseBitSet}
 import oscar.cp.core.CPOutcome._
 import oscar.cp.core.delta.DeltaIntVar
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVarViewOffset, CPIntVar}
 import oscar.cp.core.{CPOutcome, CPPropagStrength, CPStore, Constraint}
 
 import scala.collection.mutable.ArrayBuffer
@@ -31,11 +31,7 @@ import scala.collection.mutable.ArrayBuffer
  * @author Pierre Schaus pschaus@gmail.com
  * @author Jordan Demeulenaere j.demeulenaere1@gmail.com
  */
-
-object cpt {
-  var c = 0
-}
-final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableCT") {
+final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableCTT") {
 
   /* Setting idempotency & lower priority for propagate() */
   idempotent = true
@@ -43,16 +39,25 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
 
   /* Basic information */
   private[this] val arity = X.length
-  private[this] val nbTuples = table.length
+
   private[this] val spans = Array.tabulate(arity)(i => X(i).max - X(i).min + 1)
-  private[this] val originalMins = Array.tabulate(arity)(i => X(i).min)
+  //private[this] val originalMins = Array.tabulate(arity)(i => X(i).min)
+
+  private[this] val offsets = Array.tabulate(arity)(i => X(i).min)
+  private[this] val filteredTable = table.filter(t => (0 until arity).forall(i => X(i).hasValue(t(i))))
+
+  private[this] val nbTuples = filteredTable.length
+  private[this] val T = Array.tabulate(filteredTable.size,arity){case(t,i) => filteredTable(t)(i)-offsets(i)}//.sortBy(t => (t(0),t(1)))
+  private[this] val x = Array.tabulate(arity)(i => new CPIntVarViewOffset(X(i),-offsets(i)))
+
+
   private[this] val store = X(0).store
   private[this] val maxDomain = X.map(_.size).max
   private[this] val domainArray = new Array[Int](maxDomain)
   private[this] var domainArraySize = 0
 
 
-  private[this] val validTuples: ReversibleSparseBitSet = new ReversibleSparseBitSet(s,table.size,0 until table.size)
+  private[this] val validTuples = new ReversibleSparseBitSet(s,T.size,0 until T.size)
   private[this] val variableValueSupports = Array.tabulate(arity)(i => new Array[validTuples.BitSet](spans(i)))
   private[this] val deltas: Array[DeltaIntVar] = new Array[DeltaIntVar](arity)
 
@@ -80,8 +85,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
     /* Call propagate() when domains change */
     var i = 0
     while (i < arity) {
-      val x = X(i)
-      deltas(i) = x.callPropagateOnChangesWithDelta(this)
+      deltas(i) = x(i).callPropagateOnChangesWithDelta(this)
       i += 1
     }
 
@@ -103,22 +107,22 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
    */
   @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): CPOutcome = {
 
-    val intVar = X(varIndex)
-
-    var changed = false
-    val originalMin = originalMins(varIndex)
+    val intVar = x(varIndex)
     val varSize = intVar.size
-    val varMin = intVar.min
+    var changed = false
 
     validTuples.clearCollected()
 
     /* Update the value of validTuples by considering D(x) or delta */
+
     if (varSize == 1) {
       /* The variable is assigned */
       //println("validTuples empty?:"+validTuples.isEmpty())
-      validTuples.collect(variableValueSupports(varIndex)(varMin-originalMin))
-      changed = validTuples.intersectCollected()  //andTempMaskWithValid()
-    } else {
+      validTuples.collect(variableValueSupports(varIndex)(intVar.min))
+      changed = validTuples.intersectCollected()
+    }
+    else {
+
       if (delta.size < varSize) {
 
         /* Use delta to update validTuples */
@@ -126,7 +130,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
         var i = 0
         /* Collect all the removed tuples by doing or's with precomputed masks */
         while (i < domainArraySize) {
-          validTuples.collect(variableValueSupports(varIndex)(domainArray(i)-originalMin))
+          validTuples.collect(variableValueSupports(varIndex)(domainArray(i)))
           i += 1
         }
         /* Remove from the valid supports all the collected tuples, no longer supported */
@@ -138,7 +142,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
         domainArraySize = intVar.fillArray(domainArray)
         var i = 0
         while (i < domainArraySize) {
-          validTuples.collect(variableValueSupports(varIndex)(domainArray(i)-originalMin))
+          validTuples.collect(variableValueSupports(varIndex)(domainArray(i)))
           i += 1
         }
         /* Intersect the set of valid tuples with the valid tuples collected */
@@ -146,13 +150,12 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
 
       }
     }
-
-
     /* Failure if there are no more valid tuples */
     if (validTuples.isEmpty) return Failure
 
     Suspend
   }
+
 
   /**
    * Perform a consistency check : for each variable value pair (x,a), we check if a has at least one valid support.
@@ -160,19 +163,15 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
    * @return the outcome i.e. Failure or Success.
    */
   override def propagate(): CPOutcome = {
-    /*
-    cpt.c += 1
-    if (cpt.c % 1000 == 0) {
-      println("ct:"+cpt.c)
-    }*/
 
     var nChanged = 0
     var changedVarIdx = 0
-
+    var unBoundVarsSize_ = unBoundVarsSize.value
     var j = unBoundVarsSize.value
     while (j > 0) {
       j -= 1
       val varIndex = unBoundVars(j)
+
       if (deltas(varIndex).size > 0) {
         nChanged += 1
         changedVarIdx = varIndex
@@ -182,34 +181,37 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
       }
     }
 
-    // since we are AC we know some valid tuples have disappeared
 
-    j = unBoundVarsSize.value
+
+    // since we are AC we know some valid tuples have disappeared
+    j = unBoundVarsSize_
     while (j > 0) {
       j -= 1
       val varIndex = unBoundVars(j)
+
       // No need to check a variable if it was the only one modified
-      if (nChanged > 1 || changedVarIdx != varIndex) {
-        domainArraySize = X(varIndex).fillArray(domainArray)
+      if ((nChanged > 1 || changedVarIdx != varIndex) && !x(varIndex).isBound) {
+        domainArraySize = x(varIndex).fillArray(domainArray)
         var i = 0
         var value = 0
         while (i < domainArraySize) {
           value = domainArray(i)
-          if (!validTuples.intersect(variableValueSupports(varIndex)(value - originalMins(varIndex)))) {
-            if (X(varIndex).removeValue(value) == Failure) {
+          if (!validTuples.intersect(variableValueSupports(varIndex)(value))) {
+            if (x(varIndex).removeValue(value) == Failure) {
               return Failure
             }
           }
           i += 1
         }
-
       }
-      if (X(varIndex).isBound) {
-        unBoundVarsSize.decr()
-        unBoundVars(j) = unBoundVars(unBoundVarsSize.value)
-        unBoundVars(unBoundVarsSize.value) = varIndex
+      if (x(varIndex).isBound) {
+        unBoundVarsSize_ -= 1
+        unBoundVars(j) = unBoundVars(unBoundVarsSize_)
+        unBoundVars(unBoundVarsSize_) = varIndex
       }
     }
+    unBoundVarsSize.value = unBoundVarsSize_
+
 
 
     // If the variable is bound, we never need to consider it any more (put them in a sparse-set)
@@ -247,7 +249,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
   @inline private def isTupleValid(tupleIndex: Int): Boolean = {
     var varIndex = 0
     while (varIndex < arity) {
-      if (!X(varIndex).hasValue(table(tupleIndex)(varIndex))) {
+      if (!x(varIndex).hasValue(T(tupleIndex)(varIndex))) {
         return false
       }
       varIndex += 1
@@ -260,7 +262,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
    */
   @inline private def computeSupportsAndInitialFiltering(valids: ArrayBuffer[Int]): CPOutcome = {
 
-    val varValueSupports = Array.tabulate(X.size)(i => Array.tabulate(spans(i))(v => new ArrayBuffer[Int]()))
+    val varValueSupports = Array.tabulate(x.size)(i => Array.tabulate(spans(i))(v => new ArrayBuffer[Int]()))
 
     /* Collect the supports */
     var validIndex = 0
@@ -268,9 +270,8 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
       val tupleIndex = valids(validIndex)
       var varIndex = 0
       while (varIndex < arity) {
-        val value = table(tupleIndex)(varIndex)
-        val valueIndex = value - originalMins(varIndex)
-        varValueSupports(varIndex)(valueIndex) += tupleIndex
+        val value = T(tupleIndex)(varIndex)
+        varValueSupports(varIndex)(value) += tupleIndex
         varIndex += 1
       }
       validIndex += 1
@@ -284,7 +285,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
         variableValueSupports(varIndex)(valueIndex) = new validTuples.BitSet(varValueSupports(varIndex)(valueIndex))
       } else {
         /* This variable-value does not have any support, it can be removed */
-        if (X(varIndex).removeValue(valueIndex+originalMins(varIndex)) == Failure) {
+        if (x(varIndex).removeValue(valueIndex) == Failure) {
           return Failure
         }
       }
