@@ -7,6 +7,7 @@ import oscar.cp.core.CPOutcome._
 import oscar.cp.core.CPPropagStrength
 import oscar.algo.reversible.ReversibleInt
 import java.util.Arrays
+import oscar.cp.core.CPStore
 
 /**
  * @author ThanhKM thanhkhongminh@gmail.com
@@ -19,40 +20,49 @@ import java.util.Arrays
  */
 class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(variables(0).store, "TableSTRNe") {
   idempotent = true
+  priorityL2 = CPStore.MaxPriorityL2 - 1
   
   private[this] val arity = variables.length
-  
-  // Sparse set for current table
-  private[this] val position = Array.tabulate(table.length)(i => i)
-  private[this] val revLimit = new ReversibleInt(s, table.length - 1)
+  // Ssup, Sval
+  private[this] var sSupLimit = -1
+  private[this] val sSup = Array.tabulate(arity)(i => i)  
+  private[this] var sValLimit = -1
+  private[this] val sVal = Array.tabulate(arity)(i => i)
 
+  // Global time-stamp increased at each propagate
+  private[this] var timeStamp = 0
+  // domValues is used for speedup validity check 
+  private[this] val values = Array.ofDim[Int](variables.map(_.size).max)
+  private[this] val domValues = Array.tabulate(arity)(i => Array.fill(variables(i).max-variables(i).min+1)(-1))
+  
   // Dense + sparse set for (variable, value) (unsupported set)
   private[this] val unsDense = Array.tabulate(arity)(i => new Array[Int](variables(i).size)) // store values
   private[this] val unsSparse = Array.tabulate(arity)(i => new Array[Int](variables(i).max - variables(i).min + 1)) // sparse
   private[this] val minValues = Array.tabulate(arity)(i => variables(i).min) // min values of each variables 
   private[this] val unsSizes = Array.tabulate(arity)(i => variables(i).size) // size of sparse set
 
-  // Ssup, Sval
-  private[this] var sSupLimit = -1
-  private[this] val sSup = Array.tabulate(arity)(i => i)  
-  private[this] var sValLimit = -1
-  private[this] val sVal = Array.tabulate(arity)(i => i)
+  //// Remove invalid tuples to obtain filtered table
+  private[this] val fTable = table.filter(t => (0 until arity).forall(i => variables(i).hasValue(t(i))))
+  // Sparse set for current table
+  private[this] val position = Array.tabulate(fTable.length)(i => i)
+  private[this] val currentLimit = new ReversibleInt(s, fTable.length - 1)
   
   // variable's domain size since last invocation 
-  private[this] val lastSizes = Array.tabulate(variables.length)(i => new ReversibleInt(s, -1))
+  private[this] val lastSizes = Array.tabulate(variables.length)(i => new ReversibleInt(s, -1))  
   
+  //TODO: fix 'count' and use gac to speedup unsupport
   // count(x,a): number of support possibles for each literal (x,a)
   private[this] val count = Array.tabulate(arity)(i => new Array[Int](variables(i).size))
   
   override def setup(l: CPPropagStrength): CPOutcome = {
     if (propagate() == Failure) return Failure
     variables.filter(!_.isBound).foreach(_.callPropagateWhenDomainChanges(this))
-    CPOutcome.Suspend
+    Suspend
   }
 
   override def propagate(): CPOutcome = {
-
-    var limit = revLimit.getValue()
+    timeStamp += 1
+    var limit = currentLimit.getValue()
     //---------------------- initialize -------------------------------------/
     sValLimit = -1 // reset Sval
     sSupLimit = -1 // reset Ssup
@@ -66,7 +76,13 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
       if (variables(i).size != lastSizes(i).getValue) {
         sValLimit += 1
         sVal(sValLimit) = i
-        lastSizes(i).setValue(variables(i).size)
+        lastSizes(i).setValue(variables(i).size)        
+        // update domValues, speed up check validity
+        var k = variables(i).fillArray(values)
+        while (k > 0) {
+          k -= 1
+          domValues(i)(values(k)-minValues(i)) = timeStamp
+        }
       }
       i += 1
     }
@@ -86,41 +102,35 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
       if (nTuples > limit + 1) {
         sSup(i) = sSup(sSupLimit)
         sSupLimit -= 1
-      } else
-        //count(i) = Array.fill(variables(i).size)(nTuples)
-        Arrays.fill(count(i), 0, variables(i).size, nTuples)
-      i -= 1
-    }
-    
-    //-------------- iterate global table ------------------------------/
-    i = 0
-    while (i <= limit) {
-      val tau = table(position(i))
-      
-      /*
-      if (isValidTuple(tau) != isValidTupleWithSVal(tau)) {
-        println("------------\ntuple:")
-        printArray(tau)
-        println("variables: " + variables.toSeq)
-        println("table:")
-        for (j <- 0 to limit) {
-          print(position(j) + ": ")
-          printArray(table(position(j)))
+      } else {
+        // update count(x,a)
+        var k = variables(i).fillArray(values)
+        while (k > 0) {
+          k -= 1
+          count(i)(values(k)-minValues(i)) = nTuples
         }
       }
-      */
-        
-      // if the tuple is valid
-      if (isValidTupleWithSVal(tau)) {//if (isValidTuple(tau)) {
-        unsupport(tau, limit+1)
-        i += 1
-      } else { // remove tuple
+      i -= 1
+    }
+    //-------------- iterate global table ------------------------------/
+    i = limit
+    while (i >= 0) {
+      val tau = fTable(position(i))
+      if (!isValidTupleWithSVal(tau)) {
+        // remove tuple
         swap(position, i, limit)
         limit -= 1
       }
+      i -= 1
     }
-    revLimit.setValue(limit)
-    
+    i = limit
+    while (i >= 0) { // && sSupLimit > -1
+      val tau = fTable(position(i))
+      unsupport(tau, limit+1)
+      i -= 1
+    }
+
+    currentLimit.setValue(limit)
     //---------------- update domains ---------------------------------/
     if (limit == -1) return Success
 		updateDomains()
@@ -146,7 +156,7 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
    * Remove (varId, value) from Uns.
    * @return new size of Uns(varId)
    */
-  @inline private def removeFromUns(varId: Int, value: Int): Int = {
+  @inline private def removeFromUns(varId: Int, value: Int): Unit = {
     val valIndex = unsSparse(varId)(value - minValues(varId))
     // value
     val size = unsSizes(varId)
@@ -157,7 +167,6 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
       swap(unsSparse(varId), value - minValues(varId), value2 - minValues(varId))
       unsSizes(varId) = size - 1
     }
-    unsSizes(varId)
   }
   
   /**
@@ -167,21 +176,19 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
     var i = sSupLimit
     while (i >= 0) {
       val varId = sSup(i)
-      val value = tau(varId)
-      val valIndex = unsSparse(varId)(value - minValues(varId))
-      
-      count(varId)(valIndex) -= 1
-      
+      val offValue = tau(varId) - minValues(varId)
+      count(varId)(offValue) -= 1
       // when count(x,a) > tbSize, it means (x,a) is GAC, we have to remove it
-      if (count(varId)(valIndex) > tbSize) {
+      ///*
+      if (count(varId)(offValue) > tbSize) {
         // Remove from Uns
-        val unsSize = removeFromUns(varId, value)
-        if (unsSize == 0) {
+        removeFromUns(varId, offValue + minValues(varId))
+        if (unsSizes(varId) == 0) {
           sSup(i) = sSup(sSupLimit)
           sSupLimit -= 1
         }
       }
-      
+      //*/
       i -= 1
     }
   }
@@ -193,18 +200,14 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
     var i = 0
     while (i <= sSupLimit) {
       val varId = sSup(i)
-
       val size = unsSizes(varId)
       var j = 0
       while (j < size) {
-        val value = unsDense(varId)(j)
-        val valIndex = unsSparse(varId)(value - minValues(varId))
-        
-        if (count(varId)(valIndex) == 0) {
+        val value = unsDense(varId)(j)        
+        if (count(varId)(value - minValues(varId)) == 0) {
           if (variables(varId).size == 1)
             return Failure
           variables(varId).removeValue(value)
-          // println("variables: " + (varId) + " removeValue " +value)
         }
         j += 1
       }
@@ -213,7 +216,6 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
       // lastSizes(varId).setValue(variables(varId).size)
       i += 1
     }
-    
     Suspend
   }
   
@@ -221,28 +223,27 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
    *  Check tuple validity with SVal
    */
   @inline private def isValidTupleWithSVal(tau: Array[Int]): Boolean = {
-      var i = 0
-      while (i <= sValLimit) {
-        val varId = sVal(i)
-        if (!variables(varId).hasValue(tau(varId)))
-          return false
-        
-        i += 1
-      }
-      true
+    var i = 0
+    while (i <= sValLimit) {
+      val varId = sVal(i)
+      if (domValues(varId)(tau(varId)-minValues(varId)) != timeStamp) return false
+      //if (!variables(varId).hasValue(tau(varId)))  return false
+      i += 1
+    }
+    true
   }
 
   /**
    *  Check valid tuple by presence of all values in variables' domain
    */
   @inline private def isValidTuple(tau: Array[Int]): Boolean = {
-      var varId = 0
-      while (varId < arity) {
-        if (!variables(varId).hasValue(tau(varId)))
-          return false        
-        varId += 1
-      }
-      true
+    var varId = 0
+    while (varId < arity) {
+      if (!variables(varId).hasValue(tau(varId)))
+        return false        
+      varId += 1
+    }
+    true
   }
   
   @inline private def swap(arrays: Array[Int], i1: Int, i2: Int) = {
