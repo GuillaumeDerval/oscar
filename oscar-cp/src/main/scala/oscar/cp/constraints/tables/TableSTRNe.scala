@@ -179,7 +179,6 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
       val offValue = tau(varId) - minValues(varId)
       count(varId)(offValue) -= 1
       // when count(x,a) > tbSize, it means (x,a) is GAC, we have to remove it
-      ///*
       if (count(varId)(offValue) > tbSize) {
         // Remove from Uns
         removeFromUns(varId, offValue + minValues(varId))
@@ -188,7 +187,6 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
           sSupLimit -= 1
         }
       }
-      //*/
       i -= 1
     }
   }
