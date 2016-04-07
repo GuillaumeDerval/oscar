@@ -155,7 +155,7 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
 
 
   private[this] def trail(): Unit = {
-    if (nTrailEntries+nNonZero > innerTrailSize) growInnerTrail()
+    while (nTrailEntries+nNonZero > innerTrailSize) growInnerTrail()
     var i: Int = nNonZero
     while (i > 0) {
       i -= 1
