@@ -17,7 +17,7 @@ package oscar.cp.constraints.tables
 
 
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{Constraint, CPOutcome, CPPropagStrength}
+import oscar.cp.core.{CPStore, Constraint, CPOutcome, CPPropagStrength}
 import oscar.cp.core.CPOutcome._
 import oscar.cp.constraints.tables.mdd.{MDDTableVar, ReversibleMDD}
 
@@ -28,6 +28,9 @@ import oscar.cp.constraints.tables.mdd.{MDDTableVar, ReversibleMDD}
  * @author Jordan Demeulenaere j.demeulenaere1@gmail.com
  */
 class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableMDD4R") {
+
+  idempotent = true
+  priorityL2 = CPStore.MaxPriorityL2 - 1
   
   private[this] val arity = X.length
   private[this] val mdd = new ReversibleMDD(X(0).store, table)
@@ -53,6 +56,8 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
    * 4) We do a first propagation
    */
   override def setup(l: CPPropagStrength): CPOutcome = {
+
+
     /* Put edges in valid set */
     for (edge <- 0 until mdd.nbEdges) {
       vars(mdd.varOfEdge(edge)).addEdge(mdd.valueOfEdge(edge), edge)

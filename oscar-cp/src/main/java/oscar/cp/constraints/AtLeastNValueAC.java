@@ -14,7 +14,6 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import com.sun.tools.javac.main.Option;
 import oscar.cp.core.CPOutcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
@@ -115,7 +114,9 @@ public class AtLeastNValueAC extends Constraint {
 
         allocateSCC();
 
-        prune(sizeMatching);
+        if (propagate() == CPOutcome.Failure) {
+            return CPOutcome.Failure;
+        }
 
         for (int k = 0; k < x.length; k++) {
             if (!x[k].isBound()) {
@@ -155,7 +156,8 @@ public class AtLeastNValueAC extends Constraint {
                 }
             }
             if (!x[k].isBound()) {
-                unBoundIdx[nUnBound++] = k;
+                unBoundIdx[nUnBound] = k;
+                nUnBound++;
             }
         }
 
@@ -288,6 +290,7 @@ public class AtLeastNValueAC extends Constraint {
 
     private void findSCC() {
         initSCC();
+        //for (int k = 0; k < x.length; k++) {
         for (int i = 0; i < nUnBound; i++) {
             int k = unBoundIdx[i];
             if (varDfs[k] == 0)
@@ -322,6 +325,7 @@ public class AtLeastNValueAC extends Constraint {
 
         //matched variable can go to other unmatched variables
         if (match[k] != NONE) {
+            //for (int i = 0; i < x.length; i++) {
             for (int j = 0; j < nUnBound; j++) {
                 int i = unBoundIdx[j];
                 if (match[i] == NONE) {
@@ -373,6 +377,7 @@ public class AtLeastNValueAC extends Constraint {
                     valHigh[k - min] = varDfs[w];
             }
         } else {
+            //for (i = 0; i < x.length; i++) {
             for (int j = 0; j < nUnBound; j++) {
                 i = unBoundIdx[j];
                 //unmatched value can go to every matched value
@@ -417,9 +422,6 @@ public class AtLeastNValueAC extends Constraint {
     }
 
     private void prune(int sizeMatching) {
-        if (sizeMatching > nValueVar.getMin()) {
-            return; //no pruning possible
-        }
         findSCC();
         for (int j = 0; j < nUnBound; j++) {
                 int k = unBoundIdx[j];

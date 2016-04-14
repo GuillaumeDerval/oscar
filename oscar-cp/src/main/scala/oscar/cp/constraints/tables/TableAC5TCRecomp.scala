@@ -72,7 +72,7 @@ class TableAC5TCRecomp(val data: TableData, val x: CPIntVar*) extends Constraint
       if (!filterAndInitSupport(i)) return CPOutcome.Failure
       if (!y.isBound) {
         //y.callValRemoveIdxWhenValueIsRemoved(this, i)
-        y.callOnChangesIdx(i, delta => valuesRemoved(delta))
+        y.callOnChangesIdx(i, delta => valuesRemoved(delta),idempotent = true)
 
       }
     }

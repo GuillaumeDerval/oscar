@@ -118,7 +118,7 @@ class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Co
     }
 
     X.zipWithIndex.foreach { case (x, index) =>
-      x.callOnChangesIdx(index, delta => valuesRemoved(delta))
+      x.callOnChangesIdx(index,delta => valuesRemoved(delta),idempotent=true)
     }
 
 

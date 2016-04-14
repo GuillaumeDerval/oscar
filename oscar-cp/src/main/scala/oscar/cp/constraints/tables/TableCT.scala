@@ -119,7 +119,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
       /* The variable is assigned */
       //println("validTuples empty?:"+validTuples.isEmpty())
       validTuples.collect(variableValueSupports(varIndex)(intVar.min))
-      changed = validTuples.intersectCollected()
+
     }
     else {
 
@@ -130,12 +130,12 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
         var i = 0
         /* Collect all the removed tuples by doing or's with precomputed masks */
         while (i < domainArraySize) {
+          //validTuples.collectReverse(variableValueSupports(varIndex)(domainArray(i)))
           validTuples.collect(variableValueSupports(varIndex)(domainArray(i)))
           i += 1
         }
+        validTuples.reverseCollected()
         /* Remove from the valid supports all the collected tuples, no longer supported */
-        changed = validTuples.removeCollected()
-
       } else {
 
         /* Don't use delta = reset strategy = recompute from the domain */
@@ -146,12 +146,17 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
           i += 1
         }
         /* Intersect the set of valid tuples with the valid tuples collected */
-        changed = validTuples.intersectCollected()
 
       }
+
     }
+    changed = validTuples.intersectCollected()
     /* Failure if there are no more valid tuples */
-    if (validTuples.isEmpty) return Failure
+
+    if (validTuples.isEmpty) {
+      //println("here")
+      return Failure
+    }
 
     Suspend
   }

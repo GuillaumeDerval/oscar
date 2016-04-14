@@ -195,6 +195,15 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     }
   }
 
+  def reverseCollected(): Unit = {
+    var i: Int = nNonZero
+    while (i > 0) {
+      i -= 1
+      val offset = nonZeroIdx(i)
+      tempMask(offset) = ~tempMask(offset)
+    }
+  }
+
   /**
    * Change the bit set such that only the elements
    * also present in the collected set are kept
@@ -206,19 +215,22 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
       timeStamp = context.magic
     }
 
-
     var changed = false
     var i: Int = nNonZero
     while (i > 0) {
       i -= 1
       val offset = nonZeroIdx(i)
-      val tempMaskOffset = tempMask(offset)
-      /* They should at be at least one bit set in words(offset) */
-      /* and not set in tempMaskOffset to have a change */
-      if ((~tempMaskOffset & words(offset)) != 0L) {
-        andWordWithMask(i, offset, tempMaskOffset)
-        changed = true
+      val storeMagic = context.magic
+      val oldLong: Long = words(offset)
+      val newLong: Long = oldLong & tempMask(offset)
+      words(offset) = newLong
+      /* Remove the word from the sparse set if equal to 0 */
+      if (newLong == 0L) {
+        nNonZero -= 1
+        nonZeroIdx(i) = nonZeroIdx(nNonZero)
+        nonZeroIdx(nNonZero) = offset
       }
+      changed |= oldLong != newLong
     }
     changed
   }
@@ -229,24 +241,10 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
    * @return true if the set has changed, false otherwise.
    */
   def removeCollected(): Boolean = {
-    if (context.magic != timeStamp) {
-      trail()
-      timeStamp = context.magic
-    }
-
-    var changed = false
-    var i: Int = nNonZero
-    while (i > 0) {
-      i -= 1
-      val offset = nonZeroIdx(i)
-      val tempMaskOffset = tempMask(offset)
-      /* There should be at least one bit in common to have a change */
-      if ((tempMaskOffset & words(offset)) != 0L) {
-        andWordWithMask(i, offset, ~tempMaskOffset)
-        changed = true
-      }
-    }
-    changed
+    reverseCollected()
+    val b = intersectCollected()
+    reverseCollected()
+    b
   }
 
   @inline private def andWordWithMask(position: Int, offset: Int, mask: Long): Unit = {
