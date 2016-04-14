@@ -54,7 +54,7 @@ trait Constraints {
    */
   def minus(x: CPIntVar, y: CPIntVar): CPIntVar = {
     val c = CPIntVar(x.min - y.max, x.max - y.min)(x.store)
-    x.store.post(new oscar.cp.constraints.Minus(x, y, c))
+    x.store.post(new oscar.cp.constraints.BinarySum(c,y,x))
     c
   }
 

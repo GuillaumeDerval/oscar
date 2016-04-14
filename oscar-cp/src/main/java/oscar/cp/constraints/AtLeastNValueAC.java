@@ -14,6 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
+import com.sun.tools.javac.main.Option;
 import oscar.cp.core.CPOutcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
@@ -60,6 +61,8 @@ public class AtLeastNValueAC extends Constraint {
     private int top;
 
     private int[][] domArray;
+    private int[] unBoundIdx;
+    private int nUnBound;
 
 
     public AtLeastNValueAC(CPIntVar[] x, CPIntVar nval) {
@@ -78,7 +81,6 @@ public class AtLeastNValueAC extends Constraint {
 
     @Override
     public CPOutcome setup(CPPropagStrength l) {
-
         posted = true;
 
         if (nValueVar.getMin() < x.length) {
@@ -93,6 +95,8 @@ public class AtLeastNValueAC extends Constraint {
 
         findValueRange();
 
+
+        unBoundIdx = new int[x.length];
         domArray = new int[x.length][valSize];
 
         initMatching();
@@ -141,6 +145,7 @@ public class AtLeastNValueAC extends Constraint {
 
     @Override
     public CPOutcome propagate() {
+        nUnBound = 0;
         for (int k = 0; k < x.length; k++) {
             if (match[k] != NONE) {
                 if (!x[k].hasValue(match[k])) {
@@ -148,6 +153,9 @@ public class AtLeastNValueAC extends Constraint {
                     match[k] = NONE;
                     sizeMatching--;
                 }
+            }
+            if (!x[k].isBound()) {
+                unBoundIdx[nUnBound++] = k;
             }
         }
 
@@ -280,8 +288,9 @@ public class AtLeastNValueAC extends Constraint {
 
     private void findSCC() {
         initSCC();
-        for (int k = 0; k < x.length; k++) {
-            if (varDfs[k] == 0 &&  !x[k].isBound())
+        for (int i = 0; i < nUnBound; i++) {
+            int k = unBoundIdx[i];
+            if (varDfs[k] == 0)
                 findSCCvar(k);
         }
     }
@@ -293,9 +302,8 @@ public class AtLeastNValueAC extends Constraint {
         type[top] = 0;
         top++;
         assert (top <= x.length + valSize);
+
         //a variable can go to values in its domain that it doesn't match
-
-
         int nVal = x[k].fillArray(domArray[k]);
         for (int i = 0; i < nVal; i++) {
             int w = domArray[k][i];
@@ -314,8 +322,9 @@ public class AtLeastNValueAC extends Constraint {
 
         //matched variable can go to other unmatched variables
         if (match[k] != NONE) {
-            for (int i = 0; i < x.length; i++) {
-                if (match[i] == NONE && !x[i].isBound()) {
+            for (int j = 0; j < nUnBound; j++) {
+                int i = unBoundIdx[j];
+                if (match[i] == NONE) {
                     if (varDfs[i] == 0) {
                         findSCCvar(i);
                         if (varHigh[i] > varHigh[k])
@@ -364,7 +373,8 @@ public class AtLeastNValueAC extends Constraint {
                     valHigh[k - min] = varDfs[w];
             }
         } else {
-            for (i = 0; i < x.length; i++) {
+            for (int j = 0; j < nUnBound; j++) {
+                i = unBoundIdx[j];
                 //unmatched value can go to every matched value
                 if (match[i] != NONE) {
                     int w = match[i];
@@ -411,8 +421,8 @@ public class AtLeastNValueAC extends Constraint {
             return; //no pruning possible
         }
         findSCC();
-        for (int k = 0; k < x.length; k++) {
-            if (!x[k].isBound()) {
+        for (int j = 0; j < nUnBound; j++) {
+                int k = unBoundIdx[j];
                 int nVal = x[k].fillArray(domArray[k]);
                 for (int i = 0; i < nVal; i++) {
                     int w = domArray[k][i];
@@ -420,8 +430,6 @@ public class AtLeastNValueAC extends Constraint {
                         x[k].removeValue(w);
                     }
                 }
-            }
-
         }
         //System.out.println("here");
     }
