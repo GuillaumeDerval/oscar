@@ -15,6 +15,12 @@ final class WatcherL2(constraint: Constraint) extends Watcher {
   @inline final override def awake(): Unit = store.enqueueL2(constraint)
 }
 
+final class WatcherL2Hot(variable: CPIntVar, constraint: Constraint) extends Watcher { 
+  private[this] val store = constraint.s
+  val hot = if (variable.size == 1) 1 else 0
+  @inline final override def awake(): Unit = store.enqueueL2(constraint, hot)
+}
+
 final class WatcherL1BindId(constraint: Constraint, variable: CPIntVar, id: Int) extends Watcher {
   private[this] val store = constraint.s
   final override def awake(): Unit = {

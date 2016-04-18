@@ -3,6 +3,7 @@ package oscar.cp.core.watcher
 import oscar.algo.reversible.TrailEntry
 import oscar.cp.core.CPStore
 import oscar.cp.core.Constraint
+import oscar.cp.core.variables.CPIntVar
 
 class WatcherListL2(store: CPStore) {
   
@@ -23,6 +24,14 @@ class WatcherListL2(store: CPStore) {
   }
 
   final def register(constraint: Constraint): Unit = {
+    val watcher = new WatcherL2(constraint)
+    if (index == watchers.length) growStack()
+    watchers(index) = watcher
+    trail()
+    index += 1
+  }
+
+  final def registerHot(variable: CPIntVar, constraint: Constraint): Unit = {
     val watcher = new WatcherL2(constraint)
     if (index == watchers.length) growStack()
     watchers(index) = watcher

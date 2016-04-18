@@ -516,7 +516,7 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
    */
   final override def callPropagateWhenBind(c: Constraint) {
     degree.incr()
-    onBindL2.register(c)
+    onBindL2.registerHot(this, c)
   }
 
   /**
@@ -527,12 +527,12 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
    */
   final override def callPropagateWhenBoundsChange(c: Constraint) {
     degree.incr()
-    onBoundsL2.register(c)
+    onBoundsL2.registerHot(this, c)
   }
 
   final override def callPropagateWhenBoundsChange(c: Constraint, cond: => Boolean) {
     degree.incr()
-    onBoundsL2.register(c, cond)
+    onBoundsL2.registerHot(this, c)
   }
   
   /**
@@ -543,13 +543,13 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
    */
   final override def callPropagateWhenDomainChanges(c: Constraint): Unit = {
     degree.incr()
-    onDomainL2.register(c)
+    onDomainL2.registerHot(this, c)
   }
 
   final override def callPropagateOnChangesWithDelta(c: Constraint): DeltaIntVar = {
     val snap = delta(c)
     degree.incr()
-    onDomainL2.register(c)
+    onDomainL2.registerHot(this, c)
     snap
   }
 

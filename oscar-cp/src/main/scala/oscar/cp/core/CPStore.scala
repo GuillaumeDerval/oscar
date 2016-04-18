@@ -40,7 +40,9 @@ import scala.util.Random
  * @author Pierre Schaus pschaus@gmail.com
  * @author Renaud Hartert ren.hartert@gmail.com
  */
-class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode {
+class CPStore(final val propagStrength: CPPropagStrength, hotDegree: Int) extends DFSearchNode {
+  
+  def this(defaultPropag: CPPropagStrength) = this(defaultPropag, 2)
 
   def this() = this(CPPropagStrength.Weak)
   
@@ -52,7 +54,7 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode {
   private[this] var highestPriorL1 = -1
 
   // Propagation queue L2 (AC3)
-  private[this] val propagQueueL2 = Array.fill(CPStore.MaxPriorityL2 + 1)(new ArrayQueue[Constraint](100))
+  private[this] val propagQueueL2 = Array.fill(CPStore.MaxPriorityL2 * hotDegree + 1)(new ArrayQueue[Constraint](100))
   private[this] var highestPriorL2 = -1
 
   private[this] val cutConstraints = new ArrayQueue[Constraint](1) // usually empty
@@ -115,6 +117,17 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode {
     if (c.isEnqueuable) {
       c.setInQueue()
       val priority = c.priorityL2
+      propagQueueL2(priority).addLast(c)
+      if (priority > highestPriorL2) {
+        highestPriorL2 = priority
+      }
+    }
+  }
+  
+  @inline final def enqueueL2(c: Constraint, hot: Int): Unit = {
+    if (c.isEnqueuable) {
+      c.setInQueue()
+      val priority = c.priorityL2 * hotDegree + hot
       propagQueueL2(priority).addLast(c)
       if (priority > highestPriorL2) {
         highestPriorL2 = priority
