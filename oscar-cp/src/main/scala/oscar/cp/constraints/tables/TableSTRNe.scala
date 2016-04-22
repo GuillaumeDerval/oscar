@@ -52,7 +52,7 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
   
   //TODO: fix 'count' and use gac to speedup unsupport
   // count(x,a): number of support possibles for each literal (x,a)
-  private[this] val count = Array.tabulate(arity)(i => new Array[Int](variables(i).size))
+  private[this] val count = Array.tabulate(arity)(i => new Array[Int](variables(i).max-variables(i).min+1))
   
   override def setup(l: CPPropagStrength): CPOutcome = {
     if (propagate() == Failure) return Failure
@@ -107,6 +107,9 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
         var k = variables(i).fillArray(values)
         while (k > 0) {
           k -= 1
+          println(i+" countsize"+count.size+" count(i).size"+count(i).size)
+          println(values(k)+" minvalue "+minValues(i))
+
           count(i)(values(k)-minValues(i)) = nTuples
         }
       }

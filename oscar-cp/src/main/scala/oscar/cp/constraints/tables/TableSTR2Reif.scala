@@ -16,7 +16,6 @@ import oscar.cp.core.CPStore
  * 
  */
 class TableSTR2Reif(val variables: Array[CPIntVar], table: Array[Array[Int]], val b: CPBoolVar) extends Constraint(variables(0).store, "TableSTR2Reif") {
-  idempotent = true
   private[this] val arity = variables.length
   
   // Sparse set for current table
