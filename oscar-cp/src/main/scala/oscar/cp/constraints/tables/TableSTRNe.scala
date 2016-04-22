@@ -107,9 +107,6 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
         var k = variables(i).fillArray(values)
         while (k > 0) {
           k -= 1
-          println(i+" countsize"+count.size+" count(i).size"+count(i).size)
-          println(values(k)+" minvalue "+minValues(i))
-
           count(i)(values(k)-minValues(i)) = nTuples
         }
       }

@@ -14,7 +14,7 @@ object STR2Bench extends App {
 
   val xcspSolver = new XCSPSolver with DefaultConstraints {
     // Scenario test for TableSTR2 + TableSTRNe
-    override def table(x: Array[CPIntVar], tuples: Array[Array[Int]]): Constraint = new TableSTR21(x, tuples)
+    override def table(x: Array[CPIntVar], tuples: Array[Array[Int]]): Constraint = new TableSTR2(x, tuples)
     override def tableNe(x: Array[CPIntVar], tuples: Array[Array[Int]]): Constraint = new TableSTRNe(x, tuples)
   }
   
