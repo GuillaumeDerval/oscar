@@ -48,20 +48,17 @@ object OscarBuild extends Build {
   }
 
   object Resolvers {
-    val xypron = "Xypron Release" at "http://rsync.xypron.de/repository/"
     val leadoperations = "AWS S3 Release Repository" at "http://maven.leadoperations.co/release"
     val cogcomp = "Cognitive Computation Group" at "http://cogcomp.cs.illinois.edu/m2repo/"
     val ingi = "INGI Snapshots" at "http://artifactory.info.ucl.ac.be/artifactory/libs-snapshot-local/"
-
+    val nsideExtReleases = "N-SIDE External Releases" at "http://10.3.13.21:8080/artifactory/ext-release-local/"
   }
 
   object Dependencies {
-
     // Regular libraries
     val antlr4Runtime = "org.antlr" % "antlr4-runtime" % "latest.milestone"
-    val glpk = "org.gnu.glpk" % "glpk-java" % "1.0.16"
-    val gurobi = "gurobi" % "gurobi" % "5.0.1"
     val lpsolve = "lpsolve" % "lpsolve" % "5.5.2"
+    val gurobi = "gurobi" % "gurobi" % "6.5.1"
     val jcommon = "org.jfree" % "jcommon" % "latest.milestone"
     val jfreechart = "org.jfree" % "jfreechart" % "latest.milestone"
     val jsci = "net.sf.jsci" % "jsci" % "latest.milestone"
@@ -203,8 +200,8 @@ object OscarBuild extends Build {
     settings =
       commonSettings ++
         Seq(
-          resolvers ++= Seq(xypron, leadoperations, cogcomp),
-          libraryDependencies ++= testDeps :+ glpk :+ gurobi :+ lpsolve :+ scalaXml
+          resolvers ++= Seq(leadoperations, cogcomp, nsideExtReleases),
+          libraryDependencies ++= testDeps :+ lpsolve :+ gurobi :+ scalaXml
         ),
     dependencies = Seq(oscarAlgebra)
   )
