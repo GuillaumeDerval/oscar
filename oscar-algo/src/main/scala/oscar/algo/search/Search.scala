@@ -100,6 +100,7 @@ class Search(node: SearchNode, branching: Branching) {
         val stats = stat()
         solutionActionsStat.foreach(_(stats))
         solCounter += 1
+        node.pop()
       }
     }
 
