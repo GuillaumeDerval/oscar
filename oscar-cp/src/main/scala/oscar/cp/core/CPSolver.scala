@@ -123,6 +123,7 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
 
   /** Deactivate the no solution exception when an add is used and an inconsistent model is detected */
   def deactivateNoSolExceptions(): Unit = throwNoSolExceptions = false
+  def activateNoSolExceptions(): Unit = throwNoSolExceptions = true
 
   /**
    * return true if every variable is bound
