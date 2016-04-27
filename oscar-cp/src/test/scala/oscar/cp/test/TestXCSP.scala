@@ -10,13 +10,14 @@ import oscar.cp._
 class TestXCSP extends TestSuite {
 
   test("test format") {
+
     val solver = new XCSPSolver with DefaultConstraints
     val str: String = """<?xml version="1.0" encoding="UTF-8"?> 
 	    <instance> 
-	    		<presentation name="?" maxConstraintArity="3" format="XCSP 2.0"/> 
+	    		<presentation name="?" maxConstraintArity="3" format="XCSP 1.9"/>
 	    </instance>"""
     val thrown = intercept[RuntimeException] { solver.model(str) }
-    assert(thrown.getMessage === "Only XCSP 2.1 format is supported.")
+    assert(thrown.getMessage === "Only XCSP 2.0 or 2.1 format is supported.")
   }
 
   test("nqueen intension") {
