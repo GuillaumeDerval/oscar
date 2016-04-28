@@ -98,6 +98,7 @@ class DFSearch(node: DFSearchNode) {
         node.solFound()
         solutionActions.foreach(_())
         nbSols += 1
+        node.pop()
       }
     }
 
