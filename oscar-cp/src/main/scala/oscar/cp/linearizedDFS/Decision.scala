@@ -41,6 +41,7 @@ case class Pop(cp : CPStore) extends ControlDecision {
   }
 }
 
+
 case class Assign(variable : CPIntVar, value : Int) extends DomainDecision {
   val name = variable.name + Decision.assign + value
   def apply() = {

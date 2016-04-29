@@ -15,9 +15,7 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import oscar.cp.constraints.tables.TableAlgo
-import oscar.cp.constraints.tables.table
-import oscar.cp.constraints.tables.TableDecomp
+import oscar.cp.constraints.tables.{TableAC5TCRecomp, TableAlgo, TableDecomp, TableSTR2}
 import oscar.cp.testUtils._
 import oscar.cp._
 
@@ -82,5 +80,173 @@ class TestTable extends TestSuite {
     assert(stat.nSols == statRef.nSols)
     assert(stat.nFails == statRef.nFails)
   }
+
+
+
+  for (algo <- TableAlgo.values) {
+
+    test("test 1 "+algo) {
+      val cp = CPSolver()
+      var x = Array.fill(3)(CPIntVar(1 to 3)(cp))
+
+      val tuples = Array(Array(1, 1, 1),Array(1, 2, 3))
+
+      cp.post(table(Array(x(0), x(1), x(2)),tuples,algo))
+
+      x(0).isBound should be(true)
+      x(0).value should be(1)
+      x(2).hasValue(2) should be(false)
+
+      cp.post(x(2) != 3)
+
+      cp.isFailed should be(false)
+      x(1).value should be(1)
+      x(2).value should be(1)
+    }
+
+    test("test 2 "+algo) {
+      val cp = CPSolver()
+
+      var x = CPIntVar(0 to 4)(cp)
+      var y = CPIntVar(0 to 4)(cp)
+      var z = CPIntVar(0 to 24)(cp)
+
+      val tuples = (for (i <- 0 until 5; j <- i + 1 until 5) yield Array(i, j, i * 4 + j - 1)).toArray
+      cp.post(table(Array(x, y, z), tuples,algo))
+      cp.post(z == 0)
+      x.value should be(0)
+      y.value should be(1)
+      z.value should be(0)
+
+    }
+
+
+    test("test 3 "+algo) {
+      val cp = CPSolver()
+      var x = Array.fill(3)(CPIntVar(1 to 7)(cp))
+      val tuples = Array(Array(1, 1, 1), Array(1, 2, 3), Array(1, 2, 7), Array(2, 1, 4))
+      var nbSol = 0
+      cp.add(table(x, tuples,algo))
+      cp.search {
+        binaryStatic(x)
+      } onSolution {
+        nbSol += 1
+      } start ()
+      nbSol should be(4)
+    }
+
+    test("test 4 "+algo) {
+      val cp = CPSolver()
+      var x = Array.fill(2)(CPIntVar(1 to 1)(cp))
+
+      val tuples = Array(Array(1, 2), Array(2, 1))
+
+      cp.post(table(x, tuples,algo))
+      cp.isFailed should be(true)
+
+    }
+
+
+    test("test5 "+algo) {
+
+      def nbSol(newcons: Boolean) = {
+        val cp = CPSolver()
+        val x = Array.fill(4)(CPIntVar(Set(1, 3, 6, 9))(cp))
+
+        val tuples = Array(Array(1, 2, 2, 4),
+          Array(1, 2, 4, 8),
+          Array(1, 1, 9, 6),
+          Array(1, 1, 8, 6),
+          Array(3, 1, 6, 9),
+          Array(1, 9, 3, 1),
+          Array(1, 9, 9, 9),
+          Array(3, 6, 6, 6))
+
+        val cons = if (newcons) table(x, tuples,algo) else new TableDecomp(x,tuples)
+        cp.post(cons)
+        var nbSol = 0
+        cp.search {
+          binaryFirstFail(x)
+        } onSolution {
+          nbSol += 1
+        } start ()
+        nbSol
+      }
+      nbSol(false) should be(nbSol(true))
+
+    }
+
+
+    test("test 6 "+algo) {
+      implicit val cp = CPSolver()
+      var x = Array.fill(6)(CPIntVar(2 to 3)(cp))
+      var nbSol = 0
+
+      val tuples = Array(
+        Array(2,2,3,2,2,3),
+        Array(2,3,2,2,3,2)
+      )
+
+
+      cp.post(table(x,tuples,algo))
+      cp.search(binaryStatic(x))
+      cp.onSolution {
+        //println(x.mkString(", "))
+        nbSol += 1
+      }
+      cp.start()
+      nbSol should be(2)
+
+    }
+
+    test("test 7 "+algo) {
+      implicit val cp = CPSolver()
+      var x = Array.fill(6)(CPIntVar(0 to 5)(cp))
+      var nbSol = 0
+
+      val tuples = Array(
+        Array(5, 5, 0, 5, 1, 4),
+        Array(5, 5, 0, 3, 1, 1),
+        Array(3, 1, 4, 2, 3, 1)
+      )
+
+
+      cp.post(table(x,tuples,algo))
+      cp.search(binaryStatic(x))
+      cp.onSolution {
+        //println(x.mkString(", "))
+        nbSol += 1
+      }
+      cp.start()
+      nbSol should be(3)
+    }
+
+    test("test 8 "+algo) {
+      implicit val cp = CPSolver()
+      var x = Array.fill(7)(CPIntVar(0 to 3)(cp))
+      var nbSol = 0
+
+      val tuples = Array(
+        Array(1, 0, 3, 1, 0, 2, 1),
+        Array(1, 3, 3, 3, 2, 1, 3),
+        Array(1, 0, 3, 0, 0, 3, 1)
+      )
+
+      cp.post(table(x,tuples,algo))
+      cp.search(binaryStatic(x))
+      cp.onSolution {
+        //println(x.mkString(", "))
+        nbSol += 1
+      }
+      cp.start()
+      nbSol should be(3)
+    }
+
+
+
+
+
+  }
+
 }
 

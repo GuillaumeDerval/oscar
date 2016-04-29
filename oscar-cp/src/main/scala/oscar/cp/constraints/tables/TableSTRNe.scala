@@ -1,3 +1,19 @@
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
+
 package oscar.cp.constraints.tables
 
 import oscar.cp.core.variables.CPIntVar
@@ -10,14 +26,12 @@ import java.util.Arrays
 import oscar.cp.core.CPStore
 
 /**
- * @author ThanhKM thanhkhongminh@gmail.com
- * 
- * Class for Negative Table Constraint
- * 
- * Implementation follows https://www.aaai.org/ocs/index.php/AAAI/AAAI13/paper/viewFile/6141/6825 
- * and improves with ideas of STR2 (Sval, Ssup)
- * 
- */
+  *
+  *  Making Simple Tabular Reduction Works on Negative Table Constraints
+  *  Hongbo Li, Yanchun Liang, Jinsong Guo and Zhanshan Li, AAAI13
+  *
+  * @author ThanhKM thanhkhongminh@gmail.com
+  */
 class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(variables(0).store, "TableSTRNe") {
   idempotent = true
   priorityL2 = CPStore.MaxPriorityL2 - 1
