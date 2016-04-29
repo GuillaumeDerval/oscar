@@ -95,25 +95,27 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode {
   // Cleans the propagation queues
   @inline protected def cleanQueues(): Unit = {
     // Clean queue L1
-    highestPriorL1 = -1
-    var i = propagQueueL1.length
-    while (i > 0) {
-      i -= 1
-      propagQueueL1(i).clear()
+    while (highestPriorL1 >= 0) {
+      propagQueueL1(highestPriorL1).clear()
+      highestPriorL1 -= 1
     }
     // Clean queue L2
-    highestPriorL2 = -1
-    i = propagQueueL2.length
-    while (i > 0) {
-      i -= 1
-      propagQueueL2(i).clear()
+    while (highestPriorL2 >= 0) {
+      val queue = propagQueueL2(highestPriorL2)
+      var i = queue.size
+      while (i > 0) {
+        i -= 1
+        val constraint = queue.removeFirst()
+        constraint.setDequeued()
+      }
+      highestPriorL2 -= 1
     }
   }
 
   // Adds the constraint in the L2 queue
   @inline final def enqueueL2(c: Constraint): Unit = {
     if (c.isEnqueuable) {
-      c.setInQueue()
+      c.setEnqueued()
       val priority = c.priorityL2
       propagQueueL2(priority).addLast(c)
       if (priority > highestPriorL2) {
@@ -266,6 +268,7 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode {
         else {
           nCallsL2 += 1
           val constraint = queue.removeFirst()
+          constraint.setDequeued()
           lastConstraint = constraint
           isNotFailed = constraint.execute() != Failure
         }
