@@ -48,8 +48,11 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
     linExpr
   }
 
-  def getNumberOfVariables: Int = rawSolver.get(GRB.IntAttr.NumVars)
-  def getNumberOfLinearConstraints: Int = rawSolver.get(GRB.IntAttr.NumConstrs)
+  private var nVars = 0
+  def getNumberOfVariables: Int = nVars
+
+  private var nCstrs = 0
+  def getNumberOfLinearConstraints: Int = nCstrs
 
   def modelName: String = rawSolver.get(GRB.StringAttr.ModelName)
   def modelName_=(value: String) = rawSolver.set(GRB.StringAttr.ModelName, value)
@@ -81,20 +84,18 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
     objCoef: Option[Double], cstrCoefs: Option[Array[Double]], cstrIds: Option[Array[Int]], integer: Boolean, binary: Boolean): Int = {
     val varId = (objCoef, cstrCoefs, cstrIds) match {
       case (Some(oCoef), Some(cCoefs), Some(cIds)) =>
-        val varId = getNumberOfVariables
+        val varId = nVars
+        nVars += 1
         rawSolver.addVar(lb, ub, oCoef, toGRBVarType(integer, binary), cIds.map(i => rawSolver.getConstr(i)), cCoefs, name)
         varId
       case (None, None, None) =>
-        val varId = getNumberOfVariables
+        val varId = nVars
+        nVars += 1
         rawSolver.addVar(lb, ub, 0.0, toGRBVarType(integer, binary), name)
         varId
       case _ =>
         throw new IllegalArgumentException("Parameters objCoef, cstrCoef, cstrId should all be defined or none.")
     }
-    // Important ! the model should be immediately updated so that
-    //   the variable can be used immediately after
-    //   the number of variables as seen by getNumberOfVariables is correct which is important for indexing
-    rawSolver.update()
 
     varId
   }
@@ -113,64 +114,34 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
 
   def removeVariable(varId: Int): Unit = {
     rawSolver.remove(rawSolver.getVar(varId))
-    // Important ! the model should be immediately updated so that
-    //   the number of variables as seen by getNumberOfVariables is correct which is important for indexing
-    rawSolver.update()
+    nVars -= 1
   }
 
   def getVariableLowerBound(varId: Int): Double = rawSolver.getVar(varId).get(GRB.DoubleAttr.LB)
-  def setVariableLowerBound(varId: Int, lb: Double) = {
-    rawSolver.getVar(varId).set(GRB.DoubleAttr.LB, lb)
-    // Important ! the model should be immediately updated so that
-    //   the type of the variable is correctly reflected by a call to getVariableLowerBound
-    rawSolver.update()
-  }
+
+  def setVariableLowerBound(varId: Int, lb: Double) = rawSolver.getVar(varId).set(GRB.DoubleAttr.LB, lb)
 
   def getVariableUpperBound(varId: Int): Double = rawSolver.getVar(varId).get(GRB.DoubleAttr.UB)
-  def setVariableUpperBound(varId: Int, ub: Double) = {
-    rawSolver.getVar(varId).set(GRB.DoubleAttr.UB, ub)
-    // Important ! the model should be immediately updated so that
-    //   the type of the variable is correctly reflected by a call to getVariableUpperBound
-    rawSolver.update()
-  }
+  def setVariableUpperBound(varId: Int, ub: Double) = rawSolver.getVar(varId).set(GRB.DoubleAttr.UB, ub)
 
   private def getVarType(varId: Int) = rawSolver.getVar(varId).get(GRB.CharAttr.VType)
-  private def setVarType(varId: Int, t: Char) = {
-    rawSolver.getVar(varId).set(GRB.CharAttr.VType, t)
-    // Important ! the model should be immediately updated so that
-    //   the type of the variable is correctly reflected by a call to getVarType
-    rawSolver.update()
-  }
+  private def setVarType(varId: Int, t: Char) = rawSolver.getVar(varId).set(GRB.CharAttr.VType, t)
 
   def isInteger(varId: Int): Boolean = getVarType(varId) == GRB.INTEGER
-  def setInteger(varId: Int) = {
-    setVarType(varId, GRB.INTEGER)
-    // Important ! the model should be immediately updated so that
-    //   the type of the variable is correctly reflected by a call to isInteger
-    rawSolver.update()
-  }
+  def setInteger(varId: Int) = setVarType(varId, GRB.INTEGER)
 
   def isBinary(varId: Int): Boolean = getVarType(varId) == GRB.BINARY
-  def setBinary(varId: Int) = {
-    setVarType(varId, GRB.BINARY)
-    // Important ! the model should be immediately updated so that
-    //   the type of the variable is correctly reflected by a call to isBinary
-    rawSolver.update()
-  }
+  def setBinary(varId: Int) = setVarType(varId, GRB.BINARY)
 
   def isFloat(varId: Int): Boolean = getVarType(varId) == GRB.CONTINUOUS
-  def setFloat(varId: Int) = {
-    setVarType(varId, GRB.CONTINUOUS)
-    // Important ! the model should be immediately updated so that
-    //   the type of the variable is correctly reflected by a call to isFloat
-    rawSolver.update()
-  }
+  def setFloat(varId: Int) = setVarType(varId, GRB.CONTINUOUS)
 
 
   /* CONSTRAINTS */
 
   def addConstraint(name: String, coefs: Array[Double], varIds: Array[Int], sense: String, rhs: Double): Int = {
-    val cstrId = getNumberOfLinearConstraints
+    val cstrId = nCstrs
+    nCstrs += 1
 
     val GRBSense =
       sense match {
@@ -183,18 +154,12 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
 
     rawSolver.addConstr(cstrExpr, GRBSense, rhs, name)
 
-    // Important ! the model should be immediately updated so that
-    //   the number of constraints as seen by getNumberOfLinearConstraints is correct which is important for indexing
-    rawSolver.update()
-
     cstrId
   }
 
   def removeConstraint(cstrId: Int): Unit = {
     rawSolver.remove(rawSolver.getConstr(cstrId))
-    // Important ! the model should be immediately updated so that
-    //   the number of constraints as seen by getNumberOfLinearConstraints is correct which is important for indexing
-    rawSolver.update()
+    nCstrs -= 1
   }
 
   def setConstraintCoefficient(cstrId: Int, varId: Int, coef: Double): Unit =
@@ -237,7 +202,7 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
 
   def objectiveBound: Double = rawSolver.get(GRB.DoubleAttr.ObjBound)
 
-  def solution: Array[Double] =rawSolver.getVars.map(v => v.get(GRB.DoubleAttr.X))
+  def solution: Array[Double] = rawSolver.getVars.map(v => v.get(GRB.DoubleAttr.X))
 
   private[gurobi] var aborted: Boolean = false
   rawSolver.setCallback(new GurobiAborter(this))
