@@ -5,6 +5,7 @@ import org.scalatest.junit.JUnitRunner
 import oscar.algebra._
 import oscar.linprog.enums.{Optimal, SolutionFound}
 import oscar.linprog.interface.MPSolverLib
+import oscar.linprog.interface.gurobi.Gurobi
 import oscar.linprog.modeling._
 
 import scala.util.Success

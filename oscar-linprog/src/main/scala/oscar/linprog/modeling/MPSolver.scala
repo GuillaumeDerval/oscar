@@ -17,6 +17,8 @@ package oscar.linprog.modeling
 
 import java.nio.file.Path
 
+import org.joda.time.DateTime
+import com.github.nscala_time.time.Imports._
 import oscar.algebra.{Const, LinearExpression}
 import oscar.linprog.enums._
 import oscar.linprog.interface._
@@ -29,6 +31,8 @@ import scala.util.{Failure, Success, Try}
  * @author acrucifix acr@n-side.com
  */
 class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
+  println(s"Creating solver with lib: ${solverInterface.solverName}")
+  val modelCreationStartTime = DateTime.now
 
   private def dirty: Boolean = solveStatus == NotSolved
   private def setDirty() = {
@@ -548,8 +552,17 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
    * @return the [[EndStatus]] of the solve
    */
   def solve: EndStatus = {
+    println("Updating model")
     solverInterface.updateModel()
+    println("End of model creation")
+    println(s"Time to create model = ${(modelCreationStartTime to DateTime.now).toDuration.getStandardSeconds} s")
+
+    println("Solving")
+    val solvingStartTime = DateTime.now
     val es = solverInterface.solve
+    println("Solved")
+    println(s"Time to solve model = ${(solvingStartTime to DateTime.now).toDuration.getStandardSeconds} s")
+
     _solveStatus = Solved
     _endStatus = Success(es)
     es

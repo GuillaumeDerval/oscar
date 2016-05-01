@@ -43,6 +43,7 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
   val rawSolver = new GRBModel(env)
 
   private def toGRBLinExpr(coefs: Array[Double], varIds: Array[Int]): GRBLinExpr = {
+    updateVars()
     val vars = getVars
     val linExpr = new GRBLinExpr()
     linExpr.addTerms(coefs, varIds map (vars(_)))
@@ -62,6 +63,7 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
   /* OBJECTIVE */
 
   private var pendingObj: Option[GRBLinExpr] = None
+  private var minimize: Boolean = true
   private def flushPendingObj() = pendingObj = None
 
   private def getObjective =
@@ -69,8 +71,8 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
 
   def setObjective(minimize: Boolean, coefs: Array[Double], varIds: Array[Int]): Unit = {
     val obj = toGRBLinExpr(coefs, varIds)
-    rawSolver.setObjective(obj)
     pendingObj = Some(obj)
+    this.minimize = minimize
   }
 
   def setObjectiveCoefficient(varId: Int, coef: Double): Unit = {
@@ -78,7 +80,7 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
     val obj = getObjective
     obj.remove(variable)
     obj.addTerm(coef, variable)
-    rawSolver.setObjective(obj)
+    pendingObj = Some(obj)
   }
 
 
@@ -111,7 +113,8 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
       case (None, None, None) =>
         // Note: actual addition of the variable is delayed until the next updateModel
         val varId = this.nCols
-        rawSolver.addVar(lb, ub, 0.0, toGRBVarType(integer, binary), name)
+        val newVar = rawSolver.addVar(lb, ub, 0.0, toGRBVarType(integer, binary), name)
+        pendingVars = (varId, newVar) +: pendingVars
         this.nCols += 1
         varId
       case _ =>
@@ -134,46 +137,39 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
     addVariable(name, 0.0, 1.0, objCoef, cstrCoefs, cstrIds, integer = true, binary = true)
 
   def removeVariable(varId: Int): Unit = {
+    updateVars()
     this.nCols -= 1
-    if(pendingVars.exists(v => v._1 == varId)) {
-      pendingVars = pendingVars.flatMap { v =>
-        if (v._1 > varId) {
-          Some((v._1 - 1, v._2))
-        } else if (v._1 < varId) {
-          Some(v)
-        } else {
-          rawSolver.remove(v._2)
-          None
-        }
-      }
-
-      def computeShiftedVardIds(varIds: Array[Int]): Array[Int] =
-        varIds.map { vId =>
-          if(vId > varId) vId-1
-          else vId
-        }
-
-      pendingCstrs = pendingCstrs.map { case (cstrId, name, coefs, varIds, sense, rhs) =>
-        (cstrId, name, coefs, computeShiftedVardIds(varIds), sense, rhs)
-      }
-
-      pendingGRBConstrs = pendingCstrs.map { case (cstrId, name, coefs, varIds, sense, rhs) =>
-        rawSolver.remove(getCstr(cstrId))
-        (cstrId, addConstraintToModel(cstrId, name, coefs, varIds, sense, rhs))
-      }
-    }
     rawSolver.remove(getVar(varId))
   }
 
-  def getVariableLowerBound(varId: Int): Double = getVar(varId).get(GRB.DoubleAttr.LB)
+  private var dirtyVars = false
 
-  def setVariableLowerBound(varId: Int, lb: Double) = getVar(varId).set(GRB.DoubleAttr.LB, lb)
+  def getVariableLowerBound(varId: Int): Double = {
+    updateVars()
+    getVar(varId).get(GRB.DoubleAttr.LB)
+  }
+  def setVariableLowerBound(varId: Int, lb: Double) = {
+    dirtyVars = true
+    getVar(varId).set(GRB.DoubleAttr.LB, lb)
+  }
 
-  def getVariableUpperBound(varId: Int): Double = getVar(varId).get(GRB.DoubleAttr.UB)
-  def setVariableUpperBound(varId: Int, ub: Double) = getVar(varId).set(GRB.DoubleAttr.UB, ub)
+  def getVariableUpperBound(varId: Int): Double = {
+    updateVars()
+    getVar(varId).get(GRB.DoubleAttr.UB)
+  }
+  def setVariableUpperBound(varId: Int, ub: Double) = {
+    dirtyVars = true
+    getVar(varId).set(GRB.DoubleAttr.UB, ub)
+  }
 
-  private def getVarType(varId: Int) = getVar(varId).get(GRB.CharAttr.VType)
-  private def setVarType(varId: Int, t: Char) = getVar(varId).set(GRB.CharAttr.VType, t)
+  private def getVarType(varId: Int) = {
+    updateVars()
+    getVar(varId).get(GRB.CharAttr.VType)
+  }
+  private def setVarType(varId: Int, t: Char) = {
+    dirtyVars = true
+    getVar(varId).set(GRB.CharAttr.VType, t)
+  }
 
   def isInteger(varId: Int): Boolean = getVarType(varId) == GRB.INTEGER
   def setInteger(varId: Int) = setVarType(varId, GRB.INTEGER)
@@ -188,14 +184,9 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
   /* CONSTRAINTS */
 
   private var pendingCstrs: Seq[(Int, String, Array[Double], Array[Int], String, Double)] = Seq()
-  private var pendingGRBConstrs: Seq[(Int, GRBConstr)] = Seq()
-  private def flushPendingCstrs() = {
-    pendingCstrs = Seq()
-    pendingGRBConstrs = Seq()
-  }
+  private def flushPendingCstrs() = pendingCstrs = Seq()
 
-  def getCstr(cstrId: Int) =
-    pendingGRBConstrs.find(_._1 == cstrId).map(_._2).getOrElse(rawSolver.getConstr(cstrId))
+  def getCstr(cstrId: Int) = rawSolver.getConstr(cstrId)
 
   private def addConstraintToModel(cstrId: Int, name: String, coefs: Array[Double], varIds: Array[Int], sense: String, rhs: Double) = {
     val sen = sense match {
@@ -212,38 +203,67 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
   def addConstraint(name: String, coefs: Array[Double], varIds: Array[Int], sense: String, rhs: Double): Int = {
     val cstrId = this.nRows
     pendingCstrs = (cstrId, name, coefs, varIds, sense, rhs) +: pendingCstrs
-    pendingGRBConstrs = (cstrId, addConstraintToModel(cstrId, name, coefs, varIds, sense, rhs)) +: pendingGRBConstrs
     this.nRows += 1
     cstrId
   }
 
   def removeConstraint(cstrId: Int): Unit = {
     this.nRows -= 1
-    if(pendingCstrs.exists(c => c._1 == cstrId)) {
+    if (pendingCstrs.exists(c => c._1 == cstrId)) {
       pendingCstrs = pendingCstrs.flatMap { c =>
         if (c._1 > cstrId) Some((c._1 - 1, c._2, c._3, c._4, c._5, c._6))
         else if (c._1 < cstrId) Some(c)
         else None
       }
-    }
-    rawSolver.remove(getCstr(cstrId))
+    } else rawSolver.remove(getCstr(cstrId))
   }
 
-  def setConstraintCoefficient(cstrId: Int, varId: Int, coef: Double): Unit =
-    rawSolver.chgCoeff(getCstr(cstrId), getVar(varId), coef)
+  def setConstraintCoefficient(cstrId: Int, varId: Int, coef: Double): Unit = {
+    pendingCstrs.find(_._1 == cstrId) match {
+      case Some((_, _, coefs, _, _, _)) =>
+        val newCoefs = coefs.zipWithIndex.map { case (c, i) =>
+          if(i == varId) coef else c
+        }
+        pendingCstrs = pendingCstrs.map { c =>
+          if (c._1 == cstrId) (c._1, c._2, newCoefs, c._4, c._5, c._6)
+          else c
+        }
+      case None => rawSolver.chgCoeff(getCstr(cstrId), getVar(varId), coef)
+    }
+  }
 
-  def setConstraintRightHandSide(cstrId: Int, rhs: Double): Unit =
-    getCstr(cstrId).set(GRB.DoubleAttr.RHS, rhs)
+  def setConstraintRightHandSide(cstrId: Int, rhs: Double): Unit = {
+    pendingCstrs.find(_._1 == cstrId) match {
+      case Some((_, _, _, _, _, oldRhs)) =>
+        pendingCstrs = pendingCstrs.map { c =>
+          if (c._1 == cstrId) (c._1, c._2, c._3, c._4, c._5, rhs)
+          else c
+        }
+      case None => getCstr(cstrId).set(GRB.DoubleAttr.RHS, rhs)
+    }
+  }
 
 
   /* SOLVE */
 
-  def updateModel() = {
-    rawSolver.update()
+  def updateVars() =
+    if(pendingVars.nonEmpty || dirtyVars) {
+      rawSolver.update()
+      flushPendingVars()
+    }
 
-    flushPendingVars()
+  def updateModel() = {
+    updateVars()
+
+    pendingObj.foreach(obj => rawSolver.setObjective(obj, if(this.minimize) GRB.MINIMIZE else GRB.MAXIMIZE))
     flushPendingObj()
+
+    pendingCstrs.sortBy(_._1).foreach { case (cstrId, name, coefs, varIds, sense, rhs) =>
+      addConstraintToModel(cstrId, name, coefs, varIds, sense, rhs)
+    }
     flushPendingCstrs()
+
+    rawSolver.update()
 
     // verify that the raw model contains the correct number of variables and constraints
     assert(rawSolver.get(GRB.IntAttr.NumVars) == getNumberOfVariables,
@@ -281,13 +301,12 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
 
   def objectiveBound: Double = rawSolver.get(GRB.DoubleAttr.ObjBound)
 
-  def solution: Array[Double] = rawSolver.getVars.map(v => v.get(GRB.DoubleAttr.X))
+  def solution: Array[Double] = rawSolver.get(GRB.DoubleAttr.X, rawSolver.getVars)
 
   private[gurobi] var aborted: Boolean = false
   rawSolver.setCallback(new GurobiAborter(this))
 
   def solve: EndStatus = {
-    updateModel()
     aborted = false
 
     rawSolver.optimize()

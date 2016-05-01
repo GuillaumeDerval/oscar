@@ -11,7 +11,7 @@ object OscarBuild extends Build {
 
   object BuildSettings {
     val buildOrganization = "oscar"
-    val buildVersion = "3.1.1.1-NSIDE"
+    val buildVersion = "3.1.1.2-NSIDE"
     val buildScalaVersion = "2.11.0"
     val buildSbtVersion= "0.13.0"
 
@@ -71,6 +71,7 @@ object OscarBuild extends Build {
     val swingxWs = "org.swinglabs" % "swingx-ws" % "1.0"
     val xmlApisExt = "xml-apis" % "xml-apis-ext" % "latest.milestone"
     val xcsp3 = "xcsp3"  % "xcsp3_2.11" % "1.0.0-SNAPSHOT"
+    val nscalaTime = "com.github.nscala-time" %% "nscala-time" % "2.12.0" // A scala wrapper for Joda Time
 
     // Test libraries
     val junit = "junit" % "junit" % "latest.milestone" % Test
@@ -201,7 +202,7 @@ object OscarBuild extends Build {
       commonSettings ++
         Seq(
           resolvers ++= Seq(leadoperations, cogcomp, nsideExtReleases),
-          libraryDependencies ++= testDeps :+ lpsolve :+ gurobi :+ scalaXml
+          libraryDependencies ++= testDeps :+ lpsolve :+ gurobi :+ scalaXml :+ nscalaTime
         ),
     dependencies = Seq(oscarAlgebra)
   )

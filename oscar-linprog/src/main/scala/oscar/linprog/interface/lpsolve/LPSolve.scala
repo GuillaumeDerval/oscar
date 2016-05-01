@@ -256,7 +256,6 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
   rawSolver.putAbortfunc(new LPSolveAborter(this), this)
 
   def solve: EndStatus = {
-    updateModel()
     aborted = false
 
     val status = rawSolver.solve
