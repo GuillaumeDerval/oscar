@@ -20,7 +20,6 @@ package oscar.linprog.interface.gurobi
 import java.nio.file.Path
 
 import gurobi._
-import lpsolve.LpSolve
 import oscar.linprog.enums._
 import oscar.linprog.interface.{MIPSolverInterface, MPSolverInterface}
 
