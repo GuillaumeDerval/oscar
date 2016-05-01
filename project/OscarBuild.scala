@@ -11,7 +11,7 @@ object OscarBuild extends Build {
 
   object BuildSettings {
     val buildOrganization = "oscar"
-    val buildVersion = "3.1.1.2-NSIDE"
+    val buildVersion = "3.1.1.3-NSIDE"
     val buildScalaVersion = "2.11.0"
     val buildSbtVersion= "0.13.0"
 
@@ -65,8 +65,6 @@ object OscarBuild extends Build {
     val scalaParserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "latest.milestone"
     val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "latest.milestone"
     val scalaSwing = "org.scala-lang.modules" %% "scala-swing" % "latest.milestone"
-    //val swingx = "org.swinglabs" % "swingx" % "latest.milestone"
-    // val swingxWs = "org.swinglabs" % "swingx-ws" % "latest.milestone"
     val swingx = "org.swinglabs" % "swingx" % "1.0"
     val swingxWs = "org.swinglabs" % "swingx-ws" % "1.0"
     val xmlApisExt = "xml-apis" % "xml-apis-ext" % "latest.milestone"
