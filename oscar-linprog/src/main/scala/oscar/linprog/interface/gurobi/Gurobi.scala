@@ -34,12 +34,16 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
 
   val solverName = "gurobi"
 
-  private val env = _env match {
-    case Some(e) => e
-    case None => new GRBEnv()
+  val rawSolver = {
+    val env = _env match {
+      case Some(e) => e
+      case None => new GRBEnv()
+    }
+
+    new GRBModel(env)
   }
 
-  val rawSolver = new GRBModel(env)
+  val env = rawSolver.getEnv
 
   private def toGRBLinExpr(coefs: Array[Double], varIds: Array[Int]): GRBLinExpr = {
     updateVars()
