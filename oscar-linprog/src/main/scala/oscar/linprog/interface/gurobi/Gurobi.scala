@@ -275,15 +275,24 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
       s"$solverName: the number of constraints contained by the raw solver does not correspond to the number of constraints added.")
   }
 
+  private def verifySolutionExists = if(rawSolver.get(GRB.IntAttr.SolCount) > 0) SolutionFound else NoSolutionFound
+
   def endStatus: EndStatus =
     rawSolver.get(GRB.IntAttr.Status) match {
+      case GRB.LOADED => throw NotSolvedYetException
+      case GRB.INPROGRESS => throw NotSolvedYetException
       case GRB.OPTIMAL => SolutionFound
       case GRB.SUBOPTIMAL => SolutionFound
       case GRB.INFEASIBLE => Infeasible
       case GRB.UNBOUNDED => Unbounded
       case GRB.INF_OR_UNBD => InfeasibleOrUnbounded
-      case GRB.LOADED => throw NotSolvedYetException
-      case _ => Warning
+      case GRB.CUTOFF => NoSolutionFound
+      case GRB.TIME_LIMIT => verifySolutionExists
+      case GRB.SOLUTION_LIMIT => verifySolutionExists
+      case GRB.ITERATION_LIMIT => verifySolutionExists
+      case GRB.NODE_LIMIT => verifySolutionExists
+      case GRB.INTERRUPTED => verifySolutionExists
+      case GRB.NUMERIC => verifySolutionExists
     }
 
   def hasSolution: Boolean =
@@ -294,11 +303,15 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
     }
 
   def solutionQuality: SolutionQuality =
-    rawSolver.get(GRB.IntAttr.Status) match {
-      case GRB.OPTIMAL => Optimal
-      case GRB.SUBOPTIMAL => Suboptimal
+    endStatus match {
+      case SolutionFound =>
+        rawSolver.get(GRB.IntAttr.Status) match {
+          case GRB.OPTIMAL => Optimal
+          case _ => Suboptimal
+        }
       case _ => throw NoSolutionFoundException(endStatus)
     }
+
 
   def objectiveValue: Double = rawSolver.get(GRB.DoubleAttr.ObjVal)
 
