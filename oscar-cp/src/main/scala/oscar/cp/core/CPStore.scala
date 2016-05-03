@@ -21,7 +21,6 @@ import scala.collection.JavaConversions.asJavaCollection
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import oscar.algo.array.ArrayQueue
 import oscar.algo.reversible.ReversiblePointer
-import oscar.algo.search.SearchNode
 import oscar.cp.constraints.EqCons
 import oscar.cp.core.CPOutcome.Failure
 import oscar.cp.core.CPOutcome.Success
@@ -81,7 +80,6 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode {
   // Reference to the last constraint called
   private[this] var lastConstraint: Constraint = null
   
-  final def getRandom(): Random = rand
 
   /**
    *  Returns the last constraint called in the propagate algorithm.
