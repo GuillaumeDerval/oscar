@@ -16,14 +16,14 @@ class DFSLinearizer extends DFSearchListener {
 
   // called on Push events
   def onPush(node : DFSearchNode) : Unit = {
-    searchStateModificationList_ += Push(node)
+    searchStateModificationList_ += new Push(node)
   }
   // called on Pop events
   def onPop(node : DFSearchNode) : Unit = {
-    searchStateModificationList_ += Pop(node)
+    searchStateModificationList_ += new Pop(node)
   }
   // called on branching
   def onBranch(alternative : Alternative) : Unit = {
-    searchStateModificationList_ += alternative.asInstanceOf[Decision]
+    searchStateModificationList_ += new AlternativeDecision(alternative)
   }
 }

@@ -1,8 +1,6 @@
 package oscar.cp.linearizedDFS
 
-import java.io.File
 import java.lang.management.ManagementFactory
-import oscar.cp.linearizedDFS.utils.DecisionReader
 import oscar.cp.core.CPSolver
 import oscar.cp.core.variables.CPIntVar
 
@@ -13,38 +11,7 @@ class DFSReplayer(node: CPSolver, decisionVariables : Seq[CPIntVar]) {
 
   private val timeThreadBean = ManagementFactory.getThreadMXBean()
 
-  def replay(dirURL : String) : (Long,Int,Int,Int) = {
-    var time = 0 : Long
-    var nSols = 0
-    var nBacktracks = 0
-    var nNodes = 1
-    val decisionFiles = (new File(dirURL).listFiles.filter(_.getName.startsWith("chunk"))).sortBy(_.getName().replace("chunk","").replace(".txt","").toInt) map (_.getAbsolutePath)
-    for (f <- decisionFiles) {
-      val (timeCurrent,nSolsCurrent, nBacktracksCurrent, nNodesCurrent) : (Long,Int,Int,Int) = replay(DecisionReader.decisionsFromFile(f,decisionVariables))
-      time += timeCurrent
-      nSols += nSolsCurrent
-      nBacktracks += nBacktracksCurrent
-      nNodes += nNodesCurrent
-    }
-    (time,nSols,nBacktracks,nNodes)
-  }
-
-  def replay(decisionArray : Array[Array[Decision]]) : (Long,Int,Int,Int) = {
-    var time = 0 : Long
-    var nSols = 0
-    var nBacktracks = 0
-    var nNodes = 1
-    for(i<- 0 until decisionArray.length) {
-      val (timeCurrent,nSolsCurrent, nBacktracksCurrent, nNodesCurrent) : (Long,Int,Int,Int) = replay(decisionArray(i))
-      time += timeCurrent
-      nSols += nSolsCurrent
-      nBacktracks += nBacktracksCurrent
-      nNodes += nNodesCurrent
-    }
-    (time,nSols,nBacktracks,nNodes)
-  }
-
-  private def replay(searchStateModifications : Array[Decision]) : (Long,Int,Int,Int) = {
+  def replay(searchStateModifications : Array[Decision]) : ReplayStatistics = {
     val nModifications = searchStateModifications.length
     var i = 0
 
@@ -53,8 +20,7 @@ class DFSReplayer(node: CPSolver, decisionVariables : Seq[CPIntVar]) {
       while (panicInvariant() && i < searchStateModifications.size - 1) {
         i += 1
         searchStateModifications(i) match {
-          case Pop(_) => searchStateModifications(i)()
-          case Push(_) => searchStateModifications(i)()
+          case _ : ControlDecision => { searchStateModifications(i)() }
           case _ =>
         }
       }
@@ -72,7 +38,7 @@ class DFSReplayer(node: CPSolver, decisionVariables : Seq[CPIntVar]) {
 
     while (i < nModifications) {
       searchStateModifications(i) match {
-        case _ : DomainDecision => nNodes += 1
+        case _ : AlternativeDecision => nNodes += 1
         case _ : ControlDecision =>
       }
 
@@ -82,8 +48,8 @@ class DFSReplayer(node: CPSolver, decisionVariables : Seq[CPIntVar]) {
         nBacktracks += 1
         if(i < nModifications - 1) {
           searchStateModifications(i + 1) match {
-            case Pop(_) =>
-            case Push(_) | Assign(_,_) | Remove(_,_) | Fail(_) | Propagate(_) | _ : SetTimesBranch => totalPanicTime += panicFail() //additional failure compared to baseline model so we enter panic mode
+            case _ : Pop =>
+            case _ : Push | _ : AlternativeDecision => totalPanicTime += panicFail() //additional failure compared to baseline model so we enter panic mode
           }
         }
       }
@@ -97,7 +63,16 @@ class DFSReplayer(node: CPSolver, decisionVariables : Seq[CPIntVar]) {
       i += 1
     }
 
-    ((timeThreadBean.getCurrentThreadUserTime - beforeSolvingTime - totalPanicTime).toLong,nSols, nBacktracks,nNodes)
+    val timeInMillis = ((timeThreadBean.getCurrentThreadUserTime - beforeSolvingTime - totalPanicTime)/math.pow(10,6)).toLong
+    new ReplayStatistics(nNodes, nBacktracks, timeInMillis , nSols)
   }
 
+}
+
+class ReplayStatistics(
+                        val nNodes: Int,
+                        val nBacktracks: Int,
+                        val time: Long,
+                        val nSols: Int) {
+  override val toString: String = s"nNodes: $nNodes\nnBacktracks: $nBacktracks\ntime(ms): $time\nnSols: $nSols\n"
 }

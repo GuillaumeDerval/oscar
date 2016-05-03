@@ -19,8 +19,9 @@ import oscar.algo.search._
 import oscar.cp._
 import oscar.cp.core._
 import oscar.cp.constraints._
-import oscar.cp.linearizedDFS.{DFSReplayer, DFSLinearizer}
+import oscar.cp.linearizedDFS.{DFSLinearizer, DFSReplayer, ReplayStatistics}
 import oscar.cp.linearizedDFS.examples.Queens._
+
 import scala.collection.mutable.Stack
 import oscar.algo.reversible._
 import oscar.util._
@@ -91,12 +92,12 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
   }
 
   //the solution variables are the variables that must be assigned to have a solution
-  final def replay(solutionVariables : Seq[CPIntVar]) : (Long,Int,Int,Int) = {
+  final def replay(solutionVariables : Seq[CPIntVar]) : ReplayStatistics = {
     if(searchEngine.searchListener != null) {
       searchEngine.searchListener match {
         case listener : DFSLinearizer => {
           val replayer = new DFSReplayer(solver, solutionVariables)
-          replayer.replay(Array(listener.searchStateModifications))
+          replayer.replay(listener.searchStateModifications)
         }
         case _ => throw new RuntimeException("To replay, the listener must be a linearizer.")
       }

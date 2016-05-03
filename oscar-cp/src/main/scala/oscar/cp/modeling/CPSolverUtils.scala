@@ -4,6 +4,7 @@ import oscar.algo.search.{Alternative, Branching, SearchStatistics}
 import oscar.cp.core.CPPropagStrength.Weak
 import oscar.cp.core.variables.{CPBoolVar, CPIntVar}
 import oscar.cp.core.{CPPropagStrength, CPSolver, Constraint}
+import oscar.cp.linearizedDFS.ReplayStatistics
 
 trait CPSolverUtils {
   
@@ -39,7 +40,7 @@ trait CPSolverUtils {
     cp.listen()
   }
 
-  def replay(solutionVariables : Seq[CPIntVar])(implicit cp: CPSolver) : (Long,Int,Int,Int) =  {
+  def replay(solutionVariables : Seq[CPIntVar])(implicit cp: CPSolver) : ReplayStatistics =  {
     cp.replay(solutionVariables)
   }
 }

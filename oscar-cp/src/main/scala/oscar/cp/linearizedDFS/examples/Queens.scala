@@ -2,7 +2,6 @@ package oscar.cp.linearizedDFS.examples
 
 import oscar.cp._
 import oscar.cp.constraints.{AllDiffAC, AllDiffFWC}
-import oscar.cp.linearizedDFS.branching.BinaryFirstFailBranching
 
 /**
   * Created by saschavancauwelaert on 24/02/16.
@@ -17,7 +16,7 @@ object Queens extends CPModel with App {
   val queens = Array.fill(nQueens)(CPIntVar.sparse(0, nQueens - 1))
 
   // Search heuristic
-  search(new BinaryFirstFailBranching(queens))
+  search(binaryFirstFail(queens))
 
   //set up listener
   listen()
