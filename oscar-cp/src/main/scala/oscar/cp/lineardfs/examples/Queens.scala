@@ -1,4 +1,4 @@
-package oscar.cp.linearizedDFS.examples
+package oscar.cp.lineardfs.examples
 
 import oscar.cp._
 import oscar.cp.constraints.{AllDiffAC, AllDiffFWC}

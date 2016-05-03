@@ -1,4 +1,4 @@
-package oscar.cp.linearizedDFS
+package oscar.cp.lineardfs
 
 import oscar.algo.search._
 import oscar.algo.search.listener.DFSearchListener

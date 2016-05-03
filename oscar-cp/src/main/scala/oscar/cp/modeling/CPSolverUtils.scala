@@ -4,7 +4,7 @@ import oscar.algo.search.{Alternative, Branching, SearchStatistics}
 import oscar.cp.core.CPPropagStrength.Weak
 import oscar.cp.core.variables.{CPBoolVar, CPIntVar}
 import oscar.cp.core.{CPPropagStrength, CPSolver, Constraint}
-import oscar.cp.linearizedDFS.ReplayStatistics
+import oscar.cp.lineardfs.ReplayStatistics
 
 trait CPSolverUtils {
   

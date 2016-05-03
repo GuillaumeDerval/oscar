@@ -19,8 +19,8 @@ import oscar.algo.search._
 import oscar.cp._
 import oscar.cp.core._
 import oscar.cp.constraints._
-import oscar.cp.linearizedDFS.{DFSLinearizer, DFSReplayer, ReplayStatistics}
-import oscar.cp.linearizedDFS.examples.Queens._
+import oscar.cp.lineardfs.{DFSLinearizer, DFSReplayer, ReplayStatistics}
+import oscar.cp.lineardfs.examples.Queens._
 
 import scala.collection.mutable.Stack
 import oscar.algo.reversible._

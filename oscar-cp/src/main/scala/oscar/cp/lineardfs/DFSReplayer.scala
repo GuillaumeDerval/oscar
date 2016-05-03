@@ -1,4 +1,4 @@
-package oscar.cp.linearizedDFS
+package oscar.cp.lineardfs
 
 import java.lang.management.ManagementFactory
 import oscar.cp.core.CPSolver
