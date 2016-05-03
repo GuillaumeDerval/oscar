@@ -58,6 +58,15 @@ abstract class MPSolverInterface {
   def modelName_=(value: String)
 
   /**
+   * crop name if the maximum number of chars is reached and add a unique identifier
+   */
+  protected val nameMaxNbChars: Int = 255
+  protected def cropName(name:String, maxNbChars: Int = nameMaxNbChars, uniqueId: String): String = {
+    val nbCharsToKeep = maxNbChars - uniqueId.length
+    name.take(nbCharsToKeep).concat(uniqueId)
+  }
+
+  /**
    * Defines the optimization direction and the objective function of the model.
    *
    * The objective function is given as ''coef(0)*x[col(0)] + ... + coef(n)*x[col(n)]''.
