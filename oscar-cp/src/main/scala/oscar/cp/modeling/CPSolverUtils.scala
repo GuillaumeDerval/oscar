@@ -32,8 +32,8 @@ trait CPSolverUtils {
 
   def onSolution(block: => Unit)(implicit cp: CPSolver) = cp.onSolution(block)
 
-  def start(nSols: Int = Int.MaxValue, failureLimit: Int = Int.MaxValue, timeLimit: Int = Int.MaxValue)(implicit cp: CPSolver): SearchStatistics = {
-    cp.start(nSols, failureLimit, timeLimit)
+  def start(nSols: Int = Int.MaxValue, failureLimit: Int = Int.MaxValue, timeLimit: Int = Int.MaxValue, maxDiscrepancy: Int = Int.MaxValue)(implicit cp: CPSolver): SearchStatistics = {
+    cp.start(nSols,failureLimit,timeLimit,maxDiscrepancy)
   }
 
   def start(stopCondition: => Boolean)(implicit cp: CPSolver): SearchStatistics = {
