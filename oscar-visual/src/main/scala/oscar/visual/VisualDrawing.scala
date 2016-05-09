@@ -79,9 +79,9 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel {
     super.paintComponent(g)
     val g2d = g.asInstanceOf[Graphics2D]
     transform = new AffineTransform() // start with identity transform   
-    
+
     if (shapes.nonEmpty) {
-      
+
       // Shapes size
       val (minX, maxX, minY, maxY) = findBounds(shapes)
       val sWidth = maxX - minX

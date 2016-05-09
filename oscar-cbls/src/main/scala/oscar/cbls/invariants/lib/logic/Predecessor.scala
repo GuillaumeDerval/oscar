@@ -19,7 +19,7 @@
 
 package oscar.cbls.invariants.lib.logic
 
-import oscar.cbls.invariants.core.computation.{CBLSIntVar, ChangingIntValue, IntValue, Invariant}
+import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
 
 /**
@@ -33,7 +33,9 @@ import oscar.cbls.invariants.core.propagation.Checker
  * @param V the number of vehicles.
  * @author renaud.delandtsheer@cetic.be
  * */
-case class Predecessor(next:Array[IntValue],V:Int) extends Invariant{
+case class Predecessor(next:Array[IntValue],V:Int)
+  extends Invariant
+  with IntNotificationTarget{
 
   val N = next.length
   registerStaticAndDynamicDependencyArrayIndex(next)
@@ -65,7 +67,7 @@ case class Predecessor(next:Array[IntValue],V:Int) extends Invariant{
   override def toString ={
     var toReturn = ""
     toReturn +="\npreds array: ["
-    for (v <- preds){toReturn += (""+v.getValue(true) +",")}
+    for (v <- preds){toReturn += (""+v.newValue +",")}
     toReturn = toReturn.substring(0, toReturn.length - 1)+"]\n"
     toReturn
   }

@@ -33,7 +33,9 @@ import scala.collection.immutable.{SortedMap, SortedSet}
   * This is considered as a sparse cluster because Cluster is a map and must not cover all possibles values of the values in the array ''values''
   * @author renaud.delandtsheer@cetic.be
   * */
-case class SparseCluster[T<:IntValue](values:Array[T], Clusters:SortedMap[Int,CBLSSetVar]) extends Invariant {
+case class SparseCluster[T<:IntValue](values:Array[T], Clusters:SortedMap[Int,CBLSSetVar])
+  extends Invariant
+  with IntNotificationTarget{
 
   for (v <- values.indices) registerStaticAndDynamicDependency(values(v),v)
 
@@ -47,7 +49,7 @@ case class SparseCluster[T<:IntValue](values:Array[T], Clusters:SortedMap[Int,CB
   }
 
   @inline
-  override def notifyIntChanged(v:ChangingIntValue,index:Int, OldVal:Int,NewVal:Int){
+  override def notifyIntChanged(v:ChangingIntValue, index:Int, OldVal:Int,NewVal:Int){
     val x:CBLSSetVar = Clusters.getOrElse(OldVal,null)
     if(x != null) x.deleteValue(index)
     val y:CBLSSetVar = Clusters.getOrElse(NewVal,null)
@@ -74,7 +76,7 @@ case class SparseCluster[T<:IntValue](values:Array[T], Clusters:SortedMap[Int,CB
   * This is considered as a dense cluster because Cluster is an array and must cover all the possibles values of the values in the array ''values''
   * @author renaud.delandtsheer@cetic.be
   * */
-case class DenseCluster[T<:IntValue](values:Array[T], clusters:Array[CBLSSetVar]) extends Invariant {
+case class DenseCluster[T<:IntValue](values:Array[T], clusters:Array[CBLSSetVar]) extends Invariant with IntNotificationTarget{
 
   //We register the static and dynamic dependencies.
   //Dynamic dependencies are the ones considered for the notifications.
@@ -126,7 +128,7 @@ case class DenseCluster[T<:IntValue](values:Array[T], clusters:Array[CBLSSetVar]
   * This is considered as a dense cluster because Cluster is an array and must cover all the possibles values of the values in the array ''values''
   * @author renaud.delandtsheer@cetic.be
   * */
-case class TranslatedDenseCluster(values:Array[CBLSIntVar],  indicesArray:Array[Int], clusters:Array[CBLSSetVar]) extends Invariant {
+case class TranslatedDenseCluster(values:Array[CBLSIntVar],  indicesArray:Array[Int], clusters:Array[CBLSSetVar]) extends Invariant with IntNotificationTarget{
 
   //We register the static and dynamic dependencies.
   //Dynamic dependencies are the ones considered for the notifications.

@@ -53,7 +53,7 @@ sealed abstract class Domain extends Iterable[Int]{
   def randomValue:Int
   def restrict(d:Domain):Domain
 
-  def union(d:Domain) =
+  def union(d:Domain):Domain =
     DomainRange(if(d.min < this.min) d.min else this.min,
       if(d.max > this.max) d.max else this.max)
 
@@ -68,11 +68,13 @@ case class DomainRange(override val min: Int, override val max: Int) extends Dom
   override def values: Iterable[Int] = min to max
   override def randomValue: Int = (min to max)(Random.nextInt(max-min+1))
   override def restrict(d: Domain): Domain = {
-    d match{
+    val newDomain:Domain = d match{
       case r:DomainRange => math.max(r.min,min) to math.min(r.max,max)
       case FullRange => d
       case d:SingleValueDomain => d.restrict(this)
     }
+    if (newDomain.isEmpty) throw new EmptyDomainException
+    newDomain
   }
 
   override def toString(): String = "DomainRange(min:" + min + ", max:" +  max + ")"
@@ -88,6 +90,9 @@ case object FullRange extends Domain{
   override def restrict(d: Domain): Domain = d
   override def toString(): String = "FullRange"
 }
+
+object PositiveOrNullRange extends DomainRange(0, Int.MaxValue)
+
 
 case class SingleValueDomain(value:Int) extends Domain{
   override def min: Int = value
