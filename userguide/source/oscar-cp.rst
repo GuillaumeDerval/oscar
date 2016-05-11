@@ -604,7 +604,7 @@ We can now implement the 100 restarts and each restart have a limit of at most 1
 ``for`` loop and use the method ``startSubjectTo`` to make a new run. 
 Note that constraints added in the ``startSubjectTo`` block are reverted at each new run.
 
-.. literalinclude:: ../../oscar-cp/src/main/examples/oscar/examples/cp/userguide/QuadraticAssignment.scala  
+.. literalinclude:: ../../oscar-cp/src/main/examples/oscar/examples/cp/userguide/QuadraticAssignmentLNS.scala  
    :language: scala
    :linenos: 
 
