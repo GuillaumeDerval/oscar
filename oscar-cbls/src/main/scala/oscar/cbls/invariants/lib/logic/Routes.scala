@@ -35,7 +35,7 @@ import oscar.cbls.invariants.core.propagation.Checker
  * Info : the indices from 0 to V-1 (in the next, positionInRoute and routeNr array) are the starting
  * points of vehicles.
  * @param V the number of vehicles.
- * @param next the array of successors of each points (deposits and customers) of the VRP.
+ * @param externalNext the array of successors of each points (deposits and customers) of the VRP.
  * @param positionInRoute the position in route of each points, N is the value of unrouted node.
  * @param routeNr the route number of each points, V is the value of unrouted node.
  * @param routeLength the length of each route.
@@ -43,18 +43,25 @@ import oscar.cbls.invariants.core.propagation.Checker
  * @author renaud.delandtsheer@cetic.be
  * */
 class Routes(V: Int,
-  val next: Array[IntValue],
+  val externalNext: Array[IntValue],
   val positionInRoute: Array[CBLSIntVar],
   val routeNr: Array[CBLSIntVar],
   val routeLength: Array[CBLSIntVar],
-  val lastInRoute: Array[CBLSIntVar]) extends VaryingDependencies {
-  val UNROUTED = next.length
-  val arrayOfUnregisterKeys = registerStaticAndDynamicDependencyArrayIndex(next)
+  val lastInRoute: Array[CBLSIntVar])
+  extends Invariant
+  with IntNotificationTarget{
+
+  val UNROUTED = externalNext.length
+
+  registerStaticAndDynamicDependencyArrayIndex(externalNext)
+
   finishInitialization()
   for (v <- positionInRoute) { v.setDefiningInvariant(this) }
   for (v <- routeNr) { v.setDefiningInvariant(this) }
   for (v <- routeLength) { v.setDefiningInvariant(this) }
   for (v <- lastInRoute) { v.setDefiningInvariant(this) }
+
+  var next:Array[Int] = externalNext.map(_.value)
 
   for (v <- 0 until V) DecorateVehicleRoute(v)
 
@@ -64,16 +71,16 @@ class Routes(V: Int,
     for (v <- next) { toReturn += ("" + v + ",") }
     toReturn = toReturn.substring(0, toReturn.length - 1) + "]\n"
     toReturn += "Position array: ["
-    for (v <- positionInRoute) { toReturn += ("" + v.getValue(true) + ",") }
+    for (v <- positionInRoute) { toReturn += ("" + v.newValue + ",") }
     toReturn = toReturn.substring(0, toReturn.length - 1) + "]\n"
     toReturn += "RouteNr array: ["
-    for (v <- routeNr) { toReturn += ("" + v.getValue(true) + ",") }
+    for (v <- routeNr) { toReturn += ("" + v.newValue + ",") }
     toReturn = toReturn.substring(0, toReturn.length - 1) + "]\n"
     toReturn += "RouteLength array: ["
-    for (v <- routeLength) { toReturn += ("" + v.getValue(true) + ",") }
+    for (v <- routeLength) { toReturn += ("" + v.newValue + ",") }
     toReturn = toReturn.substring(0, toReturn.length - 1) + "]\n"
     toReturn += "LastInRoute array: ["
-    for (v <- lastInRoute) { toReturn += ("" + v.getValue(true) + ",") }
+    for (v <- lastInRoute) { toReturn += ("" + v.newValue + ",") }
     toReturn = toReturn.substring(0, toReturn.length - 1) + "]\n"
     toReturn
   }
@@ -83,49 +90,54 @@ class Routes(V: Int,
     var currentPosition = 1
     positionInRoute(v) := 0
     routeNr(v) := v
-    while (next(currentID).value != v) {
+    while (next(currentID) != v) {
 
-      assert(next(currentID).value > v)
+      assert(next(currentID) > v)
 
-      currentID = next(currentID).value
+      currentID = next(currentID)
       positionInRoute(currentID) := currentPosition
       routeNr(currentID) := v
       currentPosition += 1
     }
     lastInRoute(v) := currentID
-    routeLength(v) := positionInRoute(currentID).getValue(true) + 1
+    routeLength(v) := positionInRoute(currentID).newValue + 1
   }
 
+  val inToUpdate:Array[Boolean] = Array.fill(UNROUTED)(false)
   var ToUpdate: List[Int] = List.empty
   var ToUpdateCount: Int = 0
 
   override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Int, NewVal: Int) {
-    arrayOfUnregisterKeys(i).performRemove()
-    arrayOfUnregisterKeys(i) = null
-    ToUpdate = i :: ToUpdate
-    ToUpdateCount += 1
-    scheduleForPropagation()
+    if(!inToUpdate(i)) {
+      ToUpdate = i :: ToUpdate
+      ToUpdateCount += 1
+      scheduleForPropagation()
+      assert(next(i) == OldVal)
+      inToUpdate(i) = true
+    }
+    next(i) = NewVal
   }
 
   @inline
   final def isUpToDate(node: Int): Boolean = {
-    ((routeNr(node).getValue(true) == routeNr(next(node).value).getValue(true))
-      && ((positionInRoute(node).getValue(true) + 1) % next.length == positionInRoute(next(node).value).getValue(true)))
+    ((routeNr(node).newValue == routeNr(next(node)).newValue)
+      && ((positionInRoute(node).newValue + 1) % UNROUTED == positionInRoute(next(node)).newValue))
   }
 
+  //TODO how about an accumulating heap?
+  val heap = new BinomialHeap[(Int, Int)]((a: (Int, Int)) => a._2, UNROUTED)
+
   override def performInvariantPropagation() {
-    //le numéro de noeud, son ancienne position dans le circuit
-    val heap = new BinomialHeap[(Int, Int)]((a: (Int, Int)) => a._2, ToUpdateCount)
     for (node <- ToUpdate) {
-      if (next(node).value == UNROUTED) {
+      inToUpdate(node) = false
+      if (next(node) == UNROUTED) {
         //node is unrouted now
         routeNr(node) := V
         positionInRoute(node) := UNROUTED
-        arrayOfUnregisterKeys(node) = registerDynamicallyListenedElement(next(node), node)
       } else if (isUpToDate(node)) {
-        arrayOfUnregisterKeys(node) = registerDynamicallyListenedElement(next(node), node)
+        ;
       } else {
-        heap.insert((node, positionInRoute(node).getValue(true)))
+        heap.insert((node, positionInRoute(node).newValue))
       }
     }
     ToUpdate = List.empty
@@ -134,35 +146,33 @@ class Routes(V: Int,
     while (!heap.isEmpty) {
       val currentNodeForUpdate = heap.popFirst()._1
       DecorateRouteStartingFromAndUntilConformOrEnd(currentNodeForUpdate)
-      arrayOfUnregisterKeys(currentNodeForUpdate) = registerDynamicallyListenedElement(next(currentNodeForUpdate), currentNodeForUpdate)
     }
   }
 
   /**
-   *
-   * @param nodeID is the node whose next hjas changed
+   * @param nodeID is the node whose next has changed
    */
   def DecorateRouteStartingFromAndUntilConformOrEnd(nodeID: Int) {
-    var currentNode = nodeID
-    var nextNode = next(currentNode).value
-    var maxIt = next.length
+    var currentNode:Int = nodeID
+    var nextNode:Int = next(currentNode)
+    var maxIt:Int = UNROUTED
     while (!isUpToDate(currentNode) && nextNode >= V) {
-      positionInRoute(nextNode) := (positionInRoute(currentNode).getValue(true) + 1)
-      routeNr(nextNode) := routeNr(currentNode).getValue(true)
+      positionInRoute(nextNode) := (positionInRoute(currentNode).newValue + 1)
+      routeNr(nextNode) := routeNr(currentNode).newValue
       currentNode = nextNode
-      nextNode = next(currentNode).value
+      nextNode = next(currentNode)
       if (maxIt == 0) throw new Error("Route invariant not converging. Cycle involving node " + currentNode)
       maxIt -= 1
     }
     if (nextNode < V) {
       lastInRoute(nextNode) := currentNode
-      routeLength(nextNode) := positionInRoute(currentNode).getValue(true) + 1
+      routeLength(nextNode) := positionInRoute(currentNode).newValue + 1
     }
   }
 
   override def checkInternals(c: Checker) {
     for (n <- next.indices) {
-      val nextNode = next(n).value
+      val nextNode = next(n)
       if (nextNode != UNROUTED) {
         c.check(routeNr(nextNode).value == routeNr(n).value, Some("routeNr(nextNode).value == routeNr(n).value"))
         if (nextNode < V) {

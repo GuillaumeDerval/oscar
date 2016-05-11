@@ -25,8 +25,10 @@
 
 package oscar.cbls.invariants.lib.set
 
-import oscar.cbls.invariants.core.computation.{ChangingSetValue, IntInvariant, SetValue}
+import oscar.cbls.invariants.core.computation.{ChangingSetValue, IntInvariant, SetNotificationTarget, SetValue}
 import oscar.cbls.invariants.core.propagation.Checker
+
+import scala.collection.immutable.SortedSet
 
 /**
  * Sum(i in on)(fun(i))
@@ -35,21 +37,17 @@ import oscar.cbls.invariants.core.propagation.Checker
  * @author renaud.delandtsheer@cetic.be
  * */
 case class SetSum(on: SetValue, fun: (Int => Int) = (a: Int) => a)
-  extends IntInvariant(on.value.foldLeft(0)((a, b) => a + fun(b))) {
+  extends IntInvariant(on.value.foldLeft(0)((a, b) => a + fun(b)))
+  with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(on)
   finishInitialization()
 
-  @inline
-  override def notifyInsertOn(v: ChangingSetValue, value: Int) {
-    assert(v == on)
-    this :+= fun(value)
-  }
-
-  @inline
-  override def notifyDeleteOn(v: ChangingSetValue, value: Int) {
-    assert(v == on)
-    this :-= fun(value)
+  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
+    var delta = 0
+    for (added <- addedValues) delta += fun(added)
+    for (deleted <- removedValues) delta -= fun(deleted)
+    this :+= delta
   }
 
   override def checkInternals(c: Checker) {
@@ -62,57 +60,43 @@ case class SetSum(on: SetValue, fun: (Int => Int) = (a: Int) => a)
 /**
  * PRod(i in on)(fun(i))
  * @param on is the set of integers to multiply
- * @param fun is an optional function Int -> Int to apply before multiplying elements. It is expected not to rely on any variable of the model.
  * @author renaud.delandtsheer@cetic.be
  * */
-case class SetProd(on: SetValue, fun: (Int => Int) = (a: Int) => a) extends IntInvariant {
-
-  var NonZeroProduct: Int = 0
+case class SetProd(on: SetValue)
+  extends IntInvariant
+  with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(on)
   finishInitialization()
 
-  NonZeroProduct = on.value.foldLeft(1)(
-    (acc, value) => if (value == 0) { acc } else { acc * fun(value) })
+  var nonZeroProduct = on.value.foldLeft(1)(
+    (acc, value) => if (value == 0) { acc } else { acc * value})
+
   if (on.value.contains(0)) {
     this := 0
   } else {
-    this := NonZeroProduct
+    this := nonZeroProduct
   }
 
-  @inline
-  override def notifyInsertOn(v: ChangingSetValue, value: Int) {
-    assert(v == on)
-    if (value != 0) {
-      NonZeroProduct *= fun(value)
-    }
-    if (on.value.contains(0)) {
+  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]){
+    for (deleted <- removedValues) if (deleted != 0) {nonZeroProduct /= deleted}
+    for (added <- addedValues) if (added != 0) {nonZeroProduct *= added}
+    if (newValue.contains(0)) {
       this := 0
     } else {
-      this := NonZeroProduct
-    }
-  }
-
-  @inline
-  override def notifyDeleteOn(v: ChangingSetValue, value: Int) {
-    assert(v == on, "The given set (IntSetVar) should be SetProd.on.")
-    if (value != 0) {
-      NonZeroProduct /= fun(value)
-    }
-    if (on.value.contains(0)) {
-      /**
-       * Nothing to do since 0 is already in this
-       * or it will be added when its insertion in the set will be notified.
-       */
-    } else {
-      this := NonZeroProduct
+      this := nonZeroProduct
     }
   }
 
   override def checkInternals(c: Checker) {
+    var countNZ = 1
+    for (v <- on.value) if(v !=0) countNZ *= v
+    c.check(nonZeroProduct == countNZ,
+      Some("non zero product (" + nonZeroProduct + ") == product of non zero items (" + countNZ + ") and on is " + on))
+
     var count = 1
     for (v <- on.value) count *= v
     c.check(this.value == count,
-      Some("this.value (" + this.value + ") == count (" + count + ")"))
+      Some("this.value (" + this.value + ") == count (" + count + ") and on is " + on))
   }
 }

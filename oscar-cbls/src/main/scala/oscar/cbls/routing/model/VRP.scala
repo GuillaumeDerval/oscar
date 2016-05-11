@@ -23,15 +23,14 @@
 
 package oscar.cbls.routing.model
 
-import oscar.cbls.constraints.core.ConstraintSystem
-import oscar.cbls.invariants.core.algo.heap.BinomialHeap
 import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.lib.logic._
 import oscar.cbls.invariants.lib.numeric.Sum
 import oscar.cbls.invariants.lib.set.Cardinality
 import oscar.cbls.modeling.Algebra._
+import oscar.cbls.search.algo.KSmallest
 
-import scala.collection.immutable.{SortedMap, SortedSet}
+import scala.collection.immutable.SortedSet
 import scala.math.min
 
 /**
@@ -48,6 +47,7 @@ import scala.math.min
  * @author renaud.delandtsheer@cetic.be
  * @author Florent Ghilain (UMONS)
  */
+@deprecated("this routing model is inefficient for large moves. A faster model will be released in septembre 2016","spring 2016")
 class VRP(val N: Int, val V: Int, val m: Store) {
   /**
    * the data structure array which maintains the successors.
@@ -57,7 +57,7 @@ class VRP(val N: Int, val V: Int, val m: Store) {
    */
   val next: Array[CBLSIntVar] = Array.tabulate(N)(i =>
     if (i < V) CBLSIntVar(m, i, 0 to N - 1, "next" + i)
-    else CBLSIntVar(m, N, 0 to N,  "next" + i))
+    else CBLSIntVar(m, N, 0 to N, "next" + i))
 
   /**unroutes all points of the VRP*/
   def unroute() {
@@ -72,7 +72,7 @@ class VRP(val N: Int, val V: Int, val m: Store) {
   /**
    * the range vehicle of the problem.
    */
-  val Vehicles = 0 until V
+  val vehicles = 0 until V
 
   /**
    * Returns if a given point is a depot.
@@ -86,7 +86,7 @@ class VRP(val N: Int, val V: Int, val m: Store) {
    * @param n the point queried.
    * @return true if the point is still routed, else false.
    */
-  def isRouted(n: Int): Boolean = { next(n).value != N }
+  def isRouted(n: Int): Boolean = { next(n).newValue != N }
 
   /**
    * This function is intended to be used for testing only.
@@ -119,13 +119,22 @@ class VRP(val N: Int, val V: Int, val m: Store) {
    * @return the route of a vehicle as a String.
    */
   def routeToString(vehicle: Int): String = {
-    var toReturn = "Vehicle " + vehicle + ": " + vehicle
+    "Vehicle " + vehicle + ": " + getRouteOfVehicle(vehicle).mkString("->")
+  }
+
+  /**
+   * the route of the vehicle, starting at the vehicle node, and not including the last vehicle node
+   * @param vehicle
+   * @return
+   */
+  def getRouteOfVehicle(vehicle:Int):List[Int] = {
     var current = next(vehicle).value
+    var acc:List[Int] = List(vehicle)
     while (current != vehicle) {
-      toReturn += " -> " + current
-      current = next(current).getValue(true)
+      acc = current :: acc
+      current = next(current).newValue //to avoid unnecessary propagation
     }
-    toReturn
+    acc.reverse
   }
 
   /**
@@ -139,19 +148,17 @@ class VRP(val N: Int, val V: Int, val m: Store) {
       toReturn += routeToString(v)
       toReturn += "\n"
     }
-    for (additionalStringFunction <- additionalStrings){
+    for (additionalStringFunction <- additionalStrings) {
       toReturn += additionalStringFunction() + "\n"
     }
     toReturn
   }
 
-  private var additionalStrings:List[()=>String] = List.empty
-  def addToStringInfo(a:()=>String){
+  private var additionalStrings: List[() => String] = List.empty
+  def addToStringInfo(a: () => String) {
     additionalStrings = a :: additionalStrings
   }
 }
-
-
 
 /**
  * Maintains the set of routed and unrouted nodes.
@@ -168,6 +175,9 @@ abstract trait RoutedAndUnrouted extends VRP {
    */
   val routed = Filter(next, _ < N)
   m.registerForPartialPropagation(routed)
+  
+  val routedNotStartingPoint = routed.minus(SortedSet.empty[Int] ++ (0 to V-1))
+  m.registerForPartialPropagation(routedNotStartingPoint)
 
   /**
    * the data structure set which maintains the unrouted nodes.
@@ -201,26 +211,32 @@ abstract trait PenaltyForUnrouted extends VRP with RoutedAndUnrouted {
 
   /**
    * the data structure array which maintains penalty of nodes.
+   * it is not supposed to be modified after model close, neither controlled by an invariant
    */
-  val weightUnroutedPenalty = Array.tabulate(N)(i => CBLSIntVar(m, 0, FullRange,
-    "penality of node " + i))
+  protected val weightUnroutedPenalty = Array.fill(N)(0)
   /**
    * the variable which maintains the sum of penalty of unrouted nodes, thanks to invariant SumElements.
    */
-  val unroutedPenalty = Sum(weightUnroutedPenalty, unrouted)
+  val unroutedPenalty = CBLSIntVar(m,name="TotalPenaltyForUnroutedNodes")
 
   /**
    * It allows you to set the penalty of a given point.
    * @param n the point.
    * @param p the penalty.
    */
-  def setUnroutedPenaltyWeight(n: Int, p: Int) { weightUnroutedPenalty(n) := p }
+  @deprecated("not deprecated, just, do not forget to call closeUnroutedPenaltyWeight afgter you are done with penalties","")
+  def setUnroutedPenaltyWeight(n: Int, p: Int) { weightUnroutedPenalty(n) = p }
 
   /**
    * It allows you to set a specific penalty for all points of the VRP.
    * @param p the penalty.
    */
-  def setUnroutedPenaltyWeight(p: Int) { weightUnroutedPenalty.foreach(penalty => penalty := p) }
+  def setUnroutedPenaltyWeight(p: Int) { weightUnroutedPenalty.indices.foreach(i => weightUnroutedPenalty(i) = p) }
+
+  def closeUnroutedPenaltyWeight(){
+    unroutedPenalty <== Sum(weightUnroutedPenalty, unrouted)
+  }
+
 }
 
 /**
@@ -230,54 +246,82 @@ trait HopClosestNeighbors extends ClosestNeighbors with HopDistance {
   final override protected def getDistance(from: Int, to: Int): Int = getHop(from, to)
 }
 
+
+abstract trait ClosestNeighborsWithPenaltyForUnrouted extends VRP with PenaltyForUnrouted with ClosestNeighbors{
+
+  var closestNeighborsWithPenaltyForUnrouted: Array[Iterable[Int]] = null
+
+  override def computeClosestNeighbors(): Unit = {
+    super.computeClosestNeighbors()
+    computeClosestNeighborsWithPenalty()
+  }
+
+  private def computeClosestNeighborsWithPenalty() = {
+    def arrayOfAllNodes = Array.tabulate(N)(node => node)
+    closestNeighborsWithPenaltyForUnrouted = Array.tabulate(N)(node =>
+      KSmallest.lazySort(arrayOfAllNodes,
+        neighbor => (min(getDistance(neighbor, node), getDistance(node, neighbor)) - weightUnroutedPenalty(neighbor))
+      ))
+  }
+
+  /**
+   * Returns the k nearest nodes of a given node.
+   * It allows us to add a filter (optional) on the neighbor.
+   *
+   * Info : it uses the Currying feature.
+   * @param k the parameter k.
+   * @param filter the filter, should only return unrouted nodes
+   * @param node the given node.
+   * @return the k nearest neighbor as an iterable list of Int.
+   */
+  def kNearestWithPenaltyForUnrouted(k: Int, filter: (Int => Boolean) = (_ => true))(node: Int): Iterable[Int] = {
+    if (k >= N - 1) return nodes.filter(filter)
+
+    def kNearestAccumulator(sortedNeighbors: Iterator[Int], k: Int, kNearestAcc: List[Int]): List[Int] = {
+      require(k >= 0)
+      if(k == 0 || !sortedNeighbors.hasNext){
+        kNearestAcc.reverse
+      }else{
+        val neighbor = sortedNeighbors.next()
+        if (filter(neighbor))
+          kNearestAccumulator(sortedNeighbors, k - 1, neighbor :: kNearestAcc)
+        else
+          kNearestAccumulator(sortedNeighbors, k, kNearestAcc)
+      }
+    }
+
+    kNearestAccumulator(closestNeighbors(node).iterator, k, Nil)
+  }
+}
+
 /**
  * Computes the nearest neighbors of each point.
  * Used by some neighborhood searches.
  * @author renaud.delandtsheer@cetic.be
  * @author Florent Ghilain (UMONS)
+ * @author yoann.guyot@cetic.be
  */
 abstract trait ClosestNeighbors extends VRP {
 
   protected def getDistance(from: Int, to: Int): Int
-  /**
-   * the data structure which maintains the k closest neighbors of each point.
-   */
-  var closestNeighbors: SortedMap[Int, Array[List[Int]]] = SortedMap.empty
 
-  /**
-   * Save the k nearest neighbors of each node of the VRP.
-   * It allows us to add a filter (optional) on the neighbor we want to save.
-   * @param k the parameter k.
-   * @param filter the filter
-   */
-  def saveKNearestPoints(k: Int, filter: (Int => Boolean) = (_ => true)) {
-    if (k < N - 1) {
-      val neighbors = Array.tabulate(N)((node: Int) => computeKNearestNeighbors(node, k, filter))
-      closestNeighbors += ((k, neighbors))
-    }
+  var closestNeighbors: Array[Iterable[Int]] = null
+
+  def computeClosestNeighbors() = {
+    def arrayOfAllNodes = Array.tabulate(N)(node => node)
+    closestNeighbors = Array.tabulate(N)(node =>
+      KSmallest.lazySort(arrayOfAllNodes,
+        neighbor => min(getDistance(neighbor, node), getDistance(node, neighbor))
+      ))
   }
-
   /**
-   * Computes and returns the k nearest neighbor of a given node.
-   * It allows us to add a filter (optional) on the neighbor we want to save.
-   * @param node the given node.
-   * @param k the parameter k.
-   * @param filter the optional filter.
-   * @return the k nearest neighbor of the a node as a list of Int.
+   * Filters the node itself and unreachable neighbors.
    */
-  def computeKNearestNeighbors(node: Int, k: Int, filter: (Int => Boolean) = (_ => true)): List[Int] = {
-
-    val reachableNeigbors = nodes.filter((next: Int) => node != next && filter(next) && (getDistance(node, next) != Int.MaxValue || getDistance(next, node) != Int.MaxValue))
-
-    val heap = new BinomialHeap[(Int, Int)](-_._2, k + 1)
-
-    for (neigbor <- reachableNeigbors) {
-      heap.insert(neigbor, min(getDistance(neigbor, node), getDistance(node, neigbor)))
-      if (heap.size > k) heap.popFirst()
-    }
-
-    heap.toList.map(_._1)
-  }
+  def reachableNeigbors(node: Int) =
+    nodes.filter((node2: Int) =>
+      node != node2
+        && (getDistance(node, node2) != Int.MaxValue
+          || getDistance(node2, node) != Int.MaxValue)).toList
 
   /**
    * Returns the k nearest nodes of a given node.
@@ -290,11 +334,22 @@ abstract trait ClosestNeighbors extends VRP {
    * @return the k nearest neighbor as an iterable list of Int.
    */
   def kNearest(k: Int, filter: (Int => Boolean) = (_ => true))(node: Int): Iterable[Int] = {
-    if (k >= N - 1) return nodes
-    if (!closestNeighbors.isDefinedAt(k)) {
-      saveKNearestPoints(k: Int, filter)
+    if (k >= N - 1) return nodes.filter(filter)
+
+    def kNearestAccumulator(sortedNeighbors: Iterator[Int], k: Int, kNearestAcc: List[Int]): List[Int] = {
+      require(k >= 0)
+      if(k == 0 || !sortedNeighbors.hasNext){
+        kNearestAcc.reverse
+      }else{
+        val neighbor = sortedNeighbors.next()
+        if (filter(neighbor))
+          kNearestAccumulator(sortedNeighbors, k - 1, neighbor :: kNearestAcc)
+        else
+          kNearestAccumulator(sortedNeighbors, k, kNearestAcc)
+      }
     }
-    closestNeighbors(k)(node)
+
+    kNearestAccumulator(closestNeighbors(node).iterator, k, Nil)
   }
 }
 
@@ -311,14 +366,14 @@ trait HopDistance extends VRP {
    * Info : the domain max is (Int.MaxValue / N) to avoid problem with domain. (allow us to use sum invariant without
    * throw over flow exception to save the distance of all vehicle).
    */
-  var hopDistance:Array[IntValue] = new Array[IntValue](N)
+  var hopDistance: Array[IntValue] = new Array[IntValue](N)
 
   /**
    * maintains the total distance of all vehicle, linked on the actual next hop of each node.
    */
   val overallDistance = CBLSIntVar(m, name = "overall distance")
 
-  def assignOverallDistance(){
+  def assignOverallDistance() {
     overallDistance <== Sum(hopDistance)
   }
   /**
@@ -349,7 +404,7 @@ trait HopDistance extends VRP {
     assignOverallDistance()
   }
 
-  def installhopDistance(d:Domain = 0 to Int.MaxValue/N){
+  def installhopDistance(d: Domain = 0 to Int.MaxValue / N) {
     hopDistance = Array.tabulate(N) { (i: Int) => CBLSIntVar(m, 0, 0 to Int.MaxValue / N, "hopDistanceForLeaving" + i) }
     assignOverallDistance()
   }
@@ -363,6 +418,18 @@ trait HopDistance extends VRP {
 }
 
 
+trait hopDistancePerVehicle extends HopDistance with NodesOfVehicle{
+  var hopDistancePerVehicle:Array[IntValue] = null
+  def installHopDistancePerVehicle(){
+    hopDistancePerVehicle = Array.tabulate(V)(v => Sum(hopDistance,nodesOfVehicle(v)).setName("totalDistance_" + v))
+    addToStringInfo(() => "hopDistancePerVehicle:" + hopDistancePerVehicle.mkString(";"))
+  }
+}
+
+trait hopsPerVehicle extends NodesOfVehicle{
+  var hopsPerVehicle:Array[IntValue] = Array.tabulate(V)(v => Cardinality(nodesOfVehicle(v)).setName("totalHops_" + v))
+  addToStringInfo(() => "hopsPerVehicle:" + hopsPerVehicle.mkString(";"))
+}
 
 /**
  * Maintains the set of nodes reached by each vehicle
@@ -404,7 +471,7 @@ trait PositionInRouteAndRouteNr extends VRP {
 
   {
     val allvars = positionInRoute.toList ++ routeNr ++ routeLength
-    m.registerForPartialPropagation(allvars:_*)
+    m.registerForPartialPropagation(allvars: _*)
   }
 
   /**
@@ -528,7 +595,7 @@ trait PenaltyForEmptyRouteWithException extends VRP with NodesOfVehicle {
    */
   val emptyRoutes = Filter(nodesOfRealVehicles.map(
     (vehicleNodes: CBLSSetVar) => Cardinality(vehicleNodes minus exceptionNodes)), _ == 1)
-    
+
   /**
    * The variable which maintains the sum of route penalties,
    * thanks to SumElements invariant.

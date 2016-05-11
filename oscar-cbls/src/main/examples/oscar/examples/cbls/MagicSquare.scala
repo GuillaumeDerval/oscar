@@ -21,11 +21,11 @@
 
 package oscar.examples.cbls
 
-import oscar.cbls.search._
 import oscar.cbls.constraints.core._
 import oscar.cbls.constraints.lib.basic._
 import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.lib.numeric._
+import oscar.cbls.search._
 
 /**
  * Example showing how to use Asteroid on the magic square problem  

@@ -30,7 +30,10 @@ import oscar.cbls.invariants.core.propagation.Checker
 /**
  * Author: Jean-Noël Monette
  */
-case class SparseCount(values: Array[IntValue], counts: Map[Int,CBLSIntVar]) extends Invariant {
+case class SparseCount(values: Array[IntValue], counts: Map[Int,CBLSIntVar])
+  extends Invariant
+  with IntNotificationTarget{
+
   for (v <- values.indices) registerStaticAndDynamicDependency(values(v), v)
   
   finishInitialization()
@@ -55,7 +58,9 @@ case class SparseCount(values: Array[IntValue], counts: Map[Int,CBLSIntVar]) ext
  * it is expected that the values are always >= 0
  * @author renaud.delandtsheer@cetic.be
  * */
-case class DenseCount(values: Array[IntValue], counts: Array[CBLSIntVar], offset:Int = 0) extends Invariant {
+case class DenseCount(values: Array[IntValue], counts: Array[CBLSIntVar], offset:Int = 0)
+  extends Invariant
+  with IntNotificationTarget{
 
   for (v <- values.indices) registerStaticAndDynamicDependency(values(v), v)
 
@@ -91,8 +96,8 @@ case class DenseCount(values: Array[IntValue], counts: Array[CBLSIntVar], offset
     }
 
     for (j <- counts.indices) {
-      c.check(counts(j+offset).getValue(false) == myCounts(j+offset),
-        Some("counts(" + j + "+offset).getValue(false) (" + counts(j+offset).getValue(false)
+      c.check(counts(j+offset).value == myCounts(j+offset),
+        Some("counts(" + j + "+offset).getValue(false) (" + counts(j+offset).value
           + ") == myCounts(" + j + "+offset) (" + myCounts(j+offset) + ")"))
     }
   }

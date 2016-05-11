@@ -23,7 +23,7 @@ import java.awt.Color
 import java.awt.Toolkit
 import java.awt.BorderLayout
 
-class VisualFrame(title: String, val nbLines: Int = 1, val nbCols: Int = 1) extends JFrame(title) {
+class VisualFrame(title: String, val nbLines: Int = 1, val nbCols: Int = 1, internalFrames: List[JInternalFrame] = Nil) extends JFrame(title) {
 
   val desktop = new JDesktopPane()
 
@@ -39,6 +39,12 @@ class VisualFrame(title: String, val nbLines: Int = 1, val nbCols: Int = 1) exte
   content.add(new JScrollPane(desktop))
   setSize(screenSize)
   setMinimumSize(new Dimension(400, 300))
+
+  for(internalFrame <- internalFrames){
+    println("boucle for",internalFrame.getClass().toString)
+    addFrame(internalFrame)
+  }
+
   setVisible(true)
   
   def onWindowClosing(): Unit = {
@@ -83,6 +89,28 @@ class VisualFrame(title: String, val nbLines: Int = 1, val nbCols: Int = 1) exte
     frame.moveToFront()
     n += 1
     frame
+  }
+
+  def addFrame(frame: JInternalFrame, location:(Int, Int) = null, size:(Int,Int) = (w,h), bg:Color = Color.white, visible:Boolean = true, resizable:Boolean = true): Unit ={
+    val c = n % nbCols
+    val l = n / nbCols
+
+    if(location == null)
+      frame.setLocation(c * size._1,l * size._2)
+    else
+      frame.setLocation(location._1, location._2)
+
+    println("w",w,"h",h,"c",c,"l",l,"size",size)
+    println("before",frame.getPreferredSize)
+    frame.setPreferredSize(new Dimension(size._1,size._2))
+    frame.setSize(size._1,size._2)
+    frame.setBackground(bg)
+    frame.setVisible(visible)
+    frame.setResizable(resizable)
+    println(frame.getPreferredSize, frame.getSize())
+    desktop.add(frame)
+    frame.moveToFront()
+    n += 1
   }
 
   def createToolBar(): VisualToolBar = {

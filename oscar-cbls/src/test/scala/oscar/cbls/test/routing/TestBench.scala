@@ -1,38 +1,30 @@
 package oscar.cbls.test.routing
 
-import scala.math.pow
-import scala.math.round
-import scala.math.sqrt
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
 
 import org.scalacheck.Gen
-import org.scalatest.FunSuite
-import org.scalatest.Matchers
 import org.scalatest.prop.Checkers
-
+import org.scalatest.{FunSuite, Matchers}
 import oscar.cbls.invariants.core.computation.SetValue.toFunction
 import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.objective.Objective
-import oscar.cbls.routing.model.ClosestNeighbors
-import oscar.cbls.routing.model.HopClosestNeighbors
-import oscar.cbls.routing.model.HopDistanceAsObjectiveTerm
-import oscar.cbls.routing.model.PenaltyForUnrouted
-import oscar.cbls.routing.model.PositionInRouteAndRouteNr
-import oscar.cbls.routing.model.Predecessors
-import oscar.cbls.routing.model.RoutedAndUnrouted
-import oscar.cbls.routing.model.UnroutedImpl
-import oscar.cbls.routing.model.VRP
-import oscar.cbls.routing.model.VRPObjective
-import oscar.cbls.routing.neighborhood.InsertPoint
-import oscar.cbls.routing.neighborhood.OnePointMove
-import oscar.cbls.routing.neighborhood.OnePointMoveMove
-import oscar.cbls.routing.neighborhood.Swap
-import oscar.cbls.routing.neighborhood.SwapMove
-import oscar.cbls.routing.neighborhood.ThreeOpt
-import oscar.cbls.routing.neighborhood.ThreeOptMove
-import oscar.cbls.routing.neighborhood.TwoOpt
-import oscar.cbls.routing.neighborhood.TwoOptMove
-import oscar.cbls.search.core.MoveFound
-import oscar.cbls.search.core.NoMoveFound
+import oscar.cbls.routing.model.{ClosestNeighbors, HopClosestNeighbors, HopDistanceAsObjectiveTerm, PenaltyForUnrouted, PositionInRouteAndRouteNr, Predecessors, RoutedAndUnrouted, UnroutedImpl, VRP, VRPObjective}
+import oscar.cbls.routing.neighborhood.{InsertPointUnroutedFirst, OnePointMove, OnePointMoveMove, Swap, SwapMove, ThreeOpt, ThreeOptMove, TwoOpt, TwoOptMove}
+import oscar.cbls.search.core.{MoveFound, NoMoveFound}
+
+import scala.math.{pow, round, sqrt}
 
 object RandomInsert {
   /**
@@ -41,7 +33,7 @@ object RandomInsert {
    */
   def apply(vrp: VRP with RoutedAndUnrouted with VRPObjective with PositionInRouteAndRouteNr) {
     print("Applying random insert heuristic...")
-    InsertPoint(vrp.unrouted,
+    InsertPointUnroutedFirst(vrp.unrouted,
       () => (n: Int) => vrp.routed.value,
       vrp: VRP,
       "Random insert",
