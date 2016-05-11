@@ -176,7 +176,7 @@ abstract class Neighborhood(name:String = null) {
    */
   def doAllMoves(shouldStop: Int => Boolean = _ => false, obj: Objective, acceptanceCriterion: (Int, Int) => Boolean = (oldObj, newObj) => oldObj > newObj): Int = {
     if (verbose != 0){
-      println("start doAllMove at " + java.time.LocalDateTime.now)
+      //println("start doAllMove at " + java.time.LocalDateTime.now)
       println("initial objective function:" + obj)
     }
     val startSearchNanotime = System.nanoTime()

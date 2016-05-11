@@ -87,6 +87,15 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
       }
   }
 
+  /*
+   * Do NOT use this method! It exists only for the sake of oscar-fzn-cbls (hence it should not be suppressed either until oscar-fzn-cbls is able to use a workaround).
+   */
+  def relaxDomain(d: Domain): Domain = {
+    val olddom = privatedomain
+    privatedomain = d
+    olddom
+  }
+
   override def toString = {
     if(model != null && model.propagateOnToString) s"$name:=$value" else s"$name:=$Value"
   }
