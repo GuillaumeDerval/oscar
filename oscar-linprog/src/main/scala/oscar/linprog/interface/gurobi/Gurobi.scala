@@ -62,7 +62,6 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
   def modelName: String = rawSolver.get(GRB.StringAttr.ModelName)
   def modelName_=(value: String) = rawSolver.set(GRB.StringAttr.ModelName, value)
 
-
   /* OBJECTIVE */
 
   private var pendingObj: Option[GRBLinExpr] = None
@@ -106,23 +105,23 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
 
   private def addVariable(name: String, lb: Double, ub: Double,
     objCoef: Option[Double], cstrCoefs: Option[Array[Double]], cstrIds: Option[Array[Int]], integer: Boolean, binary: Boolean): Int = {
-    val varId = (objCoef, cstrCoefs, cstrIds) match {
+
+    val varId = this.nCols
+    val varName = cropName(name, uniqueId = varId.toString)
+
+    // Add the variable to the solver
+    val newVar = (objCoef, cstrCoefs, cstrIds) match {
       case (Some(oCoef), Some(cCoefs), Some(cIds)) =>
-        val varId = this.nCols
-        val newVar = rawSolver.addVar(lb, ub, oCoef, toGRBVarType(integer, binary), cIds.map(i => rawSolver.getConstr(i)), cCoefs, name)
-        pendingVars = (varId, newVar) +: pendingVars
-        this.nCols += 1
-        varId
+        rawSolver.addVar(lb, ub, oCoef, toGRBVarType(integer, binary), cIds.map(i => rawSolver.getConstr(i)), cCoefs, varName)
       case (None, None, None) =>
         // Note: actual addition of the variable is delayed until the next updateModel
-        val varId = this.nCols
-        val newVar = rawSolver.addVar(lb, ub, 0.0, toGRBVarType(integer, binary), name)
-        pendingVars = (varId, newVar) +: pendingVars
-        this.nCols += 1
-        varId
+        rawSolver.addVar(lb, ub, 0.0, toGRBVarType(integer, binary), varName)
       case _ =>
         throw new IllegalArgumentException("Parameters objCoef, cstrCoef, cstrId should all be defined or none.")
     }
+
+    pendingVars = (varId, newVar) +: pendingVars
+    this.nCols += 1
 
     varId
   }
