@@ -144,7 +144,7 @@ object JobShopWithLNSAndShaving extends CPModel with App {
       val startDomSizeBefore = startVars.map(sv => sv.size)
       ShavingUtils.boundsShaving(solver, startVars)
       val startDomSizeAfter = startVars.map(sv => sv.size)
-      println(s"Makespan: ${bestSolutionMk}")
+      println(s"Makespan: $bestSolutionMk")
       println(s"Shaving on min and max has reduced the domains of ${startVars.indices.foldLeft(0)((acc, i) => acc + (startDomSizeBefore(i) - startDomSizeAfter(i)))} values")
     }
   }
