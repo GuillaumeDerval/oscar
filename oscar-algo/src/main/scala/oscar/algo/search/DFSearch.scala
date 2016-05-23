@@ -17,6 +17,17 @@ package oscar.algo.search
 
 import oscar.algo.array.ArrayStack
 
+class SearchStatistics(
+                        val nNodes: Int,
+                        val nFails: Int,
+                        val time: Long,
+                        val completed: Boolean,
+                        val timeInTrail: Long,
+                        val maxTrailSize: Int,
+                        val nSols: Int) {
+  override val toString: String = s"nNodes: $nNodes\nnFails: $nFails\ntime(ms): $time\ncompleted: $completed\ntimeInTrail: $timeInTrail\nnSols: $nSols\n"
+}
+
 /**
  *  DFS search
  *  

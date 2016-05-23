@@ -23,9 +23,11 @@ import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPPropagStrength
 import oscar.cp._
 import oscar.cp.scheduling.constraints.DisjunctiveWithTransitionTimes
+
 import scala.collection.mutable.ArrayBuffer
 import oscar.cp.scheduling.constraints._
 import oscar.cp.constraints.tables.TableAlgo._
+import oscar.cp.constraints.tables.NegativeTableAlgo._
 
 trait Constraints {
 
@@ -623,15 +625,27 @@ trait Constraints {
     z
   }
 
+
   /**
-   * Table Constraints for couples (constraint given in extension by enumerating valid assignments)
+    * Negative Table Constraints  (constraint given in extension by enumerating invalid valid assignments)
+    * @param x non empty array of variables on which the negative table constraint apply
+    * @param impossibleTuples a collection of impossible tuples for variables in x
+    * @param algo the negative table filtering algorithm to be used
+    * @return a constraint enforcing that x is not one of the tuples given in tuples
+    */
+  def negativeTable(x: Array[CPIntVar], impossibleTuples: Array[Array[Int]], algo: NegativeTableAlgo = STRNE): Constraint = {
+    oscar.cp.constraints.tables.negativeTable(x,impossibleTuples,algo)
+  }
+
+  /**
+   * Table Constraints (constraint given in extension by enumerating valid assignments)
    * @param x non empty array of variables on which the table constraint apply
    * @param possibleTuples a collection of possible tuples for variables in x
    * @param algo the table filtering algorithm used
    * @return a constraint enforcing that x is one of the tuples given in tuples
    */
   def table(x: Array[CPIntVar], possibleTuples: Array[Array[Int]], algo: TableAlgo = CompactTable): Constraint = {
-    oscar.cp.constraints.tables.table(x, possibleTuples, algo)
+    oscar.cp.constraints.tables.table(x,possibleTuples,algo)
   }
 
   /**

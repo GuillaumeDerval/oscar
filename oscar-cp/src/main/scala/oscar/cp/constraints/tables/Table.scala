@@ -19,9 +19,12 @@ import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPOutcome._
 
+/**
+  * @author Pierre Schaus pschaus@gmail.com
+  */
 object TableAlgo extends Enumeration {
   type TableAlgo = Value
-  val CompactTable = Value("CompactTable (Perron)")
+  val CompactTable = Value("CompactTable (Perron et al)")
   val CompactTableGAC6 = Value("CompactTable GAC6 (Régin,Perrez,Schaus)")
   val CompactTableRefactored = Value("CompactTable Refactored")
   val GAC4 = Value("GAC4 (Regin)")
@@ -30,6 +33,7 @@ object TableAlgo extends Enumeration {
   val STR3 = Value("STR3 (Lecoutre)")
   val MDD4R = Value("MDD4R (Perez and Regin)")
   val AC5TCRecomp = Value("AC5TCRecomp (Mairy et al)")
+  val Decomp = Value("Basic Decomposition")
 }
 
 object table {
@@ -46,6 +50,7 @@ object table {
       case STR2         => str2(X, table)
       case STR3         => str3(X, table)
       case AC5TCRecomp  => ac5tcRecomp(X, table)
+      case Decomp       => decomp(X, table)
       case _            => compactTable(X, table)
     }
   }
@@ -64,9 +69,35 @@ object table {
 
   def str3(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableSTR3(X, table)
 
+  def decomp(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableDecomp(X, table)
+
   def ac5tcRecomp(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = {
     val data = new TableData(X.size)
     table.foreach(t => data.add(t: _*))
     new TableAC5TCRecomp(data, X: _*)
   }
 }
+
+
+object NegativeTableAlgo extends Enumeration {
+  type NegativeTableAlgo = Value
+  val STRNE = Value("STRNE (Hongbo Li et al)")
+}
+
+object negativeTable {
+
+  def apply(X: Array[CPIntVar], invalidTuples: Array[Array[Int]], algo: NegativeTableAlgo.Value = NegativeTableAlgo.STRNE): Constraint = {
+    import oscar.cp.constraints.tables.NegativeTableAlgo._
+
+    algo match {
+      case STRNE => str2ne(X, invalidTuples)
+      case _     => str2ne(X, invalidTuples)
+    }
+  }
+
+
+  def str2ne(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableSTRNe(X, table)
+
+
+}
+

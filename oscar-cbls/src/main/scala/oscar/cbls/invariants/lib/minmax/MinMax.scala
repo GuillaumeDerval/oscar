@@ -33,7 +33,9 @@ import oscar.cbls.invariants.lib.logic._
 import scala.collection.immutable.SortedSet
 
 abstract class MiaxLin(vars: SortedSet[IntValue])
-  extends IntInvariant(initialValue = 0) {
+  extends IntInvariant(initialValue = 0)
+  with IntNotificationTarget{
+
   require(vars.size > 0, "Invariant " + this + " declared with zero vars to max")
 
   for (v <- vars) registerStaticAndDynamicDependency(v)
@@ -63,9 +65,9 @@ abstract class MiaxLin(vars: SortedSet[IntValue])
 
   LoadNewMiax()
 
-  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
     assert(vars.contains(v), this + " notified for not interesting var")
-    val MiaxVal = this.getValue(true)
+    val MiaxVal = this.newValue
     if (OldVal == MiaxVal && better(MiaxVal, NewVal)) {
       MiaxCount -= 1
       if (MiaxCount == 0) LoadNewMiax() //this is where we pay the price.
@@ -111,7 +113,8 @@ case class MinLin(vars: SortedSet[IntValue]) extends MiaxLin(vars) {
 }
 
 abstract class Miax(vars: SortedSet[IntValue])
-  extends IntInvariant {
+  extends IntInvariant
+  with IntNotificationTarget{
 
   for (v <- vars) registerStaticAndDynamicDependency(v)
   finishInitialization()
@@ -129,7 +132,7 @@ abstract class Miax(vars: SortedSet[IntValue])
 
   this := h.getFirst.value
 
-  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
     assert(vars.contains(v), name + " notified for not interesting var")
     h.notifyChange(v)
     this := h.getFirst.value
@@ -161,7 +164,7 @@ case class Min(vars: SortedSet[IntValue]) extends Miax(vars) {
 }
 
 object Min{
-  def apply(varss: Array[IntValue], ccond: SetValue, default: Int = Int.MaxValue) = MinArray(varss, ccond, default)
+  def apply(varss: Array[IntValue], ccond: SetValue = null, default: Int = Int.MaxValue) = MinArray(varss, ccond, default)
 }
 
 /**

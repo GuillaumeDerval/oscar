@@ -68,7 +68,9 @@ case class ArgMin(vars: Array[IntValue], cond: SetValue = null, default: Int = I
 abstract class ArgMiax(vars: Array[IntValue], cond: SetValue, default: Int)
   extends SetInvariant(initialDomain = vars.indices.start to vars.indices.last)
   with Bulked[IntValue, Unit]
-  with VaryingDependencies {
+  with VaryingDependencies
+  with IntNotificationTarget
+  with SetNotificationTarget{
 
   override def toString:String = {
     name + "(" + InvariantHelper.arrayToString(vars) + "," + cond + "," + default + ")"
@@ -100,16 +102,12 @@ abstract class ArgMiax(vars: Array[IntValue], cond: SetValue, default: Int)
 
   def Ord(v: IntValue): Int
 
-  var cost:Long = 0
-
   val firsts = h.getFirsts
   this := firsts.foldLeft(SortedSet.empty[Int])((acc, index) => acc + index)
   var Miax = if (firsts.isEmpty) default else vars(h.getFirst).value
 
-
   @inline
   override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
-    cost = cost - System.currentTimeMillis()
     //mettre a jour le heap
     h.notifyChange(index)
 
@@ -118,14 +116,13 @@ abstract class ArgMiax(vars: Array[IntValue], cond: SetValue, default: Int)
       this := h.getFirsts.foldLeft(SortedSet.empty[Int])((acc, index) => acc + index)
     } else if (OldVal == Miax) {
       this.deleteValue(index)
-      if (this.getValue(true).isEmpty) {
+      if (this.newValue.isEmpty) {
 
         for(first <- h.getFirsts){
           this :+= first
         }
 
-//        this := h.getFirsts.foldLeft(SortedSet.empty[Int])((acc, index) => acc + index)
-        if (this.getValue(true).isEmpty) {
+        if (this.newValue.isEmpty) {
           Miax = default
         } else {
           Miax = vars(h.getFirst).value
@@ -134,12 +131,15 @@ abstract class ArgMiax(vars: Array[IntValue], cond: SetValue, default: Int)
     } else if (NewVal == Miax) {
       this.insertValue(index)
     }
-    cost = cost + System.currentTimeMillis()
+  }
+
+  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
+    for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
+    for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
   @inline
-  override def notifyInsertOn(v: ChangingSetValue, value: Int) {
-    cost = cost - System.currentTimeMillis()
+  def notifyInsertOn(v: ChangingSetValue, value: Int) {
     assert(v == cond && cond != null)
     keyForRemoval(value) = registerDynamicDependency(vars(value), value)
 
@@ -153,12 +153,10 @@ abstract class ArgMiax(vars: Array[IntValue], cond: SetValue, default: Int)
       this.insertValue(value)
       Miax = vars(h.getFirst).value
     }
-    cost = cost + System.currentTimeMillis()
   }
 
   @inline
-  override def notifyDeleteOn(v: ChangingSetValue, value: Int) {
-    cost = cost - System.currentTimeMillis()
+  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
     assert(v == cond && cond != null)
 
     keyForRemoval(value).performRemove()
@@ -175,16 +173,14 @@ abstract class ArgMiax(vars: Array[IntValue], cond: SetValue, default: Int)
       this := h.getFirsts.foldLeft(SortedSet.empty[Int])((acc, index) => acc + index)
     } else if (vars(value).value == Miax) {
       this.deleteValue(value)
-      if (this.getValue(true).isEmpty) {
+      if (this.newValue.isEmpty) {
         for(first <- h.getFirsts){
           this :+= first
         }
 
-//        this := h.getFirsts.foldLeft(SortedSet.empty[Int])((acc, index) => acc + index)
         Miax = vars(h.getFirst).value
       }
     }
-    cost = cost + System.currentTimeMillis()
   }
 
   override def checkInternals(c: Checker) {
@@ -206,7 +202,7 @@ abstract class ArgMiax(vars: Array[IntValue], cond: SetValue, default: Int)
     h.checkInternals(c: Checker)
     c.check(h.getFirsts.length == this.value.size, Some("h.getFirsts.length == this.value.size"))
     if (cond != null)
-      c.check(this.getValue(true).subsetOf(cond.value), Some("this.getValue(true).subsetOf(cond.getValue(true))"))
+      c.check(this.value.subsetOf(cond.value), Some("this.newValue.subsetOf(cond.newValue)"))
   }
 }
 
