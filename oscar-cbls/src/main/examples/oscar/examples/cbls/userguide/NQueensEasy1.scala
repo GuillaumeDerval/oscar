@@ -18,7 +18,7 @@
   *         by Renaud De Landtsheer
   ******************************************************************************/
 
-package oscar.examples.cbls.queens
+package oscar.examples.cbls.userguide
 
 import oscar.cbls.modeling._
 import oscar.cbls.search.StopWatch
@@ -28,7 +28,7 @@ import scala.util.Random
 /** Local Search for NQueens
  *  Moves are operated by swapping variables, using a standard neighborhood
  */
-object NQueensEasy1 extends CBLSModel with App{
+object NQueensEasy extends CBLSModel with App{
 
   val N = 1000
 

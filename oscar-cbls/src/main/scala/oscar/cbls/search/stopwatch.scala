@@ -32,6 +32,8 @@ trait StopWatch {
     starttime = System.currentTimeMillis
   }
 
+  startWatch()
+
   /**returns the time elapsed since the last call to startWatch.
    * time is wall clock time in milliseconds
    */
