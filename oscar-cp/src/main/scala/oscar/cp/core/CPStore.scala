@@ -72,8 +72,6 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode {
 
   // Reference to the last constraint called
   private[this] var lastConstraint: Constraint = null
-  
-  final def getRandom(): Random = rand
 
   /**
    *  Returns the last constraint called in the propagate algorithm.
