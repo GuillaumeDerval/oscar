@@ -16,23 +16,15 @@
 package oscar.cp.core
 
 import java.util.Collection
-import java.util.LinkedList
-import scala.collection.JavaConversions.asJavaCollection
-import scala.collection.JavaConversions.collectionAsScalaIterable
+
 import oscar.algo.array.ArrayQueue
-import oscar.algo.reversible.ReversiblePointer
-import oscar.algo.search.SearchNode
-import oscar.cp.constraints.EqCons
-import oscar.cp.core.CPOutcome.Failure
-import oscar.cp.core.CPOutcome.Success
-import oscar.cp.core.CPOutcome.Suspend
-import oscar.cp.core.variables.CPBoolVar
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPSetVar
-import oscar.cp.core.watcher.PropagEventQueueVarSet
-import oscar.cp.core.watcher.PropagEventQueueVarInt
 import oscar.algo.search.DFSearchNode
+import oscar.cp.constraints.EqCons
+import oscar.cp.core.CPOutcome.{Failure, Success, Suspend}
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPSetVar}
+import oscar.cp.core.watcher.PropagEventQueueVarSet
+
+import scala.collection.JavaConversions.{asJavaCollection, collectionAsScalaIterable}
 import scala.util.Random
 
 /**
@@ -93,7 +85,7 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode {
   def lastConstraintCalled: Constraint = lastConstraint
 
   // Cleans the propagation queues
-  @inline protected def cleanQueues(): Unit = {
+  def cleanQueues(): Unit = {
     // Clean queue L1
     while (highestPriorL1 >= 0) {
       propagQueueL1(highestPriorL1).clear()
