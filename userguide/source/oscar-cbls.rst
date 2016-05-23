@@ -1,6 +1,5 @@
 .. _oscar-cbls:
 
-
 ******************************
 OscaR-CBLS
 ******************************
@@ -20,9 +19,8 @@ Learning Outcomes
   - can create a search involving several neighborhoods and a global meta-heuristic
   - has a good intuition of how propagation works
 
-Create basic models (L1)
+Hello Queens (L1)
 ===================================================
-
 
 Lots of tutorial in this field start with the same example that is the NQueen.
     This one will not make an exception. A simple NQueen is shown here:
@@ -42,16 +40,18 @@ Writing local search procedure is a tedious and time-consuming task.
     Besides, search procedure often include the same basic bricks (neighborhoods, solution management, meta-heuristics, etc.)
     For this reason, OscaR.cbls includes a library of standard neighborhoods that can be assembled together to easily constitute complex search procedures.
 
-We show here below another solver for the NQueen problem that uses a standard ``swap`` neighborhood:
+We show here below a more elaborate solver for the NQueen. Besides using a more elaborate search strategy,
+it also relies on a standard neighborhood for implementing the search procedure.
+It uses a standard ``swap`` neighborhood with problem-specific parameters that specifies what queen must be swapped with what other queen.
 
 .. literalinclude:: ../../oscar-cbls/src/main/examples/oscar/examples/cbls/userguide/NQueenEasy.scala
    :language: scala
    :linenos:
 
-
-Modeling capabilities of OscaR.cbls (L1)
+Modeling with OscaR.cbls (L1)
 ===================================================
 
+OscaR.cbls is based on the concept of cbls
 
 (variables, invariants, constraints)
 
@@ -61,12 +61,18 @@ Modeling API of OscaR.cbls (L1)
 ===================================================
 
 
-
-Combining neighborhoods (L2)
-===================================================
-
-
 Principles of propagation in OscaR.cbls (L2)
 ===================================================
+
+
+Searching with OscaR.cbls using linear selectors (L1)
+===================================================
+
+Searching with OscaR.cbls using standard neighborhoods (L1)
+===================================================
+
+Advanced Searching with OscaR.cbls (L2)
+===================================================
+
 
 
