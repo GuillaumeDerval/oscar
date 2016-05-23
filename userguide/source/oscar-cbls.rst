@@ -13,7 +13,7 @@ Learning Outcomes
 
   - can create a simple model, with a simple search based on one neighborhood
   - knows how modeling is organized (variables, invariants, constraints)
-  - knows where to find invariants and their documentation
+  - knows where to find invariants and constraints
 
 * Level 2: Advanced CBLS Modeler
 
@@ -23,8 +23,6 @@ Learning Outcomes
 Create basic models (L1)
 ===================================================
 
-Declare a solver, create variables, add constraints
--------------------------------------------------------
 
 Lots of tutorial in this field start with the same example that is the NQueen.
     This one will not make an exception. A simple NQueen is shown here:
@@ -33,23 +31,42 @@ Lots of tutorial in this field start with the same example that is the NQueen.
    :language: scala
    :linenos:
 
-This model mixes with the trait  ``CBLSModel ``. It offers the following features:
+This model mixes with the trait  ``CBLSModel``. It offers the following features:
 
-* it defines an implicit Store (named "s") and ConstraintSystem (named "c") behind the scene
-* it supports an API to create all variables. They are implicitly added to the store "s"
+* it defines an implicit Store (named ``s``) and ConstraintSystem (named ``c``) behind the scene
+* it supports an API to create all variables. They are implicitly added to the store ``s``
 * it also offers lots of methods to create every constraints or invariant of the problem you want to solve
-* it includes some linear selectors that you can use for defining our search procedure (see the "selectMin" method)
+* it includes some linear selectors that you can use for defining our search procedure (see the ``selectMin`` method)
 
-You might view this object as the one containing all the info about your model (or more simply it is your model).
+Writing local search procedure is a tedious and time-consuming task.
+    Besides, search procedure often include the same basic bricks (neighborhoods, solution management, meta-heuristics, etc.)
+    For this reason, OscaR.cbls includes a library of standard neighborhoods that can be assembled together to easily constitute complex search procedures.
 
-In OscaR each time you add a constraint with the method add you trigger the fix-point algorithm
-    so that you can see immediately the effect of propagation when adding this constraint (with interleaved  ``println `` for instance).
+We show here below another solver for the NQueen problem that uses a standard ``swap`` neighborhood:
 
-On the next example we use a binary-first fail depth first search on the array of variables [x1,x2,x3].
+.. literalinclude:: ../../oscar-cbls/src/main/examples/oscar/examples/cbls/userguide/NQueenEasy.scala
+   :language: scala
+   :linenos:
 
-The start(nSols = 1) is asking to start the search and stop as soon as the first solution is discovered.
-To find all the solutions, you can simply use  ``start() `` which is equivalent to  ``start(nSols = Int.MaxValue) ``.
-Each time a solution is found during the search tree exploration, the closure defined in onSolution(...) is executed. In this case, we just showing the value of x1 in the solution.
 
+Modeling capabilities of OscaR.cbls (L1)
+===================================================
+
+
+(variables, invariants, constraints)
+
+
+
+Modeling API of OscaR.cbls (L1)
+===================================================
+
+
+
+Combining neighborhoods (L2)
+===================================================
+
+
+Principles of propagation in OscaR.cbls (L2)
+===================================================
 
 
