@@ -22,10 +22,9 @@ import oscar.cp.core.variables.CPIntVarViewMinus
 import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPPropagStrength
 import oscar.cp._
-import oscar.cp.scheduling.constraints.DisjunctiveWithTransitionTimes
+import oscar.cp.scheduling.constraints.{DisjunctiveWithTransitionTimes, UnaryResource, _}
 
 import scala.collection.mutable.ArrayBuffer
-import oscar.cp.scheduling.constraints._
 import oscar.cp.constraints.tables.TableAlgo._
 import oscar.cp.constraints.tables.NegativeTableAlgo._
 
@@ -1246,8 +1245,9 @@ trait Constraints {
    * @param required tells if a task is scheduled on this resource or not, if not this task is not constrained
    * @return a constraint ensuring activities don't overlap in time
    */
-  def unaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], required: Array[CPBoolVar]): UnaryResourceWithOptionalActivities = {
-    new UnaryResourceWithOptionalActivities(starts, durations, ends, required)
+  def unaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], required: Array[CPBoolVar]): UnaryResource = {
+    val resource = required.map(_.asInstanceOf[CPIntVar])
+    new UnaryResource(starts, durations, ends, resource)
   }
 
   /**
@@ -1260,7 +1260,7 @@ trait Constraints {
    * @return a constraint ensuring activities don't overlap in time
    */
   def unaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], resources: Array[CPIntVar], id: Int) = {
-    Unary(starts, durations, ends, resources, id)(starts(0).store)
+    new UnaryResource(starts, durations, ends, resources, id)
   }
 
   /**
@@ -1270,12 +1270,12 @@ trait Constraints {
    * @param ends the variables representing the completion time of the tasks, it is your responsibility to link starts, durations and ends such that start(i) + durations(i) = ends(i)
    * @return a constraint ensuring activities don't overlap in time
    */
-  def unaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar]) = {
+  def unaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar]): Constraint = {
     implicit val store = starts(0).store
     val n = starts.length
     val zero = CPIntVar(0)
     val resources = Array.fill(n)(zero)
-    Unary(starts, durations, ends, resources, 0)
+    unaryResource(starts, durations, ends, resources, 0)
   }
 
   /**
@@ -1287,7 +1287,7 @@ trait Constraints {
    * @param transitionTimes matrix of the transition times between the different activities according to their respective type
    * @return a constraint ensuring activities don't overlap in time and that consecutive activities are separated by a transition time corresponding to their respective type
    */
-  def unaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], types: Array[Int], transitionTimes: Array[Array[Int]]) = {
+  def unaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], types: Array[Int], transitionTimes: Array[Array[Int]]): Constraint = {
     val cp = starts(0).store
     for {
       i <- starts.indices
@@ -1295,7 +1295,7 @@ trait Constraints {
     } {
       cp.add((ends(j) + transitionTimes(types(j))(types(i)) <== starts(i)) || (ends(i) + transitionTimes(types(i))(types(j)) <== starts(j)))
     }
-    new UnaryResourceWithOptionalActivities(starts, durations, ends, starts.map(s => CPBoolVar(b=true)(cp)))
+    unaryResource(starts, durations, ends)
   }
 
   /**
@@ -1326,7 +1326,7 @@ trait Constraints {
       j <- i + 1 until starts.length
     } {
       if (states(i) != states(j)) {
-        new UnaryResourceWithOptionalActivities(Array(starts(i), starts(j)), Array(durations(i), durations(j)), Array(ends(i), ends(j)), Array(CPBoolVar(b=true)(cp), CPBoolVar(b=true)(cp)))
+        new UnaryResource(Array(starts(i), starts(j)), Array(durations(i), durations(j)), Array(ends(i), ends(j)), Array(CPBoolVar(b=true)(cp), CPBoolVar(b=true)(cp)))
         cp.add((ends(j) + transitionTimes(states(j))(states(i)) <== starts(i)) || (ends(i) + transitionTimes(states(i))(states(j)) <== starts(j)))
       }
     }
