@@ -29,7 +29,9 @@ import scala.collection.immutable.SortedSet
 /**maintains the reverse references. Referencing(i) = {j | Reference(j) includes i}
   * @author renaud.delandtsheer@cetic.be
   * */
-case class DenseRef(references:Array[SetValue], referencing:Array[CBLSSetVar]) extends Invariant {
+case class DenseRef(references:Array[SetValue], referencing:Array[CBLSSetVar])
+  extends Invariant
+  with SetNotificationTarget{
 
   for (v <- references.indices) registerStaticAndDynamicDependency(references(v),v)
 
@@ -43,14 +45,9 @@ case class DenseRef(references:Array[SetValue], referencing:Array[CBLSSetVar]) e
     }
   }
 
-  @inline
-  override def notifyInsertOn(v: ChangingSetValue, i: Int, value: Int){
-    referencing(value).insertValue(i)
-  }
-
-  @inline
-  override def notifyDeleteOn(v: ChangingSetValue, i: Int, value: Int){
-    referencing(value).deleteValue(i)
+  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
+    for (added <- addedValues) referencing(added).insertValue(d)
+    for (deleted <- removedValues)  referencing(deleted).deleteValue(d)
   }
 
   /** To override whenever possible to spot errors in invariants.

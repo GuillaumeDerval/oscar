@@ -49,17 +49,21 @@ class AbortTester extends OscarLinprogTester {
     }
 
     // wait
-    Thread.sleep(500)
+    Thread.sleep(10000)
 
     // abort
     solver.abort()
 
     //get the results
-    Await.result(endStatusFuture, 1 minute)
+    Await.result(endStatusFuture, 16 seconds)
 
     val endTime = System.currentTimeMillis()
 
-    (endTime - startTime).toDouble should be <= 600.0
+    endStatusFuture.onComplete { es =>
+      es should equal(Success(NoSolutionFound))
+    }
+
+    (endTime - startTime).toDouble should be <= 15000.0
   }
 
   testForAllSolvers(MPSolverLib.lpSolvers, "Call to abort BEFORE solve") { implicit solver =>

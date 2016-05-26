@@ -1,9 +1,7 @@
 package oscar.cp.constraints
 
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.Constraint
-import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
+import oscar.cp.core.{CPStore, Constraint, CPPropagStrength, CPOutcome}
 import oscar.cp.core.CPOutcome._
 
 /**
@@ -14,6 +12,10 @@ import oscar.cp.core.CPOutcome._
 class Minus(x: CPIntVar, y: CPIntVar, z: CPIntVar) extends Constraint(x.store, "Minus") {
 
   final override def setup(l: CPPropagStrength): CPOutcome = {
+
+    priorityL2 = CPStore.MaxPriorityL2
+
+
     if (propagate() == Failure) Failure
     else {
       x.callPropagateWhenBoundsChange(this)

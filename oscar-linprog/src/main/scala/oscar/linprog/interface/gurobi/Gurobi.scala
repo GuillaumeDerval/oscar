@@ -20,6 +20,7 @@ package oscar.linprog.interface.gurobi
 import java.nio.file.Path
 
 import gurobi._
+import oscar.linprog._
 import oscar.linprog.enums._
 import oscar.linprog.interface.{MIPSolverInterface, MPSolverInterface}
 
@@ -78,8 +79,8 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
   }
 
   private def addVariable(name: String, lb: Double, ub: Double,
-    objCoef: Option[Double], cstrCoefs: Option[Array[Double]], cstrIds: Option[Array[Int]], integer: Boolean, binary: Boolean): Int =
-    (objCoef, cstrCoefs, cstrIds) match {
+    objCoef: Option[Double], cstrCoefs: Option[Array[Double]], cstrIds: Option[Array[Int]], integer: Boolean, binary: Boolean): Int = {
+    val varId = (objCoef, cstrCoefs, cstrIds) match {
       case (Some(oCoef), Some(cCoefs), Some(cIds)) =>
         val varId = getNumberOfVariables
         rawSolver.addVar(lb, ub, oCoef, toGRBVarType(integer, binary), cIds.map(i => rawSolver.getConstr(i)), cCoefs, name)
@@ -91,6 +92,13 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
       case _ =>
         throw new IllegalArgumentException("Parameters objCoef, cstrCoef, cstrId should all be defined or none.")
     }
+    // Important ! the model should be immediately updated so that
+    //   the variable can be used immediately after
+    //   the number of variables as seen by getNumberOfVariables is correct which is important for indexing
+    rawSolver.update()
+
+    varId
+  }
 
   def addVariable(name: String, lb: Double = -Double.MaxValue, ub: Double = Double.MaxValue,
     objCoef: Option[Double] = None, cstrCoefs: Option[Array[Double]] = None, cstrIds: Option[Array[Int]] = None) =
@@ -104,23 +112,60 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
     objCoef: Option[Double] = None, cstrCoefs: Option[Array[Double]] = None, cstrIds: Option[Array[Int]] = None): Int =
     addVariable(name, 0.0, 1.0, objCoef, cstrCoefs, cstrIds, integer = true, binary = true)
 
+  def removeVariable(varId: Int): Unit = {
+    rawSolver.remove(rawSolver.getVar(varId))
+    // Important ! the model should be immediately updated so that
+    //   the number of variables as seen by getNumberOfVariables is correct which is important for indexing
+    rawSolver.update()
+  }
+
   def getVariableLowerBound(varId: Int): Double = rawSolver.getVar(varId).get(GRB.DoubleAttr.LB)
-  def setVariableLowerBound(varId: Int, lb: Double) = rawSolver.getVar(varId).set(GRB.DoubleAttr.LB, lb)
+  def setVariableLowerBound(varId: Int, lb: Double) = {
+    rawSolver.getVar(varId).set(GRB.DoubleAttr.LB, lb)
+    // Important ! the model should be immediately updated so that
+    //   the type of the variable is correctly reflected by a call to getVariableLowerBound
+    rawSolver.update()
+  }
 
   def getVariableUpperBound(varId: Int): Double = rawSolver.getVar(varId).get(GRB.DoubleAttr.UB)
-  def setVariableUpperBound(varId: Int, ub: Double) = rawSolver.getVar(varId).set(GRB.DoubleAttr.UB, ub)
+  def setVariableUpperBound(varId: Int, ub: Double) = {
+    rawSolver.getVar(varId).set(GRB.DoubleAttr.UB, ub)
+    // Important ! the model should be immediately updated so that
+    //   the type of the variable is correctly reflected by a call to getVariableUpperBound
+    rawSolver.update()
+  }
 
   private def getVarType(varId: Int) = rawSolver.getVar(varId).get(GRB.CharAttr.VType)
-  private def setVarType(varId: Int, t: Char) = rawSolver.getVar(varId).set(GRB.CharAttr.VType, t)
+  private def setVarType(varId: Int, t: Char) = {
+    rawSolver.getVar(varId).set(GRB.CharAttr.VType, t)
+    // Important ! the model should be immediately updated so that
+    //   the type of the variable is correctly reflected by a call to getVarType
+    rawSolver.update()
+  }
 
   def isInteger(varId: Int): Boolean = getVarType(varId) == GRB.INTEGER
-  def setInteger(varId: Int) = setVarType(varId, GRB.INTEGER)
+  def setInteger(varId: Int) = {
+    setVarType(varId, GRB.INTEGER)
+    // Important ! the model should be immediately updated so that
+    //   the type of the variable is correctly reflected by a call to isInteger
+    rawSolver.update()
+  }
 
   def isBinary(varId: Int): Boolean = getVarType(varId) == GRB.BINARY
-  def setBinary(varId: Int) = setVarType(varId, GRB.BINARY)
+  def setBinary(varId: Int) = {
+    setVarType(varId, GRB.BINARY)
+    // Important ! the model should be immediately updated so that
+    //   the type of the variable is correctly reflected by a call to isBinary
+    rawSolver.update()
+  }
 
   def isFloat(varId: Int): Boolean = getVarType(varId) == GRB.CONTINUOUS
-  def setFloat(varId: Int) = setVarType(varId, GRB.CONTINUOUS)
+  def setFloat(varId: Int) = {
+    setVarType(varId, GRB.CONTINUOUS)
+    // Important ! the model should be immediately updated so that
+    //   the type of the variable is correctly reflected by a call to isFloat
+    rawSolver.update()
+  }
 
 
   /* CONSTRAINTS */
@@ -139,7 +184,18 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
 
     rawSolver.addConstr(cstrExpr, GRBSense, rhs, name)
 
+    // Important ! the model should be immediately updated so that
+    //   the number of constraints as seen by getNumberOfLinearConstraints is correct which is important for indexing
+    rawSolver.update()
+
     cstrId
+  }
+
+  def removeConstraint(cstrId: Int): Unit = {
+    rawSolver.remove(rawSolver.getConstr(cstrId))
+    // Important ! the model should be immediately updated so that
+    //   the number of constraints as seen by getNumberOfLinearConstraints is correct which is important for indexing
+    rawSolver.update()
   }
 
   def setConstraintCoefficient(cstrId: Int, varId: Int, coef: Double): Unit =
@@ -153,21 +209,13 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
 
   def updateModel() = rawSolver.update()
 
-  // Gurobi's export file handling is a little different. The format is defined by the fileName
-  // passed to model.write for the LP format it's .lp and for MPS it's .mps
-  def exportModel(filepath: Path, format: ModelExportFormat): Unit =
-    format match {
-      case MPS => rawSolver.write(filepath + ".mps")
-      case LP => rawSolver.write(filepath + ".lp")
-      case _ => println(s"Unrecognised export format $format")
-    }
-
   def endStatus: EndStatus =
     rawSolver.get(GRB.IntAttr.Status) match {
       case GRB.OPTIMAL => SolutionFound
       case GRB.SUBOPTIMAL => SolutionFound
       case GRB.INFEASIBLE => Infeasible
       case GRB.UNBOUNDED => Unbounded
+      case GRB.INF_OR_UNBD => InfeasibleOrUnbounded
       case GRB.LOADED => throw NotSolvedYetException
       case _ => Warning
     }
@@ -216,10 +264,7 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
 
   def abort(): Unit = aborted = true
 
-  var _released = false
-
-  def release(): Unit = {
-    _released = true
+  override def release(): Unit = {
     rawSolver.dispose()
     // If the environment was self-made, release it also.
     // Otherwise, it is the responsibility of the user to release it.
@@ -227,10 +272,48 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
       env.release()
       env.dispose()
     }
+    super.release()
   }
 
-  def released: Boolean = _released
 
+  /* LOGGING */
+
+  /**
+   * Gurobi's export file handling is a little different. The format is defined by the fileName passed to model.write:
+   *  - for LP  the file should end with .lp
+   *  - for MPS the file should end with .mps
+   *
+   * Therefore, the file extension is checked against the given format to make sure it matches.
+   */
+  def exportModel(filePath: java.nio.file.Path, format: ModelExportFormat): Unit = {
+    require(format.checkExtension(filePath), s"Unexpected file extension (${filePath.extension}) for the given model export format ($format)")
+
+    format match {
+      case MPS => rawSolver.write(filePath.toString)
+      case LP => rawSolver.write(filePath.toString)
+      case _  => println(s"Unrecognised export format $format")
+    }
+  }
+
+  override def setLogOutput(logOutput: LogOutput): Unit = {
+    super.setLogOutput(logOutput)
+
+    logOutput match {
+      case DisabledLogOutput =>
+        env.set(GRB.IntParam.OutputFlag, 0)
+        env.set(GRB.IntParam.LogToConsole, 0)
+        env.set(GRB.StringParam.LogFile, "")
+      case StandardLogOutput =>
+        env.set(GRB.IntParam.OutputFlag, 1)
+        env.set(GRB.IntParam.LogToConsole, 1)
+        env.set(GRB.StringParam.LogFile, "")
+      case FileLogOutput(path) =>
+        env.set(GRB.IntParam.OutputFlag, 1)
+        env.set(GRB.IntParam.LogToConsole, 0)
+        env.set(GRB.StringParam.LogFile, path.toString)
+      case _ => println(s"Unrecognised log output $logOutput")
+    }
+  }
 
   /* CONFIGURATION */
 

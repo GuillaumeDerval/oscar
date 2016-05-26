@@ -5,22 +5,24 @@ import oscar.cp.core.CPSolver
 import oscar.cp.core.variables.CPIntVar
 
 /**
- * Created by saschavancauwelaert on 01/12/14.
- */
-class DFSReplayer(node: CPSolver, decisionVariables : Seq[CPIntVar]) {
+  * @author Sascha Van Cauwelart
+  */
+class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar]) {
 
   private val timeThreadBean = ManagementFactory.getThreadMXBean()
 
-  def replay(searchStateModifications : Array[Decision]) : ReplayStatistics = {
+  def replay(searchStateModifications: Array[Decision]): ReplayStatistics = {
     val nModifications = searchStateModifications.length
     var i = 0
 
-    def panic(panicInvariant : () => Boolean) = {
+    def panic(panicInvariant: () => Boolean) = {
       val beforePanicTime = timeThreadBean.getCurrentThreadUserTime
       while (panicInvariant() && i < searchStateModifications.size - 1) {
         i += 1
         searchStateModifications(i) match {
-          case _ : ControlDecision => { searchStateModifications(i)() }
+          case _: ControlDecision => {
+            searchStateModifications(i)()
+          }
           case _ =>
         }
       }
@@ -38,18 +40,18 @@ class DFSReplayer(node: CPSolver, decisionVariables : Seq[CPIntVar]) {
 
     while (i < nModifications) {
       searchStateModifications(i) match {
-        case _ : AlternativeDecision => nNodes += 1
-        case _ : ControlDecision =>
+        case _: AlternativeDecision => nNodes += 1
+        case _: ControlDecision =>
       }
 
       searchStateModifications(i)() //apply the search state modification
 
       if (node.isFailed) {
         nBacktracks += 1
-        if(i < nModifications - 1) {
+        if (i < nModifications - 1) {
           searchStateModifications(i + 1) match {
-            case _ : Pop =>
-            case _ : Push | _ : AlternativeDecision => totalPanicTime += panicFail() //additional failure compared to baseline model so we enter panic mode
+            case _: Pop =>
+            case _: Push | _: AlternativeDecision => totalPanicTime += panicFail() //additional failure compared to baseline model so we enter panic mode
           }
         }
       }
@@ -63,8 +65,8 @@ class DFSReplayer(node: CPSolver, decisionVariables : Seq[CPIntVar]) {
       i += 1
     }
 
-    val timeInMillis = ((timeThreadBean.getCurrentThreadUserTime - beforeSolvingTime - totalPanicTime)/math.pow(10,6)).toLong
-    new ReplayStatistics(nNodes, nBacktracks, timeInMillis , nSols)
+    val timeInMillis = ((timeThreadBean.getCurrentThreadUserTime - beforeSolvingTime - totalPanicTime) / math.pow(10, 6)).toLong
+    new ReplayStatistics(nNodes, nBacktracks, timeInMillis, nSols)
   }
 
 }

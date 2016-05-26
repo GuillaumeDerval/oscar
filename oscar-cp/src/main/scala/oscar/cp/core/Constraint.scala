@@ -32,13 +32,11 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
 
   private[this] var active: Boolean = true
   private[this] var inQueue: Boolean = false
-  private[this] var lastMagicInQueue = -1L
   private[this] var lastMagicActive = -1L
 
   final override def restore(): Unit = active = !active
 
   val s: CPStore = store
-
 
   // Snapshots
   private[this] var snapshots = new Array[Delta](10)
@@ -90,9 +88,7 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
   @inline final def inPropagate(): Boolean = _inPropagate
 
   @inline final def isEnqueuable: Boolean = {
-    active &&
-      (lastMagicInQueue != store.magic || !inQueue) &&
-      (!_inPropagate || !_idempotent)
+    active && !inQueue && (!_inPropagate || !_idempotent)
   }
 
   /**
@@ -146,7 +142,10 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
   /**
    * @return true if the constraint is still in the propagation queue, false otherwise
    */
-  final def isInQueue = lastMagicInQueue == store.magic && inQueue
+  final def isInQueue = inQueue
+  
+  @inline private[cp] def setEnqueued(): Unit = inQueue = true
+  @inline private[cp] def setDequeued(): Unit = inQueue = false
 
   /**
    * Disable the constraint such that it is not propagated any more (will not enter into the propagation queue).
@@ -288,10 +287,5 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
     if (oc == CPOutcome.Success) deactivate()
     _inPropagate = false
     oc
-  }
-
-  @inline private[cp] def setInQueue(): Unit = {
-    lastMagicInQueue = store.magic
-    inQueue = true
   }
 }

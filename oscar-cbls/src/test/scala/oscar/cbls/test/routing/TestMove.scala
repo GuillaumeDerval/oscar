@@ -23,17 +23,10 @@
 
 package oscar.cbls.test.routing
 
-import org.scalatest.FunSuite
-import org.scalatest.Matchers
 import org.scalatest.prop.Checkers
-import TestBench.onePoint
-import TestBench.swap
-import TestBench.threeOpt
-import TestBench.twoOpt
-import oscar.cbls.routing.model.PositionInRouteAndRouteNr
-import oscar.cbls.routing.model.VRP
-import oscar.cbls.routing.model.VRPObjective
-import oscar.cbls.routing.model.RoutedAndUnrouted
+import org.scalatest.{FunSuite, Matchers}
+import oscar.cbls.routing.model.{PositionInRouteAndRouteNr, RoutedAndUnrouted, VRP, VRPObjective}
+import oscar.cbls.test.routing.TestBench.{onePoint, swap, threeOpt, twoOpt}
 
 /**
  * The tests marked with a star (*) require the assertion mechanism of IntVar in ComputationStructure file, which

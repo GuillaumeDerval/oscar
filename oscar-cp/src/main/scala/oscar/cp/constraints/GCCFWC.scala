@@ -101,7 +101,7 @@ class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[In
       }
 
       // Register before the first check loop so that we receive information on what we changed there
-      x.callOnChanges(i, delta => {
+      x.callOnChangesIdx(i, delta => {
         val nBoundsOk = nBoundsOkRev.value
         if (nBoundsOk == nBounds) Success
         else whenDomainChanges(delta, x, nBoundsOk)

@@ -21,17 +21,12 @@
 
 package oscar.cbls.constraints.lib.global
 
-import collection.immutable.SortedMap
 import oscar.cbls.constraints.core.Constraint
-import oscar.cbls.modeling.Algebra._
-import oscar.cbls.invariants.core.computation.{ Variable, CBLSIntVar }
 import oscar.cbls.invariants.core.computation.CBLSIntVar._
+import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
-import oscar.cbls.invariants.lib.logic.Sort
-import oscar.cbls.invariants.core.computation.Invariant
-import oscar.cbls.invariants.core.computation.IntValue
-import oscar.cbls.invariants.core.computation.ChangingIntValue
-import oscar.cbls.invariants.core.computation.Value
+
+import scala.collection.immutable.SortedMap
 
 /**
  * Implement the Disjunctive constraint.
@@ -40,7 +35,7 @@ import oscar.cbls.invariants.core.computation.Value
  * @author Jean-Noël Monette 
  */
 case class Disjunctive(start: Array[IntValue],
-                      duration: Array[Int]) extends Invariant with Constraint{
+                      duration: Array[Int]) extends Invariant with Constraint with IntNotificationTarget{
 //TODO: Make duration also a var
   
   registerStaticAndDynamicDependencyArrayIndex(start)

@@ -79,9 +79,9 @@ class CBLSIntVarDom(model: Store,Value: Int,  val dom: Domain, n: String = null)
 
 //TODO: Should not extend it anymore!
 //Need the store while it extends CBLSIntVar, as sometimes it is requested (e.g., to find the Model in some invariants)
-class CBLSIntConstDom(model:Store,value:Int) extends CBLSIntVarDom(model,value,DomainRange(value,value),value.toString()){
-  override def getValue(NewValue:Boolean=false):Int = value //pour pas avoir de propagation
-  override def toString:String = "IntConst("+ value + ")"
+class CBLSIntConstDom(model:Store,_value:Int) extends CBLSIntVarDom(model,_value,DomainRange(_value,_value),_value.toString()){
+  override def value:Int = _value //pour pas avoir de propagation
+  override def toString:String = "IntConst("+ _value + ")"
 }
 /*  extends CBLSIntConst(value) with IntValueDom{
   override def inDomain(v:Int): Boolean = v==value 

@@ -2,7 +2,7 @@ package oscar.examples.cp
 
 import oscar.cp._
 import oscar.util.InFile
-import oscar.cp.constraints.TableAC5TCRecomp
+import oscar.cp.constraints.tables.TableAC5TCRecomp
 
 /**
  * Eternity Problem = Edge Matching Puzzle

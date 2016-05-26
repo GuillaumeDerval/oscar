@@ -131,7 +131,7 @@ class LPTester extends OscarLinprogTester {
 
     val endStatus = solver.solve
 
-    endStatus should equal(Unbounded)
+    endStatus should (equal(Unbounded) or equal(InfeasibleOrUnbounded))
 
     intercept[NoSolutionFoundException] {
       solver.solutionQuality
@@ -209,5 +209,131 @@ class LPTester extends OscarLinprogTester {
 
     solver.objectiveValue should equal(Success(2*120 - 5*80))
     solver.solutionQuality should equal(Success(Optimal))
+  }
+
+  testForAllSolvers(MPSolverLib.lpSolvers, "Remove constraint before solve") { implicit solver =>
+    val x = MPFloatVar("x", 0, 100)
+    val y = MPFloatVar("y", 0, 100)
+    val z = MPFloatVar("z", 0, 100)
+
+    maximize(1 * x + 2 * y + 3 * z)
+    add(x + y <:= 75, "cstr0")
+    add(x + z <:= 75, "cstr1")
+
+    solver.removeLinearConstraint("cstr0")
+
+    add(x + y <:= 60, "cstr0")
+
+    val endStatus = solver.solve
+
+    endStatus should equal(SolutionFound)
+
+    x.value should equalWithTolerance(Some(0))
+    y.value should equalWithTolerance(Some(60))
+    z.value should equalWithTolerance(Some(75))
+
+    solver.objectiveValue.toOption should equalWithTolerance(Success(1*0.0 + 2*60 + 3*75).toOption)
+    solver.solutionQuality should equal(Success(Optimal))
+  }
+
+  testForAllSolvers(MPSolverLib.lpSolvers, "Remove constraint after solve") { implicit solver =>
+    val x = MPFloatVar("x", 0, 100)
+    val y = MPFloatVar("y", 0, 100)
+    val z = MPFloatVar("z", 0, 100)
+
+    maximize(1 * x + 2 * y + 3 * z)
+    add(x + y <:= 75, "cstr0")
+    add(x + z <:= 75, "cstr1")
+
+    solver.solve should equal(SolutionFound)
+
+    x.value should equalWithTolerance(Some(0))
+    y.value should equalWithTolerance(Some(75))
+    z.value should equalWithTolerance(Some(75))
+
+    solver.objectiveValue.toOption should equalWithTolerance(Success(1*0.0 + 2*75 + 3*75).toOption)
+    solver.solutionQuality should equal(Success(Optimal))
+
+    // update model
+    solver.removeLinearConstraint("cstr0")
+    add(x + y <:= 60, "cstr0")
+
+    solver.solve should equal(SolutionFound)
+
+    x.value should equalWithTolerance(Some(0))
+    y.value should equalWithTolerance(Some(60))
+    z.value should equalWithTolerance(Some(75))
+
+    solver.objectiveValue.toOption should equalWithTolerance(Success(1*0.0 + 2*60 + 3*75).toOption)
+    solver.solutionQuality should equal(Success(Optimal))
+  }
+
+  testForAllSolvers(MPSolverLib.lpSolvers, "Remove unused variable before solve") { implicit solver =>
+    val x = MPFloatVar("x", 0, 100)
+    val y = MPFloatVar("y", 0, 100)
+    val w = MPFloatVar("w", 0, 100)
+    val z = MPFloatVar("z", 0, 100)
+
+    maximize(1 * x + 2 * y + 3 * z)
+    add(x + y <:= 75, "cstr0")
+    add(x + z <:= 75, "cstr1")
+
+    solver.removeVariable("w")
+
+    solver.solve should equal(SolutionFound)
+
+    x.value should equalWithTolerance(Some(0))
+    y.value should equalWithTolerance(Some(75))
+    z.value should equalWithTolerance(Some(75))
+
+    solver.objectiveValue.toOption should equalWithTolerance(Success(1*0.0 + 2*75 + 3*75).toOption)
+    solver.solutionQuality should equal(Success(Optimal))
+  }
+
+  testForAllSolvers(MPSolverLib.lpSolvers, "Remove unused variable after solve") { implicit solver =>
+    val x = MPFloatVar("x", 0, 100)
+    val y = MPFloatVar("y", 0, 100)
+    val w = MPFloatVar("w", 0, 100)
+    val z = MPFloatVar("z", 0, 100)
+
+    maximize(1 * x + 2 * y + 3 * z)
+    add(x + y <:= 75, "cstr0")
+    add(x + z <:= 75, "cstr1")
+
+    solver.solve should equal(SolutionFound)
+
+    x.value should equalWithTolerance(Some(0))
+    y.value should equalWithTolerance(Some(75))
+    z.value should equalWithTolerance(Some(75))
+
+    solver.objectiveValue.toOption should equalWithTolerance(Success(1*0.0 + 2*75 + 3*75).toOption)
+    solver.solutionQuality should equal(Success(Optimal))
+
+    solver.removeVariable("w")
+
+    solver.solve should equal(SolutionFound)
+
+    x.value should equalWithTolerance(Some(0))
+    y.value should equalWithTolerance(Some(75))
+    z.value should equalWithTolerance(Some(75))
+
+    solver.objectiveValue.toOption should equalWithTolerance(Success(1*0.0 + 2*75 + 3*75).toOption)
+    solver.solutionQuality should equal(Success(Optimal))
+  }
+
+  testForAllSolvers(MPSolverLib.lpSolvers, "Cannot remove used variable") { implicit solver =>
+    intercept[IllegalArgumentException] {
+      val x = MPFloatVar("x", 0, 100)
+      val y = MPFloatVar("y", 0, 100)
+      val z = MPFloatVar("z", 0, 100)
+
+      maximize(1 * x + 2 * y + 3 * z)
+      add(x + y <:= 75)
+      add(x + z <:= 75)
+
+      solver.solve
+
+      solver.removeVariable("y")
+    }
   }
 }

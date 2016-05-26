@@ -18,6 +18,17 @@ package oscar.algo.search
 import oscar.algo.array.ArrayStack
 import oscar.algo.search.listener.DFSearchListener
 
+class SearchStatistics(
+                        val nNodes: Int,
+                        val nFails: Int,
+                        val time: Long,
+                        val completed: Boolean,
+                        val timeInTrail: Long,
+                        val maxTrailSize: Int,
+                        val nSols: Int) {
+  override val toString: String = s"nNodes: $nNodes\nnFails: $nFails\ntime(ms): $time\ncompleted: $completed\ntimeInTrail: $timeInTrail\nnSols: $nSols\n"
+}
+
 /**
  *  DFS search
  *  
@@ -111,6 +122,7 @@ class DFSearch(node: DFSearchNode) {
         node.solFound()
         solutionActions.foreach(_())
         nbSols += 1
+        node.pop()
       }
     }
 

@@ -40,8 +40,8 @@ object XCSPParser {
 
   private def checkFormat(instance: Elem) = {
     val format : String = (instance \ "presentation" \ "@format").text
-    if(format != "XCSP 2.1")
-     throw new RuntimeException("Only XCSP 2.1 format is supported.")
+    if(format != "XCSP 2.0" && format != "XCSP 2.1" )
+     throw new RuntimeException("Only XCSP 2.0 or 2.1 format is supported.")
   }
   private def parseDomain(instance: Elem) = {
    

@@ -112,6 +112,34 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
     objCoef: Option[Double] = None, cstrCoefs: Option[Array[Double]] = None, cstrIds: Option[Array[Int]] = None): Int =
     addVariable(name, 0.0, 1.0, objCoef, cstrCoefs, cstrIds, integer = true, binary = true)
 
+  def removeVariable(varId: Int): Unit = {
+    this.nCols -= 1
+    if(pendingVars.exists(v => v._1 == varId)) {
+      pendingVars = pendingVars.flatMap { v =>
+        if (v._1 > varId) {
+          Some((v._1 - 1, v._2, v._3, v._4, v._5, v._6))
+        } else if (v._1 < varId) {
+          Some(v)
+        } else {
+          None
+        }
+      }
+
+      def computeShiftedVardIds(varIds: Array[Int]): Array[Int] =
+        varIds.map { vId =>
+          if(vId > varId) vId-1
+          else vId
+        }
+
+      pendingCstrs = pendingCstrs.map { case (cstrId, name, coefs, varIds, sense, rhs) =>
+        (cstrId, name, coefs, computeShiftedVardIds(varIds), sense, rhs)
+      }
+      pendingObj = pendingObj.map { case (minimize, coefs, varIds) =>
+        (minimize, coefs, computeShiftedVardIds(varIds))
+      }
+    } else rawSolver.delColumn(varId + 1)
+  }
+
   def getVariableLowerBound(varId: Int): Double = rawSolver.getLowbo(varId + 1)
   def setVariableLowerBound(varId: Int, lb: Double) = rawSolver.setLowbo(varId + 1, lb)
 
@@ -145,7 +173,7 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
     }
 
     rawSolver.addConstraintex(coefs.length, coefs, varIds.map(_ + 1), sen, rhs)
-    rawSolver.setRowName(cstrId, name)
+    rawSolver.setRowName(cstrId + 1, name)
   }
 
   def addConstraint(name: String, coefs: Array[Double], varIds: Array[Int], sense: String, rhs: Double): Int = {
@@ -153,6 +181,17 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
     pendingCstrs = (cstrId, name, coefs, varIds, sense, rhs) +: pendingCstrs
     this.nRows += 1
     cstrId
+  }
+
+  def removeConstraint(cstrId: Int): Unit = {
+    this.nRows -= 1
+    if(pendingCstrs.exists(c => c._1 == cstrId)) {
+      pendingCstrs = pendingCstrs.flatMap { c =>
+        if (c._1 > cstrId) Some((c._1 - 1, c._2, c._3, c._4, c._5, c._6))
+        else if (c._1 < cstrId) Some(c)
+        else None
+      }
+    } else rawSolver.delConstraint(cstrId + 1)
   }
 
   def setConstraintCoefficient(cstrId: Int, varId: Int, coef: Double): Unit = rawSolver.setMat(cstrId + 1, varId + 1, coef)
@@ -190,13 +229,6 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
     assert(rawSolver.getNorigRows == getNumberOfLinearConstraints,
       s"$solverName: the number of constraints contained by the raw solver does not correspond to the number of constraints added.")
   }
-
-  def exportModel(filepath: Path, format: ModelExportFormat): Unit =
-    format match {
-      case LP => rawSolver.writeLp(filepath.toString) // Note: this is lp_solve's own lp format which is different from CPLEX's one.
-      case MPS => rawSolver.writeFreeMps(filepath.toString)
-      case _ => println(s"Unrecognised export format $format")
-    }
 
   private var _endStatus: Option[EndStatus] = None
 
@@ -253,14 +285,31 @@ class LPSolve extends MPSolverInterface with MIPSolverInterface {
 
   def abort(): Unit = aborted = true
 
-  var _released = false
-
-  def release(): Unit = {
-    _released = true
+  override def release(): Unit = {
     rawSolver.deleteLp()
+    super.release()
   }
 
-  def released: Boolean = _released
+
+  /* LOGGING */
+
+  def exportModel(filepath: Path, format: ModelExportFormat): Unit =
+    format match {
+      case LP => rawSolver.writeLp(filepath.toString) // Note: this is lp_solve's own lp format which is different from CPLEX's one.
+      case MPS => rawSolver.writeFreeMps(filepath.toString)
+      case _ => println(s"Unrecognised export format $format")
+    }
+
+  override def setLogOutput(logOutput: LogOutput): Unit = {
+    super.setLogOutput(logOutput)
+
+    logOutput match {
+      case DisabledLogOutput => throw new IllegalArgumentException("Impossible to disable the log output of lp_solve. Try changing the verbosity.")
+      case StandardLogOutput => rawSolver.setOutputfile("")
+      case FileLogOutput(path) => rawSolver.setOutputfile(path.toString)
+      case _ => println(s"Unrecognised log output $logOutput")
+    }
+  }
 
 
   /* CONFIGURATION */

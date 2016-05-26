@@ -6,8 +6,10 @@ import org.scalatest.matchers.ShouldMatchers
 import oscar.cp.constraints._
 
 import oscar.cp._
+import oscar.cp.core.CPOutcome
 
 class TestGCC extends FunSuite with ShouldMatchers {
+
   val rand = new scala.util.Random(0)
 
   def randomDom(n: Int): Array[Array[Int]] = {
@@ -80,5 +82,20 @@ class TestGCC extends FunSuite with ShouldMatchers {
       else o(i).value should be(0)
     }
   }
+
+  test("GCC3") {
+
+    implicit val cp = CPSolver()
+    val n = 2
+    val x = Array.fill(n)(CPIntVar(0 to n - 1))
+    val allValues = Array.tabulate(n)(i => (i, x(i)))
+
+    val ok = cp.post(gcc(x, allValues), Strong)
+
+    assert(ok == CPOutcome.Failure)
+  }
+
+
+
 
 }

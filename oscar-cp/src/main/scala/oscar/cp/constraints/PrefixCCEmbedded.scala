@@ -372,7 +372,7 @@ class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
       bufferSize = bufferSize max x.size
 
       // Register before the first check loop so that we receive information on what we changed there
-      x.callOnChanges(i, delta => whenDomainChanges(delta, x))
+      x.callOnChangesIdx(i, delta => whenDomainChanges(delta, x))
 
       i += 1
     }

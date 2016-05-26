@@ -13,10 +13,10 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 /******************************************************************************
- * Contributors:
- *     This code has been initially developed by CETIC www.cetic.be
- *         by Renaud De Landtsheer
- ******************************************************************************/
+  * Contributors:
+  *     This code has been initially developed by CETIC www.cetic.be
+  *         by Renaud De Landtsheer
+  ******************************************************************************/
 
 
 package oscar.cbls.constraints.lib.global
@@ -24,23 +24,27 @@ package oscar.cbls.constraints.lib.global
 import oscar.cbls.constraints.core.Constraint
 import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
+import oscar.cbls.invariants.lib.logic.LazyIntInt2Int
 import oscar.cbls.invariants.lib.numeric.Sum
 
 import scala.collection.immutable.SortedMap
 ;
 
 /**implments the sequence constraint:
- *
- * @param variables the "history variables"
- * @param length the length of the sequence
- * @param Max the max number of elements matching pred in all sequences of the history
- * @param predicate a predicate to say which values belong to the constraint
+  *
+  * @param variables the "history variables"
+  * @param length the length of the sequence
+  * @param Max the max number of elements matching pred in all sequences of the history
+  * @param predicate an array of bolean, covering all the values of the varaibles, and ith true or false if the value enforces the predicate or not, respectively
+  * @param predicateIsToBeConsideredInVarViolation if false, the violation of a variable is the summed violation of all sequences it is involved in, if true,
+  *                                                the violation is dependent on whether the variable enforces the predicate; if it enforces it,
+  *                                                it is the other definition, if it does not, it is zero
   * @author renaud.delandtsheer@cetic.be
- */
-case class Sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:(Int=>Boolean))
-  extends Invariant with Constraint{
+  */
+case class Sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:Array[Boolean], predicateIsToBeConsideredInVarViolation:Boolean = false)
+  extends Invariant with Constraint with IntNotificationTarget{
 
-  assert(Max <= length, "Sequence: Max > length")
+  assert(Max <= length, "the specified maximum is bigger than the ength of the sequences to consider")
 
   registerStaticAndDynamicDependencyArrayIndex(variables)
   registerConstrainedVariables(variables)
@@ -58,8 +62,17 @@ case class Sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:(
   /**the violation of a variable is the sum of the violation of each sequence it is involved in*/
   var Violations = SortedMap.empty[IntValue, IntValue]
 
-  for(i <- 0 to variables.length - length){
-    Violations = Violations + ((variables(i),Sum(sequencesInvolving(i).map(violated(_)))))
+  for(i <- 0 to variables.length - 1){
+    val (lb,ub) = sequencesInvolving(i)
+    val summedViolationOfSequencesVarIIsInvolvedIn = Sum((lb to ub).map(violated(_)))
+    val violationOfVariableI = if(predicateIsToBeConsideredInVarViolation){
+      new LazyIntInt2Int(summedViolationOfSequencesVarIIsInvolvedIn,
+        variables(i),
+        (summedViol,varValue) => if (predicate(varValue)) summedViol else 0, summedViolationOfSequencesVarIIsInvolvedIn.domain)
+    }else{
+      summedViolationOfSequencesVarIIsInvolvedIn
+    }
+    Violations = Violations + ((variables(i),violationOfVariableI))
   }
 
   val Violation = CBLSIntVar(model,0, 0 to variables.length * length ,"sequence_violations")
@@ -67,12 +80,15 @@ case class Sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:(
 
   for(i <- variables.indices){
     if(predicate(variables(i).value)){
-      for(j <- sequencesInvolving(i)){
+      val (lb,ub) = sequencesInvolving(i)
+      var j = lb
+      while(j <= ub){
         count(j) += 1
         if(count(j) > Max){
           violated(j) :+=1
           Violation :+= 1
         }
+        j += 1
       }
     }
   }
@@ -84,34 +100,41 @@ case class Sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:(
     * @param i the position
     * @return
     */
-  private def sequencesInvolving(i:Int):Range = {
+  @inline
+  private def sequencesInvolving(i:Int):(Int,Int) = {
     val lb = 0 max 1+i-length
     val ub = i min variables.length - length
-    lb to ub
+    (lb,ub)
   }
 
   @inline
   override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Int, NewVal: Int){
-    if (predicate(OldVal)){
+    if (predicate(OldVal)){ //TODO: on peut éventuellement conserver predicate(OldVal) dans un tableau de booléens
       if(!predicate(NewVal)){
         //decrease the count
-        for(j <- sequencesInvolving(i)){
+        val (lb,ub) = sequencesInvolving(i)
+        var j = lb
+        while(j <= ub){
           count(j) -= 1
           if(count(j) >= Max){
             violated(j) :-=1
             Violation :-= 1
           }
+          j+=1
         }
       }
     }else{
-      if(predicate(variables(i).value)){
+      if(predicate(NewVal)){
         //increase the count
-        for(j <- sequencesInvolving(i)){
+        val (lb,ub) = sequencesInvolving(i)
+        var j = lb
+        while(j <= ub){
           count(j) += 1
           if(count(j) > Max){
             violated(j) :+=1
             Violation :+= 1
           }
+          j+=1
         }
       }
     }
@@ -135,7 +158,8 @@ case class Sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:(
 
     for(i <- variables.indices){
       if(predicate(variables(i).value)){
-        for(j <- sequencesInvolving(i)){
+        val (lb,ub) = sequencesInvolving(i)
+        for(j <- (lb to ub)){
           countCheck(j) += 1
           if(countCheck(j) > Max){
             violatedCheck(j) +=1
@@ -148,6 +172,5 @@ case class Sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:(
     for(s <- sequences)c.check(countCheck(s) == count(s),Some("countCheck(s) == count(s)"))
     for(s <- sequences)c.check(violatedCheck(s) == violated(s).value,Some("violatedCheck(s) == violated(s).value"))
     c.check(violationCheck == violation.value)
-
   }
 }

@@ -19,5 +19,9 @@ sealed abstract class ConstraintSense(val symbol: String, val name: String) {
 }
 
 case object LQ extends ConstraintSense("<=", "LQ")
-case object GQ extends ConstraintSense(">=", "GQ")
 case object EQ extends ConstraintSense("==", "EQ")
+case object GQ extends ConstraintSense(">=", "GQ")
+
+object ConstraintSense {
+  val values: List[ConstraintSense] = List(LQ, EQ, GQ)
+}

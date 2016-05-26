@@ -15,10 +15,10 @@
 
 package oscar.examples.linprog
 
+import oscar.algebra._
 import oscar.linprog.interface.MIPSolverInterface
 import oscar.linprog.interface.lpsolve.LPSolveLib
 import oscar.linprog.modeling._
-import oscar.algebra._
 
 /**
  * The goal of the diet problem is to find the cheapest combination of foods

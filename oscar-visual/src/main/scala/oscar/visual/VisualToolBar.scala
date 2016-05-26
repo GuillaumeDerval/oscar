@@ -14,8 +14,7 @@
  ******************************************************************************/
 package oscar.visual
 
-import javax.swing.JToolBar
-import javax.swing.JButton
+import javax.swing.{JTextField, JLabel, JToolBar, JButton}
 import java.awt.event.ActionListener
 import java.awt.event.ActionEvent
 
@@ -27,9 +26,19 @@ class VisualToolBar() extends JToolBar {
     val button = new JButton(label)
     button.addActionListener( new ActionListener() {
 		override def actionPerformed(e:ActionEvent) { actionOnClick }
-	})
-	add(button)
+		})
+		add(button)
   }
+
+	def addLabel(text:String): Unit ={
+		val label = new JLabel(text)
+		add(label)
+	}
+
+	def addTextField(defaultText:String): Unit ={
+		val textField = new JTextField(defaultText)
+		add(textField)
+	}
 }
 
 object VisualToolBar{

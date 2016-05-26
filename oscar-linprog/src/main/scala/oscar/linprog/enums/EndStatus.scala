@@ -22,11 +22,12 @@ sealed abstract class EndStatus(val name: String) {
 case object SolutionFound extends EndStatus("SOLUTION_FOUND")
 case object Unbounded extends EndStatus("UNBOUNDED")
 case object Infeasible extends EndStatus("INFEASIBLE")
+case object InfeasibleOrUnbounded extends EndStatus("INFEASIBLE_OR_UNBOUNDED")
 case object NoSolutionFound extends EndStatus("NO_SOLUTION_FOUND")
 case object Warning extends EndStatus("WARNING")
 
 object EndStatus {
-  val values: List[EndStatus] = List(SolutionFound, Unbounded, Infeasible, NoSolutionFound, Warning)
+  val values: List[EndStatus] = List(SolutionFound, Unbounded, Infeasible, InfeasibleOrUnbounded, NoSolutionFound, Warning)
 
   def fromString(str: String): EndStatus = values.find(es => es.name == str.toUpperCase) match {
     case Some(es) => es

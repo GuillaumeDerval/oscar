@@ -34,68 +34,26 @@ import java.util.Collection
 
 class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStrength) {
 
-  private[this] val searchStrategy = new DFSearch(this)
-  private[this] var heuristic: Branching = null
-  
+
   def this() = this(CPPropagStrength.Weak)
-  
-  final def searchEngine: DFSearch = searchStrategy
 
-  final def onSolution(action: => Unit): CPSolver = {
-    searchStrategy.onSolution(action); this
-  }
-
-  final def start(nSols: Int = Int.MaxValue, failureLimit: Int = Int.MaxValue, timeLimit: Int = Int.MaxValue): SearchStatistics = {
-    startSubjectTo(nSols, failureLimit, timeLimit)()
-  }
-  
-  final def start(stopCondition: => Boolean): SearchStatistics = {
-    startSubjectTo(stopCondition)(Unit)
-  }
-  
-  final def start(stopCondition: DFSearch => Boolean): SearchStatistics = {
-    startSubjectTo(stopCondition)(Unit)
-  }
-
-  final def startSubjectTo(nSols: Int = Int.MaxValue, failureLimit: Int = Int.MaxValue, timeLimit: Int = Int.MaxValue)(block: => Unit = Unit): SearchStatistics = {
-    val stopCondition = buildStopCondition(nSols, failureLimit, timeLimit)
-    startSubjectTo(stopCondition)(block)
-  }
-
-  final def startSubjectTo(stopCondition: => Boolean)(block: => Unit): SearchStatistics = {
-    startSubjectTo((s: DFSearch) => stopCondition)(block)
-  }
-
-  final def startSubjectTo(stopCondition: DFSearch => Boolean)(block: => Unit): SearchStatistics = {
-    val t0 = System.currentTimeMillis()
-    deactivateNoSolExceptions() // TODO refactor
-    pushState() // Store the current state
-    block // Apply the before search action
-    searchStrategy.start(heuristic, stopCondition)
-    pop() // Restore the current state 
+  override def startSubjectTo(stopCondition: DFSearch => Boolean, maxDiscrepancy: Int)(block: => Unit): SearchStatistics = {
+    deactivateNoSolExceptions()
+    val stat = super.startSubjectTo(stopCondition,maxDiscrepancy)(block)
     cleanQueues()
-    // Build the statistic object
-    new SearchStatistics(
-      searchStrategy.nNodes,
-      searchStrategy.nBacktracks,
-      System.currentTimeMillis() - t0,
-      searchStrategy.isCompleted,
-      this.time,
-      this.maxSize,
-      searchStrategy.nSolutions
-    )
+    stat
   }
 
-  final def listen() : Unit = {
+  final def listen(): Unit = {
     val dFSListener = new DFSLinearizer
     searchEngine.searchListener(dFSListener)
   }
 
   //the solution variables are the variables that must be assigned to have a solution
-  final def replay(solutionVariables : Seq[CPIntVar]) : ReplayStatistics = {
-    if(searchEngine.searchListener != null) {
+  final def replay(solutionVariables: Seq[CPIntVar]): ReplayStatistics = {
+    if (searchEngine.searchListener != null) {
       searchEngine.searchListener match {
-        case listener : DFSLinearizer => {
+        case listener: DFSLinearizer => {
           val replayer = new DFSReplayer(solver, solutionVariables)
           replayer.replay(listener.searchStateModifications)
         }
@@ -118,14 +76,6 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
       stop |= (checkTime && System.currentTimeMillis() >= maxTime)
       stop
     }
-  }
-
-  def search(block: => Seq[Alternative]): CPSolver = {
-    heuristic = Branching(block); this
-  }
-
-  def search(branching: Branching): CPSolver = {
-    heuristic = branching; this
   }
 
 
