@@ -243,16 +243,17 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
   
   def awakeOnChanges(watcher: Watcher): Unit
 
-  def callOnChanges(propagate: DeltaIntVar => CPOutcome): PropagatorIntVar = {
+
+  def callOnChanges(propagate: DeltaIntVar => CPOutcome,idempotent: Boolean = true): PropagatorIntVar = {
     val propagator = new PropagatorIntVar(this, 0, propagate)
-    propagator.idempotent = true
+    propagator.idempotent = idempotent
     callPropagateWhenDomainChanges(propagator)
     propagator
   }
   
-  def callOnChanges(id: Int, propagate: DeltaIntVar => CPOutcome): PropagatorIntVar = {
+  def callOnChangesIdx(id: Int, propagate: DeltaIntVar => CPOutcome, idempotent: Boolean = true): PropagatorIntVar = {
     val propagator = new PropagatorIntVar(this, id, propagate)
-    propagator.idempotent = true
+    propagator.idempotent = idempotent
     propagator.priority = CPStore.MaxPriorityL2
     callPropagateWhenDomainChanges(propagator)
     propagator
@@ -353,14 +354,8 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
   def delta(oldMin: Int, oldMax: Int, oldSize: Int): Iterator[Int]
   
   def fillDeltaArray(oldMin: Int, oldMax: Int, oldSize: Int, arr: Array[Int]): Int
-  
-  def delta(constraint: Constraint): DeltaIntVar = {
-    val delta = new DeltaIntVarAdaptable(this, 0)
-    constraint.registerDelta(delta)
-    delta
-  }
-  
-  def delta(id: Int, constraint: Constraint): DeltaIntVar = {
+
+  def delta(constraint: Constraint,id: Int = 0): DeltaIntVar = {
     val delta = new DeltaIntVarAdaptable(this, id)
     constraint.registerDelta(delta)
     delta

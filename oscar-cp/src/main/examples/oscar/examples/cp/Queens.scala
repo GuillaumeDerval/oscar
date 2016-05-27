@@ -1,8 +1,6 @@
 package oscar.examples.cp
 
 import oscar.cp._
-import oscar.algo.reversible.ReversibleBoolean
-import oscar.cp.searches.BinaryLastConflict
 
 /**
  * n-queens model: place n-queens on a chess-board such that they don't attack each other.

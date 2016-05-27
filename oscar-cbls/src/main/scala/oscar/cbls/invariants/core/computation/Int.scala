@@ -18,10 +18,10 @@
   *         by Renaud De Landtsheer
   ******************************************************************************/
 
-
 package oscar.cbls.invariants.core.computation
 
-import oscar.cbls.invariants.core.propagation.{Checker, PropagationElement}
+import oscar.cbls.invariants.core.propagation.Checker
+
 import scala.collection.mutable.{Map => MMap}
 import scala.language.implicitConversions
 
@@ -37,6 +37,8 @@ sealed trait IntValue extends Value{
 
   def name:String
   override def valueString: String = "" + value
+  def restrictDomain(d:Domain): Unit
+
 }
 
 object IntValue {
@@ -58,6 +60,10 @@ object IntValue {
   }
 }
 
+trait IntNotificationTarget{
+  def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int)
+}
+
 /**An IntVar is a variable managed by the [[oscar.cbls.invariants.core.computation.Store]] whose type is integer.
   *
   * @param initialDomain is the domain value of the variable. Some invariants exploit this value to declare fixed size arrays
@@ -74,17 +80,21 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
 
   def domain:Domain = privatedomain
 
-  protected def restrictDomain(d:Domain): Unit ={
+  def restrictDomain(d:Domain): Unit = {
     privatedomain = privatedomain.restrict(d)
     if(!privatedomain.contains(Value)){
         this := privatedomain.min
       }
   }
-  /*protected def relaxDomain(d: Domain): Domain = {
+
+  /*
+   * Do NOT use this method! It exists only for the sake of oscar-fzn-cbls (hence it should not be suppressed either until oscar-fzn-cbls is able to use a workaround).
+   */
+  def relaxDomain(d: Domain): Domain = {
     val olddom = privatedomain
     privatedomain = d
     olddom
-  }*/
+  }
 
   override def toString = {
     if(model != null && model.propagateOnToString) s"$name:=$value" else s"$name:=$Value"
@@ -93,33 +103,23 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
 
   def setValue(v:Int){
     if (v != Value){
-      //TODO: disable assert while domain of invariant are buggy, this assert is needed in UNIT TEST.
-      // (-Xdisable-assertions as argument of scala compiler)
-      // or comment this assert and use it only to throw unit test while domain bugs.
-      /*
-      assert(inDomain(v),print("Assertion False : variable ["+this+"] is not in his domain \n" +
-          "domain : ["+MinVal+ ";"+MaxVal+"]\n" +
-           "new value :"+ v +"\n" ))
-           */
       assert(domain.contains(v),v+ " is not in the domain of "+this+"("+min+".."+max+"). This might indicate an integer overflow.")
       Value = v
       notifyChanged()
     }
   }
 
-  override def value: Int = getValue()
+  override def value: Int = {
+    if (model == null) return Value
+    if (definingInvariant == null && !model.propagating) return Value
+    model.propagate(this)
+    OldValue
+  }
 
-  def getValue(NewValue: Boolean = false): Int = {
-    if(NewValue){
-      assert(model.checkExecutingInvariantOK(definingInvariant),"variable [" + this
-        + "] queried for latest val by non-controlling invariant")
-      Value
-    } else{
-      if (model == null) return Value
-      if (definingInvariant == null && !model.propagating) return Value
-      model.propagate(this)
-      OldValue
-    }
+  def newValue:Int = {
+    assert(model.checkExecutingInvariantOK(definingInvariant),"variable [" + this
+      + "] queried for latest val by non-controlling invariant")
+    Value
   }
 
   override def performPropagation(){performIntPropagation()}
@@ -135,9 +135,9 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
       while(currentElement != headPhantom){
         val e = currentElement.elem
         currentElement = currentElement.next
-        val inv:Invariant = e._1.asInstanceOf[Invariant]
-        assert({this.model.NotifiedInvariant=inv; true})
-        inv.notifyIntChangedAny(this,e._2,old,Value)
+        val inv:IntNotificationTarget = e._1.asInstanceOf[IntNotificationTarget]
+        assert({this.model.NotifiedInvariant=inv.asInstanceOf[Invariant]; true})
+        inv.notifyIntChanged(this,e._2,old,Value)
         assert({this.model.NotifiedInvariant=null; true})
       }
       /*
@@ -159,24 +159,22 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
   }
 
   protected def :+=(v: Int) {
-    setValue(v + getValue(true))
+    setValue(v + newValue)
   }
 
   protected def :*=(v: Int) {
-    setValue(v * getValue(true))
+    setValue(v * newValue)
   }
 
   protected def :-=(v:Int) {
-    setValue(getValue(true) - v)
+    setValue(newValue - v)
   }
 
   /** increments the variable by one
     */
   protected def ++ {
-    setValue(1 + getValue(true))
+    setValue(1 + newValue)
   }
-
-  def getDotNode = "[label = \"IntVar(" + name + ")\" shape = oval color = " + getDotColor + "]"
 
   def compare(that: ChangingIntValue): Int = {
     assert(this.uniqueID != -1, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
@@ -202,9 +200,6 @@ class CBLSIntVar(givenModel: Store, initialValue: Int, initialDomain:Domain, n: 
   extends ChangingIntValue(initialValue,initialDomain) with Variable{
   
   require(givenModel != null)
-  
-  override def restrictDomain(d:Domain) = super.restrictDomain(d)
-  //override def relaxDomain(d:Domain) = super.relaxDomain(d)
 
   model = givenModel
 
@@ -215,21 +210,21 @@ class CBLSIntVar(givenModel: Store, initialValue: Int, initialDomain:Domain, n: 
   }
 
   override def :+=(v: Int) {
-    setValue(v + getValue(true))
+    setValue(v + newValue)
   }
 
   override def :*=(v: Int) {
-    setValue(v * getValue(true))
+    setValue(v * newValue)
   }
 
   override def :-=(v:Int) {
-    setValue(getValue(true) - v)
+    setValue(newValue - v)
   }
 
   /** increments the variable by one
     */
   override def ++ {
-    setValue(1 + getValue(true))
+    setValue(1 + newValue)
   }
 
   /**this operator swaps the value of two IntVar*/
@@ -261,9 +256,9 @@ object CBLSIntVar{
  * An IntConst is an [[oscar.cbls.invariants.core.computation.CBLSIntVar]] that has a constant value.
  * It has no associated model, as there is no need to incorporate it into any propagation process.
  * notice that you should not attempt to create a CBLSIntConst directly; use the companion object for an efficient memoïzation
- * @param value: the value of the constant
- * @author renaud.delandtsheer@cetic.be
- */
+* @param value: the value of the constant
+* @author renaud.delandtsheer@cetic.be
+*/
 class CBLSIntConst(override val value:Int)
   extends IntValue{
   override def toString:String = "" + value
@@ -271,8 +266,10 @@ class CBLSIntConst(override val value:Int)
   override def min: Int = value
   override def max: Int = value
   override def name = "" + value
+  override def restrictDomain(d:Domain){
+    require(d.contains(value))
+  }
 }
-
 
 object CBLSIntConst{
   implicit def int2IntValue(a: Int): IntValue = apply(a)
@@ -333,14 +330,14 @@ object IdentityInt{
 /** an invariant that is the identity function
   * @author renaud.delandtsheer@cetic.be
   */
-class IdentityInt(toValue:CBLSIntVar, fromValue:IntValue) extends Invariant{
+class IdentityInt(toValue:CBLSIntVar, fromValue:IntValue) extends Invariant with IntNotificationTarget{
   registerStaticAndDynamicDependency(fromValue)
   toValue.setDefiningInvariant(this)
   finishInitialization()
 
   toValue := fromValue.value
 
-  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
     toValue := NewVal
   }
 

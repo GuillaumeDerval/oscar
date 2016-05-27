@@ -82,7 +82,7 @@ trait ClusterInvariants{
    * @param cond is a function that selects values to be includes in the output set.
    * This ''cond'' function cannot depend on any IntVar, as updates to these IntVars will not trigger propagation of this invariant.
    */
-  def filter(values:Array[IntValue], cond:(Int=>Boolean)) = Filter(values:Array[IntValue], cond:(Int=>Boolean))
+  def filter(values:Array[IntValue], cond:(Int=>Boolean) = _ != 0) = Filter(values:Array[IntValue], cond:(Int=>Boolean))
 
   /** {i in index of values | values[i] <= boundary}
    * It is based on two heap data structure, hence updates are log(n) and all updates are allowed
@@ -401,7 +401,6 @@ trait SetInvariants{
 
   /** PRod(i in on)(fun(i))
    * @param on is the set of integers to multiply
-   * @param fun is an optional function Int -> Int to apply before multiplying elements. It is expected not to rely on any variable of the model.
    * */
-  def setProd(on:SetValue, fun:(Int => Int) = ((a:Int) => a)) = SetProd(on, fun)
+  def setProd(on:SetValue) = SetProd(on)
 }

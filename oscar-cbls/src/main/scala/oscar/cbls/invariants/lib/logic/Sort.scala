@@ -32,7 +32,10 @@ import oscar.cbls.invariants.core.propagation.Checker
  * see method GetForwardPerm() for the forward permutation: ReversePerm(ForwardPerm(i)) == i
  * @author renaud.delandtsheer@cetic.be
  * */
-class Sort(var values:Array[IntValue], ReversePerm:Array[CBLSIntVar]) extends Invariant {
+class Sort(var values:Array[IntValue], ReversePerm:Array[CBLSIntVar])
+  extends Invariant
+  with IntNotificationTarget{
+
   for (v <- values.indices) registerStaticAndDynamicDependency(values(v),v)
 
   finishInitialization()
@@ -69,9 +72,9 @@ class Sort(var values:Array[IntValue], ReversePerm:Array[CBLSIntVar]) extends In
   @inline
   private def BubbleUp(v: ChangingIntValue, PositionInInitialArray: Int) {
     while (true) {
-      val PositionInSorting: Int = ForwardPerm(PositionInInitialArray).getValue(true)
+      val PositionInSorting: Int = ForwardPerm(PositionInInitialArray).newValue
       if (PositionInSorting == values.indices.last) return //last position
-      val ValueAbove: Int = values(ReversePerm(PositionInSorting + 1).getValue(true)).value //this shit returns the new value!!
+      val ValueAbove: Int = values(ReversePerm(PositionInSorting + 1).newValue).value //this shit returns the new value!!
       if (ValueAbove < v.value) swap(PositionInSorting, PositionInSorting + 1)
       else return
     }
@@ -80,9 +83,9 @@ class Sort(var values:Array[IntValue], ReversePerm:Array[CBLSIntVar]) extends In
   @inline
   private def BubbleDown(v: ChangingIntValue, PositionInInitialArray: Int) {
     while (true) {
-      val PositionInSorting: Int = ForwardPerm(PositionInInitialArray).getValue(true)
+      val PositionInSorting: Int = ForwardPerm(PositionInInitialArray).newValue
       if (PositionInSorting == 0) return //first position
-      val ValueBelow: Int = values(ReversePerm(PositionInSorting - 1).getValue(true)).value
+      val ValueBelow: Int = values(ReversePerm(PositionInSorting - 1).newValue).value
       if (ValueBelow > v.value) swap(PositionInSorting, PositionInSorting - 1)
       else  return
     }
@@ -90,8 +93,8 @@ class Sort(var values:Array[IntValue], ReversePerm:Array[CBLSIntVar]) extends In
 
   @inline
   private def swap(PositionInSorting1: Int, PositionInSorting2: Int) {
-    val PositionInInitialArray1: Int = ReversePerm(PositionInSorting1).getValue(true)
-    val PositionInInitialArray2: Int = ReversePerm(PositionInSorting2).getValue(true)
+    val PositionInInitialArray1: Int = ReversePerm(PositionInSorting1).newValue
+    val PositionInInitialArray2: Int = ReversePerm(PositionInSorting2).newValue
 
     ReversePerm(PositionInSorting1) := PositionInInitialArray2
     ReversePerm(PositionInSorting2) := PositionInInitialArray1
@@ -112,11 +115,11 @@ class Sort(var values:Array[IntValue], ReversePerm:Array[CBLSIntVar]) extends In
     }
     for (i <- range) {
       for (j <- range if i < j) {
-        c.check((values(ReversePerm(i).getValue(true)).value <= values(ReversePerm(j).getValue(true)).value),
-          Some("(values(ReversePerm(" + i + ").getValue(true)).value ("
-            + values(ReversePerm(i).getValue(true)).value
-            + ") <= values(ReversePerm(" + j + ").getValue(true)).value "
-            + values(ReversePerm(j).getValue(true)).value + ")"))
+        c.check((values(ReversePerm(i).newValue).value <= values(ReversePerm(j).newValue).value),
+          Some("(values(ReversePerm(" + i + ").newValue).value ("
+            + values(ReversePerm(i).newValue).value
+            + ") <= values(ReversePerm(" + j + ").newValue).value "
+            + values(ReversePerm(j).newValue).value + ")"))
       }
     }
   }

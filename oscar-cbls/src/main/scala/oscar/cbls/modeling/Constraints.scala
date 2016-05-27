@@ -76,7 +76,11 @@ trait Constraints {
    * @param length the length of the sequence
    * @param Max the max number of elements matching pred in all sequences of the history
    * @param predicate a predicate to say which values belong to the constraint
+   * @param predicateIsToBeConsideredInVarViolation if false, the violation of a variable is the summed violation of all sequences it is involved in, if true,
+   *                                                the violation is dependent on whether the variable enforces the predicate; if it enforces it,
+   *                                                it is the other definition, if it does not, it is zero
    */
-  def sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:(Int=>Boolean)) = Sequence(variables, length, Max, predicate)
+  def sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:Array[Boolean],predicateIsToBeConsideredInVarViolation:Boolean = false) =
+    Sequence(variables, length, Max, predicate,predicateIsToBeConsideredInVarViolation)
 
 }

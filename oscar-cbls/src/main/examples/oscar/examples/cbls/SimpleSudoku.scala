@@ -21,10 +21,10 @@
 
 package oscar.examples.cbls
 
-import oscar.cbls.search._
 import oscar.cbls.constraints.core._
 import oscar.cbls.constraints.lib.global.AllDiff
 import oscar.cbls.invariants.core.computation._
+import oscar.cbls.search._
 
 /**
  * Simple Sudoku (for 9x9 grid) 

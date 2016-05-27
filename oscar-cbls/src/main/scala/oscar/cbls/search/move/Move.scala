@@ -15,7 +15,7 @@
 
 package oscar.cbls.search.move
 
-import oscar.cbls.invariants.core.computation.{CBLSIntVar, CBLSSetVar, Variable}
+import oscar.cbls.invariants.core.computation.{CBLSIntVar, CBLSSetVar, Solution, Variable}
 import oscar.cbls.objective.Objective
 
 /** standard move template
@@ -39,7 +39,8 @@ abstract class Move(val objAfter:Int = Int.MaxValue, val neighborhoodName:String
    * use this to update a Tabu for instance
    * notice that is a variable is touched twice by the move, it will appear twice in this list
    * This can happen with a set where we add two elements in two distinct moves that are aggregated into a [[oscar.cbls.search.move.CompositeMove]]
-   * @return the list of touched variables.
+    *
+    * @return the list of touched variables.
    */
   def touchedVariables:List[Variable] = throw new Exception(this.getClass().getSimpleName + "cannot provide touched variables")
 
@@ -54,12 +55,13 @@ abstract class Move(val objAfter:Int = Int.MaxValue, val neighborhoodName:String
     * notice that the objAfter is supposed to carry the proper value, so you generally do not need to call this
     * since it is not an efficient way to proceed
     * notice that it relies on the touchedVariables method.
+    *
     * @param obj the objective function to evaluate
     * @return the value of the objective function if the move were taken
     */
   def evaluate(obj:Objective):Int = {
     val model = obj.model
-    val snapshot = model.saveValues(touchedVariables:_*)
+    val snapshot = model.saveValues(touchedVariables)
     commit()
     val toReturn = obj.value
     model.restoreSolution(snapshot)
@@ -83,15 +85,35 @@ class EasyMove(override val objAfter:Int, override val neighborhoodName:String =
 
 }
 
+/**
+ * this move loads solution s
+  *
+  * @param s the solution that is loaded when the move is comitted
+ * @param objAfter the objective after this assignation will be performed
+ *                 in case you degrade the objective because you make a jump, and you do not want to compute it,
+ *                 you must set it to Int.MaxValue or just do not specify it, as it is the default value
+ *                 we did not use an option there because there would anyway be a need
+ *                 for arithmetic on this option in combinators suh as [[oscar.cbls.search.combinators.Best]]
+ *                 Many combinators actually rely on this value to take decisions (eg: [[oscar.cbls.search.combinators.SaveBest]] and [[oscar.cbls.search.combinators.Best]]
+ * @param neighborhoodName the name of the neighborhood that generated this move, used for pretty printing purpose.
+ *                         Notice that the name is not the type of the neighborhood.
+ */
+case class LoadSolutionMove(s:Solution,override val objAfter:Int, override val neighborhoodName:String = null) extends Move(objAfter,neighborhoodName){
+  /** to actually take the move */
+  override def commit(): Unit = s.model.restoreSolution(s)
+}
+
+
 /** standard move that assigns an int value to a CBLSIntVar
   *
   * @param i the variable
   * @param v the value to assign
+  * @param id an ID that is used by the neighborhood to pass additional information
   * @param objAfter the objective after this assignation will be performed
   * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
   * @author renaud.delandtsheer@cetic.be
   */
-case class AssignMove(i:CBLSIntVar,v:Int, override val objAfter:Int, override val neighborhoodName:String = null)
+case class AssignMove(i:CBLSIntVar,v:Int, id:Int, override val objAfter:Int, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
   override def commit() {i := v}
@@ -103,6 +125,95 @@ case class AssignMove(i:CBLSIntVar,v:Int, override val objAfter:Int, override va
   override def touchedVariables: List[Variable] = List(i)
 }
 
+case class RollMove(l:List[CBLSIntVar],offset:Int, override val objAfter:Int, override val neighborhoodName:String = null)
+  extends Move(objAfter,neighborhoodName){
+  /** to actually take the move */
+  override def commit(){
+    val variables = l.toArray
+    val initialValues:Array[Int] = variables.map(_.value)
+    for(i <- variables.indices){
+      variables(i) := initialValues((i+offset) % variables.length)
+    }
+  }
+
+  override def toString: String = {
+    neighborhoodNameToString + "RollMove(" + l + ", offset:" + offset + objToString + ")"
+  }
+
+}
+
+/** standard move that switch a block of value to the right
+  *
+  * @param startIndice the indice of the item beginning the block to switch
+  * @param length the length of the block to switch
+  * @param offset the size off the movement that has to be performed to the right
+  * @param objAfter the objective after this assignation will be performed
+  * @param neighborhoodName the name of the neighborhood that generated this move, used for pretty printing purpose.
+  *                         Notice that the name is not the type of the neighborhood.
+  * @author fabian.germeau@student.vinci.be
+  * */
+case class ShiftMove(startIndice:Int,length:Int,offset:Int,variables:Array[CBLSIntVar], override val objAfter:Int, override val neighborhoodName:String = null)
+  extends Move(objAfter,neighborhoodName){
+
+  def shiftedElements = startIndice to startIndice + length
+  override def toString: String = {
+    neighborhoodNameToString + "ShiftMove(startIndice:" + startIndice + "; length:" + length + "; offset:" + offset + objToString + ")"
+  }
+
+  /** to actually take the move */
+  override def commit() {
+    val initialValues: Array[Int] = Array.tabulate(variables.length)(variables(_).value)
+    //If the block is moved on the right
+    if(offset > 0){
+      //The values are changed
+      for(i <- startIndice to startIndice + offset + length - 1){
+        if(i < startIndice + offset){
+          variables(i) := initialValues(i + length)
+        }
+        else{
+          variables(i) := initialValues(i - offset)
+        }
+      }
+    }
+    //If the block is moved on the left
+    else{
+      //The values are changed (and don't forget, here offset is negative
+      for(i <- startIndice + offset to startIndice + length - 1){
+        if(i < startIndice + offset + length){
+          variables(i) := initialValues(i - offset)
+        }
+        else{
+          variables(i) := initialValues(i - length)
+        }
+      }
+    }
+  }
+}
+
+object FlipMove{
+  def doFlip(fromPosition:Int,toPosition:Int,variables:Array[CBLSIntVar]){
+    if(fromPosition < toPosition){
+      variables(fromPosition) :=: variables(toPosition)
+      doFlip(fromPosition+1,toPosition-1,variables)
+    }
+  }
+}
+case class FlipMove(fromPosition:Int,toPosition:Int,variables:Array[CBLSIntVar], override val objAfter:Int, override val neighborhoodName:String = null)
+  extends Move(objAfter, neighborhoodName) {
+
+  require(fromPosition < toPosition)
+
+  override def commit(): Unit = {
+    FlipMove.doFlip(fromPosition,toPosition,variables)
+  }
+
+  override def toString: String = {
+    neighborhoodNameToString + "FlipMove(fromPosition:" + fromPosition + " toPosition:" + toPosition + " size:" + (toPosition - fromPosition) +  objToString + ")"
+  }
+
+}
+
+
 /** standard move that swaps the value of two CBLSIntVar
   *
   * @param i the variable
@@ -111,7 +222,7 @@ case class AssignMove(i:CBLSIntVar,v:Int, override val objAfter:Int, override va
   * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
   * @author renaud.delandtsheer@cetic.be
   */
-case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, override val objAfter:Int, override val neighborhoodName:String = null)
+case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Int, idJ:Int, override val objAfter:Int, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
   override def commit() {i :=: j}
@@ -188,6 +299,25 @@ case class CompositeMove(ml:List[Move], override val objAfter:Int, override val 
   override def touchedVariables: List[Variable] = ml.flatMap(_.touchedVariables)
 }
 
+
+case class NamedMove(m:Move, override val neighborhoodName:String = null)
+  extends Move(m.objAfter, neighborhoodName){
+
+
+  override def commit(): Unit = {
+    m.commit()
+  }
+
+  override def toString: String  = {
+    neighborhoodNameToString + m.toString
+  }
+
+  override def touchedVariables: List[Variable] = m.touchedVariables
+
+  override def evaluate(obj: Objective): Int = m.evaluate(obj)
+}
+
+
 /** an instrumented move that performs a callBack before being taken
   * the move itself is given in parameter.
   *
@@ -214,6 +344,7 @@ object CallBackMove{
 
 /** a callBackMove when committed calls some method
   * this is how it takes its move
+  *
   * @param callBack the method that is called when the move is committed it takes a parameter of type T, which is given in param
   * @param objAfter the objective after this assignation will be performed
   *                 in case you degrade the objective because you make a jump, and you do not want to compute it,

@@ -1,32 +1,25 @@
-/**
- * *****************************************************************************
- * OscaR is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 2.1 of the License, or
- * (at your option) any later version.
- *
- * OscaR is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License  for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License along with OscaR.
- * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
- * ****************************************************************************
- */
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  *******************************************************************************/
 
 package oscar.cp.core
 
-import oscar.algo.reversible.ReversibleBoolean
+
 import oscar.cp.constraints.Garded
-import scala.collection.mutable.ArrayBuffer
-import oscar.algo.reversible.MagicBoolean
 import oscar.cp.core.variables.CPSetVar
 import oscar.cp.core.variables.CPBoolVar
 import oscar.cp.core.variables.CPIntVar
-import scala.collection.JavaConversions.mapAsScalaMap
-import oscar.cp.core.delta.DeltaSetVar
-import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.delta.Delta
 import oscar.algo.reversible.TrailEntry
 
@@ -39,27 +32,22 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
 
   private[this] var active: Boolean = true
   private[this] var inQueue: Boolean = false
-  private[this] var lastMagicInQueue = -1L
   private[this] var lastMagicActive = -1L
 
   final override def restore(): Unit = active = !active
 
   val s: CPStore = store
 
-  // FIXME variables should have an id 
-  val snapshotsVarSet = new java.util.HashMap[CPSetVar, DeltaSetVar]
-
   // Snapshots
   private[this] var snapshots = new Array[Delta](10)
   private[this] var nSnapshots = 0
   private[this] var _mustSnapshot = false
 
-  final def registerDelta(delta: DeltaIntVar): Unit = {
+  final def registerDelta(delta: Delta): Unit = {
     if (nSnapshots == snapshots.length) growSnapshots()
     snapshots(nSnapshots) = delta
     nSnapshots += 1
     delta.update()
-    if (!_mustSnapshot) { s.onPop { updateSnapshots() }; _mustSnapshot = true }
   }
 
   @inline private def growSnapshots(): Unit = {
@@ -73,28 +61,6 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
     while (i > 0) {
       i -= 1
       snapshots(i).update()
-    }
-  }
-
-  def addSnapshot(x: CPSetVar): Unit = {
-    snapshotsVarSet(x) = new DeltaSetVar(x) // FIXME avoid the implicit cast
-
-    if (nSnapshots == snapshots.length) growSnapshots()
-    snapshots(nSnapshots) = snapshotsVarSet(x) // FIXME avoid the implicit cast
-    nSnapshots += 1
-
-    snapshotsVarSet(x).update() // FIXME avoid the implicit cast
-    if (!_mustSnapshot) {
-      s.onPop { updateSnapshots() }
-      _mustSnapshot = true
-    }
-  }
-
-  @inline protected def snapshotVarSet(): Unit = {
-    var i = 0
-    while (i < nSnapshots) {
-      snapshots(i).update()
-      i += 1
     }
   }
 
@@ -122,9 +88,7 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
   @inline final def inPropagate(): Boolean = _inPropagate
 
   @inline final def isEnqueuable: Boolean = {
-    active &&
-      (lastMagicInQueue != store.magic || !inQueue) &&
-      (!_inPropagate || !_idempotent)
+    active && !inQueue && (!_inPropagate || !_idempotent)
   }
 
   /**
@@ -178,7 +142,10 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
   /**
    * @return true if the constraint is still in the propagation queue, false otherwise
    */
-  final def isInQueue = lastMagicInQueue == store.magic && inQueue
+  final def isInQueue = inQueue
+  
+  @inline private[cp] def setEnqueued(): Unit = inQueue = true
+  @inline private[cp] def setDequeued(): Unit = inQueue = false
 
   /**
    * Disable the constraint such that it is not propagated any more (will not enter into the propagation queue).
@@ -320,10 +287,5 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
     if (oc == CPOutcome.Success) deactivate()
     _inPropagate = false
     oc
-  }
-
-  @inline private[cp] def setInQueue(): Unit = {
-    lastMagicInQueue = store.magic
-    inQueue = true
   }
 }

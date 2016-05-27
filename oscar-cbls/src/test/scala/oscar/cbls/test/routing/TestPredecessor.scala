@@ -23,8 +23,7 @@
 
 package oscar.cbls.test.routing
 
-import org.scalatest.{Matchers, FunSuite}
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{FunSuite, Matchers}
 import oscar.cbls.invariants.core.computation.Store
 import oscar.cbls.routing.model._
 

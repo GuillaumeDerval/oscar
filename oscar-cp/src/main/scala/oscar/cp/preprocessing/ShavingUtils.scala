@@ -4,7 +4,9 @@ import oscar.cp._
 import oscar.algo.search.DFSearch
 import oscar.cp.core.CPOutcome
 
-/** Renaud Hartert ren.hartert@gmail.com */
+/**
+  * Sascha Van Cauwelaert
+  * Renaud Hartert ren.hartert@gmail.com */
 object ShavingUtils {
 
   /** Strenghten the lower bound of the objective by complete shaving on the forwardVariables */
@@ -40,7 +42,7 @@ object ShavingUtils {
       if (bound > bestBound) bestBound = bound
     }
     
-    search.start(branching, _ => bestBound == originalBound) 
+    search.start(branching, _ => bestBound == originalBound)
     
     // Update the bound
     objective.updateMax(bestBound)
@@ -76,5 +78,141 @@ object ShavingUtils {
     }
 
     problem.propagate()   
+  }
+
+  def minShavingDummy(problem: CPStore, variable: CPIntVar): CPOutcome = {
+    var fail = true
+    var min = variable.min
+    val max = variable.max
+    while (fail && min <= max + 1) {
+      problem.pushState()
+      fail = problem.post(variable == min) == CPOutcome.Failure
+      problem.pop()
+      min += 1
+    }
+    variable.updateMin(min - 1)
+  }
+
+  def boundsShaving(problem: CPSolver, variables: Array[CPIntVar]): CPOutcome = {
+    var domainChange = true
+    while (domainChange) {
+      domainChange = false
+      minShaving(problem, variables) match {
+        case CPOutcome.Failure => return CPOutcome.Failure
+        case CPOutcome.Suspend => domainChange = true
+        case _ =>
+      }
+      maxShaving(problem, variables) match {
+        case CPOutcome.Failure => return CPOutcome.Failure
+        case CPOutcome.Suspend => domainChange = true
+        case _ =>
+      }
+    }
+    CPOutcome.Suspend
+  }
+
+  def minShaving(problem: CPStore, variables: Array[CPIntVar]): CPOutcome = {
+    var i = 0
+    var domainChange = false
+    while (i < variables.length) {
+      val variable = variables(i)
+      val min = variable.min
+      var u = variable.max
+      var l = min
+      var m = 0
+      var fail = false
+      while (l != u) {
+        m = l + (u - l) / 2
+        problem.pushState()
+        fail = problem.post(variable <= m) == CPOutcome.Failure
+        problem.pop()
+        if (fail) {
+          l = m + 1
+        }
+        else {
+          u = m
+        }
+      }
+      if (l != min) {
+        domainChange = true
+        if (variable.updateMin(l) == CPOutcome.Failure) {
+          return CPOutcome.Failure
+        }
+      }
+      i += 1
+    }
+    if (domainChange) {
+      CPOutcome.Suspend
+    }
+    else {
+      CPOutcome.Success
+    }
+  }
+
+  def maxShaving(problem: CPSolver, variables: Array[CPIntVar]): CPOutcome = {
+    var i = 0
+    var domainChange = false
+    while (i < variables.length) {
+      val variable = variables(i)
+      val max = variable.max
+      var u = max
+      var l = variable.min
+      var m = 0
+      var fail = false
+      while (l != u) {
+        m = l + (u - l) / 2
+
+        problem.pushState()
+        val fail3 = problem.isFailed()
+        problem.cleanQueues()
+        fail = problem.post(variable > m) == CPOutcome.Failure
+        problem.pop()
+//        problem.cleanQueues()
+//        problem.pushState()
+//        val fail2 = problem.post(variable > m) == CPOutcome.Failure
+//        problem.pop()
+//        if (fail != fail2) {
+//          print()
+//        }
+        if (fail) {
+          u = m
+//          for (v <- u + 1 to max) {
+//            problem.pushState()
+//            val fail3 = problem.post(variable > m) == CPOutcome.Failure
+////            problem.post(variable == v)
+////            val fail2 = problem.propagate() == CPOutcome.Failure
+//            problem.pop()
+//            if (!fail3) {
+//              println("CHIASSE")
+//            }
+//          }
+        }
+        else {
+          l = m + 1
+        }
+      }
+      if (u != max) {
+//        for (v <- u + 1 to max) {
+//          problem.pushState()
+//          fail = problem.post(variable == v) == CPOutcome.Failure
+//          problem.pop()
+//          if (!fail) {
+//            println("CHIASSE")
+//          }
+//        }
+
+        domainChange = true
+        if (problem.post(variable <= u) == CPOutcome.Failure) {
+          return CPOutcome.Failure
+        }
+      }
+      i += 1
+    }
+    if (domainChange) {
+      CPOutcome.Suspend
+    }
+    else {
+      CPOutcome.Success
+    }
   }
 }

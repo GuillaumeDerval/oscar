@@ -18,7 +18,7 @@ class DFSReplayer(node: CPSolver, decisionVariables : Seq[CPIntVar]) {
     var nSols = 0
     var nBacktracks = 0
     var nNodes = 1
-    val decisionFiles = ((new File(dirURL).listFiles.filter(_.getName.startsWith("chunk"))) map (_.getAbsolutePath) sorted)
+    val decisionFiles = (new File(dirURL).listFiles.filter(_.getName.startsWith("chunk"))).sortBy(_.getName().replace("chunk","").replace(".txt","").toInt) map (_.getAbsolutePath)
     for (f <- decisionFiles) {
       val (timeCurrent,nSolsCurrent, nBacktracksCurrent, nNodesCurrent) : (Long,Int,Int,Int) = replay(DecisionReader.decisionsFromFile(f,decisionVariables))
       time += timeCurrent
@@ -50,7 +50,7 @@ class DFSReplayer(node: CPSolver, decisionVariables : Seq[CPIntVar]) {
 
     def panic(panicInvariant : () => Boolean) = {
       val beforePanicTime = timeThreadBean.getCurrentThreadUserTime
-      while (panicInvariant()) {
+      while (panicInvariant() && i < searchStateModifications.size - 1) {
         i += 1
         searchStateModifications(i) match {
           case Pop(_) => searchStateModifications(i)()

@@ -175,13 +175,14 @@ class MDDTableVar(context: ReversibleContext, linkedVar: CPIntVar, indexVar: Int
    * @return the outcome i.e. Failure or Success.
    */
   @inline final def removeEdgeForValue(edge: Int, value: Int): CPOutcome = {
-    edgesPerValue(value).remove(edge)
-    if (edgesPerValue(value).isEmpty) {
+    if (edgesPerValue(value).size == 1) {
       activeValues.remove(value)
       if (linkedVar.removeValue(mdd.valueForIndex(indexVar, value)) == Failure) {
         return Failure
       }
+      Suspend
     }
+    edgesPerValue(value).remove(edge)
 
     Suspend
   }

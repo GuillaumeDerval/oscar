@@ -42,7 +42,9 @@ case class Cumulative(indices: Array[Int],
                       duration: Array[IntValue],
                       amount: Array[IntValue],
                       profile: Array[CBLSIntVar],
-                      active: Array[CBLSSetVar]) extends Invariant {
+                      active: Array[CBLSSetVar])
+  extends Invariant
+  with IntNotificationTarget{
 
   //horizon is the uppermost indice of the profile, which is supposed to be the same as active
   val horizonPlus1 = profile.length

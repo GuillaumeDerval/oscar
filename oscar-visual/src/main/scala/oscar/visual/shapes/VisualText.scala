@@ -30,29 +30,31 @@ class VisualText(d: VisualDrawing, private var x: Double, private var y: Double,
   protected val shape = s
   
   def this(d: VisualDrawing, x: Int, y: Int, t: String, centered: Boolean = false) {
-    this(d, x,y,t,centered,new Rectangle2D.Double(x, y, 1, 1))
+    this(d, x, y, t, centered, new Rectangle2D.Double(x, y, 1, 1))
   }
+
+  var lines = text.trim.split("\n")
+  def nLines = lines.length
+
+  val fm = d.getFontMetrics(d.getFont)
+  shape.setRect(x, y, lines.map(lineStr => fm.stringWidth(lineStr)).max, nLines * fm.getHeight)
   
-  val fm = d.getFontMetrics(d.getFont())
-  shape.setRect(x,y, fm.stringWidth(text),fm.getHeight())
-  
-  var font = new Font(Font.SANS_SERIF, Font.PLAIN, 13);
+  var font = new Font(Font.SANS_SERIF, Font.PLAIN, 13)
   var fontColor = Color.BLACK
   
   def setFont(font: Font) = {
     this.font = font
   }
-  
-  
+
   /**
    * Move the specified left corner
-   * @param x
-   * @param y
+   * @param x the relative number of pixels to move along the x-axis
+   * @param y the relative number of pixels to move along the y-axis
    */
   def move(x: Double, y: Double) {
     this.x = x
     this.y = y
-    shape.setRect(x,y,shape.getWidth(),shape.getHeight())
+    shape.setRect(x, y, shape.getWidth, shape.getHeight)
     drawing.repaint()
   }
   
@@ -60,22 +62,29 @@ class VisualText(d: VisualDrawing, private var x: Double, private var y: Double,
   
   def text_=(t: String) {
     this.t = t
+    lines = t.trim.split("\n")
+    shape.setRect(x, y, lines.map(lineStr => fm.stringWidth(lineStr)).max, nLines * fm.getHeight)
     d.repaint()
   }
 
   override def draw(g: Graphics2D) {
-    if (centered)
-      drawCenteredString(text, x.toInt, y.toInt, g)
-    else
-      g.drawString(text, x.toInt, y.toInt)
-    
-    shape.setRect(x,y, fm.stringWidth(text), fm.getHeight())
+    if (centered) {
+      for (i <- 0 until nLines) {
+        drawCenteredString(lines(i), x.toInt, y.toInt + i * fm.getHeight, g)
+      }
+    }
+    else {
+      for (i <- 0 until nLines) {
+        g.drawString(lines(i), x.toInt, y.toInt + i * fm.getHeight)
+      }
+    }
+    shape.setRect(x, y, fm.stringWidth(text), fm.getHeight)
   }
 
   def drawCenteredString(text: String, x: Int, y: Int, g: Graphics2D) {
     g.setFont(font)
     g.setColor(fontColor)
-    val fm = g.getFontMetrics()
+    val fm = g.getFontMetrics
     val w = fm.stringWidth(text)
     g.drawString(text, x - (w / 2), y)
   }
@@ -84,18 +93,18 @@ class VisualText(d: VisualDrawing, private var x: Double, private var y: Double,
 
 object VisualText extends App {
 
-    /*val  f = new VisualFrame("toto");
-    val d = new VisualDrawing(false);
-    val inf = f.createFrame("Drawing");
-    inf.add(d);
-    f.pack();
+    val f = new VisualFrame("toto")
+    val d = VisualDrawing(flipped=false)
+    val inf = f.createFrame("Drawing")
+    inf.add(d)
+    f.pack()
 
-    val arrow = new VisualArrow(d, 50, 50, 100, 50, 5);
-    val text = new VisualText(d, 50, 50, "hello");
+    val arrow = VisualArrow(d, 50, 50, 100, 50, 5)
+    val text = new VisualText(d, 50, 50, "hello\nworld")
 
-    Thread.sleep(1000);
+    Thread.sleep(1000)
 
-    arrow.dest = ((100.0, 100.0));
-    text.move(100, 100);*/
+    arrow.dest = (100.0, 100.0)
+    text.move(100, 100)
 
 }

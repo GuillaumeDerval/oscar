@@ -1,3 +1,18 @@
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
 package oscar.cp.constraints
 
 import oscar.cp.core.variables.CPIntVar
@@ -9,8 +24,8 @@ abstract class CPObjectiveGeometric(objVar: CPIntVar, name: String, ratio: Doubl
 extends CPObjectiveUnit(objVar, name) {
   require(0 < ratio && ratio < 1)
   
-  override protected val lb = math.floor(objVar.min * (1 / (1 + ratio))) toInt
-  override protected val ub = math.ceil( objVar.max * (1 / (1 - ratio))) toInt
+  override protected val lb = math.floor(objVar.min * (1 / (1 + ratio))).toInt
+  override protected val ub = math.ceil( objVar.max * (1 / (1 - ratio))).toInt
 }
 
 
@@ -25,10 +40,10 @@ extends CPObjectiveGeometric(objVar, name, ratio) {
   def isMin: Boolean = true 
   
   def updateWorstBound(newBound: Int, delta: Int = 0): CPOutcome = 
-    objVar.updateMax(newBound - math.ceil(ratio * newBound * delta) toInt) 
+    objVar.updateMax(newBound - math.ceil(ratio * newBound * delta).toInt) 
   
   def updateBestBound(newBound: Int, delta: Int = 0): CPOutcome = 
-    objVar.updateMin(newBound + math.ceil(ratio * newBound * delta) toInt) 
+    objVar.updateMin(newBound + math.ceil(ratio * newBound * delta).toInt) 
     
   def worstBound: Int = ub
   def bestBound: Int = lb
@@ -48,10 +63,10 @@ extends CPObjectiveGeometric(objVar, name, ratio) {
   def isMax: Boolean = true
   def isMin: Boolean = false
   def updateWorstBound(newBound: Int, delta: Int = 0): CPOutcome = 
-    objVar.updateMin(newBound + math.ceil(ratio * newBound * delta) toInt) 
+    objVar.updateMin(newBound + math.ceil(ratio * newBound * delta).toInt) 
   
   def updateBestBound(newBound: Int, delta: Int = 0): CPOutcome = 
-    objVar.updateMax(newBound - math.ceil(ratio * newBound * delta) toInt)
+    objVar.updateMax(newBound - math.ceil(ratio * newBound * delta).toInt)
     
   def worstBound: Int = lb
   def bestBound: Int = ub

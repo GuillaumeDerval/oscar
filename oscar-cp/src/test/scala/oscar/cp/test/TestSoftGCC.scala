@@ -16,7 +16,7 @@ package oscar.cp.test
 
 import oscar.cp._
 import oscar.cp.testUtils._
-import oscar.cp.constraints.{SoftGCCFWC, SoftGCC}
+import oscar.cp.constraints.{SoftGCCFWC, SoftGCCAC}
 
 import scala.util.Random
 
@@ -38,7 +38,7 @@ class TestSoftGCC extends TestSuite {
 
     try {
       if (mode == AC) {
-        cp.add(new SoftGCC(X, values.min, lower, upper, viol))
+        cp.add(new SoftGCCAC(X, values.min, lower, upper, viol))
       } else {
         cp.add(new SoftGCCFWC(X, values.min, lower, upper, viol))
       }

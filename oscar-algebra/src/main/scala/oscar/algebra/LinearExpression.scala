@@ -24,17 +24,19 @@ abstract class LinearExpression extends Expression {
   val cte: Double
   val coef: scala.collection.immutable.Map[Var, Double]
 
+  def uses[V <: Var](v: V) = coef.contains(v)
+
   def +(expr: LinearExpression): LinearExpression = new LinearExpressionSum(expr, this)
 
   def -(expr: LinearExpression): LinearExpression = new LinearExpressionDiff(this, expr)
 
   def unary_- : LinearExpression = new LinearExpressionDiff(0, this)
 
-  def <=(linExpr: LinearExpression) = new LinearConstraint(this - linExpr, ConstraintType.LQ)
+  def <:=(linExpr: LinearExpression) = new LinearConstraintExpression(this - linExpr, LQ)
 
-  def >=(linExpr: LinearExpression) = new LinearConstraint(this - linExpr, ConstraintType.GQ)
+  def >:=(linExpr: LinearExpression) = new LinearConstraintExpression(this - linExpr, GQ)
 
-  def ==(linExpr: LinearExpression) = new LinearConstraint(this - linExpr, ConstraintType.EQ)
+  def =:=(linExpr: LinearExpression) = new LinearConstraintExpression(this - linExpr, EQ)
 
   /**
    * Test if two linear expressions are logically equivalent

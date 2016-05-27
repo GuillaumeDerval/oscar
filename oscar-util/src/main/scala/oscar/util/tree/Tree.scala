@@ -24,10 +24,10 @@ import java.awt.Color
 class Tree(var record: Boolean = true) {
   var branches: List[(Int,Int,String,String,() => Unit)] = Nil
   
-  var succ: List[Int] = Nil
+  private[this] var succ: List[Int] = Nil
   
   def addBranch(parentId: Int, id: Int, nodeName: String="", branchName: String="") {
-	createBranch(parentId,id,nodeName,branchName){}
+	  createBranch(parentId,id,nodeName,branchName){}
   }
   
   def createBranch(parentId: Int, id: Int, nodeName: String="", branchName: String="")(action: => Unit) {
@@ -67,8 +67,39 @@ class Tree(var record: Boolean = true) {
       Node(n.toString,childs.map(c => toNode(c._2)),childs.map(_._4),if(succ.contains(n)) Color.green else Color.white,action(n))
     }
   }
+
+  def toTikz(root: Int = 0): String = {
+    // grammar:
+    // tree::= \node [circle,draw] (z){$z$}  [subtree]* ;
+    // subtree::= child {node  [circle,draw] (id) {$label}   [subtree]* }
+
+
+    val childsAndPos = children(root).reverse.zipWithIndex
+    val style = "style={font=\\sffamily\\huge}"
+    var res = s"\\node [circle,draw,$style]  ($root){$root} ${ childsAndPos.map{case(child,pos) => toTikz(child._2,child._4,pos)}.mkString(" ")} ;"
+
+    println("sucessnodes:"+succ.mkString((",")))
+    return res;
+  }
+
+  def toTikz(i: Int,label: String,position: Int): String = {
+    val style = "style={font=\\sffamily\\huge}"
+    val lab = "$"+label+"$"
+    val align = if (position > 0) "right" else "left"
+    if (children(i).isEmpty) {
+      val color = if (succ.contains(i)) "green" else "red"
+      s"child {node  [circle,draw,$style,$color] ($i) {$i} edge from parent node[$align,draw=none] {$lab}  }"
+    }
+    else {
+      val childsAndPos = children(i).reverse.zipWithIndex
+      s"child {node  [circle,draw,$style] ($i) {$i}  ${ childsAndPos.map{case(child,pos) => toTikz(child._2,child._4,pos)}.mkString(" ")}  edge from parent node[$align,draw=none] {$lab}  }"
+    }
+  }
+
+
+
   
-  
+  /*
   def toXml() = {
     <tree version="1.0">
 		  <root id="0"/>
@@ -83,10 +114,11 @@ class Tree(var record: Boolean = true) {
 	  	  }
     </tree>
   }
+
   
   def save(file: String) {
     scala.xml.XML.save(file,toXml())
-  }
+  }*/
   
   
 }

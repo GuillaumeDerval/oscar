@@ -19,12 +19,13 @@ import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
 import oscar.algo.search._
 import oscar.algo.reversible._
+import oscar.algo.testUtils.TestSuite
 
 
-class SearchTest extends FunSuite with ShouldMatchers  {
+class SearchTest extends TestSuite {
 
   test("test search0") {
-    val node = new SearchNode()
+    val node = new DFSearchNode()
 
     val i = new ReversibleInt(node, 0)
     node.search {
@@ -36,63 +37,59 @@ class SearchTest extends FunSuite with ShouldMatchers  {
     for (d <- 0 to 3) {
       node.start()
     }
-    stat.nSols should be(4)
+    assert(stat.nSols == 4)
     
   }
   
   test("test search1") {
-    val node = new SearchNode()
+    val node = new DFSearchNode()
 
-
-    //def search
-    val b = new Branching() {
-      val i = new ReversibleInt(node, 0)
-
-      override def alternatives = {
-        if (i.value > 2) noAlternative
-        else {
-          branch {i.incr() } { i.incr() }
-        }
+    val i = new ReversibleInt(node, 0)
+    node.search {
+      if (i.value > 2) noAlternative
+      else {
+        branch {i.incr() } { i.incr() }
       }
     }
+
     
     var nbSol = 0
-    val search = new Search(node, b)
-    search.onSolution {
+
+    node.onSolution {
       nbSol +=1 
     }
     
     nbSol = 0
-    search.solveAll().nSols should be(8)
-    nbSol should be(8)
+    assert(node.start().nSols == 8)
+    assert(nbSol == 8)
     
     nbSol = 0
-    search.solveAll(nSols = 2).nSols should be(2)
-    nbSol should be(2)
+    assert(node.start(nSols = 2).nSols == 2)
+    assert(nbSol == 2)
     
     nbSol = 0
-    search.solveAll(failureLimit = 5).nSols should be(5)
-    nbSol should be(5)
+    assert(node.start(failureLimit = 5).nSols == 5)
+    assert(nbSol == 5)
     
     nbSol = 0
-    search.solveAll(maxDiscrepancy = 0).nSols should be(1)
-    nbSol should be(1)
+    assert(node.start(maxDiscrepancy = 0).nSols == 1)
+    assert(nbSol == 1)
     
     nbSol = 0
-    search.solveAll(maxDiscrepancy = 1).nSols should be(4)  
-    nbSol should be(4)
+    assert(node.start(maxDiscrepancy = 1).nSols == 4)
+    assert(nbSol == 4)
     
     nbSol = 0
-    search.solveAll(maxDiscrepancy = 2).nSols should be(7)  
-    nbSol should be(7)    
+    assert(node.start(maxDiscrepancy = 2).nSols == 7)
+    assert(nbSol == 7)
 
     nbSol = 0
-    search.solveAll(maxDiscrepancy = 3).nSols should be(8)  
-    nbSol should be(8)     
+    assert(node.start(maxDiscrepancy = 3).nSols == 8)
+    assert(nbSol == 8)
   }
   
   test("test search2") {
-    val node = new SearchNode()
+    val node = new DFSearchNode()
 
     val d = Array(false, false, false)
 
@@ -118,23 +115,26 @@ class SearchTest extends FunSuite with ShouldMatchers  {
       }
     }
     // solutions
+
+    node.search(b)
     
     var nbSol = 0
-    val search = new Search(node, b)
-    search.onSolution {
+
+    node.onSolution {
       nbSol +=1 
     }
+
     nbSol = 0
-    search.solveAll().nSols should be(4)
-    nbSol should be(4)
+    assert(node.start().nSols == 4)
+    assert(nbSol == 4)
     
     nbSol = 0
-    search.solveAll(failureLimit = 1).nSols should be(0)
+    assert(node.start(failureLimit = 1).nSols == 0)
   }
   
   
   test("test search3") {
-    val node = new SearchNode()
+    val node = new DFSearchNode()
 
     def branch(left: => Unit)(right: => Unit) = Seq(() => left, () => right)
 
@@ -150,14 +150,14 @@ class SearchTest extends FunSuite with ShouldMatchers  {
       }
     }
     
-    val search = new Search(node, b)
+    node.search(b)
      
-    search.solveAll(timeLimit = 1).time should be <= 15000L
+    assert(node.start(timeLimit = 1).time <= 15000L)
     
   }
   
   test("test search4") {
-    val node = new SearchNode()
+    val node = new DFSearchNode()
 
 
     //def search
@@ -185,12 +185,12 @@ class SearchTest extends FunSuite with ShouldMatchers  {
     var c = 0
     node.onSolution { c += 1 }
     node.search(b1++b2)
-    node.start().nSols should be(32)
+    assert(node.start().nSols  == 32)
     c should be(32)    
   }
   
   test("test search5") {
-    val node = new SearchNode()
+    val node = new DFSearchNode()
     
     var c = 0
     node.onSolution { c += 1 }
@@ -217,7 +217,7 @@ class SearchTest extends FunSuite with ShouldMatchers  {
   }
   
   test("test search6") {
-    val node = new SearchNode()
+    val node = new DFSearchNode()
 
     val i = new ReversibleInt(node, 0)
     node.search {
@@ -241,7 +241,7 @@ class SearchTest extends FunSuite with ShouldMatchers  {
  
   
   test("test search7") {
-    val node = new SearchNode()
+    val node = new DFSearchNode()
     val i = new ReversibleInt(node, 0)
     node.search {
       if (i > 1) noAlternative
@@ -252,7 +252,7 @@ class SearchTest extends FunSuite with ShouldMatchers  {
   }   
   
   test("test search8") {
-    val node = new SearchNode()
+    val node = new DFSearchNode()
     val i = new ReversibleInt(node, 0)
     node.search {
       if (i > 0) noAlternative
@@ -264,7 +264,7 @@ class SearchTest extends FunSuite with ShouldMatchers  {
   
   
   test("test search9") {
-    val node = new SearchNode()
+    val node = new DFSearchNode()
     val i = new ReversibleInt(node, 0)
     node.search {
       if (i > 0) noAlternative
@@ -275,7 +275,7 @@ class SearchTest extends FunSuite with ShouldMatchers  {
   } 
   
   test("test search10") {
-    val node = new SearchNode()
+    val node = new DFSearchNode()
     val i = new ReversibleInt(node, 0)
     node.search {
       if (i > 2) noAlternative
@@ -287,7 +287,7 @@ class SearchTest extends FunSuite with ShouldMatchers  {
   
   
   test("test search11") {
-    val node = new SearchNode()
+    val node = new DFSearchNode()
     val i = new ReversibleInt(node, 0)
     node.search {
       if (i > 2) noAlternative
@@ -298,7 +298,7 @@ class SearchTest extends FunSuite with ShouldMatchers  {
   }
   
   test("should restore the state of the root node") {
-    val node = new SearchNode()
+    val node = new DFSearchNode()
     
     val a = new ReversibleInt(node, 0)
     val b = new ReversibleInt(node, 0)

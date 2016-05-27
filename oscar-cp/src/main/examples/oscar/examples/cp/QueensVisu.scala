@@ -26,7 +26,7 @@ object QueensVisu extends CPModel with App {
 
   val tree = new Tree()
   // -----------------------------------------------
-  val f = new VisualFrame("ParcelShipment", 1, 2)
+  val f = new VisualFrame("n-Queens", 1, 2)
   val w1 = f.createFrame("Tree")
   val vt = new VisualSearchTree(tree)
   w1.add(vt)
