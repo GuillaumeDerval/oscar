@@ -387,9 +387,6 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   def get_bin_packing_load(load: Array[IntegerVariable], bin: Array[IntegerVariable], w: Array[IntegerVariable], ann: List[Annotation]): CBLSConstraint = {
     MultiKnapsackLoad(bin.map(v => Sum2(getCBLSVar(v),-1)),w.map(getCBLSVar(_)),load.map(getCBLSVar(_)))
   }
-  def get_bin_packing_load_inv(load: Array[IntegerVariable], bin: Array[IntegerVariable], w: Array[IntegerVariable], ann: List[Annotation]): IntValue = {
-
-  }
 
 
 

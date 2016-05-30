@@ -30,7 +30,7 @@ object MultiKnapsackTest  extends SearchEngine with StopWatch {
       val c = ConstraintSystem(m)
 
       val bin_pack = BinPackingLoad(inBinVar.map(Sum2(_,-1)),sizeArray)
-      bin_pack.PostInvariants(binSizeVar)
+      bin_pack.Defines(binSizeVar)
 
       for(v <- inBinVar)
         println(c.violation(v))
@@ -42,14 +42,16 @@ object MultiKnapsackTest  extends SearchEngine with StopWatch {
       m.close()
 
       def printViolation() = {
-        println(c.violation)
-        for(v <- inBinVar)
-          println(v + ": " + c.violation(v))
         for(b <- binSizeVar)
-          println(b + ": " + c.violation(b))
+          println(b)
+        println("---")
       }
       printViolation()
       inBinVar(0).asInstanceOf[CBLSIntVar].setValue(2)
+      printViolation()
+      inBinVar(4).asInstanceOf[CBLSIntVar].setValue(2)
+      printViolation()
+      inBinVar(0).asInstanceOf[CBLSIntVar].setValue(1)
       printViolation()
     }
   }

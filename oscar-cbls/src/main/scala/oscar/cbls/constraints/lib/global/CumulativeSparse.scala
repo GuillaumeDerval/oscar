@@ -1,21 +1,16 @@
 package oscar.cbls.constraints.lib.global
 
-import oscar.cbls.invariants.core.computation.Invariant
+import oscar.cbls.invariants.core.computation._
 import oscar.cbls.constraints.core.Constraint
-import oscar.cbls.invariants.core.computation.IntValue
-import oscar.cbls.invariants.core.computation.CBLSIntVar
-import oscar.cbls.invariants.core.computation.InvariantHelper
-import oscar.cbls.invariants.core.computation.Value
 import oscar.cbls.invariants.core.propagation.Checker
-import oscar.cbls.invariants.core.computation.ChangingIntValue
+
 import scala.collection.mutable.LinkedList
 import scala.collection.mutable.LinkedListLike
 import oscar.cbls.invariants.core.algo.dll.DoublyLinkedList
-import oscar.cbls.invariants.core.computation.Store
 import oscar.cbls.invariants.lib.minmax.MaxArray
 import oscar.cbls.invariants.lib.numeric.MinusOffsetPos
 
-case class CumulativeSparse(start: Array[IntValue], duration: Array[IntValue], amount:Array[IntValue], limit:IntValue) extends Invariant with Constraint{
+case class CumulativeSparse(start: Array[IntValue], duration: Array[IntValue], amount:Array[IntValue], limit:IntValue) extends Invariant with Constraint with IntNotificationTarget{
   
   
   
@@ -149,7 +144,7 @@ class Profile(n: Int,maxh: Int,model:Store){
         rd = 0
       }
       //merge with previous one
-      if(profile_prev(cur)!= -1 && profile_height(profile_prev(cur)).getValue(true) == profile_height(cur).getValue(true)){
+      if(profile_prev(cur)!= -1 && profile_height(profile_prev(cur)).newValue == profile_height(cur).newValue){
 //        println("HERE")
         val prev = profile_prev(cur)
         profile_length(prev) += profile_length(cur)
@@ -168,7 +163,7 @@ class Profile(n: Int,maxh: Int,model:Store){
       cur = profile_next(cur)
     }
     //merge with previous one
-      if(profile_prev(cur)!= -1 && profile_height(profile_prev(cur)).getValue(true) == profile_height(cur).getValue(true)){
+      if(profile_prev(cur)!= -1 && profile_height(profile_prev(cur)).newValue == profile_height(cur).newValue){
         val prev = profile_prev(cur)
         profile_length(prev) += profile_length(cur)
         profile_next(prev) = profile_next(cur)
@@ -198,7 +193,7 @@ class Profile(n: Int,maxh: Int,model:Store){
     
     
     //var next = profile_next(cur)
-    var next_h = profile_height(cur).getValue(true)
+    var next_h = profile_height(cur).newValue
     val res = if(profile_start(cur) < cs){first_free}else{cur}
     if(profile_start(cur) < cs){
       //new profile necessary
@@ -207,7 +202,7 @@ class Profile(n: Int,maxh: Int,model:Store){
       //1. cut into two parts with same profile
       profile_start(new_prof) = cs
       profile_length(new_prof) = profile_start(cur)+profile_length(cur)-cs
-      profile_height(new_prof) := profile_height(cur).getValue(true)
+      profile_height(new_prof) := profile_height(cur).newValue
       
       profile_length(cur) = profile_start(new_prof) - profile_start(cur)
       
@@ -227,7 +222,7 @@ class Profile(n: Int,maxh: Int,model:Store){
         println(profile_start(0)  + "\t"+ cur + "\t"+ cs + "\t"+ rd  + "\t"+ profile_start(cur) + "\t"+ d  + "\t"+ s  + "\t"+ h)
         print_profile()
       }
-      next_h = profile_height(cur).getValue(true)
+      next_h = profile_height(cur).newValue
       
       
       profile_height(cur) :+= h
