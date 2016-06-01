@@ -26,7 +26,7 @@ object Queens extends CPModel with App {
   // Search heuristic
   search(binaryFirstFail(queens))
 
-  
+
   // Execution
   val stats = start()
   println(stats)
