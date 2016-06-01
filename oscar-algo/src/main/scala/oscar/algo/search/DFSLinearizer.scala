@@ -13,46 +13,31 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-package oscar.cp.lineardfs.examples
+package oscar.algo.search
 
-import oscar.cp._
-import oscar.cp.constraints.{AllDiffAC, AllDiffFWC}
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * @author Sascha Van Cauwelart
   */
-object Queens extends CPModel with App {
+class DFSLinearizer extends DFSearchListener {
 
-  val nQueens = 10
-  // Number of queens
-  val Queens = 0 until nQueens
+  private[this] val decisions_ : ArrayBuffer[Decision] = ArrayBuffer[Decision]()
 
-  // Variables
-  val queens = Array.fill(nQueens)(CPIntVar.sparse(0, nQueens - 1))
+  def decisions: Array[Decision] = decisions_ toArray
 
-  // Search heuristic
-  search(binaryFirstFail(queens))
-
-  //set up listener
-  listen()
-
-  // Execution
-  val stats = startSubjectTo() {
-    // Constraints
-    add(new AllDiffFWC(queens))
-    add(new AllDiffFWC(Queens.map(i => queens(i) + i)))
-    add(new AllDiffFWC(Queens.map(i => queens(i) - i)))
+  // called on Push events
+  def onPush(node: DFSearchNode): Unit = {
+    decisions_ += new Push(node)
   }
 
-  //extend the model with additional constraints
-  add(new AllDiffAC(queens))
-  add(new AllDiffAC(Queens.map(i => queens(i) + i)))
-  add(new AllDiffAC(Queens.map(i => queens(i) - i)))
+  // called on Pop events
+  def onPop(node: DFSearchNode): Unit = {
+    decisions_ += new Pop(node)
+  }
 
-  //replay
-  val stat2 = replay(queens)
-
-  println(stats)
-  println(stat2)
-
+  // called on branching
+  def onBranch(alternative: Alternative): Unit = {
+    decisions_ += new AlternativeDecision(alternative)
+  }
 }

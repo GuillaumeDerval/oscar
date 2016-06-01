@@ -19,8 +19,6 @@ import oscar.algo.search._
 import oscar.cp._
 import oscar.cp.core._
 import oscar.cp.constraints._
-import oscar.cp.lineardfs.{DFSLinearizer, DFSReplayer, ReplayStatistics}
-import oscar.cp.lineardfs.examples.Queens._
 
 import scala.collection.mutable.Stack
 import oscar.algo.reversible._
@@ -32,36 +30,35 @@ import oscar.cp.core.CPOutcome._
 import java.util.LinkedList
 import java.util.Collection
 
+import oscar.algo.search.DFSLinearizer
+import oscar.cp.searches.DFSReplayer
+
 class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStrength) {
 
 
   def this() = this(CPPropagStrength.Weak)
 
-  override def startSubjectTo(stopCondition: DFSearch => Boolean, maxDiscrepancy: Int)(block: => Unit): SearchStatistics = {
+  override def startSubjectTo(stopCondition: DFSearch => Boolean, maxDiscrepancy: Int, listener: DFSearchListener)(block: => Unit): SearchStatistics = {
     deactivateNoSolExceptions()
-    val stat = super.startSubjectTo(stopCondition,maxDiscrepancy)(block)
+    val stat = super.startSubjectTo(stopCondition,maxDiscrepancy,listener)(block)
     cleanQueues()
     stat
   }
 
-  final def listen(): Unit = {
-    val dFSListener = new DFSLinearizer
-    searchEngine.searchListener(dFSListener)
+  //the solution variables are the variables that must be assigned to have a solution
+  final def replay(dfsLinearizer: DFSLinearizer, solutionVariables: Seq[CPIntVar]): SearchStatistics = {
+    replaySubjectTo(dfsLinearizer,solutionVariables){}
   }
 
-  //the solution variables are the variables that must be assigned to have a solution
-  final def replay(solutionVariables: Seq[CPIntVar]): ReplayStatistics = {
-    if (searchEngine.searchListener != null) {
-      searchEngine.searchListener match {
-        case listener: DFSLinearizer => {
-          val replayer = new DFSReplayer(solver, solutionVariables)
-          replayer.replay(listener.searchStateModifications)
-        }
-        case _ => throw new RuntimeException("To replay, the listener must be a linearizer.")
-      }
-    }
-    else throw new RuntimeException("To replay, the listener cannot be null.")
+  final def replaySubjectTo(dfsLinearizer: DFSLinearizer, solutionVariables: Seq[CPIntVar])(block: => Unit): SearchStatistics = {
+    pushState() // Store the current state
+    block
+    val stats = new DFSReplayer(this, solutionVariables).replay(dfsLinearizer.decisions)
+    pop()
+    stats
   }
+
+
 
   @inline private def buildStopCondition(nSols: Int, failureLimit: Int, timeLimit: Int): Function1[DFSearch, Boolean] = {
     // Build the stop condition

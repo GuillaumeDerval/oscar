@@ -10,10 +10,11 @@ import oscar.cp._
 
 /**
  * Created on 21/01/15.
+ *
  * @author Cyrille Dejemeppe (cyrille.dejemeppe@gmail.com)
  * @author Sascha Van Cauwelaert (sascha.vancauwelaert@gmail.com)
  */
-class UnaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar]) extends Constraint(starts(0).store) {
+class UnaryResourceVilim(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar]) extends Constraint(starts(0).store) {
   idempotent = true
 
   private[this] val nTasks = starts.length
@@ -320,7 +321,7 @@ class UnaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: A
   }
 }
 
-object UnaryResource {
+object UnaryResourceVilim {
   def apply(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar]) =
-    new UnaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar])
+    new UnaryResourceVilim(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar])
 }

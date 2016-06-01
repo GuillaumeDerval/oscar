@@ -1,6 +1,4 @@
-package oscar.algo.search.listener
-
-import oscar.algo.search._
+package oscar.algo.search
 
 /**
   * Created by saschavancauwelaert on 23/02/16.

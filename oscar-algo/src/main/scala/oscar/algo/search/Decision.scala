@@ -13,34 +13,28 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-package oscar.cp.lineardfs
+package oscar.algo.search
 
-import oscar.algo.search._
-import oscar.algo.search.listener.DFSearchListener
-
-import scala.collection.mutable.ArrayBuffer
+import oscar.algo.reversible.ReversibleContext
 
 /**
-  * @author Sascha Van Cauwelart
+  * @author Sascha Van Cauwelaert
+  * @author Pierre Schaus
   */
-class DFSLinearizer extends DFSearchListener {
+trait Decision extends Alternative {}
 
-  private[this] val searchStateModificationList_ : ArrayBuffer[Decision] = ArrayBuffer[Decision]()
+trait TrailDecision extends Decision {}
 
-  def searchStateModifications: Array[Decision] = searchStateModificationList_ toArray
+final class Push(val context: ReversibleContext) extends TrailDecision {
+  override def apply(): Unit = context.pushState()
+  override def toString: String = s"Push"
+}
 
-  // called on Push events
-  def onPush(node: DFSearchNode): Unit = {
-    searchStateModificationList_ += new Push(node)
-  }
+final class Pop(val context: ReversibleContext) extends TrailDecision {
+  override def apply(): Unit = context.pop()
+  override def toString: String = s"Pop"
+}
 
-  // called on Pop events
-  def onPop(node: DFSearchNode): Unit = {
-    searchStateModificationList_ += new Pop(node)
-  }
-
-  // called on branching
-  def onBranch(alternative: Alternative): Unit = {
-    searchStateModificationList_ += new AlternativeDecision(alternative)
-  }
+class AlternativeDecision(alternative: Alternative) extends Decision {
+  def apply() = alternative.apply()
 }

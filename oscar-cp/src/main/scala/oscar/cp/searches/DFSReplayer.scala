@@ -1,27 +1,47 @@
-package oscar.cp.lineardfs
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
+package oscar.cp.searches
 
 import java.lang.management.ManagementFactory
+
+import oscar.algo.search._
 import oscar.cp.core.CPSolver
 import oscar.cp.core.variables.CPIntVar
 
 /**
   * @author Sascha Van Cauwelart
+  * @author Pierre Schaus
   */
 class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar]) {
 
   private val timeThreadBean = ManagementFactory.getThreadMXBean()
 
-  def replay(searchStateModifications: Array[Decision]): ReplayStatistics = {
-    val nModifications = searchStateModifications.length
+  def replay(decisions: Array[Decision]): SearchStatistics = {
+    node.resetStats()
+    node.resetStatistics()
+    val nModifications = decisions.length
     var i = 0
 
     def panic(panicInvariant: () => Boolean) = {
       val beforePanicTime = timeThreadBean.getCurrentThreadUserTime
-      while (panicInvariant() && i < searchStateModifications.size - 1) {
+      while (panicInvariant() && i < decisions.size - 1) {
         i += 1
-        searchStateModifications(i) match {
-          case _: ControlDecision => {
-            searchStateModifications(i)()
+        decisions(i) match {
+          case _: TrailDecision => {
+            decisions(i)()
           }
           case _ =>
         }
@@ -39,17 +59,17 @@ class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar]) {
     val beforeSolvingTime = timeThreadBean.getCurrentThreadUserTime
 
     while (i < nModifications) {
-      searchStateModifications(i) match {
+      decisions(i) match {
         case _: AlternativeDecision => nNodes += 1
-        case _: ControlDecision =>
+        case _: TrailDecision =>
       }
 
-      searchStateModifications(i)() //apply the search state modification
+      decisions(i)() //apply the search state modification
 
       if (node.isFailed) {
         nBacktracks += 1
         if (i < nModifications - 1) {
-          searchStateModifications(i + 1) match {
+          decisions(i + 1) match {
             case _: Pop =>
             case _: Push | _: AlternativeDecision => totalPanicTime += panicFail() //additional failure compared to baseline model so we enter panic mode
           }
@@ -66,15 +86,9 @@ class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar]) {
     }
 
     val timeInMillis = ((timeThreadBean.getCurrentThreadUserTime - beforeSolvingTime - totalPanicTime) / math.pow(10, 6)).toLong
-    new ReplayStatistics(nNodes, nBacktracks, timeInMillis, nSols)
+
+    new SearchStatistics(nNodes,nBacktracks,timeInMillis,true,node.time,node.maxSize,nSols)
+
   }
 
-}
-
-class ReplayStatistics(
-                        val nNodes: Int,
-                        val nBacktracks: Int,
-                        val time: Long,
-                        val nSols: Int) {
-  override val toString: String = s"nNodes: $nNodes\nnBacktracks: $nBacktracks\ntime(ms): $time\nnSols: $nSols\n"
 }

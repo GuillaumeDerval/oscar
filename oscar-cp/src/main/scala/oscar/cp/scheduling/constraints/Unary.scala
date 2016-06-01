@@ -17,16 +17,14 @@ import oscar.algo.reversible.ReversibleInt
  *  As in "Extension of O(n log n) Filtering...", Vilim et al. Constraints 2005. 
  *  Added NFNL, since it fill the theta tree in the same order.
  */
-
-
-class Unary(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], resources: Array[CPIntVar], id: Int)(implicit store: CPStore)
-extends Constraint(store, "Unary") {
+class Unary(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], resources: Array[CPIntVar], id: Int)
+extends Constraint(starts(0).store, "Unary") {
   val lr = new UnaryLR(starts, durations, ends, resources, id) 
   val rl = new UnaryLR(ends map(-_), durations, starts map(-_), resources, id)
   
   override def setup(strength: CPPropagStrength) = {
     try {
-      if (store.add(Array(lr, rl)) == Failure) Failure
+      if (s.add(Array(lr, rl)) == Failure) Failure
       else Suspend
     }
     catch {
@@ -39,8 +37,8 @@ extends Constraint(store, "Unary") {
 
 
 
-class UnaryLR(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], resources: Array[CPIntVar], id: Int)(implicit store: CPStore)
-extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryLR")(store)
+class UnaryLR(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], resources: Array[CPIntVar], id: Int)
+extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryLR")(starts(0).store)
 {
   private[this] val nTasks = starts.length
 
@@ -62,7 +60,7 @@ extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryLR")(store)
   private[this] val temp2 = Array.ofDim[Int](nTasks + 1)
 
   private[this] val sortedBySMin, sortedByEMax, sortedByEMin, sortedBySMax = Array.tabulate(nTasks){ i => i }
-  private[this] val bySMinMax, bySMaxMax, byEMinMax, byEMaxMax = new ReversibleInt(store, nTasks)
+  private[this] val bySMinMax, bySMaxMax, byEMinMax, byEMaxMax = new ReversibleInt(s, nTasks)
   
   private[this] val toConsiderBySMin, toConsiderByEMax, toConsiderByEMin, toConsiderBySMax = Array.ofDim[Int](nTasks)
   
@@ -274,6 +272,6 @@ extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryLR")(store)
 
 
 object Unary {
-  def apply(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], resources: Array[CPIntVar], id: Int)(implicit store: CPStore) = 
+  def apply(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], resources: Array[CPIntVar], id: Int) =
     new Unary(starts, durations, ends, resources, id) 
 }

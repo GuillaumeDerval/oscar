@@ -16,7 +16,6 @@
 package oscar.algo.search
 
 import oscar.algo.array.ArrayStack
-import oscar.algo.search.listener.DFSearchListener
 
 class SearchStatistics(
                         val nNodes: Int,
@@ -62,7 +61,7 @@ class DFSearch(node: DFSearchNode) {
   def searchListener : DFSearchListener = searchListener_
 
   /** Sets the DFSearch listener */
-  def searchListener(listener : DFSearchListener) : Unit = searchListener_ = listener
+  def searchListener_= (listener : DFSearchListener) : Unit = searchListener_ = listener
 
   /** Returns the number of backtracks in the previous search */
   final def nBacktracks: Int = nbBkts
