@@ -34,15 +34,16 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
 
   val solverName = "gurobi"
 
-  val rawSolver = {
-    val env = _env match {
-      case Some(e) => e
-      case None => new GRBEnv()
-    }
-
-    new GRBModel(env)
+  // originalEnv is the original environment that is passed to the model.
+  //   It is this environment that should be released when releasing the solver.
+  val (rawSolver, originalEnv) = {
+    val env = _env.getOrElse(new GRBEnv())
+    (new GRBModel(env), env)
   }
 
+  // The GRBEnv used by this GRBModel, it should be used to modify the solver parameters
+  // Note that env is a copy of the originalEnv (see http://www.gurobi.com/documentation/6.5/refman/java_grbmodel_getenv.html)
+  // This environment is released when GRBModel is disposed
   val env = rawSolver.getEnv
 
   private def toGRBLinExpr(coefs: Array[Double], varIds: Array[Int]): GRBLinExpr = {
@@ -346,8 +347,8 @@ class Gurobi(_env: Option[GRBEnv] = None) extends MPSolverInterface with MIPSolv
     // If the environment was self-made, release it also.
     // Otherwise, it is the responsibility of the user to release it.
     if(_env.isEmpty) {
-      env.release()
-      env.dispose()
+      originalEnv.release()
+      originalEnv.dispose()
     }
     super.release()
   }
