@@ -26,7 +26,7 @@ object QueensReplay extends  App {
 
   implicit val cp = CPSolver()
 
-  val nQueens = 10
+  val nQueens = 8
   // Number of queens
   val Queens = 0 until nQueens
 
@@ -45,13 +45,15 @@ object QueensReplay extends  App {
   val linearizer = new DFSLinearizer()
 
 
+  cp.onSolution()
+
   // Execution with FC allDifferent
   val statsInit = startSubjectTo(searchListener = linearizer) {
     add(allDiffs,Weak)
   }
 
   // Replay with AC allDifferent
-  val statsReplayAC = cp.replaySubjectTo(linearizer,queens) {
+  val statsReplayAC = cp.replaySubjectTo(linearizer, queens, println(queens.mkString(" "))) {
     add(allDiffs,Strong)
   }
 

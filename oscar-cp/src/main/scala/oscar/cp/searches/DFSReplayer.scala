@@ -25,7 +25,9 @@ import oscar.cp.core.variables.CPIntVar
   * @author Sascha Van Cauwelart
   * @author Pierre Schaus
   */
-class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar]) {
+class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar], onSolutionAction: => Unit = ()) {
+
+  val onSolutionCallBack = () => onSolutionAction
 
   private val timeThreadBean = ManagementFactory.getThreadMXBean()
 
@@ -76,6 +78,7 @@ class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar]) {
         }
       }
       else if (decisionVariables.forall(_.isBound)) {
+        onSolutionCallBack()
         nBacktracks += 1
         nSols += 1
         node.solFound()
