@@ -107,7 +107,7 @@ case class DomainRange(var mi: Int, var ma: Int) extends Domain {
   def min = mi
   def max = ma
   def contains(v:Int): Boolean = mi <= v && ma >= v
-  def size = if(ma==Int.MaxValue && mi==Int.MinValue) Int.MaxValue else ma-mi+1
+  def size = if(ma==Helper.FznMaxInt && mi==Helper.FznMinInt) Helper.FznMaxInt else ma-mi+1
   def geq(v:Int) = { mi = math.max(v,mi); checkEmpty() }
   def leq(v:Int) = { ma = math.min(v,ma); checkEmpty() }
   def toRange = mi to ma

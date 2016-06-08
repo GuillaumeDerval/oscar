@@ -234,8 +234,8 @@ object FZSimplify{
         }
         //added for wwtpp with Mzn 2.0.2
         //TODO: avoid overflows!
-        case int_lin_eq(c,x,v,_) if c.forall(_.value.abs <= 1) && x.filter(_.domainSize==Int.MaxValue).length==1 =>{
-          val (theone,others) = x.zip(c).partition(_._1.domainSize==Int.MaxValue)
+        case int_lin_eq(c,x,v,_) if c.forall(_.value.abs <= 1) && x.filter(_.domainSize==Helper.FznMaxInt).length==1 =>{
+          val (theone,others) = x.zip(c).partition(_._1.domainSize==Helper.FznMaxInt)
           val one = theone(0)
           val summin = others.foldLeft(0)((acc,xc) => acc + xc._2.value*(if(xc._2.value > 0){xc._1.min}else{xc._1.max}))
           val summax = others.foldLeft(0)((acc,xc) => acc + xc._2.value*(if(xc._2.value > 0){xc._1.max}else{xc._1.min}))
@@ -371,8 +371,8 @@ object FZSimplify{
         }
         //added for wwtpp with Mzn 2.0.2
         //TODO: avoid overflows!
-        case int_lin_eq(c,x,v,_) if c.forall(_.value.abs <= 1) && x.filter(_.domainSize==Int.MaxValue).length==1 =>{
-          val (theone,others) = x.zip(c).partition(_._1.domainSize==Int.MaxValue)
+        case int_lin_eq(c,x,v,_) if c.forall(_.value.abs <= 1) && x.filter(_.domainSize==Helper.FznMaxInt).length==1 =>{
+          val (theone,others) = x.zip(c).partition(_._1.domainSize==Helper.FznMaxInt)
           val one = theone(0)
           val summin = others.foldLeft(0)((acc,xc) => acc + xc._2.value*(if(xc._2.value > 0){xc._1.min}else{xc._1.max}))
           val summax = others.foldLeft(0)((acc,xc) => acc + xc._2.value*(if(xc._2.value > 0){xc._1.max}else{xc._1.min}))

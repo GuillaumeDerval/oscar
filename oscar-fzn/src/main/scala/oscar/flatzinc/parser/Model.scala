@@ -32,6 +32,7 @@ import oscar.flatzinc.Log
 import scala.collection.mutable.WrappedArray
 
 
+
 //class VarRef(val v: Variable) extends Element()
 
 class Model(val log: Log, val acceptAnyCstr: Boolean) {
@@ -59,7 +60,7 @@ class Model(val log: Log, val acceptAnyCstr: Boolean) {
   def createDomain(e: Domain,t: Integer): Domain  = {
     if(e==null){
       if(t==Type.BOOL) new DomainRange(0,1)
-      else new DomainRange(Int.MinValue, Int.MaxValue)//TODO: This is dangerous!
+      else new DomainRange(Helper.FznMinInt, Helper.FznMaxInt)//TODO: This is dangerous!
     }else e;      
   }
   def copy(d: Domain): Domain = {
