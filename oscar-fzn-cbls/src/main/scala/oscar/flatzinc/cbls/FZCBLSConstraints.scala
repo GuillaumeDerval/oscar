@@ -388,6 +388,20 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     MultiKnapsackLoad(bin.map(v => Sum2(getCBLSVar(v),-1)),w.map(getCBLSVar(_)),load.map(getCBLSVar(_)))
   }
 
+  def get_table_int(xs: Array[IntegerVariable], ts:Array[IntegerVariable], ann: List[Annotation]): CBLSConstraint = {
+    val foldedTs:Array[Array[Int]] = Array.tabulate(ts.size/xs.size)(row =>
+      Array.tabulate(xs.size)(i => ts(row*xs.size + i).value)
+    )
+    Table(xs.map(getCBLSVar(_)).toList,foldedTs)
+  }
+
+  def get_table_bool(xs: Array[BooleanVariable], ts:Array[BooleanVariable], ann: List[Annotation]): CBLSConstraint = {
+    val foldedTs:Array[Array[Int]] = Array.tabulate(ts.size/xs.size)(row =>
+      Array.tabulate(xs.size)(i => ts(row*xs.size + i).intValue)
+    )
+    Table(xs.map(getCBLSVar(_)).toList,foldedTs)
+  }
+
 
 
   implicit def cstrListToCstr(cstrs: List[CBLSConstraint]): CBLSConstraint = {
@@ -455,8 +469,10 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
       case maximum_int(y,xs,ann)                      => EQ(y,get_maximum_inv(xs,ann))
      // case member_int(xs,y,ann)                       => get_member(xs,y) use the decomposition
       case minimum_int(y,xs,ann)                      => EQ(y,get_minimum_inv(xs,ann))
-      case nvalue_int(y,xs,ann)                      => EQ(y,get_nvalue_inv(xs,ann))
+      case nvalue_int(y,xs,ann)                       => EQ(y,get_nvalue_inv(xs,ann))
       case bin_packing_load(load,bin,w,ann)           => get_bin_packing_load(load,bin,w,ann)
+      case table_int(xs,ts, ann)                      => get_table_int(xs,ts,ann)
+      case table_bool(xs,ts, ann)                     => get_table_bool(xs,ts,ann)
       case notimplemented                             => throw new NoSuchConstraintException(notimplemented.toString(),"CBLS Solver");
     }
   }

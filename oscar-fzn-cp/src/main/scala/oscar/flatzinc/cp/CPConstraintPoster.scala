@@ -98,7 +98,8 @@ class CPConstraintPoster(val pstrength: oscar.cp.core.CPPropagStrength){
       case int_times(x, y, z, ann)                    => oscar.cp.mul(getVar(x), getVar(y)) ==getVar(z)
       case set_in(x, s, ann)                          => new oscar.cp.constraints.InSet(getVar(x),s.toSortedSet)
       case reif(set_in(x, s, ann),b)                  => new oscar.cp.constraints.InSetReif(getVar(x),s.toSortedSet,getBoolVar(b))
-      case default => Console.err.println("% No CP constsraint found for +" + default + ". The created CP model is thus a relaxed version without this constraint." )
+      case table_int(xs,ts,ann)                       => oscar.cp.table(xs.map(getVar(_)), Array.tabulate(ts.size/xs.size)(row => Array.tabulate(xs.size)(i => ts(row*xs.size + i).value)))
+      case default => Console.err.println("% No CP constsraint found for " + default + ". The created CP model is thus a relaxed version without this constraint." )
         Array.empty
     } 
   }

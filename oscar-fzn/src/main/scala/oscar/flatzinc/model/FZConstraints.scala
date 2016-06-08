@@ -266,8 +266,14 @@ case class bin_packing_capa(c:Array[IntegerVariable],bin:Array[IntegerVariable],
 case class bin_packing(c:IntegerVariable,bin:Array[IntegerVariable],w:Array[IntegerVariable], ann: List[Annotation] = List.empty[Annotation]) 
   extends Constraint(bin++Array.empty[Variable],ann)
 //TODO: defines the loads
-case class bin_packing_load(load:Array[IntegerVariable],bin:Array[IntegerVariable],w:Array[IntegerVariable], ann: List[Annotation] = List.empty[Annotation]) 
+case class bin_packing_load(load:Array[IntegerVariable],bin:Array[IntegerVariable],w:Array[IntegerVariable], ann: List[Annotation] = List.empty[Annotation])
   extends Constraint(load++bin,ann)
+
+case class table_int(xs:Array[IntegerVariable],ts:Array[IntegerVariable], ann: List[Annotation] = List.empty[Annotation])
+  extends Constraint(xs++Array.empty[Variable],ann)
+
+case class table_bool(xs:Array[BooleanVariable],ts:Array[BooleanVariable], ann: List[Annotation] = List.empty[Annotation])
+  extends Constraint(xs++Array.empty[Variable],ann)
 
 case class cumulative(s:Array[IntegerVariable], d:Array[IntegerVariable],r:Array[IntegerVariable],b:IntegerVariable,ann: List[Annotation] = List.empty[Annotation]) 
   extends Constraint(s++d++r++Array(b),ann)

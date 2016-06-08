@@ -12,7 +12,7 @@ import oscar.cbls.invariants.lib.set.TakeAny
 /**
   * Created by gustavbjordal on 08/06/16.
   */
-case class Table(variables: List[ChangingIntValue], table:Array[Array[Int]]) extends Invariant with Constraint with IntNotificationTarget{
+case class Table(variables: List[IntValue], table:Array[Array[Int]]) extends Invariant with Constraint with IntNotificationTarget{
 
   registerStaticAndDynamicDependencyAllNoID(variables)
   registerConstrainedVariables(variables)
@@ -60,9 +60,7 @@ case class Table(variables: List[ChangingIntValue], table:Array[Array[Int]]) ext
   override def checkInternals(c: Checker) {
 
   }
-
+ @inline
   override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
-    for(r <- violationTable)
-      println(r.mkString(", "))
   }
 }
