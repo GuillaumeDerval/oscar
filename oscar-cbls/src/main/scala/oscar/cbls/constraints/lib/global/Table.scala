@@ -1,3 +1,22 @@
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+/**
+  * @author Gustav Björdal
+  *
+  **/
+
 package oscar.cbls.constraints.lib.global
 
 import oscar.cbls.constraints.core.Constraint
@@ -10,8 +29,15 @@ import oscar.cbls.invariants.lib.numeric._
 import oscar.cbls.invariants.lib.set.TakeAny
 
 /**
-  * Created by gustavbjordal on 08/06/16.
+  * Implementation of the table constraint. For each row, the violation of the row is the
+  * number of elements that are different from the corresponding variable in variables.
+  * The violation of the constraint is the minimum violation of any row.
+  * 
+  * @param variables the variables.
+  * @param table an array of the rows of the table.
+  * @author gustav.bjordal@it.uu.se
   */
+
 case class Table(variables: List[IntValue], table:Array[Array[Int]]) extends Invariant with Constraint with IntNotificationTarget{
 
   registerStaticAndDynamicDependencyAllNoID(variables)
