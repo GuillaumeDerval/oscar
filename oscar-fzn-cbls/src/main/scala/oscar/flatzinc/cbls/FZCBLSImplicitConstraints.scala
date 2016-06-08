@@ -23,15 +23,16 @@ import oscar.flatzinc.model._
 import scala.collection.mutable.ArrayOps
 
 
-    
+
 class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
   var uid = 0;
-  
+
   def findAndPostImplicit(constraints: List[Constraint]) = {
       //TODO: DO not like the filtering here.
     //TODO: Added a second criterion of sort to get the circuit before the all_different. Stupid, hey?
       constraints.sortBy(c => (- c.variables.length,Helper.getCName(c).length())).partition((constraint: Constraint) =>
         constraint match {
+          case inverse(xs,invXs,ann) => tryInverse(xs, invXs)
           case all_different_int(xs, ann) => tryAllDiff(xs)
           case circuit(xs, ann) => tryCircuit(xs)
           case subcircuit(xs, ann) => trySubCircuit(xs)
@@ -44,15 +45,24 @@ class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
           case bool_lin_eq(coeffs,vars,sum,ann) => trySum(vars,coeffs,sum)
           case _ => false;
         })
-  
-  }
-  
 
-    
-  def tryAllDiff(xs: Array[IntegerVariable]):Boolean = {
+  }
+
+
+
+    def tryAllDiff(xs: Array[IntegerVariable]):Boolean = {
       if(allOK(xs)){
         val vars = xs.map(cblsmodel.getCBLSVarDom(_))
         cblsmodel.addNeighbourhood((o,c) => new AllDifferent(vars, o,c),vars)
+        true
+      }else false
+    }
+    def tryInverse(xs: Array[IntegerVariable],invXs: Array[IntegerVariable]):Boolean = {
+      val intersection = xs.intersect(invXs)
+      if(allOK(xs,true) && allOK(invXs,true) && intersection.length == 0){
+        val xsVars = xs.map(cblsmodel.getCBLSVarDom(_))
+        val invVars = invXs.map(cblsmodel.getCBLSVarDom(_))
+        cblsmodel.addNeighbourhood((o,c) => new Inverse(xsVars, invVars, o,c,-1),xsVars++invVars)
         true
       }else false
     }
@@ -105,7 +115,7 @@ class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
         false
       }
     }
-    
+
     def tryGCC(xs: Array[IntegerVariable],vals: Array[IntegerVariable], cnts: Array[IntegerVariable],closed: Boolean):Boolean ={
       if (allOK(xs) && cnts.forall(c => c.isBound)){//Only for fixed count variables for now
         val vars = xs.map(cblsmodel.getCBLSVarDom(_))
@@ -142,7 +152,7 @@ class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
         false
       }
     }
-  
+
   //TODO: I only added the bound acceptance criterion for subcircuit to avoid disrupting other neighbourhoods.
   def allOK(xs: Array[IntegerVariable],acceptBound: Boolean = false):Boolean = {
     xs.forall(x => ! x.isDefined && (cblsmodel.vars.contains(cblsmodel.getCBLSVar(x)) || (acceptBound && x.isBound)))

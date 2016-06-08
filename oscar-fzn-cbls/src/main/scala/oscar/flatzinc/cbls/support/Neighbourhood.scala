@@ -50,6 +50,11 @@ case class SwapMove(x: CBLSIntVar,y:CBLSIntVar,override val value:Int) extends M
   def getModified=Set(x,y)
   override def toString() = x + " swapped with " +y
 }
+case class ChainMoves(ms:Array[Move],override val value:Int) extends Move(value){
+  def commit(){ms.foreach(_.commit())}
+  def getModified=ms.foldLeft(Set.empty[CBLSIntVar])((acc,m) => acc ++ m.getModified)
+  override def toString() = "Chain of: " + ms.mkString(" and ") + "."
+}
 case class NoMove(override val value:Int = Int.MaxValue) extends Move(value){
   def commit(){}
   def getModified = Set.empty[CBLSIntVar]
@@ -615,6 +620,91 @@ class AllDifferent(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
     val bestMove = selectMin2(rng1,freeValues,(idx:Int,v:Int) => getAssignMove(idx,v,accept).value,(idx:Int,v:Int) => variables(idx).dom.contains(v))
     val move = bestMove match {case (i1,i2) => getAssignMove(i1,i2,accept) case _ => new NoMove(Int.MaxValue)}
     if(swap.value < move.value) swap else move
+  }
+  def violation() = { variableViolation.foldLeft(0)((acc, x) => acc + x.value) };
+}
+
+class Inverse(xs: Array[CBLSIntVarDom], invXs:Array[CBLSIntVarDom], objective: CBLSObjective, constraintSystem: ConstraintSystem, offset:Int = 0) extends Neighbourhood(xs ++ invXs) {
+  /**/
+
+  val xsViolation: Array[IntValue] = xs.map(constraintSystem.violation(_))
+  val invXsViolation: Array[IntValue] = invXs.map(constraintSystem.violation(_))
+  val variableViolation: Array[IntValue] = xsViolation ++ invXsViolation
+
+  reset();
+
+  def reset() = {
+    //Aweful bruteforce method:
+    var tmpXs = Array.tabulate(xs.length)( i => 0)
+    def recursiveFind(possibleValue:List[Int], index:Int):Boolean = {
+      if(index == xs.length) return true
+      println("Trying index: " + index)
+      for (v <- possibleValue if xs(index).dom.contains(v) &&  invXs(v+offset).dom.contains(index-offset)){
+        println("Trying value: " + v + " for index " + index)
+        tmpXs(index) = v
+        if(recursiveFind(possibleValue.filterNot(_ == v), index+1)) {
+          println("success")
+          return true
+        }
+      }
+      return false
+    }
+    val possibleValues = (-offset to xs.length-offset).toList
+    RandomGenerator.shuffle(possibleValues)
+    if(!recursiveFind(possibleValues,0)){
+      throw new Exception("Unable to initialize inverse neighbourhood")
+    }
+
+    for(i <- xs.indices) {
+      xs(i) := tmpXs(i)
+      println(xs(i).newValue + " - " + xs(i).value + " - " + tmpXs(i))
+      invXs(tmpXs(i) + offset) := i - offset
+    }
+  }
+
+  def getSwapMove(idx1: Int,idx2: Int,accept: Move => Boolean) = {
+    val v1 = xs(idx1).value
+    val v2 = xs(idx2).value
+    if(xs(idx1).dom.contains(v2) && xs(idx2).dom.contains(v1)){
+      val invV1 = invXs(v1+offset).value
+      val invV2 = invXs(v2+offset).value
+      if(invXs(v1+offset).dom.contains(invV2) && invXs(v2+offset).dom.contains(invV1)) {
+        assert(invV1+offset == idx1 && invV2+offset == idx2)
+        xs(idx1) :=: xs(idx2)
+        invXs(v1 + offset) :=: invXs(v2 + offset)
+        val newObj = constraintSystem.violation.value
+        xs(idx1) :=: xs(idx2)
+        invXs(v1 + offset) :=: invXs(v2 + offset)
+        acceptOr(new ChainMoves(Array(new SwapMove(xs(idx1), xs(idx2), newObj),
+          new SwapMove(invXs(v1 + offset), invXs(v2 + offset), newObj)),
+          newObj),
+          accept)
+      }else
+        new NoMove()
+    }
+    else new NoMove()
+  }
+
+  def randomMove(it: Int): Move = {
+    val i1 = RandomGenerator.nextInt(xs.length)
+    var i2 = RandomGenerator.nextInt(xs.length-1)
+    if(i2 >= i1)
+      i2 = i2+1
+    getSwapMove(i1,i2, m => true)
+  }
+
+  def getMinObjective(it: Int,accept: Move => Boolean): Move = {
+    val rng2 = (0 until xs.length);
+    val idx = selectMax(rng2, (i: Int) => xsViolation(i).value);
+    getBest(List(idx),rng2,accept)
+  }
+  def getExtendedMinObjective(it: Int,accept: Move => Boolean): Move = {
+    val rng2 = (0 until xs.length);
+    getBest(rng2,rng2,accept)
+  }
+  def getBest(rng1:Iterable[Int],rng2:Iterable[Int],accept: Move => Boolean): Move = {
+    val bestSwap = selectMin2(rng1, rng2, (idx:Int,next:Int) => getSwapMove(idx,next,accept).value,(idx:Int,v:Int) => idx != v)
+    bestSwap match { case (i1,i2) => getSwapMove(i1,i2,accept) case _ => new NoMove(Int.MaxValue)}
   }
   def violation() = { variableViolation.foldLeft(0)((acc, x) => acc + x.value) };
 }

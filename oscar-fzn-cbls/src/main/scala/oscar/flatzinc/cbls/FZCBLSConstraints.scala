@@ -426,7 +426,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
       case bool_xor(a, b, r, ann)                     => EQ(r,get_int_or_bool_ne(a, b, ann).truthValue)
 
       case int_abs(x, y, ann)                         => EQ(y,get_int_abs_inv(x, y, y.id,ann))
-      case int_div(x, y, z, ann)                      => EQ(z,get_int_div_inv(x, y, z,z.id, ann))
+      case int_div(x, y, z, ann)                      => EQ(x,get_int_times_inv(y,z,x,x.id,ann))//EQ(z,get_int_div_inv(x, y, z,z.id, ann))
       case int_eq(x, y, ann)                          => EQ(x,y)
       case int_le(x, y, ann)                          => get_int_or_bool_le(x, y, ann)
       case int_lin_eq(params, vars, sum, ann)         => get_int_lin_eq(params, vars, sum, ann)

@@ -138,6 +138,8 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
   def updateModelDomains(): Boolean ={
     try{
       for(v <- model.variables){
+        val domSizeBefore = v.domainSize
+
         v match{
           case bv:BooleanVariable =>
             if(getMinFor(bv)>=1)bv.bind(true)
@@ -146,6 +148,8 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
             iv.geq(getMinFor(iv));
             iv.leq(getMaxFor(iv));
         }
+        if(v.domainSize < domSizeBefore)
+          Console.err.println("% Reducing for " + v + " from " + domSizeBefore + " to " + v.domainSize)
       }
     }catch{
       case e:UnsatException => false

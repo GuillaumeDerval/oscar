@@ -314,6 +314,7 @@ class FZCBLSSolver extends SearchEngine with StopWatch {
     model.variables.foreach(v => if(v.isDefined && v.cstrs.exists{ 
         case c:subcircuit => true; 
         case c:circuit => true;
+        case c:inverse => true;
         case _ => false}) v.definingConstraint.get.unsetDefinedVar(v))    
     
     
@@ -343,6 +344,7 @@ class FZCBLSSolver extends SearchEngine with StopWatch {
     model.variables.foreach(v => if(v.isDefined && v.cstrs.exists{ 
         case c:subcircuit => true; 
         case c:circuit => true;
+        case c:inverse => true;
         case _ => false}){v.definingConstraint.get.unsetDefinedVar(v)})    
     
     
