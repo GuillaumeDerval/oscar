@@ -8,7 +8,8 @@ import oscar.cbls.invariants.lib.numeric.Sum
   * Created by gustavbjordal on 27/05/16.
   */
 case class BinPackingLoad(items: Array[IntValue], itemsizes: Array[Int]) extends Invariant with IntNotificationTarget{
-  for (v <- items.indices) registerStaticAndDynamicDependency(items(v),v)
+  for (v <- items.indices)
+    registerStaticAndDynamicDependency(items(v),v)
 
   finishInitialization()
 
