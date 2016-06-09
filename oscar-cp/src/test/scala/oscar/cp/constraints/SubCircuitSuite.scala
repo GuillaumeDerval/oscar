@@ -2,6 +2,7 @@ package oscar.cp.constraints
 
 import oscar.cp.testUtils.TestSuite
 import oscar.cp._
+import oscar.cp.core.CPOutcome
 
 class SubCircuitSuite extends TestSuite {
   
@@ -64,6 +65,52 @@ class SubCircuitSuite extends TestSuite {
     assert(!cp.isFailed)
     assert(succs(4).value == 0)
     assert(succs(2).value == 3)
+  }
+
+  test("issue detected by Damien Mercier") {
+    implicit val cp = CPSolver()
+    /*
+      Two subcircuits :
+      - (2->3->4->2)
+      - (1->5->1)
+      - And elem 0 is not taken (0 -> 0)
+     */
+    val successors = Array(
+      CPIntVar(0),//0
+      CPIntVar(5),//1
+      CPIntVar(3),//2
+      CPIntVar(4),//3
+      CPIntVar(2),//4
+      CPIntVar(1) //5
+    )
+
+    assert(cp.post(subCircuit(successors)) == CPOutcome.Failure)
+
+
+
+    def checkUniqueCircuit(): Boolean = {
+      val takenSuccessorsIndices = successors.indices.filter(i => !successors(i).isBoundTo(i))
+      val n=takenSuccessorsIndices.length
+      if(n==0){return true}//Empty circuit
+      val first = takenSuccessorsIndices.head
+      var curr = first
+      var c = 0
+      do{
+        curr = successors(curr).value
+        c+=1
+      } while(curr != first)
+      if(c!=n){
+        println(takenSuccessorsIndices.map(i=>(i,successors(i).value)).mkString(","))
+        println(s"Number of successors in one subcircuit:$c")
+        println(s"Total number of successors in all subcircuits:$n")
+        System.out.flush()
+        return false
+      }
+      return true
+    }
+
+    //assert(checkUniqueCircuit())
+
   }
   
   test("solve all") {
