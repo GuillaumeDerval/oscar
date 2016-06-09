@@ -53,7 +53,7 @@ class FZCBLSObjective(cblsmodel:FZCBLSModel,log:Log){
   private val opt = cblsmodel.model.search.obj
   private val objectiveVar = cblsmodel.model.search.variable.map(cblsmodel.getCBLSVar(_)).getOrElse(null)
   val violation = cblsmodel.c.violation
-  val violationWeight = CBLSIntVar(cblsmodel.c.model, 1, 0 to (if(violation.max!=0)math.max(1,Int.MaxValue/(violation.max/500000)) else 1) , "violation_weight")
+  val violationWeight = CBLSIntVar(cblsmodel.c.model, 1, 0 to (if(violation.max!=0)math.max(1,Int.MaxValue/(violation.max/5000000)) else 1) , "violation_weight")
   //TODO: The division does not seem right... why max and not min?
   val objectiveWeight = CBLSIntVar(cblsmodel.c.model, 1, 0 to (if(objectiveVar!=null && objectiveVar.max > 0)math.max(1,Int.MaxValue/(objectiveVar.max/200)) else 1) , "objective_weight")
   private val objective2 = opt match {

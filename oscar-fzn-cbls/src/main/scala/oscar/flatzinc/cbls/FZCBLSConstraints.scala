@@ -392,14 +392,14 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     val foldedTs:Array[Array[Int]] = Array.tabulate(ts.size/xs.size)(row =>
       Array.tabulate(xs.size)(i => ts(row*xs.size + i).value)
     )
-    Table(xs.map(getCBLSVar(_)).toList,foldedTs)
+    Table(xs.map(getCBLSVar(_)),foldedTs)
   }
 
   def get_table_bool(xs: Array[BooleanVariable], ts:Array[BooleanVariable], ann: List[Annotation]): CBLSConstraint = {
     val foldedTs:Array[Array[Int]] = Array.tabulate(ts.size/xs.size)(row =>
       Array.tabulate(xs.size)(i => ts(row*xs.size + i).intValue)
     )
-    Table(xs.map(getCBLSVar(_)).toList,foldedTs)
+    Table(xs.map(getCBLSVar(_)),foldedTs)
   }
 
 

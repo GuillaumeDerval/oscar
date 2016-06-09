@@ -23,7 +23,7 @@ import oscar.cbls.constraints.core.Constraint
 import oscar.cbls.constraints.lib.basic.EQ
 import oscar.cbls.invariants.core.computation.{Value, _}
 import oscar.cbls.invariants.core.propagation.Checker
-import oscar.cbls.invariants.lib.logic.IntElement
+import oscar.cbls.invariants.lib.logic.{IntElement, IntElementNoVar}
 import oscar.cbls.invariants.lib.minmax.{ArgMin, MinArray}
 import oscar.cbls.invariants.lib.numeric._
 import oscar.cbls.invariants.lib.set.TakeAny
@@ -38,28 +38,24 @@ import oscar.cbls.invariants.lib.set.TakeAny
   * @author gustav.bjordal@it.uu.se
   */
 
-case class Table(variables: List[IntValue], table:Array[Array[Int]]) extends Invariant with Constraint with IntNotificationTarget{
+case class Table(variables: Array[IntValue], table:Array[Array[Int]]) extends Invariant with Constraint with IntNotificationTarget{
 
-  registerStaticAndDynamicDependencyAllNoID(variables)
+  registerStaticAndDynamicDependencyArrayIndex(variables)
   registerConstrainedVariables(variables)
 
   finishInitialization()
 
-  val violationTable = Array.tabulate(table.size)(i =>
-    Array.tabulate(variables.size)( j => Step(EQ(variables(j), table(i)(j)).violation,0,1,0)
-    )
+
+  val rowViolation:Array[CBLSIntVar] = Array.tabulate(table.size)( i =>
+   CBLSIntVar(this.model,table(i).zip(variables).foldLeft(0)((acc,p) => acc + (if(p._1 == p._2.value) 0 else 1)), 0 to table.size)
   )
 
-  val rowViolation:Array[IntValue] = Array.tabulate(table.size)(i =>
-    Sum(violationTable(i))
-  )
-
-  val minViolatingRows = ArgMin(rowViolation)
+  val minViolatingRows = ArgMin(rowViolation.asInstanceOf[Array[IntValue]])
 
   val aMinViolatingRow = TakeAny(minViolatingRows,0)
 
-  val variableViolation = Array.tabulate(variables.size)(i =>
-    IntElement(aMinViolatingRow,violationTable.map(_(i)))
+  val variableViolation:Array[IntValue] = Array.tabulate(variables.length)( i =>
+    Step( Dist(variables(i), IntElementNoVar(aMinViolatingRow, table.map(_(i)))) , 0,1,0)
   )
   /** returns the violation associated with variable v in this constraint
     * all variables that are declared as constraint should have an associated violation degree.
@@ -74,7 +70,7 @@ case class Table(variables: List[IntValue], table:Array[Array[Int]]) extends Inv
       0
     }
   }
-  val minViolation = MinArray(rowViolation)
+  val minViolation = MinArray(rowViolation.asInstanceOf[Array[IntValue]])
   /** returns the degree of violation of the constraint
     * notice that you cannot create any new invariant or variable in this method
     * because they can only be created before the model is closed.
@@ -87,6 +83,16 @@ case class Table(variables: List[IntValue], table:Array[Array[Int]]) extends Inv
 
   }
  @inline
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int): Unit = {
+   assert(OldVal != NewVal)
+   val oldMinViolation = minViolation.value
+   val oldMinRow = aMinViolatingRow.value
+   for(row <- table.indices) {
+     if(table(row)(index) == OldVal){
+       rowViolation(row) :+= 1
+     }else if(table(row)(index) == NewVal){
+       rowViolation(row) :-= 1
+     }
+   }
   }
 }
