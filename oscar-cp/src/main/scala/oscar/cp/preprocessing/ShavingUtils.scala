@@ -93,6 +93,16 @@ object ShavingUtils {
     variable.updateMin(min - 1)
   }
 
+  /**
+    * Performs a shaving on the min and max values of the variables.
+    * Stops as soon as the min and max values of the domain of each variable does not trigger a Failure
+    * If the domain of a variable becomes empty, it returns a Failure.
+    *
+    * @param problem The CPStore containing the variables
+    * @param variables The variables on which the shaving is performed
+    * @return Failure if a domain has been emptied,
+    *         Suspend if a domain has been modified
+    */
   def boundsShaving(problem: CPSolver, variables: Array[CPIntVar]): CPOutcome = {
     var domainChange = true
     while (domainChange) {
@@ -111,32 +121,60 @@ object ShavingUtils {
     CPOutcome.Suspend
   }
 
+  /**
+    * Assign a variable to a value and checks whether or not the assignment triggers a Failure
+    *
+    * @param problem The CPStore containing the variable
+    * @param variable The variable to be assigned
+    * @param value The value assigned to variable
+    * @return A boolean that is true if assigning value to variable triggers a Failure and false otherwise
+    */
+  def assignFail(problem: CPStore, variable: CPIntVar, value: Int): Boolean = {
+    problem.pushState()
+    val fail = problem.post(variable == value) == CPOutcome.Failure
+    problem.pop()
+    fail
+  }
+
+  /**
+    * Performs a shaving on the min values of the variables.
+    * Stops as soon as the min value of the domain of each variable does not trigger a Failure
+    * If the domain of a variable becomes empty, it returns a Failure.
+    *
+    * @param problem The CPStore containing the variables
+    * @param variables The variables on which the shaving is performed
+    * @return Failure if a domain has been emptied,
+    *         Suspend if a domain has been modified and
+    *         Success if no domain has been modified
+    */
   def minShaving(problem: CPStore, variables: Array[CPIntVar]): CPOutcome = {
     var i = 0
     var domainChange = false
     while (i < variables.length) {
       val variable = variables(i)
       val min = variable.min
-      var u = variable.max
-      var l = min
-      var m = 0
-      var fail = false
-      while (l != u) {
-        m = l + (u - l) / 2
-        problem.pushState()
-        fail = problem.post(variable <= m) == CPOutcome.Failure
-        problem.pop()
-        if (fail) {
-          l = m + 1
+      if (assignFail(problem, variable, min)) {
+        var u = variable.max
+        var l = min
+        var m = 0
+        var fail = false
+        while (l != u) {
+          m = l + (u - l) / 2
+          problem.pushState()
+          fail = problem.post(variable <= m) == CPOutcome.Failure
+          problem.pop()
+          if (fail) {
+            l = m + 1
+          }
+          else {
+            u = m
+          }
         }
-        else {
-          u = m
-        }
-      }
-      if (l != min) {
-        domainChange = true
-        if (variable.updateMin(l) == CPOutcome.Failure) {
-          return CPOutcome.Failure
+        if (l != min) {
+          domainChange = true
+          if (variable.updateMin(l) == CPOutcome.Failure) {
+            return CPOutcome.Failure
+          }
         }
       }
       i += 1
@@ -149,61 +187,45 @@ object ShavingUtils {
     }
   }
 
+  /**
+    * Performs a shaving on the max values of the variables.
+    * Stops as soon as the max value of the domain of each variable does not trigger a Failure
+    * If the domain of a variable becomes empty, it returns a Failure.
+    *
+    * @param problem The CPStore containing the variables
+    * @param variables The variables on which the shaving is performed
+    * @return Failure if a domain has been emptied,
+    *         Suspend if a domain has been modified and
+    *         Success if no domain has been modified
+    */
   def maxShaving(problem: CPSolver, variables: Array[CPIntVar]): CPOutcome = {
     var i = 0
     var domainChange = false
     while (i < variables.length) {
       val variable = variables(i)
       val max = variable.max
-      var u = max
-      var l = variable.min
-      var m = 0
-      var fail = false
-      while (l != u) {
-        m = l + (u - l) / 2
-
-        problem.pushState()
-        val fail3 = problem.isFailed()
-        problem.cleanQueues()
-        fail = problem.post(variable > m) == CPOutcome.Failure
-        problem.pop()
-//        problem.cleanQueues()
-//        problem.pushState()
-//        val fail2 = problem.post(variable > m) == CPOutcome.Failure
-//        problem.pop()
-//        if (fail != fail2) {
-//          print()
-//        }
-        if (fail) {
-          u = m
-//          for (v <- u + 1 to max) {
-//            problem.pushState()
-//            val fail3 = problem.post(variable > m) == CPOutcome.Failure
-////            problem.post(variable == v)
-////            val fail2 = problem.propagate() == CPOutcome.Failure
-//            problem.pop()
-//            if (!fail3) {
-//              println("CHIASSE")
-//            }
-//          }
+      if (assignFail(problem, variable, max)) {
+        var u = max
+        var l = variable.min
+        var m = 0
+        var fail = false
+        while (l != u) {
+          m = l + (u - l) / 2
+          problem.pushState()
+          fail = problem.post(variable > m) == CPOutcome.Failure
+          problem.pop()
+          if (fail) {
+            u = m
+          }
+          else {
+            l = m + 1
+          }
         }
-        else {
-          l = m + 1
-        }
-      }
-      if (u != max) {
-//        for (v <- u + 1 to max) {
-//          problem.pushState()
-//          fail = problem.post(variable == v) == CPOutcome.Failure
-//          problem.pop()
-//          if (!fail) {
-//            println("CHIASSE")
-//          }
-//        }
-
-        domainChange = true
-        if (problem.post(variable <= u) == CPOutcome.Failure) {
-          return CPOutcome.Failure
+        if (u != max) {
+          domainChange = true
+          if (problem.post(variable <= u) == CPOutcome.Failure) {
+            return CPOutcome.Failure
+          }
         }
       }
       i += 1
