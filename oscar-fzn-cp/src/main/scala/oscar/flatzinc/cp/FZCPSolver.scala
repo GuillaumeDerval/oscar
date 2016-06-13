@@ -27,7 +27,7 @@ import oscar.cp.core.CPPropagStrength
 import oscar.flatzinc.transfo.FZModelTransfo
 
 class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.cp.core.CPPropagStrength = oscar.cp.Medium, val ignoreUnkownConstraints: Boolean = false) {
-  implicit val solver: CPSolver = CPSolver()
+  implicit val solver: CPSolver = CPSolver(pstrength)
   solver.silent = true
   val poster = new CPConstraintPoster(pstrength);
   val dicoVars = MMap.empty[String,CPIntVar]

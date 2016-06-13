@@ -46,8 +46,11 @@ case class Table(variables: Array[IntValue], table:Array[Array[Int]]) extends In
   finishInitialization()
 
 
-  val rowViolation:Array[CBLSIntVar] = Array.tabulate(table.size)( i =>
-   CBLSIntVar(this.model,table(i).zip(variables).foldLeft(0)((acc,p) => acc + (if(p._1 == p._2.value) 0 else 1)), 0 to table.size)
+  val rowViolation:Array[CBLSIntVar] = Array.tabulate(table.size)( i => {
+    val tmp = CBLSIntVar(this.model, table(i).zip(variables).foldLeft(0)((acc, p) => acc + (if (p._1 == p._2.value) 0 else 1)), 0 to table.size)
+    tmp.setDefiningInvariant(this)
+    tmp
+  }
   )
 
   val minViolatingRows = ArgMin(rowViolation.asInstanceOf[Array[IntValue]])
@@ -80,13 +83,16 @@ case class Table(variables: Array[IntValue], table:Array[Array[Int]]) extends In
   override def violation: IntValue = minViolation
 
   override def checkInternals(c: Checker) {
-
+    c.check(minViolation.value == rowViolation.map(_.value).min, Some("Min violation is not min"))
+    c.check(rowViolation(aMinViolatingRow.value).value == minViolation.value,Some("Min row is wrong"))
+    for(i <- variables.indices){
+      c.check(variableViolation(i).value == ( if(variables(i).value == table(aMinViolatingRow.value)(i)) 0 else 1), Some("Violation is not correct"))
+    }
   }
+
  @inline
   override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int): Unit = {
    assert(OldVal != NewVal)
-   val oldMinViolation = minViolation.value
-   val oldMinRow = aMinViolatingRow.value
    for(row <- table.indices) {
      if(table(row)(index) == OldVal){
        rowViolation(row) :+= 1

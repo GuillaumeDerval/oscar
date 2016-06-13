@@ -38,7 +38,7 @@ abstract class Move(val value:Int){
 case class AssignMove(x: CBLSIntVar,k:Int,override val value:Int) extends Move(value){
   def commit(){x := k}
   def getModified=Set(x)
-  override def toString() = x + " assigned to " +k + "doms: "+x.domain+ x.asInstanceOf[CBLSIntVarDom].dom
+  override def toString() = x + " assigned to " +k + " doms: "+x.domain+ x.asInstanceOf[CBLSIntVarDom].dom + " resulting violation: " + value
 }
 case class AssignsMove(xk: List[(CBLSIntVar,Int)],override val  value:Int) extends Move(value){
   def commit(){xk.foreach(x => x._1 := x._2)}
@@ -438,10 +438,13 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
   def getMinObjective(it: Int, accept: Move => Boolean): Move = {
     //TODO: Only takes into account the violation!
     val bestIndex = selectMax(indexRange, (i: Int) => variableViolation(i).value);
-    val bestValue = selectMin(searchVariables(bestIndex).getDomain())((i: Int) => acceptOr(new AssignMove(searchVariables(bestIndex),i,objective.assignVal(searchVariables(bestIndex), i)),accept).value, _ != searchVariables(bestIndex).value)
+    val bestValue = selectMin(searchVariables(bestIndex).getDomain())((i: Int) =>
+      acceptOr(new AssignMove(searchVariables(bestIndex),i,objective.assignVal(searchVariables(bestIndex), i)),accept).value,
+      _ != searchVariables(bestIndex).value)
     return acceptOr(new AssignMove(searchVariables(bestIndex),bestValue,objective.assignVal(searchVariables(bestIndex), bestValue)),accept)
   }
-  def getExtendedMinObjective(it: Int, accept: Move => Boolean): Move = { 
+  def getExtendedMinObjective(it: Int, accept: Move => Boolean): Move = {
+
     var bMv = null.asInstanceOf[Move]
     var bObj = Int.MaxValue
     var cVar = start
@@ -450,9 +453,11 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
     while(!(looped && cVar == start)){
       val v = searchVariables(cVar)
       if(v.domainSize < 10000000){//TODO: Do something about this!
+        val variableValue = v.value
         for(cVal <- v.getDomain()){
-          if(v.value != cVal){
+          if(variableValue != cVal){
             val mv = new AssignMove(v,cVal,objective.assignVal(v,cVal))
+
             if(accept(mv)){
               val cObj = mv.value
               if(cObj < bObj){
@@ -475,13 +480,6 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
     }
     if(bMv ==null) return new NoMove()
     else return bMv
-    /*
-    val bestPair = selectMinImb(indexRange.filter(searchVariables(_).domainSize < 10000000), (i:Int) => searchVariables(i).getDomain(), 
-        (vi:(Int,Int)) => acceptOr(new AssignMove(searchVariables(vi._1),vi._2,objective.assignVal(searchVariables(vi._1),vi._2)),accept).value,(v:Int,i:Int) => searchVariables(v).value!=i);
-    bestPair match{
-      case (v,i)  => new AssignMove(searchVariables(v),i,objective.assignVal(searchVariables(v),i))
-      case _ => new NoMove()
-    }*/
   }
   
   def violation() = { variableViolation.foldLeft(0)((acc, x) => acc + x.value) };

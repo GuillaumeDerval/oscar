@@ -162,6 +162,7 @@ class SearchControl(val m: FZCBLSModel, val objLB:Int, val MaxTimeMilli: Int,val
     }else if(bestKnownObjective == Int.MaxValue){
       m.log("Best Violation: "+m.objective.violation.value+ "\tat "+m.getWatch()+ " ms")
     }
+
     if(m.objective().value < weightedBest){
       bestPair = (m.objective.violation.value,m.objective.getObjectiveValue())
     }
@@ -184,83 +185,6 @@ abstract class NeighbourhoodSearch(val m: FZCBLSModel,val sc: SearchControl) ext
   
 }
 
-/*
-class NeighbourhoodCBSearch(m: FZCBLSModel, sc: SearchControl) extends NeighbourhoodTabuSearch(m,sc){
-  val varsOfCstr = m.c.getPostedConstraints.foldLeft(Map.empty[Constraint,Set[CBLSIntVarDom]])((acc,c) => 
-                   acc + (c._1 -> c._1.constrainedVariables.foldLeft(Set.empty[Variable])((acc,v) =>
-                   acc ++ m.m.getSourceVariables(v)).intersect(searchVariables.toSet[Variable]).map(v => v.asInstanceOf[CBLSIntVarDom])))
-  val cstrs = m.c.getPostedConstraints.map(_._1).toArray
-  val viols = cstrs.map(_.violation)
-  //Do not register for partial propagation as it leads to to much memory for large problems
-  //viols.foreach(v => m.m.registerForPartialPropagation(v))
-  val violatedConstraints:SetValue = Filter(viols) 
-  val tabuC: Array[CBLSIntVar] = cstrs.map(c => CBLSIntVar(sc.m.m, 0, 0 to Int.MaxValue, "Tabu_" + c.toString())).toArray;
-  val nonTabuConstraints: SetValue = SelectLEHeapHeap(tabuC.asInstanceOf[Array[IntValue]], it);
-  val nonTabuAndViolated = Inter(nonTabuConstraints,violatedConstraints);
-  var tenureC = 2
-  val maxTenureC = cstrs.length/2
-  //println(varsOfCstr)
-  //TODO: Make constraints TABU
-  def assign(c: Constraint, x: CBLSIntVar, v: Int):Int = {
-    val o = x.value
-    x:=v
-    val res = c.violation.value
-    x:=o
-    res
-  }
-  /*{
-    val avar = variableMap.toList.head._1
-    varsOfCstr.valuesIterator.filter(vs => vs.contains(avar.asInstanceOf[CBLSIntVarDom])).foreach(println(_))
-    throw new Exception()
-  }*/
-  def run() = {
-    
-    log("Starting Constraint-Based Search")
-    while(!sc.stop()){
-      it++;
-      if(nonTabuAndViolated.value.nonEmpty){
-        val ci = nonTabuAndViolated.value.toArray.apply(RandomGenerator.nextInt(nonTabuAndViolated.value.size))
-        val c = cstrs(ci)
-        val xv = selectMinImb(varsOfCstr(c), (x:CBLSIntVarDom) => x.getDomain(), (x:CBLSIntVar,v:Int) => m.objective.objective.assignVal(x,v),(x:CBLSIntVar,v:Int) => x.value != v && assign(c,x,v) < c.violation.value && nonTabuVariables.value.contains(variableMap(x)));
-        //println()
-        //println(c)
-        xv match{
-          case (x,v) =>
-            //println(x,v)
-            x := v
-//            println(c.violation)
-//            println(violatedConstraints.value.size)
-//            println(violatedConstraints.value.foldLeft(List.empty[String])((acc,ci) => varsOfCstr(cstrs(ci)).toList.sortBy(v => v.name).mkString("[",",","]"):: acc).sorted.mkString(", "))
-            tabuC(ci) := it.value + Math.min(maxTenureC, tenureC + RandomGenerator.nextInt(violatedConstraints.value.size+1));
-            tabu(variableMap(x)) := tabuC(ci).value + 1;
-            tenureC +=1
-            //tenure += 1
-          case _ => 
-//            println("skip");
-//            println(varsOfCstr(c).intersect(nonTabuVariables.value.map(searchVariables(_))))
-            tenureC = math.max(tenureC-1,1)
-        }
-      }else if(m.c.violation.value==0){
-        val (x,v) = selectMinImb(searchVariables,(x:CBLSIntVarDom) => x.getDomain(),(x:CBLSIntVar,v:Int) => m.objective.objective.assignVal(x,v),(x:CBLSIntVar,v:Int) => x.value != v);
-//        println("==========================")
-//        //print (".")
-//        println(x,v)
-        x := v
-        //tenureC = math.max(tenureC-1,1)
-        tabu(variableMap(x)) := it.value + tenureC + RandomGenerator.nextInt(100);
-        //tenure -= 1
-        //tenure = math.max(tenure,1)
-      }else{
-//        println("skip2")
-      }
-      //TODO: update the weights
-      sc.handlePossibleSolution();
-      
-    }
-    log("Completed Constraint-Based Search at "+m.getWatch())
-  }
-}
-*/
 
 abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extends NeighbourhoodSearch(m,sc){
   
@@ -269,8 +193,8 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
   val it = CBLSIntVar(m.m, 1, 0 to Int.MaxValue, "it");
   val tabu: Array[CBLSIntVar] = searchVariables.map(v => CBLSIntVar(sc.m.m, 0, 0 to Int.MaxValue,  "Tabu_" + v.name)).toArray;
   val nonTabuVariables = SelectLEHeapHeap(tabu.asInstanceOf[Array[IntValue]], it);
-  val MaxTenure = (searchVariables.length * 0.6).toInt;
-  val MinTenure = 2 + 0 * (searchVariables.length * 0.1).toInt;
+  val MaxTenure = (searchVariables.length * 0.6).toInt
+  val MinTenure = 2
   val tenureIncrement = Math.max(1, (MaxTenure - MinTenure) / 10);
   var tenure = MinTenure
   var ecnt = 0;
@@ -284,26 +208,20 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
   }
   
   def makeMove(extendedSearch: Boolean){
-    //if(it.value%10==0){
-    //    log(2,"it: "+it.value+" violation: "+m.c.violation.value+" objective: "+m.objective.getObjectiveValue())
-    //  }
-    //log(3,"it: "+it.value+" violation: "+m.c.violation.value+" objective: "+m.objective.getObjectiveValue())
-    //if(log.level>=4) for(cc <- m.c.violatedConstraints){
-    //    log(4,cc + " "+cc.violation.value)
-    //}
-    //log(3,"Non tabu variables: "+nonTabuVariables.value.size)
+    val violationAtStart = m.c.violation.value
     val nonTabuSet = nonTabuVariables.value.map(searchVariables(_).asInstanceOf[CBLSIntVar]);
     val bestValue = sc.weightedBest
     if(extendedSearch) ecnt+=1 else bcnt+=1
     val bestNeighbour = selectMin(neighbourhoods.map((n: Neighbourhood) =>
       if (extendedSearch) {
-        //log(3,"E "+n)
-        n.getExtendedMinObjective(it.value, acceptMove(bestValue,nonTabuSet)/*, bestNow*/)
+        n.getExtendedMinObjective(it.value, acceptMove(bestValue,nonTabuSet))
       } else {
-        //log(3,"S "+n)
         n.getMinObjective(it.value, acceptMove(bestValue,nonTabuSet))
       }))(_.value)
-//      println("X")
+    val violationAfter = m.c.violation.value
+    if(violationAtStart != violationAfter){
+      log("Violation is different after exploration: " + violationAtStart + " -> "+ violationAfter + " -> "+m.c.violation.value)
+    }
     if(bestNeighbour!=null){
       //TODO: Aspiration sometimes accepts moves that do not improve but seem to improve because of changing weights. 
       if(log.level > 0 && bestNeighbour.getModified.forall(!nonTabuSet.contains(_))){
@@ -312,11 +230,10 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
       }
       log(3,bestNeighbour.toString)
       log(4,tabu.filter(t => t.value > it.value).toList.toString())
-      
-      bestNeighbour.commit();
+      bestNeighbour.commit()
       sc.handlePossibleSolution()
     }else
-      log("No move exists!");
+      log("No move exists!")
     val modifiedVars = if(bestNeighbour!=null) bestNeighbour.getModified else Set.empty[CBLSIntVar]
     for (v <- modifiedVars) {
       val index = variableMap(v);
@@ -324,7 +241,7 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
       //tabu(index) := it.value + tenure;
       tabu(index) := it.value + Math.min(MaxTenure, tenure + RandomGenerator.nextInt(tenureIncrement));
     }
-    it++;
+    it++
   }
 }
 
@@ -392,7 +309,7 @@ class NeighbourhoodSearchOPT(m:FZCBLSModel, sc: SearchControl) extends Neighbour
         } else if (bestNow <= lastMinObjective) { // 2)
           m.objective.increaseObjectiveWeight(minObjectiveSinceBest)
         }
-        lastMinObjective = bestNow;
+        lastMinObjective = bestNow
         minViolationSinceBest = Int.MaxValue
         minObjectiveSinceBest = Int.MaxValue
 
@@ -488,6 +405,7 @@ class NeighbourhoodSearchSAT(m:FZCBLSModel, sc: SearchControl) extends Neighbour
           n.reset();
       }
     }
+
     log("Completed Satisfaction Search at "+m.getWatch())
     log("nb moves "+ecnt+"\t"+bcnt)
   }
