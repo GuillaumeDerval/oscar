@@ -36,7 +36,7 @@ import oscar.cp.searches.DFSReplayer
 class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStrength) {
 
 
-  def this() = this(CPPropagStrength.Weak)
+  def this() = this(CPPropagStrength.Automatic)
 
   override def startSubjectTo(stopCondition: DFSearch => Boolean, maxDiscrepancy: Int, listener: DFSearchListener)(block: => Unit): SearchStatistics = {
     deactivateNoSolExceptions()
