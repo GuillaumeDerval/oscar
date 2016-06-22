@@ -28,6 +28,6 @@ class StatusBehaviourDelegate {
   }
 
   final def performFailureActions() = {
-    solutionActions.foreach(_())
+    failureActions.foreach(_())
   }
 }
