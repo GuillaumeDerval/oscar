@@ -25,13 +25,16 @@ class DFSearchNode extends ReversibleContext {
 
   protected val searchStrategy = new DFSearch(this)
 
+  val statusBehaviourDelegate = new StatusBehaviourDelegate()
+
   protected var heuristic: Branching = null
 
 
   final def searchEngine: DFSearch = searchStrategy
 
   final def onSolution(action: => Unit): DFSearchNode = {
-    searchStrategy.onSolution(action); this
+    //searchStrategy.onSolution(action); this
+    statusBehaviourDelegate.onSolution(action); this
   }
 
 
