@@ -49,6 +49,7 @@ class DFSearch(node: DFSearchNode) {
   // True if the previous search was exhaustive
   private[this] var completed: Boolean = false
 
+
   /*// Actions to execute in case of solution node
   private[this] var solutionActions = List.empty[() => Unit]
 
@@ -153,6 +154,7 @@ class DFSearch(node: DFSearchNode) {
       if (!node.isFailed()) {
         val isExpandable = expand(branching)
         if (!isExpandable) {
+          node.solFound()
           //solutionActions.foreach(_())
           node.statusBehaviourDelegate.performSolutionActions()
           nbSols += 1
