@@ -40,24 +40,22 @@ object QueensReplay extends  App {
     allDifferent(Queens.map(i => queens(i) + i)),
     allDifferent(Queens.map(i => queens(i) - i)))
 
-
-
   val linearizer = new DFSLinearizer()
 
-
-  cp.onSolution()
+  onSolution(println(queens.mkString(",")))
 
   // Execution with FC allDifferent
   val statsInit = startSubjectTo(searchListener = linearizer) {
     add(allDiffs,Weak)
   }
 
+  println(statsInit)
+
   // Replay with AC allDifferent
-  val statsReplayAC = cp.replaySubjectTo(linearizer, queens, println(queens.mkString(" "))) {
+  val statsReplayAC = cp.replaySubjectTo(linearizer, queens) {
     add(allDiffs,Strong)
   }
 
-  println(statsInit)
   println(statsReplayAC)
 
 

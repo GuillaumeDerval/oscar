@@ -25,9 +25,7 @@ import oscar.cp.core.variables.CPIntVar
   * @author Sascha Van Cauwelart
   * @author Pierre Schaus
   */
-class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar], onSolutionAction: => Unit = ()) {
-
-  val onSolutionCallBack = () => onSolutionAction
+class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar]) {
 
   private val timeThreadBean = ManagementFactory.getThreadMXBean()
 
@@ -69,6 +67,7 @@ class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar], onSolutionAc
       decisions(i)() //apply the search state modification
 
       if (node.isFailed) {
+        node.statusBehaviourDelegate.performFailureActions()
         nBacktracks += 1
         if (i < nModifications - 1) {
           decisions(i + 1) match {
@@ -78,7 +77,8 @@ class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar], onSolutionAc
         }
       }
       else if (decisionVariables.forall(_.isBound)) {
-        onSolutionCallBack()
+        //onSolutionCallBack()
+        node.statusBehaviourDelegate.performSolutionActions()
         nBacktracks += 1
         nSols += 1
         node.solFound()
