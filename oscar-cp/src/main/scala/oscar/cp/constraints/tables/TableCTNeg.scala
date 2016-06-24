@@ -29,9 +29,9 @@ import scala.collection.mutable.ArrayBuffer
  * @param X the variables restricted by the constraint.
  * @param table the list of tuples composing the table.
  * @author Pierre Schaus pschaus@gmail.com
- * @author Jordan Demeulenaere j.demeulenaere1@gmail.com
+ * @author Helene Verhaeghe helene.verhaeghe27@gmail.com
  */
-final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableCT") {
+final class TableCTNeg(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableCTNeg") {
 
   /* Setting idempotency & lower priority for propagate() */
   idempotent = true
@@ -53,8 +53,8 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
   private[this] val domainArray = new Array[Int](maxDomain)
   private[this] var domainArraySize = 0
 
-  private[this] val validTuples = new ReversibleSparseBitSet(s, nbTuples, 0 until nbTuples)
-  private[this] val variableValueSupports = Array.tabulate(arity)(i => new Array[validTuples.BitSet](spans(i)))
+  private[this] val dangerousTuples = new ReversibleSparseBitSet(s, nbTuples, 0 until nbTuples)
+  private[this] val variableValueAntiSupports = Array.tabulate(arity)(i => new Array[dangerousTuples.BitSet](spans(i)))
   private[this] val deltas: Array[DeltaIntVar] = new Array[DeltaIntVar](arity)
 
   private[this] val unBoundVars = Array.tabulate(arity)(i => i)
@@ -62,20 +62,18 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
 
   override def setup(l: CPPropagStrength): CPOutcome = {
 
-    /* Retrieve the current valid tuples */
-    val valids = collectValidTuples()
+    /* Retrieve the current dangerous tuples */
+    val dangerous = collectDangerousTuples()
 
-    if (valids.isEmpty)
+    if (dangerous.isEmpty)
       return Failure
 
-    /* Remove non valid tuples */
-    validTuples.collect(new validTuples.BitSet(valids))
-    validTuples.intersectCollected()
+    /* Remove non dangerous tuples */
+    dangerousTuples.collect(new dangerousTuples.BitSet(dangerous))
+    dangerousTuples.intersectCollected()
 
-    /* Compute Supports = Compute for each for each variable/value pair the supported tuples,
-       Remove values not supported by any tuple */
-    if (computeSupportsAndInitialFiltering(valids) == Failure)
-      return Failure
+    /* Compute AntiSupports = Compute for each for each variable/value pair the dangerous tuples */
+    computeAntiSupports(dangerous)
 
     /* Call propagate() when domains change */
     var i = 0
@@ -84,7 +82,8 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
       i += 1
     }
 
-    Suspend
+    /* Propagate a first time */
+    initPropagate()
   }
 
   private[this] def showTable(): Unit = {
@@ -106,29 +105,30 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
     val varSize = intVar.size
     var changed = false
 
-    validTuples.clearCollected()
+    dangerousTuples.clearCollected()
 
-    /* Update the value of validTuples by considering D(x) or delta */
+    /* Update the value of dangerousTuples by considering D(x) or delta */
+
     if (varSize == 1) {
 
       /* The variable is assigned */
-      validTuples.collect(variableValueSupports(varIndex)(intVar.min))
+      dangerousTuples.collect(variableValueAntiSupports(varIndex)(intVar.min))
+      changed = dangerousTuples.intersectCollected()
 
     } else {
 
       if (delta.size < varSize) {
 
-        /* Use delta to update validTuples */
+        /* Use delta to update dangerousTuples */
         domainArraySize = delta.fillArray(domainArray)
         var i = 0
         /* Collect all the removed tuples by doing or's with precomputed masks */
         while (i < domainArraySize) {
-          validTuples.collect(variableValueSupports(varIndex)(domainArray(i)))
+          dangerousTuples.collect(variableValueAntiSupports(varIndex)(domainArray(i)))
           i += 1
         }
-
-        /* Remove from the valid supports all the collected tuples, no longer supported */
-        validTuples.reverseCollected()
+        /* Remove from the anti-supports all the collected tuples, no longer dangerous */
+        changed = dangerousTuples.removeCollected()
 
       } else {
 
@@ -136,25 +136,26 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
         domainArraySize = intVar.fillArray(domainArray)
         var i = 0
         while (i < domainArraySize) {
-          validTuples.collect(variableValueSupports(varIndex)(domainArray(i)))
+          dangerousTuples.collect(variableValueAntiSupports(varIndex)(domainArray(i)))
           i += 1
         }
+        /* Intersect the set of dangrous tuples with the dangerous tuples collected */
+        changed = dangerousTuples.intersectCollected()
 
       }
-
     }
-    changed = validTuples.intersectCollected()
 
-    /* Failure if there are no more valid tuples */
-    if (validTuples.isEmpty())
-      return Failure
+    /* Success if there are no more dangerous tuples */
+    if (dangerousTuples.isEmpty())
+      return Success
 
     Suspend
   }
 
 
   /**
-   * Perform a consistency check : for each variable value pair (x,a), we check if a has at least one valid support.
+   * Perform a consistency check : for each variable value pair (x,a), we check if
+   * the number of dangerous tuples doesn't exceed all the possible tuples with the value.
    * Unsupported values are removed.
    * @return the outcome i.e. Failure or Success.
    */
@@ -172,13 +173,13 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
       if (deltas(varIndex).size > 0) {
         nChanged += 1
         changedVarIdx = varIndex
-        if (updateDelta(varIndex, deltas(varIndex)) == Failure) {
-          return Failure
-        }
+        if (updateDelta(varIndex, deltas(varIndex)) == Success)
+          return Success
       }
     }
 
-    /* since we are AC we know some valid tuples have disappeared */
+    val cardinalSizeInit = unBoundVars.foldLeft(1)((i, j) => i * x(j).size)
+
     j = unBoundVarsSize_
     while (j > 0) {
       j -= 1
@@ -189,18 +190,23 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
         domainArraySize = x(varIndex).fillArray(domainArray)
         var i = 0
         var value = 0
+        val cardinalSize = cardinalSizeInit / x(varIndex).size
+
         while (i < domainArraySize) {
           value = domainArray(i)
-          if (!validTuples.intersect(variableValueSupports(varIndex)(value))) {
+          if (dangerousTuples.intersectCount(variableValueAntiSupports(varIndex)(value)) == cardinalSize) {
             if (x(varIndex).removeValue(value) == Failure) {
               return Failure
+            } else {
+              dangerousTuples.clearCollected()
+              dangerousTuples.collect(variableValueAntiSupports(varIndex)(value))
+              dangerousTuples.removeCollected()
             }
           }
           i += 1
         }
       }
       if (x(varIndex).isBound) {
-        /* If the variable is bound, we never need to consider it any more (put them in a sparse-set) */
         unBoundVarsSize_ -= 1
         unBoundVars(j) = unBoundVars(unBoundVarsSize_)
         unBoundVars(unBoundVarsSize_) = varIndex
@@ -211,20 +217,66 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
     Suspend
   }
 
+  /**
+   * Initial propagation
+   * @return the outcome i.e. Failure or Suspend
+   */
+  @inline def initPropagate(): CPOutcome = {
+
+    var unBoundVarsSize_ = unBoundVarsSize.value
+    var j = unBoundVarsSize.value
+
+    val cardinalSizeInit = unBoundVars.foldLeft(1)((i, j) => i * x(j).size)
+
+    j = unBoundVarsSize_
+    while (j > 0) {
+      j -= 1
+      val varIndex = unBoundVars(j)
+
+      if (!x(varIndex).isBound) {
+        domainArraySize = x(varIndex).fillArray(domainArray)
+        var i = 0
+        var value = 0
+        val cardinalSize = cardinalSizeInit / x(varIndex).size
+
+        while (i < domainArraySize) {
+          value = domainArray(i)
+          if (dangerousTuples.intersectCount(variableValueAntiSupports(varIndex)(value)) == cardinalSize) {
+            if (x(varIndex).removeValue(value) == Failure) {
+              return Failure
+            } else {
+              dangerousTuples.clearCollected()
+              dangerousTuples.collect(variableValueAntiSupports(varIndex)(value))
+              dangerousTuples.removeCollected()
+            }
+          }
+          i += 1
+        }
+      }
+      if (x(varIndex).isBound) {
+        unBoundVarsSize_ -= 1
+        unBoundVars(j) = unBoundVars(unBoundVarsSize_)
+        unBoundVars(unBoundVarsSize_) = varIndex
+      }
+    }
+    unBoundVarsSize.value = unBoundVarsSize_
+
+    Suspend
+  }
 
   /* ----- Functions used during the setup of the constraint ----- */
 
   /**
-   * Retrieve the valid tuples from the table and store their index in validTuplesBuffer.
-   * @return Failure if there is no valid tuples, Suspend otherwise.
+   * Retrieve the dangerous tuples from the table and store their index in dangerousTuplesBuffer.
+   * @return the ArrayBuffer containing the dangerous tuples.
    */
-  @inline private def collectValidTuples(): ArrayBuffer[Int] = {
+  @inline private def collectDangerousTuples(): ArrayBuffer[Int] = {
 
     val validTuplesBuffer = ArrayBuffer[Int]()
 
     var tupleIndex = 0
     while (tupleIndex < nbTuples) {
-      if (isTupleValid(tupleIndex)) {
+      if (isTupleDangerous(tupleIndex)) {
         validTuplesBuffer += tupleIndex
       }
       tupleIndex += 1
@@ -234,11 +286,11 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
   }
 
   /**
-   * Check if a tuple is valid.
+   * Check if a tuple is dangerous.
    * @param tupleIndex the index of the tuple in the table.
-   * @return true if the tuple is valid, false otherwise.
+   * @return true if the tuple is dangerous, false otherwise.
    */
-  @inline private def isTupleValid(tupleIndex: Int): Boolean = {
+  @inline private def isTupleDangerous(tupleIndex: Int): Boolean = {
     var varIndex = 0
     while (varIndex < arity) {
       if (!x(varIndex).hasValue(T(tupleIndex)(varIndex))) {
@@ -252,38 +304,29 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
   /**
    * Compute the mask for each variable value pair (x,a).
    */
-  @inline private def computeSupportsAndInitialFiltering(valids: ArrayBuffer[Int]): CPOutcome = {
+  @inline private def computeAntiSupports(dangerous: ArrayBuffer[Int]): Unit = {
 
-    val varValueSupports = Array.tabulate(x.length)(i => Array.tabulate(spans(i))(v => new ArrayBuffer[Int]()))
+    val varValueAntiSupports = Array.tabulate(x.length)(i => Array.tabulate(spans(i))(v => new ArrayBuffer[Int]()))
 
     /* Collect the supports */
-    var validIndex = 0
-    while (validIndex < valids.length) {
-      val tupleIndex = valids(validIndex)
+    var dangerousIndex = 0
+    while (dangerousIndex < dangerous.length) {
+      val tupleIndex = dangerous(dangerousIndex)
       var varIndex = 0
       while (varIndex < arity) {
         val value = T(tupleIndex)(varIndex)
-        varValueSupports(varIndex)(value) += tupleIndex
+        varValueAntiSupports(varIndex)(value) += tupleIndex
         varIndex += 1
       }
-      validIndex += 1
+      dangerousIndex += 1
     }
 
-    /* Create the final support bitSets and remove any value that is not supported */
+    /* Create the final anti-support bitSets */
     for {
-      varIndex <- variableValueSupports.indices
-      valueIndex <- variableValueSupports(varIndex).indices
+      varIndex <- variableValueAntiSupports.indices
+      valueIndex <- variableValueAntiSupports(varIndex).indices
     } {
-      if (varValueSupports(varIndex)(valueIndex).nonEmpty) {
-        variableValueSupports(varIndex)(valueIndex) = new validTuples.BitSet(varValueSupports(varIndex)(valueIndex))
-      } else {
-        /* This variable-value does not have any support, it can be removed */
-        if (x(varIndex).removeValue(valueIndex) == Failure) {
-          return Failure
-        }
-      }
+      variableValueAntiSupports(varIndex)(valueIndex) = new dangerousTuples.BitSet(varValueAntiSupports(varIndex)(valueIndex))
     }
-
-    Suspend
   }
 }

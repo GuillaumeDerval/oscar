@@ -15,8 +15,6 @@
 
 package oscar.algo.reversible
 
-import oscar.algo.reversible.{SparseSet, ReversibleContext, TrailEntry}
-
 object BitSetOp {
 
   def bitLength(size: Int): Int = (size + 63) >>> 6
@@ -38,7 +36,7 @@ object BitSetOp {
 }
 
 
-import BitSetOp._
+import oscar.algo.reversible.BitSetOp._
 
 /* Trailable entry to restore the value of the ith Long of the valid tuples */
 final class ReversibleSparseBitSetEntry(set: ReversibleSparseBitSet, numberOfValues: Int) extends TrailEntry {
@@ -71,8 +69,35 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
 
     values.foreach(v => setBit(words, v))
 
-  }
+    def &=(bs: BitSet) = {
+      for (i <- 0 until words.length)
+        words(i) = words(i) & bs.words(i)
+    }
 
+    def &~=(bs: BitSet) = {
+      for (i <- 0 until words.length)
+        words(i) = words(i) & ~bs.words(i)
+    }
+
+    def |=(bs: BitSet) = {
+      for (i <- 0 until words.length)
+        words(i) = words(i) | bs.words(i)
+    }
+
+
+    val mask = ~0 >>> (64 - (n % 64))
+
+    def unary_~ = {
+      for (i <- 0 until words.length)
+        words(i) = ~words(i)
+      words(words.length - 1) = words(words.length - 1) & mask
+    }
+
+    override def toString: String = {
+      words.mkString(" ")
+    }
+
+  }
 
 
   private[this] var timeStamp = -1L
@@ -81,14 +106,14 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
   /* Compute number of Long in a bitset */
   private[this] var nWords = bitLength(n)
 
-  val wordIndicesToTrail = new oscar.algo.reversible.SparseSet(0,nWords,true)
+  val wordIndicesToTrail = new oscar.algo.reversible.SparseSet(0, nWords, true)
 
   private[this] val words: Array[Long] = Array.fill(nWords)(0L)
   private[this] val lastMagics = Array.fill(nWords)(-1L)
 
 
   private[this] var nonZeroIdx: Array[Int] = Array.tabulate(nWords)(i => i)
-  private[this] var nNonZero: Int =  nWords
+  private[this] var nNonZero: Int = nWords
 
 
   private[this] val tempMask = Array.fill(nWords)(0L)
@@ -98,7 +123,6 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
   initialValues.foreach(v => setBit(words, v))
 
 
-
   private[this] var innerTrailSize = 1000
   private[this] var nTrailEntries = 0
   private[this] var wordIndex = Array.ofDim[Int](innerTrailSize)
@@ -106,15 +130,14 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
 
 
   @inline private[this] def growInnerTrail(): Unit = {
-    val newWordIndex = new Array[Int](innerTrailSize*2)
-    val newWordValue = new Array[Long](innerTrailSize*2)
-    System.arraycopy(wordIndex, 0,newWordIndex, 0, innerTrailSize)
-    System.arraycopy(wordValue, 0,newWordValue, 0, innerTrailSize)
+    val newWordIndex = new Array[Int](innerTrailSize * 2)
+    val newWordValue = new Array[Long](innerTrailSize * 2)
+    System.arraycopy(wordIndex, 0, newWordIndex, 0, innerTrailSize)
+    System.arraycopy(wordValue, 0, newWordValue, 0, innerTrailSize)
     wordIndex = newWordIndex
     wordValue = newWordValue
     innerTrailSize *= 2
   }
-
 
 
   // Remove the zero words from sparse set
@@ -130,7 +153,7 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
 
   }
 
-  def isEmpty() : Boolean = {
+  def isEmpty(): Boolean = {
     nNonZero == 0
   }
 
@@ -138,7 +161,7 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     val size = n min 64
     def format(l: Long) = String.format(s"%${size}s", java.lang.Long.toBinaryString(l)).replace(' ', '0')
 
-    "NonZeroWords:"+nNonZero +" words:"+words.map(format(_)).mkString(" , ")
+    "NonZeroWords:" + nNonZero + " words:" + words.map(format(_)).mkString(" , ")
   }
 
 
@@ -155,7 +178,7 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
 
 
   private[this] def trail(): Unit = {
-    while (nTrailEntries+nNonZero > innerTrailSize) growInnerTrail()
+    while (nTrailEntries + nNonZero > innerTrailSize) growInnerTrail()
     var i: Int = nNonZero
     while (i > 0) {
       i -= 1
@@ -288,6 +311,86 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     }
 
     false
+  }
+
+  /**
+   * @param set
+   * @return the number of bits of the intersection of the bitSet and this
+   */
+  def intersectCount(set: BitSet): Int = {
+    var count = 0
+
+    var i: Int = nNonZero
+    while (i > 0) {
+      i -= 1
+      val offset = nonZeroIdx(i)
+      count += java.lang.Long.bitCount(words(offset) & set.words(offset))
+    }
+
+    count
+  }
+
+  /**
+   * @param set1 set2
+   * @return the number of bits of the intersection of the bitSet and this
+   */
+  def intersectCount(set1: BitSet, set2: BitSet): Int = {
+    var count = 0
+
+    var i: Int = nNonZero
+    while (i > 0) {
+      i -= 1
+      val offset = nonZeroIdx(i)
+      count += java.lang.Long.bitCount(words(offset) & set1.words(offset) & set2.words(offset))
+    }
+
+    count
+  }
+
+  /**
+   * @param set
+   * @return the number of bits of the intersection of the bitSet and this
+   */
+  def scalarProductIntersect(set: BitSet, setRM: BitSet, coef: Array[() => Int], div: Int = 1): Int = {
+    /// TODO FIX this
+    var count = 0
+
+    var i: Int = nNonZero
+    //    println("nz " + i)
+    while (i > 0) {
+      i -= 1
+      val offset = nonZeroIdx(i)
+      //      println("i : " + words(offset) + " " + set.words(offset))
+      var intersect = words(offset) & set.words(offset)
+      var stars = set.words(offset) ^ setRM.words(offset)
+      var idx = (offset + 1) * 64 - 1
+      var idxc = (offset) * 64
+      //      while (idx >= coef.length){
+      //        idx -= 1
+      //        intersect = intersect >>> 1
+      //        stars = stars >>> 1
+      //      }
+      //      println("intersect :" + intersect)
+      //      println("star :" + stars)
+      while (intersect != 0 && idxc < coef.length) {
+        //        println("inter : " + intersect)
+        if ((intersect & 1) == 1) {
+          //          println("coef :" + coef(idxc)())
+          //          println("div :" + div)
+          if ((stars & 1) == 1)
+            count += coef(idxc)() / div
+          else
+            count += coef(idxc)()
+        }
+        idxc += 1
+        idx -= 1
+        intersect = intersect >>> 1
+        stars = stars >>> 1
+      }
+      //count += java.lang.Long.bitCount(words(offset) & set.words(offset))
+    }
+
+    count
   }
 
 
