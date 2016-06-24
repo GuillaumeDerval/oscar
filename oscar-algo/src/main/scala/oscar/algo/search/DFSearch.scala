@@ -49,11 +49,20 @@ class DFSearch(node: DFSearchNode) {
   // True if the previous search was exhaustive
   private[this] var completed: Boolean = false
 
-  // Actions to execute in case of solution node
+
+  /*// Actions to execute in case of solution node
   private[this] var solutionActions = List.empty[() => Unit]
 
   // Actions to execute in case of failed node
-  private[this] var failureActions = List.empty[() => Unit]
+  private[this] var failureActions = List.empty[() => Unit]*/
+
+  private[this] var searchListener_ : DFSearchListener = null
+
+  /** Gets the DFSearch listener */
+  def searchListener : DFSearchListener = searchListener_
+
+  /** Sets the DFSearch listener */
+  def searchListener_= (listener : DFSearchListener) : Unit = searchListener_ = listener
 
   /** Returns the number of backtracks in the previous search */
   final def nBacktracks: Int = nbBkts
@@ -68,16 +77,20 @@ class DFSearch(node: DFSearchNode) {
   final def isCompleted: Boolean = completed
 
   /** Adds an action to execute when a failed node is found */
-  final def onFailure(action: => Unit): Unit = failureActions = (() => action) :: failureActions
+  //final def onFailure(action: => Unit): Unit = failureActions = (() => action) :: failureActions
+  final def onFailure(action: => Unit): Unit = node.statusBehaviourDelegate.onFailure(action)
 
   /** Adds an action to execute when a solution node is found */
-  final def onSolution(action: => Unit): Unit = solutionActions = (() => action) :: solutionActions
+  //final def onSolution(action: => Unit): Unit = solutionActions = (() => action) :: solutionActions
+  final def onSolution(action: => Unit): Unit = node.statusBehaviourDelegate.onSolution(action)
   
-  /** Clear all actions executed when a solution node is found */ 
-  final def clearOnSolution(): Unit = solutionActions = Nil
+  /** Clear all actions executed when a solution node is found */
+  //final def clearOnSolution(): Unit = solutionActions = Nil
+  final def clearOnSolution(): Unit = node.statusBehaviourDelegate.clearOnSolution()
   
   /** Clear all actions executed when a failed node is found */ 
-  final def clearOnFailure(): Unit = failureActions = Nil
+  //final def clearOnFailure(): Unit = failureActions = Nil
+  final def clearOnFailure(): Unit = node.statusBehaviourDelegate.clearOnFailure()
   
   @inline private def expand(branching: Branching): Boolean = {
     val alternatives = branching.alternatives
@@ -99,15 +112,20 @@ class DFSearch(node: DFSearchNode) {
     nbNodes = 0
     completed = false
 
+    if(searchListener_ != null)
+      searchListener_.onPush(node)
     node.pushState()
 
     // Expand the root node
     if (!node.isFailed) {
+      if(searchListener_ != null)
+        searchListener_.onPush(node)
       node.pushState()
       val isExpandable = expand(branching)
       if (!isExpandable) {
         node.solFound()
-        solutionActions.foreach(_())
+        //solutionActions.foreach(_())
+        node.statusBehaviourDelegate.performSolutionActions()
         nbSols += 1
         node.pop()
       }
@@ -122,23 +140,35 @@ class DFSearch(node: DFSearchNode) {
       
       val isLast = !alternatives.hasNext
       
-      if (!isLast) node.pushState()
+      if (!isLast) {
+        if(searchListener_ != null)
+          searchListener_.onPush(node)
+        node.pushState()
+      }
       else alternativesStack.pop() // no more alternative in the sequence
 
+      if(searchListener_ != null)
+        searchListener_.onBranch(alternative)
       alternative() // apply the alternative
 
       if (!node.isFailed()) {
         val isExpandable = expand(branching)
         if (!isExpandable) {
           node.solFound()
-          solutionActions.foreach(_())
+          //solutionActions.foreach(_())
+          node.statusBehaviourDelegate.performSolutionActions()
           nbSols += 1
           nbBkts += 1
+          if(searchListener_ != null)
+            searchListener_.onPop(node)
           node.pop()
         }
       } else {
-        failureActions.foreach(_())
+        //failureActions.foreach(_())
+        node.statusBehaviourDelegate.performFailureActions()
         nbBkts += 1
+        if(searchListener_ != null)
+          searchListener_.onPop(node)
         node.pop()
       }
     }
@@ -147,9 +177,13 @@ class DFSearch(node: DFSearchNode) {
     var i = alternativesStack.size
     if (i == 0) completed = true
     else while (i != 0) {
+      if(searchListener_ != null)
+        searchListener_.onPop(node)
       node.pop()
       i -= 1
     }
+    if(searchListener_ != null)
+      searchListener_.onPop(node)
     node.pop()
   }
 }

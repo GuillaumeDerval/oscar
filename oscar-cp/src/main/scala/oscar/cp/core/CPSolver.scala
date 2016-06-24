@@ -19,6 +19,7 @@ import oscar.algo.search._
 import oscar.cp._
 import oscar.cp.core._
 import oscar.cp.constraints._
+
 import scala.collection.mutable.Stack
 import oscar.algo.reversible._
 import oscar.util._
@@ -29,16 +30,49 @@ import oscar.cp.core.CPOutcome._
 import java.util.LinkedList
 import java.util.Collection
 
+import oscar.algo.search.DFSLinearizer
+import oscar.cp.searches.DFSReplayer
+
 class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStrength) {
 
 
-  def this() = this(CPPropagStrength.Weak)
+  def this() = this(CPPropagStrength.Automatic)
 
-  override def startSubjectTo(stopCondition: DFSearch => Boolean, maxDiscrepancy: Int)(block: => Unit): SearchStatistics = {
+  override def startSubjectTo(stopCondition: DFSearch => Boolean, maxDiscrepancy: Int, listener: DFSearchListener)(block: => Unit): SearchStatistics = {
     deactivateNoSolExceptions()
-    val stat = super.startSubjectTo(stopCondition,maxDiscrepancy)(block)
+    val stat = super.startSubjectTo(stopCondition,maxDiscrepancy,listener)(block)
     cleanQueues()
     stat
+  }
+
+  //the solution variables are the variables that must be assigned to have a solution
+  final def replay(dfsLinearizer: DFSLinearizer, solutionVariables: Seq[CPIntVar]): SearchStatistics = {
+    replaySubjectTo(dfsLinearizer,solutionVariables){}
+  }
+
+  final def replaySubjectTo(dfsLinearizer: DFSLinearizer, solutionVariables: Seq[CPIntVar])(block: => Unit): SearchStatistics = {
+    pushState() // Store the current state
+    block
+    val stats = new DFSReplayer(this, solutionVariables).replay(dfsLinearizer.decisions)
+    pop()
+    stats
+  }
+
+
+
+  @inline private def buildStopCondition(nSols: Int, failureLimit: Int, timeLimit: Int): Function1[DFSearch, Boolean] = {
+    // Build the stop condition
+    val checkSol = nSols < Int.MaxValue
+    val checkFailures = failureLimit < Int.MaxValue
+    val checkTime = timeLimit < Int.MaxValue
+    val maxTime = (timeLimit * 1000) + System.currentTimeMillis()
+    (s: DFSearch) => {
+      var stop = false
+      stop |= (checkSol && s.nSolutions >= nSols)
+      stop |= (checkFailures && s.nBacktracks >= failureLimit)
+      stop |= (checkTime && System.currentTimeMillis() >= maxTime)
+      stop
+    }
   }
 
 
@@ -112,7 +146,8 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
   /**
    * Add a constraint to the store (b == true) in a reversible way and trigger the fix-point algorithm. <br>
    * In a reversible way means that the constraint is present in the store only for descendant nodes.
-   * @param c
+    *
+    * @param c
    * @throws NoSolutionException if the fix point detects a failure that is one of the domain became empty
    */
   override def add(b: CPBoolVar): CPOutcome = {
@@ -134,7 +169,8 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
   /**
    * Add a set of constraints to the store in a reversible way and trigger the fix-point algorithm afterwards.
    * In a reversible way means that the posted constraints are present in the store only for descendant nodes.
-   * @param constraints
+    *
+    * @param constraints
    * @param st the propagation strength asked for the constraint. Will be used only if available for the constraint (see specs of the constraint)
    * @throws NoSolutionException if the fix point detects a failure that is one of the domain became empty, Suspend otherwise.
    */

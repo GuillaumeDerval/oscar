@@ -16,10 +16,13 @@
 package oscar.examples.cp.scheduling
 
 import oscar.cp._
-
 import oscar.visual._
+
 import scala.io.Source
 import oscar.cp.scheduling.visual.VisualGanttChart
+import oscar.util.RandomGenerator
+
+import scala.collection.mutable.ArrayBuffer
 
 
 
@@ -36,7 +39,7 @@ import oscar.cp.scheduling.visual.VisualGanttChart
  *  @author Renaud Hartert ren.hartert@gmail.com
  *  @author Cyrille Dejemeppe cyrille.dejemeppe@gmail.com
  */
-object JobShop extends CPModel with App {
+object JobShop extends App {
 
   // Parsing    
   // -----------------------------------------------------------------------
@@ -73,6 +76,7 @@ object JobShop extends CPModel with App {
   // Modeling 
   // -----------------------------------------------------------------------
 
+  implicit val cp = CPSolver()
   val horizon = durations.sum
 
   // Activities & Resources
@@ -84,6 +88,8 @@ object JobShop extends CPModel with App {
 
   val makespan = maximum(endsVar)
 
+  val bestSolutionStarts = Array.ofDim[Int](nActivities)
+
   // Visualization  
   // -----------------------------------------------------------------------
 
@@ -92,6 +98,9 @@ object JobShop extends CPModel with App {
   val gantt1 = new VisualGanttChart(startsVar, durationsVar, endsVar, i => jobs(i), colors = i => colors(resources(i)))
   val gantt2 = new VisualGanttChart(startsVar, durationsVar, endsVar, i => resources(i), colors = i => colors(resources(i)))
   onSolution {
+    for (a <- 0 until nActivities) {
+      bestSolutionStarts(a) = startsVar(a).min
+    }
     gantt1.update(1, 20)
     gantt2.update(1, 20)
   }
@@ -122,9 +131,25 @@ object JobShop extends CPModel with App {
 
   val rankBranching = rankBranchings.reduce{_++_}
     
-  solver.search {
+  search {
     rankBranchings.reduce{_++_} ++ binaryStatic(startsVar)
   }
-  println(start())
+  start(1)
+  // LNS
+  val constraintBuffer = ArrayBuffer[Constraint]()
+  val maxFails = 2000
+  val relaxProba = 90
+  val nRelaxations = 100000
+  for (r <- 1 to nRelaxations) {
+    constraintBuffer.clear()
+    val stats = startSubjectTo(failureLimit = maxFails) {
+      for (a <- 0 until nActivities) {
+        if (RandomGenerator.nextInt(100) > relaxProba) {
+          constraintBuffer += startsVar(a) == bestSolutionStarts(a)
+        }
+      }
+      add(constraintBuffer)
+    }
+  }
 }
 

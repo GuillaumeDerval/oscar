@@ -19,6 +19,7 @@ import oscar.cp.core.variables.CPIntVar
 import oscar.cp.modeling._
 import oscar.cp.core.Constraint
 import oscar.algo.reversible.ReversibleInt
+import oscar.cp._
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPOutcome._
@@ -27,6 +28,7 @@ import oscar.cp.core.CPOutcome._
  * SubCircuit
  *
  * @author Renaud Hartert ren.hartert@gmail.com
+ * @author Pierre Schaus pschaus@gmail.com
  */
 final class SubCircuit(successors: Array[CPIntVar]) extends Constraint(successors(0).store, "SubCircuit") {
 
@@ -41,18 +43,24 @@ final class SubCircuit(successors: Array[CPIntVar]) extends Constraint(successor
     else Suspend
   }
 
-  @inline private def init(): CPOutcome = {
+  private def init(): CPOutcome = {
     var i = nSuccessors
     while (i > 0) {
       i -= 1
+      val idx = i
       val successor = successors(i)
-      if (!successor.isBound) successor.callValBindIdxWhenBind(this, i)
-      else if (valBindIdx(successors(i), i) == Failure) return Failure
+      if (!successor.isBound) {
+        successor.callValBindIdxWhenBind(this, i)
+        successor.filterWhenBind(true,CPStore.MaxPriorityL2) {
+          bind(idx)
+        }
+      }
+      else if (bind(idx) == Failure) return Failure
     }
     Suspend
   }
 
-  @inline private def close(): CPOutcome = {
+   private def close(): CPOutcome = {
     var i = nSuccessors
     while (i > 0) {
       i -= 1
@@ -62,9 +70,9 @@ final class SubCircuit(successors: Array[CPIntVar]) extends Constraint(successor
     Success // All the variables are bound
   }
 
-  override def valBindIdx(cpvar: CPIntVar, u: Int): CPOutcome = {
+  private def bind(u: Int): CPOutcome = {
     // s ->* u -> v ->* d
-    val v = cpvar.min
+    val v = successors(u).min
     if (u == v) Suspend
     else {    
       val s = src(u).value
@@ -73,7 +81,7 @@ final class SubCircuit(successors: Array[CPIntVar]) extends Constraint(successor
       dest(s).value = d     
       // Updates the number of sub-circuits
       if (d != v) nSubCircuits.decr()
-      else if (s == u) nSubCircuits.incr()      
+      if (s == u) nSubCircuits.incr()
       // Only one sub-circuit
       if (nSubCircuits.value > 1) {
         if (successors(d).removeValue(s) == Failure) {

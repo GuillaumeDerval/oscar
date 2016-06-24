@@ -21,7 +21,6 @@ import oscar.algo.search.DFSearch
 import oscar.cp.searches.ConflictOrderingSearch
 import oscar.cp.constraints.Or
 import oscar.cp.scheduling.constraints._
-import oscar.cp.constraints.UnaryResourceWithOptionalActivities
 import oscar.algo.search.Branching
 import scala.collection.mutable.TreeSet
 
