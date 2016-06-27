@@ -1,96 +1,148 @@
 /*******************************************************************************
- * OscaR is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 2.1 of the License, or
- * (at your option) any later version.
- *   
- * OscaR is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License  for more details.
- *   
- * You should have received a copy of the GNU Lesser General Public License along with OscaR.
- * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
- ******************************************************************************/
-
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
 package oscar.cp.constraints
 
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.modeling._
-import oscar.cp.core.Constraint
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp._
+import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPOutcome._
+import oscar.cp.core.Constraint
 
 /**
- * SubCircuit
- *
- * @author Renaud Hartert ren.hartert@gmail.com
- * @author Pierre Schaus pschaus@gmail.com
- */
-final class SubCircuit(successors: Array[CPIntVar]) extends Constraint(successors(0).store, "SubCircuit") {
+  * SubCircuit constraint (only one mode of filtering)
+  * This constraint enforces `successors` to represent an Hamiltonian circuit on a subset of nodes.
+  * A node that is not part of the circuit is its own successor:
+  * succ(i) = j means that j is the successor of i and succ(i) = i means that i is not in the circuit.
+  * Available propagation strengths are Weak (default) and Strong.
+  * @param succ
+  * @see CPPropagStrength
+  * @author Pierre Schaus pschaus@gmail.com
+  */
+final class SubCircuit(succs: Array[CPIntVar]) extends Constraint(succs(0).store, "SubCircuit") {
 
-  private[this] val nSuccessors = successors.length
-  private[this] val dest: Array[ReversibleInt] = Array.tabulate(nSuccessors)(new ReversibleInt(s, _))
-  private[this] val src: Array[ReversibleInt] = Array.tabulate(nSuccessors)(new ReversibleInt(s, _))
-  private[this] val nSubCircuits: ReversibleInt = new ReversibleInt(s, 0)
+  require(succs.length > 0, "no variable.")
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
-    if (s.post(new AllDifferent(successors: _*), l) == Failure) Failure
-    else if (init() == Failure) Failure
-    else Suspend
+  private[this] val nSuccs = succs.length
+  private[this] val dests = Array.tabulate(nSuccs)(i => new ReversibleInt(s, i))
+  private[this] val origs = Array.tabulate(nSuccs)(i => new ReversibleInt(s, i))
+  private[this] val lengthToDest = Array.fill(nSuccs)(new ReversibleInt(s,0))
+  private[this] val lengthSubCircuit = new ReversibleInt(s,0)
+
+  // two sparse-sets
+  // unbound variable indices
+  private[this] val unboundIdx = Array.tabulate(nSuccs)(i => i)
+  private[this] val nUnbound = new ReversibleInt(s,nSuccs)
+  // unbound variable indices such that succs(i) contains i
+  private[this] val unboundPossSelfLoopIdx = Array.tabulate(nSuccs)(i => i)
+  private[this] val nUnboundPossSelfLoop = new ReversibleInt(s,nSuccs)
+
+
+  final override def setup(l: CPPropagStrength): CPOutcome = {
+    if (nSuccs == 1) return succs(0).assign(0)
+    if (s.post(new AllDifferent(succs:_*), l) == Failure) Failure // FIXME post two allDifferent in case of symmetry
+    else {
+      for (i <- 0 until nSuccs) {
+        if (!succs(i).isBound) succs(i).callPropagateWhenBind(this)
+      }
+    }
+    return propagate()
   }
 
-  private def init(): CPOutcome = {
-    var i = nSuccessors
+  final override def propagate(): CPOutcome = {
+
+    // filter-out unbound
+    var i = nUnboundPossSelfLoop.value
+    while (i > 0) {
+      i-= 1
+      if (!succs(unboundPossSelfLoopIdx(i)).hasValue(unboundPossSelfLoopIdx(i))) {
+        // remove this variable that cannot self-loop
+        lengthSubCircuit.incr()
+        val tmp = unboundPossSelfLoopIdx(i)
+        unboundPossSelfLoopIdx(i) =  unboundPossSelfLoopIdx(nUnboundPossSelfLoop.value -1)
+        unboundPossSelfLoopIdx(nUnboundPossSelfLoop.value -1) = tmp
+        nUnboundPossSelfLoop -= 1
+      }
+      else if (succs(unboundPossSelfLoopIdx(i)).isBound) {
+        // remove this bound variable index
+        val tmp = unboundPossSelfLoopIdx(i)
+        unboundPossSelfLoopIdx(i) =  unboundPossSelfLoopIdx(nUnboundPossSelfLoop.value -1)
+        unboundPossSelfLoopIdx(nUnboundPossSelfLoop.value -1) = tmp
+        nUnboundPossSelfLoop -= 1
+      }
+    }
+
+
+    assert(lengthSubCircuit.value != (0 until nSuccs).count(i => !succs(i).hasValue((i))))
+
+    // call bind on every newly bound variable
+    i = nUnbound.value
     while (i > 0) {
       i -= 1
-      val idx = i
-      val successor = successors(i)
-      if (!successor.isBound) {
-        successor.callValBindIdxWhenBind(this, i)
-        successor.filterWhenBind(true,CPStore.MaxPriorityL2) {
-          bind(idx)
-        }
+      if (succs(unboundIdx(i)).isBound) {
+        val tmp = unboundIdx(i)
+        if (bind(tmp) == Failure) return Failure
+        unboundIdx(i) =  unboundIdx(nUnbound.value -1)
+        unboundIdx(nUnbound.value -1) = tmp
+        nUnbound -= 1
       }
-      else if (bind(idx) == Failure) return Failure
     }
     Suspend
   }
 
-   private def close(): CPOutcome = {
-    var i = nSuccessors
+  private def close(): CPOutcome = {
+    var i = nUnboundPossSelfLoop
     while (i > 0) {
       i -= 1
-      val successor = successors(i)
-      if (!successor.isBound && successor.assign(i) == Failure) return Failure
+      if (succs(unboundPossSelfLoopIdx(i)).assign(unboundPossSelfLoopIdx(i)) == Failure) {
+        return Failure
+      }
     }
-    Success // All the variables are bound
+    Suspend
   }
 
-  private def bind(u: Int): CPOutcome = {
-    // s ->* u -> v ->* d
-    val v = successors(u).min
-    if (u == v) Suspend
-    else {    
-      val s = src(u).value
-      val d = dest(v).value
-      src(d).value = s
-      dest(s).value = d     
-      // Updates the number of sub-circuits
-      if (d != v) nSubCircuits.decr()
-      if (s == u) nSubCircuits.incr()
-      // Only one sub-circuit
-      if (nSubCircuits.value > 1) {
-        if (successors(d).removeValue(s) == Failure) {
+  private def bind(i: Int): CPOutcome = {
+    val j = succs(i).min
+
+    if (j == i) {
+      Suspend
+    }
+    else {
+      // o *-> i -> j *-> d
+      val d = dests(j).value
+      val o = origs(i).value
+      val length = lengthToDest(o) += (lengthToDest(j).value + 1)
+      if (o == j && i != j) {
+        // a sub-circuit was closed but it appears to be too short
+        if (length < lengthSubCircuit) {
           return Failure
         }
-      }     
-      // Closes the circuit
-      if (src(u).value == v) close()
-      else Suspend
+        else {
+          return close()
+        }
+      } else {
+        // maintain the path and path length
+        dests(o).value = d
+        origs(d).value = o
+        if (lengthSubCircuit-1 > length) {
+          if (succs(d).removeValue(o) == Failure) {
+            return Failure
+          }
+        }
+        return Suspend
+      }
     }
   }
 }
