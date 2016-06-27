@@ -52,10 +52,10 @@ final class SubCircuit(succs: Array[CPIntVar]) extends Constraint(succs(0).store
 
   final override def setup(l: CPPropagStrength): CPOutcome = {
     if (nSuccs == 1) return succs(0).assign(0)
-    if (s.post(new AllDifferent(succs:_*), l) == Failure) Failure // FIXME post two allDifferent in case of symmetry
+    if (s.post(new AllDifferent(succs), l) == Failure) Failure // FIXME post two allDifferent in case of symmetry
     else {
       for (i <- 0 until nSuccs) {
-        if (!succs(i).isBound) succs(i).callPropagateWhenBind(this)
+        if (!succs(i).isBound) succs(i).callPropagateWhenDomainChanges(this)
       }
     }
     return propagate()
@@ -71,14 +71,14 @@ final class SubCircuit(succs: Array[CPIntVar]) extends Constraint(succs(0).store
         // remove this variable that cannot self-loop
         lengthSubCircuit.incr()
         val tmp = unboundPossSelfLoopIdx(i)
-        unboundPossSelfLoopIdx(i) =  unboundPossSelfLoopIdx(nUnboundPossSelfLoop.value -1)
+        unboundPossSelfLoopIdx(i) = unboundPossSelfLoopIdx(nUnboundPossSelfLoop.value -1)
         unboundPossSelfLoopIdx(nUnboundPossSelfLoop.value -1) = tmp
         nUnboundPossSelfLoop -= 1
       }
       else if (succs(unboundPossSelfLoopIdx(i)).isBound) {
         // remove this bound variable index
         val tmp = unboundPossSelfLoopIdx(i)
-        unboundPossSelfLoopIdx(i) =  unboundPossSelfLoopIdx(nUnboundPossSelfLoop.value -1)
+        unboundPossSelfLoopIdx(i) = unboundPossSelfLoopIdx(nUnboundPossSelfLoop.value -1)
         unboundPossSelfLoopIdx(nUnboundPossSelfLoop.value -1) = tmp
         nUnboundPossSelfLoop -= 1
       }
@@ -91,12 +91,23 @@ final class SubCircuit(succs: Array[CPIntVar]) extends Constraint(succs(0).store
     i = nUnbound.value
     while (i > 0) {
       i -= 1
+      val tmp = unboundIdx(i)
       if (succs(unboundIdx(i)).isBound) {
-        val tmp = unboundIdx(i)
         if (bind(tmp) == Failure) return Failure
         unboundIdx(i) =  unboundIdx(nUnbound.value -1)
         unboundIdx(nUnbound.value -1) = tmp
         nUnbound -= 1
+      } else {
+        val o = origs(tmp).value
+        val d = dests(tmp).value
+        val lengthOrigDest = lengthToDest(o)
+        if (o != tmp && d == tmp) {
+          if (lengthSubCircuit.value - 1 > lengthOrigDest) {
+            if (succs(d).removeValue(o) == Failure) {
+              return Failure
+            }
+          }
+        }
       }
     }
     Suspend

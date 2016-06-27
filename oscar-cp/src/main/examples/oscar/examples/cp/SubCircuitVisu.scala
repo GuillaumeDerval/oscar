@@ -44,7 +44,7 @@ object SubCircuitVisu extends CPModel with App {
   add(nEdge >= 12)
 
   // Constraints
-  add(subCircuit(succ), Weak)
+  add(subCircuit(succ),Weak)
 
   // Search heuristic
   minimize(totDist)
