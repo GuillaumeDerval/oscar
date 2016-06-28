@@ -1,6 +1,5 @@
 package oscar.examples.cp
 
-import SportSchedulingMedium1._
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
 import oscar.util._
