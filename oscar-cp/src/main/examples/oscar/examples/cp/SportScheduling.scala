@@ -1,20 +1,22 @@
 package oscar.examples.cp
 
+import SportSchedulingMedium1._
 import oscar.cp._
+import oscar.cp.core.CPPropagStrength
 import oscar.util._
 
 /**
- * The problem is to schedule an even number n of teams over n/2 periods and n - 1 weeks,
- * under the following constraints: <br>
- *  - Each team must play against every other team <br>
- *  - A team plays exactly one game per week  <br>
- *  - A team can play at most twice in the same period <br>
- *
- * @author Pierre Schaus pschaus@gmail.com
- */
-object SportScheduling extends CPModel with App {
+  * The problem is to schedule an even number n of teams over n/2 periods and n - 1 weeks,
+  * under the following constraints: <br>
+  *  - Each team must play against every other team <br>
+  *  - A team plays exactly one game per week  <br>
+  *  - A team can play at most twice in the same period <br>
+  *
+  * @author Pierre Schaus pschaus@gmail.com
+  */
+object SportSchedulingMedium extends CPModel with App {
 
-  val n = 10
+  val n = 14
   val nbPeriods = n / 2
   val Periods = 0 until nbPeriods
   val nbTeams = n
@@ -23,6 +25,7 @@ object SportScheduling extends CPModel with App {
   val Weeks = 0 until nbWeeks
   val Homes = 0 to 1 // 0/1 for home/away game
 
+  solver.silent = true
   val team = Array.tabulate(nbPeriods, nbWeeks, 2)((p, w, h) => CPIntVar(0 until nbTeams))
   val game = Array.tabulate(nbPeriods, nbWeeks)((p, w) => CPIntVar(0 until (n * n - 1)))
   val tuples = for (i <- Teams; j <- i + 1 until nbTeams) yield (i, j, i * nbWeeks + j - 1)
@@ -38,14 +41,7 @@ object SportScheduling extends CPModel with App {
     }
     println("\n")
   }
-
-  var solFound = false
-  onSolution {
-    solFound = true
-    println("sol found")
-    printSol()
-  }
-
+  val cl = CPPropagStrength.Medium
   // make the link between the team and game variables
   for (p <- Periods; w <- Weeks) {
     add(table(team(p)(w)(0), team(p)(w)(1), game(p)(w), tuples))
@@ -53,29 +49,16 @@ object SportScheduling extends CPModel with App {
   // a team plays exactly one game per week
   for (w <- Weeks) {
     val teamw = for (p <- Periods; h <- Homes) yield team(p)(w)(h)
-    add(allDifferent(teamw), Strong)
+    add(allDifferent(teamw), cl)
   }
   // every team plays against every other team
-  add(allDifferent(game.flatten), Strong)
+  add(allDifferent(game.flatten), cl)
   // a team can play at most twice in the same period
-  for (p <- Periods) {
-    add(gcc(team(p).flatten, Teams, 1, 2), Strong)
-  }
-
+  for (p <- Periods)
+    add(gcc(team(p).flatten, Teams, 1, 2), cl)
   search {
-    binary(game.flatten.toSeq, _.size, _.randomValue) // our randomized solution
+    binaryFirstFail(game.flatten.toSeq)
   }
+  println(start (1))
 
-  // use restarts to break heavy tails phenomena
-  var restart = 0
-  val t = time {
-    do {
-      start(nSols = 1, failureLimit = 5000)
-      restart += 1
-    } while (!solFound)
-  }
-
-  println("time:" + t)
-  println("#restart:" + restart)
 }
-

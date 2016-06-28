@@ -55,7 +55,12 @@ final class SubCircuit(succs: Array[CPIntVar]) extends Constraint(succs(0).store
     if (s.post(new AllDifferent(succs), l) == Failure) Failure // FIXME post two allDifferent in case of symmetry
     else {
       for (i <- 0 until nSuccs) {
-        if (!succs(i).isBound) succs(i).callPropagateWhenDomainChanges(this)
+        if (!succs(i).isBound) {
+          if (l == CPPropagStrength.Strong)
+          succs(i).callPropagateWhenDomainChanges(this)
+        } else {
+          succs(i).callPropagateWhenBind(this)
+        }
       }
     }
     return propagate()
