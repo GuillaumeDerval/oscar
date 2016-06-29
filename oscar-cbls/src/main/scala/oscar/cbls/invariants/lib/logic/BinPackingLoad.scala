@@ -18,6 +18,9 @@ case class BinPackingLoad(items: Array[IntValue], itemsizes: Array[Int]) extends
   private val maxLoad = itemsizes.foldLeft(0)((acc,l) => acc+ l)
 
   val binLoad = Array.tabulate(maxVal+1)(i => CBLSIntVar(this.model,0, 0 to maxLoad, "bin_"+i))
+  for( b <- binLoad){
+    b.setDefiningInvariant(this)
+  }
 
   for(i <- items.indices)
     binLoad(items(i).value) :+= itemsizes(i)

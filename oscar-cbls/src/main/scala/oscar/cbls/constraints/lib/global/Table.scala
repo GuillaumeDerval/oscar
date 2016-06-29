@@ -73,7 +73,7 @@ case class Table(variables: Array[IntValue], table:Array[Array[Int]]) extends In
       0
     }
   }
-  val minViolation = MinArray(rowViolation.asInstanceOf[Array[IntValue]])
+  val minViolation = IntElement(aMinViolatingRow,rowViolation.asInstanceOf[Array[IntValue]])//MinArray(rowViolation.asInstanceOf[Array[IntValue]])
   /** returns the degree of violation of the constraint
     * notice that you cannot create any new invariant or variable in this method
     * because they can only be created before the model is closed.
@@ -93,11 +93,12 @@ case class Table(variables: Array[IntValue], table:Array[Array[Int]]) extends In
  @inline
   override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int): Unit = {
    assert(OldVal != NewVal)
-   for(row <- table.indices) {
-     if(table(row)(index) == OldVal){
-       rowViolation(row) :+= 1
-     }else if(table(row)(index) == NewVal){
-       rowViolation(row) :-= 1
+   for(r <- table.indices) {
+     val row = table(r)
+     if(row(index) == OldVal){
+       rowViolation(r) :+= 1
+     }else if(row(index) == NewVal){
+       rowViolation(r) :-= 1
      }
    }
   }

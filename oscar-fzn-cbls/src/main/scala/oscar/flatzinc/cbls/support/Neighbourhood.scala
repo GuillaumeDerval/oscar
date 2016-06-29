@@ -79,8 +79,8 @@ abstract class Neighbourhood(val searchVariables: Array[CBLSIntVarDom]) extends 
   //var minObjective: Int = Int.MaxValue;
   def getVariables(): Array[CBLSIntVarDom] = searchVariables
   
-  def getMinObjective(it: Int, accept: Move => Boolean): Move;
-  def getExtendedMinObjective(it: Int, accept: Move => Boolean): Move;
+  def getMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean = {(x:CBLSIntVar) => true}): Move;
+  def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean = {(x:CBLSIntVar) => true}): Move;
   def randomMove(it: Int): Move;
   
  // def init(): Unit;
@@ -140,10 +140,10 @@ class SumNeighborhood(val variables: Array[CBLSIntVarDom],val coeffs:Array[Int],
   def randomMove(it:Int):Move = {
     new NoMove()
   }
-  def getMinObjective(it: Int, accept: Move => Boolean): Move = {
+  def getMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     getExtendedMinObjective(it,accept)
   }
-  def getExtendedMinObjective(it: Int, accept: Move => Boolean): Move = {
+  def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     val rng = 0 until variables.length;
     val part1 = selectMinImb(rng,(i:Int) => variables(i).min to variables(i).max,(iv:(Int,Int)) => objective.assignVal(variables(iv._1),iv._2))
     part1 match{ 
@@ -283,12 +283,12 @@ class GCCNeighborhood(val variables: Array[CBLSIntVarDom],val vals:Array[Int],va
     return getSwapMove(RandomGenerator.nextInt(variables.length),RandomGenerator.nextInt(variables.length),_ => true)
   }
   
-  def getMinObjective(it: Int, accept: Move => Boolean): Move = {
+  def getMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     val rng2 = 0 until variables.length;
     val idx = selectMax(rng2, (i: Int) => variableViolation(i).value);
     getBest(List(idx),rng2, accept)
   }
-  def getExtendedMinObjective(it: Int, accept: Move => Boolean): Move = {
+  def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     val rng2 = 0 until variables.length
     getBest(rng2,rng2,accept)
   }
@@ -340,14 +340,14 @@ class ThreeOpt(variables: Array[CBLSIntVarDom], objective: CBLSObjective, cs: Co
     val obj = objective.assignVal(list)
     acceptOr(new AssignsMove(list,obj),accept)
   }
-  def getMinObjective(it: Int, accept: Move => Boolean): Move = {
+  def getMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     val idx = selectMax(rng, (i: Int) => variableViolation(i-offset).value);
     val next = selectMin(rng)(next =>getMove(idx,next,accept).value)
    // println(idx +  " "+ getMove(idx,vars(idx).value))
     getMove(idx,next,accept)
     
   }
-  def getExtendedMinObjective(it: Int, accept: Move => Boolean): Move = {
+  def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     
     //println(variables.map(v => v.value).mkString(","))
     //this one removes a node and reinsert it somewhere else
@@ -435,7 +435,7 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
     val minObjective = objective.assignVal(searchVariables(bestIndex), bestValue); 
     return new AssignMove(searchVariables(bestIndex),bestValue,minObjective)
   }
-  def getMinObjective(it: Int, accept: Move => Boolean): Move = {
+  def getMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     //TODO: Only takes into account the violation!
     val bestIndex = selectMax(indexRange, (i: Int) => variableViolation(i).value);
     val bestValue = selectMin(searchVariables(bestIndex).getDomain())((i: Int) =>
@@ -443,7 +443,7 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
       _ != searchVariables(bestIndex).value)
     return acceptOr(new AssignMove(searchVariables(bestIndex),bestValue,objective.assignVal(searchVariables(bestIndex), bestValue)),accept)
   }
-  def getExtendedMinObjective(it: Int, accept: Move => Boolean): Move = {
+  def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
 
     var bMv = null.asInstanceOf[Move]
     var bObj = Int.MaxValue
@@ -452,7 +452,7 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
     val oObj = objective.value
     while(!(looped && cVar == start)){
       val v = searchVariables(cVar)
-      if(v.domainSize < 10000000){//TODO: Do something about this!
+      if(acceptVar(v) && v.domainSize < 10000000){//TODO: Do something about this!
         val variableValue = v.value
         for(cVal <- v.getDomain()){
           if(variableValue != cVal){
@@ -467,7 +467,7 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
             }
           }
         }
-        if(bObj < oObj){ 
+        if(bObj < oObj){
           start = cVar
           return bMv
         }
@@ -489,7 +489,7 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
 //This neighborhood assumes that all variables have the same domain
 class MaxViolatingSwap(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjective, constraintSystem: ConstraintSystem) extends Neighbourhood(searchVariables) {
   val indexRange = 0 until searchVariables.length;
-  val variableViolation: Array[IntValue] = searchVariables.map(constraintSystem.violation(_)).toArray
+  val variableViolation: Array[IntValue] = searchVariables.map(constraintSystem.violation(_))
   //TODO: Might be made more efficient by maintaining the two sets of variables, the ones assigned to true and the ones assigned to false.
   def reset() = {
 
@@ -500,14 +500,14 @@ class MaxViolatingSwap(searchVariables: Array[CBLSIntVarDom], objective: CBLSObj
     val minObjective = objective.swapVal(searchVariables(bestIndex1), searchVariables(bestIndex2))
     return new SwapMove(searchVariables(bestIndex1), searchVariables(bestIndex2),minObjective);
   }
-  def getMinObjective(it: Int, accept: Move =>Boolean): Move = {
+  def getMinObjective(it: Int, accept: Move =>Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     
     //TODO: Only takes into account the violation for the first
-    val bestIndex1 = selectMax(indexRange, (i: Int) => variableViolation(i).value);
+    val bestIndex1 = selectMax(indexRange, (i: Int) => variableViolation(i).value)
     val bestIndex2 = selectMin(indexRange)((i:Int) => acceptOr(new SwapMove(searchVariables(bestIndex1),searchVariables(i),objective.swapVal(searchVariables(bestIndex1),searchVariables(i))),accept).value, (i: Int) => searchVariables(i).value != searchVariables(bestIndex1).value && i != bestIndex1);
     return acceptOr(new SwapMove(searchVariables(bestIndex1),searchVariables(bestIndex2),objective.swapVal(searchVariables(bestIndex1),searchVariables(bestIndex2))),accept)
   }
-  def getExtendedMinObjective(it: Int, accept: Move =>Boolean): Move = {
+  def getExtendedMinObjective(it: Int, accept: Move =>Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     getMinObjective(it,accept)
     //Seems too costly
 //    val bestPair = selectMin2(indexRange, indexRange, (v:Int,i:Int) => acceptOr(new SwapMove(searchVariables(v),searchVariables(i),objective.swapVal(searchVariables(v),searchVariables(i))),accept).value)
@@ -603,12 +603,12 @@ class AllDifferent(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
     }
   }
   
-  def getMinObjective(it: Int,accept: Move => Boolean): Move = {
+  def getMinObjective(it: Int,accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     val rng2 = (0 until variables.length);
     val idx = selectMax(rng2, (i: Int) => variableViolation(i).value);
     getBest(List(idx),rng2,accept)
   }
-  def getExtendedMinObjective(it: Int,accept: Move => Boolean): Move = {
+  def getExtendedMinObjective(it: Int,accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     val rng2 = (0 until variables.length);
     getBest(rng2,rng2,accept)
   }
@@ -691,12 +691,12 @@ class Inverse(xs: Array[CBLSIntVarDom], invXs:Array[CBLSIntVarDom], objective: C
     getSwapMove(i1,i2, m => true)
   }
 
-  def getMinObjective(it: Int,accept: Move => Boolean): Move = {
+  def getMinObjective(it: Int,accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     val rng2 = (0 until xs.length);
     val idx = selectMax(rng2, (i: Int) => xsViolation(i).value);
     getBest(List(idx),rng2,accept)
   }
-  def getExtendedMinObjective(it: Int,accept: Move => Boolean): Move = {
+  def getExtendedMinObjective(it: Int,accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     val rng2 = (0 until xs.length);
     getBest(rng2,rng2,accept)
   }

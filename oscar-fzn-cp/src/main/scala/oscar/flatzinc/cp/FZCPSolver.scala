@@ -144,12 +144,17 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
           case bv:BooleanVariable =>
             if(getMinFor(bv)>=1)bv.bind(true)
             if(getMaxFor(bv)<=0)bv.bind(false)
-          case iv:IntegerVariable => 
-            iv.geq(getMinFor(iv));
-            iv.leq(getMaxFor(iv));
+          case iv:IntegerVariable =>
+            if(getIntVar(iv).isContinuous) {
+              iv.geq(getMinFor(iv))
+              iv.leq(getMaxFor(iv))
+            }else{
+              iv.inter(DomainSet(getIntVar(iv).iterator.toSet))
+            }
         }
+        //
         if(v.domainSize < domSizeBefore)
-          Console.err.println("% Reducing for " + v + " from " + domSizeBefore + " to " + v.domainSize)
+          Console.err.println("% Reducing for " + v + " from " + domSizeBefore + " to " + v.domainSize + ". Dom: " + getIntVar(v).iterator.toArray.mkString(", "))
       }
     }catch{
       case e:UnsatException => false

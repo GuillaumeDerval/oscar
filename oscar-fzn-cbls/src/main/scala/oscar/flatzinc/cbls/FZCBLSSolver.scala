@@ -53,11 +53,17 @@ import oscar.flatzinc.cp.FZCPModel
 
 class FZCBLSObjective(cblsmodel:FZCBLSModel,log:Log){
   private val opt = cblsmodel.model.search.obj
-  private val objectiveVar = cblsmodel.model.search.variable.map(cblsmodel.getCBLSVar(_)).getOrElse(null)
+  val objectiveVar = cblsmodel.model.search.variable.map(cblsmodel.getCBLSVar(_)).getOrElse(null)
   val violation = cblsmodel.c.violation
-  val violationWeight = CBLSIntVar(cblsmodel.c.model, 1, 0 to (if(violation.max!=0)math.max(1,Int.MaxValue/(violation.max/50000)) else 1) , "violation_weight")
+ /* val objectiveBound = CBLSIntVarDom(cblsmodel.c.model, opt match {
+    case Objective.SATISFY => 0
+    case Objective.MINIMIZE => cblsmodel.model.search.variable.get.max+1
+    case Objective.MAXIMIZE => cblsmodel.model.search.variable.get.min-1
+  }, cblsmodel.model.search.variable.get.domain, "ObjectiveBound")
+*/
+  val violationWeight = CBLSIntVar(cblsmodel.c.model, 1, 0 to (if(violation.max!=0)Int.MaxValue else 1) , "violation_weight")
   //TODO: The division does not seem right... why max and not min?
-  val objectiveWeight = CBLSIntVar(cblsmodel.c.model, 1, 0 to (if(objectiveVar!=null && objectiveVar.max > 0)math.max(1,Int.MaxValue/(objectiveVar.max/200)) else 1) , "objective_weight")
+  val objectiveWeight = CBLSIntVar(cblsmodel.c.model, 1, 0 to (if(objectiveVar!=null && objectiveVar.max > 0) Int.MaxValue else 1) , "objective_weight")
   private val objective2 = opt match {
         case Objective.SATISFY => violation
         case Objective.MAXIMIZE => Minus(Prod2(violation, violationWeight), Prod2(objectiveVar, objectiveWeight))
@@ -76,20 +82,20 @@ class FZCBLSObjective(cblsmodel:FZCBLSModel,log:Log){
     if (objectiveWeight.value > 1) {
       correctWeights(objectiveWeight.value / 2,violationWeight.value)
     } else {
-      correctWeights(objectiveWeight.value,violationWeight.value + Math.max(10, Math.abs(minViolationSinceBest / 2)))
+      correctWeights(objectiveWeight.value,Math.min(Int.MaxValue/3,violationWeight.value) + Math.min(Int.MaxValue/3,Math.max(10, Math.abs(minViolationSinceBest / 2))))
     }
   }
   def increaseObjectiveWeight(minObjectiveSinceBest: Int){
     if (violationWeight.value > 1) {
       correctWeights(objectiveWeight.value,violationWeight.value / 2)
     } else {
-      correctWeights(objectiveWeight.value + Math.max(10, Math.abs(minObjectiveSinceBest / 2)),violationWeight.value)
+      correctWeights(Math.min(Int.MaxValue/3,objectiveWeight.value) + Math.min(Int.MaxValue/3,Math.max(10, Math.abs(minObjectiveSinceBest / 2))),violationWeight.value)
     }
   }
   def correctWeights(newObjW: Int,newVioW: Int){
     val minWeight = math.min(newObjW, newVioW)
     objectiveWeight := math.min(newObjW/minWeight,objectiveWeight.max)
-    violationWeight := math.min(newVioW/ minWeight,violationWeight.max)
+    violationWeight := math.min(newVioW/minWeight,violationWeight.max)
     //violationWeight := 1000 + RandomGenerator.nextInt(10)
     log("Changed Violation Weight to "+violationWeight.value+(if(violationWeight.value==violationWeight.max)"(max)"else ""))
     log("    And Objective Weight to "+objectiveWeight.value+(if(objective.value==objectiveWeight.max)"(max)"else ""))
@@ -114,8 +120,8 @@ class FZCBLSModel(val model: FZProblem, val c: ConstraintSystem, val m: Store, v
       val varsToSwap = vars.groupBy(v => v.dom)
       addNeighbourhood((o,c) => new MaxViolating(vars.toArray, o, c),Array.empty[CBLSIntVarDom])
 
-      //for(key <- varsToSwap.keys)
-       // addNeighbourhood((o,c) => new MaxViolatingSwap(varsToSwap(key).toArray,o,c),Array.empty[CBLSIntVarDom])
+      //for(key <- varsToSwap.keys if key.size == 2)
+      //  addNeighbourhood((o,c) => new MaxViolatingSwap(varsToSwap(key).toArray,o,c),Array.empty[CBLSIntVarDom])
       //addNeighbourhood((o,c) => new MaxViolatingSwap(varsToSwap(varsToSwap.keys.drop(2).head).toArray,o,c),Array.empty[CBLSIntVarDom])
 
       val boolVars = vars.filter((v: CBLSIntVar) => v.min == 0 && v.max == 1)
@@ -243,8 +249,8 @@ class FZCBLSModel(val model: FZProblem, val c: ConstraintSystem, val m: Store, v
       log("Calling the CP solver")
       cpmodel.updateBestObjectiveValue(getCBLSVar(model.search.variable.get).value)
     //TODO: ignore variables whose domain should not be reduced (e.g. variables in the Circuit constraint)
-      cpmodel.updateModelDomains();
-      updateVarDomains();
+      cpmodel.updateModelDomains()
+      updateVarDomains()
       log("Variable domains updated")
     }
   }
@@ -393,7 +399,7 @@ class FZCBLSSolver extends SearchEngine with StopWatch {
       hardCS.close()
       Event(hardCS.violation, Unit => {if(hardCS.violation.value > 0){
         log(0,"PROBLEM: Some implicit Constraint is not satisfied during search.")
-        cblsmodel.neighbourhoods .foreach(n => log(0,n.getClass().toString()+" "+n.getVariables().mkString("[",",","]")))
+        cblsmodel.neighbourhoods.foreach(n => log(0,n.getClass().toString()+" "+n.getVariables().mkString("[",",","]")))
         throw new Exception()
       }});
       //Event(cs.violation, Unit => {log(cs.violation.toString);})
@@ -430,8 +436,26 @@ class FZCBLSSolver extends SearchEngine with StopWatch {
     cblsmodel.vars = cblsmodel.vars.filterNot(v => v.domainSize==1 || v.isControlledVariable);
     cblsmodel.addDefaultNeighbourhoods()
 
+
+  /*  log("WARNING: Sat models will crash")
+    val objVar = CBLSIntVarDom(cblsmodel.m,cblsmodel.model.search.variable.get.domain.min, cblsmodel.model.search.variable.get.domain,"objVar")
+    val objBnd = CBLSIntVarDom(cblsmodel.m,cblsmodel.model.search.variable.get.domain.min, cblsmodel.model.search.variable.get.domain,"objBnd")
+    cblsmodel.model.search.obj match {
+      case Objective.SATISFY => ()
+      case Objective.MINIMIZE =>
+        cblsmodel.c.add(L(objVar, objBnd))
+      case Objective.MAXIMIZE => cblsmodel.c.add(G(objVar, objBnd))
+    }*/
+
+    //Create variable violation before closing the constraint system!
+    cblsmodel.vars.map(cblsmodel.c.violation(_))
+
     cblsmodel.c.close()//The objective depends on the violation of the CS, so it must be first closed before creating the Objective.
     cblsmodel.objective = new FZCBLSObjective(cblsmodel,log)//But objective is needed in neighbourhoods
+
+    //objVar <== cblsmodel.objective.objectiveVar
+    //objBnd <== cblsmodel.objective.objectiveBound
+
     cblsmodel.createNeighbourhoods()//So we actually create the neighbourhoods only after!
     cblsmodel.neighbourhoods.foreach(n => log(2,"Created Neighbourhood "+ n+ " over "+n.searchVariables.length+" variables"))
     
@@ -462,8 +486,8 @@ class FZCBLSSolver extends SearchEngine with StopWatch {
         new ActionSearch(() => {sc.restoreObjective()}),
         model.search.obj match {
           case Objective.SATISFY => new ActionSearch(() => {}) 
-          case Objective.MAXIMIZE => new NeighbourhoodSearchOPT(cblsmodel,sc);
-          case Objective.MINIMIZE => new NeighbourhoodSearchOPT(cblsmodel,sc);
+          case Objective.MAXIMIZE => new NeighbourhoodSearchOPT(cblsmodel,sc)
+          case Objective.MINIMIZE => new NeighbourhoodSearchOPT(cblsmodel,sc); //new NeighbourhoodSearchOPTbySAT(cblsmodel,sc)//
         });
     
     log("Search created")

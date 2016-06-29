@@ -45,7 +45,7 @@ class FZSolution {
     }
     
     def getSolution(converter:String=>String):String = {
-      output.map{case (id,f) => id+" = "+f(converter)+";\n"}.mkString("")+"\n----------\n"
+      output.map{case (id,f) => id+" = "+f(converter)+";\n"}.mkString("")+"----------\n"
     }
     
 	def handleSolution(converter:(String)=>String) = {

@@ -142,7 +142,7 @@ case class array_int_element(b: IntegerVariable, as: Array[IntegerVariable], c: 
 case class array_var_bool_element(b: IntegerVariable, as: Array[BooleanVariable], c: BooleanVariable, ann: List[Annotation] = List.empty[Annotation])
   extends SimpleDefiningConstraint(as++Array(b,c),c,ann);
 
-case class array_var_int_element(b: IntegerVariable, as: Array[IntegerVariable], c: IntegerVariable, ann: List[Annotation] = List.empty[Annotation]) 
+case class array_var_int_element(b: IntegerVariable, as: Array[IntegerVariable], c: IntegerVariable, ann: List[Annotation] = List.empty[Annotation])
   extends SimpleDefiningConstraint(as++Array(b,c),c,ann){
   override def toString() ={"array_var_int_element("+b+","+as.mkString("[", ",", "]")+","+c+","+ann+")"}
 }
