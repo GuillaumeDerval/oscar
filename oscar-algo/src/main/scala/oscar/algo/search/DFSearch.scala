@@ -50,11 +50,11 @@ class DFSearch(node: DFSearchNode) {
   private[this] var completed: Boolean = false
 
 
-  /*// Actions to execute in case of solution node
+  // Actions to execute in case of solution node
   private[this] var solutionActions = List.empty[() => Unit]
 
   // Actions to execute in case of failed node
-  private[this] var failureActions = List.empty[() => Unit]*/
+  private[this] var failureActions = List.empty[() => Unit]
 
   private[this] var searchListener_ : DFSearchListener = null
 
@@ -77,21 +77,17 @@ class DFSearch(node: DFSearchNode) {
   final def isCompleted: Boolean = completed
 
   /** Adds an action to execute when a failed node is found */
-  //final def onFailure(action: => Unit): Unit = failureActions = (() => action) :: failureActions
-  final def onFailure(action: => Unit): Unit = node.statusBehaviourDelegate.onFailure(action)
+  final def onFailure(action: => Unit): Unit = failureActions = (() => action) :: failureActions
 
   /** Adds an action to execute when a solution node is found */
-  //final def onSolution(action: => Unit): Unit = solutionActions = (() => action) :: solutionActions
-  final def onSolution(action: => Unit): Unit = node.statusBehaviourDelegate.onSolution(action)
-  
+  final def onSolution(action: => Unit): Unit = solutionActions = (() => action) :: solutionActions
+
   /** Clear all actions executed when a solution node is found */
-  //final def clearOnSolution(): Unit = solutionActions = Nil
-  final def clearOnSolution(): Unit = node.statusBehaviourDelegate.clearOnSolution()
-  
+  final def clearOnSolution(): Unit = solutionActions = Nil
+
   /** Clear all actions executed when a failed node is found */ 
-  //final def clearOnFailure(): Unit = failureActions = Nil
-  final def clearOnFailure(): Unit = node.statusBehaviourDelegate.clearOnFailure()
-  
+  final def clearOnFailure(): Unit = failureActions = Nil
+
   @inline private def expand(branching: Branching): Boolean = {
     val alternatives = branching.alternatives
     if (alternatives.isEmpty) false
@@ -101,7 +97,7 @@ class DFSearch(node: DFSearchNode) {
     }
   }
 
-  final def start(branching: Branching, stopCondition: DFSearch => Boolean = _ => false): Unit = {
+  final def start(branching: Branching, stopCondition: DFSearch => Boolean = _ => false/*, searchListener : DFSearchListener*/): Unit = {
 
     // Initializes the search
     node.resetStats() // resets trailing time too
@@ -124,8 +120,7 @@ class DFSearch(node: DFSearchNode) {
       val isExpandable = expand(branching)
       if (!isExpandable) {
         node.solFound()
-        //solutionActions.foreach(_())
-        node.statusBehaviourDelegate.performSolutionActions()
+        solutionActions.foreach(_())
         nbSols += 1
         node.pop()
       }
@@ -155,8 +150,7 @@ class DFSearch(node: DFSearchNode) {
         val isExpandable = expand(branching)
         if (!isExpandable) {
           node.solFound()
-          //solutionActions.foreach(_())
-          node.statusBehaviourDelegate.performSolutionActions()
+          solutionActions.foreach(_())
           nbSols += 1
           nbBkts += 1
           if(searchListener_ != null)
@@ -164,11 +158,10 @@ class DFSearch(node: DFSearchNode) {
           node.pop()
         }
       } else {
-        //failureActions.foreach(_())
-        node.statusBehaviourDelegate.performFailureActions()
+        failureActions.foreach(_())
         nbBkts += 1
-        if(searchListener_ != null)
-          searchListener_.onPop(node)
+        if(searchListener != null)
+          searchListener.onPop(node)
         node.pop()
       }
     }
