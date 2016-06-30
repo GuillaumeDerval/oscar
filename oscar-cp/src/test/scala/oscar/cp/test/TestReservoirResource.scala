@@ -16,6 +16,7 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.Matchers
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
 import oscar.util.RandomGenerator
 
@@ -107,6 +108,7 @@ class TestReservoirResource extends FunSuite with Matchers {
     val horizon = nActivities * maxDuration
     for (iter <- 1 to 100) {
       implicit val cp = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       cp.silent = true
       val durationVars = Array.fill(nActivities)(CPIntVar(minDuration + RandomGenerator.nextInt(maxDuration - minDuration)))
       val startVars = Array.tabulate(nActivities)(i => CPIntVar(0 to horizon - durationVars(i).min))
@@ -148,6 +150,7 @@ class TestReservoirResource extends FunSuite with Matchers {
     val horizon = nActivities * maxDuration
     for (iter <- 1 to 20) {
       implicit val cp = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       cp.silent = true
       val durationVars = Array.fill(nActivities)(CPIntVar(minDuration + RandomGenerator.nextInt(maxDuration - minDuration)))
       val startVars = Array.tabulate(nActivities)(i => CPIntVar(0 to horizon - durationVars(i).min))

@@ -14,6 +14,7 @@
  ******************************************************************************/
 package oscar.cp.test
 
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp.constraints._
 import oscar.cp._
 import oscar.cp.testUtils._
@@ -45,6 +46,7 @@ class TestLostAtSea extends TestSuite {
     val tuples = (for (i <- 0 until 64; j <- neighbors(i)) yield (i, j)).toSet
     
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     cp.silent = true
     var best = 1000
 
@@ -73,6 +75,7 @@ class TestLostAtSea extends TestSuite {
     def testCircuit(cons: CPPropagStrength): Int = {
 
       val cp = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       cp.silent = true
       val succ = Array.tabulate(64)(i => CPIntVar(neighbors(i))(cp))
 

@@ -7,7 +7,7 @@ import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.CPPropagStrength._
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.variables.CPBoolVar
-import oscar.algo.search.{Alternative, Branching, DFSearchListener, SearchStatistics}
+import oscar.algo.search._
 
 
 trait CPSolverUtils {
@@ -32,18 +32,18 @@ trait CPSolverUtils {
   def minimize(obj: CPIntVar)(implicit cp: CPSolver): CPSolver = cp.minimize(obj)
   def maximize(obj: CPIntVar)(implicit cp: CPSolver): CPSolver = cp.maximize(obj)
 
-  def onSolution(block: => Unit)(implicit cp: CPSolver) = cp.onSolution(block)
+  def onSolution(block: => Unit)(implicit cp: CPSolver, listener: DFSearchListener) = cp.onSolution(block)
 
-  def start(nSols: Int = Int.MaxValue, failureLimit: Int = Int.MaxValue, timeLimit: Int = Int.MaxValue, maxDiscrepancy: Int = Int.MaxValue, searchListener: DFSearchListener = null)(implicit cp: CPSolver): SearchStatistics = {
-    cp.start(nSols,failureLimit,timeLimit,maxDiscrepancy,searchListener)
+  def start(nSols: Int = Int.MaxValue, failureLimit: Int = Int.MaxValue, timeLimit: Int = Int.MaxValue, maxDiscrepancy: Int = Int.MaxValue)(implicit cp: CPSolver, searchListener: DFSearchListener = DefaultDFSearchListener()): SearchStatistics = {
+    cp.start(nSols,failureLimit,timeLimit,maxDiscrepancy)(searchListener)
   }
 
-  def start(stopCondition: => Boolean)(implicit cp: CPSolver): SearchStatistics = {
+  def start(stopCondition: => Boolean)(implicit cp: CPSolver, listener: DFSearchListener): SearchStatistics = {
     cp.start(stopCondition)
   }
 
-  def startSubjectTo(nSols: Int = Int.MaxValue, failureLimit: Int = Int.MaxValue, timeLimit: Int = Int.MaxValue, maxDiscrepancy: Int = Int.MaxValue, searchListener: DFSearchListener = null)(reversibleBlock: => Unit = {})(implicit cp: CPSolver): SearchStatistics = {
-    cp.startSubjectTo(nSols,failureLimit,timeLimit,maxDiscrepancy, searchListener)(reversibleBlock)
+  def startSubjectTo(nSols: Int = Int.MaxValue, failureLimit: Int = Int.MaxValue, timeLimit: Int = Int.MaxValue, maxDiscrepancy: Int = Int.MaxValue)(reversibleBlock: => Unit = {})(implicit cp: CPSolver, searchListener: DFSearchListener = DefaultDFSearchListener() ): SearchStatistics = {
+    cp.startSubjectTo(nSols,failureLimit,timeLimit,maxDiscrepancy)(reversibleBlock)(searchListener)
   }
 
 }

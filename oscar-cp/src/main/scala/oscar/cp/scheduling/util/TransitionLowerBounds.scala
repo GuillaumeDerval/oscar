@@ -1,6 +1,7 @@
 package oscar.cp.scheduling.util
 
 import oscar.algo.DisjointSets
+import oscar.algo.search.{DFSearchListener, DefaultDFSearchListener}
 import oscar.cp._
 import oscar.cp.core.CPSolver
 import oscar.cp.core.variables.CPIntVar
@@ -85,6 +86,7 @@ class TransitionLowerBounds(transitionTimeMatrix: Array[Array[Int]]) {
     for (nNodes <- 2 to nElements) {
       //println("Best bound for " + nNodes + " nodes")
       val solver = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       solver.silent = true
       val nodeVars = Array.tabulate(nNodes)(i => CPIntVar(0 until nElements)(solver))
       val pathCost = sum(0 until nNodes - 1)(i => element(transitionTimeMatrix, nodeVars(i), nodeVars(i + 1)))

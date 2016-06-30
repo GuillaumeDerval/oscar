@@ -17,6 +17,7 @@
 
 package oscar
 
+import oscar.algo.search.{DFSearchListener, DefaultDFSearchListener}
 import oscar.cp.constraints.InSet
 import oscar.cp.constraints.ModuloLHS
 import oscar.cp.core.CPOutcome
@@ -77,7 +78,10 @@ package object cp extends Constraints with Branchings with ElementBuilder with C
 
   type NoSolutionException = oscar.cp.core.NoSolutionException
 
-  trait CPModel { implicit val solver: CPSolver = CPSolver() }
+  trait CPModel {
+    implicit val solver: CPSolver = CPSolver()
+    implicit val dfsListener : DFSearchListener = new DefaultDFSearchListener()
+  }
 
   /**
    * Filtering power can be specified for some of the constraints.

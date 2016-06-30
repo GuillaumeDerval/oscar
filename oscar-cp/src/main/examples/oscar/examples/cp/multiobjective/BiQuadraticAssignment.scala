@@ -20,6 +20,8 @@ import oscar.cp._
 import oscar.visual.VisualFrame
 import oscar.cp.multiobjective.visual._
 import java.awt.Color
+
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.examples.cp.util.reader.QAPReader._
 import oscar.util.time
 
@@ -64,6 +66,7 @@ object BiQuadraticAssignment extends App {
   // Model
   // -----
   implicit val cp = CPSolver()
+  implicit val listener = DefaultDFSearchListener()
   cp.silent = true
 
   val x: Array[CPIntVar] = Array.fill(n)(CPIntVar(N)(cp))

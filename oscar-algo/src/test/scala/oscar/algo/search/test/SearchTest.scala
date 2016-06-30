@@ -27,6 +27,8 @@ class SearchTest extends TestSuite {
   test("test search0") {
     val node = new DFSearchNode()
 
+    implicit val listener = DefaultDFSearchListener()
+
     val i = new ReversibleInt(node, 0)
     node.search {
       if (i > 2) noAlternative
@@ -43,6 +45,8 @@ class SearchTest extends TestSuite {
   
   test("test search1") {
     val node = new DFSearchNode()
+
+    implicit val listener = DefaultDFSearchListener()
 
     val i = new ReversibleInt(node, 0)
     node.search {
@@ -91,6 +95,8 @@ class SearchTest extends TestSuite {
   test("test search2") {
     val node = new DFSearchNode()
 
+    implicit val listener = DefaultDFSearchListener()
+
     val d = Array(false, false, false)
 
     def branch(left: => Unit)(right: => Unit) = Seq(() => left, () => right)
@@ -136,6 +142,8 @@ class SearchTest extends TestSuite {
   test("test search3") {
     val node = new DFSearchNode()
 
+    implicit val listener = DefaultDFSearchListener()
+
     def branch(left: => Unit)(right: => Unit) = Seq(() => left, () => right)
 
     //def search
@@ -159,6 +167,7 @@ class SearchTest extends TestSuite {
   test("test search4") {
     val node = new DFSearchNode()
 
+    implicit val listener = DefaultDFSearchListener()
 
     //def search
     val b1 = new Branching() {
@@ -191,7 +200,9 @@ class SearchTest extends TestSuite {
   
   test("test search5") {
     val node = new DFSearchNode()
-    
+
+    implicit val listener = DefaultDFSearchListener()
+
     var c = 0
     node.onSolution { c += 1 }
 
@@ -219,6 +230,8 @@ class SearchTest extends TestSuite {
   test("test search6") {
     val node = new DFSearchNode()
 
+    implicit val listener = DefaultDFSearchListener()
+
     val i = new ReversibleInt(node, 0)
     node.search {
       if (i > 2) noAlternative
@@ -242,6 +255,7 @@ class SearchTest extends TestSuite {
   
   test("test search7") {
     val node = new DFSearchNode()
+    implicit val listener = DefaultDFSearchListener()
     val i = new ReversibleInt(node, 0)
     node.search {
       if (i > 1) noAlternative
@@ -253,6 +267,7 @@ class SearchTest extends TestSuite {
   
   test("test search8") {
     val node = new DFSearchNode()
+    implicit val listener = DefaultDFSearchListener()
     val i = new ReversibleInt(node, 0)
     node.search {
       if (i > 0) noAlternative
@@ -265,6 +280,7 @@ class SearchTest extends TestSuite {
   
   test("test search9") {
     val node = new DFSearchNode()
+    implicit val listener = DefaultDFSearchListener()
     val i = new ReversibleInt(node, 0)
     node.search {
       if (i > 0) noAlternative
@@ -276,6 +292,7 @@ class SearchTest extends TestSuite {
   
   test("test search10") {
     val node = new DFSearchNode()
+    implicit val listener = DefaultDFSearchListener()
     val i = new ReversibleInt(node, 0)
     node.search {
       if (i > 2) noAlternative
@@ -288,6 +305,7 @@ class SearchTest extends TestSuite {
   
   test("test search11") {
     val node = new DFSearchNode()
+    implicit val listener = DefaultDFSearchListener()
     val i = new ReversibleInt(node, 0)
     node.search {
       if (i > 2) noAlternative
@@ -299,6 +317,7 @@ class SearchTest extends TestSuite {
   
   test("should restore the state of the root node") {
     val node = new DFSearchNode()
+    implicit val listener = DefaultDFSearchListener()
     
     val a = new ReversibleInt(node, 0)
     val b = new ReversibleInt(node, 0)

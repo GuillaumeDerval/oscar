@@ -5,16 +5,24 @@ package oscar.algo.search
   */
 trait DFSearchListener {
 
-  // called on Push events
+  /** Called on Push events */
   def onPush(node : DFSearchNode) : Unit
-  // called on Pop events
+  /**  Called on Pop events */
   def onPop(node : DFSearchNode) : Unit
-  // called on branching
+  /** Called on branching */
   def onBranch(alternative : Alternative) : Unit
-  /*//called when a failure occurs
+  /** Called when a failure occurs */
   def performFailureActions(): Unit
-  //called when a solution is found
-  def performSolutionActions(): Unit*/
+  /** Called when a solution is found */
+  def performSolutionActions(): Unit
+  /** Adds an action to execute when a failed node is found */
+  def onFailure(action: => Unit): Unit
+  /** Adds an action to execute when a solution node is found */
+  def onSolution(action: => Unit): Unit
+  /** Clear all actions executed when a solution node is found */
+  def clearOnSolution(): Unit
+  /** Clear all actions executed when a failed node is found */
+  def clearOnFailure(): Unit
 
 }
 
@@ -25,28 +33,30 @@ class DefaultDFSearchListener extends DFSearchListener {
   // Actions to execute in case of failed node
   private[this] var failureActions : List[() => Unit] = null
 
-  def onPush(node : DFSearchNode) : Unit = ()
-  def onPop(node : DFSearchNode) : Unit = ()
-  def onBranch(alternative : Alternative) : Unit = ()
+  def onPush(node : DFSearchNode) : Unit = {}
+  def onPop(node : DFSearchNode) : Unit = {}
+  def onBranch(alternative : Alternative) : Unit = {}
 
-  /** Adds an action to execute when a failed node is found */
-  final def onFailure(action: => Unit): Unit = failureActions = (() => action) :: failureActions
+  final def onSolution(action: => Unit): Unit = solutionActions = onEvent(action, solutionActions)
+  final def onFailure(action: => Unit): Unit = failureActions = onEvent(action, failureActions)
 
-  /** Adds an action to execute when a solution node is found */
-  final def onSolution(action: => Unit): Unit = solutionActions = (() => action) :: solutionActions
+  final def clearOnSolution(): Unit = solutionActions = null
+  final def clearOnFailure(): Unit = failureActions = null
 
-  /** Clear all actions executed when a solution node is found */
-  final def clearOnSolution(): Unit = solutionActions = Nil
+  final def performSolutionActions() = perform(solutionActions)
+  final def performFailureActions() = perform(failureActions)
 
-  /** Clear all actions executed when a failed node is found */
-  final def clearOnFailure(): Unit = failureActions = Nil
-
-  final def performSolutionActions() = {
-    solutionActions.foreach(_())
+  private final def onEvent(action: => Unit, actions : List[() => Unit]): List[() => Unit] = {
+    if(actions == null)
+      (() => action) :: Nil
+    else
+      (() => action) :: actions
   }
 
-  final def performFailureActions() = {
-    failureActions.foreach(_())
-  }
+  private final def perform(actions : List[() => Unit]) = if(actions != null) actions.foreach(_())
 
+}
+
+object DefaultDFSearchListener {
+  def apply() = new DefaultDFSearchListener()
 }

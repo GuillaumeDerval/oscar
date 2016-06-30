@@ -2,9 +2,8 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp.constraints._
-
 import oscar.cp._
 import oscar.cp.core.CPOutcome
 
@@ -29,6 +28,7 @@ class TestGCC extends FunSuite with ShouldMatchers {
    */
   def nbSolution(randomDom: Array[Array[Int]], randomOcc: Array[Array[Int]], gccvar: Boolean): Int = {
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     val x: Array[CPIntVar] = Array.tabulate(randomDom(0).size)(i => CPIntVar(randomDom(0)(i) to randomDom(1)(i))(cp))
     val o: Array[CPIntVar] = Array.tabulate(randomOcc(0).size)(i => CPIntVar(randomOcc(0)(i) to randomOcc(1)(i))(cp))
 

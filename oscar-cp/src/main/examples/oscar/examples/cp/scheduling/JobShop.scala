@@ -15,6 +15,7 @@
 
 package oscar.examples.cp.scheduling
 
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
 import oscar.visual._
 
@@ -77,6 +78,7 @@ object JobShop extends App {
   // -----------------------------------------------------------------------
 
   implicit val cp = CPSolver()
+  implicit val listener = DefaultDFSearchListener()
   val horizon = durations.sum
 
   // Activities & Resources

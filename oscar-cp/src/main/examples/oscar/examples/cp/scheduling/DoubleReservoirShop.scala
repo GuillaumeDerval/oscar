@@ -2,6 +2,7 @@ package oscar.examples.cp.scheduling
 
 import java.awt.Color
 
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
 import oscar.cp.scheduling.visual.{VisualGanttChart, VisualReservoirProfile}
 import oscar.visual.VisualFrame
@@ -37,6 +38,7 @@ object DoubleReservoirShop extends App {
 
   val horizon = durations.sum
   implicit val cp = CPSolver()
+  implicit val listener = DefaultDFSearchListener()
 
   val durationVars = Array.tabulate(nTasks)(t => CPIntVar(durations(t)))
   val startVars = Array.tabulate(nTasks)(t => CPIntVar(0 to horizon - durationVars(t).min))

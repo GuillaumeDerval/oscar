@@ -6,6 +6,8 @@ import scala.io.Source._
 import scala.math._
 import java.util.Random
 
+import oscar.algo.search.DefaultDFSearchListener
+
 /*
 
   Generates alphametic problems in Oscar.
@@ -103,6 +105,7 @@ object AlphameticGenerate {
   def solve(problem_in: String = "SEND+MORE=MONEY", base: Int = 10, start: Int = 0): Int = {
 
     implicit val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
 
     //
     // data

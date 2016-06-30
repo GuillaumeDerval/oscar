@@ -1,5 +1,6 @@
 package oscar.cp.test
 
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp.xcsp.modeling.DefaultConstraints
 import oscar.cp.xcsp.XCSPSolver
 import oscar.cp.xcsp.ast.ParameterParser
@@ -11,6 +12,7 @@ class TestXCSP extends TestSuite {
 
   test("test format") {
     val solver = new XCSPSolver with DefaultConstraints
+    implicit val listener = DefaultDFSearchListener()
     val str: String = """<?xml version="1.0" encoding="UTF-8"?> 
 	    <instance> 
 	    		<presentation name="?" maxConstraintArity="3" format="XCSP 1.9"/>
@@ -21,6 +23,7 @@ class TestXCSP extends TestSuite {
 
   test("nqueen intension") {
     val solver = new XCSPSolver with DefaultConstraints
+    implicit val listener = DefaultDFSearchListener()
     val str: String = """<?xml version="1.0" encoding="UTF-8"?>
 
 <instance>
@@ -79,6 +82,7 @@ class TestXCSP extends TestSuite {
 
   test("hanoi 03 sat extension") {
     val solver = new XCSPSolver with DefaultConstraints
+    implicit val listener = DefaultDFSearchListener()
     val str: String = """<?xml version="1.0" encoding="UTF-8"?>
 
 <instance>
@@ -125,6 +129,7 @@ class TestXCSP extends TestSuite {
 
   test("test weightedsum") {
     val solver = new XCSPSolver with DefaultConstraints
+    implicit val listener = DefaultDFSearchListener()
     val str: String = """<?xml version="1.0" encoding="UTF-8"?>
 	  	<instance>
 	  		<presentation name="?" maxConstraintArity="3" format="XCSP 2.1"/>
@@ -159,6 +164,7 @@ class TestXCSP extends TestSuite {
 
   test("test alldiff") {
     val solver = new XCSPSolver with DefaultConstraints
+    implicit val listener = DefaultDFSearchListener()
     val str: String = """<?xml version="1.0" encoding="UTF-8"?>
 	  <instance>
 	  <presentation name="?" maxConstraintArity="3" format="XCSP 2.1"/>
@@ -190,6 +196,7 @@ class TestXCSP extends TestSuite {
 
   test("test alldiff 2") {
     val solver = new XCSPSolver with DefaultConstraints
+    implicit val listener = DefaultDFSearchListener()
     val str: String = """<?xml version="1.0" encoding="UTF-8"?>
 	  <instance>
 	  <presentation name="?" maxConstraintArity="3" format="XCSP 2.1"/>
@@ -220,6 +227,7 @@ class TestXCSP extends TestSuite {
 
   test("test among") {
     val solver = new XCSPSolver with DefaultConstraints
+    implicit val listener = DefaultDFSearchListener()
     val str: String = """<?xml version="1.0" encoding="UTF-8"?>
 	  	<instance>
 	  		<presentation name="?" maxConstraintArity="3" format="XCSP 2.1"/>
@@ -254,6 +262,7 @@ class TestXCSP extends TestSuite {
 
   test("test atleast") {
     val solver = new XCSPSolver with DefaultConstraints
+    implicit val listener = DefaultDFSearchListener()
     val str: String = """<?xml version="1.0" encoding="UTF-8"?>
 	  	<instance>
 	  		<presentation name="?" maxConstraintArity="3" format="XCSP 2.1"/>
@@ -290,6 +299,7 @@ class TestXCSP extends TestSuite {
 
   test("test atmost") {
     val solver = new XCSPSolver with DefaultConstraints
+    implicit val listener = DefaultDFSearchListener()
     val str: String = """<?xml version="1.0" encoding="UTF-8"?>
 	  	<instance>
 	  		<presentation name="?" maxConstraintArity="3" format="XCSP 2.1"/>
@@ -329,6 +339,7 @@ class TestXCSP extends TestSuite {
 
   test("test cumulative") {
     val solver = new XCSPSolver with DefaultConstraints
+    implicit val listener = DefaultDFSearchListener()
     val str: String = """<?xml version="1.0" encoding="UTF-8"?>
 	  	<instance>
 	  		<presentation name="?" maxConstraintArity="3" format="XCSP 2.1"/>
@@ -364,6 +375,7 @@ class TestXCSP extends TestSuite {
 
   test("test cumulative 2") {
     val solver = new XCSPSolver with DefaultConstraints
+    implicit val listener = DefaultDFSearchListener()
     val str: String = """<?xml version="1.0" encoding="UTF-8"?>
 	  	<instance>
 	  		<presentation name="?" maxConstraintArity="3" format="XCSP 2.1"/>
@@ -399,6 +411,7 @@ class TestXCSP extends TestSuite {
 
   test("test disjunctive") {
     val solver = new XCSPSolver with DefaultConstraints
+    implicit val listener = DefaultDFSearchListener()
     val str: String = """<?xml version="1.0" encoding="UTF-8"?>
 	  	<instance>
 	  		<presentation name="?" maxConstraintArity="3" format="XCSP 2.1"/>
@@ -438,6 +451,7 @@ class TestXCSP extends TestSuite {
 
   test("test disjunctive 2") {
     val solver = new XCSPSolver with DefaultConstraints
+    implicit val listener = DefaultDFSearchListener()
     val str: String = """<?xml version="1.0" encoding="UTF-8"?>
 	  	<instance>
 	  		<presentation name="?" maxConstraintArity="3" format="XCSP 2.1"/>
@@ -478,6 +492,7 @@ class TestXCSP extends TestSuite {
   //index is going from 1 to n, not from 0 to n-1 in XCSP format (follows specifications of global constraint catalog)
   test("test element") {
     val solver = new XCSPSolver with DefaultConstraints
+    implicit val listener = DefaultDFSearchListener()
     val str: String = """<?xml version="1.0" encoding="UTF-8"?>
 	  	<instance>
 	  		<presentation name="?" maxConstraintArity="3" format="XCSP 2.1"/>
@@ -520,6 +535,7 @@ class TestXCSP extends TestSuite {
 
   test("test global_cardinality") {
     val solver = new XCSPSolver with DefaultConstraints
+    implicit val listener = DefaultDFSearchListener()
     val str: String = """<?xml version="1.0" encoding="UTF-8"?>
 	  	<instance>
 	  		<presentation name="?" maxConstraintArity="3" format="XCSP 2.1"/>
@@ -560,6 +576,7 @@ class TestXCSP extends TestSuite {
 
   test("test minimum_weight_all_different") {
     val solver = new XCSPSolver with DefaultConstraints
+    implicit val listener = DefaultDFSearchListener()
     val str: String = """<?xml version="1.0" encoding="UTF-8"?>
 	  	<instance>
 	  		<presentation name="?" maxConstraintArity="3" format="XCSP 2.1"/>

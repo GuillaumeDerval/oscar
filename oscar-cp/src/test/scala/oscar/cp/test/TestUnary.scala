@@ -16,12 +16,13 @@ package oscar.cp.test
 
 import oscar.cp._
 import oscar.cp.testUtils.TestSuite
+
 import scala.util.Random
-import oscar.algo.search.DFSearch
+import oscar.algo.search.{Branching, DFSearch, DefaultDFSearchListener}
 import oscar.cp.searches.ConflictOrderingSearch
 import oscar.cp.constraints.Or
 import oscar.cp.scheduling.constraints._
-import oscar.algo.search.Branching
+
 import scala.collection.mutable.TreeSet
 
 /**
@@ -114,8 +115,9 @@ abstract class TestUnary(name: String, nTests: Int) extends TestSuite {
   def testConstrainer(problem: UnaryProblem, dfs: DFSearch, br: Branching, constrain: (Vars, Vars, Vars, Vars, Int) => Array[Constraint])(implicit S: CPStore): Int = {
     S.pushState()
       
-    for (id <- 1 until nResources)  S.add(constrain(problem.starts, problem.durations, problem.ends, problem.resources, id))    
-    
+    for (id <- 1 until nResources)  S.add(constrain(problem.starts, problem.durations, problem.ends, problem.resources, id))
+
+    implicit val listener = DefaultDFSearchListener()
     dfs.start(br, node => node.nSolutions >= 30000)
     val nSolutionsUnary = dfs.nSolutions
     
@@ -148,20 +150,22 @@ abstract class TestUnary(name: String, nTests: Int) extends TestSuite {
         
         // get the set of solutions
         val dfsDecomp = new DFSearch(S)
+        val listenerDecomp = DefaultDFSearchListener()
         val decompSolutions = new TreeSet[Solution]()(solOrdering)
-        dfsDecomp.onSolution {
+        S.onSolution {
           val sol = Solution(problem.starts.map(_.value), problem.ends.map(_.value), problem.resources.map(_.value))
           decompSolutions.add(sol)
-        }
+        }(listenerDecomp)
         val nDecomp = testConstrainer(problem, dfsDecomp, br, decomp)
         if (debug) println(s"decomp has $nDecomp solutions on recount")
         
         val dfsUnary = new DFSearch(S)
+        val listenerUnary= DefaultDFSearchListener()
         val unarySolutions = new TreeSet[Solution]()(solOrdering)
-        dfsUnary.onSolution {
+        S.onSolution {
           val sol = Solution(problem.starts.map(_.value), problem.ends.map(_.value), problem.resources.map(_.value))
           unarySolutions.add(sol)
-        }
+        }(listenerUnary)
         val nUnary = testConstrainer(problem, dfsUnary, br, unary)
         if (debug) println(s"unary has $nUnary solutions on recount")
         

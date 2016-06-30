@@ -16,9 +16,11 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import oscar.cp._
+
 import collection.immutable.SortedSet
 import oscar.algo.reversible.SparseSet
 import org.scalatest.Matchers
+import oscar.algo.search.DefaultDFSearchListener
 
 class TestCarSeq extends FunSuite with Matchers {
 
@@ -45,7 +47,7 @@ class TestCarSeq extends FunSuite with Matchers {
     //   -----------------  model -----------------------
 
     val cp = CPSolver()
-
+    implicit val listener = DefaultDFSearchListener()
     val line = Array.fill(nbCars)(CPIntVar(0, nbConfigs - 1)(cp))
 
     var nbSol = 0

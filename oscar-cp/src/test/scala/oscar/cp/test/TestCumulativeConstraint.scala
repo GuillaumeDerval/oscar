@@ -1,6 +1,7 @@
 package oscar.cp.test
 
 
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp.core.Constraint
 import oscar.cp.scheduling.constraints._
 import oscar.cp._
@@ -59,7 +60,8 @@ abstract class TestCumulativeConstraint(val cumulativeName: String, val nTests: 
     
     cp.post(cp.starts(0)+2 >= cp.starts(4))
     cp.post(cp.starts(4) >= cp.ends(3)-1)
-    
+
+    implicit val listener = DefaultDFSearchListener()
 
     cp.search {
       val b1 = binaryStatic(cp.starts,_.randomValue)

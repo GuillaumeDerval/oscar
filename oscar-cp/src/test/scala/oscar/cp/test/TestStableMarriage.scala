@@ -18,9 +18,8 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp.constraints._
-
 import oscar.cp._
 
 class StableMarriage extends FunSuite with ShouldMatchers {
@@ -46,6 +45,7 @@ class StableMarriage extends FunSuite with ShouldMatchers {
       Array(4, 1, 2, 0, 3))
 
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
 
     val wife = Array.fill(n)(CPIntVar(Women)(cp)) // wife(i) is the woman chosen for man i
     val husband = Array.fill(n)(CPIntVar(Men)(cp)) // husband(j) is the man chosen for woman j

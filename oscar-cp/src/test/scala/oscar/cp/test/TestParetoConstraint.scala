@@ -18,6 +18,7 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
 import oscar.cp.constraints.MinAssignment
 import oscar.util.selectMin
@@ -99,6 +100,7 @@ class TestParetoConstraint extends FunSuite with ShouldMatchers {
     val distMatrices = for (p <- problems) yield computeDistMatrix(coords(p))
 
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     val succ = Array.fill(nCities)(CPIntVar(Cities)(cp))
     val totDists = for (o <- Objs) yield CPIntVar(0, distMatrices(o).flatten.sum)(cp)
 

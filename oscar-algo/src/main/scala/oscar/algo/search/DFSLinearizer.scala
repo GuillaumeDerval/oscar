@@ -20,24 +20,21 @@ import scala.collection.mutable.ArrayBuffer
 /**
   * @author Sascha Van Cauwelart
   */
-class DFSLinearizer extends DFSearchListener {
+class DFSLinearizer extends DefaultDFSearchListener {
 
   private[this] val decisions_ : ArrayBuffer[Decision] = ArrayBuffer[Decision]()
 
   def decisions: Array[Decision] = decisions_ toArray
 
-  // called on Push events
-  def onPush(node: DFSearchNode): Unit = {
+  override def onPush(node: DFSearchNode): Unit = {
     decisions_ += new Push(node)
   }
 
-  // called on Pop events
-  def onPop(node: DFSearchNode): Unit = {
+  override def onPop(node: DFSearchNode): Unit = {
     decisions_ += new Pop(node)
   }
 
-  // called on branching
-  def onBranch(alternative: Alternative): Unit = {
+  override def onBranch(alternative: Alternative): Unit = {
     decisions_ += new AlternativeDecision(alternative)
   }
 }

@@ -4,6 +4,7 @@ import scala.util.parsing.combinator._
 import FZType._
 import oscar.cp._
 import java.io.FileReader
+
 import scala.Equals
 import oscar.cp.constraints.EqReifVar
 import oscar.cp.constraints.GrEqVarReif
@@ -16,11 +17,14 @@ import oscar.cp.constraints.Automaton
 import oscar.cp.constraints.Sum
 import oscar.cp.constraints.SetDiff
 import java.sql.Time
+
 import oscar.cp.constraints.ScalarProduct
 import oscar.cp.constraints.WeightedSum
+
 import scala.collection.mutable.HashMap
 import java.util.Collection
-import oscar.algo.search.Branching
+
+import oscar.algo.search.{Branching, DefaultDFSearchListener}
 import oscar.cp.constraints.MulCte
 import oscar.cp.constraints.SubCircuit
 import oscar.cp.core.variables.CPVar
@@ -39,6 +43,7 @@ class Parser extends JavaTokenParsers { // RegexParsers {
 
   var model: Minizinc_model = new Minizinc_model
   var cp = CPSolver()
+  implicit val listener = DefaultDFSearchListener()
 
   var options: Options = null
   var bool2Int: Map[String, String] = null

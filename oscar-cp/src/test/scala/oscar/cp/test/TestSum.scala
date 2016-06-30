@@ -18,6 +18,7 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp.constraints._
 import oscar.cp._
 import oscar.cp.core.CPOutcome
@@ -87,6 +88,7 @@ class TestSum extends FunSuite with ShouldMatchers {
   val rand = new scala.util.Random(0)
   def solve(x: Array[CPIntVar], y: CPIntVar, decomp: Boolean = false): Int = {
     val cp = y.store.asInstanceOf[CPSolver]
+    implicit val listener = DefaultDFSearchListener()
     //cp.pushState()
     var nbSol = 0
     if (decomp) cp.add(new oscar.cp.constraints.Sum(x, y))

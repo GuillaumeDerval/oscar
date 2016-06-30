@@ -16,10 +16,10 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp.constraints._
-
 import oscar.cp._
+
 import collection.immutable.SortedSet
 
 class TestDudeney extends FunSuite with ShouldMatchers  {
@@ -32,6 +32,7 @@ class TestDudeney extends FunSuite with ShouldMatchers  {
     val n = 5
 
     val cp = new CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     var nbSol = 0
 
     val x = (0 until n).map(v => CPIntVar(0 to 9)(cp))

@@ -16,6 +16,7 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
 
 /**
@@ -130,6 +131,7 @@ class TestUnaryResourceWithOptionalActivities extends FunSuite with ShouldMatche
       val durations = randomDurations(n, seed)
       val horizon = durations.sum
       implicit val cp = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       cp.silent = true
       val starts = Array.tabulate(n)(i => CPIntVar(0 until (horizon - durations(i) + 1)))
       val durs = Array.tabulate(n)(i => CPIntVar(durations(i)))
@@ -166,6 +168,7 @@ class TestUnaryResourceWithOptionalActivities extends FunSuite with ShouldMatche
 		
 		val horizon = 5
 		implicit val cp = new CPSolver()
+    implicit val listener = DefaultDFSearchListener()
 		cp.silent = true
         val starts = Array.fill(4)(CPIntVar(0 to 5))
         val ends = Array.fill(4)(CPIntVar(0 to 5))
@@ -200,6 +203,7 @@ class TestUnaryResourceWithOptionalActivities extends FunSuite with ShouldMatche
 		
 		val horizon = 5
 		implicit val cp = new CPSolver()
+    implicit val listener = DefaultDFSearchListener()
 		cp.silent = true
         val starts = Array.fill(4)(CPIntVar(0 to 5))
         val ends = Array.fill(4)(CPIntVar(0 to 5))
@@ -236,6 +240,7 @@ class TestUnaryResourceWithOptionalActivities extends FunSuite with ShouldMatche
 		
 		val horizon = 5
 		implicit val cp = new CPSolver()
+    implicit val listener = DefaultDFSearchListener()
 		cp.silent = true
         val starts = Array.fill(4)(CPIntVar(0 to 5))
         val ends = Array.fill(4)(CPIntVar(0 to 5))
@@ -300,6 +305,7 @@ class TestUnaryResourceWithOptionalActivities extends FunSuite with ShouldMatche
       val expectedOpt = horizon / 2
 
       implicit val cp = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       cp.silent = true
       val starts = Array.tabulate(n)(i => CPIntVar(0 until (horizon - durations(i) + 1)))
       val durs = Array.tabulate(n)(i => CPIntVar(durations(i)))

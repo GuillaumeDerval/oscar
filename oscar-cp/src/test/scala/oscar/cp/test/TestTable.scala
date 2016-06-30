@@ -15,6 +15,7 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp.constraints.tables.{TableAC5TCRecomp, TableAlgo, TableDecomp, TableSTR2}
 import oscar.cp.testUtils._
 import oscar.cp._
@@ -123,6 +124,7 @@ class TestTable extends TestSuite {
 
     test("test 3 "+algo) {
       val cp = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       var x = Array.fill(3)(CPIntVar(1 to 7)(cp))
       val tuples = Array(Array(1, 1, 1), Array(1, 2, 3), Array(1, 2, 7), Array(2, 1, 4))
       var nbSol = 0
@@ -151,6 +153,7 @@ class TestTable extends TestSuite {
 
       def nbSol(newcons: Boolean) = {
         val cp = CPSolver()
+        implicit val listener = DefaultDFSearchListener()
         val x = Array.fill(4)(CPIntVar(Set(1, 3, 6, 9))(cp))
 
         val tuples = Array(Array(1, 2, 2, 4),
@@ -179,6 +182,7 @@ class TestTable extends TestSuite {
 
     test("test 6 "+algo) {
       implicit val cp = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       var x = Array.fill(6)(CPIntVar(2 to 3)(cp))
       var nbSol = 0
 
@@ -201,6 +205,7 @@ class TestTable extends TestSuite {
 
     test("test 7 "+algo) {
       implicit val cp = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       var x = Array.fill(6)(CPIntVar(0 to 5)(cp))
       var nbSol = 0
 
@@ -223,6 +228,7 @@ class TestTable extends TestSuite {
 
     test("test 8 "+algo) {
       implicit val cp = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       var x = Array.fill(7)(CPIntVar(0 to 3)(cp))
       var nbSol = 0
 

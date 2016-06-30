@@ -20,6 +20,8 @@ import oscar.cp._
 import oscar.visual.VisualFrame
 import oscar.cp.multiobjective.visual._
 import java.awt.Color
+
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.util.selectMin
 import oscar.util.time
 import oscar.examples.cp.util.reader.KnapsackReader._
@@ -61,6 +63,7 @@ object BiKnapsackLNS extends App {
   // Model
   // -----
   implicit val cp = CPSolver()
+  implicit val listener = DefaultDFSearchListener()
   cp.silent = true
 
   val x: Array[CPBoolVar] = Array.fill(nItems)(CPBoolVar()(cp))

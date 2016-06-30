@@ -1,6 +1,7 @@
 package oscar.cp.test
 
 
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
 import oscar.cp.testUtils._
 
@@ -11,6 +12,7 @@ class TestGolomb extends TestSuite {
     // return the best ruler with n ticks
     def test(n: Int) = {
       implicit val cp = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       val marks = Array.fill(n)(CPIntVar(0 to n * n))
       val obj = marks(n - 1)
       var best = Int.MaxValue

@@ -16,6 +16,7 @@
  */
 package oscar.examples.cp.hakank
 
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
 /**
  *
@@ -38,6 +39,7 @@ object SendMostMoney2 extends App {
   def send_most_money(money: Int): Int = {
 
     implicit val solver = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
 
     // variables
     val S = CPIntVar(0 to 9)

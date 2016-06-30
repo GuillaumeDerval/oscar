@@ -16,9 +16,8 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp.constraints._
-
 import oscar.cp._
 
 
@@ -37,7 +36,7 @@ class TestGCCBCUp extends FunSuite with ShouldMatchers {
   def nbSol(domX: Array[Set[Int]], values: Range, max: Array[Int], decomp: Boolean): (Int, Int, Int) = {
     var nbSol = 0
     val cp = CPSolver()
-
+    implicit val listener = DefaultDFSearchListener()
     val X = Array.tabulate(domX.size)(i => CPIntVar(domX(i))(cp))
 
     if (decomp) {

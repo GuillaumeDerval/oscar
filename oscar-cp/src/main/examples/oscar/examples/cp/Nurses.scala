@@ -1,6 +1,8 @@
 package oscar.examples.cp
 
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
+
 import scala.io.Source
 import scala.io.Source
 import oscar.util._
@@ -110,6 +112,7 @@ object Nurses extends App {
 
     // actual cp model solving zone i
     implicit val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     cp.silent = true
     val spreadAcuity = CPIntVar(0 to 10e6.toInt)
     val nurseOfPatient = Array.fill(nbPatientsInZone(i))(CPIntVar(0 until nbNursesInZone(i)))

@@ -19,3 +19,4 @@ package oscar.algo
  * @author Pierre Schaus pschaus@gmail.com
  */
 package object search extends BranchingUtils
+

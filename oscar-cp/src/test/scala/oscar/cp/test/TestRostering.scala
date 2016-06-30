@@ -16,10 +16,10 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp.constraints._
-
 import oscar.cp._
+
 import collection.immutable.SortedSet
 
 
@@ -48,7 +48,7 @@ class TestRostering extends FunSuite with ShouldMatchers  {
                        Array(0, 0, 1, 0, 0, 1, 1, 0, 1, 0));
 
     val cp = CPSolver()
-
+    implicit val listener = DefaultDFSearchListener()
     cp.silent=true
 
     val activities = Array.tabulate(nbPersons, nbSlots)((p, t) => CPIntVar(possibleActivities(p))(cp))

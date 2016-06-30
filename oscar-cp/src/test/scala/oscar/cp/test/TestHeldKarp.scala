@@ -20,7 +20,7 @@ import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
 import oscar.cp.constraints._
 import oscar.cp._
-import oscar.algo.search.SearchStatistics
+import oscar.algo.search.{DefaultDFSearchListener, SearchStatistics}
 import oscar.algo.DisjointSets
 import oscar.algo.RangeMinQuery
 import oscar.cp.core.CPPropagStrength
@@ -40,6 +40,7 @@ class TestHeldKarp extends FunSuite with ShouldMatchers {
 
   def bestTourSize(distMatrix: Array[Array[Int]]): Int = {
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     cp.silent = true
     val n = distMatrix.size
 

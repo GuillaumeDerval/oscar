@@ -38,9 +38,9 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
 
   def this() = this(CPPropagStrength.Automatic)
 
-  override def startSubjectTo(stopCondition: DFSearch => Boolean, maxDiscrepancy: Int, listener: DFSearchListener)(block: => Unit): SearchStatistics = {
+  override def startSubjectTo(stopCondition: DFSearch => Boolean, maxDiscrepancy: Int)(block: => Unit)(implicit listener: DFSearchListener): SearchStatistics = {
     deactivateNoSolExceptions()
-    val stat = super.startSubjectTo(stopCondition,maxDiscrepancy,listener)(block)
+    val stat = super.startSubjectTo(stopCondition,maxDiscrepancy)(block)
     cleanQueues()
     stat
   }

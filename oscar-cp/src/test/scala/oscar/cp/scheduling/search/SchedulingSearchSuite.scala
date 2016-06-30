@@ -17,11 +17,13 @@ package oscar.cp.scheduling.search
 
 import oscar.cp.testUtils._
 import oscar.cp._
+
 import scala.util.Random
-import oscar.algo.search.Branching
+import oscar.algo.search.{Branching, DefaultDFSearchListener}
 import oscar.cp.searches.SplitLastConflict
 import oscar.cp.searches.LCSearchSimplePhaseAssign
 import oscar.util.RandomGenerator
+
 import scala.collection.mutable.ArrayBuffer
 /**
  *  @author Cyrille Dejemeppe cyrille.dejemeppe@gmail.com
@@ -91,6 +93,7 @@ abstract class SchedulingSearchSuite(seed: Int, scalable: Boolean) extends TestS
       val demands = activitySolution.map(a => a._2)
 
       val cp = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       cp.silent = true
       val startVars = Array.tabulate(nActivities)(i => CPIntVar(0 to optimalMakespan - durations(i))(cp))
       val endVars = Array.tabulate(nActivities)(i => startVars(i)+durations(i))
@@ -126,6 +129,7 @@ abstract class SchedulingSearchSuite(seed: Int, scalable: Boolean) extends TestS
       val demands = activitySolution.map(a => a._2)
 
       val cp = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       cp.silent = true
       val startVars = Array.tabulate(nActivities)(i => CPIntVar(0 to optimalMakespan - durations(i))(cp))
       val endVars = Array.tabulate(nActivities)(i => startVars(i)+durations(i))

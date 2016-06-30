@@ -5,9 +5,12 @@ import oscar.cp.core.Constraint
 import oscar.cp.xcsp.modeling.DefaultConstraints
 import oscar.cp._
 import java.io.File
+
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp.xcsp.XCSPSolver
 import oscar.cp.constraints._
 import oscar.cp.constraints.tables._
+
 import scala.collection.mutable.Map
 
 object STR2Bench extends App {
@@ -21,6 +24,8 @@ object STR2Bench extends App {
   //args(0) = "/Users/ThanhKM/Documents/workspace/rand-6-40-5-40-15000-0.xml"
   println(args(0))
   val (cp, vars) = xcspSolver.model(new File(args(0)))
+
+  implicit val listener = DefaultDFSearchListener()
 
   cp.onSolution {
     vars.toSeq.sortBy(v => (v.name.length, v.name)) foreach { v => print(v.name + ":" + v.min + " ") }

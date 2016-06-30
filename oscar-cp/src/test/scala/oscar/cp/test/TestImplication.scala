@@ -2,9 +2,8 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp.constraints._
-
 import oscar.cp._
 
 class TestImplication extends FunSuite with ShouldMatchers {
@@ -23,6 +22,7 @@ class TestImplication extends FunSuite with ShouldMatchers {
   test("=>2") {
     val values = Set((0, 0, 1), (0, 1, 1), (1, 0, 0), (1, 1, 1))
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     val A = CPBoolVar()(cp)
     val B = CPBoolVar()(cp)
     val res = A ==> B
@@ -38,6 +38,7 @@ class TestImplication extends FunSuite with ShouldMatchers {
   test("=>3") {
     val values = Set((0, 0, 1), (0, 1, 1), (1, 0, 0), (1, 1, 1))
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     val A = CPBoolVar()(cp)
     val B = CPBoolVar()(cp)
     val res = A ==> B
@@ -53,6 +54,7 @@ class TestImplication extends FunSuite with ShouldMatchers {
   test("=>4") {
     val values = Set((0, 0, 1), (0, 1, 1), (1, 0, 0), (1, 1, 1))
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     val A = CPBoolVar()(cp)
     val B = CPBoolVar()(cp)
     val res = A ==> B
@@ -69,6 +71,7 @@ class TestImplication extends FunSuite with ShouldMatchers {
   test("=>5") {
     val values = Set((0, 0, 1), (0, 1, 1), (1, 0, 0), (1, 1, 1))
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     val A = CPBoolVar()(cp)
     val B = CPBoolVar()(cp)
     val res = A ==> B
@@ -83,6 +86,7 @@ class TestImplication extends FunSuite with ShouldMatchers {
 
   test("=>6") {
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     val A = CPBoolVar()(cp)
     val B = CPBoolVar()(cp)
     cp.add(A ==> B)
@@ -92,6 +96,7 @@ class TestImplication extends FunSuite with ShouldMatchers {
 
   test("=>7") {
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     val A = CPBoolVar()(cp)
     val B = CPBoolVar()(cp)
     cp.add(A == 1)

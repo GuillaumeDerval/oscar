@@ -16,9 +16,8 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp.constraints._
-
 import oscar.cp._
 
 /**
@@ -36,7 +35,7 @@ class TestCount extends FunSuite with ShouldMatchers {
   def nbSol(nmin: Int, nmax: Int, domx: Array[Set[Int]], domy: Set[Int], decomp: Boolean = false): (Int, Int) = {
     var nbSol = 0
     val cp = CPSolver()
-
+    implicit val listener = DefaultDFSearchListener()
     val N = CPIntVar(nmin to nmax)(cp)
     val X = Array.tabulate(domx.size)(i => CPIntVar(domx(i))(cp))
     val Y = CPIntVar(domy)(cp)
@@ -61,7 +60,7 @@ class TestCount extends FunSuite with ShouldMatchers {
 
   test("count1") {
     val cp = CPSolver()
-
+    implicit val listener = DefaultDFSearchListener()
     val N = CPIntVar(0 to 3)(cp)
     val X = Array.fill(5)(CPIntVar(0 to 5)(cp))
     val Y = CPIntVar(1 to 3)(cp)

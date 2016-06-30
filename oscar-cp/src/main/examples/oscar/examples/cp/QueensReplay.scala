@@ -15,7 +15,7 @@
 
 package oscar.examples.cp
 
-import oscar.algo.search.DFSLinearizer
+import oscar.algo.search.{DFSLinearizer, DefaultDFSearchListener}
 import oscar.cp._
 
 /**
@@ -25,6 +25,7 @@ import oscar.cp._
 object QueensReplay extends  App {
 
   implicit val cp = CPSolver()
+  implicit val listener = DefaultDFSearchListener()
 
   val nQueens = 8
   // Number of queens
@@ -45,18 +46,18 @@ object QueensReplay extends  App {
   onSolution(println(queens.mkString(",")))
 
   // Execution with FC allDifferent
-  val statsInit = startSubjectTo(searchListener = linearizer) {
+  val statsInit = startSubjectTo(/*searchListener = linearizer*/) {
     add(allDiffs,Weak)
   }
 
-  println(statsInit)
+  /*println(statsInit)
 
   // Replay with AC allDifferent
   val statsReplayAC = cp.replaySubjectTo(linearizer, queens) {
     add(allDiffs,Strong)
   }
 
-  println(statsReplayAC)
+  println(statsReplayAC)*/
 
 
 

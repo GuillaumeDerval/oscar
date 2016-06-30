@@ -14,6 +14,7 @@
  ******************************************************************************/
 package oscar.cp.test
 
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
 import oscar.cp.testUtils._
 import oscar.cp.constraints.Knapsack
@@ -29,6 +30,7 @@ class TestKnapsack extends TestSuite {
     val profit = Array.fill(n)(1 + rand.nextInt(100))
     val weight = Array.fill(n)(1 + rand.nextInt(u))
     implicit val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     val P = CPIntVar(0 to 1000000)
     val W = CPIntVar(0 to (n / 2 * u / 2))
     val X = Array.fill(profit.size)(CPBoolVar())

@@ -1,7 +1,7 @@
 package oscar.cp.preprocessing
 
 import oscar.cp._
-import oscar.algo.search.DFSearch
+import oscar.algo.search.{DFSearch, DFSearchListener}
 import oscar.cp.core.CPOutcome
 
 /**
@@ -10,14 +10,14 @@ import oscar.cp.core.CPOutcome
 object ShavingUtils {
 
   /** Strenghten the lower bound of the objective by complete shaving on the forwardVariables */
-  def strengthenLowerBound(problem: CPStore, forwardVariables: Array[CPIntVar], objective: CPIntVar): CPOutcome = {
+  def strengthenLowerBound(problem: CPStore, forwardVariables: Array[CPIntVar], objective: CPIntVar)(implicit listener: DFSearchListener): CPOutcome = {
     
     val search = new DFSearch(problem)
     val branching = binaryFirstFail(forwardVariables)  
     
     val originalBound = objective.min
     var bestBound = Int.MaxValue
-    search.onSolution {
+    problem.onSolution {
       val bound = objective.min
       if (bound < bestBound) bestBound = bound
     }
@@ -30,14 +30,14 @@ object ShavingUtils {
   }
   
   /** Strenghten the upper bound of the objective by complete shaving on the forwardVariables */
-  def strengthenUpperBound(problem: CPStore, forwardVariables: Array[CPIntVar], objective: CPIntVar): CPOutcome = {
+  def strengthenUpperBound(problem: CPStore, forwardVariables: Array[CPIntVar], objective: CPIntVar)(implicit listener: DFSearchListener): CPOutcome = {
     
     val search = new DFSearch(problem)
     val branching = binaryFirstFail(forwardVariables)  
     
     val originalBound = objective.max
     var bestBound = Int.MinValue
-    search.onSolution {
+    problem.onSolution {
       val bound = objective.max
       if (bound > bestBound) bestBound = bound
     }
@@ -50,7 +50,7 @@ object ShavingUtils {
   }
   
   /** Reduce the domain of variables by complete shaving on the forwardVariables */
-  def reduceDomains(problem: CPStore, forwardVariables: Array[CPIntVar], variables: Array[CPIntVar]): CPOutcome = {
+  def reduceDomains(problem: CPStore, forwardVariables: Array[CPIntVar], variables: Array[CPIntVar])(implicit listener: DFSearchListener): CPOutcome = {
     
     val nVariables = variables.length
     val Variables = 0 until nVariables
@@ -60,8 +60,8 @@ object ShavingUtils {
     
     val originalSize = Array.tabulate(variables.length)(i => variables(i).size)
     val reducedDomains = Array.fill(variables.length)(Set[Int]())
-    
-    search.onSolution {
+
+    problem.onSolution {
       var i = variables.length
       while (i > 0) {
         i -= 1

@@ -14,6 +14,7 @@
  ******************************************************************************/
 package oscar.cp.test
 
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
 import oscar.cp.testUtils._
 import oscar.cp.constraints.Among
@@ -42,6 +43,7 @@ class TestAmong extends TestSuite {
    
   test("among1") { 
 	  implicit val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
 	  val S = Set(1,2,3)
 	  val N = CPIntVar(2)
 	  val X = Array.fill(5)(CPIntVar(0 to 5))

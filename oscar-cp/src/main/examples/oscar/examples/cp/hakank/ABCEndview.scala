@@ -1,5 +1,6 @@
 package oscar.examples.cp.hakank
 
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
 
 /**
@@ -279,7 +280,7 @@ object ABCEndview extends App {
   def solve(problem: Problem) {
 
     implicit val cp = CPSolver()
-
+    implicit val listener = DefaultDFSearchListener()
     //
     // data
     //     

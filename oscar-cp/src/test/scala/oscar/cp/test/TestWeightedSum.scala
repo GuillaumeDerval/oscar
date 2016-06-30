@@ -2,7 +2,7 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
 
 class TestWeightedSum extends FunSuite with ShouldMatchers {
@@ -43,6 +43,7 @@ class TestWeightedSum extends FunSuite with ShouldMatchers {
 
   def nbsol(w: Array[Int], domx: Array[Set[Int]], ymin: Int, ymax: Int, decomp: Boolean = false): Int = {
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     val x = domx.map(dom => CPIntVar(dom)(cp))
     val y = CPIntVar(ymin to ymax)(cp)
     var n: Int = 0

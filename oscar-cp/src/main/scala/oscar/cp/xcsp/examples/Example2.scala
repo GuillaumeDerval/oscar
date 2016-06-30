@@ -1,5 +1,6 @@
 package oscar.cp.xcsp.examples
 
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
 import oscar.cp.xcsp.modeling.DefaultConstraints
@@ -11,7 +12,9 @@ object Example2 extends App {
   val xcspSolver = new XCSPSolver with DefaultConstraints {
     override def allDifferent(vars: Iterable[CPIntVar]) : Constraint = oscar.cp.modeling.constraint.allDifferent(vars)
   }
-  
+
+  implicit val listener = DefaultDFSearchListener()
+
   val instance = """<?xml version="1.0" encoding="UTF-8"?>
 
 <instance>

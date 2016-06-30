@@ -1,6 +1,6 @@
 package oscar.cp.constraints
 
-import oscar.algo.search.Objective
+import oscar.algo.search.{DefaultDFSearchListener, Objective}
 import oscar.cp.core.Constraint
 import oscar.cp._
 import oscar.cp.core.CPOutcome._
@@ -10,6 +10,7 @@ import oscar.cp.core.CPSolver
 
 class CPObjectiveLexicographic(val solver: CPSolver, val variables: Array[CPIntVar])
 extends Constraint(solver, "CPObjectiveLexicographic") {
+  implicit val listener = DefaultDFSearchListener()
   val n = variables.length
   
   val best = Array.ofDim[Int](n)

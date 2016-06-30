@@ -1,7 +1,7 @@
 package oscar.cp.constraints
 
 import oscar.algo.reversible.ReversibleInt
-import oscar.algo.search.Branching
+import oscar.algo.search.{Branching, DefaultDFSearchListener}
 import oscar.cp.testUtils.TestSuite
 import oscar.cp._
 import oscar.cp.core.CPOutcome
@@ -159,6 +159,7 @@ class SubCircuitSuite extends TestSuite {
   test("multiple subcircuit test (random)") {
     for (i <- 1 to 200) {
       implicit val cp = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       val n = 5
       val succ: Array[Set[Int]] = Array.tabulate(n)(i => Array.fill(Random.nextInt(n - 1) + 1)(Random.nextInt(n)).distinct.toSet[Int])
       val successors: Array[CPIntVar] = Array.tabulate(n)(i => CPIntVar(succ(i)))

@@ -16,9 +16,8 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp.constraints._
-
 import oscar.cp._
 
 
@@ -39,6 +38,7 @@ class TestBinPacking extends FunSuite with ShouldMatchers  {
     val bins = 0 until binCapacities.length
 
     val cp = new CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     val x = (for (i <- items) yield CPIntVar(binForItems(i))(cp)).toArray
     val l = bins.map(i => CPIntVar(binCapacities(i))(cp)).toArray
     var nbSol = 0
@@ -67,6 +67,7 @@ class TestBinPacking extends FunSuite with ShouldMatchers  {
     val bins = 0 until 5
 
     val cp = new CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     val x = (for (i <- items) yield CPIntVar(bins)(cp)).toArray
     val l = bins.map(i => CPIntVar(0 to 10)(cp)).toArray
     var nbSol = 0

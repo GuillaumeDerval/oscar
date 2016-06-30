@@ -25,11 +25,10 @@ class TestReplaySearch extends TestSuite {
 
 
 
-    val linearizer = new DFSLinearizer()
-
+    implicit val linearizer = new DFSLinearizer()
 
     // Execution with FC allDifferent
-    val statsInit = startSubjectTo(searchListener = linearizer) {
+    val statsInit = startSubjectTo() {
       add(allDiffs,Weak)
     }
 

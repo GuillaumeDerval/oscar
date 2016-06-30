@@ -2,6 +2,7 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
 
@@ -38,6 +39,7 @@ class TestStockingCost extends FunSuite with ShouldMatchers {
   def nbSol(domX: Array[Set[Int]], d: Array[Int], domH: Set[Int], c: Int, decomp: Int = 0): (Int, Int, Int) = {
     var nbSol = 0
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
 
     val X = Array.tabulate(domX.size)(i => CPIntVar(domX(i))(cp))
     val H = CPIntVar(domH)(cp)

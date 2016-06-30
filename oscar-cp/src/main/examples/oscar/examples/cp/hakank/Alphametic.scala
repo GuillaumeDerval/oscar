@@ -1,6 +1,8 @@
 package oscar.examples.cp.hakank
 
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
+
 import scala.io.Source._
 import scala.math._
 
@@ -76,6 +78,7 @@ object Alphametic {
   def solve(problem_in: String = "SEND+MORE=MONEY", base: Int = 10, start: Int = 0) {
 
     implicit val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
 
     //
     // data

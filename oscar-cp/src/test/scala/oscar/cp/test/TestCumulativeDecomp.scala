@@ -2,6 +2,7 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
 import oscar.cp.scheduling.constraints.CumulativeDecomp
 
@@ -30,6 +31,8 @@ class TestCumulativeDecomp extends FunSuite with ShouldMatchers {
     val capacity = 2
     val cp = new CPSched(durationsData, demandsData, horizon)
     cp.add(cumulative(cp, capacity))
+
+    implicit val listener = DefaultDFSearchListener()
 
     val allSols = Set(
       List(0, 0, 2),
@@ -63,6 +66,7 @@ class TestCumulativeDecomp extends FunSuite with ShouldMatchers {
     val horizon = 5
     val capacity = 2
     val cp = new CPSched(durationsData, demandsData, horizon)
+    implicit val listener = DefaultDFSearchListener()
     cp.add(cumulative(cp, capacity))
 
     var nSol = 0

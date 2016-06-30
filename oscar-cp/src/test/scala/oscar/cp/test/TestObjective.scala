@@ -17,9 +17,8 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp.constraints._
-
 import oscar.cp._
 
 class TestObjective extends FunSuite with ShouldMatchers {
@@ -47,6 +46,7 @@ class TestObjective extends FunSuite with ShouldMatchers {
 
   test("Obj2") {
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     cp.silent = true
     val x1 = CPIntVar(2 to 3)(cp)
     val x2 = CPIntVar(1 to 3)(cp)
@@ -69,6 +69,7 @@ class TestObjective extends FunSuite with ShouldMatchers {
 
   test("Obj3") {
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     cp.silent = true
     val x1 = CPIntVar(2 to 3)(cp)
     val x2 = CPIntVar(1 to 3)(cp)
@@ -93,6 +94,7 @@ class TestObjective extends FunSuite with ShouldMatchers {
 
   test("Obj4") {
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     cp.silent = true
     val x1 = CPIntVar(2 to 3)(cp)
     val x2 = CPIntVar(1 to 3)(cp)

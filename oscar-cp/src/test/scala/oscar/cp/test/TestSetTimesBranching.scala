@@ -14,9 +14,11 @@
  ******************************************************************************/
 package oscar.cp.test
 
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
 import oscar.cp.testUtils._
 import oscar.util.RandomGenerator
+
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -65,6 +67,7 @@ class TestSetTimesBranching extends TestSuite {
       val demands = activitySolution.map(a => a._2)
 
       val cp = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       cp.silent = true
       val startVars = Array.tabulate(nActivities)(i => CPIntVar(0 to optimalMakespan - durations(i))(cp))
       val endVars = Array.tabulate(nActivities)(i => startVars(i)+durations(i))
@@ -101,6 +104,7 @@ class TestSetTimesBranching extends TestSuite {
       val demands = activitySolution.map(a => a._2)
 
       val cp = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       cp.silent = true
       val startVars = Array.tabulate(nActivities)(i => CPIntVar(0 to optimalMakespan - durations(i))(cp))
       val endVars = Array.tabulate(nActivities)(i => startVars(i)+durations(i))
@@ -145,6 +149,7 @@ class TestSetTimesBranching extends TestSuite {
       
       
       implicit val cp = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       cp.silent = true
 
       val durations = Array.tabulate(nTasks)(t => CPIntVar(durationsData(t)))
@@ -226,6 +231,7 @@ class TestSetTimesBranching extends TestSuite {
       
       
       implicit val cp = CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       cp.silent = true
 
       val durations = Array.tabulate(nTasks)(t => CPIntVar(durationsData(t)))

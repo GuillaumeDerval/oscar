@@ -2,14 +2,14 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-
-
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
 
 class TestSearchNew extends FunSuite with ShouldMatchers {
 
   test("ids search, bug #36") {
     implicit val cp = new CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     var nbSol = 0
     cp.onSolution { nbSol += 1 }
     val x = Array(CPIntVar(0)(cp))
@@ -23,7 +23,7 @@ class TestSearchNew extends FunSuite with ShouldMatchers {
 
   test("explocompleted") {
     val cp = CPSolver()
-
+    implicit val listener = DefaultDFSearchListener()
     var nbSol = 0
     cp.onSolution { nbSol += 1 }
 
@@ -62,6 +62,7 @@ class TestSearchNew extends FunSuite with ShouldMatchers {
   test("optimize") {
 
     val cp = new CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     val x = CPIntVar(Array(1, 5, 9, 10))(cp)
     cp.silent = true
     cp.minimize(x)
@@ -79,6 +80,7 @@ class TestSearchNew extends FunSuite with ShouldMatchers {
   test("test 2 dfs") {
 
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     val x = Array.fill(2)(CPIntVar(1 to 2)(cp))
     val y = Array.fill(2)(CPIntVar(1 to 2)(cp))
 
@@ -99,6 +101,7 @@ class TestSearchNew extends FunSuite with ShouldMatchers {
   test("test 3 split") {
 
     val cp = CPSolver()
+    implicit val listener = DefaultDFSearchListener()
     val x = Array.fill(4)(CPIntVar(1 to 2)(cp))
 
     //def dom(x: CPIntVar) = (x.min to x.max).filter(x.hasValue(_))

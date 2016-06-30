@@ -15,6 +15,7 @@
 package oscar.cp.test
 
 import org.scalatest.{FunSuite, Matchers}
+import oscar.algo.search.DefaultDFSearchListener
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
 
@@ -106,6 +107,8 @@ class TestUnaryResource extends FunSuite with Matchers {
 
       val horizon = 5
       implicit val cp = new CPSolver()
+      implicit val listener = DefaultDFSearchListener()
+
       cp.silent = true
       val starts = Array.fill(4)(CPIntVar(0 to horizon))
       val ends = Array.fill(4)(CPIntVar(0 to horizon))
@@ -138,6 +141,7 @@ class TestUnaryResource extends FunSuite with Matchers {
 
       val horizon = 5
       implicit val cp = new CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       cp.silent = true
       val starts = Array.fill(4)(CPIntVar(0 to horizon))
       val ends = Array.fill(4)(CPIntVar(0 to horizon))
@@ -172,6 +176,7 @@ class TestUnaryResource extends FunSuite with Matchers {
     test("Test 3: durations"+strength) {
       val horizon = 5
       implicit val cp = new CPSolver()
+      implicit val listener = DefaultDFSearchListener()
       cp.silent = true
       val starts = Array.fill(4)(CPIntVar(0 to horizon))
       val ends = Array.fill(4)(CPIntVar(0 to horizon))
