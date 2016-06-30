@@ -48,7 +48,9 @@ class AllDifferent(x: Array[CPIntVar]) extends Constraint(x(0).store) {
       if (permutation) {
         val min = allValues.min
         val cards = Array.tabulate(allValues.size)(v => if (allValues.contains(v+min)) 1 else 0)
+        //println(min+" cards:"+cards.mkString(","))
         new GCCFWC(x,min,cards,cards)
+        //new AllDiffFWC(x)
       }
       else new AllDiffFWC(x)
     }

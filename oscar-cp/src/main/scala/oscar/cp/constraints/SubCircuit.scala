@@ -57,9 +57,9 @@ final class SubCircuit(succs: Array[CPIntVar]) extends Constraint(succs(0).store
       for (i <- 0 until nSuccs) {
         if (!succs(i).isBound) {
           if (l == CPPropagStrength.Strong)
-          succs(i).callPropagateWhenDomainChanges(this)
-        } else {
-          succs(i).callPropagateWhenBind(this)
+            succs(i).callPropagateWhenDomainChanges(this)
+          else
+            succs(i).callPropagateWhenBind(this)
         }
       }
     }
