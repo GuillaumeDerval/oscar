@@ -1,5 +1,20 @@
 package oscar.cbls.search.algo
 
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
 import scala.collection.Iterator
 import scala.collection.immutable.SortedSet
 
@@ -25,26 +40,42 @@ object HotRestart {
     }
   }
 
+  def hotRestartPreserveSequence(it:Iterable[Int],pivot:Int) = new ShiftedIterable(it,pivot,true)
+
   def apply(r:Range, pivot:Int):Iterable[Int] =  if (r contains pivot) new InstrumentedRange(r) startBy pivot else r
 
   def apply(s:SortedSet[Int], pivot:Int):Iterable[Int] =  new ShiftedSet(s,pivot)
 }
 
-class ShiftedIterable(it:Iterable[Int], pivot:Int) extends Iterable[Int] {
+class ShiftedIterable(it:Iterable[Int], pivot:Int, sequence:Boolean = false) extends Iterable[Int] {
   override def iterator: Iterator[Int] = {
-    val (above, below) = it.partition(i => i > pivot)
-    new ShiftedIterator(above, below)
+    if(sequence) {
+      //splitting into two parts:
+      val aboveIterator = it.iterator
+      def fetchHead: List[Int] = {
+        if (aboveIterator.hasNext) {
+          val nextValue = aboveIterator.next()
+          if (nextValue == pivot) List(nextValue)
+           else nextValue :: fetchHead
+        }else Nil
+      }
+      val below = fetchHead
+      new ShiftedIterator(aboveIterator.toList, below)
+    }else {
+      val (above, below) = it.partition(i => i > pivot)
+      new ShiftedIterator(above, below)
+    }
   }
 
   class ShiftedIterator(first:Iterable[Int], var second:Iterable[Int]) extends Iterator[Int]{
     //TODO: this is awful: maybe the stuff is already sorted
     //TODO: we should perform a lazy sort since all the first might not be covered anyway
-    var it:Iterator[Int] = first.toList.sorted.toIterator
+    var it:Iterator[Int] = first.toList.toIterator
     override def hasNext: Boolean = {
       if(it.hasNext) true
       else if (second == null) false
       else{
-        it = second.toList.sorted.toIterator
+        it = second.toList.toIterator
         second = null
         it.hasNext
       }

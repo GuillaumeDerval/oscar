@@ -44,7 +44,11 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
   //println(x.mkString(","))
   //println("minVal"+minval)
   //println(upperCard.mkString(","))
-  for (i <- 0 until upperCard.length) {
+  for {
+    i <- 0 until upperCard.length;
+    v = i + minval - minDomVal
+    if (v >= 0 && v < upCard.size )
+  } {
     upCard(i + minval - minDomVal) = upperCard(i)
   }
   

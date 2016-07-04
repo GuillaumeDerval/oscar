@@ -15,8 +15,7 @@
 
 package oscar.cp.modeling
 
-import oscar.algo.search.Branching
-import oscar.algo.search.BranchingUtils
+import oscar.algo.search.{Branching, BranchingUtils, DiscrepancyBranching}
 import oscar.cp.scheduling.search.SetTimesBranching
 import oscar.cp.scheduling.search.RankBranching
 import oscar.cp.searches._
@@ -166,8 +165,8 @@ trait Branchings extends BranchingUtils {
     rank(starts, durations, ends, (i: Int) => ends(i).max)
   }
 
-  def discrepancy(branching: Branching, maxDiscrepancy: Int)(implicit context: ReversibleContext): Branching = {
-    new DiscrepancyBranching(context, branching, maxDiscrepancy)
+  def discrepancy(branching: Branching, maxDiscrepancy: Int): Branching = {
+    new DiscrepancyBranching(branching, maxDiscrepancy)
   }
 
   def minDom(x: CPIntVar): Int = x.size

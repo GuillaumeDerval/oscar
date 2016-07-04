@@ -48,7 +48,7 @@ class BinarySum(val x: CPIntVar, val y: CPIntVar, val z: CPIntVar) extends Const
     var reduce = true // for idempotence
     var newbound = 0
     
-    while(reduce) {
+    while (reduce) {
       reduce = false
       
       newbound = xmax + ymax

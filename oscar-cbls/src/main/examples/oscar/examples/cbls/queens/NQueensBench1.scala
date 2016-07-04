@@ -66,6 +66,7 @@ object NQueensBench1 extends SearchEngine(true) with StopWatch{
         SolveNQueen(n)
         System.gc()
       }
+
     } else {
       val N:Int=args(0).toInt
       println("Runing NQueen - this takes time depending on N")
@@ -80,20 +81,20 @@ object NQueensBench1 extends SearchEngine(true) with StopWatch{
     print(padToLength("" + N, 15))
 
     startWatch()
-    val range:Range = Range(0,N)
+    val queensRange:Range = Range(0,N)
     val tabulength = 10
 
     val m = Store()
-    val init = Random.shuffle(range.toList).iterator
-    val queens:Array[CBLSIntVar] = Array.tabulate(N)((q:Int) => CBLSIntVar(m, init.next(), 0 to N-1,"queen" + q))
+    val init = Random.shuffle(queensRange.toList).iterator
+    val queens:Array[CBLSIntVar] = queensRange.map(q => CBLSIntVar(m, init.next(), 0 to N-1,"queen" + q)).toArray
 
     val c = ConstraintSystem(m)
 
     //c.post(AllDiff(Queens)) //enforced because we swap queens and they are always alldiff
-    c.post(AllDiff(for ( q <- range) yield queens(q) + q))
-    c.post(AllDiff(for ( q <- range) yield q - queens(q)))
+    c.post(AllDiff(queensRange.map(q => queens(q) + q)))
+    c.post(AllDiff(queensRange.map(q => q - queens(q))))
 
-    val tabu = Array.tabulate(N)(q => CBLSIntVar(m, 0, 0 to Int.MaxValue, "Tabu_queen" + q))
+    val tabu = queensRange.map(q => CBLSIntVar(m, 0, 0 to Int.MaxValue, "Tabu_queen" + q)).toArray
     val it = CBLSIntVar(m,1, 0 to Int.MaxValue,"it")
     val nonTabuQueens = SelectLESetQueue(tabu, it).setName("non tabu queens")
     val nonTabuMaxViolQueens = ArgMax(c.violations(queens), nonTabuQueens)
@@ -122,5 +123,6 @@ object NQueensBench1 extends SearchEngine(true) with StopWatch{
     }
 
     println(padToLength("" + getWatch, 15) + it.value)
+    //println(m.stats)
   }
 }

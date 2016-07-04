@@ -40,22 +40,37 @@ class AllDifferent(x: Array[CPIntVar]) extends Constraint(x(0).store) {
    */
   override def setup(l: CPPropagStrength): CPOutcome = {
 
+    val allValues = x.map(_.toSet).foldLeft(Set[Int]())((u,v) => u.union(v))
+    if (x.size > allValues.size) return Failure
+    val permutation = allValues.size == x.size
+
+    val lightAllDiff = {
+      if (permutation) {
+        val min = allValues.min
+        val cards = Array.tabulate(allValues.size)(v => if (allValues.contains(v+min)) 1 else 0)
+        //println(min+" cards:"+cards.mkString(","))
+        new GCCFWC(x,min,cards,cards)
+        //new AllDiffFWC(x)
+      }
+      else new AllDiffFWC(x)
+    }
+
     val ok = l match {
       case CPPropagStrength.Weak => {
-        s.post(new AllDiffFWC(x))
+        s.post(lightAllDiff)
       }
       case CPPropagStrength.Medium => {
         val minVal = x.map(_.min).min
         val maxVal = x.map(_.max).max
         val cards = Array.fill(maxVal - minVal + 1)(1)
-        s.post(Array(new AllDiffFWC(x), new GCCUpperBC(x, minVal, cards)))
+        s.post(Array(lightAllDiff, new GCCUpperBC(x, minVal, cards)))
       }
       case CPPropagStrength.Strong => s.post(new AllDiffAC(x))
       case CPPropagStrength.Automatic => {
         val minVal = x.map(_.min).min
         val maxVal = x.map(_.max).max
         val cards = Array.fill(maxVal - minVal + 1)(1)
-        s.post(Array(new AllDiffFWC(x), new GCCUpperBC(x, minVal, cards)))        
+        s.post(Array(lightAllDiff, new GCCUpperBC(x, minVal, cards)))
       }
       
 

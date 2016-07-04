@@ -1,7 +1,24 @@
 package oscar.cbls.modeling
 
-import oscar.cbls.invariants.core.computation.{CBLSIntVar, CBLSSetVar}
-import oscar.cbls.search.{AssignNeighborhood, RandomSwapNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
+import oscar.cbls.invariants.core.computation.CBLSIntVar
+import oscar.cbls.search._
+
+import scala.collection.immutable.SortedSet
 
 /** A trait that interfaces some of the neighborhoods of OScaR.CBLS
   *
@@ -58,7 +75,7 @@ trait Search {
   def randomizeNeighborhood(vars:Array[CBLSIntVar],
                             degree:Int = 1,
                             name:String = "RandomizeNeighborhood",
-                            searchZone:CBLSSetVar = null,
+                            searchZone:() => SortedSet[Int],
                             valuesToConsider:(CBLSIntVar,Int) => Iterable[Int] = (variable,_) => variable.domain)
   = RandomizeNeighborhood(vars,degree,name,searchZone,valuesToConsider)
 
@@ -74,7 +91,7 @@ trait Search {
   def randomSwapNeighborhood(vars:Array[CBLSIntVar],
                              degree:Int = 1,
                              name:String = "RandomSwapNeighborhood",
-                             searchZone:CBLSSetVar = null)
+                             searchZone:() => SortedSet[Int] = null)
   = RandomSwapNeighborhood(vars,degree,name,searchZone)
 
   /**
@@ -86,7 +103,7 @@ trait Search {
    * @param searchZone2 a subset of the indices of vars to consider for the second moved point
    *                   If none is provided, all the array will be considered each time
    * @param symmetryCanBeBrokenOnIndices if set to true, the neighborhood will break symmetries on indices of swapped vars
-   *                            that is: thee first variable will always have an indice strictly smaller than the second swapped variable
+   *                            that is: the first variable will always have an indice strictly smaller than the second swapped variable
    *                            typically, you always want it except if you have specified one or two searchZones, and they are different
    * @param symmetryCanBeBrokenOnValue if set to true, the neighborhood will break symmetries on values of swapped vars
    *                            that is: thee first variable will always have a value strictly smaller than the value of second swapped variable
@@ -121,5 +138,60 @@ trait Search {
   = SwapsNeighborhood(vars,name,searchZone1,searchZone2,
     symmetryCanBeBrokenOnIndices,symmetryCanBeBrokenOnValue,
     best,symmetryClassOfVariables1,symmetryClassOfVariables2,hotRestart)
+
+
+
+  /**
+   * will randomize the array, by performing shuffle on a subset of the variables
+   * This will not consider the objective function, even if it includes some strong constraints
+   *
+   * @param vars an array of [[oscar.cbls.invariants.core.computation.CBLSIntVar]] defining the search space
+   * @param indicesToConsider the positions to consider in the shuffle, all positions if not specified
+   * @param numberOfShuffledPositions the number of positions to shuffle, taken in indicesToConsider.
+   * @param name the name of the neighborhood
+   * @param checkNoMoveFound checks that the variables to shuffle have different values, return NoMoveFound if this is not the case
+   */
+  def shuffleNeighborhood(vars:Array[CBLSIntVar],
+                          indicesToConsider:()=>Iterable[Int] = null,
+                          numberOfShuffledPositions:() => Int = () => Int.MaxValue,
+                          name:String = "ShuffleNeighborhood",
+                          checkNoMoveFound:Boolean = true) =
+    ShuffleNeighborhood(vars, indicesToConsider, numberOfShuffledPositions, name, checkNoMoveFound)
+
+  /**
+    * will shift a block of value to the right(doing it also to the left is redundant)
+    *
+    * @param vars an array of [[oscar.cbls.invariants.core.computation.CBLSIntVar]] defining the search space
+    * @param searchZone1 a subset of the indices of vars to consider in order to determine the block's extremities
+    *                   if none provided, all the array will be considered each time
+    * @param maxShiftSize the max size of the shift, given the first indice considered in the shift
+    * @param maxOffsetLength the max size of the offset
+    * @param best if true, the neighborhood will try to find the best solution possible
+    *             (not very usefull because browsing all the possibilities can be very long)
+    * @param name the name of the neighborhood
+    * @param hotRestart  if true, the exploration order in case you ar not going for the best
+    *                    is a hotRestart for the first swapped variable
+    *                    even if you specify a searchZone that is: the exploration starts again
+    *                    at the position where it stopped, and consider the indices in increasing order
+    *                    if false, consider the exploration range in natural order from the first position.
+    */
+  def shiftNeighborhood(vars:Array[CBLSIntVar],
+                        name:String = "ShiftNeighborhood",
+                        searchZone1:()=>Iterable[Int] = null,
+                        maxShiftSize:Int = Int.MaxValue,
+                        maxOffsetLength:Int = Int.MaxValue,
+                        best:Boolean = false,
+                        hotRestart:Boolean = true) =
+    ShiftNeighborhood(vars, name, searchZone1, maxShiftSize, maxOffsetLength, best, hotRestart)
+
+  def rollNeighborhood(vars:Array[CBLSIntVar],
+                       name:String = "RollNeighborhood",
+                       searchZone:()=>Set[Int] = null,
+                       bridgeOverFrozenVariables:Boolean = false,
+                       maxShiftSize:Int=>Int = _ => Int.MaxValue, //the max size of the roll, given the ID of the first variable
+                       best:Boolean = false,
+                       hotRestart:Boolean = true) =
+    RollNeighborhood(vars, name, searchZone, bridgeOverFrozenVariables, maxShiftSize, best, hotRestart)
+
 }
 

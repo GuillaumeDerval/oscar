@@ -19,7 +19,7 @@ import oscar.algo.SortUtils._
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.core.CPOutcome._
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{CPOutcome, CPPropagStrength, Constraint}
+import oscar.cp.core.{CPStore, CPOutcome, CPPropagStrength, Constraint}
 
 /**
  *
@@ -68,6 +68,8 @@ class CountingBasedAllDifferent(constrainedVariables: Array[CPIntVar]) extends C
   private[this] val nBoundAndProcessedVariables = new ReversibleInt(constrainedVariables(0).store, 0) 
   
   final override def setup(l: CPPropagStrength): CPOutcome = {
+    priorityL2 = CPStore.MaxPriorityL2 - 2
+
     if (propagate() == Failure) Failure
     else {
       var i = nVariables

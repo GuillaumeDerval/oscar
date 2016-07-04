@@ -21,16 +21,15 @@
 
 package oscar.examples.cbls
 
-import scala.swing.SimpleSwingApplication
-import scala.swing.MainFrame
-import scala.swing.GridPanel
-import scala.swing.Label
-import javax.swing.border.LineBorder
 import java.awt.Color
-import oscar.cbls.search._
+import javax.swing.border.LineBorder
+
 import oscar.cbls.constraints.core._
 import oscar.cbls.constraints.lib.global.AllDiff
 import oscar.cbls.invariants.core.computation._
+import oscar.cbls.search._
+
+import scala.swing.{GridPanel, Label, MainFrame, SimpleSwingApplication}
 
 /**
  * Sudoku generator on NxN grids where N is a Square

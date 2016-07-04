@@ -21,7 +21,8 @@
 
 package oscar.cbls.invariants.core.computation
 
-import oscar.cbls.invariants.core.propagation.{Checker, PropagationElement}
+import oscar.cbls.invariants.core.algo.quick.QList
+import oscar.cbls.invariants.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
 import scala.language.implicitConversions
@@ -45,27 +46,14 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
   private var privatedomain:Domain = initialDomain
   private var Value: SortedSet[Int] = initialValue
   private var OldValue:SortedSet[Int] = Value
-
+  private[this] var domainSizeDiv10 = privatedomain.size/10
   def domain:Domain = privatedomain
 
   /**this must be protected because invariants might rework this after isntanciation
     * for CBLSVars, no problems*/
   protected def restrictDomain(d:Domain): Unit ={
     privatedomain = privatedomain.restrict(d)
-  }
-
-  private var ToPerform: List[(Int,Boolean)] = List.empty
-
-  private def Perform(){
-    def Update(l:List[(Int,Boolean)]){
-      if (l.isEmpty) return
-      Update(l.tail)
-      val (v, inserted) = l.head
-      if (inserted) OldValue += v
-      else OldValue -= v
-    }
-    Update(ToPerform)
-    ToPerform = List.empty
+    domainSizeDiv10 = privatedomain.size/10
   }
 
   override def toString:String = name + ":={" + (if(model.propagateOnToString) value else Value).mkString(",") + "}"
@@ -81,22 +69,37 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
   /**The values that have bee impacted since last propagation was performed.
     * null if set was assigned
     */
-  var TouchedValues:List[(Int,Boolean)] = List.empty
+  private[this] var addedValues:QList[Int] = null
+  private[this] var removedValues:QList[Int] = null
+  private[this] var nbTouched:Int = 0
 
   def insertValue(v:Int){
-    if (!Value.contains(v)){
-      if (TouchedValues != null) TouchedValues = (v,true) :: TouchedValues
-      Value +=v
-      notifyChanged()
-    }
+    if (!Value.contains(v)) insertValueNotPreviouslyIn(v)
   }
 
-  def deleteValue(v:Int){
-    if (Value.contains(v)){
-      if (TouchedValues != null) TouchedValues = (v,false) :: TouchedValues
-      Value -=v
-      notifyChanged()
+  def insertValueNotPreviouslyIn(v:Int){
+    if (nbTouched != -1){
+      addedValues = QList(v,addedValues)
+      nbTouched += 1
+      if(nbTouched > domainSizeDiv10) nbTouched = -1
     }
+    Value +=v
+    notifyChanged()
+  }
+
+
+  def deleteValue(v:Int){
+    if (Value.contains(v)) deleteValuePreviouslyIn(v)
+  }
+
+  def deleteValuePreviouslyIn(v:Int){
+    if (nbTouched != -1){
+      removedValues = QList(v,removedValues)
+      nbTouched += 1
+      if(nbTouched > domainSizeDiv10) nbTouched = -1
+    }
+    Value -=v
+    notifyChanged()
   }
 
   /**We suppose that the new value is not the same as the actual value.
@@ -104,107 +107,81 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
     * @param v the new value to set to the variable
     */
   def setValue(v:SortedSet[Int]){
-    TouchedValues = null
+    removedValues = null
+    addedValues = null
+    nbTouched = -1
     Value = v
     notifyChanged()
   }
 
   override def performPropagation(){performSetPropagation()}
 
+  @inline
   final protected def performSetPropagation(){
     if(getDynamicallyListeningElements.isEmpty){
       //no need to do it gradually
       OldValue=Value
     }else{
-      if (TouchedValues == null){
+      val (addedValues,deletedValues):(Iterable[Int],Iterable[Int]) = if (nbTouched == -1) {
         //need to calll every listening one, so gradual approach required
-        OldValue.diff(Value).foreach(v => {
-          OldValue -=v
-          val dynListElements = getDynamicallyListeningElements
-          val headPhantom = dynListElements.headPhantom
-          var currentElement = headPhantom.next
-          while(currentElement != headPhantom){
-            val e = currentElement.elem
-            currentElement = currentElement.next
-            val inv:Invariant = e._1.asInstanceOf[Invariant]
-            assert({this.model.NotifiedInvariant=inv; true})
-            inv.notifyDeleteOnAny(this,e._2,v)
-            assert({this.model.NotifiedInvariant=null; true})
+        (Value.diff(OldValue),OldValue.diff(Value))
+      }else {
+        var addedUnique = SortedSet.empty[Int] ++ this.addedValues
+        var removedUnique = SortedSet.empty[Int] ++ this.removedValues
+        for(inter <- addedUnique.intersect(removedUnique)){
+          val inNew = Value.contains(inter)
+          val inOld = OldValue.contains(inter)
+          if(!inOld || inNew) {
+            removedUnique = removedUnique - inter
           }
-        })
-        //puis on fait partir tous les insert
-        Value.diff(OldValue).foreach(v => {
-          OldValue += v
-          val dynListElements = getDynamicallyListeningElements
-          val headPhantom = dynListElements.headPhantom
-          var currentElement = headPhantom.next
-          while(currentElement != headPhantom){
-            val e = currentElement.elem
-            currentElement = currentElement.next
-            val inv:Invariant = e._1.asInstanceOf[Invariant]
-            assert({this.model.NotifiedInvariant=inv; true})
-            inv.notifyInsertOnAny(this,e._2,v)
-            assert({this.model.NotifiedInvariant=null; true})
-          }
-        })
-        //puis, on fait une affectation en plus, pour garbage collecter l'ancienne structure de donnees.
-        assert(OldValue.intersect(Value).size == Value.size, "mismatch: OLD" + OldValue + " New:" + Value)
-        OldValue=Value
-      }else{
-        //only touched values must be looked for
-        for ((v,inserted) <- TouchedValues.reverse){
-          //We simply replay the history. If some backtrack was performed, it is suboptimal
-          // eg: if something was propagated to this during a neighbourhood exploration not involving this var
-          if (inserted){
-            //inserted
-            ToPerform = (v, inserted) :: ToPerform
-            val dynListElements = getDynamicallyListeningElements
-            val headPhantom = dynListElements.headPhantom
-            var currentElement = headPhantom.next
-            while(currentElement != headPhantom){
-              val e = currentElement.elem
-              currentElement = currentElement.next
-              val inv:Invariant = e._1.asInstanceOf[Invariant]
-
-              assert({this.model.NotifiedInvariant=inv;true})
-              inv.notifyInsertOnAny(this,e._2,v)
-              assert({this.model.NotifiedInvariant=null;true})
-            }
-          }else{
-            //deleted
-            ToPerform = (v, inserted) :: ToPerform
-            val dynListElements = getDynamicallyListeningElements
-            val headPhantom = dynListElements.headPhantom
-            var currentElement = headPhantom.next
-            while(currentElement != headPhantom){
-              val e = currentElement.elem
-              currentElement = currentElement.next
-              val inv:Invariant = e._1.asInstanceOf[Invariant]
-              assert({this.model.NotifiedInvariant=inv;true})
-              inv.notifyDeleteOnAny(this,e._2,v)
-              assert({this.model.NotifiedInvariant=null;true})
-            }
+          if(!inNew || inOld) {
+            addedUnique = addedUnique - inter
           }
         }
-        OldValue = Value //in case we were lazy on the update
-        ToPerform = List.empty
+        (addedUnique,removedUnique)
       }
+
+      assert((OldValue ++ addedValues -- deletedValues).equals(Value))
+
+      if(addedValues.nonEmpty || deletedValues.nonEmpty) {
+        val dynListElements = getDynamicallyListeningElements
+        val headPhantom = dynListElements.headPhantom
+        var currentElement = headPhantom.next
+        while (currentElement != headPhantom) {
+          val e = currentElement.elem
+          currentElement = currentElement.next
+          val inv : SetNotificationTarget = e._1.asInstanceOf[SetNotificationTarget]
+          assert({
+            this.model.NotifiedInvariant = inv.asInstanceOf[Invariant]; true
+          })
+          inv.notifySetChanges(this, e._2, addedValues, deletedValues, OldValue, Value)
+          assert({
+            this.model.NotifiedInvariant = null; true
+          })
+        }
+      }
+      //puis, on fait une affectation en plus, pour garbage collecter l'ancienne structure de donnees.
+      assert(OldValue.intersect(Value).size == Value.size, "mismatch: OLD" + OldValue + " New:" + Value)
+      OldValue=Value
     }
-    TouchedValues = List.empty
+    this.addedValues = null
+    this.removedValues = null
+    nbTouched = 0
   }
 
   def value:SortedSet[Int] = getValue(false)
 
-  def getValue(NewValue:Boolean=false):SortedSet[Int] = {
+  def newValue:SortedSet[Int] = getValue(true)
+
+  private def getValue(NewValue:Boolean=false):SortedSet[Int] = {
     if (NewValue){
       assert(model.checkExecutingInvariantOK(definingInvariant),
         "variable [" + this + "] queried for latest val by non-controlling invariant")
       Value
     }else{
       if (model == null) return Value
-      if (definingInvariant == null && !model.propagating) return Value
+      //if (definingInvariant == null && !model.propagating) return Value
       model.propagate(this)
-      Perform()
       OldValue
     }
   }
@@ -218,12 +195,22 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
   protected def :+=(i:Int) {this.insertValue(i)}
   protected def :-=(i:Int) {this.deleteValue(i)}
 
-  def getDotNode = "[label = \"IntSetVar(" + name + ")\" shape = oval color = " + getDotColor + "]"
-
   override def checkInternals(c:Checker){
     assert(this.definingInvariant == null || OldValue.intersect(Value).size == Value.size,
       "internal error: " + "Value: " + Value + " OldValue: " + OldValue)
   }
+}
+trait SetNotificationTarget {
+  /**
+   * this method will be called just before the variable "v" is actually updated.
+   * @param v
+   * @param d
+   * @param addedValues
+   * @param removedValues
+   * @param oldValue
+   * @param newValue
+   */
+  def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int])
 }
 
 object ChangingSetValue{
@@ -240,9 +227,9 @@ object ChangingSetValue{
   * */
 class CBLSSetVar(givenModel: Store, initialValue: SortedSet[Int], initialDomain:Domain, n: String = null)
   extends ChangingSetValue(initialValue, initialDomain) with Variable{
-  
+
   require(givenModel != null)
-  
+
   model = givenModel
 
   override def restrictDomain(d:Domain) = super.restrictDomain(d)
@@ -286,13 +273,13 @@ case class CBLSSetConst(override val value:SortedSet[Int])
   override def name: String = toString
 }
 
-
 /*
 * @author renaud.delandtsheer@cetic.be
  */
 abstract class SetInvariant(initialValue:SortedSet[Int] = SortedSet.empty,
                             initialDomain:Domain = FullRange)
-  extends ChangingSetValue(initialValue, initialDomain) with Invariant{
+  extends ChangingSetValue(initialValue, initialDomain)
+  with Invariant {
 
   override def definingInvariant: Invariant = this
   override def isControlledVariable:Boolean = true
@@ -330,21 +317,20 @@ object IdentitySet{
 /** an invariant that is the identity function
   * @author renaud.delandtsheer@cetic.be
   */
-class IdentitySet(toValue:CBLSSetVar, fromValue:ChangingSetValue) extends Invariant{
+class IdentitySet(toValue:CBLSSetVar, fromValue:ChangingSetValue)
+  extends Invariant
+  with SetNotificationTarget{
+
   registerStaticAndDynamicDependency(fromValue)
   toValue.setDefiningInvariant(this)
   finishInitialization()
 
   toValue := fromValue.value
 
-  override def notifyInsertOn(v:ChangingSetValue,value:Int){
+  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
     assert(v == this.fromValue)
-    toValue.insertValue(value)
-  }
-
-  override def notifyDeleteOn(v:ChangingSetValue,value:Int){
-    assert(v == this.fromValue)
-    toValue.deleteValue(value)
+    for(added <- addedValues)toValue.insertValueNotPreviouslyIn(added)
+    for(deleted <- removedValues) toValue.deleteValuePreviouslyIn(deleted)
   }
 
   override def checkInternals(c:Checker){

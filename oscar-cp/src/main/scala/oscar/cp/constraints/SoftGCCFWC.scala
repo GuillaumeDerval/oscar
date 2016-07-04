@@ -114,7 +114,7 @@ class SoftGCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Arra
       }
 
       // Register before the first check loop so that we receive information on what we changed there
-      x.callOnChanges(i, delta => whenDomainChanges(delta, x))
+      x.callOnChangesIdx(i, delta => whenDomainChanges(delta, x))
     }
 
     // First violation counting

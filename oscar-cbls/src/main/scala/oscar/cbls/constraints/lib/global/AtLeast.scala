@@ -100,12 +100,12 @@ case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Int, IntValu
 
     for (v <- minMin to maxMax) {
       if (MyValueCount.isDefinedAt(v)){
-        c.check(valueCount(v+offset).getValue(true) == MyValueCount(v),
-          Some("ValueCount(" + v + "+offset).getValue(true) (" + valueCount(v).getValue(true)
+        c.check(valueCount(v+offset).newValue == MyValueCount(v),
+          Some("ValueCount(" + v + "+offset).newValue (" + valueCount(v).newValue
             + ") == MyValueCount(" + v + ") (" + MyValueCount(v) + ")"))
       }else{
-        c.check(valueCount(v+offset).getValue(true) == 0,
-          Some("ValueCount(" + v + "+offset).getValue(true) (" + valueCount(v).getValue(true)
+        c.check(valueCount(v+offset).newValue == 0,
+          Some("ValueCount(" + v + "+offset).newValue (" + valueCount(v).newValue
             + ") == 0"))
       }
     }

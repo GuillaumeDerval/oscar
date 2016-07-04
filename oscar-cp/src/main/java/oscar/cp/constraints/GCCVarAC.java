@@ -95,7 +95,6 @@ public class GCCVarAC extends Constraint {
 
 	@Override
 	public CPOutcome setup(CPPropagStrength l) {
-
 		if (!findValueRange()) {
 			return CPOutcome.Failure; //failure update the bounds of variables o
 		}
@@ -122,7 +121,7 @@ public class GCCVarAC extends Constraint {
 		for (int i = 0; i < o.length; i++) {
 			o[i].callPropagateWhenBoundsChange(this);
 		}
-		return CPOutcome.Suspend;
+		return propagate();
 	}
 	
 	@Override

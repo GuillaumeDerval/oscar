@@ -1,19 +1,33 @@
 package oscar.cbls.test.invariants
 
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
 import org.scalacheck.Gen
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 import oscar.cbls.constraints.lib.basic.{BelongsTo, EQ, G, GE, L, LE, NE}
 import oscar.cbls.constraints.lib.global.{AllDiff, AtLeast, AtMost, MultiKnapsack, Sequence}
-import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.lib.logic.{DenseCount, Elements, Filter, IntElement, IntITE, SelectLEHeapHeap, SetElement, _}
 import oscar.cbls.invariants.lib.minmax.{ArgMax, ArgMin, Max2, MaxArray, MaxLin, MaxSet, Min2, MinArray, MinLin, MinSet}
 import oscar.cbls.invariants.lib.numeric.{Abs, Div, Minus, Mod, Prod, Prod2, ProdElements, RoundUpModulo, Step, Sum, Sum2, SumElements}
-import oscar.cbls.invariants.lib.set.{Cardinality, Diff, Inter, Interval, MakeSet, SetProd, SetSum, TakeAny, Union}
+import oscar.cbls.invariants.lib.set.{Cardinality, Diff, Inter, Interval, MakeSet, SetProd, SetSum, TakeAny, Union, UnionAll}
 import oscar.cbls.modeling.Algebra._
 import oscar.cbls.test.invariants.bench.{InvBench, InvGen}
+
 import scala.collection.immutable.SortedMap
-import oscar.cbls.invariants.lib.set.UnionAll
 
 /**
  * @author yoann.guyot@cetic.be
@@ -115,7 +129,7 @@ class InvariantTests extends FunSuite with Checkers {
       bench.genIntVarsArray(),
       Gen.choose(10, 20).sample.get,
       Gen.choose(2, 9).sample.get,
-      (x: Int) => x > 1)
+      Array.tabulate(101)(n => (n%3 == 0)))
     bench.run
   }
 
@@ -446,7 +460,7 @@ class InvariantTests extends FunSuite with Checkers {
   /**
    * Won't pass when the product products an overflow.
    */
-  test("SetProd maintains the product of variables (after optionnaly appliying a function).") {
+  test("SetProd maintains the product of variables") {
     val bench = new InvBench(verbose)
     new SetProd(bench.genIntSetVar(10, -3 to 3))
     bench.run

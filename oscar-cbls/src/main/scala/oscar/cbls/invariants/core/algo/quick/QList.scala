@@ -1,5 +1,20 @@
 package oscar.cbls.invariants.core.algo.quick
 
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
 import scala.language.implicitConversions
 
 class QList[@specialized T](val head:T, val tail:QList[T] = null){
@@ -35,11 +50,12 @@ object QList{
   implicit def toIterable[T](l:QList[T]):Iterable[T] = new IterableQList(l)
 
   def buildFromIterable[T](l:Iterable[T]):QList[T] = {
-    def buildFromIterator[T](l:Iterator[T]):QList[T] = {
-      if(l.hasNext) QList(l.next(),buildFromIterator(l))
-      else null
+    var acc:QList[T] = null
+    val it = l.toIterator
+    while(it.hasNext){
+      acc = QList(it.next(),acc)
     }
-    buildFromIterator(l.toIterator)
+    acc
   }
 }
 
