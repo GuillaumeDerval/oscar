@@ -214,6 +214,7 @@ case class Store(override val verbose:Boolean = false,
   def sourceVariables(v:AbstractVariable):SortedSet[Variable] = {
     var ToExplore: QList[PropagationElement] = QList(v)
     var SourceVariables:SortedSet[Variable] = SortedSet.empty
+    var ExploredElements:Set[PropagationElement] = Set.empty
     while(ToExplore != null){
       val head = ToExplore.head
       ToExplore = ToExplore.tail
@@ -228,7 +229,8 @@ case class Store(override val verbose:Boolean = false,
         //TODO: keep a set of the explored invariants, to speed up this thing?
       }else if(head.isInstanceOf[Invariant]){
         val i:Invariant = head.asInstanceOf[Invariant]
-        for (listened <- i.getStaticallyListenedElements){
+        for (listened <- i.getStaticallyListenedElements if !ExploredElements.contains(listened)){
+          ExploredElements = ExploredElements + listened
           if (listened.propagationStructure != null && (!listened.isInstanceOf[Variable] || !SourceVariables.contains(listened.asInstanceOf[Variable]))){
             ToExplore = QList(listened,ToExplore)
           }
