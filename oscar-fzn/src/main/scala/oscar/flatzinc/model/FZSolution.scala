@@ -49,6 +49,7 @@ class FZSolution {
     }
     
 	def handleSolution(converter:(String)=>String) = {
-	  println(getSolution(converter));
+	  println(getSolution(converter))
+    System.out.flush()
 	}
 }

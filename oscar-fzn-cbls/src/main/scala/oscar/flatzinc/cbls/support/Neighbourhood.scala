@@ -636,12 +636,9 @@ class Inverse(xs: Array[CBLSIntVarDom], invXs:Array[CBLSIntVarDom], objective: C
     var tmpXs = Array.tabulate(xs.length)( i => 0)
     def recursiveFind(possibleValue:List[Int], index:Int):Boolean = {
       if(index == xs.length) return true
-      println("Trying index: " + index)
       for (v <- possibleValue if xs(index).dom.contains(v) &&  invXs(v+offset).dom.contains(index-offset)){
-        println("Trying value: " + v + " for index " + index)
         tmpXs(index) = v
         if(recursiveFind(possibleValue.filterNot(_ == v), index+1)) {
-          println("success")
           return true
         }
       }
@@ -655,7 +652,6 @@ class Inverse(xs: Array[CBLSIntVarDom], invXs:Array[CBLSIntVarDom], objective: C
 
     for(i <- xs.indices) {
       xs(i) := tmpXs(i)
-      println(xs(i).newValue + " - " + xs(i).value + " - " + tmpXs(i))
       invXs(tmpXs(i) + offset) := i - offset
     }
   }

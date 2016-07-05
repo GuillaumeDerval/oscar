@@ -203,7 +203,9 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
   var bcnt = 0;
   val baseSearchSize = 100;
   val searchFactor = 20;
-  
+
+  var currentNeighbour = 0
+
   def acceptMove(best: Int,nonTabuSet: Set[CBLSIntVar])(m:Move): Boolean = {
     //changed forall to exists after a suggestion of Gustav.
     m.getModified.exists(nonTabuSet.contains(_)) || m.value < best 
@@ -217,12 +219,22 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
     val nonTabuSet = nonTabuVariables.value.map(searchVariables(_).asInstanceOf[CBLSIntVar]);
     val bestValue = sc.weightedBest
     if(extendedSearch) ecnt+=1 else bcnt+=1
+    /*
+    val bestNeighbour = if(extendedSearch){
+      neighbourhoods(currentNeighbour).getExtendedMinObjective(it.value, acceptMove(bestValue,nonTabuSet),acceptVar(nonTabuSet))
+    }else{
+      neighbourhoods(currentNeighbour).getMinObjective(it.value, acceptMove(bestValue,nonTabuSet),acceptVar(nonTabuSet))
+    }
+    currentNeighbour = (currentNeighbour + 1) % neighbourhoods.size
+    */
+
     val bestNeighbour = selectMin(neighbourhoods.map((n: Neighbourhood) =>
       if (extendedSearch) {
         n.getExtendedMinObjective(it.value, acceptMove(bestValue,nonTabuSet),acceptVar(nonTabuSet))
       } else {
         n.getMinObjective(it.value, acceptMove(bestValue,nonTabuSet),acceptVar(nonTabuSet))
       }))(_.value)
+
     if(bestNeighbour!=null){
       //TODO: Aspiration sometimes accepts moves that do not improve but seem to improve because of changing weights. 
       if(log.level > 0 && bestNeighbour.getModified.forall(!nonTabuSet.contains(_))){

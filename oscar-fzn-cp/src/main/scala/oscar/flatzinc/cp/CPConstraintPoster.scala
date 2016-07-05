@@ -75,7 +75,7 @@ class CPConstraintPoster(val pstrength: oscar.cp.core.CPPropagStrength){
       case bool_xor(a, b, r, ann)                     => getBoolVar(r) == (getVar(a) ?!= getVar(b))
 
       case int_abs(x, y, ann)                         => new oscar.cp.constraints.Abs(getVar(x), getVar(y))
-      case int_div(x, y, z, ann)                      => oscar.cp.mul(getVar(z), getVar(y)) == getVar(x)
+      //case int_div(x, y, z, ann)                      => oscar.cp.mul(getVar(y), getVar(z)) == getVar(x) // TODO: this does not work as intended
       case int_eq(x, y, ann)                          => getVar(x) == getVar(y)
       case int_le(x, y, ann)                          => getVar(x) <= getVar(y)
       case int_lt(x, y, ann)                          => getVar(x) < getVar(y)
@@ -99,7 +99,7 @@ class CPConstraintPoster(val pstrength: oscar.cp.core.CPPropagStrength){
       case set_in(x, s, ann)                          => new oscar.cp.constraints.InSet(getVar(x),s.toSortedSet)
       case reif(set_in(x, s, ann),b)                  => new oscar.cp.constraints.InSetReif(getVar(x),s.toSortedSet,getBoolVar(b))
       case table_int(xs,ts,ann)                       => oscar.cp.table(xs.map(getVar(_)), Array.tabulate(ts.size/xs.size)(row => Array.tabulate(xs.size)(i => ts(row*xs.size + i).value)))
-      case default => Console.err.println("% No CP constsraint found for " + default + ". The created CP model is thus a relaxed version without this constraint." )
+      case default => Console.err.println("% No CP constraint found for " + default)
         Array.empty
     } 
   }

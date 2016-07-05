@@ -74,7 +74,8 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
         for(c <- model.constraints){
           //TODO: Take consistency annotation to post constraints.
           try{
-            add(poster.getConstraint(c,getIntVar,getBoolVar))
+            val cons = poster.getConstraint(c,getIntVar,getBoolVar)
+            add(cons)
           }catch{
             case e: scala.MatchError if ignoreUnkownConstraints => Console.err.println("% ignoring in CP: "+c)
           }
@@ -85,7 +86,9 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
   }
   //TODO: why do we need a separate method?
   def add(c:Array[(oscar.cp.Constraint,oscar.cp.core.CPPropagStrength)]){
-    c.foreach(cs => solver.add(cs._1,cs._2));
+    for(cs <- c){
+      solver.add(cs._1,cs._2)
+    }
   }
   def createObjective(){
     model.search.obj match{
@@ -153,8 +156,8 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
             }
         }
         //
-        if(v.domainSize < domSizeBefore)
-          Console.err.println("% Reducing for " + v + " from " + domSizeBefore + " to " + v.domainSize + ". Dom: " + getIntVar(v).iterator.toArray.mkString(", "))
+        //if(v.domainSize < domSizeBefore)
+          //Console.err.println("% Reducing for " + v + " from " + domSizeBefore + " to " + v.domainSize + ". Dom: " + getIntVar(v).iterator.toArray.mkString(", "))
       }
     }catch{
       case e:UnsatException => false

@@ -100,7 +100,7 @@ object FZFindDefined {
   
   private def findInvariants(model: FZProblem, log:Log,step:Int, searchVars: Set[Variable]) = {
     //Find all free variables of the model.
-    var freeVariables: List[Variable] =
+    val freeVariables: List[Variable] =
       model.variables.toList.filter((variable: Variable) =>
         //model.map(id).id == id  //to take each variable only once (as there may be aliases)
         //&&

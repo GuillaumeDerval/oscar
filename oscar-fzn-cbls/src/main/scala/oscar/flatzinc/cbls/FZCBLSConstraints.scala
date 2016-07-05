@@ -141,7 +141,8 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   }
 
   def get_bool_clause(as: Array[BooleanVariable], bs: Array[BooleanVariable], ann: List[Annotation]) = {
-    GE(Minus(Sum(as.map(getCBLSVar(_))),Prod(bs.map(getCBLSVar(_)))),0)
+    //GE(Minus(Sum(as.map(getCBLSVar(_))),Prod(bs.map(getCBLSVar(_)))),0)
+    GE(Sum(as.map(getCBLSVar(_))),Prod(bs.map(getCBLSVar(_))))
     //NE(Sum2(Step(Sum(as.map(getCBLSVar(_)))), EQ(Prod(bs.map(getCBLSVar(_))), 0).truthValue), 0)
   }
 
