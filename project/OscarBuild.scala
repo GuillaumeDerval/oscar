@@ -11,15 +11,15 @@ object OscarBuild extends Build {
 
   object BuildSettings {
     val buildOrganization = "oscar"
-    val buildVersion = "4.0.0-SNAPSHOT"
+    val buildVersion = "3.1.1.6-NSIDE"
     val buildScalaVersion = "2.11.0"
     val buildSbtVersion= "0.13.0"
 
-    val osNativeLibDir = (sys.props("os.name"), sys.props("os.arch")) match {
-      case (os, arch) if os.contains("Mac") && arch.endsWith("64") => "macos64"
-      case (os, arch) if os.contains("Linux") && arch.endsWith("64") => "linux64"
-      case (os, arch) if os.contains("Windows") && arch.endsWith("32") => "windows32"
-      case (os, arch) if os.contains("Windows") && arch.endsWith("64") => "windows64"
+    val (osNativeLibDir, osJavaLibraryPath) = (sys.props("os.name"), sys.props("os.arch")) match {
+      case (os, arch) if os.contains("Mac") && arch.endsWith("64") => ("macos64", sys.env.getOrElse("DYLD_LIBRARY_PATH", ""))
+      case (os, arch) if os.contains("Linux") && arch.endsWith("64") => ("linux64", sys.env.getOrElse("LD_LIBRARY_PATH", ""))
+      case (os, arch) if os.contains("Windows") && arch.endsWith("32") => ("windows32", sys.env.getOrElse("PATH", ""))
+      case (os, arch) if os.contains("Windows") && arch.endsWith("64") => ("windows64", sys.env.getOrElse("PATH", ""))
       case (os, arch) => sys.error("Unsupported OS [${os}] Architecture [${arch}] combo, OscaR currently supports macos64, linux64, windows32, windows64")
     }
 
@@ -32,7 +32,7 @@ object OscarBuild extends Build {
         t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
       parallelExecution in Test := false,
       fork in Test := true,
-      javaOptions in Test += "-Djava.library.path=../lib:../lib/" + osNativeLibDir,
+      javaOptions in Test += "-Djava.library.path=../lib:../lib/" + osNativeLibDir + ":" + osJavaLibraryPath,
       scalaVersion := buildScalaVersion,
       unmanagedSourceDirectories in Test += baseDirectory.value / "src" / "main" / "examples",
       publishTo := {
@@ -48,32 +48,29 @@ object OscarBuild extends Build {
   }
 
   object Resolvers {
-    val xypron = "Xypron Release" at "http://rsync.xypron.de/repository/"
     val leadoperations = "AWS S3 Release Repository" at "http://maven.leadoperations.co/release"
     val cogcomp = "Cognitive Computation Group" at "http://cogcomp.cs.illinois.edu/m2repo/"
     val ingi = "INGI Snapshots" at "http://artifactory.info.ucl.ac.be/artifactory/libs-snapshot-local/"
-
+    val nsideExtReleases = "N-SIDE External Releases" at "http://10.3.13.21:8080/artifactory/ext-release-local/"
   }
 
   object Dependencies {
-
     // Regular libraries
     val antlr4Runtime = "org.antlr" % "antlr4-runtime" % "latest.milestone"
-    val glpk = "org.gnu.glpk" % "glpk-java" % "1.0.16"
-    val gurobi = "gurobi" % "gurobi" % "5.0.1"
     val lpsolve = "lpsolve" % "lpsolve" % "5.5.2"
+    val gurobi = "gurobi" % "gurobi" % "6.5.1"
     val jcommon = "org.jfree" % "jcommon" % "latest.milestone"
     val jfreechart = "org.jfree" % "jfreechart" % "latest.milestone"
     val jsci = "net.sf.jsci" % "jsci" % "latest.milestone"
+    val kryo = "com.esotericsoftware.kryo" % "kryo" % "latest.milestone"
     val scalaParserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "latest.milestone"
     val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "latest.milestone"
     val scalaSwing = "org.scala-lang.modules" %% "scala-swing" % "latest.milestone"
-    //val swingx = "org.swinglabs" % "swingx" % "latest.milestone"
-    // val swingxWs = "org.swinglabs" % "swingx-ws" % "latest.milestone"
     val swingx = "org.swinglabs" % "swingx" % "1.0"
     val swingxWs = "org.swinglabs" % "swingx-ws" % "1.0"
     val xmlApisExt = "xml-apis" % "xml-apis-ext" % "latest.milestone"
     val xcsp3 = "xcsp3"  % "xcsp3_2.11" % "1.0.0-SNAPSHOT"
+    val nscalaTime = "com.github.nscala-time" %% "nscala-time" % "2.12.0" // A scala wrapper for Joda Time
 
     // Test libraries
     val junit = "junit" % "junit" % "latest.milestone" % Test
@@ -203,10 +200,18 @@ object OscarBuild extends Build {
     settings =
       commonSettings ++
         Seq(
-          resolvers ++= Seq(xypron, leadoperations, cogcomp),
-          libraryDependencies ++= testDeps :+ glpk :+ gurobi :+ lpsolve :+ scalaXml
+          resolvers ++= Seq(leadoperations, cogcomp, nsideExtReleases),
+          libraryDependencies ++= testDeps :+ lpsolve :+ gurobi :+ scalaXml :+ nscalaTime
         ),
-    dependencies = Seq(oscarAlgebra, oscarVisual)
+    dependencies = Seq(oscarAlgebra)
+  )
+
+  lazy val oscarModeling = Project(
+    id = "oscar-modeling",
+    base = file("oscar-modeling"),
+    settings =
+      commonSettings ++
+        Seq(libraryDependencies ++= testDeps :+ kryo)
   )
 
   lazy val oscarUtil = Project(
