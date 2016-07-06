@@ -42,8 +42,7 @@ trait CPSolverUtils {
     cp.start(stopCondition)
   }
 
-  def startSubjectTo(nSols: Int = Int.MaxValue, failureLimit: Int = Int.MaxValue, timeLimit: Int = Int.MaxValue, maxDiscrepancy: Int = Int.MaxValue)(reversibleBlock: => Unit = {})(implicit cp: CPSolver, searchListener: DFSearchListener = DefaultDFSearchListener() ): SearchStatistics = {
+  def startSubjectTo(nSols: Int = Int.MaxValue, failureLimit: Int = Int.MaxValue, timeLimit: Int = Int.MaxValue, maxDiscrepancy: Int = Int.MaxValue)(reversibleBlock: => Unit = {})(implicit cp: CPSolver, searchListener: DFSearchListener = DefaultDFSearchListener()): SearchStatistics = {
     cp.startSubjectTo(nSols,failureLimit,timeLimit,maxDiscrepancy)(reversibleBlock)(searchListener)
   }
-
 }

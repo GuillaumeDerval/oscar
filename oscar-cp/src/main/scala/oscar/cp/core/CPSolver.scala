@@ -53,7 +53,7 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
   final def replaySubjectTo(dfsLinearizer: DFSLinearizer, solutionVariables: Seq[CPIntVar])(block: => Unit): SearchStatistics = {
     pushState() // Store the current state
     block
-    val stats = new DFSReplayer(this, solutionVariables).replay(dfsLinearizer.decisions)
+    val stats = new DFSReplayer(this, solutionVariables, dfsLinearizer).replay()
     pop()
     stats
   }

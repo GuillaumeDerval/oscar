@@ -25,11 +25,12 @@ import oscar.cp.core.variables.CPIntVar
   * @author Sascha Van Cauwelart
   * @author Pierre Schaus
   */
-class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar]) {
+class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar], linearizer: DFSLinearizer) {
 
   private val timeThreadBean = ManagementFactory.getThreadMXBean()
 
-  def replay(decisions: Array[Decision]): SearchStatistics = {
+  def replay(): SearchStatistics = {
+    val decisions: Array[Decision] = linearizer.decisions
     node.resetStats()
     node.resetStatistics()
     val nModifications = decisions.length
@@ -67,7 +68,7 @@ class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar]) {
       decisions(i)() //apply the search state modification
 
       if (node.isFailed) {
-        //node.statusBehaviourDelegate.performFailureActions()
+        linearizer.performFailureActions()
         nBacktracks += 1
         if (i < nModifications - 1) {
           decisions(i + 1) match {
@@ -77,8 +78,7 @@ class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar]) {
         }
       }
       else if (decisionVariables.forall(_.isBound)) {
-        //onSolutionCallBack()
-        //node.statusBehaviourDelegate.performSolutionActions()
+        linearizer.performSolutionActions()
         nBacktracks += 1
         nSols += 1
         node.solFound()
