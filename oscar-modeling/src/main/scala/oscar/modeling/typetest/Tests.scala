@@ -14,19 +14,6 @@ object Tests extends App {
   println(expr2.evaluate().asDouble)
   println(expr3.evaluate().asDouble)
   println(expr4.evaluate().asInt)
-  println(expr5.evaluate(new Data {
-    def hasValue[T <: ValueType](v: Var[T]) = v == n
-    def getValue[T <: ValueType](v: Var[T]) = {
-      if (v == n) new Integer(2).asInstanceOf[T]
-      else throw new UnsupportedOperationException()
-    }
-  }).asInt)
-  println(expr6.evaluate(new Data {
-    def hasValue[T <: ValueType](v: Var[T]) = v == n || v == x
-    def getValue[T <: ValueType](v: Var[T]) = (
-      if (v == n) new Integer(4)
-      else if (v == x) new Number(1.5)
-      else throw new UnsupportedOperationException()
-      ).asInstanceOf[T]
-  }).asDouble)
+  println(expr5.evaluate(new MapData(Map((n, new Integer(2))))).asInt)
+  println(expr6.evaluate(new MapData(Map((n, new Integer(4)), (x, new Number(1.5))))).asDouble)
 }
