@@ -82,7 +82,7 @@ object JobShop extends App {
   // Activities & Resources
   val durationsVar = Array.tabulate(nActivities)(t => CPIntVar(durations(t)))
   val startsVar = Array.tabulate(nActivities)(t => CPIntVar(0 to horizon - durationsVar(t).min))
-  val endsVar = Array.tabulate(nActivities)(t => CPIntVar(durationsVar(t).min to horizon))
+  val endsVar = Array.tabulate(nActivities)(t => startsVar(t)+durations(t))
   val demandsVar = Array.fill(nActivities)(CPIntVar(1))
   val resourcesVar = Array.tabulate(nActivities)(t => CPIntVar(resources(t)))
 
@@ -111,10 +111,6 @@ object JobShop extends App {
   // Constraints & Search
   // -----------------------------------------------------------------------
 
-  // Consistency 
-  for (t <- Activities) {
-    add(endsVar(t) == startsVar(t) + durationsVar(t))
-  }
   // Precedences
   for (t <- 1 to Activities.max if jobs(t - 1) == jobs(t)) {
     add(endsVar(t - 1) <= startsVar(t))
@@ -152,4 +148,5 @@ object JobShop extends App {
     }
   }
 }
+
 
