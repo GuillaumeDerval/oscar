@@ -1,7 +1,11 @@
 package oscar.modeling.typetest
 
 trait Expression[+T <: ValueType] {
-  def evaluate(): T
+  def evaluate(): T = evaluate(new Data {
+    def hasValue[U <: ValueType](v: Var[U]) = v.isBound
+    def getValue[U <: ValueType](v: Var[U]) = v.value
+  })
+  def evaluate(data: Data): T
   def subExpressions(): Iterable[Expression[T]]
 }
 
