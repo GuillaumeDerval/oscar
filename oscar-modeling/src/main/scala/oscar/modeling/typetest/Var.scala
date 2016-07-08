@@ -13,6 +13,12 @@ trait Var[+T <: ValueType] extends Expression[T] {
   def value: T
 }
 
+// Stub
+class DoubleVar extends Var[Number] {
+  def isBound = ???
+  def value = ???
+}
+
 class Parameter[T <: ValueType] extends Var[T] {
   def isBound = false
   def value = throw new UnsupportedOperationException("Parameters do not have values")
