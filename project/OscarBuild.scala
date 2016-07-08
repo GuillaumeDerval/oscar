@@ -211,7 +211,9 @@ object OscarBuild extends Build {
     base = file("oscar-modeling"),
     settings =
       commonSettings ++
-        Seq(libraryDependencies ++= testDeps :+ kryo)
+        Seq(libraryDependencies ++= testDeps :+ kryo),
+    // TODO: REMOVE THIS IMMEDIATELY
+    dependencies = Seq(oscarLinprog)
   )
 
   lazy val oscarUtil = Project(
