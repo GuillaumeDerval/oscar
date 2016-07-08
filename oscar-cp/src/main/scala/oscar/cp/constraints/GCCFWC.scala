@@ -173,16 +173,18 @@ class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[In
       // If the value removed is one we track
       if (minVal <= v && v <= maxVal) {
         val vi = v - minVal
+        // Number of variables having vi in their domain
         val nPossible = nPossibleRev(vi).decr()
+        // Number of unbound variables having vi in their domain
         val nUnbound = nPossible - nMandatoryRev(vi).value
-
+        // Variable X(i) must be removed from the unbound variables having vi in their domain since vi was removed
         removeUnbound(i, vi, nUnbound)
 
         // If the number of variables that have the value decreases to the upper bound, all good!
         if (nPossible == upper(vi)) {
+          // the upper-bound for vi cannot be violated
           nBoundsOkVar += 1
-          if (nBoundsOkVar == nBounds)
-          {
+          if (nBoundsOkVar == nBounds) {
             nBoundsOkRev.setValue(nBounds)
             return Success
           }
@@ -202,14 +204,14 @@ class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[In
         val vi = v - minVal
         val nMandatory = nMandatoryRev(vi).incr()
         val nUnbound = nPossibleRev(vi).value - nMandatory
-
+        // Variable X(i) must be removed from the unbound variables having vi in their domain since is it is now bound
         removeUnbound(i, vi, nUnbound)
 
         // If the number of variables that are bound to the value increases to the lower bound, all good!
         if (nMandatory == lower(vi)) {
+          // the lower-bound for vi cannot be violated
           nBoundsOkVar += 1
-          if (nBoundsOkVar == nBounds)
-          {
+          if (nBoundsOkVar == nBounds) {
             nBoundsOkRev.setValue(nBounds)
             return Success
           }
@@ -228,8 +230,11 @@ class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[In
   }
 
   /**
-   * Remove a variable from a value's unbound sparse set
-   */
+    * Remove a variable from a value's unbound sparse set
+    * i = variable index
+    * vi = value removed from X(i)
+    * last = current size of the sparse-set
+    */
   @inline private def removeUnbound(i: Int, vi: Int, last: Int): Unit = {
 
     val thisUnboundSet = unboundSet(vi)

@@ -67,7 +67,7 @@ class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar]) {
       decisions(i)() //apply the search state modification
 
       if (node.isFailed) {
-        node.statusBehaviourDelegate.performFailureActions()
+        //node.statusBehaviourDelegate.performFailureActions()
         nBacktracks += 1
         if (i < nModifications - 1) {
           decisions(i + 1) match {
@@ -78,7 +78,7 @@ class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar]) {
       }
       else if (decisionVariables.forall(_.isBound)) {
         //onSolutionCallBack()
-        node.statusBehaviourDelegate.performSolutionActions()
+        //node.statusBehaviourDelegate.performSolutionActions()
         nBacktracks += 1
         nSols += 1
         node.solFound()

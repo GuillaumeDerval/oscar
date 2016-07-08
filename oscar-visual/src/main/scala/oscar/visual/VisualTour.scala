@@ -1,7 +1,6 @@
 package oscar.visual
 
-import oscar.visual.shapes.VisualCircle
-import oscar.visual.shapes.VisualLine
+import oscar.visual.shapes.{VisualArrow, VisualCircle, VisualLine}
 import java.awt.Color
 
 /**
@@ -17,14 +16,15 @@ class VisualTour(nodesPos: Array[(Int, Int)], scale: Boolean, autoRepaint: Boole
   // Edges have to be printed before nodes
   protected val edges: Array[VisualLine] = Array.tabulate(nNodes)(i => {
     val (x, y) = nodesPos(i)
-    val edge = VisualLine(this, x, y, x, y)
+    val edge = VisualArrow(this, x, y, x, y)
+
     edge.autoRepaint = false
     edge
   })
 
   protected val nodes: Array[VisualCircle] = Array.tabulate(nNodes)(i => {
     val (x, y) = nodesPos(i)
-    val node = new VisualCircle(this, x, y, 5)
+    val node = new VisualCircle(this, x, y, 1)
     node.autoRepaint = false
     node
   })

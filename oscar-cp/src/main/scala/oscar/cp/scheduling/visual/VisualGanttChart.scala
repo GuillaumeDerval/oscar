@@ -62,4 +62,28 @@ class VisualGanttChart(starts: Array[CPIntVar], durations: Array[CPIntVar], ends
     text.move(makespan * xScale, (max + 2) * yScale)
     repaint()
   }
+
+
+  def printTkz() : Unit = {
+    //\fill[blue!40!white] (0,0) rectangle (4,4);
+    val scale = 25.0
+    var i = 0
+    for (r <- rectangles) {
+      i += 1
+      println(s"\\definecolor{mycolor$i}{RGB}{${r.innerCol.getRed},${r.innerCol.getGreen},${r.innerCol.getBlue}}")
+      val out = s"\\draw [fill=mycolor$i] (${r.x/scale},${r.y/scale}) rectangle (${(r.x+r.width)/scale},${(r.y+r.height)/scale});"
+
+      //val out = s"\\draw [fill={RGB:red,${r.innerCol.getRed};green,${r.innerCol.getGreen};blue,${r.innerCol.getBlue}}] (${r.x/scale},${r.y/scale}) rectangle (${(r.x+r.width)/scale},${(r.y+r.height)/scale});"
+      println(out)
+    }
+
+
+
+    var out = s"\\draw [fill=red] (${makespanLine.orig._1/scale},${makespanLine.orig._2/scale-0.5}) rectangle (${makespanLine.dest._1/scale+0.1},${makespanLine.dest._2/scale-0.5});"
+    println(out)
+
+    out = s"\\draw[thick,->] (0,-1) -- (15,-1) node[anchor=north west] {time};"
+    println(out)
+
+  }
 }
