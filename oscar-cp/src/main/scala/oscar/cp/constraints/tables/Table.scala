@@ -27,6 +27,7 @@ object TableAlgo extends Enumeration {
   val CompactTable = Value("CompactTable (Perron et al)")
   val CompactTableGAC6 = Value("CompactTable GAC6 (Régin,Perrez,Schaus)")
   val CompactTableRefactored = Value("CompactTable Refactored")
+  val CompactTableStar = Value("CompactTable for positive * table")
   val GAC4 = Value("GAC4 (Regin)")
   val GAC4R = Value("GAC4R (Perez and Regin")
   val STR2 = Value("STR2 (Lecoutre)")
@@ -44,6 +45,7 @@ object table {
     algo match {
       case CompactTable => compactTable(X, table)
       case CompactTableGAC6 => compactTableGAC6(X, table)
+      case CompactTableStar => compactTableStar(X, table)
       case GAC4         => gac4(X, table)
       case GAC4R        => gac4r(X, table)
       case MDD4R        => mdd4r(X, table)
@@ -58,6 +60,8 @@ object table {
   def compactTable(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableCT(X, table)
 
   def compactTableGAC6(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableCTAC6(X, table)
+
+  def compactTableStar(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableCTStar(X, table)
 
   def gac4(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableGAC4(X, table)
 
@@ -82,6 +86,8 @@ object table {
 object NegativeTableAlgo extends Enumeration {
   type NegativeTableAlgo = Value
   val STRNE = Value("STRNE (Hongbo Li et al)")
+  val CompactTableNegative = Value("CompactTable for negative table")
+  val CompactTableNegativeStar = Value("CompactTable for negative * table")
 }
 
 object negativeTable {
@@ -91,6 +97,8 @@ object negativeTable {
 
     algo match {
       case STRNE => str2ne(X, invalidTuples)
+      case CompactTableNegative => compactTableNegative(X, invalidTuples)
+      case CompactTableNegativeStar => compactTableNegativeStar(X, invalidTuples)
       case _     => str2ne(X, invalidTuples)
     }
   }
@@ -98,6 +106,9 @@ object negativeTable {
 
   def str2ne(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableSTRNe(X, table)
 
+  def compactTableNegative(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableCTNeg(X, table)
+
+  def compactTableNegativeStar(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableCTNegStar(X, table)
 
 }
 

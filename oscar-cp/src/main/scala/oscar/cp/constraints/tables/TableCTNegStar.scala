@@ -79,6 +79,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
    */
   private def preprocess : Array[Array[Int]] = {
 
+    val t = System.currentTimeMillis()
     val orderedVars = Array.tabulate(arity)(i => i)
     orderedVars.sortBy(x(_).size)
 
@@ -111,7 +112,10 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
       }
 
     }
-    keepSet.toArray
+
+    val array = keepSet.toArray
+    println("preprocess time : " + (System.currentTimeMillis() - t))
+    array
   }
 
   override def setup(l: CPPropagStrength): CPOutcome = {
