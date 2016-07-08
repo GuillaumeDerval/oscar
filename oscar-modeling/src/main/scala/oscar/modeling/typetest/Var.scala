@@ -17,8 +17,3 @@ class Parameter[T <: ValueType] extends Var[T] {
   def isBound = false
   def value = throw new UnsupportedOperationException("Parameters do not have values")
 }
-
-trait Data {
-  def hasValue[T <: ValueType](v: Var[T]): Boolean
-  def getValue[T <: ValueType](v: Var[T]): T
-}

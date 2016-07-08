@@ -1,18 +1,23 @@
 package oscar.modeling.typetest
 
 trait Expression[+T <: ValueType] {
-  def evaluate(): T = evaluate(new Data {
-    def hasValue[U <: ValueType](v: Var[U]) = v.isBound
-    def getValue[U <: ValueType](v: Var[U]) = v.value
-  })
-  def evaluate(data: Data): T
-  def subExpressions(): Iterable[Expression[T]]
+  def evaluate(data: Data = MapData.noData): T
+  def subExpressions(): Iterable[Expression[_]]
+}
+
+// Rough draft of assignment data
+trait Data {
+  def hasValue[T <: ValueType](v: Var[T]): Boolean
+  def getValue[T <: ValueType](v: Var[T]): T
+}
+class MapData(map: Map[Var[_], ValueType]) extends Data {
+  def hasValue[T <: ValueType](v: Var[T]) = map.contains(v) || v.isBound
+  def getValue[T <: ValueType](v: Var[T]) = if (v.isBound) v.value else map(v).asInstanceOf[T]
+}
+object MapData {
+  val noData = new MapData(Map())
 }
 
 trait Mappable[T <: ValueType, U >: T <: ValueType] {
-  def mapSubExpressions[V >: T <: U](func: (Expression[T]) => Expression[V]): Expression[V]
-}
-
-trait Derivable[T <: Number] {
-  def derive(): Expression[T]
+  def mapSubExpressions[V >: T <: U](func: Expression[T] => Expression[V]): Expression[V]
 }
