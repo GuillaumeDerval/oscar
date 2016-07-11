@@ -1,3 +1,22 @@
+/**
+  * *****************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  * ****************************************************************************
+  */
+/**
+  * @author Gustav Björdal
+  */
 package oscar.cbls.constraints.lib.global
 
 import oscar.cbls.invariants.core.computation._
@@ -8,7 +27,17 @@ import oscar.cbls.invariants.lib.minmax.MaxArray
 import oscar.cbls.invariants.lib.numeric.{MinusOffsetPos, Prod2, Sum}
 
 
-
+/**
+  * Constrains the a resource usage to be lower than some limit.
+  * The violation is the sum of the overflow at each time step:
+  *  sum(t in 0 .. horizon)(max(0,limit - usage[t]))
+  *  
+  * @param start the start time of tasks
+  * @param duration the duration of tasks
+  * @param amount the amount that tasks use of the resource
+  * @param limit the resource limit
+  * @author gustav.bjordal@it.uu.se
+  */
 case class CumulativePrototype(start: Array[IntValue], duration: Array[IntValue], amount:Array[IntValue], limit:IntValue) extends Invariant with Constraint with IntNotificationTarget{
 
 
