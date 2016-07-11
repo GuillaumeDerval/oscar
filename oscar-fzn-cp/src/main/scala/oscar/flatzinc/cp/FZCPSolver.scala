@@ -157,7 +157,7 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
         }
         //
         //if(v.domainSize < domSizeBefore)
-          //Console.err.println("% Reducing for " + v + " from " + domSizeBefore + " to " + v.domainSize + ". Dom: " + getIntVar(v).iterator.toArray.mkString(", "))
+          //Console.err.println("% Reducing for " + v + " by " + (domSizeBefore-v.domainSize))
       }
     }catch{
       case e:UnsatException => false

@@ -438,9 +438,17 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
   def getMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     //TODO: Only takes into account the violation!
     val bestIndex = selectMax(indexRange, (i: Int) => variableViolation(i).value);
-    val bestValue = selectMin(searchVariables(bestIndex).getDomain())((i: Int) =>
+    val bestValue =  if(searchVariables(bestIndex).getDomain().size < 1000000) {
+      selectMin(searchVariables(bestIndex).getDomain())((i: Int) =>
       acceptOr(new AssignMove(searchVariables(bestIndex),i,objective.assignVal(searchVariables(bestIndex), i)),accept).value,
       _ != searchVariables(bestIndex).value)
+    }else{
+      val objVal = objective.value
+      selectFirst(RandomGenerator.shuffle(searchVariables(bestIndex).getDomain()), ((i:Int) =>
+        acceptOr(new AssignMove(searchVariables(bestIndex),i,objective.assignVal(searchVariables(bestIndex), i)),accept).value < objVal
+        && i != searchVariables(bestIndex).value)
+        )
+    }
     return acceptOr(new AssignMove(searchVariables(bestIndex),bestValue,objective.assignVal(searchVariables(bestIndex), bestValue)),accept)
   }
   def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {

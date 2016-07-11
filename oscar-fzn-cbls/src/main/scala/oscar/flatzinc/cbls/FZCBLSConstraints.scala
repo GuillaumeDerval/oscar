@@ -81,12 +81,12 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
       val start = s.foldLeft(Int.MaxValue)((acc,v) => if (v.min < acc) v.min else acc)
       val ns = new Array[IntValue](s.length)
       val horizon = s.foldLeft(Int.MinValue)((acc,v) => if (v.max > acc) v.max else acc)
-      val p = new Array[CBLSIntVar](horizon-start+1)
+      //val p = new Array[CBLSIntVar](horizon-start+1)
       
       val maxprofile = r.foldLeft(0)((s,r) => s + r.max)
-      for(i <- 0 to horizon-start){
-        p(i) = CBLSIntVar(m,0,0 to maxprofile,"Profile("+i+")")
-      }
+      //for(i <- 0 to horizon-start){
+      //  p(i) = CBLSIntVar(m,0,0 to maxprofile,"Profile("+i+")")
+      //}
       if(start!=0){
         val offset = CBLSIntConst(-start)
         for(i <- 0 to s.length-1){
@@ -97,10 +97,10 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
           ns(i) = s(i)
         }
       }
-      val cumul = CumulativeNoSet(ns,d.map(getCBLSVar(_)),r.map(getCBLSVar(_)),p);
-      GE(b,MaxArray(p.asInstanceOf[Array[IntValue]]))//TODO: What we should actually do is to create the array in CumulativeNoSet
-      //TODO: The following class is still full of bugs
-      //CumulativeSparse(ns,d.map(getCBLSVar(_)),r.map(getCBLSVar(_)),b);
+      //val cumul = CumulativeNoSet(ns,d.map(getCBLSVar(_)),r.map(getCBLSVar(_)),p);
+      //GE(b,MaxArray(p.asInstanceOf[Array[IntValue]]))//TODO: What we should actually do is to create the array in CumulativeNoSet
+      //TODO: The following class may have some bugs
+      CumulativePrototype(ns,d.map(getCBLSVar(_)),r.map(getCBLSVar(_)),getCBLSVar(b));
     }
   }
   

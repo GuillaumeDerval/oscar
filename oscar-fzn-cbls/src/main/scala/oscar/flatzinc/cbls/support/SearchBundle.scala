@@ -115,7 +115,13 @@ class SimpleLocalSearch(val m:FZCBLSModel,val sc: SearchControl) extends SearchP
       while(improving > 0 && !sc.stop()){
         val currentVar = m.vars(i);
         if(violation(i).value > 0){
-          val k = selectMin(currentVar.getDomain())(k=> m.objective.objective.assignVal(currentVar,k))
+          //val k = selectMin(currentVar.getDomain())(k=> m.objective.objective.assignVal(currentVar,k))
+          val currentObj = m.objective.objective.value
+          val k = if(currentVar.getDomain().size > 1000000){
+            selectFirst(RandomGenerator.shuffle(currentVar.getDomain()), ( (k:Int) => m.objective.objective.assignVal(currentVar,k) < currentObj))
+          }else{
+            selectMin(currentVar.getDomain())(k=> m.objective.objective.assignVal(currentVar,k))
+          }
           if(k!=currentVar.value){
             val obj = m.objective.objective.value
             currentVar := k;
