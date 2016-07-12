@@ -20,13 +20,17 @@ abstract class Expression {
 
   def eval(env: Var => Double): Double
 
-  def +(expr: Expression): Expression = new Sum(this, expr)
+  def +(expr: Expression): Expression = Sum(this, expr)
 
   def -(expr: Expression): Expression = new Diff(this, expr)
 
   def *(expr: Expression): Expression = new Prod(this, expr)
 
   def /(expr: Expression): Expression = new Frac(this, expr)
+
+  def <= (expression: Expression) = new Equation(this-expression, LQ)
+  def >= (expression: Expression) = new Equation(this-expression, GQ)
+  def === (expression: Expression) = new Equation(this-expression, EQ)
 
   def derive(x: Var): Expression
 

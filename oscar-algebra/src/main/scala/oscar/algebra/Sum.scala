@@ -14,11 +14,32 @@
  ******************************************************************************/
 package oscar.algebra
 
-class Sum(val a: Expression, val b: Expression) extends BinaryOp {
-  val symb = "+"
-  val op = (a: Double, b: Double) => a + b
-  def derive(v: Var): Expression = {
-    a.derive(v) + b.derive(v)
+import scala.annotation.tailrec
+
+object Sum{
+  def apply[E <: Expression](a:E, b: E) = new Sum(Stream(a,b))
+  def apply[E <: Expression](terms: Stream[E]) = new Sum(terms)
+}
+
+class  Sum[E <: Expression] private (terms: Stream[E]) extends Expression{
+  def eval(env: Var => Double) = {
+    terms.map(_.eval(env)).sum
   }
-  override def isZero() = a.isZero() && b.isZero()
+
+  def value = {
+    @tailrec
+    def loop(acc:Double, stream: Stream[Option[Double]]): Option[Double] = {
+      stream match{
+        case Stream() => Some(acc)
+        case Some(d) #:: tail => loop(acc*d,tail)
+        case None #:: tail => None
+      }
+    }
+    loop(1.0,terms.map(_.value))
+  }
+
+  def derive(v: Var): Sum[Expression] = {
+    Sum(terms.map(_.derive(v)))
+  }
+  override def isZero = terms.forall(_.isZero)
 }
