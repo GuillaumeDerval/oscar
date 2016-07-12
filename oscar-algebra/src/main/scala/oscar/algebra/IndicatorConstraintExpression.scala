@@ -51,16 +51,16 @@ class IndicatorConstraintExpression(
   val indicators: Seq[Expression[Linear]],
   val bigM: Double) extends Equation[Linear](linExpr, sense) {
 
-  import Linear._
+  import Constant._
 
   require(indicators.length > 0, s"An IndicatorConstraint should declare at least one indicator.")
 
   val constraintExpressions: Seq[Equation[Linear]] =
     indicators.map { ind =>
-      val actualBound = Const(bigM).*(ind)(Linear.timesA)
+      val actualBound = Const(bigM).toExpression * ind
 
       lazy val constraintLQ = linExpr <= actualBound
-      lazy val constraintGQ = linExpr >=[Linear,Linear] (Const(-1).*(actualBound)(Linear.timesA))
+      lazy val constraintGQ = linExpr >= Const(-1).toExpression * actualBound
 
       sense match {
         case LQ => Seq(constraintLQ)

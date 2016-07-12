@@ -33,6 +33,9 @@ class Model[O <: AnyType, C <: AnyType]{
   var maxIndex = 0
   case class Var (id: Int) extends oscar.algebra.Var{
     def name = s"Var_$id"
+    def value = None
+
+
   }
   def Var0 = {
     maxIndex += 1

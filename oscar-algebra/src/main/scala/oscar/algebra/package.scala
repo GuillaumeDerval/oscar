@@ -16,7 +16,10 @@ package oscar
 
 
 package object algebra {
-  
+
+  implicit def term2Expression[T <: AnyType](term: Term[T]) = term.toExpression
+  implicit def double2Expression[T <: AnyType](d: Double) = Const(d).toExpression
+
   // some useful linear algebra functions
   
   def min(a:Double,b:Double): Double = {a.min(b)}

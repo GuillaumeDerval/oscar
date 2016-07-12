@@ -15,7 +15,7 @@
 package oscar.algebra
 
 //Unary operators
-abstract class UnaryOp(expr: Expression[AnyType], name: String, f: Double => Double) extends Expression {
+abstract class UnaryOp(expr: Expression[AnyType], name: String, f: Double => Double) extends AbstractExpression[AnyType] {
 
   override def toString = name + "(" + expr + ")"
 

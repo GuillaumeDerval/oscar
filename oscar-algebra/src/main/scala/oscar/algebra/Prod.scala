@@ -14,12 +14,37 @@
  ******************************************************************************/
 package oscar.algebra
 
-class Prod[+T <: AnyType](val a: Expression[T], val b: Expression[T]) extends BinaryOp[T] {
-  val symb = "*"
-  val op = (a: Double, b: Double) => a * b
-  def derive[TR >: T <: AnyType](v: Var)(implicit op: Function[(Expression[T],Expression[T]), Prod[TR]]): Expression[TR] = {
-    a// * b.derive(v) + b * a.derive(v)
+import scala.annotation.tailrec
+
+trait Term[+T <: AnyType] extends AbstractExpression[T]{
+}
+
+class Prod[+T <: AnyType](val coef: Const, val vars: Seq[Var]) extends AbstractExpression[T]{
+//  def derive[TR >: T <: AnyType](v: Var)(implicit op: Function[(Expression[T],Expression[T]), Prod[TR]]): Expression[TR] = {
+//    a// * b.derive(v) + b * a.derive(v)
+//  }
+
+  def toExpression = new Expression(Stream(this))
+
+  def *(d: Double) = new Prod(Const(coef.d * d),vars)
+
+  def eval(env: Var => Double): Double = {
+    var res = coef.d
+    for(v <- vars) res = res * v.eval(env)
+    res
   }
-  override def toString = "(" + a + ")*(" + b + ")"
-  override def isZero() = a.isZero() || b.isZero()
+  def value: Option[Double] = {
+    @tailrec
+    def loop(acc: Double, stream: List[Var]): Option[Double] = {
+      stream match {
+        case Nil => Some(acc)
+        case v :: tail => v.value match{
+          case None => None
+          case Some(d) => loop(acc*d, tail)
+        }
+      }
+    }
+    loop(coef.d, vars.toList)
+  }
+
 }

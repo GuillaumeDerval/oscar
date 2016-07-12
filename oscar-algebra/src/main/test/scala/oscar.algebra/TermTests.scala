@@ -41,7 +41,7 @@ class TermTests extends FunSuite with ShouldMatchers{
 
     val vs = model.Var1(0 until 10)
 
-    model.subjectTo(v1 + vs(5) + vs(7) <= 9)
+    model.subjectTo(v1 + vs(5) + vs(7) <= Const(9))
 
     println(model)
 

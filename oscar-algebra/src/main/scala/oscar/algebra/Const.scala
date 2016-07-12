@@ -14,24 +14,15 @@
  ******************************************************************************/
 package oscar.algebra
 
-class Const(val d: Double) extends Expression[Constant] {
+class Const(val d: Double) extends Term[Constant] {
 
   def eval(env: Var => Double) = d
   def value = Some(d)
 
-  val cte = d
-  val coef = scala.collection.immutable.Map[Var, Double]()
-
-//
-//  def *(c2: Const) = new Const(d * c2.d)
-//
-//  def +(c2: Const) = new Const(d + c2.d)
-//
-//  def -(c2: Const) = new Const(d - c2.d)
-//
-//  def *(x: Var) = new CstVar(this, x)
 
   override def toString = d.toString
+
+  def toExpression = new Expression(Stream(new Prod(this,Seq())))
 
   //override def derive(v: Var): Expression = Zero
 
