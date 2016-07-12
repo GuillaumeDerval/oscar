@@ -14,11 +14,11 @@
  ******************************************************************************/
 package oscar.algebra
 
-class Prod(val a: Expression, val b: Expression) extends BinaryOp {
+class Prod[+T <: AnyType](val a: Expression[T], val b: Expression[T]) extends BinaryOp[T] {
   val symb = "*"
   val op = (a: Double, b: Double) => a * b
-  def derive(v: Var): Expression = {
-    a * b.derive(v) + b * a.derive(v)
+  def derive[TR >: T <: AnyType](v: Var)(implicit op: Function[(Expression[T],Expression[T]), Prod[TR]]): Expression[TR] = {
+    a// * b.derive(v) + b * a.derive(v)
   }
   override def toString = "(" + a + ")*(" + b + ")"
   override def isZero() = a.isZero() || b.isZero()

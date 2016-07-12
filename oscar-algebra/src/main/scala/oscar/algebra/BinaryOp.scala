@@ -14,19 +14,19 @@
  ******************************************************************************/
 package oscar.algebra
 
-abstract class BinaryOp extends Expression {
-  val a: Expression
-  val b: Expression
+abstract class BinaryOp[+T <: AnyType] extends Expression[T] {
+  val a: Expression[T]
+  val b: Expression[T]
   val symb: String
   val op: (Double, Double) => Double
   override def toString = "(" + a + symb + b + ")"
 
-  def eval(env: Var => Double) = {
+  override def eval(env: Var => Double) = {
     op(a.eval(env), b.eval(env))
 
   }
 
-  def value = {
+  override def value = {
     (a.value, b.value) match {
       case (Some(va), Some(vb)) => Some(op(va, vb))
       case _ => None

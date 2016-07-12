@@ -14,11 +14,11 @@
  ******************************************************************************/
 package oscar.algebra
 
-class Diff(val a: Expression, val b: Expression) extends BinaryOp {
+class Diff[+T <: AnyType](val a: Expression[T], val b: Expression[T]) extends BinaryOp[T] {
   val symb = "+"
   val op = (a: Double, b: Double) => a - b
-  def derive(v: Var): Expression = {
-    a.derive(v) + b.derive(v)
+  def derive[TP >: T <: AnyType](v: Var)(implicit op: Function[(Expression[TP],Expression[TP]), SumExpression[TP]]): Expression[TP] = {
+    a  //.derive(v).+(b.derive(v))
   }
   override def isZero() = a.isZero() && b.isZero()
 

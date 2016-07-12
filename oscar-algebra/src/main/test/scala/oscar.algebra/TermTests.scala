@@ -35,7 +35,7 @@ class TermTests extends FunSuite with ShouldMatchers{
 
   test("Model"){
 
-    val model = new Model[Expression,Expression]()
+    val model = new Model[AnyType,AnyType]()
 
     val v1 = model.Var0
 
@@ -48,9 +48,31 @@ class TermTests extends FunSuite with ShouldMatchers{
     val N = 1000000000
 
     val manyManyVars = model.Var1(0 until N)
-    val manyManyConstraints = new System[Expression]((0 until N).toStream.map(manyManyVars(_) <= 2))
+    val manyManyConstraints = new System[Linear]((0 until N).toStream.map(manyManyVars(_) <= 2))
 
     model.subjectTo(manyManyConstraints)
 
+  }
+
+  test("Degrees"){
+
+    val model = new Model[AnyType,AnyType]()
+
+    val c = Const(2)
+    val x = model.Var0
+    val y = model.Var0
+    val z = model.Var0
+
+    val _0: Expression[Constant] = c+c
+
+    val _10: Expression[Constant] = c*c
+
+    val _1: Expression[Linear] = c+x
+    val _2: Expression[Linear] = c*x
+
+    val _3: Expression[Linear] = x+y
+    val _4: Expression[Quadratic] = x*y
+    val _5: Expression[Quadratic] = x+y*z
+    val _6: Expression[AnyType] = x*y*z
   }
 }

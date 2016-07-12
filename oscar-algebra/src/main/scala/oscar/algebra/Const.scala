@@ -14,24 +14,26 @@
  ******************************************************************************/
 package oscar.algebra
 
-class Const(val d: Double) extends LinearExpression {
+class Const(val d: Double) extends Expression[Constant] {
+
+  def eval(env: Var => Double) = d
+  def value = Some(d)
 
   val cte = d
   val coef = scala.collection.immutable.Map[Var, Double]()
 
-  def *(expr: LinearExpression): LinearExpression = new LinearExpressionProd(this, expr)
-
-  def *(c2: Const) = new Const(d * c2.d)
-
-  def +(c2: Const) = new Const(d + c2.d)
-
-  def -(c2: Const) = new Const(d - c2.d)
-
-  def *(x: Var) = new CstVar(this, x)
+//
+//  def *(c2: Const) = new Const(d * c2.d)
+//
+//  def +(c2: Const) = new Const(d + c2.d)
+//
+//  def -(c2: Const) = new Const(d - c2.d)
+//
+//  def *(x: Var) = new CstVar(this, x)
 
   override def toString = d.toString
 
-  override def derive(v: Var): Expression = Zero
+  //override def derive(v: Var): Expression = Zero
 
 }
 

@@ -15,21 +15,24 @@
 package oscar.algebra
 
 /**Abstract class for variables*/
-abstract class Var extends LinearExpression {
+abstract class Var extends Expression[Linear] {
 
   def name: String
 
   val cte = 0.0
   val coef = scala.collection.immutable.Map(this -> 1.0)
 
+  def eval(env: Var => Double) = env(this)
+  def value = None
+
   override def toString = name
 
-  override def derive(v: Var): Expression = {
-    if (v equals this) One
-    else Zero
-  }
+//  override def derive(v: Var): Expression = {
+//    if (v equals this) One
+//    else Zero
+//  }
 
-  def *(cons: Const): LinearExpression = new CstVar(cons, this)
+  //def *(cons: Const): Expression[Linear] = new CstVar(cons, this)
 
   override def equals(that: Any) = {
     that match {

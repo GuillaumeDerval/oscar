@@ -3,12 +3,17 @@ package oscar.algebra
 import scala.collection.mutable.ArrayBuffer
 
 
-class Equation[E <: Expression](expr: E, val sense: ConstraintSense) {
+class Equation[+T <: AnyType](expr: Expression[T], val sense: ConstraintSense) {
   override def toString = s"$expr ${sense} 0"
 }
 
+class EQEquation[+T <: AnyType](expr: Expression[T]) extends Equation(expr, EQ)
+class LQEquation[+T <: AnyType](expr: Expression[T]) extends Equation(expr, LQ)
+class GQEquation[+T <: AnyType](expr: Expression[T]) extends Equation(expr, GQ)
 
-class System[E <: Expression](val equations: Stream[Equation[E]], name: String = "System"){
+
+
+class System[+T <: AnyType](val equations: Stream[Equation[T]], name: String = "System"){
   override def toString = {
     val res = new StringBuffer()
     res.append(name)
@@ -23,7 +28,7 @@ class System[E <: Expression](val equations: Stream[Equation[E]], name: String =
   }
 }
 
-class Model[O <: Expression, C <: Expression]{
+class Model[O <: AnyType, C <: AnyType]{
 
   var maxIndex = 0
   case class Var (id: Int) extends oscar.algebra.Var{
@@ -54,11 +59,11 @@ class Model[O <: Expression, C <: Expression]{
 
 
 
-  val objectives = scala.collection.mutable.ArrayBuffer[O]()
-  val constraints = scala.collection.mutable.ArrayBuffer[System[C]]()
+  val objectives = scala.collection.mutable.ListBuffer[O]()
+  val constraints = scala.collection.mutable.ListBuffer[System[C]]()
 
   def subjectTo(eq: Equation[C]): Unit ={
-    constraints += new System(Stream(eq))
+    constraints += new System[C](Stream(eq))
   }
 
   def subjectTo(eqs: System[C]): Unit ={
