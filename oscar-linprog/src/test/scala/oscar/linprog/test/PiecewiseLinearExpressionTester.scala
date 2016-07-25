@@ -69,7 +69,7 @@ class PiecewiseLinearExpressionTester extends OscarLinprogTester {
 
     minimize(y)
     subjectTo(
-      "aboveAbsX" -> (y >:= abs(x, -100, 100))
+      "aboveAbsX" ||: (y >= abs(x, -100, 100))
     )
 
     solver.solve should equal(SolutionFound)
@@ -89,7 +89,7 @@ class PiecewiseLinearExpressionTester extends OscarLinprogTester {
 
     minimize(y)
     subjectTo(
-      "aboveAbsX" -> (y >:= solver.absLinearExpression(absX))
+      "aboveAbsX" ||: (y >= solver.absLinearExpression(absX))
     )
 
     solver.solve should equal(SolutionFound)

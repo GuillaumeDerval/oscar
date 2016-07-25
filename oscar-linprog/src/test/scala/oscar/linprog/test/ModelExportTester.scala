@@ -2,6 +2,7 @@ package oscar.linprog.test
 
 import java.nio.file.Paths
 
+import oscar.algebra._
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import oscar.linprog.enums.{LP, MPS, ModelExportFormat}
@@ -30,8 +31,8 @@ class ModelExportTester extends OscarLinprogTester {
       val x = MPFloatVar("x", 100, 150)
       val y = MPFloatVar("y", 80, 170)
 
-      maximize(-2 * x + 5 * y)
-      add(x + y <:= 200)
+      maximize(-2.0(x) + 5(y))
+      add(s"C_${solver.getNumberOfLinearConstraints}" ||:x + y <= 200)
 
       solver.exportModel(exportPath(format), format)
     }
@@ -47,8 +48,8 @@ class ModelExportTester extends OscarLinprogTester {
       val x = MPFloatVar("x", 100, 150)
       val y = MPFloatVar("y", 80, 170)
 
-      maximize(-2 * x + 5 * y)
-      add(x + y <:= 200)
+      maximize(-2(x) + 5(y))
+      add(s"C_${solver.getNumberOfLinearConstraints}" ||:x + y <= 200)
 
       solver.solve
 
@@ -65,8 +66,8 @@ class ModelExportTester extends OscarLinprogTester {
         val x = MPFloatVar("x", 100, 150)
         val y = MPFloatVar("y", 80, 170)
 
-        maximize(-2 * x + 5 * y)
-        add(x + y <:= 200)
+        maximize(-2(x) + 5(y))
+        add(s"C_${solver.getNumberOfLinearConstraints}" ||:x + y <= 200)
 
         solver.exportModel(exportPath(MPS), LP)
       }

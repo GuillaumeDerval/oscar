@@ -50,7 +50,7 @@ object ProductionPlanning extends MPModel(LPSolveLib) with App {
   maximize(sum(Products) { p => x(p) * c(p) })
   
   for (d <- Dimensions) {
-    add(sum(Products)(p => coef(d)(p) * x(p)) <:= b(d))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Products)(p => x(p)*coef(d)(p)) <= b(d))
   }
 
   val endStatus = solver.solve

@@ -53,7 +53,7 @@ object PopsicleScheduling extends MPModel(LPSolveLib) with App {
   minimize(sum(configs)(c => c._1 * (c._2 * c._3.sum)))
   for ((d, i) <- demand.zipWithIndex) {
     println("demand:" + d)
-    add(sum(configs)(c => c._1 * c._3(i)) >:= d)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(configs)(c => c._1 * c._3(i)) >= d)
   }
 
   solver.solve

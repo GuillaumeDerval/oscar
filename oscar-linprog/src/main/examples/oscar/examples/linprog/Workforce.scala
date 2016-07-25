@@ -48,10 +48,10 @@ object Workforce extends MPModel(LPSolveLib) with App {
 
   minimize(sum(Workers, Shifts)((w, s) => assigned(w)(s) * pay(w)))
   for (s <- 0 until Shifts.size) {
-    add(sum(Workers)(w => assigned(w)(s) * availability(w)(s)) =:= shiftRequirements(s))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Workers)(w => assigned(w)(s) * availability(w)(s)) === shiftRequirements(s))
   }
   for (w <- Workers) {
-    add(sum(Shifts)(s => assigned(w)(s)) <:= maxNbShift)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Shifts)(s => assigned(w)(s)) <= maxNbShift)
   }
 
   solver.solve

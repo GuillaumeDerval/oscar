@@ -17,7 +17,7 @@ package oscar.linprog.modeling
 
 import java.nio.file.Path
 
-import oscar.algebra.{Const, LinearExpression}
+import oscar.algebra._
 import oscar.linprog.enums._
 import oscar.linprog.interface._
 
@@ -67,7 +67,7 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
 
     _objective = obj
 
-    val (varIds, coefs) = obj.coef.map { case(vari, coef) => (variableColumn(vari.name), coef)}.unzip
+    val (varIds, coefs) = obj.terms.map { case p if p.vars.nonEmpty => (variableColumn(p.vars.head.name), p.coef.d)}.unzip
     solverInterface.setObjective(min, coefs.toArray, varIds.toArray)
   }
 
@@ -112,7 +112,7 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
       val v = variable(varName)
       require(
         !objective.uses(v) &&
-        linearConstraints.values.forall(c => !c.expression.linExpr.uses(v)),
+        linearConstraints.values.forall(c => !c.expression.expr.uses(v)),
         s"Cannot remove variable $varName because it is either used in the objective or in a constraint. Please remove the objective or the constraint first."
       )
 
@@ -302,11 +302,15 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
    * Adds the given [[LinearConstraint]] to the model
    */
   def addLinearConstraint(linearConstraint: LinearConstraint[I]) = {
-    val (varIds, coefs) = linearConstraint.expression.linExpr.coef.map {
-      case (vari, coef) => (variableColumn(vari.name), coef)
+    val cte = linearConstraint.expression.expr.terms.collect{
+      case p if p.vars.isEmpty => p.coef.d
+    }.sum
+
+    val (varIds, coefs) = linearConstraint.expression.expr.terms.collect {
+      case p if ( p.vars.nonEmpty) => (variableColumn(p.vars.head.name), p.coef.d)
     }.unzip
 
-    val rowId = solverInterface.addConstraint(linearConstraint.name, coefs.toArray, varIds.toArray, linearConstraint.expression.sense.symbol, -linearConstraint.expression.linExpr.cte)
+    val rowId = solverInterface.addConstraint(linearConstraint.name, coefs.toArray, varIds.toArray, linearConstraint.expression.sense.symbol, -cte)
 
     register(linearConstraint, rowId)
   }
@@ -329,7 +333,7 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
    */
   def addIndicatorConstraint(indicatorConstraint: IndicatorConstraint[I]) = {
     val constraints = indicatorConstraint.expression.constraintExpressions.zipWithIndex.map { case (cstr, i) =>
-      LinearConstraint(s"${indicatorConstraint.name}_${cstr.sense}_$i", cstr)(this)
+      LinearConstraint(s"${indicatorConstraint.name}_${cstr.sense}_$i" ||: cstr)(this)
     }
 
     register(indicatorConstraint, constraints)
@@ -410,20 +414,20 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
       implicit val solver = ev(this)
 
       val xPlus = MPFloatVar(s"${name}_xPlus", lb = 0) // the positive part of the linear expression (it is a positive value)
-      val xMinus = MPFloatVar(s"${name}_xMinus", lb = 0) // the negative part of the linear expression (it is a positive value)
+      val xMinus:MPVar[J] = MPFloatVar(s"${name}_xMinus", lb = 0) // the negative part of the linear expression (it is a positive value)
 
       val b = MPBinaryVar(s"${name}_b") // b = 1 if the linear expression is positive, 0 otherwise
 
       piecewiseVars += (name -> Seq(xPlus, xMinus, b))
 
-      val xDef = LinearConstraint(s"${name}_xDef", linearExpression =:= xPlus - xMinus)
-      val xPlusUB = LinearConstraint(s"${name}_xPlusUB", xPlus <:= upperBound * b)
-      val xMinusUB = LinearConstraint(s"${name}_xMinusUB", xMinus <:= math.abs(lowerBound) * (1 - b))
+      val xDef = LinearConstraint(s"${name}_xDef"||: linearExpression === xPlus - xMinus)
+      val xPlusUB = LinearConstraint(s"${name}_xPlusUB"||: xPlus <= b * Const(upperBound))
+      val xMinusUB = LinearConstraint(s"${name}_xMinusUB"||: xMinus <= Const(math.abs(lowerBound)) * (Const(1) - b))
 
       piecewiseConstraints += (name -> Seq(xDef, xPlusUB, xMinusUB))
 
       // |x| = xPlus + xMinus
-      _piecewiseExpr += (name -> (xPlus + xMinus))
+      _piecewiseExpr += (name -> (xPlus.toExpression + xMinus))
     } else if(lowerBound < upperBound && upperBound <= 0) {
       _piecewiseExpr += (name -> -linearExpression)
     } else if(lowerBound < upperBound && lowerBound >= 0) {
@@ -497,14 +501,14 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
 
       piecewiseVars += (name -> Seq(xPlus, xMinus, xZero, bPlus, bMinus, bZero))
 
-      val xDef = LinearConstraint(s"${name}_xDef", linearExpression =:= xPlus - xMinus + xZero)
-      val xPlusLB = LinearConstraint(s"${name}_xPlusLB", xPlus >:= eps * bPlus)
-      val xPlusUB = LinearConstraint(s"${name}_xPlusUB", xPlus <:= upperBound * bPlus)
-      val xMinusLB = LinearConstraint(s"${name}_xMinusLB", xMinus >:= eps * bMinus)
-      val xMinusUB = LinearConstraint(s"${name}_xMinusUB", xMinus <:= math.abs(lowerBound) * bMinus)
-      val xZeroLB = LinearConstraint(s"${name}_xZeroLB", xZero >:= -eps * bZero)
-      val xZeroUB = LinearConstraint(s"${name}_xZeroUB", xZero <:= eps * bZero)
-      val bDef = LinearConstraint(s"${name}_bDef", bPlus + bMinus + bZero =:= 1)
+      val xDef = LinearConstraint(s"${name}_xDef"||: linearExpression === xPlus - xMinus + xZero)
+      val xPlusLB = LinearConstraint(s"${name}_xPlusLB"||: xPlus >= bPlus*eps)
+      val xPlusUB = LinearConstraint(s"${name}_xPlusUB"||: xPlus <= bPlus * upperBound)
+      val xMinusLB = LinearConstraint(s"${name}_xMinusLB"||: xMinus >= bMinus * eps)
+      val xMinusUB = LinearConstraint(s"${name}_xMinusUB"||: xMinus <=  bMinus * math.abs(lowerBound))
+      val xZeroLB = LinearConstraint(s"${name}_xZeroLB"||: xZero >= bZero* -eps)
+      val xZeroUB = LinearConstraint(s"${name}_xZeroUB"||: xZero <=  bZero * eps)
+      val bDef = LinearConstraint(s"${name}_bDef"||: bPlus + bMinus + bZero === 1)
 
       piecewiseConstraints += (name -> Seq(xDef, xPlusLB, xPlusUB, xMinusLB, xMinusUB, xZeroLB, xZeroUB, bDef))
 

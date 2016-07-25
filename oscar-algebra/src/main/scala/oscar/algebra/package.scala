@@ -17,8 +17,15 @@ package oscar
 
 package object algebra {
 
+  type LinearExpression = Expression[Linear]
+  type LinearConstraintExpression = Equation[Linear]
+
   implicit def term2Expression[T <: AnyType](term: Term[T]) = term.toExpression
   implicit def double2Expression[T <: AnyType](d: Double) = Const(d).toExpression
+  implicit def int2Expression[T <: AnyType](i: Int) = Const(i).toExpression
+
+  implicit def value2ConcreteIndex[T](value: T) = ConcreteIndex(value)
+
 
   // some useful linear algebra functions
   
@@ -47,53 +54,35 @@ package object algebra {
   
   // -------------------------  linear expressions & constraints -------------------
 
-//  def sum(exprs : Iterable[Expression[Linear]]) : Expression[Linear] = {
-//    import scala.collection.mutable.Map
-//    val mymap = Map[Var,Double]()
-//    var mycte = 0.0
-//    for (expr <- exprs) {
-//      mycte += expr.cte
-//      for((k,v) <- expr.coef) {
-//        mymap.get(k) match {
-//           case Some(c) => mymap(k) = c+v
-//           case None => mymap += (k -> v)
-//        }
-//      }
-//    }
-//    import scala.collection.immutable.Map
-//    mymap.filterNot(_._2 == 0)
-//    new Expression[Linear]() {
-//      val cte = mycte
-//      val coef = mymap.toMap
-//    }
-//    //exprs.foldLeft(Zero : LinearExpression)(_ + _)
-//  }
-  
-//  /**
-//   * sum[a <- A] f(a)
-//   */
-//  def sum[A](indexes : Iterable[A])(f : A => LinearExpression) : LinearExpression = sum(indexes map f)
-//
-//  /**
-//   * sum[a <- A, b <- B] f(a,b)
-//   */
-//  def sum[A,B](indexes1 : Iterable[A],indexes2 : Iterable[B])(f : (A,B) => LinearExpression) : LinearExpression = {
-//         sum(for(i <- indexes1;j <- indexes2) yield f(i,j))
-//  }
-//
-//  /**
-//   * sum[a <- A, b <- B, c <- C] f(a,b,c)
-//   */
-//  def sum[A,B,C](indexes1 : Iterable[A],indexes2 : Iterable[B], indexes3 : Iterable[C])(f : (A,B,C) => LinearExpression) : LinearExpression = {
-//    	sum(for(i <- indexes1;j <- indexes2; k <- indexes3) yield f(i,j,k))
-//  }
-//
-//  /**
-//   * sum[a <- A, b <- B, c <- C, d <- D] f(a,b,c,d)
-//   */
-//  def sum[A,B,C,D](indexes1 : Iterable[A],indexes2 : Iterable[B], indexes3 : Iterable[C], indexes4 : Iterable[D])(f : (A,B,C,D) => LinearExpression) : LinearExpression = {
-//    	sum(for(i <- indexes1;j <- indexes2; k<- indexes3; l <- indexes4) yield f(i,j,k,l))
-//  }
+  def sumOf[T <: AnyType](exprs : Iterable[Expression[T]]) : Expression[T] = {
+    new Expression(exprs.toStream.map(_.terms).flatten)
+  }
+
+  /**
+   * sum[a <- A] f(a)
+   */
+  def sum[A,T <: AnyType](indexes : Iterable[A])(f : A => Expression[T]) : Expression[T] = sumOf(indexes map f)
+
+  /**
+   * sum[a <- A, b <- B] f(a,b)
+   */
+  def sum[A,B,T <: AnyType](indexes1 : Iterable[A], indexes2 : Iterable[B])(f : (A,B) => Expression[T]) : Expression[T] = {
+         sumOf(for(i <- indexes1; j <- indexes2) yield f(i,j))
+  }
+
+  /**
+   * sum[a <- A, b <- B, c <- C] f(a,b,c)
+   */
+  def sum[A,B,C,T <: AnyType](indexes1 : Iterable[A], indexes2 : Iterable[B], indexes3 : Iterable[C])(f : (A,B,C) => Expression[T]) : Expression[T] = {
+    	sumOf(for(i <- indexes1; j <- indexes2; k <- indexes3) yield f(i,j,k))
+  }
+
+  /**
+   * sum[a <- A, b <- B, c <- C, d <- D] f(a,b,c,d)
+   */
+  def sum[A,B,C,D,T <: AnyType](indexes1 : Iterable[A], indexes2 : Iterable[B], indexes3 : Iterable[C], indexes4 : Iterable[D])(f : (A,B,C,D) => Expression[T]) : Expression[T] = {
+    	sumOf(for(i <- indexes1; j <- indexes2; k<- indexes3; l <- indexes4) yield f(i,j,k,l))
+  }
 //
 //  /**
 //   * sum[a <- A such that filter(a) == true] f(a)
@@ -139,9 +128,9 @@ package object algebra {
 //  def sin(expr: Expression) = new Sin(expr)
 //  def tan(expr: Expression) = new Tan(expr)
   
-//  def sum(exprs : Iterable[Expression]) : Expression = exprs.foldLeft(Zero : Expression)(_ + _)
-//  
-//  def sum[A](indexes : Iterable[A])(f : A => Expression) : Expression = sum(indexes map f)
+  //def sum[T >: Constant <: AnyType](exprs : Iterable[Expression[T]]) : Expression[T] = exprs.foldLeft(Const(0.0) : Expression[T])(_ + _)
+
+  //def sum[A, T <: AnyType](indexes : Iterable[A])(f : A => Expression[T]) : Expression[T] = sum[T](indexes map f)
 
   
   // -------------------- constraints --------------------

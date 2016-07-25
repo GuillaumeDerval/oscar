@@ -17,12 +17,18 @@ package oscar.algebra
 import scala.annotation.tailrec
 
 trait Term[+T <: AnyType] extends AbstractExpression[T]{
+
+
 }
 
-class Prod[+T <: AnyType](val coef: Const, val vars: Seq[Var]) extends AbstractExpression[T]{
+class Prod[+T <: AnyType](val coef: Const, val vars: Seq[Term[T]]) extends AbstractExpression[T]{
 //  def derive[TR >: T <: AnyType](v: Var)(implicit op: Function[(Expression[T],Expression[T]), Prod[TR]]): Expression[TR] = {
 //    a// * b.derive(v) + b * a.derive(v)
 //  }
+
+  def uses(v: Var) = vars.contains(v)
+
+  override def toString = coef.toString + {if (vars.nonEmpty) vars.mkString("*","*","") else ""}
 
   def toExpression = new Expression(Stream(this))
 
@@ -35,7 +41,7 @@ class Prod[+T <: AnyType](val coef: Const, val vars: Seq[Var]) extends AbstractE
   }
   def value: Option[Double] = {
     @tailrec
-    def loop(acc: Double, stream: List[Var]): Option[Double] = {
+    def loop(acc: Double, stream: List[Term[T]]): Option[Double] = {
       stream match {
         case Nil => Some(acc)
         case v :: tail => v.value match{

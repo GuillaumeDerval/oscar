@@ -56,18 +56,18 @@ object LandingLocation extends MPModel(LPSolveLib) with App {
 
   val obj =
     sum(Logs, Landings) { (log, land) => x(log)(land) * transportationCost(log)(land) } +
-    sum(Landings) { land => openingCost(land) * y(land) } +
-    Alpha * (Demand - sum(Logs, Landings) { (log, land) => x(log)(land) * 1 })
+    sum(Landings) { land => y(land)*openingCost(land) } +
+     (Demand - sum(Logs, Landings) { (log, land) => x(log)(land) * 1 })*Alpha
 
   minimize(obj)
 
   // One log can be assigned only to one landing
   for (log <- Logs) {
-    add(sum(Landings) { (land) => x(log)(land) } <:= 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Landings) { (land) => x(log)(land) } <= 1)
   }
   // One log can be assigned to a landing only if that landing is open
   for (log <- Logs; land <- Landings) {
-    add(x(log)(land) <:= y(land))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x(log)(land) <= y(land))
   }
 
   solver.solve

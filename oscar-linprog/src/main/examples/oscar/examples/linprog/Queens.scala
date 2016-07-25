@@ -41,27 +41,27 @@ object Queens extends MPModel(LPSolveLib) with App {
 
   /* at most one queen can be placed in each row */
   for (l <- lines)
-    add(sum(columns)(c => x(l)(c)) <:= 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(columns)(c => x(l)(c)) <= 1)
 
   /* at most one queen can be placed in each column */
   for (c <- columns)
-    add(sum(lines)(l => x(l)(c)) <:= 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(lines)(l => x(l)(c)) <= 1)
 
   /* at most one queen can be placed in each "/"-diagonal  upper half*/
   for (i <- 1 until n)
-    add(sum(0 to i)((j) => x(i - j)(j)) <:= 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(0 to i)((j) => x(i - j)(j)) <= 1)
 
   /* at most one queen can be placed in each "/"-diagonal  lower half*/
   for (i <- 1 until n)
-    add(sum(i until n)((j) => x(j)(n - 1 - j + i)) <:= 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(i until n)((j) => x(j)(n - 1 - j + i)) <= 1)
 
   /* at most one queen can be placed in each "/"-diagonal  upper half*/
   for (i <- 0 until n)
-    add(sum(0 until n - i)((j) => x(j)(j + i)) <:= 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(0 until n - i)((j) => x(j)(j + i)) <= 1)
 
   /* at most one queen can be placed in each "/"-diagonal  lower half*/
   for (i <- 1 until n)
-    add(sum(0 until n - i)((j) => x(j + i)(j)) <:= 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(0 until n - i)((j) => x(j + i)(j)) <= 1)
 
   solver.solve
 

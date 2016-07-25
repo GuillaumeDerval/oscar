@@ -4,7 +4,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import oscar.algebra._
 import oscar.linprog.enums._
-import oscar.linprog.interface.MPSolverLib
+import oscar.linprog.interface.{MIPSolverInterface, MPSolverLib}
 import oscar.linprog.modeling._
 
 import scala.concurrent.duration._
@@ -27,17 +27,17 @@ class AbortTester extends OscarLinprogTester {
     val sizes = Array.tabulate(n)(i => minSize + scala.util.Random.nextInt(maxSize - minSize))
     val binSize = n * maxSize / 2
 
-    minimize(sum(ys))
+    minimize(sum(ys)(_.toExpression))
     subjectTo(
       (for {
         i <- 0 until n
       } yield {
-          s"allocation[$i]" -> (sum(0 until n)(j => xs(i)(j) * sizes(j)) <:= ys(i) * binSize)
+          s"allocation[$i]" ||: (sum(0 until n)(j => xs(i)(j) * sizes(j)) <= ys(i) * binSize)
         }) ++ (
         for {
           j <- 0 until n
         } yield {
-          s"unicity[$j]" -> (sum(0 until n)(i => xs(i)(j)) =:= 1.0)
+          s"unicity[$j]" ||: (sum(0 until n)(i => xs(i)(j)) === 1.0)
         }): _*
     )
 
@@ -70,8 +70,8 @@ class AbortTester extends OscarLinprogTester {
     val x = MPFloatVar("x", 100, 150)
     val y = MPFloatVar("y", 80, 170)
 
-    maximize(-2 * x + 5 * y)
-    add(x + y <:= 200)
+    maximize( -2(x) +  y*5)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y <= 200)
 
     // Abort before solve should not prevent it
     solver.abort()

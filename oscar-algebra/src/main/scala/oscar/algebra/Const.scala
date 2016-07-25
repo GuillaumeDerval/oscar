@@ -22,7 +22,15 @@ class Const(val d: Double) extends Term[Constant] {
 
   override def toString = d.toString
 
-  def toExpression = new Expression(Stream(new Prod(this,Seq())))
+  def apply[TP <: AnyType](that: Expression[TP])(implicit op: (Expression[Constant], Expression[TP]) => ProdExpression[TP]): ProdExpression[TP] = {
+    op(Const(d), that)
+  }
+
+  def *[TP <: AnyType](that: Expression[TP])(implicit op: (Expression[Constant], Expression[TP]) => ProdExpression[TP]): ProdExpression[TP] = {
+    op(Const(d), that)
+  }
+
+  def toExpression = new Expression[Constant](Stream(new Prod(this,Seq())))
 
   //override def derive(v: Var): Expression = Zero
 

@@ -39,29 +39,19 @@ package object modeling {
    * In case no name is given to the constraint, params name equals to the empty string,
    * a default name is created by appending to "cstr" the row number of the linear constraint in the matrix of the problem.
    */
-  def add[I <: MPSolverInterface](cstr: LinearConstraintExpression, name: String = "")(implicit solver: MPSolver[I]): LinearConstraint[I] = {
-    val n =
-      if(name == "") "cstr" + solver.getNumberOfLinearConstraints
-      else name
+  def add[I <: MPSolverInterface](cstr: LinearConstraintExpression)(implicit solver: MPSolver[I]): LinearConstraint[I] = {
 
-    LinearConstraint(n, cstr)
+    LinearConstraint( cstr)
   }
 
   /**
    * Adds the given [[LinearConstraintExpression]] to the model with given names.
    */
-  def subjectTo[I <: MPSolverInterface](cstrs: (String, LinearConstraintExpression)*)(implicit solver: MPSolver[I]): Seq[(String, LinearConstraint[I])] =
-    cstrs.toSeq map { case (name, cstr) =>
-      name -> add(cstr, name)
-    }
-
-  /**
-   * Adds the given [[LinearConstraintExpression]] to the model with default names.
-   */
-  def subjectTo[I <: MPSolverInterface](cstrs: LinearConstraintExpression*)(implicit solver: MPSolver[I]): IndexedSeq[LinearConstraint[I]] =
-    cstrs.toIndexedSeq map { cstr =>
+  def subjectTo[I <: MPSolverInterface](cstrs: LinearConstraintExpression*)(implicit solver: MPSolver[I]): Seq[LinearConstraint[I]] =
+    cstrs.toSeq map { case cstr =>
       add(cstr)
     }
+
 
   /**
    * Adds a new absolute value expression to the model and returns the [[LinearExpression]] associated.

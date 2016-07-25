@@ -43,7 +43,7 @@ object Knapsack extends MPModel(LPSolveLib) with App {
   maximize(sum(objects)(o => o.x * o.utility))
 
   // given the limited capacity of the pack
-  add(sum(objects)(o => o.x * o.weight) <:= capacity)
+  add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(objects)(o => o.x * o.weight) <= capacity)
 
   solver.solve
 

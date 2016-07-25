@@ -19,7 +19,7 @@ sealed abstract class ConstraintSense(val symbol: String, val name: String) {
 }
 
 case object LQ extends ConstraintSense("<=", "LQ")
-case object EQ extends ConstraintSense("==", "EQ")
+case object EQ extends ConstraintSense("=", "EQ")
 case object GQ extends ConstraintSense(">=", "GQ")
 
 object ConstraintSense {

@@ -60,7 +60,7 @@ object ElectricityMarket extends MPModel(LPSolveLib) with App {
     val cons_t = consumers.filter(overlap(_, t))
     if (prod_t.nonEmpty && cons_t.nonEmpty) {
       // production and consumption must be the same at time t
-      add(sum(prod_t)(p => varMap(p) * p(0).abs) =:= sum(cons_t)(c => varMap(c) * c(0).abs))
+      add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(prod_t)(p => varMap(p) * p(0).abs) === sum(cons_t)(c => varMap(c) * c(0).abs))
     }
   }
 

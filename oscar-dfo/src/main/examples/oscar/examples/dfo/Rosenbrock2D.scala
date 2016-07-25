@@ -32,7 +32,7 @@ object Rosenbrock2D extends DFOModel with App {
   val y = DFOFloatVar("x2", -10, +10)
 
   // 2D Rosenbrock function
-  val objective = (1 - x) * (1 - x) + 100 * (y - x * x) * (y - x * x)
+  val objective = (-x+1) * (-x+1) + 100 * (y - x * x) * (y - x * x)
 
   // callback to print evolution of objective during optimization
   onSolution {

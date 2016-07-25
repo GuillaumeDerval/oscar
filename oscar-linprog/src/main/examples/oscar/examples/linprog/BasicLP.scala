@@ -28,11 +28,11 @@ object BasicLP extends MPModel(LPSolveLib) with App {
 
   var cons = Array[LinearConstraint[_]]()
 
-  maximize(x0 + 2 * x1 + 3 * x2 + x3)
+  maximize(x0 + x1*2.0 + x2*3.0 + x3)
   subjectTo(
-    "cons1" -> (-1 * x0 +       x1   + x2 +  10 * x3 <:= 20),
-    "cons2" -> (     x0 - 3.0 * x1   + x2            <:= 30),
-    "cons3" -> (                x1        - 3.5 * x3 =:=  0)
+    "cons1" ||: (x0 * -1 + x1     + x2 +  x3*10  <= 20),
+    "cons2" ||: (     x0 - x1*3.0 + x2           <= 30),
+    "cons3" ||: (          x1          -  x3*3.5 ===  0)
   )
 
   val endStatus = solver.solve

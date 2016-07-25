@@ -49,8 +49,8 @@ class LinearConstraint[+I <: MPSolverInterface] protected (
 }
 
 object LinearConstraint {
-  def apply[I <: MPSolverInterface](name: String, expression: oscar.algebra.LinearConstraintExpression)(implicit solver: MPSolver[I]) =
-    new LinearConstraint[I](name, expression)
+  def apply[I <: MPSolverInterface](expression: oscar.algebra.LinearConstraintExpression)(implicit solver: MPSolver[I]) =
+    new LinearConstraint[I](expression.name, expression)
 }
 
 

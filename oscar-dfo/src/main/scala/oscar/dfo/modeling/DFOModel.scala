@@ -84,7 +84,7 @@ class DFOSolver(val algo: DFOAlgo.Value = DFOAlgo.NelderMead) {
 		this
 	}
     
-    def minimize(objective: Expression) : Expression = {
+    def minimize(objective: Expression[AnyType]) : Expression[AnyType] = {
            
     	val domain = Array.tabulate(vars.size)(i => Interval(vars(i).lb,vars(i).ub))
     

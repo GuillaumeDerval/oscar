@@ -41,62 +41,79 @@ object AnyType {
 object Quadratic {
 
 
-  implicit def times02: (Expression[Constant], Expression[Quadratic]) => ProdExpression[Quadratic] = {
-    new ProdExpression(_, _)
-  }
+    implicit def times02: (Expression[Constant], Expression[Quadratic]) => ProdExpression[Quadratic] = {
+      new ProdExpression(_, _)
+    }
 
   implicit def times11: (Expression[Linear], Expression[Linear]) => ProdExpression[Quadratic] = {
     new ProdExpression(_, _)
   }
 
-  implicit def times20: (Expression[Quadratic], Expression[Constant]) => ProdExpression[Quadratic] = {
-    new ProdExpression(_, _)
-  }
+
+    implicit def times20: (Expression[Quadratic], Expression[Constant]) => ProdExpression[Quadratic] = {
+      new ProdExpression(_, _)
+    }
 
 }
 
 object Linear {
 
+  implicit def times01: (Expression[Constant], Expression[Linear]) => ProdExpression[Linear] = {
+    new ProdExpression(_, _)
+  }
+
+
+
+  implicit def times10: (Expression[Linear], Expression[Constant]) => ProdExpression[Linear] = {
+    new ProdExpression(_, _)
+  }
 }
 
 object Constant {
 
 
-  implicit def times0N[TP >: Linear <: AnyType]: (Expression[Constant], Expression[TP]) => ProdExpression[TP] = {
-    new ProdExpression(_, _)
-  }
-  implicit def timesN0[TP >: Linear <: AnyType]: (Expression[TP], Expression[Constant]) => ProdExpression[TP] = {
-    new ProdExpression(_, _)
-  }
+//  implicit def times0N[TP >: Linear <: AnyType]: (Expression[Constant], Expression[TP]) => ProdExpression[TP] = {
+//    new ProdExpression(_, _)
+//  }
+//
+//  implicit def timesN0[TP >: Linear <: AnyType]: (Expression[TP], Expression[Constant]) => ProdExpression[TP] = {
+//    new ProdExpression(_, _)
+//  }
+
   implicit def times00: (Expression[Constant], Expression[Constant]) => ProdExpression[Constant] = {
     new ProdExpression[Constant](_, _)
   }
+
   implicit def eq: (Expression[Constant], Expression[Constant]) => EQEquation[Constant] = {
-    case (a, b) => new EQEquation[Constant](a-b)
+    case (a, b) => new EQEquation[Constant](a - b)
   }
 
   implicit def le: (Expression[Constant], Expression[Constant]) => LQEquation[Constant] = {
-    case (a, b) => new LQEquation[Constant](a-b)
+    case (a, b) => new LQEquation[Constant](a - b)
   }
 
   implicit def ge: (Expression[Constant], Expression[Constant]) => GQEquation[Constant] = {
-    case (a, b) => new GQEquation[Constant](a-b)
+    case (a, b) => new GQEquation[Constant](a - b)
   }
 
 }
 
-trait AbstractExpression[+T <: AnyType]{
-  def eval(env: Var => Double): Double
+trait AbstractExpression[+T <: AnyType] {
+  //def eval(env: Var => Double): Double
 
   def value: Option[Double]
 
   def toExpression: Expression[T]
 }
 
-class Expression[+T <: AnyType](val terms: Stream[Prod[T]]) extends AbstractExpression[T] {
+class Expression[+T <: AnyType](val terms: Stream[Prod[T]], val name: String = "ND") extends AbstractExpression[T] {
   def eval(env: Var => Double): Double = {
     terms.map(_.eval(env)).sum
   }
+
+  def uses(v: Var) = terms.exists(_ uses v)
+
+  def ||:(s: String) = new Expression(terms,s)
 
   def value: Option[Double] = {
     @tailrec
@@ -110,6 +127,8 @@ class Expression[+T <: AnyType](val terms: Stream[Prod[T]]) extends AbstractExpr
     loop(1.0, terms.map(_.value))
   }
 
+  override def toString = terms.mkString(" + ")
+
   def toExpression = this
 
   def +[TP >: T <: AnyType](that: Expression[TP]): Expression[TP] = {
@@ -118,13 +137,14 @@ class Expression[+T <: AnyType](val terms: Stream[Prod[T]]) extends AbstractExpr
 
   def -[TP >: T <: AnyType](that: Expression[TP]): Expression[TP] = {
 
-    this.+(new Expression[T](terms.map(_ * -1)))
+    this.+(new Expression[TP](that.terms.map(_ * -1)))
   }
 
   def *[TP <: AnyType, TR <: AnyType](that: Expression[TP])(implicit op: (Expression[T], Expression[TP]) => ProdExpression[TR]): ProdExpression[TR] = {
     op(this, that)
   }
 
+  def unary_- = new Expression(terms.map(_ * (-1)))
 
   //  def /[TP <: Quadratic, TR <: Quadratic](that: Expression[TP])(implicit op: Function[(Expression[T],Expression[TP]), Expression[TR]]): Expression[TR] = {
   //    Sum(this, that)//op((this, that))

@@ -31,8 +31,8 @@ class LPTester extends OscarLinprogTester {
     val x = MPFloatVar("x", 100, 150)
     val y = MPFloatVar("y", 80, 170)
 
-    maximize(-2 * x + 5 * y)
-    add(x + y <:= 200)
+    maximize(-2 (x) + 5 (y))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||:  s"C_${solver.getNumberOfLinearConstraints}" ||: x + y <= 200)
 
     val endStatus = solver.solve
 
@@ -49,8 +49,8 @@ class LPTester extends OscarLinprogTester {
     val x = MPFloatVar("x", 100, 150)
     val y = MPFloatVar("y", 80, 170)
 
-    minimize(-2 * x + 5 * y)
-    add(x + y >:= 200)
+    minimize(-2(x) + 5(y))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y >= 200)
 
     val endStatus = solver.solve
 
@@ -68,9 +68,9 @@ class LPTester extends OscarLinprogTester {
     val y = MPFloatVar("y", 0, 100)
     val z = MPFloatVar("z", 0, 100)
 
-    maximize(1 * x + 2 * y + 3 * z)
-    add(x + y <:= 75)
-    add(x + z <:= 75)
+    maximize(1(x) + 2(y) + 3(z))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y <= 75)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + z <= 75)
 
     val endStatus = solver.solve
 
@@ -89,10 +89,10 @@ class LPTester extends OscarLinprogTester {
     val y = MPFloatVar("y", 0, 100)
     val z = MPFloatVar("z", 0, 100)
 
-    maximize(10 * x + 2 * y + 3 * z)
-    add(x + y <:= 75)
-    add(x + z <:= 75)
-    add(x >:= 0)
+    maximize(10(x) + 2(y) + 3(z))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y <= 75)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + z <= 75)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x >= 0)
 
     val endStatus = solver.solve
 
@@ -110,8 +110,8 @@ class LPTester extends OscarLinprogTester {
     val x = MPFloatVar("x", 0, 10)
     val y = MPFloatVar("y", 80, 170)
 
-    minimize(-2 * x + 5 * y)
-    add(x + y >:= 200)
+    minimize(-2(x) + 5(y))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y >= 200)
 
     val endStatus = solver.solve
 
@@ -126,8 +126,8 @@ class LPTester extends OscarLinprogTester {
     val x = MPFloatVar("x")
     val y = MPFloatVar("y", 80, 170)
 
-    minimize(-2 * x + 5 * y)
-    add(x + y >:= 200)
+    minimize(-2(x) + 5(y))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y >= 200)
 
     val endStatus = solver.solve
 
@@ -142,8 +142,8 @@ class LPTester extends OscarLinprogTester {
     val x = MPFloatVar("x", 100, 150)
     val y = MPFloatVar("y", 80, 170)
 
-    maximize(-2 * x + 5 * y)
-    add(x + y <:= 200)
+    maximize(-2(x) + 5(y))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y <= 200)
 
     val endStatus = solver.solve
 
@@ -179,8 +179,8 @@ class LPTester extends OscarLinprogTester {
     val x = MPFloatVar("x", 100, 150)
     val y = MPFloatVar("y", 80, 170)
 
-    maximize(-2 * x + 5 * y)
-    add(x + y <:= 200)
+    maximize(-2(x) + 5(y))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y <= 200)
 
     val endStatus = solver.solve
 
@@ -193,7 +193,7 @@ class LPTester extends OscarLinprogTester {
     solver.solutionQuality should equal(Success(Optimal))
 
     // Update objective
-    maximize(2 * x - 5 * y)
+    maximize(2(x) - 5(y))
 
     // Model has changed
     solver.solved should equal(false)
@@ -216,13 +216,13 @@ class LPTester extends OscarLinprogTester {
     val y = MPFloatVar("y", 0, 100)
     val z = MPFloatVar("z", 0, 100)
 
-    maximize(1 * x + 2 * y + 3 * z)
-    add(x + y <:= 75, "cstr0")
-    add(x + z <:= 75, "cstr1")
+    maximize(1(x) + 2(y) + 3(z))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y <= 75)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + z <= 75)
 
     solver.removeLinearConstraint("cstr0")
 
-    add(x + y <:= 60, "cstr0")
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y <= 60)
 
     val endStatus = solver.solve
 
@@ -241,9 +241,9 @@ class LPTester extends OscarLinprogTester {
     val y = MPFloatVar("y", 0, 100)
     val z = MPFloatVar("z", 0, 100)
 
-    maximize(1 * x + 2 * y + 3 * z)
-    add(x + y <:= 75, "cstr0")
-    add(x + z <:= 75, "cstr1")
+    maximize(1(x) + 2(y) + 3(z))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y <= 75)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + z <= 75)
 
     solver.solve should equal(SolutionFound)
 
@@ -256,7 +256,7 @@ class LPTester extends OscarLinprogTester {
 
     // update model
     solver.removeLinearConstraint("cstr0")
-    add(x + y <:= 60, "cstr0")
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y <= 60)
 
     solver.solve should equal(SolutionFound)
 
@@ -274,9 +274,9 @@ class LPTester extends OscarLinprogTester {
     val w = MPFloatVar("w", 0, 100)
     val z = MPFloatVar("z", 0, 100)
 
-    maximize(1 * x + 2 * y + 3 * z)
-    add(x + y <:= 75, "cstr0")
-    add(x + z <:= 75, "cstr1")
+    maximize(1(x) + 2(y) + 3(z))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y <= 75)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + z <= 75)
 
     solver.removeVariable("w")
 
@@ -296,9 +296,9 @@ class LPTester extends OscarLinprogTester {
     val w = MPFloatVar("w", 0, 100)
     val z = MPFloatVar("z", 0, 100)
 
-    maximize(1 * x + 2 * y + 3 * z)
-    add(x + y <:= 75, "cstr0")
-    add(x + z <:= 75, "cstr1")
+    maximize(1(x) + 2(y) + 3(z))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y <= 75)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + z <= 75)
 
     solver.solve should equal(SolutionFound)
 
@@ -327,9 +327,9 @@ class LPTester extends OscarLinprogTester {
       val y = MPFloatVar("y", 0, 100)
       val z = MPFloatVar("z", 0, 100)
 
-      maximize(1 * x + 2 * y + 3 * z)
-      add(x + y <:= 75)
-      add(x + z <:= 75)
+      maximize(1(x) + 2(y) + 3(z))
+      add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y <= 75)
+      add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + z <= 75)
 
       solver.solve
 

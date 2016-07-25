@@ -51,11 +51,12 @@ object Diet extends MPModel(LPSolveLib) with App {
   ).map { case (n, p, nut) => Food(n, p, nutriments.zip(nut.map(_.toDouble)).toMap) }
 
   //for each nutriment, at least 700 must be present in the Diet
+  var id = 0
   for (n <- nutriments) {
-    add(sum(foods) { f => f.contents(n) * f.x } >:= 700)
+    add(s"C_$id" ||: sum(foods) { f =>  f.contents(n)( f.x) } >= 700)
   }
   //minimize the total cost
-  minimize(sum(foods) { f => f.price * f.x })
+  minimize(sum(foods) { f => f.price(f.x) })
 
   // effectively solve the model
   solver.solve
