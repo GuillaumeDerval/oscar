@@ -15,9 +15,8 @@
 
 package oscar.cp.constraints.tables
 
-import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
-import oscar.cp.core.CPOutcome._
+import oscar.cp.core.variables.CPIntVar
 
 /**
   * @author Pierre Schaus pschaus@gmail.com
@@ -35,6 +34,7 @@ object TableAlgo extends Enumeration {
   val MDD4R = Value("MDD4R (Perez and Regin)")
   val AC5TCRecomp = Value("AC5TCRecomp (Mairy et al)")
   val Decomp = Value("Basic Decomposition")
+  val ShortSTR2 = Value("ShortSTR2")
 }
 
 object table {
@@ -53,6 +53,7 @@ object table {
       case STR3         => str3(X, table)
       case AC5TCRecomp  => ac5tcRecomp(X, table)
       case Decomp       => decomp(X, table)
+      case ShortSTR2    => shortSTR2(X,table)
       case _            => compactTable(X, table)
     }
   }
@@ -74,6 +75,8 @@ object table {
   def str3(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableSTR3(X, table)
 
   def decomp(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableDecomp(X, table)
+
+  def shortSTR2(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableShortSTR2(X, table)
 
   def ac5tcRecomp(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = {
     val data = new TableData(X.size)
