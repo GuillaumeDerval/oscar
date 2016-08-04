@@ -6,6 +6,7 @@ import oscar.algebra._
 import oscar.linprog.enums._
 import oscar.linprog.interface.{MIPSolverInterface, MPSolverLib}
 import oscar.linprog.modeling._
+import Migration._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -32,7 +33,7 @@ class AbortTester extends OscarLinprogTester {
       (for {
         i <- 0 until n
       } yield {
-          s"allocation[$i]" ||: (sum(0 until n)(j => xs(i)(j) * sizes(j)) <= ys(i) * binSize)
+          s"allocation[$i]" ||: (sum(0 until n)(j => xs(i)(j) * sizes(j).toDouble) <= ys(i) * binSize.toDouble)
         }) ++ (
         for {
           j <- 0 until n
@@ -70,8 +71,8 @@ class AbortTester extends OscarLinprogTester {
     val x = MPFloatVar("x", 100, 150)
     val y = MPFloatVar("y", 80, 170)
 
-    maximize( -2(x) +  y*5)
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y <= 200)
+    maximize( -x*2.0 +  y*5.0)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y <= 200.toDouble)
 
     // Abort before solve should not prevent it
     solver.abort()

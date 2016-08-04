@@ -49,7 +49,7 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
 
   /* OBJECTIVE */
 
-  private var _objective: LinearExpression = Const(1)
+  private var _objective: LinearExpression = Const(1.0)
 
   /**
    * Returns the [[LinearExpression]] representing the current objective of the problem
@@ -422,7 +422,7 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
 
       val xDef = LinearConstraint(s"${name}_xDef"||: linearExpression === xPlus - xMinus)
       val xPlusUB = LinearConstraint(s"${name}_xPlusUB"||: xPlus <= b * Const(upperBound))
-      val xMinusUB = LinearConstraint(s"${name}_xMinusUB"||: xMinus <= Const(math.abs(lowerBound)) * (Const(1) - b))
+      val xMinusUB = LinearConstraint(s"${name}_xMinusUB"||: xMinus <= Const(math.abs(lowerBound)) * (Const(1.0) - b))
 
       piecewiseConstraints += (name -> Seq(xDef, xPlusUB, xMinusUB))
 
@@ -508,7 +508,7 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
       val xMinusUB = LinearConstraint(s"${name}_xMinusUB"||: xMinus <=  bMinus * math.abs(lowerBound))
       val xZeroLB = LinearConstraint(s"${name}_xZeroLB"||: xZero >= bZero* -eps)
       val xZeroUB = LinearConstraint(s"${name}_xZeroUB"||: xZero <=  bZero * eps)
-      val bDef = LinearConstraint(s"${name}_bDef"||: bPlus + bMinus + bZero === 1)
+      val bDef = LinearConstraint(s"${name}_bDef"||: bPlus + bMinus + bZero === Const(1.0))
 
       piecewiseConstraints += (name -> Seq(xDef, xPlusLB, xPlusUB, xMinusLB, xMinusUB, xZeroLB, xZeroUB, bDef))
 

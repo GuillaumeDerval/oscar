@@ -71,9 +71,10 @@ case object Binary extends MPVarType("binary") {
  *
  * @author acrucifix acr@n-side.com
  */
-class MPVar[+I <: MPSolverInterface] private (val initialVarType: MPVarType, val name: String, val initialLowerBound: Double, val initialUpperBound: Double)(implicit solver: MPSolver[I]) extends oscar.algebra.Var {
+class MPVar[+I <: MPSolverInterface] private (val initialVarType: MPVarType, val name: String, val initialLowerBound: Double, val initialUpperBound: Double)(implicit solver: MPSolver[I]) extends oscar.algebra.Var[Double] {
   initialVarType.createVar(this)
 
+  def id = 0
   /**
    * Returns the [[MPVarType]] of this variable.
    */

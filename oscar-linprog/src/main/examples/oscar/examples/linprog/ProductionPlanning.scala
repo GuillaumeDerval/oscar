@@ -18,6 +18,7 @@ package oscar.examples.linprog
 import oscar.algebra._
 import oscar.linprog.interface.lpsolve.LPSolveLib
 import oscar.linprog.modeling._
+import Migration._
 
 /**
  * A number of 12 products can be produced, each of which has a set of features, such as volume, weight, etc.
@@ -45,12 +46,12 @@ object ProductionPlanning extends MPModel(LPSolveLib) with App {
     Array( 0,  32,  0,  0,   0,   5,   0,  3,  0, 660, 0, 9)
   )
 
-  val x = Products.map(p => MPFloatVar("x", 0, 10000))
+  val x = Products.map(p => MPFloatVar("x", 0.toDouble, 10000.toDouble))
 
-  maximize(sum(Products) { p => x(p) * c(p) })
+  maximize(sum(Products) { p => x(p) * c(p).toDouble })
   
   for (d <- Dimensions) {
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Products)(p => x(p)*coef(d)(p)) <= b(d))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Products)(p => x(p)*coef(d)(p).toDouble) <= b(d).toDouble)
   }
 
   val endStatus = solver.solve

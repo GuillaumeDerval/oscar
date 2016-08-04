@@ -18,6 +18,7 @@ package oscar.examples.linprog
 import oscar.algebra._
 import oscar.linprog.interface.lpsolve.LPSolveLib
 import oscar.linprog.modeling._
+import Migration._
 
 /**
  *  The Queens Problem is to place as many queens as possible on the 8x8
@@ -41,27 +42,27 @@ object Queens extends MPModel(LPSolveLib) with App {
 
   /* at most one queen can be placed in each row */
   for (l <- lines)
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(columns)(c => x(l)(c)) <= 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(columns)(c => x(l)(c)) <= 1.toDouble)
 
   /* at most one queen can be placed in each column */
   for (c <- columns)
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(lines)(l => x(l)(c)) <= 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(lines)(l => x(l)(c)) <= 1.toDouble)
 
   /* at most one queen can be placed in each "/"-diagonal  upper half*/
   for (i <- 1 until n)
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(0 to i)((j) => x(i - j)(j)) <= 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(0 to i)((j) => x(i - j)(j)) <= 1.toDouble)
 
   /* at most one queen can be placed in each "/"-diagonal  lower half*/
   for (i <- 1 until n)
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(i until n)((j) => x(j)(n - 1 - j + i)) <= 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(i until n)((j) => x(j)(n - 1 - j + i)) <= 1.toDouble)
 
   /* at most one queen can be placed in each "/"-diagonal  upper half*/
   for (i <- 0 until n)
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(0 until n - i)((j) => x(j)(j + i)) <= 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(0 until n - i)((j) => x(j)(j + i)) <= 1.toDouble)
 
   /* at most one queen can be placed in each "/"-diagonal  lower half*/
   for (i <- 1 until n)
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(0 until n - i)((j) => x(j + i)(j)) <= 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(0 until n - i)((j) => x(j + i)(j)) <= 1.toDouble)
 
   solver.solve
 

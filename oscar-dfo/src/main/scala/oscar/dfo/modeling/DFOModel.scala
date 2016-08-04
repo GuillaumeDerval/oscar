@@ -27,11 +27,13 @@ import oscar.util.Interval
 /**
  * @author Pierre Schaus pschaus@gmail.com
  */
-class DFOFloatVar(val solver: DFOSolver, val varName: String, val lb: Double = 0.0, val ub: Double = Double.PositiveInfinity) extends Var {
-    val index = solver.register(this)
-    override def value = solver.getValue(index)
+class DFOFloatVar(val solver: DFOSolver, val varName: String, val lb: Double = 0.0, val ub: Double = Double.PositiveInfinity) extends Var[Double] {
+    val id = solver.register(this)
+    override def value = solver.getValue(id)
     def name = varName
     def randVal = rand.nextDouble() * (ub - lb) + lb
+  def lowerBound = lb
+  def upperBound = ub
 }
 
 object DFOFloatVar {
@@ -84,13 +86,13 @@ class DFOSolver(val algo: DFOAlgo.Value = DFOAlgo.NelderMead) {
 		this
 	}
     
-    def minimize(objective: Expression[AnyType]) : Expression[AnyType] = {
+    def minimize(objective: Expression[AnyType,Double]) : Expression[AnyType,Double] = {
            
     	val domain = Array.tabulate(vars.size)(i => Interval(vars(i).lb,vars(i).ub))
     
     
     	def function(coord: Array[Double]): Array[Double] = {
-    		val env : Map[Var,Double] = vars.map{ case(i,x) => (x -> coord(i))}
+    		val env : Map[Var[Double],Double] = vars.map{ case(i,x) => (x -> coord(i))}
     		Array(objective.eval(env))
     	}
     	

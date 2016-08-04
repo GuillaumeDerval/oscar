@@ -11,7 +11,7 @@ object OscarBuild extends Build {
 
   object BuildSettings {
     val buildOrganization = "oscar"
-    val buildVersion = "4.0.0-algebra-SNAPSHOT"
+    val buildVersion = "4.0.1-algebra-SNAPSHOT"
     val buildScalaVersion = "2.11.0"
     val buildSbtVersion= "0.13.0"
 
@@ -75,7 +75,7 @@ object OscarBuild extends Build {
     val swingxWs = "org.swinglabs" % "swingx-ws" % "1.0"
     val xmlApisExt = "xml-apis" % "xml-apis-ext" % "latest.milestone"
     val xcsp3 = "xcsp3"  % "xcsp3_2.11" % "1.0.0-SNAPSHOT"
-
+    val squants = "com.squants"  %% "squants"  % "0.6.2"
     // Test libraries
     val junit = "junit" % "junit" % "latest.milestone" % Test
     val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.11.+" % Test
@@ -107,7 +107,7 @@ object OscarBuild extends Build {
     base = file("oscar-algebra"),
     settings =
       commonSettings ++
-        Seq(libraryDependencies ++= testDeps)
+        Seq(libraryDependencies ++= testDeps :+ squants)
   )
 
   lazy val oscarAlgo = Project(

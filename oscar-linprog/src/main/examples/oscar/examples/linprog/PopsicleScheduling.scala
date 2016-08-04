@@ -18,6 +18,7 @@ package oscar.examples.linprog
 import oscar.algebra._
 import oscar.linprog.interface.lpsolve.LPSolveLib
 import oscar.linprog.modeling._
+import Migration._
 
 /**
  * Workforce management is central to efficient operations and good customer service.
@@ -53,7 +54,7 @@ object PopsicleScheduling extends MPModel(LPSolveLib) with App {
   minimize(sum(configs)(c => c._1 * (c._2 * c._3.sum)))
   for ((d, i) <- demand.zipWithIndex) {
     println("demand:" + d)
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(configs)(c => c._1 * c._3(i)) >= d)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(configs)(c => c._1 * c._3(i).toDouble) >= d.toDouble)
   }
 
   solver.solve

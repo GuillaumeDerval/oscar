@@ -27,7 +27,7 @@ package object modeling {
     val MDS = Value("MDS")
   }
   
-  def minimize(objective: Expression[AnyType])(implicit dfo: DFOSolver) = dfo.minimize(objective)
+  def minimize(objective: Expression[AnyType,Double])(implicit dfo: DFOSolver) = dfo.minimize(objective)
   def onSolution(block: => Unit)(implicit dfo: DFOSolver) = dfo.onSolution(block) 
 
 }

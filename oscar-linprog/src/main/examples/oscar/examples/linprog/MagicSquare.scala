@@ -18,6 +18,7 @@ package oscar.examples.linprog
 import oscar.algebra._
 import oscar.linprog.interface.lpsolve.LPSolveLib
 import oscar.linprog.modeling._
+import Migration._
 
 /**
  *  a magic square of order n is an
@@ -40,22 +41,22 @@ object MagicSquare extends MPModel(LPSolveLib) with App {
 
   /* each cell must be assigned exactly one integer */
   for (l <- Lines; c <- Columns)
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Numbers)((n) => x(l)(c)(n - 1)) === 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Numbers)((n) => x(l)(c)(n - 1)) === 1.0)
 
   /* each integer must be assigned exactly to one cell */
   for (n <- Numbers)
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Lines, Columns)((l, c) => x(l)(c)(n - 1)) === 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Lines, Columns)((l, c) => x(l)(c)(n - 1)) === 1.0)
 
   /* the sum in each row must be the magic sum */
   for (l <- Lines)
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Columns, Numbers)((c, n) => x(l)(c)(n - 1) * n) === s)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Columns, Numbers)((c, n) => x(l)(c)(n - 1) * n.toDouble) === s)
 
   /* the sum in each column must be the magic sum */
   for (c <- Columns)
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Lines, Numbers)((l, n) => x(l)(c)(n - 1) * n) === s)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Lines, Numbers)((l, n) => x(l)(c)(n - 1) * n.toDouble) === s)
 
   /* the sum in the diagonal must be the magic sum */
-  add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Lines, Numbers)((l, n) => x(l)(l)(n - 1) * n) === s)
+  add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Lines, Numbers)((l, n) => x(l)(l)(n - 1) * n.toDouble) === s)
 
   /* the sum in the co-diagonal must be the magic sum */
   //mip.add(sum(Lines,Numbers)((l,n) => x(l)(n-l-1)(n-1)*(n))==s) // TODO: fix this constraint

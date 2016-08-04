@@ -19,6 +19,7 @@ import oscar.algebra._
 import oscar.linprog.interface.MIPSolverInterface
 import oscar.linprog.interface.lpsolve.LPSolveLib
 import oscar.linprog.modeling._
+import Migration._
 
 /**
  * The goal of the diet problem is to find the cheapest combination of foods
@@ -53,10 +54,10 @@ object Diet extends MPModel(LPSolveLib) with App {
   //for each nutriment, at least 700 must be present in the Diet
   var id = 0
   for (n <- nutriments) {
-    add(s"C_$id" ||: sum(foods) { f =>  f.contents(n)( f.x) } >= 700)
+    add(s"C_$id" ||: sum(foods) { f =>  f.x*f.contents(n) } >= 700.toDouble)
   }
   //minimize the total cost
-  minimize(sum(foods) { f => f.price(f.x) })
+  minimize(sum(foods) { f => f.x*f.price })
 
   // effectively solve the model
   solver.solve

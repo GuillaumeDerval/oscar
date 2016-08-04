@@ -18,6 +18,7 @@ package oscar.examples.linprog
 import oscar.algebra._
 import oscar.linprog.interface.lpsolve.LPSolveLib
 import oscar.linprog.modeling._
+import Migration._
 
 import scala.io.Source
 
@@ -55,15 +56,15 @@ object LandingLocation extends MPModel(LPSolveLib) with App {
   val x = Array.tabulate(Logs.length, Landings.length)((log, land) => MPIntVar("x" + (log, land), 0 to 1))
 
   val obj =
-    sum(Logs, Landings) { (log, land) => x(log)(land) * transportationCost(log)(land) } +
-    sum(Landings) { land => y(land)*openingCost(land) } +
-     (Demand - sum(Logs, Landings) { (log, land) => x(log)(land) * 1 })*Alpha
+    sum(Logs, Landings) { (log, land) => x(log)(land) * transportationCost(log)(land).toDouble } +
+    sum(Landings) { land => y(land)*openingCost(land).toDouble } +
+     (Const(Demand.toDouble) - sum(Logs, Landings) { (log, land) => x(log)(land) })*Alpha.toDouble
 
   minimize(obj)
 
   // One log can be assigned only to one landing
   for (log <- Logs) {
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Landings) { (land) => x(log)(land) } <= 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Landings) { (land) => x(log)(land) } <= 1.0)
   }
   // One log can be assigned to a landing only if that landing is open
   for (log <- Logs; land <- Landings) {

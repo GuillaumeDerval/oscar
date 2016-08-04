@@ -17,14 +17,60 @@ package oscar
 
 package object algebra {
 
-  type LinearExpression = Expression[Linear]
-  type LinearConstraintExpression = Equation[Linear]
+  type LinearExpression = Expression[Linear,Double]
+  type LinearConstraintExpression = Equation[Linear,Double]
 
-  implicit def term2Expression[T <: AnyType](term: Term[T]) = term.toExpression
-  implicit def double2Expression[T <: AnyType](d: Double) = Const(d).toExpression
-  implicit def int2Expression[T <: AnyType](i: Int) = Const(i).toExpression
+//  implicit def int2Integral(i: Int) = new Integral(i)
+//  implicit def double2Continuous(d: Double) = new Continuous(d)
+//
+//  implicit object IntegralIsNumeric extends Numeric[Integral]{
+//    override def plus(x: Integral, y: Integral): Integral = x.intValue+y.intValue
+//
+//    override def minus(x: Integral, y: Integral): Integral = x.intValue-y.intValue
+//
+//    override def times(x: Integral, y: Integral): Integral = x.intValue*y.intValue
+//
+//    override def negate(x: Integral): Integral = new Integral(-x.intValue)
+//
+//    override def fromInt(x: Int): Integral = new Integral(x)
+//
+//    override def toInt(x: Integral): Int = x.intValue
+//
+//    override def toLong(x: Integral): Long = x.intValue
+//
+//    override def toFloat(x: Integral): Float =   x.intValue
+//
+//    override def toDouble(x: Integral): Double = x.intValue.toDouble
+//
+//    override def compare(x: Integral, y: Integral): Int = implicitly[Numeric[Int]].compare(x.intValue,y.intValue)
+//  }
+//
+//  implicit object ContinuousIsIsNumeric extends Numeric[Continuous]{
+//    override def plus(x: Continuous, y: Continuous): Continuous = x.doubleValue+y.doubleValue
+//
+//    override def minus(x: Continuous, y: Continuous): Continuous = x.doubleValue-y.doubleValue
+//
+//    override def times(x: Continuous, y: Continuous): Continuous = x.doubleValue*y.doubleValue
+//
+//    override def negate(x: Continuous): Continuous = new Continuous(-x.doubleValue)
+//
+//    override def fromInt(x: Int): Continuous = new Continuous(x)
+//
+//    override def toInt(x: Continuous): Int = x.doubleValue.toInt
+//
+//    override def toLong(x: Continuous): Long = x.doubleValue.toLong
+//
+//    override def toFloat(x: Continuous): Float =   x.doubleValue.toFloat
+//
+//    override def toDouble(x: Continuous): Double = x.doubleValue
+//
+//    override def compare(x: Continuous, y: Continuous): Int = implicitly[Numeric[Double]].compare(x.doubleValue,y.doubleValue)
+//  }
+  
+  implicit def term2Expression[T <: AnyType,V:Numeric](term: Term[T,V]) = term.toExpression
+  //implicit def double2Expression[T <: AnyType](d: Double) = Const(d).toExpression
 
-  implicit def value2ConcreteIndex[T](value: T) = ConcreteIndex(value)
+  //implicit def value2ConcreteIndex[T](value: T) = ConcreteIndex(value)
 
 
   // some useful linear algebra functions
@@ -54,33 +100,33 @@ package object algebra {
   
   // -------------------------  linear expressions & constraints -------------------
 
-  def sumOf[T <: AnyType](exprs : Iterable[Expression[T]]) : Expression[T] = {
+  def sumOf[T <: AnyType,V:Numeric](exprs : Iterable[Expression[T,V]]) : Expression[T,V] = {
     new Expression(exprs.toStream.map(_.terms).flatten)
   }
 
   /**
    * sum[a <- A] f(a)
    */
-  def sum[A,T <: AnyType](indexes : Iterable[A])(f : A => Expression[T]) : Expression[T] = sumOf(indexes map f)
+  def sum[A,T <: AnyType,V:Numeric](indexes : Iterable[A])(f : A => Expression[T,V]) : Expression[T,V] = sumOf(indexes map f)
 
   /**
    * sum[a <- A, b <- B] f(a,b)
    */
-  def sum[A,B,T <: AnyType](indexes1 : Iterable[A], indexes2 : Iterable[B])(f : (A,B) => Expression[T]) : Expression[T] = {
+  def sum[A,B,T <: AnyType,V:Numeric](indexes1 : Iterable[A], indexes2 : Iterable[B])(f : (A,B) => Expression[T,V]) : Expression[T,V] = {
          sumOf(for(i <- indexes1; j <- indexes2) yield f(i,j))
   }
 
   /**
    * sum[a <- A, b <- B, c <- C] f(a,b,c)
    */
-  def sum[A,B,C,T <: AnyType](indexes1 : Iterable[A], indexes2 : Iterable[B], indexes3 : Iterable[C])(f : (A,B,C) => Expression[T]) : Expression[T] = {
+  def sum[A,B,C,T <: AnyType,V:Numeric](indexes1 : Iterable[A], indexes2 : Iterable[B], indexes3 : Iterable[C])(f : (A,B,C) => Expression[T,V]) : Expression[T,V] = {
     	sumOf(for(i <- indexes1; j <- indexes2; k <- indexes3) yield f(i,j,k))
   }
 
   /**
    * sum[a <- A, b <- B, c <- C, d <- D] f(a,b,c,d)
    */
-  def sum[A,B,C,D,T <: AnyType](indexes1 : Iterable[A], indexes2 : Iterable[B], indexes3 : Iterable[C], indexes4 : Iterable[D])(f : (A,B,C,D) => Expression[T]) : Expression[T] = {
+  def sum[A,B,C,D,T <: AnyType,V:Numeric](indexes1 : Iterable[A], indexes2 : Iterable[B], indexes3 : Iterable[C], indexes4 : Iterable[D])(f : (A,B,C,D) => Expression[T,V]) : Expression[T,V] = {
     	sumOf(for(i <- indexes1; j <- indexes2; k<- indexes3; l <- indexes4) yield f(i,j,k,l))
   }
 //
@@ -114,9 +160,8 @@ package object algebra {
   
   // ------------   Implicits -----------------------
   
-  implicit def double2const(d : Double) : Const = if (d == 0.0) Zero else Const(d)
-  implicit def int2const(i : Int) : Const = double2const(i)
-  
+  implicit def double2const[V:Numeric](d : V) : Expression[Constant,V] = Const(d)
+
   // ------------------------- general mathematical expressions -------------------
 
 //

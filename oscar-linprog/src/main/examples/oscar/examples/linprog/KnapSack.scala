@@ -19,6 +19,7 @@ import oscar.algebra._
 import oscar.linprog.interface.MIPSolverInterface
 import oscar.linprog.interface.lpsolve.LPSolveLib
 import oscar.linprog.modeling._
+import Migration._
 
 /*
  * The knapsack problem is a well-known problem in combinatorial optimization:
@@ -40,10 +41,10 @@ object Knapsack extends MPModel(LPSolveLib) with App {
   val capacity = 100
 
   // maximize total utility
-  maximize(sum(objects)(o => o.x * o.utility))
+  maximize(sum(objects)(o => o.x * o.utility.toDouble))
 
   // given the limited capacity of the pack
-  add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(objects)(o => o.x * o.weight) <= capacity)
+  add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(objects)(o => o.x * o.weight.toDouble) <= capacity.toDouble)
 
   solver.solve
 

@@ -18,6 +18,7 @@ package oscar.examples.linprog
 import oscar.algebra._
 import oscar.linprog.interface.lpsolve.LPSolveLib
 import oscar.linprog.modeling._
+import Migration._
 
 /**
  * Assign workers to shifts while satisfying requirements for that day.
@@ -46,12 +47,12 @@ object Workforce extends MPModel(LPSolveLib) with App {
 
   val assigned = Array.tabulate(Workers.size, Shifts.size)((i, j) => MPBinaryVar(s"x($i,$j)"))
 
-  minimize(sum(Workers, Shifts)((w, s) => assigned(w)(s) * pay(w)))
+  minimize(sum(Workers, Shifts)((w, s) => assigned(w)(s) * pay(w).toDouble))
   for (s <- 0 until Shifts.size) {
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Workers)(w => assigned(w)(s) * availability(w)(s)) === shiftRequirements(s))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Workers)(w => assigned(w)(s) * availability(w)(s).toDouble) === shiftRequirements(s).toDouble)
   }
   for (w <- Workers) {
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Shifts)(s => assigned(w)(s)) <= maxNbShift)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Shifts)(s => assigned(w)(s)) <= maxNbShift.toDouble)
   }
 
   solver.solve

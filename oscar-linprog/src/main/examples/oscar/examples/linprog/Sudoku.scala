@@ -18,6 +18,7 @@ package oscar.examples.linprog
 import oscar.algebra._
 import oscar.linprog.interface.lpsolve.LPSolveLib
 import oscar.linprog.modeling._
+import Migration._
 
 import scala.concurrent.Future
 
@@ -31,55 +32,55 @@ object Sudoku extends MPModel(LPSolveLib) with App {
 
   val x = Array.tabulate(n, n, n)((l, c, n) => MPIntVar("x" + (l, c, n), 0 to 1))
 
-  maximize(0)
+  maximize(0.toDouble)
 
   /* each cell must be assigned exactly one integer */
   for (l <- N; c <- N) // for each row, each column
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(N)((n) => x(l)(c)(n)) === 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(N)((n) => x(l)(c)(n)) === 1.toDouble)
 
   /* cells in the same row must be assigned distinct numbers */
   for (l <- N; n <- N)
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(N)((c) => x(l)(c)(n)) === 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(N)((c) => x(l)(c)(n)) === 1.toDouble)
 
   /* cells in the same column must be assigned distinct numbers */
   for (c <- N; n <- N)
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(N)((l) => x(l)(c)(n)) === 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(N)((l) => x(l)(c)(n)) === 1.toDouble)
   /* cells in the same region must be assigned distinct numbers */
   for (l1 <- 0 until 3; c1 <- 0 until 3; n <- N) {
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(0 until 3, 0 until 3)((l, c) => x(l + 3 * l1)(c + 3 * c1)(n)) === 1)
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(0 until 3, 0 until 3)((l, c) => x(l + 3 * l1)(c + 3 * c1)(n)) === 1.toDouble)
   }
 
   subjectTo(
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(0)(0)(4) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(0)(1)(2) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(0)(4)(6) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(1)(0)(5) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(1)(3)(0) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(1)(4)(8) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(1)(5)(4) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(2)(1)(8) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(2)(2)(7) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(2)(7)(5) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(3)(0)(7) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(3)(4)(5) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(3)(8)(2) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(4)(0)(3) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(4)(3)(7) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(4)(5)(2) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(4)(8)(0) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(5)(0)(6) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(5)(4)(1) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(5)(8)(5) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(6)(1)(5) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(6)(6)(1) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(6)(7)(7) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(7)(3)(3) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(7)(4)(0) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(7)(5)(8) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(7)(8)(4) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(8)(4)(7) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(8)(7)(6) === 1,
-     s"C_${solver.getNumberOfLinearConstraints}" ||: x(8)(8)(8) === 1
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(0)(0)(4) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(0)(1)(2) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(0)(4)(6) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(1)(0)(5) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(1)(3)(0) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(1)(4)(8) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(1)(5)(4) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(2)(1)(8) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(2)(2)(7) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(2)(7)(5) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(3)(0)(7) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(3)(4)(5) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(3)(8)(2) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(4)(0)(3) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(4)(3)(7) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(4)(5)(2) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(4)(8)(0) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(5)(0)(6) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(5)(4)(1) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(5)(8)(5) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(6)(1)(5) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(6)(6)(1) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(6)(7)(7) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(7)(3)(3) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(7)(4)(0) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(7)(5)(8) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(7)(8)(4) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(8)(4)(7) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(8)(7)(6) === 1.0,
+     s"C_${solver.getNumberOfLinearConstraints}" ||: x(8)(8)(8) === 1.0
   )
 
   // Run solver in another thread

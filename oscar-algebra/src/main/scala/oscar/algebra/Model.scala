@@ -2,36 +2,43 @@ package oscar.algebra
 
 import scala.collection.mutable
 
-class Sum[T,U <: AnyType](loop: ALoop[T,Expression[U]])
+//class Sum[T,U <: AnyType,V](loop: ALoop[T,Expression[U,V]])
 
-class Model[O <: AnyType, C <: AnyType]{
+class Model[O <: AnyType, C <: AnyType,V]{
 
-  val variables: scala.collection.mutable.Map[VarDescription,Int] = new scala.collection.mutable.HashMap[VarDescription,Int]()
-  val indices = mutable.HashSet[Indices[_]]()
-  val params = mutable.HashSet[Param1[_]]()
+  val variables: scala.collection.mutable.Map[Var[V],Int] = new scala.collection.mutable.HashMap[Var[V],Int]()
+//  val indices = mutable.HashSet[Indices[_]]()
+//  val params = mutable.HashSet[Param1[_,V]]()
 
   var maxIndex = 0
 
-  val objectives = scala.collection.mutable.ListBuffer[Expression[O]]()
-  val constraints = scala.collection.mutable.ListBuffer[System[C]]()
+  val objectives = scala.collection.mutable.ListBuffer[Expression[O,V]]()
+  val constraints = scala.collection.mutable.ListBuffer[System[C,V]]()
 
-  def subjectTo(eq: Equation[C]): Unit ={
-    constraints += new StreamSystem[C](Stream(eq))
+  def addVariable(v: Var[V]) = {
+    val res = maxIndex
+    maxIndex += 1
+    variables += v -> res
+    res
   }
 
-  def subjectTo(eqs: StreamSystem[C]): Unit ={
+  def subjectTo(eq: Equation[C,V]): Unit ={
+    constraints += new StreamSystem[C,V](Stream(eq))
+  }
+
+  def subjectTo(eqs: StreamSystem[C,V]): Unit ={
     constraints += eqs
   }
 
-  def subjectTo(eqs: ALoop[_,Equation[C]]): Unit ={
-    constraints += new LoopSystem(Stream(eqs))
-  }
+//  def subjectTo(eqs: ALoop[_,Equation[C,V]]): Unit ={
+//    constraints += new LoopSystem(Stream(eqs))
+//  }
 
-  def minimize(eq: Expression[O]): Unit ={
+  def minimize(eq: Expression[O,V]): Unit ={
     objectives += eq
   }
 
-  def withObjective(obj: Expression[O]): Unit ={
+  def withObjective(obj: Expression[O,V]): Unit ={
     objectives += obj
   }
 
@@ -39,36 +46,33 @@ class Model[O <: AnyType, C <: AnyType]{
 }
 
 
-/**
-  * Created by smo on 18/07/16.
-  */
-class SolutionBuffer[O<: AnyType, C <: AnyType](implicit model: Model[O,C]) {
+class SolutionBuffer[O<: AnyType, C <: AnyType,V](implicit model: Model[O,C,V]) {
 
   var objectiveValue: Double = 0.0
 
   val values = new Array[Double](model.maxIndex)
 
-  def apply(v: Indexed) = values(v.id)
+  def apply(v: Var[V]) = values(v.id)
 
-  def update[T](v: Indexed, value: Double): Unit ={
+  def update[T](v: Var[V], value: Double): Unit ={
     values(v.id) = value
   }
 
-  def update[T](v: Var1[_], vals: IndexedSeq[Double]): Unit ={
-    var id = v.id
-    for(v <- vals){
-      values(id) = v
-      id += 1
-    }
-  }
-
-  def update[T](v: Var2[_,_], vals: IndexedSeq[Double]): Unit ={
-    var id = v.id
-    val iter = vals.iterator
-    for(a <- v.rangeA.values; b <- v.rangeB.values){
-      values(id) = iter.next
-      id += 1
-    }
-  }
+//  def update[T](v: Var1[_,V], vals: IndexedSeq[Double]): Unit ={
+//    var id = v.id
+//    for(v <- vals){
+//      values(id) = v
+//      id += 1
+//    }
+//  }
+//
+//  def update[T](v: Var2[_,_,V], vals: IndexedSeq[Double]): Unit ={
+//    var id = v.id
+//    val iter = vals.iterator
+//    for(a <- v.rangeA.values; b <- v.rangeB.values){
+//      values(id) = iter.next
+//      id += 1
+//    }
+//  }
 
 }

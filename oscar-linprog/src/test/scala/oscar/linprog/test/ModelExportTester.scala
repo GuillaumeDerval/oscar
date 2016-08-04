@@ -9,6 +9,7 @@ import oscar.linprog.enums.{LP, MPS, ModelExportFormat}
 import oscar.linprog.interface.MPSolverLib
 import oscar.linprog.interface.gurobi.GurobiLib
 import oscar.linprog.modeling._
+import Migration._
 
 @RunWith(classOf[JUnitRunner])
 class ModelExportTester extends OscarLinprogTester {
@@ -31,8 +32,8 @@ class ModelExportTester extends OscarLinprogTester {
       val x = MPFloatVar("x", 100, 150)
       val y = MPFloatVar("y", 80, 170)
 
-      maximize(-2.0(x) + 5(y))
-      add(s"C_${solver.getNumberOfLinearConstraints}" ||:x + y <= 200)
+      maximize(-x*2.0 + y*5.0)
+      add(s"C_${solver.getNumberOfLinearConstraints}" ||:x + y <= 200.toDouble)
 
       solver.exportModel(exportPath(format), format)
     }
@@ -48,8 +49,8 @@ class ModelExportTester extends OscarLinprogTester {
       val x = MPFloatVar("x", 100, 150)
       val y = MPFloatVar("y", 80, 170)
 
-      maximize(-2(x) + 5(y))
-      add(s"C_${solver.getNumberOfLinearConstraints}" ||:x + y <= 200)
+      maximize(-x*2.0 + y*5.0)
+      add(s"C_${solver.getNumberOfLinearConstraints}" ||:x + y <= 200.toDouble)
 
       solver.solve
 
@@ -66,8 +67,8 @@ class ModelExportTester extends OscarLinprogTester {
         val x = MPFloatVar("x", 100, 150)
         val y = MPFloatVar("y", 80, 170)
 
-        maximize(-2(x) + 5(y))
-        add(s"C_${solver.getNumberOfLinearConstraints}" ||:x + y <= 200)
+        maximize(-x*2.0 + y*5.0)
+        add(s"C_${solver.getNumberOfLinearConstraints}" ||:x + y <= 200.toDouble)
 
         solver.exportModel(exportPath(MPS), LP)
       }

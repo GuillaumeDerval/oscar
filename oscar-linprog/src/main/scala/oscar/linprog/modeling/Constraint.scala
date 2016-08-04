@@ -56,7 +56,7 @@ object LinearConstraint {
 
 class IndicatorConstraint[+I <: MPSolverInterface] private (
   name: String,
-  override val expression : oscar.algebra.IndicatorConstraintExpression
+  override val expression : oscar.algebra.IndicatorConstraintExpression[Double]
   )(implicit solver: MPSolver[I]) extends LinearConstraint[I](name, expression) {
 
   override protected def addToSolver(): Unit = solver.addIndicatorConstraint(this)
@@ -68,6 +68,6 @@ class IndicatorConstraint[+I <: MPSolverInterface] private (
 }
 
 object IndicatorConstraint {
-  def apply[I <: MPSolverInterface](name: String, expression : oscar.algebra.IndicatorConstraintExpression)(implicit solver: MPSolver[I]) =
+  def apply[I <: MPSolverInterface](name: String, expression : oscar.algebra.IndicatorConstraintExpression[Double])(implicit solver: MPSolver[I]) =
     new IndicatorConstraint[I](name, expression)
 }

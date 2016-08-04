@@ -45,22 +45,22 @@ package oscar.algebra
  *
  * @author acrucifix acr@n-side.com
  */
-class IndicatorConstraintExpression(
-  linExpr: Expression[Linear],
+class IndicatorConstraintExpression[+V](
+  linExpr: Expression[Linear,V],
   sense: ConstraintSense, name : String,
-  val indicators: Seq[Expression[Linear]],
-  val bigM: Double)  extends Equation[Linear](linExpr, sense,name){
+  val indicators: Seq[Expression[Linear,V]],
+  val bigM: V)(implicit numeric: Numeric[V])  extends Equation[Linear,V](linExpr, sense,name){
 
   import Constant._
 
   require(indicators.length > 0, s"An IndicatorConstraint should declare at least one indicator.")
 
-  val constraintExpressions: Seq[Equation[Linear]] =
+  val constraintExpressions: Seq[Equation[Linear,V]] =
     indicators.map { ind =>
-      val actualBound = Const(bigM).toExpression * ind
+      val actualBound = Const[V](bigM).toExpression * ind
 
       lazy val constraintLQ = s"${name}_A" ||: linExpr <= actualBound
-      lazy val constraintGQ = s"${name}_B" ||: linExpr >= Const(-1).toExpression * actualBound
+      lazy val constraintGQ = s"${name}_B" ||: linExpr >= Const(numeric.negate(numeric.one)).toExpression * actualBound
 
       sense match {
         case LQ => Seq(constraintLQ)

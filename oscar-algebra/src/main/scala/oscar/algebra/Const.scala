@@ -14,33 +14,29 @@
  ******************************************************************************/
 package oscar.algebra
 
-class Const(val d: Double) extends Term[Constant] {
+class Const[+V: Numeric](val d: V) extends Term[Constant,V] {
 
-  def eval(env: Var => Double) = d
+  def eval[VR >: V](env: Var[VR] => VR)(implicit numeric: Numeric[VR]):VR = d
   def value = Some(d)
 
 
   override def toString = d.toString
 
-  def apply[TP <: AnyType](that: Expression[TP])(implicit op: (Expression[Constant], Expression[TP]) => ProdExpression[TP]): ProdExpression[TP] = {
-    op(Const(d), that)
+  def apply[TP <: AnyType, VP >: V](that: Expression[TP,VP])(implicit op: (Expression[Constant,VP], Expression[TP,VP]) => ProdExpression[TP,VP], numeric: Numeric[VP]): ProdExpression[TP,VP] = {
+    op(Const[VP](d), that)
   }
 
-  def *[TP <: AnyType](that: Expression[TP])(implicit op: (Expression[Constant], Expression[TP]) => ProdExpression[TP]): ProdExpression[TP] = {
-    op(Const(d), that)
-  }
+//  def *[TP <: AnyType, VP >: V](that: Expression[TP,VP])(implicit op: (Expression[Constant,VP], Expression[TP,VP]) => ProdExpression[TP,VP], numeric: Numeric[VP]): ProdExpression[TP,VP] = {
+//    op(Const[VP](d), that)
+//  }
 
-  def toExpression = new Expression[Constant](Stream(new Prod(this,Seq())))
+  def toExpression[ VP >: V](implicit numeric: Numeric[VP]) = new Expression[Constant,VP](Stream(new Prod[Constant,VP](this,Seq())))
 
   //override def derive(v: Var): Expression = Zero
 
 }
 
 object Const {
-  def apply(d: Double): Const = d match {
-    case 0.0 => Zero
-    case 1.0 => One
-    case _ => new Const(d)
-  }
-  def unapply(c: Const): Option[Double] = Some(c.d)
+  def apply[V](d: V)(implicit numeric: Numeric[V]): Const[V] = new Const(d)
+  def unapply[V](c: Const[V]): Option[V] = Some(c.d)
 }  

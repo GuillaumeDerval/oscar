@@ -15,33 +15,39 @@
 package oscar.algebra
 
 import scala.annotation.tailrec
-
-trait Term[+T <: AnyType] extends AbstractExpression[T]{
+import Numeric.Implicits._
+trait Term[+T <: AnyType,+V] extends AbstractExpression[T,V]{
 
 
 }
 
-class Prod[+T <: AnyType](val coef: Const, val vars: Seq[Term[T]]) extends AbstractExpression[T]{
+object Prod{
+  def apply[T <: AnyType,V](vars: Seq[Term[T,V]])(implicit num: Numeric[V]) = new Prod(Const(num.one), vars)
+  def apply[T <: AnyType,V](d: V, vars: Seq[Term[T,V]])(implicit num: Numeric[V]) = new Prod(Const(d), vars)
+
+}
+
+class Prod[+T <: AnyType,+V](val coef: Const[V], val vars: Seq[Term[T,V]])(implicit num: Numeric[V]) extends AbstractExpression[T,V]{
 //  def derive[TR >: T <: AnyType](v: Var)(implicit op: Function[(Expression[T],Expression[T]), Prod[TR]]): Expression[TR] = {
 //    a// * b.derive(v) + b * a.derive(v)
 //  }
 
-  def uses(v: Var) = vars.contains(v)
+  def uses[VP>: V](v: Var[VP]) = vars.contains(v)
 
   override def toString = coef.toString + {if (vars.nonEmpty) vars.mkString("*","*","") else ""}
 
-  def toExpression = new Expression(Stream(this))
+  def toExpression[VP>: V](implicit numeric: Numeric[VP]) = new Expression(Stream(this))
 
-  def *(d: Double) = new Prod(Const(coef.d * d),vars)
+  def *[VP>: V](d: VP)(implicit num: Numeric[VP]) = new Prod(Const(num.times(coef.d, d)),vars)
 
-  def eval(env: Var => Double): Double = {
-    var res = coef.d
-    for(v <- vars) res = res * v.eval(env)
+  def eval[VP >: V](env: Var[VP] => VP)(implicit numeric: Numeric[VP]): VP = {
+    var res:VP = coef.d
+    for(v <- vars) res = numeric.times(res ,v.eval(env))
     res
   }
-  def value: Option[Double] = {
+  def value: Option[V] = {
     @tailrec
-    def loop(acc: Double, stream: List[Term[T]]): Option[Double] = {
+    def loop(acc: V, stream: List[Term[T,V]]): Option[V] = {
       stream match {
         case Nil => Some(acc)
         case v :: tail => v.value match{

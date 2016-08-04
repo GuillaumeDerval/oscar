@@ -18,7 +18,7 @@ package oscar.examples.linprog
 import oscar.algebra._
 import oscar.linprog.interface.lpsolve.LPSolveLib
 import oscar.linprog.modeling._
-
+import Migration._
 /**
  * Capacitated Facility Location Problem
  *
@@ -66,15 +66,15 @@ object Warehouse extends MPModel(LPSolveLib) with App {
   val transport = Array.tabulate(Warehouses.length, Plants.length)((w, p) => MPFloatVar("trans" + (w, p), lb = 0))
 
   // The objective is to minimize the total fixed and variable costs
-  minimize(sum(Warehouses, Plants) { (w, p) => transport(w)(p) * transCosts(w)(p) } //variable cost
-    + sum(Plants) { p => open(p) * fixedCosts(p) }) //fixed costs
+  minimize(sum(Warehouses, Plants) { (w, p) => transport(w)(p) * transCosts(w)(p).toDouble } //variable cost
+    + sum(Plants) { p => open(p) * fixedCosts(p).toDouble }) //fixed costs
   // Production Constraints
   for (p <- Plants) {
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Warehouses)(w => transport(w)(p)) <=open(p)*capacity(p))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Warehouses)(w => transport(w)(p)) <=open(p)*capacity(p).toDouble)
   }
   // Demand Constraints
   for (w <- Warehouses) {
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Plants)(p => transport(w)(p)) >= demand(w))
+    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Plants)(p => transport(w)(p)) >= demand(w).toDouble)
   }
 
   solver.solve

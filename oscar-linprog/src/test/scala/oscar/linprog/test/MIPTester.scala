@@ -8,6 +8,7 @@ import oscar.linprog.interface.MPSolverLib
 import oscar.linprog.modeling._
 
 import scala.util.Success
+import Migration._
 
 @RunWith(classOf[JUnitRunner])
 class MIPTester extends OscarLinprogTester {
@@ -16,8 +17,8 @@ class MIPTester extends OscarLinprogTester {
     val x = MPIntVar("x", 0 to 100)
     val y = MPFloatVar("y", 0, 100)
 
-    maximize(100(x) + 1(y))
-    add(s"C_${solver.getNumberOfLinearConstraints}" ||:3(x) + 1(y) <= 14.5)
+    maximize(x*100.0 + y)
+    add(s"C_${solver.getNumberOfLinearConstraints}" ||:x*3.0 + y <= 14.5)
 
     val endStatus = solver.solve
 
@@ -34,8 +35,8 @@ class MIPTester extends OscarLinprogTester {
     val x = MPIntVar("x", 0, 100)
     val y = MPIntVar("y", 0, 100)
 
-    maximize(100(x) + 1(y))
-    add(s"C_${solver.getNumberOfLinearConstraints}" ||:3(x) + 1(y) <= 14.5)
+    maximize(x*100.0 + y)
+    add(s"C_${solver.getNumberOfLinearConstraints}" ||:x*3.0 + y <= 14.5)
 
     val endStatus = solver.solve
 
@@ -50,8 +51,8 @@ class MIPTester extends OscarLinprogTester {
     val x = MPIntVar("x", 0 to 100)
     val y = MPFloatVar("y", 0, 100)
 
-    maximize(100(x) + 1(y))
-    add(s"C_${solver.getNumberOfLinearConstraints}" ||:3(x) + 1(y) <= 14.5)
+    maximize(x*100.0 + y)
+    add(s"C_${solver.getNumberOfLinearConstraints}" ||:x*3.0 + y <= 14.5)
 
     val endStatus = solver.solve
 
@@ -83,7 +84,7 @@ class MIPTester extends OscarLinprogTester {
     val y = MPFloatVar("y", 0, 100)
     val z = MPFloatVar("z", 0, 100)
 
-    maximize(1(x) + 2(y) + 3(z))
+    maximize(x + y*2.0 + z*3.0)
     add(s"C_${solver.getNumberOfLinearConstraints}" ||:x + y <= 75.5)
     add(s"C_${solver.getNumberOfLinearConstraints}" ||:x + z <= 75.5)
 
@@ -118,8 +119,8 @@ class MIPTester extends OscarLinprogTester {
     val x = MPBinaryVar("x")
     val y = MPFloatVar("y", 0, 100)
 
-    maximize(100(x) + 1(y))
-    add(s"C_${solver.getNumberOfLinearConstraints}" ||:3(x) + 1(y) <= 14.5)
+    maximize(x*100.0 + y)
+    add(s"C_${solver.getNumberOfLinearConstraints}" ||:x*3.0 + y <= 14.5)
 
     val endStatus = solver.solve
 
@@ -143,27 +144,27 @@ class MIPTester extends OscarLinprogTester {
 
       /* at most one queen can be placed in each row */
       for (l <- lines)
-        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(columns)(c => x(l)(c)) <= 1)
+        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(columns)(c => x(l)(c)) <= 1.0)
 
       /* at most one queen can be placed in each column */
       for (c <- columns)
-        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(lines)(l => x(l)(c)) <= 1)
+        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(lines)(l => x(l)(c)) <= 1.0)
 
       /* at most one queen can be placed in each "/"-diagonal  upper half*/
       for (i <- 1 until n)
-        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(0 to i)((j) => x(i - j)(j)) <= 1)
+        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(0 to i)((j) => x(i - j)(j)) <= 1.0)
 
       /* at most one queen can be placed in each "/"-diagonal  lower half*/
       for (i <- 1 until n)
-        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(i until n)((j) => x(j)(n - 1 - j + i)) <= 1)
+        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(i until n)((j) => x(j)(n - 1 - j + i)) <= 1.0)
 
       /* at most one queen can be placed in each "/"-diagonal  upper half*/
       for (i <- 0 until n)
-        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(0 until n - i)((j) => x(j)(j + i)) <= 1)
+        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(0 until n - i)((j) => x(j)(j + i)) <= 1.0)
 
       /* at most one queen can be placed in each "/"-diagonal  lower half*/
       for (i <- 1 until n)
-        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(0 until n - i)((j) => x(j + i)(j)) <= 1)
+        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(0 until n - i)((j) => x(j + i)(j)) <= 1.0)
 
       val endStatus = solver.solve
 
