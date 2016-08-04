@@ -17,8 +17,8 @@ package oscar.cp.constraints.tables
 
 import oscar.algo.reversible.{ReversibleInt, ReversibleSparseSet}
 import oscar.cp.core.CPOutcome._
-import oscar.cp.core.{CPStore, Constraint, _}
 import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset}
+import oscar.cp.core.{CPStore, Constraint, _}
 
 
 /**
@@ -59,11 +59,32 @@ final class TableShortSTR2(private[this] val variables: Array[CPIntVar], private
   private[this] val T = Array.tabulate(filteredTable.length, arity) {
     case (t, i) =>
       if (filteredTable(t)(i) == star)
-    _star
-  else filteredTable(t)(i) - offsets(i)
+        _star
+      else
+        filteredTable(t)(i) - offsets(i)
   }
   private[this] val x = Array.tabulate(arity)(i => new CPIntVarViewOffset(variables(i), -offsets(i)))
 
+  // keep track for each tuple of the indexes where there are no stars
+  private[this] val shortTable = {
+    val buf = new Array[Int](arity)
+    var nb = 0
+    Array.tabulate(T.length) { i =>
+      nb = 0
+      val tuple = T(i)
+      var j = arity
+      while (j > 0) {
+        j -= 1
+        if (tuple(j) != _star) {
+          buf(nb) = j
+          nb += 1
+        }
+      }
+      val shortTuple = new Array[Int](nb)
+      System.arraycopy(buf, 0, shortTuple, 0, nb)
+      shortTuple
+    }
+  }
 
   // Tuples to consider
   private[this] val nTuples = T.length
@@ -105,24 +126,14 @@ final class TableShortSTR2(private[this] val variables: Array[CPIntVar], private
       val varId = sSup(j)
       val value = tau(varId)
       if (value == _star) {
-        for (v <- x(varId).iterator) {
-          if (gacValues(varId)(v) != timeStamp) {
-            gacValues(varId)(v) = timeStamp
-            nGacValues(varId) += 1
-            lastGacValue(varId) = tau(varId)
-            if (nGacValues(varId) == variables(varId).size) {
-              // Remove value from sSup
-              sSupSize -= 1
-              sSup(j) = sSup(sSupSize)
-            }
-          }
-        }
+        sSupSize -= 1
+        sSup(j) = sSup(sSupSize)
       } else {
         // Value tau(varId) is GAC
         if (gacValues(varId)(value) != timeStamp) {
           gacValues(varId)(value) = timeStamp
           nGacValues(varId) += 1
-          lastGacValue(varId) = tau(varId)
+          lastGacValue(varId) = value
           if (nGacValues(varId) == variables(varId).size) {
             // Remove value from sSup
             sSupSize -= 1
@@ -180,8 +191,6 @@ final class TableShortSTR2(private[this] val variables: Array[CPIntVar], private
         k -= 1
         domValues(varIdx)(values(k)) = timeStamp
       }
-      sSup(sSupSize) = varIdx
-      sSupSize += 1
       val inSVal = lastSize(varIdx).value != varSize // changed since last propagate
       lastSize(varIdx).setValue(varSize)
       if (inSVal) {
@@ -189,6 +198,30 @@ final class TableShortSTR2(private[this] val variables: Array[CPIntVar], private
         sValSize += 1 // push
         changedIdx = varIdx
         nChanged += 1
+      }
+    }
+
+    // Search the first still valid to fill sSup for the first time
+    var j = nActiveTuples - 1
+    var c = true
+    while (j >= 0 && isInvalidTuple(T(activeTuples(j)))) {
+      // Deactivate tuple
+      nActiveTuples -= 1
+      val tmpPosition = activeTuples(j)
+      activeTuples(j) = activeTuples(nActiveTuples)
+      activeTuples(nActiveTuples) = tmpPosition
+      j -= 1
+    }
+    if (nActiveTuples == 0) {
+      return Failure
+    }
+    if (j >= 0) {
+      val tau = shortTable(j)
+      var k = tau.length
+      while (k > 0) {
+        k -= 1
+        sSup(sSupSize) = tau(k)
+        sSupSize += 1
       }
     }
 
@@ -213,12 +246,8 @@ final class TableShortSTR2(private[this] val variables: Array[CPIntVar], private
         val nGac = nGacValues(varId)
         if (nGac == 0) return Failure
         else if (nGac == 1) {
-          if (lastGacValue(varId) == _star) {
-            variable.assign(variable.min) // should be only one value left
-          } else {
-            variable.assign(lastGacValue(varId))
-            unBoundVars.removeValue(varId)
-          }
+          variable.assign(lastGacValue(varId))
+          unBoundVars.removeValue(varId)
         }
         else {
           var j = variable.fillArray(values)
