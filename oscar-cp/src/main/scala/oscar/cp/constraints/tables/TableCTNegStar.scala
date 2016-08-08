@@ -2,9 +2,9 @@ package oscar.cp.constraints.tables
 
 import oscar.algo.reversible.{ReversibleInt, ReversibleSparseBitSet}
 import oscar.cp.core.CPOutcome._
+import oscar.cp.core.{CPStore, Constraint, _}
 import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset}
-import oscar.cp.core.{CPOutcome, CPPropagStrength, CPStore, Constraint}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -49,8 +49,27 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
   private[this] val starsByTuples = new Array[dangerousTuples.BitSet](arity)
   private[this] val starTupleCombinatoire = Math.pow(2, arity).toInt
   private[this] val splitStarsByTuples = new Array[dangerousTuples.BitSet](starTupleCombinatoire)
-  private[this] val splitMultByTuples = Array.fill(starTupleCombinatoire)(new Array[Int](arity)) // TODO : use hashset instead
+  private[this] val splitMultByTuples = Array.fill(starTupleCombinatoire)(new Array[Int](arity))
   comb(1, starTupleCombinatoire / 2, 0)
+  private[this] val splitMultByTuplesSparse = {
+    val temp = new Array[Int](arity)
+    var nb = 0
+    Array.tabulate(starTupleCombinatoire) {
+      i =>
+        nb = 0
+        var j = arity
+        while (j > 0) {
+          j -= 1
+          if (splitMultByTuples(i)(j) == 1) {
+            temp(nb) = j
+            nb += 1
+          }
+        }
+        val newArray = new Array[Int](nb)
+        System.arraycopy(temp, 0, newArray, 0, nb)
+        newArray
+    }
+  }
 
   private[this] val deltas: Array[DeltaIntVar] = new Array[DeltaIntVar](arity)
 
@@ -77,7 +96,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
    * Method to compute the table without intersections
    * @return The new table, without any overlap
    */
-  private def preprocess : Array[Array[Int]] = {
+  private def preprocess: Array[Array[Int]] = {
 
     val t = System.currentTimeMillis()
     val orderedVars = Array.tabulate(arity)(i => i)
@@ -224,7 +243,6 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
     while (j > 0) {
       j -= 1
       val varIndex = unBoundVars(j)
-
       if (deltas(varIndex).size > 0) {
         nChanged += 1
         changedVarIdx = varIndex
@@ -251,14 +269,21 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
         while (i < domainArraySize) {
           value = domainArray(i)
           var count = dangerousTuples.intersectCount(splitStarsByTuples(0), variableValueAntiSupports(varIndex)(value))
-          for (i <- 1 until starTupleCombinatoire) {
-            var mult = 1
-            for (vIndex <- 0 until arity; if splitMultByTuples(i)(vIndex) == 1 && varIndex != vIndex) {
-              mult *= x(vIndex).size
-            }
-            count += dangerousTuples.intersectCount(splitStarsByTuples(i), variableValueAntiSupports(varIndex)(value)) * mult
-          }
+          var j = 1
+          while (j < starTupleCombinatoire) {
+              val sparseIndex = splitMultByTuplesSparse(j)
+              var mult = 1
+              var vIndex = sparseIndex.length
+              while (vIndex > 0) {
+                vIndex -= 1
+                mult *= x(sparseIndex(vIndex)).size
+              }
+              if (splitMultByTuples(j)(varIndex) == 1)
+                mult /= x(varIndex).size
+              count += dangerousTuples.intersectCount(splitStarsByTuples(j), variableValueAntiSupports(varIndex)(value)) * mult
 
+            j += 1
+          }
           if (count == cardinalSize) {
             if (x(varIndex).removeValue(value) == Failure) {
               return Failure
@@ -308,12 +333,17 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
           value = domainArray(i)
 
           var count = dangerousTuples.intersectCount(splitStarsByTuples(0), variableValueAntiSupports(varIndex)(value))
-          for (i <- 1 until starTupleCombinatoire) {
+          var j = 1
+          while (j < starTupleCombinatoire) {
             var mult = 1
-            for (vIndex <- 0 until arity; if splitMultByTuples(i)(vIndex) == 1 && varIndex != vIndex) {
-              mult *= x(vIndex).size
+            var vIndex = 0
+            while (vIndex < arity) {
+              if (splitMultByTuples(j)(vIndex) == 1 && varIndex != vIndex)
+                mult *= x(vIndex).size
+              vIndex += 1
             }
-            count += dangerousTuples.intersectCount(splitStarsByTuples(i), variableValueAntiSupports(varIndex)(value)) * mult
+            count += dangerousTuples.intersectCount(splitStarsByTuples(j), variableValueAntiSupports(varIndex)(value)) * mult
+            j += 1
           }
 
           if (count == cardinalSize) {
@@ -414,15 +444,19 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
     starsByTuples.foreach(t => splitStarsByTuples(0) |= t)
     ~splitStarsByTuples(0)
 
-    for (i <- 1 until starTupleCombinatoire) {
+    var i = 1
+    while (i < starTupleCombinatoire) {
       splitStarsByTuples(i) = new dangerousTuples.BitSet(List())
       ~splitStarsByTuples(i)
-      for (varIndex <- 0 until arity) {
+      var varIndex = 0
+      while (varIndex < arity) {
         if (splitMultByTuples(i)(varIndex) == 1)
           splitStarsByTuples(i) &= starsByTuples(varIndex)
         else
           splitStarsByTuples(i) &~= starsByTuples(varIndex)
+        varIndex += 1
       }
+      i += 1
     }
   }
 }
