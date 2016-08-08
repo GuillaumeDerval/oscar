@@ -72,7 +72,7 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     def &=(bs: BitSet) = {
       var i = words.length
       while (i > 0) {
-        i -= 0
+        i -= 1
         words(i) = words(i) & bs.words(i)
       }
     }
@@ -80,7 +80,7 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     def &~=(bs: BitSet) = {
       var i = words.length
       while (i > 0) {
-        i -= 0
+        i -= 1
         words(i) = words(i) & ~bs.words(i)
       }
     }
@@ -88,7 +88,7 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     def operation(fct: (Long) => Long) = {
       var i = words.length
       while (i > 0) {
-        i -= 0
+        i -= 1
         words(i) = fct(words(i))
       }
     }
@@ -96,7 +96,7 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     def operation(fct: (Long, Long) => Long, bs: BitSet) = {
       var i = words.length
       while (i > 0) {
-        i -= 0
+        i -= 1
         words(i) = fct(words(i), bs.words(i))
       }
     }
@@ -104,7 +104,7 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     def operation(fct: (Long, Long, Long) => Long, bs1: BitSet, bs2: BitSet) = {
       var i = words.length
       while (i > 0) {
-        i -= 0
+        i -= 1
         words(i) = fct(words(i), bs1.words(i), bs2.words(i))
       }
     }
@@ -112,7 +112,7 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     def operation(fct: (Long, Iterable[Long]) => Long, bs: Iterable[BitSet]) = {
       var i = words.length
       while (i > 0) {
-        i -= 0
+        i -= 1
         words(i) = fct(words(i), bs.map(_.words(i)))
       }
     }
@@ -125,7 +125,7 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     def |=(bs: BitSet) = {
       var i = words.length
       while (i > 0) {
-        i -= 0
+        i -= 1
         words(i) = words(i) | bs.words(i)
       }
     }
@@ -135,7 +135,7 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     def unary_~ = {
       var i = words.length
       while (i > 0) {
-        i -= 0
+        i -= 1
         words(i) = ~words(i)
       }
       words(words.length - 1) = words(words.length - 1) & mask
