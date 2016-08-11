@@ -150,7 +150,8 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     }
 
     override def toString: String = {
-      words.mkString(" ")
+      val size = n min 64
+      words.map(e => String.format(s"%${size}s", java.lang.Long.toBinaryString(e)).replace(' ', '0')).mkString(" ")
     }
 
   }
@@ -407,47 +408,18 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
    * @param set
    * @return the number of bits of the intersection of the bitSet and this
    */
-  //  def scalarProductIntersect(set: BitSet, setRM: BitSet, coef: Array[() => Int], div: Int = 1): Int = {
-  //    /// TODO FIX this
-  //    var count = 0
-  //
-  //    var i: Int = nNonZero
-  //    //    println("nz " + i)
-  //    while (i > 0) {
-  //      i -= 1
-  //      val offset = nonZeroIdx(i)
-  //      //      println("i : " + words(offset) + " " + set.words(offset))
-  //      var intersect = words(offset) & set.words(offset)
-  //      var stars = set.words(offset) ^ setRM.words(offset)
-  //      var idx = (offset + 1) * 64 - 1
-  //      var idxc = (offset) * 64
-  //      //      while (idx >= coef.length){
-  //      //        idx -= 1
-  //      //        intersect = intersect >>> 1
-  //      //        stars = stars >>> 1
-  //      //      }
-  //      //      println("intersect :" + intersect)
-  //      //      println("star :" + stars)
-  //      while (intersect != 0 && idxc < coef.length) {
-  //        //        println("inter : " + intersect)
-  //        if ((intersect & 1) == 1) {
-  //          //          println("coef :" + coef(idxc)())
-  //          //          println("div :" + div)
-  //          if ((stars & 1) == 1)
-  //            count += coef(idxc)() / div
-  //          else
-  //            count += coef(idxc)()
-  //        }
-  //        idxc += 1
-  //        idx -= 1
-  //        intersect = intersect >>> 1
-  //        stars = stars >>> 1
-  //      }
-  //      //count += java.lang.Long.bitCount(words(offset) & set.words(offset))
-  //    }
-  //
-  //    count
-  //  }
+  def intersectCount(set: BitSet, hashMult: Array[Int], multiplicator: Array[Int]): Int = {
+    var count = 0
+
+    var i: Int = nNonZero
+    while (i > 0) {
+      i -= 1
+      val offset = nonZeroIdx(i)
+      count += java.lang.Long.bitCount(words(offset) & set.words(offset)) * multiplicator(hashMult(offset))
+    }
+
+    count
+  }
 
 
 }
