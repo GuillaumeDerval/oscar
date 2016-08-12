@@ -59,7 +59,7 @@ final class TableCTNeg(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
 
   override def setup(l: CPPropagStrength): CPOutcome = {
 
-    /* Success if table is empty initialy or after initial filtering */
+    /* Success if table is empty initially or after initial filtering */
     if (nbTuples == 0)
       return Success
 

@@ -186,7 +186,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
 
   override def setup(l: CPPropagStrength): CPOutcome = {
 
-    /* Success if table is empty initialy or after initial filtering */
+    /* Success if table is empty initially or after initial filtering */
     if (nbTuples == 0)
       return Success
 
