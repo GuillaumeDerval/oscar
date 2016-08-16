@@ -182,8 +182,8 @@ class Profile(n: Int,maxh: Int,model:Store){
   }
   
   def insert(s: Int, d: Int, h: Int): Int = {
-//    println("Before inserting "+(s,d,h))
-//    print_profile()
+    println("Before inserting "+(s,d,h))
+    print_profile()
     if(h==0 || d==0) return -1
     var cur = 0
     var rd = d//remaining duration
@@ -213,8 +213,8 @@ class Profile(n: Int,maxh: Int,model:Store){
       
       cur = new_prof
     }
-//    println("after initial")
-//    print_profile(false)
+    println("after initial")
+    print_profile(false)
     while(rd > 0){
       
       if(cs != profile_start(cur)){
@@ -254,8 +254,8 @@ class Profile(n: Int,maxh: Int,model:Store){
       profile_next(cur) = new_prof
       profile_prev(new_prof) = cur
     }
-//    println("After inserting "+(s,d,h))
-//    print_profile()
+    println("After inserting "+(s,d,h))
+    print_profile()
     res
   }
 }

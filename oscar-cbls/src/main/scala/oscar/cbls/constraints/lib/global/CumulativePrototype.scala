@@ -31,7 +31,7 @@ import oscar.cbls.invariants.lib.numeric.{MinusOffsetPos, Prod2, Sum}
   * Constrains the a resource usage to be lower than some limit.
   * The violation is the sum of the overflow at each time step:
   *  sum(t in 0 .. horizon)(max(0,limit - usage[t]))
-  *  
+  *
   * @param start the start time of tasks
   * @param duration the duration of tasks
   * @param amount the amount that tasks use of the resource
@@ -92,7 +92,9 @@ case class CumulativePrototype(start: Array[IntValue], duration: Array[IntValue]
 
   @inline
   override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
-    if (start(index) == v && amount(index).value >0) {
+    if(index == -1){
+      updateVarViolation(0,horizon)
+    }else if (start(index) == v && amount(index).value >0) {
       //start
       val d = duration(index).value
       val a = amount(index).value
@@ -127,8 +129,6 @@ case class CumulativePrototype(start: Array[IntValue], duration: Array[IntValue]
     } else if(amount(index) == v){
       profile.change(start(index).value,duration(index).value,NewVal-OldVal)
       updateVarViolation(start(index).value,duration(index).value)
-    }else{
-      updateVarViolation(0,horizon)
     }
     //println(violation)
   }

@@ -112,7 +112,7 @@ class SimpleLocalSearch(val m:FZCBLSModel,val sc: SearchControl) extends SearchP
     log("Starting Violation: "+m.objective.violation.value)
     if(m.vars.length>0){
       sc.handlePossibleSolution();
-      while(improving > 0 && !sc.stop()){
+      while(improving > 0 && !sc.stopOnTime()){
         val currentVar = m.vars(i);
         if(violation(i).value > 0){
           //val k = selectMin(currentVar.getDomain())(k=> m.objective.objective.assignVal(currentVar,k))
@@ -148,12 +148,21 @@ class SimpleLocalSearch(val m:FZCBLSModel,val sc: SearchControl) extends SearchP
 }
 
 class SearchControl(val m: FZCBLSModel, val objLB:Int, val MaxTimeMilli: Int,val stopOnSat:Boolean){
-  def stop(): Boolean = {
-    m.getWatch() >= MaxTimeMilli || //ran out of time
-    (m.objective.violation.value==0 && stopOnSat) || //sat problem
-    (m.objective.violation.value==0 && m.objective.objectiveWeight.value==0) ||
-    (m.objective.violation.value==0 && m.objective.getObjectiveValue() == objLB) //reached the lower bound
+
+  def stopOnTime(): Boolean = {
+    m.getWatch() >= MaxTimeMilli //ran out of time
   }
+
+  def stop(): Boolean = {
+    val newSolution = bestKnownObjective < lastBestKnownObjective;
+    lastBestKnownObjective = bestKnownObjective
+    val outOfTime = m.getWatch() >= MaxTimeMilli //ran out of time
+    val satProblem = (newSolution && stopOnSat) //sat problem
+    val ignoreObj = (newSolution && m.objective.objectiveWeight.value==0)
+    val lowestValue = (m.objective.violation.value == 0 && m.objective.getObjectiveValue() == objLB) //reached the lower bound
+    return outOfTime || satProblem || ignoreObj || lowestValue
+  }
+  var lastBestKnownObjective = Int.MaxValue
   var bestKnownObjective = Int.MaxValue 
   //var bestKnownViolation = Int.MaxValue
   var bestPair = (Int.MaxValue,Int.MaxValue)
@@ -363,21 +372,21 @@ class NeighbourhoodSearchOPT(m:FZCBLSModel, sc: SearchControl) extends Neighbour
 class NeighbourhoodSearchSAT(m:FZCBLSModel, sc: SearchControl) extends NeighbourhoodTabuSearch(m,sc) {
   override def run()= {
     log("Starting Satisfaction Search")
-    var extendedSearch = false;
-    var roundsWithoutSat = 0;
-    val maxRounds = 5;
+    var extendedSearch = false
+    var roundsWithoutSat = 0
+    val maxRounds = 5
 
-    var timeOfBest = m.getWatch();
-    var itSinceBest = 0;
+    var timeOfBest = m.getWatch()
+    var itSinceBest = 0
     var bestViolation = Int.MaxValue
 
 
-    var wait = 0;
-    val waitDec = 1;
-    
+    var wait = 0
+    val waitDec = 1
+
+
     while (!sc.stop()) {
       makeMove(extendedSearch)
-      
       if (wait > 0) {
         wait -= waitDec;
       } else {
@@ -385,7 +394,7 @@ class NeighbourhoodSearchSAT(m:FZCBLSModel, sc: SearchControl) extends Neighbour
       }
       if (m.c.violation.value < bestViolation) {
         bestViolation = m.c.violation.value
-        itSinceBest = 0;
+        itSinceBest = 0
         timeOfBest = m.getWatch()
         tenure = Math.max(MinTenure, tenure - 1)
         if (tenure == MinTenure) {

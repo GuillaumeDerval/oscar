@@ -471,7 +471,7 @@ class FZCBLSSolver extends SearchEngine with StopWatch {
     
     
     //Search
-    val timeout = (if(opts.timeOut>0) {opts.timeOut} else 15 * 60) * 1000
+    val timeout = (if(opts.timeOut>0) {opts.timeOut} else 20 * 60) * 1000
     log("Timeout is set to "+timeout+" milliseconds"); 
     val sc : SearchControl =  model.search.obj match {
           case Objective.SATISFY => new SearchControl(cblsmodel,0,timeout,true);

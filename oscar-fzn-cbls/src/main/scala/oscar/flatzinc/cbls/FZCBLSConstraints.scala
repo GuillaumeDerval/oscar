@@ -73,20 +73,19 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     val disjunctive = r.forall(v => 2*v.min > b.max) 
     val fixedduration = d.forall(v => v.isBound)
     val unitduration = d.forall(v => v.isBound && v.value==1)
+
+    val useNewCumulative = true
+
     if(disjunctive && unitduration){
       AllDiff(s.map(getCBLSVar(_)))
     }else if(disjunctive && fixedduration){
       Disjunctive(s.map(getCBLSVar(_)),d.map(_.value))
-    }else{
+    }else if(useNewCumulative){
       val start = s.foldLeft(Int.MaxValue)((acc,v) => if (v.min < acc) v.min else acc)
       val ns = new Array[IntValue](s.length)
       val horizon = s.foldLeft(Int.MinValue)((acc,v) => if (v.max > acc) v.max else acc)
-      //val p = new Array[CBLSIntVar](horizon-start+1)
       
       val maxprofile = r.foldLeft(0)((s,r) => s + r.max)
-      //for(i <- 0 to horizon-start){
-      //  p(i) = CBLSIntVar(m,0,0 to maxprofile,"Profile("+i+")")
-      //}
       if(start!=0){
         val offset = CBLSIntConst(-start)
         for(i <- 0 to s.length-1){
@@ -97,10 +96,31 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
           ns(i) = s(i)
         }
       }
-      //val cumul = CumulativeNoSet(ns,d.map(getCBLSVar(_)),r.map(getCBLSVar(_)),p);
-      //GE(b,MaxArray(p.asInstanceOf[Array[IntValue]]))//TODO: What we should actually do is to create the array in CumulativeNoSet
-      //TODO: The following class may have some bugs
       CumulativePrototype(ns,d.map(getCBLSVar(_)),r.map(getCBLSVar(_)),getCBLSVar(b));
+    }else{
+      val start = s.foldLeft(Int.MaxValue)((acc,v) => if (v.min < acc) v.min else acc)
+      val ns = new Array[IntValue](s.length)
+      val horizon = s.foldLeft(Int.MinValue)((acc,v) => if (v.max > acc) v.max else acc)
+      val p = new Array[CBLSIntVar](horizon-start+1)
+
+      val maxprofile = r.foldLeft(0)((s,r) => s + r.max)
+      for(i <- 0 to horizon-start){
+        p(i) = CBLSIntVar(m,0,0 to maxprofile,"Profile("+i+")")
+      }
+      if(start!=0){
+        val offset = CBLSIntConst(-start)
+        for(i <- 0 to s.length-1){
+          ns(i) = Sum2(s(i),offset)
+        }
+      }else{
+        for(i <- 0 to s.length-1){
+          ns(i) = s(i)
+        }
+      }
+      val cumul = CumulativeNoSet(ns,d.map(getCBLSVar(_)),r.map(getCBLSVar(_)),p);
+      GE(b,MaxArray(p.asInstanceOf[Array[IntValue]]))//TODO: What we should actually do is to create the array in CumulativeNoSet
+      //TODO: The following class may have some bugs
+      //CumulativePrototype(ns,d.map(getCBLSVar(_)),r.map(getCBLSVar(_)),getCBLSVar(b));
     }
   }
   
