@@ -211,8 +211,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
       i += 1
     }
 
-    /* Compute first multiplicators and Propagate a first time */
-    updateMultiplicator()
+    /* Propagate a first time */
     basicPropagate()
   }
 
@@ -319,8 +318,6 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
    */
   override def propagate(): CPOutcome = {
 
-    updateMultiplicator()
-
     var varIndex = x.length
     while (varIndex > 0) {
       varIndex -= 1
@@ -343,43 +340,38 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
    */
   @inline def basicPropagate(): CPOutcome = {
 
-    var changed = false
-    var cardinalSizeInit = 1L
-    do {
-      changed = false
-      cardinalSizeInit = x.foldLeft(1L)((i, j) => i * j.size)
-      var varIndex = x.length
-      while (varIndex > 0) {
-        varIndex -= 1
+    updateMultiplicator()
+    var cardinalSizeInit = x.foldLeft(1L)((i, j) => i * j.size)
+    var varIndex = x.length
+    while (varIndex > 0) {
+      varIndex -= 1
 
-        domainArraySize = x(varIndex).fillArray(domainArray)
-        var i = 0
-        var value = 0
-        val cardinalSize = cardinalSizeInit / x(varIndex).size
+      domainArraySize = x(varIndex).fillArray(domainArray)
+      var i = 0
+      var value = 0
+      val cardinalSize = cardinalSizeInit / x(varIndex).size
 
-        while (i < domainArraySize) {
-          value = domainArray(i)
-          val count = dangerousTuples.intersectCount(variableValueAntiSupports(varIndex)(value), hashMult, multiplicator(varIndex))
-          if (count == cardinalSize) {
-            if (x(varIndex).removeValue(value) == Failure) {
-              return Failure
-            } else {
-              changed = true
-              dangerousTuples.clearCollected()
-              dangerousTuples.collect(variableValueAntiSupportsRM(varIndex)(value))
-              dangerousTuples.removeCollected()
-              if (dangerousTuples.isEmpty()) {
-                return Success
-              }
-              cardinalSizeInit /= (x(varIndex).size + 1)
-              cardinalSizeInit *= x(varIndex).size
+      while (i < domainArraySize) {
+        value = domainArray(i)
+        val count = dangerousTuples.intersectCount(variableValueAntiSupports(varIndex)(value), hashMult, multiplicator(varIndex))
+        if (count == cardinalSize) {
+          if (x(varIndex).removeValue(value) == Failure) {
+            return Failure
+          } else {
+            dangerousTuples.clearCollected()
+            dangerousTuples.collect(variableValueAntiSupportsRM(varIndex)(value))
+            dangerousTuples.removeCollected()
+            if (dangerousTuples.isEmpty()) {
+              return Success
             }
-            updateMultiplicator()
+            cardinalSizeInit /= (x(varIndex).size + 1)
+            cardinalSizeInit *= x(varIndex).size
           }
-          i += 1
+          updateMultiplicator()
         }
+        i += 1
       }
-    } while (changed)
+    }
 
     Suspend
   }
