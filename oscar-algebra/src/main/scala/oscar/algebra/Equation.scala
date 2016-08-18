@@ -24,12 +24,12 @@ class GQEquation[+T <: AnyType,+V](expr: Expression[T,V])  extends EquationDescr
 }
 
 trait System[+T <: AnyType,+V]{
-  def equations: Stream[Equation[T,V]]
+  def equations: Iterator[Equation[T,V]]
   def :||(s: String): System[T,V]
 }
 
 
-class StreamSystem[+T <: AnyType,+V](val equations: Stream[Equation[T,V]], val name: String = "System") extends System[T,V]{
+class StreamSystem[+T <: AnyType,+V](val equations: Iterator[Equation[T,V]], val name: String = "System") extends System[T,V]{
 
   def :||(s: String) = new StreamSystem(equations, s)
 

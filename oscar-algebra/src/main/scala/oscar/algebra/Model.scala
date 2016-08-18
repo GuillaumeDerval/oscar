@@ -23,7 +23,7 @@ class Model[O <: AnyType, C <: AnyType,V]{
   }
 
   def subjectTo(eq: Equation[C,V]): Unit ={
-    constraints += new StreamSystem[C,V](Stream(eq))
+    constraints += new StreamSystem[C,V](Iterator(eq))
   }
 
   def subjectTo(eqs: StreamSystem[C,V]): Unit ={
