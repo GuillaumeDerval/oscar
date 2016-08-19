@@ -17,8 +17,13 @@ package oscar.cp.test
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
 import oscar.cp._
-import oscar.cp.constraints.MinAssignment
+import oscar.cp.constraints.{MinAssignment}
 
+/**
+  * Test for Minimum Assignment (or weighted matching)
+  *
+  * @author Pierre Schaus pschaus@gmail.com
+  */
 class TestMinAssignment extends FunSuite with ShouldMatchers {
 
   test("Test Assignment 1") {
@@ -28,6 +33,7 @@ class TestMinAssignment extends FunSuite with ShouldMatchers {
                   Array(4, 5, 2))
     val cost = CPIntVar(0 to 100)(cp)
     val x = Array.fill(3)(CPIntVar(0 to 2)(cp))
+    cp.post(allDifferent(x),Strong)
     cp.post(new MinAssignment(x, w, cost))
     cost.min should be(7)
     cp.post(x(0) != 0)
@@ -44,6 +50,7 @@ class TestMinAssignment extends FunSuite with ShouldMatchers {
                   Array(4, 5, 2))
     val cost = CPIntVar(0 to 100)(cp)
     val x = Array(CPIntVar(Set(1,2))(cp), CPIntVar(Set(0,1,2))(cp), CPIntVar(Set(0,1))(cp))
+    cp.post(allDifferent(x),Strong)
     cp.post(new MinAssignment(x, w, cost))
     cost.min should be(10)
   }
@@ -56,6 +63,7 @@ class TestMinAssignment extends FunSuite with ShouldMatchers {
                   Array(4, 5, 2))
     val cost = CPIntVar(0 to 100)(cp)
     val x = Array(CPIntVar(Set(0,1,2))(cp), CPIntVar(Set(0,1,2))(cp), CPIntVar(Set(0,1))(cp))
+    cp.post(allDifferent(x),Strong)
     cp.post(new MinAssignment(x, w, cost))
     //println(cost)
     cost.min should be(10)
@@ -68,6 +76,7 @@ class TestMinAssignment extends FunSuite with ShouldMatchers {
                   Array(4, 5, 2))
     val cost = CPIntVar(0 to 100)(cp)
     val x = Array.fill(3)(CPIntVar(0 to 2)(cp))
+    cp.post(allDifferent(x),Strong)
     cp.post(new MinAssignment(x, w, cost))
     cost.min should be(7)
     cp.pushState()
@@ -86,6 +95,7 @@ class TestMinAssignment extends FunSuite with ShouldMatchers {
                   Array(4, 5, 2))
     val cost = CPIntVar(0 to 100)(cp)
     val x = Array.fill(3)(CPIntVar(0 to 2)(cp))
+    cp.post(allDifferent(x),Strong)
     cp.post(new MinAssignment(x, w, cost))
     cost.min should be(7)
     cp.post(cost <= 7)
@@ -102,6 +112,7 @@ class TestMinAssignment extends FunSuite with ShouldMatchers {
                   Array(2, 3, 0))
     val cost = CPIntVar(0 to 100)(cp)
     val x = Array.fill(3)(CPIntVar(0 to 2)(cp))
+    cp.post(allDifferent(x),Strong)
     cp.post(new MinAssignment(x, w, cost))
     cost.min should be(0)
     cp.post(cost <= 0)
@@ -118,14 +129,74 @@ class TestMinAssignment extends FunSuite with ShouldMatchers {
                   Array(2, 3, 0, 3))
     val cost = CPIntVar(0 to 100)(cp)
     val x = Array.fill(3)(CPIntVar(0 to 3)(cp))
+    cp.post(allDifferent(x),Strong)
     cp.post(new MinAssignment(x, w, cost))
     cost.min should be(0)
     cp.post(cost <= 0)
     x(0).value should be(0)
     x(1).value should be(3)
     x(2).value should be(2)
-  }    
-  
-   
+  }
+
+
+  test("Test random min assignment") {
+
+    for (i <- 0 until 200) {
+      val cp = CPSolver()
+      cp.silent = true
+      val rand = new scala.util.Random(i)
+      val n = 5
+      val w = Array.tabulate(n,n){case(i,j) => rand.nextInt(20)}
+      val x = Array.fill(n)(CPIntVar(0 until n)(cp))
+
+
+
+      val cost = CPIntVar(0 to 300)(cp)
+
+      cp.add(allDifferent(x))
+      cp.add(sum(0 until n)(i => w(i)(x(i))) == cost)
+
+
+      cp.search {
+        binaryStatic(x)
+      }
+
+      cp.onSolution {
+        //"solution obj = "+cost
+      }
+
+      cp.minimize(cost)
+
+      val stat1 = cp.start()
+
+
+      cp.obj(cost).relax()
+
+      // println("----------------------")
+
+      val stat2 = cp.startSubjectTo() {
+        cp.add(new MinAssignment(x, w, cost),Weak)
+      }
+
+      cp.obj(cost).relax()
+
+      val stat3 = cp.startSubjectTo() {
+        cp.add(new MinAssignment(x, w, cost),Strong)
+      }
+
+
+
+      assert(stat1.nSols == stat2.nSols)
+      assert(stat1.nSols == stat3.nSols)
+
+      assert(stat2.nFails <= stat1.nFails)
+      assert(stat3.nFails <= stat2.nFails)
+
+
+    }
+
+  }
+
+
 
 }
