@@ -16,12 +16,10 @@
 package oscar.examples.cp.scheduling
 
 import oscar.cp._
-import oscar.cp.scheduling._
+import oscar.cp.scheduling.visual.{VisualGanttChart, VisualProfile}
 import oscar.visual._
+
 import scala.io.Source
-import oscar.cp.scheduling.visual.VisualGanttChart
-import oscar.cp.scheduling.search.SetTimesBranching
-import oscar.cp.scheduling.visual.VisualProfile
 
 object CumulativeJobShop extends CPModel with App {
 

@@ -15,8 +15,6 @@
 
 package oscar.algo.reversible
 
-import oscar.algo.reversible.{SparseSet, ReversibleContext, TrailEntry}
-
 object BitSetOp {
 
   def bitLength(size: Int): Int = (size + 63) >>> 6
@@ -38,7 +36,7 @@ object BitSetOp {
 }
 
 
-import BitSetOp._
+import oscar.algo.reversible.BitSetOp._
 
 /* Trailable entry to restore the value of the ith Long of the valid tuples */
 final class ReversibleSparseBitSetEntry(set: ReversibleSparseBitSet, numberOfValues: Int) extends TrailEntry {
@@ -71,8 +69,92 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
 
     values.foreach(v => setBit(words, v))
 
-  }
+    def &=(bs: BitSet) = {
+      var i = words.length
+      while (i > 0) {
+        i -= 1
+        words(i) = words(i) & bs.words(i)
+      }
+    }
 
+    def &~=(bs: BitSet) = {
+      var i = words.length
+      while (i > 0) {
+        i -= 1
+        words(i) = words(i) & ~bs.words(i)
+      }
+    }
+
+    def operation(fct: (Long) => Long) = {
+      var i = words.length
+      while (i > 0) {
+        i -= 1
+        words(i) = fct(words(i))
+      }
+    }
+
+    def operation(fct: (Long, Long) => Long, bs: BitSet) = {
+      var i = words.length
+      while (i > 0) {
+        i -= 1
+        words(i) = fct(words(i), bs.words(i))
+      }
+    }
+
+    def operation(fct: (Long, Long, Long) => Long, bs1: BitSet, bs2: BitSet) = {
+      var i = words.length
+      while (i > 0) {
+        i -= 1
+        words(i) = fct(words(i), bs1.words(i), bs2.words(i))
+      }
+    }
+
+    def operation(fct: (Long, Iterable[Long]) => Long, bs: Iterable[BitSet]) = {
+      var i = words.length
+      while (i > 0) {
+        i -= 1
+        words(i) = fct(words(i), bs.map(_.words(i)))
+      }
+    }
+
+    def isZero: Boolean = {
+      words.forall(_ == 0)
+    }
+
+
+    def |=(bs: BitSet) = {
+      var i = words.length
+      while (i > 0) {
+        i -= 1
+        words(i) = words(i) | bs.words(i)
+      }
+    }
+
+    val mask: Long = ~0L >>> (64 - (n % 64))
+
+    def unary_~ = {
+      var i = words.length
+      while (i > 0) {
+        i -= 1
+        words(i) = ~words(i)
+      }
+      words(words.length - 1) = words(words.length - 1) & mask
+    }
+
+    def indexOfFirstNonZero: Int = {
+      var i = 0
+      while (i < words.length && words(i) == 0) {
+        i += 1
+      }
+      (i + 1) * 64 - java.lang.Long.numberOfLeadingZeros(words(i)) - 1
+    }
+
+    override def toString: String = {
+      val size = n min 64
+      words.map(e => String.format(s"%${size}s", java.lang.Long.toBinaryString(e)).replace(' ', '0')).mkString(" ")
+    }
+
+  }
 
 
   private[this] var timeStamp = -1L
@@ -81,14 +163,14 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
   /* Compute number of Long in a bitset */
   private[this] var nWords = bitLength(n)
 
-  val wordIndicesToTrail = new oscar.algo.reversible.SparseSet(0,nWords,true)
+  val wordIndicesToTrail = new oscar.algo.reversible.SparseSet(0, nWords, true)
 
   private[this] val words: Array[Long] = Array.fill(nWords)(0L)
   private[this] val lastMagics = Array.fill(nWords)(-1L)
 
 
   private[this] var nonZeroIdx: Array[Int] = Array.tabulate(nWords)(i => i)
-  private[this] var nNonZero: Int =  nWords
+  private[this] var nNonZero: Int = nWords
 
 
   private[this] val tempMask = Array.fill(nWords)(0L)
@@ -98,7 +180,6 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
   initialValues.foreach(v => setBit(words, v))
 
 
-
   private[this] var innerTrailSize = 1000
   private[this] var nTrailEntries = 0
   private[this] var wordIndex = Array.ofDim[Int](innerTrailSize)
@@ -106,15 +187,14 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
 
 
   @inline private[this] def growInnerTrail(): Unit = {
-    val newWordIndex = new Array[Int](innerTrailSize*2)
-    val newWordValue = new Array[Long](innerTrailSize*2)
-    System.arraycopy(wordIndex, 0,newWordIndex, 0, innerTrailSize)
-    System.arraycopy(wordValue, 0,newWordValue, 0, innerTrailSize)
+    val newWordIndex = new Array[Int](innerTrailSize * 2)
+    val newWordValue = new Array[Long](innerTrailSize * 2)
+    System.arraycopy(wordIndex, 0, newWordIndex, 0, innerTrailSize)
+    System.arraycopy(wordValue, 0, newWordValue, 0, innerTrailSize)
     wordIndex = newWordIndex
     wordValue = newWordValue
     innerTrailSize *= 2
   }
-
 
 
   // Remove the zero words from sparse set
@@ -130,7 +210,7 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
 
   }
 
-  def isEmpty() : Boolean = {
+  def isEmpty(): Boolean = {
     nNonZero == 0
   }
 
@@ -138,7 +218,7 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     val size = n min 64
     def format(l: Long) = String.format(s"%${size}s", java.lang.Long.toBinaryString(l)).replace(' ', '0')
 
-    "NonZeroWords:"+nNonZero +" words:"+words.map(format(_)).mkString(" , ")
+    "NonZeroWords:" + nNonZero + " words:" + words.map(format(_)).mkString(" , ")
   }
 
 
@@ -155,7 +235,7 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
 
 
   private[this] def trail(): Unit = {
-    while (nTrailEntries+nNonZero > innerTrailSize) growInnerTrail()
+    while (nTrailEntries + nNonZero > innerTrailSize) growInnerTrail()
     var i: Int = nNonZero
     while (i > 0) {
       i -= 1
@@ -288,6 +368,57 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     }
 
     false
+  }
+
+  /**
+   * @param set
+   * @return the number of bits of the intersection of the bitSet and this
+   */
+  def intersectCount(set: BitSet): Int = {
+    var count = 0
+
+    var i: Int = nNonZero
+    while (i > 0) {
+      i -= 1
+      val offset = nonZeroIdx(i)
+      count += java.lang.Long.bitCount(words(offset) & set.words(offset))
+    }
+
+    count
+  }
+
+  /**
+   * @param set1 set2
+   * @return the number of bits of the intersection of the bitSet and this
+   */
+  def intersectCount(set1: BitSet, set2: BitSet): Int = {
+    var count = 0
+
+    var i: Int = nNonZero
+    while (i > 0) {
+      i -= 1
+      val offset = nonZeroIdx(i)
+      count += java.lang.Long.bitCount(words(offset) & set1.words(offset) & set2.words(offset))
+    }
+
+    count
+  }
+
+  /**
+   * @param set
+   * @return the number of bits of the intersection of the bitSet and this
+   */
+  def intersectCount(set: BitSet, hashMult: Array[Int], multiplicator: Array[Int]): Int = {
+    var count = 0
+
+    var i: Int = nNonZero
+    while (i > 0) {
+      i -= 1
+      val offset = nonZeroIdx(i)
+      count += java.lang.Long.bitCount(words(offset) & set.words(offset)) * multiplicator(hashMult(offset))
+    }
+
+    count
   }
 
 
