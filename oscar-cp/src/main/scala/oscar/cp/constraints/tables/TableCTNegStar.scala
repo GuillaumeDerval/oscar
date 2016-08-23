@@ -92,6 +92,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
     }
     buf.toArray
   }
+  private[this] val nonEmptyGroupIdSize = nonEmptyGroupId.length
 
   /* Computed information about the repartition by group into the BitSets*/
   private[this] val blockOffset = Array.fill(maxNbGroup)(0)
@@ -138,6 +139,8 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
   private[this] val variableValueAntiSupportsRM = Array.tabulate(arity)(i => new Array[dangerousTuples.BitSet](spans(i)))
   private[this] val variableValueAntiSupports = Array.tabulate(arity)(i => new Array[dangerousTuples.BitSet](spans(i)))
   private[this] val deltas: Array[DeltaIntVar] = new Array[DeltaIntVar](arity)
+
+  private[this] val sizeTemp: Array[Int] = Array.tabulate(arity)(i => x(i).size)
 
   /**
    * Method to compute the table without intersections
@@ -286,7 +289,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
    */
   private[this] def updateMultiplicator() = {
 
-    var j = nonEmptyGroupId.length
+    var j = nonEmptyGroupIdSize
     while (j > 0) {
       j -= 1
       val hash = nonEmptyGroupId(j)
@@ -296,13 +299,13 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
       while (i > 0) {
         i -= 1
         val valIndex = sparseIndex(i)
-        mult *= x(valIndex).size
+        mult *= sizeTemp(valIndex)
       }
       var varId = arity
       while (varId > 0) {
         varId -= 1
         if (starPositionByGroup(hash)(varId) == 1)
-          multiplicator(varId)(hash) = mult / x(varId).size
+          multiplicator(varId)(hash) = mult / sizeTemp(varId)
         else
           multiplicator(varId)(hash) = mult
       }
@@ -318,7 +321,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
    */
   override def propagate(): CPOutcome = {
 
-    var varIndex = x.length
+    var varIndex = arity
     while (varIndex > 0) {
       varIndex -= 1
       if (deltas(varIndex).size > 0) {
@@ -340,18 +343,32 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
    */
   @inline def basicPropagate(): CPOutcome = {
 
+    var varIndex = arity
+    while (varIndex > 0) {
+      varIndex -= 1
+      sizeTemp(varIndex) = x(varIndex).size
+    }
+
     updateMultiplicator()
-    var cardinalSizeInit = x.foldLeft(1L)((i, j) => i * j.size)
-    var varIndex = x.length
+
+    var cardinalSizeInit = 1L
+    varIndex = arity
+    while (varIndex > 0) {
+      varIndex -= 1
+      cardinalSizeInit *= sizeTemp(varIndex)
+    }
+
+    varIndex = arity
     while (varIndex > 0) {
       varIndex -= 1
 
       domainArraySize = x(varIndex).fillArray(domainArray)
-      var i = 0
+      var i = domainArraySize
       var value = 0
-      val cardinalSize = cardinalSizeInit / x(varIndex).size
+      val cardinalSize = cardinalSizeInit / sizeTemp(varIndex)
 
-      while (i < domainArraySize) {
+      while (i > 0) {
+        i -= 1
         value = domainArray(i)
         val count = dangerousTuples.intersectCount(variableValueAntiSupports(varIndex)(value), hashMult, multiplicator(varIndex))
         if (count == cardinalSize) {
@@ -364,12 +381,12 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
             if (dangerousTuples.isEmpty()) {
               return Success
             }
-            cardinalSizeInit /= (x(varIndex).size + 1)
-            cardinalSizeInit *= x(varIndex).size
+            cardinalSizeInit /= sizeTemp(varIndex)
+            sizeTemp(varIndex) -= 1
+            cardinalSizeInit *= sizeTemp(varIndex)
           }
           updateMultiplicator()
         }
-        i += 1
       }
     }
 
@@ -386,7 +403,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
     val dangerousTuplesBuffer = ArrayBuffer[Int] ()
     val dangerousByHash = Array.fill(maxNbGroup)(ArrayBuffer[Int] ())
 
-    var i = nonEmptyGroupId.length
+    var i = nonEmptyGroupIdSize
     while (i > 0) {
       i -= 1
       val hash = nonEmptyGroupId(i)
@@ -428,7 +445,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
     val varValueSupportsStar = Array.fill(x.length)(new ArrayBuffer[Int]())
 
     /* Collect the supports */
-    var j = nonEmptyGroupId.length
+    var j = nonEmptyGroupIdSize
     while (j > 0) {
       j -= 1
       val hash = nonEmptyGroupId(j)
