@@ -57,6 +57,8 @@ final class TableCTNeg(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
   private[this] val variableValueAntiSupports = Array.tabulate(arity)(i => new Array[dangerousTuples.BitSet](spans(i)))
   private[this] val deltas: Array[DeltaIntVar] = new Array[DeltaIntVar](arity)
 
+  private[this] val sizeTemp:Array[Int] = Array.tabulate(arity)(i => x(i).size)
+
   override def setup(l: CPPropagStrength): CPOutcome = {
 
     /* Success if table is empty initially or after initial filtering */
@@ -182,17 +184,25 @@ final class TableCTNeg(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
    */
     @inline def basicPropagate(): CPOutcome = {
 
-    var cardinalSizeInit = x.foldLeft(1L)((i, j) => i * j.size)
-    var varIndex = x.length
+    var cardinalSizeInit = 1L
+    var varIndex = arity
+    while (varIndex>0){
+      varIndex -= 1
+      sizeTemp(varIndex) = x(varIndex).size
+      cardinalSizeInit *= sizeTemp(varIndex)
+    }
+
+    varIndex = arity
     while (varIndex > 0) {
       varIndex -= 1
 
       domainArraySize = x(varIndex).fillArray(domainArray)
-      var i = 0
+      var i = domainArraySize
       var value = 0
-      val cardinalSize = cardinalSizeInit / x(varIndex).size
+      val cardinalSize = cardinalSizeInit / sizeTemp(varIndex)
 
-      while (i < domainArraySize) {
+      while (i > 0) {
+        i -= 1
         value = domainArray(i)
         val count = dangerousTuples.intersectCount(variableValueAntiSupports(varIndex)(value))
         if (count == cardinalSize) {
@@ -205,11 +215,11 @@ final class TableCTNeg(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
             if (dangerousTuples.isEmpty()) {
               return Success
             }
-            cardinalSizeInit /= (x(varIndex).size + 1)
-            cardinalSizeInit *= x(varIndex).size
+            cardinalSizeInit /= sizeTemp(varIndex)
+            sizeTemp(varIndex) -= 1
+            cardinalSizeInit *= sizeTemp(varIndex)
           }
         }
-        i += 1
       }
     }
 
