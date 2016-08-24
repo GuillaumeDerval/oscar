@@ -127,8 +127,16 @@ package object cp extends Constraints with Branchings with ElementBuilder with C
       }
     }
   }
+
+  //class LeSymbolic(val x: CPIntVarOps,val y : CPIntVarOps)
+
+  //implicit def LeSymbolicToConstraint(cons: LeSymbolic): Constraint =  new oscar.cp.constraints.Le(cons.x.x, cons.y.x)
+
+  //implicit def LeSymbolicToBoolean(cons: LeSymbolic): CPBoolVar =  cons.x.x.isLeEq(cons.y.x - 1)
+
+
   
-  implicit class CPIntVarOps(x: CPIntVar) {
+  implicit class CPIntVarOps(val x: CPIntVar) {
 
     /**
      * @return difference between second smallest and smallest value in the domain, Int.MaxInt if variable is bound
@@ -259,6 +267,8 @@ package object cp extends Constraints with Branchings with ElementBuilder with C
       b
     }
 
+
+
     /**
      * x must take a value from set
      */
@@ -300,22 +310,22 @@ package object cp extends Constraints with Branchings with ElementBuilder with C
     /**
      * x == v
      */
-    def ===(v: Int): Constraint = x.eq(v)
+    def ===(v: Int) = x.eq(v)
 
     /**
       * x == y
       */
-    def ===(y: CPIntVar): Constraint = x.eq(y)
+    def ===(y: CPIntVar) = x.eq(y)
 
     /**
       * x != v
       */
-    def !==(v: Int): Constraint = x.diff(v)
+    def !==(v: Int) = x.diff(v)
 
     /**
       * x == y
       */
-    def !==(y: CPIntVar): Constraint = x.diff(y)
+    def !==(y: CPIntVar) = x.diff(y)
 
 
 
@@ -356,15 +366,12 @@ package object cp extends Constraints with Branchings with ElementBuilder with C
     /**
      * b <=> x > y
      */
-    def ?> (y: Int) = x.isGrEq(y + 1)
+    def ?> (y: Int) = x.isGr(y)
 
     /**
      * b <=> x > y
      */
-    def ?> (y: CPIntVar) = {
-      val z = y + 1
-      x.isGrEq(z)
-    }
+    def ?> (y: CPIntVar) = x.isGr(y)
 
     /**
      * b <=> x >= y
@@ -379,12 +386,12 @@ package object cp extends Constraints with Branchings with ElementBuilder with C
     /**
      * b <=> x > y
      */
-    def ?< (y: Int) = x.isLeEq(y - 1)
+    def ?< (y: Int) = x.isLe(y)
 
     /**
      * b <=> x > y
      */
-    def ?< (y: CPIntVar) = x.isLeEq(y - 1)
+    def ?< (y: CPIntVar) = x.isLe(y)
   }
 
   implicit class CPBoolVarOps(val variable: CPBoolVar) extends AnyVal {
