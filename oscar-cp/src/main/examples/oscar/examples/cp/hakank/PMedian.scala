@@ -58,12 +58,12 @@ object PMedian extends CPModel with App  {
     //
     var numSols = 0
    minimize(z) 
-     add(sum(open) == p)
+     add(sum(open) === p)
       for(c <- CUSTOMERS) {
         for(w <- WAREHOUSES) {
          add(ship(c)(w) <= open(w))
         }
-       add(sum(for(w <- WAREHOUSES) yield ship(c)(w)) == 1)
+       add(sum(for(w <- WAREHOUSES) yield ship(c)(w)) === 1)
       }
     search{
       binary(ship.flatten ++ open, _.constraintDegree, _.max)

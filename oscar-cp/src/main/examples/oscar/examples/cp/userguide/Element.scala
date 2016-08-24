@@ -18,7 +18,7 @@ object Element extends CPModel with App {
   val z = CPIntVar(0 to 5)
 
 
-  add(x(y) == z) // index on array of integers
-  add(w(y) == z) // index on array of variables
-  add(matrix(y1)(y2) == 3)
+  add(x(y) === z) // index on array of integers
+  add(w(y) === z) // index on array of variables
+  add(matrix(y1)(y2) === 3)
 }

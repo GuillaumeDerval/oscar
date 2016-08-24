@@ -57,7 +57,7 @@ object CumulativeJobShop extends CPModel with App {
 
   // Consistency 
   for (t <- Activities) {
-    add(endsVar(t) == startsVar(t) + durationsVar(t))
+    add(endsVar(t) === startsVar(t) + durationsVar(t))
   }
   // Precedences
   for (t <- 1 to Activities.max if jobs(t - 1) == jobs(t)) {

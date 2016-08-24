@@ -31,7 +31,7 @@ class TestAllIntervals extends TestSuite {
     add(allDifferent(x), Strong)
 
     for (k <- 0 until n - 1) {
-      add(diffs(k) == (x(k + 1) - (x(k))).abs)
+      add(diffs(k) === (x(k + 1) - (x(k))).abs)
     }
 
     // symmetry breaking

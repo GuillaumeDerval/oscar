@@ -47,7 +47,7 @@ object Coins3 extends CPModel with App {
   // Check that all changes from 1 to 99 can be made.
   for (j <- 1 until 100) {
     val tmp = Array.fill(n)(CPIntVar(0 to 99))
-    add(weightedSum(variables, tmp) == j)
+    add(weightedSum(variables, tmp) === j)
     for (i <- 0 until n) {
       add(tmp(i) <= x(i))
     }

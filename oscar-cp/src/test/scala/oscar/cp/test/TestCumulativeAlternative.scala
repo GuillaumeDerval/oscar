@@ -30,7 +30,7 @@ class TestCumulativeAlternative extends FunSuite with ShouldMatchers  {
     val es = Array(CPIntVar(0 to 20))
     val dems = Array(CPIntVar(6))
     val rs = Array(CPIntVar(0))
-    add(ss(0) + ds(0) == es(0))
+    add(ss(0) + ds(0) === es(0))
     intercept[NoSolutionException] {
     	add(maxCumulativeResource(ss, ds, es, dems, rs, CPIntVar(3), 0), CPPropagStrength.Strong)
     }
@@ -43,7 +43,7 @@ class TestCumulativeAlternative extends FunSuite with ShouldMatchers  {
     val es = Array(CPIntVar(0 to 20))
     val dems = Array(CPIntVar(6))
     val rs = Array(CPIntVar(0))
-    add(ss(0) + ds(0) == es(0))
+    add(ss(0) + ds(0) === es(0))
     val capa = CPIntVar(0 to 6)
     add(maxCumulativeResource(ss, ds, es, dems, rs, capa, 0), CPPropagStrength.Strong)
     intercept[NoSolutionException] {
@@ -58,7 +58,7 @@ class TestCumulativeAlternative extends FunSuite with ShouldMatchers  {
     val es = Array(CPIntVar(0 to 20))
     val dems = Array(CPIntVar(6))
     val rs = Array(CPIntVar(0 to 1))
-    add(ss(0) + ds(0) == es(0))
+    add(ss(0) + ds(0) === es(0))
     val capa = CPIntVar(0 to 6)
     add(maxCumulativeResource(ss, ds, es, dems, rs, capa, 0), CPPropagStrength.Strong)
     add(capa < 6)

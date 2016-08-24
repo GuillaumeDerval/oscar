@@ -40,7 +40,7 @@ class TestQueens extends TestSuite {
       search {
         queens.find(!_.isBound) match {
           case None    => noAlternative
-          case Some(x) => branchAll(1 to n)(v => add(x == v))
+          case Some(x) => branchAll(1 to n)(v => add(x === v))
         }
       }
       val stat = cp.start()

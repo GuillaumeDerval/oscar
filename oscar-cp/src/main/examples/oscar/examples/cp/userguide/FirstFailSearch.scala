@@ -7,8 +7,8 @@ object FirstFailSearch extends CPModel with App {
 
   val X = Array.fill(10)(CPIntVar(0 to 10))
 
-  add(X(8)+X(9) == 3)
-  add(sum(X) == 9) // sum must be 3
+  add(X(8)+X(9) === 3)
+  add(sum(X) === 9) // sum must be 3
   add(allDifferent(X)) // must all be different
 
   onSolution {
@@ -21,7 +21,7 @@ object FirstFailSearch extends CPModel with App {
       case None => noAlternative // no more children
       case Some(x) => {
         val v = x.min
-        branch(add(x == v))(add(x != v))
+        branch(add(x === v))(add(x !== v))
       }
     }
   }

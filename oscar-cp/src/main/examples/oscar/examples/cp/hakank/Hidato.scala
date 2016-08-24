@@ -107,7 +107,7 @@ object Hidato extends CPModel with App  {
       for(i <- 0 until n) {
         for(j <- 0 until n) {
           if (problem(i)(j) > 0) {
-           add(x(i*n+j) == problem(i)(j))
+           add(x(i*n+j) === problem(i)(j))
           }
         }
       }
@@ -128,10 +128,10 @@ object Hidato extends CPModel with App  {
        add(a.abs+b.abs > 0)
         // find the indices of this k
         // x(i)(j) #= k
-       add(x(ix1) == k, Strong)
+       add(x(ix1) === k, Strong)
         // and then find where to put the next number (k+1)
         // x(i+a)(j+b) #= k+1
-       add(x(ix2) == k+1, Strong)
+       add(x(ix2) === k+1, Strong)
       }
     search{
       binaryStatic(x)

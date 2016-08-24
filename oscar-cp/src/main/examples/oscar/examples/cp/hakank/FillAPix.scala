@@ -90,7 +90,7 @@ object FillAPix extends CPModel with App  {
                              b <- tmp 
                              if ( (i+a >= 0) && (j+b >=  0) &&
                                   (i+a < n)  && (j+b < n)) 
-                               } yield pict(i+a)(j+b) ) == puzzle(i)(j))
+                               } yield pict(i+a)(j+b) ) === puzzle(i)(j))
       }
     search{
       binaryFirstFail(pict.flatten.toSeq)

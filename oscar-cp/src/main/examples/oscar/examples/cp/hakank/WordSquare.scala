@@ -72,7 +72,7 @@ object WordSquare extends CPModel with App  {
       // now find the connections
       for{i <- WORDLEN
           j <- WORDLEN} {
-       add(A(E(i))(CPIntVar(j)) == A(E(j))(CPIntVar(i)))
+       add(A(E(i))(CPIntVar(j)) === A(E(j))(CPIntVar(i)))
       }
     search{
       binaryFirstFail(E)

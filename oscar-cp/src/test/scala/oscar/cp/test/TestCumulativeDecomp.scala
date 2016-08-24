@@ -16,7 +16,7 @@ class TestCumulativeDecomp extends FunSuite with ShouldMatchers {
     val ends = Array.tabulate(nTasks)(t => CPIntVar(durations(t).min to horizon))
     val demands = Array.tabulate(nTasks)(t => CPIntVar(demandsData(t)))
     val resources = Array.fill(nTasks)(CPIntVar(0))
-    Tasks.foreach(t => this.post(ends(t) == starts(t) + durations(t)))
+    Tasks.foreach(t => this.post(ends(t) === starts(t) + durations(t)))
   }
 
   private def cumulative(cp: CPSched, capacity: Int): CumulativeDecomp = {

@@ -59,7 +59,7 @@ object SetPartition extends CPModel with App {
     j <- SRANGE if i != j
   ) {
     add(
-      sum(for { k <- NRANGE } yield a(i)(k) * a(j)(k)) == 0
+      sum(for { k <- NRANGE } yield a(i)(k) * a(j)(k)) === 0
     )
   }
   // ensure that all integers is in
@@ -70,31 +70,31 @@ object SetPartition extends CPModel with App {
         i <- SRANGE
         j <- NRANGE
       } yield a(i)(j)
-    ) == n
+    ) === n
   )
   for (i <- SRANGE; j <- SRANGE if i < j) {
     // same cardinality
     add(
       sum(for { k <- NRANGE } yield a(i)(k))
-        ==
+        ===
         sum(for { k <- NRANGE } yield a(j)(k))
     )
     // same sum
     add(
       sum(for { k <- NRANGE } yield a(i)(k) * k)
-        ==
+        ===
         sum(for { k <- NRANGE } yield a(j)(k) * k)
     )
     // same sum squared
     add(
       sum(for { k <- NRANGE } yield a(i)(k) * k * a(i)(k) * k)
-        ==
+        ===
         sum(for { k <- NRANGE } yield a(j)(k) * k * a(j)(k) * k)
     )
   }
   // symmetry breaking for num_sets == 2
   if (num_sets == 2) {
-    add(a(0)(0) == 1)
+    add(a(0)(0) === 1)
   }
   search {
     binaryStatic(a.flatten.toSeq)
