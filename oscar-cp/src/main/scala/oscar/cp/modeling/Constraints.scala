@@ -1397,7 +1397,21 @@ trait Constraints {
    */
   def unaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], transitionTimes: Array[Array[Int]]) = {
     new DisjunctiveWithTransitionTimes(starts,durations,ends,transitionTimes)
-  }  
+  }
+
+  /**
+    * Unary Resource constraint (also called disjunctive resource): at any time, no two tasks can overlap in time
+    *
+    * @param starts the variables representing the start time of the tasks
+    * @param durations the variables representing the duration of the tasks
+    * @param ends the variables representing the completion time of the tasks, it is your responsibility to link starts, durations and ends such that start(i) + durations(i) = ends(i)
+    * @param familyMatrix matrix of the transition times between the different families
+    * @param families The family associated to each activity
+    * @return a constraint ensuring activities don't overlap in time and that consecutive activities are separated by their respective transition time
+    */
+  def unaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], familyMatrix: Array[Array[Int]], families: Array[Int]) = {
+    new DisjunctiveWithTransitionTimesAndFamilies(starts, durations, ends, familyMatrix, families)
+  }
 
   /**
    * State Resource constraint: at any time, no two tasks needing different states can overlap in time
