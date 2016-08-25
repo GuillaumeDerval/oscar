@@ -27,26 +27,26 @@ class SubCircuitSuite extends TestSuite {
   test("no circuit") {
     val (cp, succs) = testData(10)
     for (i <- 0 until 10) {
-      cp.add(succs(i) == i)
+      cp.add(succs(i) === i)
     }
     assert(!cp.isFailed)
   }
 
   test("circuit") {
     val (cp, succs) = testData(5)
-    cp.add(succs(0) == 1)
-    cp.add(succs(1) == 2)
-    cp.add(succs(2) == 3)
-    cp.add(succs(3) == 4)
-    cp.add(succs(4) == 0)
+    cp.add(succs(0) === 1)
+    cp.add(succs(1) === 2)
+    cp.add(succs(2) === 3)
+    cp.add(succs(3) === 4)
+    cp.add(succs(4) === 0)
     assert(!cp.isFailed)
   }
 
   test("subcircuit 1") {
     val (cp, succs) = testData(5)
-    cp.add(succs(0) == 1)
-    cp.add(succs(1) == 2)
-    cp.add(succs(2) == 0)
+    cp.add(succs(0) === 1)
+    cp.add(succs(1) === 2)
+    cp.add(succs(2) === 0)
     assert(!cp.isFailed)
     assert(succs(3).value == 3)
     assert(succs(4).value == 4)
@@ -54,19 +54,19 @@ class SubCircuitSuite extends TestSuite {
 
   test("subcircuit 2") {
     val (cp, succs) = testData(5)
-    cp.add(succs(3) == 3)
-    cp.add(succs(0) == 1)
-    cp.add(succs(1) == 2)
-    cp.add(succs(2) == 0)
+    cp.add(succs(3) === 3)
+    cp.add(succs(0) === 1)
+    cp.add(succs(1) === 2)
+    cp.add(succs(2) === 0)
     assert(!cp.isFailed)
     assert(succs(4).value == 4)
   }
 
   test("only one subtour") {
     val (cp, succs) = testData(5)
-    cp.add(succs(0) == 1)
-    cp.add(succs(1) == 2)
-    cp.add(succs(3) == 4)
+    cp.add(succs(0) === 1)
+    cp.add(succs(1) === 2)
+    cp.add(succs(3) === 4)
     assert(!cp.isFailed)
     assert(succs(4).value == 0)
     assert(succs(2).value == 3)
@@ -197,8 +197,8 @@ class SubCircuitSuite extends TestSuite {
 
   test("subcircuit 5") {
     val (cp, succs) = testData(4)
-    cp.add(succs(0) == 1)
-    cp.post(succs(1) == 1)
+    cp.add(succs(0) === 1)
+    cp.post(succs(1) === 1)
     assert(cp.isFailed)
   }
 

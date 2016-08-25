@@ -73,7 +73,7 @@ object KillerSudoku extends CPModel with App  {
            res: Int) {
     val len = (cc.length / 2).toInt
     // sum the numbers
-   add(sum(for{i <- 0 until len} yield x(cc(i*2)-1)(cc(i*2+1)-1)) == res)
+   add(sum(for{i <- 0 until len} yield x(cc(i*2)-1)(cc(i*2+1)-1)) === res)
   }
     //
     // data

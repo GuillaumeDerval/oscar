@@ -51,7 +51,7 @@ object CuriousSetOfIntegers extends CPModel with App {
   for (i <- 0 until n - 1) {
     for (j <- i + 1 until n) {
       val p = CPIntVar(0 to max_val)
-      add((p * p - 1) == x(i) * x(j))
+      add((p * p - 1) === x(i) * x(j))
     }
   }
   // Symmetry breaking
@@ -60,9 +60,9 @@ object CuriousSetOfIntegers extends CPModel with App {
   // The given numbers are {1,3,8,120},
   // Which is the fifth number?
   add(
-    ((x(0) <<= 1) && x(1) === 1 && x(2) === 3 && x(3) === 8 && x(4) === 120)
+    ((x(0) ?< 1) && (x(1) ?=== 1) && (x(2) ?=== 3) && (x(3) ?=== 8) && (x(4) ?=== 120))
       ||
-      (x(0) === 1 && x(1) === 3 && x(2) === 8 && x(3) === 120 && (x(4) >>= 120))
+      ((x(0) ?=== 1) && (x(1) ?=== 3) && (x(2) ?=== 8) && (x(3) ?=== 120) && (x(4) ?> 120))
   )
   search {
     binaryStatic(x)

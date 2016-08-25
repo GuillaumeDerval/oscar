@@ -58,7 +58,7 @@ object Assignment extends CPModel with App {
   //
   var numSols = 0
   // Exacly one assignment per row (task),
-  ROWS.foreach(i => add(sum(x.row(i)) == 1))
+  ROWS.foreach(i => add(sum(x.row(i)) === 1))
   // At most one assignments per column (worker)
   COLS.foreach(j => add(sum(x.col(j)) <= 1))
   minimize(total_cost) search { binaryMaxDegree(x.flatten.toSeq) }

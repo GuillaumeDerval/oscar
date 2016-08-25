@@ -248,7 +248,8 @@ package object cp extends Constraints with Branchings with ElementBuilder with C
 
     /**
      * Reified constraint
-     * @param y a variable
+      *
+      * @param y a variable
      * @return a boolean variable b in the same store linked to x by the relation x == y <=> b == true
      */
     def isEq(y: CPIntVar): CPBoolVar = {
@@ -297,67 +298,26 @@ package object cp extends Constraints with Branchings with ElementBuilder with C
     def >=(y: Int) = new oscar.cp.constraints.GrEq(x, y)
 
     /**
-     * b <=> x == v
+     * x == v
      */
-    def ===(v: Int) = x.isEq(v)
+    def ===(v: Int): Constraint = x.eq(v)
 
     /**
-     * b <=> x == y
-     */
-    def ===(y: CPIntVar) = x.isEq(y)
+      * x == y
+      */
+    def ===(y: CPIntVar): Constraint = x.eq(y)
 
     /**
-     * b <=> x!= y
-     */
-    def !==(y: CPIntVar) = x.isDiff(y)
+      * x != v
+      */
+    def !==(v: Int): Constraint = x.diff(v)
 
     /**
-     * b <=> x!= y
-     */
-    def !==(y: Int) = x.isDiff(y)
+      * x == y
+      */
+    def !==(y: CPIntVar): Constraint = x.diff(y)
 
-    /**
-     * b <=> x >= y
-     */
-    def >==(y: Int) = x.isGrEq(y)
 
-    /**
-     * b <=> x >= y
-     */
-    def >==(y: CPIntVar) = x.isGrEq(y)
-
-    /**
-     * b <=> x > y
-     */
-    def >>=(y: Int) = x.isGrEq(y + 1)
-
-    /**
-     * b <=> x > y
-     */
-    def >>=(y: CPIntVar) = {
-      val z = y + 1
-      x.isGrEq(z)
-    }
-
-    /**
-     * b <=> x >= y
-     */
-    def <==(y: Int) = x.isLeEq(y)
-
-    /**
-     * b <=> x >= y
-     */
-    def <==(y: CPIntVar) = y >== x
-
-    /**
-     * b <=> x > y
-     */
-    def <<=(y: Int) = x <== (y - 1)
-
-    /**
-     * b <=> x > y
-     */
-    def <<=(y: CPIntVar) = x <== (y - 1)
 
     def %(y: Int) = ModuloLHS(x, y)
     
@@ -366,22 +326,22 @@ package object cp extends Constraints with Branchings with ElementBuilder with C
     /**
      * b <=> x == v
      */
-    def ?== (v: Int) = x.isEq(v)
+    def ?=== (v: Int) = x.isEq(v)
 
     /**
      * b <=> x == y
      */
-    def ?== (y: CPIntVar) = x.isEq(y)
+    def ?=== (y: CPIntVar) = x.isEq(y)
 
     /**
      * b <=> x!= y
      */
-    def ?!= (y: CPIntVar) = x.isDiff(y)
+    def ?!== (y: CPIntVar) = x.isDiff(y)
 
     /**
      * b <=> x!= y
      */
-    def ?!= (y: Int) = x.isDiff(y)
+    def ?!== (y: Int) = x.isDiff(y)
 
     /**
      * b <=> x >= y
@@ -414,17 +374,17 @@ package object cp extends Constraints with Branchings with ElementBuilder with C
     /**
      * b <=> x >= y
      */
-    def ?<= (y: CPIntVar) = y >== x
+    def ?<= (y: CPIntVar) = x.isLeEq(y)
 
     /**
      * b <=> x > y
      */
-    def ?< (y: Int) = x <== (y - 1)
+    def ?< (y: Int) = x.isLeEq(y - 1)
 
     /**
      * b <=> x > y
      */
-    def ?< (y: CPIntVar) = x <== (y - 1)
+    def ?< (y: CPIntVar) = x.isLeEq(y - 1)
   }
 
   implicit class CPBoolVarOps(val variable: CPBoolVar) extends AnyVal {

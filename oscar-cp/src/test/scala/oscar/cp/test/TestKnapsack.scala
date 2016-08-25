@@ -42,7 +42,7 @@ class TestKnapsack extends TestSuite {
       if (allBounds(X)) noAlternative
       else {
         val (x, i) = X.zipWithIndex.filter { case (x, i) => !x.isBound }.maxBy { case (x, i) => weight(i) }
-        branch(post(x == 1))(post(x == 0))
+        branch(post(x === 1))(post(x === 0))
       }
     }
     onSolution { obj = P.value }
@@ -70,7 +70,7 @@ class TestKnapsack extends TestSuite {
     val P = CPIntVar(155 to 170)(cp)
     val W = CPIntVar(0 to 40)(cp)
     cp.add(new Knapsack(X, p, w, P, W))
-    cp.add(X(3) == 0)
+    cp.add(X(3) === 0)
     X(0).value should be(0)
     X(1).value should be(1)
     X(2).value should be(0)
@@ -90,7 +90,7 @@ class TestKnapsack extends TestSuite {
     val X = Array.fill(w.size)(CPBoolVar()(cp))
     val P = CPIntVar(85 to 170)(cp)
     val W = CPIntVar(0 to 40)(cp)
-    cp.add(X(1) == 0)
+    cp.add(X(1) === 0)
     cp.add(new Knapsack(X, p, w, P, W))
     X(0).value should be(1)
     X(1).value should be(0)

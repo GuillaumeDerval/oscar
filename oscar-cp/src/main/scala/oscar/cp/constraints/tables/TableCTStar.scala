@@ -35,7 +35,7 @@ import scala.collection.mutable.ArrayBuffer
 final class TableCTStar(X: Array[CPIntVar], table: Array[Array[Int]], star: Int = -1) extends Constraint(X(0).store, "TableCTStar") {
   assert(X.forall(x => !x.hasValue(star)), "star value used (" + star + ") is part of the domain of at least one of the variables")
 
-  /* After offset star value */
+  /* Set default star value */
   private[this] val _star = -1
 
   /* Setting idempotency & lower priority for propagate() */
@@ -70,6 +70,10 @@ final class TableCTStar(X: Array[CPIntVar], table: Array[Array[Int]], star: Int 
 
 
   override def setup(l: CPPropagStrength): CPOutcome = {
+
+    /* Failure if table is empty initially or after initial filtering */
+    if (nbTuples == 0)
+      return Failure
 
     /* Retrieve the current valid tuples */
     val valids = collectValidTuples()

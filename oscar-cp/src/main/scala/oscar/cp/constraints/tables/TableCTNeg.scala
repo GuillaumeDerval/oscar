@@ -16,11 +16,11 @@
 package oscar.cp.constraints.tables
 
 
-import oscar.algo.reversible.{ReversibleInt, ReversibleSparseBitSet}
+import oscar.algo.reversible.ReversibleSparseBitSet
 import oscar.cp.core.CPOutcome._
+import oscar.cp.core.{CPStore, Constraint, _}
 import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset}
-import oscar.cp.core.{CPOutcome, CPPropagStrength, CPStore, Constraint}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -57,16 +57,20 @@ final class TableCTNeg(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
   private[this] val variableValueAntiSupports = Array.tabulate(arity)(i => new Array[dangerousTuples.BitSet](spans(i)))
   private[this] val deltas: Array[DeltaIntVar] = new Array[DeltaIntVar](arity)
 
-  private[this] val unBoundVars = Array.tabulate(arity)(i => i)
-  private[this] val unBoundVarsSize = new ReversibleInt(s, arity)
+  private[this] val sizeTemp:Array[Int] = Array.tabulate(arity)(i => x(i).size)
 
   override def setup(l: CPPropagStrength): CPOutcome = {
+
+    /* Success if table is empty initially or after initial filtering */
+    if (nbTuples == 0)
+      return Success
 
     /* Retrieve the current dangerous tuples */
     val dangerous = collectDangerousTuples()
 
-    if (dangerous.isEmpty)
-      return Failure
+    if (dangerous.isEmpty) {
+      return Success
+    }
 
     /* Remove non dangerous tuples */
     dangerousTuples.collect(new dangerousTuples.BitSet(dangerous))
@@ -83,7 +87,7 @@ final class TableCTNeg(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
     }
 
     /* Propagate a first time */
-    initPropagate()
+    basicPropagate()
   }
 
   private[this] def showTable(): Unit = {
@@ -103,7 +107,6 @@ final class TableCTNeg(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
 
     val intVar = x(varIndex)
     val varSize = intVar.size
-    var changed = false
 
     dangerousTuples.clearCollected()
 
@@ -113,7 +116,7 @@ final class TableCTNeg(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
 
       /* The variable is assigned */
       dangerousTuples.collect(variableValueAntiSupports(varIndex)(intVar.min))
-      changed = dangerousTuples.intersectCollected()
+      dangerousTuples.intersectCollected()
 
     } else {
 
@@ -128,7 +131,7 @@ final class TableCTNeg(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
           i += 1
         }
         /* Remove from the anti-supports all the collected tuples, no longer dangerous */
-        changed = dangerousTuples.removeCollected()
+        dangerousTuples.removeCollected()
 
       } else {
 
@@ -140,7 +143,7 @@ final class TableCTNeg(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
           i += 1
         }
         /* Intersect the set of dangrous tuples with the dangerous tuples collected */
-        changed = dangerousTuples.intersectCollected()
+        dangerousTuples.intersectCollected()
 
       }
     }
@@ -161,105 +164,64 @@ final class TableCTNeg(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
    */
   override def propagate(): CPOutcome = {
 
-    var nChanged = 0
-    var changedVarIdx = 0
-    var unBoundVarsSize_ = unBoundVarsSize.value
-    var j = unBoundVarsSize.value
-
-    while (j > 0) {
-      j -= 1
-      val varIndex = unBoundVars(j)
-
+    var varIndex = x.length
+    while (varIndex > 0) {
+      varIndex -= 1
       if (deltas(varIndex).size > 0) {
-        nChanged += 1
-        changedVarIdx = varIndex
         if (updateDelta(varIndex, deltas(varIndex)) == Success)
           return Success
       }
     }
 
-    val cardinalSizeInit = unBoundVars.foldLeft(1)((i, j) => i * x(j).size)
-
-    j = unBoundVarsSize_
-    while (j > 0) {
-      j -= 1
-      val varIndex = unBoundVars(j)
-
-      /* No need to check a variable if it was the only one modified */
-      if ((nChanged > 1 || changedVarIdx != varIndex) && !x(varIndex).isBound) {
-        domainArraySize = x(varIndex).fillArray(domainArray)
-        var i = 0
-        var value = 0
-        val cardinalSize = cardinalSizeInit / x(varIndex).size
-
-        while (i < domainArraySize) {
-          value = domainArray(i)
-          if (dangerousTuples.intersectCount(variableValueAntiSupports(varIndex)(value)) == cardinalSize) {
-            if (x(varIndex).removeValue(value) == Failure) {
-              return Failure
-            } else {
-              dangerousTuples.clearCollected()
-              dangerousTuples.collect(variableValueAntiSupports(varIndex)(value))
-              dangerousTuples.removeCollected()
-            }
-          }
-          i += 1
-        }
-      }
-      if (x(varIndex).isBound) {
-        unBoundVarsSize_ -= 1
-        unBoundVars(j) = unBoundVars(unBoundVarsSize_)
-        unBoundVars(unBoundVarsSize_) = varIndex
-      }
-    }
-    unBoundVarsSize.value = unBoundVarsSize_
-
-    Suspend
+    basicPropagate()
   }
 
   /**
-   * Initial propagation
+   * Heart of the propagation step
+   * Loop on the variable-values until no changes
+   * Remove the pair if the number of tuple as reach the threshold
    * @return the outcome i.e. Failure or Suspend
    */
-  @inline def initPropagate(): CPOutcome = {
+    @inline def basicPropagate(): CPOutcome = {
 
-    var unBoundVarsSize_ = unBoundVarsSize.value
-    var j = unBoundVarsSize.value
+    var cardinalSizeInit = 1L
+    var varIndex = arity
+    while (varIndex>0){
+      varIndex -= 1
+      sizeTemp(varIndex) = x(varIndex).size
+      cardinalSizeInit *= sizeTemp(varIndex)
+    }
 
-    val cardinalSizeInit = unBoundVars.foldLeft(1)((i, j) => i * x(j).size)
+    varIndex = arity
+    while (varIndex > 0) {
+      varIndex -= 1
 
-    j = unBoundVarsSize_
-    while (j > 0) {
-      j -= 1
-      val varIndex = unBoundVars(j)
+      domainArraySize = x(varIndex).fillArray(domainArray)
+      var i = domainArraySize
+      var value = 0
+      val cardinalSize = cardinalSizeInit / sizeTemp(varIndex)
 
-      if (!x(varIndex).isBound) {
-        domainArraySize = x(varIndex).fillArray(domainArray)
-        var i = 0
-        var value = 0
-        val cardinalSize = cardinalSizeInit / x(varIndex).size
-
-        while (i < domainArraySize) {
-          value = domainArray(i)
-          if (dangerousTuples.intersectCount(variableValueAntiSupports(varIndex)(value)) == cardinalSize) {
-            if (x(varIndex).removeValue(value) == Failure) {
-              return Failure
-            } else {
-              dangerousTuples.clearCollected()
-              dangerousTuples.collect(variableValueAntiSupports(varIndex)(value))
-              dangerousTuples.removeCollected()
+      while (i > 0) {
+        i -= 1
+        value = domainArray(i)
+        val count = dangerousTuples.intersectCount(variableValueAntiSupports(varIndex)(value))
+        if (count == cardinalSize) {
+          if (x(varIndex).removeValue(value) == Failure) {
+            return Failure
+          } else {
+            dangerousTuples.clearCollected()
+            dangerousTuples.collect(variableValueAntiSupports(varIndex)(value))
+            dangerousTuples.removeCollected()
+            if (dangerousTuples.isEmpty()) {
+              return Success
             }
+            cardinalSizeInit /= sizeTemp(varIndex)
+            sizeTemp(varIndex) -= 1
+            cardinalSizeInit *= sizeTemp(varIndex)
           }
-          i += 1
         }
       }
-      if (x(varIndex).isBound) {
-        unBoundVarsSize_ -= 1
-        unBoundVars(j) = unBoundVars(unBoundVarsSize_)
-        unBoundVars(unBoundVarsSize_) = varIndex
-      }
     }
-    unBoundVarsSize.value = unBoundVarsSize_
 
     Suspend
   }

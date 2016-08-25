@@ -29,7 +29,7 @@ class TestObjective extends FunSuite with ShouldMatchers {
     cp.silent = true
     val x1 = CPIntVar(1 to 3)(cp)
     val x2 = CPIntVar(1 to 3)(cp)
-    cp.add(x1 + x2 == 4)
+    cp.add(x1 + x2 === 4)
 
     val obj1 = new CPObjectiveUnitMinimize(x1, "x1")
     obj1.tightenMode = TightenType.NoTighten

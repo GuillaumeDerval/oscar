@@ -15,9 +15,10 @@
  * ****************************************************************************
  */
 package oscar.examples.cp.hakank
+
 import oscar.cp._
-import scala.io.Source._
-import scala.math._
+
+
 /*
   Breaking news puzzle (Dell Logic Puzzles) in Oscar.
   Problem from  
@@ -61,7 +62,7 @@ object BreakingNews extends CPModel with App {
   def inverse(x: Array[CPIntVar], y: Array[CPIntVar]) {
     val len = x.length
     for (i <- 0 until len; j <- 0 until len) {
-      add((y(j) === i) == (x(i) === j))
+      add((y(j) ?=== i) === (x(i) ?=== j))
     }
   }
   // Convenient function which returns y (for presentation)
@@ -95,25 +96,25 @@ object BreakingNews extends CPModel with App {
   add(allDifferent(locations), Strong)
   add(allDifferent(events), Strong)
   // 1. The 30-pound baby wasn't born in South Amboy or New Hope.
-  add(baby != south_amboy)
-  add(baby != new_hope)
+  add(baby !== south_amboy)
+  add(baby !== new_hope)
   //  2. Jimmy didn't go to Port Charles.
-  add(port_charles != jimmy)
+  add(port_charles !== jimmy)
   //  3. The blimp launching and the skyscraper dedication were covered, 
   //     in some order, by Lois and the reporter who was sent to 
   //     Port Charles.
   add(
-    (blimp === lois && skyscraper === port_charles)
+    ((blimp ?=== lois) && (skyscraper ?=== port_charles))
       ||
-      (skyscraper === lois && blimp === port_charles)
+      ((skyscraper ?=== lois) && (blimp ?=== port_charles))
   )
   //  4. South Amboy was not the site of either the beached whale or the 
   //     skyscraper  dedication.
-  add(south_amboy != whale)
-  add(south_amboy != skyscraper)
+  add(south_amboy !== whale)
+  add(south_amboy !== skyscraper)
   //  5. Bayonne is either the place that Corey went or the place where 
   //     the whale was beached, or both.
-  add((bayonne === corey) + (bayonne === whale) >= 1)
+  add((bayonne ?=== corey) || (bayonne ?=== whale))
   search { binaryStatic(locations ++ events) }
   onSolution {
     println("Names    : " + names.mkString(" "))

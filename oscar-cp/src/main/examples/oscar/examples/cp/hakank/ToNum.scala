@@ -36,7 +36,7 @@ object ToNum extends CPModel with App  {
       val y = CPIntVar(0 to pow(n, base).toInt)
       var numSols = 0
     
-       add(y == toNum(x))
+       add(y === toNum(x))
         //add(y == 2143)
       search{
         binaryFirstFail(x)

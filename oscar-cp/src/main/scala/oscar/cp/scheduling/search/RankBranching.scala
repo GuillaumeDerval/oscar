@@ -48,7 +48,7 @@ class Ranker(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CP
     val cr = rankCons.rank.value
 
     selectMin(0 until starts.size)(i => rankVar(i).hasValue(cr))(i => f(i)) match {
-      case Some(i) => branch(rankCons.s.add(rankVar(i) == cr))(rankCons.s.add(rankVar(i) != cr))
+      case Some(i) => branch(rankCons.s.add(rankVar(i) === cr))(rankCons.s.add(rankVar(i).diff(cr)))
       case None => {
         throw new Error("shoudl not happen, alldiff should fail")
       }

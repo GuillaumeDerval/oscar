@@ -49,7 +49,7 @@ class TestMultiplication extends FunSuite with ShouldMatchers  {
 
     val x = CPIntVar(-1 to 0)(cp)
     val y = CPIntVar(0 to 1)(cp)
-    cp.post(x*x == y)
+    cp.post(x*x === y)
     	
     cp.isFailed should be(false)
 
@@ -60,7 +60,7 @@ class TestMultiplication extends FunSuite with ShouldMatchers  {
 
     val x = CPIntVar(-10 to -1)(cp)
     val y = CPIntVar(3 to 9)(cp)
-    cp.add(x*x == y)
+    cp.add(x*x === y)
     	
     cp.isFailed should be(false)
 
@@ -77,7 +77,7 @@ class TestMultiplication extends FunSuite with ShouldMatchers  {
     // with a one before (smaller one)
     val nb2 =  CPIntVar(100000)(cp) + digits(0)*10000 + digits(1)*1000 +  digits(2)*100 + digits(3)*10 + digits(4)
     var nbsol = 0
-    cp.add(nb1 == (nb2*3))
+    cp.add(nb1 === (nb2*3))
     search {
       binaryStatic(digits)
     } 

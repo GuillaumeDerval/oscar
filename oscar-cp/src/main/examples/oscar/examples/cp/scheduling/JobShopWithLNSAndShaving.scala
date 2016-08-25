@@ -98,7 +98,7 @@ object JobShopWithLNSAndShaving extends CPModel with App {
 
   // Consistency 
   for (t <- Activities) {
-    add(endVars(t) == startVars(t) + durationVars(t))
+    add(endVars(t) === startVars(t) + durationVars(t))
   }
   // Precedences
   for (t <- 1 to Activities.max if jobs(t - 1) == jobs(t)) {
@@ -133,7 +133,7 @@ object JobShopWithLNSAndShaving extends CPModel with App {
     val stats = startSubjectTo(failureLimit = maxFails) {
       for (a <- 0 until nActivities) {
         if (RandomGenerator.nextInt(100) > relaxProba) {
-          constraintBuffer += startVars(a) == bestSolutionStarts(a)
+          constraintBuffer += startVars(a) === bestSolutionStarts(a)
         }
       }
       add(constraintBuffer)

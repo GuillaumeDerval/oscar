@@ -50,7 +50,7 @@ object BusSchedule extends CPModel with App {
     add(x(i) + x(i + 1) >= demands(i))
   }
   // The demand "around the clock"
-  add(x(time_slots - 1) + x(0) - demands(time_slots - 1) == 0)
+  add(x(time_slots - 1) + x(0) - demands(time_slots - 1) === 0)
   search {
     binaryStatic(x)
   }

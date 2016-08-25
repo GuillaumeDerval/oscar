@@ -60,7 +60,7 @@ object PhotoProblem extends CPModel with App  {
       i <- 0 until len;
       j <- 0 until len
     ) {
-      add((y(j) === i) == (x(i) === j))
+      add((y(j) ?=== i) === (x(i) ?=== j))
     }
   }
   //
@@ -94,7 +94,7 @@ object PhotoProblem extends CPModel with App  {
       i <- 0 until n
       j <- 0 until n
       if preferences(i)(j) == 1
-    } yield ((positions(i) - positions(j)).abs === 1)
+    } yield ((positions(i) - positions(j)).abs ?=== 1)
   )
   //
   // constraints

@@ -87,10 +87,10 @@ object PandigitalNumbers extends CPModel with App  {
     var numSols = 0
   
      add(allDifferent(x))
-     add(num1 == toNum((for{i <- 0 until len1} yield x(i)), base))
-     add(num2 == toNum((for{i <- len1 until len1+len2} yield x(i)), base))
-     add(res  == toNum((for{i <- (len1+len2) until x_len} yield x(i)), base))
-     add(num1*num2 == res)
+     add(num1 === toNum((for{i <- 0 until len1} yield x(i)), base))
+     add(num2 === toNum((for{i <- len1 until len1+len2} yield x(i)), base))
+     add(res  === toNum((for{i <- (len1+len2) until x_len} yield x(i)), base))
+     add(num1*num2 === res)
       // no number must start with 0
      add(x(0) > 0)
      add(x(len1) > 0)

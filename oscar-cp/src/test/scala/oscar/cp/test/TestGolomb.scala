@@ -17,7 +17,7 @@ class TestGolomb extends TestSuite {
       cp.silent = true
       minimize(obj)
       // we break symmetries to put the marks increasing
-      add(marks(0) == 0)
+      add(marks(0) === 0)
       for (i <- 0 until n - 1) {
         add(marks(i) < marks(i + 1))
       }
