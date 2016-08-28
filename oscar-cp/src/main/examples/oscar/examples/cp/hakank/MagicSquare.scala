@@ -39,12 +39,12 @@ object MagicSquare extends CPModel with App  {
       add(allDifferent(x.flatten), Strong)
        // rows and columns
        for(i <- 0 until n) {
-        add(sum(x(i)) == total)
-        add(sum(x_t(i)) == total)
+        add(sum(x(i)) === total)
+        add(sum(x_t(i)) === total)
        }
        // diagonals
-      add(sum( for(i <- 0 until n) yield x(i)(i)) == total)
-      add(sum( for(i <- 0 until n) yield x(i)(n-i-1) ) == total)
+      add(sum(for(i <- 0 until n) yield x(i)(i)) === total)
+      add(sum(for(i <- 0 until n) yield x(i)(n-i-1)) === total)
        // symmetry breaking
       add(x(0)(0)   < x(0)(n-1))
       add(x(0)(n-1) < x(n-1)(0))

@@ -62,7 +62,7 @@ object Fancy extends CPModel with App  {
     //solveAll 
       // channeling between CPBoolVar and CPIntVar
       for(i <- 0 until k) {
-       add(x(i)==x2(i))
+       add(x(i) === x2(i))
       }
       // This is a straight translation from the LPL code
      add( (t==>r) || n )

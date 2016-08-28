@@ -182,7 +182,7 @@ final class TableCTNeg(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
    * Remove the pair if the number of tuple as reach the threshold
    * @return the outcome i.e. Failure or Suspend
    */
-  @inline def basicPropagate(): CPOutcome = {
+    @inline def basicPropagate(): CPOutcome = {
 
     var cardinalSizeInit = 1L
     var varIndex = arity

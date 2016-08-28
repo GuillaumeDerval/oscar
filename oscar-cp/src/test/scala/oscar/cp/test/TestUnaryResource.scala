@@ -27,7 +27,7 @@ class TestUnaryResource extends FunSuite with Matchers {
   def decomp(cp: CPSolver, starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar]): Unit = {
     val n = starts.length
     for (i <- 0 until n; j <- i + 1 until n) {
-      cp.add((ends(i) <== starts(j)) || (ends(j) <== starts(i)))
+      cp.add((ends(i) ?<= starts(j)) || (ends(j) ?<= starts(i)))
     }
   }
 
@@ -35,7 +35,7 @@ class TestUnaryResource extends FunSuite with Matchers {
   def decomp(cp: CPSolver, starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], resources: Array[CPIntVar], id: Int): Unit = {
     val n = starts.length
     for (i <- 0 until n; j <- i + 1 until n) {
-      cp.add((ends(i) <== starts(j)) || (ends(j) <== starts(i)) || (resources(i) !== id) || (resources(j) !== id))
+      cp.add((ends(i) ?<= starts(j)) || (ends(j) ?<= starts(i)) || (resources(i) ?!== id) || (resources(j) ?!== id))
     }
   }
 
@@ -111,7 +111,7 @@ class TestUnaryResource extends FunSuite with Matchers {
       val ends = Array.fill(4)(CPIntVar(0 to horizon))
       val durs = Array(CPIntVar(3), CPIntVar(1), CPIntVar(2), CPIntVar(2))
       for (i <- 0 until 4) {
-        add(starts(i) + durs(i) == ends(i))
+        add(starts(i) + durs(i) === ends(i))
       }
       add(ends(0) <= starts(1)) // 0 precedes act 1
       add(ends(2) <= starts(3)) // 2 precedes act 3
@@ -143,7 +143,7 @@ class TestUnaryResource extends FunSuite with Matchers {
       val ends = Array.fill(4)(CPIntVar(0 to horizon))
       val durs = Array(CPIntVar(3 to 4), CPIntVar(1), CPIntVar(2), CPIntVar(2))
       for (i <- 0 until 4) {
-        add(starts(i) + durs(i) == ends(i))
+        add(starts(i) + durs(i) === ends(i))
       }
       add(ends(0) <= starts(1)) // 0 precedes act 1
       add(ends(2) <= starts(3)) // 2 precedes act 3
@@ -177,7 +177,7 @@ class TestUnaryResource extends FunSuite with Matchers {
       val ends = Array.fill(4)(CPIntVar(0 to horizon))
       val durs = Array(CPIntVar(3 to 4), CPIntVar(2), CPIntVar(2), CPIntVar(1))
       for (i <- 0 until 4) {
-        add(starts(i) + durs(i) == ends(i))
+        add(starts(i) + durs(i) === ends(i))
       }
 
 
@@ -238,7 +238,7 @@ class TestUnaryResource extends FunSuite with Matchers {
         val makespan = maximum(ends)
 
         for (i <- 0 until nActivities) {
-          cp.add(starts(i) + durs(i) == ends(i))
+          cp.add(starts(i) + durs(i) === ends(i))
         }
         cp.add(unaryResource(starts, durs, ends),strength)
 
@@ -258,10 +258,10 @@ class TestUnaryResource extends FunSuite with Matchers {
         val makespan2 = maximum(ends2)
 
         for (i <- 0 until nActivities) {
-          cp2.add(starts2(i) + durs2(i) == ends2(i))
+          cp2.add(starts2(i) + durs2(i) === ends2(i))
           for (j <- 0 until nActivities) {
             if (i != j) {
-              cp2.add((ends2(i) <== starts2(j)) || (ends2(j) <== starts2(i)))
+              cp2.add((ends2(i) ?<= starts2(j)) || (ends2(j) ?<= starts2(i)))
             }
           }
         }
@@ -294,7 +294,7 @@ class TestUnaryResource extends FunSuite with Matchers {
         val makespan = maximum(ends)
 
         for (i <- 0 until nActivities) {
-          cp.add(starts(i) + durs(i) == ends(i))
+          cp.add(starts(i) + durs(i) === ends(i))
         }
         cp.add(unaryResource(starts, durs, ends),strength)
 
@@ -312,7 +312,7 @@ class TestUnaryResource extends FunSuite with Matchers {
         val makespan3 = maximum(ends3)
 
         for (i <- 0 until nActivities) {
-          cp3.add(starts3(i) + durs3(i) == ends3(i))
+          cp3.add(starts3(i) + durs3(i) === ends3(i))
         }
         cp3.add(unaryResource(starts3, durs3, ends3),strength)
 

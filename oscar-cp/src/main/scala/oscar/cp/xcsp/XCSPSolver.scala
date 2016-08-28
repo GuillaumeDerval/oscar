@@ -150,12 +150,12 @@ abstract class XCSPSolver {
    case "iff" => (booleanExpression(left) ==> booleanExpression(right)) & (booleanExpression(right) ==> booleanExpression(left)) 
   }
   case BooleanOperatorOnIntegers(name,left,right) => name match {
-   case "eq" => integerExpression(left) === integerExpression(right)
-   case "ne" => integerExpression(left) !== integerExpression(right)
-   case "ge" => integerExpression(left) >== integerExpression(right)
-   case "gt" => integerExpression(left) >>= integerExpression(right)
-   case "le" => integerExpression(left) <== integerExpression(right)
-   case "lt" => integerExpression(left) <<= integerExpression(right)
+   case "eq" => integerExpression(left) ?=== integerExpression(right)
+   case "ne" => integerExpression(left) ?!== integerExpression(right)
+   case "ge" => integerExpression(left) ?>= integerExpression(right)
+   case "gt" => integerExpression(left) ?> integerExpression(right)
+   case "le" => integerExpression(left) ?<= integerExpression(right)
+   case "lt" => integerExpression(left) ?< integerExpression(right)
   }
  }
  

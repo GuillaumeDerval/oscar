@@ -47,7 +47,7 @@ object QuadraticAssignment extends CPModel with App {
       case None => noAlternative
       case Some(y) => {
         val v = y.min
-        branch(post(y == v))(post(y != v))
+        branch(post(y === v))(post(y !== v))
       }
     }
   }

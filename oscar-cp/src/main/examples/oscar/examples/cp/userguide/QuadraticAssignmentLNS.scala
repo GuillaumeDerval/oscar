@@ -38,7 +38,7 @@ object QuadraticAssignmentLNS extends CPModel with App {
     // do a new run, not limiting number of solution and with 60 backtrack limit
     startSubjectTo(failureLimit = 1000) {
       // relax randomly 50% of the variables
-      add((0 until n).filter(i => random.nextInt(100) < 50).map(i => x(i) == bestSol(i)))
+      add((0 until n).filter(i => random.nextInt(100) < 50).map(i => x(i) === bestSol(i)))
     }
   }
 

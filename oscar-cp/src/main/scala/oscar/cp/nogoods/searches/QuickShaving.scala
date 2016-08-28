@@ -1,6 +1,7 @@
 package oscar.cp.nogoods.searches
 
 import oscar.cp.core.CPOutcome
+import oscar.cp._
 import oscar.algo.search.DFSearch
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.CPStore
@@ -22,11 +23,11 @@ object QuickShaving {
 
     // Apply first decision
     problem.pushState()
-    problem.post(boolean == 1)
+    problem.post(boolean === 1)
 
     if (problem.isFailed()) {
       problem.pop()
-      problem.post(boolean == 0)
+      problem.post(boolean === 0)
     } else {
       // Save domain state
       var i = 0
@@ -38,10 +39,10 @@ object QuickShaving {
       problem.pop()
       // Apply second decision
       problem.pushState()
-      problem.post(boolean == 0)
+      problem.post(boolean === 0)
       if (problem.isFailed()) {
         problem.pop()
-        problem.post(boolean == 1)
+        problem.post(boolean === 1)
       } else {
         var i = 0
         while (i < nVariables) {

@@ -50,7 +50,7 @@ class TestElementVar extends FunSuite with Matchers {
     z.min should be(1)
     z.max should be(4)
 
-    cp.add(y(0) != 3)
+    cp.add(y(0) !== 3)
     z.hasValue(3) should be(false)
 
     cp.add(z >= 2)
@@ -66,7 +66,7 @@ class TestElementVar extends FunSuite with Matchers {
 
     cp.add(elementVar(y, x, z), Strong)
 
-    cp.add(x != 1)
+    cp.add(x !== 1)
 
     z.hasValue(4) should be(false)
     z.size should be(3) // 1,3,5
@@ -81,7 +81,7 @@ class TestElementVar extends FunSuite with Matchers {
 
     cp.add(elementVar(y, x, z), Strong)
 
-    cp.add((y(0) !== 1) && (y(2) !== 1))
+    cp.add((y(0) ?!== 1) && (y(2) ?!== 1))
     z.min should be(3)
     z.max should be(5)
 
@@ -111,7 +111,7 @@ class TestElementVar extends FunSuite with Matchers {
 
     cp.add(elementVar(y, x, z), Strong)
 
-    cp.add(z == 2)
+    cp.add(z === 2)
 
     x.min should be(1)
     x.max should be(2)
@@ -149,13 +149,13 @@ class TestElementVar extends FunSuite with Matchers {
     }
     
     
-    cp.add(z(len - 1) == 0)
-    cp.add(x(4) == 1)
-    cp.add(x(0) == 4)
-    cp.add(x(1) == 5)
-    cp.add(x(3) == 2)
-    cp.add(x(5) == 3)
-    cp.add(x(2) == 0)
+    cp.add(z(len - 1) === 0)
+    cp.add(x(4) === 1)
+    cp.add(x(0) === 4)
+    cp.add(x(1) === 5)
+    cp.add(x(3) === 2)
+    cp.add(x(5) === 3)
+    cp.add(x(2) === 0)
     cp.isFailed() should be(false)
 
   }
@@ -173,7 +173,7 @@ class TestElementVar extends FunSuite with Matchers {
     x.min should be(0)
     x.max should be(1)
 
-    cp.add(z != 2)
+    cp.add(z !== 2)
 
     x.isBound should be(true)
     tab(1).min should be(2)
@@ -194,30 +194,30 @@ class TestElementVar extends FunSuite with Matchers {
     x.min should be(0)
     x.max should be(2)
 
-    cp.add(tab(0) != 0)
-    cp.add(tab(1) != 1)
-    cp.add(tab(2) != 2)
+    cp.add(tab(0) !== 0)
+    cp.add(tab(1) !== 1)
+    cp.add(tab(2) !== 2)
 
     x.min should be(0)
     x.max should be(2)
 
-    cp.add(tab(0) == 1)
-    cp.add(tab(2) != 1)
+    cp.add(tab(0) === 1)
+    cp.add(tab(2) !== 1)
 
     x.min should be(0)
     x.max should be(2)
 
-    cp.add(z != 1)
+    cp.add(z !== 1)
 
     x.min should be(1)
     x.max should be(2)
 
-    cp.add(z != 2)
+    cp.add(z !== 2)
 
     x.min should be(1)
     x.max should be(2)
 
-    cp.add(tab(1) != 0)
+    cp.add(tab(1) !== 0)
 
     x.isBound should be(true)
   }
@@ -235,14 +235,14 @@ class TestElementVar extends FunSuite with Matchers {
     x.min should be(0)
     x.max should be(2)
     
-    cp.add(x != 2)
+    cp.add(x !== 2)
     
     x.min should be(0)
     x.max should be(1)
     z.min should be(1)
     z.max should be(3)
     
-    cp.add(tab(2) != 3)
+    cp.add(tab(2) !== 3)
     
     x.min should be(0)
     x.max should be(1)
@@ -265,7 +265,7 @@ class TestElementVar extends FunSuite with Matchers {
     z.min should be(1)
     z.max should be(3)
     
-    cp.add(tab(0) != 1)
+    cp.add(tab(0) !== 1)
     
     x.min should be(0)
     x.max should be(1)
@@ -297,7 +297,7 @@ class TestElementVar extends FunSuite with Matchers {
     cp.add(elementVar(y, x, z), Weak)
 
     z.min should be(1)
-    cp.add(x != 0)
+    cp.add(x !== 0)
     z.min should be(2)
   }
 
@@ -327,7 +327,7 @@ class TestElementVar extends FunSuite with Matchers {
 
     cp.add(elementVar(y, x, z), Weak)
 
-    cp.add(z == 2)
+    cp.add(z === 2)
     x.min should be(0)
     x.max should be(2)
   }
@@ -340,7 +340,7 @@ class TestElementVar extends FunSuite with Matchers {
 
     cp.add(elementVar(y, x, z), Weak)
 
-    cp.add(z == 2)
+    cp.add(z === 2)
 
     x.min should be(1)
     x.max should be(2)

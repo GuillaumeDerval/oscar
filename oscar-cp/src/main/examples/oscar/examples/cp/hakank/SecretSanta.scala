@@ -70,11 +70,11 @@ object SecretSanta extends CPModel with App  {
       // Can't be one own's Secret Santa
       // (i.e. ensure that there are no fix-point in x)
       for(i <- 0 until n) {
-       add(x(i) != i)
+       add(x(i) !== i)
       }
       // No Secret Santa to a person in the same family
       for(i <- 0 until n) {
-       add(family(x(i)) != family(i))
+       add(family(x(i)) !== family(i))
       }
     search{
       binaryStatic(x)

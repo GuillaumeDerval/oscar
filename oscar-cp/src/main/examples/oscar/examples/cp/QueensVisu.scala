@@ -60,14 +60,14 @@ object QueensVisu extends CPModel with App {
         val parent = currNode
         val v = x.min
         branch {
-          post(x == v)
+          post(x === v)
           currNode += 1
           val doms = queens.map(_.toSet)
           tree.createBranch(parent, currNode, currNode.toString, "left") {
             updateVisu(doms)
           }
         } {
-          post(x != v)
+          post(x !== v)
           currNode += 1
           val doms = queens.map(_.toSet)
           tree.createBranch(parent, currNode, currNode.toString, "right") {

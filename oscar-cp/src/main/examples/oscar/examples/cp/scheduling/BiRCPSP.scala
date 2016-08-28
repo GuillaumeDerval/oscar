@@ -46,7 +46,7 @@ object BiRCPSP extends CPModel with App {
 
   // Consistency 
   for (t <- Tasks) {
-    add(endsVar(t) == startsVar(t) + durationsVar(t))
+    add(endsVar(t) === startsVar(t) + durationsVar(t))
   }
   
   // Precedences

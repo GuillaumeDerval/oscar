@@ -72,15 +72,15 @@ object CircuitTest extends CPModel with App {
     val z = Array.tabulate(len)(i => CPIntVar(0 to len - 1))
     add(allDifferent(x), Strong)
     add(allDifferent(z), Strong)
-    add(z(0) == x(0))
+    add(z(0) === x(0))
     // then put the orbit of x(0) in z(1..n-1)
     for (i <- 1 until len) {
-      add(x(z(i - 1)) == z(i), Strong)
+      add(x(z(i - 1)) === z(i), Strong)
     }
     // for(i <- lb until len-1) {
     //   add(z(i) != 0)
     // }
-    add(z(len - 1) == 0)
+    add(z(len - 1) === 0)
   } // end circuit_me
   /*
    * circuit_path(x, p)
@@ -92,9 +92,9 @@ object CircuitTest extends CPModel with App {
   def circuit_path(x: Array[CPIntVar], p: Array[CPIntVar]) = {
     val len = x.length
     add(allDifferent(p), Strong)
-    add(p(0) == 0) // path always starts with 1
+    add(p(0) === 0) // path always starts with 1
     for (i <- 1 until len) {
-      add(x(p(i - 1)) == p(i), Strong)
+      add(x(p(i - 1)) === p(i), Strong)
     }
   } // end circuit_path
   //

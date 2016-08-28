@@ -99,7 +99,7 @@ object Steel extends CPModel with App {
 
   add(binPacking(x, weight, l), Strong)
   for (s <- Slabs) {
-    def colPresent(c: Int) = isOr((for (o <- colorOrders(c)) yield x(o) === s)) //return a CPBoolVar telling whether color c is present is slab s
+    def colPresent(c: Int) = isOr((for (o <- colorOrders(c)) yield x(o) ?=== s)) //return a CPBoolVar telling whether color c is present is slab s
     add(sum(Cols)(c => colPresent(c)) <= 2) //at most two colors present in each slab
   }
 
@@ -109,7 +109,7 @@ object Steel extends CPModel with App {
       case Some(y) => {
         // dynamic symmetry breaking
         val maxUsed = x.maxBoundOrElse(-1)
-        branchAll((0 to maxUsed + 1).filter(y.hasValue(_)))(v => post(y == v))
+        branchAll((0 to maxUsed + 1).filter(y.hasValue(_)))(v => post(y === v))
       }
     }
 
@@ -120,7 +120,7 @@ object Steel extends CPModel with App {
   for (r <- 1 to 100) {
     startSubjectTo(failureLimit = 200) {
       for (s <- Slabs; if rnd.nextInt(100) > 70) {
-        post(x(s) == xsol(s))
+        post(x(s) === xsol(s))
       }
     }
   }

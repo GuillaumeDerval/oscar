@@ -61,7 +61,7 @@ object YoungTableaux extends CPModel with App  {
       for(i <- 1 until n+1) {
        add(gcc(x_flatten, i to i, 1, 1), Strong) 
       }
-     add(x(0)(0) == 1)
+     add(x(0)(0) === 1)
       // rows
       for(i <- RANGE0;
           j <- RANGE1) {
@@ -74,9 +74,9 @@ object YoungTableaux extends CPModel with App  {
       }
       // calculate the structure (the partition)
       for(i <- RANGE0) {
-       add(p(i) == sum(for(j <- RANGE0) yield (x(i)(j) <== n)))
+       add(p(i) === sum(for(j <- RANGE0) yield (x(i)(j) ?<= n)))
       }
-     add(sum(p) == n)
+     add(sum(p) === n)
       for(i <- RANGE1) {
        add(p(i-1) >= p(i))
       }

@@ -36,9 +36,9 @@ class TestMinAssignment extends FunSuite with ShouldMatchers {
     cp.post(allDifferent(x),Strong)
     cp.post(new MinAssignment(x, w, cost))
     cost.min should be(7)
-    cp.post(x(0) != 0)
+    cp.post(x(0) !== 0)
     cost.min should be(8)
-    cp.post(x(2) != 2)
+    cp.post(x(2) !== 2)
     cost.min should be(10)
   }
   
@@ -80,10 +80,10 @@ class TestMinAssignment extends FunSuite with ShouldMatchers {
     cp.post(new MinAssignment(x, w, cost))
     cost.min should be(7)
     cp.pushState()
-    cp.post(x(0) != 0)
+    cp.post(x(0) !== 0)
     cost.min should be(8)
     cp.pop()
-    cp.post(x(2) != 2)
+    cp.post(x(2) !== 2)
     cost.min should be(10)
   }
   
@@ -154,7 +154,7 @@ class TestMinAssignment extends FunSuite with ShouldMatchers {
       val cost = CPIntVar(0 to 300)(cp)
 
       cp.add(allDifferent(x))
-      cp.add(sum(0 until n)(i => w(i)(x(i))) == cost)
+      cp.add(sum(0 until n)(i => w(i)(x(i))) === cost)
 
 
       cp.search {

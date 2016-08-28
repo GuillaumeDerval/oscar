@@ -363,6 +363,25 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
 
   // ------------------------ some useful methods for java -------------------------
 
+
+  /**
+    * x!=y
+    */
+  def diff(y: CPIntVar) = new oscar.cp.constraints.DiffVar(this, y)
+  /**
+    * x!=y
+    */
+  def diff(y: Int) = new oscar.cp.constraints.DiffVal(this, y)
+  /**
+    * x==y
+    */
+  def eq(y: CPIntVar) = new oscar.cp.constraints.Eq(this, y)
+  /**
+    * x==y
+    */
+  def eq(y: Int) = new oscar.cp.constraints.EqVal(this, y)
+
+
   /**
    * Reified constraint
    * @param v
@@ -451,22 +470,7 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
    * x must take a value from set
    */
   def in(set: Set[Int]): Constraint = new InSet(this, set)
-  /**
-   * x!=y
-   */
-  def !=(y: CPIntVar) = new oscar.cp.constraints.DiffVar(this, y)
-  /**
-   * x!=y
-   */
-  def !=(y: Int) = new oscar.cp.constraints.DiffVal(this, y)
-  /**
-   * x==y
-   */
-  def ==(y: CPIntVar) = new oscar.cp.constraints.Eq(this, y)
-  /**
-   * x==y
-   */
-  def ==(y: Int) = new oscar.cp.constraints.EqVal(this, y)
+
   
   /**
    * b <=> x belongs to set

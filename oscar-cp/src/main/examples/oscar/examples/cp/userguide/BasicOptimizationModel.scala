@@ -10,8 +10,8 @@ object BasicOptimizationModel extends CPModel with App {
   val x3 = CPIntVar(1 until 5)
 
 
-  add(x1 != x2)
-  add(x1 + x2 == x3)
+  add(x1 !== x2)
+  add(x1 + x2 === x3)
 
   // define an objective function
   maximize(x1+x3)

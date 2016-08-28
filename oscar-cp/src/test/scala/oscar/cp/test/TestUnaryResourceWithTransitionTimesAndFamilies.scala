@@ -1,8 +1,8 @@
 package oscar.cp.test
 
-import org.scalatest.{Assertions, Matchers, FunSuite}
+import org.scalatest.{Assertions, FunSuite, Matchers}
 import oscar.cp._
-import oscar.cp.constraints.UnaryResourceWithTransitionTimes
+import oscar.cp.constraints.UnaryResourceWithTransitionTimesAndFamilies
 import oscar.cp.core.variables.CPIntVar
 
 import scala.util.Random
@@ -12,7 +12,7 @@ import scala.util.Random
  * @author Cyrille Dejemeppe (cyrille.dejemeppe@gmail.com)
  * @author Sascha Van Cauwelaert (sascha.vancauwelaert@gmail.com)
  */
-class TestUnaryResourceWithTransitionTimes extends FunSuite with Matchers with Assertions {
+class TestUnaryResourceWithTransitionTimesAndFamilies extends FunSuite with Matchers with Assertions {
   val seed = 42
   val randGen = new scala.util.Random(seed)
 
@@ -27,13 +27,11 @@ class TestUnaryResourceWithTransitionTimes extends FunSuite with Matchers with A
       val intervalProba = 0.0
       val (durations, triMatrix, actiBounds) = randomInstance(nActivities,minTT, maxTT, minDuration, maxDuration, intervalMultiplicator, intervalProba)
 
-      if (i > 0) {
-        val (stat1, stat2) = compareWithDecomp(nActivities, durations, triMatrix, actiBounds)
+      val (stat1, stat2) = compareWithDecomp(nActivities, durations, triMatrix, actiBounds)
 
-        assert(stat2.nSols == stat1.nSols)
-        assert(stat2.nFails <= stat1.nFails)
-        assert(stat2.nNodes <= stat1.nNodes)
-      }
+      assert(stat2.nSols == stat1.nSols)
+      assert(stat2.nFails <= stat1.nFails)
+      assert(stat2.nNodes <= stat1.nNodes)
     }
   }
 
@@ -99,7 +97,7 @@ class TestUnaryResourceWithTransitionTimes extends FunSuite with Matchers with A
       j <- 0 until nActivities
       if i != j
     } {
-      basicSolver.add((endVars(i) + ttMatrix(i)(j) ?<= startVars(j)) || (endVars(j) + ttMatrix(j)(i) ?<= startVars(i)))
+      basicSolver.add((endVars(j) + ttMatrix(j)(i) ?<= startVars(i)) || (endVars(i) + ttMatrix(i)(j) ?<= startVars(j)))
     }
 
     basicSolver.search {
@@ -123,11 +121,12 @@ class TestUnaryResourceWithTransitionTimes extends FunSuite with Matchers with A
       augmentedSolver.add(startVars2(i) + durationVars2(i) === endVars2(i))
     }
 
-    augmentedSolver.add(new UnaryResourceWithTransitionTimes(startVars2, durationVars2, endVars2, ttMatrix))
+    augmentedSolver.add(new UnaryResourceWithTransitionTimesAndFamilies(startVars2, durationVars2, endVars2, ttMatrix, Array.tabulate(nActivities)(i => i)))
 
     augmentedSolver.search {
       binaryStatic(startVars2)
     }
+
     val stat2 = augmentedSolver.start(numSolutions)
 
     (stat1, stat2)

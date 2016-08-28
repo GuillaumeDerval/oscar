@@ -67,7 +67,7 @@ object GolombRuler extends CPModel with App {
   add(allDifferent(differences), Strong)
   increasing(mark)
   // symmetry breaking
-  add(mark(0) == 0)
+  add(mark(0) === 0)
   add(mark(1) - mark(0) < mark(m - 1) - mark(m - 2))
   // ensure positive differences 
   // (Cred to Pierre Schaus.)
