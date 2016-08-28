@@ -408,14 +408,14 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
    * @param set
    * @return the number of bits of the intersection of the bitSet and this
    */
-  def intersectCount(set: BitSet, hashMult: Array[Int], multiplicator: Array[Int]): Int = {
+  def intersectCount(set: BitSet, hashMult: Array[Int], multiplicator: Array[()=>Int]): Int = {
     var count = 0
 
     var i: Int = nNonZero
     while (i > 0) {
       i -= 1
       val offset = nonZeroIdx(i)
-      count += java.lang.Long.bitCount(words(offset) & set.words(offset)) * multiplicator(hashMult(offset))
+      count += java.lang.Long.bitCount(words(offset) & set.words(offset)) * multiplicator(hashMult(offset))()
     }
 
     count

@@ -41,45 +41,89 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
 
   /* Maximum number of combination of star positions */
   private[this] val maxNbGroup = Math.pow(2, arity).toInt
-
-  /* Dispositions of the different combinations of star positions */
-  private[this] val starPositionByGroup: Array[Array[Int]] = {
-    val temp = Array.fill(maxNbGroup)(new Array[Int](arity))
-    def comb(times: Int, repeat: Int, index: Int): Unit = {
-      val repeatTwice = 2 * repeat
-      for (t <- 0 until times) {
-        val offset = t * repeatTwice
-        for (r <- 0 until repeat)
-          temp(offset + r)(index) = 0
-        for (r <- repeat until repeatTwice)
-          temp(offset + r)(index) = 1
-      }
-      if (index < arity - 1)
-        comb(times * 2, repeat / 2, index + 1)
-    }
-    comb(1, maxNbGroup / 2, 0)
-    temp
-  }
-  /* Indexes of the stars for each combinations of star positions */
-  private[this] val starPositionByGroupSparse = {
-    val temp = new Array[Int](arity)
-    Array.tabulate(maxNbGroup) { i =>
-      var nb = 0
-      var j = arity
-      while (j > 0) {
-        j -= 1
-        if (starPositionByGroup(i)(j) == 1) {
-          temp(nb) = j
-          nb += 1
+  private[this] val sizeTemp: Array[Int] = Array.tabulate(arity)(i => x(i).size)
+  private[this] val multiplicator = Array.fill(maxNbGroup)(1)
+  private[this] val multiplicatorsNeeded = Array.fill(maxNbGroup)(0)
+  private[this] val multCheck = Array.fill(arity, maxNbGroup)(() => Unit)
+  private[this] val multiplicatorFormulaCheck = Array.fill(maxNbGroup)(() => Unit)
+  private[this] val multiplicatorLook = Array.fill(maxNbGroup)(0)
+  private[this] val mult = {
+    val temp = Array.fill(arity, maxNbGroup)(() => 1)
+    var n = 1
+    var j = arity
+    while (j > 0) {
+      j -= 1
+      var k = maxNbGroup
+      while (k > 0) {
+        k -= 1
+        if ((n & k) == 0) {
+          val p = k
+          temp(j)(k) = () => multiplicator(p)
+          multCheck(j)(k) = () => multiplicatorFormulaCheck(p)()
+        } else {
+          val p = k - n
+          temp(j)(k) = () => multiplicator(p)
+          multCheck(j)(k) = () => multiplicatorFormulaCheck(p)()
         }
       }
-      val newArray = new Array[Int](nb)
-      System.arraycopy(temp, 0, newArray, 0, nb)
-      newArray
+      n *= 2
     }
+    temp
   }
-  /* Array containing the different multiplicator for each combination of star position */
-  private[this] val multiplicator = Array.fill(arity, maxNbGroup)(1)
+  private[this] val multiplicatorFormula = Array.fill(maxNbGroup)(() => 1)
+
+  private[this] def computeFormula() = {
+    var i = arity
+    var n = 1
+    val initarray = Array.fill(arity)(Array(0))
+    while (i > 0) {
+      i -= 1
+      initarray(i)(0) = n
+      val k = i
+      multiplicatorFormula(n) = () => sizeTemp(k)
+      val k2 = n
+      multiplicatorFormulaCheck(n) =
+        () => {multiplicatorLook(k2) = 1; Unit}
+      n *= 2
+    }
+    def compute(setofset: Array[Array[Int]]): Unit = {
+      val newarray = new Array[Array[Int]]((setofset.length + 1) / 2)
+      if (setofset.length % 2 != 0)
+        newarray(newarray.length - 1) = setofset(setofset.length - 1)
+      var j = setofset.length / 2
+      while (j > 0) {
+        j -= 1
+        val a1 = setofset(j * 2)
+        val a2 = setofset(j * 2 + 1)
+        var pos = a1.length
+        val pos2 = a2.length
+        val ares = new Array[Int](pos2 + pos * (pos2 + 1))
+        System.arraycopy(a1, 0, ares, 0, pos)
+        System.arraycopy(a2, 0, ares, pos, pos2)
+        var a = pos
+        pos += pos2
+        while (a > 0) {
+          a -= 1
+          var b = pos2
+          while (b > 0) {
+            b -= 1
+            val k1 = a1(a)
+            val k2 = a2(b)
+            val id = k1 + k2
+            ares(pos) = id
+            multiplicatorFormula(id) = () => multiplicator(k1) * multiplicator(k2)
+            multiplicatorFormulaCheck(id) = () => {multiplicatorLook(id) = 1;multiplicatorFormulaCheck(k1)();multiplicatorFormulaCheck(k2)(); Unit}
+            pos += 1
+          }
+        }
+        newarray(j) = ares
+      }
+      if (newarray.length > 1)
+        compute(newarray.toArray)
+    }
+    compute(initarray)
+  }
+  computeFormula()
 
   private[this] val T: Map[Int, Array[Array[Int]]] = preprocessedTable.groupBy(tup => tup.foldLeft(0)((a, b) => a * 2 + (if (b == _star) 1 else 0)))
   private[this] val nonEmptyGroupId = {
@@ -87,11 +131,31 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
     var i = maxNbGroup
     while (i > 0) {
       i -= 1
-      if (T.contains(i))
+      if (T.contains(i)) {
         buf += i
+        var j = arity
+        while(j > 0){
+          j-=1
+          multCheck(j)(i)()
+        }
+      }
     }
     buf.toArray
   }
+  private[this] val mutiplicatorNeededSparse= multiplicatorLook.zipWithIndex.filter(a => a._1 == 1).map(_._2)
+  private[this] val multiplicatorNeededSize = mutiplicatorNeededSparse.length
+  private[this] val mutiplicatorNeededSparseByVar= {
+    val temp = new Array[Array[Int]](arity)
+    var n = 1
+    var i = arity
+    while (i >0){
+      i-=1
+      temp(i) = mutiplicatorNeededSparse.filter(m => (m & n) != 0)
+      n*=2
+    }
+    temp
+  }
+  private[this] val multiplicatorNeededSizeByVar = Array.tabulate(arity)(i => mutiplicatorNeededSparseByVar(i).length)
   private[this] val nonEmptyGroupIdSize = nonEmptyGroupId.length
 
   /* Computed information about the repartition by group into the BitSets*/
@@ -140,7 +204,28 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
   private[this] val variableValueAntiSupports = Array.tabulate(arity)(i => new Array[dangerousTuples.BitSet](spans(i)))
   private[this] val deltas: Array[DeltaIntVar] = new Array[DeltaIntVar](arity)
 
-  private[this] val sizeTemp: Array[Int] = Array.tabulate(arity)(i => x(i).size)
+  /**
+   * Update the multiplicators for each group of tuples and each variable concerned
+   */
+  /*private[this]*/ def updateMultiplicator() = {
+    var i = 0
+    while (i < multiplicatorNeededSize) {
+      // has to be updated in this order!!
+      val id = mutiplicatorNeededSparse(i)
+      multiplicator(id) = multiplicatorFormula(id)()
+      i += 1
+    }
+  }
+
+  /*private[this]*/ def updateMultiplicator(varId:Int) = {
+    var i = 0
+    while (i < multiplicatorNeededSizeByVar(varId)) {
+      // has to be updated in this order!!
+      val id = mutiplicatorNeededSparseByVar(varId)(i)
+      multiplicator(id) = multiplicatorFormula(id)()
+      i += 1
+    }
+  }
 
   /**
    * Method to compute the table without intersections
@@ -285,35 +370,6 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
   }
 
   /**
-   * Update the multiplicators for each group of tuples and each variable concerned
-   */
-  private[this] def updateMultiplicator() = {
-
-    var j = nonEmptyGroupIdSize
-    while (j > 0) {
-      j -= 1
-      val hash = nonEmptyGroupId(j)
-      val sparseIndex = starPositionByGroupSparse(hash)
-      var i = sparseIndex.length
-      var mult = 1
-      while (i > 0) {
-        i -= 1
-        val valIndex = sparseIndex(i)
-        mult *= sizeTemp(valIndex)
-      }
-      var varId = arity
-      while (varId > 0) {
-        varId -= 1
-        if (starPositionByGroup(hash)(varId) == 1)
-          multiplicator(varId)(hash) = mult / sizeTemp(varId)
-        else
-          multiplicator(varId)(hash) = mult
-      }
-    }
-
-  }
-
-  /**
    * Perform a consistency check : for each variable value pair (x,a), we check if
    * the number of dangerous tuples doesn't exceed all the possible tuples with the value.
    * Unsupported values are removed.
@@ -370,7 +426,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
       while (i > 0) {
         i -= 1
         value = domainArray(i)
-        val count = dangerousTuples.intersectCount(variableValueAntiSupports(varIndex)(value), hashMult, multiplicator(varIndex))
+        val count = dangerousTuples.intersectCount(variableValueAntiSupports(varIndex)(value), hashMult, mult(varIndex))
         if (count == cardinalSize) {
           if (x(varIndex).removeValue(value) == Failure) {
             return Failure
@@ -385,7 +441,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
             sizeTemp(varIndex) -= 1
             cardinalSizeInit *= sizeTemp(varIndex)
           }
-          updateMultiplicator()
+          updateMultiplicator(varIndex)
         }
       }
     }
@@ -473,6 +529,145 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
       }
     }
   }
+}
+
+
+object sandbox extends App {
+
+  val arity = 3
+  val domain = Array(3, 3, 3)
+
+  /* Maximum number of combination of star positions */
+  private[this] val maxNbGroup = Math.pow(2, arity).toInt
+
+
+  val multhash = Array.fill(arity, maxNbGroup)(0)
+
+  var n = 1
+  var j = arity
+  while (j > 0) {
+    j -= 1
+    var k = maxNbGroup
+    while (k > 0) {
+      k -= 1
+      if ((n & k) == 0)
+        multhash(j)(k) = k
+      else
+        multhash(j)(k) = k - n
+
+    }
+
+    n *= 2
+  }
+  val mult = Array.fill(arity, maxNbGroup)(0)
+
+
+  val multiplicator = Array.fill(maxNbGroup)(0)
+  val multiplicatorFormula = Array.fill(maxNbGroup)(() => 1)
+
+  def updateMult() = {
+    // has to be updated in this order!!
+    var i = 0
+    while (i < maxNbGroup) {
+      // replace by max possible
+      multiplicator(i) = multiplicatorFormula(i)()
+      i += 1
+    }
+
+    i = arity
+    while (i > 0) {
+      i -= 1
+      var j = maxNbGroup
+      while (j > 0) {
+        j -= 1
+        val id = j
+        mult(i)(id) = multiplicator(multhash(i)(id))
+      }
+    }
+
+
+  }
+
+  def computeformula() = {
+
+    var i = arity
+    var n = 1
+    val initarray = Array.fill(arity)(Array(0))
+    while (i > 0) {
+      i -= 1
+      initarray(i)(0) = n
+      val k = i
+      multiplicatorFormula(n) = () => domain(k)
+      n *= 2
+    }
+
+
+
+    def compute(setofset: Array[Array[Int]]): Unit = {
+      val newarray = new Array[Array[Int]]((setofset.length + 1) / 2)
+      if (setofset.length % 2 != 0)
+        newarray(newarray.length - 1) = setofset(setofset.length - 1)
+      var j = setofset.length / 2
+      while (j > 0) {
+        j -= 1
+        val a1 = setofset(j * 2)
+        val a2 = setofset(j * 2 + 1)
+        var pos = a1.length
+        val pos2 = a2.length
+        val ares = new Array[Int](pos2 + pos * (pos2 + 1))
+        System.arraycopy(a1, 0, ares, 0, pos)
+        System.arraycopy(a2, 0, ares, pos, pos2)
+        var a = pos
+        pos += pos2
+        while (a > 0) {
+          a -= 1
+          var b = pos2
+          while (b > 0) {
+            b -= 1
+            val k1 = a1(a)
+            val k2 = a2(b)
+            val id = k1 + k2
+            ares(pos) = id
+            multiplicatorFormula(id) = () => multiplicator(k1) * multiplicator(k2)
+            pos += 1
+          }
+
+
+        }
+        newarray(j) = ares
+
+      }
+
+      if (newarray.length > 1)
+        compute(newarray.toArray)
+    }
+    compute(initarray)
+  }
+
+  println("NbGroup : " + maxNbGroup)
+
+  println("----")
+  println("multiplicators init :")
+  println(multiplicator.mkString(","))
+
+  updateMult()
+  println("----")
+  println("multiplicators 1 :")
+  println(multiplicator.mkString(","))
+
+  computeformula()
+  updateMult()
+  println("----")
+  println("multiplicators :")
+  println(multiplicator.mkString(","))
+  println("----")
+  println("mult hash")
+  println(multhash.map(_.mkString(",")).mkString("\n"))
+  println("----")
+  println("mult")
+  println(mult.map(_.mkString(",")).mkString("\n"))
+
+
 }
 
 
