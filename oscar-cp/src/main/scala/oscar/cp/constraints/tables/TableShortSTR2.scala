@@ -216,7 +216,7 @@ final class TableShortSTR2(private[this] val variables: Array[CPIntVar], private
       return Failure
     }
     if (j >= 0) {
-      val tau = shortTable(j)
+      val tau = shortTable(activeTuples(j))
       var k = tau.length
       while (k > 0) {
         k -= 1
