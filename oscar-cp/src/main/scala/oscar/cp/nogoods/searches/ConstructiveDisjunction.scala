@@ -8,7 +8,7 @@ import oscar.cp.core.CPStore
 import oscar.cp.nogoods.decisions.Decision
 
 /** @author Renaud Hartert ren.hartert@gmail.com */
-object QuickShaving {
+object ConstructiveDisjunction {
 
   def reduceDomains(problem: CPStore, variables: Array[CPIntVar], decision: Decision): CPOutcome = {
 
