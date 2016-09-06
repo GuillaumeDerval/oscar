@@ -444,9 +444,9 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
       _ != searchVariables(bestIndex).value)
     }else{
       val objVal = objective.value
-      selectFirst(RandomGenerator.shuffle(searchVariables(bestIndex).getDomain()), ((i:Int) =>
+      selectFirst(RandomGenerator.shuffle(searchVariables(bestIndex).getDomain()), (i:Int) =>
         acceptOr(new AssignMove(searchVariables(bestIndex),i,objective.assignVal(searchVariables(bestIndex), i)),accept).value < objVal
-        && i != searchVariables(bestIndex).value)
+        && i != searchVariables(bestIndex).value
         )
     }
     return acceptOr(new AssignMove(searchVariables(bestIndex),bestValue,objective.assignVal(searchVariables(bestIndex), bestValue)),accept)

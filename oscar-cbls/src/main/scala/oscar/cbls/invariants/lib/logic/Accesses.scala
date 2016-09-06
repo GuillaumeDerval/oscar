@@ -150,6 +150,9 @@ case class IntElementNoVar(index: IntValue, inputarray: Array[Int])
   @inline
   override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
    // println(OldVal + " "+ NewVal)
+    if(NewVal >= inputarray.length){
+      println("something is wrong")
+    }
     this := inputarray(NewVal)
   }
 
