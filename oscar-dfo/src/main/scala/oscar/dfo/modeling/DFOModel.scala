@@ -29,7 +29,7 @@ import oscar.util.Interval
  */
 class DFOFloatVar(val solver: DFOSolver, val varName: String, val lb: Double = 0.0, val ub: Double = Double.PositiveInfinity) extends Var[Double] {
     val id = solver.register(this)
-    override def value = solver.getValue(id)
+    def value = solver.getValue(id)
     def name = varName
     def randVal = rand.nextDouble() * (ub - lb) + lb
   def lowerBound = lb
@@ -86,7 +86,7 @@ class DFOSolver(val algo: DFOAlgo.Value = DFOAlgo.NelderMead) {
 		this
 	}
     
-    def minimize(objective: Expression[AnyType,Double]) : Expression[AnyType,Double] = {
+    def minimize(objective: NormalizedExpression[ExpressionDegree,Double]) : NormalizedExpression[ExpressionDegree,Double] = {
            
     	val domain = Array.tabulate(vars.size)(i => Interval(vars(i).lb,vars(i).ub))
     

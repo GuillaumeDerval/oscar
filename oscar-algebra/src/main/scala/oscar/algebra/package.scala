@@ -17,7 +17,7 @@ package oscar
 
 package object algebra {
 
-  type LinearExpression = Expression[Linear,Double]
+  type LinearExpression = NormalizedExpression[Linear,Double]
   type LinearConstraintExpression = Equation[Linear,Double]
 
 //  implicit def int2Integral(i: Int) = new Integral(i)
@@ -67,7 +67,7 @@ package object algebra {
 //    override def compare(x: Continuous, y: Continuous): Int = implicitly[Numeric[Double]].compare(x.doubleValue,y.doubleValue)
 //  }
   
-  implicit def term2Expression[T <: AnyType,V:Numeric](term: Term[T,V]) = term.toExpression
+  implicit def term2Expression[T <: ExpressionDegree,V:Numeric](term: Term[T,V]) = term.normalized
   //implicit def double2Expression[T <: AnyType](d: Double) = Const(d).toExpression
 
   //implicit def value2ConcreteIndex[T](value: T) = ConcreteIndex(value)
@@ -100,33 +100,33 @@ package object algebra {
   
   // -------------------------  linear expressions & constraints -------------------
 
-  def sumOf[T <: AnyType,V:Numeric](exprs : Iterable[Expression[T,V]]) : Expression[T,V] = {
-    new Expression(exprs.toStream.map(_.terms).flatten)
+  def sumOf[T <: ExpressionDegree,V:Numeric](exprs : Iterable[NormalizedExpression[T,V]]) : NormalizedExpression[T,V] = {
+    new NormalizedExpression(exprs.toStream.map(_.terms).flatten)
   }
 
   /**
    * sum[a <- A] f(a)
    */
-  def sum[A,T <: AnyType,V:Numeric](indexes : Iterable[A])(f : A => Expression[T,V]) : Expression[T,V] = sumOf(indexes map f)
+  def sum[A,T <: ExpressionDegree,V:Numeric](indexes : Iterable[A])(f : A => NormalizedExpression[T,V]) : NormalizedExpression[T,V] = sumOf(indexes map f)
 
   /**
    * sum[a <- A, b <- B] f(a,b)
    */
-  def sum[A,B,T <: AnyType,V:Numeric](indexes1 : Iterable[A], indexes2 : Iterable[B])(f : (A,B) => Expression[T,V]) : Expression[T,V] = {
+  def sum[A,B,T <: ExpressionDegree,V:Numeric](indexes1 : Iterable[A], indexes2 : Iterable[B])(f : (A,B) => NormalizedExpression[T,V]) : NormalizedExpression[T,V] = {
          sumOf(for(i <- indexes1; j <- indexes2) yield f(i,j))
   }
 
   /**
    * sum[a <- A, b <- B, c <- C] f(a,b,c)
    */
-  def sum[A,B,C,T <: AnyType,V:Numeric](indexes1 : Iterable[A], indexes2 : Iterable[B], indexes3 : Iterable[C])(f : (A,B,C) => Expression[T,V]) : Expression[T,V] = {
+  def sum[A,B,C,T <: ExpressionDegree,V:Numeric](indexes1 : Iterable[A], indexes2 : Iterable[B], indexes3 : Iterable[C])(f : (A,B,C) => NormalizedExpression[T,V]) : NormalizedExpression[T,V] = {
     	sumOf(for(i <- indexes1; j <- indexes2; k <- indexes3) yield f(i,j,k))
   }
 
   /**
    * sum[a <- A, b <- B, c <- C, d <- D] f(a,b,c,d)
    */
-  def sum[A,B,C,D,T <: AnyType,V:Numeric](indexes1 : Iterable[A], indexes2 : Iterable[B], indexes3 : Iterable[C], indexes4 : Iterable[D])(f : (A,B,C,D) => Expression[T,V]) : Expression[T,V] = {
+  def sum[A,B,C,D,T <: ExpressionDegree,V:Numeric](indexes1 : Iterable[A], indexes2 : Iterable[B], indexes3 : Iterable[C], indexes4 : Iterable[D])(f : (A,B,C,D) => NormalizedExpression[T,V]) : NormalizedExpression[T,V] = {
     	sumOf(for(i <- indexes1; j <- indexes2; k<- indexes3; l <- indexes4) yield f(i,j,k,l))
   }
 //
@@ -160,7 +160,7 @@ package object algebra {
   
   // ------------   Implicits -----------------------
   
-  implicit def double2const[V:Numeric](d : V) : Expression[Constant,V] = Const(d)
+  implicit def double2const[V:Numeric](d : V) : NormalizedExpression[Constant,V] = Const(d)
 
   // ------------------------- general mathematical expressions -------------------
 

@@ -1,78 +1,109 @@
 package oscar.algebra
 
-import scala.collection.mutable
+/**
+  * A [[Model]] represents a mathematical model (X,C,O) where X is a set of numerical variables, C a set of constraints
+  * and O a set of objectives to be optimized.
+  *
+  * Please note that such [[Model]] is mutable and there is no check to ensure that it is not modified after a solver
+  * has begun solving it.
+  *
+  * @tparam O the maximum degree of the objectives to be added to this model
+  * @tparam C the maximum degree of the constraints to be added to this model
+  * @tparam V the type value stored in the variables (Double, Int, ...). For now, mainly Double is used here.
+  */
 
-//class Sum[T,U <: AnyType,V](loop: ALoop[T,Expression[U,V]])
+class Model[O <: ExpressionDegree, C <: ExpressionDegree,V]{
 
-class Model[O <: AnyType, C <: AnyType,V]{
+  /**
+    * Set of variables of the [[Model]]
+    */
+  private val _variables: scala.collection.mutable.Map[Var[V],Int] = new scala.collection.mutable.HashMap[Var[V],Int]()
+  def variables: scala.collection.Map[Var[V],Int] = _variables
 
-  val variables: scala.collection.mutable.Map[Var[V],Int] = new scala.collection.mutable.HashMap[Var[V],Int]()
-//  val indices = mutable.HashSet[Indices[_]]()
-//  val params = mutable.HashSet[Param1[_,V]]()
+  /**
+    * @return the maximum index of all the variables
+    */
+  def maxIndex = _variables.size - 1
 
-  var maxIndex = 0
+  /**
+    * List of objectives to be optimized
+    */
+  val objectives = scala.collection.mutable.ListBuffer[NormalizedExpression[O,V]]()
 
-  val objectives = scala.collection.mutable.ListBuffer[Expression[O,V]]()
-  val constraints = scala.collection.mutable.ListBuffer[System[C,V]]()
+  /**
+    * List of constraints for this [[Model]]
+    */
+  val constraints = scala.collection.mutable.ListBuffer[EquationSystem[C,V]]()
 
+  /**
+    * Add a variable in this model
+    * @param v the variable to be added
+    * @return the index of the added variable in this model
+    */
   def addVariable(v: Var[V]) = {
-    val res = maxIndex
-    maxIndex += 1
-    variables += v -> res
-    res
+    _variables += v -> maxIndex
+    maxIndex - 1
   }
 
+  /**
+    * Add a constraint to the model
+    * @param eq the equation to be added
+    */
   def subjectTo(eq: Equation[C,V]): Unit ={
-    constraints += new StreamSystem[C,V](Iterator(eq))
+    constraints += new EquationSystem[C,V](Iterable(eq))
   }
 
-  def subjectTo(eqs: StreamSystem[C,V]): Unit ={
+  /**
+    * Add a set of constraint to the model
+    * @param eqs the set of constraints to be added
+    */
+  def subjectTo(eqs: EquationSystem[C,V]): Unit ={
     constraints += eqs
   }
 
-//  def subjectTo(eqs: ALoop[_,Equation[C,V]]): Unit ={
-//    constraints += new LoopSystem(Stream(eqs))
-//  }
-
-  def minimize(eq: Expression[O,V]): Unit ={
+  /**
+    * Add an objective to be minimized
+    */
+  def minimize(eq: NormalizedExpression[O,V]): Unit ={
     objectives += eq
   }
 
-  def withObjective(obj: Expression[O,V]): Unit ={
+  /**
+    * Add an objective to be minimized
+    */
+  def withObjective(obj: NormalizedExpression[O,V]): Unit ={
     objectives += obj
   }
 
   override def toString = constraints.mkString("\n")
-}
 
+  /**
+    * Buffer the solution found by a solver for this [[Model]]
+    */
+  @deprecated
+  class SolutionBuffer {
 
-class SolutionBuffer[O<: AnyType, C <: AnyType,V](implicit model: Model[O,C,V]) {
+    var objectiveValue: Double = 0.0
 
-  var objectiveValue: Double = 0.0
+    val values = new Array[Double](maxIndex)
 
-  val values = new Array[Double](model.maxIndex)
+    def immutable = new Solution(values.toIndexedSeq, objectiveValue)
 
-  def apply(v: Var[V]) = values(v.id)
+    def update[T](v: Var[V], value: Double): Unit ={
+      values(v.id) = value
+    }
 
-  def update[T](v: Var[V], value: Double): Unit ={
-    values(v.id) = value
   }
 
-//  def update[T](v: Var1[_,V], vals: IndexedSeq[Double]): Unit ={
-//    var id = v.id
-//    for(v <- vals){
-//      values(id) = v
-//      id += 1
-//    }
-//  }
-//
-//  def update[T](v: Var2[_,_,V], vals: IndexedSeq[Double]): Unit ={
-//    var id = v.id
-//    val iter = vals.iterator
-//    for(a <- v.rangeA.values; b <- v.rangeB.values){
-//      values(id) = iter.next
-//      id += 1
-//    }
-//  }
+  /**
+    * Solution for this model, respecting all the constraints
+    * @param values the values of all the variables, indexed by their respective index
+    * @param objectiveValue value of the objective for this solution
+    */
+  class Solution(values: IndexedSeq[Double], objectiveValue: Double) {
 
+    def apply(v: Var[V]) = values(v.id)
+    def cost = objectiveValue
+  }
 }
+

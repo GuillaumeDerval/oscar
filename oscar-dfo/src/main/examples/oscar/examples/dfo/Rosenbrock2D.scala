@@ -33,16 +33,12 @@ object Rosenbrock2D extends DFOModel with App {
   // 2D Rosenbrock function
   val objective = (-x+1.0) * (-x+1.0) + (y - x * x)*100.0 * (y - x * x)
 
-  // callback to print evolution of objective during optimization
-  onSolution {
-    println(objective.value)
-  }
+
 
   // start the effective optimization
   minimize(objective)
 
   println(""+x + " " + x.value)
   println(""+y + " " + y.value)
-  println("objective:" + objective.value)
 
 }

@@ -1,6 +1,6 @@
 package oscar.linprog.modeling
 
-import oscar.algebra.{AbstractExpression, Const, Equation, EquationDescription, Expression,  Linear, Model, Var}
+import oscar.algebra.{Expression, Const, Equation, EquationDescription, NormalizedExpression,  Linear, Model, Var}
 import oscar.linprog.interface.MPSolverInterface
 
 /**
@@ -8,14 +8,14 @@ import oscar.linprog.interface.MPSolverInterface
   */
 object Migration {
 
-  implicit def int2DoubleConst(i: Int) = Const(i.toDouble).toExpression
+  implicit def int2DoubleConst(i: Int) = Const(i.toDouble).normalized
 
-  implicit class ExpressionWithColon(val expr: AbstractExpression[Linear, Double]) extends AnyVal {
-    def <:=(that: Expression[Linear, Double]) = expr <= that
+  implicit class ExpressionWithColon(val expr: Expression[Linear, Double]) extends AnyVal {
+    def <:=(that: NormalizedExpression[Linear, Double]) = expr <= that
 
-    def >:=(that: Expression[Linear, Double]) = expr >= that
+    def >:=(that: NormalizedExpression[Linear, Double]) = expr >= that
 
-    def =:=(that: Expression[Linear, Double]) = expr === that
+    def =:=(that: NormalizedExpression[Linear, Double]) = expr === that
   }
 
   def add[I <: MPSolverInterface](eq: EquationDescription[Linear, Double], name: String = "")(implicit solver: MPSolver[I]) = {

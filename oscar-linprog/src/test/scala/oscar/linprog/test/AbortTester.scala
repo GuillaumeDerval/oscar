@@ -28,7 +28,7 @@ class AbortTester extends OscarLinprogTester {
     val sizes = Array.tabulate(n)(i => minSize + scala.util.Random.nextInt(maxSize - minSize))
     val binSize = n * maxSize / 2
 
-    minimize(sum(ys)(_.toExpression))
+    minimize(sum(ys)(_.normalized))
     subjectTo(
       (for {
         i <- 0 until n

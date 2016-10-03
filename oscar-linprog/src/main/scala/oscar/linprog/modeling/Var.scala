@@ -162,7 +162,7 @@ class MPVar[+I <: MPSolverInterface] private (val initialVarType: MPVarType, val
   /**
    * Returns the value of this variable in the solution found by the solver if any
    */
-  override def value: Option[Double] = solver.value(name).toOption
+  def value: Option[Double] = solver.value(name).toOption
 
   /**
    * Returns true in case the lower bound on this variable belongs to the set of infeasible constraints

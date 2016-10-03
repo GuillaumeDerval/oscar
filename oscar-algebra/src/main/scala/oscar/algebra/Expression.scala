@@ -17,185 +17,134 @@ package oscar.algebra
 import scala.Numeric.Implicits._
 import scala.annotation.tailrec
 
+/**
+  * Represents mathematical expression of any degree. [[Expression]]s can be added, multiplied and used to create equations (i.e. constraints).
+  * @param num [[Numeric]] object for type [[V]]
+  * @tparam T the degree of the [[Expression]]
+  * @tparam V the type of values stored by the variables of the [[Expression]]. For now, mainly Double is used.
+  */
+abstract class Expression[+T <: ExpressionDegree, +V](implicit num: Numeric[V]) {
 
-class Continuous(val doubleValue: Double){
-  override def hashCode(): Int = doubleValue.hashCode()
-  override def equals(other: Any) = {
-    other match{
-      case that: Continuous => that.doubleValue == doubleValue
-      case _ => false
-    }
-  }
-}
-class Integral(val intValue: Int){
-  override def hashCode(): Int = intValue.hashCode()
-  override def equals(other: Any) = {
-    other match{
-      case that: Integral => that.intValue == intValue
-      case _ => false
-    }
-  }
-}
-
-class AnyType
-
-class Quadratic extends AnyType
-
-class Linear extends Quadratic
-
-class Constant extends Linear
-
-object ProdExpression {
-  def apply[T <: AnyType, V: Numeric](a: Expression[T, V], b: Expression[T, V]) = {
-    val num = implicitly[Numeric[V]]
-    new ProdExpression[T, V](
-      for (va <- a.terms; vb <- b.terms) yield Prod(num.times(va.coef.d, vb.coef.d), va.vars ++ vb.vars)
-    )
-  }
-}
-
-class ProdExpression[+T <: AnyType, +V: Numeric](t: Stream[Prod[T, V]], n: String = "ND")(implicit num: Numeric[V]) extends Expression[T, V](t, n)(num)
-
-object AnyType {
-
-
-  implicit def times[V](implicit numeric: Numeric[V]): (Expression[AnyType, V], Expression[AnyType, V]) => ProdExpression[AnyType, V] = {
-    ProdExpression(_, _)
-  }
-
-}
-
-object Quadratic {
-
-
-  implicit def times02[V](implicit numeric: Numeric[V]): (Expression[Constant, V], Expression[Quadratic, V]) => ProdExpression[Quadratic, V] = {
-    ProdExpression(_, _)
-  }
-
-  implicit def times11[V](implicit numeric: Numeric[V]): (Expression[Linear, V], Expression[Linear, V]) => ProdExpression[Quadratic, V] = {
-    ProdExpression(_, _)
-  }
-
-
-  implicit def times20[V](implicit numeric: Numeric[V]): (Expression[Quadratic, V], Expression[Constant, V]) => ProdExpression[Quadratic, V] = {
-    ProdExpression(_, _)
-  }
-
-}
-
-object Linear {
-
-  implicit def times01[V](implicit numeric: Numeric[V]): (Expression[Constant, V], Expression[Linear, V]) => ProdExpression[Linear, V] = {
-    ProdExpression(_, _)
-  }
-
-
-  implicit def times10[V](implicit numeric: Numeric[V]): (Expression[Linear, V], Expression[Constant, V]) => ProdExpression[Linear, V] = {
-    ProdExpression(_, _)
-  }
-}
-
-object Constant {
-
-
-  //  implicit def times0N[TP >: Linear <: AnyType]: (Expression[Constant], Expression[TP]) => ProdExpression[TP] = {
-  //    new ProdExpression(_, _)
-  //  }
-  //
-  //  implicit def timesN0[TP >: Linear <: AnyType]: (Expression[TP], Expression[Constant]) => ProdExpression[TP] = {
-  //    new ProdExpression(_, _)
-  //  }
-
-  implicit def times00[V](implicit numeric: Numeric[V]): (Expression[Constant, V], Expression[Constant, V]) => ProdExpression[Constant, V] = {
-    ProdExpression[Constant, V](_, _)
-  }
-
-  //
-  //  implicit def eq[V]: (Expression[Constant], Expression[Constant]) => EQEquation[Constant] = {
-  //    case (a, b) => new EQEquation[Constant](a - b)
-  //  }
-  //
-  //  implicit def le[V]: (Expression[Constant], Expression[Constant]) => LQEquation[Constant] = {
-  //    case (a, b) => new LQEquation[Constant](a - b)
-  //  }
-  //
-  //  implicit def ge[V]: (Expression[Constant], Expression[Constant]) => GQEquation[Constant] = {
-  //    case (a, b) => new GQEquation[Constant](a - b)
-  //  }
-
-}
-
-abstract class AbstractExpression[+T <: AnyType, +V](implicit num: Numeric[V]) {
+  /**
+    * Returns the value of this [[Expression]] given the specified [[Model.Solution]]
+    * @param env functions returing a value for all variables contained in this [[Expression]]
+    * @param numeric [[Numeric]] object for [[VP]]
+    * @tparam VP the type of values contained by the variables defined in env
+    * @return the value of this [[Expression]] in function of env
+    */
   def eval[VP >: V](env: Var[VP] => VP)(implicit numeric: Numeric[VP]): VP
 
-  def value: Option[V]
+  /**
+    * Transforms ```this``` into normalized form
+    * @param numeric [[Numeric]] object for VP
+    * @tparam VP the type of values of the variables of this [[Expression]]
+    * @return the [[NormalizedExpression]] representing this
+    */
+  def normalized[VP >: V](implicit numeric: Numeric[VP]): NormalizedExpression[T, VP]
 
-  def toExpression[VP >: V](implicit numeric: Numeric[VP]): Expression[T, VP]
-
-  def +[TP >: T <: AnyType, VP >: V](that: AbstractExpression[TP, VP])(implicit numeric: Numeric[VP]): Expression[TP, VP] = {
-    new Expression[TP, VP](this.toExpression.terms ++ that.toExpression.terms)
+  /**
+    * Sum of two expressions
+    * @param that the [[Expression]] to sum with this
+    * @param numeric [[Numeric]] object for VP
+    * @tparam TP the degree of that
+    * @tparam VP the type of values stored by the variables in that
+    * @return the sum of this and that, in normal form
+    */
+  def +[TP >: T <: ExpressionDegree, VP >: V](that: Expression[TP, VP])(implicit numeric: Numeric[VP]): NormalizedExpression[TP, VP] = {
+    new NormalizedExpression[TP, VP](this.normalized.terms ++ that.normalized.terms)
   }
 
-  def -[TP >: T <: AnyType, VP >: V](that: AbstractExpression[TP, VP])(implicit numeric: Numeric[VP]): Expression[TP, VP] = {
-
-    this.toExpression.+(new Expression[TP, VP](that.toExpression.terms.map(_ * numeric.negate(numeric.one))))
+  /**
+    * Difference of two expressions
+    * @param that the [[Expression]] to substract from this
+    * @param numeric [[Numeric]] object for VP
+    * @tparam TP the degree of that
+    * @tparam VP the type of values stored by the variables in that
+    * @return the difference of this and that, in normal form
+    */
+  def -[TP >: T <: ExpressionDegree, VP >: V](that: Expression[TP, VP])(implicit numeric: Numeric[VP]): NormalizedExpression[TP, VP] = {
+    this.normalized + (-that.normalized)
   }
 
-  def *[TP <: AnyType, TR <: AnyType, VP >: V](that: AbstractExpression[TP, VP])(implicit op: (Expression[T, VP], Expression[TP, VP]) => ProdExpression[TR, VP], numeric: Numeric[VP]): ProdExpression[TR, VP] = {
-    op(this.toExpression, that.toExpression)
+  /**
+    * Multiplication of two expressions
+    * @param that the [[Expression]] to multiply with this
+    * @param numeric [[Numeric]] object for VP
+    * @tparam TP the degree of that
+    * @tparam VP the type of values stored by the variables in that
+    * @return the product of this and that, in normal form
+    */
+  def *[TP <: ExpressionDegree, TR <: ExpressionDegree, VP >: V](that: Expression[TP, VP])(implicit op: (NormalizedExpression[T, VP], NormalizedExpression[TP, VP]) => ProdExpression[TR, VP], numeric: Numeric[VP]): ProdExpression[TR, VP] = {
+    op(this.normalized, that.normalized)
   }
 
-  //  def *[TP >: T <: AnyType , VP>: V](v: VP)(implicit op: (Expression[Constant, VP], Expression[TP, VP]) => ProdExpression[TP, VP], numeric: Numeric[VP]): Expression[TP,VP] = {
-  //    Const(v).*[TP,VP](this.toExpression)
-  //  }
+  /**
+    * Negate this [[Expression]]
+    * @return -this
+    */
+  def unary_- = new NormalizedExpression(normalized.terms.map(_ * num.negate(num.one)))
 
-  def unary_- = new Expression(toExpression.terms.map(_ * num.negate(num.one)))
-
-  //  def /[TP <: Quadratic, TR <: Quadratic](that.toExpression: AbstractExpression[TP])(implicit op: Function[(Expression[T],Expression[TP]), Expression[TR]]): Expression[TR] = {
-  //    Sum(this.toExpression, that.toExpression)//op((this.toExpression, that.toExpression))
-  //  }
-
-  def <=[TR >: T <: AnyType, VP >: V](that: AbstractExpression[TR, VP])(implicit numeric: Numeric[VP]): LQEquation[TR, VP] = {
-    new LQEquation[TR, VP](this.toExpression - that.toExpression)
+  /**
+    * Constraints that this is smaller of equal to that
+    * @param that the other expression
+    * @param numeric [[Numeric]] object for VP
+    * @tparam TR the degree of that
+    * @tparam VP the type of values of the variables in that
+    * @return the constraint representing this <= that
+    */
+   def <=[TR >: T <: ExpressionDegree, VP >: V](that: Expression[TR, VP])(implicit numeric: Numeric[VP]): LQEquation[TR, VP] = {
+    new LQEquation[TR, VP](this.normalized - that.normalized)
   }
 
-  def >=[TR >: T <: AnyType, VP >: V](that: AbstractExpression[TR, VP])(implicit numeric: Numeric[VP]): GQEquation[TR, VP] = {
-    new GQEquation[TR, VP](this.toExpression - that.toExpression)
+  /**
+    * Constraints that this is greater of equal to that
+    * @param that the other expression
+    * @param numeric [[Numeric]] object for VP
+    * @tparam TR the degree of that
+    * @tparam VP the type of values of the variables in that
+    * @return the constraint representing this >= that
+    */
+  def >=[TR >: T <: ExpressionDegree, VP >: V](that: Expression[TR, VP])(implicit numeric: Numeric[VP]): GQEquation[TR, VP] = {
+    new GQEquation[TR, VP](this.normalized - that.normalized)
   }
 
-  def ===[TR >: T <: AnyType, VP >: V](that: AbstractExpression[TR, VP])(implicit numeric: Numeric[VP]): EQEquation[TR, VP] = {
-    new EQEquation[TR, VP](this.toExpression - that.toExpression)
+  /**
+    * Constraints that this is equal to that
+    * @param that the other expression
+    * @param numeric [[Numeric]] object for VP
+    * @tparam TR the degree of that
+    * @tparam VP the type of values of the variables in that
+    * @return the constraint representing this = that
+    */
+  def ===[TR >: T <: ExpressionDegree, VP >: V](that: Expression[TR, VP])(implicit numeric: Numeric[VP]): EQEquation[TR, VP] = {
+    new EQEquation[TR, VP](this.normalized - that.normalized)
   }
 }
 
-class Expression[+T <: AnyType, +V](val terms: Stream[Prod[T, V]], val name: String = "ND")(implicit num: Numeric[V]) extends AbstractExpression[T, V] {
+/**
+  * [[Expression]] represented internally as a sum of [[Product]]s of [[Term]]s.
+  *
+  * Please note that these expressions are not normalized enough yet to ensure that the [[equals]] method will work as
+  * expected.
+  *
+  * @param terms the products in the sum
+  * @param name identifying the [[Expression]]
+  * @param num [[Numeric]] object for type [[V]]
+  * @tparam T the degree of the [[Expression]]
+  * @tparam V the type of values stored by the variables of the [[Expression]]. For now, mainly Double is used.
+  */
+class NormalizedExpression[+T <: ExpressionDegree, +V](val terms: Iterable[Product[T, V]], val name: String = "ND")(implicit num: Numeric[V]) extends Expression[T, V] {
   def eval[VP >: V](env: Var[VP] => VP)(implicit numeric: Numeric[VP]): VP = {
     terms.map(_.eval(env)).sum
   }
 
   def uses[VP >: V](v: Var[VP]) = terms.exists(_ uses v)
 
-  def ||:(s: String) = new Expression(terms, s)
-
-  def value: Option[V] = {
-    @tailrec
-    def loop(acc: V, stream: Stream[Option[V]]): Option[V] = {
-      stream match {
-        case Stream() => Some(acc)
-        case Some(d) #:: tail => loop(acc * d, tail)
-        case None #:: tail => None
-      }
-    }
-    loop(num.one, terms.map(_.value))
-  }
+  def ||:(s: String) = new NormalizedExpression(terms, s)
 
   override def toString = terms.mkString(" + ")
 
-  def toExpression[VP >: V](implicit numeric: Numeric[VP]) = this
-
-  
-
-  //def derive(x: Var): Expression[T]
+  def normalized[VP >: V](implicit numeric: Numeric[VP]) = this
 
   def isZero(): Boolean = false
 }

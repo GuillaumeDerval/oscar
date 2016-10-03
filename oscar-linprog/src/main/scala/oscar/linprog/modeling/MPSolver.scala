@@ -67,7 +67,7 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
 
     _objective = obj
 
-    val (varIds, coefs) = obj.terms.map { case p if p.vars.nonEmpty => (variableColumn(p.vars.head.name), p.coef.d)}.unzip
+    val (varIds, coefs) = obj.terms.map { case p if p.terms.nonEmpty => (variableColumn(p.terms.head.name), p.coef.d)}.unzip
     solverInterface.setObjective(min, coefs.toArray, varIds.toArray)
   }
 
@@ -303,11 +303,11 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
    */
   def addLinearConstraint(linearConstraint: LinearConstraint[I]) = {
     val cte = linearConstraint.expression.expr.terms.collect{
-      case p if p.vars.isEmpty => p.coef.d
+      case p if p.terms.isEmpty => p.coef.d
     }.sum
 
     val (varIds, coefs) = linearConstraint.expression.expr.terms.collect {
-      case p if ( p.vars.nonEmpty) => (variableColumn(p.vars.head.name), p.coef.d)
+      case p if ( p.terms.nonEmpty) => (variableColumn(p.terms.head.name), p.coef.d)
     }.unzip
 
     val rowId = solverInterface.addConstraint(linearConstraint.name, coefs.toArray, varIds.toArray, linearConstraint.expression.sense.symbol, -cte)
@@ -427,7 +427,7 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
       piecewiseConstraints += (name -> Seq(xDef, xPlusUB, xMinusUB))
 
       // |x| = xPlus + xMinus
-      _piecewiseExpr += (name -> (xPlus.toExpression + xMinus))
+      _piecewiseExpr += (name -> (xPlus.normalized + xMinus))
     } else if(lowerBound < upperBound && upperBound <= 0) {
       _piecewiseExpr += (name -> -linearExpression)
     } else if(lowerBound < upperBound && lowerBound >= 0) {

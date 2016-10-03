@@ -14,42 +14,58 @@
   * *****************************************************************************/
 package oscar.algebra
 
-
-/** Abstract class for variables */
+/**
+  * Variable to be used in [[Expression]]
+  * @tparam V the type of values stored by the variables of the [[Expression]]. For now, mainly Double is used.
+  */
 abstract class Var[+V: Numeric] extends Term[Linear,V] {
  require(name.nonEmpty)
+
+  /**
+    * Unique string identifier for this variable
+    */
   def name: String
 
+  /**
+    * Unique int id for this
+    */
   def id: Int
 
+  /**
+    * Lower bound of this
+    */
   def lowerBound: V
 
+  /**
+    * Upper bound of this
+    */
   def upperBound: V
 
+  /**
+    * Value of the variable given a solution.
+    * @param env functions returing a value for all variables contained in this [[Expression]]
+    * @param numeric [[Numeric]] object for [[VP]]
+    * @tparam VP the type of values contained by the variables defined in env
+    * @return the value of this [[Expression]] in function of env
+    */
   def eval[VP>:V](env: Var[VP] => VP)(implicit numeric: Numeric[VP])  = env(this)
 
-  def toExpression[VP>: V](implicit numeric: Numeric[VP])  = new Expression(Stream( Prod(Seq(this))))
+  def normalized[VP>: V](implicit numeric: Numeric[VP])  = new NormalizedExpression(Stream( Product(Seq(this))))
 
   override def toString = name
-
-  //  override def derive(v: Var): Expression = {
-  //    if (v equals this) One
-  //    else Zero
-  //  }
 
   override def equals(that: Any) = {
     that match {
       case other: Var[V] =>
-        other.name equals this.name
+        other.id equals this.id
       case _ => false
     }
   }
 
-  override def hashCode: Int = name.hashCode
+  override def hashCode: Int = id.hashCode
 }
 
 
 case class Var0[+V:Numeric](val name: String, val lowerBound: V, val upperBound: V)(implicit model: Model[_, _,V]) extends Var[V] {
   val id = model.addVariable(this)
-  def value = None
 }
