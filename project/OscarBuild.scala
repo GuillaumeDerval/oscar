@@ -73,7 +73,7 @@ object OscarBuild extends Build {
     val swingx = "org.swinglabs" % "swingx" % "1.0"
     val swingxWs = "org.swinglabs" % "swingx-ws" % "1.0"
     val xmlApisExt = "xml-apis" % "xml-apis-ext" % "latest.milestone"
-    val xcsp3 = "xcsp3"  % "xcsp3_2.11" % "1.0.0-SNAPSHOT"
+    val xcsp3 = "xcsp3"  % "xcsp3" % "1.0.0-SNAPSHOT"
 
     // Test libraries
     val junit = "junit" % "junit" % "latest.milestone" % Test
