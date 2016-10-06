@@ -30,15 +30,16 @@ Lots of tutorial in this field start with the same example that is the NQueen.
    :language: scala
    :linenos:
 
-This model mixes with the trait  ``CBLSModel``. It offers the following features:
+This model mixes with the trait  ``CBLSModel``. This trait offers the following features:
 
-* it defines an implicit Store (named ``s``) and ConstraintSystem (named ``c``) behind the scene
-* it supports an API to create all variables. They are implicitly added to the store ``s``
+* it defines an implicit Store (named ``s``) and ConstraintSystem (named ``c``) behind the scene. A store is what contains all the modeling of the optimization problem: varaibles, invariants, constraints. Constraints are furthermore grouped into a constraint system that notably maintains the conjunction of the constraints.
+* it supports an API to create variables and invariants. They are implicitly added to the store ``s``
 * it also offers lots of methods to create every constraints or invariant of the problem you want to solve
 * it includes some linear selectors that you can use for defining our search procedure (see the ``selectMin`` method)
+* it also includes high-level methods to create complex search procedures
 
-Writing local search procedure is a tedious and time-consuming task.
-    Besides, search procedure often include the same basic bricks (neighborhoods, solution management, meta-heuristics, etc.)
+Writing local search procedure is a tedious and time-consuming task because you might want to try different search procedures, tune it, and benchmark it.
+    Search procedure often include the same basic bricks such as neighborhoods, solution management, meta-heuristics, etc.
     For this reason, OscaR.cbls includes a library of standard neighborhoods that can be assembled together to easily constitute complex search procedures.
 
 We show here below a more elaborate solver for the NQueen. Besides using a more elaborate search strategy,
