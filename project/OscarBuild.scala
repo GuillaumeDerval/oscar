@@ -52,7 +52,6 @@ object OscarBuild extends Build {
     val leadoperations = "AWS S3 Release Repository" at "http://maven.leadoperations.co/release"
     val cogcomp = "Cognitive Computation Group" at "http://cogcomp.cs.illinois.edu/m2repo/"
     val ingi = "INGI Snapshots" at "http://artifactory.info.ucl.ac.be/artifactory/libs-snapshot-local/"
-
   }
 
   object Dependencies {
@@ -73,7 +72,17 @@ object OscarBuild extends Build {
     val swingx = "org.swinglabs" % "swingx" % "1.0"
     val swingxWs = "org.swinglabs" % "swingx-ws" % "1.0"
     val xmlApisExt = "xml-apis" % "xml-apis-ext" % "latest.milestone"
-    val xcsp3 = "xcsp3"  % "xcsp3_2.11" % "1.0.0-SNAPSHOT"
+    val xcsp3 = "xcsp3"  % "xcsp3" % "1.0.0-SNAPSHOT"
+    val graphStreamCore = "org.graphstream" % "gs-core" % "1.3"
+    val graphStreamAlgo = "org.graphstream" % "gs-algo" % "1.3"
+    val graphStreamUI = "org.graphstream" % "gs-ui" % "1.3"
+    val scallop = "org.rogach" % "scallop_2.11" % "1.0.0"
+
+    // Akka
+    val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.4.3"
+    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.4.3"
+    val chill = "com.twitter" % "chill-akka_2.11" % "0.8.0"
+    val spores = "org.scala-lang.modules" %% "spores-core" % "0.2.1"
 
     // Test libraries
     val junit = "junit" % "junit" % "latest.milestone" % Test
@@ -97,7 +106,7 @@ object OscarBuild extends Build {
         unidocSettings ++
         Seq(libraryDependencies ++= testDeps) :+
         (unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(oscarFzn, oscarFznCbls)),
-    aggregate = Seq(oscarAlgebra, oscarAlgo, oscarCbls, oscarCp, oscarCPXcsp3, oscarDfo, oscarLinprog, oscarUtil, oscarVisual, oscarFzn, oscarFznCbls, oscarDes, oscarInvariants)
+    aggregate = Seq(oscarAlgebra, oscarAlgo, oscarCbls, oscarCp, oscarCPXcsp3, oscarModeling, oscarDfo, oscarLinprog, oscarUtil, oscarVisual, oscarFzn, oscarFznCbls, oscarDes, oscarInvariants)
 
   )
 
@@ -140,6 +149,15 @@ object OscarBuild extends Build {
     dependencies = Seq(oscarAlgo, oscarVisual)
   )
 
+  lazy val oscarModeling = Project(
+    id = "oscar-modeling",
+    base = file("oscar-modeling"),
+    settings =
+      commonSettings ++ Seq(libraryDependencies ++= testDeps :+ graphStreamCore :+ graphStreamAlgo
+        :+ graphStreamUI :+ scallop :+ akkaActor :+ akkaRemote :+ chill :+ spores :+ scalaSwing),
+    dependencies = Seq(oscarCp)
+  )
+
   lazy val oscarCPXcsp3 = Project(
     id = "oscar-cp-xcsp3",
     base = file("oscar-cp-xcsp3"),
@@ -148,7 +166,7 @@ object OscarBuild extends Build {
         Seq(
           resolvers ++= Seq(ingi),
           libraryDependencies ++= testDeps :+ xcsp3),
-    dependencies = Seq(oscarCp)
+    dependencies = Seq(oscarCp, oscarModeling)
   )
 
   // Not included in the root build
