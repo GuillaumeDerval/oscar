@@ -1,11 +1,11 @@
 import org.xcsp.common.XEnums;
 import org.xcsp.parser.XCallbacks2;
 import org.xcsp.parser.XDomains;
+import org.xcsp.parser.XParser;
 import org.xcsp.parser.XVariables;
 
 import java.util.Arrays;
 import java.util.UUID;
-import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 
 /**
@@ -56,5 +56,65 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
         XVariables.XVarInteger v = (XVariables.XVarInteger)XVariables.XVar.build(UUID.randomUUID().toString(), XVariables.TypeVar.integer, new XDomains.XDomInteger(0, list.length-1));
         buildVarInteger(v, 0, list.length-1);
         buildCtrElement(id, list, 0, v, XEnums.TypeRank.ANY, value);
+    }
+
+    /**
+     * Compute possible ends for given job starts and lenghts
+     */
+    protected XVariables.XVarInteger[] buildEndsFromStartAndLength(XVariables.XVarInteger[] starts, XVariables.XVarInteger[] lengths) {
+        XVariables.XVarInteger[] output = new XVariables.XVarInteger[starts.length];
+        for(int i = 0; i < starts.length; i++) {
+            int min = (int)(((XDomains.XDomInteger)starts[i].dom).getFirstValue() + ((XDomains.XDomInteger)lengths[i].dom).getFirstValue());
+            int max = (int)(((XDomains.XDomInteger)starts[i].dom).getLastValue() + ((XDomains.XDomInteger)lengths[i].dom).getLastValue());
+            output[i] = (XVariables.XVarInteger)XVariables.XVar.build(UUID.randomUUID().toString(), XVariables.TypeVar.integer, new XDomains.XDomInteger(min, max));
+            buildVarInteger(output[i], min, max);
+        }
+        return output;
+    }
+
+    /**
+     * Compute possible ends for given job starts and lenghts
+     */
+    protected XVariables.XVarInteger[] buildEndsFromStartAndLength(XVariables.XVarInteger[] starts, int[] lengths) {
+        XVariables.XVarInteger[] output = new XVariables.XVarInteger[starts.length];
+        for(int i = 0; i < starts.length; i++) {
+            int min = (int)(((XDomains.XDomInteger)starts[i].dom).getFirstValue())+lengths[i];
+            int max = (int)(((XDomains.XDomInteger)starts[i].dom).getLastValue())+lengths[i];
+            output[i] = (XVariables.XVarInteger)XVariables.XVar.build(UUID.randomUUID().toString(), XVariables.TypeVar.integer, new XDomains.XDomInteger(min, max));
+            buildVarInteger(output[i], min, max);
+        }
+        return output;
+    }
+
+    /**
+     * Cumulative constraint. Infer the parameters ends from origins and length
+     */
+    @Override
+    public void buildCtrCumulative(String id, XVariables.XVarInteger[] origins, int[] lengths, int[] heights, XParser.Condition condition) {
+        buildCtrCumulative(id, origins, lengths, buildEndsFromStartAndLength(origins, lengths), heights, condition);
+    }
+
+    /**
+     * Cumulative constraint. Infer the parameters ends from origins and length
+     */
+    @Override
+    public void buildCtrCumulative(String id, XVariables.XVarInteger[] origins, int[] lengths, XVariables.XVarInteger[] heights, XParser.Condition condition) {
+        buildCtrCumulative(id, origins, lengths, buildEndsFromStartAndLength(origins, lengths), heights, condition);
+    }
+
+    /**
+     * Cumulative constraint. Infer the parameters ends from origins and length
+     */
+    @Override
+    public void buildCtrCumulative(String id, XVariables.XVarInteger[] origins, XVariables.XVarInteger[] lengths, int[] heights, XParser.Condition condition) {
+        buildCtrCumulative(id, origins, lengths, buildEndsFromStartAndLength(origins, lengths), heights, condition);
+    }
+
+    /**
+     * Cumulative constraint. Infer the parameters ends from origins and length
+     */
+    @Override
+    public void buildCtrCumulative(String id, XVariables.XVarInteger[] origins, XVariables.XVarInteger[] lengths, XVariables.XVarInteger[] heights, XParser.Condition condition) {
+        buildCtrCumulative(id, origins, lengths, buildEndsFromStartAndLength(origins, lengths), heights, condition);
     }
 }

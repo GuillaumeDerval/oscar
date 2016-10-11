@@ -6,7 +6,7 @@ import constraints._
 import models.ModelDeclaration
 import org.xcsp.common.XEnums._
 import org.xcsp.common.predicates.{XNodeExpr, XNodeLeaf, XNodeParent}
-import org.xcsp.parser.XParser.{Condition, ConditionVal, ConditionVar}
+import org.xcsp.parser.XParser.{Condition, ConditionIntvl, ConditionVal, ConditionVar}
 import org.xcsp.parser.XVariables._
 import solvers.cp.branchings.Branching
 import solvers.cp.decompositions.CartProdRefinement
@@ -370,6 +370,76 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
     lists.map(tuple => tuple.map(x => varHashMap(x.id))).sliding(2).foreach(tuples => modelDeclaration.add(constraintType(tuples(0), tuples(1))))
   }
 
+  def _getConditionVar(condition: Condition): IntExpression = condition match {
+    case c: ConditionVal => c.k
+    case c: ConditionVar => varHashMap(c.x.id)
+  }
+
+  def buildCtrCumulative(id: String, starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], demands: Array[IntExpression], minCum: Boolean, limit: IntExpression): Unit = {
+    if(minCum)
+      modelDeclaration.add(MinCumulativeResource(starts, durations, ends, demands, limit))
+    else
+      modelDeclaration.add(MaxCumulativeResource(starts, durations, ends, demands, limit))
+  }
+
+  def buildCtrCumulative(id: String, starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], demands: Array[IntExpression], condition: Condition): Unit = {
+    val constraintParameters = condition.operator match {
+      case TypeConditionOperator.EQ =>
+        buildCtrCumulative(id, starts, durations, ends, demands, true, _getConditionVar(condition))
+        buildCtrCumulative(id, starts, durations, ends, demands, false, _getConditionVar(condition))
+      case TypeConditionOperator.GE => buildCtrCumulative(id, starts, durations, ends, demands, false, _getConditionVar(condition))
+      case TypeConditionOperator.GT => buildCtrCumulative(id, starts, durations, ends, demands, false, _getConditionVar(condition)+1)
+      case TypeConditionOperator.LE => buildCtrCumulative(id, starts, durations, ends, demands, true, _getConditionVar(condition))
+      case TypeConditionOperator.LT => buildCtrCumulative(id, starts, durations, ends, demands, true, _getConditionVar(condition)-1)
+      case TypeConditionOperator.NE =>
+        val tVar = IntVar(0, demands.map(_.max).sum)
+        modelDeclaration.add(tVar !== _getConditionVar(condition))
+        buildCtrCumulative(id, starts, durations, ends, demands, true, tVar)
+        buildCtrCumulative(id, starts, durations, ends, demands, false, tVar)
+      case TypeConditionOperator.IN =>
+        val tVar = IntVar(condition.asInstanceOf[ConditionIntvl].min, condition.asInstanceOf[ConditionIntvl].max)
+        buildCtrCumulative(id, starts, durations, ends, demands, true, tVar)
+        buildCtrCumulative(id, starts, durations, ends, demands, false, tVar)
+      case TypeConditionOperator.NOTIN =>
+        val tVar = IntVar(0, demands.map(_.max).sum)
+        modelDeclaration.add(Or(Array(tVar < condition.asInstanceOf[ConditionIntvl].min, tVar > condition.asInstanceOf[ConditionIntvl].max)))
+        buildCtrCumulative(id, starts, durations, ends, demands, true, tVar)
+        buildCtrCumulative(id, starts, durations, ends, demands, false, tVar)
+    }
+  }
+
+  override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], ends: Array[XVarInteger], heights: Array[XVarInteger], condition: Condition): Unit = {
+    val mOrigins = origins map(x => varHashMap(x.id))
+    val mLengths = lengths map(x => varHashMap(x.id))
+    val mEnds = ends map(x => varHashMap(x.id))
+    val mHeights = heights map(x => varHashMap(x.id))
+    buildCtrCumulative(id, mOrigins, mLengths, mEnds, mHeights, condition)
+  }
+
+  override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[Int], ends: Array[XVarInteger], heights: Array[Int], condition: Condition): Unit = {
+    val mOrigins = origins map(x => varHashMap(x.id))
+    val mLengths = lengths map(x => IntVar(x))
+    val mEnds = ends map(x => varHashMap(x.id))
+    val mHeights = heights map(x => IntVar(x))
+    buildCtrCumulative(id, mOrigins, mLengths, mEnds, mHeights, condition)
+  }
+
+  override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[Int], ends: Array[XVarInteger], heights: Array[XVarInteger], condition: Condition): Unit = {
+    val mOrigins = origins map(x => varHashMap(x.id))
+    val mLengths = lengths map(x => IntVar(x))
+    val mEnds = ends map(x => varHashMap(x.id))
+    val mHeights = heights map(x => varHashMap(x.id))
+    buildCtrCumulative(id, mOrigins, mLengths, mEnds, mHeights, condition)
+  }
+
+  override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], ends: Array[XVarInteger], heights: Array[Int], condition: Condition): Unit = {
+    val mOrigins = origins map(x => varHashMap(x.id))
+    val mLengths = lengths map(x => varHashMap(x.id))
+    val mEnds = ends map(x => varHashMap(x.id))
+    val mHeights = heights map(x => IntVar(x))
+    buildCtrCumulative(id, mOrigins, mLengths, mEnds, mHeights, condition)
+  }
+
   override def buildCtrAllDifferentList(id: String, lists: Array[Array[XVarInteger]]): Unit = throw new Exception("AllDifferentList is not implemented") // TODO implement with extension
   override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = throw new Exception("AllDifferentExcept is not implemented")
   override def buildCtrMinimum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = throw new Exception("Minimum/MinArg is not implemented")
@@ -448,22 +518,6 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
   override def buildCtrNValuesExcept(id: String, list: Array[XVarInteger], except: Array[Int], condition: Condition): Unit = ???
 
   override def buildCtrNValues(id: String, list: Array[XVarInteger], condition: Condition): Unit = ???
-
-  override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[Int], heights: Array[Int], condition: Condition): Unit = ???
-
-  override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[Int], heights: Array[XVarInteger], condition: Condition): Unit = ???
-
-  override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], heights: Array[Int], condition: Condition): Unit = ???
-
-  override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], heights: Array[XVarInteger], condition: Condition): Unit = ???
-
-  override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[Int], ends: Array[XVarInteger], heights: Array[Int], condition: Condition): Unit = ???
-
-  override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[Int], ends: Array[XVarInteger], heights: Array[XVarInteger], condition: Condition): Unit = ???
-
-  override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], ends: Array[XVarInteger], heights: Array[Int], condition: Condition): Unit = ???
-
-  override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], ends: Array[XVarInteger], heights: Array[XVarInteger], condition: Condition): Unit = ???
 
   override def buildCtrNoOverlap(id: String, origins: Array[XVarInteger], lengths: Array[Int], zeroIgnored: Boolean): Unit = ???
 

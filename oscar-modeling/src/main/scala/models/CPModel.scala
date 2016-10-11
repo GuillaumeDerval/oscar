@@ -67,6 +67,22 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
     constraint match {
       case ExpressionConstraint(expr: BoolExpression) => postBooleanExpression(expr)
       case Among(n, x, s) => cpSolver.post(cp.modeling.constraint.among(postIntExpressionAndGetVar(n), x.map(postIntExpressionAndGetVar), s)) != CPOutcome.Failure
+      case MinCumulativeResource(starts, durations, ends, demands, resources, capacity, id) =>
+        val cpStart = starts map postIntExpressionAndGetVar
+        val cpDuration = durations map postIntExpressionAndGetVar
+        val cpEnds = ends map postIntExpressionAndGetVar
+        val cpDemands = demands map postIntExpressionAndGetVar
+        val cpResources = resources map postIntExpressionAndGetVar
+        val cpCapacity = postIntExpressionAndGetVar(capacity)
+        cpSolver.post(cp.modeling.constraint.minCumulativeResource(cpStart, cpDuration, cpEnds, cpDemands, cpResources, cpCapacity, id)) != CPOutcome.Failure
+      case MaxCumulativeResource(starts, durations, ends, demands, resources, capacity, id) =>
+        val cpStart = starts map postIntExpressionAndGetVar
+        val cpDuration = durations map postIntExpressionAndGetVar
+        val cpEnds = ends map postIntExpressionAndGetVar
+        val cpDemands = demands map postIntExpressionAndGetVar
+        val cpResources = resources map postIntExpressionAndGetVar
+        val cpCapacity = postIntExpressionAndGetVar(capacity)
+        cpSolver.post(cp.modeling.constraint.maxCumulativeResource(cpStart, cpDuration, cpEnds, cpDemands, cpResources, cpCapacity, id)) != CPOutcome.Failure
       case AllDifferent(array) => cpSolver.post(cp.modeling.constraint.allDifferent(array.map(postIntExpressionAndGetVar)), CPPropagStrength.Weak) != CPOutcome.Failure
       case LexLeq(a, b) => cpSolver.post(cp.modeling.constraint.lexLeq(a.map(postIntExpressionAndGetVar), b.map(postIntExpressionAndGetVar))) != CPOutcome.Failure
       case Table(array, values) => cpSolver.post(cp.modeling.constraint.table(array.map(postIntExpressionAndGetVar), values, TableAlgo.MDD4R)) != CPOutcome.Failure
