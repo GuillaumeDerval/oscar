@@ -84,7 +84,7 @@ class BinaryLastConflict(cp: CPModel, variables: Array[IntVar], varHeuristic: In
 
   // Return an Alternative that assign the value to the variable
   @inline private def remove(variable: IntVar, value: Int, nAssigned: Int): Alternative = () => {
-    val out = cp.post(variable != value)
+    val out = cp.post(variable !== value)
     if (!out) conflictAssign = nAssigned
   }
 

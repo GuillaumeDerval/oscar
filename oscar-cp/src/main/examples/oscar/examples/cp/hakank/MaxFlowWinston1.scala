@@ -74,12 +74,12 @@ object MaxFlowWinston1 extends CPModel with App  {
                        yield flow(arcs(k)(0))(arcs(k)(1)))
         val s2 = sum(for(k <- ARCS if arcs(k)(0) == i)
                        yield flow(arcs(k)(0))(arcs(k)(1)))
-       add(s1 == s2)
+       add(s1 === s2)
       }
       // Just arcs with connections can have a flow.
       for(i <- NODES; j <- NODES) {
         if (mat(i)(j) == 0) {
-         add(flow(i)(j) == 0)
+         add(flow(i)(j) === 0)
         }
       }
     search{

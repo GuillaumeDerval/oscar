@@ -67,7 +67,7 @@ class BinaryBranching(cp: CPModel, variables: Array[IntVar], var varHeuris: (Int
       val i = nextVar()
       val variable = variables(i)
       val value = valHeuris(i)
-      Branching.branch(cp.post(variable === value))(cp.post(variable != value))
+      Branching.branch(cp.post(variable === value))(cp.post(variable !== value))
     }
   }
 }

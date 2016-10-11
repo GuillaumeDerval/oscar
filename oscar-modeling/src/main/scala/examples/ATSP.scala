@@ -48,7 +48,7 @@ object ATSP extends DistributedCPApp[Int] with App {
         case Some(x) => {
           // Select the closest successors of the city x
           val v = selectMin(0 until n)(x._1.hasValue)(y => _distMatrixSucc(x._2)(y)).get
-          Branching.branch(cp.post(x._1 === v))(cp.post(x._1 != v))
+          Branching.branch(cp.post(x._1 === v))(cp.post(x._1 !== v))
         }
       }
     }

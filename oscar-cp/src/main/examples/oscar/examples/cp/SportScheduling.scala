@@ -4,14 +4,14 @@ import oscar.cp._
 import oscar.util._
 
 /**
- * The problem is to schedule an even number n of teams over n/2 periods and n - 1 weeks,
- * under the following constraints: <br>
- *  - Each team must play against every other team <br>
- *  - A team plays exactly one game per week  <br>
- *  - A team can play at most twice in the same period <br>
- *
- * @author Pierre Schaus pschaus@gmail.com
- */
+  * The problem is to schedule an even number n of teams over n/2 periods and n - 1 weeks,
+  * under the following constraints: <br>
+  *  - Each team must play against every other team <br>
+  *  - A team plays exactly one game per week  <br>
+  *  - A team can play at most twice in the same period <br>
+  *
+  * @author Pierre Schaus pschaus@gmail.com
+  */
 object SportScheduling extends CPModel with App {
 
   val n = 10
@@ -78,4 +78,3 @@ object SportScheduling extends CPModel with App {
   println("time:" + t)
   println("#restart:" + restart)
 }
-

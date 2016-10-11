@@ -50,7 +50,7 @@ class TestWeightedSum extends FunSuite with ShouldMatchers {
     if (!decomp)
       cp.add(weightedSum(w, x, y))
     else
-      cp.add(sum(w.zip(x).map { case (wi, xi) => xi * wi }) == y)
+      cp.add(sum(w.zip(x).map { case (wi, xi) => xi * wi }) === y)
     cp.search {
       binaryFirstFail(x)
     } onSolution {

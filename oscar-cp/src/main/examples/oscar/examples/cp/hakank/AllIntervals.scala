@@ -39,7 +39,7 @@ object AllIntervals extends CPModel with App {
   add(allDifferent(diffs), Strong)
   add(allDifferent(x), Strong)
   for (k <- 0 until n - 1) {
-    add(diffs(k) == (x(k + 1) - (x(k))).abs)
+    add(diffs(k) === (x(k + 1) - (x(k))).abs)
   }
   // Symmetry breaking
   add(x(0) < x(n - 1))

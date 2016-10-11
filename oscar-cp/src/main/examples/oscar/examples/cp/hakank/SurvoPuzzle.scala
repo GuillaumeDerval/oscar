@@ -86,15 +86,15 @@ object SurvoPuzzle extends CPModel with App  {
       // fill the things we know
       for (i <- 0 until r; 
            j <- 0 until c if problem(i)(j) > 0) {
-         add(x(i)(j) == problem(i)(j))
+         add(x(i)(j) === problem(i)(j))
       }
      add(allDifferent(x.flatten.toArray), Strong)
       // rows and columns
       for (i <- 0 until r) {
-       add(sum( Array.tabulate(c)(j=> x(i)(j)) ) == rowsums(i))
+       add(sum( Array.tabulate(c)(j=> x(i)(j)) ) === rowsums(i))
       }
       for (j <- 0 until c) {
-       add(sum( Array.tabulate(r)(i=> x(i)(j)) ) == colsums(j))
+       add(sum( Array.tabulate(r)(i=> x(i)(j)) ) === colsums(j))
       }
      search{
        binaryFirstFail(x.flatten.toSeq)

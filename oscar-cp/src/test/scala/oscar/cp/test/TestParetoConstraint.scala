@@ -103,7 +103,7 @@ class TestParetoConstraint extends FunSuite with ShouldMatchers {
     val totDists = for (o <- Objs) yield CPIntVar(0, distMatrices(o).flatten.sum)(cp)
 
     cp.post(circuit(succ), Strong)
-    for (o <- Objs) cp.add(sum(Cities)(i => distMatrices(o)(i)(succ(i))) == totDists(o))
+    for (o <- Objs) cp.add(sum(Cities)(i => distMatrices(o)(i)(succ(i))) === totDists(o))
     cp.post(new ParetoConstraint(paretoSet, isMax, totDists.toArray))
 
     cp.search {
@@ -112,7 +112,7 @@ class TestParetoConstraint extends FunSuite with ShouldMatchers {
         case Some(i) => {
           val j = if (isMax(0)) selectMin(Cities)(succ(i).hasValue(_))(-distMatrices(0)(i)(_)).get
           else selectMin(Cities)(succ(i).hasValue(_))(distMatrices(0)(i)(_)).get
-          branch(cp.post(succ(i) == j))(cp.post(succ(i) != j))
+          branch(cp.post(succ(i) === j))(cp.post(succ(i) !== j))
         }
       }
     } onSolution {

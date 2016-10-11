@@ -30,10 +30,10 @@ object AddedCorner extends CPModel with App {
   
   // Constraints
   add(allDifferent(x), Strong)
-  add(b == a + c)
-  add(d == a + f)
-  add(e == c + h)
-  add(g == f + h)
+  add(b === a + c)
+  add(d === a + f)
+  add(e === c + h)
+  add(g === f + h)
   
   search { binaryFirstFail(x) }
   

@@ -123,8 +123,8 @@ class TestTableSTR2Reif extends FunSuite with ShouldMatchers  {
     cp.post(new TableSTR2Reif(x,tuples,b))
     b.isBound should be(false)
 
-    cp.post(x(1) == 3)
-    cp.post(x(2) == 3)
+    cp.post(x(1) === 3)
+    cp.post(x(2) === 3)
     b.isTrue should be(true)
 
   }
@@ -156,8 +156,8 @@ class TestTableSTR2Reif extends FunSuite with ShouldMatchers  {
     cp.post(new TableSTR2Reif(x,tuples,b))
     b.isBound should be(false)
     
-    cp.post(x(1) == 2)
-    cp.post(x(2) == 3)
+    cp.post(x(1) === 2)
+    cp.post(x(2) === 3)
     b.isFalse should be(true)
     
   }

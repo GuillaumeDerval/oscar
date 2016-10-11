@@ -25,7 +25,7 @@ class BinaryStaticOrderBranching(cp: CPModel, variables: Array[IntVar], valHeuri
       // Alternatives
       val variable = variables(depth)
       val value = valHeuris(depth)
-      Branching.branch(cp.post(variable === value))(cp.post(variable != value))
+      Branching.branch(cp.post(variable === value))(cp.post(variable !== value))
     }
   }
 }

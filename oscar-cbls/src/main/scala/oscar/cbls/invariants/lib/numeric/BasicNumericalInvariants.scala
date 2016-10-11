@@ -25,17 +25,10 @@
 
 package oscar.cbls.invariants.lib.numeric
 
-import oscar.cbls.invariants.core.computation.ChangingIntValue
-import oscar.cbls.invariants.core.computation.Domain
 import oscar.cbls.invariants.core.computation.Domain.rangeToDomain
-import oscar.cbls.invariants.core.computation.DomainHelper
-import oscar.cbls.invariants.core.computation.IntInvariant
-import oscar.cbls.invariants.core.computation.IntValue
-import oscar.cbls.invariants.core.computation.SetValue
-import oscar.cbls.invariants.core.computation.Store
+import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
-import oscar.cbls.invariants.lib.logic.Int2Int
-import oscar.cbls.invariants.lib.logic.IntInt2Int
+import oscar.cbls.invariants.lib.logic.{Int2Int, IntInt2Int}
 
 object Sum {
   def apply(vars: Array[IntValue], cond: SetValue) = SumElements(vars, cond)
@@ -56,13 +49,14 @@ object Prod {
  */
 class Sum(vars: Iterable[IntValue])
   extends IntInvariant(
-    vars.foldLeft(0)((a: Int, b: IntValue) => a + b.value), 
-	vars.foldLeft(0)((acc, intvar) => DomainHelper.safeAddMin(acc, intvar.min)) to vars.foldLeft(0)((acc, intvar) => DomainHelper.safeAddMax(acc, intvar.max))) {
+    vars.foldLeft(0)((a: Int, b: IntValue) => a + b.value),
+	vars.foldLeft(0)((acc, intvar) => DomainHelper.safeAddMin(acc, intvar.min)) to vars.foldLeft(0)((acc, intvar) => DomainHelper.safeAddMax(acc, intvar.max)))
+  with IntNotificationTarget{
 
   for (v <- vars) registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
     this :+= NewVal - OldVal
   }
 
@@ -83,7 +77,9 @@ class Linear(vars: Iterable[IntValue], coeffs: IndexedSeq[Int])
   extends IntInvariant(
 		  vars.zip(coeffs).foldLeft(0)((acc, intvar) => acc + intvar._1.value*intvar._2), 
 		  vars.zip(coeffs).foldLeft(0)((acc, intvar) => DomainHelper.safeAddMin(acc,DomainHelper2.getMinProd(intvar._1.min,intvar._1.max,intvar._2,intvar._2))) to 
-		  vars.zip(coeffs).foldLeft(0)((acc, intvar) => DomainHelper.safeAddMax(acc,DomainHelper2.getMaxProd(intvar._1.min,intvar._1.max,intvar._2,intvar._2)))){
+		  vars.zip(coeffs).foldLeft(0)((acc, intvar) => DomainHelper.safeAddMax(acc,DomainHelper2.getMaxProd(intvar._1.min,intvar._1.max,intvar._2,intvar._2))))
+  with IntNotificationTarget {
+
   //coeffs needs to be indexed as we need to access it be index from the index of vars (as given in notifyIntChanged)
   //TODO: There is still the risk of adding plus and minus "infinity" and get absurd results. But at least we avoid overflows...
 			   
@@ -107,7 +103,8 @@ class Linear(vars: Iterable[IntValue], coeffs: IndexedSeq[Int])
  * @author renaud.delandtsheer@cetic.be
  */
 class ExtendableSum(model: Store, domain: Domain)
-  extends IntInvariant(initialDomain = domain) {
+  extends IntInvariant(initialDomain = domain)
+  with IntNotificationTarget{
 
   finishInitialization(model)
 
@@ -122,7 +119,7 @@ class ExtendableSum(model: Store, domain: Domain)
     }
   }
 
-  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
     this :+= NewVal - OldVal
   }
 
@@ -137,7 +134,9 @@ class ExtendableSum(model: Store, domain: Domain)
  * @param vars is a set of IntVars
  * @author renaud.delandtsheer@cetic.be
  */
-class Prod(vars: Iterable[IntValue]) extends IntInvariant {
+class Prod(vars: Iterable[IntValue])
+  extends IntInvariant
+with IntNotificationTarget{
   assert(vars.size > 0, "Invariant prod declared with zero vars to multiply")
 
   for (v <- vars) registerStaticAndDynamicDependency(v)
@@ -159,7 +158,7 @@ class Prod(vars: Iterable[IntValue]) extends IntInvariant {
     -myMax to myMax})
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
     assert(OldVal != NewVal)
     if (OldVal == 0 && NewVal != 0) {
       NullVarCount -= 1
@@ -194,7 +193,8 @@ class Prod(vars: Iterable[IntValue]) extends IntInvariant {
 case class Minus(left: IntValue, right: IntValue)
   extends IntInt2Int(left, right, (if(DomainHelper2.isSafeSub(left,right))
                                       (l,r) => l - r
-                                   else ((l: Int, r: Int) => DomainHelper2.safeSub(l,r))), DomainHelper2.safeSub(left.min, right.max) to DomainHelper2.safeSub(left.max, right.min)) {
+                                   else ((l: Int, r: Int) => DomainHelper2.safeSub(l,r))),
+    DomainHelper2.safeSub(left.min, right.max) to DomainHelper2.safeSub(left.max, right.min)) {
   assert(left != right)
 }
 
@@ -242,7 +242,8 @@ case class ReifViol(b: IntValue, v:IntValue) extends IntInt2Int(b,v, (b,v) => {i
 case class Sum2(left: IntValue, right: IntValue)
   extends IntInt2Int(left, right, (if(DomainHelper2.isSafeAdd(left,right))
                                       (l,r) => l + r
-                                   else ((l: Int, r: Int) => DomainHelper2.safeAdd(l,r))), DomainHelper.safeAddMin(left.min, right.min) to DomainHelper.safeAddMax(left.max, right.max))
+                                   else ((l: Int, r: Int) => DomainHelper2.safeAdd(l,r))),
+    DomainHelper.safeAddMin(left.min, right.min) to DomainHelper.safeAddMax(left.max, right.max))
 //TODO: Should return simply left if right is the constant zero. (use a companion object)
 
 /**
@@ -253,7 +254,8 @@ case class Sum2(left: IntValue, right: IntValue)
 case class Prod2(left: IntValue, right: IntValue)
   extends IntInt2Int(left, right, (if(DomainHelper2.isSafeMult(left,right))
                                       (l,r) => l * r
-                                   else ((l: Int, r: Int) => DomainHelper2.safeMult(l,r))), DomainHelper2.getMinProd2(left, right) to DomainHelper2.getMaxProd2(left, right))
+                                   else ((l: Int, r: Int) => DomainHelper2.safeMult(l,r))),
+    DomainHelper2.getMinProd2(left, right) to DomainHelper2.getMaxProd2(left, right))
 
 
 
@@ -264,7 +266,8 @@ case class Prod2(left: IntValue, right: IntValue)
  * @author renaud.delandtsheer@cetic.be
  */
 case class Div(left: IntValue, right: IntValue)
-  extends IntInt2Int(left, right, (l: Int, r: Int) => l / r, DomainHelper2.getMinDiv(left, right) to DomainHelper2.getMaxDiv(left, right))
+  extends IntInt2Int(left, right, (l: Int, r: Int) => l / r,
+    DomainHelper2.getMinDiv(left, right) to DomainHelper2.getMaxDiv(left, right))
 /**
  * left / right
  * where left, right, and output are IntVar
@@ -272,7 +275,9 @@ case class Div(left: IntValue, right: IntValue)
  * @author renaud.delandtsheer@cetic.be
  */
 case class Mod(left: IntValue, right: IntValue)
-  extends IntInt2Int(left, right, (l: Int, r: Int) => l - r * (l / r), 0 to Math.min(left.max, right.max))
+  extends IntInt2Int(left, right,
+    (l: Int, r: Int) => l - r * (l / r),
+    0 to Math.min(left.max, right.max))
 
 /**
  * abs(v) (absolute value)
@@ -280,7 +285,8 @@ case class Mod(left: IntValue, right: IntValue)
  * @author renaud.delandtsheer@cetic.be
  */
 case class Abs(v: IntValue)
-  extends Int2Int(v, ((x: Int) => x.abs), (if (v.min <= 0) 0 else v.min) to v.max.max(-v.min))
+  extends Int2Int(v, ((x: Int) => x.abs),
+    (if (v.min <= 0) 0 else v.min) to v.max.max(-v.min))
 
 /**
  * This invariant implements a step function. Values higher than pivot are mapped to ifval
@@ -293,7 +299,8 @@ case class Abs(v: IntValue)
  * @param elseval the value returned when x <= pivot
  */
 case class Step(x: IntValue, pivot: Int = 0, thenval: Int = 1, elseval: Int = 0)
-  extends Int2Int(x, (a: Int) => if (a > pivot) thenval else elseval, math.min(thenval,elseval) to math.max(thenval,elseval))
+  extends Int2Int(x, (a: Int) => if (a > pivot) thenval else elseval,
+    math.min(thenval,elseval) to math.max(thenval,elseval))
 
 /**
  * This invariant implements the identity function within the min-max range.
@@ -305,7 +312,8 @@ case class Step(x: IntValue, pivot: Int = 0, thenval: Int = 1, elseval: Int = 0)
  * @param maxBound
  */
 case class Bound(x: IntValue, minBound: Int, maxBound: Int)
-  extends Int2Int(x, (a: Int) => if (a < minBound) minBound else if (a > maxBound) maxBound else a, math.max(minBound, x.min) to math.min(maxBound, x.max))
+  extends Int2Int(x, (a: Int) => if (a < minBound) minBound else if (a > maxBound) maxBound else a,
+    math.max(minBound, x.min) to math.min(maxBound, x.max))
 
 
 /**
@@ -315,26 +323,30 @@ object DomainHelper2 {
   def getMinDiv(left: IntValue, right: IntValue) = {
     val maxVal = if (right.max == 0) { -1 } else { right.max }
     val minVal = if (right.min == 0) { 1 } else { right.min }
-    Math.min(left.min / maxVal, Math.min(left.min / minVal, Math.min(left.max / maxVal, left.max / minVal)))
+    Math.min(left.min / maxVal, Math.min(left.min / minVal,
+      Math.min(left.max / maxVal, left.max / minVal)))
   }
   def getMaxDiv(left: IntValue, right: IntValue) = {
     val maxVal = if (right.max == 0) { -1 } else { right.max }
     val minVal = if (right.min == 0) { 1 } else { right.min }
-    Math.max(left.min / maxVal, Math.max(left.min / minVal, Math.max(left.max / maxVal, left.max / minVal)))
+    Math.max(left.min / maxVal, Math.max(left.min / minVal,
+      Math.max(left.max / maxVal, left.max / minVal)))
   }
 
   // Unfortunately all of these options need to be checked. For example if left has the domain -10..0 and right has the domain 3..5 then
   // the min value would be -50 and the max value would be 0. But if the domains were -10..0 and -10..0 then the min would be 0 and max 100. 
   // So basically all combinations of the domains min and max could yield the new min and max, as the ugly code below indicates. 
   def getMinProd2(left: IntValue, right: IntValue) = {
-    Math.min(safeMult(left.min, right.min), Math.min(safeMult(left.min, right.max), Math.min(safeMult(left.max, right.min), safeMult(left.max, right.max))))
+    Math.min(safeMult(left.min, right.min), Math.min(safeMult(left.min, right.max),
+      Math.min(safeMult(left.max, right.min), safeMult(left.max, right.max))))
   }
   def getMinProd(lm:Int,lM:Int,rm:Int,rM:Int) = {
     Math.min(safeMult(lm, rm), Math.min(safeMult(lm, rM), Math.min(safeMult(lM,rm), safeMult(lM,rM))))
   }
 
   def getMaxProd2(left: IntValue, right: IntValue) = {
-    Math.max(safeMult(left.min, right.min), Math.max(safeMult(left.min, right.max), Math.max(safeMult(left.max, right.min), safeMult(left.max, right.max))))
+    Math.max(safeMult(left.min, right.min), Math.max(safeMult(left.min, right.max),
+      Math.max(safeMult(left.max, right.min), safeMult(left.max, right.max))))
   }
   def getMaxProd(lm:Int,lM:Int,rm:Int,rM:Int) = {
     Math.max(safeMult(lm, rm), Math.max(safeMult(lm, rM), Math.max(safeMult(lM,rm), safeMult(lM,rM))))

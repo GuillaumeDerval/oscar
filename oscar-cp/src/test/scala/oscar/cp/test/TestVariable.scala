@@ -163,9 +163,9 @@ class TestVariable extends FunSuite with ShouldMatchers {
     
     
     propagCalled = 0
-    cp.add(x != 1)
+    cp.add(x !== 1)
     assert(propagCalled == 0)
-    cp.add(x != 4)
+    cp.add(x !== 4)
     assert(propagCalled == 1)
     assert(x.isBound)
     

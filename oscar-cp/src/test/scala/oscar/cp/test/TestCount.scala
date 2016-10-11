@@ -30,7 +30,7 @@ class TestCount extends FunSuite with ShouldMatchers {
   val rand = new scala.util.Random(0)
 
   def countDecomp(cp: CPSolver, N: CPIntVar, X: Array[CPIntVar], Y: CPIntVar) = {
-    cp.add(sum(X.map(_ === Y)) == N)
+    cp.add(sum(X.map(_ ?=== Y)) === N)
   }
 
   def nbSol(nmin: Int, nmax: Int, domx: Array[Set[Int]], domy: Set[Int], decomp: Boolean = false): (Int, Int) = {

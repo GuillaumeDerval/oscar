@@ -57,13 +57,13 @@ object SendMostMoney2 extends App {
     
     println("MONEY1: " + money)
     add(S * 1000 + E * 100 + N * 10 + D +
-      M * 1000 + O * 100 + S * 10 + T ==
+      M * 1000 + O * 100 + S * 10 + T ===
       M * 10000 + O * 1000 + N * 100 + E * 10 + Y)
     add(S > 0)
     add(M > 0)
     add(allDifferent(all), Strong)
     if (money > 0) {
-      add(Money == money)
+      add(Money === money)
     }
     search {
       binaryFirstFail(all)

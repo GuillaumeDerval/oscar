@@ -27,14 +27,9 @@ package oscar.cbls.constraints.lib.basic
 import oscar.cbls.constraints.core._
 import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
-import oscar.cbls.invariants.lib.logic.IntInt2Int
-import oscar.cbls.invariants.lib.minmax._
-import oscar.cbls.invariants.lib.numeric.Dist
-import oscar.cbls.modeling.Algebra._
+import oscar.cbls.invariants.lib.numeric.{Dist, MinusOffsetPos, ReifViol}
+
 import scala.math.abs
-import oscar.cbls.invariants.lib.logic.IntInt2Int
-import oscar.cbls.invariants.lib.numeric.MinusOffsetPos
-import oscar.cbls.invariants.lib.numeric.ReifViol
 
 /**
  * implements left <= right
@@ -123,7 +118,7 @@ case class G(l: IntValue, r: IntValue) extends LA(r, l)
  * implements left != right
  * @author renaud.delandtsheer@cetic.be
  */
-case class NE(left: IntValue, right: IntValue) extends Invariant with Constraint {
+case class NE(left: IntValue, right: IntValue) extends Invariant with Constraint with IntNotificationTarget{
   registerConstrainedVariables(left, right)
   registerStaticAndDynamicDependenciesNoID(left, right)
   finishInitialization()
@@ -134,7 +129,7 @@ case class NE(left: IntValue, right: IntValue) extends Invariant with Constraint
   violation.setDefiningInvariant(this)
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
     violation := (if (left.value == right.value) 1 else 0)
   }
 

@@ -50,7 +50,7 @@ object CookieMonster extends CPModel with App {
   }
 
   for (j <- 0 until jars.size) {
-    add(sum(0 until maxMove)(m => bx(m)(j)) == jars(j))
+    add(sum(0 until maxMove)(m => bx(m)(j)) === jars(j))
   }
   // break symmetry
   for (m <- 0 until maxMove - 1) {
@@ -64,7 +64,7 @@ object CookieMonster extends CPModel with App {
   for (i <- 0 until maxMove; if nbSol == 0) {
     startSubjectTo(nSols = 1) {
       for (m <- i + 1 until maxMove) {
-        if (m > i) post(x(m) == 0)
+        if (m > i) post(x(m) === 0)
         else post(x(m) > 0)
       }
     }

@@ -31,7 +31,7 @@ class TestOperator extends FunSuite with ShouldMatchers  {
 	  val B = CPIntVar(-10 to 10)(cp)
 	  val C = -A
 	  C.value should be(-8)
-	  cp.post(B == -C)
+	  cp.post(B === -C)
 	  B.value should be(8)
   }  
   
@@ -60,7 +60,7 @@ class TestOperator extends FunSuite with ShouldMatchers  {
 	  val cp = CPSolver()
 	  val A = CPBoolVar()(cp)
 	  val B = CPBoolVar()(cp)
-	  cp.add((!A || B) == (A ==> B))
+	  cp.add((!A || B) === (A ==> B))
 	  cp.search {
 	    binaryStatic(Seq(A,B))
 	  }

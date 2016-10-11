@@ -38,13 +38,13 @@ object AlternativeTask extends CPModel with App {
 
   // Consistency 
   for (t <- Tasks) {
-    add(ends(t) == starts(t) + durations(t))
+    add(ends(t) === starts(t) + durations(t))
   }
   
   // Alternative demands
   for (t <- Tasks) {
-    add((resources(t) === 1) ==> (demands(t) === demandsData1(t)))
-    add((resources(t) === 2) ==> (demands(t) === demandsData2(t)))
+    add((resources(t) ?=== 1) ==> (demands(t) ?=== demandsData1(t)))
+    add((resources(t) ?=== 2) ==> (demands(t) ?=== demandsData2(t)))
   }
   
   // Cumulative

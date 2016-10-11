@@ -59,7 +59,7 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
       case TypeConditionOperatorRel.GT => r > k
       case TypeConditionOperatorRel.LE => r <= k
       case TypeConditionOperatorRel.LT => r < k
-      case TypeConditionOperatorRel.NE => r != k
+      case TypeConditionOperatorRel.NE => r !== k
     }).toConstraint
     modelDeclaration.add(r2)
   }
@@ -72,7 +72,7 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
       case TypeConditionOperatorRel.GT => r > k
       case TypeConditionOperatorRel.LE => r <= k
       case TypeConditionOperatorRel.LT => r < k
-      case TypeConditionOperatorRel.NE => r != k
+      case TypeConditionOperatorRel.NE => r !== k
     }).toConstraint
     modelDeclaration.add(r2)
   }
@@ -95,7 +95,7 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
       case TypeConditionOperatorRel.GT => r > z
       case TypeConditionOperatorRel.LE => r <= z
       case TypeConditionOperatorRel.LT => r < z
-      case TypeConditionOperatorRel.NE => r != z
+      case TypeConditionOperatorRel.NE => r !== z
     }).toConstraint
     modelDeclaration.add(r2)
   }
@@ -109,7 +109,7 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
           case TypeConditionOperator.GT => expr > c.k
           case TypeConditionOperator.LE => expr <= c.k
           case TypeConditionOperator.LT => expr < c.k
-          case TypeConditionOperator.NE => expr != c.k
+          case TypeConditionOperator.NE => expr !== c.k
           case TypeConditionOperator.IN => ??? // ???
           case TypeConditionOperator.NOTIN => ??? // ???
         }
@@ -120,7 +120,7 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
           case TypeConditionOperator.GT => expr > varHashMap(c.x.id)
           case TypeConditionOperator.LE => expr <= varHashMap(c.x.id)
           case TypeConditionOperator.LT => expr < varHashMap(c.x.id)
-          case TypeConditionOperator.NE => expr != varHashMap(c.x.id)
+          case TypeConditionOperator.NE => expr !== varHashMap(c.x.id)
           case TypeConditionOperator.IN => ??? // ???
           case TypeConditionOperator.NOTIN => ??? // ???
         }
@@ -176,7 +176,7 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
       case TypeExpr.LE => _recursiveIntentionBuilder(tree.sons(0)) <= _recursiveIntentionBuilder(tree.sons(1))
       case TypeExpr.GE => _recursiveIntentionBuilder(tree.sons(0)) >= _recursiveIntentionBuilder(tree.sons(1))
       case TypeExpr.GT => _recursiveIntentionBuilder(tree.sons(0)) > _recursiveIntentionBuilder(tree.sons(1))
-      case TypeExpr.NE => _recursiveIntentionBuilder(tree.sons(0)) != _recursiveIntentionBuilder(tree.sons(1))
+      case TypeExpr.NE => _recursiveIntentionBuilder(tree.sons(0)) !== _recursiveIntentionBuilder(tree.sons(1))
       case TypeExpr.ADD => Sum(tree.sons.map(_recursiveIntentionBuilder))
       case TypeExpr.SUB => _recursiveIntentionBuilder(tree.sons(0)) - _recursiveIntentionBuilder(tree.sons(1))
       case TypeExpr.DIV => _recursiveIntentionBuilder(tree.sons(0)) / _recursiveIntentionBuilder(tree.sons(1))
@@ -290,7 +290,7 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
       val a: Array[IntExpression] = Array(varHashMap(x.id))
       val b: Array[Array[Int]] = Array(values)
       val v = varHashMap(x.id)
-      values.foreach(x => modelDeclaration.add(v != x))
+      values.foreach(x => modelDeclaration.add(v !== x))
     }
   }
 

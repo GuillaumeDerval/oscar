@@ -92,9 +92,9 @@ object ABCEndview extends App {
     val n = a.length
     if (c > 0) {
       val i = CPIntVar(0 until d)(cp)
-      cp.add(a(i) == c)
+      cp.add(a(i) === c)
       for (j <- 0 until n) {
-        cp.add((i >>= j) ==> (a(j) === 0))
+        cp.add((i ?> j) ==> (a(j) ?=== 0))
       }
     }
   }
@@ -106,9 +106,9 @@ object ABCEndview extends App {
     val n = a.length
     if (c > 0) {
       val i = CPIntVar(n - d until n)(cp)
-      cp.add(a(i) == c)
+      cp.add(a(i) === c)
       for (j <- 0 until n) {
-        cp.add((i <<= j) ==> (a(j) === 0))
+        cp.add((i ?< j) ==> (a(j) ?=== 0))
       }
     }
   }
@@ -365,7 +365,7 @@ object ABCEndview extends App {
         // 
         val vMax = y.max
         val v = vMax
-        branch { post(y == v) } { post(y != v) }
+        branch { post(y === v) } { post(y !== v) }
       }
 
     }

@@ -58,7 +58,7 @@ object Marathon extends CPModel with App  {
       val len = x.length
       for(i <- 0 until len;
           j <- 0 until len) {
-       add( (y(j) === i) == (x(i) === j) )
+       add((y(j) ?=== i) === (x(i) ?=== j))
       }
    }
    // Same as inverse() but returns the y Array
@@ -67,7 +67,7 @@ object Marathon extends CPModel with App  {
       val y = Array.fill(len)(CPIntVar(0 to len-1))
       for(i <- 0 until len;
           j <- 0 until len) {
-       add( (y(j) === i) == (x(i) === j) )
+       add((y(j) ?=== i) === (x(i) ?=== j))
       }
       y
    }
@@ -88,7 +88,7 @@ object Marathon extends CPModel with App  {
     
     	add(allDifferent(runners), Strong)
         // a: Olivier not last
-       add(olivier != n)
+       add(olivier !== n)
         // b: Dominique, Pascal and Ignace before Naren and Olivier
         for(a <- Array(dominique, pascal, ignace);
             b <- Array(naren, olivier)) {
@@ -99,13 +99,13 @@ object Marathon extends CPModel with App  {
         // d: Philippe is among the first four
        add(philippe   <= 3)
         // e: Ignace neither second nor third
-       add(ignace     != 1)
-       add(ignace     != 2)
+       add(ignace     !== 1)
+       add(ignace     !== 2)
         // f: Pascal three places earlier than Naren
-       add(pascal + 3 == naren)
+       add(pascal + 3 === naren)
         // g: Neither Ignace nor Dominique on fourth position
-       add(ignace     != 3)
-       add(dominique  != 3)
+       add(ignace     !== 3)
+       add(dominique  !== 3)
       search{
         binaryStatic(runners ++ places)
       }

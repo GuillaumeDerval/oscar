@@ -88,7 +88,7 @@ object Sudoku2 extends CPModel with App {
     i <- NRANGE;
     j <- NRANGE if problem(i)(j) > 0
   ) {
-    add(x(i)(j) == problem(i)(j))
+    add(x(i)(j) === problem(i)(j))
   }
   // rows and columns
   for (i <- NRANGE) {

@@ -56,6 +56,6 @@ object BoolExpression {
    * Convert a BoolExpression to an equivalent constraint
    */
   implicit def booltoConstraint(boolExpression: BoolExpression): Constraint = boolExpression.toConstraint
-  implicit def toBoolExpression(intExpression: IntExpression): BoolExpression = intExpression != 0
-  implicit def intToConstraint(intExpression: IntExpression): Constraint = intExpression != 0
+  implicit def toBoolExpression(intExpression: IntExpression): BoolExpression = intExpression !== 0
+  implicit def intToConstraint(intExpression: IntExpression): Constraint = intExpression !== 0
 }

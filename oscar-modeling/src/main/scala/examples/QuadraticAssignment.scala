@@ -62,7 +62,7 @@ object QuadraticAssignment extends DistributedCPApp[Int] with App {
           else {
             val vari = selectMinDeterministic(z)(y => y.size)
             val valu = vari.min
-            Branching.branch(cp.post(vari === valu))(cp.post(vari != valu))
+            Branching.branch(cp.post(vari === valu))(cp.post(vari !== valu))
           }
         }
     }

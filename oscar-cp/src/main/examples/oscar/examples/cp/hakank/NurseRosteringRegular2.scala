@@ -109,7 +109,7 @@ object NurseRosteringRegular2 extends CPModel with App  {
        add(gcc(Array.tabulate(num_nurses)(x(_)(d)),0 to 2,Array(3,2,0),Array(num_nurses,num_nurses,num_nurses)))
         // for the statistics
         for(s <- shifts_a) {
-         add(stat(d)(s) == sum(for{n <- nurses} yield(x(n)(d) === s)))
+         add(stat(d)(s) === sum(for{n <- nurses} yield(x(n)(d) ?=== s)))
         }
       }
      search{

@@ -60,12 +60,10 @@ trait IntExpression extends Serializable {
   def % (b: Int): IntExpression = new Modulo(this, b)
   def ~** (b: IntExpression): IntExpression = new Exponent(this, b)
   def ~^ (b: IntExpression): IntExpression = new Exponent(this, b)
-  //def == (b: IntExpression): BoolExpression = new Eq(this, b)
-  //def == (b: Int): BoolExpression = new Eq(this, b)
   def === (b: IntExpression): BoolExpression = new Eq(this, b)
   def === (b: Int): BoolExpression = new Eq(this, b)
-  def != (b: IntExpression): BoolExpression = new NotEq(this, b)
-  def != (b: Int): BoolExpression = new NotEq(this, b)
+  def !== (b: IntExpression): BoolExpression = new NotEq(this, b)
+  def !== (b: Int): BoolExpression = new NotEq(this, b)
   def >= (b: IntExpression): BoolExpression = new GrEq(this, b)
   def > (b: IntExpression): BoolExpression = new Gr(this, b)
   def <= (b: IntExpression): BoolExpression = new LrEq(this, b)
@@ -73,7 +71,7 @@ trait IntExpression extends Serializable {
   def in (b: Set[Int]): BoolExpression = new InSet(this, b)
   def unary_- : IntExpression = new UnaryMinus(this)
   def unary_+ : IntExpression = this
-  def unary_! : IntExpression = this != 1
+  def unary_! : IntExpression = this !== 1
 
   def maxRegret(costs: Array[Int]): Int = {
     val valuess = values().toSeq

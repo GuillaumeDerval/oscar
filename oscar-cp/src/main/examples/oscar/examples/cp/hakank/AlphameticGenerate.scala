@@ -135,7 +135,7 @@ object AlphameticGenerate {
     //    word<0> + word<1> + ... = word<p-1>
     //
     add(
-      sum(for (p <- 0 until p_len - 1) yield wordSum(x, problem_words(p), base, ht)) ==
+      sum(for (p <- 0 until p_len - 1) yield wordSum(x, problem_words(p), base, ht)) ===
         wordSum(x, problem_words(p_len - 1), base, ht))
 
     // ensure that all initial digits > 0

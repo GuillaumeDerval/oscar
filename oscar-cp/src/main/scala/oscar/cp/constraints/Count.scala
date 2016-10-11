@@ -206,7 +206,7 @@ class Count(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) extends Co
     if (updateN() == Failure) return Failure
     if (N.isBound) return Success
     if (Y.isBound) return filterYBound()
-    if (s.post(new Sum(X.map((_ === Y)), N)) == Failure) return Failure
+    if (s.post(new Sum(X.map((_ ?=== Y)), N)) == Failure) return Failure
     Success
   }
 

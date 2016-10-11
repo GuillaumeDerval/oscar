@@ -77,7 +77,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
       case SubCircuit(succ, offset) => cpSolver.post(cp.constraints.SubCircuit(succ.map(postIntExpressionAndGetVar), offset)) != CPOutcome.Failure
       case Inverse(a, b) => cpSolver.post(new cp.constraints.Inverse(a.map(postIntExpressionAndGetVar), b.map(postIntExpressionAndGetVar))) != CPOutcome.Failure
       case MinAssignment(xarg, weightsarg, cost) => cpSolver.post(new cp.constraints.MinAssignment(xarg.map(postIntExpressionAndGetVar), weightsarg, postIntExpressionAndGetVar(cost))) != CPOutcome.Failure
-      case StrongEq(a, b) => cpSolver.post(postIntExpressionAndGetVar(a) == postIntExpressionAndGetVar(b), CPPropagStrength.Strong) != CPOutcome.Failure
+      case StrongEq(a, b) => cpSolver.post(postIntExpressionAndGetVar(a) === postIntExpressionAndGetVar(b), CPPropagStrength.Strong) != CPOutcome.Failure
       case Spread(a, s1, s2) => cpSolver.post(new cp.constraints.Spread(a.toArray.map(postIntExpressionAndGetVar), s1, postIntExpressionAndGetVar(s2), true))  != CPOutcome.Failure
       case default => throw new Exception() //TODO: put a real exception here
     }
@@ -96,9 +96,9 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
         postEquality(right, left, second = true)
       else
         postConstraintForPossibleConstant(left, right,
-          (x,y)=>(y == x),
-          (x,y)=>(x == y),
-          (x,y)=>(x == y)
+          (x,y)=>(y === x),
+          (x,y)=>(x === y),
+          (x,y)=>(x === y)
         )
   }
 
@@ -127,9 +127,9 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
         cpSolver.add(postBoolExpressionAndGetVar(a).not) != CPOutcome.Failure
       case NotEq(a, b) =>
         postConstraintForPossibleConstant(a, b,
-          (x,y)=>(y != x),
-          (x,y)=>(x != y),
-          (x,y)=>(x != y)
+          (x,y)=>(y !== x),
+          (x,y)=>(x !== y),
+          (x,y)=>(x !== y)
         )
       case InSet(a, b) =>
         cpSolver.add(new cp.constraints.InSet(postIntExpressionAndGetVar(a), b)) != CPOutcome.Failure
@@ -152,21 +152,21 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
       case BinaryOr(a, b) =>
         CPBoolVarOps(postBoolExpressionAndGetVar(a)) || postBoolExpressionAndGetVar(b)
       case Eq(a, b) =>
-        CPIntVarOps(postIntExpressionAndGetVar(a)) === postIntExpressionAndGetVar(b)
+        CPIntVarOps(postIntExpressionAndGetVar(a)) ?=== postIntExpressionAndGetVar(b)
       case Gr(a, b) =>
-        CPIntVarOps(postIntExpressionAndGetVar(a)) >>= postIntExpressionAndGetVar(b)
+        CPIntVarOps(postIntExpressionAndGetVar(a)) ?> postIntExpressionAndGetVar(b)
       case GrEq(a, b) =>
-        CPIntVarOps(postIntExpressionAndGetVar(a)) >== postIntExpressionAndGetVar(b)
+        CPIntVarOps(postIntExpressionAndGetVar(a)) ?>= postIntExpressionAndGetVar(b)
       case Lr(a, b) =>
-        CPIntVarOps(postIntExpressionAndGetVar(a)) <<= postIntExpressionAndGetVar(b)
+        CPIntVarOps(postIntExpressionAndGetVar(a)) ?< postIntExpressionAndGetVar(b)
       case LrEq(a, b) =>
-        CPIntVarOps(postIntExpressionAndGetVar(a)) <== postIntExpressionAndGetVar(b)
+        CPIntVarOps(postIntExpressionAndGetVar(a)) ?<= postIntExpressionAndGetVar(b)
       case Or(array) =>
         array.foldLeft(oscar.cp.CPBoolVar(false))((a,b) => CPBoolVarOps(a) || postBoolExpressionAndGetVar(b))
       case Not(a) =>
         postBoolExpressionAndGetVar(a).not
       case NotEq(a, b) =>
-        CPIntVarOps(postIntExpressionAndGetVar(a)) !== postIntExpressionAndGetVar(b)
+        CPIntVarOps(postIntExpressionAndGetVar(a)) ?!== postIntExpressionAndGetVar(b)
       case Implication(a, b) =>
         CPBoolVarOps(postBoolExpressionAndGetVar(a)) ==> postBoolExpressionAndGetVar(b)
       case Xor(a, b) => throw new Exception() //TODO: throw valid exception

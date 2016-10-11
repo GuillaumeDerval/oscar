@@ -59,7 +59,7 @@ object BalesOfHay extends CPModel with App {
     // indices in bales
     val i = CPIntVar(0 until n)
     val j = CPIntVar(0 until n)
-    add(bales(i) + bales(j) == weights(w))
+    add(bales(i) + bales(j) === weights(w))
     add(i < j) // symmetry breaking
   }
   // symmetry breaking

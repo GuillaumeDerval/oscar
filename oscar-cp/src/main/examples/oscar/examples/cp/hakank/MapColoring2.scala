@@ -40,17 +40,17 @@ object MapColoring2 extends CPModel with App  {
     //
     var numSols = 0
   
-     add(color(France) != color(Belgium))
-     add(color(France) != color(Luxembourg))
-     add(color(France) != color(Germany))
-     add(color(Luxembourg) != color(Germany))
-     add(color(Luxembourg) != color(Belgium))
-     add(color(Belgium) != color(Netherlands))
-     add(color(Belgium) != color(Germany))
-     add(color(Germany) != color(Netherlands))
-     add(color(Germany) != color(Denmark))
+     add(color(France) !== color(Belgium))
+     add(color(France) !== color(Luxembourg))
+     add(color(France) !== color(Germany))
+     add(color(Luxembourg) !== color(Germany))
+     add(color(Luxembourg) !== color(Belgium))
+     add(color(Belgium) !== color(Netherlands))
+     add(color(Belgium) !== color(Germany))
+     add(color(Germany) !== color(Netherlands))
+     add(color(Germany) !== color(Denmark))
       // Symmetry breaking: Belgium has color 1
-     add(color(Belgium) == 1)
+     add(color(Belgium) === 1)
      search{
        binaryFirstFail(color)
      }

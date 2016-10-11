@@ -64,19 +64,19 @@ object CalculsDEnfer extends CPModel with App {
   minimize(x_max)
   // solveAll 
   add(allDifferent(X), Strong)
-  add(z + e + r + o == 0);
-  add(o + n + e == 1);
-  add(t + w + o == 2);
-  add(t + h + r + e + e == 3);
-  add(f + o + u + r == 4);
-  add(f + i + v + e == 5);
-  add(s + i + x == 6);
-  add(s + e + v + e + n == 7);
-  add(e + i + g + h + t == 8);
-  add(n + i + n + e == 9);
-  add(t + e + n == 10);
-  add(e + l + e + v + e + n == 11);
-  add(t + w + e + l + f == 12); // Sic!
+  add(z + e + r + o === 0);
+  add(o + n + e === 1);
+  add(t + w + o === 2);
+  add(t + h + r + e + e === 3);
+  add(f + o + u + r === 4);
+  add(f + i + v + e === 5);
+  add(s + i + x === 6);
+  add(s + e + v + e + n === 7);
+  add(e + i + g + h + t === 8);
+  add(n + i + n + e === 9);
+  add(t + e + n === 10);
+  add(e + l + e + v + e + n === 11);
+  add(t + w + e + l + f === 12); // Sic!
   // for solveAll
   // add(x_max == 16);
   search {

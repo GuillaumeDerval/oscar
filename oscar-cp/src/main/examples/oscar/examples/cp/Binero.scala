@@ -63,7 +63,7 @@ object Binero extends CPModel with App {
 
   // The solution must contain the elements of the input grid
   for (i <- range; j <- range; if (origGrid(i)(j) != -1)) {
-    add(grid(2 * n * i + j) == origGrid(i)(j))
+    add(grid(2 * n * i + j) === origGrid(i)(j))
   }
 
   for (i <- range) {

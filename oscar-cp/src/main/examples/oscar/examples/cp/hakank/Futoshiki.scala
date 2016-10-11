@@ -115,7 +115,7 @@ object Futoshiki extends CPModel with App  {
   
       // set initial values
       for(row <- RANGE; col <- RANGE if values(row)(col) > 0) {
-       add(field(row)(col) == values(row)(col))
+       add(field(row)(col) === values(row)(col))
       }
       // all rows have to be different
       for(row <- RANGE) {
