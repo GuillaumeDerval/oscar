@@ -15,6 +15,8 @@
 
 package oscar.cp.modeling
 
+import java.security.InvalidParameterException
+
 import oscar.cp.constraints._
 import oscar.cp.core.variables.CPIntVarViewOffset
 import oscar.cp.core.variables.CPIntVarViewTimes
@@ -928,6 +930,22 @@ trait Constraints {
     new Count(c, x, y)
   }
 
+
+  /**
+    * Global Cardinality Constraint: every value occurs at least min and at most max
+    *
+    * @param x an non empty array of variables
+    * @param valueMin is the minimum value that is constrained
+    * @param cardMin is the minimum number of occurrences
+    * @param cardMax such that cardMax.size == cardMin.size is the maximum number of occurrences
+    * @return a constraint such that each value v in the range  [valueMin..valueMin+cardMin.size-1]
+    *         occurs at least cardMin[v-minValue] and at most cardMax[v-minValue] times.
+    */
+  def gcc(x: Array[CPIntVar], valueMin: Int, cardMin: Array[Int], cardMax: Array[Int]): Constraint = {
+    if (cardMin.size != cardMax.size) throw new InvalidParameterException("cardMin.size != cardMax.size")
+    new GCC(x, valueMin, cardMin, cardMax)
+  }
+
   /**
    * Global Cardinality Constraint: every value occurs at least min and at most max
     *
@@ -1218,11 +1236,11 @@ trait Constraints {
     val constraints = ArrayBuffer[Constraint]()
 
     for (i <- 0 until n - 1) {
-      constraints.append(elementVar(x, p(i), Strong) <= elementVar(x, p(i + 1), Strong))
+      constraints.append(elementVar(x, p(i), Strong).leEq(elementVar(x, p(i + 1), Strong)))
       if (strictly) {
-        constraints.append(s(i) < s(i + 1))
+        constraints.append(s(i).le(s(i + 1)))
       } else {
-        constraints.append(s(i) <= s(i + 1))
+        constraints.append(s(i).leEq(s(i + 1)))
       }
 
     }
@@ -1232,14 +1250,14 @@ trait Constraints {
     val maxs = s.map(_.max).max
 
     for (i <- x.indices) {
-      constraints.append(p(i) >= 0)
-      constraints.append(p(i) <= n)
+      constraints.append(p(i).grEq(0))
+      constraints.append(p(i).leEq(n))
 
-      constraints.append(s(i) <= maxx)
-      constraints.append(s(i) >= minx)
+      constraints.append(s(i).leEq(maxx))
+      constraints.append(s(i).grEq(minx))
 
-      constraints.append(x(i) <= maxs)
-      constraints.append(x(i) >= mins)
+      constraints.append(x(i).leEq(maxs))
+      constraints.append(x(i).grEq(mins))
     }
     for (i <- 0 until n) {
       constraints.append(elementVar(x, p(i), s(i)))
@@ -1261,7 +1279,7 @@ trait Constraints {
 
     for (i <- 0 until n) {
       // there are less than i values smaller than s(i) 
-      constraints.append(elementVar(nbBefore, s(i) - minVal) <= i)
+      constraints.append(elementVar(nbBefore, s(i) - minVal).leEq(i))
     }
     constraints.toArray
   }
