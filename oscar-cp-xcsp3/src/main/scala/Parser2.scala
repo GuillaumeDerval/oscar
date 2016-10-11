@@ -352,9 +352,31 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
     modelDeclaration.add(AtMost(k, list.map(x => varHashMap(x.id)), value))
   }
 
-  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int): Unit = throw new Exception("Single subcircuit constraint is not implemented")
-  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: Int): Unit = throw new Exception("Single subcircuit constraint is not implemented")
-  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: XVarInteger): Unit = throw new Exception("Single subcircuit constraint is not implemented")
+  override def buildCtrMinimum(id: String, list: Array[XVarInteger], condition: Condition): Unit = {
+    _buildCrtWithCondition(id, Min(list.map(x => varHashMap(x.id))), condition)
+  }
+
+  override def buildCtrMaximum(id: String, list: Array[XVarInteger], condition: Condition): Unit = {
+    _buildCrtWithCondition(id, Max(list.map(x => varHashMap(x.id))), condition)
+  }
+
+  override def buildCtrLex(id: String, lists: Array[Array[XVarInteger]], operator: TypeOperator): Unit = {
+    val constraintType: (Array[IntExpression], Array[IntExpression]) => Constraint = operator match {
+      case TypeOperator.GE => LexGeq.apply
+      case TypeOperator.GT => LexGr.apply
+      case TypeOperator.LE => LexLeq
+      case TypeOperator.LT => LexLr.apply
+    }
+    lists.map(tuple => tuple.map(x => varHashMap(x.id))).sliding(2).foreach(tuples => modelDeclaration.add(constraintType(tuples(0), tuples(1))))
+  }
+
+  override def buildCtrAllDifferentList(id: String, lists: Array[Array[XVarInteger]]): Unit = throw new Exception("AllDifferentList is not implemented") // TODO implement with extension
+  override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = throw new Exception("AllDifferentExcept is not implemented")
+  override def buildCtrMinimum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = throw new Exception("Minimum/MinArg is not implemented")
+  override def buildCtrMaximum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = throw new Exception("Maximum/MaxArg is not implemented")
+  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int): Unit = throw new Exception("Single subcircuit constraint is not implemented") // TODO verify
+  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: Int): Unit = throw new Exception("Single subcircuit constraint is not implemented") // TODO verify
+  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: XVarInteger): Unit = throw new Exception("Single subcircuit constraint is not implemented") // TODO verify
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occurs: Array[XVarInteger]): Unit = throw new Exception("GCC with var cardinalities is not implemented")
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occurs: Array[Int]): Unit = throw new Exception("GCC with var cardinalities is not implemented")
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occursMin: Array[Int], occursMax: Array[Int]): Unit = throw new Exception("GCC with var cardinalities is not implemented")
@@ -469,27 +491,15 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
 
   override def buildCtrRegular(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]], startState: String, finalStates: Array[String]): Unit = ???
 
-  override def buildCtrLex(id: String, lists: Array[Array[XVarInteger]], operator: TypeOperator): Unit = ???
-
   override def buildCtrMDD(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]]): Unit = ???
 
-  override def buildCtrAllDifferentList(id: String, lists: Array[Array[XVarInteger]]): Unit = ???
-
   override def buildCtrLexMatrix(id: String, matrix: Array[Array[XVarInteger]], operator: TypeOperator): Unit = ???
-
-  override def buildCtrMinimum(id: String, list: Array[XVarInteger], condition: Condition): Unit = ???
-
-  override def buildCtrMinimum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = ???
-
-  override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = ???
 
   override def buildCtrStretch(id: String, list: Array[XVarInteger], values: Array[Int], widthsMin: Array[Int], widthsMax: Array[Int]): Unit = ???
 
   override def buildCtrStretch(id: String, list: Array[XVarInteger], values: Array[Int], widthsMin: Array[Int], widthsMax: Array[Int], patterns: Array[Array[Int]]): Unit = ???
 
-  override def buildCtrMaximum(id: String, list: Array[XVarInteger], condition: Condition): Unit = ???
 
-  override def buildCtrMaximum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = ???
 }
 
 object XCSP3Parser {

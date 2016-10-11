@@ -68,8 +68,9 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
       case ExpressionConstraint(expr: BoolExpression) => postBooleanExpression(expr)
       case Among(n, x, s) => cpSolver.post(cp.modeling.constraint.among(postIntExpressionAndGetVar(n), x.map(postIntExpressionAndGetVar), s)) != CPOutcome.Failure
       case AllDifferent(array) => cpSolver.post(cp.modeling.constraint.allDifferent(array.map(postIntExpressionAndGetVar)), CPPropagStrength.Weak) != CPOutcome.Failure
+      case LexLeq(a, b) => cpSolver.post(cp.modeling.constraint.lexLeq(a.map(postIntExpressionAndGetVar), b.map(postIntExpressionAndGetVar))) != CPOutcome.Failure
       case Table(array, values) => cpSolver.post(cp.modeling.constraint.table(array.map(postIntExpressionAndGetVar), values, TableAlgo.MDD4R)) != CPOutcome.Failure
-      //case NegativeTable(array, values) => cpSolver.post(cp.modeling.constraint.negativeTable(array.map(postIntExpressionAndGetVar), values)) != CPOutcome.Failure
+      case NegativeTable(array, values) => cpSolver.post(cp.modeling.constraint.negativeTable(array.map(postIntExpressionAndGetVar), values)) != CPOutcome.Failure
       case MinCircuit(succ, distMatrixSucc, cost) => cpSolver.post(cp.modeling.constraint.minCircuit(succ.map(postIntExpressionAndGetVar), distMatrixSucc, postIntExpressionAndGetVar(cost)), CPPropagStrength.Strong) != CPOutcome.Failure
       case MinCircuitWeak(succ, distMatrixSucc, cost) => cpSolver.post(cp.modeling.constraint.minCircuit(succ.map(postIntExpressionAndGetVar), distMatrixSucc, postIntExpressionAndGetVar(cost)), CPPropagStrength.Weak) != CPOutcome.Failure
       case GCC(x, minVal, low, up) => cpSolver.post(new oscar.cp.constraints.GCC(x.map(postIntExpressionAndGetVar), minVal, low, up)) != CPOutcome.Failure
