@@ -25,6 +25,7 @@ import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPSetVar}
 import oscar.cp.core.watcher.PropagEventQueueVarSet
 
 import scala.collection.JavaConversions.{asJavaCollection, collectionAsScalaIterable}
+import scala.reflect.ClassTag
 import scala.util.Random
 
 /**
@@ -457,8 +458,16 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode {
         Failure
       }
     }
-  }  
-  
+  }
+
+  def add[T: ClassTag](boolVars: Iterable[CPBoolVar]): CPOutcome = post(boolVars)
+
+  def post(boolVars: Iterable[CPBoolVar]): CPOutcome = {
+    for (b <- boolVars) {
+      if (post(b.constraintTrue) == Failure) return Failure
+    }
+    return CPOutcome.Suspend
+  }
 
   def add(c: Constraint, st: CPPropagStrength): CPOutcome = post(c, st)
 

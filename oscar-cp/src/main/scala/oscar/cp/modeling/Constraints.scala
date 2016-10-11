@@ -1218,11 +1218,11 @@ trait Constraints {
     val constraints = ArrayBuffer[Constraint]()
 
     for (i <- 0 until n - 1) {
-      constraints.append(elementVar(x, p(i), Strong) <= elementVar(x, p(i + 1), Strong))
+      constraints.append(elementVar(x, p(i), Strong).leEq(elementVar(x, p(i + 1), Strong)))
       if (strictly) {
-        constraints.append(s(i) < s(i + 1))
+        constraints.append(s(i).le(s(i + 1)))
       } else {
-        constraints.append(s(i) <= s(i + 1))
+        constraints.append(s(i).leEq(s(i + 1)))
       }
 
     }
@@ -1232,14 +1232,14 @@ trait Constraints {
     val maxs = s.map(_.max).max
 
     for (i <- x.indices) {
-      constraints.append(p(i) >= 0)
-      constraints.append(p(i) <= n)
+      constraints.append(p(i).grEq(0))
+      constraints.append(p(i).leEq(n))
 
-      constraints.append(s(i) <= maxx)
-      constraints.append(s(i) >= minx)
+      constraints.append(s(i).leEq(maxx))
+      constraints.append(s(i).grEq(minx))
 
-      constraints.append(x(i) <= maxs)
-      constraints.append(x(i) >= mins)
+      constraints.append(x(i).leEq(maxs))
+      constraints.append(x(i).grEq(mins))
     }
     for (i <- 0 until n) {
       constraints.append(elementVar(x, p(i), s(i)))
@@ -1261,7 +1261,7 @@ trait Constraints {
 
     for (i <- 0 until n) {
       // there are less than i values smaller than s(i) 
-      constraints.append(elementVar(nbBefore, s(i) - minVal) <= i)
+      constraints.append(elementVar(nbBefore, s(i) - minVal).leEq(i))
     }
     constraints.toArray
   }

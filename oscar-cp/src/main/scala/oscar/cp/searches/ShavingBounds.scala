@@ -67,7 +67,8 @@ extends Branching with BranchingUtils {
         
         if (minBound(q) > x.min || maxBound(q) < x.max) {
           hasRemoved = true
-          store.post(Array(x >= minBound(q), x <= maxBound(q)))
+          store.post(x >= minBound(q))
+          store.post(x <= maxBound(q))
         }
         
         q += 1
