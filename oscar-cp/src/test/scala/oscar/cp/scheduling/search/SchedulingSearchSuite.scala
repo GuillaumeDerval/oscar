@@ -167,7 +167,7 @@ abstract class SchedulingSearchSuite(seed: Int, scalable: Boolean) extends TestS
 
       solver.silent = true
 
-      add(startVars(0) == 0)
+      add(startVars(0) === 0)
       add(maxCumulativeResource(startVars, durationVars, endVars, demandVars, CPIntVar(capa)), Strong)
       search { searchHeuristic(startVars, durationVars, endVars, i => i) }
 

@@ -39,7 +39,7 @@ object FurnitureMoving extends CPModel with App  {
     val d_max = d.max
     val times_max = tasks.map(i => s(i).max + d_max).min
     for (t <- times_min to times_max) {
-      add(sum(tasks)(i => ((s(i) <<= t) && (s(i) + d(i) >>= t)) * r(i)) <= b)
+      add(sum(tasks)(i => ((s(i) ?< t) && ((s(i) + d(i)) ?> t)) * r(i)) <= b)
     }
     add(b <= r.sum);
   }
@@ -68,7 +68,7 @@ object FurnitureMoving extends CPModel with App  {
   minimize(num_persons)
   // ensure that end_times is starts + duration
   for (i <- 0 until n) {
-    add(end_times(i) == starts(i) + durations(i))
+    add(end_times(i) === starts(i) + durations(i))
   }
   // when searching for max_end_time
   //add(num_persons == 3)

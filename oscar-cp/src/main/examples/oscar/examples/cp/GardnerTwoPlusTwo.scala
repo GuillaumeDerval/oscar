@@ -27,7 +27,7 @@ object GardnerTwoPlusTwo extends CPModel with App {
   
   val variables = Seq(T, W, O, F, U, R)
 
-  add((T * 100 + W * 10 + O) * 2 == F * 1000 + O * 100 + U * 10 + R)
+  add((T * 100 + W * 10 + O) * 2 === F * 1000 + O * 100 + U * 10 + R)
   add(allDifferent(variables), Strong)
 
   search {

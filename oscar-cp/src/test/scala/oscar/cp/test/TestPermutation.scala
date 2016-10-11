@@ -63,14 +63,14 @@ class TestPermutation extends FunSuite with ShouldMatchers {
 		val y = Array.fill(4)(CPIntVar(-6 to 6)(cp))
 
 		cp.add(new Permutation(x,y))
-		cp.add(x(2) == 2)
+		cp.add(x(2) === 2)
 		
 		
 		y(2).isBound should be(true)
 		y(2).value should be(2)
 		y(3).hasValue(2) should be(false)
 		
-		cp.add(x(0) == 3)
+		cp.add(x(0) === 3)
 	    y(3).isBound should be(true)
 		y(3).value should be(0)
 		
@@ -82,7 +82,7 @@ class TestPermutation extends FunSuite with ShouldMatchers {
 		val y = Array.fill(4)(CPIntVar(-6 to 6)(cp))
 
 		cp.add(new Permutation(x,y))
-		cp.add(y(2) == 2)
+		cp.add(y(2) === 2)
 		
 		
 		x(2).isBound should be(true)

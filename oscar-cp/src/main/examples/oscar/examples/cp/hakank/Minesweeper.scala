@@ -92,10 +92,10 @@ object Minesweeper extends CPModel with App  {
          add(sum( for{ a <- tmp; b <- tmp 
                       if ( (i+a >= 0) && (j+b  >= 0) &&
                            (i+a <  r)  && (j+b <  c)) 
-                        } yield mines(i+a)(j+b)) == game(i)(j))
+                        } yield mines(i+a)(j+b)) === game(i)(j))
           // redundant constraint
           if (game(i)(j) > X) {
-           add(mines(i)(j) == 0)
+           add(mines(i)(j) === 0)
           }
       }
     search{

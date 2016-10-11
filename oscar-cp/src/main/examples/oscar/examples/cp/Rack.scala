@@ -48,10 +48,10 @@ object Rack extends CPModel with App {
 
   for (c <- Cards) {
     // all the cards of type c are placed
-    add(sum(Racks)(counters(_)(c)) == cards(c).quantity)
+    add(sum(Racks)(counters(_)(c)) === cards(c).quantity)
   }
 
-  add(sum(Racks)(r => element(prices, rack(r))) == cost)
+  add(sum(Racks)(r => element(prices, rack(r))) === cost)
 
   // symmetry breaking constraints
   for (r <- 1 until nbRack) {

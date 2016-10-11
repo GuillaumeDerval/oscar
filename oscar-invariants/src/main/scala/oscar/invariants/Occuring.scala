@@ -137,7 +137,7 @@ class Signal[A](private var value: A) extends Event[A]{
 class Event[A] extends NotifyAllEvent[A]{}
 class EventFromNow[A](sig: Signal[A], fil: A => Boolean) extends ConditionalOccuring[A](sig, fil){
   
-  // could be improved in the case the cal f(sig()) is false;
+  // could be improved in the case the call to f(sig()) is false;
   // then we could avoid to create the Reaction
   override def foreach(f: A => Boolean) = {
     val r = super.foreach(f)

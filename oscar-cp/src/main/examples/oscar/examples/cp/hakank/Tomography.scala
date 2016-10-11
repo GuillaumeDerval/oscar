@@ -76,10 +76,10 @@ object Tomography extends CPModel with App  {
     var numSols = 0
   
       for(i <- 0 until r) {
-       add(sum( x(i) ) == row_sums(i))
+       add(sum( x(i) ) === row_sums(i))
       }
       for(j <- 0 until c) {
-       add(sum( x_t(j) ) == col_sums(j))
+       add(sum( x_t(j) ) === col_sums(j))
       }
      search{
        binaryFirstFail(x.flatten.toSeq)

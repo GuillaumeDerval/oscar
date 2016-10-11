@@ -110,7 +110,9 @@ object TestRoundUpModulo extends App {
  * @author renaud.delandtsheer@cetic.be
  */
 case class RoundUpCustom(from: IntValue, duration: IntValue, forbiddenZones: List[(Int, Int)])
-  extends IntInvariant(initialDomain = from.min to forbiddenZones.maxBy(_._2)._2 + 1) {
+  extends IntInvariant(initialDomain = from.min to forbiddenZones.maxBy(_._2)._2 + 1)
+  with IntNotificationTarget{
+
   /**
    * These must be computed first.
    */
@@ -123,7 +125,7 @@ case class RoundUpCustom(from: IntValue, duration: IntValue, forbiddenZones: Lis
   this := roundup()
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
     scheduleForPropagation()
   }
 

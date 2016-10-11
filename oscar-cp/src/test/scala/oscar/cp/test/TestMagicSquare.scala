@@ -30,11 +30,11 @@ class TestMagicSquare extends TestSuite {
     val diag2 = Array.tabulate(n)(i => x(i)(n - i - 1))
     var nbSol = 0
     add(allDifferent(x.flatten), Weak)
-    add(sum(diag1) == s)
-    add(sum(diag2) == s)
+    add(sum(diag1) === s)
+    add(sum(diag2) === s)
     for (i <- 0 until n) {
-      add(sum(0 until n)(j => x(i)(j)) == s)
-      add(sum(0 until n)(j => x(j)(i)) == s)
+      add(sum(0 until n)(j => x(i)(j)) === s)
+      add(sum(0 until n)(j => x(j)(i)) === s)
     }
     search {
       binaryFirstFail(x.flatten.toSeq)

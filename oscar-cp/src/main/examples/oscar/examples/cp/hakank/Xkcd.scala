@@ -40,7 +40,7 @@ object Xkcd extends CPModel with App  {
     //
     var numSols = 0
   
-     add(weightedSum(price, x) == total)
+     add(weightedSum(price, x) === total)
     search{
        binaryFirstFail(x)
     }

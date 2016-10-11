@@ -24,16 +24,9 @@
 package oscar.cbls.routing.model
 
 import oscar.cbls.constraints.core.ConstraintSystem
-import oscar.cbls.invariants.core.algo.heap.BinomialHeap
 import oscar.cbls.invariants.core.computation._
-import oscar.cbls.invariants.lib.logic._
 import oscar.cbls.invariants.lib.numeric.Sum
-import oscar.cbls.invariants.lib.set.Cardinality
-import oscar.cbls.modeling.Algebra._
 import oscar.cbls.objective.{CascadingObjective, Objective}
-
-import scala.collection.immutable.{SortedMap, SortedSet}
-import scala.math.min
 
 /**
  * @author renaud.delandtsheer@cetic.be

@@ -77,7 +77,7 @@ object JobShopWithTransitionTimes extends CPModel with App {
 
   // Consistency constraints
   for (t <- 0 until nActivities) {
-    add(endsVar(t) == startsVar(t) + durationsVar(t))
+    add(endsVar(t) === startsVar(t) + durationsVar(t))
   }
 
   // Precedences

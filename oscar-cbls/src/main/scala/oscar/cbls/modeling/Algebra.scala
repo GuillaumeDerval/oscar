@@ -25,9 +25,9 @@ package oscar.cbls.modeling
  * ****************************************************************************
  */
 
-import oscar.cbls.constraints.lib.basic.{ BelongsTo, EQ, G, GE, L, LE, NE }
+import oscar.cbls.constraints.lib.basic.{BelongsTo, EQ, G, GE, L, LE, NE}
 import oscar.cbls.invariants.core.computation._
-import oscar.cbls.invariants.lib.logic.{ ConstantIntElement, Elements, IntElement, SetElement }
+import oscar.cbls.invariants.lib.logic._
 import oscar.cbls.invariants.lib.numeric._
 import oscar.cbls.invariants.lib.set._
 import oscar.cbls.search.algo.InstrumentedRange
@@ -60,6 +60,7 @@ trait AlgebraTrait {
     def *(v: IntValue): IntInvariant = Prod(List(x, v))
 
     def /(v: IntValue): IntInvariant = Div(x, v)
+    def /(i:Int):IntInvariant = new Int2Int(x,_/i)
 
     def %(v: IntValue): IntInvariant = Mod(x, v)
 

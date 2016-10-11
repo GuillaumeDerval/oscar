@@ -37,7 +37,7 @@ abstract class TestCumulativeConstraint(val cumulativeName: String, val nTests: 
     val ends = Array.tabulate(nTasks)(t => CPIntVar(durations(t).min to instance.horizon))
     val demands = Array.tabulate(nTasks)(t => CPIntVar(instance.demands(t)))
     val resources = Array.tabulate(nTasks)(t => CPIntVar(instance.resources(t)))
-    Tasks.foreach(t => post(ends(t) == starts(t) + durations(t)))
+    Tasks.foreach(t => post(ends(t) === starts(t) + durations(t)))
   }
 
   def cumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], demands: Array[CPIntVar], resources: Array[CPIntVar], capacity: CPIntVar, id: Int): Array[Constraint]  // returning array is useful when testing non-checking constraints, such as edge-finding, to couple with cumulativedecomp  

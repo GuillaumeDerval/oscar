@@ -39,26 +39,26 @@ object MurderMystery extends CPModel with App {
   add(allDifferent(age), Strong)
 
   // 1. The witness and the one who helped the murderer were not of the same sex.
-  add(sex(witness) != sex(helper))
+  add(sex(witness) !== sex(helper))
 
   // 2. The oldest person and the witness were not of the same sex.
-  add(sex(oldest) != sex(witness))
+  add(sex(oldest) !== sex(witness))
 
   // 3. The youngest person and the victim were not of the same sex.
-  add(sex(youngest) != sex(victim))
+  add(sex(youngest) !== sex(victim))
 
   // 4. The one who helped the murderer was older than the victim.
   for (i <- 0 to 3) {
-    add(age(personWithAge(i)) == i)
+    add(age(personWithAge(i)) === i)
   }
   add(age(helper) > age(victim))
 
   // 5. The father was the oldest member of the family.
-  add(oldest == father)
-  add(personWithAge(2) == mother)
+  add(oldest === father)
+  add(personWithAge(2) === mother)
 
   // 6. The murderer was not the youngest member of the family.
-  add(youngest != murderer)
+  add(youngest !== murderer)
 
   search {
     binaryFirstFail(Array(murderer, witness, helper, victim))

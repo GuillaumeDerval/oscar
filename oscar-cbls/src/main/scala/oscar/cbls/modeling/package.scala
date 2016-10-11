@@ -20,15 +20,4 @@ package oscar.cbls
  * that is as similar as possible to the one exhibited by the other engines of OScar.
  */
 package object modeling
-//TODO: reset this
-  /*extends Constraints
-with ClusterInvariants
-with ComplexLogicInvariants
-with ElementInvariants
-with MinMaxInvariants
-with NumericInvariants
-with SetInvariants {
 
-
-}
-*/

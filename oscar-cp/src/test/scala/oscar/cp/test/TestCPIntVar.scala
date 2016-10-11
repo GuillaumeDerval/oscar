@@ -70,7 +70,7 @@ class TestCPIntVar extends FunSuite with Matchers {
   test("Iterator4") {
     val cp = CPSolver()
     val x = CPIntVar(Set(1, 3, 5))(cp) - 1
-    cp.add(x != 2)
+    cp.add(x !== 2)
     x.toSet should be(Set(0, 4))
   }
 
@@ -79,7 +79,7 @@ class TestCPIntVar extends FunSuite with Matchers {
     val x = CPIntVar(1 to 5)(cp) - 1
 
     x.toSet should be(Set(0, 1, 2, 3, 4))
-    cp.add(x != 2)
+    cp.add(x !== 2)
     x.toSet should be(Set(0, 1, 3, 4))
   }
 
@@ -87,7 +87,7 @@ class TestCPIntVar extends FunSuite with Matchers {
     val cp = CPSolver()
     val a = CPIntVar(Array(10, 20, 30))(cp)
     a.isBound should be(false)
-    cp.add(a == 10)
+    cp.add(a === 10)
     a.isBound should be(true)
   }
 
@@ -113,15 +113,15 @@ class TestCPIntVar extends FunSuite with Matchers {
     for (i <- 0 to 5) {
 
       cp.pushState()
-      cp.add(x != 0)
-      cp.add(x != 2)
+      cp.add(x !== 0)
+      cp.add(x !== 2)
 
       x.size should be(5)
       x.min should be(-2)
       x.max should be(4)
 
-      cp.add(x != -1)
-      cp.add(x != -2)
+      cp.add(x !== -1)
+      cp.add(x !== -2)
 
       x.size should be(3)
       x.min should be(1)
@@ -205,7 +205,7 @@ class TestCPIntVar extends FunSuite with Matchers {
     val cp = CPSolver()
     val x = CPIntVar(Array(1, 3, 5, 7))(cp)
     cp.add(new MyCons(x))
-    cp.add(x == 3)
+    cp.add(x === 3)
     valBindCalled should be(1)
     propagCalled should be(2)
 

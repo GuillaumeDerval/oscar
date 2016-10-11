@@ -15,7 +15,7 @@ class TestImplication extends FunSuite with ShouldMatchers {
     val A = CPBoolVar()(cp)
     val B = CPBoolVar()(cp)
     val res = A ==> B
-    cp.add(res == 0)
+    cp.add(res === 0)
     A.isBoundTo(1) should be(true)
     B.isBoundTo(0) should be(true)
   }
@@ -86,7 +86,7 @@ class TestImplication extends FunSuite with ShouldMatchers {
     val A = CPBoolVar()(cp)
     val B = CPBoolVar()(cp)
     cp.add(A ==> B)
-    cp.add(B == 0)
+    cp.add(B === 0)
     A.isBoundTo(0) should be(true)
   }
 
@@ -94,7 +94,7 @@ class TestImplication extends FunSuite with ShouldMatchers {
     val cp = CPSolver()
     val A = CPBoolVar()(cp)
     val B = CPBoolVar()(cp)
-    cp.add(A == 1)
+    cp.add(A === 1)
     cp.add(A ==> B)
     B.isBoundTo(1) should be(true)
   }

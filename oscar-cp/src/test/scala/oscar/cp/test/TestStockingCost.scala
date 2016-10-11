@@ -13,7 +13,7 @@ class TestStockingCost extends FunSuite with ShouldMatchers {
     val min = X.map(_.min).min
 
     for (t <- min to max) {
-      cp.add((sum(0 until X.size)(k => X(k) === t)) <= c)
+      cp.add((sum(0 until X.size)(k => X(k) ?=== t)) <= c)
     }
 
     cp.add((-sum(0 until X.size)(k => X(k) - d(k))) === H)

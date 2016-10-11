@@ -89,7 +89,7 @@ object CalvinPuzzleTable extends CPModel with App {
     add(table(Array(x_flat(k), x_flat(k + 1)), valid))
   }
   // symmetry breaking
-  add(x(0)(0) == 0)
+  add(x(0)(0) === 0)
   search {
     binary(x_flat, -_.constraintDegree, _.randomValue)
   }

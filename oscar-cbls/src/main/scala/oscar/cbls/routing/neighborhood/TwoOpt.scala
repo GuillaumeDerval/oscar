@@ -27,6 +27,8 @@ package oscar.cbls.routing.neighborhood
 import oscar.cbls.routing.model._
 import oscar.cbls.search.algo.HotRestart
 
+import scala.collection.immutable.SortedSet
+
 /**
  * Removes two edges of routes, and rebuilds routes from the segments.
  * (with one reverse required)
@@ -38,10 +40,10 @@ import oscar.cbls.search.algo.HotRestart
  * */
 case class TwoOpt(predecesorOfFirstMovedPoint:()=>Iterable[Int],
                   relevantNeighbors:()=>Int=>Iterable[Int],
-                  vrp: VRP with PositionInRouteAndRouteNr,
-                  neighborhoodName:String = null,
+                  override val vrp: VRP with PositionInRouteAndRouteNr,
+                  neighborhoodName:String = "TwoOpt",
                   best:Boolean = false,
-                  hotRestart:Boolean = true) extends EasyRoutingNeighborhood(best,vrp,neighborhoodName) {
+                  hotRestart:Boolean = true) extends EasyRoutingNeighborhood[TwoOptMove](best,vrp,neighborhoodName) {
 
   //the indice to start with for the exploration
   var startIndice: Int = 0
@@ -64,24 +66,33 @@ case class TwoOpt(predecesorOfFirstMovedPoint:()=>Iterable[Int],
       assert(vrp.isRouted(fstPred),
         "The search zone should be restricted to routed.")
 
+      val nodesOnTheSameRouteAsFstPred = SortedSet.empty[Int] ++ vrp.getRouteOfVehicle(vrp.routeNr(fstPred).value)
+
       for (
         sndPred <- relevantNeighborsNow(fstPred) if (vrp.isRouted(sndPred)
         && sndPred != fstPred
-        && fstPred != vrp.next(sndPred).value
-        && vrp.onTheSameRoute(fstPred, sndPred))
+        && fstPred != vrp.next(sndPred).newValue
+        && nodesOnTheSameRouteAsFstPred.contains(sndPred))
       ) {
 
-        encode(fstPred, sndPred)
-        val newObj = evalObjOnEncodedMove()
+        this.fstPred = fstPred
+        this.sndPred = sndPred
 
-        if (moveRequested(newObj)
-          && submitFoundMove(TwoOptMove(fstPred, sndPred, newObj, this, neighborhoodNameToString))) {
+        encode(fstPred, sndPred)
+
+        if (evaluateCurrentMoveObjTrueIfStopRequired(evalObjOnEncodedMove())) {
           startIndice = fstPred + 1
           return
         }
       }
     }
   }
+
+  var fstPred:Int = 0
+  var sndPred:Int = 0
+
+  override def instantiateCurrentMove(newObj: Int) =
+    TwoOptMove(fstPred, sndPred, newObj, this, neighborhoodName)
 
   def encode(fstPred:Int, sndPred:Int) {
     val seg = cut(fstPred, sndPred)
@@ -94,7 +105,6 @@ case class TwoOpt(predecesorOfFirstMovedPoint:()=>Iterable[Int],
     startIndice = 0
   }
 }
-
 
 /**
  * Models a two-opt-move operator of a given VRP problem.
@@ -111,14 +121,16 @@ case class TwoOptMove(
   sndPred: Int,
   override val objAfter: Int,
   override val neighborhood:TwoOpt,
-  override val neighborhoodName:String = null)
-  extends VRPMove(objAfter, neighborhood, neighborhoodName) {
-  // overriding methods
+  override val neighborhoodName:String = "TwoOptMove")
+  extends VRPMove(objAfter, neighborhood, neighborhoodName){
+
+  override def impactedPoints: List[Int] = List(fstPred,sndPred)
+
   override def encodeMove() {
     neighborhood.encode(fstPred, sndPred)
   }
 
-  override def toString: String = ("TwoOpt(first predecessor = "
+  override def toString: String = (neighborhoodNameToString + "TwoOpt(beforeSegStart:"
     + fstPred
-    + ", second predecessor = " + sndPred + " )")
+    + "; end:" + sndPred + objToString + ")")
 }

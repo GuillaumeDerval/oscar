@@ -101,18 +101,23 @@ case class Store(override val verbose:Boolean = false,
 
   /**this is to be used as a backtracking point in a search engine
     * you can only save variables that are not controlled*/
-  def saveValues(vars:Variable*):Solution = {
+  def saveValues(vars:Iterable[Variable]):Solution = {
     var assignationInt:List[(ChangingIntValue,Int)] = List.empty
     var assignationIntSet:List[(ChangingSetValue,SortedSet[Int])] = List.empty
     for (v:Variable <- vars if v.isDecisionVariable){
-      if(v.isInstanceOf[CBLSIntVar]){
-        assignationInt = ((v.asInstanceOf[CBLSIntVar], v.asInstanceOf[CBLSIntVar].getValue(true))) :: assignationInt
-      }else if(v.isInstanceOf[CBLSSetVar]){
-        assignationIntSet = ((v.asInstanceOf[CBLSSetVar], v.asInstanceOf[CBLSSetVar].getValue(true))) :: assignationIntSet
+      v match{
+        case c:CBLSIntVar =>
+          assignationInt = ((c, c.newValue)) :: assignationInt
+        case s:CBLSSetVar =>
+          assignationIntSet = ((s, s.newValue)) :: assignationIntSet
       }
     }
     Solution(assignationInt,assignationIntSet,this)
   }
+
+  def snapShot(toRecordInt:Iterable[ChangingIntValue],
+               toRecordSet:Iterable[ChangingSetValue]) =
+    new Snapshot(toRecordInt,toRecordSet,this)
 
   /**To restore a saved solution
     * notice that only the variables that are not derived will be restored; others will be derived lazily at the next propagation wave.
@@ -161,7 +166,6 @@ case class Store(override val verbose:Boolean = false,
   def addToCallBeforeClose(toCallBeforeCloseProc : (()=>Unit)){
     toCallBeforeClose = (toCallBeforeCloseProc) :: toCallBeforeClose
   }
-
 
   protected def performCallsBeforeClose() {
     for (p <- toCallBeforeClose) p()
@@ -278,6 +282,37 @@ case class Solution(assignationInt:List[(ChangingIntValue,Int)],
   }
 }
 
+/**
+ * a snapshot is moreless the same as a solution, except that the snapshot can be queried for the value of the variables.
+ * there is an overhead in creating a snapshot because it cretes a dictionary to store the values.
+ * @param toRecordInt the Int values to save
+ * @param toRecordSet the set values to save
+ * @param model
+ */
+class Snapshot(toRecordInt:Iterable[ChangingIntValue],
+               toRecordSet:Iterable[ChangingSetValue],
+               val model:Store) {
+
+  val intDico: SortedMap[ChangingIntValue, Int] = SortedMap.empty[ChangingIntValue,Int] ++ toRecordInt.map(v => ((v, v.value)))
+  val setDico: SortedMap[ChangingSetValue, SortedSet[Int]] = SortedMap.empty[ChangingSetValue,SortedSet[Int]] ++ toRecordSet.map(v => ((v, v.value)))
+
+  def restoreDecisionVariables() {
+    for ((intVar, int) <- intDico) {
+      intVar match {
+        case i: CBLSIntVar if i.isDecisionVariable => i := int
+        case _ => ;
+      }
+    }
+
+    for ((setVar, set) <- setDico) {
+      setVar match {
+        case s: CBLSSetVar if s.isDecisionVariable => s := set
+        case _ => ;
+      }
+    }
+  }
+}
+
 object Invariant{
   implicit val Ord:Ordering[Invariant] = new Ordering[Invariant]{
     def compare(o1: Invariant, o2: Invariant) = o1.compare(o2)
@@ -287,7 +322,7 @@ object Invariant{
 trait VaryingDependencies extends Invariant with VaryingDependenciesPE{
 
   /**register to determining element. It must be in the static dependency graph*/
-  def registerDeterminingDependency(v:Value,i:Any = -1){
+  def registerDeterminingDependency(v:Value,i:Int = -1){
     registerDeterminingElement(v,i)
   }
 
@@ -298,7 +333,7 @@ trait VaryingDependencies extends Invariant with VaryingDependenciesPE{
     * @param i: an integer value that will be passed when updates on this variable are notified to the invariant
     * @return a handle that is required to remove the listened var from the dynamically listened ones
     */
-  override def registerDynamicDependency(v:Value,i:Any = -1):KeyForElementRemoval = {
+  override def registerDynamicDependency(v:Value,i:Int = -1):KeyForElementRemoval = {
     registerDynamicallyListenedElement(v,i)
   }
 
@@ -318,7 +353,6 @@ trait VaryingDependencies extends Invariant with VaryingDependenciesPE{
 
 /**This is be base class for all invariants.
   * Invariants also register to the model, but they identify the model they are associated to by querying the variables they are monitoring.
-  *
   */
 trait Invariant extends PropagationElement{
 
@@ -372,12 +406,12 @@ trait Invariant extends PropagationElement{
     * @param v the variable that we want to register to
     * @param i the integer value that will be passed to the invariant to notify some changes in the value of this variable
     */
-  def registerStaticAndDynamicDependency(v:Value,i:Any = -1){
+  def registerStaticAndDynamicDependency(v:Value,i:Int = -1){
     registerStaticDependency(v)
     registerDynamicDependency(v,i)
   }
 
-  def registerStaticAndDynamicDependencies(v:((Value,Any))*){
+  def registerStaticAndDynamicDependencies(v:((Value,Int))*){
     for (varint <- v){
       registerStaticDependency(varint._1)
       registerDynamicDependency(varint._1,varint._2)
@@ -423,29 +457,12 @@ trait Invariant extends PropagationElement{
     * @param i: an integer value that will be passed when updates on this variable are notified to the invariant
     * @return null
     */
-  def registerDynamicDependency(v:Value,i:Any = -1):KeyForElementRemoval = {
+  def registerDynamicDependency(v:Value,i:Int = -1):KeyForElementRemoval = {
     registerDynamicallyListenedElement(v,i)
     null
   }
 
-  //we are only notified for the variable we really want to listen (cfr. mGetReallyListenedElements, registerDynamicDependency, unregisterDynamicDependency)
-  def notifyIntChangedAny(v: ChangingIntValue, i: Any, OldVal: Int, NewVal: Int) {notifyIntChanged(v, i.asInstanceOf[Int], OldVal, NewVal)}
 
-  def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Int, NewVal: Int) {notifyIntChanged(v, OldVal, NewVal)}
-
-  def notifyIntChanged(v: ChangingIntValue, OldVal: Int, NewVal: Int) {}
-
-  def notifyInsertOnAny(v: ChangingSetValue,i:Any,value:Int){notifyInsertOn(v,i.asInstanceOf[Int],value)}
-
-  def notifyInsertOn(v: ChangingSetValue,i:Int,value:Int){notifyInsertOn(v,value)}
-
-  def notifyInsertOn(v: ChangingSetValue,value:Int){}
-
-  def notifyDeleteOnAny(v:ChangingSetValue,i:Any,value:Int){notifyDeleteOn(v,i.asInstanceOf[Int],value)}
-
-  def notifyDeleteOn(v: ChangingSetValue,i:Int,value:Int){notifyDeleteOn(v,value)}
-
-  def notifyDeleteOn(v: ChangingSetValue,value:Int){}
 
   /**To override whenever possible to spot errors in invariants.
     * this will be called for each invariant after propagation is performed.
@@ -613,16 +630,6 @@ trait AbstractVariable
     * @return a string similar to the toString method
     */
   def toStringNoPropagate:String
-
-  def getDotColor:String = {
-    if (getStaticallyListeningElements.isEmpty){
-      "blue"
-    }else if (getStaticallyListenedElements.isEmpty){
-      "green"
-    }else{
-      "black"
-    }
-  }
 }
 
 object AbstractVariable{

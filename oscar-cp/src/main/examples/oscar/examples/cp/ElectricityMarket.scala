@@ -86,7 +86,7 @@ object ElectricityMarket extends CPModel with App {
       val unboundOrders = orders.filter(!_.bound)
       val order = unboundOrders.maxBy(_.energy)
       // select orders on the left
-      branch { post(order.selected == 1) } { post(order.selected == 0) }
+      branch { post(order.selected === 1) } { post(order.selected === 0) }
     }
   } onSolution {
     // update visualization

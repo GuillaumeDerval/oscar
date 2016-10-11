@@ -47,12 +47,12 @@ object FiveFloors extends CPModel with App  {
   
       add(allDifferent(x), Strong)
        // Baker does not live on the fifth floor.
-      add(baker != 5)
+      add(baker !== 5)
        // Cooper does not live on the first floor. 
-      add(cooper != 1)
+      add(cooper !== 1)
        // Fletcher does not live on either the fifth or the first floor. 
-      add(fletcher != 5)
-      add(fletcher != 1)
+      add(fletcher !== 5)
+      add(fletcher !== 1)
        // Miller lives on a higher floor than does Cooper. 
       add(miller > cooper)
        // Smith does not live on a floor adjacent to Fletcher'. 

@@ -38,13 +38,13 @@ object ChooChooTrain extends CPModel with App {
   // constraints
   // This give better pre-labeling results:
   // it find C: 5..9
-  add((C * 1000 + H * 100 + O * 10 + O) * 2 == T * 10000 + R * 1000 + A * 100 + I * 10 + N)
+  add((C * 1000 + H * 100 + O * 10 + O) * 2 === T * 10000 + R * 1000 + A * 100 + I * 10 + N)
   // than this, which just find C: 2..9
   //add(          C*1000 + H*100 + O*10 + O 
   //              +   C*1000 + H*100 + O*10 + O == 
   //        T*10000 + R*1000 + A*100 + I*10 + N)
-  add(C != 0)
-  add(T != 0)
+  add(C !== 0)
+  add(T !== 0)
   add(allDifferent(all), Strong)
   search {
     binaryFirstFail(all)

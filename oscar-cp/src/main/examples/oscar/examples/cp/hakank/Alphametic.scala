@@ -111,7 +111,7 @@ object Alphametic {
     //    word<0> + word<1> + ... = word<p-1>
     //
     add(
-      sum(for (p <- 0 until p_len - 1) yield wordSum2(x, problem_words(p), base, ht)) ==
+      sum(for (p <- 0 until p_len - 1) yield wordSum2(x, problem_words(p), base, ht)) ===
         wordSum2(x, problem_words(p_len - 1), base, ht))
 
     // ensure that all initial digits > 0

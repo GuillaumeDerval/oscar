@@ -71,16 +71,16 @@ object StableMarriageRandom extends CPModel with App {
 
   val t1 = System.currentTimeMillis
   for (m <- Men) {
-    add(husband(wife(m)) == m)
+    add(husband(wife(m)) === m)
   }
   for (w <- Women) {
-    add(wife(husband(w)) == w)
+    add(wife(husband(w)) === w)
   }
   for (m <- Men; w <- Women) {
     val pref_m = rankMen(m)(wife(m)) // preference of m for his wife
     val pref_w = rankWomen(w)(husband(w)) // preference of w for her husband
-    add((pref_m >>= rankMen(m)(w)) ==> (pref_w <<= rankWomen(w)(m)))
-    add((pref_w >>= rankWomen(w)(m)) ==> (pref_m <<= rankMen(m)(w)))
+    add((pref_m ?> rankMen(m)(w)) ==> (pref_w ?< rankWomen(w)(m)))
+    add((pref_w ?> rankWomen(w)(m)) ==> (pref_m ?< rankMen(m)(w)))
   }
   val t2 = System.currentTimeMillis
   println("Constraints took " + (t2 - t1) + "ms");

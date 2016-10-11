@@ -23,10 +23,7 @@
 
 package oscar.cbls.invariants.lib.logic
 
-import oscar.cbls.invariants.core.computation.{ Invariant, CBLSSetVar, CBLSIntVar }
-import collection.immutable.SortedSet
-import oscar.cbls.invariants.core.computation.IntValue
-import oscar.cbls.invariants.core.computation.ChangingIntValue
+import oscar.cbls.invariants.core.computation._
 
 /**
  * Maintains a resource usage profile.
@@ -40,7 +37,9 @@ import oscar.cbls.invariants.core.computation.ChangingIntValue
 case class CumulativeNoSet(start: Array[IntValue],
                       duration: Array[IntValue],
                       amount: Array[IntValue],
-                      profile: Array[CBLSIntVar]) extends Invariant {
+                      profile: Array[CBLSIntVar])
+  extends Invariant
+  with IntNotificationTarget{
 
   //horizon is the uppermost indice of the profile, which is supposed to be the same as active
   val horizonPlus1 = profile.length

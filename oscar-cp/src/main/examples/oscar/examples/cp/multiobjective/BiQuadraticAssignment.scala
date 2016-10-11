@@ -89,7 +89,7 @@ object BiQuadraticAssignment extends App {
     if (allBounds(x)) noAlternative
     else {
       val (i, v) = heuristic(if (rand.nextBoolean) w1 else w2)
-      branch(cp.add(x(i) == v))(cp.add(x(i) != v))
+      branch(cp.add(x(i) === v))(cp.add(x(i) !== v))
     }
   } 
   onSolution {

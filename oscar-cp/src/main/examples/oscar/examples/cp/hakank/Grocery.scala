@@ -47,12 +47,12 @@ object Grocery extends CPModel with App {
 
   add(allDifferent(item), Strong)
   increasing(item)
-  add(sum(item) == m)
+  add(sum(item) === m)
   // Note: yields overflow (though the solution is correct)
   // Alternative solutions:
   //add(item(0)*item(1)*item(2)*item(3) == m2) // this is slightly better
   //add(item(0).mul(item(1)).mul(item(2)).mul(item(3)) == m2)
-  add(item.reduceLeft((acc, x) => acc * x) == m2, Strong)
+  add(item.reduceLeft((acc, x) => acc * x) === m2, Strong)
 
   onSolution {
     binaryFirstFail(item)

@@ -74,7 +74,7 @@ object PArea extends CPModel with App {
   for (r <- 0 until 10000000) {
     if (r%10000 == 0) println(r)
     startSubjectTo(failureLimit = 100) {
-      add(for (i <- 0 until nHouseholds; if rand.nextInt(100) < 70) yield (x(i) == xsol(i)))
+      add(for (i <- 0 until nHouseholds; if rand.nextInt(100) < 70) yield (x(i) === xsol(i)))
     }
   }
 }
