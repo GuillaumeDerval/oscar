@@ -128,6 +128,7 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
     val cst = expr2.toConstraint
     modelDeclaration.add(cst)
   }
+
   override def buildCtrSum(id: String, list: Array[XVarInteger], condition: Condition): Unit = {
     _buildCrtWithCondition(id, Sum(list.map(i => varHashMap(i.id))), condition)
   }
@@ -310,12 +311,58 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
     csts.foreach(modelDeclaration.add)
   }
 
+  override def buildCtrElement(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, value: XVarInteger): Unit = {
+    if(rank != TypeRank.ANY)
+      throw new Exception("Element constraint only supports ANY as position for the index")
+    val array = list.map(x => varHashMap(x.id))
+    val indexExpr = if(startIndex == 0) varHashMap(index.id) else varHashMap(index.id) - startIndex
+    val valueExpr = varHashMap(value.id)
+    modelDeclaration.add(array(indexExpr) === valueExpr)
+  }
+
+  override def buildCtrElement(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, value: Int): Unit = {
+    if(rank != TypeRank.ANY)
+      throw new Exception("Element constraint only supports ANY as position for the index")
+    val array = list.map(x => varHashMap(x.id))
+    val indexExpr = if(startIndex == 0) varHashMap(index.id) else varHashMap(index.id) - startIndex
+    modelDeclaration.add(array(indexExpr) === value)
+  }
+
+  override def buildCtrAmong(id: String, list: Array[XVarInteger], values: Array[Int], k: Int): Unit = {
+    modelDeclaration.add(Among(k, list.map(x => varHashMap(x.id)), values.toSet))
+  }
+
+  override def buildCtrAmong(id: String, list: Array[XVarInteger], values: Array[Int], k: XVarInteger): Unit = {
+    modelDeclaration.add(Among(varHashMap(k.id), list.map(x => varHashMap(x.id)), values.toSet))
+  }
+
+  override def buildCtrExactly(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = {
+    modelDeclaration.add(Among(k, list.map(x => varHashMap(x.id)), value))
+  }
+
+  override def buildCtrExactly(id: String, list: Array[XVarInteger], value: Int, k: XVarInteger): Unit = {
+    modelDeclaration.add(Among(varHashMap(k.id), list.map(x => varHashMap(x.id)), value))
+  }
+
+  override def buildCtrAtLeast(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = {
+    modelDeclaration.add(AtLeast(k, list.map(x => varHashMap(x.id)), value))
+  }
+
+  override def buildCtrAtMost(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = {
+    modelDeclaration.add(AtMost(k, list.map(x => varHashMap(x.id)), value))
+  }
+
   override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int): Unit = throw new Exception("Single subcircuit constraint is not implemented")
   override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: Int): Unit = throw new Exception("Single subcircuit constraint is not implemented")
   override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: XVarInteger): Unit = throw new Exception("Single subcircuit constraint is not implemented")
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occurs: Array[XVarInteger]): Unit = throw new Exception("GCC with var cardinalities is not implemented")
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occurs: Array[Int]): Unit = throw new Exception("GCC with var cardinalities is not implemented")
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occursMin: Array[Int], occursMax: Array[Int]): Unit = throw new Exception("GCC with var cardinalities is not implemented")
+  override def buildCtrExtension(id: String, x: XVarSymbolic, values: Array[String], positive: Boolean, flags: util.Set[TypeFlag]): Unit = throw new Exception("Symbolic variables are not implemented")
+  override def buildCtrExtension(id: String, list: Array[XVarSymbolic], tuples: Array[Array[String]], positive: Boolean, flags: util.Set[TypeFlag]): Unit = throw new Exception("Symbolic variables are not implemented")
+  override def buildCtrIntension(id: String, scope: Array[XVarSymbolic], syntaxTreeRoot: XNodeParent[XVar]): Unit = throw new Exception("Symbolic variables are not implemented")
+  override def buildVarSymbolic(x: XVarSymbolic, values: Array[String]): Unit = throw new Exception("Symbolic variables are not implemented")
+  override def buildCtrAllDifferent(id: String, list: Array[XVarSymbolic]): Unit = throw new Exception("Symbolic variables are not implemented")
 
   // Objectives
   def _getExprForTypeObjective(objtype: TypeObjective, list: Array[XVarInteger]): IntExpression = {
@@ -408,25 +455,11 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
 
   override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = ???
 
-  override def buildCtrElement(id: String, list: Array[XVarInteger], value: XVarInteger): Unit = ???
-
-  override def buildCtrElement(id: String, list: Array[XVarInteger], value: Int): Unit = ???
-
-  override def buildCtrElement(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, value: XVarInteger): Unit = ???
-
-  override def buildCtrElement(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, value: Int): Unit = ???
-
   override def buildCtrAllEqual(id: String, list: Array[XVarInteger]): Unit = ???
 
   override def buildCtrNotAllEqual(id: String, list: Array[XVarInteger]): Unit = ???
 
-  override def buildCtrAtMost(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = ???
-
   override def buildCtrClause(id: String, pos: Array[XVarInteger], neg: Array[XVarInteger]): Unit = ???
-
-  override def buildCtrExactly(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = ???
-
-  override def buildCtrExactly(id: String, list: Array[XVarInteger], value: Int, k: XVarInteger): Unit = ???
 
   override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int): Unit = ???
 
@@ -448,8 +481,6 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
 
   override def buildCtrMinimum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = ???
 
-  override def buildCtrAtLeast(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = ???
-
   override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = ???
 
   override def buildCtrStretch(id: String, list: Array[XVarInteger], values: Array[Int], widthsMin: Array[Int], widthsMax: Array[Int]): Unit = ???
@@ -459,20 +490,6 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
   override def buildCtrMaximum(id: String, list: Array[XVarInteger], condition: Condition): Unit = ???
 
   override def buildCtrMaximum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = ???
-
-  override def buildCtrAmong(id: String, list: Array[XVarInteger], values: Array[Int], k: Int): Unit = ???
-
-  override def buildCtrAmong(id: String, list: Array[XVarInteger], values: Array[Int], k: XVarInteger): Unit = ???
-
-  override def buildCtrExtension(id: String, x: XVarSymbolic, values: Array[String], positive: Boolean, flags: util.Set[TypeFlag]): Unit = ???
-
-  override def buildCtrExtension(id: String, list: Array[XVarSymbolic], tuples: Array[Array[String]], positive: Boolean, flags: util.Set[TypeFlag]): Unit = ???
-
-  override def buildCtrIntension(id: String, scope: Array[XVarSymbolic], syntaxTreeRoot: XNodeParent[XVar]): Unit = ???
-
-  override def buildVarSymbolic(x: XVarSymbolic, values: Array[String]): Unit = ???
-
-  override def buildCtrAllDifferent(id: String, list: Array[XVarSymbolic]): Unit = ???
 }
 
 object XCSP3Parser {
