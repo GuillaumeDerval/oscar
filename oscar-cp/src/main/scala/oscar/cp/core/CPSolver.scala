@@ -33,6 +33,8 @@ import java.util.Collection
 import oscar.algo.search.DFSLinearizer
 import oscar.cp.searches.DFSReplayer
 
+import scala.reflect.ClassTag
+
 class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStrength) {
 
 
@@ -152,7 +154,7 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
    * @throws NoSolutionException if the fix point detects a failure that is one of the domain became empty
    */
   override def add(b: CPBoolVar): CPOutcome = {
-    val outcome = post(new EqCons(b, 1))
+    val outcome = post(b.constraintTrue)
     if ((outcome == Failure || isFailed) && throwNoSolExceptions) {
       throw new NoSolutionException(s"the stored failed when setting " + b.name + " to true")
     }
@@ -186,6 +188,14 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
   override def add(constraints: Array[Constraint]): CPOutcome = add(constraints, propagStrength)
 
   override def add(constraints: Iterable[Constraint], st: CPPropagStrength): CPOutcome = add(constraints.toArray, st)
+
+  override def add[T: ClassTag](boolVars: Iterable[CPBoolVar]): CPOutcome = {
+    val outcome = post(boolVars);
+    if ((outcome == Failure || isFailed) && throwNoSolExceptions) {
+      throw new NoSolutionException(s"the stored failed when setting those boolVars to true and propagate $boolVars");
+    }
+    return outcome
+  }
 
   override def add(constraints: Iterable[Constraint]): CPOutcome = add(constraints.toArray, propagStrength)
 
