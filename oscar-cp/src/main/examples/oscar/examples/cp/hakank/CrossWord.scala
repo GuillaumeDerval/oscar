@@ -102,7 +102,7 @@ object CrossWord extends CPModel with App  {
      add(allDifferent(E), Strong)
       for(I <- 0 until num_words;
           J <- 0 until word_len) {
-         add(A(I)(J) == AA(I)(J));
+         add(A(I)(J) === AA(I)(J));
       }
       // Handle the overlappings.
       //
@@ -115,7 +115,7 @@ object CrossWord extends CPModel with App  {
       for(I <- 0 until num_overlapping) {
           add(
                   A_flatten(E(overlapping(I)(0))*word_len+overlapping(I)(1))
-                  ==
+                  ===
                   A_flatten(E(overlapping(I)(2))*word_len+overlapping(I)(3)),
                   Strong
                   )

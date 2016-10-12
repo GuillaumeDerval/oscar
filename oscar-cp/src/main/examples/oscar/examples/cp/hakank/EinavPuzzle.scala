@@ -112,7 +112,7 @@ object EinavPuzzle extends CPModel with App {
   var numSols = 0
   minimize(total_sum)
   for (i <- ROWS; j <- COLS) {
-    add(x(i)(j) == row_signs(i) * col_signs(j) * data(i)(j))
+    add(x(i)(j) === row_signs(i) * col_signs(j) * data(i)(j))
   }
   for (i <- ROWS) {
     add(row_sums(i) >= 0)

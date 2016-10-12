@@ -138,7 +138,7 @@ object Nurses extends App {
         case Some(y) => { // ok y is patient not yet assigned to a nurse
           val maxUsed = nurseOfPatient.maxBoundOrElse(-1)
           // try every possible nurses up to the maximum one without any patient less (dynamic symmetry breaking)
-          branchAll(0 to maxUsed + 1)(v => post(y == v))
+          branchAll(0 to maxUsed + 1)(v => post(y === v))
         }
       }
     }

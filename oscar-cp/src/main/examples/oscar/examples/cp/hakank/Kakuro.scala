@@ -62,7 +62,7 @@ object Kakuro extends CPModel with App  {
      add(x(cc(i*2)-1)(cc(i*2+1)-1) >= 1)
     }
     // sum the numbers
-   add(sum(for{i <- 0 until len} yield x(cc(i*2)-1)(cc(i*2+1)-1)) == res)
+   add(sum(for{i <- 0 until len} yield x(cc(i*2)-1)(cc(i*2+1)-1)) === res)
   }
     //
     // data
@@ -123,7 +123,7 @@ object Kakuro extends CPModel with App  {
   
       // fill the blanks with 0
       for(i <- 0 until num_blanks) {
-       add(x(blanks(i)(0)-1)(blanks(i)(1)-1) == 0)
+       add(x(blanks(i)(0)-1)(blanks(i)(1)-1) === 0)
       }
       for(i <- 0 until num_p) {
         val segment = problem(i)

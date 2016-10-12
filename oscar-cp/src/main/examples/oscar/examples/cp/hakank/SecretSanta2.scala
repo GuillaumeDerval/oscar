@@ -139,20 +139,20 @@ object SecretSanta2 extends CPModel with App  {
       // Can't be one own"s Secret Santa
       // (i.e. ensure that there are no fix-point in the array.)
       for(i <- RANGE) {
-       add(santas(i) != i)
+       add(santas(i) !== i)
       }
       // no Santa for a spouses
       for(i <- RANGE if spouses(i) > -1) {
-         add(santas(i) != spouses(i))
+         add(santas(i) !== spouses(i))
       }
       // optimize "distance" to earlier rounds:
       for(i <- RANGE) {
-       add(santa_distance(i) == rounds(i)(santas(i)))
+       add(santa_distance(i) === rounds(i)(santas(i)))
       }
       // cannot be a Secret Santa for the same person
       // two years in a row.
       for(i <- RANGE; j <- RANGE if rounds(i)(j) == 1) {
-           add(santas(i) != j)
+           add(santas(i) !== j)
       }
     search{
       binaryFirstFail(santas ++ santa_distance)

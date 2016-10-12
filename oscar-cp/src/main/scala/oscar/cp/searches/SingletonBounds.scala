@@ -27,7 +27,7 @@ extends Branching with BranchingUtils {
       while (removeMin && minBound < xMax) {
         val xTest = minBound
         store.pushState()
-        if (store.post(x == xTest) == Failure) {
+        if (store.post(x.eq(xTest)) == Failure) {
           minBound += 1
           hasRemoved = true
         }
@@ -42,7 +42,7 @@ extends Branching with BranchingUtils {
       while (removeMax && maxBound > xMin) {
         val xTest = maxBound
         store.pushState()
-        if (store.post(x == xTest) == Failure) {
+        if (store.post(x.eq(xTest)) == Failure) {
           maxBound -= 1
           hasRemoved = true
         }

@@ -62,6 +62,10 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
 
   override def setup(l: CPPropagStrength): CPOutcome = {
 
+    /* Failure if table is empty initially or after initial filtering */
+    if (nbTuples == 0)
+      return Failure
+
     /* Retrieve the current valid tuples */
     val valids = collectValidTuples()
 

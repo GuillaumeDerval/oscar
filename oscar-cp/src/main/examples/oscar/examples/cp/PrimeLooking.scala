@@ -20,14 +20,14 @@ object PrimeLooking extends CPModel with App {
   val d1 = CPIntVar(2 to n)
   val d2 = CPIntVar(2 to n)
 
-  add(d1 * d2 == x)
+  add(d1 * d2 === x)
   add(d1 <= d2) // avoid symmetric solutions
 
   // prevent divisibility by 2,3 and 5
   for (v <- List(2, 3, 5)) {
     for (i <- 1 to 1000 if (v * i <= n)) {
-      add(d1 != (v * i))
-      add(d2 != (v * i))
+      add(d1 !== (v * i))
+      add(d2 !== (v * i))
     }
   }
 

@@ -141,7 +141,7 @@ object JobShop extends App {
     val stats = startSubjectTo(failureLimit = maxFails) {
       for (a <- 0 until nActivities) {
         if (RandomGenerator.nextInt(100) > relaxProba) {
-          constraintBuffer += startsVar(a) == bestSolutionStarts(a)
+          constraintBuffer += startsVar(a) === bestSolutionStarts(a)
         }
       }
       add(constraintBuffer)

@@ -26,7 +26,7 @@ object SequenceSum extends CPModel with App  {
   def sequence_sum(y: Array[CPIntVar], m: CPIntVar, s: Int) = {
     val n = y.length
     for(i <- 0 until n - s + 1) {
-     add(sum( Range(i,i+s).map(j => y(j) ).toList) == m)
+     add(sum( Range(i,i+s).map(j => y(j) ).toList) === m)
     }
   }
     val n = 6
@@ -42,7 +42,7 @@ object SequenceSum extends CPModel with App  {
     var numSols = 0
   
       sequence_sum(x, m, s)
-     add(m == 10)
+     add(m === 10)
       // symmetry breaking
       //add(x(0) == 1)
     search{

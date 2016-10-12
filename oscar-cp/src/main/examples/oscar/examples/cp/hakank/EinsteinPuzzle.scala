@@ -57,35 +57,35 @@ object EinsteinPuzzle extends CPModel with App {
   // The clues
   //
   // 1. The Brit lives in a red house.
-  add(nationality(brit) == color(red))
+  add(nationality(brit) === color(red))
   // 2. The Swede keeps dogs as pets.
-  add(nationality(swede) == animal(dogs))
+  add(nationality(swede) === animal(dogs))
   // 3. The Dane drinks tea.
-  add(nationality(dane) == drink(tea))
+  add(nationality(dane) === drink(tea))
   // 4. The Green house is just on the left of the White house.
-  add(color(green) == color(white) - 1)
+  add(color(green) === color(white) - 1)
   // 5. The owner of the Green house drinks coffee.
-  add(color(green) == drink(coffee))
+  add(color(green) === drink(coffee))
   // 6. The person who smokes Pall Mall keeps birds.
-  add(smoke(pall_mall) == animal(birds))
+  add(smoke(pall_mall) === animal(birds))
   // 7. The owner of the Yellow house smokes Dunhill.
-  add(color(yellow) == smoke(dunhill))
+  add(color(yellow) === smoke(dunhill))
   // 8. The man living in the center house drinks milk.
-  add(drink(milk) == 2)
+  add(drink(milk) === 2)
   // 9. The Norwegian lives in the first house.
-  add(nationality(norwegian) == 0)
+  add(nationality(norwegian) === 0)
   // 10. The man who smokes Blends lives next to the one who keeps cats.
-  add((smoke(blends) - animal(cats)).abs == 1)
+  add((smoke(blends) - animal(cats)).abs === 1)
   // 11. The man who smokes Blue Master drinks beer.
-  add(smoke(blue_master) == drink(beer))
+  add(smoke(blue_master) === drink(beer))
   // 12. The man who keeps horses lives next to the man who smokes Dunhill.
-  add((animal(horses) - smoke(dunhill)).abs == 1)
+  add((animal(horses) - smoke(dunhill)).abs === 1)
   // 13. The German smokes Prince.
-  add(nationality(german) == smoke(prince))
+  add(nationality(german) === smoke(prince))
   // 14. The Norwegian lives next to the blue house.
-  add((nationality(norwegian) - color(blue)).abs == 1)
+  add((nationality(norwegian) - color(blue)).abs === 1)
   // 15. The man who smokes Blends has a neighbour who drinks water.
-  add((smoke(blends) - drink(water)).abs == 1);
+  add((smoke(blends) - drink(water)).abs === 1);
   search {
     binaryFirstFail(nationality ++ animal ++ drink ++ smoke ++ color)
   }

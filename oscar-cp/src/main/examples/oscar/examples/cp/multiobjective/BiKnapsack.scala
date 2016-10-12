@@ -83,7 +83,7 @@ object BiKnapsack extends App {
   cp.search {
     selectMin(0 until x.size)(!x(_).isBound)(-ratio(obj)(_)) match {
       case None => noAlternative
-      case Some(i) => branch(cp.post(x(i) == 1))(cp.post(x(i) == 0))
+      case Some(i) => branch(cp.post(x(i) === 1))(cp.post(x(i) === 0))
     }  
   } 
   

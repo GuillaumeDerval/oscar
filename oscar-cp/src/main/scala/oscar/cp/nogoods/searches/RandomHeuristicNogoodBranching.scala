@@ -30,7 +30,7 @@ import scala.util.Random
  * @param varHeuris is a variable heuristic, it will select preferably a random unbound
  *        variables(i) such that varHeuris(i) is the smallest
  */
-class RandomHeuristicNogoodBranching(variables: Array[CPIntVar], varHeuris: (Int => Int), valHeuris: (Int => Int))
+class RandomHeuristicNogoodBranching(variables: Array[CPIntVar], varHeuris: (Int => Int), valHeuris: (Int => Int), doSplit: Boolean = true)
 extends NogoodBranching {
 
   val cp = variables(0).store
@@ -97,7 +97,7 @@ extends NogoodBranching {
       val i = nextVar()
       val variable = variables(i)
       val value = valHeuris(i)
-      new Assign(variable, value)
+      if (doSplit) new LowerEq(variable, value) else new Assign(variable, value)      
     }
   }
 }

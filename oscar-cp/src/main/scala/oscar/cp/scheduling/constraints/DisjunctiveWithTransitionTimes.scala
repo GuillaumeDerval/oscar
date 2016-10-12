@@ -33,7 +33,7 @@ class DisjunctiveWithTransitionTimes(starts: Array[CPIntVar], durations: Array[C
   override def setup(l: CPPropagStrength): CPOutcome = {
     if (starts.nonEmpty) {
       val cp = starts(0).store
-      val n = starts.size
+      val n = starts.length
 
       // always add the binary decomposition by default
       for (i <- 0 until n; j <- 0 until n; if i != j) {

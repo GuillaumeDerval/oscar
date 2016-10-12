@@ -91,7 +91,7 @@ object NontransitiveDice extends CPModel with App  {
       }
       // Probability gap
       for(i <- MRANGE) {
-       add(gap(i) == comp(i)(0) - comp(i)(1))
+       add(gap(i) === comp(i)(0) - comp(i)(1))
        add(gap(i) > 0)
       }
       // And now we roll...
@@ -99,12 +99,12 @@ object NontransitiveDice extends CPModel with App  {
       for(d <- MRANGE) {
         val sum1 = sum(for{r1 <- NRANGE
                            r2 <- NRANGE}
-                          yield (dice(d % m)(r1) >>= dice((d+1) % m)(r2)))
-       add(comp(d%m)(0) == sum1)
+                          yield (dice(d % m)(r1) ?> dice((d+1) % m)(r2)))
+       add(comp(d%m)(0) === sum1)
         val sum2 = sum(for{r1 <- NRANGE
                               r2 <- NRANGE}
-                              yield (dice((d+1) % m)(r1) >>= dice(d % m)(r2)))
-       add(comp(d%m)(1) == sum2)
+                              yield (dice((d+1) % m)(r1) ?> dice(d % m)(r2)))
+       add(comp(d%m)(1) === sum2)
       }
     search{
       binaryMaxDegree(all)

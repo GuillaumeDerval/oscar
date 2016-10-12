@@ -42,23 +42,23 @@ object Eternity extends CPModel with App {
 
   // force 0 on horizontal borders
   for (c <- 0 until m) {
-    add(up(0)(c) == 0)
-    add(down(n - 1)(c) == 0)
+    add(up(0)(c) === 0)
+    add(down(n - 1)(c) === 0)
   }
 
   // force 0 on vertical borders
   for (l <- 0 until n) {
-    add(left(l)(0) == 0)
-    add(right(l)(m - 1) == 0)
+    add(left(l)(0) === 0)
+    add(right(l)(m - 1) === 0)
   }
 
   // horizontal match on adjacent cells
   for (l <- 0 until n; c <- 0 until m - 1)
-    add(right(l)(c) == left(l)(c + 1))
+    add(right(l)(c) === left(l)(c + 1))
 
   // vertical match on adjacent cells
   for (l <- 0 until n - 1; c <- 0 until m) {
-    add(down(l)(c) == up(l + 1)(c));
+    add(down(l)(c) === up(l + 1)(c));
   }
 
   def prettyPrint() {

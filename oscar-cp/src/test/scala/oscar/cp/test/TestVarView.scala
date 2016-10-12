@@ -68,7 +68,7 @@ class TestVarView extends FunSuite with ShouldMatchers  {
     var x = CPIntVar(-2 to 4)(cp)
     val y = x+5+2-3-5 // y = x-1 so its domain should be -3..3
     cp.add(new ViewCons(y))
-    cp.add(y != 0)
+    cp.add(y !== 0)
     cp.add(y >= -2)
     y.max should be(3)
     y.min should be(-2)
@@ -120,7 +120,7 @@ class TestVarView extends FunSuite with ShouldMatchers  {
     
     val y = x+5+2-3-5 // y = x-1 so its domain should be -3..3
     cp.add(new ViewCons(y))
-    cp.add(y != 0)
+    cp.add(y !== 0)
     cp.add(y >= -2)
     y.max should be(3)
     y.min should be(-2)

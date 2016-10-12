@@ -43,8 +43,8 @@ object MagicSequence extends CPModel with App {
   //
   var numSols = 0
 
-  add(weightedSum(0 to n, x) == n)
-  add(sum(x) == n)
+  add(weightedSum(0 to n, x) === n)
+  add(sum(x) === n)
   add(gcc(x, allValues), Strong)
   
   search {

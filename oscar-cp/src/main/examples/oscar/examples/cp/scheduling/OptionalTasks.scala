@@ -48,7 +48,7 @@ object OptionalTasks extends CPModel with App {
 
   // Consistency 
   for (t <- Tasks) {
-    add(ends(t) == starts(t) + durations(t))
+    add(ends(t) === starts(t) + durations(t))
   }
   // Cumulative
   add(maxCumulativeResource(starts, durations, ends, demands, resources, CPIntVar(capaMax), 1))

@@ -62,8 +62,8 @@ object TouristSiteCompetition extends CPModel with App  {
     //
     // variables
     //
-    val x = Array.fill(num_sites, num_judges)(CPIntVar(0 to 1))
-    val judges_where = Array.fill(num_judges, num_sites)(CPIntVar(0 to 1))
+    val x = Array.fill(num_sites, num_judges)(CPBoolVar())
+    val judges_where = Array.fill(num_judges, num_sites)(CPBoolVar())
     //
     // constraints
     //
@@ -71,26 +71,26 @@ object TouristSiteCompetition extends CPModel with App  {
   
       //  Symmetry breaking
       for(s <- 0 until 3) {
-       add(x(s)(0) == 1)
+       add(x(s)(0))
       }
       //  Every tourist site is visited by r judges.
       for(s <- sites) {
-       add(sum(for(j <- judges) yield x(s)(j)) == r)
+       add(sum(for(j <- judges) yield x(s)(j)) === r)
       }
       //  Every judge visits c tourist sites.
       for(j <- judges) {
-       add(sum(for(s <- sites) yield x(s)(j)) == c)
+       add(sum(for(s <- sites) yield x(s)(j)) === c)
       }
       //  Every pair of sites is visited by lambda common judge.
       for(s1 <- sites;
           s2 <- sites
             if s1 < s2) {
-       add(sum(for(j <- judges) yield ((x(s1)(j) === 1) && (x(s1)(j) === x(s2)(j)))) == lambda)
+       add(sum(for(j <- judges) yield (x(s1)(j) && (x(s1)(j) ?=== x(s2)(j)))) === lambda)
       }
       //  where are the judges? (for presentation)
       for(j <- judges;
           s <- sites) {
-       add((x(s)(j) === 1) === judges_where(j)(s) === 1)
+       add((x(s)(j) ?=== 1) === (judges_where(j)(s) ?=== 1))
       }
     search{      
       binaryMaxDegree(x.flatten.toSeq)

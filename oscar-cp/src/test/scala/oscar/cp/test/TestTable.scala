@@ -97,7 +97,7 @@ class TestTable extends TestSuite {
       x(0).value should be(1)
       x(2).hasValue(2) should be(false)
 
-      cp.post(x(2) != 3)
+      cp.post(x(2) !== 3)
 
       cp.isFailed should be(false)
       x(1).value should be(1)
@@ -113,7 +113,7 @@ class TestTable extends TestSuite {
 
       val tuples = (for (i <- 0 until 5; j <- i + 1 until 5) yield Array(i, j, i * 4 + j - 1)).toArray
       cp.post(table(Array(x, y, z), tuples,algo))
-      cp.post(z == 0)
+      cp.post(z === 0)
       x.value should be(0)
       y.value should be(1)
       z.value should be(0)

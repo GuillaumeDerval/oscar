@@ -7,8 +7,8 @@ object PredefinedSearches extends CPModel with App {
 
   val X = Array.fill(10)(CPIntVar(0 to 10))
 
-  add(X(8)+X(9) == 3)
-  add(sum(X) == 9) // sum must be 3
+  add(X(8)+X(9) === 3)
+  add(sum(X) === 9) // sum must be 3
   add(allDifferent(X)) // must all be different
 
   // start the search and print

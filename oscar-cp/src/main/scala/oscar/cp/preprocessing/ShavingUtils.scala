@@ -86,7 +86,7 @@ object ShavingUtils {
     val max = variable.max
     while (fail && min <= max + 1) {
       problem.pushState()
-      fail = problem.post(variable == min) == CPOutcome.Failure
+      fail = problem.post(variable === min) == CPOutcome.Failure
       problem.pop()
       min += 1
     }
@@ -131,7 +131,7 @@ object ShavingUtils {
     */
   def assignFail(problem: CPStore, variable: CPIntVar, value: Int): Boolean = {
     problem.pushState()
-    val fail = problem.post(variable == value) == CPOutcome.Failure
+    val fail = problem.post(variable === value) == CPOutcome.Failure
     problem.pop()
     fail
   }
