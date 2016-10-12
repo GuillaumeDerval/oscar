@@ -428,8 +428,8 @@ class TestDeltaPropagate extends TestSuite {
     cp.add(new MyCons(x))
     
     val cons = ArrayBuffer[Constraint]()
-    cons.append(x > -4)
-    cons.append(x > -2)
+    cons.append(x.gr(-4))
+    cons.append(x.gr(-2))
     cp.add(cons)
     
     //println("x dom:"+x.toSet)

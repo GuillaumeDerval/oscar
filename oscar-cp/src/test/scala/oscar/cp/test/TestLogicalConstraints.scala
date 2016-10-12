@@ -188,4 +188,7 @@ class TestLogicalConstraints extends FunSuite with ShouldMatchers {
     cp.isFailed should be(true)
 
   }
+
+
+
 }

@@ -41,10 +41,7 @@ import scala.math._
   http://www.hakank.org/oscar/
 */
 object Olympic extends CPModel with App  {
-  def abs_minus(x: CPIntVar,
-             y: CPIntVar,
-             z: CPIntVar) : Constraint = 
-    z === (x-y).abs
+    def abs_minus(x: CPIntVar, y: CPIntVar, z: CPIntVar) : Constraint = z.eq((x-y).abs)
     //
     // data
     //
