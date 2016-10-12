@@ -103,14 +103,13 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
 
   def postEquality(left: IntExpression, right: IntExpression, second: Boolean = false): Boolean = (left, right) match {
     case (Minus(a, b), v: IntExpression) =>
-      //cpSolver.add(oscar.cp.constraints.Minus(postIntExpressionAndGetVar(a), postIntExpressionAndGetVar(b), postIntExpressionAndGetVar(v)))
       cpSolver.add(new oscar.cp.constraints.BinarySum(postIntExpressionAndGetVar(v),postIntExpressionAndGetVar(b),postIntExpressionAndGetVar(a))) != CPOutcome.Failure
-    case (BinarySum(a, b), v: IntExpression) =>
+    case (Sum(Array(a, b)), v: IntExpression) =>
       cpSolver.add(new oscar.cp.constraints.BinarySum(postIntExpressionAndGetVar(a),postIntExpressionAndGetVar(b),postIntExpressionAndGetVar(v))) != CPOutcome.Failure
-    case (Prod(a, b), v: IntExpression) =>
+    case (Prod(Array(a, b)), v: IntExpression) =>
       cpSolver.add(new oscar.cp.constraints.MulVar(postIntExpressionAndGetVar(a),postIntExpressionAndGetVar(b),postIntExpressionAndGetVar(v))) != CPOutcome.Failure
     case _ =>
-      if(!second)
+      if(!second) //retry with the reversed order
         postEquality(right, left, second = true)
       else
         postConstraintForPossibleConstant(left, right,
@@ -124,11 +123,6 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
     expr match {
       case And(array) =>
         array.forall(i => postBooleanExpression(i))
-      case BinaryAnd(a, b) =>
-        postBooleanExpression(a)
-        postBooleanExpression(b)
-      case BinaryOr(a, b) =>
-        cpSolver.add(oscar.cp.or(Array(postBoolExpressionAndGetVar(a),postBoolExpressionAndGetVar(b)))) != CPOutcome.Failure
       case Eq(a, b) =>
         postEquality(a, b)
       case Gr(a, b) =>
@@ -139,7 +133,9 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
         cpSolver.add(new oscar.cp.constraints.Le(postIntExpressionAndGetVar(a),postIntExpressionAndGetVar(b))) != CPOutcome.Failure
       case LrEq(a, b) =>
         cpSolver.add(new oscar.cp.constraints.LeEq(postIntExpressionAndGetVar(a),postIntExpressionAndGetVar(b))) != CPOutcome.Failure
-      case Or(a) =>
+      case Or(Array(a,b)) => //binary Or
+        cpSolver.add(oscar.cp.or(Array(postBoolExpressionAndGetVar(a), postBoolExpressionAndGetVar(b)))) != CPOutcome.Failure
+      case Or(a) => //n-ary Or
         cpSolver.add(oscar.cp.or(a.map(postBoolExpressionAndGetVar))) != CPOutcome.Failure
       case Not(a) =>
         cpSolver.add(postBoolExpressionAndGetVar(a).not) != CPOutcome.Failure
@@ -163,12 +159,10 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
 
   def postBoolExpressionAndGetVar(expr: BoolExpression): oscar.cp.CPBoolVar = {
     expr match {
-      case And(array) =>
-        array.foldLeft(oscar.cp.CPBoolVar())((a,b) => CPBoolVarOps(a) && postBoolExpressionAndGetVar(b))
-      case BinaryAnd(a, b) =>
+      case And(Array(a,b)) => //binary And
         CPBoolVarOps(postBoolExpressionAndGetVar(a)) && postBoolExpressionAndGetVar(b)
-      case BinaryOr(a, b) =>
-        CPBoolVarOps(postBoolExpressionAndGetVar(a)) || postBoolExpressionAndGetVar(b)
+      case And(array) => //n-ary And
+        array.drop(1).foldLeft(postBoolExpressionAndGetVar(array(0)))((a,b) => CPBoolVarOps(a) && postBoolExpressionAndGetVar(b))
       case Eq(a, b) =>
         CPIntVarOps(postIntExpressionAndGetVar(a)) ?=== postIntExpressionAndGetVar(b)
       case Gr(a, b) =>
@@ -179,8 +173,10 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
         CPIntVarOps(postIntExpressionAndGetVar(a)) ?< postIntExpressionAndGetVar(b)
       case LrEq(a, b) =>
         CPIntVarOps(postIntExpressionAndGetVar(a)) ?<= postIntExpressionAndGetVar(b)
-      case Or(array) =>
-        array.foldLeft(oscar.cp.CPBoolVar(false))((a,b) => CPBoolVarOps(a) || postBoolExpressionAndGetVar(b))
+      case Or(Array(a, b)) => //binary Or
+        CPBoolVarOps(postBoolExpressionAndGetVar(a)) || postBoolExpressionAndGetVar(b)
+      case Or(array) => //n-ary Or
+        array.drop(1).foldLeft(postBoolExpressionAndGetVar(array(0)))((a,b) => CPBoolVarOps(a) || postBoolExpressionAndGetVar(b))
       case Not(a) =>
         postBoolExpressionAndGetVar(a).not
       case NotEq(a, b) =>
@@ -232,25 +228,37 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
           m
         case Minus(x, y) =>
           getCPIntVarForPossibleConstant(x, y,
-            (a,b) => (-b + a),
-            (a,b) => (a - b),
-            (a,b) => (a - b))
+            (a,b) => -b + a,
+            (a,b) => a - b,
+            (a,b) => a - b)
         case Modulo(x, y) =>
           val v = oscar.cp.CPIntVar(expr.min, expr.max)
           cpSolver.add(new CPIntVarOps(postIntExpressionAndGetVar(x)) % y == v)
           v
-        case Prod(x, y) =>
+        case Prod(Array(x, y)) => //binary prod
           getCPIntVarForPossibleConstant(x, y,
             (a,b) => b * a,
             (a,b) => a * b,
             (a,b) => a * b)
-        case Sum(x) =>
-          oscar.cp.sum(x.map(postIntExpressionAndGetVar))
-        case BinarySum(x, y) =>
+        case Prod(x) => //n-ary prod
+          //OscaR only has binary product; transform into a balanced binary tree to minimise number of constraints
+          def recurmul(exprs: Array[cp.CPIntVar]): Array[cp.CPIntVar] = {
+            if(exprs.length == 1)
+              exprs
+            else
+              recurmul(exprs.grouped(2).map({
+                case Array(a, b) => CPIntVarOps(a) * b
+                case Array(a) => a
+              }).toArray)
+          }
+          recurmul(x.map(postIntExpressionAndGetVar))(0)
+        case Sum(Array(x, y)) => //binary sum
           getCPIntVarForPossibleConstant(x, y,
-            (a,b) => (b + a),
-            (a,b) => (a + b),
-            (a,b) => (a + b))
+            (a,b) => b + a,
+            (a,b) => a + b,
+            (a,b) => a + b)
+        case Sum(x) => //n-ary sum
+          oscar.cp.sum(x.map(postIntExpressionAndGetVar))
         case UnaryMinus(a) =>
           -postIntExpressionAndGetVar(a)
         case WeightedSum(x, y) =>

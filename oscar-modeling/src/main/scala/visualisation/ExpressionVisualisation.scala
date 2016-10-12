@@ -78,9 +78,6 @@ class ConstraintsVisualisation(constraints: Array[Constraint], name: String) {
     expr match {
       //std expressions
       case And(array) => basicCreate(expr, "And", array, "&&")
-      case BinaryAnd(a, b) => basicCreate(expr, "And (Binary)", Seq(a,b), "&&")
-      case BinaryOr(a, b) => basicCreate(expr, "Or (Binary)", Seq(a,b), "||")
-      case BinarySum(a, b) => basicCreate(expr, "Sum (Binary)", Seq(a,b), "+")
       case Div(x, y) => basicCreate(expr, "Divide", Seq(x,y), "/")
       case Eq(a, b) => basicCreate(expr, "Equality", Seq(a,b), "=")
       case Exponent(x, y) => basicCreate(expr, "Exponent", Seq(x,y), "**")
@@ -96,7 +93,7 @@ class ConstraintsVisualisation(constraints: Array[Constraint], name: String) {
       case Not(a) => basicCreate(expr, "Not", Seq(a), "")
       case NotEq(a, b) => basicCreate(expr, "Not equal", Seq(a, b), "!=")
       case Or(a) => basicCreate(expr, "Or", a, "||")
-      case Prod(a, b) => basicCreate(expr, "Product", Seq(a,b), "*")
+      case Prod(a) => basicCreate(expr, "Product", a, "*")
       case Sum(a) => basicCreate(expr, "Sum", a, "+")
       case UnaryMinus(a) => basicCreate(expr, "Unary minus", Seq(a), "")
       case Xor(a, b) => basicCreate(expr, "Xor", Seq(a,b), "^")

@@ -53,23 +53,38 @@ trait IntExpression extends Serializable {
     z
   }
 
-  def + (b: IntExpression): IntExpression = new BinarySum(this, b)
-  def - (b: IntExpression): IntExpression = new Minus(this, b)
-  def * (b: IntExpression): IntExpression = new Prod(this, b)
-  def / (b: IntExpression): IntExpression = new Div(this, b)
-  def % (b: Int): IntExpression = new Modulo(this, b)
-  def ~** (b: IntExpression): IntExpression = new Exponent(this, b)
-  def ~^ (b: IntExpression): IntExpression = new Exponent(this, b)
-  def === (b: IntExpression): BoolExpression = new Eq(this, b)
-  def === (b: Int): BoolExpression = new Eq(this, b)
-  def !== (b: IntExpression): BoolExpression = new NotEq(this, b)
-  def !== (b: Int): BoolExpression = new NotEq(this, b)
-  def >= (b: IntExpression): BoolExpression = new GrEq(this, b)
-  def > (b: IntExpression): BoolExpression = new Gr(this, b)
-  def <= (b: IntExpression): BoolExpression = new LrEq(this, b)
-  def < (b: IntExpression): BoolExpression = new Lr(this, b)
-  def in (b: Set[Int]): BoolExpression = new InSet(this, b)
-  def unary_- : IntExpression = new UnaryMinus(this)
+  def + (b: IntExpression): IntExpression = {
+    (this, b) match {
+      case (Sum(x), Sum(y)) => Sum(x ++ y)
+      case (Sum(x), second) => Sum(x ++ Array(second))
+      case (first,  Sum(y)) => Sum(y ++ Array(first))
+      case (first,  second) => Sum(first, second)
+    }
+  }
+  def - (b: IntExpression): IntExpression = Minus(this, b)
+  def * (b: IntExpression): IntExpression = {
+    (this, b) match {
+      case (Prod(x), Prod(y)) => Prod(x ++ y)
+      case (Prod(x), second ) => Prod(x ++ Array(second))
+      case (first  , Prod(y)) => Prod(y ++ Array(first))
+      case (first  , second ) => Prod(first, second)
+    }
+  }
+
+  def / (b: IntExpression): IntExpression = Div(this, b)
+  def % (b: Int): IntExpression = Modulo(this, b)
+  def ~** (b: IntExpression): IntExpression = Exponent(this, b)
+  def ~^ (b: IntExpression): IntExpression = Exponent(this, b)
+  def === (b: IntExpression): BoolExpression = Eq(this, b)
+  def === (b: Int): BoolExpression = Eq(this, b)
+  def !== (b: IntExpression): BoolExpression = NotEq(this, b)
+  def !== (b: Int): BoolExpression = NotEq(this, b)
+  def >= (b: IntExpression): BoolExpression = GrEq(this, b)
+  def > (b: IntExpression): BoolExpression = Gr(this, b)
+  def <= (b: IntExpression): BoolExpression = LrEq(this, b)
+  def < (b: IntExpression): BoolExpression = Lr(this, b)
+  def in (b: Set[Int]): BoolExpression = InSet(this, b)
+  def unary_- : IntExpression = UnaryMinus(this)
   def unary_+ : IntExpression = this
   def unary_! : IntExpression = this !== 1
 

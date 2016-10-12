@@ -3,7 +3,7 @@ package algebra
 /**
  * Sum of an array of expression
  */
-case class Sum(val v: Array[IntExpression]) extends IntExpression {
+case class Sum(v: Array[IntExpression]) extends IntExpression {
   override def evaluate(): Int = v.foldLeft(0)((acc: Int, e: IntExpression) => acc + e.evaluate())
   override def min: Int = v.foldLeft(0)((acc: Int, e: IntExpression) => acc + e.min)
   override def max: Int = v.foldLeft(0)((acc: Int, e: IntExpression) => acc + e.max)
@@ -22,6 +22,8 @@ case class Sum(val v: Array[IntExpression]) extends IntExpression {
 }
 
 object Sum {
+  def apply(a: IntExpression*): Sum = Sum(a.toArray)
+
   def apply(v: Iterable[IntExpression]): Sum = Sum(v.toArray)
 
   def apply[A](indices: Iterable[A])(f: A => IntExpression): Sum = Sum(indices map f)

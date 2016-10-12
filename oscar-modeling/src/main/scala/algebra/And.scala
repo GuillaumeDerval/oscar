@@ -11,7 +11,7 @@ case class And(a: Array[BoolExpression]) extends BoolExpression {
    * @throws VariableNotBoundException when a variable is not bound
    * @return the value of this expression
    */
-  override def evaluateBool(): Boolean = a.foldLeft(true)((acc, v) => acc && v.evaluateBool())
+  override def evaluateBool(): Boolean = a.forall(_.evaluateBool())
 
   /**
    * Returns an iterable that contains all sub-expressions of this expression
@@ -25,4 +25,8 @@ case class And(a: Array[BoolExpression]) extends BoolExpression {
   override def mapSubexpressions(func: (IntExpression) => IntExpression): IntExpression = {
     new And(a.map(func(_).asInstanceOf[BoolExpression]))
   }
+}
+
+object And {
+  def apply(a: BoolExpression*): And = new And(a.toArray)
 }

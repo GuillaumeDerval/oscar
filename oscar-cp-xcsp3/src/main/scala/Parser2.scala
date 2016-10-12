@@ -101,32 +101,42 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
   }
 
   def _buildCrtWithCondition(id: String, expr: IntExpression, operator: Condition): Unit = {
-    val expr2: BoolExpression = operator match {
+    val expr2: Array[BoolExpression] = operator match {
       case c: ConditionVal =>
         c.operator match {
-          case TypeConditionOperator.EQ => expr === c.k
-          case TypeConditionOperator.GE => expr >= c.k
-          case TypeConditionOperator.GT => expr > c.k
-          case TypeConditionOperator.LE => expr <= c.k
-          case TypeConditionOperator.LT => expr < c.k
-          case TypeConditionOperator.NE => expr !== c.k
-          case TypeConditionOperator.IN => ??? // ???
-          case TypeConditionOperator.NOTIN => ??? // ???
+          case TypeConditionOperator.EQ => Array(expr === c.k)
+          case TypeConditionOperator.GE => Array(expr >= c.k)
+          case TypeConditionOperator.GT => Array(expr > c.k)
+          case TypeConditionOperator.LE => Array(expr <= c.k)
+          case TypeConditionOperator.LT => Array(expr < c.k)
+          case TypeConditionOperator.NE => Array(expr !== c.k)
+          case TypeConditionOperator.IN => throw new XCSP3ParseException("Invalid operator IN on a ConditionVal")
+          case TypeConditionOperator.NOTIN => throw new XCSP3ParseException("Invalid operator NOTIN on a ConditionVal")
         }
       case c: ConditionVar =>
         c.operator match {
-          case TypeConditionOperator.EQ => expr === varHashMap(c.x.id)
-          case TypeConditionOperator.GE => expr >= varHashMap(c.x.id)
-          case TypeConditionOperator.GT => expr > varHashMap(c.x.id)
-          case TypeConditionOperator.LE => expr <= varHashMap(c.x.id)
-          case TypeConditionOperator.LT => expr < varHashMap(c.x.id)
-          case TypeConditionOperator.NE => expr !== varHashMap(c.x.id)
-          case TypeConditionOperator.IN => ??? // ???
-          case TypeConditionOperator.NOTIN => ??? // ???
+          case TypeConditionOperator.EQ => Array(expr === varHashMap(c.x.id))
+          case TypeConditionOperator.GE => Array(expr >= varHashMap(c.x.id))
+          case TypeConditionOperator.GT => Array(expr > varHashMap(c.x.id))
+          case TypeConditionOperator.LE => Array(expr <= varHashMap(c.x.id))
+          case TypeConditionOperator.LT => Array(expr < varHashMap(c.x.id))
+          case TypeConditionOperator.NE => Array(expr !== varHashMap(c.x.id))
+          case TypeConditionOperator.IN => throw new XCSP3ParseException("Invalid operator IN on a ConditionVar")
+          case TypeConditionOperator.NOTIN => throw new XCSP3ParseException("Invalid operator NOTIN on a ConditionVar")
+        }
+      case c: ConditionIntvl =>
+        c.operator match {
+          case TypeConditionOperator.EQ => throw new XCSP3ParseException("Invalid operator EQ on a ConditionIntvl")
+          case TypeConditionOperator.GE => throw new XCSP3ParseException("Invalid operator GE on a ConditionIntvl")
+          case TypeConditionOperator.GT => throw new XCSP3ParseException("Invalid operator GT on a ConditionIntvl")
+          case TypeConditionOperator.LE => throw new XCSP3ParseException("Invalid operator LE on a ConditionIntvl")
+          case TypeConditionOperator.LT => throw new XCSP3ParseException("Invalid operator LT on a ConditionIntvl")
+          case TypeConditionOperator.NE => throw new XCSP3ParseException("Invalid operator NE on a ConditionIntvl")
+          case TypeConditionOperator.IN => Array(expr <= c.max, expr >= c.min)
+          case TypeConditionOperator.NOTIN => Array(Or(Array(expr > c.max, expr < c.min)))
         }
     }
-    val cst = expr2.toConstraint
-    modelDeclaration.add(cst)
+    expr2.map(_.toConstraint).foreach(modelDeclaration.add)
   }
 
   override def buildCtrSum(id: String, list: Array[XVarInteger], condition: Condition): Unit = {
@@ -456,7 +466,7 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
       case TypeObjective.MAXIMUM => Max(list.map(i => varHashMap(i.id)))
       case TypeObjective.MINIMUM => Min(list.map(i => varHashMap(i.id)))
       case TypeObjective.SUM => Sum(list.map(i => varHashMap(i.id)))
-      case TypeObjective.EXPRESSION => ???
+      case TypeObjective.EXPRESSION => throw new XCSP3ParseException("TypeObjective.EXPRESSION should not be called without a tree")
       case TypeObjective.LEX => ???
       case TypeObjective.NVALUES => ???
       case TypeObjective.PRODUCT => ???
@@ -468,7 +478,7 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
       case TypeObjective.MAXIMUM => Max(list.zip(coefs).map(i => varHashMap(i._1.id)*i._2))
       case TypeObjective.MINIMUM => Min(list.zip(coefs).map(i => varHashMap(i._1.id)*i._2))
       case TypeObjective.SUM => WeightedSum(list.map(i => varHashMap(i.id)), coefs)
-      case TypeObjective.EXPRESSION => ???
+      case TypeObjective.EXPRESSION => throw new XCSP3ParseException("TypeObjective.EXPRESSION should not be called without a tree")
       case TypeObjective.LEX => ???
       case TypeObjective.NVALUES => ???
       case TypeObjective.PRODUCT => ???

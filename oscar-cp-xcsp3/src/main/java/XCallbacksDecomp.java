@@ -9,7 +9,6 @@ import org.xcsp.parser.XVariables;
 
 import java.util.*;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 /**
  * An extension of the default XCallback parser that provides default decompositions for the most complex constraints

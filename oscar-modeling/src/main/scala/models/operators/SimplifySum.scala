@@ -41,7 +41,6 @@ object SimplifySum extends ModelOperator[UninstantiatedModel] {
   private def convertToWeightedSum(expr: IntExpression): IntExpression = {
     val nexpr = expr.mapSubexpressions(convertToWeightedSum)
     nexpr match {
-      case BinarySum(a, b) => WeightedSum(Array(a, b), Array(1, 1))
       case Sum(a) => WeightedSum(a, Array.tabulate(a.length)(_ => 1))
       case default => nexpr
     }
@@ -63,8 +62,8 @@ object SimplifySum extends ModelOperator[UninstantiatedModel] {
     val ix = ixw._1
     val iw = ixw._2
     ix match {
-      case Prod(sub, Constant(subw)) => updateWeightedSumCoefficientRecur((sub, subw*iw))
-      case Prod(Constant(subw), sub) => updateWeightedSumCoefficientRecur((sub, subw*iw))
+      case Prod(Array(sub, Constant(subw))) => updateWeightedSumCoefficientRecur((sub, subw*iw))
+      case Prod(Array(Constant(subw), sub)) => updateWeightedSumCoefficientRecur((sub, subw*iw))
       case default => ixw
     }
   }
@@ -101,10 +100,7 @@ object SimplifySum extends ModelOperator[UninstantiatedModel] {
     nexpr match {
       case WeightedSum(x, w) => {
         if(w.forall(v => v == 1)) {
-          if(w.length == 2)
-            new BinarySum(x(0), x(1))
-          else
-            new Sum(x)
+          new Sum(x)
         }
         else
           nexpr
