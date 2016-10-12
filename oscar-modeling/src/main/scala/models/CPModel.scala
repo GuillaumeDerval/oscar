@@ -160,9 +160,14 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
   def postBoolExpressionAndGetVar(expr: BoolExpression): oscar.cp.CPBoolVar = {
     expr match {
       case And(Array(a,b)) => //binary And
-        CPBoolVarOps(postBoolExpressionAndGetVar(a)) && postBoolExpressionAndGetVar(b)
+        val b = oscar.cp.modeling.constraint.plus(postBoolExpressionAndGetVar(a),
+          postBoolExpressionAndGetVar(a))
+        b ?=== 2
       case And(array) => //n-ary And
-        array.drop(1).foldLeft(postBoolExpressionAndGetVar(array(0)))((a,b) => CPBoolVarOps(a) && postBoolExpressionAndGetVar(b))
+        val v: Array[cp.CPIntVar] = array.map(x => postBoolExpressionAndGetVar(x).asInstanceOf[cp.CPIntVar])
+        val b = cp.CPIntVar(0, array.length)
+        cpSolver.post(oscar.cp.modeling.constraint.sum(v, b))
+        b ?=== array.length
       case Eq(a, b) =>
         CPIntVarOps(postIntExpressionAndGetVar(a)) ?=== postIntExpressionAndGetVar(b)
       case Gr(a, b) =>
@@ -173,10 +178,10 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
         CPIntVarOps(postIntExpressionAndGetVar(a)) ?< postIntExpressionAndGetVar(b)
       case LrEq(a, b) =>
         CPIntVarOps(postIntExpressionAndGetVar(a)) ?<= postIntExpressionAndGetVar(b)
-      case Or(Array(a, b)) => //binary Or
-        CPBoolVarOps(postBoolExpressionAndGetVar(a)) || postBoolExpressionAndGetVar(b)
       case Or(array) => //n-ary Or
-        array.drop(1).foldLeft(postBoolExpressionAndGetVar(array(0)))((a,b) => CPBoolVarOps(a) || postBoolExpressionAndGetVar(b))
+        val b = cp.CPBoolVar()
+        cpSolver.post(new oscar.cp.constraints.OrReif2(array.map(postBoolExpressionAndGetVar), b))
+        b
       case Not(a) =>
         postBoolExpressionAndGetVar(a).not
       case NotEq(a, b) =>
@@ -186,6 +191,47 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
       case Xor(a, b) => throw new Exception() //TODO: throw valid exception
       case InSet(a, b) => throw new Exception() //TODO: throw valid exception
       case v: BoolVar => getRepresentative(v).realCPVar.asInstanceOf[oscar.cp.CPBoolVar]
+    }
+  }
+
+  def postBoolExpressionWithVar(expr: BoolExpression, result: oscar.cp.CPBoolVar): Unit = {
+    expr match {
+      case And(Array(a,b)) => //binary And
+        val b = oscar.cp.modeling.constraint.plus(postBoolExpressionAndGetVar(a),
+          postBoolExpressionAndGetVar(a))
+        cpSolver.post(new oscar.cp.constraints.EqReif(b, 2, result))
+      case And(array) => //n-ary And
+        val v: Array[cp.CPIntVar] = array.map(x => postBoolExpressionAndGetVar(x).asInstanceOf[cp.CPIntVar])
+        val b = cp.CPIntVar(0, array.length)
+        cpSolver.post(oscar.cp.modeling.constraint.sum(v, b))
+        cpSolver.post(new oscar.cp.constraints.EqReif(b, array.length, result))
+      case Eq(a, b) =>
+        // TODO what if a/b is a constant? get rid of ReifVar?
+        cpSolver.post(new oscar.cp.constraints.EqReifVar(postIntExpressionAndGetVar(a), postIntExpressionAndGetVar(b), result))
+      case Gr(a, b) =>
+        // TODO what if a/b is a constant? get rid of ReifVar?
+        cpSolver.post(new oscar.cp.constraints.GrEqVarReif(postIntExpressionAndGetVar(a), postIntExpressionAndGetVar(b)+1, result))
+      case GrEq(a, b) =>
+        // TODO what if a/b is a constant? get rid of ReifVar?
+        cpSolver.post(new oscar.cp.constraints.GrEqVarReif(postIntExpressionAndGetVar(a), postIntExpressionAndGetVar(b), result))
+      case Lr(a, b) =>
+        // TODO what if a/b is a constant? get rid of ReifVar?
+        cpSolver.post(new oscar.cp.constraints.GrEqVarReif(postIntExpressionAndGetVar(b), postIntExpressionAndGetVar(a)+1, result))
+      case LrEq(a, b) =>
+        // TODO what if a/b is a constant? get rid of ReifVar?
+        cpSolver.post(new oscar.cp.constraints.GrEqVarReif(postIntExpressionAndGetVar(b), postIntExpressionAndGetVar(a), result))
+      case Or(array) =>
+        cpSolver.add(new oscar.cp.constraints.OrReif2(array.map(postBoolExpressionAndGetVar), result))
+      case Not(a) =>
+        cpSolver.post(new oscar.cp.constraints.Eq(postBoolExpressionAndGetVar(a).not, result))
+      case NotEq(a, b) =>
+        // TODO what if a/b is a constant? get rid of ReifVar?
+        cpSolver.post(new oscar.cp.constraints.DiffReifVar(postIntExpressionAndGetVar(a), postIntExpressionAndGetVar(b), result))
+      case Implication(a, b) =>
+        cpSolver.post(new oscar.cp.constraints.Implication(postBoolExpressionAndGetVar(a), postBoolExpressionAndGetVar(b), result))
+      case Xor(a, b) => throw new Exception() //TODO: throw valid exception
+      case InSet(a, b) => throw new Exception() //TODO: throw valid exception
+      case v: BoolVar => throw new Exception() //TODO: throw valid exception
     }
   }
 
@@ -204,11 +250,6 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
           val vx: Array[oscar.cp.CPIntVar] = x.map(postIntExpressionAndGetVar)
           val vy: oscar.cp.CPIntVar = postIntExpressionAndGetVar(y)
           vx(vy)
-        /*case Element2D(x, y, z) =>
-          val vx: Array[Array[oscar.cp.CPIntVar]] = x.map(_.map(postIntExpressionAndGetVar))
-          val vy: oscar.cp.CPIntVar = postIntExpressionAndGetVar(y)
-          val vz: oscar.cp.CPIntVar = postIntExpressionAndGetVar(z)
-          vx(vy)(vz)*/
         case ElementCst(x, y) =>
           val vy: oscar.cp.CPIntVar = postIntExpressionAndGetVar(y)
           x(vy)
@@ -242,7 +283,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
             (a,b) => a * b)
         case Prod(x) => //n-ary prod
           //OscaR only has binary product; transform into a balanced binary tree to minimise number of constraints
-          def recurmul(exprs: Array[cp.CPIntVar]): Array[cp.CPIntVar] = {
+          def recurmul(exprs: Array[oscar.cp.CPIntVar]): Array[oscar.cp.CPIntVar] = {
             if(exprs.length == 1)
               exprs
             else
