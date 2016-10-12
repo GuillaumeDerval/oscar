@@ -36,6 +36,7 @@ object Product{
   */
 class Product[+T <: ExpressionDegree,+V](val coef: Const[V], val terms: Seq[Term[T,V]])(implicit num: Numeric[V]) extends Expression[T,V]{
 
+  assert(terms.forall(! _.isInstanceOf[Const[_]]))
   def uses[VP>: V](v: Var[VP]) = terms.contains(v)
 
   override def toString = coef.toString + {if (terms.nonEmpty) terms.mkString("*","*","") else ""}

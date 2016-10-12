@@ -16,10 +16,7 @@
 package oscar.examples.linprog
 
 import oscar.algebra._
-import oscar.linprog.interface.MIPSolverInterface
-import oscar.linprog.interface.lpsolve.LPSolveLib
-import oscar.linprog.modeling._
-import Migration._
+import oscar.linprog.{LPSolve, MPModel}
 
 /**
  * The goal of the diet problem is to find the cheapest combination of foods
@@ -29,12 +26,12 @@ import Migration._
  * We include constraints that regulate the number of
  * calories and amounts of vitamins, minerals, fats, sodium and cholesterol in the diet.
  */
-object Diet extends MPModel(LPSolveLib) with App {
+object Diet extends MPModel(LPSolve) with App {
 
   case class Nutriment(name: String) {
     val shortName = name
   }
-  case class Food[I <: MIPSolverInterface](x: MPVar[I], price: Double, contents: Nutriment => Double)
+  case class Food(x: Var[Double], price: Double, contents: Nutriment => Double)
 
   val nutriments = List("A", "C", "B1", "B2", "NA", "CAL").map { Nutriment }
 
@@ -60,11 +57,12 @@ object Diet extends MPModel(LPSolveLib) with App {
   minimize(sum(foods) { f => f.x*f.price })
 
   // effectively solve the model
-  solver.solve
+  interface.solve(this) match{
+    case AOptimal(solution) =>
+      println("objective: " + solution(objective.expression))
+      println("-----------------------------------")
+      println(foods.map(f => s"${f.x.name} -> ${solution(f.x)}").mkString("\n"))
+  }
 
-  println("objective: " + solver.objectiveValue)
-  println("-----------------------------------")
-  println(foods.map(f => s"${f.x} -> ${f.x.value}").mkString("\n"))
 
-  solver.release() // release memory
 }

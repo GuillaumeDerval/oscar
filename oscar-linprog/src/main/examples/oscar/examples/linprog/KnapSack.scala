@@ -1,4 +1,4 @@
-/*******************************************************************************
+/** *****************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
   * the Free Software Foundation, either version 2.1 of the License, or
@@ -11,15 +11,12 @@
   *
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+  * *****************************************************************************/
 
 package oscar.examples.linprog
 
 import oscar.algebra._
-import oscar.linprog.interface.MIPSolverInterface
-import oscar.linprog.interface.lpsolve.LPSolveLib
-import oscar.linprog.modeling._
-import Migration._
+import oscar.linprog.{LPSolve, MPModel}
 
 /*
  * The knapsack problem is a well-known problem in combinatorial optimization:
@@ -29,9 +26,9 @@ import Migration._
  *
  * @author gme
  */
-object Knapsack extends MPModel(LPSolveLib) with App {
+object Knapsack extends MPModel(LPSolve) with App {
 
-  case class O(weight: Int, utility: Int, x: MPVar[_ <: MIPSolverInterface])
+  case class O(weight: Int, utility: Int, x: Var[Double])
 
   val weights = Array(100, 50, 45, 20, 10, 5)
   val utility = Array(40, 35, 18, 4, 10, 2)
@@ -44,16 +41,16 @@ object Knapsack extends MPModel(LPSolveLib) with App {
   maximize(sum(objects)(o => o.x * o.utility.toDouble))
 
   // given the limited capacity of the pack
-  add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(objects)(o => o.x * o.weight.toDouble) <= capacity.toDouble)
+  add(s"C_1" ||: sum(objects)(o => o.x * o.weight.toDouble) <= capacity.toDouble)
 
-  solver.solve
+  solve match {
+    case AOptimal(solution) =>
 
-  val selected = objects.filter(o => o.x.value.get >= .9)
-  var totalWeight = selected.map(o => o.weight).sum
+      val selected = objects.filter(o => solution(o.x) >= .9)
+      var totalWeight = selected.map(o => o.weight).sum
 
-  println("Status: " + solver.solutionQuality)
-  println("Total Utility: " + solver.objectiveValue)
-  println("Total Weight: " + totalWeight)
+      println("Total Utility: " + solution(objective.expression))
+      println("Total Weight: " + totalWeight)
 
-  solver.release()
+  }
 }

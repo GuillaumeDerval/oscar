@@ -2,177 +2,154 @@ package oscar.linprog.test
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
+import org.scalatest.{FunSuite, Matchers}
 import oscar.algebra._
-import oscar.linprog.enums.{Optimal, SolutionFound}
-import oscar.linprog.interface.MPSolverLib
-import oscar.linprog.modeling._
 
-import scala.util.Success
-import Migration._
 
 @RunWith(classOf[JUnitRunner])
-class MIPTester extends OscarLinprogTester {
-
-  testForAllSolvers(MPSolverLib.mipSolvers, "Maximize objective under constraints with integer variables") { implicit solver =>
-    val x = MPIntVar("x", 0 to 100)
-    val y = MPFloatVar("y", 0, 100)
-
-    maximize(x*100.0 + y)
-    add(s"C_${solver.getNumberOfLinearConstraints}" ||:x*3.0 + y <= 14.5)
-
-    val endStatus = solver.solve
-
-    endStatus should equal(SolutionFound)
-    solver.solutionQuality should equal(Success(Optimal))
-
-    x.value should equalWithTolerance(Some(4.0))
-    y.value should equalWithTolerance(Some(14.5 - 3*4))
+class MIPTests extends LinearMathSolverTester{
+  override def testSuite(interface: Option[SolverInterface[Linear,Linear,Double]], solverName: String): FunSuite = {
+    new MIPTester(interface)(solverName)
   }
+}
 
-  // NOTE:
-  // this test might fail for LpSolve in case infinity is modified
-  testForAllSolvers(MPSolverLib.mipSolvers, "Maximize objective under constraints with integer variables only") { implicit solver =>
-    val x = MPIntVar("x", 0, 100)
-    val y = MPIntVar("y", 0, 100)
 
-    maximize(x*100.0 + y)
-    add(s"C_${solver.getNumberOfLinearConstraints}" ||:x*3.0 + y <= 14.5)
+class MIPTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
 
-    val endStatus = solver.solve
+  implicit def int2DoubleConst(i: Int) = Const(i.toDouble).normalized
 
-    endStatus should equal(SolutionFound)
-    solver.solutionQuality should equal(Success(Optimal))
+  override def suiteName: String = solverName + " - MIPTester"
 
-    x.value should equalWithTolerance(Some(4.0))
-    y.value should equalWithTolerance(Some(2.0))
-  }
+  implicit def i = interface.getOrElse{cancel()}
 
-  testForAllSolvers(MPSolverLib.mipSolvers, "Change variable type from integer to continuous") { implicit solver =>
-    val x = MPIntVar("x", 0 to 100)
-    val y = MPFloatVar("y", 0, 100)
+  def moreOrLess(d: Double) = d +- 1e-6
 
-    maximize(x*100.0 + y)
-    add(s"C_${solver.getNumberOfLinearConstraints}" ||:x*3.0 + y <= 14.5)
+  test("Maximize objective under constraints with integer variables") {
+    implicit val model = new Model[Linear, Linear, Double]()
 
-    val endStatus = solver.solve
+    val x = VarInt("x", 0, 100)
+    val y = VarNumerical("y", 0, 100)
 
-    endStatus should equal(SolutionFound)
+    maximize(x * 100.0 + y)
+    model.subjectTo("E" ||: "E" ||: x * 3.0 + y <= 14.5)
 
-    // Set x as a continuous var => performs the linear relaxation of the above problem
-    x.setFloat()
-
-    // Both variables should be continuous
-    x.float should equal(true)
-    y.float should equal(true)
-
-    // Model has changed
-    solver.solved should equal(false)
-    solver.hasSolution should equal(false)
-
-    // Reoptimize to get new solution
-    val endStatus2 = solver.solve
-
-    endStatus2 should equal(SolutionFound)
-    solver.solutionQuality should equal(Success(Optimal))
-
-    x.value should equalWithTolerance(Some(14.5/3.0))
-    y.value should equalWithTolerance(Some(0.0))
-  }
-
-  testForAllSolvers(MPSolverLib.mipSolvers, "Change variable type from continuous to integer") { implicit solver =>
-    val x = MPIntVar("x", 0, 100)
-    val y = MPFloatVar("y", 0, 100)
-    val z = MPFloatVar("z", 0, 100)
-
-    maximize(x + y*2.0 + z*3.0)
-    add(s"C_${solver.getNumberOfLinearConstraints}" ||:x + y <= 75.5)
-    add(s"C_${solver.getNumberOfLinearConstraints}" ||:x + z <= 75.5)
-
-    val endStatus = solver.solve
-
-    endStatus should equal(SolutionFound)
-
-    // Set y as an integer var
-    y.setInteger()
-
-    // Both variables should be integer
-    x.integer should equal(true)
-    y.integer should equal(true)
-    z.integer should equal(false)
-
-    // Model has changed
-    solver.solved should equal(false)
-    solver.hasSolution should equal(false)
-
-    // Reoptimize to get new solution
-    val endStatus2 = solver.solve
-
-    endStatus2 should equal(SolutionFound)
-    solver.solutionQuality should equal(Success(Optimal))
-
-    x.value should equalWithTolerance(Some(0.0))
-    y.value should equalWithTolerance(Some(75.0))
-    z.value should equalWithTolerance(Some(75.5))
-  }
-
-  testForAllSolvers(MPSolverLib.mipSolvers, "Maximize objective under constraints with binary variables") { implicit solver =>
-    val x = MPBinaryVar("x")
-    val y = MPFloatVar("y", 0, 100)
-
-    maximize(x*100.0 + y)
-    add(s"C_${solver.getNumberOfLinearConstraints}" ||:x*3.0 + y <= 14.5)
-
-    val endStatus = solver.solve
-
-    endStatus should equal(SolutionFound)
-    solver.solutionQuality should equal(Success(Optimal))
-
-    x.value should equalWithTolerance(Some(1))
-    y.value should equalWithTolerance(Some(14.5 - 3*1))
-  }
-
-  for {
-    n <- Seq(4, 8, 16)
-  } {
-    testForAllSolvers(MPSolverLib.mipSolvers, s"Solves the $n Queens problem") { implicit solver =>
-      val lines = 0 until n
-      val columns = 0 until n
-
-      val x = Array.tabulate(n, n)((l, c) => MPBinaryVar(s"x($l, $c)"))
-
-      maximize(sum(lines, columns) { (l, c) => x(l)(c) })
-
-      /* at most one queen can be placed in each row */
-      for (l <- lines)
-        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(columns)(c => x(l)(c)) <= 1.0)
-
-      /* at most one queen can be placed in each column */
-      for (c <- columns)
-        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(lines)(l => x(l)(c)) <= 1.0)
-
-      /* at most one queen can be placed in each "/"-diagonal  upper half*/
-      for (i <- 1 until n)
-        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(0 to i)((j) => x(i - j)(j)) <= 1.0)
-
-      /* at most one queen can be placed in each "/"-diagonal  lower half*/
-      for (i <- 1 until n)
-        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(i until n)((j) => x(j)(n - 1 - j + i)) <= 1.0)
-
-      /* at most one queen can be placed in each "/"-diagonal  upper half*/
-      for (i <- 0 until n)
-        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(0 until n - i)((j) => x(j)(j + i)) <= 1.0)
-
-      /* at most one queen can be placed in each "/"-diagonal  lower half*/
-      for (i <- 1 until n)
-        add(s"C_${solver.getNumberOfLinearConstraints}" ||:sum(0 until n - i)((j) => x(j + i)(j)) <= 1.0)
-
-      val endStatus = solver.solve
-
-      endStatus should equal(SolutionFound)
-      solver.solutionQuality should equal(Success(Optimal))
-
-      solver.objectiveValue.toOption should equalWithTolerance(Some(n))
+    model.solve match {
+      case AOptimal(solution) =>
+        solution(x) shouldBe moreOrLess(4.0)
+        solution(y) shouldBe moreOrLess(14.5 - 3 * 4)
     }
   }
 
+  test("Maximize objective under constraints with integer variables only") {
+    implicit val model = new Model[Linear, Linear, Double]()
+
+    val x = VarInt("x", 0, 100)
+    val y = VarInt("y", 0, 100)
+
+    maximize(x * 100.0 + y)
+    subjectTo("E" ||: x * 3.0 + y <= 14.5)
+
+    model.solve match {
+      case AOptimal(solution) =>
+        solution(x) shouldBe moreOrLess(4.0)
+        solution(y) shouldBe moreOrLess(2.0)
+    }
+  }
+
+  test("Change variable type from integer to continuous") {
+    implicit val model = new Model[Linear, Linear, Double]()
+
+    val x = VarInt("x", 0, 100)
+    val y = VarNumerical("y", 0, 100)
+
+    maximize(x * 100.0 + y)
+    subjectTo("E" ||: x * 3.0 + y <= 14.5)
+
+    val run = i.run(model)
+
+    run.solve match {
+      case AOptimal(solution) =>
+
+        // Set x as a continuous var => performs the linear relaxation of the above problem
+        run.setContinuous(x)
+
+        run.solve match {
+          case AOptimal(solution2) =>
+            solution2(x) shouldBe moreOrLess(14.5 / 3.0)
+            solution2(y) shouldBe moreOrLess(0.0)
+        }
+    }
+  }
+
+  test("Change variable type from continuous to integer") {
+    implicit val model = new Model[Linear, Linear, Double]()
+
+    val x = VarInt("x", 0, 100)
+    val y = VarNumerical("y", 0, 100)
+    val z = VarNumerical("z", 0, 100)
+
+    maximize(x + y * 2.0 + z * 3.0)
+    subjectTo("E" ||: x + y <= 75.5)
+    subjectTo("E" ||: x + z <= 75.5)
+
+    val run = i.run(model)
+
+    run.solve match {
+      case AOptimal(solution) =>
+
+        run.setInteger(y)
+
+        run.solve match {
+          case AOptimal(solution2) =>
+            solution2(x) shouldBe moreOrLess(0.0)
+            solution2(y) shouldBe moreOrLess(75.0)
+            solution2(z) shouldBe moreOrLess(75.5)
+        }
+    }
+  }
+
+  test("Maximize objective under constraints with binary variables") {
+    implicit val model = new Model[Linear, Linear, Double]()
+
+
+    val x = VarBinary("x")
+    val y = VarNumerical("y", 0, 100)
+
+    maximize(100 * x + 1 * y)
+    subjectTo("E" ||: 3 * x + 1 * y <= 14.5)
+
+
+
+    model.solve match {
+      case AOptimal(solution) =>
+        solution(x) shouldBe moreOrLess(1)
+        solution(y) shouldBe moreOrLess(14.5 - 3 * 1)
+    }
+  }
+
+  //  test("Retrieve gap value") {
+  //    implicit val model = new Model[Linear,Linear,Double]()
+  //
+  //
+  //    val y1 = MPBinaryVar("y1")
+  //    val y2 = MPBinaryVar("y2")
+  //
+  //    val x1 = VarNumerical("x1", 0, 1)
+  //    val x2 = VarNumerical("x2", 0, 1)
+  //    val x3 = VarNumerical("x3", 0, 1)
+  //    val x4 = VarNumerical("x4", 0, 1)
+  //
+  //    maximize(30*35*x3 + 10*25*x4 - 20*15*x1 - 20*20*x2)
+  //    subjectTo( "E" ||: y1 === x1)
+  //    subjectTo( "E" ||: y2 === x2)
+  //    subjectTo( "E" ||: x1*20+x2*20 === x3*35+x4*25)
+  //
+  //    solver.subjectToGapCallback()
+  //
+  //
+  //
+  //    assert(solver.currentGap.get>=0)
+  //
+  //    solver.release()
+  //  }
 }

@@ -1,4 +1,4 @@
-/*******************************************************************************
+/** *****************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
   * the Free Software Foundation, either version 2.1 of the License, or
@@ -11,30 +11,28 @@
   *
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+  * *****************************************************************************/
 
 package oscar.examples.linprog
 
 import oscar.algebra._
-import oscar.linprog.interface.lpsolve.LPSolveLib
-import oscar.linprog.modeling._
-import Migration._
+import oscar.linprog.{LPSolve, MPModel}
 
 import scala.io.Source
 
 /**
- * Uncapacitated facility location problem.
- *
- * A series of logs to cut and ship to a set of landings.
- * One must decide which logs to cut, which landings to open,
- * given shipment and landing opening costs
- * Cost of shipment of each log to each landing are known.
- * A minimal number of logs should be cut, modeled by a
- * trade-off coefficient and an additional term in the objective function.
- *
- * @author Bertrand Cornelusse
- */
-object LandingLocation extends MPModel(LPSolveLib) with App {
+  * Uncapacitated facility location problem.
+  *
+  * A series of logs to cut and ship to a set of landings.
+  * One must decide which logs to cut, which landings to open,
+  * given shipment and landing opening costs
+  * Cost of shipment of each log to each landing are known.
+  * A minimal number of logs should be cut, modeled by a
+  * trade-off coefficient and an additional term in the objective function.
+  *
+  * @author Bertrand Cornelusse
+  */
+object LandingLocation extends MPModel(LPSolve) with App {
 
   // ---------- Data of the Problem ----------
 
@@ -43,7 +41,8 @@ object LandingLocation extends MPModel(LPSolveLib) with App {
   val transportationCost = (for (line <- dataIterator) yield for (el <- line.split(";").drop(1)) yield el.toDouble).toArray
   val Landings = openingCost.indices
   val Logs = transportationCost.indices
-  val Alpha = 700 // A trade-off coefficient
+  val Alpha = 700
+  // A trade-off coefficient
   val Demand = 4
 
   // ---------- MIP model ----------
@@ -57,26 +56,27 @@ object LandingLocation extends MPModel(LPSolveLib) with App {
 
   val obj =
     sum(Logs, Landings) { (log, land) => x(log)(land) * transportationCost(log)(land).toDouble } +
-    sum(Landings) { land => y(land)*openingCost(land).toDouble } +
-     (Const(Demand.toDouble) - sum(Logs, Landings) { (log, land) => x(log)(land) })*Alpha.toDouble
+      sum(Landings) { land => y(land) * openingCost(land).toDouble } +
+      (Const(Demand.toDouble) - sum(Logs, Landings) { (log, land) => x(log)(land) }) * Alpha.toDouble
 
   minimize(obj)
 
   // One log can be assigned only to one landing
   for (log <- Logs) {
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Landings) { (land) => x(log)(land) } <= 1.0)
+    add("" ||: sum(Landings) { (land) => x(log)(land) } <= 1.0)
   }
   // One log can be assigned to a landing only if that landing is open
   for (log <- Logs; land <- Landings) {
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x(log)(land) <= y(land))
+    add("" ||: x(log)(land) <= y(land))
   }
 
-  solver.solve
-  println("objective: " + solver.objectiveValue)
-  println("----------")
-  println(y.mkString("\n"))
-  x.foreach(log => println(log.map(_.value.get).mkString("\t")))
-  x.foreach(log => println(log.map(_.value.get).mkString("\t")))
+  solve match {
+    case AOptimal(solution) =>
+      println("objective: " + solution(objective.expression))
+      println("----------")
+      println(y.mkString("\n"))
+      x.foreach(log => println(log.map(solution).mkString("\t")))
+      x.foreach(log => println(log.map(solution).mkString("\t")))
+  }
 
-  solver.release()
 }

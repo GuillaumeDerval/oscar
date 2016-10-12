@@ -16,9 +16,7 @@
 package oscar.examples.linprog
 
 import oscar.algebra._
-import oscar.linprog.interface.lpsolve.LPSolveLib
-import oscar.linprog.modeling._
-import Migration._
+import oscar.linprog.{LPSolve, MPModel}
 
 /**
  * A number of 12 products can be produced, each of which has a set of features, such as volume, weight, etc.
@@ -29,7 +27,7 @@ import Migration._
  *
  * @author pschaus@gmail.com
  */
-object ProductionPlanning extends MPModel(LPSolveLib) with App {
+object ProductionPlanning extends MPModel(LPSolve) with App {
   val b = Array(18209, 7692, 1333, 924, 26638, 61188, 13360) // Dimensions
   val c = Array(96, 76, 56, 11, 86, 10, 66, 86, 83, 12, 9, 81) // Products
 
@@ -51,13 +49,14 @@ object ProductionPlanning extends MPModel(LPSolveLib) with App {
   maximize(sum(Products) { p => x(p) * c(p).toDouble })
   
   for (d <- Dimensions) {
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Products)(p => x(p)*coef(d)(p).toDouble) <= b(d).toDouble)
+    add( "" ||: sum(Products)(p => x(p)*coef(d)(p).toDouble) <= b(d).toDouble)
   }
 
-  val endStatus = solver.solve
+  val endStatus = solve match {
+    case AOptimal(solution) =>
 
-  println("objective: " + solver.objectiveValue)
-  Products.foreach(p => if (x(p).value.get > 0) println("x" + p + ":" + x(p).value.get))
+      println("objective: " + solution(objective.expression))
+      Products.foreach(p => if (solution(x(p)) > 0) println("x" + p + ":" + x(p).value.get))
 
-  solver.release()
+  }
 }

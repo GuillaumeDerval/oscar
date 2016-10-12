@@ -71,7 +71,8 @@ class Model[O >: Constant <: ExpressionDegree , C <: ExpressionDegree, V: Numeri
   /**
     * List of constraints for this [[Model]]
     */
-  private val constraints = scala.collection.mutable.ListBuffer[EquationSystem[C, V]]()
+  private val _constraints = scala.collection.mutable.ListBuffer[EquationSystem[C, V]]()
+  def constraints: Seq[EquationSystem[C,V]] = _constraints
 
   /**
     * Add a variable in this model
@@ -90,7 +91,7 @@ class Model[O >: Constant <: ExpressionDegree , C <: ExpressionDegree, V: Numeri
     * @param eq the equation to be added
     */
   def subjectTo(eq: Equation[C, V]*): Unit = {
-    constraints += new EquationSystem[C, V](eq.toIterable)
+    _constraints += new EquationSystem[C, V](eq.toIterable)
   }
 
   /**
@@ -99,7 +100,7 @@ class Model[O >: Constant <: ExpressionDegree , C <: ExpressionDegree, V: Numeri
     * @param eqs the set of constraints to be added
     */
   def subjectTo(eqs: EquationSystem[C, V]): Unit = {
-    constraints += eqs
+    _constraints += eqs
   }
 
   /**
@@ -124,7 +125,7 @@ class Model[O >: Constant <: ExpressionDegree , C <: ExpressionDegree, V: Numeri
     _objective = obj
   }
 
-  override def toString = constraints.mkString("\n")
+  override def toString = _constraints.mkString("\n")
 
 
 

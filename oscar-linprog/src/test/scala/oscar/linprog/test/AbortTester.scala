@@ -2,89 +2,105 @@ package oscar.linprog.test
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
+import org.scalatest.{FunSuite, Matchers}
 import oscar.algebra._
-import oscar.linprog.enums._
-import oscar.linprog.interface.{MIPSolverInterface, MPSolverLib}
-import oscar.linprog.modeling._
-import Migration._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-import scala.language.postfixOps
-import scala.util.Success
+
 
 @RunWith(classOf[JUnitRunner])
-class AbortTester extends OscarLinprogTester {
+class AbortTests extends LinearMathSolverTester{
+  override def testSuite(interface: Option[SolverInterface[Linear,Linear,Double]], solverName: String): FunSuite = {
+    new AbortTester(interface)(solverName)
+  }
+}
 
-  testForAllSolvers(MPSolverLib.mipSolvers, "Call to abort AFTER solve") { implicit solver =>
-    // A 1D bin packing problem
+class AbortTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
+
+  override def suiteName: String = solverName + " - AbortTester"
+
+  implicit def i = interface.getOrElse{cancel()}
+
+  test("Call to abort AFTER solve") {
+    implicit val model = new Model[Linear, Linear, Double]()
+
     val n = 200
 
-    val xs = Array.tabulate(n, n)((i, j) => MPBinaryVar(s"x[$i,$j]"))
-    val ys = Array.tabulate(n)(i => MPBinaryVar(s"y$i"))
+    val xs = Array.tabulate(n, n)((i, j) => VarBinary(s"x[$i,$j]"))
+    val ys = Array.tabulate(n)(i => VarBinary(s"y$i"))
 
     val minSize = 10
     val maxSize = 100
     val sizes = Array.tabulate(n)(i => minSize + scala.util.Random.nextInt(maxSize - minSize))
     val binSize = n * maxSize / 2
 
-    minimize(sum(ys)(_.normalized))
-    subjectTo(
-      (for {
+    minimize(sumOf(ys.map(_.normalized)))
+
+    model.subjectTo (
+      new EquationSystem(for {
         i <- 0 until n
       } yield {
-          s"allocation[$i]" ||: (sum(0 until n)(j => xs(i)(j) * sizes(j).toDouble) <= ys(i) * binSize.toDouble)
-        }) ++ (
-        for {
-          j <- 0 until n
-        } yield {
-          s"unicity[$j]" ||: (sum(0 until n)(i => xs(i)(j)) === 1.0)
-        }): _*
-    )
+        s"allocation[$i]" ||: (sum(0 until n)(j => xs(i)(j) * sizes(j).toDouble) <= ys(i) * binSize.toDouble)
+      }))
+
+    model.subjectTo (
+      new EquationSystem(
+      for {
+        j <- 0 until n
+      } yield {
+        s"unicity[$j]" ||: (sum(0 until n)(i => xs(i)(j)) === Const(1.0))
+      }))
+
+    val run = i.run(model)
 
     val startTime = System.currentTimeMillis()
 
     import scala.concurrent.ExecutionContext.Implicits.global
     val endStatusFuture = Future {
-      solver.solve
+      run.solve
     }
 
     // wait
-    Thread.sleep(10000)
+    Thread.sleep(500)
 
     // abort
-    solver.abort()
+    run.abort
 
     //get the results
-    Await.result(endStatusFuture, 16 seconds)
+    Await.result(endStatusFuture, 1 minute)
 
     val endTime = System.currentTimeMillis()
 
-    endStatusFuture.onComplete { es =>
-      es should equal(Success(NoSolutionFound))
-    }
-
-    (endTime - startTime).toDouble should be <= 15000.0
+    (endTime - startTime).toDouble should be <= 1000.0
   }
 
-  testForAllSolvers(MPSolverLib.lpSolvers, "Call to abort BEFORE solve") { implicit solver =>
-    val x = MPFloatVar("x", 100, 150)
-    val y = MPFloatVar("y", 80, 170)
+  test("Call to abort BEFORE solve") {
 
-    maximize( -x*2.0 +  y*5.0)
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: x + y <= 200.toDouble)
+    implicit val model = new Model[Linear, Linear, Double]()
+
+    val x = VarNumerical("x", 100, 150)
+    val y = VarNumerical("y", 80, 170)
+
+    val o = x * 2.0 - y * 5.0
+    minimize(o)
+
+    model.subjectTo("E" ||: x + y <= 200.0)
+
+    val run = i.run(model)
 
     // Abort before solve should not prevent it
-    solver.abort()
+    run.abort
 
-    val endStatus = solver.solve
+    run.solve match {
+      case AOptimal(solution) =>
+        solution(x) shouldBe (100.0 +- 1e-6)
+        solution(y) shouldBe (100.0 +- 1e-6)
 
-    endStatus should equal(SolutionFound)
-
-    x.value should equalWithTolerance(Some(100))
-    y.value should equalWithTolerance(Some(100))
-
-    solver.objectiveValue should equal(Success(-2*100 + 5*100))
-    solver.solutionQuality should equal(Success(Optimal))
+        o.eval(solution) shouldBe (2 * 100 + -5 * 100.0 +- 1e-6)
+      case r =>
+        println(r)
+        assert(false)
+    }
   }
 }

@@ -16,9 +16,7 @@
 package oscar.examples.linprog
 
 import oscar.algebra._
-import oscar.linprog.interface.lpsolve.LPSolveLib
-import oscar.linprog.modeling._
-import Migration._
+import oscar.linprog.{LPSolve, MPModel}
 
 /**
  * Workforce management is central to efficient operations and good customer service.
@@ -34,7 +32,7 @@ import Migration._
  *
  * @author Pierre Schaus pschaus@gmail.com
  */
-object PopsicleScheduling extends MPModel(LPSolveLib) with App {
+object PopsicleScheduling extends MPModel(LPSolve) with App {
 
   val demand = Array(5, 7, 7, 10, 16, 18, 12)
 
@@ -54,20 +52,21 @@ object PopsicleScheduling extends MPModel(LPSolveLib) with App {
   minimize(sum(configs)(c => c._1 * (c._2 * c._3.sum)))
   for ((d, i) <- demand.zipWithIndex) {
     println("demand:" + d)
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(configs)(c => c._1 * c._3(i).toDouble) >= d.toDouble)
+    add( "" ||: sum(configs)(c => c._1 * c._3(i).toDouble) >= d.toDouble)
   }
 
-  solver.solve
+  solve match {
+    case AOptimal(solution) =>
 
-  println(solver.objectiveValue)
-  for (c <- configs; if (c._1.value.get > 0)) {
-    println(c._1.value.get + " X \t" + c._3.mkString("\t"))
-  }
-  println("--------------")
-  val cover = for ((d, i) <- demand.zipWithIndex) yield {
-    configs.map(c => c._1.value.get * c._3(i)).sum
-  }
-  println("\t" + cover.mkString("\t"))
+      println(solution(objective.expression))
+      for (c <- configs; if (solution(c._1) > 0)) {
+        println(solution(c._1) + " X \t" + c._3.mkString("\t"))
+      }
+      println("--------------")
+      val cover = for ((d, i) <- demand.zipWithIndex) yield {
+        configs.map(c => solution(c._1) * c._3(i)).sum
+      }
+      println("\t" + cover.mkString("\t"))
 
-  solver.release()
+  }
 }

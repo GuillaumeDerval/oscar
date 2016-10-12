@@ -16,9 +16,7 @@
 package oscar.examples.linprog
 
 import oscar.algebra._
-import oscar.linprog.interface.lpsolve.LPSolveLib
-import oscar.linprog.modeling._
-import Migration._
+import oscar.linprog.{LPSolve, MPModel}
 /**
  * Capacitated Facility Location Problem
  *
@@ -37,7 +35,7 @@ import Migration._
  *
  * @author Pierre Schaus pschaus@gmail.com
  */
-object Warehouse extends MPModel(LPSolveLib) with App {
+object Warehouse extends MPModel(LPSolve) with App {
 
   // ----------- Data of the problem ------------
 
@@ -70,22 +68,23 @@ object Warehouse extends MPModel(LPSolveLib) with App {
     + sum(Plants) { p => open(p) * fixedCosts(p).toDouble }) //fixed costs
   // Production Constraints
   for (p <- Plants) {
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Warehouses)(w => transport(w)(p)) <=open(p)*capacity(p).toDouble)
+    add( "" ||: sum(Warehouses)(w => transport(w)(p)) <=open(p)*capacity(p).toDouble)
   }
   // Demand Constraints
   for (w <- Warehouses) {
-    add( s"C_${solver.getNumberOfLinearConstraints}" ||: sum(Plants)(p => transport(w)(p)) >= demand(w).toDouble)
+    add( "" ||: sum(Plants)(p => transport(w)(p)) >= demand(w).toDouble)
   }
 
-  solver.solve
+  solve match {
+    case AOptimal(solution) =>
 
-  println("objective: " + solver.objectiveValue)
-  println("----------")
+      println("objective: " + solution(objective.expression))
+      println("----------")
 
-  open.foreach { o =>
-    println(o.toString +" "+o.value.get)
+      open.foreach { o =>
+        println(o.toString + " " + o.value.get)
+      }
+      transport.foreach(x => println(x.map(solution).mkString("\t")))
+
   }
-  transport.foreach(x => println(x.map(_.value.get).mkString("\t")))
-
-  solver.release()
 }
