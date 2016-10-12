@@ -17,6 +17,21 @@ package oscar
 
 package object algebra {
 
+  class ModelDecorator[O  >: Constant <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](val model: Model[O,C,V]){
+    def solve(implicit solver: SolverInterface[O,C,V]) = {
+      solver.solve(model)
+    }
+  }
+
+  implicit def model2decorator[O  >: Constant <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](model: Model[O,C,V]) = new ModelDecorator(model)
+
+  def maximize[O  >: Constant <: ExpressionDegree, V: Numeric](obj: NormalizedExpression[O,V])(implicit model: Model[O,_,V]) = model.withObjective(new Maximize[O,V](obj))
+  def minimize[O  >: Constant <: ExpressionDegree, V: Numeric](obj: NormalizedExpression[O,V])(implicit model: Model[O,_,V]) = model.withObjective(new Minimize[O,V](obj))
+
+  def subjectTo[C <: ExpressionDegree, V: Numeric](constraints: Equation[C, V]*)(implicit model: Model[_,C,V]): Unit = {
+    for (c <- constraints) model.subjectTo(c)
+  }
+
   type LinearExpression = NormalizedExpression[Linear,Double]
   type LinearConstraintExpression = Equation[Linear,Double]
 

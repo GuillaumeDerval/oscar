@@ -39,19 +39,6 @@ class Const[+V: Numeric](val d: V) extends Term[Constant,V] {
 
   override def toString = d.toString
 
-  /**
-    * Syntactic sugar for *
-    * @param that
-    * @param op
-    * @param numeric
-    * @tparam TP
-    * @tparam VP
-    * @return
-    */
-  def apply[TP <: ExpressionDegree, VP >: V](that: NormalizedExpression[TP,VP])(implicit op: (NormalizedExpression[Constant,VP], NormalizedExpression[TP,VP]) => ProdExpression[TP,VP], numeric: Numeric[VP]): ProdExpression[TP,VP] = {
-    op(Const[VP](d), that)
-  }
-
   def normalized[ VP >: V](implicit numeric: Numeric[VP]) = new NormalizedExpression[Constant,VP](Stream(new Product[Constant,VP](this,Seq())))
 
   override def hashCode = d.hashCode

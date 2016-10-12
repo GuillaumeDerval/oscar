@@ -108,7 +108,7 @@ class LPTester extends OscarLinprogTester {
     solver.solutionQuality should equal(Success(Optimal))
   }
 
-  testForAllSolvers(MPSolverLib.lpSolvers, "Detect infeasible problem") { implicit solver =>
+  testForAllSolvers(MPSolverLib.lpSolvers, "Detect inSolutionFound problem") { implicit solver =>
     val x = MPFloatVar("x", 0, 10)
     val y = MPFloatVar("y", 80, 170)
 

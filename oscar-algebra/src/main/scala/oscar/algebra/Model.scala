@@ -1,6 +1,43 @@
 package oscar.algebra
 
 /**
+  * Represents an objective for a mathematical model.
+  * @tparam O the degree of the objective
+  * @tparam V the type of values contained by the variables in the objective
+  */
+abstract class Objective[O <: ExpressionDegree, V: Numeric] {
+  /**
+    * Expression to be either minimized or maximized
+    * @return
+    */
+  def expression: NormalizedExpression[O, V]
+}
+
+object Maximize{
+  def apply[O <: ExpressionDegree, V: Numeric](expression: NormalizedExpression[O, V]) = new Maximize[O,V](expression)
+}
+
+object Minimize{
+  def apply[O <: ExpressionDegree, V: Numeric](expression: NormalizedExpression[O, V]) = new Minimize[O,V](expression)
+}
+
+/**
+  * Describe a maximization objective.
+  * @param expression expression to be maximized
+  * @tparam O the degree of the objective
+  * @tparam V the type of values contained by the variables in the objective
+  */
+class Maximize[O <: ExpressionDegree, V: Numeric](val expression: NormalizedExpression[O, V]) extends Objective[O, V]
+
+/**
+  * Describe a minimization objective.
+  * @param expression expression to be minimized
+  * @tparam O the degree of the objective
+  * @tparam V the type of values contained by the variables in the objective
+  */
+class Minimize[O <: ExpressionDegree, V: Numeric](val expression: NormalizedExpression[O, V]) extends Objective[O, V]
+
+/**
   * A [[Model]] represents a mathematical model (X,C,O) where X is a set of numerical variables, C a set of constraints
   * and O a set of objectives to be optimized.
   *
@@ -11,99 +48,85 @@ package oscar.algebra
   * @tparam C the maximum degree of the constraints to be added to this model
   * @tparam V the type value stored in the variables (Double, Int, ...). For now, mainly Double is used here.
   */
-
-class Model[O <: ExpressionDegree, C <: ExpressionDegree,V]{
+class Model[O >: Constant <: ExpressionDegree , C <: ExpressionDegree, V: Numeric] {
 
   /**
     * Set of variables of the [[Model]]
     */
-  private val _variables: scala.collection.mutable.Map[Var[V],Int] = new scala.collection.mutable.HashMap[Var[V],Int]()
-  def variables: scala.collection.Map[Var[V],Int] = _variables
+  private val _variables: scala.collection.mutable.ArrayBuffer[Var[V]] = new scala.collection.mutable.ArrayBuffer[Var[V]]()
+
+  def variables: scala.collection.IndexedSeq[Var[V]] = _variables
 
   /**
     * @return the maximum index of all the variables
     */
-  def maxIndex = _variables.size - 1
+  def maxIndex = _variables.size
 
   /**
-    * List of objectives to be optimized
+    * Objective to be optimized
     */
-  val objectives = scala.collection.mutable.ListBuffer[NormalizedExpression[O,V]]()
+  private var _objective: Objective[O, V] = new Minimize[O,V](implicitly[Numeric[V]].zero.normalized[V])
+  def objective = _objective
 
   /**
     * List of constraints for this [[Model]]
     */
-  val constraints = scala.collection.mutable.ListBuffer[EquationSystem[C,V]]()
+  private val constraints = scala.collection.mutable.ListBuffer[EquationSystem[C, V]]()
 
   /**
     * Add a variable in this model
+    *
     * @param v the variable to be added
     * @return the index of the added variable in this model
     */
   def addVariable(v: Var[V]) = {
-    _variables += v -> maxIndex
+    _variables += v
     maxIndex - 1
   }
 
   /**
     * Add a constraint to the model
+    *
     * @param eq the equation to be added
     */
-  def subjectTo(eq: Equation[C,V]): Unit ={
-    constraints += new EquationSystem[C,V](Iterable(eq))
+  def subjectTo(eq: Equation[C, V]*): Unit = {
+    constraints += new EquationSystem[C, V](eq.toIterable)
   }
 
   /**
     * Add a set of constraint to the model
+    *
     * @param eqs the set of constraints to be added
     */
-  def subjectTo(eqs: EquationSystem[C,V]): Unit ={
+  def subjectTo(eqs: EquationSystem[C, V]): Unit = {
     constraints += eqs
   }
 
   /**
     * Add an objective to be minimized
     */
-  def minimize(eq: NormalizedExpression[O,V]): Unit ={
-    objectives += eq
+  def minimize(eq: NormalizedExpression[O, V]): Unit = {
+    _objective = new Minimize[O, V](eq)
+  }
+
+
+  /**
+    * Add an objective to be minimized
+    */
+  def maximize(eq: NormalizedExpression[O, V]): Unit = {
+    _objective = new Maximize[O, V](eq)
   }
 
   /**
     * Add an objective to be minimized
     */
-  def withObjective(obj: NormalizedExpression[O,V]): Unit ={
-    objectives += obj
+  def withObjective(obj: Objective[O, V]): Unit = {
+    _objective = obj
   }
 
   override def toString = constraints.mkString("\n")
 
-  /**
-    * Buffer the solution found by a solver for this [[Model]]
-    */
-  @deprecated
-  class SolutionBuffer {
 
-    var objectiveValue: Double = 0.0
 
-    val values = new Array[Double](maxIndex)
-
-    def immutable = new Solution(values.toIndexedSeq, objectiveValue)
-
-    def update[T](v: Var[V], value: Double): Unit ={
-      values(v.id) = value
-    }
-
-  }
-
-  /**
-    * Solution for this model, respecting all the constraints
-    * @param values the values of all the variables, indexed by their respective index
-    * @param objectiveValue value of the objective for this solution
-    */
-  class Solution(values: IndexedSeq[Double], objectiveValue: Double) {
-
-    def apply(v: Var[V]) = values(v.id)
-    def cost = objectiveValue
-  }
 }
 

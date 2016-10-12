@@ -14,9 +14,6 @@
   * *****************************************************************************/
 package oscar.algebra
 
-import scala.Numeric.Implicits._
-import scala.annotation.tailrec
-
 /**
   * Represents mathematical expression of any degree. [[Expression]]s can be added, multiplied and used to create equations (i.e. constraints).
   * @param num [[Numeric]] object for type [[V]]

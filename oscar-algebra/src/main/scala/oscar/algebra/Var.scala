@@ -66,6 +66,25 @@ abstract class Var[+V: Numeric] extends Term[Linear,V] {
 }
 
 
+case class VarBinary(name: String)(implicit model: Model[_, _,Double]) extends Var[Double] {
+  val id = model.addVariable((this))
+  def lowerBound = 0
+
+  def upperBound = 1
+
+  def value = None
+}
+
+case class VarInt(name: String, lowerBound: Double , upperBound: Double )(implicit model: Model[_, _,Double]) extends Var[Double] {
+  val id = model.addVariable((this))
+  def value = None
+}
+
+case class VarNumerical(name: String, lowerBound: Double , upperBound: Double )(implicit model: Model[_, _,Double]) extends Var[Double]{
+  val id = model.addVariable((this))
+  def value = None
+}
+
 case class Var0[+V:Numeric](val name: String, val lowerBound: V, val upperBound: V)(implicit model: Model[_, _,V]) extends Var[V] {
   val id = model.addVariable(this)
 }

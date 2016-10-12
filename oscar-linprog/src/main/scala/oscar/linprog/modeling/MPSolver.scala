@@ -542,7 +542,7 @@ class MPSolver[I <: MPSolverInterface](val solverInterface: I) {
   private var _solveStatus: SolveStatus = NotSolved
 
   /**
-   * Returns the current status of the solve. (see [[SolveStatus]])
+   * Returns the current status of the solve. (see [[EndStatus]])
    */
   def solveStatus = _solveStatus
 
