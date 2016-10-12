@@ -157,9 +157,12 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
     }
   }
 
+  // Cache that stores equivalent cp.CPIntVar for each IntExpression, in order to avoid duplicates
+  protected lazy val expr_cache: mutable.HashMap[IntExpression, cp.CPIntVar] = mutable.HashMap[IntExpression, cp.CPIntVar]()
+
   def postBoolExpressionAndGetVar(expr: BoolExpression): cp.CPBoolVar = {
-    expr match {
-      case And(Array(a,b)) => //binary And
+    expr_cache.getOrElseUpdate(expr, expr match {
+      case And(Array(a, b)) => //binary And
         val b = cp.modeling.constraint.plus(postBoolExpressionAndGetVar(a),
           postBoolExpressionAndGetVar(a))
         b ?=== 2
@@ -191,7 +194,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
       case Xor(a, b) => throw new Exception() //TODO: throw valid exception
       case InSet(a, b) => throw new Exception() //TODO: throw valid exception
       case v: BoolVar => getRepresentative(v).realCPVar.asInstanceOf[cp.CPBoolVar]
-    }
+    }).asInstanceOf[cp.CPBoolVar]
   }
 
   def postBoolExpressionWithVar(expr: BoolExpression, result: cp.CPBoolVar): Unit = {
@@ -235,81 +238,84 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
     }
   }
 
-  lazy val expr_cache: mutable.HashMap[IntExpression, cp.CPIntVar] = mutable.HashMap[IntExpression, cp.CPIntVar]()
-  def postIntExpressionAndGetVar(expr: IntExpression): cp.CPIntVar =
-    expr_cache.getOrElseUpdate(expr,{
-      expr match {
-        case expr: BoolExpression => postBoolExpressionAndGetVar(expr)
-        case Abs(a) => postIntExpressionAndGetVar(a).abs
-        case Constant(a) => cp.CPIntVar(a)
-        case Count(x, y) =>
-          val v = cp.CPIntVar(0, x.length)
-          cpSolver.add(new cp.constraints.Count(v, x.map(postIntExpressionAndGetVar), postIntExpressionAndGetVar(y)))
-          v
-        case Element(x, y) =>
-          val vx: Array[cp.CPIntVar] = x.map(postIntExpressionAndGetVar)
-          val vy: cp.CPIntVar = postIntExpressionAndGetVar(y)
-          vx(vy)
-        case ElementCst(x, y) =>
-          val vy: cp.CPIntVar = postIntExpressionAndGetVar(y)
-          x(vy)
-        case ElementCst2D(x, y, z) =>
-          val vy: cp.CPIntVar = postIntExpressionAndGetVar(y)
-          val vz: cp.CPIntVar = postIntExpressionAndGetVar(z)
-          x(vy)(vz)
-        case Max(x) =>
-          val vx = x.map(postIntExpressionAndGetVar)
-          val m = cp.CPIntVar(vx.map(_.min).max, vx.map(_.max).max)
-          cpSolver.add(cp.maximum(vx, m))
-          m
-        case Min(x) =>
-          val vx = x.map(postIntExpressionAndGetVar)
-          val m = cp.CPIntVar(vx.map(_.min).min, vx.map(_.max).min)
-          cpSolver.add(cp.maximum(vx, m))
-          m
-        case Minus(x, y) =>
-          getCPIntVarForPossibleConstant(x, y,
-            (a,b) => -b + a,
-            (a,b) => a - b,
-            (a,b) => a - b)
-        case Modulo(x, y) =>
-          val v = cp.CPIntVar(expr.min, expr.max)
-          cpSolver.add(new CPIntVarOps(postIntExpressionAndGetVar(x)) % y == v)
-          v
-        case Prod(Array(x, y)) => //binary prod
-          getCPIntVarForPossibleConstant(x, y,
-            (a,b) => b * a,
-            (a,b) => a * b,
-            (a,b) => a * b)
-        case Prod(x) => //n-ary prod
-          //OscaR only has binary product; transform into a balanced binary tree to minimise number of constraints
-          def recurmul(exprs: Array[cp.CPIntVar]): Array[cp.CPIntVar] = {
-            if(exprs.length == 1)
-              exprs
-            else
-              recurmul(exprs.grouped(2).map({
-                case Array(a, b) => CPIntVarOps(a) * b
-                case Array(a) => a
-              }).toArray)
-          }
-          recurmul(x.map(postIntExpressionAndGetVar))(0)
-        case Sum(Array(x, y)) => //binary sum
-          getCPIntVarForPossibleConstant(x, y,
-            (a,b) => b + a,
-            (a,b) => a + b,
-            (a,b) => a + b)
-        case Sum(x) => //n-ary sum
-          cp.sum(x.map(postIntExpressionAndGetVar))
-        case UnaryMinus(a) =>
-          -postIntExpressionAndGetVar(a)
-        case WeightedSum(x, y) =>
-          cp.weightedSum(y, x.map(postIntExpressionAndGetVar))
-        case Div(x, y) => throw new Exception() //TODO: real exception
-        case Exponent(x, y) => throw new Exception() //TODO: real exception
-        case v: IntVar =>
-          getRepresentative(v).realCPVar
-      }
-    })
+  def postIntExpressionAndGetVar(expr: IntExpression): cp.CPIntVar = {
+    expr match {
+      case boolexpr: BoolExpression => postBoolExpressionAndGetVar(boolexpr) //should be done outside expr_cache
+                                                                             //as it is updated by postBoolExpressionAndGetVar
+      case default => expr_cache.getOrElseUpdate(expr, expr match {
+          case Abs(a) => postIntExpressionAndGetVar(a).abs
+          case Constant(a) => cp.CPIntVar(a)
+          case Count(x, y) =>
+            val v = cp.CPIntVar(0, x.length)
+            cpSolver.add(new cp.constraints.Count(v, x.map(postIntExpressionAndGetVar), postIntExpressionAndGetVar(y)))
+            v
+          case Element(x, y) =>
+            val vx: Array[cp.CPIntVar] = x.map(postIntExpressionAndGetVar)
+            val vy: cp.CPIntVar = postIntExpressionAndGetVar(y)
+            vx(vy)
+          case ElementCst(x, y) =>
+            val vy: cp.CPIntVar = postIntExpressionAndGetVar(y)
+            x(vy)
+          case ElementCst2D(x, y, z) =>
+            val vy: cp.CPIntVar = postIntExpressionAndGetVar(y)
+            val vz: cp.CPIntVar = postIntExpressionAndGetVar(z)
+            x(vy)(vz)
+          case Max(x) =>
+            val vx = x.map(postIntExpressionAndGetVar)
+            val m = cp.CPIntVar(vx.map(_.min).max, vx.map(_.max).max)
+            cpSolver.add(cp.maximum(vx, m))
+            m
+          case Min(x) =>
+            val vx = x.map(postIntExpressionAndGetVar)
+            val m = cp.CPIntVar(vx.map(_.min).min, vx.map(_.max).min)
+            cpSolver.add(cp.maximum(vx, m))
+            m
+          case Minus(x, y) =>
+            getCPIntVarForPossibleConstant(x, y,
+              (a, b) => -b + a,
+              (a, b) => a - b,
+              (a, b) => a - b)
+          case Modulo(x, y) =>
+            val v = cp.CPIntVar(expr.min, expr.max)
+            cpSolver.add(new CPIntVarOps(postIntExpressionAndGetVar(x)) % y == v)
+            v
+          case Prod(Array(x, y)) => //binary prod
+            getCPIntVarForPossibleConstant(x, y,
+              (a, b) => b * a,
+              (a, b) => a * b,
+              (a, b) => a * b)
+          case Prod(x) => //n-ary prod
+            //OscaR only has binary product; transform into a balanced binary tree to minimise number of constraints
+            def recurmul(exprs: Array[cp.CPIntVar]): Array[cp.CPIntVar] = {
+              if (exprs.length == 1)
+                exprs
+              else
+                recurmul(exprs.grouped(2).map({
+                  case Array(a, b) => CPIntVarOps(a) * b
+                  case Array(a) => a
+                }).toArray)
+            }
+
+            recurmul(x.map(postIntExpressionAndGetVar))(0)
+          case Sum(Array(x, y)) => //binary sum
+            getCPIntVarForPossibleConstant(x, y,
+              (a, b) => b + a,
+              (a, b) => a + b,
+              (a, b) => a + b)
+          case Sum(x) => //n-ary sum
+            cp.sum(x.map(postIntExpressionAndGetVar))
+          case UnaryMinus(a) =>
+            -postIntExpressionAndGetVar(a)
+          case WeightedSum(x, y) =>
+            cp.weightedSum(y, x.map(postIntExpressionAndGetVar))
+          case Div(x, y) => throw new Exception() //TODO: real exception
+          case Exponent(x, y) => throw new Exception() //TODO: real exception
+          case v: IntVar =>
+            getRepresentative(v).realCPVar
+        }
+      )
+    }
+  }
 
   /**
     * Post the right constraint depending on the type of a and b.
