@@ -157,7 +157,7 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
 
   def _recursiveIntentionBuilderParentNode[V](tree: XNodeParent[V]): IntExpression = {
     tree.getType match {
-      case TypeExpr.IN => {
+      case TypeExpr.IN =>
         assert(tree.sons(1).getType == TypeExpr.SET)
         try{
           val set = tree.sons(1).asInstanceOf[XNodeParent[V]].sons.map(i => i.asInstanceOf[XNodeLeaf[V]].value.asInstanceOf[Long].toInt)
@@ -169,7 +169,6 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
             val main = _recursiveIntentionBuilder(tree.sons(0))
             Or(tree.sons(1).asInstanceOf[XNodeParent[V]].sons.map(x => _recursiveIntentionBuilder(x) === main))
         }
-      }
       case TypeExpr.OR => Or(tree.sons.map(_recursiveIntentionBuilder(_).asInstanceOf[BoolExpression]))
       case TypeExpr.AND => And(tree.sons.map(_recursiveIntentionBuilder(_).asInstanceOf[BoolExpression]))
       case TypeExpr.EQ => _recursiveIntentionBuilder(tree.sons(0)) === _recursiveIntentionBuilder(tree.sons(1))
@@ -450,11 +449,6 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occurs: Array[XVarInteger]): Unit = throw new Exception("GCC with var cardinalities is not implemented")
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occurs: Array[Int]): Unit = throw new Exception("GCC with var cardinalities is not implemented")
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occursMin: Array[Int], occursMax: Array[Int]): Unit = throw new Exception("GCC with var cardinalities is not implemented")
-  override def buildCtrExtension(id: String, x: XVarSymbolic, values: Array[String], positive: Boolean, flags: util.Set[TypeFlag]): Unit = throw new Exception("Symbolic variables are not implemented")
-  override def buildCtrExtension(id: String, list: Array[XVarSymbolic], tuples: Array[Array[String]], positive: Boolean, flags: util.Set[TypeFlag]): Unit = throw new Exception("Symbolic variables are not implemented")
-  override def buildCtrIntension(id: String, scope: Array[XVarSymbolic], syntaxTreeRoot: XNodeParent[XVar]): Unit = throw new Exception("Symbolic variables are not implemented")
-  override def buildVarSymbolic(x: XVarSymbolic, values: Array[String]): Unit = throw new Exception("Symbolic variables are not implemented")
-  override def buildCtrAllDifferent(id: String, list: Array[XVarSymbolic]): Unit = throw new Exception("Symbolic variables are not implemented")
 
   // Objectives
   def _getExprForTypeObjective(objtype: TypeObjective, list: Array[XVarInteger]): IntExpression = {
@@ -557,9 +551,18 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
 }
 
 object XCSP3Parser {
-  def parse(modelDeclarator: ModelDeclaration, filename: String): Iterable[IntVar] = {
+  /**
+    * Parse a XCSP3 instance
+    * @param modelDeclarator the OscaR-Modeling ModelDeclator to be used
+    * @param filename the path to the file to parse
+    * @return a list of variables, and a solution generator.
+    *         The solution generator, to be called when all variables are bound, will return a XCSP3 instantiation
+    *         constraint equivalent to the solution found.
+    */
+  def parse(modelDeclarator: ModelDeclaration, filename: String): (Iterable[IntVar], () => String) = {
     val parser = new XCSP3Parser(modelDeclarator, filename)
-    parser.varHashMap.values.map(i => i.asInstanceOf[IntVar])
+    val vars = parser.varHashMap.values.map(i => i.asInstanceOf[IntVar]).toArray
+    (vars, () => parser.generateInstantiationWithSymbolic(vars.map(x => x.getRepresentativeName.get), vars.map(x => x.evaluate())))
   }
 }
 
@@ -569,16 +572,11 @@ object Parser2 extends DistributedCPApp[String] with App {
     val check = opt[Boolean]("c", descr = "Check results with the XCSP3 checker")
   }
 
-  val vars = XCSP3Parser.parse(this.modelDeclaration, config.instance.get.get)
+  val (vars, solutionGenerator) = XCSP3Parser.parse(this.modelDeclaration, config.instance.get.get)
 
   setSearch(Branching.binaryFirstFail(vars.toSeq))
   onSolution {
-    val str1 = "<instantiation>\n\t<list>\n\t\t"
-    val elems = vars.map(x => x.getRepresentativeName.get).mkString(" ")
-    var str2 = "\n\t</list>\n\t<values>\n\t\t"
-    val vals = vars.map(x => x.evaluate().toString).mkString(" ")
-    val str3 = "\n\t</values>\n</instantiation>"
-    str1 + elems + str2 + vals + str3
+    solutionGenerator()
   }
 
   setDecompositionStrategy(new CartProdRefinement(vars, Branching.binaryFirstFail(vars.toSeq)))
@@ -635,16 +633,11 @@ object RunEverything extends DistributedCPApp[String] with App {
     modelDeclaration.apply(modelDeclaration.getCurrentModel) {
       try {
         println("<!--" + instancePath)
-        val vars = XCSP3Parser.parse(this.modelDeclaration, instancePath)
+        val (vars, solutionGenerator) = XCSP3Parser.parse(this.modelDeclaration, instancePath)
 
         setSearch(Branching.binaryFirstFail(vars.toSeq))
         onSolution {
-          val str1 = "<instantiation>\n\t<list>\n\t\t"
-          val elems = vars.map(x => x.getRepresentativeName.get).mkString(" ")
-          var str2 = "\n\t</list>\n\t<values>\n\t\t"
-          val vals = vars.map(x => x.evaluate().toString).mkString(" ")
-          val str3 = "\n\t</values>\n</instantiation>"
-          str1 + elems + str2 + vals + str3
+          solutionGenerator()
         }
 
         setDecompositionStrategy(new CartProdRefinement(vars, Branching.binaryFirstFail(vars.toSeq)))
