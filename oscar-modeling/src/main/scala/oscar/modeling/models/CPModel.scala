@@ -185,11 +185,14 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         cpSolver.post(cp.modeling.constraint.maxCumulativeResource(cpStart, cpDuration, cpEnds, cpDemands, cpResources, cpCapacity, id)) != CPOutcome.Failure
       case AllDifferent(array) => cpSolver.post(cp.modeling.constraint.allDifferent(array.map(postIntExpressionAndGetVar)), CPPropagStrength.Weak) != CPOutcome.Failure
       case LexLeq(a, b) => cpSolver.post(cp.modeling.constraint.lexLeq(a.map(postIntExpressionAndGetVar), b.map(postIntExpressionAndGetVar))) != CPOutcome.Failure
-      case Table(array, values) => cpSolver.post(cp.modeling.constraint.table(array.map(postIntExpressionAndGetVar), values, TableAlgo.MDD4R)) != CPOutcome.Failure
-      case NegativeTable(array, values) => cpSolver.post(cp.modeling.constraint.negativeTable(array.map(postIntExpressionAndGetVar), values)) != CPOutcome.Failure
+      case Table(array, values, None) => cpSolver.post(cp.modeling.constraint.table(array.map(postIntExpressionAndGetVar), values, TableAlgo.MDD4R)) != CPOutcome.Failure
+      case NegativeTable(array, values, None) => cpSolver.post(cp.modeling.constraint.negativeTable(array.map(postIntExpressionAndGetVar), values)) != CPOutcome.Failure
+      case Table(array, values, Some(starred)) => cpSolver.post(new oscar.cp.constraints.tables.TableCTStar(array.map(postIntExpressionAndGetVar), values, starred)) != CPOutcome.Failure
+      case NegativeTable(array, values, Some(starred)) => cpSolver.post(new oscar.cp.constraints.tables.TableCTNegStar(array.map(postIntExpressionAndGetVar), values, starred)) != CPOutcome.Failure
       case MinCircuit(succ, distMatrixSucc, cost) => cpSolver.post(cp.modeling.constraint.minCircuit(succ.map(postIntExpressionAndGetVar), distMatrixSucc, postIntExpressionAndGetVar(cost)), CPPropagStrength.Strong) != CPOutcome.Failure
       case MinCircuitWeak(succ, distMatrixSucc, cost) => cpSolver.post(cp.modeling.constraint.minCircuit(succ.map(postIntExpressionAndGetVar), distMatrixSucc, postIntExpressionAndGetVar(cost)), CPPropagStrength.Weak) != CPOutcome.Failure
       case GCC(x, minVal, low, up) => cpSolver.post(new cp.constraints.GCC(x.map(postIntExpressionAndGetVar), minVal, low, up)) != CPOutcome.Failure
+      case GCCVar(x, y) => cpSolver.post(cp.modeling.constraint.gcc(x.map(postIntExpressionAndGetVar), y.map(a => (a._1, postIntExpressionAndGetVar(a._2))))) != CPOutcome.Failure
       case BinPacking(x, w, l) => cpSolver.post(new cp.constraints.BinPacking(x.map(postIntExpressionAndGetVar), w, l.map(postIntExpressionAndGetVar))) != CPOutcome.Failure
       case Circuit(succ, symmetric) => cpSolver.post(new cp.constraints.Circuit(succ.map(postIntExpressionAndGetVar), symmetric), CPPropagStrength.Strong) != CPOutcome.Failure
       case SubCircuit(succ, offset) => cpSolver.post(cp.constraints.SubCircuit(succ.map(postIntExpressionAndGetVar), offset)) != CPOutcome.Failure
@@ -197,7 +200,28 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
       case MinAssignment(xarg, weightsarg, cost) => cpSolver.post(new cp.constraints.MinAssignment(xarg.map(postIntExpressionAndGetVar), weightsarg, postIntExpressionAndGetVar(cost))) != CPOutcome.Failure
       case StrongEq(a, b) => cpSolver.post(postIntExpressionAndGetVar(a) === postIntExpressionAndGetVar(b), CPPropagStrength.Strong) != CPOutcome.Failure
       case Spread(a, s1, s2) => cpSolver.post(new cp.constraints.Spread(a.toArray.map(postIntExpressionAndGetVar), s1, postIntExpressionAndGetVar(s2), true))  != CPOutcome.Failure
-      case default => throw new Exception() //TODO: put a real exception here
+      case UnaryResourceSimple(starts, durations, ends, resources, id) =>
+        val cpStarts = starts.map(postIntExpressionAndGetVar)
+        val cpDurations = durations.map(postIntExpressionAndGetVar)
+        val cpEnds = ends.map(postIntExpressionAndGetVar)
+        val cpResources = resources.map(postIntExpressionAndGetVar)
+        cpSolver.post(cp.modeling.constraint.unaryResource(cpStarts, cpDurations, cpEnds, cpResources, id)) != CPOutcome.Failure
+      case UnaryResourceTransitionType(starts, durations, ends, types, transitionTimes) =>
+        val cpStarts = starts.map(postIntExpressionAndGetVar)
+        val cpDurations = durations.map(postIntExpressionAndGetVar)
+        val cpEnds = ends.map(postIntExpressionAndGetVar)
+        cpSolver.post(cp.modeling.constraint.unaryResource(cpStarts, cpDurations, cpEnds, types, transitionTimes)) != CPOutcome.Failure
+      case UnaryResourceTransition(starts, durations, ends, transitionTimes) =>
+        val cpStarts = starts.map(postIntExpressionAndGetVar)
+        val cpDurations = durations.map(postIntExpressionAndGetVar)
+        val cpEnds = ends.map(postIntExpressionAndGetVar)
+        cpSolver.post(cp.modeling.constraint.unaryResource(cpStarts, cpDurations, cpEnds, transitionTimes)) != CPOutcome.Failure
+      case UnaryResourceTransitionFamilies(starts, durations, ends, familyMatrix, families) =>
+        val cpStarts = starts.map(postIntExpressionAndGetVar)
+        val cpDurations = durations.map(postIntExpressionAndGetVar)
+        val cpEnds = ends.map(postIntExpressionAndGetVar)
+        cpSolver.post(cp.modeling.constraint.unaryResource(cpStarts, cpDurations, cpEnds, familyMatrix, families)) != CPOutcome.Failure
+      case default => throw new Exception("Unknown constraint "+constraint.getClass.toString) //TODO: put a real exception here
     }
   }
 
@@ -252,9 +276,8 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
       case InSet(a, b) =>
         cpSolver.add(new cp.constraints.InSet(postIntExpressionAndGetVar(a), b)) != CPOutcome.Failure
       case Implication(a, b) =>
-        val v = cp.CPBoolVar()
-        cpSolver.add(new cp.constraints.Implication(v, postBoolExpressionAndGetVar(a), postBoolExpressionAndGetVar(b))) != CPOutcome.Failure &&
-        cpSolver.add(v) != CPOutcome.Failure
+        val v = cp.CPBoolVar(b = true)
+        cpSolver.add(new cp.constraints.Implication(postBoolExpressionAndGetVar(a), postBoolExpressionAndGetVar(b), v)) != CPOutcome.Failure
       case Xor(a, b) => throw new Exception() //TODO: throw valid exception
       case v: BoolVar =>
         cpSolver.add(getRepresentative(v).realCPVar.asInstanceOf[cp.CPBoolVar])  != CPOutcome.Failure
@@ -377,7 +400,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
           case Min(x) =>
             val vx = x.map(postIntExpressionAndGetVar)
             val m = cp.CPIntVar(vx.map(_.min).min, vx.map(_.max).min)
-            cpSolver.add(cp.maximum(vx, m))
+            cpSolver.add(cp.minimum(vx, m))
             m
           case Minus(x, y) =>
             getCPIntVarForPossibleConstant(x, y,
@@ -417,7 +440,10 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
             -postIntExpressionAndGetVar(a)
           case WeightedSum(x, y) =>
             cp.weightedSum(y, x.map(postIntExpressionAndGetVar))
-          case Div(x, y) => throw new Exception() //TODO: real exception
+          case Div(x, y) =>
+            val v = cp.CPIntVar(expr.min, expr.max)
+            cpSolver.add(new oscar.cp.constraints.MulCte(v, y, postIntExpressionAndGetVar(x - Modulo(x, y))))
+            v
           case Exponent(x, y) => throw new Exception() //TODO: real exception
           case v: IntVar =>
             getRepresentative(v).realCPVar
@@ -455,7 +481,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         cpSolver.add(cp.maximum(vx, result))
       case Min(x) =>
         val vx = x.map(postIntExpressionAndGetVar)
-        cpSolver.add(cp.maximum(vx, result))
+        cpSolver.add(cp.minimum(vx, result))
       case Minus(x: Constant, y) =>
         throw new Exception("Minus with a constant should never be called in postIntExpressionWithVar as it should return a view!")
       case Minus(x, y: Constant) =>
@@ -496,7 +522,8 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         throw new Exception("UnaryMinus should never be called in postIntExpressionWithVar as it should return a view!")
       case WeightedSum(x, y) =>
         cpSolver.add(cp.modeling.constraint.weightedSum(y, x.map(postIntExpressionAndGetVar), result))
-      case Div(x, y) => throw new Exception() //TODO: real exception
+      case Div(x, y) =>
+        cpSolver.add(new oscar.cp.constraints.MulCte(result, y, postIntExpressionAndGetVar(x - Modulo(x, y))))
       case Exponent(x, y) => throw new Exception() //TODO: real exception
       case v: IntVar =>
         throw new Exception("An IntVar should never be given to postIntExpressionWithVar as it should be used before!")

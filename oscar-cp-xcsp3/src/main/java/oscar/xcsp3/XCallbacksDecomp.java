@@ -21,12 +21,23 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
     protected ArrayList<String> symbolicValuesReversed;
     protected HashMap<String, XVariables.XVarInteger> symbolicVariables;
 
+    protected String reservedArray = "oscarReserved";
+    protected int currentReservedArrayIdx;
     public XCallbacksDecomp() {
         symbolicValues = new HashMap<>();
         symbolicValuesReversed = new ArrayList<>();
         symbolicVariables = new HashMap<>();
+        currentReservedArrayIdx = 0;
     }
 
+    /**
+     * Generate a variable id that is unique and will not be sent in the solution
+     */
+    protected String generateReservedArrayIdx() {
+        currentReservedArrayIdx++;
+        return reservedArray + "[" + Integer.toString(currentReservedArrayIdx) + "]";
+    }
+    
     /**
      * Builds a new symbolic variable.
      *
@@ -154,7 +165,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
      */
     @Override
     public void buildCtrElement(String id, XVariables.XVarInteger[] list, XVariables.XVarInteger value) {
-        XVariables.XVarInteger v = (XVariables.XVarInteger)XVariables.XVar.build(UUID.randomUUID().toString(), XVariables.TypeVar.integer, new XDomains.XDomInteger(0, list.length-1));
+        XVariables.XVarInteger v = (XVariables.XVarInteger)XVariables.XVar.build(generateReservedArrayIdx(), XVariables.TypeVar.integer, new XDomains.XDomInteger(0, list.length-1));
         buildVarInteger(v, 0, list.length-1);
         buildCtrElement(id, list, 0, v, XEnums.TypeRank.ANY, value);
     }
@@ -170,7 +181,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
      */
     @Override
     public void buildCtrElement(String id, XVariables.XVarInteger[] list, int value) {
-        XVariables.XVarInteger v = (XVariables.XVarInteger)XVariables.XVar.build(UUID.randomUUID().toString(), XVariables.TypeVar.integer, new XDomains.XDomInteger(0, list.length-1));
+        XVariables.XVarInteger v = (XVariables.XVarInteger)XVariables.XVar.build(generateReservedArrayIdx(), XVariables.TypeVar.integer, new XDomains.XDomInteger(0, list.length-1));
         buildVarInteger(v, 0, list.length-1);
         buildCtrElement(id, list, 0, v, XEnums.TypeRank.ANY, value);
     }
@@ -183,7 +194,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
         for(int i = 0; i < starts.length; i++) {
             int min = (int)(((XDomains.XDomInteger)starts[i].dom).getFirstValue() + ((XDomains.XDomInteger)lengths[i].dom).getFirstValue());
             int max = (int)(((XDomains.XDomInteger)starts[i].dom).getLastValue() + ((XDomains.XDomInteger)lengths[i].dom).getLastValue());
-            output[i] = (XVariables.XVarInteger)XVariables.XVar.build(UUID.randomUUID().toString(), XVariables.TypeVar.integer, new XDomains.XDomInteger(min, max));
+            output[i] = (XVariables.XVarInteger)XVariables.XVar.build(generateReservedArrayIdx(), XVariables.TypeVar.integer, new XDomains.XDomInteger(min, max));
             buildVarInteger(output[i], min, max);
         }
         return output;
@@ -197,7 +208,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
         for(int i = 0; i < starts.length; i++) {
             int min = (int)(((XDomains.XDomInteger)starts[i].dom).getFirstValue())+lengths[i];
             int max = (int)(((XDomains.XDomInteger)starts[i].dom).getLastValue())+lengths[i];
-            output[i] = (XVariables.XVarInteger)XVariables.XVar.build(UUID.randomUUID().toString(), XVariables.TypeVar.integer, new XDomains.XDomInteger(min, max));
+            output[i] = (XVariables.XVarInteger)XVariables.XVar.build(generateReservedArrayIdx(), XVariables.TypeVar.integer, new XDomains.XDomInteger(min, max));
             buildVarInteger(output[i], min, max);
         }
         return output;
@@ -236,23 +247,54 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
     }
 
     /**
+     * Lex-matrix constraint.
+     *
+     * Map to the std. Lex constraint, on the columns and on the rows
+     *
+     * @param id
+     * @param matrix
+     * @param operator
+     */
+    @Override
+    public void buildCtrLexMatrix(String id, XVariables.XVarInteger[][] matrix, XEnums.TypeOperator operator) {
+        buildCtrLex(id, matrix, operator);
+
+        XVariables.XVarInteger[][] mt = new XVariables.XVarInteger[matrix[0].length][matrix.length];
+        for (int r = 0; r < matrix.length; r++)
+            for (int c = 0; c < matrix[0].length; c++)
+                mt[c][r] = matrix[r][c];
+
+        buildCtrLex(id, mt, operator);
+    }
+
+    /**
      * Generate an <instantiation></instantiation> constraint that is the solution given in values.
      *
      * The main purpose of this function is to parse back XVarInteger to XVarSymbolic if it was previously converted
      *
-     * @param variables list of variables in the solution, given by their id
-     * @param values values[i] is the value assigned to variables[i]
+     * @param allVariables list of variables in the solution, given by their id
+     * @param allValues values[i] is the value assigned to variables[i]
      */
-    public String generateInstantiationWithSymbolic(String[] variables, int[] values) {
+    public String generateInstantiationWithSymbolic(String[] allVariables, int[] allValues) {
+        // Remove variables that have been generated
+        ArrayList<String> variables = new ArrayList<>();
+        ArrayList<Integer> values = new ArrayList<>();
+        for(int i = 0; i < allVariables.length; i++) {
+            if(!allVariables[i].startsWith(reservedArray)) {
+                variables.add(allVariables[i]);
+                values.add(allValues[i]);
+            }
+        }
+            
         StringBuilder builder = new StringBuilder();
         builder.append("<instantiation>\n\t<list>\n\t\t");
-        builder.append(String.join(" ", (CharSequence[]) variables));
+        builder.append(String.join(" ", variables));
         builder.append("\n\t</list>\n\t<values>\n\t\t");
-        for(int i = 0; i < values.length; i++) {
-            if(symbolicVariables.containsKey(variables[i]))
-                builder.append(symbolicValuesReversed.get(values[i]));
+        for(int i = 0; i < values.size(); i++) {
+            if(symbolicVariables.containsKey(variables.get(i)))
+                builder.append(symbolicValuesReversed.get(values.get(i)));
             else
-                builder.append(values[i]);
+                builder.append(values.get(i));
             builder.append(' ');
         }
         builder.append("\n\t</values>\n</instantiation>");
