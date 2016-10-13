@@ -1,17 +1,17 @@
 import java.io.File
 import java.util
 
-import algebra._
-import constraints._
-import models.ModelDeclaration
+import oscar.modeling.algebra._
+import oscar.modeling.constraints._
+import oscar.modeling.models.ModelDeclaration
 import org.xcsp.common.XEnums._
 import org.xcsp.common.predicates.{XNodeExpr, XNodeLeaf, XNodeParent}
 import org.xcsp.parser.XParser.{Condition, ConditionIntvl, ConditionVal, ConditionVar}
 import org.xcsp.parser.XVariables._
-import solvers.cp.branchings.Branching
-import solvers.cp.decompositions.CartProdRefinement
-import solvers.cp.{DistributedCPApp, DistributedCPAppConfig}
-import vars.IntVar
+import oscar.modeling.solvers.cp.branchings.Branching
+import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
+import oscar.modeling.solvers.cp.{DistributedCPApp, DistributedCPAppConfig}
+import oscar.modeling.vars.IntVar
 
 /**
   * An XCSP3 parser that converts an XCSP3 instance to an OscaR-Modeling model
