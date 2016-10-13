@@ -123,8 +123,10 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
     expr match {
       case And(array) =>
         array.forall(i => postBooleanExpression(i))
-      case Eq(a, b) =>
+      case Eq(Array(a, b)) => //binary Eq
         postEquality(a, b)
+      case Eq(x) => //n-ary Eq
+        false //TODO
       case Gr(a, b) =>
         cpSolver.add(new cp.constraints.Gr(postIntExpressionAndGetVar(a),postIntExpressionAndGetVar(b))) != CPOutcome.Failure
       case GrEq(a, b) =>
@@ -171,8 +173,12 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
         val b = cp.CPIntVar(0, array.length)
         cpSolver.post(cp.modeling.constraint.sum(v, b))
         b ?=== array.length
-      case Eq(a, b) =>
+      case Eq(Array(a, b)) => //binary eq reif
         CPIntVarOps(postIntExpressionAndGetVar(a)) ?=== postIntExpressionAndGetVar(b)
+      case Eq(x) => //n-ary eq reif
+        // TODO Is it better to post n*(n-1)/2 reif constraints or only n-1?
+        // map to binary Eq
+        postBoolExpressionAndGetVar(And(for(a <- x; b <- x; if a != b) yield Eq(a,b).asInstanceOf[BoolExpression]))
       case Gr(a, b) =>
         CPIntVarOps(postIntExpressionAndGetVar(a)) ?> postIntExpressionAndGetVar(b)
       case GrEq(a, b) =>
@@ -211,8 +217,12 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
         val b = cp.CPIntVar(0, array.length)
         cpSolver.post(cp.modeling.constraint.sum(v, b))
         cpSolver.post(new cp.constraints.EqReif(b, array.length, result))
-      case Eq(a, b) =>
+      case Eq(Array(a, b)) => //binary Eq
         cpSolver.post(new cp.constraints.EqReifVar(postIntExpressionAndGetVar(a), postIntExpressionAndGetVar(b), result))
+      case Eq(x) => //n-ary Eq
+        // TODO Is it better to post n*(n-1)/2 reif constraints or only n-1?
+        // map to binary Eq
+        postBoolExpressionWithVar(And(for(a <- x; b <- x; if a != b) yield Eq(a,b).asInstanceOf[BoolExpression]), result)
       case Gr(a, b) =>
         cpSolver.post(new cp.constraints.GrEqVarReif(postIntExpressionAndGetVar(a), postIntExpressionAndGetVar(b)+1, result))
       case GrEq(a, b) =>

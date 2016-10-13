@@ -79,7 +79,7 @@ class ConstraintsVisualisation(constraints: Array[Constraint], name: String) {
       //std expressions
       case And(array) => basicCreate(expr, "And", array, "&&")
       case Div(x, y) => basicCreate(expr, "Divide", Seq(x,y), "/")
-      case Eq(a, b) => basicCreate(expr, "Equality", Seq(a,b), "=")
+      case Eq(array) => basicCreate(expr, "Equality", array, "=")
       case Exponent(x, y) => basicCreate(expr, "Exponent", Seq(x,y), "**")
       case Gr(a, b) => basicCreate(expr, "Greater", Seq(a,b), ">")
       case GrEq(a, b) => basicCreate(expr, "Greater or equal", Seq(a,b), ">=")

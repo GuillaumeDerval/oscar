@@ -49,7 +49,7 @@ trait IntExpression extends Serializable {
    */
   def reify()(implicit modelDeclaration: ModelDeclaration): IntVar = {
     val z = IntVar(min, max)(modelDeclaration)
-    modelDeclaration.post(new Eq(this, z))
+    modelDeclaration.post(Eq(this, z))
     z
   }
 

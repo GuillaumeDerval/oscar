@@ -33,7 +33,7 @@ object SimplifySum extends ModelOperator[UninstantiatedModel] {
   private def simplifyEq(expr: IntExpression): IntExpression = {
     val nexpr = expr.mapSubexpressions(convertToWeightedSum)
     nexpr match {
-      case Eq(WeightedSum(x, wx), WeightedSum(y, wy)) => Eq(mergeWeightedSums(WeightedSum(x++y, wx ++ wy.map(i => -i))), 0)
+      case Eq(Array(WeightedSum(x, wx), WeightedSum(y, wy))) => Eq(mergeWeightedSums(WeightedSum(x++y, wx ++ wy.map(i => -i))), 0)
       case default => nexpr
     }
   }
