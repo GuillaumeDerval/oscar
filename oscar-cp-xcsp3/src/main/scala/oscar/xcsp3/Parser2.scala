@@ -1,13 +1,15 @@
+package oscar.xcsp3
+
 import java.io.File
 import java.util
 
-import oscar.modeling.algebra._
-import oscar.modeling.constraints._
-import oscar.modeling.models.ModelDeclaration
 import org.xcsp.common.XEnums._
 import org.xcsp.common.predicates.{XNodeExpr, XNodeLeaf, XNodeParent}
 import org.xcsp.parser.XParser.{Condition, ConditionIntvl, ConditionVal, ConditionVar}
 import org.xcsp.parser.XVariables._
+import oscar.modeling.algebra._
+import oscar.modeling.constraints._
+import oscar.modeling.models.ModelDeclaration
 import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.modeling.solvers.cp.{DistributedCPApp, DistributedCPAppConfig}
@@ -18,7 +20,7 @@ import oscar.modeling.vars.IntVar
   * @param modelDeclaration OscaR-Modeling base model declaration
   * @param filename path to the instance
   */
-private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) extends XCallbacksDecomp {
+private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String) extends XCallbacksDecomp {
   implicit val implModelDeclaration = modelDeclaration
   val varHashMap = collection.mutable.LinkedHashMap[String, IntExpression]() //automagically maintains the order of insertion
 
@@ -560,7 +562,7 @@ private class XCSP3Parser(modelDeclaration: ModelDeclaration, filename: String) 
 
 }
 
-object XCSP3Parser {
+object XCSP3Parser2 {
   /**
     * Parse a XCSP3 instance
     * @param modelDeclarator the OscaR-Modeling ModelDeclator to be used
@@ -570,7 +572,7 @@ object XCSP3Parser {
     *         constraint equivalent to the solution found.
     */
   def parse(modelDeclarator: ModelDeclaration, filename: String): (Iterable[IntVar], () => String) = {
-    val parser = new XCSP3Parser(modelDeclarator, filename)
+    val parser = new XCSP3Parser2(modelDeclarator, filename)
     val vars = parser.varHashMap.values.map(i => i.asInstanceOf[IntVar]).toArray
     (vars, () => parser.generateInstantiationWithSymbolic(vars.map(x => x.getRepresentativeName.get), vars.map(x => x.evaluate())))
   }
@@ -582,7 +584,7 @@ object Parser2 extends DistributedCPApp[String] with App {
     val check = opt[Boolean]("c", descr = "Check results with the XCSP3 checker")
   }
 
-  val (vars, solutionGenerator) = XCSP3Parser.parse(this.modelDeclaration, config.instance.get.get)
+  val (vars, solutionGenerator) = XCSP3Parser2.parse(this.modelDeclaration, config.instance.get.get)
 
   setSearch(Branching.binaryFirstFail(vars.toSeq))
   onSolution {
@@ -643,7 +645,7 @@ object RunEverything extends DistributedCPApp[String] with App {
     modelDeclaration.apply(modelDeclaration.getCurrentModel) {
       try {
         println("<!--" + instancePath)
-        val (vars, solutionGenerator) = XCSP3Parser.parse(this.modelDeclaration, instancePath)
+        val (vars, solutionGenerator) = XCSP3Parser2.parse(this.modelDeclaration, instancePath)
 
         setSearch(Branching.binaryFirstFail(vars.toSeq))
         onSolution {
@@ -659,8 +661,7 @@ object RunEverything extends DistributedCPApp[String] with App {
         //println("<!-- solutions verified -->")
 
         def testSolution(instancePath: String, solution: String): Unit = {
-          val sc = new CheckerLib(instancePath, solution)
-          if(sc.getInvalidObjs.nonEmpty || sc.getViolatedCtrs.nonEmpty)
+          if(!new CheckerLib(instancePath, solution).valid)
             throw new XCSP3ValidationException()
         }
 

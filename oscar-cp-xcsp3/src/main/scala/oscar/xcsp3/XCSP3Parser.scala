@@ -529,9 +529,6 @@ object XCSP3Parser {
   def apply(filename: String): XCSP3Parser = new XCSP3Parser(filename)
 }
 
-class XCSP3ValidationException extends Exception {}
-class XCSP3TimeoutException extends Exception {}
-
 object RunXCSP3 extends App {
 
   val instance = "data/xcsp3/instancesTest/Blackhole-04-3-00.xml"
@@ -562,12 +559,8 @@ object RunXCSP3 extends App {
 
 
   def testSolution(instancePath: String, solution: String): Unit = {
-    val sc = new SolutionChecker(instancePath, new ByteArrayInputStream(solution.getBytes)) {
-      def nViolated = violatedCtrs
-
-    }
-    //if(sc.getInvalidObjs.size() != 0 || sc.getViolatedCtrs.size() == 0)
-    //  throw new XCSP3ValidationException()
+    if(!new CheckerLib(instancePath, solution).valid)
+      throw new XCSP3ValidationException()
   }
   solutions.foreach(sol => testSolution(instance, sol))
   println("<!-- solutions verified -->")

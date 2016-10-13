@@ -1,3 +1,5 @@
+package oscar.xcsp3;
+
 import org.xcsp.common.XEnums;
 import org.xcsp.common.predicates.XNodeExpr;
 import org.xcsp.common.predicates.XNodeLeaf;

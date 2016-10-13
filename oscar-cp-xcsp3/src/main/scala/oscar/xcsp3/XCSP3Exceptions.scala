@@ -1,3 +1,5 @@
+package oscar.xcsp3
+
 
 /**
   * Thrown when a solution given for a XCSP3 is invalid
