@@ -198,6 +198,9 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
   }
 
   def postBoolExpressionWithVar(expr: BoolExpression, result: cp.CPBoolVar): Unit = {
+    if(expr_cache.contains(expr))
+      throw new Exception("Expression already cached given to postBoolExpressionWithVar")
+    expr_cache.put(expr, result) //we already know the result
     expr match {
       case And(Array(a,b)) => //binary And
         val b = cp.modeling.constraint.plus(postBoolExpressionAndGetVar(a),
@@ -209,26 +212,20 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
         cpSolver.post(cp.modeling.constraint.sum(v, b))
         cpSolver.post(new cp.constraints.EqReif(b, array.length, result))
       case Eq(a, b) =>
-        // TODO what if a/b is a constant? get rid of ReifVar?
         cpSolver.post(new cp.constraints.EqReifVar(postIntExpressionAndGetVar(a), postIntExpressionAndGetVar(b), result))
       case Gr(a, b) =>
-        // TODO what if a/b is a constant? get rid of ReifVar?
         cpSolver.post(new cp.constraints.GrEqVarReif(postIntExpressionAndGetVar(a), postIntExpressionAndGetVar(b)+1, result))
       case GrEq(a, b) =>
-        // TODO what if a/b is a constant? get rid of ReifVar?
         cpSolver.post(new cp.constraints.GrEqVarReif(postIntExpressionAndGetVar(a), postIntExpressionAndGetVar(b), result))
       case Lr(a, b) =>
-        // TODO what if a/b is a constant? get rid of ReifVar?
         cpSolver.post(new cp.constraints.GrEqVarReif(postIntExpressionAndGetVar(b), postIntExpressionAndGetVar(a)+1, result))
       case LrEq(a, b) =>
-        // TODO what if a/b is a constant? get rid of ReifVar?
         cpSolver.post(new cp.constraints.GrEqVarReif(postIntExpressionAndGetVar(b), postIntExpressionAndGetVar(a), result))
       case Or(array) =>
         cpSolver.add(new cp.constraints.OrReif2(array.map(postBoolExpressionAndGetVar), result))
       case Not(a) =>
         cpSolver.post(new cp.constraints.Eq(postBoolExpressionAndGetVar(a).not, result))
       case NotEq(a, b) =>
-        // TODO what if a/b is a constant? get rid of ReifVar?
         cpSolver.post(new cp.constraints.DiffReifVar(postIntExpressionAndGetVar(a), postIntExpressionAndGetVar(b), result))
       case Implication(a, b) =>
         cpSolver.post(new cp.constraints.Implication(postBoolExpressionAndGetVar(a), postBoolExpressionAndGetVar(b), result))
@@ -314,6 +311,83 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
             getRepresentative(v).realCPVar
         }
       )
+    }
+  }
+
+  def postIntExpressionWithVar(expr: IntExpression, result: cp.CPIntVar): Unit = {
+    if(expr_cache.contains(expr))
+      throw new Exception("Expression already cached given to postIntExpressionWithVar")
+    expr_cache.put(expr, result)
+    expr match {
+      case boolexpr: BoolExpression =>
+        postBoolExpressionWithVar(boolexpr, result.asInstanceOf[cp.CPBoolVar])
+      case Abs(a) =>
+        cpSolver.add(new cp.constraints.Abs(postIntExpressionAndGetVar(expr), result))
+      case Constant(a) =>
+        cpSolver.add(new cp.constraints.EqCons(result, a))
+      case Count(x, y) =>
+        cpSolver.add(new cp.constraints.Count(result, x.map(postIntExpressionAndGetVar), postIntExpressionAndGetVar(y)))
+      case Element(x, y) =>
+        val vx: Array[cp.CPIntVar] = x.map(postIntExpressionAndGetVar)
+        val vy: cp.CPIntVar = postIntExpressionAndGetVar(y)
+        cpSolver.add(new cp.constraints.ElementVar(vx, vy, result))
+      case ElementCst(x, y) =>
+        val vy: cp.CPIntVar = postIntExpressionAndGetVar(y)
+        cpSolver.add(new cp.constraints.ElementCst(x, vy, result))
+      case ElementCst2D(x, y, z) =>
+        val vy: cp.CPIntVar = postIntExpressionAndGetVar(y)
+        val vz: cp.CPIntVar = postIntExpressionAndGetVar(z)
+        cpSolver.add(new cp.constraints.ElementCst2D(x, vy, vz, result))
+      case Max(x) =>
+        val vx = x.map(postIntExpressionAndGetVar)
+        cpSolver.add(cp.maximum(vx, result))
+      case Min(x) =>
+        val vx = x.map(postIntExpressionAndGetVar)
+        cpSolver.add(cp.maximum(vx, result))
+      case Minus(x: Constant, y) =>
+        throw new Exception("Minus with a constant should never be called in postIntExpressionWithVar as it should return a view!")
+      case Minus(x, y: Constant) =>
+        throw new Exception("Minus with a constant should never be called in postIntExpressionWithVar as it should return a view!")
+      case Minus(x, y) =>
+        cpSolver.add(new oscar.cp.constraints.BinarySum(result,postIntExpressionAndGetVar(y),postIntExpressionAndGetVar(x)))
+      case Modulo(x, y) =>
+        cpSolver.add(new CPIntVarOps(postIntExpressionAndGetVar(x)) % y == result)
+      case Prod(Array(x: Constant, y)) =>
+        throw new Exception("Prod with a constant should never be called in postIntExpressionWithVar as it should return a view!")
+      case Prod(Array(x, y: Constant)) =>
+        throw new Exception("Prod with a constant should never be called in postIntExpressionWithVar as it should return a view!")
+      case Prod(Array(x, y)) => //binary prod
+        cpSolver.add(new oscar.cp.constraints.MulVar(postIntExpressionAndGetVar(x), postIntExpressionAndGetVar(y), result))
+      case Prod(x) => //n-ary prod
+        //OscaR only has binary product; transform into a balanced binary tree to minimise number of constraints
+        def recurmul(exprs: Array[cp.CPIntVar]): Array[cp.CPIntVar] = {
+          if (exprs.length == 2)
+            exprs
+          else
+            recurmul(exprs.grouped(2).map({
+              case Array(a, b) => CPIntVarOps(a) * b
+              case Array(a) => a
+            }).toArray)
+        }
+
+        val bprod = recurmul(x.map(postIntExpressionAndGetVar))
+        cpSolver.add(new oscar.cp.constraints.MulVar(bprod(0), bprod(1), result))
+      case Sum(Array(x: Constant, y)) =>
+        throw new Exception("Sum with a constant should never be called in postIntExpressionWithVar as it should return a view!")
+      case Sum(Array(x, y: Constant)) =>
+        throw new Exception("Sum with a constant should never be called in postIntExpressionWithVar as it should return a view!")
+      case Sum(Array(x, y)) => //binary sum
+        cpSolver.add(new oscar.cp.constraints.BinarySum(postIntExpressionAndGetVar(x), postIntExpressionAndGetVar(y), result))
+      case Sum(x) => //n-ary sum
+        cpSolver.add(cp.modeling.constraint.sum(x.map(postIntExpressionAndGetVar), result))
+      case UnaryMinus(a) =>
+        throw new Exception("UnaryMinus should never be called in postIntExpressionWithVar as it should return a view!")
+      case WeightedSum(x, y) =>
+        cpSolver.add(cp.modeling.constraint.weightedSum(y, x.map(postIntExpressionAndGetVar), result))
+      case Div(x, y) => throw new Exception() //TODO: real exception
+      case Exponent(x, y) => throw new Exception() //TODO: real exception
+      case v: IntVar =>
+        throw new Exception("An IntVar should never be given to postIntExpressionWithVar as it should be used before!")
     }
   }
 
