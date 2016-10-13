@@ -9,16 +9,116 @@ import cp.constraints.{CPObjective, CPObjectiveUnit, CPObjectiveUnitMaximize, CP
 import cp.core.{CPOutcome, CPPropagStrength}
 import cp.{CPBoolVarOps, CPIntVarOps}
 import vars.cp.int.{CPBoolVar => ModelCPBoolVar, CPIntVar => ModelCPIntVar}
-import vars.domainstorage.int.{AdaptableIntDomainStorage, IntervalDomainStorage, SetDomainStorage, SingletonDomainStorage}
+import vars.domainstorage.int._
 import vars.{BoolVar, IntVar}
 
 import scala.collection.mutable
+
+private case class CPCstEq(expr: IntExpression, cst: Int) extends Constraint
+
+object CPModel {
+
+  /**
+    * Preprocess some things in order to improve performance of the solver
+    * Currently preprocessed:
+    * - Nothing :D
+    *
+    * // TODO
+    * - Eq constraints. Merge IntVar together, generate correct instantiation order for max efficiency
+    */
+  private def preprocessCP(p: UninstantiatedModel): UninstantiatedModel = {
+    // Find all the Eq
+    //val eqs = p.constraints.filter(_.isInstanceOf[Eq]).asInstanceOf[Array[Eq]]
+    p
+  }
+
+  /**
+    * Preprocess the given arguments of an equality constraint.
+    *
+    * Returns new constraints that will replace the current one, and pairs of IntDomainStorage to be merged together
+    */
+  /*private def preprocessEquality(exprs: Array[IntExpression]): (Array[Constraint], Array[(IntVar, IntVar)], Array[(IntVar, Int)]) = {
+    // We first need to find everything that is:
+    // - An IntVar
+    // - A view of an IntVar (Prod, Sum, Minus, UnaryMinus with constants)
+    // - A constant
+
+    object ViewType extends Enumeration {
+      //MinusL = variable - constant
+      //MinusR = constant - variable
+      val Prod, Sum, MinusL, MinusR, UnaryMinus, None = Value
+    }
+
+    /**
+      * Compute the value that a variable X should take to make
+      * X op cst = result
+      */
+    def computeValueForView(op: ViewType.Value, cst: Int, result: Int): Int = {
+      op match {
+        case ViewType.Prod =>
+          if(result % cst != 0) throw new Exception("Impossible")
+          result / cst
+        case ViewType.Sum => result - cst
+        case ViewType.MinusL =>
+          //X - cst == result ===> X == result + cst
+          result + cst
+        case ViewType.MinusR =>
+          //cst - X == result ===> X == cst - result
+          cst - result
+        case ViewType.UnaryMinus => -result
+        case ViewType.None => result
+      }
+    }
+
+    var constant: Option[Int] = None
+    val variables: mutable.MutableList[(IntVar, ViewType.Value, Int)] = mutable.MutableList()
+    val remaining: mutable.MutableList[(IntExpression, ViewType.Value, Int)] = mutable.MutableList()
+
+    def viewVerifier(orig: IntExpression, content: Array[IntExpression], viewTypeL: ViewType.Value, viewTypeR: ViewType.Value): Unit = {
+      content match {
+        case Array(c: Constant, v: IntVar) => variables += ((v, viewTypeR, c.value))
+        case Array(c: Constant, v: IntExpression) => remaining += ((v, viewTypeR, c.value))
+        case Array(v: IntVar, c: Constant) => variables += ((v, viewTypeL, c.value))
+        case Array(v: IntExpression, c: Constant) => remaining += ((v, viewTypeL, c.value))
+        case default => remaining += ((orig, ViewType.None, 0))
+      }
+    }
+
+    for(expr <- exprs) expr match {
+      case Constant(a) =>
+        if(constant.isEmpty) constant = Some(a)
+        //if old constant does not equal to the one we just found, eq is impossible
+        else if(constant.get != a) throw new Exception("Two != constant in Eq constraint")
+      case Prod(x) => viewVerifier(expr, x, ViewType.Prod, ViewType.Prod)
+      case Sum(x) => viewVerifier(expr, x, ViewType.Sum, ViewType.Sum)
+      case Minus(a,b) => viewVerifier(expr, Array(a,b), ViewType.MinusL, ViewType.MinusR)
+      case UnaryMinus(a: IntVar) => variables += ((a, ViewType.UnaryMinus, 0))
+      case UnaryMinus(a: IntExpression) => remaining += ((a, ViewType.UnaryMinus, 0))
+      case default => remaining += ((expr, ViewType.None, 0))
+    }
+
+    // If we have a constant, it is simple: simply post everything and assign the constant to the variables received
+    if(constant.isDefined) {
+        return (remaining.map(t => CPCstEq(t._1, computeValueForView(t._2, t._3, constant.get))),
+               variables.sliding(2).map(a => (a(0).,a(1))),
+
+        )
+        variables.foreach(t => cpSolver.add(postIntExpressionAndGetVar(t._1) === computeValueForView(t._2, t._3, constant.get)))
+        remaining.foreach(t => cpSolver.add(postIntExpressionAndGetVar(t._1) === computeValueForView(t._2, t._3, constant.get)))
+
+      return true
+    }
+
+    // TODO
+
+  }*/
+}
 
 /**
   * Model associated with a CP Solver
   * @param p
   */
-class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
+class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preprocessCP(p)){
   implicit lazy val cpSolver = new cp.CPSolver()
   override type IntVarImplementation = ModelCPIntVar
 
@@ -102,6 +202,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
   }
 
   def postEquality(left: IntExpression, right: IntExpression, second: Boolean = false): Boolean = (left, right) match {
+    //TODO replace partially with preprocessing
     case (Minus(a, b), v: IntExpression) =>
       cpSolver.add(new cp.constraints.BinarySum(postIntExpressionAndGetVar(v),postIntExpressionAndGetVar(b),postIntExpressionAndGetVar(a))) != CPOutcome.Failure
     case (Sum(Array(a, b)), v: IntExpression) =>
@@ -126,7 +227,8 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(p){
       case Eq(Array(a, b)) => //binary Eq
         postEquality(a, b)
       case Eq(x) => //n-ary Eq
-        false //TODO
+        //TODO lots of ways to improve, must preprocess
+        x.sliding(2).forall(a => postEquality(a(0), a(1)))
       case Gr(a, b) =>
         cpSolver.add(new cp.constraints.Gr(postIntExpressionAndGetVar(a),postIntExpressionAndGetVar(b))) != CPOutcome.Failure
       case GrEq(a, b) =>
