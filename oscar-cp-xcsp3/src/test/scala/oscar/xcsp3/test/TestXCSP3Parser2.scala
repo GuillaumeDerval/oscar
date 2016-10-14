@@ -73,11 +73,11 @@ class TestXCSP3Parser2 extends TestSuite {
     "MagicSquare-6-mdd.xml",
     "Nonogram-001-regular.xml",
     "Ramsey-12.xml",
-    "Sat-flat200-00-clause.xml",
-    "StripPacking-C1P1.xml"
+    "Sat-flat200-00-clause.xml"
 
     // Too long, does not find solutions
     //"Taillard-js-015-15-0.xml",
+    //"StripPacking-C1P1.xml"
   )
 
 
@@ -137,7 +137,7 @@ class TestXCSP3Parser2 extends TestSuite {
   )
 
 
-  for (t <- OKTests) {
+  for (t <- KOTests) {
     test(t) {
       assert(isValid("data/xcsp3/instancesTest/"+t))
     }

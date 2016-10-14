@@ -267,6 +267,39 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
         buildCtrLex(id, mt, operator);
     }
 
+    @Override
+    public void buildCtrNoOverlap(String id, XVariables.XVarInteger[][] origins, int[][] lengths, boolean zeroIgnored) {
+        //TODO semantics of zeroIgnored ???
+        if(origins[0].length == 2) //2D case
+            buildCtrNoOverlap2D(id,
+                    Arrays.stream(origins).map(e -> e[0]).toArray(XVariables.XVarInteger[]::new),
+                    Arrays.stream(lengths).mapToInt(e -> e[0]).toArray(),
+                    Arrays.stream(origins).map(e -> e[1]).toArray(XVariables.XVarInteger[]::new),
+                    Arrays.stream(lengths).mapToInt(e -> e[1]).toArray());
+        else
+            unimplementedCase();
+    }
+
+    @Override
+    public void buildCtrNoOverlap(String id, XVariables.XVarInteger[][] origins, XVariables.XVarInteger[][] lengths, boolean zeroIgnored) {
+        if(origins[0].length == 2) //2D case
+            buildCtrNoOverlap2D(id,
+                    Arrays.stream(origins).map(e -> e[0]).toArray(XVariables.XVarInteger[]::new),
+                    Arrays.stream(lengths).map(e -> e[0]).toArray(XVariables.XVarInteger[]::new),
+                    Arrays.stream(origins).map(e -> e[1]).toArray(XVariables.XVarInteger[]::new),
+                    Arrays.stream(lengths).map(e -> e[1]).toArray(XVariables.XVarInteger[]::new));
+        else
+            unimplementedCase();
+    }
+
+    public void buildCtrNoOverlap2D(String id, XVariables.XVarInteger[] x, XVariables.XVarInteger[] dx, XVariables.XVarInteger[] y, XVariables.XVarInteger[] dy) {
+        unimplementedCase();
+    }
+
+    public void buildCtrNoOverlap2D(String id, XVariables.XVarInteger[] x, int[] dx, XVariables.XVarInteger[] y, int[] dy) {
+        unimplementedCase();
+    }
+
     /**
      * Generate an <instantiation></instantiation> constraint that is the solution given in values.
      *

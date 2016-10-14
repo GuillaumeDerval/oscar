@@ -15,7 +15,7 @@ import oscar.modeling.models.ModelDeclaration
 import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.modeling.solvers.cp.{DistributedCPApp, DistributedCPAppConfig}
-import oscar.modeling.vars.{BoolVar, IntVar}
+import oscar.modeling.vars.IntVar
 
 /**
   * An XCSP3 parser that converts an XCSP3 instance to an OscaR-Modeling model
@@ -510,11 +510,13 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     (mStarts, mDurations, mEnds).zipped.foreach({case (s, d, e) => modelDeclaration.post((s+d)===e)})
   }
 
-  //diffn(x: Array[CPIntVar], dx: Array[CPIntVar], y: Array[CPIntVar], dy: Array[CPIntVar])
-  override def buildCtrNoOverlap(id: String, origins: Array[Array[XVarInteger]], lengths: Array[Array[Int]], zeroIgnored: Boolean): Unit = ???
+  override def buildCtrNoOverlap2D(id: String, x: Array[XVarInteger], dx: Array[Int], y: Array[XVarInteger], dy: Array[Int]): Unit = {
+    modelDeclaration.post(DiffN(x.map(e => varHashMap(e.id)), dx.map(Constant), y.map(e => varHashMap(e.id)), dy.map(Constant)))
+  }
 
-  //diffn(x: Array[CPIntVar], dx: Array[CPIntVar], y: Array[CPIntVar], dy: Array[CPIntVar])
-  override def buildCtrNoOverlap(id: String, origins: Array[Array[XVarInteger]], lengths: Array[Array[XVarInteger]], zeroIgnored: Boolean): Unit = ???
+  override def buildCtrNoOverlap2D(id: String, x: Array[XVarInteger], dx: Array[XVarInteger], y: Array[XVarInteger], dy: Array[XVarInteger]): Unit = {
+    modelDeclaration.post(DiffN(x.map(e => varHashMap(e.id)), dx.map(e => varHashMap(e.id)), y.map(e => varHashMap(e.id)), dy.map(e => varHashMap(e.id))))
+  }
 
   override def buildCtrAllDifferentList(id: String, lists: Array[Array[XVarInteger]]): Unit = throw new Exception("AllDifferentList is not implemented") // TODO implement with extension
   override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = throw new Exception("AllDifferentExcept is not implemented")

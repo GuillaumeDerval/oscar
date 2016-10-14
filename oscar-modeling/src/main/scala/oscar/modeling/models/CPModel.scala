@@ -221,6 +221,8 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         val cpDurations = durations.map(postIntExpressionAndGetVar)
         val cpEnds = ends.map(postIntExpressionAndGetVar)
         cpSolver.post(cp.modeling.constraint.unaryResource(cpStarts, cpDurations, cpEnds, familyMatrix, families)) != CPOutcome.Failure
+      case DiffN(x, dx, y, dy) =>
+        cpSolver.post(cp.modeling.constraint.diffn(x.map(postIntExpressionAndGetVar), dx.map(postIntExpressionAndGetVar), y.map(postIntExpressionAndGetVar), dy.map(postIntExpressionAndGetVar)).toArray) != CPOutcome.Failure
       case default => throw new Exception("Unknown constraint "+constraint.getClass.toString) //TODO: put a real exception here
     }
   }
