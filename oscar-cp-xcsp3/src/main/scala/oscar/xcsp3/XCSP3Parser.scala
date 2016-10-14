@@ -19,7 +19,7 @@ import oscar.cp.core.{CPSolver, Constraint}
 
 import scala.collection.mutable.ArrayBuffer
 
-class XCSP3Parser(filename: String) extends XCallbacks {
+class XCSP3Parser(filename: String) extends XCallbacksDecomp {
 
   XCallbacks.callbacksParameters.remove(XCallbacksParameters.RECOGNIZE_SPECIAL_COUNT_CASES)
   //XCallbacks.callbacksParameters.add(XCallbacksParameters.)
@@ -333,26 +333,23 @@ class XCSP3Parser(filename: String) extends XCallbacks {
 
   override def buildCtrNoOverlap(id: String, origins: Array[Array[XVarInteger]], lengths: Array[Array[XVarInteger]], zeroIgnored: Boolean): Unit = ???
 
-  override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[Int], condition: Condition): Unit = {
+  override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[Int], conditionL: Condition): Unit = {
     val setOfVal = values.toSet
     val counterVar: CPIntVar = sum(list.map(x => varHashMap(x.id)).map(_.isIn(setOfVal).asInstanceOf[CPIntVar]))
-    condition match {
-      case condition if (condition.isInstanceOf[ConditionIntvl]) => {
+    conditionL match {
+      case condition:ConditionIntvl =>
         val min = condition.asInstanceOf[ConditionIntvl].min
         val max = condition.asInstanceOf[ConditionIntvl].max
         condition.operator match {
-          case TypeConditionOperator.IN => {
+          case TypeConditionOperator.IN =>
             cp.add(counterVar <= max)
             cp.add(counterVar >= min)
-          }
-          case TypeConditionOperator.NOTIN => {
+          case TypeConditionOperator.NOTIN =>
             for (v <- min to max) {
               cp.add(counterVar !== v)
             }
-          }
         }
-      }
-      case condition if (condition.isInstanceOf[ConditionVal]) => {
+      case condition:ConditionVal =>
         val c = condition.asInstanceOf[ConditionVal].k
         condition.operator match {
           case TypeConditionOperator.LE => cp.add(counterVar <= c)
@@ -362,8 +359,7 @@ class XCSP3Parser(filename: String) extends XCallbacks {
           case TypeConditionOperator.EQ => cp.add(counterVar === c)
           case _ => throw new RuntimeException("not supported operator")
         }
-      }
-      case condition if (condition.isInstanceOf[ConditionVar]) => {
+      case condition:ConditionVar =>
         val c = varHashMap(condition.asInstanceOf[ConditionVar].x.id)
         condition.operator match {
           case TypeConditionOperator.LE => cp.add(counterVar <= c)
@@ -373,7 +369,6 @@ class XCSP3Parser(filename: String) extends XCallbacks {
           case TypeConditionOperator.EQ => cp.add(counterVar === c)
           case _ => throw new RuntimeException("not supported operator")
         }
-      }
     }
   }
 

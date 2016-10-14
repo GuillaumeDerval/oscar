@@ -61,6 +61,10 @@ object Branching {
     binaryFirstFailIdx(vars, i => valHeuris(vars(i)))
   }
 
+  def conflictOrderingSearch(variables: Array[IntVar], varHeuristic: (Int) => Int, valHeuristic: (Int) => Int, doReset: Boolean = false): BranchingInstantiator = {
+    (cp) => new ConflictOrderingSearch(cp, variables, varHeuristic, valHeuristic, doReset)
+  }
+
   /*
    Binary Last Conflict branchings
    */

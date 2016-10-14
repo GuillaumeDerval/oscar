@@ -60,20 +60,8 @@ class DistributedCPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[R
     * @param threadCount number of threads to use. By default, it is the number of available CPU
     * @return
     */
-  def solveLocally(threadCount: Int = Runtime.getRuntime.availableProcessors(), sppw: Int = 100): (SearchStatistics, List[RetVal]) = solveLocally(modelDeclaration.getCurrentModel, threadCount, sppw)
-
-  /**
-    * Starts the CPProgram locally on threadCount threads, on the current model
-    *
-    * @param model the model to solve
-    * @param threadCount number of threads to use
-    * @return
-    */
-  def solveLocally(model: Model, threadCount: Int, sppw: Int): (SearchStatistics, List[RetVal]) = {
-    model match {
-      case m: UninstantiatedModel => solveLocally(m, threadCount, sppw)
-      case _ => sys.error("The model is already instantiated")
-    }
+  def solveLocally(threadCount: Int = Runtime.getRuntime.availableProcessors(), sppw: Int = 100, nSols: Int = 0, maxTime: Int = 0): (SearchStatistics, List[RetVal]) = {
+    solveLocally(modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], threadCount, sppw, nSols, maxTime)
   }
 
   /**
@@ -83,10 +71,11 @@ class DistributedCPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[R
     * @param threadCount number of threads to use
     * @return
     */
-  def solveLocally(model: UninstantiatedModel, threadCount: Int, sppw: Int): (SearchStatistics, List[RetVal]) = {
+  def solveLocally(model: UninstantiatedModel, threadCount: Int, sppw: Int, nSols: Int, maxTime: Int): (SearchStatistics, List[RetVal]) = {
     solve(model, sppw*threadCount,
       AkkaConfigCreator.local(),
-      (system, masterActor) => List.fill(threadCount)(system.actorOf(SolverActor.props[RetVal](md, masterActor)))
+      (system, masterActor) => List.fill(threadCount)(system.actorOf(SolverActor.props[RetVal](md, masterActor))),
+      nSols, maxTime
     )
   }
 
@@ -97,8 +86,8 @@ class DistributedCPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[R
     * @param localhost tupe (hostname, port) on which the local ActorSystem will be contacted by remote Actors
     * @return
     */
-  def solveDistributed(remoteHosts: List[(String, Int)], localhost: (String, Int), sppw: Int = 100): (SearchStatistics, List[RetVal]) = {
-    solveDistributed(modelDeclaration.getCurrentModel, remoteHosts, localhost, sppw)
+  def solveDistributed(remoteHosts: List[(String, Int)], localhost: (String, Int), sppw: Int = 100, nSols: Int = 0, maxTime: Int = 0): (SearchStatistics, List[RetVal]) = {
+    solveDistributed(modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], remoteHosts, localhost, sppw, nSols, maxTime)
   }
 
   /**
@@ -109,22 +98,7 @@ class DistributedCPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[R
     * @param localhost tupe (hostname, port) on which the local ActorSystem will be contacted by remote Actors
     * @return
     */
-  def solveDistributed(model: Model, remoteHosts: List[(String, Int)], localhost: (String, Int), sppw: Int): (SearchStatistics, List[RetVal]) = {
-    model match {
-      case m: UninstantiatedModel => solveDistributed(m, remoteHosts, localhost, sppw)
-      case _ => sys.error("The model is already instantiated")
-    }
-  }
-
-  /**
-    * Starts the CPProgram in a distributed fashion
-    *
-    * @param model model to solve
-    * @param remoteHosts list of tuples (hostname, port) on which remote Akka ActorSystems can be contacted
-    * @param localhost tupe (hostname, port) on which the local ActorSystem will be contacted by remote Actors
-    * @return
-    */
-  def solveDistributed(model: UninstantiatedModel, remoteHosts: List[(String, Int)], localhost: (String, Int), sppw: Int): (SearchStatistics, List[RetVal]) = {
+  def solveDistributed(model: UninstantiatedModel, remoteHosts: List[(String, Int)], localhost: (String, Int), sppw: Int, nSols: Int, maxTime: Int): (SearchStatistics, List[RetVal]) = {
     val (hostname, port) = localhost
     val config = AkkaConfigCreator.remote(hostname, port)
 
@@ -135,7 +109,8 @@ class DistributedCPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[R
           val address = Address("akka.tcp", "solving", hostnameL, portL)
           system.actorOf(SolverActor.props[RetVal](md, masterActor).withDeploy(Deploy(scope = RemoteScope(address))))
         })
-      }
+      },
+      nSols, maxTime
     )
   }
 
@@ -148,7 +123,10 @@ class DistributedCPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[R
     * @param createSolvers function that creates SolverActor
     * @return
     */
-  def solve(model: UninstantiatedModel, subproblemCount: Int, systemConfig: Config, createSolvers: (ActorSystem, ActorRef) => List[ActorRef]): (SearchStatistics, List[RetVal]) = {
+  def solve(model: UninstantiatedModel, subproblemCount: Int, systemConfig: Config, createSolvers: (ActorSystem, ActorRef) => List[ActorRef], nSols: Int, maxTime: Int): (SearchStatistics, List[RetVal]) = {
+    if(maxTime != 0)
+      throw new Exception("maxTime is not yet implemented in distributed/parallel mode")
+
     modelDeclaration.apply(model) {
       val subproblems: List[SubProblem] = computeTimeTaken("decomposition", "solving") {
         getDecompositionStrategy.decompose(model, subproblemCount)
@@ -174,7 +152,7 @@ class DistributedCPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[R
 
       val (system, masterActor, subsolvers) = computeTimeTaken("actor creation", "network") {
         val system = ActorSystem("solving", systemConfig)
-        val masterActor = system.actorOf(Props(new SolverMaster(md, queue, outputQueue)), "master")
+        val masterActor = system.actorOf(Props(new SolverMaster(md, queue, outputQueue, nSols, maxTime)), "master")
 
         //Ensures masterActor is aware that there are DeadLetters
         system.eventStream.subscribe(masterActor, classOf[DeadLetter])
@@ -183,6 +161,7 @@ class DistributedCPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[R
         val subsolvers: List[ActorRef] = createSolvers(system, masterActor)
         implicit val timeout = Timeout(2 minutes)
         subsolvers.map((a) => a ? HelloMessage()).map((f) => Await.result(f, Duration.Inf))
+
         (system, masterActor, subsolvers)
       }
 
@@ -275,11 +254,14 @@ private object AkkaConfigCreator {
   */
 class SolverMaster[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSolve[RetVal],
                            subproblemQueue: LinkedBlockingQueue[(Int, List[Constraint])],
-                           outputQueue: LinkedBlockingQueue[SolvingMessage]) extends Actor {
+                           outputQueue: LinkedBlockingQueue[SolvingMessage],
+                           var maxSols: Int, maxTime: Int) extends Actor {
   val log = Logging(context.system, this)
   var solutionRecapReceived = 0
 
   val uninstantiatedModel = modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel]
+
+  val solverForcedToSendImmediately = maxSols != 0 || !uninstantiatedModel.optimisationMethod.isInstanceOf[NoOptimisation]
 
   @volatile private var boundary: Int = uninstantiatedModel.optimisationMethod match {
     case m: Minimisation => uninstantiatedModel.getRepresentative(m.objective).max
@@ -289,6 +271,10 @@ class SolverMaster[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPS
 
   var broadcastRouter = Router(BroadcastRoutingLogic())
   var terminating = false
+  var stillAcceptSolutions = true
+
+  // Contains the number of problems still to be computed/computing.
+  // spRemaining >= subproblemQueue.size() at any time
   var spRemaining = subproblemQueue.size()
 
   /**
@@ -298,6 +284,7 @@ class SolverMaster[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPS
     case AwaitingSPMessage() =>
       context watch sender
       broadcastRouter = broadcastRouter.addRoutee(sender)
+      context.sender() ! ConfigMessage(solverForcedToSendImmediately)
       context.sender() ! BoundUpdateMessage(boundary) //ensure the new member has the last bound
       sendNextJob(sender)
     case a: DoneMessage =>
@@ -308,7 +295,7 @@ class SolverMaster[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPS
         assert(subproblemQueue.isEmpty)
 
         //check SolutionRecap in main function if needed
-        if(!uninstantiatedModel.optimisationMethod.isInstanceOf[NoOptimisation])
+        if(solverForcedToSendImmediately)
         {
           broadcastRouter.route(AllDoneMessage(), self)
           outputQueue.add(AllDoneMessage())
@@ -318,6 +305,21 @@ class SolverMaster[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPS
         else
         {
           broadcastRouter.route(AskForSolutionRecap(), self)
+        }
+      }
+    case SolutionMessage(solution, None) =>
+      if(stillAcceptSolutions) {
+        outputQueue.add(SolutionMessage(solution, None))
+        if(maxSols != 0) {
+          maxSols -= 1
+          if(maxSols == 0) {
+            // We are done here
+            stillAcceptSolutions = false
+            broadcastRouter.route(AllDoneMessage(), self)
+            outputQueue.add(AllDoneMessage())
+            terminating = true
+            context.system.terminate()
+          }
         }
       }
     case SolutionMessage(solution, Some(b)) =>
@@ -330,10 +332,24 @@ class SolverMaster[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPS
         boundary = b
         broadcastRouter.route(BoundUpdateMessage(b), self)
       }
-      if(newSolution)
+      if(newSolution && stillAcceptSolutions) {
         outputQueue.add(SolutionMessage(solution, Some(b)))
+        if(maxSols != 0) {
+          maxSols -= 1
+          if(maxSols == 0) {
+            // We are done here
+            stillAcceptSolutions = false
+            broadcastRouter.route(AllDoneMessage(), self)
+            outputQueue.add(AllDoneMessage())
+            terminating = true
+            context.system.terminate()
+          }
+        }
+      }
+
     case m: SolutionRecapMessage[RetVal] =>
-      outputQueue.add(m)
+      if(stillAcceptSolutions)
+        outputQueue.add(m)
       solutionRecapReceived += 1
       if(solutionRecapReceived == broadcastRouter.routees.length) {//all done
         outputQueue.add(AllDoneMessage())
@@ -369,8 +385,12 @@ class SolverMaster[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPS
   * @tparam RetVal
   */
 class SolverActor[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSolve[RetVal],
-                          master: ActorRef, forceImmediateSend: Boolean = false) extends Actor with IntBoundaryManager {
+                          master: ActorRef) extends Actor with IntBoundaryManager {
   val log = Logging(context.system, this)
+
+  // Config
+  var forceImmediateSend: Boolean = false
+  val forceClose = new SynchronizedForceClose
 
   DoSubproblemSerializer.add(modelDeclaration)
 
@@ -403,7 +423,7 @@ class SolverActor[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSo
     case m: Minimisation =>
       (a) => {
         val v = cpmodel.getRepresentative(objv)
-        this.update_boundary(v.max)
+        this.updateBoundary(v.max)
         master ! SolutionMessage(on_solution(), Some(v.max))
         solutionCount += 1
         //lastSolution = SolutionMessage(on_solution(), Some(v.max))
@@ -411,7 +431,7 @@ class SolverActor[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSo
     case m: Maximisation =>
       (a) => {
         val v = cpmodel.getRepresentative(objv)
-        this.update_boundary(v.max)
+        this.updateBoundary(v.max)
         master ! SolutionMessage(on_solution(), Some(v.max))
         solutionCount += 1
         //lastSolution = SolutionMessage(on_solution(), Some(v.max))
@@ -428,17 +448,16 @@ class SolverActor[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSo
   }
 
   val search: Branching = objv match {
-    case null => modelDeclaration.getSearch(cpmodel)
-    case _ => new IntBoundaryUpdateSearchWrapper(modelDeclaration.getSearch(cpmodel), this, cpmodel.cpObjective)
+    case null => new ForceCloseSearchWrapper(modelDeclaration.getSearch(cpmodel), forceClose)
+    case _ => new IntBoundaryUpdateSearchWrapper(modelDeclaration.getSearch(cpmodel), this, forceClose, cpmodel.cpObjective)
   }
-  //val search: Branching = modelDeclaration.getSearch(cpmodel)
-  //val search: oscar.algo.search.Branching = getSearch(cpmodel)
 
   /**
     * Process messages from master
     */
   def receive = {
     case m: HelloMessage => sender() ! m
+    case ConfigMessage(newForceImmediateSend) => forceImmediateSend = newForceImmediateSend
     case StartMessage() => master ! AwaitingSPMessage()
     case DoSubproblemMessage(spid: Int, sp: List[Constraint]) =>
       Future {
@@ -452,12 +471,13 @@ class SolverActor[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSo
         }
       }
     case BoundUpdateMessage(newBound: Int) =>
-      this.update_boundary(newBound)
+      this.updateBoundary(newBound)
     case AskForSolutionRecap() =>
       //should only be sent if we are on a satisfaction problem, and forceImmediateSend is off
       assert(null == objv && !forceImmediateSend)
       master ! SolutionRecapMessage(solutionCount, foundSolutions.toList)
     case AllDoneMessage() =>
+      forceClose.close()
       DoSubproblemSerializer.remove(modelDeclaration) //allow to run GC on the modelDeclaration
       context.stop(self)
     case _ => log.info("received unknown message")
@@ -467,46 +487,47 @@ class SolverActor[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSo
     * Solve the current subproblem; should be called from a Future.
     */
   def solve_subproblem(spid: Int, sp: List[Constraint]): Unit = {
-    val t0 = getThreadCpuTime
-    val info = modelDeclaration.apply(cpmodel) {
-      cpmodel.cpSolver.startSubjectTo() {
-        for(constraint <- sp)
-          cpmodel.post(constraint)
+    try{
+      val t0 = getThreadCpuTime
+      val info = modelDeclaration.apply(cpmodel) {
+        cpmodel.cpSolver.startSubjectTo() {
+          for(constraint <- sp)
+            cpmodel.post(constraint)
 
-        /*
-         * Note: this has to be made after the call to the selection function, because it may overwrite the search
-         * and the solution handling function AND may want to use the original status at decomposition
-         */
-        cpmodel.cpSolver.searchEngine.clearOnSolution()
-        cpmodel.cpSolver.onSolution {
-          solution(cpmodel)
-        }
-        cpmodel.cpSolver.search(search)
+          /*
+           * Note: this has to be made after the call to the selection function, because it may overwrite the search
+           * and the solution handling function AND may want to use the original status at decomposition
+           */
+          cpmodel.cpSolver.searchEngine.clearOnSolution()
+          cpmodel.cpSolver.onSolution {
+            solution(cpmodel)
+          }
+          cpmodel.cpSolver.search(search)
 
-        /*
-         * Set the current bound at start
-         */
-        if (null != objv) {
-          cpmodel.cpObjective.updateWorstBound(get_boundary())
-          cpmodel.cpObjective.best = get_boundary()
+          /*
+           * Set the current bound at start
+           */
+          if (null != objv) {
+            cpmodel.cpObjective.updateWorstBound(getBoundary())
+            cpmodel.cpObjective.best = getBoundary()
+          }
         }
       }
+      cpmodel.cpSolver.searchEngine.clearOnSolution()
+      val t1 = getThreadCpuTime
+      master ! DoneMessage(spid, t1 - t0, new SPSearchStatistics(info))
     }
-    cpmodel.cpSolver.searchEngine.clearOnSolution()
-    val t1 = getThreadCpuTime
-    //if(null != lastSolution){
-    //  master ! lastSolution
-    //  lastSolution = null
-    //}
-    master ! DoneMessage(spid, t1 - t0, new SPSearchStatistics(info))
+    catch {
+      case e: ClosedByForce => //ignore
+    }
   }
 
-  def get_boundary(): Int = boundary
+  def getBoundary(): Int = boundary
 
-  def update_boundary(newval: Int) = boundary = newval
+  def updateBoundary(newval: Int) = boundary = newval
 }
 
 object SolverActor {
   def props[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSolve[RetVal], master: ActorRef): Props =
-    Props(classOf[SolverActor[RetVal]], modelDeclaration, master, false)
+    Props(classOf[SolverActor[RetVal]], modelDeclaration, master)
 }

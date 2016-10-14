@@ -30,6 +30,10 @@ class IntVar(model_decl: ModelDeclaration, id: Int) extends Var(model_decl, id) 
 
   override def subexpressions(): Iterable[IntExpression] = Array[IntExpression]()
   override def mapSubexpressions(func: (IntExpression) => IntExpression): IntExpression = this
+
+  override def toString(): String = {
+    "IntVar" + getRepresentativeName.getOrElse("")
+  }
 }
 
 object IntVar {

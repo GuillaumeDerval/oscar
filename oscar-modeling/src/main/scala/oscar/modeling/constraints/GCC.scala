@@ -49,7 +49,7 @@ object GCC {
     * @return a constraint such that each value in the array values occurs at least min and at most max times.
     */
   def apply(x: Array[IntExpression], values: Array[Int], min: Array[Int], max: Array[Int])(implicit modelDeclaration: ModelDeclaration): Constraint = {
-    //TODO get the version of Pierre which should be faster
+    /*//TODO get the version of Pierre which should be faster
     //check if values is a range
     val sorted = values.sorted
     if(sorted.zipWithIndex.forall(v => v._1 == sorted(0) + v._2)) {
@@ -59,7 +59,17 @@ object GCC {
     else {
       // use more complex GCC
       new GCCVar(x, values.zip(min.zip(max).map(i => IntVar(i._1, i._2))))
+    }*/
+
+    val minValue = values.min
+    val maxValue = values.max
+    val cardMin = Array.fill(maxValue-minValue+1)(0)
+    val cardMax = Array.fill(maxValue-minValue+1)(0)
+    for (i <- 0 until values.size) {
+      cardMin(values(i)-minValue) = min(i)
+      cardMax(values(i)-minValue) = max(i)
     }
+    new GCC(x, minValue, cardMin, cardMax)
   }
 
   /**

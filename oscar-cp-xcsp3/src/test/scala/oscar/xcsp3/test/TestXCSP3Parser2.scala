@@ -1,5 +1,6 @@
 package oscar.xcsp3.test
 
+import oscar.modeling.models.UninstantiatedModel
 import oscar.modeling.solvers.cp.DistributedCPProgram
 import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
@@ -9,6 +10,7 @@ import oscar.xcsp3.testUtils.TestSuite
 class TestXCSP3Parser2 extends TestSuite {
 
   def testSolution(instancePath: String, solution: String): Boolean = {
+    println(solution)
     new CheckerLib(instancePath, solution).valid
   }
 
@@ -16,20 +18,21 @@ class TestXCSP3Parser2 extends TestSuite {
     val cpProgram = new DistributedCPProgram[String]()
     val (vars, solutionGenerator) =  XCSP3Parser2.parse(cpProgram.modelDeclaration, instancePath)
 
-    cpProgram.setSearch(Branching.binaryFirstFail(vars.toSeq))
+    val v = vars.toArray
+    cpProgram.setSearch(Branching.conflictOrderingSearch(v,i => v(i).size, i => v(i).min))
     cpProgram.onSolution {
       solutionGenerator()
     }
 
     cpProgram.onSolution {
       val r = solutionGenerator()
-      println(r)
+      //println(r)
       r
     }
 
     cpProgram.setDecompositionStrategy(new CartProdRefinement(vars, Branching.binaryFirstFail(vars.toSeq)))
 
-    val (stats, solutions) = cpProgram.solveLocally(cpProgram.modelDeclaration.getCurrentModel, 1, 1)
+    val (stats, solutions) = cpProgram.solveLocally(cpProgram.modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], 1, 1, 1, 0)
 
     assert(solutions.nonEmpty) // feasible problem
     solutions.forall(sol => testSolution(instancePath, sol))
@@ -37,47 +40,31 @@ class TestXCSP3Parser2 extends TestSuite {
 
 
   val KOTests = Array(
-    //Too slow (need OscaR-Modeling support for stop conditions)
-    //"ColouredQueens-07.xml",
-    //"CostasArray-12.xml",
-    //"driverlogw-09.xml",
-    //"GracefulGraph-K02-P04.xml",
-    //"GraphColoring-3-fullins-4.xml",
-    //"Hanoi-05.xml",
-    //"MagicSquare-6-sum.xml",
+    //Too slow
     //"MagicSquare-9-f10-01.xml",
     //"MarketSplit-01.xml",
-    //"qcp-15-120-00_X2.xml",
-    //"QuadraticAssignment-bur26a.xml",
-    //"QuasiGroup-7-09.xml",
     //"qwh-o30-h374-01.xml",
-    //"RadarSurveillance-8-24-3-2-00.xml",
     //"Steiner3-08.xml",
-    //"TravellingSalesman-20-30-00.xml",
     //"BinPacking-sum-n1c1w4a.xml",
-    //"BinPacking-tab-n1c1w4a.xml",
-    //"KnightTour-06-int.xml",
-    //"QueenAttacking-06.xml",
-    //"Fastfood-ff10.xml",
     //"Vrp-A-n32-k5.xml",
-    //"Vrp-P-n16-k8.xml",
-    //"Pb-robin08.xml", //file not found
+    //"MagicSquare-6-mdd.xml",
+    //"StripPacking-C1P1.xml",
+
+    //file not found
+    //"Pb-robin08.xml",
+
+    // Bug (with Div?)
+    "KnightTour-06-int.xml",
+    "QueenAttacking-06.xml",
 
     // Not working yet, lacking constraint implementation
-    "BinPacking-mdd-n1c1w4a.xml",
     "Blackhole-04-3-00.xml",
     "ChessboardColoration-07-07.xml",
     "Crossword-lex-vg-5-6.xml",
     "DistinctVectors-30-050-02.xml",
-    "Domino-300-300.xml",
-    "MagicSquare-6-mdd.xml",
     "Nonogram-001-regular.xml",
     "Ramsey-12.xml",
     "Sat-flat200-00-clause.xml"
-
-    // Too long, does not find solutions
-    //"Taillard-js-015-15-0.xml",
-    //"StripPacking-C1P1.xml"
   )
 
 
@@ -123,16 +110,32 @@ class TestXCSP3Parser2 extends TestSuite {
     "Mario-easy-4.xml",
     "Tpp-3-3-20-1.xml",
     "Opd-07-007-003.xml",
-    "Taillard-os-04-04-0.xml"
-
-    //"Bibd-sc-06-050-25-03-10.xml", //too many solutions, but works
-    //"Bibd-sum-06-050-25-03-10.xml", //too many solutions, but works
-    //"KnightTour-06-ext03.xml", //too many solutions, but works
-    //"MagicSquare-4-table.xml", //too many solutions, but works
-    //"SportsScheduling-08.xml", //too many solutions, but works
-    //"SocialGolfers-4-3-4-cp.xml", //too many solutions, but works
-
-
+    "Taillard-os-04-04-0.xml",
+    "Domino-300-300.xml",
+    "BinPacking-mdd-ft060-00.xml",
+    "BinPacking-mdd-n1c1w4a.xml",
+    "Bibd-sc-06-050-25-03-10.xml",
+    "Bibd-sum-06-050-25-03-10.xml",
+    "KnightTour-06-ext03.xml",
+    "MagicSquare-4-table.xml",
+    "SportsScheduling-08.xml",
+    "SocialGolfers-4-3-4-cp.xml",
+    "ColouredQueens-07.xml",
+    "CostasArray-12.xml",
+    "driverlogw-09.xml",
+    "GracefulGraph-K02-P04.xml",
+    "GraphColoring-3-fullins-4.xml",
+    "Hanoi-05.xml",
+    "MagicSquare-6-sum.xml",
+    "qcp-15-120-00_X2.xml",
+    "QuadraticAssignment-bur26a.xml",
+    "QuasiGroup-7-09.xml",
+    "RadarSurveillance-8-24-3-2-00.xml",
+    "TravellingSalesman-20-30-00.xml",
+    "BinPacking-tab-n1c1w4a.xml",
+    "Fastfood-ff10.xml",
+    "Vrp-P-n16-k8.xml",
+    "Taillard-js-015-15-0.xml"
     //"testExtension3.xml", //has no solutions
   )
 

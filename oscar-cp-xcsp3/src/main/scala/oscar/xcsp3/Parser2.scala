@@ -31,11 +31,12 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_UNARY_INTENSION_CASES, new Object)
   XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_BINARY_INTENSION_CASES,  new Object)
   XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_TERNARY_INTENSION_CASES,  new Object)
-  XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_COUNT_CASES,  new Object)
+  //XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_COUNT_CASES,  new Object)
   XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_NVALUES_CASES,  new Object)
   XCallbacks.callbacksParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, 0:java.lang.Integer) // included
   XCallbacks.callbacksParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000:java.lang.Integer)
   XCallbacks.callbacksParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, false:java.lang.Boolean)
+
 
   loadInstance(filename)
 
@@ -196,7 +197,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
         }
       case TypeExpr.OR => Or(tree.sons.map(_recursiveIntentionBuilder(_).asInstanceOf[BoolExpression]))
       case TypeExpr.AND => And(tree.sons.map(_recursiveIntentionBuilder(_).asInstanceOf[BoolExpression]))
-      case TypeExpr.EQ => _recursiveIntentionBuilder(tree.sons(0)) === _recursiveIntentionBuilder(tree.sons(1))
+      case TypeExpr.EQ => Eq(tree.sons.map(_recursiveIntentionBuilder))
       case TypeExpr.LT => _recursiveIntentionBuilder(tree.sons(0)) < _recursiveIntentionBuilder(tree.sons(1))
       case TypeExpr.LE => _recursiveIntentionBuilder(tree.sons(0)) <= _recursiveIntentionBuilder(tree.sons(1))
       case TypeExpr.GE => _recursiveIntentionBuilder(tree.sons(0)) >= _recursiveIntentionBuilder(tree.sons(1))
@@ -299,6 +300,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     list.map(i => varHashMap(i.id)).sliding(2).map{x => rel(x(0), x(1))}.foreach(modelDeclaration.post)
   }
 
+
   override def buildCtrExtension(id: String, x: XVarInteger, values: Array[Int], positive: Boolean, flags: util.Set[TypeFlag]): Unit = {
     assert(!flags.contains(TypeFlag.STARRED_TUPLES)) // no sense!
     if(positive) {
@@ -306,10 +308,8 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       modelDeclaration.add(InSet(varHashMap(x.id), values.toSet))
     }
     else {
-      val a: Array[IntExpression] = Array(varHashMap(x.id))
-      val b: Array[Array[Int]] = Array(values)
       val v = varHashMap(x.id)
-      values.foreach(x => modelDeclaration.add(v !== x))
+      values.foreach(y => modelDeclaration.add(v !== y))
     }
   }
 
@@ -492,7 +492,6 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     (mStarts, mDurations, mEnds).zipped.foreach({case (s, d, e) => modelDeclaration.post((s+d)===e)})
   }
 
-  //unaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar])
   override def buildCtrNoOverlap(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], zeroIgnored: Boolean): Unit = {
     // TODO we ignore the value of zeroIgnored for now
     val ends = buildEndsFromStartAndLength(origins, lengths)
@@ -518,6 +517,88 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     modelDeclaration.post(DiffN(x.map(e => varHashMap(e.id)), dx.map(e => varHashMap(e.id)), y.map(e => varHashMap(e.id)), dy.map(e => varHashMap(e.id))))
   }
 
+  override def buildCtrAllEqual(id: String, list: Array[XVarInteger]): Unit = {
+    modelDeclaration.post(Eq(list.map(e => varHashMap(e.id))))
+  }
+
+  override def buildCtrMDD(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]]): Unit = {
+    // TODO move to XCallbacksDecomp
+    case class Transition(orig: String, value: Int, dest: String) {
+      override def toString = s"($orig,$value,$dest)"
+    }
+    val allTransitions = transitions.map(t => Transition(t(0).toString, t(1).toString.toInt, t(2).toString))
+
+    def outTransitions(nodeId: String): Array[Transition] = allTransitions.filter(t => t.orig.equals(nodeId))
+    def inTransitions(nodeId: String): Array[Transition] = allTransitions.filter(t => t.dest.equals(nodeId))
+
+    val nodes: Set[String] = allTransitions.map(_.orig).toSet union allTransitions.map(_.dest).toSet
+
+    val root = nodes.filter(n => inTransitions(n).size == 0).head
+    // val sink = nodes.filter(n => outTransitions(n).size == 0).head
+
+    var tuples: Array[Array[Transition]] = outTransitions(root).map(Array(_))
+
+    for (i <- 0 until list.size - 1) {
+      tuples =
+        for (t: Array[Transition] <- tuples;
+             last = t(t.size - 1).dest;
+             j <- outTransitions(last)) yield {
+          t :+ j
+        }
+    }
+    val tableTuples = for (t <- tuples) yield t.map(_.value)
+    buildCtrExtension(id, list, tableTuples, true, new util.HashSet[TypeFlag]())
+  }
+
+  override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[Int], condition: Condition): Unit = {
+    val setOfVal = values.toSet
+    val counterVar: IntExpression = Sum(list.map(x => varHashMap(x.id)).map( x => {
+      if(setOfVal.size != 1) InSet(x, setOfVal) else x === setOfVal.head
+    }))
+
+    condition match {
+      case condition if (condition.isInstanceOf[ConditionIntvl]) => {
+        val min = condition.asInstanceOf[ConditionIntvl].min
+        val max = condition.asInstanceOf[ConditionIntvl].max
+        condition.operator match {
+          case TypeConditionOperator.IN => {
+            modelDeclaration.add(counterVar <= max)
+            modelDeclaration.add(counterVar >= min)
+          }
+          case TypeConditionOperator.NOTIN => {
+            for (v <- min to max) {
+              modelDeclaration.add(counterVar !== v)
+            }
+          }
+        }
+      }
+      case condition if (condition.isInstanceOf[ConditionVal]) => {
+        val c = condition.asInstanceOf[ConditionVal].k
+        condition.operator match {
+          case TypeConditionOperator.LE => modelDeclaration.add(counterVar <= c)
+          case TypeConditionOperator.GE => modelDeclaration.add(counterVar >= c)
+          case TypeConditionOperator.GT => modelDeclaration.add(counterVar > c)
+          case TypeConditionOperator.LT => modelDeclaration.add(counterVar < c)
+          case TypeConditionOperator.EQ => modelDeclaration.add(counterVar === c)
+          case _ => throw new RuntimeException("not supported operator")
+        }
+      }
+      case condition if (condition.isInstanceOf[ConditionVar]) => {
+        val c = varHashMap(condition.asInstanceOf[ConditionVar].x.id)
+        condition.operator match {
+          case TypeConditionOperator.LE => modelDeclaration.add(counterVar <= c)
+          case TypeConditionOperator.GE => modelDeclaration.add(counterVar >= c)
+          case TypeConditionOperator.GT => modelDeclaration.add(counterVar > c)
+          case TypeConditionOperator.LT => modelDeclaration.add(counterVar < c)
+          case TypeConditionOperator.EQ => modelDeclaration.add(counterVar === c)
+          case _ => throw new RuntimeException("not supported operator")
+        }
+      }
+    }
+  }
+
+  override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = ???
+
   override def buildCtrAllDifferentList(id: String, lists: Array[Array[XVarInteger]]): Unit = throw new Exception("AllDifferentList is not implemented") // TODO implement with extension
   override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = throw new Exception("AllDifferentExcept is not implemented")
   override def buildCtrMinimum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = throw new Exception("Minimum/MinArg is not implemented")
@@ -536,7 +617,6 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeObjective.EXPRESSION => throw new XCSP3ParseException("TypeObjective.EXPRESSION should not be called without a tree")
       case TypeObjective.LEX => ???
       case TypeObjective.NVALUES => ???
-
     }
   }
 
@@ -590,12 +670,6 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
 
   override def buildCtrNValues(id: String, list: Array[XVarInteger], condition: Condition): Unit = ???
 
-  override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[Int], condition: Condition): Unit = ???
-
-  override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = ???
-
-  override def buildCtrAllEqual(id: String, list: Array[XVarInteger]): Unit = ???
-
   override def buildCtrNotAllEqual(id: String, list: Array[XVarInteger]): Unit = ???
 
   override def buildCtrClause(id: String, pos: Array[XVarInteger], neg: Array[XVarInteger]): Unit = ???
@@ -607,8 +681,6 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int, value: XVarInteger): Unit = ???
 
   override def buildCtrRegular(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]], startState: String, finalStates: Array[String]): Unit = ???
-
-  override def buildCtrMDD(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]]): Unit = ???
 
   override def buildCtrStretch(id: String, list: Array[XVarInteger], values: Array[Int], widthsMin: Array[Int], widthsMax: Array[Int]): Unit = ???
 

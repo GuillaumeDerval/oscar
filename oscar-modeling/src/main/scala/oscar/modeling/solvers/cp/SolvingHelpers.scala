@@ -80,6 +80,7 @@ case class BoundUpdateMessage(newBound: Int) extends MasterToSolverMessage
 case class AllDoneMessage() extends MasterToSolverMessage with WatcherMessage
 
 case class HelloMessage() extends MasterToSolverMessage with SolverToMasterMessage
+case class ConfigMessage(forceImmediateSend: Boolean) extends MasterToSolverMessage
 case class StartMessage() extends MasterToSolverMessage
 
 /**

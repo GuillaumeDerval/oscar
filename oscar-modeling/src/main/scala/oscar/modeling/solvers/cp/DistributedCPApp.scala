@@ -81,31 +81,27 @@ abstract class DistributedCPApp[RetVal](md: ModelDeclaration with DecomposedCPSo
   }
 
 
-  def solve(): (SearchStatistics, List[RetVal]) = solve(modelDeclaration.getCurrentModel)
-
-  def solve(model: Model): (SearchStatistics, List[RetVal]) = {
-    model match {
-      case m: UninstantiatedModel => solve(m)
-      case _ => sys.error("The model is already instantiated")
-    }
-  }
-
-  def solve(model: UninstantiatedModel): (SearchStatistics, List[RetVal]) = {
+  def solve(): (SearchStatistics, List[RetVal])  = solve(0, 0)
+  def solve(nSols: Int, maxTime: Int): (SearchStatistics, List[RetVal]) = solve(modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], nSols, maxTime)
+  def solve(model: UninstantiatedModel): (SearchStatistics, List[RetVal])  = solve(model, 0, 0)
+  def solve(model: UninstantiatedModel, nSols: Int, maxTime: Int): (SearchStatistics, List[RetVal]) = {
     if(completeConfig.master.remoteList.isDefined || completeConfig.master.remoteFile.isDefined) {
       super.solveDistributed(model,
         completeConfig.master.remoteList.get.getOrElse(completeConfig.master.remoteFile()),
         completeConfig.master.host(),
-        completeConfig.master.subproblemsPerWorker()
+        completeConfig.master.subproblemsPerWorker(),
+        nSols, maxTime
       )
     }
     else if(completeConfig.master.threads.isDefined) {
       super.solveLocally(model,
         completeConfig.master.threads(),
-        completeConfig.master.subproblemsPerWorker()
+        completeConfig.master.subproblemsPerWorker(),
+        nSols, maxTime
       )
     }
     else {
-      super.solveLocally(model, Runtime.getRuntime.availableProcessors(), completeConfig.master.subproblemsPerWorker())
+      super.solveLocally(model, Runtime.getRuntime.availableProcessors(), completeConfig.master.subproblemsPerWorker(), nSols, maxTime)
     }
   }
 }

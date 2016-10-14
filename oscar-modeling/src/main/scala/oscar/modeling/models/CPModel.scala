@@ -185,7 +185,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         cpSolver.post(cp.modeling.constraint.maxCumulativeResource(cpStart, cpDuration, cpEnds, cpDemands, cpResources, cpCapacity, id)) != CPOutcome.Failure
       case AllDifferent(array) => cpSolver.post(cp.modeling.constraint.allDifferent(array.map(postIntExpressionAndGetVar)), CPPropagStrength.Weak) != CPOutcome.Failure
       case LexLeq(a, b) => cpSolver.post(cp.modeling.constraint.lexLeq(a.map(postIntExpressionAndGetVar), b.map(postIntExpressionAndGetVar))) != CPOutcome.Failure
-      case Table(array, values, None) => cpSolver.post(cp.modeling.constraint.table(array.map(postIntExpressionAndGetVar), values, TableAlgo.MDD4R)) != CPOutcome.Failure
+      case Table(array, values, None) => cpSolver.post(cp.modeling.constraint.table(array.map(postIntExpressionAndGetVar), values)) != CPOutcome.Failure
       case NegativeTable(array, values, None) => cpSolver.post(cp.modeling.constraint.negativeTable(array.map(postIntExpressionAndGetVar), values)) != CPOutcome.Failure
       case Table(array, values, Some(starred)) => cpSolver.post(new oscar.cp.constraints.tables.TableCTStar(array.map(postIntExpressionAndGetVar), values, starred)) != CPOutcome.Failure
       case NegativeTable(array, values, Some(starred)) => cpSolver.post(new oscar.cp.constraints.tables.TableCTNegStar(array.map(postIntExpressionAndGetVar), values, starred)) != CPOutcome.Failure
@@ -325,7 +325,10 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
       case Implication(a, b) =>
         CPBoolVarOps(postBoolExpressionAndGetVar(a)) ==> postBoolExpressionAndGetVar(b)
       case Xor(a, b) => throw new Exception() //TODO: throw valid exception
-      case InSet(a, b) => throw new Exception() //TODO: throw valid exception
+      case InSet(a, b) =>
+        val c = cp.CPBoolVar()
+        cpSolver.post(new cp.constraints.InSetReif(postIntExpressionAndGetVar(a), b, c))
+        c
       case v: BoolVar => getRepresentative(v).realCPVar.asInstanceOf[cp.CPBoolVar]
     }).asInstanceOf[cp.CPBoolVar]
   }
@@ -367,7 +370,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
       case Implication(a, b) =>
         cpSolver.post(new cp.constraints.Implication(postBoolExpressionAndGetVar(a), postBoolExpressionAndGetVar(b), result))
       case Xor(a, b) => throw new Exception() //TODO: throw valid exception
-      case InSet(a, b) => throw new Exception() //TODO: throw valid exception
+      case InSet(a, b) => cpSolver.post(new cp.constraints.InSetReif(postIntExpressionAndGetVar(a), b, result))
       case v: BoolVar => throw new Exception() //TODO: throw valid exception
     }
   }

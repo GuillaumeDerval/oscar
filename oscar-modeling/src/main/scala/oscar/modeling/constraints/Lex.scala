@@ -14,22 +14,6 @@ import oscar.modeling.algebra.IntExpression
   */
 case class LexLeq(a: Array[IntExpression], b: Array[IntExpression]) extends Constraint {}
 
-
-object LexLe
-{
-  /**
-    * Lexicographical "Strictly Lesser than" constraint.
-    *
-    * Given tuples (a1, a2, ...) and (b1, b2, ...),
-    * this ensures
-    *
-    * a1 < b1 || (a1 == b1 && LexLe((a2, ...), (b2, ...)))
-    * @param a
-    * @param b
-    */
-  def apply(a: Array[IntExpression], b: Array[IntExpression]) = LexLeq(a.map(_+1),b)
-}
-
 object LexGeq
 {
   /**
