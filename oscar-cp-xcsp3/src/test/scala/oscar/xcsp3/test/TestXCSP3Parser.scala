@@ -119,12 +119,12 @@ class TestXCSP3Parser extends TestSuite {
 
 
   // objectif: ramener tout dans OKTests ;-)
-  val OKTests = Array(/*"Queens-0008-m1.xml",
+  val OKTests = Array("Queens-0008-m1.xml",
     "testExtension1.xml",
-    "testExtension2.xml",*/
+    "testExtension2.xml",
     "BinPacking-mdd-ft060-00.xml",
-    "BinPacking-mdd-n1c1w4a.xml"//,
-    /*"Sudoku-s01a-alldiff.xml"*/
+    "BinPacking-mdd-n1c1w4a.xml",
+    "Sudoku-s01a-alldiff.xml"
   )
 
 
