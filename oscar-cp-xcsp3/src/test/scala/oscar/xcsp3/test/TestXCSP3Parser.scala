@@ -42,7 +42,6 @@ class TestXCSP3Parser extends TestSuite {
     "AllInterval-005.xml",
     "Bibd-sc-06-050-25-03-10.xml",
     "Bibd-sum-06-050-25-03-10.xml",
-    "BinPacking-mdd-n1c1w4a.xml",
     "BinPacking-sum-n1c1w4a.xml",
     "BinPacking-tab-n1c1w4a.xml",
     "Blackhole-04-3-00.xml",
@@ -76,7 +75,6 @@ class TestXCSP3Parser extends TestSuite {
     "MagicSequence-008-co.xml",
     "MagicSquare-4-table.xml",
     "MagicSquare-6-mdd.xml",
-    "MagicSquare-6-sum.xml",
     "MagicSquare-9-f10-01.xml",
     "Mario-easy-4.xml",
     "MarketSplit-01.xml",
@@ -108,7 +106,6 @@ class TestXCSP3Parser extends TestSuite {
     "StillLife-wastage-03.xml",
     "StripPacking-C1P1.xml",
     "Subisomorphism-A-10.xml",
-    "Sudoku-s01a-alldiff.xml",
     "Taillard-js-015-15-0.xml",
     "Taillard-os-04-04-0.xml",
     "testExtension3.xml",
@@ -125,7 +122,10 @@ class TestXCSP3Parser extends TestSuite {
   // objectif: ramener tout dans OKTests ;-)
   val OKTests = Array("Queens-0008-m1.xml",
     "testExtension1.xml",
-    "testExtension2.xml"
+    "testExtension2.xml",
+    "BinPacking-mdd-n1c1w4a.xml",
+    "Sudoku-s01a-alldiff.xml"
+
   )
 
 

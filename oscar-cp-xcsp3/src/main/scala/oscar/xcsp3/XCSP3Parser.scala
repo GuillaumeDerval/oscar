@@ -9,7 +9,7 @@ import org.xcsp.common.predicates.{XNodeExpr, XNodeLeaf, XNodeParent}
 import org.xcsp.parser.XCallbacks.XCallbacksParameters
 import org.xcsp.parser.XConstraints.{CEntry, XBlock, XGroup, XSlide}
 import org.xcsp.parser.XObjectives.OEntry
-import org.xcsp.parser.XParser.{Condition, ConditionVal, ConditionVar}
+import org.xcsp.parser.XParser.{Condition, ConditionIntvl, ConditionVal, ConditionVar}
 import org.xcsp.parser.XVariables._
 import org.xcsp.parser._
 import oscar.cp.CPIntVar
@@ -22,6 +22,7 @@ import scala.collection.mutable.ArrayBuffer
 class XCSP3Parser(filename: String) extends XCallbacks {
 
   XCallbacks.callbacksParameters.remove(XCallbacksParameters.RECOGNIZE_SPECIAL_COUNT_CASES)
+  //XCallbacks.callbacksParameters.add(XCallbacksParameters.)
 
 
   implicit val cp = CPSolver()
@@ -333,8 +334,50 @@ class XCSP3Parser(filename: String) extends XCallbacks {
   override def buildCtrNoOverlap(id: String, origins: Array[Array[XVarInteger]], lengths: Array[Array[XVarInteger]], zeroIgnored: Boolean): Unit = ???
 
   override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[Int], condition: Condition): Unit = {
-    ???
+    val setOfVal = values.toSet
+    val counterVar: CPIntVar = sum(list.map(x => varHashMap(x.id)).map(_.isIn(setOfVal).asInstanceOf[CPIntVar]))
+    condition match {
+      case condition if (condition.isInstanceOf[ConditionIntvl]) => {
+        val min = condition.asInstanceOf[ConditionIntvl].min
+        val max = condition.asInstanceOf[ConditionIntvl].max
+        condition.operator match {
+          case TypeConditionOperator.IN => {
+            cp.add(counterVar <= max)
+            cp.add(counterVar >= min)
+          }
+          case TypeConditionOperator.NOTIN => {
+            for (v <- min to max) {
+              cp.add(counterVar !== v)
+            }
+          }
+        }
+      }
+      case condition if (condition.isInstanceOf[ConditionVal]) => {
+        val c = condition.asInstanceOf[ConditionVal].k
+        condition.operator match {
+          case TypeConditionOperator.LE => cp.add(counterVar <= c)
+          case TypeConditionOperator.GE => cp.add(counterVar >= c)
+          case TypeConditionOperator.GT => cp.add(counterVar > c)
+          case TypeConditionOperator.LT => cp.add(counterVar < c)
+          case TypeConditionOperator.EQ => cp.add(counterVar === c)
+          case _ => throw new RuntimeException("not supported operator")
+        }
+      }
+      case condition if (condition.isInstanceOf[ConditionVar]) => {
+        val c = varHashMap(condition.asInstanceOf[ConditionVar].x.id)
+        condition.operator match {
+          case TypeConditionOperator.LE => cp.add(counterVar <= c)
+          case TypeConditionOperator.GE => cp.add(counterVar >= c)
+          case TypeConditionOperator.GT => cp.add(counterVar > c)
+          case TypeConditionOperator.LT => cp.add(counterVar < c)
+          case TypeConditionOperator.EQ => cp.add(counterVar === c)
+          case _ => throw new RuntimeException("not supported operator")
+        }
+      }
+    }
   }
+
+
 
   override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = ???
 
@@ -370,7 +413,24 @@ class XCSP3Parser(filename: String) extends XCallbacks {
 
   override def buildCtrRegular(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]], startState: String, finalStates: Array[String]): Unit = ???
 
-  override def buildCtrLex(id: String, lists: Array[Array[XVarInteger]], operator: TypeOperator): Unit = ???
+  override def buildCtrLex(id: String, lists: Array[Array[XVarInteger]], operator: TypeOperator): Unit = {
+    operator match {
+      case TypeOperator.GE => {
+        for (i <- 0 until lists.size-1) {
+          cp.add(lexLeq(lists(i+1).map(x => varHashMap(x.id)),lists(i).map(x =>varHashMap(x.id))))
+        }
+      }
+      case TypeOperator.LE => {
+        for (i <- 0 until lists.size-1) {
+          cp.add(lexLeq(lists(i).map(x => varHashMap(x.id)),lists(i+1).map(x =>varHashMap(x.id))))
+        }
+      }
+      case TypeOperator.LT =>
+      case TypeOperator.GT =>
+      case _ => ???
+    }
+
+  }
 
   override def buildCtrExtension(id: String, x: XVarSymbolic, values: Array[String], positive: Boolean, flags: util.Set[TypeFlag]): Unit = ???
 
@@ -378,7 +438,35 @@ class XCSP3Parser(filename: String) extends XCallbacks {
 
   override def buildVarSymbolic(x: XVarSymbolic, values: Array[String]): Unit = ???
 
-  override def buildCtrMDD(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]]): Unit = ???
+  override def buildCtrMDD(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]]): Unit = {
+
+    case class Transition(orig: String, value: Int, dest: String) {
+      override def toString = s"($orig,$value,$dest)"
+    }
+    val allTransitions = transitions.map(t => Transition(t(0).toString, t(1).toString.toInt, t(2).toString))
+
+    def outTransitions(nodeId: String): Array[Transition] = allTransitions.filter(t => t.orig.equals(nodeId))
+    def inTransitions(nodeId: String): Array[Transition] = allTransitions.filter(t => t.dest.equals(nodeId))
+
+    val nodes: Set[String] = allTransitions.map(_.orig).toSet union allTransitions.map(_.dest).toSet
+
+    val root = nodes.filter(n => inTransitions(n).size == 0).head
+    // val sink = nodes.filter(n => outTransitions(n).size == 0).head
+
+    var tuples: Array[Array[Transition]] = outTransitions(root).map(Array(_))
+
+    for (i <- 0 until list.size - 1) {
+      tuples =
+        for (t: Array[Transition] <- tuples;
+             last = t(t.size - 1).dest;
+             j <- outTransitions(last)) yield {
+          t :+ j
+        }
+    }
+    val tableTuples = for (t <- tuples) yield t.map(_.value)
+    buildCtrExtension(id, list, tableTuples, true, new util.HashSet[TypeFlag]())
+  }
+
 
   override def buildCtrAllDifferentList(id: String, lists: Array[Array[XVarInteger]]): Unit = ???
 
