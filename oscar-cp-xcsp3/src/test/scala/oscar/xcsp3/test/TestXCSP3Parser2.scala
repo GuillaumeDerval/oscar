@@ -137,7 +137,7 @@ class TestXCSP3Parser2 extends TestSuite {
   )
 
 
-  for (t <- KOTests) {
+  for (t <- OKTests) {
     test(t) {
       assert(isValid("data/xcsp3/instancesTest/"+t))
     }
