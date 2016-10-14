@@ -108,7 +108,6 @@ class TestXCSP3Parser extends TestSuite {
     "Subisomorphism-A-10.xml",
     "Taillard-js-015-15-0.xml",
     "Taillard-os-04-04-0.xml",
-    "testExtension3.xml",
     "testObjective1.xml",
     "testPrimitive.xml",
     "Tpp-3-3-20-1.xml",
@@ -125,7 +124,6 @@ class TestXCSP3Parser extends TestSuite {
     "testExtension2.xml",
     "BinPacking-mdd-n1c1w4a.xml",
     "Sudoku-s01a-alldiff.xml"
-
   )
 
 

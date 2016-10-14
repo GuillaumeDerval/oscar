@@ -5,6 +5,8 @@ import java.util
 
 import org.xcsp.common.XEnums._
 import org.xcsp.common.predicates.{XNodeExpr, XNodeLeaf, XNodeParent}
+import org.xcsp.parser.XCallbacks
+import org.xcsp.parser.XCallbacks.XCallbacksParameters
 import org.xcsp.parser.XParser.{Condition, ConditionIntvl, ConditionVal, ConditionVar}
 import org.xcsp.parser.XVariables._
 import oscar.modeling.algebra._
@@ -13,7 +15,7 @@ import oscar.modeling.models.ModelDeclaration
 import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.modeling.solvers.cp.{DistributedCPApp, DistributedCPAppConfig}
-import oscar.modeling.vars.IntVar
+import oscar.modeling.vars.{BoolVar, IntVar}
 
 /**
   * An XCSP3 parser that converts an XCSP3 instance to an OscaR-Modeling model
@@ -23,6 +25,17 @@ import oscar.modeling.vars.IntVar
 private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String) extends XCallbacksDecomp {
   implicit val implModelDeclaration = modelDeclaration
   val varHashMap = collection.mutable.LinkedHashMap[String, IntExpression]() //automagically maintains the order of insertion
+
+  // Force parameter update
+  XCallbacks.callbacksParameters.clear()
+  XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_UNARY_INTENSION_CASES, new Object)
+  XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_BINARY_INTENSION_CASES,  new Object)
+  XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_TERNARY_INTENSION_CASES,  new Object)
+  XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_COUNT_CASES,  new Object)
+  XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_NVALUES_CASES,  new Object)
+  XCallbacks.callbacksParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, 0:java.lang.Integer) // included
+  XCallbacks.callbacksParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000:java.lang.Integer)
+  XCallbacks.callbacksParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, false:java.lang.Boolean)
 
   loadInstance(filename)
 
@@ -50,7 +63,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     val r: IntExpression = opa match {
       case TypeArithmeticOperator.ADD => x + y
       case TypeArithmeticOperator.DIST => Abs(x - y)
-      case TypeArithmeticOperator.DIV => x / y
+      case TypeArithmeticOperator.DIV => x / y.evaluate()
       case TypeArithmeticOperator.MUL => x * y
       case TypeArithmeticOperator.SUB => x - y
       case TypeArithmeticOperator.MOD => throw new Exception("Modulo between vars is not implemented")
@@ -86,7 +99,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     val r: IntExpression = opa match {
       case TypeArithmeticOperator.ADD => x + y
       case TypeArithmeticOperator.DIST => Abs(x - y)
-      case TypeArithmeticOperator.DIV => x / y
+      case TypeArithmeticOperator.DIV => x / y.evaluate()
       case TypeArithmeticOperator.MUL => x * y
       case TypeArithmeticOperator.SUB => x - y
       case TypeArithmeticOperator.MOD => throw new Exception("Modulo between vars is not implemented")
@@ -191,7 +204,9 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeExpr.NE => _recursiveIntentionBuilder(tree.sons(0)) !== _recursiveIntentionBuilder(tree.sons(1))
       case TypeExpr.ADD => Sum(tree.sons.map(_recursiveIntentionBuilder))
       case TypeExpr.SUB => _recursiveIntentionBuilder(tree.sons(0)) - _recursiveIntentionBuilder(tree.sons(1))
-      case TypeExpr.DIV => _recursiveIntentionBuilder(tree.sons(0)) / _recursiveIntentionBuilder(tree.sons(1))
+      case TypeExpr.DIV =>
+        assert(tree.sons(1).getType == TypeExpr.LONG)
+        _recursiveIntentionBuilder(tree.sons(0)) / tree.sons(1).asInstanceOf[XNodeLeaf[V]].value.asInstanceOf[Long].toInt
       case TypeExpr.ABS => Abs(_recursiveIntentionBuilder(tree.sons(0)))
       case TypeExpr.NEG => -_recursiveIntentionBuilder(tree.sons(0))
       case TypeExpr.MIN => Min(tree.sons.map(_recursiveIntentionBuilder))
@@ -202,12 +217,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
         assert(tree.sons(1).getType == TypeExpr.LONG)
         _recursiveIntentionBuilder(tree.sons(0)) % tree.sons(1).asInstanceOf[XNodeLeaf[V]].value.asInstanceOf[Long].toInt
       case TypeExpr.MUL =>
-        //TODO improve for non-binary cases
-        val ret = tree.sons.map(_recursiveIntentionBuilder).foldLeft(null: IntExpression)((cur, next) => {
-          if(cur == null) next
-          else cur * next
-        })
-        ret
+        Prod(tree.sons.map(_recursiveIntentionBuilder))
       case TypeExpr.IFF =>
         val csts = tree.sons.map(_recursiveIntentionBuilder).foldLeft((List[BoolExpression](), null: IntExpression))((cur, next) => {
           if(cur._2 == null) (List[BoolExpression](), next)
@@ -217,11 +227,12 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
           csts.last
         else
           And(csts.toArray) //TODO improve this, need for an n-ary eq
+      case TypeExpr.IMP =>
+        _recursiveIntentionBuilder(tree.sons(0)).asInstanceOf[BoolExpression] ==> _recursiveIntentionBuilder(tree.sons(1)).asInstanceOf[BoolExpression]
       case TypeExpr.SQR => ??? //1
       case TypeExpr.POW => ??? //2
       case TypeExpr.SET => ??? //0, Integer.MAX_VALUE
       case TypeExpr.XOR => ??? //2, Integer.MAX_VALUE
-      case TypeExpr.IMP => ??? //2
       case TypeExpr.IF => ??? //3
       case TypeExpr.CARD => ??? //1
       case TypeExpr.UNION => ??? //2, Integer.MAX_VALUE
@@ -251,14 +262,9 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeExpr.SINH => ??? //1
       case TypeExpr.COSH => ??? //1
       case TypeExpr.TANH => ??? //1
-      case TypeExpr.LONG => ??? //0
-      case TypeExpr.RATIONAL => ??? //0
-      case TypeExpr.DECIMAL => ??? //0
-      case TypeExpr.VAR => ??? //0
-      case TypeExpr.PAR => ??? //0
-      case TypeExpr.SYMBOL => ??? //0
     }
   }
+
   override def buildCtrIntension(id: String, scope: Array[XVarInteger], syntaxTreeRoot: XNodeParent[XVar]): Unit = {
     val cst = _recursiveIntentionBuilder(syntaxTreeRoot).asInstanceOf[BoolExpression].toConstraint
     modelDeclaration.add(cst)
@@ -290,10 +296,11 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeOperator.SUPSEQ => ???
       case TypeOperator.SUPSET => ???
     }
-    list.map(i => varHashMap(i.id)).sliding(2).map{x => rel(x(1), x(2))}.foreach(modelDeclaration.post)
+    list.map(i => varHashMap(i.id)).sliding(2).map{x => rel(x(0), x(1))}.foreach(modelDeclaration.post)
   }
 
   override def buildCtrExtension(id: String, x: XVarInteger, values: Array[Int], positive: Boolean, flags: util.Set[TypeFlag]): Unit = {
+    assert(!flags.contains(TypeFlag.STARRED_TUPLES)) // no sense!
     if(positive) {
       //InSet constraint
       modelDeclaration.add(InSet(varHashMap(x.id), values.toSet))
@@ -309,10 +316,10 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   override def buildCtrExtension(id: String, list: Array[XVarInteger], tuples: Array[Array[Int]], positive: Boolean, flags: util.Set[TypeFlag]): Unit = {
     //println(list.map(x => x.id).mkString(" "))
     val cst: Constraint = if(positive) {
-      Table(list.map(x => varHashMap(x.id)), tuples)
+      Table(list.map(x => varHashMap(x.id)), tuples, if(flags.contains(TypeFlag.STARRED_TUPLES)) Some(Integer.MAX_VALUE-1) else None)
     }
     else {
-      NegativeTable(list.map(x => varHashMap(x.id)), tuples)
+      NegativeTable(list.map(x => varHashMap(x.id)), tuples, if(flags.contains(TypeFlag.STARRED_TUPLES)) Some(Integer.MAX_VALUE-1) else None)
     }
     modelDeclaration.add(cst)
   }
@@ -451,13 +458,68 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     buildCtrCumulative(id, mOrigins, mLengths, mEnds, mHeights, condition)
   }
 
+  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int): Unit = {
+    modelDeclaration.add(SubCircuit(list.map(x => varHashMap(x.id)), startIndex))
+  }
+
+  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: Int): Unit = {
+    if(size == list.length)
+      modelDeclaration.add(Circuit(list.map(x => varHashMap(x.id))))
+    else {
+      val vars = list.map(x => varHashMap(x.id))
+      // count non-self-looping variables
+      modelDeclaration.add(Sum(vars.zipWithIndex.map({case (v, idx) => v !== (idx+startIndex)})) === size)
+      modelDeclaration.add(SubCircuit(list.map(x => varHashMap(x.id)), startIndex))
+    }
+  }
+
+  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: XVarInteger): Unit = {
+    val vars = list.map(x => varHashMap(x.id))
+    // count non-self-looping variables
+    modelDeclaration.add(Sum(vars.zipWithIndex.map({case (v, idx) => v !== (idx+startIndex)})) === varHashMap(size.id))
+    modelDeclaration.add(SubCircuit(list.map(x => varHashMap(x.id)), startIndex))
+  }
+
+  //unaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar])
+  override def buildCtrNoOverlap(id: String, origins: Array[XVarInteger], lengths: Array[Int], zeroIgnored: Boolean): Unit = {
+    val (starts, durations) = origins.zip(lengths).filter({case (v, l) => l != 0 || !zeroIgnored}).unzip
+    val ends = buildEndsFromStartAndLength(starts, durations)
+    val mStarts = starts.map(x => varHashMap(x.id))
+    val mDurations = durations.map(x => Constant(x):IntExpression)
+    val mEnds = ends.map(x => varHashMap(x.id))
+    modelDeclaration.post(UnaryResource(mStarts, mDurations, mEnds))
+    // Bind start, duration and ends
+    (mStarts, mDurations, mEnds).zipped.foreach({case (s, d, e) => modelDeclaration.post((s+d)===e)})
+  }
+
+  //unaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar])
+  override def buildCtrNoOverlap(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], zeroIgnored: Boolean): Unit = {
+    // TODO we ignore the value of zeroIgnored for now
+    val ends = buildEndsFromStartAndLength(origins, lengths)
+    val mStarts = origins.map(x => varHashMap(x.id))
+    val mDurations = lengths.map(x => varHashMap(x.id))
+    val mEnds = ends.map(x => varHashMap(x.id))
+    if(zeroIgnored) {
+      val required: Array[BoolExpression] =  mDurations.map(_ !== 0)
+      modelDeclaration.post(UnaryResource(mStarts, mDurations, mEnds, required))
+    }
+    else {
+      modelDeclaration.post(UnaryResource(mStarts, mDurations, mEnds))
+    }
+    // Bind start, duration and ends
+    (mStarts, mDurations, mEnds).zipped.foreach({case (s, d, e) => modelDeclaration.post((s+d)===e)})
+  }
+
+  //diffn(x: Array[CPIntVar], dx: Array[CPIntVar], y: Array[CPIntVar], dy: Array[CPIntVar])
+  override def buildCtrNoOverlap(id: String, origins: Array[Array[XVarInteger]], lengths: Array[Array[Int]], zeroIgnored: Boolean): Unit = ???
+
+  //diffn(x: Array[CPIntVar], dx: Array[CPIntVar], y: Array[CPIntVar], dy: Array[CPIntVar])
+  override def buildCtrNoOverlap(id: String, origins: Array[Array[XVarInteger]], lengths: Array[Array[XVarInteger]], zeroIgnored: Boolean): Unit = ???
+
   override def buildCtrAllDifferentList(id: String, lists: Array[Array[XVarInteger]]): Unit = throw new Exception("AllDifferentList is not implemented") // TODO implement with extension
   override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = throw new Exception("AllDifferentExcept is not implemented")
   override def buildCtrMinimum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = throw new Exception("Minimum/MinArg is not implemented")
   override def buildCtrMaximum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = throw new Exception("Maximum/MaxArg is not implemented")
-  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int): Unit = throw new Exception("Single subcircuit constraint is not implemented") // TODO verify
-  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: Int): Unit = throw new Exception("Single subcircuit constraint is not implemented") // TODO verify
-  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: XVarInteger): Unit = throw new Exception("Single subcircuit constraint is not implemented") // TODO verify
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occurs: Array[XVarInteger]): Unit = throw new Exception("GCC with var cardinalities is not implemented")
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occurs: Array[Int]): Unit = throw new Exception("GCC with var cardinalities is not implemented")
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occursMin: Array[Int], occursMax: Array[Int]): Unit = throw new Exception("GCC with var cardinalities is not implemented")
@@ -468,10 +530,11 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeObjective.MAXIMUM => Max(list.map(i => varHashMap(i.id)))
       case TypeObjective.MINIMUM => Min(list.map(i => varHashMap(i.id)))
       case TypeObjective.SUM => Sum(list.map(i => varHashMap(i.id)))
+      case TypeObjective.PRODUCT => Prod(list.map(i => varHashMap(i.id)))
       case TypeObjective.EXPRESSION => throw new XCSP3ParseException("TypeObjective.EXPRESSION should not be called without a tree")
       case TypeObjective.LEX => ???
       case TypeObjective.NVALUES => ???
-      case TypeObjective.PRODUCT => ???
+
     }
   }
 
@@ -481,9 +544,9 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeObjective.MINIMUM => Min(list.zip(coefs).map(i => varHashMap(i._1.id)*i._2))
       case TypeObjective.SUM => WeightedSum(list.map(i => varHashMap(i.id)), coefs)
       case TypeObjective.EXPRESSION => throw new XCSP3ParseException("TypeObjective.EXPRESSION should not be called without a tree")
+      case TypeObjective.PRODUCT => Prod(list.map(i => varHashMap(i.id))) //ignore coefs...
       case TypeObjective.LEX => ???
       case TypeObjective.NVALUES => ???
-      case TypeObjective.PRODUCT => ???
     }
   }
 
@@ -525,14 +588,6 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
 
   override def buildCtrNValues(id: String, list: Array[XVarInteger], condition: Condition): Unit = ???
 
-  override def buildCtrNoOverlap(id: String, origins: Array[XVarInteger], lengths: Array[Int], zeroIgnored: Boolean): Unit = ???
-
-  override def buildCtrNoOverlap(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], zeroIgnored: Boolean): Unit = ???
-
-  override def buildCtrNoOverlap(id: String, origins: Array[Array[XVarInteger]], lengths: Array[Array[Int]], zeroIgnored: Boolean): Unit = ???
-
-  override def buildCtrNoOverlap(id: String, origins: Array[Array[XVarInteger]], lengths: Array[Array[XVarInteger]], zeroIgnored: Boolean): Unit = ???
-
   override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[Int], condition: Condition): Unit = ???
 
   override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = ???
@@ -552,8 +607,6 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   override def buildCtrRegular(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]], startState: String, finalStates: Array[String]): Unit = ???
 
   override def buildCtrMDD(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]]): Unit = ???
-
-  override def buildCtrLexMatrix(id: String, matrix: Array[Array[XVarInteger]], operator: TypeOperator): Unit = ???
 
   override def buildCtrStretch(id: String, list: Array[XVarInteger], values: Array[Int], widthsMin: Array[Int], widthsMax: Array[Int]): Unit = ???
 

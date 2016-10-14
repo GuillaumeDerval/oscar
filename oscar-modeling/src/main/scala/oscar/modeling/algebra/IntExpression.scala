@@ -71,7 +71,7 @@ trait IntExpression extends Serializable {
     }
   }
 
-  def / (b: IntExpression): IntExpression = Div(this, b)
+  def / (b: Int): IntExpression = Div(this, b)
   def % (b: Int): IntExpression = Modulo(this, b)
   def ~** (b: IntExpression): IntExpression = Exponent(this, b)
   def ~^ (b: IntExpression): IntExpression = Exponent(this, b)

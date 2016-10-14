@@ -87,11 +87,11 @@ public class MulCte extends Constraint {
 				if (z.updateMax(Math.max(NumberUtils.safeMul(c , x.getMin()), NumberUtils.safeMul(c , x.getMax()))) == CPOutcome.Failure) {
 					return CPOutcome.Failure;
 				}
-				if (x.updateMin(Math.min(NumberUtils.ceilDiv(z.getMin(), c), 
+				if (x.updateMin(Math.min(NumberUtils.ceilDiv(z.getMin(), c),
 										 NumberUtils.ceilDiv(z.getMax(), c))) == CPOutcome.Failure) {
 					return CPOutcome.Failure;
 				}
-				if (x.updateMax(Math.max(NumberUtils.floorDiv(z.getMin(), c), 
+				if (x.updateMax(Math.max(NumberUtils.floorDiv(z.getMin(), c),
 										 NumberUtils.floorDiv(z.getMax(), c))) == CPOutcome.Failure) {
 					return CPOutcome.Failure;
 				}
