@@ -302,7 +302,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
      * AllDifferentList constraint.
      *
      * For each pair of tuple (x,y), maps to
-     * Or(not(eq(x[0],y[0])), not(eq(x[1],y[1])), not(eq(x[2],y[2])), ...)
+     * Or(ne(x[0],y[0]), ne(x[1],y[1]), ne(x[2],y[2]), ...)
      * @param id
      * @param lists
      */
@@ -323,9 +323,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
                 for(int k = 0; k < tuple1.length; k++) {
                     XNodeLeaf<XVariables.XVar> v1 = new XNodeLeaf<>(XEnums.TypeExpr.VAR, tuple1[k]);
                     XNodeLeaf<XVariables.XVar> v2 = new XNodeLeaf<>(XEnums.TypeExpr.VAR, tuple2[k]);
-                    XNodeParent<XVariables.XVar> eq = new XNodeParent<>(XEnums.TypeExpr.EQ, new XNodeExpr[]{v1, v2});
-                    XNodeParent<XVariables.XVar> not = new XNodeParent<>(XEnums.TypeExpr.NOT, new XNodeExpr[]{eq});
-                    orVars[k] = not;
+                    orVars[k] = new XNodeParent<>(XEnums.TypeExpr.NE, new XNodeExpr[]{v1, v2});
                 }
                 XNodeParent<XVariables.XVar> or = new XNodeParent<>(XEnums.TypeExpr.OR, orVars);
                 buildCtrIntension(id, scope, or);
