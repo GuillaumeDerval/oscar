@@ -236,10 +236,11 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
           And(csts.toArray) //TODO improve this, need for an n-ary eq
       case TypeExpr.IMP =>
         _recursiveIntentionBuilder(tree.sons(0)).asInstanceOf[BoolExpression] ==> _recursiveIntentionBuilder(tree.sons(1)).asInstanceOf[BoolExpression]
+      case TypeExpr.XOR =>
+        _recursiveIntentionBuilder(tree.sons(0)).asInstanceOf[BoolExpression] ^ _recursiveIntentionBuilder(tree.sons(1)).asInstanceOf[BoolExpression]
       case TypeExpr.SQR => ??? //1
       case TypeExpr.POW => ??? //2
       case TypeExpr.SET => ??? //0, Integer.MAX_VALUE
-      case TypeExpr.XOR => ??? //2, Integer.MAX_VALUE
       case TypeExpr.IF => ??? //3
       case TypeExpr.CARD => ??? //1
       case TypeExpr.UNION => ??? //2, Integer.MAX_VALUE
