@@ -291,15 +291,10 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
 
   def postBoolExpressionAndGetVar(expr: BoolExpression): cp.CPBoolVar = {
     expr_cache.getOrElseUpdate(expr, expr match {
-      case And(Array(a, b)) => //binary And
-        val b = cp.modeling.constraint.plus(postBoolExpressionAndGetVar(a),
-          postBoolExpressionAndGetVar(a))
-        b ?=== 2
-      case And(array) => //n-ary And
-        val v: Array[cp.CPIntVar] = array.map(x => postBoolExpressionAndGetVar(x).asInstanceOf[cp.CPIntVar])
-        val b = cp.CPIntVar(0, array.length)
-        cpSolver.post(cp.modeling.constraint.sum(v, b))
-        b ?=== array.length
+      case And(x) => //binary And
+        val b = cp.CPBoolVar()
+        cpSolver.post(new oscar.cp.constraints.And(x.map(postBoolExpressionAndGetVar), b))
+        b
       case Eq(Array(a, b)) => //binary eq reif
         CPIntVarOps(postIntExpressionAndGetVar(a)) ?=== postIntExpressionAndGetVar(b)
       case Eq(x) => //n-ary eq reif
@@ -316,7 +311,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         CPIntVarOps(postIntExpressionAndGetVar(a)) ?<= postIntExpressionAndGetVar(b)
       case Or(array) => //n-ary Or
         val b = cp.CPBoolVar()
-        cpSolver.post(new cp.constraints.OrReif2(array.map(postBoolExpressionAndGetVar), b))
+        cpSolver.post(cp.modeling.constraint.or(array.map(postBoolExpressionAndGetVar), b))
         b
       case Not(a) =>
         postBoolExpressionAndGetVar(a).not
@@ -324,7 +319,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         CPIntVarOps(postIntExpressionAndGetVar(a)) ?!== postIntExpressionAndGetVar(b)
       case Implication(a, b) =>
         CPBoolVarOps(postBoolExpressionAndGetVar(a)) ==> postBoolExpressionAndGetVar(b)
-      case Xor(a, b) => throw new Exception() //TODO: throw valid exception
+      case Xor(a, b) => postBoolExpressionAndGetVar(And(Or(a,b), Not(And(a,b))))
       case InSet(a, b) =>
         val c = cp.CPBoolVar()
         cpSolver.post(new cp.constraints.InSetReif(postIntExpressionAndGetVar(a), b, c))
@@ -338,15 +333,8 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
       throw new Exception("Expression already cached given to postBoolExpressionWithVar")
     expr_cache.put(expr, result) //we already know the result
     expr match {
-      case And(Array(a,b)) => //binary And
-        val b = cp.modeling.constraint.plus(postBoolExpressionAndGetVar(a),
-          postBoolExpressionAndGetVar(a))
-        cpSolver.post(new cp.constraints.EqReif(b, 2, result))
-      case And(array) => //n-ary And
-        val v: Array[cp.CPIntVar] = array.map(x => postBoolExpressionAndGetVar(x).asInstanceOf[cp.CPIntVar])
-        val b = cp.CPIntVar(0, array.length)
-        cpSolver.post(cp.modeling.constraint.sum(v, b))
-        cpSolver.post(new cp.constraints.EqReif(b, array.length, result))
+      case And(x) =>
+        cpSolver.post(new oscar.cp.constraints.And(x.map(postBoolExpressionAndGetVar), result))
       case Eq(Array(a, b)) => //binary Eq
         cpSolver.post(new cp.constraints.EqReifVar(postIntExpressionAndGetVar(a), postIntExpressionAndGetVar(b), result))
       case Eq(x) => //n-ary Eq
@@ -369,7 +357,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         cpSolver.post(new cp.constraints.DiffReifVar(postIntExpressionAndGetVar(a), postIntExpressionAndGetVar(b), result))
       case Implication(a, b) =>
         cpSolver.post(new cp.constraints.Implication(postBoolExpressionAndGetVar(a), postBoolExpressionAndGetVar(b), result))
-      case Xor(a, b) => throw new Exception() //TODO: throw valid exception
+      case Xor(a, b) => postBoolExpressionWithVar(And(Or(a,b), Not(And(a,b))), result)
       case InSet(a, b) => cpSolver.post(new cp.constraints.InSetReif(postIntExpressionAndGetVar(a), b, result))
       case v: BoolVar => throw new Exception() //TODO: throw valid exception
     }

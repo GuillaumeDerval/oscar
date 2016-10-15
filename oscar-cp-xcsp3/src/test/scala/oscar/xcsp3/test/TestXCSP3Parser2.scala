@@ -14,12 +14,15 @@ class TestXCSP3Parser2 extends TestSuite {
     new CheckerLib(instancePath, solution).valid
   }
 
-  def isValid(instancePath: String, nSol: Int = 1): Boolean = {
+  def isValid(instancePath: String, nSol: Int = 1, useStaticOrdering: Boolean = false): Boolean = {
     val cpProgram = new DistributedCPProgram[String]()
     val (vars, solutionGenerator) =  XCSP3Parser2.parse(cpProgram.modelDeclaration, instancePath)
 
     val v = vars.toArray
-    cpProgram.setSearch(Branching.conflictOrderingSearch(v,i => v(i).size, i => v(i).min))
+    if(useStaticOrdering)
+      cpProgram.setSearch(Branching.binaryStatic(v))
+    else
+      cpProgram.setSearch(Branching.conflictOrderingSearch(v,i => v(i).size, i => v(i).min))
     cpProgram.onSolution {
       solutionGenerator()
     }
@@ -42,20 +45,14 @@ class TestXCSP3Parser2 extends TestSuite {
   val KOTests = Array(
     //Too slow
     //"MagicSquare-9-f10-01.xml",
-    //"MarketSplit-01.xml",
     //"qwh-o30-h374-01.xml",
     //"Steiner3-08.xml",
-    //"BinPacking-sum-n1c1w4a.xml",
     //"Vrp-A-n32-k5.xml",
     //"MagicSquare-6-mdd.xml",
     //"StripPacking-C1P1.xml",
 
     //file not found
     //"Pb-robin08.xml",
-
-    // Bug (with Div?)
-    "KnightTour-06-int.xml",
-    "QueenAttacking-06.xml",
 
     // Not working yet, lacking constraint implementation
     "Blackhole-04-3-00.xml",
@@ -69,7 +66,9 @@ class TestXCSP3Parser2 extends TestSuite {
 
 
   // objectif: ramener tout dans OKTests ;-)
-  val OKTests = Array("testExtension1.xml",
+  val OKTests = Array(
+    "MarketSplit-01.xml",
+    "testExtension1.xml",
     "testExtension2.xml",
     "Allergy.xml",
     "AllInterval-005.xml",
@@ -135,10 +134,16 @@ class TestXCSP3Parser2 extends TestSuite {
     "BinPacking-tab-n1c1w4a.xml",
     "Fastfood-ff10.xml",
     "Vrp-P-n16-k8.xml",
-    "Taillard-js-015-15-0.xml"
+    "Taillard-js-015-15-0.xml",
+    "DivisionTest.xml"
     //"testExtension3.xml", //has no solutions
   )
 
+  val OKTestsStatic = Array(
+    "KnightTour-06-int.xml",
+    "QueenAttacking-06.xml",
+    "BinPacking-sum-n1c1w4a.xml"
+  )
 
   for (t <- OKTests) {
     test(t) {
@@ -146,4 +151,9 @@ class TestXCSP3Parser2 extends TestSuite {
     }
   }
 
+  for (t <- OKTestsStatic) {
+    test(t) {
+      assert(isValid("data/xcsp3/instancesTest/"+t, useStaticOrdering = true))
+    }
+  }
 }

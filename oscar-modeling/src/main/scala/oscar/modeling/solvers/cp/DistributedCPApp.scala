@@ -81,8 +81,7 @@ abstract class DistributedCPApp[RetVal](md: ModelDeclaration with DecomposedCPSo
   }
 
 
-  def solve(): (SearchStatistics, List[RetVal])  = solve(0, 0)
-  def solve(nSols: Int, maxTime: Int): (SearchStatistics, List[RetVal]) = solve(modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], nSols, maxTime)
+  def solve(nSols: Int = 0, maxTime: Int = 0): (SearchStatistics, List[RetVal]) = solve(modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], nSols, maxTime)
   def solve(model: UninstantiatedModel): (SearchStatistics, List[RetVal])  = solve(model, 0, 0)
   def solve(model: UninstantiatedModel, nSols: Int, maxTime: Int): (SearchStatistics, List[RetVal]) = {
     if(completeConfig.master.remoteList.isDefined || completeConfig.master.remoteFile.isDefined) {

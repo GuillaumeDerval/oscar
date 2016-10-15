@@ -17,6 +17,8 @@ import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.modeling.solvers.cp.{DistributedCPApp, DistributedCPAppConfig}
 import oscar.modeling.vars.IntVar
 
+import scala.collection.mutable
+
 /**
   * An XCSP3 parser that converts an XCSP3 instance to an OscaR-Modeling model
   * @param modelDeclaration OscaR-Modeling base model declaration
@@ -167,11 +169,15 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     _buildCrtWithCondition(id, Sum(list.zip(coeffs).map(i => varHashMap(i._1.id)*varHashMap(i._2.id))), condition)
   }
 
+  protected lazy val expr_cache: mutable.HashMap[String, IntExpression] = mutable.HashMap()
+
   def _recursiveIntentionBuilder[V](node: XNodeExpr[V]): IntExpression = {
-    node match {
-      case x: XNodeLeaf[V] => _recursiveIntentionBuilderLeafNode(x)
-      case x: XNodeParent[V] => _recursiveIntentionBuilderParentNode(x)
-    }
+    expr_cache.getOrElseUpdate(node.toString(Array(), false), {
+      node match {
+        case x: XNodeLeaf[V] => _recursiveIntentionBuilderLeafNode(x)
+        case x: XNodeParent[V] => _recursiveIntentionBuilderParentNode(x)
+      }
+    })
   }
 
   def _recursiveIntentionBuilderLeafNode[V](node: XNodeLeaf[V]): IntExpression = {
