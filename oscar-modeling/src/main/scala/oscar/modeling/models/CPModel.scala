@@ -280,7 +280,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
       case Implication(a, b) =>
         val v = cp.CPBoolVar(b = true)
         cpSolver.add(new cp.constraints.Implication(postBoolExpressionAndGetVar(a), postBoolExpressionAndGetVar(b), v)) != CPOutcome.Failure
-      case Xor(a, b) => throw new Exception() //TODO: throw valid exception
+      case Xor(a, b) => postBooleanExpression(And(Or(a,b), Not(And(a,b))))
       case v: BoolVar =>
         cpSolver.add(getRepresentative(v).realCPVar.asInstanceOf[cp.CPBoolVar])  != CPOutcome.Failure
     }

@@ -57,8 +57,6 @@ class TestXCSP3Parser2 extends TestSuite {
     // Not working yet, lacking constraint implementation
     "Blackhole-04-3-00.xml",
     "ChessboardColoration-07-07.xml",
-    "Crossword-lex-vg-5-6.xml",
-    "DistinctVectors-30-050-02.xml",
     "Nonogram-001-regular.xml",
     "Ramsey-12.xml",
     "Sat-flat200-00-clause.xml"
@@ -135,7 +133,10 @@ class TestXCSP3Parser2 extends TestSuite {
     "Fastfood-ff10.xml",
     "Vrp-P-n16-k8.xml",
     "Taillard-js-015-15-0.xml",
-    "DivisionTest.xml"
+    "DivisionTest.xml",
+    "Crossword-lex-vg-4-4.xml",
+    "Crossword-lex-vg-5-6.xml",
+    "DistinctVectors-30-050-02.xml"
     //"testExtension3.xml", //has no solutions
   )
 
@@ -144,6 +145,12 @@ class TestXCSP3Parser2 extends TestSuite {
     "QueenAttacking-06.xml",
     "BinPacking-sum-n1c1w4a.xml"
   )
+
+  /*for (t <- KOTests) {
+    test(t) {
+      assert(isValid("data/xcsp3/instancesTest/"+t))
+    }
+  }*/
 
   for (t <- OKTests) {
     test(t) {

@@ -65,7 +65,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     val y = varHashMap(yvi.id)
     val r: IntExpression = opa match {
       case TypeArithmeticOperator.ADD => x + y
-      case TypeArithmeticOperator.DIST => Abs(x - y)
+      case TypeArithmeticOperator.DIST => Dist(x, y)
       case TypeArithmeticOperator.DIV => x / y.evaluate()
       case TypeArithmeticOperator.MUL => x * y
       case TypeArithmeticOperator.SUB => x - y
@@ -101,7 +101,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     val z = varHashMap(zvi.id)
     val r: IntExpression = opa match {
       case TypeArithmeticOperator.ADD => x + y
-      case TypeArithmeticOperator.DIST => Abs(x - y)
+      case TypeArithmeticOperator.DIST => Dist(x, y)
       case TypeArithmeticOperator.DIV => x / y.evaluate()
       case TypeArithmeticOperator.MUL => x * y
       case TypeArithmeticOperator.SUB => x - y
@@ -218,7 +218,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeExpr.NEG => -_recursiveIntentionBuilder(tree.sons(0))
       case TypeExpr.MIN => Min(tree.sons.map(_recursiveIntentionBuilder))
       case TypeExpr.MAX => Max(tree.sons.map(_recursiveIntentionBuilder))
-      case TypeExpr.DIST => Abs(_recursiveIntentionBuilder(tree.sons(0)) - _recursiveIntentionBuilder(tree.sons(1)))
+      case TypeExpr.DIST => Dist(_recursiveIntentionBuilder(tree.sons(0)), _recursiveIntentionBuilder(tree.sons(1)))
       case TypeExpr.NOT => !_recursiveIntentionBuilder(tree.sons(0))
       case TypeExpr.MOD =>
         assert(tree.sons(1).getType == TypeExpr.LONG)
@@ -605,7 +605,6 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
 
   override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = ???
 
-  override def buildCtrAllDifferentList(id: String, lists: Array[Array[XVarInteger]]): Unit = throw new Exception("AllDifferentList is not implemented") // TODO implement with extension
   override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = throw new Exception("AllDifferentExcept is not implemented")
   override def buildCtrMinimum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = throw new Exception("Minimum/MinArg is not implemented")
   override def buildCtrMaximum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = throw new Exception("Maximum/MaxArg is not implemented")

@@ -4,12 +4,10 @@ import org.xcsp.common.XEnums;
 import org.xcsp.common.predicates.XNodeExpr;
 import org.xcsp.common.predicates.XNodeLeaf;
 import org.xcsp.common.predicates.XNodeParent;
-import org.xcsp.parser.XCallbacks2;
-import org.xcsp.parser.XDomains;
-import org.xcsp.parser.XParser;
-import org.xcsp.parser.XVariables;
+import org.xcsp.parser.*;
 
 import java.util.*;
+import java.util.HashSet;
 import java.util.stream.IntStream;
 
 /**
@@ -299,6 +297,117 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
     public void buildCtrNoOverlap2D(String id, XVariables.XVarInteger[] x, int[] dx, XVariables.XVarInteger[] y, int[] dy) {
         unimplementedCase();
     }
+
+    /**
+     * AllDifferentList constraint.
+     *
+     * For each pair of tuple (x,y), maps to
+     * Or(not(eq(x[0],y[0])), not(eq(x[1],y[1])), not(eq(x[2],y[2])), ...)
+     * @param id
+     * @param lists
+     */
+    @Override
+    public void buildCtrAllDifferentList(String id, XVariables.XVarInteger[][] lists) {
+        for(int i = 0; i < lists.length; i++) {
+            XVariables.XVarInteger[] tuple1 = lists[i];
+            for(int j = i+1; j < lists.length; j++) {
+                XVariables.XVarInteger[] tuple2 = lists[j];
+
+                XVariables.XVarInteger[] scope = new XVariables.XVarInteger[tuple1.length*2];
+                System.arraycopy(tuple1, 0, scope, 0, tuple1.length);
+                System.arraycopy(tuple2, 0, scope, tuple1.length, tuple1.length);
+
+
+                XNodeParent<XVariables.XVar>[] orVars = new XNodeParent[tuple1.length];
+
+                for(int k = 0; k < tuple1.length; k++) {
+                    XNodeLeaf<XVariables.XVar> v1 = new XNodeLeaf<>(XEnums.TypeExpr.VAR, tuple1[k]);
+                    XNodeLeaf<XVariables.XVar> v2 = new XNodeLeaf<>(XEnums.TypeExpr.VAR, tuple2[k]);
+                    XNodeParent<XVariables.XVar> eq = new XNodeParent<>(XEnums.TypeExpr.EQ, new XNodeExpr[]{v1, v2});
+                    XNodeParent<XVariables.XVar> not = new XNodeParent<>(XEnums.TypeExpr.NOT, new XNodeExpr[]{eq});
+                    orVars[k] = not;
+                }
+                XNodeParent<XVariables.XVar> or = new XNodeParent<>(XEnums.TypeExpr.OR, orVars);
+                buildCtrIntension(id, scope, or);
+            }
+        }
+    }
+
+    /**
+     * Helper for buildCtrAllDifferentList.
+     *
+     * Build all possibles values that can be taken by a tuple of vars, and creates a new table linking all the instances to a given id (stores the relation tuple -> id in instanceToId)
+     * For simplicity of implem, keys of instances are string, constructed while iterating.
+     */
+    /*protected void generateAllInstanceFromTuple(XVariables.XVarInteger[] tuple, int[] currentContent, int posInTuple, String accumulator,
+                                                HashMap<String, Integer> instanceToId, ArrayList<int[]> table) {
+        if(posInTuple == tuple.length) {
+            int id = instanceToId.size();
+            if(instanceToId.containsKey(accumulator))
+                id = instanceToId.get(accumulator);
+            else
+                instanceToId.put(accumulator, id);
+            //currentContent is of size tuple.length+1, so it's ok
+            currentContent[posInTuple] = id;
+            int[] copy = new int[currentContent.length];
+            System.arraycopy(currentContent, 0, copy, 0, currentContent.length);
+            table.add(copy);
+            return;
+        }
+        XVariables.XVarInteger v = tuple[posInTuple];
+        XDomains.XDomInteger domain = (XDomains.XDomInteger)v.dom;
+        int[] intDomain = XValues.IntegerEntity.toIntArray((XValues.IntegerEntity[])domain.values, Integer.MAX_VALUE);
+        for(int x: intDomain) {
+            currentContent[posInTuple] = x;
+            generateAllInstanceFromTuple(tuple, currentContent, posInTuple+1, accumulator+","+Integer.toString(x), instanceToId, table);
+        }
+    }*/
+
+    /**
+     * AllDifferentList constraint.
+     *
+     * Map to Extension constraint (each "tuple instance" points to an id) and AllDifferent (on ids)
+     *
+     * Too hungry in memory...
+     */
+    /*@Override
+    public void buildCtrAllDifferentList(String id, XVariables.XVarInteger[][] lists) {
+        HashMap<String, Integer> instanceToId = new HashMap<>();
+        ArrayList<int[]>[] tables = new ArrayList[lists.length];
+        for(int i = 0; i < lists.length; i++) {
+            XVariables.XVarInteger[] tuple = lists[i];
+            tables[i] = new ArrayList<>();
+            int[] currentContent = new int[tuple.length+1];
+            generateAllInstanceFromTuple(tuple, currentContent, 0, "", instanceToId, tables[i]);
+        }
+
+        // We now have all our tables, let's create the needed variables
+        XVariables.XVarInteger[] allDiffVars = new XVariables.XVarInteger[lists.length];
+        for(int i = 0; i < lists.length; i++) {
+            allDiffVars[i] = (XVariables.XVarInteger) XVariables.XVar.build(generateReservedArrayIdx(), XVariables.TypeVar.integer, new XDomains.XDomInteger(0, instanceToId.size()));
+            buildVarInteger(allDiffVars[i], 0, instanceToId.size());
+        }
+
+        // Let's create the allDifferent
+        buildCtrAllDifferent(id, allDiffVars);
+
+        // Now we finalize the tables and post them
+        for(int i = 0; i < lists.length; i++) {
+            XVariables.XVarInteger[] tuple = lists[i];
+
+            // Create a new tuple with the "id"
+            XVariables.XVarInteger[] completeTuple = new XVariables.XVarInteger[tuple.length+1];
+            System.arraycopy(tuple, 0, completeTuple, 0, tuple.length);
+            completeTuple[tuple.length] = allDiffVars[i];
+
+            // Generate the table
+            int[][] table = new int[tables[i].size()][tuple.length+1];
+            table = tables[i].toArray(table);
+
+            // Post the table
+            buildCtrExtension(id, completeTuple, table, true, new HashSet<>());
+        }
+    }*/
 
     /**
      * Generate an <instantiation></instantiation> constraint that is the solution given in values.
