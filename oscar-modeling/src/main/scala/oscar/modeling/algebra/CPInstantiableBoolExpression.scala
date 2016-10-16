@@ -1,6 +1,6 @@
 package oscar.modeling.algebra
 
-import oscar.cp.CPBoolVar
+import oscar.cp.{CPBoolVar, CPSolver}
 import oscar.cp.core.CPOutcome
 
 /**
@@ -10,16 +10,16 @@ trait CPInstantiableBoolExpression extends BoolExpression {
   /**
     * Post the expression as a constraint (meaning the expression should be true)
     */
-  def postAsConstraint(): CPOutcome
+  def cpPostAsConstraint(cPSolver: CPSolver): CPOutcome
 
   /**
     * Post the expression, and return a CPIntVar corresponding to its value
     */
-  def postAndGetVar(): CPBoolVar
+  def cpPostAndGetVar(cPSolver: CPSolver): CPBoolVar
 
   /**
     * Post the expression, with 'v' being the value the expression should equal to
     * @param v The value the expression should equal to
     */
-  def postWithVar(v: CPBoolVar): Unit
+  def cpPostWithVar(cPSolver: CPSolver, v: CPBoolVar): Unit
 }

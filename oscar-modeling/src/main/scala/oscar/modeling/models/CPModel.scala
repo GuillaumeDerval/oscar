@@ -165,6 +165,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
 
   override def post(constraint: Constraint): Boolean = {
     constraint match {
+      case instantiable: CPInstantiableConstraint => instantiable.cpPost(cpSolver) != CPOutcome.Failure
       case ExpressionConstraint(expr: BoolExpression) => postBooleanExpression(expr)
       case Among(n, x, s) => cpSolver.post(cp.modeling.constraint.among(postIntExpressionAndGetVar(n), x.map(postIntExpressionAndGetVar), s)) != CPOutcome.Failure
       case MinCumulativeResource(starts, durations, ends, demands, resources, capacity, id) =>
@@ -252,7 +253,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
 
   def postBooleanExpression(expr: BoolExpression): Boolean = {
     expr match {
-      case instantiable: CPInstantiableBoolExpression => instantiable.postAsConstraint() != CPOutcome.Failure
+      case instantiable: CPInstantiableBoolExpression => instantiable.cpPostAsConstraint(cpSolver) != CPOutcome.Failure
       case And(array) =>
         array.forall(i => postBooleanExpression(i))
       case Eq(Array(a, b)) => //binary Eq
@@ -296,7 +297,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
 
   def postBoolExpressionAndGetVar(expr: BoolExpression): cp.CPBoolVar = {
     expr_cache.getOrElseUpdate(expr, expr match {
-      case instantiable: CPInstantiableBoolExpression => instantiable.postAndGetVar()
+      case instantiable: CPInstantiableBoolExpression => instantiable.cpPostAndGetVar(cpSolver)
       case And(x) => //binary And
         val b = cp.CPBoolVar()
         cpSolver.post(new oscar.cp.constraints.And(x.map(postBoolExpressionAndGetVar), b))
@@ -339,7 +340,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
       throw new Exception("Expression already cached given to postBoolExpressionWithVar")
     expr_cache.put(expr, result) //we already know the result
     expr match {
-      case instantiable: CPInstantiableBoolExpression => instantiable.postWithVar(result)
+      case instantiable: CPInstantiableBoolExpression => instantiable.cpPostWithVar(cpSolver, result)
       case And(x) =>
         cpSolver.post(new oscar.cp.constraints.And(x.map(postBoolExpressionAndGetVar), result))
       case Eq(Array(a, b)) => //binary Eq
@@ -375,7 +376,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
       case boolexpr: BoolExpression => postBoolExpressionAndGetVar(boolexpr) //should be done outside expr_cache
                                                                              //as it is updated by postBoolExpressionAndGetVar
       case default => expr_cache.getOrElseUpdate(expr, expr match {
-          case instantiable: CPInstantiableIntExpression => instantiable.postAndGetVar()
+          case instantiable: CPInstantiableIntExpression => instantiable.cpPostAndGetVar(cpSolver)
           case Abs(a) => postIntExpressionAndGetVar(a).abs
           case Constant(a) => cp.CPIntVar(a)
           case Count(x, y) =>
@@ -464,7 +465,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
     expr match {
       case boolexpr: BoolExpression =>
         postBoolExpressionWithVar(boolexpr, result.asInstanceOf[cp.CPBoolVar])
-      case instantiable: CPInstantiableIntExpression => instantiable.postWithVar(result)
+      case instantiable: CPInstantiableIntExpression => instantiable.cpPostWithVar(cpSolver, result)
       case Abs(a) =>
         cpSolver.add(new cp.constraints.Abs(postIntExpressionAndGetVar(expr), result))
       case Constant(a) =>
