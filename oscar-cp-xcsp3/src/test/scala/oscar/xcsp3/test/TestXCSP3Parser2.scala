@@ -57,8 +57,7 @@ class TestXCSP3Parser2 extends TestSuite {
     // Not working yet, lacking constraint implementation
     "ChessboardColoration-07-07.xml",
     "Nonogram-001-regular.xml",
-    "Ramsey-12.xml",
-    "Sat-flat200-00-clause.xml"
+    "Ramsey-12.xml"
   )
 
 
@@ -136,7 +135,8 @@ class TestXCSP3Parser2 extends TestSuite {
     "Crossword-lex-vg-4-4.xml",
     "Crossword-lex-vg-5-6.xml",
     "DistinctVectors-30-050-02.xml",
-    "Blackhole-04-3-00.xml"
+    "Blackhole-04-3-00.xml",
+    "Sat-flat200-00-clause.xml"
     //"testExtension3.xml", //has no solutions
   )
 
@@ -146,13 +146,13 @@ class TestXCSP3Parser2 extends TestSuite {
     "BinPacking-sum-n1c1w4a.xml"
   )
 
-  /*for (t <- KOTests) {
+  for (t <- KOTests) {
     test(t) {
       assert(isValid("data/xcsp3/instancesTest/"+t))
     }
-  }*/
+  }
 
-  for (t <- OKTests) {
+  /*for (t <- OKTests) {
     test(t) {
       assert(isValid("data/xcsp3/instancesTest/"+t))
     }
@@ -162,5 +162,5 @@ class TestXCSP3Parser2 extends TestSuite {
     test(t) {
       assert(isValid("data/xcsp3/instancesTest/"+t, useStaticOrdering = true))
     }
-  }
+  }*/
 }

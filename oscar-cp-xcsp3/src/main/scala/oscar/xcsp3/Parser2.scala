@@ -548,6 +548,10 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       modelDeclaration.post(vars(i) === (newVars(i) === i))
   }
 
+  override def buildCtrClause(id: String, pos: Array[XVarInteger], neg: Array[XVarInteger]): Unit = {
+    modelDeclaration.post(Or(pos.map(e => varHashMap(e.id)).map(_ === 1) ++ neg.map(e => varHashMap(e.id)).map(_ === 0)))
+  }
+
   override def buildCtrMDD(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]]): Unit = {
     // TODO move to XCallbacksDecomp
     case class Transition(orig: String, value: Int, dest: String) {
@@ -697,8 +701,6 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   override def buildCtrNValues(id: String, list: Array[XVarInteger], condition: Condition): Unit = ???
 
   override def buildCtrNotAllEqual(id: String, list: Array[XVarInteger]): Unit = ???
-
-  override def buildCtrClause(id: String, pos: Array[XVarInteger], neg: Array[XVarInteger]): Unit = ???
 
   override def buildCtrRegular(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]], startState: String, finalStates: Array[String]): Unit = ???
 
