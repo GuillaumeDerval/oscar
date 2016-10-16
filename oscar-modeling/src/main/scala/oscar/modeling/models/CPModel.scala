@@ -223,6 +223,8 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         cpSolver.post(cp.modeling.constraint.unaryResource(cpStarts, cpDurations, cpEnds, familyMatrix, families)) != CPOutcome.Failure
       case DiffN(x, dx, y, dy) =>
         cpSolver.post(cp.modeling.constraint.diffn(x.map(postIntExpressionAndGetVar), dx.map(postIntExpressionAndGetVar), y.map(postIntExpressionAndGetVar), dy.map(postIntExpressionAndGetVar)).toArray) != CPOutcome.Failure
+      case Regular(on, automaton) =>
+        cpSolver.post(cp.modeling.constraint.regular(on.map(postIntExpressionAndGetVar), automaton)) != CPOutcome.Failure
       case default => throw new Exception("Unknown constraint "+constraint.getClass.toString) //TODO: put a real exception here
     }
   }
@@ -437,6 +439,10 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
             val v = cp.CPIntVar(expr.min, expr.max)
             cpSolver.add(new oscar.cp.constraints.MulCte(v, y, postIntExpressionAndGetVar(x - Modulo(x, y))))
             v
+          case NValues(x) =>
+            val v = cp.CPIntVar(expr.min, expr.max)
+            cpSolver.add(new oscar.cp.constraints.AtLeastNValue(x.map(postIntExpressionAndGetVar), v))
+            v
           case Exponent(x, y) => throw new Exception() //TODO: real exception
           case v: IntVar =>
             getRepresentative(v).realCPVar
@@ -517,6 +523,8 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         cpSolver.add(cp.modeling.constraint.weightedSum(y, x.map(postIntExpressionAndGetVar), result))
       case Div(x, y) =>
         cpSolver.add(new oscar.cp.constraints.MulCte(result, y, postIntExpressionAndGetVar(x - Modulo(x, y))))
+      case NValues(x) =>
+        cpSolver.add(new oscar.cp.constraints.AtLeastNValue(x.map(postIntExpressionAndGetVar), result))
       case Exponent(x, y) => throw new Exception() //TODO: real exception
       case v: IntVar =>
         throw new Exception("An IntVar should never be given to postIntExpressionWithVar as it should be used before!")

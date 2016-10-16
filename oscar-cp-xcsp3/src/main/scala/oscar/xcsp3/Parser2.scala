@@ -9,6 +9,7 @@ import org.xcsp.parser.XCallbacks
 import org.xcsp.parser.XCallbacks.XCallbacksParameters
 import org.xcsp.parser.XParser.{Condition, ConditionIntvl, ConditionVal, ConditionVar}
 import org.xcsp.parser.XVariables._
+import oscar.cp.constraints.Automaton
 import oscar.modeling.algebra._
 import oscar.modeling.constraints._
 import oscar.modeling.models.ModelDeclaration
@@ -17,6 +18,7 @@ import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.modeling.solvers.cp.{DistributedCPApp, DistributedCPAppConfig}
 import oscar.modeling.vars.IntVar
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 /**
@@ -581,29 +583,26 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     buildCtrExtension(id, list, tableTuples, true, new util.HashSet[TypeFlag]())
   }
 
-  override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[Int], condition: Condition): Unit = {
+  override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[Int], bcondition: Condition): Unit = {
     val setOfVal = values.toSet
     val counterVar: IntExpression = Sum(list.map(x => varHashMap(x.id)).map( x => {
       if(setOfVal.size != 1) InSet(x, setOfVal) else x === setOfVal.head
     }))
 
-    condition match {
-      case condition if (condition.isInstanceOf[ConditionIntvl]) => {
+    bcondition match {
+      case condition: ConditionIntvl =>
         val min = condition.asInstanceOf[ConditionIntvl].min
         val max = condition.asInstanceOf[ConditionIntvl].max
         condition.operator match {
-          case TypeConditionOperator.IN => {
+          case TypeConditionOperator.IN =>
             modelDeclaration.add(counterVar <= max)
             modelDeclaration.add(counterVar >= min)
-          }
-          case TypeConditionOperator.NOTIN => {
+          case TypeConditionOperator.NOTIN =>
             for (v <- min to max) {
               modelDeclaration.add(counterVar !== v)
             }
-          }
         }
-      }
-      case condition if (condition.isInstanceOf[ConditionVal]) => {
+      case condition: ConditionVal =>
         val c = condition.asInstanceOf[ConditionVal].k
         condition.operator match {
           case TypeConditionOperator.LE => modelDeclaration.add(counterVar <= c)
@@ -613,8 +612,8 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
           case TypeConditionOperator.EQ => modelDeclaration.add(counterVar === c)
           case _ => throw new RuntimeException("not supported operator")
         }
-      }
-      case condition if (condition.isInstanceOf[ConditionVar]) => {
+
+      case condition: ConditionVar =>
         val c = varHashMap(condition.asInstanceOf[ConditionVar].x.id)
         condition.operator match {
           case TypeConditionOperator.LE => modelDeclaration.add(counterVar <= c)
@@ -624,12 +623,52 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
           case TypeConditionOperator.EQ => modelDeclaration.add(counterVar === c)
           case _ => throw new RuntimeException("not supported operator")
         }
-      }
     }
   }
 
-  override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = ???
+  override def buildCtrRegular(id: String, list: Array[XVarInteger], transitionsBase: Array[Array[AnyRef]], startStateBase: String, finalStatesBase: Array[String]): Unit = {
+    val transitionsString = transitionsBase.map(x => (x(0).asInstanceOf[String], x(1).asInstanceOf[Long].toInt, x(2).asInstanceOf[String]))
 
+    // First step is to convert all String "ids" of state to an equivalent Integer id
+    val stringToId = mutable.HashMap[String, Integer]()
+    val startState = stringToId.getOrElseUpdate(startStateBase, stringToId.size)
+    val finalStates = finalStatesBase.map(x => stringToId.getOrElseUpdate(x, stringToId.size))
+    var transitions = transitionsString.map({case (from, emit, to) => (stringToId.getOrElseUpdate(from, stringToId.size), emit, stringToId.getOrElseUpdate(to, stringToId.size))})
+
+    // Compute min/max letter to be emitted
+    var minLetter = transitions.map{case (from, emit, to) => emit}.min
+    var maxLetter = transitions.map{case (from, emit, to) => emit}.max
+
+    // The automaton in OscaR work with letters between 0 and maxLetter. If we have minLetter that is below 0, that might pose a problem
+    val variables = if(minLetter < 0) {
+      val newVars = list.map(e => varHashMap(e.id)+minLetter)
+      transitions = transitions.map{case (from, emit, to) => (from, emit+minLetter, to)}
+      maxLetter -= minLetter
+      minLetter = 0
+      newVars
+    }
+    else {
+      list.map(e => varHashMap(e.id))
+    }
+
+    // Now let's create the automaton
+    val automaton = new Automaton(stringToId.size, maxLetter+1, startState, finalStates.toSet.asJava)
+    transitions.foreach{case (from, emit, to) => automaton.addTransition(from, to, emit)}
+
+    // And finally post the constraint
+    modelDeclaration.post(Regular(variables, automaton))
+  }
+
+  override def buildCtrNValues(id: String, list: Array[XVarInteger], condition: Condition): Unit = {
+    _buildCrtWithCondition(id, NValues(list.map(e => varHashMap(e.id))), condition)
+  }
+
+  override def buildCtrNotAllEqual(id: String, list: Array[XVarInteger]): Unit = {
+    // TODO create a better propagator
+    modelDeclaration.post(NValues(list.map(e => varHashMap(e.id))) >= 2)
+  }
+
+  override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = ???
   override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = throw new Exception("AllDifferentExcept is not implemented")
   override def buildCtrMinimum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = throw new Exception("Minimum/MinArg is not implemented")
   override def buildCtrMaximum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = throw new Exception("Maximum/MaxArg is not implemented")
@@ -698,14 +737,8 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
 
   override def buildCtrNValuesExcept(id: String, list: Array[XVarInteger], except: Array[Int], condition: Condition): Unit = ???
 
-  override def buildCtrNValues(id: String, list: Array[XVarInteger], condition: Condition): Unit = ???
-
-  override def buildCtrNotAllEqual(id: String, list: Array[XVarInteger]): Unit = ???
-
-  override def buildCtrRegular(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]], startState: String, finalStates: Array[String]): Unit = ???
-
+  // There is no public instance of XCSP3 with a stretch constraint yet :D
   override def buildCtrStretch(id: String, list: Array[XVarInteger], values: Array[Int], widthsMin: Array[Int], widthsMax: Array[Int]): Unit = ???
-
   override def buildCtrStretch(id: String, list: Array[XVarInteger], values: Array[Int], widthsMin: Array[Int], widthsMax: Array[Int], patterns: Array[Array[Int]]): Unit = ???
 
 

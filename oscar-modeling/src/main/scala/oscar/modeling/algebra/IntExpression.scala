@@ -16,17 +16,17 @@ trait IntExpression extends Serializable {
   def evaluate(): Int
 
   /**
-   * Return a lower bound for this expression
+   * Return a *lower bound* for this expression
    */
   def min: Int
 
   /**
-   * Return a higher bound for this expression
+   * Return a *higher bound* for this expression
    */
   def max: Int
 
   /**
-   * Returns an iterable that contains a superset of the values this expression can have
+   * Returns an iterable that contains a *superset* of the values this expression can have
    */
   def values(): Iterable[Int]
 
