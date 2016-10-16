@@ -225,6 +225,8 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         cpSolver.post(cp.modeling.constraint.diffn(x.map(postIntExpressionAndGetVar), dx.map(postIntExpressionAndGetVar), y.map(postIntExpressionAndGetVar), dy.map(postIntExpressionAndGetVar)).toArray) != CPOutcome.Failure
       case Regular(on, automaton) =>
         cpSolver.post(cp.modeling.constraint.regular(on.map(postIntExpressionAndGetVar), automaton)) != CPOutcome.Failure
+      case NotAllEqual(x) =>
+        cpSolver.post(cp.modeling.constraint.notAllEqual(x.map(postIntExpressionAndGetVar))) != CPOutcome.Failure
       case default => throw new Exception("Unknown constraint "+constraint.getClass.toString) //TODO: put a real exception here
     }
   }

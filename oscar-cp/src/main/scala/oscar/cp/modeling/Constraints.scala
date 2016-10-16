@@ -229,7 +229,7 @@ trait Constraints {
   /**
    * allDifferent Constraint (Available Filtering: Weak, Medium, Strong)
     *
-    * @param variables an non empty array of variables
+    * @param variables a non empty array of variables
    * @return a constraint ensure that no value occurs more than once in variables
    */
   def allDifferent(variables: Array[CPIntVar]): Constraint = {
@@ -245,6 +245,15 @@ trait Constraints {
    */
   def softAllDifferent(variables: Array[CPIntVar], violations: CPIntVar): Constraint = {
     new SoftAllDifferent(variables, violations)
+  }
+
+  /**
+    * notAllEqual Constraint
+    * @param variables a non empty array of variables
+    * @return a constraint that ensures there is a least two values in 'variables' that are not equal (they are not all equal)
+    */
+  def notAllEqual(variables: Array[CPIntVar]): Constraint = {
+    new NotAllEqual(variables)
   }
 
   /**

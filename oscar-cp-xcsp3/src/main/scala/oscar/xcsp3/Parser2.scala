@@ -664,8 +664,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   override def buildCtrNotAllEqual(id: String, list: Array[XVarInteger]): Unit = {
-    // TODO create a better propagator
-    modelDeclaration.post(NValues(list.map(e => varHashMap(e.id))) >= 2)
+    modelDeclaration.post(NotAllEqual(list.map(e => varHashMap(e.id))))
   }
 
   override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = ???
