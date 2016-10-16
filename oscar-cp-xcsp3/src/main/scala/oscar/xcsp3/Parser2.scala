@@ -528,6 +528,26 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     modelDeclaration.post(Eq(list.map(e => varHashMap(e.id))))
   }
 
+  override def buildCtrChannel(id: String, list1: Array[XVarInteger], startIndex1: Int, list2: Array[XVarInteger], startIndex2: Int): Unit = {
+    modelDeclaration.post(Inverse(list1.map(e => varHashMap(e.id)).map(e => if(startIndex1 == 0) e else e-startIndex1),
+      list2.map(e => varHashMap(e.id)).map(e => if(startIndex2 == 0) e else e-startIndex2)))
+  }
+
+  override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int): Unit = {
+    val corrected = list.map(e => varHashMap(e.id)).map(e => if(startIndex == 0) e else e-startIndex)
+    modelDeclaration.post(Inverse(corrected, corrected))
+  }
+
+  override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int, pos: XVarInteger): Unit = {
+    // In this form, each variable has only domain 0/1. 'pos' should point to the index of the first variable having 1 as value
+    val vars = list.map(e => varHashMap(e.id))
+    val posVar = varHashMap(pos.id)
+    val newVars = list.indices.map(idx => IntVar(Set(idx, list.length))).toArray
+    modelDeclaration.post(Inverse(newVars :+ posVar, newVars :+ posVar))
+    for(i <- vars.indices)
+      modelDeclaration.post(vars(i) === (newVars(i) === i))
+  }
+
   override def buildCtrMDD(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]]): Unit = {
     // TODO move to XCallbacksDecomp
     case class Transition(orig: String, value: Int, dest: String) {
@@ -679,12 +699,6 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   override def buildCtrNotAllEqual(id: String, list: Array[XVarInteger]): Unit = ???
 
   override def buildCtrClause(id: String, pos: Array[XVarInteger], neg: Array[XVarInteger]): Unit = ???
-
-  override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int): Unit = ???
-
-  override def buildCtrChannel(id: String, list1: Array[XVarInteger], startIndex1: Int, list2: Array[XVarInteger], startIndex2: Int): Unit = ???
-
-  override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int, value: XVarInteger): Unit = ???
 
   override def buildCtrRegular(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]], startState: String, finalStates: Array[String]): Unit = ???
 

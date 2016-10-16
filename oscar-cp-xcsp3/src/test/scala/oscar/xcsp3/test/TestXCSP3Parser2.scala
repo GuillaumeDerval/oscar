@@ -55,7 +55,6 @@ class TestXCSP3Parser2 extends TestSuite {
     //"Pb-robin08.xml",
 
     // Not working yet, lacking constraint implementation
-    "Blackhole-04-3-00.xml",
     "ChessboardColoration-07-07.xml",
     "Nonogram-001-regular.xml",
     "Ramsey-12.xml",
@@ -136,7 +135,8 @@ class TestXCSP3Parser2 extends TestSuite {
     "DivisionTest.xml",
     "Crossword-lex-vg-4-4.xml",
     "Crossword-lex-vg-5-6.xml",
-    "DistinctVectors-30-050-02.xml"
+    "DistinctVectors-30-050-02.xml",
+    "Blackhole-04-3-00.xml"
     //"testExtension3.xml", //has no solutions
   )
 
