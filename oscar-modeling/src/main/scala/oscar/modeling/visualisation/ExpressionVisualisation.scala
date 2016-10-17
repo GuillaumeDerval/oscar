@@ -100,8 +100,8 @@ class ConstraintsVisualisation(constraints: Array[Constraint], name: String) {
 
       //terminal expressions
       case Constant(a) => terminalNodeCreate(expr, "Constant ("+a.toString+")")
-      case i: BoolVar => terminalNodeCreate(expr, if(i.getRepresentativeName.isDefined) i.getRepresentativeName.get+" (BoolVar)" else "BoolVar")
-      case i: IntVar => terminalNodeCreate(expr, if(i.getRepresentativeName.isDefined) i.getRepresentativeName.get+" (IntVar)" else "IntVar")
+      case i: BoolVar => terminalNodeCreate(expr, if(i.name.isDefined) i.name.get+" (BoolVar)" else "BoolVar")
+      case i: IntVar => terminalNodeCreate(expr, if(i.name.isDefined) i.name.get+" (IntVar)" else "IntVar")
 
       //More complicated expressions
       case Count(array, value) =>
@@ -169,11 +169,11 @@ class TerminalNodeDisplay(viewer: Viewer, graph: Graph) extends ViewerListener {
     expr match {
       case a: BoolVar =>
         println("Var id: "+a.varid)
-        a.getRepresentativeName.map(name => println("\tVar name: "+name))
+        a.name.foreach(name => println("\tVar name: "+name))
         println("\tBoolean value: "+a.iterator.mkString(","))
       case a: IntVar =>
         println("Var id: "+a.varid)
-        a.getRepresentativeName.map(name => println("\tVar name: "+name))
+        a.name.foreach(name => println("\tVar name: "+name))
         println("\tInteger value: "+a.iterator.mkString(","))
       case Constant(a) =>
         println("Constant value: "+a.toString)

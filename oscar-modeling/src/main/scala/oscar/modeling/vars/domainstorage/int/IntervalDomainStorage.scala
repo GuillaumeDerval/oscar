@@ -57,5 +57,5 @@ class IntervalDomainStorage(min_value: Int, max_value: Int, repr_name: Option[St
   /**
    * Return a representative name for this var(-like), if one was given
    */
-  override def getRepresentativeName: Option[String] = repr_name
+  override def name: Option[String] = repr_name
 }

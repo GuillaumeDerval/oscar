@@ -6,7 +6,7 @@ import oscar.modeling.misc.VariableNotBoundException
 import oscar.modeling.models.ModelDeclaration
 import oscar.modeling.vars.domainstorage.int.IntDomainStorage
 
-class BoolVar(model_decl: ModelDeclaration, id: Int) extends IntVar(model_decl, id) with BoolVarLike with BoolExpression
+class BoolVar(model_decl: ModelDeclaration, id: Int, name: Option[String]) extends IntVar(model_decl, id, name) with BoolVarLike with BoolExpression
 {
   /**
    * @return a constraint that imposes this variable is true
@@ -29,7 +29,7 @@ class BoolVar(model_decl: ModelDeclaration, id: Int) extends IntVar(model_decl, 
 
 object BoolVar {
   def apply(containsFalse: Boolean, containsTrue: Boolean, name: Option[String] = None)(implicit model_decl: ModelDeclaration) = {
-    new BoolVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(if (containsFalse) 0 else 1, if (containsFalse) 1 else 0, name)))
+    new BoolVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(if (containsFalse) 0 else 1, if (containsFalse) 1 else 0, name)), name)
   }
-  def apply()(implicit model_decl: ModelDeclaration) = new BoolVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(0,1)))
+  def apply()(implicit model_decl: ModelDeclaration) = new BoolVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(0,1)), None)
 }

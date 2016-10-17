@@ -73,7 +73,7 @@ object CPModel {
     }
 
     // Merge IntVars in the same Eq
-    /*for(setObj <- allSets) {
+    for(setObj <- allSets) {
       val set = setObj.data.get
       val intvars = set.filter(_.isInstanceOf[IntVar]).map(_.asInstanceOf[IntVar]).toArray
       val notIntvars = set.filterNot(_.isInstanceOf[IntVar])
@@ -83,7 +83,7 @@ object CPModel {
         val newDomainStorage = new SetDomainStorage(newDomain)
         representatives = (1 until intvars.length).foldLeft(p.intRepresentatives){case (iR, idx) => iR.union(intvars(0), intvars(idx), newDomainStorage)}
       }
-    }*/
+    }
 
     // Map each expression to a constant representing the equality which it is in
     val exprToEq : Map[IntExpression, Int] = allSets.zipWithIndex.flatMap{case (eq, idx) => eq.data.get.map(_ -> idx)}.toMap

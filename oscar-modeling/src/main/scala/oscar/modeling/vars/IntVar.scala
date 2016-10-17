@@ -12,7 +12,7 @@ import scala.util.Random
  * Represents a variable with Integer domain
  * @param model_decl: the ModelDeclaration associated with this Var
  */
-class IntVar(model_decl: ModelDeclaration, id: Int) extends Var(model_decl, id) with IntVarLike with IntExpression {
+class IntVar(model_decl: ModelDeclaration, id: Int, name: Option[String]) extends Var(model_decl, id, name) with IntVarLike with IntExpression {
   protected def getRepresentative: IntVarImplem = model_decl.getCurrentModel.getRepresentative(this).asInstanceOf[IntVarImplem]
   override def isBound: Boolean = getRepresentative.isBound
   override def randomValue(implicit rand: Random): Int = getRepresentative.randomValue(rand)
@@ -22,7 +22,6 @@ class IntVar(model_decl: ModelDeclaration, id: Int) extends Var(model_decl, id) 
   override def valueAfter(value: Int): Option[Int] = getRepresentative.valueAfter(value)
   override def iterator: Iterator[Int] = getRepresentative.iterator
   override def hasValue(value: Int): Boolean = getRepresentative.hasValue(value)
-  override def getRepresentativeName: Option[String] = getRepresentative.getRepresentativeName
 
   override def reify()(implicit modelDeclaration: ModelDeclaration): IntVar = this
   override def evaluate(): Int = if(isBound) max else throw new VariableNotBoundException()
@@ -32,40 +31,40 @@ class IntVar(model_decl: ModelDeclaration, id: Int) extends Var(model_decl, id) 
   override def mapSubexpressions(func: (IntExpression) => IntExpression): IntExpression = this
 
   override def toString(): String = {
-    getRepresentativeName.getOrElse("IntVar")
+    name.getOrElse("IntVar")
   }
 }
 
 object IntVar {
   def apply(minValue: Int, maxValue: Int)(implicit model_decl: ModelDeclaration) = {
-    new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(minValue, maxValue)))
+    new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(minValue, maxValue)), None)
   }
 
   def apply(content: Set[Int])(implicit model_decl: ModelDeclaration) = {
-    new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(content)))
+    new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(content)), None)
   }
 
   def apply(content: SortedSet[Int])(implicit model_decl: ModelDeclaration) = {
-    new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(content)))
+    new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(content)), None)
   }
 
   def apply(value: Int)(implicit model_decl: ModelDeclaration) = {
-    new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(value)))
+    new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(value)), None)
   }
 
   def apply(minValue: Int, maxValue: Int, name: Option[String])(implicit model_decl: ModelDeclaration) = {
-    new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(minValue, maxValue, name)))
+    new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(minValue, maxValue, name)), name)
   }
 
   def apply(content: Set[Int], name: Option[String])(implicit model_decl: ModelDeclaration) = {
-    new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(content, name)))
+    new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(content, name)), name)
   }
 
   def apply(content: SortedSet[Int], name: Option[String])(implicit model_decl: ModelDeclaration) = {
-    new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(content, name)))
+    new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(content, name)), name)
   }
 
   def apply(value: Int, name: Option[String])(implicit model_decl: ModelDeclaration) = {
-    new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(value, name)))
+    new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(value, name)), name)
   }
 }

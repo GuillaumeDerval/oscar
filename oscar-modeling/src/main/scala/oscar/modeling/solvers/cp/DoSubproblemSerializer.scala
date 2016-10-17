@@ -23,13 +23,17 @@ class DoSubproblemSerializer(system: ExtendedActorSystem) extends AkkaSerializer
   class IntVarSerializer(system: ExtendedActorSystem) extends Serializer[IntVar] with IKryoRegistrar {
     override def write(kryo: Kryo, output: Output, obj: IntVar): Unit = {
       output.writeInt(obj.varid)
+      output.writeBoolean(obj.name.isDefined)
+      if(obj.name.isDefined)
+        output.writeString(obj.name.get)
       kryo.writeClassAndObject(output, obj.model_decl.uuid)
     }
 
     override def read(kryo: Kryo, input: Input, t: Class[IntVar]): IntVar = {
       val id = input.readInt()
+      val name = if(input.readBoolean()) Some(input.readString()) else None
       val uuid = kryo.readClassAndObject(input).asInstanceOf[java.util.UUID]
-      new IntVar(DoSubproblemSerializer.get(uuid), id)
+      new IntVar(DoSubproblemSerializer.get(uuid), id, name)
     }
 
     override def apply(k: Kryo): Unit = {
@@ -43,13 +47,16 @@ class DoSubproblemSerializer(system: ExtendedActorSystem) extends AkkaSerializer
   class BoolVarSerializer(system: ExtendedActorSystem) extends Serializer[BoolVar] with IKryoRegistrar {
     override def write(kryo: Kryo, output: Output, obj: BoolVar): Unit = {
       output.writeInt(obj.varid)
+      if(obj.name.isDefined)
+        output.writeString(obj.name.get)
       kryo.writeClassAndObject(output, obj.model_decl.uuid)
     }
 
     override def read(kryo: Kryo, input: Input, t: Class[BoolVar]): BoolVar = {
       val id = input.readInt()
+      val name = if(input.readBoolean()) Some(input.readString()) else None
       val uuid = kryo.readClassAndObject(input).asInstanceOf[java.util.UUID]
-      new BoolVar(DoSubproblemSerializer.get(uuid), id)
+      new BoolVar(DoSubproblemSerializer.get(uuid), id, name)
     }
 
     override def apply(k: Kryo): Unit = {

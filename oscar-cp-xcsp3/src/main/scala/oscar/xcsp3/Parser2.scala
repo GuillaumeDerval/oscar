@@ -755,7 +755,7 @@ object XCSP3Parser2 {
   def parse(modelDeclarator: ModelDeclaration, filename: String): (Iterable[IntVar], () => String) = {
     val parser = new XCSP3Parser2(modelDeclarator, filename)
     val vars = parser.varHashMap.values.map(i => i.asInstanceOf[IntVar]).toArray
-    (vars, () => parser.generateInstantiationWithSymbolic(vars.map(x => x.getRepresentativeName.get), vars.map(x => x.evaluate())))
+    (vars, () => parser.generateInstantiationWithSymbolic(vars.map(x => x.name.get), vars.map(x => x.evaluate())))
   }
 }
 

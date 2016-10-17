@@ -57,5 +57,5 @@ class AdaptableIntDomainStorage(val content: IntDomainStorage) extends IntDomain
   /**
    * Return a representative name for this var(-like), if one was given
    */
-  override def getRepresentativeName: Option[String] = content.getRepresentativeName
+  override def name: Option[String] = content.name
 }
