@@ -4,10 +4,11 @@ import oscar.modeling.algebra._
 import oscar.modeling.constraints._
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp
-import cp.constraints.tables.TableAlgo
 import cp.constraints.{CPObjective, CPObjectiveUnit, CPObjectiveUnitMaximize, CPObjectiveUnitMinimize}
-import cp.core.{CPOutcome, CPPropagStrength}
+import cp.core.{CPOutcome, CPPropagStrength, NoSolutionException}
 import cp.{CPBoolVarOps, CPIntVarOps}
+import oscar.algo.DisjointSets
+import oscar.modeling.models.CPModel.{InstantiateAndReuse, InstantiateAndStoreInCache}
 import oscar.modeling.vars.cp.int.{CPBoolVar => ModelCPBoolVar, CPIntVar => ModelCPIntVar}
 import oscar.modeling.vars.domainstorage.int._
 import oscar.modeling.vars.{BoolVar, IntVar}
@@ -17,101 +18,122 @@ import scala.collection.mutable
 private case class CPCstEq(expr: IntExpression, cst: Int) extends Constraint
 
 object CPModel {
+  private case class InstantiateAndStoreInCache(expr: IntExpression) extends Constraint
+  private case class InstantiateAndReuse(reuseFrom: IntExpression, toInstantiate: IntExpression) extends Constraint
 
   /**
     * Preprocess some things in order to improve performance of the solver
     * Currently preprocessed:
-    * - Nothing :D
+    * - Eq constraints
     *
-    * // TODO
-    * - Eq constraints. Merge IntVar together, generate correct instantiation order for max efficiency
+    * TODO merge IntVars together
     */
   private def preprocessCP(p: UninstantiatedModel): UninstantiatedModel = {
     // Find all the Eq
-    //val eqs = p.constraints.filter(_.isInstanceOf[Eq]).asInstanceOf[Array[Eq]]
-    p
+    val eqs = p.constraints.filter{case ExpressionConstraint(eq: Eq) => true; case _ => false}.map{case ExpressionConstraint(eq: Eq) => eq}.toArray
+    if(eqs.isEmpty) //nothing to do here
+      return p
+
+    val otherConstraints = p.constraints.filter{case ExpressionConstraint(eq: Eq) => false; case _ => true}
+
+    // Find, for each expression, in which eq they are. The goal is to merge eq as much as possible
+    val exprToSet = mutable.HashMap[IntExpression, mutable.Set[Int]]()
+    for((eq, idx) <- eqs.zipWithIndex)
+      for(expr <- eq.v)
+        exprToSet.getOrElseUpdate(expr, mutable.Set()).add(idx)
+
+    // Merge all the Eq containing same expressions
+    val unionFind = new DisjointSets[mutable.Set[IntExpression]](0, eqs.length-1)
+    for((expr, set) <- exprToSet) {
+      set.sliding(2).map(_.toArray).foreach{
+        case Array(a,b) => unionFind.union(a,b)
+        case Array(a) => //ignore
+      }
+    }
+
+    // Each set in allSets is a new Eq
+    val allSets = eqs.indices.map(unionFind.find).toSet
+    allSets.foreach(_.data = Some(mutable.Set()))
+    for((expr, set) <- exprToSet) {
+      set.foreach(unionFind.find(_).data.get.add(expr))
+    }
+
+    // Map each expression to a constant representing the equality which it is in
+    val exprToEq : Map[IntExpression, Int] = allSets.zipWithIndex.flatMap{case (eq, idx) => eq.data.get.map(_ -> idx)}.toMap
+
+    // Generate instantiation order (constants first, then toposort of the expressions)
+    val topoSortOrder = expressionTopoSort(allSets.flatMap(_.data.get))
+
+    // Select the variable to instantiate for each Eq (the first appearing in the toposort)
+    // Create InstantiateAndStoreInCache for each of these
+    val newEqConstraints = mutable.ArrayBuffer[Constraint]()
+    val eqFirstExpr = Array.fill[IntExpression](allSets.size)(null)
+    val exprUsed = Array.fill(exprToEq.size)(false)
+    for((expr,idx) <- topoSortOrder.zipWithIndex) {
+      val eq = exprToEq(expr)
+      if(null == eqFirstExpr(eq)) {
+        eqFirstExpr(eq) = expr
+        exprUsed(idx) = true
+        newEqConstraints += InstantiateAndStoreInCache(expr)
+      }
+    }
+
+    // Create InstantiateAndReuse for all the other values (linked to the Eq, in the order of the toposort)
+    for((expr,idx) <- topoSortOrder.zipWithIndex; if !exprUsed(idx)) {
+      newEqConstraints += InstantiateAndReuse(eqFirstExpr(exprToEq(expr)), expr)
+    }
+
+    val newConstraints: List[Constraint]= /*eqs.map(ExpressionConstraint(_)).toList ++*/ newEqConstraints.toList ++ otherConstraints
+    UninstantiatedModel(p.declaration, newConstraints, p.intRepresentatives, p.optimisationMethod)
   }
 
-  /**
-    * Preprocess the given arguments of an equality constraint.
-    *
-    * Returns new constraints that will replace the current one, and pairs of IntDomainStorage to be merged together
-    */
-  /*private def preprocessEquality(exprs: Array[IntExpression]): (Array[Constraint], Array[(IntVar, IntVar)], Array[(IntVar, Int)]) = {
-    // We first need to find everything that is:
-    // - An IntVar
-    // - A view of an IntVar (Prod, Sum, Minus, UnaryMinus with constants)
-    // - A constant
-
-    object ViewType extends Enumeration {
-      //MinusL = variable - constant
-      //MinusR = constant - variable
-      val Prod, Sum, MinusL, MinusR, UnaryMinus, None = Value
-    }
-
+  private def expressionTopoSort(expressions: Set[IntExpression]): Array[IntExpression] = {
     /**
-      * Compute the value that a variable X should take to make
-      * X op cst = result
+      * Fix some problems with on-the-fly-generated subexprs.
+      * For example, as Div generates a Minus(y-Modulo(x,y)), we should ensures we checks its dependencies correctly
       */
-    def computeValueForView(op: ViewType.Value, cst: Int, result: Int): Int = {
-      op match {
-        case ViewType.Prod =>
-          if(result % cst != 0) throw new Exception("Impossible")
-          result / cst
-        case ViewType.Sum => result - cst
-        case ViewType.MinusL =>
-          //X - cst == result ===> X == result + cst
-          result + cst
-        case ViewType.MinusR =>
-          //cst - X == result ===> X == cst - result
-          cst - result
-        case ViewType.UnaryMinus => -result
-        case ViewType.None => result
+    def customSubExpr(expr: IntExpression): Iterable[IntExpression] = expr match {
+      case Div(x, y) => Array(x - Modulo(x, y))
+      case Xor(a,b) => Array(And(Or(a,b), Not(And(a,b))))
+      case default => default.subexpressions()
+    }
+
+    // Create the dependency graph
+    val links = expressions.map(_ -> mutable.Set[IntExpression]()).toMap
+
+    for(expr <- expressions) {
+      def recurFind(subExprs: Iterable[IntExpression]): Unit = {
+        for(subExpr <- subExprs) {
+          if(expressions.contains(subExpr))
+            links(subExpr).add(expr) //subExpr must be instantiated before expr
+          else
+            recurFind(customSubExpr(subExpr))
+        }
       }
+      recurFind(customSubExpr(expr))
     }
 
-    var constant: Option[Int] = None
-    val variables: mutable.MutableList[(IntVar, ViewType.Value, Int)] = mutable.MutableList()
-    val remaining: mutable.MutableList[(IntExpression, ViewType.Value, Int)] = mutable.MutableList()
+    // We now have the graph, let's toposort it
+    val visited = mutable.HashMap[IntExpression, Boolean]()
+    visited ++= expressions.map(_ -> false)
 
-    def viewVerifier(orig: IntExpression, content: Array[IntExpression], viewTypeL: ViewType.Value, viewTypeR: ViewType.Value): Unit = {
-      content match {
-        case Array(c: Constant, v: IntVar) => variables += ((v, viewTypeR, c.value))
-        case Array(c: Constant, v: IntExpression) => remaining += ((v, viewTypeR, c.value))
-        case Array(v: IntVar, c: Constant) => variables += ((v, viewTypeL, c.value))
-        case Array(v: IntExpression, c: Constant) => remaining += ((v, viewTypeL, c.value))
-        case default => remaining += ((orig, ViewType.None, 0))
-      }
+    val topo = mutable.Stack[IntExpression]()
+
+    def DFSVisit(expr: IntExpression): Unit = {
+      visited.put(expr, true)
+      links(expr).foreach(node => if(!visited(node)) DFSVisit(node))
+      topo.push(expr)
     }
+    for(expr <- expressions; if !visited(expr)) DFSVisit(expr)
 
-    for(expr <- exprs) expr match {
-      case Constant(a) =>
-        if(constant.isEmpty) constant = Some(a)
-        //if old constant does not equal to the one we just found, eq is impossible
-        else if(constant.get != a) throw new Exception("Two != constant in Eq constraint")
-      case Prod(x) => viewVerifier(expr, x, ViewType.Prod, ViewType.Prod)
-      case Sum(x) => viewVerifier(expr, x, ViewType.Sum, ViewType.Sum)
-      case Minus(a,b) => viewVerifier(expr, Array(a,b), ViewType.MinusL, ViewType.MinusR)
-      case UnaryMinus(a: IntVar) => variables += ((a, ViewType.UnaryMinus, 0))
-      case UnaryMinus(a: IntExpression) => remaining += ((a, ViewType.UnaryMinus, 0))
-      case default => remaining += ((expr, ViewType.None, 0))
+    // Get the effective order.
+    topo.toArray.sortBy{ //sortBy is stable
+      case _: Constant => 0 //Put constants before everything else, as by def they do not have subexprs
+      case _: BoolVar => 1 //Then put BoolVars as they should not have a big domain
+      case _: IntVar => 2 //Then IntVar, as they are already instantiated
+      case default => 3 //Then evrything that is not one of the above
     }
-
-    // If we have a constant, it is simple: simply post everything and assign the constant to the variables received
-    if(constant.isDefined) {
-        return (remaining.map(t => CPCstEq(t._1, computeValueForView(t._2, t._3, constant.get))),
-               variables.sliding(2).map(a => (a(0).,a(1))),
-
-        )
-        variables.foreach(t => cpSolver.add(postIntExpressionAndGetVar(t._1) === computeValueForView(t._2, t._3, constant.get)))
-        remaining.foreach(t => cpSolver.add(postIntExpressionAndGetVar(t._1) === computeValueForView(t._2, t._3, constant.get)))
-
-      return true
-    }
-
-    // TODO
-
-  }*/
+  }
 }
 
 /**
@@ -166,6 +188,18 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
   override def post(constraint: Constraint): Boolean = {
     constraint match {
       case instantiable: CPInstantiableConstraint => instantiable.cpPost(cpSolver) != CPOutcome.Failure
+      case InstantiateAndStoreInCache(expr) =>
+        postIntExpressionAndGetVar(expr)
+        true
+      case InstantiateAndReuse(reuse, expr) =>
+        try {
+          val orig = postIntExpressionAndGetVar(reuse)
+          postIntExpressionWithVar(expr, orig)
+          true
+        }
+        catch {
+          case _: NoSolutionException => false
+        }
       case ExpressionConstraint(expr: BoolExpression) => postBooleanExpression(expr)
       case Among(n, x, s) => cpSolver.post(cp.modeling.constraint.among(postIntExpressionAndGetVar(n), x.map(postIntExpressionAndGetVar), s)) != CPOutcome.Failure
       case MinCumulativeResource(starts, durations, ends, demands, resources, capacity, id) =>
@@ -289,6 +323,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
       case Xor(a, b) => postBooleanExpression(And(Or(a,b), Not(And(a,b))))
       case v: BoolVar =>
         cpSolver.add(getRepresentative(v).realCPVar.asInstanceOf[cp.CPBoolVar])  != CPOutcome.Failure
+      case default => throw new Exception("Unknown BoolExpression "+default.getClass.toString) //TODO: put a real exception here
     }
   }
 
@@ -332,14 +367,17 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         cpSolver.post(new cp.constraints.InSetReif(postIntExpressionAndGetVar(a), b, c))
         c
       case v: BoolVar => getRepresentative(v).realCPVar.asInstanceOf[cp.CPBoolVar]
+      case default => throw new Exception("Unknown BoolExpression "+default.getClass.toString) //TODO: put a real exception here
     }).asInstanceOf[cp.CPBoolVar]
   }
 
   def postBoolExpressionWithVar(expr: BoolExpression, result: cp.CPBoolVar): Unit = {
-    if(expr_cache.contains(expr))
-      throw new Exception("Expression already cached given to postBoolExpressionWithVar")
-    expr_cache.put(expr, result) //we already know the result
-    expr match {
+    if(expr_cache.contains(expr)) {
+      // This should not happen too often, but is still feasible as we create new expr on the fly
+      println("An expression given to postBoolExpressionWithVar has already been instantiated!")
+      cpSolver.post(expr_cache(expr) === result)
+    }
+    val ret = expr match {
       case instantiable: CPInstantiableBoolExpression => instantiable.cpPostWithVar(cpSolver, result)
       case And(x) =>
         cpSolver.post(new oscar.cp.constraints.And(x.map(postBoolExpressionAndGetVar), result))
@@ -367,8 +405,12 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         cpSolver.post(new cp.constraints.Implication(postBoolExpressionAndGetVar(a), postBoolExpressionAndGetVar(b), result))
       case Xor(a, b) => postBoolExpressionWithVar(And(Or(a,b), Not(And(a,b))), result)
       case InSet(a, b) => cpSolver.post(new cp.constraints.InSetReif(postIntExpressionAndGetVar(a), b, result))
-      case v: BoolVar => throw new Exception() //TODO: throw valid exception
+      case v: BoolVar => cpSolver.post(postBoolExpressionAndGetVar(v) === result)
+      case default => throw new Exception("Unknown BoolExpression "+default.getClass.toString) //TODO: put a real exception here
     }
+    // Must ABSOLUTELY be put AFTER all the calls to postIntExpressionAndGetVar
+    expr_cache.put(expr, result)
+    ret
   }
 
   def postIntExpressionAndGetVar(expr: IntExpression): cp.CPIntVar = {
@@ -453,16 +495,19 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
           case Exponent(x, y) => throw new Exception() //TODO: real exception
           case v: IntVar =>
             getRepresentative(v).realCPVar
+          case default => throw new Exception("Unknown IntExpression "+default.getClass.toString) //TODO: put a real exception here
         }
       )
     }
   }
 
   def postIntExpressionWithVar(expr: IntExpression, result: cp.CPIntVar): Unit = {
-    if(expr_cache.contains(expr))
-      throw new Exception("Expression already cached given to postIntExpressionWithVar")
-    expr_cache.put(expr, result)
-    expr match {
+    if(expr_cache.contains(expr)) {
+      // This should not happen too often, but is still feasible as we create new expr on the fly
+      println("An expression given to postBoolExpressionWithVar has already been instantiated!")
+      cpSolver.post(expr_cache(expr) === result)
+    }
+    val ret = expr match {
       case boolexpr: BoolExpression =>
         postBoolExpressionWithVar(boolexpr, result.asInstanceOf[cp.CPBoolVar])
       case instantiable: CPInstantiableIntExpression => instantiable.cpPostWithVar(cpSolver, result)
@@ -489,18 +534,10 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
       case Min(x) =>
         val vx = x.map(postIntExpressionAndGetVar)
         cpSolver.add(cp.minimum(vx, result))
-      case Minus(x: Constant, y) =>
-        throw new Exception("Minus with a constant should never be called in postIntExpressionWithVar as it should return a view!")
-      case Minus(x, y: Constant) =>
-        throw new Exception("Minus with a constant should never be called in postIntExpressionWithVar as it should return a view!")
       case Minus(x, y) =>
         cpSolver.add(new oscar.cp.constraints.BinarySum(result,postIntExpressionAndGetVar(y),postIntExpressionAndGetVar(x)))
       case Modulo(x, y) =>
         cpSolver.add(new CPIntVarOps(postIntExpressionAndGetVar(x)) % y == result)
-      case Prod(Array(x: Constant, y)) =>
-        throw new Exception("Prod with a constant should never be called in postIntExpressionWithVar as it should return a view!")
-      case Prod(Array(x, y: Constant)) =>
-        throw new Exception("Prod with a constant should never be called in postIntExpressionWithVar as it should return a view!")
       case Prod(Array(x, y)) => //binary prod
         cpSolver.add(new oscar.cp.constraints.MulVar(postIntExpressionAndGetVar(x), postIntExpressionAndGetVar(y), result))
       case Prod(x) => //n-ary prod
@@ -514,19 +551,14 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
               case Array(a) => a
             }).toArray)
         }
-
         val bprod = recurmul(x.map(postIntExpressionAndGetVar))
         cpSolver.add(new oscar.cp.constraints.MulVar(bprod(0), bprod(1), result))
-      case Sum(Array(x: Constant, y)) =>
-        throw new Exception("Sum with a constant should never be called in postIntExpressionWithVar as it should return a view!")
-      case Sum(Array(x, y: Constant)) =>
-        throw new Exception("Sum with a constant should never be called in postIntExpressionWithVar as it should return a view!")
       case Sum(Array(x, y)) => //binary sum
         cpSolver.add(new oscar.cp.constraints.BinarySum(postIntExpressionAndGetVar(x), postIntExpressionAndGetVar(y), result))
       case Sum(x) => //n-ary sum
         cpSolver.add(cp.modeling.constraint.sum(x.map(postIntExpressionAndGetVar), result))
       case UnaryMinus(a) =>
-        throw new Exception("UnaryMinus should never be called in postIntExpressionWithVar as it should return a view!")
+        cpSolver.add(result === -postIntExpressionAndGetVar(a))
       case WeightedSum(x, y) =>
         cpSolver.add(cp.modeling.constraint.weightedSum(y, x.map(postIntExpressionAndGetVar), result))
       case Div(x, y) =>
@@ -535,8 +567,12 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         cpSolver.add(new oscar.cp.constraints.AtLeastNValue(x.map(postIntExpressionAndGetVar), result))
       case Exponent(x, y) => throw new Exception() //TODO: real exception
       case v: IntVar =>
-        throw new Exception("An IntVar should never be given to postIntExpressionWithVar as it should be used before!")
+        cpSolver.add(postIntExpressionAndGetVar(v) === result)
+      case default => throw new Exception("Unknown IntExpression "+default.getClass.toString) //TODO: put a real exception here
     }
+    // Must ABSOLUTELY be put AFTER all the calls to postIntExpressionAndGetVar
+    expr_cache.put(expr, result)
+    ret
   }
 
   /**
