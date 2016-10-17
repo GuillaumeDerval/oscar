@@ -13,6 +13,7 @@ import oscar.modeling.vars.cp.int.{CPBoolVar => ModelCPBoolVar, CPIntVar => Mode
 import oscar.modeling.vars.domainstorage.int._
 import oscar.modeling.vars.{BoolVar, IntVar}
 
+import scala.collection.immutable
 import scala.collection.mutable
 
 private case class CPCstEq(expr: IntExpression, cst: Int) extends Constraint
@@ -29,6 +30,8 @@ object CPModel {
     * TODO merge IntVars together
     */
   private def preprocessCP(p: UninstantiatedModel): UninstantiatedModel = {
+    var representatives = p.intRepresentatives
+
     // Find all the Eq
     val eqs = p.constraints.filter{case ExpressionConstraint(eq: Eq) => true; case _ => false}.map{case ExpressionConstraint(eq: Eq) => eq}.toArray
     if(eqs.isEmpty) //nothing to do here
@@ -51,12 +54,36 @@ object CPModel {
       }
     }
 
+    // Merge all the Eq containing "same" IntVars (pointing to the same effective values)
+    val intvarsToSet = exprToSet.filter(_._1.isInstanceOf[IntVar]).toArray.asInstanceOf[Array[(IntVar, mutable.Set[Int])]]
+    for(i <- 0 until intvarsToSet.size) {
+      val repr1 = p.getRepresentative(intvarsToSet(i)._1)
+      for(j <- i+1 until intvarsToSet.size) {
+        val repr2 = p.getRepresentative(intvarsToSet(j)._1)
+        if(repr1 == repr2)
+          unionFind.union(intvarsToSet(i)._2.head, intvarsToSet(i)._1.head)
+      }
+    }
+
     // Each set in allSets is a new Eq
     val allSets = eqs.indices.map(unionFind.find).toSet
     allSets.foreach(_.data = Some(mutable.Set()))
     for((expr, set) <- exprToSet) {
       set.foreach(unionFind.find(_).data.get.add(expr))
     }
+
+    // Merge IntVars in the same Eq
+    /*for(setObj <- allSets) {
+      val set = setObj.data.get
+      val intvars = set.filter(_.isInstanceOf[IntVar]).map(_.asInstanceOf[IntVar]).toArray
+      val notIntvars = set.filterNot(_.isInstanceOf[IntVar])
+      if(intvars.length > 1) {
+        // Compute new domain
+        val newDomain = immutable.SortedSet[Int]() ++ intvars.map(p.getRepresentative(_).toVector.toSet).reduceLeft((a,b)=> b.intersect(a))
+        val newDomainStorage = new SetDomainStorage(newDomain)
+        representatives = (1 until intvars.length).foldLeft(p.intRepresentatives){case (iR, idx) => iR.union(intvars(0), intvars(idx), newDomainStorage)}
+      }
+    }*/
 
     // Map each expression to a constant representing the equality which it is in
     val exprToEq : Map[IntExpression, Int] = allSets.zipWithIndex.flatMap{case (eq, idx) => eq.data.get.map(_ -> idx)}.toMap
@@ -83,8 +110,8 @@ object CPModel {
       newEqConstraints += InstantiateAndReuse(eqFirstExpr(exprToEq(expr)), expr)
     }
 
-    val newConstraints: List[Constraint]= /*eqs.map(ExpressionConstraint(_)).toList ++*/ newEqConstraints.toList ++ otherConstraints
-    UninstantiatedModel(p.declaration, newConstraints, p.intRepresentatives, p.optimisationMethod)
+    val newConstraints: List[Constraint]= newEqConstraints.toList ++ otherConstraints
+    UninstantiatedModel(p.declaration, newConstraints, representatives, p.optimisationMethod)
   }
 
   private def expressionTopoSort(expressions: Set[IntExpression]): Array[IntExpression] = {
