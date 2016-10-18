@@ -17,6 +17,7 @@ package oscar.cp.test
 import oscar.cp._
 import oscar.cp.testUtils._
 import oscar.cp.constraints.GCCFWC
+import oscar.cp.core.CPPropagStrength
 
 class TestGCCFWC extends TestSuite {
 
@@ -76,6 +77,53 @@ class TestGCCFWC extends TestSuite {
     add(new GCCFWC(x, minVal, Low, Up))
     search { binaryFirstFail(x) }
     cp.start().nSols should be(14)
+  }
+
+  test("Test 7: test mapping from AllDifferent to GCCFWC") {
+    val theAllDiff = Array(
+      Array(2,10,11),
+      Array(11,14),
+      Array(8,9,10,17),
+      Array(8,9,10),
+      Array(2,9,13),
+      Array(8,10,17),
+      Array(8,9,11),
+      Array(11,13,17)
+    )
+
+    val removalOrder = Array(
+      (4, Array(2)),
+      (0, Array(11, 10)),
+      (2, Array(8)),
+      (3, Array(9, 10)),
+      (5, Array(8)),
+      (6, Array(8)),
+      (2, Array(17, 10)),
+      (4, Array(9)),
+      (6, Array(9))
+      //after this, there are no more calls to whenDomainChanges
+    )
+
+    val wrongSolution = Array(2,11,9,8,13,10,11,11)
+
+    val solutionIsWrong = try {
+      implicit val solver = CPSolver()
+      val x = theAllDiff.map(domain => CPIntVar(domain))
+      solver.add(oscar.cp.modeling.constraint.allDifferent(x), CPPropagStrength.Weak) //GCCFWC
+      for ((idx, toRemove) <- removalOrder) {
+        solver.add(toRemove.map(value => x(idx) !== value))
+      }
+      //once you have pushed removalOrder, the constraint was wrongly marked as Success
+      for((value, idx) <- wrongSolution.zipWithIndex)
+        solver.add(x(idx) === value)
+      //this should have raised a NoSolutionException
+      false
+    }
+    catch {
+      case e: NoSolutionException => true
+    }
+
+    assert(solutionIsWrong)
   }
 }
 
