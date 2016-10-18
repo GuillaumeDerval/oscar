@@ -58,6 +58,7 @@ class TestXCSP3Parser2 extends TestSuite {
 
   // objectif: ramener tout dans OKTests ;-)
   val OKTests = Array(
+    "bqwh-18-141-02_X2.xml",
     "CryptoPuzzle-cross-roads-danger.xml",
     "MarketSplit-01.xml",
     "testExtension1.xml",

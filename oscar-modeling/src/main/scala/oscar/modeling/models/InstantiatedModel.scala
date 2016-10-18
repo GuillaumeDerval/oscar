@@ -35,8 +35,8 @@ abstract class InstantiatedModel(p: UninstantiatedModel) extends LeafModel {
   override val intRepresentatives: ModelVarStorage[IntVar, IntVarImplementation] = ModelVarStorage[IntVar, IntVarImplementation, IntDomainStorage](p.intRepresentatives, instantiateDomainStorage)
   override val optimisationMethod: OptimisationMethod = p.optimisationMethod
 
-  for(c <- p.constraints)
-    post(c)
+  if(!p.constraints.forall(post))
+    throw NoSolException()
 
   protected def instantiateDomainStorage(v: DomainStorage): IntVarImplementation = {
     v match {

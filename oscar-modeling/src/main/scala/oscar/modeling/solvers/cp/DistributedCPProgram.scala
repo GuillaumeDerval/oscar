@@ -124,9 +124,6 @@ class DistributedCPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[R
     * @return
     */
   def solve(model: UninstantiatedModel, subproblemCount: Int, systemConfig: Config, createSolvers: (ActorSystem, ActorRef) => List[ActorRef], nSols: Int, maxTime: Int): (SearchStatistics, List[RetVal]) = {
-    if(maxTime != 0)
-      throw new Exception("maxTime is not yet implemented in distributed/parallel mode")
-
     modelDeclaration.apply(model) {
       val subproblems: List[SubProblem] = computeTimeTaken("decomposition", "solving") {
         getDecompositionStrategy.decompose(model, subproblemCount)
@@ -173,6 +170,11 @@ class DistributedCPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[R
         statWatcher.start()
         // TODO this maybe should be in SolverMaster
         subsolvers.foreach((a) => a ! StartMessage())
+
+        if(maxTime != 0) {
+          import system.dispatcher
+          system.scheduler.scheduleOnce(maxTime milliseconds, masterActor, SolveTimeout())
+        }
 
         Await.result(system.whenTerminated, Duration.Inf)
       }
@@ -307,6 +309,13 @@ class SolverMaster[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPS
           broadcastRouter.route(AskForSolutionRecap(), self)
         }
       }
+    case SolveTimeout() =>
+      // We are done here
+      stillAcceptSolutions = false
+      broadcastRouter.route(AllDoneMessage(), self)
+      outputQueue.add(AllDoneMessage())
+      terminating = true
+      context.system.terminate()
     case SolutionMessage(solution, None) =>
       if(stillAcceptSolutions) {
         outputQueue.add(SolutionMessage(solution, None))

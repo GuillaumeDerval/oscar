@@ -42,7 +42,7 @@ class ModelDeclaration extends Serializable {
     * @param constraint the constraint to post
    */
   def post(constraint: Constraint): Unit = current_model.value match {
-    case m: InstantiatedModel => postinstantiated(m, constraint)
+    case m: InstantiatedModel => postInstantiated(m, constraint)
     case m: UninstantiatedModel => postUninstantiated(m, constraint)
     case null => println("WTF")
   }
@@ -58,8 +58,9 @@ class ModelDeclaration extends Serializable {
     * @param model the model on which to post the constraint
     * @param constraint the constraint to post
     */
-  private def postinstantiated(model: InstantiatedModel, constraint: Constraint): Unit = {
-    model.post(constraint)
+  private def postInstantiated(model: InstantiatedModel, constraint: Constraint): Unit = {
+    if(!model.post(constraint))
+      throw NoSolException()
   }
 
   /**

@@ -62,6 +62,7 @@ trait Watcher[RetVal] {
   */
 trait SolvingMessage
 trait MasterToSolverMessage extends SolvingMessage
+trait MasterToMasterMessage extends SolvingMessage
 trait SolverToMasterMessage extends SolvingMessage
 trait WatcherMessage extends SolvingMessage
 
@@ -82,6 +83,7 @@ case class AllDoneMessage() extends MasterToSolverMessage with WatcherMessage
 case class HelloMessage() extends MasterToSolverMessage with SolverToMasterMessage
 case class ConfigMessage(forceImmediateSend: Boolean) extends MasterToSolverMessage
 case class StartMessage() extends MasterToSolverMessage
+case class SolveTimeout() extends MasterToMasterMessage
 
 /**
   * Class that runs watchers, and send them the info from the output queue

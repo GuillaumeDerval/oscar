@@ -46,11 +46,10 @@ class AllDifferent(x: Array[CPIntVar]) extends Constraint(x(0).store) {
 
     val lightAllDiff = {
       if (permutation) {
-        val min = allValues.min
-        val cards = Array.tabulate(allValues.size)(v => if (allValues.contains(v+min)) 1 else 0)
-        //println(min+" cards:"+cards.mkString(","))
-        new GCCFWC(x,min,cards,cards)
-        //new AllDiffFWC(x)
+        val minVal = allValues.min
+        val maxVal = allValues.max
+        val cards = Array.tabulate(maxVal - minVal + 1)(v => if (allValues.contains(v + minVal)) 1 else 0)
+        new GCCFWC(x, minVal, cards, cards)
       }
       else new AllDiffFWC(x)
     }

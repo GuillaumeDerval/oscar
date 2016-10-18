@@ -803,7 +803,7 @@ object RunEverything extends DistributedCPApp[String] with App {
   def getFolderContent(dir: String):List[File] = {
     val d = new File(dir)
     if (d.exists && d.isDirectory) {
-      d.listFiles.toList
+      d.listFiles.toList.sortBy(_.getName)
     } else {
       List[File]()
     }
@@ -814,8 +814,7 @@ object RunEverything extends DistributedCPApp[String] with App {
     .map(f => (f.getName, f))
     .flatMap(x => getFolderContent(x._2.getAbsolutePath).filter(_.isDirectory).map(f => (x._1+"/"+f.getName, f)))
       .flatMap(x => {
-        getFolderContent(x._2.getAbsolutePath).filter(_.getName.endsWith(".lzma")).sortBy(f => f.length()).map(f => (x._1, f.getName, f.getAbsolutePath))
-
+        getFolderContent(x._2.getAbsolutePath).filter(_.getName.endsWith(".lzma")).map(f => (x._1, f.getName, f.getAbsolutePath))
       })
 
   val working = scala.collection.mutable.MutableList[String]()

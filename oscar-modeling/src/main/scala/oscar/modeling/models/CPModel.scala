@@ -30,6 +30,7 @@ object CPModel {
     * TODO merge IntVars together
     */
   private def preprocessCP(p: UninstantiatedModel): UninstantiatedModel = {
+    return p
     var representatives = p.intRepresentatives
 
     // Find all the Eq
