@@ -28,7 +28,11 @@ class DistributedCPAppConfig extends Subcommand("master") {
     descr = "Path to a file listing hostname:port of remote clients, one per line",
     default = None)(singleArgConverter(HostnameParser.parseFromFile))
   val enableGUI = opt[Boolean]("gui", descr = "Enable the GUI. Disabled by default")
+  val timeout = opt[Int](name="timeout", short='t', descr = "Timeout for the *solving*, in milliseconds. 0 (default) means no timeout", default = Some(0))
+  val nSols = opt[Int](name="nsols", short='n',  descr = "Maximum number of solutions to find before stopping the solve. 0 (default) tells the solver to find all the solutions", default = Some(0))
   mutuallyExclusive(threads, remoteList, remoteFile)
+
+  footer("\nTo start a client (for distributed solving), see <command> client --help")
 }
 
 /**
@@ -60,9 +64,14 @@ abstract class DistributedCPApp[RetVal](md: ModelDeclaration with DecomposedCPSo
   extends DistributedCPProgram[RetVal](md) with App {
 
   lazy val config = new DistributedCPAppConfig()             //laziness ensures that if the variable is overridden...
-  lazy val completeConfig = new DistributedCPAppCompleteConfig(args) {
-      override lazy val master = config                      //..., it is loaded at this point
-    }
+
+  lazy val completeConfig = new DistributedCPAppCompleteConfig({
+    if(args.isEmpty) Array("master")
+    else if(args(0) != "master" && args(0) != "client") Array("master") ++ args
+    else args
+  }){
+    override lazy val master = config                      //..., it is loaded at this point
+  }
   completeConfig.verify()
 
   completeConfig.subcommand match {
@@ -81,8 +90,9 @@ abstract class DistributedCPApp[RetVal](md: ModelDeclaration with DecomposedCPSo
   }
 
 
-  def solve(nSols: Int = 0, maxTime: Int = 0): (SearchStatistics, List[RetVal]) = solve(modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], nSols, maxTime)
-  def solve(model: UninstantiatedModel): (SearchStatistics, List[RetVal])  = solve(model, 0, 0)
+  def solve(nSols: Int = config.nSols.get.get, maxTime: Int = config.timeout.get.get): (SearchStatistics, List[RetVal]) =
+    solve(modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], nSols, maxTime)
+  def solve(model: UninstantiatedModel): (SearchStatistics, List[RetVal])  = solve(model, config.nSols.get.get, config.timeout.get.get)
   def solve(model: UninstantiatedModel, nSols: Int, maxTime: Int): (SearchStatistics, List[RetVal]) = {
     if(completeConfig.master.remoteList.isDefined || completeConfig.master.remoteFile.isDefined) {
       super.solveDistributed(model,
