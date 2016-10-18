@@ -3,12 +3,13 @@ package oscar.xcsp3
 import java.io.File
 import java.util
 
-import org.xcsp.common.XEnums._
-import org.xcsp.common.predicates.{XNodeExpr, XNodeLeaf, XNodeParent}
-import org.xcsp.parser.XCallbacks
-import org.xcsp.parser.XCallbacks.XCallbacksParameters
-import org.xcsp.parser.XParser.{Condition, ConditionIntvl, ConditionVal, ConditionVar}
-import org.xcsp.parser.XVariables._
+import org.xcsp.common.Condition
+import org.xcsp.common.Condition.{ConditionIntvl, ConditionRel, ConditionVal, ConditionVar}
+import org.xcsp.common.Interfaces.IVar
+import org.xcsp.common.Types._
+import org.xcsp.common.predicates.{XNode, XNodeLeaf, XNodeParent}
+import org.xcsp.parser.XCallbacks.{Implem, XCallbacksParameters}
+import org.xcsp.parser.entries.XVariables.{XVar, XVarInteger}
 import oscar.cp.constraints.Automaton
 import oscar.modeling.algebra._
 import oscar.modeling.constraints._
@@ -30,16 +31,15 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   implicit val implModelDeclaration = modelDeclaration
   val varHashMap = collection.mutable.LinkedHashMap[String, IntExpression]() //automagically maintains the order of insertion
 
-  // Force parameter update
-  XCallbacks.callbacksParameters.clear()
-  XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_UNARY_INTENSION_CASES, new Object)
-  XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_BINARY_INTENSION_CASES,  new Object)
-  XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_TERNARY_INTENSION_CASES,  new Object)
-  //XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_COUNT_CASES,  new Object)
-  XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_NVALUES_CASES,  new Object)
-  XCallbacks.callbacksParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, 0:java.lang.Integer) // included
-  XCallbacks.callbacksParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000:java.lang.Integer)
-  XCallbacks.callbacksParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, false:java.lang.Boolean)
+  val implem = new Implem(this)
+  implem.currentParameters.clear()
+  implem.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_UNARY_INTENSION_CASES, new Object)
+  implem.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_BINARY_INTENSION_CASES,  new Object)
+  implem.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_TERNARY_INTENSION_CASES,  new Object)
+  implem.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_NVALUES_CASES,  new Object)
+  implem.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, 0:java.lang.Integer) // included
+  implem.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000:java.lang.Integer)
+  implem.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, false:java.lang.Boolean)
 
 
   loadInstance(filename)
@@ -47,24 +47,24 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   // Variables
   override def buildVarInteger(x: XVarInteger, minValue: Int, maxValue: Int): Unit = {
     //println("Adding var "+x.id)
-    varHashMap += ((x.id, IntVar(minValue, maxValue, Some(x.id))))
+    varHashMap += x.id() -> IntVar(minValue, maxValue, Some(x.id()))
   }
 
   override def buildVarInteger(x: XVarInteger, values: Array[Int]): Unit = {
-    varHashMap += ((x.id, IntVar(values.toSet, Some(x.id))))
+    varHashMap += x.id() -> IntVar(values.toSet, Some(x.id()))
   }
 
   // Constraints
   override def buildCtrAllDifferent(id: String, list: Array[XVarInteger]): Unit = {
     //println("Adding AllDifferent "+id)
-    val cst = AllDifferent(list.map(elem => varHashMap(elem.id)))
+    val cst = AllDifferent(list.map(elem => varHashMap(elem.id())))
     modelDeclaration.add(cst)
   }
 
   override def buildCtrPrimitive(id: String, xvi: XVarInteger, opa: TypeArithmeticOperator, yvi: XVarInteger, op: TypeConditionOperatorRel, k: Int): Unit = {
     //println(id)
-    val x = varHashMap(xvi.id)
-    val y = varHashMap(yvi.id)
+    val x = varHashMap(xvi.id())
+    val y = varHashMap(yvi.id())
     val r: IntExpression = opa match {
       case TypeArithmeticOperator.ADD => x + y
       case TypeArithmeticOperator.DIST => Dist(x, y)
@@ -85,7 +85,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   override def buildCtrPrimitive(id: String, xvi: XVarInteger, op: TypeConditionOperatorRel, k: Int): Unit = {
-    val r = varHashMap(xvi.id)
+    val r = varHashMap(xvi.id())
     val r2 = (op match {
       case TypeConditionOperatorRel.EQ => r === k
       case TypeConditionOperatorRel.GE => r >= k
@@ -98,9 +98,9 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   override def buildCtrPrimitive(id: String, xvi: XVarInteger, opa: TypeArithmeticOperator, yvi: XVarInteger, op: TypeConditionOperatorRel, zvi: XVarInteger): Unit = {
-    val x = varHashMap(xvi.id)
-    val y = varHashMap(yvi.id)
-    val z = varHashMap(zvi.id)
+    val x = varHashMap(xvi.id())
+    val y = varHashMap(yvi.id())
+    val z = varHashMap(zvi.id())
     val r: IntExpression = opa match {
       case TypeArithmeticOperator.ADD => x + y
       case TypeArithmeticOperator.DIST => Dist(x, y)
@@ -124,57 +124,47 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     val expr2: Array[BoolExpression] = operator match {
       case c: ConditionVal =>
         c.operator match {
-          case TypeConditionOperator.EQ => Array(expr === c.k)
-          case TypeConditionOperator.GE => Array(expr >= c.k)
-          case TypeConditionOperator.GT => Array(expr > c.k)
-          case TypeConditionOperator.LE => Array(expr <= c.k)
-          case TypeConditionOperator.LT => Array(expr < c.k)
-          case TypeConditionOperator.NE => Array(expr !== c.k)
-          case TypeConditionOperator.IN => throw new XCSP3ParseException("Invalid operator IN on a ConditionVal")
-          case TypeConditionOperator.NOTIN => throw new XCSP3ParseException("Invalid operator NOTIN on a ConditionVal")
+          case TypeConditionOperatorRel.EQ => Array(expr === c.k)
+          case TypeConditionOperatorRel.GE => Array(expr >= c.k)
+          case TypeConditionOperatorRel.GT => Array(expr > c.k)
+          case TypeConditionOperatorRel.LE => Array(expr <= c.k)
+          case TypeConditionOperatorRel.LT => Array(expr < c.k)
+          case TypeConditionOperatorRel.NE => Array(expr !== c.k)
         }
       case c: ConditionVar =>
         c.operator match {
-          case TypeConditionOperator.EQ => Array(expr === varHashMap(c.x.id))
-          case TypeConditionOperator.GE => Array(expr >= varHashMap(c.x.id))
-          case TypeConditionOperator.GT => Array(expr > varHashMap(c.x.id))
-          case TypeConditionOperator.LE => Array(expr <= varHashMap(c.x.id))
-          case TypeConditionOperator.LT => Array(expr < varHashMap(c.x.id))
-          case TypeConditionOperator.NE => Array(expr !== varHashMap(c.x.id))
-          case TypeConditionOperator.IN => throw new XCSP3ParseException("Invalid operator IN on a ConditionVar")
-          case TypeConditionOperator.NOTIN => throw new XCSP3ParseException("Invalid operator NOTIN on a ConditionVar")
+          case TypeConditionOperatorRel.EQ => Array(expr === varHashMap(c.x.id()))
+          case TypeConditionOperatorRel.GE => Array(expr >= varHashMap(c.x.id()))
+          case TypeConditionOperatorRel.GT => Array(expr > varHashMap(c.x.id()))
+          case TypeConditionOperatorRel.LE => Array(expr <= varHashMap(c.x.id()))
+          case TypeConditionOperatorRel.LT => Array(expr < varHashMap(c.x.id()))
+          case TypeConditionOperatorRel.NE => Array(expr !== varHashMap(c.x.id()))
         }
       case c: ConditionIntvl =>
         c.operator match {
-          case TypeConditionOperator.EQ => throw new XCSP3ParseException("Invalid operator EQ on a ConditionIntvl")
-          case TypeConditionOperator.GE => throw new XCSP3ParseException("Invalid operator GE on a ConditionIntvl")
-          case TypeConditionOperator.GT => throw new XCSP3ParseException("Invalid operator GT on a ConditionIntvl")
-          case TypeConditionOperator.LE => throw new XCSP3ParseException("Invalid operator LE on a ConditionIntvl")
-          case TypeConditionOperator.LT => throw new XCSP3ParseException("Invalid operator LT on a ConditionIntvl")
-          case TypeConditionOperator.NE => throw new XCSP3ParseException("Invalid operator NE on a ConditionIntvl")
-          case TypeConditionOperator.IN => Array(expr <= c.max, expr >= c.min)
-          case TypeConditionOperator.NOTIN => Array(Or(Array(expr > c.max, expr < c.min)))
+          case TypeConditionOperatorSet.IN => Array(expr <= c.max, expr >= c.min)
+          case TypeConditionOperatorSet.NOTIN => Array(Or(Array(expr > c.max, expr < c.min)))
         }
     }
     expr2.map(_.toConstraint).foreach(modelDeclaration.add)
   }
 
   override def buildCtrSum(id: String, list: Array[XVarInteger], condition: Condition): Unit = {
-    _buildCrtWithCondition(id, Sum(list.map(i => varHashMap(i.id))), condition)
+    _buildCrtWithCondition(id, Sum(list.map(i => varHashMap(i.id()))), condition)
   }
 
   override def buildCtrSum(id: String, list: Array[XVarInteger], coeffs: Array[Int], condition: Condition): Unit = {
-    _buildCrtWithCondition(id, WeightedSum(list.map(i => varHashMap(i.id)), coeffs), condition)
+    _buildCrtWithCondition(id, WeightedSum(list.map(i => varHashMap(i.id())), coeffs), condition)
   }
 
   override def buildCtrSum(id: String, list: Array[XVarInteger], coeffs: Array[XVarInteger], condition: Condition): Unit = {
-    _buildCrtWithCondition(id, Sum(list.zip(coeffs).map(i => varHashMap(i._1.id)*varHashMap(i._2.id))), condition)
+    _buildCrtWithCondition(id, Sum(list.zip(coeffs).map(i => varHashMap(i._1.id())*varHashMap(i._2.id()))), condition)
   }
 
   protected lazy val expr_cache: mutable.HashMap[String, IntExpression] = mutable.HashMap()
 
-  def _recursiveIntentionBuilder[V](node: XNodeExpr[V]): IntExpression = {
-    expr_cache.getOrElseUpdate(node.toString(Array(), false), {
+  def _recursiveIntentionBuilder[V <: IVar](node: XNode[V]): IntExpression = {
+    expr_cache.getOrElseUpdate(node.toString, {
       node match {
         case x: XNodeLeaf[V] => _recursiveIntentionBuilderLeafNode(x)
         case x: XNodeParent[V] => _recursiveIntentionBuilderParentNode(x)
@@ -182,14 +172,14 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     })
   }
 
-  def _recursiveIntentionBuilderLeafNode[V](node: XNodeLeaf[V]): IntExpression = {
+  def _recursiveIntentionBuilderLeafNode[V <: IVar](node: XNodeLeaf[V]): IntExpression = {
     node.getType match {
       case TypeExpr.VAR => varHashMap(node.value.toString)
       case TypeExpr.LONG => node.value.asInstanceOf[Long].toInt
     }
   }
 
-  def _recursiveIntentionBuilderParentNode[V](tree: XNodeParent[V]): IntExpression = {
+  def _recursiveIntentionBuilderParentNode[V <: IVar](tree: XNodeParent[V]): IntExpression = {
     tree.getType match {
       case TypeExpr.IN =>
         assert(tree.sons(1).getType == TypeExpr.SET)
@@ -275,23 +265,23 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     }
   }
 
-  override def buildCtrIntension(id: String, scope: Array[XVarInteger], syntaxTreeRoot: XNodeParent[XVar]): Unit = {
+  override def buildCtrIntension(id: String, scope: Array[XVarInteger], syntaxTreeRoot: XNodeParent[XVarInteger]): Unit = {
     val cst = _recursiveIntentionBuilder(syntaxTreeRoot).asInstanceOf[BoolExpression].toConstraint
     modelDeclaration.add(cst)
   }
 
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[Int], occurs: Array[Int]): Unit = {
-    val cst = GCC(list.map(i => varHashMap(i.id)), values, occurs, occurs)
+    val cst = GCC(list.map(i => varHashMap(i.id())), values, occurs, occurs)
     modelDeclaration.add(cst)
   }
 
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[Int], occursMin: Array[Int], occursMax: Array[Int]): Unit = {
-    val cst = GCC(list.map(i => varHashMap(i.id)), values, occursMin, occursMax)
+    val cst = GCC(list.map(i => varHashMap(i.id())), values, occursMin, occursMax)
     modelDeclaration.add(cst)
   }
 
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[Int], occurs: Array[XVarInteger]): Unit = {
-    val cst = GCC(list.map(i => varHashMap(i.id)), values, occurs.map(i => varHashMap(i.id)))
+    val cst = GCC(list.map(i => varHashMap(i.id())), values, occurs.map(i => varHashMap(i.id())))
     modelDeclaration.add(cst)
   }
 
@@ -306,7 +296,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeOperator.SUPSEQ => ???
       case TypeOperator.SUPSET => ???
     }
-    list.map(i => varHashMap(i.id)).sliding(2).map{x => rel(x(0), x(1))}.foreach(modelDeclaration.post)
+    list.map(i => varHashMap(i.id())).sliding(2).map{x => rel(x(0), x(1))}.foreach(modelDeclaration.post)
   }
 
 
@@ -314,77 +304,77 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     assert(!flags.contains(TypeFlag.STARRED_TUPLES)) // no sense!
     if(positive) {
       //InSet constraint
-      modelDeclaration.add(InSet(varHashMap(x.id), values.toSet))
+      modelDeclaration.add(InSet(varHashMap(x.id()), values.toSet))
     }
     else {
-      val v = varHashMap(x.id)
+      val v = varHashMap(x.id())
       values.foreach(y => modelDeclaration.add(v !== y))
     }
   }
 
   override def buildCtrExtension(id: String, list: Array[XVarInteger], tuples: Array[Array[Int]], positive: Boolean, flags: util.Set[TypeFlag]): Unit = {
-    //println(list.map(x => x.id).mkString(" "))
+    //println(list.map(x => x.id()).mkString(" "))
     val cst: Constraint = if(positive) {
-      Table(list.map(x => varHashMap(x.id)), tuples, if(flags.contains(TypeFlag.STARRED_TUPLES)) Some(Integer.MAX_VALUE-1) else None)
+      Table(list.map(x => varHashMap(x.id())), tuples, if(flags.contains(TypeFlag.STARRED_TUPLES)) Some(Integer.MAX_VALUE-1) else None)
     }
     else {
-      NegativeTable(list.map(x => varHashMap(x.id)), tuples, if(flags.contains(TypeFlag.STARRED_TUPLES)) Some(Integer.MAX_VALUE-1) else None)
+      NegativeTable(list.map(x => varHashMap(x.id())), tuples, if(flags.contains(TypeFlag.STARRED_TUPLES)) Some(Integer.MAX_VALUE-1) else None)
     }
     modelDeclaration.add(cst)
   }
 
   override def buildCtrInstantiation(id: String, list: Array[XVarInteger], values: Array[Int]): Unit = {
-    val csts = list.zip(values).map(x => (varHashMap(x._1.id) === x._2).toConstraint)
+    val csts = list.zip(values).map(x => (varHashMap(x._1.id()) === x._2).toConstraint)
     csts.foreach(modelDeclaration.add)
   }
 
   override def buildCtrElement(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, value: XVarInteger): Unit = {
     if(rank != TypeRank.ANY)
       throw new Exception("Element constraint only supports ANY as position for the index")
-    val array = list.map(x => varHashMap(x.id))
-    val indexExpr = if(startIndex == 0) varHashMap(index.id) else varHashMap(index.id) - startIndex
-    val valueExpr = varHashMap(value.id)
+    val array = list.map(x => varHashMap(x.id()))
+    val indexExpr = if(startIndex == 0) varHashMap(index.id()) else varHashMap(index.id()) - startIndex
+    val valueExpr = varHashMap(value.id())
     modelDeclaration.add(array(indexExpr) === valueExpr)
   }
 
   override def buildCtrElement(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, value: Int): Unit = {
     if(rank != TypeRank.ANY)
       throw new Exception("Element constraint only supports ANY as position for the index")
-    val array = list.map(x => varHashMap(x.id))
-    val indexExpr = if(startIndex == 0) varHashMap(index.id) else varHashMap(index.id) - startIndex
+    val array = list.map(x => varHashMap(x.id()))
+    val indexExpr = if(startIndex == 0) varHashMap(index.id()) else varHashMap(index.id()) - startIndex
     modelDeclaration.add(array(indexExpr) === value)
   }
 
   override def buildCtrAmong(id: String, list: Array[XVarInteger], values: Array[Int], k: Int): Unit = {
-    modelDeclaration.add(Among(k, list.map(x => varHashMap(x.id)), values.toSet))
+    modelDeclaration.add(Among(k, list.map(x => varHashMap(x.id())), values.toSet))
   }
 
   override def buildCtrAmong(id: String, list: Array[XVarInteger], values: Array[Int], k: XVarInteger): Unit = {
-    modelDeclaration.add(Among(varHashMap(k.id), list.map(x => varHashMap(x.id)), values.toSet))
+    modelDeclaration.add(Among(varHashMap(k.id()), list.map(x => varHashMap(x.id())), values.toSet))
   }
 
   override def buildCtrExactly(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = {
-    modelDeclaration.add(Among(k, list.map(x => varHashMap(x.id)), value))
+    modelDeclaration.add(Among(k, list.map(x => varHashMap(x.id())), value))
   }
 
   override def buildCtrExactly(id: String, list: Array[XVarInteger], value: Int, k: XVarInteger): Unit = {
-    modelDeclaration.add(Among(varHashMap(k.id), list.map(x => varHashMap(x.id)), value))
+    modelDeclaration.add(Among(varHashMap(k.id()), list.map(x => varHashMap(x.id())), value))
   }
 
   override def buildCtrAtLeast(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = {
-    modelDeclaration.add(AtLeast(k, list.map(x => varHashMap(x.id)), value))
+    modelDeclaration.add(AtLeast(k, list.map(x => varHashMap(x.id())), value))
   }
 
   override def buildCtrAtMost(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = {
-    modelDeclaration.add(AtMost(k, list.map(x => varHashMap(x.id)), value))
+    modelDeclaration.add(AtMost(k, list.map(x => varHashMap(x.id())), value))
   }
 
   override def buildCtrMinimum(id: String, list: Array[XVarInteger], condition: Condition): Unit = {
-    _buildCrtWithCondition(id, Min(list.map(x => varHashMap(x.id))), condition)
+    _buildCrtWithCondition(id, Min(list.map(x => varHashMap(x.id()))), condition)
   }
 
   override def buildCtrMaximum(id: String, list: Array[XVarInteger], condition: Condition): Unit = {
-    _buildCrtWithCondition(id, Max(list.map(x => varHashMap(x.id))), condition)
+    _buildCrtWithCondition(id, Max(list.map(x => varHashMap(x.id()))), condition)
   }
 
   override def buildCtrLex(id: String, lists: Array[Array[XVarInteger]], operator: TypeOperator): Unit = {
@@ -394,14 +384,30 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeOperator.LE => LexLeq
       case TypeOperator.LT => LexLr.apply
     }
-    lists.map(tuple => tuple.map(x => varHashMap(x.id))).sliding(2).foreach(tuples => modelDeclaration.add(constraintType(tuples(0), tuples(1))))
+    lists.map(tuple => tuple.map(x => varHashMap(x.id()))).sliding(2).foreach(tuples => modelDeclaration.add(constraintType(tuples(0), tuples(1))))
   }
 
   def _getConditionVar(condition: Condition): IntExpression = condition match {
     case c: ConditionVal => c.k
-    case c: ConditionVar => varHashMap(c.x.id)
+    case c: ConditionVar => varHashMap(c.x.id())
   }
 
+  def _buildCumulativeConditionCst(id: String, starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], demands: Array[IntExpression], condition: ConditionRel) = {
+    condition.operator match {
+      case TypeConditionOperatorRel.EQ =>
+        buildCtrCumulative(id, starts, durations, ends, demands, true, _getConditionVar(condition))
+        buildCtrCumulative(id, starts, durations, ends, demands, false, _getConditionVar(condition))
+      case TypeConditionOperatorRel.GE => buildCtrCumulative(id, starts, durations, ends, demands, false, _getConditionVar(condition))
+      case TypeConditionOperatorRel.GT => buildCtrCumulative(id, starts, durations, ends, demands, false, _getConditionVar(condition)+1)
+      case TypeConditionOperatorRel.LE => buildCtrCumulative(id, starts, durations, ends, demands, true, _getConditionVar(condition))
+      case TypeConditionOperatorRel.LT => buildCtrCumulative(id, starts, durations, ends, demands, true, _getConditionVar(condition)-1)
+      case TypeConditionOperatorRel.NE =>
+        val tVar = IntVar(0, demands.map(_.max).sum)
+        modelDeclaration.add(tVar !== _getConditionVar(condition))
+        buildCtrCumulative(id, starts, durations, ends, demands, true, tVar)
+        buildCtrCumulative(id, starts, durations, ends, demands, false, tVar)
+    }
+  }
   def buildCtrCumulative(id: String, starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], demands: Array[IntExpression], minCum: Boolean, limit: IntExpression): Unit = {
     if(minCum)
       modelDeclaration.add(MinCumulativeResource(starts, durations, ends, demands, limit))
@@ -410,92 +416,84 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   def buildCtrCumulative(id: String, starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], demands: Array[IntExpression], condition: Condition): Unit = {
-    val constraintParameters = condition.operator match {
-      case TypeConditionOperator.EQ =>
-        buildCtrCumulative(id, starts, durations, ends, demands, true, _getConditionVar(condition))
-        buildCtrCumulative(id, starts, durations, ends, demands, false, _getConditionVar(condition))
-      case TypeConditionOperator.GE => buildCtrCumulative(id, starts, durations, ends, demands, false, _getConditionVar(condition))
-      case TypeConditionOperator.GT => buildCtrCumulative(id, starts, durations, ends, demands, false, _getConditionVar(condition)+1)
-      case TypeConditionOperator.LE => buildCtrCumulative(id, starts, durations, ends, demands, true, _getConditionVar(condition))
-      case TypeConditionOperator.LT => buildCtrCumulative(id, starts, durations, ends, demands, true, _getConditionVar(condition)-1)
-      case TypeConditionOperator.NE =>
-        val tVar = IntVar(0, demands.map(_.max).sum)
-        modelDeclaration.add(tVar !== _getConditionVar(condition))
-        buildCtrCumulative(id, starts, durations, ends, demands, true, tVar)
-        buildCtrCumulative(id, starts, durations, ends, demands, false, tVar)
-      case TypeConditionOperator.IN =>
-        val tVar = IntVar(condition.asInstanceOf[ConditionIntvl].min, condition.asInstanceOf[ConditionIntvl].max)
-        buildCtrCumulative(id, starts, durations, ends, demands, true, tVar)
-        buildCtrCumulative(id, starts, durations, ends, demands, false, tVar)
-      case TypeConditionOperator.NOTIN =>
-        val tVar = IntVar(0, demands.map(_.max).sum)
-        modelDeclaration.add(Or(Array(tVar < condition.asInstanceOf[ConditionIntvl].min, tVar > condition.asInstanceOf[ConditionIntvl].max)))
-        buildCtrCumulative(id, starts, durations, ends, demands, true, tVar)
-        buildCtrCumulative(id, starts, durations, ends, demands, false, tVar)
+    condition match {
+      case c: ConditionVal => _buildCumulativeConditionCst(id, starts, durations, ends, demands, c)
+      case c: ConditionVar => _buildCumulativeConditionCst(id, starts, durations, ends, demands, c)
+      case c: ConditionIntvl => c.operator match {
+        case TypeConditionOperatorSet.IN =>
+          val tVar = IntVar(condition.asInstanceOf[ConditionIntvl].min, c.max)
+          buildCtrCumulative(id, starts, durations, ends, demands, true, tVar)
+          buildCtrCumulative(id, starts, durations, ends, demands, false, tVar)
+        case TypeConditionOperatorSet.NOTIN =>
+          val tVar = IntVar(0, demands.map(_.max).sum)
+          modelDeclaration.add(Or(Array(tVar < condition.asInstanceOf[ConditionIntvl].min, tVar > c.max)))
+          buildCtrCumulative(id, starts, durations, ends, demands, true, tVar)
+          buildCtrCumulative(id, starts, durations, ends, demands, false, tVar)
+      }
     }
   }
 
   override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], ends: Array[XVarInteger], heights: Array[XVarInteger], condition: Condition): Unit = {
-    val mOrigins = origins map(x => varHashMap(x.id))
-    val mLengths = lengths map(x => varHashMap(x.id))
-    val mEnds = ends map(x => varHashMap(x.id))
-    val mHeights = heights map(x => varHashMap(x.id))
+    val mOrigins = origins map(x => varHashMap(x.id()))
+    val mLengths = lengths map(x => varHashMap(x.id()))
+    val mEnds = ends map(x => varHashMap(x.id()))
+    val mHeights = heights map(x => varHashMap(x.id()))
     buildCtrCumulative(id, mOrigins, mLengths, mEnds, mHeights, condition)
   }
 
   override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[Int], ends: Array[XVarInteger], heights: Array[Int], condition: Condition): Unit = {
-    val mOrigins = origins map(x => varHashMap(x.id))
+    val mOrigins = origins map(x => varHashMap(x.id()))
     val mLengths = lengths map(x => IntVar(x))
-    val mEnds = ends map(x => varHashMap(x.id))
+    val mEnds = ends map(x => varHashMap(x.id()))
     val mHeights = heights map(x => IntVar(x))
     buildCtrCumulative(id, mOrigins, mLengths, mEnds, mHeights, condition)
   }
 
   override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[Int], ends: Array[XVarInteger], heights: Array[XVarInteger], condition: Condition): Unit = {
-    val mOrigins = origins map(x => varHashMap(x.id))
+    val mOrigins = origins map(x => varHashMap(x.id()))
     val mLengths = lengths map(x => IntVar(x))
-    val mEnds = ends map(x => varHashMap(x.id))
-    val mHeights = heights map(x => varHashMap(x.id))
+    val mEnds = ends map(x => varHashMap(x.id()))
+    val mHeights = heights map(x => varHashMap(x.id()))
     buildCtrCumulative(id, mOrigins, mLengths, mEnds, mHeights, condition)
   }
 
   override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], ends: Array[XVarInteger], heights: Array[Int], condition: Condition): Unit = {
-    val mOrigins = origins map(x => varHashMap(x.id))
-    val mLengths = lengths map(x => varHashMap(x.id))
-    val mEnds = ends map(x => varHashMap(x.id))
+    val mOrigins = origins map(x => varHashMap(x.id()))
+    val mLengths = lengths map(x => varHashMap(x.id()))
+    val mEnds = ends map(x => varHashMap(x.id()))
     val mHeights = heights map(x => IntVar(x))
     buildCtrCumulative(id, mOrigins, mLengths, mEnds, mHeights, condition)
   }
 
   override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int): Unit = {
-    modelDeclaration.add(SubCircuit(list.map(x => varHashMap(x.id)), startIndex))
+    modelDeclaration.add(SubCircuit(list.map(x => varHashMap(x.id())), startIndex))
   }
 
   override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: Int): Unit = {
     if(size == list.length)
-      modelDeclaration.add(Circuit(list.map(x => varHashMap(x.id))))
+      modelDeclaration.add(Circuit(list.map(x => varHashMap(x.id()))))
     else {
-      val vars = list.map(x => varHashMap(x.id))
+      val vars = list.map(x => varHashMap(x.id()))
       // count non-self-looping variables
       modelDeclaration.add(Sum(vars.zipWithIndex.map({case (v, idx) => v !== (idx+startIndex)})) === size)
-      modelDeclaration.add(SubCircuit(list.map(x => varHashMap(x.id)), startIndex))
+      modelDeclaration.add(SubCircuit(list.map(x => varHashMap(x.id())), startIndex))
     }
   }
 
   override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: XVarInteger): Unit = {
-    val vars = list.map(x => varHashMap(x.id))
+    val vars = list.map(x => varHashMap(x.id()))
     // count non-self-looping variables
-    modelDeclaration.add(Sum(vars.zipWithIndex.map({case (v, idx) => v !== (idx+startIndex)})) === varHashMap(size.id))
-    modelDeclaration.add(SubCircuit(list.map(x => varHashMap(x.id)), startIndex))
+    modelDeclaration.add(Sum(vars.zipWithIndex.map({case (v, idx) => v !== (idx+startIndex)})) === varHashMap(size.id()))
+    modelDeclaration.add(SubCircuit(list.map(x => varHashMap(x.id())), startIndex))
   }
 
   //unaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar])
   override def buildCtrNoOverlap(id: String, origins: Array[XVarInteger], lengths: Array[Int], zeroIgnored: Boolean): Unit = {
     val (starts, durations) = origins.zip(lengths).filter({case (v, l) => l != 0 || !zeroIgnored}).unzip
     val ends = buildEndsFromStartAndLength(starts, durations)
-    val mStarts = starts.map(x => varHashMap(x.id))
+    val mStarts = starts.map(x => varHashMap(x.id()))
     val mDurations = durations.map(x => Constant(x):IntExpression)
-    val mEnds = ends.map(x => varHashMap(x.id))
+    val mEnds = ends.map(x => varHashMap(x.id()))
     modelDeclaration.post(UnaryResource(mStarts, mDurations, mEnds))
     // Bind start, duration and ends
     (mStarts, mDurations, mEnds).zipped.foreach({case (s, d, e) => modelDeclaration.post((s+d)===e)})
@@ -504,9 +502,9 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   override def buildCtrNoOverlap(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], zeroIgnored: Boolean): Unit = {
     // TODO we ignore the value of zeroIgnored for now
     val ends = buildEndsFromStartAndLength(origins, lengths)
-    val mStarts = origins.map(x => varHashMap(x.id))
-    val mDurations = lengths.map(x => varHashMap(x.id))
-    val mEnds = ends.map(x => varHashMap(x.id))
+    val mStarts = origins.map(x => varHashMap(x.id()))
+    val mDurations = lengths.map(x => varHashMap(x.id()))
+    val mEnds = ends.map(x => varHashMap(x.id()))
     if(zeroIgnored) {
       val required: Array[BoolExpression] =  mDurations.map(_ !== 0)
       modelDeclaration.post(UnaryResource(mStarts, mDurations, mEnds, required))
@@ -519,31 +517,31 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   override def buildCtrNoOverlap2D(id: String, x: Array[XVarInteger], dx: Array[Int], y: Array[XVarInteger], dy: Array[Int]): Unit = {
-    modelDeclaration.post(DiffN(x.map(e => varHashMap(e.id)), dx.map(Constant), y.map(e => varHashMap(e.id)), dy.map(Constant)))
+    modelDeclaration.post(DiffN(x.map(e => varHashMap(e.id())), dx.map(Constant), y.map(e => varHashMap(e.id())), dy.map(Constant)))
   }
 
   override def buildCtrNoOverlap2D(id: String, x: Array[XVarInteger], dx: Array[XVarInteger], y: Array[XVarInteger], dy: Array[XVarInteger]): Unit = {
-    modelDeclaration.post(DiffN(x.map(e => varHashMap(e.id)), dx.map(e => varHashMap(e.id)), y.map(e => varHashMap(e.id)), dy.map(e => varHashMap(e.id))))
+    modelDeclaration.post(DiffN(x.map(e => varHashMap(e.id())), dx.map(e => varHashMap(e.id())), y.map(e => varHashMap(e.id())), dy.map(e => varHashMap(e.id()))))
   }
 
   override def buildCtrAllEqual(id: String, list: Array[XVarInteger]): Unit = {
-    modelDeclaration.post(Eq(list.map(e => varHashMap(e.id))))
+    modelDeclaration.post(Eq(list.map(e => varHashMap(e.id()))))
   }
 
   override def buildCtrChannel(id: String, list1: Array[XVarInteger], startIndex1: Int, list2: Array[XVarInteger], startIndex2: Int): Unit = {
-    modelDeclaration.post(Inverse(list1.map(e => varHashMap(e.id)).map(e => if(startIndex1 == 0) e else e-startIndex1),
-      list2.map(e => varHashMap(e.id)).map(e => if(startIndex2 == 0) e else e-startIndex2)))
+    modelDeclaration.post(Inverse(list1.map(e => varHashMap(e.id())).map(e => if(startIndex1 == 0) e else e-startIndex1),
+      list2.map(e => varHashMap(e.id())).map(e => if(startIndex2 == 0) e else e-startIndex2)))
   }
 
   override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int): Unit = {
-    val corrected = list.map(e => varHashMap(e.id)).map(e => if(startIndex == 0) e else e-startIndex)
+    val corrected = list.map(e => varHashMap(e.id())).map(e => if(startIndex == 0) e else e-startIndex)
     modelDeclaration.post(Inverse(corrected, corrected))
   }
 
   override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int, pos: XVarInteger): Unit = {
     // In this form, each variable has only domain 0/1. 'pos' should point to the index of the first variable having 1 as value
-    val vars = list.map(e => varHashMap(e.id))
-    val posVar = varHashMap(pos.id)
+    val vars = list.map(e => varHashMap(e.id()))
+    val posVar = varHashMap(pos.id())
     val newVars = list.indices.map(idx => IntVar(Set(idx, list.length))).toArray
     modelDeclaration.post(Inverse(newVars :+ posVar, newVars :+ posVar))
     for(i <- vars.indices)
@@ -551,7 +549,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   override def buildCtrClause(id: String, pos: Array[XVarInteger], neg: Array[XVarInteger]): Unit = {
-    modelDeclaration.post(Or(pos.map(e => varHashMap(e.id)).map(_ === 1) ++ neg.map(e => varHashMap(e.id)).map(_ === 0)))
+    modelDeclaration.post(Or(pos.map(e => varHashMap(e.id())).map(_ === 1) ++ neg.map(e => varHashMap(e.id())).map(_ === 0)))
   }
 
   override def buildCtrMDD(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]]): Unit = {
@@ -585,7 +583,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
 
   override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[Int], bcondition: Condition): Unit = {
     val setOfVal = values.toSet
-    val counterVar: IntExpression = Sum(list.map(x => varHashMap(x.id)).map( x => {
+    val counterVar: IntExpression = Sum(list.map(x => varHashMap(x.id())).map( x => {
       if(setOfVal.size != 1) InSet(x, setOfVal) else x === setOfVal.head
     }))
 
@@ -594,10 +592,10 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
         val min = condition.asInstanceOf[ConditionIntvl].min
         val max = condition.asInstanceOf[ConditionIntvl].max
         condition.operator match {
-          case TypeConditionOperator.IN =>
+          case TypeConditionOperatorSet.IN =>
             modelDeclaration.add(counterVar <= max)
             modelDeclaration.add(counterVar >= min)
-          case TypeConditionOperator.NOTIN =>
+          case TypeConditionOperatorSet.NOTIN =>
             for (v <- min to max) {
               modelDeclaration.add(counterVar !== v)
             }
@@ -605,22 +603,24 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case condition: ConditionVal =>
         val c = condition.asInstanceOf[ConditionVal].k
         condition.operator match {
-          case TypeConditionOperator.LE => modelDeclaration.add(counterVar <= c)
-          case TypeConditionOperator.GE => modelDeclaration.add(counterVar >= c)
-          case TypeConditionOperator.GT => modelDeclaration.add(counterVar > c)
-          case TypeConditionOperator.LT => modelDeclaration.add(counterVar < c)
-          case TypeConditionOperator.EQ => modelDeclaration.add(counterVar === c)
+          case TypeConditionOperatorRel.LE => modelDeclaration.add(counterVar <= c)
+          case TypeConditionOperatorRel.GE => modelDeclaration.add(counterVar >= c)
+          case TypeConditionOperatorRel.GT => modelDeclaration.add(counterVar > c)
+          case TypeConditionOperatorRel.LT => modelDeclaration.add(counterVar < c)
+          case TypeConditionOperatorRel.EQ => modelDeclaration.add(counterVar === c)
+          case TypeConditionOperatorRel.NE => modelDeclaration.add(counterVar !== c)
           case _ => throw new RuntimeException("not supported operator")
         }
 
       case condition: ConditionVar =>
-        val c = varHashMap(condition.asInstanceOf[ConditionVar].x.id)
+        val c = varHashMap(condition.asInstanceOf[ConditionVar].x.id())
         condition.operator match {
-          case TypeConditionOperator.LE => modelDeclaration.add(counterVar <= c)
-          case TypeConditionOperator.GE => modelDeclaration.add(counterVar >= c)
-          case TypeConditionOperator.GT => modelDeclaration.add(counterVar > c)
-          case TypeConditionOperator.LT => modelDeclaration.add(counterVar < c)
-          case TypeConditionOperator.EQ => modelDeclaration.add(counterVar === c)
+          case TypeConditionOperatorRel.LE => modelDeclaration.add(counterVar <= c)
+          case TypeConditionOperatorRel.GE => modelDeclaration.add(counterVar >= c)
+          case TypeConditionOperatorRel.GT => modelDeclaration.add(counterVar > c)
+          case TypeConditionOperatorRel.LT => modelDeclaration.add(counterVar < c)
+          case TypeConditionOperatorRel.EQ => modelDeclaration.add(counterVar === c)
+          case TypeConditionOperatorRel.NE => modelDeclaration.add(counterVar !== c)
           case _ => throw new RuntimeException("not supported operator")
         }
     }
@@ -641,14 +641,14 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
 
     // The automaton in OscaR work with letters between 0 and maxLetter. If we have minLetter that is below 0, that might pose a problem
     val variables = if(minLetter < 0) {
-      val newVars = list.map(e => varHashMap(e.id)+minLetter)
+      val newVars = list.map(e => varHashMap(e.id())+minLetter)
       transitions = transitions.map{case (from, emit, to) => (from, emit+minLetter, to)}
       maxLetter -= minLetter
       minLetter = 0
       newVars
     }
     else {
-      list.map(e => varHashMap(e.id))
+      list.map(e => varHashMap(e.id()))
     }
 
     // Now let's create the automaton
@@ -660,11 +660,11 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   override def buildCtrNValues(id: String, list: Array[XVarInteger], condition: Condition): Unit = {
-    _buildCrtWithCondition(id, NValues(list.map(e => varHashMap(e.id))), condition)
+    _buildCrtWithCondition(id, NValues(list.map(e => varHashMap(e.id()))), condition)
   }
 
   override def buildCtrNotAllEqual(id: String, list: Array[XVarInteger]): Unit = {
-    modelDeclaration.post(NotAllEqual(list.map(e => varHashMap(e.id))))
+    modelDeclaration.post(NotAllEqual(list.map(e => varHashMap(e.id()))))
   }
 
   override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = ???
@@ -678,10 +678,10 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   // Objectives
   def _getExprForTypeObjective(objtype: TypeObjective, list: Array[XVarInteger]): IntExpression = {
     objtype match {
-      case TypeObjective.MAXIMUM => Max(list.map(i => varHashMap(i.id)))
-      case TypeObjective.MINIMUM => Min(list.map(i => varHashMap(i.id)))
-      case TypeObjective.SUM => Sum(list.map(i => varHashMap(i.id)))
-      case TypeObjective.PRODUCT => Prod(list.map(i => varHashMap(i.id)))
+      case TypeObjective.MAXIMUM => Max(list.map(i => varHashMap(i.id())))
+      case TypeObjective.MINIMUM => Min(list.map(i => varHashMap(i.id())))
+      case TypeObjective.SUM => Sum(list.map(i => varHashMap(i.id())))
+      case TypeObjective.PRODUCT => Prod(list.map(i => varHashMap(i.id())))
       case TypeObjective.EXPRESSION => throw new XCSP3ParseException("TypeObjective.EXPRESSION should not be called without a tree")
       case TypeObjective.LEX => ???
       case TypeObjective.NVALUES => ???
@@ -690,11 +690,11 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
 
   def _getExprForTypeObjective(objtype: TypeObjective, list: Array[XVarInteger], coefs: Array[Int]): IntExpression = {
     objtype match {
-      case TypeObjective.MAXIMUM => Max(list.zip(coefs).map(i => varHashMap(i._1.id)*i._2))
-      case TypeObjective.MINIMUM => Min(list.zip(coefs).map(i => varHashMap(i._1.id)*i._2))
-      case TypeObjective.SUM => WeightedSum(list.map(i => varHashMap(i.id)), coefs)
+      case TypeObjective.MAXIMUM => Max(list.zip(coefs).map(i => varHashMap(i._1.id())*i._2))
+      case TypeObjective.MINIMUM => Min(list.zip(coefs).map(i => varHashMap(i._1.id())*i._2))
+      case TypeObjective.SUM => WeightedSum(list.map(i => varHashMap(i.id())), coefs)
       case TypeObjective.EXPRESSION => throw new XCSP3ParseException("TypeObjective.EXPRESSION should not be called without a tree")
-      case TypeObjective.PRODUCT => Prod(list.map(i => varHashMap(i.id))) //ignore coefs...
+      case TypeObjective.PRODUCT => Prod(list.map(i => varHashMap(i.id()))) //ignore coefs...
       case TypeObjective.LEX => ???
       case TypeObjective.NVALUES => ???
     }
@@ -709,11 +709,11 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   override def buildObjToMinimize(id: String, x: XVarInteger): Unit = {
-    modelDeclaration.minimize(varHashMap(x.id).reify())
+    modelDeclaration.minimize(varHashMap(x.id()).reify())
   }
 
   override def buildObjToMaximize(id: String, x: XVarInteger): Unit = {
-    modelDeclaration.maximize(varHashMap(x.id).reify())
+    modelDeclaration.maximize(varHashMap(x.id()).reify())
   }
 
   override def buildObjToMinimize(id: String, objtype: TypeObjective, list: Array[XVarInteger], coeffs: Array[Int]): Unit = {
@@ -724,11 +724,11 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     modelDeclaration.maximize(_getExprForTypeObjective(objtype, list, coeffs).reify())
   }
 
-  override def buildObjToMinimize(id: String, syntaxTreeRoot: XNodeParent[XVar]): Unit = {
+  override def buildObjToMinimize(id: String, syntaxTreeRoot: XNodeParent[XVarInteger]): Unit = {
     modelDeclaration.minimize(_recursiveIntentionBuilder(syntaxTreeRoot).reify())
   }
 
-  override def buildObjToMaximize(id: String, syntaxTreeRoot: XNodeParent[XVar]): Unit = {
+  override def buildObjToMaximize(id: String, syntaxTreeRoot: XNodeParent[XVarInteger]): Unit = {
     modelDeclaration.maximize(_recursiveIntentionBuilder(syntaxTreeRoot).reify())
   }
 
@@ -739,8 +739,6 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   // There is no public instance of XCSP3 with a stretch constraint yet :D
   override def buildCtrStretch(id: String, list: Array[XVarInteger], values: Array[Int], widthsMin: Array[Int], widthsMax: Array[Int]): Unit = ???
   override def buildCtrStretch(id: String, list: Array[XVarInteger], values: Array[Int], widthsMin: Array[Int], widthsMax: Array[Int], patterns: Array[Array[Int]]): Unit = ???
-
-
 }
 
 object XCSP3Parser2 {

@@ -4,14 +4,15 @@ import java.io.{ByteArrayInputStream, File}
 import java.util
 
 import org.xcsp.checker.SolutionChecker
-import org.xcsp.common.XEnums._
-import org.xcsp.common.predicates.{XNodeExpr, XNodeLeaf, XNodeParent}
-import org.xcsp.parser.XCallbacks.XCallbacksParameters
-import org.xcsp.parser.XConstraints.{CEntry, XBlock, XGroup, XSlide}
-import org.xcsp.parser.XObjectives.OEntry
-import org.xcsp.parser.XParser.{Condition, ConditionIntvl, ConditionVal, ConditionVar}
-import org.xcsp.parser.XVariables._
+import org.xcsp.common.Condition
+import org.xcsp.common.Condition.{ConditionIntvl, ConditionVal, ConditionVar}
+import org.xcsp.common.Types._
+import org.xcsp.common.predicates.XNodeParent
+import org.xcsp.parser.XCallbacks.{Implem, XCallbacksParameters}
 import org.xcsp.parser._
+import org.xcsp.parser.entries.AnyEntry.{CEntry, OEntry, VEntry}
+import org.xcsp.parser.entries.XConstraints.{XBlock, XGroup, XSlide}
+import org.xcsp.parser.entries.XVariables.{XArray, XVarInteger, XVarSymbolic}
 import oscar.cp.CPIntVar
 import oscar.cp._
 import oscar.cp.constraints.EqCons
@@ -21,9 +22,15 @@ import scala.collection.mutable.ArrayBuffer
 
 class XCSP3Parser(filename: String) extends XCallbacksDecomp {
 
-  XCallbacks.callbacksParameters.remove(XCallbacksParameters.RECOGNIZE_SPECIAL_COUNT_CASES)
-  //XCallbacks.callbacksParameters.add(XCallbacksParameters.)
-
+  val implem = new Implem(this)
+  implem.currentParameters.clear()
+  implem.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_UNARY_INTENSION_CASES, new Object)
+  implem.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_BINARY_INTENSION_CASES,  new Object)
+  implem.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_TERNARY_INTENSION_CASES,  new Object)
+  implem.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_NVALUES_CASES,  new Object)
+  implem.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, 0:java.lang.Integer) // included
+  implem.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000:java.lang.Integer)
+  implem.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, false:java.lang.Boolean)
 
   implicit val cp = CPSolver()
 
@@ -52,26 +59,26 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
 
   // Variables
   override def buildVarInteger(x: XVarInteger, minValue: Int, maxValue: Int): Unit = {
-    //println("Adding var "+x.id)
-    varHashMap += (x.id -> CPIntVar(minValue,maxValue,x.id)(cp)) // Some(x.id)
+    //println("Adding var "+x.id())
+    varHashMap += (x.id() -> CPIntVar(minValue,maxValue,x.id())(cp)) // Some(x.id())
   }
 
   override def buildVarInteger(x: XVarInteger, values: Array[Int]): Unit = {
-    varHashMap += (x.id -> CPIntVar(values,x.id)(cp))
+    varHashMap += (x.id() -> CPIntVar(values,x.id())(cp))
   }
 
   // Constraints
   override def buildCtrAllDifferent(id: String, list: Array[XVarInteger]): Unit = {
     //println("Adding AllDifferent "+id)
-    val cons = allDifferent(list.map(elem => varHashMap(elem.id)))
+    val cons = allDifferent(list.map(elem => varHashMap(elem.id())))
     cp.add(cons)
     cstHashMap += (id->cons)
   }
 
   override def buildCtrPrimitive(id: String, xvi: XVarInteger, opa: TypeArithmeticOperator, yvi: XVarInteger, op: TypeConditionOperatorRel, k: Int): Unit = {
     //println(id)
-    val x = varHashMap(xvi.id)
-    val y = varHashMap(yvi.id)
+    val x = varHashMap(xvi.id())
+    val y = varHashMap(yvi.id())
     val r: CPIntVar = opa match {
       case TypeArithmeticOperator.ADD => x + y
       case TypeArithmeticOperator.DIST => (x-y).abs
@@ -80,36 +87,36 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
       case TypeArithmeticOperator.SUB => x - y
       case TypeArithmeticOperator.MOD => throw new Exception("Modulo between vars is not implemented")
     }
-    val r2: Constraint = (op match {
+    val r2: Constraint = op match {
       case TypeConditionOperatorRel.EQ => r === k
       case TypeConditionOperatorRel.GE => r >= k
       case TypeConditionOperatorRel.GT => r > k
       case TypeConditionOperatorRel.LE => r <= k
       case TypeConditionOperatorRel.LT => r < k
       case TypeConditionOperatorRel.NE => r !== k
-    })
+    }
     cp.add(r2)
     cstHashMap += ((id, r2))
   }
 
   override def buildCtrPrimitive(id: String, xvi: XVarInteger, op: TypeConditionOperatorRel, k: Int): Unit = {
-    val r = varHashMap(xvi.id)
-    val r2: Constraint = (op match {
+    val r = varHashMap(xvi.id())
+    val r2: Constraint = op match {
       case TypeConditionOperatorRel.EQ => r === k
       case TypeConditionOperatorRel.GE => r >= k
       case TypeConditionOperatorRel.GT => r > k
       case TypeConditionOperatorRel.LE => r <= k
       case TypeConditionOperatorRel.LT => r < k
       case TypeConditionOperatorRel.NE => r !== k
-    })
+    }
     cp.add(r2)
     cstHashMap += ((id, r2))
   }
 
   override def buildCtrPrimitive(id: String, xvi: XVarInteger, opa: TypeArithmeticOperator, yvi: XVarInteger, op: TypeConditionOperatorRel, zvi: XVarInteger): Unit = {
-    val x = varHashMap(xvi.id)
-    val y = varHashMap(yvi.id)
-    val z = varHashMap(zvi.id)
+    val x = varHashMap(xvi.id())
+    val y = varHashMap(yvi.id())
+    val z = varHashMap(zvi.id())
     val r: CPIntVar = opa match {
       case TypeArithmeticOperator.ADD => x + y
       case TypeArithmeticOperator.DIST => (x-y).abs
@@ -118,14 +125,14 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
       case TypeArithmeticOperator.SUB => x - y
       case TypeArithmeticOperator.MOD => throw new Exception("Modulo between vars is not implemented")
     }
-    val r2: Constraint = (op match {
+    val r2: Constraint = op match {
       case TypeConditionOperatorRel.EQ => r === z
       case TypeConditionOperatorRel.GE => r >= z
       case TypeConditionOperatorRel.GT => r > z
       case TypeConditionOperatorRel.LE => r <= z
       case TypeConditionOperatorRel.LT => r < z
       case TypeConditionOperatorRel.NE => r !== z
-    })
+    }
     cp.add(r2)
     cstHashMap += (id->r2)
   }
@@ -134,44 +141,40 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     val cons: Constraint = operator match {
       case c: ConditionVal =>
         c.operator match {
-          case TypeConditionOperator.EQ => expr === c.k
-          case TypeConditionOperator.GE => expr >= c.k
-          case TypeConditionOperator.GT => expr > c.k
-          case TypeConditionOperator.LE => expr <= c.k
-          case TypeConditionOperator.LT => expr < c.k
-          case TypeConditionOperator.NE => expr !== c.k
-          case TypeConditionOperator.IN => ??? // ???
-          case TypeConditionOperator.NOTIN => ??? // ???
+          case TypeConditionOperatorRel.EQ => expr === c.k
+          case TypeConditionOperatorRel.GE => expr >= c.k
+          case TypeConditionOperatorRel.GT => expr > c.k
+          case TypeConditionOperatorRel.LE => expr <= c.k
+          case TypeConditionOperatorRel.LT => expr < c.k
+          case TypeConditionOperatorRel.NE => expr !== c.k
         }
       case c: ConditionVar =>
         c.operator match {
-          case TypeConditionOperator.EQ => expr === varHashMap(c.x.id)
-          case TypeConditionOperator.GE => expr >= varHashMap(c.x.id)
-          case TypeConditionOperator.GT => expr > varHashMap(c.x.id)
-          case TypeConditionOperator.LE => expr <= varHashMap(c.x.id)
-          case TypeConditionOperator.LT => expr < varHashMap(c.x.id)
-          case TypeConditionOperator.NE => expr !== varHashMap(c.x.id)
-          case TypeConditionOperator.IN => ??? // ???
-          case TypeConditionOperator.NOTIN => ??? // ???
+          case TypeConditionOperatorRel.EQ => expr === varHashMap(c.x.id())
+          case TypeConditionOperatorRel.GE => expr >= varHashMap(c.x.id())
+          case TypeConditionOperatorRel.GT => expr > varHashMap(c.x.id())
+          case TypeConditionOperatorRel.LE => expr <= varHashMap(c.x.id())
+          case TypeConditionOperatorRel.LT => expr < varHashMap(c.x.id())
+          case TypeConditionOperatorRel.NE => expr !== varHashMap(c.x.id())
         }
     }
     cp.add(cons)
     cstHashMap += (id->cons)
   }
   override def buildCtrSum(id: String, list: Array[XVarInteger], condition: Condition): Unit = {
-    _buildCrtWithCondition(id, sum(list.map(i => varHashMap(i.id))), condition)
+    _buildCrtWithCondition(id, sum(list.map(i => varHashMap(i.id()))), condition)
   }
 
   override def buildCtrSum(id: String, list: Array[XVarInteger], coeffs: Array[Int], condition: Condition): Unit = {
-    _buildCrtWithCondition(id, weightedSum(coeffs,list.map(i => varHashMap(i.id))) , condition)
+    _buildCrtWithCondition(id, weightedSum(coeffs,list.map(i => varHashMap(i.id()))) , condition)
   }
 
   override def buildCtrSum(id: String, list: Array[XVarInteger], coeffs: Array[XVarInteger], condition: Condition): Unit = {
-    _buildCrtWithCondition(id, sum(list.zip(coeffs).map(i => varHashMap(i._1.id)*varHashMap(i._2.id))), condition)
+    _buildCrtWithCondition(id, sum(list.zip(coeffs).map(i => varHashMap(i._1.id())*varHashMap(i._2.id()))), condition)
   }
 
 
-  override def buildCtrIntension(id: String, scope: Array[XVarInteger], syntaxTreeRoot: XNodeParent[XVar]): Unit = ???
+  override def buildCtrIntension(id: String, scope: Array[XVarInteger], syntaxTreeRoot: XNodeParent[XVarInteger]): Unit = ???
 
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[Int], occurs: Array[Int]): Unit = {
     buildCtrCardinality(id,list,closed,values,occurs,occurs)
@@ -186,7 +189,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
       cardMin(values(i)-minValue) = occursMin(i)
       cardMax(values(i)-minValue) = occursMax(i)
     }
-    val cst: Constraint = gcc(list.map(i => varHashMap(i.id)), minValue, cardMin, cardMax)
+    val cst: Constraint = gcc(list.map(i => varHashMap(i.id())), minValue, cardMin, cardMax)
     cp.add(cst)
     cstHashMap += (id -> cst)
   }
@@ -206,34 +209,34 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
       case TypeOperator.SUPSEQ => ???
       case TypeOperator.SUPSET => ???
     }
-    val csts = list.map(i => varHashMap(i.id)).sliding(2).map{x => rel(x(0),x(1))}
+    val csts = list.map(i => varHashMap(i.id())).sliding(2).map{x => rel(x(0),x(1))}
 
     cp.add(csts.toArray)
   }
 
   override def buildCtrExtension(id: String, x: XVarInteger, values: Array[Int], positive: Boolean, flags: util.Set[TypeFlag]): Unit = {
     if (positive) {
-      cp.add(varHashMap(x.id).in(values.toSet))
+      cp.add(varHashMap(x.id()).in(values.toSet))
     }
     else {
-      cp.add(values.map(varHashMap(x.id) !== _))
+      cp.add(values.map(varHashMap(x.id()) !== _))
     }
   }
 
   override def buildCtrExtension(id: String, list: Array[XVarInteger], tuples: Array[Array[Int]], positive: Boolean, flags: util.Set[TypeFlag]): Unit = {
-    //println(list.map(x => x.id).mkString(" "))
+    //println(list.map(x => x.id()).mkString(" "))
     val cst: Constraint = if (positive) {
-      table(list.map(x => varHashMap(x.id)), tuples)
+      table(list.map(x => varHashMap(x.id())), tuples)
     }
     else {
-     negativeTable(list.map(x => varHashMap(x.id)), tuples)
+     negativeTable(list.map(x => varHashMap(x.id())), tuples)
     }
     cp.add(cst)
     cstHashMap += ((id, cst))
   }
 
   override def buildCtrInstantiation(id: String, list: Array[XVarInteger], values: Array[Int]): Unit = {
-    val csts = list.zip(values).map{case(x,v) => varHashMap(x.id) === v}
+    val csts = list.zip(values).map{case(x,v) => varHashMap(x.id()) === v}
     cp.add(csts)
   }
 
@@ -247,9 +250,9 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
   // Objectives
   def _getExprForTypeObjective(objtype: TypeObjective, list: Array[XVarInteger]): CPIntVar = {
     objtype match {
-      case TypeObjective.MAXIMUM => maximum(list.map(i => varHashMap(i.id)))
-      case TypeObjective.MINIMUM => minimum(list.map(i => varHashMap(i.id)))
-      case TypeObjective.SUM => sum(list.map(i => varHashMap(i.id)))
+      case TypeObjective.MAXIMUM => maximum(list.map(i => varHashMap(i.id())))
+      case TypeObjective.MINIMUM => minimum(list.map(i => varHashMap(i.id())))
+      case TypeObjective.SUM => sum(list.map(i => varHashMap(i.id())))
       case TypeObjective.EXPRESSION => ???
       case TypeObjective.LEX => ???
       case TypeObjective.NVALUES => ???
@@ -259,9 +262,9 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
 
   def _getExprForTypeObjective(objtype: TypeObjective, list: Array[XVarInteger], coefs: Array[Int]): CPIntVar = {
     objtype match {
-      case TypeObjective.MAXIMUM => maximum(list.zip(coefs).map(i => varHashMap(i._1.id)*i._2))
-      case TypeObjective.MINIMUM => minimum(list.zip(coefs).map(i => varHashMap(i._1.id)*i._2))
-      case TypeObjective.SUM => weightedSum(coefs,list.map(i => varHashMap(i.id)))
+      case TypeObjective.MAXIMUM => maximum(list.zip(coefs).map(i => varHashMap(i._1.id())*i._2))
+      case TypeObjective.MINIMUM => minimum(list.zip(coefs).map(i => varHashMap(i._1.id())*i._2))
+      case TypeObjective.SUM => weightedSum(coefs,list.map(i => varHashMap(i.id())))
       case TypeObjective.EXPRESSION => ???
       case TypeObjective.LEX => ???
       case TypeObjective.NVALUES => ???
@@ -278,11 +281,11 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
   }
 
   override def buildObjToMinimize(id: String, x: XVarInteger): Unit = {
-    cp.minimize(varHashMap(x.id))
+    cp.minimize(varHashMap(x.id()))
   }
 
   override def buildObjToMaximize(id: String, x: XVarInteger): Unit = {
-    cp.maximize(varHashMap(x.id))
+    cp.maximize(varHashMap(x.id()))
   }
 
   override def buildObjToMinimize(id: String, objtype: TypeObjective, list: Array[XVarInteger], coeffs: Array[Int]): Unit = {
@@ -293,12 +296,12 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     cp.maximize(_getExprForTypeObjective(objtype, list, coeffs))
   }
 
-  override def buildObjToMinimize(id: String, syntaxTreeRoot: XNodeParent[XVar]): Unit = {
+  override def buildObjToMinimize(id: String, syntaxTreeRoot: XNodeParent[XVarInteger]): Unit = {
     ???
     //cp.minimize(_recursiveIntentionBuilder(syntaxTreeRoot).reify())
   }
 
-  override def buildObjToMaximize(id: String, syntaxTreeRoot: XNodeParent[XVar]): Unit = {
+  override def buildObjToMaximize(id: String, syntaxTreeRoot: XNodeParent[XVarInteger]): Unit = {
     ???
     //modelDeclaration.maximize(_recursiveIntentionBuilder(syntaxTreeRoot).reify())
   }
@@ -335,16 +338,16 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
 
   override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[Int], conditionL: Condition): Unit = {
     val setOfVal = values.toSet
-    val counterVar: CPIntVar = sum(list.map(x => varHashMap(x.id)).map(_.isIn(setOfVal).asInstanceOf[CPIntVar]))
+    val counterVar: CPIntVar = sum(list.map(x => varHashMap(x.id())).map(_.isIn(setOfVal).asInstanceOf[CPIntVar]))
     conditionL match {
       case condition:ConditionIntvl =>
         val min = condition.asInstanceOf[ConditionIntvl].min
         val max = condition.asInstanceOf[ConditionIntvl].max
         condition.operator match {
-          case TypeConditionOperator.IN =>
+          case TypeConditionOperatorSet.IN =>
             cp.add(counterVar <= max)
             cp.add(counterVar >= min)
-          case TypeConditionOperator.NOTIN =>
+          case TypeConditionOperatorSet.NOTIN =>
             for (v <- min to max) {
               cp.add(counterVar !== v)
             }
@@ -352,21 +355,21 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
       case condition:ConditionVal =>
         val c = condition.asInstanceOf[ConditionVal].k
         condition.operator match {
-          case TypeConditionOperator.LE => cp.add(counterVar <= c)
-          case TypeConditionOperator.GE => cp.add(counterVar >= c)
-          case TypeConditionOperator.GT => cp.add(counterVar > c)
-          case TypeConditionOperator.LT => cp.add(counterVar < c)
-          case TypeConditionOperator.EQ => cp.add(counterVar === c)
+          case TypeConditionOperatorRel.LE => cp.add(counterVar <= c)
+          case TypeConditionOperatorRel.GE => cp.add(counterVar >= c)
+          case TypeConditionOperatorRel.GT => cp.add(counterVar > c)
+          case TypeConditionOperatorRel.LT => cp.add(counterVar < c)
+          case TypeConditionOperatorRel.EQ => cp.add(counterVar === c)
           case _ => throw new RuntimeException("not supported operator")
         }
       case condition:ConditionVar =>
-        val c = varHashMap(condition.asInstanceOf[ConditionVar].x.id)
+        val c = varHashMap(condition.asInstanceOf[ConditionVar].x.id())
         condition.operator match {
-          case TypeConditionOperator.LE => cp.add(counterVar <= c)
-          case TypeConditionOperator.GE => cp.add(counterVar >= c)
-          case TypeConditionOperator.GT => cp.add(counterVar > c)
-          case TypeConditionOperator.LT => cp.add(counterVar < c)
-          case TypeConditionOperator.EQ => cp.add(counterVar === c)
+          case TypeConditionOperatorRel.LE => cp.add(counterVar <= c)
+          case TypeConditionOperatorRel.GE => cp.add(counterVar >= c)
+          case TypeConditionOperatorRel.GT => cp.add(counterVar > c)
+          case TypeConditionOperatorRel.LT => cp.add(counterVar < c)
+          case TypeConditionOperatorRel.EQ => cp.add(counterVar === c)
           case _ => throw new RuntimeException("not supported operator")
         }
     }
@@ -404,7 +407,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
 
   override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int, value: XVarInteger): Unit = ???
 
-  override def buildCtrIntension(id: String, scope: Array[XVarSymbolic], syntaxTreeRoot: XNodeParent[XVar]): Unit = ???
+  override def buildCtrIntension(id: String, scope: Array[XVarSymbolic], syntaxTreeRoot: XNodeParent[XVarSymbolic]): Unit = ???
 
   override def buildCtrRegular(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]], startState: String, finalStates: Array[String]): Unit = ???
 
@@ -412,12 +415,12 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     operator match {
       case TypeOperator.GE => {
         for (i <- 0 until lists.size-1) {
-          cp.add(lexLeq(lists(i+1).map(x => varHashMap(x.id)),lists(i).map(x =>varHashMap(x.id))))
+          cp.add(lexLeq(lists(i+1).map(x => varHashMap(x.id())),lists(i).map(x =>varHashMap(x.id()))))
         }
       }
       case TypeOperator.LE => {
         for (i <- 0 until lists.size-1) {
-          cp.add(lexLeq(lists(i).map(x => varHashMap(x.id)),lists(i+1).map(x =>varHashMap(x.id))))
+          cp.add(lexLeq(lists(i).map(x => varHashMap(x.id())),lists(i+1).map(x =>varHashMap(x.id()))))
         }
       }
       case TypeOperator.LT =>

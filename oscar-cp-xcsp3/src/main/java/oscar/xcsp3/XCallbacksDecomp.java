@@ -1,10 +1,13 @@
 package oscar.xcsp3;
 
-import org.xcsp.common.XEnums;
-import org.xcsp.common.predicates.XNodeExpr;
+import org.xcsp.common.Condition;
+import org.xcsp.common.Types;
+import org.xcsp.common.predicates.XNode;
 import org.xcsp.common.predicates.XNodeLeaf;
 import org.xcsp.common.predicates.XNodeParent;
 import org.xcsp.parser.*;
+import org.xcsp.parser.entries.XDomains;
+import org.xcsp.parser.entries.XVariables;
 
 import java.util.*;
 import java.util.HashSet;
@@ -86,30 +89,30 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
      * Maps to buildCtrExtension with Integer variables if CONVERT_SYMBOLIC is true
      */
     @Override
-    public void buildCtrExtension(String id, XVariables.XVarSymbolic x, String[] values, boolean positive, Set<XEnums.TypeFlag> flags) {
+    public void buildCtrExtension(String id, XVariables.XVarSymbolic x, String[] values, boolean positive, Set<Types.TypeFlag> flags) {
         if(CONVERT_SYMBOLIC)
             buildCtrExtension(id, symbolicVariables.get(x.id), Arrays.stream(values).mapToInt(i -> symbolicValues.get(i)).toArray(), positive, flags);
         else
             unimplementedCase(id);
     }
 
-    protected XNodeLeaf<XVariables.XVar> convertSymbolicTreeLeaf(XNodeLeaf<XVariables.XVar> leaf) {
-        if(leaf.type == XEnums.TypeExpr.VAR && leaf.value instanceof XVariables.XVarSymbolic)
-            return new XNodeLeaf<>(XEnums.TypeExpr.VAR, symbolicVariables.get(((XVariables.XVarSymbolic)leaf.value).id));
-        if(leaf.type == XEnums.TypeExpr.SYMBOL)
-            return new XNodeLeaf<>(XEnums.TypeExpr.LONG, (long)symbolicValues.get((String)leaf.value));
-        return leaf;
+    protected XNodeLeaf<XVariables.XVarInteger> convertSymbolicTreeLeaf(XNodeLeaf<XVariables.XVarSymbolic> leaf) {
+        if(leaf.type == Types.TypeExpr.VAR && leaf.value instanceof XVariables.XVarSymbolic)
+            return new XNodeLeaf<>(Types.TypeExpr.VAR, symbolicVariables.get(((XVariables.XVarSymbolic)leaf.value).id));
+        if(leaf.type == Types.TypeExpr.SYMBOL)
+            return new XNodeLeaf<>(Types.TypeExpr.LONG, (long)symbolicValues.get((String)leaf.value));
+        return new XNodeLeaf<>(leaf.getType(), leaf.value);
     }
 
     @SuppressWarnings("unchecked")
-    protected XNodeParent<XVariables.XVar> convertSymbolicTree(XNodeParent<XVariables.XVar> syntaxTreeRoot) {
+    protected XNodeParent<XVariables.XVarInteger> convertSymbolicTree(XNodeParent<XVariables.XVarSymbolic> syntaxTreeRoot) {
 
         return new XNodeParent<>(syntaxTreeRoot.type, Arrays.stream(syntaxTreeRoot.sons).map(x -> {
             if(x instanceof XNodeParent)
-                return convertSymbolicTree((XNodeParent<XVariables.XVar>)x);
+                return convertSymbolicTree((XNodeParent<XVariables.XVarSymbolic>)x);
             else
-                return convertSymbolicTreeLeaf((XNodeLeaf<XVariables.XVar>)x);
-        }).toArray(XNodeExpr[]::new));
+                return convertSymbolicTreeLeaf((XNodeLeaf<XVariables.XVarSymbolic>)x);
+        }).toArray(XNode[]::new));
     }
 
     /**
@@ -118,7 +121,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
      * Maps to buildCtrIntension with Integer variables if CONVERT_SYMBOLIC is true
      */
     @Override
-    public void buildCtrIntension(String id, XVariables.XVarSymbolic[] scope, XNodeParent<XVariables.XVar> syntaxTreeRoot) {
+    public void buildCtrIntension(String id, XVariables.XVarSymbolic[] scope, XNodeParent<XVariables.XVarSymbolic> syntaxTreeRoot) {
         if(CONVERT_SYMBOLIC)
             buildCtrIntension(id, Arrays.stream(scope).map(x -> symbolicVariables.get(x.id)).toArray(XVariables.XVarInteger[]::new), convertSymbolicTree(syntaxTreeRoot));
         else
@@ -131,7 +134,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
      * Maps to buildCtrExtension with Integer variables if CONVERT_SYMBOLIC is true
      */
     @Override
-    public void buildCtrExtension(String id, XVariables.XVarSymbolic[] list, String[][] tuples, boolean positive, Set<XEnums.TypeFlag> flags) {
+    public void buildCtrExtension(String id, XVariables.XVarSymbolic[] list, String[][] tuples, boolean positive, Set<Types.TypeFlag> flags) {
         buildCtrExtension(id,
                 Arrays.stream(list).map(x -> symbolicVariables.get(x.id)).toArray(XVariables.XVarInteger[]::new),
                 Arrays.stream(tuples).map(x -> Arrays.stream(x).mapToInt(y -> symbolicValues.get(y)).toArray()).toArray(int[][]::new),
@@ -165,7 +168,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
     public void buildCtrElement(String id, XVariables.XVarInteger[] list, XVariables.XVarInteger value) {
         XVariables.XVarInteger v = (XVariables.XVarInteger)XVariables.XVar.build(generateReservedArrayIdx(), XVariables.TypeVar.integer, new XDomains.XDomInteger(0, list.length-1));
         buildVarInteger(v, 0, list.length-1);
-        buildCtrElement(id, list, 0, v, XEnums.TypeRank.ANY, value);
+        buildCtrElement(id, list, 0, v, Types.TypeRank.ANY, value);
     }
 
     /**
@@ -181,7 +184,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
     public void buildCtrElement(String id, XVariables.XVarInteger[] list, int value) {
         XVariables.XVarInteger v = (XVariables.XVarInteger)XVariables.XVar.build(generateReservedArrayIdx(), XVariables.TypeVar.integer, new XDomains.XDomInteger(0, list.length-1));
         buildVarInteger(v, 0, list.length-1);
-        buildCtrElement(id, list, 0, v, XEnums.TypeRank.ANY, value);
+        buildCtrElement(id, list, 0, v, Types.TypeRank.ANY, value);
     }
 
     /**
@@ -216,7 +219,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
      * Cumulative constraint. Infer the parameters ends from origins and length
      */
     @Override
-    public void buildCtrCumulative(String id, XVariables.XVarInteger[] origins, int[] lengths, int[] heights, XParser.Condition condition) {
+    public void buildCtrCumulative(String id, XVariables.XVarInteger[] origins, int[] lengths, int[] heights, Condition condition) {
         buildCtrCumulative(id, origins, lengths, buildEndsFromStartAndLength(origins, lengths), heights, condition);
     }
 
@@ -224,7 +227,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
      * Cumulative constraint. Infer the parameters ends from origins and length
      */
     @Override
-    public void buildCtrCumulative(String id, XVariables.XVarInteger[] origins, int[] lengths, XVariables.XVarInteger[] heights, XParser.Condition condition) {
+    public void buildCtrCumulative(String id, XVariables.XVarInteger[] origins, int[] lengths, XVariables.XVarInteger[] heights, Condition condition) {
         buildCtrCumulative(id, origins, lengths, buildEndsFromStartAndLength(origins, lengths), heights, condition);
     }
 
@@ -232,7 +235,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
      * Cumulative constraint. Infer the parameters ends from origins and length
      */
     @Override
-    public void buildCtrCumulative(String id, XVariables.XVarInteger[] origins, XVariables.XVarInteger[] lengths, int[] heights, XParser.Condition condition) {
+    public void buildCtrCumulative(String id, XVariables.XVarInteger[] origins, XVariables.XVarInteger[] lengths, int[] heights, Condition condition) {
         buildCtrCumulative(id, origins, lengths, buildEndsFromStartAndLength(origins, lengths), heights, condition);
     }
 
@@ -240,7 +243,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
      * Cumulative constraint. Infer the parameters ends from origins and length
      */
     @Override
-    public void buildCtrCumulative(String id, XVariables.XVarInteger[] origins, XVariables.XVarInteger[] lengths, XVariables.XVarInteger[] heights, XParser.Condition condition) {
+    public void buildCtrCumulative(String id, XVariables.XVarInteger[] origins, XVariables.XVarInteger[] lengths, XVariables.XVarInteger[] heights, Condition condition) {
         buildCtrCumulative(id, origins, lengths, buildEndsFromStartAndLength(origins, lengths), heights, condition);
     }
 
@@ -254,7 +257,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
      * @param operator
      */
     @Override
-    public void buildCtrLexMatrix(String id, XVariables.XVarInteger[][] matrix, XEnums.TypeOperator operator) {
+    public void buildCtrLexMatrix(String id, XVariables.XVarInteger[][] matrix, Types.TypeOperator operator) {
         buildCtrLex(id, matrix, operator);
 
         XVariables.XVarInteger[][] mt = new XVariables.XVarInteger[matrix[0].length][matrix.length];
@@ -318,14 +321,14 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
                 System.arraycopy(tuple2, 0, scope, tuple1.length, tuple1.length);
 
 
-                XNodeParent<XVariables.XVar>[] orVars = new XNodeParent[tuple1.length];
+                XNodeParent<XVariables.XVarInteger>[] orVars = new XNodeParent[tuple1.length];
 
                 for(int k = 0; k < tuple1.length; k++) {
-                    XNodeLeaf<XVariables.XVar> v1 = new XNodeLeaf<>(XEnums.TypeExpr.VAR, tuple1[k]);
-                    XNodeLeaf<XVariables.XVar> v2 = new XNodeLeaf<>(XEnums.TypeExpr.VAR, tuple2[k]);
-                    orVars[k] = new XNodeParent<>(XEnums.TypeExpr.NE, new XNodeExpr[]{v1, v2});
+                    XNodeLeaf<XVariables.XVar> v1 = new XNodeLeaf<>(Types.TypeExpr.VAR, tuple1[k]);
+                    XNodeLeaf<XVariables.XVar> v2 = new XNodeLeaf<>(Types.TypeExpr.VAR, tuple2[k]);
+                    orVars[k] = new XNodeParent<>(Types.TypeExpr.NE, new XNode[]{v1, v2});
                 }
-                XNodeParent<XVariables.XVar> or = new XNodeParent<>(XEnums.TypeExpr.OR, orVars);
+                XNodeParent<XVariables.XVarInteger> or = new XNodeParent<>(Types.TypeExpr.OR, orVars);
                 buildCtrIntension(id, scope, or);
             }
         }
