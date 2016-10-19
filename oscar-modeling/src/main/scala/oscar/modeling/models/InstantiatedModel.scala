@@ -11,19 +11,19 @@ trait LeafModel extends Model {
     * Post a new constraint
     * @param constraint constraint to add
     */
-  def post(constraint: Constraint): Boolean
+  def post(constraint: Constraint): Unit
 
   /**
     * Post a new constraint
     * @param constraint constraint to add
     */
-  def add(constraint: Constraint): Boolean = post(constraint)
+  def add(constraint: Constraint): Unit = post(constraint)
 
   /**
     * Post a new constraint
     * @param constraint constraint to add
     */
-  def += (constraint: Constraint): Boolean = post(constraint)
+  def += (constraint: Constraint): Unit = post(constraint)
 }
 
 /**
@@ -35,8 +35,8 @@ abstract class InstantiatedModel(p: UninstantiatedModel) extends LeafModel {
   override val intRepresentatives: ModelVarStorage[IntVar, IntVarImplementation] = ModelVarStorage[IntVar, IntVarImplementation, IntDomainStorage](p.intRepresentatives, instantiateDomainStorage)
   override val optimisationMethod: OptimisationMethod = p.optimisationMethod
 
-  if(!p.constraints.forall(post))
-    throw NoSolException()
+  // Post the constraints
+  p.constraints.foreach(post)
 
   protected def instantiateDomainStorage(v: DomainStorage): IntVarImplementation = {
     v match {

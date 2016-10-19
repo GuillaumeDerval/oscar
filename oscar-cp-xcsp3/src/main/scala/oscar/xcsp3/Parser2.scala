@@ -13,7 +13,8 @@ import org.xcsp.parser.entries.XVariables.{XVar, XVarInteger}
 import oscar.cp.constraints.Automaton
 import oscar.modeling.algebra._
 import oscar.modeling.constraints._
-import oscar.modeling.models.ModelDeclaration
+import oscar.modeling.misc.SearchStatistics
+import oscar.modeling.models.{ModelDeclaration, NoSolException}
 import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.modeling.solvers.cp.{DistributedCPApp, DistributedCPAppConfig}
@@ -296,7 +297,10 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeOperator.SUPSEQ => ???
       case TypeOperator.SUPSET => ???
     }
-    list.map(i => varHashMap(i.id())).sliding(2).map{x => rel(x(0), x(1))}.foreach(modelDeclaration.post)
+    list.map(i => varHashMap(i.id())).sliding(2).foreach({
+      case Array(x, y) => modelDeclaration.post(rel(x, y))
+      case _ => // do nothing
+    })
   }
 
 
@@ -393,14 +397,21 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   def _buildCumulativeConditionCst(id: String, starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], demands: Array[IntExpression], condition: ConditionRel) = {
+    //Ensure start+durations==end
+    for(i <- starts.indices)
+      modelDeclaration.add(starts(i) + durations(i) === ends(i))
     condition.operator match {
       case TypeConditionOperatorRel.EQ =>
         buildCtrCumulative(id, starts, durations, ends, demands, true, _getConditionVar(condition))
         buildCtrCumulative(id, starts, durations, ends, demands, false, _getConditionVar(condition))
-      case TypeConditionOperatorRel.GE => buildCtrCumulative(id, starts, durations, ends, demands, false, _getConditionVar(condition))
-      case TypeConditionOperatorRel.GT => buildCtrCumulative(id, starts, durations, ends, demands, false, _getConditionVar(condition)+1)
-      case TypeConditionOperatorRel.LE => buildCtrCumulative(id, starts, durations, ends, demands, true, _getConditionVar(condition))
-      case TypeConditionOperatorRel.LT => buildCtrCumulative(id, starts, durations, ends, demands, true, _getConditionVar(condition)-1)
+      case TypeConditionOperatorRel.GE =>
+        buildCtrCumulative(id, starts, durations, ends, demands, false, _getConditionVar(condition))
+      case TypeConditionOperatorRel.GT =>
+        buildCtrCumulative(id, starts, durations, ends, demands, false, _getConditionVar(condition)+1)
+      case TypeConditionOperatorRel.LE =>
+        buildCtrCumulative(id, starts, durations, ends, demands, true, _getConditionVar(condition))
+      case TypeConditionOperatorRel.LT =>
+        buildCtrCumulative(id, starts, durations, ends, demands, true, _getConditionVar(condition)-1)
       case TypeConditionOperatorRel.NE =>
         val tVar = IntVar(0, demands.map(_.max).sum)
         modelDeclaration.add(tVar !== _getConditionVar(condition))
@@ -408,11 +419,11 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
         buildCtrCumulative(id, starts, durations, ends, demands, false, tVar)
     }
   }
-  def buildCtrCumulative(id: String, starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], demands: Array[IntExpression], minCum: Boolean, limit: IntExpression): Unit = {
-    if(minCum)
-      modelDeclaration.add(MinCumulativeResource(starts, durations, ends, demands, limit))
-    else
+  def buildCtrCumulative(id: String, starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], demands: Array[IntExpression], maxCum: Boolean, limit: IntExpression): Unit = {
+    if(maxCum)
       modelDeclaration.add(MaxCumulativeResource(starts, durations, ends, demands, limit))
+    else
+      modelDeclaration.add(MinCumulativeResource(starts, durations, ends, demands, limit))
   }
 
   def buildCtrCumulative(id: String, starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], demands: Array[IntExpression], condition: Condition): Unit = {
@@ -763,6 +774,7 @@ object Parser2 extends DistributedCPApp[String] with App {
     val check = opt[Boolean]("c", descr = "Check results with the XCSP3 checker")
   }
 
+  println("<--")
   val (vars, solutionGenerator) = XCSP3Parser2.parse(this.modelDeclaration, config.instance.get.get)
 
   setSearch(Branching.binaryFirstFail(vars.toSeq))
@@ -771,11 +783,18 @@ object Parser2 extends DistributedCPApp[String] with App {
   }
 
   setDecompositionStrategy(new CartProdRefinement(vars, Branching.binaryFirstFail(vars.toSeq)))
-  val (stats, solutions) = solve()
+  val (stats, solutions) = try {
+    solve()
+  }
+  catch {
+    case e: NoSolException =>
+      println("This instance is already proven unsatisfeasible before solving")
+      (SearchStatistics(nNodes=0, nFails=0, time=0, completed=true, timeInTrail=0, maxTrailSize=0, nSols=0, timeToLastSolution=0), List[String]())
+  }
+
   println(stats)
   println("-->")
   println(solutions.mkString("\n\n"))
-
 
   def testSolution(instancePath: String, solution: String): Unit = {
     val sc = new CheckerLib(instancePath, solution)

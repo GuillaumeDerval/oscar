@@ -53,8 +53,9 @@ trait Watcher[RetVal] {
 
   /**
     * Called when solving is completely done and all solutions have been sent. No more function calls will be made
+    * @param completed: True if the timeout was not reached
     */
-  def allDone(): Unit
+  def allDone(completed: Boolean): Unit
 }
 
 /**
@@ -78,7 +79,7 @@ case class SolutionRecapMessage[RetVal](nbSolutions: Int, solutions: List[RetVal
 
 case class DoSubproblemMessage(spid: Int, sp: List[Constraint]) extends MasterToSolverMessage
 case class BoundUpdateMessage(newBound: Int) extends MasterToSolverMessage
-case class AllDoneMessage() extends MasterToSolverMessage with WatcherMessage
+case class AllDoneMessage(completed: Boolean) extends MasterToSolverMessage with WatcherMessage
 
 case class HelloMessage() extends MasterToSolverMessage with SolverToMasterMessage
 case class ConfigMessage(forceImmediateSend: Boolean) extends MasterToSolverMessage
@@ -101,9 +102,9 @@ class WatcherRunnable[RetVal](watchers: Iterable[Watcher[RetVal]],
         case DoneMessage(spid, newtimeTaken, searchStats) => watchers.foreach(_.endedSubproblem(spid, newtimeTaken, searchStats))
         case StartedMessage(spid) => watchers.foreach(_.startedSubproblem(spid))
         case SolutionRecapMessage(nbSolutions: Int, solutions: List[RetVal]) => watchers.foreach(_.solutionRecap(nbSolutions, solutions))
-        case AllDoneMessage() =>
+        case AllDoneMessage(completed) =>
           done = true
-          watchers.foreach(_.allDone())
+          watchers.foreach(_.allDone(completed))
       }
     }
   }
@@ -150,11 +151,11 @@ class StatisticsWatcher[RetVal] extends Watcher[RetVal] {
     results ++= solutions
   }
 
-  override def allDone(): Unit = {
+  override def allDone(completed: Boolean): Unit = {
     currentStatistics = new SearchStatistics(nNodes = currentStatistics.nNodes,
       nFails = currentStatistics.nFails,
       time = currentStatistics.time,
-      completed = true,
+      completed = completed,
       timeInTrail = currentStatistics.timeInTrail,
       maxTrailSize = currentStatistics.maxTrailSize,
       nSols = currentStatistics.nSols,

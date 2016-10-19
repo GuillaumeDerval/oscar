@@ -59,8 +59,7 @@ class ModelDeclaration extends Serializable {
     * @param constraint the constraint to post
     */
   private def postInstantiated(model: InstantiatedModel, constraint: Constraint): Unit = {
-    if(!model.post(constraint))
-      throw NoSolException()
+    model.post(constraint)
   }
 
   /**

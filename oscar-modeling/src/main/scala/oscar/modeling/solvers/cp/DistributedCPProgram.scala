@@ -263,7 +263,7 @@ class SolverMaster[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPS
 
   val uninstantiatedModel = modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel]
 
-  val solverForcedToSendImmediately = maxSols != 0 || !uninstantiatedModel.optimisationMethod.isInstanceOf[NoOptimisation]
+  val solverForcedToSendImmediately = maxSols != 0 || maxTime != 0 || !uninstantiatedModel.optimisationMethod.isInstanceOf[NoOptimisation]
 
   @volatile private var boundary: Int = uninstantiatedModel.optimisationMethod match {
     case m: Minimisation => uninstantiatedModel.getRepresentative(m.objective).max
@@ -299,8 +299,8 @@ class SolverMaster[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPS
         //check SolutionRecap in main function if needed
         if(solverForcedToSendImmediately)
         {
-          broadcastRouter.route(AllDoneMessage(), self)
-          outputQueue.add(AllDoneMessage())
+          broadcastRouter.route(AllDoneMessage(true), self)
+          outputQueue.add(AllDoneMessage(true))
           terminating = true
           context.system.terminate()
         }
@@ -312,8 +312,8 @@ class SolverMaster[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPS
     case SolveTimeout() =>
       // We are done here
       stillAcceptSolutions = false
-      broadcastRouter.route(AllDoneMessage(), self)
-      outputQueue.add(AllDoneMessage())
+      broadcastRouter.route(AllDoneMessage(false), self)
+      outputQueue.add(AllDoneMessage(false))
       terminating = true
       context.system.terminate()
     case SolutionMessage(solution, None) =>
@@ -324,8 +324,8 @@ class SolverMaster[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPS
           if(maxSols == 0) {
             // We are done here
             stillAcceptSolutions = false
-            broadcastRouter.route(AllDoneMessage(), self)
-            outputQueue.add(AllDoneMessage())
+            broadcastRouter.route(AllDoneMessage(true), self)
+            outputQueue.add(AllDoneMessage(true))
             terminating = true
             context.system.terminate()
           }
@@ -348,8 +348,8 @@ class SolverMaster[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPS
           if(maxSols == 0) {
             // We are done here
             stillAcceptSolutions = false
-            broadcastRouter.route(AllDoneMessage(), self)
-            outputQueue.add(AllDoneMessage())
+            broadcastRouter.route(AllDoneMessage(true), self)
+            outputQueue.add(AllDoneMessage(true))
             terminating = true
             context.system.terminate()
           }
@@ -361,7 +361,7 @@ class SolverMaster[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPS
         outputQueue.add(m)
       solutionRecapReceived += 1
       if(solutionRecapReceived == broadcastRouter.routees.length) {//all done
-        outputQueue.add(AllDoneMessage())
+        outputQueue.add(AllDoneMessage(true))
         terminating = true
         context.system.terminate()
       }
@@ -485,7 +485,7 @@ class SolverActor[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSo
       //should only be sent if we are on a satisfaction problem, and forceImmediateSend is off
       assert(null == objv && !forceImmediateSend)
       master ! SolutionRecapMessage(solutionCount, foundSolutions.toList)
-    case AllDoneMessage() =>
+    case AllDoneMessage(completed) =>
       forceClose.close()
       DoSubproblemSerializer.remove(modelDeclaration) //allow to run GC on the modelDeclaration
       context.stop(self)

@@ -348,7 +348,7 @@ class SubproblemGraphicalProgressBar[T](nbSubproblems: Int, nbThreads: Int) exte
     }
   }
 
-  override def allDone(): Unit = {
+  override def allDone(completed: Boolean): Unit = {
     val totalWallTime: Double = getClockTime - startTime
     val totalCPUTime: Double = subproblemsTotalCPUTime
 

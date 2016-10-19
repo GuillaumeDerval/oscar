@@ -1,6 +1,6 @@
 package oscar.modeling.solvers.cp.branchings
 
-import oscar.modeling.models.CPModel
+import oscar.modeling.models.{CPModel, NoSolException}
 import oscar.modeling.solvers.cp.branchings.Branching.Alternative
 import oscar.modeling.vars.IntVar
 
@@ -78,14 +78,22 @@ class BinaryLastConflict(cp: CPModel, variables: Array[IntVar], varHeuristic: In
 
   // Return an Alternative that assign the value to the variable
   @inline private def assign(variable: IntVar, value: Int, nAssigned: Int): Alternative = () => {
-    val out = cp.post(variable === value)
-    if (!out) conflictAssign = nAssigned
+    try {
+      val out = cp.post(variable === value)
+    }
+    catch {
+      case e: NoSolException => conflictAssign = nAssigned
+    }
   }
 
   // Return an Alternative that assign the value to the variable
   @inline private def remove(variable: IntVar, value: Int, nAssigned: Int): Alternative = () => {
-    val out = cp.post(variable !== value)
-    if (!out) conflictAssign = nAssigned
+    try {
+      val out = cp.post(variable !== value)
+    }
+    catch {
+      case e: NoSolException => conflictAssign = nAssigned
+    }
   }
 
   @inline private def updateAssigned(): Int = {

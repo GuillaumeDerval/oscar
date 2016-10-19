@@ -3,7 +3,7 @@ package oscar.modeling.experiences
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.examples.GolombRuler._
 import oscar.modeling.misc.CartesianProduct
-import oscar.modeling.models.{MemoCPModel, UninstantiatedModel}
+import oscar.modeling.models.{MemoCPModel, NoSolException, UninstantiatedModel}
 import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.{CartProdRefinement, DecompositionAddCartProdInfo, DepthIterativeDeepening}
 import oscar.modeling.solvers.cp.{DistributedCPApp, DistributedCPAppConfig, SubProblemCartesianProductLog}
@@ -71,7 +71,14 @@ object CartProdExperienceGolombRuler extends DistributedCPApp[String] with App {
   memo.apply {
     for((sp, idx) <- subproblems.zipWithIndex) {
       memo.pushState()
-      val ok = sp.constraints.forall(c => memo.post(c))
+      val ok = try {
+        sp.constraints.foreach(c => memo.post(c))
+        true
+      }
+      catch {
+        case c: NoSolException => false
+      }
+
 
       val original_cp = sp.getData(SubProblemCartesianProductLog).get
       val current_cp = if(ok) CartesianProduct.computeLog(m) else 0
