@@ -2,7 +2,7 @@ package oscar.linprog
 
 import oscar.algebra._
 
-class MPModel(val interface: SolverInterface[Linear,Linear,Double]) extends Model[Linear,Linear,Double]{
+class MPModel[S](val interface: SolverInterface[S,Linear,Linear,Double]) extends Model[Linear,Linear,Double]{
 
   implicit val thisModel = this
 
@@ -12,7 +12,15 @@ class MPModel(val interface: SolverInterface[Linear,Linear,Double]) extends Mode
   def MPIntVar(name: String, rng: Range) = VarInt(name,rng.min,rng.max)
   def MPBinaryVar(name: String) = VarBinary(name)
   def add(eq: EquationDescription[Linear, Double], name: String = "") = {
-    subjectTo(name ||: eq)
+    subjectTo(name |: eq)
+  }
+
+  def maximize(obj: NormalizedExpression[Linear,Double]): Unit = {
+    withObjective(Maximize(obj))
+  }
+
+  def minimize(obj: NormalizedExpression[Linear,Double]): Unit = {
+    withObjective(Minimize(obj))
   }
 
   def solve = interface.solve(this)

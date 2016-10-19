@@ -22,5 +22,5 @@ abstract class LinearMathSolverTester extends FunSuite{
       testSuite(lpsolve, "LPSolve")
     )
 
-  def testSuite(interface: Option[SolverInterface[Linear,Linear,Double]], solverName: String): FunSuite
+  def testSuite(interface: Option[SolverInterface[_,Linear,Linear,Double]], solverName: String): FunSuite
 }

@@ -68,15 +68,15 @@ object Warehouse extends MPModel(LPSolve) with App {
     + sum(Plants) { p => open(p) * fixedCosts(p).toDouble }) //fixed costs
   // Production Constraints
   for (p <- Plants) {
-    add( "" ||: sum(Warehouses)(w => transport(w)(p)) <=open(p)*capacity(p).toDouble)
+    add( "" |: sum(Warehouses)(w => transport(w)(p)) <=open(p)*capacity(p).toDouble)
   }
   // Demand Constraints
   for (w <- Warehouses) {
-    add( "" ||: sum(Plants)(p => transport(w)(p)) >= demand(w).toDouble)
+    add( "" |: sum(Plants)(p => transport(w)(p)) >= demand(w).toDouble)
   }
 
   solve match {
-    case AOptimal(solution) =>
+    case Optimal(solution) =>
 
       println("objective: " + solution(objective.expression))
       println("----------")

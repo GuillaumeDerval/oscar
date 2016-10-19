@@ -10,14 +10,14 @@ import java.nio.file.Path
   * @tparam C the degree of the constraints of the [[Model]]
   * @tparam V the type of values contained by the variables
   */
-abstract class SolverInterface[O  >: Constant <: ExpressionDegree, C <: ExpressionDegree, V: Numeric] {
+abstract class SolverInterface[S, O  >: Constant <: ExpressionDegree, C <: ExpressionDegree, V: Numeric] {
 
   /**
     * Create a new [[SolverRun]] to solve `model`. Please note that the solver does not actually solve the [[Model]]. The method `solve` of the returned [[SolverRun]] should be called to actually solve the [[Model]].
     * @param model the [[Model]] to be solved
     * @return A [[SolverRun]] that will solve `model`
     */
-  def run(model: Model[O, C, V], config: Option[Path] = None): SolverRun[O, C, V]
+  def run(model: Model[O, C, V], config: Option[Path] = None): SolverRun[S, O, C, V]
 
   /**
     * Solve the specified [[Model]]
@@ -34,7 +34,15 @@ abstract class SolverInterface[O  >: Constant <: ExpressionDegree, C <: Expressi
   * @tparam C the degree of the constraints of the [[Model]]
   * @tparam V the type of values contained by the variables
   */
-abstract class SolverRun[O  >: Constant <: ExpressionDegree, C <: ExpressionDegree, V: Numeric] {
+abstract class SolverRun[S, O  >: Constant <: ExpressionDegree, C <: ExpressionDegree, V: Numeric] {
+
+  /**
+    *
+    * @return the solver to be used to solve the [[Model]]. This methods is exposed in order to have access to all
+    *         functionalities of the math solver (CPlex, Gurobi, LPSolve,...). However this has to be used with caution
+    *         as any call to the rawSolver is not known by the [[SolverRun]]
+    */
+  def rawSolver: S
 
   /**
     * Solves the [[Model]] using a specific solver
@@ -46,6 +54,12 @@ abstract class SolverRun[O  >: Constant <: ExpressionDegree, C <: ExpressionDegr
     * Cleanly terminate the optimization process
     */
   def abort: Unit
+
+  /**
+    * Release all the resources associated with this [[SolverRun]]. No further calls should be made to this after this
+    * method has been called!
+    */
+  def release: Unit
 
   /**
     * Update the lower bound a variable. The [[Model]] passed to initialize the [[SolverRun]] will ```not``` be modified.
@@ -130,7 +144,7 @@ abstract class ModelStatus[O <: ExpressionDegree, C <: ExpressionDegree, V: Nume
   * @tparam C the degree of the constraints of the [[Model]]
   * @tparam V type of values contained by the variables of the [[Model]] solved
   */
-case class AFeasible[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](solution: Solution[V]) extends ModelStatus[O, C, V]
+case class Feasible[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](solution: Solution[V]) extends ModelStatus[O, C, V]
 
 /**
   * The solving has been successful and optimality is proven
@@ -139,7 +153,7 @@ case class AFeasible[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](s
   * @tparam C the degree of the constraints of the [[Model]]
   * @tparam V type of values contained by the variables of the [[Model]] solved
   */
-case class AOptimal[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](solution: Solution[V]) extends ModelStatus[O, C, V]
+case class Optimal[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](solution: Solution[V]) extends ModelStatus[O, C, V]
 
 /**
   * The [[Model]] is unbounded.
@@ -147,7 +161,7 @@ case class AOptimal[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](so
   * @tparam C the degree of the constraints of the [[Model]]
   * @tparam V type of values contained by the variables of the [[Model]] solved
   */
-case class AUnbounded[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric]() extends ModelStatus[O, C, V]
+case class Unbounded[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric]() extends ModelStatus[O, C, V]
 
 /**
   * The [[Model]] is infeasible given the bounds on the variables and the constraints
@@ -155,7 +169,7 @@ case class AUnbounded[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](
   * @tparam C the degree of the constraints of the [[Model]]
   * @tparam V type of values contained by the variables of the [[Model]] solved
   */
-case class AInfeasible[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric]() extends ModelStatus[O, C, V]
+case class Infeasible[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric]() extends ModelStatus[O, C, V]
 
 /**
   * The solver has returned an unknown status
@@ -163,8 +177,8 @@ case class AInfeasible[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric]
   * @tparam C the degree of the constraints of the [[Model]]
   * @tparam V type of values contained by the variables of the [[Model]] solved
   */
-case class AWarning[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric]() extends ModelStatus[O, C, V]
+case class Warning[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric]() extends ModelStatus[O, C, V]
 
-case class ANoSolutionFoundException[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](ModelStatus: ModelStatus[O,C,V]) extends Exception(s"No solution found to the problem, end status is $ModelStatus")
+case class NoSolutionFoundException[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](ModelStatus: ModelStatus[O,C,V]) extends Exception(s"No solution found to the problem, end status is $ModelStatus")
 
 

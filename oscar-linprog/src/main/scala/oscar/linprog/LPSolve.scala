@@ -8,7 +8,7 @@ import oscar.algebra._
 /**
   * [[SolverInterface]] for using LPSolve to solve linear mathematical [[Model]]s.
   */
-object LPSolve extends SolverInterface[Linear, Linear, Double]{
+object LPSolve extends SolverInterface[LpSolve,Linear, Linear, Double]{
   override def run(model: Model[Linear, Linear, Double],config: Option[Path] = None) = new LPSolveRun(config)(model)
 }
 
@@ -17,11 +17,11 @@ object LPSolve extends SolverInterface[Linear, Linear, Double]{
   * @param config path to an optional config file to configure LPSolve
   * @param model the [[Model]] to solve with this [[SolverRun]]
   */
-class LPSolveRun(config: Option[Path] = None)(private val model: Model[Linear, Linear, Double]) extends SolverRun[Linear, Linear, Double] {
+class LPSolveRun(config: Option[Path] = None)(private val model: Model[Linear, Linear, Double]) extends SolverRun[LpSolve,Linear, Linear, Double] {
 
 
-  // CPlex solver
-  val rawSolver = LpSolve.makeLp(0, model.variables.size)
+  // LPSolve solver
+  val rawSolver: LpSolve = LpSolve.makeLp(0, model.variables.size)
 
   // Abortion management
   class LPSolveAborter extends lpsolve.AbortListener {
@@ -44,8 +44,8 @@ class LPSolveRun(config: Option[Path] = None)(private val model: Model[Linear, L
     case _ =>
   }
 
-  // Create the CPlex variables
-  val cplexVars = {
+  // Create the LPSolve variables
+  private val solverVars = {
     for (vd <- model.variables) yield {
       rawSolver.setColName(vd.id + 1, vd.name)
       rawSolver.setLowbo(vd.id + 1, vd.lowerBound)
@@ -91,7 +91,7 @@ class LPSolveRun(config: Option[Path] = None)(private val model: Model[Linear, L
     rawSolver.setBinary(vd.id + 1, false)
   }
 
-  // Add all constraints to the CPlex model
+  // Add all constraints to the solver
   for (s <- model.constraints; c <- s.equations) {
     val sen = c.sense match {
       case LQ => LpSolve.LE
@@ -112,15 +112,15 @@ class LPSolveRun(config: Option[Path] = None)(private val model: Model[Linear, L
 
     rawSolver.solve match {
       case LpSolve.OPTIMAL =>
-        AOptimal(new Solution[Double](rawSolver.getPtrVariables))
+        Optimal(new Solution[Double](rawSolver.getPtrVariables))
       case LpSolve.SUBOPTIMAL =>
-        AFeasible(new Solution[Double](rawSolver.getPtrVariables))
+        Feasible(new Solution[Double](rawSolver.getPtrVariables))
       case LpSolve.INFEASIBLE =>
-        AInfeasible()
+        Infeasible()
       case LpSolve.UNBOUNDED =>
-        AUnbounded()
+        Unbounded()
       case _ =>
-       AWarning()
+       Warning()
     }
   }
 

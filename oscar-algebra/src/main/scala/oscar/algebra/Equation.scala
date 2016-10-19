@@ -28,7 +28,7 @@ class EquationSystem[+T <: ExpressionDegree,+V](val equations: Iterable[Equation
     * @param newName the new name of the [[EquationSystem]]
     * @return a [[EquationSystem]] with name newName
     * */
-  def :||(newName: String) = new EquationSystem(equations, newName)
+  def |:(newName: String) = new EquationSystem(equations, newName)
 
   override def toString = {
     val res = new StringBuffer()
@@ -72,16 +72,16 @@ trait EquationDescription[+T <: ExpressionDegree,+V]{
     * @param name name of the [[Equation]]
     * @return an [[Equation]] corresponding to this with name `name`
     */
-  def ||:(name: String): Equation[T,V]
+  def |:(name: String): Equation[T,V]
 }
 
 class EQEquation[+T <: ExpressionDegree,+V](expr: NormalizedExpression[T,V]) extends EquationDescription[T,V]{
-  def ||:(s: String) = new Equation(expr, EQ,s)
+  def |:(s: String) = new Equation(expr, EQ,s)
 }
 class LQEquation[+T <: ExpressionDegree,+V](expr: NormalizedExpression[T,V]) extends EquationDescription[T,V]{
-  def ||:(s: String) = new Equation(expr, LQ,s)
+  def |:(s: String) = new Equation(expr, LQ,s)
 }
 class GQEquation[+T <: ExpressionDegree,+V](expr: NormalizedExpression[T,V])  extends EquationDescription[T,V]{
-  def ||:(s: String) = new Equation(expr, GQ,s)
+  def |:(s: String) = new Equation(expr, GQ,s)
 }
 

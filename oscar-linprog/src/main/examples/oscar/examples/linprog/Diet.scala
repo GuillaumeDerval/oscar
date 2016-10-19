@@ -51,14 +51,14 @@ object Diet extends MPModel(LPSolve) with App {
   //for each nutriment, at least 700 must be present in the Diet
   var id = 0
   for (n <- nutriments) {
-    add(s"C_$id" ||: sum(foods) { f =>  f.x*f.contents(n) } >= 700.toDouble)
+    add(s"C_$id" |: sum(foods) { f =>  f.x*f.contents(n) } >= 700.toDouble)
   }
   //minimize the total cost
   minimize(sum(foods) { f => f.x*f.price })
 
   // effectively solve the model
   interface.solve(this) match{
-    case AOptimal(solution) =>
+    case Optimal(solution) =>
       println("objective: " + solution(objective.expression))
       println("-----------------------------------")
       println(foods.map(f => s"${f.x.name} -> ${solution(f.x)}").mkString("\n"))

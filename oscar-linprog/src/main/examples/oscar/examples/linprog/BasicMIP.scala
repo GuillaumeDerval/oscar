@@ -27,9 +27,9 @@ object BasicMIP extends MPModel(LPSolve) with App {
 
   maximize(x0 + x1*2.0 + x2*3.0 + x3)
   subjectTo(
-    "cons1" ||: (-x0 +       x1   + x2 +   x3*10.0 <= 20.0),
-    "cons2" ||: (     x0 -  x1*3.0   + x2            <= 30.0),
-    "cons3" ||: (                x1        -  x3*3.5 ===  0.0)
+    "cons1" |: (-x0 +       x1   + x2 +   x3*10.0 <= 20.0),
+    "cons2" |: (     x0 -  x1*3.0   + x2            <= 30.0),
+    "cons3" |: (                x1        -  x3*3.5 ===  0.0)
   )
 
   val endStatus = interface.solve(this)

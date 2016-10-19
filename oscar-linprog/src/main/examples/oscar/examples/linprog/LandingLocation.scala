@@ -63,15 +63,15 @@ object LandingLocation extends MPModel(LPSolve) with App {
 
   // One log can be assigned only to one landing
   for (log <- Logs) {
-    add("" ||: sum(Landings) { (land) => x(log)(land) } <= 1.0)
+    add("" |: sum(Landings) { (land) => x(log)(land) } <= 1.0)
   }
   // One log can be assigned to a landing only if that landing is open
   for (log <- Logs; land <- Landings) {
-    add("" ||: x(log)(land) <= y(land))
+    add("" |: x(log)(land) <= y(land))
   }
 
   solve match {
-    case AOptimal(solution) =>
+    case Optimal(solution) =>
       println("objective: " + solution(objective.expression))
       println("----------")
       println(y.mkString("\n"))

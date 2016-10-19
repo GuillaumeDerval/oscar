@@ -47,14 +47,14 @@ object Workforce extends MPModel(LPSolve) with App {
 
   minimize(sum(Workers, Shifts)((w, s) => assigned(w)(s) * pay(w).toDouble))
   for (s <- 0 until Shifts.size) {
-    add( "" ||: sum(Workers)(w => assigned(w)(s) * availability(w)(s).toDouble) === shiftRequirements(s).toDouble)
+    add( "" |: sum(Workers)(w => assigned(w)(s) * availability(w)(s).toDouble) === shiftRequirements(s).toDouble)
   }
   for (w <- Workers) {
-    add( "" ||: sum(Shifts)(s => assigned(w)(s)) <= maxNbShift.toDouble)
+    add( "" |: sum(Shifts)(s => assigned(w)(s)) <= maxNbShift.toDouble)
   }
 
   solve match {
-    case AOptimal(solution) =>
+    case Optimal(solution) =>
 
       println("objective: " + solution(objective.expression))
       for (s <- 0 until Shifts.size) {

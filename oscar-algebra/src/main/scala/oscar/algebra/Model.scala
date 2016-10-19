@@ -65,7 +65,7 @@ class Model[O >: Constant <: ExpressionDegree , C <: ExpressionDegree, V: Numeri
   /**
     * Objective to be optimized
     */
-  private var _objective: Objective[O, V] = new Minimize[O,V](implicitly[Numeric[V]].zero.normalized[V])
+  private var _objective: Objective[O, V] = new Minimize[O,V](Const(implicitly[Numeric[V]].zero).normalized[V])
   def objective = _objective
 
   /**
@@ -101,21 +101,6 @@ class Model[O >: Constant <: ExpressionDegree , C <: ExpressionDegree, V: Numeri
     */
   def subjectTo(eqs: EquationSystem[C, V]): Unit = {
     _constraints += eqs
-  }
-
-  /**
-    * Add an objective to be minimized
-    */
-  def minimize(eq: NormalizedExpression[O, V]): Unit = {
-    _objective = new Minimize[O, V](eq)
-  }
-
-
-  /**
-    * Add an objective to be minimized
-    */
-  def maximize(eq: NormalizedExpression[O, V]): Unit = {
-    _objective = new Maximize[O, V](eq)
   }
 
   /**

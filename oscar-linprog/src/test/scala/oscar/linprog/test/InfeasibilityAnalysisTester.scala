@@ -8,12 +8,12 @@ import oscar.algebra._
 
 @RunWith(classOf[JUnitRunner])
 class InfeasibilityAnalysisTests extends LinearMathSolverTester{
-  override def testSuite(interface: Option[SolverInterface[Linear,Linear,Double]], solverName: String): FunSuite = {
+  override def testSuite(interface: Option[SolverInterface[_,Linear,Linear,Double]], solverName: String): FunSuite = {
     new InfeasibilityAnalysisTester(interface)(solverName)
   }
 }
 
-class InfeasibilityAnalysisTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
+class InfeasibilityAnalysisTester(interface: Option[SolverInterface[_,Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
 
   override def suiteName: String = solverName + " - InfeasibilityAnalysisTester"
 
@@ -33,14 +33,14 @@ class InfeasibilityAnalysisTester(interface: Option[SolverInterface[Linear, Line
     maximize(x1 + x2 * 2.0 + x3 * 3.0)
 
     subjectTo(
-      "E1" ||: x2 + x3 <= 20.0, // 0
-      "E2" ||: x1 - x2 * 3.0 + x3 <= 30.0, // 1
-      "E3" ||: x1 <= 20.0, // 2
-      "E4" ||: x1 >= 40.0 // 3
+      "E1" |: x2 + x3 <= 20.0, // 0
+      "E2" |: x1 - x2 * 3.0 + x3 <= 30.0, // 1
+      "E3" |: x1 <= 20.0, // 2
+      "E4" |: x1 >= 40.0 // 3
     )
 
     model.solve match {
-      case AInfeasible() =>
+      case Infeasible() =>
 
       //
       //        val infeasibilitySetTry = solver.analyseInfeasibility()
@@ -61,7 +61,6 @@ class InfeasibilityAnalysisTester(interface: Option[SolverInterface[Linear, Line
       //        }
       case _ => assert(false)
     }
-    //solver.release()
   }
 
   test("Infeasibility analysis on LP: infeasibilities due to var bounds") {
@@ -73,12 +72,12 @@ class InfeasibilityAnalysisTester(interface: Option[SolverInterface[Linear, Line
     minimize(y)
 
     subjectTo(
-      "E" ||: x - y <= 10.0 // 0
+      "E" |: x - y <= 10.0 // 0
     )
 
     model.solve match {
 
-      case AInfeasible() =>
+      case Infeasible() =>
       //
       //    val infeasibilitySetTry = solver.analyseInfeasibility()
       //
@@ -92,6 +91,5 @@ class InfeasibilityAnalysisTester(interface: Option[SolverInterface[Linear, Line
       //    y.lowerBoundInfeasible should be (Some(false))
       //    y.upperBoundInfeasible should be (Some(true))
     }
-    //solver.release()
   }
 }

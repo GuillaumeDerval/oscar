@@ -44,12 +44,12 @@ object MaxFlow extends MPModel(LPSolve) with App {
 
 
   for (l <- 1 to nbline - 1)
-    add( "" ||: sum(Columns)(c => x(l)(c)) - sum(Lines)(c => x(c)(l)) === 0.toDouble)
+    add( "" |: sum(Columns)(c => x(l)(c)) - sum(Lines)(c => x(c)(l)) === 0.toDouble)
 
   maximize(sum(Lines)(l => x(l)(nbcol - 1)))
 
   solve match {
-    case AOptimal(solution) =>
+    case Optimal(solution) =>
 
       println("objective: " + solution(objective.expression))
       for (l <- Lines) {

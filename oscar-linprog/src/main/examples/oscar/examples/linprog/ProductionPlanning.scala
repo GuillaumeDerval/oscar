@@ -49,11 +49,11 @@ object ProductionPlanning extends MPModel(LPSolve) with App {
   maximize(sum(Products) { p => x(p) * c(p).toDouble })
   
   for (d <- Dimensions) {
-    add( "" ||: sum(Products)(p => x(p)*coef(d)(p).toDouble) <= b(d).toDouble)
+    add( "" |: sum(Products)(p => x(p)*coef(d)(p).toDouble) <= b(d).toDouble)
   }
 
   val endStatus = solve match {
-    case AOptimal(solution) =>
+    case Optimal(solution) =>
 
       println("objective: " + solution(objective.expression))
       Products.foreach(p => if (solution(x(p)) > 0) println("x" + p + ":" + x(p).value.get))

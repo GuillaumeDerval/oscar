@@ -8,15 +8,13 @@ import oscar.algebra._
 
 @RunWith(classOf[JUnitRunner])
 class MIPTests extends LinearMathSolverTester{
-  override def testSuite(interface: Option[SolverInterface[Linear,Linear,Double]], solverName: String): FunSuite = {
+  override def testSuite(interface: Option[SolverInterface[_,Linear,Linear,Double]], solverName: String): FunSuite = {
     new MIPTester(interface)(solverName)
   }
 }
 
 
-class MIPTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
-
-  implicit def int2DoubleConst(i: Int) = Const(i.toDouble).normalized
+class MIPTester(interface: Option[SolverInterface[_,Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
 
   override def suiteName: String = solverName + " - MIPTester"
 
@@ -31,10 +29,10 @@ class MIPTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solv
     val y = VarNumerical("y", 0, 100)
 
     maximize(x * 100.0 + y)
-    model.subjectTo("E" ||: "E" ||: x * 3.0 + y <= 14.5)
+    model.subjectTo("E" ||: "E" |: x * 3.0 + y <= 14.5)
 
     model.solve match {
-      case AOptimal(solution) =>
+      case Optimal(solution) =>
         solution(x) shouldBe moreOrLess(4.0)
         solution(y) shouldBe moreOrLess(14.5 - 3 * 4)
     }
@@ -47,10 +45,10 @@ class MIPTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solv
     val y = VarInt("y", 0, 100)
 
     maximize(x * 100.0 + y)
-    subjectTo("E" ||: x * 3.0 + y <= 14.5)
+    subjectTo("E" |: x * 3.0 + y <= 14.5)
 
     model.solve match {
-      case AOptimal(solution) =>
+      case Optimal(solution) =>
         solution(x) shouldBe moreOrLess(4.0)
         solution(y) shouldBe moreOrLess(2.0)
     }
@@ -63,18 +61,18 @@ class MIPTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solv
     val y = VarNumerical("y", 0, 100)
 
     maximize(x * 100.0 + y)
-    subjectTo("E" ||: x * 3.0 + y <= 14.5)
+    subjectTo("E" |: x * 3.0 + y <= 14.5)
 
     val run = i.run(model)
 
     run.solve match {
-      case AOptimal(solution) =>
+      case Optimal(solution) =>
 
         // Set x as a continuous var => performs the linear relaxation of the above problem
         run.setContinuous(x)
 
         run.solve match {
-          case AOptimal(solution2) =>
+          case Optimal(solution2) =>
             solution2(x) shouldBe moreOrLess(14.5 / 3.0)
             solution2(y) shouldBe moreOrLess(0.0)
         }
@@ -89,18 +87,18 @@ class MIPTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solv
     val z = VarNumerical("z", 0, 100)
 
     maximize(x + y * 2.0 + z * 3.0)
-    subjectTo("E" ||: x + y <= 75.5)
-    subjectTo("E" ||: x + z <= 75.5)
+    subjectTo("E" |: x + y <= 75.5)
+    subjectTo("E" |: x + z <= 75.5)
 
     val run = i.run(model)
 
     run.solve match {
-      case AOptimal(solution) =>
+      case Optimal(solution) =>
 
         run.setInteger(y)
 
         run.solve match {
-          case AOptimal(solution2) =>
+          case Optimal(solution2) =>
             solution2(x) shouldBe moreOrLess(0.0)
             solution2(y) shouldBe moreOrLess(75.0)
             solution2(z) shouldBe moreOrLess(75.5)
@@ -116,12 +114,12 @@ class MIPTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solv
     val y = VarNumerical("y", 0, 100)
 
     maximize(100 * x + 1 * y)
-    subjectTo("E" ||: 3 * x + 1 * y <= 14.5)
+    subjectTo("E" |: 3 * x + 1 * y <= 14.5)
 
 
 
     model.solve match {
-      case AOptimal(solution) =>
+      case Optimal(solution) =>
         solution(x) shouldBe moreOrLess(1)
         solution(y) shouldBe moreOrLess(14.5 - 3 * 1)
     }

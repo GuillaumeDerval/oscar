@@ -40,30 +40,30 @@ object Queens extends MPModel(LPSolve) with App {
 
   /* at most one queen can be placed in each row */
   for (l <- lines)
-    add( "" ||: sum(columns)(c => x(l)(c)) <= 1.toDouble)
+    add( "" |: sum(columns)(c => x(l)(c)) <= 1.toDouble)
 
   /* at most one queen can be placed in each column */
   for (c <- columns)
-    add( "" ||: sum(lines)(l => x(l)(c)) <= 1.toDouble)
+    add( "" |: sum(lines)(l => x(l)(c)) <= 1.toDouble)
 
   /* at most one queen can be placed in each "/"-diagonal  upper half*/
   for (i <- 1 until n)
-    add( "" ||: sum(0 to i)((j) => x(i - j)(j)) <= 1.toDouble)
+    add( "" |: sum(0 to i)((j) => x(i - j)(j)) <= 1.toDouble)
 
   /* at most one queen can be placed in each "/"-diagonal  lower half*/
   for (i <- 1 until n)
-    add( "" ||: sum(i until n)((j) => x(j)(n - 1 - j + i)) <= 1.toDouble)
+    add( "" |: sum(i until n)((j) => x(j)(n - 1 - j + i)) <= 1.toDouble)
 
   /* at most one queen can be placed in each "/"-diagonal  upper half*/
   for (i <- 0 until n)
-    add( "" ||: sum(0 until n - i)((j) => x(j)(j + i)) <= 1.toDouble)
+    add( "" |: sum(0 until n - i)((j) => x(j)(j + i)) <= 1.toDouble)
 
   /* at most one queen can be placed in each "/"-diagonal  lower half*/
   for (i <- 1 until n)
-    add( "" ||: sum(0 until n - i)((j) => x(j + i)(j)) <= 1.toDouble)
+    add( "" |: sum(0 until n - i)((j) => x(j + i)(j)) <= 1.toDouble)
 
   solve match {
-    case AOptimal(solution) =>
+    case Optimal(solution) =>
 
       println("objective: " + solution(objective.expression))
 

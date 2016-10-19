@@ -11,12 +11,12 @@ import scala.concurrent.{Await, Future}
 
 @RunWith(classOf[JUnitRunner])
 class AbortTests extends LinearMathSolverTester{
-  override def testSuite(interface: Option[SolverInterface[Linear,Linear,Double]], solverName: String): FunSuite = {
+  override def testSuite(interface: Option[SolverInterface[_,Linear,Linear,Double]], solverName: String): FunSuite = {
     new AbortTester(interface)(solverName)
   }
 }
 
-class AbortTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
+class AbortTester(interface: Option[SolverInterface[_,Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
 
   override def suiteName: String = solverName + " - AbortTester"
 
@@ -41,7 +41,7 @@ class AbortTester(interface: Option[SolverInterface[Linear, Linear, Double]])(so
       new EquationSystem(for {
         i <- 0 until n
       } yield {
-        s"allocation[$i]" ||: (sum(0 until n)(j => xs(i)(j) * sizes(j).toDouble) <= ys(i) * binSize.toDouble)
+        s"allocation[$i]" |: (sum(0 until n)(j => xs(i)(j) * sizes(j).toDouble) <= ys(i) * binSize.toDouble)
       }))
 
     model.subjectTo (
@@ -49,7 +49,7 @@ class AbortTester(interface: Option[SolverInterface[Linear, Linear, Double]])(so
       for {
         j <- 0 until n
       } yield {
-        s"unicity[$j]" ||: (sum(0 until n)(i => xs(i)(j)) === Const(1.0))
+        s"unicity[$j]" |: (sum(0 until n)(i => xs(i)(j)) === Const(1.0))
       }))
 
     val run = i.run(model)
@@ -85,7 +85,7 @@ class AbortTester(interface: Option[SolverInterface[Linear, Linear, Double]])(so
     val o = x * 2.0 - y * 5.0
     minimize(o)
 
-    model.subjectTo("E" ||: x + y <= 200.0)
+    model.subjectTo("E" |: x + y <= 200.0)
 
     val run = i.run(model)
 
@@ -93,7 +93,7 @@ class AbortTester(interface: Option[SolverInterface[Linear, Linear, Double]])(so
     run.abort
 
     run.solve match {
-      case AOptimal(solution) =>
+      case Optimal(solution) =>
         solution(x) shouldBe (100.0 +- 1e-6)
         solution(y) shouldBe (100.0 +- 1e-6)
 

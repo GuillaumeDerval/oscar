@@ -59,8 +59,8 @@ class IndicatorConstraintExpression[+V](
     indicators.map { ind =>
       val actualBound = Const[V](bigM).normalized * ind
 
-      lazy val constraintLQ = s"${name}_A" ||: linExpr <= actualBound
-      lazy val constraintGQ = s"${name}_B" ||: linExpr >= Const(numeric.negate(numeric.one)).normalized * actualBound
+      lazy val constraintLQ = s"${name}_A" |: linExpr <= actualBound
+      lazy val constraintGQ = s"${name}_B" |: linExpr >= Const(numeric.negate(numeric.one)).normalized * actualBound
 
       sense match {
         case LQ => Seq(constraintLQ)

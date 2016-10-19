@@ -52,11 +52,11 @@ object PopsicleScheduling extends MPModel(LPSolve) with App {
   minimize(sum(configs)(c => c._1 * (c._2 * c._3.sum)))
   for ((d, i) <- demand.zipWithIndex) {
     println("demand:" + d)
-    add( "" ||: sum(configs)(c => c._1 * c._3(i).toDouble) >= d.toDouble)
+    add( "" |: sum(configs)(c => c._1 * c._3(i).toDouble) >= d.toDouble)
   }
 
   solve match {
-    case AOptimal(solution) =>
+    case Optimal(solution) =>
 
       println(solution(objective.expression))
       for (c <- configs; if (solution(c._1) > 0)) {

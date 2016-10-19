@@ -61,13 +61,13 @@ object ElectricityMarket extends MPModel(LPSolve) with App {
     val cons_t = consumers.filter(overlap(_, t))
     if (prod_t.nonEmpty && cons_t.nonEmpty) {
       // production and consumption must be the same at time t
-      add(s"C_${nc}" ||: sum(prod_t)(p => varMap(p) * p(0).abs.toDouble) === sum(cons_t)(c => varMap(c) * c(0).abs.toDouble))
+      add(s"C_${nc}" |: sum(prod_t)(p => varMap(p) * p(0).abs.toDouble) === sum(cons_t)(c => varMap(c) * c(0).abs.toDouble))
       nc += 1
     }
   }
 
   solve match {
-    case AOptimal(solution) =>
+    case Optimal(solution) =>
 
       println("time:" + (System.currentTimeMillis - t0))
       println("objective:" + solution(objective.expression))
