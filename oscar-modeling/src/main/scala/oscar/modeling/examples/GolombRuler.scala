@@ -4,7 +4,7 @@ import oscar.modeling.algebra.IntExpression
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.{CartProdRefinement, DecompositionAddCartProdInfo, DepthIterativeDeepening}
-import oscar.modeling.solvers.cp.{DistributedCPApp, DistributedCPAppConfig}
+import oscar.modeling.solvers.cp.{CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar
 
 import scala.spores._
@@ -13,8 +13,8 @@ import scala.spores._
   * Example of ATSP, copied from the original one from OscaR-lib.
   * GNU GPL, OscaR Authors
   */
-object GolombRuler extends DistributedCPApp[String] with App {
-  override lazy val config = new DistributedCPAppConfig {
+object GolombRuler extends CPApp[String] with App {
+  override lazy val config = new CPAppConfig {
     val size = trailArg[Int](descr = "Size of the golomb ruler")
   }
 

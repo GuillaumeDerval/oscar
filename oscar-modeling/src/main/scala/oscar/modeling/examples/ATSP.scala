@@ -3,7 +3,7 @@ package oscar.modeling.examples
 import oscar.modeling.constraints.{MinCircuit, MinCircuitWeak}
 import oscar.modeling.models.{CPModel, UninstantiatedModel}
 import oscar.util._
-import oscar.modeling.solvers.cp.DistributedCPApp
+import oscar.modeling.solvers.cp.CPApp
 import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.{AnotherModelDecomposition, CartProdRefinement}
 import oscar.modeling.vars.IntVar
@@ -15,7 +15,7 @@ import scala.io.Source
   * Example of ATSP, copied from the original one from OscaR-lib.
   * GNU GPL, OscaR Authors
   */
-object ATSP extends DistributedCPApp[Int] with App {
+object ATSP extends CPApp[Int] with App {
   var lines = Source.fromFile("ftv70.atsp").getLines.toArray
   lines = lines.take(lines.size-1) // drop EOF
   val n = lines(3).split(":")(1).trim().toInt

@@ -1,4 +1,4 @@
-package oscar.modeling.solvers.cp
+package oscar.modeling.solvers.cp.distributed
 
 import akka.actor.ExtendedActorSystem
 import com.esotericsoftware.kryo.io.{Input, Output}

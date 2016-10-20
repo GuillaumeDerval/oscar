@@ -2,8 +2,8 @@ package oscar.modeling.solvers.cp.decompositions
 
 import oscar.modeling.models.{MemoCPModel, UninstantiatedModel}
 import oscar.modeling.solvers.cp.branchings.Branching
-import oscar.modeling.solvers.cp.{SubProblem, SubProblemDiscrepancy}
 import oscar.modeling.solvers.cp.branchings.Branching._
+import oscar.modeling.solvers.cp.distributed.{SubProblem, SubProblemDiscrepancy}
 
 import scala.collection.mutable
 

@@ -4,7 +4,7 @@ import oscar.modeling.constraints.{BinPacking, Spread}
 
 import scala.io.Source
 import oscar.util._
-import oscar.modeling.solvers.cp.{DistributedCPApp, DistributedCPAppConfig}
+import oscar.modeling.solvers.cp.{CPApp, CPAppConfig}
 import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.{CartProdRefinement, DecompositionAddCartProdInfo, DepthIterativeDeepening}
 import oscar.modeling.vars.IntVar
@@ -31,8 +31,8 @@ import scala.spores._
   * @author Pierre Schaus pschaus@gmail.com
   * @author Guillaume Derval guillaume.derval@student.uclouvain.be
   */
-object BACP extends DistributedCPApp[Int] with App {
-  override lazy val config = new DistributedCPAppConfig {
+object BACP extends CPApp[Int] with App {
+  override lazy val config = new CPAppConfig {
     val file = trailArg[String](descr = "Path to the instance")
   }
 

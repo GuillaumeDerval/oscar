@@ -3,7 +3,7 @@ package oscar.xcsp3.test
 import java.io.File
 
 import oscar.modeling.models.UninstantiatedModel
-import oscar.modeling.solvers.cp.DistributedCPProgram
+import oscar.modeling.solvers.cp.CPProgram
 import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.xcsp3._
@@ -17,7 +17,7 @@ class TestXCSP3Parser2_All extends TestSuite {
   }
 
   def isValid(instancePath: String, nSol: Int = 1, useStaticOrdering: Boolean = false): Boolean = {
-    val cpProgram = new DistributedCPProgram[String]()
+    val cpProgram = new CPProgram[String]()
     val (vars, solutionGenerator) =  XCSP3Parser2.parse(cpProgram.modelDeclaration, instancePath)
 
     val v = vars.toArray
@@ -37,7 +37,7 @@ class TestXCSP3Parser2_All extends TestSuite {
 
     cpProgram.setDecompositionStrategy(new CartProdRefinement(vars, Branching.binaryFirstFail(vars.toSeq)))
 
-    val (stats, solutions) = cpProgram.solveLocally(cpProgram.modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], threadCount = 1, sppw = 1, nSols = 1, maxTime = 30000)
+    val (stats, solutions) = cpProgram.solveParallel(cpProgram.modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], threadCount = 1, sppw = 1, nSols = 1, maxTime = 30000)
 
     assert(solutions.nonEmpty) // feasible problem
     solutions.forall(sol => testSolution(instancePath, sol))

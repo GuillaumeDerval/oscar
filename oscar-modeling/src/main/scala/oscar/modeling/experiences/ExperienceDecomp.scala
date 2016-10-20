@@ -5,10 +5,10 @@ import oscar.modeling.misc.CartesianProduct
 import oscar.modeling.models.{MemoCPModel, UninstantiatedModel}
 import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions._
-import oscar.modeling.solvers.cp.{DistributedCPApp, DistributedCPAppConfig, SubProblem, SubProblemCartesianProductLog}
+import oscar.modeling.solvers.cp.{CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar
 
-object ExperienceDecomp extends DistributedCPApp[String] with App {
+object ExperienceDecomp extends CPApp[String] with App {
   def increasing(y: Array[IntVar]) = {
     for (i <- 1 until y.length) {
       post(y(i - 1) < y(i))

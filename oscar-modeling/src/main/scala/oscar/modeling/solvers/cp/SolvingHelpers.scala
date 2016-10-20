@@ -7,15 +7,15 @@ import oscar.modeling.misc.{SPSearchStatistics, SearchStatistics}
 import oscar.modeling.models.operators.ModelOperator
 import oscar.modeling.models.{Model, ModelDeclaration}
 import oscar.modeling.solvers.cp.branchings.Branching
-import oscar.modeling.solvers.cp.branchings.Branching.{Alternative, BranchingInstantiator}
+import oscar.modeling.solvers.cp.branchings.Branching._
+import oscar.modeling.solvers.cp.distributed._
 import oscar.modeling.vars.IntVar
 
 import scala.collection.mutable.ListBuffer
 import scala.spores.NullarySpore
-import oscar.modeling.misc.TimeHelper.getClockTime
 
 /**
-  * A trait for object that would want to watch parallel solving
+  * A trait for object that would want to watch solving
   * @tparam RetVal
   */
 trait Watcher[RetVal] {
@@ -59,55 +59,49 @@ trait Watcher[RetVal] {
 }
 
 /**
-  * Message
-  */
-trait SolvingMessage
-trait MasterToSolverMessage extends SolvingMessage
-trait MasterToMasterMessage extends SolvingMessage
-trait SolverToMasterMessage extends SolvingMessage
-trait WatcherMessage extends SolvingMessage
-
-case class AwaitingSPMessage() extends SolverToMasterMessage
-case class SolutionMessage[RetVal](solution: RetVal, newBound: Option[Int]) extends SolverToMasterMessage with WatcherMessage
-case class DoneMessage(spid: Int, timeTakenNS: Double, searchStats: SPSearchStatistics) extends SolverToMasterMessage with WatcherMessage
-case class StartedMessage(spid: Int) extends SolverToMasterMessage with WatcherMessage
-
-//Sent only on satisfaction problems, at the end of the computation
-case class AskForSolutionRecap() extends MasterToSolverMessage
-//solutions is only filled with solutions if RetVal is not Unit
-case class SolutionRecapMessage[RetVal](nbSolutions: Int, solutions: List[RetVal]) extends SolverToMasterMessage with WatcherMessage
-
-case class DoSubproblemMessage(spid: Int, sp: List[Constraint]) extends MasterToSolverMessage
-case class BoundUpdateMessage(newBound: Int) extends MasterToSolverMessage
-case class AllDoneMessage(completed: Boolean) extends MasterToSolverMessage with WatcherMessage
-
-case class HelloMessage() extends MasterToSolverMessage with SolverToMasterMessage
-case class ConfigMessage(forceImmediateSend: Boolean) extends MasterToSolverMessage
-case class StartMessage() extends MasterToSolverMessage
-case class SolveTimeout() extends MasterToMasterMessage
-
-/**
-  * Class that runs watchers, and send them the info from the output queue
+  * A watcher multiplexer
   * @param watchers
-  * @param outputQueue
   * @tparam RetVal
   */
-class WatcherRunnable[RetVal](watchers: Iterable[Watcher[RetVal]],
-                              outputQueue: LinkedBlockingQueue[SolvingMessage]) extends Runnable {
-  override def run(): Unit = {
-    var done = false
-    while(!done) {
-      outputQueue.take() match {
-        case SolutionMessage(solution: RetVal, newBound: Option[Int]) => watchers.foreach(_.newSolution(solution, newBound))
-        case DoneMessage(spid, newtimeTaken, searchStats) => watchers.foreach(_.endedSubproblem(spid, newtimeTaken, searchStats))
-        case StartedMessage(spid) => watchers.foreach(_.startedSubproblem(spid))
-        case SolutionRecapMessage(nbSolutions: Int, solutions: List[RetVal]) => watchers.foreach(_.solutionRecap(nbSolutions, solutions))
-        case AllDoneMessage(completed) =>
-          done = true
-          watchers.foreach(_.allDone(completed))
-      }
-    }
-  }
+class WatcherMultiplexer[RetVal](watchers: Iterable[Watcher[RetVal]]) extends Watcher[RetVal]{
+  /**
+    * Called when a subproblem just started
+    *
+    * @param spid id of the subproblem
+    */
+  override def startedSubproblem(spid: Int): Unit = watchers.foreach(_.startedSubproblem(spid))
+
+  /**
+    * Called when a subproblem ends
+    *
+    * @param spid        id of the subproblem
+    * @param timeTaken   time taken, in nanosecs
+    * @param searchStats search stats of the subproblem
+    */
+  override def endedSubproblem(spid: Int, timeTaken: Double, searchStats: SPSearchStatistics): Unit = watchers.foreach(_.endedSubproblem(spid, timeTaken, searchStats))
+
+  /**
+    * Called when a new solution is found (during the search)
+    *
+    * @param solution new solution
+    * @param newBound possible new bound
+    */
+  override def newSolution(solution: RetVal, newBound: Option[Int]): Unit = watchers.foreach(_.newSolution(solution, newBound))
+
+  /**
+    * Called when a solver give a recap of the found solution (after the search, no duplicates with newSolution)
+    *
+    * @param nbSolutions the number of solutions
+    * @param solutions   only filled if RetVal is not Unit
+    */
+  override def solutionRecap(nbSolutions: Int, solutions: List[RetVal]): Unit = watchers.foreach(_.solutionRecap(nbSolutions, solutions))
+
+  /**
+    * Called when solving is completely done and all solutions have been sent. No more function calls will be made
+    *
+    * @param completed : True if the timeout was not reached
+    */
+  override def allDone(completed: Boolean): Unit = watchers.foreach(_.allDone(completed))
 }
 
 /**

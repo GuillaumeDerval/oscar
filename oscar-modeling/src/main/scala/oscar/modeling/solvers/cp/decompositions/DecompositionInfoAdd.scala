@@ -2,7 +2,7 @@ package oscar.modeling.solvers.cp.decompositions
 
 import oscar.modeling.misc.CartesianProduct
 import oscar.modeling.models.{MemoCPModel, UninstantiatedModel}
-import oscar.modeling.solvers.cp.{SubProblem, SubProblemCartesianProductLog}
+import oscar.modeling.solvers.cp.distributed.{SubProblem, SubProblemCartesianProductLog}
 import oscar.modeling.vars.IntVar
 
 /**

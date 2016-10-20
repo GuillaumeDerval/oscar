@@ -4,10 +4,10 @@ import oscar.modeling.algebra.{Abs, And, IntExpression, Or}
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
-import oscar.modeling.solvers.cp.DistributedCPApp
+import oscar.modeling.solvers.cp.CPApp
 import oscar.modeling.vars.IntVar
 
-object KnightTour extends DistributedCPApp[String] with App {
+object KnightTour extends CPApp[String] with App {
   val x = Array.fill(36)(IntVar(0,36))
   post(AllDifferent(x))
   post(x(0) === 0)

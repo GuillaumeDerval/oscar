@@ -17,7 +17,7 @@ import oscar.modeling.misc.SearchStatistics
 import oscar.modeling.models.{ModelDeclaration, NoSolException}
 import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
-import oscar.modeling.solvers.cp.{DistributedCPApp, DistributedCPAppConfig}
+import oscar.modeling.solvers.cp.{CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar
 
 import scala.collection.JavaConverters._
@@ -768,8 +768,8 @@ object XCSP3Parser2 {
   }
 }
 
-object Parser2 extends DistributedCPApp[String] with App {
-  override lazy val config = new DistributedCPAppConfig {
+object Parser2 extends CPApp[String] with App {
+  override lazy val config = new CPAppConfig {
     val instance = trailArg[String](descr = "Path to the file to parse")
     val check = opt[Boolean]("c", descr = "Check results with the XCSP3 checker")
   }
@@ -806,12 +806,14 @@ object Parser2 extends DistributedCPApp[String] with App {
     }
   }
   if(config.check.get.contains(true)) {
+    println("<!--")
     solutions.foreach(x => testSolution(config.instance.get.get, x))
+    println("-->")
     println("<!-- solutions verified -->")
   }
 }
 
-object RunEverything extends DistributedCPApp[String] with App {
+object RunEverything extends CPApp[String] with App {
   //Basic/Basic-m1-s1/Allergy.xml.lzma -> symbolic
   //Basic/Basic-m1-s1/Purdey.xml.lzma -> symbolic
   //Bibd -> lex

@@ -5,14 +5,14 @@ import oscar.modeling.models.UninstantiatedModel
 import oscar.modeling.models.operators.SimplifySum
 import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
-import oscar.modeling.solvers.cp.{DistributedCPApp, DistributedCPAppConfig}
+import oscar.modeling.solvers.cp.{CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar
 import oscar.modeling.visualisation.ConstraintsVisualisation
 
 /**
   * Created by dervalguillaume on 2/06/16.
   */
-object SendMoreMoney extends DistributedCPApp[Unit] with App {
+object SendMoreMoney extends CPApp[Unit] with App {
   // variables
   val S = IntVar(0,9, Some("S"))
   val E = IntVar(0,9, Some("E"))

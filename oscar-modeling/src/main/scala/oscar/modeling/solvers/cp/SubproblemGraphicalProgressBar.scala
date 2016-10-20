@@ -4,7 +4,6 @@ import java.awt._
 import java.util.TimerTask
 import javax.swing._
 
-import oscar.modeling.constraints.Constraint
 import oscar.modeling.misc.TimeHelper._
 import oscar.modeling.misc._
 import org.jfree.chart.axis.{AxisLocation, NumberAxis}
@@ -14,6 +13,7 @@ import org.jfree.chart.{ChartFactory, ChartPanel}
 import org.jfree.data.xy
 import org.jfree.data.xy.XYSeries
 import org.jfree.util.ShapeUtilities
+import oscar.modeling.solvers.cp.distributed.{SubProblem, SubProblemCartesianProductLog, SubProblemDiscrepancy}
 
 import scala.List
 import scala.collection.mutable

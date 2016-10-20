@@ -1,7 +1,7 @@
 package oscar.modeling.examples
 
 import oscar.modeling.constraints.{AllDifferent, Table}
-import oscar.modeling.solvers.cp.DistributedCPApp
+import oscar.modeling.solvers.cp.CPApp
 import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.vars.IntVar
 import oscar.modeling.algebra.IntExpression._
@@ -15,7 +15,7 @@ import scala.spores._
   * Example of LonguestPath, copied from the original one from OscaR-lib.
   * GNU GPL, OscaR Authors
   */
-object LongestPath extends DistributedCPApp[Int] with App {
+object LongestPath extends CPApp[Int] with App {
 
   // --- reading the data ---
 

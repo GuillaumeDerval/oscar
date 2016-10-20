@@ -1,4 +1,4 @@
-package oscar.modeling.solvers.cp
+package oscar.modeling.solvers.cp.distributed
 
 import oscar.modeling.constraints.Constraint
 import oscar.modeling.models.{Maximisation, Minimisation, NoOptimisation, OptimisationMethod}

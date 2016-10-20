@@ -2,8 +2,9 @@ package oscar.modeling.solvers.cp
 
 import oscar.modeling.misc.SearchStatistics
 import oscar.modeling.misc.scallop.HostnameParser
-import oscar.modeling.models.{Model, ModelDeclaration, UninstantiatedModel}
+import oscar.modeling.models.{ModelDeclaration, UninstantiatedModel}
 import org.rogach.scallop._
+import oscar.modeling.solvers.cp.distributed.{DecomposedCPSolve, SimpleRemoteSolverSystem}
 
 /**
   * Minimal configuration for a DistributedCPApp model; models with arguments should subclass this by doing
@@ -14,7 +15,7 @@ import org.rogach.scallop._
   *
   * in their DistributedCPApp object.
   */
-class DistributedCPAppConfig extends Subcommand("master") {
+class CPAppConfig extends Subcommand("master") {
   descr("Starts a master for distributed computation of this model. Can also work alone using threads")
   val threads = opt[Int](name="local", short='l', descr = "Number of local threads to start", default = None)
   val subproblemsPerWorker = opt[Int](name="sppw", short = 's', descr = "Number of subproblems per worker. Default is 100", default = Some(100))
@@ -41,7 +42,7 @@ class DistributedCPAppConfig extends Subcommand("master") {
   *
   * @param arguments args from App
   */
-class DistributedCPAppCompleteConfig(arguments: Seq[String]) extends ScallopConf(arguments) {
+class CPAppCompleteConfig(arguments: Seq[String]) extends ScallopConf(arguments) {
   val client = new Subcommand("client") {
     descr("Starts a remote client for distributed computation of this model")
     val hostname = opt[String](name="host", descr = "Hostname/IP on which this client should be binded. Default is 127.0.0.1.", default = Some("127.0.0.1"))
@@ -49,7 +50,7 @@ class DistributedCPAppCompleteConfig(arguments: Seq[String]) extends ScallopConf
     val registerDir = opt[String](name="register-dir", descr="Path to a dir where the client will create a file named hostname:port. Useful if you set port to 0.", default=None)
   }
 
-  lazy val master = new DistributedCPAppConfig
+  lazy val master = new CPAppConfig
   addSubcommand(master)
   addSubcommand(client)
 }
@@ -60,12 +61,12 @@ class DistributedCPAppCompleteConfig(arguments: Seq[String]) extends ScallopConf
   * @param md
   * @tparam RetVal
   */
-abstract class DistributedCPApp[RetVal](md: ModelDeclaration with DecomposedCPSolve[RetVal] = new ModelDeclaration() with DecomposedCPSolve[RetVal])
-  extends DistributedCPProgram[RetVal](md) with App {
+abstract class CPApp[RetVal](md: ModelDeclaration with DecomposedCPSolve[RetVal] = new ModelDeclaration() with DecomposedCPSolve[RetVal])
+  extends CPProgram[RetVal](md) with App {
 
-  lazy val config = new DistributedCPAppConfig()             //laziness ensures that if the variable is overridden...
+  lazy val config = new CPAppConfig()             //laziness ensures that if the variable is overridden...
 
-  lazy val completeConfig = new DistributedCPAppCompleteConfig({
+  lazy val completeConfig = new CPAppCompleteConfig({
     if(args.isEmpty) Array("master")
     else if(args(0) != "master" && args(0) != "client") Array("master") ++ args
     else args
@@ -103,14 +104,14 @@ abstract class DistributedCPApp[RetVal](md: ModelDeclaration with DecomposedCPSo
       )
     }
     else if(completeConfig.master.threads.isDefined) {
-      super.solveLocally(model,
+      super.solveParallel(model,
         completeConfig.master.threads(),
         completeConfig.master.subproblemsPerWorker(),
         nSols, maxTime
       )
     }
     else {
-      super.solveLocally(model, Runtime.getRuntime.availableProcessors(), completeConfig.master.subproblemsPerWorker(), nSols, maxTime)
+      super.solveLocally(model, nSols, maxTime)
     }
   }
 }

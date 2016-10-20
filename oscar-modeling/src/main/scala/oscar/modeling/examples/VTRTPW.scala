@@ -4,7 +4,7 @@ import oscar.modeling.algebra.Sum
 import oscar.modeling.constraints._
 import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
-import oscar.modeling.solvers.cp.{DistributedCPApp, DistributedCPAppConfig}
+import oscar.modeling.solvers.cp.{CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar
 
 import scala.collection.mutable.ArrayBuffer
@@ -15,8 +15,8 @@ import scala.io.Source
   * Example of VRTPW, copied from the original one from OscaR-lib.
   * GNU GPL, OscaR Authors
   */
-object VTRTPW extends DistributedCPApp[Int] {
-  override lazy val config = new DistributedCPAppConfig {
+object VTRTPW extends CPApp[Int] {
+  override lazy val config = new CPAppConfig {
     val file = trailArg[String](descr = "Path to the VRTPW instance")
   }
   val instanceFile = config.file()

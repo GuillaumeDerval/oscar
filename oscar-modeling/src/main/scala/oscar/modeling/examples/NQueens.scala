@@ -4,7 +4,7 @@ import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.models.UninstantiatedModel
 import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.{CartProdRefinement, DecompositionAddCartProdInfo, DepthIterativeDeepening, DepthRefinement}
-import oscar.modeling.solvers.cp.{DistributedCPApp, DistributedCPAppConfig}
+import oscar.modeling.solvers.cp.{CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar
 import oscar.modeling.visualisation.ConstraintsVisualisation
 
@@ -12,8 +12,8 @@ import oscar.modeling.visualisation.ConstraintsVisualisation
   * Example of nQueens, copied from the original one from OscaR-lib.
   * GNU GPL, OscaR Authors
   */
-class NQueens extends DistributedCPApp[Unit] {
-  override lazy val config = new DistributedCPAppConfig {
+class NQueens extends CPApp[Unit] {
+  override lazy val config = new CPAppConfig {
     val size = trailArg[Int](descr = "Size of the golomb ruler")
   }
   val nQueens = config.size()

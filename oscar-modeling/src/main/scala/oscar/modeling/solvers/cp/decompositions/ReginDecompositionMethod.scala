@@ -1,8 +1,8 @@
 package oscar.modeling.solvers.cp.decompositions
 
 import oscar.modeling.models.UninstantiatedModel
-import oscar.modeling.solvers.cp.SubProblem
 import oscar.modeling.solvers.cp.branchings.Branching
+import oscar.modeling.solvers.cp.distributed.SubProblem
 import oscar.modeling.vars.IntVar
 
 import scala.util.Random

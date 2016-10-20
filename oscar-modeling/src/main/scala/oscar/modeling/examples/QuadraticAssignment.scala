@@ -3,7 +3,7 @@ package oscar.modeling.examples
 import oscar.modeling.algebra.Sum
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.models.CPModel
-import oscar.modeling.solvers.cp.DistributedCPApp
+import oscar.modeling.solvers.cp.CPApp
 import oscar.modeling.vars.IntVar
 import oscar.util._
 import oscar.modeling.solvers.cp.branchings.Branching
@@ -17,7 +17,7 @@ import scala.spores._
   * GNU GPL, OscaR Authors
   */
 
-object QuadraticAssignment extends DistributedCPApp[Int] with App {
+object QuadraticAssignment extends CPApp[Int] with App {
 
   // Read the data
   var lines = Source.fromFile("qap.txt").getLines.toList.filter(_ != "")

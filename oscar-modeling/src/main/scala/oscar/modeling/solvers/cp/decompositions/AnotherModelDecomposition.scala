@@ -1,7 +1,7 @@
 package oscar.modeling.solvers.cp.decompositions
 
 import oscar.modeling.models.UninstantiatedModel
-import oscar.modeling.solvers.cp.SubProblem
+import oscar.modeling.solvers.cp.distributed.SubProblem
 
 /**
   * Decompose using another model
