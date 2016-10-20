@@ -10,6 +10,7 @@ abstract class CPIntVar extends CPVar with IntVarImplem {
   val realCPVar: oscar.cp.CPIntVar
 }
 
+class NewCPIntVar
 object CPIntVar {
   def apply(notInstantied: IntDomainStorage, store: oscar.cp.CPStore): CPIntVar = new CPIntVarImplem(notInstantied, store)
 }
@@ -51,7 +52,7 @@ class CPIntVarImplem(notInstantied: IntDomainStorage, store: oscar.cp.CPStore) e
   /**
     * Return a representative name for this var(-like), if one was given
     */
-  override def name: Option[String] = notInstantied.name
+  override def name: String = notInstantied.name
 
   /**
     * @return  the minimum value in the domain

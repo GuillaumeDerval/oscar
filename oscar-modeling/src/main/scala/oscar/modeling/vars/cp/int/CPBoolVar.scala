@@ -40,7 +40,7 @@ class CPBoolVarImpl(notInstantied: IntDomainStorage, store: oscar.cp.CPStore) ex
   /**
     * Return a representative name for this var(-like), if one was given
     */
-  override def name: Option[String] = notInstantied.name
+  override def name: String = notInstantied.name
 
   /**
     * @return  the minimum value in the domain

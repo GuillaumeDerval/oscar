@@ -6,7 +6,7 @@ import scala.util.Random
  * A domain that stores a single integer
  * @param single_value
  */
-class SingletonDomainStorage(single_value: Int, repr_name: Option[String] = None) extends IntDomainStorage {
+class SingletonDomainStorage(single_value: Int, repr_name: String = "") extends IntDomainStorage {
   /**
    * @return true if the domain of the variable has exactly one value, false if the domain has more than one value
    */
@@ -51,5 +51,5 @@ class SingletonDomainStorage(single_value: Int, repr_name: Option[String] = None
   /**
    * Return a representative name for this var(-like), if one was given
    */
-  override def name: Option[String] = repr_name
+  override def name: String = repr_name
 }

@@ -7,7 +7,7 @@ import scala.util.Random
  * @param min_value: the minimum value (inclusive)
  * @param max_value: the maximum value (inclusive)
  */
-class IntervalDomainStorage(min_value: Int, max_value: Int, repr_name: Option[String] = None) extends IntDomainStorage {
+class IntervalDomainStorage(min_value: Int, max_value: Int, repr_name: String = "") extends IntDomainStorage {
   /**
    * @return true if the domain of the variable has exactly one value, false if the domain has more than one value
    */
@@ -57,5 +57,5 @@ class IntervalDomainStorage(min_value: Int, max_value: Int, repr_name: Option[St
   /**
    * Return a representative name for this var(-like), if one was given
    */
-  override def name: Option[String] = repr_name
+  override def name: String = repr_name
 }

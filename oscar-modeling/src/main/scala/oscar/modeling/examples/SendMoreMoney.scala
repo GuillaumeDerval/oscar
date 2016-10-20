@@ -14,14 +14,14 @@ import oscar.modeling.visualisation.ConstraintsVisualisation
   */
 object SendMoreMoney extends CPApp[Unit] with App {
   // variables
-  val S = IntVar(0,9, Some("S"))
-  val E = IntVar(0,9, Some("E"))
-  val N = IntVar(0,9, Some("N"))
-  val D = IntVar(0,9, Some("D"))
-  val M = IntVar(0,9, Some("M"))
-  val O = IntVar(0,9, Some("O"))
-  val R = IntVar(0,9, Some("R"))
-  val Y = IntVar(0,9, Some("Y"))
+  val S = IntVar(0,9, "S")
+  val E = IntVar(0,9, "E")
+  val N = IntVar(0,9, "N")
+  val D = IntVar(0,9, "D")
+  val M = IntVar(0,9, "M")
+  val O = IntVar(0,9, "O")
+  val R = IntVar(0,9, "R")
+  val Y = IntVar(0,9, "Y")
   val all = Array(S,E,N,D,M,O,R,Y)
 
   // constraints

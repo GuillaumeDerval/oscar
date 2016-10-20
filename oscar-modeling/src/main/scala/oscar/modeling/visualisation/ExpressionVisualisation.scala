@@ -100,8 +100,8 @@ class ConstraintsVisualisation(constraints: Array[Constraint], name: String) {
 
       //terminal expressions
       case Constant(a) => terminalNodeCreate(expr, "Constant ("+a.toString+")")
-      case i: BoolVar => terminalNodeCreate(expr, if(i.name.isDefined) i.name.get+" (BoolVar)" else "BoolVar")
-      case i: IntVar => terminalNodeCreate(expr, if(i.name.isDefined) i.name.get+" (IntVar)" else "IntVar")
+      case i: BoolVar => terminalNodeCreate(expr, if(!i.name.isEmpty) i.name+" (BoolVar)" else "BoolVar")
+      case i: IntVar => terminalNodeCreate(expr, if(!i.name.isEmpty) i.name+" (IntVar)" else "IntVar")
 
       //More complicated expressions
       case Count(array, value) =>

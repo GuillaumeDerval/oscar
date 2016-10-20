@@ -7,10 +7,7 @@ import scala.util.Random
  * Stores a set of int
  * @param content: the domain
  */
-class SetDomainStorage(val content: SortedSet[Int], repr_name: Option[String] = None) extends IntDomainStorage {
-//  def this(content: Set[Int], repr_name: Option[String]) = this(SortedSet(content.toList: _*), repr_name)
-//  def this(content: Set[Int]) = this(SortedSet(content.toList: _*))
-
+class SetDomainStorage(val content: SortedSet[Int], repr_name: String = "") extends IntDomainStorage {
   /**
    * @return true if the domain of the variable has exactly one value, false if the domain has more than one value
    */
@@ -60,5 +57,5 @@ class SetDomainStorage(val content: SortedSet[Int], repr_name: Option[String] = 
   /**
    * Return a representative name for this var(-like), if one was given
    */
-  override def name: Option[String] = repr_name
+  override def name: String = repr_name
 }

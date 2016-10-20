@@ -48,11 +48,11 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   // Variables
   override def buildVarInteger(x: XVarInteger, minValue: Int, maxValue: Int): Unit = {
     //println("Adding var "+x.id)
-    varHashMap += x.id() -> IntVar(minValue, maxValue, Some(x.id()))
+    varHashMap += x.id() -> IntVar(minValue, maxValue, x.id())
   }
 
   override def buildVarInteger(x: XVarInteger, values: Array[Int]): Unit = {
-    varHashMap += x.id() -> IntVar(values.toSet, Some(x.id()))
+    varHashMap += x.id() -> IntVar(values.toSet, x.id())
   }
 
   // Constraints
@@ -764,7 +764,7 @@ object XCSP3Parser2 {
   def parse(modelDeclarator: ModelDeclaration, filename: String): (Iterable[IntVar], () => String) = {
     val parser = new XCSP3Parser2(modelDeclarator, filename)
     val vars = parser.varHashMap.values.map(i => i.asInstanceOf[IntVar]).toArray
-    (vars, () => parser.generateInstantiationWithSymbolic(vars.map(x => x.name.get), vars.map(x => x.evaluate())))
+    (vars, () => parser.generateInstantiationWithSymbolic(vars.map(x => x.name), vars.map(x => x.evaluate())))
   }
 }
 

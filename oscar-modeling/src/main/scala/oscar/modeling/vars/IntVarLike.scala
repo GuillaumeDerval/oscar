@@ -124,5 +124,5 @@ trait IntVarLike extends Iterable[Int] {
   /**
    * Return a representative name for this var(-like), if one was given
    */
-  def name: Option[String]
+  def name: String
 }

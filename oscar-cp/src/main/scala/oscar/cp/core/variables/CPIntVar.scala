@@ -54,19 +54,19 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
 
   /**
    * Test if a value is in the domain
-   * @param val
+   * @param value
    * @return  true if the domain contains the value val, false otherwise
    */
   def hasValue(value: Int): Boolean
 
   /**
-   * @param val
+   * @param value
    * @return the smallest value > val in the domain, None if there is not value > val in the domain
    */
   def valueAfter(value: Int): Int
 
   /**
-   * @param val
+   * @param value
    * @return the largest value < val in the domain, None if there is not value < val in the domain
    */
   def valueBefore(value: Int): Int
@@ -106,21 +106,21 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
 
   /**
    * Reduce the domain to the singleton {val}, and notify appropriately all the propagators registered to this variable
-   * @param val
+   * @param value
    * @return  Suspend if val was in the domain, Failure otherwise
    */
   def assign(value: Int): CPOutcome
 
   /**
    * Remove from the domain all values < val, and notify appropriately all the propagators registered to this variable
-   * @param val
+   * @param value
    * @return  Suspend if there is at least one value >= val in the domain, Failure otherwise
    */
   def updateMin(value: Int): CPOutcome
 
   /**
    * Remove from the domain all values > val, and notify appropriately all the propagators registered to this variable
-   * @param val
+   * @param value
    * @return  Suspend if there is at least one value <= val in the domain, Failure otherwise
    */
   def updateMax(value: Int): CPOutcome
@@ -329,7 +329,7 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
 
   /**
    * Remove val from the domain, and notify appropriately all the propagators registered to this variable
-   * @param val
+   * @param value
    * @return  Suspend if the domain is not equal to the singleton {val}, Failure otherwise
    */
   def removeValue(value: Int): CPOutcome
