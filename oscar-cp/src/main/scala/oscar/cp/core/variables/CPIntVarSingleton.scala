@@ -44,7 +44,7 @@ final class CPIntVarSingleton(final override val store: CPStore, initValue: Int,
    * @param v
    * @return true if the variable is bound to value v, false if variable is not bound or bound to another value than v
    */
-  @inline final def isBoundTo(value: Int): Boolean = value == initValue
+  @inline final override def isBoundTo(value: Int): Boolean = value == initValue
 
   /**
    * Test if a value is in the domain

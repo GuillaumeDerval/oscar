@@ -1,5 +1,6 @@
 package oscar.modeling.vars
 
+import oscar.algo.vars.IntVarLike
 import oscar.modeling.algebra.IntExpression
 import oscar.modeling.misc.VariableNotBoundException
 import oscar.modeling.models.ModelDeclaration
@@ -12,7 +13,7 @@ import scala.util.Random
  * Represents a variable with Integer domain
  * @param model_decl: the ModelDeclaration associated with this Var
  */
-class IntVar(model_decl: ModelDeclaration, id: Int, name: String) extends Var(model_decl, id, name) with IntVarLikeReusable with IntExpression {
+class IntVar(model_decl: ModelDeclaration, id: Int, name: String) extends Var(model_decl, id, name) with IntVarLike with IntExpression {
   protected def getRepresentative: IntVarImplem = model_decl.getCurrentModel.getRepresentative(this).asInstanceOf[IntVarImplem]
   override def isBound: Boolean = getRepresentative.isBound
   override def randomValue(rand: Random): Int = getRepresentative.randomValue(rand)

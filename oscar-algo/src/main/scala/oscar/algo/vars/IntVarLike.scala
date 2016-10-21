@@ -1,4 +1,4 @@
-package oscar.modeling.vars
+package oscar.algo.vars
 
 import scala.util.Random
 
@@ -6,7 +6,7 @@ import scala.util.Random
  * A trait that all objects that behave like an IntVar should implement
  */
 trait IntVarLike extends Iterable[Int] {
-  def isContinuous: Boolean
+  def isContinuous: Boolean = size == (max - min + 1)
 
   /**
    * @return true if the domain of the variable has exactly one value, false if the domain has more than one value
@@ -17,7 +17,7 @@ trait IntVarLike extends Iterable[Int] {
    * @param v: value to test
    * @return true if the variable is bound to value v, false if variable is not bound or bound to another value than v
    */
-  def isBoundTo(v: Int): Boolean
+  def isBoundTo(v: Int): Boolean = isBound && hasValue(v)
 
   /**
    * Test if a value is in the domain
@@ -49,11 +49,6 @@ trait IntVarLike extends Iterable[Int] {
   def size: Int
 
   /**
-   * @return the size of the domain
-   */
-  def getSize: Int
-
-  /**
    * @return true if domain is empty, false else
    */
   def isEmpty: Boolean
@@ -64,19 +59,9 @@ trait IntVarLike extends Iterable[Int] {
   def min: Int
 
   /**
-   * @return the minimum value in the domain
-   */
-  def getMin: Int
-
-  /**
    * @return  the maximum value in the domain
    */
   def max: Int
-
-  /**
-   * @return the maximum value in the domain
-   */
-  def getMax: Int
 
   def iterator: Iterator[Int]
 
@@ -85,7 +70,7 @@ trait IntVarLike extends Iterable[Int] {
   /**
    * @return an (not sorted) array representation of the domain.
    */
-  def toArray: Array[Int]
+  def toArray: Array[Int] = iterator.toArray
 
   /**
    * @param array.length >= this.size
@@ -93,24 +78,7 @@ trait IntVarLike extends Iterable[Int] {
    *         returns the number of values (this.size).
    *         The array is not sorted.
    */
-  def fillArray(array: Array[Int]): Int
-
-  /**
-   * Return a representative name for this var(-like), if one was given
-   */
-  def name: String
-}
-
-trait IntVarLikeReusable extends IntVarLike {
-  def isContinuous: Boolean = size == (max - min + 1)
-  def isBoundTo(v: Int): Boolean = isBound && hasValue(v)
-  def getSize = size
-  override def isEmpty: Boolean = size == 0
-  def getMin = min
-  def getMax = max
-  override def foreach[@specialized(Int) U](f: Int => U): Unit = iterator.foreach(f)
-  def toArray: Array[Int] = iterator.toArray
-  def fillArray(array: Array[Int]): Int = {
+  def fillArray(array: Array[Int]): Int= {
     val ite = iterator
     var i = 0
     while (ite.hasNext) {
@@ -119,4 +87,9 @@ trait IntVarLikeReusable extends IntVarLike {
     }
     i
   }
+
+  /**
+   * Return a representative name for this var(-like), if one was given
+   */
+  def name: String
 }
