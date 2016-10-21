@@ -3,7 +3,7 @@ package oscar.modeling.vars
 import oscar.modeling.algebra.IntExpression
 import oscar.modeling.misc.VariableNotBoundException
 import oscar.modeling.models.ModelDeclaration
-import oscar.modeling.vars.domainstorage.int.IntDomainStorage
+import oscar.modeling.vars.domainstorage.IntDomainStorage
 
 import scala.collection.immutable.SortedSet
 import scala.util.Random
@@ -12,14 +12,14 @@ import scala.util.Random
  * Represents a variable with Integer domain
  * @param model_decl: the ModelDeclaration associated with this Var
  */
-class IntVar(model_decl: ModelDeclaration, id: Int, name: String) extends Var(model_decl, id, name) with IntVarLike with IntExpression {
+class IntVar(model_decl: ModelDeclaration, id: Int, name: String) extends Var(model_decl, id, name) with IntVarLikeReusable with IntExpression {
   protected def getRepresentative: IntVarImplem = model_decl.getCurrentModel.getRepresentative(this).asInstanceOf[IntVarImplem]
   override def isBound: Boolean = getRepresentative.isBound
-  override def randomValue(implicit rand: Random): Int = getRepresentative.randomValue(rand)
+  override def randomValue(rand: Random): Int = getRepresentative.randomValue(rand)
   override def max: Int = getRepresentative.max
-  override def valueBefore(value: Int): Option[Int] = getRepresentative.valueBefore(value)
+  override def valueBefore(value: Int): Int = getRepresentative.valueBefore(value)
   override def min: Int = getRepresentative.min
-  override def valueAfter(value: Int): Option[Int] = getRepresentative.valueAfter(value)
+  override def valueAfter(value: Int): Int = getRepresentative.valueAfter(value)
   override def iterator: Iterator[Int] = getRepresentative.iterator
   override def hasValue(value: Int): Boolean = getRepresentative.hasValue(value)
 

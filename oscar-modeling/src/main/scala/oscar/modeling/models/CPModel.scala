@@ -5,12 +5,13 @@ import oscar.modeling.constraints._
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp
 import cp.constraints.{CPObjective, CPObjectiveUnit, CPObjectiveUnitMaximize, CPObjectiveUnitMinimize}
-import cp.core.{CPOutcome, CPPropagStrength, NoSolutionException}
+import cp.core.{CPPropagStrength, NoSolutionException}
 import cp.{CPBoolVarOps, CPIntVarOps}
 import oscar.algo.DisjointSets
 import oscar.modeling.models.CPModel.{InstantiateAndReuse, InstantiateAndStoreInCache}
-import oscar.modeling.vars.cp.int.{CPBoolVar => ModelCPBoolVar, CPIntVar => ModelCPIntVar}
-import oscar.modeling.vars.domainstorage.int._
+import oscar.modeling.vars.cp.CPIntVar
+import oscar.modeling.vars.cp.{CPIntVar => ModelCPIntVar, CPBoolVar => ModelCPBoolVar}
+import oscar.modeling.vars.domainstorage.IntDomainStorage
 import oscar.modeling.vars.{BoolVar, IntVar}
 
 import scala.collection.immutable
@@ -80,7 +81,7 @@ object CPModel {
       if(intvars.length > 1) {
         // Compute new domain
         val newDomain = immutable.SortedSet[Int]() ++ intvars.map(p.getRepresentative(_).toVector.toSet).reduceLeft((a,b)=> b.intersect(a))
-        val newDomainStorage = new SetDomainStorage(newDomain)
+        val newDomainStorage = new IntDomainStorage(newDomain, intvars.head.name)
         representatives = (1 until intvars.length).foldLeft(p.intRepresentatives){case (iR, idx) => iR.union(intvars(0), intvars(idx), newDomainStorage)}
       }
     }
@@ -169,7 +170,7 @@ object CPModel {
   */
 class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preprocessCP(p)){
   implicit lazy val cpSolver = new cp.CPSolver()
-  override type IntVarImplementation = ModelCPIntVar
+  override type IntVarImplementation = CPIntVar
 
   val cpObjective: CPObjectiveUnit= this.optimisationMethod match {
     case m: Minimisation =>
@@ -184,32 +185,11 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
 
   def getReversibleInt(init: Int) = new ReversibleInt(cpSolver, init)
 
-  override protected def instantiateAdaptableIntDomainStorage(adaptable: AdaptableIntDomainStorage): ModelCPIntVar = {
-    if(adaptable.min >= 0 && adaptable.max <= 1)
-      ModelCPBoolVar(adaptable, cpSolver)
+  def instantiateIntVar(content: Iterable[Int], name: String): CPIntVar = {
+    if(content.min >= 0 && content.max <= 1)
+      ModelCPBoolVar(content, name, cpSolver)
     else
-      ModelCPIntVar(adaptable.content, cpSolver)
-  }
-
-  override protected def instantiateSetDomainStorage(set: SetDomainStorage): ModelCPIntVar = {
-    if(set.min >= 0 && set.max <= 1)
-      ModelCPBoolVar(set, cpSolver)
-    else
-      ModelCPIntVar(set, cpSolver)
-  }
-
-  override protected def instantiateSingletonDomainStorage(singleton: SingletonDomainStorage): ModelCPIntVar = {
-    if(singleton.min >= 0 && singleton.max <= 1)
-      ModelCPBoolVar(singleton, cpSolver)
-    else
-      ModelCPIntVar(singleton, cpSolver)
-  }
-
-  override protected def instantiateIntervalDomainStorage(interval: IntervalDomainStorage): ModelCPIntVar = {
-    if(interval.min >= 0 && interval.max <= 1)
-      ModelCPBoolVar(interval, cpSolver)
-    else
-      ModelCPIntVar(interval, cpSolver)
+      ModelCPIntVar(content, name, cpSolver)
   }
 
   override def post(constraint: Constraint): Unit = {
@@ -347,7 +327,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         cpSolver.add(new cp.constraints.Implication(postBoolExpressionAndGetVar(a), postBoolExpressionAndGetVar(b), v))
       case Xor(a, b) => postBooleanExpression(And(Or(a,b), Not(And(a,b))))
       case v: BoolVar =>
-        cpSolver.add(getRepresentative(v).realCPVar.asInstanceOf[cp.CPBoolVar]) 
+        cpSolver.add(getRepresentative(v).asInstanceOf[cp.CPBoolVar])
       case default => throw new Exception("Unknown BoolExpression "+default.getClass.toString) //TODO: put a real exception here
     }
   }
@@ -391,7 +371,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         val c = cp.CPBoolVar()
         cpSolver.add(new cp.constraints.InSetReif(postIntExpressionAndGetVar(a), b, c))
         c
-      case v: BoolVar => getRepresentative(v).realCPVar.asInstanceOf[cp.CPBoolVar]
+      case v: BoolVar => getRepresentative(v).asInstanceOf[cp.CPBoolVar]
       case default => throw new Exception("Unknown BoolExpression "+default.getClass.toString) //TODO: put a real exception here
     }).asInstanceOf[cp.CPBoolVar]
   }

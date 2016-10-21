@@ -1,8 +1,10 @@
 package oscar.modeling.solvers.cp.branchings
 
+import oscar.algo.reversible.ReversibleInt
+import oscar.cp.core.CPSolver
 import oscar.modeling.models.CPModel
 import oscar.modeling.solvers.cp.branchings.Branching.Alternative
-import oscar.modeling.vars.IntVar
+import oscar.modeling.vars.{IntVar, IntVarLike}
 
 class BinaryStaticOrderBranching(cp: CPModel, variables: Array[IntVar], valHeuris: (Int => Int)) extends Branching {
   def this(cp: CPModel, vars: Array[IntVar]) = this(cp, vars, vars(_).min)

@@ -3,8 +3,7 @@ package oscar.modeling.models
 import oscar.modeling.constraints.Constraint
 import oscar.modeling.misc.ModelVarStorage
 import oscar.modeling.vars.IntVar
-import oscar.modeling.vars.domainstorage.DomainStorage
-import oscar.modeling.vars.domainstorage.int._
+import oscar.modeling.vars.domainstorage.IntDomainStorage
 
 trait LeafModel extends Model {
   /**
@@ -32,27 +31,13 @@ trait LeafModel extends Model {
   */
 abstract class InstantiatedModel(p: UninstantiatedModel) extends LeafModel {
   override val declaration: ModelDeclaration = p.declaration
-  override val intRepresentatives: ModelVarStorage[IntVar, IntVarImplementation] = ModelVarStorage[IntVar, IntVarImplementation, IntDomainStorage](p.intRepresentatives, instantiateDomainStorage)
+  override val intRepresentatives: ModelVarStorage[IntVar, IntVarImplementation] = ModelVarStorage[IntVar, IntVarImplementation, IntDomainStorage](p.intRepresentatives, instantiateIntDomainStorage)
   override val optimisationMethod: OptimisationMethod = p.optimisationMethod
 
   // Post the constraints
   p.constraints.foreach(post)
 
-  protected def instantiateDomainStorage(v: DomainStorage): IntVarImplementation = {
-    v match {
-      case adaptable: AdaptableIntDomainStorage => instantiateAdaptableIntDomainStorage(adaptable)
-      case interval: IntervalDomainStorage => instantiateIntervalDomainStorage(interval)
-      case set: SetDomainStorage => instantiateSetDomainStorage(set)
-      case singleton: SingletonDomainStorage => instantiateSingletonDomainStorage(singleton)
-      case _ => sys.error("Unknown DomainStorage type in InstantiatedModel.instantiateDomainStorage")
-    }
-  }
+  private def instantiateIntDomainStorage(v: IntDomainStorage): IntVarImplementation = instantiateIntVar(v.content, v.name)
 
-  protected def instantiateAdaptableIntDomainStorage(adaptable: AdaptableIntDomainStorage): IntVarImplementation
-
-  protected def instantiateIntervalDomainStorage(interval: IntervalDomainStorage): IntVarImplementation
-
-  protected def instantiateSetDomainStorage(set: SetDomainStorage): IntVarImplementation
-
-  protected def instantiateSingletonDomainStorage(singleton: SingletonDomainStorage): IntVarImplementation
+  protected def instantiateIntVar(content: Iterable[Int], name: String): IntVarImplementation
 }

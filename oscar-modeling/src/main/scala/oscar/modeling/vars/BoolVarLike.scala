@@ -5,6 +5,20 @@ package oscar.modeling.vars
  */
 trait BoolVarLike extends IntVarLike
 {
+  /** @return true if the variable is bound and bound to value 1 */
+  def isTrue: Boolean
+
+  /** @return true if the variable is bound and bound to value 0 */
+  def isFalse: Boolean
+
+  /** Returns `true` if the domain contains 1. */
+  def containsTrue: Boolean
+
+  /** Returns `true` if the domain contains 0. */
+  def containsFalse: Boolean
+}
+
+trait BoolVarLikeReusable extends BoolVarLike with IntVarLikeReusable {
   final override def isContinuous: Boolean = true
 
   /** @return true if the variable is bound and bound to value 1 */

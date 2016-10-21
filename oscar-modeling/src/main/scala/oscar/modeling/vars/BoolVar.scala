@@ -4,9 +4,9 @@ import oscar.modeling.algebra.{BoolExpression, IntExpression, Not}
 import oscar.modeling.constraints.{Constraint, ExpressionConstraint}
 import oscar.modeling.misc.VariableNotBoundException
 import oscar.modeling.models.ModelDeclaration
-import oscar.modeling.vars.domainstorage.int.IntDomainStorage
+import oscar.modeling.vars.domainstorage.IntDomainStorage
 
-class BoolVar(model_decl: ModelDeclaration, id: Int, name: String) extends IntVar(model_decl, id, name) with BoolVarLike with BoolExpression
+class BoolVar(model_decl: ModelDeclaration, id: Int, name: String) extends IntVar(model_decl, id, name) with BoolVarLikeReusable with BoolExpression
 {
   /**
    * @return a constraint that imposes this variable is true

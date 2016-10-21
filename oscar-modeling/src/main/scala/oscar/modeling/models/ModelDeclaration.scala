@@ -6,7 +6,7 @@ import oscar.modeling.constraints.Constraint
 import oscar.modeling.misc.DynamicModelVariable
 import oscar.modeling.models.operators.ModelOperator
 import oscar.modeling.vars.IntVar
-import oscar.modeling.vars.domainstorage.int.IntDomainStorage
+import oscar.modeling.vars.domainstorage.IntDomainStorage
 
 /**
  * The declaration of a Model.
