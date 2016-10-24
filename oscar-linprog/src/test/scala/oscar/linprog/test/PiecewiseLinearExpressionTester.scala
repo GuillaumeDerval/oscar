@@ -1,24 +1,25 @@
 package oscar.linprog.test
 
 import org.junit.runner.RunWith
+import org.scalactic.TripleEqualsSupport.Spread
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FunSuite, Matchers}
 import oscar.algebra._
 
 @RunWith(classOf[JUnitRunner])
 class PiecewiseLinearExpressionTests extends LinearMathSolverTester {
-  override def testSuite(interface: Option[SolverInterface[_,Linear, Linear, Double]], solverName: String): FunSuite = {
+  override def testSuite(interface: Option[SolverInterface[Linear, Linear, Double]], solverName: String): FunSuite = {
     new PiecewiseLinearExpressionTester(interface)(solverName)
   }
 }
 
-class PiecewiseLinearExpressionTester(interface: Option[SolverInterface[_,Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
+class PiecewiseLinearExpressionTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
 
   override def suiteName: String = solverName + " - LPTester"
 
-  implicit def i = interface.getOrElse{cancel()}
+  implicit def i: SolverInterface[Linear, Linear, Double] = interface.getOrElse { cancel() }
 
-  def moreOrLess(d: Double) = d +- 1e-6
+  def moreOrLess(d: Double): Spread[Double] = d +- 1e-6
 
   ignore("Minimize |x|") {
     implicit val model = new Model[Linear, Linear, Double]()

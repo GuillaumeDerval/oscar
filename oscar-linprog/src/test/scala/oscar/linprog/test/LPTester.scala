@@ -1,6 +1,7 @@
 package oscar.linprog.test
 
 import org.junit.runner.RunWith
+import org.scalactic.TripleEqualsSupport.Spread
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FunSuite, Matchers}
 import oscar.algebra._
@@ -8,21 +9,19 @@ import oscar.algebra._
 
 @RunWith(classOf[JUnitRunner])
 class LPTests extends LinearMathSolverTester {
-  override def testSuite(interface: Option[SolverInterface[_, Linear, Linear, Double]], solverName: String): FunSuite = {
+  override def testSuite(interface: Option[SolverInterface[Linear, Linear, Double]], solverName: String): FunSuite = {
     new LPTester(interface)(solverName)
   }
 }
 
 
-class LPTester(interface: Option[SolverInterface[_, Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
+class LPTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
 
   override def suiteName: String = solverName + " - LPTester"
 
-  implicit def i = interface.getOrElse {
-    cancel()
-  }
+  implicit def i: SolverInterface[Linear, Linear, Double] = interface.getOrElse { cancel() }
 
-  def moreOrLess(d: Double) = d +- 1e-6
+  def moreOrLess(d: Double): Spread[Double] = d +- 1e-6
 
   test("Maximize objective under constraints") {
     implicit val model = new Model[Linear, Linear, Double]()
@@ -49,7 +48,7 @@ class LPTester(interface: Option[SolverInterface[_, Linear, Linear, Double]])(so
     val x = VarNumerical("x", 100, 150)
     val y = VarNumerical("y", 80, 170)
 
-    minimize(-2 * (x) + 5 * (y))
+    minimize(-2 * x + 5 * y)
     subjectTo("E" |: x + y >= 200.0)
 
     model.solve match {
@@ -320,7 +319,7 @@ class LPTester(interface: Option[SolverInterface[_, Linear, Linear, Double]])(so
         solution(model.objective.expression) shouldBe moreOrLess(1 * 0.0 + 2 * 75.0 + 3 * 75.0)
     }
 
-     //   solver.removeVariable("w")
+    //   solver.removeVariable("w")
 
     model.solve match {
       case Optimal(solution) =>
@@ -336,18 +335,18 @@ class LPTester(interface: Option[SolverInterface[_, Linear, Linear, Double]])(so
   ignore("Cannot remove used variable") {
     implicit val model = new Model[Linear, Linear, Double]()
 
-        intercept[IllegalArgumentException] {
-          val x = VarNumerical("x", 0, 100)
-          val y = VarNumerical("y", 0, 100)
-          val z = VarNumerical("z", 0, 100)
+    intercept[IllegalArgumentException] {
+      val x = VarNumerical("x", 0, 100)
+      val y = VarNumerical("y", 0, 100)
+      val z = VarNumerical("z", 0, 100)
 
-          maximize(x * 1.0 + y * 2.0 + z * 3.0)
-          subjectTo("A" |: x + y <= 75.0)
-          subjectTo("B" |: x + z <= 75.0)
+      maximize(x * 1.0 + y * 2.0 + z * 3.0)
+      subjectTo("A" |: x + y <= 75.0)
+      subjectTo("B" |: x + z <= 75.0)
 
-          model.solve
+      model.solve
 
-          //solver.removeVariable("y")
-        }
+      //solver.removeVariable("y")
+    }
   }
 }

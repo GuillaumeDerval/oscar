@@ -1,6 +1,7 @@
 package oscar.linprog.test
 
 import org.junit.runner.RunWith
+import org.scalactic.TripleEqualsSupport.Spread
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FunSuite, Matchers}
 import oscar.algebra._
@@ -8,19 +9,19 @@ import oscar.algebra._
 
 @RunWith(classOf[JUnitRunner])
 class MIPTests extends LinearMathSolverTester{
-  override def testSuite(interface: Option[SolverInterface[_,Linear,Linear,Double]], solverName: String): FunSuite = {
+  override def testSuite(interface: Option[SolverInterface[Linear,Linear,Double]], solverName: String): FunSuite = {
     new MIPTester(interface)(solverName)
   }
 }
 
 
-class MIPTester(interface: Option[SolverInterface[_,Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
+class MIPTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
 
   override def suiteName: String = solverName + " - MIPTester"
 
-  implicit def i = interface.getOrElse{cancel()}
+  implicit def i: SolverInterface[Linear, Linear, Double] = interface.getOrElse { cancel() }
 
-  def moreOrLess(d: Double) = d +- 1e-6
+  def moreOrLess(d: Double): Spread[Double] = d +- 1e-6
 
   test("Maximize objective under constraints with integer variables") {
     implicit val model = new Model[Linear, Linear, Double]()
@@ -29,7 +30,7 @@ class MIPTester(interface: Option[SolverInterface[_,Linear, Linear, Double]])(so
     val y = VarNumerical("y", 0, 100)
 
     maximize(x * 100.0 + y)
-    model.subjectTo("E" ||: "E" |: x * 3.0 + y <= 14.5)
+    model.subjectTo("E" |: "E" |: x * 3.0 + y <= 14.5)
 
     model.solve match {
       case Optimal(solution) =>

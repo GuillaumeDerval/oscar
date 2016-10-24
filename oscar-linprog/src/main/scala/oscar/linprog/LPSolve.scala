@@ -2,26 +2,26 @@ package oscar.linprog
 
 import java.nio.file.Path
 
-import lpsolve.LpSolve
 import oscar.algebra._
 
 /**
-  * [[SolverInterface]] for using LPSolve to solve linear mathematical [[Model]]s.
-  */
-object LPSolve extends SolverInterface[LpSolve,Linear, Linear, Double]{
-  override def run(model: Model[Linear, Linear, Double],config: Option[Path] = None) = new LPSolveRun(config)(model)
+ * [[SolverInterface]] for using LPSolve to solve linear mathematical [[Model]]s.
+ */
+object LPSolve extends SolverInterface[Linear, Linear, Double]{
+  override def run(model: Model[Linear, Linear, Double],config: Option[Path] = None): LPSolveRun = new LPSolveRun(config)(model)
 }
 
 /**
-  * [[SolverRun]]s using LPSolve to solve [[Model]]s.
-  * @param config path to an optional config file to configure LPSolve
-  * @param model the [[Model]] to solve with this [[SolverRun]]
-  */
-class LPSolveRun(config: Option[Path] = None)(private val model: Model[Linear, Linear, Double]) extends SolverRun[LpSolve,Linear, Linear, Double] {
+ * [[SolverRun]]s using LPSolve to solve [[Model]]s.
+ * @param config path to an optional config file to configure LPSolve
+ * @param model the [[Model]] to solve with this [[SolverRun]]
+ */
+class LPSolveRun(config: Option[Path] = None)(private val model: Model[Linear, Linear, Double]) extends SolverRun[Linear, Linear, Double] {
 
+  type Solver = lpsolve.LpSolve
 
   // LPSolve solver
-  val rawSolver: LpSolve = LpSolve.makeLp(0, model.variables.size)
+  val rawSolver: Solver = lpsolve.LpSolve.makeLp(0, model.variables.size)
 
   // Abortion management
   class LPSolveAborter extends lpsolve.AbortListener {
@@ -29,12 +29,12 @@ class LPSolveRun(config: Option[Path] = None)(private val model: Model[Linear, L
   }
 
   private var aborted = false
-  override def abort {aborted = true}
+  override def abort() {aborted = true}
 
   rawSolver.putAbortfunc(new LPSolveAborter, null)
 
   // Release all resources
-  def release: Unit ={
+  def release(): Unit ={
     rawSolver.deleteLp()
   }
 
@@ -84,9 +84,9 @@ class LPSolveRun(config: Option[Path] = None)(private val model: Model[Linear, L
     }
   }
 
-  override def setInteger(v: Var[Double]) = rawSolver.setInt(v.id + 1, true)
+  override def setInteger(v: Var[Double]): Unit = rawSolver.setInt(v.id + 1, true)
 
-  override def setContinuous(vd: Var[Double]) = {
+  override def setContinuous(vd: Var[Double]): Unit = {
     rawSolver.setInt(vd.id + 1, false)
     rawSolver.setBinary(vd.id + 1, false)
   }
@@ -94,9 +94,9 @@ class LPSolveRun(config: Option[Path] = None)(private val model: Model[Linear, L
   // Add all constraints to the solver
   for (s <- model.constraints; c <- s.equations) {
     val sen = c.sense match {
-      case LQ => LpSolve.LE
-      case EQ => LpSolve.EQ
-      case GQ => LpSolve.GE
+      case LQ => lpsolve.LpSolve.LE
+      case EQ => lpsolve.LpSolve.EQ
+      case GQ => lpsolve.LpSolve.GE
     }
 
     transform(c.expr)(rawSolver.addConstraintex(_,_,_, sen, _))
@@ -106,21 +106,21 @@ class LPSolveRun(config: Option[Path] = None)(private val model: Model[Linear, L
   setObjective(model.objective)
 
 
-  def solve: ModelStatus[Linear, Linear, Double] = {
+  override def solve: ModelStatus[Linear, Linear, Double] = {
 
     aborted = false
 
     rawSolver.solve match {
-      case LpSolve.OPTIMAL =>
+      case lpsolve.LpSolve.OPTIMAL =>
         Optimal(new Solution[Double](rawSolver.getPtrVariables))
-      case LpSolve.SUBOPTIMAL =>
+      case lpsolve.LpSolve.SUBOPTIMAL =>
         Feasible(new Solution[Double](rawSolver.getPtrVariables))
-      case LpSolve.INFEASIBLE =>
+      case lpsolve.LpSolve.INFEASIBLE =>
         Infeasible()
-      case LpSolve.UNBOUNDED =>
+      case lpsolve.LpSolve.UNBOUNDED =>
         Unbounded()
       case _ =>
-       Warning()
+        Warning()
     }
   }
 

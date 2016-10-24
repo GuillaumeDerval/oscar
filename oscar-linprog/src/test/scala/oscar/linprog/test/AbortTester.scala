@@ -1,6 +1,7 @@
 package oscar.linprog.test
 
 import org.junit.runner.RunWith
+import org.scalactic.TripleEqualsSupport.Spread
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FunSuite, Matchers}
 import oscar.algebra._
@@ -11,16 +12,18 @@ import scala.concurrent.{Await, Future}
 
 @RunWith(classOf[JUnitRunner])
 class AbortTests extends LinearMathSolverTester{
-  override def testSuite(interface: Option[SolverInterface[_,Linear,Linear,Double]], solverName: String): FunSuite = {
+  override def testSuite(interface: Option[SolverInterface[Linear,Linear,Double]], solverName: String): FunSuite = {
     new AbortTester(interface)(solverName)
   }
 }
 
-class AbortTester(interface: Option[SolverInterface[_,Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
+class AbortTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
 
   override def suiteName: String = solverName + " - AbortTester"
 
-  implicit def i = interface.getOrElse{cancel()}
+  implicit def i: SolverInterface[Linear, Linear, Double] = interface.getOrElse { cancel() }
+
+  def moreOrLess(d: Double): Spread[Double] = d +- 1e-6
 
   test("Call to abort AFTER solve") {
     implicit val model = new Model[Linear, Linear, Double]()

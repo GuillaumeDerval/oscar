@@ -1,17 +1,17 @@
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
 package oscar.algebra
 
 /**
@@ -46,14 +46,14 @@ package oscar.algebra
  * @author acrucifix acr@n-side.com
  */
 class IndicatorConstraintExpression[+V](
-                                         linExpr: NormalizedExpression[Linear,V],
-                                         sense: ConstraintSign, name : String,
-                                         val indicators: Seq[NormalizedExpression[Linear,V]],
-                                         val bigM: V)(implicit numeric: Numeric[V]) extends Equation[Linear,V](linExpr, sense,name){
+  linExpr: NormalizedExpression[Linear,V],
+  sense: ConstraintSign, name : String,
+  val indicators: Seq[NormalizedExpression[Linear,V]],
+  val bigM: V)(implicit numeric: Numeric[V]) extends Equation[Linear,V](linExpr, sense,name){
 
   import Constant._
 
-  require(indicators.length > 0, s"An IndicatorConstraint should declare at least one indicator.")
+  require(indicators.nonEmpty, s"An IndicatorConstraint should declare at least one indicator.")
 
   val constraintExpressions: Seq[Equation[Linear,V]] =
     indicators.map { ind =>

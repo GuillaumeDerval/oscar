@@ -1,38 +1,39 @@
 package oscar.algebra
 
 /**
-  * Type representing polynomial degree of [[Expression]]s.
-  */
+ * Type representing polynomial degree of [[Expression]]s.
+ */
 class ExpressionDegree
 
 /**
-  * Quadratic type for [[Expression]]s
-  */
+ * Quadratic type for [[Expression]]s
+ */
 class Quadratic extends ExpressionDegree
 
 /**
-  * Linear type for [[Expression]]s
-  */
+ * Linear type for [[Expression]]s
+ */
 class Linear extends Quadratic
 
 /**
-  * Constant type for [[Expression]]s
-  */
+ * Constant type for [[Expression]]s
+ */
 class Constant extends Linear
 
 
-
 /**
-  * Represents the product of several [[Product]]s. Used only for DSL for multiplication and compile-time check of degree of [[Expression]]s.
-  * @param products products to be multiplied
-  * @param name name of the product
-  * @tparam T the degree of the [[Expression]]
-  * @tparam V the type of values stored by the variables of the [[Expression]]. For now, mainly Double is used.
-  */
+ * Represents the product of several [[Product]]s. Used only for DSL for multiplication and compile-time check of degree
+ * of [[Expression]]s.
+ *
+ * @param products products to be multiplied
+ * @param name name of the product
+ * @tparam T the degree of the [[Expression]]
+ * @tparam V the type of values stored by the variables of the [[Expression]]. For now, mainly Double is used.
+ */
 protected class ProdExpression[+T <: ExpressionDegree, +V: Numeric](products: Iterable[Product[T, V]], name: String = "ND") extends NormalizedExpression[T, V](products, name)
 
 protected object ProdExpression {
-  def apply[T <: ExpressionDegree, V: Numeric](a: NormalizedExpression[T, V], b: NormalizedExpression[T, V]) = {
+  def apply[T <: ExpressionDegree, V: Numeric](a: NormalizedExpression[T, V], b: NormalizedExpression[T, V]): ProdExpression[T, V] = {
     val num = implicitly[Numeric[V]]
     new ProdExpression[T, V](
       for (va <- a.terms; vb <- b.terms) yield Product(num.times(va.coef.d, vb.coef.d), va.terms ++ vb.terms)
