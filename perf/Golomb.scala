@@ -43,7 +43,7 @@ object Golomb extends CPModel with App {
   for (i <- 1 until mark.length) add(mark(i - 1) <= mark(i), Strong)
 
   // symmetry breaking
-  add(mark(0) == 0)
+  add(mark(0) === 0)
 
   add(differences(0) <= differences((m * m - m) / 2 - 1))
 

@@ -57,7 +57,7 @@ object CookieMonster extends CPModel with App {
   }
 
   for (j <- 0 until jars.size) {
-    add(sum(0 until maxMove)(m => bx(m)(j)) == jars(j))
+    add(sum(0 until maxMove)(m => bx(m)(j)) === jars(j))
   }
 
   // break symmetries

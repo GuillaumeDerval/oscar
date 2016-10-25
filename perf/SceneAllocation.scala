@@ -97,7 +97,7 @@ object SceneAllocation extends CPModel with App {
   var numSols = 0
   minimize(cost)
   add(gcc(shoot, 0 until maxDay, 0, 5), Strong)
-  add(shoot(0) == 0)
+  add(shoot(0) === 0)
 
   // This labeling is from the great mind of Pierre Schaus.
   // order the shoot by decreasing cost

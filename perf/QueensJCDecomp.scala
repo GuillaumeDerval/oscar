@@ -36,9 +36,9 @@ object QueensJCDecomp extends CPModel with App {
 
   // Constraints
   for (i <- Queens; j <- Queens; if j < i) {
-    add(queens(i) != queens(j))
-    add(rQueens(i) != rQueens(j))
-    add(fQueens(i) != fQueens(j))
+    add(queens(i) !== queens(j))
+    add(rQueens(i) !== rQueens(j))
+    add(fQueens(i) !== fQueens(j))
   }
 
   // Search heuristic

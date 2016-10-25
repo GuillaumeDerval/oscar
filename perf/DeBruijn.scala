@@ -67,15 +67,15 @@ object DeBruijn extends CPModel with App {
   // the first elements in binary[i] is the same as the last
   // elements in binary[i-i]
   for (i <- 1 until m; j <- 1 until n) {
-    add(binary(i - 1)(j) == binary(i)(j - 1))
+    add(binary(i - 1)(j) === binary(i)(j - 1))
   }
   // and around the corner
   for (j <- 1 until n) {
-    add(binary(m - 1)(j) == binary(0)(j - 1))
+    add(binary(m - 1)(j) === binary(0)(j - 1))
   }
   // convert binary -> bin_code (de Bruijn sequence)
   for (i <- 0 until m) {
-    add(bin_code(i) == binary(i)(0))
+    add(bin_code(i) === binary(i)(0))
   }
   // gcc on the de Bruijn sequence
   add(gcc(bin_code, gccv))

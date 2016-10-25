@@ -55,7 +55,7 @@ object SubCircuit extends CPModel with App {
       case Some(x) => {
         // Select the closest successors of the city x
         val v = selectMin(Cities)(succ(x).hasValue(_))(distMatrix(x)(_)).get
-        branch(add(succ(x) == v))(add(succ(x) != v))
+        branch(add(succ(x) === v))(add(succ(x) !== v))
       }
     }
   }

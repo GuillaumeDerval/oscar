@@ -55,14 +55,14 @@ object Eternity extends CPModel with App {
 
   // force 0 on horizontal borders
   for (c <- 0 until nRows) {
-    add(up(0)(c) == 0)
-    add(down(nCols - 1)(c) == 0)
+    add(up(0)(c) === 0)
+    add(down(nCols - 1)(c) === 0)
   }
 
   // force 0 on vertical borders
   for (l <- 0 until nCols) {
-    add(left(l)(0) == 0)
-    add(right(l)(nRows - 1) == 0)
+    add(left(l)(0) === 0)
+    add(right(l)(nRows - 1) === 0)
   }
 
   val fId = id.flatten
