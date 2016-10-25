@@ -25,6 +25,23 @@ import oscar.util._
   * @author Pierre Schaus  pschaus@gmail.com
   */
 object SubCircuit extends CPModel with App {
+  
+  object TSPGenerator {
+    def randomInstance(nCities: Int, seed: Int = 0): (Array[Array[Int]], Array[(Int, Int)]) = {
+      val rand = new scala.util.Random(seed)
+      val coord = Array.tabulate(nCities)(i => (100 + rand.nextInt(400), rand.nextInt(400)))
+      val distMatrix = Array.tabulate(nCities, nCities)((i, j) => getDist(coord(i), coord(j)))
+      (distMatrix, coord)
+    }
+
+    def getDist(p1: (Int, Int), p2: (Int, Int)): Int = {
+      val dx = p2._1 - p1._1
+      val dy = p2._2 - p1._2
+      math.sqrt(dx * dx + dy * dy).toInt
+    }
+  }
+
+
   // Data
   val nCities = 20
   val Cities = 0 until nCities
@@ -37,9 +54,9 @@ object SubCircuit extends CPModel with App {
   // Variables
   val succ = Array.fill(nCities)(CPIntVar(Cities))
   val totDist = CPIntVar(0 to distMatrix.flatten.sum)
-  add(sum(Cities)(i => distMatrix(i)(succ(i))) == totDist)
+  add(sum(Cities)(i => distMatrix(i)(succ(i))) === totDist)
 
-  val nEdge = sum(Cities)(i => succ(i) !== i)
+  val nEdge = sum(Cities)(i => succ(i) ?!== i)
   add(nEdge >= 12)
 
   // Constraints

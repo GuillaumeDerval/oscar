@@ -1,7 +1,7 @@
 
 import oscar.cp._
 import oscar.util.InFile
-import oscar.cp.constraints.TableAC5TCRecomp
+import oscar.cp.constraints.tables.TableAC5TCRecomp
 import oscar.cp.constraints.tables.TableAlgo
 import scala.util.Random
 import oscar.cp.searches.ConflictOrderingSearch
@@ -33,12 +33,12 @@ object Eternity extends CPModel with App {
 
   // horizontal match on adjacent cells
   for (l <- 0 until nCols; c <- 0 until nRows - 1) {
-    add(right(l)(c) == left(l)(c + 1))
+    add(right(l)(c) === left(l)(c + 1))
   }
 
   // vertical match on adjacent cells
   for (l <- 0 until nCols - 1; c <- 0 until nRows) {
-    add(down(l)(c) == up(l + 1)(c))
+    add(down(l)(c) === up(l + 1)(c))
   }
   
   // make the link between id, orientation and up variable

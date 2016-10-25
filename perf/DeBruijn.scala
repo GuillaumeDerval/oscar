@@ -58,9 +58,9 @@ object DeBruijn extends CPModel with App {
   // channeling x <-> binary
   for (i <- 0 until m) {
     val t = Array.tabulate(n)(j => CPIntVar(0 to base - 1))
-    add(x(i) == toNum(t, base))
+    add(x(i) === toNum(t, base))
     for (j <- 0 until n) {
-      add(binary(i)(j) == t(j))
+      add(binary(i)(j) === t(j))
     }
   }
   // the de Bruijn condition
