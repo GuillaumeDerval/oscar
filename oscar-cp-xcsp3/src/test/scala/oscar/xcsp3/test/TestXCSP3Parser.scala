@@ -1,5 +1,7 @@
 package oscar.xcsp3.test
 
+import org.xcsp.parser.XCallbacks
+import org.xcsp.parser.XCallbacks.XCallbacksParameters
 import oscar.xcsp3._
 import oscar.cp._
 import oscar.xcsp3.testUtils.TestSuite
@@ -8,6 +10,9 @@ import scala.collection.mutable.ArrayBuffer
 
 
 class TestXCSP3Parser extends TestSuite {
+
+
+
 
   def testSolution(instancePath: String, solution: String): Boolean = {
     new CheckerLib(instancePath, solution).valid
@@ -39,7 +44,6 @@ class TestXCSP3Parser extends TestSuite {
 
 
   val KOTests = Array("Allergy.xml",
-    "AllInterval-005.xml",
     "Bibd-sc-06-050-25-03-10.xml",
     "Bibd-sum-06-050-25-03-10.xml",
     "BinPacking-sum-n1c1w4a.xml",
@@ -52,23 +56,19 @@ class TestXCSP3Parser extends TestSuite {
     "CostasArray-12.xml",
     "Crossword-lex-vg-5-6.xml",
     "CryptoPuzzle-cross-roads-danger.xml",
-    "Cutstock-small.xml",
     "DistinctVectors-30-050-02.xml",
     "Domino-300-300.xml",
     "driverlogw-09.xml",
     "Fastfood-ff10.xml",
-    "GolombRuler-09-a3.xml",
     "GolombRuler-09-a4.xml",
     "GracefulGraph-K02-P04.xml",
     "GraphColoring-3-fullins-4.xml",
     "GraphColoring-qwhdec-o5-h10-1.xml",
-    "Hanoi-05.xml",
     "Kakuro-easy-000-ext.xml",
     "Kakuro-easy-000-sumdiff.xml",
     "Knapsack-30-100-00.xml",
     "KnightTour-06-ext03.xml",
     "KnightTour-06-int.xml",
-    "Langford-3-10.xml",
     "LangfordBin-08.xml",
     "LowAutocorrelation-015.xml",
     "MagicSequence-008-ca.xml",
@@ -93,8 +93,6 @@ class TestXCSP3Parser extends TestSuite {
     "QuadraticAssignment-qap.xml",
     "QuasiGroup-3-04.xml",
     "QuasiGroup-7-09.xml",
-    "QueenAttacking-06.xml",
-    "Queens-0008-m1.xml",
     "qwh-o30-h374-01.xml",
     "RadarSurveillance-8-24-3-2-00.xml",
     "Ramsey-12.xml","RoomMate-sr0050-int.xml",
@@ -107,12 +105,10 @@ class TestXCSP3Parser extends TestSuite {
     "StripPacking-C1P1.xml",
     "Subisomorphism-A-10.xml",
     "Taillard-js-015-15-0.xml",
-    "Taillard-os-04-04-0.xml",
     "testObjective1.xml",
     "testPrimitive.xml",
     "Tpp-3-3-20-1.xml",
     "TravellingSalesman-20-30-00.xml",
-    "Vrp-A-n32-k5.xml",
     "Vrp-P-n16-k8.xml",
     "Warehouse-opl.xml",
     "Zebra.xml")
@@ -123,7 +119,15 @@ class TestXCSP3Parser extends TestSuite {
     "testExtension1.xml",
     "testExtension2.xml",
     "BinPacking-mdd-n1c1w4a.xml",
-    "Sudoku-s01a-alldiff.xml"
+    "Sudoku-s01a-alldiff.xml",
+    "AllInterval-005.xml",
+    "GolombRuler-09-a3.xml",
+    "Hanoi-05.xml",
+    "Cutstock-small.xml",
+    "QueenAttacking-06.xml",
+    "Taillard-os-04-04-0.xml",
+    "Vrp-A-n32-k5.xml",
+    "Langford-3-10.xml"
   )
 
 

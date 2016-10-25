@@ -19,8 +19,18 @@ import oscar.cp.core.{CPSolver, Constraint}
 
 import scala.collection.mutable.ArrayBuffer
 
-class XCSP3Parser(filename: String) extends XCallbacks {
+class XCSP3Parser(filename: String) extends XCallbacksDecomp {
 
+  // Force parameter update
+  XCallbacks.callbacksParameters.clear()
+  XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_UNARY_INTENSION_CASES, new Object)
+  XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_BINARY_INTENSION_CASES,  new Object)
+  XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_TERNARY_INTENSION_CASES,  new Object)
+  XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_COUNT_CASES,  new Object)
+  XCallbacks.callbacksParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_NVALUES_CASES,  new Object)
+  XCallbacks.callbacksParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, 0:java.lang.Integer) // included
+  XCallbacks.callbacksParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000:java.lang.Integer)
+  XCallbacks.callbacksParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, false:java.lang.Boolean)
   XCallbacks.callbacksParameters.remove(XCallbacksParameters.RECOGNIZE_SPECIAL_COUNT_CASES)
   //XCallbacks.callbacksParameters.add(XCallbacksParameters.)
 
@@ -171,8 +181,6 @@ class XCSP3Parser(filename: String) extends XCallbacks {
   }
 
 
-  override def buildCtrIntension(id: String, scope: Array[XVarInteger], syntaxTreeRoot: XNodeParent[XVar]): Unit = ???
-
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[Int], occurs: Array[Int]): Unit = {
     buildCtrCardinality(id,list,closed,values,occurs,occurs)
   }
@@ -293,6 +301,7 @@ class XCSP3Parser(filename: String) extends XCallbacks {
     cp.maximize(_getExprForTypeObjective(objtype, list, coeffs))
   }
 
+  /*
   override def buildObjToMinimize(id: String, syntaxTreeRoot: XNodeParent[XVar]): Unit = {
     ???
     //cp.minimize(_recursiveIntentionBuilder(syntaxTreeRoot).reify())
@@ -302,8 +311,6 @@ class XCSP3Parser(filename: String) extends XCallbacks {
     ???
     //modelDeclaration.maximize(_recursiveIntentionBuilder(syntaxTreeRoot).reify())
   }
-
-  ////////////
 
   override def buildCtrNValuesExcept(id: String, list: Array[XVarInteger], except: Array[Int], condition: Condition): Unit = ???
 
@@ -333,6 +340,7 @@ class XCSP3Parser(filename: String) extends XCallbacks {
 
   override def buildCtrNoOverlap(id: String, origins: Array[Array[XVarInteger]], lengths: Array[Array[XVarInteger]], zeroIgnored: Boolean): Unit = ???
 
+*/
   override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[Int], condition: Condition): Unit = {
     val setOfVal = values.toSet
     val counterVar: CPIntVar = sum(list.map(x => varHashMap(x.id)).map(_.isIn(setOfVal).asInstanceOf[CPIntVar]))
@@ -377,7 +385,7 @@ class XCSP3Parser(filename: String) extends XCallbacks {
     }
   }
 
-
+/*
 
   override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = ???
 
@@ -413,6 +421,8 @@ class XCSP3Parser(filename: String) extends XCallbacks {
 
   override def buildCtrRegular(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]], startState: String, finalStates: Array[String]): Unit = ???
 
+*/
+
   override def buildCtrLex(id: String, lists: Array[Array[XVarInteger]], operator: TypeOperator): Unit = {
     operator match {
       case TypeOperator.GE => {
@@ -432,11 +442,13 @@ class XCSP3Parser(filename: String) extends XCallbacks {
 
   }
 
+  /*
   override def buildCtrExtension(id: String, x: XVarSymbolic, values: Array[String], positive: Boolean, flags: util.Set[TypeFlag]): Unit = ???
 
   override def buildCtrExtension(id: String, list: Array[XVarSymbolic], tuples: Array[Array[String]], positive: Boolean, flags: util.Set[TypeFlag]): Unit = ???
 
   override def buildVarSymbolic(x: XVarSymbolic, values: Array[String]): Unit = ???
+  */
 
   override def buildCtrMDD(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]]): Unit = {
 
