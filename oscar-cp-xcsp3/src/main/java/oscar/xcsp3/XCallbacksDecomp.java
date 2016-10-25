@@ -6,8 +6,10 @@ import org.xcsp.common.predicates.XNode;
 import org.xcsp.common.predicates.XNodeLeaf;
 import org.xcsp.common.predicates.XNodeParent;
 import org.xcsp.parser.*;
+import org.xcsp.parser.entries.XConstraints;
 import org.xcsp.parser.entries.XDomains;
 import org.xcsp.parser.entries.XVariables;
+import org.xcsp.parser.entries.XConstraints.CChild;
 
 import java.util.*;
 import java.util.HashSet;
@@ -329,7 +331,10 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
                     orVars[k] = new XNodeParent<>(Types.TypeExpr.NE, new XNode[]{v1, v2});
                 }
                 XNodeParent<XVariables.XVarInteger> or = new XNodeParent<>(Types.TypeExpr.OR, orVars);
-                buildCtrIntension(id, scope, or);
+
+                CChild[] childs = new CChild[] { new CChild(Types.TypeChild.function,or)};
+                implem().ctrLoaderInteger.load(new XConstraints.XCtr(Types.TypeCtr.intension,childs));
+                // todo: should be a buildCtrClause instead of or
             }
         }
     }

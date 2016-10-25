@@ -13,7 +13,6 @@ import org.xcsp.parser._
 import org.xcsp.parser.entries.AnyEntry.{CEntry, OEntry, VEntry}
 import org.xcsp.parser.entries.XConstraints.{XBlock, XGroup, XSlide}
 import org.xcsp.parser.entries.XVariables.{XArray, XVarInteger, XVarSymbolic}
-import oscar.cp.CPIntVar
 import oscar.cp._
 import oscar.cp.constraints.EqCons
 import oscar.cp.core.{CPSolver, Constraint}
@@ -22,20 +21,28 @@ import scala.collection.mutable.ArrayBuffer
 
 class XCSP3Parser(filename: String) extends XCallbacksDecomp {
 
-  val implem = new Implem(this)
-  implem.currentParameters.clear()
-  implem.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_UNARY_INTENSION_CASES, new Object)
-  implem.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_BINARY_INTENSION_CASES,  new Object)
-  implem.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_TERNARY_INTENSION_CASES,  new Object)
-  implem.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_NVALUES_CASES,  new Object)
-  implem.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, 0:java.lang.Integer) // included
-  implem.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000:java.lang.Integer)
-  implem.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, false:java.lang.Boolean)
+  val impl = new Implem(this)
+  impl.currentParameters.clear()
+  impl.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_UNARY_INTENSION_CASES, new Object)
+  impl.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_BINARY_INTENSION_CASES,  new Object)
+  impl.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_TERNARY_INTENSION_CASES,  new Object)
+  impl.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_NVALUES_CASES,  new Object)
+  impl.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, 1000:java.lang.Integer) // included
+  impl.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000:java.lang.Integer)
+  impl.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, java.lang.Boolean.FALSE)
+
+
+  override def implem(): XCallbacks.Implem = {
+    impl
+  }
 
   implicit val cp = CPSolver()
 
   val varHashMap = collection.mutable.LinkedHashMap[String, CPIntVar]() //automagically maintains the order of insertion
   val cstHashMap = collection.mutable.HashMap[String, Constraint]()
+
+
+  def toCPIntVar(list: Array[XVarInteger]): Array[CPIntVar] = list.map(i => varHashMap(i.id()))
 
   loadInstance(filename)
 
@@ -190,13 +197,16 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
       cardMin(values(i)-minValue) = occursMin(i)
       cardMax(values(i)-minValue) = occursMax(i)
     }
-    val cst: Constraint = gcc(list.map(i => varHashMap(i.id())), minValue, cardMin, cardMax)
+    val cst: Constraint = gcc(toCPIntVar(list), minValue, cardMin, cardMax)
     cp.add(cst)
     cstHashMap += (id -> cst)
   }
 
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[Int], occurs: Array[XVarInteger]): Unit = {
-    ???
+    val x = toCPIntVar(list)
+    val o = toCPIntVar(occurs)
+    cp.add(gcc(x,values.zip(o)))
+
   }
 
   override def buildCtrOrdered(id: String, list: Array[XVarInteger], operator: TypeOperator): Unit = {
@@ -241,7 +251,12 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     cp.add(csts)
   }
 
-  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int): Unit = throw new Exception("Single subcircuit constraint is not implemented")
+  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int): Unit = {
+
+
+
+    throw new Exception("Single subcircuit constraint is not implemented")
+  }
   override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: Int): Unit = throw new Exception("Single subcircuit constraint is not implemented")
   override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: XVarInteger): Unit = throw new Exception("Single subcircuit constraint is not implemented")
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occurs: Array[XVarInteger]): Unit = throw new Exception("GCC with var cardinalities is not implemented")
@@ -328,9 +343,19 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
 
   override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], ends: Array[XVarInteger], heights: Array[XVarInteger], condition: Condition): Unit = ???
 
-  override def buildCtrNoOverlap(id: String, origins: Array[XVarInteger], lengths: Array[Int], zeroIgnored: Boolean): Unit = ???
+  override def buildCtrNoOverlap(id: String, origins: Array[XVarInteger], lengths: Array[Int], zeroIgnored: Boolean): Unit = {
+    val starts = origins.map(x => varHashMap(x.id()))
+    val durations = lengths.map(CPIntVar(_)(cp))
+    val ends = starts.zip(lengths).map{case(s,d) => s+d}
+    cp.add(unaryResource(starts,durations,ends))
+  }
 
-  override def buildCtrNoOverlap(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], zeroIgnored: Boolean): Unit = ???
+  override def buildCtrNoOverlap(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], zeroIgnored: Boolean): Unit = {
+    val starts = origins.map(x => varHashMap(x.id()))
+    val durations = lengths.map(x => varHashMap(x.id()))
+    val ends = starts.zip(durations).map{case(s,d) => s+d}
+    cp.add(unaryResource(starts,durations,ends))
+  }
 
   override def buildCtrNoOverlap(id: String, origins: Array[Array[XVarInteger]], lengths: Array[Array[Int]], zeroIgnored: Boolean): Unit = ???
 
@@ -375,43 +400,60 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     }
   }
 
-/*
-
-  override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = ???
-
-  override def buildCtrElement(id: String, list: Array[XVarInteger], value: XVarInteger): Unit = ???
-
   override def buildCtrElement(id: String, list: Array[XVarInteger], value: Int): Unit = ???
 
-  override def buildCtrElement(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, value: XVarInteger): Unit = ???
+  override def buildCtrElement(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, value: XVarInteger): Unit = {
+    val idx: CPIntVar = varHashMap(index.id()) - startIndex
+    val x: Array[CPIntVar] = toCPIntVar(list)
+    val z: CPIntVar = varHashMap(value.id())
+    cp.add(elementVar(x,idx,z))
+  }
 
-  override def buildCtrElement(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, value: Int): Unit = ???
+  override def buildCtrElement(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, value: Int): Unit = {
+    val idx: CPIntVar = varHashMap(index.id()) - startIndex
+    val x: Array[CPIntVar] = toCPIntVar(list)
+    val z: CPIntVar = CPIntVar(value)(cp)
+    cp.add(elementVar(x,idx,z))
+  }
 
-  override def buildCtrAllEqual(id: String, list: Array[XVarInteger]): Unit = ???
 
-  override def buildCtrNotAllEqual(id: String, list: Array[XVarInteger]): Unit = ???
+  override def buildCtrAllEqual(id: String, list: Array[XVarInteger]): Unit = {
+    val x = toCPIntVar(list)
+    x.sliding(2).foreach{ a => cp.add(a(0) === a(1))}
+  }
 
-  override def buildCtrAtMost(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = ???
 
-  override def buildCtrAllDifferentMatrix(id: String, matrix: Array[Array[XVarInteger]]): Unit = ???
+  /*
 
-  override def buildCtrClause(id: String, pos: Array[XVarInteger], neg: Array[XVarInteger]): Unit = ???
+    override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = ???
 
-  override def buildCtrExactly(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = ???
+    override def buildCtrElement(id: String, list: Array[XVarInteger], value: XVarInteger): Unit = ???
 
-  override def buildCtrExactly(id: String, list: Array[XVarInteger], value: Int, k: XVarInteger): Unit = ???
 
-  override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int): Unit = ???
 
-  override def buildCtrChannel(id: String, list1: Array[XVarInteger], startIndex1: Int, list2: Array[XVarInteger], startIndex2: Int): Unit = ???
+    override def buildCtrNotAllEqual(id: String, list: Array[XVarInteger]): Unit = ???
 
-  override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int, value: XVarInteger): Unit = ???
+    override def buildCtrAtMost(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = ???
 
-  override def buildCtrIntension(id: String, scope: Array[XVarSymbolic], syntaxTreeRoot: XNodeParent[XVarSymbolic]): Unit = ???
+    override def buildCtrAllDifferentMatrix(id: String, matrix: Array[Array[XVarInteger]]): Unit = ???
 
-  override def buildCtrRegular(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]], startState: String, finalStates: Array[String]): Unit = ???
+    override def buildCtrClause(id: String, pos: Array[XVarInteger], neg: Array[XVarInteger]): Unit = ???
 
-*/
+    override def buildCtrExactly(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = ???
+
+    override def buildCtrExactly(id: String, list: Array[XVarInteger], value: Int, k: XVarInteger): Unit = ???
+
+    override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int): Unit = ???
+
+    override def buildCtrChannel(id: String, list1: Array[XVarInteger], startIndex1: Int, list2: Array[XVarInteger], startIndex2: Int): Unit = ???
+
+    override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int, value: XVarInteger): Unit = ???
+
+    override def buildCtrIntension(id: String, scope: Array[XVarSymbolic], syntaxTreeRoot: XNodeParent[XVarSymbolic]): Unit = ???
+
+    override def buildCtrRegular(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]], startState: String, finalStates: Array[String]): Unit = ???
+
+  */
 
   override def buildCtrLex(id: String, lists: Array[Array[XVarInteger]], operator: TypeOperator): Unit = {
     operator match {
@@ -470,11 +512,21 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
   }
 
 
-  override def buildCtrAllDifferentList(id: String, lists: Array[Array[XVarInteger]]): Unit = ???
+
+
+  override def buildCtrAllDifferentList(id: String, lists: Array[Array[XVarInteger]]): Unit = {
+    for (i <- 0 until lists.size; j <- i+1 until lists.size) {
+      val x1 = toCPIntVar(lists(i))
+      val x2 = toCPIntVar(lists(j))
+      cp.add(or(x1.zip(x2).map{case(a,b) => a ?!== b}))
+    }
+  }
 
   override def buildCtrLexMatrix(id: String, matrix: Array[Array[XVarInteger]], operator: TypeOperator): Unit = ???
 
-  override def buildCtrMinimum(id: String, list: Array[XVarInteger], condition: Condition): Unit = ???
+  override def buildCtrMinimum(id: String, list: Array[XVarInteger], condition: Condition): Unit = {
+    _buildCrtWithCondition(id, minimum(toCPIntVar(list)),condition)
+  }
 
   override def buildCtrMinimum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = ???
 
