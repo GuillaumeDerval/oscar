@@ -8,20 +8,16 @@ import oscar.algebra._
 
 
 @RunWith(classOf[JUnitRunner])
-class MIPTests extends LinearMathSolverTester{
+class MIPTests extends LinearMathSolverTests{
   override def testSuite(interface: Option[SolverInterface[Linear,Linear,Double]], solverName: String): FunSuite = {
-    new MIPTester(interface)(solverName)
+    new MIPTester(interface, solverName)
   }
 }
 
 
-class MIPTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
+class MIPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], solverName: String) extends LinearMathSolverTester(interfaceOpt, solverName) {
 
   override def suiteName: String = solverName + " - MIPTester"
-
-  implicit def i: SolverInterface[Linear, Linear, Double] = interface.getOrElse { cancel() }
-
-  def moreOrLess(d: Double): Spread[Double] = d +- 1e-6
 
   test("Maximize objective under constraints with integer variables") {
     implicit val model = new Model[Linear, Linear, Double]()
@@ -64,7 +60,7 @@ class MIPTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solv
     maximize(x * 100.0 + y)
     subjectTo("E" |: x * 3.0 + y <= 14.5)
 
-    val run = i.run(model)
+    val run = solverInterface.run(model)
 
     run.solve match {
       case Optimal(solution) =>
@@ -91,7 +87,7 @@ class MIPTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solv
     subjectTo("E" |: x + y <= 75.5)
     subjectTo("E" |: x + z <= 75.5)
 
-    val run = i.run(model)
+    val run = solverInterface.run(model)
 
     run.solve match {
       case Optimal(solution) =>

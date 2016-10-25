@@ -8,20 +8,16 @@ import oscar.algebra._
 
 
 @RunWith(classOf[JUnitRunner])
-class LPTests extends LinearMathSolverTester {
+class LPTests extends LinearMathSolverTests {
   override def testSuite(interface: Option[SolverInterface[Linear, Linear, Double]], solverName: String): FunSuite = {
-    new LPTester(interface)(solverName)
+    new LPTester(interface, solverName)
   }
 }
 
 
-class LPTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
+class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], solverName: String) extends LinearMathSolverTester(interfaceOpt, solverName) {
 
   override def suiteName: String = solverName + " - LPTester"
-
-  implicit def i: SolverInterface[Linear, Linear, Double] = interface.getOrElse { cancel() }
-
-  def moreOrLess(d: Double): Spread[Double] = d +- 1e-6
 
   test("Maximize objective under constraints") {
     implicit val model = new Model[Linear, Linear, Double]()
@@ -147,7 +143,7 @@ class LPTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solve
     maximize(-x * 2.0 + y * 5.0)
     subjectTo("E" |: x + y <= 200.0)
 
-    val run = i.run(model)
+    val run = solverInterface.run(model)
 
     run.solve match {
       case Optimal(solution) =>
@@ -184,7 +180,7 @@ class LPTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solve
     maximize(obj)
     subjectTo("E" |: x + y <= 200.0)
 
-    val run = i.run(model)
+    val run = solverInterface.run(model)
 
     run.solve match {
       case Optimal(solution) =>

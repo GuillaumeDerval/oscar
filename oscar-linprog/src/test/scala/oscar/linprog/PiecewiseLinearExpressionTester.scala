@@ -7,19 +7,15 @@ import org.scalatest.{FunSuite, Matchers}
 import oscar.algebra._
 
 @RunWith(classOf[JUnitRunner])
-class PiecewiseLinearExpressionTests extends LinearMathSolverTester {
+class PiecewiseLinearExpressionTests extends LinearMathSolverTests {
   override def testSuite(interface: Option[SolverInterface[Linear, Linear, Double]], solverName: String): FunSuite = {
-    new PiecewiseLinearExpressionTester(interface)(solverName)
+    new PiecewiseLinearExpressionTester(interface, solverName)
   }
 }
 
-class PiecewiseLinearExpressionTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
+class PiecewiseLinearExpressionTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], solverName: String) extends LinearMathSolverTester(interfaceOpt, solverName) {
 
   override def suiteName: String = solverName + " - LPTester"
-
-  implicit def i: SolverInterface[Linear, Linear, Double] = interface.getOrElse { cancel() }
-
-  def moreOrLess(d: Double): Spread[Double] = d +- 1e-6
 
   ignore("Minimize |x|") {
     implicit val model = new Model[Linear, Linear, Double]()

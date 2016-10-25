@@ -11,19 +11,15 @@ import scala.concurrent.{Await, Future}
 
 
 @RunWith(classOf[JUnitRunner])
-class AbortTests extends LinearMathSolverTester{
+class AbortTests extends LinearMathSolverTests{
   override def testSuite(interface: Option[SolverInterface[Linear,Linear,Double]], solverName: String): FunSuite = {
-    new AbortTester(interface)(solverName)
+    new AbortTester(interface, solverName)
   }
 }
 
-class AbortTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
+class AbortTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], solverName: String) extends LinearMathSolverTester(interfaceOpt, solverName) {
 
   override def suiteName: String = solverName + " - AbortTester"
-
-  implicit def i: SolverInterface[Linear, Linear, Double] = interface.getOrElse { cancel() }
-
-  def moreOrLess(d: Double): Spread[Double] = d +- 1e-6
 
   test("Call to abort AFTER solve") {
     implicit val model = new Model[Linear, Linear, Double]()
@@ -55,7 +51,7 @@ class AbortTester(interface: Option[SolverInterface[Linear, Linear, Double]])(so
         s"unicity[$j]" |: (sum(0 until n)(i => xs(i)(j)) === Const(1.0))
       }))
 
-    val run = i.run(model)
+    val run = solverInterface.run(model)
 
     val startTime = System.currentTimeMillis()
 
@@ -68,7 +64,7 @@ class AbortTester(interface: Option[SolverInterface[Linear, Linear, Double]])(so
     Thread.sleep(500)
 
     // abort
-    run.abort
+    run.abort()
 
     //get the results
     Await.result(endStatusFuture, 1 minute)
@@ -90,10 +86,10 @@ class AbortTester(interface: Option[SolverInterface[Linear, Linear, Double]])(so
 
     model.subjectTo("E" |: x + y <= 200.0)
 
-    val run = i.run(model)
+    val run = solverInterface.run(model)
 
     // Abort before solve should not prevent it
-    run.abort
+    run.abort()
 
     run.solve match {
       case Optimal(solution) =>

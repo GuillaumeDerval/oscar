@@ -8,19 +8,15 @@ import oscar.algebra._
 
 
 @RunWith(classOf[JUnitRunner])
-class InfeasibilityAnalysisTests extends LinearMathSolverTester{
+class InfeasibilityAnalysisTests extends LinearMathSolverTests{
   override def testSuite(interface: Option[SolverInterface[Linear,Linear,Double]], solverName: String): FunSuite = {
-    new InfeasibilityAnalysisTester(interface)(solverName)
+    new InfeasibilityAnalysisTester(interface, solverName)
   }
 }
 
-class InfeasibilityAnalysisTester(interface: Option[SolverInterface[Linear, Linear, Double]])(solverName: String) extends FunSuite with Matchers {
+class InfeasibilityAnalysisTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], solverName: String) extends LinearMathSolverTester(interfaceOpt, solverName) {
 
   override def suiteName: String = solverName + " - InfeasibilityAnalysisTester"
-
-  implicit def i: SolverInterface[Linear, Linear, Double] = interface.getOrElse { cancel() }
-
-  def moreOrLess(d: Double): Spread[Double] = d +- 1e-6
 
   override def test(testName: String, testTags: Tag*)(testFun: => Unit): Unit = {
     super.test(solverName + " " + testName, testTags: _*)(testFun)
