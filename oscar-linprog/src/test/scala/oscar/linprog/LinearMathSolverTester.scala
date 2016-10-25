@@ -13,7 +13,8 @@ abstract class LinearMathSolverTester extends FunSuite {
     try {
       f
     } catch {
-      case t: UnsatisfiedLinkError => cancel(t)
+      case _: UnsatisfiedLinkError => None
+      case _: NoClassDefFoundError => None
       case t: Throwable => fail(t)
     }
 
