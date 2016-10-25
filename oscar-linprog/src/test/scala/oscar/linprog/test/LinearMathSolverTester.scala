@@ -9,13 +9,18 @@ import scala.collection.immutable.IndexedSeq
 
 abstract class LinearMathSolverTester extends FunSuite {
 
-  val lpsolve =
+  private def trySolverAvailability(f: => Option[SolverInterface[Linear,Linear,Double]]): Option[SolverInterface[Linear,Linear,Double]] =
     try {
-      LPSolve.solve(new Model[Linear,Linear,Double]())
-      Some(LPSolve)
+      f
     } catch {
-      case _: Throwable => None
+      case t: UnsatisfiedLinkError => cancel(t)
+      case t: Throwable => fail(t)
     }
+
+  val lpsolve = trySolverAvailability {
+    LPSolve.solve(new Model[Linear,Linear,Double]())
+    Some(LPSolve)
+  }
 
   override def nestedSuites: IndexedSeq[Suite] =
     IndexedSeq(

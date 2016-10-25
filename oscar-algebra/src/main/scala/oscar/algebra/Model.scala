@@ -61,7 +61,7 @@ class Model[O >: Constant <: ExpressionDegree , C <: ExpressionDegree, V: Numeri
   /**
    * Returns the maximum index of all the variables
    */
-  private def maxIndex: Int = _variables.size
+  def maxIndex: Int = _variables.size
 
   private var _objective: Objective[O, V] = new Minimize[O,V](Const(implicitly[Numeric[V]].zero).normalized[V])
   /**
