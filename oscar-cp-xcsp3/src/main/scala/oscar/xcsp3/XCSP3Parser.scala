@@ -176,6 +176,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
 
   override def buildCtrIntension(id: String, scope: Array[XVarInteger], syntaxTreeRoot: XNodeParent[XVarInteger]): Unit = ???
 
+
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[Int], occurs: Array[Int]): Unit = {
     buildCtrCardinality(id,list,closed,values,occurs,occurs)
   }
@@ -296,6 +297,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     cp.maximize(_getExprForTypeObjective(objtype, list, coeffs))
   }
 
+
   override def buildObjToMinimize(id: String, syntaxTreeRoot: XNodeParent[XVarInteger]): Unit = {
     ???
     //cp.minimize(_recursiveIntentionBuilder(syntaxTreeRoot).reify())
@@ -305,8 +307,6 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     ???
     //modelDeclaration.maximize(_recursiveIntentionBuilder(syntaxTreeRoot).reify())
   }
-
-  ////////////
 
   override def buildCtrNValuesExcept(id: String, list: Array[XVarInteger], except: Array[Int], condition: Condition): Unit = ???
 
@@ -375,7 +375,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     }
   }
 
-
+/*
 
   override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = ???
 
@@ -411,6 +411,8 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
 
   override def buildCtrRegular(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]], startState: String, finalStates: Array[String]): Unit = ???
 
+*/
+
   override def buildCtrLex(id: String, lists: Array[Array[XVarInteger]], operator: TypeOperator): Unit = {
     operator match {
       case TypeOperator.GE => {
@@ -430,11 +432,13 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
 
   }
 
+  /*
   override def buildCtrExtension(id: String, x: XVarSymbolic, values: Array[String], positive: Boolean, flags: util.Set[TypeFlag]): Unit = ???
 
   override def buildCtrExtension(id: String, list: Array[XVarSymbolic], tuples: Array[Array[String]], positive: Boolean, flags: util.Set[TypeFlag]): Unit = ???
 
   override def buildVarSymbolic(x: XVarSymbolic, values: Array[String]): Unit = ???
+  */
 
   override def buildCtrMDD(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]]): Unit = {
 
