@@ -16,7 +16,8 @@
 package oscar.examples.linprog
 
 import oscar.algebra._
-import oscar.linprog.{LPSolve, MPModel}
+import oscar.linprog.MPModel
+import oscar.linprog.lpsolve.LPSolve
 
 /*
  * The knapsack problem is a well-known problem in combinatorial optimization:

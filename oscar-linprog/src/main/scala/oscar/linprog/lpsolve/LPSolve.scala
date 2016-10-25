@@ -1,4 +1,4 @@
-package oscar.linprog
+package oscar.linprog.lpsolve
 
 import java.nio.file.Path
 

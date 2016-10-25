@@ -16,7 +16,8 @@
 package oscar.examples.linprog
 
 import oscar.algebra._
-import oscar.linprog.{LPSolve, MPModel}
+import oscar.linprog.MPModel
+import oscar.linprog.lpsolve.LPSolve
 /**
  *  Note: example taken from glpk
  *  The Maximum Flow Problem in a network G = (V, E), where V is a set

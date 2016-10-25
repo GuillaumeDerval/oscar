@@ -1,4 +1,4 @@
-package oscar.linprog.test
+package oscar.linprog
 
 import org.junit.runner.RunWith
 import org.scalactic.TripleEqualsSupport.Spread

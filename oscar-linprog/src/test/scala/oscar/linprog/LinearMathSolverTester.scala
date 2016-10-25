@@ -1,8 +1,8 @@
-package oscar.linprog.test
+package oscar.linprog
 
 import org.scalatest.{FunSuite, Suite}
 import oscar.algebra.{Linear, Model, SolverInterface}
-import oscar.linprog.LPSolve
+import oscar.linprog.lpsolve.LPSolve
 
 import scala.collection.immutable.IndexedSeq
 
