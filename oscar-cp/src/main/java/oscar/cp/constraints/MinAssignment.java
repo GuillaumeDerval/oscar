@@ -103,7 +103,7 @@ public class MinAssignment extends Constraint {
 
         initWeightMatrix(weightMat);
 
-        sp = new int[x.length][n];
+        sp = new int[n][n];
         distance = new int[2*n];
 
         isValueBound = new boolean[n];
