@@ -345,22 +345,4 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
       //solver.removeVariable("y")
     }
   }
-
-  testForAllSolvers(MPSolverLib.lpSolvers, "Variable names are cropped if the solver used impose a restriction on their length") { implicit solver =>
-    val x = MPFloatVar("veryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVery" +
-      "VeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVery" +
-      "VeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVery" +
-      "VeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVery" +
-      "VeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVery" +
-      "LongVariableName", 100, 150)
-    val y = MPFloatVar("y", 80, 170)
-
-    maximize(-2 * x + 5 * y)
-    add(x + y <:= 200)
-
-    val endStatus = solver.solve
-
-    endStatus should equal(SolutionFound)
-    solver.solutionQuality should equal(Success(Optimal))
-  }
 }
