@@ -17,7 +17,7 @@ object ScalarProduct {
   def zero(vars: Seq[CPIntVar], scalars: Seq[Int], rhs: Int = 0)(implicit cp: CPStore): Constraint = { // the scalar product must be zero
     assert(vars.size == scalars.size)
     
-    sum(vars.zip(scalars).map { case (x, c) => x * c }) == rhs
+    sum(vars.zip(scalars).map { case (x, c) => x * c }).eq(rhs)
     
     /*
     // step 1, take all indices where x_i * a_i is known in advance, and put these in a separate int
@@ -52,7 +52,7 @@ object ScalarProduct {
   def nonzero(vars: Seq[CPIntVar], scalars: Seq[Int], rhs: Int = 0)(implicit cp: CPStore): Constraint = {
     assert(vars.size == scalars.size)
     
-    sum(vars.zip(scalars).map { case (x, c) => x * c }) != rhs
+    sum(vars.zip(scalars).map { case (x, c) => x * c }).diff(rhs)
     
     /*
     val (constants, nonconstants) = vars.indices.partition { i => scalars(i) == 0 || vars(i).isBound }
@@ -71,7 +71,7 @@ object ScalarProduct {
   def leq(vars: Seq[CPIntVar], scalars: Seq[Int], rhs: Int = 0)(implicit cp: CPStore): Constraint = {
     assert(vars.size == scalars.size)
 
-    sum(vars.zip(scalars).map { case (x, c) => x * c }) <= rhs
+    sum(vars.zip(scalars).map { case (x, c) => x * c }).leEq(rhs)
 
     /*
     val (constants, nonconstants) = vars.indices.partition { i => scalars(i) == 0 || vars(i).isBound }
@@ -89,17 +89,17 @@ object ScalarProduct {
 
   def lt(vars: Seq[CPIntVar], scalars: Seq[Int], rhs: Int = 0)(implicit cp: CPStore): Constraint = {
     assert(vars.size == scalars.size)
-    sum(vars.zip(scalars).map { case (x, c) => x * c }) < rhs
+    sum(vars.zip(scalars).map { case (x, c) => x * c }).le(rhs)
   }
 
   def gt(vars: Seq[CPIntVar], scalars: Seq[Int], rhs: Int = 0)(implicit cp: CPStore): Constraint = {
     assert(vars.size == scalars.size)
-    sum(vars.zip(scalars).map { case (x, c) => x * c }) > rhs
+    sum(vars.zip(scalars).map { case (x, c) => x * c }).gr(rhs)
   }
 
   def geq(vars: Seq[CPIntVar], scalars: Seq[Int], rhs: Int = 0)(implicit cp: CPStore): Constraint = {
     assert(vars.size == scalars.size)
-    sum(vars.zip(scalars).map { case (x, c) => x * c }) >= rhs
+    sum(vars.zip(scalars).map { case (x, c) => x * c }).grEq(rhs)
   }
 
 

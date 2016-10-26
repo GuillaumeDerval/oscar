@@ -50,10 +50,10 @@ object MapColoring3 extends CPModel with App  {
     var numSols = 0
   
       for(i <- 0 until neighbours.length) {
-       add(color(neighbours(i)(0)) != color(neighbours(i)(1)))
+       add(color(neighbours(i)(0)) !== color(neighbours(i)(1)))
       }
       // Symmetry breaking: Belgium has color 1
-     add(color(Belgium) == 1)
+     add(color(Belgium) === 1)
      search{
        binaryFirstFail(color)
      }

@@ -58,7 +58,7 @@ object JustForgotten extends CPModel with App  {
   
      add(allDifferent(x), Strong)
       for(r <- 0 until rows) {
-       add(sum(for{c <- 0 until cols} yield x(c) === a(r)(c)) == 4)
+       add(sum(for{c <- 0 until cols} yield x(c) ?=== a(r)(c)) === 4)
       }
     search{
       binaryStatic(x)

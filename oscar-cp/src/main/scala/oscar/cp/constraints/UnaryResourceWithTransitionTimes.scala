@@ -100,7 +100,7 @@ class UnaryResourceWithTransitionTimes(starts: Array[CPIntVar], durations: Array
     }
 
     while(!failure && changed) {
-      changed = EF() || OC() || DP() || NFNL() || binaryPropagate()
+      changed = binaryPropagate() || EF() || OC() || DP() || NFNL()
     }
 
     if(failure)

@@ -16,8 +16,8 @@
 package oscar.linprog.examples
 
 import oscar.algebra._
-import oscar.linprog.interface.lpsolve.LPSolveLib
-import oscar.linprog.modeling._
+import oscar.linprog.MPModel
+import oscar.linprog.lpsolve.LPSolve
 
 /**
  * Assign workers to shifts while satisfying requirements for that day.
@@ -27,7 +27,7 @@ import oscar.linprog.modeling._
  *
  * @author Pierre Schaus pschaus@gmail.com
  */
-object Workforce extends MPModel(LPSolveLib) with App {
+object Workforce extends MPModel(LPSolve) with App {
 
   val Shifts = 0 to 13
   val Workers = 0 to 6
@@ -46,20 +46,21 @@ object Workforce extends MPModel(LPSolveLib) with App {
 
   val assigned = Array.tabulate(Workers.size, Shifts.size)((i, j) => MPBinaryVar(s"x($i,$j)"))
 
-  minimize(sum(Workers, Shifts)((w, s) => assigned(w)(s) * pay(w)))
+  minimize(sum(Workers, Shifts)((w, s) => assigned(w)(s) * pay(w).toDouble))
   for (s <- 0 until Shifts.size) {
-    add(sum(Workers)(w => assigned(w)(s) * availability(w)(s)) =:= shiftRequirements(s))
+    add( "" |: sum(Workers)(w => assigned(w)(s) * availability(w)(s).toDouble) === shiftRequirements(s).toDouble)
   }
   for (w <- Workers) {
-    add(sum(Shifts)(s => assigned(w)(s)) <:= maxNbShift)
+    add( "" |: sum(Shifts)(s => assigned(w)(s)) <= maxNbShift.toDouble)
   }
 
-  solver.solve
+  solve match {
+    case Optimal(solution) =>
 
-  println("objective: " + solver.objectiveValue.get)
-  for (s <- 0 until Shifts.size) {
-    println("Day " + s + " workers: " + Workers.filter(assigned(_)(s).value.get == 1))
+      println("objective: " + solution(objective.expression))
+      for (s <- 0 until Shifts.size) {
+        println("Day " + s + " workers: " + Workers.filter(assigned(_)(s).value.get == 1))
+      }
   }
 
-  solver.release()
 }

@@ -104,7 +104,7 @@ class TestElementCst2D extends FunSuite with ShouldMatchers {
     val z = CPIntVar(0 to 10)(cp)
 
     cp.add(new ElementCst2D(T, x, y, z))
-    cp.add(y != 0)
+    cp.add(y !== 0)
 
     z.min should be(2)
     z.max should be(8)
@@ -119,7 +119,7 @@ class TestElementCst2D extends FunSuite with ShouldMatchers {
     val z = CPIntVar(0 to 10)(cp)
 
     cp.add(new ElementCst2D(T, x, y, z))
-    cp.add(y != 0)
+    cp.add(y !== 0)
     cp.add(z < 4)
 
     x.max should be(0)

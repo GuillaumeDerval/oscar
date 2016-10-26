@@ -16,9 +16,8 @@
 package oscar.linprog.examples
 
 import oscar.algebra._
-import oscar.linprog.interface.lpsolve.LPSolveLib
-import oscar.linprog.modeling._
-
+import oscar.linprog.MPModel
+import oscar.linprog.lpsolve.LPSolve
 /**
  *  Note: example taken from glpk
  *  The Maximum Flow Problem in a network G = (V, E), where V is a set
@@ -27,7 +26,7 @@ import oscar.linprog.modeling._
  *  to conservation of flow constraints at each node and flow capacities
  *  on each arc.
  */
-object MaxFlow extends MPModel(LPSolveLib) with App {
+object MaxFlow extends MPModel(LPSolve) with App {
 
   val Lines = 0 to 7
   val Columns = 0 to 8
@@ -46,18 +45,19 @@ object MaxFlow extends MPModel(LPSolveLib) with App {
 
 
   for (l <- 1 to nbline - 1)
-    add(sum(Columns)(c => x(l)(c)) - sum(Lines)(c => x(c)(l)) =:= 0)
+    add( "" |: sum(Columns)(c => x(l)(c)) - sum(Lines)(c => x(c)(l)) === 0.toDouble)
 
   maximize(sum(Lines)(l => x(l)(nbcol - 1)))
 
-  solver.solve
+  solve match {
+    case Optimal(solution) =>
 
-  println("objective: " + solver.objectiveValue)
-  for (l <- Lines) {
-    for (c <- Columns)
-      print(x(l)(c).value.get + "  ")
-    println()
+      println("objective: " + solution(objective.expression))
+      for (l <- Lines) {
+        for (c <- Columns)
+          print(solution(x(l)(c)) + "  ")
+        println()
+      }
   }
 
-  solver.release()
 }

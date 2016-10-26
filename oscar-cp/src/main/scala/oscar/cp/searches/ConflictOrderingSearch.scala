@@ -53,7 +53,7 @@ class ConflictOrderingSearch(variables: Array[CPIntVar], varHeuristic: (Int) => 
       if (!x.isBound) {
         lastVariable = Some(i)
         val value = valHeuristic(i)
-        val alternatives = branch { store.post(x == value) } { store.post(x != value) }
+        val alternatives = branch { store.post(x.eq((value))) } { store.post(x.diff(value)) }
         return alternatives        
       }
     }
@@ -82,7 +82,7 @@ class ConflictOrderingSearch(variables: Array[CPIntVar], varHeuristic: (Int) => 
       lastVariable = Some(bestVar)
       val x = variables(bestVar)
       val value = valHeuristic(bestVar)
-      val alternatives = branch { store.post(x == value) } { store.post(x != value) }
+      val alternatives = branch { store.post(x.eq(value)) } { store.post(x.diff(value)) }
       alternatives        
     }
   }

@@ -11,9 +11,9 @@ object OscarBuild extends Build {
 
   object BuildSettings {
     val buildOrganization = "oscar"
-    val buildVersion = "3.1.1.6-NSIDE"
+    val buildVersion = "4.0.0-SNAPSHOT"
     val buildScalaVersion = "2.11.0"
-    val buildSbtVersion= "0.13.0"
+    val buildSbtVersion= "0.13.8"
 
     val (osNativeLibDir, osJavaLibraryPath) = (sys.props("os.name"), sys.props("os.arch")) match {
       case (os, arch) if os.contains("Mac") && arch.endsWith("64") => ("macos64", sys.env.getOrElse("DYLD_LIBRARY_PATH", ""))
@@ -23,7 +23,7 @@ object OscarBuild extends Build {
       case (os, arch) => sys.error("Unsupported OS [${os}] Architecture [${arch}] combo, OscaR currently supports macos64, linux64, windows32, windows64")
     }
 
-    lazy val commonSettings = Defaults.defaultSettings ++ jacoco.settings ++ Seq(
+    lazy val commonSettings = Defaults.defaultSettings ++  jacoco.settings ++ Seq(
       organization := buildOrganization,
       version := buildVersion,
       scalacOptions in Compile ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature", "-unchecked", "-Xdisable-assertions"),
@@ -33,6 +33,7 @@ object OscarBuild extends Build {
       parallelExecution in Test := false,
       fork in Test := true,
       javaOptions in Test += "-Djava.library.path=../lib:../lib/" + osNativeLibDir + ":" + osJavaLibraryPath,
+      javacOptions ++= Seq("-encoding", "UTF-8"),
       scalaVersion := buildScalaVersion,
       unmanagedSourceDirectories in Test += baseDirectory.value / "src" / "main" / "examples",
       publishTo := {
@@ -69,8 +70,6 @@ object OscarBuild extends Build {
     val swingxWs = "org.swinglabs" % "swingx-ws" % "1.0"
     val xmlApisExt = "xml-apis" % "xml-apis-ext" % "latest.milestone"
     val xcsp3 = "xcsp3"  % "xcsp3_2.11" % "1.0.0-SNAPSHOT"
-    val nscalaTime = "com.github.nscala-time" %% "nscala-time" % "2.12.0" // A scala wrapper for Joda Time
-
     // Test libraries
     val junit = "junit" % "junit" % "latest.milestone" % Test
     val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.11.+" % Test
@@ -200,7 +199,7 @@ object OscarBuild extends Build {
       commonSettings ++
         Seq(
           resolvers ++= Seq(leadoperations, cogcomp, nsideExtReleases),
-          libraryDependencies ++= testDeps :+ lpsolve :+ gurobi :+ scalaXml :+ nscalaTime
+          libraryDependencies ++= testDeps :+ lpsolve :+ gurobi :+ scalaXml
         ),
     dependencies = Seq(oscarAlgebra)
   )

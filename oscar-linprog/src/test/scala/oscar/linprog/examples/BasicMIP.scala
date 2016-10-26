@@ -16,28 +16,26 @@
 package oscar.linprog.examples
 
 import oscar.algebra._
-import oscar.linprog.interface.lpsolve.LPSolveLib
-import oscar.linprog.modeling._
+import oscar.linprog.MPModel
+import oscar.linprog.lpsolve.LPSolve
 
-object BasicMIP extends MPModel(LPSolveLib) with App {
+object BasicMIP extends MPModel(LPSolve) with App {
 
   val x0 = MPFloatVar("x0", 0.0, 40.0)
   val x1 = MPIntVar("x1", 0 to 1000)
   val x2 = MPIntVar("x2", 0 until 18)
   val x3 = MPFloatVar("x3", 2.0, 3.0)
 
-  maximize(x0 + 2 * x1 + 3 * x2 + x3)
+  maximize(x0 + x1*2.0 + x2*3.0 + x3)
   subjectTo(
-    "cons1" -> (-1 * x0 +       x1   + x2 +  10 * x3 <:= 20),
-    "cons2" -> (     x0 - 3.0 * x1   + x2            <:= 30),
-    "cons3" -> (                x1        - 3.5 * x3 =:=  0)
+    "cons1" |: (-x0 +       x1   + x2 +   x3*10.0 <= 20.0),
+    "cons2" |: (     x0 -  x1*3.0   + x2            <= 30.0),
+    "cons3" |: (                x1        -  x3*3.5 ===  0.0)
   )
 
-  val endStatus = solver.solve
+  val endStatus = interface.solve(this)
 
   println(s"End status = $endStatus")
-  println(s"Solution quality = ${solver.solutionQuality}")
-  println(s"Objective = ${solver.objectiveValue}")
   println("---------------------------------------------")
   println(s"x0: ${x0.value}")
   println(s"x1: ${x1.value}")
@@ -45,5 +43,4 @@ object BasicMIP extends MPModel(LPSolveLib) with App {
   println(s"x3: ${x3.value}")
   println("---------------------------------------------")
 
-  solver.release()
 }

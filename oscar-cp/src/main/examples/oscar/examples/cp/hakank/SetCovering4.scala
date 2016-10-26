@@ -63,7 +63,7 @@ object SetCovering4 extends CPModel with App  {
         val b = sum(for{i <- 0 until num_alternatives} yield x(i) * a(i)(j))
         set_partition match {
           case 1 =>add(b >= 1)
-          case _ =>add(b == 1)
+          case _ =>add(b === 1)
         }
       }
     search{

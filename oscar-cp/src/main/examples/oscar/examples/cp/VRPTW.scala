@@ -44,28 +44,28 @@ object VRPTW extends CPModel with App {
   add(inverse(pred, succ))
   add(circuit(pred, false), Strong)
   add(minAssignment(pred, distances, totalDistance)) // lower bound
-  add(sum(Sites)(s => distances(s)(pred(s))) == totalDistance)
+  add(sum(Sites)(s => distances(s)(pred(s))) === totalDistance)
 
   // Ensure the link between the TSPTW and the BinPacking
   for (c <- Customers) {
-    add(vehicles(pred(c)) == vehicles(c), Strong)
-    add(vehicles(succ(c)) == vehicles(c), Strong)
+    add(vehicles(pred(c)) === vehicles(c), Strong)
+    add(vehicles(succ(c)) === vehicles(c), Strong)
   }
 
   // Each vehicle starts and ends at its own depot
   for (v <- Vehicles) {
     val first = nCustomers + v
     val last = first + nVehicles
-    add(vehicles(first) == v)
-    add(vehicles(last) == v)
+    add(vehicles(first) === v)
+    add(vehicles(last) === v)
   }
   
   // Links the depots
-  add(succ(Depots.max) == Depots.min)
+  add(succ(Depots.max) === Depots.min)
   for (v <- 0 until nVehicles - 1) {
     val last = nCustomers + nVehicles + v
     val first = nCustomers + v + 1
-    add(succ(last) == first)
+    add(succ(last) === first)
   }
 
   // Capacity of each vehicle
@@ -80,8 +80,8 @@ object VRPTW extends CPModel with App {
   for (v <- Vehicles) {
     val first = nCustomers + v
     val last = first + nVehicles
-    add(starts(first) == startsMin(first))
-    add(ends(last) == startsMax(last))
+    add(starts(first) === startsMin(first))
+    add(ends(last) === startsMax(last))
   }
 
   // Conflict set / max regret search

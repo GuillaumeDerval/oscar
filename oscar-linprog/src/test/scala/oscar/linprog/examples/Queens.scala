@@ -16,8 +16,8 @@
 package oscar.linprog.examples
 
 import oscar.algebra._
-import oscar.linprog.interface.lpsolve.LPSolveLib
-import oscar.linprog.modeling._
+import oscar.linprog.MPModel
+import oscar.linprog.lpsolve.LPSolve
 
 /**
  *  The Queens Problem is to place as many queens as possible on the 8x8
@@ -28,7 +28,7 @@ import oscar.linprog.modeling._
  *
  *  @author Pierre Schaus pschaus@gmail.com
  */
-object Queens extends MPModel(LPSolveLib) with App {
+object Queens extends MPModel(LPSolve) with App {
 
   val n = 8
 
@@ -41,37 +41,38 @@ object Queens extends MPModel(LPSolveLib) with App {
 
   /* at most one queen can be placed in each row */
   for (l <- lines)
-    add(sum(columns)(c => x(l)(c)) <:= 1)
+    add( "" |: sum(columns)(c => x(l)(c)) <= 1.toDouble)
 
   /* at most one queen can be placed in each column */
   for (c <- columns)
-    add(sum(lines)(l => x(l)(c)) <:= 1)
+    add( "" |: sum(lines)(l => x(l)(c)) <= 1.toDouble)
 
   /* at most one queen can be placed in each "/"-diagonal  upper half*/
   for (i <- 1 until n)
-    add(sum(0 to i)((j) => x(i - j)(j)) <:= 1)
+    add( "" |: sum(0 to i)((j) => x(i - j)(j)) <= 1.toDouble)
 
   /* at most one queen can be placed in each "/"-diagonal  lower half*/
   for (i <- 1 until n)
-    add(sum(i until n)((j) => x(j)(n - 1 - j + i)) <:= 1)
+    add( "" |: sum(i until n)((j) => x(j)(n - 1 - j + i)) <= 1.toDouble)
 
   /* at most one queen can be placed in each "/"-diagonal  upper half*/
   for (i <- 0 until n)
-    add(sum(0 until n - i)((j) => x(j)(j + i)) <:= 1)
+    add( "" |: sum(0 until n - i)((j) => x(j)(j + i)) <= 1.toDouble)
 
   /* at most one queen can be placed in each "/"-diagonal  lower half*/
   for (i <- 1 until n)
-    add(sum(0 until n - i)((j) => x(j + i)(j)) <:= 1)
+    add( "" |: sum(0 until n - i)((j) => x(j + i)(j)) <= 1.toDouble)
 
-  solver.solve
+  solve match {
+    case Optimal(solution) =>
 
-  println("objective: " + solver.objectiveValue)
+      println("objective: " + solution(objective.expression))
 
-  for (i <- 0 until n) {
-    for (j <- 0 until n)
-      if (x(i)(j).value.get >= .9) print("Q") else print(".")
-    println()
+      for (i <- 0 until n) {
+        for (j <- 0 until n)
+          if (solution(x(i)(j)) >= .9) print("Q") else print(".")
+        println()
+      }
   }
 
-  solver.release()
 }

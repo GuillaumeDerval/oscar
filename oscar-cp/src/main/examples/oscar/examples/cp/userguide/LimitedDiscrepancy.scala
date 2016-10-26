@@ -14,8 +14,8 @@ object LimitedDiscrepancy extends CPModel with App {
     X.find(!_.isBound) match {
       case None => noAlternative // no more children
       case Some(x) =>
-        branch{add(x == 0)} // left alternative
-        {add(x == 1)} // right alternative
+        branch{add(x === 0)} // left alternative
+        {add(x === 1)} // right alternative
     }
   }
 

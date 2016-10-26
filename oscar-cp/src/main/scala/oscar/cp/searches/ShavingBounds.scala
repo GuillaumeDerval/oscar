@@ -47,7 +47,7 @@ extends Branching with BranchingUtils {
         val v = xDomain(p)
         store.pushState()
         
-        if (store.post(x == v) != Failure) {        // if this fails, union with nothing, achieved by doing nothing
+        if (store.post(x.eq(v)) != Failure) {        // if this fails, union with nothing, achieved by doing nothing
           var q = 0
           while (q < nUVars) {
             minBound(q) = math.min(minBound(q), unboundVars(q).min)
@@ -67,7 +67,8 @@ extends Branching with BranchingUtils {
         
         if (minBound(q) > x.min || maxBound(q) < x.max) {
           hasRemoved = true
-          store.post(Array(x >= minBound(q), x <= maxBound(q)))
+          store.post(x >= minBound(q))
+          store.post(x <= maxBound(q))
         }
         
         q += 1

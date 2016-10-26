@@ -50,7 +50,7 @@ object SendMoreMoneyAnyBase extends CPModel with App  {
   
        add(allDifferent(all), Strong)
        add(       S*b3 + E*b2 + N*b1 + D +
-                      M*b3 + O*b2 + R*b1 + E ==
+                      M*b3 + O*b2 + R*b1 + E ===
                M*b4 + O*b3 + N*b2 + E*b1 + Y
              )
        add(S > 0)

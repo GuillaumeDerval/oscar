@@ -91,14 +91,14 @@ object SceneAllocation extends CPModel with App {
   // variables
   //
   val shoot = Array.fill(maxScene)(CPIntVar(0 until maxDay)) // the day a particular scene is shooted
-  val cost = sum(ACTORS, DAYS)((a, d) => isOr(which(a))(shoot(_) === d) * pay(a))
+  val cost = sum(ACTORS, DAYS)((a, d) => isOr(which(a))(shoot(_) ?=== d) * pay(a))
   //
   // constraints
   //
   var numSols = 0
   minimize(cost)
   add(gcc(shoot, 0 until maxDay, 0, 5), Strong)
-  add(shoot(0) == 0)
+  add(shoot(0) === 0)
 
   // This labeling is from the great mind of Pierre Schaus.
   // order the shoot by decreasing cost
@@ -111,9 +111,9 @@ object SceneAllocation extends CPModel with App {
       val x = orderedShoot.filter(_.size == minsize).head
       val xmin = x.min
       if (xmin == max + 1) {
-        branchOne(post(x == xmin))
+        branchOne(post(x === xmin))
       } else {
-        branch(post(x == xmin))(post(x != xmin))
+        branch(post(x === xmin))(post(x !== xmin))
       }
     }
   }

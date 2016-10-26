@@ -38,9 +38,9 @@ object SubCircuitVisu extends CPModel with App {
   // Variables
   val succ = Array.fill(nCities)(CPIntVar(Cities))
   val totDist = CPIntVar(0 to distMatrix.flatten.sum)
-  add(sum(Cities)(i => distMatrix(i)(succ(i))) == totDist)
+  add(sum(Cities)(i => distMatrix(i)(succ(i))) === totDist)
 
-  val nEdge = sum(Cities)(i => succ(i) !== i)
+  val nEdge = sum(Cities)(i => succ(i) ?!== i)
   add(nEdge >= 12)
 
   // Constraints
@@ -56,7 +56,7 @@ object SubCircuitVisu extends CPModel with App {
       case Some(x) => {
         // Select the closest successors of the city x
         val v = selectMin(Cities)(succ(x).hasValue(_))(distMatrix(x)(_)).get
-        branch(add(succ(x) == v))(add(succ(x) != v))
+        branch(add(succ(x) === v))(add(succ(x) !== v))
       }
     }
   }

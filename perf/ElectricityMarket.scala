@@ -75,7 +75,7 @@ object ElectricityMarket {
         val unboundOrders = orders.filter(!_.bound)
         val order = unboundOrders.maxBy(_.energy)
         // select orders on the left
-        branch { cp.add(order.selected == 1) } { cp.add(order.selected == 0) }
+        branch { cp.add(order.selected === 1) } { cp.add(order.selected === 0) }
       }
     }
     println(cp.start())

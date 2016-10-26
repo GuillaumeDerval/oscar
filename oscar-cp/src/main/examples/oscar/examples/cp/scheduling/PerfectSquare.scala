@@ -69,8 +69,8 @@ object PerfectSquare extends CPModel with App {
 
   // Consistency
   for (t <- Square) {
-    add(endsX(t) == startsX(t) + durationsX(t))
-    add(endsY(t) == startsY(t) + durationsY(t))
+    add(endsX(t) === startsX(t) + durationsX(t))
+    add(endsY(t) === startsY(t) + durationsY(t))
   }
 
   // Cumulative
@@ -81,7 +81,7 @@ object PerfectSquare extends CPModel with App {
 
   // Overlapping
   for (i <- 0 until nSquare; j <- i + 1 until nSquare) {
-    add((endsX(i) <== startsX(j)) || (endsX(j) <== startsX(i)) || (endsY(i) <== startsY(j)) || (endsY(j) <== startsY(i)))
+    add((endsX(i) ?<= startsX(j)) || (endsX(j) ?<= startsX(i)) || (endsY(i) ?<= startsY(j)) || (endsY(j) ?<= startsY(i)))
   }
 
   import oscar.util._
@@ -93,7 +93,7 @@ object PerfectSquare extends CPModel with App {
       case None => noAlternative
       case Some(z) => {
         val v = z.min
-        branch(post(z == v))(post(z != v))
+        branch(post(z === v))(post(z !== v))
       }
     }
   }

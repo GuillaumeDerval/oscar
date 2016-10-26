@@ -15,7 +15,7 @@
 
 
 import oscar.cp._
-import oscar.cp.constraints.TableSTR2
+import oscar.cp.constraints.tables.TableSTR2
 
 import scala.xml.XML
 

@@ -38,7 +38,7 @@ object Queens {
     cp.search {
       queens.find(!_.isBound) match {
         case None => noAlternative
-        case Some(x) => branchAll(1 to n)(v => cp.add(x == v))
+        case Some(x) => branchAll(1 to n)(v => cp.add(x === v))
       }
     }
     println(cp.start())

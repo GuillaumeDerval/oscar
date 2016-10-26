@@ -923,7 +923,7 @@ trait Constraints {
    */
   def countNeq(n: CPIntVar, x: IndexedSeq[CPIntVar], y: CPIntVar) = {
     val c = CPIntVar(0 to x.size)(n.store)
-    val ok = n.store.post(n != c)
+    val ok = n.store.post(n.diff(c))
     assert(ok != CPOutcome.Failure)
     new Count(c, x, y)
   }
@@ -1218,11 +1218,11 @@ trait Constraints {
     val constraints = ArrayBuffer[Constraint]()
 
     for (i <- 0 until n - 1) {
-      constraints.append(elementVar(x, p(i), Strong) <= elementVar(x, p(i + 1), Strong))
+      constraints.append(elementVar(x, p(i), Strong).leEq(elementVar(x, p(i + 1), Strong)))
       if (strictly) {
-        constraints.append(s(i) < s(i + 1))
+        constraints.append(s(i).le(s(i + 1)))
       } else {
-        constraints.append(s(i) <= s(i + 1))
+        constraints.append(s(i).leEq(s(i + 1)))
       }
 
     }
@@ -1232,14 +1232,14 @@ trait Constraints {
     val maxs = s.map(_.max).max
 
     for (i <- x.indices) {
-      constraints.append(p(i) >= 0)
-      constraints.append(p(i) <= n)
+      constraints.append(p(i).grEq(0))
+      constraints.append(p(i).leEq(n))
 
-      constraints.append(s(i) <= maxx)
-      constraints.append(s(i) >= minx)
+      constraints.append(s(i).leEq(maxx))
+      constraints.append(s(i).grEq(minx))
 
-      constraints.append(x(i) <= maxs)
-      constraints.append(x(i) >= mins)
+      constraints.append(x(i).leEq(maxs))
+      constraints.append(x(i).grEq(mins))
     }
     for (i <- 0 until n) {
       constraints.append(elementVar(x, p(i), s(i)))
@@ -1261,7 +1261,7 @@ trait Constraints {
 
     for (i <- 0 until n) {
       // there are less than i values smaller than s(i) 
-      constraints.append(elementVar(nbBefore, s(i) - minVal) <= i)
+      constraints.append(elementVar(nbBefore, s(i) - minVal).leEq(i))
     }
     constraints.toArray
   }
@@ -1305,14 +1305,14 @@ trait Constraints {
     var cons = Vector[Constraint]()
     for (i <- x.indices;
          j <- i + 1 until x.length) {
-      cons = cons :+ new Or(Array(x(i) + dx(i) <== x(j),
-        x(j) + dx(j) <== x(i),
-        y(i) + dy(i) <== y(j),
-        y(j) + dy(j) <== y(i),
-        x(i) + dx(i) <== x(j),
-        x(j) + dx(j) <== x(i),
-        y(i) + dy(i) <== y(j),
-        y(j) + dy(j) <== y(i)))
+      cons = cons :+ new Or(Array((x(i) + dx(i)).isLeEq(x(j)),
+        (x(j) + dx(j)).isLeEq(x(i)),
+        (y(i) + dy(i)).isLeEq(y(j)),
+        (y(j) + dy(j)).isLeEq(y(i)),
+        (x(i) + dx(i)).isLeEq(x(j)),
+        (x(j) + dx(j)).isLeEq(x(i)),
+        (y(i) + dy(i)).isLeEq(y(j)),
+        (y(j) + dy(j)).isLeEq(y(i))))
     }
     cons = cons :+ maxCumulativeResource(x, dx, endx, dy, capay)
     cons = cons :+ maxCumulativeResource(y, dy, endy, dx, capax)
@@ -1381,7 +1381,7 @@ trait Constraints {
       i <- starts.indices
       j <- i + 1 until starts.length
     } {
-      cp.add((ends(j) + transitionTimes(types(j))(types(i)) <== starts(i)) || (ends(i) + transitionTimes(types(i))(types(j)) <== starts(j)))
+      cp.add((ends(j) + transitionTimes(types(j))(types(i)) ?<= starts(i)) || (ends(i) + transitionTimes(types(i))(types(j)) ?<= starts(j)))
     }
     unaryResource(starts, durations, ends)
   }
@@ -1397,7 +1397,21 @@ trait Constraints {
    */
   def unaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], transitionTimes: Array[Array[Int]]) = {
     new DisjunctiveWithTransitionTimes(starts,durations,ends,transitionTimes)
-  }  
+  }
+
+  /**
+    * Unary Resource constraint (also called disjunctive resource): at any time, no two tasks can overlap in time
+    *
+    * @param starts the variables representing the start time of the tasks
+    * @param durations the variables representing the duration of the tasks
+    * @param ends the variables representing the completion time of the tasks, it is your responsibility to link starts, durations and ends such that start(i) + durations(i) = ends(i)
+    * @param familyMatrix matrix of the transition times between the different families
+    * @param families The family associated to each activity
+    * @return a constraint ensuring activities don't overlap in time and that consecutive activities are separated by their respective transition time
+    */
+  def unaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], familyMatrix: Array[Array[Int]], families: Array[Int]) = {
+    new DisjunctiveWithTransitionTimesAndFamilies(starts, durations, ends, familyMatrix, families)
+  }
 
   /**
    * State Resource constraint: at any time, no two tasks needing different states can overlap in time
@@ -1417,7 +1431,7 @@ trait Constraints {
     } {
       if (states(i) != states(j)) {
         new UnaryResource(Array(starts(i), starts(j)), Array(durations(i), durations(j)), Array(ends(i), ends(j)), Array(CPBoolVar(b=true)(cp), CPBoolVar(b=true)(cp)))
-        cp.add((ends(j) + transitionTimes(states(j))(states(i)) <== starts(i)) || (ends(i) + transitionTimes(states(i))(states(j)) <== starts(j)))
+        cp.add((ends(j) + transitionTimes(states(j))(states(i)) ?<= starts(i)) || (ends(i) + transitionTimes(states(i))(states(j)) ?<= starts(j)))
       }
     }
   }

@@ -73,10 +73,10 @@ object Rack {
 
     for (c <- Cards) {
       // all the cards of type c are placed
-      cp.add(sum(Racks)(counters(_)(c)) == cards(c).quantity)
+      cp.add(sum(Racks)(counters(_)(c)) === cards(c).quantity)
     }
 
-    cp.add(sum(Racks)(r => element(prices, rack(r))) == cost)
+    cp.add(sum(Racks)(r => element(prices, rack(r))) === cost)
 
     // symmetry breaking constraints
     for (r <- 1 until nbRack) {
