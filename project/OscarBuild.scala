@@ -33,6 +33,7 @@ object OscarBuild extends Build {
       parallelExecution in Test := false,
       fork in Test := true,
       javaOptions in Test += "-Djava.library.path=../lib:../lib/" + osNativeLibDir,
+      javacOptions ++= Seq("-encoding", "UTF-8"),
       scalaVersion := buildScalaVersion,
       unmanagedSourceDirectories in Test += baseDirectory.value / "src" / "main" / "examples",
       publishTo := {
@@ -74,7 +75,6 @@ object OscarBuild extends Build {
     val swingxWs = "org.swinglabs" % "swingx-ws" % "1.0"
     val xmlApisExt = "xml-apis" % "xml-apis-ext" % "latest.milestone"
     val xcsp3 = "xcsp3"  % "xcsp3_2.11" % "1.0.0-SNAPSHOT"
-
     // Test libraries
     val junit = "junit" % "junit" % "latest.milestone" % Test
     val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.11.+" % Test
