@@ -41,23 +41,20 @@ object MaxFlow extends MPModel(LPSolve) with App {
     Array(0, 0, 0, 0, 0, 0, 0, 0, 15),
     Array(0, 0, 0, 0, 0, 63, 0, 0, 20))
 
-  val x = Array.tabulate(nbline, nbcol)((l, c) => MPFloatVar("x" + (l, c), 0, capa(l)(c)))
+  val x = Array.tabulate(nbline, nbcol)((l, c) => VarNumerical("x" + (l, c), 0, capa(l)(c)))
 
 
-  for (l <- 1 to nbline - 1)
-    add( "" |: sum(Columns)(c => x(l)(c)) - sum(Lines)(c => x(c)(l)) === 0.toDouble)
+  for (l <- 1 until nbline)
+    add( "FlowConservation" |: sum(Columns)(c => x(l)(c)) - sum(Lines)(c => x(c)(l)) === 0.toDouble)
 
   maximize(sum(Lines)(l => x(l)(nbcol - 1)))
 
-  solve match {
-    case Optimal(solution) =>
-
-      println("objective: " + solution(objective.expression))
-      for (l <- Lines) {
-        for (c <- Columns)
-          print(solution(x(l)(c)) + "  ")
-        println()
-      }
+  solve.onSolution { solution =>
+    println("objective: " + solution(objective.expression))
+    for (l <- Lines) {
+      for (c <- Columns)
+        print(solution(x(l)(c)) + "  ")
+      println()
+    }
   }
-
 }

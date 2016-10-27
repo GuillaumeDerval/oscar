@@ -10,7 +10,7 @@ package oscar.algebra
  * @tparam V type of values of the variables in [[expr]]
  */
 class Equation[+T <: ExpressionDegree,+V](val expr: NormalizedExpression[T,V], val sense: ConstraintSign, val name: String) {
-  require(name.nonEmpty, s"Equation name should be non empty")
+  require(name.nonEmpty, s"Equation.name should be non empty")
   override def toString: String = s"$expr $sense 0"
 
   /**

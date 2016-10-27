@@ -50,34 +50,32 @@ object LandingLocation extends MPModel(LPSolve) with App {
 
   // Variables
   // For each landing either it is ON or OFF
-  val y = for (land <- Landings) yield MPIntVar("y" + land, 0 to 1)
+  val y = for (land <- Landings) yield VarInt("y" + land, 0 to 1)
 
   // Transportation decision variables
-  val x = Array.tabulate(Logs.length, Landings.length)((log, land) => MPIntVar("x" + (log, land), 0 to 1))
+  val x = Array.tabulate(Logs.length, Landings.length)((log, land) => VarInt("x" + (log, land), 0 to 1))
 
   val obj =
-    sum(Logs, Landings) { (log, land) => x(log)(land) * transportationCost(log)(land).toDouble } +
-      sum(Landings) { land => y(land) * openingCost(land).toDouble } +
+    sum(Logs, Landings) { (log, land) => x(log)(land) * transportationCost(log)(land) } +
+      sum(Landings) { land => y(land) * openingCost(land) } +
       (Const(Demand.toDouble) - sum(Logs, Landings) { (log, land) => x(log)(land) }) * Alpha.toDouble
 
   minimize(obj)
 
   // One log can be assigned only to one landing
   for (log <- Logs) {
-    add("" |: sum(Landings) { (land) => x(log)(land) } <= 1.0)
+    add("OneLandingPerLog" |: sum(Landings) { (land) => x(log)(land) } <= 1.0)
   }
   // One log can be assigned to a landing only if that landing is open
   for (log <- Logs; land <- Landings) {
-    add("" |: x(log)(land) <= y(land))
+    add("LandingOpenness" |: x(log)(land) <= y(land))
   }
 
-  solve match {
-    case Optimal(solution) =>
-      println("objective: " + solution(objective.expression))
-      println("----------")
-      println(y.mkString("\n"))
-      x.foreach(log => println(log.map(solution).mkString("\t")))
-      x.foreach(log => println(log.map(solution).mkString("\t")))
+  solve.onSolution { solution =>
+    println("objective: " + solution(objective.expression))
+    println("----------")
+    println(y.mkString("\n"))
+    x.foreach(log => println(log.map(solution).mkString("\t")))
+    x.foreach(log => println(log.map(solution).mkString("\t")))
   }
-
 }

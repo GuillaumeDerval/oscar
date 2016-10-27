@@ -19,7 +19,7 @@ package oscar.algebra
  * @tparam V the type of values stored by the variables of the [[Expression]]. For now, mainly Double is used.
  */
 abstract class Var[+V: Numeric] extends Term[Linear,V] {
-  require(name.nonEmpty)
+  require(name.nonEmpty, "Var.name should be non empty")
 
   /**
    * Unique string identifier for this variable
@@ -51,11 +51,6 @@ abstract class Var[+V: Numeric] extends Term[Linear,V] {
    */
   def eval[VP>:V](env: Var[VP] => VP)(implicit numeric: Numeric[VP]): VP = env(this)
 
-  /**
-   * Returns taken by this variable if any
-   */
-  def value: Option[V] = None
-
   def normalized[VP>: V](implicit numeric: Numeric[VP]): NormalizedExpression[Linear, VP] = new NormalizedExpression(Stream(Product(Seq(this))))
 
   override def toString: String = name
@@ -80,12 +75,16 @@ case class VarBinary(name: String)(implicit model: Model[_, _,Double]) extends V
   override def upperBound: Double = 1
 }
 
+case class VarNumerical(name: String, lowerBound: Double , upperBound: Double )(implicit model: Model[_, _,Double]) extends Var[Double]{
+  val id = model.addVariable(this)
+}
+
 case class VarInt(name: String, lowerBound: Double , upperBound: Double )(implicit model: Model[_, _,Double]) extends Var[Double] {
   val id = model.addVariable(this)
 }
 
-case class VarNumerical(name: String, lowerBound: Double , upperBound: Double )(implicit model: Model[_, _,Double]) extends Var[Double]{
-  val id = model.addVariable(this)
+object VarInt {
+  def apply(name: String, rng: Range)(implicit model: Model[_, _,Double]): VarInt = VarInt(name, rng.min, rng.max)
 }
 
 case class Var0[+V:Numeric](name: String, lowerBound: V, upperBound: V)(implicit model: Model[_, _,V]) extends Var[V] {

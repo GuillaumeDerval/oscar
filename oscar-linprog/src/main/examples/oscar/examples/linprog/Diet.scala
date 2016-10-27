@@ -36,7 +36,7 @@ object Diet extends MPModel(LPSolve) with App {
 
   val nutriments = List("A", "C", "B1", "B2", "NA", "CAL").map { Nutriment }
 
-  def nvar(name: String) = MPFloatVar(name, 2, 10) //Each food is limited between 2 and 10
+  def nvar(name: String) = VarNumerical(name, 2, 10) //Each food is limited between 2 and 10
 
   val foods = List(
     (nvar("Beef"), 3.19, List(60, 20, 10, 15, 938, 295)),
@@ -58,12 +58,9 @@ object Diet extends MPModel(LPSolve) with App {
   minimize(sum(foods) { f => f.x*f.price })
 
   // effectively solve the model
-  interface.solve(this) match{
-    case Optimal(solution) =>
+  interface.solve(this).onSolution { solution =>
       println("objective: " + solution(objective.expression))
       println("-----------------------------------")
       println(foods.map(f => s"${f.x.name} -> ${solution(f.x)}").mkString("\n"))
   }
-
-
 }

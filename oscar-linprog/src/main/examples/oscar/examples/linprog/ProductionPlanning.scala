@@ -32,8 +32,8 @@ object ProductionPlanning extends MPModel(LPSolve) with App {
   val b = Array(18209, 7692, 1333, 924, 26638, 61188, 13360) // Dimensions
   val c = Array(96, 76, 56, 11, 86, 10, 66, 86, 83, 12, 9, 81) // Products
 
-  val Dimensions = 0 until b.length
-  val Products = 0 until c.length
+  val Dimensions = b.indices
+  val Products = c.indices
 
   val coef = Array(
     Array(19,   1, 10,  1,   1,  14, 152, 11,  1,   1, 1, 1), //Dimensions x Products
@@ -45,19 +45,16 @@ object ProductionPlanning extends MPModel(LPSolve) with App {
     Array( 0,  32,  0,  0,   0,   5,   0,  3,  0, 660, 0, 9)
   )
 
-  val x = Products.map(p => MPFloatVar("x", 0.toDouble, 10000.toDouble))
+  val x = Products.map(p => VarNumerical("x", 0.toDouble, 10000.toDouble))
 
   maximize(sum(Products) { p => x(p) * c(p).toDouble })
   
   for (d <- Dimensions) {
-    add( "" |: sum(Products)(p => x(p)*coef(d)(p).toDouble) <= b(d).toDouble)
+    add( "C" |: sum(Products)(p => x(p)*coef(d)(p).toDouble) <= b(d).toDouble)
   }
 
-  val endStatus = solve match {
-    case Optimal(solution) =>
-
-      println("objective: " + solution(objective.expression))
-      Products.foreach(p => if (solution(x(p)) > 0) println("x" + p + ":" + x(p).value.get))
-
+  solve.onSolution { solution =>
+    println("objective: " + solution(objective.expression))
+    Products.foreach(p => if (solution(x(p)) > 0) println("x" + p + ":" + solution(x(p))))
   }
 }

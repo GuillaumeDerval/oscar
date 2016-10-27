@@ -52,40 +52,36 @@ object Warehouse extends MPModel(LPSolve) with App {
     Array(1200, 1800, 2600, 4100, 3000),
     Array(2200, 2600, 3100, 3700, 3200))
   // Number of plants and warehouses
-  val Plants = 0 until capacity.length
-  val Warehouses = 0 until demand.length
+  val Plants = capacity.indices
+  val Warehouses = demand.indices
 
   // ----------- MIP Model ------------
 
 
   // For each plant whether it is open (1) or not (0)
-  val open = Plants.map(p => MPBinaryVar("open" + p))
+  val open = Plants.map(p => VarBinary("open" + p))
 
   // Transportation decision variables: how much to transport from a plant p to a warehouse w
-  val transport = Array.tabulate(Warehouses.length, Plants.length)((w, p) => MPFloatVar("trans" + (w, p), lb = 0))
+  val transport = Array.tabulate(Warehouses.length, Plants.length)((w, p) => VarNumerical("trans" + (w, p), lowerBound = 0.0, upperBound = Double.MaxValue))
 
   // The objective is to minimize the total fixed and variable costs
   minimize(sum(Warehouses, Plants) { (w, p) => transport(w)(p) * transCosts(w)(p).toDouble } //variable cost
     + sum(Plants) { p => open(p) * fixedCosts(p).toDouble }) //fixed costs
   // Production Constraints
   for (p <- Plants) {
-    add( "" |: sum(Warehouses)(w => transport(w)(p)) <=open(p)*capacity(p).toDouble)
+    add( "Production" |: sum(Warehouses)(w => transport(w)(p)) <=open(p)*capacity(p).toDouble)
   }
   // Demand Constraints
   for (w <- Warehouses) {
-    add( "" |: sum(Plants)(p => transport(w)(p)) >= demand(w).toDouble)
+    add( "Demand" |: sum(Plants)(p => transport(w)(p)) >= demand(w).toDouble)
   }
 
-  solve match {
-    case Optimal(solution) =>
-
-      println("objective: " + solution(objective.expression))
-      println("----------")
-
-      open.foreach { o =>
-        println(o.toString + " " + o.value.get)
-      }
-      transport.foreach(x => println(x.map(solution).mkString("\t")))
-
+  solve.onSolution { solution =>
+    println("objective: " + solution(objective.expression))
+    println("----------")
+    open.foreach { o =>
+      println(o.toString + " " + solution(o))
+    }
+    transport.foreach(x => println(x.map(solution).mkString("\t")))
   }
 }

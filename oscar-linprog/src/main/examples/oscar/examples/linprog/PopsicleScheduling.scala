@@ -45,10 +45,9 @@ object PopsicleScheduling extends MPModel(LPSolve) with App {
     config
   }
 
-
   val configs =
-    Array.tabulate(7)(i => (MPIntVar(s"FTE_$i", 0 to demand.max), 100, generateConfig(i, 5))) ++
-    Array.tabulate(7)(i => (MPIntVar(s"PTE_$i", 0 to demand.max), 150, generateConfig(i, 2)))
+    Array.tabulate(7)(i => (VarInt(s"FTE_$i", 0 to demand.max), 100, generateConfig(i, 5))) ++
+    Array.tabulate(7)(i => (VarInt(s"PTE_$i", 0 to demand.max), 150, generateConfig(i, 2)))
 
   minimize(sum(configs)(c => c._1 * (c._2 * c._3.sum)))
   for ((d, i) <- demand.zipWithIndex) {
@@ -56,18 +55,15 @@ object PopsicleScheduling extends MPModel(LPSolve) with App {
     add( "" |: sum(configs)(c => c._1 * c._3(i).toDouble) >= d.toDouble)
   }
 
-  solve match {
-    case Optimal(solution) =>
-
-      println(solution(objective.expression))
-      for (c <- configs; if (solution(c._1) > 0)) {
-        println(solution(c._1) + " X \t" + c._3.mkString("\t"))
-      }
-      println("--------------")
-      val cover = for ((d, i) <- demand.zipWithIndex) yield {
-        configs.map(c => solution(c._1) * c._3(i)).sum
-      }
-      println("\t" + cover.mkString("\t"))
-
+  solve.onSolution { solution =>
+    println(solution(objective.expression))
+    for (c <- configs; if solution(c._1) > 0) {
+      println(solution(c._1) + " X \t" + c._3.mkString("\t"))
+    }
+    println("--------------")
+    val cover = for ((d, i) <- demand.zipWithIndex) yield {
+      configs.map(c => solution(c._1) * c._3(i)).sum
+    }
+    println("\t" + cover.mkString("\t"))
   }
 }

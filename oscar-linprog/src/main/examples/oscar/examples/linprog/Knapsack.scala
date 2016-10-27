@@ -34,7 +34,7 @@ object Knapsack extends MPModel(LPSolve) with App {
   val weights = Array(100, 50, 45, 20, 10, 5)
   val utility = Array(40, 35, 18, 4, 10, 2)
 
-  val objects = Array.tabulate(weights.length)(i => O(weights(i), utility(i), MPIntVar(s"x_$i", 0 to 1)))
+  val objects = Array.tabulate(weights.length)(i => O(weights(i), utility(i), VarInt(s"x_$i", 0 to 1)))
 
   val capacity = 100
 
@@ -42,16 +42,13 @@ object Knapsack extends MPModel(LPSolve) with App {
   maximize(sum(objects)(o => o.x * o.utility.toDouble))
 
   // given the limited capacity of the pack
-  add(s"C_1" |: sum(objects)(o => o.x * o.weight.toDouble) <= capacity.toDouble)
+  add(s"Capacity" |: sum(objects)(o => o.x * o.weight.toDouble) <= capacity.toDouble)
 
-  solve match {
-    case Optimal(solution) =>
+  solve.onSolution { solution =>
+    val selected = objects.filter(o => solution(o.x) >= .9)
+    var totalWeight = selected.map(o => o.weight).sum
 
-      val selected = objects.filter(o => solution(o.x) >= .9)
-      var totalWeight = selected.map(o => o.weight).sum
-
-      println("Total Utility: " + solution(objective.expression))
-      println("Total Weight: " + totalWeight)
-
+    println("Total Utility: " + solution(objective.expression))
+    println("Total Weight: " + totalWeight)
   }
 }
