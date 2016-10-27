@@ -13,7 +13,7 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   * *****************************************************************************/
 
-package oscar.linprog.examples
+package oscar.examples.linprog
 
 import oscar.algebra._
 import oscar.linprog.MPModel
