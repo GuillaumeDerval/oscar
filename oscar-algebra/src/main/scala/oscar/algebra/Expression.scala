@@ -64,6 +64,12 @@ abstract class Expression[+T <: ExpressionDegree, +V](implicit num: Numeric[V]) 
   }
 
   /**
+   * Negate this [[Expression]]
+   * @return -this
+   */
+  def unary_- = new NormalizedExpression(normalized.terms.map(_ * num.negate(num.one)))
+
+  /**
    * Multiplication of two expressions
    * @param that the [[Expression]] to multiply with this
    * @param numeric [[Numeric]] object for VP
@@ -76,10 +82,16 @@ abstract class Expression[+T <: ExpressionDegree, +V](implicit num: Numeric[V]) 
   }
 
   /**
-   * Negate this [[Expression]]
-   * @return -this
+   * Division of two expressions
+   * @param that the [[Expression]] to divide with this
+   * @param numeric [[Fractional]] object for VP
+   * @tparam TP the degree of that
+   * @tparam VP the type of values stored by the variables in that
+   * @return the division of this and that, in normal form
    */
-  def unary_- = new NormalizedExpression(normalized.terms.map(_ * num.negate(num.one)))
+  def /[TP <: ExpressionDegree, TR <: ExpressionDegree, VP >: V](that: Expression[TP, VP])(implicit op: (NormalizedExpression[T, VP], NormalizedExpression[TP, VP]) => DivExpression[TR, VP], numeric: Fractional[VP]): DivExpression[TR, VP] = {
+    op(this.normalized, that.normalized)
+  }
 
   /**
    * Constraints that this is smaller of equal to that

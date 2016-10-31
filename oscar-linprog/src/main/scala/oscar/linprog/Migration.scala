@@ -2,7 +2,7 @@ package oscar.linprog
 
 import oscar.algebra._
 
-class MPModel[S](val interface: SolverInterface[Linear,Linear,Double]) extends Model[Linear,Linear,Double]{
+class MPModel(val interface: SolverInterface[Linear,Linear,Double]) extends Model[Linear,Linear,Double]{
 
   implicit val thisModel = this
 

@@ -32,18 +32,18 @@ object Product{
 class Product[+T <: ExpressionDegree,+V](val coef: Const[V], val terms: Seq[Term[T,V]])(implicit num: Numeric[V]) extends Expression[T,V]{
 
   assert(terms.forall(! _.isInstanceOf[Const[_]]))
-  def uses[VP>: V](v: Var[VP]): Boolean = terms.contains(v)
+  def uses[VP >: V](v: Var[VP]): Boolean = terms.contains(v)
 
   override def toString: String = coef.toString + {if (terms.nonEmpty) terms.mkString("*","*","") else ""}
 
-  def normalized[VP>: V](implicit numeric: Numeric[VP]): NormalizedExpression[T,VP] = new NormalizedExpression(Iterable(this))
+  def normalized[VP >: V](implicit numeric: Numeric[VP]): NormalizedExpression[T,VP] = new NormalizedExpression(Iterable(this))
 
-  def *[VP>: V](d: VP)(implicit num: Numeric[VP]): Product[T,VP] = new Product(Const(num.times(coef.d, d)),terms)
+  def *[VP >: V](d: VP)(implicit num: Numeric[VP]): Product[T,VP] = new Product(Const(num.times(coef.d, d)),terms)
+  def /[VP >: V](d: VP)(implicit num: Fractional[VP]): Product[T,VP] = new Product(Const(num.div(coef.d, d)), terms)
 
   def eval[VP >: V](env: Var[VP] => VP)(implicit numeric: Numeric[VP]): VP = {
     var res:VP = coef.d
     for(v <- terms) res = numeric.times(res ,v.eval(env))
     res
   }
-
 }
