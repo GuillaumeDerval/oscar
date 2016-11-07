@@ -49,6 +49,7 @@ import oscar.flatzinc.cbls.support.Weight
 import oscar.flatzinc.cbls.support.EnsureDomain
 import oscar.cbls.invariants.core.computation.IdentityInt
 import oscar.cbls.invariants.lib.numeric.Step
+import oscar.cbls.invariants.lib.minmax._
 
 
 
@@ -134,13 +135,27 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     Prod2(a,b)
   }
   def get_array_int_element_inv(b: IntegerVariable, as: Array[IntegerVariable], r: IntegerVariable, defId: String, ann: List[Annotation]) = {
-    if(as.forall(_.isBound)) IntElementNoVar(Sum2(b,-1), as.map(_.value))
-    else IntElement(Sum2(b,-1), as.map(getCBLSVar(_)))
+   val idx = Sum2(b,-1)
+    val k = Max2(0,Min2(idx,as.length-1))
+    c.add(EQ(k,idx))
+    
+    if(as.forall(_.isBound)) IntElementNoVar(k, as.map(_.value))
+    else IntElement(k, as.map(getCBLSVar(_)))
+
+    //if(as.forall(_.isBound)) IntElementNoVar(Sum2(b,-1), as.map(_.value))
+    //else IntElement(Sum2(b,-1), as.map(getCBLSVar(_)))
     //TODO: Integrate the offset in the invariant?
   }
   def get_array_bool_element_inv(b: IntegerVariable, as: Array[BooleanVariable], r: BooleanVariable, defId: String, ann: List[Annotation]) = {
-    if(as.forall(_.isBound)) IntElementNoVar(Sum2(b,-1), as.map(_.intValue))
-    else IntElement(Sum2(b,-1), as.map(getCBLSVar(_)))
+    val idx = Sum2(b,-1)
+    val k = Max2(0,Min2(idx,as.length-1))
+    c.add(EQ(k,idx))
+
+    if(as.forall(_.isBound)) IntElementNoVar(k, as.map(_.intValue))
+    else IntElement(k, as.map(getCBLSVar(_)))
+
+    //if(as.forall(_.isBound)) IntElementNoVar(Sum2(b,-1), as.map(_.intValue))
+    //else IntElement(Sum2(b,-1), as.map(getCBLSVar(_)))
     //TODO: Integrate the offset in the invariant?
   }
   

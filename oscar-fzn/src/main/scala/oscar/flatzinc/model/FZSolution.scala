@@ -39,7 +39,7 @@ class FZSolution {
     }
     def addOutputArrayVarBool(label:String,vars:Array[String],dimRanges: List[Range]) = {
       def k(c:(String => String)) = {
-        "array"+dimRanges.length+"d("+dimRanges.map(r => if(r.isEmpty) "1..0" else (r.min+".."+r.max)).mkString(", ")+", ["+vars.map(v => if(c(v).equals("0")) "false" else "true").mkString(", ")+" ])"
+        "array"+dimRanges.length+"d("+dimRanges.map(r => if(r.isEmpty) "1..0" else (r.min+".."+r.max)).mkString(", ")+", ["+vars.map(v => if(c(v).equals("false") || c(v).equals("0")) "false" else "true").mkString(", ")+" ])"
       }
       output += label -> k
     }
