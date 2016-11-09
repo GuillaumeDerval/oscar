@@ -29,15 +29,18 @@ class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar]) {
 
   private val timeThreadBean = ManagementFactory.getThreadMXBean()
 
-  def replay(decisions: Array[Decision]): SearchStatistics = {
+  def replay(decisions: Array[Decision], timeLimit: Int = Int.MaxValue): SearchStatistics = {
+    val timeLimitInNanos : Long = timeLimit * math.pow(10,9).toLong
     node.resetStats()
     node.resetStatistics()
     val nModifications = decisions.length
     var i = 0
 
+    val beforeSolvingTime = timeThreadBean.getCurrentThreadUserTime
+
     def panic(panicInvariant: () => Boolean) = {
       val beforePanicTime = timeThreadBean.getCurrentThreadUserTime
-      while (panicInvariant() && i < decisions.size - 1) {
+      while (panicInvariant() && i < decisions.size - 1 && timeThreadBean.getCurrentThreadUserTime - beforeSolvingTime < timeLimitInNanos) {
         i += 1
         decisions(i) match {
           case _: TrailDecision => {
@@ -56,9 +59,9 @@ class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar]) {
     var nNodes = 0
     var nBacktracks = 0
     var nSols = 0
-    val beforeSolvingTime = timeThreadBean.getCurrentThreadUserTime
 
-    while (i < nModifications) {
+
+    while (i < nModifications && timeThreadBean.getCurrentThreadUserTime - beforeSolvingTime < timeLimitInNanos) {
       decisions(i) match {
         case _: AlternativeDecision => nNodes += 1
         case _: TrailDecision =>
@@ -88,9 +91,10 @@ class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar]) {
       i += 1
     }
 
-    val timeInMillis = ((timeThreadBean.getCurrentThreadUserTime - beforeSolvingTime - totalPanicTime) / math.pow(10, 6)).toLong
+    val replayIsComplete = i == nModifications
 
-    new SearchStatistics(nNodes,nBacktracks,timeInMillis,true,node.time,node.maxSize,nSols)
+    val timeInMillis = ((timeThreadBean.getCurrentThreadUserTime - beforeSolvingTime - totalPanicTime) / math.pow(10, 6)).toLong
+    new SearchStatistics(nNodes,nBacktracks,timeInMillis,replayIsComplete,node.time,node.maxSize,nSols)
 
   }
 
