@@ -15,35 +15,37 @@
 package oscar.algebra
 
 object Product{
-  def apply[T <: ExpressionDegree,V](vars: Seq[Term[T,V]])(implicit num: Numeric[V]): Product[T,V] = new Product(Const(num.one), vars)
-  def apply[T <: ExpressionDegree,V](d: V, vars: Seq[Term[T,V]])(implicit num: Numeric[V]): Product[T,V] = new Product(Const(d), vars)
+  def apply[T <: ExpressionDegree, V](vars: Seq[Var[V]])(implicit num: Numeric[V]): Product[T,V] = new Product[T,V](Const(num.one), vars)
+  def apply[T <: ExpressionDegree, V](d: V, vars: Seq[Var[V]])(implicit num: Numeric[V]): Product[T,V] = new Product(Const(d), vars)
+  def apply[V](d: V)(implicit num: Numeric[V]): Product[Constant,V] = new Product[Constant, V](Const(d), Seq())
+  def apply[V](coef: Const[V])(implicit num: Numeric[V]): Product[Constant,V] = new Product[Constant, V](coef, Seq())
 
 }
 
 /**
- * Product of one [[Const]] and a set of [[Term]]s. Represents
- * {{{coef * terms.first * ... * terms.last}}}
+ * Product of one [[Const]] and a set of [[Var]]s.
+ * Represents {{{coef * vars.first * ... * vars.last}}}
+ *
  * @param coef the coefficient of this [[Product]]
- * @param terms the terms of this [[Product]]
+ * @param vars the variables of this [[Product]]
  * @param num [[Numeric]] object for type [[V]]
  * @tparam T the degree of the [[Expression]]
  * @tparam V the type of values stored by the variables of the [[Expression]]. For now, mainly Double is used.
  */
-class Product[+T <: ExpressionDegree,+V](val coef: Const[V], val terms: Seq[Term[T,V]])(implicit num: Numeric[V]) extends Expression[T,V]{
+class Product[+T <: ExpressionDegree, +V](val coef: Const[V], val vars: Seq[Var[V]])(implicit num: Numeric[V]) extends Expression[T,V]{
 
-  assert(terms.forall(! _.isInstanceOf[Const[_]]))
-  def uses[VP >: V](v: Var[VP]): Boolean = terms.contains(v)
-
-  override def toString: String = coef.toString + {if (terms.nonEmpty) terms.mkString("*","*","") else ""}
+  def uses[VP >: V](v: Var[VP]): Boolean = vars.contains(v)
 
   def normalized[VP >: V](implicit numeric: Numeric[VP]): NormalizedExpression[T,VP] = new NormalizedExpression(Iterable(this))
 
-  def *[VP >: V](d: VP)(implicit num: Numeric[VP]): Product[T,VP] = new Product(Const(num.times(coef.d, d)),terms)
-  def /[VP >: V](d: VP)(implicit num: Fractional[VP]): Product[T,VP] = new Product(Const(num.div(coef.d, d)), terms)
+  def *[VP >: V](d: VP)(implicit num: Numeric[VP]): Product[T,VP] = new Product(Const(num.times(coef.d, d)), vars)
+  def /[VP >: V](d: VP)(implicit num: Fractional[VP]): Product[T,VP] = new Product(Const(num.div(coef.d, d)), vars)
 
   def eval[VP >: V](env: Var[VP] => VP)(implicit numeric: Numeric[VP]): VP = {
     var res:VP = coef.d
-    for(v <- terms) res = numeric.times(res ,v.eval(env))
+    for(v <- vars) res = numeric.times(res ,v.eval(env))
     res
   }
+
+  override def toString: String = coef.toString + {if (vars.nonEmpty) vars.mkString("*","*","") else ""}
 }

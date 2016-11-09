@@ -17,7 +17,7 @@ package oscar.examples.linprog
 
 import oscar.algebra._
 import oscar.linprog.MPModel
-import oscar.linprog.lpsolve.LPSolve
+import oscar.linprog.lp_solve.LPSolve
 
 /**
  * Assign workers to shifts while satisfying requirements for that day.

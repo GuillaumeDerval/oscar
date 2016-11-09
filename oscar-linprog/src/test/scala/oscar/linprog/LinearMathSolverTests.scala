@@ -1,9 +1,9 @@
 package oscar.linprog
 
 import org.scalactic.TripleEqualsSupport.Spread
-import org.scalatest.{FunSuite, Matchers, Suite, Tag}
+import org.scalatest._
 import oscar.algebra.{Linear, Model, SolverInterface}
-import oscar.linprog.lpsolve.LPSolve
+import oscar.linprog.lp_solve.LPSolve
 
 import scala.collection.immutable.IndexedSeq
 
@@ -20,7 +20,8 @@ abstract class LinearMathSolverTests extends FunSuite {
     }
 
   val lpsolve = canInstantiate {
-    LPSolve.solve(new Model[Linear,Linear,Double]())
+    val run = LPSolve.run(new Model[Linear,Linear,Double]())
+    run.release()
     Some(LPSolve)
   }
 

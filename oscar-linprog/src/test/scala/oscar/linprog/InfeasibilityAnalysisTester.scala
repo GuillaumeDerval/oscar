@@ -22,7 +22,7 @@ class InfeasibilityAnalysisTester(interfaceOpt: Option[SolverInterface[Linear, L
     super.test(solverName + " " + testName, testTags: _*)(testFun)
   }
 
-  test("Infeasibility analysis on LP: infeasibilities due to constraints") {
+  ignore("Infeasibility analysis on LP: infeasibilities due to constraints") {
     implicit val model = new Model[Linear, Linear, Double]
 
     val x1 = VarNumerical("x1", 0, 40)
@@ -62,7 +62,7 @@ class InfeasibilityAnalysisTester(interfaceOpt: Option[SolverInterface[Linear, L
     }
   }
 
-  test("Infeasibility analysis on LP: infeasibilities due to var bounds") {
+  ignore("Infeasibility analysis on LP: infeasibilities due to var bounds") {
     implicit val model = new Model[Linear, Linear, Double]
 
     val x = VarNumerical("x", 20, Double.MaxValue)

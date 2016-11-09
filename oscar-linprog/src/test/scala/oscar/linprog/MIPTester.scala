@@ -101,6 +101,8 @@ class MIPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], s
             solution2(z) shouldBe moreOrLess(75.5)
         }
     }
+
+    run.release()
   }
 
   test("Maximize objective under constraints with binary variables") {
@@ -112,8 +114,6 @@ class MIPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], s
 
     maximize(100 * x + 1 * y)
     subjectTo("E" |: 3 * x + 1 * y <= 14.5)
-
-
 
     model.solve match {
       case Optimal(solution) =>

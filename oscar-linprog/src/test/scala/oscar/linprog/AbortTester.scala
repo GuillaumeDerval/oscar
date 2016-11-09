@@ -72,6 +72,8 @@ class AbortTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]],
     val endTime = System.currentTimeMillis()
 
     (endTime - startTime).toDouble should be <= 1000.0
+
+    run.release()
   }
 
   test("Call to abort BEFORE solve") {
@@ -98,8 +100,9 @@ class AbortTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]],
 
         o.eval(solution) shouldBe (2 * 100 + -5 * 100.0 +- 1e-6)
       case r =>
-        println(r)
         assert(false)
     }
+
+    run.release()
   }
 }

@@ -17,7 +17,7 @@ package oscar.examples.linprog
 
 import oscar.algebra._
 import oscar.linprog.MPModel
-import oscar.linprog.lpsolve.LPSolve
+import oscar.linprog.lp_solve.LPSolve
 
 import scala.concurrent.Future
 
@@ -113,4 +113,5 @@ object Sudoku extends MPModel(LPSolve) with App {
   Thread.sleep(1 * 60 * 1000)
 
   run.abort()
+  run.release()
 }

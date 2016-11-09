@@ -27,8 +27,12 @@ abstract class SolverInterface[O  >: Constant <: ExpressionDegree, C <: Expressi
    * @param model the model to be solved
    * @return the status of the solving
    */
-  def solve(model: Model[O, C, V], config: Option[Path] = None): ModelStatus[O, C, V] = run(model).solve
-
+  def solve(model: Model[O, C, V], config: Option[Path] = None): ModelStatus[O, C, V] = {
+    val r = run(model)
+    val status = r.solve
+    r.release()
+    status
+  }
 }
 
 /**

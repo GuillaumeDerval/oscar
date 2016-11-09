@@ -48,7 +48,16 @@ abstract class Expression[+T <: ExpressionDegree, +V](implicit num: Numeric[V]) 
    * @return the sum of this and that, in normal form
    */
   def +[TP >: T <: ExpressionDegree, VP >: V](that: Expression[TP, VP])(implicit numeric: Numeric[VP]): NormalizedExpression[TP, VP] = {
-    new NormalizedExpression[TP, VP](this.normalized.terms ++ that.normalized.terms)
+    val thisTerms = this.normalized.terms
+    val thatTerms = that.normalized.terms
+
+    // Computes the new terms of the resulting expression by merging the common terms of the two expressions
+    val terms = (thisTerms ++ thatTerms).groupBy(_.vars).map { case (vars, commonTerms) =>
+      val sumOfTerms = commonTerms.map(_.coef.d).sum
+      Product(sumOfTerms, vars)
+    }
+
+    new NormalizedExpression[TP,VP](terms)
   }
 
   /**
@@ -131,7 +140,9 @@ abstract class Expression[+T <: ExpressionDegree, +V](implicit num: Numeric[V]) 
 }
 
 /**
- * [[Expression]] represented internally as a sum of [[Product]]s of [[Term]]s.
+ * [[Expression]] represented internally as a sum of [[Product]]s.
+ *
+ * Each term should be unique, that is each [[Product]] in the sum should have a unique sequence of [[Var]].
  *
  * Please note that these expressions are not normalized enough yet to ensure that the [[equals]] method will work as
  * expected.
@@ -143,6 +154,7 @@ abstract class Expression[+T <: ExpressionDegree, +V](implicit num: Numeric[V]) 
  * @tparam V the type of values stored by the variables of the [[Expression]]. For now, mainly Double is used.
  */
 class NormalizedExpression[+T <: ExpressionDegree, +V](val terms: Iterable[Product[T, V]], val name: String = "ND")(implicit num: Numeric[V]) extends Expression[T, V] {
+  assert(terms.groupBy(_.vars).forall(_._2.size == 1), s"Similar terms where found in normalized expression $name. Each term should be unique.")
 
   /**
    * Returns the same [[NormalizedExpression]] but with a different name.

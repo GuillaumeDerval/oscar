@@ -36,7 +36,7 @@ protected object ProdExpression {
   def apply[T <: ExpressionDegree, V: Numeric](a: NormalizedExpression[T, V], b: NormalizedExpression[T, V]): ProdExpression[T, V] = {
     val num = implicitly[Numeric[V]]
     new ProdExpression[T, V](
-      for (va <- a.terms; vb <- b.terms) yield Product(num.times(va.coef.d, vb.coef.d), va.terms ++ vb.terms)
+      for (va <- a.terms; vb <- b.terms) yield Product(num.times(va.coef.d, vb.coef.d), va.vars ++ vb.vars)
     )
   }
 }
@@ -56,7 +56,7 @@ protected object DivExpression {
   def apply[V: Fractional](a: NormalizedExpression[Constant, V], b: NormalizedExpression[Constant, V]): DivExpression[Constant, V] = {
     val num = implicitly[Fractional[V]]
     new DivExpression[Constant, V](
-      for (va <- a.terms; vb <- b.terms) yield new Product(Const(num.div(va.coef.d, vb.coef.d)), Seq())
+      for (va <- a.terms; vb <- b.terms) yield Product(Const(num.div(va.coef.d, vb.coef.d)))
     )
   }
 }

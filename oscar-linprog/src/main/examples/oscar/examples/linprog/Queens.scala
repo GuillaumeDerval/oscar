@@ -17,7 +17,7 @@ package oscar.examples.linprog
 
 import oscar.algebra._
 import oscar.linprog.MPModel
-import oscar.linprog.lpsolve.LPSolve
+import oscar.linprog.lp_solve.LPSolve
 
 /**
  *  The Queens Problem is to place as many queens as possible on the 8x8

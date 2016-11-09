@@ -17,7 +17,7 @@ package oscar.examples.linprog
 
 import oscar.algebra._
 import oscar.linprog.MPModel
-import oscar.linprog.lpsolve.LPSolve
+import oscar.linprog.lp_solve.LPSolve
 
 /**
  * A number of 12 products can be produced, each of which has a set of features, such as volume, weight, etc.

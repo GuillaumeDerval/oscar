@@ -14,7 +14,6 @@
  ******************************************************************************/
 package oscar
 
-
 package object algebra {
 
   /* ------------   Implicits ----------------------- */
@@ -24,7 +23,10 @@ package object algebra {
 
   class ModelDecorator[O  >: Constant <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](val model: Model[O,C,V]){
     def solve(implicit solver: SolverInterface[O,C,V]): ModelStatus[O, C, V] = {
-      solver.solve(model)
+      val run = solver.run(model)
+      val status = run.solve
+      run.release()
+      status
     }
   }
 
