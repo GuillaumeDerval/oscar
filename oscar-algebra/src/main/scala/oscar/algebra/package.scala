@@ -100,10 +100,4 @@ package object algebra {
   def sum[A,B,C,D,T <: ExpressionDegree,V:Numeric](indexes1 : Iterable[A], indexes2 : Iterable[B], indexes3 : Iterable[C], indexes4 : Iterable[D])(f : (A,B,C,D) => NormalizedExpression[T,V]) : NormalizedExpression[T,V] = {
     sumOf(for(i <- indexes1; j <- indexes2; k<- indexes3; l <- indexes4) yield f(i,j,k,l))
   }
-
-  // TODO implement these functions
-  def abs(expr: NormalizedExpression[_,Double])(implicit model: Model[Linear,Linear,Double]): NormalizedExpression[Linear,Double] = ???
-
-  def sign(expr: NormalizedExpression[_,Double])(implicit model: Model[Linear,Linear,Double]): NormalizedExpression[Linear,Double] = ???
-
 }
