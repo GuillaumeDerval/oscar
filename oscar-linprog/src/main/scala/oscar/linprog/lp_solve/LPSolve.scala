@@ -7,7 +7,7 @@ import oscar.algebra._
 /**
  * [[SolverInterface]] for using LPSolve to solve linear mathematical [[Model]]s.
  */
-object LPSolve extends SolverInterface[Linear, Linear, Double]{
+object LPSolve extends SolverInterface[Linear, Linear, Double]("lp_solve"){
   override def run(model: Model[Linear, Linear, Double],config: Option[Path] = None): LPSolveRun =
     new LPSolveRun(config)(model)
 }

@@ -10,7 +10,7 @@ import java.nio.file.Path
  * @tparam C the degree of the constraints of the [[Model]]
  * @tparam V the type of values contained by the variables
  */
-abstract class SolverInterface[O  >: Constant <: ExpressionDegree, C <: ExpressionDegree, V: Numeric] {
+abstract class SolverInterface[O  >: Constant <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](val name: String) {
 
   /**
    * Create a new [[SolverRun]] to solve `model`. Please note that the solver does not actually solve the [[Model]].
