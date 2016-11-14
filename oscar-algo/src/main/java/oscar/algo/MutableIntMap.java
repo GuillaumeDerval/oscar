@@ -259,7 +259,7 @@ public class MutableIntMap<V> extends AbstractMap<Integer, V> implements Navigab
 
     
     public Integer lowerKey(Integer key) {
-        Entry<Integer, V> entry = lowerEntry(key);
+        Map.Entry<Integer, V> entry = lowerEntry(key);
         if (entry != null)
             return entry.getKey();
         return null;
@@ -267,7 +267,7 @@ public class MutableIntMap<V> extends AbstractMap<Integer, V> implements Navigab
 
     
     public Integer floorKey(Integer key) {
-        Entry<Integer, V> entry = floorEntry(key);
+        Map.Entry<Integer, V> entry = floorEntry(key);
         if (entry != null)
             return entry.getKey();
         return null;
@@ -275,7 +275,7 @@ public class MutableIntMap<V> extends AbstractMap<Integer, V> implements Navigab
 
     
     public Integer ceilingKey(Integer key) {
-        Entry<Integer, V> entry = ceilingEntry(key);
+        Map.Entry<Integer, V> entry = ceilingEntry(key);
         if (entry != null)
             return entry.getKey();
         return null;
@@ -283,7 +283,7 @@ public class MutableIntMap<V> extends AbstractMap<Integer, V> implements Navigab
 
     
     public Integer higherKey(Integer key) {
-        Entry<Integer, V> entry = higherEntry(key);
+        Map.Entry<Integer, V> entry = higherEntry(key);
         if (entry != null)
             return entry.getKey();
         return null;
@@ -291,7 +291,7 @@ public class MutableIntMap<V> extends AbstractMap<Integer, V> implements Navigab
 
     
     public Integer firstKey() {
-        Entry<Integer, V> entry = firstEntry();
+        Map.Entry<Integer, V> entry = firstEntry();
         if (entry != null)
             return entry.getKey();
         return null;
@@ -299,7 +299,7 @@ public class MutableIntMap<V> extends AbstractMap<Integer, V> implements Navigab
 
     
     public Integer lastKey() {
-        Entry<Integer, V> entry = lastEntry();
+        Map.Entry<Integer, V> entry = lastEntry();
         if (entry != null)
             return entry.getKey();
         return null;
@@ -390,45 +390,45 @@ public class MutableIntMap<V> extends AbstractMap<Integer, V> implements Navigab
     }
 
     
-    public Entry<Integer, V> lowerEntry(Integer key) {
+    public Map.Entry<Integer, V> lowerEntry(Integer key) {
         if (size() == 0)
             return null;
         return findLowestNodeGoingToXAndFollow(convertKey(key), true, true);
     }
 
     
-    public Entry<Integer, V> floorEntry(Integer key) {
+    public Map.Entry<Integer, V> floorEntry(Integer key) {
         if (size() == 0)
             return null;
         return findLowestNodeGoingToXAndFollow(convertKey(key), true, false);
     }
 
     
-    public Entry<Integer, V> higherEntry(Integer key) {
+    public Map.Entry<Integer, V> higherEntry(Integer key) {
         if (size() == 0)
             return null;
         return findLowestNodeGoingToXAndFollow(convertKey(key), false, true);
     }
 
     
-    public Entry<Integer, V> ceilingEntry(Integer key) {
+    public Map.Entry<Integer, V> ceilingEntry(Integer key) {
         if (size() == 0)
             return null;
         return findLowestNodeGoingToXAndFollow(convertKey(key), false, false);
     }
 
     
-    public Entry<Integer, V> firstEntry() {
+    public Map.Entry<Integer, V> firstEntry() {
         return ceilingEntry(Integer.MIN_VALUE);
     }
 
     
-    public Entry<Integer, V> lastEntry() {
+    public Map.Entry<Integer, V> lastEntry() {
         return floorEntry(Integer.MAX_VALUE);
     }
 
     
-    public Entry<Integer, V> pollFirstEntry() {
+    public Map.Entry<Integer, V> pollFirstEntry() {
         MapEntry entry = (MapEntry)firstEntry();
         if (entry == null)
             return null;
@@ -438,7 +438,7 @@ public class MutableIntMap<V> extends AbstractMap<Integer, V> implements Navigab
     }
 
     
-    public Entry<Integer, V> pollLastEntry() {
+    public Map.Entry<Integer, V> pollLastEntry() {
         MapEntry entry = (MapEntry)lastEntry();
         if (entry == null)
             return null;
@@ -451,14 +451,14 @@ public class MutableIntMap<V> extends AbstractMap<Integer, V> implements Navigab
         return Comparator.naturalOrder();
     }
 
-    private transient volatile Set<Entry<Integer, V>> entrySet;
-    public Set<Entry<Integer, V>> entrySet() {
+    private transient volatile Set<Map.Entry<Integer, V>> entrySet;
+    public Set<Map.Entry<Integer, V>> entrySet() {
         if(entrySet == null)
             entrySet = new EntrySet(this);
         return entrySet;
     }
 
-    class EntrySetIterator implements Iterator<Entry<Integer, V>> {
+    class EntrySetIterator implements Iterator<Map.Entry<Integer, V>> {
         protected MapEntry current;
         protected MapEntry next;
         private EntrySetIterator() {
@@ -472,7 +472,7 @@ public class MutableIntMap<V> extends AbstractMap<Integer, V> implements Navigab
         }
 
         @Override
-        public Entry<Integer, V> next() {
+        public Map.Entry<Integer, V> next() {
             if(next == null)
                 throw new NoSuchElementException();
             current = next;
@@ -489,7 +489,7 @@ public class MutableIntMap<V> extends AbstractMap<Integer, V> implements Navigab
         }
     }
 
-    class EntrySet extends AbstractSet<Entry<Integer, V>> implements Set<Entry<Integer, V>> {
+    class EntrySet extends AbstractSet<Map.Entry<Integer, V>> implements Set<Map.Entry<Integer, V>> {
         MutableIntMap<V> parent;
 
         private EntrySet(MutableIntMap<V> parent){
@@ -498,13 +498,13 @@ public class MutableIntMap<V> extends AbstractMap<Integer, V> implements Navigab
 
         @Override
         public boolean contains(Object o) {
-            Entry<Integer, V> entry = (Entry<Integer, V>)o;
+            Map.Entry<Integer, V> entry = (Map.Entry<Integer, V>)o;
             V val = MutableIntMap.this.get(entry.getKey());
             return val != null && !val.equals(entry.getValue());
         }
 
         @Override
-        public Iterator<Entry<Integer, V>> iterator() {
+        public Iterator<Map.Entry<Integer, V>> iterator() {
             return new EntrySetIterator();
         }
 
