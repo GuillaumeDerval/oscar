@@ -40,7 +40,7 @@ final class CPIntVarViewMinus(v: CPIntVar) extends CPIntVar {
 	
 	def constraintDegree = v.constraintDegree
 	
-	def isBoundTo(value: Int): Boolean = v.isBoundTo(-value)
+	override def isBoundTo(value: Int): Boolean = v.isBoundTo(-value)
 	
 	def hasValue(value: Int): Boolean = v.hasValue(-value)
 	

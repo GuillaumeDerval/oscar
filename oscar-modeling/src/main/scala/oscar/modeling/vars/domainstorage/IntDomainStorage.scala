@@ -1,11 +1,12 @@
 package oscar.modeling.vars.domainstorage
 
-import oscar.modeling.vars.{IntVarImplem, IntVarLikeReusable}
+import oscar.algo.vars.IntVarLike
+import oscar.modeling.vars.IntVarImplem
 
 import scala.collection.immutable.SortedSet
 import scala.util.Random
 
-class IntDomainStorage(val content: Iterable[Int], val name: String) extends DomainStorage with IntVarImplem with IntVarLikeReusable
+class IntDomainStorage(val content: Iterable[Int], val name: String) extends DomainStorage with IntVarImplem with IntVarLike
 {
   override def isContinuous: Boolean = (content.max - content.min) == (content.size-1)
 
@@ -64,29 +65,14 @@ class IntDomainStorage(val content: Iterable[Int], val name: String) extends Dom
   override def randomValue(rand: Random): Int = content.toVector(rand.nextInt(size))
 
   /**
-    * @return the size of the domain
-    */
-  override def getSize: Int = content.size
-
-  /**
     * @return the minimum value in the domain
     */
   override def min: Int = content.min
 
   /**
-    * @return the minimum value in the domain
-    */
-  override def getMin: Int = min
-
-  /**
     * @return the maximum value in the domain
     */
   override def max: Int = content.max
-
-  /**
-    * @return the maximum value in the domain
-    */
-  override def getMax: Int = max
 
   override def iterator: Iterator[Int] = content.iterator
 

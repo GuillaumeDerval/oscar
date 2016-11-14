@@ -5,7 +5,7 @@ import oscar.modeling.vars.IntVarImplem
 import scala.util.Random
 
 class CPIntVar(val realCPVar: oscar.cp.CPIntVar) extends CPVar with IntVarImplem {
-  def isContinuous: Boolean = realCPVar.isContinuous
+  override def isContinuous: Boolean = realCPVar.isContinuous
 
   /**
     * @return true if the domain of the variable has exactly one value, false if the domain has more than one value
@@ -16,7 +16,7 @@ class CPIntVar(val realCPVar: oscar.cp.CPIntVar) extends CPVar with IntVarImplem
     * @param v: value to test
     * @return true if the variable is bound to value v, false if variable is not bound or bound to another value than v
     */
-  def isBoundTo(v: Int): Boolean = realCPVar.isBoundTo(v)
+  override def isBoundTo(v: Int): Boolean = realCPVar.isBoundTo(v)
 
   /**
     * Test if a value is in the domain
@@ -84,7 +84,7 @@ class CPIntVar(val realCPVar: oscar.cp.CPIntVar) extends CPVar with IntVarImplem
   /**
     * @return an (not sorted) array representation of the domain.
     */
-  def toArray: Array[Int] = realCPVar.toArray
+  override def toArray: Array[Int] = realCPVar.toArray
 
   /**
     * @param array.length >= this.size
@@ -92,7 +92,7 @@ class CPIntVar(val realCPVar: oscar.cp.CPIntVar) extends CPVar with IntVarImplem
     *         returns the number of values (this.size).
     *         The array is not sorted.
     */
-  def fillArray(array: Array[Int]): Int = realCPVar.fillArray(array)
+  override def fillArray(array: Array[Int]): Int = realCPVar.fillArray(array)
 
   /**
     * Return a representative name for this var(-like), if one was given

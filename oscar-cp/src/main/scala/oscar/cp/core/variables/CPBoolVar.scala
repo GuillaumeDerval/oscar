@@ -1,6 +1,7 @@
 package oscar.cp.core.variables
 
-import scala.util.Random
+import oscar.algo.vars.BoolVarLike
+
 import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPStore
 import oscar.cp.core.Constraint
@@ -12,10 +13,7 @@ import oscar.cp.core.Constraint
  * @author Pierre Schaus pschaus@gmail.com
  * @author Renaud Hartert ren.hartert@gmail.com
  */
-abstract class CPBoolVar extends CPIntVar {
-  
-  final override def isContinuous: Boolean = true
-
+abstract class CPBoolVar extends CPIntVar with BoolVarLike {
   /** @return a constraint setting the boolean variable to true (1) */
   def constraintTrue: Constraint
 

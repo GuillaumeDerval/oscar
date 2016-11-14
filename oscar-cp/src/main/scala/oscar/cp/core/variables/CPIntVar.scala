@@ -15,9 +15,11 @@
 
 package oscar.cp.core.variables
 
+import oscar.algo.vars.IntVarLike
 import oscar.cp.constraints.InSet
 import oscar.cp.constraints.InSetReif
 import oscar.cp.constraints.ModuloLHS
+
 import scala.util.Random
 import oscar.cp.core.domains.SparseSetDomain
 import oscar.cp._
@@ -32,9 +34,7 @@ import oscar.cp.core.delta.DeltaIntVarAdaptable
 /**
  * @author Pierre Schaus pschaus@gmail.com
  */
-abstract class CPIntVar extends CPVar with Iterable[Int] {
-
-  def isContinuous: Boolean = size == (max - min + 1)
+abstract class CPIntVar extends CPVar with IntVarLike {
 
   def transform(v: Int): Int
 
@@ -207,27 +207,6 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
   def iterator: Iterator[Int]
   
   final override def foreach[@specialized(Int) U](f: Int => U): Unit = iterator.foreach(f)
-  
-  /**
-   * @return an (not sorted) array representation of the domain.
-   */
-  def toArray: Array[Int] = iterator.toArray
-
-  /**
-   *  @param array.length >= this.size
-   *  @return Fills the array with the domain.
-   *          returns the number of values (this.size).
-   *          The array is not sorted.
-   */
-  def fillArray(array: Array[Int]): Int = {
-    val ite = iterator
-    var i = 0
-    while (ite.hasNext) {
-      array(i) = ite.next
-      i += 1
-    }
-    i
-  } 
 
   /**
    * Level 2 registration: ask that the propagate() method of the constraint c is called whenever
