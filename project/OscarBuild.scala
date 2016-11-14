@@ -13,7 +13,7 @@ object OscarBuild extends Build {
     val buildOrganization = "oscar"
     val buildVersion = "4.0.0-SNAPSHOT"
     val buildScalaVersion = "2.11.0"
-    val buildSbtVersion= "0.13.8"
+    val buildSbtVersion= "0.13.12"
 
     val osNativeLibDir = (sys.props("os.name"), sys.props("os.arch")) match {
       case (os, arch) if os.contains("Mac") && arch.endsWith("64") => "macos64"
