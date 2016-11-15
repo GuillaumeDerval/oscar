@@ -5,9 +5,8 @@ import scala.util.Random
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.reversible.ReversiblePointer
 import oscar.algo.reversible.TrailEntry
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome.Failure
-import oscar.cp.core.CPOutcome.Suspend
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.CPStore
 import oscar.cp.core.Constraint
 import oscar.cp.core.watcher.WatcherListL2
@@ -22,7 +21,9 @@ import oscar.cp.core.delta.DeltaIntVar
 class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, final override val name: String = "") extends CPBoolVar with TrailEntry {
   
   import CPBoolVarImpl._
-  
+
+  override val context = store
+
   // Registered constraints
   private[this] val onBindL2 = new WatcherListL2(store)
   private[this] val onBoundsL1 = new WatcherListL1(store)
@@ -99,7 +100,7 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     else domain & 1 // min value
   }
 
-  final override def updateMin(value: Int): CPOutcome = {
+  final override def updateMin(value: Int): Outcome = {
     if (value == 1) {
       if (domain == UNASSIGNED) setDomainTrue()
       else if (domain == TRUE) Suspend
@@ -108,7 +109,7 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     else setDomainEmpty()
   }
 
-  final override def updateMax(value: Int): CPOutcome = {
+  final override def updateMax(value: Int): Outcome = {
     if (value == 0) {
       if (domain == UNASSIGNED) setDomainFalse()
       else if (domain == FALSE) Suspend
@@ -117,19 +118,19 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     else setDomainEmpty()
   }
   
-  final override def assignTrue(): CPOutcome = {
+  final override def assignTrue(): Outcome = {
     if (domain == UNASSIGNED) setDomainTrue()
     else if (domain == TRUE) Suspend
     else setDomainEmpty()
   }
 
-  final override def assignFalse(): CPOutcome = {
+  final override def assignFalse(): Outcome = {
     if (domain == UNASSIGNED) setDomainFalse()
     else if (domain == FALSE) Suspend
     else setDomainEmpty()
   }
     
-  final override def assign(value: Int): CPOutcome = {
+  final override def assign(value: Int): Outcome = {
     if (value == 0) assignFalse()
     else if (value == 1) assignTrue()
     else Failure
@@ -146,7 +147,7 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     trailedDomain = UNASSIGNED
   }
 
-  @inline private def setDomainTrue(): CPOutcome = {
+  @inline private def setDomainTrue(): Outcome = {
     store.trail(this)
     trailedDomain = domain
     domain = TRUE
@@ -158,7 +159,7 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     Suspend
   }
 
-  @inline private def setDomainFalse(): CPOutcome = {
+  @inline private def setDomainFalse(): Outcome = {
     store.trail(this)
     trailedDomain = domain
     domain = FALSE
@@ -170,7 +171,7 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     Suspend
   }
 
-  @inline private def setDomainEmpty(): CPOutcome = {
+  @inline private def setDomainEmpty(): Outcome = {
     store.trail(this)
     trailedDomain = domain
     domain = EMPTY

@@ -2,7 +2,7 @@ package oscar.cp.constraints
 
 import oscar.cp._
 import oscar.cp.testUtils._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 
 // Test the sum constraint on CPIntVar
 class SumSuite extends TestSuite {
@@ -31,7 +31,7 @@ class SumSuite extends TestSuite {
       }
       s.post(nbVal <= max) should not be (Failure)
       s.post(nbVal >= min) should not be (Failure)
-      s.isFailed() should be(false)
+      s.isFailed should be(false)
     }
   }
 

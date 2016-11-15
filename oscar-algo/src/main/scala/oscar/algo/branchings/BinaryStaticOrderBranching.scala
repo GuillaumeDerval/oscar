@@ -1,16 +1,16 @@
-package oscar.cp.searches
+package oscar.algo.branchings
 
-import oscar.cp._
-import oscar.algo.search.Branching
 import oscar.algo.reversible.ReversibleInt
+import oscar.algo.search._
+import oscar.algo.vars.IntVarLike
 
-class BinaryStaticOrderBranching(variables: Array[CPIntVar], valHeuris: (Int => Int)) extends Branching {
+class BinaryStaticOrderBranching(variables: Array[IntVarLike], valHeuris: (Int => Int)) extends Branching {
 
-  def this(vars: Array[CPIntVar]) = this(vars, vars(_).min)
+  def this(vars: Array[IntVarLike]) = this(vars, vars(_).min)
 
-  private[this] val store = variables(0).store
+  private[this] val context = variables(0).context
   private[this] val nVariables = variables.length
-  private[this] val depthRev = new ReversibleInt(store, 0)
+  private[this] val depthRev = new ReversibleInt(context, 0)
   private[this] var depth = 0
 
   final override def alternatives(): Seq[Alternative] = {

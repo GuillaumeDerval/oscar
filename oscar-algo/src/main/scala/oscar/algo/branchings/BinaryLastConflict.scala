@@ -1,4 +1,4 @@
-package oscar.cp.searches
+package oscar.algo.branchings
 
 /**
  * *****************************************************************************
@@ -17,10 +17,10 @@ package oscar.cp.searches
  * ****************************************************************************
  */
 
-import oscar.cp._
 import oscar.algo.reversible._
-import oscar.algo.search.Branching
-import oscar.cp.core.CPOutcome.Failure
+import oscar.algo.search.Outcome.Failure
+import oscar.algo.search.{Branching, _}
+import oscar.algo.vars.IntVarLike
 
 /**
  * Last Conflict Search
@@ -37,12 +37,12 @@ import oscar.cp.core.CPOutcome.Failure
  * @author Renaud Hartert
  */
 
-class BinaryLastConflict(variables: Array[CPIntVar], varHeuristic: Int => Int, valHeuristic: Int => Int) extends Branching {
+class BinaryLastConflict(variables: Array[IntVarLike], varHeuristic: Int => Int, valHeuristic: Int => Int) extends Branching {
 
   require(variables.length > 0, "no variable")
 
   private[this] val nVariables = variables.length
-  private[this] val store = variables(0).store
+  private[this] val context = variables(0).context
 
   // Order in which variables have to be assigned
   private[this] val order = Array.tabulate(nVariables) { i => i }
@@ -51,7 +51,7 @@ class BinaryLastConflict(variables: Array[CPIntVar], varHeuristic: Int => Int, v
   private[this] val lastValues = Array.fill(nVariables)(Int.MinValue)
 
   // Current depth of the search tree
-  private[this] val nAssignedRev = new ReversibleInt(store, 0)
+  private[this] val nAssignedRev = new ReversibleInt(context, 0)
 
   // Last conflict
   private[this] var maxAssigned: Int = -1
@@ -95,14 +95,14 @@ class BinaryLastConflict(variables: Array[CPIntVar], varHeuristic: Int => Int, v
   }
   
   // Return an Alternative that assign the value to the variable
-  @inline private def assign(variable: CPIntVar, value: Int, nAssigned: Int): Alternative = () => {
-    val out = store.assign(variable, value)
+  @inline private def assign(variable: IntVarLike, value: Int, nAssigned: Int): Alternative = () => {
+    val out = context.assign(variable, value)
     if (out == Failure) conflictAssign = nAssigned
   }
   
   // Return an Alternative that assign the value to the variable
-  @inline private def remove(variable: CPIntVar, value: Int, nAssigned: Int): Alternative = () => {
-    val out = store.remove(variable, value)
+  @inline private def remove(variable: IntVarLike, value: Int, nAssigned: Int): Alternative = () => {
+    val out = context.remove(variable, value)
     if (out == Failure) conflictAssign = nAssigned
   }
 

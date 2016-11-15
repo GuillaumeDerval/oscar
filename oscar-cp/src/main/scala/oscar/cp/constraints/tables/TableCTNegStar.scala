@@ -1,7 +1,8 @@
 package oscar.cp.constraints.tables
 
 import oscar.algo.reversible.ReversibleSparseBitSet
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset}
 import oscar.cp.core.{CPStore, Constraint, _}
@@ -272,7 +273,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
     array
   }
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
 
     /* Success if table is empty initially or after initial filtering */
     if (nbTuples == 0)
@@ -317,7 +318,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
    * @param delta the set of values removed since the last call.
    * @return the outcome i.e. Failure or Success.
    */
-  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): CPOutcome = {
+  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): Outcome = {
 
     val intVar = x(varIndex)
     val varSize = intVar.size
@@ -375,7 +376,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
    * Unsupported values are removed.
    * @return the outcome i.e. Failure or Success.
    */
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
 
     var varIndex = arity
     while (varIndex > 0) {
@@ -397,7 +398,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
    * Remove the pair if the number of tuple as reach the threshold
    * @return the outcome i.e. Failure or Suspend
    */
-  @inline def basicPropagate(): CPOutcome = {
+  @inline def basicPropagate(): Outcome = {
 
     var varIndex = arity
     while (varIndex > 0) {

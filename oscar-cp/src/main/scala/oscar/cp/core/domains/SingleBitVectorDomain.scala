@@ -2,10 +2,12 @@ package oscar.cp.core.domains
 
 import oscar.algo.reversible.ReversibleContext
 import oscar.algo.reversible.ReversibleInt
+
 import scala.util.Random
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import java.lang.Integer.bitCount
+
+import oscar.algo.search.Outcome
 
 /** 
  *  An integer domain based on a bit vector of 32 bits. 
@@ -74,7 +76,7 @@ class SingleBitVectorDomain(override val context: ReversibleContext, val minValu
     }
   }
 
-  def removeValue(value: Int): CPOutcome = {
+  def removeValue(value: Int): Outcome = {
     if (value < minValue) Suspend
     else if (value > maxValue) Suspend
     else {
@@ -92,7 +94,7 @@ class SingleBitVectorDomain(override val context: ReversibleContext, val minValu
     }
   }
 
-  def assign(value: Int): CPOutcome = {
+  def assign(value: Int): Outcome = {
     if (value < minValue || value > maxValue) {
       bits.value = 0
       Failure
@@ -126,7 +128,7 @@ class SingleBitVectorDomain(override val context: ReversibleContext, val minValu
     maxId.value = id
   }
 
-  def updateMin(value: Int): CPOutcome = {
+  def updateMin(value: Int): Outcome = {
     if (value < minValue) Suspend
     else if (value > maxValue) {
       bits.value = 0
@@ -162,7 +164,7 @@ class SingleBitVectorDomain(override val context: ReversibleContext, val minValu
     }
   }
 
-  def updateMax(value: Int): CPOutcome = {
+  def updateMax(value: Int): Outcome = {
     if (value < minValue) {
       bits.value = 0
       Failure

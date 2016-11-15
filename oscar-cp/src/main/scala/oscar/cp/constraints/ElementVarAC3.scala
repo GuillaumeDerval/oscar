@@ -15,19 +15,20 @@
 
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
 import oscar.cp.util.ArrayUtils
 import oscar.algo.reversible.ReversibleInt
+
 import scala.math.min
 import scala.math.max
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.CPSolver
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.reversible.ReversibleSparseSet
+import oscar.algo.search.Outcome
 import oscar.cp.core.watcher.Watcher
 
 
@@ -60,7 +61,7 @@ class ElementVarAC3(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constr
   
   
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     if (zRange.isEmpty) return Failure
     //println("setup:"+x.mkString(","))
     
@@ -148,7 +149,7 @@ class ElementVarAC3(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constr
     }
   }  
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     //println("propagate:"+x.mkString(","))
     var mz = z.fillArray(zvalues)
     val mx = x.fillArray(xvalues)
@@ -191,7 +192,7 @@ class ElementVarAC3(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constr
   }
   
   // Removes each value i in x that is not a valid id in y
-  @inline private def adjustX(): CPOutcome = {
+  @inline private def adjustX(): Outcome = {
     if (x.updateMin(0) == Failure) Failure
     else if (x.updateMax(y.size - 1) == Failure) Failure
     else if (x.isBound) valBind(x)
@@ -205,7 +206,7 @@ class ElementVarAC3(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constr
 
     private[this] var y: CPIntVar = null
 
-    final override def setup(l: CPPropagStrength): CPOutcome = {
+    final override def setup(l: CPPropagStrength): Outcome = {
       y = ys(x.min)
       if (propagate() == Failure) Failure
       else {
@@ -215,7 +216,7 @@ class ElementVarAC3(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constr
       }
     }
 
-    final override def propagate(): CPOutcome = {
+    final override def propagate(): Outcome = {
       var i = y.fillArray(values)
       while (i > 0) {
         i -= 1
@@ -232,7 +233,7 @@ class ElementVarAC3(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constr
     }
 
     // FIXME: should be idempotent (not allowed yet for L1 events)
-    final override def valRemove(intVar: CPIntVar, value: Int): CPOutcome = {
+    final override def valRemove(intVar: CPIntVar, value: Int): Outcome = {
       if (intVar == y) z.removeValue(value)
       else y.removeValue(value)
     }

@@ -1,7 +1,7 @@
 package oscar.modeling.algebra
 
+import oscar.algo.search.Outcome
 import oscar.cp.{CPBoolVar, CPSolver}
-import oscar.cp.core.CPOutcome
 
 /**
   * A BoolExpression that can be instantiated in a CP model
@@ -10,7 +10,7 @@ trait CPInstantiableBoolExpression extends BoolExpression {
   /**
     * Post the expression as a constraint (meaning the expression should be true)
     */
-  def cpPostAsConstraint(cPSolver: CPSolver): CPOutcome
+  def cpPostAsConstraint(cPSolver: CPSolver): Outcome
 
   /**
     * Post the expression, and return a CPIntVar corresponding to its value

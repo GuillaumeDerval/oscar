@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.variables.CPBoolVar;
@@ -45,7 +45,7 @@ public class EqReifVar extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Outcome setup(CPPropagStrength l) {
 		if (b.isBound()) {
 			return valBind(b);
 		} 
@@ -66,54 +66,54 @@ public class EqReifVar extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome valBind(CPIntVar var) {
+	public Outcome valBind(CPIntVar var) {
 		if (b.isBound()) {
 			deactivate();
 			if (b.min() == 1) {
 				// x == y
-				if (s().post(new Eq(x,y)) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (s().post(new Eq(x,y)) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 			} else {
 				//x != y
-				if (s().post(new DiffVar(x,y))  == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (s().post(new DiffVar(x,y))  == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}	
 		else if (x.isBound()) {
 			deactivate();
-			if (s().post(new EqReif(y,x.min(),b)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (s().post(new EqReif(y,x.min(),b)) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}
 		else { // y.isBound()
 			deactivate();
-			if (s().post(new EqReif(x,y.min(),b)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (s().post(new EqReif(x,y.min(),b)) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}
 	}
 	
 	
 	
 	@Override
-	public CPOutcome propagate() {
+	public Outcome propagate() {
 		// if the domains of x and y are disjoint we can set b to false and return success
 		if (x.getMax() < y.getMin()) {
-			if (b.assign(0) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (b.assign(0) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}
 		else if (y.getMax() < x.getMin()) {
-			if (b.assign(0) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (b.assign(0) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}
 		else {
 			// there is an overlap between the domain ranges
@@ -121,7 +121,7 @@ public class EqReifVar extends Constraint {
 			int start = Math.max(x.getMin(), y.getMin());
 			int end = Math.min(x.getMax(), y.getMax());
 			boolean commonValues = false;
-			if (x.isContinuous() || y.isContinuous()) return CPOutcome.Suspend;
+			if (x.isContinuous() || y.isContinuous()) return Outcome.Suspend;
 			for (int i = start; i <= end; i++) {
  				if (x.hasValue(i) && y.hasValue(i)) {
 					commonValues = true;
@@ -129,12 +129,12 @@ public class EqReifVar extends Constraint {
 				}
 			}
 			if (!commonValues) {
-				if (b.assign(0) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (b.assign(0) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
-				return CPOutcome.Success;
+				return Outcome.Success;
 			}
-			return CPOutcome.Suspend;
+			return Outcome.Suspend;
 		}	
 	}
 

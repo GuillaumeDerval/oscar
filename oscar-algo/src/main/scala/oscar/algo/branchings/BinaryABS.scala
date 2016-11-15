@@ -3,33 +3,33 @@
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 2.1 of the License, or
  * (at your option) any later version.
- *   
+ *
  * OscaR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License  for more details.
- *   
+ *
  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
 
 
-package oscar.cp.searches
+package oscar.algo.branchings
 
-
-import oscar.cp._
-import oscar.algo.reversible._
-import oscar.algo.search.Branching
-import oscar.cp.core.CPOutcome.Failure
+import oscar.algo.search.Outcome.Failure
+import oscar.algo.search.{Branching, _}
+import oscar.algo.vars.IntVarLike
 import oscar.util.IncrementalStatistics
-import scala.util.Random;
+
+import scala.util.Random
+
 /**
  *
  * @author Pierre Schaus
  */
-class BinaryABS(variables: Array[CPIntVar], valHeuristic: Int => Int,rand: Random,nProbes: Int = 1000, decay: Double = 0.999) extends Branching {
+class BinaryABS(variables: Array[IntVarLike], valHeuristic: Int => Int,rand: Random,nProbes: Int = 1000, decay: Double = 0.999) extends Branching {
 
-  private[this] val s = variables(0).store
+  private[this] val c = variables(0).context
   private[this] val n = variables.size
   private[this] val activity = Array.fill(n)(0.0);
   private[this] val domSize = Array.tabulate(n)(i => variables(i).size);
@@ -39,9 +39,9 @@ class BinaryABS(variables: Array[CPIntVar], valHeuristic: Int => Int,rand: Rando
 
     for (i <- 0 until n) {
       if (variables(i).size < domSize(i)) {
-        activity(i) += 1;
+        activity(i) += 1
       } else if (!variables(i).isBound) {
-        activity(i) *= decay;
+        activity(i) *= decay
       }
       domSize(i) = variables(i).size
     }
@@ -60,7 +60,7 @@ class BinaryABS(variables: Array[CPIntVar], valHeuristic: Int => Int,rand: Rando
     if (varIdx == -1) return noAlternative
     else {
       val v = valHeuristic(varIdx)
-      branch(s.assign(variables(varIdx),v))(s.remove(variables(varIdx),v))
+      branch(c.assign(variables(varIdx),v))(c.remove(variables(varIdx),v))
     }
   }
 
@@ -88,20 +88,20 @@ class BinaryABS(variables: Array[CPIntVar], valHeuristic: Int => Int,rand: Rando
   
   val indexes = Array.tabulate(n)(i => i).toSeq
   private def probe() {
-    s.pushState()
+    c.pushState()
     val shuffled = rand.shuffle(indexes)
     var i = 0
-    while (i < n && !s.isFailed) {
+    while (i < n && !c.isFailed) {
       val x = variables(shuffled(i))
       if (!x.isBound) {
-        if (s.assign(x,valHeuristic(shuffled(i))) != Failure)
-        if (!s.isFailed()) {
+        if (c.assign(x,valHeuristic(shuffled(i))) != Failure)
+        if (!c.isFailed) {
           updateActivities()
         }
       }
       i += 1
     }
-    s.pop()
+    c.pop()
   }
 
   private def updateActivities() {

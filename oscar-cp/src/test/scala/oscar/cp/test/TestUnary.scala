@@ -14,14 +14,16 @@
  ******************************************************************************/
 package oscar.cp.test
 
+import oscar.algo.branchings.ConflictOrderingSearch
 import oscar.cp._
 import oscar.cp.testUtils.TestSuite
+
 import scala.util.Random
 import oscar.algo.search.DFSearch
-import oscar.cp.searches.ConflictOrderingSearch
 import oscar.cp.constraints.Or
 import oscar.cp.scheduling.constraints._
 import oscar.algo.search.Branching
+
 import scala.collection.mutable.TreeSet
 
 /**

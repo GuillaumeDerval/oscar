@@ -16,10 +16,11 @@
 package oscar.cp.constraints.tables
 
 import oscar.algo.reversible.{ReversibleContext, TrailEntry}
+import oscar.algo.search.Outcome
 import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{Constraint, CPOutcome, CPPropagStrength}
-import oscar.cp.core.CPOutcome._
+import oscar.cp.core.{CPPropagStrength, Constraint}
+import oscar.algo.search.Outcome._
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -108,7 +109,7 @@ class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Co
 
   /* ----- Setup ----- */
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     /* Only work with allowed tuples */
     fillValidTuples()
 
@@ -130,7 +131,7 @@ class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Co
    * Compute the supports for each variable value pair (x,a) and remove values not supported by any tuple.
    * @return the outcome i.e. Failure or Success.
    */
-  private final def fillSupportsAndRemoveUnsupported(): CPOutcome = {
+  private final def fillSupportsAndRemoveUnsupported(): Outcome = {
     /* Fill temp supports */
     val tempSupports = Array.tabulate(arity)(i => Array.tabulate(spans(i))(j => ArrayBuffer[Int]()))
     var tupleIndex = 0
@@ -216,7 +217,7 @@ class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Co
    * @param varIndex the index of x.
    * @return the outcome i.e. Failure or Success.
    */
-  private final def removeTupleFromSupports(tuple: Array[Int], tupleIndex: Int, varIndex: Int): CPOutcome = {
+  private final def removeTupleFromSupports(tuple: Array[Int], tupleIndex: Int, varIndex: Int): Outcome = {
     val valueTuple = tuple(varIndex)
     val valueIndex = valueTuple - originalMins(varIndex)
     val variableSupports = supports(varIndex)
@@ -233,7 +234,7 @@ class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Co
    * @param varIndex the index of the variable for which the invalidation is not necessary.
    * @return the outcome i.e. Failure or Success.
    */
-  private final def invalidateTuple(tupleIndex: Int, varIndex: Int): CPOutcome = {
+  private final def invalidateTuple(tupleIndex: Int, varIndex: Int): Outcome = {
     val tuple = tuples(tupleIndex)
     var i = 0
     while (i < varIndex) {
@@ -253,7 +254,7 @@ class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Co
     Suspend
   }
 
-  private final def valuesRemoved(delta: DeltaIntVar): CPOutcome = {
+  private final def valuesRemoved(delta: DeltaIntVar): Outcome = {
     val idx = delta.id
     var i = delta.fillArray(domainsFillArray)
     /* Iterate all the values removed in x(idx) */

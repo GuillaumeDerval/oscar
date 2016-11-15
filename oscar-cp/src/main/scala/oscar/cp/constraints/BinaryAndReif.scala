@@ -16,7 +16,8 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPBoolVar
 
 /**
@@ -26,14 +27,14 @@ import oscar.cp.core.variables.CPBoolVar
 class BinaryAnd(val x: CPBoolVar, val y: CPBoolVar, val b: CPBoolVar) extends Constraint(b.store, "BinaryAndReif") {
 
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     x.callPropagateWhenBind(this)
     y.callPropagateWhenBind(this)
     b.callPropagateWhenBind(this)
     propagate()
   }
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     if (b.isBoundTo(0)) {
       if (x.isBoundTo(1)) y.assign(0)
       else if(y.isBoundTo(1)) x.assign(0)

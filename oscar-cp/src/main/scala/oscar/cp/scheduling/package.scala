@@ -15,14 +15,15 @@
 
 package oscar.cp
 
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
+import oscar.algo.search.Outcome
 import oscar.cp.core._
 package object scheduling {
 
   /**
    * prune such that activity 1 << activity 2
    */
-  def precedes(s1: CPIntVar, d1: CPIntVar, e1: CPIntVar, s2: CPIntVar, d2: CPIntVar, e2: CPIntVar): CPOutcome = { 
+  def precedes(s1: CPIntVar, d1: CPIntVar, e1: CPIntVar, s2: CPIntVar, d2: CPIntVar, e2: CPIntVar): Outcome = {
       if (s2.updateMin(e1.min) == Failure) return Failure
       if (e1.updateMax(s2.max) == Failure) return Failure
       Suspend
@@ -31,28 +32,28 @@ package object scheduling {
   /**
    * ensure s+d = e
    */
-  def update(s: CPIntVar, d: CPIntVar, e: CPIntVar): CPOutcome = {
+  def update(s: CPIntVar, d: CPIntVar, e: CPIntVar): Outcome = {
     // end <= start
-    if (e.updateMin(s.min) == CPOutcome.Failure) {
-      CPOutcome.Failure
-    } else if (s.updateMax(e.max) == CPOutcome.Failure) {
-      CPOutcome.Failure
+    if (e.updateMin(s.min) == Outcome.Failure) {
+      Outcome.Failure
+    } else if (s.updateMax(e.max) == Outcome.Failure) {
+      Outcome.Failure
     } // end = start + dur
-    else if (e.updateMax(s.max + d.max) == CPOutcome.Failure) {
-      CPOutcome.Failure
-    } else if (e.updateMin(s.min + d.min) == CPOutcome.Failure) {
-      CPOutcome.Failure
+    else if (e.updateMax(s.max + d.max) == Outcome.Failure) {
+      Outcome.Failure
+    } else if (e.updateMin(s.min + d.min) == Outcome.Failure) {
+      Outcome.Failure
     } // start = end - dur
-    else if (s.updateMax(e.max - d.min) == CPOutcome.Failure) {
-      CPOutcome.Failure
-    } else if (s.updateMin(e.min - d.max) == CPOutcome.Failure) {
-      CPOutcome.Failure
+    else if (s.updateMax(e.max - d.min) == Outcome.Failure) {
+      Outcome.Failure
+    } else if (s.updateMin(e.min - d.max) == Outcome.Failure) {
+      Outcome.Failure
     } // dur = end - start
-    else if (d.updateMax(e.max - s.min) == CPOutcome.Failure) {
-      CPOutcome.Failure
-    } else if (d.updateMin(e.min - s.max) == CPOutcome.Failure) {
-      CPOutcome.Failure
-    } else CPOutcome.Suspend
+    else if (d.updateMax(e.max - s.min) == Outcome.Failure) {
+      Outcome.Failure
+    } else if (d.updateMin(e.min - s.max) == Outcome.Failure) {
+      Outcome.Failure
+    } else Outcome.Suspend
   }
   
 

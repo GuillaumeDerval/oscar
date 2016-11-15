@@ -1,10 +1,10 @@
 package oscar.cp.constraints
 
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.CPStore
 
 final class EqualityBC(x: CPIntVar, y: CPIntVar) extends Constraint(x.store, "EqualityBC") {
@@ -12,7 +12,7 @@ final class EqualityBC(x: CPIntVar, y: CPIntVar) extends Constraint(x.store, "Eq
   priorityL2 = CPStore.MaxPriorityL2
   idempotent = true
   
-  final override def setup(l: CPPropagStrength): CPOutcome = {
+  final override def setup(l: CPPropagStrength): Outcome = {
     val outcome = propagate()
     if (outcome != Suspend) outcome
     else {
@@ -22,7 +22,7 @@ final class EqualityBC(x: CPIntVar, y: CPIntVar) extends Constraint(x.store, "Eq
     }
   }
 
-  final override def propagate(): CPOutcome = {
+  final override def propagate(): Outcome = {
     var yMin = y.min
     var yMax = y.max
     if (yMin == yMax) assignTo(x, yMin)
@@ -54,7 +54,7 @@ final class EqualityBC(x: CPIntVar, y: CPIntVar) extends Constraint(x.store, "Eq
     }
   }
 
-  @inline private def assignTo(intVar: CPIntVar, value: Int): CPOutcome = {
+  @inline private def assignTo(intVar: CPIntVar, value: Int): Outcome = {
     if (intVar.assign(value) == Failure) Failure
     else Success
   }

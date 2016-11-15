@@ -15,22 +15,26 @@
 
 package oscar.cp.modeling
 
+import oscar.algo.branchings._
 import oscar.algo.search.{Branching, BranchingUtils, DiscrepancyBranching}
 import oscar.cp.scheduling.search.SetTimesBranching
 import oscar.cp.scheduling.search.RankBranching
-import oscar.cp.searches._
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.variables.CPSetVar
-import oscar.algo.reversible.ReversibleContext
+import oscar.algo.vars.{IntVarLike, SetVarLike}
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
  * @author Renaud Hartert ren.hartert@gmail.com
  */
 trait Branchings extends BranchingUtils {
+  @inline
+  implicit def arrayCPIntToIntLike(orig: Array[CPIntVar]): Array[IntVarLike] = orig.asInstanceOf[Array[IntVarLike]]
+  @inline
+  implicit def arrayCPSetToSetLike(orig: Array[CPSetVar]): Array[SetVarLike] = orig.asInstanceOf[Array[SetVarLike]]
 
   def binaryIdx(variables: Array[CPIntVar], varHeuristic: (Int => Int), valHeuristic: (Int => Int)): Branching = {
-    new BinaryBranching(variables, varHeuristic, valHeuristic)
+    new BinaryBranching(variables.asInstanceOf[Array[IntVarLike]], varHeuristic, valHeuristic)
   }
 
   def binaryIdx(variables: Array[CPIntVar], varHeuristic: (Int => Int)): Branching = {
@@ -55,7 +59,7 @@ trait Branchings extends BranchingUtils {
   }
 
   def binaryLastConflict(variables: Array[CPIntVar], varHeuristic: (Int => Int), valHeuristic: (Int => Int)): Branching = {
-    new BinaryLastConflict(variables, varHeuristic, valHeuristic)
+    new BinaryLastConflict(variables.asInstanceOf[Array[IntVarLike]], varHeuristic, valHeuristic)
   }
 
   def splitLastConflict(variables: Array[CPIntVar]): Branching = {
@@ -67,11 +71,11 @@ trait Branchings extends BranchingUtils {
   }
 
   def splitLastConflict(variables: Array[CPIntVar], varHeuristic: (Int => Int), valHeuristic: (Int => Int)): Branching = {
-    new SplitLastConflict(variables, varHeuristic, valHeuristic)
+    new SplitLastConflict(variables.asInstanceOf[Array[IntVarLike]], varHeuristic, valHeuristic)
   }
 
   def conflictOrderingSearch(variables: Array[CPIntVar], varHeuristic: (Int) => Int, valHeuristic: (Int) => Int, doReset: Boolean = false): Branching = {
-    new ConflictOrderingSearch(variables, varHeuristic, valHeuristic, doReset)
+    new ConflictOrderingSearch(variables.asInstanceOf[Array[IntVarLike]], varHeuristic, valHeuristic, doReset)
   }
 
 
@@ -96,14 +100,14 @@ trait Branchings extends BranchingUtils {
     val vars = variables.toArray
     binaryIdx(vars, vars(_).size, valHeuris)
   }
-  
+
   def binaryFirstFail(variables: Seq[CPIntVar]): Branching = {
-    val vars = variables.toArray    
+    val vars = variables.toArray
     binaryFirstFailIdx(vars, vars(_).min)
   }
 
   def binaryFirstFail(variables: Seq[CPIntVar], valHeuris: (CPIntVar => Int)): Branching = {
-    val vars = variables.toArray    
+    val vars = variables.toArray
     binaryFirstFailIdx(vars, i => valHeuris(vars(i)))
   }
 
@@ -114,18 +118,18 @@ trait Branchings extends BranchingUtils {
     val vars = variables.toArray
     binaryIdx(vars, vars(_).constraintDegree, vars(_).min)
   }
-  
+
   /**
    * Binary search on the decision variables vars, splitting the domain of the selected variable on the
    * median of the values (left : <= median, right : > median)
    */
   def binarySplitIdx(x: Seq[CPIntVar], varHeuris: (Int => Int), valHeuris: (Int => Int)): Branching = {
-    val xa = x.toArray
+    val xa = x.toArray.asInstanceOf[Array[IntVarLike]]
     new BinaryDomainSplitBranching(xa, varHeuris, valHeuris)
   }
 
   def binarySplitIdx(x: Seq[CPIntVar], varHeuris: (Int => Int)): Branching = {
-    val xa = x.toArray
+    val xa = x.toArray.asInstanceOf[Array[IntVarLike]]
     new BinaryDomainSplitBranching(xa, varHeuris)
   }
 
@@ -139,7 +143,7 @@ trait Branchings extends BranchingUtils {
 
   def binarySplit(x: Seq[CPIntVar]): Branching = {
     val xa = x.toArray
-    new BinaryDomainSplitBranching(xa, minVar(xa.toArray))
+    new BinaryDomainSplitBranching(xa.asInstanceOf[Array[IntVarLike]], minVar(xa))
   }
 
   /**

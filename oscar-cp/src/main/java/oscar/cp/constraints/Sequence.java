@@ -16,7 +16,7 @@ package oscar.cp.constraints;
 
 
 import oscar.algo.reversible.SparseSet;
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.variables.CPBoolVar;
@@ -63,15 +63,15 @@ public class Sequence extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength cl) {
+	public Outcome setup(CPPropagStrength cl) {
         // creates the bool vars and create the channeling constraints
         x = new CPBoolVar[xinit.length];
         for (int i = 0; i < x.length; i++) {
         	x[i] = CPBoolVar.apply(s());
         }
         for (int i = 0; i < x.length; i++) {
-            if (s().post(new MemberReif(xinit[i],values,x[i])) == CPOutcome.Failure) {
-                return CPOutcome.Failure;
+            if (s().post(new MemberReif(xinit[i],values,x[i])) == Outcome.Failure) {
+                return Outcome.Failure;
             }
         }
         cumulatedCounters = new CPIntVar[x.length]; // cumulatedCounters[i] = x[0]+x[1]+...+x[i]
@@ -92,22 +92,22 @@ public class Sequence extends Constraint {
         for (int i = 0; i < x.length; i++) {
             for (int j = i+1; j < Math.min(x.length, i+len); j++) {
                 for (int m = i; m < j; m++) {
-                    if (s().post(new Sum(new CPIntVar[]{P[i][m],P[m+1][j]},P[i][j])) == CPOutcome.Failure) {
-                        return CPOutcome.Failure;
+                    if (s().post(new Sum(new CPIntVar[]{P[i][m],P[m+1][j]},P[i][j])) == Outcome.Failure) {
+                        return Outcome.Failure;
                     }
                 }
             }
 
             if (i <= x.length-len) {
-               if (s().post(new GrEq(P[i][i+len-1],min)) == CPOutcome.Failure) {
-                   return CPOutcome.Failure;
+               if (s().post(new GrEq(P[i][i+len-1],min)) == Outcome.Failure) {
+                   return Outcome.Failure;
                }
-               if (s().post(new LeEq(P[i][i+len-1],max)) == CPOutcome.Failure) {
-                   return CPOutcome.Failure;
+               if (s().post(new LeEq(P[i][i+len-1],max)) == Outcome.Failure) {
+                   return Outcome.Failure;
                }
             }
 
         }
-		return CPOutcome.Success;
+		return Outcome.Success;
 	}
 }

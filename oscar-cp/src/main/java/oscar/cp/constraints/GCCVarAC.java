@@ -15,7 +15,7 @@
 package oscar.cp.constraints;
 
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -94,24 +94,24 @@ public class GCCVarAC extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Outcome setup(CPPropagStrength l) {
 		if (!findValueRange()) {
-			return CPOutcome.Failure; //failure update the bounds of variables o
+			return Outcome.Failure; //failure update the bounds of variables o
 		}
 		allocateFlow();
 		findInitialFlow();
 
 		if (!findMaximalFlow()) {
-			return CPOutcome.Failure;
+			return Outcome.Failure;
 		}	
 		if (!findFeasibleFlow()) {	
-			return CPOutcome.Failure;
+			return Outcome.Failure;
 		}
 
 		allocateSCC();
 		prune();
 		if (!pruneBounds()) {
-			return CPOutcome.Failure;
+			return Outcome.Failure;
 		}
 		for(int k = 0 ; k < x.length; k++) {
 			if (!x[k].isBound()) {
@@ -125,7 +125,7 @@ public class GCCVarAC extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome propagate() {
+	public Outcome propagate() {
 	   updateBounds();
 	   for(int k = 0; k < x.length; k++) {
 	      if (varMatch[k] != NONE) {
@@ -138,15 +138,15 @@ public class GCCVarAC extends Constraint {
 	      while (flow[k-minVal] > up[k-minVal])
 	         unassign(valMatch[k-minVal]);
 	   if (!findMaximalFlow()) {
-	      return CPOutcome.Failure;
+	      return Outcome.Failure;
 	   }
 	   if (!findFeasibleFlow()) {
-	      return CPOutcome.Failure;
+	      return Outcome.Failure;
 	   }
 	   prune();
 	   if (!pruneBounds())
-	      return CPOutcome.Failure;
-	   return CPOutcome.Suspend;
+	      return Outcome.Failure;
+	   return Outcome.Suspend;
 	}
 
 
@@ -174,14 +174,14 @@ public class GCCVarAC extends Constraint {
 			if (o[i].getMin() > 0){
 				low[i+d] = o[i].getMin() ;
 			} else {
-				if (o[i].updateMin(0) ==  CPOutcome.Failure) {
+				if (o[i].updateMin(0) ==  Outcome.Failure) {
 					return false;
 				}
 			}
 			if (o[i].getMax() < x.length) {
 				up[i+d] = o[i].getMax();
 			} else {
-				if (o[i].updateMax(x.length) ==  CPOutcome.Failure) {
+				if (o[i].updateMax(x.length) ==  Outcome.Failure) {
 					return false;
 				}
 			}
@@ -406,8 +406,8 @@ public class GCCVarAC extends Constraint {
 				if (varMatch[k] != w) {
 					if (varComponent[k] != valComponent[w-minVal]) {
 						if (x[k].hasValue(w)) {
-							CPOutcome ok = x[k].removeValue(w);
-							assert(ok != CPOutcome.Failure);
+							Outcome ok = x[k].removeValue(w);
+							assert(ok != Outcome.Failure);
 						}
 					}
 				}
@@ -613,7 +613,7 @@ public class GCCVarAC extends Constraint {
 	            while (!decreaseMax(i+minValInit)) { //not feasible with this value
 	               up[i+minValInit-minVal]++;
 	            }
-	            if (o[i].updateMin(up[i+minValInit-minVal]) == CPOutcome.Failure) {
+	            if (o[i].updateMin(up[i+minValInit-minVal]) == Outcome.Failure) {
 	               return false;
 	            }
 	            up[i+minValInit-minVal] = M;
@@ -629,7 +629,7 @@ public class GCCVarAC extends Constraint {
 			   while (!increaseMin(i+minValInit)) { //not feasible with this value
 				   low[i+minValInit-minVal]--;
 			   }
-			   if (o[i].updateMax(low[i+minValInit-minVal]) == CPOutcome.Failure) {
+			   if (o[i].updateMax(low[i+minValInit-minVal]) == Outcome.Failure) {
 				   return false;
 			   } 
 			   low[i+minValInit-minVal] = m;

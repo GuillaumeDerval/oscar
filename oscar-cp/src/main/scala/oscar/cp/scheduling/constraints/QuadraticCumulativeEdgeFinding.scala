@@ -33,13 +33,13 @@ class QuadraticCumulativeEdgeFinding(cp: CPStore, allTasks : Array[CumulativeAct
 	val SLupd = new Array[Int](nTasks) 
 	val E     = new Array[Int](nTasks) 
 	
-	override def setup(l: CPPropagStrength) : CPOutcome = {
+	override def setup(l: CPPropagStrength) : Outcome = {
 	
 		priorityL2 = 0
 		
         val oc = propagate()
         
-        if (oc == CPOutcome.Suspend) {
+        if (oc == Outcome.Suspend) {
         	for (i <- 0 until lToRTasks.size) {
         		if (!lToRTasks(i).start.isBound) 
         			lToRTasks(i).start.callPropagateWhenBoundsChange(this)
@@ -57,7 +57,7 @@ class QuadraticCumulativeEdgeFinding(cp: CPStore, allTasks : Array[CumulativeAct
         return oc   
   	}
 	
-	override def propagate(): CPOutcome = {
+	override def propagate(): Outcome = {
 		
 		lToRTasks = allTasks.filter(_.resource.isBoundTo(r))
 		rToLTasks = rToLTasks.filter(_.resource.isBoundTo(r))
@@ -66,8 +66,8 @@ class QuadraticCumulativeEdgeFinding(cp: CPStore, allTasks : Array[CumulativeAct
 
 		// Adjusts starting time
 		if (nTasks > 0) {
-			if (edgeFind(lToRTasks) == CPOutcome.Failure) {
-				return CPOutcome.Failure
+			if (edgeFind(lToRTasks) == Outcome.Failure) {
+				return Outcome.Failure
 			}
 		}
 				
@@ -81,16 +81,16 @@ class QuadraticCumulativeEdgeFinding(cp: CPStore, allTasks : Array[CumulativeAct
 			
 		// Adjusts ending time
 		if (nTasks > 0) {
-			if (edgeFind(rToLTasks) == CPOutcome.Failure) {
-			  return CPOutcome.Failure
+			if (edgeFind(rToLTasks) == Outcome.Failure) {
+			  return Outcome.Failure
 			}
 				
 		}
 			
-		return CPOutcome.Suspend
+		return Outcome.Suspend
 	}
 	
-	private def edgeFind(tasks : Array[CumulativeActivity]): CPOutcome = {
+	private def edgeFind(tasks : Array[CumulativeActivity]): Outcome = {
 		
 		// Init
 		var i = 0
@@ -181,10 +181,10 @@ class QuadraticCumulativeEdgeFinding(cp: CPStore, allTasks : Array[CumulativeAct
 		}
 		
 		for (i <- 0 until nTasks)
-			if (tasks(i).adjustStart(LB(i)) == CPOutcome.Failure)
-				return CPOutcome.Failure
+			if (tasks(i).adjustStart(LB(i)) == Outcome.Failure)
+				return Outcome.Failure
 				
-		return CPOutcome.Suspend
+		return Outcome.Suspend
 	}
 
 }*/

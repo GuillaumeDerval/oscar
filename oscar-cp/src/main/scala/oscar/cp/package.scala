@@ -17,9 +17,9 @@
 
 package oscar
 
+import oscar.algo.search.Outcome
 import oscar.cp.constraints.InSet
 import oscar.cp.constraints.ModuloLHS
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPBoolVarImpl
 import oscar.cp.core.variables.CPIntVarViewMinus
@@ -263,7 +263,7 @@ package object cp extends Constraints with Branchings with ElementBuilder with C
     def isEq(y: CPIntVar): CPBoolVar = {
       val b = CPBoolVar()(x.store);
       val ok = x.store.post(new oscar.cp.constraints.EqReifVar(x, y, b));
-      assert(ok != CPOutcome.Failure);
+      assert(ok != Outcome.Failure);
       b
     }
 

@@ -16,9 +16,9 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
+import oscar.algo.search.Outcome
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
 
 /**
  * @author: Pierre Schaus pschaus@gmail.com
@@ -33,14 +33,14 @@ class TestVarSet extends FunSuite with ShouldMatchers  {
     var inpropag = false
     class SetCons(val X: CPSetVar) extends Constraint(X.store, "TestSet") {
       
-    	override def setup(l: CPPropagStrength): CPOutcome = { 
+    	override def setup(l: CPPropagStrength): Outcome = {
     	    X.callPropagateWhenDomainChanges(this)
-    		return CPOutcome.Suspend
+    		return Outcome.Suspend
     	}
 
-    	override def propagate(): CPOutcome = {
+    	override def propagate(): Outcome = {
     	  inpropag = true
-          return CPOutcome.Suspend
+          return Outcome.Suspend
         }
 
     }
@@ -90,27 +90,27 @@ class TestVarSet extends FunSuite with ShouldMatchers  {
     class SetCons(val X: CPSetVar) extends Constraint(X.store, "TestSet") {
 
       
-    	override def setup(l: CPPropagStrength): CPOutcome = { 
+    	override def setup(l: CPPropagStrength): Outcome = {
     	    X.callPropagateWhenDomainChanges(this)
     	    X.callValExcludedWhenExcludedValue(this)
     	    X.callValRequiredWhenRequiredValue(this)
-    		return CPOutcome.Suspend
+    		return Outcome.Suspend
     	}
 
-    	override def propagate(): CPOutcome = {
+    	override def propagate(): Outcome = {
     	  inpropag = true
-          return CPOutcome.Suspend
+          return Outcome.Suspend
         }
     	
-    	override def valExcluded(x: CPSetVar, v: Int): CPOutcome = {
+    	override def valExcluded(x: CPSetVar, v: Int): Outcome = {
     	  inexclude = true
-    	  return CPOutcome.Suspend
+    	  return Outcome.Suspend
     	}
     	
     	
-    	override def valRequired(x: CPSetVar, v: Int): CPOutcome = {
+    	override def valRequired(x: CPSetVar, v: Int): Outcome = {
     	  inrequire = true
-    	  return CPOutcome.Suspend
+    	  return Outcome.Suspend
     	}
     }
     
@@ -177,31 +177,31 @@ class TestVarSet extends FunSuite with ShouldMatchers  {
     }
     class SetCons(val X: CPSetVar) extends Constraint(X.store, "TestSet") {
       
-    	override def setup(l: CPPropagStrength): CPOutcome = { 
+    	override def setup(l: CPPropagStrength): Outcome = {
     	    X.callPropagateWhenDomainChanges(this)
     	    X.callValExcludedIdxWhenExcludedValue(this,100)
     	    X.callValRequiredIdxWhenRequiredValue(this,1000)
-    		return CPOutcome.Suspend
+    		return Outcome.Suspend
     	}
 
-    	override def propagate(): CPOutcome = {
+    	override def propagate(): Outcome = {
     	  inpropag = true
-          return CPOutcome.Suspend
+          return Outcome.Suspend
         }
     	
-    	override def valExcludedIdx(x: CPSetVar, i: Int, v: Int): CPOutcome = {
+    	override def valExcludedIdx(x: CPSetVar, i: Int, v: Int): Outcome = {
     	  inexclude = true
     	  idx = i
     	  value = v
-    	  return CPOutcome.Suspend
+    	  return Outcome.Suspend
     	}
     	
     	
-    	override def valRequiredIdx(x: CPSetVar, i: Int, v: Int): CPOutcome = {
+    	override def valRequiredIdx(x: CPSetVar, i: Int, v: Int): Outcome = {
     	  inrequire = true
      	  idx = i
     	  value = v   	  
-    	  return CPOutcome.Suspend
+    	  return Outcome.Suspend
     	}
     }
     
@@ -276,27 +276,27 @@ class TestVarSet extends FunSuite with ShouldMatchers  {
     class SetCons(val X: CPSetVar) extends Constraint(X.store, "TestSet") {
 
       
-    	override def setup(l: CPPropagStrength): CPOutcome = { 
+    	override def setup(l: CPPropagStrength): Outcome = {
     	    X.callPropagateWhenDomainChanges(this)
     	    X.callValExcludedWhenExcludedValue(this)
     	    X.callValRequiredWhenRequiredValue(this)
-    		return CPOutcome.Suspend
+    		return Outcome.Suspend
     	}
 
-    	override def propagate(): CPOutcome = {
+    	override def propagate(): Outcome = {
     	  inpropag = true
-          return CPOutcome.Suspend
+          return Outcome.Suspend
         }
     	
-    	override def valExcluded(x: CPSetVar, v: Int): CPOutcome = {
+    	override def valExcluded(x: CPSetVar, v: Int): Outcome = {
     	  inexclude = true
-    	  return CPOutcome.Suspend
+    	  return Outcome.Suspend
     	}
     	
     	
-    	override def valRequired(x: CPSetVar, v: Int): CPOutcome = {
+    	override def valRequired(x: CPSetVar, v: Int): Outcome = {
     	  inrequire = true
-    	  return CPOutcome.Suspend
+    	  return Outcome.Suspend
     	}
     }
     
@@ -362,30 +362,30 @@ class TestVarSet extends FunSuite with ShouldMatchers  {
     }
     class SetCons(val X: CPSetVar) extends Constraint(X.store, "TestSet") {
       
-    	override def setup(l: CPPropagStrength): CPOutcome = { 
+    	override def setup(l: CPPropagStrength): Outcome = {
     	    X.callPropagateWhenDomainChanges(this)
     	    X.callValExcludedIdxWhenExcludedValue(this,100)
     	    X.callValRequiredIdxWhenRequiredValue(this,1000)
-    		return CPOutcome.Suspend
+    		return Outcome.Suspend
     	}
 
-    	override def propagate(): CPOutcome = {
+    	override def propagate(): Outcome = {
     	  inpropag = true
-          return CPOutcome.Suspend
+          return Outcome.Suspend
         }
     	
-    	override def valExcludedIdx(x: CPSetVar, i: Int, v: Int): CPOutcome = {
+    	override def valExcludedIdx(x: CPSetVar, i: Int, v: Int): Outcome = {
     	  excluded = excluded + v
     	  inexclude = true
     	  idx = i
-    	  return CPOutcome.Suspend
+    	  return Outcome.Suspend
     	}
     	
     	
-    	override def valRequiredIdx(x: CPSetVar, i: Int, v: Int): CPOutcome = {
+    	override def valRequiredIdx(x: CPSetVar, i: Int, v: Int): Outcome = {
     	  inrequire = true
      	  idx = i  	  
-    	  return CPOutcome.Suspend
+    	  return Outcome.Suspend
     	}
     }
     
@@ -395,7 +395,7 @@ class TestVarSet extends FunSuite with ShouldMatchers  {
     reset()
     cp.add(x ++ 0)
     cp.add(new Constraint(cp, "TestSet") {
-      override def setup(l: CPPropagStrength): CPOutcome = x.excludesAll()  // -2,-1,1,2,3,4 should be notified as removed
+      override def setup(l: CPPropagStrength): Outcome = x.excludesAll()  // -2,-1,1,2,3,4 should be notified as removed
     })
     
     x.possibleSet should be(Set(0))
@@ -427,31 +427,31 @@ class TestVarSet extends FunSuite with ShouldMatchers  {
     }
     class SetCons(val X: CPSetVar) extends Constraint(X.store, "TestSet") {
       
-    	override def setup(l: CPPropagStrength): CPOutcome = { 
+    	override def setup(l: CPPropagStrength): Outcome = {
     	    X.callPropagateWhenDomainChanges(this)
     	    X.callValExcludedIdxWhenExcludedValue(this,100)
     	    X.callValRequiredIdxWhenRequiredValue(this,1000)
-    		return CPOutcome.Suspend
+    		return Outcome.Suspend
     	}
 
-    	override def propagate(): CPOutcome = {
+    	override def propagate(): Outcome = {
     	  inpropag = true
-          return CPOutcome.Suspend
+          return Outcome.Suspend
         }
     	
-    	override def valExcludedIdx(x: CPSetVar, i: Int, v: Int): CPOutcome = {
+    	override def valExcludedIdx(x: CPSetVar, i: Int, v: Int): Outcome = {
     	  
     	  inexclude = true
     	  idx = i
-    	  return CPOutcome.Suspend
+    	  return Outcome.Suspend
     	}
     	
     	
-    	override def valRequiredIdx(x: CPSetVar, i: Int, v: Int): CPOutcome = {
+    	override def valRequiredIdx(x: CPSetVar, i: Int, v: Int): Outcome = {
     	  included = included + v
     	  inrequire = true
      	  idx = i  	  
-    	  return CPOutcome.Suspend
+    	  return Outcome.Suspend
     	}
     }
     
@@ -461,7 +461,7 @@ class TestVarSet extends FunSuite with ShouldMatchers  {
     reset()
     cp.add(x -- 0)
     cp.add(new Constraint(cp, "TestSet") {
-      override def setup(l: CPPropagStrength): CPOutcome = x.requiresAll()  // -2,-1,1,2,3,4 should be notified as removed
+      override def setup(l: CPPropagStrength): Outcome = x.requiresAll()  // -2,-1,1,2,3,4 should be notified as removed
     })
     x.possibleSet should be(Set(-2,-1,1,2,3,4))
     x.requiredSet should be(Set(-2,-1,1,2,3,4))

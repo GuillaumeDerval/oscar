@@ -2,12 +2,14 @@ package oscar.cp.scheduling.constraints
 
 import oscar.cp.core._
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.algo.SortUtils._
-import scala.math.{min, max}
+
+import scala.math.{max, min}
 import scala.annotation.tailrec
 import oscar.cp.scheduling.util.OpenSparseSet
 import oscar.algo.array.ArrayHeapInt
+import oscar.algo.search.Outcome
 
 /**
  * @author Steven Gay steven.gay@uclouvain.be
@@ -74,7 +76,7 @@ extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryDetectablePr
   private [this] val heapByEMin = new ArrayHeapInt(nTasks)
   
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     updateCache()
         
     // Step 1: Initialization

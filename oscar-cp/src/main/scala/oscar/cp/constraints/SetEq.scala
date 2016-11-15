@@ -17,8 +17,9 @@
 
 package oscar.cp.constraints
 
+import oscar.algo.search.Outcome
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPSetVar
 import oscar.cp.core.delta.{DeltaSetVar, PropagatorSetVar}
 
@@ -27,9 +28,9 @@ import oscar.cp.core.delta.{DeltaSetVar, PropagatorSetVar}
  * @author Leonard Debroux leonard.debroux@gmail.com
  */
 class SetEq(val a: CPSetVar, val b: CPSetVar) extends Constraint(a.store, "SetEq") {
-	override def setup(l: CPPropagStrength): CPOutcome = {
+	override def setup(l: CPPropagStrength): Outcome = {
 	  
-	  def filterB(d: DeltaSetVar): CPOutcome = {
+	  def filterB(d: DeltaSetVar): Outcome = {
 	    for (v <- d.deltaRequired) {
 	      if(b.requires(v) == Failure) return Failure
 	    }
@@ -38,7 +39,7 @@ class SetEq(val a: CPSetVar, val b: CPSetVar) extends Constraint(a.store, "SetEq
 	    }
 	    Suspend
 	  }
-	  def filterA(d: DeltaSetVar): CPOutcome = {
+	  def filterA(d: DeltaSetVar): Outcome = {
 	    for (v <- d.deltaRequired) {
 	      if(a.requires(v) == Failure) return Failure
 	    }

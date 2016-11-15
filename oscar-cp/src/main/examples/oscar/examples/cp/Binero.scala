@@ -5,7 +5,6 @@ import oscar.algo.search._
 import oscar.algo.reversible._
 import scala.io.Source
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
 
 /**
  * Binero is a grid game, similar to Sudoku.
@@ -96,30 +95,30 @@ class TabNotEqual(val tab1: Array[CPIntVar], val tab2: Array[CPIntVar], val len:
   val valuesBin = Array(new ReversibleInt(s, 0), new ReversibleInt(s, 0))
   val numBound = Array(new ReversibleInt(s, 0), new ReversibleInt(s, 0))
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     if (tab1.length != len || tab2.length != len)
-      CPOutcome.Success
+      Outcome.Success
 
     for ((v, i) <- (tab1 ++ tab2).zipWithIndex) {
       if (v.isBound) {
         val ok = valBindIdx(v, i)
-        if (ok != CPOutcome.Suspend) return ok
+        if (ok != Outcome.Suspend) return ok
       } else
         v.callValBindIdxWhenBind(this, i)
     }
-    CPOutcome.Suspend
+    Outcome.Suspend
   }
 
-  override def valBindIdx(x: CPIntVar, i: Int): CPOutcome = {
+  override def valBindIdx(x: CPIntVar, i: Int): Outcome = {
     valuesBin(i / len).value += x.min * intPow(2, i % len)
     numBound(i / len).incr()
     if (numBound(0).value == len && numBound(1).value == len) {
       if (valuesBin(0).value == valuesBin(1).value)
-        CPOutcome.Failure
+        Outcome.Failure
       else
-        CPOutcome.Success
+        Outcome.Success
     } else
-      CPOutcome.Suspend
+      Outcome.Suspend
   }
 
   /**

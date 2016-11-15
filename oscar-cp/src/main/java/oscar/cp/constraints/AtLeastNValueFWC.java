@@ -16,7 +16,7 @@ package oscar.cp.constraints;
 
 import oscar.algo.reversible.ReversibleBoolean;
 import oscar.algo.reversible.ReversibleInt;
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -47,7 +47,7 @@ public class AtLeastNValueFWC extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Outcome setup(CPPropagStrength l) {
 	    
 	     findValueRange();
 
@@ -74,13 +74,13 @@ public class AtLeastNValueFWC extends Constraint {
 	     }
 
 	     //update lower bound on the number of values
-	     if (nValueVar.updateMin(Math.max(nbValueUsed.getValue(), x.length>0 ? 1:0)) == CPOutcome.Failure) {
-	       return CPOutcome.Failure;
+	     if (nValueVar.updateMin(Math.max(nbValueUsed.getValue(), x.length>0 ? 1:0)) == Outcome.Failure) {
+	       return Outcome.Failure;
 	     }
 
 	     //update upper bound on the number of values
-	     if (nValueVar.updateMax(nbValueUsed.getValue()+x.length-nbBound.getValue()) == CPOutcome.Failure) {
-	       return CPOutcome.Failure;
+	     if (nValueVar.updateMax(nbValueUsed.getValue()+x.length-nbBound.getValue()) == Outcome.Failure) {
+	       return Outcome.Failure;
 	     }
 
 	     for (int k=0; k < x.length; k++) {
@@ -97,11 +97,11 @@ public class AtLeastNValueFWC extends Constraint {
 	       return prune();
 	     }
 
-	     return CPOutcome.Suspend;
+	     return Outcome.Suspend;
 	}
 	
 	@Override
-	public CPOutcome valBindIdx(CPIntVar var, int idx) {
+	public Outcome valBindIdx(CPIntVar var, int idx) {
 		
 		int val = var.min();
 		nbBound.incr();
@@ -112,31 +112,31 @@ public class AtLeastNValueFWC extends Constraint {
 
 		int ubNbValueUsed = nbValueUsed.getValue() + (x.length-nbBound.getValue());
 
-		if(nValueVar.updateMin(nbValueUsed.getValue()) == CPOutcome.Failure){
-			return CPOutcome.Failure;
+		if(nValueVar.updateMin(nbValueUsed.getValue()) == Outcome.Failure){
+			return Outcome.Failure;
 		}
-		if(nValueVar.updateMax(ubNbValueUsed) == CPOutcome.Failure){
-			return CPOutcome.Failure;
+		if(nValueVar.updateMax(ubNbValueUsed) == Outcome.Failure){
+			return Outcome.Failure;
 		}
 
 		if(ubNbValueUsed == nValueVar.getMin()){
 			return prune();
 		}
 
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 	
 	@Override
-	public CPOutcome propagate() {
+	public Outcome propagate() {
 		//_nValueVar has changed
 		int ubNbValueUsed = nbValueUsed.getValue() + (x.length - nbBound.getValue());
 		if (ubNbValueUsed == nValueVar.getMin()) {
 			return prune();
 		}
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 	
-	public CPOutcome prune(){
+	public Outcome prune(){
 		  //remove used values from unbound variables
 		  int [] values = new int[x.length];
 		  int nb = 0;
@@ -149,13 +149,13 @@ public class AtLeastNValueFWC extends Constraint {
 		  for (int k = 0; k < x.length; k++) {
 		    if (!x[k].isBound()) {
 		      for (int i = 0; i < nb; i++) {
-		        if (x[k].removeValue(values[i]) == CPOutcome.Failure) {
-		          return CPOutcome.Failure;
+		        if (x[k].removeValue(values[i]) == Outcome.Failure) {
+		          return Outcome.Failure;
 		        }
 		      }
 		    }
 		  }
-		  return CPOutcome.Suspend;
+		  return Outcome.Suspend;
 	}
 	
 	private void findValueRange(){

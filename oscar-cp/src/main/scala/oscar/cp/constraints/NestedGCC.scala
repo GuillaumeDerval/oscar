@@ -15,6 +15,7 @@
 
 package oscar.cp.constraints
 
+import oscar.algo.search.Outcome
 import oscar.cp.core._
 import oscar.cp.core.variables.CPIntVar
 
@@ -31,10 +32,10 @@ class NestedGCC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int, I
                upperLists: Array[Array[(Int, Int)]])
   extends Constraint(X(0).store) {
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     val ok = s.post(new NestedGCCFWC(X, minVal, lowerLists, upperLists))
-    if (ok == CPOutcome.Failure) CPOutcome.Failure
-    else CPOutcome.Success
+    if (ok == Outcome.Failure) Outcome.Failure
+    else Outcome.Success
   }
 }
 

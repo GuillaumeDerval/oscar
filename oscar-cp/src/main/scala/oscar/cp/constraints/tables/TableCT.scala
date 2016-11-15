@@ -17,10 +17,11 @@ package oscar.cp.constraints.tables
 
 
 import oscar.algo.reversible.{ReversibleInt, ReversibleSparseBitSet}
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset}
-import oscar.cp.core.{CPOutcome, CPPropagStrength, CPStore, Constraint}
+import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -60,7 +61,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
   private[this] val unBoundVars = Array.tabulate(arity)(i => i)
   private[this] val unBoundVarsSize = new ReversibleInt(s, arity)
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
 
     /* Failure if table is empty initially or after initial filtering */
     if (nbTuples == 0)
@@ -104,7 +105,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
    * @param delta the set of values removed since the last call.
    * @return the outcome i.e. Failure or Success.
    */
-  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): CPOutcome = {
+  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): Outcome = {
 
     val intVar = x(varIndex)
     val varSize = intVar.size
@@ -162,7 +163,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
    * Unsupported values are removed.
    * @return the outcome i.e. Failure or Success.
    */
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
 
     var nChanged = 0
     var changedVarIdx = 0
@@ -256,7 +257,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
   /**
    * Compute the mask for each variable value pair (x,a).
    */
-  @inline private def computeSupportsAndInitialFiltering(valids: ArrayBuffer[Int]): CPOutcome = {
+  @inline private def computeSupportsAndInitialFiltering(valids: ArrayBuffer[Int]): Outcome = {
 
     val varValueSupports = Array.tabulate(x.length)(i => Array.tabulate(spans(i))(v => new ArrayBuffer[Int]()))
 

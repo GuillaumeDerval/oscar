@@ -1,11 +1,12 @@
 package oscar.cp.scheduling.constraints
 
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.SortUtils.mergeSort
+import oscar.algo.search.Outcome
+
 import scala.annotation.tailrec
-import scala.math.{min, max}
-import oscar.cp.core.CPOutcome
+import scala.math.{max, min}
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Inconsistency
 

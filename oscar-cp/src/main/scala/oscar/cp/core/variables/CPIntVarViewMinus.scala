@@ -25,9 +25,10 @@ import oscar.cp.core.delta.DeltaIntVar
  * @author Pierre Schaus pschaus@gmail.com
  */
 final class CPIntVarViewMinus(v: CPIntVar) extends CPIntVar {
-    
+
   final override val store: CPStore = v.store
-  
+	final override val context = store
+
   final override val name: String = s"-${v.name}"
     
   def transform(v: Int) = -this.v.transform(v)    

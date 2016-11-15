@@ -1,16 +1,16 @@
-package oscar.cp.searches
+package oscar.algo.branchings
 
+import oscar.algo.search.Outcome._
 import oscar.algo.search._
-import oscar.cp.core.CPOutcome._
-import oscar.cp._
+import oscar.algo.vars.IntVarLike
 
 /*
  * Forces singleton-consistency on bounds of given variables.
  * Use this before a real branching, to extend fixed point.
  */
 
-class SingletonBounds(val vars: Array[CPIntVar])(implicit val store: CPStore)
-extends Branching with BranchingUtils {
+class SingletonBounds(val vars: Array[IntVarLike]) extends Branching with BranchingUtils {
+  val context = vars(0).context
   val nVars = vars.length
   
   def alternatives(): Seq[Alternative] = {
@@ -26,31 +26,31 @@ extends Branching with BranchingUtils {
       var removeMin = true
       while (removeMin && minBound < xMax) {
         val xTest = minBound
-        store.pushState()
-        if (store.post(x.eq(xTest)) == Failure) {
+        context.pushState()
+        if (context.assign(x, xTest) == Failure) {
           minBound += 1
           hasRemoved = true
         }
         else removeMin = false
-        store.pop()        
+        context.pop()
       }
       
-      if (store.post(x >= minBound) == Failure) return branchOne({})
+      if (context.largerEq(x, minBound) == Failure) return branchOne({})
       
       
       var removeMax = true
       while (removeMax && maxBound > xMin) {
         val xTest = maxBound
-        store.pushState()
-        if (store.post(x.eq(xTest)) == Failure) {
+        context.pushState()
+        if (context.assign(x, xTest) == Failure) {
           maxBound -= 1
           hasRemoved = true
         }
         else removeMax = false
-        store.pop()        
+        context.pop()
       }
       
-      if (store.post(x <= maxBound) == Failure) return branchOne({})
+      if (context.smallerEq(x, maxBound) == Failure) return branchOne({})
     }
     
     if (hasRemoved) { 
@@ -62,5 +62,5 @@ extends Branching with BranchingUtils {
 }
 
 object SingletonBounds {
-  def apply(vars: Array[CPIntVar])(implicit store: CPStore) = new SingletonBounds(vars)
+  def apply(vars: Array[IntVarLike])(implicit store: IntVarLike) = new SingletonBounds(vars)
 }

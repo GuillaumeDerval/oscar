@@ -15,8 +15,8 @@
 
 package oscar.cp.core.domains
 
-import oscar.cp.core.CPOutcome
+import oscar.algo.search.Outcome
 
 abstract class IntDomain extends IntervalDomain {
-  def removeValue(value: Int): CPOutcome 
+  def removeValue(value: Int): Outcome
 }

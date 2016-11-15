@@ -1,12 +1,13 @@
 package oscar.cp.core.variables
 
+import oscar.algo.search.Outcome
 import oscar.cp.testUtils._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
+
 import scala.util.Random
 import oscar.cp.core.CPStore
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
 
 class CPIntVarAdaptableSuite extends TestSuite {
 
@@ -499,11 +500,11 @@ class CPIntVarAdaptableSuite extends TestSuite {
     val removedValues = scala.collection.mutable.Set[Int]()
     
     class TestConstraint extends Constraint(context, "valRemoveTester") {
-      override def setup(l: CPPropagStrength): CPOutcome = {
+      override def setup(l: CPPropagStrength): Outcome = {
         variable.callValRemoveWhenValueIsRemoved(this)
         Suspend
       }
-      override def valRemove(x: CPIntVar, value: Int): CPOutcome = {
+      override def valRemove(x: CPIntVar, value: Int): Outcome = {
         removedValues.add(value)
         Suspend
       }
@@ -531,11 +532,11 @@ class CPIntVarAdaptableSuite extends TestSuite {
     var n = 0
     
     class TestConstraint extends Constraint(context, "valRemoveTester") {
-      override def setup(l: CPPropagStrength): CPOutcome = {
+      override def setup(l: CPPropagStrength): Outcome = {
         variable.callPropagateWhenDomainChanges(this)
         Suspend
       }
-      override def propagate(): CPOutcome = {
+      override def propagate(): Outcome = {
         n += 1
         Suspend
       }
@@ -563,11 +564,11 @@ class CPIntVarAdaptableSuite extends TestSuite {
     var n = 0
     
     class TestConstraint extends Constraint(context, "valRemoveTester") {
-      override def setup(l: CPPropagStrength): CPOutcome = {
+      override def setup(l: CPPropagStrength): Outcome = {
         variable.callPropagateWhenBind(this)
         Suspend
       }
-      override def propagate(): CPOutcome = {
+      override def propagate(): Outcome = {
         n += 1
         Suspend
       }
@@ -595,10 +596,10 @@ class CPIntVarAdaptableSuite extends TestSuite {
     var n = 0
     
     class TestConstraint extends Constraint(context, "valRemoveTester") {
-      override def setup(l: CPPropagStrength): CPOutcome = {
+      override def setup(l: CPPropagStrength): Outcome = {
         variable.callPropagateWhenBoundsChange(this); Suspend
       }
-      override def propagate(): CPOutcome = {
+      override def propagate(): Outcome = {
         n += 1; Suspend
       }
     }

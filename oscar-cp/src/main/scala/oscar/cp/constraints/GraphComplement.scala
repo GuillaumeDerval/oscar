@@ -16,8 +16,9 @@
 
 package oscar.cp.constraints
 
+import oscar.algo.search.Outcome
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPGraphVar
 
 /**
@@ -28,14 +29,14 @@ import oscar.cp.core.variables.CPGraphVar
 
 class GraphComplement(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constraint(g1.s, "Complement") {
   
-	override def setup(l: CPPropagStrength): CPOutcome = {
+	override def setup(l: CPPropagStrength): Outcome = {
 	  // add filter when domain changes
 	  g1.callPropagateWhenDomainChanges(this)
 	  g2.callPropagateWhenDomainChanges(this)
 	  propagate()
 	}
 	
-	override def propagate(): CPOutcome = {
+	override def propagate(): Outcome = {
 	  // We can do all the propagation symmetrically pruning on the two graphs
 	  
 	  val g1PossNodes : List[Int] = g1.possibleNodes

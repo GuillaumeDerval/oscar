@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -41,12 +41,12 @@ public class Abs extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
-		if (y.updateMin(0) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
+	public Outcome setup(CPPropagStrength l) {
+		if (y.updateMin(0) == Outcome.Failure) {
+			return Outcome.Failure;
 		}
-		if (propagate() == CPOutcome.Failure) {
-			return CPOutcome.Failure;
+		if (propagate() == Outcome.Failure) {
+			return Outcome.Failure;
 		}
 		if (!x.isBound()) {
 			x.callPropagateWhenBoundsChange(this);
@@ -57,80 +57,80 @@ public class Abs extends Constraint {
 			y.callValBindWhenBind(this);
 		}
 		//we can do more propagation with val remove
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 	
 	
 
 	
 	@Override
-	public CPOutcome propagate() {
+	public Outcome propagate() {
 		// y = |x|	
 		
 		if (x.getMin() >= 0) {
-			if (y.updateMin(x.getMin()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (y.updateMin(x.getMin()) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			if (y.updateMax(x.getMax()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (y.updateMax(x.getMax()) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			if (x.updateMin(y.getMin()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (x.updateMin(y.getMin()) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			if (x.updateMax(y.getMax()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (x.updateMax(y.getMax()) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
 		}
 		else if (x.getMax() <= 0) {
-			if (y.updateMin(-x.getMax()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (y.updateMin(-x.getMax()) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			if (y.updateMax(-x.getMin()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (y.updateMax(-x.getMin()) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			if (x.updateMin(-y.getMax()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (x.updateMin(-y.getMax()) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			if (x.updateMax(-y.getMin()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (x.updateMax(-y.getMin()) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
 		} else {
 			int maxabsy = Math.max(Math.abs(x.getMax()), Math.abs(x.getMin()));			
-			if (y.updateMax(maxabsy) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (y.updateMax(maxabsy) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			if (x.updateMax(y.getMax()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (x.updateMax(y.getMax()) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			if (x.updateMin(-y.getMax()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (x.updateMin(-y.getMax()) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
 			
 		}
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 	
 	@Override
-	public CPOutcome valBind(CPIntVar var) {
-		//return CPOutcome.Suspend;
+	public Outcome valBind(CPIntVar var) {
+		//return Outcome.Suspend;
 		
 		if (x.isBound()) {
 			
-			if (y.assign(Math.abs(x.min())) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (y.assign(Math.abs(x.min())) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 			
 		} else { // y is bound
 			// y = |x|	
 			if(!x.hasValue(-y.min())) {
-				if (x.assign(y.min()) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (x.assign(y.min()) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 			}
 			else if(!x.hasValue(y.min())) {
-				if (x.assign(-y.min()) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (x.assign(-y.min()) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 			}
 
@@ -139,13 +139,13 @@ public class Abs extends Constraint {
 				// remove everything except y and -y from x
 				for (int v = x.getMin(); v <= x.getMax(); v++) {
 					if(v != y.min() && v != -y.min()) {
-						if (x.removeValue(v) == CPOutcome.Failure) {
-							return CPOutcome.Failure;
+						if (x.removeValue(v) == Outcome.Failure) {
+							return Outcome.Failure;
 						}
 					}
 				}
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 			
 		}
 	}

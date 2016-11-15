@@ -16,11 +16,10 @@ package oscar.cp.constraints;
 
 import oscar.algo.reversible.ReversibleInt;
 import oscar.algo.reversible.SparseSet;
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.variables.CPBoolVar;
-import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.variables.CPIntVar;
 
 
@@ -49,7 +48,7 @@ public class MemberReif extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Outcome setup(CPPropagStrength l) {
 		if (b.isBound()) {
             return valBind(b);
         }
@@ -75,12 +74,12 @@ public class MemberReif extends Constraint {
         b.callValBindWhenBind(this);
         x.callValRemoveWhenValueIsRemoved(this);
 
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 
 	}
 
     @Override
-    public CPOutcome valRemove(CPIntVar var, int val) {
+    public Outcome valRemove(CPIntVar var, int val) {
         xsize.decr();
         if (set.hasValue(val)) {
             inter.decr();
@@ -91,23 +90,23 @@ public class MemberReif extends Constraint {
         if (inter.getValue() == xsize.getValue()) { // D(x) is included in set
            return fullIntersection();
         }
-        return  CPOutcome.Suspend;
+        return  Outcome.Suspend;
     }
 
     @Override
-    public CPOutcome valBind(CPIntVar var) {
+    public Outcome valBind(CPIntVar var) {
         assert(var.isBound());
 		if (var == x) {
              if (set.hasValue(x.min())) {
-                 if (b.assign(1) == CPOutcome.Failure) {
-                     return CPOutcome.Failure;
+                 if (b.assign(1) == Outcome.Failure) {
+                     return Outcome.Failure;
                  }
              } else {
-                 if (b.assign(0) == CPOutcome.Failure) {
-                     return CPOutcome.Failure;
+                 if (b.assign(0) == Outcome.Failure) {
+                     return Outcome.Failure;
                  }
              }
-             return CPOutcome.Success;
+             return Outcome.Success;
         } else {
             assert(var == b);
             if (b.min() == 1) { // x must be a member of the set
@@ -118,18 +117,18 @@ public class MemberReif extends Constraint {
         }
 	}
 
-    private CPOutcome emptyIntersection() {
-		if (b.assign(0) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
+    private Outcome emptyIntersection() {
+		if (b.assign(0) == Outcome.Failure) {
+			return Outcome.Failure;
 		}
-		return CPOutcome.Success;
+		return Outcome.Success;
 	}
 
-    private CPOutcome fullIntersection() {
-		if (b.assign(1) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
+    private Outcome fullIntersection() {
+		if (b.assign(1) == Outcome.Failure) {
+			return Outcome.Failure;
 		}
-		return CPOutcome.Success;
+		return Outcome.Success;
 	}
 
     /**
@@ -137,18 +136,18 @@ public class MemberReif extends Constraint {
      *        memberValue = false then remove all values from x that are not member of set
      * @return Failure if the domain of x becomes empty, Success otherwise
      */
-    private CPOutcome removeValues(boolean memberValue) {
+    private Outcome removeValues(boolean memberValue) {
         assert(b.isBound());
         for (int val = x.min(); val <= x.max(); val++) {
         	if (x.hasValue(val)) {
         		if ((memberValue && set.hasValue(val)) || (!memberValue && !set.hasValue(val))) {
-        			if (x.removeValue(val) == CPOutcome.Failure) {
-        				return CPOutcome.Failure;
+        			if (x.removeValue(val) == Outcome.Failure) {
+        				return Outcome.Failure;
         			}
         		}
         	}
         }
-		return CPOutcome.Success;
+		return Outcome.Success;
 	}
 }
 

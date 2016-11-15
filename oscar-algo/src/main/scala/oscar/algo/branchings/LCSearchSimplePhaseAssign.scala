@@ -15,11 +15,11 @@
  * ****************************************************************************
  */
 
-package oscar.cp.searches
+package oscar.algo.branchings
 
-import oscar.cp._
 import oscar.algo.reversible._
-import oscar.algo.search.Branching
+import oscar.algo.search.{Branching, _}
+import oscar.algo.vars.IntVarLike
 
 
 /**
@@ -33,12 +33,12 @@ import oscar.algo.search.Branching
  * @author Renaud Hartert
  */
 
-class LCSearchSimplePhaseAssign(variables: Array[CPIntVar], varHeuris: Int => Int, valHeuris: Int => Int) extends Branching {
+class LCSearchSimplePhaseAssign(variables: Array[IntVarLike], varHeuris: Int => Int, valHeuris: Int => Int) extends Branching {
 
   require(variables.length > 0, "no variables")
 
   private[this] val nVariables = variables.length
-  private[this] val store = variables(0).store
+  private[this] val context = variables(0).context
 
   // Order in which variables have to be assigned
   private[this] val order = Array.tabulate(nVariables) { i => i }
@@ -47,7 +47,7 @@ class LCSearchSimplePhaseAssign(variables: Array[CPIntVar], varHeuris: Int => In
   private[this] val phase = Array.fill(nVariables)(0)
 
   // Current depth of the search tree
-  private[this] val depth = new ReversibleInt(store, 0)
+  private[this] val depth = new ReversibleInt(context, 0)
 
   private[this] var maxDepth: Int = -1
 
@@ -103,14 +103,14 @@ class LCSearchSimplePhaseAssign(variables: Array[CPIntVar], varHeuris: Int => In
         }
 
         */
-        var s = Seq[() => Unit](() => { store.assign(x, p); if (!store.isFailed) phase(dd) = p })
+        var s = Seq[() => Unit](() => { context.assign(x, p); if (!context.isFailed) phase(dd) = p })
 
         if (minX < p) {
-          s = s ++ branchOne(store.post(x < p))
+          s = s ++ branchOne(context.smaller(x, p))
         }
 
         if (p < maxX) {
-          s = s ++ branchOne(store.post(x > p))
+          s = s ++ branchOne(context.larger(x, p))
         }        
         
         s
@@ -119,8 +119,8 @@ class LCSearchSimplePhaseAssign(variables: Array[CPIntVar], varHeuris: Int => In
       else {
         // always do assign/remove
         val v = valHeuris(dd)
-        Seq(() => { store.assign(x, v); if (!store.isFailed) phase(dd) = v },
-          () => { store.remove(x, v) }
+        Seq(() => { context.assign(x, v); if (!context.isFailed) phase(dd) = v },
+          () => { context.remove(x, v) }
         )
       }
     }

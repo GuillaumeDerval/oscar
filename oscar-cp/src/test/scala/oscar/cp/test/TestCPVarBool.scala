@@ -16,8 +16,8 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
+import oscar.algo.search.Outcome
 import oscar.cp._
-import oscar.cp.core.CPOutcome
 
 class TestCPBoolVar extends FunSuite with ShouldMatchers {
 	
@@ -40,7 +40,7 @@ class TestCPBoolVar extends FunSuite with ShouldMatchers {
 		x.isEmpty should be(false)
 		x.size should be(1)		
 
-		x.removeValue(1) should be(CPOutcome.Failure)
+		x.removeValue(1) should be(Outcome.Failure)
 		
 		x.isEmpty should be(true)
 		x.size should be(0)				
@@ -62,7 +62,7 @@ class TestCPBoolVar extends FunSuite with ShouldMatchers {
 		x.isEmpty should be(false)
 		x.size should be(1)
 		
-		x.removeValue(0) should be(CPOutcome.Failure)
+		x.removeValue(0) should be(Outcome.Failure)
 		
 		x.isEmpty should be(true)
 		x.size should be(0)				
@@ -80,7 +80,7 @@ class TestCPBoolVar extends FunSuite with ShouldMatchers {
 		x.isEmpty should be(false)
 		x.size should be(1)
 		
-		x.assign(1) should be(CPOutcome.Failure)
+		x.assign(1) should be(Outcome.Failure)
 		
 	}
 	
@@ -95,7 +95,7 @@ class TestCPBoolVar extends FunSuite with ShouldMatchers {
 		x.isEmpty should be(false)
 		x.size should be(1)
 		
-		x.assign(0) should be(CPOutcome.Suspend)
+		x.assign(0) should be(Outcome.Suspend)
 		
 	}	
 	*/

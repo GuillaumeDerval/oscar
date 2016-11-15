@@ -3,14 +3,14 @@ package oscar.cp.nogoods.searches
 import oscar.cp.nogoods.decisions.Decision
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.nogoods.decisions.Decision
-import oscar.algo.search.Branching
+import oscar.algo.search.{Branching, Outcome}
 import oscar.algo.array.ArrayStack
 import oscar.algo.reversible.ReversibleInt
+
 import scala.collection.mutable.PriorityQueue
 import scala.annotation.tailrec
 import oscar.cp.core.variables.CPBoolVar
-import oscar.cp.core.CPOutcome.Failure
-import oscar.cp.core.CPOutcome
+import oscar.algo.search.Outcome.Failure
 
 /** @author Renaud Hartert ren.hartert@gmail.com */
 class FailureDirectedSearch(variables: Array[CPIntVar], varHeuristic: Int => Int, valHeuristic: Int => Int) extends NogoodBranching {
@@ -124,7 +124,7 @@ class FailureDirectedSearch(variables: Array[CPIntVar], varHeuristic: Int => Int
     def rating: Double
     def rating_=(rate: Double): Unit
     def isAssigned: Boolean
-    def applyDecision(): CPOutcome
+    def applyDecision(): Outcome
     
     override def apply(): Unit = {
       val space = spaceSize
@@ -168,7 +168,7 @@ class FailureDirectedSearch(variables: Array[CPIntVar], varHeuristic: Int => Int
     override def isTrue: Boolean = variable.max <= value
     override def opposite: Decision = _opposite
     override def toLiteral: CPBoolVar = variable.isLeEq(value)
-    override def applyDecision(): CPOutcome = variable.store.post(variable <= value)
+    override def applyDecision(): Outcome = variable.store.post(variable <= value)
   }
 
   class FDSGreater(val variable: CPIntVar, val value: Int, _opposite: FDSDecision) extends FDSDecision {
@@ -179,7 +179,7 @@ class FailureDirectedSearch(variables: Array[CPIntVar], varHeuristic: Int => Int
     override def isTrue: Boolean = variable.min > value
     override def opposite: Decision = _opposite
     override def toLiteral: CPBoolVar = variable.isGrEq(value + 1)
-    override def applyDecision(): CPOutcome = variable.store.post(variable > value)
+    override def applyDecision(): Outcome = variable.store.post(variable > value)
   }
 
   object FDSChoiceOrdering extends Ordering[FDSChoice] {

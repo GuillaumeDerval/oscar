@@ -15,10 +15,10 @@
 package oscar.cp.constraints
 
 import oscar.algo.reversible.ReversibleInt
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.Constraint
 
 /**
@@ -41,7 +41,7 @@ final class Circuit(succs: Array[CPIntVar], symmetric: Boolean) extends Constrai
   private[this] val origs = Array.tabulate(nSuccs)(i => new ReversibleInt(s, i))
   private[this] val lengthToDest = Array.fill(nSuccs)(new ReversibleInt(s,0))
   
-  final override def setup(l: CPPropagStrength): CPOutcome = {    
+  final override def setup(l: CPPropagStrength): Outcome = {
     if (s.post(new AllDifferent(succs:_*), l) == Failure) Failure // FIXME post two allDifferent in case of symmetry
     else {
       var i = nSuccs
@@ -62,7 +62,7 @@ final class Circuit(succs: Array[CPIntVar], symmetric: Boolean) extends Constrai
     }
   }
   
-  final override def valBindIdx(x: CPIntVar, i: Int): CPOutcome = {
+  final override def valBindIdx(x: CPIntVar, i: Int): Outcome = {
     val j = x.min
     // o *-> i -> j *-> d
     val d = dests(j).value

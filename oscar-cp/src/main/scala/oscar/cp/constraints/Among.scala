@@ -16,8 +16,8 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome
 import oscar.algo.reversible.ReversibleSparseSet
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 
 /**
@@ -27,7 +27,7 @@ import oscar.cp.core.variables.CPIntVar
  */
 class Among(val N: CPIntVar, val X: Array[CPIntVar], val S: Set[Int]) extends Constraint(N.store, "Among") {
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     // for each xi, maintain the size of the intersection between D(xi) and v
     val interSize = Array.tabulate(X.size)(i => new ReversibleInt(s, X(i).count(v => S.contains(v))))
     val nonEmptyInterIdx = new ReversibleSparseSet(s, 0, X.size - 1)
@@ -41,42 +41,42 @@ class Among(val N: CPIntVar, val X: Array[CPIntVar], val S: Set[Int]) extends Co
     val lb = new ReversibleInt(s, (0 until X.size).count(i => interSize(i).value == X(i).size))
     val ub = new ReversibleInt(s, (0 until X.size).count(i => interSize(i).value > 0))
     
-    if (N.updateMin(lb.value) == CPOutcome.Failure) return CPOutcome.Failure
-    if (N.updateMax(ub.value) == CPOutcome.Failure) return CPOutcome.Failure
+    if (N.updateMin(lb.value) == Outcome.Failure) return Outcome.Failure
+    if (N.updateMax(ub.value) == Outcome.Failure) return Outcome.Failure
  
 
-    def filterMaxCount(): CPOutcome = {
+    def filterMaxCount(): Outcome = {
       // if lb = max(N), it means no more value can be from the set. 
       // every variables not yet surely in the set must be removed the values from the set
       for (i <- nonSubsetIdx) {
     	  for (v <- S) {
-    	    if (X(i).removeValue(v) == CPOutcome.Failure) return CPOutcome.Failure
+    	    if (X(i).removeValue(v) == Outcome.Failure) return Outcome.Failure
     	  }
       }
-      return CPOutcome.Success
+      return Outcome.Success
     }
     
-    def filterMinCount(): CPOutcome = {
+    def filterMinCount(): Outcome = {
       // if ub = min(N), it mean all the values still with non empty intersection must be in the set. 
       // every variable with non empty intersection must only keep values from the set
       for (i <- nonEmptyInterIdx) {
     	  var Dxi = X(i).iterator
     	  for (v <- Dxi; if !S.contains(v)) {
-    	    if (X(i).removeValue(v) == CPOutcome.Failure) return CPOutcome.Failure
+    	    if (X(i).removeValue(v) == Outcome.Failure) return Outcome.Failure
     	  }
       }
-      return CPOutcome.Success
+      return Outcome.Success
     }
 
-    def filter(): CPOutcome = {
-      if (N.updateMin(lb.value) == CPOutcome.Failure) CPOutcome.Failure
-      else if (N.updateMax(ub.value) == CPOutcome.Failure) CPOutcome.Failure
+    def filter(): Outcome = {
+      if (N.updateMin(lb.value) == Outcome.Failure) Outcome.Failure
+      else if (N.updateMax(ub.value) == Outcome.Failure) Outcome.Failure
       else if (lb.value == N.max) {
         filterMaxCount()
       } else if (ub.value == N.min) {
         filterMinCount()
       } else {
-        CPOutcome.Suspend
+        Outcome.Suspend
       }
     }
 
@@ -106,10 +106,10 @@ class Among(val N: CPIntVar, val X: Array[CPIntVar], val S: Set[Int]) extends Co
           nonEmptyInterIdx.removeValue(i)
         }
         val oc = filter()
-        if (oc == CPOutcome.Failure) CPOutcome.Failure
-        else if (oc == CPOutcome.Success) CPOutcome.Success
-        else if (interSize(i).value == 0 || interSize(i).value == X(i).size) CPOutcome.Success
-        else CPOutcome.Suspend
+        if (oc == Outcome.Failure) Outcome.Failure
+        else if (oc == Outcome.Success) Outcome.Success
+        else if (interSize(i).value == 0 || interSize(i).value == X(i).size) Outcome.Success
+        else Outcome.Suspend
       }
     }
     N.filterWhenBoundsChange() {

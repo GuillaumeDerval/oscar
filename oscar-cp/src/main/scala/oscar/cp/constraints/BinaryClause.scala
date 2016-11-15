@@ -1,15 +1,15 @@
 package oscar.cp.constraints
 
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPBoolVar
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 
 /** @author Renaud Hartert ren.hartert@gmail.com */
 class BinaryClause(x: CPBoolVar, y: CPBoolVar, name: String) extends Constraint(x.store, name) {
 
-  final override def setup(l: CPPropagStrength): CPOutcome = {
+  final override def setup(l: CPPropagStrength): Outcome = {
     val outcome = propagate()
     if (outcome != Suspend) outcome
     else {
@@ -19,7 +19,7 @@ class BinaryClause(x: CPBoolVar, y: CPBoolVar, name: String) extends Constraint(
     }
   }
 
-  final override def propagate(): CPOutcome = {
+  final override def propagate(): Outcome = {
     if (x.isTrue) Success
     else if (y.isTrue) Success
     else if (x.isFalse) {

@@ -23,7 +23,7 @@ import oscar.cp.scheduling.CumulativeActivity
 import oscar.cp.scheduling.MirrorCumulativeActivity
 import oscar.cp.modeling.CPSolver
 import oscar.cp.core.CPIntVar
-import oscar.cp.core.CPOutcome
+import oscar.cp.core.Outcome
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 
@@ -62,7 +62,7 @@ class NewMaxCumulative(cp: CPSolver, allTasks: Array[CumulativeActivity], limit:
   // Events are preprocessed to speed-up the propagation
   val eventList = Array.tabulate(nTasks) { e => new EventList(e) }
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
 
     // Treat this constraint at the end of the propagation queue
     priorityL2 = 0
@@ -71,7 +71,7 @@ class NewMaxCumulative(cp: CPSolver, allTasks: Array[CumulativeActivity], limit:
 
     val oc = propagate()
 
-    if (oc == CPOutcome.Suspend) {
+    if (oc == Outcome.Suspend) {
       for (i <- Tasks) {
 
         if (!lToRTasks(i).start.isBound) lToRTasks(i).start.callPropagateWhenBoundsChange(this)
@@ -85,15 +85,15 @@ class NewMaxCumulative(cp: CPSolver, allTasks: Array[CumulativeActivity], limit:
     return oc
   }
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
 
     // Left to Right sweep
-    if (sweepAlgorithm(lToRTasks) == CPOutcome.Failure) return CPOutcome.Failure
+    if (sweepAlgorithm(lToRTasks) == Outcome.Failure) return Outcome.Failure
 
     // Right to Left sweep
-    if (sweepAlgorithm(rToLTasks) == CPOutcome.Failure) return CPOutcome.Failure
+    if (sweepAlgorithm(rToLTasks) == Outcome.Failure) return Outcome.Failure
 
-    return CPOutcome.Suspend
+    return Outcome.Suspend
   }
 
   def initDataStructures(tasks: Array[CumulativeActivity]) {
@@ -140,7 +140,7 @@ class NewMaxCumulative(cp: CPSolver, allTasks: Array[CumulativeActivity], limit:
     }
   }
 
-  def sweepAlgorithm(tasks: Array[CumulativeActivity]): CPOutcome = {
+  def sweepAlgorithm(tasks: Array[CumulativeActivity]): Outcome = {
 
     // INITIALIZATION
     initDataStructures(tasks)
@@ -175,7 +175,7 @@ class NewMaxCumulative(cp: CPSolver, allTasks: Array[CumulativeActivity], limit:
         // All the active tasks have be processed
         nActiveTasks = 0
 
-        if (!filterMin(tasks, delta, deltaBis)) return CPOutcome.Failure
+        if (!filterMin(tasks, delta, deltaBis)) return Outcome.Failure
 
         delta = deltaBis
       }
@@ -196,12 +196,12 @@ class NewMaxCumulative(cp: CPSolver, allTasks: Array[CumulativeActivity], limit:
       }
 
       // GETTING NEXT EVENT
-      if (hEvents.isEmpty && !filterMin(tasks, delta, Int.MaxValue)) return CPOutcome.Failure
+      if (hEvents.isEmpty && !filterMin(tasks, delta, Int.MaxValue)) return Outcome.Failure
 
       deltaBis = synchronize(tasks, delta)
     }
 
-    return CPOutcome.Suspend
+    return Outcome.Suspend
   }
 
   def filterMin(tasks: Array[CumulativeActivity], delta: Int, deltaBis: Int): Boolean = {
@@ -220,7 +220,7 @@ class NewMaxCumulative(cp: CPSolver, allTasks: Array[CumulativeActivity], limit:
 
       if (delta >= tasks(t).lst || delta - mins(t) >= tasks(t).minDuration || hEvents.isEmpty) {
 
-        if (tasks(t).adjustStart(mins(t)) == CPOutcome.Failure) return false
+        if (tasks(t).adjustStart(mins(t)) == Outcome.Failure) return false
 
         if (!evup(t)) {
           //Update events of the compulsory part of t
@@ -243,7 +243,7 @@ class NewMaxCumulative(cp: CPSolver, allTasks: Array[CumulativeActivity], limit:
 
       if (delta >= tasks(t).lst) {
 
-        if (tasks(t).adjustStart(tasks(t).lst) == CPOutcome.Failure) return false
+        if (tasks(t).adjustStart(tasks(t).lst) == Outcome.Failure) return false
 
         if (!evup(t)) {
           //Update events of the compulsory part of t
@@ -253,7 +253,7 @@ class NewMaxCumulative(cp: CPSolver, allTasks: Array[CumulativeActivity], limit:
 
         if (deltaBis - delta >= tasks(t).minDuration) {
 
-          if (tasks(t).adjustStart(delta) == CPOutcome.Failure) return false
+          if (tasks(t).adjustStart(delta) == Outcome.Failure) return false
 
           tasks(t).adjustStart(delta)
 

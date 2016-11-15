@@ -20,7 +20,7 @@ import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
 import oscar.cp.core.Constraint
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome
+import oscar.algo.search.Outcome
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
 
@@ -35,11 +35,11 @@ class TestIdempotency extends FunSuite with ShouldMatchers {
 
     class MyCons(val X: CPIntVar, idempot: Boolean) extends Constraint(X.store, "MyCons") {
       idempotent = idempot
-      override def setup(l: CPPropagStrength): CPOutcome = {
+      override def setup(l: CPPropagStrength): Outcome = {
         X.callPropagateWhenDomainChanges(this)
-        CPOutcome.Suspend
+        Outcome.Suspend
       }
-      override def propagate(): CPOutcome = {
+      override def propagate(): Outcome = {
         nbCallToPropagate += 1
         X.removeValue(0)
       }

@@ -16,7 +16,8 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 
 /**
@@ -25,7 +26,7 @@ import oscar.cp.core.variables.CPIntVar
  */
 class InSet(val x: CPIntVar, val set: Set[Int]) extends Constraint(x.store, "InSet") {
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     for (v <- x.min to x.max if !set.contains(v)) {
       if (x.removeValue(v) == Failure) {
         return Failure

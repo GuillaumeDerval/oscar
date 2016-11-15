@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -40,12 +40,12 @@ public class Square extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
-		if (y.updateMin(0) == CPOutcome.Failure) { 
-			return CPOutcome.Failure;
+	public Outcome setup(CPPropagStrength l) {
+		if (y.updateMin(0) == Outcome.Failure) {
+			return Outcome.Failure;
 		}
-		CPOutcome ok = propagate();
-		if (ok != CPOutcome.Suspend) {
+		Outcome ok = propagate();
+		if (ok != Outcome.Suspend) {
 			return ok;
 		}
 		if (!x.isBound()) {
@@ -54,11 +54,11 @@ public class Square extends Constraint {
 		if (!y.isBound()) {
 			y.callPropagateWhenBoundsChange(this);
 		}
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 
 	@Override
-	public CPOutcome propagate() {
+	public Outcome propagate() {
 		
 		    // propagation of y
 		    
@@ -70,34 +70,34 @@ public class Square extends Constraint {
 
 			//propagate y (which is not bound)
 			if (mx >= 0) { // x will be positive
-				if (y.updateMin(mx2) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (y.updateMin(mx2) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
-				if (y.updateMax(Mx2) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (y.updateMax(Mx2) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 			} else if (Mx <= 0) { // x is non positive
-				if (y.updateMin(Mx2) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (y.updateMin(Mx2) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
-				if (y.updateMax(mx2) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (y.updateMax(mx2) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 			} else if (x.hasValue(0)) {
 				//y min is already >= 0 (post does it)
-				if (y.updateMax(Math.max(mx2, Mx2)) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (y.updateMax(Math.max(mx2, Mx2)) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 			} else {
 				Integer a = (Integer) x.valueBefore(0);
 				Integer b = (Integer) x.valueAfter(0);
 				int a2 = a*a;
 				int b2 = b*b;
-				if (y.updateMin(Math.min(a2, b2)) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (y.updateMin(Math.min(a2, b2)) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
-				if (y.updateMax(Math.max(a2, b2)) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (y.updateMax(Math.max(a2, b2)) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 			}
 			//propagate x (which is not bound)
@@ -110,36 +110,36 @@ public class Square extends Constraint {
 			int rootM = (int) Math.sqrt(My);
 
 			if (mx >= 0) {
-				if (x.updateMin(rootm) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (x.updateMin(rootm) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
-				if (x.updateMax(rootM) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (x.updateMax(rootM) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 			} else if (Mx <= 0) {
-				if (x.updateMax(-rootm) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (x.updateMax(-rootm) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
-				if (x.updateMin(-rootM) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (x.updateMin(-rootM) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 			} else {
-				if (x.updateMin(-rootM) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (x.updateMin(-rootM) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 
-				if (x.updateMax(rootM) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (x.updateMax(rootM) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 				/*
 				for (int v = -rootm+1; v < rootm; v++) {
-					if (x.removeValue(v) == CPOutcome.Failure) {
-						return CPOutcome.Failure;
+					if (x.removeValue(v) == Outcome.Failure) {
+						return Outcome.Failure;
 					}
 				}*/
 			}
 		
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 
 }

@@ -15,13 +15,13 @@
 
 package oscar.cp.core.delta
 
-import oscar.cp.core.CPOutcome
+import oscar.algo.search.Outcome
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.CPStore
 
-class PropagatorIntVar(x: CPIntVar, id: Int, filter: DeltaIntVar => CPOutcome, name: String = "PropagatorIntVar") extends Constraint(x.store, name) {
+class PropagatorIntVar(x: CPIntVar, id: Int, filter: DeltaIntVar => Outcome, name: String = "PropagatorIntVar") extends Constraint(x.store, name) {
   
   private[this] val _delta = x.delta(this,id)
   
@@ -30,7 +30,7 @@ class PropagatorIntVar(x: CPIntVar, id: Int, filter: DeltaIntVar => CPOutcome, n
   
   @inline final def snapshot = _delta
   
-  override def setup(l: CPPropagStrength): CPOutcome = CPOutcome.Suspend
+  override def setup(l: CPPropagStrength): Outcome = Outcome.Suspend
   
-  override def propagate(): CPOutcome = filter(_delta)
+  override def propagate(): Outcome = filter(_delta)
 }

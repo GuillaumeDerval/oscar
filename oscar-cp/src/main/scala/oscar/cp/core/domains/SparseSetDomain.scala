@@ -2,8 +2,9 @@ package oscar.cp.core.domains
 
 import oscar.algo.reversible.ReversibleContext
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.CPOutcome
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
+
 import scala.util.Random
 
 /**
@@ -135,7 +136,7 @@ final class SparseSetDomain(override val context: ReversibleContext, val minValu
   }
 
   @inline
-  override final def removeValue(value : Int): CPOutcome = {
+  override final def removeValue(value : Int): Outcome = {
     if (!hasValue(value)) Suspend
     else {
       val s = _size.value - 1
@@ -194,7 +195,7 @@ final class SparseSetDomain(override val context: ReversibleContext, val minValu
   }
 
   @inline
-  override final def assign(value: Int): CPOutcome = {
+  override final def assign(value: Int): Outcome = {
     if (!hasValue(value)) {
       _size.value = 0
       Failure
@@ -213,7 +214,7 @@ final class SparseSetDomain(override val context: ReversibleContext, val minValu
   }
 
   @inline
-  override final def updateMin(minv: Int): CPOutcome = {
+  override final def updateMin(minv: Int): Outcome = {
     if (isEmpty) sys.error("empty domain")
     else {
       val minVal = min // Lazy update
@@ -238,7 +239,7 @@ final class SparseSetDomain(override val context: ReversibleContext, val minValu
   }
 
   @inline
-  override final def updateMax(maxv: Int): CPOutcome = {
+  override final def updateMax(maxv: Int): Outcome = {
     if (isEmpty) sys.error("empty domain")
     else {
       val maxVal = max // Lazy update

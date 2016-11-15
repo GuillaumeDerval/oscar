@@ -19,7 +19,6 @@ package oscar.cp.constraints
 
 import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
-
 import oscar.algo.DisjointSets
 import oscar.algo.RangeMinQuery
 import oscar.algo.SortUtils
@@ -28,9 +27,8 @@ import oscar.cp.CPIntVar
 import oscar.cp.CPIntVarOps
 import oscar.cp.CPSetVar
 import oscar.cp.Constraint
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome.Failure
-import oscar.cp.core.CPOutcome.Suspend
+import oscar.algo.search.Outcome._
+import oscar.algo.search.Outcome
 import oscar.cp.core.CPPropagStrength
 
 /**
@@ -58,12 +56,12 @@ class HeldKarp(edges: CPSetVar, edgeData: Array[(Int,Int,Int)], cost: CPIntVar) 
   }
   
 
-  @inline private def removeEdge(i: Int,j: Int): CPOutcome = {
+  @inline private def removeEdge(i: Int,j: Int): Outcome = {
     distMatrix(i min j)(i max j) := Int.MaxValue
     edges.excludes(edgeIndex(i)(j))
   }
   
-  @inline private def forceEdge(i: Int,j: Int): CPOutcome = {
+  @inline private def forceEdge(i: Int,j: Int): Outcome = {
     edges.requires(edgeIndex(i)(j))
   }  
   
@@ -75,7 +73,7 @@ class HeldKarp(edges: CPSetVar, edgeData: Array[(Int,Int,Int)], cost: CPIntVar) 
     edges.isRequired(edgeIndex(i)(j))
   }  
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     for (((i,j,w),idx) <- edgeData.zipWithIndex) {
       if (!edges.isPossible(idx)) removeEdge(i,j)
       if (edges.isRequired(idx)) forceEdge(i,j)
@@ -85,11 +83,11 @@ class HeldKarp(edges: CPSetVar, edgeData: Array[(Int,Int,Int)], cost: CPIntVar) 
     return oc
   }
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     propagateNumSteps(5)
   }
   
-  @inline private def propagateNumSteps(nSteps: Int): CPOutcome = {
+  @inline private def propagateNumSteps(nSteps: Int): Outcome = {
     var iter = 0
     var improvement = true
     var lb = 0
@@ -364,7 +362,7 @@ class ChannelTSP(val succ: Array[CPIntVar],val distMatrix: Array[Array[Int]]) ex
   // todo: fix the cardinality of the set            
   
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
 	s.post(edgeVar.card === 2*n)
     
     for (i <- 0 until n) {
@@ -380,30 +378,30 @@ class ChannelTSP(val succ: Array[CPIntVar],val distMatrix: Array[Array[Int]]) ex
       }
     }
 
-    CPOutcome.Suspend
+    Outcome.Suspend
   }
   
-  override def valRemoveIdx(x: CPIntVar, idx: Int, v: Int): CPOutcome = {
+  override def valRemoveIdx(x: CPIntVar, idx: Int, v: Int): Outcome = {
     if (v != idx) {
       edgeVar.excludes(edgeIndex(idx)(v))
     }
-    else CPOutcome.Suspend
+    else Outcome.Suspend
   }
   
-  override def valBindIdx(x: CPIntVar, idx: Int): CPOutcome = {
+  override def valBindIdx(x: CPIntVar, idx: Int): Outcome = {
     edgeVar.requires(edgeIndex(idx)(x.value))
   } 
   
-  override def valExcluded(x: CPSetVar, v: Int): CPOutcome = {
+  override def valExcluded(x: CPSetVar, v: Int): Outcome = {
     val (i,j,w) = edges(v)
     succ(i-n).removeValue(j)
   }  
 
-  override def valRequired(x: CPSetVar, v: Int): CPOutcome = {
+  override def valRequired(x: CPSetVar, v: Int): Outcome = {
     val (i,j,w) = edges(v)
     if ((i-n) != j) {
       succ(i-n).assign(j)
-    } else CPOutcome.Suspend
+    } else Outcome.Suspend
   }   
 
 }

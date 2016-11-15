@@ -16,7 +16,8 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.delta.DeltaIntVar
 
@@ -59,7 +60,7 @@ class Count(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) extends Co
      * When at most Nmin variables have a non empty intersection with Y, those variables must be equal to Y
      */  
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     
     val minY = Y.min
     val maxY = Y.max
@@ -98,7 +99,7 @@ class Count(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) extends Co
       currMax
     }
     
-    def filterYBound(): CPOutcome = {
+    def filterYBound(): Outcome = {
       assert(Y.isBound)
       val v = Y.min
       val mincount = X.count(_.isBoundTo(v))
@@ -126,7 +127,7 @@ class Count(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) extends Co
       Suspend
     }
 
-    def updateN(): CPOutcome = {
+    def updateN(): Outcome = {
       if (updateSupportMinRequired && N.updateMin(updateSupportMin()) == Failure) {
         Failure
       }
@@ -136,7 +137,7 @@ class Count(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) extends Co
       else Suspend
     }
         
-    def updateLostValue(v: Int): CPOutcome = {
+    def updateLostValue(v: Int): Outcome = {
       if (Y.hasValue(v)) {
         if (supportmax.value == v) {
           updateSupportMaxRequired = true
@@ -149,7 +150,7 @@ class Count(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) extends Co
       Suspend
     }
     
-    def updateBindValue(v: Int): CPOutcome = {
+    def updateBindValue(v: Int): Outcome = {
       if (Y.hasValue(v)) {
         if (supportmin.value == v) {
           updateSupportMinRequired = true
@@ -179,7 +180,7 @@ class Count(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) extends Co
     	filterYBound()
     }
     
-    def filterX(x: CPIntVar, d: DeltaIntVar): CPOutcome = {
+    def filterX(x: CPIntVar, d: DeltaIntVar): Outcome = {
         //println("FilterX"+X.mkString(",")+" Y:"+Y)
         for (v <- d.values) {
           //println("lost value"+v)

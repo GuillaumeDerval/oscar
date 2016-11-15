@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -44,9 +44,9 @@ public class SumLeEq extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
-		if (propagate() == CPOutcome.Failure) {
-			return CPOutcome.Failure;
+	public Outcome setup(CPPropagStrength l) {
+		if (propagate() == Outcome.Failure) {
+			return Outcome.Failure;
 		}
 		for (int i = 0; i < x.length; i++) {
 			if (!x[i].isBound()) 
@@ -54,11 +54,11 @@ public class SumLeEq extends Constraint {
 		}
 		if (!y.isBound())
 			y.callPropagateWhenBoundsChange(this);
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 	
 	@Override
-	public CPOutcome propagate() {
+	public Outcome propagate() {
 		int maxsumx = 0;
 		int minsumx = 0;
 		for (int i = 0; i < x.length; i++) {
@@ -67,21 +67,21 @@ public class SumLeEq extends Constraint {
 		}
 		
 		if (maxsumx <= y.getMin()) {
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}
 		
-		if (y.updateMax(maxsumx) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
+		if (y.updateMax(maxsumx) == Outcome.Failure) {
+			return Outcome.Failure;
 		}
 		
 		for (int i = 0; i < x.length; i++) {
 			int minsumxi = minsumx - x[i].getMin();
 			int maxi = y.getMax() - minsumxi;
-			if (x[i].updateMax(maxi) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (x[i].updateMax(maxi) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
 		}
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 	
 	

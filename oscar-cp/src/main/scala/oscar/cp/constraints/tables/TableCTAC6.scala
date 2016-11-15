@@ -16,10 +16,12 @@
 package oscar.cp.constraints.tables
 
 
-import oscar.algo.reversible.{TrailEntry, ReversibleInt, ReversibleBoolean}
+import oscar.algo.reversible.{ReversibleBoolean, ReversibleInt, TrailEntry}
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{ Constraint, CPStore, CPOutcome, CPPropagStrength }
-import oscar.cp.core.CPOutcome._
+import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
+import oscar.algo.search.Outcome._
+
 import scala.collection.mutable.ArrayBuffer
 import oscar.cp.core.delta.DeltaIntVar
 
@@ -216,7 +218,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
 
 
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
 
     /* Retrieve the current valid tuples */
     if (fillValidTuples() == Failure) return Failure
@@ -242,7 +244,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
 
 
   /*
-  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): CPOutcome = {
+  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): Outcome = {
     //println("delta size:"+delta.size)
     val intVar = X(varIndex)//delta.variable
 
@@ -293,7 +295,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
    */
 
 
-  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): CPOutcome = {
+  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): Outcome = {
     //println("delta size:"+delta.size)
     val intVar = X(varIndex)//delta.variable
 
@@ -365,7 +367,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
    * @return the outcome i.e. Failure or Success.
    */
   var nCheck = 0
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     //println("propagate"+scala.util.Random.nextInt(10))
 
     // Cache reversible values
@@ -672,7 +674,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
    * Retrieve the valid tuples from the table and store their index in validTuplesBuffer.
    * @return Failure if there is no valid tuples, Suspend otherwise.
    */
-  @inline private def fillValidTuples(): CPOutcome = {
+  @inline private def fillValidTuples(): Outcome = {
     validTuplesBuffer.clear()
     var tupleIndex = 0
     while (tupleIndex < nbTuples) {
@@ -741,7 +743,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
    * Remove values not supported by any tuple.
    * @return the outcome i.e. Failure or Suspend.
    */
-  @inline private def removeUnsupportedValues(): CPOutcome = {
+  @inline private def removeUnsupportedValues(): Outcome = {
     var varIndex = 0
     while (varIndex < arity) {
       val intVar = X(varIndex)

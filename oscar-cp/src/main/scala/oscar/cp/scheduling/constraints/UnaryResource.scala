@@ -1,14 +1,14 @@
 package oscar.cp.scheduling.constraints
 
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.CPPropagStrength._
 import oscar.cp.core.{CPPropagStrength, Constraint}
 import oscar.cp.core.variables.CPIntVar
 
 class UnaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], resources: Array[CPIntVar], id: Int = 1)
   extends Constraint(starts.head.store, "UnaryResource") {
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
 
     val unitDemand = CPIntVar(1)(s)
     val demands = Array.fill(starts.size)(unitDemand)

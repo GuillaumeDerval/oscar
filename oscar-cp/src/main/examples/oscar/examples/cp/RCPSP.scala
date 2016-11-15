@@ -1,8 +1,7 @@
 package oscar.examples.cp
 
+import oscar.algo.branchings.{LCSearchSimplePhaseAssign, SplitLastConflict}
 import oscar.cp._
-import oscar.cp.searches.SplitLastConflict
-import oscar.cp.searches.LCSearchSimplePhaseAssign
 
 object RCPSP extends CPModel with App {
   

@@ -17,9 +17,9 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
+import oscar.algo.search.Outcome
 import oscar.cp.constraints._
 import oscar.cp._
-import oscar.cp.core.CPOutcome
 
 class TestSpread extends FunSuite with ShouldMatchers {
 
@@ -280,13 +280,13 @@ class TestSpread extends FunSuite with ShouldMatchers {
 
 
 
-  def decomposition(x: Array[CPIntVar], sum: Int, sum2: CPIntVar): CPOutcome = {
-    if (sum2.store.post(new Sum(x.map(i => i * i), sum2)) == CPOutcome.Failure) {
-      CPOutcome.Failure
-    } else if (sum2.store.post(new Sum(x, CPIntVar(sum)(sum2.store))) == CPOutcome.Failure) {
-      CPOutcome.Failure
+  def decomposition(x: Array[CPIntVar], sum: Int, sum2: CPIntVar): Outcome = {
+    if (sum2.store.post(new Sum(x.map(i => i * i), sum2)) == Outcome.Failure) {
+      Outcome.Failure
+    } else if (sum2.store.post(new Sum(x, CPIntVar(sum)(sum2.store))) == Outcome.Failure) {
+      Outcome.Failure
     } else {
-      CPOutcome.Suspend
+      Outcome.Suspend
     }
   }
 

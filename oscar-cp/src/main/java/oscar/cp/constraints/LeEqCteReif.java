@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
@@ -46,11 +46,11 @@ public class LeEqCteReif extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Outcome setup(CPPropagStrength l) {
 		priorityBindL1_$eq(CPStore.MAXPRIORL1());
 		priorityL2_$eq(CPStore.MAXPRIORL2()-1);
-		CPOutcome oc = propagate();
-		if(oc == CPOutcome.Suspend){
+		Outcome oc = propagate();
+		if(oc == Outcome.Suspend){
 			b.callValBindWhenBind(this);
 			x.callPropagateWhenBoundsChange(this);
 			if (b.isBound()) {
@@ -61,37 +61,37 @@ public class LeEqCteReif extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome propagate() {
+	public Outcome propagate() {
 		if (x.getMax() <= v) {
-			if (b.assign(1) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (b.assign(1) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		} else if (x.getMin() > v) {
-			if (b.assign(0) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (b.assign(0) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}
 		else {
-			return CPOutcome.Suspend;
+			return Outcome.Suspend;
 		}
 	}
 		
 	@Override
-	public CPOutcome valBind(CPIntVar var) {
+	public Outcome valBind(CPIntVar var) {
 		if (b.min() == 0) {
 			//x > v
-			if (x.updateMin(v+1) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (x.updateMin(v+1) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
 		} else {
 			//x <= v
-			if (x.updateMax(v) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (x.updateMax(v) == Outcome.Failure) {
+				return Outcome.Failure;
 			}				
 		}
-		return CPOutcome.Success;
+		return Outcome.Success;
 	}
 
 }

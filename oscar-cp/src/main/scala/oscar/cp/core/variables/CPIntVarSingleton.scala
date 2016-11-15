@@ -3,8 +3,8 @@ package oscar.cp.core.variables
 import scala.util.Random
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.reversible.TrailEntry
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.CPOutcome
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
 import oscar.cp.core.delta.DeltaIntVarEmpty
@@ -12,7 +12,9 @@ import oscar.cp.core.watcher.Watcher
 import oscar.cp.core.delta.DeltaIntVar
 
 final class CPIntVarSingleton(final override val store: CPStore, initValue: Int, final override val name: String = "") extends CPIntVar {
-  
+
+  final override val context = store
+
   // Number of constraints registered on the variable
   private[this] val degree = new ReversibleInt(store, 0) // should not change often
   
@@ -89,7 +91,7 @@ final class CPIntVarSingleton(final override val store: CPStore, initValue: Int,
    * @param val
    * @return  Suspend if val was in the domain, Failure otherwise
    */
-  @inline final override def assign(value: Int): CPOutcome = {
+  @inline final override def assign(value: Int): Outcome = {
     if (_size == 0) Failure
     else if (value == initValue) Suspend
     else emptyDomain()
@@ -100,7 +102,7 @@ final class CPIntVarSingleton(final override val store: CPStore, initValue: Int,
    * @param val
    * @return  Suspend if the domain is not equal to the singleton {val}, Failure otherwise
    */
-  @inline final override def removeValue(value: Int): CPOutcome = {
+  @inline final override def removeValue(value: Int): Outcome = {
     if (value == initValue) emptyDomain()
     else if (_size == 0) emptyDomain()
     else Suspend
@@ -111,7 +113,7 @@ final class CPIntVarSingleton(final override val store: CPStore, initValue: Int,
    * @param val
    * @return  Suspend if there is at least one value >= val in the domain, Failure otherwise
    */
-  @inline final override def updateMin(value: Int): CPOutcome = {
+  @inline final override def updateMin(value: Int): Outcome = {
     if (_size == 0) Failure
     else if (value <= initValue) Suspend
     else emptyDomain()
@@ -122,14 +124,14 @@ final class CPIntVarSingleton(final override val store: CPStore, initValue: Int,
    * @param val
    * @return  Suspend if there is at least one value <= val in the domain, Failure otherwise
    */
-  @inline final override def updateMax(value: Int): CPOutcome = {
+  @inline final override def updateMax(value: Int): Outcome = {
     if (_size == 0) Failure
     else if (value >= initValue) Suspend
     else emptyDomain()
   }
   
   // Trail and empty the domain
-  @inline private def emptyDomain(): CPOutcome = {
+  @inline private def emptyDomain(): Outcome = {
     store.trail(trailEntry)
     _size = 0
     Failure

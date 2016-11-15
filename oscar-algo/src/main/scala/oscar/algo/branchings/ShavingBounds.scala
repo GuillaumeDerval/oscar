@@ -1,11 +1,8 @@
-package oscar.cp.searches
+package oscar.algo.branchings
 
+import oscar.algo.search.Outcome._
 import oscar.algo.search._
-import oscar.cp._
-import oscar.cp.core.CPStore
-import oscar.algo.reversible.SparseSet
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.Constraint
+import oscar.algo.vars.IntVarLike
 
 /*
  *  A shaving implemented as a branching.
@@ -14,9 +11,8 @@ import oscar.cp.core.Constraint
  */
 
 
-class ShavingBounds(val vars: Array[CPIntVar])
-             (implicit val store: CPStore)
-extends Branching with BranchingUtils {
+class ShavingBounds(val vars: Array[IntVarLike]) extends Branching with BranchingUtils {
+  val context = vars(0).context
   val nVars = vars.length
   
   val minBound = new Array[Int](nVars)
@@ -45,9 +41,9 @@ extends Branching with BranchingUtils {
       p = 0
       while (p < xDomain.length) {
         val v = xDomain(p)
-        store.pushState()
+        context.pushState()
         
-        if (store.post(x.eq(v)) != Failure) {        // if this fails, union with nothing, achieved by doing nothing
+        if (context.assign(x, v) != Failure) {        // if this fails, union with nothing, achieved by doing nothing
           var q = 0
           while (q < nUVars) {
             minBound(q) = math.min(minBound(q), unboundVars(q).min)
@@ -55,25 +51,25 @@ extends Branching with BranchingUtils {
             q += 1
           }
         }
-        
-        store.pop()
+
+        context.pop()
         p += 1
       }
       
       // Step 3: remove values for i
       var q = 0
-      while (q < nUVars && !store.isFailed) {
+      while (q < nUVars && !context.isFailed) {
         val x = unboundVars(q)
         
         if (minBound(q) > x.min || maxBound(q) < x.max) {
           hasRemoved = true
-          store.post(x >= minBound(q))
-          store.post(x <= maxBound(q))
+          context.largerEq(x, minBound(q))
+          context.smallerEq(x, maxBound(q))
         }
         
         q += 1
       }
-      if (store.isFailed) return branchOne()
+      if (context.isFailed) return branchOne()
     }
     
     
@@ -84,5 +80,5 @@ extends Branching with BranchingUtils {
 }
 
 object ShavingBounds {
-  def apply(vars: Array[CPIntVar])(implicit store: CPStore) = new ShavingBounds(vars)
+  def apply(vars: Array[IntVarLike]) = new ShavingBounds(vars)
 }

@@ -15,6 +15,7 @@ import scala.util.Random
  */
 class IntVar(model_decl: ModelDeclaration, id: Int, name: String) extends Var(model_decl, id, name) with IntVarLike with IntExpression {
   protected def getRepresentative: IntVarImplem = model_decl.getCurrentModel.getRepresentative(this).asInstanceOf[IntVarImplem]
+  override def context = getRepresentative.context
   override def isBound: Boolean = getRepresentative.isBound
   override def randomValue(rand: Random): Int = getRepresentative.randomValue(rand)
   override def max: Int = getRepresentative.max

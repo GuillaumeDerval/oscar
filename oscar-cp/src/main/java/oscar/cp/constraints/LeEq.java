@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -43,11 +43,11 @@ public class LeEq extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
-		if(s().post(new GrEq(y,x)) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
+	public Outcome setup(CPPropagStrength l) {
+		if(s().post(new GrEq(y,x)) == Outcome.Failure) {
+			return Outcome.Failure;
 		}
-		return CPOutcome.Success;
+		return Outcome.Success;
 	}	
 
 }

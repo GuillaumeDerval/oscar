@@ -17,7 +17,8 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPGraphVar
 
 /**
@@ -28,13 +29,13 @@ import oscar.cp.core.variables.CPGraphVar
 
 class GraphBipartite(val g : CPGraphVar) extends Constraint(g.s, "Bipartite") {
   
-	override def setup(l: CPPropagStrength): CPOutcome = {
+	override def setup(l: CPPropagStrength): Outcome = {
 	  // add filter when domain changes
 	  g.callPropagateWhenDomainChanges(this)
 	  propagate()
 	}
 	
-	override def propagate(): CPOutcome = {
+	override def propagate(): Outcome = {
 	  // #1 If required domain of G is not bipartite, the constraint fails
 	  // #2 If possible domain of G is bipartite, the constraint is entailed
 	  // #3 Pruning : remove possible element of the domain of G

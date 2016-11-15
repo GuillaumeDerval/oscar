@@ -5,10 +5,12 @@ import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.CPStore
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import java.lang.Math._
+
 import oscar.algo.SortUtils._
+import oscar.algo.search.Outcome
+
 import scala.collection.mutable.Set
 import scala.collection.mutable.TreeSet
 import oscar.cp.core.Inconsistency
@@ -160,7 +162,7 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   
   private[this] val pushees = Array.ofDim[Int](nTasks)
   
-  final override def propagate(): CPOutcome = {
+  final override def propagate(): Outcome = {
     updateCache()
     val C = capacity.max
     

@@ -15,10 +15,10 @@
 
 package oscar.cp.constraints.tables
 
-
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{CPStore, Constraint, CPOutcome, CPPropagStrength}
-import oscar.cp.core.CPOutcome._
+import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
+import oscar.algo.search.Outcome._
+import oscar.algo.search.Outcome
 import oscar.cp.constraints.tables.mdd.{MDDTableVar, ReversibleMDD}
 
 /**
@@ -55,7 +55,7 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
    * 3) We remove the value that do not appear in the table/MDD
    * 4) We do a first propagation
    */
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
 
 
     /* Put edges in valid set */
@@ -75,7 +75,7 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
     propagate()
   }
   
-  @inline override final def propagate(): CPOutcome = {
+  @inline override final def propagate(): Outcome = {
     /* We check for each variable if one of them has changed since last propagate */
     var i = 0
     while (i < arity) {
@@ -91,7 +91,7 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
     Suspend
   }
   
-  /*@inline final def propagateDelta(tableVar: MDDTableVar, indexVar: Int, deltaVar: DeltaIntVar): CPOutcome = {
+  /*@inline final def propagateDelta(tableVar: MDDTableVar, indexVar: Int, deltaVar: DeltaIntVar): Outcome = {
     if (!tableVar.hasChanged) {
       return Suspend
     }
@@ -114,7 +114,7 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
    * also delete edges (and remove values from the domain if necessary) that
    * became invalid during the process.
    */
-  @inline final def update(tableVar: MDDTableVar, indexVar: Int): CPOutcome = {
+  @inline final def update(tableVar: MDDTableVar, indexVar: Int): Outcome = {
     
     var cptUp = 0
     var cptDown = 0

@@ -1,11 +1,11 @@
 package oscar.cp.modeling
 
 
-import oscar.cp.core.{CPOutcome, CPPropagStrength, CPSolver, Constraint}
+import oscar.cp.core.{CPPropagStrength, CPSolver, Constraint}
 import oscar.cp.core.CPPropagStrength._
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.variables.CPBoolVar
-import oscar.algo.search.{Alternative, Branching, DFSearchListener, SearchStatistics}
+import oscar.algo.search._
 
 import scala.reflect.ClassTag
 
@@ -13,20 +13,20 @@ import scala.reflect.ClassTag
 trait CPSolverUtils {
   
     // helper functions to model with an implicit CPSolver
-  def add(constraints: Iterable[_ <: Constraint], propagStrengh: CPPropagStrength)(implicit cp: CPSolver): CPOutcome = cp.add(constraints,propagStrengh)
-  def add(constraints: Iterable[_ <: Constraint])(implicit cp: CPSolver): CPOutcome = cp.add(constraints)
+  def add(constraints: Iterable[_ <: Constraint], propagStrengh: CPPropagStrength)(implicit cp: CPSolver): Outcome = cp.add(constraints,propagStrengh)
+  def add(constraints: Iterable[_ <: Constraint])(implicit cp: CPSolver): Outcome = cp.add(constraints)
 
-  def add[T: ClassTag](constraints: Iterable[_ <: CPBoolVar])(implicit cp: CPSolver): CPOutcome = cp.add(constraints)
+  def add[T: ClassTag](constraints: Iterable[_ <: CPBoolVar])(implicit cp: CPSolver): Outcome = cp.add(constraints)
 
-  def add(c: Constraint, propagStrengh: CPPropagStrength)(implicit cp: CPSolver): CPOutcome = cp.add(c, propagStrengh)
-  def add(c: Constraint)(implicit cp: CPSolver): CPOutcome = cp.add(c)
+  def add(c: Constraint, propagStrengh: CPPropagStrength)(implicit cp: CPSolver): Outcome = cp.add(c, propagStrengh)
+  def add(c: Constraint)(implicit cp: CPSolver): Outcome = cp.add(c)
 
-  def add(c: CPBoolVar)(implicit cp: CPSolver): CPOutcome = cp.add(c)
+  def add(c: CPBoolVar)(implicit cp: CPSolver): Outcome = cp.add(c)
 
-  def post(c: CPBoolVar)(implicit cp: CPSolver): CPOutcome = cp.post(c)
+  def post(c: CPBoolVar)(implicit cp: CPSolver): Outcome = cp.post(c)
 
-  def post(c: Constraint, propagStrengh: CPPropagStrength = Weak)(implicit cp: CPSolver): CPOutcome = cp.post(c, propagStrengh)
-  def post(c: Constraint)(implicit cp: CPSolver): CPOutcome = cp.post(c)
+  def post(c: Constraint, propagStrengh: CPPropagStrength = Weak)(implicit cp: CPSolver): Outcome = cp.post(c, propagStrengh)
+  def post(c: Constraint)(implicit cp: CPSolver): Outcome = cp.post(c)
 
   def search(branching: Branching)(implicit cp: CPSolver) = cp.search(branching)
 

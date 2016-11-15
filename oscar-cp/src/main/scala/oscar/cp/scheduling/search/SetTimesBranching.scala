@@ -16,7 +16,7 @@
 package oscar.cp.scheduling.search
 
 import oscar.cp._
-import oscar.cp.core.CPOutcome.Failure
+import oscar.algo.search.Outcome.Failure
 import oscar.algo.search.Branching
 import oscar.algo.reversible.ReversibleInt
 

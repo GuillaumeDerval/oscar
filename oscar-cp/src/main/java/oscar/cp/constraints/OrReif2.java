@@ -16,7 +16,7 @@ package oscar.cp.constraints;
 
 import oscar.algo.reversible.ReversibleBoolean;
 import oscar.algo.reversible.ReversibleInt;
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
@@ -49,19 +49,19 @@ public class OrReif2 extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Outcome setup(CPPropagStrength l) {
 	    if (x.length == 2) {
-	        if (s().post(new BinaryOr(x[0],x[1],y)) == CPOutcome.Failure) return CPOutcome.Failure;
-	        else return CPOutcome.Success;
+	        if (s().post(new BinaryOr(x[0],x[1],y)) == Outcome.Failure) return Outcome.Failure;
+	        else return Outcome.Success;
 	    }
 		nbBound = new ReversibleInt(s(),0); // number of values assigned to false
 		ytrue = new ReversibleBoolean(s(),false);
 		for (int i = 0; i < x.length; i++) {
 			if (x[i].isTrue()) {
-				if (y.assign(1) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (y.assign(1) == Outcome.Failure) {
+					return Outcome.Failure;
 				} else {
-					return CPOutcome.Success;
+					return Outcome.Success;
 				}
 			}
 		}
@@ -76,8 +76,8 @@ public class OrReif2 extends Constraint {
 		}
 		if (!y.isBound()) {
 			if (nbBound.getValue() == x.length) {
-				if (y.assign(0) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (y.assign(0) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 			}
 			y.callValBindWhenBind(this);
@@ -85,81 +85,81 @@ public class OrReif2 extends Constraint {
 		else {
 			if (y.min() == 0) {
 				for (int i = 0; i < x.length; i++) {
-						if (x[i].assign(0) == CPOutcome.Failure) {
-							return CPOutcome.Failure;
+						if (x[i].assign(0) == Outcome.Failure) {
+							return Outcome.Failure;
 						}
 				}
-				return CPOutcome.Success;
+				return Outcome.Success;
 			} else { // y = true
 				ytrue.setValue(true);
 				if (nbBound.getValue() == x.length-1) { // only one is not bound to false, this one must be set to true
 					for (int i = 0; i < x.length; i++) {
 						if (!x[i].isBound()) {
-							if (x[i].assign(1) == CPOutcome.Failure) {
-								return CPOutcome.Failure;
+							if (x[i].assign(1) == Outcome.Failure) {
+								return Outcome.Failure;
 							}
-							return CPOutcome.Success;
+							return Outcome.Success;
 						}
 					}
 				}
 			}
 		}
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 	
 	
 	@Override
-	public CPOutcome valBindIdx(CPIntVar var, int idx) {
+	public Outcome valBindIdx(CPIntVar var, int idx) {
 		if (var.min() == 1) {
-			if (y.assign(1) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (y.assign(1) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		} else {
 			nbBound.incr();			
 			if (nbBound.getValue() == x.length) {
-				if (y.assign(0) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (y.assign(0) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 			} else if (nbBound.getValue() == x.length-1 && ytrue.getValue()){
 				for (int i = 0; i < x.length; i++) {
 					if (!x[i].isBound()) {
-						if (x[i].assign(1) == CPOutcome.Failure) {
-							return CPOutcome.Failure;
+						if (x[i].assign(1) == Outcome.Failure) {
+							return Outcome.Failure;
 						}
-						return CPOutcome.Success;
+						return Outcome.Success;
 					}
 				}
-				return CPOutcome.Suspend;
+				return Outcome.Suspend;
 			}
 		}
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 	
 	@Override
-	public CPOutcome valBind(CPIntVar yvar) {
+	public Outcome valBind(CPIntVar yvar) {
 		if (yvar.min() == 0) {
 			for (int i = 0; i < x.length; i++) {
-					if (x[i].assign(0) == CPOutcome.Failure) {
-						return CPOutcome.Failure;
+					if (x[i].assign(0) == Outcome.Failure) {
+						return Outcome.Failure;
 					}
 				
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		} else {
 			ytrue.setValue(true);
 			if (nbBound.getValue() == x.length-1){
 				for (int i = 0; i < x.length; i++) {
 					if (!x[i].isBound()) {
-						if (x[i].assign(1) == CPOutcome.Failure) {
-							return CPOutcome.Failure;
+						if (x[i].assign(1) == Outcome.Failure) {
+							return Outcome.Failure;
 						}
-						return CPOutcome.Success;
+						return Outcome.Success;
 					}
 				}
 			}
 		}
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 
 }

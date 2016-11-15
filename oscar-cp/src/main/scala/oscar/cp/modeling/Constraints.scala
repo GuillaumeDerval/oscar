@@ -17,11 +17,11 @@ package oscar.cp.modeling
 
 import java.security.InvalidParameterException
 
+import oscar.algo.search.Outcome
 import oscar.cp.constraints._
 import oscar.cp.core.variables.CPIntVarViewOffset
 import oscar.cp.core.variables.CPIntVarViewTimes
 import oscar.cp.core.variables.CPIntVarViewMinus
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPPropagStrength
 import oscar.cp._
 import oscar.cp.scheduling.constraints.{DisjunctiveWithTransitionTimes, UnaryResource, _}
@@ -81,7 +81,7 @@ trait Constraints {
     else {
       val c = CPIntVar(x.min + y.min, x.max + y.max)(x.store)
       val ok = x.store.post(new oscar.cp.constraints.BinarySum(x, y, c))
-      assert(ok != CPOutcome.Failure)
+      assert(ok != Outcome.Failure)
       c
     }
   }
@@ -112,7 +112,7 @@ trait Constraints {
     val t = Array(NumberUtils.safeMul(a, c), NumberUtils.safeMul(a, d), NumberUtils.safeMul(b, c), NumberUtils.safeMul(b, d))
     val z = CPIntVar(t.min, t.max)(x.store)
     val ok = x.store.post(new oscar.cp.constraints.MulVar(x, y, z))
-    assert(ok != CPOutcome.Failure)
+    assert(ok != Outcome.Failure)
     z
   }
 
@@ -125,7 +125,7 @@ trait Constraints {
   def absolute(x: CPIntVar): CPIntVar = {
     val c = CPIntVar(0, Math.max(Math.abs(x.min), Math.abs(x.max)))(x.store)
     val ok = x.store.post(new oscar.cp.constraints.Abs(x, c))
-    assert(ok != CPOutcome.Failure)
+    assert(ok != Outcome.Failure)
     c
   }
 
@@ -374,7 +374,7 @@ trait Constraints {
   def element(matrix: Array[Array[Int]], i: CPIntVar, j: CPIntVar): CPIntVar = {
     val z = CPIntVar(matrix.flatten.min to matrix.flatten.max)(i.store)
     val ok = i.store.post(new ElementCst2D(matrix, i, j, z))
-    assert(ok != CPOutcome.Failure, { println("element on matrix, should not fail") })
+    assert(ok != Outcome.Failure, { println("element on matrix, should not fail") })
     z
   }
 
@@ -875,7 +875,7 @@ trait Constraints {
   def countGeq(n: CPIntVar, x: IndexedSeq[CPIntVar], y: CPIntVar) = {
     val c = CPIntVar(0 to x.size)(n.store)
     val ok = n.store.post(n >= c)
-    assert(ok != CPOutcome.Failure)
+    assert(ok != Outcome.Failure)
     new Count(c, x, y)
   }
 
@@ -890,7 +890,7 @@ trait Constraints {
   def countGt(n: CPIntVar, x: IndexedSeq[CPIntVar], y: CPIntVar) = {
     val c = CPIntVar(0 to x.size)(n.store)
     val ok = n.store.post(n > c)
-    assert(ok != CPOutcome.Failure)
+    assert(ok != Outcome.Failure)
     new Count(c, x, y)
   }
 
@@ -905,7 +905,7 @@ trait Constraints {
   def countLeq(n: CPIntVar, x: IndexedSeq[CPIntVar], y: CPIntVar) = {
     val c = CPIntVar(0 to x.size)(n.store)
     val ok = n.store.post(n <= c)
-    assert(ok != CPOutcome.Failure)
+    assert(ok != Outcome.Failure)
     new Count(c, x, y)
   }
 
@@ -920,7 +920,7 @@ trait Constraints {
   def countLt(n: CPIntVar, x: IndexedSeq[CPIntVar], y: CPIntVar) = {
     val c = CPIntVar(0 to x.size)(n.store)
     val ok = n.store.post(n < c)
-    assert(ok != CPOutcome.Failure)
+    assert(ok != Outcome.Failure)
     new Count(c, x, y)
   }
 
@@ -935,7 +935,7 @@ trait Constraints {
   def countNeq(n: CPIntVar, x: IndexedSeq[CPIntVar], y: CPIntVar) = {
     val c = CPIntVar(0 to x.size)(n.store)
     val ok = n.store.post(n.diff(c))
-    assert(ok != CPOutcome.Failure)
+    assert(ok != Outcome.Failure)
     new Count(c, x, y)
   }
 

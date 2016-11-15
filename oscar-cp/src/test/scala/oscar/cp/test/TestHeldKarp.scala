@@ -20,19 +20,18 @@ import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
 import oscar.cp.constraints._
 import oscar.cp._
-import oscar.algo.search.SearchStatistics
+import oscar.algo.search.{Outcome, SearchStatistics}
 import oscar.algo.DisjointSets
 import oscar.algo.RangeMinQuery
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
 
 class TestHeldKarp extends FunSuite with ShouldMatchers {
 
   class MinCircuit(succ: Array[CPIntVar], distMatrix: Array[Array[Int]], cost: CPIntVar) extends ChannelTSP(succ, distMatrix) {
 
-    override def setup(l: CPPropagStrength): CPOutcome = {
+    override def setup(l: CPPropagStrength): Outcome = {
       //if (s.post(circuit(succ),l) == Failure) return Failure
-      if (s.post(new HeldKarp(edgeVar, edges, cost)) == CPOutcome.Failure) return CPOutcome.Failure
+      if (s.post(new HeldKarp(edgeVar, edges, cost)) == Outcome.Failure) return Outcome.Failure
       super.setup(l)
     }
 

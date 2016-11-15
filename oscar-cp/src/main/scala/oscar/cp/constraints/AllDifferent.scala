@@ -16,10 +16,12 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.constraints._
 import oscar.cp.modeling._
 import oscar.algo.DisjointSets
+import oscar.algo.search.Outcome
+
 import scala.collection.mutable.ArrayBuffer
 import oscar.cp.core.variables.CPIntVar
 
@@ -38,7 +40,7 @@ class AllDifferent(x: Array[CPIntVar]) extends Constraint(x(0).store) {
    * @see CPPropagStrength
    * @param x
    */
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
 
     val allValues = x.map(_.toSet).foldLeft(Set[Int]())((u,v) => u.union(v))
     if (x.size > allValues.size) return Failure
@@ -74,8 +76,8 @@ class AllDifferent(x: Array[CPIntVar]) extends Constraint(x(0).store) {
       
 
     }
-    if (ok == CPOutcome.Failure) return CPOutcome.Failure;
-    else return CPOutcome.Success;
+    if (ok == Outcome.Failure) return Outcome.Failure;
+    else return Outcome.Success;
 
   }
 

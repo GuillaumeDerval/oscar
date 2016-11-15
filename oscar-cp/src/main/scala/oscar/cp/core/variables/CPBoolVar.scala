@@ -1,8 +1,7 @@
 package oscar.cp.core.variables
 
+import oscar.algo.search.Outcome
 import oscar.algo.vars.BoolVarLike
-
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPStore
 import oscar.cp.core.Constraint
 
@@ -27,10 +26,10 @@ abstract class CPBoolVar extends CPIntVar with BoolVarLike {
   def isFalse: Boolean
 
   /** Assigns the variable to true. */
-  def assignTrue(): CPOutcome
+  def assignTrue(): Outcome
 
   /** Assigns the variable to false. */
-  def assignFalse(): CPOutcome
+  def assignFalse(): Outcome
 
   /** Returns `true` if the domain contains 1. */
   def containsTrue: Boolean

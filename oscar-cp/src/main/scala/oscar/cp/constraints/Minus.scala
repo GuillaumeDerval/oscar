@@ -1,8 +1,9 @@
 package oscar.cp.constraints
 
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{CPStore, Constraint, CPPropagStrength, CPOutcome}
-import oscar.cp.core.CPOutcome._
+import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
+import oscar.algo.search.Outcome._
+import oscar.algo.search.Outcome
 
 /**
  * Minus Constraint
@@ -11,7 +12,7 @@ import oscar.cp.core.CPOutcome._
  */
 class Minus(x: CPIntVar, y: CPIntVar, z: CPIntVar) extends Constraint(x.store, "Minus") {
 
-  final override def setup(l: CPPropagStrength): CPOutcome = {
+  final override def setup(l: CPPropagStrength): Outcome = {
 
     priorityL2 = CPStore.MaxPriorityL2
 
@@ -25,7 +26,7 @@ class Minus(x: CPIntVar, y: CPIntVar, z: CPIntVar) extends Constraint(x.store, "
     }
   }
 
-  final override def propagate(): CPOutcome = {   
+  final override def propagate(): Outcome = {
     // Cache
     val xMin = x.min
     val xMax = x.max

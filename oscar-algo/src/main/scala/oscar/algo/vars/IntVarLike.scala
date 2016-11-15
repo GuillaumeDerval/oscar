@@ -1,11 +1,15 @@
 package oscar.algo.vars
 
+import oscar.algo.search.IntConstrainableContext
+
 import scala.util.Random
 
 /**
  * A trait that all objects that behave like an IntVar should implement
  */
 trait IntVarLike extends Iterable[Int] {
+  def context: IntConstrainableContext
+
   def isContinuous: Boolean = size == (max - min + 1)
 
   /**

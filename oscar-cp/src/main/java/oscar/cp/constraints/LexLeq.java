@@ -15,10 +15,9 @@
 package oscar.cp.constraints;
 
 import oscar.algo.reversible.ReversibleInt;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.variables.CPIntVar;
-import oscar.cp.core.CPOutcome;
 import oscar.cp.core.CPPropagStrength;
-import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
 
 /**
@@ -66,11 +65,11 @@ public class LexLeq extends Constraint {
 		posted = false;
 	}
 
-	public CPOutcome setup(CPPropagStrength l) {
-		  CPOutcome ok = mySetup(l);
+	public Outcome setup(CPPropagStrength l) {
+		  Outcome ok = mySetup(l);
 		  posted = true;
-		  if (ok == CPOutcome.Failure) {
-			  return CPOutcome.Failure;
+		  if (ok == Outcome.Failure) {
+			  return Outcome.Failure;
 		  }
 		  return ok;
 	}
@@ -78,7 +77,7 @@ public class LexLeq extends Constraint {
 	
 	
 	
-	private CPOutcome mySetup(CPPropagStrength l) {
+	private Outcome mySetup(CPPropagStrength l) {
 	   i = 0;
 	   q.setValue(0);
 	   r.setValue(0);
@@ -99,29 +98,29 @@ public class LexLeq extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome updateBoundsIdx(CPIntVar var, int idx) {
+	public Outcome updateBoundsIdx(CPIntVar var, int idx) {
 		i = idx;
 		if (i == q.getValue()) return state1();
 		else if (i == r.getValue()) return state2();
 		else if (u.getValue() == 3 && (i == s.getValue() || (i < s.getValue() && x[i].getMax() != y[i].getMin()))) return state3();
 		else if (u.getValue() == 4 && (i == s.getValue() || (i < s.getValue() && x[i].getMin() != y[i].getMax()))) return state4();
-		else return CPOutcome.Suspend;
+		else return Outcome.Suspend;
 	}
 	
   
-	private CPOutcome state1() {
+	private Outcome state1() {
 		while(i < x.length && x[i].getMin() == y[i].getMax()) {
 			int val = x[i].getMin();
-			if (x[i].assign(val) == CPOutcome.Failure || y[i].assign(val) == CPOutcome.Failure)
-				return CPOutcome.Failure;
+			if (x[i].assign(val) == Outcome.Failure || y[i].assign(val) == Outcome.Failure)
+				return Outcome.Failure;
 			q.setValue(i = i + 1);
 		}
 		if (i >= x.length || x[i].getMax() < y[i].getMin()) {
 			if (posted) deactivate();
-			return CPOutcome.Success; 
+			return Outcome.Success;
 		}
-		if (x[i].updateMax(y[i].getMax()) == CPOutcome.Failure  || y[i].updateMin(x[i].getMin()) ==  CPOutcome.Failure)
-			return CPOutcome.Failure;
+		if (x[i].updateMax(y[i].getMax()) == Outcome.Failure  || y[i].updateMin(x[i].getMin()) ==  Outcome.Failure)
+			return Outcome.Failure;
 
 		i = i+1 > r.getValue() ? i+1 : r.getValue();
 		r.setValue(i);
@@ -129,16 +128,16 @@ public class LexLeq extends Constraint {
 		return state2();
 	}
 	   
-	private CPOutcome state2() {
+	private Outcome state2() {
 		while(i < x.length && x[i].isBound() && y[i].isBound() && x[i].getMin() == y[i].getMin())  //STATE 2
 			r.setValue(i = i + 1);
 		if (i >= x.length || x[i].getMax() < y[i].getMin()) {
 			if (posted) deactivate(); // deactivate the constraint since it is now replaced by a new one
-			CPOutcome ok = super.s().post(new LeEq(x[q.getValue()],y[q.getValue()])); // T3
+			Outcome ok = super.s().post(new LeEq(x[q.getValue()],y[q.getValue()])); // T3
 			return ok;
 		} else if (x[i].getMin() > y[i].getMax()) {
 			if (posted) deactivate();
-			CPOutcome ok = super.s().post(new Le(x[q.getValue()],y[q.getValue()])); // T2
+			Outcome ok = super.s().post(new Le(x[q.getValue()],y[q.getValue()])); // T2
 			return ok;
 		} else if (x[i].getMax() == y[i].getMin() && x[i].getMin() < y[i].getMax()) {
 			i = i+1 > s.getValue() ? i+1 : s.getValue();
@@ -151,35 +150,35 @@ public class LexLeq extends Constraint {
 		}
 		setupFrom(q.getValue());
 		u.setValue(2);
-		return CPOutcome.Suspend; // D1
+		return Outcome.Suspend; // D1
 	}
 	
-	private CPOutcome state3() {
+	private Outcome state3() {
 		while(i < x.length && x[i].getMax() == y[i].getMin())
 			i = i+1;
 		s.setValue(i);
 		if (i>= x.length || x[i].getMax() < y[i].getMin()) {
 			if (posted) super.deactivate();
-			CPOutcome ok = super.s().post(new LeEq(x[q.getValue()], y[q.getValue()])); // T3
+			Outcome ok = super.s().post(new LeEq(x[q.getValue()], y[q.getValue()])); // T3
 			return ok;
 		}
 		setupFrom(q.getValue());
 		u.setValue(3);
-		return CPOutcome.Suspend; // D3
+		return Outcome.Suspend; // D3
 	}
 	
-	private CPOutcome state4() {
+	private Outcome state4() {
 		while (i < x.length && x[i].getMin() == y[i].getMax())
 			i = i + 1;
 		s.setValue(i);
 		if (i < x.length && x[i].getMin() > y[i].getMax()) {
 			if (posted) super.deactivate();
-			CPOutcome ok = super.s().post(new Le(x[q.getValue()], y[q.getValue()]));
+			Outcome ok = super.s().post(new Le(x[q.getValue()], y[q.getValue()]));
 			return ok;
 		}
 		setupFrom(q.getValue());
 		u.setValue(4);
-		return CPOutcome.Suspend; // D2
+		return Outcome.Suspend; // D2
 	}
 	
 

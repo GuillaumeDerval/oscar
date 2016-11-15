@@ -1,12 +1,12 @@
 package oscar.cp.constraints
 
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.variables.CPBoolVar
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.CPStore
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 
 /** @author Renaud Hartert ren.hartert@gmail.com */
 final class EqReif(int: CPIntVar, value: Int, boolean: CPBoolVar) extends Constraint(int.store, "EqReif") {
@@ -14,7 +14,7 @@ final class EqReif(int: CPIntVar, value: Int, boolean: CPBoolVar) extends Constr
   idempotent = true
   priorityL2 = CPStore.MaxPriorityL2
 
-  final override def setup(l: CPPropagStrength): CPOutcome = {
+  final override def setup(l: CPPropagStrength): Outcome = {
     val outcome = propagate()
     if (outcome != Suspend) outcome
     else {
@@ -24,7 +24,7 @@ final class EqReif(int: CPIntVar, value: Int, boolean: CPBoolVar) extends Constr
     }
   }
 
-  final override def propagate(): CPOutcome = {
+  final override def propagate(): Outcome = {
     if (boolean.isTrue) {
       if (int.assign(value) == Failure) Failure
       else Success

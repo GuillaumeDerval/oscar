@@ -16,8 +16,9 @@
 
 package oscar.cp.constraints
 
+import oscar.algo.search.Outcome
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPGraphVar
 
 /**
@@ -28,13 +29,13 @@ import oscar.cp.core.variables.CPGraphVar
 
 class GraphSymmetric(val g : CPGraphVar) extends Constraint(g.s, "Symmetric") {
   
-	override def setup(l: CPPropagStrength): CPOutcome = {
+	override def setup(l: CPPropagStrength): Outcome = {
 	  // add filter when domain changes
 	  g.callPropagateWhenDomainChanges(this)
 	  propagate()
 	}
 	
-	override def propagate(): CPOutcome = { 
+	override def propagate(): Outcome = {
 	  // if an edge e is possible
 	  //  	if there is no opposite, the edge should be removed
 	  // 	if the edge is required, the opposite should be required

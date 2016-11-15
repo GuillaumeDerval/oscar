@@ -16,8 +16,9 @@
 
 package oscar.cp.constraints
 
+import oscar.algo.search.Outcome
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPGraphVar
 
 /**
@@ -27,13 +28,13 @@ import oscar.cp.core.variables.CPGraphVar
 
 class GraphStronglyConnected(val g : CPGraphVar) extends Constraint(g.s, "Strongly Connected") {
   
-	override def setup(l: CPPropagStrength): CPOutcome = {
+	override def setup(l: CPPropagStrength): Outcome = {
 	  // add filter when domain changes
 	  g.callPropagateWhenDomainChanges(this)
 	  propagate()
 	}
 	
-	override def propagate(): CPOutcome = {
+	override def propagate(): Outcome = {
 	  // #1 If required D(G) != empty and possible D(G) contains more than one connected component, 
 	  //	   remove all but the connected component containing required D(G). 
 	  // #2 Then all cutnodes and bridges on a path between two nodes of required D(G) are included in required D(G)

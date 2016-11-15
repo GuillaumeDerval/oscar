@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.CPStore;
 import oscar.cp.core.variables.CPIntVar;
@@ -44,10 +44,10 @@ public class Gr extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Outcome setup(CPPropagStrength l) {
 		priorityL2_$eq(CPStore.MAXPRIORL2());
-		CPOutcome oc = propagate();
-		if(oc == CPOutcome.Suspend){
+		Outcome oc = propagate();
+		if(oc == Outcome.Suspend){
 			if (!y.isBound()) y.callPropagateWhenBoundsChange(this);
 			if (!x.isBound()) x.callPropagateWhenBoundsChange(this);
 		}
@@ -55,17 +55,17 @@ public class Gr extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome propagate() {
+	public Outcome propagate() {
 		if (x.getMin() > y.getMax()) {
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}
-		if (x.updateMin(y.getMin()+1) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
+		if (x.updateMin(y.getMin()+1) == Outcome.Failure) {
+			return Outcome.Failure;
 		}
-		if (y.updateMax(x.getMax()-1) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
+		if (y.updateMax(x.getMax()-1) == Outcome.Failure) {
+			return Outcome.Failure;
 		}
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	
 	}
 

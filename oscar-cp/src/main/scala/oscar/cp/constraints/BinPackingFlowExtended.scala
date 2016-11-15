@@ -15,12 +15,12 @@
 
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
 import oscar.cp.util.ArrayUtils
-import oscar.algo.reversible.ReversibleInt;
+import oscar.algo.reversible.ReversibleInt
+import oscar.algo.search.Outcome;
 
 /**
  * Redundant Bin-Packing Flow Constraint
@@ -34,12 +34,12 @@ class BinPackingFlowExtended(val x: Array[CPIntVar], val sizes: Array[Int], val 
   val candidates_t = Array.fill(c.size)(new ReversibleInt(s, 0))
   val permRev = perm.reverse
 
-  override def setup(strength: CPPropagStrength): CPOutcome = {
+  override def setup(strength: CPPropagStrength): Outcome = {
 
-    if (x.exists(_.updateMax(l.length - 1) == CPOutcome.Failure)
-      || x.exists(_.updateMin(0) == CPOutcome.Failure)
-      || s.post(new GCCVarAC(x, 0, c), CPPropagStrength.Strong) == CPOutcome.Failure) {
-      CPOutcome.Failure
+    if (x.exists(_.updateMax(l.length - 1) == Outcome.Failure)
+      || x.exists(_.updateMin(0) == Outcome.Failure)
+      || s.post(new GCCVarAC(x, 0, c), CPPropagStrength.Strong) == Outcome.Failure) {
+      Outcome.Failure
     } else {
       for (lt <- l)
         lt.callPropagateWhenBoundsChange(this);
@@ -67,33 +67,33 @@ class BinPackingFlowExtended(val x: Array[CPIntVar], val sizes: Array[Int], val 
   }
   
 
-  override def valRemoveIdx(x: CPIntVar, idx: Int, value: Int): CPOutcome = {
+  override def valRemoveIdx(x: CPIntVar, idx: Int, value: Int): Outcome = {
     candidates_t(value).decr();
-    return CPOutcome.Suspend;
+    return Outcome.Suspend;
   }
 
 
-  override def valBindIdx(x: CPIntVar, idx: Int): CPOutcome = {
+  override def valBindIdx(x: CPIntVar, idx: Int): Outcome = {
     val j = x.min;
     val wj = sizes(idx);
     l_t(j).setValue(l_t(j).value + wj);
     c_t(j).incr();
     candidates_t(j).decr()
-    return CPOutcome.Suspend;
+    return Outcome.Suspend;
  }
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     for (j <- 0 until l.size) {
-      if (setCardinality(j) == CPOutcome.Failure) {
-        return CPOutcome.Failure
+      if (setCardinality(j) == Outcome.Failure) {
+        return Outcome.Failure
       }
       
-      if (updateLoad(j) == CPOutcome.Failure) {
-        return CPOutcome.Failure
+      if (updateLoad(j) == Outcome.Failure) {
+        return Outcome.Failure
       }
       
     }
-    return CPOutcome.Suspend;
+    return Outcome.Suspend;
   }
   
   def bestLoad(j: Int, cardInit: Int, cardToReach: Int, loadInit: Int, permArray: Array[Int]) = {
@@ -109,18 +109,18 @@ class BinPackingFlowExtended(val x: Array[CPIntVar], val sizes: Array[Int], val 
       curLoad
   }
   
-  def updateLoad(j: Int): CPOutcome = {
+  def updateLoad(j: Int): Outcome = {
     
       // update load min based on card min
-      if (l(j).updateMin(bestLoad(j,c_t(j).value,c(j).min,l_t(j).value,perm)) == CPOutcome.Failure) {
-        return CPOutcome.Failure
+      if (l(j).updateMin(bestLoad(j,c_t(j).value,c(j).min,l_t(j).value,perm)) == Outcome.Failure) {
+        return Outcome.Failure
       }
       // update load max based on card max
-      if (l(j).updateMax(bestLoad(j,c_t(j).value,c(j).max,l_t(j).value,permRev)) == CPOutcome.Failure) {
-        return CPOutcome.Failure
+      if (l(j).updateMax(bestLoad(j,c_t(j).value,c(j).max,l_t(j).value,permRev)) == Outcome.Failure) {
+        return Outcome.Failure
       }
       
-      CPOutcome.Suspend
+      Outcome.Suspend
     
   }
 
@@ -129,18 +129,18 @@ class BinPackingFlowExtended(val x: Array[CPIntVar], val sizes: Array[Int], val 
    * @param j is the bin index
    * @return Failure if fail detected when adapting cards, or Suspend otherwise
    */
-  def setCardinality(j: Int): CPOutcome = {
-    if (setMinCard(j) == CPOutcome.Failure)
-      return CPOutcome.Failure
-    if (setMaxCard(j) == CPOutcome.Failure)
-      return CPOutcome.Failure
-    return CPOutcome.Suspend
+  def setCardinality(j: Int): Outcome = {
+    if (setMinCard(j) == Outcome.Failure)
+      return Outcome.Failure
+    if (setMaxCard(j) == Outcome.Failure)
+      return Outcome.Failure
+    return Outcome.Suspend
   }
 
   /**
    * compute the maximum cardinality for the bin `bin`
    */
-  def setMaxCard(bin: Int): CPOutcome = {
+  def setMaxCard(bin: Int): Outcome = {
     val (card, load) = getCard(bin, perm, (binLoad, nextItemSize) => binLoad + nextItemSize <= l(bin).getMax.intValue())
     c(bin).updateMax(card)
   }
@@ -148,10 +148,10 @@ class BinPackingFlowExtended(val x: Array[CPIntVar], val sizes: Array[Int], val 
   /**
    * compute the minimum cardinality for the bin `bin`
    */
-  def setMinCard(bin: Int): CPOutcome = {
+  def setMinCard(bin: Int): Outcome = {
     val (card, load) = getCard(bin, permRev, (binLoad, nextItemSize) => l(bin).getMin.intValue() > binLoad)
     if (load < l(bin).getMin.intValue())
-      return CPOutcome.Failure
+      return Outcome.Failure
     else
       c(bin).updateMin(card)
   }

@@ -17,8 +17,9 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.algo.reversible.ReversibleSparseSet
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPBoolVar
 
 /**
@@ -42,7 +43,7 @@ class OrReif(val X: Array[CPBoolVar], y: CPBoolVar) extends Constraint(y.store, 
   }
   priorityL2 = CPStore.MaxPriorityL2
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
 	  if (x.size == 2) {
 	        if (s.post(new BinaryOr(x(0),x(1),y)) == Failure) return Failure;
 	        else return Success;
@@ -61,7 +62,7 @@ class OrReif(val X: Array[CPBoolVar], y: CPBoolVar) extends Constraint(y.store, 
   }
 
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
 
     if (y.isFalse) {
       i = nFalse.value

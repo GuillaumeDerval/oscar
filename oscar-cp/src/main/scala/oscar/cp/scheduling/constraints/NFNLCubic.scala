@@ -1,16 +1,17 @@
 package oscar.cp.scheduling.constraints
 
 import oscar.cp._
-
 import oscar.cp._
-
-import oscar.cp.core.CPOutcome._ ; import oscar.cp.core._ 
-
+import oscar.algo.search.Outcome._
+import oscar.cp.core._
 import oscar.algo.SortUtils._
 import oscar.algo.reversible.ReversibleInt
+
 import scala.collection.mutable.Set
 import java.lang.Math.min
 import java.lang.Math.max
+
+import oscar.algo.search.Outcome
 
 // @author Steven Gay steven.gay@uclouvain.be
 
@@ -30,7 +31,7 @@ extends Constraint(capacity.store, "NFNLCubic") {
   val l2r = new NFNLCubicLR(starts, durations, ends, heights, resources, capacity, id)
   val r2l = new NFNLCubicLR(mstarts, durations, mends, heights, resources, capacity, id)
   
-  def setup(strength: CPPropagStrength): CPOutcome = {
+  def setup(strength: CPPropagStrength): Outcome = {
     if (l2r.setup(strength) == Failure || r2l.setup(strength) == Failure)
       Failure
     else
@@ -55,7 +56,7 @@ extends Constraint(capacity.store, "NFNLCubicLR") {
   
   val myActs = (0 until n) filter { a => resources(a).hasValue(id) && heights(a).max > 0 }
 
-  def setup(strength: CPPropagStrength): CPOutcome = {
+  def setup(strength: CPPropagStrength): Outcome = {
     priorityL2 = 1
         
     def callbacks(a: Int) = {
@@ -179,7 +180,7 @@ extends Constraint(capacity.store, "NFNLCubicLR") {
     
   }
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     val C = capacity.max
     updateCache()
     

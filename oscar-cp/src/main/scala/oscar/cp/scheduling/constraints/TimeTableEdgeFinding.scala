@@ -2,12 +2,13 @@ package oscar.cp.scheduling.constraints
 
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp._
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.modeling._
 import java.lang.Math._
+
 import oscar.algo.SortUtils._
+import oscar.algo.search.Outcome
 import oscar.cp.core.Inconsistency
 
 /*
@@ -64,7 +65,7 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   
   @inline private final def ttEn(a: Int, b: Int): Long = ttBeforeEMax(b) - ttBeforeSMin(a)
   
-  final override def propagate(): CPOutcome = {
+  final override def propagate(): Outcome = {
     updateCache()
     C = capacity.max
     

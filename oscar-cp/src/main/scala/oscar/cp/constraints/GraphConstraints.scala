@@ -1,7 +1,7 @@
 package oscar.cp.constraints
 
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPGraphVar
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
 
@@ -12,7 +12,7 @@ import oscar.cp.core.Constraint
 
 class RequiresNode(val G: CPGraphVar, n: Int) extends Constraint(G.s, "Node required") {
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     G.addNodeToGraph(n)
   }
 
@@ -20,7 +20,7 @@ class RequiresNode(val G: CPGraphVar, n: Int) extends Constraint(G.s, "Node requ
 
 class ExcludesNode(val G: CPGraphVar, n: Int) extends Constraint(G.s, "Node excluded") {
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     G.removeNodeFromGraph(n)
   }
 
@@ -28,7 +28,7 @@ class ExcludesNode(val G: CPGraphVar, n: Int) extends Constraint(G.s, "Node excl
 
 class RequiresEdge(val G: CPGraphVar, src: Int, dest: Int) extends Constraint(G.s, "Edge required") {
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     G.addEdgeToGraph(src,dest)
   }
 
@@ -36,7 +36,7 @@ class RequiresEdge(val G: CPGraphVar, src: Int, dest: Int) extends Constraint(G.
 
 class ExcludesEdge(val G: CPGraphVar, src: Int, dest: Int) extends Constraint(G.s, "Edge excluded") {
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     G.removeEdgeFromGraph(src,dest)
   }
 

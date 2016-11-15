@@ -15,14 +15,13 @@
 
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.Constraint;
 import oscar.algo.reversible.*;
 import oscar.cp.core.delta.DeltaIntVar;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.variables.CPIntVarAdaptable;
-import oscar.cp.core.variables.CPIntVarAdaptableDomainSparse;
 
 import java.util.Arrays;
 
@@ -180,7 +179,7 @@ public class MinAssignment extends Constraint {
 
 
     @Override
-    public CPOutcome setup(CPPropagStrength l) {
+    public Outcome setup(CPPropagStrength l) {
         initTrails();
 
         markc = new boolean[x.length];
@@ -192,8 +191,8 @@ public class MinAssignment extends Constraint {
         initAssignment();
         findMinimalAssignment();
         updateUnBounds();
-        if (prune() == CPOutcome.Failure)
-            return CPOutcome.Failure;
+        if (prune() == Outcome.Failure)
+            return Outcome.Failure;
 
         for (int i = 0; i < x.length; i++) {
             if (!x[i].isBound()) {
@@ -208,7 +207,7 @@ public class MinAssignment extends Constraint {
             exactReducedCosts = true;
         }
 
-        return CPOutcome.Suspend;
+        return Outcome.Suspend;
     }
 
     private void reduceMatrix() {
@@ -343,7 +342,7 @@ public class MinAssignment extends Constraint {
     }
 
     @Override
-    public CPOutcome propagate() {
+    public Outcome propagate() {
         // treat the deltas
         for (int r = 0; r < x.length; r++) {
             if (delta[r] != null) { // if variable was not already bound at posting
@@ -485,23 +484,23 @@ public class MinAssignment extends Constraint {
     }
 
 
-    private CPOutcome prune() {
+    private Outcome prune() {
         int sum = 0;
         for (int i = 0; i < x.length; i++) {
             sum += lc[i].getValue();
             sum += lr[i].getValue();
         }
-        if (cost.updateMin(sum) ==  CPOutcome.Failure)
-            return CPOutcome.Failure;
+        if (cost.updateMin(sum) ==  Outcome.Failure)
+            return Outcome.Failure;
         int slack = cost.getMax() - sum;
-        if (pruneLPReducedCosts(slack) == CPOutcome.Failure)
-            return CPOutcome.Failure;
-        if (exactReducedCosts && pruneExactReducedCosts(slack) == CPOutcome.Failure)
-            return CPOutcome.Failure;
-        return CPOutcome.Suspend;
+        if (pruneLPReducedCosts(slack) == Outcome.Failure)
+            return Outcome.Failure;
+        if (exactReducedCosts && pruneExactReducedCosts(slack) == Outcome.Failure)
+            return Outcome.Failure;
+        return Outcome.Suspend;
     }
 
-    public CPOutcome pruneLPReducedCosts(int slack) {
+    public Outcome pruneLPReducedCosts(int slack) {
         for (int s = 0; s < nUnboundVars; s++) {
             int i = unboundVars[s];
             int nVals = x[i].fillArray(values);
@@ -512,8 +511,8 @@ public class MinAssignment extends Constraint {
                     int m = val - lc[j].getValue() - lr[i].getValue(); // get reduced cost of assigning i->j
                     if (m > slack) {
                         w[i][j].setValue(M);
-                        if (x[i].removeValue(j) == CPOutcome.Failure) {
-                            return CPOutcome.Failure;
+                        if (x[i].removeValue(j) == Outcome.Failure) {
+                            return Outcome.Failure;
                         }
                     }
                 }
@@ -521,11 +520,11 @@ public class MinAssignment extends Constraint {
 
             }
         }
-        return CPOutcome.Suspend;
+        return Outcome.Suspend;
     }
 
 
-    public CPOutcome pruneExactReducedCosts(int slack) {
+    public Outcome pruneExactReducedCosts(int slack) {
 
 
         //updateAllPairsShortestPathBellmanFord();
@@ -551,8 +550,8 @@ public class MinAssignment extends Constraint {
 
                     if (m > slack) {
                         w[i][j].setValue(M);
-                        if (x[i].removeValue(j) == CPOutcome.Failure) {
-                            return CPOutcome.Failure;
+                        if (x[i].removeValue(j) == Outcome.Failure) {
+                            return Outcome.Failure;
                         }
                     }
                 }
@@ -560,7 +559,7 @@ public class MinAssignment extends Constraint {
 
         }
 
-        return CPOutcome.Suspend;
+        return Outcome.Suspend;
     }
 
 

@@ -16,10 +16,10 @@
  */
 package oscar.cp.constraints.tables
 
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome
+import oscar.algo.search.Outcome
 import oscar.cp._
 import oscar.cp.core.delta.DeltaIntVar
 
@@ -64,23 +64,23 @@ class TableAC5TCRecomp(val data: TableData, val x: CPIntVar*) extends Constraint
   /**
    * Initialization, input checks and registration to events
    */
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     idempotent = true
     data.setup()
 
     for ((y, i) <- x.zipWithIndex) {
-      if (!filterAndInitSupport(i)) return CPOutcome.Failure
+      if (!filterAndInitSupport(i)) return Outcome.Failure
       if (!y.isBound) {
         //y.callValRemoveIdxWhenValueIsRemoved(this, i)
         y.callOnChangesIdx(i, delta => valuesRemoved(delta),idempotent = true)
 
       }
     }
-    CPOutcome.Suspend
+    Outcome.Suspend
   }
 
   def filterAndInitSupport(i: Int): Boolean = {
-    if (x(i).updateMax(data.max(i)) == CPOutcome.Failure || x(i).updateMin(data.min(i)) == CPOutcome.Failure) {
+    if (x(i).updateMax(data.max(i)) == Outcome.Failure || x(i).updateMin(data.min(i)) == Outcome.Failure) {
       return false
     }
     support(i) = Array.fill(data.max(i) - data.min(i) + 1)(new ReversibleInt(s, -1))
@@ -88,7 +88,7 @@ class TableAC5TCRecomp(val data: TableData, val x: CPIntVar*) extends Constraint
       if (data.hasFirstSupport(i, v)) {
         if (!updateAndSeekNextSupport(i, data.firstSupport(i, v), v)) { return false }
       } else {
-        if (x(i).removeValue(v) == CPOutcome.Failure) { return false }
+        if (x(i).removeValue(v) == Outcome.Failure) { return false }
       }
     }
     true
@@ -100,7 +100,7 @@ class TableAC5TCRecomp(val data: TableData, val x: CPIntVar*) extends Constraint
       t = data.nextSupport(i, t)
     }
     if (!tupleOk(t)) {
-      if (x(i).removeValue(v) == CPOutcome.Failure) { return false }
+      if (x(i).removeValue(v) == Outcome.Failure) { return false }
     } else {
       sup(i)(v).value = t
     }
@@ -137,7 +137,7 @@ class TableAC5TCRecomp(val data: TableData, val x: CPIntVar*) extends Constraint
     true
   }
 
-  private final def valuesRemoved(delta: DeltaIntVar): CPOutcome = {
+  private final def valuesRemoved(delta: DeltaIntVar): Outcome = {
     val idx = delta.id
     var i = delta.fillArray(domainsFillArray)
     while (i > 0) {
@@ -150,15 +150,15 @@ class TableAC5TCRecomp(val data: TableData, val x: CPIntVar*) extends Constraint
     Suspend
   }
 
-  private final def valueRemoved(y: CPIntVar, i: Int, v: Int): CPOutcome = {
+  private final def valueRemoved(y: CPIntVar, i: Int, v: Int): Outcome = {
     // all the supports using a tuple with v at index i are not support any more
     // we iterate on these and try to find new support in case they were used as support
     var t = sup(i)(v).value
     do {
-      if (!updateSupports(i, t)) { return CPOutcome.Failure }
+      if (!updateSupports(i, t)) { return Outcome.Failure }
       t = data.nextSupport(i, t) // get the next tuple with a value v at index i
     } while (t >= 0);
-    CPOutcome.Suspend
+    Outcome.Suspend
   }
 
 }

@@ -13,11 +13,12 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
 
-package oscar.cp.searches
+package oscar.algo.branchings
 
-import oscar.cp._
-import oscar.algo.search.Branching
+import oscar.algo.search._
 import oscar.algo.reversible.ReversibleInt
+import oscar.algo.search.{Branching, Decision}
+import oscar.algo.vars.IntVarLike
 
 /**
  * Abstract Binary Branching:
@@ -28,13 +29,11 @@ import oscar.algo.reversible.ReversibleInt
  * @param varHeuris is a variable heuristic, it will select preferably first the unbound
  *        variables(i) such that varHeuris(i) is the smallest
  */
-class BinaryBranching(variables: Array[CPIntVar], var varHeuris: (Int => Int), valHeuris: (Int => Int)) extends Branching {
-
-  val cp = variables(0).store
-
+class BinaryBranching(variables: Array[IntVarLike], var varHeuris: (Int => Int), valHeuris: (Int => Int)) extends Branching {
+  private val context = variables(0).context
   private[this] val nVariables = variables.length
   private[this] val indexes = Array.tabulate(nVariables)(i => i)
-  private[this] val nBounds = new ReversibleInt(cp, 0)
+  private[this] val nBounds = new ReversibleInt(context, 0)
 
   @inline private def bound(i: Int): Unit = {
     val id = nBounds.incr() - 1

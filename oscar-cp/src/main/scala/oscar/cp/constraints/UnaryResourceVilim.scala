@@ -2,9 +2,10 @@ package oscar.cp.constraints
 
 import oscar.algo.SortUtils._
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{CPOutcome, CPPropagStrength, Constraint}
+import oscar.cp.core.{CPPropagStrength, Constraint}
 import oscar.cp.scheduling.util.ThetaLambdaTree
 import oscar.cp._
 
@@ -59,7 +60,7 @@ class UnaryResourceVilim(starts: Array[CPIntVar], durations: Array[CPIntVar], en
   private[this] val mergeSortAux = Array.ofDim[Int](nTasks)
 
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     for (i <- 0 until nTasks) {
       starts(i).callPropagateWhenBoundsChange(this)
       ends(i).callPropagateWhenBoundsChange(this)
@@ -67,7 +68,7 @@ class UnaryResourceVilim(starts: Array[CPIntVar], durations: Array[CPIntVar], en
     propagate()
   }
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     failure = false
     changed = true
 

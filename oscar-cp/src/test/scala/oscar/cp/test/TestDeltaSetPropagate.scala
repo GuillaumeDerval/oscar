@@ -17,10 +17,11 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-import oscar.cp.core.CPOutcome
+import oscar.algo.search.Outcome
 import oscar.cp.core.CPPropagStrength
 import oscar.cp._
 import oscar.cp.core.delta.DeltaSetVar
+
 import scala.collection.mutable.ArrayBuffer
 
 
@@ -37,7 +38,7 @@ class TestDeltaSetPropagate extends FunSuite with ShouldMatchers {
     
     class MyCons(val X: CPSetVar) extends Constraint(X.store, "TestDelta") {
       priorityL2 = CPStore.MaxPriorityL2-5
-      override def setup(l: CPPropagStrength): CPOutcome = {
+      override def setup(l: CPPropagStrength): Outcome = {
         //println("setup")
         X.filterWhenDomainChangesWithDelta(){ delta =>
           propag = true
@@ -51,9 +52,9 @@ class TestDeltaSetPropagate extends FunSuite with ShouldMatchers {
           delta.deltaPossible.toSet should be(Set(2,4))
           
 
-          CPOutcome.Suspend
+          Outcome.Suspend
         }
-        CPOutcome.Suspend
+        Outcome.Suspend
       }
     }
 
@@ -81,11 +82,11 @@ class TestDeltaSetPropagate extends FunSuite with ShouldMatchers {
     class MyCons(val X: CPSetVar) extends Constraint(X.store, "TestDelta") {
       priorityL2 = CPStore.MaxPriorityL2-5
       var delta: DeltaSetVar = null
-      override def setup(l: CPPropagStrength): CPOutcome = {
+      override def setup(l: CPPropagStrength): Outcome = {
         delta = X.callPropagateOnChangesWithDelta(this)
-        CPOutcome.Suspend
+        Outcome.Suspend
       }
-      override def propagate(): CPOutcome = {
+      override def propagate(): Outcome = {
           propag = true
           delta.changed() should be(true)
           delta.requiredChanged should be(true)
@@ -95,7 +96,7 @@ class TestDeltaSetPropagate extends FunSuite with ShouldMatchers {
           delta.deltaPossibleSize() should be(2)
           delta.deltaPossible().toSet should be(Set(2,4))
         
-          CPOutcome.Suspend
+          Outcome.Suspend
       }
       
     }

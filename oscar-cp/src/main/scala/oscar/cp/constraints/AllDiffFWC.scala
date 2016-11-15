@@ -18,11 +18,11 @@ package oscar.cp.constraints
 
 import oscar.cp.core.variables.CPIntVar
 import oscar.algo.reversible.ReversibleInt
+import oscar.algo.search.Outcome
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 
 /**
  * Implementation of AllDifferent
@@ -40,7 +40,7 @@ class AllDiffFWC(x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffFWC"
   private[this] val nBoundsRev = new ReversibleInt(s, 0)
   private[this] var nBounds = 0
 
-  final override def setup(l: CPPropagStrength): CPOutcome = {
+  final override def setup(l: CPPropagStrength): Outcome = {
     if (propagate() == Failure) Failure
     else {
       var i = variables.length
@@ -59,7 +59,7 @@ class AllDiffFWC(x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffFWC"
     nBounds += 1
   }
 
-  final override def propagate(): CPOutcome = {
+  final override def propagate(): Outcome = {
     nBounds = nBoundsRev.value // cache 
     var i = nBounds
     while (i < nVariables) {

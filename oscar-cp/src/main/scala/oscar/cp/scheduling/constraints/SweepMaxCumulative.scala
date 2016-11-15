@@ -17,12 +17,12 @@ package oscar.cp.scheduling.constraints
 import scala.math.max
 import scala.math.min
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.modeling._
 import oscar.algo.SortUtils._
+import oscar.algo.search.Outcome
 
 /**
  * @author Renaud Hartert ren.hartert@gmail.com
@@ -33,7 +33,7 @@ class SweepMaxCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
   val sweepLR = new SweepMaxCumulativeLR(starts,        durations,            ends, demands, resources, capacity, id) 
   val sweepRL = new SweepMaxCumulativeLR(ends map {-_}, durations, starts map {-_}, demands, resources, capacity, id)
     
-  def setup(str: CPPropagStrength): CPOutcome = {
+  def setup(str: CPPropagStrength): Outcome = {
     val S = capacity.store
       
     if (S.post(sweepLR) == Failure || S.post(sweepRL) == Failure) Failure
@@ -117,7 +117,7 @@ class SweepMaxCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
 
   private def forbidenCheck(t: Int): Boolean = capaSumHeight - capaContrib(t) + demands(t).min > capacity.max
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
 
     priorityL2 = 2
 
@@ -137,7 +137,7 @@ class SweepMaxCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
     return oc
   }
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
 
     // Generates events
     if (!generateEventPointSeries())
@@ -206,7 +206,7 @@ class SweepMaxCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
   val permutation = Array.ofDim[Int](3*nTasks)
   val dates = Array.ofDim[Int](3*nTasks)
   
-  private def sweepAlgorithm(): CPOutcome = {
+  private def sweepAlgorithm(): Outcome = {
 
     resetSweepLine
 
@@ -280,7 +280,7 @@ class SweepMaxCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
     return Suspend
   }
 
-  private def prune(low: Int, up: Int): CPOutcome = {
+  private def prune(low: Int, up: Int): Outcome = {
 
     // Used to adjust stackPrune
     var nRemainingTasksToPrune = 0
@@ -317,7 +317,7 @@ class SweepMaxCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
     return Suspend
   }
 
-  private def pruneMandatory(t: Int, r: Int, low: Int, up: Int): CPOutcome = {
+  private def pruneMandatory(t: Int, r: Int, low: Int, up: Int): Outcome = {
 
     // Checks if the task is mandatory to respect consistency
     if (!mandatoryCheck(t))
@@ -350,7 +350,7 @@ class SweepMaxCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
     return Suspend
   }
 
-  private def pruneForbiden(t: Int, r: Int, low: Int, up: Int): CPOutcome = {
+  private def pruneForbiden(t: Int, r: Int, low: Int, up: Int): Outcome = {
 
     // Checks if the task must be discarded to respect consistency
     if (forbidenCheck(t)) {
@@ -386,7 +386,7 @@ class SweepMaxCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
     return Suspend
   }
 
-  private def pruneConsumption(t: Int, r: Int, low: Int, up: Int): CPOutcome = {
+  private def pruneConsumption(t: Int, r: Int, low: Int, up: Int): Outcome = {
 
     if (resources(t).isBoundTo(r) && ends(t).min > low && starts(t).max <= up && durations(t).min > 0) {
 
@@ -397,7 +397,7 @@ class SweepMaxCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
     return Suspend
   }
 
-  private def pruneInterval(low: Int, up: Int, v: CPIntVar): CPOutcome = {
+  private def pruneInterval(low: Int, up: Int, v: CPIntVar): Outcome = {
 
     assert(low <= up)
     if (low <= v.min && up <= v.max) {

@@ -2,7 +2,7 @@ package oscar.cp.core.domains
 
 import oscar.cp.testUtils.TestSuite
 import oscar.algo.reversible.ReversibleContext
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 
 /**
  *  Tests the sparse set implementation of a sparse domain

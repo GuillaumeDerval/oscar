@@ -1,9 +1,8 @@
-package oscar.cp.searches
+package oscar.algo.branchings
 
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp.core.CPStore
-import oscar.cp.core.variables.CPIntVar
 import oscar.algo.search._
+import oscar.algo.vars.IntVarLike
 
 /*
  *  Conflict Ordering Search, basically orders the variables by latest conflict
@@ -11,21 +10,21 @@ import oscar.algo.search._
  */
 
 object ConflictOrderingSearch {
-  def apply(variables: Array[CPIntVar], varHeuristic: (Int) => Int, valHeuristic: (Int) => Int, doReset: Boolean = false)(implicit S: CPStore) = 
+  def apply(variables: Array[IntVarLike], varHeuristic: (Int) => Int, valHeuristic: (Int) => Int, doReset: Boolean = false) =
     new ConflictOrderingSearch(variables, varHeuristic, valHeuristic, doReset)
 }
 
-class ConflictOrderingSearch(variables: Array[CPIntVar], varHeuristic: (Int) => Int, valHeuristic: (Int) => Int, doReset: Boolean = false) extends Branching {  
+class ConflictOrderingSearch(variables: Array[IntVarLike], varHeuristic: (Int) => Int, valHeuristic: (Int) => Int, doReset: Boolean = false) extends Branching {
   
   require(variables.length > 0)
   
-  private[this] val store = variables(0).store
+  private[this] val context = variables(0).context
   
   var lastVariables = List[Int]()
   
   var lastVariable: Option[Int] = None
   var lastDepth = 0
-  val depth = new ReversibleInt(store, 0)
+  val depth = new ReversibleInt(context, 0)
   
   override def reset() = {
     lastVariable = None
@@ -53,8 +52,8 @@ class ConflictOrderingSearch(variables: Array[CPIntVar], varHeuristic: (Int) => 
       if (!x.isBound) {
         lastVariable = Some(i)
         val value = valHeuristic(i)
-        val alternatives = branch { store.post(x.eq((value))) } { store.post(x.diff(value)) }
-        return alternatives        
+        val alternatives = branch { context.assign(x, value) } { context.remove(x, value) }
+        return alternatives
       }
     }
     
@@ -82,7 +81,7 @@ class ConflictOrderingSearch(variables: Array[CPIntVar], varHeuristic: (Int) => 
       lastVariable = Some(bestVar)
       val x = variables(bestVar)
       val value = valHeuristic(bestVar)
-      val alternatives = branch { store.post(x.eq(value)) } { store.post(x.diff(value)) }
+      val alternatives = branch { context.assign(x, value) } { context.remove(x, value) }
       alternatives        
     }
   }

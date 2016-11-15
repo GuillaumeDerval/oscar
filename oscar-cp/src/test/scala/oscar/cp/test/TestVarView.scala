@@ -16,10 +16,10 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
+import oscar.algo.search.Outcome
 import oscar.cp.constraints._
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
 
 
 class TestVarView extends FunSuite with ShouldMatchers  {
@@ -32,35 +32,35 @@ class TestVarView extends FunSuite with ShouldMatchers  {
 
     	var valRemove = true
       
-    	override def setup(l: CPPropagStrength): CPOutcome = { 
+    	override def setup(l: CPPropagStrength): Outcome = {
     	    X.callValRemoveWhenValueIsRemoved(this)
     		X.callValBindWhenBind(this)
     		X.callUpdateBoundsWhenBoundsChange(this)
-    		return CPOutcome.Suspend
+    		return Outcome.Suspend
     	}
 
-    	override def valRemove(x: CPIntVar,v: Int): CPOutcome = {
+    	override def valRemove(x: CPIntVar,v: Int): Outcome = {
     	  val eq: Boolean = x==X
     	  eq should  equal(true)
           if (valRemove) {
            v should be(0)
            valRemove = false
           }  
-          return CPOutcome.Suspend
+          return Outcome.Suspend
         }
  
-        override def valBind(x: CPIntVar): CPOutcome = {
+        override def valBind(x: CPIntVar): Outcome = {
     	  val eq: Boolean = x==X
     	  eq should  equal(true)
           x.value should be(-2)  
-          return CPOutcome.Suspend
+          return Outcome.Suspend
         }
 
         
-        override def updateBounds(x: CPIntVar): CPOutcome = {
+        override def updateBounds(x: CPIntVar): Outcome = {
     	  val eq: Boolean = x==X
     	  eq should  equal(true)
-          return CPOutcome.Suspend
+          return Outcome.Suspend
         }
 
     }
@@ -86,34 +86,34 @@ class TestVarView extends FunSuite with ShouldMatchers  {
 
     	var valRemove = true
       
-    	override def setup(l: CPPropagStrength): CPOutcome = { 
+    	override def setup(l: CPPropagStrength): Outcome = {
     	    X.callValRemoveIdxWhenValueIsRemoved(this,-1)
     		X.callValBindIdxWhenBind(this,-1)
     		X.callUpdateBoundsIdxWhenBoundsChange(this,-1)
-    		return CPOutcome.Suspend
+    		return Outcome.Suspend
     	}
 
-    	override def valRemoveIdx(x: CPIntVar,idx: Int, v: Int): CPOutcome = {
+    	override def valRemoveIdx(x: CPIntVar,idx: Int, v: Int): Outcome = {
     	  val eq: Boolean = x==X
     	  eq should  equal(true)
           if (valRemove) {
            v should be(0)
            valRemove = false
           }  
-          return CPOutcome.Suspend
+          return Outcome.Suspend
         }
  
-        override def valBindIdx(x: CPIntVar,idx: Int): CPOutcome = {
+        override def valBindIdx(x: CPIntVar,idx: Int): Outcome = {
     	  val eq: Boolean = x==X
     	  eq should  equal(true)
           x.value should be(-2)  
-          return CPOutcome.Suspend
+          return Outcome.Suspend
         }
         
-        override def updateBoundsIdx(x: CPIntVar,idx: Int): CPOutcome = {
+        override def updateBoundsIdx(x: CPIntVar,idx: Int): Outcome = {
     	  val eq: Boolean = x==X
     	  eq should  equal(true)
-          return CPOutcome.Suspend
+          return Outcome.Suspend
         }
 
     }

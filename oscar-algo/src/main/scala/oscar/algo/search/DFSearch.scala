@@ -146,7 +146,7 @@ class DFSearch(node: DFSearchNode) {
         searchListener_.onBranch(alternative)
       alternative() // apply the alternative
 
-      if (!node.isFailed()) {
+      if (!node.isFailed) {
         val isExpandable = expand(branching)
         if (!isExpandable) {
           node.solFound()

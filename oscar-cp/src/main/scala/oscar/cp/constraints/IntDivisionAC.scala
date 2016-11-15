@@ -2,8 +2,8 @@ package oscar.cp.constraints
 
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 
 /** 
@@ -18,7 +18,7 @@ class IntDivisionAC(val a : CPIntVar, val b: CPIntVar, val c: Int) extends Const
   // Checks requirements
   require(c > 0, "c has to be greater than 0")
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     if (init() == Failure) Failure
     else {
       if (!a.isBound) a.callValRemoveWhenValueIsRemoved(this)
@@ -27,7 +27,7 @@ class IntDivisionAC(val a : CPIntVar, val b: CPIntVar, val c: Int) extends Const
     }
   }
   
-  private def init(): CPOutcome = {
+  private def init(): Outcome = {
     // Checks values of a
     val valuesA = a.toArray
     var i = 0
@@ -56,7 +56,7 @@ class IntDivisionAC(val a : CPIntVar, val b: CPIntVar, val c: Int) extends Const
     Suspend
   }
   
-  override def valRemove(intVar: CPIntVar, value: Int): CPOutcome = {
+  override def valRemove(intVar: CPIntVar, value: Int): Outcome = {
     if (intVar == b) {
       var supported = false
       val m = value / c

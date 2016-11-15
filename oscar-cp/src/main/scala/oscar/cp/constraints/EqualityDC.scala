@@ -1,18 +1,18 @@
 package oscar.cp.constraints
 
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.CPStore
 
 final class EqualityDC(x: CPIntVar, y: CPIntVar) extends Constraint(x.store, "EqualityDC") {
 
   private[this] val values = new Array[Int](Math.max(x.size, y.size))
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     val outcome = init()
     if (outcome != Suspend) outcome
     else {
@@ -24,7 +24,7 @@ final class EqualityDC(x: CPIntVar, y: CPIntVar) extends Constraint(x.store, "Eq
     }
   }
 
-  @inline private def init(): CPOutcome = {
+  @inline private def init(): Outcome = {
     if (x.isBound) {
       if (y.assign(x.min) == Failure) Failure 
       else Success
@@ -50,7 +50,7 @@ final class EqualityDC(x: CPIntVar, y: CPIntVar) extends Constraint(x.store, "Eq
     }
   }
 
-  @inline private def removeValues(from: CPIntVar, to: CPIntVar, delta: DeltaIntVar): CPOutcome = {
+  @inline private def removeValues(from: CPIntVar, to: CPIntVar, delta: DeltaIntVar): Outcome = {
     if (from.isBound) {
       if (to.assign(from.min) == Failure) Failure
       else Success

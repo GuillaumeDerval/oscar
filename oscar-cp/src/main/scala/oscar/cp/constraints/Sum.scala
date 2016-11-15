@@ -17,12 +17,12 @@
 package oscar.cp.constraints
 
 import oscar.algo.reversible.ReversibleInt
+import oscar.algo.search.Outcome
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 
 /**
  * Implementation of Sum Constraint:
@@ -44,7 +44,7 @@ class Sum(x: Array[CPIntVar], constant: Int, sum: CPIntVar) extends Constraint(s
   idempotent = true
   priorityL2 = CPStore.MaxPriorityL2 - 1
 
-  final override def setup(l: CPPropagStrength): CPOutcome = {
+  final override def setup(l: CPPropagStrength): Outcome = {
     if (propagate() == Failure) Failure
     else {
       sum.callPropagateWhenBoundsChange(this)
@@ -58,7 +58,7 @@ class Sum(x: Array[CPIntVar], constant: Int, sum: CPIntVar) extends Constraint(s
   }
 
   // Invariant: fixedValue is the sum of bound term variables.
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
 
     var sumxmin = 0
     var sumxmax = 0

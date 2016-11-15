@@ -15,10 +15,10 @@
 package oscar.cp.constraints
 
 import oscar.algo.reversible.ReversibleInt
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.Constraint
 
 /**
@@ -50,7 +50,7 @@ final class SubCircuit(succs: Array[CPIntVar]) extends Constraint(succs(0).store
   private[this] val nUnboundPossSelfLoop = new ReversibleInt(s,nSuccs)
 
 
-  final override def setup(l: CPPropagStrength): CPOutcome = {
+  final override def setup(l: CPPropagStrength): Outcome = {
     if (nSuccs == 1) return succs(0).assign(0)
     if (s.post(new AllDifferent(succs), l) == Failure) Failure // FIXME post two allDifferent in case of symmetry
     else {
@@ -66,7 +66,7 @@ final class SubCircuit(succs: Array[CPIntVar]) extends Constraint(succs(0).store
     return propagate()
   }
 
-  final override def propagate(): CPOutcome = {
+  final override def propagate(): Outcome = {
 
     // filter-out unbound
     var i = nUnboundPossSelfLoop.value
@@ -118,7 +118,7 @@ final class SubCircuit(succs: Array[CPIntVar]) extends Constraint(succs(0).store
     Suspend
   }
 
-  private def close(): CPOutcome = {
+  private def close(): Outcome = {
     var i = nUnboundPossSelfLoop
     while (i > 0) {
       i -= 1
@@ -129,7 +129,7 @@ final class SubCircuit(succs: Array[CPIntVar]) extends Constraint(succs(0).store
     Suspend
   }
 
-  private def bind(i: Int): CPOutcome = {
+  private def bind(i: Int): Outcome = {
     val j = succs(i).min
 
     if (j == i) {

@@ -1,11 +1,13 @@
 package oscar.cp.scheduling.constraints
 
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.SortUtils.mergeSort
+
 import scala.annotation.tailrec
 import java.lang.Math.max
-import oscar.cp.core.CPOutcome
+
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Inconsistency
 
@@ -83,7 +85,7 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   private[this] val sortedBySMin = Array.tabulate(nTasks){ i => i }
   private[this] val sortedByEMax = Array.tabulate(nTasks){ i => i }
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     updateCache()
     C = capacity.max
     

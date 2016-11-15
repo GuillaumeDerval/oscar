@@ -32,7 +32,7 @@ class TestNoSolutionException extends FunSuite with ShouldMatchers {
 	    cp.add(x < 10)
 	  }  
 	  
-	  cp.isFailed() should be(true)
+	  cp.isFailed should be(true)
 	}
 	
 	test("test3: using post outside subjectTo shouldn't generate NoSolutionExceptions") {
@@ -45,7 +45,7 @@ class TestNoSolutionException extends FunSuite with ShouldMatchers {
 	    case e: NoSolutionException => fail("post should handle the NoSolutionException internally")
 	  }
 	  
-	  cp.isFailed() should be(true)
+	  cp.isFailed should be(true)
 	}
 	
 	test("test4: using post inside subjectTo shouldn't generate NoSolutionExceptions") {
@@ -56,6 +56,6 @@ class TestNoSolutionException extends FunSuite with ShouldMatchers {
 	  } catch {
 	    case e: NoSolutionException => fail("The NoSolutionException should be caught by the subjectTo block")
 	  }
-	  cp.isFailed() should be(true)  
+	  cp.isFailed should be(true)
 	}
 }

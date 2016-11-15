@@ -16,7 +16,8 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPIntVar
 
 /**
@@ -31,7 +32,7 @@ class WeightedSum(val W: Array[Int], val X: Array[CPIntVar], val y: CPIntVar) ex
   val nBounds = new ReversibleInt(s,0)
   
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     //priorityL2 = CPStore.MAXPRIORL2-1
     X.foreach(_.callPropagateWhenBoundsChange(this))
     y.callPropagateWhenBoundsChange(this)
@@ -50,7 +51,7 @@ class WeightedSum(val W: Array[Int], val X: Array[CPIntVar], val y: CPIntVar) ex
     nBounds.incr()
   }
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
 
     var ymin: Int = sumBounds.value
     var ymax: Int = sumBounds.value

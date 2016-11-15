@@ -1,11 +1,12 @@
 package oscar.cp.scheduling.constraints
 
+import oscar.algo.search.Outcome
+
 import scala.collection.mutable.HashSet
 import scala.math.min
 import scala.math.max
 import scala.math.ceil
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.variables.CPIntVar
@@ -31,7 +32,7 @@ class EnergeticReasoning(starts: Array[CPIntVar], durations: Array[CPIntVar], en
   
   val tasksId = Array.tabulate(starts.length)(i => i)
   
-  def setup(l: CPPropagStrength): CPOutcome = {
+  def setup(l: CPPropagStrength): Outcome = {
     priorityL2 = 0
     
     if (propagate == Failure) Failure
@@ -48,7 +49,7 @@ class EnergeticReasoning(starts: Array[CPIntVar], durations: Array[CPIntVar], en
     }
   }
 
-  override def propagate: CPOutcome = {
+  override def propagate: Outcome = {
 
     if(s.isFailed)
       return Failure

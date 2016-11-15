@@ -3,14 +3,14 @@ package oscar.cp.constraints
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
+import oscar.algo.search.Outcome
 
 final class DiffVar(x: CPIntVar, y: CPIntVar) extends Constraint(x.store, "DiffVar") {
   
   idempotent = true
 
-  final override def setup(l: CPPropagStrength): CPOutcome = {
+  final override def setup(l: CPPropagStrength): Outcome = {
     val outcome = init()
     if (outcome != Suspend) outcome
     else {
@@ -20,7 +20,7 @@ final class DiffVar(x: CPIntVar, y: CPIntVar) extends Constraint(x.store, "DiffV
     }
   }
   
-  @inline private def init(): CPOutcome = {
+  @inline private def init(): Outcome = {
     if (x.isBound) {
       if (y.removeValue(x.min) == Failure) Failure
       else Success
@@ -30,7 +30,7 @@ final class DiffVar(x: CPIntVar, y: CPIntVar) extends Constraint(x.store, "DiffV
     } else Suspend
   }
 
-  @inline final override def propagate(): CPOutcome = {
+  @inline final override def propagate(): Outcome = {
     if (x.isBound) {
       if (y.removeValue(x.min) == Failure) Failure
       else Success

@@ -15,7 +15,7 @@
 package oscar.cp.constraints;
 
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -45,13 +45,13 @@ public class MulCteRes extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Outcome setup(CPPropagStrength l) {
 		
 		if (x == y) {
-			if (s().post(new Square(x,CPIntVar.apply(s(),c,c))) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (s().post(new Square(x,CPIntVar.apply(s(),c,c))) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}
 		
 		if (c == 0 && x.hasValue(0) && y.hasValue(0)) {
@@ -62,35 +62,35 @@ public class MulCteRes extends Constraint {
 			y.callPropagateWhenBoundsChange(this);
 		}
 		// propagate must be called after attaching events because this propagator may not reach fix-point it-self.
-		CPOutcome ok = propagate();
-		if (ok != CPOutcome.Suspend) {
+		Outcome ok = propagate();
+		if (ok != Outcome.Suspend) {
 			return ok;
 		}
 		
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 		
 	@Override
-	public CPOutcome propagate() {
+	public Outcome propagate() {
 		
 		if (c != 0) {
-			if (x.removeValue(0) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (x.removeValue(0) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			if (y.removeValue(0) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (y.removeValue(0) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
 		}
 		if (x.isBound()) {
-			if (s().post(new MulCte(y,x.min(),CPIntVar.apply(s(), c,c))) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (s().post(new MulCte(y,x.min(),CPIntVar.apply(s(), c,c))) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		} else if (y.isBound()) {
-			if (s().post(new MulCte(x,y.min(),CPIntVar.apply(s(), c,c))) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (s().post(new MulCte(x,y.min(),CPIntVar.apply(s(), c,c))) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		} else {
 			if (c == 0) {
 				boolean xZero = x.hasValue(0);
@@ -102,25 +102,25 @@ public class MulCteRes extends Constraint {
 						} else {
 							y.assign(0);
 						}
-						return CPOutcome.Success;
+						return Outcome.Success;
 					}
-				} else return CPOutcome.Failure;
+				} else return Outcome.Failure;
 			} else { // c != 0
-				if (propagateVar(x,y) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (propagateVar(x,y) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
-				if (propagateVar(y,x) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (propagateVar(y,x) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 			}
-			return CPOutcome.Suspend;
+			return Outcome.Suspend;
 		}
 	}
 	
 	/**
 	 * Filter domain of z with w * z == c with c!=0
 	 */
-	private CPOutcome propagateVar(CPIntVar w , CPIntVar z) { 
+	private Outcome propagateVar(CPIntVar w , CPIntVar z) {
 		int a = w.getMin();
 		int b = w.getMax();
 		
@@ -129,44 +129,44 @@ public class MulCteRes extends Constraint {
 		
 		if (a > 0 || b < 0) {
 			// [a,b] > 0 or [a,b] < 0
-			if (z.updateMin(NumberUtils.minCeilDiv(c,a,b)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (z.updateMin(NumberUtils.minCeilDiv(c,a,b)) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			if (z.updateMax(NumberUtils.maxFloorDiv(c,a,b)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (z.updateMax(NumberUtils.maxFloorDiv(c,a,b)) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Suspend;
+			return Outcome.Suspend;
 		} else if (a == 0) {
 			int after0 = w.valueAfter(0);
 			// a=0 ... after0 ... b
-			if (z.updateMin(NumberUtils.minCeilDiv(c,after0,b)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (z.updateMin(NumberUtils.minCeilDiv(c,after0,b)) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			if (z.updateMax(NumberUtils.maxFloorDiv(c,after0,b)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (z.updateMax(NumberUtils.maxFloorDiv(c,after0,b)) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Suspend;
+			return Outcome.Suspend;
 		} else if (b == 0) {
 			int before0 = w.valueBefore(0);
 			// a ... before0 ... b=0
-			if (z.updateMin(NumberUtils.minCeilDiv(c,before0,a)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (z.updateMin(NumberUtils.minCeilDiv(c,before0,a)) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			if (z.updateMax(NumberUtils.maxFloorDiv(c,before0,a)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (z.updateMax(NumberUtils.maxFloorDiv(c,before0,a)) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Suspend;
+			return Outcome.Suspend;
 		} else { // a ... 0 ... b
 			int before0 = w.valueBefore(0);
 			int after0 = w.valueAfter(0);
-			if (z.updateMin(NumberUtils.minCeilDiv(c, a, before0, after0, b)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (z.updateMin(NumberUtils.minCeilDiv(c, a, before0, after0, b)) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			if (z.updateMax(NumberUtils.maxFloorDiv(c, a, before0, after0, b)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (z.updateMax(NumberUtils.maxFloorDiv(c, a, before0, after0, b)) == Outcome.Failure) {
+				return Outcome.Failure;
 			}			
 		}
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}	
 }
 

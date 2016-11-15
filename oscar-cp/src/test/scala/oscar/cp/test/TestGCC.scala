@@ -2,11 +2,9 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-
+import oscar.algo.search.Outcome
 import oscar.cp.constraints._
-
 import oscar.cp._
-import oscar.cp.core.CPOutcome
 
 class TestGCC extends FunSuite with ShouldMatchers {
 
@@ -39,7 +37,7 @@ class TestGCC extends FunSuite with ShouldMatchers {
     } else {
       cp.post(new oscar.cp.constraints.SoftGCCAC(x, -1, randomOcc(0), randomOcc(1), CPIntVar(0)(cp)));
     }
-    if (cp.isFailed()) {
+    if (cp.isFailed) {
       return -1;
     }
 
@@ -74,7 +72,7 @@ class TestGCC extends FunSuite with ShouldMatchers {
 
     cp.post(new oscar.cp.constraints.GCCVarAC(x, 0, o));
 
-    cp.isFailed() should be(false)
+    cp.isFailed should be(false)
 
     for (i <- 0 until o.size) {
       o(i).isBound should be(true)
@@ -92,7 +90,7 @@ class TestGCC extends FunSuite with ShouldMatchers {
 
     val ok = cp.post(gcc(x, allValues), Strong)
 
-    assert(ok == CPOutcome.Failure)
+    assert(ok == Outcome.Failure)
   }
 
 

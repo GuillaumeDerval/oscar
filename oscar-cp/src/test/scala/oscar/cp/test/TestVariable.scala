@@ -2,11 +2,11 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
+import oscar.algo.search.Outcome
 import oscar.cp.core.CPStore
 import oscar.cp._
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
 
 class TestVariable extends FunSuite with ShouldMatchers {
 
@@ -145,13 +145,13 @@ class TestVariable extends FunSuite with ShouldMatchers {
   test("test AC3 bind sparse") {
     var propagCalled = 0
     class FooValBind(val x: CPIntVar) extends Constraint(x.store, "Foo") {
-      override def setup(l: oscar.cp.core.CPPropagStrength): CPOutcome = {
+      override def setup(l: oscar.cp.core.CPPropagStrength): Outcome = {
         x.callPropagateWhenBind(this)
         return propagate()
       }
-      override def propagate(): CPOutcome = {
+      override def propagate(): Outcome = {
         propagCalled += 1
-        CPOutcome.Suspend
+        Outcome.Suspend
       }
 
     }
@@ -183,13 +183,13 @@ class TestVariable extends FunSuite with ShouldMatchers {
   test("test AC3 bind continuous") {
     var propagCalled = 0
     class FooValBind(val x: CPIntVar) extends Constraint(x.store, "Foo") {
-      override def setup(l: oscar.cp.core.CPPropagStrength): CPOutcome = {
+      override def setup(l: oscar.cp.core.CPPropagStrength): Outcome = {
         x.callPropagateWhenBind(this)
         return propagate()
       }
-      override def propagate(): CPOutcome = {
+      override def propagate(): Outcome = {
         propagCalled += 1
-        CPOutcome.Suspend
+        Outcome.Suspend
       }
 
     }

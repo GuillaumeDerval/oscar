@@ -15,7 +15,8 @@
 package oscar.cp.constraints
 
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core._
 import oscar.cp.core.delta._
 import oscar.cp.core.variables._
@@ -68,7 +69,7 @@ class SoftGCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Arra
   // Change buffer to load the deltas
   private[this] var changeBuffer: Array[Int] = null
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
 
     // Temporary variables to avoid using reversible variables too much
     val nMandatory = new Array[Int](nValues)
@@ -185,7 +186,7 @@ class SoftGCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Arra
    * @param x The variable that changed
    * @return [[Failure]] on failure, [[Suspend]] otherwise
    */
-  @inline private def whenDomainChanges(delta: DeltaIntVar, x: CPIntVar): CPOutcome = {
+  @inline private def whenDomainChanges(delta: DeltaIntVar, x: CPIntVar): Outcome = {
     val i = delta.id
 
     // Treat the value removals
@@ -265,7 +266,7 @@ class SoftGCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Arra
    * Increases the minimal violation locally and in [[viol]], prunes if it reaches the maximum
    * @return [[Failure]] on failure, [[Suspend]] otherwise
    */
-  @inline def increaseMinViol(): CPOutcome = {
+  @inline def increaseMinViol(): Outcome = {
     val minViol = minViolRev.incr()
     if (minViol == viol.max) {
       if (whenMaxViolReached() == Failure) {
@@ -281,7 +282,7 @@ class SoftGCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Arra
    * Prunes everything that waited until the maximum violation was reached
    * @return [[Failure]] on failure, [[Suspend]] otherwise
    */
-  @inline def whenMaxViolReached(): CPOutcome = {
+  @inline def whenMaxViolReached(): Outcome = {
     atMaxViolRev.setTrue()
 
     var c = nValuesInLackRev.value
@@ -331,7 +332,7 @@ class SoftGCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Arra
    * @param action The action to be performed
    * @return [[Failure]] on failure, [[Suspend]] otherwise
    */
-  @inline private def eliminateUnbound(vi: Int, nUnbound: Int, action: CPIntVar => CPOutcome): CPOutcome = {
+  @inline private def eliminateUnbound(vi: Int, nUnbound: Int, action: CPIntVar => Outcome): Outcome = {
     val thisUnboundSet = unboundSet(vi)
     var i = nUnbound
     while (i > 0) {

@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -44,9 +44,9 @@ public class MulCte extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
-		CPOutcome ok = propagate();
-		if (ok == CPOutcome.Suspend) {
+	public Outcome setup(CPPropagStrength l) {
+		Outcome ok = propagate();
+		if (ok == Outcome.Suspend) {
 			x.callPropagateWhenBoundsChange(this);
 			z.callPropagateWhenBoundsChange(this);
 		}
@@ -55,8 +55,8 @@ public class MulCte extends Constraint {
 			if (x.getSize() <= 100) { // remove all numbers not multiples of c if dom size to too big
 				for (int v = z.getMin(); v <= z.getMax(); v++) {
 					if (z.hasValue(v) && (v%c != 0)) {
-						if (z.removeValue(v) == CPOutcome.Failure) {
-							return CPOutcome.Failure;
+						if (z.removeValue(v) == Outcome.Failure) {
+							return Outcome.Failure;
 						}
 					}
 				}
@@ -66,37 +66,37 @@ public class MulCte extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome propagate() {
+	public Outcome propagate() {
 		if (x.isBound()) {
 			
-			if (z.assign(NumberUtils.safeMul(c , x.min())) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (z.assign(NumberUtils.safeMul(c , x.min())) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}
 		else {
 			if (c == 0) {
-				if (z.assign(0) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (z.assign(0) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
-				return CPOutcome.Success;
+				return Outcome.Success;
 			} else {
-				if (z.updateMin(Math.min(NumberUtils.safeMul(c , x.getMin()), NumberUtils.safeMul(c , x.getMax()))) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (z.updateMin(Math.min(NumberUtils.safeMul(c , x.getMin()), NumberUtils.safeMul(c , x.getMax()))) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
-				if (z.updateMax(Math.max(NumberUtils.safeMul(c , x.getMin()), NumberUtils.safeMul(c , x.getMax()))) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (z.updateMax(Math.max(NumberUtils.safeMul(c , x.getMin()), NumberUtils.safeMul(c , x.getMax()))) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 				if (x.updateMin(Math.min(NumberUtils.ceilDiv(z.getMin(), c),
-										 NumberUtils.ceilDiv(z.getMax(), c))) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+										 NumberUtils.ceilDiv(z.getMax(), c))) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 				if (x.updateMax(Math.max(NumberUtils.floorDiv(z.getMin(), c),
-										 NumberUtils.floorDiv(z.getMax(), c))) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+										 NumberUtils.floorDiv(z.getMax(), c))) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 
-				return CPOutcome.Suspend;
+				return Outcome.Suspend;
 			}
 		}
 	}

@@ -17,7 +17,8 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPGraphVar
 
 /**
@@ -28,7 +29,7 @@ import oscar.cp.core.variables.CPGraphVar
 
 class InducedSubGraph(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constraint(g1.s, "InducedSubGraph") {
   
-	override def setup(l: CPPropagStrength): CPOutcome = {
+	override def setup(l: CPPropagStrength): Outcome = {
 	  // InducedSubGraph  =  SubGraph + induced part
 	  if (s.post(new SubGraph(g1,g2)) == Failure) return Failure
 	  // add filter when domain changes
@@ -37,7 +38,7 @@ class InducedSubGraph(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constrain
 	  propagate()
 	}
 	
-	override def propagate(): CPOutcome = {
+	override def propagate(): Outcome = {
 	  // We only have to deal with the induced part of the constraint
 	  // 	we dealt with the subgraph part by posting constraint in setup()
 	  

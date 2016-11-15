@@ -15,7 +15,7 @@
 package oscar.cp.constraints;
 
 import oscar.algo.reversible.ReversibleInt;
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -53,17 +53,17 @@ public class BinPackingFlow extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome setup(CPPropagStrength strength) {
+	public Outcome setup(CPPropagStrength strength) {
 		for (CPIntVar var: x) {
-			if (var.updateMax(l.length-1) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (var.updateMax(l.length-1) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			if (var.updateMin(0) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (var.updateMin(0) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
 		}
-		if(s().post(new GCCVarAC(x, 0, c), CPPropagStrength.Strong) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
+		if(s().post(new GCCVarAC(x, 0, c), CPPropagStrength.Strong) == Outcome.Failure) {
+			return Outcome.Failure;
 		}
 		for (int j = 0; j < l.length; j++) {
 			l[j].callPropagateWhenBoundsChange(this);
@@ -83,12 +83,12 @@ public class BinPackingFlow extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome valBindIdx(CPIntVar x, int idx) {
+	public Outcome valBindIdx(CPIntVar x, int idx) {
 		int j = x.min();
 		int size = sizes[idx];
 		l_t[j].setValue(l_t[j].getValue() + size);
 		c_t[j].incr();
-	    return CPOutcome.Suspend;
+	    return Outcome.Suspend;
 	}
 	
 	private void printDebug() {
@@ -102,16 +102,16 @@ public class BinPackingFlow extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome propagate() {
+	public Outcome propagate() {
 		//printDebug();
 		for (int j = 0; j < l.length; j++) {
 			//System.out.println("set card bin "+j);
-			if (setCardinality(j) == CPOutcome.Failure) {
+			if (setCardinality(j) == Outcome.Failure) {
 				//System.out.println("failure set card");
-		        return CPOutcome.Failure;
+		        return Outcome.Failure;
 		    }
 		}
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 	
 	/**
@@ -119,7 +119,7 @@ public class BinPackingFlow extends Constraint {
 	 * @param j is the bin index
 	 * @return Failure if fail detected when adapting cards, or Suspend otherwise
 	 */
-	private CPOutcome setCardinality(int j) {
+	private Outcome setCardinality(int j) {
 	    int minVal = l[j].getMin();
 	    int maxVal = l[j].getMax();
 	    //how many items do I need at least to reach minVal ?
@@ -133,11 +133,11 @@ public class BinPackingFlow extends Constraint {
 	      }
 	      i--;
 	    }
-	    if(v < minVal) return CPOutcome.Failure; //not possible to reach the minimum level
+	    if(v < minVal) return Outcome.Failure; //not possible to reach the minimum level
 	    int nbMin = nbAdded + c_t[j].getValue();
 	    //System.out.println("cardmin="+nbMin);
-	    if (c[j].updateMin(nbMin) == CPOutcome.Failure){
-	      return CPOutcome.Failure;
+	    if (c[j].updateMin(nbMin) == Outcome.Failure){
+	      return Outcome.Failure;
 	    }
 	    // how many items can I use at most before reaching maxVal ?
 	    v = l_t[j].getValue();
@@ -152,10 +152,10 @@ public class BinPackingFlow extends Constraint {
 	    }
 	    int nbMax = nbAdded + c_t[j].getValue();
 	    //System.out.println("cardmax="+nbMax);
-	    if (c[j].updateMax(nbMax) == CPOutcome.Failure){
-	      return CPOutcome.Failure;
+	    if (c[j].updateMax(nbMax) == Outcome.Failure){
+	      return Outcome.Failure;
 	    }
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 
 }

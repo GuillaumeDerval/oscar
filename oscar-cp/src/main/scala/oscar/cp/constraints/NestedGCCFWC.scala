@@ -15,10 +15,11 @@
 package oscar.cp.constraints
 
 import oscar.algo.reversible.ReversibleInt
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.delta.DeltaIntVar
-import oscar.cp.core.{CPPropagStrength, CPOutcome, Constraint}
+import oscar.cp.core.{CPPropagStrength, Constraint}
 import oscar.cp.core.variables.CPIntVar
-import CPOutcome._
 
 /**
  * Cardinality constraint on prefixes of a variable array.
@@ -143,7 +144,7 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
   // INIT METHODS
   // ============
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
 
     val feasibleLower = (index: Int, value: Int) => value <= index
     val feasibleUpper = (index: Int, value: Int) => value >= 0
@@ -175,7 +176,7 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
    * @return [[Failure]] if one of the bounds in unfeasible, [[Suspend]] otherwise
    */
   private def readArguments(st: SegmentStructure, boundList: Array[(Int, Int)],
-                            feasible: (Int, Int) => Boolean): CPOutcome = {
+                            feasible: (Int, Int) => Boolean): Outcome = {
     var bound = boundList.length
     while (bound > 0) {
       bound -= 1
@@ -290,7 +291,7 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
    * Does some basic tests on the bounds and deduces bounds based on the bounds for other values
    * @return [[Failure]] if the bounds are found to be unfeasible, [[Suspend]] otherwise
    */
-  private def testAndDeduceBounds(): CPOutcome = {
+  private def testAndDeduceBounds(): Outcome = {
     var i = nVariables
     while (i > 0) {
       // Compute the sums
@@ -328,7 +329,7 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
    * Initializes the memorization structures and performs first checks
    * @return [[Failure]] if a failure is detected, [[Suspend]] otherwise
    */
-  private def initAndCheck(): CPOutcome = {
+  private def initAndCheck(): Outcome = {
 
     val lowerTmp = Array.fill(nValues)(new TempStructure())
     val upperTmp = Array.fill(nValues)(new TempStructure())
@@ -446,7 +447,7 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
    * @return [[Failure]] if applying the action was impossible, [[Suspend]] otherwise
    */
   private def initialCheck(st: SegmentStructure, tmp: TempStructure, list: TempList,
-                           action: CPIntVar => CPOutcome): CPOutcome = {
+                           action: CPIntVar => Outcome): Outcome = {
     import st._
 
     // Merge as much as possible, intentionally backwards!
@@ -589,7 +590,7 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
    * @param x The variable they were removed from
    * @return [[Failure]] if the pruning caused a failure, [[Suspend]] otherwise
    */
-  @inline private def whenDomainChanges(delta: DeltaIntVar, x: CPIntVar): CPOutcome = {
+  @inline private def whenDomainChanges(delta: DeltaIntVar, x: CPIntVar): Outcome = {
     val i = delta.id
 
     // Treat the value removals
@@ -628,7 +629,7 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
    */
 
   @inline private def onUpdate(i: Int, st: SegmentStructure, list: UnboundList,
-                               domOp: Int, v: Int): CPOutcome = {
+                               domOp: Int, v: Int): Outcome = {
     import st._
 
     // If this variable is in one of the segments
@@ -711,7 +712,7 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
 
 
   @inline private def onUpdate_(i: Int, st: SegmentStructure, list: UnboundList,
-                               action: CPIntVar => CPOutcome): CPOutcome = {
+                               action: CPIntVar => Outcome): Outcome = {
     import st._
 
     // If this variable is in one of the segments

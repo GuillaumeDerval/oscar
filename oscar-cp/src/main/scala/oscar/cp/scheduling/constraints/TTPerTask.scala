@@ -2,9 +2,10 @@ package oscar.cp.scheduling.constraints
 
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import java.lang.Math._
+
+import oscar.algo.search.Outcome
 
 // @author Steven Gay steven.gay@uclouvain.be
 
@@ -43,7 +44,7 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   // Profile
   private[this] val profile = new ProfileStructure(sMin, sMax, dMin, eMin, eMax, hMin, requiredTasks, possibleTasks)  
   
-  final override def propagate(): CPOutcome = { 
+  final override def propagate(): Outcome = {
     updateCache()
     C = capacity.max
 

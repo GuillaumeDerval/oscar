@@ -16,7 +16,8 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.variables.CPBoolVar
 
@@ -26,13 +27,13 @@ import oscar.cp.core.variables.CPBoolVar
  */
 class WeightedSumReif(val a: Array[Int], val x: Array[CPIntVar], val c: Int, val b: CPBoolVar) extends Constraint(b.store, "WeightedSumReif") {
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     x.foreach(_.callPropagateWhenDomainChanges(this))
     b.callPropagateWhenBind(this)
     Suspend
   }
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     if (b.isBoundTo(1)) {
       if (s.post(new oscar.cp.constraints.WeightedSum(a,x,CPIntVar(c)(s))) == Failure) Failure
       else Success

@@ -5,14 +5,15 @@ import oscar.cp.core.variables.CPIntVar
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.reversible.ReversibleSparseSetManual
 import oscar.algo.array.ArraySet
+
 import scala.collection.mutable.ArrayBuffer
 import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.CPStore
 import oscar.algo.array.ArrayMap
+import oscar.algo.search.Outcome
 
 /**
  * Implementation of the STR3 algorithm for the table constraint.
@@ -41,7 +42,7 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
   private[this] val separators = Array.tabulate(arity)(i => new Array[ReversibleInt](vars(i).max - initMins(i) + 1))
   private[this] val deps: Array[ArrayMap] = Array.fill(table.length)(new ArrayMap(arity, true))
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     invalidTuples.trail() // save state
 
     val tempSupport = Array.tabulate(arity)(i => {
@@ -86,7 +87,7 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
     Suspend
   }
 
-  private def valuesRemoved(delta: DeltaIntVar): CPOutcome = {
+  private def valuesRemoved(delta: DeltaIntVar): Outcome = {
     invalidTuples.trail() // save state
     val varId = delta.id
     var i = delta.fillArray(tmpArray)
@@ -98,7 +99,7 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
     Suspend
   }
 
-  private def valueRemoved(varId: Int, value: Int): CPOutcome = {
+  private def valueRemoved(varId: Int, value: Int): Outcome = {
 
     val membersBefore = invalidTuples.size
     val valueId = value - initMins(varId)

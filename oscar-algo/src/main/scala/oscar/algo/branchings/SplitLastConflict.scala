@@ -15,12 +15,12 @@
  * ****************************************************************************
  */
 
-package oscar.cp.searches
+package oscar.algo.branchings
 
-import oscar.cp._
 import oscar.algo.reversible._
-import oscar.algo.search.Branching
-import oscar.cp.core.CPOutcome.Failure
+import oscar.algo.search.Outcome.Failure
+import oscar.algo.search._
+import oscar.algo.vars.IntVarLike
 
 /**
  * Last Conflict Search with Simple phase saving:
@@ -33,12 +33,12 @@ import oscar.cp.core.CPOutcome.Failure
  * @author Renaud Hartert
  */
 
-class SplitLastConflict(variables: Array[CPIntVar], varHeuristic: Int => Int, valHeuristic: Int => Int, resetOnRestart: Boolean = false) extends Branching {
+class SplitLastConflict(variables: Array[IntVarLike], varHeuristic: Int => Int, valHeuristic: Int => Int, resetOnRestart: Boolean = false) extends Branching {
 
   require(variables.length > 0, "no variable")
 
   private[this] val nVariables = variables.length
-  private[this] val store = variables(0).store
+  private[this] val context = variables(0).context
 
   // Order in which variables have to be assigned
   private[this] val order = Array.tabulate(nVariables) { i => i }
@@ -47,7 +47,7 @@ class SplitLastConflict(variables: Array[CPIntVar], varHeuristic: Int => Int, va
   private[this] val lastValues = Array.tabulate(nVariables) { i => Int.MinValue }
 
   // Current depth of the search tree
-  private[this] val depthRev = new ReversibleInt(store, 0)
+  private[this] val depthRev = new ReversibleInt(context, 0)
 
   // Maximum number of assigned variables
   private[this] var maxDepth: Int = -1
@@ -112,26 +112,24 @@ class SplitLastConflict(variables: Array[CPIntVar], varHeuristic: Int => Int, va
   }
 
   // Return an Alternative that assign the value to the variable
-  @inline private def assign(variable: CPIntVar, value: Int, depth: Int): Alternative = () => {
-    val out = store.assign(variable, value)
+  @inline private def assign(variable: IntVarLike, value: Int, depth: Int): Alternative = () => {
+    val out = context.assign(variable, value)
     if (out == Failure) {
       conflictDepth = depth
     }
   }
 
   // Return an Alternative that constraints the variable to be greater than value
-  @inline private def greater(variable: CPIntVar, value: Int, depth: Int): Alternative = () => {
-    variable.updateMin(value + 1)
-    val out = store.propagate()
+  @inline private def greater(variable: IntVarLike, value: Int, depth: Int): Alternative = () => {
+    val out = context.larger(variable, value)
     if (out == Failure) {
       conflictDepth = depth
     }
   }
 
   // Return an Alternative that constraints the variable to be lower than value
-  @inline private def lower(variable: CPIntVar, value: Int, depth: Int): Alternative = () => {
-    variable.updateMax(value - 1)
-    val out = store.propagate()
+  @inline private def lower(variable: IntVarLike, value: Int, depth: Int): Alternative = () => {
+    val out = context.smaller(variable, value)
     if (out == Failure) {
       conflictDepth = depth
     }

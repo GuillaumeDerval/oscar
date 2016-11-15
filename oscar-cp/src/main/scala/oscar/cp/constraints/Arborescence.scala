@@ -16,8 +16,9 @@ package oscar.cp.constraints
 
 
 import oscar.algo.reversible.{ReversibleInt, ReversibleSet, ReversibleSparseSet, ReversibleSparseSetJava}
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.{CPOutcome, CPPropagStrength, Constraint}
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
+import oscar.cp.core.{CPPropagStrength, Constraint}
 import oscar.cp.core.variables.CPIntVar
 
 /**
@@ -39,7 +40,7 @@ final class Arborescence(preds: Array[CPIntVar], root: Int) extends Constraint(p
   private[this] val leafNodes = Array.tabulate(n)(i => new ReversibleSparseSetJava(s,0,n-1,true))
 
 
-  final override def setup(l: CPPropagStrength): CPOutcome = {
+  final override def setup(l: CPPropagStrength): Outcome = {
     for (i <- 0 until n; if i != root) {
       leafNodes(i).insert(i)
     }
@@ -58,7 +59,7 @@ final class Arborescence(preds: Array[CPIntVar], root: Int) extends Constraint(p
 
   private[this] val values = Array.ofDim[Int](n)
   
-  private def bind(i: Int): CPOutcome = {
+  private def bind(i: Int): Outcome = {
 
     val j = preds(i).min
 

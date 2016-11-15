@@ -1,14 +1,14 @@
-package oscar.cp.searches
+package oscar.algo.branchings
 
-import oscar.cp._
-import oscar.algo.search.Branching
+import oscar.algo.search._
+import oscar.algo.vars.IntVarLike
 
 /**
  * Binary search on the decision variables vars, splitting the domain at the selected value (left : <= value, right : > value)
  */
-class BinaryDomainSplitBranching(variables: Array[CPIntVar], varHeuris: (Int => Int), valHeuris: (Int => Int)) extends BinaryBranching(variables, varHeuris, valHeuris) {
+class BinaryDomainSplitBranching(variables: Array[IntVarLike], varHeuris: (Int => Int), valHeuris: (Int => Int)) extends BinaryBranching(variables, varHeuris, valHeuris) {
 
-  def this(x: Array[CPIntVar], varHeuris: (Int => Int)) = this(x, varHeuris, i => (x(i).min + x(i).max) / 2)
+  def this(x: Array[IntVarLike], varHeuris: (Int => Int)) = this(x, varHeuris, i => (x(i).min + x(i).max) / 2)
 
   final override def alternatives(): Seq[Alternative] = {
     if (allBounds()) noAlternative

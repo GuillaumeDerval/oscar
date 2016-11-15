@@ -1,21 +1,21 @@
 package oscar.cp.constraints.tables
 
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 
 class TableDecomp(val X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableDecomp"){
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     idempotent = true
-    if (propagate() == CPOutcome.Failure) return CPOutcome.Failure
+    if (propagate() == Outcome.Failure) return Outcome.Failure
     X.filter(!_.isBound).foreach(_.callPropagateWhenDomainChanges(this))
     Suspend
   }
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     for (i <- 0 until X.size) {
       for (v <- X(i).min to X(i).max if X(i).hasValue(v)) {
         var valueIsSupported = false

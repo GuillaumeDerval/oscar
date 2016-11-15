@@ -3,14 +3,14 @@ package oscar.cp.scheduling.constraints
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
+import oscar.algo.search.Outcome
 import oscar.cp.core.CPPropagStrength._
 import oscar.cp.scheduling.constraints._
 
 class MaxCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], demands: Array[CPIntVar], resources: Array[CPIntVar], capacity: CPIntVar, id: Int = 1)
   extends Constraint(starts.head.store, "Max Cumulative") {
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     if (s.post(new MaxCumulativeCapaCheck(starts,durations,ends,demands,resources,capacity,id)) == Failure) {
       return Failure
     }

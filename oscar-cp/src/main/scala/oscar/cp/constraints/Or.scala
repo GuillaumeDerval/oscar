@@ -16,8 +16,9 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.algo.reversible.ReversibleSparseSet
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPBoolVar
 import oscar.cp.core.variables.CPIntVar
 
@@ -32,7 +33,7 @@ class Or(val x: Array[CPBoolVar]) extends Constraint(x(0).store, "Or") {
   var up = 0
   val n = x.size
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     i = 0
     while (i < n && x(i).isBound) {
       if (x(i).isBoundTo(1)) return Success
@@ -61,7 +62,7 @@ class Or(val x: Array[CPBoolVar]) extends Constraint(x(0).store, "Or") {
     Suspend
   }
 
-  override def valBindIdx(y: CPIntVar, idx: Int): CPOutcome = {
+  override def valBindIdx(y: CPIntVar, idx: Int): Outcome = {
     if (y.isBoundTo(1)) return Success
     if (down >= n || up < 0 || x(down).isBound || x(up).isBound || (down >= up)) {
       i = 0
@@ -92,7 +93,7 @@ class Or(val x: Array[CPBoolVar]) extends Constraint(x(0).store, "Or") {
     Suspend
   }
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     if (down < n && x(down).isBoundTo(1)) return Success
     if (up >= 0 && x(up).isBoundTo(1)) return Success
     if (down >= n || up < 0 || x(down).isBound || x(up).isBound || (down >= up)) {

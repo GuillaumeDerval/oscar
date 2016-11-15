@@ -16,12 +16,13 @@
 package oscar.cp.constraints.tables.mdd
 
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.algo.reversible.{ReversibleContext, ReversibleSharedSparseSet}
+import oscar.algo.search.Outcome
 
 /**
  * Represent a variable of a MDD (i.e. a layer). This class makes the link between ReversibleMDD and CPIntVar.
+ *
  * @param context the context of the variable.
  * @param linkedVar the associated integer variable.
  * @param indexVar the index of the variable in the tuples of the table.
@@ -73,7 +74,7 @@ class MDDTableVar(context: ReversibleContext, linkedVar: CPIntVar, indexVar: Int
    * @param dom a temporary big enough to store D(x).
    * @return the outcome i.e. Failure or Success.
    */
-  @inline final def deleteValuesNotInMDD(dom: Array[Int]): CPOutcome = {
+  @inline final def deleteValuesNotInMDD(dom: Array[Int]): Outcome = {
     val size = linkedVar.fillArray(dom)
     var i = 0
     var value = 0
@@ -174,7 +175,7 @@ class MDDTableVar(context: ReversibleContext, linkedVar: CPIntVar, indexVar: Int
    * @param value the associated value
    * @return the outcome i.e. Failure or Success.
    */
-  @inline final def removeEdgeForValue(edge: Int, value: Int): CPOutcome = {
+  @inline final def removeEdgeForValue(edge: Int, value: Int): Outcome = {
     if (edgesPerValue(value).size == 1) {
       activeValues.remove(value)
       if (linkedVar.removeValue(mdd.valueForIndex(indexVar, value)) == Failure) {
@@ -210,7 +211,7 @@ class MDDTableVar(context: ReversibleContext, linkedVar: CPIntVar, indexVar: Int
    * Remove values not supported by any edge.
    * @return the outcome i.e. Failure or Success.
    */
-  @inline final def removeUnsupportedValues(): CPOutcome = {
+  @inline final def removeUnsupportedValues(): Outcome = {
     var i = activeValues.size - 1
     while (i >= 0) {
       val value = activeValues(i)

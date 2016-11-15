@@ -16,10 +16,12 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.constraints._
 import oscar.cp.modeling._
 import oscar.algo.DisjointSets
+import oscar.algo.search.Outcome
+
 import scala.collection.mutable.ArrayBuffer
 import oscar.cp.core.variables.CPIntVar
 
@@ -30,7 +32,7 @@ import oscar.cp.core.variables.CPIntVar
  */
 class GCCVar(x: Array[CPIntVar], val minVal: Int, val cards: Array[CPIntVar]) extends Constraint(x(0).store) {
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
 
     val ok = l match {
       case CPPropagStrength.Automatic => {
@@ -49,8 +51,8 @@ class GCCVar(x: Array[CPIntVar], val minVal: Int, val cards: Array[CPIntVar]) ex
 
       
     }
-    if (ok == CPOutcome.Failure) return CPOutcome.Failure;
-    else return CPOutcome.Success;
+    if (ok == Outcome.Failure) return Outcome.Failure;
+    else return Outcome.Success;
 
   }
   

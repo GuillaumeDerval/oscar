@@ -14,8 +14,8 @@
  * *****************************************************************************/
 package oscar.cp.scheduling.constraints
 
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 
@@ -27,19 +27,19 @@ class MaxCumulativeCapaCheck(starts: Array[CPIntVar], durations: Array[CPIntVar]
   private val nTasks = starts.size
   private val Tasks = 0 until nTasks
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     capacity.callPropagateWhenBoundsChange(this)    
     return propagate()
   }
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     for (i <- Tasks; if durations(i).min > 0) {
       if (demands(i).min > capacity.max) {
-        if (resources(i).removeValue(id) == CPOutcome.Failure) return CPOutcome.Failure
+        if (resources(i).removeValue(id) == Outcome.Failure) return Outcome.Failure
       } 
     }
-    if (Tasks.forall(i => durations(i).max == 0 || demands(i).max < capacity.min || !resources(i).hasValue(id))) CPOutcome.Success
-    else CPOutcome.Suspend
+    if (Tasks.forall(i => durations(i).max == 0 || demands(i).max < capacity.min || !resources(i).hasValue(id))) Outcome.Success
+    else Outcome.Suspend
   }
 }
   

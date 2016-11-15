@@ -17,13 +17,13 @@
 
 package oscar.cp.constraints
 
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
-import oscar.cp.util.ArrayUtils;
+import oscar.cp.util.ArrayUtils
 import oscar.algo.reversible.ReversibleInt
+import oscar.algo.search.Outcome
 import oscar.cp.constraints.tables.TableAlgo
 
 /**
@@ -76,7 +76,7 @@ final class ElementCst2D(T: Array[Array[Int]], x: CPIntVar, y: CPIntVar, z: CPIn
   private[this] val lowRev = new ReversibleInt(s, 0)
   private[this] val upRev = new ReversibleInt(s, nTuples - 1)
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     if (x.updateMin(0) == Failure) Failure
     else if (x.updateMax(nRows - 1) == Failure) Failure
     else if (y.updateMin(0) == Failure) Failure
@@ -110,7 +110,7 @@ final class ElementCst2D(T: Array[Array[Int]], x: CPIntVar, y: CPIntVar, z: CPIn
     false
   }
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
 
     // Cache
     var low = lowRev.value

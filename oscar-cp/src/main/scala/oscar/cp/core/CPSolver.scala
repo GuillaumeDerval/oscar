@@ -15,7 +15,7 @@
 
 package oscar.cp.core
 
-import oscar.algo.search._
+import oscar.algo.search.{DFSLinearizer, DFSReplayer, _}
 import oscar.cp._
 import oscar.cp.core._
 import oscar.cp.constraints._
@@ -26,12 +26,9 @@ import oscar.util._
 import oscar.cp.multiobjective.ListPareto
 import oscar.cp.multiobjective.Pareto
 import oscar.cp.constraints.ParetoConstraint
-import oscar.cp.core.CPOutcome._
+import Outcome._
 import java.util.LinkedList
 import java.util.Collection
-
-import oscar.algo.search.DFSLinearizer
-import oscar.cp.searches.DFSReplayer
 
 import scala.reflect.ClassTag
 
@@ -136,7 +133,7 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
     objective.tighten()
   }
 
-  override def add(c: Constraint, st: CPPropagStrength): CPOutcome = {
+  override def add(c: Constraint, st: CPPropagStrength): Outcome = {
     val outcome = post(c, st)
     if ((outcome == Failure || isFailed) && throwNoSolExceptions) {
       throw new NoSolutionException(s"the stored failed when adding constraint $c")
@@ -144,7 +141,7 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
     outcome
   }
 
-  override def add(c: Constraint): CPOutcome = add(c, propagStrength)
+  override def add(c: Constraint): Outcome = add(c, propagStrength)
 
   /**
    * Add a constraint to the store (b == true) in a reversible way and trigger the fix-point algorithm. <br>
@@ -153,7 +150,7 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
     * @param c
    * @throws NoSolutionException if the fix point detects a failure that is one of the domain became empty
    */
-  override def add(b: CPBoolVar): CPOutcome = {
+  override def add(b: CPBoolVar): Outcome = {
     val outcome = post(b.constraintTrue)
     if ((outcome == Failure || isFailed) && throwNoSolExceptions) {
       throw new NoSolutionException(s"the stored failed when setting " + b.name + " to true")
@@ -161,7 +158,7 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
     return outcome
   }
     
-  override def addCut(c: Constraint): CPOutcome = {
+  override def addCut(c: Constraint): Outcome = {
     val outcome = postCut(c)
     if ((outcome == Failure || isFailed) && throwNoSolExceptions) {
       throw new NoSolutionException(s"the stored failed when adding constraint $c")
@@ -177,7 +174,7 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
    * @param st the propagation strength asked for the constraint. Will be used only if available for the constraint (see specs of the constraint)
    * @throws NoSolutionException if the fix point detects a failure that is one of the domain became empty, Suspend otherwise.
    */
-  override def add(constraints: Array[Constraint], st: CPPropagStrength): CPOutcome = {
+  override def add(constraints: Array[Constraint], st: CPPropagStrength): Outcome = {
     val outcome = post(constraints, st);
     if ((outcome == Failure || isFailed) && throwNoSolExceptions) {
       throw new NoSolutionException(s"the stored failed when adding constraint $constraints");
@@ -185,11 +182,11 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
     return outcome
   }
   
-  override def add(constraints: Array[Constraint]): CPOutcome = add(constraints, propagStrength)
+  override def add(constraints: Array[Constraint]): Outcome = add(constraints, propagStrength)
 
-  override def add(constraints: Iterable[Constraint], st: CPPropagStrength): CPOutcome = add(constraints.toArray, st)
+  override def add(constraints: Iterable[Constraint], st: CPPropagStrength): Outcome = add(constraints.toArray, st)
 
-  override def add[T: ClassTag](boolVars: Iterable[CPBoolVar]): CPOutcome = {
+  override def add[T: ClassTag](boolVars: Iterable[CPBoolVar]): Outcome = {
     val outcome = post(boolVars);
     if ((outcome == Failure || isFailed) && throwNoSolExceptions) {
       throw new NoSolutionException(s"the stored failed when setting those boolVars to true and propagate $boolVars");
@@ -197,10 +194,10 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
     return outcome
   }
 
-  override def add(constraints: Iterable[Constraint]): CPOutcome = add(constraints.toArray, propagStrength)
+  override def add(constraints: Iterable[Constraint]): Outcome = add(constraints.toArray, propagStrength)
 
-  override def +=(c: Constraint, st: CPPropagStrength): CPOutcome = add(c, st)
-  override def +=(c: Constraint): CPOutcome = add(c, propagStrength)
+  override def +=(c: Constraint, st: CPPropagStrength): Outcome = add(c, st)
+  override def +=(c: Constraint): Outcome = add(c, propagStrength)
 }
 
 object CPSolver {

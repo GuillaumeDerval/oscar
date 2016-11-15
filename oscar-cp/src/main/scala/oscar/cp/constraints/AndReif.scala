@@ -16,8 +16,9 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.algo.reversible.ReversibleSparseSet
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPBoolVar
 import oscar.cp.core.variables.CPIntVar
 
@@ -31,7 +32,7 @@ class And(val X: Array[CPBoolVar], val b: CPBoolVar) extends Constraint(b.store,
   priorityBindL1 = CPStore.MaxPriorityL1-1
   
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     if (X.size == 2) {
       if (s.post(new BinaryAnd(X(0),X(1),b)) == Failure) return Failure
       else return Success
@@ -49,7 +50,7 @@ class And(val X: Array[CPBoolVar], val b: CPBoolVar) extends Constraint(b.store,
     propagate()
   }
   
-  override def valBindIdx(x: CPIntVar, idx: Int): CPOutcome = {
+  override def valBindIdx(x: CPIntVar, idx: Int): Outcome = {
     if (x.isBoundTo(0)) {
       if (b.assign(0) == Failure) Failure
       else Success
@@ -65,7 +66,7 @@ class And(val X: Array[CPBoolVar], val b: CPBoolVar) extends Constraint(b.store,
     }
   }
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     if (b.isBoundTo(1)) {
       for (i <- unbound) {
         if (X(i).assign(1) == Failure) return Failure

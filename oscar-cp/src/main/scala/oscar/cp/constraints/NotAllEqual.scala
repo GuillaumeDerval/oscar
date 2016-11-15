@@ -15,6 +15,7 @@
 package oscar.cp.constraints
 
 import oscar.algo.reversible.{ReversibleBoolean, ReversibleInt}
+import oscar.algo.search.Outcome
 import oscar.cp.core._
 import oscar.cp.core.variables.CPIntVar
 
@@ -27,44 +28,44 @@ class NotAllEqual(val x: Array[CPIntVar]) extends Constraint(x(0).store, "NotAll
   var firstValue: Int = 0
   val nUnbound = new ReversibleInt(s,x.length)
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     // Check specific cases
     if(x.length == 1)
-      return CPOutcome.Success
+      return Outcome.Success
     if(x.length == 2) {
-      if(x(0).store.post(x(0).diff(x(1))) == CPOutcome.Failure)
-        return CPOutcome.Failure
-      return CPOutcome.Success
+      if(x(0).store.post(x(0).diff(x(1))) == Outcome.Failure)
+        return Outcome.Failure
+      return Outcome.Success
     }
 
     x.zipWithIndex.foreach{case (v, idx) => {
       v.callValBindIdxWhenBind(this, idx)
 
       // If the variable is already bound, call valBindIdx
-      if(v.isBound && valBindIdx(v, idx) == CPOutcome.Success)
-        return CPOutcome.Success
+      if(v.isBound && valBindIdx(v, idx) == Outcome.Success)
+        return Outcome.Success
     }}
 
     if(nUnbound.getValue() == 0)
-      CPOutcome.Failure //if we have all our variable bound but did not return Success earlier, we failed
+      Outcome.Failure //if we have all our variable bound but did not return Success earlier, we failed
     else
-      CPOutcome.Suspend
+      Outcome.Suspend
   }
 
-  override def valBindIdx(x: CPIntVar, idx: Int): CPOutcome = {
+  override def valBindIdx(x: CPIntVar, idx: Int): Outcome = {
     nUnbound.decr()
     if(firstValueFound.getValue()) { //if we already found our first value
       if(x.min != firstValue)
-        return CPOutcome.Success
+        return Outcome.Success
     }
     else {
       firstValueFound.setTrue()
       firstValue = x.min
     }
     if(nUnbound.getValue() == 0)
-      CPOutcome.Failure
+      Outcome.Failure
     else
-      CPOutcome.Suspend
+      Outcome.Suspend
   }
 }
 

@@ -15,10 +15,10 @@
 
 package oscar.cp.test
 
+import oscar.algo.search.Outcome
 import oscar.cp._
 import oscar.cp.modeling._
 import oscar.cp.testUtils.TestSuite
-import oscar.cp.core.CPOutcome
 import oscar.cp.CPIntVar
 import oscar.cp.core.CPPropagStrength
 
@@ -29,7 +29,7 @@ import oscar.cp.core.CPPropagStrength
 class TestElement extends TestSuite {
 
   class ElementChecker(val y: Array[CPIntVar], val x: CPIntVar, val z: CPIntVar) extends Constraint(y(0).store, "ElementChecker") {
-    override def setup(l: CPPropagStrength): CPOutcome = {
+    override def setup(l: CPPropagStrength): Outcome = {
       
       for (yvar <- y) yvar.callPropagateWhenBind(this)
       x.callPropagateWhenBind(this)
@@ -40,23 +40,23 @@ class TestElement extends TestSuite {
       for (yvar <- y) yvar.callPropagateWhenDomainChanges(this)*/
       return propagate()
     }
-    override def propagate(): CPOutcome = {
+    override def propagate(): Outcome = {
       if (x.isBound) {
         
         if (x.min < 0 || x.min >= y.length) {
-           return CPOutcome.Failure 
+           return Outcome.Failure
         }
         assert(x.max >= 0)
         if (z.isBound && y(x.min).isBound) {
           if (y(x.min).min == z.min) {
-             return CPOutcome.Success 
+             return Outcome.Success
           }
-          else return CPOutcome.Failure
+          else return Outcome.Failure
         }
-        else return CPOutcome.Suspend
+        else return Outcome.Suspend
       }
       assert(!(x.isBound && y(x.min).isBound && z.isBound))
-      CPOutcome.Suspend
+      Outcome.Suspend
     }
     
   }
@@ -81,7 +81,7 @@ class TestElement extends TestSuite {
       //val allVars = scala.util.Random.shuffle((Array(z) ++ y :+ x).asInstanceOf[Array[CPIntVar]])
 
       cp.post(allDifferent(Array(y(1), y(3), x)),CPPropagStrength.Medium)
-      if (!cp.isFailed()) {
+      if (!cp.isFailed) {
         cp.search(binaryStatic(allVars, _.min))
         val stat1 = cp.startSubjectTo() {
           cp.add(elementVar(y, x, z), CPPropagStrength.Medium)

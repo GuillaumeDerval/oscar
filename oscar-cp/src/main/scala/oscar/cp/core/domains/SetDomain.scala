@@ -16,9 +16,9 @@
 
 package oscar.cp.core.domains
 
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.algo.reversible.ReversibleSparseSubset
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPStore
 
 
@@ -29,7 +29,7 @@ class SetDomain(s: CPStore, min: Int, max: Int) {
   
    val values = new ReversibleSparseSubset(s,min,max)
    
-   def requires(value: Int): CPOutcome = {
+   def requires(value: Int): Outcome = {
      if (!values.isPossible(value)) Failure
      else {
        values.requires(value)
@@ -38,7 +38,7 @@ class SetDomain(s: CPStore, min: Int, max: Int) {
    }
    
    
-   def excludes(value: Int): CPOutcome = {
+   def excludes(value: Int): Outcome = {
      if (values.isRequired(value)) Failure
      else {
        if (value <= max && value >= min)
@@ -47,12 +47,12 @@ class SetDomain(s: CPStore, min: Int, max: Int) {
      }
    }
    
-   def requiresAll(): CPOutcome = {
+   def requiresAll(): Outcome = {
      values.requiresAll()
      Suspend
    }
    
-   def excludesAll(): CPOutcome = {
+   def excludesAll(): Outcome = {
      values.excludesAll()
      Suspend
    }

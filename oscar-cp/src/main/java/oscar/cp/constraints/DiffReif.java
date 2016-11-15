@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
@@ -46,7 +46,7 @@ public class DiffReif extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Outcome setup(CPPropagStrength l) {
 		priorityBindL1_$eq(CPStore.MAXPRIORL1());
 		priorityRemoveL1_$eq(CPStore.MAXPRIORL1());
 		
@@ -59,66 +59,66 @@ public class DiffReif extends Constraint {
 			b.callValBindWhenBind(this);
 			//x.addAC5Bounds(this);
 			x.callValRemoveWhenValueIsRemoved(this);
-			return CPOutcome.Suspend;
+			return Outcome.Suspend;
 		}
 	}
 	
 	@Override
-	public CPOutcome updateBounds(CPIntVar x) {
+	public Outcome updateBounds(CPIntVar x) {
 		if (x.getMax() < v || x.getMin() > v) {
-			if (b.assign(1) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (b.assign(1) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 	
 
 	@Override
-	public CPOutcome valRemove(CPIntVar x, int val) {
+	public Outcome valRemove(CPIntVar x, int val) {
 		if (val == v) {
-			if (b.assign(1) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (b.assign(1) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 	
 
 	@Override
-	public CPOutcome valBind(CPIntVar var) {
+	public Outcome valBind(CPIntVar var) {
 		if (b.isBound()) {
 			if (b.min() == 1) {
 				//x != v
-				if (x.removeValue(v) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (x.removeValue(v) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 			} else {
 				//x == v
-				if (x.assign(v) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (x.assign(v) == Outcome.Failure) {
+					return Outcome.Failure;
 				}				
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}
 		
 		if (x.isBound()) {
 			if (x.min() == v) {
-				if (b.assign(0) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (b.assign(0) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 			}
 			else {
-				if (b.assign(1) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (b.assign(1) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}
 		
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 
 }

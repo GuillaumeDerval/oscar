@@ -13,25 +13,22 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-package oscar.cp.searches
+package oscar.algo.search
 
 import java.lang.management.ManagementFactory
 
-import oscar.algo.search._
-import oscar.cp.core.CPSolver
-import oscar.cp.core.variables.CPIntVar
+import oscar.algo.vars.IntVarLike
 
 /**
   * @author Sascha Van Cauwelart
   * @author Pierre Schaus
   */
-class DFSReplayer(node: CPSolver, decisionVariables: Seq[CPIntVar]) {
+class DFSReplayer(node: DFSearchNode, decisionVariables: Seq[IntVarLike]) {
 
   private val timeThreadBean = ManagementFactory.getThreadMXBean()
 
   def replay(decisions: Array[Decision]): SearchStatistics = {
     node.resetStats()
-    node.resetStatistics()
     val nModifications = decisions.length
     var i = 0
 

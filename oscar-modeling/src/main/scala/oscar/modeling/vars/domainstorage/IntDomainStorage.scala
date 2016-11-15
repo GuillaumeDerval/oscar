@@ -9,6 +9,7 @@ import scala.util.Random
 class IntDomainStorage(val content: Iterable[Int], val name: String) extends DomainStorage with IntVarImplem with IntVarLike
 {
   override def isContinuous: Boolean = (content.max - content.min) == (content.size-1)
+  override def context = throw new Exception("This variable is not instantiated and thus has no context")
 
   /**
     * @return true if the domain of the variable has exactly one value, false if the domain has more than one value

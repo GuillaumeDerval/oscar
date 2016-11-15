@@ -14,9 +14,10 @@
   ******************************************************************************/
 package oscar.cp.constraints
 
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{CPOutcome, CPPropagStrength, Constraint}
+import oscar.cp.core.{CPPropagStrength, Constraint}
 
 /**
  * Cardinality constraint on prefixes of a variable array.
@@ -97,7 +98,7 @@ class NestedGCCDecompFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Arra
   // INIT METHODS
   // ============
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
 
     val feasibleLower = (index: Int, value: Int) => value <= index
     val feasibleUpper = (index: Int, value: Int) => value >= 0
@@ -142,7 +143,7 @@ class NestedGCCDecompFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Arra
    * @return [[Failure]] if one of the bounds in unfeasible, [[Suspend]] otherwise
    */
   private def readArguments(st: SegmentStructure, boundList: Array[(Int, Int)],
-                            feasible: (Int, Int) => Boolean): CPOutcome = {
+                            feasible: (Int, Int) => Boolean): Outcome = {
     var bound = boundList.length
     while (bound > 0) {
       bound -= 1
@@ -257,7 +258,7 @@ class NestedGCCDecompFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Arra
    * Does some basic tests on the bounds and deduces bounds based on the bounds for other values
    * @return [[Failure]] if the bounds are found to be unfeasible, [[Suspend]] otherwise
    */
-  private def testAndDeduceBounds(): CPOutcome = {
+  private def testAndDeduceBounds(): Outcome = {
     var i = nVariables
     while (i > 0) {
       // Compute the sums

@@ -16,7 +16,8 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPIntVar
 
 /**
@@ -28,7 +29,7 @@ import oscar.cp.core.variables.CPIntVar
 class BinarySum(val x: CPIntVar, val y: CPIntVar, val z: CPIntVar) extends Constraint(x.store, "BinarySum") {
 
   idempotent = true
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     priorityL2 = CPStore.MaxPriorityL2 - 1
     if (!x.isBound) x.callPropagateWhenBoundsChange(this)
     if (!y.isBound) y.callPropagateWhenBoundsChange(this)
@@ -36,7 +37,7 @@ class BinarySum(val x: CPIntVar, val y: CPIntVar, val z: CPIntVar) extends Const
     propagate()
   }
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     // While reading this code, remember that there are sorting networks in Java's default sort. Check and compare, this is not so bad.
     // The logic itself is much lighter than the CP variable manipulations, so we add logic to do the fewest manipulations we can.
     

@@ -17,7 +17,8 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPGraphVar
 
 /**
@@ -28,7 +29,7 @@ import oscar.cp.core.variables.CPGraphVar
 
 class SubGraph(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constraint(g1.s, "SubGraph") {
   
-	override def setup(l: CPPropagStrength): CPOutcome = {
+	override def setup(l: CPPropagStrength): Outcome = {
 	  // check inconsistency
 	  if(inconsistent) return Failure
 	  // add filter when domain changes
@@ -38,7 +39,7 @@ class SubGraph(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constraint(g1.s,
 	  propagate()
 	}
 	
-	override def propagate(): CPOutcome = {
+	override def propagate(): Outcome = {
 	  // test for entailment	  
 	  // test if g1.possible values are included in g2.required values => entailment, success
 	  val g1PossNodes = g1.possibleNodes

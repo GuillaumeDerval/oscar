@@ -16,7 +16,8 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 
 
@@ -30,13 +31,13 @@ class CountCst(val N: CPIntVar, val X: Array[CPIntVar], val Y: Int) extends Cons
  
   val n = X.size
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     X.foreach(_.callPropagateWhenDomainChanges(this))
     N.callPropagateWhenBoundsChange(this)
-    CPOutcome.Suspend
+    Outcome.Suspend
   }
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     var i = 0
     var sure = 0
     var possible = 0
@@ -54,8 +55,8 @@ class CountCst(val N: CPIntVar, val X: Array[CPIntVar], val Y: Int) extends Cons
     val minCount = sure
     val maxCount = possible
     
-    if (N.updateMin(minCount) == CPOutcome.Failure) return CPOutcome.Failure
-    if (N.updateMax(maxCount) == CPOutcome.Failure) return CPOutcome.Failure
+    if (N.updateMin(minCount) == Outcome.Failure) return Outcome.Failure
+    if (N.updateMax(maxCount) == Outcome.Failure) return Outcome.Failure
     
     
     // we reached the maximum number values
@@ -63,24 +64,24 @@ class CountCst(val N: CPIntVar, val X: Array[CPIntVar], val Y: Int) extends Cons
       i = 0
       while (i < n) {
         if (!X(i).isBound) {
-          if (X(i).removeValue(Y) == CPOutcome.Failure) return CPOutcome.Failure
+          if (X(i).removeValue(Y) == Outcome.Failure) return Outcome.Failure
         }  
         i += 1
       }
-      return CPOutcome.Success
+      return Outcome.Success
     }
     // every value not surely equal to Y must be equal to Y
     if (maxCount == N.min) {
       i = 0
       while (i < n) {
         if (X(i).hasValue(Y)) {
-          if (X(i).assign(Y) == CPOutcome.Failure) return CPOutcome.Failure
+          if (X(i).assign(Y) == Outcome.Failure) return Outcome.Failure
         }
         i += 1
       }
-      return CPOutcome.Success
+      return Outcome.Success
     }
-    return CPOutcome.Suspend 
+    return Outcome.Suspend
   }
   
 

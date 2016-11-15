@@ -15,10 +15,11 @@
 package oscar.cp.constraints
 
 import oscar.algo.reversible._
+import oscar.algo.search.Outcome
 import oscar.cp.core._
 import oscar.cp.core.delta._
 import oscar.cp.core.variables._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 
 /**
  * Global Cardinality Constraint
@@ -56,7 +57,7 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
   // Change buffer to load the deltas
   private[this] var changeBuffer: Array[Int] = null
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
 
     // Temporary variables to avoid using reversible variables too much
     val nMandatory = new Array[Int](nValues)
@@ -208,7 +209,7 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
   /**
    * Update the structure when values are removed from a variable.
    */
-  @inline private def whenDomainChanges(delta: DeltaIntVar, x: CPIntVar, nValuesOk: Int): CPOutcome = {
+  @inline private def whenDomainChanges(delta: DeltaIntVar, x: CPIntVar, nValuesOk: Int): Outcome = {
     val i = delta.id
     var nValuesOkVar = nValuesOk
 
@@ -311,7 +312,7 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
     Suspend
   }
 
-  def whenBoundsChange(bound: CPIntVar, vi: Int): CPOutcome = {
+  def whenBoundsChange(bound: CPIntVar, vi: Int): Outcome = {
     val v = vi + minVal
     val lower = bound.min
     val upper = bound.max
@@ -369,7 +370,7 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
   /**
    * When the number of possible variables drops to the lower bound, bind the unbound.
    */
-  @inline private def whenMinPossible(vi: Int, v: Int, nUnbound: Int): CPOutcome = {
+  @inline private def whenMinPossible(vi: Int, v: Int, nUnbound: Int): Outcome = {
     val thisUnboundSet = unboundSet(vi)
 
     // Bind all the unbound variables that have this value
@@ -387,7 +388,7 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
   /**
    * When the number of mandatory variables reaches the upper bound, drop the unbound.
    */
-  @inline private def whenMaxMandatory(vi: Int, v: Int, nUnbound: Int): CPOutcome = {
+  @inline private def whenMaxMandatory(vi: Int, v: Int, nUnbound: Int): Outcome = {
     val thisUnboundSet = unboundSet(vi)
 
     // Remove the value from the unbound variables that have this value

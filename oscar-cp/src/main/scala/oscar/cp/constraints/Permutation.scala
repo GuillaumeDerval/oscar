@@ -16,25 +16,28 @@
 package oscar.cp.constraints;
 
 import oscar.cp._
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
 import oscar.cp.util.ArrayUtils
 import oscar.algo.reversible.ReversibleInt
+
 import scala.math.min
 import scala.math.max
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.CPSolver
 import oscar.algo.reversible.ReversibleInt
 import java.security.InvalidParameterException
+
+import oscar.algo.search.Outcome
 
 
 /**
  * n = x.size-1 = y.size-1
  * x is a permutation of {0 ... n-1} and y also
  * x and y are such that x(y(i)) = i i.e. y(i) is the position of number i in x
+ *
  * @author Pierre Schaus - pschaus@gmail.com
  */
 class Permutation(x: Array[CPIntVar], y: Array[CPIntVar]) extends Constraint(y(0).store, "Permutation") {
@@ -42,7 +45,7 @@ class Permutation(x: Array[CPIntVar], y: Array[CPIntVar]) extends Constraint(y(0
   val n = x.size-1
   if (x.size != y.size) throw new InvalidParameterException("x and y must have the same size")
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     
     for (i <- 0 to n) {
       if (x(i).updateMin(0) == Failure) return Failure
@@ -69,7 +72,7 @@ class Permutation(x: Array[CPIntVar], y: Array[CPIntVar]) extends Constraint(y(0
   }
 
 
-  override def valRemoveIdx(cpvar: CPIntVar, i: Int, v: Int): CPOutcome = {
+  override def valRemoveIdx(cpvar: CPIntVar, i: Int, v: Int): Outcome = {
     if (i <= n) {
       // x(i) lost the value v
       y(v).removeValue(i)

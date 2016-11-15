@@ -17,10 +17,12 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
+
 import scala.collection.mutable.PriorityQueue
 import oscar.algo.reversible.ReversibleBoolean
 import oscar.algo.reversible.ReversibleInt
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.variables.CPGraphVar
 
@@ -45,7 +47,7 @@ class GraphPath(val g : CPGraphVar, src : Int, dest : Int, w : (Int,Int) => Int,
     var nbEdges : ReversibleInt = new ReversibleInt(g.s, g.nbPossibleEdges)
     var nbNodes : ReversibleInt = new ReversibleInt(g.s, n)
   
-    override def setup(l: CPPropagStrength): CPOutcome = {
+    override def setup(l: CPPropagStrength): Outcome = {
       // add src and dest mandatory
       if (g.addNodeToGraph(src) == Failure) return Failure
       if (g.addNodeToGraph(dest) == Failure) return Failure
@@ -60,12 +62,12 @@ class GraphPath(val g : CPGraphVar, src : Int, dest : Int, w : (Int,Int) => Int,
 	  propagate()
 	}
     
-    override def propagate(): CPOutcome = {
+    override def propagate(): Outcome = {
       val possNodes : List[Int] = g.possibleNodes
       val reqNodes  : List[Int] = g.requiredNodes
        
       // check if the constraint is entailed (there is a required path)
-      val c : CPOutcome = isEntailed(possNodes,reqNodes)
+      val c : Outcome = isEntailed(possNodes,reqNodes)
       if (c != Suspend) return c
       
       // check if we need to rebuild tc before pruning
@@ -176,7 +178,7 @@ class GraphPath(val g : CPGraphVar, src : Int, dest : Int, w : (Int,Int) => Int,
     
     // check if there exists a required path ( = path composed of only required edges from source to destination)
     // 	if it is true, the maximal weight path CPIntVar is also entailed
-    private def isEntailed(possNodes : List[Int], reqNodes : List[Int]) : CPOutcome = {
+    private def isEntailed(possNodes : List[Int], reqNodes : List[Int]) : Outcome = {
       if (existRequiredPath(src, dest, reqNodes)){
         val requiredEdges : List[Int] = reqNodes.flatMap(g.requiredOutEdges(_))
         val possibleNotRequiredEdges : List[Int] = possNodes.flatMap(g.possibleOutEdges(_)).filter(!requiredEdges.contains(_))

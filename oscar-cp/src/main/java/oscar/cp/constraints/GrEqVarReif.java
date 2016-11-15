@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
@@ -45,22 +45,22 @@ public class GrEqVarReif extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Outcome setup(CPPropagStrength l) {
 		
 		if (x.isBound()) {
-			if (s().post(new LeEqCteReif(y, x.min(), b)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (s().post(new LeEqCteReif(y, x.min(), b)) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		} else if (y.isBound()) {
-			if (s().post(new GrEqCteReif(x, y.min(), b)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (s().post(new GrEqCteReif(x, y.min(), b)) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}
 		
-		CPOutcome oc = propagate();
-		if (oc == CPOutcome.Suspend){
+		Outcome oc = propagate();
+		if (oc == Outcome.Suspend){
 			if (!b.isBound()) b.callValBindWhenBind(this);
 			if (!x.isBound()) x.callPropagateWhenBoundsChange(this);
 			if (!y.isBound()) y.callPropagateWhenBoundsChange(this);
@@ -72,20 +72,20 @@ public class GrEqVarReif extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome propagate() {
+	public Outcome propagate() {
 		if (x.getMin() >= y.getMax()) {
-			if (b.assign(1) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (b.assign(1) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		} else if (x.getMax() < y.getMin()) {
-			if (b.assign(0) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (b.assign(0) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}
 		else {
-			return CPOutcome.Suspend;
+			return Outcome.Suspend;
 		}
 	}
 	
@@ -95,19 +95,19 @@ public class GrEqVarReif extends Constraint {
 	}
 		
 	@Override
-	public CPOutcome valBind(CPIntVar var) {
+	public Outcome valBind(CPIntVar var) {
 		if (b.min() == 0) {
 			//x < y
-			if (s().post(new Le(x,y)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (s().post(new Le(x,y)) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
 		} else {
 			//x >= v
-			if (s().post(new GrEq(x,y)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (s().post(new GrEq(x,y)) == Outcome.Failure) {
+				return Outcome.Failure;
 			}				
 		}
-		return CPOutcome.Success;
+		return Outcome.Success;
 	}
 
 }

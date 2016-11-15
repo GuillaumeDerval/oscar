@@ -12,12 +12,12 @@
  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
-package oscar.cp.core;
+package oscar.algo.search;
 
 /**
- * A CPOutcome informs us on the state of a CPStore or the result of a propagation method.
+ * An outcome informs us on the state of a CPStore or the result of a propagation method.
  * @author Pierre Schaus pschaus@gmail.com
  */
-public enum CPOutcome {
+public enum Outcome {
 	Failure, Success, Suspend
 }

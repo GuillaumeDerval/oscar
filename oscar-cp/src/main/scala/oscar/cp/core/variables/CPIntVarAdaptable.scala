@@ -20,9 +20,8 @@ import oscar.algo.reversible.ReversibleBoolean
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.reversible.ReversiblePointer
 import oscar.algo.reversible.TrailEntry
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome.Failure
-import oscar.cp.core.CPOutcome.Suspend
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.CPStore
 import oscar.cp.core.Constraint
 import oscar.cp.core.watcher.WatcherListL2
@@ -44,6 +43,8 @@ class CPIntVarAdaptableDomainSparse(variable: CPIntVarAdaptable, min: Int, max: 
 }
 
 final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int, maxValue: Int, continuous: Boolean, final override val name: String = "") extends CPIntVar {
+
+  final override val context = store
 
   // Registered constraints
   private[this] val onBindL2 = new WatcherListL2(store)
@@ -174,7 +175,7 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
    * @param val
    * @return  Suspend if val was in the domain, Failure otherwise
    */
-  final override def assign(value: Int): CPOutcome = {
+  final override def assign(value: Int): Outcome = {
     if (value < _min || value > _max) Failure
     else if (_size == 1) Suspend
     else if (_continuous) assignContinuous(value) // assign continuous
@@ -182,7 +183,7 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
     else assignSparse(value) // assign sparse
   }
 
-  @inline private def assignContinuous(value: Int): CPOutcome = {
+  @inline private def assignContinuous(value: Int): Outcome = {
     // Trail before changes
     trail()
     // Update the domain
@@ -210,7 +211,7 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
     Suspend
   }
 
-  @inline private def assignSparse(value: Int): CPOutcome = {
+  @inline private def assignSparse(value: Int): Outcome = {
     // Notify removed values if necessary
     if (!onDomainL1.isEmpty) {
       var i = _size
@@ -250,14 +251,14 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
    * @param val
    * @return  Suspend if the domain is not equal to the singleton {val}, Failure otherwise
    */
-  final override def removeValue(value: Int): CPOutcome = {
+  final override def removeValue(value: Int): Outcome = {
     if (value < _min || value > _max) Suspend
     else if (_size == 1) Failure
     else if (_continuous) removeContinuous(value)
     else removeSparse(value)
   }
 
-  @inline private def removeContinuous(value: Int): CPOutcome = {
+  @inline private def removeContinuous(value: Int): Outcome = {
     if (value == _min) updateMinContinuous(value + 1)
     else if (value == _max) updateMaxContinuous(value - 1)
     else { // Switch the domain representation
@@ -274,7 +275,7 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
     positions = Array.tabulate(nValues)(i => i)
   }
 
-  @inline private def removeSparse(value: Int): CPOutcome = {
+  @inline private def removeSparse(value: Int): Outcome = {
     val id1 = value - offset
     val pos1 = positions(id1)
     if (pos1 >= _size) Suspend
@@ -332,14 +333,14 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
    * @param val
    * @return  Suspend if there is at least one value >= val in the domain, Failure otherwise
    */
-  final override def updateMin(value: Int): CPOutcome = {
+  final override def updateMin(value: Int): Outcome = {
     if (value <= _min) Suspend
     else if (value > _max) Failure
     else if (_continuous) updateMinContinuous(value)
     else updateMinSparse(value)
   }
 
-  @inline private def updateMinContinuous(value: Int): CPOutcome = {
+  @inline private def updateMinContinuous(value: Int): Outcome = {
     if (value == _max) assignContinuous(value)
     else {
       // Trail before changes 
@@ -365,7 +366,7 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
     }
   }
 
-  @inline private def updateMinSparse(value: Int): CPOutcome = {
+  @inline private def updateMinSparse(value: Int): Outcome = {
     if (value == _max) assignSparse(value)
     else {
       trail() // trail before changes  
@@ -415,14 +416,14 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
    * @param val
    * @return  Suspend if there is at least one value <= val in the domain, Failure otherwise
    */
-  final override def updateMax(value: Int): CPOutcome = {
+  final override def updateMax(value: Int): Outcome = {
     if (value >= _max) Suspend
     else if (value < _min) Failure
     else if (_continuous) updateMaxContinuous(value)
     else updateMaxSparse(value)
   }
 
-  @inline private def updateMaxContinuous(value: Int): CPOutcome = {
+  @inline private def updateMaxContinuous(value: Int): Outcome = {
     if (value == _min) assignContinuous(value)
     else {
       // Trail before changes 
@@ -448,7 +449,7 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
     }
   }
 
-  @inline private def updateMaxSparse(value: Int): CPOutcome = {
+  @inline private def updateMaxSparse(value: Int): Outcome = {
     if (value == _min) assignSparse(value)
     else {
       trail() // trail before changes  

@@ -17,9 +17,10 @@ package oscar.cp.constraints
 
 import oscar.algo.SortUtils._
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{CPStore, CPOutcome, CPPropagStrength, Constraint}
+import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
 
 /**
  *
@@ -67,7 +68,7 @@ class CountingBasedAllDifferent(constrainedVariables: Array[CPIntVar]) extends C
      because their value is already removed from the other domains */
   private[this] val nBoundAndProcessedVariables = new ReversibleInt(constrainedVariables(0).store, 0) 
   
-  final override def setup(l: CPPropagStrength): CPOutcome = {
+  final override def setup(l: CPPropagStrength): Outcome = {
     priorityL2 = CPStore.MaxPriorityL2 - 2
 
     if (propagate() == Failure) Failure
@@ -81,7 +82,7 @@ class CountingBasedAllDifferent(constrainedVariables: Array[CPIntVar]) extends C
     }
   }
 
-  final override def propagate(): CPOutcome = {
+  final override def propagate(): Outcome = {
 
     val nBoundAndProcessedVars = nBoundAndProcessedVariables.value
     var newnBoundAndProcessedVariables = 0
@@ -116,7 +117,7 @@ class CountingBasedAllDifferent(constrainedVariables: Array[CPIntVar]) extends C
       removeHallSetFromdomainAndUpdateDomainUnion()
 
       if (domainEmpty || currUnionDomainCardinality < nDomainsContributingToUnion)
-        return CPOutcome.Failure
+        return Outcome.Failure
 
       if (currUnionDomainCardinality == nDomainsContributingToUnion) {
         updateHallSetAndClearDomainUnion()
@@ -131,7 +132,7 @@ class CountingBasedAllDifferent(constrainedVariables: Array[CPIntVar]) extends C
     //update number of bound and processed variables
     nBoundAndProcessedVariables.setValue(newnBoundAndProcessedVariables)
 
-    CPOutcome.Suspend
+    Outcome.Suspend
   }
 
   /* Bits operations */

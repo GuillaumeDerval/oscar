@@ -17,9 +17,10 @@
 package oscar.cp.scheduling.constraints
 
 import oscar.cp.constraints.UnaryResourceWithTransitionTimesAndFamilies
-import oscar.cp.core.CPOutcome.{Failure, Success}
+import oscar.algo.search.Outcome.{Failure, Success}
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{CPOutcome, CPPropagStrength, Constraint}
+import oscar.cp.core.{CPPropagStrength, Constraint}
 
 /**
  * @author Cyrille Dejemeppe (cyrille.dejemeppe@gmail.com)
@@ -30,7 +31,7 @@ class DisjunctiveWithTransitionTimesAndFamilies(starts: Array[CPIntVar], duratio
 
   import oscar.cp.core.CPPropagStrength._
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     if (starts.nonEmpty) {
       val cp = starts(0).store
       val n = starts.length

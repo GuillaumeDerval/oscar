@@ -16,7 +16,8 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPSetVar
 import oscar.cp.core.delta.{DeltaSetVar, PropagatorSetVar}
 
@@ -26,16 +27,16 @@ import oscar.cp.core.delta.{DeltaSetVar, PropagatorSetVar}
  */
 class Disjoint(val x: CPSetVar, val y: CPSetVar) extends Constraint(x.store, "Disjoint") {
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     
-    def filterY(d: DeltaSetVar): CPOutcome = {
+    def filterY(d: DeltaSetVar): Outcome = {
       for (v <- d.deltaRequired) {
         if (y.excludes(v) == Failure) return Failure
       }
       Suspend
     }
     
-    def filterX(d: DeltaSetVar): CPOutcome = {
+    def filterX(d: DeltaSetVar): Outcome = {
       for (v <- d.deltaRequired) {
         if (x.excludes(v) == Failure) return Failure
       }

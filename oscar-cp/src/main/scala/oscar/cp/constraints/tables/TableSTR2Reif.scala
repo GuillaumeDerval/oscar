@@ -3,10 +3,10 @@ package oscar.cp.constraints.tables
 import oscar.cp.core.Constraint
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.variables.CPBoolVar
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.CPPropagStrength
 import oscar.algo.reversible.ReversibleInt
+import oscar.algo.search.Outcome
 import oscar.cp.core.CPStore
 
 /**
@@ -29,7 +29,7 @@ class TableSTR2Reif(val variables: Array[CPIntVar], table: Array[Array[Int]], va
   private[this] var posConstraint: Constraint = new TableSTR2(variables, table)
   private[this] var neConstraint: Constraint = new TableSTRNe(variables, table)
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     val outcome = propagate()
     if (outcome == Failure) return Failure
     else if (outcome == Success) return Success
@@ -39,7 +39,7 @@ class TableSTR2Reif(val variables: Array[CPIntVar], table: Array[Array[Int]], va
     Suspend
   }
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     // check if b is bound
     if (b.isBound) {
       if (b.min == 1) {

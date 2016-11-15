@@ -109,7 +109,7 @@ class NogoodSearch(store: CPStore, nogoods: NogoodDB) {
 
       branch.push((decision, !isLast))
 
-      if (!store.isFailed()) {
+      if (!store.isFailed) {
         val isExpandable = expand(branching)
         if (!isExpandable) {
           store.solFound()

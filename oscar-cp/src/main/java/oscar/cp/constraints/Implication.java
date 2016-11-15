@@ -14,10 +14,9 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
-import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.CPStore;
@@ -47,23 +46,23 @@ public class Implication extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Outcome setup(CPPropagStrength l) {
 		if (A.isBound()) {
-			if (valBind(A) == CPOutcome.Failure) return CPOutcome.Failure;
+			if (valBind(A) == Outcome.Failure) return Outcome.Failure;
 		}
 		else A.callValBindWhenBind(this);
 		
 		if (B.isBound()) {
-			if (valBind(B) == CPOutcome.Failure) return CPOutcome.Failure;
+			if (valBind(B) == Outcome.Failure) return Outcome.Failure;
 		}
 		else B.callValBindWhenBind(this);
 		
 		if (V.isBound()) {
-			if (valBind(V) == CPOutcome.Failure) return CPOutcome.Failure;
+			if (valBind(V) == Outcome.Failure) return Outcome.Failure;
 		}
 		else V.callValBindWhenBind(this);
 		
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 
 	
@@ -74,29 +73,29 @@ public class Implication extends Constraint {
 
 
 	@Override
-	public CPOutcome valBind(CPIntVar var) {
+	public Outcome valBind(CPIntVar var) {
 		if (A.isBound()) {
 			if (A.isBoundTo(0)) {
 				// F => X is always true
-				if (V.assign(1) == CPOutcome.Failure) return CPOutcome.Failure;
-				return CPOutcome.Success;
+				if (V.assign(1) == Outcome.Failure) return Outcome.Failure;
+				return Outcome.Success;
 			} else {
 				// T => B <-> V
 				if (B.isBoundTo(0)) { // T => F it means V must be F
-					if (V.assign(0) == CPOutcome.Failure) return CPOutcome.Failure;
-					return CPOutcome.Success;
+					if (V.assign(0) == Outcome.Failure) return Outcome.Failure;
+					return Outcome.Success;
 				}
 				if (B.isBoundTo(1)) { // T => T it means V must be T
-					if (V.assign(1) == CPOutcome.Failure) return CPOutcome.Failure;
-					return CPOutcome.Success;
+					if (V.assign(1) == Outcome.Failure) return Outcome.Failure;
+					return Outcome.Success;
 				}
 				// the case of whether V is bound is treated below
 			}
 		} 
 		if (B.isBound()) {
 			if (B.isBoundTo(1)) { // V is always true in this case
-				if (V.assign(1) == CPOutcome.Failure) return CPOutcome.Failure;
-				return CPOutcome.Success;
+				if (V.assign(1) == Outcome.Failure) return Outcome.Failure;
+				return Outcome.Success;
 			} else {
 				// A => F <-> V
 				// case A is bound is treated above and V is bound is treated below
@@ -105,24 +104,24 @@ public class Implication extends Constraint {
 		if (V.isBound()) {
 			if (V.min() == 0) {
 				// only way to get A => B <-> F is to have T => F
-				if (A.assign(1) == CPOutcome.Failure) return CPOutcome.Failure;
-				if (B.assign(0) == CPOutcome.Failure) return CPOutcome.Failure;
-				return CPOutcome.Success;
+				if (A.assign(1) == Outcome.Failure) return Outcome.Failure;
+				if (B.assign(0) == Outcome.Failure) return Outcome.Failure;
+				return Outcome.Success;
 			} else {
 				// V is True
 				if (B.isBoundTo(0)) {  // A => F <-> T it means A must be F
-					if (A.assign(0) == CPOutcome.Failure) return CPOutcome.Failure;
-					return CPOutcome.Success;
+					if (A.assign(0) == Outcome.Failure) return Outcome.Failure;
+					return Outcome.Success;
 				}
 				if (B.isBoundTo(1)) { // A => T <-> T it means A can be true of false, doesn't matter
-					return CPOutcome.Success;
+					return Outcome.Success;
 				}
 				if (A.isBoundTo(1)) {
-					if (B.assign(1) == CPOutcome.Failure) return CPOutcome.Failure;
+					if (B.assign(1) == Outcome.Failure) return Outcome.Failure;
 				}
 			}
 		}
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 
 }

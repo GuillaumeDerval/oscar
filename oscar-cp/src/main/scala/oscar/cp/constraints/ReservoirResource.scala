@@ -17,8 +17,9 @@
 package oscar.cp.constraints
 
 import oscar.cp._
-import oscar.cp.core.{CPOutcome, CPPropagStrength}
-import oscar.cp.core.CPOutcome.{Success, Failure}
+import oscar.cp.core.CPPropagStrength
+import oscar.algo.search.Outcome._
+import oscar.algo.search.Outcome
 
 /**
  * Created on 03/06/15.
@@ -99,7 +100,7 @@ class ReservoirResource(startVars: Array[CPIntVar], durationVars: Array[CPIntVar
   private[this] val cumulativeDuration2 = Array.tabulate(nTasks)(i => CPIntVar((cumulativeEnd2(i).min - cumulativeStart2(i).max) to (cumulativeEnd2(i).max - cumulativeStart2(i).min))(cpSolver))
 
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     for (i <- 0 until nTasks) {
       if (cpSolver.post(cumulativeStart1(i) + cumulativeDuration1(i) === cumulativeEnd1(i)) == Failure)
         return Failure

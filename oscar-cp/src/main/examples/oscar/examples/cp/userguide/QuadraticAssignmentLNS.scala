@@ -10,7 +10,7 @@ object QuadraticAssignmentLNS extends CPModel with App {
   var d: Array[Array[Int]] = Array.ofDim(n,n) //distance matrix
 
   // fill distance and weight matrix randomly
-  val random = solver.getRandom()
+  val random = solver.getRandom
   for (i <- 0 until n; j <- i+1 until n) {
     w(i)(j) = random.nextInt(100)
     w(j)(i) = w(i)(j)

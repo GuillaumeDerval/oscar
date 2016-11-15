@@ -5,11 +5,11 @@ import oscar.cp.core.variables.CPBoolVar
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.algo.reversible.ReversibleBoolean
 import oscar.cp.core.watcher.Watcher
 import oscar.algo.SortUtils
+import oscar.algo.search.Outcome
 
 /** @author Renaud Hartert ren.hartert@gmail.com */
 
@@ -38,7 +38,7 @@ final class LightBinaryKnapsack(items: Array[CPBoolVar], weights: Array[Int], lo
   private[this] var requiredLoad = 0
   private[this] var possibleLoad = 0
 
-  final override def setup(l: CPPropagStrength): CPOutcome = {
+  final override def setup(l: CPPropagStrength): Outcome = {
     if (init() == Failure) Failure
     else {
       var i = nItems
@@ -52,7 +52,7 @@ final class LightBinaryKnapsack(items: Array[CPBoolVar], weights: Array[Int], lo
     }
   }
 
-  @inline private def init(): CPOutcome = {
+  @inline private def init(): Outcome = {
     // Reset structures
     requiredLoad = 0
     possibleLoad = 0
@@ -83,7 +83,7 @@ final class LightBinaryKnapsack(items: Array[CPBoolVar], weights: Array[Int], lo
     }
   }
 
-  final override def propagate(): CPOutcome = {
+  final override def propagate(): Outcome = {
     // Cache
     largestItem = largestItemRev.value
     requiredLoad = requiredLoadRev.value
@@ -99,7 +99,7 @@ final class LightBinaryKnapsack(items: Array[CPBoolVar], weights: Array[Int], lo
     }
   }
 
-  @inline private def filterItems(): CPOutcome = {
+  @inline private def filterItems(): Outcome = {
     if (load.updateMax(possibleLoad) == Failure) return Failure
     else if (load.updateMin(requiredLoad) == Failure) return Failure
     else {

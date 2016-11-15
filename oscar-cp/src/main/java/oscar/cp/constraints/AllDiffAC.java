@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -32,13 +32,13 @@ public class AllDiffAC extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Outcome setup(CPPropagStrength l) {
 		CPIntVar nvalues = CPIntVar.apply(s(), x.length);
-		CPOutcome ok = s().post(new AtLeastNValueAC(x, nvalues));
-		if (ok == CPOutcome.Failure) {
-			return CPOutcome.Failure;
+		Outcome ok = s().post(new AtLeastNValueAC(x, nvalues));
+		if (ok == Outcome.Failure) {
+			return Outcome.Failure;
 		} else {
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}
 	}
 }

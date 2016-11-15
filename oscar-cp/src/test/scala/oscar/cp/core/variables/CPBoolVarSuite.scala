@@ -1,7 +1,7 @@
 package oscar.cp.core.variables
 
 import oscar.cp.testUtils._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import scala.util.Random
 import oscar.cp.core.CPStore
 

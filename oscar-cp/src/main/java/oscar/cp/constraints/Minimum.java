@@ -15,9 +15,8 @@
 package oscar.cp.constraints;
 
 import oscar.algo.reversible.ReversibleInt;
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
-import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
 
@@ -71,19 +70,19 @@ public class Minimum extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Outcome setup(CPPropagStrength l) {
 		int ymin = y.getMin();
 		for (int i=0; i < x.length; i++) {			
-			if (x[i].updateMin(ymin) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (x[i].updateMin(ymin) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
 		}
 		updateSupport();
-		if (y.updateMin(minval.getValue()) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
+		if (y.updateMin(minval.getValue()) == Outcome.Failure) {
+			return Outcome.Failure;
 		}
-		if (y.updateMax(maxval.getValue()) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
+		if (y.updateMax(maxval.getValue()) == Outcome.Failure) {
+			return Outcome.Failure;
 		}
 		
 		for (int i = 0; i < x.length; i++) {
@@ -94,40 +93,40 @@ public class Minimum extends Constraint {
 		if (!y.isBound()) {
 			y.callUpdateBoundsWhenBoundsChange(this);
 		}	
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 	
 	@Override
-	public CPOutcome updateBoundsIdx(CPIntVar x, int idx) {
+	public Outcome updateBoundsIdx(CPIntVar x, int idx) {
 		if (idx == minvalsupport.getValue() || idx == maxvalsupport.getValue()) {
 			updateSupport();
-			if (y.updateMin(minval.getValue()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (y.updateMin(minval.getValue()) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			if (y.updateMax(maxval.getValue()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (y.updateMax(maxval.getValue()) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
 		}
 		if (x.isBound() && x.min() == minval.getValue()) {
-			if (y.assign(minval.getValue()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (y.assign(minval.getValue()) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}
 		
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 	
 	
 	@Override
-	public CPOutcome updateBounds(CPIntVar y) {
+	public Outcome updateBounds(CPIntVar y) {
 		int ymin = y.getMin();
 		for (int i=0; i < x.length; i++) {			
-			if (x[i].updateMin(ymin) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (x[i].updateMin(ymin) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
 		}
-		return CPOutcome.Suspend;
+		return Outcome.Suspend;
 	}
 
 }

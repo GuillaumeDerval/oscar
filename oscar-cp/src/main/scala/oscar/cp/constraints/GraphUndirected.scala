@@ -16,8 +16,9 @@
 
 package oscar.cp.constraints
 
+import oscar.algo.search.Outcome
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPGraphVar
 
 /**
@@ -28,14 +29,14 @@ import oscar.cp.core.variables.CPGraphVar
 
 class GraphUndirected(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constraint(g1.s, "Undirected") {
   
-	override def setup(l: CPPropagStrength): CPOutcome = {
+	override def setup(l: CPPropagStrength): Outcome = {
 	  // add filter when domain changes
 	  g1.callPropagateWhenDomainChanges(this)
 	  g2.callPropagateWhenDomainChanges(this)
 	  propagate()
 	}
 	
-	override def propagate(): CPOutcome = {  	  
+	override def propagate(): Outcome = {
 	  // we have to check that nodes sets are the same
 	  val g1PossNodes = g1.possibleNodes
 	  val g1ReqNodes = g1.requiredNodes

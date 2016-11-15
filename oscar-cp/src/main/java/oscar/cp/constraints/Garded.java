@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.Constraint;
@@ -40,28 +40,28 @@ public class Garded extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Outcome setup(CPPropagStrength l) {
 		if (!b.isBound()) {
 			b.callPropagateWhenBind(this);
-			return CPOutcome.Suspend;
+			return Outcome.Suspend;
 		} else {
 			if ((b.min() == 1 && onTrue) || (b.min() == 0 && !onTrue)) {
-				if (s().post(c) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
+				if (s().post(c) == Outcome.Failure) {
+					return Outcome.Failure;
 				}
 			}
-			return CPOutcome.Success;
+			return Outcome.Success;
 		}	
 	}
 	
 	@Override
-	public CPOutcome propagate() {
+	public Outcome propagate() {
 		if ((b.min() == 1 && onTrue) || (b.min() == 0 && !onTrue)) {
-			if (s().post(c) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (s().post(c) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
 		}
-		return CPOutcome.Success;
+		return Outcome.Success;
 	}
 
 }

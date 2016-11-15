@@ -16,11 +16,11 @@
  */
 package oscar.cp.constraints
 
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.CPStore
 
@@ -42,7 +42,7 @@ class Inverse(prev: Array[CPIntVar], next: Array[CPIntVar]) extends Constraint(p
   // Structure used to collect removed values
   private[this] val removedValues = new Array[Int](prev.length)
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     if (init() == Failure) Failure
     else {
       var i = prev.length
@@ -55,7 +55,7 @@ class Inverse(prev: Array[CPIntVar], next: Array[CPIntVar]) extends Constraint(p
     }
   }
 
-  @inline private def propagatePrev(delta: DeltaIntVar): CPOutcome = {
+  @inline private def propagatePrev(delta: DeltaIntVar): Outcome = {
     val varId = delta.id
     val intVar = prev(varId)
     if (intVar.isBound) next(intVar.min).assign(varId)
@@ -70,7 +70,7 @@ class Inverse(prev: Array[CPIntVar], next: Array[CPIntVar]) extends Constraint(p
     }
   }
 
-  @inline private def propagateNext(delta: DeltaIntVar): CPOutcome = {
+  @inline private def propagateNext(delta: DeltaIntVar): Outcome = {
     val varId = delta.id
     val intVar = next(varId)
     if (intVar.isBound) prev(intVar.min).assign(varId)
@@ -85,7 +85,7 @@ class Inverse(prev: Array[CPIntVar], next: Array[CPIntVar]) extends Constraint(p
     }
   }
   
-  @inline private def init(): CPOutcome = {
+  @inline private def init(): Outcome = {
     var i = 0
     while (i < prev.length) {
       // Initializes the bounds of the variables

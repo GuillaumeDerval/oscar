@@ -1,10 +1,9 @@
 package oscar.cp.constraints
 
-import oscar.algo.search.Objective
+import oscar.algo.search.{Outcome, Objective}
 import oscar.cp.core.Constraint
 import oscar.cp._
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.CPOutcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.CPSolver
 
@@ -14,7 +13,7 @@ extends Constraint(solver, "CPObjectiveLexicographic") {
   
   val best = Array.ofDim[Int](n)
 
-  override def setup(strength: CPPropagStrength): CPOutcome = {
+  override def setup(strength: CPPropagStrength): Outcome = {
     variables.foreach(_.callPropagateWhenBoundsChange(this))
     
     // Here we minimize, so the worst value is all max
@@ -27,7 +26,7 @@ extends Constraint(solver, "CPObjectiveLexicographic") {
   solver.postCut(this)
   solver.onSolution(this.tighten())
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     var p = 0
     
     while (p < n && variables(p).isBoundTo(best(p))) p += 1

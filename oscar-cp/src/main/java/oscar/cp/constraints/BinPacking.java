@@ -15,7 +15,7 @@
 package oscar.cp.constraints;
 
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
@@ -50,13 +50,13 @@ public class BinPacking extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength cl) {
+	public Outcome setup(CPPropagStrength cl) {
 		for (int i = 0; i < x.length; i++) {
-			if (x[i].updateMin(0) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (x[i].updateMin(0) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
-			if (x[i].updateMax(l.length-1) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (x[i].updateMax(l.length-1) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
 		}
 		
@@ -71,8 +71,8 @@ public class BinPacking extends Constraint {
 			for (int j = 0; j < x.length; j++) {
 				b[i][j] = x[j].isEq(i);
 			}
-			if (s().post(new BinaryKnapsack(b[i],w,l[i]),cl) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
+			if (s().post(new BinaryKnapsack(b[i],w,l[i]),cl) == Outcome.Failure) {
+				return Outcome.Failure;
 			}
 		}
 		for (int j = 0; j < x.length; j++) {
@@ -82,9 +82,9 @@ public class BinPacking extends Constraint {
 			}
 		}
 		//redundant constraint
-		if (s().post(new Sum(l,CPIntVar.apply(s(),totW,totW))) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
+		if (s().post(new Sum(l,CPIntVar.apply(s(),totW,totW))) == Outcome.Failure) {
+			return Outcome.Failure;
 		}
-		return CPOutcome.Success;
+		return Outcome.Success;
 	}
 }

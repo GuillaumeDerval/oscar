@@ -1,22 +1,16 @@
-package oscar.cp.searches
+package oscar.algo.branchings
 
+import oscar.algo.search.Outcome._
 import oscar.algo.search._
-import oscar.cp._
-import oscar.cp.core.CPStore
-import oscar.algo.reversible.SparseSet
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.Constraint
+import oscar.algo.vars.IntVarLike
 
 /*
  *  A shaving implemented as a branching.
  *    
  *  Not tested extensively, not optimized at all.
  */
-
-
-class ShavingDomain(val vars: Array[CPIntVar])
-             (implicit val store: CPStore)
-extends Branching with BranchingUtils {
+class ShavingDomain(val vars: Array[IntVarLike]) extends Branching with BranchingUtils {
+  val context = vars(0).context
   val nVars = vars.length
   
   def alternatives(): Seq[Alternative] = {
@@ -32,17 +26,17 @@ extends Branching with BranchingUtils {
       var p = 0
       while (p < xDomain.length && !toRemove.isEmpty) {  // intersect with x == v, stop if no variable has a candidate value to remove
         val v = xDomain(p)
-        store.pushState()
+        context.pushState()
         
-        if (store.post(x.eq(v)) != Failure) {        // if this fails, intersect with universe, i.e. do nothing
+        if (context.assign(x, v) != Failure) {        // if this fails, intersect with universe, i.e. do nothing
           toRemove = toRemove.map { case (xr, xrvalues) =>
             (xr, xrvalues.filter { !xr.hasValue(_) })       // if a value is still there, it should not be removed
           }
           
           toRemove = toRemove.filter(!_._2.isEmpty)         // filter out variables that have no values to remove
         }
-        
-        store.pop()
+
+        context.pop()
         p += 1
       }
       
@@ -52,15 +46,13 @@ extends Branching with BranchingUtils {
       }
       
       // Step 2: remove values for i
-      while (!store.isFailed() && !toRemove.isEmpty) {
+      while (!context.isFailed && !toRemove.isEmpty) {
         val (xr, xrToRemove) = toRemove.head
-        
-        val removalConstraints = xrToRemove.map(xr.diff(_): Constraint).toArray
-        store.post(removalConstraints)
-        
+
+        context.remove(xr, xrToRemove.toArray)
         toRemove = toRemove.tail
       }
-      if (store.isFailed) return branchOne()
+      if (context.isFailed) return branchOne()
     }
     
     
@@ -71,5 +63,5 @@ extends Branching with BranchingUtils {
 }
 
 object ShavingDomain {
-  def apply(vars: Array[CPIntVar])(implicit store: CPStore) = new ShavingDomain(vars)
+  def apply(vars: Array[IntVarLike]) = new ShavingDomain(vars)
 }

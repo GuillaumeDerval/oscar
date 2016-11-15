@@ -18,7 +18,7 @@ class DFSearchNode extends ReversibleContext {
   /**
     * @return The Random generator of this node potentially used in other algorithms
     */
-  def getRandom(): Random = random
+  def getRandom: Random = random
 
 
   protected val failed = new ReversibleBoolean(this, false)
@@ -36,7 +36,7 @@ class DFSearchNode extends ReversibleContext {
 
 
   /** @return  true if this node can surely not lead to any solution */
-  def isFailed(): Boolean = failed.value
+  def isFailed: Boolean = failed.value
 
   /** Set the node in a failed state */
   def fail(): Unit = failed.setTrue()

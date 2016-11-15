@@ -16,7 +16,8 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.variables.CPBoolVar
 
@@ -34,7 +35,7 @@ class InSetReif(val x: CPIntVar, val set: Set[Int], val b: CPBoolVar) extends Co
   val supportValueNotInSet = new ReversibleInt(s,0)
   
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     if (!b.isBound) b.callValBindWhenBind(this)
     else return valBind(b)
     
@@ -77,7 +78,7 @@ class InSetReif(val x: CPIntVar, val set: Set[Int], val b: CPBoolVar) extends Co
     }
   }  
   
-  override def valBind(variable: CPIntVar): CPOutcome = {
+  override def valBind(variable: CPIntVar): Outcome = {
     if (b.isTrue) {
       for (v <- x.toSet if !set.contains(v)) {
         if (x.removeValue(v) == Failure) {
@@ -99,7 +100,7 @@ class InSetReif(val x: CPIntVar, val set: Set[Int], val b: CPBoolVar) extends Co
     Success
   }
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     if (x.min > setMax) {
       if (b.assign(0) == Failure) {
         return Failure

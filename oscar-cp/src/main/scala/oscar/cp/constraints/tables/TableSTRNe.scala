@@ -18,11 +18,12 @@ package oscar.cp.constraints.tables
 
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp.core.CPPropagStrength
 import oscar.algo.reversible.ReversibleInt
 import java.util.Arrays
+
+import oscar.algo.search.Outcome
 import oscar.cp.core.CPStore
 
 /**
@@ -68,13 +69,13 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
   // count(x,a): number of support possibles for each literal (x,a)
   private[this] val count = Array.tabulate(arity)(i => new Array[Int](variables(i).max - variables(i).min+1))
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     if (propagate() == Failure) return Failure
     variables.filter(!_.isBound).foreach(_.callPropagateWhenDomainChanges(this))
     Suspend
   }
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     timeStamp += 1
     var limit = currentLimit.getValue()
     //---------------------- initialize -------------------------------------/
@@ -206,9 +207,9 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
   }
   
   /**
-   * Update variables' domain and return CPOutcome i.e. Suspend, Failure,... 
+   * Update variables' domain and return Outcome i.e. Suspend, Failure,...
    */
-  @inline private def updateDomains(): CPOutcome = {
+  @inline private def updateDomains(): Outcome = {
     var i = 0
     while (i <= sSupLimit) {
       val varId = sSup(i)

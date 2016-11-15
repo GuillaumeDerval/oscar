@@ -4,6 +4,7 @@ import scala.util.parsing.combinator._
 import FZType._
 import oscar.cp._
 import java.io.FileReader
+
 import scala.Equals
 import oscar.cp.constraints.EqReifVar
 import oscar.cp.constraints.GrEqVarReif
@@ -16,18 +17,20 @@ import oscar.cp.constraints.Automaton
 import oscar.cp.constraints.Sum
 import oscar.cp.constraints.SetDiff
 import java.sql.Time
+
 import oscar.cp.constraints.ScalarProduct
 import oscar.cp.constraints.WeightedSum
+
 import scala.collection.mutable.HashMap
 import java.util.Collection
-import oscar.algo.search.Branching
+
+import oscar.algo.search.{Branching, Outcome}
 import oscar.cp.constraints.MulCte
 import oscar.cp.constraints.SubCircuit
 import oscar.cp.core.variables.CPVar
 import oscar.cp.core.NoSolutionException
 import oscar.cp.core.variables.CPSetVar
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.Constraint
 
 class Parser extends JavaTokenParsers { // RegexParsers {
@@ -699,16 +702,16 @@ class Parser extends JavaTokenParsers { // RegexParsers {
    * @param cpvar : CPIntVar
    */
   def shrinkDom(s: Set[Int], cpvar: CPIntVar) {
-    if (cpvar.updateMax(s.max) == CPOutcome.Failure) {
+    if (cpvar.updateMax(s.max) == Outcome.Failure) {
       throw new NoSolutionException("VarInt domains are incompatible")
     }
-    if (cpvar.updateMin(s.min) == CPOutcome.Failure) {
+    if (cpvar.updateMin(s.min) == Outcome.Failure) {
       throw new NoSolutionException("VarInt domains are incompatible")
     }
     if (!(s.max - s.min + 1 == s.size)) {
       for (e <- cpvar.iterator) {
         if (!(s contains e)) {
-          if (cpvar.removeValue(e) == CPOutcome.Failure) {
+          if (cpvar.removeValue(e) == Outcome.Failure) {
             throw new NoSolutionException("VarInt domains are incompatible")
           }
         }
@@ -724,7 +727,7 @@ class Parser extends JavaTokenParsers { // RegexParsers {
   def shrinkDom(s: Set[Int], cpvar: CPSetVar) {
     for (e <- cpvar.possibleNotRequiredValues.toSet[Int]) {
       if (!(s contains e)) {
-        if (cpvar.excludes(e) == CPOutcome.Failure) {
+        if (cpvar.excludes(e) == Outcome.Failure) {
           throw new NoSolutionException("Sets domains are incompatible")
         }
       }

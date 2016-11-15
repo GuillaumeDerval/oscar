@@ -2,9 +2,10 @@ package oscar.cp.core.domains
 
 import oscar.algo.reversible.ReversibleContext
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.CPOutcome
+import oscar.algo.search.Outcome._
 import oscar.algo.reversible.Reversible
+import oscar.algo.search.Outcome
+
 import scala.util.Random
 
 /**
@@ -102,7 +103,7 @@ class BoundDomain(override val context: ReversibleContext, val minValue: Int, va
   }
 
   @inline
-  override final def updateMax(value: Int): CPOutcome = {
+  override final def updateMax(value: Int): Outcome = {
     if (value < _min.value) {
       _max.value = _min.value - 1
       Failure
@@ -114,7 +115,7 @@ class BoundDomain(override val context: ReversibleContext, val minValue: Int, va
   }
 
   @inline
-  override final def updateMin(value: Int): CPOutcome = {
+  override final def updateMin(value: Int): Outcome = {
     if (value > _max.value) {
       _min.value = _max.value + 1
       Failure
@@ -126,7 +127,7 @@ class BoundDomain(override val context: ReversibleContext, val minValue: Int, va
   }
 
   @inline
-  override final def assign(value: Int): CPOutcome = {
+  override final def assign(value: Int): Outcome = {
     if (!hasValue(value)) {
       _max.value = value
       _min.value = value + 1

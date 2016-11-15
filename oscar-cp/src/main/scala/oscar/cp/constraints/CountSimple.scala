@@ -16,7 +16,8 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome
+import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPIntVar
 
 
@@ -49,14 +50,14 @@ class CountSimple(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) exte
   }  
   
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     X.foreach(_.callPropagateWhenDomainChanges(this))
     Y.callPropagateWhenBind(this)
     N.callPropagateWhenBoundsChange(this)
-    CPOutcome.Suspend
+    Outcome.Suspend
   }
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     var i = 0
     if (Y.isBound) {
       val v = Y.min
@@ -82,8 +83,8 @@ class CountSimple(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) exte
     val minCount = nEqY.value
     val maxCount = n-nDiffY.value
     
-    if (N.updateMin(minCount) == CPOutcome.Failure) return CPOutcome.Failure
-    if (N.updateMax(maxCount) == CPOutcome.Failure) return CPOutcome.Failure
+    if (N.updateMin(minCount) == Outcome.Failure) return Outcome.Failure
+    if (N.updateMax(maxCount) == Outcome.Failure) return Outcome.Failure
     
     
     // we reached the maximum number values
@@ -91,22 +92,22 @@ class CountSimple(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) exte
       val v = Y.min
       i = nEqY.value
       while (i < n) {
-        if (eqY(i).removeValue(v) == CPOutcome.Failure) return CPOutcome.Failure
+        if (eqY(i).removeValue(v) == Outcome.Failure) return Outcome.Failure
         i += 1
       }
-      return CPOutcome.Success
+      return Outcome.Success
     }
     // every value not surely equal to Y must be equal to Y
     if (maxCount == N.min && Y.isBound) {
       val v = Y.min
       i = nDiffY.value
       while (i < n) {
-        if (diffY(i).assign(v) == CPOutcome.Failure) return CPOutcome.Failure
+        if (diffY(i).assign(v) == Outcome.Failure) return Outcome.Failure
         i += 1
       }
-      return CPOutcome.Success
+      return Outcome.Success
     }
-    return CPOutcome.Suspend 
+    return Outcome.Suspend
   }
   
 

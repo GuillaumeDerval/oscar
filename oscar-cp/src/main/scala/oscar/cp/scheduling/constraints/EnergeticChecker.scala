@@ -21,8 +21,9 @@ import scala.math.min
 import oscar.cp.core._
 import oscar.cp.constraints._
 import oscar.cp._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.algo.SortUtils.stableSort
+import oscar.algo.search.Outcome
 
 /**
  * @author Steven Gay 
@@ -46,7 +47,7 @@ class EnergeticChecker(starts: Array[CPIntVar], durations: Array[CPIntVar], ends
   val leftToRight = new EnergeticCheckerLeftToRight(starts, durations,    ends, demands, resources, capacity, id)
   val rightToLeft = new EnergeticCheckerLeftToRight(rends,  durations, rstarts, demands, resources, capacity, id)  
         
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     priorityL2 = 1
       
     val oc = propagate()
@@ -176,7 +177,7 @@ class EnergeticCheckerLeftToRight(startsV: Array[CPIntVar], durationsV: Array[CP
   }
 
     
-  def propagate(): CPOutcome = {
+  def propagate(): Outcome = {
     val myTasks = Tasks.filter( i => resourcesV(i).isBoundTo(ressourceId) && demandsV(i).max > 0 && durationsV(i).max > 0 ).toArray
     updateCache()
     

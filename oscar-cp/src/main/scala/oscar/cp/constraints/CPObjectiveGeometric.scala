@@ -15,9 +15,9 @@
 
 package oscar.cp.constraints
 
+import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp._
 
 abstract class CPObjectiveGeometric(objVar: CPIntVar, name: String, ratio: Double)
@@ -39,10 +39,10 @@ extends CPObjectiveGeometric(objVar, name, ratio) {
   def isMax: Boolean = false
   def isMin: Boolean = true 
   
-  def updateWorstBound(newBound: Int, delta: Int = 0): CPOutcome = 
+  def updateWorstBound(newBound: Int, delta: Int = 0): Outcome =
     objVar.updateMax(newBound - math.ceil(ratio * newBound * delta).toInt) 
   
-  def updateBestBound(newBound: Int, delta: Int = 0): CPOutcome = 
+  def updateBestBound(newBound: Int, delta: Int = 0): Outcome =
     objVar.updateMin(newBound + math.ceil(ratio * newBound * delta).toInt) 
     
   def worstBound: Int = ub
@@ -62,10 +62,10 @@ extends CPObjectiveGeometric(objVar, name, ratio) {
   def domWorst: Int = objVar.min 
   def isMax: Boolean = true
   def isMin: Boolean = false
-  def updateWorstBound(newBound: Int, delta: Int = 0): CPOutcome = 
+  def updateWorstBound(newBound: Int, delta: Int = 0): Outcome =
     objVar.updateMin(newBound + math.ceil(ratio * newBound * delta).toInt) 
   
-  def updateBestBound(newBound: Int, delta: Int = 0): CPOutcome = 
+  def updateBestBound(newBound: Int, delta: Int = 0): Outcome =
     objVar.updateMax(newBound - math.ceil(ratio * newBound * delta).toInt)
     
   def worstBound: Int = lb

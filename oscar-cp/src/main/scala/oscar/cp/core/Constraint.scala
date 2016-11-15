@@ -22,6 +22,7 @@ import oscar.cp.core.variables.CPBoolVar
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.delta.Delta
 import oscar.algo.reversible.TrailEntry
+import oscar.algo.search.Outcome
 
 /**
  * Abstract class extended by any CP constraints
@@ -112,7 +113,7 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
    * @param l
    * @return The outcome of the first propagation and consistency check
    */
-  def setup(l: CPPropagStrength): CPOutcome
+  def setup(l: CPPropagStrength): Outcome
 
   final def priorityL2: Int = priorL2
   final def priorityBindL1: Int = priorBindL1
@@ -187,7 +188,7 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
    * on which of the method(s) above was used
    * @return the outcome i.e. Failure, Success or Suspend
    */
-  def propagate(): CPOutcome = CPOutcome.Suspend
+  def propagate(): Outcome = Outcome.Suspend
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
@@ -195,7 +196,7 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
    * @param x has a new minimum and/or maximum value in its domain since last call
    * @return the outcome i.e. Failure, Success or Suspend
    */
-  def updateBounds(x: CPIntVar) = CPOutcome.Suspend
+  def updateBounds(x: CPIntVar) = Outcome.Suspend
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
@@ -205,7 +206,7 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
    *        This is typically used to retrieve the index of x in an array of variables in constant time
    * @return the outcome i.e. Failure, Success or Suspend
    */
-  def updateBoundsIdx(x: CPIntVar, idx: Int) = CPOutcome.Suspend
+  def updateBoundsIdx(x: CPIntVar, idx: Int) = Outcome.Suspend
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
@@ -213,7 +214,7 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
    * @param x is bind
    * @return the outcome i.e. Failure, Success or Suspend
    */
-  def valBind(x: CPIntVar) = CPOutcome.Suspend
+  def valBind(x: CPIntVar) = Outcome.Suspend
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
@@ -223,7 +224,7 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
    *        This is typically used to retrieve the index of x in an array of variables in constant time
    * @return the outcome i.e. Failure, Success or Suspend
    */
-  def valBindIdx(x: CPIntVar, idx: Int) = CPOutcome.Suspend
+  def valBindIdx(x: CPIntVar, idx: Int) = Outcome.Suspend
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
@@ -231,7 +232,7 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
    * @param value is a value that has been removed from the domain of x since last call
    * @return the outcome i.e. Failure, Success or Suspend
    */
-  def valRemove(x: CPIntVar, value: Int) = CPOutcome.Suspend
+  def valRemove(x: CPIntVar, value: Int) = Outcome.Suspend
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
@@ -241,7 +242,7 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
    *        This is typically used to retrieve the index of x in an array of variables in constant time
    * @return the outcome i.e. Failure, Success or Suspend
    */
-  def valRemoveIdx(x: CPIntVar, idx: Int, value: Int) = CPOutcome.Suspend
+  def valRemoveIdx(x: CPIntVar, idx: Int, value: Int) = Outcome.Suspend
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
@@ -249,7 +250,7 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
    * @param val is a value that has been put as required in the domain of x since last call
    * @return the outcome i.e. Failure, Success or Suspend
    */
-  def valRequired(x: CPSetVar, value: Int) = CPOutcome.Suspend
+  def valRequired(x: CPSetVar, value: Int) = Outcome.Suspend
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
@@ -259,7 +260,7 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
    *        This is typically used to retrieve the index of x in an array of variables in constant time
    * @return the outcome i.e. Failure, Success or Suspend
    */
-  def valRequiredIdx(x: CPSetVar, idx: Int, value: Int) = CPOutcome.Suspend
+  def valRequiredIdx(x: CPSetVar, idx: Int, value: Int) = Outcome.Suspend
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
@@ -267,7 +268,7 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
    * @param val is a value that has been excluded in the domain of x since last call
    * @return the outcome i.e. Failure, Success or Suspend
    */
-  def valExcluded(x: CPSetVar, value: Int) = CPOutcome.Suspend
+  def valExcluded(x: CPSetVar, value: Int) = Outcome.Suspend
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
@@ -277,14 +278,14 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
    *        This is typically used to retrieve the index of x in an array of variables in constant time
    * @return the outcome i.e. Failure, Success or Suspend
    */
-  def valExcludedIdx(x: CPSetVar, idx: Int, value: Int) = CPOutcome.Suspend
+  def valExcludedIdx(x: CPSetVar, idx: Int, value: Int) = Outcome.Suspend
 
-  def execute(): CPOutcome = {
+  def execute(): Outcome = {
     inQueue = false
     _inPropagate = true
     val oc = propagate()
-    if (oc != CPOutcome.Failure) updateSnapshots()
-    if (oc == CPOutcome.Success) deactivate()
+    if (oc != Outcome.Failure) updateSnapshots()
+    if (oc == Outcome.Success) deactivate()
     _inPropagate = false
     oc
   }

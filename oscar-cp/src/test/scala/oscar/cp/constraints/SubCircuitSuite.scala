@@ -1,11 +1,9 @@
 package oscar.cp.constraints
 
 import oscar.algo.reversible.ReversibleInt
-import oscar.algo.search.Branching
+import oscar.algo.search.{Branching, Outcome}
 import oscar.cp.testUtils.TestSuite
 import oscar.cp._
-import oscar.cp.core.CPOutcome
-import oscar.cp.searches.Decision
 
 import scala.util.Random
 
@@ -89,7 +87,7 @@ class SubCircuitSuite extends TestSuite {
       CPIntVar(1) //5
     )
     println("---------------------------------")
-    assert(cp.post(subCircuit(successors)) == CPOutcome.Failure)
+    assert(cp.post(subCircuit(successors)) == Outcome.Failure)
 
 
 
@@ -129,7 +127,7 @@ class SubCircuitSuite extends TestSuite {
       CPIntVar(Set(4)),
       CPIntVar(Set(3))
     )
-    assert(cp.post(subCircuit(successors)) == CPOutcome.Failure)
+    assert(cp.post(subCircuit(successors)) == Outcome.Failure)
   }
 
   test("successors all different") {
@@ -141,7 +139,7 @@ class SubCircuitSuite extends TestSuite {
       CPIntVar(Set(0)),
       CPIntVar(Set(2))
     )
-    assert(cp.post(subCircuit(successors)) == CPOutcome.Failure)
+    assert(cp.post(subCircuit(successors)) == Outcome.Failure)
 
 
     successors = Array(
@@ -151,7 +149,7 @@ class SubCircuitSuite extends TestSuite {
       CPIntVar(Set(3)),
       CPIntVar(Set(1))
     )
-    assert(cp.post(subCircuit(successors)) == CPOutcome.Failure)
+    assert(cp.post(subCircuit(successors)) == Outcome.Failure)
 
   }
 

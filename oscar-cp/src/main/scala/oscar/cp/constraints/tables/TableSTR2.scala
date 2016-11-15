@@ -15,13 +15,13 @@
 
 package oscar.cp.constraints.tables
 
-import oscar.algo.reversible.{SparseSet, ReversibleSparseSet, ReversibleInt, ReversibleBoolean}
-import oscar.cp.core.variables.{CPIntVarViewOffset, CPIntVar}
+import oscar.algo.reversible.{ReversibleBoolean, ReversibleInt, ReversibleSparseSet, SparseSet}
+import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset}
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
+import oscar.algo.search.Outcome
 
 
 /**
@@ -85,7 +85,7 @@ final class TableSTR2(private[this] val variables: Array[CPIntVar], private[this
   // Last size of the domain
   private[this] val lastSize = Array.fill(arity)(new ReversibleInt(s, -1))
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     if (propagate() == Failure) Failure
     else {
       var i = arity
@@ -140,7 +140,7 @@ final class TableSTR2(private[this] val variables: Array[CPIntVar], private[this
 
 
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     // Increasing the timeStamp implicitely removes all dom and gac values
     timeStamp += 1
 

@@ -75,7 +75,7 @@ class TestElementCst2D extends FunSuite with ShouldMatchers {
 
     cp.post(new ElementCst2D(T, x, y, z))
 
-    cp.isFailed() should be(true)
+    cp.isFailed should be(true)
   }
 
   test("Test Element 5") {

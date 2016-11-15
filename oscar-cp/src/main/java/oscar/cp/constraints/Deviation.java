@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -67,14 +67,14 @@ public class Deviation extends Constraint {
     }
 
     @Override
-    public CPOutcome setup(CPPropagStrength l) {
+    public Outcome setup(CPPropagStrength l) {
     	// post the decomposition
     	CPIntVar [] devVar = new CPIntVar[n];
     	for (int i = 0; i < x.length; i++) {
     		devVar[i] = oscar.cp.modeling.constraint.absolute(oscar.cp.modeling.constraint.minus(oscar.cp.modeling.constraint.mul(x[i],n),s));
     	}
-    	if (s().post(new Sum(devVar,nd)) == CPOutcome.Failure) {
-    		return CPOutcome.Failure;
+    	if (s().post(new Sum(devVar,nd)) == Outcome.Failure) {
+    		return Outcome.Failure;
     	}
     	
     	//add(vari == sum(periods)(p => (l(p)*nbPeriods - credits.sum).abs))
@@ -89,10 +89,10 @@ public class Deviation extends Constraint {
     }
 
     @Override
-    public CPOutcome propagate() {
+    public Outcome propagate() {
         // 1) make the sum constraint bound consistent
-        if (propagateSum() == CPOutcome.Failure) {
-            return CPOutcome.Failure;
+        if (propagateSum() == Outcome.Failure) {
+            return Outcome.Failure;
         }
         // 2) initialize scaled domain data
         initData(false);
@@ -101,20 +101,20 @@ public class Deviation extends Constraint {
         computeMinDevAssignment();
         // 4) compute the deviation of this assignment and prune the lower bound of the deviation var
         int delta_min = computeMinDev();
-        if (nd.updateMin(delta_min) == CPOutcome.Failure) {
-            return CPOutcome.Failure;
+        if (nd.updateMin(delta_min) == Outcome.Failure) {
+            return Outcome.Failure;
         }
         // 5) propagate the upper and lower bounds of the x[i]'s
         propagateBounds(delta_min);
         //propagateBoundsShaving(); // replace previous line with this one to use the shaving (debugging purpose, much less efficient)
-        return CPOutcome.Suspend;
+        return Outcome.Suspend;
     }
 
     /**
      * Bound Consistent propagation for the sum constraint sum x[i] == s
      * @return Suspend if the sum is bound consistent, false otherwise
      */
-    private CPOutcome propagateSum() {
+    private Outcome propagateSum() {
         int maxsum = 0;
         int minsum = 0;
         for (int i = 0; i < x.length; i++) {
@@ -122,14 +122,14 @@ public class Deviation extends Constraint {
             minsum += x[i].getMin();
         }
         for (int i = 0; i < x.length; i++) {
-            if (x[i].updateMax(s - (minsum - x[i].getMin())) == CPOutcome.Failure) {
-                return CPOutcome.Failure;
+            if (x[i].updateMax(s - (minsum - x[i].getMin())) == Outcome.Failure) {
+                return Outcome.Failure;
             }
-            if (x[i].updateMin(s - (maxsum - x[i].getMax())) == CPOutcome.Failure) {
-                return CPOutcome.Failure;
+            if (x[i].updateMin(s - (maxsum - x[i].getMax())) == Outcome.Failure) {
+                return Outcome.Failure;
             }
         }
-        return CPOutcome.Suspend;
+        return Outcome.Suspend;
     }
 
     /**
@@ -244,11 +244,11 @@ public class Deviation extends Constraint {
         for (int i = 0; i < n; i++) {
             if (x[i].isBound()) continue;
             int max = boundConsistentValue(i,true);
-            if (x[i].updateMax(max) == CPOutcome.Failure) {
+            if (x[i].updateMax(max) == Outcome.Failure) {
                 assert(false); //should never fail since it is called when the constraint is consistent
             }
             int min = boundConsistentValue(i,false);
-            if (x[i].updateMin(min) == CPOutcome.Failure) {
+            if (x[i].updateMin(min) == Outcome.Failure) {
                 assert(false); //should never fail since it is called when the constraint is consistent
             }
         }
@@ -428,10 +428,10 @@ public class Deviation extends Constraint {
      */
     private boolean pruneBound(CPIntVar x, int bound, boolean mirror) {
         if (!mirror) {
-            if (x.updateMax(bound) == CPOutcome.Failure)
+            if (x.updateMax(bound) == Outcome.Failure)
                 return false;
         } else {
-            if (x.updateMin(-bound) == CPOutcome.Failure) {
+            if (x.updateMin(-bound) == Outcome.Failure) {
                 return false;
             }
         }

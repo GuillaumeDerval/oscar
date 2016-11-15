@@ -14,9 +14,9 @@
  ******************************************************************************/
 package oscar.cp.constraints
 
+import oscar.algo.search.Outcome
 import oscar.cp._
 import oscar.cp.core.Constraint
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPPropagStrength
 
 
@@ -36,16 +36,16 @@ class Spread(val x: Array[CPIntVar], val sum: Int, val sum2: CPIntVar, val rever
  
   val epsilon = 10e-6
   
-  override def setup(l: CPPropagStrength): CPOutcome = { 
+  override def setup(l: CPPropagStrength): Outcome = {
     
     if (reverse) {
       
-      if (s.post(new Spread(x.map(-_),-sum,sum2,false)) == CPOutcome.Failure) {
-    	  return CPOutcome.Failure
+      if (s.post(new Spread(x.map(-_),-sum,sum2,false)) == Outcome.Failure) {
+    	  return Outcome.Failure
       } 
       
-      if (decomposition() == CPOutcome.Failure) {
-         return CPOutcome.Failure
+      if (decomposition() == Outcome.Failure) {
+         return Outcome.Failure
       }
     }
     
@@ -53,40 +53,40 @@ class Spread(val x: Array[CPIntVar], val sum: Int, val sum2: CPIntVar, val rever
     sum2.callPropagateWhenBoundsChange(this)
     propagate()
     
-    CPOutcome.Suspend
+    Outcome.Suspend
   }
   
-  def decomposition(): CPOutcome = {
-    if (s.post(new Sum(x.map(i => i*i),sum2)) == CPOutcome.Failure) {
-      CPOutcome.Failure
+  def decomposition(): Outcome = {
+    if (s.post(new Sum(x.map(i => i*i),sum2)) == Outcome.Failure) {
+      Outcome.Failure
     }
-    else if (s.post(new Sum(x,CPIntVar(sum)(s))) == CPOutcome.Failure) {
-      CPOutcome.Failure 
+    else if (s.post(new Sum(x,CPIntVar(sum)(s))) == Outcome.Failure) {
+      Outcome.Failure
     } else {
-      CPOutcome.Suspend 
+      Outcome.Suspend
     }
   }
   
-  def propagateSum(): CPOutcome = {
+  def propagateSum(): Outcome = {
     val summin = x.map(_.min).sum
 	val summax = x.map(_.max).sum
 	// check that sum constraint is feasible and prune it (fix point on it)
 	for (i <- 0 until n) {
-		if (x(i).updateMin(sum - (summax - x(i).max)) == CPOutcome.Failure) {
-		  return CPOutcome.Failure
+		if (x(i).updateMin(sum - (summax - x(i).max)) == Outcome.Failure) {
+		  return Outcome.Failure
 		}	
-		if (x(i).updateMax(sum - (summin - x(i).min)) == CPOutcome.Failure) {
-		  return CPOutcome.Failure
+		if (x(i).updateMax(sum - (summin - x(i).min)) == Outcome.Failure) {
+		  return Outcome.Failure
 		}
 	}
-    CPOutcome.Suspend
+    Outcome.Suspend
   }
 
  
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     // first make sure the the sum is consistent
-    if (propagateSum() == CPOutcome.Failure) {
-      return CPOutcome.Failure
+    if (propagateSum() == Outcome.Failure) {
+      return Outcome.Failure
     }
     // check that not every variable is bound otherwise we can assign the sum of square directly
     if (x.forall(_.isBound)) {
@@ -201,8 +201,8 @@ class Spread(val x: Array[CPIntVar], val sum: Int, val sum2: CPIntVar, val rever
 	//println("es:"+es(Iopt))
 	//minopt = scala.math.ceil(es2(Iopt) + m(Iopt) * v * v).toInt
 	
-	if (sum2.updateMin(minopt) == CPOutcome.Failure) {
-	  return CPOutcome.Failure 
+	if (sum2.updateMin(minopt) == Outcome.Failure) {
+	  return Outcome.Failure
 	}
 	
 		
@@ -220,7 +220,7 @@ class Spread(val x: Array[CPIntVar], val sum: Int, val sum2: CPIntVar, val rever
 	    (mStar,esStar,es2Star)
 	}
 	
-    def pruneMax(i: Int, xiq: Double, I: Int): CPOutcome = {
+    def pruneMax(i: Int, xiq: Double, I: Int): Outcome = {
 	    if (I >= 0 && xiq < xmax(i)) {
 	      val (mStar,esStar,es2Star) = updateValues(i,xiq,I)
 	      val isStar = esStar + mStar * Imin(I)
@@ -258,16 +258,16 @@ class Spread(val x: Array[CPIntVar], val sum: Int, val sum2: CPIntVar, val rever
                 } 
                 else pruneMax(i,xiq+ d1, I-1)	        
 	      } else pruneMax(i,xiq, I-1)
-	    } else CPOutcome.Suspend
+	    } else Outcome.Suspend
 	}
 
 	
 	for (i <- 0 until n; if xmax(i) > Imin(Iopt)) {
-	  if (pruneMax(i,if (inDomain(Iopt,i)) v else xmin(i), Iopt) == CPOutcome.Failure) {
-	    return CPOutcome.Failure
+	  if (pruneMax(i,if (inDomain(Iopt,i)) v else xmin(i), Iopt) == Outcome.Failure) {
+	    return Outcome.Failure
 	  }
 	}
-    return CPOutcome.Suspend
+    return Outcome.Suspend
   }
 
 }

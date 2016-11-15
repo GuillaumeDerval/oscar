@@ -15,6 +15,7 @@
 
 package oscar.cp.constraints
 
+import oscar.algo.search.Outcome
 import oscar.cp.core._
 import oscar.cp.core.variables.CPIntVar
 
@@ -25,14 +26,14 @@ import oscar.cp.core.variables.CPIntVar
 class SoftGCC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[Int], viol: CPIntVar)
   extends Constraint(X(0).store, "SoftGCC") {
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     val ok = l match {
       case CPPropagStrength.Strong => s.post(new SoftGCCAC(X, minVal, lower, upper, viol))
       case _ => s.post(new SoftGCCFWC(X, minVal, lower, upper, viol))
     }
 
-    if (ok == CPOutcome.Failure) CPOutcome.Failure
-    else CPOutcome.Success
+    if (ok == Outcome.Failure) Outcome.Failure
+    else Outcome.Success
   }
 }
 

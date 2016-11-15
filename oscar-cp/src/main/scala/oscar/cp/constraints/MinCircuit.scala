@@ -15,9 +15,9 @@
 package oscar.cp.constraints
 
 import oscar.algo.reversible.ReversibleSparseSet
+import oscar.algo.search.Outcome
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.cp._
 
 /**
@@ -34,7 +34,7 @@ import oscar.cp._
  */
 class MinCircuit(val succ: Array[CPIntVar], val distMatrix: Array[Array[Int]], obj: CPIntVar, addPredModel: Boolean = true) extends Constraint(obj.store, "MinCircuit") {
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     val n = succ.size
     val distMatrixSucc = Array.tabulate(n, n)((i, j) => distMatrix(i)(j))
 
@@ -63,7 +63,7 @@ class MinCircuit(val succ: Array[CPIntVar], val distMatrix: Array[Array[Int]], o
       if (s.post(new MinCircuit(pred, distMatrixPred, obj, false), l) == Failure) return Failure
     }
 
-    return CPOutcome.Success
+    return Outcome.Success
   }
 
 }

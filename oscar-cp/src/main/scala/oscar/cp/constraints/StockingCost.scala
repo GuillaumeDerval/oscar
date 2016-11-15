@@ -1,7 +1,9 @@
 package oscar.cp.constraints
 
+import oscar.algo.search.Outcome
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
+
 import scala.collection.mutable.PriorityQueue
 import oscar.cp.core.variables.CPIntVar
 
@@ -41,7 +43,7 @@ class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIn
   val d = Array.fill(n)(0)
   val vopt = Array.fill(n)(0)
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Outcome = {
     X.foreach(_.callPropagateWhenBoundsChange(this))
     H.callPropagateWhenBoundsChange(this)
     propagate()
@@ -105,7 +107,7 @@ class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIn
     
   }  
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     if (allDiffBC.propagate() == Failure) return Failure
     sortIncremental()
     var t = Xmax(0)

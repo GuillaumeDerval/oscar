@@ -16,12 +16,11 @@
 package oscar.cp.constraints
 
 import oscar.cp._
-import java.util.{Arrays => JArrays}
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.reversible.ReversibleBoolean
 import oscar.algo.SortUtils
+import oscar.algo.search.Outcome
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
@@ -39,9 +38,9 @@ class UnaryRank(val starts: Array[CPIntVar], val durations: Array[CPIntVar], val
   
   
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
-    if (s.add(allDifferent(ranks),Strong) == CPOutcome.Failure) 
-        return CPOutcome.Failure
+  override def setup(l: CPPropagStrength): Outcome = {
+    if (s.add(allDifferent(ranks),Strong) == Outcome.Failure)
+        return Outcome.Failure
     for(i <- 0 until n) {
       if (ranks(i).isBound) valBindIdx(ranks(i),i)
     }
@@ -53,11 +52,11 @@ class UnaryRank(val starts: Array[CPIntVar], val durations: Array[CPIntVar], val
       ranks(i).callPropagateWhenBind(this)
     }
 
-    if (propagate() == CPOutcome.Failure) {
-      return CPOutcome.Failure
+    if (propagate() == Outcome.Failure) {
+      return Outcome.Failure
     }
 
-    return CPOutcome.Suspend
+    return Outcome.Suspend
   }
 
   
@@ -65,12 +64,12 @@ class UnaryRank(val starts: Array[CPIntVar], val durations: Array[CPIntVar], val
   val endMax = Array.ofDim[Int](n)
   val startMin = Array.ofDim[Int](n)
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     val cr = rank.value
     //println("propagate:"+cr)
     if (cr == n) {
       isRanked.value = true
-      return CPOutcome.Success;
+      return Outcome.Success;
     }
     
     for (i <- 0 until n) {
@@ -94,8 +93,8 @@ class UnaryRank(val starts: Array[CPIntVar], val durations: Array[CPIntVar], val
           }
         } 
         if (startMax < ends(i).min) {
-          if (ranks(i).removeValue(cr) == CPOutcome.Failure) {
-            return CPOutcome.Failure
+          if (ranks(i).removeValue(cr) == Outcome.Failure) {
+            return Outcome.Failure
           }
         }
       }
@@ -108,15 +107,15 @@ class UnaryRank(val starts: Array[CPIntVar], val durations: Array[CPIntVar], val
     for (i <- 0 until n) {
       if (ranks(i).min > cr) {
         // since i cannot come in cr it must be scheduled after
-        if (starts(i).updateMin(minEndTimeInCr) == CPOutcome.Failure)
-          return CPOutcome.Failure;        
+        if (starts(i).updateMin(minEndTimeInCr) == Outcome.Failure)
+          return Outcome.Failure;
       }
 
     }
-    return CPOutcome.Suspend 
+    return Outcome.Suspend
   }
   
-  override def valBindIdx(x: CPIntVar,idx: Int): CPOutcome = {
+  override def valBindIdx(x: CPIntVar,idx: Int): Outcome = {
     var rankedValue = x.value
     rankIndex(rankedValue).value = idx
     
@@ -145,8 +144,8 @@ class UnaryRank(val starts: Array[CPIntVar], val durations: Array[CPIntVar], val
     for (i <- 0 until n) {
       if (!ranks(i).isBound) {
         //println("=> update min of "+i+" to "+minEndTime)
-        if (starts(i).updateMin(minEndTime) == CPOutcome.Failure) {
-          return CPOutcome.Failure
+        if (starts(i).updateMin(minEndTime) == Outcome.Failure) {
+          return Outcome.Failure
         }
       }
     }
@@ -155,7 +154,7 @@ class UnaryRank(val starts: Array[CPIntVar], val durations: Array[CPIntVar], val
     
     
     
-    return CPOutcome.Suspend
+    return Outcome.Suspend
   }
 
 

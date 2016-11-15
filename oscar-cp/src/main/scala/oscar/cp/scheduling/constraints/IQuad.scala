@@ -2,9 +2,10 @@ package oscar.cp.scheduling.constraints
 
 import oscar.cp.core._
 import oscar.cp._
-import oscar.cp.core.CPOutcome._
+import oscar.algo.search.Outcome._
 import oscar.algo.SortUtils._
 import oscar.algo.reversible.ReversibleInt
+import oscar.algo.search.Outcome
 
 // @author Steven Gay steven.gay@uclouvain.be
 
@@ -34,7 +35,7 @@ extends Constraint(capacity.store, "IQuad") {
   val r2l = new IQuadL2R(re, durations, rs,  demands, resources, capacity, id)
   
   
-  def setup(strength: CPPropagStrength): CPOutcome = {
+  def setup(strength: CPPropagStrength): Outcome = {
     if (myStore.post(l2r) == Failure) return Failure
     if (myStore.post(r2l) == Failure) return Failure
 
@@ -61,7 +62,7 @@ extends Constraint(capacity.store, "IQuadL2R") {
   val myStore = capacity.store
 
 
-  def setup(strength: CPPropagStrength): CPOutcome = {
+  def setup(strength: CPPropagStrength): Outcome = {
     priorityL2 = 2
     
     def boundsCB(v: CPIntVar)  = { if (!v.isBound) v.callPropagateWhenBoundsChange(this) }
@@ -162,7 +163,7 @@ extends Constraint(capacity.store, "IQuadL2R") {
   }
   
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Outcome = {
     val C = capacity.max
     
     updateCache()
