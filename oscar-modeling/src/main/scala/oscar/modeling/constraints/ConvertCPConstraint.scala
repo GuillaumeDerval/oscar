@@ -65,6 +65,12 @@ object ConvertCPConstraint {
     case array: Array[String] => array
     case array: Array[IntVar] => array.map(convertArg(_).asInstanceOf[cp.CPIntVar])
     case array: Array[BoolVar] => array.map(convertArg(_).asInstanceOf[cp.CPBoolVar])
+    case array: Array[Array[_]] =>
+      val values = array.map(convertArg(_))
+      val valueType = values(0).getClass
+      val newArray = java.lang.reflect.Array.newInstance(valueType, array.length)
+      java.lang.System.arraycopy(values, 0, newArray, 0, array.length)
+      newArray
     case _ => throw new RuntimeException("Unknown parameter type "+arg.getClass.toString)
   }
 
