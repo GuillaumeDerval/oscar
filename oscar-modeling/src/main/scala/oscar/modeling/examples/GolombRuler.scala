@@ -1,6 +1,6 @@
 package oscar.modeling.examples
 
-import oscar.modeling.algebra.IntExpression
+import oscar.modeling.algebra.integer.IntExpression
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.solvers.cp.decompositions.{CartProdRefinement, DecompositionAddCartProdInfo, DepthIterativeDeepening}
 import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}

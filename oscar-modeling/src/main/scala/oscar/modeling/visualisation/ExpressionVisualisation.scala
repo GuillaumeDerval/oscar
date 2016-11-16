@@ -1,10 +1,11 @@
 package oscar.modeling.visualisation
 
-import oscar.modeling.algebra._
-import oscar.modeling.constraints.{AllDifferent, Constraint, ExpressionConstraint}
+import oscar.modeling.algebra.integer._
+import oscar.modeling.constraints.{Constraint, ExpressionConstraint}
 import org.graphstream.graph.implementations.SingleGraph
 import org.graphstream.graph.{Edge, Graph, Node}
 import org.graphstream.ui.view.{Viewer, ViewerListener}
+import oscar.modeling.algebra.integer.{Constant, IntExpression}
 import oscar.modeling.vars.{BoolVar, IntVar}
 import oscar.modeling.visualisation.Color.Color
 

@@ -1,6 +1,6 @@
 package oscar.modeling.examples
 
-import oscar.modeling.algebra.Sum
+import oscar.modeling.algebra.integer.Sum
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.models.CPModel
 import oscar.modeling.solvers.cp.{Branchings, CPApp}

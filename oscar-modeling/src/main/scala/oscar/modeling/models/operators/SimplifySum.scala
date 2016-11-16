@@ -1,6 +1,7 @@
 package oscar.modeling.models.operators
 
 import oscar.modeling.algebra._
+import oscar.modeling.algebra.integer._
 import oscar.modeling.constraints.ExpressionConstraint
 import oscar.modeling.models.UninstantiatedModel
 

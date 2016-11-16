@@ -1,9 +1,10 @@
 package oscar.modeling.constraints
 
-import oscar.modeling.algebra.IntExpression
+import oscar.modeling.algebra.integer.IntExpression
 
 /**
   * Table constraint
+ *
   * @param X
   * @param table
   */

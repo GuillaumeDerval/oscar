@@ -1,7 +1,7 @@
 package oscar.modeling.vars
 
 import oscar.algo.vars.BoolVarLike
-import oscar.modeling.algebra.{BoolExpression, IntExpression, Not}
+import oscar.modeling.algebra.integer.{BoolExpression, IntExpression, Not}
 import oscar.modeling.constraints.{Constraint, ExpressionConstraint}
 import oscar.modeling.misc.VariableNotBoundException
 import oscar.modeling.models.ModelDeclaration

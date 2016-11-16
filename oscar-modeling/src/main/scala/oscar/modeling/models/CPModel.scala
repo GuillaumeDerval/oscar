@@ -9,6 +9,7 @@ import cp.core.{CPPropagStrength, NoSolutionException}
 import cp.{CPBoolVarOps, CPIntVarOps}
 import oscar.algo.DisjointSets
 import oscar.algo.search.Outcome
+import oscar.modeling.algebra.integer._
 import oscar.modeling.models.CPModel.{InstantiateAndReuse, InstantiateAndStoreInCache}
 import oscar.modeling.vars.cp.CPIntVar
 import oscar.modeling.vars.cp.{CPBoolVar => ModelCPBoolVar, CPIntVar => ModelCPIntVar}

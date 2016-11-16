@@ -1,6 +1,6 @@
 package oscar.modeling.constraints
 
-import oscar.modeling.algebra.IntExpression
+import oscar.modeling.algebra.integer.IntExpression
 
 /**
   * Lexicographical Less or Equal constraint.
@@ -9,6 +9,7 @@ import oscar.modeling.algebra.IntExpression
   * this ensures
   *
   * a1 <= b1 || (a1 == b1 && LexLeq((a2, ...), (b2, ...)))
+ *
   * @param a
   * @param b
   */

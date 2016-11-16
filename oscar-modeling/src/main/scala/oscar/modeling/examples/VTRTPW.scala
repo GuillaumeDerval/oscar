@@ -1,6 +1,6 @@
 package oscar.modeling.examples
 
-import oscar.modeling.algebra.Sum
+import oscar.modeling.algebra.integer.Sum
 import oscar.modeling.constraints._
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}

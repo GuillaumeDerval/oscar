@@ -3,8 +3,8 @@ package oscar.modeling.examples
 import oscar.modeling.constraints.{AllDifferent, Table}
 import oscar.modeling.solvers.cp.{Branchings, CPApp}
 import oscar.modeling.vars.IntVar
-import oscar.modeling.algebra.IntExpression._
-import oscar.modeling.algebra.Sum
+import oscar.modeling.algebra.integer.IntExpression._
+import oscar.modeling.algebra.integer.Sum
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 
 import scala.io.Source

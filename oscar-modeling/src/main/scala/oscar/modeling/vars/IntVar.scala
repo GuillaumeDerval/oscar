@@ -1,7 +1,7 @@
 package oscar.modeling.vars
 
 import oscar.algo.vars.IntVarLike
-import oscar.modeling.algebra.IntExpression
+import oscar.modeling.algebra.integer.IntExpression
 import oscar.modeling.misc.VariableNotBoundException
 import oscar.modeling.models.ModelDeclaration
 import oscar.modeling.vars.domainstorage.IntDomainStorage
