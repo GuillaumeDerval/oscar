@@ -8,9 +8,12 @@ import oscar.modeling.vars.cp.CPIntVar
 import oscar.modeling.vars.{BoolVar, IntVar}
 
 /**
-  * Created by dervalguillaume on 16/11/16.
+  * Convert an oscar.cp constraint to an oscar.modeling constraint
+  *
+  * @author Guillaume Derval (guillaume.derval@uclouvain.be)
   */
 object ConvertCPConstraint {
+
   /**
     * Convert an oscar.cp constraint to an oscar.modeling constraint
     * @param args the arguments to the constructor of the class
@@ -23,6 +26,7 @@ object ConvertCPConstraint {
 
   /**
     * Convert args from oscar.modeling and returns a oscar.cp.Constraint
+    * @param args the arguments to the constructor of the class
     */
   def getConstraint[T <: oscar.cp.Constraint](args: Any*)(implicit m : Manifest[T]): T = {
     val constructors = m.runtimeClass.getConstructors
