@@ -37,11 +37,6 @@ trait FloatExpression extends Expression {
   def linear: Boolean
 
   /**
-    * Returns an iterable that contains all sub-expressions of this expression
-    */
-  def subexpressions(): Iterable[FloatExpression]
-
-  /**
     * Give a variable that is equal to this expression. May post appropriate constraints.
     * @param modelDeclaration the ModelDeclaration object in which new variable/constraint will be created
     * @throws EmptyDomainException when the new IntVar has an empty domain
