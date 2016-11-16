@@ -4,10 +4,9 @@ import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.examples.GolombRuler._
 import oscar.modeling.misc.CartesianProduct
 import oscar.modeling.models.{MemoCPModel, NoSolException, UninstantiatedModel}
-import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.{CartProdRefinement, DecompositionAddCartProdInfo, DepthIterativeDeepening}
 import oscar.modeling.solvers.cp.distributed.SubProblemCartesianProductLog
-import oscar.modeling.solvers.cp.{CPApp, CPAppConfig}
+import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar
 
 import scala.spores._
@@ -57,7 +56,7 @@ object CartProdExperienceGolombRuler extends CPApp[String] with App {
 
   //val decompose = new DecompositionAddCartProdInfo(new DepthIterativeDeepening(Branching.naryStatic(m)), m)
   //val subproblems = decompose.decompose(this.modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], 1952)
-  val decompose = new DecompositionAddCartProdInfo(new DepthIterativeDeepening(Branching.binaryStatic(m)), m)
+  val decompose = new DecompositionAddCartProdInfo(new DepthIterativeDeepening(Branchings.binaryStatic(m)), m)
   val subproblems = decompose.decompose(this.modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], 1952)
   //val decompose = new CartProdRefinement(m, Branching.naryStatic(m))
   //val subproblems = decompose.decompose(this.modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], 2000)
@@ -68,8 +67,8 @@ object CartProdExperienceGolombRuler extends CPApp[String] with App {
   var bestBound = m(n-1).max
   memo.cpSolver.silent = true
   memo.cpSolver.onSolution({bestBound = m(n-1).max})
-  memo.cpSolver.search(Branching.binaryStatic(m)(memo))
   memo.apply {
+    memo.cpSolver.search(Branchings.binaryStatic(m)(memo))
     for((sp, idx) <- subproblems.zipWithIndex) {
       memo.pushState()
       val ok = try {

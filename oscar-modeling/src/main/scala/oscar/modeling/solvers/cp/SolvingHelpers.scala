@@ -2,12 +2,12 @@ package oscar.modeling.solvers.cp
 
 import java.util.concurrent.LinkedBlockingQueue
 
+import oscar.algo.search.Branching
 import oscar.modeling.constraints.Constraint
 import oscar.modeling.misc.{SPSearchStatistics, SearchStatistics}
 import oscar.modeling.models.operators.ModelOperator
 import oscar.modeling.models.{Model, ModelDeclaration}
-import oscar.modeling.solvers.cp.branchings.Branching
-import oscar.modeling.solvers.cp.branchings.Branching._
+import Branchings._
 import oscar.modeling.solvers.cp.distributed._
 import oscar.modeling.vars.IntVar
 

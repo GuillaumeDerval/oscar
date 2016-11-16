@@ -21,5 +21,5 @@ trait CPInstantiableBoolExpression extends BoolExpression {
     * Post the expression, with 'v' being the value the expression should equal to
     * @param v The value the expression should equal to
     */
-  def cpPostWithVar(cPSolver: CPSolver, v: CPBoolVar): Unit
+  def cpPostWithVar(cPSolver: CPSolver, v: CPBoolVar): Outcome
 }

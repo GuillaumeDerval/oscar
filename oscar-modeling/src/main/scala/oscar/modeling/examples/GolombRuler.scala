@@ -2,9 +2,8 @@ package oscar.modeling.examples
 
 import oscar.modeling.algebra.IntExpression
 import oscar.modeling.constraints.AllDifferent
-import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.{CartProdRefinement, DecompositionAddCartProdInfo, DepthIterativeDeepening}
-import oscar.modeling.solvers.cp.{CPApp, CPAppConfig}
+import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar
 
 import scala.spores._
@@ -55,7 +54,7 @@ object GolombRuler extends CPApp[String] with App {
   minimize(m(n - 1))
 
   setSearch {
-    Branching.binaryStatic(m)
+    Branchings.binaryStatic(m)
   }
 
   post(m(n-1) < n*n)
@@ -71,7 +70,7 @@ object GolombRuler extends CPApp[String] with App {
 
   //apply(SimplifySum)
 
-  setDecompositionStrategy(new CartProdRefinement(m, Branching.binaryStatic(m)))
+  setDecompositionStrategy(new CartProdRefinement(m, Branchings.binaryStatic(m)))
   //setDecompositionStrategy(new DecompositionAddCartProdInfo(new DepthIterativeDeepening(Branching.naryStatic(m)), m))
   val (stats, solutions) = solve()
   println(stats)

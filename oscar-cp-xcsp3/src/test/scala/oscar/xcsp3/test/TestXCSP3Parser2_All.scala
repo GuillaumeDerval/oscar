@@ -3,8 +3,7 @@ package oscar.xcsp3.test
 import java.io.File
 
 import oscar.modeling.models.UninstantiatedModel
-import oscar.modeling.solvers.cp.CPProgram
-import oscar.modeling.solvers.cp.branchings.Branching
+import oscar.modeling.solvers.cp.{Branchings, CPProgram}
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.xcsp3._
 import oscar.xcsp3.testUtils.TestSuite
@@ -22,9 +21,9 @@ class TestXCSP3Parser2_All extends TestSuite {
 
     val v = vars.toArray
     if(useStaticOrdering)
-      cpProgram.setSearch(Branching.binaryStatic(v))
+      cpProgram.setSearch(Branchings.binaryStatic(v))
     else
-      cpProgram.setSearch(Branching.conflictOrderingSearch(v,i => v(i).size, i => v(i).min))
+      cpProgram.setSearch(Branchings.conflictOrderingSearch(v, i => v(i).size, i => v(i).min))
     cpProgram.onSolution {
       solutionGenerator()
     }
@@ -35,7 +34,7 @@ class TestXCSP3Parser2_All extends TestSuite {
       r
     }
 
-    cpProgram.setDecompositionStrategy(new CartProdRefinement(vars, Branching.binaryFirstFail(vars.toSeq)))
+    cpProgram.setDecompositionStrategy(new CartProdRefinement(vars, Branchings.binaryFirstFail(vars.toSeq)))
 
     val (stats, solutions) = cpProgram.solveParallel(cpProgram.modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], threadCount = 1, sppw = 1, nSols = 1, maxTime = 30000)
 

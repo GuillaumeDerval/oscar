@@ -3,10 +3,9 @@ package oscar.modeling.examples
 import oscar.modeling.algebra.Sum
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.models.CPModel
-import oscar.modeling.solvers.cp.CPApp
+import oscar.modeling.solvers.cp.{Branchings, CPApp}
 import oscar.modeling.vars.IntVar
 import oscar.util._
-import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 
 import scala.io.Source
@@ -53,16 +52,16 @@ object QuadraticAssignment extends CPApp[Int] with App {
 
   minimize(obj)
 
-  val search = Branching.fromAlternatives(spore{
+  val search = Branchings.fromAlternatives(spore{
         val _x = x
         (cp: CPModel) => {
           val z = _x.filter(y => !y.isBound)
           if(z.isEmpty)
-            Branching.noAlternative
+            Branchings.noAlternative
           else {
             val vari = selectMinDeterministic(z)(y => y.size)
             val valu = vari.min
-            Branching.branch(cp.post(vari === valu))(cp.post(vari !== valu))
+            Branchings.branch(cp.post(vari === valu))(cp.post(vari !== valu))
           }
         }
     }

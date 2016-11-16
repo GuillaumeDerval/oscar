@@ -2,14 +2,14 @@ package oscar.algo.search
 
 
 import scala.util.Random
-import oscar.algo.reversible.ReversibleContext
+import oscar.algo.reversible.ReversibleContextImpl
 import oscar.algo.reversible.ReversibleBoolean
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
  * @author Renaud Hartert ren.hartert@gmail.com
  */
-class DFSearchNode extends ReversibleContext {
+class DFSearchNode extends ReversibleContextImpl with ConstrainableContext {
 
   var silent = false
 

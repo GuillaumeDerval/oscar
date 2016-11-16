@@ -52,7 +52,7 @@ case class UninstantiatedModel(declaration: ModelDeclaration,
     * @param constraint constraint to add
     * @return new model with the new constraint
     */
-  def +(constraint: Constraint): UninstantiatedModel = post(constraint)
+  def +(constraint: Constraint): UninstantiatedModel = add(constraint)
 
   /**
     * Minimize v

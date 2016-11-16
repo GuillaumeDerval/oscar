@@ -1,7 +1,6 @@
 package oscar.cp.core.domains
 
-import oscar.cp.testUtils.TestSuite
-import oscar.algo.reversible.ReversibleContext
+import oscar.algo.reversible.{ReversibleContext, ReversibleContextImpl}
 import oscar.algo.search.Outcome._
 
 /**
@@ -40,7 +39,7 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
   }
 
   test("Removed values should not be contained in the domain anymore") {
-    val context = new ReversibleContext()
+    val context = new ReversibleContextImpl()
     val domain = sparseDomain(context, 5, 10)
     assert(domain.removeValue(5) == Suspend)
     assert(!domain.hasValue(5))
@@ -51,7 +50,7 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
   }
 
   test("Remove a value should reduce the size") {
-    val context = new ReversibleContext()
+    val context = new ReversibleContextImpl()
     val domain = sparseDomain(context, 5, 10)
     val size = domain.size
     assert(domain.removeValue(5) == Suspend)
@@ -63,7 +62,7 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
   }
 
   test("Remove a removed value should not impact the domain") {
-    val context = new ReversibleContext()
+    val context = new ReversibleContextImpl()
     val domain = sparseDomain(context, 5, 10)
     val size = domain.size
     assert(domain.removeValue(4) == Suspend)
@@ -74,7 +73,7 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
   }
 
   test("Remove the minimal value should change the minimum value") {
-    val context = new ReversibleContext()
+    val context = new ReversibleContextImpl()
     val domain = sparseDomain(context, 5, 10)
     val size = domain.size
     assert(domain.removeValue(5) == Suspend)
@@ -87,7 +86,7 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
   }
 
   test("Remove all but one value should assign that value") {
-    val context = new ReversibleContext()
+    val context = new ReversibleContextImpl()
     val domain = sparseDomain(context, 5, 10)
     val size = domain.size
     assert(domain.removeValue(5) == Suspend)
@@ -104,7 +103,7 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
   }
 
   test("Removed values should be restored when a backtrack occurs") {
-    val context = new ReversibleContext()
+    val context = new ReversibleContextImpl()
     val domain = sparseDomain(context, 5, 10)
     val size = domain.size
     context.pushState()
@@ -144,14 +143,14 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
   }
   
   test("Remove the assigned value should fail") {
-    val context = new ReversibleContext()
+    val context = new ReversibleContextImpl()
     val domain = sparseDomain(context, 10, 10)
     assert(domain.removeValue(10) == Failure)
     assert(domain.size == 0)
   }
   
   test("Iterator should iterate on all the values (sparse)") {
-    val context = new ReversibleContext()
+    val context = new ReversibleContextImpl()
     val values = Set(10, 11, 15, 16, 17, 20, 21, 25)
     val domain = sparseDomain(context, 10, 25)
     (10 to 25).foreach(v => if (!values.contains(v)) domain.removeValue(v))
@@ -162,7 +161,7 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
   }
   
   test("UpdateMin should adjust the minimum value and the size (sparse)") {
-    val context = new ReversibleContext()
+    val context = new ReversibleContextImpl()
     val values = Set(10, 11, 15, 16, 17, 20, 21, 25)
     val domain = sparseDomain(context, 10, 25)
     (10 to 25).foreach(v => if (!values.contains(v)) domain.removeValue(v))
@@ -172,7 +171,7 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
   }
   
   test("UpdateMin should remove all values lesser than min (sparse)") {
-    val context = new ReversibleContext()
+    val context = new ReversibleContextImpl()
     val values = Set(10, 11, 15, 16, 17, 20, 21, 25)
     val domain = sparseDomain(context, 10, 25)
     (10 to 25).foreach(v => if (!values.contains(v)) domain.removeValue(v))
@@ -183,7 +182,7 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
   }
   
   test("UpdateMax should adjust the maximum value and the size (sparse)") {
-    val context = new ReversibleContext()
+    val context = new ReversibleContextImpl()
     val values = Set(10, 11, 15, 16, 17, 20, 21, 25)
     val domain = sparseDomain(context, 10, 25)
     (10 to 25).foreach(v => if (!values.contains(v)) domain.removeValue(v))
@@ -193,7 +192,7 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
   }
   
   test("UpdateMax should remove all values greater than max (sparse)") {
-    val context = new ReversibleContext()
+    val context = new ReversibleContextImpl()
     val values = Set(10, 11, 15, 16, 17, 20, 21, 25)
     val domain = sparseDomain(context, 10, 25)
     (10 to 25).foreach(v => if (!values.contains(v)) domain.removeValue(v))
@@ -204,7 +203,7 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
   }
   
   test("PrevValue of a value not in the domain should be the previous value in that domain") {
-    val context = new ReversibleContext()
+    val context = new ReversibleContextImpl()
     val values = Set(10, 11, 15, 16, 17, 20, 21, 25)
     val domain = sparseDomain(context, 10, 25)
     (10 to 25).foreach(v => if (!values.contains(v)) domain.removeValue(v))
@@ -214,7 +213,7 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
   }
   
   test("NextValue of a value not in the domain should be the next value in that domain") {
-    val context = new ReversibleContext()
+    val context = new ReversibleContextImpl()
     val values = Set(10, 11, 15, 16, 17, 20, 21, 25)
     val domain = sparseDomain(context, 10, 25)
     (10 to 25).foreach(v => if (!values.contains(v)) domain.removeValue(v))

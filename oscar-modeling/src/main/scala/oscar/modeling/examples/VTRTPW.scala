@@ -2,9 +2,8 @@ package oscar.modeling.examples
 
 import oscar.modeling.algebra.Sum
 import oscar.modeling.constraints._
-import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
-import oscar.modeling.solvers.cp.{CPApp, CPAppConfig}
+import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar
 
 import scala.collection.mutable.ArrayBuffer
@@ -93,11 +92,11 @@ object VTRTPW extends CPApp[Int] {
     add(ends(last) === startsMax(last))
   }
 
-  setSearch(Branching.binaryLastConflict(pred, i => -pred(i).maxRegret(distances(i)), i => pred(i).minBy(distances(i))))
+  setSearch(Branchings.binaryLastConflict(pred, i => -pred(i).maxRegret(distances(i)), i => pred(i).minBy(distances(i))))
 
   onSolution {totalDistance.min}
 
-  setDecompositionStrategy(new CartProdRefinement(pred, Branching.naryStatic(pred)))
+  setDecompositionStrategy(new CartProdRefinement(pred, Branchings.naryStatic(pred)))
 
   val (stats, solutions) = solve()
   println(stats, solutions)

@@ -2,12 +2,12 @@ package oscar.modeling.solvers.cp.distributed
 
 import akka.actor.{Actor, ActorRef, Props}
 import akka.event.Logging
+import oscar.algo.search.Branching
 import oscar.modeling.constraints.Constraint
 import oscar.modeling.misc.SPSearchStatistics
 import oscar.modeling.misc.TimeHelper._
 import oscar.modeling.models._
 import oscar.modeling.solvers.cp._
-import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.vars.IntVar
 
 import scala.collection.mutable.ListBuffer
@@ -82,9 +82,11 @@ class SolverActor[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSo
       }
   }
 
-  val search: Branching = objv match {
-    case null => new ForceCloseSearchWrapper(modelDeclaration.getSearch(cpmodel), forceClose)
-    case _ => new IntBoundaryUpdateSearchWrapper(modelDeclaration.getSearch(cpmodel), this, forceClose, cpmodel.cpObjective)
+  val search: Branching = modelDeclaration.apply(cpmodel) {
+    objv match {
+      case null => new ForceCloseSearchWrapper(modelDeclaration.getSearch(cpmodel), forceClose)
+      case _ => new IntBoundaryUpdateSearchWrapper(modelDeclaration.getSearch(cpmodel), this, forceClose, cpmodel.cpObjective)
+    }
   }
 
   /**

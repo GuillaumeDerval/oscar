@@ -15,9 +15,8 @@ import oscar.modeling.algebra._
 import oscar.modeling.constraints._
 import oscar.modeling.misc.SearchStatistics
 import oscar.modeling.models.{ModelDeclaration, NoSolException}
-import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
-import oscar.modeling.solvers.cp.{CPApp, CPAppConfig}
+import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar
 
 import scala.collection.JavaConverters._
@@ -777,12 +776,12 @@ object Parser2 extends CPApp[String] with App {
   println("<--")
   val (vars, solutionGenerator) = XCSP3Parser2.parse(this.modelDeclaration, config.instance.get.get)
 
-  setSearch(Branching.binaryFirstFail(vars.toSeq))
+  setSearch(Branchings.binaryFirstFail(vars.toSeq))
   onSolution {
     solutionGenerator()
   }
 
-  setDecompositionStrategy(new CartProdRefinement(vars, Branching.binaryFirstFail(vars.toSeq)))
+  setDecompositionStrategy(new CartProdRefinement(vars, Branchings.binaryFirstFail(vars.toSeq)))
   val (stats, solutions) = try {
     solve()
   }
@@ -846,12 +845,12 @@ object RunEverything extends CPApp[String] with App {
         println("<!--" + instancePath)
         val (vars, solutionGenerator) = XCSP3Parser2.parse(this.modelDeclaration, instancePath)
 
-        setSearch(Branching.binaryFirstFail(vars.toSeq))
+        setSearch(Branchings.binaryFirstFail(vars.toSeq))
         onSolution {
           solutionGenerator()
         }
 
-        setDecompositionStrategy(new CartProdRefinement(vars, Branching.binaryFirstFail(vars.toSeq)))
+        setDecompositionStrategy(new CartProdRefinement(vars, Branchings.binaryFirstFail(vars.toSeq)))
         val (stats, solutions) = solve()
         //println(stats)
         println("-->")

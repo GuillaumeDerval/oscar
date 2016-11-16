@@ -6,7 +6,7 @@ import scala.util.Random
 
 class CPIntVar(val realCPVar: oscar.cp.CPIntVar) extends CPVar with IntVarImplem {
   override def isContinuous: Boolean = realCPVar.isContinuous
-  override def context = realCPVar.context
+  override val context = new ContextProxy(realCPVar.context)
 
   /**
     * @return true if the domain of the variable has exactly one value, false if the domain has more than one value

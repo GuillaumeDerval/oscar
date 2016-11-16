@@ -3,9 +3,8 @@ package oscar.modeling.examples
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.models.UninstantiatedModel
 import oscar.modeling.models.operators.SimplifySum
-import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
-import oscar.modeling.solvers.cp.{CPApp, CPAppConfig}
+import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar
 import oscar.modeling.visualisation.ConstraintsVisualisation
 

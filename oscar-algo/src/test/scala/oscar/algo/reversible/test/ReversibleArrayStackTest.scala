@@ -27,7 +27,7 @@ class ReversibleArrayStackTest extends FunSuite {
 
   test("test ReversibleArrayStack 1") {
 
-    val rc = new ReversibleContext()
+    val rc = new ReversibleContextImpl()
     val s = new ReversibleArrayStack[Int](rc)
     
     s.push(1)

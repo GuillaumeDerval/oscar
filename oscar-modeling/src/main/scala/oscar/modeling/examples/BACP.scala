@@ -4,8 +4,7 @@ import oscar.modeling.constraints.{BinPacking, Spread}
 
 import scala.io.Source
 import oscar.util._
-import oscar.modeling.solvers.cp.{CPApp, CPAppConfig}
-import oscar.modeling.solvers.cp.branchings.Branching
+import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}
 import oscar.modeling.solvers.cp.decompositions.{CartProdRefinement, DecompositionAddCartProdInfo, DepthIterativeDeepening}
 import oscar.modeling.vars.IntVar
 
@@ -67,7 +66,7 @@ object BACP extends CPApp[Int] with App {
   // Search
   minimize(vari)
 
-  val search = Branching.binaryFirstFail(x, spore {
+  val search = Branchings.binaryFirstFail(x, spore {
     val l_ = l.toIndexedSeq
     val periods_ = periods
     (z: IntVar) => {

@@ -3,9 +3,8 @@ package oscar.modeling.experiences
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.misc.CartesianProduct
 import oscar.modeling.models.{MemoCPModel, UninstantiatedModel}
-import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions._
-import oscar.modeling.solvers.cp.{CPApp, CPAppConfig}
+import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar
 
 object ExperienceDecomp extends CPApp[String] with App {
@@ -50,8 +49,8 @@ object ExperienceDecomp extends CPApp[String] with App {
   val decompositions = Array[(String, DecompositionStrategy)](
     //("Depth - ID - nary", new DepthIterativeDeepening(Branching.naryStatic(m))),
     //("Depth - R - nary", new DepthRefinement(Branching.naryStatic(m))),
-    ("Depth - ID - binary", new DepthIterativeDeepening(Branching.binaryStatic(m))),
-    ("Depth - R - binary", new DepthRefinement(Branching.binaryStatic(m)))//,
+    ("Depth - ID - binary", new DepthIterativeDeepening(Branchings.binaryStatic(m))),
+    ("Depth - R - binary", new DepthRefinement(Branchings.binaryStatic(m)))//,
     //("CartProd - ID - nary", new CartProdIterativeDeepening(m.toList, Branching.naryStatic(m))),
     //("CartProd - R - nary", new CartProdRefinement(m, Branching.naryStatic(m))),
     //("CartProd - ID - binary", new CartProdIterativeDeepening(m.toList, Branching.binaryStatic(m))),

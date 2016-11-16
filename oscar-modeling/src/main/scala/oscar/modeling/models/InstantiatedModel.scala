@@ -1,5 +1,6 @@
 package oscar.modeling.models
 
+import oscar.algo.search.Outcome
 import oscar.modeling.constraints.Constraint
 import oscar.modeling.misc.ModelVarStorage
 import oscar.modeling.vars.IntVar
@@ -10,13 +11,16 @@ trait LeafModel extends Model {
     * Post a new constraint
     * @param constraint constraint to add
     */
-  def post(constraint: Constraint): Unit
+  def post(constraint: Constraint): Outcome
 
   /**
     * Post a new constraint
     * @param constraint constraint to add
     */
-  def add(constraint: Constraint): Unit = post(constraint)
+  def add(constraint: Constraint): Unit = {
+    if(post(constraint) == Outcome.Failure)
+      throw new NoSolException
+  }
 
   /**
     * Post a new constraint
@@ -35,7 +39,7 @@ abstract class InstantiatedModel(p: UninstantiatedModel) extends LeafModel {
   override val optimisationMethod: OptimisationMethod = p.optimisationMethod
 
   // Post the constraints
-  p.constraints.foreach(post)
+  p.constraints.foreach(add)
 
   private def instantiateIntDomainStorage(v: IntDomainStorage): IntVarImplementation = instantiateIntVar(v.content, v.name)
 

@@ -3,8 +3,7 @@ package oscar.modeling.examples
 import oscar.modeling.constraints.{MinCircuit, MinCircuitWeak}
 import oscar.modeling.models.{CPModel, UninstantiatedModel}
 import oscar.util._
-import oscar.modeling.solvers.cp.CPApp
-import oscar.modeling.solvers.cp.branchings.Branching
+import oscar.modeling.solvers.cp.{Branchings, CPApp}
 import oscar.modeling.solvers.cp.decompositions.{AnotherModelDecomposition, CartProdRefinement}
 import oscar.modeling.vars.IntVar
 
@@ -37,18 +36,18 @@ object ATSP extends CPApp[Int] with App {
 
   add(MinCircuit(succ, distMatrixSucc,obj))
 
-  val branching = Branching.fromAlternatives(spore {
+  val branching = Branchings.fromAlternatives(spore {
     val _succ = succ
     val _n = n
     val _distMatrixSucc = distMatrixSucc
     (cp: CPModel) => {
       // Select the not yet bound city with the smallest number of possible successors
       selectMin(_succ.zipWithIndex)(x => !x._1.isBound)(x => x._1.size) match {
-        case None => Branching.noAlternative
+        case None => Branchings.noAlternative
         case Some(x) => {
           // Select the closest successors of the city x
           val v = selectMin(0 until n)(x._1.hasValue)(y => _distMatrixSucc(x._2)(y)).get
-          Branching.branch(cp.post(x._1 === v))(cp.post(x._1 !== v))
+          Branchings.branch(cp.post(x._1 === v))(cp.post(x._1 !== v))
         }
       }
     }

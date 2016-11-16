@@ -2,9 +2,8 @@ package oscar.modeling.examples
 
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.models.UninstantiatedModel
-import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.{CartProdRefinement, DecompositionAddCartProdInfo, DepthIterativeDeepening, DepthRefinement}
-import oscar.modeling.solvers.cp.{CPApp, CPAppConfig}
+import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar
 import oscar.modeling.visualisation.ConstraintsVisualisation
 
@@ -27,10 +26,10 @@ class NQueens extends CPApp[Unit] {
   post(AllDifferent(Queens.map(i => queens(i) + i).toArray))
   post(AllDifferent(Queens.map(i => queens(i) - i).toArray))
 
-  setSearch(Branching.binaryFirstFail(queens))
+  setSearch(Branchings.binaryFirstFail(queens))
   onSolution {}
 
-  setDecompositionStrategy(new CartProdRefinement(queens, Branching.binaryFirstFail(queens)))
+  setDecompositionStrategy(new CartProdRefinement(queens, Branchings.binaryFirstFail(queens)))
   //setDecompositionStrategy(new DecompositionAddCartProdInfo(new DepthIterativeDeepening(Branching.naryStatic(queens)), queens))
   val (stats, solutions) = solve()
   println(stats)

@@ -15,9 +15,7 @@
 
 package oscar.cp.core.domains
 
-import oscar.cp.core.CPStore
-import oscar.algo.reversible.ReversiblePointer
-import oscar.algo.reversible.ReversibleContext
+import oscar.algo.reversible.{ReversibleContext, ReversiblePointer}
 import oscar.algo.search.Outcome
 
 import scala.util.Random

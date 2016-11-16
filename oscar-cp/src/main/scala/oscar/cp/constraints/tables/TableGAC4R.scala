@@ -15,7 +15,7 @@
 
 package oscar.cp.constraints.tables
 
-import oscar.algo.reversible.{ReversibleContext, ReversibleSharedSparseSet, ReversibleSparseSet, TrailEntry}
+import oscar.algo.reversible._
 import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.{CPPropagStrength, Constraint}

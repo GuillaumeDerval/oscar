@@ -3,7 +3,7 @@ package oscar.modeling.solvers.cp.decompositions
 import oscar.modeling.constraints.Constraint
 import oscar.modeling.models.{MemoCPModel, UninstantiatedModel}
 import oscar.cp.core.NoSolutionException
-import oscar.modeling.solvers.cp.branchings.Branching.BranchingInstantiator
+import oscar.modeling.solvers.cp.Branchings.BranchingInstantiator
 import oscar.modeling.solvers.cp.distributed.{SubProblem, SubProblemDiscrepancy, SubProblemMinBound}
 
 import scala.collection.mutable
@@ -43,9 +43,9 @@ abstract class RefinementStrategy[SubproblemOrdering](searchInstantiator: Branch
 
     q += new SubproblemInfo(List(), List(), generate(List(), List()))
 
-    val search = searchInstantiator(model)
-
     model.declaration.apply(model) {
+      val search = searchInstantiator(model)
+
       while(q.size < count) {
         //Dequeue the largest subproblem, and compute its domain
         val sp = q.dequeue()

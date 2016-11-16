@@ -19,13 +19,38 @@ import oscar.algo.array.ArrayStackInt
 import oscar.algo.array.ArrayStack
 
 /**
+  * Interface to a reversible node, that is a node able to restore all
+  * the reversible state attached to it (see Reversibles). <br>
+  *
+  * @author Pierre Schaus pschaus@gmail.com
+  * @author Renaud Hartert ren.hartert@gmail.com
+  * @author Guillaume Derval guillaume.derval@uclouvain.be
+  */
+trait ReversibleContext {
+  /** Returns the magic number of the context */
+  def magic: Long
+
+  /** Stores the current state of the node on a stack */
+  def pushState(): Unit
+
+  /** Restores state on top of the stack of states and remove it from the stack */
+  def pop(): Unit
+
+  /** Trail the entry such that its restore method is called on corresponding pop */
+  def trail(entry: TrailEntry): Unit
+
+  /** Trail the closure such that it is called on corresponding pop */
+  def trail[@specialized T](closure: => T): Unit
+}
+
+/**
  * Class representing a reversible node, that is a node able to restore all
  * the reversible state attached to it (see Reversibles). <br>
  *
  * @author Pierre Schaus pschaus@gmail.com
  * @author Renaud Hartert ren.hartert@gmail.com
  */
-class ReversibleContext {
+class ReversibleContextImpl extends ReversibleContext {
 
   private[this] var maxTrailSize: Int = 0
   private[this] var trailTime: Long = 0

@@ -1,9 +1,7 @@
 package oscar.cp.core.domains
 
-import oscar.algo.reversible.ReversibleContext
-import oscar.algo.reversible.ReversibleInt
+import oscar.algo.reversible.{ReversibleContext, ReversibleInt}
 import oscar.algo.search.Outcome._
-import oscar.algo.reversible.Reversible
 import oscar.algo.search.Outcome
 
 import scala.util.Random

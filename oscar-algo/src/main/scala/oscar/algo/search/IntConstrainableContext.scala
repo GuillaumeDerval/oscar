@@ -5,7 +5,7 @@ import oscar.algo.vars.IntVarLike
 /**
   * A trait to be mixed-in a DFSearchNode to make it accept to "branch", or to "constraint" on IntVarLike instances.
   */
-trait IntConstrainableContext extends DFSearchNode {
+trait IntConstrainableContext extends ConstrainableContext {
 
   /**
     * Post x == v

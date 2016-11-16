@@ -2,9 +2,8 @@ package oscar.modeling.examples
 
 import oscar.modeling.algebra.{Abs, And, IntExpression, Or}
 import oscar.modeling.constraints.AllDifferent
-import oscar.modeling.solvers.cp.branchings.Branching
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
-import oscar.modeling.solvers.cp.CPApp
+import oscar.modeling.solvers.cp.{Branchings, CPApp}
 import oscar.modeling.vars.IntVar
 
 object KnightTour extends CPApp[String] with App {
@@ -20,12 +19,12 @@ object KnightTour extends CPApp[String] with App {
     post(Or(And(dist(v1/6, v2/6) === 1, dist(v1%6, v2%6) === 2), And(dist(v1/6, v2/6) === 2, dist(v1%6, v2%6) === 1)))
   }
 
-  setSearch(Branching.binaryStatic(x))
+  setSearch(Branchings.binaryStatic(x))
   onSolution {
     x.zipWithIndex.map({case (v, idx) => "x["+idx+"]="+v.evaluate()}).mkString(" ")
   }
 
-  setDecompositionStrategy(new CartProdRefinement(x, Branching.binaryStatic(x)))
+  setDecompositionStrategy(new CartProdRefinement(x, Branchings.binaryStatic(x)))
   val (stats, solutions) = solve(nSols = 1)
   println(solutions.mkString("\n"))
   println(stats)

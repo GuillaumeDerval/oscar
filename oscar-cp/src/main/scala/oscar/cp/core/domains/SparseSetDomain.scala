@@ -1,7 +1,6 @@
 package oscar.cp.core.domains
 
-import oscar.algo.reversible.ReversibleContext
-import oscar.algo.reversible.ReversibleInt
+import oscar.algo.reversible.{ReversibleContext, ReversibleInt}
 import oscar.algo.search.Outcome
 import oscar.algo.search.Outcome._
 
