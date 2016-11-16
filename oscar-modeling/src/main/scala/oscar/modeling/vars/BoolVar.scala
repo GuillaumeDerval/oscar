@@ -1,7 +1,8 @@
 package oscar.modeling.vars
 
 import oscar.algo.vars.BoolVarLike
-import oscar.modeling.algebra.integer.{BoolExpression, IntExpression, Not}
+import oscar.modeling.algebra.Expression
+import oscar.modeling.algebra.bool.{BoolExpression, Not}
 import oscar.modeling.constraints.{Constraint, ExpressionConstraint}
 import oscar.modeling.misc.VariableNotBoundException
 import oscar.modeling.models.ModelDeclaration
@@ -12,20 +13,20 @@ class BoolVar(model_decl: ModelDeclaration, id: Int, name: String) extends IntVa
   /**
    * @return a constraint that imposes this variable is true
    */
-  def constraintTrue(): Constraint = new ExpressionConstraint(this)
+  def constraintTrue(): Constraint = ExpressionConstraint(this)
 
   /**
    * @return a constraint that imposes this variable is false
    */
-  def constraintFalse(): Constraint = new ExpressionConstraint(new Not(this))
+  def constraintFalse(): Constraint = ExpressionConstraint(Not(this))
 
   override def max: Int = getRepresentative.max
   override def min: Int = getRepresentative.min
   override def evaluate(): Int = if(isBound) max else throw new VariableNotBoundException()
   override def evaluateBool(): Boolean = evaluate() == 1
 
-  override def subexpressions(): Iterable[IntExpression] = Array[IntExpression]()
-  override def mapSubexpressions(func: (IntExpression) => IntExpression): IntExpression = this
+  override def subexpressions(): Iterable[BoolExpression] = Array[BoolExpression]()
+  override def mapSubexpressions(func: (Expression) => Expression): BoolExpression = this
 }
 
 object BoolVar {

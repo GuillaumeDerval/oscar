@@ -1,6 +1,7 @@
 package oscar.modeling.examples
 
-import oscar.modeling.algebra.integer.{Abs, And, IntExpression, Or}
+import oscar.modeling.algebra.bool.{And, Or}
+import oscar.modeling.algebra.integer.{Abs, IntExpression}
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.modeling.solvers.cp.{Branchings, CPApp}

@@ -1,5 +1,7 @@
-package oscar.modeling.algebra.integer
+package oscar.modeling.algebra.bool
 
+import oscar.modeling.algebra.Expression
+import oscar.modeling.algebra.integer.IntExpression
 import oscar.modeling.misc.VariableNotBoundException
 
 /**
@@ -22,5 +24,5 @@ case class InSet(a: IntExpression, b: Set[Int]) extends BoolExpression {
    * Apply a function on all sub-expressions of this expression and returns a new expression of the same type.
    * This function should return a value that is of the class as the object that was given to it.
    */
-  override def mapSubexpressions(func: (IntExpression) => IntExpression): IntExpression = new InSet(func(a), b)
+  override def mapSubexpressions(func: (Expression) => Expression): BoolExpression = InSet(func(a).asInstanceOf[IntExpression], b)
 }

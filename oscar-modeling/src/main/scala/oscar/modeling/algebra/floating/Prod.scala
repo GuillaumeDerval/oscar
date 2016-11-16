@@ -1,0 +1,45 @@
+package oscar.modeling.algebra.floating
+
+import oscar.modeling.algebra.Expression
+
+/**
+  * Sum of an array of expression
+  */
+case class Prod(v: Array[FloatExpression]) extends FloatExpression {
+  override def evaluate(): Double = v.foldLeft(1.0)((acc: Double, e: FloatExpression) => acc * e.evaluate())
+  override def min: Double = v.foldLeft(1.0)((acc: Double, e: FloatExpression) => acc * e.min)
+  override def max: Double = v.foldLeft(1.0)((acc: Double, e: FloatExpression) => acc * e.max)
+
+  /**
+    * Returns an iterable that contains all sub-expressions of this expression
+    */
+  override def subexpressions(): Iterable[FloatExpression] = v
+
+  /**
+    * Apply a function on all sub-expressions of this expression and returns a new expression of the same type.
+    * This function should return a value that is of the class as the object that was given to it.
+    */
+  override def mapSubexpressions(func: (Expression) => Expression): FloatExpression = new Prod(v.map(func).asInstanceOf[Array[FloatExpression]])
+
+  /**
+    * Returns true if continuous (not an integer variable)
+    */
+  override def continuous: Boolean = subexpressions().forall(_.continuous)
+
+  /**
+    * Returns true if the expression is linear
+    */
+  override def linear: Boolean = subexpressions().count(x => x.isInstanceOf[Constant]) >= v.length-1
+}
+
+object Prod {
+  def apply(a: FloatExpression*): Prod = Prod(a.toArray)
+
+  def apply(v: Iterable[FloatExpression]): Prod = Prod(v.toArray)
+
+  def apply[A](indices: Iterable[A])(f: A => FloatExpression): Prod = Prod(indices map f)
+
+  def apply[A, B](indices1: Iterable[A], indices2: Iterable[B])(f: (A, B) => FloatExpression): Prod = Prod(for (i <- indices1; j <- indices2) yield f(i, j))
+
+  def apply(n1: Int, n2: Int)(f: (Int, Int) => FloatExpression): Prod = Prod(0 until n1, 0 until n2)(f)
+}

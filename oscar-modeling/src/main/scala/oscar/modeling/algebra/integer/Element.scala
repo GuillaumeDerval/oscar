@@ -1,5 +1,7 @@
 package oscar.modeling.algebra.integer
 
+import oscar.modeling.algebra.Expression
+
 import scala.collection.mutable.HashSet
 
 /**
@@ -33,7 +35,7 @@ case class Element(table: Array[IntExpression], key: IntExpression) extends IntE
    * Apply a function on all sub-expressions of this expression and returns a new expression of the same type.
    * This function should return a value that is of the class as the object that was given to it.
    */
-  override def mapSubexpressions(func: (IntExpression) => IntExpression): IntExpression = new Element(table.map(func), func(key))
+  override def mapSubexpressions(func: (Expression) => Expression): IntExpression = Element(table.map(func).asInstanceOf[Array[IntExpression]], func(key).asInstanceOf[IntExpression])
 }
 
 case class ElementCst(table: Array[Int], key: IntExpression) extends IntExpression {
@@ -57,5 +59,5 @@ case class ElementCst(table: Array[Int], key: IntExpression) extends IntExpressi
     * Apply a function on all sub-expressions of this expression and returns a new expression of the same type.
     * This function should return a value that is of the class as the object that was given to it.
     */
-  override def mapSubexpressions(func: (IntExpression) => IntExpression): IntExpression = new ElementCst(table, func(key))
+  override def mapSubexpressions(func: (Expression) => Expression): IntExpression = ElementCst(table, func(key).asInstanceOf[IntExpression])
 }

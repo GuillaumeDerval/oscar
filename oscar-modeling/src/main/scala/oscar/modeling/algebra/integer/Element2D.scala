@@ -1,5 +1,6 @@
 package oscar.modeling.algebra.integer
 
+import oscar.modeling.algebra.Expression
 import oscar.modeling.misc.VariableNotBoundException
 
 import scala.collection.mutable
@@ -36,13 +37,13 @@ case class Element2D(array: Array[Array[IntExpression]], idx1: IntExpression, id
   /**
     * Returns an iterable that contains all sub-expressions of this expression
     */
-  override def subexpressions(): Iterable[IntExpression] = array.flatMap(a => a) ++ Array(idx1, idx2)
+  override def subexpressions(): Iterable[IntExpression] = array.flatten ++ Array(idx1, idx2)
 
   /**
     * Apply a function on all sub-expressions of this expression and returns a new expression of the same type.
     * This function should return a value that is of the class as the object that was given to it.
     */
-  override def mapSubexpressions(func: (IntExpression) => IntExpression): IntExpression = new Element2D(array.map(a => a.map(func)), func(idx1), func(idx2))
+  override def mapSubexpressions(func: (Expression) => Expression): IntExpression = Element2D(array.map(a => a.map(func).asInstanceOf[Array[IntExpression]]), func(idx1).asInstanceOf[IntExpression], func(idx2).asInstanceOf[IntExpression])
 }
 
 case class ElementCst2D(array: Array[Array[Int]], idx1: IntExpression, idx2: IntExpression) extends IntExpression {
@@ -79,5 +80,5 @@ case class ElementCst2D(array: Array[Array[Int]], idx1: IntExpression, idx2: Int
     * Apply a function on all sub-expressions of this expression and returns a new expression of the same type.
     * This function should return a value that is of the class as the object that was given to it.
     */
-  override def mapSubexpressions(func: (IntExpression) => IntExpression): IntExpression = new ElementCst2D(array, func(idx1), func(idx2))
+  override def mapSubexpressions(func: (Expression) => Expression): IntExpression = ElementCst2D(array, func(idx1).asInstanceOf[IntExpression], func(idx2).asInstanceOf[IntExpression])
 }

@@ -9,6 +9,7 @@ import cp.core.{CPPropagStrength, NoSolutionException}
 import cp.{CPBoolVarOps, CPIntVarOps}
 import oscar.algo.DisjointSets
 import oscar.algo.search.Outcome
+import oscar.modeling.algebra.bool._
 import oscar.modeling.algebra.integer._
 import oscar.modeling.models.CPModel.{InstantiateAndReuse, InstantiateAndStoreInCache}
 import oscar.modeling.vars.cp.CPIntVar
@@ -125,7 +126,7 @@ object CPModel {
     def customSubExpr(expr: IntExpression): Iterable[IntExpression] = expr match {
       case Div(x, y) => Array(x - Modulo(x, y))
       case Xor(a,b) => Array(And(Or(a,b), Not(And(a,b))))
-      case default => default.subexpressions()
+      case default => default.subexpressions().asInstanceOf[Seq[IntExpression]]
     }
 
     // Create the dependency graph

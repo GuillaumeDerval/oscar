@@ -1,5 +1,7 @@
 package oscar.modeling.algebra.integer
 
+import oscar.modeling.algebra.Expression
+
 /**
  * Sum of an array of expression
  */
@@ -18,7 +20,7 @@ case class Sum(v: Array[IntExpression]) extends IntExpression {
    * Apply a function on all sub-expressions of this expression and returns a new expression of the same type.
    * This function should return a value that is of the class as the object that was given to it.
    */
-  override def mapSubexpressions(func: (IntExpression) => IntExpression): IntExpression = new Sum(v.map(func))
+  override def mapSubexpressions(func: (Expression) => Expression): IntExpression = new Sum(v.map(func).asInstanceOf[Array[IntExpression]])
 }
 
 object Sum {

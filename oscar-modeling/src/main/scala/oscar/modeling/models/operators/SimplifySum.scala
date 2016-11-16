@@ -1,6 +1,7 @@
 package oscar.modeling.models.operators
 
 import oscar.modeling.algebra._
+import oscar.modeling.algebra.bool.{BoolExpression, Eq}
 import oscar.modeling.algebra.integer._
 import oscar.modeling.constraints.ExpressionConstraint
 import oscar.modeling.models.UninstantiatedModel
@@ -31,31 +32,33 @@ object SimplifySum extends ModelOperator[UninstantiatedModel] {
     transformBackWeightedSum(s4)
   }
 
-  private def simplifyEq(expr: IntExpression): IntExpression = {
+  private def simplifyEq(expr: Expression): IntExpression = {
     val nexpr = expr.mapSubexpressions(convertToWeightedSum)
     nexpr match {
       case Eq(Array(WeightedSum(x, wx), WeightedSum(y, wy))) => Eq(mergeWeightedSums(WeightedSum(x++y, wx ++ wy.map(i => -i))), 0)
-      case default => nexpr
+      case default: IntExpression => default
+      case _ => throw new RuntimeException("Only Bool/IntExpressions are supported in CP")
     }
   }
 
-  private def convertToWeightedSum(expr: IntExpression): IntExpression = {
+  private def convertToWeightedSum(expr: Expression): IntExpression = {
     val nexpr = expr.mapSubexpressions(convertToWeightedSum)
     nexpr match {
       case Sum(a) => WeightedSum(a, Array.tabulate(a.length)(_ => 1))
-      case default => nexpr
+      case default: IntExpression => default
+      case _ => throw new RuntimeException("Only Bool/IntExpressions are supported in CP")
     }
   }
 
-  private def updateWeightedSumCoefficient(expr: IntExpression): IntExpression = {
+  private def updateWeightedSumCoefficient(expr: Expression): IntExpression = {
     val nexpr = expr.mapSubexpressions(updateWeightedSumCoefficient)
     nexpr match {
-      case WeightedSum(x, w) => {
+      case WeightedSum(x, w) =>
         val nxw : Array[(IntExpression, Int)] = x.zip(w).map(updateWeightedSumCoefficientRecur)
         val (nx, nw) = nxw.unzip
-        new WeightedSum(nx, nw)
-      }
-      case default => nexpr
+        WeightedSum(nx, nw)
+      case default: IntExpression => default
+      case _ => throw new RuntimeException("Only Bool/IntExpressions are supported in CP")
     }
   }
 
@@ -69,15 +72,16 @@ object SimplifySum extends ModelOperator[UninstantiatedModel] {
     }
   }
 
-  private def mergeWeightedSums(expr: IntExpression): IntExpression = {
+  private def mergeWeightedSums(expr: Expression): IntExpression = {
     val nexpr = expr.mapSubexpressions(mergeWeightedSums)
     nexpr match {
       case WeightedSum(x, w) => {
         val (nx, nw) = x.zip(w).flatMap(updateWeightedSum).unzip
         val (fnx, fnw) = findRedundancy(nx, nw)
-        new WeightedSum(fnx, fnw)
+        WeightedSum(fnx, fnw)
       }
-      case default => nexpr
+      case default: IntExpression => default
+      case _ => throw new RuntimeException("Only Bool/IntExpressions are supported in CP")
     }
   }
 
@@ -96,7 +100,7 @@ object SimplifySum extends ModelOperator[UninstantiatedModel] {
     }
   }
 
-  private def transformBackWeightedSum(expr: IntExpression): IntExpression = {
+  private def transformBackWeightedSum(expr: Expression): IntExpression = {
     val nexpr = expr.mapSubexpressions(transformBackWeightedSum)
     nexpr match {
       case WeightedSum(x, w) => {
@@ -104,9 +108,10 @@ object SimplifySum extends ModelOperator[UninstantiatedModel] {
           new Sum(x)
         }
         else
-          nexpr
+          nexpr.asInstanceOf[WeightedSum]
       }
-      case default => nexpr
+      case default: IntExpression => default
+      case _ => throw new RuntimeException("Only Bool/IntExpressions are supported in CP")
     }
   }
 }

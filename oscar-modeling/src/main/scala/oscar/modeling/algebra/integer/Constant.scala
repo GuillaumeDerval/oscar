@@ -1,9 +1,11 @@
 package oscar.modeling.algebra.integer
 
+import oscar.modeling.algebra.Expression
+
 /**
  * Expression of a constant
- *
- * @param value the value of the constant
+  *
+  * @param value the value of the constant
  */
 case class Constant(val value: Int) extends IntExpression {
   override def evaluate(): Int = value
@@ -20,5 +22,5 @@ case class Constant(val value: Int) extends IntExpression {
    * Apply a function on all sub-expressions of this expression and returns a new expression of the same type.
    * This function should return a value that is of the class as the object that was given to it.
    */
-  override def mapSubexpressions(func: (IntExpression) => IntExpression): IntExpression = this
+  override def mapSubexpressions(func: (Expression) => Expression): IntExpression = this
 }

@@ -1,5 +1,6 @@
 package oscar.modeling.visualisation
 
+import oscar.modeling.algebra.bool._
 import oscar.modeling.algebra.integer._
 import oscar.modeling.constraints.{Constraint, ExpressionConstraint}
 import org.graphstream.graph.implementations.SingleGraph

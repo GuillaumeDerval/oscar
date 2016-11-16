@@ -1,5 +1,7 @@
-package oscar.modeling.algebra.integer
+package oscar.modeling.algebra.bool
 
+import oscar.modeling.algebra.Expression
+import oscar.modeling.algebra.integer._
 import oscar.modeling.constraints.{Constraint, ExpressionConstraint}
 import oscar.modeling.misc.{EmptyDomainException, VariableNotBoundException}
 import oscar.modeling.models.ModelDeclaration
@@ -63,6 +65,12 @@ trait BoolExpression extends IntExpression {
     }
   }
   def ==> (b: BoolExpression): BoolExpression = Implication(this, b)
+
+  /**
+    * Apply a function on all sub-expressions of this expression and returns a new expression of the same type.
+    * This function should return a value that is of the class as the object that was given to it.
+    */
+  override def mapSubexpressions(func: (Expression => Expression)): BoolExpression
 }
 
 object BoolExpression {

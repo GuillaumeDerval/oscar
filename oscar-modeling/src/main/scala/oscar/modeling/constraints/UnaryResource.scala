@@ -1,6 +1,7 @@
 package oscar.modeling.constraints
 
-import oscar.modeling.algebra.integer.{BoolExpression, IntExpression}
+import oscar.modeling.algebra.bool.BoolExpression
+import oscar.modeling.algebra.integer.IntExpression
 
 /**
   * Unary Resource constraint (also called disjunctive resource): at any time, no two tasks (with resources(i) = id) can overlap in time

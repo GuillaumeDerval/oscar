@@ -1,5 +1,7 @@
 package oscar.modeling.algebra.integer
 
+import oscar.modeling.algebra.Expression
+
 import scala.collection.mutable.HashSet
 
 /**
@@ -28,5 +30,5 @@ case class Minus(val left: IntExpression, val right: IntExpression) extends IntE
    * Apply a function on all sub-expressions of this expression and returns a new expression of the same type.
    * This function should return a value that is of the class as the object that was given to it.
    */
-  override def mapSubexpressions(func: (IntExpression) => IntExpression): IntExpression = new Minus(func(left), func(right))
+  override def mapSubexpressions(func: (Expression) => Expression): IntExpression = Minus(func(left).asInstanceOf[IntExpression], func(right).asInstanceOf[IntExpression])
 }

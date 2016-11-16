@@ -1,12 +1,14 @@
 package oscar.modeling.algebra.integer
 
+import oscar.modeling.algebra.Expression
+
 /**
   * Sum of an array of expression
   */
 case class Prod(v: Array[IntExpression]) extends IntExpression {
-  override def evaluate(): Int = v.foldLeft(0)((acc: Int, e: IntExpression) => acc * e.evaluate())
-  override def min: Int = v.foldLeft(0)((acc: Int, e: IntExpression) => acc * e.min)
-  override def max: Int = v.foldLeft(0)((acc: Int, e: IntExpression) => acc * e.max)
+  override def evaluate(): Int = v.foldLeft(1)((acc: Int, e: IntExpression) => acc * e.evaluate())
+  override def min: Int = v.foldLeft(1)((acc: Int, e: IntExpression) => acc * e.min)
+  override def max: Int = v.foldLeft(1)((acc: Int, e: IntExpression) => acc * e.max)
   override def values(): Iterable[Int] = Range(min, max+1)
 
   /**
@@ -18,7 +20,7 @@ case class Prod(v: Array[IntExpression]) extends IntExpression {
     * Apply a function on all sub-expressions of this expression and returns a new expression of the same type.
     * This function should return a value that is of the class as the object that was given to it.
     */
-  override def mapSubexpressions(func: (IntExpression) => IntExpression): IntExpression = new Prod(v.map(func))
+  override def mapSubexpressions(func: (Expression) => Expression): IntExpression = new Prod(v.map(func).asInstanceOf[Array[IntExpression]])
 }
 
 object Prod {

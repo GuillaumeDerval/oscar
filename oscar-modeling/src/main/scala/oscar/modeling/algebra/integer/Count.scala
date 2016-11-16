@@ -1,9 +1,11 @@
 package oscar.modeling.algebra.integer
 
+import oscar.modeling.algebra.Expression
+
 /**
  * Return N, the count of variables in X that are equals to Y
- *
- * @param X
+  *
+  * @param X
  * @param Y
  */
 case class Count(X: Array[IntExpression], Y: IntExpression) extends IntExpression{
@@ -24,5 +26,5 @@ case class Count(X: Array[IntExpression], Y: IntExpression) extends IntExpressio
    * Apply a function on all sub-expressions of this expression and returns a new expression of the same type.
    * This function should return a value that is of the class as the object that was given to it.
    */
-  override def mapSubexpressions(func: (IntExpression) => IntExpression): IntExpression = new Count(X.map(func), func(Y))
+  override def mapSubexpressions(func: (Expression) => Expression): IntExpression = Count(X.map(func).asInstanceOf[Array[IntExpression]], func(Y).asInstanceOf[IntExpression])
 }

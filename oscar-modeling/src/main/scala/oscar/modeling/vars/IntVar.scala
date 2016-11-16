@@ -1,6 +1,7 @@
 package oscar.modeling.vars
 
 import oscar.algo.vars.IntVarLike
+import oscar.modeling.algebra.Expression
 import oscar.modeling.algebra.integer.IntExpression
 import oscar.modeling.misc.VariableNotBoundException
 import oscar.modeling.models.ModelDeclaration
@@ -30,7 +31,7 @@ class IntVar(model_decl: ModelDeclaration, id: Int, name: String) extends Var(mo
   override def values(): Iterable[Int] = this
 
   override def subexpressions(): Iterable[IntExpression] = Array[IntExpression]()
-  override def mapSubexpressions(func: (IntExpression) => IntExpression): IntExpression = this
+  override def mapSubexpressions(func: (Expression) => Expression): IntExpression = this
 
   override def toString(): String = if(name.isEmpty) "IntVar" else name
 }

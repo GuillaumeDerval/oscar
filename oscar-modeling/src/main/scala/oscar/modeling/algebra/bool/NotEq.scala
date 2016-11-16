@@ -1,17 +1,19 @@
-package oscar.modeling.algebra.integer
+package oscar.modeling.algebra.bool
 
+import oscar.modeling.algebra.Expression
+import oscar.modeling.algebra.integer.IntExpression
 import oscar.modeling.misc.VariableNotBoundException
 
 /**
- * a ^ b
+ * a != b
  */
-case class Xor(a: BoolExpression, b: BoolExpression) extends BoolExpression {
+case class NotEq(a: IntExpression, b: IntExpression) extends BoolExpression {
   /**
    * Evaluate this expression. All variables referenced have to be bound.
    * @throws VariableNotBoundException when a variable is not bound
    * @return the value of this expression
    */
-  override def evaluateBool(): Boolean = a.evaluateBool() ^ b.evaluateBool()
+  override def evaluateBool(): Boolean = a.evaluate() != b.evaluate()
 
   /**
    * Returns an iterable that contains all sub-expressions of this expression
@@ -22,7 +24,5 @@ case class Xor(a: BoolExpression, b: BoolExpression) extends BoolExpression {
    * Apply a function on all sub-expressions of this expression and returns a new expression of the same type.
    * This function should return a value that is of the class as the object that was given to it.
    */
-  override def mapSubexpressions(func: (IntExpression) => IntExpression): IntExpression = {
-    new Xor(func(a).asInstanceOf[BoolExpression], func(b).asInstanceOf[BoolExpression])
-  }
+  override def mapSubexpressions(func: (Expression) => Expression): BoolExpression = NotEq(func(a).asInstanceOf[IntExpression], func(b).asInstanceOf[IntExpression])
 }

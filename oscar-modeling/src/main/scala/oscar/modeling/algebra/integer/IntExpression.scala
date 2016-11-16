@@ -1,5 +1,7 @@
 package oscar.modeling.algebra.integer
 
+import oscar.modeling.algebra.Expression
+import oscar.modeling.algebra.bool._
 import oscar.modeling.misc.{EmptyDomainException, VariableNotBoundException}
 import oscar.modeling.models.ModelDeclaration
 import oscar.modeling.vars.IntVar
@@ -7,7 +9,7 @@ import oscar.modeling.vars.IntVar
 /**
  * An expression that represents an Integer
  */
-trait IntExpression extends Serializable {
+trait IntExpression extends Expression {
   /**
    * Evaluate this expression. All variables referenced have to be bound.
    * @throws VariableNotBoundException when a variable is not bound
@@ -29,17 +31,6 @@ trait IntExpression extends Serializable {
    * Returns an iterable that contains a *superset* of the values this expression can have
    */
   def values(): Iterable[Int]
-
-  /**
-   * Returns an iterable that contains all sub-expressions of this expression
-   */
-  def subexpressions(): Iterable[IntExpression]
-
-  /**
-   * Apply a function on all sub-expressions of this expression and returns a new expression of the same type.
-   * This function should return a value that is of the class as the object that was given to it.
-   */
-  def mapSubexpressions(func: (IntExpression => IntExpression)): IntExpression
 
   /**
    * Give a variable that is equal to this expression. May post appropriate constraints.
@@ -86,7 +77,7 @@ trait IntExpression extends Serializable {
   def in (b: Set[Int]): BoolExpression = InSet(this, b)
   def unary_- : IntExpression = UnaryMinus(this)
   def unary_+ : IntExpression = this
-  def unary_! : IntExpression = this !== 1
+  def unary_! : IntExpression = this === 0
 
   def maxRegret(costs: Array[Int]): Int = {
     val valuess = values().toSeq
@@ -104,6 +95,12 @@ trait IntExpression extends Serializable {
     }
     min2 - min1
   }
+
+  /**
+    * Apply a function on all sub-expressions of this expression and returns a new expression of the same type.
+    * This function should return a value that is of the class as the object that was given to it.
+    */
+  override def mapSubexpressions(func: (Expression => Expression)): IntExpression
 }
 
 object IntExpression

@@ -1,5 +1,7 @@
 package oscar.modeling.algebra.integer
 
+import oscar.modeling.algebra.bool.{And, BoolExpression, Or}
+
 /**
  * Basic operations on expressions
  */

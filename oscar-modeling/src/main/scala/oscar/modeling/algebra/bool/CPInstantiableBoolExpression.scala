@@ -1,4 +1,4 @@
-package oscar.modeling.algebra.integer
+package oscar.modeling.algebra.bool
 
 import oscar.algo.search.Outcome
 import oscar.cp.{CPBoolVar, CPSolver}

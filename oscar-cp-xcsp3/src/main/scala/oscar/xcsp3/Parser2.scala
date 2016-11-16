@@ -12,6 +12,7 @@ import org.xcsp.parser.XCallbacks.{Implem, XCallbacksParameters}
 import org.xcsp.parser.entries.XVariables.{XVar, XVarInteger}
 import oscar.cp.constraints.Automaton
 import oscar.modeling.algebra._
+import oscar.modeling.algebra.bool._
 import oscar.modeling.algebra.integer._
 import oscar.modeling.constraints._
 import oscar.modeling.misc.SearchStatistics

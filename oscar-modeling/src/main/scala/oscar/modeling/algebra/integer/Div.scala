@@ -1,5 +1,7 @@
 package oscar.modeling.algebra.integer
 
+import oscar.modeling.algebra.Expression
+
 import scala.collection.mutable.HashSet
 
 /**
@@ -33,5 +35,5 @@ case class Div(left: IntExpression, right: Int) extends IntExpression {
    * Apply a function on all sub-expressions of this expression and returns a new expression of the same type.
    * This function should return a value that is of the class as the object that was given to it.
    */
-  override def mapSubexpressions(func: (IntExpression) => IntExpression): IntExpression = new Div(func(left), right)
+  override def mapSubexpressions(func: (Expression) => Expression): IntExpression = Div(func(left).asInstanceOf[IntExpression], right)
 }
