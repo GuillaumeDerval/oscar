@@ -24,5 +24,10 @@ case class GrEqFloat(a: FloatExpression, b: FloatExpression) extends BoolExpress
    * Apply a function on all sub-expressions of this expression and returns a new expression of the same type.
    * This function should return a value that is of the class as the object that was given to it.
    */
-  override def mapSubexpressions(func: (Expression) => Expression): BoolExpression = new GrEqFloat(func(a).asInstanceOf[FloatExpression], func(b).asInstanceOf[FloatExpression])
+  override def mapSubexpressions(func: (Expression) => Expression): BoolExpression = GrEqFloat(func(a).asInstanceOf[FloatExpression], func(b).asInstanceOf[FloatExpression])
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }

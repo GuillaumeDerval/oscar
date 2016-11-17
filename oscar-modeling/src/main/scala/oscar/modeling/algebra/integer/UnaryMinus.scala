@@ -23,4 +23,9 @@ case class UnaryMinus(value: IntExpression) extends IntExpression {
    * This function should return a value that is of the class as the object that was given to it.
    */
   override def mapSubexpressions(func: (Expression) => Expression): IntExpression = UnaryMinus(func(value).asInstanceOf[IntExpression])
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }

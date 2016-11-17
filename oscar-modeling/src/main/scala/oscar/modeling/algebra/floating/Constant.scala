@@ -32,4 +32,9 @@ case class Constant(value: Double) extends FloatExpression {
     * Returns true if the expression is linear
     */
   override def linear: Boolean = true
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = true
 }

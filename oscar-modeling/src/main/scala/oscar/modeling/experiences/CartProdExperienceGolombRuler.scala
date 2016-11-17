@@ -3,7 +3,8 @@ package oscar.modeling.experiences
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.examples.GolombRuler._
 import oscar.modeling.misc.CartesianProduct
-import oscar.modeling.models.{MemoCPModel, NoSolException, UninstantiatedModel}
+import oscar.modeling.models.cp.MemoCPModel
+import oscar.modeling.models.{NoSolException, UninstantiatedModel}
 import oscar.modeling.solvers.cp.decompositions.{CartProdRefinement, DecompositionAddCartProdInfo, DepthIterativeDeepening}
 import oscar.modeling.solvers.cp.distributed.SubProblemCartesianProductLog
 import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}

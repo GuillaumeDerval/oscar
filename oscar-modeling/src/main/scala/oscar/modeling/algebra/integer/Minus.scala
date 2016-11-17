@@ -31,4 +31,9 @@ case class Minus(val left: IntExpression, val right: IntExpression) extends IntE
    * This function should return a value that is of the class as the object that was given to it.
    */
   override def mapSubexpressions(func: (Expression) => Expression): IntExpression = Minus(func(left).asInstanceOf[IntExpression], func(right).asInstanceOf[IntExpression])
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }

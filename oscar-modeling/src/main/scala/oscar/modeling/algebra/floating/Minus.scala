@@ -33,4 +33,9 @@ case class Minus(left: FloatExpression, right: FloatExpression) extends FloatExp
     * Returns true if the expression is linear
     */
   override def linear: Boolean = subexpressions().forall(_.linear)
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }

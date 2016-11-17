@@ -27,4 +27,9 @@ case class Count(X: Array[IntExpression], Y: IntExpression) extends IntExpressio
    * This function should return a value that is of the class as the object that was given to it.
    */
   override def mapSubexpressions(func: (Expression) => Expression): IntExpression = Count(X.map(func).asInstanceOf[Array[IntExpression]], func(Y).asInstanceOf[IntExpression])
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }

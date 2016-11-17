@@ -44,6 +44,11 @@ case class Element2D(array: Array[Array[IntExpression]], idx1: IntExpression, id
     * This function should return a value that is of the class as the object that was given to it.
     */
   override def mapSubexpressions(func: (Expression) => Expression): IntExpression = Element2D(array.map(a => a.map(func).asInstanceOf[Array[IntExpression]]), func(idx1).asInstanceOf[IntExpression], func(idx2).asInstanceOf[IntExpression])
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }
 
 case class ElementCst2D(array: Array[Array[Int]], idx1: IntExpression, idx2: IntExpression) extends IntExpression {
@@ -81,4 +86,9 @@ case class ElementCst2D(array: Array[Array[Int]], idx1: IntExpression, idx2: Int
     * This function should return a value that is of the class as the object that was given to it.
     */
   override def mapSubexpressions(func: (Expression) => Expression): IntExpression = ElementCst2D(array, func(idx1).asInstanceOf[IntExpression], func(idx2).asInstanceOf[IntExpression])
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }

@@ -1,7 +1,8 @@
-package oscar.modeling.models
+package oscar.modeling.models.cp
 
 import oscar.algo.search.Outcome
 import oscar.modeling.constraints.Constraint
+import oscar.modeling.models.UninstantiatedModel
 import oscar.modeling.solvers.cp.Branchings.Alternative
 
 import scala.collection.mutable

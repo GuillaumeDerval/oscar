@@ -1,7 +1,8 @@
 package oscar.modeling.examples
 
 import oscar.modeling.constraints.{MinCircuit, MinCircuitWeak}
-import oscar.modeling.models.{CPModel, UninstantiatedModel}
+import oscar.modeling.models.UninstantiatedModel
+import oscar.modeling.models.cp.CPModel
 import oscar.util._
 import oscar.modeling.solvers.cp.{Branchings, CPApp}
 import oscar.modeling.solvers.cp.decompositions.{AnotherModelDecomposition, CartProdRefinement}

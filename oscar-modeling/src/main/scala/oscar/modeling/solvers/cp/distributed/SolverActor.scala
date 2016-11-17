@@ -3,10 +3,12 @@ package oscar.modeling.solvers.cp.distributed
 import akka.actor.{Actor, ActorRef, Props}
 import akka.event.Logging
 import oscar.algo.search.Branching
+import oscar.cp.CPIntVar
 import oscar.modeling.constraints.Constraint
 import oscar.modeling.misc.SPSearchStatistics
 import oscar.modeling.misc.TimeHelper._
 import oscar.modeling.models._
+import oscar.modeling.models.cp.CPModel
 import oscar.modeling.solvers.cp._
 import oscar.modeling.vars.IntVar
 
@@ -38,13 +40,13 @@ class SolverActor[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSo
 
   @volatile private var boundary = 0
 
-  val objv: IntVar = cpmodel.optimisationMethod match {
+  val objv: CPIntVar = cpmodel.optimisationMethod match {
     case m: Minimisation =>
-      boundary = cpmodel.getRepresentative(m.objective).max
-      m.objective
+      boundary = cpmodel.cpObjective.objVar.max
+      cpmodel.cpObjective.objVar
     case m: Maximisation =>
-      boundary = cpmodel.getRepresentative(m.objective).min
-      m.objective
+      boundary = cpmodel.cpObjective.objVar.min
+      cpmodel.cpObjective.objVar
     case _ => null
   }
 
@@ -57,17 +59,15 @@ class SolverActor[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSo
   val solution: Model => Unit = cpmodel.optimisationMethod match {
     case m: Minimisation =>
       (a) => {
-        val v = cpmodel.getRepresentative(objv)
-        this.updateBoundary(v.max)
-        master ! SolutionMessage(on_solution(), Some(v.max))
+        this.updateBoundary(objv.max)
+        master ! SolutionMessage(on_solution(), Some(objv.max))
         solutionCount += 1
         //lastSolution = SolutionMessage(on_solution(), Some(v.max))
       }
     case m: Maximisation =>
       (a) => {
-        val v = cpmodel.getRepresentative(objv)
-        this.updateBoundary(v.max)
-        master ! SolutionMessage(on_solution(), Some(v.max))
+        this.updateBoundary(objv.max)
+        master ! SolutionMessage(on_solution(), Some(objv.max))
         solutionCount += 1
         //lastSolution = SolutionMessage(on_solution(), Some(v.max))
       }

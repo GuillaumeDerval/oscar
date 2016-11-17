@@ -1,9 +1,10 @@
 package oscar.modeling.algebra.floating
 
 import oscar.modeling.algebra.Expression
-import oscar.modeling.algebra.bool._
+import oscar.modeling.algebra.bool.{Eq, _}
 import oscar.modeling.misc.{EmptyDomainException, VariableNotBoundException}
 import oscar.modeling.models.ModelDeclaration
+import oscar.modeling.vars.{FloatVar, IntVar}
 
 /**
   * Created by dervalguillaume on 16/11/16.
@@ -91,4 +92,23 @@ trait FloatExpression extends Expression {
     * This function should return a value that is of the class as the object that was given to it.
     */
   override def mapSubexpressions(func: (Expression => Expression)): FloatExpression
+
+  /**
+    * Give a variable that is equal to this expression. May post appropriate constraints.
+    * @param modelDeclaration the ModelDeclaration object in which new variable/constraint will be created
+    * @throws EmptyDomainException when the new IntVar has an empty domain
+    * @return a FloatVar
+    */
+  def reify()(implicit modelDeclaration: ModelDeclaration): FloatVar = {
+    val z = FloatVar(min, max)(modelDeclaration)
+    modelDeclaration.post(EqFloat(this, z))
+    z
+  }
+}
+
+object FloatExpression
+{
+  implicit def constant(v: Int): Constant = Constant(v)
+  implicit def constant(v: Double): Constant = Constant(v)
+  implicit def array_intvar(v: Array[FloatVar]): Array[FloatExpression] = v.asInstanceOf[Array[FloatExpression]]
 }

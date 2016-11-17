@@ -3,11 +3,13 @@ package oscar.modeling.models
 import java.util.UUID
 
 import oscar.algo.search.Outcome
+import oscar.modeling.algebra.Expression
+import oscar.modeling.algebra.integer.IntExpression
 import oscar.modeling.constraints.Constraint
 import oscar.modeling.misc.DynamicModelVariable
 import oscar.modeling.models.operators.ModelOperator
 import oscar.modeling.vars.IntVar
-import oscar.modeling.vars.domainstorage.IntDomainStorage
+import oscar.modeling.vars.domainstorage.{FloatDomainStorage, IntDomainStorage}
 
 /**
  * The declaration of a Model.
@@ -80,7 +82,7 @@ class ModelDeclaration extends Serializable {
     * Minimize on variable v
     * @param v variable to minimize
     */
-  def minimize(v: IntVar) = current_model.value match {
+  def minimize(v: Expression) = current_model.value match {
     case m: UninstantiatedModel => current_model.value = m.minimize(v)
     case _ => throw new Exception("Cannot modify the optimisation method of an instantiated model")
   }
@@ -89,7 +91,7 @@ class ModelDeclaration extends Serializable {
     * Maximize on variable v
     * @param v variable to maximize
     */
-  def maximize(v: IntVar) = current_model.value match {
+  def maximize(v: Expression) = current_model.value match {
     case m: UninstantiatedModel => current_model.value = m.maximize(v)
     case _ => throw new Exception("Cannot modify the optimisation method of an instantiated model")
   }
@@ -103,6 +105,15 @@ class ModelDeclaration extends Serializable {
   }
 
   def addNewRepresentative(domain: IntDomainStorage): Int = current_model.value match {
+    case m: UninstantiatedModel => {
+      val r = m.withNewVariable(domain)
+      current_model.value = r._2
+      r._1
+    }
+    case _ => throw new Exception("Cannot add a new variable in an instantiated model")
+  }
+
+  def addNewRepresentative(domain: FloatDomainStorage): Int = current_model.value match {
     case m: UninstantiatedModel => {
       val r = m.withNewVariable(domain)
       current_model.value = r._2

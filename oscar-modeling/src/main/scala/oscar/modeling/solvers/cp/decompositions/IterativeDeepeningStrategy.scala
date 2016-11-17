@@ -1,7 +1,8 @@
 package oscar.modeling.solvers.cp.decompositions
 
 import oscar.algo.search.Branching
-import oscar.modeling.models.{MemoCPModel, UninstantiatedModel}
+import oscar.modeling.models.UninstantiatedModel
+import oscar.modeling.models.cp.MemoCPModel
 import oscar.modeling.solvers.cp.Branchings._
 import oscar.modeling.solvers.cp.distributed.{SubProblem, SubProblemDiscrepancy}
 

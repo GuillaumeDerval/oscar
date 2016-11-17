@@ -36,6 +36,11 @@ case class Element(table: Array[IntExpression], key: IntExpression) extends IntE
    * This function should return a value that is of the class as the object that was given to it.
    */
   override def mapSubexpressions(func: (Expression) => Expression): IntExpression = Element(table.map(func).asInstanceOf[Array[IntExpression]], func(key).asInstanceOf[IntExpression])
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }
 
 case class ElementCst(table: Array[Int], key: IntExpression) extends IntExpression {
@@ -60,4 +65,9 @@ case class ElementCst(table: Array[Int], key: IntExpression) extends IntExpressi
     * This function should return a value that is of the class as the object that was given to it.
     */
   override def mapSubexpressions(func: (Expression) => Expression): IntExpression = ElementCst(table, func(key).asInstanceOf[IntExpression])
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }

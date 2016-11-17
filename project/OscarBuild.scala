@@ -155,7 +155,7 @@ object OscarBuild extends Build {
     settings =
       commonSettings ++ Seq(libraryDependencies ++= testDeps :+ graphStreamCore :+ graphStreamAlgo
         :+ graphStreamUI :+ scallop :+ akkaActor :+ akkaRemote :+ chill :+ spores :+ scalaSwing),
-    dependencies = Seq(oscarCp)
+    dependencies = Seq(oscarCp, oscarLinprog)
   )
 
   lazy val oscarCPXcsp3 = Project(

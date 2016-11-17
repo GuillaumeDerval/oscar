@@ -25,4 +25,9 @@ case class InSet(a: IntExpression, b: Set[Int]) extends BoolExpression {
    * This function should return a value that is of the class as the object that was given to it.
    */
   override def mapSubexpressions(func: (Expression) => Expression): BoolExpression = InSet(func(a).asInstanceOf[IntExpression], b)
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }

@@ -14,4 +14,9 @@ trait Expression {
     * This function should return a value that is of the class as the object that was given to it.
     */
   def mapSubexpressions(func: (Expression => Expression)): Expression
+
+  /**
+    * True if the variable is bound
+    */
+  def isBound: Boolean
 }

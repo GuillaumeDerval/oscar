@@ -2,7 +2,7 @@ package oscar.modeling.experiences
 
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.misc.CartesianProduct
-import oscar.modeling.models.{MemoCPModel, UninstantiatedModel}
+import oscar.modeling.models.UninstantiatedModel
 import oscar.modeling.solvers.cp.decompositions._
 import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar

@@ -35,4 +35,9 @@ case class DivConst(left: FloatExpression, right: Double) extends FloatExpressio
     * Returns true if the expression is linear
     */
   override def linear: Boolean = left.linear
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }

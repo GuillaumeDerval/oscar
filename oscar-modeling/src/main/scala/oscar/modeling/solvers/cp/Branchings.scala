@@ -3,7 +3,7 @@ package oscar.modeling.solvers.cp
 import oscar.algo.branchings._
 import oscar.algo.search.{Branching, DiscrepancyBranching}
 import oscar.algo.vars.IntVarLike
-import oscar.modeling.models.CPModel
+import oscar.modeling.models.cp.CPModel
 import oscar.modeling.vars.IntVar
 
 object Branchings {

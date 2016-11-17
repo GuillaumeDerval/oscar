@@ -7,7 +7,7 @@ import oscar.modeling.algebra.Expression
   *
   * @param value the value of the constant
  */
-case class Constant(val value: Int) extends IntExpression {
+case class Constant(value: Int) extends IntExpression {
   override def evaluate(): Int = value
   override def min: Int = value
   override def max: Int = value
@@ -23,4 +23,9 @@ case class Constant(val value: Int) extends IntExpression {
    * This function should return a value that is of the class as the object that was given to it.
    */
   override def mapSubexpressions(func: (Expression) => Expression): IntExpression = this
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = true
 }

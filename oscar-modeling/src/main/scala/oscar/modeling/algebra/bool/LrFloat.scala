@@ -25,4 +25,9 @@ case class LrFloat(a: FloatExpression, b: FloatExpression) extends BoolExpressio
    * This function should return a value that is of the class as the object that was given to it.
    */
   override def mapSubexpressions(func: (Expression) => Expression): BoolExpression = LrFloat(func(a).asInstanceOf[FloatExpression], func(b).asInstanceOf[FloatExpression])
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }

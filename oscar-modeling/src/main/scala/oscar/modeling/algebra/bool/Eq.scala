@@ -28,6 +28,11 @@ case class Eq(v: Array[IntExpression]) extends BoolExpression {
    * This function should return a value that is of the class as the object that was given to it.
    */
   override def mapSubexpressions(func: (Expression) => Expression): BoolExpression = Eq(v.map(func).asInstanceOf[Array[IntExpression]])
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }
 
 object Eq {

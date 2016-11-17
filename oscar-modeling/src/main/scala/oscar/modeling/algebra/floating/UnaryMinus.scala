@@ -32,4 +32,9 @@ case class UnaryMinus(value: FloatExpression) extends FloatExpression {
     * Returns true if the expression is linear
     */
   override def linear: Boolean = value.linear
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }

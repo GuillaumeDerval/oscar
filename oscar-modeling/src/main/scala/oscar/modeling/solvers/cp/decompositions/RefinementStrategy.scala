@@ -1,8 +1,9 @@
 package oscar.modeling.solvers.cp.decompositions
 
 import oscar.modeling.constraints.Constraint
-import oscar.modeling.models.{MemoCPModel, UninstantiatedModel}
+import oscar.modeling.models.UninstantiatedModel
 import oscar.cp.core.NoSolutionException
+import oscar.modeling.models.cp.MemoCPModel
 import oscar.modeling.solvers.cp.Branchings.BranchingInstantiator
 import oscar.modeling.solvers.cp.distributed.{SubProblem, SubProblemDiscrepancy, SubProblemMinBound}
 

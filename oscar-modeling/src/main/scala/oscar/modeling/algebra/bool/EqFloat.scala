@@ -29,6 +29,11 @@ case class EqFloat(v: Array[FloatExpression]) extends BoolExpression {
    * This function should return a value that is of the class as the object that was given to it.
    */
   override def mapSubexpressions(func: (Expression) => Expression): BoolExpression = EqFloat(v.map(func).asInstanceOf[Array[FloatExpression]])
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }
 
 object EqFloat {

@@ -1,30 +1,29 @@
-package oscar.modeling.models
+package oscar.modeling.models.cp
 
-import oscar.modeling.algebra._
-import oscar.modeling.constraints._
-import oscar.algo.reversible.ReversibleInt
-import oscar.cp
-import cp.constraints.{CPObjective, CPObjectiveUnit, CPObjectiveUnitMaximize, CPObjectiveUnitMinimize}
-import cp.core.{CPPropagStrength, NoSolutionException}
-import cp.{CPBoolVarOps, CPIntVarOps}
 import oscar.algo.DisjointSets
+import oscar.algo.reversible.ReversibleInt
 import oscar.algo.search.Outcome
+import oscar.cp
+import oscar.cp.constraints.{CPObjective, CPObjectiveUnit, CPObjectiveUnitMaximize, CPObjectiveUnitMinimize}
+import oscar.cp.core.{CPPropagStrength, NoSolutionException}
+import oscar.cp.{CPBoolVarOps, CPIntVarOps}
 import oscar.modeling.algebra.bool._
 import oscar.modeling.algebra.integer._
-import oscar.modeling.models.CPModel.{InstantiateAndReuse, InstantiateAndStoreInCache}
-import oscar.modeling.vars.cp.CPIntVar
+import oscar.modeling.constraints._
+import oscar.modeling.models._
+import oscar.modeling.models.cp.CPModel.{InstantiateAndReuse, InstantiateAndStoreInCache}
 import oscar.modeling.vars.cp.{CPBoolVar => ModelCPBoolVar, CPIntVar => ModelCPIntVar}
 import oscar.modeling.vars.domainstorage.IntDomainStorage
+import oscar.modeling.vars.nostorage.NoFloatDomainStorage
 import oscar.modeling.vars.{BoolVar, IntVar}
 
-import scala.collection.immutable
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 
 private case class CPCstEq(expr: IntExpression, cst: Int) extends Constraint
 
 object CPModel {
-  private case class InstantiateAndStoreInCache(expr: IntExpression) extends Constraint
-  private case class InstantiateAndReuse(reuseFrom: IntExpression, toInstantiate: IntExpression) extends Constraint
+  case class InstantiateAndStoreInCache(expr: IntExpression) extends Constraint
+  case class InstantiateAndReuse(reuseFrom: IntExpression, toInstantiate: IntExpression) extends Constraint
 
   /**
     * Preprocess some things in order to improve performance of the solver
@@ -115,7 +114,7 @@ object CPModel {
     }
 
     val newConstraints: List[Constraint]= newEqConstraints.toList ++ otherConstraints
-    UninstantiatedModel(p.declaration, newConstraints, representatives, p.optimisationMethod)
+    UninstantiatedModel(p.declaration, newConstraints, representatives, p.floatRepresentatives, p.optimisationMethod)
   }
 
   private def expressionTopoSort(expressions: Set[IntExpression]): Array[IntExpression] = {
@@ -173,27 +172,41 @@ object CPModel {
   */
 class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preprocessCP(p)){
   implicit lazy val cpSolver = new cp.CPSolver()
-  override type IntVarImplementation = CPIntVar
+  override type IntVarImplementation = ModelCPIntVar
+  override type FloatVarImplementation = NoFloatDomainStorage
 
-  val cpObjective: CPObjectiveUnit= this.optimisationMethod match {
-    case m: Minimisation =>
-      new CPObjectiveUnitMinimize(this.getRepresentative(m.objective).realCPVar)
-    case m: Maximisation =>
-      new CPObjectiveUnitMaximize(this.getRepresentative(m.objective).realCPVar)
-    case _ => null
+  // TODO for now we only support one objective at a time
+  def cpObjective: CPObjectiveUnit = {
+    val objs = cpSolver.objective.objs
+    if(objs.isEmpty)
+      null
+    else
+      objs.head
   }
 
-  if(cpObjective != null)
-    cpSolver.optimize(new CPObjective(cpSolver, cpObjective))
+  protected def postObjective(optimisationMethod: OptimisationMethod) = {
+    val obj = optimisationMethod match {
+      case m: Minimisation =>
+        new CPObjectiveUnitMinimize(postIntExpressionAndGetVar(m.objective))
+      case m: Maximisation =>
+        new CPObjectiveUnitMaximize(postIntExpressionAndGetVar(m.objective))
+      case _ => null
+    }
+
+    if(obj != null)
+      cpSolver.optimize(new CPObjective(cpSolver, obj))
+  }
 
   def getReversibleInt(init: Int) = new ReversibleInt(cpSolver, init)
 
-  def instantiateIntVar(content: Iterable[Int], name: String): CPIntVar = {
+  def instantiateIntVar(content: Iterable[Int], name: String): ModelCPIntVar = {
     if(content.min >= 0 && content.max <= 1)
       ModelCPBoolVar(content, name, cpSolver)
     else
       ModelCPIntVar(content, name, cpSolver)
   }
+
+  override def instantiateFloatVar(min: Double, max: Double, name: String): NoFloatDomainStorage = throw new RuntimeException("CP has no support for float variables yet")
 
   override def post(constraint: Constraint): Outcome = {
     try {

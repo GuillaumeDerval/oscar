@@ -29,8 +29,8 @@ class SolverMaster[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPS
   val solverForcedToSendImmediately = maxSols != 0 || maxTime != 0 || !uninstantiatedModel.optimisationMethod.isInstanceOf[NoOptimisation]
 
   @volatile private var boundary: Int = uninstantiatedModel.optimisationMethod match {
-    case m: Minimisation => uninstantiatedModel.getRepresentative(m.objective).max
-    case m: Maximisation => uninstantiatedModel.getRepresentative(m.objective).min
+    case m: Minimisation => m.objective.max
+    case m: Maximisation => m.objective.min
     case _               => 0
   }
 

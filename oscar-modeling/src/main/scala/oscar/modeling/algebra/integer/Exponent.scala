@@ -37,4 +37,9 @@ case class Exponent(val base: IntExpression, val exponent: IntExpression) extend
    * This function should return a value that is of the class as the object that was given to it.
    */
   override def mapSubexpressions(func: (Expression) => Expression): IntExpression = Exponent(func(base).asInstanceOf[IntExpression], func(exponent).asInstanceOf[IntExpression])
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }

@@ -5,13 +5,14 @@ import oscar.modeling.algebra.integer.{Abs, IntExpression}
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.modeling.solvers.cp.{Branchings, CPApp}
-import oscar.modeling.vars.IntVar
+import oscar.modeling.vars.{FloatVar, IntVar}
 
 object KnightTour extends CPApp[String] with App {
   val x = Array.fill(36)(IntVar(0,36))
   post(AllDifferent(x))
   post(x(0) === 0)
   post(x(1) === 8)
+
   def dist(a: IntExpression, b: IntExpression): IntExpression = Abs(a-b)
 
   for(i <- 0 until 36) {

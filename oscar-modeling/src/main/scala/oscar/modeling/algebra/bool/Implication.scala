@@ -27,4 +27,9 @@ case class Implication(a: BoolExpression, b: BoolExpression) extends BoolExpress
   override def mapSubexpressions(func: (Expression) => Expression): BoolExpression = {
     Implication(func(a).asInstanceOf[BoolExpression], func(b).asInstanceOf[BoolExpression])
   }
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }

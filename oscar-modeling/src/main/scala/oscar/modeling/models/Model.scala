@@ -8,9 +8,11 @@ import oscar.modeling.vars._
  */
 trait Model extends Serializable {
   type IntVarImplementation <: IntVarImplem
+  type FloatVarImplementation <: FloatVarImplem
 
   val declaration: ModelDeclaration
   val intRepresentatives: ModelVarStorage[IntVar, IntVarImplementation]
+  val floatRepresentatives: ModelVarStorage[FloatVar, FloatVarImplementation]
   val optimisationMethod: OptimisationMethod
 
   /**
@@ -19,6 +21,7 @@ trait Model extends Serializable {
    * @return On an instantiated model, the model itself; on an uninstantiated one, a copy of it
    */
   def getRepresentative(v: IntVar): IntVarImplementation = intRepresentatives.get(v)
+  def getRepresentative(v: FloatVar): FloatVarImplementation = floatRepresentatives.get(v)
 
   /**
    * Apply a function on this model

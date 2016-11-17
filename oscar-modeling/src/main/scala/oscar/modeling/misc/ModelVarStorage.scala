@@ -10,7 +10,7 @@ object ModelVarStorage {
     * @tparam VarType Var type that will store its domain in this object
     * @tparam StoredObject type of domain
     */
-  def apply[VarType <: Var, StoredObject]() = new ModelVarStorage[VarType, StoredObject](IndexedSeq[StoredObject]())
+  def apply[VarType <: Var, StoredObject]() = new ModelVarStorageImpl[VarType, StoredObject](IndexedSeq[StoredObject]())
 
   /**
     * Init this ModelVarStorage with a copy of the content of another one, with a type conversion
@@ -19,7 +19,7 @@ object ModelVarStorage {
     */
   def apply[VarType <: Var, StoredObject, OldType](to_copy: ModelVarStorage[VarType, OldType], convert: OldType => StoredObject) = {
     val map = mutable.Map[OldType, StoredObject]()
-    new ModelVarStorage[VarType, StoredObject](to_copy.array.map(item => map.getOrElseUpdate(item, convert(item))))
+    new ModelVarStorageImpl[VarType, StoredObject](to_copy.asInstanceOf[ModelVarStorageImpl[VarType, OldType]].array.map(item => map.getOrElseUpdate(item, convert(item))))
   }
 }
 
@@ -27,70 +27,137 @@ object ModelVarStorage {
   * Stores variable domains (and allow to replace/union domains)
   * Immutable
   */
-class ModelVarStorage[VarType <: Var, StoredObject](private val array: IndexedSeq[StoredObject]) extends Serializable {
+trait ModelVarStorage[VarType <: Var, StoredObject] extends Serializable {
+
   /**
     * Get the domain of `v`
+    *
     * @param v the variable of which we want to find the domain
     */
-  def get(v: VarType): StoredObject = array(v.varid)
+  def get(v: VarType): StoredObject
 
   /**
     * Get the domain of the variable with id `v`
+    *
     * @param v the variable of which we want to find the domain
     */
-  def get(v: Int): StoredObject = array(v)
+  def get(v: Int): StoredObject
 
   /**
     * Add a new element
+    *
     * @param elem domain to be added
     * @return the id of the element, to be used by the var as internal value
     */
-  def add(elem: StoredObject): (Int, ModelVarStorage[VarType, StoredObject]) = {
-    val newid = array.length
-    (newid, new ModelVarStorage[VarType, StoredObject](array :+ elem))
-  }
+  def add(elem: StoredObject): (Int, ModelVarStorage[VarType, StoredObject])
 
   /**
     * Create a new ModelVarStorage where all the objects that are keys in toReplace are replaced by their value in the map
+    *
     * @param toReplace object to be replaced -> object that will replace it
     */
-  def replace(toReplace: Map[StoredObject, StoredObject]): ModelVarStorage[VarType, StoredObject] = {
-    new ModelVarStorage(array.map(item => toReplace.getOrElse(item, item)))
-  }
+  def replace(toReplace: Map[StoredObject, StoredObject]): ModelVarStorage[VarType, StoredObject]
 
   /**
     * Create a new ModelVarStorage where all the objects in toReplace are replaced by `by`
+    *
     * @param toReplace set of objects to replace
-    * @param by object by which the items will be replaced
+    * @param by        object by which the items will be replaced
     */
-  def replace(toReplace: Set[StoredObject], by: StoredObject): ModelVarStorage[VarType, StoredObject] = {
-    replace(toReplace.map(item => (item, by)).toMap)
-  }
+  def replace(toReplace: Set[StoredObject], by: StoredObject): ModelVarStorage[VarType, StoredObject]
 
   /**
     * Make a "union" of vars domain replace1 and replace2 by making the vars link to newVal
+    *
     * @param replace1 first domain to replace
     * @param replace2 second domain to replace
-    * @param newVal new domain
+    * @param newVal   new domain
     */
-  def union(replace1: StoredObject, replace2: StoredObject, newVal: StoredObject): ModelVarStorage[VarType, StoredObject] = {
-    replace(Set(replace1, replace2), newVal)
-  }
+  def union(replace1: StoredObject, replace2: StoredObject, newVal: StoredObject): ModelVarStorage[VarType, StoredObject]
 
   /**
     * Create a new ModelVarStorage where all the `toReplace` are replaced by `by`
+    *
     * @param toReplace object to be replaced
-    * @param by object to use instead
+    * @param by        object to use instead
     */
-  def replace(toReplace: StoredObject, by: StoredObject): ModelVarStorage[VarType, StoredObject] = {
-    replace(Map((toReplace, by)))
-  }
+  def replace(toReplace: StoredObject, by: StoredObject): ModelVarStorage[VarType, StoredObject]
 
   /**
     * Create a new ModelVarStorage where all the objects that are keys in toReplace are replaced
+    *
     * @param toReplace object to be replaced -> object that will replace it
     */
-  def replaceVars(toReplace: Map[VarType, StoredObject]): ModelVarStorage[VarType, StoredObject] = {
+  def replaceVars(toReplace: Map[VarType, StoredObject]): ModelVarStorage[VarType, StoredObject]
+
+  /**
+    * Create a new ModelVarStorage where all the objects in toReplace are replaced by `by`
+    *
+    * @param toReplace set of objects to replace
+    * @param by        object by which the items will be replaced
+    */
+  def replaceVars(toReplace: Set[VarType], by: StoredObject): ModelVarStorage[VarType, StoredObject]
+
+  /**
+    * Create a new ModelVarStorage where all the `toReplace` are replaced by `by`
+    *
+    * @param toReplace object to be replaced
+    * @param by        object to use instead
+    */
+  def replaceVars(toReplace: VarType, by: StoredObject): ModelVarStorage[VarType, StoredObject]
+
+  /**
+    * Make a "union" of vars domain replace1 and replace2 by making the vars link to newVal
+    *
+    * @param replace1 first domain to replace
+    * @param replace2 second domain to replace
+    * @param newVal   new domain
+    */
+  def union(replace1: VarType, replace2: VarType, newVal: StoredObject): ModelVarStorage[VarType, StoredObject]
+}
+
+class ModelVarStorageEmpty[VarType <: Var, StoredObject] extends ModelVarStorage[VarType, StoredObject] {
+  private def fail = throw new NoSuchElementException("This ModelVarStorage is always empty as this type of Var is not supported in this model")
+  override def get(v: VarType): StoredObject = fail
+  override def get(v: Int): StoredObject = fail
+  override def add(elem: StoredObject): (Int, ModelVarStorage[VarType, StoredObject]) = fail
+  override def replace(toReplace: Map[StoredObject, StoredObject]): ModelVarStorage[VarType, StoredObject] = fail
+  override def replace(toReplace: Set[StoredObject], by: StoredObject): ModelVarStorage[VarType, StoredObject] = fail
+  override def union(replace1: StoredObject, replace2: StoredObject, newVal: StoredObject): ModelVarStorage[VarType, StoredObject] = fail
+  override def replace(toReplace: StoredObject, by: StoredObject): ModelVarStorage[VarType, StoredObject] = fail
+  override def replaceVars(toReplace: Map[VarType, StoredObject]): ModelVarStorage[VarType, StoredObject] = fail
+  override def replaceVars(toReplace: Set[VarType], by: StoredObject): ModelVarStorage[VarType, StoredObject] = fail
+  override def replaceVars(toReplace: VarType, by: StoredObject): ModelVarStorage[VarType, StoredObject] = fail
+  override def union(replace1: VarType, replace2: VarType, newVal: StoredObject): ModelVarStorage[VarType, StoredObject] = fail
+}
+
+class ModelVarStorageImpl[VarType <: Var, StoredObject](val array: IndexedSeq[StoredObject]) extends ModelVarStorage[VarType, StoredObject] {
+  override def get(v: VarType): StoredObject = array(v.varid)
+
+  override def get(v: Int): StoredObject = array(v)
+
+  override def add(elem: StoredObject): (Int, ModelVarStorage[VarType, StoredObject]) = {
+    val newid = array.length
+    (newid, new ModelVarStorageImpl[VarType, StoredObject](array :+ elem))
+  }
+
+  override def replace(toReplace: Map[StoredObject, StoredObject]): ModelVarStorage[VarType, StoredObject] = {
+    new ModelVarStorageImpl(array.map(item => toReplace.getOrElse(item, item)))
+  }
+
+  override def replace(toReplace: Set[StoredObject], by: StoredObject): ModelVarStorage[VarType, StoredObject] = {
+    replace(toReplace.map(item => (item, by)).toMap)
+  }
+
+  override def union(replace1: StoredObject, replace2: StoredObject, newVal: StoredObject): ModelVarStorage[VarType, StoredObject] = {
+    replace(Set(replace1, replace2), newVal)
+  }
+
+  override def replace(toReplace: StoredObject, by: StoredObject): ModelVarStorage[VarType, StoredObject] = {
+    replace(Map((toReplace, by)))
+  }
+
+  override def replaceVars(toReplace: Map[VarType, StoredObject]): ModelVarStorage[VarType, StoredObject] = {
     val newMap = mutable.Map[StoredObject, StoredObject]()
     for((v, o) <- toReplace) {
       val curVal = get(v)
@@ -103,31 +170,15 @@ class ModelVarStorage[VarType <: Var, StoredObject](private val array: IndexedSe
     replace(newMap.toMap)
   }
 
-  /**
-    * Create a new ModelVarStorage where all the objects in toReplace are replaced by `by`
-    * @param toReplace set of objects to replace
-    * @param by object by which the items will be replaced
-    */
-  def replaceVars(toReplace: Set[VarType], by: StoredObject): ModelVarStorage[VarType, StoredObject] = {
+  override def replaceVars(toReplace: Set[VarType], by: StoredObject): ModelVarStorage[VarType, StoredObject] = {
     replaceVars(toReplace.map(item => (item, by)).toMap)
   }
 
-  /**
-    * Create a new ModelVarStorage where all the `toReplace` are replaced by `by`
-    * @param toReplace object to be replaced
-    * @param by object to use instead
-    */
-  def replaceVars(toReplace: VarType, by: StoredObject): ModelVarStorage[VarType, StoredObject] = {
+  override def replaceVars(toReplace: VarType, by: StoredObject): ModelVarStorage[VarType, StoredObject] = {
     replace(Map((get(toReplace), by)))
   }
 
-  /**
-    * Make a "union" of vars domain replace1 and replace2 by making the vars link to newVal
-    * @param replace1 first domain to replace
-    * @param replace2 second domain to replace
-    * @param newVal new domain
-    */
-  def union(replace1: VarType, replace2: VarType, newVal: StoredObject): ModelVarStorage[VarType, StoredObject] = {
+  override def union(replace1: VarType, replace2: VarType, newVal: StoredObject): ModelVarStorage[VarType, StoredObject] = {
     replaceVars(Set(replace1, replace2), newVal)
   }
 }

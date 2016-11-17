@@ -27,4 +27,9 @@ case class Xor(a: BoolExpression, b: BoolExpression) extends BoolExpression {
   override def mapSubexpressions(func: (Expression) => Expression): BoolExpression = {
     Xor(func(a).asInstanceOf[BoolExpression], func(b).asInstanceOf[BoolExpression])
   }
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }

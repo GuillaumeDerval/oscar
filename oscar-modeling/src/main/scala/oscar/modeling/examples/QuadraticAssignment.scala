@@ -2,7 +2,7 @@ package oscar.modeling.examples
 
 import oscar.modeling.algebra.integer.Sum
 import oscar.modeling.constraints.AllDifferent
-import oscar.modeling.models.CPModel
+import oscar.modeling.models.cp.CPModel
 import oscar.modeling.solvers.cp.{Branchings, CPApp}
 import oscar.modeling.vars.IntVar
 import oscar.util._

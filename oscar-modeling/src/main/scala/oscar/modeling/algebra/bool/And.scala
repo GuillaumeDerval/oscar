@@ -27,6 +27,11 @@ case class And(a: Array[BoolExpression]) extends BoolExpression {
   override def mapSubexpressions(func: (Expression) => Expression): BoolExpression = {
     new And(a.map(func(_).asInstanceOf[BoolExpression]))
   }
+
+  /**
+    * True if the variable is bound
+    */
+  override def isBound: Boolean = subexpressions().forall(_.isBound)
 }
 
 object And {
