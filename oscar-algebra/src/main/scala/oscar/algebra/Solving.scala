@@ -2,7 +2,6 @@ package oscar.algebra
 
 import java.nio.file.Path
 
-
 /**
  * Factory class for creating [[SolverRun]]s that solves [[Model]]s with a specific solver.
  *
@@ -71,12 +70,24 @@ abstract class SolverRun[O  >: Constant <: ExpressionDegree, C <: ExpressionDegr
   def release(): Unit
 
   /**
+   * Updates the objective of the [[Model]]. The [[Model]] passed to initialize the [[SolverRun]] will ```not``` be modified.
+   * @param obj the [[Objective]] to use for the next optimization.
+   */
+  def setObjective(obj: Objective[O,V]): Unit
+
+  /**
    * Updates the lower bound a variable. The [[Model]] passed to initialize the [[SolverRun]] will ```not``` be modified.
    * @param v the variable whose lower bound is updated
    * @param d the new lower bound
    */
   def setLowerBound(v: Var[V], d: V): Unit
 
+  /**
+   * DSL to write `run.lowerBound(v) = newValue`
+   */
+  object lowerBound {
+    def update(v: Var[V], d: V) = setLowerBound(v,d)
+  }
 
   /**
    * Updates the upper bound a variable. The [[Model]] passed to initialize the [[SolverRun]] will ```not``` be modified.
@@ -86,10 +97,11 @@ abstract class SolverRun[O  >: Constant <: ExpressionDegree, C <: ExpressionDegr
   def setUpperBound(v: Var[V], d: V): Unit
 
   /**
-   * Updates the objective of the [[Model]]. The [[Model]] passed to initialize the [[SolverRun]] will ```not``` be modified.
-   * @param obj the [[Objective]] to use for the next optimization.
+   * DSL to write `run.upperBound(v) = newValue`
    */
-  def setObjective(obj: Objective[O,V]): Unit
+  object upperBound {
+    def update(v: Var[V], d: V) = setUpperBound(v,d)
+  }
 
   /**
    * Relaxes a variable to be continuous. The [[Model]] passed to initialize the [[SolverRun]] will ```not``` be modified.
@@ -104,18 +116,31 @@ abstract class SolverRun[O  >: Constant <: ExpressionDegree, C <: ExpressionDegr
   def setInteger(v: Var[Double])
 
   /**
-   * DSL to write `run.lowerBound(v) = newValue`
+   * Returns a [[Seq]] containing the extensions of the supported model export formats
+   *
+   * For example;
+   *   if only LP is supported, returns `Seq("lp")`
+   *   if LP and MPS are supported, returns `Seq("lp", "mps")`
    */
-  object lowerBound {
-    def update(v: Var[V], d: V) = setLowerBound(v,d)
+  def supportedModelExportFormats: Seq[String]
+
+  /*
+   * Returns a String with the extension of the given [[java.nio.file.Path]]
+   */
+  protected def getExtension(filePath: java.nio.file.Path): String = {
+    val name = filePath.getFileName.toString
+    name.substring(name.lastIndexOf('.')+1, name.length)
   }
 
   /**
-   * DSL to write `run.upperBound(v) = newValue`
+   * Saves the problem to the file at the given path in the given format.
+   *
+   * The format is defined by the extension of filePath:
+   *  - for LP  the file should end with .lp
+   *  - for MPS the file should end with .mps
    */
-  object upperBound {
-    def update(v: Var[V], d: V) = setUpperBound(v,d)
-  }
+  def exportModel(filePath: Path): Unit
+  def exportModel(filePath: String): Unit = exportModel(java.nio.file.Paths.get(filePath))
 }
 
 /**
