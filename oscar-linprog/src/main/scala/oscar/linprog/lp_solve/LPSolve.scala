@@ -121,7 +121,7 @@ class LPSolveRun(config: Option[Path] = None)(private val model: Model[Linear, L
 
   /* --- Solve --- */
 
-  override def solve: ModelStatus[Linear, Linear, Double] = {
+  override def solve: SolveResult[Linear, Linear, Double] = {
     aborted = false
 
     rawSolver.solve match {
