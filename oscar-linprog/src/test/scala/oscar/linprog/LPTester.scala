@@ -23,7 +23,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     maximize(-x * 2.0 + y * 5.0)
     subjectTo("E" |: x + y <= 200.0)
 
-    model.solve.onSolution { solution =>
+    model.solve.checkOptimalSolution { solution =>
       solution(x) shouldBe moreOrLess(100)
       solution(y) shouldBe moreOrLess(100)
 
@@ -40,7 +40,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     minimize(-2 * x + 5 * y)
     subjectTo("E" |: x + y >= 200.0)
 
-    model.solve.onSolution { solution =>
+    model.solve.checkOptimalSolution { solution =>
       solution(x) shouldBe moreOrLess(150)
       solution(y) shouldBe moreOrLess(80)
 
@@ -59,7 +59,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     subjectTo("E" |: x + y <= 75.0)
     subjectTo("E" |: x + z <= 75.0)
 
-    model.solve.onSolution { solution =>
+    model.solve.checkOptimalSolution { solution =>
       solution(x) shouldBe moreOrLess(0)
       solution(y) shouldBe moreOrLess(75.0)
       solution(z) shouldBe moreOrLess(75.0)
@@ -79,7 +79,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     subjectTo("E" |: x + y <= 75.0)
     subjectTo("E" |: z <= 75.0)
 
-    model.solve.onSolution { solution =>
+    model.solve.checkOptimalSolution { solution =>
       solution(x) shouldBe moreOrLess(75.0)
       solution(y) shouldBe moreOrLess(0.0)
       solution(z) shouldBe moreOrLess(75.0)
@@ -99,7 +99,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     subjectTo("E" |: x + 0.5 * y + 0.5 * y <= 75.0)
     subjectTo("E" |: x + z <= 75.0)
 
-    model.solve.onSolution { solution =>
+    model.solve.checkOptimalSolution { solution =>
       solution(x) shouldBe moreOrLess(0)
       solution(y) shouldBe moreOrLess(75.0)
       solution(z) shouldBe moreOrLess(75.0)
@@ -120,7 +120,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     subjectTo("E" |: x + z <= 75.0)
     subjectTo("E" |: x >= 0)
 
-    model.solve.onSolution { solution =>
+    model.solve.checkOptimalSolution { solution =>
       solution(x) shouldBe moreOrLess(75.0)
       solution(y) shouldBe moreOrLess(0)
       solution(z) shouldBe moreOrLess(0)
@@ -164,7 +164,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
 
     val run = solverInterface.run(model)
 
-    run.solve.onSolution { solution =>
+    run.solve.checkOptimalSolution { solution =>
       solution(x) shouldBe moreOrLess(100)
       solution(y) shouldBe moreOrLess(100)
 
@@ -175,7 +175,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     run.lowerBound(x) = 0
     run.upperBound(y) = 250
 
-    run.solve.onSolution { solution =>
+    run.solve.checkOptimalSolution { solution =>
       solution(x) shouldBe moreOrLess(0)
       solution(y) shouldBe moreOrLess(200.0)
 
@@ -198,7 +198,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
 
     val run = solverInterface.run(model)
 
-    run.solve.onSolution { solution =>
+    run.solve.checkOptimalSolution { solution =>
       solution(x) shouldBe moreOrLess(100)
       solution(y) shouldBe moreOrLess(100)
 
@@ -209,7 +209,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     run.setObjective(Minimize(obj))
 
     // Model has changed
-    run.solve.onSolution { solution =>
+    run.solve.checkOptimalSolution { solution =>
       solution(x) shouldBe moreOrLess(120)
       solution(y) shouldBe moreOrLess(80)
 
@@ -235,7 +235,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
 
     subjectTo("cstr0" |: x + y <= 60)
 
-    model.solve.onSolution { solution =>
+    model.solve.checkOptimalSolution { solution =>
       solution(x) shouldBe moreOrLess(0)
       solution(y) shouldBe moreOrLess(60)
       solution(z) shouldBe moreOrLess(75.0)
@@ -256,7 +256,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     subjectTo("cstr0" |: x + y <= 75.0)
     subjectTo("cstr1" |: x + z <= 75.0)
 
-    model.solve.onSolution { solution =>
+    model.solve.checkOptimalSolution { solution =>
       solution(x) shouldBe moreOrLess(0)
       solution(y) shouldBe moreOrLess(75.0)
       solution(z) shouldBe moreOrLess(75.0)
@@ -268,7 +268,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     //solver.removeLinearConstraint("cstr0")
     subjectTo("cstr0" |: x + y <= 60)
 
-    model.solve.onSolution { solution =>
+    model.solve.checkOptimalSolution { solution =>
       solution(x) shouldBe moreOrLess(0)
       solution(y) shouldBe moreOrLess(60)
       solution(z) shouldBe moreOrLess(75.0)
@@ -292,7 +292,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
 
     //    solver.removeVariable("w")
 
-    model.solve.onSolution { solution =>
+    model.solve.checkOptimalSolution { solution =>
       solution(x) shouldBe moreOrLess(0)
       solution(y) shouldBe moreOrLess(75.0)
       solution(z) shouldBe moreOrLess(75.0)
@@ -313,7 +313,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     subjectTo("cstr0" |: x + y <= 75.0)
     subjectTo("cstr1" |: x + z <= 75.0)
 
-    model.solve.onSolution { solution =>
+    model.solve.checkOptimalSolution { solution =>
       solution(x) shouldBe moreOrLess(0)
       solution(y) shouldBe moreOrLess(75.0)
       solution(z) shouldBe moreOrLess(75.0)
@@ -323,7 +323,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
 
     //   solver.removeVariable("w")
 
-    model.solve.onSolution { solution =>
+    model.solve.checkOptimalSolution { solution =>
       solution(x) shouldBe moreOrLess(0)
       solution(y) shouldBe moreOrLess(75.0)
       solution(z) shouldBe moreOrLess(75.0)

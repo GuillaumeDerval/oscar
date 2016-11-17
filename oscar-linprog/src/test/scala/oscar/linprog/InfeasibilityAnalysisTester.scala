@@ -1,13 +1,8 @@
 package oscar.linprog
 
-import org.junit.runner.RunWith
-import org.scalactic.TripleEqualsSupport.Spread
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.{FunSuite, Matchers, Tag}
+import org.scalatest.{FunSuite, Tag}
 import oscar.algebra._
 
-
-@RunWith(classOf[JUnitRunner])
 class InfeasibilityAnalysisTests extends LinearMathSolverTests{
   override def testSuite(interface: Option[SolverInterface[Linear,Linear,Double]], solverName: String): FunSuite = {
     new InfeasibilityAnalysisTester(interface, solverName)

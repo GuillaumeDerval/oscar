@@ -2,7 +2,7 @@ package oscar.linprog
 
 import org.scalactic.TripleEqualsSupport.Spread
 import org.scalatest._
-import oscar.algebra.{Linear, Model, SolverInterface}
+import oscar.algebra.{Linear, Model, Optimal, Solution, SolveResult, SolveResultWithSolution, SolverInterface}
 import oscar.linprog.lp_solve.LPSolve
 
 import scala.collection.immutable.IndexedSeq
@@ -42,5 +42,17 @@ abstract class LinearMathSolverTester(interfaceOpt: Option[SolverInterface[Linea
   override def test(testName: String, testTags: Tag*)(testFun: => Unit): Unit = interfaceOpt match {
     case Some(i) => super.test(testName)(testFun)
     case None    => ignore(testName)(testFun)
+  }
+
+  implicit class ExtendedSolveResult[O <: oscar.algebra.ExpressionDegree, C <: oscar.algebra.ExpressionDegree, V](val solveResult: SolveResult[O,C,V]) {
+    def checkSolution(testFun: Solution[V] => Unit): Unit = solveResult match {
+      case withSol: SolveResultWithSolution[O,C,V] => testFun(withSol.solution)
+      case _ => fail("The SolveResult should have a solution but was " + solveResult)
+    }
+
+    def checkOptimalSolution(testFun: Solution[V] => Unit): Unit = solveResult match {
+      case optimal: Optimal[O,C,V] => testFun(optimal.solution)
+      case _ => fail("The SolveResult should be Optimal but was " + solveResult)
+    }
   }
 }
