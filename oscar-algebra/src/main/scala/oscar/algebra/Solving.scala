@@ -161,7 +161,7 @@ abstract class SolveResult[O <: ExpressionDegree, C <: ExpressionDegree, V: Nume
   /**
    * When this contains a [[Solution]], applies the provided function to that [[Solution]].
    */
-  def onSolution[U](f: Solution[V] => U): Unit
+  def onSolution[U](f: Solution[V] => U): Option[U]
 }
 
 /**
@@ -174,12 +174,12 @@ abstract class SolveResult[O <: ExpressionDegree, C <: ExpressionDegree, V: Nume
 abstract class SolveResultWithSolution[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric] extends SolveResult[O,C,V] {
   val solution: Solution[V]
   override def hasSolution: Boolean = true
-  override def onSolution[U](f: Solution[V] => U): Unit = f(solution)
+  override def onSolution[U](f: Solution[V] => U): Option[U] = Some(f(solution))
 }
 
 abstract class SolveResultWithNoSolution[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric] extends SolveResult[O,C,V] {
   override def hasSolution: Boolean = false
-  override def onSolution[U](f: Solution[V] => U): Unit = { /* no solution to provide */ }
+  override def onSolution[U](f: Solution[V] => U): Option[U] = { /* no solution to provide */ None }
 }
 
 case class NoSolutionFoundException[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](modelStatus: SolveResultWithNoSolution[O,C,V]) extends Exception(s"No solution found to the problem, end status is $modelStatus")
