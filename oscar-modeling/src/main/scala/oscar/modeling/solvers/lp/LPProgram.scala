@@ -3,15 +3,19 @@ package oscar.modeling.solvers.lp
 import oscar.linprog.enums.EndStatus
 import oscar.modeling.models.lp.LPModel
 import oscar.modeling.models.{ModelDeclaration, ModelDeclarationProxy, UninstantiatedModel}
+import oscar.modeling.solvers.lp.LPProgram.{withLPSolve, withWhichSolver}
 import oscar.modeling.solvers.{Solve, SolveHolder}
 
 class LPProgram[RetVal](modelDeclaration: ModelDeclaration = new ModelDeclaration()) extends SolveHolder[RetVal](modelDeclaration) with ModelDeclarationProxy {
   implicit val program = this
   override implicit val md = modelDeclaration
 
-  def solve(): (EndStatus, Option[RetVal]) = {
+  def solve(withSolver: withWhichSolver = withLPSolve()): (EndStatus, Option[RetVal]) = {
     val umodel = md.getCurrentModel.asInstanceOf[UninstantiatedModel]
-    val model = LPModel.lpsolve(umodel)
+    val model = withSolver match {
+      case withLPSolve => LPModel.lpsolve(umodel)
+      case withGurobi => LPModel.gurobi(umodel)
+    }
     md.apply(model){
       val endStatus = model.solver.solve
 
@@ -22,4 +26,10 @@ class LPProgram[RetVal](modelDeclaration: ModelDeclaration = new ModelDeclaratio
       (endStatus, solution)
     }
   }
+}
+
+object LPProgram {
+  abstract class withWhichSolver
+  case class withLPSolve() extends withWhichSolver
+  case class withGurobi() extends withWhichSolver
 }

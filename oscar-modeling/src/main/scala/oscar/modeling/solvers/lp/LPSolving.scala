@@ -19,6 +19,9 @@ trait LPSolving extends SolverAppModulable {
 class LPAppModule(app: SolverApp[_], modelDeclaration: ModelDeclaration) extends SolverAppModule {
   class SequentialCPSubcommand extends Subcommand("lp") {
     descr("Solves the model using a LP solver.")
+    val lpsolve = toggle(name="lpsolve", descrYes="Solve with LPSolve. This is the default", default=Some(false))
+    val gurobi = toggle(name="gurobi", descrYes="Solve with gurobi", default=Some(false))
+    mutuallyExclusive(lpsolve, gurobi)
   }
   override val subcommand = new SequentialCPSubcommand
 
@@ -28,7 +31,9 @@ class LPAppModule(app: SolverApp[_], modelDeclaration: ModelDeclaration) extends
     if(onSolution == null)
       throw new RuntimeException("No onSolution defined in the SolverApp or in the ModelDeclaration")
     pg.onSolution{onSolution()}
-    val result = pg.solve()
+
+    val withSolver = if(subcommand.gurobi()) LPProgram.withGurobi() else LPProgram.withLPSolve()
+    val result = pg.solve(withSolver)
     result._2.toList
   }
 }
