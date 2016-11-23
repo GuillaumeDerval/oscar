@@ -8,6 +8,8 @@ import scala.collection.mutable.ListBuffer
 object ComputeTimeTaken {
   val results: ListBuffer[(String, String, Double)] = ListBuffer()
 
+  def reset() = results.clear()
+
   def computeTimeTaken[T](name: String, category: String = "")(v: => T): T = {
     val t0 = getClockTime
     val r: T = v

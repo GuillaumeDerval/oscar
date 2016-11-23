@@ -72,7 +72,10 @@ object DoSubproblemSerializer {
     * Add a model declaration for an actor to the registered list. Allow IntVar/BoolVar to be correctly unserialized
     * @param modelDeclaration
     */
-  def add(modelDeclaration: ModelDeclaration): Unit = clientModels += ((modelDeclaration.uuid, modelDeclaration))
+  def add(modelDeclaration: ModelDeclaration): Unit = {
+    println("Adding "+modelDeclaration.uuid)
+    clientModels += ((modelDeclaration.uuid, modelDeclaration))
+  }
 
   /**
     * Allow to spare memory by allowing the GC to remove the ModelDeclaration now unused
@@ -86,7 +89,7 @@ object DoSubproblemSerializer {
       }
   }
 
-  private def get(m: java.util.UUID): ModelDeclaration = clientModels.getOrElse(m, throw new Exception("Model not registered!"))
+  private def get(m: java.util.UUID): ModelDeclaration = clientModels.getOrElse(m, throw new Exception("Model "+ m +"not registered!"))
 }
 
 

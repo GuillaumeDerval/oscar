@@ -58,11 +58,11 @@ class CPAppCompleteConfig(arguments: Seq[String]) extends ScallopConf(arguments)
 /**
   * An app for DistributedCPProgram that provides a simple CLI for any model
   *
-  * @param md
+  * @param modeld
   * @tparam RetVal
   */
-abstract class CPApp[RetVal](md: ModelDeclaration with DecomposedCPSolve[RetVal] = new ModelDeclaration() with DecomposedCPSolve[RetVal])
-  extends CPProgram[RetVal](md) with App {
+abstract class CPApp[RetVal](modeld: ModelDeclaration with DecomposedCPSolve[RetVal] = new ModelDeclaration() with DecomposedCPSolve[RetVal])
+  extends CPProgram[RetVal](modeld) with App {
 
   lazy val config = new CPAppConfig()             //laziness ensures that if the variable is overridden...
 
@@ -92,7 +92,7 @@ abstract class CPApp[RetVal](md: ModelDeclaration with DecomposedCPSolve[RetVal]
 
 
   def solve(nSols: Int = config.nSols.get.get, maxTime: Int = config.timeout.get.get): (SearchStatistics, List[RetVal]) =
-    solve(modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], nSols, maxTime)
+    solve(md.getCurrentModel.asInstanceOf[UninstantiatedModel], nSols, maxTime)
   def solve(model: UninstantiatedModel): (SearchStatistics, List[RetVal])  = solve(model, config.nSols.get.get, config.timeout.get.get)
   def solve(model: UninstantiatedModel, nSols: Int, maxTime: Int): (SearchStatistics, List[RetVal]) = {
     if(completeConfig.master.remoteList.isDefined || completeConfig.master.remoteFile.isDefined) {

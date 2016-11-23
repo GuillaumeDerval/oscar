@@ -6,6 +6,7 @@ import oscar.modeling.vars.domainstorage.DomainStorage
 
 class NoFloatDomainStorage extends DomainStorage with FloatVarImplem with FloatVarLike
 {
+  fail
   def fail = throw new RuntimeException("This is a fake storage, and should'nt be instantiated")
   override def context = fail
   override def isBound: Boolean = fail

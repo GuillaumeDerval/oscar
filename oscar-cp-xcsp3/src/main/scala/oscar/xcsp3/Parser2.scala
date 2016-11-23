@@ -776,7 +776,7 @@ object Parser2 extends CPApp[String] with App {
   }
 
   println("<--")
-  val (vars, solutionGenerator) = XCSP3Parser2.parse(this.modelDeclaration, config.instance.get.get)
+  val (vars, solutionGenerator) = XCSP3Parser2.parse(this.md, config.instance.get.get)
 
   setSearch(Branchings.binaryFirstFail(vars.toSeq))
   onSolution {
@@ -842,10 +842,10 @@ object RunEverything extends CPApp[String] with App {
 
   val results = scala.util.Random.shuffle(inputs).map(tuple => {
     val (instanceName, fileName, instancePath) = tuple
-    modelDeclaration.apply(modelDeclaration.getCurrentModel) {
+    md.apply(md.getCurrentModel) {
       try {
         println("<!--" + instancePath)
-        val (vars, solutionGenerator) = XCSP3Parser2.parse(this.modelDeclaration, instancePath)
+        val (vars, solutionGenerator) = XCSP3Parser2.parse(md, instancePath)
 
         setSearch(Branchings.binaryFirstFail(vars.toSeq))
         onSolution {

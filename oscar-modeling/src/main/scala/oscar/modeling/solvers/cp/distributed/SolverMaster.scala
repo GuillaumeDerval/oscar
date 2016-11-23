@@ -17,7 +17,7 @@ import oscar.modeling.solvers.cp._
   * @param outputQueue
   * @tparam RetVal
   */
-class SolverMaster[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSolve[RetVal],
+class SolverMaster[RetVal](modelDeclaration: ModelDeclaration,
                            subproblemQueue: LinkedBlockingQueue[(Int, List[Constraint])],
                            outputQueue: LinkedBlockingQueue[SolvingMessage],
                            var maxSols: Int, maxTime: Int) extends Actor {

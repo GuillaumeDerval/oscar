@@ -3,7 +3,7 @@ package oscar.modeling.algebra
 /**
   * An expression, that can be floating, integer or boolean
   */
-trait Expression {
+trait Expression extends Serializable {
   /**
     * Returns an iterable that contains all sub-expressions of this expression
     */

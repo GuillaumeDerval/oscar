@@ -1,15 +1,9 @@
 package oscar.modeling.solvers.cp
 
-import java.util.concurrent.LinkedBlockingQueue
-
 import oscar.algo.search.Branching
-import oscar.modeling.constraints.Constraint
 import oscar.modeling.misc.{SPSearchStatistics, SearchStatistics}
-import oscar.modeling.models.operators.ModelOperator
-import oscar.modeling.models.{Model, ModelDeclaration}
+import oscar.modeling.models.{ModelDeclaration, ModelDeclarationProxy}
 import Branchings._
-import oscar.modeling.solvers.cp.distributed._
-import oscar.modeling.vars.IntVar
 
 import scala.collection.mutable.ListBuffer
 import scala.spores.NullarySpore
@@ -158,7 +152,7 @@ class StatisticsWatcher[RetVal] extends Watcher[RetVal] {
   }
 
   override def endedSubproblem(spid: Int, timeTaken: Double, searchStats: SPSearchStatistics): Unit = {
-    currentStatistics = new SearchStatistics(nNodes = currentStatistics.nNodes+searchStats.nNodes,
+    currentStatistics = SearchStatistics(nNodes = currentStatistics.nNodes+searchStats.nNodes,
       nFails = currentStatistics.nFails+searchStats.nFails,
       time = currentStatistics.time + searchStats.time,
       completed = false,
@@ -173,61 +167,17 @@ class StatisticsWatcher[RetVal] extends Watcher[RetVal] {
 /**
   * Proxy most functions to an underlying model
   *
-  * @param md
-  * @tparam CPModelType
-  * @tparam Retval
+  * @param modelDeclaration the model to proxy to
   */
-class ModelProxy[CPModelType <: CPSolve[Retval], Retval](md: ModelDeclaration with CPModelType) {
-  implicit val modelDeclaration: ModelDeclaration with CPModelType = md
+class CPModelProxy[CPModelType <: CPSolve[Retval], Retval](modelDeclaration: ModelDeclaration with CPModelType) extends ModelDeclarationProxy {
+  implicit val md: ModelDeclaration = modelDeclaration
 
-  def getCurrentModel = modelDeclaration.getCurrentModel
+  def getSearch: BranchingInstantiator = modelDeclaration.getSearch
+  def setSearch(b: Branching): Unit = modelDeclaration.setSearch(b)
+  def setSearch(b: => Seq[Alternative]): Unit = modelDeclaration.setSearch(b)
+  def setSearch(b: BranchingInstantiator): Unit = modelDeclaration.setSearch(b)
 
-  def getSearch: BranchingInstantiator = md.getSearch
-  def setSearch(b: Branching): Unit = md.setSearch(b)
-  def setSearch(b: => Seq[Alternative]): Unit = md.setSearch(b)
-  def setSearch(b: BranchingInstantiator): Unit = md.setSearch(b)
-
-  def onSolution = md.onSolution
-  def onSolution(s: => Retval): Unit = md.onSolution(s)
-  def onSolution(s: NullarySpore[Retval]): Unit = md.onSolution(s())
-
-  /**
-    * Post a new constraint
-    *
-    * @param constraint the constraint to post
-    */
-  def post(constraint: Constraint): Unit = modelDeclaration.post(constraint)
-
-  /**
-    * Add a new constraint to the model
-    *
-    * @param constraint the constraint to add
-    */
-  def add(constraint: Constraint): Unit = modelDeclaration.add(constraint)
-
-  /**
-    * Apply a model operator
-    *
-    * @param operator operator to apply
-    */
-  def apply[OutputType <: Model](operator: ModelOperator[OutputType]): Unit = modelDeclaration(operator)
-
-  /**
-    * Minimize on variable v
-    *
-    * @param v variable to minimize
-    */
-  def minimize(v: IntVar) = modelDeclaration.minimize(v)
-
-  /**
-    * Maximize on variable v
-    *
-    * @param v variable to maximize
-    */
-  def maximize(v: IntVar) = modelDeclaration.maximize(v)
-
-  /**
-    * Remove the optimisation method
-    */
-  def removeOptimization() = modelDeclaration.removeOptimization()
+  def onSolution = modelDeclaration.onSolution
+  def onSolution(s: => Retval): Unit = modelDeclaration.onSolution(s)
+  def onSolution(s: NullarySpore[Retval]): Unit = modelDeclaration.onSolution(s())
 }

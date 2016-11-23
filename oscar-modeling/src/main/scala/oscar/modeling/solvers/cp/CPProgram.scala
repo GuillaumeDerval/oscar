@@ -7,12 +7,14 @@ import akka.pattern.ask
 import akka.remote.RemoteScope
 import akka.util.Timeout
 import com.typesafe.config.Config
-import oscar.algo.search.DFSearch
+import oscar.algo.search.{Branching, DFSearch}
 import oscar.modeling.constraints.Constraint
 import oscar.modeling.misc.ComputeTimeTaken._
-import oscar.modeling.misc.{SPSearchStatistics, SearchStatistics}
+import oscar.modeling.misc.{ComputeTimeTaken, SearchStatistics}
 import oscar.modeling.models._
 import oscar.modeling.models.operators.CPInstantiate
+import oscar.modeling.solvers.cp.Branchings.{Alternative, BranchingInstantiator}
+import oscar.modeling.solvers.SolveHolder
 import oscar.modeling.solvers.cp.decompositions.DecompositionStrategy
 import oscar.modeling.solvers.cp.distributed._
 
@@ -24,12 +26,13 @@ import scala.concurrent.Await
 /**
   * A CPProgram that can distribute works among a cluster
   *
-  * @param md
+  * @param modelDeclaration
   * @tparam RetVal
   */
-class CPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[RetVal] = new ModelDeclaration() with DecomposedCPSolve[RetVal])
-  extends ModelProxy[DecomposedCPSolve[RetVal], RetVal](md) {
+class CPProgram[RetVal](modelDeclaration: ModelDeclaration = new ModelDeclaration())
+  extends SolveHolder[RetVal](modelDeclaration) with CPSearchHolder with CPDecompositionHolder with ModelDeclarationProxy {
   implicit val program = this
+  override implicit val md = modelDeclaration
 
   protected val registeredWatchers: scala.collection.mutable.ListBuffer[(
       List[SubProblem] => Watcher[RetVal],
@@ -47,9 +50,12 @@ class CPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[RetVal] = ne
     registeredWatchers += ((creator, initiator))
   }
 
-  def setDecompositionStrategy(d: DecompositionStrategy): Unit = md.setDecompositionStrategy(d)
-
-  def getDecompositionStrategy: DecompositionStrategy = md.getDecompositionStrategy
+  def getSearch: BranchingInstantiator = getCPSearch
+  def setSearch(b: Branching): Unit = setCPSearch(b)
+  def setSearch(b: => Seq[Alternative]): Unit = setCPSearch(b)
+  def setSearch(b: BranchingInstantiator): Unit = setCPSearch(b)
+  def setDecompositionStrategy(d: DecompositionStrategy): Unit = setCPDecompositionStrategy(d)
+  def getDecompositionStrategy: DecompositionStrategy = getCPDecompositionStrategy
 
   /**
     * Starts the CPProgram locally on threadCount threads, on the current model
@@ -58,7 +64,7 @@ class CPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[RetVal] = ne
     * @return
     */
   def solveParallel(threadCount: Int = Runtime.getRuntime.availableProcessors(), sppw: Int = 100, nSols: Int = 0, maxTime: Int = 0): (SearchStatistics, List[RetVal]) = {
-    solveParallel(modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], threadCount, sppw, nSols, maxTime)
+    solveParallel(md.getCurrentModel.asInstanceOf[UninstantiatedModel], threadCount, sppw, nSols, maxTime)
   }
 
   /**
@@ -71,7 +77,7 @@ class CPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[RetVal] = ne
   def solveParallel(model: UninstantiatedModel, threadCount: Int, sppw: Int, nSols: Int, maxTime: Int): (SearchStatistics, List[RetVal]) = {
     solveDistributed(model, sppw*threadCount,
       AkkaConfigCreator.local(),
-      (system, masterActor) => List.fill(threadCount)(system.actorOf(SolverActor.props[RetVal](md, masterActor))),
+      (system, masterActor) => List.fill(threadCount)(system.actorOf(SolverActor.props[RetVal](md, onSolution, getSearch, masterActor))),
       nSols, maxTime
     )
   }
@@ -84,7 +90,7 @@ class CPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[RetVal] = ne
     * @return
     */
   def solveDistributed(remoteHosts: List[(String, Int)], localhost: (String, Int), sppw: Int = 100, nSols: Int = 0, maxTime: Int = 0): (SearchStatistics, List[RetVal]) = {
-    solveDistributed(modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], remoteHosts, localhost, sppw, nSols, maxTime)
+    solveDistributed(md.getCurrentModel.asInstanceOf[UninstantiatedModel], remoteHosts, localhost, sppw, nSols, maxTime)
   }
 
   /**
@@ -104,7 +110,7 @@ class CPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[RetVal] = ne
         remoteHosts.map(t => {
           val (hostnameL, portL) = t
           val address = Address("akka.tcp", "solving", hostnameL, portL)
-          system.actorOf(SolverActor.props[RetVal](md, masterActor).withDeploy(Deploy(scope = RemoteScope(address))))
+          system.actorOf(SolverActor.props[RetVal](md, onSolution, getSearch, masterActor).withDeploy(Deploy(scope = RemoteScope(address))))
         })
       },
       nSols, maxTime
@@ -141,7 +147,7 @@ class CPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[RetVal] = ne
 
     val cpModel = CPInstantiate(model)
     val solutions = mutable.ArrayBuffer[RetVal]()
-    modelDeclaration.apply(cpModel) {
+    md.apply(cpModel) {
       cpModel.cpSolver.onSolution {solutions += onSolution()}
       cpModel.cpSolver.search(getSearch(cpModel))
       val result = cpModel.cpSolver.startSubjectTo(stopCondition, Int.MaxValue, null)()
@@ -159,7 +165,8 @@ class CPProgram[RetVal](md: ModelDeclaration with DecomposedCPSolve[RetVal] = ne
     * @return
     */
   def solveDistributed(model: UninstantiatedModel, subproblemCount: Int, systemConfig: Config, createSolvers: (ActorSystem, ActorRef) => List[ActorRef], nSols: Int, maxTime: Int): (SearchStatistics, List[RetVal]) = {
-    modelDeclaration.apply(model) {
+    md.apply(model) {
+      ComputeTimeTaken.reset()
       val subproblems: List[SubProblem] = computeTimeTaken("decomposition", "solving") {
         getDecompositionStrategy.decompose(model, subproblemCount)
       }

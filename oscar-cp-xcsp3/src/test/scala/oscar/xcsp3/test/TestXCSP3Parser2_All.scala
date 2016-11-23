@@ -17,7 +17,7 @@ class TestXCSP3Parser2_All extends TestSuite {
 
   def isValid(instancePath: String, nSol: Int = 1, useStaticOrdering: Boolean = false): Boolean = {
     val cpProgram = new CPProgram[String]()
-    val (vars, solutionGenerator) =  XCSP3Parser2.parse(cpProgram.modelDeclaration, instancePath)
+    val (vars, solutionGenerator) =  XCSP3Parser2.parse(cpProgram.md, instancePath)
 
     val v = vars.toArray
     if(useStaticOrdering)
@@ -36,7 +36,7 @@ class TestXCSP3Parser2_All extends TestSuite {
 
     cpProgram.setDecompositionStrategy(new CartProdRefinement(vars, Branchings.binaryFirstFail(vars.toSeq)))
 
-    val (stats, solutions) = cpProgram.solveParallel(cpProgram.modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], threadCount = 1, sppw = 1, nSols = 1, maxTime = 30000)
+    val (stats, solutions) = cpProgram.solveParallel(cpProgram.md.getCurrentModel.asInstanceOf[UninstantiatedModel], threadCount = 1, sppw = 1, nSols = 1, maxTime = 30000)
 
     assert(solutions.nonEmpty) // feasible problem
     solutions.forall(sol => testSolution(instancePath, sol))

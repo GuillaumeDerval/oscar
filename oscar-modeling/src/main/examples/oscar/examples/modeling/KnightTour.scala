@@ -1,11 +1,11 @@
-package oscar.modeling.examples
+package oscar.examples.modeling
 
 import oscar.modeling.algebra.bool.{And, Or}
 import oscar.modeling.algebra.integer.{Abs, IntExpression}
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.modeling.solvers.cp.{Branchings, CPApp}
-import oscar.modeling.vars.{FloatVar, IntVar}
+import oscar.modeling.vars.IntVar
 
 object KnightTour extends CPApp[String] with App {
   val x = Array.fill(36)(IntVar(0,36))

@@ -13,14 +13,13 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-package oscar.modeling.examples
+package oscar.examples.modeling
 
-import oscar.modeling.models.ModelDeclaration
-import oscar.modeling.solvers.Solve
-import oscar.modeling.solvers.lp.LPProgram
+import oscar.modeling.solvers.SolverApp
+import oscar.modeling.solvers.lp.LPSolving
 import oscar.modeling.vars.FloatVar
 
-class DemoLP extends ModelDeclaration with Solve[Unit] {
+object DemoLP extends SolverApp[Unit] with LPSolving {
 
   val x0 = FloatVar(0, 40, "x0")
   val x1 = FloatVar(0, 1000, "x1")
@@ -40,8 +39,6 @@ class DemoLP extends ModelDeclaration with Solve[Unit] {
     println("x3 = "+x3.value().toString)
     println("obj = "+obj.evaluate())
   }
-}
 
-object DemoLP extends LPProgram[Unit](new DemoLP) with App {
-  println(solve())
+  solve()
 }

@@ -1,21 +1,21 @@
-package oscar.modeling.examples
+package oscar.examples.modeling
 
 import oscar.modeling.constraints.{MinCircuit, MinCircuitWeak}
 import oscar.modeling.models.UninstantiatedModel
 import oscar.modeling.models.cp.CPModel
-import oscar.util._
-import oscar.modeling.solvers.cp.{Branchings, CPApp}
 import oscar.modeling.solvers.cp.decompositions.{AnotherModelDecomposition, CartProdRefinement}
+import oscar.modeling.solvers.cp.{Branchings, CPApp}
 import oscar.modeling.vars.IntVar
+import oscar.util._
 
-import scala.spores._
 import scala.io.Source
+import scala.spores._
 
 /**
   * Example of ATSP, copied from the original one from OscaR-lib.
   * GNU GPL, OscaR Authors
   */
-object ATSP extends CPApp[Int] with App {
+object ATSP extends CPApp[Int] {
   var lines = Source.fromFile("ftv70.atsp").getLines.toArray
   lines = lines.take(lines.size-1) // drop EOF
   val n = lines(3).split(":")(1).trim().toInt
@@ -56,7 +56,7 @@ object ATSP extends CPApp[Int] with App {
 
   setSearch(branching)
   setDecompositionStrategy(new AnotherModelDecomposition(modelWithWeakMinCircuit, new CartProdRefinement(succ, branching)))
-  onSolution(spore {
+  onSolutionF(spore {
     val x_ = obj
     () => {
       x_.max

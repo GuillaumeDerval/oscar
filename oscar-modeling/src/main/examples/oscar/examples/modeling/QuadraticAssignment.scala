@@ -1,12 +1,12 @@
-package oscar.modeling.examples
+package oscar.examples.modeling
 
 import oscar.modeling.algebra.integer.Sum
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.models.cp.CPModel
+import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.modeling.solvers.cp.{Branchings, CPApp}
 import oscar.modeling.vars.IntVar
 import oscar.util._
-import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 
 import scala.io.Source
 import scala.spores._
@@ -43,7 +43,7 @@ object QuadraticAssignment extends CPApp[Int] with App {
 
   val obj = Sum(N, N)((i, j) => d(x(i))(x(j)) * w(i)(j)).reify()
 
-  onSolution(spore {
+  onSolutionF(spore {
     val x_ = obj
     () => {
       x_.max

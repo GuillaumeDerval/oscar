@@ -4,17 +4,15 @@ import java.util.UUID
 
 import oscar.algo.search.Outcome
 import oscar.modeling.algebra.Expression
-import oscar.modeling.algebra.integer.IntExpression
 import oscar.modeling.constraints.Constraint
 import oscar.modeling.misc.DynamicModelVariable
 import oscar.modeling.models.operators.ModelOperator
-import oscar.modeling.vars.IntVar
 import oscar.modeling.vars.domainstorage.{FloatDomainStorage, IntDomainStorage}
 
 /**
- * The declaration of a Model.
- */
-class ModelDeclaration extends Serializable {
+  * The declaration of a Model.
+  */
+class ModelDeclaration extends Serializable with ModelDeclarationInterface {
   implicit val modelDeclaration = this
 
   private val current_model: DynamicModelVariable = new DynamicModelVariable()
@@ -23,18 +21,18 @@ class ModelDeclaration extends Serializable {
   val uuid = UUID.randomUUID() //used by serialiser to ensure that Var are not resending models with them
 
   /**
-   * Get the current model
-   */
-  def getCurrentModel = current_model.value
+    * Get the current model
+    */
+  override def getCurrentModel = current_model.value
 
   /**
-   * Apply the function func, which uses Var declared in this ModelDeclaration,
-   * on the model (inheriting for this object too), temporarily changing the current model.
+    * Apply the function func, which uses Var declared in this ModelDeclaration,
+    * on the model (inheriting for this object too), temporarily changing the current model.
     *
     * @param model: model on which to apply the function
-   * @param func: function to apply
-   */
-  def apply[RetVal](model: Model)(func: => RetVal): RetVal = {
+    * @param func: function to apply
+    */
+  override def apply[RetVal](model: Model)(func: => RetVal): RetVal = {
     assert(model.declaration == this, "The model must be a sub-model of the declared model " +
       "of this instance of ModelDeclaration")
     current_model.withValue(model)(func)
@@ -43,8 +41,8 @@ class ModelDeclaration extends Serializable {
   /**
     * Post a new constraint
     * @param constraint the constraint to post
-   */
-  def post(constraint: Constraint): Outcome = current_model.value match {
+    */
+  override def post(constraint: Constraint): Outcome = current_model.value match {
     case m: InstantiatedModel => postInstantiated(m, constraint)
     case m: UninstantiatedModel => postUninstantiated(m, constraint)
     case null => throw new RuntimeException("Model is not an instance of InstantiatedModel or UninstantiatedModel")
@@ -54,7 +52,7 @@ class ModelDeclaration extends Serializable {
     * Add a new constraint to the model
     * @param constraint the constraint to add
     */
-  def add(constraint: Constraint): Unit = {
+  override def add(constraint: Constraint): Unit = {
     if(post(constraint) == Outcome.Failure)
       throw new NoSolException
   }
@@ -82,7 +80,7 @@ class ModelDeclaration extends Serializable {
     * Minimize on variable v
     * @param v variable to minimize
     */
-  def minimize(v: Expression) = current_model.value match {
+  override def minimize(v: Expression) = current_model.value match {
     case m: UninstantiatedModel => current_model.value = m.minimize(v)
     case _ => throw new Exception("Cannot modify the optimisation method of an instantiated model")
   }
@@ -91,7 +89,7 @@ class ModelDeclaration extends Serializable {
     * Maximize on variable v
     * @param v variable to maximize
     */
-  def maximize(v: Expression) = current_model.value match {
+  override def maximize(v: Expression) = current_model.value match {
     case m: UninstantiatedModel => current_model.value = m.maximize(v)
     case _ => throw new Exception("Cannot modify the optimisation method of an instantiated model")
   }
@@ -99,7 +97,7 @@ class ModelDeclaration extends Serializable {
   /**
     * Remove the optimisation method
     */
-  def removeOptimization() = current_model.value match {
+  override def removeOptimization() = current_model.value match {
     case m: UninstantiatedModel => current_model.value = m.removeOptimisation()
     case _ => throw new Exception("Cannot modify the optimisation method of an instantiated model")
   }
@@ -126,7 +124,7 @@ class ModelDeclaration extends Serializable {
     * Apply a model operator
     * @param operator operator to apply
     */
-  def apply[OutputType <: Model](operator: ModelOperator[OutputType]): Unit = current_model.value match {
+  override def apply[OutputType <: Model](operator: ModelOperator[OutputType]): Unit = current_model.value match {
     case m: UninstantiatedModel => current_model.value = operator(m)
     case _ => throw new Exception("Cannot apply an operator on an instantiated model")
   }

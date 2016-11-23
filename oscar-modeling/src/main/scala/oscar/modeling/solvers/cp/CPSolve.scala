@@ -12,12 +12,13 @@ import oscar.modeling.solvers.Solve
   */
 trait CPSolve[RetVal] extends Solve[RetVal] {
   protected var branching: BranchingInstantiator = null
+  protected var on_solution: () => RetVal = null
 
   def getSearch: BranchingInstantiator = branching
   def setSearch(b: BranchingInstantiator): Unit = branching = b
   def setSearch(b: Branching): Unit = branching = (_) => b
   def setSearch(b: => Seq[Alternative]): Unit = branching = Branchings(b)
+
+  def onSolution = on_solution
+  def onSolutionF(o: () => RetVal): Unit = on_solution = o
 }
-
-
-

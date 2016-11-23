@@ -1,4 +1,4 @@
-package oscar.modeling.examples
+package oscar.examples.modeling
 
 import oscar.modeling.algebra.integer.Sum
 import oscar.modeling.constraints._

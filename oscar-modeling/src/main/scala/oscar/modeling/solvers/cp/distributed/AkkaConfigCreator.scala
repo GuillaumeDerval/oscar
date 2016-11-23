@@ -14,22 +14,24 @@ object AkkaConfigCreator {
            provider = "akka.remote.RemoteActorRefProvider"
            serializers {
              kryo = "com.twitter.chill.akka.AkkaSerializer"
-             sp = "solvers.cp.DoSubproblemSerializer"
+             sp = "oscar.modeling.solvers.cp.distributed.DoSubproblemSerializer"
            }
            serialization-bindings {
-             "solvers.cp.SolvingMessage" = kryo
-             "solvers.cp.HelloMessage" = kryo
-             "solvers.cp.StartMessage" = kryo
-             "solvers.cp.AwaitingSPMessage" = kryo
-             "solvers.cp.DoneMessage" = kryo
-             "solvers.cp.BoundUpdateMessage" = kryo
-             "solvers.cp.AskForSolutionRecap" = kryo
-             "solvers.cp.SolutionRecapMessage" = kryo
-             "solvers.cp.AllDoneMessage" = kryo
-             "solvers.cp.SolutionMessage" = kryo
-             "models.Model" = kryo
-             "models.ModelDeclaration" = kryo
-             "solvers.cp.DoSubproblemMessage" = sp
+             "oscar.modeling.solvers.cp.distributed.SolvingMessage" = kryo
+             "oscar.modeling.solvers.cp.distributed.HelloMessage" = kryo
+             "oscar.modeling.solvers.cp.distributed.StartMessage" = kryo
+             "oscar.modeling.solvers.cp.distributed.AwaitingSPMessage" = kryo
+             "oscar.modeling.solvers.cp.distributed.DoneMessage" = kryo
+             "oscar.modeling.solvers.cp.distributed.BoundUpdateMessage" = kryo
+             "oscar.modeling.solvers.cp.distributed.AskForSolutionRecap" = kryo
+             "oscar.modeling.solvers.cp.distributed.SolutionRecapMessage" = kryo
+             "oscar.modeling.solvers.cp.distributed.AllDoneMessage" = kryo
+             "oscar.modeling.solvers.cp.distributed.SolutionMessage" = kryo
+             "oscar.modeling.models.Model" = kryo
+             "oscar.modeling.models.ModelDeclaration" = kryo
+             "oscar.modeling.solvers.cp.distributed.DoSubproblemMessage" = sp
+             "scala.spores.NullarySpore" = kryo
+             "oscar.modeling.solvers.cp.distributed.ActorParameters" = kryo
            }
          }
          remote {

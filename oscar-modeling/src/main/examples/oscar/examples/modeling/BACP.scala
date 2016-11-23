@@ -1,13 +1,12 @@
-package oscar.modeling.examples
+package oscar.examples.modeling
 
 import oscar.modeling.constraints.{BinPacking, Spread}
+import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
+import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}
+import oscar.modeling.vars.IntVar
+import oscar.util._
 
 import scala.io.Source
-import oscar.util._
-import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}
-import oscar.modeling.solvers.cp.decompositions.{CartProdRefinement, DecompositionAddCartProdInfo, DepthIterativeDeepening}
-import oscar.modeling.vars.IntVar
-
 import scala.spores._
 
 /**
@@ -71,7 +70,7 @@ object BACP extends CPApp[Int] with App {
     val periods_ = periods
     (z: IntVar) => {
       val ll = l_
-      selectMinDeterministic(periods_.filter(z.hasValue(_)))(a => ll.apply(a).min)
+      selectMinDeterministic(periods_.filter(z.hasValue))(a => ll.apply(a).min)
     }
   })
 
@@ -79,7 +78,7 @@ object BACP extends CPApp[Int] with App {
   setDecompositionStrategy(new CartProdRefinement(x, search))
   //setDecompositionStrategy(new DecompositionAddCartProdInfo(new DepthIterativeDeepening(Branching.naryStatic(x)), x))
 
-  onSolution(spore {
+  onSolutionF(spore {
     val v = vari
     () => vari.max
   })

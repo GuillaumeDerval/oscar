@@ -57,7 +57,7 @@ object ExperienceDecomp extends CPApp[String] with App {
     //("CartProd - R - binary", new CartProdRefinement(m, Branching.binaryStatic(m)))
   )
 
-  decompositions(0)._2.decompose(this.modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], 500) //start JVM properly
+  decompositions(0)._2.decompose(this.md.getCurrentModel.asInstanceOf[UninstantiatedModel], 500) //start JVM properly
 
   for((name, decompose) <- decompositions) {
     println("--------------")
@@ -68,7 +68,7 @@ object ExperienceDecomp extends CPApp[String] with App {
       if(last < count) {
         val s = System.currentTimeMillis()
         for(i <- 0 until 5)
-          last = decompose.decompose(this.modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], count).length
+          last = decompose.decompose(this.md.getCurrentModel.asInstanceOf[UninstantiatedModel], count).length
         val e = System.currentTimeMillis()
         println(last.toString+"\t"+((e-s)/5).toString)
       }

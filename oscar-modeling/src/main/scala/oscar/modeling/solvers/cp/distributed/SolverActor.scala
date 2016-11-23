@@ -9,20 +9,20 @@ import oscar.modeling.misc.SPSearchStatistics
 import oscar.modeling.misc.TimeHelper._
 import oscar.modeling.models._
 import oscar.modeling.models.cp.CPModel
-import oscar.modeling.solvers.cp._
-import oscar.modeling.vars.IntVar
+import oscar.modeling.solvers.cp.Branchings.BranchingInstantiator
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 
 /**
   * A solver actor, that solves one subproblem at once
-  *
-  * @param modelDeclaration that contains an UninstantiatedModel as current model (this is the one to be solved)
-  * @tparam RetVal
   */
-class SolverActor[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSolve[RetVal],
-                          master: ActorRef) extends Actor with IntBoundaryManager {
+class SolverActor[RetVal](parameters: ActorParameters[RetVal]) extends Actor with IntBoundaryManager {
+  val modelDeclaration = parameters.modelDeclaration
+  val onSolution = parameters.onSolution
+  val getSearch = parameters.getSearch
+  val master = parameters.master
+
   val log = Logging(context.system, this)
 
   // Config
@@ -50,7 +50,6 @@ class SolverActor[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSo
     case _ => null
   }
 
-  val on_solution: () => RetVal = modelDeclaration.onSolution
   val foundSolutions: ListBuffer[RetVal] = ListBuffer()
   var solutionCount: Int = 0
 
@@ -60,32 +59,32 @@ class SolverActor[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSo
     case m: Minimisation =>
       (a) => {
         this.updateBoundary(objv.max)
-        master ! SolutionMessage(on_solution(), Some(objv.max))
+        master ! SolutionMessage(onSolution(), Some(objv.max))
         solutionCount += 1
         //lastSolution = SolutionMessage(on_solution(), Some(v.max))
       }
     case m: Maximisation =>
       (a) => {
         this.updateBoundary(objv.max)
-        master ! SolutionMessage(on_solution(), Some(objv.max))
+        master ! SolutionMessage(onSolution(), Some(objv.max))
         solutionCount += 1
         //lastSolution = SolutionMessage(on_solution(), Some(v.max))
       }
     case _ => (a) =>
       if(forceImmediateSend)
-        master ! SolutionMessage(on_solution(), None)
+        master ! SolutionMessage(onSolution(), None)
       else {
-        val v = on_solution()
+        val v = onSolution()
         if(!v.isInstanceOf[Unit])
-          foundSolutions.append(on_solution())
+          foundSolutions.append(onSolution())
         solutionCount += 1
       }
   }
 
   val search: Branching = modelDeclaration.apply(cpmodel) {
     objv match {
-      case null => new ForceCloseSearchWrapper(modelDeclaration.getSearch(cpmodel), forceClose)
-      case _ => new IntBoundaryUpdateSearchWrapper(modelDeclaration.getSearch(cpmodel), this, forceClose, cpmodel.cpObjective)
+      case null => new ForceCloseSearchWrapper(getSearch(cpmodel), forceClose)
+      case _ => new IntBoundaryUpdateSearchWrapper(getSearch(cpmodel), this, forceClose, cpmodel.cpObjective)
     }
   }
 
@@ -165,6 +164,7 @@ class SolverActor[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSo
 }
 
 object SolverActor {
-  def props[RetVal](modelDeclaration: ModelDeclaration with DecomposedCPSolve[RetVal], master: ActorRef): Props =
-    Props(classOf[SolverActor[RetVal]], modelDeclaration, master)
+  def props[RetVal](modelDeclaration: ModelDeclaration, onSolution: () => RetVal,
+                    getSearch: BranchingInstantiator, master: ActorRef): Props =
+    Props(classOf[SolverActor[RetVal]], ActorParameters(modelDeclaration, onSolution, getSearch, master))
 }

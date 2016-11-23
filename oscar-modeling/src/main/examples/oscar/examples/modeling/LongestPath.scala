@@ -1,11 +1,11 @@
-package oscar.modeling.examples
+package oscar.examples.modeling
 
-import oscar.modeling.constraints.{AllDifferent, Table}
-import oscar.modeling.solvers.cp.{Branchings, CPApp}
-import oscar.modeling.vars.IntVar
 import oscar.modeling.algebra.integer.IntExpression._
 import oscar.modeling.algebra.integer.Sum
+import oscar.modeling.constraints.{AllDifferent, Table}
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
+import oscar.modeling.solvers.cp.{Branchings, CPApp}
+import oscar.modeling.vars.IntVar
 
 import scala.io.Source
 import scala.spores._
@@ -67,7 +67,7 @@ object LongestPath extends CPApp[Int] with App {
   setSearch(Branchings.binaryFirstFail(path))
   setDecompositionStrategy(new CartProdRefinement(path, Branchings.binaryFirstFail(path)))
 
-  onSolution(spore {
+  onSolutionF(spore {
     val x_ = weight
     () => {
       x_.max

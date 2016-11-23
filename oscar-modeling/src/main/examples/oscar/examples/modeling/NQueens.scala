@@ -1,11 +1,9 @@
-package oscar.modeling.examples
+package oscar.examples.modeling
 
 import oscar.modeling.constraints.AllDifferent
-import oscar.modeling.models.UninstantiatedModel
-import oscar.modeling.solvers.cp.decompositions.{CartProdRefinement, DecompositionAddCartProdInfo, DepthIterativeDeepening, DepthRefinement}
+import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar
-import oscar.modeling.visualisation.ConstraintsVisualisation
 
 /**
   * Example of nQueens, copied from the original one from OscaR-lib.
