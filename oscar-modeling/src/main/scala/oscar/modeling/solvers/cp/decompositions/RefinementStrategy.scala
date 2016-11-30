@@ -18,7 +18,7 @@ import scala.collection.mutable
 abstract class RefinementStrategy[SubproblemOrdering](searchInstantiator: BranchingInstantiator)(implicit ordering: Ordering[SubproblemOrdering])
   extends DecompositionStrategy {
 
-  protected def generate(assignment: List[Constraint], path: List[Int]): SubproblemOrdering
+  protected def generate(memoCPModel: MemoCPModel, assignment: List[Constraint], path: List[Int]): SubproblemOrdering
 
   private case class SubproblemInfo(assignment: List[Constraint], path: List[Int], orderInfo: SubproblemOrdering) extends Ordered[SubproblemInfo] {
     override def compare(that: SubproblemInfo): Int = ordering.compare(orderInfo, that.orderInfo)
@@ -42,9 +42,9 @@ abstract class RefinementStrategy[SubproblemOrdering](searchInstantiator: Branch
     val q = mutable.PriorityQueue[SubproblemInfo]()
     val solutions = mutable.ArrayBuffer[SubproblemInfo]()
 
-    q += new SubproblemInfo(List(), List(), generate(List(), List()))
-
     model.declaration.apply(model) {
+      q += SubproblemInfo(List(), List(), generate(model, List(), List()))
+
       val search = searchInstantiator(model)
 
       while(q.size < count) {
@@ -67,7 +67,7 @@ abstract class RefinementStrategy[SubproblemOrdering](searchInstantiator: Branch
               alternative()
               val addedConstraints = model.getAddedConstraints
               val newPath = sp.path ++ List(idx)
-              q += new SubproblemInfo(addedConstraints, newPath, generate(addedConstraints, newPath))
+              q += SubproblemInfo(addedConstraints, newPath, generate(model, addedConstraints, newPath))
             }
             catch { case _: NoSolutionException => }
             model.popState()

@@ -2,6 +2,7 @@ package oscar.modeling.solvers.cp.decompositions
 
 import oscar.modeling.constraints.Constraint
 import oscar.modeling.misc.CartesianProduct
+import oscar.modeling.models.cp.MemoCPModel
 import oscar.modeling.solvers.cp.Branchings.BranchingInstantiator
 import oscar.modeling.solvers.cp.distributed.{SubProblem, SubProblemCartesianProductLog}
 import oscar.modeling.vars.IntVar
@@ -12,6 +13,6 @@ import oscar.modeling.vars.IntVar
   * @param search search to be used
   */
 class CartProdRefinement(allVars: Iterable[IntVar], search: BranchingInstantiator) extends RefinementStrategy[Double](search) {
-  override def generate(assignment: List[Constraint], path: List[Int]): Double = CartesianProduct.computeLog(allVars)
+  override def generate(memoCPModel: MemoCPModel, constraints: List[Constraint], path: List[Int]): Double = CartesianProduct.computeLog(allVars)
   override def extendSubProblem(subproblem: SubProblem, cartProd: Double): SubProblem = subproblem addData(SubProblemCartesianProductLog, cartProd)
 }
