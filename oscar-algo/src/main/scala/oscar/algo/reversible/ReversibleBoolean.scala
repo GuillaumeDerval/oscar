@@ -19,22 +19,37 @@ package oscar.algo.reversible;
  * @author Pierre Schaus pschaus@gmail.com
  * @author Renaud Hartert ren.hartert@gmail.com
  */
-class ReversibleBoolean(context: ReversibleContext, initialValue: Boolean) extends TrailEntry {
+class ReversibleBoolean(context: ReversibleContext, initialValue: Boolean) {
+
+
 
   def this(node: ReversibleContext) = this(node, false)
   
   private[this] var lastMagic: Long = -1L
   private[this] var pointer: Boolean = initialValue
+
+  private[this] val restoreTrue = new TrailEntry {
+    override def restore(): Unit = {
+      pointer = true;
+    }
+  }
+
+  private[this] val restoreFalse = new TrailEntry {
+    override def restore(): Unit = {
+      pointer = false;
+    }
+  }
   
   @inline private def trail(): Unit = {
     val contextMagic = context.magic
     if (lastMagic != contextMagic) {
       lastMagic = contextMagic
-      context.trail(this)
+      if (this.pointer)
+        context.trail(restoreTrue)
+      else
+        context.trail(restoreFalse)
     }
   }
-  
-  final override def restore(): Unit = pointer = !pointer
   
   @inline final def setValue(value: Boolean): Unit = {
     if (value != pointer) {
@@ -50,10 +65,6 @@ class ReversibleBoolean(context: ReversibleContext, initialValue: Boolean) exten
       this.pointer = value
     }
   }
-  
-  @inline final def restoreTrue(): Unit = pointer = true
-  
-  @inline final def restoreFalse(): Unit = pointer = false
   
   @inline final def setTrue(): Unit = {
     if (!pointer) {
