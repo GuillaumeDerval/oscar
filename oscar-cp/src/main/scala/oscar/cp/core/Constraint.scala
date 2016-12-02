@@ -297,11 +297,11 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
     _inPropagate = true
     try {
       propagate()
+      updateSnapshots()
       _inPropagate = false
     }
     catch {
       case e: Inconsistency =>
-        updateSnapshots()
         throw e
     }
   }
