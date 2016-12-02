@@ -55,7 +55,7 @@ object RCPSP2 extends App {
 
   // Consistency 
   for (t <- taskIds)
-    cp.add(ends(t) == starts(t) + durations(t))
+    cp.add(ends(t) === starts(t) + durations(t))
 
   var best = Int.MaxValue 
   

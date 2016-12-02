@@ -52,7 +52,7 @@ object Langford extends CPModel with App {
   val cons = Strong
   add(allDifferent(position), Medium)
   for (i <- 1 to k) {
-    add(position(i + k - 1) == (position(i - 1) + i + 1))
+    add(position(i + k - 1) === (position(i - 1) + i + 1))
 
     add(elementVar(solution,position(i-1),i),cons)
     add(elementVar(solution,position(k + i - 1),i),cons)

@@ -14,7 +14,6 @@
  ******************************************************************************/
 package oscar.examples.dfo
 
-import oscar.algebra.int2const
 import oscar.dfo.modeling.DFOModel
 import oscar.dfo.modeling.DFOFloatVar
 import oscar.dfo.modeling.minimize
@@ -32,18 +31,14 @@ object Rosenbrock2D extends DFOModel with App {
   val y = DFOFloatVar("x2", -10, +10)
 
   // 2D Rosenbrock function
-  val objective = (1 - x) * (1 - x) + 100 * (y - x * x) * (y - x * x)
+  val objective = (-x+1.0) * (-x+1.0) + (y - x * x)*100.0 * (y - x * x)
 
-  // callback to print evolution of objective during optimization
-  onSolution {
-    println(objective.value)
-  }
+
 
   // start the effective optimization
   minimize(objective)
 
-  println(x + " " + x.value)
-  println(y + " " + y.value)
-  println("objective:" + objective.value)
+  println(""+x + " " + x.value)
+  println(""+y + " " + y.value)
 
 }

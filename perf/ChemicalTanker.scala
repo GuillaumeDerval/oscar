@@ -181,7 +181,7 @@ object ChemicalTanker extends CPModel with App {
       val unboundTanks = cargo.zipWithIndex.filter { case (x, c) => !x.isBound }
       val (tankVar, tank) = unboundTanks.maxBy { case (x, c) => (tanks(c).capa, -x.getSize) }
       val cargoToPlace = (0 until cargos.size).filter(tankVar.hasValue(_)).maxBy(volumeLeft(_))
-      branch(post(tankVar == cargoToPlace))(post(tankVar != cargoToPlace))
+      branch(post(tankVar === cargoToPlace))(post(tankVar !== cargoToPlace))
     }
   }
 
