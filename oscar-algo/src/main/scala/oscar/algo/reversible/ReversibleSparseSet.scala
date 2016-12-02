@@ -20,8 +20,8 @@ import scala.collection.Iterable
 /**
  * Initializes a set with all values min..max in it
  * @param s
- * @param min
- * @param max >= min
+ * @param minValue
+ * @param maxValue >= minValue
  * @author Pierre Schaus
  */
 class ReversibleSparseSet(s: ReversibleContext, val minValue: Int, val maxValue: Int) extends Iterable[Int] {
@@ -152,11 +152,11 @@ class ReversibleSparseSet(s: ReversibleContext, val minValue: Int, val maxValue:
     if (!hasValue(v)) return false; //the value has already been removed
     exchangePositions(v, values(size - 1) + offset)
     _size.decr()
-    return true;
+    true
   }
 
   /**
-   * @param value
+   * @param v
    * @return smallest value in the domain >= value, value-1 is returned if no such value
    */
   def nextValue(v: Int): Int = {
@@ -173,7 +173,7 @@ class ReversibleSparseSet(s: ReversibleContext, val minValue: Int, val maxValue:
   }
 
   /**
-   * @param value
+   * @param v
    * @return largest value in the domain <= value, value+1 is returned if no such value
    */
   def prevValue(v: Int): Int = {

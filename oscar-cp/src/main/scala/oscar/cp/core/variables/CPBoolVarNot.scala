@@ -1,6 +1,5 @@
 package oscar.cp.core.variables
 
-import oscar.algo.search.Outcome
 
 import scala.util.Random
 import oscar.cp.core.Constraint
@@ -50,15 +49,15 @@ class CPBoolVarNot(final override val not: CPBoolVar) extends CPBoolVar {
 
   final override def randomValue(rand: Random): Int = 1 - not.randomValue(rand)
 
-  final override def updateMin(value: Int): Outcome = not.updateMax(1 - value)
+  final override def updateMin(value: Int): Unit = not.updateMax(1 - value)
 
-  final override def updateMax(value: Int): Outcome = not.updateMin(1 - value)
+  final override def updateMax(value: Int): Unit = not.updateMin(1 - value)
   
-  final override def assignTrue(): Outcome = not.assignFalse()
+  final override def assignTrue(): Unit = not.assignFalse()
 
-  final override def assignFalse(): Outcome = not.assignTrue()
+  final override def assignFalse(): Unit = not.assignTrue()
     
-  final override def assign(value: Int): Outcome = not.assign(1 - value)
+  final override def assign(value: Int): Unit = not.assign(1 - value)
 
   final override def removeValue(value: Int) = not.removeValue(1 - value)
 

@@ -16,9 +16,8 @@
 
 package oscar.cp.constraints
 
+import oscar.algo.Inconsistency
 import oscar.cp.core._
-import oscar.algo.search.Outcome._
-import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPGraphVar
 
 /**
@@ -29,9 +28,9 @@ import oscar.cp.core.variables.CPGraphVar
 
 class SubGraph(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constraint(g1.s, "SubGraph") {
   
-	override def setup(l: CPPropagStrength): Outcome = {
+	override def setup(l: CPPropagStrength): Unit = {
 	  // check inconsistency
-	  if(inconsistent) return Failure
+	  if(inconsistent) throw Inconsistency
 	  // add filter when domain changes
 	  g1.callPropagateWhenDomainChanges(this)
 	  g2.callPropagateWhenDomainChanges(this)
@@ -39,7 +38,7 @@ class SubGraph(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constraint(g1.s,
 	  propagate()
 	}
 	
-	override def propagate(): Outcome = {
+	override def propagate(): Unit = {
 	  // test for entailment	  
 	  // test if g1.possible values are included in g2.required values => entailment, success
 	  val g1PossNodes = g1.possibleNodes
@@ -50,7 +49,10 @@ class SubGraph(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constraint(g1.s,
 	    var nCorrect : Int = 0 // count g1.possibleEdges included in g2.requiredEdge
 	    for (e <- g1PossEdges; if g2ReqEdgesMap.contains(g1.edge(e)))
 	      nCorrect += 1
-	    if (g1PossEdges.length == nCorrect) return Success
+	    if (g1PossEdges.length == nCorrect) {
+				deactivate()
+				return
+			}
 	  }
 	  
 	  // pruning
@@ -58,28 +60,28 @@ class SubGraph(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constraint(g1.s,
 	  // for all required values in g1 and not required in g2, should be required in g2
 	  val g1ReqNodes = g1.requiredNodes
 	  for (n <- g1ReqNodes){
-	    if (!g2ReqNodes.contains(n)) if (g2.addNodeToGraph(n) ==  Failure) return Failure
+	    if (!g2ReqNodes.contains(n))
+				g2.addNodeToGraph(n)
+
 	    for (e <- g1.requiredEdges(n)){
 	      val (src, dest) = g1.edge(e)
 	      // test if g2 contains the required edge, otherwise, add it to required
 	      if (!g2.requiredEdges(n).map(g2.edge(_)).contains(src, dest))
-	    	  if (g2.addEdgeToGraph(src, dest) ==  Failure) return Failure
+	    	  g2.addEdgeToGraph(src, dest)
 	    }
 	  }
 	  
 	  // for all possible values in g1 and not possible in g2, should be removed from g1
 	  for (n <- g1PossNodes){
 	    if (!g2.possibleNodes.contains(n))
-	      if (g1.removeNodeFromGraph(n) == Failure) return Failure
+	      g1.removeNodeFromGraph(n)
 	     for (e <- g1.possibleEdges(n)){
 	        val (src, dest) = g1.edge(e)
 	        // test if g2 has the possible edge, otherwise, remove it from g1
 	    	if (!g2.possibleEdges(n).map(g2.edge(_)).contains(src, dest))
-	    	  if (g1.removeEdgeFromGraph(src, dest) ==  Failure) return Failure
+	    	  g1.removeEdgeFromGraph(src, dest)
 	    }
 	  }
-	  
-	  Suspend
 	}
 	
 	private def inconsistent : Boolean = {

@@ -1,5 +1,4 @@
 package oscar.modeling.test
-import oscar.algo.search.Outcome
 import oscar.cp.{CPBoolVar, CPIntVar}
 import oscar.cp.core.CPPropagStrength
 import oscar.modeling.constraints.ConvertCPConstraint
@@ -10,7 +9,7 @@ import oscar.modeling.vars.{BoolVar, IntVar}
 
 abstract class MyTestConstraints extends oscar.cp.Constraint(null) {
   def print: String
-  override def setup(l: CPPropagStrength): Outcome = Outcome.Success
+  override def setup(l: CPPropagStrength): Unit = {}
 }
 
 final class StdTypeTest(a: Int, b: Long, c: String, d: Double, e: Boolean, f: Float) extends MyTestConstraints {

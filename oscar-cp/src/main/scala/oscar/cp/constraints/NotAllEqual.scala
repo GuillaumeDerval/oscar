@@ -14,8 +14,8 @@
  ******************************************************************************/
 package oscar.cp.constraints
 
+import oscar.algo.Inconsistency
 import oscar.algo.reversible.{ReversibleBoolean, ReversibleInt}
-import oscar.algo.search.Outcome
 import oscar.cp.core._
 import oscar.cp.core.variables.CPIntVar
 
@@ -28,44 +28,44 @@ class NotAllEqual(val x: Array[CPIntVar]) extends Constraint(x(0).store, "NotAll
   var firstValue: Int = 0
   val nUnbound = new ReversibleInt(s,x.length)
 
-  override def setup(l: CPPropagStrength): Outcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     // Check specific cases
     if(x.length == 1)
-      return Outcome.Success
+      return
     if(x.length == 2) {
-      if(x(0).store.post(x(0).diff(x(1))) == Outcome.Failure)
-        return Outcome.Failure
-      return Outcome.Success
+      x(0).store.post(x(0).diff(x(1)))
+      return
     }
 
     x.zipWithIndex.foreach{case (v, idx) => {
       v.callValBindIdxWhenBind(this, idx)
 
       // If the variable is already bound, call valBindIdx
-      if(v.isBound && valBindIdx(v, idx) == Outcome.Success)
-        return Outcome.Success
+      if(v.isBound)
+        valBindIdx(v, idx)
+
+      if(!isActive)
+        return
     }}
 
     if(nUnbound.getValue() == 0)
-      Outcome.Failure //if we have all our variable bound but did not return Success earlier, we failed
-    else
-      Outcome.Suspend
+      throw Inconsistency//if we have all our variable bound but did not return Success earlier, we failed
   }
 
-  override def valBindIdx(x: CPIntVar, idx: Int): Outcome = {
+  override def valBindIdx(x: CPIntVar, idx: Int): Unit = {
     nUnbound.decr()
     if(firstValueFound.getValue()) { //if we already found our first value
-      if(x.min != firstValue)
-        return Outcome.Success
+      if(x.min != firstValue) {
+        deactivate()
+        return
+      }
     }
     else {
       firstValueFound.setTrue()
       firstValue = x.min
     }
     if(nUnbound.getValue() == 0)
-      Outcome.Failure
-    else
-      Outcome.Suspend
+      throw Inconsistency
   }
 }
 

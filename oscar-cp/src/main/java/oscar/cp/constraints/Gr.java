@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.algo.search.Outcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.CPStore;
 import oscar.cp.core.variables.CPIntVar;
@@ -44,29 +44,23 @@ public class Gr extends Constraint {
 	}
 	
 	@Override
-	public Outcome setup(CPPropagStrength l) {
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		priorityL2_$eq(CPStore.MAXPRIORL2());
-		Outcome oc = propagate();
-		if(oc == Outcome.Suspend){
+		propagate();
+		if(isActive()){
 			if (!y.isBound()) y.callPropagateWhenBoundsChange(this);
 			if (!x.isBound()) x.callPropagateWhenBoundsChange(this);
 		}
-		return oc;
 	}
 	
 	@Override
-	public Outcome propagate() {
+	public void propagate() {
 		if (x.getMin() > y.getMax()) {
-			return Outcome.Success;
+			deactivate();
+			return;
 		}
-		if (x.updateMin(y.getMin()+1) == Outcome.Failure) {
-			return Outcome.Failure;
-		}
-		if (y.updateMax(x.getMax()-1) == Outcome.Failure) {
-			return Outcome.Failure;
-		}
-		return Outcome.Suspend;
-	
+		x.updateMin(y.getMin()+1);
+		y.updateMax(x.getMax()-1);
 	}
 
 }

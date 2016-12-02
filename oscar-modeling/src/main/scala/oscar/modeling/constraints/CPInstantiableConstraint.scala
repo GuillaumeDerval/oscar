@@ -1,6 +1,5 @@
 package oscar.modeling.constraints
 
-import oscar.algo.search.Outcome
 import oscar.cp.CPSolver
 
 /**
@@ -11,5 +10,5 @@ trait CPInstantiableConstraint extends Constraint {
     * Posts the constraint in the CP solver and returns its outcome
     * @return
     */
-  def cpPost(cpSolver: CPSolver): Outcome
+  def cpPost(cpSolver: CPSolver): Unit
 }

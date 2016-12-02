@@ -15,14 +15,14 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 import oscar.cp.constraints._
 import oscar.cp._
 
 /**
  * @author: Pierre Schaus pschaus@gmail.com
  */
-class TestLambdaThetaTree extends FunSuite with ShouldMatchers {
+class TestLambdaThetaTree extends TestSuite {
 
   //todo: port this test to new version
  /*

@@ -1,7 +1,6 @@
 package oscar.modeling.models.lp
 
 import oscar.algebra.LinearExpression
-import oscar.algo.search.Outcome
 import oscar.linprog.interface.gurobi.GurobiLib
 import oscar.linprog.interface.lpsolve.LPSolveLib
 import oscar.linprog.interface.{MPSolverInterface, MPSolverLib}
@@ -29,12 +28,12 @@ class LPModel[I <: MPSolverInterface](p: UninstantiatedModel, solverLib: MPSolve
 
   override protected def instantiateFloatVar(min: Double, max: Double, name: String): MIPFloatVar[I] = MIPFloatVar(min, max, name, solver)
 
-  override def post(constraint: Constraint): Outcome = constraint match {
+  override def post(constraint: Constraint): Unit = constraint match {
     case ExpressionConstraint(expr) => postBooleanExpr(expr)
     case _ => throw new RuntimeException("No support for constraint "+constraint.getClass.getName+" in linear programming")
   }
 
-  private def postBooleanExpr(expr: BoolExpression): Outcome = {
+  private def postBooleanExpr(expr: BoolExpression): Unit = {
     expr match {
       case EqFloat(array) =>
         val expressions = array.map(getLinearExpression)
@@ -51,7 +50,6 @@ class LPModel[I <: MPSolverInterface](p: UninstantiatedModel, solverLib: MPSolve
         oscar.linprog.modeling.add(exprA <:= exprB)
       case _ => throw new RuntimeException("No support for expression "+expr.getClass.getName+" in linear programming")
     }
-    Outcome.Suspend
   }
 
   private def getLinearExpression(expr: FloatExpression): LinearExpression = expr match {

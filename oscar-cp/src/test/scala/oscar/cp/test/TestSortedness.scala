@@ -17,13 +17,13 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 
 import oscar.cp.constraints._
 
 import oscar.cp._
 
-class TestSortedness extends FunSuite with ShouldMatchers {
+class TestSortedness extends TestSuite {
 
   
   test("Sortedness1") {

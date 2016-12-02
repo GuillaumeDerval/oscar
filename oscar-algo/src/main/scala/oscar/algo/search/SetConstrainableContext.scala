@@ -9,10 +9,10 @@ trait SetConstrainableContext extends ConstrainableContext {
   /**
     * Post v \in x
     */
-  def requires(x: SetVarLike, v: Int): Outcome
+  def requires(x: SetVarLike, v: Int): Unit
 
   /**
     * Post v \notin x
     */
-  def excludes(x: SetVarLike, v: Int): Outcome
+  def excludes(x: SetVarLike, v: Int): Unit
 }

@@ -14,8 +14,7 @@
  ******************************************************************************/
 package oscar.cp.core.variables
 
-import oscar.algo.search.Outcome
-import oscar.algo.search.Outcome._
+import oscar.algo.Inconsistency
 import oscar.cp.constraints._
 import oscar.cp.core.CPStore
 import oscar.cp.core.Constraint
@@ -190,43 +189,43 @@ class CPGraphVar(val s: CPStore, nNodes: Int, inputEdges: List[(Int,Int)], val n
    * Add a node into required nodes from graph interval
    * @param node Id
    */
-  def addNodeToGraph(nodeId: Int) : Outcome =  N.requires(nodeId)
+  def addNodeToGraph(nodeId: Int) : Unit =  N.requires(nodeId)
   
   /**
    * Remove a node from possible nodes from graph interval and connected edges to this node
    * @param node Id
    */
-  def removeNodeFromGraph(nodeId: Int) : Outcome = {
-    if ( N.excludes(nodeId) == Failure ) Failure
-    else {
-      for (e <- possibleEdges(nodeId)) 
-        if ( E.excludes(e) == Failure) Failure
-      Suspend
-    }
+  def removeNodeFromGraph(nodeId: Int) : Unit = {
+    N.excludes(nodeId)
+
+    for (e <- possibleEdges(nodeId))
+      E.excludes(e)
   }
   
   /**
    * Add an edge into required edges from graph interval, also add in required nodes connected nodes to that edge
-   * @param source and destination of the edge
+   * @param src and dest of the edge
    */
-  def addEdgeToGraph(src: Int, dest: Int) : Outcome = {
+  def addEdgeToGraph(src: Int, dest: Int) : Unit = {
     val index = indexOfEdge(src, dest)
     addEdgeToGraph(index)
   }
-  def addEdgeToGraph(edgeId : Int) : Outcome = {
-    if (! E.isPossible(edgeId)) Failure
-    else if ( E.requires(edgeId) == Failure ) Failure
-    else if ( N.requires(edges(edgeId).src) == Failure ) Failure
-    else if ( N.requires(edges(edgeId).dest) == Failure ) Failure
-    else Suspend
+
+  def addEdgeToGraph(edgeId : Int) : Unit = {
+    if (! E.isPossible(edgeId))
+      throw Inconsistency
+
+    E.requires(edgeId)
+    N.requires(edges(edgeId).src)
+    N.requires(edges(edgeId).dest)
   }
   
   /**
    * Remove an edge from possible edges from graph interval
    * @param source and destination of the edge
    */
-  def removeEdgeFromGraph(src: Int, dest: Int) : Outcome = E.excludes(indexOfEdge(src, dest))
-  def removeEdgeFromGraph(edgeId: Int) : Outcome = E.excludes(edgeId)
+  def removeEdgeFromGraph(src: Int, dest: Int) : Unit = E.excludes(indexOfEdge(src, dest))
+  def removeEdgeFromGraph(edgeId: Int) : Unit = E.excludes(edgeId)
   
   /**
    * @return the index of the edge (src,dest)

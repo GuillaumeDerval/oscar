@@ -16,7 +16,6 @@
 package oscar.cp.core.domains
 
 import oscar.algo.reversible.{ReversibleContext, ReversiblePointer}
-import oscar.algo.search.Outcome
 
 import scala.util.Random
 
@@ -58,7 +57,7 @@ class AdaptableIntDomain(override val context: ReversibleContext, val minValue: 
   var cpt = 0
   
   @inline
-  override final def removeValue(value: Int): Outcome = {
+  override final def removeValue(value: Int): Unit = {
     val dom = domain.value
     // If sparse representation, remove
     if (dom.isInstanceOf[IntDomain]) {
@@ -91,13 +90,13 @@ class AdaptableIntDomain(override val context: ReversibleContext, val minValue: 
   }
 
   @inline
-  override final def assign(value: Int): Outcome = domain.value.assign(value)
+  override final def assign(value: Int): Unit = domain.value.assign(value)
 
   @inline
-  override final def updateMin(value: Int): Outcome = domain.value.updateMin(value)
+  override final def updateMin(value: Int): Unit = domain.value.updateMin(value)
 
   @inline
-  override final def updateMax(value: Int): Outcome = domain.value.updateMax(value)
+  override final def updateMax(value: Int): Unit = domain.value.updateMax(value)
 
   @inline
   override final def nextValue(value: Int): Int = domain.value.nextValue(value)

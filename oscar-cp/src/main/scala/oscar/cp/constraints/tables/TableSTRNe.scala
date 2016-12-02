@@ -18,12 +18,11 @@ package oscar.cp.constraints.tables
 
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
-import oscar.algo.search.Outcome._
 import oscar.cp.core.CPPropagStrength
 import oscar.algo.reversible.ReversibleInt
 import java.util.Arrays
 
-import oscar.algo.search.Outcome
+import oscar.algo.Inconsistency
 import oscar.cp.core.CPStore
 
 /**
@@ -69,13 +68,12 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
   // count(x,a): number of support possibles for each literal (x,a)
   private[this] val count = Array.tabulate(arity)(i => new Array[Int](variables(i).max - variables(i).min+1))
 
-  override def setup(l: CPPropagStrength): Outcome = {
-    if (propagate() == Failure) return Failure
+  override def setup(l: CPPropagStrength): Unit = {
+    propagate()
     variables.filter(!_.isBound).foreach(_.callPropagateWhenDomainChanges(this))
-    Suspend
   }
 
-  override def propagate(): Outcome = {
+  override def propagate(): Unit = {
     timeStamp += 1
     var limit = currentLimit.getValue()
     //---------------------- initialize -------------------------------------/
@@ -147,7 +145,10 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
 
     currentLimit.setValue(limit)
     //---------------- update domains ---------------------------------/
-    if (limit == -1) return Success
+    if (limit == -1) {
+      deactivate()
+      return
+    }
 		updateDomains()
   }
   
@@ -209,7 +210,7 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
   /**
    * Update variables' domain and return Outcome i.e. Suspend, Failure,...
    */
-  @inline private def updateDomains(): Outcome = {
+  @inline private def updateDomains(): Unit = {
     var i = 0
     while (i <= sSupLimit) {
       val varId = sSup(i)
@@ -219,7 +220,7 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
         val value = unsDense(varId)(j)        
         if (count(varId)(value - minValues(varId)) == 0) {
           if (variables(varId).size == 1)
-            return Failure
+            throw Inconsistency
           variables(varId).removeValue(value)
         }
         j += 1
@@ -229,7 +230,6 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
       // lastSizes(varId).setValue(variables(varId).size)
       i += 1
     }
-    Suspend
   }
   
   /**

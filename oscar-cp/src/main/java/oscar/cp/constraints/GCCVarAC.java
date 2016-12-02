@@ -15,7 +15,7 @@
 package oscar.cp.constraints;
 
 
-import oscar.algo.search.Outcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -94,25 +94,22 @@ public class GCCVarAC extends Constraint {
 	}
 
 	@Override
-	public Outcome setup(CPPropagStrength l) {
-		if (!findValueRange()) {
-			return Outcome.Failure; //failure update the bounds of variables o
-		}
+	public void setup(CPPropagStrength l) throws Inconsistency {
+		findValueRange();
 		allocateFlow();
 		findInitialFlow();
 
 		if (!findMaximalFlow()) {
-			return Outcome.Failure;
+			throw Inconsistency.get();
 		}	
-		if (!findFeasibleFlow()) {	
-			return Outcome.Failure;
+		if (!findFeasibleFlow()) {
+			throw Inconsistency.get();
 		}
 
 		allocateSCC();
 		prune();
-		if (!pruneBounds()) {
-			return Outcome.Failure;
-		}
+		pruneBounds();
+
 		for(int k = 0 ; k < x.length; k++) {
 			if (!x[k].isBound()) {
 				x[k].callPropagateWhenDomainChanges(this);
@@ -121,11 +118,11 @@ public class GCCVarAC extends Constraint {
 		for (int i = 0; i < o.length; i++) {
 			o[i].callPropagateWhenBoundsChange(this);
 		}
-		return propagate();
+		propagate();
 	}
 	
 	@Override
-	public Outcome propagate() {
+	public void propagate() throws Inconsistency {
 	   updateBounds();
 	   for(int k = 0; k < x.length; k++) {
 	      if (varMatch[k] != NONE) {
@@ -138,19 +135,17 @@ public class GCCVarAC extends Constraint {
 	      while (flow[k-minVal] > up[k-minVal])
 	         unassign(valMatch[k-minVal]);
 	   if (!findMaximalFlow()) {
-	      return Outcome.Failure;
+		   throw Inconsistency.get();
 	   }
 	   if (!findFeasibleFlow()) {
-	      return Outcome.Failure;
+		   throw Inconsistency.get();
 	   }
 	   prune();
-	   if (!pruneBounds())
-	      return Outcome.Failure;
-	   return Outcome.Suspend;
+	   pruneBounds();
 	}
 
 
-	private boolean findValueRange() {
+	private void findValueRange() {
 		int prev_minval = minVal;
 
 		for(int i = 0; i < x.length; i++) {
@@ -174,19 +169,14 @@ public class GCCVarAC extends Constraint {
 			if (o[i].getMin() > 0){
 				low[i+d] = o[i].getMin() ;
 			} else {
-				if (o[i].updateMin(0) ==  Outcome.Failure) {
-					return false;
-				}
+				o[i].updateMin(0);
 			}
 			if (o[i].getMax() < x.length) {
 				up[i+d] = o[i].getMax();
 			} else {
-				if (o[i].updateMax(x.length) ==  Outcome.Failure) {
-					return false;
-				}
+				o[i].updateMax(x.length);
 			}
 		}
-		return true;
 	}
 
 
@@ -406,8 +396,7 @@ public class GCCVarAC extends Constraint {
 				if (varMatch[k] != w) {
 					if (varComponent[k] != valComponent[w-minVal]) {
 						if (x[k].hasValue(w)) {
-							Outcome ok = x[k].removeValue(w);
-							assert(ok != Outcome.Failure);
+							x[k].removeValue(w);
 						}
 					}
 				}
@@ -603,7 +592,7 @@ public class GCCVarAC extends Constraint {
 		return true;
 	}
 	
-	private boolean pruneBounds() {
+	private void pruneBounds() {
 	   for(int i = 0 ; i < o.length; i++) {
 	         int m = o[i].getMin();
 	         int M = o[i].getMax();
@@ -613,9 +602,7 @@ public class GCCVarAC extends Constraint {
 	            while (!decreaseMax(i+minValInit)) { //not feasible with this value
 	               up[i+minValInit-minVal]++;
 	            }
-	            if (o[i].updateMin(up[i+minValInit-minVal]) == Outcome.Failure) {
-	               return false;
-	            }
+	            o[i].updateMin(up[i+minValInit-minVal]);
 	            up[i+minValInit-minVal] = M;
 	         }
 	   }
@@ -629,13 +616,10 @@ public class GCCVarAC extends Constraint {
 			   while (!increaseMin(i+minValInit)) { //not feasible with this value
 				   low[i+minValInit-minVal]--;
 			   }
-			   if (o[i].updateMax(low[i+minValInit-minVal]) == Outcome.Failure) {
-				   return false;
-			   } 
+			   o[i].updateMax(low[i+minValInit-minVal]);
 			   low[i+minValInit-minVal] = m;
 		   }
 	   }
-	   return true;
 	}
 
 	private void updateBounds() {

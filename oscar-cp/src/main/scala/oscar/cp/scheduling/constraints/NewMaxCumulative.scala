@@ -62,7 +62,7 @@ class NewMaxCumulative(cp: CPSolver, allTasks: Array[CumulativeActivity], limit:
   // Events are preprocessed to speed-up the propagation
   val eventList = Array.tabulate(nTasks) { e => new EventList(e) }
 
-  override def setup(l: CPPropagStrength): Outcome = {
+  override def setup(l: CPPropagStrength): Unit = {
 
     // Treat this constraint at the end of the propagation queue
     priorityL2 = 0
@@ -85,13 +85,13 @@ class NewMaxCumulative(cp: CPSolver, allTasks: Array[CumulativeActivity], limit:
     return oc
   }
 
-  override def propagate(): Outcome = {
+  override def propagate(): Unit = {
 
     // Left to Right sweep
-    if (sweepAlgorithm(lToRTasks) == Outcome.Failure) return Outcome.Failure
+    sweepAlgorithm(lToRTasks)
 
     // Right to Left sweep
-    if (sweepAlgorithm(rToLTasks) == Outcome.Failure) return Outcome.Failure
+    sweepAlgorithm(rToLTasks)
 
     return Outcome.Suspend
   }
@@ -140,7 +140,7 @@ class NewMaxCumulative(cp: CPSolver, allTasks: Array[CumulativeActivity], limit:
     }
   }
 
-  def sweepAlgorithm(tasks: Array[CumulativeActivity]): Outcome = {
+  def sweepAlgorithm(tasks: Array[CumulativeActivity]): Unit = {
 
     // INITIALIZATION
     initDataStructures(tasks)

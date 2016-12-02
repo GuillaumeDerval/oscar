@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.algo.search.Outcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
@@ -45,15 +45,15 @@ public class DiffReifVar extends Constraint {
 	}
 	
 	@Override
-	public Outcome setup(CPPropagStrength l) {
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		if (b.isBound()) {
-			return valBind(b);
+			valBind(b);
 		} 
 		else if (x.isBound()) {
-			return valBind(x);
+			valBind(x);
 		} 
 		else if (y.isBound()) {
-			return valBind(y);
+			valBind(y);
 		}
 		else {
 			x.callPropagateWhenDomainChanges(this);
@@ -61,57 +61,42 @@ public class DiffReifVar extends Constraint {
 			b.callValBindWhenBind(this);
 			x.callValBindWhenBind(this);
 			y.callValBindWhenBind(this);
-			return propagate();
+			propagate();
 		}
 	}
 	
 	@Override
-	public Outcome valBind(CPIntVar var) {
+	public void valBind(CPIntVar var) throws Inconsistency {
 		if (b.isBound()) {
 			if (b.min() == 1) {
 				// x != y
-				if (s().post(new DiffVar(x,y)) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
+				s().post(new DiffVar(x,y));
 			} else {
 				//x == y
-				if (s().post(new Eq(x,y))  == Outcome.Failure) {
-					return Outcome.Failure;
-				}
+				s().post(new Eq(x,y));
 			}
-			return Outcome.Success;
 		}	
 		else if (x.isBound()) {
-			if (s().post(new DiffReif(y,x.min(),b)) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			s().post(new DiffReif(y,x.min(),b));
 		}
 		else if (y.isBound()) {
-			if (s().post(new DiffReif(x,y.min(),b)) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			s().post(new DiffReif(x,y.min(),b));
 		}
-		return Outcome.Success;
+		deactivate();
 	}
 	
 	
 	
 	@Override
-	public Outcome propagate() {
+	public void propagate() {
 		// if the domains of x and y are disjoint we can set b to false and return success
 		if (x.getMax() < x.getMin()) {
-			if (b.assign(1) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			b.assign(1);
+			deactivate();
 		}
 		else if (y.getMax() < x.getMin()) {
-			if (b.assign(1) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			b.assign(1);
+			deactivate();
 		}
 		else {
 			// there is an overlap between the domain ranges
@@ -126,14 +111,10 @@ public class DiffReifVar extends Constraint {
 				}
 			}
 			if (!commonValues) {
-				if (b.assign(1) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
-				return Outcome.Success;
+				b.assign(1);
+				deactivate();
 			}
-			return Outcome.Suspend;
 		}
-		
 	}
 	
 

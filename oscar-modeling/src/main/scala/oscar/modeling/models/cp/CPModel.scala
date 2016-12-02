@@ -2,7 +2,6 @@ package oscar.modeling.models.cp
 
 import oscar.algo.DisjointSets
 import oscar.algo.reversible.ReversibleInt
-import oscar.algo.search.Outcome
 import oscar.cp
 import oscar.cp.constraints.{CPObjective, CPObjectiveUnit, CPObjectiveUnitMaximize, CPObjectiveUnitMinimize}
 import oscar.cp.core.{CPPropagStrength, NoSolutionException}
@@ -208,16 +207,11 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
 
   override def instantiateFloatVar(min: Double, max: Double, name: String): NoFloatDomainStorage = throw new RuntimeException("CP has no support for float variables yet")
 
-  override def post(constraint: Constraint): Outcome = {
-    try {
+  override def post(constraint: Constraint): Unit = {
       constraint match {
         case instantiable: CPInstantiableConstraint => instantiable.cpPost(cpSolver)
-        case InstantiateAndStoreInCache(expr) =>
-          postIntExpressionAndGetVar(expr)
-          Outcome.Suspend
-        case InstantiateAndReuse(reuse, expr) =>
-          postIntExpressionWithVar(expr, postIntExpressionAndGetVar(reuse))
-          Outcome.Suspend
+        case InstantiateAndStoreInCache(expr) => postIntExpressionAndGetVar(expr)
+        case InstantiateAndReuse(reuse, expr) => postIntExpressionWithVar(expr, postIntExpressionAndGetVar(reuse))
         case ExpressionConstraint(expr: BoolExpression) => postBooleanExpression(expr)
         case Among(n, x, s) => cpSolver.add(cp.modeling.constraint.among(postIntExpressionAndGetVar(n), x.map(postIntExpressionAndGetVar), s))
         case MinCumulativeResource(starts, durations, ends, demands, resources, capacity, id) =>
@@ -283,13 +277,9 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
           cpSolver.add(cp.modeling.constraint.notAllEqual(x.map(postIntExpressionAndGetVar)))
         case default => throw new Exception("Unknown constraint " + constraint.getClass.toString) //TODO: put a real exception here
       }
-    }
-    catch {
-      case c: NoSolutionException => Outcome.Failure
-    }
   }
 
-  def postEquality(left: IntExpression, right: IntExpression, second: Boolean = false): Outcome = (left, right) match {
+  def postEquality(left: IntExpression, right: IntExpression, second: Boolean = false): Unit = (left, right) match {
     //TODO replace partially with preprocessing
     case (Minus(a, b), v: IntExpression) =>
       cpSolver.add(new cp.constraints.BinarySum(postIntExpressionAndGetVar(v),postIntExpressionAndGetVar(b),postIntExpressionAndGetVar(a)))
@@ -308,28 +298,15 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         )
   }
 
-  def postBooleanExpression(expr: BoolExpression): Outcome = {
+  def postBooleanExpression(expr: BoolExpression): Unit = {
     expr match {
       case instantiable: CPInstantiableBoolExpression => instantiable.cpPostAsConstraint(cpSolver)
-      case And(array) =>
-        val r = array.map(i => postBooleanExpression(i))
-        if(r.contains(Outcome.Failure))
-          Outcome.Failure
-        else if(r.contains(Outcome.Suspend))
-          Outcome.Suspend
-        else
-          Outcome.Success
+      case And(array) => array.foreach(i => postBooleanExpression(i))
       case Eq(Array(a, b)) => //binary Eq
         postEquality(a, b)
       case Eq(x) => //n-ary Eq
         //TODO lots of ways to improve, must preprocess
-        val r = x.sliding(2).map(a => postEquality(a(0), a(1)))
-        if(r.contains(Outcome.Failure))
-          Outcome.Failure
-        else if(r.contains(Outcome.Suspend))
-          Outcome.Suspend
-        else
-          Outcome.Success
+        x.sliding(2).map(a => postEquality(a(0), a(1)))
       case Gr(a, b) =>
         cpSolver.add(new cp.constraints.Gr(postIntExpressionAndGetVar(a),postIntExpressionAndGetVar(b)))
       case GrEq(a, b) =>
@@ -406,13 +383,13 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
     }).asInstanceOf[cp.CPBoolVar]
   }
 
-  def postBoolExpressionWithVar(expr: BoolExpression, result: cp.CPBoolVar): Outcome = {
+  def postBoolExpressionWithVar(expr: BoolExpression, result: cp.CPBoolVar): Unit = {
     if(expr_cache.contains(expr)) {
       // This should not happen too often, but is still feasible as we create new expr on the fly
       println("An expression given to postBoolExpressionWithVar has already been instantiated!")
       cpSolver.add(expr_cache(expr) === result)
     }
-    val ret: Outcome = expr match {
+    expr match {
       case instantiable: CPInstantiableBoolExpression => instantiable.cpPostWithVar(cpSolver, result)
       case And(x) =>
         cpSolver.add(new oscar.cp.constraints.And(x.map(postBoolExpressionAndGetVar), result))
@@ -445,7 +422,6 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
     }
     // Must ABSOLUTELY be put AFTER all the calls to postIntExpressionAndGetVar
     expr_cache.put(expr, result)
-    ret
   }
 
   def postIntExpressionAndGetVar(expr: IntExpression): cp.CPIntVar = {
@@ -536,13 +512,13 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
     }
   }
 
-  def postIntExpressionWithVar(expr: IntExpression, result: cp.CPIntVar): Outcome = {
+  def postIntExpressionWithVar(expr: IntExpression, result: cp.CPIntVar): Unit = {
     if(expr_cache.contains(expr)) {
       // This should not happen too often, but is still feasible as we create new expr on the fly
       println("An expression given to postBoolExpressionWithVar has already been instantiated!")
       cpSolver.add(expr_cache(expr) === result)
     }
-    val ret: Outcome = expr match {
+    expr match {
       case boolexpr: BoolExpression =>
         postBoolExpressionWithVar(boolexpr, result.asInstanceOf[cp.CPBoolVar])
       case instantiable: CPInstantiableIntExpression => instantiable.cpPostWithVar(cpSolver, result)
@@ -607,7 +583,6 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
     }
     // Must ABSOLUTELY be put AFTER all the calls to postIntExpressionAndGetVar
     expr_cache.put(expr, result)
-    ret
   }
 
   /**
@@ -622,7 +597,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
   def postConstraintForPossibleConstant(a: IntExpression, b: IntExpression,
                                         leftCst: (Int, cp.CPIntVar) => cp.Constraint,
                                         rightCst: (cp.CPIntVar, Int) => cp.Constraint,
-                                        allVar: (cp.CPIntVar, cp.CPIntVar) => cp.Constraint): Outcome = {
+                                        allVar: (cp.CPIntVar, cp.CPIntVar) => cp.Constraint): Unit = {
     (a,b) match {
       case (Constant(value), variable:IntExpression) => cpSolver.add(leftCst(value, postIntExpressionAndGetVar(variable)))
       case (variable: IntExpression, Constant(value)) => cpSolver.add(rightCst(postIntExpressionAndGetVar(variable), value))

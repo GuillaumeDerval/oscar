@@ -1,15 +1,13 @@
 package oscar.cp.scheduling.constraints
 
-import oscar.algo.search.Outcome._
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.SortUtils.mergeSort
 
 import scala.annotation.tailrec
 import java.lang.Math.max
 
-import oscar.algo.search.Outcome
+import oscar.algo.Inconsistency
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.Inconsistency
 
 /*
  *  Wolf & Schrader's overload checker, INAP 2005.
@@ -85,7 +83,7 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   private[this] val sortedBySMin = Array.tabulate(nTasks){ i => i }
   private[this] val sortedByEMax = Array.tabulate(nTasks){ i => i }
   
-  override def propagate(): Outcome = {
+  override def propagate(): Unit = {
     updateCache()
     C = capacity.max
     
@@ -177,7 +175,7 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
         val opt = getMaxOptional(1, rr)
         
         val b = leafActivity(opt-rr)
-        if (resources(b).removeValue(id) == Failure) throw Inconsistency
+        resources(b).removeValue(id)
         
         // remove b from tree
         workloadOpt(opt) = 0
@@ -188,7 +186,6 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
 
       p += 1
     }
-    Suspend
   }
   
   @tailrec

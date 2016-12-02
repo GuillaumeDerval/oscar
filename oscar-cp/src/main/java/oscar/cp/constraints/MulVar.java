@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.algo.search.Outcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -44,13 +44,12 @@ public class MulVar extends Constraint {
 	}
 	
 	@Override
-	public Outcome setup(CPPropagStrength l) {
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		
 		if (x == y) {
-			if (s().post(new Square(x,z)) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			s().post(new Square(x,z));
+			deactivate();
+			return;
 		}
 		if (z.isBound()) {
 			if (z.min() == 0 && x.hasValue(0) && y.hasValue(0)) {
@@ -66,67 +65,47 @@ public class MulVar extends Constraint {
 			z.callPropagateWhenBoundsChange(this);
 		}
 		
-		Outcome ok = propagate();
-		if (ok != Outcome.Suspend) {
-			return ok;
-		}
-		
-		return Outcome.Suspend;
+		propagate();
 	}
 		
 	@Override
-	public Outcome propagate() {
+	public void propagate() throws Inconsistency {
 		if (!z.hasValue(0)) {
-			
-			if (x.removeValue(0) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			if (y.removeValue(0) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-		} 
+			x.removeValue(0);
+			y.removeValue(0);
+		}
+
 		if (x.isBound()) { // y * c = z
-			if (s().post(new MulCte(y,x.min(),z)) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
-		} else if (y.isBound()) { // x *c = z
-			if (s().post(new MulCte(x,y.min(),z)) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
-		} else if (z.isBound()) { // x * y = c
-			if (s().post(new MulCteRes(x,y,z.min())) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
-		} else { // none of the variables are bound
+			s().post(new MulCte(y,x.min(),z));
+			deactivate();
+		}
+		else if (y.isBound()) { // x *c = z
+			s().post(new MulCte(x,y.min(),z));
+			deactivate();
+		}
+		else if (z.isBound()) { // x * y = c
+			s().post(new MulCteRes(x,y,z.min()));
+			deactivate();
+		}
+		else { // none of the variables are bound
 
 			assert (!x.isBound() && !x.isBound() && !y.isBound());
 			// propagation of z (try every combination of x and y's bounds)
-			if (z.updateMin(ArrayUtils.min(NumberUtils.safeMul(x.getMin() , y.getMin()),
-										   NumberUtils.safeMul(x.getMin() , y.getMax()),
-										   NumberUtils.safeMul(x.getMax() , y.getMin()),
-									       NumberUtils.safeMul(x.getMax() , y.getMax()))) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			if (z.updateMax(ArrayUtils.max(NumberUtils.safeMul(x.getMin() , y.getMin()),
-										   NumberUtils.safeMul(x.getMin() , y.getMax()),
-							               NumberUtils.safeMul(x.getMax() , y.getMin()),
-									       NumberUtils.safeMul(x.getMax() , y.getMax()))) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
+			z.updateMin(ArrayUtils.min(NumberUtils.safeMul(x.getMin() , y.getMin()),
+									   NumberUtils.safeMul(x.getMin() , y.getMax()),
+									   NumberUtils.safeMul(x.getMax() , y.getMin()),
+									   NumberUtils.safeMul(x.getMax() , y.getMax())));
+
+			z.updateMax(ArrayUtils.max(NumberUtils.safeMul(x.getMin() , y.getMin()),
+									   NumberUtils.safeMul(x.getMin() , y.getMax()),
+									   NumberUtils.safeMul(x.getMax() , y.getMin()),
+									   NumberUtils.safeMul(x.getMax() , y.getMax())));
 			
 			// propagate x
-			if (propagateMul(x, y, z) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
+			propagateMul(x, y, z);
 			// propagate y
-			if (propagateMul(y, x, z) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
+			propagateMul(y, x, z);
 		}
-		return Outcome.Suspend;
 	}
 	
 	/**
@@ -139,53 +118,45 @@ public class MulVar extends Constraint {
 	 * @param d != 0
 	 * @return Suspend if no failure detected during this propagation
 	 */
-	private Outcome propagDiv(CPIntVar w, int a, int b, int c, int d) {
+	private void propagDiv(CPIntVar w, int a, int b, int c, int d) {
 		int wmin = Math.min(NumberUtils.minCeilDiv(a, c, d), NumberUtils.minCeilDiv(b, c, d)); 
-		if (w.updateMin(wmin) == Outcome.Failure) {
-			return Outcome.Failure;
-		}
+		w.updateMin(wmin);
 		int wmax = Math.max(NumberUtils.maxFloorDiv(a, c, d), NumberUtils.maxFloorDiv(b, c, d)); 
-		if (w.updateMax(wmax) == Outcome.Failure) {
-			return Outcome.Failure;
-		} 
-		return Outcome.Suspend;
+		w.updateMax(wmax);
 	}
 	
 	
 
 	// propagate variable u for expression (u * w = z) with neither of the variable bound
-	private Outcome propagateMul(CPIntVar u, CPIntVar w, CPIntVar z) {
-	   if (w.getMin() > 0 || w.getMax() < 0) { 
-		   return propagDiv(u, z.getMin(), z.getMax(), w.getMin(), w.getMax());
-	   } else {
-	      // w_min < 0 && w_max > 0. 
-	      if (z.getMin() <= 0 && z.getMax() >= 0) {
-	    	 // cannot filter u because we potentially have u * 0 = 0 
-	         return Outcome.Suspend;
-	      } else {
-	    	 assert(!z.isBound());
-	    	 int after0 = w.valueAfter(0);
-	    	 int before0 = w.valueBefore(0);
-	    	 if (w.getMin() == 0) {
-	    		 return propagDiv(u, z.getMin(), z.getMax(), after0, w.getMax());
-	    	 } else if (w.getMax() == 0) {
-	    		 return propagDiv(u, z.getMin(), z.getMax(), w.getMin(), before0);
-	    	 } else {
-	    		 // w_min ... before0 ... 0 ... after0 ... w_max
-	    		 int umin = Math.min(NumberUtils.minCeilDiv(z.getMin(), w.getMin(), w.getMax(), before0, after0), 
-	    				 			 NumberUtils.minCeilDiv(z.getMax(), w.getMin(), w.getMax(), before0, after0));
-	    		 if (u.updateMin(umin) == Outcome.Failure) {
-	    			 return Outcome.Failure;
-	    		 }
-	    		 int umax = Math.max(NumberUtils.maxFloorDiv(z.getMin(), w.getMin(), w.getMax(), before0, after0), 
-	    				 			 NumberUtils.minCeilDiv(z.getMax(), w.getMin(), w.getMax(), before0, after0));
-	    		 if (u.updateMax(umax) == Outcome.Failure) {
-	    			 return Outcome.Failure;
-	    		 }
-	    		 return Outcome.Suspend;
-	    	 }
-	      }
+	private void propagateMul(CPIntVar u, CPIntVar w, CPIntVar z) {
+	   if (w.getMin() > 0 || w.getMax() < 0) {
+		   propagDiv(u, z.getMin(), z.getMax(), w.getMin(), w.getMax());
+		   return;
 	   }
+	   // w_min < 0 && w_max > 0.
+	   else if (z.getMin() <= 0 && z.getMax() >= 0) {
+		 // cannot filter u because we potentially have u * 0 = 0
+	   }
+	   else {
+		 assert(!z.isBound());
+		 int after0 = w.valueAfter(0);
+		 int before0 = w.valueBefore(0);
+		 if (w.getMin() == 0) {
+			 propagDiv(u, z.getMin(), z.getMax(), after0, w.getMax());
+		 }
+		 else if (w.getMax() == 0) {
+			 propagDiv(u, z.getMin(), z.getMax(), w.getMin(), before0);
+		 }
+		 else {
+			 // w_min ... before0 ... 0 ... after0 ... w_max
+			 int umin = Math.min(NumberUtils.minCeilDiv(z.getMin(), w.getMin(), w.getMax(), before0, after0),
+								 NumberUtils.minCeilDiv(z.getMax(), w.getMin(), w.getMax(), before0, after0));
+			 u.updateMin(umin);
+			 int umax = Math.max(NumberUtils.maxFloorDiv(z.getMin(), w.getMin(), w.getMax(), before0, after0),
+								 NumberUtils.minCeilDiv(z.getMax(), w.getMin(), w.getMax(), before0, after0));
+			 u.updateMax(umax);
+		 }
+	  }
 	}	
 }
 

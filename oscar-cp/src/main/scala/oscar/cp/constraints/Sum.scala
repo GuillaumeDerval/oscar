@@ -17,12 +17,10 @@
 package oscar.cp.constraints
 
 import oscar.algo.reversible.ReversibleInt
-import oscar.algo.search.Outcome
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
-import oscar.algo.search.Outcome._
 
 /**
  * Implementation of Sum Constraint:
@@ -44,21 +42,20 @@ class Sum(x: Array[CPIntVar], constant: Int, sum: CPIntVar) extends Constraint(s
   idempotent = true
   priorityL2 = CPStore.MaxPriorityL2 - 1
 
-  final override def setup(l: CPPropagStrength): Outcome = {
-    if (propagate() == Failure) Failure
-    else {
+  final override def setup(l: CPPropagStrength): Unit = {
+    propagate()
+    if(isActive) {
       sum.callPropagateWhenBoundsChange(this)
       var i = 0
       while (i < nVariables) {
         variables(i).callPropagateWhenBoundsChange(this)
         i += 1
       }
-      Suspend
     }
   }
 
   // Invariant: fixedValue is the sum of bound term variables.
-  override def propagate(): Outcome = {
+  override def propagate(): Unit = {
 
     var sumxmin = 0
     var sumxmax = 0
@@ -95,8 +92,8 @@ class Sum(x: Array[CPIntVar], constant: Int, sum: CPIntVar) extends Constraint(s
       }
 
       // step 2: propagate from x to y
-      if (sum.updateMax(sumxmax) == Failure) return Failure
-      if (sum.updateMin(sumxmin) == Failure) return Failure
+      sum.updateMax(sumxmax)
+      sum.updateMin(sumxmin)
       
       val ymax = sum.max
       val ymin = sum.min
@@ -111,7 +108,7 @@ class Sum(x: Array[CPIntVar], constant: Int, sum: CPIntVar) extends Constraint(s
           val ximax = ymax - ymini
           // Update and check whether the domain is sparse
           if (ximax < oldximax) {
-            if (variables(i).updateMax(ximax) == Failure) return Failure
+            variables(i).updateMax(ximax)
             val newximax = variables(i).max
             val xidiff = newximax - oldximax
             sumxmax += xidiff
@@ -130,7 +127,7 @@ class Sum(x: Array[CPIntVar], constant: Int, sum: CPIntVar) extends Constraint(s
           val ximin = ymin - ymaxi
           // Update and check whether the domain is sparse
           if (ximin > oldximin) {
-            if (variables(i).updateMin(ximin) == Failure) return Failure
+            variables(i).updateMin(ximin)
             val newxmin = variables(i).min
             reduce |= newxmin != ximin
           }
@@ -142,27 +139,5 @@ class Sum(x: Array[CPIntVar], constant: Int, sum: CPIntVar) extends Constraint(s
     
     nFixed.value = n
     fixedValue.value = value
-
-    Suspend
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

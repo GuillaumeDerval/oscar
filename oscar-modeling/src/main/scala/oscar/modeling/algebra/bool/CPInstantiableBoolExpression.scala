@@ -1,6 +1,5 @@
 package oscar.modeling.algebra.bool
 
-import oscar.algo.search.Outcome
 import oscar.cp.{CPBoolVar, CPSolver}
 
 /**
@@ -10,7 +9,7 @@ trait CPInstantiableBoolExpression extends BoolExpression {
   /**
     * Post the expression as a constraint (meaning the expression should be true)
     */
-  def cpPostAsConstraint(cPSolver: CPSolver): Outcome
+  def cpPostAsConstraint(cPSolver: CPSolver): Unit
 
   /**
     * Post the expression, and return a CPIntVar corresponding to its value
@@ -21,5 +20,5 @@ trait CPInstantiableBoolExpression extends BoolExpression {
     * Post the expression, with 'v' being the value the expression should equal to
     * @param v The value the expression should equal to
     */
-  def cpPostWithVar(cPSolver: CPSolver, v: CPBoolVar): Outcome
+  def cpPostWithVar(cPSolver: CPSolver, v: CPBoolVar): Unit
 }

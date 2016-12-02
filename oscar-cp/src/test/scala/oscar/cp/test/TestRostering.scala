@@ -15,7 +15,7 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 
 import oscar.cp.constraints._
 
@@ -27,7 +27,7 @@ import collection.immutable.SortedSet
 /**
  * @author Pierre Schaus pschaus@gmail.com
  */
-class TestRostering extends FunSuite with ShouldMatchers  {
+class TestRostering extends TestSuite  {
 
   test("Test Rostering2") {
     val nbPersons = 5;

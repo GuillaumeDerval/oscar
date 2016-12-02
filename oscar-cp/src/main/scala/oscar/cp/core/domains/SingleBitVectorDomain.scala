@@ -3,10 +3,10 @@ package oscar.cp.core.domains
 import oscar.algo.reversible.{ReversibleContext, ReversibleInt}
 
 import scala.util.Random
-import oscar.algo.search.Outcome._
 import java.lang.Integer.bitCount
 
-import oscar.algo.search.Outcome
+import oscar.algo.Inconsistency
+
 
 /** 
  *  An integer domain based on a bit vector of 32 bits. 
@@ -75,38 +75,34 @@ class SingleBitVectorDomain(override val context: ReversibleContext, val minValu
     }
   }
 
-  def removeValue(value: Int): Outcome = {
-    if (value < minValue) Suspend
-    else if (value > maxValue) Suspend
-    else {
+  def removeValue(value: Int): Unit = {
+    if(minValue <= value && value <= maxValue) {
       val bit = 1 << (value - minValue)
       val domain = bits.value
-      // Value is not in the domain
-      if ((domain & bit) == 0) Suspend
-      // The domain becomes empty
-      else {
+      // Value is in the domain
+      if ((domain & bit) != 0) {
         val newDomain = domain ^ bit
         bits.value = newDomain
-        if (newDomain == 0) Failure
-        else Suspend
+        // The domain becomes empty
+        if (newDomain == 0)
+          throw Inconsistency
       }
     }
   }
 
-  def assign(value: Int): Outcome = {
+  def assign(value: Int): Unit = {
     if (value < minValue || value > maxValue) {
       bits.value = 0
-      Failure
+      throw Inconsistency
     }
     else {
       val id = (value - minValue)
       val bit = 1 << id
       if ((bits.value & bit) == 0) {
         bits.value = 0
-        Failure
+        throw Inconsistency
       } else {
         bits.value = bit
-        Suspend
       }
     }
   }
@@ -127,25 +123,29 @@ class SingleBitVectorDomain(override val context: ReversibleContext, val minValu
     maxId.value = id
   }
 
-  def updateMin(value: Int): Outcome = {
-    if (value < minValue) Suspend
+  def updateMin(value: Int): Unit = {
+    if (value < minValue) {
+      //nothing to do
+    }
     else if (value > maxValue) {
       bits.value = 0
-      Failure
+      throw Inconsistency
     }
     else {
       val id = value - minValue
       updateMinId()
       val minBitId = minId.value
-      if (id <= minBitId) Suspend
-      else {
+      if (id > minBitId) {
         updateMaxId()
         val maxBitId = maxId.value
-        if (id == maxBitId) assign(value)
+        if (id == maxBitId) {
+          assign(value)
+        }
         else if (id > maxBitId) {
           bits.value = 0
-          Failure
-        } else {
+          throw Inconsistency
+        }
+        else {
           var i = minBitId
           var domain = bits.value
           while (i < id) {
@@ -157,31 +157,34 @@ class SingleBitVectorDomain(override val context: ReversibleContext, val minValu
           }
           bits.value = domain
           minId.value = id
-          Suspend
         }
       }
     }
   }
 
-  def updateMax(value: Int): Outcome = {
+  def updateMax(value: Int): Unit = {
     if (value < minValue) {
       bits.value = 0
-      Failure
+      throw Inconsistency
     }
-    else if (value > maxValue) Suspend
+    else if (value > maxValue) {
+      //nothing to do
+    }
     else {
       val id = value - minValue
       updateMaxId()
       val maxBitId = maxId.value
-      if (id >= maxBitId) Suspend
-      else {
+      if (id < maxBitId) {
         updateMinId()
         val minBitId = minId.value
-        if (id == minBitId) assign(value)
+        if (id == minBitId) {
+          assign(value)
+        }
         else if (id < minBitId) {
           bits.value = 0
-          Failure
-        } else {
+          throw Inconsistency
+        }
+        else {
           var i = maxBitId
           var domain = bits.value
           while (i > id) {
@@ -193,7 +196,6 @@ class SingleBitVectorDomain(override val context: ReversibleContext, val minValu
           }
           bits.value = domain
           maxId.value = id
-          Suspend
         }
       }
     }

@@ -1,6 +1,5 @@
 package oscar.modeling.models
 
-import oscar.algo.search.Outcome
 import oscar.modeling.constraints.Constraint
 import oscar.modeling.misc.ModelVarStorage
 import oscar.modeling.vars.domainstorage.{FloatDomainStorage, IntDomainStorage}
@@ -11,16 +10,13 @@ trait LeafModel extends Model {
     * Post a new constraint
     * @param constraint constraint to add
     */
-  def post(constraint: Constraint): Outcome
+  def post(constraint: Constraint): Unit
 
   /**
     * Post a new constraint
     * @param constraint constraint to add
     */
-  def add(constraint: Constraint): Unit = {
-    if(post(constraint) == Outcome.Failure)
-      throw new NoSolException
-  }
+  def add(constraint: Constraint): Unit = post(constraint)
 
   /**
     * Post a new constraint

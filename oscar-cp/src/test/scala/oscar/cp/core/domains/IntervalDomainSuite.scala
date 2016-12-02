@@ -1,8 +1,8 @@
 package oscar.cp.core.domains
 
 import oscar.cp.testUtils.TestSuite
+import oscar.cp.isInconsistent
 import oscar.algo.reversible.{ReversibleContext, ReversibleContextImpl}
-import oscar.algo.search.Outcome._
 
 import scala.util.Random
 
@@ -62,7 +62,7 @@ abstract class IntervalDomainSuite extends TestSuite {
     val context = new ReversibleContextImpl()
     val domain = intervalDomain(context, 5, 15)
     assert(domain.size == 11)
-    assert(domain.updateMin(10) == Suspend)
+    domain.updateMin(10)
     assert(domain.size == 6)
     assert(domain.min == 10)
   }
@@ -70,18 +70,18 @@ abstract class IntervalDomainSuite extends TestSuite {
   test("UpdateMin should remove all values lesser than min") {
     val context = new ReversibleContextImpl()
     val domain = intervalDomain(context, 5, 15)
-    assert(domain.updateMin(10) == Suspend)
+    domain.updateMin(10)
     assert(containsAll(domain))
   }
   
   test("UpdateMin with a lesser or equal value than min should not impact the domain") {
     val context = new ReversibleContextImpl()
     val domain = intervalDomain(context, 5, 15)
-    assert(domain.updateMin(4) == Suspend)
+    domain.updateMin(4)
     assert(domain.size == 11)
     assert(domain.min == 5)
     assert(domain.max == 15)
-    assert(domain.updateMin(5) == Suspend)
+    domain.updateMin(5)
     assert(domain.size == 11)
     assert(domain.min == 5)
     assert(domain.max == 15)
@@ -90,7 +90,7 @@ abstract class IntervalDomainSuite extends TestSuite {
   test("UpdateMin to max should assign max") {
     val context = new ReversibleContextImpl()
     val domain = intervalDomain(context, 5, 15)
-    assert(domain.updateMin(15) == Suspend)
+    domain.updateMin(15)
     assert(domain.size == 1)
     assert(domain.isBound)
     assert(domain.hasValue(15))
@@ -99,7 +99,7 @@ abstract class IntervalDomainSuite extends TestSuite {
   test("UpdateMin greater than max should fail") {
     val context = new ReversibleContextImpl()
     val domain = intervalDomain(context, 5, 15)
-    assert(domain.updateMin(20) == Failure)
+    assert(isInconsistent(domain.updateMin(20)))
     assert(domain.size == 0)
   }
   
@@ -107,7 +107,7 @@ abstract class IntervalDomainSuite extends TestSuite {
     val context = new ReversibleContextImpl()
     val domain = intervalDomain(context, 5, 15)
     assert(domain.size == 11)
-    assert(domain.updateMax(10) == Suspend)
+    domain.updateMax(10)
     assert(domain.size == 6)
     assert(domain.max == 10)
   }
@@ -115,18 +115,18 @@ abstract class IntervalDomainSuite extends TestSuite {
   test("UpdateMax should remove all values greater than max") {
     val context = new ReversibleContextImpl()
     val domain = intervalDomain(context, 5, 15)
-    assert(domain.updateMax(10) == Suspend)
+    domain.updateMax(10)
     assert(containsAll(domain))
   }
   
   test("UpdateMax with a greater or equal value than max should not impact the domain") {
     val context = new ReversibleContextImpl()
     val domain = intervalDomain(context, 5, 15)
-    assert(domain.updateMax(20) == Suspend)
+    domain.updateMax(20)
     assert(domain.size == 11)
     assert(domain.min == 5)
     assert(domain.max == 15)
-    assert(domain.updateMax(15) == Suspend)
+    domain.updateMax(15)
     assert(domain.size == 11)
     assert(domain.min == 5)
     assert(domain.max == 15)
@@ -135,7 +135,7 @@ abstract class IntervalDomainSuite extends TestSuite {
   test("UpdateMax to min should assign min") {
     val context = new ReversibleContextImpl()
     val domain = intervalDomain(context, 5, 15)
-    assert(domain.updateMax(5) == Suspend)
+    domain.updateMax(5)
     assert(domain.size == 1)
     assert(domain.isBound)
     assert(domain.hasValue(5))
@@ -144,7 +144,7 @@ abstract class IntervalDomainSuite extends TestSuite {
   test("UpdateMax lesser than min should fail") {
     val context = new ReversibleContextImpl()
     val domain = intervalDomain(context, 5, 15)
-    assert(domain.updateMax(0) == Failure)
+    assert(isInconsistent(domain.updateMax(0)))
     assert(domain.size == 0)
   }
   
@@ -152,14 +152,14 @@ abstract class IntervalDomainSuite extends TestSuite {
     val context = new ReversibleContextImpl()
     val domain = intervalDomain(context, 5, 15)
     context.pushState()
-    assert(domain.updateMax(10) == Suspend)
+    domain.updateMax(10)
     assert(domain.min == 5)
     assert(domain.max == 10)
     assert(domain.size == 6)
     assert(containsAll(domain))
     context.pushState()
-    assert(domain.updateMax(9) == Suspend)
-    assert(domain.updateMin(6) == Suspend)
+    domain.updateMax(9)
+    domain.updateMin(6)
     assert(domain.min == 6)
     assert(domain.max == 9)
     assert(domain.size == 4)
@@ -185,7 +185,7 @@ abstract class IntervalDomainSuite extends TestSuite {
   test("Assign should make min equal to max") {
     val context = new ReversibleContextImpl()
     val domain = intervalDomain(context, 5, 15)
-    assert(domain.assign(10) == Suspend)
+    domain.assign(10)
     assert(domain.hasValue(10))
     assert(domain.min == 10)
     assert(domain.max == 10)
@@ -194,14 +194,14 @@ abstract class IntervalDomainSuite extends TestSuite {
   test("Assign should reduce the size to 1") {
     val context = new ReversibleContextImpl()
     val domain = intervalDomain(context, 5, 15)
-    assert(domain.assign(10) == Suspend)
+    domain.assign(10)
     assert(domain.size == 1)
   }
   
   test("Assign an out of bounds value should fail") {
     val context = new ReversibleContextImpl()
     val domain = intervalDomain(context, 5, 15)
-    assert(domain.assign(20) == Failure)
+    assert(isInconsistent(domain.assign(20)))
     assert(domain.size == 0)
   }
   
@@ -261,8 +261,8 @@ abstract class IntervalDomainSuite extends TestSuite {
     assert(domain.iterator.forall(values1.contains(_)))
     assert(domain.iterator.size == 11)
     val values2 = (7 to 10).toSet
-    assert(domain.updateMin(7) == Suspend)
-    assert(domain.updateMax(10) == Suspend)
+    domain.updateMin(7)
+    domain.updateMax(10)
     assert(domain.size == 4)    
     assert(domain.iterator.forall(domain.hasValue(_)))
     assert(domain.iterator.forall(values2.contains(_)))

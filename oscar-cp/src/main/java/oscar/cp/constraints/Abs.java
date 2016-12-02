@@ -14,7 +14,6 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -41,13 +40,9 @@ public class Abs extends Constraint {
 	}
 
 	@Override
-	public Outcome setup(CPPropagStrength l) {
-		if (y.updateMin(0) == Outcome.Failure) {
-			return Outcome.Failure;
-		}
-		if (propagate() == Outcome.Failure) {
-			return Outcome.Failure;
-		}
+	public void setup(CPPropagStrength l) {
+		y.updateMin(0) ;
+		propagate() ;
 		if (!x.isBound()) {
 			x.callPropagateWhenBoundsChange(this);
 			x.callValBindWhenBind(this);
@@ -57,96 +52,60 @@ public class Abs extends Constraint {
 			y.callValBindWhenBind(this);
 		}
 		//we can do more propagation with val remove
-		return Outcome.Suspend;
 	}
 	
 	
 
 	
 	@Override
-	public Outcome propagate() {
+	public void propagate() {
 		// y = |x|	
 		
 		if (x.getMin() >= 0) {
-			if (y.updateMin(x.getMin()) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			if (y.updateMax(x.getMax()) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			if (x.updateMin(y.getMin()) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			if (x.updateMax(y.getMax()) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
+			y.updateMin(x.getMin());
+			y.updateMax(x.getMax());
+			x.updateMin(y.getMin());
+			x.updateMax(y.getMax());
 		}
 		else if (x.getMax() <= 0) {
-			if (y.updateMin(-x.getMax()) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			if (y.updateMax(-x.getMin()) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			if (x.updateMin(-y.getMax()) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			if (x.updateMax(-y.getMin()) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
+			y.updateMin(-x.getMax());
+			y.updateMax(-x.getMin());
+			x.updateMin(-y.getMax());
+			x.updateMax(-y.getMin());
 		} else {
 			int maxabsy = Math.max(Math.abs(x.getMax()), Math.abs(x.getMin()));			
-			if (y.updateMax(maxabsy) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			if (x.updateMax(y.getMax()) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			if (x.updateMin(-y.getMax()) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
+			y.updateMax(maxabsy);
+			x.updateMax(y.getMax());
+			x.updateMin(-y.getMax());
 			
 		}
-		return Outcome.Suspend;
 	}
 	
 	@Override
-	public Outcome valBind(CPIntVar var) {
+	public void valBind(CPIntVar var) {
 		//return Outcome.Suspend;
 		
 		if (x.isBound()) {
-			
-			if (y.assign(Math.abs(x.min())) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
-			
+			y.assign(Math.abs(x.min()));
+			deactivate();
 		} else { // y is bound
 			// y = |x|	
 			if(!x.hasValue(-y.min())) {
-				if (x.assign(y.min()) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
+				x.assign(y.min());
 			}
 			else if(!x.hasValue(y.min())) {
-				if (x.assign(-y.min()) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
+				x.assign(-y.min());
 			}
-
 			else {
 				// x can be (y or -y)
 				// remove everything except y and -y from x
 				for (int v = x.getMin(); v <= x.getMax(); v++) {
 					if(v != y.min() && v != -y.min()) {
-						if (x.removeValue(v) == Outcome.Failure) {
-							return Outcome.Failure;
-						}
+						x.removeValue(v);
 					}
 				}
 			}
-			return Outcome.Success;
-			
+			deactivate();
 		}
 	}
 }

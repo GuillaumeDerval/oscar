@@ -16,8 +16,6 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.algo.search.Outcome._
-import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 
 
@@ -27,17 +25,14 @@ import oscar.cp.core.variables.CPIntVar
  * @author Pierre Schaus pschaus@gmail.com
  */
 class CountCst(val N: CPIntVar, val X: Array[CPIntVar], val Y: Int) extends Constraint(N.store, "CountSimple") {
-  
- 
   val n = X.size
 
-  override def setup(l: CPPropagStrength): Outcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     X.foreach(_.callPropagateWhenDomainChanges(this))
     N.callPropagateWhenBoundsChange(this)
-    Outcome.Suspend
   }
   
-  override def propagate(): Outcome = {
+  override def propagate(): Unit = {
     var i = 0
     var sure = 0
     var possible = 0
@@ -55,8 +50,8 @@ class CountCst(val N: CPIntVar, val X: Array[CPIntVar], val Y: Int) extends Cons
     val minCount = sure
     val maxCount = possible
     
-    if (N.updateMin(minCount) == Outcome.Failure) return Outcome.Failure
-    if (N.updateMax(maxCount) == Outcome.Failure) return Outcome.Failure
+    N.updateMin(minCount)
+    N.updateMax(maxCount)
     
     
     // we reached the maximum number values
@@ -64,24 +59,24 @@ class CountCst(val N: CPIntVar, val X: Array[CPIntVar], val Y: Int) extends Cons
       i = 0
       while (i < n) {
         if (!X(i).isBound) {
-          if (X(i).removeValue(Y) == Outcome.Failure) return Outcome.Failure
+          X(i).removeValue(Y)
         }  
         i += 1
       }
-      return Outcome.Success
+      this.deactivate()
+      return
     }
     // every value not surely equal to Y must be equal to Y
     if (maxCount == N.min) {
       i = 0
       while (i < n) {
-        if (X(i).hasValue(Y)) {
-          if (X(i).assign(Y) == Outcome.Failure) return Outcome.Failure
-        }
+        if (X(i).hasValue(Y))
+          X(i).assign(Y)
         i += 1
       }
-      return Outcome.Success
+      this.deactivate()
+      return
     }
-    return Outcome.Suspend
   }
   
 

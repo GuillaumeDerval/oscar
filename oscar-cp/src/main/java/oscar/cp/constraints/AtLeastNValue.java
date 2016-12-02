@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.algo.search.Outcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -44,19 +44,12 @@ public class AtLeastNValue extends Constraint {
 	}
 
 	@Override
-	public Outcome setup(CPPropagStrength l) {
-		
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		if(l == CPPropagStrength.Weak) {
-			if (s().post(new AtLeastNValueFWC(x,nval)) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
+			s().post(new AtLeastNValueFWC(x,nval));
 		} else {
-			if (s().post(new AtLeastNValueAC(x,nval)) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
+			s().post(new AtLeastNValueAC(x,nval));
 		}
-		
-		return Outcome.Success;
 	}
 
 }

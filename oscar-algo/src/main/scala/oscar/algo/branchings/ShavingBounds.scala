@@ -1,6 +1,5 @@
 package oscar.algo.branchings
 
-import oscar.algo.search.Outcome._
 import oscar.algo.search._
 import oscar.algo.vars.IntVarLike
 
@@ -43,7 +42,7 @@ class ShavingBounds(val vars: Array[IntVarLike]) extends Branching with Branchin
         val v = xDomain(p)
         context.pushState()
         
-        if (context.assign(x, v) != Failure) {        // if this fails, union with nothing, achieved by doing nothing
+        if (!isInconsistent(context.assign(x, v))) {        // if this fails, union with nothing, achieved by doing nothing
           var q = 0
           while (q < nUVars) {
             minBound(q) = math.min(minBound(q), unboundVars(q).min)

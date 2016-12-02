@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.algo.search.Outcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -135,36 +135,29 @@ public class SoftGCCAC extends Constraint{
 	
 
 	@Override
-	public Outcome setup(CPPropagStrength l) {
-		
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		posted = true;
 
 		findValueRange();
 		allocateFlow();
 		findInitialFlow();
 
-
 		int valViol = getValueViolation();
-		if (viol.updateMin(valViol) == Outcome.Failure) {
-			return Outcome.Failure;
-		}
+		viol.updateMin(valViol);
 
 		allocateSCC();
 
-		if(propagate() == Outcome.Failure){
-			return Outcome.Failure;
-		}
+		propagate();
 
 		for(int k = 0 ; k < x.length; k++){
 			if (!x[k].isBound())
 				x[k].callPropagateWhenDomainChanges(this);
 		}
 		if (!viol.isBound()) viol.callPropagateWhenBoundsChange(this);
-		return Outcome.Suspend;
 	}
 	
 	@Override
-	public Outcome propagate() {
+	public void propagate() {
 		for(int k = 0; k < x.length ; k++) {
 			if (varMatch_uf[k] != NONE) {
 				if (!x[k].hasValue(varMatch_uf[k])) {
@@ -181,7 +174,7 @@ public class SoftGCCAC extends Constraint{
 		int valViol = getValueViolation();
 
 		//prune lower bound of violation
-		if (viol.updateMin(valViol) == Outcome.Failure) return Outcome.Failure;
+		viol.updateMin(valViol);
 
 		//prune variable domains (the constraint is consistent at this point)
 		prune(valViol);
@@ -194,13 +187,8 @@ public class SoftGCCAC extends Constraint{
 				break;
 			}
 		}
-		if (allBound) {
-			if (viol.updateMax(valViol) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-		}
-
-		return Outcome.Suspend;
+		if (allBound)
+			viol.updateMax(valViol);
 	}
 	
 	
@@ -825,7 +813,7 @@ public class SoftGCCAC extends Constraint{
 		
 		findSCC(FlowType.UF);
 		computeIsVarAlwaysMatched(FlowType.UF);
-		for(int v = 0; v<nbVals; v++){
+		for(int v = 0; v<nbVals; v++) {
 			valComponent_uf[v] = valComponent[v];
 		}
 		for(int k = 0; k < x.length; k++) {
@@ -835,7 +823,7 @@ public class SoftGCCAC extends Constraint{
 		findSCC(FlowType.OF);
 		computeIsVarAlwaysMatched(FlowType.OF);
 
-		if(valViol == viol.getMax()-1){
+		if(valViol == viol.getMax()-1) {
 			for(int k = 0; k < x.length; k++) {
 				if( varMatch_of[k] == NONE) continue;//all values of this variable are consistent
 				int mx = x[k].getMin();
@@ -844,8 +832,7 @@ public class SoftGCCAC extends Constraint{
 					if(x[k].hasValue(w)){
 						if (varMatch_uf[k] != w && varMatch_of[k] != w) {
 							if ((varComponent_uf[k] != valComponent_uf[w-minval] && (low[w-minval]>0 || isVarAlwaysMatched_uf[k])) && (varComponent[k] != valComponent[w-minval] && (up[w-minval]>0 || isVarAlwaysMatched_of[k])) ) {
-								Outcome status = x[k].removeValue(w);
-								assert(status != Outcome.Failure);
+								x[k].removeValue(w);
 							}
 						}
 					}
@@ -862,8 +849,7 @@ public class SoftGCCAC extends Constraint{
 					if(x[k].hasValue(w)){
 						if (varMatch_uf[k] != w && varMatch_of[k] != w) {
 							if (varComponent_uf[k] != valComponent_uf[w-minval] && (low[w-minval]>0 || isVarAlwaysMatched_uf[k])) {
-								Outcome status = x[k].removeValue(w);
-								assert(status != Outcome.Failure);
+								x[k].removeValue(w);
 							}
 						}
 					}
@@ -879,8 +865,7 @@ public class SoftGCCAC extends Constraint{
 					if(x[k].hasValue(w)){
 						if (varMatch_of[k] != w) {
 							if (varComponent[k] != valComponent[w-minval] && (up[w-minval]>0 || isVarAlwaysMatched_of[k])) {
-								Outcome status = x[k].removeValue(w);
-								assert(status != Outcome.Failure);
+								x[k].removeValue(w);
 							}
 						}
 					}

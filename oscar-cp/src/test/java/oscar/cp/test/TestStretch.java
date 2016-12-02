@@ -16,6 +16,7 @@ package oscar.cp.test;
 
 
 import junit.framework.TestCase;
+import oscar.algo.Inconsistency;
 import oscar.cp.constraints.Automaton;
 import oscar.cp.constraints.EqCons;
 import oscar.cp.constraints.Regular;
@@ -51,7 +52,7 @@ public class TestStretch extends TestCase {
         s = null;
     }
     
-    public void testStretch(){ 
+    public void testStretch() throws Inconsistency {
     	CPIntVar [] x = new CPIntVar[8];
     	for (int i = 0; i < x.length; i++) {
 			x[i] = CPIntVar.apply(s,0,2);

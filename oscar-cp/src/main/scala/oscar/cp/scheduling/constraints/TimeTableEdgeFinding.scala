@@ -2,14 +2,12 @@ package oscar.cp.scheduling.constraints
 
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp._
-import oscar.algo.search.Outcome._
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.modeling._
 import java.lang.Math._
 
+import oscar.algo.Inconsistency
 import oscar.algo.SortUtils._
-import oscar.algo.search.Outcome
-import oscar.cp.core.Inconsistency
 
 /*
  * TTEF of Vilim 2011 as described in Schutt et al 2013 
@@ -22,13 +20,7 @@ extends Constraint(capacity.store, "TimeTableEdgeFinding") {
   private val store = capacity.store
   
   override def setup(strength: CPPropagStrength) = {
-    try {
-      if (store.post(Array[Constraint](lr, rl)) == Failure) Failure
-      else Suspend
-    }
-    catch {
-      case e: NoSolutionException => Failure
-    }
+    store.post(Array[Constraint](lr, rl))
   }
 }
 
@@ -65,7 +57,7 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   
   @inline private final def ttEn(a: Int, b: Int): Long = ttBeforeEMax(b) - ttBeforeSMin(a)
   
-  final override def propagate(): Outcome = {
+  final override def propagate(): Unit = {
     updateCache()
     C = capacity.max
     
@@ -194,13 +186,14 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
             val allowedLength = (reserve + hmin(u).toLong * max(0, min(dmin(u), end - smax(u)))) / hmin(u)
             val newSMin = end - allowedLength
             
-            if (smin(u) < newSMin && starts(u).updateMin(newSMin.toInt) == Failure) throw Inconsistency
+            if (smin(u) < newSMin)
+              starts(u).updateMin(newSMin.toInt)
           }
           else { // possible(u)
             val newSMin = end - reserve / hmin(u) 
             
             if (smax(u) < newSMin) {
-              if (resources(u).removeValue(id)  == Failure) throw Inconsistency
+              resources(u).removeValue(id)
               possible(u) = false
               energyReqU = 0L
             } 
@@ -212,8 +205,6 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
       
       do { y -= 1 } while (y > 0 && emax(activeByEMax(y)) == end)   // find next emax
     }
-    
-    Suspend
   }
 }
 

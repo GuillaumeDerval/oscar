@@ -17,7 +17,6 @@
 
 package oscar
 
-import oscar.algo.search.Outcome
 import oscar.cp.constraints.InSet
 import oscar.cp.constraints.ModuloLHS
 import oscar.cp.core.CPPropagStrength
@@ -53,7 +52,6 @@ import oscar.util.selectMin
  * @author Renaud Hartert ren.hartert@gmail.com
  */
 package object cp extends Constraints with Branchings with ElementBuilder with CPSolverUtils with LNSRelaxations {
-
   // Alias to useful classes and companion objects
   type CPIntVar = oscar.cp.core.variables.CPIntVar
   final val CPIntVar = oscar.cp.core.variables.CPIntVar
@@ -261,9 +259,8 @@ package object cp extends Constraints with Branchings with ElementBuilder with C
      * @return a boolean variable b in the same store linked to x by the relation x == y <=> b == true
      */
     def isEq(y: CPIntVar): CPBoolVar = {
-      val b = CPBoolVar()(x.store);
-      val ok = x.store.post(new oscar.cp.constraints.EqReifVar(x, y, b));
-      assert(ok != Outcome.Failure);
+      val b = CPBoolVar()(x.store)
+      x.store.post(new oscar.cp.constraints.EqReifVar(x, y, b))
       b
     }
 

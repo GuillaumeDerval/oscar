@@ -17,8 +17,8 @@ package oscar.cp.constraints;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import oscar.algo.Inconsistency;
 import oscar.algo.reversible.ReversibleInt;
-import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
@@ -107,18 +107,16 @@ public class BinaryKnapsack extends Constraint {
     }
 
 	@Override
-	public Outcome setup(CPPropagStrength l) {
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		if (n > 0) {
-            if (s().post(new BinaryKnapsackWithCardinality(x,w,c,n)) == Outcome.Failure) {
-                return Outcome.Failure;
-            }
+            s().post(new BinaryKnapsackWithCardinality(x,w,c,n));
         }
 
-		if (s().post(new LightBinaryKnapsack(x,w,c)) == Outcome.Failure) {
-			return Outcome.Failure;
+		s().post(new LightBinaryKnapsack(x,w,c));
+		if (l == CPPropagStrength.Weak) {
+			deactivate();
+			return;
 		}
-		if (l == CPPropagStrength.Weak)
-			return Outcome.Success;
 		
 		candidate = new ReversibleInt[x.length];
 		for (int i = 0; i < candidate.length; i++) {
@@ -138,12 +136,10 @@ public class BinaryKnapsack extends Constraint {
 		for (int i = 0; i < x.length; i++) {
 			if (x[i].isBound()) {
 				if (x[i].isTrue()) {
-					if (bind(i) == Outcome.Failure)
-						return Outcome.Failure;
+					bind(i) ;
 				}
 				else {
-					if (remove(i) == Outcome.Failure)
-						return Outcome.Failure;
+					remove(i) ;
 				}
 			}
 			else {
@@ -157,48 +153,40 @@ public class BinaryKnapsack extends Constraint {
 		beta_ = 0;
 		X = new int[x.length];
 		
-		if (propagate() == Outcome.Failure) {
-			return Outcome.Failure;
-		}
-		
-		return Outcome.Suspend;
+		propagate();
 	}
 	
 
 	@Override
-	public Outcome valBindIdx(CPIntVar var, int idx) {
+	public void valBindIdx(CPIntVar var, int idx) {
 		if (var.getMin() == 1)
-			return bind(idx);
+			bind(idx);
 		else
-			return remove(idx);
+			remove(idx);
 	}
 
 	
-	private Outcome bind(int i) {
+	private void bind(int i) {
 		int wi = w[i];
 		int nrcap = rcap.getValue() + wi;
-		if (c.updateMin(nrcap) == Outcome.Failure)
-			return Outcome.Failure;
+		c.updateMin(nrcap) ;
 		rcap.setValue(nrcap);
 		candidate[i].setValue(0);
 		nb.decr(); //nb--
-		return Outcome.Suspend;
 	}
 	
 	
-	private Outcome remove(int i) {
+	private void remove(int i) {
 		pcap.setValue(pcap.getValue() - w[i]);
-		if (c.updateMax(pcap.getValue()) == Outcome.Failure)
-			return Outcome.Failure;
+		c.updateMax(pcap.getValue()) ;
 		candidate[i].setValue(0);
 		nb.decr();
-		return Outcome.Suspend;
 	}
 	
 	
 	
 	@Override
-	public Outcome propagate() {
+	public void propagate() throws Inconsistency {
 		this.alpha_ = 0;
 		this.beta_ = 0;
 		int leftover = c.getMax() - rcap.getValue();
@@ -206,29 +194,22 @@ public class BinaryKnapsack extends Constraint {
 		for (int k = 0; k < x.length; k++) {
 			if (candidate[k].getValue() == 1) {
 				if (w[k] > leftover) {
-					if (x[k].removeValue(1) == Outcome.Failure) {
-						return Outcome.Failure;
-					}
-					else{
-						return Outcome.Suspend;
-					}
+					x[k].removeValue(1);
+					return;
                 }
 				if (w[k] > slack) {
-					if (x[k].assign(1) == Outcome.Failure) {
-						return Outcome.Failure;
-					}
-					else{
-						return Outcome.Suspend;
-					}
+					x[k].assign(1);
+					return;
                 }
 			}
 		}
 
 		boolean pruneMore = true;
 		if (nb.getValue() <= 2)
-			return Outcome.Suspend;
+			return;
 		if (noSumPossible(c.min() - rcap.value(),c.getMax() - rcap.getValue()))
-			return Outcome.Failure;
+			throw Inconsistency.get();
+
 		if (pruneMore) {
 			int lastsize = -1;
 			for(int k = 0; k < x.length; k++) {
@@ -238,10 +219,8 @@ public class BinaryKnapsack extends Constraint {
 					boolean toremove = noSumPossible(Math.max(c.getMin(),rcap.getValue()+w[k]) - rcap.getValue() - w[k], c.getMax() - rcap.getValue() - w[k]);
 					candidate[k].setValue(1);
 					if (toremove) {
-						if (x[k].removeValue(1) == Outcome.Failure)
-							return Outcome.Failure;
-						else
-							return Outcome.Suspend;
+						x[k].removeValue(1);
+						return;
 					}
 				}
 			}
@@ -254,22 +233,17 @@ public class BinaryKnapsack extends Constraint {
 							Math.min(c.getMax(),pcap.getValue() - w[k]) - rcap.getValue());
 					candidate[k].setValue(1);
 					if (toinsert) {
-						if (x[k].assign(1) == Outcome.Failure)
-							return Outcome.Failure;
+						x[k].assign(1) ;
 					}
 				}
 			}
 		}
 		if(noSumPossible(c.getMin() - rcap.getValue(),c.getMin() - rcap.getValue())){
-			if(c.updateMin( rcap.getValue()+beta_) == Outcome.Failure)
-				return Outcome.Failure;
+			c.updateMin( rcap.getValue()+beta_) ;
 		}
 		if(noSumPossible(c.getMax() - rcap.getValue(),c.getMax() - rcap.getValue())){
-            if(c.updateMax(rcap.getValue()+alpha_) == Outcome.Failure)
-				return Outcome.Failure;
+            c.updateMax(rcap.getValue()+alpha_) ;
 		}
-		
-		return Outcome.Suspend;
 	}
 
 

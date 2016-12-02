@@ -1,15 +1,14 @@
 package oscar.cp.scheduling.constraints
 
+import oscar.algo.Inconsistency
 import oscar.cp.core._
 import oscar.cp.core.variables.CPIntVar
-import oscar.algo.search.Outcome._
 import oscar.algo.SortUtils._
 
 import scala.math.{max, min}
 import scala.annotation.tailrec
 import oscar.cp.scheduling.util.OpenSparseSet
 import oscar.algo.reversible.ReversibleInt
-import oscar.algo.search.Outcome
 
 /**
  * @author Steven Gay steven.gay@uclouvain.be
@@ -25,14 +24,7 @@ extends Constraint(starts(0).store, "Unary") {
   val rl = new UnaryLR(ends map(-_), durations, starts map(-_), resources, id)
   
   override def setup(strength: CPPropagStrength) = {
-    try {
-      if (s.add(Array(lr, rl)) == Failure) Failure
-      else Suspend
-    }
-    catch {
-      case e: NoSolutionException => Failure
-      case e: Inconsistency => Failure
-    }
+    s.add(Array(lr, rl))
   }
 }
 
@@ -116,7 +108,7 @@ extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryLR")(starts(
     }
   }
   
-  override def propagate(): Outcome = {
+  override def propagate(): Unit = {
     updateCache()
     
     filterSort(sortedBySMin, bySMinMax, toConsiderBySMin, smin)
@@ -165,16 +157,15 @@ extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryLR")(starts(
         val j = toConsiderBySMax(pEnergyEvents)
         
         if (required(j)) {
-          if (tree.thetaEnvelope > smax(j) && 
-              ends(j).updateMax(smax(latestThetaTask)) == Failure) 
-            throw Inconsistency
+          if (tree.thetaEnvelope > smax(j))
+              ends(j).updateMax(smax(latestThetaTask))
           latestThetaTask = j
           tree.addToTheta(taskToStartEvent(j))
           // println(s"Added $j at ${smin(j)} == ${startEventEnvelope(taskToStartEvent(j))}, with workload ${dmin(j)} == ${startEventWorkload(taskToStartEvent(j))}, new envelope is ${tree.thetaEnvelope}")
         }
         else {
           if (tree.thetaEnvelope > smax(j) && emin(j) > smax(latestThetaTask)) {
-            if (resources(j).removeValue(id) == Failure) throw Inconsistency
+            resources(j).removeValue(id)
             toConsider.exclude(j)
           }
           else tree.addToLambda(taskToStartEvent(j))
@@ -195,20 +186,22 @@ extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryLR")(starts(
               if (tree.thetaEnvelope > smax(i)) {
                 // println(s"mustRemoveI = $mustRemoveI smax($i) = ${smax(i)}, envelope is ${tree.thetaEnvelope}")
                 val newEMax = smax(latestThetaTask)
-                if (newEMax < emax(i) && ends(i).updateMax(newEMax) == Failure) throw Inconsistency
+                if (newEMax < emax(i))
+                  ends(i).updateMax(newEMax)
               } 
             }
             else {
               val newSMin = tree.thetaEnvelope  // do not convert toInt here: if envelope is Long.MinValue, boom
               // println(s"mustRemoveI = $mustRemoveI smin($i) = ${smin(i)}, envelope is ${newSMin} == ${tree.thetaEnvelope}")
-              if (newSMin > smin(i) && starts(i).updateMin(newSMin.toInt) == Failure) throw Inconsistency
+              if (newSMin > smin(i))
+                starts(i).updateMin(newSMin.toInt)
               
               // remove optionals
               while (tree.lambdaEnvelope > smax(i)) {
                 val opt = tree.getLambdaEvent()
                 
                 val b = toConsiderBySMin(opt)
-                if (resources(b).removeValue(id) == Failure) throw Inconsistency
+                resources(b).removeValue(id)
                 toConsider.exclude(b)
                 
                 tree.remove(opt)
@@ -220,7 +213,7 @@ extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryLR")(starts(
           else {
             if (tree.thetaEnvelope > smax(i)) {
               if ((pruningEventIsEmax && smax(latestThetaTask) < emin(i)) || !pruningEventIsEmax) {
-                if (resources(i).removeValue(id) == Failure) throw Inconsistency
+                resources(i).removeValue(id)
                 // println((if (emaxEvent) "NFNL" else "DP") + " removing with a push")
                 toConsider.exclude(i)
                 tree.remove(taskToStartEvent(i))
@@ -245,11 +238,12 @@ extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryLR")(starts(
           val i = toConsiderBySMin(opt)
           
           if (required(i)) { // apply Edge Finding
-            if (tree.thetaEnvelope > smin(i) && starts(i).updateMin(tree.thetaEnvelope.toInt) == Failure) throw Inconsistency
+            if (tree.thetaEnvelope > smin(i))
+              starts(i).updateMin(tree.thetaEnvelope.toInt)
             tree.remove(taskToStartEvent(i))
           }
           else {  // remove responsible, using Overload Checking
-            if (resources(i).removeValue(id) == Failure) throw Inconsistency
+            resources(i).removeValue(id)
             toConsider.exclude(i)
             tree.remove(taskToStartEvent(i))
           }
@@ -268,7 +262,6 @@ extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryLR")(starts(
     
     removeExtremal()
     //removeIsolated(toConsiderBySMin, toConsiderByEMax, nToConsider)
-    Suspend
   }
 }
 

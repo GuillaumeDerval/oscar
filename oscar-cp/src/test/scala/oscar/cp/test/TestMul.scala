@@ -16,7 +16,7 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 import oscar.cp.core.CPStore
 import oscar.cp._
 import oscar.cp.constraints.WeightedSum
@@ -27,7 +27,7 @@ import oscar.cp.constraints.Gr
 import oscar.cp.constraints.MulVar
 import oscar.cp.constraints.DiffVal
 
-class TestMul extends FunSuite with ShouldMatchers {
+class TestMul extends TestSuite {
 
   test("test Mul 1") {
     implicit val s = new CPStore()
@@ -41,8 +41,7 @@ class TestMul extends FunSuite with ShouldMatchers {
     implicit val s = new CPStore()
     val x = CPIntVar(2, 5)
     val y = CPIntVar(10, 10)
-    s.post(new MulCte(x, 3, y))
-
+    postAndCheckFailure(s,new MulCte(x, 3, y))
     assert(s.isFailed)
   }
 
@@ -70,7 +69,7 @@ class TestMul extends FunSuite with ShouldMatchers {
     val x = CPIntVar(2, 5)
     val y = CPIntVar(10, 10)
     //s.post(new MulCte(x,3,y))
-    s.post(new WeightedSum(Array(3), Array(x), y))
+    postAndCheckFailure(s, new WeightedSum(Array(3), Array(x), y))
     assert(s.isFailed)
 
     assert(true)

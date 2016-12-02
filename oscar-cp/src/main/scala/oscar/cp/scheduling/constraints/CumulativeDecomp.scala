@@ -1,9 +1,7 @@
 package oscar.cp.scheduling.constraints
 
-import oscar.algo.search.Outcome
 import oscar.cp._
 import oscar.cp.core.Constraint
-import oscar.algo.search.Outcome._
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.constraints.Sum
 
@@ -23,17 +21,16 @@ class CumulativeDecomp(starts: Array[CPIntVar], durations: Array[CPIntVar], ends
     Tasks.filter(task => starts(task).min <= t && ends(task).max > t)
   }
 
-  override def setup(l: CPPropagStrength): Outcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     for (t <- Horizon) {
       val tasks = overlapingTasks(t)
       val overlapingVars = tasks.map(task => ((starts(task).isLeEq(t) and (ends(task) ?> t) and (resources(task).isEq(id))) * demands(task)))
       val minDemand = minSum(overlapingVars)
       val maxDemand = maxSum(overlapingVars)
       val totDemand = CPIntVar(minDemand to maxDemand)(s)
-      if (s.post(new Sum(overlapingVars.toArray, totDemand)) == Failure) return Failure
-      if (s.post(totDemand <= capacity.max) == Failure) return Failure
+      s.post(new Sum(overlapingVars.toArray, totDemand))
+      s.post(totDemand <= capacity.max)
     }
-    Suspend
   }
 
   private def maxValue(vars: Seq[CPIntVar]): Int = {

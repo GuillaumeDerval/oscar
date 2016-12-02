@@ -16,13 +16,13 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 import oscar.cp.constraints._
 import oscar.cp.core._
 import oscar.cp.modeling._
 import oscar.cp.multiobjective.ListPareto
 
-class TestListPareto extends FunSuite with ShouldMatchers {
+class TestListPareto extends TestSuite {
 
   test("equals") {
     val p1 = ListPareto[Any](2, maximization = true)

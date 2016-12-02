@@ -15,6 +15,8 @@
 
 package oscar.algo.search
 
+import oscar.algo.Inconsistency
+
 /**
  * @author Pierre Schaus pschaus@gmail.com
  */
@@ -31,4 +33,14 @@ trait BranchingUtils {
   }
   
   val noAlternative = Seq[Alternative]()
+
+  final def isInconsistent(clo: => Unit): Boolean = {
+    try {
+      clo
+      false
+    }
+    catch {
+      case _: Inconsistency => true
+    }
+  }
 }

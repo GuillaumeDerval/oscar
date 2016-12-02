@@ -14,8 +14,8 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
+import oscar.algo.Inconsistency;
 import oscar.algo.reversible.ReversibleInt;
-import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -70,20 +70,14 @@ public class Maximum extends Constraint {
 	}
 
 	@Override
-	public Outcome setup(CPPropagStrength l) {
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		
 		for (int i=0; i < x.length; i++) {			
-			if (x[i].updateMax(y.getMax()) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
+			x[i].updateMax(y.getMax());
 		}
 		updateSupport();
-		if (y.updateMin(minval.getValue()) == Outcome.Failure) {
-			return Outcome.Failure;
-		}
-		if (y.updateMax(maxval.getValue()) == Outcome.Failure) {
-			return Outcome.Failure;
-		}
+		y.updateMin(minval.getValue());
+		y.updateMax(maxval.getValue());
 		
 		for (int i = 0; i < x.length; i++) {
 			if (!x[i].isBound() && (x[i].getMax() > y.getMin())) {
@@ -92,40 +86,28 @@ public class Maximum extends Constraint {
 		}
 		if (!y.isBound()) {
 			y.callUpdateBoundsWhenBoundsChange(this);
-		}	
-		return Outcome.Suspend;
+		}
 	}
 	
 	@Override
-	public Outcome updateBoundsIdx(CPIntVar x, int idx) {
+	public void updateBoundsIdx(CPIntVar x, int idx) {
 		if (idx == minvalsupport.getValue() || idx == maxvalsupport.getValue()) {
 			updateSupport();
-			if (y.updateMin(minval.getValue()) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			if (y.updateMax(maxval.getValue()) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
+			y.updateMin(minval.getValue());
+			y.updateMax(maxval.getValue());
 		}
 		if (x.isBound() && x.min() == maxval.getValue()) {
-			if (y.assign(maxval.getValue()) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			y.assign(maxval.getValue());
+			deactivate();
 		}
-		
-		return Outcome.Suspend;
 	}
 	
 	
 	@Override
-	public Outcome updateBounds(CPIntVar y) {
+	public void updateBounds(CPIntVar y) {
 		for (int i=0; i < x.length; i++) {			
-			if (x[i].updateMax(y.getMax()) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
+			x[i].updateMax(y.getMax());
 		}
-		return Outcome.Suspend;
 	}
 
 }

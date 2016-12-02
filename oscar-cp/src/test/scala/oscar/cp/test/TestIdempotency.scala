@@ -17,17 +17,16 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 import oscar.cp.core.Constraint
 import oscar.algo.reversible._
-import oscar.algo.search.Outcome
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
  */
-class TestIdempotency extends FunSuite with ShouldMatchers {
+class TestIdempotency extends TestSuite {
 
   test("test idempotency") {
 
@@ -35,11 +34,10 @@ class TestIdempotency extends FunSuite with ShouldMatchers {
 
     class MyCons(val X: CPIntVar, idempot: Boolean) extends Constraint(X.store, "MyCons") {
       idempotent = idempot
-      override def setup(l: CPPropagStrength): Outcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         X.callPropagateWhenDomainChanges(this)
-        Outcome.Suspend
       }
-      override def propagate(): Outcome = {
+      override def propagate(): Unit = {
         nbCallToPropagate += 1
         X.removeValue(0)
       }

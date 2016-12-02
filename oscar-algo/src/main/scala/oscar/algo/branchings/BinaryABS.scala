@@ -16,7 +16,6 @@
 
 package oscar.algo.branchings
 
-import oscar.algo.search.Outcome.Failure
 import oscar.algo.search.{Branching, _}
 import oscar.algo.vars.IntVarLike
 import oscar.util.IncrementalStatistics
@@ -93,11 +92,8 @@ class BinaryABS(variables: Array[IntVarLike], valHeuristic: Int => Int,rand: Ran
     var i = 0
     while (i < n && !c.isFailed) {
       val x = variables(shuffled(i))
-      if (!x.isBound) {
-        if (c.assign(x,valHeuristic(shuffled(i))) != Failure)
-        if (!c.isFailed) {
+      if (!x.isBound && !isInconsistent(c.assign(x,valHeuristic(shuffled(i)))) && !c.isFailed) {
           updateActivities()
-        }
       }
       i += 1
     }
@@ -107,7 +103,7 @@ class BinaryABS(variables: Array[IntVarLike], valHeuristic: Int => Int,rand: Ran
   private def updateActivities() {
     for (i <- 0 until n) {
       if (variables(i).size < domSize(i)) {
-        activity(i) += 1;
+        activity(i) += 1
       }
       domSize(i) = variables(i).size
     }

@@ -16,8 +16,6 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.algo.search.Outcome
-import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.variables.CPBoolVar
 
@@ -35,7 +33,7 @@ class InSetReif(val x: CPIntVar, val set: Set[Int], val b: CPBoolVar) extends Co
   val supportValueNotInSet = new ReversibleInt(s,0)
   
   
-  override def setup(l: CPPropagStrength): Outcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     if (!b.isBound) b.callValBindWhenBind(this)
     else return valBind(b)
     
@@ -78,59 +76,42 @@ class InSetReif(val x: CPIntVar, val set: Set[Int], val b: CPBoolVar) extends Co
     }
   }  
   
-  override def valBind(variable: CPIntVar): Outcome = {
+  override def valBind(variable: CPIntVar): Unit = {
     if (b.isTrue) {
       for (v <- x.toSet if !set.contains(v)) {
-        if (x.removeValue(v) == Failure) {
-          return Failure
-        }
+        x.removeValue(v)
       }
     } else if (b.isFalse) {
       for (v <- x.toSet if set.contains(v)) {
-        if (x.removeValue(v) == Failure) {
-          return Failure
-        }
+        x.removeValue(v)
       }
     } else if (x.isBound) {
       val value = if (set.contains(x.min)) 1 else 0
-      if (b.assign(value) == Failure) {
-        return Failure
-      }
+      b.assign(value)
     }
-    Success
+    deactivate()
   }
 
-  override def propagate(): Outcome = {
+  override def propagate(): Unit = {
     if (x.min > setMax) {
-      if (b.assign(0) == Failure) {
-        return Failure
-      }
-      return Success
+      b.assign(0)
+      deactivate()
     } else if (x.max < setMin) {
-       if (b.assign(0) == Failure) {
-        return Failure
-      } 
-      return Success
+      b.assign(0)
+      deactivate()
     } else if (setRange && x.min >= setMin && x.max <= setMax) {
-       if (b.assign(1) == Failure) {
-        return Failure
-      }      
+       b.assign(1)
     } else {
       val atLeastOneNotInSet = updateSupportNotInSet()
       if (!atLeastOneNotInSet) {
-        if (b.assign(1) == Failure) {
-          return Failure
-        }        
+        b.assign(1)
       }
       val atLeastOneInSet = updateSupportInSet()
       if (atLeastOneNotInSet && !atLeastOneInSet) {
-        if (b.assign(0) == Failure) {
-          return Failure
-        }
-        return Success
+        b.assign(0)
+        deactivate()
       }
     }
-    Suspend
   }
 
 }

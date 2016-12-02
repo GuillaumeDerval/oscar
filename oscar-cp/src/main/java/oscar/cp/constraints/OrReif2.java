@@ -14,9 +14,9 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
+import oscar.algo.Inconsistency;
 import oscar.algo.reversible.ReversibleBoolean;
 import oscar.algo.reversible.ReversibleInt;
-import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
@@ -49,22 +49,21 @@ public class OrReif2 extends Constraint {
 	}
 
 	@Override
-	public Outcome setup(CPPropagStrength l) {
+	public void setup(CPPropagStrength l) throws Inconsistency {
 	    if (x.length == 2) {
-	        if (s().post(new BinaryOr(x[0],x[1],y)) == Outcome.Failure) return Outcome.Failure;
-	        else return Outcome.Success;
+	        s().post(new BinaryOr(x[0],x[1],y));
+			return;
 	    }
+
 		nbBound = new ReversibleInt(s(),0); // number of values assigned to false
 		ytrue = new ReversibleBoolean(s(),false);
 		for (int i = 0; i < x.length; i++) {
 			if (x[i].isTrue()) {
-				if (y.assign(1) == Outcome.Failure) {
-					return Outcome.Failure;
-				} else {
-					return Outcome.Success;
-				}
+				y.assign(1);
+				return;
 			}
 		}
+
 		// we know no variables from X are bound to 1
 		for (int i = 0; i < x.length; i++) {
 			if (!x[i].isBound()) {
@@ -74,92 +73,75 @@ public class OrReif2 extends Constraint {
 				nbBound.incr();
 			}
 		}
+
 		if (!y.isBound()) {
 			if (nbBound.getValue() == x.length) {
-				if (y.assign(0) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
+				y.assign(0);
 			}
 			y.callValBindWhenBind(this);
 		}
 		else {
 			if (y.min() == 0) {
-				for (int i = 0; i < x.length; i++) {
-						if (x[i].assign(0) == Outcome.Failure) {
-							return Outcome.Failure;
-						}
+				for (CPBoolVar aX : x) {
+					aX.assign(0);
 				}
-				return Outcome.Success;
+				this.deactivate();
 			} else { // y = true
 				ytrue.setValue(true);
 				if (nbBound.getValue() == x.length-1) { // only one is not bound to false, this one must be set to true
 					for (int i = 0; i < x.length; i++) {
 						if (!x[i].isBound()) {
-							if (x[i].assign(1) == Outcome.Failure) {
-								return Outcome.Failure;
-							}
-							return Outcome.Success;
+							x[i].assign(1);
+							this.deactivate();
+							return;
 						}
 					}
 				}
 			}
 		}
-		return Outcome.Suspend;
 	}
 	
 	
 	@Override
-	public Outcome valBindIdx(CPIntVar var, int idx) {
+	public void valBindIdx(CPIntVar var, int idx) {
 		if (var.min() == 1) {
-			if (y.assign(1) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			y.assign(1);
+			this.deactivate();
+			return;
 		} else {
 			nbBound.incr();			
 			if (nbBound.getValue() == x.length) {
-				if (y.assign(0) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
+				y.assign(0);
 			} else if (nbBound.getValue() == x.length-1 && ytrue.getValue()){
 				for (int i = 0; i < x.length; i++) {
 					if (!x[i].isBound()) {
-						if (x[i].assign(1) == Outcome.Failure) {
-							return Outcome.Failure;
-						}
-						return Outcome.Success;
+						x[i].assign(1);
+						this.deactivate();
+						return;
 					}
 				}
-				return Outcome.Suspend;
 			}
 		}
-		return Outcome.Suspend;
 	}
 	
 	@Override
-	public Outcome valBind(CPIntVar yvar) {
+	public void valBind(CPIntVar yvar) {
 		if (yvar.min() == 0) {
-			for (int i = 0; i < x.length; i++) {
-					if (x[i].assign(0) == Outcome.Failure) {
-						return Outcome.Failure;
-					}
-				
-			}
-			return Outcome.Success;
+			for (int i = 0; i < x.length; i++)
+				x[i].assign(0);
+			this.deactivate();
 		} else {
 			ytrue.setValue(true);
 			if (nbBound.getValue() == x.length-1){
 				for (int i = 0; i < x.length; i++) {
 					if (!x[i].isBound()) {
-						if (x[i].assign(1) == Outcome.Failure) {
-							return Outcome.Failure;
-						}
-						return Outcome.Success;
+						x[i].assign(1);
+						this.deactivate();
+						return;
 					}
 				}
 			}
 		}
-		return Outcome.Suspend;
 	}
 
 }

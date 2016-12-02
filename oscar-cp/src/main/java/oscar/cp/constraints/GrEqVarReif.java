@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.algo.search.Outcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
@@ -45,47 +45,37 @@ public class GrEqVarReif extends Constraint {
 	}
 	
 	@Override
-	public Outcome setup(CPPropagStrength l) {
-		
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		if (x.isBound()) {
-			if (s().post(new LeEqCteReif(y, x.min(), b)) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			s().post(new LeEqCteReif(y, x.min(), b));
+			deactivate();
+			return;
 		} else if (y.isBound()) {
-			if (s().post(new GrEqCteReif(x, y.min(), b)) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			s().post(new GrEqCteReif(x, y.min(), b));
+			deactivate();
+			return;
 		}
 		
-		Outcome oc = propagate();
-		if (oc == Outcome.Suspend){
+		propagate();
+		if (isActive()){
 			if (!b.isBound()) b.callValBindWhenBind(this);
 			if (!x.isBound()) x.callPropagateWhenBoundsChange(this);
 			if (!y.isBound()) y.callPropagateWhenBoundsChange(this);
 			if (b.isBound()) {
-				oc = valBind(b);
+				valBind(b);
 			}
 		}
-		return oc;
 	}
 	
 	@Override
-	public Outcome propagate() {
+	public void propagate() {
 		if (x.getMin() >= y.getMax()) {
-			if (b.assign(1) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
-		} else if (x.getMax() < y.getMin()) {
-			if (b.assign(0) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			b.assign(1);
+			deactivate();
 		}
-		else {
-			return Outcome.Suspend;
+		else if (x.getMax() < y.getMin()) {
+			b.assign(0);
+			deactivate();
 		}
 	}
 	
@@ -95,19 +85,15 @@ public class GrEqVarReif extends Constraint {
 	}
 		
 	@Override
-	public Outcome valBind(CPIntVar var) {
+	public void valBind(CPIntVar var) throws Inconsistency {
 		if (b.min() == 0) {
 			//x < y
-			if (s().post(new Le(x,y)) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
+			s().post(new Le(x,y));
 		} else {
 			//x >= v
-			if (s().post(new GrEq(x,y)) == Outcome.Failure) {
-				return Outcome.Failure;
-			}				
+			s().post(new GrEq(x,y));
 		}
-		return Outcome.Success;
+		deactivate();
 	}
 
 }

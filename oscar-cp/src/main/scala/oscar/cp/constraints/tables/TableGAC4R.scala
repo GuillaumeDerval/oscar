@@ -16,10 +16,8 @@
 package oscar.cp.constraints.tables
 
 import oscar.algo.reversible._
-import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.{CPPropagStrength, Constraint}
-import oscar.algo.search.Outcome._
 
 import scala.collection.mutable.ArrayBuffer
 import oscar.cp.core.delta.DeltaIntVar
@@ -132,14 +130,12 @@ class TableGAC4R(X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Const
 
   /* ----- Set up ----- */
 
-  override def setup(l: CPPropagStrength): Outcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     /* Only work with allowed tuples */
     fillValidTuples()
 
     /* Fill supports for each (variable, value) pair and remove unsupported values */
-    if (fillSupportsAndRemoveUnsupported() == Failure) {
-      return Failure
-    }
+    fillSupportsAndRemoveUnsupported()
 
     /* AC3 propagator with delta */
     idempotent = true
@@ -150,15 +146,13 @@ class TableGAC4R(X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Const
       val x = X(i)
       snapshots(i) = x.callPropagateOnChangesWithDelta(this)
     }
-
-    Suspend
   }
 
   /**
    * Compute the supports for each variable value pair (x,a) and remove values not supported by any tuple.
    * @return the outcome i.e. Failure or Success.
    */
-  private final def fillSupportsAndRemoveUnsupported(): Outcome = {
+  private final def fillSupportsAndRemoveUnsupported(): Unit = {
     validTuples = new ReversibleSharedSparseSet(store, nbTuples)
 
     /* Fill temp supports */
@@ -187,9 +181,7 @@ class TableGAC4R(X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Const
         val value = domainsFillArray(valueIndex)
         val tempSupport = tempSupports(i)(value - originalMin)
         if (tempSupport.isEmpty) {
-          if (X(i).removeValue(value) == Failure) {
-            return Failure
-          }
+          X(i).removeValue(value)
         }
         else {
           variableSupport.initDense(value - originalMin, tempSupport.toArray)
@@ -201,8 +193,6 @@ class TableGAC4R(X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Const
       supports(i) = variableSupport
       i += 1
     }
-
-    Suspend
   }
 
   /**
@@ -248,17 +238,15 @@ class TableGAC4R(X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Const
    * @param varIndex the index of x.
    * @return the outcome i.e. Failure or Success.
    */
-  @inline private final def removeTupleFromSupports(tuple: Array[Int], tupleIndex: Int, varIndex: Int): Outcome = {
+  @inline private final def removeTupleFromSupports(tuple: Array[Int], tupleIndex: Int, varIndex: Int): Unit = {
     val valueTuple = tuple(varIndex)
     val valueIndex = valueTuple - originalMins(varIndex)
     val variableSupports = supports(varIndex)
     variableSupports.remove(valueIndex, tupleIndex)
     if (variableSupports.size(valueIndex) == 0) {
-      if (X(varIndex).removeValue(tuple(varIndex)) == Failure)
-        return Failure
+      X(varIndex).removeValue(tuple(varIndex))
       //if (X(varIndex).isBound) unBoundVars.removeValue(varIndex)
     }
-    Suspend
   }
 
   /**
@@ -267,30 +255,23 @@ class TableGAC4R(X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Const
    * @param varIndex the index of the variable for which the invalidation is not necessary.
    * @return the outcome i.e. Failure or Success.
    */
-  private final def invalidateTuple(tupleIndex: Int, varIndex: Int): Outcome = {
+  private final def invalidateTuple(tupleIndex: Int, varIndex: Int): Unit = {
     validTuples.remove(tupleIndex)
     val tuple = tuples(tupleIndex)
     var i = 0
     while (i < varIndex) {
-      if (removeTupleFromSupports(tuple, tupleIndex, i) == Failure) {
-        return Failure
-      }
-
+      removeTupleFromSupports(tuple, tupleIndex, i)
       i += 1
     }
 
     i = varIndex + 1
     while (i < arity) {
-      if (removeTupleFromSupports(tuple, tupleIndex, i) == Failure) {
-        return Failure
-      }
-
+      removeTupleFromSupports(tuple, tupleIndex, i)
       i += 1
     }
-    Suspend
   }
 
-  override def propagate(): Outcome = {
+  override def propagate(): Unit = {
     /* Count the number of invalidated tuples per variable and keep the max */
     var maxCount = 0
     var indexMax = 0
@@ -386,9 +367,8 @@ class TableGAC4R(X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Const
         j = 0
         while (j < domSize) {
           b = domainsFillArray(j)
-          if (supportsY.size(b - originalMinY) == 0 && y.removeValue(b) == Failure) {
-            return Failure
-          }
+          if(supportsY.size(b - originalMinY) == 0)
+            y.removeValue(b)
           j += 1
         }
         if (y.isBound) {
@@ -408,19 +388,15 @@ class TableGAC4R(X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Const
           val deltaSize = snapshot.fillArray(domainsFillArray)
           var deltaIndex = 0
           while (deltaIndex < deltaSize) {
-            if (valRemove(intVar, varId, domainsFillArray(deltaIndex)) == Failure) {
-              return Failure
-            }
+            valRemove(intVar, varId, domainsFillArray(deltaIndex))
             deltaIndex += 1
           }
         }
       }
     }
-
-    Suspend
   }
 
-  private final def valRemove(x: CPIntVar, idx: Int, value: Int): Outcome = {
+  private final def valRemove(x: CPIntVar, idx: Int, value: Int): Unit = {
     /* When a value a is removed from D(x), we invalidate all tuples in supports(x,a) */
     val valueIndex = value - originalMins(idx)
     val variableSupports = supports(idx)
@@ -430,14 +406,10 @@ class TableGAC4R(X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Const
     var indexSupport = 0
     while (indexSupport < nbSupports) {
       val tupleIndex = valueSupports(indexSupport)
-      if (invalidateTuple(tupleIndex, idx) == Failure) {
-        return Failure
-      }
+      invalidateTuple(tupleIndex, idx)
       indexSupport += 1
     }
     variableSupports.clear(valueIndex)
-
-    Suspend
   }
 
 }

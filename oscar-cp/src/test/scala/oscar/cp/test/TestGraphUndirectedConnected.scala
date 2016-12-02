@@ -15,8 +15,7 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
-import oscar.algo.search.Outcome._
+import oscar.cp.testUtils.TestSuite
 import oscar.cp._
 import oscar.cp.constraints.GraphUndirected
 import oscar.cp.constraints.GraphUndirectedConnected
@@ -25,7 +24,7 @@ import oscar.cp.constraints.GraphUndirectedConnected
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
  */
 
-class TestGraphUndirectedConnected extends FunSuite with ShouldMatchers  {
+class TestGraphUndirectedConnected extends TestSuite  {
   
   test("Test 1 : Test constraint initial propagation") {
     val cp = CPSolver()
@@ -34,11 +33,11 @@ class TestGraphUndirectedConnected extends FunSuite with ShouldMatchers  {
     val g = CPGraphVar(cp, nnodes, edges)
     val gu = CPGraphVar(cp, nnodes)
     
-    cp.post(new GraphUndirected(g,gu)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphUndirected(g,gu))
     
     // 1) add some mandatory nodes/edges
-    cp.post(g.addNode(0)) should be (Suspend)
-    cp.post(g.addEdge(0,1)) should be (Suspend) // should also add node 1 as required
+    postAndCheckSuspend(cp, g.addNode(0))
+    postAndCheckSuspend(cp, g.addEdge(0,1)) // should also add node 1 as required
     
     // 2) check that all is correct : 
     // check nodes
@@ -57,7 +56,7 @@ class TestGraphUndirectedConnected extends FunSuite with ShouldMatchers  {
     g.possibleEdges(4).sorted    should be (List())
     
     // 3) add constraint
-    cp.post(new GraphUndirectedConnected(gu)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphUndirectedConnected(gu))
     
     // 4) check that all changes are correct acc. to definition :
     // 		-> remove node 4 (isolated - not required and lead to two connected components)
@@ -83,12 +82,12 @@ class TestGraphUndirectedConnected extends FunSuite with ShouldMatchers  {
     val g = CPGraphVar(cp, nnodes, edges)
     val gu = CPGraphVar(cp, nnodes)
     
-    cp.post(new GraphUndirected(g,gu)) should be (Suspend)
-    cp.post(g.addNode(0)) should be (Suspend)
-    cp.post(new GraphUndirectedConnected(gu)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphUndirected(g,gu))
+    postAndCheckSuspend(cp,g.addNode(0))
+    postAndCheckSuspend(cp,new GraphUndirectedConnected(gu))
     
     // add node 3 as required
-    cp.post(gu.addNode(3)) should be (Suspend)
+    postAndCheckSuspend(cp,gu.addNode(3))
     // propagation lead to changes :
     //	 * as 0 and 3 are required, node 2 is a cutnode in path between 0 and 3
     //     -> set 2 required
@@ -117,12 +116,12 @@ class TestGraphUndirectedConnected extends FunSuite with ShouldMatchers  {
     val g = CPGraphVar(cp, nnodes, edges)
     val gu = CPGraphVar(cp, nnodes)
     
-    cp.post(new GraphUndirected(g,gu)) should be (Suspend)
-    cp.post(g.addNode(0)) should be (Suspend)
-    cp.post(new GraphUndirectedConnected(gu)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphUndirected(g,gu))
+    postAndCheckSuspend(cp,g.addNode(0))
+    postAndCheckSuspend(cp,new GraphUndirectedConnected(gu))
     
     // remove node 2
-    cp.post(g.removeNode(2)) should be (Suspend)
+    postAndCheckSuspend(cp,g.removeNode(2))
     // propagation lead to changes :
     // 	 * two connected components : List(0,1) and List(3) : as 0 is required, remove List(3)
     //   * remove all edges connected with either 2 and 3
@@ -148,12 +147,12 @@ class TestGraphUndirectedConnected extends FunSuite with ShouldMatchers  {
     val g = CPGraphVar(cp, nnodes, edges)
     val gu = CPGraphVar(cp, nnodes)
     
-    cp.post(new GraphUndirected(g,gu)) should be (Suspend)
-    cp.post(g.addNode(0)) should be (Suspend)
-    cp.post(new GraphUndirectedConnected(gu)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphUndirected(g,gu))
+    postAndCheckSuspend(cp,g.addNode(0))
+    postAndCheckSuspend(cp,new GraphUndirectedConnected(gu))
     
     // add node 2 as required
-    cp.post(g.addNode(2)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(2))
     // propagation lead to no changes other than add node 2
     
     g.possibleNodes.sorted should be (List(0,1,2,3))
@@ -178,19 +177,19 @@ class TestGraphUndirectedConnected extends FunSuite with ShouldMatchers  {
     val g = CPGraphVar(cp, nnodes, edges)
     val gu = CPGraphVar(cp, nnodes)
     
-    cp.post(new GraphUndirected(g,gu)) should be (Suspend)
-    cp.post(g.addNode(0)) should be (Suspend)
-    cp.post(new GraphUndirectedConnected(gu)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphUndirected(g,gu))
+    postAndCheckSuspend(cp,g.addNode(0))
+    postAndCheckSuspend(cp,new GraphUndirectedConnected(gu))
     
     // add node 3 as required
-    cp.post(g.addNode(3)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(3))
     // propagation lead to changes :
     //	 * as 0 and 3 are required, node 2 is a cutnode in path between 0 and 3
     //     -> set 2 required
     //   * as 0 and 3 are required, edge between 2 and 3 is the only way to go from 3 to 2 and then to 0
     //     -> set edge 3:(2,3) required because it is a bridge
     
-    cp.post(g.removeEdge(2,3)) should be (Failure)
+    postAndCheckFailure(cp, g.removeEdge(2,3))
     cp.isFailed should be (true)
   }
   
@@ -202,12 +201,12 @@ class TestGraphUndirectedConnected extends FunSuite with ShouldMatchers  {
     val g = CPGraphVar(cp, nnodes, edges)
     val gu = CPGraphVar(cp, nnodes)
     
-    cp.post(new GraphUndirected(g,gu)) should be (Suspend)
-    cp.post(g.addNode(0)) should be (Suspend)
-    cp.post(new GraphUndirectedConnected(gu)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphUndirected(g,gu))
+    postAndCheckSuspend(cp,g.addNode(0))
+    postAndCheckSuspend(cp,new GraphUndirectedConnected(gu))
     
     // add node 1 as required
-    cp.post(g.addNode(1)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(1))
     // propagation lead to changes :
     //   * as 0 and 1 are required, edge between them is the only way to go from one to another
     //     -> set edge 0:(0,1) required because it is a bridge

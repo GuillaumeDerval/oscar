@@ -25,7 +25,9 @@ class TestGolomb extends TestSuite {
       // break the symmetries between differences
       add(marks(1) - marks(0) < marks(n - 1) - marks(n - 2))
       search { binaryFirstFail(marks) }
-      onSolution { best = obj.value } 
+      onSolution { best = obj.value }
+
+      println("Reached")
       start()
       best
     }

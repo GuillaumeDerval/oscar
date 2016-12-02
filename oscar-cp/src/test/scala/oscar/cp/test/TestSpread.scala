@@ -16,12 +16,11 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
-import oscar.algo.search.Outcome
+import oscar.cp.testUtils.TestSuite
 import oscar.cp.constraints._
 import oscar.cp._
 
-class TestSpread extends FunSuite with ShouldMatchers {
+class TestSpread extends TestSuite {
 
   test("Spread 1") {
     val cp = CPSolver()
@@ -280,14 +279,9 @@ class TestSpread extends FunSuite with ShouldMatchers {
 
 
 
-  def decomposition(x: Array[CPIntVar], sum: Int, sum2: CPIntVar): Outcome = {
-    if (sum2.store.post(new Sum(x.map(i => i * i), sum2)) == Outcome.Failure) {
-      Outcome.Failure
-    } else if (sum2.store.post(new Sum(x, CPIntVar(sum)(sum2.store))) == Outcome.Failure) {
-      Outcome.Failure
-    } else {
-      Outcome.Suspend
-    }
+  def decomposition(x: Array[CPIntVar], sum: Int, sum2: CPIntVar): Unit = {
+    sum2.store.post(new Sum(x.map(i => i * i), sum2))
+    sum2.store.post(new Sum(x, CPIntVar(sum)(sum2.store)))
   }
 
   def nbSol(doms: Array[(Int, Int)], sum: Int, sum2Max: Int, decomp: Boolean): Int = {

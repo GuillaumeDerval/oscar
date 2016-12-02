@@ -16,11 +16,9 @@
  */
 package oscar.cp.constraints
 
-import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
-import oscar.algo.search.Outcome._
 import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.CPStore
 
@@ -42,20 +40,17 @@ class Inverse(prev: Array[CPIntVar], next: Array[CPIntVar]) extends Constraint(p
   // Structure used to collect removed values
   private[this] val removedValues = new Array[Int](prev.length)
 
-  override def setup(l: CPPropagStrength): Outcome = {
-    if (init() == Failure) Failure
-    else {
-      var i = prev.length
-      while (i > 0) {
-        i -= 1
-        if (!prev(i).isBound) prev(i).callOnChangesIdx(i, s => propagatePrev(s))
-        if (!next(i).isBound) next(i).callOnChangesIdx(i, s => propagateNext(s))
-      }
-      Suspend
+  override def setup(l: CPPropagStrength): Unit = {
+    init()
+    var i = prev.length
+    while (i > 0) {
+      i -= 1
+      if (!prev(i).isBound) prev(i).callOnChangesIdx(i, s => propagatePrev(s))
+      if (!next(i).isBound) next(i).callOnChangesIdx(i, s => propagateNext(s))
     }
   }
 
-  @inline private def propagatePrev(delta: DeltaIntVar): Outcome = {
+  @inline private def propagatePrev(delta: DeltaIntVar): Boolean = {
     val varId = delta.id
     val intVar = prev(varId)
     if (intVar.isBound) next(intVar.min).assign(varId)
@@ -64,13 +59,13 @@ class Inverse(prev: Array[CPIntVar], next: Array[CPIntVar]) extends Constraint(p
       while (i > 0) {
         i -= 1
         val value = removedValues(i)
-        if (next(value).removeValue(varId) == Failure) return Failure
+        next(value).removeValue(varId)
       }
-      Suspend
     }
+    false
   }
 
-  @inline private def propagateNext(delta: DeltaIntVar): Outcome = {
+  @inline private def propagateNext(delta: DeltaIntVar): Boolean = {
     val varId = delta.id
     val intVar = next(varId)
     if (intVar.isBound) prev(intVar.min).assign(varId)
@@ -79,43 +74,42 @@ class Inverse(prev: Array[CPIntVar], next: Array[CPIntVar]) extends Constraint(p
       while (i > 0) {
         i -= 1
         val value = removedValues(i)
-        if (prev(value).removeValue(varId) == Failure) return Failure
+        prev(value).removeValue(varId)
       }
-      Suspend
     }
+    false
   }
   
-  @inline private def init(): Outcome = {
+  @inline private def init(): Unit = {
     var i = 0
     while (i < prev.length) {
       // Initializes the bounds of the variables
-      if (!initBounds(prev(i))) return Failure
-      else if (!initBounds(next(i))) return Failure
-      else {
-        var j = 0
-        while (j < prev.length) {
-          // Initializes inner domains
-          if (!init(prev, next, i, j)) return Failure
-          else if (!init(next, prev, i, j)) return Failure
-          else j += 1
-        }
+      initBounds(prev(i))
+      initBounds(next(i))
+
+      var j = 0
+      while (j < prev.length) {
+        // Initializes inner domains
+        init(prev, next, i, j)
+        init(next, prev, i, j)
+        j += 1
       }
       i += 1
     }
-    Suspend
   }
 
-  @inline private def initBounds(intVar: CPIntVar): Boolean = {
-    if (intVar.updateMin(0) == Failure) false
-    else if (intVar.updateMax(prev.length - 1) == Failure) false
-    else true
+  @inline private def initBounds(intVar: CPIntVar): Unit = {
+    intVar.updateMin(0)
+    intVar.updateMax(prev.length - 1)
   }
 
-  @inline private def init(vector1: Array[CPIntVar], vector2: Array[CPIntVar], i: Int, j: Int): Boolean = {
-    if (!vector1(i).hasValue(j)) true
-    else if (vector1(i).isBound) vector2(j).assign(i) != Failure
-    else if (!vector2(j).hasValue(i)) vector1(i).removeValue(j) != Failure
-    else true
+  @inline private def init(vector1: Array[CPIntVar], vector2: Array[CPIntVar], i: Int, j: Int): Unit = {
+    if (!vector1(i).hasValue(j))
+      return
+    else if (vector1(i).isBound)
+      vector2(j).assign(i)
+    else if (!vector2(j).hasValue(i))
+      vector1(i).removeValue(j)
   }
 }
 

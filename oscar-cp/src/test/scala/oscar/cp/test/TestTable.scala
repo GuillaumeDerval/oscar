@@ -141,9 +141,8 @@ class TestTable extends TestSuite {
 
       val tuples = Array(Array(1, 2), Array(2, 1))
 
-      cp.post(table(x, tuples,algo))
+      postAndCheckFailure(cp, table(x, tuples,algo))
       cp.isFailed should be(true)
-
     }
 
 

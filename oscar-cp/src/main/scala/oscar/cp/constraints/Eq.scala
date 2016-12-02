@@ -17,24 +17,21 @@
 
 package oscar.cp.constraints
 
-import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.CPPropagStrength._
-import oscar.algo.search.Outcome._
 import oscar.cp.core.CPStore
 
 class EqCons(x: CPIntVar, v: Int) extends Constraint(x.store, "Equality") {
-  final override def setup(l: CPPropagStrength): Outcome = {
-    if (x.assign(v) == Failure) Failure
-    else Success
+  final override def setup(l: CPPropagStrength): Unit = {
+    x.assign(v)
   }
 }
 
 class Eq(x: CPIntVar, y: CPIntVar) extends Constraint(x.store, "Equality") {
 
-  final override def setup(l: CPPropagStrength): Outcome = {
+  final override def setup(l: CPPropagStrength): Unit = {
     if (l == Strong) s.post(equalityStrong(x, y))
     else if (l == Medium) s.post(new EqualityBC(x, y))
     else if (l == Weak || l == Automatic) s.post(new EqualityBC(x, y))

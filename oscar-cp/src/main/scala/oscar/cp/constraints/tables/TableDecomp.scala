@@ -1,21 +1,18 @@
 package oscar.cp.constraints.tables
 
-import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
-import oscar.algo.search.Outcome._
 
 class TableDecomp(val X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableDecomp"){
   
-  override def setup(l: CPPropagStrength): Outcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     idempotent = true
-    if (propagate() == Outcome.Failure) return Outcome.Failure
+    propagate();
     X.filter(!_.isBound).foreach(_.callPropagateWhenDomainChanges(this))
-    Suspend
   }
 
-  override def propagate(): Outcome = {
+  override def propagate(): Unit = {
     for (i <- 0 until X.size) {
       for (v <- X(i).min to X(i).max if X(i).hasValue(v)) {
         var valueIsSupported = false
@@ -28,13 +25,10 @@ class TableDecomp(val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
           valueIsSupported = allValueVariableSupported
         }
         if (!valueIsSupported) {
-          if (X(i).removeValue(v) == Failure)
-            return Failure
+          X(i).removeValue(v)
         }
-
       }
     }
-    Suspend    
   }
   
 }
@@ -52,8 +46,7 @@ class TableDecomp(val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
         valueIsSupported = allValueVariableSupported
       }
       if (!valueIsSupported){
-        if(variable.removeValue(value) == Failure)
-          return Failure
+        variable.removeValue(value)
       }
         
     }

@@ -1,14 +1,12 @@
 package oscar.cp.scheduling.constraints
 
-import oscar.algo.search.Outcome._
+import oscar.algo.Inconsistency
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.SortUtils.mergeSort
-import oscar.algo.search.Outcome
 
 import scala.annotation.tailrec
 import scala.math.{max, min}
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.Inconsistency
 
 /**
  * @author Steven Gay steven.gay@uclouvain.be
@@ -178,14 +176,12 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
         val optEvent = tree.getLambdaEvent()
         val optTask = startEventTask(optEvent)
         
-        if (resources(optTask).removeValue(id) == Failure) throw Inconsistency        
+        resources(optTask).removeValue(id)
         tree.remove(optEvent)
       }      
       
       p += 1
     }
-    
-    Suspend
   }
 }
 

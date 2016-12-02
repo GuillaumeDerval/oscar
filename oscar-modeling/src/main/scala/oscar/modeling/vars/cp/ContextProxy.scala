@@ -1,7 +1,7 @@
 package oscar.modeling.vars.cp
 
 import oscar.algo.reversible.TrailEntry
-import oscar.algo.search.{IntConstrainableContext, Outcome}
+import oscar.algo.search.IntConstrainableContext
 import oscar.algo.vars.IntVarLike
 import oscar.modeling.models.ModelDeclaration
 import oscar.modeling.vars.IntVar
@@ -20,7 +20,7 @@ class ContextProxy(store: IntConstrainableContext) extends IntConstrainableConte
   /**
     * Post x == v
     */
-  @inline final override def assign(x: IntVarLike, v: Int): Outcome = {
+  @inline final override def assign(x: IntVarLike, v: Int): Unit = {
     val (modelDeclaration, iv) = c(x)
     // this will call cpstore.assign
     modelDeclaration.post(iv === v)
@@ -29,7 +29,7 @@ class ContextProxy(store: IntConstrainableContext) extends IntConstrainableConte
   /**
     * Post x != v
     */
-  @inline final override def remove(x: IntVarLike, v: Int): Outcome = {
+  @inline final override def remove(x: IntVarLike, v: Int): Unit = {
     val (modelDeclaration, iv) = c(x)
     // this will call cpstore.remove
     modelDeclaration.post(iv !== v)
@@ -38,7 +38,7 @@ class ContextProxy(store: IntConstrainableContext) extends IntConstrainableConte
   /**
     * Post x <= v
     */
-  @inline final override def smallerEq(x: IntVarLike, v: Int): Outcome = {
+  @inline final override def smallerEq(x: IntVarLike, v: Int): Unit = {
     val (modelDeclaration, iv) = c(x)
     // this will call cpstore.smallerEq
     modelDeclaration.post(iv <= v)
@@ -47,7 +47,7 @@ class ContextProxy(store: IntConstrainableContext) extends IntConstrainableConte
   /**
     * Post x >= v
     */
-  @inline final override def largerEq(x: IntVarLike, v: Int): Outcome = {
+  @inline final override def largerEq(x: IntVarLike, v: Int): Unit = {
     val (modelDeclaration, iv) = c(x)
     // this will call cpstore.largerEq
     modelDeclaration.post(iv >= v)
@@ -56,16 +56,10 @@ class ContextProxy(store: IntConstrainableContext) extends IntConstrainableConte
   /**
     * Post x != v for all v in vs
     */
-  @inline final override def remove(x: IntVarLike, vs: Array[Int]): Outcome = {
+  @inline final override def remove(x: IntVarLike, vs: Array[Int]): Unit = {
     val (modelDeclaration, iv) = c(x)
     // this will call cpstore.remove
-    val v = vs.map(v => modelDeclaration.post(iv !== v))
-    if(v.contains(Outcome.Failure))
-      Outcome.Failure
-    else if(v.contains(Outcome.Suspend))
-      Outcome.Suspend
-    else
-      Outcome.Success
+    vs.foreach(v => modelDeclaration.post(iv !== v))
   }
 
   /**

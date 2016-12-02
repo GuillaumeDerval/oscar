@@ -1,11 +1,10 @@
 package oscar.cp.core.variables
 
-import oscar.algo.search.Outcome
 import oscar.cp.testUtils._
-import oscar.algo.search.Outcome._
 
 import scala.util.Random
 import oscar.cp.core.CPStore
+import oscar.cp.isInconsistent
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 
@@ -48,7 +47,7 @@ class CPIntVarAdaptableSuite extends TestSuite {
     val store = new CPStore()
     val variable = new CPIntVarAdaptable(store, 5, 15, true)
     assert(variable.size == 11)
-    assert(variable.updateMin(10) == Suspend)
+    variable.updateMin(10)
     assert(variable.size == 6)
     assert(variable.min == 10)
   }
@@ -56,18 +55,18 @@ class CPIntVarAdaptableSuite extends TestSuite {
   test("UpdateMin should remove all values lesser than min") {
     val store = new CPStore()
     val variable = new CPIntVarAdaptable(store, 5, 15, true)
-    assert(variable.updateMin(10) == Suspend)
+    variable.updateMin(10)
     assert(containsAll(variable))
   }
 
   test("UpdateMin with a lesser or equal value than min should not impact the domain") {
     val store = new CPStore()
     val variable = new CPIntVarAdaptable(store, 5, 15, true)
-    assert(variable.updateMin(4) == Suspend)
+    variable.updateMin(4)
     assert(variable.size == 11)
     assert(variable.min == 5)
     assert(variable.max == 15)
-    assert(variable.updateMin(5) == Suspend)
+    variable.updateMin(5)
     assert(variable.size == 11)
     assert(variable.min == 5)
     assert(variable.max == 15)
@@ -76,7 +75,7 @@ class CPIntVarAdaptableSuite extends TestSuite {
   test("UpdateMin to max should assign max") {
     val store = new CPStore()
     val variable = new CPIntVarAdaptable(store, 5, 15, true)
-    assert(variable.updateMin(15) == Suspend)
+    variable.updateMin(15)
     assert(variable.size == 1)
     assert(variable.isBound)
     assert(variable.hasValue(15))
@@ -85,7 +84,7 @@ class CPIntVarAdaptableSuite extends TestSuite {
   test("UpdateMin greater than max should fail") {
     val store = new CPStore()
     val variable = new CPIntVarAdaptable(store, 5, 15, true)
-    assert(variable.updateMin(20) == Failure)
+    assert(isInconsistent(variable.updateMin(20) ))
     //intercept[Inconsistency](variable.updateMin(20))
   }
 
@@ -93,7 +92,7 @@ class CPIntVarAdaptableSuite extends TestSuite {
     val store = new CPStore()
     val variable = new CPIntVarAdaptable(store, 5, 15, true)
     assert(variable.size == 11)
-    assert(variable.updateMax(10) == Suspend)
+    variable.updateMax(10)
     assert(variable.size == 6)
     assert(variable.max == 10)
   }
@@ -101,18 +100,18 @@ class CPIntVarAdaptableSuite extends TestSuite {
   test("UpdateMax should remove all values greater than max") {
     val store = new CPStore()
     val variable = new CPIntVarAdaptable(store, 5, 15, true)
-    assert(variable.updateMax(10) == Suspend)
+    variable.updateMax(10)
     assert(containsAll(variable))
   }
 
   test("UpdateMax with a greater or equal value than max should not impact the domain") {
     val store = new CPStore()
     val variable = new CPIntVarAdaptable(store, 5, 15, true)
-    assert(variable.updateMax(20) == Suspend)
+    variable.updateMax(20)
     assert(variable.size == 11)
     assert(variable.min == 5)
     assert(variable.max == 15)
-    assert(variable.updateMax(15) == Suspend)
+    variable.updateMax(15)
     assert(variable.size == 11)
     assert(variable.min == 5)
     assert(variable.max == 15)
@@ -121,7 +120,7 @@ class CPIntVarAdaptableSuite extends TestSuite {
   test("UpdateMax to min should assign min") {
     val store = new CPStore()
     val variable = new CPIntVarAdaptable(store, 5, 15, true)
-    assert(variable.updateMax(5) == Suspend)
+    variable.updateMax(5)
     assert(variable.size == 1)
     assert(variable.isBound)
     assert(variable.hasValue(5))
@@ -130,7 +129,7 @@ class CPIntVarAdaptableSuite extends TestSuite {
   test("UpdateMax lesser than min should fail") {
     val store = new CPStore()
     val variable = new CPIntVarAdaptable(store, 5, 15, true)
-    assert(variable.updateMax(0) == Failure)
+    assert(isInconsistent(variable.updateMax(0) ))
     //intercept[Inconsistency](variable.updateMax(0))
   }
 
@@ -138,14 +137,14 @@ class CPIntVarAdaptableSuite extends TestSuite {
     val store = new CPStore()
     val variable = new CPIntVarAdaptable(store, 5, 15, true)
     store.pushState()
-    assert(variable.updateMax(10) == Suspend)
+    variable.updateMax(10)
     assert(variable.min == 5)
     assert(variable.max == 10)
     assert(variable.size == 6)
     assert(containsAll(variable))
     store.pushState()
-    assert(variable.updateMax(9) == Suspend)
-    assert(variable.updateMin(6) == Suspend)
+    variable.updateMax(9)
+    variable.updateMin(6)
     assert(variable.min == 6)
     assert(variable.max == 9)
     assert(variable.size == 4)
@@ -171,7 +170,7 @@ class CPIntVarAdaptableSuite extends TestSuite {
   test("Assign should make min equal to max") {
     val store = new CPStore()
     val variable = new CPIntVarAdaptable(store, 5, 15, true)
-    assert(variable.assign(10) == Suspend)
+    variable.assign(10)
     assert(variable.hasValue(10))
     assert(variable.min == 10)
     assert(variable.max == 10)
@@ -180,14 +179,14 @@ class CPIntVarAdaptableSuite extends TestSuite {
   test("Assign should reduce the size to 1") {
     val store = new CPStore()
     val variable = new CPIntVarAdaptable(store, 5, 15, true)
-    assert(variable.assign(10) == Suspend)
+    variable.assign(10)
     assert(variable.size == 1)
   }
 
   test("Assign an out of bounds value should fail") {
     val store = new CPStore()
     val variable = new CPIntVarAdaptable(store, 5, 15, true)
-    assert(variable.assign(20) == Failure)
+    assert(isInconsistent(variable.assign(20) ))
     //intercept[Inconsistency](variable.assign(20))
   }
 
@@ -223,8 +222,8 @@ class CPIntVarAdaptableSuite extends TestSuite {
     assert(variable.iterator.forall(values1.contains(_)))
     assert(variable.iterator.size == 11)
     val values2 = (7 to 10).toSet
-    assert(variable.updateMin(7) == Suspend)
-    assert(variable.updateMax(10) == Suspend)
+    variable.updateMin(7)
+    variable.updateMax(10)
     assert(variable.size == 4)
     assert(variable.iterator.forall(variable.hasValue(_)))
     assert(variable.iterator.forall(values2.contains(_)))
@@ -234,11 +233,11 @@ class CPIntVarAdaptableSuite extends TestSuite {
   test("Removed values should not be contained in the domain anymore") {
     val context = new CPStore()
     val domain = new CPIntVarAdaptable(context, 5, 10, true)
-    assert(domain.removeValue(5) == Suspend)
+    domain.removeValue(5)
     assert(!domain.hasValue(5))
-    assert(domain.removeValue(7) == Suspend)
+    domain.removeValue(7)
     assert(!domain.hasValue(7))
-    assert(domain.removeValue(8) == Suspend)
+    domain.removeValue(8)
     assert(!domain.hasValue(8))
   }
 
@@ -246,11 +245,11 @@ class CPIntVarAdaptableSuite extends TestSuite {
     val context = new CPStore()
     val domain = new CPIntVarAdaptable(context, 5, 10, true)
     val size = domain.size
-    assert(domain.removeValue(5) == Suspend)
+    domain.removeValue(5)
     assert(domain.size == size - 1)
-    assert(domain.removeValue(5) == Suspend)
+    domain.removeValue(5)
     assert(domain.size == size - 1)
-    assert(domain.removeValue(6) == Suspend)
+    domain.removeValue(6)
     assert(domain.size == size - 2)
   }
 
@@ -258,9 +257,9 @@ class CPIntVarAdaptableSuite extends TestSuite {
     val context = new CPStore()
     val domain = new CPIntVarAdaptable(context, 5, 10, true)
     val size = domain.size
-    assert(domain.removeValue(4) == Suspend)
+    domain.removeValue(4)
     assert(domain.size == size)
-    assert(domain.removeValue(11) == Suspend)
+    domain.removeValue(11)
     assert(domain.size == size)
 
   }
@@ -269,12 +268,12 @@ class CPIntVarAdaptableSuite extends TestSuite {
     val context = new CPStore()
     val domain = new CPIntVarAdaptable(context, 5, 10, true)
     val size = domain.size
-    assert(domain.removeValue(5) == Suspend)
+    domain.removeValue(5)
     assert(domain.min == 6)
-    assert(domain.removeValue(6) == Suspend)
-    assert(domain.removeValue(7) == Suspend)
+    domain.removeValue(6)
+    domain.removeValue(7)
     assert(domain.min == 8)
-    assert(domain.removeValue(10) == Suspend)
+    domain.removeValue(10)
     assert(domain.min == 8)
   }
 
@@ -282,15 +281,15 @@ class CPIntVarAdaptableSuite extends TestSuite {
     val context = new CPStore()
     val domain = new CPIntVarAdaptable(context, 5, 10, true)
     val size = domain.size
-    assert(domain.removeValue(5) == Suspend)
+    domain.removeValue(5)
     assert(domain.hasValue(7))
-    assert(domain.removeValue(6) == Suspend)
+    domain.removeValue(6)
     assert(domain.hasValue(7))
-    assert(domain.removeValue(9) == Suspend)
+    domain.removeValue(9)
     assert(domain.hasValue(7))
-    assert(domain.removeValue(10) == Suspend)
+    domain.removeValue(10)
     assert(domain.hasValue(7))
-    assert(domain.removeValue(8) == Suspend)
+    domain.removeValue(8)
     assert(domain.hasValue(7))
     assert(domain.isBound)
   }
@@ -300,12 +299,12 @@ class CPIntVarAdaptableSuite extends TestSuite {
     val domain = new CPIntVarAdaptable(context, 5, 10, true)
     val size = domain.size
     context.pushState()
-    assert(domain.removeValue(5) == Suspend)
-    assert(domain.removeValue(6) == Suspend)
+    domain.removeValue(5)
+    domain.removeValue(6)
     context.pushState()
-    assert(domain.removeValue(9) == Suspend)
+    domain.removeValue(9)
     context.pushState()
-    assert(domain.removeValue(8) == Suspend)
+    domain.removeValue(8)
     assert(!domain.hasValue(5))
     assert(!domain.hasValue(6))
     assert(domain.hasValue(7))
@@ -338,7 +337,7 @@ class CPIntVarAdaptableSuite extends TestSuite {
   test("Remove the assigned value should fail") {
     val context = new CPStore()
     val domain = new CPIntVarAdaptable(context, 10, 10, true)
-    assert(domain.removeValue(10) == Failure)
+    assert(isInconsistent(domain.removeValue(10) ))
   }
 
   test("Iterator should iterate on all the values (sparse)") {
@@ -358,7 +357,7 @@ class CPIntVarAdaptableSuite extends TestSuite {
     val values = Set(10, 11, 15, 16, 17, 20, 21, 25)
     val domain = new CPIntVarAdaptable(context, 10, 25, true)
     (10 to 25).foreach(v => if (!values.contains(v)) domain.removeValue(v))
-    assert(domain.updateMin(12) == Suspend)
+    domain.updateMin(12)
     assert(domain.size == 6)
     assert(domain.min == 15)
   }
@@ -368,7 +367,7 @@ class CPIntVarAdaptableSuite extends TestSuite {
     val values = Set(10, 11, 15, 16, 17, 20, 21, 25)
     val domain = new CPIntVarAdaptable(context, 10, 25, true)
     (10 to 25).foreach(v => if (!values.contains(v)) domain.removeValue(v))
-    assert(domain.updateMin(16) == Suspend)
+    domain.updateMin(16)
     assert(!domain.hasValue(10))
     assert(!domain.hasValue(11))
     assert(!domain.hasValue(15))
@@ -379,7 +378,7 @@ class CPIntVarAdaptableSuite extends TestSuite {
     val values = Set(10, 11, 15, 16, 17, 20, 21, 25)
     val domain = new CPIntVarAdaptable(context, 10, 25, true)
     (10 to 25).foreach(v => if (!values.contains(v)) domain.removeValue(v))
-    assert(domain.updateMax(19) == Suspend)
+    domain.updateMax(19)
     assert(domain.size == 5)
     assert(domain.max == 17)
   }
@@ -389,7 +388,7 @@ class CPIntVarAdaptableSuite extends TestSuite {
     val values = Set(10, 11, 15, 16, 17, 20, 21, 25)
     val domain = new CPIntVarAdaptable(context, 10, 25, true)
     (10 to 25).foreach(v => if (!values.contains(v)) domain.removeValue(v))
-    assert(domain.updateMax(17) == Suspend)
+    domain.updateMax(17)
     assert(!domain.hasValue(20))
     assert(!domain.hasValue(21))
     assert(!domain.hasValue(25))
@@ -500,13 +499,11 @@ class CPIntVarAdaptableSuite extends TestSuite {
     val removedValues = scala.collection.mutable.Set[Int]()
     
     class TestConstraint extends Constraint(context, "valRemoveTester") {
-      override def setup(l: CPPropagStrength): Outcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         variable.callValRemoveWhenValueIsRemoved(this)
-        Suspend
       }
-      override def valRemove(x: CPIntVar, value: Int): Outcome = {
+      override def valRemove(x: CPIntVar, value: Int): Unit = {
         removedValues.add(value)
-        Suspend
       }
     }
     
@@ -532,13 +529,11 @@ class CPIntVarAdaptableSuite extends TestSuite {
     var n = 0
     
     class TestConstraint extends Constraint(context, "valRemoveTester") {
-      override def setup(l: CPPropagStrength): Outcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         variable.callPropagateWhenDomainChanges(this)
-        Suspend
       }
-      override def propagate(): Outcome = {
+      override def propagate(): Unit = {
         n += 1
-        Suspend
       }
     }
     
@@ -564,13 +559,11 @@ class CPIntVarAdaptableSuite extends TestSuite {
     var n = 0
     
     class TestConstraint extends Constraint(context, "valRemoveTester") {
-      override def setup(l: CPPropagStrength): Outcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         variable.callPropagateWhenBind(this)
-        Suspend
       }
-      override def propagate(): Outcome = {
+      override def propagate(): Unit = {
         n += 1
-        Suspend
       }
     }
     
@@ -596,11 +589,11 @@ class CPIntVarAdaptableSuite extends TestSuite {
     var n = 0
     
     class TestConstraint extends Constraint(context, "valRemoveTester") {
-      override def setup(l: CPPropagStrength): Outcome = {
-        variable.callPropagateWhenBoundsChange(this); Suspend
+      override def setup(l: CPPropagStrength): Unit = {
+        variable.callPropagateWhenBoundsChange(this)
       }
-      override def propagate(): Outcome = {
-        n += 1; Suspend
+      override def propagate(): Unit = {
+        n += 1
       }
     }
     

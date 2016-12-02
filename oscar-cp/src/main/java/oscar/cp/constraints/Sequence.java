@@ -15,8 +15,8 @@
 package oscar.cp.constraints;
 
 
+import oscar.algo.Inconsistency;
 import oscar.algo.reversible.SparseSet;
-import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.variables.CPBoolVar;
@@ -63,16 +63,14 @@ public class Sequence extends Constraint {
 	}
 
 	@Override
-	public Outcome setup(CPPropagStrength cl) {
+	public void setup(CPPropagStrength cl) throws Inconsistency {
         // creates the bool vars and create the channeling constraints
         x = new CPBoolVar[xinit.length];
         for (int i = 0; i < x.length; i++) {
         	x[i] = CPBoolVar.apply(s());
         }
         for (int i = 0; i < x.length; i++) {
-            if (s().post(new MemberReif(xinit[i],values,x[i])) == Outcome.Failure) {
-                return Outcome.Failure;
-            }
+            s().post(new MemberReif(xinit[i],values,x[i]));
         }
         cumulatedCounters = new CPIntVar[x.length]; // cumulatedCounters[i] = x[0]+x[1]+...+x[i]
         cumulatedCounters[0] = x[0];
@@ -92,22 +90,15 @@ public class Sequence extends Constraint {
         for (int i = 0; i < x.length; i++) {
             for (int j = i+1; j < Math.min(x.length, i+len); j++) {
                 for (int m = i; m < j; m++) {
-                    if (s().post(new Sum(new CPIntVar[]{P[i][m],P[m+1][j]},P[i][j])) == Outcome.Failure) {
-                        return Outcome.Failure;
-                    }
+                    s().post(new Sum(new CPIntVar[]{P[i][m],P[m+1][j]},P[i][j]));
                 }
             }
 
             if (i <= x.length-len) {
-               if (s().post(new GrEq(P[i][i+len-1],min)) == Outcome.Failure) {
-                   return Outcome.Failure;
-               }
-               if (s().post(new LeEq(P[i][i+len-1],max)) == Outcome.Failure) {
-                   return Outcome.Failure;
-               }
+               s().post(new GrEq(P[i][i+len-1],min));
+               s().post(new LeEq(P[i][i+len-1],max));
             }
 
         }
-		return Outcome.Success;
 	}
 }

@@ -15,10 +15,9 @@
 
 package oscar.cp.constraints
 
+import oscar.algo.Inconsistency
 import oscar.algo.SortUtils._
 import oscar.algo.reversible.ReversibleInt
-import oscar.algo.search.Outcome
-import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
 
@@ -68,21 +67,18 @@ class CountingBasedAllDifferent(constrainedVariables: Array[CPIntVar]) extends C
      because their value is already removed from the other domains */
   private[this] val nBoundAndProcessedVariables = new ReversibleInt(constrainedVariables(0).store, 0) 
   
-  final override def setup(l: CPPropagStrength): Outcome = {
+  final override def setup(l: CPPropagStrength): Unit = {
     priorityL2 = CPStore.MaxPriorityL2 - 2
 
-    if (propagate() == Failure) Failure
-    else {
-      var i = nVariables
-      while (i > 0) {
-        i -= 1
-        constrainedVariables(i).callPropagateWhenDomainChanges(this)
-      }
-      Suspend
+    propagate()
+    var i = nVariables
+    while (i > 0) {
+      i -= 1
+      constrainedVariables(i).callPropagateWhenDomainChanges(this)
     }
   }
 
-  final override def propagate(): Outcome = {
+  final override def propagate(): Unit = {
 
     val nBoundAndProcessedVars = nBoundAndProcessedVariables.value
     var newnBoundAndProcessedVariables = 0
@@ -117,7 +113,7 @@ class CountingBasedAllDifferent(constrainedVariables: Array[CPIntVar]) extends C
       removeHallSetFromdomainAndUpdateDomainUnion()
 
       if (domainEmpty || currUnionDomainCardinality < nDomainsContributingToUnion)
-        return Outcome.Failure
+        throw Inconsistency
 
       if (currUnionDomainCardinality == nDomainsContributingToUnion) {
         updateHallSetAndClearDomainUnion()
@@ -131,8 +127,6 @@ class CountingBasedAllDifferent(constrainedVariables: Array[CPIntVar]) extends C
 
     //update number of bound and processed variables
     nBoundAndProcessedVariables.setValue(newnBoundAndProcessedVariables)
-
-    Outcome.Suspend
   }
 
   /* Bits operations */

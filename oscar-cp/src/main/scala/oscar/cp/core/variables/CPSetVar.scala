@@ -3,13 +3,11 @@ package oscar.cp.core.variables
 import oscar.algo.reversible.ReversibleQueue
 import oscar.algo.reversible.Reversible
 import oscar.cp._
-import oscar.algo.search.Outcome._
 import oscar.cp.constraints.sets.Requires
 import oscar.cp.constraints.sets.Excludes
 import oscar.cp.constraints.SetCard
 import oscar.cp.core.domains.SetDomain
 import oscar.algo.reversible.ReversiblePointer
-import oscar.algo.search.Outcome
 import oscar.algo.vars.SetVarLike
 import oscar.cp.core.delta._
 import oscar.cp.core.Constraint
@@ -82,7 +80,7 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
   }
 
 
-  def filterWhenDomainChangesWithDelta(idempotent: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: DeltaSetVar => Outcome): DeltaSetVar = {
+  def filterWhenDomainChangesWithDelta(idempotent: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: DeltaSetVar => Unit): DeltaSetVar = {
     val propagator = new PropagatorSetVar(this, 0, filter)
     propagator.idempotent = idempotent
     propagator.priorityL2 = priority
@@ -129,7 +127,7 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
     onExcludedIdxL1.setValue(new PropagEventQueueVarSet(onExcludedIdxL1.value, c, this, idx))
   }
 
-  def requires(v: Int): Outcome = {
+  def requires(v: Int): Unit = {
     if (dom.isPossible(v) && !dom.isRequired(v)) {
       // -------- AC3 notifications ------------
       onDomainL2.enqueue()
@@ -137,19 +135,15 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
       store.notifyRequired(onRequiredL1.value, this, v)
       store.notifyRequiredIdx(onRequiredIdxL1.value, this, v)
     }
-    val oc = dom.requires(v)
-    if (oc != Outcome.Failure) {
-      if (requiredSize == card.max) {
-        for (a: Int <- possibleNotRequiredValues.toSet) {
-          val r = excludes(a)
-          assert(r != Outcome.Failure)
-        }
-      }
-      card.updateMin(requiredSize)
-    } else oc
+    dom.requires(v)
+    if (requiredSize == card.max) {
+      for (a: Int <- possibleNotRequiredValues.toSet)
+        excludes(a)
+    }
+    card.updateMin(requiredSize)
   }
 
-  def excludes(v: Int): Outcome = {
+  def excludes(v: Int): Unit = {
     if (dom.isPossible(v) && !dom.isRequired(v)) {
       // -------- AC3 notifications ------------
       onDomainL2.enqueue()
@@ -157,19 +151,15 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
       store.notifyExcluded(onExcludedL1.value, this, v)
       store.notifyExcludedIdx(onExcludedIdxL1.value, this, v)
     }
-    val oc = dom.excludes(v)
-    if (oc != Outcome.Failure) {
-      if (possibleSize == card.min) {
-        for (a: Int <- possibleNotRequiredValues.toSet) {
-          val r = requires(a)
-          assert(r != Outcome.Failure)
-        }
-      }
-      card.updateMax(possibleSize)
-    } else oc
+    dom.excludes(v)
+    if (possibleSize == card.min) {
+      for (a: Int <- possibleNotRequiredValues.toSet)
+        requires(a)
+    }
+    card.updateMax(possibleSize)
   }
 
-  def requiresAll(): Outcome = {
+  def requiresAll(): Unit = {
     // -------- AC3 notifications ------------
     if (possibleSize > requiredSize) onDomainL2.enqueue()
     // -------- AC5 notifications ------------
@@ -179,12 +169,11 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
         if (onRequiredIdxL1.hasValue) store.notifyRequiredIdx(onRequiredIdxL1.value, this, v)
       }
     }
-    val oc = dom.requiresAll()
-    assert(oc != Outcome.Failure)
+    dom.requiresAll()
     card.assign(requiredSize)
   }
 
-  def excludesAll(): Outcome = {
+  def excludesAll(): Unit = {
     // -------- AC3 notifications ------------
     if (possibleSize > requiredSize) onDomainL2.enqueue()
     // -------- AC5 notifications ------------
@@ -194,8 +183,7 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
         if (onExcludedIdxL1.hasValue) store.notifyExcludedIdx(onExcludedIdxL1.value, this, v)
       }
     }
-    val oc = dom.excludesAll()
-    assert(oc != Outcome.Failure)
+    dom.excludesAll()
     card.assign(requiredSize)
   }
 

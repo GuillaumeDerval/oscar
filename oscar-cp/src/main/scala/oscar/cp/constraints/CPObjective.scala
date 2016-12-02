@@ -15,7 +15,6 @@
 
 package oscar.cp.constraints
 
-import oscar.algo.search._
 import oscar.algo.search.Objective
 import oscar.cp._
 import oscar.cp.core._
@@ -39,7 +38,7 @@ class CPObjective(val st: CPStore, val objs: CPObjectiveUnit*) extends Constrain
   def isOptimum(): Boolean = objs.forall(_.isOptimum())
 
   /** Returns true if the current state of the objective variables is consistent with the model */
-  def isOK(): Boolean = propagate != Outcome.Failure
+  def isOK(): Boolean = !isInconsistent(propagate())
 
   /** Returns the corresponding objective object */
   def apply(objVar: CPIntVar) = map(objVar)
@@ -70,15 +69,11 @@ class CPObjective(val st: CPStore, val objs: CPObjectiveUnit*) extends Constrain
 
   /** Ensures that the domain of each objective objects only contains better values (according to 
    *  its tighten mode) than its best so far value. */
-  override def propagate(): Outcome = {
-    // println("coucou")
-    if (objs.forall(_.ensureBest() != Outcome.Failure)) Outcome.Suspend
-    else {
-      Outcome.Failure
-    }
+  override def propagate(): Unit = {
+    objs.foreach(_.ensureBest())
   }
   
-  override def setup(l: CPPropagStrength): Outcome = propagate()
+  override def setup(l: CPPropagStrength): Unit = propagate()
 
   override def toString = objs.mkString(" , ")
 }

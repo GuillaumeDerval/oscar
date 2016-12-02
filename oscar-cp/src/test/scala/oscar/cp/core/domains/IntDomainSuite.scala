@@ -1,7 +1,7 @@
 package oscar.cp.core.domains
 
 import oscar.algo.reversible.{ReversibleContext, ReversibleContextImpl}
-import oscar.algo.search.Outcome._
+import oscar.cp.isInconsistent
 
 /**
  *  Tests the sparse set implementation of a sparse domain
@@ -41,11 +41,11 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
   test("Removed values should not be contained in the domain anymore") {
     val context = new ReversibleContextImpl()
     val domain = sparseDomain(context, 5, 10)
-    assert(domain.removeValue(5) == Suspend)
+    domain.removeValue(5)
     assert(!domain.hasValue(5))
-    assert(domain.removeValue(7) == Suspend)
+    domain.removeValue(7)
     assert(!domain.hasValue(7))
-    assert(domain.removeValue(8) == Suspend)
+    domain.removeValue(8)
     assert(!domain.hasValue(8))
   }
 
@@ -53,11 +53,11 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
     val context = new ReversibleContextImpl()
     val domain = sparseDomain(context, 5, 10)
     val size = domain.size
-    assert(domain.removeValue(5) == Suspend)
+    domain.removeValue(5)
     assert(domain.size == size - 1)
-    assert(domain.removeValue(5) == Suspend)
+    domain.removeValue(5)
     assert(domain.size == size - 1)
-    assert(domain.removeValue(6) == Suspend)
+    domain.removeValue(6)
     assert(domain.size == size - 2)
   }
 
@@ -65,9 +65,9 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
     val context = new ReversibleContextImpl()
     val domain = sparseDomain(context, 5, 10)
     val size = domain.size
-    assert(domain.removeValue(4) == Suspend)
+    domain.removeValue(4)
     assert(domain.size == size)
-    assert(domain.removeValue(11) == Suspend)
+    domain.removeValue(11)
     assert(domain.size == size)
 
   }
@@ -76,12 +76,12 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
     val context = new ReversibleContextImpl()
     val domain = sparseDomain(context, 5, 10)
     val size = domain.size
-    assert(domain.removeValue(5) == Suspend)
+    domain.removeValue(5)
     assert(domain.min == 6)
-    assert(domain.removeValue(6) == Suspend)
-    assert(domain.removeValue(7) == Suspend)
+    domain.removeValue(6)
+    domain.removeValue(7)
     assert(domain.min == 8)
-    assert(domain.removeValue(10) == Suspend)
+    domain.removeValue(10)
     assert(domain.min == 8)
   }
 
@@ -89,15 +89,15 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
     val context = new ReversibleContextImpl()
     val domain = sparseDomain(context, 5, 10)
     val size = domain.size
-    assert(domain.removeValue(5) == Suspend)
+    domain.removeValue(5)
     assert(domain.hasValue(7))
-    assert(domain.removeValue(6) == Suspend)
+    domain.removeValue(6)
     assert(domain.hasValue(7))
-    assert(domain.removeValue(9) == Suspend)
+    domain.removeValue(9)
     assert(domain.hasValue(7))
-    assert(domain.removeValue(10) == Suspend)
+    domain.removeValue(10)
     assert(domain.hasValue(7))
-    assert(domain.removeValue(8) == Suspend)
+    domain.removeValue(8)
     assert(domain.hasValue(7))
     assert(domain.isBound)
   }
@@ -107,12 +107,12 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
     val domain = sparseDomain(context, 5, 10)
     val size = domain.size
     context.pushState()
-    assert(domain.removeValue(5) == Suspend)
-    assert(domain.removeValue(6) == Suspend)
+    domain.removeValue(5)
+    domain.removeValue(6)
     context.pushState()
-    assert(domain.removeValue(9) == Suspend)
+    domain.removeValue(9)
     context.pushState()
-    assert(domain.removeValue(8) == Suspend)
+    domain.removeValue(8)
     assert(!domain.hasValue(5))
     assert(!domain.hasValue(6))
     assert(domain.hasValue(7))
@@ -145,7 +145,7 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
   test("Remove the assigned value should fail") {
     val context = new ReversibleContextImpl()
     val domain = sparseDomain(context, 10, 10)
-    assert(domain.removeValue(10) == Failure)
+    assert(isInconsistent(domain.removeValue(10)))
     assert(domain.size == 0)
   }
   
@@ -165,7 +165,7 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
     val values = Set(10, 11, 15, 16, 17, 20, 21, 25)
     val domain = sparseDomain(context, 10, 25)
     (10 to 25).foreach(v => if (!values.contains(v)) domain.removeValue(v))
-    assert(domain.updateMin(12) == Suspend)
+    domain.updateMin(12)
     assert(domain.size == 6)
     assert(domain.min == 15)
   }
@@ -175,7 +175,7 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
     val values = Set(10, 11, 15, 16, 17, 20, 21, 25)
     val domain = sparseDomain(context, 10, 25)
     (10 to 25).foreach(v => if (!values.contains(v)) domain.removeValue(v))
-    assert(domain.updateMin(16) == Suspend)
+    domain.updateMin(16)
     assert(!domain.hasValue(10))
     assert(!domain.hasValue(11))
     assert(!domain.hasValue(15))
@@ -186,7 +186,7 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
     val values = Set(10, 11, 15, 16, 17, 20, 21, 25)
     val domain = sparseDomain(context, 10, 25)
     (10 to 25).foreach(v => if (!values.contains(v)) domain.removeValue(v))
-    assert(domain.updateMax(19) == Suspend)
+    domain.updateMax(19)
     assert(domain.size == 5)
     assert(domain.max == 17)
   }
@@ -196,7 +196,7 @@ abstract class IntDomainSuite extends IntervalDomainSuite {
     val values = Set(10, 11, 15, 16, 17, 20, 21, 25)
     val domain = sparseDomain(context, 10, 25)
     (10 to 25).foreach(v => if (!values.contains(v)) domain.removeValue(v))
-    assert(domain.updateMax(17) == Suspend)
+    domain.updateMax(17)
     assert(!domain.hasValue(20))
     assert(!domain.hasValue(21))
     assert(!domain.hasValue(25))

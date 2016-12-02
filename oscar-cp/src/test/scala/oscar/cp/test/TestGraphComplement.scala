@@ -15,8 +15,7 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
-import oscar.algo.search.Outcome._
+import oscar.cp.testUtils.TestSuite
 import oscar.cp._
 import oscar.cp.constraints.GraphComplement
 
@@ -24,7 +23,7 @@ import oscar.cp.constraints.GraphComplement
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
  */
 
-class TestGraphComplement extends FunSuite with ShouldMatchers  {
+class TestGraphComplement extends TestSuite  {
   
   test("Test 1 : Test constraint initial propagation") {
     // we will test with two graph that first propagation does correct pruning
@@ -38,11 +37,11 @@ class TestGraphComplement extends FunSuite with ShouldMatchers  {
     
     // 1) add some mandatory nodes/edges
     for (x <- 0 to 2) {
-      cp.post(g1.addNode(x)) should be (Suspend)
-      cp.post(g2.addNode(x)) should be (Suspend)
+      postAndCheckSuspend(cp,g1.addNode(x))
+      postAndCheckSuspend(cp,g2.addNode(x))
     }
-    cp.post(g2.addNode(3)) should be (Suspend)
-    cp.post(g1.addEdge(0,1)) should be (Suspend)
+    postAndCheckSuspend(cp,g2.addNode(3))
+    postAndCheckSuspend(cp,g1.addEdge(0,1))
     
     // 2) check that all is correct : 
     // check nodes
@@ -73,7 +72,7 @@ class TestGraphComplement extends FunSuite with ShouldMatchers  {
     
     
     // 3) add constraint
-    cp.post(new GraphComplement(g1,g2)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphComplement(g1,g2))
     
     // 4) check that all changes are correct acc. to definition
     // check nodes
@@ -113,15 +112,15 @@ class TestGraphComplement extends FunSuite with ShouldMatchers  {
     val g2 = CPGraphVar(cp, nnodes2, edges2)
     
     for (x <- 0 to 2) {
-      cp.post(g1.addNode(x)) should be (Suspend)
-      cp.post(g2.addNode(x)) should be (Suspend)
+      postAndCheckSuspend(cp,g1.addNode(x))
+      postAndCheckSuspend(cp,g2.addNode(x))
     }
-    cp.post(g2.addNode(3)) should be (Suspend)
-    cp.post(g1.addEdge(0,1)) should be (Suspend)
-    cp.post(new GraphComplement(g1,g2)) should be (Suspend)
+    postAndCheckSuspend(cp,g2.addNode(3))
+    postAndCheckSuspend(cp,g1.addEdge(0,1))
+    postAndCheckSuspend(cp,new GraphComplement(g1,g2))
     
     // add required edge in g1
-    cp.post(g1.addEdge(0,2)) should be (Suspend)
+    postAndCheckSuspend(cp,g1.addEdge(0,2))
     // -> should remove it from g2 to be consistent during propagation 
     
     // check edges
@@ -156,15 +155,15 @@ class TestGraphComplement extends FunSuite with ShouldMatchers  {
     val g2 = CPGraphVar(cp, nnodes2, edges2)
     
     for (x <- 0 to 2) {
-      cp.post(g1.addNode(x)) should be (Suspend)
-      cp.post(g2.addNode(x)) should be (Suspend)
+      postAndCheckSuspend(cp,g1.addNode(x))
+      postAndCheckSuspend(cp,g2.addNode(x))
     }
-    cp.post(g2.addNode(3)) should be (Suspend)
-    cp.post(g1.addEdge(0,1)) should be (Suspend)
-    cp.post(new GraphComplement(g1,g2)) should be (Suspend)
+    postAndCheckSuspend(cp,g2.addNode(3))
+    postAndCheckSuspend(cp,g1.addEdge(0,1))
+    postAndCheckSuspend(cp,new GraphComplement(g1,g2))
     
     // remove possible edge in g1
-    cp.post(g1.removeEdge(0,2)) should be (Suspend)
+    postAndCheckSuspend(cp,g1.removeEdge(0,2))
     // -> should set it required in g2 to be consistent during propagation 
     
     // check edges : node 1:(0,2) should be required in g2

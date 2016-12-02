@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.algo.search.Outcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
@@ -46,23 +46,18 @@ public class Implication extends Constraint {
 	}
 	
 	@Override
-	public Outcome setup(CPPropagStrength l) {
-		if (A.isBound()) {
-			if (valBind(A) == Outcome.Failure) return Outcome.Failure;
-		}
+	public void setup(CPPropagStrength l) throws Inconsistency {
+		if (A.isBound())
+			valBind(A);
 		else A.callValBindWhenBind(this);
 		
-		if (B.isBound()) {
-			if (valBind(B) == Outcome.Failure) return Outcome.Failure;
-		}
+		if (B.isBound())
+			valBind(B);
 		else B.callValBindWhenBind(this);
 		
-		if (V.isBound()) {
-			if (valBind(V) == Outcome.Failure) return Outcome.Failure;
-		}
+		if (V.isBound())
+			valBind(V);
 		else V.callValBindWhenBind(this);
-		
-		return Outcome.Suspend;
 	}
 
 	
@@ -73,56 +68,61 @@ public class Implication extends Constraint {
 
 
 	@Override
-	public Outcome valBind(CPIntVar var) {
+	public void valBind(CPIntVar var) {
 		if (A.isBound()) {
 			if (A.isBoundTo(0)) {
 				// F => X is always true
-				if (V.assign(1) == Outcome.Failure) return Outcome.Failure;
-				return Outcome.Success;
+				V.assign(1);
+				this.deactivate();
+				return;
 			} else {
 				// T => B <-> V
 				if (B.isBoundTo(0)) { // T => F it means V must be F
-					if (V.assign(0) == Outcome.Failure) return Outcome.Failure;
-					return Outcome.Success;
+					V.assign(0);
+					this.deactivate();
+					return;
 				}
 				if (B.isBoundTo(1)) { // T => T it means V must be T
-					if (V.assign(1) == Outcome.Failure) return Outcome.Failure;
-					return Outcome.Success;
+					V.assign(1);
+					this.deactivate();
+					return;
 				}
 				// the case of whether V is bound is treated below
 			}
 		} 
 		if (B.isBound()) {
 			if (B.isBoundTo(1)) { // V is always true in this case
-				if (V.assign(1) == Outcome.Failure) return Outcome.Failure;
-				return Outcome.Success;
+				V.assign(1);
+				this.deactivate();
+				return;
 			} else {
 				// A => F <-> V
 				// case A is bound is treated above and V is bound is treated below
 			}
-		}	
+		}
 		if (V.isBound()) {
 			if (V.min() == 0) {
 				// only way to get A => B <-> F is to have T => F
-				if (A.assign(1) == Outcome.Failure) return Outcome.Failure;
-				if (B.assign(0) == Outcome.Failure) return Outcome.Failure;
-				return Outcome.Success;
+				A.assign(1);
+				B.assign(0);
+				this.deactivate();
+				return;
 			} else {
 				// V is True
 				if (B.isBoundTo(0)) {  // A => F <-> T it means A must be F
-					if (A.assign(0) == Outcome.Failure) return Outcome.Failure;
-					return Outcome.Success;
+					A.assign(0);
+					this.deactivate();
+					return;
 				}
 				if (B.isBoundTo(1)) { // A => T <-> T it means A can be true of false, doesn't matter
-					return Outcome.Success;
+					this.deactivate();
+					return;
 				}
 				if (A.isBoundTo(1)) {
-					if (B.assign(1) == Outcome.Failure) return Outcome.Failure;
+					B.assign(1);
 				}
 			}
 		}
-		return Outcome.Suspend;
 	}
-
 }
 

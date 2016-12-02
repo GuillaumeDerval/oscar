@@ -17,7 +17,6 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.algo.search.Outcome
 
 import scala.collection.JavaConversions._
 import oscar.cp.core.variables.CPIntVar
@@ -51,41 +50,36 @@ class Knapsack(val X: Array[CPBoolVar], val profit: Array[Int], val weight: Arra
   
   
   
-  override def setup(l: CPPropagStrength): Outcome = {
-    if (s.post(new BinaryKnapsack(X, profit, P)) == Outcome.Failure) {
-      return Outcome.Failure;
-    }
-    if (s.post(new BinaryKnapsack(X,weight,W)) == Outcome.Failure) {
-    		return Outcome.Failure;
-    }
+  override def setup(l: CPPropagStrength): Unit = {
+    s.post(new BinaryKnapsack(X, profit, P))
+    s.post(new BinaryKnapsack(X,weight,W))
     if (!pre) {
      println("Knapasack Constraint Not Posted, weights must be > 0 and profit >= 0")
-     return Outcome.Success
+     return
     }
-
     
     if (filter) {
     	x.filter(!_.isBound).foreach(_.callPropagateWhenDomainChanges(this))
     	for ((y,i) <- x.zipWithIndex) {
-    		val ok = if (y.isBound) valBindIdx(y,i) else y.callValBindIdxWhenBind(this,i)
-    		if (ok == Outcome.Failure) return Outcome.Failure
+    		if (y.isBound)
+          valBindIdx(y,i)
+        else
+          y.callValBindIdxWhenBind(this,i)
     	}
-    	if (propagate() == Outcome.Failure) return Outcome.Failure
+    	propagate()
     	P.callPropagateWhenBoundsChange(this)
     	W.callPropagateWhenBoundsChange(this)
     }
-    Outcome.Suspend
   }
 
   
-  override def valBindIdx(y: CPIntVar, i: Int) : Outcome = {
-    unbound.removeValue(i);
+  override def valBindIdx(y: CPIntVar, i: Int) : Unit = {
+    unbound.removeValue(i)
     if (y.min == 1) {
     	// add this to the capacity and to the reward
         packedProfit.value = packedProfit.value + p(i).toInt 
         packedWeight.value = packedWeight.value + w(i)  
     }
-    return Outcome.Suspend
   }
   
   /**
@@ -123,20 +117,20 @@ class Knapsack(val X: Array[CPBoolVar], val profit: Array[Int], val weight: Arra
   }
   
  
-  override def propagate(): Outcome = {
+  override def propagate(): Unit = {
     // try to find the maximum profit under the weight/capa constraint using the linear relaxation
     val (profit: Int,weight: Int,s: Int) = getCriticalItem()
     
     if (s == -1) { // enough capa to take all items
-      if (P.updateMax(profit) == Outcome.Failure) return Outcome.Failure
-      else return Outcome.Suspend
+      P.updateMax(profit)
     } else {
       val weightSlack = W.max - weight
       // fraction of item s taken in the relaxed sol
       val fraq_s = weightSlack.toDouble / w(s) 
       
       val maxProfit = profit + fraq_s * p(s)
-      if (P.updateMax(Math.floor(maxProfit).toInt) == Outcome.Failure) return Outcome.Failure
+      P.updateMax(Math.floor(maxProfit).toInt)
+
       // we store the initial weight and profit of the critical item to restore it at the end
       val w_s_init = w(s)
       val p_s_init = p(s)
@@ -169,8 +163,7 @@ class Knapsack(val X: Array[CPBoolVar], val profit: Array[Int], val weight: Arra
                   j = unbound.getNext(j)
         	    } else { // found the exact weight that fills the gap
                   if (w_acc + w_ + tol < w(i)) { // item i is mandatory
-                    val ok = x(i).assign(1) // should not fail
-                    assert(ok != Outcome.Failure)
+                    x(i).assign(1) // should not fail
                   }
                   found = true
         	    }
@@ -202,8 +195,7 @@ class Knapsack(val X: Array[CPBoolVar], val profit: Array[Int], val weight: Arra
                   j = unbound.getPrev(j)
         	  } else { // found the exact weight that fills the gap
                   if (w_acc + w_ + tol < w(i)) { // item i is forbidden because we could force it's complete insertion
-                    val ok = x(i).removeValue(1) // should not fail
-                    assert(ok != Outcome.Failure)
+                    x(i).removeValue(1) // should not fail
                   }
                   found = true
         	  }
@@ -212,7 +204,6 @@ class Knapsack(val X: Array[CPBoolVar], val profit: Array[Int], val weight: Arra
          }
       } 
       restore_s() // restore w(s) and p(s)
-      return Outcome.Suspend
     }
   }
 

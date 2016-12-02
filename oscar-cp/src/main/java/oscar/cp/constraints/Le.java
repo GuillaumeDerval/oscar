@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.algo.search.Outcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -43,19 +43,14 @@ public class Le extends Constraint {
 	}
 	
 	@Override
-	public Outcome setup(CPPropagStrength l) {
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		if (y.isBound()) {
-			if (x.updateMax(y.min()-1) == Outcome.Failure){
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			x.updateMax(y.min()-1);
+			return;
 		}
 		
 		// y > x
-		if(s().post(new Gr(y,x)) == Outcome.Failure) {
-			return Outcome.Failure;
-		}
-		return Outcome.Success;
+		s().post(new Gr(y,x));
 	}
 	
 }

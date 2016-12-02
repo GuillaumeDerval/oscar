@@ -16,8 +16,7 @@
 
 package oscar.cp.core.domains
 
-import oscar.algo.search.Outcome
-import oscar.algo.search.Outcome._
+import oscar.algo.Inconsistency
 import oscar.algo.reversible.ReversibleSparseSubset
 import oscar.cp.core.CPStore
 
@@ -29,32 +28,28 @@ class SetDomain(s: CPStore, min: Int, max: Int) {
   
    val values = new ReversibleSparseSubset(s,min,max)
    
-   def requires(value: Int): Outcome = {
-     if (!values.isPossible(value)) Failure
-     else {
-       values.requires(value)
-       Suspend
-     }
+   def requires(value: Int): Unit = {
+     if (!values.isPossible(value))
+       throw Inconsistency
+
+     values.requires(value)
    }
    
    
-   def excludes(value: Int): Outcome = {
-     if (values.isRequired(value)) Failure
-     else {
-       if (value <= max && value >= min)
-    	   values.excludes(value)
-       Suspend
-     }
+   def excludes(value: Int): Unit = {
+     if (values.isRequired(value))
+       throw Inconsistency
+
+     if (value <= max && value >= min)
+       values.excludes(value)
    }
    
-   def requiresAll(): Outcome = {
+   def requiresAll(): Unit = {
      values.requiresAll()
-     Suspend
    }
    
-   def excludesAll(): Outcome = {
+   def excludesAll(): Unit = {
      values.excludesAll()
-     Suspend
    }
    
    def possibleSize = values.possibleSize

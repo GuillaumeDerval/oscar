@@ -14,18 +14,18 @@
  ******************************************************************************/
 package oscar.cp.test
 
-import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{FunSuite, Matchers}
+import oscar.cp.testUtils.TestSuite
 import oscar.cp.constraints._
-import oscar.algo.search.Outcome._
 import oscar.cp._
 import oscar.cp.core.variables.CPGraphVar
+import oscar.cp.testUtils.TestSuite
 
 /**
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
  */
 
-class TestBipartite extends FunSuite with ShouldMatchers  {
+class TestBipartite extends TestSuite {
   
   test("Test 1 : Test constraint initial propagation") {
     val cp = CPSolver()
@@ -34,7 +34,7 @@ class TestBipartite extends FunSuite with ShouldMatchers  {
     // g.edges are (0,1),(0,2),(1,0),(1,2),(2,0),(2,1)
     
     // 1) add some mandatory nodes/edges
-    cp.post(g.addEdge(0,1)) should be (Suspend)
+    postAndCheckSuspend(cp, g.addEdge(0,1))
     
     // 2) check that all is correct
     g.possibleNodes should be (List(0,1,2))
@@ -47,7 +47,7 @@ class TestBipartite extends FunSuite with ShouldMatchers  {
     g.possibleEdges(2).sorted  should be (List(1,3,4,5))
     
     // 3) add constraint
-    cp.post(new GraphBipartite(g)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphBipartite(g))
 
     // 4) check that all changes are correct acc. to definition
     // should change nothing
@@ -67,7 +67,7 @@ class TestBipartite extends FunSuite with ShouldMatchers  {
     val g = CPGraphVar(cp, nnodes)
     // g.edges are (0,1),(0,2),(1,0),(1,2),(2,0),(2,1)
     
-    cp.post(g.addEdge(0,1)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addEdge(0,1))
     
     // 2) check that all is correct : 
     // check nodes
@@ -82,10 +82,10 @@ class TestBipartite extends FunSuite with ShouldMatchers  {
     g.possibleEdges(2).sorted  should be (List(1,3,4,5))
     
     // 3) add constraint
-    cp.post(new GraphBipartite(g)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphBipartite(g))
 
-    cp.post(g.addEdge(1,0)) should be (Suspend)
-    cp.post(g.addEdge(1,2)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addEdge(1,0))
+    postAndCheckSuspend(cp,g.addEdge(1,2))
     
     // check that all changes are correct acc. to definition
     // -> should remove edges 1:(0,2) and 4:(2,0) which would create an odd-length cycle if added
@@ -106,12 +106,12 @@ class TestBipartite extends FunSuite with ShouldMatchers  {
     val g = CPGraphVar(cp, nnodes)
     // g.edges are (0,1),(0,2),(1,0),(1,2),(2,0),(2,1)
     
-    cp.post(g.addEdge(0,1)) should be (Suspend)
-    cp.post(g.addEdge(1,2)) should be (Suspend)
-    cp.post(g.addEdge(2,0)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addEdge(0,1))
+    postAndCheckSuspend(cp,g.addEdge(1,2))
+    postAndCheckSuspend(cp,g.addEdge(2,0))
     
     // 3) add constraint
-    cp.post(new GraphBipartite(g)) should be (Failure)
+    postAndCheckFailure(cp, new GraphBipartite(g))
   }
   
   test("Test 4 : Success when posting constraint") {
@@ -122,10 +122,9 @@ class TestBipartite extends FunSuite with ShouldMatchers  {
     val g = CPGraphVar(cp, nnodes, edges)
      
     val c : Constraint = new GraphBipartite(g)
-    c.isActive == true should be (true)
+    c.isActive should be (true)
     // post constraint -> entailment -> constraint no longer active after posted
-    cp.post(c) should be (Suspend)
-    c.isActive == true should be (false)
+    postAndCheckSuccess(cp,c)
   }
   
   test("Test 5 : Check correct pruning") {
@@ -143,11 +142,11 @@ class TestBipartite extends FunSuite with ShouldMatchers  {
      *      3------2
      * the dashed lines represent possible edges in both direction (as we have a directed graph) */
     
-    cp.post(new GraphBipartite(g)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphBipartite(g))
 
     //  add some mandatory nodes/edges
-    cp.post(g.addEdge(0,1)) should be (Suspend)
-    cp.post(g.addEdge(2,3)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addEdge(0,1))
+    postAndCheckSuspend(cp,g.addEdge(2,3))
     
     // check that all changes are correct acc. to definition :
     g.possibleNodes should be (List(0,1,2,3))
@@ -162,7 +161,7 @@ class TestBipartite extends FunSuite with ShouldMatchers  {
     g.possibleEdges(3).sorted  should be (List(2,5,8,9,10,11))
     
     // add another required edge
-    cp.post(g.addEdge(1,2)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addEdge(1,2))
     
     // check that all changes are correct acc. to definition :
     // as 4:(1,2) is required, we should remove multiple edges :

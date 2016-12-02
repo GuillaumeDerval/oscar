@@ -17,8 +17,6 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.algo.search.Outcome._
-import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPGraphVar
 
 /**
@@ -28,14 +26,12 @@ import oscar.cp.core.variables.CPGraphVar
 
 class GraphWeaklyConnected(val g : CPGraphVar) extends Constraint(g.s, "Weakly Connected") {
   
-	override def setup(l: CPPropagStrength): Outcome = {
+	override def setup(l: CPPropagStrength): Unit = {
 	  // create undirected version of g
 	  val gu = CPGraphVar(g.possibleNodes.size)(s)
 	  // link g and gu
-	  if (s.post(new GraphUndirected(g,gu)) == Failure) return Failure // should not happen
+	  s.post(new GraphUndirected(g,gu))  // should not happen
 	  // post connected constraint on gu
-	  if (s.post(new GraphUndirectedConnected(gu)) == Failure) return Failure
-	  
-	  Suspend
+	  s.post(new GraphUndirectedConnected(gu))
 	}
 }

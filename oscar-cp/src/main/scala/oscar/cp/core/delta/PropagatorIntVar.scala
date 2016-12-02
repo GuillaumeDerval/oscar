@@ -15,13 +15,19 @@
 
 package oscar.cp.core.delta
 
-import oscar.algo.search.Outcome
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.CPStore
 
-class PropagatorIntVar(x: CPIntVar, id: Int, filter: DeltaIntVar => Outcome, name: String = "PropagatorIntVar") extends Constraint(x.store, name) {
+/**
+ * Create a new constrait, with the closure `filter` as propagator.
+ * @param x
+ * @param id
+ * @param filter The propagator to be used; Should return true only if the propagator is done (== it should be deactivated)
+ * @param name
+ */
+class PropagatorIntVar(x: CPIntVar, id: Int, filter: DeltaIntVar => Boolean, name: String = "PropagatorIntVar") extends Constraint(x.store, name) {
   
   private[this] val _delta = x.delta(this,id)
   
@@ -30,7 +36,7 @@ class PropagatorIntVar(x: CPIntVar, id: Int, filter: DeltaIntVar => Outcome, nam
   
   @inline final def snapshot = _delta
   
-  override def setup(l: CPPropagStrength): Outcome = Outcome.Suspend
+  override def setup(l: CPPropagStrength): Unit = {}
   
-  override def propagate(): Outcome = filter(_delta)
+  override def propagate(): Unit = if(filter(_delta)) deactivate()
 }

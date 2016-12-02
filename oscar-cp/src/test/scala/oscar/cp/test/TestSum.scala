@@ -17,12 +17,11 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
-import oscar.algo.search.Outcome
+import oscar.cp.testUtils.TestSuite
 import oscar.cp.constraints._
 import oscar.cp._
 
-class TestSum extends FunSuite with ShouldMatchers {
+class TestSum extends TestSuite {
 
   test("sum0") {
 
@@ -46,8 +45,8 @@ class TestSum extends FunSuite with ShouldMatchers {
       if (i > 0) {
         nbVal = nbVal - cumulatedCounters(i - 1)
       }
-      s.post(nbVal <= max) should not be (Outcome.Failure)
-      s.post(nbVal >= min) should not be (Outcome.Failure)
+      s.post(nbVal <= max)
+      s.post(nbVal >= min)
       s.isFailed should be(false)
     }
   }

@@ -15,7 +15,7 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 import oscar.cp._
 import oscar.cp.constraints.{MinAssignment}
 
@@ -24,7 +24,7 @@ import oscar.cp.constraints.{MinAssignment}
   *
   * @author Pierre Schaus pschaus@gmail.com
   */
-class TestMinAssignment extends FunSuite with ShouldMatchers {
+class TestMinAssignment extends TestSuite {
 
   test("Test Assignment 1") {
     val cp = CPSolver()

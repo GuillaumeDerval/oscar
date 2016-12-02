@@ -15,16 +15,15 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 import oscar.cp.constraints._
-import oscar.algo.search.Outcome._
 import oscar.cp._
 
 /**
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
  */
 
-class TestPathG extends FunSuite with ShouldMatchers  {
+class TestPathG extends TestSuite  {
 
   test("Test 1 : Test constraint initial propagation") {
     val cp = CPSolver()
@@ -46,7 +45,7 @@ class TestPathG extends FunSuite with ShouldMatchers  {
     
     // add constraint
     def myfun(u :Int,v : Int) : Int = 1
-    cp.post(new GraphPath(g,0,1,myfun,i)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphPath(g,0,1,myfun,i))
 
     // check that all changes are correct acc. to definition:
     g.possibleNodes should be (List(0,1,2))
@@ -69,10 +68,10 @@ class TestPathG extends FunSuite with ShouldMatchers  {
     val i = CPIntVar(cp,0,10)
     
     // add a mandatory node
-    cp.post(g.addNode(2)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(2))
     
     // add constraint
-    cp.post(new GraphPath(g,0,4, (u,v) => 1,i)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphPath(g,0,4, (u,v) => 1,i))
 
     //  check that all changes are correct acc. to definition:
     // 	  - remove edge 2:(1,3) because it skip required node 2 in path
@@ -97,7 +96,7 @@ class TestPathG extends FunSuite with ShouldMatchers  {
     
     // add constraint and define weight function
     def myfun(u : Int, v : Int) : Int = 1
-    cp.post(new GraphPath(g,0,2,myfun,i)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphPath(g,0,2,myfun,i))
 
     //  check that all changes are correct acc. to definition:
     // 	  - remove all edges except 1:(0,2) which is the only simple path of length <= 1
@@ -130,7 +129,7 @@ class TestPathG extends FunSuite with ShouldMatchers  {
         case (_,_) => 1
       }
     }
-    cp.post(new GraphPath(g,0,5,myfun,i)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphPath(g,0,5,myfun,i))
 
     //  check that all changes are correct acc. to definition:
     // 	  - remove edges 1:(0,3), 3:(1,3), 5:(2,4), 7:(3,4) because no path from length <= 5 using these edges
@@ -159,10 +158,10 @@ class TestPathG extends FunSuite with ShouldMatchers  {
     val i = CPIntVar(cp,0,10)
     
     // add a mandatory node
-    cp.post(g.addNode(2)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(2))
     
     // add constraint
-    cp.post(new GraphPath(g,0,4, (u,v) => 1,i)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphPath(g,0,4, (u,v) => 1,i))
 
     //  check that all changes are correct acc. to definition:
     // 	  - as we removed edges 2:(1,3), 4:(2,6) and 6:(5,2),
@@ -180,7 +179,7 @@ class TestPathG extends FunSuite with ShouldMatchers  {
     
     // add constraint and define weight function
     def myfun(u : Int, v : Int) : Int = 1
-    cp.post(new GraphPath(g,0,2,myfun,i)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphPath(g,0,2,myfun,i))
 
     //  check that all changes are correct acc. to definition:
     // 	  - as we removed all edges except 1:(0,2) which is the only simple path of length <= 1,
@@ -200,13 +199,13 @@ class TestPathG extends FunSuite with ShouldMatchers  {
     
     // add constraint and define weight function
     def myfun(u : Int, v : Int) : Int = 1
-    cp.post(new GraphPath(g,0,3,myfun,i)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphPath(g,0,3,myfun,i))
     
     g.possibleNodes.sorted should be (List(0,1,2,3))
     g.requiredNodes.sorted should be (List(0,3))
 
     // add node 1
-    cp.post(g.addNode(1)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(1))
     
     //  check that all changes are correct acc. to definition:
     //    - add mandatory node 2
@@ -225,7 +224,7 @@ class TestPathG extends FunSuite with ShouldMatchers  {
     
     // add constraint and define weight function
     def myfun(u : Int, v : Int) : Int = 1
-    cp.post(new GraphPath(g,0,3,myfun,i)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphPath(g,0,3,myfun,i))
     
     g.possibleNodes.sorted should be (List(0,1,2,3))
     g.requiredNodes.sorted should be (List(0,3))
@@ -236,8 +235,8 @@ class TestPathG extends FunSuite with ShouldMatchers  {
     for (n <- 0 to nnodes-1) g.requiredEdges(n).sorted  should be (List())
 
     // add nodes
-    cp.post(g.addNode(1)) should be (Suspend)
-    cp.post(g.addNode(2)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(1))
+    postAndCheckSuspend(cp,g.addNode(2))
     
     //  check that all changes are correct acc. to definition:
     // 	  - remove 1:(0,2),3:(1,3)

@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.algo.search.Outcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -44,21 +44,18 @@ public class SumLeEq extends Constraint {
 	}
 
 	@Override
-	public Outcome setup(CPPropagStrength l) {
-		if (propagate() == Outcome.Failure) {
-			return Outcome.Failure;
-		}
+	public void setup(CPPropagStrength l) throws Inconsistency {
+		propagate();
 		for (int i = 0; i < x.length; i++) {
 			if (!x[i].isBound()) 
 				x[i].callPropagateWhenBoundsChange(this);
 		}
 		if (!y.isBound())
 			y.callPropagateWhenBoundsChange(this);
-		return Outcome.Suspend;
 	}
 	
 	@Override
-	public Outcome propagate() {
+	public void propagate() {
 		int maxsumx = 0;
 		int minsumx = 0;
 		for (int i = 0; i < x.length; i++) {
@@ -67,21 +64,17 @@ public class SumLeEq extends Constraint {
 		}
 		
 		if (maxsumx <= y.getMin()) {
-			return Outcome.Success;
+			deactivate();
+			return;
 		}
 		
-		if (y.updateMax(maxsumx) == Outcome.Failure) {
-			return Outcome.Failure;
-		}
+		y.updateMax(maxsumx);
 		
 		for (int i = 0; i < x.length; i++) {
 			int minsumxi = minsumx - x[i].getMin();
 			int maxi = y.getMax() - minsumxi;
-			if (x[i].updateMax(maxi) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
+			x[i].updateMax(maxi);
 		}
-		return Outcome.Suspend;
 	}
 	
 	

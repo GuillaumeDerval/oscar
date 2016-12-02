@@ -1,8 +1,10 @@
 package oscar.examples.cp
 
+import oscar.algo.Inconsistency
 import oscar.cp._
 import oscar.algo.search._
 import oscar.algo.reversible._
+
 import scala.io.Source
 import oscar.cp.core.CPPropagStrength
 
@@ -95,30 +97,30 @@ class TabNotEqual(val tab1: Array[CPIntVar], val tab2: Array[CPIntVar], val len:
   val valuesBin = Array(new ReversibleInt(s, 0), new ReversibleInt(s, 0))
   val numBound = Array(new ReversibleInt(s, 0), new ReversibleInt(s, 0))
 
-  override def setup(l: CPPropagStrength): Outcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     if (tab1.length != len || tab2.length != len)
-      Outcome.Success
+      return
 
     for ((v, i) <- (tab1 ++ tab2).zipWithIndex) {
       if (v.isBound) {
-        val ok = valBindIdx(v, i)
-        if (ok != Outcome.Suspend) return ok
-      } else
+        valBindIdx(v, i)
+        if(!isActive)
+          return
+      }
+      else
         v.callValBindIdxWhenBind(this, i)
     }
-    Outcome.Suspend
   }
 
-  override def valBindIdx(x: CPIntVar, i: Int): Outcome = {
+  override def valBindIdx(x: CPIntVar, i: Int): Unit = {
     valuesBin(i / len).value += x.min * intPow(2, i % len)
     numBound(i / len).incr()
     if (numBound(0).value == len && numBound(1).value == len) {
       if (valuesBin(0).value == valuesBin(1).value)
-        Outcome.Failure
+        throw Inconsistency
       else
-        Outcome.Success
-    } else
-      Outcome.Suspend
+        deactivate()
+    }
   }
 
   /**

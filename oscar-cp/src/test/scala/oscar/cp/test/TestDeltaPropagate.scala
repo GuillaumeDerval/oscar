@@ -14,10 +14,8 @@
  ******************************************************************************/
 package oscar.cp.test
 
-import oscar.algo.search.Outcome
 import oscar.cp.constraints._
 import oscar.cp._
-import oscar.algo.search.Outcome._
 
 import collection.immutable.SortedSet
 import oscar.cp.core.CPPropagStrength
@@ -39,12 +37,11 @@ class TestDeltaPropagate extends TestSuite {
       
       var snapshot: DeltaIntVar = null
 
-      override def setup(l: CPPropagStrength): Outcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         snapshot = X.callPropagateOnChangesWithDelta(this)
-        Outcome.Suspend
       }
       
-     override def propagate(): Outcome = {
+     override def propagate(): Unit = {
         //println(X.delta(this).toSet)
         
         snapshot.changed should be(true)
@@ -57,7 +54,6 @@ class TestDeltaPropagate extends TestSuite {
         
         
         propag = true
-        Outcome.Suspend
       }
     }
 
@@ -77,12 +73,11 @@ class TestDeltaPropagate extends TestSuite {
 
       var snapshot: DeltaIntVar = null
 
-      override def setup(l: CPPropagStrength): Outcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         snapshot = X.callPropagateOnChangesWithDelta(this)
-        Outcome.Suspend
       }
       
-      override def propagate(): Outcome = {
+      override def propagate(): Unit = {
         //println(X.delta(this).toSet)
         
         snapshot.changed should be(true)
@@ -95,7 +90,6 @@ class TestDeltaPropagate extends TestSuite {
         
         
         propag = true
-        Outcome.Suspend
       }
     }
 
@@ -113,12 +107,11 @@ class TestDeltaPropagate extends TestSuite {
       priorityL2 = CPStore.MAXPRIORL2-5 
       var snapshot: DeltaIntVar = null
 
-      override def setup(l: CPPropagStrength): Outcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         snapshot = X.callPropagateOnChangesWithDelta(this)
-        Outcome.Suspend
       }
       
-      override def propagate(): Outcome = {
+      override def propagate(): Unit = {
         //println(X.delta(this).toSet)
         
         snapshot.changed should be(true)
@@ -131,7 +124,6 @@ class TestDeltaPropagate extends TestSuite {
         
         
         propag = true
-        Outcome.Suspend
       }
     }
 
@@ -154,7 +146,7 @@ class TestDeltaPropagate extends TestSuite {
     
     class MyCons(val X: CPIntVar) extends Constraint(X.store, "TestDelta") {
       priorityL2 = CPStore.MaxPriorityL2-5 
-      override def setup(l: CPPropagStrength): Outcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         X.filterWhenDomainChangesWithDelta() { delta =>
           propag = true
           delta.changed should be(true)
@@ -164,9 +156,8 @@ class TestDeltaPropagate extends TestSuite {
           delta.minChanged should be(false)
           delta.oldMin should be(-2)
           delta.oldMax should be(4)
-          Outcome.Suspend
+          false
         }
-        Outcome.Suspend
       }
     }
 
@@ -187,7 +178,7 @@ class TestDeltaPropagate extends TestSuite {
     
     class MyCons(val X: CPIntVar) extends Constraint(X.store, "TestDelta") {
       priorityL2 = CPStore.MaxPriorityL2-5 
-      override def setup(l: CPPropagStrength): Outcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         X.filterWhenDomainChangesWithDelta() { delta =>
           propag = true
           delta.changed should be(true)
@@ -197,9 +188,8 @@ class TestDeltaPropagate extends TestSuite {
           delta.minChanged should be(true)
           delta.oldMin should be(-4)
           delta.oldMax should be(2)
-          Outcome.Suspend
+          false
         }
-        Outcome.Suspend
       }
     }
 
@@ -224,7 +214,7 @@ class TestDeltaPropagate extends TestSuite {
       
       val snapshots = new Array[DeltaIntVar](x.length)
 
-      override def setup(l: CPPropagStrength): Outcome = {
+      override def setup(l: CPPropagStrength): Unit = {
 
         for (i <- 0 until x.size) {
           snapshots(i) = x(i).callPropagateOnChangesWithDelta(this)
@@ -243,10 +233,9 @@ class TestDeltaPropagate extends TestSuite {
       override def valRemoveIdx(x: CPIntVar, idx: Int, value: Int) = {
         delta1(idx)(currDim(idx)) = value
         currDim(idx) += 1
-        Outcome.Suspend
       }
      
-      override def propagate(): Outcome = {
+      override def propagate(): Unit = {
         for (i <- 0 until x.size) {
 
           val m = snapshots(i).fillArray(delta2(i))
@@ -265,7 +254,6 @@ class TestDeltaPropagate extends TestSuite {
         for (i <- 0 until x.size) {
           currDim(i) = 0
         }
-        Outcome.Suspend
       }
     }
 
@@ -304,22 +292,20 @@ class TestDeltaPropagate extends TestSuite {
       
       var snapshot: DeltaIntVar = null
       
-      override def setup(l: CPPropagStrength): Outcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         snapshot = X.callPropagateOnChangesWithDelta(this)
         // I remove some values such that propagate should be called again
         X.updateMax(5)
         X.updateMin(1)
         X.removeValue(3)
-        Outcome.Suspend
       }
-      override def propagate(): Outcome = {
+      override def propagate(): Unit = {
         nPropagates += 1
         assert(snapshot.values.toSet == Set(0,3,6,7,8)) 
         val array = Array.ofDim[Int](6)
         val m = snapshot.fillArray(array)
         assert(m == 5)
         assert(array.take(m).toSet == Set(0,3,6,7,8))
-        Outcome.Suspend
       }
     }
     
@@ -339,7 +325,7 @@ class TestDeltaPropagate extends TestSuite {
 
     class MyCons(val X: CPIntVar) extends Constraint(X.store, "TestDelta") {
       priorityL2 = CPStore.MaxPriorityL2 - 5
-      override def setup(l: CPPropagStrength): Outcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         X.filterWhenDomainChangesWithDelta() { delta =>
           nPropag += 1
 
@@ -363,10 +349,8 @@ class TestDeltaPropagate extends TestSuite {
             delta.oldMin should be(0)
             delta.oldMax should be(2)
           }
-
-          Outcome.Suspend
+          false
         }
-        Outcome.Suspend
       }
     }
 
@@ -390,7 +374,7 @@ class TestDeltaPropagate extends TestSuite {
 
     class MyCons(val X: CPIntVar) extends Constraint(X.store, "TestDelta") {
       priorityL2 = CPStore.MaxPriorityL2 - 5
-      override def setup(l: CPPropagStrength): Outcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         X.filterWhenDomainChangesWithDelta(idempotent = true) { delta =>
           nPropag += 1
 
@@ -418,10 +402,8 @@ class TestDeltaPropagate extends TestSuite {
             delta.oldMin should be(0)
             delta.oldMax should be(2)
           }
-
-          Outcome.Suspend
+          false
         }
-        Outcome.Suspend
       }
     }
 
@@ -444,15 +426,14 @@ class TestDeltaPropagate extends TestSuite {
 
     class MyCons(val X: CPIntVar) extends Constraint(X.store, "TestDelta") {
       priorityL2 = CPStore.MaxPriorityL2 - 5
-      override def setup(l: CPPropagStrength): Outcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         X.filterWhenDomainChangesWithDelta(idempotent = false) { delta =>
           nPropag += 1
 
           X.updateMin(-1)
 
-          Outcome.Suspend
+          false
         }
-        Outcome.Suspend
       }
     }
 
@@ -475,7 +456,7 @@ class TestDeltaPropagate extends TestSuite {
 
     class MyCons(val X: CPIntVar) extends Constraint(X.store, "TestDelta") {
       priorityL2 = CPStore.MaxPriorityL2 - 5
-      override def setup(l: CPPropagStrength): Outcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         X.callOnChanges(delta => {
           if (nPropag == 0) {
             assert(delta.size == 1)
@@ -485,11 +466,8 @@ class TestDeltaPropagate extends TestSuite {
           }
           nPropag += 1
           X.updateMin(-1)
-          Outcome.Suspend
-        },idempotent=false);
-
-        Outcome.Suspend
-
+          false
+        },idempotent=false)
       }
     }
 

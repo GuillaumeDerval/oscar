@@ -19,7 +19,6 @@ import java.util.Comparator;
 import java.util.Hashtable;
 
 import oscar.algo.reversible.ReversibleInt;
-import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -73,18 +72,12 @@ public class ElementCst extends Constraint {
 	}
 
 	@Override
-	public Outcome setup(CPPropagStrength l) {
+	public void setup(CPPropagStrength l) {
 
-		if (x.updateMin(0) == Outcome.Failure) {
-			return Outcome.Failure;
-		}
-		if (x.updateMax(y.length-1) == Outcome.Failure) {
-			return Outcome.Failure;
-		}
+		x.updateMin(0);
+		x.updateMax(y.length-1);
 		
-		if (propagate() == Outcome.Failure) {
-			return Outcome.Failure;
-		}
+		propagate();
 		if (l == CPPropagStrength.Strong) {
 			initCounters();
 			x.callValRemoveWhenValueIsRemoved(this);
@@ -93,8 +86,6 @@ public class ElementCst extends Constraint {
 		z.callPropagateWhenBoundsChange(this);
 		x.callPropagateWhenDomainChanges(this);		
 		x.callValBindWhenBind(this);
-
-		return Outcome.Suspend;
 	}
 	
 	private void initCounters() {
@@ -111,13 +102,11 @@ public class ElementCst extends Constraint {
 	}
 	
 	@Override
-	public Outcome valRemove(CPIntVar var, int val) {
+	public void valRemove(CPIntVar var, int val) {
 		if (var == z) {
 			for (int i = 0; i < y.length; i++) {
 				if (y[i] == val) {
-					if (x.removeValue(i) == Outcome.Failure) {
-						return Outcome.Failure;
-					}
+					x.removeValue(i);
 				}
 			}
 		} else {
@@ -125,50 +114,37 @@ public class ElementCst extends Constraint {
 			ReversibleInt counter = counters.get(y[val]);
 			counter.decr();
 			if (counter.getValue() == 0) {
-				if (z.removeValue(y[val]) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
+				z.removeValue(y[val]);
 			}
 		}
-		return Outcome.Suspend;
 	}
 
 	@Override
-	public Outcome propagate() {
+	public void propagate() {
 		// z = y[x] 
 		int i = minIndSupp.getValue();
 		while (i<y.length && (y[sortedPerm[i]] < z.getMin() || !x.hasValue(sortedPerm[i]))) {
-			if (x.removeValue(sortedPerm[i]) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
+			x.removeValue(sortedPerm[i]);
 			i++;
 		}
 		minIndSupp.setValue(i);
 		
-		if (z.updateMin(y[sortedPerm[i]]) == Outcome.Failure){
-			return Outcome.Failure;
-		}
+		z.updateMin(y[sortedPerm[i]]);
 		
 		i = maxIndSupp.getValue();
 		while (i>=0 && (y[sortedPerm[i]] > z.getMax() || !x.hasValue(sortedPerm[i]))) {
-			if (x.removeValue(sortedPerm[i]) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
+			x.removeValue(sortedPerm[i]);
 			i--;
 		}
 		maxIndSupp.setValue(i);
 		
-		if (z.updateMax(y[sortedPerm[i]]) == Outcome.Failure){
-			return Outcome.Failure;
-		}
-		return Outcome.Suspend;
+		z.updateMax(y[sortedPerm[i]]);
 	}
 	@Override
-	public Outcome valBind(CPIntVar x) {
+	public void valBind(CPIntVar x) {
 		// x is bound
-		if (z.assign(y[x.min()]) == Outcome.Failure)
-			return Outcome.Failure;
-		return Outcome.Success;
+		z.assign(y[x.min()]);
+		deactivate();
 	}
 
 }

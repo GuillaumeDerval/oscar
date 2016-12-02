@@ -17,7 +17,7 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 
 import oscar.cp.constraints._
 import oscar.cp._
@@ -33,7 +33,7 @@ import collection.immutable.SortedSet
  *
  * @author Pierre Schaus pschaus@gmail.com
  */
-class TestNumberPartitioning extends FunSuite with ShouldMatchers {
+class TestNumberPartitioning extends TestSuite {
 
   test("Number Partitioning") {
 

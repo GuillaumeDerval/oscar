@@ -1,6 +1,5 @@
 package oscar.modeling.models
 
-import oscar.algo.search.Outcome
 import oscar.modeling.algebra.Expression
 import oscar.modeling.constraints.Constraint
 import oscar.modeling.models.operators.ModelOperator
@@ -29,7 +28,7 @@ trait ModelDeclarationInterface {
     *
     * @param constraint the constraint to post
     */
-  def post(constraint: Constraint): Outcome
+  def post(constraint: Constraint): Unit
 
   /**
     * Add a new constraint to the model

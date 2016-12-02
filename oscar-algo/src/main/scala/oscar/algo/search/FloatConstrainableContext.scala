@@ -9,15 +9,15 @@ trait FloatConstrainableContext extends ConstrainableContext {
   /**
     * Post x == v
     */
-  def assign(x: FloatVarLike, v: Double): Outcome
+  def assign(x: FloatVarLike, v: Double): Unit
 
   /**
     * Post x <= v
     */
-  def smallerEq(x: FloatVarLike, v: Double): Outcome
+  def smallerEq(x: FloatVarLike, v: Double): Unit
 
   /**
     * Post x >= v
     */
-  def largerEq(x: FloatVarLike, v: Double): Outcome
+  def largerEq(x: FloatVarLike, v: Double): Unit
 }

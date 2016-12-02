@@ -1,6 +1,5 @@
 package oscar.algo.branchings
 
-import oscar.algo.search.Outcome._
 import oscar.algo.search._
 import oscar.algo.vars.IntVarLike
 
@@ -27,7 +26,7 @@ class SingletonBounds(val vars: Array[IntVarLike]) extends Branching with Branch
       while (removeMin && minBound < xMax) {
         val xTest = minBound
         context.pushState()
-        if (context.assign(x, xTest) == Failure) {
+        if (isInconsistent(context.assign(x, xTest))) {
           minBound += 1
           hasRemoved = true
         }
@@ -35,14 +34,14 @@ class SingletonBounds(val vars: Array[IntVarLike]) extends Branching with Branch
         context.pop()
       }
       
-      if (context.largerEq(x, minBound) == Failure) return branchOne({})
+      if (isInconsistent(context.largerEq(x, minBound))) return branchOne({})
       
       
       var removeMax = true
       while (removeMax && maxBound > xMin) {
         val xTest = maxBound
         context.pushState()
-        if (context.assign(x, xTest) == Failure) {
+        if (isInconsistent(context.assign(x, xTest))) {
           maxBound -= 1
           hasRemoved = true
         }
@@ -50,7 +49,7 @@ class SingletonBounds(val vars: Array[IntVarLike]) extends Branching with Branch
         context.pop()
       }
       
-      if (context.smallerEq(x, maxBound) == Failure) return branchOne({})
+      if (isInconsistent(context.smallerEq(x, maxBound))) return branchOne({})
     }
     
     if (hasRemoved) { 

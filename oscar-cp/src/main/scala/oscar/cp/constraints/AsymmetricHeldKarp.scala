@@ -17,26 +17,16 @@
 
 package oscar.cp.constraints
 
-import oscar.cp.core.variables.CPSetVar
-import oscar.algo.reversible.ReversibleDouble
 import oscar.cp._
 import oscar.cp.core._
-
-import scala.io.Source
-import oscar.algo.reversible.ReversibleInt
-import oscar.algo.DisjointSets
-import oscar.algo.search.Outcome
-import oscar.algo.search.Outcome._
-
-import scala.collection.mutable.ArrayBuffer
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
  */
 class AsymetricHeldKarp(succ: Array[CPIntVar], distMatrix: Array[Array[Int]], cost: CPIntVar) extends ChannelTSP(succ, distMatrix) {
 
-  override def setup(l: CPPropagStrength): Outcome = {
-    if (s.post(new HeldKarp(edgeVar, edges, cost)) == Failure) return Failure
+  override def setup(l: CPPropagStrength): Unit = {
+    s.post(new HeldKarp(edgeVar, edges, cost))
     super.setup(l)
   }
 

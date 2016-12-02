@@ -16,8 +16,6 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.algo.search.Outcome
-import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPIntVar
 
 
@@ -50,14 +48,13 @@ class CountSimple(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) exte
   }  
   
 
-  override def setup(l: CPPropagStrength): Outcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     X.foreach(_.callPropagateWhenDomainChanges(this))
     Y.callPropagateWhenBind(this)
     N.callPropagateWhenBoundsChange(this)
-    Outcome.Suspend
   }
   
-  override def propagate(): Outcome = {
+  override def propagate(): Unit = {
     var i = 0
     if (Y.isBound) {
       val v = Y.min
@@ -83,31 +80,31 @@ class CountSimple(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) exte
     val minCount = nEqY.value
     val maxCount = n-nDiffY.value
     
-    if (N.updateMin(minCount) == Outcome.Failure) return Outcome.Failure
-    if (N.updateMax(maxCount) == Outcome.Failure) return Outcome.Failure
-    
+    N.updateMin(minCount)
+    N.updateMax(maxCount)
     
     // we reached the maximum number values
     if (minCount == N.max && Y.isBound) {
       val v = Y.min
       i = nEqY.value
       while (i < n) {
-        if (eqY(i).removeValue(v) == Outcome.Failure) return Outcome.Failure
+        eqY(i).removeValue(v)
         i += 1
       }
-      return Outcome.Success
+      deactivate()
+      return
     }
     // every value not surely equal to Y must be equal to Y
     if (maxCount == N.min && Y.isBound) {
       val v = Y.min
       i = nDiffY.value
       while (i < n) {
-        if (diffY(i).assign(v) == Outcome.Failure) return Outcome.Failure
+        diffY(i).assign(v)
         i += 1
       }
-      return Outcome.Success
+      deactivate()
+      return
     }
-    return Outcome.Suspend
   }
   
 

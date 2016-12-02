@@ -18,7 +18,6 @@
 package oscar.algo.branchings
 
 import oscar.algo.reversible._
-import oscar.algo.search.Outcome.Failure
 import oscar.algo.search._
 import oscar.algo.vars.IntVarLike
 
@@ -113,24 +112,24 @@ class SplitLastConflict(variables: Array[IntVarLike], varHeuristic: Int => Int, 
 
   // Return an Alternative that assign the value to the variable
   @inline private def assign(variable: IntVarLike, value: Int, depth: Int): Alternative = () => {
-    val out = context.assign(variable, value)
-    if (out == Failure) {
+    val out = isInconsistent(context.assign(variable, value))
+    if (out) {
       conflictDepth = depth
     }
   }
 
   // Return an Alternative that constraints the variable to be greater than value
   @inline private def greater(variable: IntVarLike, value: Int, depth: Int): Alternative = () => {
-    val out = context.larger(variable, value)
-    if (out == Failure) {
+    val out = isInconsistent(context.larger(variable, value))
+    if (out) {
       conflictDepth = depth
     }
   }
 
   // Return an Alternative that constraints the variable to be lower than value
   @inline private def lower(variable: IntVarLike, value: Int, depth: Int): Alternative = () => {
-    val out = context.smaller(variable, value)
-    if (out == Failure) {
+    val out = isInconsistent(context.smaller(variable, value))
+    if (out) {
       conflictDepth = depth
     }
   }

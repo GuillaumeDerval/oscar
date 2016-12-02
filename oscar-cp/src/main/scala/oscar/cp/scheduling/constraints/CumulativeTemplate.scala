@@ -1,12 +1,10 @@
 package oscar.cp.scheduling.constraints
 
-import oscar.algo.search.Outcome._
 import oscar.algo.SortUtils._
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.scheduling.util.OpenSparseSet
 import Math._
 
-import oscar.algo.search.Outcome
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.variables.CPIntVar
@@ -26,7 +24,7 @@ extends Constraint(capacity.store, name) {
   require(n == resources.length)
 
     
-  def setup(strength: CPPropagStrength): Outcome = {
+  def setup(strength: CPPropagStrength): Unit = {
     for (a <- 0 until n) {
       if (resources(a).hasValue(id) && heights(a).max > 0) {
         if (!resources(a).isBound) {

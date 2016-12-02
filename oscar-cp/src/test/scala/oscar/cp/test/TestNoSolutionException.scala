@@ -15,22 +15,22 @@
 package oscar.cp.test
 
 import scala.reflect.Manifest
-
 import org.scalatest.FunSuite
 import org.scalatest.events.Formatter
 import org.scalatest.ShouldMatchers
-
+import oscar.algo.Inconsistency
 import oscar.cp._
+import oscar.cp.testUtils.TestSuite
 
-class TestNoSolutionException extends FunSuite with ShouldMatchers {
+class TestNoSolutionException extends TestSuite {
 	
 	test("test1: using add outside subjectTo allows NoSolutionExceptions") {
 	  val cp = CPSolver()
 	  val x = CPIntVar(Array(10, 20, 30))(cp)
 	  
-	  intercept[NoSolutionException]{ 
+	  intercept[NoSolutionException]{ intercept[Inconsistency] {
 	    cp.add(x < 10)
-	  }  
+	  }  }
 	  
 	  cp.isFailed should be(true)
 	}
@@ -39,23 +39,15 @@ class TestNoSolutionException extends FunSuite with ShouldMatchers {
 	  val cp = CPSolver()
 	  val x = CPIntVar(Array(10, 20, 30))(cp)
 	  
-	  try {
-	    cp.post(x < 10)
-	  }  catch {
-	    case e: NoSolutionException => fail("post should handle the NoSolutionException internally")
-	  }
-	  
+	  postAndCheckFailure(cp, x < 10)
 	  cp.isFailed should be(true)
 	}
 	
 	test("test4: using post inside subjectTo shouldn't generate NoSolutionExceptions") {
 	  val cp = CPSolver()
 	  val x = CPIntVar(Array(10, 20, 30))(cp)
-	  try {
-			cp.post(x < 10)
-	  } catch {
-	    case e: NoSolutionException => fail("The NoSolutionException should be caught by the subjectTo block")
-	  }
+
+		postAndCheckFailure(cp, x < 10)
 	  cp.isFailed should be(true)
 	}
 }

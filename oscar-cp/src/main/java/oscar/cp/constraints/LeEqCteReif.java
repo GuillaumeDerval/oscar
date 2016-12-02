@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.algo.search.Outcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
@@ -46,52 +46,40 @@ public class LeEqCteReif extends Constraint {
 	}
 	
 	@Override
-	public Outcome setup(CPPropagStrength l) {
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		priorityBindL1_$eq(CPStore.MAXPRIORL1());
 		priorityL2_$eq(CPStore.MAXPRIORL2()-1);
-		Outcome oc = propagate();
-		if(oc == Outcome.Suspend){
+		propagate();
+		if(isActive()){
 			b.callValBindWhenBind(this);
 			x.callPropagateWhenBoundsChange(this);
 			if (b.isBound()) {
-				oc = valBind(b);
+				valBind(b);
 			}
 		}
-		return oc;
 	}
 	
 	@Override
-	public Outcome propagate() {
+	public void propagate() {
 		if (x.getMax() <= v) {
-			if (b.assign(1) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			b.assign(1);
+			deactivate();
 		} else if (x.getMin() > v) {
-			if (b.assign(0) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
-		}
-		else {
-			return Outcome.Suspend;
+			b.assign(0);
+			deactivate();
 		}
 	}
 		
 	@Override
-	public Outcome valBind(CPIntVar var) {
+	public void valBind(CPIntVar var) {
 		if (b.min() == 0) {
 			//x > v
-			if (x.updateMin(v+1) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
+			x.updateMin(v+1);
 		} else {
 			//x <= v
-			if (x.updateMax(v) == Outcome.Failure) {
-				return Outcome.Failure;
-			}				
+			x.updateMax(v);
 		}
-		return Outcome.Success;
+		deactivate();
 	}
 
 }

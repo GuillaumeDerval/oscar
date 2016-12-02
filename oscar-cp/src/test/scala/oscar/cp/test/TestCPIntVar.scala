@@ -18,7 +18,6 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.Matchers
-import oscar.algo.search.Outcome
 import oscar.cp.core.CPPropagStrength
 import oscar.cp._
 
@@ -140,9 +139,9 @@ class TestCPIntVar extends FunSuite with Matchers {
     var x = CPIntVar(Set(1, 3, 5))(cp)
 
     val d = x.iterator
-    assert(x.removeValue(d.next) == Outcome.Suspend)
-    assert(x.removeValue(d.next) == Outcome.Suspend)
-    assert(x.removeValue(d.next) == Outcome.Failure)
+    x.removeValue(d.next)
+    x.removeValue(d.next)
+    assert(isInconsistent(x.removeValue(d.next) ))
     d.hasNext should be(false)
   }
 
@@ -153,7 +152,7 @@ class TestCPIntVar extends FunSuite with Matchers {
     val d = x.iterator
     val removed = (for (i <- 1 to x.size - 1) yield {
       val v = d.next
-      assert(x.removeValue(v) == Outcome.Suspend)
+      x.removeValue(v)
       v
     }).toSet
 
@@ -182,22 +181,19 @@ class TestCPIntVar extends FunSuite with Matchers {
     var i = 0
     class MyCons(val X: CPIntVar) extends Constraint(X.store, "TestDelta") {
 
-      override def setup(l: CPPropagStrength): Outcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         X.callPropagateWhenBind(this)
         X.callValBindWhenBind(this)
-        Outcome.Suspend
       }
 
-      override def propagate(): Outcome = {
+      override def propagate(): Unit = {
         i += 1
         propagCalled = i
-        Outcome.Suspend
       }
 
-      override def valBind(x: CPIntVar): Outcome = {
+      override def valBind(x: CPIntVar): Unit = {
         i += 1
         valBindCalled = i
-        Outcome.Suspend
       }
     }
 

@@ -3,12 +3,10 @@ package oscar.cp.scheduling.constraints
 import oscar.algo.SortUtils._
 import Math._
 
-import oscar.algo.search.Outcome
 import oscar.cp.core.CPStore
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
 import oscar.cp.core.variables.CPIntVar
-import oscar.algo.search.Outcome._
 import oscar.cp.scheduling.util.OpenSparseSet
 
 // @author Steven Gay steven.gay@uclouvain.be
@@ -22,7 +20,7 @@ extends Constraint(store, name) {
   require(n == resources.length)
 
     
-  def setup(strength: CPPropagStrength): Outcome = {
+  def setup(strength: CPPropagStrength): Unit = {
     for (a <- 0 until n) {
       if (resources(a).hasValue(id)) {
         if (!resources(a).isBound) {

@@ -16,7 +16,8 @@
  */
 package oscar.cp.core.variables
 
-import oscar.algo.search.Outcome
+
+import oscar.algo.Inconsistency
 
 import scala.util.Random
 import oscar.cp.core.Constraint
@@ -91,9 +92,9 @@ final class CPIntVarViewTimes(v: CPIntVar, a: Int) extends CPIntVar {
 
   override final def updateMax(value: Int) = v.updateMax(floor_div(value, a))
 
-  override final def assign(value: Int) = if (value % a == 0) v.assign(value / a) else Outcome.Failure
+  override final def assign(value: Int) = if (value % a == 0) v.assign(value / a) else throw Inconsistency
 
-  override final def removeValue(value: Int) = if (value % a == 0) v.removeValue(value / a) else Outcome.Suspend
+  override final def removeValue(value: Int) = if (value % a == 0) v.removeValue(value / a)
 
   override final def min = a * v.min
 

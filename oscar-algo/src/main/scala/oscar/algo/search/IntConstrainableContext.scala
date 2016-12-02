@@ -10,35 +10,35 @@ trait IntConstrainableContext extends ConstrainableContext {
   /**
     * Post x == v
     */
-  def assign(x: IntVarLike, v: Int): Outcome
+  def assign(x: IntVarLike, v: Int): Unit
 
   /**
     * Post x != v
     */
-  def remove(x: IntVarLike, v: Int): Outcome
+  def remove(x: IntVarLike, v: Int): Unit
 
   /**
     * Post x <= v
     */
-  def smallerEq(x: IntVarLike, v: Int): Outcome
+  def smallerEq(x: IntVarLike, v: Int): Unit
 
   /**
     * Post x >= v
     */
-  def largerEq(x: IntVarLike, v: Int): Outcome
+  def largerEq(x: IntVarLike, v: Int): Unit
 
   /**
     * Post x < v
     */
-  def smaller(x: IntVarLike, v: Int): Outcome = smallerEq(x, v-1)
+  def smaller(x: IntVarLike, v: Int): Unit = smallerEq(x, v-1)
 
   /**
     * Post x > v
     */
-  def larger(x: IntVarLike, v: Int): Outcome = largerEq(x, v+1)
+  def larger(x: IntVarLike, v: Int): Unit = largerEq(x, v+1)
 
   /**
     * Post x != v for all v in vs
     */
-  def remove(x: IntVarLike, vs: Array[Int]): Outcome
+  def remove(x: IntVarLike, vs: Array[Int]): Unit
 }

@@ -16,8 +16,6 @@
 
 package oscar.cp.scheduling.constraints
 
-import oscar.algo.search.Outcome.{Failure, Suspend}
-import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.{CPPropagStrength, Constraint}
 
@@ -28,7 +26,7 @@ class BinaryDisjunctiveWithTransitionTimes(startVar1: CPIntVar, endVar1: CPIntVa
 
   idempotent = true
   
-  override def setup(l: CPPropagStrength): Outcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     startVar1.callPropagateWhenBoundsChange(this)
     endVar1.callPropagateWhenBoundsChange(this)
     startVar2.callPropagateWhenBoundsChange(this)
@@ -36,21 +34,14 @@ class BinaryDisjunctiveWithTransitionTimes(startVar1: CPIntVar, endVar1: CPIntVa
     propagate()
   }
 
-  override def propagate(): Outcome = {
+  override def propagate(): Unit = {
     if (endVar1.min + transition1To2 > startVar2.max) {
-      if (startVar1.updateMin(endVar2.min + transition2To1) == Failure || endVar2.updateMax(startVar1.max - transition2To1) == Failure)
-        Failure
-      else
-        Suspend
+      startVar1.updateMin(endVar2.min + transition2To1)
+      endVar2.updateMax(startVar1.max - transition2To1)
     }
     else if (endVar2.min + transition2To1 > startVar1.max) {
-      if (startVar2.updateMin(endVar1.min + transition1To2) == Failure || endVar1.updateMax(startVar2.max - transition1To2) == Failure)
-        Failure
-      else
-        Suspend
-    }
-    else {
-      Suspend
+      startVar2.updateMin(endVar1.min + transition1To2)
+      endVar1.updateMax(startVar2.max - transition1To2)
     }
   }
 

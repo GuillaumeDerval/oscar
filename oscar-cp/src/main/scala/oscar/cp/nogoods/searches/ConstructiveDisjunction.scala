@@ -1,7 +1,6 @@
 package oscar.cp.nogoods.searches
 
 import oscar.cp._
-import oscar.algo.search.{Outcome, DFSearch}
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.CPStore
 import oscar.cp.nogoods.decisions.Decision
@@ -9,7 +8,7 @@ import oscar.cp.nogoods.decisions.Decision
 /** @author Renaud Hartert ren.hartert@gmail.com */
 object ConstructiveDisjunction {
 
-  def reduceDomains(problem: CPStore, variables: Array[CPIntVar], decision: Decision): Outcome = {
+  def reduceDomains(problem: CPStore, variables: Array[CPIntVar], decision: Decision): Unit = {
 
     val nVariables = variables.length
     val mins = Array.tabulate(nVariables)(i => variables(i).min)

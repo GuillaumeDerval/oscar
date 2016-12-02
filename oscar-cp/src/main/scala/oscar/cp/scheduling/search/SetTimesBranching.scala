@@ -16,7 +16,6 @@
 package oscar.cp.scheduling.search
 
 import oscar.cp._
-import oscar.algo.search.Outcome.Failure
 import oscar.algo.search.Branching
 import oscar.algo.reversible.ReversibleInt
 
@@ -65,9 +64,9 @@ class SetTimesBranching(starts: Array[CPIntVar], durations: Array[CPIntVar], end
           
         else {
           branch {
-            val out = cp.assign(start, est)
+            val inconsistent = isInconsistent(cp.assign(start, est))
             assign(taskId) // the task is assigned by setTimes
-            if (out != Failure) dominanceCheck()
+            if (!inconsistent) dominanceCheck()
           } {
             //val minEct = selectMinEct(est)
             cp.propagate()

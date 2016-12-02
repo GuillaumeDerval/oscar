@@ -15,13 +15,11 @@
 
 package oscar.cp.constraints
 
+import oscar.algo.search.isInconsistent
 import oscar.cp.TightenType
 import oscar.cp.TightenType._
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.Constraint
-import oscar.algo.search.Outcome._
-import oscar.algo.search.{Objective, Outcome}
-import oscar.cp.core.CPPropagStrength
+import oscar.algo.search.Objective
 
 /**
  * @author Pierre Schaus  pschaus@gmail.com
@@ -47,9 +45,9 @@ abstract class CPObjectiveUnit(val objVar: CPIntVar, val n: String = "") extends
   /** Returns true if the objective has to be minimized, false otherwise */
   def isMin: Boolean
   /** Tries to adjust the worst bound of the domain to newBound with delta */
-  def updateWorstBound(newBound: Int, delta: Int = 0): Outcome
+  def updateWorstBound(newBound: Int, delta: Int = 0): Unit
   /** Tries to adjust the best bound of the domain to newBound with delta */
-  def updateBestBound(newBound: Int, delta: Int = 0): Outcome
+  def updateBestBound(newBound: Int, delta: Int = 0): Unit
   /** Returns the value of the worst bound of the objective */
   def worstBound: Int
   /** Returns the value of the best bound of the objective */
@@ -80,7 +78,7 @@ abstract class CPObjectiveUnit(val objVar: CPIntVar, val n: String = "") extends
   def isOptimum: Boolean = (best == bestBound)
 
   /** Returns true if the objective is consistent according to its model */
-  def isOK(): Boolean = ensureBest() != Outcome.Failure
+  def isOK(): Boolean = !isInconsistent(ensureBest())
   
   /** Restores the lower and upper bounds of the objective as well as its best so far value */
   def relax(): Unit = {
@@ -89,13 +87,10 @@ abstract class CPObjectiveUnit(val objVar: CPIntVar, val n: String = "") extends
   
   /** Adjusts the bounds of the objective according to the best so far value and to the 
    *  tightening mode */
-  def ensureBest(): Outcome = {
-    if (tightenType == NoTighten) Suspend
-    else {
+  def ensureBest(): Unit = {
+    if (tightenType != NoTighten) {
       val delta = if (tightenType == StrongTighten) 1 else 0
-      val oc = updateWorstBound(best, delta)
-      //println("ensure best:"+oc+" best:"+best+" objVar:"+objVar)
-      oc
+      updateWorstBound(best, delta)
     }
   }
   
@@ -111,10 +106,10 @@ class CPObjectiveUnitMinimize(objVar: CPIntVar, n: String = "") extends CPObject
   def domWorst: Int = objVar.max 
   def isMax: Boolean = false
   def isMin: Boolean = true 
-  def updateWorstBound(newBound: Int, delta: Int = 0): Outcome = {
+  def updateWorstBound(newBound: Int, delta: Int = 0): Unit = {
     objVar.updateMax(newBound-delta) 
   }
-  def updateBestBound(newBound: Int, delta: Int = 0): Outcome = objVar.updateMin(newBound+delta)
+  def updateBestBound(newBound: Int, delta: Int = 0): Unit = objVar.updateMin(newBound+delta)
   def worstBound: Int = ub
   def bestBound: Int = lb
   
@@ -131,8 +126,8 @@ class CPObjectiveUnitMaximize(objVar: CPIntVar, n: String = "") extends CPObject
   def domWorst: Int = objVar.min 
   def isMax: Boolean = true
   def isMin: Boolean = false
-  def updateWorstBound(newBound: Int, delta: Int = 0): Outcome = objVar.updateMin(newBound+delta)
-  def updateBestBound(newBound: Int, delta: Int = 0): Outcome = objVar.updateMax(newBound-delta)
+  def updateWorstBound(newBound: Int, delta: Int = 0): Unit = objVar.updateMin(newBound+delta)
+  def updateBestBound(newBound: Int, delta: Int = 0): Unit = objVar.updateMax(newBound-delta)
   def worstBound: Int = lb
   def bestBound: Int = ub
   

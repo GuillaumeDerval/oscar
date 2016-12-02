@@ -1,6 +1,5 @@
 package oscar.algo.branchings
 
-import oscar.algo.search.Outcome._
 import oscar.algo.search._
 import oscar.algo.vars.IntVarLike
 
@@ -28,7 +27,7 @@ class ShavingDomain(val vars: Array[IntVarLike]) extends Branching with Branchin
         val v = xDomain(p)
         context.pushState()
         
-        if (context.assign(x, v) != Failure) {        // if this fails, intersect with universe, i.e. do nothing
+        if (!isInconsistent(context.assign(x, v))) {        // if this fails, intersect with universe, i.e. do nothing
           toRemove = toRemove.map { case (xr, xrvalues) =>
             (xr, xrvalues.filter { !xr.hasValue(_) })       // if a value is still there, it should not be removed
           }

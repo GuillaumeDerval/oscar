@@ -18,7 +18,6 @@ package oscar.algo.branchings
  */
 
 import oscar.algo.reversible._
-import oscar.algo.search.Outcome.Failure
 import oscar.algo.search.{Branching, _}
 import oscar.algo.vars.IntVarLike
 
@@ -96,14 +95,14 @@ class BinaryLastConflict(variables: Array[IntVarLike], varHeuristic: Int => Int,
   
   // Return an Alternative that assign the value to the variable
   @inline private def assign(variable: IntVarLike, value: Int, nAssigned: Int): Alternative = () => {
-    val out = context.assign(variable, value)
-    if (out == Failure) conflictAssign = nAssigned
+    val out = isInconsistent(context.assign(variable, value))
+    if (out) conflictAssign = nAssigned
   }
   
   // Return an Alternative that assign the value to the variable
   @inline private def remove(variable: IntVarLike, value: Int, nAssigned: Int): Alternative = () => {
-    val out = context.remove(variable, value)
-    if (out == Failure) conflictAssign = nAssigned
+    val out = isInconsistent(context.remove(variable, value))
+    if (out) conflictAssign = nAssigned
   }
 
   @inline private def updateAssigned(): Int = {

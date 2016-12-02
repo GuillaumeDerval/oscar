@@ -16,7 +16,6 @@ package oscar.cp.constraints;
 
 import oscar.algo.reversible.ReversibleBoolean;
 import oscar.algo.reversible.ReversibleInt;
-import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -47,7 +46,7 @@ public class AtLeastNValueFWC extends Constraint {
 	}
 
 	@Override
-	public Outcome setup(CPPropagStrength l) {
+	public void setup(CPPropagStrength l) {
 	    
 	     findValueRange();
 
@@ -74,14 +73,10 @@ public class AtLeastNValueFWC extends Constraint {
 	     }
 
 	     //update lower bound on the number of values
-	     if (nValueVar.updateMin(Math.max(nbValueUsed.getValue(), x.length>0 ? 1:0)) == Outcome.Failure) {
-	       return Outcome.Failure;
-	     }
+	     nValueVar.updateMin(Math.max(nbValueUsed.getValue(), x.length>0 ? 1:0));
 
 	     //update upper bound on the number of values
-	     if (nValueVar.updateMax(nbValueUsed.getValue()+x.length-nbBound.getValue()) == Outcome.Failure) {
-	       return Outcome.Failure;
-	     }
+	     nValueVar.updateMax(nbValueUsed.getValue()+x.length-nbBound.getValue());
 
 	     for (int k=0; k < x.length; k++) {
 	       if (!x[k].isBound())
@@ -94,14 +89,12 @@ public class AtLeastNValueFWC extends Constraint {
 
 	     int ubNbValueUsed = nbValueUsed.getValue() + (x.length -nbBound.getValue());
 	     if(ubNbValueUsed <= nValueVar.getMin()){
-	       return prune();
+	       prune();
 	     }
-
-	     return Outcome.Suspend;
 	}
 	
 	@Override
-	public Outcome valBindIdx(CPIntVar var, int idx) {
+	public void valBindIdx(CPIntVar var, int idx) {
 		
 		int val = var.min();
 		nbBound.incr();
@@ -112,50 +105,40 @@ public class AtLeastNValueFWC extends Constraint {
 
 		int ubNbValueUsed = nbValueUsed.getValue() + (x.length-nbBound.getValue());
 
-		if(nValueVar.updateMin(nbValueUsed.getValue()) == Outcome.Failure){
-			return Outcome.Failure;
-		}
-		if(nValueVar.updateMax(ubNbValueUsed) == Outcome.Failure){
-			return Outcome.Failure;
-		}
+		nValueVar.updateMin(nbValueUsed.getValue());
+		nValueVar.updateMax(ubNbValueUsed);
 
 		if(ubNbValueUsed == nValueVar.getMin()){
-			return prune();
+			prune();
 		}
-
-		return Outcome.Suspend;
 	}
 	
 	@Override
-	public Outcome propagate() {
+	public void propagate() {
 		//_nValueVar has changed
 		int ubNbValueUsed = nbValueUsed.getValue() + (x.length - nbBound.getValue());
 		if (ubNbValueUsed == nValueVar.getMin()) {
-			return prune();
+			prune();
 		}
-		return Outcome.Suspend;
 	}
 	
-	public Outcome prune(){
-		  //remove used values from unbound variables
-		  int [] values = new int[x.length];
-		  int nb = 0;
-		  for (int k = 0; k < x.length; k++) {
-		    if (x[k].isBound()) {
-		      values[nb] = x[k].min();
-		      nb++;
-		    }
+	public void prune(){
+	  //remove used values from unbound variables
+	  int [] values = new int[x.length];
+	  int nb = 0;
+	  for (int k = 0; k < x.length; k++) {
+		if (x[k].isBound()) {
+		  values[nb] = x[k].min();
+		  nb++;
+		}
+	  }
+	  for (int k = 0; k < x.length; k++) {
+		if (!x[k].isBound()) {
+		  for (int i = 0; i < nb; i++) {
+			x[k].removeValue(values[i]);
 		  }
-		  for (int k = 0; k < x.length; k++) {
-		    if (!x[k].isBound()) {
-		      for (int i = 0; i < nb; i++) {
-		        if (x[k].removeValue(values[i]) == Outcome.Failure) {
-		          return Outcome.Failure;
-		        }
-		      }
-		    }
-		  }
-		  return Outcome.Suspend;
+		}
+	  }
 	}
 	
 	private void findValueRange(){

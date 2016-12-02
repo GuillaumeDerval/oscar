@@ -15,7 +15,7 @@
 
 package oscar.cp.constraints;
 
-import oscar.algo.search.Outcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.Constraint;
 import oscar.algo.reversible.*;
@@ -179,7 +179,7 @@ public class MinAssignment extends Constraint {
 
 
     @Override
-    public Outcome setup(CPPropagStrength l) {
+    public void setup(CPPropagStrength l) throws Inconsistency {
         initTrails();
 
         markc = new boolean[x.length];
@@ -191,8 +191,7 @@ public class MinAssignment extends Constraint {
         initAssignment();
         findMinimalAssignment();
         updateUnBounds();
-        if (prune() == Outcome.Failure)
-            return Outcome.Failure;
+        prune() ;
 
         for (int i = 0; i < x.length; i++) {
             if (!x[i].isBound()) {
@@ -206,8 +205,6 @@ public class MinAssignment extends Constraint {
         if (l == CPPropagStrength.Strong) {
             exactReducedCosts = true;
         }
-
-        return Outcome.Suspend;
     }
 
     private void reduceMatrix() {
@@ -342,7 +339,7 @@ public class MinAssignment extends Constraint {
     }
 
     @Override
-    public Outcome propagate() {
+    public void propagate() {
         // treat the deltas
         for (int r = 0; r < x.length; r++) {
             if (delta[r] != null) { // if variable was not already bound at posting
@@ -374,7 +371,7 @@ public class MinAssignment extends Constraint {
             valr_[i] = valr[i].getValue();
         }
 
-        return prune();
+        prune();
     }
 
 
@@ -484,23 +481,20 @@ public class MinAssignment extends Constraint {
     }
 
 
-    private Outcome prune() {
+    private void prune() {
         int sum = 0;
         for (int i = 0; i < x.length; i++) {
             sum += lc[i].getValue();
             sum += lr[i].getValue();
         }
-        if (cost.updateMin(sum) ==  Outcome.Failure)
-            return Outcome.Failure;
+        cost.updateMin(sum) ;
         int slack = cost.getMax() - sum;
-        if (pruneLPReducedCosts(slack) == Outcome.Failure)
-            return Outcome.Failure;
-        if (exactReducedCosts && pruneExactReducedCosts(slack) == Outcome.Failure)
-            return Outcome.Failure;
-        return Outcome.Suspend;
+        pruneLPReducedCosts(slack) ;
+        if (exactReducedCosts)
+            pruneExactReducedCosts(slack);
     }
 
-    public Outcome pruneLPReducedCosts(int slack) {
+    public void pruneLPReducedCosts(int slack) {
         for (int s = 0; s < nUnboundVars; s++) {
             int i = unboundVars[s];
             int nVals = x[i].fillArray(values);
@@ -511,20 +505,15 @@ public class MinAssignment extends Constraint {
                     int m = val - lc[j].getValue() - lr[i].getValue(); // get reduced cost of assigning i->j
                     if (m > slack) {
                         w[i][j].setValue(M);
-                        if (x[i].removeValue(j) == Outcome.Failure) {
-                            return Outcome.Failure;
-                        }
+                        x[i].removeValue(j);
                     }
                 }
-
-
             }
         }
-        return Outcome.Suspend;
     }
 
 
-    public Outcome pruneExactReducedCosts(int slack) {
+    public void pruneExactReducedCosts(int slack) {
 
 
         //updateAllPairsShortestPathBellmanFord();
@@ -550,16 +539,11 @@ public class MinAssignment extends Constraint {
 
                     if (m > slack) {
                         w[i][j].setValue(M);
-                        if (x[i].removeValue(j) == Outcome.Failure) {
-                            return Outcome.Failure;
-                        }
+                        x[i].removeValue(j);
                     }
                 }
             }
-
         }
-
-        return Outcome.Suspend;
     }
 
 

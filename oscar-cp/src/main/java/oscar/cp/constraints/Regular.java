@@ -16,7 +16,7 @@ package oscar.cp.constraints;
 
 import java.util.Set;
 
-import oscar.algo.search.Outcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -58,25 +58,17 @@ public class Regular extends Constraint {
 
 	
 	@Override
-	public Outcome setup(CPPropagStrength l) {
-		if (s().post(ElementCst2D.apply(T,CPIntVar.apply(s(),initialState,initialState),x[0],q[0])) == Outcome.Failure) {
-			return Outcome.Failure;
-		}
+	public void setup(CPPropagStrength l) throws Inconsistency {
+		s().post(ElementCst2D.apply(T,CPIntVar.apply(s(),initialState,initialState),x[0],q[0]));
 		
 		for (int v = 0; v < nbStates; v++) {
 			if (!acceptingStates.contains(v)) {
-				if (q[x.length-1].removeValue(v) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
+				q[x.length-1].removeValue(v);
 			}
 		}
 		for (int i = 1; i < x.length; i++) {
-			if (s().post(ElementCst2D.apply(T,q[i-1],x[i],q[i])) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
+			s().post(ElementCst2D.apply(T,q[i-1],x[i],q[i]));
 		}
-		
-		return Outcome.Success;
 	}
 
 }

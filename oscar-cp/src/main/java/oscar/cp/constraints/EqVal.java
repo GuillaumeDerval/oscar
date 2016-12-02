@@ -14,7 +14,6 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -40,13 +39,8 @@ public class EqVal extends Constraint {
 	}
 	
 	@Override
-	public Outcome setup(CPPropagStrength l) {
-
-		if (x.assign(v) == Outcome.Failure) {
-			return Outcome.Failure;
-		}
-		return Outcome.Success;
-
+	public void setup(CPPropagStrength l) {
+		x.assign(v);
 	}
 	
 

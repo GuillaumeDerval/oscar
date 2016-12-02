@@ -15,18 +15,15 @@
 
 package oscar.cp.core.variables
 
-import oscar.algo.search.Outcome
+import oscar.algo.Inconsistency
 import oscar.algo.vars.IntVarLike
 import oscar.cp.constraints.InSet
 import oscar.cp.constraints.InSetReif
-import oscar.cp.constraints.ModuloLHS
 
 import scala.util.Random
-import oscar.cp.core.domains.SparseSetDomain
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.delta.PropagatorIntVar
-import oscar.algo.search.Outcome._
 import oscar.cp.core.watcher.Watcher
 import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.delta.DeltaIntVarAdaptable
@@ -107,23 +104,23 @@ abstract class CPIntVar extends CPVar with IntVarLike {
   /**
    * Reduce the domain to the singleton {val}, and notify appropriately all the propagators registered to this variable
    * @param value
-   * @return  Suspend if val was in the domain, Failure otherwise
+   * @throws Inconsistency
    */
-  def assign(value: Int): Outcome
+  def assign(value: Int): Unit
 
   /**
    * Remove from the domain all values < val, and notify appropriately all the propagators registered to this variable
    * @param value
-   * @return  Suspend if there is at least one value >= val in the domain, Failure otherwise
+   * @throws Inconsistency
    */
-  def updateMin(value: Int): Outcome
+  def updateMin(value: Int): Unit
 
   /**
    * Remove from the domain all values > val, and notify appropriately all the propagators registered to this variable
    * @param value
-   * @return  Suspend if there is at least one value <= val in the domain, Failure otherwise
+   * @throws Inconsistency
    */
-  def updateMax(value: Int): Outcome
+  def updateMax(value: Int): Unit
 
   /**
    * Level 2 registration: ask that the propagate() method of the constraint c is called whenever
@@ -223,22 +220,22 @@ abstract class CPIntVar extends CPVar with IntVarLike {
   def awakeOnChanges(watcher: Watcher): Unit
 
 
-  def callOnChanges(propagate: DeltaIntVar => Outcome, idempotent: Boolean = true): PropagatorIntVar = {
+  def callOnChanges(propagate: DeltaIntVar => Boolean, idempotent: Boolean = true): PropagatorIntVar = {
     val propagator = new PropagatorIntVar(this, 0, propagate)
     propagator.idempotent = idempotent
     callPropagateWhenDomainChanges(propagator)
     propagator
   }
-  
-  def callOnChangesIdx(id: Int, propagate: DeltaIntVar => Outcome, idempotent: Boolean = true): PropagatorIntVar = {
+
+  def callOnChangesIdx(id: Int, propagate: DeltaIntVar => Boolean, idempotent: Boolean = true): PropagatorIntVar = {
     val propagator = new PropagatorIntVar(this, id, propagate)
     propagator.idempotent = idempotent
     propagator.priority = CPStore.MaxPriorityL2
     callPropagateWhenDomainChanges(propagator)
     propagator
   }
-  
-  def filterWhenDomainChangesWithDelta(idempotent: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: DeltaIntVar => Outcome): DeltaIntVar = {
+
+  def filterWhenDomainChangesWithDelta(idempotent: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: DeltaIntVar => Boolean): DeltaIntVar = {
     val propagator = new PropagatorIntVar(this, 0, filter)
     propagator.idempotent = idempotent
     propagator.priorityL2 = priority
@@ -246,43 +243,51 @@ abstract class CPIntVar extends CPVar with IntVarLike {
     propagator.snapshot
   }
 
-  def filterWhenDomainChanges(idempot: Boolean = true, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: => Outcome) {
-    (new Constraint(this.store, "filterWhenDomainChanges on  " + this) {
+  /**
+   * @param idempot
+   * @param priority
+   * @param filter Filters. Should return true when there will never be more filtering to do: the filter will be deactivated
+   */
+  def filterWhenDomainChanges(idempot: Boolean = true, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: => Boolean) {
+    new Constraint(this.store, "filterWhenDomainChanges on  " + this) {
       idempotent = idempot
       priorityL2 = priority
 
-      def setup(l: CPPropagStrength) = {
-        callPropagateWhenDomainChanges(this)
-        Outcome.Suspend
-      }
-      override def propagate() = filter
-    }).setup(store.propagStrength)
+      def setup(l: CPPropagStrength) = callPropagateWhenDomainChanges(this)
+
+      override def propagate() = if (filter) this.deactivate()
+    }.setup(store.propagStrength)
   }
 
-  def filterWhenBoundsChange(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: => Outcome) {
-    (new Constraint(this.store, "filterWhenBoundsChange on  " + this) {
+  /**
+   * @param idempot
+   * @param priority
+   * @param filter Filters. Should return true when there will never be more filtering to do: the filter will be deactivated
+   */
+  def filterWhenBoundsChange(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: => Boolean) {
+    new Constraint(this.store, "filterWhenBoundsChange on  " + this) {
       idempotent = idempot
       priorityL2 = priority
 
-      def setup(l: CPPropagStrength) = {
-        callPropagateWhenBoundsChange(this)
-        Outcome.Suspend
-      }
-      override def propagate() = filter
-    }).setup(store.propagStrength)
+      def setup(l: CPPropagStrength) = callPropagateWhenBoundsChange(this)
+
+      override def propagate() = if(filter) deactivate()
+    }.setup(store.propagStrength)
   }
 
-  def filterWhenBind(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2-2)(filter: => Outcome) {
-    (new Constraint(this.store, "filterWhenBind on  " + this) {
+  /**
+   * @param idempot
+   * @param priority
+   * @param filter Filters. Should return true when there will never be more filtering to do: the filter will be deactivated
+   */
+  def filterWhenBind(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2-2)(filter: => Boolean) {
+    new Constraint(this.store, "filterWhenBind on  " + this) {
       idempotent = idempot
       priorityL2 = priority
 
-      def setup(l: CPPropagStrength) = {
-        callPropagateWhenBind(this)
-        Outcome.Suspend
-      }
-      override def propagate() = filter
-    }).setup(store.propagStrength)
+      def setup(l: CPPropagStrength) = callPropagateWhenBind(this)
+      override def propagate() = if(filter) deactivate()
+    }.setup(store.propagStrength)
   }
 
   /**
@@ -309,20 +314,19 @@ abstract class CPIntVar extends CPVar with IntVarLike {
   /**
    * Remove val from the domain, and notify appropriately all the propagators registered to this variable
    * @param value
-   * @return  Suspend if the domain is not equal to the singleton {val}, Failure otherwise
+   * @throws Inconsistency
    */
-  def removeValue(value: Int): Outcome
+  def removeValue(value: Int): Unit
   
-  def removeValues(values: Array[Int], nValues: Int): Outcome = {
+  def removeValues(values: Array[Int], nValues: Int): Unit = {
     var i = nValues
     while (i > 0) {
       i -= 1
-      if (removeValue(values(i)) == Failure) return Failure
+      removeValue(values(i))
     }
-    Suspend
   }
   
-  final def removeValues(values: Array[Int]): Outcome = removeValues(values, values.length)
+  final def removeValues(values: Array[Int]): Unit = removeValues(values, values.length)
   
   /** 
    *  Restrict the domain to be equal to the `newSize` first values contained in `newDomain`.
@@ -408,10 +412,9 @@ abstract class CPIntVar extends CPVar with IntVarLike {
    * @return  a boolean variable b in the same store linked to x by the relation x == v <=> b == true
    */
   def isEq(v: Int): CPBoolVar = {
-    val b = CPBoolVar()(store);
-    val ok = store.post(new oscar.cp.constraints.EqReif(this, v, b));
-    assert(ok != Outcome.Failure);
-    return b;
+    val b = CPBoolVar()(store)
+    store.post(new oscar.cp.constraints.EqReif(this, v, b))
+    b
   }
 
   /**
@@ -420,10 +423,9 @@ abstract class CPIntVar extends CPVar with IntVarLike {
    * @return  a boolean variable b in the same store linked to x by the relation x != v <=> b == true
    */
   def isDiff(v: Int): CPBoolVar = {
-    val b = CPBoolVar()(store);
-    val ok = store.post(new oscar.cp.constraints.DiffReif(this, v, b));
-    assert(ok != Outcome.Failure)
-    return b;
+    val b = CPBoolVar()(store)
+    store.post(new oscar.cp.constraints.DiffReif(this, v, b))
+    b
   }
 
   /**
@@ -432,10 +434,9 @@ abstract class CPIntVar extends CPVar with IntVarLike {
    * @return  a boolean variable b in the same store linked to x by the relation x != y <=> b == true
    */
   def isDiff(y: CPIntVar): CPBoolVar = {
-    val b = CPBoolVar()(store);
-    val ok = store.post(new oscar.cp.constraints.DiffReifVar(this, y, b));
-    assert(ok != Outcome.Failure)
-    return b;
+    val b = CPBoolVar()(store)
+    store.post(new oscar.cp.constraints.DiffReifVar(this, y, b))
+    b
   }
 
   /**
@@ -444,10 +445,9 @@ abstract class CPIntVar extends CPVar with IntVarLike {
    * @return  a boolean variable b in the same store linked to x by the relation x >= v <=> b == true
    */
   def isGrEq(v: Int): CPBoolVar = {
-    val b = CPBoolVar()(store);
-    val ok = store.post(new oscar.cp.constraints.GrEqCteReif(this, v, b));
-    assert(ok != Outcome.Failure);
-    return b;
+    val b = CPBoolVar()(store)
+    store.post(new oscar.cp.constraints.GrEqCteReif(this, v, b))
+    b
   }
 
   /**
@@ -463,10 +463,9 @@ abstract class CPIntVar extends CPVar with IntVarLike {
    * @return  a boolean variable b in the same store linked to x by the relation x <= v <=> b == true
    */
   def isLeEq(v: Int): CPBoolVar = {
-    val b = CPBoolVar()(store);
-    val ok = store.post(new oscar.cp.constraints.LeEqCteReif(this, v, b));
-    assert(ok != Outcome.Failure);
-    return b;
+    val b = CPBoolVar()(store)
+    store.post(new oscar.cp.constraints.LeEqCteReif(this, v, b))
+    b
   }
 
   /**
@@ -483,10 +482,9 @@ abstract class CPIntVar extends CPVar with IntVarLike {
    * @return  a boolean variable b in the same store linked to x by the relation x >= y <=> b == true
    */
   def isGrEq(y: CPIntVar): CPBoolVar = {
-    val b = CPBoolVar()(store);
-    val ok = store.post(new oscar.cp.constraints.GrEqVarReif(this, y, b));
-    assert(ok != Outcome.Failure);
-    return b;
+    val b = CPBoolVar()(store)
+    store.post(new oscar.cp.constraints.GrEqVarReif(this, y, b))
+    b
   }
 
   /**
@@ -502,10 +500,9 @@ abstract class CPIntVar extends CPVar with IntVarLike {
    * @return  a boolean variable b in the same store linked to x by the relation x <= v <=> b == true
    */
   def isLeEq(v: CPIntVar): CPBoolVar = {
-    val b = CPBoolVar()(store);
-    val ok = store.post(new oscar.cp.constraints.GrEqVarReif(v, this, b));
-    assert(ok != Outcome.Failure);
-    return b;
+    val b = CPBoolVar()(store)
+    store.post(new oscar.cp.constraints.GrEqVarReif(v, this, b))
+    b
   }
 
   /**

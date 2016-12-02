@@ -1,11 +1,10 @@
 package oscar.cp.scheduling.constraints
 
+import oscar.algo.Inconsistency
 import oscar.cp.core._
 import oscar.cp._
-import oscar.algo.search.Outcome._
 import oscar.algo.SortUtils._
 import oscar.algo.reversible.ReversibleInt
-import oscar.algo.search.Outcome
 
 // @author Steven Gay steven.gay@uclouvain.be
 
@@ -14,9 +13,6 @@ import oscar.algo.search.Outcome
  * Here, activities may have alternative resources:
  * this version of the propagator removes optional activities that can not fit among mandatory activities.
  */
-
-
-
 class IQuad(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar],
             demands: Array[CPIntVar], resources: Array[CPIntVar], capacity: CPIntVar, id: Int)
 extends Constraint(capacity.store, "IQuad") {
@@ -35,16 +31,16 @@ extends Constraint(capacity.store, "IQuad") {
   val r2l = new IQuadL2R(re, durations, rs,  demands, resources, capacity, id)
   
   
-  def setup(strength: CPPropagStrength): Outcome = {
-    if (myStore.post(l2r) == Failure) return Failure
-    if (myStore.post(r2l) == Failure) return Failure
+  def setup(strength: CPPropagStrength): Unit = {
+    myStore.post(l2r)
+    myStore.post(r2l)
 
     propagate()
   }
   
   override def propagate() = {
-    if (l2r.propagate() == Failure || r2l.propagate() == Failure) Failure
-    else Suspend
+    l2r.propagate()
+    r2l.propagate()
   }
 }
 
@@ -62,7 +58,7 @@ extends Constraint(capacity.store, "IQuadL2R") {
   val myStore = capacity.store
 
 
-  def setup(strength: CPPropagStrength): Outcome = {
+  def setup(strength: CPPropagStrength): Unit = {
     priorityL2 = 2
     
     def boundsCB(v: CPIntVar)  = { if (!v.isBound) v.callPropagateWhenBoundsChange(this) }
@@ -163,7 +159,7 @@ extends Constraint(capacity.store, "IQuadL2R") {
   }
   
   
-  override def propagate(): Outcome = {
+  override def propagate(): Unit = {
     val C = capacity.max
     
     updateCache()
@@ -211,12 +207,13 @@ extends Constraint(capacity.store, "IQuadL2R") {
     	  if (dmax(i) <= du) {
     		  val emax = C * (du - rmin(i))
 
- 				  if (E(i) > emax) return Failure
+ 				  if (E(i) > emax)
+            throw Inconsistency
 
 				  if (optional(i) && 
   					  E(i) + pmin(i) * cmin(i) > emax
              ) {
-            if (resources(byStartMin(i)).removeValue(id) == Failure) return Failure
+            resources(byStartMin(i)).removeValue(id)
             optional(i) = false
 				  }
     	  }
@@ -246,10 +243,8 @@ extends Constraint(capacity.store, "IQuadL2R") {
             }
           
             // additional detection of the journal version
-            if (Dupd(i) > rmin(i) &&
-                maxEnergy + cmin(i) * (rmin(i) + pmin(i) - r_rho) > C * (du - r_rho) &&
-                starts(ism).updateMin(Dupd(i)) == Failure)
-              return Failure
+            if (Dupd(i) > rmin(i) && maxEnergy + cmin(i) * (rmin(i) + pmin(i) - r_rho) > C * (du - r_rho))
+                starts(ism).updateMin(Dupd(i))
           }
         }
         else if (optional(i)) {
@@ -264,9 +259,9 @@ extends Constraint(capacity.store, "IQuadL2R") {
                 // Dupd(i) > dmax(i) - pmin(i) &&
                 maxEnergy + cmin(i) * (rmin(i) + pmin(i) - r_rho) > C * (du - r_rho) &&
                 Dupd(i) > starts(ism).max &&
-                resources(ism).removeValue(id) == Failure) {
+                isInconsistent(resources(ism).removeValue(id))) {
               optional(i) = false
-              return Failure
+              throw Inconsistency
             }
           }
         }
@@ -293,10 +288,11 @@ extends Constraint(capacity.store, "IQuadL2R") {
             val newlbpi = math.max(Dupd(i), SLupd(i))
                         
             if (newlbpi > rmin(i)) {
-              if (mandatory(i) && starts(ism).updateMin(newlbpi) == Failure) return Failure
+              if(mandatory(i))
+                starts(ism).updateMin(newlbpi)
               if (optional(i) && newlbpi > starts(ism).max) {
                 optional(i) = false
-                if (resources(ism).removeValue(id) == Failure) return Failure
+                resources(ism).removeValue(id)
               }
             }
           }
@@ -307,9 +303,6 @@ extends Constraint(capacity.store, "IQuadL2R") {
       }
       k += 1
     }
-    
-    
-    Suspend
   }
   
   

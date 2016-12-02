@@ -2,7 +2,6 @@ package oscar.cp.core.domains
 
 import scala.util.Random
 import oscar.algo.reversible.ReversibleContext
-import oscar.algo.search.Outcome
 
 abstract class IntervalDomain extends Iterable[Int] {
   
@@ -22,11 +21,11 @@ abstract class IntervalDomain extends Iterable[Int] {
   
   def hasValue(value: Int): Boolean
   
-  def assign(value: Int): Outcome
+  def assign(value: Int): Unit
 
-  def updateMin(value: Int): Outcome
+  def updateMin(value: Int): Unit
 
-  def updateMax(value: Int): Outcome
+  def updateMax(value: Int): Unit
 
   def nextValue(value: Int): Int
 

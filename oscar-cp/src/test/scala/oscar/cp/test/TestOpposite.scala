@@ -15,11 +15,11 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 
 import oscar.cp._
 
-class TestOpposite extends FunSuite with ShouldMatchers {
+class TestOpposite extends TestSuite {
 
 	test("Test Opposite 1") {
 		val cp = CPSolver()

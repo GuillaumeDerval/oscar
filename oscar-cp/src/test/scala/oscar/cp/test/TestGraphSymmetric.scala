@@ -15,8 +15,7 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
-import oscar.algo.search.Outcome._
+import oscar.cp.testUtils.TestSuite
 import oscar.cp._
 import oscar.cp.constraints.GraphSymmetric
 
@@ -24,7 +23,7 @@ import oscar.cp.constraints.GraphSymmetric
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
  */
 
-class TestGraphSymmetric extends FunSuite with ShouldMatchers  {
+class TestGraphSymmetric extends TestSuite  {
   
   test("Test 1 : Test constraint initial propagation") {
     val cp = CPSolver()
@@ -33,9 +32,9 @@ class TestGraphSymmetric extends FunSuite with ShouldMatchers  {
     val g = CPGraphVar(cp, nnodes1, edges1)
     
     // 1) add some mandatory nodes/edges
-    cp.post(g.addNode(0)) should be (Suspend)
-    cp.post(g.addNode(1)) should be (Suspend)
-    cp.post(g.addEdge(0,1)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(0))
+    postAndCheckSuspend(cp,g.addNode(1))
+    postAndCheckSuspend(cp,g.addEdge(0,1))
     
     // 2) check that all is correct : 
     // check nodes
@@ -50,7 +49,7 @@ class TestGraphSymmetric extends FunSuite with ShouldMatchers  {
     g.possibleEdges(2).sorted    should be (List(1,2))
     
     // 3) add constraint
-    cp.post(new GraphSymmetric(g)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphSymmetric(g))
     
     // 4) check that all changes are correct acc. to definition
     // check nodes

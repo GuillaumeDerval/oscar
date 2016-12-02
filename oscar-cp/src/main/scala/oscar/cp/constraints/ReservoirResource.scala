@@ -18,8 +18,6 @@ package oscar.cp.constraints
 
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
-import oscar.algo.search.Outcome._
-import oscar.algo.search.Outcome
 
 /**
  * Created on 03/06/15.
@@ -100,22 +98,17 @@ class ReservoirResource(startVars: Array[CPIntVar], durationVars: Array[CPIntVar
   private[this] val cumulativeDuration2 = Array.tabulate(nTasks)(i => CPIntVar((cumulativeEnd2(i).min - cumulativeStart2(i).max) to (cumulativeEnd2(i).max - cumulativeStart2(i).min))(cpSolver))
 
 
-  override def setup(l: CPPropagStrength): Outcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     for (i <- 0 until nTasks) {
-      if (cpSolver.post(cumulativeStart1(i) + cumulativeDuration1(i) === cumulativeEnd1(i)) == Failure)
-        return Failure
+      cpSolver.post(cumulativeStart1(i) + cumulativeDuration1(i) === cumulativeEnd1(i))
     }
-    if (cpSolver.post(maxCumulativeResource(cumulativeStart1, cumulativeDuration1, cumulativeEnd1, cumulativeDemand, cumulativeCapacity1)) == Failure)
-      return Failure
+    cpSolver.post(maxCumulativeResource(cumulativeStart1, cumulativeDuration1, cumulativeEnd1, cumulativeDemand, cumulativeCapacity1))
 
 
     for (i <- 0 until nTasks) {
-      if (cpSolver.post(cumulativeStart2(i) + cumulativeDuration2(i) === cumulativeEnd2(i)) == Failure)
-        return Failure
+      cpSolver.post(cumulativeStart2(i) + cumulativeDuration2(i) === cumulativeEnd2(i))
     }
-    if (cpSolver.post(maxCumulativeResource(cumulativeStart2, cumulativeDuration2, cumulativeEnd2, cumulativeDemand, cumulativeCapacity2)) == Failure)
-      return Failure
-    Success
+    cpSolver.post(maxCumulativeResource(cumulativeStart2, cumulativeDuration2, cumulativeEnd2, cumulativeDemand, cumulativeCapacity2))
   }
 }
 

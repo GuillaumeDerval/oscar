@@ -17,7 +17,6 @@ package oscar.examples.cp
 
 import oscar.cp._
 import oscar.algo.reversible._
-import oscar.algo.search.Outcome
 import oscar.visual._
 
 import scala.collection.JavaConversions._
@@ -100,7 +99,6 @@ object ChemicalTanker extends CPModel with App {
 
     override def setup(l: CPPropagStrength) = {
       cargos.zipWithIndex.foreach(e => e._1.callValBindIdxWhenBind(this, e._2))
-      Outcome.Suspend
     }
 
     override def valBindIdx(x: CPIntVar, tank: Int) = {
@@ -111,12 +109,8 @@ object ChemicalTanker extends CPModel with App {
           for (c <- cargos; if (!c.isBound)) {
             c.removeValue(cargo.id) // should never fail here
           }
-          Outcome.Success
-        } else {
-          Outcome.Suspend
+          deactivate()
         }
-      } else {
-        Outcome.Suspend
       }
     }
   }

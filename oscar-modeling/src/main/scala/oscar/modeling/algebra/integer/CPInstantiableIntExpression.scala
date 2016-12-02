@@ -1,6 +1,5 @@
 package oscar.modeling.algebra.integer
 
-import oscar.algo.search.Outcome
 import oscar.cp._
 import oscar.cp.core.variables.CPIntVar
 
@@ -17,5 +16,5 @@ trait CPInstantiableIntExpression extends IntExpression {
     * Post the expression, with 'v' being the value the expression should equal to
     * @param v The value the expression should equal to
     */
-  def cpPostWithVar(cPSolver: CPSolver, v: CPIntVar): Outcome
+  def cpPostWithVar(cPSolver: CPSolver, v: CPIntVar): Unit
 }

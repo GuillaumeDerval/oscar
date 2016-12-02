@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.algo.search.Outcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.variables.CPBoolVar;
@@ -45,15 +45,15 @@ public class EqReifVar extends Constraint {
 	}
 	
 	@Override
-	public Outcome setup(CPPropagStrength l) {
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		if (b.isBound()) {
-			return valBind(b);
+			valBind(b);
 		} 
 		else if (x.isBound()) {
-			return valBind(x);
+			valBind(x);
 		} 
 		else if (y.isBound()) {
-			return valBind(y);
+			valBind(y);
 		}
 		else {
 			x.callPropagateWhenDomainChanges(this);
@@ -61,59 +61,44 @@ public class EqReifVar extends Constraint {
 			b.callValBindWhenBind(this);
 			x.callValBindWhenBind(this);
 			y.callValBindWhenBind(this);
-			return propagate();
+			propagate();
 		}
 	}
 	
 	@Override
-	public Outcome valBind(CPIntVar var) {
+	public void valBind(CPIntVar var) throws Inconsistency {
 		if (b.isBound()) {
 			deactivate();
 			if (b.min() == 1) {
 				// x == y
-				if (s().post(new Eq(x,y)) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
+				s().post(new Eq(x,y));
 			} else {
 				//x != y
-				if (s().post(new DiffVar(x,y))  == Outcome.Failure) {
-					return Outcome.Failure;
-				}
+				s().post(new DiffVar(x,y));
 			}
-			return Outcome.Success;
 		}	
 		else if (x.isBound()) {
 			deactivate();
-			if (s().post(new EqReif(y,x.min(),b)) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			s().post(new EqReif(y,x.min(),b));
 		}
 		else { // y.isBound()
 			deactivate();
-			if (s().post(new EqReif(x,y.min(),b)) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			s().post(new EqReif(x,y.min(),b));
 		}
 	}
 	
 	
 	
 	@Override
-	public Outcome propagate() {
+	public void propagate() {
 		// if the domains of x and y are disjoint we can set b to false and return success
 		if (x.getMax() < y.getMin()) {
-			if (b.assign(0) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			b.assign(0);
+			deactivate();
 		}
 		else if (y.getMax() < x.getMin()) {
-			if (b.assign(0) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			b.assign(0);
+			deactivate();
 		}
 		else {
 			// there is an overlap between the domain ranges
@@ -121,7 +106,9 @@ public class EqReifVar extends Constraint {
 			int start = Math.max(x.getMin(), y.getMin());
 			int end = Math.min(x.getMax(), y.getMax());
 			boolean commonValues = false;
-			if (x.isContinuous() || y.isContinuous()) return Outcome.Suspend;
+			if (x.isContinuous() || y.isContinuous())
+				return;
+
 			for (int i = start; i <= end; i++) {
  				if (x.hasValue(i) && y.hasValue(i)) {
 					commonValues = true;
@@ -129,12 +116,9 @@ public class EqReifVar extends Constraint {
 				}
 			}
 			if (!commonValues) {
-				if (b.assign(0) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
-				return Outcome.Success;
+				b.assign(0);
+				deactivate();
 			}
-			return Outcome.Suspend;
 		}	
 	}
 

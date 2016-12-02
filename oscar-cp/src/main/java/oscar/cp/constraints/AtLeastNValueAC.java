@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.algo.search.Outcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -79,17 +79,13 @@ public class AtLeastNValueAC extends Constraint {
 
 
     @Override
-    public Outcome setup(CPPropagStrength l) {
+    public void setup(CPPropagStrength l) throws Inconsistency {
         posted = true;
 
         if (nValueVar.getMin() < x.length) {
-            if (s().post(new AtLeastNValueFWC(x, nValueVar)) == Outcome.Failure) {
-                return Outcome.Failure;
-            }
+            s().post(new AtLeastNValueFWC(x, nValueVar));
         } else { //allDifferent (AtLeastNValueAC is also used to implement the AllDiffAC)
-            if (s().post(new AllDiffFWC(x)) == Outcome.Failure) {
-                return Outcome.Failure;
-            }
+            s().post(new AllDiffFWC(x));
         }
 
         findValueRange();
@@ -104,19 +100,15 @@ public class AtLeastNValueAC extends Constraint {
 
         int sizeMatching = findMaximalMatching();
 
-        if (nValueVar.updateMax(sizeMatching) == Outcome.Failure) {
-            return Outcome.Failure;
-        }
+        nValueVar.updateMax(sizeMatching);
 
         if (nValueVar.getMin() > sizeMatching) {
-            return Outcome.Failure;
+            throw Inconsistency.get();
         }
 
         allocateSCC();
 
-        if (propagate() == Outcome.Failure) {
-            return Outcome.Failure;
-        }
+        propagate();
 
         for (int k = 0; k < x.length; k++) {
             if (!x[k].isBound()) {
@@ -127,8 +119,6 @@ public class AtLeastNValueAC extends Constraint {
         if (!nValueVar.isBound()) {
             nValueVar.callPropagateWhenBoundsChange(this);
         }
-
-        return Outcome.Suspend;
     }
 
     public boolean hasValInBestAssignment(int i) {
@@ -145,7 +135,7 @@ public class AtLeastNValueAC extends Constraint {
     }
 
     @Override
-    public Outcome propagate() {
+    public void propagate() throws Inconsistency {
         nUnBound = 0;
         for (int k = 0; k < x.length; k++) {
             if (match[k] != NONE) {
@@ -163,16 +153,12 @@ public class AtLeastNValueAC extends Constraint {
 
         int maxMatching = findMaximalMatching();
 
-        if (nValueVar.updateMax(maxMatching) == Outcome.Failure) {
-            return Outcome.Failure;
-        }
+        nValueVar.updateMax(maxMatching);
         if (nValueVar.getMin() > maxMatching) {
-            //System.out.println("fail detected");
-            return Outcome.Failure;
+            throw Inconsistency.get();
         }
         //lower bound of nValueVar is pruned by CotCPAtLeastNValueIFW
         prune(maxMatching);
-        return Outcome.Suspend;
     }
 
     private void findValueRange() {

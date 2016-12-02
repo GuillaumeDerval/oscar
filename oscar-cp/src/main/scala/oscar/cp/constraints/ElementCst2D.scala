@@ -17,13 +17,12 @@
 
 package oscar.cp.constraints
 
-import oscar.algo.search.Outcome._
+import oscar.algo.Inconsistency
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
 import oscar.cp.util.ArrayUtils
 import oscar.algo.reversible.ReversibleInt
-import oscar.algo.search.Outcome
 import oscar.cp.constraints.tables.TableAlgo
 
 /**
@@ -76,18 +75,17 @@ final class ElementCst2D(T: Array[Array[Int]], x: CPIntVar, y: CPIntVar, z: CPIn
   private[this] val lowRev = new ReversibleInt(s, 0)
   private[this] val upRev = new ReversibleInt(s, nTuples - 1)
 
-  override def setup(l: CPPropagStrength): Outcome = {
-    if (x.updateMin(0) == Failure) Failure
-    else if (x.updateMax(nRows - 1) == Failure) Failure
-    else if (y.updateMin(0) == Failure) Failure
-    else if (y.updateMax(nCols - 1) == Failure) Failure
-    else {
-      init()     
-      x.callPropagateWhenDomainChanges(this)
-      y.callPropagateWhenDomainChanges(this)
-      z.callPropagateWhenBoundsChange(this)
-      propagate()
-    }
+  override def setup(l: CPPropagStrength): Unit = {
+    x.updateMin(0)
+    x.updateMax(nRows - 1)
+    y.updateMin(0)
+    y.updateMax(nCols - 1)
+
+    init()
+    x.callPropagateWhenDomainChanges(this)
+    y.callPropagateWhenDomainChanges(this)
+    z.callPropagateWhenBoundsChange(this)
+    propagate()
   }
 
   @inline private def init(): Unit = {
@@ -100,17 +98,16 @@ final class ElementCst2D(T: Array[Array[Int]], x: CPIntVar, y: CPIntVar, z: CPIn
   }
 
   // entry i disappear
-  @inline private def update(i: Int): Boolean = {
+  @inline private def update(i: Int): Unit = {
     if (nbColSupports(xValues(i)).decr() == 0) {
-      if (x.removeValue(xValues(i)) == Failure) return true
+      x.removeValue(xValues(i))
     }
     if (nbRowSupports(yValues(i)).decr() == 0) {
-      if (y.removeValue(yValues(i)) == Failure) return true
+      y.removeValue(yValues(i))
     }
-    false
   }
 
-  override def propagate(): Outcome = {
+  override def propagate(): Unit = {
 
     // Cache
     var low = lowRev.value
@@ -120,22 +117,22 @@ final class ElementCst2D(T: Array[Array[Int]], x: CPIntVar, y: CPIntVar, z: CPIn
     val zMax = z.max
     
     while (zValues(low) < zMin || !x.hasValue(xValues(low)) || !y.hasValue(yValues(low))) {
-      if (up == low || update(low)) return Failure
+      if (up == low) throw Inconsistency
+      update(low)
       low += 1
     }
     while (zValues(up) > zMax || !x.hasValue(xValues(up)) || !y.hasValue(yValues(up))) {
-      if (up == low || update(up)) return Failure
+      if (up == low) throw Inconsistency
+      update(up)
       up -= 1
     }
 
-    if (z.updateMin(zValues(low)) == Failure) Failure
-    else if (z.updateMax(zValues(up)) == Failure) Failure
-    else {
-      // Trail 
-      lowRev.value = low
-      upRev.value = up
-      Suspend
-    }
+    z.updateMin(zValues(low))
+    z.updateMax(zValues(up))
+
+    // Trail
+    lowRev.value = low
+    upRev.value = up
   }
 }
 	

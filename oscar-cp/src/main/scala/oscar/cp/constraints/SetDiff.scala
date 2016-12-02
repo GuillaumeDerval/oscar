@@ -17,7 +17,6 @@
 
 package oscar.cp.constraints
 
-import oscar.algo.search.Outcome
 import oscar.cp.core._
 import oscar.cp.core.variables.CPSetVar
 import oscar.cp.core.delta.{DeltaSetVar, PropagatorSetVar}
@@ -28,7 +27,7 @@ import oscar.cp.core.delta.{DeltaSetVar, PropagatorSetVar}
  */
 class SetDiff(val a: CPSetVar, val b: CPSetVar, val c: CPSetVar) extends Constraint(a.store, "SetDiff") {
 
-  override def setup(l: CPPropagStrength): Outcome = {
+  override def setup(l: CPPropagStrength): Unit = {
 
     // --------------------------------------------
 
@@ -37,35 +36,26 @@ class SetDiff(val a: CPSetVar, val b: CPSetVar, val c: CPSetVar) extends Constra
     // for every value in possible a, if not in c and not required in b, remove it from a
     // for every value in required a, if not in b, required in c
     for (v <- a.possibleNotRequiredValues.toSet; if !c.isPossible(v) && !b.isRequired(v)) {
-      if (a.excludes(v) == Outcome.Failure) {
-        return Outcome.Failure
-      }
+      a.excludes(v)
     }
     for (v <- a.requiredValues; if !b.isPossible(v)) {
-      if (c.requires(v) == Outcome.Failure) {
-        return Outcome.Failure
-      }
+      c.requires(v)
     }    
 
     // for every value v in required b => remove it from c
 
     for (v <- b.requiredValues) {
-      if (c.excludes(v) == Outcome.Failure) {
-        return Outcome.Failure
-      }
+      c.excludes(v)
     }
 
     // for every value in possible c if not in a possible, remove it from c
     // for every value v in required c => must be required in a and excluded from b   
     for (v <- c.possibleNotRequiredValues.toSet; if !a.isPossible(v)) {
-      if (c.excludes(v) == Outcome.Failure) {
-        return Outcome.Failure
-      }
+      c.excludes(v)
     }
     for (v <- c.requiredValues) {
-      if (a.requires(v) == Outcome.Failure || b.excludes(v) == Outcome.Failure) {
-        return Outcome.Failure
-      }
+      a.requires(v)
+      b.excludes(v)
     }
     // -------------------------------------------
     // incremental filtering daemons
@@ -76,8 +66,6 @@ class SetDiff(val a: CPSetVar, val b: CPSetVar, val c: CPSetVar) extends Constra
     if (!b.isBound) b.filterWhenDomainChangesWithDelta() { d => filterb(d) }
 
     if (!c.isBound) c.filterWhenDomainChangesWithDelta() { d => filterc(d) }
-    
-    return Outcome.Suspend
   }
 
   // if value impossible in a, becomes impossible in c
@@ -89,30 +77,22 @@ class SetDiff(val a: CPSetVar, val b: CPSetVar, val c: CPSetVar) extends Constra
   //                         if this value is not possible in c, it is required in b
   //                         if this value is required in c, it is not possible in b
   //                         if this value is possible but not required in c, nothing to do in b  
-  def filtera(d: DeltaSetVar): Outcome = {
+  def filtera(d: DeltaSetVar): Unit = {
     if (d.possibleChanged) {
       for (v <- d.deltaPossible) {
-        if (c.excludes(v) == Outcome.Failure) {
-          return Outcome.Failure
-        }
+        c.excludes(v)
       }
     }
     if (d.requiredChanged) {
       for (v <- d.deltaRequired) {
         if (b.isRequired(v)) {
-          if (c.excludes(v) == Outcome.Failure) {
-            return Outcome.Failure
-          }
+          c.excludes(v)
         }
         if (!b.isPossible(v)) {
-          if (c.requires(v) == Outcome.Failure) {
-
-            return Outcome.Failure
-          }
+          c.requires(v)
         }
       }
     }
-    Outcome.Suspend
   }
 
   // if value impossible in b, if this value is required in a, it becomes required in c
@@ -120,59 +100,44 @@ class SetDiff(val a: CPSetVar, val b: CPSetVar, val c: CPSetVar) extends Constra
   //                           otherwise nothing to do
 
   // if value required in b, it is removed from c  
-  def filterb(d: DeltaSetVar): Outcome = {
+  def filterb(d: DeltaSetVar): Unit = {
     if (d.possibleChanged) {
       for (v <- d.deltaPossible) {
         if (a.isRequired(v)) {
-          if (c.requires(v) == Outcome.Failure) {
-            return Outcome.Failure
-          }
+          c.requires(v)
         }
         if (c.isRequired(v)) {
-          if (a.requires(v) == Outcome.Failure) {
-            return Outcome.Failure
-          }
+          a.requires(v)
         }
       }
     }
     if (d.requiredChanged) {
       for (v <- d.deltaRequired) {
-        if (c.excludes(v) == Outcome.Failure) {
-          return Outcome.Failure
-        }
+        c.excludes(v)
       }
     }
-    Outcome.Suspend
   }
 
   // if value impossible in c, if impossible in b, it becomes impossible in a
   //                           if required in a, it is becomes required in b
 
   // if value required in c, it becomes required in a and impossible in b  
-  def filterc(d: DeltaSetVar): Outcome = {
+  def filterc(d: DeltaSetVar): Unit = {
     if (d.possibleChanged) {
       for (v <- d.deltaPossible) {
-        if (!a.isPossible(v) && a.excludes(v) == Outcome.Failure) {
-          return Outcome.Failure
-        }
+        if(!a.isPossible(v))
+          a.excludes(v)
 
         if (a.isRequired(v)) {
-          if (b.requires(v) == Outcome.Failure) {
-            return Outcome.Failure
-          }
+          b.requires(v)
         }
       }
     }
     if (d.requiredChanged) {
       for (v <- d.deltaRequired) {
-        if (a.requires(v) == Outcome.Failure) {
-          return Outcome.Failure
-        }
-        if (b.excludes(v) == Outcome.Failure) {
-          return Outcome.Failure
-        }
+        a.requires(v)
+        b.excludes(v)
       }
     }
-    Outcome.Suspend
   }
 }

@@ -15,8 +15,7 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
-import oscar.algo.search.Outcome._
+import oscar.cp.testUtils.TestSuite
 import oscar.cp._
 import oscar.cp.constraints.GraphWeaklyConnected
 
@@ -24,7 +23,7 @@ import oscar.cp.constraints.GraphWeaklyConnected
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
  */
 
-class TestGraphWeaklyConnected extends FunSuite with ShouldMatchers  {
+class TestGraphWeaklyConnected extends TestSuite  {
   
   test("Test 1 : Test constraint initial propagation") {
     val cp = CPSolver()
@@ -33,8 +32,8 @@ class TestGraphWeaklyConnected extends FunSuite with ShouldMatchers  {
     val g = CPGraphVar(cp, nnodes, edges)
     
     // 1) add some mandatory nodes/edges
-    cp.post(g.addNode(0)) should be (Suspend)
-    cp.post(g.addEdge(0,1)) should be (Suspend) // should also add node 1 as required
+    postAndCheckSuspend(cp,g.addNode(0))
+    postAndCheckSuspend(cp,g.addEdge(0,1)) // should also add node 1 as required
     
     // 2) check that all is correct : 
     // check nodes
@@ -53,7 +52,7 @@ class TestGraphWeaklyConnected extends FunSuite with ShouldMatchers  {
     g.possibleEdges(4).sorted    should be (List())
     
     // 3) add constraint
-    cp.post(new GraphWeaklyConnected(g)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphWeaklyConnected(g))
     
     // 4) check that all changes are correct acc. to definition :
     // 		-> remove node 4 (isolated - not required and lead to two connected components)
@@ -79,17 +78,17 @@ class TestGraphWeaklyConnected extends FunSuite with ShouldMatchers  {
     val edges = List((0,1),(0,2),(1,0),(1,2),(2,3),(3,2),(3,4))
     val g = CPGraphVar(cp, nnodes, edges)
     
-    cp.post(g.addNode(0)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(0))
     g.possibleNodes should be (List(0,1,2,3,4))
     g.requiredNodes should be (List(0))
     
-    cp.post(new GraphWeaklyConnected(g)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphWeaklyConnected(g))
     // propagation : no changes because all nodes are weakly connected
     g.possibleNodes should be (List(0,1,2,3,4))
     g.requiredNodes should be (List(0))
     
     // add node 3 as required
-    cp.post(g.addNode(3)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(3))
     // propagation lead to changes :
     //	 * as 0 and 3 are required, node 2 is a cutnode in path between 0 and 3
     //     -> set 2 required
@@ -119,11 +118,11 @@ class TestGraphWeaklyConnected extends FunSuite with ShouldMatchers  {
     val edges =  List((0,1),(0,2),(1,0),(1,2),(2,3),(3,2),(3,4))
     val g = CPGraphVar(cp, nnodes, edges)
     
-    cp.post(g.addNode(0)) should be (Suspend)
-    cp.post(new GraphWeaklyConnected(g)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(0))
+    postAndCheckSuspend(cp,new GraphWeaklyConnected(g))
     
     // remove node 2
-    cp.post(g.removeNode(2)) should be (Suspend)
+    postAndCheckSuspend(cp,g.removeNode(2))
     // propagation lead to changes :
     // 	 * two connected components : List(0,1) and List(3,4) : as 0 is required, remove List(3,4)
     //   * remove all edges connected with either 2, 3 and 4
@@ -150,11 +149,11 @@ class TestGraphWeaklyConnected extends FunSuite with ShouldMatchers  {
     val edges = List((0,1),(0,2),(1,0),(1,2),(2,3),(3,2),(3,4))
     val g = CPGraphVar(cp, nnodes, edges)
     
-    cp.post(g.addNode(0)) should be (Suspend)
-    cp.post(new GraphWeaklyConnected(g)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(0))
+    postAndCheckSuspend(cp,new GraphWeaklyConnected(g))
     
     // add node 2 as required
-    cp.post(g.addNode(2)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(2))
     // propagation lead to no changes other than add node 2
     
     g.possibleNodes.sorted should be (List(0,1,2,3,4))
@@ -175,18 +174,18 @@ class TestGraphWeaklyConnected extends FunSuite with ShouldMatchers  {
     val edges = List((0,1),(0,2),(1,0),(1,2),(2,3),(3,2),(3,4))
     val g = CPGraphVar(cp, nnodes, edges)
     
-    cp.post(g.addNode(0)) should be (Suspend)
-    cp.post(new GraphWeaklyConnected(g)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(0))
+    postAndCheckSuspend(cp,new GraphWeaklyConnected(g))
     
     // add node 3 as required
-    cp.post(g.addNode(3)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(3))
     // propagation lead to changes :
     //	 * as 0 and 3 are required, node 2 is a cutnode in path between 0 and 3
     //     -> set 2 required
     //   * as 0 and 3 are required, edge between 2 and 3 is the only way to go from 3 to 2 and then to 0
     //     -> set edge 3:(2,3) required because it is a bridge
     
-    cp.post(g.removeEdge(2,3)) should be (Failure)
+    postAndCheckFailure(cp, g.removeEdge(2,3))
     cp.isFailed should be (true)
   }
   
@@ -197,11 +196,11 @@ class TestGraphWeaklyConnected extends FunSuite with ShouldMatchers  {
     val edges = List((0,1))
     val g = CPGraphVar(cp, nnodes, edges)
     
-    cp.post(g.addNode(0)) should be (Suspend)
-    cp.post(new GraphWeaklyConnected(g)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(0))
+    postAndCheckSuspend(cp,new GraphWeaklyConnected(g))
     
     // add node 1 as required
-    cp.post(g.addNode(1)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(1))
     // propagation lead to changes :
     //   * as 0 and 1 are required, edge between them is the only way to go from one to another
     //     -> set edge 0:(0,1) required because it is a bridge
@@ -221,12 +220,12 @@ class TestGraphWeaklyConnected extends FunSuite with ShouldMatchers  {
     val edges = List((0,2),(1,2),(2,3),(3,2),(3,4))
     val g = CPGraphVar(cp, nnodes, edges)
     
-    cp.post(g.addNode(0)) should be (Suspend)
-    cp.post(new GraphWeaklyConnected(g)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(0))
+    postAndCheckSuspend(cp,new GraphWeaklyConnected(g))
     // edge (0,1) removed because no edge (1,0)
     
     // add node 1 as required
-    cp.post(g.addNode(1)) should be (Suspend)
+    postAndCheckSuspend(cp,g.addNode(1))
     // propagation lead to changes :
     //	 * as 0 and 1 are required, node 2 is a cutnode in path between 0 and 1
     //       as the only was to got from 0 to 1 is through 2 -> set 2 required

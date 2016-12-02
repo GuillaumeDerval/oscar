@@ -15,7 +15,7 @@
 
 package oscar.cp.test
 
-import oscar.algo.search.Outcome
+import oscar.algo.Inconsistency
 import oscar.cp._
 import oscar.cp.modeling._
 import oscar.cp.testUtils.TestSuite
@@ -29,7 +29,7 @@ import oscar.cp.core.CPPropagStrength
 class TestElement extends TestSuite {
 
   class ElementChecker(val y: Array[CPIntVar], val x: CPIntVar, val z: CPIntVar) extends Constraint(y(0).store, "ElementChecker") {
-    override def setup(l: CPPropagStrength): Outcome = {
+    override def setup(l: CPPropagStrength): Unit = {
       
       for (yvar <- y) yvar.callPropagateWhenBind(this)
       x.callPropagateWhenBind(this)
@@ -40,23 +40,23 @@ class TestElement extends TestSuite {
       for (yvar <- y) yvar.callPropagateWhenDomainChanges(this)*/
       return propagate()
     }
-    override def propagate(): Outcome = {
+    override def propagate(): Unit = {
       if (x.isBound) {
-        
         if (x.min < 0 || x.min >= y.length) {
-           return Outcome.Failure
+           throw Inconsistency
         }
         assert(x.max >= 0)
         if (z.isBound && y(x.min).isBound) {
           if (y(x.min).min == z.min) {
-             return Outcome.Success
+             deactivate()
           }
-          else return Outcome.Failure
+          else
+            throw Inconsistency
         }
-        else return Outcome.Suspend
       }
-      assert(!(x.isBound && y(x.min).isBound && z.isBound))
-      Outcome.Suspend
+      else {
+        assert(!(x.isBound && y(x.min).isBound && z.isBound))
+      }
     }
     
   }

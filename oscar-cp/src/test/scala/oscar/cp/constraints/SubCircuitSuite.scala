@@ -1,7 +1,7 @@
 package oscar.cp.constraints
 
 import oscar.algo.reversible.ReversibleInt
-import oscar.algo.search.{Branching, Outcome}
+import oscar.algo.search.Branching
 import oscar.cp.testUtils.TestSuite
 import oscar.cp._
 
@@ -87,9 +87,7 @@ class SubCircuitSuite extends TestSuite {
       CPIntVar(1) //5
     )
     println("---------------------------------")
-    assert(cp.post(subCircuit(successors)) == Outcome.Failure)
-
-
+    postAndCheckFailure(cp, subCircuit(successors))
 
     def checkUniqueCircuit(): Boolean = {
       val takenSuccessorsIndices = successors.indices.filter(i => !successors(i).isBoundTo(i))
@@ -127,7 +125,7 @@ class SubCircuitSuite extends TestSuite {
       CPIntVar(Set(4)),
       CPIntVar(Set(3))
     )
-    assert(cp.post(subCircuit(successors)) == Outcome.Failure)
+    postAndCheckFailure(cp, subCircuit(successors))
   }
 
   test("successors all different") {
@@ -139,8 +137,7 @@ class SubCircuitSuite extends TestSuite {
       CPIntVar(Set(0)),
       CPIntVar(Set(2))
     )
-    assert(cp.post(subCircuit(successors)) == Outcome.Failure)
-
+    postAndCheckFailure(cp, subCircuit(successors))
 
     successors = Array(
       CPIntVar(Set(4)),
@@ -149,8 +146,7 @@ class SubCircuitSuite extends TestSuite {
       CPIntVar(Set(3)),
       CPIntVar(Set(1))
     )
-    assert(cp.post(subCircuit(successors)) == Outcome.Failure)
-
+    postAndCheckFailure(cp, subCircuit(successors))
   }
 
 

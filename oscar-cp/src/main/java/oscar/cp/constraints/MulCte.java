@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.algo.search.Outcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -44,9 +44,9 @@ public class MulCte extends Constraint {
 	}
 	
 	@Override
-	public Outcome setup(CPPropagStrength l) {
-		Outcome ok = propagate();
-		if (ok == Outcome.Suspend) {
+	public void setup(CPPropagStrength l) throws Inconsistency {
+		propagate();
+		if (isActive()) {
 			x.callPropagateWhenBoundsChange(this);
 			z.callPropagateWhenBoundsChange(this);
 		}
@@ -55,49 +55,28 @@ public class MulCte extends Constraint {
 			if (x.getSize() <= 100) { // remove all numbers not multiples of c if dom size to too big
 				for (int v = z.getMin(); v <= z.getMax(); v++) {
 					if (z.hasValue(v) && (v%c != 0)) {
-						if (z.removeValue(v) == Outcome.Failure) {
-							return Outcome.Failure;
-						}
+						z.removeValue(v);
 					}
 				}
 			}
 		}*/
-		return ok;
 	}
 	
 	@Override
-	public Outcome propagate() {
+	public void propagate() {
 		if (x.isBound()) {
-			
-			if (z.assign(NumberUtils.safeMul(c , x.min())) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			z.assign(NumberUtils.safeMul(c , x.min()));
+			deactivate();
 		}
-		else {
-			if (c == 0) {
-				if (z.assign(0) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
-				return Outcome.Success;
-			} else {
-				if (z.updateMin(Math.min(NumberUtils.safeMul(c , x.getMin()), NumberUtils.safeMul(c , x.getMax()))) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
-				if (z.updateMax(Math.max(NumberUtils.safeMul(c , x.getMin()), NumberUtils.safeMul(c , x.getMax()))) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
-				if (x.updateMin(Math.min(NumberUtils.ceilDiv(z.getMin(), c),
-										 NumberUtils.ceilDiv(z.getMax(), c))) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
-				if (x.updateMax(Math.max(NumberUtils.floorDiv(z.getMin(), c),
-										 NumberUtils.floorDiv(z.getMax(), c))) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
-
-				return Outcome.Suspend;
-			}
-		}
+		else if (c == 0) {
+				z.assign(0);
+                deactivate();
+        }
+        else {
+            z.updateMin(Math.min(NumberUtils.safeMul(c , x.getMin()), NumberUtils.safeMul(c , x.getMax())));
+            z.updateMax(Math.max(NumberUtils.safeMul(c , x.getMin()), NumberUtils.safeMul(c , x.getMax())));
+            x.updateMin(Math.min(NumberUtils.ceilDiv(z.getMin(), c),  NumberUtils.ceilDiv(z.getMax(), c)));
+            x.updateMax(Math.max(NumberUtils.floorDiv(z.getMin(), c), NumberUtils.floorDiv(z.getMax(), c)));
+        }
 	}
 }

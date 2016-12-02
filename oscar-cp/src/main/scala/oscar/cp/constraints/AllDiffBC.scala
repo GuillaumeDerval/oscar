@@ -15,6 +15,7 @@
 
 package oscar.cp.constraints;
 
+import oscar.algo.Inconsistency
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
@@ -24,9 +25,7 @@ import oscar.algo.reversible.ReversibleInt
 
 import scala.math.min
 import scala.math.max
-import oscar.algo.search.Outcome._
 import oscar.algo.reversible.ReversibleInt
-import oscar.algo.search.Outcome
 
 /**
  * Based on Claude-Guy Quimper Implem (personal webpage)
@@ -58,7 +57,7 @@ class AllDiffBC(val x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffB
   private[this] val d = Array.fill(2 * n + 2)(0) // diffs between critical capacities
   private[this] val h = Array.fill(2 * n + 2)(0) // hall interval links
 
-  override def setup(l: CPPropagStrength): Outcome = {
+  override def setup(l: CPPropagStrength): Unit = {
 
     for (i <- 0 until x.size) {
       x(i).callPropagateWhenBoundsChange(this)
@@ -253,7 +252,7 @@ class AllDiffBC(val x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffB
     else NO_CHANGES;
   }
 
-  override def propagate(): Outcome = {
+  override def propagate(): Unit = {
     // not incremental
     var statusLower = CHANGES
     var statusUpper = CHANGES
@@ -271,17 +270,15 @@ class AllDiffBC(val x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffB
     }
 
     if ((statusLower == INCONSISTENT) || (statusUpper == INCONSISTENT)) {
-      return Outcome.Failure
+      throw Inconsistency
     } else if ((statusLower == CHANGES) || (statusUpper == CHANGES)) {
-      i = 0;
+      i = 0
       while (i < x.size) {
         x(i).updateMax(iv(i).max)
         x(i).updateMin(iv(i).min)
         i += 1
       }
     }
-
-    Suspend
   }
 
 }

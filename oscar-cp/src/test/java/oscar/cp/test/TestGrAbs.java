@@ -16,6 +16,7 @@ package oscar.cp.test;
 
 
 import junit.framework.TestCase;
+import oscar.algo.Inconsistency;
 import oscar.cp.constraints.EqCons;
 import oscar.cp.constraints.GrEq;
 import oscar.cp.core.CPStore;
@@ -50,7 +51,7 @@ public class TestGrAbs extends TestCase {
         s = null;
     }
     
-    public void testGrAbs(){  	
+    public void testGrAbs() throws Inconsistency {
     	CPIntVar [] x = new CPIntVar[2];
     	for (int i = 0; i < x.length; i++) {
 			x[i] = CPIntVar.apply(s,1,256);

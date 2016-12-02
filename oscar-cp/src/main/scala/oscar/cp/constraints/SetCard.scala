@@ -17,7 +17,7 @@
 
 package oscar.cp.constraints
 
-import oscar.algo.search.Outcome
+import oscar.algo.Inconsistency
 import oscar.cp.core._
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.variables.CPSetVar
@@ -27,18 +27,18 @@ import oscar.cp.core.variables.CPSetVar
  */
 class SetCard(val x: CPSetVar, val c: CPIntVar) extends Constraint(x.store, "SetCard") {
   priorityL2 = CPStore.MaxPriorityL2
-  override def setup(l: CPPropagStrength): Outcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     x.callPropagateWhenDomainChanges(this)
     c.callPropagateWhenBoundsChange(this)
     propagate()
   }
   
-  override def propagate(): Outcome = {
-    if (c.updateMin(x.requiredSize) == Outcome.Failure) return Outcome.Failure
-    if (c.updateMax(x.possibleSize) == Outcome.Failure) return Outcome.Failure
+  override def propagate(): Unit = {
+    c.updateMin(x.requiredSize)
+    c.updateMax(x.possibleSize)
     
-    if (c.min > x.possibleSize) Outcome.Failure
-    else if (c.max < x.requiredSize) Outcome.Failure
+    if (c.min > x.possibleSize) throw Inconsistency
+    else if (c.max < x.requiredSize) throw Inconsistency
     else if (c.min == x.possibleSize) {
       // every possible must become required
       x.requiresAll()
@@ -48,9 +48,8 @@ class SetCard(val x: CPSetVar, val c: CPIntVar) extends Constraint(x.store, "Set
       x.excludesAll()
       c.updateMin(c.max)
     } else {
-      if (c.updateMin(x.requiredSize) == Outcome.Failure) return Outcome.Failure
-      if (c.updateMax(x.possibleSize) == Outcome.Failure) return Outcome.Failure
-      Outcome.Suspend
+      c.updateMin(x.requiredSize)
+      c.updateMax(x.possibleSize)
     }
   }
 }

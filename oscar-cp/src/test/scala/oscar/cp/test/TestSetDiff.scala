@@ -15,22 +15,21 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
-import oscar.algo.search.Outcome
+import oscar.cp.testUtils.TestSuite
 import oscar.cp.constraints._
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
 
 /**
- * @author: Pierre Schaus pschaus@gmail.com
+ * @author Pierre Schaus pschaus@gmail.com
  */
-class TestSetDiff extends FunSuite with ShouldMatchers {
+class TestSetDiff extends TestSuite {
   
   val rand = new scala.util.Random(0)
 
   class SetDiffDecomp(val a: CPSetVar, val b: CPSetVar, val c: CPSetVar) extends Constraint(a.store, "SetDiffDecomp") {
 
-    override def setup(l: CPPropagStrength): Outcome = {
+    override def setup(l: CPPropagStrength): Unit = {
 
       if (!a.isBound) a.callPropagateWhenDomainChanges(this)
 
@@ -41,7 +40,7 @@ class TestSetDiff extends FunSuite with ShouldMatchers {
       return propagate()
     }
 
-    override def propagate(): Outcome = {
+    override def propagate(): Unit = {
       // --------------------------------------------
 
       // initial filtering   a - b = c
@@ -49,37 +48,27 @@ class TestSetDiff extends FunSuite with ShouldMatchers {
       // for every value in possible a, if not in c and not required in b, remove it from a
       // for every value in required a, if not in b, required in c
       for (v <- a.possibleNotRequiredValues.toSet; if !c.isPossible(v) && !b.isRequired(v)) {
-        if (a.excludes(v) == Outcome.Failure) {
-          return Outcome.Failure
-        }
+        a.excludes(v)
       }
       for (v <- a.requiredValues; if !b.isPossible(v)) {
-        if (c.requires(v) == Outcome.Failure) {
-          return Outcome.Failure
-        }
+        c.requires(v)
       }
 
       // for every value v in required b => remove it from c
 
       for (v <- b.requiredValues) {
-        if (c.excludes(v) == Outcome.Failure) {
-          return Outcome.Failure
-        }
+        c.excludes(v)
       }
 
       // for every value in possible c if not in a possible, remove it from c
       // for every value v in required c => must be required in a and excluded from b   
       for (v <- c.possibleNotRequiredValues.toSet; if !a.isPossible(v)) {
-        if (c.excludes(v) == Outcome.Failure) {
-          return Outcome.Failure
-        }
+        c.excludes(v)
       }
       for (v <- c.requiredValues) {
-        if (a.requires(v) == Outcome.Failure || b.excludes(v) == Outcome.Failure) {
-          return Outcome.Failure
-        }
+        a.requires(v)
+        b.excludes(v)
       }
-      Outcome.Suspend
     }
   }
   
@@ -89,11 +78,11 @@ class TestSetDiff extends FunSuite with ShouldMatchers {
     var b = CPSetVar(bReq ++ bPoss, bReq)(cp)
     var c = CPSetVar(cReq ++ cPoss, cReq)(cp)
     var nbSol = 0
-    val oc = 
+    val oc = isInconsistent(
       if (decomp) cp.post(new SetDiffDecomp(a, b, c))
-      else cp.post(new SetDiff(a, b, c))
+      else cp.post(new SetDiff(a, b, c)))
     //println("fix point a:" + a + " b:" + b + " c:" + c)
-    if (oc == Outcome.Failure) return 0
+    if (oc) return 0
     cp search {
       binary(a) ++ binary(b) ++ binary(c)
     } 

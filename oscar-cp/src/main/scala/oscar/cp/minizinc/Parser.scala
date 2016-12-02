@@ -24,7 +24,7 @@ import oscar.cp.constraints.WeightedSum
 import scala.collection.mutable.HashMap
 import java.util.Collection
 
-import oscar.algo.search.{Branching, Outcome}
+import oscar.algo.search.Branching
 import oscar.cp.constraints.MulCte
 import oscar.cp.constraints.SubCircuit
 import oscar.cp.core.variables.CPVar
@@ -558,7 +558,6 @@ class Parser extends JavaTokenParsers { // RegexParsers {
    * @param ann : the list of annotations for the variable
    * @param id : the name of the variable
    * @param s : the inital domain of the variable
-   * @param hasDomain : true of the inital domain is given
    */
   def addCPIntVar(ann: List[Annotation], id: String, s: Set[Int]) {
     if (!bool2Int.contains(id)) {
@@ -702,16 +701,16 @@ class Parser extends JavaTokenParsers { // RegexParsers {
    * @param cpvar : CPIntVar
    */
   def shrinkDom(s: Set[Int], cpvar: CPIntVar) {
-    if (cpvar.updateMax(s.max) == Outcome.Failure) {
+    if (isInconsistent(cpvar.updateMax(s.max))) {
       throw new NoSolutionException("VarInt domains are incompatible")
     }
-    if (cpvar.updateMin(s.min) == Outcome.Failure) {
+    if (isInconsistent(cpvar.updateMin(s.min))) {
       throw new NoSolutionException("VarInt domains are incompatible")
     }
     if (!(s.max - s.min + 1 == s.size)) {
       for (e <- cpvar.iterator) {
         if (!(s contains e)) {
-          if (cpvar.removeValue(e) == Outcome.Failure) {
+          if (isInconsistent(cpvar.removeValue(e))) {
             throw new NoSolutionException("VarInt domains are incompatible")
           }
         }
@@ -727,7 +726,7 @@ class Parser extends JavaTokenParsers { // RegexParsers {
   def shrinkDom(s: Set[Int], cpvar: CPSetVar) {
     for (e <- cpvar.possibleNotRequiredValues.toSet[Int]) {
       if (!(s contains e)) {
-        if (cpvar.excludes(e) == Outcome.Failure) {
+        if (isInconsistent(cpvar.excludes(e))) {
           throw new NoSolutionException("Sets domains are incompatible")
         }
       }

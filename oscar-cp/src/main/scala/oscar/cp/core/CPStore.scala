@@ -17,10 +17,10 @@ package oscar.cp.core
 
 import java.util.Collection
 
+import oscar.algo.Inconsistency
 import oscar.algo.array.ArrayQueue
-import oscar.algo.search.{DFSearchNode, IntConstrainableContext, Outcome, SetConstrainableContext}
+import oscar.algo.search.{DFSearchNode, IntConstrainableContext, SetConstrainableContext}
 import oscar.cp.constraints.EqCons
-import oscar.algo.search.Outcome.{Failure, Success, Suspend}
 import oscar.algo.vars.{IntVarLike, SetVarLike}
 import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPSetVar}
 import oscar.cp.core.watcher.PropagEventQueueVarSet
@@ -42,7 +42,7 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
   private[this] val rand = new Random(0)
 
   // Propagation queue L1 (AC5)
-  private[this] val propagQueueL1 = Array.fill(CPStore.MaxPriorityL1 + 1)(new ArrayQueue[() => Outcome](1000))
+  private[this] val propagQueueL1 = Array.fill(CPStore.MaxPriorityL1 + 1)(new ArrayQueue[() => Unit](1000))
   private[this] var highestPriorL1 = -1
 
   // Propagation queue L2 (AC3)
@@ -118,14 +118,12 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
   }
 
   // Adds the constraint in the L1 queue
-  @inline final def enqueueL1(c: Constraint, priority: Int, evt: => Outcome): Unit = {
+  @inline final def enqueueL1(c: Constraint, priority: Int, evt: => Unit): Unit = {
     propagQueueL1(priority).addLast(() => {
       if (c.isActive) {
         lastConstraint = c // last constraint called
-        val oc = evt
-        if (oc == Success) c.deactivate()
-        oc
-      } else Suspend
+        evt
+      }
     })
     if (priority > highestPriorL1) {
       highestPriorL1 = priority
@@ -135,7 +133,7 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
   // set variable
 
   def notifyRequired(constraints: PropagEventQueueVarSet, x: CPSetVar, v: Int) {
-    var q = constraints;
+    var q = constraints
     while (q != null) {
       val c = q.cons
       val x = q.x
@@ -148,7 +146,7 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
   }
 
   def notifyRequiredIdx(constraints: PropagEventQueueVarSet, x: CPSetVar, v: Int) {
-    var q = constraints;
+    var q = constraints
     while (q != null) {
       val c = q.cons
       val x = q.x
@@ -161,7 +159,7 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
   }
 
   def notifyExcluded(constraints: PropagEventQueueVarSet, x: CPSetVar, v: Int) {
-    var q = constraints;
+    var q = constraints
     while (q != null) {
       val c = q.cons
       val x = q.x
@@ -174,7 +172,7 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
   }
 
   def notifyExcludedIdx(constraints: PropagEventQueueVarSet, x: CPSetVar, v: Int) {
-    var q = constraints;
+    var q = constraints
     while (q != null) {
       val c = q.cons
       val x = q.x
@@ -186,11 +184,10 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
     }
   }
 
-  final def doAndPropagate(action: => Outcome): Outcome = {
-    val out = action // apply action
-    if (out == Failure) Failure
-    else if (isFailed) Failure
-    else propagate()
+  final def doAndPropagate(action: => Unit): Unit = {
+    action // apply action
+    if (isFailed) throw Inconsistency
+    propagate()
   }
   
   /**
@@ -200,62 +197,54 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
    *
    *  @param constraints a sequence of constraints
    */
-  def propagate(constraints: Constraint*): Outcome = {
-    if (isFailed) Failure
-    else {
-      constraints.foreach(c => enqueueL2(c))
-      propagate()
-      if (isFailed) Failure
-      else Suspend
-    }
+  def propagate(constraints: Constraint*): Unit = {
+    if (isFailed) throw Inconsistency
+
+    constraints.foreach(c => enqueueL2(c))
+    propagate()
   }
 
-  protected def propagate(): Outcome = {
+  protected def propagate(): Unit = {
     if (isFailed) throw Inconsistency
     else {
       val t = System.currentTimeMillis()
       inFixedPoint = true
       try {
-        val outcome = fixedPoint()
-        if (outcome == Failure) {
-          cleanQueues() // may be not empty
-          fail()
-        }
-        outcome
-      } catch {
+        fixedPoint()
+        timeInFixedPoint += System.currentTimeMillis() - t
+        inFixedPoint = false
+      }
+      catch {
         case i: Inconsistency => {
           cleanQueues() // may be not empty
           fail()
-          Failure
+          timeInFixedPoint += System.currentTimeMillis() - t
+          inFixedPoint = false
+          throw i
         }
-      } finally {
-        timeInFixedPoint += System.currentTimeMillis() - t
-        inFixedPoint = false
       }
     }
   }
 
-  @inline private def fixedPoint(): Outcome = {
+  @inline private def fixedPoint(): Unit = {
 
     // Adds the cut constraints
     cutConstraints.foreach(c => enqueueL2(c))
 
-    var isNotFailed = true
-    while (isNotFailed && (highestPriorL1 >= 0 || highestPriorL2 >= 0)) {
-
+    while (highestPriorL1 >= 0 || highestPriorL2 >= 0) {
       // Propagate L1
-      while (highestPriorL1 >= 0 && isNotFailed) {
+      while (highestPriorL1 >= 0) {
         val queue = propagQueueL1(highestPriorL1)
         if (queue.isEmpty) highestPriorL1 -= 1
         else {
           nCallsL1 += 1
           val event = queue.removeFirst()
-          isNotFailed = event() != Failure
+          event()
         }
       }
 
       // Propagate L2 if no constraint in L1
-      while (highestPriorL1 < 0 && highestPriorL2 >= 0 && isNotFailed) {
+      while (highestPriorL1 < 0 && highestPriorL2 >= 0) {
         val queue = propagQueueL2(highestPriorL2)
         if (queue.isEmpty) highestPriorL2 -= 1
         else {
@@ -263,13 +252,10 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
           val constraint = queue.removeFirst()
           constraint.setDequeued()
           lastConstraint = constraint
-          isNotFailed = constraint.execute() != Failure
+          constraint.execute()
         }
       }
     }
-
-    if (isNotFailed) Suspend
-    else Failure
   }
 
   def printQueues(): Unit = {
@@ -285,41 +271,28 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
    * @param st the propagation strength asked for the constraint. Will be used only if available for the constraint (see specs of the constraint).
    * @return Failure if the fix point detects a failure that is one of the domain became empty, Suspend otherwise.
    */
-  def post(constraint: Constraint, st: CPPropagStrength): Outcome = {
-    if (isFailed) Failure
-    else if (inFixedPoint) { // already in a try block
-      val outcome = constraint.setup(st)
-      if (outcome == Success) {
-         constraint.deactivate()
-         Success
-      }
-      else if (outcome == Failure) {
+  @throws[Inconsistency]
+  def post(constraint: Constraint, st: CPPropagStrength): Unit = {
+    if (isFailed) throw Inconsistency
+    try {
+      constraint.setup(st)
+    }
+    catch {
+      case e: Inconsistency =>
         fail()
-        Failure
-      }
-      else Suspend
-    } else try {
-      val outcome = constraint.setup(st)
-      if (outcome == Failure) {
-        fail()
-        Failure
-      } else {
-        if (outcome == Success) constraint.deactivate()
-        propagate()
-      }
-    } catch {
-      case i: Inconsistency => {
-        fail()
-        Failure
-      }
+        throw e
+    }
+    if (!inFixedPoint) { // already in a try block
+      propagate()
     }
   }
 
-  def post(c: Constraint): Outcome = post(c, propagStrength)
+  @throws[Inconsistency]
+  def post(c: Constraint): Unit = post(c, propagStrength)
 
-  def postCut(c: Constraint): Outcome = postCut(c, propagStrength)
+  def postCut(c: Constraint): Unit = postCut(c, propagStrength)
 
-  def postCut(c: Constraint, st: CPPropagStrength): Outcome = {
+  def postCut(c: Constraint, st: CPPropagStrength): Unit = {
     val ok = post(c, st)
     cutConstraints.addLast(c)
     return ok
@@ -338,7 +311,7 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
    * @param b, the Boolean Var
    * @return Failure if the fix point detects a failure that is one of the domain became empty, Suspend otherwise
    */
-  def post(b: CPBoolVar): Outcome = post(new EqCons(b, 1), propagStrength)
+  def post(b: CPBoolVar): Unit = post(new EqCons(b, 1), propagStrength)
 
   /**
    * Add a set of constraints to the store in a reversible way and trigger the fix-point algorithm afterwards.
@@ -347,42 +320,28 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
    * @param st the propagation strength asked for the constraint. Will be used only if available for the constraint (see specs of the constraint)
    * @return Failure if the fix point detects a failure that is one of the domain became empty, Suspend otherwise.
    */
-  def post(constraints: Array[Constraint], st: CPPropagStrength): Outcome = {
-    if (isFailed) Failure
-    else if (inFixedPoint) { // already in a try block
-      var outcome: Outcome = Suspend
+  def post(constraints: Array[Constraint], st: CPPropagStrength): Unit = {
+    if (isFailed)
+      throw Inconsistency
+
+    try {
       var i = 0
-      while (i < constraints.length && outcome != Failure) {
+      while (i < constraints.length) {
         val constraint = constraints(i)
-        outcome = constraint.setup(st)
-        if (outcome == Success) constraint.deactivate()
+        constraint.setup(st)
         i += 1
       }
-      if (outcome == Failure) fail()
-      outcome
-    } else try {
-      var outcome: Outcome = Suspend
-      var i = 0
-      while (i < constraints.length && outcome != Failure) {
-        val constraint = constraints(i)
-        outcome = constraint.setup(st)
-        if (outcome == Success) constraint.deactivate()
-        i += 1
-      }
-      if (outcome != Failure) propagate()
-      else {
+      if(!inFixedPoint)
+        propagate()
+    }
+    catch {
+      case i: Inconsistency =>
         fail()
-        Failure
-      }
-    } catch {
-      case i: Inconsistency => {
-        fail()
-        Failure
-      }
+        throw i
     }
   }
 
-  def post(constraints: Array[Constraint]): Outcome = post(constraints, propagStrength);
+  def post(constraints: Array[Constraint]): Unit = post(constraints, propagStrength);
 
   /**
    * Add a set of constraints to the store (with a Weak propagation strength) in a reversible way and trigger the fix-point algorithm afterwards.
@@ -390,127 +349,121 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
    * @param constraints
    * @return Failure if the fix point detects a failure that is one of the domain became empty, Suspend otherwise.
    */
-  def post(constraints: Collection[Constraint], st: CPPropagStrength): Outcome = post(constraints.map(x => x.asInstanceOf[Constraint]).toArray, st)
+  def post(constraints: Collection[Constraint], st: CPPropagStrength): Unit = post(constraints.map(x => x.asInstanceOf[Constraint]).toArray, st)
 
-  def post(constraints: Collection[Constraint]): Outcome = post(constraints.map(x => x.asInstanceOf[Constraint]), propagStrength)
+  def post(constraints: Collection[Constraint]): Unit = post(constraints.map(x => x.asInstanceOf[Constraint]), propagStrength)
 
   @inline
-  def assign(x: IntVarLike, v: Int): Outcome = assign(x.asInstanceOf[CPIntVar], v)
+  def assign(x: IntVarLike, v: Int): Unit = assign(x.asInstanceOf[CPIntVar], v)
   @inline
-  def remove(x: IntVarLike, v: Int): Outcome = remove(x.asInstanceOf[CPIntVar], v)
+  def remove(x: IntVarLike, v: Int): Unit = remove(x.asInstanceOf[CPIntVar], v)
   @inline
-  def smallerEq(x: IntVarLike, v: Int): Outcome = smallerEq(x.asInstanceOf[CPIntVar], v)
+  def smallerEq(x: IntVarLike, v: Int): Unit = smallerEq(x.asInstanceOf[CPIntVar], v)
   @inline
-  def largerEq(x: IntVarLike, v: Int): Outcome = largerEq(x.asInstanceOf[CPIntVar], v)
+  def largerEq(x: IntVarLike, v: Int): Unit = largerEq(x.asInstanceOf[CPIntVar], v)
   @inline
-  def remove(x: IntVarLike, vs: Array[Int]): Outcome = remove(x.asInstanceOf[CPIntVar], vs)
+  def remove(x: IntVarLike, vs: Array[Int]): Unit = remove(x.asInstanceOf[CPIntVar], vs)
   @inline
-  def requires(x: SetVarLike, v: Int): Outcome = requires(x.asInstanceOf[CPSetVar], v)
+  def requires(x: SetVarLike, v: Int): Unit = requires(x.asInstanceOf[CPSetVar], v)
   @inline
-  def excludes(x: SetVarLike, v: Int): Outcome = excludes(x.asInstanceOf[CPSetVar], v)
+  def excludes(x: SetVarLike, v: Int): Unit = excludes(x.asInstanceOf[CPSetVar], v)
 
-  def assign(x: CPIntVar, v: Int): Outcome = {
-    if (isFailed) Failure
-    else try {
-      val outcome = x.assign(v)
-      if (outcome != Failure) propagate()
-      else {
-        fail()
-        Failure
-      }
-    } catch {
+  def assign(x: CPIntVar, v: Int): Unit = {
+    if (isFailed)
+      throw Inconsistency
+
+    try {
+      x.assign(v)
+      propagate()
+    }
+    catch {
       case i: Inconsistency => {
         fail()
-        Failure
+        throw i
       }
     }
   }
 
 
-  def remove(x: CPIntVar, v: Int): Outcome = {
-    if (isFailed) Failure
-    else try {
-      val outcome = x.removeValue(v)
-      if (outcome != Failure) propagate()
-      else {
-        fail()
-        Failure
-      }
-    } catch {
+  def remove(x: CPIntVar, v: Int): Unit = {
+    if (isFailed)
+      throw Inconsistency
+
+    try {
+      x.removeValue(v)
+      propagate()
+    }
+    catch {
       case i: Inconsistency => {
         fail()
-        Failure
+        throw i
       }
     }
   }
 
-  def remove(x: CPIntVar, vs: Array[Int]): Outcome = {
-    if (isFailed) Failure
-    else try {
-      val outcome = x.removeValues(vs)
-      if (outcome != Failure) propagate()
-      else {
-        fail()
-        Failure
-      }
-    } catch {
+  def remove(x: CPIntVar, vs: Array[Int]): Unit = {
+    if (isFailed)
+      throw Inconsistency
+
+    try {
+      x.removeValues(vs)
+      propagate()
+    }
+    catch {
       case i: Inconsistency => {
         fail()
-        Failure
+        throw i
       }
     }
   }
 
-  def smallerEq(x: CPIntVar, v: Int): Outcome = {
-    if (isFailed) Failure
-    else try {
-      val outcome = x.updateMax(v)
-      if (outcome != Failure) propagate()
-      else {
-        fail()
-        Failure
-      }
-    } catch {
+  def smallerEq(x: CPIntVar, v: Int): Unit = {
+    if (isFailed)
+      throw Inconsistency
+
+    try {
+      x.updateMax(v)
+      propagate()
+    }
+    catch {
       case i: Inconsistency => {
         fail()
-        Failure
+        throw i
       }
     }
   }
 
-  def largerEq(x: CPIntVar, v: Int): Outcome = {
-    if (isFailed) Failure
-    else try {
-      val outcome = x.updateMin(v)
-      if (outcome != Failure) propagate()
-      else {
-        fail()
-        Failure
-      }
-    } catch {
+  def largerEq(x: CPIntVar, v: Int): Unit = {
+    if (isFailed)
+      throw Inconsistency
+
+    try {
+      x.updateMin(v)
+      propagate()
+    }
+    catch {
       case i: Inconsistency => {
         fail()
-        Failure
+        throw i
       }
     }
   }
 
-  def add[T: ClassTag](boolVars: Iterable[CPBoolVar]): Outcome = post(boolVars)
+  def add[T: ClassTag](boolVars: Iterable[CPBoolVar]): Unit = post(boolVars)
 
-  def post(boolVars: Iterable[CPBoolVar]): Outcome = {
+  def post(boolVars: Iterable[CPBoolVar]): Unit = {
     for (b <- boolVars) {
-      if (post(b.constraintTrue) == Failure) return Failure
+      post(b.constraintTrue)
     }
-    return Outcome.Suspend
   }
 
-  def add(c: Constraint, st: CPPropagStrength): Outcome = post(c, st)
+  def add(c: Constraint, st: CPPropagStrength): Unit = post(c, st)
 
-  def add(c: Constraint): Outcome = add(c, propagStrength)
+  def add(c: Constraint): Unit = add(c, propagStrength)
 
-  def add(b: CPBoolVar): Outcome = post(new EqCons(b, 1))
+  def add(b: CPBoolVar): Unit = post(new EqCons(b, 1))
   
-  def addCut(c: Constraint): Outcome = postCut(c)
+  def addCut(c: Constraint): Unit = postCut(c)
 
   /**
    * Add a set of constraints to the store in a reversible way and trigger the fix-point algorithm afterwards.
@@ -519,33 +472,32 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
    * @param st the propagation strength asked for the constraint. Will be used only if available for the constraint (see specs of the constraint)
    * @throws NoSolutionException if the fix point detects a failure that is one of the domain became empty, Suspend otherwise.
    */
-  def add(constraints: Array[Constraint], st: CPPropagStrength): Outcome = post(constraints, st)
+  def add(constraints: Array[Constraint], st: CPPropagStrength): Unit = post(constraints, st)
 
-  def add(constraints: Array[Constraint]): Outcome = add(constraints, propagStrength)
+  def add(constraints: Array[Constraint]): Unit = add(constraints, propagStrength)
 
-  def add(constraints: Iterable[Constraint], st: CPPropagStrength): Outcome = add(constraints.toArray, st)
+  def add(constraints: Iterable[Constraint], st: CPPropagStrength): Unit = add(constraints.toArray, st)
 
-  def add(constraints: Iterable[Constraint]): Outcome = add(constraints.toArray, propagStrength)
+  def add(constraints: Iterable[Constraint]): Unit = add(constraints.toArray, propagStrength)
 
-  def +=(c: Constraint, st: CPPropagStrength): Outcome = add(c, st)
-  def +=(c: Constraint): Outcome = add(c, propagStrength)
+  def +=(c: Constraint, st: CPPropagStrength): Unit = add(c, st)
+  def +=(c: Constraint): Unit = add(c, propagStrength)
 
   /**
     * Post v \in x
     */
-  def requires(x: CPSetVar, v: Int): Outcome = {
-    if (isFailed) Failure
-    else try {
-      val outcome = x.requires(v)
-      if (outcome != Failure) propagate()
-      else {
-        fail()
-        Failure
-      }
-    } catch {
+  def requires(x: CPSetVar, v: Int): Unit = {
+    if (isFailed)
+      throw Inconsistency
+
+    try {
+      x.requires(v)
+      propagate()
+    }
+    catch {
       case i: Inconsistency => {
         fail()
-        Failure
+        throw i
       }
     }
   }
@@ -553,19 +505,18 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
   /**
     * Post v \notin x
     */
-  def excludes(x: CPSetVar, v: Int): Outcome = {
-    if (isFailed) Failure
-    else try {
-      val outcome = x.excludes(v)
-      if (outcome != Failure) propagate()
-      else {
-        fail()
-        Failure
-      }
-    } catch {
+  def excludes(x: CPSetVar, v: Int): Unit = {
+    if (isFailed)
+      throw Inconsistency
+
+    try {
+      x.excludes(v)
+      propagate()
+    }
+    catch {
       case i: Inconsistency => {
         fail()
-        Failure
+        throw i
       }
     }
   }

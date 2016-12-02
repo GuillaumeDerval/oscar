@@ -6,14 +6,14 @@ package oscar.cp.test
 
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 import oscar.cp._
 import oscar.cp.scheduling.util.ThetaLambdaTree
 
 /**
  * Created by saschavancauwelaert on 17/12/14.
  */
-class TestThetaLambdaTree extends FunSuite with ShouldMatchers {
+class TestThetaLambdaTree extends TestSuite {
 
   test("unary unit fig2.8 of petr vilim's thesis") {
     implicit val cp = CPSolver()

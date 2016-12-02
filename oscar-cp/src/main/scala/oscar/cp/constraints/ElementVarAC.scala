@@ -19,11 +19,9 @@ import scala.math.max
 import scala.math.min
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.reversible.ReversibleSparseSet
-import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
-import oscar.algo.search.Outcome._
 
 /**
  * A full Arc-Consistent Element Constraint: y(x) == z
@@ -55,28 +53,24 @@ class ElementVarAC(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constra
   // Replaces this constraint by an Equality constraint.
   private[this] val equality = new ElementEq(y, x, z, values)
 
-  final override def setup(l: CPPropagStrength): Outcome = {
-    if (z.updateMax((y.map(_.max).max)) == Failure) Failure
-    else if (z.updateMin((y.map(_.min).min)) == Failure) Failure
-    else if (x.updateMin(0) == Failure) Failure
-    else if (x.updateMax(y.size - 1) == Failure) Failure
-    else if (adjustX() == Failure) Failure
-    else {
-      val out = init()
-      if (out != Suspend) out
-      else {
-        x.callValRemoveWhenValueIsRemoved(this)
-        z.callValRemoveWhenValueIsRemoved(this)
-        for (i <- x.min to x.max; if x hasValue i) {
-          y(i).callValRemoveIdxWhenValueIsRemoved(this, i)
-        }
+  final override def setup(l: CPPropagStrength): Unit = {
+    z.updateMax(y.map(_.max).max)
+    z.updateMin(y.map(_.min).min)
+    x.updateMin(0)
+    x.updateMax(y.size - 1)
+    adjustX()
 
-        Suspend
+    init()
+    if(isActive) {
+      x.callValRemoveWhenValueIsRemoved(this)
+      z.callValRemoveWhenValueIsRemoved(this)
+      for (i <- x.min to x.max; if x hasValue i) {
+        y(i).callValRemoveIdxWhenValueIsRemoved(this, i)
       }
     }
   }
 
-  @inline private def init(): Outcome = {
+  @inline private def init(): Unit = {
     //resetData() // Mandatory if propagate is called after the initial call
     initData()
 
@@ -85,9 +79,7 @@ class ElementVarAC(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constra
       i -= 1
       val v = values(i)
       if (intersect(v - minId).size == 0) {
-        if (x.removeValue(v) == Failure) {
-          return Failure
-        }
+        x.removeValue(v)
       }
     }
 
@@ -98,12 +90,9 @@ class ElementVarAC(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constra
       i -= 1
       val v = values(i)
       if (nSupports(v - minValue).value == 0) {
-        if (z.removeValue(v) == Failure) {
-          return Failure
-        }
+        z.removeValue(v)
       }
     }
-    Suspend
   }
 
   // Initializes data structures
@@ -130,74 +119,70 @@ class ElementVarAC(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constra
 
   // If y(i) has an intersection with z, the number of supports of the  value v is reduced by 1
   // Remove v from y(i)
-  final override def valRemoveIdx(cpvar: CPIntVar, i: Int, v: Int): Outcome = {
+  final override def valRemoveIdx(cpvar: CPIntVar, i: Int, v: Int): Unit = {
     // we must check that x has value to avoid reducing twice for the same removal
     // y(i) might loose the value and i is also removed ...
-    if (x.hasValue(i) && reduceSupports(v) == Failure) Failure
-    else reduceIntersect(i, v)
+    if (x.hasValue(i))
+      reduceSupports(v)
+    reduceIntersect(i, v)
   }
 
-  final override def valRemove(cpvar: CPIntVar, v: Int): Outcome = {
+  final override def valRemove(cpvar: CPIntVar, v: Int): Unit = {
     if (cpvar == x) removeFromX(v)
     else removeFromZ(v)
   }
 
   // Reduces the number of supports of the value v
-  @inline private def reduceSupports(value: Int): Outcome = {
-    if (value < minValue || value > maxValue) Suspend
-    else {
+  @inline private def reduceSupports(value: Int): Unit = {
+    if (!(value < minValue || value > maxValue)) {
       val v = value - minValue
       val nSup = nSupports(v)
       if (nSup.value > 0 && nSup.decr() == 0) z.removeValue(value)
-      else Suspend
     }
   }
 
   // Removes the value v from the intersection between y(i) and z
-  @inline private def reduceIntersect(i: Int, v: Int): Outcome = {
+  @inline private def reduceIntersect(i: Int, v: Int): Unit = {
     val id = i - minId
     val removed = intersect(id).removeValue(v)
     if (removed && intersect(id).isEmpty) x.removeValue(i)
-    else Suspend
   }
 
   // Removes v from all the intersections
-  @inline private def removeFromZ(v: Int): Outcome = {
+  @inline private def removeFromZ(v: Int): Unit = {
     nSupports(v - minValue).value = 0
     var i = x.fillArray(values)
     while (i > 0) {
       i -= 1
-      if (reduceIntersect(values(i), v) == Failure) return Failure
+      reduceIntersect(values(i), v)
     }
-    Suspend
   }
 
   // If x is bound, this constraint is replaced by an Equality constraint
   // else, the number of supports for all values v in y(i) is reduced by 1
-  @inline private def removeFromX(id: Int): Outcome = {
+  @inline private def removeFromX(id: Int): Unit = {
     if (x.isBound) bindX()
     else {
       // Decrement the number of supports for each value in y(id)
       var i = y(id).fillArray(values)
       while (i > 0) {
         i -= 1
-        if (reduceSupports(values(i)) == Failure) return Failure
+        reduceSupports(values(i))
       }
-      Suspend
     }
   }
 
-  @inline private def bindX(): Outcome = {
-    if (s.post(equality) == Failure) Failure
-    else Success
+  @inline private def bindX(): Unit = {
+    s.post(equality)
+    deactivate()
   }
 
   // Removes each value i in x that is not a valid id in y
-  @inline private def adjustX(): Outcome = {
-    if (x.updateMin(0) == Failure) Failure
-    else if (x.updateMax(y.length - 1) == Failure) Failure
-    else if (x.isBound) bindX()
-    else Suspend
+  @inline private def adjustX(): Unit = {
+    x.updateMin(0)
+    x.updateMax(y.length - 1)
+    if (x.isBound)
+      bindX()
   }
 }
 
@@ -205,34 +190,34 @@ class ElementEq(ys: Array[CPIntVar], x: CPIntVar, z: CPIntVar, values: Array[Int
   
   private[this] var y: CPIntVar = null
   
-  final override def setup(l: CPPropagStrength): Outcome = {
+  final override def setup(l: CPPropagStrength): Unit = {
     y = ys(x.min)
-    if (propagate() == Failure) Failure
-    else {
+    propagate()
+    if(isActive) {
       y.callValRemoveWhenValueIsRemoved(this)
       z.callValRemoveWhenValueIsRemoved(this)
-      Suspend
     }
   }
   
-  final override def propagate(): Outcome = {
+  final override def propagate(): Unit = {
     var i = y.fillArray(values)
     while (i > 0) {
       i -= 1
       val value = values(i)
-      if (!z.hasValue(value) && y.removeValue(value) == Failure) return Failure
+      if (!z.hasValue(value))
+        y.removeValue(value)
     }
     i = z.fillArray(values)
     while (i > 0) {
       i -= 1
       val value = values(i)
-      if (!y.hasValue(value) && z.removeValue(value) == Failure) return Failure
+      if (!y.hasValue(value))
+        z.removeValue(value)
     }
-    Suspend
   }
   
   // FIXME: should be idempotent (not allowed yet for L1 events)
-  final override def valRemove(intVar: CPIntVar, value: Int): Outcome = {
+  final override def valRemove(intVar: CPIntVar, value: Int): Unit = {
     if (intVar == y) z.removeValue(value)
     else y.removeValue(value)
   } 

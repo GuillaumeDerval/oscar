@@ -1,7 +1,5 @@
 package oscar.examples.cp.userguide
 
-import oscar.algo.search.Outcome
-import oscar.algo.search.Outcome._
 import oscar.cp._
 import oscar.cp.core._
 
@@ -9,17 +7,19 @@ object SimpleUserConstraint extends CPModel with App {
 
   class MyLessOrEqual(val X: CPIntVar, val Y: CPIntVar ) extends Constraint(X.store, "MyLessOrEqual") {
 
-    override def setup(l: CPPropagStrength): Outcome =  {
+    override def setup(l: CPPropagStrength): Unit =  {
       X.callPropagateWhenBoundsChange(this)
       Y.callPropagateWhenBoundsChange(this)
       propagate()
     }
 
-    override def propagate(): Outcome = {
-      if (Y.min >= X.max) Success
-      else if (Y.updateMin(X.min) == Failure) Failure
-      else if (X.updateMax(Y.max) == Failure) Failure
-      else Suspend
+    override def propagate(): Unit = {
+      if (Y.min >= X.max)
+        deactivate()
+      else {
+        Y.updateMin(X.min)
+        X.updateMax(Y.max)
+      }
     }
   }
 

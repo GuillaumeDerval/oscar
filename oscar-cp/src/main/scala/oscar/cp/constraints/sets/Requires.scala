@@ -1,9 +1,7 @@
 package oscar.cp.constraints.sets
 
-import oscar.algo.search.Outcome
 import oscar.cp.core.variables.CPSetVar
 import oscar.cp.core.Constraint
-import oscar.algo.search.Outcome._
 import oscar.cp.core.variables.CPBoolVar
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPIntVar
@@ -14,65 +12,61 @@ import oscar.cp.core.variables.CPIntVar
  */
 
 class Requires(val set: CPSetVar, elem: Int) extends Constraint(set.store, "Set requires") {
-  override def setup(l: CPPropagStrength): Outcome = set.requires(elem)
+  override def setup(l: CPPropagStrength): Unit = set.requires(elem)
 }
 
 class RequireElem(set: CPSetVar, elem: Int, b: CPBoolVar) extends Constraint(set.store, "RequiredElem") {
 
-  override def setup(l: CPPropagStrength): Outcome = {
-    val outcome = propagate()
-    if (outcome == Failure) Failure
-    else if (outcome == Success) Success
-    else {
+  override def setup(l: CPPropagStrength): Unit = {
+    propagate()
+    if(isActive) {
       set.callValExcludedWhenExcludedValue(this)
       set.callValRequiredWhenRequiredValue(this)
       b.callValBindWhenBind(this)
-      Suspend
     }
   }
 
-  override def propagate(): Outcome = {
+  override def propagate(): Unit = {
     if (b.isBound) valBind(b)
     else if (set.isRequired(elem)) setTrue()
     else if (!set.isPossible(elem)) setFalse()
-    else Suspend
   }
 
   @inline
-  private def setTrue(): Outcome = {
-    if (b.assign(1) == Failure) Failure
-    else Success
+  private def setTrue(): Unit = {
+    b.assign(1)
+    deactivate()
   }
 
   @inline
-  private def setFalse(): Outcome = {
-    if (b.assign(0) == Failure) Failure
-    else Success
+  private def setFalse(): Unit = {
+    b.assign(0)
+    deactivate()
   }
 
   @inline
-  private def requires(elem: Int): Outcome = {
-    if (set.requires(elem) == Failure) Failure
-    else Success
+  private def requires(elem: Int): Unit = {
+    set.requires(elem)
+    deactivate()
   }
   
   @inline
-  private def excludes(elem: Int): Outcome = {
-    if (set.excludes(elem) == Failure) Failure
-    else Success
+  private def excludes(elem: Int): Unit = {
+    set.excludes(elem)
+    deactivate()
   }
 
-  override def valRequired(cpSet: CPSetVar, reqElem: Int): Outcome = {
-    if (reqElem == elem) setTrue()
-    else Suspend
+  override def valRequired(cpSet: CPSetVar, reqElem: Int): Unit = {
+    if (reqElem == elem)
+      setTrue()
   }
 
-  override def valExcluded(cpSet: CPSetVar, exElem: Int): Outcome = {
-    if (exElem == elem) setFalse()
-    else Suspend
+  override def valExcluded(cpSet: CPSetVar, exElem: Int): Unit = {
+    if (exElem == elem)
+      setFalse()
   }
 
-  override def valBind(cpVar: CPIntVar): Outcome = {
+  override def valBind(cpVar: CPIntVar): Unit = {
     if (b.isTrue) requires(elem)
     else excludes(elem)
   }

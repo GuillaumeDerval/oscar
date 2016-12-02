@@ -2,7 +2,6 @@ package oscar.examples.cp
 
 import oscar.cp._
 import scala.io.Source
-import oscar.algo.search.Outcome._
 import oscar.util._
 
 /**

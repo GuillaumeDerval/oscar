@@ -1,6 +1,5 @@
 package oscar.modeling.models.cp
 
-import oscar.algo.search.Outcome
 import oscar.modeling.constraints.Constraint
 import oscar.modeling.models.UninstantiatedModel
 import oscar.modeling.solvers.cp.Branchings.Alternative
@@ -20,11 +19,10 @@ class MemoCPModel(base: UninstantiatedModel) extends CPModel(base) {
     *
     * @param constraint constraint to add
     */
-  override def post(constraint: Constraint): Outcome = {
-    val o = super.post(constraint)
+  override def post(constraint: Constraint): Unit = {
+    super.post(constraint)
     if(currentConstraintList != null) //only add once the model is init
       currentConstraintList = constraint :: currentConstraintList
-    o
   }
 
   /**

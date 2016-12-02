@@ -14,7 +14,6 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
@@ -46,79 +45,61 @@ public class DiffReif extends Constraint {
 	}
 	
 	@Override
-	public Outcome setup(CPPropagStrength l) {
+	public void setup(CPPropagStrength l) {
 		priorityBindL1_$eq(CPStore.MAXPRIORL1());
 		priorityRemoveL1_$eq(CPStore.MAXPRIORL1());
 		
 		if (x.isBound() || b.isBound())
-			return valBind(x);
+			valBind(x);
 		else if (b.isBound())
-			return valBind(b);
+			valBind(b);
 		else {
 			x.callValBindWhenBind(this);
 			b.callValBindWhenBind(this);
 			//x.addAC5Bounds(this);
 			x.callValRemoveWhenValueIsRemoved(this);
-			return Outcome.Suspend;
 		}
 	}
 	
 	@Override
-	public Outcome updateBounds(CPIntVar x) {
+	public void updateBounds(CPIntVar x) {
 		if (x.getMax() < v || x.getMin() > v) {
-			if (b.assign(1) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			b.assign(1);
+			deactivate();
 		}
-		return Outcome.Suspend;
 	}
 	
 
 	@Override
-	public Outcome valRemove(CPIntVar x, int val) {
+	public void valRemove(CPIntVar x, int val) {
 		if (val == v) {
-			if (b.assign(1) == Outcome.Failure) {
-				return Outcome.Failure;
-			}
-			return Outcome.Success;
+			b.assign(1);
+			deactivate();
 		}
-		return Outcome.Suspend;
 	}
 	
 
 	@Override
-	public Outcome valBind(CPIntVar var) {
+	public void valBind(CPIntVar var) {
 		if (b.isBound()) {
 			if (b.min() == 1) {
 				//x != v
-				if (x.removeValue(v) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
+				x.removeValue(v);
 			} else {
 				//x == v
-				if (x.assign(v) == Outcome.Failure) {
-					return Outcome.Failure;
-				}				
+				x.assign(v);
 			}
-			return Outcome.Success;
+			deactivate();
 		}
-		
-		if (x.isBound()) {
+		else if (x.isBound()) {
 			if (x.min() == v) {
-				if (b.assign(0) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
+				b.assign(0);
 			}
 			else {
-				if (b.assign(1) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
+				b.assign(1);
 			}
-			return Outcome.Success;
+			deactivate();
 		}
-		
-		return Outcome.Suspend;
 	}
 
 }

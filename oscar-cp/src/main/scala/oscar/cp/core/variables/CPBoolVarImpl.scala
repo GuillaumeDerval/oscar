@@ -1,12 +1,12 @@
 package oscar.cp.core.variables
 
+import oscar.algo.Inconsistency
+
 import scala.Iterator
 import scala.util.Random
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.reversible.ReversiblePointer
 import oscar.algo.reversible.TrailEntry
-import oscar.algo.search.Outcome
-import oscar.algo.search.Outcome._
 import oscar.cp.core.CPStore
 import oscar.cp.core.Constraint
 import oscar.cp.core.watcher.WatcherListL2
@@ -100,46 +100,41 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     else domain & 1 // min value
   }
 
-  final override def updateMin(value: Int): Outcome = {
+  final override def updateMin(value: Int): Unit = {
     if (value == 1) {
       if (domain == UNASSIGNED) setDomainTrue()
-      else if (domain == TRUE) Suspend
-      else setDomainEmpty()
-    } else if (value <= 0) Suspend
-    else setDomainEmpty()
+      else if (domain != TRUE) setDomainEmpty()
+    }
+    else if (value > 0) setDomainEmpty()
   }
 
-  final override def updateMax(value: Int): Outcome = {
+  final override def updateMax(value: Int): Unit = {
     if (value == 0) {
       if (domain == UNASSIGNED) setDomainFalse()
-      else if (domain == FALSE) Suspend
-      else setDomainEmpty()
-    } else if (value >= 1) Suspend
-    else setDomainEmpty()
+      else if (domain != FALSE) setDomainEmpty()
+    }
+    else if (value < 1) setDomainEmpty()
   }
   
-  final override def assignTrue(): Outcome = {
+  final override def assignTrue(): Unit = {
     if (domain == UNASSIGNED) setDomainTrue()
-    else if (domain == TRUE) Suspend
-    else setDomainEmpty()
+    else if (domain != TRUE) setDomainEmpty()
   }
 
-  final override def assignFalse(): Outcome = {
+  final override def assignFalse(): Unit = {
     if (domain == UNASSIGNED) setDomainFalse()
-    else if (domain == FALSE) Suspend
-    else setDomainEmpty()
+    else if (domain != FALSE) setDomainEmpty()
   }
     
-  final override def assign(value: Int): Outcome = {
+  final override def assign(value: Int): Unit = {
     if (value == 0) assignFalse()
     else if (value == 1) assignTrue()
-    else Failure
+    else throw Inconsistency
   }
 
   final override def removeValue(value: Int) = {
     if (value == 0) assignTrue() 
     else if (value == 1) assignFalse()
-    else Suspend
   }
   
   final override def restore(): Unit = {
@@ -147,7 +142,7 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     trailedDomain = UNASSIGNED
   }
 
-  @inline private def setDomainTrue(): Outcome = {
+  @inline private def setDomainTrue(): Unit = {
     store.trail(this)
     trailedDomain = domain
     domain = TRUE
@@ -156,10 +151,9 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     onBoundsL1.enqueueBounds()
     onBindL1.enqueueBind()
     onBindL2.enqueue()
-    Suspend
   }
 
-  @inline private def setDomainFalse(): Outcome = {
+  @inline private def setDomainFalse(): Unit = {
     store.trail(this)
     trailedDomain = domain
     domain = FALSE
@@ -168,14 +162,13 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     onBoundsL1.enqueueBounds()
     onBindL1.enqueueBind()
     onBindL2.enqueue()
-    Suspend
   }
 
-  @inline private def setDomainEmpty(): Outcome = {
+  @inline private def setDomainEmpty(): Unit = {
     store.trail(this)
     trailedDomain = domain
     domain = EMPTY
-    Failure
+    throw Inconsistency
   }
 
   final override def iterator = {

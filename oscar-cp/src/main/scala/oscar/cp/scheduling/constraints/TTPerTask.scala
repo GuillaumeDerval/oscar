@@ -2,10 +2,11 @@ package oscar.cp.scheduling.constraints
 
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint
-import oscar.algo.search.Outcome._
 import java.lang.Math._
+import oscar.cp.isInconsistent
 
-import oscar.algo.search.Outcome
+import oscar.algo.Inconsistency
+
 
 // @author Steven Gay steven.gay@uclouvain.be
 
@@ -44,20 +45,21 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   // Profile
   private[this] val profile = new ProfileStructure(sMin, sMax, dMin, eMin, eMax, hMin, requiredTasks, possibleTasks)  
   
-  final override def propagate(): Outcome = {
+  final override def propagate(): Unit = {
     updateCache()
     C = capacity.max
 
     do {
       hasChanged = false
-      if (oneSweep()) return Failure
+      if (oneSweep())
+        throw Inconsistency
     } while (hasChanged)
     
     if (C == capacity.min) removeExtremal()
     else removeImpossible()
     
-    if (filterPossibleActivities()) Failure
-    else Suspend 
+    if (filterPossibleActivities())
+      throw Inconsistency
   }
   
   @inline private def oneSweep(): Boolean = {
@@ -90,10 +92,12 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
           val newSMin = min(profileSMin, sMaxTask)
 
           if (newSMin > sMinTask) {
-            if (starts(taskId).updateMin(newSMin) == Failure) return true
+            if (isInconsistent(starts(taskId).updateMin(newSMin)))
+              return true
             val eMinTask = eMin(taskId)
             val newEMin = max(newSMin + dMinTask, eMinTask)  // eMin might already be later if duration is not constant
-            if (newEMin > eMinTask && ends(taskId).updateMin(newEMin) == Failure) return true
+            if (newEMin > eMinTask && isInconsistent(ends(taskId).updateMin(newEMin)))
+              return true
             
             sMin(taskId) = newSMin
             eMin(taskId) = newEMin
@@ -107,13 +111,16 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
 
         if (eMinTask < eMaxTask) {   // push i to the left
           val profileEMax = profile.sweepRL(taskId, C - hMinTask, aContributes)
-          if (!aContributes && profileEMax < eMinTask) return true
+          if (!aContributes && profileEMax < eMinTask)
+            return true
           val newEMax = max(profileEMax, eMinTask)
         
           if (newEMax < eMaxTask) {
-            if (ends(taskId).updateMax(newEMax) == Failure) return true
+            if (isInconsistent(ends(taskId).updateMax(newEMax)))
+              return true
             val newSMax = min(newEMax - dMinTask, sMaxTask)
-            if (newSMax < sMaxTask && starts(taskId).updateMax(newSMax) == Failure) return true
+            if (newSMax < sMaxTask && isInconsistent(starts(taskId).updateMax(newSMax)))
+              return true
             
             eMax(taskId) = newEMax
             sMax(taskId) = newSMax
@@ -162,7 +169,8 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
         else sMax(i)
         
         if (newSMax < newEMin && profile.maxInterval(newSMax, newEMin) + hMin(i) > C){
-          if (resources(i).removeValue(id) == Failure) return true
+          if (isInconsistent(resources(i).removeValue(id)))
+            return true
           possibleTasks(i) = false
         } 
       }

@@ -19,16 +19,12 @@ package oscar.cp.constraints
 
 import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
-import oscar.algo.DisjointSets
-import oscar.algo.RangeMinQuery
-import oscar.algo.SortUtils
+import oscar.algo.{DisjointSets, Inconsistency, RangeMinQuery, SortUtils}
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.CPIntVar
 import oscar.cp.CPIntVarOps
 import oscar.cp.CPSetVar
 import oscar.cp.Constraint
-import oscar.algo.search.Outcome._
-import oscar.algo.search.Outcome
 import oscar.cp.core.CPPropagStrength
 
 /**
@@ -56,12 +52,12 @@ class HeldKarp(edges: CPSetVar, edgeData: Array[(Int,Int,Int)], cost: CPIntVar) 
   }
   
 
-  @inline private def removeEdge(i: Int,j: Int): Outcome = {
+  @inline private def removeEdge(i: Int,j: Int): Unit = {
     distMatrix(i min j)(i max j) := Int.MaxValue
     edges.excludes(edgeIndex(i)(j))
   }
   
-  @inline private def forceEdge(i: Int,j: Int): Outcome = {
+  @inline private def forceEdge(i: Int,j: Int): Unit = {
     edges.requires(edgeIndex(i)(j))
   }  
   
@@ -73,7 +69,7 @@ class HeldKarp(edges: CPSetVar, edgeData: Array[(Int,Int,Int)], cost: CPIntVar) 
     edges.isRequired(edgeIndex(i)(j))
   }  
 
-  override def setup(l: CPPropagStrength): Outcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     for (((i,j,w),idx) <- edgeData.zipWithIndex) {
       if (!edges.isPossible(idx)) removeEdge(i,j)
       if (edges.isRequired(idx)) forceEdge(i,j)
@@ -83,11 +79,11 @@ class HeldKarp(edges: CPSetVar, edgeData: Array[(Int,Int,Int)], cost: CPIntVar) 
     return oc
   }
   
-  override def propagate(): Outcome = {
+  override def propagate(): Unit = {
     propagateNumSteps(5)
   }
   
-  @inline private def propagateNumSteps(nSteps: Int): Outcome = {
+  @inline private def propagateNumSteps(nSteps: Int): Unit = {
     var iter = 0
     var improvement = true
     var lb = 0
@@ -134,15 +130,13 @@ class HeldKarp(edges: CPSetVar, edgeData: Array[(Int,Int,Int)], cost: CPIntVar) 
           }
           edgeUsed(idx) = true
           if (incident(i) > 2 || incident(j) > 2) {
-            //println("failure h&k nadjecent excluded > 2")
-            return Failure
+            throw Inconsistency
           }
           weight += edgeWeight(idx)
         }
         // check if out degree is not more than 2
         if (nAdjacentToExcluded > 2) {
-          //println("failure h&k nadjecent excluded > 2")
-          return Failure
+          throw Inconsistency
         }
         var heaviestWeightAdjacentToExcluded = Double.MaxValue 
         // then complete the minimum spanning tree with Kruskal
@@ -182,15 +176,12 @@ class HeldKarp(edges: CPSetVar, edgeData: Array[(Int,Int,Int)], cost: CPIntVar) 
           improvement = true
           lb = oneTreeLB
           
-          if (cost.updateMin(lb) == Failure) {
-            //println("failure h&k lb:"+lb)
-            return Failure
-          }
+          cost.updateMin(lb)
         }
         if (!cctree.singleRoot) {
           //println("failure , not single root")
           // the graph without "excluded" is not connected
-          return Failure
+          throw Inconsistency
         }
 
         // filtering of the edges
@@ -216,7 +207,7 @@ class HeldKarp(edges: CPSetVar, edgeData: Array[(Int,Int,Int)], cost: CPIntVar) 
                 }
               if ((oneTreeLBf + reducedCost).ceil.toInt > cost.max) {
                 //println("failure h&k exclude edge")
-                if (edges.excludes(idx) == Failure) return Failure
+                edges.excludes(idx)
               }
             }
           }
@@ -241,12 +232,7 @@ class HeldKarp(edges: CPSetVar, edgeData: Array[(Int,Int,Int)], cost: CPIntVar) 
       
       metaIter += 1
     }
-    if (cost.updateMin(lb) == Failure) {
-      //println("failure lb:"+lb)
-      return Failure
-    } 
-    return Suspend
-
+    cost.updateMin(lb)
   }
  
 }
@@ -362,7 +348,7 @@ class ChannelTSP(val succ: Array[CPIntVar],val distMatrix: Array[Array[Int]]) ex
   // todo: fix the cardinality of the set            
   
   
-  override def setup(l: CPPropagStrength): Outcome = {
+  override def setup(l: CPPropagStrength): Unit = {
 	s.post(edgeVar.card === 2*n)
     
     for (i <- 0 until n) {
@@ -377,31 +363,28 @@ class ChannelTSP(val succ: Array[CPIntVar],val distMatrix: Array[Array[Int]]) ex
         edgeVar.excludes(edgeIndex(i-n)(j))
       }
     }
-
-    Outcome.Suspend
   }
   
-  override def valRemoveIdx(x: CPIntVar, idx: Int, v: Int): Outcome = {
+  override def valRemoveIdx(x: CPIntVar, idx: Int, v: Int): Unit = {
     if (v != idx) {
       edgeVar.excludes(edgeIndex(idx)(v))
     }
-    else Outcome.Suspend
   }
   
-  override def valBindIdx(x: CPIntVar, idx: Int): Outcome = {
+  override def valBindIdx(x: CPIntVar, idx: Int): Unit = {
     edgeVar.requires(edgeIndex(idx)(x.value))
   } 
   
-  override def valExcluded(x: CPSetVar, v: Int): Outcome = {
+  override def valExcluded(x: CPSetVar, v: Int): Unit = {
     val (i,j,w) = edges(v)
     succ(i-n).removeValue(j)
   }  
 
-  override def valRequired(x: CPSetVar, v: Int): Outcome = {
+  override def valRequired(x: CPSetVar, v: Int): Unit = {
     val (i,j,w) = edges(v)
     if ((i-n) != j) {
-      succ(i-n).assign(j)
-    } else Outcome.Suspend
+      succ(i - n).assign(j)
+    }
   }   
 
 }

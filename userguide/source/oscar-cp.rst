@@ -299,7 +299,6 @@ You can add a constraint (an object of type ``oscar.cp.core.Constraint``) to the
    :linenos:
    
    import oscar.cp._
-   import oscar.algo.search.Outcome._
 
    object MyModel extends CPModel with App {
 

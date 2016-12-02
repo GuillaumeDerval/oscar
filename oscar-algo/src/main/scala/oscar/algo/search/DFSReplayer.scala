@@ -17,6 +17,7 @@ package oscar.algo.search
 
 import java.lang.management.ManagementFactory
 
+import oscar.algo.Inconsistency
 import oscar.algo.vars.IntVarLike
 
 /**
@@ -61,8 +62,13 @@ class DFSReplayer(node: DFSearchNode, decisionVariables: Seq[IntVarLike]) {
         case _: TrailDecision =>
       }
 
-      decisions(i)() //apply the search state modification
-
+      try {
+        decisions(i)() //apply the search state modification
+      }
+      catch {
+        case i: Inconsistency => node.fail()
+      }
+      
       if (node.isFailed) {
         //node.statusBehaviourDelegate.performFailureActions()
         nBacktracks += 1

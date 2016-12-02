@@ -16,9 +16,7 @@
 
 package oscar.cp.scheduling.constraints
 
-import oscar.algo.search.Outcome
 import oscar.cp.constraints.UnaryResourceWithTransitionTimes
-import oscar.algo.search.Outcome.{Failure, Success}
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.{CPPropagStrength, Constraint}
 
@@ -31,27 +29,19 @@ class DisjunctiveWithTransitionTimes(starts: Array[CPIntVar], durations: Array[C
 
   import  oscar.cp.core.CPPropagStrength._  
 
-  override def setup(l: CPPropagStrength): Outcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     if (starts.nonEmpty) {
       val cp = starts(0).store
       val n = starts.length
 
       // always add the binary decomposition by default
       for (i <- 0 until n; j <- 0 until n; if i != j) {
-
-        if (cp.post(new BinaryDisjunctiveWithTransitionTimes(starts(i), ends(i), starts(j), ends(j), transitions(i)(j), transitions(j)(i))) == Failure) {
-          return Failure
-        }
-
+        cp.post(new BinaryDisjunctiveWithTransitionTimes(starts(i), ends(i), starts(j), ends(j), transitions(i)(j), transitions(j)(i)))
       }
       if (l == Medium || l == Strong) {
-        if (cp.post(new UnaryResourceWithTransitionTimes(starts, durations, ends, transitions)) == Failure) {
-          return Failure
-        }
+        cp.post(new UnaryResourceWithTransitionTimes(starts, durations, ends, transitions))
       }
-
     }
-    Success
   }
 
  

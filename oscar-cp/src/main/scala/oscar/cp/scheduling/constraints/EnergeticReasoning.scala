@@ -1,12 +1,12 @@
 package oscar.cp.scheduling.constraints
 
-import oscar.algo.search.Outcome
+
+import oscar.algo.Inconsistency
 
 import scala.collection.mutable.HashSet
 import scala.math.min
 import scala.math.max
 import scala.math.ceil
-import oscar.algo.search.Outcome._
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.variables.CPIntVar
@@ -32,27 +32,24 @@ class EnergeticReasoning(starts: Array[CPIntVar], durations: Array[CPIntVar], en
   
   val tasksId = Array.tabulate(starts.length)(i => i)
   
-  def setup(l: CPPropagStrength): Outcome = {
+  def setup(l: CPPropagStrength): Unit = {
     priorityL2 = 0
     
-    if (propagate == Failure) Failure
-    else {
-      for (task <- tasksId) {
-        starts(task).callPropagateWhenBoundsChange(this)
-        durations(task).callPropagateWhenBoundsChange(this)
-        ends(task).callPropagateWhenBoundsChange(this)
-        demands(task).callPropagateWhenBoundsChange(this)
-        resources(task).callPropagateWhenBind(this)
-      }
-      capacity.callPropagateWhenBoundsChange(this)
-      Suspend
+    propagate()
+    for (task <- tasksId) {
+      starts(task).callPropagateWhenBoundsChange(this)
+      durations(task).callPropagateWhenBoundsChange(this)
+      ends(task).callPropagateWhenBoundsChange(this)
+      demands(task).callPropagateWhenBoundsChange(this)
+      resources(task).callPropagateWhenBind(this)
     }
+    capacity.callPropagateWhenBoundsChange(this)
   }
 
-  override def propagate: Outcome = {
+  override def propagate: Unit = {
 
     if(s.isFailed)
-      return Failure
+      throw Inconsistency
     
     //cache
     var i = 0
@@ -83,10 +80,7 @@ class EnergeticReasoning(starts: Array[CPIntVar], durations: Array[CPIntVar], en
       val currentMinIntervalEnergy = cmin * (t2 - t1)
       val currentMaxIntervalEnergy = cmax * (t2 - t1)
       if (currentIntervalEnergy > currentMinIntervalEnergy) {
-        if (capacity.updateMin(ceil(currentIntervalEnergy.toDouble / (t2 - t1)).toInt) == Failure) {
-          return Failure
-        } else
-          return Suspend
+        capacity.updateMin(ceil(currentIntervalEnergy.toDouble / (t2 - t1)).toInt)
       } else {
         //bound adjustements computation
         for (task <- tasks) {
@@ -107,14 +101,12 @@ class EnergeticReasoning(starts: Array[CPIntVar], durations: Array[CPIntVar], en
 
     //apply bound adjustements
     for (task <- tasks) {
-      if (smax(task) > newLsts(task) && starts(task).updateMax(newLsts(task)) == Failure)
-        return Failure
+      if (smax(task) > newLsts(task))
+        starts(task).updateMax(newLsts(task))
 
-      if (emin(task) < newEets(task) && ends(task).updateMin(newEets(task)) == Failure) {
-        return Failure
-      }
+      if(emin(task) < newEets(task))
+        ends(task).updateMin(newEets(task))
     }
-    Suspend
   }
 
   @inline

@@ -1,16 +1,14 @@
 package oscar.cp.nogoods.searches
 
-import oscar.cp.nogoods.decisions.Decision
+import oscar.cp.isInconsistent
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.nogoods.decisions.Decision
-import oscar.algo.search.{Branching, Outcome}
 import oscar.algo.array.ArrayStack
 import oscar.algo.reversible.ReversibleInt
 
 import scala.collection.mutable.PriorityQueue
 import scala.annotation.tailrec
 import oscar.cp.core.variables.CPBoolVar
-import oscar.algo.search.Outcome.Failure
 
 /** @author Renaud Hartert ren.hartert@gmail.com */
 class FailureDirectedSearch(variables: Array[CPIntVar], varHeuristic: Int => Int, valHeuristic: Int => Int) extends NogoodBranching {
@@ -124,12 +122,12 @@ class FailureDirectedSearch(variables: Array[CPIntVar], varHeuristic: Int => Int
     def rating: Double
     def rating_=(rate: Double): Unit
     def isAssigned: Boolean
-    def applyDecision(): Outcome
+    def applyDecision(): Unit
     
     override def apply(): Unit = {
       val space = spaceSize
-      val out = applyDecision()
-      val localRating = if (out == Failure) 0.0 else 1 + spaceSize / space
+      val inconsistent = isInconsistent(applyDecision())
+      val localRating = if (inconsistent) 0.0 else 1 + spaceSize / space
       
       // Handle average ratings
       if (nRatings.length <= depth.value) {
@@ -168,7 +166,7 @@ class FailureDirectedSearch(variables: Array[CPIntVar], varHeuristic: Int => Int
     override def isTrue: Boolean = variable.max <= value
     override def opposite: Decision = _opposite
     override def toLiteral: CPBoolVar = variable.isLeEq(value)
-    override def applyDecision(): Outcome = variable.store.post(variable <= value)
+    override def applyDecision(): Unit = variable.store.post(variable <= value)
   }
 
   class FDSGreater(val variable: CPIntVar, val value: Int, _opposite: FDSDecision) extends FDSDecision {
@@ -179,7 +177,7 @@ class FailureDirectedSearch(variables: Array[CPIntVar], varHeuristic: Int => Int
     override def isTrue: Boolean = variable.min > value
     override def opposite: Decision = _opposite
     override def toLiteral: CPBoolVar = variable.isGrEq(value + 1)
-    override def applyDecision(): Outcome = variable.store.post(variable > value)
+    override def applyDecision(): Unit = variable.store.post(variable > value)
   }
 
   object FDSChoiceOrdering extends Ordering[FDSChoice] {

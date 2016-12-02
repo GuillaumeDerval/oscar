@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import oscar.algo.reversible.ReversibleInt;
-import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.variables.CPBoolVar;
@@ -48,7 +47,7 @@ public class BinaryKnapsackWithCardinality extends Constraint {
 	}
 
 	@Override
-	public Outcome setup(CPPropagStrength l) {
+	public void setup(CPPropagStrength l) {
 
         packed = new ReversibleInt(s(),0);
         nPacked = new ReversibleInt(s(),0);
@@ -62,24 +61,19 @@ public class BinaryKnapsackWithCardinality extends Constraint {
             }
 
         }
-
-		return Outcome.Suspend;
 	}
 
 	@Override
-	public Outcome valBindIdx(CPIntVar var, int idx) {
+	public void valBindIdx(CPIntVar var, int idx) {
         if (var.getMin() == 1) {
             nPacked.incr();
             packed.setValue(packed.getValue() + w[idx]);
         }
-
-         return Outcome.Suspend;
 	}
 
 
 	@Override
-	public Outcome propagate() {
-
+	public void propagate() {
         int curn = nPacked.getValue();
         int curw = packed.getValue();
         for (int i = 0; i < x.length && curn < n; i++) {
@@ -88,9 +82,7 @@ public class BinaryKnapsackWithCardinality extends Constraint {
                 curn++;
             }
         }
-        if (c.updateMax(curw) == Outcome.Failure) {
-            return Outcome.Failure;
-        }
+        c.updateMax(curw);
 
         curn = nPacked.getValue();
         curw = packed.getValue();
@@ -101,10 +93,6 @@ public class BinaryKnapsackWithCardinality extends Constraint {
             }
         }
 
-        if (c.updateMin(curw) == Outcome.Failure) {
-            return Outcome.Failure;
-        }
-
-		return Outcome.Suspend;
+        c.updateMin(curw);
 	}
 }

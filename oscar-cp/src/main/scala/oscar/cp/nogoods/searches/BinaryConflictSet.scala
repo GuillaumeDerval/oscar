@@ -5,7 +5,6 @@ import oscar.algo.reversible.ReversibleInt
 import oscar.cp.nogoods.decisions.Decision
 import oscar.cp.nogoods.decisions.Remove
 import oscar.cp.nogoods.decisions.Assign
-import oscar.algo.search.Outcome.Failure
 
 /** @author Renaud Hartert ren.hartert@gmail.com */
 class BinaryConflictSet(variables: Array[CPIntVar], varHeuristic: Int => Int, valHeuristic: Int => Int) extends NogoodBranching {

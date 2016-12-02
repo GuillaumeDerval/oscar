@@ -15,16 +15,16 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
-import oscar.algo.search.Outcome._
+import oscar.cp.testUtils.TestSuite
 import oscar.cp._
 import oscar.cp.constraints.InducedSubGraph
+import oscar.cp.testUtils.TestSuite
 
 /**
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
  */
 
-class TestSubGraphInduced extends FunSuite with ShouldMatchers  {
+class TestSubGraphInduced extends TestSuite  {
 
   test("Test 1 : All possible") {
     val cp = CPSolver()
@@ -35,7 +35,7 @@ class TestSubGraphInduced extends FunSuite with ShouldMatchers  {
     val edges2 = List((0,1),(1,2))
     val g2 = CPGraphVar(cp, nnodes2, edges2)
     
-    cp.post(new InducedSubGraph(g1,g2)) should be (Suspend)
+    postAndCheckSuspend(cp,new InducedSubGraph(g1,g2))
     
     // all should be possible for g1
     for (n <- 0 to (nnodes1-1)){
@@ -98,15 +98,15 @@ class TestSubGraphInduced extends FunSuite with ShouldMatchers  {
     val g2 = CPGraphVar(cp, nnodes2, edges2)
     
     // #1 add before posting constraint
-    cp.post(g1.addNode(0)) should be (Suspend) 
-    cp.post(new InducedSubGraph(g1,g2)) should be (Suspend)
+    postAndCheckSuspend(cp, g1.addNode(0))
+    postAndCheckSuspend(cp,new InducedSubGraph(g1,g2))
     // if node 0 is required in g1 and subgraph(g1,g2)
     //    => node 0 should be required in g2
     g1.requiredNodes should be (List(0))
     g2.requiredNodes should be (List(0))
     
     // #2 add after posting constraint (check propagator working properly)
-    cp.post(g1.addNode(1)) should be (Suspend)
+    postAndCheckSuspend(cp,g1.addNode(1))
     // if node 1 is required in g1 and subgraph(g1,g2)
     //    => node 1 should be required in g2
     g1.requiredNodes should be (List(0,1))

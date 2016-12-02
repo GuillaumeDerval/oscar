@@ -33,7 +33,7 @@ class QuadraticCumulativeEdgeFinding(cp: CPStore, allTasks : Array[CumulativeAct
 	val SLupd = new Array[Int](nTasks) 
 	val E     = new Array[Int](nTasks) 
 	
-	override def setup(l: CPPropagStrength) : Outcome = {
+	override def setup(l: CPPropagStrength) : Unit = {
 	
 		priorityL2 = 0
 		
@@ -57,7 +57,7 @@ class QuadraticCumulativeEdgeFinding(cp: CPStore, allTasks : Array[CumulativeAct
         return oc   
   	}
 	
-	override def propagate(): Outcome = {
+	override def propagate(): Unit = {
 		
 		lToRTasks = allTasks.filter(_.resource.isBoundTo(r))
 		rToLTasks = rToLTasks.filter(_.resource.isBoundTo(r))
@@ -66,9 +66,7 @@ class QuadraticCumulativeEdgeFinding(cp: CPStore, allTasks : Array[CumulativeAct
 
 		// Adjusts starting time
 		if (nTasks > 0) {
-			if (edgeFind(lToRTasks) == Outcome.Failure) {
-				return Outcome.Failure
-			}
+			edgeFind(lToRTasks)
 		}
 				
 		var t = 0
@@ -81,16 +79,14 @@ class QuadraticCumulativeEdgeFinding(cp: CPStore, allTasks : Array[CumulativeAct
 			
 		// Adjusts ending time
 		if (nTasks > 0) {
-			if (edgeFind(rToLTasks) == Outcome.Failure) {
-			  return Outcome.Failure
-			}
+			edgeFind(rToLTasks)
 				
 		}
 			
 		return Outcome.Suspend
 	}
 	
-	private def edgeFind(tasks : Array[CumulativeActivity]): Outcome = {
+	private def edgeFind(tasks : Array[CumulativeActivity]): Unit = {
 		
 		// Init
 		var i = 0
@@ -181,8 +177,7 @@ class QuadraticCumulativeEdgeFinding(cp: CPStore, allTasks : Array[CumulativeAct
 		}
 		
 		for (i <- 0 until nTasks)
-			if (tasks(i).adjustStart(LB(i)) == Outcome.Failure)
-				return Outcome.Failure
+			tasks(i).adjustStart(LB(i))
 				
 		return Outcome.Suspend
 	}

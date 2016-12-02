@@ -1,6 +1,5 @@
 package oscar.modeling.constraints
 
-import oscar.algo.search.Outcome
 import oscar.cp
 import oscar.cp.CPSolver
 import oscar.cp.constraints.Automaton
@@ -20,7 +19,7 @@ object ConvertCPConstraint {
     */
   def apply[T <: oscar.cp.Constraint](args: Any*)(implicit m : Manifest[T]): CPInstantiableConstraint = {
     new CPInstantiableConstraint {
-      override def cpPost(cpSolver: CPSolver): Outcome = cpSolver.post(getConstraint[T](args: _*))
+      override def cpPost(cpSolver: CPSolver): Unit = cpSolver.post(getConstraint[T](args: _*))
     }
   }
 

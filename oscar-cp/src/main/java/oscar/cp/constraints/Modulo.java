@@ -15,8 +15,8 @@
 package oscar.cp.constraints;
 
 
+import oscar.algo.Inconsistency;
 import oscar.algo.reversible.ReversibleSparseSetJava;
-import oscar.algo.search.Outcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
@@ -53,13 +53,9 @@ public class Modulo extends Constraint{
 	}
 
 	@Override
-	public Outcome setup(CPPropagStrength l) {
-		if (y.updateMin(-v+1) == Outcome.Failure) {
-			return Outcome.Failure;
-		}
-		if (y.updateMax(v-1) == Outcome.Failure) {
-			return Outcome.Failure;
-		}
+	public void setup(CPPropagStrength l) throws Inconsistency {
+		y.updateMin(-v+1);
+		y.updateMax(v-1);
 
 		supportSet = new ReversibleSparseSetJava[2*v-1]; // for negative and positive numbers if v = 3, we must consider -2,-1,0,1,2
 		for (int i = -v+1; i < v; i++) {		
@@ -74,9 +70,7 @@ public class Modulo extends Constraint{
 				}
 			}
 			if (supportSet[i+v-1] == null || supportSet[i+v-1].isEmpty()) {
-				if (y.removeValue(i) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
+				y.removeValue(i);
 			}
 			//else {
 			//	System.out.println("support for "+i+" :" +Arrays.toString(supportSet[i].getValues()));
@@ -84,48 +78,36 @@ public class Modulo extends Constraint{
 		}
 		for (int i = y.getMin(); i <= y.getMax(); i++) {
 			if (!y.hasValue(i)) {
-				if (valRemovedFromY(i) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
+				valRemovedFromY(i);
 			}
 		}
 		
 
 		if (!x.isBound()) x.callValRemoveWhenValueIsRemoved(this);
 		if (!y.isBound()) y.callValRemoveWhenValueIsRemoved(this);
-
-		return Outcome.Suspend;
 	}
 
-	private Outcome valRemovedFromY(int val) {
+	private void valRemovedFromY(int val) {
 		assert(val > -v && val < v);
 		if (!supportSet[val+v-1].isEmpty()) {
 			for (int j: supportSet[val+v-1]) {
-				if (x.removeValue(j) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
+				x.removeValue(j);
 			}
-
 		}
-		return Outcome.Suspend;
 	}
 
 	@Override
-	public Outcome valRemove(CPIntVar var, int val) {
+	public void valRemove(CPIntVar var, int val) {
 		if (var == x) {
 			int i = val % v;
 			supportSet[i+v-1].removeValue(val);
 			if (supportSet[i+v-1].isEmpty()) {
-				if (y.removeValue(i) == Outcome.Failure) {
-					return Outcome.Failure;
-				}
+				y.removeValue(i);
 			}
-			return Outcome.Suspend;
-		} else { // var == y
-			assert(val > -v && val < v);
-			return valRemovedFromY(val);
 		}
-
+		else { // var == y
+			assert(val > -v && val < v);
+			valRemovedFromY(val);
+		}
 	}
-
 }
