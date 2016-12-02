@@ -35,7 +35,7 @@ class TestGCCFixedBounds extends TestSuite {
       cp.add(gcc(X, values, min, max), s)
 
     } catch {
-      case e: oscar.cp.core.NoSolutionException => {
+      case e: NoSolutionException => {
           return (0, 0, 0) 
       }
     }

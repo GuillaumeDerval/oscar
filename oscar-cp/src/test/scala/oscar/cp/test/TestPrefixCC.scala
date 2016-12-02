@@ -78,8 +78,9 @@ class TestPrefixCC extends TestSuite {
       else CPPropagStrength.Weak
     }
 
+    cp.deactivateNoSolExceptions()
     for (con <- makeGccs(X, values, lower, upper, mode))
-      cp.post(con, strength)
+      cp.add(con, strength)
 
     cp.search { binaryStatic(X) }
 

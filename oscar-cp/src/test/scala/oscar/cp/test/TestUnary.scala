@@ -14,6 +14,7 @@
  ******************************************************************************/
 package oscar.cp.test
 
+import oscar.algo.Inconsistency
 import oscar.algo.branchings.ConflictOrderingSearch
 import oscar.cp._
 import oscar.cp.testUtils.TestSuite
@@ -79,7 +80,7 @@ abstract class TestUnary(name: String, nTests: Int) extends TestSuite {
   
   def makeRandomInstance(nTasks: Int): UnaryProblem = {
     implicit val S = new CPStore()
-    
+
     val begTimes = Random.nextInt(60) - 30
     val endTimes = begTimes + 5 + Random.nextInt(60)
     val durTimes = endTimes - begTimes
@@ -97,16 +98,30 @@ abstract class TestUnary(name: String, nTests: Int) extends TestSuite {
     }
     
     val ends = Array.tabulate[CPIntVar](nTasks) { i =>
-      val e = starts(i) + durations(i)  // unary does not have to take care of start + duration == end
-      S.add(e <= endTimes)
-      e
+      // unary does not have to take care of start + duration == end
+      try {
+        val e = starts(i) + durations(i)
+        S.add(e <= endTimes)
+        e
+      }
+      catch {
+        case _: Inconsistency =>
+          //just ignore Inconsistency, will simply set fail()
+          CPIntVar(0,0)
+      }
     }
     
     val resources = Array.fill(nTasks){
       val r = CPIntVar.sparse(1, nResources)
       
       // make some holes
-      for (i <- 0 until nResources - 1)  r.removeValue(Random.nextInt(nResources + 1))      
+      try {
+        for (i <- 0 until nResources - 1)
+          r.removeValue(Random.nextInt(nResources + 1))
+      }
+      catch {
+        case _: Inconsistency => //just ignore Inconsistency, will simply set fail()
+      }
       r
     }
     
@@ -115,9 +130,15 @@ abstract class TestUnary(name: String, nTests: Int) extends TestSuite {
   
   def testConstrainer(problem: UnaryProblem, dfs: DFSearch, br: Branching, constrain: (Vars, Vars, Vars, Vars, Int) => Array[Constraint])(implicit S: CPStore): Int = {
     S.pushState()
-      
-    for (id <- 1 until nResources)  S.add(constrain(problem.starts, problem.durations, problem.ends, problem.resources, id))    
-    
+
+    try {
+      for (id <- 1 until nResources)
+        S.add(constrain(problem.starts, problem.durations, problem.ends, problem.resources, id))
+    }
+    catch {
+      case _: Inconsistency => //just ignore Inconsistency, will simply set fail()
+    }
+
     dfs.start(br, node => node.nSolutions >= 30000)
     val nSolutionsUnary = dfs.nSolutions
     
@@ -127,6 +148,7 @@ abstract class TestUnary(name: String, nTests: Int) extends TestSuite {
 
   test("Testing " + name + " for all solutions ") {
     for (t <- 0 until nTests) {
+      println(t)
       val problem = makeRandomInstance(6)
       implicit val S = problem.store
       val dfs = new DFSearch(S)

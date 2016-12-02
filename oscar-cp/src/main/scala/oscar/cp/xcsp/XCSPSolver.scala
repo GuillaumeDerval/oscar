@@ -32,6 +32,8 @@ import oscar.cp.xcsp.ast.Not
 import oscar.cp._
 import oscar.cp.xcsp.modeling.DefaultConstraints
 import java.io.File
+
+import oscar.algo.Inconsistency
 import oscar.cp.xcsp.ast.FunctionalPredicateParser
 import oscar.cp.xcsp.ast.ParameterParser
 import oscar.cp.xcsp.ast.EffectiveIntegerValue
@@ -78,37 +80,50 @@ abstract class XCSPSolver {
    val name = variable._1 
    (name -> CPIntVar(domains(variable._2), name))
   } toMap
-  
-  for ((constraintName, constraint) <- constraints) {
-   val (scope,reference,parametersOption) = constraint 
-   parametersOption match {
-    case None => { 
-      if(relations != None && relations.get.contains(reference)) { //constraint in extension
-        val relation = relations.get (reference)
-        if (relation._1 == "supports") add(table(scope map {decisionVariables(_)},relation._2))
-        else if (relation._1 == "conflicts") add(tableNe(scope map {decisionVariables(_)},relation._2)) // modified: added constraint negative
-        else throw new RuntimeException(relation._1 + " tables are not supported.")
+
+  try {
+   for ((constraintName, constraint) <- constraints) {
+    val (scope, reference, parametersOption) = constraint
+    parametersOption match {
+     case None => {
+      if (relations != None && relations.get.contains(reference)) {
+       //constraint in extension
+       val relation = relations.get(reference)
+       if (relation._1 == "supports") add(table(scope map {
+        decisionVariables(_)
+       }, relation._2))
+       else if (relation._1 == "conflicts") add(tableNe(scope map {
+        decisionVariables(_)
+       }, relation._2)) // modified: added constraint negative
+       else throw new RuntimeException(relation._1 + " tables are not supported.")
       }
-      else if(reference == "global:allDifferent") //deprecated implicit parameters for allDiff is tolerated 
-        allDifferentHelper(scope, "["+ scope.reduce(_ + " " + _) + "]")
-      else 
-        throw new RuntimeException(constraintName + " : Implicit parameters are deprecated since XCSP 2.1 and therefore are non-supported.")
-    }
-    case Some(parameters) => { //constraint in intension or global
-     XCSPParser.globalPrefix findFirstIn reference match {
-       case Some(_) => { // global constraint
-         imposeGlobalConstraint(reference, scope, parameters)
+      else if (reference == "global:allDifferent") //deprecated implicit parameters for allDiff is tolerated
+       allDifferentHelper(scope, "[" + scope.reduce(_ + " " + _) + "]")
+      else
+       throw new RuntimeException(constraintName + " : Implicit parameters are deprecated since XCSP 2.1 and therefore are non-supported.")
+     }
+     case Some(parameters) => {
+      //constraint in intension or global
+      XCSPParser.globalPrefix findFirstIn reference match {
+       case Some(_) => {
+        // global constraint
+        imposeGlobalConstraint(reference, scope, parameters)
        }
-       case None => { //constraint in intension
+       case None => {
+        //constraint in intension
         val predicateInfos = predicates.get(reference)
         val formalParameters = predicateInfos._1 map (_._2) toArray
-        val predicateFunction = predicateInfos._2.get getOrElse(throw new RuntimeException("Only functional expressions are handled for now."))
+        val predicateFunction = predicateInfos._2.get getOrElse (throw new RuntimeException("Only functional expressions are handled for now."))
         implicit val parameterMap = formalToEffectiveParametersMap(formalParameters, parameters split (" "))
         add(booleanExpression(predicateFunction))
        }
+      }
      }
-    } 
+    }
    }
+  }
+  catch {
+   case _: Inconsistency => cp.fail()
   }
   (cp, decisionVariables.values toArray)
  }

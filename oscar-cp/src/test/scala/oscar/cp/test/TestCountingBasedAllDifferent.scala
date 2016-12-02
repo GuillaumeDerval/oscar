@@ -69,7 +69,6 @@ class TestCountingBasedAllDifferent extends TestSuite  {
 
   test("CountingBasedAllDifferent : random") {
     for (i <- 0 until 200) {
-      println("rest number"+i)
       if (i == 5) debug = true
       val cp = CPSolver()
       val n = 6
@@ -80,35 +79,20 @@ class TestCountingBasedAllDifferent extends TestSuite  {
       cp.search(binaryStatic(x))
 
       val stat1 = cp.startSubjectTo() {
-        println("wut1")
         cp.add(new AllDiffFWC(x))
-        println("wut2")
       }
 
-      println("wut3")
       val stat2 = cp.startSubjectTo() {
-        println("wut4")
         cp.post(new CountingBasedAllDifferent(x))
-        println("wut5")
       }
 
       val stat3 = cp.startSubjectTo() {
-        println("wut6")
         cp.post(new AllDiffAC(x))
-        println("wut7")
       }
 
       assert(stat1.nSols == stat2.nSols)
       assert(stat1.nFails >= stat2.nFails)
       assert(stat2.nFails >= stat3.nFails)
-      
     }
-
-    
-    
-    
   }
-
-  
-
 }

@@ -18,6 +18,7 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.Matchers
+import oscar.algo.Inconsistency
 import oscar.cp.core.CPPropagStrength
 import oscar.cp._
 

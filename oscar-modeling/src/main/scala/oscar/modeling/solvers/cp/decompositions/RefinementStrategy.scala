@@ -1,5 +1,6 @@
 package oscar.modeling.solvers.cp.decompositions
 
+import oscar.algo.Inconsistency
 import oscar.modeling.constraints.Constraint
 import oscar.modeling.models.UninstantiatedModel
 import oscar.cp.core.NoSolutionException
@@ -69,7 +70,7 @@ abstract class RefinementStrategy[SubproblemOrdering](searchInstantiator: Branch
               val newPath = sp.path ++ List(idx)
               q += SubproblemInfo(addedConstraints, newPath, generate(model, addedConstraints, newPath))
             }
-            catch { case _: NoSolutionException => }
+            catch { case _: Inconsistency => }
             model.popState()
           }
         }

@@ -49,7 +49,6 @@ class Or(val x: Array[CPBoolVar]) extends Constraint(x(0).store, "Or") {
       throw Inconsistency
     } else if (down == up) {
        x(up).assign(1)
-      return
     } else {
       assert(down != up)
       x(down).callValBindIdxWhenBind(this,down)

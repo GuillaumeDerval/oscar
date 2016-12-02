@@ -163,7 +163,8 @@ class DFSearch(node: DFSearchNode) {
             searchListener_.onPop(node)
           node.pop()
         }
-      } else {
+      }
+      else {
         failureActions.foreach(_())
         nbBkts += 1
         if(searchListener != null)

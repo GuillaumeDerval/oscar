@@ -184,7 +184,7 @@ class TestLogicalConstraints extends TestSuite {
     val x = CPBoolVar()(cp)
     val y = CPBoolVar()(cp)
     cp.add(x || y)
-    cp.post(!x && !y)
+    isInconsistent(cp.post(!x && !y)) should be(true)
     cp.isFailed should be(true)
 
   }

@@ -302,6 +302,7 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
     }
     catch {
       case e: Inconsistency =>
+        _inPropagate = false
         throw e
     }
   }

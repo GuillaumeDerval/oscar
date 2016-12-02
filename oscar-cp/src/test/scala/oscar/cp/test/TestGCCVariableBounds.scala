@@ -33,7 +33,7 @@ class TestGCCVariableBounds extends TestSuite {
       cp.add(gcc(X, cards), s)
 
     } catch {
-      case e: oscar.cp.core.NoSolutionException => return (0, 0, 0)
+      case e: NoSolutionException => return (0, 0, 0)
     }
     cp.search {
       binaryStatic(X)

@@ -152,14 +152,14 @@ class TestSubGraph extends TestSuite  {
     g2.requiredInEdges(1) should be (List())
     g2.requiredOutEdges(0) should be (List())
     val c : Constraint = new SubGraph(g1,g2)
-    postAndCheckSuspend(cp,c)
+    cp.post(c)
     // after posting constraint, the edge (0,1) should be required in g2
     g1.requiredInEdges(1) should be (List(0))
     g1.requiredOutEdges(0) should be (List(0))
     g2.requiredInEdges(1) should be (List(0))
     g2.requiredOutEdges(0) should be (List(0))
     // also, as (0,1) is required in g2, the constraint is entailed and c no longer active
-    assert(c.isActive == false)  
+    assert(!c.isActive)
     }
     
     test("Test 5 : add required edge in g1 after post constraint") {
@@ -206,8 +206,7 @@ class TestSubGraph extends TestSuite  {
     g2.requiredNodes.sorted	should be (List(0,1))
     // the constraint is entailed, we can check it directly by noticing that is is no longer active 
     val c : Constraint =  new SubGraph(g1,g2)
-    postAndCheckSuspend(cp,c)
-    assert(c.isActive == false)
+    postAndCheckSuccess(cp,c)
     }
     
     test("Test 7 : add required edge in g2 st entailment (2)") {

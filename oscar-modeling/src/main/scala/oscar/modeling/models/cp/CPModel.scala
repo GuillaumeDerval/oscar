@@ -4,7 +4,7 @@ import oscar.algo.DisjointSets
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp
 import oscar.cp.constraints.{CPObjective, CPObjectiveUnit, CPObjectiveUnitMaximize, CPObjectiveUnitMinimize}
-import oscar.cp.core.{CPPropagStrength, NoSolutionException}
+import oscar.cp.core.CPPropagStrength
 import oscar.cp.{CPBoolVarOps, CPIntVarOps}
 import oscar.modeling.algebra.bool._
 import oscar.modeling.algebra.integer._

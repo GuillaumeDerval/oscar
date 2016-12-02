@@ -192,7 +192,7 @@ class SubCircuitSuite extends TestSuite {
   test("subcircuit 5") {
     val (cp, succs) = testData(4)
     cp.add(succs(0) === 1)
-    cp.post(succs(1) === 1)
+    postAndCheckFailure(cp, succs(1) === 1)
     assert(cp.isFailed)
   }
 

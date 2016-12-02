@@ -71,7 +71,7 @@ class TestPathG extends TestSuite  {
     postAndCheckSuspend(cp,g.addNode(2))
     
     // add constraint
-    postAndCheckSuspend(cp,new GraphPath(g,0,4, (u,v) => 1,i))
+    cp.post(new GraphPath(g,0,4, (u,v) => 1,i))
 
     //  check that all changes are correct acc. to definition:
     // 	  - remove edge 2:(1,3) because it skip required node 2 in path
@@ -96,7 +96,7 @@ class TestPathG extends TestSuite  {
     
     // add constraint and define weight function
     def myfun(u : Int, v : Int) : Int = 1
-    postAndCheckSuspend(cp,new GraphPath(g,0,2,myfun,i))
+    cp.post(new GraphPath(g,0,2,myfun,i))
 
     //  check that all changes are correct acc. to definition:
     // 	  - remove all edges except 1:(0,2) which is the only simple path of length <= 1
@@ -161,7 +161,7 @@ class TestPathG extends TestSuite  {
     postAndCheckSuspend(cp,g.addNode(2))
     
     // add constraint
-    postAndCheckSuspend(cp,new GraphPath(g,0,4, (u,v) => 1,i))
+    cp.post(new GraphPath(g,0,4, (u,v) => 1,i))
 
     //  check that all changes are correct acc. to definition:
     // 	  - as we removed edges 2:(1,3), 4:(2,6) and 6:(5,2),
@@ -179,7 +179,7 @@ class TestPathG extends TestSuite  {
     
     // add constraint and define weight function
     def myfun(u : Int, v : Int) : Int = 1
-    postAndCheckSuspend(cp,new GraphPath(g,0,2,myfun,i))
+    cp.post(new GraphPath(g,0,2,myfun,i))
 
     //  check that all changes are correct acc. to definition:
     // 	  - as we removed all edges except 1:(0,2) which is the only simple path of length <= 1,
@@ -199,7 +199,7 @@ class TestPathG extends TestSuite  {
     
     // add constraint and define weight function
     def myfun(u : Int, v : Int) : Int = 1
-    postAndCheckSuspend(cp,new GraphPath(g,0,3,myfun,i))
+    cp.post(new GraphPath(g,0,3,myfun,i))
     
     g.possibleNodes.sorted should be (List(0,1,2,3))
     g.requiredNodes.sorted should be (List(0,3))

@@ -23,8 +23,8 @@ import oscar.cp._
 import oscar.cp.testUtils.TestSuite
 
 class TestNoSolutionException extends TestSuite {
-	
-	test("test1: using add outside subjectTo allows NoSolutionExceptions") {
+	//TODO Guillaume convert to TestInconsistency
+	/*test("test1: using add outside subjectTo allows NoSolutionExceptions") {
 	  val cp = CPSolver()
 	  val x = CPIntVar(Array(10, 20, 30))(cp)
 	  
@@ -49,5 +49,5 @@ class TestNoSolutionException extends TestSuite {
 
 		postAndCheckFailure(cp, x < 10)
 	  cp.isFailed should be(true)
-	}
+	}*/
 }

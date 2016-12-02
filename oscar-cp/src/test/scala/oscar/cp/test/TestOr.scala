@@ -16,6 +16,7 @@
  */
 package oscar.cp.test
 
+import oscar.algo.Inconsistency
 import oscar.cp._
 import oscar.cp.testUtils._
 
@@ -174,8 +175,8 @@ class TestOr extends TestSuite {
     val rand = new scala.util.Random()
 
     for (i <- 0 until 200) {
-
       implicit val cp = CPSolver()
+      cp.deactivateNoSolExceptions()
 
       val A = Array.fill(10)(CPBoolVar())
 
@@ -189,7 +190,7 @@ class TestOr extends TestSuite {
       for (i <- 0 until 3) {
         val varId = rand.nextInt(A.length)
         val value = rand.nextInt(2)
-        cp.post(A(varId) === value)
+        cp.add(A(varId) === value)
       }
 
       def myOr(decomp: Boolean) {
@@ -200,10 +201,9 @@ class TestOr extends TestSuite {
       }
 
       search(binaryFirstFail(A, _.randomValue))
-      
+
       val stat1 = startSubjectTo() { myOr(false) }
       val stat2 = startSubjectTo() { myOr(true) }
-      
       stat1.nSols should be(stat2.nSols)
       stat1.nFails should be(stat2.nFails)
     }

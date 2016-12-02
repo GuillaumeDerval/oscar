@@ -186,7 +186,8 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
 
   final def doAndPropagate(action: => Unit): Unit = {
     action // apply action
-    if (isFailed) throw Inconsistency
+    if (isFailed)
+      throw Inconsistency
     propagate()
   }
   
@@ -198,14 +199,16 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
    *  @param constraints a sequence of constraints
    */
   def propagate(constraints: Constraint*): Unit = {
-    if (isFailed) throw Inconsistency
+    if (isFailed)
+      throw Inconsistency
 
     constraints.foreach(c => enqueueL2(c))
     propagate()
   }
 
   protected def propagate(): Unit = {
-    if (isFailed) throw Inconsistency
+    if (isFailed)
+      throw Inconsistency
     else {
       val t = System.currentTimeMillis()
       inFixedPoint = true
@@ -273,7 +276,8 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
    */
   @throws[Inconsistency]
   def post(constraint: Constraint, st: CPPropagStrength): Unit = {
-    if (isFailed) throw Inconsistency
+    if (isFailed)
+      throw Inconsistency
     try {
       constraint.setup(st)
     }
@@ -289,7 +293,7 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
 
   @throws[Inconsistency]
   def post(c: Constraint): Unit = post(c, propagStrength)
-
+  
   def postCut(c: Constraint): Unit = postCut(c, propagStrength)
 
   def postCut(c: Constraint, st: CPPropagStrength): Unit = {
