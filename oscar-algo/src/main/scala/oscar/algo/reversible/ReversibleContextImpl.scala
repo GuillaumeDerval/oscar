@@ -154,3 +154,7 @@ class ReversibleContextImpl extends ReversibleContext {
 
   override def toString: String = "nPushed: " + levelStack.length + " currentTrailSize: " + trailStack.length
 }
+
+object ReversibleContext {
+  def apply() = new ReversibleContextImpl
+}
