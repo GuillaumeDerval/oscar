@@ -134,11 +134,12 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
   }
 
   override def add(c: Constraint, st: CPPropagStrength): Unit = {
-    //TODO GUILLAUME est-ce qu'on doit catch l'inconsistency ici??
+    /*//TODO GUILLAUME est-ce qu'on doit catch l'inconsistency ici??
     val inconsistent = isInconsistent(post(c, st))
     if ((inconsistent || isFailed) && throwNoSolExceptions) {
       throw new NoSolutionException(s"the stored failed when adding constraint $c")
-    }
+    }*/
+    post(c,st)
   }
 
   override def add(c: Constraint): Unit = add(c, propagStrength)
@@ -149,19 +150,21 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
    * @throws NoSolutionException if the fix point detects a failure that is one of the domain became empty
    */
   override def add(b: CPBoolVar): Unit = {
-    //TODO GUILLAUME est-ce qu'on doit catch l'inconsistency ici??
+    /*//TODO GUILLAUME est-ce qu'on doit catch l'inconsistency ici??
     val inconsistent = isInconsistent(post(b.constraintTrue))
     if ((inconsistent || isFailed) && throwNoSolExceptions) {
       throw new NoSolutionException(s"the stored failed when setting " + b.name + " to true")
-    }
+    }*/
+    post(b.constraintTrue)
   }
     
   override def addCut(c: Constraint): Unit = {
-    //TODO GUILLAUME est-ce qu'on doit catch l'inconsistency ici??
+    /*//TODO GUILLAUME est-ce qu'on doit catch l'inconsistency ici??
     val inconsistent = isInconsistent(postCut(c))
     if ((inconsistent || isFailed) && throwNoSolExceptions) {
       throw new NoSolutionException(s"the stored failed when adding constraint $c")
-    }
+    }*/
+    postCut(c)
   }
 
   /**
@@ -173,11 +176,12 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
    * @throws NoSolutionException if the fix point detects a failure that is one of the domain became empty, Suspend otherwise.
    */
   override def add(constraints: Array[Constraint], st: CPPropagStrength): Unit = {
-    //TODO GUILLAUME est-ce qu'on doit catch l'inconsistency ici??
+    /*//TODO GUILLAUME est-ce qu'on doit catch l'inconsistency ici??
     val inconsistent = isInconsistent(post(constraints, st))
     if ((inconsistent|| isFailed) && throwNoSolExceptions) {
       throw new NoSolutionException(s"the stored failed when adding constraint $constraints");
-    }
+    }*/
+    post(constraints, st)
   }
   
   override def add(constraints: Array[Constraint]): Unit = add(constraints, propagStrength)
@@ -185,11 +189,12 @@ class CPSolver(propagStrength: CPPropagStrength) extends CPOptimizer(propagStren
   override def add(constraints: Iterable[Constraint], st: CPPropagStrength): Unit = add(constraints.toArray, st)
 
   override def add[T: ClassTag](boolVars: Iterable[CPBoolVar]): Unit = {
-    //TODO GUILLAUME est-ce qu'on doit catch l'inconsistency ici??
+    /*//TODO GUILLAUME est-ce qu'on doit catch l'inconsistency ici??
     val inconsistent = isInconsistent(post(boolVars))
     if ((inconsistent || isFailed) && throwNoSolExceptions) {
       throw new NoSolutionException(s"the stored failed when setting those boolVars to true and propagate $boolVars");
-    }
+    }*/
+    post(boolVars)
   }
 
   override def add(constraints: Iterable[Constraint]): Unit = add(constraints.toArray, propagStrength)
