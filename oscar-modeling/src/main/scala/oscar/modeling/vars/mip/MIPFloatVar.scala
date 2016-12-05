@@ -1,31 +1,32 @@
 package oscar.modeling.vars.mip
 
+import oscar.algebra.{Solution, VarNumerical}
 import oscar.algo.search.FloatConstrainableContext
-import oscar.linprog.interface.MPSolverInterface
-import oscar.linprog.modeling.{MPFloatVar, MPSolver}
+import oscar.linprog.MPModel
 import oscar.modeling.vars.FloatVarImplem
+import oscar.modeling.vars.mip.MIPFloatVar.MIPSolutionHolder
 
 /**
   * A float ("continuous") variable for the MIP Solver
   */
-class MIPFloatVar[I <: MPSolverInterface](val realMipVar: oscar.linprog.modeling.MPVar[I]) extends MIPVar with FloatVarImplem {
+class MIPFloatVar(val realMipVar: VarNumerical, solutionHolder: MIPSolutionHolder) extends MIPVar with FloatVarImplem {
   override def context: FloatConstrainableContext = null
 
   /**
     * @return true if the domain of the variable has exactly one value,
     *         false if the domain has more than one value
     */
-  override def isBound: Boolean = realMipVar.value.isDefined
+  override def isBound: Boolean = solutionHolder.getSolution.isDefined
 
   /**
     * Return a *lower bound* for this expression
     */
-  override def min: Double = if(isBound) value() else realMipVar.bounds._1
+  override def min: Double = if(isBound) value() else realMipVar.lowerBound
 
   /**
     * Return a *higher bound* for this expression
     */
-  override def max: Double = if(isBound) value() else realMipVar.bounds._2
+  override def max: Double = if(isBound) value() else realMipVar.upperBound
 
   /**
     * Test if a value is in the domain
@@ -38,7 +39,7 @@ class MIPFloatVar[I <: MPSolverInterface](val realMipVar: oscar.linprog.modeling
   /**
     * @return returns the set this variable represents, if it is bound
     */
-  override def value(): Double = realMipVar.value.get
+  override def value(): Double = solutionHolder.getSolution.get.apply(realMipVar)
 
   /**
     * Return a representative name for this var(-like), if one was given
@@ -47,7 +48,11 @@ class MIPFloatVar[I <: MPSolverInterface](val realMipVar: oscar.linprog.modeling
 }
 
 object MIPFloatVar {
-  def apply[I <: MPSolverInterface](min: Double, max: Double, name: String, solver: MPSolver[I]): MIPFloatVar[I] = {
-    new MIPFloatVar(MPFloatVar(name, min, max)(solver))
+  def apply(min: Double, max: Double, name: String, solver: MPModel[_], solutionHolder: MIPSolutionHolder): MIPFloatVar = {
+    new MIPFloatVar(VarNumerical(name, min, max)(solver), solutionHolder)
+  }
+
+  trait MIPSolutionHolder {
+    def getSolution: Option[Solution[Double]]
   }
 }

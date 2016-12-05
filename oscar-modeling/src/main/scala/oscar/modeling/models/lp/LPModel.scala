@@ -1,32 +1,31 @@
 package oscar.modeling.models.lp
 
-import oscar.algebra.LinearExpression
-import oscar.linprog.interface.gurobi.GurobiLib
-import oscar.linprog.interface.lpsolve.LPSolveLib
-import oscar.linprog.interface.{MPSolverInterface, MPSolverLib}
-import oscar.linprog.modeling.MPSolver
+import oscar.algebra.{LinearExpression, Solution}
+import oscar.linprog.MPModel
+import oscar.linprog.lpsolve.LPSolve
 import oscar.modeling.algebra.bool.{BoolExpression, EqFloat, GrEqFloat, LrEqFloat}
 import oscar.modeling.algebra.floating._
 import oscar.modeling.constraints.{Constraint, ExpressionConstraint}
 import oscar.modeling.models._
 import oscar.modeling.vars.FloatVar
 import oscar.modeling.vars.mip.MIPFloatVar
+import oscar.modeling.vars.mip.MIPFloatVar.MIPSolutionHolder
 import oscar.modeling.vars.nostorage.NoIntDomainStorage
 
 /**
   * Model for Linear Programming
-  * @param solverLib the solver to use
   * @param p: the model from which to inherit
   */
-class LPModel[I <: MPSolverInterface](p: UninstantiatedModel, solverLib: MPSolverLib[I]) extends InstantiatedModel(p){
-  implicit lazy val solver: MPSolver[I] = new MPSolver(solverLib.createSolver)
+class LPModel(p: UninstantiatedModel) extends InstantiatedModel(p) with MIPSolutionHolder {
+  implicit lazy val oscarLPModel = new MPModel(LPSolve)
+  private var currentEqId = 0
 
   override type IntVarImplementation = NoIntDomainStorage
-  override type FloatVarImplementation = MIPFloatVar[I]
+  override type FloatVarImplementation = MIPFloatVar
 
   override protected def instantiateIntVar(content: Iterable[Int], name: String): NoIntDomainStorage = throw new RuntimeException("There is no support for Integer variables in linear programming")
 
-  override protected def instantiateFloatVar(min: Double, max: Double, name: String): MIPFloatVar[I] = MIPFloatVar(min, max, name, solver)
+  override protected def instantiateFloatVar(min: Double, max: Double, name: String): MIPFloatVar = MIPFloatVar(min, max, name, oscarLPModel, this)
 
   override def post(constraint: Constraint): Unit = constraint match {
     case ExpressionConstraint(expr) => postBooleanExpr(expr)
@@ -38,16 +37,20 @@ class LPModel[I <: MPSolverInterface](p: UninstantiatedModel, solverLib: MPSolve
       case EqFloat(array) =>
         val expressions = array.map(getLinearExpression)
         for(i <- 0 until expressions.length)
-          for(j <- i+1 until expressions.length)
-            oscar.linprog.modeling.add(expressions(i) =:= expressions(j))
+          for(j <- i+1 until expressions.length) {
+            oscarLPModel.subjectTo((expressions(i) === expressions(j)).|:(currentEqId.toString))
+            currentEqId+=1
+          }
       case GrEqFloat(a,b) =>
         val exprA = getLinearExpression(a)
         val exprB = getLinearExpression(b)
-        oscar.linprog.modeling.add(exprA >:= exprB)
+        oscarLPModel.subjectTo((exprA >= exprB).|:(currentEqId.toString))
+        currentEqId+=1
       case LrEqFloat(a,b) =>
         val exprA = getLinearExpression(a)
         val exprB = getLinearExpression(b)
-        oscar.linprog.modeling.add(exprA <:= exprB)
+        oscarLPModel.subjectTo((exprA <= exprB).|:(currentEqId.toString))
+        currentEqId+=1
       case _ => throw new RuntimeException("No support for expression "+expr.getClass.getName+" in linear programming")
     }
   }
@@ -83,14 +86,13 @@ class LPModel[I <: MPSolverInterface](p: UninstantiatedModel, solverLib: MPSolve
   }
 
   override protected def postObjective(optimisationMethod: OptimisationMethod): Unit = optimisationMethod match {
-    case MinimisationFloat(o) => solver.setObjective(getLinearExpression(o), min=true)
-    case MaximisationFloat(o) => solver.setObjective(getLinearExpression(o), min=false)
+    case MinimisationFloat(o) => oscarLPModel.minimize(getLinearExpression(o))
+    case MaximisationFloat(o) => oscarLPModel.maximize(getLinearExpression(o))
     case NoOptimisation() => //nothing
     case _ => throw new RuntimeException("You can only minimize/maximize float expression in linear programming")
   }
-}
 
-object LPModel {
-  def lpsolve(p: UninstantiatedModel) = new LPModel(p, LPSolveLib)
-  def gurobi(p: UninstantiatedModel) = new LPModel(p, GurobiLib)
+  protected var currentSolution: Option[Solution[Double]] = None
+  def setCurrentSolution(c: Option[Solution[Double]]) = currentSolution = c
+  override def getSolution: Option[Solution[Double]] = currentSolution
 }
