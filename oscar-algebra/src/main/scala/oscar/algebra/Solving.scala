@@ -27,11 +27,11 @@ abstract class SolverInterface[O  >: Constant <: ExpressionDegree, C <: Expressi
    * @param model the model to be solved
    * @return the status of the solving
    */
-  def solve(model: Model[O, C, V], config: Option[Path] = None): ModelStatus[O, C, V] = {
+  def solve(model: Model[O, C, V], config: Option[Path] = None): SolveResult[O, C, V] = {
     val r = run(model)
-    val status = r.solve
+    val result = r.solve
     r.release()
-    status
+    result
   }
 }
 
@@ -55,9 +55,10 @@ abstract class SolverRun[O  >: Constant <: ExpressionDegree, C <: ExpressionDegr
 
   /**
    * Solves the [[Model]] using a specific solver
+   *
    * @return the status of the solving process
    */
-  def solve: ModelStatus[O, C, V]
+  def solve: SolveResult[O, C, V]
 
   /**
    * Cleanly terminates the optimization process
@@ -72,6 +73,7 @@ abstract class SolverRun[O  >: Constant <: ExpressionDegree, C <: ExpressionDegr
 
   /**
    * Updates the lower bound a variable. The [[Model]] passed to initialize the [[SolverRun]] will ```not``` be modified.
+   *
    * @param v the variable whose lower bound is updated
    * @param d the new lower bound
    */
@@ -80,6 +82,7 @@ abstract class SolverRun[O  >: Constant <: ExpressionDegree, C <: ExpressionDegr
 
   /**
    * Updates the upper bound a variable. The [[Model]] passed to initialize the [[SolverRun]] will ```not``` be modified.
+   *
    * @param v the variable whose upper bound is updated
    * @param d the new upper bound
    */
@@ -87,18 +90,21 @@ abstract class SolverRun[O  >: Constant <: ExpressionDegree, C <: ExpressionDegr
 
   /**
    * Updates the objective of the [[Model]]. The [[Model]] passed to initialize the [[SolverRun]] will ```not``` be modified.
+   *
    * @param obj the [[Objective]] to use for the next optimization.
    */
   def setObjective(obj: Objective[O,V]): Unit
 
   /**
    * Relaxes a variable to be continuous. The [[Model]] passed to initialize the [[SolverRun]] will ```not``` be modified.
+   *
    * @param v the variable to make continuous
    */
   def setContinuous(v: Var[Double])
 
   /**
    * Constrains a variable to be integral. The [[Model]] passed to initialize the [[SolverRun]] will ```not``` be modified.
+   *
    * @param v the variable to make integral
    */
   def setInteger(v: Var[Double])
@@ -127,6 +133,7 @@ class Solution[V: Numeric](values: IndexedSeq[V]) extends Function[Var[V], V] {
 
   /**
    * Returns the value of `v` in this [[Solution]]
+   *
    * @param v the variable whose value in this [[Solution]] should be returned
    */
   def apply(v: Var[V]): V = values(v.id)
@@ -138,77 +145,89 @@ class Solution[V: Numeric](values: IndexedSeq[V]) extends Function[Var[V], V] {
 }
 
 /**
- * Status of the solving of a [[Model]] by a specific solver
- * @tparam O the degree of the objective of the [[Model]] solved
- * @tparam C the degree of the constraints of the [[Model]]
- * @tparam V type of values contained by the variables of the [[Model]] solved
- */
-abstract class ModelStatus[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric] {
-
-  /**
-   * When this contains a [[Solution]], applies the provided function to that [[Solution]].
-   */
-  def onSolution[U](f: Solution[V] => U): Unit
-}
-
-/**
- * A [[ModelStatus]] containing a [[Solution]]
+ * Result of the solving of a [[Model]] by a specific solver
  *
  * @tparam O the degree of the objective of the [[Model]] solved
  * @tparam C the degree of the constraints of the [[Model]]
  * @tparam V type of values contained by the variables of the [[Model]] solved
  */
-abstract class ModelStatusWithSolution[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric] extends ModelStatus[O,C,V] {
+abstract class SolveResult[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric] {
+
+  /**
+   * Returns true if this contains a [[Solution]]
+   */
+  def hasSolution: Boolean
+
+  /**
+   * When this contains a [[Solution]], applies the provided function to that [[Solution]].
+   */
+  def onSolution[U](f: Solution[V] => U): Option[U]
+}
+
+/**
+ * A [[SolveResult]] containing a [[Solution]]
+ *
+ * @tparam O the degree of the objective of the [[Model]] solved
+ * @tparam C the degree of the constraints of the [[Model]]
+ * @tparam V type of values contained by the variables of the [[Model]] solved
+ */
+abstract class SolveResultWithSolution[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric] extends SolveResult[O,C,V] {
   val solution: Solution[V]
-
-  override def onSolution[U](f: Solution[V] => U): Unit = f(solution)
+  override def hasSolution: Boolean = true
+  override def onSolution[U](f: Solution[V] => U): Option[U] = Some(f(solution))
 }
 
-abstract class ModelStatusWithNoSolution[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric] extends ModelStatus[O,C,V] {
-  override def onSolution[U](f: Solution[V] => U): Unit = { /* no solution to provide */ }
+abstract class SolveResultWithNoSolution[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric] extends SolveResult[O,C,V] {
+  override def hasSolution: Boolean = false
+  override def onSolution[U](f: Solution[V] => U): Option[U] = { /* no solution to provide */ None }
 }
 
-case class NoSolutionFoundException[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](modelStatus: ModelStatusWithNoSolution[O,C,V]) extends Exception(s"No solution found to the problem, end status is $modelStatus")
+case class NoSolutionFoundException[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](modelStatus: SolveResultWithNoSolution[O,C,V]) extends Exception(s"No solution found to the problem, end status is $modelStatus")
 
 /**
  * The solving has been successful, but optimality is not proven
+ *
  * @param solution the [[Solution]] found by the solver
  * @tparam O the degree of the objective of the [[Model]] solved
  * @tparam C the degree of the constraints of the [[Model]]
  * @tparam V type of values contained by the variables of the [[Model]] solved
  */
-case class Feasible[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](solution: Solution[V]) extends ModelStatusWithSolution[O, C, V]
+case class Feasible[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](solution: Solution[V]) extends SolveResultWithSolution[O, C, V]
 
 /**
  * The solving has been successful and optimality is proven
+ *
  * @param solution the optimal solution found
  * @tparam O the degree of the objective of the [[Model]] solved
  * @tparam C the degree of the constraints of the [[Model]]
  * @tparam V type of values contained by the variables of the [[Model]] solved
  */
-case class Optimal[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](solution: Solution[V]) extends ModelStatusWithSolution[O, C, V]
+case class Optimal[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](solution: Solution[V]) extends SolveResultWithSolution[O, C, V]
 
 /**
  * The [[Model]] is unbounded.
+ *
  * @tparam O the degree of the objective of the [[Model]] solved
  * @tparam C the degree of the constraints of the [[Model]]
  * @tparam V type of values contained by the variables of the [[Model]] solved
  */
-case class Unbounded[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric]() extends ModelStatusWithNoSolution[O, C, V]
+case class Unbounded[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric]() extends SolveResultWithNoSolution[O, C, V]
 
 /**
  * The [[Model]] is infeasible given the bounds on the variables and the constraints
+ *
  * @tparam O the degree of the objective of the [[Model]] solved
  * @tparam C the degree of the constraints of the [[Model]]
  * @tparam V type of values contained by the variables of the [[Model]] solved
  */
-case class Infeasible[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric]() extends ModelStatusWithNoSolution[O, C, V]
+case class Infeasible[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric]() extends SolveResultWithNoSolution[O, C, V]
 
 /**
  * The solver has returned an unknown status
+ *
  * @tparam O the degree of the objective of the [[Model]] solved
  * @tparam C the degree of the constraints of the [[Model]]
  * @tparam V type of values contained by the variables of the [[Model]] solved
  */
-case class Warning[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric]() extends ModelStatusWithNoSolution[O, C, V]
+case class Warning[O <: ExpressionDegree, C <: ExpressionDegree, V: Numeric]() extends SolveResultWithNoSolution[O, C, V]
 

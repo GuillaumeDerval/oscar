@@ -1,16 +1,11 @@
 package oscar.linprog
 
-import org.junit.runner.RunWith
-import org.scalactic.TripleEqualsSupport.Spread
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.FunSuite
 import oscar.algebra._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-
-@RunWith(classOf[JUnitRunner])
 class AbortTests extends LinearMathSolverTests{
   override def testSuite(interface: Option[SolverInterface[Linear,Linear,Double]], solverName: String): FunSuite = {
     new AbortTester(interface, solverName)
@@ -93,14 +88,11 @@ class AbortTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]],
     // Abort before solve should not prevent it
     run.abort()
 
-    run.solve match {
-      case Optimal(solution) =>
-        solution(x) shouldBe (100.0 +- 1e-6)
-        solution(y) shouldBe (100.0 +- 1e-6)
+    run.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe (100.0 +- 1e-6)
+      solution(y) shouldBe (100.0 +- 1e-6)
 
-        o.eval(solution) shouldBe (2 * 100 + -5 * 100.0 +- 1e-6)
-      case r =>
-        assert(false)
+      o.eval(solution) shouldBe (2 * 100 + -5 * 100.0 +- 1e-6)
     }
 
     run.release()

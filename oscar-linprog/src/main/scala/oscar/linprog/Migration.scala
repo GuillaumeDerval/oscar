@@ -33,7 +33,7 @@ class MPModel(val interface: SolverInterface[Linear,Linear,Double]) extends Mode
     withObjective(Minimize(obj))
   }
 
-  def solve: ModelStatus[Linear,Linear,Double] = interface.solve(this)
+  def solve: SolveResult[Linear,Linear,Double] = interface.solve(this)
 }
 
 object Migration {
