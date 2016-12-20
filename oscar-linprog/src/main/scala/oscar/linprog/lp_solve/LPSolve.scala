@@ -1,4 +1,4 @@
-package oscar.linprog.lpsolve
+package oscar.linprog.lp_solve
 
 import java.nio.file.Path
 
@@ -7,23 +7,23 @@ import oscar.algebra._
 /**
  * [[SolverInterface]] for using LPSolve to solve linear mathematical [[Model]]s.
  */
-object LPSolve extends SolverInterface[Linear, Linear, Double]{
+object LPSolve extends SolverInterface[Linear, Linear, Double]("lp_solve"){
   override def run(model: Model[Linear, Linear, Double],config: Option[Path] = None): LPSolveRun =
     new LPSolveRun(config)(model)
 }
 
 /**
  * [[SolverRun]]s using LPSolve to solve [[Model]]s.
+ *
  * @param config path to an optional config file to configure LPSolve
  * @param model the [[Model]] to solve with this [[SolverRun]]
  */
 class LPSolveRun(config: Option[Path] = None)(private val model: Model[Linear, Linear, Double]) extends SolverRun[Linear, Linear, Double] {
-
   type Solver = lpsolve.LpSolve
 
   val rawSolver = lpsolve.LpSolve.makeLp(0, model.variables.size)
 
-  override def release(): Unit = rawSolver.deleteLp()
+  override def release(): Unit = { rawSolver.deleteLp() }
 
   /* --- Configuration --- */
 
@@ -78,10 +78,10 @@ class LPSolveRun(config: Option[Path] = None)(private val model: Model[Linear, L
 
   // Transform oscar.algebra.Expression into lpsolve expression
   private def transform(expression: NormalizedExpression[Linear,Double])(f: (Int, Array[Double], Array[Int],Double) => Unit) = {
-    val (termsWithVar, constantTerms) = expression.terms.partition(_.terms.nonEmpty)
+    val (termsWithVar, constantTerms) = expression.terms.partition(_.vars.nonEmpty)
     f(termsWithVar.size,
       termsWithVar.map{_.coef.d}.toArray,
-      termsWithVar.map{_.terms.head.asInstanceOf[Var[Double]].id + 1}.toArray,
+      termsWithVar.map{_.vars.head.asInstanceOf[Var[Double]].id + 1}.toArray,
       -constantTerms.map(_.coef.d).sum
     )
   }
@@ -121,8 +121,7 @@ class LPSolveRun(config: Option[Path] = None)(private val model: Model[Linear, L
 
   /* --- Solve --- */
 
-  override def solve: ModelStatus[Linear, Linear, Double] = {
-
+  override def solve: SolveResult[Linear, Linear, Double] = {
     aborted = false
 
     rawSolver.solve match {
@@ -136,6 +135,16 @@ class LPSolveRun(config: Option[Path] = None)(private val model: Model[Linear, L
         Unbounded()
       case _ =>
         Warning()
+    }
+  }
+
+  val supportedModelExportFormats: Seq[String] = Seq("lp", "mps")
+  override def exportModel(filePath: Path): Unit = {
+    val format = getExtension(filePath)
+    format match {
+      case "lp" => rawSolver.writeLp(filePath.toString) // Note: this is lp_solve's own lp format which is different from CPLEX's one.
+      case "mps" => rawSolver.writeFreeMps(filePath.toString)
+      case _ => throw new IllegalArgumentException(s"Unrecognised export format $format")
     }
   }
 }

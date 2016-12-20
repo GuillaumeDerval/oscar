@@ -17,7 +17,7 @@ package oscar.examples.linprog
 
 import oscar.algebra._
 import oscar.linprog.MPModel
-import oscar.linprog.lpsolve.LPSolve
+import oscar.linprog.lp_solve.LPSolve
 
 import scala.io.Source
 
@@ -43,7 +43,7 @@ object ElectricityMarket extends MPModel(LPSolve) with App {
 
   // one variable for each order if we take it or not
   var varMap = Map[Array[Int], Var[Double]]()
-  orders.foreach(o => varMap += (o -> MPIntVar(s"order_$o", 0 to 1)))
+  orders.foreach(o => varMap += (o -> VarInt(s"order_$o", 0 to 1)))
 
   // helper functions
   def overlap(order: Array[Int], t: Int) = t <= order(2) && t >= order(1)
@@ -67,17 +67,14 @@ object ElectricityMarket extends MPModel(LPSolve) with App {
     }
   }
 
-  solve match {
-    case Optimal(solution) =>
-
-      println("time:" + (System.currentTimeMillis - t0))
-      println("objective:" + solution(objective.expression))
-      val check = Array.tabulate(tmax - tmin + 1)(_ => 0)
-      for (o <- orders; if solution(varMap(o)) > 0.5) {
-        for (t <- o(1) to o(2)) {
-          check(t - 1) += o(0)
-        }
+  solve.onSolution { solution =>
+    println("time:" + (System.currentTimeMillis - t0))
+    println("objective:" + solution(objective.expression))
+    val check = Array.tabulate(tmax - tmin + 1)(_ => 0)
+    for (o <- orders; if solution(varMap(o)) > 0.5) {
+      for (t <- o(1) to o(2)) {
+        check(t - 1) += o(0)
       }
+    }
   }
-
 }

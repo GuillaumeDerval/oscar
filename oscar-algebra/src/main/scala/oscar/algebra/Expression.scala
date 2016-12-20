@@ -48,7 +48,17 @@ abstract class Expression[+T <: ExpressionDegree, +V](implicit num: Numeric[V]) 
    * @return the sum of this and that, in normal form
    */
   def +[TP >: T <: ExpressionDegree, VP >: V](that: Expression[TP, VP])(implicit numeric: Numeric[VP]): NormalizedExpression[TP, VP] = {
-    new NormalizedExpression[TP, VP](this.normalized.terms ++ that.normalized.terms)
+    val thisTerms = this.normalized.terms
+    val thatTerms = that.normalized.terms
+
+    // Computes the new terms of the resulting expression by merging the common terms of the two expressions
+    // TODO check groupBy for non-linear expressions. It assumes that the order of the vars is important (vars is a Seq), that is "x*y" is considered different from "y*x". It should be verified that it is indeed the case. See Pull Request #53.
+    val terms = (thisTerms ++ thatTerms).groupBy(_.vars).map { case (vars, commonTerms) =>
+      val sumOfTerms = commonTerms.map(_.coef.d).sum
+      Product(sumOfTerms, vars)
+    }
+
+    new NormalizedExpression[TP,VP](terms)
   }
 
   /**
@@ -64,6 +74,12 @@ abstract class Expression[+T <: ExpressionDegree, +V](implicit num: Numeric[V]) 
   }
 
   /**
+   * Negate this [[Expression]]
+   * @return -this
+   */
+  def unary_- = new NormalizedExpression(normalized.terms.map(_ * num.negate(num.one)))
+
+  /**
    * Multiplication of two expressions
    * @param that the [[Expression]] to multiply with this
    * @param numeric [[Numeric]] object for VP
@@ -76,10 +92,16 @@ abstract class Expression[+T <: ExpressionDegree, +V](implicit num: Numeric[V]) 
   }
 
   /**
-   * Negate this [[Expression]]
-   * @return -this
+   * Division of two expressions
+   * @param that the [[Expression]] to divide with this
+   * @param numeric [[Fractional]] object for VP
+   * @tparam TP the degree of that
+   * @tparam VP the type of values stored by the variables in that
+   * @return the division of this and that, in normal form
    */
-  def unary_- = new NormalizedExpression(normalized.terms.map(_ * num.negate(num.one)))
+  def /[TP <: ExpressionDegree, TR <: ExpressionDegree, VP >: V](that: Expression[TP, VP])(implicit op: (NormalizedExpression[T, VP], NormalizedExpression[TP, VP]) => DivExpression[TR, VP], numeric: Fractional[VP]): DivExpression[TR, VP] = {
+    op(this.normalized, that.normalized)
+  }
 
   /**
    * Constraints that this is smaller of equal to that
@@ -119,7 +141,9 @@ abstract class Expression[+T <: ExpressionDegree, +V](implicit num: Numeric[V]) 
 }
 
 /**
- * [[Expression]] represented internally as a sum of [[Product]]s of [[Term]]s.
+ * [[Expression]] represented internally as a sum of [[Product]]s.
+ *
+ * Each term should be unique, that is each [[Product]] in the sum should have a unique sequence of [[Var]].
  *
  * Please note that these expressions are not normalized enough yet to ensure that the [[equals]] method will work as
  * expected.
@@ -131,6 +155,7 @@ abstract class Expression[+T <: ExpressionDegree, +V](implicit num: Numeric[V]) 
  * @tparam V the type of values stored by the variables of the [[Expression]]. For now, mainly Double is used.
  */
 class NormalizedExpression[+T <: ExpressionDegree, +V](val terms: Iterable[Product[T, V]], val name: String = "ND")(implicit num: Numeric[V]) extends Expression[T, V] {
+  assert(terms.groupBy(_.vars).forall(_._2.size == 1), s"Similar terms where found in normalized expression $name. Each term should be unique.")
 
   /**
    * Returns the same [[NormalizedExpression]] but with a different name.

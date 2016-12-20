@@ -1,13 +1,8 @@
 package oscar.linprog
 
-import org.junit.runner.RunWith
-import org.scalactic.TripleEqualsSupport.Spread
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.FunSuite
 import oscar.algebra._
 
-
-@RunWith(classOf[JUnitRunner])
 class MIPTests extends LinearMathSolverTests{
   override def testSuite(interface: Option[SolverInterface[Linear,Linear,Double]], solverName: String): FunSuite = {
     new MIPTester(interface, solverName)
@@ -28,10 +23,9 @@ class MIPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], s
     maximize(x * 100.0 + y)
     model.subjectTo("E" |: "E" |: x * 3.0 + y <= 14.5)
 
-    model.solve match {
-      case Optimal(solution) =>
-        solution(x) shouldBe moreOrLess(4.0)
-        solution(y) shouldBe moreOrLess(14.5 - 3 * 4)
+    model.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(4.0)
+      solution(y) shouldBe moreOrLess(14.5 - 3 * 4)
     }
   }
 
@@ -62,17 +56,14 @@ class MIPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], s
 
     val run = solverInterface.run(model)
 
-    run.solve match {
-      case Optimal(solution) =>
+    run.solve.checkOptimalSolution { solution =>
+      // Set x as a continuous var => performs the linear relaxation of the above problem
+      run.setContinuous(x)
 
-        // Set x as a continuous var => performs the linear relaxation of the above problem
-        run.setContinuous(x)
-
-        run.solve match {
-          case Optimal(solution2) =>
-            solution2(x) shouldBe moreOrLess(14.5 / 3.0)
-            solution2(y) shouldBe moreOrLess(0.0)
-        }
+      run.solve.checkOptimalSolution { solution2 =>
+        solution2(x) shouldBe moreOrLess(14.5 / 3.0)
+        solution2(y) shouldBe moreOrLess(0.0)
+      }
     }
   }
 
@@ -89,23 +80,21 @@ class MIPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], s
 
     val run = solverInterface.run(model)
 
-    run.solve match {
-      case Optimal(solution) =>
+    run.solve.checkOptimalSolution { solution =>
+      run.setInteger(y)
 
-        run.setInteger(y)
-
-        run.solve match {
-          case Optimal(solution2) =>
-            solution2(x) shouldBe moreOrLess(0.0)
-            solution2(y) shouldBe moreOrLess(75.0)
-            solution2(z) shouldBe moreOrLess(75.5)
-        }
+      run.solve.checkOptimalSolution { solution2 =>
+        solution2(x) shouldBe moreOrLess(0.0)
+        solution2(y) shouldBe moreOrLess(75.0)
+        solution2(z) shouldBe moreOrLess(75.5)
+      }
     }
+
+    run.release()
   }
 
   test("Maximize objective under constraints with binary variables") {
     implicit val model = new Model[Linear, Linear, Double]()
-
 
     val x = VarBinary("x")
     val y = VarNumerical("y", 0, 100)
@@ -113,12 +102,9 @@ class MIPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], s
     maximize(100 * x + 1 * y)
     subjectTo("E" |: 3 * x + 1 * y <= 14.5)
 
-
-
-    model.solve match {
-      case Optimal(solution) =>
-        solution(x) shouldBe moreOrLess(1)
-        solution(y) shouldBe moreOrLess(14.5 - 3 * 1)
+    model.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(1)
+      solution(y) shouldBe moreOrLess(14.5 - 3 * 1)
     }
   }
 

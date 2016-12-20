@@ -10,7 +10,7 @@ package oscar.algebra
  * @tparam V type of values of the variables in [[expr]]
  */
 class Equation[+T <: ExpressionDegree,+V](val expr: NormalizedExpression[T,V], val sense: ConstraintSign, val name: String) {
-  require(name.nonEmpty)
+  require(name.nonEmpty, s"Equation.name should be non empty")
   override def toString: String = s"$expr $sense 0"
 
   /**
@@ -75,22 +75,15 @@ object ConstraintSign {
  * @tparam T degree of the [[Equation]]
  * @tparam V type of values of [[Equation]]
  */
-trait EquationDescription[+T <: ExpressionDegree,+V]{
-
+abstract class EquationDescription[+T <: ExpressionDegree,+V](val expr: NormalizedExpression[T,V], val sense: ConstraintSign) {
   /**
    * Returns an [[Equation]] corresponding to this with name `name`
    * @param name name of the [[Equation]]
    */
-  def |:(name: String): Equation[T,V]
+  def |:(name: String): Equation[T,V] = new Equation[T,V](expr, sense, name)
 }
 
-class EQEquation[+T <: ExpressionDegree,+V](expr: NormalizedExpression[T,V]) extends EquationDescription[T,V]{
-  def |:(s: String) = new Equation(expr, EQ,s)
-}
-class LQEquation[+T <: ExpressionDegree,+V](expr: NormalizedExpression[T,V]) extends EquationDescription[T,V]{
-  def |:(s: String) = new Equation(expr, LQ,s)
-}
-class GQEquation[+T <: ExpressionDegree,+V](expr: NormalizedExpression[T,V])  extends EquationDescription[T,V]{
-  def |:(s: String) = new Equation(expr, GQ,s)
-}
+class EQEquation[+T <: ExpressionDegree,+V](expr: NormalizedExpression[T,V]) extends EquationDescription[T,V](expr, EQ)
+class LQEquation[+T <: ExpressionDegree,+V](expr: NormalizedExpression[T,V]) extends EquationDescription[T,V](expr, LQ)
+class GQEquation[+T <: ExpressionDegree,+V](expr: NormalizedExpression[T,V]) extends EquationDescription[T,V](expr, GQ)
 

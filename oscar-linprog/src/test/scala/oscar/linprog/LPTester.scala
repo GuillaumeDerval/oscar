@@ -1,13 +1,8 @@
 package oscar.linprog
 
-import org.junit.runner.RunWith
-import org.scalactic.TripleEqualsSupport.Spread
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.FunSuite
 import oscar.algebra._
 
-
-@RunWith(classOf[JUnitRunner])
 class LPTests extends LinearMathSolverTests {
   override def testSuite(interface: Option[SolverInterface[Linear, Linear, Double]], solverName: String): FunSuite = {
     new LPTester(interface, solverName)
@@ -26,15 +21,13 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     val y = VarNumerical("y", 80, 170)
 
     maximize(-x * 2.0 + y * 5.0)
-
     subjectTo("E" |: x + y <= 200.0)
 
-    model.solve match {
-      case Optimal(solution) =>
-        solution(x) shouldBe moreOrLess(100)
-        solution(y) shouldBe moreOrLess(100)
+    model.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(100)
+      solution(y) shouldBe moreOrLess(100)
 
-        model.objective.expression.eval(solution) shouldBe moreOrLess(-2 * 100 + 5 * 100)
+      model.objective.expression.eval(solution) shouldBe moreOrLess(-2 * 100 + 5 * 100)
     }
   }
 
@@ -47,12 +40,11 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     minimize(-2 * x + 5 * y)
     subjectTo("E" |: x + y >= 200.0)
 
-    model.solve match {
-      case Optimal(solution) =>
-        solution(x) shouldBe moreOrLess(150)
-        solution(y) shouldBe moreOrLess(80)
+    model.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(150)
+      solution(y) shouldBe moreOrLess(80)
 
-        model.objective.expression.eval(solution) shouldBe moreOrLess(-2 * 150 + 5 * 80)
+      model.objective.expression.eval(solution) shouldBe moreOrLess(-2 * 150 + 5 * 80)
     }
   }
 
@@ -67,16 +59,52 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     subjectTo("E" |: x + y <= 75.0)
     subjectTo("E" |: x + z <= 75.0)
 
+    model.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(0)
+      solution(y) shouldBe moreOrLess(75.0)
+      solution(z) shouldBe moreOrLess(75.0)
 
+      model.objective.expression.eval(solution) shouldBe moreOrLess(1 * 0 + 2 * 75.0 + 3 * 75.0)
+    }
+  }
 
-    model.solve match {
-      case Optimal(solution) =>
+  test("Objective with multiple terms involving the same variable") {
+    implicit val model = new Model[Linear, Linear, Double]()
 
-        solution(x) shouldBe moreOrLess(0)
-        solution(y) shouldBe moreOrLess(75.0)
-        solution(z) shouldBe moreOrLess(75.0)
+    val x = VarNumerical("x", 0, 100)
+    val y = VarNumerical("y", 0, 100)
+    val z = VarNumerical("z", 0, 100)
 
-        model.objective.expression.eval(solution) shouldBe moreOrLess(1 * 0 + 2 * 75.0 + 3 * 75.0)
+    maximize(x * 1.0 + y * 1.0 - 0.5 * y + z * 3.0)
+    subjectTo("E" |: x + y <= 75.0)
+    subjectTo("E" |: z <= 75.0)
+
+    model.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(75.0)
+      solution(y) shouldBe moreOrLess(0.0)
+      solution(z) shouldBe moreOrLess(75.0)
+
+      model.objective.expression.eval(solution) shouldBe moreOrLess(1 * 75.0 + 0.5 * 0.0 + 3 * 75.0)
+    }
+  }
+
+  test("Constraint with multiple terms involving the same variable") {
+    implicit val model = new Model[Linear, Linear, Double]()
+
+    val x = VarNumerical("x", 0, 100)
+    val y = VarNumerical("y", 0, 100)
+    val z = VarNumerical("z", 0, 100)
+
+    maximize(x * 1.0 + y * 2.0 + z * 3.0)
+    subjectTo("E" |: x + 0.5 * y + 0.5 * y <= 75.0)
+    subjectTo("E" |: x + z <= 75.0)
+
+    model.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(0)
+      solution(y) shouldBe moreOrLess(75.0)
+      solution(z) shouldBe moreOrLess(75.0)
+
+      model.objective.expression.eval(solution) shouldBe moreOrLess(1 * 0 + 2 * 75.0 + 3 * 75.0)
     }
   }
 
@@ -92,16 +120,12 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     subjectTo("E" |: x + z <= 75.0)
     subjectTo("E" |: x >= 0)
 
+    model.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(75.0)
+      solution(y) shouldBe moreOrLess(0)
+      solution(z) shouldBe moreOrLess(0)
 
-
-    model.solve match {
-      case Optimal(solution) =>
-
-        solution(x) shouldBe moreOrLess(75.0)
-        solution(y) shouldBe moreOrLess(0)
-        solution(z) shouldBe moreOrLess(0)
-
-        model.objective.expression.eval(solution) shouldBe moreOrLess(10 * 75.0 + 2 * 0 + 3 * 0)
+      model.objective.expression.eval(solution) shouldBe moreOrLess(10 * 75.0 + 2 * 0 + 3 * 0)
     }
   }
 
@@ -114,9 +138,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     minimize(-x * 2.0 + y * 5.0)
     subjectTo("E" |: x + y >= 200.0)
 
-    model.solve match {
-      case Infeasible() =>
-    }
+    model.solve shouldBe an[Infeasible[Linear, Linear, Double]]
   }
 
   test("Detect unbounded problem") {
@@ -128,10 +150,7 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     minimize(-x * 2.0 + y * 5.0)
     subjectTo("E" |: x + y >= 200.0)
 
-    model.solve match {
-      case Unbounded() =>
-    }
-
+    model.solve shouldBe an[Unbounded[Linear, Linear, Double]]
   }
 
   test("Update variable bounds") {
@@ -145,28 +164,25 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
 
     val run = solverInterface.run(model)
 
-    run.solve match {
-      case Optimal(solution) =>
+    run.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(100)
+      solution(y) shouldBe moreOrLess(100)
 
-        solution(x) shouldBe moreOrLess(100)
-        solution(y) shouldBe moreOrLess(100)
-
-        model.objective.expression.eval(solution) shouldBe moreOrLess(-2 * 100 + 5 * 100)
+      model.objective.expression.eval(solution) shouldBe moreOrLess(-2 * 100 + 5 * 100)
     }
 
     // Update bounds
     run.lowerBound(x) = 0
     run.upperBound(y) = 250
 
-    run.solve match {
-      case Optimal(solution) =>
+    run.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(0)
+      solution(y) shouldBe moreOrLess(200.0)
 
-        solution(x) shouldBe moreOrLess(0)
-        solution(y) shouldBe moreOrLess(200.0)
-
-        model.objective.expression.eval(solution) shouldBe moreOrLess(-2 * 0 + 5 * 200.0)
+      model.objective.expression.eval(solution) shouldBe moreOrLess(-2 * 0 + 5 * 200.0)
     }
 
+    run.release()
   }
 
   test("Update objective") {
@@ -182,26 +198,25 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
 
     val run = solverInterface.run(model)
 
-    run.solve match {
-      case Optimal(solution) =>
+    run.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(100)
+      solution(y) shouldBe moreOrLess(100)
 
-        solution(x) shouldBe moreOrLess(100)
-        solution(y) shouldBe moreOrLess(100)
-
-        solution(obj) shouldBe moreOrLess(-2 * 100 + 5 * 100)
+      solution(obj) shouldBe moreOrLess(-2 * 100 + 5 * 100)
     }
 
     // Update objective
     run.setObjective(Minimize(obj))
 
     // Model has changed
-    run.solve match {
-      case Optimal(solution) =>
-        solution(x) shouldBe moreOrLess(120)
-        solution(y) shouldBe moreOrLess(80)
+    run.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(120)
+      solution(y) shouldBe moreOrLess(80)
 
-        solution(obj) shouldBe moreOrLess(-2 * 120 + 5 * 80)
+      solution(obj) shouldBe moreOrLess(-2 * 120 + 5 * 80)
     }
+
+    run.release()
   }
 
   ignore("Remove constraint before solve") {
@@ -220,16 +235,12 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
 
     subjectTo("cstr0" |: x + y <= 60)
 
+    model.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(0)
+      solution(y) shouldBe moreOrLess(60)
+      solution(z) shouldBe moreOrLess(75.0)
 
-
-    model.solve match {
-      case Optimal(solution) =>
-
-        solution(x) shouldBe moreOrLess(0)
-        solution(y) shouldBe moreOrLess(60)
-        solution(z) shouldBe moreOrLess(75.0)
-
-        solution(o) shouldBe moreOrLess(1 * 0.0 + 2 * 60 + 3 * 75.0)
+      solution(o) shouldBe moreOrLess(1 * 0.0 + 2 * 60 + 3 * 75.0)
     }
   }
 
@@ -245,27 +256,24 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     subjectTo("cstr0" |: x + y <= 75.0)
     subjectTo("cstr1" |: x + z <= 75.0)
 
-    model.solve match {
-      case Optimal(solution) =>
+    model.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(0)
+      solution(y) shouldBe moreOrLess(75.0)
+      solution(z) shouldBe moreOrLess(75.0)
 
-        solution(x) shouldBe moreOrLess(0)
-        solution(y) shouldBe moreOrLess(75.0)
-        solution(z) shouldBe moreOrLess(75.0)
-
-        solution(o) shouldBe moreOrLess(1 * 0.0 + 2 * 75.0 + 3 * 75.0)
+      solution(o) shouldBe moreOrLess(1 * 0.0 + 2 * 75.0 + 3 * 75.0)
     }
+
     // update model
     //solver.removeLinearConstraint("cstr0")
     subjectTo("cstr0" |: x + y <= 60)
 
-    model.solve match {
-      case Optimal(solution) =>
+    model.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(0)
+      solution(y) shouldBe moreOrLess(60)
+      solution(z) shouldBe moreOrLess(75.0)
 
-        solution(x) shouldBe moreOrLess(0)
-        solution(y) shouldBe moreOrLess(60)
-        solution(z) shouldBe moreOrLess(75.0)
-
-        solution(o) shouldBe moreOrLess(1 * 0.0 + 2 * 60 + 3 * 75.0)
+      solution(o) shouldBe moreOrLess(1 * 0.0 + 2 * 60 + 3 * 75.0)
     }
   }
 
@@ -284,13 +292,12 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
 
     //    solver.removeVariable("w")
 
-    model.solve match {
-      case Optimal(solution) =>
-        solution(x) shouldBe moreOrLess(0)
-        solution(y) shouldBe moreOrLess(75.0)
-        solution(z) shouldBe moreOrLess(75.0)
+    model.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(0)
+      solution(y) shouldBe moreOrLess(75.0)
+      solution(z) shouldBe moreOrLess(75.0)
 
-        solution(model.objective.expression) shouldBe moreOrLess(1 * 0.0 + 2 * 75.0 + 3 * 75.0)
+      solution(model.objective.expression) shouldBe moreOrLess(1 * 0.0 + 2 * 75.0 + 3 * 75.0)
     }
   }
 
@@ -306,25 +313,22 @@ class LPTester(interfaceOpt: Option[SolverInterface[Linear, Linear, Double]], so
     subjectTo("cstr0" |: x + y <= 75.0)
     subjectTo("cstr1" |: x + z <= 75.0)
 
-    model.solve match {
-      case Optimal(solution) =>
-        solution(x) shouldBe moreOrLess(0)
-        solution(y) shouldBe moreOrLess(75.0)
-        solution(z) shouldBe moreOrLess(75.0)
+    model.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(0)
+      solution(y) shouldBe moreOrLess(75.0)
+      solution(z) shouldBe moreOrLess(75.0)
 
-        solution(model.objective.expression) shouldBe moreOrLess(1 * 0.0 + 2 * 75.0 + 3 * 75.0)
+      solution(model.objective.expression) shouldBe moreOrLess(1 * 0.0 + 2 * 75.0 + 3 * 75.0)
     }
 
     //   solver.removeVariable("w")
 
-    model.solve match {
-      case Optimal(solution) =>
+    model.solve.checkOptimalSolution { solution =>
+      solution(x) shouldBe moreOrLess(0)
+      solution(y) shouldBe moreOrLess(75.0)
+      solution(z) shouldBe moreOrLess(75.0)
 
-        solution(x) shouldBe moreOrLess(0)
-        solution(y) shouldBe moreOrLess(75.0)
-        solution(z) shouldBe moreOrLess(75.0)
-
-        solution(model.objective.expression) shouldBe moreOrLess(1 * 0.0 + 2 * 75.0 + 3 * 75.0)
+      solution(model.objective.expression) shouldBe moreOrLess(1 * 0.0 + 2 * 75.0 + 3 * 75.0)
     }
   }
 
