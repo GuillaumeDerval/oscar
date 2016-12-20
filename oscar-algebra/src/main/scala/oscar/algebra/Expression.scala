@@ -52,6 +52,7 @@ abstract class Expression[+T <: ExpressionDegree, +V](implicit num: Numeric[V]) 
     val thatTerms = that.normalized.terms
 
     // Computes the new terms of the resulting expression by merging the common terms of the two expressions
+    // TODO check groupBy for non-linear expressions. It assumes that the order of the vars is important (vars is a Seq), that is "x*y" is considered different from "y*x". It should be verified that it is indeed the case. See Pull Request #53.
     val terms = (thisTerms ++ thatTerms).groupBy(_.vars).map { case (vars, commonTerms) =>
       val sumOfTerms = commonTerms.map(_.coef.d).sum
       Product(sumOfTerms, vars)
