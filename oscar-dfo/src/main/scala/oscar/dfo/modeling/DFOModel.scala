@@ -33,6 +33,8 @@ class DFOFloatVar(val solver: DFOSolver, val varName: String, val lb: Double = 0
     def randVal = rand.nextDouble() * (ub - lb) + lb
   def lowerBound = lb
   def upperBound = ub
+
+	def value = solver.getValue(id)
 }
 
 object DFOFloatVar {

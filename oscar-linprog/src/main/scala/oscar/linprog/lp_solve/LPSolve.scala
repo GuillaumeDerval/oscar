@@ -137,4 +137,14 @@ class LPSolveRun(config: Option[Path] = None)(private val model: Model[Linear, L
         Warning()
     }
   }
+
+  val supportedModelExportFormats: Seq[String] = Seq("lp", "mps")
+  override def exportModel(filePath: Path): Unit = {
+    val format = getExtension(filePath)
+    format match {
+      case "lp" => rawSolver.writeLp(filePath.toString) // Note: this is lp_solve's own lp format which is different from CPLEX's one.
+      case "mps" => rawSolver.writeFreeMps(filePath.toString)
+      case _ => throw new IllegalArgumentException(s"Unrecognised export format $format")
+    }
+  }
 }
