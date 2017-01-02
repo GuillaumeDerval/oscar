@@ -15,14 +15,14 @@ for f in `ls -1 *.scala`; do
   f2=${f%%??????}
   echo "class file: $f2"
   $SCALA/scalac -cp "/Users/pschaus/Documents/IdeaProjects/oscar/target/pack/lib/*" $f
-  #echo "init time $SECONDS"
-  #SECONDS=0; $SCALA/scala -encoding Cp1252 -J-Xmx1g -cp "/home/oscar/.jenkins/workspace/oscar-dev/target/pack/lib/*":. $f2 ; 
-  #echo "that took approximately $SECONDS seconds"
-  #echo $f $SECONDS $D2 $D1 $C >> ../perfresults.txt
-  #echo $f $SECONDS $D $C
+  echo "init time $SECONDS"
+  SECONDS=0; $SCALA/scala -encoding Cp1252 -J-Xmx1g -cp "/home/oscar/.jenkins/workspace/oscar-dev/target/pack/lib/*":. $f2 ;
+  echo "that took approximately $SECONDS seconds"
+  echo $f $SECONDS $D2 $D1 $C >> ../perfresults.txt
+  echo $f $SECONDS $D $C
 done
 cd ..
-#JAVA_HOME=/home/oscar/jdk1.7.0_71/
-#scala analyze
+JAVA_HOME=/home/oscar/jdk1.7.0_71/
+scala analyze
 
 

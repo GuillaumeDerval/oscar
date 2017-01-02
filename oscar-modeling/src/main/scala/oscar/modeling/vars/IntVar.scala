@@ -37,35 +37,43 @@ class IntVar(model_decl: ModelDeclaration, id: Int, name: String) extends Var(mo
 }
 
 object IntVar {
-  def apply(minValue: Int, maxValue: Int)(implicit model_decl: ModelDeclaration) = {
+  def apply(minValue: Int, maxValue: Int)(implicit model_decl: ModelDeclaration): IntVar = {
     new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(minValue, maxValue)), "")
   }
 
-  def apply(content: Set[Int])(implicit model_decl: ModelDeclaration) = {
+  def apply(content: Set[Int])(implicit model_decl: ModelDeclaration): IntVar = {
     new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(content)), "")
   }
 
-  def apply(content: SortedSet[Int])(implicit model_decl: ModelDeclaration) = {
+  def apply(content: SortedSet[Int])(implicit model_decl: ModelDeclaration): IntVar = {
     new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(content)), "")
   }
 
-  def apply(value: Int)(implicit model_decl: ModelDeclaration) = {
+  def apply(value: Int)(implicit model_decl: ModelDeclaration): IntVar = {
     new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(value)), "")
   }
 
-  def apply(minValue: Int, maxValue: Int, name: String)(implicit model_decl: ModelDeclaration) = {
+  def apply(minValue: Int, maxValue: Int, name: String)(implicit model_decl: ModelDeclaration): IntVar = {
     new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(minValue, maxValue, name)), name)
   }
 
-  def apply(content: Set[Int], name: String)(implicit model_decl: ModelDeclaration) = {
+  def apply(content: Set[Int], name: String)(implicit model_decl: ModelDeclaration): IntVar = {
     new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(content, name)), name)
   }
 
-  def apply(content: SortedSet[Int], name: String)(implicit model_decl: ModelDeclaration) = {
+  def apply(content: SortedSet[Int], name: String)(implicit model_decl: ModelDeclaration): IntVar = {
     new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(content, name)), name)
   }
 
-  def apply(value: Int, name: String)(implicit model_decl: ModelDeclaration) = {
+  def apply(value: Int, name: String)(implicit model_decl: ModelDeclaration): IntVar = {
     new IntVar(model_decl, model_decl.addNewRepresentative(IntDomainStorage(value, name)), name)
+  }
+
+  def apply(content: Range, name: String)(implicit model_decl: ModelDeclaration): IntVar = {
+    apply(content.min, content.max, name)
+  }
+
+  def apply(content: Range)(implicit model_decl: ModelDeclaration): IntVar = {
+    apply(content.min, content.max)
   }
 }

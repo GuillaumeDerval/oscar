@@ -106,8 +106,8 @@ object OscarBuild extends Build {
         packSettings ++
         unidocSettings ++
         Seq(libraryDependencies ++= testDeps) :+
-        (unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(oscarFzn, oscarFznCbls)),
-    aggregate = Seq(oscarAlgebra, oscarAlgo, oscarCbls, oscarCp, oscarCPXcsp3, oscarModeling, oscarDfo, oscarLinprog, oscarUtil, oscarVisual, oscarFzn, oscarFznCbls, oscarDes, oscarInvariants)
+        (unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(oscarFzn, oscarFznCbls, oscarPerf)),
+    aggregate = Seq(oscarAlgebra, oscarAlgo, oscarCbls, oscarCp, oscarCPXcsp3, oscarPerf, oscarModeling, oscarDfo, oscarLinprog, oscarUtil, oscarVisual, oscarFzn, oscarFznCbls, oscarDes, oscarInvariants)
 
   )
 
@@ -168,6 +168,13 @@ object OscarBuild extends Build {
           resolvers ++= Seq(ingi),
           libraryDependencies ++= testDeps :+ xcsp3),
     dependencies = Seq(oscarCp, oscarModeling)
+  )
+
+  lazy val oscarPerf = Project(
+    id = "oscar-perf",
+    base = file("oscar-perf"),
+    settings = commonSettings ++ Seq(resolvers ++= Seq(ingi), libraryDependencies ++= testDeps :+ xcsp3),
+    dependencies = Seq(oscarCp, oscarCPXcsp3, oscarModeling)
   )
 
   // Not included in the root build
