@@ -18,7 +18,7 @@ package oscar.modeling.perf
 
 import oscar.cp._
 import oscar.modeling.algebra.integer.Max
-import oscar.modeling.constraints.{BinPacking, GCC, Spread}
+import oscar.modeling.constraints.{BinPacking, GCC, Spread, StrongPropagation}
 import oscar.modeling.solvers.cp.{Branchings, CPApp}
 import oscar.modeling.vars.IntVar
 import oscar.util._
@@ -68,7 +68,7 @@ object BACP extends CPApp[Unit] with App {
   val l = Array.fill(nbPeriods)(IntVar(0, credits.sum))
   val vari = IntVar(0, 10000000)
 
-  add(Spread(l, credits.sum, vari))
+  add(new Spread(l, credits.sum, vari) with StrongPropagation)
   add(BinPacking(x, credits, l))
   for ((i, j) <- prerequisites) {
     add(x(i) < x(j)) // precedence constraint

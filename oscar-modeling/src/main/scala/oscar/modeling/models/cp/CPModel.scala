@@ -183,6 +183,16 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
       objs.head
   }
 
+  private def getPropaStrength(mC: Constraint): CPPropagStrength = mC match {
+    case _: StrongPropagation => oscar.cp.Strong
+    case _: MediumPropagation => oscar.cp.Medium
+    case _: WeakPropagation => oscar.cp.Weak
+    case default => cpSolver.propagStrength
+  }
+
+  private def p(mC: Constraint, oC: oscar.cp.core.Constraint): Unit = cpSolver.add(oC, getPropaStrength(mC))
+  private def p(mC: Constraint, oC: Array[oscar.cp.core.Constraint]): Unit = cpSolver.add(oC, getPropaStrength(mC))
+
   protected def postObjective(optimisationMethod: OptimisationMethod) = {
     val obj = optimisationMethod match {
       case m: Minimisation =>
@@ -213,7 +223,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         case InstantiateAndStoreInCache(expr) => postIntExpressionAndGetVar(expr)
         case InstantiateAndReuse(reuse, expr) => postIntExpressionWithVar(expr, postIntExpressionAndGetVar(reuse))
         case ExpressionConstraint(expr: BoolExpression) => postBooleanExpression(expr)
-        case Among(n, x, s) => cpSolver.add(cp.modeling.constraint.among(postIntExpressionAndGetVar(n), x.map(postIntExpressionAndGetVar), s))
+        case Among(n, x, s) => p(constraint,cp.modeling.constraint.among(postIntExpressionAndGetVar(n), x.map(postIntExpressionAndGetVar), s))
         case MinCumulativeResource(starts, durations, ends, demands, resources, capacity, id) =>
           val cpStart = starts map postIntExpressionAndGetVar
           val cpDuration = durations map postIntExpressionAndGetVar
@@ -221,7 +231,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
           val cpDemands = demands map postIntExpressionAndGetVar
           val cpResources = resources map postIntExpressionAndGetVar
           val cpCapacity = postIntExpressionAndGetVar(capacity)
-          cpSolver.add(cp.modeling.constraint.minCumulativeResource(cpStart, cpDuration, cpEnds, cpDemands, cpResources, cpCapacity, id))
+          p(constraint,cp.modeling.constraint.minCumulativeResource(cpStart, cpDuration, cpEnds, cpDemands, cpResources, cpCapacity, id))
         case MaxCumulativeResource(starts, durations, ends, demands, resources, capacity, id) =>
           val cpStart = starts map postIntExpressionAndGetVar
           val cpDuration = durations map postIntExpressionAndGetVar
@@ -229,52 +239,52 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
           val cpDemands = demands map postIntExpressionAndGetVar
           val cpResources = resources map postIntExpressionAndGetVar
           val cpCapacity = postIntExpressionAndGetVar(capacity)
-          cpSolver.add(cp.modeling.constraint.maxCumulativeResource(cpStart, cpDuration, cpEnds, cpDemands, cpResources, cpCapacity, id))
-        case AllDifferent(array) => cpSolver.add(cp.modeling.constraint.allDifferent(array.map(postIntExpressionAndGetVar)), CPPropagStrength.Weak)
-        case LexLeq(a, b) => cpSolver.add(cp.modeling.constraint.lexLeq(a.map(postIntExpressionAndGetVar), b.map(postIntExpressionAndGetVar)))
+          p(constraint,cp.modeling.constraint.maxCumulativeResource(cpStart, cpDuration, cpEnds, cpDemands, cpResources, cpCapacity, id))
+        case AllDifferent(array) => p(constraint,cp.modeling.constraint.allDifferent(array.map(postIntExpressionAndGetVar)))
+        case LexLeq(a, b) => p(constraint,cp.modeling.constraint.lexLeq(a.map(postIntExpressionAndGetVar), b.map(postIntExpressionAndGetVar)))
         case Table(array, values, None) =>
-          cpSolver.add(cp.modeling.constraint.table(array.map(postIntExpressionAndGetVar), values))
-        case NegativeTable(array, values, None) => cpSolver.add(cp.modeling.constraint.negativeTable(array.map(postIntExpressionAndGetVar), values))
-        case Table(array, values, Some(starred)) => cpSolver.add(new oscar.cp.constraints.tables.TableCTStar(array.map(postIntExpressionAndGetVar), values, starred))
-        case NegativeTable(array, values, Some(starred)) => cpSolver.add(new oscar.cp.constraints.tables.TableCTNegStar(array.map(postIntExpressionAndGetVar), values, starred))
-        case MinCircuit(succ, distMatrixSucc, cost) => cpSolver.add(cp.modeling.constraint.minCircuit(succ.map(postIntExpressionAndGetVar), distMatrixSucc, postIntExpressionAndGetVar(cost)), CPPropagStrength.Strong)
-        case MinCircuitWeak(succ, distMatrixSucc, cost) => cpSolver.add(cp.modeling.constraint.minCircuit(succ.map(postIntExpressionAndGetVar), distMatrixSucc, postIntExpressionAndGetVar(cost)), CPPropagStrength.Weak)
-        case GCC(x, minVal, low, up) => cpSolver.add(new cp.constraints.GCC(x.map(postIntExpressionAndGetVar), minVal, low, up))
-        case GCCVar(x, y) => cpSolver.add(cp.modeling.constraint.gcc(x.map(postIntExpressionAndGetVar), y.map(a => (a._1, postIntExpressionAndGetVar(a._2)))))
-        case BinPacking(x, w, l) => cpSolver.add(new cp.constraints.BinPacking(x.map(postIntExpressionAndGetVar), w, l.map(postIntExpressionAndGetVar)))
-        case Circuit(succ, symmetric) => cpSolver.add(new cp.constraints.Circuit(succ.map(postIntExpressionAndGetVar), symmetric), CPPropagStrength.Strong)
-        case SubCircuit(succ, offset) => cpSolver.add(cp.constraints.SubCircuit(succ.map(postIntExpressionAndGetVar), offset))
-        case Inverse(a, b) => cpSolver.add(new cp.constraints.Inverse(a.map(postIntExpressionAndGetVar), b.map(postIntExpressionAndGetVar)))
-        case MinAssignment(xarg, weightsarg, cost) => cpSolver.add(new cp.constraints.MinAssignment(xarg.map(postIntExpressionAndGetVar), weightsarg, postIntExpressionAndGetVar(cost)))
-        case StrongEq(a, b) => cpSolver.add(postIntExpressionAndGetVar(a) === postIntExpressionAndGetVar(b), CPPropagStrength.Strong)
-        case Spread(a, s1, s2) => cpSolver.add(new cp.constraints.Spread(a.toArray.map(postIntExpressionAndGetVar), s1, postIntExpressionAndGetVar(s2), true))
+          p(constraint,cp.modeling.constraint.table(array.map(postIntExpressionAndGetVar), values))
+        case NegativeTable(array, values, None) => p(constraint,cp.modeling.constraint.negativeTable(array.map(postIntExpressionAndGetVar), values))
+        case Table(array, values, Some(starred)) => p(constraint,new oscar.cp.constraints.tables.TableCTStar(array.map(postIntExpressionAndGetVar), values, starred))
+        case NegativeTable(array, values, Some(starred)) => p(constraint,new oscar.cp.constraints.tables.TableCTNegStar(array.map(postIntExpressionAndGetVar), values, starred))
+        case MinCircuit(succ, distMatrixSucc, cost) => p(constraint,cp.modeling.constraint.minCircuit(succ.map(postIntExpressionAndGetVar), distMatrixSucc, postIntExpressionAndGetVar(cost)))
+        case MinCircuitWeak(succ, distMatrixSucc, cost) => p(constraint,cp.modeling.constraint.minCircuit(succ.map(postIntExpressionAndGetVar), distMatrixSucc, postIntExpressionAndGetVar(cost)))
+        case GCC(x, minVal, low, up) => p(constraint,new cp.constraints.GCC(x.map(postIntExpressionAndGetVar), minVal, low, up))
+        case GCCVar(x, y) => p(constraint,cp.modeling.constraint.gcc(x.map(postIntExpressionAndGetVar), y.map(a => (a._1, postIntExpressionAndGetVar(a._2)))))
+        case BinPacking(x, w, l) => p(constraint,new cp.constraints.BinPacking(x.map(postIntExpressionAndGetVar), w, l.map(postIntExpressionAndGetVar)))
+        case Circuit(succ, symmetric) => p(constraint,new cp.constraints.Circuit(succ.map(postIntExpressionAndGetVar), symmetric))
+        case SubCircuit(succ, offset) => p(constraint,cp.constraints.SubCircuit(succ.map(postIntExpressionAndGetVar), offset))
+        case Inverse(a, b) => p(constraint,new cp.constraints.Inverse(a.map(postIntExpressionAndGetVar), b.map(postIntExpressionAndGetVar)))
+        case MinAssignment(xarg, weightsarg, cost) => p(constraint,new cp.constraints.MinAssignment(xarg.map(postIntExpressionAndGetVar), weightsarg, postIntExpressionAndGetVar(cost)))
+        case StrongEq(a, b) => p(constraint,postIntExpressionAndGetVar(a) === postIntExpressionAndGetVar(b))
+        case Spread(a, s1, s2) => p(constraint,new cp.constraints.Spread(a.toArray.map(postIntExpressionAndGetVar), s1, postIntExpressionAndGetVar(s2), true))
         case UnaryResourceSimple(starts, durations, ends, resources, id) =>
           val cpStarts = starts.map(postIntExpressionAndGetVar)
           val cpDurations = durations.map(postIntExpressionAndGetVar)
           val cpEnds = ends.map(postIntExpressionAndGetVar)
           val cpResources = resources.map(postIntExpressionAndGetVar)
-          cpSolver.add(cp.modeling.constraint.unaryResource(cpStarts, cpDurations, cpEnds, cpResources, id))
+          p(constraint,cp.modeling.constraint.unaryResource(cpStarts, cpDurations, cpEnds, cpResources, id))
         case UnaryResourceTransitionType(starts, durations, ends, types, transitionTimes) =>
           val cpStarts = starts.map(postIntExpressionAndGetVar)
           val cpDurations = durations.map(postIntExpressionAndGetVar)
           val cpEnds = ends.map(postIntExpressionAndGetVar)
-          cpSolver.add(cp.modeling.constraint.unaryResource(cpStarts, cpDurations, cpEnds, types, transitionTimes))
+          p(constraint,cp.modeling.constraint.unaryResource(cpStarts, cpDurations, cpEnds, types, transitionTimes))
         case UnaryResourceTransition(starts, durations, ends, transitionTimes) =>
           val cpStarts = starts.map(postIntExpressionAndGetVar)
           val cpDurations = durations.map(postIntExpressionAndGetVar)
           val cpEnds = ends.map(postIntExpressionAndGetVar)
-          cpSolver.add(cp.modeling.constraint.unaryResource(cpStarts, cpDurations, cpEnds, transitionTimes))
+          p(constraint,cp.modeling.constraint.unaryResource(cpStarts, cpDurations, cpEnds, transitionTimes))
         case UnaryResourceTransitionFamilies(starts, durations, ends, familyMatrix, families) =>
           val cpStarts = starts.map(postIntExpressionAndGetVar)
           val cpDurations = durations.map(postIntExpressionAndGetVar)
           val cpEnds = ends.map(postIntExpressionAndGetVar)
-          cpSolver.add(cp.modeling.constraint.unaryResource(cpStarts, cpDurations, cpEnds, familyMatrix, families))
+          p(constraint,cp.modeling.constraint.unaryResource(cpStarts, cpDurations, cpEnds, familyMatrix, families))
         case DiffN(x, dx, y, dy) =>
-          cpSolver.add(cp.modeling.constraint.diffn(x.map(postIntExpressionAndGetVar), dx.map(postIntExpressionAndGetVar), y.map(postIntExpressionAndGetVar), dy.map(postIntExpressionAndGetVar)).toArray)
+          p(constraint,cp.modeling.constraint.diffn(x.map(postIntExpressionAndGetVar), dx.map(postIntExpressionAndGetVar), y.map(postIntExpressionAndGetVar), dy.map(postIntExpressionAndGetVar)).toArray)
         case Regular(on, automaton) =>
-          cpSolver.add(cp.modeling.constraint.regular(on.map(postIntExpressionAndGetVar), automaton))
+          p(constraint,cp.modeling.constraint.regular(on.map(postIntExpressionAndGetVar), automaton))
         case NotAllEqual(x) =>
-          cpSolver.add(cp.modeling.constraint.notAllEqual(x.map(postIntExpressionAndGetVar)))
+          p(constraint,cp.modeling.constraint.notAllEqual(x.map(postIntExpressionAndGetVar)))
         case default => throw new Exception("Unknown constraint " + constraint.getClass.toString) //TODO: put a real exception here
       }
   }

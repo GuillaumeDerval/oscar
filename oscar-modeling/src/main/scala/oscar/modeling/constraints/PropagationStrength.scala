@@ -1,0 +1,7 @@
+package oscar.modeling.constraints
+
+
+trait PropagationStrength extends Constraint
+trait StrongPropagation extends PropagationStrength
+trait MediumPropagation extends PropagationStrength
+trait WeakPropagation extends PropagationStrength
