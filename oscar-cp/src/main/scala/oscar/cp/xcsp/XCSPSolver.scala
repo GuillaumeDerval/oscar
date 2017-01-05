@@ -43,7 +43,8 @@ abstract class XCSPSolver {
  
   //----------------------------- abstract global constraints-------------------------------------
   
- def table(x: Array[CPIntVar], tuples: Array[Array[Int]]) : Constraint  
+ def table(x: Array[CPIntVar], tuples: Array[Array[Int]]) : Constraint
+ def tableNe(x: Array[CPIntVar], tuples: Array[Array[Int]]) : Constraint = oscar.cp.table(x,tuples)
  def allDifferent(vars: Iterable[CPIntVar]) : Constraint
  def weightedSum(w: Array[Int], x: Array[CPIntVar], y: Int) : Constraint
  def among(n: CPIntVar, x: IndexedSeq[CPIntVar], s: Set[Int]) : Constraint
@@ -85,7 +86,8 @@ abstract class XCSPSolver {
       if(relations != None && relations.get.contains(reference)) { //constraint in extension
         val relation = relations.get (reference)
         if (relation._1 == "supports") add(table(scope map {decisionVariables(_)},relation._2))
-        else throw new RuntimeException("Conflicts tables are not supported.")
+        else if (relation._1 == "conflicts") add(tableNe(scope map {decisionVariables(_)},relation._2)) // modified: added constraint negative
+        else throw new RuntimeException(relation._1 + " tables are not supported.")
       }
       else if(reference == "global:allDifferent") //deprecated implicit parameters for allDiff is tolerated 
         allDifferentHelper(scope, "["+ scope.reduce(_ + " " + _) + "]")
@@ -148,12 +150,12 @@ abstract class XCSPSolver {
    case "iff" => (booleanExpression(left) ==> booleanExpression(right)) & (booleanExpression(right) ==> booleanExpression(left)) 
   }
   case BooleanOperatorOnIntegers(name,left,right) => name match {
-   case "eq" => integerExpression(left) === integerExpression(right)
-   case "ne" => integerExpression(left) !== integerExpression(right)
-   case "ge" => integerExpression(left) >== integerExpression(right)
-   case "gt" => integerExpression(left) >>= integerExpression(right)
-   case "le" => integerExpression(left) <== integerExpression(right)
-   case "lt" => integerExpression(left) <<= integerExpression(right)
+   case "eq" => integerExpression(left) ?=== integerExpression(right)
+   case "ne" => integerExpression(left) ?!== integerExpression(right)
+   case "ge" => integerExpression(left) ?>= integerExpression(right)
+   case "gt" => integerExpression(left) ?> integerExpression(right)
+   case "le" => integerExpression(left) ?<= integerExpression(right)
+   case "lt" => integerExpression(left) ?< integerExpression(right)
   }
  }
  

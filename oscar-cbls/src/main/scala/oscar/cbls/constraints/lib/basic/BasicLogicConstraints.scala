@@ -27,14 +27,9 @@ package oscar.cbls.constraints.lib.basic
 import oscar.cbls.constraints.core._
 import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
-import oscar.cbls.invariants.lib.logic.IntInt2Int
-import oscar.cbls.invariants.lib.minmax._
-import oscar.cbls.invariants.lib.numeric.Dist
-import oscar.cbls.modeling.Algebra._
+import oscar.cbls.invariants.lib.numeric.{Dist, MinusOffsetPos, ReifViol}
+
 import scala.math.abs
-import oscar.cbls.invariants.lib.logic.IntInt2Int
-import oscar.cbls.invariants.lib.numeric.MinusOffsetPos
-import oscar.cbls.invariants.lib.numeric.ReifViol
 
 /**
  * implements left <= right

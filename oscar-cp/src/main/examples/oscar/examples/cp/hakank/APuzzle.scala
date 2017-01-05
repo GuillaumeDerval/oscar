@@ -92,28 +92,28 @@ object APuzzle extends CPModel with App {
   if (p == 1) {
     // Problem 1 (basic approach)
     println("Problem 1 (basic approach)")
-    add(x8 + x8 + x0 + x9 == 6)
-    add(x7 + x1 + x1 + x1 == 0)
-    add(x2 + x1 + x7 + x2 == 0)
-    add(x6 + x6 + x6 + x6 == 4)
-    add(x1 + x1 + x1 + x1 == 0)
-    add(x3 + x2 + x1 + x3 == 0)
-    add(x7 + x6 + x6 + x2 == 2)
-    add(x9 + x3 + x1 + x2 == 1)
-    add(x0 + x0 + x0 + x0 == 4)
-    add(x2 + x2 + x2 + x2 == 0)
-    add(x3 + x3 + x3 + x3 == 0)
-    add(x5 + x5 + x5 + x5 == 0)
-    add(x8 + x1 + x9 + x3 == 3)
-    add(x8 + x0 + x9 + x6 == 5)
-    add(x7 + x7 + x7 + x7 == 0)
-    add(x9 + x9 + x9 + x9 == 4)
-    add(x7 + x7 + x5 + x6 == 1)
-    add(x6 + x8 + x5 + x5 == 3)
-    add(x9 + x8 + x8 + x1 == 5)
-    add(x5 + x5 + x3 + x1 == 0)
+    add(x8 + x8 + x0 + x9 === 6)
+    add(x7 + x1 + x1 + x1 === 0)
+    add(x2 + x1 + x7 + x2 === 0)
+    add(x6 + x6 + x6 + x6 === 4)
+    add(x1 + x1 + x1 + x1 === 0)
+    add(x3 + x2 + x1 + x3 === 0)
+    add(x7 + x6 + x6 + x2 === 2)
+    add(x9 + x3 + x1 + x2 === 1)
+    add(x0 + x0 + x0 + x0 === 4)
+    add(x2 + x2 + x2 + x2 === 0)
+    add(x3 + x3 + x3 + x3 === 0)
+    add(x5 + x5 + x5 + x5 === 0)
+    add(x8 + x1 + x9 + x3 === 3)
+    add(x8 + x0 + x9 + x6 === 5)
+    add(x7 + x7 + x7 + x7 === 0)
+    add(x9 + x9 + x9 + x9 === 4)
+    add(x7 + x7 + x5 + x6 === 1)
+    add(x6 + x8 + x5 + x5 === 3)
+    add(x9 + x8 + x8 + x1 === 5)
+    add(x5 + x5 + x3 + x1 === 0)
     // The unknown
-    add(x2 + x5 + x8 + x1 == x)
+    add(x2 + x5 + x8 + x1 === x)
   } else if (p == 2) {
     // Problem 1 (alternative approach)
     println("Problem 1 (alternative approach)")
@@ -139,22 +139,22 @@ object APuzzle extends CPModel with App {
       Array(9, 8, 8, 1, 5),
       Array(5, 5, 3, 1, 0))
     for (i <- 0 until problem1.length) {
-      add(sum(for (j <- 0 until 4) yield all(problem1(i)(j))) == problem1(i)(4))
+      add(sum(for (j <- 0 until 4) yield all(problem1(i)(j))) === problem1(i)(4))
     }
-    add(all(2) + all(5) + all(8) + all(1) == x);
+    add(all(2) + all(5) + all(8) + all(1) === x);
   } else if (p == 3) {
     // Problem 2 (basic approach)
     println("Problem 2 (basic approach)")
-    add(x8 + x8 + x0 + x9 == 6)
-    add(x7 + x6 + x6 + x2 == 2)
-    add(x9 + x3 + x1 + x2 == 1)
-    add(x8 + x1 + x9 + x3 == 3)
-    add(x8 + x0 + x9 + x6 == 5)
-    add(x7 + x7 + x5 + x6 == 1)
-    add(x6 + x8 + x5 + x5 == 3)
-    add(x9 + x8 + x8 + x1 == 5)
+    add(x8 + x8 + x0 + x9 === 6)
+    add(x7 + x6 + x6 + x2 === 2)
+    add(x9 + x3 + x1 + x2 === 1)
+    add(x8 + x1 + x9 + x3 === 3)
+    add(x8 + x0 + x9 + x6 === 5)
+    add(x7 + x7 + x5 + x6 === 1)
+    add(x6 + x8 + x5 + x5 === 3)
+    add(x9 + x8 + x8 + x1 === 5)
     // The unknown
-    add(x2 + x5 + x8 + x1 == x)
+    add(x2 + x5 + x8 + x1 === x)
   } else {
     // Problem 2 (alternative approach)
     println("Problem 2 (alternative approach)")
@@ -168,9 +168,9 @@ object APuzzle extends CPModel with App {
       Array(6, 8, 5, 5, 3),
       Array(9, 8, 8, 1, 5))
     for (i <- 0 until problem2.length) {
-      add(sum(for (j <- 0 until 4) yield all(problem2(i)(j))) == problem2(i)(4))
+      add(sum(for (j <- 0 until 4) yield all(problem2(i)(j))) === problem2(i)(4))
     }
-    add(all(2) + all(5) + all(8) + all(1) == x)
+    add(all(2) + all(5) + all(8) + all(1) === x)
   }
   search { binaryStatic(all) }
   onSolution {

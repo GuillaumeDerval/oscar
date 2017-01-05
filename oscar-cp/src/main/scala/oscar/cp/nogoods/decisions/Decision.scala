@@ -1,6 +1,6 @@
 package oscar.cp.nogoods.decisions
 
-import oscar.cp.core.Constraint
+import oscar.cp._
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.variables.CPBoolVar
 
@@ -17,18 +17,18 @@ abstract class Decision {
 }
 
 class Assign(val variable: CPIntVar, val value: Int) extends Decision {
-  override def apply(): Unit = variable.store.post(variable == value)
+  override def apply(): Unit = variable.store.post(variable.eq(value))
   override def opposite: Decision = new Remove(variable, value)
   override def isTrue: Boolean = variable.isBoundTo(value)
-  override def toLiteral: CPBoolVar = variable ?== value
+  override def toLiteral: CPBoolVar = variable ?=== value
   override def toString: String = s"[${variable.name} == $value]"
 }
 
 class Remove(val variable: CPIntVar, val value: Int) extends Decision {
-  override def apply(): Unit = variable.store.post(variable != value)
+  override def apply(): Unit = variable.store.post(variable.diff(value))
   override def opposite: Decision = new Assign(variable, value)
   override def isTrue: Boolean = !variable.hasValue(value)
-  override def toLiteral: CPBoolVar = variable ?!= value
+  override def toLiteral: CPBoolVar = variable ?!== value
   override def toString: String = s"[${variable.name} != $value]"
 }
 

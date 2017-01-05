@@ -86,7 +86,7 @@ object Strimko extends CPModel with App  {
       // Handle the placed
       for(i <- 0 until num_placed) {
         // note: also adjust to 0-based
-       add(x(placed(i)(0) - 1)(placed(i)(1)- 1) ==  placed(i)(2))
+       add(x(placed(i)(0) - 1)(placed(i)(1)- 1) ===  placed(i)(2))
       }
     search{
       binaryFirstFail(x.flatten.toSeq)

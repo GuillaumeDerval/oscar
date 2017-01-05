@@ -292,47 +292,112 @@ extends Constraint(capacity.store, name) {
       if (oldHeight >  C && height <= C) lastUnder = date
     }
   }
+  
+  
+  private val indices = new Array[Int](n)
+  private val temp1   = new Array[Int](n + 1)
+  private val temp2   = new Array[Int](n + 1)
+  
+  // filters out tasks that should not be considered, then sorts them. Returns the number of items in filtered list.
+  final def filterFreeSort(byKey: Array[Int], filtered: Array[Int], keys: Array[Int]): Int = {
+    val nKeys = byKey.length
+    val limit = toConsider.limit.value
+    val status = toConsider.status
+    
+    var p = 0 
+    var count = 0
+    
+    // extract only tasks to consider, that are optional or have a free part
+    while (p < nKeys) {
+      val task = byKey(p)
+      if (status(task) < limit && 
+          (!required(task) || smin(task) + dmin(task) < emax(task))) {
+        filtered(count) = task
+        indices(count) = p
+        count += 1
+      }
+      p += 1
+    }
+    
+    // sort them
+    mergeSort(filtered, keys, 0, count, temp1, temp2)
+    
+    // put them back for mergeSort's incremental behaviour
+    p = count
+    while (p > 0) {
+      p -= 1
+      byKey(indices(p)) = filtered(p) 
+    }
+    
+    count
+  }
+  
+  // filters out tasks that should not be considered, then sorts them. Returns the number of items in filtered list.
+  final def filterActiveSort(byKey: Array[Int], filtered: Array[Int], keys: Array[Int]): Int = {
+    val nKeys = byKey.length
+    val limit = toConsider.limit.value
+    val status = toConsider.status
+    
+    var p = 0 
+    var count = 0
+    
+    // extract only tasks to consider
+    while (p < nKeys) {
+      val task = byKey(p)
+      if (status(task) < limit) {
+        filtered(count) = task
+        indices(count) = p
+        count += 1
+      }
+      p += 1
+    }
+    
+    // sort them
+    mergeSort(filtered, keys, 0, count, temp1, temp2)
+    
+    // put them back for mergeSort's incremental behaviour
+    p = count
+    while (p > 0) {
+      p -= 1
+      byKey(indices(p)) = filtered(p) 
+    }
+    
+    count
+  }
+  
+  final def filterMandatorySort(byKey: Array[Int], filtered: Array[Int], keys: Array[Int]): Int = {
+    val nKeys = byKey.length
+    val limit = toConsider.limit.value
+    val status = toConsider.status
+    
+    var p = 0 
+    var count = 0
+    
+    // extract only tasks to consider, that are required and have a fixed part
+    while (p < nKeys) {
+      val task = byKey(p)
+      if (status(task) < limit && required(task) && smax(task) < emin(task)) {
+        filtered(count) = task
+        indices(count) = p
+        count += 1
+      }
+      p += 1
+    }
+    
+    // sort them
+    mergeSort(filtered, keys, 0, count, temp1, temp2)
+    
+    // put them back for mergeSort's incremental behaviour
+    p = count
+    while (p > 0) {
+      p -= 1
+      byKey(indices(p)) = filtered(p) 
+    }
+    
+    count
+  }
+
 
   
-  final def removeOneStepExtremal() =  {
-    val limit = toConsider.limit.value 
-    
-    var minSMinNotFixed = Int.MaxValue
-    var maxEMaxNotFixed = Int.MinValue
-    
-    var p = limit - 1
-    while (p >= 0) {
-      val a = activitiesToConsider(p)
-      if (sMin(a) + dMin(a) < eMax(a)) {
-        minSMinNotFixed = min(minSMinNotFixed, sMin(a))
-        maxEMaxNotFixed = max(maxEMaxNotFixed, eMax(a))
-      }
-      p -= 1
-    }
-    
-    // Step 4.2: get minimal sMin of activities that overlap minSMinFixed
-    var minSMin = minSMinNotFixed
-    var maxEMax = maxEMaxNotFixed
-    p = limit - 1
-    while (p >= 0) {
-      val a = activitiesToConsider(p)
-      if (sMin(a) < minSMinNotFixed && minSMinNotFixed < eMax(a))
-        minSMin = min(minSMin, sMin(a))
-        
-      if (sMin(a) < maxEMaxNotFixed && maxEMaxNotFixed < eMax(a))
-        maxEMax = max(maxEMax, eMax(a))
-      p -= 1
-    }
-        
-    // Step 4.3: exclude from consideration all activities that are strictly before minSMin
-    p = limit - 1
-    while (p >= 0) {
-      val a = activitiesToConsider(p)
-      if (eMax(a) <= minSMin) toConsider.exclude(a)
-      else if (sMin(a) >= maxEMax) toConsider.exclude(a)
-      p -= 1
-    }
-    
-  }
 
 }

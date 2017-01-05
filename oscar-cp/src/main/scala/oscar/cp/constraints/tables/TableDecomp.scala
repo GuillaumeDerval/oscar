@@ -1,4 +1,4 @@
-package oscar.cp.constraints
+package oscar.cp.constraints.tables
 
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.Constraint

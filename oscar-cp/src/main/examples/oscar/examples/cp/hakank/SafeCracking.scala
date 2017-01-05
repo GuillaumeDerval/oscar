@@ -51,11 +51,11 @@ object SafeCracking extends CPModel with App  {
     var numSols = 0
   
      add(allDifferent(x))
-     add(c4 - c6 == c7)
-     add(c1 * c2 * c3 == c8 + c9)
+     add(c4 - c6 === c7)
+     add(c1 * c2 * c3 === c8 + c9)
      add(c2 + c3 + c6 < c8)
      add(c9 < c8)
-      (0 until n).foreach(i=>add(x(i) != i+1))
+      (0 until n).foreach(i=>add(x(i) !== i+1))
     search{
       binaryFirstFail(x)
     }

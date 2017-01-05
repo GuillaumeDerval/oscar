@@ -51,20 +51,20 @@ object MagicSquareAndCards extends CPModel with App  {
       for(i <- RANGE) {
         // rows
         val row = for{j <- RANGE} yield x(i)(j)
-       add( sum(row) == s)
+       add( sum(row) === s)
        add( allDifferent(row), Strong)
         // columns
         val col = for{j <- RANGE} yield x(j)(i)
-       add( sum(col) == s)
+       add( sum(col) === s)
        add( allDifferent(col), Strong)
       }
       // diagonals
-     add( sum(for{i <- RANGE} yield x(i)(i)) == s)
-     add( sum(for{i <- RANGE} yield x(i)(n-i-1)) == s)
+     add( sum(for{i <- RANGE} yield x(i)(i)) === s)
+     add( sum(for{i <- RANGE} yield x(i)(n-i-1)) === s)
       // redundant constraint
-     add(sum(counts.map(_._2)) == n*n) 
+     add(sum(counts.map(_._2)) === n*n)
       // symmetry breaking
-     add(x(n-1)(n-1) == values)
+     add(x(n-1)(n-1) === values)
     search{
       binaryMaxDegree(x.flatten.toSeq)
     }

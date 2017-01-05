@@ -54,7 +54,7 @@ class TestReservoirResource extends FunSuite with Matchers {
     val initialAmount = 0
 
     for (i <- startVars.indices) {
-      add(startVars(i) + durationVars(i) == endVars(i))
+      add(startVars(i) + durationVars(i) === endVars(i))
     }
     add(reservoirResource(startVars, durationVars, endVars, productionVars, consumptionVars, minCapacity, maxCapacity, initialAmount))
 
@@ -84,7 +84,7 @@ class TestReservoirResource extends FunSuite with Matchers {
     val initialAmount = 1
 
     for (i <- startVars.indices) {
-      add(startVars(i) + durationVars(i) == endVars(i))
+      add(startVars(i) + durationVars(i) === endVars(i))
     }
     add(reservoirResource(startVars, durationVars, endVars, productionVars, consumptionVars, minCapacity, maxCapacity, initialAmount))
 
@@ -120,7 +120,7 @@ class TestReservoirResource extends FunSuite with Matchers {
       val initialAmount = minCapacity + math.min(1, maxCapacity)
 
       for (i <- startVars.indices) {
-        add(startVars(i) + durationVars(i) == endVars(i))
+        add(startVars(i) + durationVars(i) === endVars(i))
       }
       try {
         add(reservoirResource(startVars, durationVars, endVars, productionVars, consumptionVars, minCapacity, maxCapacity, initialAmount))
@@ -161,7 +161,7 @@ class TestReservoirResource extends FunSuite with Matchers {
       val initialAmount = minCapacity + math.min(1, maxCapacity)
 
       for (i <- startVars.indices) {
-        add(startVars(i) + durationVars(i) == endVars(i))
+        add(startVars(i) + durationVars(i) === endVars(i))
       }
       try {
         add(reservoirResource(startVars, durationVars, endVars, productionVars, consumptionVars, minCapacity, maxCapacity, initialAmount))

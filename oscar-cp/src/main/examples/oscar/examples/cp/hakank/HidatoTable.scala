@@ -124,7 +124,7 @@ object HidatoTable extends CPModel with App  {
       for(i <- 0 until n; 
           j <- 0 until n 
           if problem(i)(j) > 0) {
-           add(positions(problem(i)(j)-1) == i*n+j)
+           add(positions(problem(i)(j)-1) === i*n+j)
       }
      add(allDifferent(positions), Strong)
       for(k <- 1 until n*n-1) {

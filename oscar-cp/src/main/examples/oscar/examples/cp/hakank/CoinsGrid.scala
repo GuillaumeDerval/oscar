@@ -54,9 +54,9 @@ object CoinsGrid extends CPModel with App  {
     //
    minimize(z) 
       // sum rows = c
-      List.tabulate(n)(i =>add(sum(List.tabulate(n)(j => x(i)(j) )) == c))
+      List.tabulate(n)(i => add(sum(List.tabulate(n)(j => x(i)(j) )) === c))
       // sum cols = c
-      List.tabulate(n)(i =>add(sum(List.tabulate(n)(j => x(j)(i) )) == c))
+      List.tabulate(n)(i => add(sum(List.tabulate(n)(j => x(j)(i) )) === c))
     search{
       binaryFirstFail(x.flatten.toSeq)
     }

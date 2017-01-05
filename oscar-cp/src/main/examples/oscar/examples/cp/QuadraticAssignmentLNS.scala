@@ -49,7 +49,7 @@ object QuadraticAssignmentLNS extends CPModel with App {
       case None => noAlternative
       case Some(y) => {
         val v = y.min
-        branch(post(y == v))(post(y != v))
+        branch(post(y === v))(post(y !== v))
       }
     }
   }
@@ -67,7 +67,7 @@ object QuadraticAssignmentLNS extends CPModel with App {
   for (r <- 1 to 200) {
     // relax randomly 50% of the variables and run again
     val stat = startSubjectTo(failureLimit = limit) {
-      add((N).filter(i => rand.nextInt(100) < 50).map(i => x(i) == solver.lastSol(x(i))))
+      add((N).filter(i => rand.nextInt(100) < 50).map(i => x(i) === solver.lastSol(x(i))))
     }
     // adapt the backtrack limit for next run *2 is previous run reached the limit /2 otherwise
     limit = if (stat.completed) limit / 2 else limit * 2

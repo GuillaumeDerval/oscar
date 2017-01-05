@@ -25,10 +25,10 @@ object AlternativeUnary extends CPModel with App {
   
   // Resources
   for (r <- 0 until nResources) {
-    add(unaryResource(starts, durations, ends, resources, r))
+    add(unaryResource(starts, durations, ends, resources, r), Medium)
   }
   
-  add(maxCumulativeResource(starts, durations, ends, demands, CPIntVar(2)))
+  add(maxCumulativeResource(starts, durations, ends, demands, CPIntVar(2)), Medium)
 
   minimize(makespan) search {
     splitLastConflict(starts ++ resources)

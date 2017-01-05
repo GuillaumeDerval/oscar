@@ -70,7 +70,7 @@ class TestHeldKarp extends FunSuite with ShouldMatchers {
 
     val obj = sum(0 until n)(i => distMatrixSucc(i)(succ(i)))
 
-    add(sum(0 until n)(i => distMatrixPred(i)(pred(i))) == obj)
+    add(sum(0 until n)(i => distMatrixPred(i)(pred(i))) === obj)
     add(obj <= ub)
 
     if (minAss) {

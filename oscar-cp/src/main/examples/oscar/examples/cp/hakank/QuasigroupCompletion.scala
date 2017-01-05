@@ -65,7 +65,7 @@ object QuasigroupCompletion extends CPModel with App  {
       // fill the things we know
       for (i <- 0 until n; j <- 0 until n) {
         if (problem(i)(j) > X) {
-         add(x(i)(j) == problem(i)(j))
+         add(x(i)(j) === problem(i)(j))
         }
       }
       // make it a Latin Square

@@ -27,7 +27,7 @@ class TestUnaryResourceWithOptionalActivities extends FunSuite with ShouldMatche
   def decomp(cp: CPSolver, starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar]): Unit = {
     val n = starts.size
     for (i <- 0 until n; j <- i + 1 until n) {
-      cp.add((ends(i) <== starts(j)) || (ends(j) <== starts(i)))
+      cp.add((ends(i) ?<= starts(j)) || (ends(j) ?<= starts(i)))
     }
   }
   
@@ -35,7 +35,7 @@ class TestUnaryResourceWithOptionalActivities extends FunSuite with ShouldMatche
   def decomp(cp: CPSolver, starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar],resources: Array[CPIntVar], id: Int ): Unit = {
     val n = starts.size
     for (i <- 0 until n; j <- i + 1 until n) {
-      cp.add((ends(i) <== starts(j)) || (ends(j) <== starts(i)) || (resources(i) !== id) || (resources(j) !== id))
+      cp.add((ends(i) ?<= starts(j)) || (ends(j) ?<= starts(i)) || (resources(i) ?!== id) || (resources(j) ?!== id))
     }
   }  
 
@@ -171,7 +171,7 @@ class TestUnaryResourceWithOptionalActivities extends FunSuite with ShouldMatche
         val ends = Array.fill(4)(CPIntVar(0 to 5))
         val durs = Array(CPIntVar(3),CPIntVar(1),CPIntVar(2),CPIntVar(2))
         for (i <- 0 until 4) {
-          add(starts(i) + durs(i) == ends(i))
+          add(starts(i) + durs(i) === ends(i))
         }
 		add(ends(0) <= starts(1)) // 0 precedes act 1
 		add(ends(2) <= starts(3)) // 2 precedes act 3
@@ -205,7 +205,7 @@ class TestUnaryResourceWithOptionalActivities extends FunSuite with ShouldMatche
         val ends = Array.fill(4)(CPIntVar(0 to 5))
         val durs = Array(CPIntVar(3 to 4),CPIntVar(1),CPIntVar(2),CPIntVar(2))
         for (i <- 0 until 4) {
-          add(starts(i) + durs(i) == ends(i))
+          add(starts(i) + durs(i) === ends(i))
         }
 		add(ends(0) <= starts(1)) // 0 precedes act 1
 		add(ends(2) <= starts(3)) // 2 precedes act 3
@@ -241,7 +241,7 @@ class TestUnaryResourceWithOptionalActivities extends FunSuite with ShouldMatche
         val ends = Array.fill(4)(CPIntVar(0 to 5))
         val durs = Array(CPIntVar(3 to 4),CPIntVar(2),CPIntVar(2),CPIntVar(1))
         for (i <- 0 until 4) {
-          add(starts(i) + durs(i) == ends(i))
+          add(starts(i) + durs(i) === ends(i))
         }
 
 		

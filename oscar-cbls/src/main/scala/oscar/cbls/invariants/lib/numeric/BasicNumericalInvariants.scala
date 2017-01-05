@@ -25,11 +25,10 @@
 
 package oscar.cbls.invariants.lib.numeric
 
-import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.computation.Domain.rangeToDomain
+import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
-import oscar.cbls.invariants.lib.logic.Int2Int
-import oscar.cbls.invariants.lib.logic.IntInt2Int
+import oscar.cbls.invariants.lib.logic.{Int2Int, IntInt2Int}
 
 object Sum {
   def apply(vars: Array[IntValue], cond: SetValue) = SumElements(vars, cond)

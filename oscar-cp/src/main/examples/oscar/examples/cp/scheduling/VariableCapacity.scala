@@ -36,7 +36,7 @@ object VariableCapacity extends CPModel with App {
 
   // Consistency 
   for (t <- Tasks) {
-    add(ends(t) == starts(t) + durations(t))
+    add(ends(t) === starts(t) + durations(t))
   }
   // Cumulative
   add(maxCumulativeResource(starts, durations, ends, demands, resources, capacity, 1))

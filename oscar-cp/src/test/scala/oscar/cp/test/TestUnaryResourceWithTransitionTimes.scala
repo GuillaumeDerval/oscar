@@ -91,7 +91,7 @@ class TestUnaryResourceWithTransitionTimes extends FunSuite with Matchers with A
     val endVars = Array.tabulate(nActivities)(i => CPIntVar(startMins(i) + durations(i) to endMaxs(i))(basicSolver))
 
     for (i <- 0 until nActivities) {
-      basicSolver.add(startVars(i) + durationVars(i) == endVars(i))
+      basicSolver.add(startVars(i) + durationVars(i) === endVars(i))
     }
 
     for {
@@ -99,7 +99,7 @@ class TestUnaryResourceWithTransitionTimes extends FunSuite with Matchers with A
       j <- 0 until nActivities
       if i != j
     } {
-      basicSolver.add((endVars(i) + ttMatrix(i)(j) <== startVars(j)) || (endVars(j) + ttMatrix(j)(i) <== startVars(i)))
+      basicSolver.add((endVars(i) + ttMatrix(i)(j) ?<= startVars(j)) || (endVars(j) + ttMatrix(j)(i) ?<= startVars(i)))
     }
 
     basicSolver.search {
@@ -120,7 +120,7 @@ class TestUnaryResourceWithTransitionTimes extends FunSuite with Matchers with A
     val endVars2 = Array.tabulate(nActivities)(i => CPIntVar(startMins(i) + durations(i) to endMaxs(i))(augmentedSolver))
 
     for (i <- 0 until nActivities) {
-      augmentedSolver.add(startVars2(i) + durationVars2(i) == endVars2(i))
+      augmentedSolver.add(startVars2(i) + durationVars2(i) === endVars2(i))
     }
 
     augmentedSolver.add(new UnaryResourceWithTransitionTimes(startVars2, durationVars2, endVars2, ttMatrix))

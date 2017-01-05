@@ -43,10 +43,10 @@ object MapColoring extends CPModel with App  {
   
       for (c1 <- 0 until num_countries; 
            c2 <- 0 until c1 if connections(c1)(c2)==1) {
-         add(color(c1) != color(c2))
+         add(color(c1) !== color(c2))
       }
       // Symmetry breaking: Belgium has color 1
-     add(color(0) == 1)
+     add(color(0) === 1)
      search{
        binaryFirstFail(color)
      }

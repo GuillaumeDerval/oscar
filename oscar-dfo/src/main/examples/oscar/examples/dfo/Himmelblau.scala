@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.examples.dfo
 
-import oscar.algebra.int2const
+import oscar.algebra.{ExpressionDegree, NormalizedExpression}
 import oscar.dfo.modeling.DFOModel
 import oscar.dfo.modeling.DFOFloatVar
 import oscar.dfo.modeling.minimize
@@ -36,18 +36,12 @@ object Himmelblau extends DFOModel with App {
   //  f(-2.8,-3.13) = 0
   //  f(-3.77,-3.28) = 0
   // f(-3.58,-1.84) = 0
-  val objective = (x * x + y - 11) * (x * x + y - 11) + (x + y * y - 7) * (x + y * y - 7)
-
-  // callback to print evolution of objective during optimization
-  onSolution {
-    println(objective.value)
-  }
+  val objective: NormalizedExpression[ExpressionDegree,Double] = (x * x + y - 11.0) * (x * x + y - 11.0) + ( y * y + x - 7.0) * ( y * y + x - 7.0)
 
   // start the effective optimization
   minimize(objective)
 
-  println(x + " " + x.value)
-  println(y + " " + y.value)
-  println("objective:" + objective.value)
+  println(""+x + " " + x.value)
+  println(""+y + " " + y.value)
 
 }

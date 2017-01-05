@@ -76,7 +76,7 @@ public class ReversibleSparseSetJava extends AbstractSparseSet {
 
 	@Override
 	public int getSize() {
-		return (int) size.getValue();
+		return size.getValue();
 	}
 
 	@Override

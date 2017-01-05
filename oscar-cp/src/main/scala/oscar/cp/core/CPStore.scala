@@ -16,23 +16,16 @@
 package oscar.cp.core
 
 import java.util.Collection
-import java.util.LinkedList
-import scala.collection.JavaConversions.asJavaCollection
-import scala.collection.JavaConversions.collectionAsScalaIterable
+
 import oscar.algo.array.ArrayQueue
-import oscar.algo.reversible.ReversiblePointer
-import oscar.algo.search.SearchNode
-import oscar.cp.constraints.EqCons
-import oscar.cp.core.CPOutcome.Failure
-import oscar.cp.core.CPOutcome.Success
-import oscar.cp.core.CPOutcome.Suspend
-import oscar.cp.core.variables.CPBoolVar
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPSetVar
-import oscar.cp.core.watcher.PropagEventQueueVarSet
-import oscar.cp.core.watcher.PropagEventQueueVarInt
 import oscar.algo.search.DFSearchNode
+import oscar.cp.constraints.EqCons
+import oscar.cp.core.CPOutcome.{Failure, Success, Suspend}
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPSetVar}
+import oscar.cp.core.watcher.PropagEventQueueVarSet
+
+import scala.collection.JavaConversions.{asJavaCollection, collectionAsScalaIterable}
+import scala.reflect.ClassTag
 import scala.util.Random
 
 /**
@@ -80,8 +73,6 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode {
 
   // Reference to the last constraint called
   private[this] var lastConstraint: Constraint = null
-  
-  final def getRandom(): Random = rand
 
   /**
    *  Returns the last constraint called in the propagate algorithm.
@@ -93,27 +84,29 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode {
   def lastConstraintCalled: Constraint = lastConstraint
 
   // Cleans the propagation queues
-  @inline protected def cleanQueues(): Unit = {
+  def cleanQueues(): Unit = {
     // Clean queue L1
-    highestPriorL1 = -1
-    var i = propagQueueL1.length
-    while (i > 0) {
-      i -= 1
-      propagQueueL1(i).clear()
+    while (highestPriorL1 >= 0) {
+      propagQueueL1(highestPriorL1).clear()
+      highestPriorL1 -= 1
     }
     // Clean queue L2
-    highestPriorL2 = -1
-    i = propagQueueL2.length
-    while (i > 0) {
-      i -= 1
-      propagQueueL2(i).clear()
+    while (highestPriorL2 >= 0) {
+      val queue = propagQueueL2(highestPriorL2)
+      var i = queue.size
+      while (i > 0) {
+        i -= 1
+        val constraint = queue.removeFirst()
+        constraint.setDequeued()
+      }
+      highestPriorL2 -= 1
     }
   }
 
   // Adds the constraint in the L2 queue
   @inline final def enqueueL2(c: Constraint): Unit = {
     if (c.isEnqueuable) {
-      c.setInQueue()
+      c.setEnqueued()
       val priority = c.priorityL2
       propagQueueL2(priority).addLast(c)
       if (priority > highestPriorL2) {
@@ -266,6 +259,7 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode {
         else {
           nCallsL2 += 1
           val constraint = queue.removeFirst()
+          constraint.setDequeued()
           lastConstraint = constraint
           isNotFailed = constraint.execute() != Failure
         }
@@ -464,8 +458,16 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode {
         Failure
       }
     }
-  }  
-  
+  }
+
+  def add[T: ClassTag](boolVars: Iterable[CPBoolVar]): CPOutcome = post(boolVars)
+
+  def post(boolVars: Iterable[CPBoolVar]): CPOutcome = {
+    for (b <- boolVars) {
+      if (post(b.constraintTrue) == Failure) return Failure
+    }
+    return CPOutcome.Suspend
+  }
 
   def add(c: Constraint, st: CPPropagStrength): CPOutcome = post(c, st)
 

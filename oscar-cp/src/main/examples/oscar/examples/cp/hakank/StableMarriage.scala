@@ -147,12 +147,12 @@ object StableMarriage extends CPModel with App  {
       //   forall(m in Men)
       //     post(husband[wife[m]] == m);
       for(m <- 0 until n) {
-       add(husband(wife(m)) == m);
+       add(husband(wife(m)) === m);
       }
       //   forall(w in Women)
       //    post(wife[husband[w]] == w);
       for(w <- 0 until n) {
-       add(wife(husband(w)) == w);
+       add(wife(husband(w)) === w);
       }
       // forall(m in Men, o in Women)
       //   post(rankMen[m,o] < rankMen[m, wife[m]] =>
@@ -160,9 +160,9 @@ object StableMarriage extends CPModel with App  {
       for(m <- 0 until n) {
         for(o <- 0 until n) {
          add(
-                 (rankMen(m)(wife(m)) >>= rankMen(m)(o))
+                 (rankMen(m)(wife(m)) ?> rankMen(m)(o))
                  ==> 
-                 (rankWomen(o)(husband(o)) <<= rankWomen(o)(m))
+                 (rankWomen(o)(husband(o)) ?< rankWomen(o)(m))
                  )
         }
       }
@@ -172,9 +172,9 @@ object StableMarriage extends CPModel with App  {
       for(w <- 0 until n) {
         for(o <- 0 until n) {
          add(
-                 (rankWomen(w)(husband(w)) >>= rankWomen(w)(o))
+                 (rankWomen(w)(husband(w)) ?> rankWomen(w)(o))
                  ==>
-                 (rankMen(o)(wife(o)) <<= rankMen(o)(w))
+                 (rankMen(o)(wife(o)) ?< rankMen(o)(w))
                  )
         }
       }

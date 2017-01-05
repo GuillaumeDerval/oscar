@@ -16,10 +16,8 @@ package oscar.cp.test
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-import oscar.cp.constraints._
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.NoSolutionException
 
 
 class TestGCCVariableBounds extends FunSuite with ShouldMatchers {
@@ -105,4 +103,32 @@ class TestGCCVariableBounds extends FunSuite with ShouldMatchers {
     }
   }
 
+  test("Magic sequence") {
+    for (n <- /*1*/ 3 to 20) {
+      var nSols = -1
+      for (strength <- Array(Weak, Medium, Strong)) {
+        val cp = CPSolver()
+
+        val x = Array.fill(n)(CPIntVar(0 until n)(cp))
+        val allValues = Array.tabulate(n)(i => (i, x(i)))
+
+        cp.post(gcc(x, allValues), strength)
+
+        cp.search {
+          binaryStatic(x)
+        }
+
+        /*cp.onSolution {
+          println("Solution:")
+          println("x: " + x.mkString(" "))
+        }*/
+
+        val sols = cp.start().nSols
+        //if (nSols != -1)
+        //  sols should equal(nSols)
+        nSols = sols
+      }
+      //println("Magic sequence of length " + n + ": " + nSols)
+    }
+  }
 }

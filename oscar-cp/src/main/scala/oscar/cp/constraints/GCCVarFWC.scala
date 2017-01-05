@@ -101,15 +101,30 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
       }
 
       // Register before the first check loop so that we receive information on what we changed there
-      x.callOnChanges(i, delta => {
+      x.callOnChangesIdx(i, delta => {
         val nValuesOk = nValuesOkRev.value
         if (nValuesOk == nValues) Success
         else whenDomainChanges(delta, x, nValuesOk)
       })
     }
 
-    // INITIAL CHECK LOOP
+    // Register for changes in the bounding variables (also important in case there are common elements between `X` and
+    //  `boundingVar`)
     var vi = nValues
+    while (vi > 0) {
+      vi -= 1
+      // Do array indexing in advance
+      val bound = boundingVar(vi)
+      // Since using a variable in the closure is probably not a good idea
+      val vi_fixed = vi
+      bound.filterWhenBoundsChange()({
+        if (valueOkRev(vi_fixed).value) Success
+        else whenBoundsChange(bound, vi_fixed)
+      })
+    }
+
+    // INITIAL CHECK LOOP
+    vi = nValues
     while (vi > 0) {
       vi -= 1
 
@@ -177,29 +192,14 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
     }
     // END OF INITIAL CHECK LOOP
 
-    // This one has to be initialized in any case
+    // Initialize the memorization structure
+    nMandatoryRev = Array.tabulate(nValues)(vi => new ReversibleInt(s, nMandatory(vi)))
+    nPossibleRev = Array.tabulate(nValues)(vi => new ReversibleInt(s, nPossible(vi)))
+    valueOkRev = Array.tabulate(nValues)(vi => new ReversibleBoolean(s, valueOk(vi)))
     nValuesOkRev = new ReversibleInt(s, nValuesOk)
 
-    // If the constraint is not okay yet
-    if (nValuesOk != nValues) {
-
-      // Initialize the memorization structure
-      nMandatoryRev = Array.tabulate(nValues)(vi => new ReversibleInt(s, nMandatory(vi)))
-      nPossibleRev = Array.tabulate(nValues)(vi => new ReversibleInt(s, nPossible(vi)))
-      valueOkRev = Array.tabulate(nValues)(vi => new ReversibleBoolean(s, valueOk(vi)))
-
-      // Create the buffer
-      changeBuffer = new Array(bufferSize)
-
-      var vi = nValues
-      while (vi > 0) {
-        vi -= 1
-        boundingVar(vi).filterWhenBoundsChange()({
-          if (valueOkRev(vi).value) Success
-          else whenBoundsChange(boundingVar(vi), vi)
-        })
-      }
-    }
+    // Create the buffer
+    changeBuffer = new Array(bufferSize)
 
     // Everything is up to the closures now
     Success
@@ -220,6 +220,7 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
 
       // If the value removed is one we track
       if (minVal <= v && v <= maxVal) {
+        //if (v == -2) println("Removing -2 from " + i)
         val vi = v - minVal
         if (!valueOkRev(vi).value) {
 
@@ -230,8 +231,16 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
 
           // Restrict the bounding to what is possible
           val bound = boundingVar(vi)
-          if (bound.updateMax(possible) == Failure) {
-            return Failure
+          if (bound.max > possible) {
+            if (bound.updateMax(possible) == Failure) {
+              return Failure
+            }
+            // Tricky case when `bound` is the same variable as `x` and we still want to process the value removal.
+            // See "Magic Sequence" example.
+            if (bound.==(x)) {
+              changeBuffer(c) = possible + 1
+              c += 1
+            }
           }
 
           // Just enough variables have the value
@@ -272,7 +281,7 @@ class GCCVarFWC(X: Array[CPIntVar], minVal: Int, boundingVar: Array[CPIntVar])
           // Restrict the bounding to what is possible
           val bound = boundingVar(vi)
           if (bound.updateMin(mandatory) == Failure) {
-              return Failure
+            return Failure
           }
 
           // Just few enough variables are bound to the value

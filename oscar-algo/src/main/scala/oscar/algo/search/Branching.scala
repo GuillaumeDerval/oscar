@@ -41,6 +41,14 @@ abstract class Branching {
       else r
     }
   }
+
+  def maxDiscrepancy(maxDiscrepancy: Int = Int.MaxValue): Branching = {
+    if (maxDiscrepancy < Int.MaxValue) {
+      new DiscrepancyBranching(this,maxDiscrepancy)
+    } else {
+      this
+    }
+  }
 }
 
 object Branching {

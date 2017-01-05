@@ -6,8 +6,10 @@ import org.scalatest.matchers.ShouldMatchers
 import oscar.cp.constraints._
 
 import oscar.cp._
+import oscar.cp.core.CPOutcome
 
 class TestGCC extends FunSuite with ShouldMatchers {
+
   val rand = new scala.util.Random(0)
 
   def randomDom(n: Int): Array[Array[Int]] = {
@@ -35,7 +37,7 @@ class TestGCC extends FunSuite with ShouldMatchers {
     if (gccvar) {
       cp.post(new oscar.cp.constraints.GCCVar(x, -1, o));
     } else {
-      cp.post(new oscar.cp.constraints.SoftGCC(x, -1, randomOcc(0), randomOcc(1), CPIntVar(0)(cp)));
+      cp.post(new oscar.cp.constraints.SoftGCCAC(x, -1, randomOcc(0), randomOcc(1), CPIntVar(0)(cp)));
     }
     if (cp.isFailed()) {
       return -1;
@@ -65,7 +67,7 @@ class TestGCC extends FunSuite with ShouldMatchers {
     val x = Array.fill(10)(CPIntVar(0 to 10)(cp))
 
     for (i <- 0 until 2; v <- 0 until 5) {
-      cp.post(x(i * 5 + v) == v)
+      cp.post(x(i * 5 + v) === v)
     }
 
     val o = Array.fill(10)(CPIntVar(0 to 10)(cp))
@@ -80,5 +82,20 @@ class TestGCC extends FunSuite with ShouldMatchers {
       else o(i).value should be(0)
     }
   }
+
+  test("GCC3") {
+
+    implicit val cp = CPSolver()
+    val n = 2
+    val x = Array.fill(n)(CPIntVar(0 to n - 1))
+    val allValues = Array.tabulate(n)(i => (i, x(i)))
+
+    val ok = cp.post(gcc(x, allValues), Strong)
+
+    assert(ok == CPOutcome.Failure)
+  }
+
+
+
 
 }

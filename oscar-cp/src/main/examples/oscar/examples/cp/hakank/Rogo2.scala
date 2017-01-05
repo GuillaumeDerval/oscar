@@ -153,13 +153,13 @@ object Rogo2 extends CPModel with App  {
     //
     var numSols = 0
    maximize(sum_points) 
-     add(sum_points == sum(points))
-     add(sum_points == best)
+     add(sum_points === sum(points))
+     add(sum_points === best)
       for(s <- STEPS) {
         // calculate the points (to maximize)
-       add(points(s) == problem_flatten(path(s)))
+       add(points(s) === problem_flatten(path(s)))
         // ensure that there are no black cells in the path
-       add(problem_flatten(path(s)) != B)
+       add(problem_flatten(path(s)) !== B)
       }
      add(allDifferent(path), Strong)
       // valid connections

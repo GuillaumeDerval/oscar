@@ -30,7 +30,7 @@ class GraphSymmetric(val g : CPGraphVar) extends Constraint(g.s, "Symmetric") {
   
 	override def setup(l: CPPropagStrength): CPOutcome = {
 	  // add filter when domain changes
-	  g.callPropagateWhenDomainChanges(this, false)
+	  g.callPropagateWhenDomainChanges(this)
 	  propagate()
 	}
 	

@@ -77,7 +77,7 @@ object MyModulo extends CPModel with App {
     // d <= max_x
     add(d <= max_x)
     // x == y*d+r
-    add(x - (y * d + r) == 0)
+    add(x - (y * d + r) === 0)
   }
   //
   // data
@@ -97,7 +97,7 @@ object MyModulo extends CPModel with App {
 
   for (i <- 1 until n) {
     // myMod(cp, x(i), x(i-1), one)
-    add(mod(x(i), x(i - 1)) == one)
+    add(mod(x(i), x(i - 1)) === one)
     //add(modulo(x(i), x(i-1)), 1)
   }
   search {

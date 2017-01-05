@@ -243,16 +243,17 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
   
   def awakeOnChanges(watcher: Watcher): Unit
 
-  def callOnChanges(propagate: DeltaIntVar => CPOutcome): PropagatorIntVar = {
+
+  def callOnChanges(propagate: DeltaIntVar => CPOutcome,idempotent: Boolean = true): PropagatorIntVar = {
     val propagator = new PropagatorIntVar(this, 0, propagate)
-    propagator.idempotent = true
+    propagator.idempotent = idempotent
     callPropagateWhenDomainChanges(propagator)
     propagator
   }
   
-  def callOnChanges(id: Int, propagate: DeltaIntVar => CPOutcome): PropagatorIntVar = {
+  def callOnChangesIdx(id: Int, propagate: DeltaIntVar => CPOutcome, idempotent: Boolean = true): PropagatorIntVar = {
     val propagator = new PropagatorIntVar(this, id, propagate)
-    propagator.idempotent = true
+    propagator.idempotent = idempotent
     propagator.priority = CPStore.MaxPriorityL2
     callPropagateWhenDomainChanges(propagator)
     propagator
@@ -353,20 +354,74 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
   def delta(oldMin: Int, oldMax: Int, oldSize: Int): Iterator[Int]
   
   def fillDeltaArray(oldMin: Int, oldMax: Int, oldSize: Int, arr: Array[Int]): Int
-  
-  def delta(constraint: Constraint): DeltaIntVar = {
-    val delta = new DeltaIntVarAdaptable(this, 0)
-    constraint.registerDelta(delta)
-    delta
-  }
-  
-  def delta(id: Int, constraint: Constraint): DeltaIntVar = {
+
+  def delta(constraint: Constraint,id: Int = 0): DeltaIntVar = {
     val delta = new DeltaIntVarAdaptable(this, id)
     constraint.registerDelta(delta)
     delta
   }
 
   // ------------------------ some useful methods for java -------------------------
+
+
+  /**
+    * x!=y
+    */
+  def diff(y: CPIntVar) = new oscar.cp.constraints.DiffVar(this, y)
+  /**
+    * x!=y
+    */
+  def diff(y: Int) = new oscar.cp.constraints.DiffVal(this, y)
+  /**
+    * x==y
+    */
+  def eq(y: CPIntVar) = new oscar.cp.constraints.Eq(this, y)
+  /**
+    * x==y
+    */
+  def eq(y: Int) = new oscar.cp.constraints.EqVal(this, y)
+
+  /**
+    * x<y
+    */
+  def le(y: CPIntVar) = new oscar.cp.constraints.Le(this, y)
+
+  /**
+    * x<y
+    */
+  def le(y: Int) = new oscar.cp.constraints.Le(this, y)
+
+  /**
+    * x<=y
+    */
+  def leEq(y: CPIntVar) = new oscar.cp.constraints.LeEq(this, y)
+
+  /**
+    * x<=y
+    */
+  def leEq(y: Int) = new oscar.cp.constraints.LeEq(this, y)
+
+  /**
+    * x>y
+    */
+  def gr(y: CPIntVar) = new oscar.cp.constraints.Gr(this, y)
+
+  /**
+    * x>y
+    */
+  def gr(y: Int) = new oscar.cp.constraints.Gr(this, y)
+
+  /**
+    * x>=y
+    */
+  def grEq(y: CPIntVar) = new oscar.cp.constraints.GrEq(this, y)
+
+  /**
+    * x>=y
+    */
+  def grEq(y: Int) = new oscar.cp.constraints.GrEq(this, y)
+
+
 
   /**
    * Reified constraint
@@ -417,6 +472,13 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
   }
 
   /**
+    * Reified constraint
+    * @param v
+    * @return  a boolean variable b in the same store linked to x by the relation x > v <=> b == true
+    */
+  def isGr(v: Int): CPBoolVar = this.isGrEq(v+1)
+
+  /**
    * Reified constraint
    * @param v
    * @return  a boolean variable b in the same store linked to x by the relation x <= v <=> b == true
@@ -427,6 +489,14 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
     assert(ok != CPOutcome.Failure);
     return b;
   }
+
+  /**
+    * Reified constraint
+    * @param v
+    * @return  a boolean variable b in the same store linked to x by the relation x < v <=> b == true
+    */
+  def isLe(v: Int): CPBoolVar = this.isLeEq(v-1)
+
 
   /**
    * Reified constraint
@@ -441,6 +511,13 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
   }
 
   /**
+    * Reified constraint
+    * @param y a variable in the same store as x
+    * @return  a boolean variable b in the same store linked to x by the relation x > y <=> b == true
+    */
+  def isGr(y: CPIntVar): CPBoolVar = this.isGrEq(y+1)
+
+  /**
    * Reified constraint
    * @param v
    * @return  a boolean variable b in the same store linked to x by the relation x <= v <=> b == true
@@ -453,25 +530,18 @@ abstract class CPIntVar extends CPVar with Iterable[Int] {
   }
 
   /**
+    * Reified constraint
+    * @param v
+    * @return  a boolean variable b in the same store linked to x by the relation x < v <=> b == true
+    */
+  def isLe(v: CPIntVar): CPBoolVar = this.isLeEq(v-1)
+
+
+  /**
    * x must take a value from set
    */
   def in(set: Set[Int]): Constraint = new InSet(this, set)
-  /**
-   * x!=y
-   */
-  def !=(y: CPIntVar) = new oscar.cp.constraints.DiffVar(this, y)
-  /**
-   * x!=y
-   */
-  def !=(y: Int) = new oscar.cp.constraints.DiffVal(this, y)
-  /**
-   * x==y
-   */
-  def ==(y: CPIntVar) = new oscar.cp.constraints.Eq(this, y)
-  /**
-   * x==y
-   */
-  def ==(y: Int) = new oscar.cp.constraints.EqVal(this, y)
+
   
   /**
    * b <=> x belongs to set

@@ -21,13 +21,12 @@
 
 package oscar.cbls.constraints.lib.global
 
-import collection.immutable.SortedMap
 import oscar.cbls.constraints.core.Constraint
-import oscar.cbls.modeling.Algebra._
-import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.computation.CBLSIntVar._
+import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
-import oscar.cbls.invariants.lib.logic.Sort
+
+import scala.collection.immutable.SortedMap
 
 /**
  * Implement the Disjunctive constraint.

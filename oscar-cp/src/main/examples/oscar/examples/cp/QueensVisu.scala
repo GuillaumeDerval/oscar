@@ -26,7 +26,7 @@ object QueensVisu extends CPModel with App {
 
   val tree = new Tree()
   // -----------------------------------------------
-  val f = new VisualFrame("ParcelShipment", 1, 2)
+  val f = new VisualFrame("n-Queens", 1, 2)
   val w1 = f.createFrame("Tree")
   val vt = new VisualSearchTree(tree)
   w1.add(vt)
@@ -60,14 +60,14 @@ object QueensVisu extends CPModel with App {
         val parent = currNode
         val v = x.min
         branch {
-          post(x == v)
+          post(x === v)
           currNode += 1
           val doms = queens.map(_.toSet)
           tree.createBranch(parent, currNode, currNode.toString, "left") {
             updateVisu(doms)
           }
         } {
-          post(x != v)
+          post(x !== v)
           currNode += 1
           val doms = queens.map(_.toSet)
           tree.createBranch(parent, currNode, currNode.toString, "right") {

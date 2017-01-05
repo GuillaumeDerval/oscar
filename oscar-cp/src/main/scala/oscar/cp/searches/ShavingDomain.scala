@@ -34,7 +34,7 @@ extends Branching with BranchingUtils {
         val v = xDomain(p)
         store.pushState()
         
-        if (store.post(x == v) != Failure) {        // if this fails, intersect with universe, i.e. do nothing
+        if (store.post(x.eq(v)) != Failure) {        // if this fails, intersect with universe, i.e. do nothing
           toRemove = toRemove.map { case (xr, xrvalues) =>
             (xr, xrvalues.filter { !xr.hasValue(_) })       // if a value is still there, it should not be removed
           }
@@ -55,7 +55,7 @@ extends Branching with BranchingUtils {
       while (!store.isFailed() && !toRemove.isEmpty) {
         val (xr, xrToRemove) = toRemove.head
         
-        val removalConstraints = xrToRemove.map(xr != _: Constraint).toArray
+        val removalConstraints = xrToRemove.map(xr.diff(_): Constraint).toArray
         store.post(removalConstraints)
         
         toRemove = toRemove.tail

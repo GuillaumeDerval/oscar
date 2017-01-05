@@ -1,21 +1,23 @@
 /*******************************************************************************
- * OscaR is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 2.1 of the License, or
- * (at your option) any later version.
- *   
- * OscaR is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License  for more details.
- *   
- * You should have received a copy of the GNU Lesser General Public License along with OscaR.
- * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
- ******************************************************************************/
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
 package oscar.examples.linprog
 
-import oscar.linprog.modeling._
 import oscar.algebra._
+import oscar.linprog.MPModel
+import oscar.linprog.lpsolve.LPSolve
 
 /**
  * The goal of the diet problem is to find the cheapest combination of foods
@@ -25,16 +27,16 @@ import oscar.algebra._
  * We include constraints that regulate the number of
  * calories and amounts of vitamins, minerals, fats, sodium and cholesterol in the diet.
  */
-object Diet extends LPModelLPSolve with App {
+object Diet extends MPModel(LPSolve) with App {
 
   case class Nutriment(name: String) {
     val shortName = name
   }
-  case class Food(x: LPFloatVar, price: Double, contents: Nutriment => Double)
+  case class Food(x: Var[Double], price: Double, contents: Nutriment => Double)
 
   val nutriments = List("A", "C", "B1", "B2", "NA", "CAL").map { Nutriment }
 
-  def nvar(name: String) = LPFloatVar(name, 2, 10) //Each food is limited between 2 and 10
+  def nvar(name: String) = MPFloatVar(name, 2, 10) //Each food is limited between 2 and 10
 
   val foods = List(
     (nvar("Beef"), 3.19, List(60, 20, 10, 15, 938, 295)),
@@ -44,25 +46,24 @@ object Diet extends LPModelLPSolve with App {
     (nvar("Macaroni"), 1.89, List(15, 35, 15, 15, 1182, 315)),
     (nvar("MeatLoaf"), 1.9, List(70, 30, 15, 15, 896, 400)),
     (nvar("Spaghetti"), 1.99, List(25, 50, 25, 15, 1329, 370)),
-    (nvar("Turkey"), 2.49, List(60, 20, 15, 10, 1397, 450))).map { case (n, p, nut) => Food(n, p, nutriments.zip(nut.map(_.toDouble)).toMap) }
+    (nvar("Turkey"), 2.49, List(60, 20, 15, 10, 1397, 450))
+  ).map { case (n, p, nut) => Food(n, p, nutriments.zip(nut.map(_.toDouble)).toMap) }
 
   //for each nutriment, at least 700 must be present in the Diet
+  var id = 0
   for (n <- nutriments) {
-    add(sum(foods) { f => f.contents(n) * f.x } >= 700)
+    add(s"C_$id" |: sum(foods) { f =>  f.x*f.contents(n) } >= 700.toDouble)
   }
   //minimize the total cost
-  minimize(sum(foods) { f => f.price * f.x })
+  minimize(sum(foods) { f => f.x*f.price })
 
   // effectively solve the model
-  start()
+  interface.solve(this) match{
+    case Optimal(solution) =>
+      println("objective: " + solution(objective.expression))
+      println("-----------------------------------")
+      println(foods.map(f => s"${f.x.name} -> ${solution(f.x)}").mkString("\n"))
+  }
 
-  println("objective: " + objectiveValue)
-  println("----------")
-  println(foods.map(_.x).mkString("\n"))
-
-  release() // release memory
 
 }
-
-
-  

@@ -54,7 +54,7 @@ class GraphPath(val g : CPGraphVar, src : Int, dest : Int, w : (Int,Int) => Int,
       for (e <- g.possibleOutEdges(dest)) if (g.removeEdgeFromGraph(e) == Failure) return Failure
       
 	  // add filter when domain changes
-	  g.callPropagateWhenDomainChanges(this, false)
+	  g.callPropagateWhenDomainChanges(this)
       
 	  // launch initial propagation
 	  propagate()

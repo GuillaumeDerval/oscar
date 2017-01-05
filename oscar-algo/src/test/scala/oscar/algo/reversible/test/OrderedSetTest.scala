@@ -20,7 +20,11 @@ import org.scalatest.matchers.ShouldMatchers
 import oscar.algo.search._
 import oscar.algo.reversible._
 import scala.collection.JavaConversions._
+import org.scalatest.junit.JUnitRunner
+import org.junit.runner.RunWith
 
+
+@RunWith(classOf[JUnitRunner])
 class OrderedSetTest extends FunSuite with ShouldMatchers {
 
    

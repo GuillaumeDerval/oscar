@@ -16,21 +16,14 @@
  */
 package oscar.visual
 
-import javax.swing.JPanel
-import java.awt.Color
-import java.awt.Shape
-import java.awt.Graphics
-import java.awt.Graphics2D
-import java.awt.event.MouseMotionListener
-import java.awt.event.MouseEvent
-import oscar.visual.shapes.VisualLine
-import oscar.visual.shapes.VisualRectangle
-import oscar.visual.shapes.VisualShape
+import java.awt.{Color, Graphics, Graphics2D}
+import java.awt.event.{MouseEvent, MouseListener, MouseMotionListener}
+import java.awt.geom.{AffineTransform, Point2D}
+import javax.swing.{JPanel, SwingUtilities}
+
+import oscar.visual.shapes.{VisualLine, VisualRectangle, VisualShape}
+
 import scala.collection.mutable.Queue
-import javax.swing.SwingUtilities
-import java.awt.event.MouseListener
-import java.awt.geom.AffineTransform
-import java.awt.geom.Point2D
 
 /**
  * VisualDrawing
@@ -87,49 +80,49 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel {
     val g2d = g.asInstanceOf[Graphics2D]
     transform = new AffineTransform() // start with identity transform   
 
-      if (!shapes.isEmpty) {
+    if (shapes.nonEmpty) {
 
-        // Shapes size
-        val (minX, maxX, minY, maxY) = findBounds(shapes)
-        val sWidth = maxX - minX
-        val sHeight = maxY - minY
+      // Shapes size
+      val (minX, maxX, minY, maxY) = findBounds(shapes)
+      val sWidth = maxX - minX
+      val sHeight = maxY - minY
 
-        // Drawing size
-        val dWidth = getWidth()
-        val dHeight = getHeight()
-
-        // Flip
-        if (flipped) {
-          transform.translate(0, dHeight)
-          transform.scale(1 * scale, -1 * scale)
-        } else {
-          transform.scale(1 * scale, 1 * scale)
-        }
-
-        // Scale
-        if (scalable) {
-          // Compute the scaling ratio
-          val ratioX = dWidth / (marginR + marginL + sWidth)
-          val ratioY = dHeight / (marginT + marginB + sHeight)
-          val ratio = math.min(ratioX, ratioY) // Maintain proportions
-          transform.scale(ratio, ratio)
-
-          // Translate
-          val translateX: Int = (marginL - minX).toInt
-          val translateY: Int = ((if (flipped) marginB else marginT) - minY).toInt
-          transform.translate(translateX, translateY)
-        }
-        g2d.transform(transform)
-        for (s <- shapes) {
-          s.draw(g2d);
-        }
+      // Drawing size
+      val dWidth = getWidth
+      val dHeight = getHeight
+      
+      // Flip
+      if (flipped) {
+        transform.translate(0, dHeight)
+        transform.scale(1*scale, -1*scale)
+      } else {
+        transform.scale(1*scale, 1*scale)
       }
+
+      // Scale
+      if (scalable) {
+        // Compute the scaling ratio
+        val ratioX = dWidth / (marginR + marginL + sWidth)
+        val ratioY = dHeight / (marginT + marginB + sHeight)
+        val ratio = math.min(ratioX, ratioY) // Maintain proportions
+        transform.scale(ratio, ratio)
+        
+        // Translate
+        val translateX: Int = (marginL - minX).toInt
+        val translateY: Int = ((if (flipped) marginB else marginT) - minY).toInt 
+        transform.translate(translateX,translateY)
+      }
+	  g2d.transform(transform)
+      for (s <- shapes) {
+        s.draw(g2d)
+      }
+    }
   }
   
   def invertTransform(p: Point2D): Point2D = {
     val clone = transform.clone().asInstanceOf[AffineTransform]
     clone.invert()
-    clone.transform(new Point2D.Double(p.getX(), p.getY()), null);
+    clone.transform(new Point2D.Double(p.getX, p.getY), null)
   } 
 
   /** Adds a new non null colored shape in the panel. */
@@ -152,9 +145,9 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel {
     val drawingPanel = this
     new MouseMotionListener() {
       override def mouseMoved(e: MouseEvent) {
-        drawingPanel.setToolTipText("");
+        drawingPanel.setToolTipText("")
         for (s <- shapes) {
-          s.showToolTip(e.getPoint());
+          s.showToolTip(e.getPoint)
         }         
       }
       override def mouseDragged(e: MouseEvent) {}
@@ -167,18 +160,17 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel {
   }
   
   addMouseListener {
-    val drawingPanel = this
     new MouseListener() {
       override def mouseClicked(e: MouseEvent) {
         if (SwingUtilities.isRightMouseButton(e)) {
           scale(0.9)
         }
         if (SwingUtilities.isLeftMouseButton(e)) {
-          if (e.getClickCount() == 2) {
+          if (e.getClickCount == 2) {
             scale(1.1)
           }
           else {
-            shapes.foreach(_.clicked(e.getPoint()))
+            shapes.foreach(_.clicked(e.getPoint))
           }
         }
       }
@@ -203,21 +195,21 @@ object VisualDrawing {
 
 object VisualDrawingTest extends App {
 
-  val frame = VisualFrame("Example");
-  val drawing = VisualDrawing();
-  val inFrame = frame.createFrame("Drawing");
-  inFrame.add(drawing);
-  frame.pack();
+  val frame = VisualFrame("Example")
+  val drawing = VisualDrawing()
+  val inFrame = frame.createFrame("Drawing")
+  inFrame.add(drawing)
+  frame.pack()
 
   val rect = new VisualRectangle(drawing, 50, 50, 100, 100)
   val line = VisualLine(drawing, 50, 50, 150, 150)
 
   try {
-    Thread.sleep(1000);
+    Thread.sleep(1000)
   } catch {
-    case e: InterruptedException => e.printStackTrace();
+    case e: InterruptedException => e.printStackTrace()
   }
 
-  rect.innerCol = Color.red;
+  rect.innerCol = Color.red
 }
 

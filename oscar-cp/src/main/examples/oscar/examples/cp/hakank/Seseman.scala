@@ -65,19 +65,19 @@ object Seseman extends CPModel with App  {
        // 0's in all the middle cells
        for(i <- 1 until n-1;
            j <- 1 until n-1) {
-        add(x(i)(j) == 0)
+        add(x(i)(j) === 0)
        }
        // sum the borders
-      add(sum(List.tabulate(n)(i => x(i)(0)))   == border_sum)
-      add(sum(List.tabulate(n)(i => x(i)(n-1))) == border_sum)
-      add(sum(List.tabulate(n)(i => x(0)(i)))   == border_sum)
-      add(sum(List.tabulate(n)(i => x(n-1)(i))) == border_sum)
+      add(sum(List.tabulate(n)(i => x(i)(0)))   === border_sum)
+      add(sum(List.tabulate(n)(i => x(i)(n-1))) === border_sum)
+      add(sum(List.tabulate(n)(i => x(0)(i)))   === border_sum)
+      add(sum(List.tabulate(n)(i => x(n-1)(i))) === border_sum)
        // all borders must be >= 1 (may be changed to 0 or whatever)
        for(i <- 0 until n;
            j <- 0 until n if ((i == 0) || (j == 0) || (i == n-1) || (j == n-1))) {
             add(x(i)(j) > 0)
        }
-      add(total_sum == sum(x.flatten))
+      add(total_sum === sum(x.flatten))
      search{
        binaryFirstFail(x.flatten.toSeq)
      }
