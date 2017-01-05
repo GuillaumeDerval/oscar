@@ -20,6 +20,12 @@ Learning Outcomes
   - has a good intuition of how propagation works
   - knows about partial propagation
 
+* Level 3: Expert CBLS Modeler
+
+  - is able to extend the library of constraints and invariants
+  - is able to extend the library of neighborhoods
+
+
 Hello Queens (L1)
 ===================================================
 
@@ -27,10 +33,10 @@ Lots of tutorial in this field start with the same example that is the NQueen.
     This one will not make an exception. A simple NQueen is shown here:
 
 .. literalinclude:: ../../oscar-cbls/src/main/examples/oscar/examples/cbls/userguide/NQueenBasic.scala
-:language: scala
-       :linenos:
+  :language: scala
+  :linenos:
 
-    This model mixes with the trait  ``CBLSModel``. This trait offers the following features:
+This model mixes with the trait  ``CBLSModel``. This trait offers the following features:
 
 * it defines an implicit Store (named ``s``) and ConstraintSystem (named ``c``) behind the scene. A store is what contains all the modeling of the optimization problem: varaibles, invariants, constraints. Constraints are furthermore grouped into a constraint system that notably maintains the conjunction of the constraints.
 * it supports an API to create variables and invariants. They are implicitly added to the store ``s``
@@ -47,17 +53,17 @@ it also relies on a standard neighborhood for implementing the search procedure.
 It uses a standard ``swap`` neighborhood with problem-specific parameters that specifies what queen must be swapped with what other queen.
 
 .. literalinclude:: ../../oscar-cbls/src/main/examples/oscar/examples/cbls/userguide/NQueenEasy.scala
-:language: scala
-       :linenos:
+   :language: scala
+   :linenos:
 
-Features of OscaR.cbls, for the impatient nerds
+Features of OscaR.cbls, for the impatient nerds (L3)
 ==================================================
 
 OscaR.cbls is an implementation of constraint-based local search.
 It also features a high-level module to help you define your search procedure.
 
 OscaR.cbls has the following features:
-* high-level modeling primitives with variables of types integer and set of integer
+* high-level modeling primitives with variables of types integer, set of integer, and sequence of integers
 * Partial propagation for fast neighborhood exploration. Propagation is triggered when the value of a variable is queried by the search script. Deciding whether the propagation will be total or partial is done depending on the variable: if the variable is registered for partial propagation, the propagation will be partial. It will be total otherwise. Violation degrees are automatically registered for fast propagation.
 * Propagation graph can be cyclic. Two propagation graphs are handled: a static graph that over-approximates the dependencies between variables and invariants, and a dynamic graph that represents the real dependencies given the data actually stored in the model. The static graph can include cycles. This makes it possible e.g. to implement JobShop scheduler from standard invariants.
 * Constraints assign violation degree to their input variables, to identify the variable that cause a violation of each constraint. The violation degree propagates upwards through the model, it enables one to find the variable contributing the more to the overall violation even if it is not directly subject to the constraint.
@@ -67,12 +73,24 @@ OscaR.cbls has the following features:
 Modeling with OscaR.cbls (L1)
 ===================================================
 
-
 OscaR.cbls has two main modeling concepts: variables, and invariants.
-OscaR.cbls natively supports both integer and set of integer variables.
+
+OscaR.cbls natively supports three types of variables: integers, sets of integers and sequences of integers.
+These variables rely on dedicated data structures to ensure an efficient representation of their value.
+These data structures are non-mutable, so that the value of a variable can be saved by simply copying a reference to its value.
 
 Invariants are mathematical operators that maintain an output according to a set of inputs.
 There is a library of roughly eighty invariants available in OscaR.cbls.
+
+To easily find them, a trait has been created that includes method to instantiate all existing invariants, with proper scaladoc.
+
+
+
+.. literalinclude:: ../../oscar-cp/src/main/examples/oscar/examples/cp/userguide/LimitedDiscrepancy.scala
+:language: scala
+       :linenos:
+
+
 This library is explained in SECTIONXXX and covers different fields such as basic arithmetic operators, min-max operators, logical operators, and set operators.
 OscaR.cbls supports a factory class that contains creation methods for all these concepts.
 The factory is the object XXXXXXXXX. It contains the documentation for all invariants,
@@ -82,7 +100,7 @@ In this tutorial, we create concepts through this factory, but you can also inst
 These concepts are grouped into a store.
 
 
-Model and propagation in OscaR.cbls (L1)
+Model and propagation in OscaR.cbls (L2)
 ===================================================
 
 OscaR.CBLS is structured into two main architectural layers: the propagation layer, and the computation layer.
@@ -108,7 +126,7 @@ When a variable is propagated, it updates its value, and notifies the new value 
 in its listening invariants to notify about the change. Thanks to this mechanism, only the invariants that might need to react to some change are notified about a change.
 There are specific methods for each type of variable, with specific parameters, but they mostly include the variable, its old value, and its new value.
 
-More details on propagation in OscaR.cbls (L1)
+More details on propagation in OscaR.cbls (L2)
 ===================================================
 
 Propagation is generally carried out by sorting the element in the propagation DAG with lower indices closer to the decision variables, and higher indices closer to the objective function.
@@ -131,14 +149,6 @@ Tip for the CP guys: In a CP engine, propagation is omnidirectional: the algorit
 In CBLS, invariants distinguish their input and output variables. They are triggered on change of their input variable, and can only update their output variables.
 A variable can only the output of a single invariants. Due to the distinction between input and output, propagation in CBLS is a single wave that crosses the propagation DAG,
 while in CP, it requires iterating until a fixpoint is reached.
-
-
-Searching with OscaR.cbls using linear selectors (L1)
-===================================================
-
-The most basic way to search in a local search engine is to use linear selectors.
-
-
 
 Searching with OscaR.cbls using standard neighborhoods and combinators (L1)
 ===================================================
@@ -179,7 +189,7 @@ Besides combinators, our framework includes a set of neighborhoods that can be u
 Domain-independent neighborhoods are most interesting because they are quite flexible to be used in very different domains. They also include several features including symmetry elimination, mechanisms to perform intensification or tabu search, the possibility to specify whether the best or the first move is required, and hot restarting. A \emph{hot restart} is the possibility to start the neighborhood exploration from the last explored point in the previous query instead of starting from the initial position at each query. Other neighborhood offer similar features.
 
 
-Constraints (L2)
+Constraints (L1)
 ===================================================
 
 Is OscaR.cbls, constraints are specific objects that have two main features:

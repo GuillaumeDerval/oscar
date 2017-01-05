@@ -9,7 +9,6 @@ import oscar.cbls.invariants.core.propagation.{ErrorChecker, Checker}
  * @param v
  * @param maxPivotPerValuePercent
  * @param maxHistorySize
- *                       THIS IS EXPERIMENTAL!
  */
 case class Flip(v: SeqValue,override val maxPivotPerValuePercent:Int = 10, override val maxHistorySize:Int = 10)
   extends SeqInvariant(v.value.flip(true,true), v.max, maxPivotPerValuePercent, maxHistorySize)

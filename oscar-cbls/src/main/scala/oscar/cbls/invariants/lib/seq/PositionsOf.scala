@@ -19,12 +19,26 @@ import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
 
 object PositionsOf{
+
+  /**
+   * Maintains the position of value of variable a in the sequence v.
+   * @param v a sequence
+   * @param a an intValue, which can be a CBLSIntVar for instance
+   * @return a ChangingSetValue that is maintained as the set of position in v where the value is the one of a
+   */
   def apply(v: SeqValue, a:IntValue):ChangingSetValue =
     new PositionsOf(v, a)
 
+  /**
+   * Maintains the position of value of variable a in the sequence v.
+   * @param v a sequence
+   * @param a an integer
+   * @return a ChangingSetValue that is maintained as the set of position in v where the value is a
+   */
   def apply(v: SeqValue, a:Int):ChangingSetValue  =
     new PositionsOfConst(v, a)
 }
+
 /**
  * the position of value a in sequence v; default if not in the sequence
  * @param v is a SeqValue

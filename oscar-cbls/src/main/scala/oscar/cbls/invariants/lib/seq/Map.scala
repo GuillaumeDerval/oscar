@@ -21,9 +21,31 @@ import oscar.cbls.invariants.core.computation._
 import oscar.cbls.invariants.core.propagation.Checker
 
 object Map {
+
+  /**
+   * @param seq a sequence of integers
+   * @param mapArray an array that is taken as a function (it cannot be modified after this call)
+   * @return a sequence where the value at any position p is equal to mapArray(seq(p))
+   */
   def apply(seq:ChangingSeqValue,mapArray:Array[Int]):MapConstantFun = {
     new MapConstantFun(seq,mapArray,InvariantHelper.getMinMaxBoundsInt(mapArray)._2)
   }
+
+  /**
+   * @param seq a sequence of integers
+   * @param transform a function to apply to each value occuring in the sequence (it cannot be modified after this call)
+   * @return a sequence where the value at any position p is equal to transform(seq(p))
+   */
+  def apply(seq:ChangingSeqValue, transform:Int=>Int,maxTransform:Int) =
+    new MapConstantFun(seq:ChangingSeqValue, transform:Int=>Int,maxTransform:Int)
+
+  /**
+   * @param seq a sequence of integers
+   * @param mapArray an array that is taken as a function The value in this array an be variable that change value (althoug hthe content of the array cannot change after this call)
+   * @return a sequence where the value at any position p is equal to mapArray(seq(p)).value
+   */
+  def apply(seq:ChangingSeqValue, mapArray:Array[IntValue]) =
+    new MapThroughArray(seq:ChangingSeqValue, mapArray)
 }
 
 
