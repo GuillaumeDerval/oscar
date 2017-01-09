@@ -16,7 +16,6 @@ package oscar.modeling.perf
  ******************************************************************************/
 
 
-import oscar.cp._
 import oscar.modeling.algebra.integer.Abs
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.solvers.cp.{Branchings, CPApp}

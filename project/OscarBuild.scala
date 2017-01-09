@@ -9,6 +9,8 @@ import sbtunidoc.Plugin._
 
 object OscarBuild extends Build {
 
+  lazy val PerfTest = config("perf") extend(Test)
+
   object BuildSettings {
     val buildOrganization = "oscar"
     val buildVersion = "4.0.0-SNAPSHOT"
@@ -44,7 +46,11 @@ object OscarBuild extends Build {
         else
           Some(artifactoryName at artifactoryUrl + "libs-release-local")
       },
-      credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
+      credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
+      testOptions in PerfTest <+= (target in PerfTest) map {
+        t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
+      fork in PerfTest := true,
+      parallelExecution in PerfTest := false
     )
   }
 
@@ -89,6 +95,10 @@ object OscarBuild extends Build {
     val junit = "junit" % "junit" % "latest.milestone" % Test
     val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.11.+" % Test
     val scalaTest = "org.scalatest" %% "scalatest" % "2.2.+" % Test
+
+    val junit2 = "junit" % "junit" % "latest.milestone" % PerfTest
+    val scalaCheck2 = "org.scalacheck" %% "scalacheck" % "1.11.+" % PerfTest
+    val scalaTest2 = "org.scalatest" %% "scalatest" % "2.2.+" % PerfTest
 
     val testDeps = Seq(junit, scalaCheck, scalaTest)
   }
@@ -175,7 +185,15 @@ object OscarBuild extends Build {
     base = file("oscar-perf"),
     settings = commonSettings ++ Seq(resolvers ++= Seq(ingi), libraryDependencies ++= testDeps :+ xcsp3),
     dependencies = Seq(oscarCp, oscarCPXcsp3, oscarModeling)
-  )
+  ).configs( PerfTest )
+    .settings(libraryDependencies ++= testDeps)
+    .settings(inConfig(PerfTest)(Defaults.testTasks ++ Seq()): _*)
+    .settings(inConfig(PerfTest)(baseDirectory in PerfTest := file(".")))
+    .settings(
+      testOptions in Test := Seq(Tests.Filter(x => !(x endsWith "PerfTest"))),
+      testOptions in PerfTest := Seq(Tests.Filter(_ endsWith "PerfTest"))
+    )
+
 
   // Not included in the root build
   lazy val oscarDes = Project(

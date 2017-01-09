@@ -37,7 +37,7 @@ import scala.xml.XML
 object Nonogram extends App {
   val TIME_OUT = 300
   
-  val instance = "data/lecoutre/nonogram-gp-65.xml"
+  val instance = "data/lecoutre/nonogram/nonogram-gp-65.xml"
   val implem = "CT"
   val nbSolsMax = if (args.length > 2) args(1).toInt else 1
   
