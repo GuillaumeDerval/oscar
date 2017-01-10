@@ -25,6 +25,20 @@ import oscar.cbls.invariants.lib.routing.convention.CachedPositionOf
 import scala.collection.immutable.SortedSet
 
 object Precedence{
+
+  /**
+   * precedence assumes that number can occur only once in the sequence
+   * so that the constraint is to be enforced from any occurrence to any occurrence,
+   * "any" being chosen arbitrarily by tne invariant, and the choice an of course change at any time.
+   * also if one of the two value of a precedence is not present in the sequence,
+   * it is considered that the precedence is enforced.
+   *
+   * maintains the number of violated precedences.
+   *
+   * @param seq
+   * @param beforeAfter
+   * @author renaud.delandtsheer@cetic.be
+   */
   def apply(seq:ChangingSeqValue,
             beforeAfter:List[(Int,Int)]):Precedence = new Precedence(seq,beforeAfter)
   //TODO: maintain set of nodes involved in precedence violation
