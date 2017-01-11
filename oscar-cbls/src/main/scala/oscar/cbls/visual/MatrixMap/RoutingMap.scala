@@ -19,13 +19,13 @@ package oscar.cbls.visual.MatrixMap
 
 import java.awt.event.{MouseEvent, MouseListener}
 import java.awt.geom.Ellipse2D
-import java.awt.{BasicStroke, Color, Graphics2D, Point, Rectangle, RenderingHints}
 import java.awt.geom.Line2D.Double
+import java.awt.{BasicStroke, Color, Graphics2D, Point, Rectangle, RenderingHints}
 
-import org.jxmapviewer.{JXMapKit, JXMapViewer}
 import org.jxmapviewer.painter.Painter
 import org.jxmapviewer.viewer.GeoPosition
-import oscar.cbls.routing.seq.model.{PDP, VRP}
+import org.jxmapviewer.{JXMapKit, JXMapViewer}
+import oscar.cbls.business.routing.model.{PDP, VRP}
 import oscar.examples.cbls.routing.visual.ColorGenerator
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualArrow, VisualCircle, VisualShape}

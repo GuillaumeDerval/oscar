@@ -15,11 +15,11 @@
 
 package oscar.cbls.modeling
 
-import oscar.cbls.invariants.core.computation._
-import oscar.cbls.invariants.lib.logic._
-import oscar.cbls.invariants.lib.minmax._
-import oscar.cbls.invariants.lib.numeric._
-import oscar.cbls.invariants.lib.set._
+import oscar.cbls.core.computation._
+import oscar.cbls.lib.invariant.logic._
+import oscar.cbls.lib.invariant.minmax._
+import oscar.cbls.lib.invariant.numeric._
+import oscar.cbls.lib.invariant.set._
 
 import scala.collection.immutable.SortedMap
 

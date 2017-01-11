@@ -16,15 +16,15 @@ package oscar.cbls.test.routingS
   ******************************************************************************/
 
 
-import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.invariants.core.propagation.ErrorChecker
-import oscar.cbls.invariants.lib.seq.Size
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.propagation.ErrorChecker
+import oscar.cbls.core.search.CompositeMove
+import oscar.cbls.lib.invariant.seq.Size
 import oscar.cbls.modeling.Algebra._
-import oscar.cbls.objective.{CascadingObjective, Objective}
-import oscar.cbls.routing.seq.model._
-import oscar.cbls.routing.seq.neighborhood._
-import oscar.cbls.search.combinators._
-import oscar.cbls.search.move.CompositeMove
+import oscar.cbls.core.objective.{CascadingObjective, Objective}
+import oscar.cbls.business.routing.model._
+import oscar.cbls.business.routing.neighborhood._
+import oscar.cbls.lib.search.combinators._
 
 import scala.util.Random
 

@@ -17,13 +17,10 @@ package oscar.cbls.visual.MatrixMap
   * ****************************************************************************
   */
 
-import java.awt.event.{ItemEvent, ItemListener}
 import java.awt.{BorderLayout, Color, Dimension}
-import javax.swing.{BoxLayout, JCheckBox, JFrame, JPanel}
+import javax.swing.{JFrame, JPanel}
 
-import oscar.cbls.routing.seq.model.{PDP, VRP}
-
-import scala.collection.immutable.HashMap
+import oscar.cbls.business.routing.model.{PDP, VRP}
 
 
 /**

@@ -16,8 +16,8 @@
 package oscar.cbls.test.search
 
 import oscar.cbls.modeling.CBLSModel
-import oscar.cbls.binPacking.model.BinPackingProblem
-import oscar.cbls.binPacking.solver._
+import oscar.cbls.business.binPacking.model.BinPackingProblem
+import oscar.cbls.business.binPacking.solver._
 
 /**
  * Created by rdl on 24/04/2014.

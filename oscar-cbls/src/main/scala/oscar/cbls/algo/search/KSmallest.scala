@@ -18,7 +18,7 @@
 package oscar.cbls.algo.search
 
 import oscar.cbls.algo.heap.BinomialHeap
-import oscar.cbls.search.StopWatch
+import oscar.cbls.util.StopWatch
 
 /**
  * This class serves to compute the k-smallest values of a given vector.

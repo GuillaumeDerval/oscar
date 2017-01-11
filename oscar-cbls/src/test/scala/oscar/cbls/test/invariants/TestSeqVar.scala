@@ -16,9 +16,9 @@ package oscar.cbls.test.invariants
   ******************************************************************************/
 
 import oscar.cbls.algo.seq.functional.{IntSequence, UniqueIntSequence}
-import oscar.cbls.invariants.core.computation.{IntValue, SeqValue, Store, CBLSSeqVar}
-import oscar.cbls.invariants.core.propagation.ErrorChecker
-import oscar.cbls.invariants.lib.seq.{PositionsOf, Content, Size}
+import oscar.cbls.core.computation.{IntValue, SeqValue, Store, CBLSSeqVar}
+import oscar.cbls.core.propagation.ErrorChecker
+import oscar.cbls.lib.invariant.seq.{PositionsOf, Content, Size}
 
 import scala.collection.immutable.SortedSet
 

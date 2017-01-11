@@ -25,7 +25,7 @@ package oscar.cbls.test.routing
 
 import org.scalatest.prop.Checkers
 import org.scalatest.{FunSuite, Matchers}
-import oscar.cbls.routing.model.{PositionInRouteAndRouteNr, RoutedAndUnrouted, VRP, VRPObjective}
+import oscar.cbls.business.routing.legacy.model.{PositionInRouteAndRouteNr, RoutedAndUnrouted, VRP, VRPObjective}
 import oscar.cbls.test.routing.TestBench.{onePoint, swap, threeOpt, twoOpt}
 
 /**

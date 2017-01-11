@@ -16,15 +16,15 @@
  */
 package oscar.examples.cbls.routing
 
-import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.invariants.lib.seq.Size
-import oscar.cbls.objective.Objective
-import oscar.cbls.routing.seq.model.{ClosestNeighbors, ConstantDistancePerVehicle, RoutedAndUnrouted, VRP}
-import oscar.cbls.search.StopWatch
-import oscar.cbls.search.combinators.{BestSlopeFirst, Profile, RoundRobin}
-import oscar.cbls.search.move.Move
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.search.Move
+import oscar.cbls.lib.invariant.seq.Size
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.business.routing.model.{ClosestNeighbors, ConstantDistancePerVehicle, RoutedAndUnrouted, VRP}
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile, RoundRobin}
 import oscar.cbls.modeling.Algebra._
-import oscar.cbls.routing.seq.neighborhood._
+import oscar.cbls.business.routing.neighborhood._
+import oscar.cbls.util.StopWatch
 
 
 class DemoRoutingController extends StopWatch{

@@ -21,7 +21,7 @@
 package oscar.examples.cbls.queens
 
 import oscar.cbls.modeling._
-import oscar.cbls.search.StopWatch
+import oscar.cbls.util.StopWatch
 
 import scala.util.Random
 

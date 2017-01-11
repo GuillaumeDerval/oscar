@@ -24,8 +24,8 @@ import java.awt._
 import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing._
 
-import oscar.cbls.invariants.core.computation.IntValue
-import oscar.cbls.search.StopWatch
+import oscar.cbls.core.computation.IntValue
+import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.FunctionGraphic.{ObjFunctionGraphicContainer, Zoom}
 import oscar.examples.cbls.routing.visual.ColorGenerator
 import oscar.cbls.visual.MatrixMap.RoutingMatrixContainer

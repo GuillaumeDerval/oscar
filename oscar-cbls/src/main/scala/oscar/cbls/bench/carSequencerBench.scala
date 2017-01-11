@@ -16,11 +16,11 @@ package oscar.cbls.bench
  * ****************************************************************************
  */
 
-import oscar.cbls.invariants.core.computation.CBLSIntVar
+import oscar.cbls.core.computation.CBLSIntVar
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.lib.search.combinators.Profile
+import oscar.cbls.lib.search.neighborhoods.WideningFlipNeighborhood
 import oscar.cbls.modeling.CBLSModel
-import oscar.cbls.objective.Objective
-import oscar.cbls.search.WideningFlipNeighborhood
-import oscar.cbls.search.combinators.Profile
 
 import scala.collection.immutable.SortedMap
 import scala.language.postfixOps

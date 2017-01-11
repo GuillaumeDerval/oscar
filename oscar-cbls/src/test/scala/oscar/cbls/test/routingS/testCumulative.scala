@@ -17,9 +17,9 @@ package oscar.cbls.test.routingS
 
 
 import oscar.cbls.algo.seq.functional.IntSequence
-import oscar.cbls.invariants.core.computation.{IntValue, CBLSIntConst, CBLSSeqVar, Store}
-import oscar.cbls.invariants.core.propagation.ErrorChecker
-import oscar.cbls.invariants.lib.routing.ForwardCumulativeIntegerDimensionOnVehicle
+import oscar.cbls.core.computation.{IntValue, CBLSIntConst, CBLSSeqVar, Store}
+import oscar.cbls.core.propagation.ErrorChecker
+import oscar.cbls.lib.invariant.routing.ForwardCumulativeIntegerDimensionOnVehicle
 
 /**
  * Created by rdl on 03-01-17.

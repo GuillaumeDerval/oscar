@@ -15,15 +15,15 @@ package oscar.cbls.test.routingS
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.invariants.lib.numeric.Sum
-import oscar.cbls.invariants.lib.routing.NodeVehicleRestrictions
-import oscar.cbls.invariants.lib.seq.{PositionsOf, Size}
+import oscar.cbls.core.computation.Store
+import oscar.cbls.lib.invariant.numeric.Sum
+import oscar.cbls.lib.invariant.routing.NodeVehicleRestrictions
+import oscar.cbls.lib.invariant.seq.{PositionsOf, Size}
 import oscar.cbls.modeling.Algebra._
-import oscar.cbls.objective.{CascadingObjective, Objective}
-import oscar.cbls.routing.seq.model._
-import oscar.cbls.routing.seq.neighborhood.{SegmentExchange, OnePointMove, ThreeOpt, TwoOpt1}
-import oscar.cbls.search.combinators.{BestSlopeFirst, Profile}
+import oscar.cbls.core.objective.{CascadingObjective, Objective}
+import oscar.cbls.business.routing.model._
+import oscar.cbls.business.routing.neighborhood.{SegmentExchange, OnePointMove, ThreeOpt, TwoOpt1}
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
 import scala.util.Random
 

@@ -42,7 +42,7 @@ private object RedBlackTreeMapLib{
   }
 }
 
-import RedBlackTreeMapLib._
+import oscar.cbls.algo.rb.RedBlackTreeMapLib._
 
 //must use trait here because of specialization, a trait is needed here.
 // we ensure that this trait is compiled into a java interface by avoiding method code in the trait.

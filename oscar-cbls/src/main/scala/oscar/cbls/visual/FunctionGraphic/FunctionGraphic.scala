@@ -18,13 +18,13 @@ package oscar.cbls.visual.FunctionGraphic
   */
 
 import java.awt._
-import java.awt.event.{MouseListener, MouseEvent}
+import java.awt.event.{MouseEvent, MouseListener}
 import java.awt.geom.Line2D.Double
 import java.awt.geom.Rectangle2D
 
-import oscar.cbls.search.StopWatch
+import oscar.cbls.util.StopWatch
 import oscar.visual.VisualDrawing
-import oscar.visual.shapes.{VisualShape, VisualRectangle, VisualLine, VisualText}
+import oscar.visual.shapes.{VisualLine, VisualRectangle, VisualShape, VisualText}
 
 import scala.collection.mutable.ListBuffer
 

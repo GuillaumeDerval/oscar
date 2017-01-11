@@ -17,7 +17,7 @@ package oscar.cbls.algo.seq.functional
 
 import oscar.cbls.algo.fun.{LinearTransform, PiecewiseLinearBijectionNaive, Pivot}
 import oscar.cbls.algo.lazyIt.LazyFilter
-import oscar.cbls.algo.rb.{RedBlackTreeMapExplorer, RedBlackTreeMap}
+import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 
 import scala.language.implicitConversions
 

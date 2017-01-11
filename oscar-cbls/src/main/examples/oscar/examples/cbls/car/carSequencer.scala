@@ -16,17 +16,16 @@ package oscar.examples.cbls.car
   ******************************************************************************/
 
 
-import oscar.cbls.invariants.core.computation.CBLSIntVar
+import oscar.cbls.core.computation.CBLSIntVar
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.search.SwapMove
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
+import oscar.cbls.lib.search.neighborhoods.{RollNeighborhood, WideningFlipNeighborhood}
 import oscar.cbls.modeling.CBLSModel
-import oscar.cbls.objective.Objective
-import oscar.cbls.search.{WideningFlipNeighborhood, RollNeighborhood}
-import oscar.cbls.search.combinators.{Profile, BestSlopeFirst, DynAndThen}
-import oscar.cbls.search.move.SwapMove
 
-import scala.collection.SortedSet
 import scala.collection.immutable.SortedMap
-import scala.util.Random
 import scala.language.postfixOps
+import scala.util.Random
 /**
  * Created by rdl on 29-01-16.
  */

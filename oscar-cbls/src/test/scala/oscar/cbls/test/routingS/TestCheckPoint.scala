@@ -16,15 +16,15 @@ package oscar.cbls.test.routingS
   ******************************************************************************/
 
 
-import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.invariants.core.propagation.ErrorChecker
-import oscar.cbls.invariants.lib.routing.RouteSuccessorAndPredecessors
-import oscar.cbls.invariants.lib.seq.Size
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.propagation.ErrorChecker
+import oscar.cbls.lib.invariant.routing.RouteSuccessorAndPredecessors
+import oscar.cbls.lib.invariant.seq.Size
 import oscar.cbls.modeling.Algebra._
-import oscar.cbls.objective.Objective
-import oscar.cbls.routing.seq.model._
-import oscar.cbls.routing.seq.neighborhood._
-import oscar.cbls.search.combinators.{BestSlopeFirst, DynAndThen, Profile}
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.business.routing.model._
+import oscar.cbls.business.routing.neighborhood._
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, DynAndThen, Profile}
 
 /**
   * Created by f.germeau on 07/09/2016.

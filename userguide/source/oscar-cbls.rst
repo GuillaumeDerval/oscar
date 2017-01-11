@@ -146,9 +146,15 @@ Neighborhoods can be compared on their varying efficiency, optimality, and conne
 * **Solution managers**, which allow us to store the best solution found during the search, and restore it when needed.
 * **Stop criteria** to identify when the search will not find any more relevant solutions.
 
-In our framework, a neighborhood is represented by a class instance that can be queried for a move, given the current solution, an acceptance criterion, and an objective function. Neighborhood queries return either the message \emph{NoMoveFound} or the message \emph{MoveFound} that carries a description of the move, and the value of the objective function once the move will be committed. The returned move is expected to be acceptable with respect to the given acceptance criterion and objective function. Querying a neighborhood for a move does not commit the move, although it requires a computational exploration of the neighborhood. The global search loop repeatedly queries moves and commits them until some stopping criterion is met, or until no move can be found by the neighborhood.
+In our framework, a neighborhood is represented by a class instance that can be queried for a move,
+given the current solution, an acceptance criterion, and an objective function.
+Neighborhood queries return either the message **NoMoveFound** or the message **MoveFound(move,objAfter)** that carries a description of the move,
+and the value of the objective function once the move will be committed. The returned move is expected to be acceptable with respect to the given acceptance criterion
+and objective function. Querying a neighborhood for a move does not commit the move, although it requires a computational exploration of the neighborhood.
+The global search loop repeatedly queries moves and commits them until some stopping criterion is met, or until no move can be found by the neighborhood.
 
-The result of combining neighborhoods are still neighborhoods, offering this same API. The most intuitive combination of neighborhoods is \emph{``Best''}. Let $a$ and $b$ be neighborhoods, the following statement is also a neighborhood (statements and code fragments are written in Scala \cite{scala}):
+The result of combining neighborhoods are still neighborhoods, offering this same API. The most intuitive combination of neighborhoods is \emph{``Best''}.
+Let $a$ and $b$ be neighborhoods, the following statement is also a neighborhood (statements and code fragments are written in Scala \cite{scala}):
 
 \begin{lstlisting}
 new Best(a,b)

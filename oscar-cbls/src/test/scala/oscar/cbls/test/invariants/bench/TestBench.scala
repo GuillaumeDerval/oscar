@@ -17,7 +17,7 @@ package oscar.cbls.test.invariants.bench
 
 import org.scalacheck.{Gen, Prop}
 import oscar.cbls.algo.seq.functional.{ConcreteIntSequence, IntSequence}
-import oscar.cbls.invariants.core.computation._
+import oscar.cbls.core.computation._
 import scala.collection.immutable.{SortedMap, SortedSet}
 import org.scalatest.prop.Checkers
 

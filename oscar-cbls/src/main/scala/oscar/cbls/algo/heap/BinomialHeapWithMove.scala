@@ -20,7 +20,7 @@
 
 package oscar.cbls.algo.heap
 
-import oscar.cbls.invariants.core.propagation.Checker
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.Iterator
 import scala.collection.immutable.SortedMap

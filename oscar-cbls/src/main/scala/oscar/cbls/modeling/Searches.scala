@@ -15,8 +15,8 @@ package oscar.cbls.modeling
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.invariants.core.computation.{CBLSIntVar, CBLSSetVar}
-import oscar.cbls.search._
+import oscar.cbls.core.computation.CBLSIntVar
+import oscar.cbls.lib.search.neighborhoods._
 
 import scala.collection.immutable.SortedSet
 
@@ -28,7 +28,7 @@ trait Search {
   /**
    * will find a variable in the array, and find a value from its range that improves the objective function
    *
-   * @param vars an array of [[oscar.cbls.invariants.core.computation.CBLSIntVar]] defining the search space
+   * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
    * @param name the name of the neighborhood
    * @param best true for the best move, false for the first move, default false
    * @param searchZone a subset of the indices of vars to consider.
@@ -65,7 +65,7 @@ trait Search {
   /**
    * will randomize the array, typically to get out of a local minimal
    *
-   * @param vars an array of [[oscar.cbls.invariants.core.computation.CBLSIntVar]] defining the search space
+   * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
    * @param degree the number of variables to change randomly
    * @param searchZone a subset of the indices of vars to consider.
    *                   If none is provided, all the array will be considered each time
@@ -82,7 +82,7 @@ trait Search {
   /**
    * will randomize the array, by performing swaps only.
    *
-   * @param vars an array of [[oscar.cbls.invariants.core.computation.CBLSIntVar]] defining the search space
+   * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
    * @param degree the number of variables to change randomly
    * @param searchZone a subset of the indices of vars to consider.
    *                   If none is provided, all the array will be considered each time
@@ -97,7 +97,7 @@ trait Search {
   /**
    * will iteratively swap the value of two different variables in the array
    *
-   * @param vars an array of [[oscar.cbls.invariants.core.computation.CBLSIntVar]] defining the search space
+   * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
    * @param searchZone1 a subset of the indices of vars to consider for the first moved point
    *                   If none is provided, all the array will be considered each time
    * @param searchZone2 a subset of the indices of vars to consider for the second moved point
@@ -145,7 +145,7 @@ trait Search {
    * will randomize the array, by performing shuffle on a subset of the variables
    * This will not consider the objective function, even if it includes some strong constraints
    *
-   * @param vars an array of [[oscar.cbls.invariants.core.computation.CBLSIntVar]] defining the search space
+   * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
    * @param indicesToConsider the positions to consider in the shuffle, all positions if not specified
    * @param numberOfShuffledPositions the number of positions to shuffle, taken in indicesToConsider.
    * @param name the name of the neighborhood
@@ -161,7 +161,7 @@ trait Search {
   /**
     * will shift a block of value to the right(doing it also to the left is redundant)
     *
-    * @param vars an array of [[oscar.cbls.invariants.core.computation.CBLSIntVar]] defining the search space
+    * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
     * @param searchZone1 a subset of the indices of vars to consider in order to determine the block's extremities
     *                   if none provided, all the array will be considered each time
     * @param maxShiftSize the max size of the shift, given the first indice considered in the shift

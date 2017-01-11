@@ -15,21 +15,17 @@ package oscar.cbls.test.invariants
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import java.io.{FileWriter, PrintWriter}
-
 import org.scalacheck.Gen
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
-import oscar.cbls.constraints.lib.basic.{BelongsTo, EQ, G, GE, L, LE, NE}
-import oscar.cbls.constraints.lib.global.{AllDiff, AtLeast, AtMost, MultiKnapsack, Sequence}
-import oscar.cbls.invariants.core.computation
-import oscar.cbls.invariants.core.computation.{ChangingIntValue, ChangingSeqValue, IntValue, CBLSIntVar}
-import oscar.cbls.invariants.lib.logic.{DenseCount, Elements, Filter, IntElement, IntITE, SelectLEHeapHeap, SetElement, _}
-import oscar.cbls.invariants.lib.minmax.{ArgMax, ArgMin, Max2, MaxArray, MaxLin, MaxSet, Min2, MinArray, MinLin, MinSet}
-import oscar.cbls.invariants.lib.numeric.{Abs, Div, Minus, Mod, Prod, Prod2, ProdElements, RoundUpModulo, Step, Sum, Sum2, SumElements}
-import oscar.cbls.invariants.lib.routing._
-import oscar.cbls.invariants.lib.seq._
-import oscar.cbls.invariants.lib.set.{Cardinality, Diff, Inter, Interval, MakeSet, SetProd, SetSum, TakeAny, Union, UnionAll}
+import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
+import oscar.cbls.lib.constraint._
+import oscar.cbls.lib.invariant.logic.{DenseCount, Elements, Filter, IntElement, IntITE, SelectLEHeapHeap, SetElement, _}
+import oscar.cbls.lib.invariant.minmax.{ArgMax, ArgMin, Max2, MaxArray, MaxLin, MaxSet, Min2, MinArray, MinLin, MinSet}
+import oscar.cbls.lib.invariant.numeric.{Abs, Div, Minus, Mod, Prod, Prod2, ProdElements, RoundUpModulo, Step, Sum, Sum2, SumElements}
+import oscar.cbls.lib.invariant.routing._
+import oscar.cbls.lib.invariant.seq._
+import oscar.cbls.lib.invariant.set.{Cardinality, Diff, Inter, Interval, MakeSet, SetProd, SetSum, TakeAny, Union, UnionAll}
 import oscar.cbls.modeling.Algebra._
 import oscar.cbls.test.invariants.bench._
 import oscar.cbls.test.routingS.RoutingMatrixGenerator
@@ -533,7 +529,7 @@ class InvariantTests extends FunSuite with Checkers {
   test ("Map "){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     val seqVar = bench.genIntSeqVar(range = 0 to 100)
-    oscar.cbls.invariants.lib.seq.Map(seqVar, Array.tabulate(101)(n => 2*n))
+    oscar.cbls.lib.invariant.seq.Map(seqVar, Array.tabulate(101)(n => 2*n))
     bench.run
   }
 

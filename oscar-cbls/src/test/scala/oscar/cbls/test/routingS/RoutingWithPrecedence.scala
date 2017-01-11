@@ -15,13 +15,13 @@ package oscar.cbls.test.routingS
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.invariants.core.propagation.ErrorChecker
-import oscar.cbls.invariants.lib.seq.Precedence
-import oscar.cbls.objective.{Objective, CascadingObjective, IntVarObjective}
-import oscar.cbls.routing.seq.model._
-import oscar.cbls.routing.seq.neighborhood.{OnePointMoveMove, OnePointMove, ThreeOpt, TwoOpt1}
-import oscar.cbls.search.combinators.{BestSlopeFirst, Profile}
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.propagation.ErrorChecker
+import oscar.cbls.lib.invariant.seq.Precedence
+import oscar.cbls.core.objective.{Objective, CascadingObjective, IntVarObjective}
+import oscar.cbls.business.routing.model._
+import oscar.cbls.business.routing.neighborhood.{OnePointMoveMove, OnePointMove, ThreeOpt, TwoOpt1}
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
 import scala.collection.immutable.SortedSet
 

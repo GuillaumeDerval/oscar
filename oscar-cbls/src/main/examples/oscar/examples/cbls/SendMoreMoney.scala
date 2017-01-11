@@ -21,20 +21,21 @@
 
 package oscar.examples.cbls
 
-import oscar.cbls.constraints.core._
-import oscar.cbls.constraints.lib.basic._
-import oscar.cbls.invariants.core.computation._
-import oscar.cbls.invariants.lib.logic._
-import oscar.cbls.invariants.lib.minmax._
+import oscar.cbls.core.computation._
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.lib.constraint.{EQ, NE}
+import oscar.cbls.lib.invariant.logic._
+import oscar.cbls.lib.invariant.minmax._
+import oscar.cbls.lib.search.LinearSelector
 import oscar.cbls.modeling.Algebra._
-import oscar.cbls.search._
+import oscar.cbls.util.StopWatch
 
 /**
  * Very simple example showing how to use Asteroid on the basic SEND+MORE=MONEY
  * Using a generic constrained directed search
  * @author christophe.ponsard@cetic.be
  */
-object SendMoreMoney extends SearchEngine with StopWatch {
+object SendMoreMoney extends LinearSelector with StopWatch {
   
   def main(args: Array[String]) {
     

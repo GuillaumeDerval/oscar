@@ -18,15 +18,15 @@ package oscar.examples.cbls.routing
 import java.awt.{Color, Dimension}
 import javax.swing.SwingUtilities
 
-import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.invariants.lib.logic.Int2Int
-import oscar.cbls.invariants.lib.minmax.{Max, Min}
-import oscar.cbls.invariants.lib.numeric.{Abs, Sum}
-import oscar.cbls.routing.model._
-import oscar.cbls.routing.neighborhood._
-import oscar.cbls.search.StopWatch
-import oscar.cbls.search.combinators.{Atomic, RoundRobin, Profile, BestSlopeFirst}
+import oscar.cbls.core.computation.Store
+import oscar.cbls.lib.invariant.logic.Int2Int
+import oscar.cbls.lib.invariant.minmax.{Max, Min}
+import oscar.cbls.lib.invariant.numeric.{Abs, Sum}
+import oscar.cbls.business.routing.legacy.model._
+import oscar.cbls.business.routing.legacy.neighborhood._
+import oscar.cbls.lib.search.combinators.{Atomic, RoundRobin, Profile, BestSlopeFirst}
 import oscar.cbls.modeling.Algebra._
+import oscar.cbls.util.StopWatch
 import scala.language.implicitConversions
 
 /**

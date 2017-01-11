@@ -14,11 +14,15 @@ package oscar.cbls.modeling
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.constraints.core.{Constraint, ConstraintSystem}
-import oscar.cbls.invariants.core.computation._
-import oscar.cbls.invariants.core.propagation.Checker
-import oscar.cbls.objective.Objective
-import oscar.cbls.search.{SearchEngineTrait, StopWatch}
+import oscar.cbls.core.computation._
+import oscar.cbls.core.constraint.{Constraint, ConstraintSystem}
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.propagation.Checker
+import oscar.cbls.lib.invariant.minmax.MinMaxInvariants
+import oscar.cbls.lib.invariant.numeric.NumericInvariants
+import oscar.cbls.lib.invariant.set.SetInvariants
+import oscar.cbls.lib.search.LinearSelectorTrait
+import oscar.cbls.util.StopWatch
 
 
 /** this is a helper object that you can extend to implement your solver with the minimal syntactic overhead.
@@ -36,7 +40,7 @@ class CBLSModel(val verbose:Boolean = false,
                  val noCycle:Boolean = true,
                  val topologicalSort:Boolean = false,
                  val propagateOnToString:Boolean = true)
-  extends SearchEngineTrait
+  extends LinearSelectorTrait
   with AlgebraTrait
   with Constraints
   with ClusterInvariants

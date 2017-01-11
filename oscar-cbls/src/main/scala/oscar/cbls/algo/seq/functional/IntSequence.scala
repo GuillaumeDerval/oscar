@@ -14,11 +14,11 @@ package oscar.cbls.algo.seq.functional
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.algo.fun.{PiecewiseLinearFun, LinearTransform, PiecewiseLinearBijectionNaive, Pivot}
+import oscar.cbls.algo.fun.{LinearTransform, PiecewiseLinearBijectionNaive, PiecewiseLinearFun, Pivot}
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.algo.rb.{RedBlackTreeMapExplorer, RedBlackTreeMap}
+import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 
-import scala.collection.immutable.{SortedMap, SortedSet}
+import scala.collection.immutable.SortedSet
 import scala.language.implicitConversions
 
 object IntSequence{
