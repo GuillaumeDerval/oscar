@@ -118,7 +118,7 @@ object Crew extends CPModel with App  {
     val crew_flat = crew.flatten
     // val num_working = CPIntVar(cp, 1 to num_persons)
     val num_working = sum(for{p <- PERSONS}
-                           yield sum(for{f <- FLIGHTS} yield (crew(f)(p)))>>= 0)
+                           yield sum(for{f <- FLIGHTS} yield (crew(f)(p))) ?> 0)
     //
     // constraints
     //
@@ -128,7 +128,7 @@ object Crew extends CPModel with App  {
       // requirements per flights
       for(f <- FLIGHTS) {
         // size of crew
-       add(sum(for{p <- PERSONS} yield crew(f)(p)) == required_crew(f)(0))
+       add(sum(for{p <- PERSONS} yield crew(f)(p)) === required_crew(f)(0))
         // attributres and requirements
         for(a <- 0 until 5) {
          add(sum(for{p <- PERSONS} yield crew(f)(p)*attributes(p)(a)) >= required_crew(f)(a+1))

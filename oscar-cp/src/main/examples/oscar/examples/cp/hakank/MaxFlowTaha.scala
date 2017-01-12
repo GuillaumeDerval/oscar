@@ -52,24 +52,24 @@ object MaxFlowTaha extends CPModel with App {
   for (i <- NODES) {
     val in_flow_sum = for { j <- NODES if c(j)(i) > 0 } yield x(j)(i)
     if (in_flow_sum.length > 0) {
-      add(sum(in_flow_sum) == in_flow(i))
+      add(sum(in_flow_sum) === in_flow(i))
     }
     val out_flow_sum = for (j <- NODES if c(i)(j) > 0) yield x(i)(j)
     if (out_flow_sum.length > 0) {
-      add(sum(out_flow_sum) == out_flow(i))
+      add(sum(out_flow_sum) === out_flow(i))
     }
   }
   // in_flow == out_flow
   for (i <- NODES if i != start && i != end) {
-    add(out_flow(i) == in_flow(i))
+    add(out_flow(i) === in_flow(i))
   }
   val s1 = for (i <- NODES if c(i)(start) > 0) yield x(i)(start)
   if (s1.length > 0) {
-    add(sum(s1) == 0)
+    add(sum(s1) === 0)
   }
   val s2 = for (j <- NODES if c(end)(j) > 0) yield x(end)(j)
   if (s2.length > 0) {
-    add(sum(s2) == 0)
+    add(sum(s2) === 0)
   }
   search {
     binary(x.flatten.toSeq, _.min, _.max)

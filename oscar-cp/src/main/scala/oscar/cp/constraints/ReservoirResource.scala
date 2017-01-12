@@ -101,7 +101,7 @@ class ReservoirResource(startVars: Array[CPIntVar], durationVars: Array[CPIntVar
 
   override def setup(l: CPPropagStrength): CPOutcome = {
     for (i <- 0 until nTasks) {
-      if (cpSolver.post(cumulativeStart1(i) + cumulativeDuration1(i) == cumulativeEnd1(i)) == Failure)
+      if (cpSolver.post(cumulativeStart1(i) + cumulativeDuration1(i) === cumulativeEnd1(i)) == Failure)
         return Failure
     }
     if (cpSolver.post(maxCumulativeResource(cumulativeStart1, cumulativeDuration1, cumulativeEnd1, cumulativeDemand, cumulativeCapacity1)) == Failure)
@@ -109,7 +109,7 @@ class ReservoirResource(startVars: Array[CPIntVar], durationVars: Array[CPIntVar
 
 
     for (i <- 0 until nTasks) {
-      if (cpSolver.post(cumulativeStart2(i) + cumulativeDuration2(i) == cumulativeEnd2(i)) == Failure)
+      if (cpSolver.post(cumulativeStart2(i) + cumulativeDuration2(i) === cumulativeEnd2(i)) == Failure)
         return Failure
     }
     if (cpSolver.post(maxCumulativeResource(cumulativeStart2, cumulativeDuration2, cumulativeEnd2, cumulativeDemand, cumulativeCapacity2)) == Failure)

@@ -51,11 +51,11 @@ object SendMostMoney extends CPModel with App {
     if (money > 0) {
       // constraints
       add(S * 1000 + E * 100 + N * 10 + D +
-        M * 1000 + O * 100 + S * 10 + T ==
+        M * 1000 + O * 100 + S * 10 + T ===
         M * 10000 + O * 1000 + N * 100 + E * 10 + Y)
       add(S > 0)
       add(M > 0)
-      add(Money == money)
+      add(Money === money)
       add(allDifferent(all), Strong)
       search {
         binaryFirstFail(all)
@@ -68,7 +68,7 @@ object SendMostMoney extends CPModel with App {
       maximize(Money)
       // constraints
       add(S * 1000 + E * 100 + N * 10 + D +
-        M * 1000 + O * 100 + S * 10 + T ==
+        M * 1000 + O * 100 + S * 10 + T ===
         M * 10000 + O * 1000 + N * 100 + E * 10 + Y)
       add(S > 0)
       add(M > 0)

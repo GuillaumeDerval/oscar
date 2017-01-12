@@ -67,7 +67,7 @@ class TestGCC extends FunSuite with ShouldMatchers {
     val x = Array.fill(10)(CPIntVar(0 to 10)(cp))
 
     for (i <- 0 until 2; v <- 0 until 5) {
-      cp.post(x(i * 5 + v) == v)
+      cp.post(x(i * 5 + v) === v)
     }
 
     val o = Array.fill(10)(CPIntVar(0 to 10)(cp))

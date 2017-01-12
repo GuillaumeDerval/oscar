@@ -15,7 +15,7 @@
 package oscar.cbls.test
 
 import org.scalatest.{FunSuite, Matchers}
-import oscar.cbls.invariants.core.computation.{CBLSIntVar, Domain, Store}
+import oscar.cbls.core.computation.{CBLSIntVar, Domain, Store}
 
 import scala.language.postfixOps
 

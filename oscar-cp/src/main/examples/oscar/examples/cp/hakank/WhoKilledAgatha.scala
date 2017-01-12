@@ -67,13 +67,13 @@ object WhoKilledAgatha extends CPModel with App  {
       // (Seems that transpose must be used.)
       val hates_t = hates.transpose
       val richer_t = richer.transpose
-     add(hates_t(agatha)(the_killer) == 1)
-     add(richer_t(agatha)(the_killer) == 0)
+     add(hates_t(agatha)(the_killer) === 1)
+     add(richer_t(agatha)(the_killer) === 0)
       //  define the concept of richer: no one is richer than him-/herself
       NRANGE.foreach(i=>add(!richer(i)(i)))
       //  (contd...) if i is richer than j then j is not richer than i
       for(i <- NRANGE; j <- NRANGE if i != j) {
-         add(richer(i)(j) != richer(j)(i))
+         add(richer(i)(j) !== richer(j)(i))
       }
       //  Charles hates noone that Agatha hates.
       NRANGE.foreach(i=>add((hates(agatha)(i)) ==> (!hates(charles)(i))))

@@ -16,8 +16,8 @@
 package oscar.examples.linprog
 
 import oscar.algebra._
-import oscar.linprog.interface.lpsolve.LPSolveLib
-import oscar.linprog.modeling._
+import oscar.linprog.MPModel
+import oscar.linprog.lpsolve.LPSolve
 
 /**
  *  a magic square of order n is an
@@ -26,7 +26,9 @@ import oscar.linprog.modeling._
  *  to the same constant. A normal magic square contains the integers
  *  from 1 to n^2.
  */
-object MagicSquare extends MPModel(LPSolveLib) with App {
+object MagicSquare extends MPModel(LPSolve) with App {
+
+  implicit
 
   val n = 4
 
@@ -40,33 +42,34 @@ object MagicSquare extends MPModel(LPSolveLib) with App {
 
   /* each cell must be assigned exactly one integer */
   for (l <- Lines; c <- Columns)
-    add(sum(Numbers)((n) => x(l)(c)(n - 1)) =:= 1)
+    add( "" |: sum(Numbers)((n) => x(l)(c)(n - 1)) === 1.0)
 
   /* each integer must be assigned exactly to one cell */
   for (n <- Numbers)
-    add(sum(Lines, Columns)((l, c) => x(l)(c)(n - 1)) =:= 1)
+    add( "" |: sum(Lines, Columns)((l, c) => x(l)(c)(n - 1)) === 1.0)
 
   /* the sum in each row must be the magic sum */
   for (l <- Lines)
-    add(sum(Columns, Numbers)((c, n) => x(l)(c)(n - 1) * n) =:= s)
+    add( "" |: sum(Columns, Numbers)((c, n) => x(l)(c)(n - 1) * n) === s)
 
   /* the sum in each column must be the magic sum */
   for (c <- Columns)
-    add(sum(Lines, Numbers)((l, n) => x(l)(c)(n - 1) * n) =:= s)
+    add( "" |: sum(Lines, Numbers)((l, n) => x(l)(c)(n - 1) * n) === s)
 
   /* the sum in the diagonal must be the magic sum */
-  add(sum(Lines, Numbers)((l, n) => x(l)(l)(n - 1) * n) =:= s)
+  add( "" |: sum(Lines, Numbers)((l, n) => x(l)(l)(n - 1) * n) === s)
 
   /* the sum in the co-diagonal must be the magic sum */
   //mip.add(sum(Lines,Numbers)((l,n) => x(l)(n-l-1)(n-1)*(n))==s) // TODO: fix this constraint
 
   maximize(s)
-  solver.solve
-  println("objective: " + solver.objectiveValue)
+  solve match {
+    case Optimal(solution) =>
+      println("objective: " + solution(objective.expression))
 
-  for (l <- Lines) {
-    println(Columns.map(c => Numbers.filter(n => x(l)(c)(n - 1).value.get == 1)).mkString(","))
+      for (l <- Lines) {
+        println(Columns.map(c => Numbers.filter(n => x(l)(c)(n - 1).value.get == 1)).mkString(","))
+      }
   }
 
-  solver.release()
 }

@@ -15,7 +15,7 @@ package oscar.cbls.test.invariants.bench
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.invariants.core.propagation.Checker
+import oscar.cbls.core.propagation.Checker
 
 /**
  *
@@ -43,6 +43,7 @@ class InvariantChecker(verbose: Int = 0) extends Checker {
   }
 
   def isChecked() = {
+    if(firstCheck) println("no check performed so far")
     invariantChecked
   }
 }

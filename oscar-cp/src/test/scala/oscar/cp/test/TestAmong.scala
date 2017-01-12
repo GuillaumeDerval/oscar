@@ -27,7 +27,7 @@ class TestAmong extends TestSuite {
   def amongDecomp(cp: CPSolver, N: CPIntVar, X: Array[CPIntVar], S: Set[Int]) = {
     val counts = Array.fill(S.size)(CPIntVar(0 to X.size)(cp))
     cp.add(gcc(X,S zip counts))
-    cp.add(sum(counts) == N)
+    cp.add(sum(counts) === N)
   }
   
   def nbSol(nmin: Int, nmax: Int, domx: Array[Set[Int]], S: Set[Int], decomp: Boolean = false): Int = {

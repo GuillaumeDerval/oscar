@@ -38,9 +38,9 @@ class TestDudeney extends FunSuite with ShouldMatchers  {
     val nb = CPIntVar(1 to math.pow(10, n).toInt - 1)(cp)
     val s = CPIntVar(1 to 9 * n)(cp)
 
-    cp.add(nb == (s * s * s))
-    cp.add(sum(0 until n)(i => x(i) * (math.pow(10, (n - i - 1)).toInt)) == nb)
-    cp.add(sum(x) == s)
+    cp.add(nb === (s * s * s))
+    cp.add(sum(0 until n)(i => x(i) * (math.pow(10, (n - i - 1)).toInt)) === nb)
+    cp.add(sum(x) === s)
     cp.search {
       binaryFirstFail(x)
     } onSolution {

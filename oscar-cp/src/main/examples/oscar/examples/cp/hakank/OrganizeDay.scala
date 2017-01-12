@@ -29,7 +29,7 @@ object OrganizeDay extends CPModel with App  {
   // No overlapping of tasks s1 and s2
   def noOverlap(s1: CPIntVar, d1: Int,
                 s2: CPIntVar, d2: Int) = 
-    (s1 + d1 <== s2) || (s2 + d2 <== s1)
+    (s1 + d1 ?<= s2) || (s2 + d2 ?<= s1)
     //
     // data
     //
@@ -56,7 +56,7 @@ object OrganizeDay extends CPModel with App  {
     var numSols = 0
   
       for(t <- tasks) {
-       add(ends(t) == begins(t) + durations(t))
+       add(ends(t) === begins(t) + durations(t))
       }
       for(i <- tasks;
           j <- tasks if i < j) {

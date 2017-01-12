@@ -20,13 +20,14 @@
 
 package oscar.cbls.test.invariants
 
-import oscar.cbls.constraints.core._
-import oscar.cbls.constraints.lib.global.AllDiff
-import oscar.cbls.invariants.core.computation._
-import oscar.cbls.invariants.lib.logic.SelectLESetQueue
-import oscar.cbls.invariants.lib.minmax._
+import oscar.cbls.core.computation._
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.lib.constraint.AllDiff
+import oscar.cbls.lib.invariant.logic.SelectLESetQueue
+import oscar.cbls.lib.invariant.minmax._
+import oscar.cbls.lib.search.{LinearSelector, LinearSelectorTrait}
 import oscar.cbls.modeling.Algebra._
-import oscar.cbls.search._
+import oscar.cbls.util.StopWatch
 
 import scala.language.postfixOps
 import scala.util.Random
@@ -46,7 +47,7 @@ import scala.util.Random
  * The program accepts an argument which is the problem size
  * Otherwise it performs a benchmarking over a range of sizes (this takes time)
  */
-object NQueensBench1 extends SearchEngine(true) with StopWatch{
+object NQueensBench1 extends LinearSelector(true) with StopWatch{
 
   def nStrings(N: Int, C: String): String = if (N <= 0) "" else "" + C + nStrings(N - 1, C)
   def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)

@@ -8,8 +8,8 @@ object BasicModel extends CPModel with App {
   val x3 = CPIntVar(1 until 5)  // Dom(x3) = [1..4]
 
 
-  add(x1 != x2)
-  add(x1 + x2 == x3)
+  add(x1 !== x2)
+  add(x1 + x2 === x3)
 
   search {
     binaryFirstFail(Seq(x1,x2))

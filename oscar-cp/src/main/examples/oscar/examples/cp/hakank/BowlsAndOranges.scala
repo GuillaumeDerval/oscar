@@ -47,7 +47,7 @@ object BowlsAndOranges extends CPModel with App {
   for (i <- 0 until m) {
     for (j <- 0 until i) {
       for (k <- 0 until j) {
-        add(x(j) - x(i) != x(k) - x(j))
+        add(x(j) - x(i) !== x(k) - x(j))
       }
     }
   }

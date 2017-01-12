@@ -21,17 +21,18 @@
 
 package oscar.examples.cbls
 
-import oscar.cbls.constraints.core._
-import oscar.cbls.invariants.core.computation._
+import oscar.cbls.core.computation._
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.lib.search.LinearSelector
 import oscar.cbls.modeling.Algebra._
-import oscar.cbls.search._
+import oscar.cbls.util.StopWatch
 
 /**
  * Very simple example showing how to use Asteroid on the basic pigeon hole problem
  * Using constraint system (better alternative: use ArgMax to keep track of violation)
  * @author christophe.ponsard@cetic.be
  * */
-object PigeonHoles extends SearchEngine with StopWatch {
+object PigeonHoles extends LinearSelector with StopWatch {
   
   def main(args: Array[String]) {
 

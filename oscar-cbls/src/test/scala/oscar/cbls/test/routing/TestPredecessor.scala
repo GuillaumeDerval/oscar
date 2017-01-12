@@ -24,8 +24,8 @@
 package oscar.cbls.test.routing
 
 import org.scalatest.{FunSuite, Matchers}
-import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.routing.model._
+import oscar.cbls.core.computation.Store
+import oscar.cbls.business.routing.legacy.model._
 
 class TestPredecessor extends FunSuite with Matchers {
 

@@ -1,4 +1,5 @@
 package oscar.examples.cbls.wlp
+
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,14 +15,14 @@ package oscar.examples.cbls.wlp
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.invariants.core.computation.{CBLSIntVar, Store}
-import oscar.cbls.invariants.lib.logic.Filter
-import oscar.cbls.invariants.lib.minmax.MinConstArrayLazy
-import oscar.cbls.invariants.lib.numeric.Sum
+import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.lib.invariant.logic.Filter
+import oscar.cbls.lib.invariant.minmax.MinConstArrayLazy
+import oscar.cbls.lib.invariant.numeric.Sum
+import oscar.cbls.lib.search.combinators.Profile
+import oscar.cbls.lib.search.neighborhoods.{AssignNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
 import oscar.cbls.modeling.AlgebraTrait
-import oscar.cbls.objective.Objective
-import oscar.cbls.search.combinators.Profile
-import oscar.cbls.search.{AssignNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
 
 import scala.language.postfixOps
 

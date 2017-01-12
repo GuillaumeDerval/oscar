@@ -20,13 +20,12 @@
 
 package oscar.examples.cbls
 
-import oscar.cbls.constraints.lib.basic.EQ
-import oscar.cbls.constraints.lib.global.Exactly
-import oscar.cbls.invariants.core.computation.{CBLSIntVar, FullRange}
-import oscar.cbls.invariants.lib.logic.SelectLESetQueue
-import oscar.cbls.invariants.lib.numeric.Sum
+import oscar.cbls.core.computation.{CBLSIntVar, FullRange}
+import oscar.cbls.lib.invariant.logic.SelectLESetQueue
+import oscar.cbls.lib.invariant.numeric.Sum
+import oscar.cbls.lib.constraint.{EQ, Exactly}
 import oscar.cbls.modeling.{AlgebraTrait, CBLSModel}
-import oscar.cbls.search.StopWatch
+import oscar.cbls.util.StopWatch
 
 import scala.collection.immutable.SortedMap
 

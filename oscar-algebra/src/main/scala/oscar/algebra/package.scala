@@ -16,8 +16,33 @@ package oscar
 
 
 package object algebra {
-  
-  // some useful linear algebra functions
+
+  /* ------------   Implicits ----------------------- */
+
+  implicit def double2const(d : Double) : NormalizedExpression[Constant,Double] = Const(d).normalized
+  implicit def int2const(d : Int) : NormalizedExpression[Constant,Double] = Const(d.toDouble).normalized
+
+  class ModelDecorator[O  >: Constant <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](val model: Model[O,C,V]){
+    def solve(implicit solver: SolverInterface[O,C,V]): ModelStatus[O, C, V] = {
+      solver.solve(model)
+    }
+  }
+
+  implicit def model2decorator[O  >: Constant <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](model: Model[O,C,V]): ModelDecorator[O, C, V] = new ModelDecorator(model)
+
+  def maximize[O  >: Constant <: ExpressionDegree, V: Numeric](obj: NormalizedExpression[O,V])(implicit model: Model[O,_,V]): Unit = model.withObjective(new Maximize[O,V](obj))
+  def minimize[O  >: Constant <: ExpressionDegree, V: Numeric](obj: NormalizedExpression[O,V])(implicit model: Model[O,_,V]): Unit = model.withObjective(new Minimize[O,V](obj))
+
+  def subjectTo[C <: ExpressionDegree, V: Numeric](constraints: Equation[C, V]*)(implicit model: Model[_,C,V]): Unit = {
+    for (c <- constraints) model.subjectTo(c)
+  }
+
+  type LinearExpression = NormalizedExpression[Linear,Double]
+  type LinearConstraintExpression = Equation[Linear,Double]
+
+  implicit def term2Expression[T <: ExpressionDegree,V:Numeric](term: Term[T,V]): NormalizedExpression[T,V] = term.normalized
+
+  /* ------------   Linear algebra ----------------------- */
   
   def min(a:Double,b:Double): Double = {a.min(b)}
   def max(a:Double,b:Double): Double = {a.max(b)}
@@ -36,113 +61,47 @@ package object algebra {
   }
   
   def sumNum[A,B,C,D](indexes1 : Iterable[A],indexes2 : Iterable[B], indexes3 : Iterable[C], indexes4 : Iterable[D])(f : (A,B,C,D) => Double) : Double = {
-    (for(i <- indexes1;j <- indexes2; k<- indexes3; l <- indexes4) yield f(i,j,k,l)).sum
-  } 
-  
-  def createVarMap[T,V](ts:Seq[T])(varConstr:T=>V): Map[T,V] = { (for (t<-ts) yield t-> varConstr(t)).toMap }  
-  
-  
-  // -------------------------  linear expressions & constraints -------------------
-
-  def sum(exprs : Iterable[LinearExpression]) : LinearExpression = {
-    import scala.collection.mutable.Map
-    val mymap = Map[Var,Double]()
-    var mycte = 0.0
-    for (expr <- exprs) {
-      mycte += expr.cte
-      for((k,v) <- expr.coef) {
-        mymap.get(k) match {
-           case Some(c) => mymap(k) = c+v
-           case None => mymap += (k -> v)
-        }
-      }
-    }
-    import scala.collection.immutable.Map
-    mymap.filterNot(_._2 == 0)
-    new LinearExpression() {
-      val cte = mycte
-      val coef = mymap.toMap
-    }
-    //exprs.foldLeft(Zero : LinearExpression)(_ + _)
+    (for (i <- indexes1; j <- indexes2; k <- indexes3; l <- indexes4) yield f(i, j, k, l)).sum
   }
-  
+
+  def createVarMap[T,V](ts:Seq[T])(varConstr:T => V): Map[T,V] = { (for (t<-ts) yield t-> varConstr(t)).toMap }
+
+
+  /* ------------------------- Linear Expressions & Constraints ------------------- */
+
+  def sumOf[T <: ExpressionDegree,V:Numeric](exprs : Iterable[NormalizedExpression[T,V]]) : NormalizedExpression[T,V] = {
+    new NormalizedExpression(exprs.toStream.flatMap(_.terms))
+  }
+
   /**
    * sum[a <- A] f(a)
-   */ 
-  def sum[A](indexes : Iterable[A])(f : A => LinearExpression) : LinearExpression = sum(indexes map f)
-  
+   */
+  def sum[A,T <: ExpressionDegree,V:Numeric](indexes : Iterable[A])(f : A => NormalizedExpression[T,V]) : NormalizedExpression[T,V] = sumOf(indexes map f)
+
   /**
    * sum[a <- A, b <- B] f(a,b)
-   */ 
-  def sum[A,B](indexes1 : Iterable[A],indexes2 : Iterable[B])(f : (A,B) => LinearExpression) : LinearExpression = {
-         sum(for(i <- indexes1;j <- indexes2) yield f(i,j))
+   */
+  def sum[A,B,T <: ExpressionDegree,V:Numeric](indexes1 : Iterable[A], indexes2 : Iterable[B])(f : (A,B) => NormalizedExpression[T,V]) : NormalizedExpression[T,V] = {
+    sumOf(for(i <- indexes1; j <- indexes2) yield f(i,j))
   }
-  
+
   /**
    * sum[a <- A, b <- B, c <- C] f(a,b,c)
-   */ 
-  def sum[A,B,C](indexes1 : Iterable[A],indexes2 : Iterable[B], indexes3 : Iterable[C])(f : (A,B,C) => LinearExpression) : LinearExpression = {
-    	sum(for(i <- indexes1;j <- indexes2; k <- indexes3) yield f(i,j,k))
+   */
+  def sum[A,B,C,T <: ExpressionDegree,V:Numeric](indexes1 : Iterable[A], indexes2 : Iterable[B], indexes3 : Iterable[C])(f : (A,B,C) => NormalizedExpression[T,V]) : NormalizedExpression[T,V] = {
+    sumOf(for(i <- indexes1; j <- indexes2; k <- indexes3) yield f(i,j,k))
   }
 
   /**
    * sum[a <- A, b <- B, c <- C, d <- D] f(a,b,c,d)
-   */ 
-  def sum[A,B,C,D](indexes1 : Iterable[A],indexes2 : Iterable[B], indexes3 : Iterable[C], indexes4 : Iterable[D])(f : (A,B,C,D) => LinearExpression) : LinearExpression = {
-    	sum(for(i <- indexes1;j <- indexes2; k<- indexes3; l <- indexes4) yield f(i,j,k,l))
-  }
-  
-  /**
-   * sum[a <- A such that filter(a) == true] f(a)
    */
-  def sum[A](S1:Iterable[A], filter: A => Boolean, f:(A) => LinearExpression): LinearExpression = {
-       sum(for (a <- S1; if(filter(a)))  yield f(a))  
-  }
-  
-  /**
-   * sum[a <- A, b <- B such that filter(a,b) == true] f(a,b)
-   */
-  def sum[A,B](S1:Iterable[A],S2:Iterable[B], filter: (A,B) => Boolean, f:(A,B) => LinearExpression): LinearExpression = {
-       sum(for (a <- S1; b <- S2; if(filter(a,b)))  yield f(a,b))  
+  def sum[A,B,C,D,T <: ExpressionDegree,V:Numeric](indexes1 : Iterable[A], indexes2 : Iterable[B], indexes3 : Iterable[C], indexes4 : Iterable[D])(f : (A,B,C,D) => NormalizedExpression[T,V]) : NormalizedExpression[T,V] = {
+    sumOf(for(i <- indexes1; j <- indexes2; k<- indexes3; l <- indexes4) yield f(i,j,k,l))
   }
 
-  /**
-   * sum[a <- A, b <- B, c <- C such that filter(a,b,c) == true] f(a,b,c)
-   */  
-  def sum[A,B,C](S1:Iterable[A],S2:Iterable[B],S3:Iterable[C], filter: (A,B,C) => Boolean, f:(A,B,C) => LinearExpression): LinearExpression = {
-       sum(for (a <- S1; b <- S2; c <- S3; if(filter(a,b,c)))  yield f(a,b,c))  
-  }
-  
-  /**
-   * sum[a <- A, b <- B, c <- C, d <- D such that filter(a,b,c,d) == true] f(a,b,c,d)
-   */    
-  def sum[A,B,C,D](S1:Iterable[A],S2:Iterable[B],S3:Iterable[C],S4:Iterable[D], filter: (A,B,C,D) => Boolean, f:(A,B,C,D) => LinearExpression): LinearExpression = {
-       sum(for (a <- S1; b <- S2; c <- S3; d <- S4; if(filter(a,b,c,d)))  yield f(a,b,c,d))  
-  }  
-  
-  // ------------   Implicits -----------------------
-  
-  implicit def double2const(d : Double) : Const = if (d == 0.0) Zero else Const(d)
-  implicit def int2const(i : Int) : Const = double2const(i)
-  
-  // ------------------------- general mathematical expressions -------------------
+  // TODO implement these functions
+  def abs(expr: NormalizedExpression[_,Double])(implicit model: Model[Linear,Linear,Double]): NormalizedExpression[Linear,Double] = ???
 
-  
-  //Non linear functions
-  def log(expr : Expression) = new Log(expr)
-  def sq(expr:Expression) = expr*expr
-  //Trigo
-  def cos(expr: Expression) = new Cos(expr)
-  def sin(expr: Expression) = new Sin(expr)
-  def tan(expr: Expression) = new Tan(expr) 
-  
-//  def sum(exprs : Iterable[Expression]) : Expression = exprs.foldLeft(Zero : Expression)(_ + _)
-//  
-//  def sum[A](indexes : Iterable[A])(f : A => Expression) : Expression = sum(indexes map f)
-
-  
-  // -------------------- constraints --------------------
-  
-
+  def sign(expr: NormalizedExpression[_,Double])(implicit model: Model[Linear,Linear,Double]): NormalizedExpression[Linear,Double] = ???
 
 }

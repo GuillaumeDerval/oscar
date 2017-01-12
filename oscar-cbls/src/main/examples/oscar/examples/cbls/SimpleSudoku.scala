@@ -21,10 +21,11 @@
 
 package oscar.examples.cbls
 
-import oscar.cbls.constraints.core._
-import oscar.cbls.constraints.lib.global.AllDiff
-import oscar.cbls.invariants.core.computation._
-import oscar.cbls.search._
+import oscar.cbls.core.computation._
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.lib.constraint.AllDiff
+import oscar.cbls.lib.search.LinearSelector
+import oscar.cbls.util.StopWatch
 
 /**
  * Simple Sudoku (for 9x9 grid) 
@@ -35,7 +36,7 @@ import oscar.cbls.search._
  * - could be generalised
  * @author christophe.ponsard@cetic.be
  */
-object SimpleSudoku extends SearchEngine with StopWatch {
+object SimpleSudoku extends LinearSelector with StopWatch {
   
   def main(args: Array[String]) {
  

@@ -78,7 +78,7 @@ object AllIntervals {
     cp.add(allDifferent(x), Strong)
 
     for (k <- 0 until n - 1) {
-      cp.add(diffs(k) == (x(k + 1) - (x(k))).abs)
+      cp.add(diffs(k) === (x(k + 1) - (x(k))).abs)
     }
 
     // symmetry breaking

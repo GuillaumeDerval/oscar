@@ -25,12 +25,13 @@ package oscar.cbls.modeling
  * ****************************************************************************
  */
 
-import oscar.cbls.constraints.lib.basic.{BelongsTo, EQ, G, GE, L, LE, NE}
-import oscar.cbls.invariants.core.computation._
-import oscar.cbls.invariants.lib.logic._
-import oscar.cbls.invariants.lib.numeric._
-import oscar.cbls.invariants.lib.set._
-import oscar.cbls.search.algo.InstrumentedRange
+import oscar.cbls.algo.search.InstrumentedRange
+import oscar.cbls.core.computation._
+import oscar.cbls.lib.constraint
+import oscar.cbls.lib.constraint._
+import oscar.cbls.lib.invariant.logic._
+import oscar.cbls.lib.invariant.numeric._
+import oscar.cbls.lib.invariant.set._
 
 import scala.collection.immutable.SortedSet
 import scala.language.implicitConversions
@@ -76,11 +77,11 @@ trait AlgebraTrait {
 
     def le(v: IntValue) = new LE(x, v)
 
-    def belongsTo(v: SetValue) = new BelongsTo(x, v)
+    def belongsTo(v: SetValue) = new constraint.BelongsTo(x, v)
 
     /**
      * creates a IntSEt maintained as the inclusive interval between te two variable
-     * see [[oscar.cbls.invariants.lib.set.Interval]]
+     * see [[oscar.cbls.lib.invariant.set.Interval]]
      * @param v
      * @return
      */

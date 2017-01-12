@@ -7,10 +7,10 @@ import java.net.URLEncoder
 import java.io.IOException
 
 object Geocoder {
-  
+
   val ENCODING: String = "UTF-8"
   val KEY: String = "xyz"
-    
+
   def getLocation(address: String): Location = {
     val input = new BufferedReader(new InputStreamReader (new URL ("http://maps.google.com/maps/geo?q="+URLEncoder.encode(address, ENCODING)+"&output=csv&key="+KEY).openStream ()))
     var location: Location = null
@@ -25,16 +25,16 @@ object Geocoder {
       line = input.readLine()
     }
     if (location == null) {
-     statusCode match {
-       case 400 => throw new IOException("Bad request")
-       case 500 => throw new IOException("Unknown error from Google Encoder")
-       case 601 => throw new IOException("Missing query")
-       case 602 => return null
-       case 603 => throw new IOException("Legal problem")
-       case 604 => throw new IOException("No route")
-       case 610 => throw new IOException("Bad key")
-       case 620 => throw new IOException("Too many queries")
-     }
+      statusCode match {
+        case 400 => throw new IOException("Bad request")
+        case 500 => throw new IOException("Unknown error from Google Encoder")
+        case 601 => throw new IOException("Missing query")
+        case 602 => return null
+        case 603 => throw new IOException("Legal problem")
+        case 604 => throw new IOException("No route")
+        case 610 => throw new IOException("Bad key")
+        case 620 => throw new IOException("Too many queries")
+      }
     }
     location
   }

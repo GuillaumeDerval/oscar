@@ -108,7 +108,7 @@ object NurseRosteringRegular extends CPModel with App  {
       for(n <- nurses) {
        add(regular((for{d <- days} yield x(n)(d)), automaton))
         for(s <- shifts_a) {
-         add(nurse_stat(n)(s) == sum(for{d <- days} yield x(n)(d) === s))
+         add(nurse_stat(n)(s) === sum(for{d <- days} yield x(n)(d) ?=== s))
         }
         // min..max workdays (either day or night shift)
        add(sum(for{s <- day_shift to night_shift} yield nurse_stat(n)(s)) >= 7)
@@ -116,24 +116,24 @@ object NurseRosteringRegular extends CPModel with App  {
       }
       for(d <- days) {
         for(s <- shifts_a) {
-         add(day_stat(d)(s) == sum(for{n <- nurses} yield(x(n)(d) === s)))
+         add(day_stat(d)(s) === sum(for{n <- nurses} yield(x(n)(d) ?=== s)))
         }
         //
         // Some constraints for each day:
         //
         if (d % 7 == 5 || d % 7 == 6) {
           // weekend:
-         add(day_stat(d)(day_shift) == 2)
-         add(day_stat(d)(night_shift) == 1)
-         add(day_stat(d)(off_shift) == 4 )
+         add(day_stat(d)(day_shift) === 2)
+         add(day_stat(d)(night_shift) === 1)
+         add(day_stat(d)(off_shift) === 4 )
         } else {
           // workdays:
           // - exactly 3 on day shift
-         add(day_stat(d)(day_shift) == 3)
+         add(day_stat(d)(day_shift) === 3)
           // - exactly 2 on night
-         add(day_stat(d)(night_shift) == 2)
+         add(day_stat(d)(night_shift) === 2)
           // - exactly 2 off duty
-         add(day_stat(d)(off_shift) == 2 )
+         add(day_stat(d)(off_shift) === 2 )
         }
       }
      search{

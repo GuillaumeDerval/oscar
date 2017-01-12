@@ -15,11 +15,11 @@ package oscar.examples.cbls.car
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.invariants.core.computation.CBLSIntVar
+import oscar.cbls.core.computation.CBLSIntVar
+import oscar.cbls.lib.search.neighborhoods.WideningFlipNeighborhood
 import oscar.cbls.modeling.CBLSModel
-import oscar.cbls.objective.Objective
-import oscar.cbls.search.WideningFlipNeighborhood
-import oscar.cbls.search.combinators.Profile
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.lib.search.combinators.Profile
 
 import scala.collection.immutable.SortedMap
 import scala.language.postfixOps
@@ -97,10 +97,10 @@ object carSequencerSwapFlip  extends CBLSModel with App {
       onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => 5 max (violatedCars.value.size/2))), 2, obj)
       onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, name = "shuffleMostCars", numberOfShuffledPositions = () => nbCars/2)), 2, obj)
       orElse (Profile(shuffleNeighborhood(carSequence, name = "shuffleAllCars")) maxMoves 4)
+//      showObjectiveFunction(obj)
       saveBestAndRestoreOnExhaust obj) //in case we do not solve it, we want to restore the best solution anyway
 
-  search.verbose = 1
-  search.paddingLength = 150
+  search.verbose = 2
   search.doAllMoves(_ => c.isTrue,obj)
 
   println(search.profilingStatistics)

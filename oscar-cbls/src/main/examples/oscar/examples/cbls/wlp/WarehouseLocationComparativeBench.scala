@@ -15,15 +15,16 @@ package oscar.examples.cbls.wlp
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.invariants.core.computation.{CBLSIntVar, Store}
-import oscar.cbls.invariants.lib.logic.Filter
-import oscar.cbls.invariants.lib.minmax.MinConstArrayLazy
-import oscar.cbls.invariants.lib.numeric.Sum
+import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.search.AssignMove
+import oscar.cbls.lib.invariant.logic.Filter
+import oscar.cbls.lib.invariant.minmax.MinConstArrayLazy
+import oscar.cbls.lib.invariant.numeric.Sum
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, FastestFirst, LearningRandom}
+import oscar.cbls.lib.search.neighborhoods.{AssignNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
 import oscar.cbls.modeling.AlgebraTrait
-import oscar.cbls.objective.Objective
-import oscar.cbls.search.combinators.{BestSlopeFirst, FastestFirst, LearningRandom}
-import oscar.cbls.search.move.AssignMove
-import oscar.cbls.search.{AssignNeighborhood, Benchmark, RandomizeNeighborhood, SwapsNeighborhood}
+import oscar.cbls.util.Benchmark
 
 import scala.language.postfixOps
 

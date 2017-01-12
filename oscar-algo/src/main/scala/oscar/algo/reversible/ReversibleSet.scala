@@ -23,17 +23,23 @@ class ReversibleSet(context: ReversibleContext) extends Iterable[Int] {
   private val set = scala.collection.mutable.Set[Int]()
 
   def add(v: Int) = {
-    context.trail {
-     set.remove(v) 
-    }
-    set.add(v)
+    if (set.add(v)) {
+      context.trail {
+        set.remove(v)
+      }
+      true
+    } else
+      false
   }
-  
+
   def remove(v: Int) = {
-    context.trail {
-     set.add(v) 
-    }
-    set.remove(v)
+    if (set.remove(v)) {
+      context.trail {
+        set.add(v)
+      }
+      true
+    } else
+      false
   }  
   
   def iterator: Iterator[Int] = set.iterator

@@ -15,16 +15,39 @@ package oscar.cbls.test.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import org.scalacheck.Gen
-import org.scalatest.prop.Checkers
-import org.scalatest.{FunSuite, Matchers}
-import oscar.cbls.invariants.core.computation.SetValue.toFunction
-import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.routing.model.{ClosestNeighbors, HopClosestNeighbors, HopDistanceAsObjectiveTerm, PenaltyForUnrouted, PositionInRouteAndRouteNr, Predecessors, RoutedAndUnrouted, UnroutedImpl, VRP, VRPObjective}
-import oscar.cbls.routing.neighborhood.{InsertPointUnroutedFirst, OnePointMove, OnePointMoveMove, Swap, SwapMove, ThreeOpt, ThreeOptMove, TwoOpt, TwoOptMove}
-import oscar.cbls.search.core.{MoveFound, NoMoveFound}
+import oscar.cbls.core.search.{MoveFound, NoMoveFound}
 
-import scala.math.{pow, round, sqrt}
+import scala.math.pow
+import scala.math.round
+import scala.math.sqrt
+
+import org.scalacheck.Gen
+import org.scalatest.FunSuite
+import org.scalatest.Matchers
+import org.scalatest.prop.Checkers
+
+import oscar.cbls.core.computation.SetValue.toFunction
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.business.routing.legacy.model.ClosestNeighbors
+import oscar.cbls.business.routing.legacy.model.HopClosestNeighbors
+import oscar.cbls.business.routing.legacy.model.HopDistanceAsObjectiveTerm
+import oscar.cbls.business.routing.legacy.model.PenaltyForUnrouted
+import oscar.cbls.business.routing.legacy.model.PositionInRouteAndRouteNr
+import oscar.cbls.business.routing.legacy.model.Predecessors
+import oscar.cbls.business.routing.legacy.model.RoutedAndUnrouted
+import oscar.cbls.business.routing.legacy.model.UnroutedImpl
+import oscar.cbls.business.routing.legacy.model.VRP
+import oscar.cbls.business.routing.legacy.model.VRPObjective
+import oscar.cbls.business.routing.legacy.neighborhood.InsertPointUnroutedFirst
+import oscar.cbls.business.routing.legacy.neighborhood.OnePointMove
+import oscar.cbls.business.routing.legacy.neighborhood.OnePointMoveMove
+import oscar.cbls.business.routing.legacy.neighborhood.Swap
+import oscar.cbls.business.routing.legacy.neighborhood.SwapMove
+import oscar.cbls.business.routing.legacy.neighborhood.ThreeOpt
+import oscar.cbls.business.routing.legacy.neighborhood.ThreeOptMove
+import oscar.cbls.business.routing.legacy.neighborhood.TwoOpt
+import oscar.cbls.business.routing.legacy.neighborhood.TwoOptMove
 
 object RandomInsert {
   /**

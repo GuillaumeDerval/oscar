@@ -98,7 +98,7 @@ object JobShopWithLNSAndShaving extends CPModel with App {
 
   // Consistency 
   for (t <- Activities) {
-    add(endVars(t) == startVars(t) + durationVars(t))
+    add(endVars(t) === startVars(t) + durationVars(t))
   }
   // Precedences
   for (t <- 1 to Activities.max if jobs(t - 1) == jobs(t)) {
@@ -133,7 +133,7 @@ object JobShopWithLNSAndShaving extends CPModel with App {
     val stats = startSubjectTo(failureLimit = maxFails) {
       for (a <- 0 until nActivities) {
         if (RandomGenerator.nextInt(100) > relaxProba) {
-          constraintBuffer += startVars(a) == bestSolutionStarts(a)
+          constraintBuffer += startVars(a) === bestSolutionStarts(a)
         }
       }
       add(constraintBuffer)
@@ -144,8 +144,8 @@ object JobShopWithLNSAndShaving extends CPModel with App {
       val startDomSizeBefore = startVars.map(sv => sv.size)
       ShavingUtils.boundsShaving(solver, startVars)
       val startDomSizeAfter = startVars.map(sv => sv.size)
-      println(s"Makespan: ${bestSolutionMk}")
-      println(s"Shaving on min and max has reduced the domains of ${startVars.indices.foldLeft(0)((acc, i) => acc + (startDomSizeBefore(i) - startDomSizeAfter(i)))} values")
+      println(s"Makespan: $bestSolutionMk")
+      println(s"Shaving on min and max has removed ${startVars.indices.foldLeft(0)((acc, i) => acc + (startDomSizeBefore(i) - startDomSizeAfter(i)))} values from the domains of ${startVars.length} variables.")
     }
   }
 }

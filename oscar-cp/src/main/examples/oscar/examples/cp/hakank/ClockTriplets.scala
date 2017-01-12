@@ -50,7 +50,7 @@ object ClockTriplets extends CPModel with App {
   // constraints
   //
   add(allDifferent(x), Strong)
-  add(x(0) == 12)
+  add(x(0) === 12)
   add(x(1) > x(11))
   for (i <- 2 to 11) {
     add(x(i) + x(i - 1) + x(i - 2) <= triplet_sum)

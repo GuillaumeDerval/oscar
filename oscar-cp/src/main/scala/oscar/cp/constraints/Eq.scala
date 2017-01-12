@@ -37,7 +37,7 @@ class Eq(x: CPIntVar, y: CPIntVar) extends Constraint(x.store, "Equality") {
   final override def setup(l: CPPropagStrength): CPOutcome = {
     if (l == Strong) s.post(equalityStrong(x, y))
     else if (l == Medium) s.post(new EqualityBC(x, y))
-    else if (l == Weak) s.post(new EqualityBC(x, y))
+    else if (l == Weak || l == Automatic) s.post(new EqualityBC(x, y))
     else sys.error("unknown propagation level") 
   }
   

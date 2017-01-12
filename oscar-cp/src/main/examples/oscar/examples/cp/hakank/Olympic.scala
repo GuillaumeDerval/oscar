@@ -41,10 +41,7 @@ import scala.math._
   http://www.hakank.org/oscar/
 */
 object Olympic extends CPModel with App  {
-  def abs_minus(x: CPIntVar,
-             y: CPIntVar,
-             z: CPIntVar) : Constraint = 
-    z == (x-y).abs
+    def abs_minus(x: CPIntVar, y: CPIntVar, z: CPIntVar) : Constraint = z.eq((x-y).abs)
     //
     // data
     //
@@ -60,7 +57,7 @@ object Olympic extends CPModel with App  {
     var numSols = 0
   
      add(allDifferent(x), Strong)
-     add(x1 == 3)
+     add(x1 === 3)
      add(abs_minus(x2, x3, x1))
      add(abs_minus(x4, x5, x2))
      add(abs_minus(x5, x6, x3))

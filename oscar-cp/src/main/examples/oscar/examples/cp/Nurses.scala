@@ -19,7 +19,7 @@ import oscar.visual._
  *
  * @author Pierre Schaus pschaus@gmail.com
  */
-object Nurses extends CPModel with App {
+object Nurses extends App {
 
   // --- reading the data ---
 
@@ -109,8 +109,8 @@ object Nurses extends CPModel with App {
     items.foreach(_.innerCol = colors(i))
 
     // actual cp model solving zone i
-
-    solver.silent = true
+    implicit val cp = CPSolver()
+    cp.silent = true
     val spreadAcuity = CPIntVar(0 to 10e6.toInt)
     val nurseOfPatient = Array.fill(nbPatientsInZone(i))(CPIntVar(0 until nbNursesInZone(i)))
     val acuityOfNurse = Array.fill(nbNursesInZone(i))(CPIntVar(1 to 105))
@@ -138,7 +138,7 @@ object Nurses extends CPModel with App {
         case Some(y) => { // ok y is patient not yet assigned to a nurse
           val maxUsed = nurseOfPatient.maxBoundOrElse(-1)
           // try every possible nurses up to the maximum one without any patient less (dynamic symmetry breaking)
-          branchAll(0 to maxUsed + 1)(v => post(y == v))
+          branchAll(0 to maxUsed + 1)(v => post(y === v))
         }
       }
     }

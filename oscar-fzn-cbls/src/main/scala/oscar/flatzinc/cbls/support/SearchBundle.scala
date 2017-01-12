@@ -18,23 +18,22 @@
  */
 package oscar.flatzinc.cbls.support
 
-import oscar.cbls.invariants.core.computation.CBLSIntVar
-import oscar.cbls.invariants.core.computation.CBLSIntConst
-import oscar.cbls.invariants.core.computation.CBLSSetVar
-import oscar.cbls.invariants.lib.logic._
-import oscar.cbls.invariants.lib.minmax._
-import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.constraints.core.ConstraintSystem
-import oscar.cbls.objective.{Objective => CBLSObjective}
+import oscar.cbls.core.computation.CBLSIntVar
+import oscar.cbls.core.computation.CBLSIntConst
+import oscar.cbls.core.computation.CBLSSetVar
+import oscar.cbls.core.constraint.{ConstraintSystem, Constraint}
+import oscar.cbls.lib.invariant.logic._
+import oscar.cbls.lib.invariant.minmax._
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.objective.{Objective => CBLSObjective}
 import oscar.cbls.search.SearchEngine
 import oscar.flatzinc.Log
 import oscar.flatzinc.model.{Domain, DomainRange, DomainSet, Objective => FZObjective}
 import oscar.flatzinc.cbls.FZCBLSModel
-import oscar.cbls.constraints.core.Constraint
-import oscar.cbls.invariants.core.computation.Variable
-import oscar.cbls.invariants.lib.set.Inter
-import oscar.cbls.invariants.core.computation.IntValue
-import oscar.cbls.invariants.core.computation.SetValue
+import oscar.cbls.core.computation.Variable
+import oscar.cbls.lib.invariant.set.Inter
+import oscar.cbls.core.computation.IntValue
+import oscar.cbls.core.computation.SetValue
 
 
 

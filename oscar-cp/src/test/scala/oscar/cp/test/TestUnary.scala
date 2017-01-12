@@ -21,7 +21,6 @@ import oscar.algo.search.DFSearch
 import oscar.cp.searches.ConflictOrderingSearch
 import oscar.cp.constraints.Or
 import oscar.cp.scheduling.constraints._
-import oscar.cp.constraints.UnaryResourceWithOptionalActivities
 import oscar.algo.search.Branching
 import scala.collection.mutable.TreeSet
 
@@ -34,7 +33,7 @@ abstract class TestUnary(name: String, nTests: Int) extends TestSuite {
   def decomp(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar],resources: Array[CPIntVar], id: Int)(implicit store: CPStore): Array[Constraint] = {
     val n = starts.length
     val constraints = for (i <- 0 until n; j <- i + 1 until n) yield {
-      new Or(Array(ends(i) <== starts(j), ends(j) <== starts(i), resources(i) !== id, resources(j) !== id)) //, durations(i) === 0, durations(j) === 0))
+      new Or(Array(ends(i) ?<= starts(j), ends(j) ?<= starts(i), resources(i) ?!== id, resources(j) ?!== id)) //, durations(i) === 0, durations(j) === 0))
     }
     constraints.toArray
   }

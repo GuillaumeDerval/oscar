@@ -64,10 +64,10 @@ object BrokenWeights extends CPModel with App {
   //
   minimize(weights(n - 1))
   // total weight of the pieces
-  add(sum(weights) == m)
+  add(sum(weights) === m)
   // ensure that all weighst are handled
   for (i <- 0 until m) {
-    add(sum(for (j <- 0 until n) yield x(i)(j) * weights(j)) == i + 1)
+    add(sum(for (j <- 0 until n) yield x(i)(j) * weights(j)) === i + 1)
   }
   // symmetry breaking
   for (j <- 1 until n) {
