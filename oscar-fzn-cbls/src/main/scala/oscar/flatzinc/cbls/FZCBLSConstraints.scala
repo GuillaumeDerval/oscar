@@ -363,10 +363,18 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   
   def get_count_eq_inv(xs:Array[IntegerVariable], y: IntegerVariable, cnt:IntegerVariable, defined: String, ann: List[Annotation]) = {
     //TODO: DenseCount might be quite expensive...
+
     //xs domain goes from i to j but cnts will be from 0 to i-j
     val dc = DenseCount.makeDenseCount(xs.map(getCBLSVar(_)));
     val cnts = dc.counts.map(_.asInstanceOf[IntValue])
-    IntElement(Sum2(y,dc.offset),cnts);
+
+    val newY = Sum2(y,dc.offset)
+
+    val k = Max2(0,Min2(newY,cnts.length-1))
+    c.add(EQ(k,newY))
+
+    IntElement(k,cnts)
+    //IntElement(newY,cnts);
   }
   
   def get_nvalue_inv(xs:Array[IntegerVariable], ann: List[Annotation]) = {
