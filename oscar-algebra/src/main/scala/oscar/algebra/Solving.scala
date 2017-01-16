@@ -135,7 +135,7 @@ abstract class SolverRun[O  >: Constant <: ExpressionDegree, C <: ExpressionDegr
    */
   protected def getExtension(filePath: java.nio.file.Path): String = {
     val name = filePath.getFileName.toString
-    name.split(".").last
+    name.split("\\.").last
   }
 
   /**
