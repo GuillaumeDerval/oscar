@@ -155,7 +155,7 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
     val f3 = LinearTransform(widthZone2,false)
 
     val transformWithZone1Shifted =
-      transformReadyForShiftOfZone1.update(
+      transformReadyForShiftOfZone1.updateDelta(
         startZone1Included,
         endZone1Included,
         widthZone2,
@@ -170,6 +170,74 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
       deleteUnnecessaryPivotStartingJustAfter(startZone1Included-1,
       deleteUnnecessaryPivotStartingJustAfter(startZone1Included + widthZone2 - 1,
         deleteUnnecessaryPivotStartingJustAfter(endZone2Included,transformationWithUpdate2Done))))
+  }
+
+
+  /**
+   * flips the function between the given bounds. does not add closing pivots before
+   * @param startZoneIncluded
+   * @param endZoneIncluded
+   * @return
+   */
+  def flipFunction(startZoneIncluded:Int,endZoneIncluded:Int):PiecewiseLinearFun = {
+    //a pivot must be added after the end of update1 if 2 is the first zone
+    val transformReadyForFlipOnLeft = addRedundantPivotAt(startZoneIncluded,this.transformation)
+    val transformReadyForFlip = addRedundantPivotAt(endZoneIncluded+1,transformReadyForFlipOnLeft)
+    //at this point, there is a pivot at startZoneIncluded, and a pivot at endZoneIncluded+1
+
+    //collecting the relevant pivots and their end into a stack
+    //flip the collected pivots
+    //insert the flipped pivot
+
+    val collectedPivotsForwardOrder:List[Pivot] = pivotsBetween(startZoneIncluded,endZoneIncluded,transformReadyForFlip)
+
+    val flippedPivots = flipPivots(collectedPivotsForwardOrder,endZoneIncluded)
+
+  }
+
+  def flipPivots(pivotList:List[Pivot],endOfLastPivot:Int, acc:List[Pivot] = List.empty):List[Pivot] = {
+    pivotList match {
+      case p1 :: p2 :: tail =>
+
+      case p1 :: Nil =>
+
+      case Nil =>
+    }
+  }
+
+  def shiftPivots(pivotList:List[Pivot],delta:Int):List[Pivot] = {
+    val f2 = LinearTransform(-delta,false)
+    val f3 = LinearTransform(delta,false)
+    pivotList.map((p:Pivot) => new Pivot(p.fromValue+delta,if(p.f.minus) f3(p.f) else f2(p.f)))
+  }
+
+  def shiftPivot(p:Pivot,delta:Int):Pivot = {
+    new Pivot(p.fromValue+delta,if(p.f.minus) f3(p.f) else f2(p.f))
+  }
+
+
+
+
+
+  def pivotsBetween(startPositionIncluded:Int,endPosition:Int,transform:RedBlackTreeMap[Pivot]):List[Pivot] = {
+    transform.biggestLowerOrEqual(endPosition) match {
+      case None => List.empty
+      case Some(k, pivot) =>
+        var explorer = transform.positionOf(k).get
+        var acc : List[Pivot] = List(explorer.value)
+        while (explorer.prev match {
+          case None => false
+          case Some(prevExplorer) =>
+            if (startPositionIncluded <= prevExplorer.key) {
+              acc = prevExplorer.value :: acc
+              explorer = prevExplorer
+              true
+            } else {
+              false
+            }
+        }) {}
+        return acc
+    }
   }
 
   def swapAdjacentZonesShiftSecond(startZone1Included:Int, endZone1Included:Int, endZone2Included:Int, flipZone1:Boolean):PiecewiseLinearFun = {
@@ -187,7 +255,7 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
     val f3 = LinearTransform(-widthZone1,false)
 
     val transformWithZone2Shifted =
-      transformReadyForShiftOfZone2.update(
+      transformReadyForShiftOfZone2.updateDelta(
         endZone1Included +1,
         endZone2Included,
         -widthZone1,
@@ -229,7 +297,6 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
         }
     }
   }
-
 
   private def myUpdateForCompositionBefore(fromIncluded:Int, toIncluded: Int, additionalFAppliedBefore: LinearTransform,cleanedTransformation:RedBlackTreeMap[Pivot]):RedBlackTreeMap[Pivot] = {
     val isAdditionaFNegativeSlope = additionalFAppliedBefore.minus
@@ -300,12 +367,18 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
   }
 
 
+  /**
+   *
+   * @param addedPivot
+   * @param transform
+   * @return  transform. there will always be a pivot at the addedPivot position.
+   */
   private def addRedundantPivotAt(addedPivot:Int,transform:RedBlackTreeMap[Pivot]):RedBlackTreeMap[Pivot] = {
     transform.biggestLowerOrEqual(addedPivot) match {
       case Some((key, pivot)) =>
-        if (key == addedPivot) transform
+        if (key == addedPivot) transform //we do not add a redundant pivot because there is already a pivot here
         else transform.insert(addedPivot, new Pivot(addedPivot, pivot.f))
-      case _ => transform.insert(addedPivot, new Pivot(addedPivot, LinearTransform.identity))
+      case _ => transform.insert(addedPivot, new Pivot(addedPivot, LinearTransform.identity)) //implicitly, it was the identity function here, so add the pivot
     }
   }
 

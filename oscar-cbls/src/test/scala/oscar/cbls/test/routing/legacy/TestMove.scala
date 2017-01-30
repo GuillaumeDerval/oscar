@@ -21,12 +21,12 @@
  * ****************************************************************************
  */
 
-package oscar.cbls.test.routing
+package oscar.cbls.test.routing.legacy
 
 import org.scalatest.prop.Checkers
 import org.scalatest.{FunSuite, Matchers}
 import oscar.cbls.business.routing.legacy.model.{PositionInRouteAndRouteNr, RoutedAndUnrouted, VRP, VRPObjective}
-import oscar.cbls.test.routing.TestBench.{onePoint, swap, threeOpt, twoOpt}
+import oscar.cbls.test.routing.legacy.TestBench.{onePoint, swap, threeOpt, twoOpt}
 
 /**
  * The tests marked with a star (*) require the assertion mechanism of IntVar in ComputationStructure file, which

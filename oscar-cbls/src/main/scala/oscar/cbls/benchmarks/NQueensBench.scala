@@ -18,7 +18,7 @@
   *         by Renaud De Landtsheer
   ******************************************************************************/
 
-package oscar.cbls.bench
+package oscar.cbls.benchmarks
 
 import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.ConstraintSystem

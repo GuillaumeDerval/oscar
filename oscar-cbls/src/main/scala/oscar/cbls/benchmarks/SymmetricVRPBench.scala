@@ -1,4 +1,4 @@
-package oscar.cbls.test.routingS
+package oscar.cbls.benchmarks
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -24,6 +24,8 @@ import oscar.cbls.business.routing.neighborhood._
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 import oscar.cbls.util.StopWatch
 
+import scala.util.Random
+
 class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int)
   extends VRP(n,v,m,maxPivot)
   with TotalConstantDistance with ClosestNeighbors with RoutedAndUnrouted{
@@ -44,7 +46,7 @@ class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Arra
   def size = routes.value.size
 }
 
-object TSProutePoints extends App {
+object SymmetricVRPBench extends App {
 
   val n = 10000
   val v = 100
@@ -54,7 +56,7 @@ object TSProutePoints extends App {
   new TSPRoutePointsS(1000,100,4,verbose)
   System.gc()
 
-  val nbTrials = 3
+  val nbTrials = 10
 
   println()
   print("n\tv\tpercent")
@@ -64,7 +66,7 @@ object TSProutePoints extends App {
   println
 
 
-  for(n <- 5000 to 11000 by 2000){
+  for(n <- 11000 to 11000 by 2000){
     for(v <- List(100)){
       for (maxPivotPerValuePercent <- List(0,1,2,3,4,5,20)) {
         print(n + "\t" + v + "\t" + maxPivotPerValuePercent + "\t")
@@ -115,4 +117,23 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) exte
   search.doAllMoves(obj=myVRP.obj)
 
   print(getWatch)
+}
+
+object RoutingMatrixGenerator {
+  val random = new Random(0)
+
+  def apply(N : Int, side : Int = 1000) : (Array[Array[Int]], Array[(Int, Int)]) = {
+
+    //we generate te cost distance matrix
+    def randomXY : Int = (random.nextFloat() * side).toInt
+    val pointPosition : Array[(Int, Int)] = Array.tabulate(N)(w => (randomXY, randomXY))
+
+    def distance(from : (Int, Int), to : (Int, Int)) =
+      math.sqrt(math.pow(from._1 - to._1, 2) + math.pow(from._2 - to._2, 2)).toInt
+
+    //for each delivery point, the distance to each warehouse
+    (Array.tabulate(N)(
+      n1 => Array.tabulate(N)(
+        n2 => distance(pointPosition(n1), pointPosition(n2)))), pointPosition)
+  }
 }

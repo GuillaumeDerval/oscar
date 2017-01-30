@@ -29,6 +29,13 @@ class LinearTransform(val offset:Int,val minus:Boolean){
   def apply(value:Int) = if(minus) offset - value else offset + value
   def unApply(value:Int) = if(minus) offset - value else value - offset
 
+  def shift(deltaOnXBeforeThis:Int):LinearTransform = {
+    //offset op (value+delta)
+
+  }
+
+
+
   /**
    * delivers a new linear transform that is equal to this(that(value))
    * @param that

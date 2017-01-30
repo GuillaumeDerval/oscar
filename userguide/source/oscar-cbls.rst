@@ -110,7 +110,7 @@ Propagation must be fast. It therefore has the following properties:
 * **Selective**: a propagation element is reached by the propagation wave only if it requires performing some update. Portions of the propagation graph where no change was performed on the input will therefore not be reached by the propagation wave.
 * **Locally incremental**:  invariants are designed to perform incremental update of the variable(s) they control. This is achieved by proposing as additional mechanism on top of the propagation process so that invariants are notified about specific change of their input variable(s).
 * **Lazy**: propagation is triggered when a variable is queried, and if it is not an input variable. Querying an objective function will query the variable that defines the objective function
-* **Partial**: when the propagation is triggered throug han objective function, only the portion of the model that contributes to the objectif function is updated
+* **Partial**: when the propagation is triggered through han objective function, only the portion of the model that contributes to the objectif function is updated
 
 On top of propagation, there is another mechanism, belonging to the computation layer. It is the notification mechanism.
 When a variable is propagated, it updates its value, and notifies the new value to its listening invariants by calling a method called "notify"

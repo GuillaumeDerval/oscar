@@ -1,4 +1,4 @@
-package oscar.cbls.test.routing
+package oscar.cbls.test.routing.legacy
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify

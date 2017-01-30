@@ -21,7 +21,7 @@
  * ****************************************************************************
  */
 
-package oscar.cbls.test.routing
+package oscar.cbls.test.routing.legacy
 
 import scala.language.reflectiveCalls
 import scala.math.pow

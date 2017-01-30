@@ -28,7 +28,7 @@ import oscar.cbls.lib.invariant.seq._
 import oscar.cbls.lib.invariant.set.{Cardinality, Diff, Inter, Interval, MakeSet, SetProd, SetSum, TakeAny, Union, UnionAll}
 import oscar.cbls.modeling.Algebra._
 import oscar.cbls.test.invariants.bench._
-import oscar.cbls.test.routingS.RoutingMatrixGenerator
+import oscar.cbls.test.routing.RoutingMatrixGenerator
 
 import scala.collection.immutable.SortedMap
 
