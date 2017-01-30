@@ -19,7 +19,7 @@ package oscar.cp.constraints.tables
 import oscar.algo.Inconsistency
 import oscar.algo.reversible.{ReversibleInt, ReversibleSparseBitSet}
 import oscar.cp.core.delta.DeltaIntVar
-import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset}
+import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset, CPVar}
 import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
 
 import scala.collection.mutable.ArrayBuffer
@@ -32,6 +32,8 @@ import scala.collection.mutable.ArrayBuffer
  * @author Jordan Demeulenaere j.demeulenaere1@gmail.com
  */
 final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableCT") {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   /* Setting idempotency & lower priority for propagate() */
   idempotent = true

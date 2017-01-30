@@ -16,7 +16,7 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.delta.DeltaIntVar
 
 
@@ -56,8 +56,10 @@ class Count(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) extends Co
      * 
      * Filtering given by the decomposition with reified constraints:
      * When at most Nmin variables have a non empty intersection with Y, those variables must be equal to Y
-     */  
-  
+     */
+
+  override def associatedVars(): Iterable[CPVar] = X ++ Array(N, Y)
+
   override def setup(l: CPPropagStrength): Unit = {
     
     val minY = Y.min

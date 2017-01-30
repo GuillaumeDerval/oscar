@@ -16,6 +16,7 @@ package oscar.cp.test
 
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.variables.CPVar
 import oscar.cp.testUtils.TestSuite
 
 
@@ -56,6 +57,7 @@ class TestVarView extends TestSuite {
         eq should equal(true)
       }
 
+      override def associatedVars(): Iterable[CPVar] = ???
     }
     val cp = CPSolver()
     var x = CPIntVar(-2 to 4)(cp)
@@ -76,7 +78,7 @@ class TestVarView extends TestSuite {
     var x = CPIntVar(-2 to 4)(cp)
 
     class ViewCons(val X: CPIntVar) extends Constraint(X.store, "TestView") {
-
+      override def associatedVars(): Iterable[CPVar] = ???
       var valRemove = true
 
       override def setup(l: CPPropagStrength): Unit = {

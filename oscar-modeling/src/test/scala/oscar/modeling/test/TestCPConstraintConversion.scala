@@ -1,6 +1,7 @@
 package oscar.modeling.test
 import oscar.cp.{CPBoolVar, CPIntVar}
 import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.variables.CPVar
 import oscar.modeling.constraints.ConvertCPConstraint
 import oscar.modeling.models.{ModelDeclaration, UninstantiatedModel}
 import oscar.modeling.models.operators.CPInstantiate
@@ -10,6 +11,7 @@ import oscar.modeling.vars.{BoolVar, IntVar}
 abstract class MyTestConstraints extends oscar.cp.Constraint(null) {
   def print: String
   override def setup(l: CPPropagStrength): Unit = {}
+  override def associatedVars(): Iterable[CPVar] = ???
 }
 
 final class StdTypeTest(a: Int, b: Long, c: String, d: Double, e: Boolean, f: Float) extends MyTestConstraints {

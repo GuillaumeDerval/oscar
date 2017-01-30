@@ -48,7 +48,7 @@ abstract class RefinementStrategy[SubproblemOrdering](searchInstantiator: Branch
 
       val search = searchInstantiator(model)
 
-      while(q.size < count) {
+      while(q.size < count && q.nonEmpty) {
         //Dequeue the largest subproblem, and compute its domain
         val sp = q.dequeue()
         model.pushState()
@@ -70,7 +70,9 @@ abstract class RefinementStrategy[SubproblemOrdering](searchInstantiator: Branch
               val newPath = sp.path ++ List(idx)
               q += SubproblemInfo(addedConstraints, newPath, generate(model, addedConstraints, newPath))
             }
-            catch { case _: Inconsistency => }
+            catch {
+              case _: NoSolutionException =>
+            }
             model.popState()
           }
         }
@@ -96,7 +98,7 @@ abstract class RefinementStrategy[SubproblemOrdering](searchInstantiator: Branch
       result
     })
 
-    r.map(sp => extendSubProblem(
+    (solutions.toList ++ r).map(sp => extendSubProblem(
       new SubProblem(sp.assignment)
         .addData(SubProblemDiscrepancy, sp.path.sum)
         .addData(SubProblemMinBound, SubProblemMinBound.compute(model.optimisationMethod)),

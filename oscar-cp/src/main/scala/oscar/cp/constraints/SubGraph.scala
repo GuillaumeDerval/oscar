@@ -18,7 +18,7 @@ package oscar.cp.constraints
 
 import oscar.algo.Inconsistency
 import oscar.cp.core._
-import oscar.cp.core.variables.CPGraphVar
+import oscar.cp.core.variables.{CPGraphVar, CPVar}
 
 /**
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
@@ -27,7 +27,9 @@ import oscar.cp.core.variables.CPGraphVar
  */
 
 class SubGraph(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constraint(g1.s, "SubGraph") {
-  
+
+	override def associatedVars(): Iterable[CPVar] = Array(g1, g2)
+
 	override def setup(l: CPPropagStrength): Unit = {
 	  // check inconsistency
 	  if(inconsistent) throw Inconsistency

@@ -18,7 +18,7 @@ package oscar.cp.constraints
 import oscar.cp.core._
 import oscar.algo.reversible._
 import oscar.algo.reversible.ReversibleSparseSet
-import oscar.cp.core.variables.CPBoolVar
+import oscar.cp.core.variables.{CPBoolVar, CPVar}
 
 /**
  * y is true if at least one of the xi's is true, false otherwise
@@ -31,7 +31,9 @@ class OrReif(val X: Array[CPBoolVar], y: CPBoolVar) extends Constraint(y.store, 
   val nFalse = new ReversibleInt(s,0)
   var i = 0
   val n = x.size
-  
+
+  override def associatedVars(): Iterable[CPVar] = x ++ Array(y)
+
   private def setBound(i: Int) {
     
     val tmp = x(nFalse.value)

@@ -1,10 +1,8 @@
 package oscar.cp.constraints.sets
 
-import oscar.cp.core.variables.CPSetVar
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPSetVar, CPVar}
 import oscar.cp.core.Constraint
-import oscar.cp.core.variables.CPBoolVar
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.variables.CPIntVar
 
 /** 
  *  @author Renaud Hartert ren.hartert@gmail.com
@@ -12,10 +10,14 @@ import oscar.cp.core.variables.CPIntVar
  */
 
 class Excludes(val set: CPSetVar, elem: Int) extends Constraint(set.store, "Set excludes") {
+  override def associatedVars(): Iterable[CPVar] = Array(set)
+
   override def setup(l: CPPropagStrength): Unit = set.excludes(elem)
 }
 
 class ExcludeElem(set: CPSetVar, elem: Int, b: CPBoolVar) extends Constraint(set.store, "RequiredElem") {
+
+  override def associatedVars(): Iterable[CPVar] = Array(set, b)
 
   override def setup(l: CPPropagStrength): Unit = {
     propagate()

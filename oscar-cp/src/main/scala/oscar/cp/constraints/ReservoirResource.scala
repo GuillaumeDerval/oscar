@@ -18,6 +18,7 @@ package oscar.cp.constraints
 
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.variables.CPVar
 
 /**
  * Created on 03/06/15.
@@ -45,6 +46,8 @@ class ReservoirResource(startVars: Array[CPIntVar], durationVars: Array[CPIntVar
   private[this] val horizon = endVars.map(myVar => myVar.max).max
   private[this] val producer = Array.tabulate(nTasks)(i => productionVars(i).max > 0)
   private[this] val consumer = Array.tabulate(nTasks)(i => consumptionVars(i).max > 0)
+
+  override def associatedVars(): Iterable[CPVar] = startVars ++ durationVars ++ endVars ++ productionVars ++ consumptionVars
 
   /* Check if the maximal capacity of the reservoir is never exceeded.
    *

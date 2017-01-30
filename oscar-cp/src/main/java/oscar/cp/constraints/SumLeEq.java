@@ -18,6 +18,13 @@ import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Sum Less Or Equal Constraint: x[0]+x[1]+...+x[n] <= y
@@ -27,6 +34,13 @@ public class SumLeEq extends Constraint {
 	
 	private CPIntVar [] x;
 	private CPIntVar y;
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+		l.add(y);
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
 
 	public SumLeEq(CPIntVar [] x, CPIntVar y) {
 		super(x[0].store(),"SumLeq");

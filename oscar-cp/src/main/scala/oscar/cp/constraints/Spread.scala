@@ -17,6 +17,7 @@ package oscar.cp.constraints
 import oscar.cp._
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.variables.CPVar
 
 
 /**
@@ -34,7 +35,9 @@ class Spread(val x: Array[CPIntVar], val sum: Int, val sum2: CPIntVar, val rever
   val bnds = Array.fill(2*n)((0,0)) // will contain the lower and upper bounds of the n domains + bounds type (1 = lower, 0 = upper)
  
   val epsilon = 10e-6
-  
+
+  override def associatedVars(): Iterable[CPVar] = x ++ Array(sum2)
+
   override def setup(l: CPPropagStrength): Unit = {
     if (reverse) {
       s.post(new Spread(x.map(-_),-sum,sum2,false))

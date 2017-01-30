@@ -21,6 +21,7 @@ import oscar.cp.core._
 import oscar.algo.reversible._
 import oscar.cp._
 import oscar.cp.core.delta.DeltaIntVar
+import oscar.cp.core.variables.CPVar
 
 /**
  * Implementation of the table algorithm described in :
@@ -31,6 +32,8 @@ import oscar.cp.core.delta.DeltaIntVar
  * @author Pierre Schaus (pschaus@gmail.com)
  */
 class TableAC5TCRecomp(val data: TableData, val x: CPIntVar*) extends Constraint(x(0).store, "TableAC5TCRecomp") {
+
+  override def associatedVars(): Iterable[CPVar] = x
 
   def this(x1: CPIntVar, x2: CPIntVar, tuples: Iterable[(Int, Int)]) = {
     this(new TableData(2), x1, x2)

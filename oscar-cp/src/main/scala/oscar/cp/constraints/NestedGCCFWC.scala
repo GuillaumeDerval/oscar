@@ -18,7 +18,7 @@ import oscar.algo.Inconsistency
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.{CPPropagStrength, Constraint}
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
  * Cardinality constraint on prefixes of a variable array.
@@ -38,6 +38,8 @@ import oscar.cp.core.variables.CPIntVar
 class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int, Int)]],
                   upperLists: Array[Array[(Int, Int)]])
   extends Constraint(X(0).store, "PrefixCCSegment") {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   // Handy structures for memorization.
   // They allow to have common code for lower bound and upper bound treatment.

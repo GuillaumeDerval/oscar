@@ -16,7 +16,7 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 
 /**
@@ -26,6 +26,8 @@ import oscar.cp.core.variables.CPIntVar
  */
 class CountCst(val N: CPIntVar, val X: Array[CPIntVar], val Y: Int) extends Constraint(N.store, "CountSimple") {
   val n = X.size
+
+  override def associatedVars(): Iterable[CPVar] = Array(N) ++ X
 
   override def setup(l: CPPropagStrength): Unit = {
     X.foreach(_.callPropagateWhenDomainChanges(this))

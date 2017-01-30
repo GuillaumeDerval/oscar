@@ -16,14 +16,16 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
  * x must be a value of the set
  * @author Pierre Schaus pschaus@gmail.com
  */
 class InSet(val x: CPIntVar, val set: Set[Int]) extends Constraint(x.store, "InSet") {
-  
+
+  override def associatedVars(): Iterable[CPVar] = Array(x)
+
   override def setup(l: CPPropagStrength): Unit = {
     for (v <- x.min to x.max if !set.contains(v)) {
       x.removeValue(v)

@@ -17,16 +17,16 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.Inconsistency
-
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
  * Alldifferent constraint
  * @author Pierre Schaus pschaus@gmail.com
  */
 class AllDifferent(x: Array[CPIntVar]) extends Constraint(x(0).store) {
-  
-  
+
+  override def associatedVars(): Iterable[CPVar] = x
+
   def this(x: CPIntVar*) =  this(x.toArray)
 
   /**

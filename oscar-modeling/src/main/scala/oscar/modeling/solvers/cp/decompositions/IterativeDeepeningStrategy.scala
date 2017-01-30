@@ -1,6 +1,7 @@
 package oscar.modeling.solvers.cp.decompositions
 
 import oscar.algo.search.Branching
+import oscar.modeling.constraints.Constraint
 import oscar.modeling.models.UninstantiatedModel
 import oscar.modeling.models.cp.MemoCPModel
 import oscar.modeling.solvers.cp.Branchings._
@@ -22,9 +23,10 @@ abstract class IterativeDeepeningStrategy[Threshold](searchInstantiator: Branchi
   def shouldStopSearch(model: MemoCPModel, threshold: Threshold, depth: Int, discrepancy: Int): Boolean
 
   // The idea here is to store the "path" taken in the tree at each iteration of the search
-  var currentDepth = -1
-  var currentDiscrepancy = -1
-  var currentPath: Array[Int] = null
+  private var currentDepth = -1
+  private var currentDiscrepancy = -1
+  private var currentPath: Array[Int] = null
+  private var atLeastOne = false
 
   /**
     * A custom search that stops going further in the tree over a given Threshold
@@ -38,6 +40,7 @@ abstract class IterativeDeepeningStrategy[Threshold](searchInstantiator: Branchi
     val trueDepth = currentDepth+1
     val trueDiscrepancy = currentDiscrepancy
     if(shouldStopSearch(a, threshold, trueDepth, trueDiscrepancy)) {
+      atLeastOne |= base.nonEmpty
       oscar.cp.noAlternative
     }
     else {
@@ -56,13 +59,13 @@ abstract class IterativeDeepeningStrategy[Threshold](searchInstantiator: Branchi
   }
 
   private def tryDecomposition(model: MemoCPModel, threshold: Threshold): List[SubProblem] = {
-    // TODO: this can be improved a lot once MemoCPModel has been rewritten to integrate it in the oscar search
     currentDepth = -1
     currentPath = Array.tabulate(32)(_ => -1) //32 should be enough for decomposition
     currentDiscrepancy = 0
+    atLeastOne = false
 
     // To store the path
-    val path_list = new mutable.MutableList[(Array[Int], Int)]
+    val path_list = new mutable.MutableList[(List[Constraint], Int)]
 
     // Search all the possibles paths
     model.apply {
@@ -71,7 +74,7 @@ abstract class IterativeDeepeningStrategy[Threshold](searchInstantiator: Branchi
 
       model.cpSolver.search(customSearch(model, baseSearch, threshold))
       model.cpSolver.onSolution {
-        path_list += ((currentPath.clone().slice(0, currentDepth+1), currentDiscrepancy))
+        path_list += ((model.getAddedConstraints, currentDiscrepancy))
       }
       model.cpSolver.start()
 
@@ -80,18 +83,8 @@ abstract class IterativeDeepeningStrategy[Threshold](searchInstantiator: Branchi
       // For each path, generate the list of constraints added
       path_list.toList.map(path_with_data => {
         val newSearch = searchInstantiator(model)
-        //re-apply the path
-        model.pushState()
-        var currentAlternatives = newSearch.alternatives().toList
-        for(i <- path_with_data._1) {
-          currentAlternatives(i)()
-          currentAlternatives = newSearch.alternatives().toList
-        }
-        //get the constraints
-        val constraints = model.getAddedConstraints
-        model.popState()
         //generate subproblem object
-        new SubProblem(constraints).addData(SubProblemDiscrepancy, path_with_data._2)
+        new SubProblem(path_with_data._1).addData(SubProblemDiscrepancy, path_with_data._2)
       })
     }
   }
@@ -114,7 +107,8 @@ abstract class IterativeDeepeningStrategy[Threshold](searchInstantiator: Branchi
     var decomp: List[SubProblem] = List(new SubProblem(List()))
 
     // Retry until we have enough subproblems
-    while(decomp.size < count) {
+    atLeastOne = true
+    while(decomp.size < count && atLeastOne) {
       decomp = tryDecomposition(model, threshold)
       threshold = nextThreshold(threshold, decomp, count)
     }

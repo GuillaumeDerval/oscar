@@ -23,6 +23,7 @@ import oscar.cp.core.CPPropagStrength
 import scala.collection.mutable.ArrayBuffer
 import oscar.cp.testUtils._
 import oscar.cp.core.delta.DeltaIntVar
+import oscar.cp.core.variables.CPVar
 
 
 /**
@@ -55,6 +56,8 @@ class TestDeltaPropagate extends TestSuite {
         
         propag = true
       }
+
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
     val cp = CPSolver()
@@ -91,6 +94,8 @@ class TestDeltaPropagate extends TestSuite {
         
         propag = true
       }
+
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
     val cp = CPSolver()
@@ -125,6 +130,7 @@ class TestDeltaPropagate extends TestSuite {
         
         propag = true
       }
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
     val cp = CPSolver()
@@ -159,6 +165,7 @@ class TestDeltaPropagate extends TestSuite {
           false
         }
       }
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
     val cp = CPSolver()
@@ -191,6 +198,8 @@ class TestDeltaPropagate extends TestSuite {
           false
         }
       }
+
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
     val cp = CPSolver()
@@ -255,6 +264,8 @@ class TestDeltaPropagate extends TestSuite {
           currDim(i) = 0
         }
       }
+
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
     implicit val cp = CPSolver()
@@ -307,6 +318,8 @@ class TestDeltaPropagate extends TestSuite {
         assert(m == 5)
         assert(array.take(m).toSet == Set(0,3,6,7,8))
       }
+
+      override def associatedVars(): Iterable[CPVar] = ???
     }
     
   
@@ -352,6 +365,7 @@ class TestDeltaPropagate extends TestSuite {
           false
         }
       }
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
     val cp = CPSolver()
@@ -405,6 +419,7 @@ class TestDeltaPropagate extends TestSuite {
           false
         }
       }
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
     val cp = CPSolver()
@@ -435,6 +450,7 @@ class TestDeltaPropagate extends TestSuite {
           false
         }
       }
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
     val cp = CPSolver()
@@ -469,6 +485,7 @@ class TestDeltaPropagate extends TestSuite {
           false
         },idempotent=false)
       }
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
     val cp = CPSolver()

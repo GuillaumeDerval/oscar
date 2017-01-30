@@ -7,6 +7,7 @@ import oscar.algo.reversible._
 
 import scala.io.Source
 import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.variables.CPVar
 
 /**
  * Binero is a grid game, similar to Sudoku.
@@ -94,6 +95,7 @@ object Binero extends CPModel with App {
  */
 class TabNotEqual(val tab1: Array[CPIntVar], val tab2: Array[CPIntVar], val len: Int) extends Constraint(tab1(0).store) {
 
+
   val valuesBin = Array(new ReversibleInt(s, 0), new ReversibleInt(s, 0))
   val numBound = Array(new ReversibleInt(s, 0), new ReversibleInt(s, 0))
 
@@ -130,5 +132,7 @@ class TabNotEqual(val tab1: Array[CPIntVar], val tab2: Array[CPIntVar], val len:
    * @return a^e, (a up to e)
    */
   def intPow(a: Int, e: Int): Int = if (e == 0) 1 else a * intPow(a, e - 1)
+
+  override def associatedVars(): Iterable[CPVar] = ???
 }
 

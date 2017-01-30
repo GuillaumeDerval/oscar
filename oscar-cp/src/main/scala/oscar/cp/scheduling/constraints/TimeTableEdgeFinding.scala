@@ -8,6 +8,7 @@ import java.lang.Math._
 
 import oscar.algo.Inconsistency
 import oscar.algo.SortUtils._
+import oscar.cp.core.variables.CPVar
 
 /*
  * TTEF of Vilim 2011 as described in Schutt et al 2013 
@@ -18,7 +19,9 @@ extends Constraint(capacity.store, "TimeTableEdgeFinding") {
   private val lr = new TimeTableEdgeFindingLR(starts, durations, ends, heights, resources, capacity, id) 
   private val rl = new TimeTableEdgeFindingLR(ends map(-_), durations, starts map(-_), heights, resources, capacity, id)
   private val store = capacity.store
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ heights ++ resources ++ Array(capacity)
+
   override def setup(strength: CPPropagStrength) = {
     store.post(Array[Constraint](lr, rl))
   }
@@ -54,7 +57,9 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   //  TT structure, needed by ttEn primitive
   private[this] val ttBeforeSMin = Array.ofDim[Long](nTasks)
   private[this] val ttBeforeEMax = Array.ofDim[Long](nTasks)
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ heights ++ resources ++ Array(capacity)
+
   @inline private final def ttEn(a: Int, b: Int): Long = ttBeforeEMax(b) - ttBeforeSMin(a)
   
   final override def propagate(): Unit = {

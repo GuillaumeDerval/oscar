@@ -14,7 +14,7 @@
  * *****************************************************************************/
 package oscar.cp.scheduling.constraints
 
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 
@@ -25,6 +25,8 @@ class MaxCumulativeCapaCheck(starts: Array[CPIntVar], durations: Array[CPIntVar]
 
   private val nTasks = starts.size
   private val Tasks = 0 until nTasks
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ demands ++ resources ++ Array(capacity)
 
   override def setup(l: CPPropagStrength): Unit = {
     capacity.callPropagateWhenBoundsChange(this)    

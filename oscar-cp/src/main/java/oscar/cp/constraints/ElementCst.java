@@ -14,16 +14,15 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Hashtable;
+import java.util.*;
 
 import oscar.algo.reversible.ReversibleInt;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
-
-
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
 
 
 /**
@@ -69,6 +68,12 @@ public class ElementCst extends Constraint {
 		maxIndSupp = new ReversibleInt(s(), 0);
 		maxIndSupp.setValue(y.length-1);
 		
+	}
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x, z));
+		return JavaConversions.iterableAsScalaIterable(l);
 	}
 
 	@Override

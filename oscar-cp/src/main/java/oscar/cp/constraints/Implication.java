@@ -20,6 +20,13 @@ import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.CPStore;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Reified Equality Constraint
@@ -31,6 +38,11 @@ public class Implication extends Constraint {
 	CPIntVar B;
 	CPIntVar V;
 
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(A, B, V));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
 
     /**
      * Logical Implication: A => B <=> V

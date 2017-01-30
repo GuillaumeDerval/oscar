@@ -19,7 +19,7 @@ package oscar.cp.constraints.tables
 import oscar.algo.reversible.ReversibleSparseBitSet
 import oscar.cp.core.{CPStore, Constraint, _}
 import oscar.cp.core.delta.DeltaIntVar
-import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset}
+import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset, CPVar}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -31,6 +31,8 @@ import scala.collection.mutable.ArrayBuffer
  * @author Helene Verhaeghe helene.verhaeghe27@gmail.com
  */
 final class TableCTNeg(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableCTNeg") {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   /* Setting idempotency & lower priority for propagate() */
   idempotent = true

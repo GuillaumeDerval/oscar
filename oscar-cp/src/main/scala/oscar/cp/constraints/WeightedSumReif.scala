@@ -16,14 +16,15 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPBoolVar
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPVar}
 
 /**
  * Implementation of sum_i a(i).x(i) == c <--> b
  * @author Pierre Schaus pschaus@gmail.com
  */
 class WeightedSumReif(val a: Array[Int], val x: Array[CPIntVar], val c: Int, val b: CPBoolVar) extends Constraint(b.store, "WeightedSumReif") {
+
+  override def associatedVars(): Iterable[CPVar] = x ++ Array(b)
 
   override def setup(l: CPPropagStrength): Unit = {
     x.foreach(_.callPropagateWhenDomainChanges(this))

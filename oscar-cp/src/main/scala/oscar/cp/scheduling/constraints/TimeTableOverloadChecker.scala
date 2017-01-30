@@ -6,7 +6,7 @@ import oscar.algo.SortUtils.mergeSort
 
 import scala.annotation.tailrec
 import scala.math.{max, min}
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
  * @author Steven Gay steven.gay@uclouvain.be
@@ -72,7 +72,9 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   private[this] val emaxEvent = Array.ofDim[Int](nTasks)
   
   private[this] val tree = new CumulativeLambdaThetaTree(startEventEnvelope, startEventWorkload)
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ heights ++ resources ++ Array(capacity)
+
   override def propagate() = {
     updateCache()
     

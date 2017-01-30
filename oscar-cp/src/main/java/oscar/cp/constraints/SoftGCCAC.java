@@ -19,6 +19,13 @@ import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.CPStore;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 
 enum FlowType { UF, OF };
@@ -112,7 +119,14 @@ public class SoftGCCAC extends Constraint{
 		this.priorityL2_$eq(CPStore.MAXPRIORL2()-2);
 		check();		
 	}
-	
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+		l.add(viol);
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
 	private void check() throws RuntimeException{
 		if(nbVals != low.length){
 			throw new RuntimeException("vals and low must be of the same size");

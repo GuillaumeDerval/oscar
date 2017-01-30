@@ -23,7 +23,7 @@ import oscar.util.IncrementalStatistics
 import scala.util.Random
 
 /**
- *
+ * Activity Based Search
  * @author Pierre Schaus
  */
 class BinaryABS(variables: Array[IntVarLike], valHeuristic: Int => Int,rand: Random,nProbes: Int = 1000, decay: Double = 0.999) extends Branching {
@@ -107,8 +107,5 @@ class BinaryABS(variables: Array[IntVarLike], valHeuristic: Int => Int,rand: Ran
       }
       domSize(i) = variables(i).size
     }
-  }  
-  
-
-  
+  }
 }

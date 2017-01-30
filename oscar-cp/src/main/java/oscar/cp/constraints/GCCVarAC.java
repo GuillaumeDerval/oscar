@@ -20,6 +20,13 @@ import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.CPStore;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 
 /**
@@ -91,6 +98,13 @@ public class GCCVarAC extends Constraint {
 		this.maxVal = minval+o.length-1;
 		nbVals = maxVal-minVal+1;
 		this.priorityL2_$eq(CPStore.MAXPRIORL2()-3);
+	}
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+		l.addAll(Arrays.asList(o));
+		return JavaConversions.iterableAsScalaIterable(l);
 	}
 
 	@Override

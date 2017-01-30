@@ -17,7 +17,7 @@
 package oscar.cp.scheduling.constraints
 
 import oscar.cp.constraints.UnaryResourceWithTransitionTimesAndFamilies
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.{CPPropagStrength, Constraint}
 
 /**
@@ -28,6 +28,8 @@ import oscar.cp.core.{CPPropagStrength, Constraint}
 class DisjunctiveWithTransitionTimesAndFamilies(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], familyMatrix: Array[Array[Int]], families: Array[Int]) extends Constraint(starts(0).store) {
 
   import oscar.cp.core.CPPropagStrength._
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends
 
   override def setup(l: CPPropagStrength): Unit = {
     if (starts.nonEmpty) {

@@ -17,7 +17,7 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.variables.CPGraphVar
+import oscar.cp.core.variables.{CPGraphVar, CPVar}
 
 /**
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
@@ -25,7 +25,9 @@ import oscar.cp.core.variables.CPGraphVar
  */
 
 class GraphWeaklyConnected(val g : CPGraphVar) extends Constraint(g.s, "Weakly Connected") {
-  
+
+	override def associatedVars(): Iterable[CPVar] = Array(g)
+
 	override def setup(l: CPPropagStrength): Unit = {
 	  // create undirected version of g
 	  val gu = CPGraphVar(g.possibleNodes.size)(s)

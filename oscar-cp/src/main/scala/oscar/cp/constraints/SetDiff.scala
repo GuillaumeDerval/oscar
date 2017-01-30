@@ -18,7 +18,7 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.variables.CPSetVar
+import oscar.cp.core.variables.{CPSetVar, CPVar}
 import oscar.cp.core.delta.{DeltaSetVar, PropagatorSetVar}
 
 /**
@@ -26,6 +26,8 @@ import oscar.cp.core.delta.{DeltaSetVar, PropagatorSetVar}
  * a - b = c
  */
 class SetDiff(val a: CPSetVar, val b: CPSetVar, val c: CPSetVar) extends Constraint(a.store, "SetDiff") {
+
+  override def associatedVars(): Iterable[CPVar] = Array(a, b, c)
 
   override def setup(l: CPPropagStrength): Unit = {
 

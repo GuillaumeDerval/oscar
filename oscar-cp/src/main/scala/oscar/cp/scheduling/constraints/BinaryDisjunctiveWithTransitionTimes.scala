@@ -16,7 +16,7 @@
 
 package oscar.cp.scheduling.constraints
 
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.{CPPropagStrength, Constraint}
 
 /**
@@ -45,4 +45,5 @@ class BinaryDisjunctiveWithTransitionTimes(startVar1: CPIntVar, endVar1: CPIntVa
     }
   }
 
+  override def associatedVars(): Iterable[CPVar] = Array(startVar1, endVar1, startVar2, endVar2)
 }

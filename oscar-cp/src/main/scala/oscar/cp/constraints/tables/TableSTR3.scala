@@ -1,7 +1,7 @@
 
 package oscar.cp.constraints.tables
 
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.reversible.ReversibleSparseSetManual
 import oscar.algo.array.ArraySet
@@ -23,6 +23,8 @@ import oscar.algo.array.ArrayMap
  * @author Renaud Hartert ren.hartert@gmail.com
  */
 class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(vars(0).store, "TableSTR3") {
+
+  override def associatedVars(): Iterable[CPVar] = vars
 
   private[this] val arity = vars.length
   private[this] val store = vars(0).store

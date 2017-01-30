@@ -16,7 +16,7 @@
 
 package oscar.cp.constraints.tables
 
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 import oscar.algo.reversible.ReversibleInt
@@ -35,7 +35,9 @@ import oscar.cp.core.CPStore
 class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(variables(0).store, "TableSTRNe") {
   idempotent = true
   priorityL2 = CPStore.MaxPriorityL2 - 1
-  
+
+  override def associatedVars(): Iterable[CPVar] = variables
+
   private[this] val arity = variables.length
   // Ssup, Sval
   private[this] var sSupLimit = -1

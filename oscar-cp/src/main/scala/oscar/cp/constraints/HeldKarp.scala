@@ -26,11 +26,14 @@ import oscar.cp.CPIntVarOps
 import oscar.cp.CPSetVar
 import oscar.cp.Constraint
 import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.variables.CPVar
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
  */
 class HeldKarp(edges: CPSetVar, edgeData: Array[(Int,Int,Int)], cost: CPIntVar) extends Constraint(edges.store) {
+
+  override def associatedVars(): Iterable[CPVar] = Array(edges)
 
   private[this] val epsilon = 10e-6
   private[this] val n = (edgeData.map(_._1).max max (edgeData.map(_._2).max)) +1
@@ -333,7 +336,9 @@ class CCTree(n: Int) {
  * @author Pierre Schaus pschaus@gmail.com
  */
 class ChannelTSP(val succ: Array[CPIntVar],val distMatrix: Array[Array[Int]]) extends Constraint(succ(0).store) {
-  
+
+  override def associatedVars(): Iterable[CPVar] = succ
+
   val n = succ.size
   
   protected val edges = ((for (i <- 0 until n; j <- succ(i); if (i != j)) yield (n+i,j,distMatrix(i)(j))) ++ 

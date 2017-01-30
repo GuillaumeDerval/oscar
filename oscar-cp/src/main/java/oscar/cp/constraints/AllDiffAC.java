@@ -18,6 +18,13 @@ import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
@@ -29,6 +36,12 @@ public class AllDiffAC extends Constraint {
 	public AllDiffAC(CPIntVar[] x) {
 		super(x[0].store(), "Alldifferent AC");
 		this.x = x;
+	}
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+		return JavaConversions.iterableAsScalaIterable(l);
 	}
 
 	@Override

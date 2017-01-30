@@ -2,12 +2,17 @@ package oscar.cp.constraints;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
 
 import oscar.algo.reversible.ReversibleInt;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
 
 public class BinaryKnapsackWithCardinality extends Constraint {
 
@@ -45,6 +50,13 @@ public class BinaryKnapsackWithCardinality extends Constraint {
 			x[i] = b[perm[i]];
 		}
 	}
+
+    @Override
+    public Iterable<CPVar> associatedVars() {
+        List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+        l.add(c);
+        return JavaConversions.iterableAsScalaIterable(l);
+    }
 
 	@Override
 	public void setup(CPPropagStrength l) {

@@ -21,6 +21,7 @@ import org.scalatest.Matchers
 import oscar.algo.Inconsistency
 import oscar.cp.core.CPPropagStrength
 import oscar.cp._
+import oscar.cp.core.variables.CPVar
 
 class TestCPIntVar extends FunSuite with Matchers {
 
@@ -196,6 +197,8 @@ class TestCPIntVar extends FunSuite with Matchers {
         i += 1
         valBindCalled = i
       }
+
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
     val cp = CPSolver()

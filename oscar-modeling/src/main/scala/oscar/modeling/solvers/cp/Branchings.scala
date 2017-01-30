@@ -3,8 +3,12 @@ package oscar.modeling.solvers.cp
 import oscar.algo.branchings._
 import oscar.algo.search.{Branching, DiscrepancyBranching}
 import oscar.algo.vars.IntVarLike
+import oscar.cp.searches.WeightedDegreeHelper
 import oscar.modeling.models.cp.CPModel
 import oscar.modeling.vars.IntVar
+import oscar.modeling.vars.cp.CPIntVar
+
+import scala.util.Random
 
 object Branchings {
   //def apply(b: => Seq[Alternative]): BranchingInstantiator = (cp) => new Branching { override def alternatives = b }
@@ -114,6 +118,62 @@ object Branchings {
   def binaryFirstFail(variables: Seq[IntVar], valHeuris: (IntVar => Int)): BranchingInstantiator = {
     val vars = variables.toArray
     binaryFirstFailIdx(vars, i => valHeuris(vars(i)))
+  }
+
+  /**
+   * Binary search on the decision variables vars, selecting first the variables having the max number of propagation methods attached to it.
+   */
+  def binaryMaxDegree(variables: Seq[IntVar]): BranchingInstantiator = {
+    val vars = variables.toArray
+    (model: CPModel) => {
+      val cpvars = vars.map(_.getRepresentative.asInstanceOf[CPIntVar].realCPVar)
+
+      //TODO find a better way to convert the double to an Int
+      new BinaryBranching(vars.asInstanceOf[Array[IntVarLike]], -cpvars(_).constraintDegree, vars(_).min)
+    }
+  }
+
+  /**
+   * Binary Search based on the weighted degree of each variable, the variable with the greater degree being selected first.
+   * The weighted degree of a var is the number of times a constraint to which it is linked has been involved in a failure.
+   */
+  def binaryMaxWeightedDegree(variables: Seq[IntVar], valHeuris: (IntVar => Int), decayRatio: Double): BranchingInstantiator = {
+    val vars = variables.toArray
+    (model: CPModel) => {
+      val cpvars = vars.map(_.getRepresentative.asInstanceOf[CPIntVar].realCPVar)
+      val helper = new WeightedDegreeHelper(model.cpSolver, cpvars, decayRatio)
+
+      //TODO find a better way to convert the double to an Int
+      new BinaryBranching(vars.asInstanceOf[Array[IntVarLike]], i => -(helper.getWeightedDegree(cpvars(i))*1000).round.toInt, i => valHeuris(vars(i)))
+    }
+  }
+
+  def binaryMaxWeightedDegree(variables: Seq[IntVar], decayRatio: Double = 0.99): BranchingInstantiator = {
+    binaryMaxWeightedDegree(variables, x => x.min, decayRatio)
+  }
+
+  /**
+   * Minimize (domain size)/(weighted degree)
+   */
+  def binaryMinDomOnWeightedDegree(variables: Seq[IntVar], valHeuris: (IntVar => Int), decayRatio: Double): BranchingInstantiator = {
+    val vars = variables.toArray
+    (model: CPModel) => {
+      val cpvars = vars.map(_.getRepresentative.asInstanceOf[CPIntVar].realCPVar)
+      val helper = new WeightedDegreeHelper(model.cpSolver, cpvars, decayRatio)
+
+      //TODO find a better way to convert the double to an Int
+      new BinaryBranching(vars.asInstanceOf[Array[IntVarLike]], i => (helper.getDomOnWeightedDegree(cpvars(i))*1000).round.toInt, i => valHeuris(vars(i)))
+    }
+
+
+  }
+
+  def binaryMinDomOnWeightedDegree(variables: Seq[IntVar], decayRatio: Double = 0.99): BranchingInstantiator = {
+    binaryMinDomOnWeightedDegree(variables, x => x.min, decayRatio)
+  }
+
+  def activityBasedSearch(variables: Seq[IntVar], valHeuristic: Int => Int,rand: Random,nProbes: Int = 1000, decay: Double = 0.999): BranchingInstantiator = {
+    (_) => new oscar.algo.branchings.BinaryABS(variables.toArray, valHeuristic, rand, nProbes, decay)
   }
 
   /**

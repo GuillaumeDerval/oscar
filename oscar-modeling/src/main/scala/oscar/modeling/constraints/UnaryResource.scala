@@ -1,6 +1,7 @@
 package oscar.modeling.constraints
 
 import oscar.modeling.algebra.bool.BoolExpression
+import oscar.modeling.algebra.floating.FloatExpression
 import oscar.modeling.algebra.integer.IntExpression
 
 /**
@@ -13,7 +14,17 @@ import oscar.modeling.algebra.integer.IntExpression
   * @param id, the resource on which we want to constraint, tasks i such that resources(i) != id are not considered
   * @return a constraint ensuring activities don't overlap in time
   */
-case class UnaryResourceSimple(starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], resources: Array[IntExpression], id: Int = 1) extends Constraint {}
+case class UnaryResourceSimple(starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], resources: Array[IntExpression], id: Int = 1) extends Constraint {
+  /**
+   * @return a list of all the IntExpression associated to this constraint
+   */
+  override def getIntExpressions(): Iterable[IntExpression] = starts ++ durations ++ ends ++ resources
+
+  /**
+   * @return a list of all the FloatExpression associated to this constraint
+   */
+  override def getFloatExpressions(): Iterable[FloatExpression] = Array[FloatExpression]()
+}
 
 /**
   * Unary Resource constraint (also called disjunctive resource): at any time, no two tasks can overlap in time
@@ -25,7 +36,17 @@ case class UnaryResourceSimple(starts: Array[IntExpression], durations: Array[In
   * @param transitionTimes matrix of the transition times between the different activities according to their respective type
   * @return a constraint ensuring activities don't overlap in time and that consecutive activities are separated by a transition time corresponding to their respective type
   */
-case class UnaryResourceTransitionType(starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], types: Array[Int], transitionTimes: Array[Array[Int]]) extends Constraint {}
+case class UnaryResourceTransitionType(starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], types: Array[Int], transitionTimes: Array[Array[Int]]) extends Constraint {
+  /**
+   * @return a list of all the IntExpression associated to this constraint
+   */
+  override def getIntExpressions(): Iterable[IntExpression] = starts ++ durations ++ ends
+
+  /**
+   * @return a list of all the FloatExpression associated to this constraint
+   */
+  override def getFloatExpressions(): Iterable[FloatExpression] = Array[FloatExpression]()
+}
 
 /**
   * Unary Resource constraint (also called disjunctive resource): at any time, no two tasks can overlap in time
@@ -36,7 +57,17 @@ case class UnaryResourceTransitionType(starts: Array[IntExpression], durations: 
   * @param transitionTimes matrix of the transition times between the different activities
   * @return a constraint ensuring activities don't overlap in time and that consecutive activities are separated by their respective transition time
   */
-case class UnaryResourceTransition(starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], transitionTimes: Array[Array[Int]]) extends Constraint {}
+case class UnaryResourceTransition(starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], transitionTimes: Array[Array[Int]]) extends Constraint {
+  /**
+   * @return a list of all the IntExpression associated to this constraint
+   */
+  override def getIntExpressions(): Iterable[IntExpression] = starts ++ durations ++ ends
+
+  /**
+   * @return a list of all the FloatExpression associated to this constraint
+   */
+  override def getFloatExpressions(): Iterable[FloatExpression] = Array[FloatExpression]()
+}
 
 /**
   * Unary Resource constraint (also called disjunctive resource): at any time, no two tasks can overlap in time
@@ -48,7 +79,17 @@ case class UnaryResourceTransition(starts: Array[IntExpression], durations: Arra
   * @param families The family associated to each activity
   * @return a constraint ensuring activities don't overlap in time and that consecutive activities are separated by their respective transition time
   */
-case class UnaryResourceTransitionFamilies(starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], familyMatrix: Array[Array[Int]], families: Array[Int]) extends Constraint {}
+case class UnaryResourceTransitionFamilies(starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], familyMatrix: Array[Array[Int]], families: Array[Int]) extends Constraint {
+  /**
+   * @return a list of all the IntExpression associated to this constraint
+   */
+  override def getIntExpressions(): Iterable[IntExpression] = starts ++ durations ++ ends
+
+  /**
+   * @return a list of all the FloatExpression associated to this constraint
+   */
+  override def getFloatExpressions(): Iterable[FloatExpression] = Array[FloatExpression]()
+}
 
 object UnaryResource {
   /**

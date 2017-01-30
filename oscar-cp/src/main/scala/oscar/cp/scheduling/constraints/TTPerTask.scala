@@ -1,10 +1,10 @@
 package oscar.cp.scheduling.constraints
 
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import java.lang.Math._
-import oscar.cp.isInconsistent
 
+import oscar.cp.isInconsistent
 import oscar.algo.Inconsistency
 
 
@@ -43,8 +43,10 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   private[this] var hasChanged = true
   
   // Profile
-  private[this] val profile = new ProfileStructure(sMin, sMax, dMin, eMin, eMax, hMin, requiredTasks, possibleTasks)  
-  
+  private[this] val profile = new ProfileStructure(sMin, sMax, dMin, eMin, eMax, hMin, requiredTasks, possibleTasks)
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ heights ++ resources ++ Array(capacity)
+
   final override def propagate(): Unit = {
     updateCache()
     C = capacity.max

@@ -17,6 +17,7 @@ package oscar.cp.constraints
 import oscar.algo.reversible.ReversibleSparseSet
 import oscar.cp.core.CPPropagStrength
 import oscar.cp._
+import oscar.cp.core.variables.CPVar
 
 /**
  * Ensures that succ represents a valid circuit. <br>
@@ -31,6 +32,8 @@ import oscar.cp._
  * @author Pierre Schaus pschaus@gmail.com
  */
 class MinCircuit(val succ: Array[CPIntVar], val distMatrix: Array[Array[Int]], obj: CPIntVar, addPredModel: Boolean = true) extends Constraint(obj.store, "MinCircuit") {
+
+  override def associatedVars(): Iterable[CPVar] = succ ++ Array(obj)
 
   override def setup(l: CPPropagStrength): Unit = {
     val n = succ.size

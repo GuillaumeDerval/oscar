@@ -505,6 +505,7 @@ class CPIntVarAdaptableSuite extends TestSuite {
       override def valRemove(x: CPIntVar, value: Int): Unit = {
         removedValues.add(value)
       }
+      override def associatedVars(): Iterable[CPVar] = ???
     }
     
     context.add(new TestConstraint)
@@ -535,6 +536,7 @@ class CPIntVarAdaptableSuite extends TestSuite {
       override def propagate(): Unit = {
         n += 1
       }
+      override def associatedVars(): Iterable[CPVar] = ???
     }
     
     context.add(new TestConstraint)
@@ -565,6 +567,7 @@ class CPIntVarAdaptableSuite extends TestSuite {
       override def propagate(): Unit = {
         n += 1
       }
+      override def associatedVars(): Iterable[CPVar] = ???
     }
     
     context.add(new TestConstraint)
@@ -595,6 +598,7 @@ class CPIntVarAdaptableSuite extends TestSuite {
       override def propagate(): Unit = {
         n += 1
       }
+      override def associatedVars(): Iterable[CPVar] = ???
     }
     
     context.add(new TestConstraint)

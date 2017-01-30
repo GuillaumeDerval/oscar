@@ -17,7 +17,7 @@ package oscar.cp.perf
 
 import oscar.cp._
 import oscar.cp.core.{CPPropagStrength, CPSolver, Constraint}
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
  * n-queens model: place n-queens on a chess-board such that they don't attack each other.
@@ -47,7 +47,9 @@ object QueensTestDelta {
         }
       }
     }
-  }   
+
+    override def associatedVars(): Iterable[CPVar] = ???
+  }
 
   def main(args: Array[String]) {
 

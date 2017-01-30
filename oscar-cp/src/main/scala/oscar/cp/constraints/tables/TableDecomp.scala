@@ -1,11 +1,13 @@
 package oscar.cp.constraints.tables
 
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 
 class TableDecomp(val X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableDecomp"){
-  
+
+  override def associatedVars(): Iterable[CPVar] = X
+
   override def setup(l: CPPropagStrength): Unit = {
     idempotent = true
     propagate();

@@ -20,12 +20,15 @@ import oscar.algo.reversible.ReversibleInt
 import oscar.algo.reversible.ReversibleBoolean
 import oscar.algo.SortUtils
 import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.variables.CPVar
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
  */
 class UnaryRank(val starts: Array[CPIntVar], val durations: Array[CPIntVar], val ends: Array[CPIntVar]) extends Constraint(starts(0).store) {
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends
+
   val n = starts.length
   
   val ranks = Array.fill(n)(CPIntVar(0 until n)(s))

@@ -20,6 +20,7 @@ package oscar.cp.perf
 import oscar.algo.reversible._
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.variables.CPVar
 import oscar.visual._
 
 /**
@@ -93,6 +94,8 @@ object ChemicalTanker extends CPModel with App {
         }
       }
     }
+
+    override def associatedVars(): Iterable[CPVar] = ???
   }
 
   // ------------- parses the data of the problem  ---------------

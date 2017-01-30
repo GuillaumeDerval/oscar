@@ -18,8 +18,15 @@ import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
 import oscar.cp.util.ArrayUtils;
 import oscar.cp.util.NumberUtils;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Multiplication Constraint x * y = z
@@ -42,7 +49,13 @@ public class MulVar extends Constraint {
 		this.y = y;
 		this.z = z;
 	}
-	
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x, y, z));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
 	@Override
 	public void setup(CPPropagStrength l) throws Inconsistency {
 		

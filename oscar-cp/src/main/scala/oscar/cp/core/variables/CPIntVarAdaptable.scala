@@ -29,6 +29,8 @@ import oscar.cp.core.watcher.WatcherListL1
 import oscar.cp.core.watcher.Watcher
 import oscar.cp.core.delta.DeltaIntVar
 
+import scala.collection.mutable
+
 /**
  *  @author Renaud Hartert ren.hartert@gmail.com
  *  @author Pierre Schaus pschaus@gmail.com

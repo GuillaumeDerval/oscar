@@ -1,13 +1,14 @@
 package oscar.cp.constraints
 
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPBoolVar
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.CPStore
 
 /** @author Renaud Hartert ren.hartert@gmail.com */
 final class EqReif(int: CPIntVar, value: Int, boolean: CPBoolVar) extends Constraint(int.store, "EqReif") {
+
+  override def associatedVars(): Iterable[CPVar] = Array(int, boolean)
 
   idempotent = true
   priorityL2 = CPStore.MaxPriorityL2

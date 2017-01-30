@@ -1,10 +1,12 @@
 package oscar.cp.constraints
 
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
 
 class EqualityFC(x: CPIntVar, y: CPIntVar) extends Constraint(x.store, "EqualityFC") {
+
+  override def associatedVars(): Iterable[CPVar] = Array(x, y)
 
   override def setup(l: CPPropagStrength): Unit = {
     propagate()

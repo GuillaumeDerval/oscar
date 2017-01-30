@@ -12,7 +12,6 @@ import oscar.modeling.vars.{BoolVar, IntVar}
   * @author Guillaume Derval (guillaume.derval@uclouvain.be)
   */
 object ConvertCPConstraint {
-
   /**
     * Convert an oscar.cp constraint to an oscar.modeling constraint
     * @param args the arguments to the constructor of the class

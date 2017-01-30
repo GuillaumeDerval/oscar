@@ -1,5 +1,6 @@
 package oscar.modeling.constraints
 
+import oscar.modeling.algebra.floating.FloatExpression
 import oscar.modeling.algebra.integer.IntExpression
 import oscar.modeling.models.ModelDeclaration
 import oscar.modeling.vars.IntVar
@@ -16,7 +17,17 @@ import oscar.modeling.vars.IntVar
   * @param id, the resource on which we want to constraint the capacity (only tasks i with resources(i) = id are taken into account)
   * @return a constraint enforcing that the load over the resource is always above/at its capacity at any point of time
   */
-case class MinCumulativeResource(starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], demands: Array[IntExpression], resources: Array[IntExpression], capacity: IntExpression, id: Int) extends Constraint {}
+case class MinCumulativeResource(starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], demands: Array[IntExpression], resources: Array[IntExpression], capacity: IntExpression, id: Int) extends Constraint {
+  /**
+   * @return a list of all the IntExpression associated to this constraint
+   */
+  override def getIntExpressions(): Iterable[IntExpression] = starts ++ durations ++ ends ++ demands ++ resources ++ Array(capacity)
+
+  /**
+   * @return a list of all the FloatExpression associated to this constraint
+   */
+  override def getFloatExpressions(): Iterable[FloatExpression] = Array[FloatExpression]()
+}
 
 object MinCumulativeResource{
   /**
@@ -47,7 +58,17 @@ object MinCumulativeResource{
   * @param id, the resource on which we want to constraint the capacity (only tasks i with resources(i) = id are taken into account)
   * @return a constraint enforcing that the load over the resource is always below/at its capacity at any point of time
   */
-case class MaxCumulativeResource(starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], demands: Array[IntExpression], resources: Array[IntExpression], capacity: IntExpression, id: Int) extends Constraint {}
+case class MaxCumulativeResource(starts: Array[IntExpression], durations: Array[IntExpression], ends: Array[IntExpression], demands: Array[IntExpression], resources: Array[IntExpression], capacity: IntExpression, id: Int) extends Constraint {
+  /**
+   * @return a list of all the IntExpression associated to this constraint
+   */
+  override def getIntExpressions(): Iterable[IntExpression] = starts ++ durations ++ ends ++ demands ++ resources ++ Array(capacity)
+
+  /**
+   * @return a list of all the FloatExpression associated to this constraint
+   */
+  override def getFloatExpressions(): Iterable[FloatExpression] = Array[FloatExpression]()
+}
 
 object MaxCumulativeResource {
   /**

@@ -17,7 +17,7 @@ package oscar.cp.constraints
 import oscar.cp.core._
 import oscar.algo.reversible._
 import oscar.algo.reversible.ReversibleSparseSet
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
  * Implementation of Among Constraint:
@@ -25,6 +25,8 @@ import oscar.cp.core.variables.CPIntVar
  * @author Pierre Schaus pschaus@gmail.com
  */
 class Among(val N: CPIntVar, val X: Array[CPIntVar], val S: Set[Int]) extends Constraint(N.store, "Among") {
+
+  override def associatedVars(): Iterable[CPVar] = Array(N) ++ X
 
   override def setup(l: CPPropagStrength): Unit = {
     // for each xi, maintain the size of the intersection between D(xi) and v

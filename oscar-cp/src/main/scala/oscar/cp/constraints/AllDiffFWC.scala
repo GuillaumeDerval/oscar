@@ -16,7 +16,7 @@
  */
 package oscar.cp.constraints
 
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
@@ -28,6 +28,8 @@ import oscar.cp.core.CPPropagStrength
  * @author Renaud Hartert ren.hartert@gmail.com
  */
 class AllDiffFWC(x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffFWC") {
+
+  override def associatedVars(): Iterable[CPVar] = x
 
   // High priority
   priorityL2 = CPStore.MaxPriorityL2 - 1

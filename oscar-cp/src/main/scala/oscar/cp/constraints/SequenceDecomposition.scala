@@ -17,12 +17,15 @@ package oscar.cp.constraints
 import oscar.cp.core._
 import oscar.cp._
 import oscar.algo.reversible._
+import oscar.cp.core.variables.CPVar
 
 /**
  * Sequence
  * @author Pierre Schaus pschaus@gmail.com
  */
 class SequenceDecomposition(val xinit: Array[CPIntVar], val values: Set[Int], val l: Int, min: Int, max: Int) extends Constraint(xinit(0).store, "Sequence") {
+
+  override def associatedVars(): Iterable[CPVar] = xinit
 
   if (values.size <= 0) throw new IllegalArgumentException("Sequence: values.size <= 0")
   if (l > xinit.size) throw new IllegalArgumentException("Sequence: l > xinit.size")

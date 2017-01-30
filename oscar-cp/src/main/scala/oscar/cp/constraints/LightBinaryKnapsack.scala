@@ -1,7 +1,6 @@
 package oscar.cp.constraints
 
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPBoolVar
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPVar}
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
@@ -23,6 +22,8 @@ final class WatcherKnapsack(knapsack: Constraint, boolVar: CPBoolVar, weight: In
 }
 
 final class LightBinaryKnapsack(items: Array[CPBoolVar], weights: Array[Int], load: CPIntVar) extends Constraint(load.store, "LightBinaryKnapsack") {
+
+  override def associatedVars(): Iterable[CPVar] = items ++ Array(load)
 
   idempotent = true
 

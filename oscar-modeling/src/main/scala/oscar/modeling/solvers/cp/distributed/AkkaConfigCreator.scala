@@ -27,6 +27,7 @@ object AkkaConfigCreator {
              "oscar.modeling.solvers.cp.distributed.SolutionRecapMessage" = kryo
              "oscar.modeling.solvers.cp.distributed.AllDoneMessage" = kryo
              "oscar.modeling.solvers.cp.distributed.SolutionMessage" = kryo
+             "oscar.modeling.solvers.cp.distributed.ConfigMessage" = kryo
              "oscar.modeling.models.Model" = kryo
              "oscar.modeling.models.ModelDeclaration" = kryo
              "oscar.modeling.solvers.cp.distributed.DoSubproblemMessage" = sp

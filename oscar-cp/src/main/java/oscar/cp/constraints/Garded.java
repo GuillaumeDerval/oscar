@@ -18,6 +18,12 @@ import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class Garded extends Constraint {
 	
@@ -37,6 +43,13 @@ public class Garded extends Constraint {
 		this.b = b;
 		this.c = c;
 		this.onTrue = onTrue;
+	}
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = JavaConversions.seqAsJavaList(c.associatedVars().toList());
+		l.add(b);
+		return JavaConversions.iterableAsScalaIterable(l);
 	}
 
 	@Override

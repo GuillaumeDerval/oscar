@@ -6,8 +6,7 @@ import oscar.cp.scheduling.util.OpenSparseSet
 import Math._
 
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 
 // @author Steven Gay steven.gay@uclouvain.be
@@ -16,7 +15,9 @@ import oscar.cp.core.Constraint
 class CumulativeTemplate(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar],
                          heights: Array[CPIntVar], resources: Array[CPIntVar], capacity: CPIntVar, id: Int, name: String = "Cumulative")
 extends Constraint(capacity.store, name) {
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ heights ++ resources ++ Array(capacity)
+
   private[this] val n = starts.length
   require(n == durations.length)
   require(n == ends.length)

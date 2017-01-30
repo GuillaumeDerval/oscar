@@ -22,6 +22,7 @@ import oscar.cp.core.Constraint
 import oscar.algo.reversible._
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.variables.CPVar
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
@@ -41,6 +42,7 @@ class TestIdempotency extends TestSuite {
         nbCallToPropagate += 1
         X.removeValue(0)
       }
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
     val cp = CPSolver()

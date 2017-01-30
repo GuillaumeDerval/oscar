@@ -19,11 +19,14 @@ package oscar.cp.constraints
 
 import oscar.cp._
 import oscar.cp.core._
+import oscar.cp.core.variables.CPVar
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
  */
 class AsymetricHeldKarp(succ: Array[CPIntVar], distMatrix: Array[Array[Int]], cost: CPIntVar) extends ChannelTSP(succ, distMatrix) {
+
+  override def associatedVars(): Iterable[CPVar] = succ ++ Array(cost)
 
   override def setup(l: CPPropagStrength): Unit = {
     s.post(new HeldKarp(edgeVar, edges, cost))

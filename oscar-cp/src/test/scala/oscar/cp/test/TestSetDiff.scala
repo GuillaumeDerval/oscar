@@ -19,6 +19,7 @@ import oscar.cp.testUtils.TestSuite
 import oscar.cp.constraints._
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.variables.CPVar
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
@@ -28,6 +29,8 @@ class TestSetDiff extends TestSuite {
   val rand = new scala.util.Random(0)
 
   class SetDiffDecomp(val a: CPSetVar, val b: CPSetVar, val c: CPSetVar) extends Constraint(a.store, "SetDiffDecomp") {
+
+    override def associatedVars(): Iterable[CPVar] = ???
 
     override def setup(l: CPPropagStrength): Unit = {
 

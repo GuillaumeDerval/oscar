@@ -17,7 +17,7 @@ package oscar.cp.constraints
 
 import oscar.algo.Inconsistency
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 
 /**
@@ -26,7 +26,9 @@ import oscar.cp.core.Constraint
  * @author Pierre Schaus - pschaus@gmail.com
  */
 class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) extends Constraint(x(0).store, "GCCUpperBC") {
-  
+
+  override def associatedVars(): Iterable[CPVar] = x
+
   private[this] val minDomVal = x.map(_.min).min
   private[this] val maxDomVal = x.map(_.max).max
   private[this] val lowCard = Array.fill(maxDomVal-minDomVal+1)(0)

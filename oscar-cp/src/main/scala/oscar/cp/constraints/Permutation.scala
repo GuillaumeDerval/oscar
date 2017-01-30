@@ -17,7 +17,7 @@ package oscar.cp.constraints;
 
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.util.ArrayUtils
 import oscar.algo.reversible.ReversibleInt
@@ -39,7 +39,9 @@ import java.security.InvalidParameterException
  * @author Pierre Schaus - pschaus@gmail.com
  */
 class Permutation(x: Array[CPIntVar], y: Array[CPIntVar]) extends Constraint(y(0).store, "Permutation") {
-    
+
+  override def associatedVars(): Iterable[CPVar] = x ++ y
+
   val n = x.size-1
   if (x.size != y.size) throw new InvalidParameterException("x and y must have the same size")
   

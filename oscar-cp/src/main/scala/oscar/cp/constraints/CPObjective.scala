@@ -18,12 +18,15 @@ package oscar.cp.constraints
 import oscar.algo.search.Objective
 import oscar.cp._
 import oscar.cp.core._
+import oscar.cp.core.variables.CPVar
 
 /**
  * @author Pierre Schaus  pschaus@gmail.com
  * @author Renaud Hartert ren.hartert@gmail.com
  */
 class CPObjective(val st: CPStore, val objs: CPObjectiveUnit*) extends Constraint(st, "objective constraint") with Objective {
+
+  override def associatedVars(): Iterable[CPVar] = objs.map(_.objVar)
 
   /** Returns the map of each objective variable to its corresponding objective object */
   def map = objs.map(o => o.objVar -> o).toMap

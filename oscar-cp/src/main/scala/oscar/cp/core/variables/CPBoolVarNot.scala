@@ -1,6 +1,8 @@
 package oscar.cp.core.variables
 
 
+import oscar.cp.Constraint
+
 import scala.util.Random
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore

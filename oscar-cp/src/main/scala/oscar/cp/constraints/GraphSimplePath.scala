@@ -21,7 +21,7 @@ import oscar.cp.core._
 import scala.collection.mutable.PriorityQueue
 import oscar.algo.reversible.ReversibleBoolean
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp.core.variables.CPGraphVar
+import oscar.cp.core.variables.{CPGraphVar, CPVar}
 
 /**
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
@@ -33,7 +33,9 @@ import oscar.cp.core.variables.CPGraphVar
  */
 
 class GraphSimplePath(val g : CPGraphVar, src : Int, dest : Int) extends Constraint(g.s, "Simple Path") {
-   val pNodes : List[Int] = g.possibleNodes
+  override def associatedVars(): Iterable[CPVar] = Array(g)
+
+  val pNodes : List[Int] = g.possibleNodes
    val n : Int = pNodes.length
     // build transitive closure of the possible values of the graph
     //   tc is composed of ReversibleBool to allow backtrack in search and still update tc

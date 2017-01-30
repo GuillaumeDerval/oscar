@@ -24,6 +24,7 @@ import oscar.cp.core._
 import oscar.cp.constraints._
 import oscar.cp._
 import oscar.algo.SortUtils.stableSort
+import oscar.cp.core.variables.CPVar
 
 /**
  * @author Steven Gay 
@@ -40,7 +41,9 @@ class EnergeticChecker(starts: Array[CPIntVar], durations: Array[CPIntVar], ends
                            extends Constraint(starts.head.store, "EnergeticChecker") {
   private val n = starts.size
   private val Tasks = 0 until n
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ demands ++ resources ++ Array(capacity)
+
   val rstarts:Array[CPIntVar] = starts.map(i => -i)
   val rends:Array[CPIntVar]   =   ends.map(i => -i)
   

@@ -16,7 +16,7 @@
 package oscar.cp.constraints.tables
 
 import oscar.algo.reversible._
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.{CPPropagStrength, Constraint}
 
 import scala.collection.mutable.ArrayBuffer
@@ -30,6 +30,8 @@ import oscar.cp.core.delta.DeltaIntVar
  * @author Pierre Schaus pschaus@gmail.com
  */
 class TableGAC4R(X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Constraint(X(0).store, "TableGAC4R") {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   /* Trailable entry to restore the size of support set of the ith value of a variable */
   final class SupportsTrailEntry(supports: VariableSupports, id: Int, word: Int) extends TrailEntry {

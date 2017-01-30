@@ -18,7 +18,7 @@ package oscar.cp.constraints
 import oscar.algo.Inconsistency
 import oscar.algo.SortUtils._
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
 
 /**
@@ -30,6 +30,8 @@ import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
 class CountingBasedAllDifferent(constrainedVariables: Array[CPIntVar]) extends Constraint(constrainedVariables(0).store){
 
   //TODO : incremental mapping of bits using a sparse set (no need of the second table maintaining the positions of the values)
+
+  override def associatedVars(): Iterable[CPVar] = constrainedVariables
 
   //general variables
   private[this] val nVariables = constrainedVariables.length

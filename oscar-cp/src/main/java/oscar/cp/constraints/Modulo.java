@@ -20,6 +20,13 @@ import oscar.algo.reversible.ReversibleSparseSetJava;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 
 /** 
@@ -50,6 +57,12 @@ public class Modulo extends Constraint{
 		this.x = x;
 		this.v = v;
 		this.y = y;
+	}
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x, y));
+		return JavaConversions.iterableAsScalaIterable(l);
 	}
 
 	@Override

@@ -18,6 +18,13 @@ import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Deviation Constraint, a constraint for the average absolute deviation to the mean. <br>
@@ -64,6 +71,13 @@ public class Deviation extends Constraint {
         overlaps = new int [n];
         maximum = new int [n];
         overlaps_sup = new int [n];
+    }
+
+    @Override
+    public Iterable<CPVar> associatedVars() {
+        List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+        l.add(nd);
+        return JavaConversions.iterableAsScalaIterable(l);
     }
 
     @Override

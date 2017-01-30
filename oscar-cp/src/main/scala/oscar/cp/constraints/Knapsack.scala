@@ -19,8 +19,7 @@ import oscar.cp.core._
 import oscar.algo.reversible._
 
 import scala.collection.JavaConversions._
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPBoolVar
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPVar}
 
 
 /**
@@ -32,6 +31,8 @@ import oscar.cp.core.variables.CPBoolVar
  * @author Pierre Schaus pschaus@gmail.com
  */
 class Knapsack(val X: Array[CPBoolVar], val profit: Array[Int], val weight: Array[Int], val P: CPIntVar, val W: CPIntVar, val filter: Boolean = true ) extends Constraint(X(0).store, "Table2") {
+
+  override def associatedVars(): Iterable[CPVar] = X ++ Array(P, W)
 
   def pre(): Boolean = weight.forall(_ > 0) && profit.forall(_ >= 0)
   

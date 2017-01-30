@@ -16,6 +16,8 @@ package oscar.cp.constraints;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
 
 import oscar.algo.Inconsistency;
 import oscar.algo.reversible.ReversibleInt;
@@ -24,6 +26,9 @@ import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.CPStore;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
 
 
 /**
@@ -57,6 +62,13 @@ public class BinaryKnapsack extends Constraint {
         this.n = n;
         assert (n > 0);
     }
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+		l.add(c);
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
 
     /**
      * Constraint: load is the sum of the weights of items selected in to the knapsack. <br>

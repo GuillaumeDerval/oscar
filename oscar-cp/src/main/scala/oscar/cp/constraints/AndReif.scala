@@ -16,14 +16,15 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible.ReversibleSparseSet
-import oscar.cp.core.variables.CPBoolVar
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPVar}
 
 /**
  * and_i x_i <--> bi 
  * @author Pierre Schaus pschaus@gmail.com
  */
 class And(val X: Array[CPBoolVar], val b: CPBoolVar) extends Constraint(b.store, "AndReif") {
+
+  override def associatedVars(): Iterable[CPVar] = X ++ Array(b)
 
   var unbound: ReversibleSparseSet = null
   priorityBindL1 = CPStore.MaxPriorityL1-1

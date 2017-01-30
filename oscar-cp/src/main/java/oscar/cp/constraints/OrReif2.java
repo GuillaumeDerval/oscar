@@ -21,6 +21,13 @@ import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Logical Or Constraint
@@ -46,6 +53,13 @@ public class OrReif2 extends Constraint {
 		this.x = x;
 		this.y = y;
 
+	}
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+		l.add(y);
+		return JavaConversions.iterableAsScalaIterable(l);
 	}
 
 	@Override

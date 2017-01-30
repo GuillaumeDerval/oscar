@@ -15,7 +15,7 @@
 
 package oscar.cp.constraints.tables
 
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
 import oscar.cp.constraints.tables.mdd.{MDDTableVar, ReversibleMDD}
 
@@ -26,6 +26,8 @@ import oscar.cp.constraints.tables.mdd.{MDDTableVar, ReversibleMDD}
  * @author Jordan Demeulenaere j.demeulenaere1@gmail.com
  */
 class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableMDD4R") {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   idempotent = true
   priorityL2 = CPStore.MaxPriorityL2 - 1

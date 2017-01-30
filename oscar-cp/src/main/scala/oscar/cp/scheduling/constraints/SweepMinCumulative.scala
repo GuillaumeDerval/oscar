@@ -20,8 +20,7 @@ import oscar.algo.Inconsistency
 
 import scala.math.max
 import scala.math.min
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 import oscar.algo.SortUtils.stableSort
@@ -59,6 +58,8 @@ class SweepMinCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
 
   // Contains all the possible events of each task (used for speed-up)
   private val eventList = Array.tabulate(nTasks) { e => new EventList(e) }
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ demands ++ resources ++ Array(capacity)
 
   private def generateCheck(t: Int) {
 

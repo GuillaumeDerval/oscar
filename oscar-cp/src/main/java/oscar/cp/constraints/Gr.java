@@ -19,6 +19,13 @@ import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.CPStore;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Strictly Greater Than Constraint
@@ -42,7 +49,13 @@ public class Gr extends Constraint {
 	public Gr(CPIntVar x, int v) {
 		this(x, CPIntVar.apply(v,v, x.store()));
 	}
-	
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x, y));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
 	@Override
 	public void setup(CPPropagStrength l) throws Inconsistency {
 		priorityL2_$eq(CPStore.MAXPRIORL2());

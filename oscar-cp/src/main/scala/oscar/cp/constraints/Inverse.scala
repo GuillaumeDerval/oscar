@@ -16,7 +16,7 @@
  */
 package oscar.cp.constraints
 
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
 import oscar.cp.core.delta.DeltaIntVar
@@ -33,6 +33,8 @@ import oscar.cp.core.CPStore
  */
 
 class Inverse(prev: Array[CPIntVar], next: Array[CPIntVar]) extends Constraint(prev.head.store, "Inverse") {
+
+  override def associatedVars(): Iterable[CPVar] = prev ++ next
 
   // Checks the consistency of the arguments
   require(prev.length == next.length, "input arrays must have the same size")

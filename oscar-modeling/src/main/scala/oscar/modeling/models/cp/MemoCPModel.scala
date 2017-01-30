@@ -1,5 +1,6 @@
 package oscar.modeling.models.cp
 
+import oscar.algo.reversible.ReversibleArrayStack
 import oscar.modeling.constraints.Constraint
 import oscar.modeling.models.UninstantiatedModel
 import oscar.modeling.solvers.cp.Branchings.Alternative
@@ -11,8 +12,9 @@ import scala.collection.mutable
   * @param base model to instantiate
   */
 class MemoCPModel(base: UninstantiatedModel) extends CPModel(base) {
-  private var currentConstraintList = List[Constraint]()
-  private val constraintListHistory = mutable.Stack[List[Constraint]]()
+  //private var currentConstraintList = List[Constraint]()
+  //private val constraintListHistory = mutable.Stack[List[Constraint]]()
+  private val constraintList = new ReversibleArrayStack[Constraint](cpSolver)
 
   /**
     * Post a new constraint
@@ -21,8 +23,8 @@ class MemoCPModel(base: UninstantiatedModel) extends CPModel(base) {
     */
   override def post(constraint: Constraint): Unit = {
     super.post(constraint)
-    if(currentConstraintList != null) //only add once the model is init
-      currentConstraintList = constraint :: currentConstraintList
+    if(constraintList != null) //only add once the model is init
+      constraintList.push(constraint)
   }
 
   /**
@@ -31,7 +33,6 @@ class MemoCPModel(base: UninstantiatedModel) extends CPModel(base) {
     */
   def pushState(): Unit = {
     cpSolver.pushState()
-    constraintListHistory.push(currentConstraintList)
   }
 
   /**
@@ -39,7 +40,6 @@ class MemoCPModel(base: UninstantiatedModel) extends CPModel(base) {
     */
   def popState(): Unit = {
     cpSolver.pop()
-    currentConstraintList = constraintListHistory.pop()
   }
 
   /**
@@ -57,5 +57,5 @@ class MemoCPModel(base: UninstantiatedModel) extends CPModel(base) {
   /**
     * @return the constraints added since the instantiation of the model
     */
-  def getAddedConstraints: List[Constraint] = currentConstraintList
+  def getAddedConstraints: List[Constraint] = constraintList.toArray.toList
 }

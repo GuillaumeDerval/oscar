@@ -2,10 +2,13 @@ package oscar.examples.cp.userguide
 
 import oscar.cp._
 import oscar.cp.core._
+import oscar.cp.core.variables.CPVar
 
 object SimpleUserConstraint extends CPModel with App {
 
   class MyLessOrEqual(val X: CPIntVar, val Y: CPIntVar ) extends Constraint(X.store, "MyLessOrEqual") {
+
+    override def associatedVars(): Iterable[CPVar] = Array(X, Y)
 
     override def setup(l: CPPropagStrength): Unit =  {
       X.callPropagateWhenBoundsChange(this)

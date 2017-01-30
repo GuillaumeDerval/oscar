@@ -36,6 +36,9 @@ class DFSearchNode extends ReversibleContextImpl with ConstrainableContext {
     //statusBehaviourDelegate.onSolution(action); this
   }
 
+  final def onFailure(action: => Unit): DFSearchNode = {
+    searchStrategy.onFailure(action); this
+  }
 
   /** @return  true if this node can surely not lead to any solution */
   def isFailed: Boolean = failed.value

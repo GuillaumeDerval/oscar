@@ -18,7 +18,14 @@ import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
 import oscar.cp.util.NumberUtils;
+import scala.collection.Iterable;
+import scala.collection.immutable.List;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import scala.collection.JavaConversions;
 
 /**
  * Multiplication Constraint x * c = z
@@ -42,7 +49,12 @@ public class MulCte extends Constraint {
 		this.z = z;
 		this.c = c;
 	}
-	
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		return JavaConversions.iterableAsScalaIterable(Arrays.asList(x, z));
+	}
+
 	@Override
 	public void setup(CPPropagStrength l) throws Inconsistency {
 		propagate();

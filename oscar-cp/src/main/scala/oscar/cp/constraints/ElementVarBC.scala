@@ -18,7 +18,7 @@
 package oscar.cp.constraints
 
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.util.ArrayUtils
 import oscar.algo.reversible.ReversibleInt
@@ -36,6 +36,8 @@ import oscar.cp.core.delta.DeltaIntVar
  * @author Renaud Hartert ren.hartert@gmail.com
  */
 final class ElementVarBC(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constraint(y(0).store, "ElementVarBC") {
+
+  override def associatedVars(): Iterable[CPVar] = Array(x, z) ++ y
 
   priorityL2 = CPStore.MaxPriorityL2 - 1
   

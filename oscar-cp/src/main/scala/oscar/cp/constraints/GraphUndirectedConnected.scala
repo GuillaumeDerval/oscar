@@ -18,7 +18,7 @@ package oscar.cp.constraints
 
 import oscar.algo.Inconsistency
 import oscar.cp.core._
-import oscar.cp.core.variables.CPGraphVar
+import oscar.cp.core.variables.{CPGraphVar, CPVar}
 
 /**
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
@@ -26,7 +26,9 @@ import oscar.cp.core.variables.CPGraphVar
  */
 
 class GraphUndirectedConnected(val g : CPGraphVar) extends Constraint(g.s, "Undirected Connected") {
-  
+
+  override def associatedVars(): Iterable[CPVar] = Array(g)
+
 	override def setup(l: CPPropagStrength): Unit = {
 	  // add filter when domain changes
 	  g.callPropagateWhenDomainChanges(this)

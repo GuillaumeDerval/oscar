@@ -17,7 +17,7 @@ package oscar.cp.constraints
 
 import oscar.algo.reversible.{ReversibleInt, ReversibleSet, ReversibleSparseSet, ReversibleSparseSetJava}
 import oscar.cp.core.{CPPropagStrength, Constraint}
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
   * Arborescence Constraint:
@@ -30,7 +30,9 @@ import oscar.cp.core.variables.CPIntVar
   * @author Ratheil Houndji  ratheilsesse@gmail.com
   */
 final class Arborescence(preds: Array[CPIntVar], root: Int) extends Constraint(preds(0).store, "Circuit") {
-  
+
+  override def associatedVars(): Iterable[CPVar] = preds
+
   require(preds.length > 0, "no variable.")
 
   private[this] val n = preds.size

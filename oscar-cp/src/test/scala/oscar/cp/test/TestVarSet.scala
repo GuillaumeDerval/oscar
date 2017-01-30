@@ -16,6 +16,7 @@ package oscar.cp.test
 
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.variables.CPVar
 import oscar.cp.testUtils.TestSuite
 
 /**
@@ -39,6 +40,7 @@ class TestVarSet extends TestSuite {
         inpropag = true
       }
 
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
 
@@ -105,6 +107,9 @@ class TestVarSet extends TestSuite {
       override def valRequired(x: CPSetVar, v: Int): Unit = {
         inrequire = true
       }
+
+      override def associatedVars(): Iterable[CPVar] = ???
+
     }
 
 
@@ -193,6 +198,8 @@ class TestVarSet extends TestSuite {
         idx = i
         value = v
       }
+
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
 
@@ -285,6 +292,9 @@ class TestVarSet extends TestSuite {
       override def valRequired(x: CPSetVar, v: Int): Unit = {
         inrequire = true
       }
+
+      override def associatedVars(): Iterable[CPVar] = ???
+
     }
 
 
@@ -371,6 +381,8 @@ class TestVarSet extends TestSuite {
         inrequire = true
         idx = i
       }
+
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
 
@@ -380,6 +392,7 @@ class TestVarSet extends TestSuite {
     cp.add(x ++ 0)
     cp.add(new Constraint(cp, "TestSet") {
       override def setup(l: CPPropagStrength): Unit = x.excludesAll() // -2,-1,1,2,3,4 should be notified as removed
+      override def associatedVars(): Iterable[CPVar] = ???
     })
 
     x.possibleSet should be(Set(0))
@@ -434,6 +447,8 @@ class TestVarSet extends TestSuite {
         inrequire = true
         idx = i
       }
+
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
 
@@ -443,6 +458,7 @@ class TestVarSet extends TestSuite {
     cp.add(x -- 0)
     cp.add(new Constraint(cp, "TestSet") {
       override def setup(l: CPPropagStrength): Unit = x.requiresAll() // -2,-1,1,2,3,4 should be notified as removed
+      override def associatedVars(): Iterable[CPVar] = ???
     })
     x.possibleSet should be(Set(-2, -1, 1, 2, 3, 4))
     x.requiredSet should be(Set(-2, -1, 1, 2, 3, 4))

@@ -18,6 +18,13 @@ import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * AtLeastNValue Constraint
@@ -41,6 +48,13 @@ public class AtLeastNValue extends Constraint {
 		super(x[0].store(),"AtLeastNValue");
 		this.x = x;
 		this.nval = nval;
+	}
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+		l.add(nval);
+		return JavaConversions.iterableAsScalaIterable(l);
 	}
 
 	@Override

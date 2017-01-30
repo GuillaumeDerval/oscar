@@ -762,7 +762,7 @@ object XCSP3Parser2 {
     *         The solution generator, to be called when all variables are bound, will return a XCSP3 instantiation
     *         constraint equivalent to the solution found.
     */
-  def parse(modelDeclarator: ModelDeclaration, filename: String): (Iterable[IntVar], () => String) = {
+  def parse(modelDeclarator: ModelDeclaration, filename: String): (Array[IntVar], () => String) = {
     val parser = new XCSP3Parser2(modelDeclarator, filename)
     val vars = parser.varHashMap.values.map(i => i.asInstanceOf[IntVar]).toArray
     (vars, () => parser.generateInstantiationWithSymbolic(vars.map(x => x.name), vars.map(x => x.evaluate())))
@@ -778,12 +778,13 @@ object Parser2 extends CPApp[String] with App {
   println("<--")
   val (vars, solutionGenerator) = XCSP3Parser2.parse(this.md, config.instance.get.get)
 
-  setSearch(Branchings.binaryFirstFail(vars.toSeq))
+  //setSearch(Branchings.conflictOrderingSearch(vars,i => vars(i).size, i => vars(i).min))
+  setSearch(Branchings.binaryMinDomOnWeightedDegree(vars))
   onSolution {
     solutionGenerator()
   }
 
-  setDecompositionStrategy(new CartProdRefinement(vars, Branchings.binaryFirstFail(vars.toSeq)))
+  setDecompositionStrategy(new CartProdRefinement(vars, Branchings.conflictOrderingSearch(vars,i => vars(i).size, i => vars(i).min)))
   val (stats, solutions) = try {
     solve()
   }

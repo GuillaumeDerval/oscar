@@ -2,7 +2,7 @@ package oscar.cp.scheduling.constraints
 
 import oscar.algo.Inconsistency
 import oscar.cp.core._
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.algo.SortUtils._
 
 import scala.math.{max, min}
@@ -22,7 +22,9 @@ class Unary(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPI
 extends Constraint(starts(0).store, "Unary") {
   val lr = new UnaryLR(starts, durations, ends, resources, id) 
   val rl = new UnaryLR(ends map(-_), durations, starts map(-_), resources, id)
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ resources
+
   override def setup(strength: CPPropagStrength) = {
     s.add(Array(lr, rl))
   }
@@ -38,7 +40,9 @@ extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryLR")(starts(
 
   // private final val compareFlag = true
   priorityL2 = 3
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ resources
+
   private def nextPowerOfTwo(k: Int): Int = {
     1 << math.ceil(math.log(k) / math.log(2)).toInt
   }

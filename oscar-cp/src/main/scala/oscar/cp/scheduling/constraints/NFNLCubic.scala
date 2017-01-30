@@ -11,6 +11,7 @@ import java.lang.Math.min
 import java.lang.Math.max
 
 import oscar.algo.Inconsistency
+import oscar.cp.core.variables.CPVar
 
 
 // @author Steven Gay steven.gay@uclouvain.be
@@ -30,7 +31,9 @@ extends Constraint(capacity.store, "NFNLCubic") {
   
   val l2r = new NFNLCubicLR(starts, durations, ends, heights, resources, capacity, id)
   val r2l = new NFNLCubicLR(mstarts, durations, mends, heights, resources, capacity, id)
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ heights ++ resources ++ Array(capacity)
+
   def setup(strength: CPPropagStrength): Unit = {
     l2r.setup(strength)
     r2l.setup(strength)
@@ -53,6 +56,8 @@ extends Constraint(capacity.store, "NFNLCubicLR") {
   require(n == resources.size)
   
   val myActs = (0 until n) filter { a => resources(a).hasValue(id) && heights(a).max > 0 }
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ heights ++ resources ++ Array(capacity)
 
   def setup(strength: CPPropagStrength): Unit = {
     priorityL2 = 1

@@ -17,7 +17,7 @@ package oscar.cp.constraints
 import oscar.algo.Inconsistency
 import oscar.algo.reversible.{ReversibleBoolean, ReversibleInt}
 import oscar.cp.core._
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
  * Ensure that at least two values in x are different (they are not all equal)
@@ -27,6 +27,8 @@ class NotAllEqual(val x: Array[CPIntVar]) extends Constraint(x(0).store, "NotAll
   val firstValueFound = new ReversibleBoolean(s,false)
   var firstValue: Int = 0
   val nUnbound = new ReversibleInt(s,x.length)
+
+  override def associatedVars(): Iterable[CPVar] = x
 
   override def setup(l: CPPropagStrength): Unit = {
     // Check specific cases

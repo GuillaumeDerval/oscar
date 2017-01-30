@@ -15,7 +15,7 @@
 package oscar.cp.constraints
 
 import oscar.algo.Inconsistency
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.{CPPropagStrength, Constraint}
 
 /**
@@ -36,6 +36,8 @@ import oscar.cp.core.{CPPropagStrength, Constraint}
 class NestedGCCDecompFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int, Int)]],
                   upperLists: Array[Array[(Int, Int)]])
   extends Constraint(X(0).store, "PrefixCCSegment") {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   // Handy structures for memorization.
   // They allow to have common code for lower bound and upper bound treatment.

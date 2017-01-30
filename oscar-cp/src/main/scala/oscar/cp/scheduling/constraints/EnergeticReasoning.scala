@@ -8,16 +8,16 @@ import scala.math.min
 import scala.math.max
 import scala.math.ceil
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 
 class EnergeticReasoning(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], demands: Array[CPIntVar], resources: Array[CPIntVar], capacity: CPIntVar, id: Int = 1) extends Constraint(capacity.store, "Energetic Reasoning") {
 
   assert(starts.length == durations.length && starts.length == ends.length && starts.length == demands.length && starts.length == resources.length, "starts, durations, ends, demands and resources must be of same length")
 
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ demands ++ resources ++ Array(capacity)
+
   //cache arrays
-  
   val numTasks = starts.length
   
   val smin = Array.fill(numTasks)(-1)

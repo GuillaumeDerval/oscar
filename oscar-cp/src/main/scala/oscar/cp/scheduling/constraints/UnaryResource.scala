@@ -2,10 +2,13 @@ package oscar.cp.scheduling.constraints
 
 import oscar.cp.core.CPPropagStrength._
 import oscar.cp.core.{CPPropagStrength, Constraint}
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 class UnaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], resources: Array[CPIntVar], id: Int = 1)
   extends Constraint(starts.head.store, "UnaryResource") {
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ resources
+
   override def setup(l: CPPropagStrength): Unit = {
 
     val unitDemand = CPIntVar(1)(s)

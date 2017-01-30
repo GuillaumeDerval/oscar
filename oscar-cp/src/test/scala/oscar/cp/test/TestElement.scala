@@ -21,6 +21,7 @@ import oscar.cp.modeling._
 import oscar.cp.testUtils.TestSuite
 import oscar.cp.CPIntVar
 import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.variables.CPVar
 
 /**
  * Test on Element Var Constraint
@@ -58,7 +59,7 @@ class TestElement extends TestSuite {
         assert(!(x.isBound && y(x.min).isBound && z.isBound))
       }
     }
-    
+    override def associatedVars(): Iterable[CPVar] = ???
   }
 
 

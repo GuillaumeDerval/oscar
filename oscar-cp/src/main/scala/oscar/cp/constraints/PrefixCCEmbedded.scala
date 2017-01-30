@@ -17,7 +17,7 @@ package oscar.cp.constraints
 import oscar.algo.Inconsistency
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.core.delta.DeltaIntVar
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.{CPPropagStrength, Constraint}
 
 /**
@@ -35,6 +35,8 @@ import oscar.cp.core.{CPPropagStrength, Constraint}
 class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int, Int)]],
                    upperLists: Array[Array[(Int, Int)]])
   extends Constraint(X(0).store, "PrefixCCEmbedded") {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   // Handy structures for memorization.
   // They allow to have common code for lower bound and upper bound treatment.

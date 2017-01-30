@@ -4,7 +4,7 @@ import oscar.algo.Inconsistency
 import oscar.algo.SortUtils._
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp._
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
 import oscar.cp.scheduling.util.{ThetaLambdaTreeWithTransitionTimesAndFamilies, TransitionLowerBounds}
 
@@ -16,6 +16,8 @@ import oscar.cp.scheduling.util.{ThetaLambdaTreeWithTransitionTimesAndFamilies, 
 class UnaryResourceWithTransitionTimesAndFamilies(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], familyMatrix: Array[Array[Int]], family: Array[Int]) extends Constraint(starts(0).store) {
   priorityL2_=(CPStore.MaxPriorityL2 - 2)
   idempotent = true
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends
 
   protected[this] val nTasks = starts.length
 

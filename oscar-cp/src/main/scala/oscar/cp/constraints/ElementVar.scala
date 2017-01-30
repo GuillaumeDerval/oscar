@@ -17,7 +17,7 @@
 package oscar.cp.constraints;
 
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 
 import scala.math.min
@@ -32,6 +32,8 @@ import oscar.cp.core.CPSolver
  * @author Pierre Schaus - pschaus@gmail.com
  */
 class ElementVar(val y: Array[CPIntVar], val x: CPIntVar, val z: CPIntVar) extends Constraint(y(0).store, "ElementVar") {
+
+  override def associatedVars(): Iterable[CPVar] = y ++ Array(x, z)
 
   override def setup(l: CPPropagStrength): Unit = {
     if (l == CPPropagStrength.Strong) {

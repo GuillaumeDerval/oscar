@@ -19,7 +19,7 @@ package oscar.cp.constraints
 
 import oscar.algo.Inconsistency
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.util.ArrayUtils
 import oscar.algo.reversible.ReversibleInt
@@ -57,6 +57,8 @@ object ElementCst2D {
  * @author Renaud Hartert ren.hartert@gmail.com
  */
 final class ElementCst2D(T: Array[Array[Int]], x: CPIntVar, y: CPIntVar, z: CPIntVar) extends Constraint(x.store, "ElementCst2D") {
+
+  override def associatedVars(): Iterable[CPVar] = Array(x, y, z)
 
   require(T.length > 0)
   require(T(0).length > 0)

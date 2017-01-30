@@ -15,7 +15,7 @@
 package oscar.cp.constraints
 
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
 
@@ -33,7 +33,9 @@ import oscar.cp.core.Constraint
 final class Circuit(succs: Array[CPIntVar], symmetric: Boolean) extends Constraint(succs(0).store, "Circuit") {
   
   require(succs.length > 0, "no variable.")
-  
+
+  override def associatedVars(): Iterable[CPVar] = succs
+
   private[this] val nSuccs = succs.length
   private[this] val dests = Array.tabulate(nSuccs)(i => new ReversibleInt(s, i))
   private[this] val origs = Array.tabulate(nSuccs)(i => new ReversibleInt(s, i))

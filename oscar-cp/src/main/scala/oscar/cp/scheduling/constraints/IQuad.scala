@@ -5,6 +5,7 @@ import oscar.cp.core._
 import oscar.cp._
 import oscar.algo.SortUtils._
 import oscar.algo.reversible.ReversibleInt
+import oscar.cp.core.variables.CPVar
 
 // @author Steven Gay steven.gay@uclouvain.be
 
@@ -29,8 +30,9 @@ extends Constraint(capacity.store, "IQuad") {
   val rs = starts.map(-_).asInstanceOf[Array[CPIntVar]]
   val re = ends  .map(-_).asInstanceOf[Array[CPIntVar]]
   val r2l = new IQuadL2R(re, durations, rs,  demands, resources, capacity, id)
-  
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ demands ++ resources ++ Array(capacity)
+
   def setup(strength: CPPropagStrength): Unit = {
     myStore.post(l2r)
     myStore.post(r2l)
@@ -57,6 +59,7 @@ extends Constraint(capacity.store, "IQuadL2R") {
   
   val myStore = capacity.store
 
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ demands ++ resources ++ Array(capacity)
 
   def setup(strength: CPPropagStrength): Unit = {
     priorityL2 = 2

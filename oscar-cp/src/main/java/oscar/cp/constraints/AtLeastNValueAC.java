@@ -19,6 +19,13 @@ import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.CPStore;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
@@ -77,6 +84,12 @@ public class AtLeastNValueAC extends Constraint {
         this(x, nval);
     }
 
+    @Override
+    public Iterable<CPVar> associatedVars() {
+        List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+        l.add(nValueVar);
+        return JavaConversions.iterableAsScalaIterable(l);
+    }
 
     @Override
     public void setup(CPPropagStrength l) throws Inconsistency {

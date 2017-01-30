@@ -17,7 +17,7 @@ package oscar.cp.constraints;
 
 import oscar.algo.Inconsistency
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.util.ArrayUtils
 import oscar.algo.reversible.ReversibleInt
@@ -37,7 +37,9 @@ import oscar.cp.core.watcher.Watcher
  * @author Renaud Hartert
  */
 class ElementVarAC3(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constraint(y(0).store, "ACElementVar") {
-    
+
+  override def associatedVars(): Iterable[CPVar] = y ++ Array(x, z)
+
   private[this] val xRange = max(0, x.min) to min(x.max, y.size)
   private[this] val zRange = (z.min max (y.map(_.min).min)) to (z.max min (y.map(_.max).max))
   
@@ -179,6 +181,8 @@ class ElementVarAC3(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constr
   }
 
   private class ElementEq(ys: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constraint(x.store, "ElementEq") {
+
+    override def associatedVars(): Iterable[CPVar] = ys ++ Array(x, z)
 
     // Used to iterate on the domain of the variables
     private[this] val values = new Array[Int](ys.map(_.size).max max x.size max z.size)

@@ -36,6 +36,8 @@ import oscar.cp.core.variables._
 class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[Int])
   extends Constraint(X(0).store, "GCCFWC") {
 
+  override def associatedVars(): Iterable[CPVar] = X
+
   idempotent = false
 
   private[this] val nValues = lower.length

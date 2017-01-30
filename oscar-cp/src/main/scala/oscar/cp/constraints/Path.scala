@@ -19,6 +19,7 @@ import oscar.cp._
 
 import scala.collection.JavaConversions._
 import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.variables.CPVar
 
 /**
  * Implementation of Path Constraint decomposition as described in 
@@ -36,6 +37,8 @@ import oscar.cp.core.CPPropagStrength
  * @author Pierre Schaus
  */
 class Path(succ: Array[CPIntVar], start: CPIntVar, end: CPIntVar, length: CPIntVar) extends Constraint(succ(0).store, "Path") {
+
+  override def associatedVars(): Iterable[CPVar] = succ ++ Array(start, end, length)
 
   // for each node, it's position in the path
   val y = Array.fill(succ.length)(CPIntVar(succ.indices)(s))

@@ -2,10 +2,8 @@ package oscar.cp.core.variables
 
 import oscar.algo.Inconsistency
 
-import scala.Iterator
 import scala.util.Random
 import oscar.algo.reversible.ReversibleInt
-import oscar.algo.reversible.ReversiblePointer
 import oscar.algo.reversible.TrailEntry
 import oscar.cp.core.CPStore
 import oscar.cp.core.Constraint
@@ -13,6 +11,8 @@ import oscar.cp.core.watcher.WatcherListL2
 import oscar.cp.core.watcher.WatcherListL1
 import oscar.cp.core.watcher.Watcher
 import oscar.cp.core.delta.DeltaIntVar
+
+import scala.collection.mutable
 
 /**
  * @author Renaud Hartert ren.hartert@gmail.com
@@ -29,7 +29,7 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
   private[this] val onBoundsL1 = new WatcherListL1(store)
   private[this] val onBindL1 = new WatcherListL1(store)
   private[this] val onDomainL1 = new WatcherListL1(store)
-  
+
   // Number of constraints registered on the variable
   private[this] val degree = new ReversibleInt(store, 0) // should not change often
   

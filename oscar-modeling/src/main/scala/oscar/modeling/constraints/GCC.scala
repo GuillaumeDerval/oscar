@@ -1,10 +1,21 @@
 package oscar.modeling.constraints
 
+import oscar.modeling.algebra.floating.FloatExpression
 import oscar.modeling.algebra.integer.IntExpression
 import oscar.modeling.models.ModelDeclaration
 import oscar.modeling.vars.IntVar
 
-case class GCC(x: Array[IntExpression], minval: Int, low: Array[Int], up: Array[Int]) extends Constraint {}
+case class GCC(x: Array[IntExpression], minval: Int, low: Array[Int], up: Array[Int]) extends Constraint {
+  /**
+   * @return a list of all the IntExpression associated to this constraint
+   */
+  override def getIntExpressions(): Iterable[IntExpression] = x
+
+  /**
+   * @return a list of all the FloatExpression associated to this constraint
+   */
+  override def getFloatExpressions(): Iterable[FloatExpression] = Array[FloatExpression]()
+}
 
 /**
   * Global Cardinality Constraint with variable counters
@@ -13,7 +24,17 @@ case class GCC(x: Array[IntExpression], minval: Int, low: Array[Int], up: Array[
   *        where o is variable representing the number of occurrences of value v
   * @return a constraint such that for each (o,v) in valueOccurrence, o is the number of times the value v appears in x
   */
-case class GCCVar(x: Array[IntExpression], valueOccurrence: Iterable[(Int, IntExpression)]) extends Constraint {}
+case class GCCVar(x: Array[IntExpression], valueOccurrence: Iterable[(Int, IntExpression)]) extends Constraint {
+  /**
+   * @return a list of all the IntExpression associated to this constraint
+   */
+  override def getIntExpressions(): Iterable[IntExpression] = x ++ valueOccurrence.map(_._2)
+
+  /**
+   * @return a list of all the FloatExpression associated to this constraint
+   */
+  override def getFloatExpressions(): Iterable[FloatExpression] = Array[FloatExpression]()
+}
 
 object GCC {
   /**

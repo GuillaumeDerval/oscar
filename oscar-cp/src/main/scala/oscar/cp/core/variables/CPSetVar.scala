@@ -80,7 +80,7 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
   }
 
 
-  def filterWhenDomainChangesWithDelta(idempotent: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: DeltaSetVar => Unit): DeltaSetVar = {
+  def filterWhenDomainChangesWithDelta(idempotent: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: DeltaSetVar => Unit)(implicit constraint: Constraint): DeltaSetVar = {
     val propagator = new PropagatorSetVar(this, 0, filter)
     propagator.idempotent = idempotent
     propagator.priorityL2 = priority

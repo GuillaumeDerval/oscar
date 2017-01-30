@@ -35,6 +35,8 @@ import oscar.cp.core.variables._
 class SoftGCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[Int], viol: CPIntVar)
   extends Constraint(X(0).store, "SoftGCCFWC") {
 
+  override def associatedVars(): Iterable[CPVar] = X ++ Array(viol)
+
   idempotent = false
 
   private[this] val nValues = lower.length

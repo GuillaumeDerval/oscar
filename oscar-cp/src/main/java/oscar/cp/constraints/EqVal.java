@@ -17,6 +17,13 @@ package oscar.cp.constraints;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Equality Constraint
@@ -37,7 +44,13 @@ public class EqVal extends Constraint {
 		this.x = x;
 		this.v = v;
 	}
-	
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = Collections.singletonList(x);
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
 	@Override
 	public void setup(CPPropagStrength l) {
 		x.assign(v);

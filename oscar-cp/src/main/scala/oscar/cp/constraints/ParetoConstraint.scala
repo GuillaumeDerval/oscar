@@ -14,12 +14,14 @@
  ******************************************************************************/
 package oscar.cp.constraints
 
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.multiobjective.Pareto
 
 class ParetoConstraint[Sol](pareto: Pareto[Sol], isMax: Array[Boolean], objVars: Array[CPIntVar]) extends Constraint(objVars.head.store, "Gavanelli02 Dominance") {
+
+  override def associatedVars(): Iterable[CPVar] = objVars
 
   // Simplifies code understanding
   type Point = IndexedSeq[Int]

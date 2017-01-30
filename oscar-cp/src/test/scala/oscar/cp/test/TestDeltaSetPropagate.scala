@@ -20,6 +20,7 @@ import oscar.cp.testUtils.TestSuite
 import oscar.cp.core.CPPropagStrength
 import oscar.cp._
 import oscar.cp.core.delta.DeltaSetVar
+import oscar.cp.core.variables.CPVar
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -51,6 +52,7 @@ class TestDeltaSetPropagate extends TestSuite {
           delta.deltaPossible.toSet should be(Set(2,4))
         }
       }
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
     val cp = CPSolver()
@@ -90,6 +92,7 @@ class TestDeltaSetPropagate extends TestSuite {
           delta.deltaPossibleSize() should be(2)
           delta.deltaPossible().toSet should be(Set(2,4))
       }
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
     val cp = CPSolver()

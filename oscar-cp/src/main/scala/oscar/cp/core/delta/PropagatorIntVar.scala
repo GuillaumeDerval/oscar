@@ -17,7 +17,7 @@ package oscar.cp.core.delta
 
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.CPStore
 
 /**
@@ -28,7 +28,9 @@ import oscar.cp.core.CPStore
  * @param name
  */
 class PropagatorIntVar(x: CPIntVar, id: Int, filter: DeltaIntVar => Boolean, name: String = "PropagatorIntVar") extends Constraint(x.store, name) {
-  
+
+  override def associatedVars(): Iterable[CPVar] = Array(x)
+
   private[this] val _delta = x.delta(this,id)
   
   final def priority: Int = this.priorityL2

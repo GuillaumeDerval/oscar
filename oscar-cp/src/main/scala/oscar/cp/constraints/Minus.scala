@@ -1,6 +1,6 @@
 package oscar.cp.constraints
 
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
 
 /**
@@ -9,6 +9,8 @@ import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
  * @author Renaud Hartert ren.hartert@gmail.com
  */
 class Minus(x: CPIntVar, y: CPIntVar, z: CPIntVar) extends Constraint(x.store, "Minus") {
+
+  override def associatedVars(): Iterable[CPVar] = Array(x, y, z)
 
   final override def setup(l: CPPropagStrength): Unit = {
 

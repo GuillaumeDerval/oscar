@@ -1,8 +1,7 @@
 package oscar.cp.constraints.tables
 
 import oscar.cp.core.Constraint
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPBoolVar
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPVar}
 import oscar.cp.core.CPPropagStrength
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.core.CPStore
@@ -14,6 +13,8 @@ import oscar.cp.core.CPStore
  * 
  */
 class TableSTR2Reif(val variables: Array[CPIntVar], table: Array[Array[Int]], val b: CPBoolVar) extends Constraint(variables(0).store, "TableSTR2Reif") {
+  override def associatedVars(): Iterable[CPVar] = variables
+
   private[this] val arity = variables.length
   
   // Sparse set for current table

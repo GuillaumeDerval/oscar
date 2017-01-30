@@ -9,7 +9,7 @@ abstract class Inconsistency extends Exception {
   def feedback: Any
   
   // Do not fill the trace
-  //final override val fillInStackTrace: Throwable = this
+  final override val fillInStackTrace: Throwable = this
   
   final override val toString: String = "Inconsistency"
 }

@@ -19,7 +19,7 @@ import scala.math.max
 import scala.math.min
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.reversible.ReversibleSparseSet
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
 
@@ -30,6 +30,8 @@ import oscar.cp.core.Constraint
  * @author Pierre Schaus pschaus@gmail.com
  */
 class ElementVarAC(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constraint(x.store, "ACElementVar") {
+
+  override def associatedVars(): Iterable[CPVar] = y ++ Array(x, z)
 
   // Range of possible indexes
   private[this] val minId = max(0, x.min)
@@ -187,7 +189,9 @@ class ElementVarAC(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constra
 }
 
 class ElementEq(ys: Array[CPIntVar], x: CPIntVar, z: CPIntVar, values: Array[Int]) extends Constraint(x.store, "ElementEq") {
-  
+
+  override def associatedVars(): Iterable[CPVar] = ys ++ Array(z, x)
+
   private[this] var y: CPIntVar = null
   
   final override def setup(l: CPPropagStrength): Unit = {

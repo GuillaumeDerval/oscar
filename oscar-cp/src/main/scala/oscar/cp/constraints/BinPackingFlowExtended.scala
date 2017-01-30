@@ -17,7 +17,7 @@ package oscar.cp.constraints
 
 import oscar.algo.Inconsistency
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.util.ArrayUtils
 import oscar.algo.reversible.ReversibleInt
@@ -27,6 +27,8 @@ import oscar.algo.reversible.ReversibleInt
  * @author pschaus@gmail.com
  */
 class BinPackingFlowExtended(val x: Array[CPIntVar], val sizes: Array[Int], val l: Array[CPIntVar], val c: Array[CPIntVar]) extends Constraint(x(0).store) {
+
+  override def associatedVars(): Iterable[CPVar] = x ++ l ++ c
 
   val perm = ArrayUtils.sortPerm(sizes);
   val l_t = Array.fill(c.size)(new ReversibleInt(s, 0))

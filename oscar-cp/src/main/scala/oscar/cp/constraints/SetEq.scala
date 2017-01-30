@@ -18,7 +18,7 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.variables.CPSetVar
+import oscar.cp.core.variables.{CPSetVar, CPVar}
 import oscar.cp.core.delta.{DeltaSetVar, PropagatorSetVar}
 
 /**
@@ -26,6 +26,9 @@ import oscar.cp.core.delta.{DeltaSetVar, PropagatorSetVar}
  * @author Leonard Debroux leonard.debroux@gmail.com
  */
 class SetEq(val a: CPSetVar, val b: CPSetVar) extends Constraint(a.store, "SetEq") {
+
+	override def associatedVars(): Iterable[CPVar] = Array(a, b)
+
 	override def setup(l: CPPropagStrength): Unit = {
 	  
 	  def filterB(d: DeltaSetVar): Unit = {

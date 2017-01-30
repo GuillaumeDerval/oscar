@@ -6,12 +6,15 @@ import oscar.cp.core.Constraint
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.CPSolver
+import oscar.cp.core.variables.CPVar
 
 class CPObjectiveLexicographic(val solver: CPSolver, val variables: Array[CPIntVar])
 extends Constraint(solver, "CPObjectiveLexicographic") {
   val n = variables.length
   
   val best = Array.ofDim[Int](n)
+
+  override def associatedVars(): Iterable[CPVar] = variables
 
   override def setup(strength: CPPropagStrength): Unit = {
     variables.foreach(_.callPropagateWhenBoundsChange(this))

@@ -22,7 +22,11 @@ import oscar.algo.reversible.*;
 import oscar.cp.core.delta.DeltaIntVar;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.variables.CPIntVarAdaptable;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -115,6 +119,11 @@ public class MinAssignment extends Constraint {
 
         delta = new DeltaIntVar[n];
 
+    }
+
+    @Override
+    public Iterable<CPVar> associatedVars() {
+        return JavaConversions.iterableAsScalaIterable(Arrays.asList(x));
     }
 
     private void initWeightMatrix(int [][] weightMat) throws RuntimeException {

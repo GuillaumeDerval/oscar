@@ -18,7 +18,7 @@ package oscar.cp.constraints.tables
 
 import oscar.algo.Inconsistency
 import oscar.algo.reversible.{ReversibleBoolean, ReversibleInt, TrailEntry}
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
 
 import scala.collection.mutable.ArrayBuffer
@@ -39,6 +39,8 @@ final class TableCTAC6LongTrailEntry(table: TableCTAC6, i: Int, value: Long) ext
 }
 
 final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableCTAC6") {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   /* Setting idempotency & lower priority for propagate() */
   idempotent = true

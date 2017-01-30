@@ -1,12 +1,14 @@
 package oscar.cp.constraints
 
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
 
 final class EqualityDC(x: CPIntVar, y: CPIntVar) extends Constraint(x.store, "EqualityDC") {
+
+  override def associatedVars(): Iterable[CPVar] = Array(x, y)
 
   private[this] val values = new Array[Int](Math.max(x.size, y.size))
 

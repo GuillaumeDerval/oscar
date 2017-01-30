@@ -16,10 +16,10 @@
 package oscar.cp.core.delta
 
 import oscar.cp.core.{CPPropagStrength, Constraint}
-import oscar.cp.core.variables.{CPIntVar, CPSetVar}
+import oscar.cp.core.variables.{CPIntVar, CPSetVar, CPVar}
 
 class PropagatorSetVar(x: CPSetVar,id: Int, filter: DeltaSetVar => Unit) extends Constraint(x.store, "PropagatorSetVar") {
-
+  override def associatedVars(): Iterable[CPVar] = Array(x)
 
   private[this] val _delta: DeltaSetVar = x.delta(this,id)
 

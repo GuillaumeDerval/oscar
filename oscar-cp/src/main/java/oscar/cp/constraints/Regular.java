@@ -14,12 +14,18 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
 
 
 /**
@@ -35,6 +41,13 @@ public class Regular extends Constraint {
 	
 	private CPIntVar [] x;
 	private CPIntVar [] q;
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+		l.addAll(Arrays.asList(q));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
 
     /**
      * Constraint x to be a valid sequence accepted by the automaton

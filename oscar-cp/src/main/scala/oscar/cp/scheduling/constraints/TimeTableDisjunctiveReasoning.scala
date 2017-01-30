@@ -1,7 +1,7 @@
 package oscar.cp.scheduling.constraints
 
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.CPStore
@@ -52,8 +52,10 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   private[this] var dminFmax = 0
   private[this] var hminmax = 0
 
-  private[this] val profile = new ProfileStructure(smin, smax, dmin, emin, emax, hmin, required, possible)  
-  
+  private[this] val profile = new ProfileStructure(smin, smax, dmin, emin, emax, hmin, required, possible)
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ heights ++ resources ++ Array(capacity)
+
   @inline private def updateFreeAndMaxs(limit: Int) = {
     dminFmax = 0
     hminmax = 0

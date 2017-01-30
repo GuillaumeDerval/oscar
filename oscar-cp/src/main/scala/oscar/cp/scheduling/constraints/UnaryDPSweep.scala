@@ -2,7 +2,7 @@ package oscar.cp.scheduling.constraints
 
 import oscar.algo.Inconsistency
 import oscar.cp.core._
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.algo.SortUtils._
 
 import scala.math.{max, min}
@@ -22,7 +22,9 @@ class UnaryDPSweep(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Ar
 extends Constraint(store, "UnaryDetectablePrecedences2") {
   val lr = new UnaryDPSweepLR(starts, durations, ends, resources, id) 
   val rl = new UnaryDPSweepLR(ends map(-_), durations, starts map(-_), resources, id)
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ resources
+
   override def setup(strength: CPPropagStrength) = {
     store.add(Array(lr, rl))
   }
@@ -34,6 +36,8 @@ extends Constraint(store, "UnaryDetectablePrecedences2") {
 class UnaryDPSweepLR(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], resources: Array[CPIntVar], id: Int)(implicit store: CPStore)
 extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryDetectablePrecedencesLR")(store)
 {
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ resources
+
   private[this] val nTasks = starts.length
   
   priorityL2 = 3

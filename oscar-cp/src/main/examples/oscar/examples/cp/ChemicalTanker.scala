@@ -24,6 +24,7 @@ import oscar.cp.constraints.BinPackingFlow
 import oscar.visual.shapes.VisualRectangle
 import oscar.visual.plot.PlotLine
 import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.variables.CPVar
 
 /**
  * Chemical Tanker Problem:
@@ -94,6 +95,8 @@ object ChemicalTanker extends CPModel with App {
    * forbid this cargo in other tanks.
    */
   class ChemicalConstraint(val cargo: Cargo, val tanks: Array[Tank], val cargos: Array[CPIntVar]) extends Constraint(cargos(0).store) {
+
+    override def associatedVars(): Iterable[CPVar] = ??? //TODO
 
     val curCapa = new ReversibleInt(s, 0)
 

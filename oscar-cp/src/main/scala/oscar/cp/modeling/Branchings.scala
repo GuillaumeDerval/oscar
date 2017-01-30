@@ -22,6 +22,7 @@ import oscar.cp.scheduling.search.RankBranching
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.variables.CPSetVar
 import oscar.algo.vars.{IntVarLike, SetVarLike}
+import oscar.cp.searches.WeightedDegreeHelper
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
@@ -116,7 +117,38 @@ trait Branchings extends BranchingUtils {
    */
   def binaryMaxDegree(variables: Seq[CPIntVar]): Branching = {
     val vars = variables.toArray
-    binaryIdx(vars, vars(_).constraintDegree, vars(_).min)
+    binaryIdx(vars, -vars(_).constraintDegree, vars(_).min)
+  }
+
+  /**
+   * Binary Search based on the weighted degree of each variable, the variable with the greater degree being selected first.
+   * The weighted degree of a var is the number of times a constraint to which it is linked has been involved in a failure.
+   */
+  def binaryMaxWeightedDegree(variables: Seq[CPIntVar], valHeuris: (CPIntVar => Int), decayRatio: Double): Branching = {
+    val vars = variables.toArray
+    val helper = new WeightedDegreeHelper(vars.head.store, vars, decayRatio)
+
+    //TODO find a better way to convert the double to an Int
+    binaryIdx(vars, i => -(helper.getWeightedDegree(vars(i))*1000).round.toInt, i => valHeuris(vars(i)))
+  }
+
+  def binaryMaxWeightedDegree(variables: Seq[CPIntVar], decayRatio: Double = 0.99): Branching = {
+    binaryMaxWeightedDegree(variables, x => x.min, decayRatio)
+  }
+
+  /**
+   * Minimize (domain size)/(weighted degree)
+   */
+  def binaryMinDomOnWeightedDegree(variables: Seq[CPIntVar], valHeuris: (CPIntVar => Int), decayRatio: Double): Branching = {
+    val vars = variables.toArray
+    val helper = new WeightedDegreeHelper(vars.head.store, vars, decayRatio)
+
+    //TODO find a better way to convert the double to an Int
+    binaryIdx(vars, i => (helper.getDomOnWeightedDegree(vars(i))*1000).round.toInt, i => valHeuris(vars(i)))
+  }
+
+  def binaryMinDomOnWeightedDegree(variables: Seq[CPIntVar], decayRatio: Double = 0.99): Branching = {
+    binaryMinDomOnWeightedDegree(variables, x => x.min, decayRatio)
   }
 
   /**

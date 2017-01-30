@@ -16,14 +16,15 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPBoolVar
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPVar}
 
 /**
  * x must be a value of the set
  * @author Pierre Schaus pschaus@gmail.com
  */
 class InSetReif(val x: CPIntVar, val set: Set[Int], val b: CPBoolVar) extends Constraint(x.store, "InSetReif") {
+  override def associatedVars(): Iterable[CPVar] = Array(x, b)
+
   val setSize = set.size
   val (setMin, setMax, setRange) = 
     if (setSize == 0) (Int.MaxValue, Int.MinValue, true)

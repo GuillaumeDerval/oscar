@@ -17,7 +17,7 @@ package oscar.cp.constraints;
 
 import oscar.algo.Inconsistency
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPSolver
 import oscar.cp.util.ArrayUtils
@@ -33,6 +33,8 @@ import oscar.algo.reversible.ReversibleInt
  * @author Pierre Schaus - pschaus@gmail.com
  */
 class AllDiffBC(val x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffBC") {
+
+  override def associatedVars(): Iterable[CPVar] = x
 
   protected[AllDiffBC] class Interval(var min: Int, var max: Int, var minRank: Int, var maxRank: Int) {
     override def toString = "["+min+","+max+"]"

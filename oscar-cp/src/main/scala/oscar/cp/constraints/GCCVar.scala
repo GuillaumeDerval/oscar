@@ -21,7 +21,7 @@ import oscar.cp.modeling._
 import oscar.algo.DisjointSets
 
 import scala.collection.mutable.ArrayBuffer
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
  * Global Cardinality Constraint
@@ -29,7 +29,9 @@ import oscar.cp.core.variables.CPIntVar
  * @author Pierre Schaus pschaus@gmail.com
  */
 class GCCVar(x: Array[CPIntVar], val minVal: Int, val cards: Array[CPIntVar]) extends Constraint(x(0).store) {
-  
+
+  override def associatedVars(): Iterable[CPVar] = x ++ cards
+
   override def setup(l: CPPropagStrength): Unit = {
     l match {
       case CPPropagStrength.Automatic => {

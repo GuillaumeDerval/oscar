@@ -21,6 +21,13 @@ import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 
 /**
@@ -46,6 +53,12 @@ public class MemberReif extends Constraint {
 		this.set = set;
 		this.b = b;
 	}
+
+    @Override
+    public Iterable<CPVar> associatedVars() {
+        List<CPVar> l = new LinkedList<>(Arrays.asList(x, b));
+        return JavaConversions.iterableAsScalaIterable(l);
+    }
 
 	@Override
 	public void setup(CPPropagStrength l) throws Inconsistency {

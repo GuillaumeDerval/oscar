@@ -16,7 +16,7 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.variables.CPSetVar
+import oscar.cp.core.variables.{CPSetVar, CPVar}
 import oscar.cp.core.delta.{DeltaSetVar, PropagatorSetVar}
 
 /**
@@ -24,6 +24,8 @@ import oscar.cp.core.delta.{DeltaSetVar, PropagatorSetVar}
  * @author Pierre Schaus pschaus@gmail.com
  */
 class Disjoint(val x: CPSetVar, val y: CPSetVar) extends Constraint(x.store, "Disjoint") {
+
+  override def associatedVars(): Iterable[CPVar] = Array(x, y)
 
   override def setup(l: CPPropagStrength): Unit = {
     

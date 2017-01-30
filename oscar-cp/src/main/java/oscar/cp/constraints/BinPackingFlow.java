@@ -19,7 +19,15 @@ import oscar.algo.reversible.ReversibleInt;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
 import oscar.cp.util.ArrayUtils;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Redundant Bin-Packing Flow Constraint
@@ -51,7 +59,15 @@ public class BinPackingFlow extends Constraint {
 			c_t[i] = new ReversibleInt(s(),0);
 		}
 	}
-	
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+		l.addAll(Arrays.asList(this.l));
+		l.addAll(Arrays.asList(c));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
 	@Override
 	public void setup(CPPropagStrength strength) throws Inconsistency {
 		for (CPIntVar var: x) {

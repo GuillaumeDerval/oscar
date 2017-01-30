@@ -19,14 +19,16 @@ package oscar.cp.constraints
 
 import oscar.algo.Inconsistency
 import oscar.cp.core._
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPSetVar
+import oscar.cp.core.variables.{CPIntVar, CPSetVar, CPVar}
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
  */
 class SetCard(val x: CPSetVar, val c: CPIntVar) extends Constraint(x.store, "SetCard") {
   priorityL2 = CPStore.MaxPriorityL2
+
+  override def associatedVars(): Iterable[CPVar] = Array(x, c)
+
   override def setup(l: CPPropagStrength): Unit = {
     x.callPropagateWhenDomainChanges(this)
     c.callPropagateWhenBoundsChange(this)

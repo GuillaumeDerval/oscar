@@ -2,7 +2,7 @@ package oscar.cp.constraints.tables
 
 import oscar.algo.reversible.ReversibleSparseBitSet
 import oscar.cp.core.delta.DeltaIntVar
-import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset}
+import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset, CPVar}
 import oscar.cp.core.{CPStore, Constraint, _}
 
 import scala.collection.mutable.ArrayBuffer
@@ -15,6 +15,8 @@ import scala.collection.mutable.ArrayBuffer
  * @author Helene Verhaeghe helene.verhaeghe27@gmail.com
  */
 final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: Int = -1, needPreprocess: Boolean = true) extends Constraint(X(0).store, "TableCTNegStar") {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   /* Set default star value */
   private[this] val _star = -1

@@ -103,7 +103,7 @@ abstract class CPApp[RetVal](modeld: ModelDeclaration with DecomposedCPSolve[Ret
         nSols, maxTime
       )
     }
-    else if(completeConfig.master.threads.isDefined) {
+    else if(completeConfig.master.threads.isDefined && completeConfig.master.threads() > 1) {
       super.solveParallel(model,
         completeConfig.master.threads(),
         completeConfig.master.subproblemsPerWorker(),

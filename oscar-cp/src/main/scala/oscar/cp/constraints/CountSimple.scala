@@ -16,7 +16,7 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 
 /**
@@ -31,8 +31,9 @@ class CountSimple(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) exte
   val nEqY = new ReversibleInt(s, 0)
   val diffY = X.map(i => i)
   val nDiffY = new ReversibleInt(s, 0)
-  
-  
+
+  override def associatedVars(): Iterable[CPVar] = Array(N, Y) ++ X
+
   private def setEq(i: Int) {
     val tmp = eqY(nEqY.value)
     eqY(nEqY.value) = eqY(i)

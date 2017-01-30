@@ -17,7 +17,7 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.variables.CPGraphVar
+import oscar.cp.core.variables.{CPGraphVar, CPVar}
 
 /**
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
@@ -26,7 +26,9 @@ import oscar.cp.core.variables.CPGraphVar
  */
 
 class InducedSubGraph(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constraint(g1.s, "InducedSubGraph") {
-  
+
+	override def associatedVars(): Iterable[CPVar] = Array(g1, g2)
+
 	override def setup(l: CPPropagStrength): Unit = {
 	  // InducedSubGraph  =  SubGraph + induced part
 	  s.post(new SubGraph(g1,g2))

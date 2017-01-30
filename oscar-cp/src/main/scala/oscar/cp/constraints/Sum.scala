@@ -18,7 +18,7 @@ package oscar.cp.constraints
 
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
 
@@ -29,6 +29,8 @@ import oscar.cp.core.CPStore
  * @author Renaud Hartert ren.hartert@gmail.com
  */
 class Sum(x: Array[CPIntVar], constant: Int, sum: CPIntVar) extends Constraint(sum.store, "Sum") {
+
+  override def associatedVars(): Iterable[CPVar] = x ++ Array(sum)
 
   // Alternative constructor
   def this(x: Array[CPIntVar], sum: CPIntVar) = this(x, 0, sum)

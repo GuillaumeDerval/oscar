@@ -16,7 +16,7 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
  * Prefix Cardinality Constraint
@@ -30,6 +30,8 @@ import oscar.cp.core.variables.CPIntVar
 class NestedGCC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int, Int)]],
                upperLists: Array[Array[(Int, Int)]])
   extends Constraint(X(0).store) {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   override def setup(l: CPPropagStrength): Unit = {
     s.post(new NestedGCCFWC(X, minVal, lowerLists, upperLists))

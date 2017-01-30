@@ -1,11 +1,13 @@
 package oscar.cp.constraints
 
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
 
 final class EqualityBC(x: CPIntVar, y: CPIntVar) extends Constraint(x.store, "EqualityBC") {
+
+  override def associatedVars(): Iterable[CPVar] = Array(x, y)
 
   priorityL2 = CPStore.MaxPriorityL2
   idempotent = true

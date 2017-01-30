@@ -17,6 +17,13 @@ package oscar.cp.constraints;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Absolute value constraint
@@ -40,6 +47,12 @@ public class Abs extends Constraint {
 	}
 
 	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x, y));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
+	@Override
 	public void setup(CPPropagStrength l) {
 		y.updateMin(0) ;
 		propagate() ;
@@ -53,9 +66,6 @@ public class Abs extends Constraint {
 		}
 		//we can do more propagation with val remove
 	}
-	
-	
-
 	
 	@Override
 	public void propagate() {

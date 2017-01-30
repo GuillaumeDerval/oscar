@@ -4,7 +4,7 @@ import org.scalatest.FunSuite
 import oscar.cp.testUtils.TestSuite
 import oscar.cp.core.CPStore
 import oscar.cp._
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.CPPropagStrength
 
 class TestVariable extends TestSuite {
@@ -151,7 +151,7 @@ class TestVariable extends TestSuite {
       override def propagate(): Unit = {
         propagCalled += 1
       }
-
+      override def associatedVars(): Iterable[CPVar] = ???
     }
     val cp = CPSolver()
     val x = CPIntVar(Set(1,4,6))(cp)
@@ -188,7 +188,7 @@ class TestVariable extends TestSuite {
       override def propagate(): Unit = {
         propagCalled += 1
       }
-
+      override def associatedVars(): Iterable[CPVar] = ???
     }
     val cp = CPSolver()
     val x = CPIntVar(1 to 6)(cp)

@@ -1,5 +1,6 @@
 package oscar.modeling.constraints
 
+import oscar.modeling.algebra.floating.FloatExpression
 import oscar.modeling.algebra.integer.IntExpression
 import oscar.modeling.models.ModelDeclaration
 import oscar.modeling.vars.IntVar
@@ -7,7 +8,17 @@ import oscar.modeling.vars.IntVar
 /**
   * N variables of X take a values in set S
   */
-case class Among(N: IntExpression, X: Array[IntExpression], S: Set[Int]) extends Constraint {}
+case class Among(N: IntExpression, X: Array[IntExpression], S: Set[Int]) extends Constraint {
+  /**
+   * @return a list of all the IntExpression associated to this constraint
+   */
+  override def getIntExpressions(): Iterable[IntExpression] = Array(N) ++ X
+
+  /**
+   * @return a list of all the FloatExpression associated to this constraint
+   */
+  override def getFloatExpressions(): Iterable[FloatExpression] = Array[FloatExpression]()
+}
 
 object Among
 {

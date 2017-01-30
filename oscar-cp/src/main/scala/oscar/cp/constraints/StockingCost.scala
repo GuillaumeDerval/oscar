@@ -3,7 +3,7 @@ package oscar.cp.constraints
 import oscar.cp.core._
 
 import scala.collection.mutable.PriorityQueue
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
   * The StockingCost constraint holds when each item is produced before
@@ -22,6 +22,8 @@ import oscar.cp.core.variables.CPIntVar
   * @author Ratheil Houndji and Pierre Schaus pschaus@gmail.com
   */
 class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIntVar, val c: Int) extends Constraint(Y(0).store, "StockingCost") {
+
+  override def associatedVars(): Iterable[CPVar] = Y ++ Array(H)
 
   val allDiffBC = new AllDiffBC(Y)
   //priorityL2 = 0

@@ -16,13 +16,15 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
  * Implementation of Sum Constraint:
  * @author Pierre Schaus pschaus@gmail.com
  */
 class WeightedSum(val W: Array[Int], val X: Array[CPIntVar], val y: CPIntVar) extends Constraint(y.store, "WeightedSum2") {
+
+  override def associatedVars(): Iterable[CPVar] = X ++ Array(y)
 
   val x: Array[CPIntVar] = X.map(i => i.asInstanceOf[CPIntVar])
   val w = W.map(i => i)

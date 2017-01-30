@@ -6,7 +6,7 @@ import Math._
 import oscar.cp.core.CPStore
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.scheduling.util.OpenSparseSet
 
 // @author Steven Gay steven.gay@uclouvain.be
@@ -19,7 +19,8 @@ extends Constraint(store, name) {
   require(n == ends.length)
   require(n == resources.length)
 
-    
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ resources
+
   def setup(strength: CPPropagStrength): Unit = {
     for (a <- 0 until n) {
       if (resources(a).hasValue(id)) {

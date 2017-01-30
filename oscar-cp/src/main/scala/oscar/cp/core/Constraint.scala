@@ -18,9 +18,7 @@ package oscar.cp.core
 
 import oscar.algo.Inconsistency
 import oscar.cp.constraints.Garded
-import oscar.cp.core.variables.CPSetVar
-import oscar.cp.core.variables.CPBoolVar
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPSetVar, CPVar}
 import oscar.cp.core.delta.Delta
 import oscar.algo.reversible.TrailEntry
 
@@ -31,9 +29,13 @@ import oscar.algo.reversible.TrailEntry
  */
 abstract class Constraint(store: CPStore, val name: String = "cons") extends TrailEntry {
 
+  implicit val thisConstraint = this
+
   private[this] var active: Boolean = true
   private[this] var inQueue: Boolean = false
   private[this] var lastMagicActive = -1L
+
+  def associatedVars(): Iterable[CPVar]
 
   final override def restore(): Unit = active = !active
 
@@ -306,4 +308,9 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
         throw e
     }
   }
+}
+
+abstract class SubConstraint(parent: Constraint, store: CPStore, name: String = "cons")
+  extends Constraint(store, name) {
+  def associatedVars(): Iterable[CPVar] = parent.associatedVars()
 }

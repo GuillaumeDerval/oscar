@@ -7,7 +7,7 @@ import scala.annotation.tailrec
 import java.lang.Math.max
 
 import oscar.algo.Inconsistency
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /*
  *  Wolf & Schrader's overload checker, INAP 2005.
@@ -49,7 +49,9 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   priorityL2 = 2
 //  idempotent = true
   private[this] val nTasks = starts.length
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ heights ++ resources ++ Array(capacity)
+
   private def nextPowerOfTwo(k: Int): Int = {
     1 << math.ceil(math.log(k) / math.log(2)).toInt
   }

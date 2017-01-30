@@ -18,8 +18,7 @@ import oscar.algo.Inconsistency
 import oscar.cp.core._
 import oscar.algo.reversible._
 import oscar.algo.reversible.ReversibleSparseSet
-import oscar.cp.core.variables.CPBoolVar
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPVar}
 
 /**
  * or x_i = true
@@ -31,6 +30,8 @@ class Or(val x: Array[CPBoolVar]) extends Constraint(x(0).store, "Or") {
   var down = 0
   var up = 0
   val n = x.size
+
+  override def associatedVars(): Iterable[CPVar] = x
 
   override def setup(l: CPPropagStrength): Unit = {
     i = 0

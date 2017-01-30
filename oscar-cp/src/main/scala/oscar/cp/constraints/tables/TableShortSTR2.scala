@@ -17,7 +17,7 @@ package oscar.cp.constraints.tables
 
 import oscar.algo.Inconsistency
 import oscar.algo.reversible.{ReversibleInt, ReversibleSparseSet}
-import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset}
+import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset, CPVar}
 import oscar.cp.core.{CPStore, Constraint, _}
 
 
@@ -30,6 +30,8 @@ import oscar.cp.core.{CPStore, Constraint, _}
  *
  */
 final class TableShortSTR2(private[this] val variables: Array[CPIntVar], private[this] val table: Array[Array[Int]], private[this] val star: Int = -1) extends Constraint(variables(0).store, "TableSTR2") {
+
+  override def associatedVars(): Iterable[CPVar] = variables
 
   idempotent = true
   priorityL2 = CPStore.MaxPriorityL2 - 1

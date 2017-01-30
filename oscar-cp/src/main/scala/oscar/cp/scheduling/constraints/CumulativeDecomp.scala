@@ -4,11 +4,14 @@ import oscar.cp._
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.constraints.Sum
+import oscar.cp.core.variables.CPVar
 
 /**
  * @author Renaud Hartert ren.hartert@gmail.com
  */
 class CumulativeDecomp(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], demands: Array[CPIntVar], resources: Array[CPIntVar], capacity: CPIntVar, id: Int) extends Constraint(starts.head.store, "Cumulative decomposition") {
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ demands ++ resources ++ Array(capacity)
 
   private val maxEndDate = maxValue(ends)
   private val minEndDate = minValue(starts)

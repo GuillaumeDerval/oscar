@@ -2,7 +2,7 @@ package oscar.cp.constraints
 
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /** 
  *  Integer Division with Arc-Consistency
@@ -12,7 +12,9 @@ import oscar.cp.core.variables.CPIntVar
  *  @author Renaud Hartert ren.hartert@gmail.com
  */
 class IntDivisionAC(val a : CPIntVar, val b: CPIntVar, val c: Int) extends Constraint(a.store, "IntDivisionAC") {
-  
+
+  override def associatedVars(): Iterable[CPVar] = Array(a, b)
+
   // Checks requirements
   require(c > 0, "c has to be greater than 0")
   

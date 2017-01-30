@@ -22,7 +22,7 @@ import oscar.cp.constraints.InSetReif
 
 import scala.util.Random
 import oscar.cp._
-import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.{CPPropagStrength, SubConstraint}
 import oscar.cp.core.delta.PropagatorIntVar
 import oscar.cp.core.watcher.Watcher
 import oscar.cp.core.delta.DeltaIntVar
@@ -220,14 +220,14 @@ abstract class CPIntVar extends CPVar with IntVarLike {
   def awakeOnChanges(watcher: Watcher): Unit
 
 
-  def callOnChanges(propagate: DeltaIntVar => Boolean, idempotent: Boolean = true): PropagatorIntVar = {
+  def callOnChanges(propagate: DeltaIntVar => Boolean, idempotent: Boolean = true)(implicit constraint: Constraint): PropagatorIntVar = {
     val propagator = new PropagatorIntVar(this, 0, propagate)
     propagator.idempotent = idempotent
     callPropagateWhenDomainChanges(propagator)
     propagator
   }
 
-  def callOnChangesIdx(id: Int, propagate: DeltaIntVar => Boolean, idempotent: Boolean = true): PropagatorIntVar = {
+  def callOnChangesIdx(id: Int, propagate: DeltaIntVar => Boolean, idempotent: Boolean = true)(implicit constraint: Constraint): PropagatorIntVar = {
     val propagator = new PropagatorIntVar(this, id, propagate)
     propagator.idempotent = idempotent
     propagator.priority = CPStore.MaxPriorityL2
@@ -235,7 +235,7 @@ abstract class CPIntVar extends CPVar with IntVarLike {
     propagator
   }
 
-  def filterWhenDomainChangesWithDelta(idempotent: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: DeltaIntVar => Boolean): DeltaIntVar = {
+  def filterWhenDomainChangesWithDelta(idempotent: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: DeltaIntVar => Boolean)(implicit constraint: Constraint): DeltaIntVar = {
     val propagator = new PropagatorIntVar(this, 0, filter)
     propagator.idempotent = idempotent
     propagator.priorityL2 = priority
@@ -248,8 +248,8 @@ abstract class CPIntVar extends CPVar with IntVarLike {
    * @param priority
    * @param filter Filters. Should return true when there will never be more filtering to do: the filter will be deactivated
    */
-  def filterWhenDomainChanges(idempot: Boolean = true, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: => Boolean) {
-    new Constraint(this.store, "filterWhenDomainChanges on  " + this) {
+  def filterWhenDomainChanges(idempot: Boolean = true, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: => Boolean)(implicit constraint: Constraint) {
+    new SubConstraint(constraint, this.store, "filterWhenDomainChanges on  " + this) {
       idempotent = idempot
       priorityL2 = priority
 
@@ -264,8 +264,8 @@ abstract class CPIntVar extends CPVar with IntVarLike {
    * @param priority
    * @param filter Filters. Should return true when there will never be more filtering to do: the filter will be deactivated
    */
-  def filterWhenBoundsChange(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: => Boolean) {
-    new Constraint(this.store, "filterWhenBoundsChange on  " + this) {
+  def filterWhenBoundsChange(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: => Boolean)(implicit constraint: Constraint) {
+    new SubConstraint(constraint, this.store, "filterWhenBoundsChange on  " + this) {
       idempotent = idempot
       priorityL2 = priority
 
@@ -280,8 +280,8 @@ abstract class CPIntVar extends CPVar with IntVarLike {
    * @param priority
    * @param filter Filters. Should return true when there will never be more filtering to do: the filter will be deactivated
    */
-  def filterWhenBind(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2-2)(filter: => Boolean) {
-    new Constraint(this.store, "filterWhenBind on  " + this) {
+  def filterWhenBind(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2-2)(filter: => Boolean)(implicit constraint: Constraint) {
+    new SubConstraint(constraint, this.store, "filterWhenBind on  " + this) {
       idempotent = idempot
       priorityL2 = priority
 
