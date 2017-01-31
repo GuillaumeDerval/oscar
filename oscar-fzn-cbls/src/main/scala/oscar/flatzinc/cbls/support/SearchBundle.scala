@@ -19,26 +19,19 @@
 package oscar.flatzinc.cbls.support
 
 import oscar.cbls.core.computation.CBLSIntVar
-import oscar.cbls.core.computation.CBLSIntConst
-import oscar.cbls.core.computation.CBLSSetVar
-import oscar.cbls.core.constraint.{ConstraintSystem, Constraint}
+import oscar.cbls.core.constraint.{Constraint, ConstraintSystem}
 import oscar.cbls.lib.invariant.logic._
-import oscar.cbls.lib.invariant.minmax._
-import oscar.cbls.core.computation.Store
 import oscar.cbls.core.objective.{Objective => CBLSObjective}
-import oscar.cbls.search.SearchEngine
-import oscar.flatzinc.Log
 import oscar.flatzinc.model.{Domain, DomainRange, DomainSet, Objective => FZObjective}
 import oscar.flatzinc.cbls.FZCBLSModel
-import oscar.cbls.core.computation.Variable
-import oscar.cbls.lib.invariant.set.Inter
 import oscar.cbls.core.computation.IntValue
-import oscar.cbls.core.computation.SetValue
+import oscar.cbls.lib.search.LinearSelector
+import oscar.util.RandomGenerator
 
 
 
 
-abstract class SearchProcedure extends SearchEngine {
+abstract class SearchProcedure extends LinearSelector{
   
   def run(): Unit
   def selectMinImb[R,S](r: Iterable[R] , s: R => Iterable[S],f: (R,S) => Int, st: ((R,S) => Boolean) = ((r:R, s:S) => true)): (R,S) = {

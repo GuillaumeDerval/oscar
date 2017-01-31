@@ -19,37 +19,30 @@
 package oscar.flatzinc.cbls
 
 import oscar.cbls.core.constraint.ConstraintSystem
-import oscar.cbls.lib.constraint._
-
-import scala.collection.mutable.{ Map => MMap }
-import oscar.cbls.search._
-import oscar.cbls.constraints.core._
+import oscar.cbls.core.constraint.{Constraint => CBLSConstraint}
 import oscar.cbls.core.computation.{Variable => CBLSVariable}
-import oscar.cbls.constraints.lib.basic._
-import oscar.cbls.constraints.lib.global._
 import oscar.cbls.lib.invariant.logic._
 import oscar.cbls.lib.invariant.minmax._
 import oscar.cbls.lib.invariant.numeric._
 import oscar.flatzinc.model._
 import oscar.flatzinc.model.Variable
 import oscar.flatzinc.model.Constraint
+
 import scala.Array.canBuildFrom
 import scala.Array.fallbackCanBuildFrom
 import scala.collection.mutable.{Map => MMap}
 import scala.collection.immutable.SortedMap
 import oscar.flatzinc.NoSuchConstraintException
-import oscar.cbls.modeling.Invariants
-import scala.collection.immutable.TreeSet
-import oscar.flatzinc.cbls.support.CBLSIntVarDom
 import oscar.cbls.core.computation.CBLSIntConst
 import oscar.cbls.core.computation.CBLSSetConst
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.IntValue
 import oscar.cbls.core.computation.CBLSIntVar
+import oscar.cbls.lib.constraint._
+
 import scala.collection.immutable.SortedSet
 import oscar.flatzinc.cbls.support.Weight
 import oscar.flatzinc.cbls.support.EnsureDomain
-import oscar.cbls.core.computation.IdentityInt
 import oscar.cbls.lib.invariant.numeric.Step
 
 

@@ -17,7 +17,7 @@
   *
   **/
 
-package oscar.cbls.constraints.lib.global
+package oscar.cbls.lib.constraint
 
 import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.Constraint

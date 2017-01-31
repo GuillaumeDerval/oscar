@@ -18,38 +18,26 @@
  */
 package oscar.flatzinc.cbls2
 
-import scala.util.Random
-import scala.collection.mutable.{ Map => MMap}
-import scala.language.implicitConversions
-import oscar.cbls.search._
-import oscar.cbls.objective.{ Objective => CBLSObjective }
-import oscar.cbls.constraints.core._
-import oscar.cbls.constraints.lib.basic._
-import oscar.cbls.constraints.lib.global._
-import oscar.cbls.invariants.lib.logic._
-import oscar.cbls.invariants.lib.minmax._
-import oscar.cbls.invariants.core.computation._
-import oscar.cbls.invariants.lib.numeric._
-import oscar.flatzinc.Options
-import oscar.flatzinc.model._
-import oscar.flatzinc.model.Constraint
-import oscar.flatzinc.model.Variable
-import oscar.flatzinc.cbls2.support._
-import oscar.cbls.invariants.lib.numeric.Sum2
-import oscar.flatzinc.transfo.FZModelTransfo
-import java.io.PrintWriter
-import oscar.flatzinc.parser.FZParser
-import oscar.util.RandomGenerator
-import oscar.flatzinc.NoSuchConstraintException
-import oscar.cbls.objective.IntVarObjective
-import oscar.flatzinc.Log
-import oscar.flatzinc.cp.FZCPModel
+import oscar.cbls.core.computation._
+import oscar.cbls.core.constraint._
+import oscar.cbls.core.objective.{Objective => CBLSObjective}
+import oscar.cbls.lib.constraint.{GE, LE}
+import oscar.cbls.lib.invariant.minmax.ArgMax
+import oscar.cbls.lib.search.LinearSelector
+import oscar.cbls.lib.search.neighborhoods.{AssignNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
+import oscar.cbls.util.StopWatch
+import oscar.flatzinc.{Log, NoSuchConstraintException, Options}
 import oscar.flatzinc.cbls.FZCBLSConstraintPoster
-import oscar.flatzinc.cbls.support.CBLSIntVarDom
-import oscar.flatzinc.cbls.support.Neighbourhood
-import oscar.flatzinc.cbls.support.MaxViolating
-import oscar.flatzinc.cbls.support.MaxViolatingSwap
-import oscar.flatzinc.cbls.support.CBLSIntConstDom
+import oscar.flatzinc.cbls.support.{CBLSIntConstDom, CBLSIntVarDom, MaxViolating, MaxViolatingSwap, Neighbourhood}
+import oscar.flatzinc.cbls2.support._
+import oscar.flatzinc.cp.FZCPModel
+import oscar.flatzinc.model.{Constraint, Variable, _}
+import oscar.flatzinc.parser.FZParser
+import oscar.flatzinc.transfo.FZModelTransfo
+
+import scala.collection.mutable.{Map => MMap}
+import scala.language.implicitConversions
+import scala.util.Random
 
 
 
@@ -254,7 +242,7 @@ class Heuristic(model: FZProblem){
   }
 }
 
-class FZCBLSSolver extends SearchEngine with StopWatch {
+class FZCBLSSolver extends LinearSelector with StopWatch {
 
   
   def solve(opts: Options) {

@@ -321,7 +321,8 @@ class Model(val log: Log, val acceptAnyCstr: Boolean) {
     "nvalue_int" -> ((varList,ann) => nvalue_int(getIntVar(varList(0)),getIntVarArray(varList(1)),ann)),
     "bin_packing_load" -> ((varList,ann) => bin_packing_load(getIntVarArray(varList(0)),getIntVarArray(varList(1)),getIntVarArray(varList(2)),ann)),
     "table_int" -> ((varList,ann) => table_int(getIntVarArray(varList(0)),getIntVarArray(varList(1)),ann)),
-    "table_bool" -> ((varList,ann) => table_bool(getBoolVarArray(varList(0)),getBoolVarArray(varList(1)),ann))
+    "table_bool" -> ((varList,ann) => table_bool(getBoolVarArray(varList(0)),getBoolVarArray(varList(1)),ann)),
+    "value_precede_chain_jumping" -> ((varList,ann) => value_precede_chain_jumping(getIntVarArray(varList(0)),ann)) ///Assumes full domain for second argument
 
   )
   

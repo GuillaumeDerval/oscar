@@ -19,16 +19,18 @@
 package oscar.flatzinc.cbls.support
 
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.core.constraint.{Constraint, ConstraintSystem}
 import oscar.cbls.lib.constraint.{BelongsTo, EQ, GE, LE}
 import oscar.flatzinc.model.Domain
 import oscar.flatzinc.model.DomainRange
 import oscar.flatzinc.model.DomainSet
 import oscar.cbls.core.computation.CBLSIntVar
+
 import scala.util.Random
 import oscar.flatzinc.model.DomainRange
 import oscar.cbls.core.computation.IntValue
 import oscar.cbls.core.computation.CBLSIntConst
+
 import scala.collection.immutable.SortedSet
 import oscar.cbls.core.computation.CBLSSetConst
 import oscar.cbls.lib.invariant.numeric.Prod2

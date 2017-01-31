@@ -66,6 +66,7 @@ class FZProblem {
     search.variable = Some(obj)
     search.setHeuristic(anns)
   }
+
   
 //  def addSearch(s: Array[Variable],vrh: VariableHeuristic.Value,vh: ValueHeuristic.Value) {
 //    //println("search "+vrh+" "+vh+ " variables:"+s.mkString(","))

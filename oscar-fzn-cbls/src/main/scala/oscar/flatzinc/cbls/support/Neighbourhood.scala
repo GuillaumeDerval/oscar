@@ -17,19 +17,14 @@
  * @author Jean-Noël Monette
  */
 package oscar.flatzinc.cbls.support
-import oscar.cbls.core.computation.CBLSIntVar
+import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.{Objective => CBLSObjective}
 import oscar.cbls.lib.invariant.logic.Cluster
 import oscar.cbls.lib.invariant.set.Cardinality
-import oscar.cbls.core.objective.{Objective => CBLSObjective}
-import oscar.cbls.search.SearchEngine
+import oscar.cbls.lib.search.LinearSelector
 
 import scala.collection.mutable.{Map => MMap}
-import oscar.cbls.core.computation.IntValue
-import java.util.Arrays
-
-import oscar.util.RandomGenerator
 
 
 
@@ -78,7 +73,7 @@ case class BeforeMove(m: Move,act:()=>Unit) extends Move(m.value) {
 
 
 //Extends SearchEngine to access the selectors
-abstract class Neighbourhood(val searchVariables: Array[CBLSIntVarDom]) extends SearchEngine {
+abstract class Neighbourhood(val searchVariables: Array[CBLSIntVarDom]) extends LinearSelector {
   //var minObjective: Int = Int.MaxValue;
   def getVariables(): Array[CBLSIntVarDom] = searchVariables
   

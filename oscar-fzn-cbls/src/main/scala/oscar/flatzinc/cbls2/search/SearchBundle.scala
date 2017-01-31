@@ -18,25 +18,12 @@
  */
 package oscar.flatzinc.cbls2.support
 
-import oscar.cbls.invariants.core.computation.CBLSIntVar
-import oscar.cbls.invariants.core.computation.CBLSIntConst
-import oscar.cbls.invariants.core.computation.CBLSSetVar
-import oscar.cbls.invariants.lib.logic._
-import oscar.cbls.invariants.lib.minmax._
-import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.constraints.core.ConstraintSystem
-import oscar.cbls.objective.{Objective => CBLSObjective}
-import oscar.cbls.search.SearchEngine
-import oscar.flatzinc.Log
-import oscar.flatzinc.model.Domain
-import oscar.flatzinc.model.DomainRange
-import oscar.flatzinc.model.DomainSet
+import oscar.cbls.core.computation._
+import oscar.cbls.core.constraint._
+import oscar.cbls.core.objective.{Objective => CBLSObjective}
+import oscar.cbls.lib.invariant.logic.SelectLEHeapHeap
 import oscar.flatzinc.cbls2.FZCBLSModel
-import oscar.cbls.constraints.core.Constraint
-import oscar.cbls.invariants.core.computation.Variable
-import oscar.cbls.invariants.lib.set.Inter
-import oscar.cbls.invariants.core.computation.IntValue
-import oscar.cbls.invariants.core.computation.SetValue
+import oscar.cbls.lib.search.LinearSelector
 import oscar.flatzinc.cbls.support.CBLSIntVarDom
 import oscar.flatzinc.cbls.support.Neighbourhood
 import oscar.flatzinc.cbls.support.CBLSIntConstDom
@@ -46,7 +33,7 @@ import oscar.flatzinc.model.Objective
 
 
 
-abstract class SearchProcedure extends SearchEngine {
+abstract class SearchProcedure extends LinearSelector {
   
   def run(): Unit
   def selectMinImb[R,S](r: Iterable[R] , s: R => Iterable[S],f: (R,S) => Int, st: ((R,S) => Boolean) = ((r:R, s:S) => true)): (R,S) = {
