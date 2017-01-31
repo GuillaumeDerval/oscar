@@ -53,7 +53,7 @@ object OscarBuild extends Build {
     val leadoperations = "AWS S3 Release Repository" at "http://maven.leadoperations.co/release"
     val cogcomp = "Cognitive Computation Group" at "http://cogcomp.cs.illinois.edu/m2repo/"
     val ingi = "INGI Snapshots" at "http://artifactory.info.ucl.ac.be/artifactory/libs-snapshot-local/"
-
+    val mvnrepository = "Maven Repository" at "https://mvnrepository.com/artifact/"
   }
 
   object Dependencies {
@@ -75,6 +75,7 @@ object OscarBuild extends Build {
     val swingxWs = "org.swinglabs" % "swingx-ws" % "1.0"
     val xmlApisExt = "xml-apis" % "xml-apis-ext" % "latest.milestone"
     val xcsp3 = "xcsp3"  % "xcsp3_2.11" % "1.0.0-SNAPSHOT"
+    val jxmapviewer2 = "org.jxmapviewer" % "jxmapviewer2" % "2.2"
     // Test libraries
     val junit = "junit" % "junit" % "latest.milestone" % Test
     val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.11.+" % Test
@@ -125,7 +126,8 @@ object OscarBuild extends Build {
       commonSettings ++
         packAutoSettings ++
         Seq(
-          libraryDependencies ++= testDeps :+ scalaSwing,
+          resolvers ++= Seq(mvnrepository),
+          libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2,
           packGenerateWindowsBatFile := false
         ),
     dependencies = Seq(oscarVisual)
