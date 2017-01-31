@@ -1,14 +1,10 @@
 package oscar.cbls.constraints.lib.global
 
-import oscar.cbls.invariants.core.computation._
-import oscar.cbls.constraints.core.Constraint
-import oscar.cbls.invariants.core.propagation.Checker
-
-import scala.collection.mutable.LinkedList
-import scala.collection.mutable.LinkedListLike
-import oscar.cbls.invariants.core.algo.dll.DoublyLinkedList
-import oscar.cbls.invariants.lib.minmax.MaxArray
-import oscar.cbls.invariants.lib.numeric.MinusOffsetPos
+import oscar.cbls.core.computation._
+import oscar.cbls.core.constraint.Constraint
+import oscar.cbls.core.propagation.Checker
+import oscar.cbls.lib.invariant.minmax.MaxArray
+import oscar.cbls.lib.invariant.numeric.MinusOffsetPos
 
 case class CumulativeSparse(start: Array[IntValue], duration: Array[IntValue], amount:Array[IntValue], limit:IntValue) extends Invariant with Constraint with IntNotificationTarget{
   

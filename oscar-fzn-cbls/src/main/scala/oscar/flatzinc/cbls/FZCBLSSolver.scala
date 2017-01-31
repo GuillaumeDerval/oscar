@@ -340,17 +340,22 @@ class FZCBLSSolver extends SearchEngine with StopWatch {
     }
 
     //
-    //added this loop to remove invariants targeting a bound variable.
+    /*//added this loop to remove invariants targeting a bound variable.
     //TODO: Actually, one might want to put this as part of the invariant discovery...
     //Moved this line after invariant discovery to avoid problem in Nonogram but then it is maybe useless? What was the initial purpose?
     //But this creates problems for the nonogram, where it creates another invariant that targets the input of an element and makes an out-of-bound exception
+    */
+    //If a variable has a domiain of size 1, then do not define it with an invariant.
+    //This should be redundant as FZModelTransfo.findInvariants does not consider bound variables.
     for(c <- model.constraints ){
-      if(c.definedVar.isDefined && c.definedVar.get.isBound)c.unsetDefinedVar(c.definedVar.get)
+      if(c.definedVar.isDefined && c.definedVar.get.isBound)
+        c.unsetDefinedVar(c.definedVar.get)
     }
 
     if(opts.is("no-post-inv")){
       for(c <- model.constraints ){
-        if(c.definedVar.isDefined)c.unsetDefinedVar(c.definedVar.get)
+        if(c.definedVar.isDefined)
+          c.unsetDefinedVar(c.definedVar.get)
       }
     }
 

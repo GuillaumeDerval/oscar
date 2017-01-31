@@ -24,7 +24,7 @@ package oscar.cbls.lib.constraint
 import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.Constraint
 import oscar.cbls.core.propagation.Checker
-import oscar.cbls.lib.invariant.logic.Cluster
+import oscar.cbls.lib.invariant.logic.{Cluster, IntElement}
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.modeling.Algebra._
 

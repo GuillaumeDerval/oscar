@@ -1,33 +1,31 @@
 package oscar.examples.cbls
 
-import oscar.cbls.constraints.core.ConstraintSystem
-import oscar.cbls.constraints.lib.global.{MultiKnapsack, MultiKnapsackLoad}
-import oscar.cbls.invariants.core.computation.{CBLSIntVar, IntValue, Store}
+import oscar.cbls.core.computation.{CBLSIntVar, IntValue, Store}
+import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.invariants.lib.logic.BinPackingLoad
-import oscar.cbls.invariants.lib.numeric.Sum2
-import oscar.cbls.search.{SearchEngine, StopWatch}
+import oscar.cbls.lib.invariant.numeric.Sum2
+import oscar.cbls.modeling.CBLSModel
+import oscar.cbls.util.StopWatch
+
 
 /**
   * Created by gustavbjordal on 27/05/16.
   */
-object MultiKnapsackTest  extends SearchEngine with StopWatch {
+object MultiKnapsackTest  extends CBLSModel with StopWatch {
 
     def main(args: Array[String]) {
 
 
       // model
-      val m: Store = new Store(false, None, true)
-
       val binArray = Array(1,1,2,2,3,3)
       val sizeArray = Array(1,2,1,2,1,2)
       val binSizes = Array(3,3,3)
 
-      val inBinVar:Array[IntValue] = binArray.map(CBLSIntVar(m,_,1 to 3, "item"))
-      val sizeVar:Array[IntValue] = sizeArray.map(CBLSIntVar(m,_,1 to 5, "size"))
-      val binSizeVar:Array[CBLSIntVar] = binSizes.map(CBLSIntVar(m,_,1 to 20, "bin_size"))
+      val inBinVar:Array[IntValue] = binArray.map(CBLSIntVar(_,1 to 3, "item"))
+      val sizeVar:Array[IntValue] = sizeArray.map(CBLSIntVar(_,1 to 5, "size"))
+      val binSizeVar:Array[CBLSIntVar] = binSizes.map(CBLSIntVar(_,1 to 20, "bin_size"))
 
 
-      val c = ConstraintSystem(m)
 
       val bin_pack = BinPackingLoad(inBinVar.map(Sum2(_,-1)),sizeArray)
       bin_pack.Defines(binSizeVar)
@@ -39,7 +37,7 @@ object MultiKnapsackTest  extends SearchEngine with StopWatch {
 
       c.close()
       // closing model
-      m.close()
+      s.close()
 
       def printViolation() = {
         for(b <- binSizeVar)

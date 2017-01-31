@@ -22,9 +22,13 @@ import java.awt.geom.Ellipse2D
 import java.awt.geom.Line2D.Double
 import java.awt.{BasicStroke, Color, Graphics2D, Point, Rectangle, RenderingHints}
 
-import org.jxmapviewer.painter.Painter
-import org.jxmapviewer.viewer.GeoPosition
-import org.jxmapviewer.{JXMapKit, JXMapViewer}
+import org.jdesktop.swingx.{JXMapKit, JXMapViewer}
+import org.jdesktop.swingx.mapviewer.GeoPosition
+import org.jdesktop.swingx.painter.Painter
+
+//import org.jxmapviewer.painter.Painter
+//import org.jxmapviewer.viewer.GeoPosition
+//import org.jxmapviewer.{JXMapKit, JXMapViewer}
 import oscar.cbls.business.routing.model.{PDP, VRP}
 import oscar.examples.cbls.routing.visual.ColorGenerator
 import oscar.visual.VisualDrawing

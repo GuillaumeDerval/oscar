@@ -74,7 +74,11 @@ object FZFindDefined {
         }
       }
       if(v.isDefined){
-        v.definingConstraint.get.getVariables().foreach(vv => if(!visited.contains(vv) && !vv.isBound) {visited.add(vv); front.enqueue((vv,v.definingConstraint.get,Objective.SATISFY))})
+        v.definingConstraint.get.getVariables().foreach(vv =>
+          if(!visited.contains(vv) && !vv.isBound) {
+            visited.add(vv)
+            front.enqueue((vv,v.definingConstraint.get,Objective.SATISFY))
+          })
       }
       if(front.isEmpty && !front2.isEmpty){
         first = false
@@ -124,6 +128,7 @@ object FZFindDefined {
       step > 0 || c.isInstanceOf[SimpleDefiningConstraint]
     }
     //log(freeVariables.toString)
+
     //For all free variables
     for (v <- freeVariables.sortBy((x:Variable) => -x.domainSize)){//With((x: Variable, y: Variable) => x.max.toLong - x.min.toLong > y.max.toLong - y.min.toLong)) {
       //println(v)

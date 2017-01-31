@@ -19,13 +19,18 @@
   */
 package oscar.cbls.constraints.lib.global
 
-import oscar.cbls.invariants.core.computation._
+import oscar.cbls.core.computation._
+import oscar.cbls.core.constraint.Constraint
+import oscar.cbls.core.propagation.Checker
+import oscar.cbls.lib.invariant.numeric.{MinusOffsetPos, Prod2, Sum}
+
+/*import oscar.cbls.invariants.core.computation._
 import oscar.cbls.constraints.core.Constraint
 import oscar.cbls.invariants.core.algo.quick.QList
 import oscar.cbls.invariants.core.propagation.Checker
 import oscar.cbls.invariants.lib.minmax.MaxArray
 import oscar.cbls.invariants.lib.numeric.{MinusOffsetPos, Prod2, Sum}
-
+*/
 
 /**
   * Constrains the a resource usage to be lower than some limit.

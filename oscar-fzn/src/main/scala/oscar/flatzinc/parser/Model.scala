@@ -340,7 +340,7 @@ class Model(val log: Log, val acceptAnyCstr: Boolean) {
   
   
   def makeConstraint(c: String, args:List[Element], ann:List[Annotation]): Constraint = {
-    cdico.getOrElse(c, ((varList: List[Element], ann:List[Annotation]) =>
+    cdico.getOrElse(c, (varList: List[Element], ann:List[Annotation]) =>
       try{
         val cl = Class.forName("oscar.flatzinc.model."+c)
         Console.err.println("MISSING CONSTRAINT: "+c)
@@ -352,7 +352,7 @@ class Model(val log: Log, val acceptAnyCstr: Boolean) {
           else 
             throw new NoSuchConstraintException(c,"Intermediate Representation");
       }
-    ))(args,ann)
+    )(args,ann)
   
   }
   

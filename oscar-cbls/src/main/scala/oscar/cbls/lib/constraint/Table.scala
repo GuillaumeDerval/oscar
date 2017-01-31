@@ -19,14 +19,14 @@
 
 package oscar.cbls.constraints.lib.global
 
-import oscar.cbls.constraints.core.Constraint
-import oscar.cbls.constraints.lib.basic.EQ
-import oscar.cbls.invariants.core.computation.{Value, _}
-import oscar.cbls.invariants.core.propagation.Checker
-import oscar.cbls.invariants.lib.logic.{IntElement, IntElementNoVar}
-import oscar.cbls.invariants.lib.minmax.{ArgMin, MinArray}
-import oscar.cbls.invariants.lib.numeric._
-import oscar.cbls.invariants.lib.set.TakeAny
+import oscar.cbls.core.computation._
+import oscar.cbls.core.constraint.Constraint
+import oscar.cbls.core.propagation.Checker
+import oscar.cbls.lib.invariant.logic.{IntElement, IntElementNoVar}
+import oscar.cbls.lib.invariant.minmax.ArgMin
+import oscar.cbls.lib.invariant.numeric.{Dist, Step}
+import oscar.cbls.lib.invariant.set.TakeAny
+
 
 /**
   * Implementation of the table constraint. For each row, the violation of the row is the
