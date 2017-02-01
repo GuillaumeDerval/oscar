@@ -16,10 +16,10 @@
 package oscar.examples.modeling
 
 import oscar.modeling.solvers.SolverApp
-import oscar.modeling.solvers.lp.LPSolving
+import oscar.modeling.solvers.mip.MIPSolving
 import oscar.modeling.vars.FloatVar
 
-object DemoLP extends SolverApp[Unit] with LPSolving {
+object DemoLP extends SolverApp[Unit] with MIPSolving {
 
   val x0 = FloatVar(0, 40, "x0")
   val x1 = FloatVar(0, 1000, "x1")

@@ -65,7 +65,8 @@ object OscarBuild extends Build {
 
     // Regular libraries
     val antlr4Runtime = "org.antlr" % "antlr4-runtime" % "latest.milestone"
-    val glpk = "org.gnu.glpk" % "glpk-java" % "1.0.16"
+    val glpk = "org.gnu.glpk" % "glpk-java" % "1.7.0"
+    val linopt = "de.xypron.linopt" % "linopt" % "1.17"
     val gurobi = "gurobi" % "gurobi" % "5.0.1"
     val lpsolve = "lpsolve" % "lpsolve" % "5.5.2"
     val jcommon = "org.jfree" % "jcommon" % "latest.milestone"
@@ -164,9 +165,12 @@ object OscarBuild extends Build {
     id = "oscar-modeling",
     base = file("oscar-modeling"),
     settings =
-      commonSettings ++ Seq(libraryDependencies ++= testDeps :+ graphStreamCore :+ graphStreamAlgo
-        :+ graphStreamUI :+ scallop :+ akkaActor :+ akkaRemote :+ chill :+ spores :+ scalaSwing),
-    dependencies = Seq(oscarCp, oscarLinprog)
+      commonSettings ++
+        Seq(
+          resolvers ++= Seq(xypron),
+          libraryDependencies ++= testDeps :+ graphStreamCore :+ graphStreamAlgo :+ graphStreamUI :+ scallop
+                               :+ akkaActor :+ akkaRemote :+ chill :+ spores :+ scalaSwing :+ linopt :+ glpk),
+    dependencies = Seq(oscarCp)
   )
 
   lazy val oscarCPXcsp3 = Project(
