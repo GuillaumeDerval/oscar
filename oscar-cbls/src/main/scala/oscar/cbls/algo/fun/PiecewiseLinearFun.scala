@@ -206,18 +206,8 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
   }
 
   def shiftPivots(pivotList:List[Pivot],delta:Int):List[Pivot] = {
-    val f2 = LinearTransform(-delta,false)
-    val f3 = LinearTransform(delta,false)
-    pivotList.map((p:Pivot) => new Pivot(p.fromValue+delta,if(p.f.minus) f3(p.f) else f2(p.f)))
+    pivotList.map(_.shiftOnX(delta))
   }
-
-  def shiftPivot(p:Pivot,delta:Int):Pivot = {
-    new Pivot(p.fromValue+delta,if(p.f.minus) f3(p.f) else f2(p.f))
-  }
-
-
-
-
 
   def pivotsBetween(startPositionIncluded:Int,endPosition:Int,transform:RedBlackTreeMap[Pivot]):List[Pivot] = {
     transform.biggestLowerOrEqual(endPosition) match {
@@ -448,4 +438,15 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
 
 class Pivot(val fromValue:Int, val f: LinearTransform){
   override def toString = "Pivot(from:" + fromValue + " " + f + " f(from)=" + f(fromValue) +")"
+
+  def shiftOnX(delta:Int):Pivot =
+    new Pivot(fromValue+delta,f.shiftOnX(delta))
+
+  def flip(endX:Int):Pivot = {
+    if(f.minus){
+      new Pivot(fromValue,LinearTransform(f(endX) - fromValue,false))
+    }else{
+      new Pivot(fromValue,LinearTransform(fromValue + f(endX),true))
+    }
+  }
 }

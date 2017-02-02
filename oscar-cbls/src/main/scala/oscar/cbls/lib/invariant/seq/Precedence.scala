@@ -344,7 +344,7 @@ class Precedence(seq:ChangingSeqValue,
 
                 val endValueOfPrecedence = precedencesArray(precedenceStartedAtValue)._2
 
-                val positionOfEndValue = cachedPositionFinderAtCheckpoint.positionOfAnyOccurrence(prev.newValue,endValueOfPrecedence).head
+                val positionOfEndValue = cachedPositionFinderAtCheckpoint.positionOfAnyOccurrence(prev.newValue,endValueOfPrecedence).get
                 if (moveDownwards && positionOfEndValue > after && positionOfEndValue < fromIncluded) {
                   saveViolationForCheckpoint(precedenceStartedAtValue)
                   isPrecedenceViolated(precedenceStartedAtValue) = false
@@ -361,7 +361,8 @@ class Precedence(seq:ChangingSeqValue,
                 //it was not violated, thus is can only get violated is the segment moved upwards
                 // of if the other value is also in the segment and there is a flip
                 val endValueOfPrecedence = precedencesArray(precedenceStartedAtValue)._2
-                val positionOfEndValue = cachedPositionFinderAtCheckpoint.positionOfAnyOccurrence(prev.newValue,endValueOfPrecedence).head
+                //TODO: what if the node was not in the seuqence?!!!!!!!!!!!!!!!!!!!!!!!!! ERROR
+                val positionOfEndValue = cachedPositionFinderAtCheckpoint.positionOfAnyOccurrence(prev.newValue,endValueOfPrecedence).get
                 if (moveUpwards && positionOfEndValue <= after && positionOfEndValue > toIncluded) {
                   saveViolationForCheckpoint(precedenceStartedAtValue)
                   isPrecedenceViolated(precedenceStartedAtValue) = true
@@ -384,7 +385,7 @@ class Precedence(seq:ChangingSeqValue,
 
                 if (moveUpwards) {
                   val startValueOfPrecedence = precedencesArray(precedenceEndingAtValue)._1
-                  val positionOfStartValue = cachedPositionFinderAtCheckpoint.positionOfAnyOccurrence(prev.newValue,startValueOfPrecedence).head
+                  val positionOfStartValue = cachedPositionFinderAtCheckpoint.positionOfAnyOccurrence(prev.newValue,startValueOfPrecedence).get
                   if (positionOfStartValue <= after && positionOfStartValue > toIncluded) {
                     saveViolationForCheckpoint(precedenceEndingAtValue)
                     isPrecedenceViolated(precedenceEndingAtValue) = false
@@ -398,7 +399,8 @@ class Precedence(seq:ChangingSeqValue,
 
                 if (moveDownwards) {
                   val startValueOfPrecedence = precedencesArray(precedenceEndingAtValue)._1
-                  val positionOfStartValue = cachedPositionFinderAtCheckpoint.positionOfAnyOccurrence(prev.newValue,startValueOfPrecedence).head
+                  //TODO: what if the node was not in the sequence!!!!!! ERROR
+                  val positionOfStartValue = cachedPositionFinderAtCheckpoint.positionOfAnyOccurrence(prev.newValue,startValueOfPrecedence).get
                   if (after < positionOfStartValue && positionOfStartValue < fromIncluded) {
                     saveViolationForCheckpoint(precedenceEndingAtValue)
                     isPrecedenceViolated(precedenceEndingAtValue) = true
