@@ -26,6 +26,9 @@ import scala.concurrent.Await
 /**
   * A CPProgram that can distribute works among a cluster
   *
+  * This class takes care of most things. If you want to use a more low-level solver (for exemple to use LNS)
+  * use a CPSolver inside your ModelDeclarator.
+  *
   * @param modelDeclaration
   * @tparam RetVal
   */

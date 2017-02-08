@@ -25,6 +25,11 @@ class ModelDeclaration extends Serializable with ModelDeclarationInterface {
   override def getCurrentModel = current_model.value
 
   /**
+   * Set the current model
+   */
+  override def setCurrentModel(model: Model) = current_model.value = model
+
+  /**
     * Apply the function func, which uses Var declared in this ModelDeclaration,
     * on the model (inheriting for this object too), temporarily changing the current model.
     *

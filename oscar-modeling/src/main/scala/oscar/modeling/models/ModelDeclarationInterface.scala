@@ -15,6 +15,11 @@ trait ModelDeclarationInterface {
   def getCurrentModel: Model
 
   /**
+   * Set the current model
+   */
+  def setCurrentModel(model: Model): Unit
+
+  /**
     * Apply the function func, which uses Var declared in this ModelDeclaration,
     * on the model (inheriting for this object too), temporarily changing the current model.
     *

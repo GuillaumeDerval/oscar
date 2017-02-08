@@ -1,10 +1,11 @@
 package oscar.examples.modeling
 
 import scala.io.Source
-
 import oscar.modeling.algebra.integer.Sum
 import oscar.modeling.constraints.{AllDifferent, StrongPropagation}
-import oscar.modeling.solvers.cp.{Branchings, CPApp}
+import oscar.modeling.models.ModelDeclaration
+import oscar.modeling.models.cp.CPModel
+import oscar.modeling.solvers.cp.{Branchings, CPApp, CPSolver}
 import oscar.modeling.vars.IntVar
 
 /**
@@ -19,7 +20,7 @@ import oscar.modeling.vars.IntVar
  * @author Pierre Schaus pschaus@gmail.com
  * @author Guillaume Derval guillaume.derval@uclouvain.be
  */
-object QuadraticAssignmentLNS extends CPApp[Unit] with App {
+object QuadraticAssignmentLNS extends ModelDeclaration with App {
 
   // Read the data
   var lines = Source.fromFile("data/qap.txt").getLines.toList.filter(_ != "")
@@ -45,16 +46,18 @@ object QuadraticAssignmentLNS extends CPApp[Unit] with App {
 
   minimize(Sum(N, N)((i, j) => d(x(i))(x(j)) * w(i)(j)))
 
-  setSearch(Branchings.binaryFirstFail(x))
+  val solver = CPSolver[Unit]().use()
+
+  solver.setSearch(Branchings.binaryFirstFail(x))
 
   var lastSol: Array[Int] = _
-  onSolution {
+  solver.onSolution {
     lastSol = x.map(_.min)
     println(lastSol.mkString(","))
   }
 
   // Search for an initial solution
-  solve(nSols=1)
+  solver.solve(nSols=1)
 
   val rand = new scala.util.Random(0)
   var limit = 1000 // set the timeout to 1 sec
@@ -62,15 +65,9 @@ object QuadraticAssignmentLNS extends CPApp[Unit] with App {
   for (r <- 1 to 200) {
     // relax randomly 50% of the variables and run again
 
-    val stat = solveSubjectTo(maxTime = limit) {
+    val stat = solver.solveSubjectTo(maxTime = limit) {
       add(N.filter(i => rand.nextInt(100) < 50).map(i => x(i) === lastSol(x(i))).map(_.toConstraint))
     }
-
-    // This is equivalent to
-    //val stat = fork {
-    //  add(N.filter(i => rand.nextInt(100) < 50).map(i => x(i) === lastSol(x(i))).map(_.toConstraint))
-    //  solve(maxTime=limit)
-    //}
 
     // adapt the time limit for next run *2 is previous run reached the limit /2 otherwise
     limit = if (stat._1.completed) limit / 2 else limit * 2
