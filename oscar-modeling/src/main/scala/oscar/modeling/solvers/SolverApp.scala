@@ -14,9 +14,10 @@ import scala.spores._
 /**
   * The base app of OscaR-Modeling. Can be linked to any type of solvers with modules, mixed-in using traits.
   */
-class SolverApp[RetVal](modelDeclaration: ModelDeclaration = new ModelDeclaration()) extends SolveHolder[RetVal](modelDeclaration) with App with SolverAppModulable with ModelDeclarationProxy {
+class SolverApp[RetVal] extends SolveHolder[RetVal] with App with SolverAppModulable with ModelDeclarationProxy {
   val app = this
-  implicit val md: ModelDeclaration = modelDeclaration
+  val modelDeclaration: ModelDeclaration = new ModelDeclaration()
+  implicit lazy val md = modelDeclaration
 
   // Custom configuration per app
   // Simply override config:
@@ -46,6 +47,8 @@ class SolverApp[RetVal](modelDeclaration: ModelDeclaration = new ModelDeclaratio
   solverAppModule.onSelect()
 
   def solve(): List[RetVal] = solverAppModule.solve()
+
+  override protected val solveRedirectTo: Any = modelDeclaration
 }
 
 

@@ -114,4 +114,12 @@ abstract class CPApp[RetVal](modeld: ModelDeclaration with DecomposedCPSolve[Ret
       super.solveLocally(model, nSols, maxTime)
     }
   }
+
+  def solveSubjectTo(nSols: Int = config.nSols.get.get, maxTime: Int = config.timeout.get.get)(func: => Unit): (SearchStatistics, List[RetVal]) = {
+    fork {
+      func
+      solve(nSols, maxTime)
+    }
+  }
+
 }

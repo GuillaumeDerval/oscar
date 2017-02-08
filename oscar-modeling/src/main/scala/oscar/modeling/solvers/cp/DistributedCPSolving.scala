@@ -14,7 +14,7 @@ import scala.spores.NullarySpore
   * A trait for SolverApp that indicates that the model is solvable using a distributed CP solver
   */
 trait DistributedCPSolving extends SolverAppModulable with CPSearchHolder with CPDecompositionHolder {
-  override def getModules: List[SolverAppModule] = new DistributedCPAppModule(this.app, this.md) :: new DistributedCPAppClientModule() :: super.getModules
+  override def getModules: List[SolverAppModule] = new DistributedCPAppModule(this.app) :: new DistributedCPAppClientModule() :: super.getModules
 }
 
 class DistributedCPAppClientModule() extends SolverAppModule {
@@ -36,9 +36,8 @@ class DistributedCPAppClientModule() extends SolverAppModule {
 /**
   * Module for SolverApp that solves models using a distributed CP solver (using EPS)
   * @param app the SolverApp
-  * @param modelDeclaration the ModelDeclaration linked to the SolverApp
   */
-class DistributedCPAppModule(app: SolverApp[_], modelDeclaration: ModelDeclaration) extends SolverAppModule {
+class DistributedCPAppModule(app: SolverApp[_]) extends SolverAppModule {
   class DistributedCPSubcommand extends Subcommand("distributed-cp") {
     descr("Solves this model using a distributed CP solver. Needs one or multiple client, that can be started with the 'distributed-cp-client' subcommand.")
     val timeout = opt[Int](name="timeout", short='t', descr = "Timeout for the *solving*, in milliseconds. 0 (default) means no timeout", default = Some(0))
@@ -58,7 +57,7 @@ class DistributedCPAppModule(app: SolverApp[_], modelDeclaration: ModelDeclarati
   override val subcommand = new DistributedCPSubcommand
 
   override def solve[RetVal](): List[RetVal] = {
-    val pg = new CPProgram[RetVal](modelDeclaration)
+    val pg = new CPProgram[RetVal](app.modelDeclaration)
     val onSolution: () => RetVal = app.asInstanceOf[SolveHolder[RetVal]].onSolution
     if(onSolution == null)
       throw new RuntimeException("No onSolution defined in the SolverApp or in the ModelDeclaration")

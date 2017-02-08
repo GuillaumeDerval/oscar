@@ -121,4 +121,22 @@ class ModelDeclaration extends Serializable with ModelDeclarationInterface {
     case m: UninstantiatedModel => current_model.value = operator(m)
     case _ => throw new Exception("Cannot apply an operator on an instantiated model")
   }
+
+  /**
+   * Fork (in the model tree). All the actions made on the model in a fork{} call will be reverted after the call.
+   * Forking on uninstantiated models is thread-safe.
+   * Forking on instantiated model is possible if the particular solver allows it. It is not thread-safe.
+   */
+  override def fork[T](func: => T): T = {
+    current_model.value match {
+      case m: UninstantiatedModel =>
+        val oldModel = current_model.value
+        val ret = func
+        current_model.value = oldModel
+        ret
+      case m: ForkableInstantiatedModel =>
+        m.fork(func)
+      case _ => throw new Exception("This model is instantiated and does not support to create a fork")
+    }
+  }
 }

@@ -49,3 +49,15 @@ abstract class InstantiatedModel(val parent: UninstantiatedModel) extends LeafMo
 
   protected def postObjective(optimisationMethod: OptimisationMethod): Unit
 }
+
+/**
+ * A InstantiatedModel that support forks (action that could be reverted immediately).
+ * It is not mandatory for the fork{} action to be thread-safe.
+ */
+trait ForkableInstantiatedModel extends InstantiatedModel {
+  /**
+   * Fork (in the model tree). All the actions made on the model in a fork{} call will be reverted after the call.
+   * It is not thread-safe.
+   */
+  def fork[T](func: => T): T
+}

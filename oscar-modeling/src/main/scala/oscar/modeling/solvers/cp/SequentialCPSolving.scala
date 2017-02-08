@@ -9,15 +9,14 @@ import oscar.modeling.solvers.{SolveHolder, SolverApp, SolverAppModulable, Solve
   * A trait for SolverApp that indicates that the model is solvable using a sequential CP solver
   */
 trait SequentialCPSolving extends SolverAppModulable with CPSearchHolder {
-  override def getModules: List[SolverAppModule] = new SequentialCPAppModule(this.app, this.md) :: super.getModules
+  override def getModules: List[SolverAppModule] = new SequentialCPAppModule(this.app) :: super.getModules
 }
 
 /**
   * Module for SolverApp that solves models using a sequential CP solver
   * @param app the SolverApp
-  * @param modelDeclaration the ModelDeclaration linked to the SolverApp
   */
-class SequentialCPAppModule(app: SolverApp[_], modelDeclaration: ModelDeclaration) extends SolverAppModule {
+class SequentialCPAppModule(app: SolverApp[_]) extends SolverAppModule {
   class SequentialCPSubcommand extends Subcommand("cp") {
     descr("Solves the model using a CP solver.")
     val timeout = opt[Int](name="timeout", short='t', descr = "Timeout for the *solving*, in milliseconds. 0 (default) means no timeout", default = Some(0))
@@ -26,7 +25,7 @@ class SequentialCPAppModule(app: SolverApp[_], modelDeclaration: ModelDeclaratio
   override val subcommand = new SequentialCPSubcommand
 
   override def solve[RetVal](): List[RetVal] = {
-    val pg = new CPProgram[RetVal](modelDeclaration)
+    val pg = new CPProgram[RetVal](app.modelDeclaration)
     val onSolution: () => RetVal = app.asInstanceOf[SolveHolder[RetVal]].onSolution
     if(onSolution == null)
       throw new RuntimeException("No onSolution defined in the SolverApp or in the ModelDeclaration")
@@ -37,7 +36,7 @@ class SequentialCPAppModule(app: SolverApp[_], modelDeclaration: ModelDeclaratio
     val time = subcommand.timeout()
     pg.onSolution{onSolution()}
     pg.setSearch(search)
-    val result = pg.solveLocally(modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], nSols, time)
+    val result = pg.solveLocally(app.modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel], nSols, time)
     result._2
   }
 }

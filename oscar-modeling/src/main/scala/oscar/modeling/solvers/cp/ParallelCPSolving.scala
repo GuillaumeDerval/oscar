@@ -10,15 +10,14 @@ import oscar.modeling.solvers.{SolveHolder, SolverApp, SolverAppModulable, Solve
   * A trait for SolverApp that indicates that the model is solvable using a parallel CP solver
   */
 trait ParallelCPSolving extends SolverAppModulable with CPSearchHolder with CPDecompositionHolder {
-  override def getModules: List[SolverAppModule] = new ParallelCPAppModule(this.app, this.md) :: super.getModules
+  override def getModules: List[SolverAppModule] = new ParallelCPAppModule(this.app) :: super.getModules
 }
 
 /**
   * Module for SolverApp that solves models using a parallel CP solver (using EPS)
   * @param app the SolverApp
-  * @param modelDeclaration the ModelDeclaration linked to the SolverApp
   */
-class ParallelCPAppModule(app: SolverApp[_], modelDeclaration: ModelDeclaration) extends SolverAppModule {
+class ParallelCPAppModule(app: SolverApp[_]) extends SolverAppModule {
   class ParallelCPSubcommand extends Subcommand("parallel-cp") {
     descr("Solves the model using a parallel CP solver.")
     val timeout = opt[Int](name="timeout", short='t', descr = "Timeout for the *solving*, in milliseconds. 0 (default) means no timeout", default = Some(0))
@@ -29,14 +28,14 @@ class ParallelCPAppModule(app: SolverApp[_], modelDeclaration: ModelDeclaration)
   override val subcommand = new ParallelCPSubcommand
 
   override def solve[RetVal](): List[RetVal] = {
-    val pg = new CPProgram[RetVal](modelDeclaration)
+    val pg = new CPProgram[RetVal](app.modelDeclaration)
     val onSolution: () => RetVal = app.asInstanceOf[SolveHolder[RetVal]].onSolution
     if(onSolution == null)
       throw new RuntimeException("No onSolution defined in the SolverApp or in the ModelDeclaration")
     val search: BranchingInstantiator = app.asInstanceOf[CPSearchHolder].getCPSearch
     if(search == null)
       throw new RuntimeException("No search defined in the SolverApp or in the ModelDeclaration")
-    val decompose: DecompositionStrategy = app.asInstanceOf[CPDecompositionHolder].getCPDecompositionStrategy
+    var decompose: DecompositionStrategy = app.asInstanceOf[CPDecompositionHolder].getCPDecompositionStrategy
     if(decompose == null)
       throw new RuntimeException("No decomposition defined in the SolverApp or in the ModelDeclaration")
     val nSols = subcommand.nSols()

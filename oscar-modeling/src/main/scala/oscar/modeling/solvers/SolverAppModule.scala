@@ -1,6 +1,7 @@
 package oscar.modeling.solvers
 
 import org.rogach.scallop.Subcommand
+import oscar.modeling.models.ModelDeclaration
 
 /**
   * A Module for SolverApp. Represents a solver or a solving method.

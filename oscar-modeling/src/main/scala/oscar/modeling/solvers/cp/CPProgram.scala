@@ -30,7 +30,7 @@ import scala.concurrent.Await
   * @tparam RetVal
   */
 class CPProgram[RetVal](modelDeclaration: ModelDeclaration = new ModelDeclaration())
-  extends SolveHolder[RetVal](modelDeclaration) with CPSearchHolder with CPDecompositionHolder with ModelDeclarationProxy {
+  extends SolveHolder[RetVal] with CPSearchHolder with CPDecompositionHolder with ModelDeclarationProxy {
   implicit val program = this
   override implicit val md = modelDeclaration
 
@@ -226,5 +226,7 @@ class CPProgram[RetVal](modelDeclaration: ModelDeclaration = new ModelDeclaratio
       statWatcher.get
     }
   }
+
+  override protected val solveRedirectTo: Any = md
 }
 

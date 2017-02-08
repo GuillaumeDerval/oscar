@@ -29,13 +29,14 @@ trait ModelDeclarationInterface {
     * @param constraint the constraint to post
     */
   def post(constraint: Constraint): Unit
-
+  def post(constraints: Seq[Constraint]): Unit = constraints.foreach(post)
   /**
     * Add a new constraint to the model
     *
     * @param constraint the constraint to add
     */
   def add(constraint: Constraint): Unit
+  def add(constraints: Seq[Constraint]): Unit = constraints.foreach(add)
 
   /**
     * Minimize on variable v
@@ -62,4 +63,9 @@ trait ModelDeclarationInterface {
     * @param operator operator to apply
     */
   def apply[OutputType <: Model](operator: ModelOperator[OutputType]): Unit
+
+  /**
+   * Fork (in the model tree). All the actions made on the model in a fork{} call will be reverted after the call.
+   */
+  def fork[T](func: => T): T
 }

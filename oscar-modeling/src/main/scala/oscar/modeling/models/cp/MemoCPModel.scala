@@ -2,10 +2,14 @@ package oscar.modeling.models.cp
 
 import oscar.algo.reversible.ReversibleArrayStack
 import oscar.modeling.constraints.Constraint
-import oscar.modeling.models.UninstantiatedModel
+import oscar.modeling.models.{ModelDeclaration, UninstantiatedModel}
 import oscar.modeling.solvers.cp.Branchings.Alternative
 
-import scala.collection.mutable
+object MemoCPModel {
+  def apply(implicit modelDeclaration: ModelDeclaration): MemoCPModel = {
+    new MemoCPModel(modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel])
+  }
+}
 
 /**
   * CPModel that memorizes added constraint, with a support for pushing/popping state.

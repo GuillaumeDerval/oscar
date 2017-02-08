@@ -163,13 +163,17 @@ object CPModel {
       case default => 3 //Then evrything that is not one of the above
     }
   }
+
+  def apply(implicit modelDeclaration: ModelDeclaration): CPModel = {
+    new CPModel(modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel])
+  }
 }
 
 /**
   * Model associated with a CP Solver
   * @param p
   */
-class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preprocessCP(p)){
+class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preprocessCP(p)) with ForkableInstantiatedModel {
   implicit lazy val cpSolver = new cp.CPSolver()
   override type IntVarImplementation = ModelCPIntVar
   override type FloatVarImplementation = NoFloatDomainStorage
@@ -633,5 +637,16 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
       case (variable: IntExpression, Constant(value)) => rightCst(postIntExpressionAndGetVar(variable), value)
       case (v1: IntExpression, v2: IntExpression) => allVar(postIntExpressionAndGetVar(v1), postIntExpressionAndGetVar(v2))
     }
+  }
+
+  /**
+   * Fork (in the model tree). All the actions made on the model in a fork{} call will be reverted after the call.
+   * It is not thread-safe.
+   */
+  override def fork[T](func: => T): T = {
+    cpSolver.pushState()
+    val ret = func
+    cpSolver.pop()
+    ret
   }
 }

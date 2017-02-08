@@ -12,6 +12,12 @@ import oscar.modeling.vars.mip.{MIPFloatVar, MIPIntVar, MIPVar}
 
 import scala.collection.mutable
 
+object MIPModel {
+  def apply(implicit modelDeclaration: ModelDeclaration): MIPModel = {
+    new MIPModel(modelDeclaration.getCurrentModel.asInstanceOf[UninstantiatedModel])
+  }
+}
+
 /**
   * Model for Linear Programming
  *

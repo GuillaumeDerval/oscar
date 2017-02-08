@@ -5,7 +5,7 @@ import oscar.modeling.models.mip.MIPModel
 import oscar.modeling.models.{ModelDeclaration, ModelDeclarationProxy, UninstantiatedModel}
 import oscar.modeling.solvers.SolveHolder
 
-class MIPProgram[RetVal](modelDeclaration: ModelDeclaration = new ModelDeclaration()) extends SolveHolder[RetVal](modelDeclaration) with ModelDeclarationProxy {
+class MIPProgram[RetVal](modelDeclaration: ModelDeclaration = new ModelDeclaration()) extends SolveHolder[RetVal] with ModelDeclarationProxy {
   implicit val program = this
   override implicit val md = modelDeclaration
   val solver = new SolverGlpk()
@@ -26,4 +26,6 @@ class MIPProgram[RetVal](modelDeclaration: ModelDeclaration = new ModelDeclarati
         None
     }
   }
+
+  override protected val solveRedirectTo: Any = md
 }
