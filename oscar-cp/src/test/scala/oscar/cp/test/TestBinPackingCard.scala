@@ -20,24 +20,26 @@ import oscar.cp.constraints._
 import oscar.cp._
 import oscar.cp.core.NoSolutionException
 
+import scala.collection.mutable.ArrayBuffer
+
 
 class TestBinPackingCard extends FunSuite with ShouldMatchers  {
 
 
   test("BP 1") {
 
-    for (s <- 0 until 100) {
-      println("seed:"+s)
+    for (s <- 1 until 200) {
+      //println("seed:"+s)
       val rand = new scala.util.Random(s)
 
 
-      val n = 9
-      val m = 4
+      //val n = 9
+      //val m = 4
 
-      /*
-      val n = 5
-      val m = 2
-      */
+
+      val n = 8
+      val m = 3
+
 
 
       val w_ = Array.fill(n)(rand.nextInt(20))
@@ -55,53 +57,45 @@ class TestBinPackingCard extends FunSuite with ShouldMatchers  {
         add(binPacking(x, w, l))
 
 
+
+
         search {
           binaryStatic(x)
         }
 
-        //val stat = start()
-        //println(stat)
-
 
         val stat1 = cp.startSubjectTo() {
-          add(gcc(x, (0 until m) zip c))
-
+          add(gcc(x, (0 until m) zip c),Strong)
         }
 
         val stat2 = cp.startSubjectTo() {
-
           add(new BinPackingFlow(x, w, l, c))
-          add(gcc(x, (0 until m) zip c))
-
+          add(gcc(x, (0 until m) zip c),Strong)
         }
 
         val stat3 = cp.startSubjectTo() {
-
           add(new BinPackingFlowExtended(x, w, l, c))
-          add(gcc(x, (0 until m) zip c))
-
+          add(gcc(x, (0 until m) zip c),Strong)
         }
 
         val stat4 = cp.startSubjectTo() {
-
           add(new GCCBinPacking(x, w, l, c))
-
         }
 
 
         //println(stat1.nSols + "=?=" + stat2.nSols + "=?=" + stat3.nSols)
-        println(stat1.nSols + "=?=" + stat2.nSols + "=?=" +stat3.nSols + "=?=" + stat4.nSols)
+        //println(stat1.nSols + "=?=" + stat2.nSols + "=?=" +stat3.nSols + "=?=" + stat4.nSols)
         assert(stat1.nSols == stat2.nSols)
         assert(stat1.nSols == stat3.nSols)
         assert(stat1.nSols == stat4.nSols)
-        println("bk:" + stat1.nFails + "<?=" + stat2.nFails + "<?=" +stat3.nFails + "<?=" + stat4.nFails)
+        //println("bk:" + stat1.nFails + "<?=" + stat2.nFails + "<?=" +stat3.nFails + "<?=" + stat4.nFails)
         assert(stat4.nFails <= stat3.nFails)
 
 
       }
 
       catch {
-        case e: NoSolutionException => println("no sol")
+        case e: NoSolutionException => //println("no sol")
       }
     }
 
@@ -125,8 +119,8 @@ class TestBinPackingCard extends FunSuite with ShouldMatchers  {
     //cp.add(new BinPackingFlowExtended(x,sizes,l,c))
     //cp.add(gcc(x,(0 to 4).zip(c)))
 
-    println(c.mkString(","))
-    println(l.mkString(","))
+    //println(c.mkString(","))
+    //println(l.mkString(","))
   }
 
   test("BP 4") {
@@ -166,6 +160,31 @@ class TestBinPackingCard extends FunSuite with ShouldMatchers  {
       case e: NoSolutionException => ok = true
     }
     assert(ok)
+
+
+  }
+
+
+  test("BP 5") {
+
+   implicit val cp = CPSolver()
+    val w = Array(18,16,12,11,11,10,4,1)
+
+    //before:(2,18),(1,16),([0, 2],12),({0, 1, 2},11),({0, 1, 2},11),({0, 1, 2},10),({0, 1},4),({0, 1, 2},1) loads:[23, 28],[26, 30],[28, 30] card:[2, 4],[2, 3],[2, 3]
+
+    val x = Array(CPIntVar(2),CPIntVar(1),CPIntVar(Set(1,2)),CPIntVar(Set(0,1,2)),CPIntVar(Set(0,1,2)),CPIntVar(Set(0,1,2)),CPIntVar(Set(0,1)),CPIntVar(Set(0,1,2)))
+    val l = Array(CPIntVar(23 to 27),CPIntVar(26 to 30),CPIntVar(28 to 30))
+    val c = Array(CPIntVar(3 to 4),CPIntVar(2 to 3),CPIntVar(2,3))
+
+
+    add(binPacking(x, w, l))
+    cp.add(new GCCBinPacking(x,w,l,c))
+
+    add(x(2) !== 0)
+    assert(c(2).max == 3)
+
+
+
 
 
   }

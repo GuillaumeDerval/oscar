@@ -87,10 +87,6 @@ public class GCCBinPacking extends Constraint {
         super(x[0].store(),"GCCVar");
         this.x = x;
         this.w = weights;
-
-
-
-
         this.o = o;
         this.l = loads;
         this.minVal = 0;
@@ -117,6 +113,7 @@ public class GCCBinPacking extends Constraint {
 
         allocateSCC();
         prune();
+
         pruneBounds();
         for(int k = 0 ; k < x.length; k++) {
             if (!x[k].isBound()) {
@@ -132,15 +129,6 @@ public class GCCBinPacking extends Constraint {
 
     @Override
     public void propagate() throws Inconsistency {
-		
-		/*
-		System.out.println("priorL2 BPGCC"+priorityL2());
-    	System.out.println("x:"+Arrays.toString(x));
-    	System.out.println("w:"+Arrays.toString(w));
-    	System.out.println("l:"+Arrays.toString(l));
-    	System.out.println("c:"+Arrays.toString(o));
-    	System.out.println(" ");
-		*/
         updateBounds();
         for (int k = 0; k < x.length; k++) {
             if (varMatch[k] != NONE) {
@@ -158,8 +146,6 @@ public class GCCBinPacking extends Constraint {
         if (!findFeasibleFlow()) {
             throw Inconsistency.get();
         }
-
-
 
         prune();
         pruneBounds();
@@ -345,9 +331,7 @@ public class GCCBinPacking extends Constraint {
     }
 
 
-    private boolean findResidualPathVariable(int k, int targeti, boolean lookingForMinCard) {
-        //System.out.println("findResiVar k:"+k+" targeti:"+targeti+" targetv:"+targetv);
-
+    private boolean findResidualPathVariable(int k, int targeti, boolean lookingForMinCard, int origVar) {
         if (k == targeti) return true;
         else if (varSeen[k] != magic) {
             varSeen[k] =  magic;
@@ -356,7 +340,7 @@ public class GCCBinPacking extends Constraint {
             for (int v = mx; v <= Mx; v++) {
                 if (varMatch[k] != v) {
                     if (x[k].hasValue(v)) {
-                        if (findResidualPathValue(v,targeti,lookingForMinCard)) {
+                        if (findResidualPathValue(v,targeti,lookingForMinCard, origVar)) {
                             assign(k,v);
                             return true;
                         }
@@ -367,37 +351,31 @@ public class GCCBinPacking extends Constraint {
         return false;
     }
 
-    private boolean findResidualPathValue(int v, int targeti, boolean lookingForMinCard) { // i is the variable index we try to find
-        //System.out.println("findResiValue v:"+v+" targeti:"+targeti+" targetv:"+targetv);
+    private boolean findResidualPathValue(int v, int targeti, boolean lookingForMinCard, int origVar) { // i is the variable index we try to find
         int vind = v-minVal;
-
 
         if (valSeen[vind] != magic) {
             valSeen[vind] = magic;
-            //if (flow[vind] > low[vind]) {
             int k = valMatch[vind];
             while (k != NONE) {
                 // k > i condition is because we cannot unassign an item that is already voluntarily assigned to targetv
+                // unless it does not start from origVar i.e. (varMatch[k] != origVar)
                 if (lookingForMinCard) {
-
-                    if ( (k >= targeti)  && findResidualPathVariable(k,targeti,lookingForMinCard))
+                    if ( (varMatch[k] != origVar || k >= targeti)  && findResidualPathVariable(k,targeti,lookingForMinCard,origVar))
                         return true;
                 } else {
-
-                    if ( (k <= targeti)  && findResidualPathVariable(k,targeti,lookingForMinCard))
+                    if ( (varMatch[k] != origVar || k <= targeti)  && findResidualPathVariable(k,targeti,lookingForMinCard,origVar))
                         return true;
                 }
                 k = next[k];
             }
             for (int u = 0; u < nbVals; u++) {
                 if (u != vind && flow[u] > low[u]) {
-                    if (findResidualPathValue(u+minVal,targeti,lookingForMinCard)) {
+                    if (findResidualPathValue(u+minVal,targeti,lookingForMinCard,origVar)) {
                         return true;
                     }
                 }
             }
-
-            //}
         }
         return false;
     }
@@ -686,7 +664,7 @@ public class GCCBinPacking extends Constraint {
 
 
     private void pruneBounds() throws Inconsistency {
-        // System.out.println("pruneBounds");
+
         for (int v = 0; v < o.length; v++) {
             int m = o[v].getMin();
             int M = o[v].getMax();
@@ -744,10 +722,9 @@ public class GCCBinPacking extends Constraint {
             // verifier car on pourrait stopper plus rapidement
             while (k < x.length && currLoad < l[v - minVal].min()
                     && currCard < up[v - minVal]) {
-                //	System.out.println("currLoad:"+currLoad+" considering adding item:"+k+" with weight "+w[k] +" and dom "+ x[k]+ " into bin "+v+ "varmatch is currently "+ varMatch[k]);
                 // try to find a path from v to k in the residual graph
                 magic += 1;
-                if (!alreadyPacked[k] && x[k].hasValue(v) && (varMatch[k] == v || findResidualPathValue(v, k, true))) {
+                if (!alreadyPacked[k] && x[k].hasValue(v) && (varMatch[k] == v || findResidualPathValue(v, k, true, k))) {
                     assign(k, v);
                     currLoad += w[k];
                     currCard += 1;
@@ -760,10 +737,9 @@ public class GCCBinPacking extends Constraint {
 
 
             while (k < x.length && currCard < up[v - minVal]) {
-                // System.out.println("currLoad:"+currLoad+" considering adding item:"+k+" with weight "+w[k]);
                 // try to find a path from v to k in the residual graph
                 magic += 1;
-                if (!alreadyPacked[k] && x[k].hasValue(v)  && (varMatch[k] == v || findResidualPathValue(v, k, true))) {
+                if (!alreadyPacked[k] && x[k].hasValue(v)  && (varMatch[k] == v || findResidualPathValue(v, k, true, k))) {
                     assign(k, v);
                     currLoad += w[k];
                     currCard += 1;
@@ -777,18 +753,16 @@ public class GCCBinPacking extends Constraint {
             currLoad = wPacked;
             currCard = nPacked;
             k = x.length - 1;
-            // System.out.println("--");
+            //System.out.println("-- maxload:"+l[v - minVal].max()+ " currLoad:"+currLoad+" currCard:"+currCard);
             while (k >= 0 && currLoad + w[k] <= l[v - minVal].max()
                     && currCard < up[v - minVal]) {
                 magic += 1;
                 // try to find a path from v to k in the residual graph
-
-                if (!alreadyPacked[k] && x[k].hasValue(v)  && (varMatch[k] == v || findResidualPathValue(v, k, false))) {
-
+                magic += 1;
+                if (!alreadyPacked[k] && x[k].hasValue(v)  && (varMatch[k] == v || findResidualPathValue(v, k, false,k))) {
                     assign(k, v);
                     currLoad += w[k];
                     currCard += 1;
-
                     if (currCard == o[v - minVal].min()) {
                         l[v - minVal].updateMin(currLoad);
                     }
