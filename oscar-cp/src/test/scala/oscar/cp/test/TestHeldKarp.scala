@@ -82,7 +82,7 @@ class TestHeldKarp extends TestSuite {
       //add(new MinCircuit(pred,distMatrixPred,obj),Strong)     
     }
 
-    cp.search(binaryStatic(succ, _.min))
+    cp.search(binaryStaticIdx(succ,i => succ(i).min))
     val stat = cp.start()
     stat
   }

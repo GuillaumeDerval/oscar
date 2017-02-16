@@ -29,13 +29,13 @@ import oscar.algo.vars.IntVarLike
  * @param varHeuris is a variable heuristic, it will select preferably first the unbound
  *        variables(i) such that varHeuris(i) is the smallest
  */
-class BinaryBranching(variables: Array[IntVarLike], var varHeuris: (Int => Int), valHeuris: (Int => Int)) extends Branching {
+class BinaryBranching[T](variables: Array[IntVarLike], var varHeuris: Int => T, valHeuris: Int => Int, orderer: T => Ordered[T]) extends Branching {
   private val context = variables(0).context
   private[this] val nVariables = variables.length
   private[this] val indexes = Array.tabulate(nVariables)(i => i)
   private[this] val nBounds = new ReversibleInt(context, 0)
 
-  @inline private def bound(i: Int): Unit = {
+  private def bound(i: Int): Unit = {
     val id = nBounds.incr() - 1
     val tmp = indexes(id)
     indexes(id) = indexes(i)
@@ -55,18 +55,20 @@ class BinaryBranching(variables: Array[IntVarLike], var varHeuris: (Int => Int),
   }
 
   protected def nextVar(): Int = {
+
     var i = nBounds.value
     var bestId = indexes(i)
     var bestVariable = variables(bestId)
-    var bestH = varHeuris(bestId)
+    var bestH: T = varHeuris(bestId)
     i += 1
     while (i < nVariables) {
       val varId = indexes(i)
       val variable = variables(varId)
       if (variable.isBound) bound(i)
       else {
-        val h = varHeuris(varId)
-        if (h < bestH || (h == bestH && varId < bestId)) {
+        val h: T = varHeuris(varId)
+        val compare = orderer(h).compare(bestH)
+        if ((compare < 0) || ((compare == 0) && varId < bestId)) {
           bestVariable = variable
           bestId = varId
           bestH = h

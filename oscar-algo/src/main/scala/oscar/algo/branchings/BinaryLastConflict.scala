@@ -1,42 +1,46 @@
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
 package oscar.algo.branchings
 
-/**
- * *****************************************************************************
- * OscaR is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 2.1 of the License, or
- * (at your option) any later version.
- *
- * OscaR is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License  for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License along with OscaR.
- * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
- * ****************************************************************************
- */
+
 
 import oscar.algo.reversible._
 import oscar.algo.search.{Branching, _}
 import oscar.algo.vars.IntVarLike
 
 /**
- * Last Conflict Search
- * 
- * Last confict is a first-fail best-firt search.
- *  
- * Variables are firstly assigned according to varHeuristic 
- * and then to the last conflict scheme.
- * 
- * Each variable is assigned to its last successfuly assigned value
- * or the value returned by valHeuristic
- *
- * @author Steven Gay
- * @author Renaud Hartert
- */
-
-class BinaryLastConflict(variables: Array[IntVarLike], varHeuristic: Int => Int, valHeuristic: Int => Int) extends Branching {
+  * Last Conflict Search described in
+  *
+  * Lecoutre, C., Saïs, L., Tabary, S., & Vidal, V. (2009).
+  * Reasoning from last conflict (s) in constraint programming.
+  * Artificial Intelligence.
+  *
+  * Last confict is a first-fail best-firt search.
+  *
+  * Variables are firstly assigned according to varHeuristic
+  * and then to the last conflict scheme.
+  *
+  * Each variable is assigned to its last successfuly assigned value
+  * or the value returned by valHeuristic
+  *
+  * @author Steven Gay
+  * @author Renaud Hartert
+  * @author Pierre Schaus pschaus@gmail.com
+  */
+class BinaryLastConflict[T](variables: Array[IntVarLike], varHeuristic: Int => T, valHeuristic: Int => Int, orderer: T => Ordered[T]) extends Branching {
 
   require(variables.length > 0, "no variable")
 
@@ -45,9 +49,6 @@ class BinaryLastConflict(variables: Array[IntVarLike], varHeuristic: Int => Int,
 
   // Order in which variables have to be assigned
   private[this] val order = Array.tabulate(nVariables) { i => i }
-
-  // Last successful assigned value for each variable
-  private[this] val lastValues = Array.fill(nVariables)(Int.MinValue)
 
   // Current depth of the search tree
   private[this] val nAssignedRev = new ReversibleInt(context, 0)
@@ -59,7 +60,7 @@ class BinaryLastConflict(variables: Array[IntVarLike], varHeuristic: Int => Int,
   final override def reset(): Unit = maxAssigned = -1
 
   final override def alternatives: Seq[Alternative] = {
-    val nAssigned = updateAssigned()
+    val nAssigned = firstUnbound()
     if (nAssigned >= nVariables) noAlternative
     else {
 
@@ -86,8 +87,7 @@ class BinaryLastConflict(variables: Array[IntVarLike], varHeuristic: Int => Int,
 
       val varId = order(nAssigned)
       val variable = variables(varId)
-      val lastValue = lastValues(varId)
-      val value = if (variable.hasValue(lastValue)) lastValue else valHeuristic(varId)
+      val value = valHeuristic(varId)
       // Alternatives
       List(assign(variable, value, nAssigned), remove(variable, value, nAssigned))
     }
@@ -105,25 +105,24 @@ class BinaryLastConflict(variables: Array[IntVarLike], varHeuristic: Int => Int,
     if (out) conflictAssign = nAssigned
   }
 
-  @inline private def updateAssigned(): Int = {
+  @inline private def firstUnbound(): Int = {
     var d = nAssignedRev.value
     while (d < nVariables && variables(order(d)).isBound) {
-      val varId = order(d)
-      lastValues(varId) = variables(varId).min
       d += 1
     }
     d
   }
 
   @inline private def nextVariable(depth: Int): Int = {
-    var minId = depth
-    var min = Int.MaxValue
+
     var i = depth
+    var min = varHeuristic(order(i))
+    var minId = i
     while (i < nVariables) {
       val varId = order(i)
       if (!variables(varId).isBound) {
         val m = varHeuristic(order(i))
-        if (m < min) {
+        if (orderer(m) < min) {
           min = m
           minId = i
         }

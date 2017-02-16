@@ -235,7 +235,7 @@ abstract class CPIntVar extends CPVar with IntVarLike {
     propagator
   }
 
-  def filterWhenDomainChangesWithDelta(idempotent: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: DeltaIntVar => Boolean)(implicit constraint: Constraint): DeltaIntVar = {
+  def filterWhenDomainChangesWithDelta(idempotent: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: DeltaIntVar => Boolean): DeltaIntVar = {
     val propagator = new PropagatorIntVar(this, 0, filter)
     propagator.idempotent = idempotent
     propagator.priorityL2 = priority
@@ -249,13 +249,13 @@ abstract class CPIntVar extends CPVar with IntVarLike {
    * @param filter Filters. Should return true when there will never be more filtering to do: the filter will be deactivated
    */
   def filterWhenDomainChanges(idempot: Boolean = true, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: => Boolean)(implicit constraint: Constraint) {
-    new SubConstraint(constraint, this.store, "filterWhenDomainChanges on  " + this) {
+    new SubConstraint(this.store, "filterWhenDomainChanges on  " + this) {
       idempotent = idempot
       priorityL2 = priority
 
       def setup(l: CPPropagStrength) = callPropagateWhenDomainChanges(this)
-
       override def propagate() = if (filter) this.deactivate()
+      def associatedVars(): Iterable[CPVar] = Iterable(CPIntVar.this)
     }.setup(store.propagStrength)
   }
 
@@ -264,14 +264,13 @@ abstract class CPIntVar extends CPVar with IntVarLike {
    * @param priority
    * @param filter Filters. Should return true when there will never be more filtering to do: the filter will be deactivated
    */
-  def filterWhenBoundsChange(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: => Boolean)(implicit constraint: Constraint) {
-    new SubConstraint(constraint, this.store, "filterWhenBoundsChange on  " + this) {
+  def filterWhenBoundsChange(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: => Boolean) {
+    new SubConstraint(this.store, "filterWhenBoundsChange on  " + this) {
       idempotent = idempot
       priorityL2 = priority
-
       def setup(l: CPPropagStrength) = callPropagateWhenBoundsChange(this)
-
       override def propagate() = if(filter) deactivate()
+      def associatedVars(): Iterable[CPVar] = Iterable(CPIntVar.this)
     }.setup(store.propagStrength)
   }
 
@@ -280,13 +279,13 @@ abstract class CPIntVar extends CPVar with IntVarLike {
    * @param priority
    * @param filter Filters. Should return true when there will never be more filtering to do: the filter will be deactivated
    */
-  def filterWhenBind(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2-2)(filter: => Boolean)(implicit constraint: Constraint) {
-    new SubConstraint(constraint, this.store, "filterWhenBind on  " + this) {
+  def filterWhenBind(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2-2)(filter: => Boolean) {
+    new SubConstraint(this.store, "filterWhenBind on  " + this) {
       idempotent = idempot
       priorityL2 = priority
-
       def setup(l: CPPropagStrength) = callPropagateWhenBind(this)
       override def propagate() = if(filter) deactivate()
+      def associatedVars(): Iterable[CPVar] = Iterable(CPIntVar.this)
     }.setup(store.propagStrength)
   }
 

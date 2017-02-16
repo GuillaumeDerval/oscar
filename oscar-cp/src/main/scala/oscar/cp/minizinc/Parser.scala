@@ -2185,7 +2185,7 @@ class Parser extends JavaTokenParsers { // RegexParsers {
    */
   def varChoiceAnn2(args: List[Any], array: Array[CPIntVar]): Branching = {
     args(1) match {
-      case "input_order" => binaryStatic(array, assignAnn(args))
+      case "input_order" => binaryStaticIdx(array,i => assignAnn(args)(array(i)))
       case "first_fail" => {
         binaryFirstFail(array, assignAnn(args))
       }

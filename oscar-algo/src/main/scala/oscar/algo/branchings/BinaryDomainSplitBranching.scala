@@ -6,9 +6,9 @@ import oscar.algo.vars.IntVarLike
 /**
  * Binary search on the decision variables vars, splitting the domain at the selected value (left : <= value, right : > value)
  */
-class BinaryDomainSplitBranching(variables: Array[IntVarLike], varHeuris: (Int => Int), valHeuris: (Int => Int)) extends BinaryBranching(variables, varHeuris, valHeuris) {
+class BinaryDomainSplitBranching[T](variables: Array[IntVarLike], varHeuris: (Int => T), valHeuris: (Int => Int), orderer: T => Ordered[T]) extends BinaryBranching(variables, varHeuris, valHeuris, orderer) {
 
-  def this(x: Array[IntVarLike], varHeuris: (Int => Int)) = this(x, varHeuris, i => (x(i).min + x(i).max) / 2)
+  def this(x: Array[IntVarLike], varHeuris: (Int => T), orderer: T => Ordered[T]) = this(x, varHeuris, i => (x(i).min + x(i).max) / 2, orderer)
 
   final override def alternatives(): Seq[Alternative] = {
     if (allBounds()) noAlternative

@@ -62,8 +62,8 @@ abstract class TestCumulativeConstraint(val cumulativeName: String, val nTests: 
     
 
     cp.search {
-      val b1 = binaryStatic(cp.starts,_.randomValue)
-      val b2 = binaryStatic(cp.durations,_.randomValue)
+      val b1 = binaryStaticIdx(cp.starts,i => cp.starts(i).randomValue)
+      val b2 = binaryStaticIdx(cp.durations,i => cp.durations(i).randomValue)
       val b3 = binaryStatic(cp.resources)
       b1 ++ b2 ++ b3
     }

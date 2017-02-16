@@ -188,7 +188,7 @@ class TestSetTimesBranching extends TestSuite {
 
       search {
         if (withSetTimes) setTimes(starts, durations, ends)
-        else binaryStatic(starts,_.min)
+        else binaryStaticIdx(starts,i => starts(i).min)
 
       }
 
@@ -259,7 +259,7 @@ class TestSetTimesBranching extends TestSuite {
 
       search {
         if (withSetTimes) setTimes(starts, durations, ends)
-        else binaryStatic(starts,_.min)
+        else binaryStaticIdx(starts,i => starts(i).min)
 
       }
 

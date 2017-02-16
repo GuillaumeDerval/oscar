@@ -21,7 +21,7 @@ object MagicSequence extends CPModel with App {
   add(gcc(x, allValues), Medium)
 
   search {
-    binaryStatic(x, _.min)
+    binaryStaticIdx(x,i => x(i).min)
   }
 
   onSolution {

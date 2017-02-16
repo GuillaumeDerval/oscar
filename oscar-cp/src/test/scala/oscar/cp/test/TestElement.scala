@@ -83,7 +83,7 @@ class TestElement extends TestSuite {
 
       cp.post(allDifferent(Array(y(1), y(3), x)),CPPropagStrength.Medium)
       if (!cp.isFailed) {
-        cp.search(binaryStatic(allVars, _.min))
+        cp.search(binaryStaticIdx(allVars,i => allVars(i).min))
         val stat1 = cp.startSubjectTo() {
           cp.add(elementVar(y, x, z), CPPropagStrength.Medium)
         }

@@ -55,11 +55,36 @@ object BACP extends CPModel with App {
     add(x(i) < x(j)) // precedence constraint
   }
 
+
+  class ValueHeuristicLearner(x: Array[CPIntVar], defaultValueHeuristic: (Int => Int)){
+    private[this] val lastValues = Array.fill(x.length)(Int.MinValue)
+
+    x(0).store.onPush {
+      for (i <- 0 until x.length) {
+        if (x(i).isBound) {
+          lastValues(i) = x(i).min
+        }
+      }
+    }
+    def valueHeuristic(i: Int): Int = {
+      if (x(i).hasValue(lastValues(i))) {
+        lastValues(i)
+      } else {
+        defaultValueHeuristic(i)
+      }
+    }
+  }
+  def learnValueHeuristic(x: Array[CPIntVar], defaultValueHeuristic: (Int => Int)): (Int => Int) = {
+    new ValueHeuristicLearner(x,defaultValueHeuristic).valueHeuristic
+  }
+
+  val valueHeuris: (Int => Int) = learnValueHeuristic(x,i => selectMin(periods)(x(i).hasValue(_))(l(_).min).get)
+
   // Search
   minimize(vari) search {
-    binaryFirstFail(x, x => selectMin(periods)(x.hasValue(_))(l(_).min).get)
+    binaryFirstFailIdx(x, valueHeuris)
   }
 
   // Execution
-  start()
+  println(start())
 }

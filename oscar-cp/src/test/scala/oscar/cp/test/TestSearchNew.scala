@@ -68,7 +68,7 @@ class TestSearchNew extends TestSuite {
     var best = 0
     cp.onSolution { best = x.value }
     cp.search {
-      binaryStatic(Array(x), _.max)
+      binaryStaticIdx(Array(x), i => x.max)
     }
     val stat = cp.start()
     stat.nSols should be(4)

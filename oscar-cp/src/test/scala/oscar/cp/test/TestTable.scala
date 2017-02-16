@@ -51,7 +51,7 @@ class TestTable extends TestSuite {
     val x = Array.fill(5)(CPIntVar(1 to 8))
 
     solver.add(allDifferent(x))
-    solver.search(binaryFirstFail(x, _.max))
+    solver.search(binaryFirstFailIdx(x,i => x(i).max))
 
     val statRef = solver.startSubjectTo() {
       val cons = Seq(

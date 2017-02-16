@@ -310,7 +310,6 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
   }
 }
 
-abstract class SubConstraint(parent: Constraint, store: CPStore, name: String = "cons")
+abstract class SubConstraint(store: CPStore, name: String = "cons")
   extends Constraint(store, name) {
-  def associatedVars(): Iterable[CPVar] = parent.associatedVars()
 }

@@ -161,7 +161,7 @@ abstract class TestUnary(name: String, nTests: Int) extends TestSuite {
       //println(s"nSolutionsDecomp = $nSolutionsDecomp, nSolutionsUnary = $nSolutionsUnary")
       val ok = nSolutionsDecomp == nSolutionsUnary
       
-      val debug = true
+      val debug = false
       
       if (!ok) {
         val nTasks = problem.starts.length
