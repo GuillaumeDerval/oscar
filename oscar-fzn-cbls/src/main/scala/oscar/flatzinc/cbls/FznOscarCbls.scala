@@ -23,6 +23,6 @@ object FznOscarCbls extends FznOscarMain {
   checkAntlr()   
   withCheck{
     val opts = options("fzn-oscar-cbls",cbls=true)
-	val solutions = new FZCBLSSolver().solve(opts)
+	val solutions = new FZCBLSModelBuilder().solve(opts)
   }
 }

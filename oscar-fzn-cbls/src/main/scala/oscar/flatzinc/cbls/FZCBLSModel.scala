@@ -47,10 +47,6 @@ class FZCBLSModel(val model: FZProblem, val c: ConstraintSystem, val m: Store, v
       val varsToSwap = vars.groupBy(v => v.dom)
       addNeighbourhood((o,c) => new MaxViolating(vars.toArray, o, c),Array.empty[CBLSIntVarDom])
 
-      //for(key <- varsToSwap.keys if key.size == 2)
-      //  addNeighbourhood((o,c) => new MaxViolatingSwap(varsToSwap(key).toArray,o,c),Array.empty[CBLSIntVarDom])
-      //addNeighbourhood((o,c) => new MaxViolatingSwap(varsToSwap(varsToSwap.keys.drop(2).head).toArray,o,c),Array.empty[CBLSIntVarDom])
-
       val boolVars = vars.filter((v: CBLSIntVar) => v.min == 0 && v.max == 1)
       if (boolVars.length > 1)
         addNeighbourhood((o,c) => new MaxViolatingSwap(boolVars.toArray, o, c),Array.empty[CBLSIntVarDom])
@@ -86,10 +82,8 @@ class FZCBLSModel(val model: FZProblem, val c: ConstraintSystem, val m: Store, v
           val cblsVariable = CBLSIntVarDom(m, initialValue, thedom,  id);
           //TODO: handle constant variables here.
           cblsIntMap += id -> cblsVariable;
-          //Removed this test and filtered for search variables only later
-          //if (!parsedVariable.isDefined) {
-            variables = cblsVariable :: variables;
-          //}
+          variables = cblsVariable :: variables;
+
        case bv:BooleanVariable =>
          val dom = oscar.flatzinc.model.DomainRange(if(bv.isTrue) 1 else 0, if(bv.isFalse) 0 else 1)
           //TODO: Put this in a method! or make it deterministic as the neighbourhoods should take care of the assignments!
@@ -100,63 +94,39 @@ class FZCBLSModel(val model: FZProblem, val c: ConstraintSystem, val m: Store, v
           val cblsVariable = CBLSIntVarDom(m, initialValue, dom,  bv.id);
           //TODO: handle constant variables here.
           cblsIntMap += bv.id -> cblsVariable;
-          //Removed this test and filtered for search variables only later
-          //if (!parsedVariable.isDefined) {
-            variables = cblsVariable :: variables;
-          //}
+          variables = cblsVariable :: variables;
 
-       // case _ => ()//TODO: DO something for the concrete constants?
+        // case _ => ()//TODO: DO something for the concrete constants?
       }
     }
     variables;
   }
+
   def getCBLSVarDom(v: Variable) = {
     getCBLSVar(v).asInstanceOf[CBLSIntVarDom]
   }
-    implicit def getCBLSVar(v: Variable) = {
-      v match {
-      /*  case ConcreteConstant(_, value, _) =>
-
-        cblsIntMap.get(value + "") match {
-          case None =>
-            val c = CBLSIntConstDom(value, m);
-            cblsIntMap += value + "" -> c;
-            c;
-          case Some(c) => c;
-        }
-    */
+  implicit def getCBLSVar(v: Variable) = {
+    v match {
       case v:IntegerVariable =>
         cblsIntMap.get(v.id) match {
           case None if v.isBound =>
-            /*cblsIntMap.get(v.min.toString) match {
-              case Some(c) => c;
-              case None => {*/
-            //From Gustav: All constants need to have a store, otherwise they won't have a UniqueID (from PropagationElement) and constraints will start throwing exceptions
-            //JNM: I removed ",m " to avoid introducing a lot of useless "variables" in the model in the hope of making it more efficient.
-            //JNM: restored the "m," as one need it to find the model sometimes.
             val c = new CBLSIntConstDom(m,v.value);
-            //println("ICI "+id + " "+v.min)
-            cblsIntMap += v.id -> c; //was id ->
-            c;//}}
+            cblsIntMap += v.id -> c;
+            c;
           case Some(c) => c;
         }
       case v:BooleanVariable =>
         cblsIntMap.get(v.id) match {
           case None if v.isBound =>
-            /*cblsIntMap.get(v.min.toString) match {
-              case Some(c) => c;
-              case None => {*/
-            //From Gustav: All constants need to have a store, otherwise they won't have a UniqueID (from PropagationElement) and constraints will start throwing exceptions
-            //JNM: I removed ",m " to avoid introducing a lot of useless "variables" in the model in the hope of making it more efficient.
-            //JNM: restored the "m," as one need it to find the model sometimes.
             val c = new CBLSIntConstDom(m,v.intValue);
-            //println("ICI "+id + " "+v.min)
-            cblsIntMap += v.id -> c; //was id ->
-            c;//}}
+            cblsIntMap += v.id -> c;
+            c;
           case Some(c) => c;
         }
       }
     }
+
+
   def handleSolution() = {
     println("% time from start: "+getWatch())
     model.solution.handleSolution(
@@ -197,13 +167,4 @@ class FZCBLSModel(val model: FZProblem, val c: ConstraintSystem, val m: Store, v
       vls.restrictDomain(vls.dom.min to vls.dom.max)
     }
   }
-  /*
-  def getSolution():String = {
-    model.solution.getSolution(
-      (s: String) => cblsIntMap.get(s) match {
-        case Some(intVar) =>
-          intVar.value + "";
-        case _ => throw new Exception("Unhappy")
-      });
-  }*/
-}
+ }
