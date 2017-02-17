@@ -44,29 +44,29 @@ class FZCBLSModelBuilder extends LinearSelector with StopWatch {
 
     val useCP = opts.is("usecp")
 
-    val model = FZParser.readFlatZincModelFromFile(opts.fileName,log, false).problem;
+    val fzModel = FZParser.readFlatZincModelFromFile(opts.fileName,log, false).problem;
 
-    Helper.getCstrsByName(model.constraints).map{ case (n:String,l:List[Constraint]) => l.length +"\t"+n}.toList.sorted.foreach(log(_))
+    Helper.getCstrsByName(fzModel.constraints).map{ case (n:String,l:List[Constraint]) => l.length +"\t"+n}.toList.sorted.foreach(log(_))
 
     log("Parsed. Parsing took "+getWatch+" ms")
-    val cpmodel = new FZCPModel(model,oscar.cp.Strong )
-    //println(model.variables.toList.map(v => v.domainSize))
+    val cpmodel = new FZCPModel(fzModel,oscar.cp.Strong )
+    //println(fzModel.variables.toList.map(v => v.domainSize))
 
-    simplify(opts, log, useCP, model, cpmodel)
+    simplifyFlatZincModel(opts, log, useCP, fzModel, cpmodel)
 
 
     //Hack for the subcircuit constraints:
-    model.variables.foreach(v => if(v.isDefined && v.cstrs.exists{
+    fzModel.variables.foreach(v => if(v.isDefined && v.cstrs.exists{
         case c:subcircuit => true;
         case c:circuit => true;
         case c:inverse => true;
         case _ => false}) v.definingConstraint.get.unsetDefinedVar(v))
 
 
-    findInvariants(model, opts, log)
+    findInvariants(fzModel, opts, log)
 
     //Hack for the subcircuit constraints:
-    model.variables.foreach(v => if(v.isDefined && v.cstrs.exists{
+    fzModel.variables.foreach(v => if(v.isDefined && v.cstrs.exists{
         case c:subcircuit => true;
         case c:circuit => true;
         case c:inverse => true;
@@ -74,60 +74,41 @@ class FZCBLSModelBuilder extends LinearSelector with StopWatch {
 
 
 
-    val allConstraints:List[Constraint] = model.constraints.toList
+    val allConstraints:List[Constraint] = fzModel.constraints.toList
 
     val (maybeDirConstraint,maybeSoftConstraint) = allConstraints.partition(_.definedVar.isDefined)
     log("Possibly "+maybeDirConstraint.length+" invariants.")
     val (invariants,removed) = FZModelTransfo.getSortedInvariants(maybeDirConstraint)(log)
     log("Sorted "+invariants.length+" Invariants")
 
-    // Model
-    val m: Store = new Store(false, None, true)//setting the last Boolean to true would avoid calling the SCC algorithm but we have to make sure that there are no SCCs in the Graph. Is it the case in the way we build it?
-    // constraint system
-    val cs = ConstraintSystem(m)
-    val cblsmodel = new FZCBLSModel(model,cs,m,log,() => getWatch)
+
+    val cblsmodel = new FZCBLSModel(fzModel,log,() => getWatch)
 
     if(useCP)cblsmodel.useCPsolver(cpmodel)
     log("Created Model (Variables and Objective)")
 
 
-    val softConstraints: List[Constraint] = findAndPostImplicitConstraints(cblsmodel, m, maybeSoftConstraint, removed, opts, log)
+    val softConstraints: List[Constraint] = findAndPostImplicitConstraints(cblsmodel, maybeSoftConstraint, removed, opts, log)
 
 
-    val poster: FZCBLSConstraintPoster = new FZCBLSConstraintPoster(cs,cblsmodel.getCBLSVar)
+    val poster: FZCBLSConstraintPoster = new FZCBLSConstraintPoster(cblsmodel.c,cblsmodel.getCBLSVar)
 
-    for (invariant <- invariants){
-      log(2,"Posting as Invariant "+invariant)
-      val inv = poster.add_invariant(invariant)
-      cblsmodel.cblsIntMap += invariant.definedVar.get.id -> inv;
-    }
-    log("Posted "+invariants.length+" Invariants")
-    Helper.getCstrsByName(invariants).map{ case (n:String,l:List[Constraint]) => l.length +"\t"+n}.toList.sorted.foreach(s => log(" "+s))
+    postInvariants(cblsmodel, poster, invariants, log)
 
-    for (constraint <- softConstraints) {
-      log(2,"Posting as Soft "+constraint)
-      poster.add_constraint(constraint);
-    }
-    log("Posted "+softConstraints.length+" Soft Constraints")
-    Helper.getCstrsByName(softConstraints).map{ case (n:String,l:List[Constraint]) => l.length +"\t"+n}.toList.sorted.foreach(s => log(" "+s))
-    log(softConstraints.filter(c => c.getVariables().forall(v => !v.isDefined)).size+" are only on search variables.")
-    log(softConstraints.filter(c => c.getVariables().forall(v => v.isDefined)).size+" are only on defined variables.")
+    postConstraints(poster, softConstraints, log)
 
-    //println(implicitConstraints.length + " implicit constraints");
-    //Do not want to search on such variables!
-    cblsmodel.vars = cblsmodel.vars.filterNot(v => v.domainSize==1 || v.isControlledVariable);
+    //Do not want to search on fixed variables!
+    cblsmodel.removeVariablesFromNeighbourhood(v => v.domainSize == 1 || v.isControlledVariable)
+
     cblsmodel.addDefaultNeighbourhoods()
 
 
     //Create variable violation before closing the constraint system!
-    cblsmodel.vars.map(cblsmodel.c.violation(_))
+    cblsmodel.initiateVariableViolation()
 
-    cblsmodel.c.close()//The objective depends on the violation of the CS, so it must be first closed before creating the Objective.
-    cblsmodel.objective = new FZCBLSObjective(cblsmodel,log)//But objective is needed in neighbourhoods
-
-
+    cblsmodel.closeConstraintSystem()//The objective depends on the violation of the CS, so it must be first closed before creating the Objective.
+    cblsmodel.initObjective()//But objective is needed in neighbourhoods
     cblsmodel.createNeighbourhoods()//So we actually create the neighbourhoods only after!
-    cblsmodel.neighbourhoods.foreach(n => log(2,"Created Neighbourhood "+ n+ " over "+n.searchVariables.length+" variables"))
     
     
     if(cblsmodel.neighbourhoods.length==0){
@@ -142,31 +123,35 @@ class FZCBLSModelBuilder extends LinearSelector with StopWatch {
     //Search
     val timeout = (if(opts.timeOut>0) {opts.timeOut} else 20 * 60) * 1000
     log("Timeout is set to "+timeout+" milliseconds"); 
-    val sc : SearchControl =  model.search.obj match {
+    val sc : SearchControl =  fzModel.search.obj match {
           case Objective.SATISFY => new SearchControl(cblsmodel,0,timeout,true);
-          case Objective.MAXIMIZE => new SearchControl(cblsmodel,-model.search.variable.get.max, timeout,false);
-          case Objective.MINIMIZE => new SearchControl(cblsmodel,model.search.variable.get.min, timeout,false);
+          case Objective.MAXIMIZE => new SearchControl(cblsmodel,-fzModel.search.variable.get.max, timeout,false);
+          case Objective.MINIMIZE => new SearchControl(cblsmodel,fzModel.search.variable.get.min, timeout,false);
         }
+
+
     //TODO: The search should print the solution if, by chance, the initial assingnment is a solution!
     val search = new Chain(
         new ActionSearch(() => {sc.cancelObjective()}),
         if(!opts.is("no-sls"))new SimpleLocalSearch(cblsmodel,sc) else new ActionSearch(() =>{}),
         new NeighbourhoodSearchSAT(cblsmodel,sc),
         new ActionSearch(() => {sc.restoreObjective()}),
-        model.search.obj match {
+        fzModel.search.obj match {
           case Objective.SATISFY => new ActionSearch(() => {}) 
           case Objective.MAXIMIZE => new NeighbourhoodSearchOPT(cblsmodel,sc)
           case Objective.MINIMIZE => new NeighbourhoodSearchOPT(cblsmodel,sc); //new NeighbourhoodSearchOPTbySAT(cblsmodel,sc)//
         });
     
     log("Search created")
-    m.close();
+    cblsmodel.close()
     log("Model closed");
+
+
     if(opts.is("no-run")){
       log("Not running the search...")
     }else{
       log("Starting Search at "+getWatchString)
-      if(cblsmodel.c.violatedConstraints.length == 0 && model.search.obj == Objective.SATISFY  ){
+      if(cblsmodel.c.violatedConstraints.length == 0 && fzModel.search.obj == Objective.SATISFY  ){
         cblsmodel.handleSolution()
       }else {
         search.run()
@@ -177,14 +162,36 @@ class FZCBLSModelBuilder extends LinearSelector with StopWatch {
         log("Smallest violation: "+sc.bestPair._1 )
         log(cblsmodel.c.violatedConstraints.length+" violated constraints")
       }else{
-        log("Best Overall Solution: "+sc.bestKnownObjective * (if(model.search.obj==Objective.MAXIMIZE) -1 else 1))
+        log("Best Overall Solution: "+sc.bestKnownObjective * (if(fzModel.search.obj==Objective.MAXIMIZE) -1 else 1))
       }
     }
     System.exit(0)
   }
 
 
-  def findAndPostImplicitConstraints(cblsmodel: FZCBLSModel, m: Store, maybeSoftConstraint: List[Constraint], removed: List[Constraint], opts: Options, log: Log): List[Constraint] = {
+  def postConstraints(poster: FZCBLSConstraintPoster, softConstraints: List[Constraint], log: Log): Unit = {
+    for (constraint <- softConstraints) {
+      log(2, "Posting as Soft " + constraint)
+      poster.add_constraint(constraint);
+    }
+    log("Posted " + softConstraints.length + " Soft Constraints")
+    Helper.getCstrsByName(softConstraints).map { case (n: String, l: List[Constraint]) => l.length + "\t" + n }.toList.sorted.foreach(s => log(" " + s))
+    log(softConstraints.filter(c => c.getVariables().forall(v => !v.isDefined)).size + " are only on search variables.")
+    log(softConstraints.filter(c => c.getVariables().forall(v => v.isDefined)).size + " are only on defined variables.")
+  }
+
+  def postInvariants(cblsmodel: FZCBLSModel, poster: FZCBLSConstraintPoster, invariants: List[Constraint], log: Log): Unit = {
+    for (invariant <- invariants) {
+      log(2, "Posting as Invariant " + invariant)
+      val inv = poster.add_invariant(invariant)
+      cblsmodel.cblsIntMap += invariant.definedVar.get.id -> inv;
+    }
+
+    log("Posted " + invariants.length + " Invariants")
+    Helper.getCstrsByName(invariants).map { case (n: String, l: List[Constraint]) => l.length + "\t" + n }.toList.sorted.foreach(s => log(" " + s))
+  }
+
+  def findAndPostImplicitConstraints(cblsmodel: FZCBLSModel, maybeSoftConstraint: List[Constraint], removed: List[Constraint], opts: Options, log: Log): List[Constraint] = {
     val softOrImplicitConstraint = maybeSoftConstraint ++ removed
     if (opts.is("no-impl-cstr")) {
       log("Did not try to find implicit constraints")
@@ -197,7 +204,7 @@ class FZCBLSModelBuilder extends LinearSelector with StopWatch {
       log("Found " + cblsmodel.neighbourhoodGenerator.length + " Implicit Constraints")
       Helper.getCstrsByName(implicitConstraints).map { case (n: String, l: List[Constraint]) => l.length + "\t" + n }.toList.sorted.foreach(s => log(" " + s))
 
-      val hardCS = ConstraintSystem(m)
+      val hardCS = ConstraintSystem(cblsmodel.m)
       val hardPoster: FZCBLSConstraintPoster = new FZCBLSConstraintPoster(hardCS, cblsmodel.getCBLSVar);
       for (c <- implicitConstraints) {
         try {
@@ -242,16 +249,16 @@ class FZCBLSModelBuilder extends LinearSelector with StopWatch {
     }
   }
 
-  private def simplify(opts: Options, log: Log, useCP: Boolean, model: FZProblem, cpmodel: FZCPModel): Unit = {
+  private def simplifyFlatZincModel(opts: Options, log: Log, useCP: Boolean, model: FZProblem, cpmodel: FZCPModel): Unit = {
     if (useCP) {
       FZModelTransfo.propagate(model)(log);
       log("Reduced Domains before CP")
-      //println(model.variables.toList.map(v => v.domainSize))
+      //println(fzModel.variables.toList.map(v => v.domainSize))
       cpmodel.createVariables()
       cpmodel.createConstraints()
       cpmodel.updateModelDomains()
       log("Reduced Domains with CP")
-      //println(model.variables.toList.map(v => v.domainSize))
+      //println(fzModel.variables.toList.map(v => v.domainSize))
     }
     if (opts.is("no-simpl")) {
       log("No domain reduction")

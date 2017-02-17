@@ -141,8 +141,8 @@ class FZCBLSModel(val model: FZProblem, val c: ConstraintSystem, val m: Store, v
         cblsIntMap.get(v.id) match {
           case None if v.isBound =>
             //From Gustav: All constants need to have a store, otherwise they won't have a UniqueID (from PropagationElement) and constraints will start throwing exceptions
-            //JNM: I removed ",m " to avoid introducing a lot of useless "variables" in the model in the hope of making it more efficient.
-            //JNM: restored the "m," as one need it to find the model sometimes.
+            //JNM: I removed ",m " to avoid introducing a lot of useless "variables" in the fzModel in the hope of making it more efficient.
+            //JNM: restored the "m," as one need it to find the fzModel sometimes.
             val c = new CBLSIntConstDom(m,v.value);
             cblsIntMap += v.id -> c;
             c;
@@ -152,8 +152,8 @@ class FZCBLSModel(val model: FZProblem, val c: ConstraintSystem, val m: Store, v
         cblsIntMap.get(v.id) match {
           case None if v.isBound =>
             //From Gustav: All constants need to have a store, otherwise they won't have a UniqueID (from PropagationElement) and constraints will start throwing exceptions
-            //JNM: I removed ",m " to avoid introducing a lot of useless "variables" in the model in the hope of making it more efficient.
-            //JNM: restored the "m," as one need it to find the model sometimes.
+            //JNM: I removed ",m " to avoid introducing a lot of useless "variables" in the fzModel in the hope of making it more efficient.
+            //JNM: restored the "m," as one need it to find the fzModel sometimes.
             val c = new CBLSIntConstDom(m,v.intValue);
             cblsIntMap += v.id -> c;
             c;
@@ -257,20 +257,20 @@ class FZCBLSSolver extends LinearSelector with StopWatch {
     
     val heuristic = new Heuristic(model)
     
-//    model.variables.foreach{
+//    fzModel.variables.foreach{
 //      case v:IntegerVariable => println(v+"\t"+v.domain)
 //    }
     val cpmodel = if(useCP){
       val cpmodel = new FZCPModel(model,oscar.cp.Strong, true)
-//      println(model.variables.toList.map(v => v.domainSize))
+//      println(fzModel.variables.toList.map(v => v.domainSize))
       FZModelTransfo.simplify(model)(log);
       log("Reduced Domains before CP")
-//      println(model.variables.toList.map(v => v.domainSize))
+//      println(fzModel.variables.toList.map(v => v.domainSize))
       cpmodel.createVariables()
       cpmodel.createConstraints()
       cpmodel.updateModelDomains()
       log("Reduced Domains with CP")
-      //println(model.variables.toList.map(v => v.domainSize))
+      //println(fzModel.variables.toList.map(v => v.domainSize))
       cpmodel
     }else null
     
@@ -489,7 +489,7 @@ class FZCBLSSolver extends LinearSelector with StopWatch {
         log("Smallest violation: "+sc.bestPair._1 )
         log(cblsmodel.c.violatedConstraints.length+" violated constraints")
       }else{
-        log("Best Overall Solution: "+sc.bestKnownObjective * (if(model.search.obj==Objective.MAXIMIZE) -1 else 1))
+        log("Best Overall Solution: "+sc.bestKnownObjective * (if(fzModel.search.obj==Objective.MAXIMIZE) -1 else 1))
       }
     }
     * 

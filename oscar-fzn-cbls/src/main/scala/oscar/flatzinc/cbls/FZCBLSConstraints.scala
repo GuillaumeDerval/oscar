@@ -289,7 +289,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   def get_int_max_inv(a: IntegerVariable, b: IntegerVariable, c: IntegerVariable, defId: String, ann: List[Annotation]) = {
     if (defId == c.id) {
       Max2(a, b)
-    } else if (defId == a.id) { // This is superweird but it happened in a model...
+    } else if (defId == a.id) { // This is superweird but it happened in a fzModel...
       Max2(c, b)
     } else {
       Max2(a, c)
@@ -302,7 +302,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   def get_int_min_inv(a: IntegerVariable, b: IntegerVariable, c: IntegerVariable, defId: String, ann: List[Annotation]) = {
     if (defId == c.id) {
       Min2(a, b)
-    } else if (defId == a.id) { // This is superweird but it happened in a model...
+    } else if (defId == a.id) { // This is superweird but it happened in a fzModel...
       Min2(c, b)
     } else {
       Min2(a, c)

@@ -30,13 +30,43 @@ import scala.collection.mutable.{Map => MMap}
 import scala.util.Random
 
 
-class FZCBLSModel(val model: FZProblem, val c: ConstraintSystem, val m: Store, val log:Log, val getWatch: () => Long) {
+class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long) {
+
+
+
+  // Model
+  val m: Store = new Store(false, None, true) //setting the last Boolean to true would avoid calling the SCC algorithm but we have to make sure that there are no SCCs in the Graph. Is it the case in the way we build it?
+  // constraint system
+  val c = ConstraintSystem(m)
 
   val cblsIntMap: MMap[String, IntValue] = MMap.empty[String, IntValue]
-  var vars: List[CBLSIntVarDom] = createVariables();
+  //Create variables from FlatZinc model.
+  var vars: List[CBLSIntVarDom] = createVariables()
+
   var objective = null.asInstanceOf[FZCBLSObjective]
-  var neighbourhoods: List[Neighbourhood] = List.empty[Neighbourhood];
+  var neighbourhoods: List[Neighbourhood] = List.empty[Neighbourhood]
   var neighbourhoodGenerator: List[(CBLSObjective,ConstraintSystem) => Neighbourhood] = List.empty[(CBLSObjective,ConstraintSystem) => Neighbourhood]
+
+  def close():Unit ={
+    m.close()
+  }
+  def closeConstraintSystem():Unit ={
+    c.close()
+  }
+
+  def initiateVariableViolation() = {
+    vars.map(c.violation(_))
+  }
+
+  def removeVariablesFromNeighbourhood(condition:(CBLSIntVarDom => Boolean)) = {
+    vars = vars.filterNot(condition)
+  }
+
+  def initObjective() = {
+    objective = new FZCBLSObjective(this,log)
+  }
+
+
   def addNeighbourhood(n: (CBLSObjective,ConstraintSystem) => Neighbourhood,removeVars: Array[CBLSIntVarDom]){
     neighbourhoodGenerator = n :: neighbourhoodGenerator
     //neighbourhoods = n :: neighbourhoods
@@ -55,11 +85,12 @@ class FZCBLSModel(val model: FZProblem, val c: ConstraintSystem, val m: Store, v
 
   def createNeighbourhoods(){
     neighbourhoods = neighbourhoodGenerator.map(_(objective(),c))
+    neighbourhoods.foreach(n => log(2,"Created Neighbourhood "+ n+ " over "+n.searchVariables.length+" variables"))
   }
   def createVariables() = {
     var variables: List[CBLSIntVarDom] = List.empty[CBLSIntVarDom];
      //Only create variables that are not fixed by an invariant.
-    for (parsedVariable <- model.variables if !parsedVariable.isDefined) {
+    for (parsedVariable <- fzModel.variables if !parsedVariable.isDefined) {
       parsedVariable match {
         case IntegerVariable(id, dom) =>
           //TODO: Put this in a method! or make it deterministic as the neighbourhoods should take care of the assignments!
@@ -129,7 +160,7 @@ class FZCBLSModel(val model: FZProblem, val c: ConstraintSystem, val m: Store, v
 
   def handleSolution() = {
     println("% time from start: "+getWatch())
-    model.solution.handleSolution(
+    fzModel.solution.handleSolution(
       (s: String) => cblsIntMap.get(s) match {
         case Some(intVar) =>
           intVar.value + ""
@@ -142,9 +173,9 @@ class FZCBLSModel(val model: FZProblem, val c: ConstraintSystem, val m: Store, v
           }
         }
      });
-    if(cpmodel!=null && model.search.obj != Objective.SATISFY){
+    if(cpmodel!=null && fzModel.search.obj != Objective.SATISFY){
       log("Calling the CP solver")
-      cpmodel.updateBestObjectiveValue(getCBLSVar(model.search.variable.get).value)
+      cpmodel.updateBestObjectiveValue(getCBLSVar(fzModel.search.variable.get).value)
     //TODO: ignore variables whose domain should not be reduced (e.g. variables in the Circuit constraint)
       cpmodel.updateModelDomains()
       updateVarDomains()
@@ -153,13 +184,13 @@ class FZCBLSModel(val model: FZProblem, val c: ConstraintSystem, val m: Store, v
   }
   var cpmodel = null.asInstanceOf[FZCPModel]
   def useCPsolver(cpm: FZCPModel){
-    assert(cpm.model == model);
+    assert(cpm.model == fzModel);
     cpmodel = cpm
   }
   def updateVarDomains(){
     //TODO: Make sure this is necessary,as it is not clear from which domain the moves are drawn from.
     //Might want to get rid of CBLSIntVarDom
-    for(vm<-model.variables if !vm.isDefined && !vm.cstrs.exists{
+    for(vm<-fzModel.variables if !vm.isDefined && !vm.cstrs.exists{
         case c:subcircuit => true;
         case c:circuit => true;
         case _ => false}){

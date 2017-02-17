@@ -46,6 +46,7 @@ abstract class SearchProcedure extends LinearSelector{
     }
   }
 }
+
 class Chain(val a: SearchProcedure*) extends SearchProcedure {
   def run() = {
     a.foreach(_.run())
@@ -56,7 +57,7 @@ class ActionSearch(action:() => Unit) extends SearchProcedure {
   def run() = action()
 }
 class FakeSearch extends SearchProcedure {
-  def run()={}
+  def run() = {}
 }
 
 class GreedySearch(val level: Int = 1, val m: FZCBLSModel,val sc: SearchControl) extends SearchProcedure {
@@ -92,6 +93,7 @@ class GreedySearch(val level: Int = 1, val m: FZCBLSModel,val sc: SearchControl)
     log("Nb Moves: "+it)
   }
 }
+
 class SimpleLocalSearch(val m:FZCBLSModel,val sc: SearchControl) extends SearchProcedure {
   val violation: Array[IntValue] = m.vars.map(m.c.violation(_)).toArray;
   val log = m.log
@@ -463,7 +465,7 @@ class NeighbourhoodSearchOPTbySAT(m:FZCBLSModel, sc: SearchControl) extends Neig
         }
         if(m.c.violation.value == 0){
           bestViolation = Int.MaxValue
-        /*  m.objective.objectiveBound := (m.model.search.obj match{
+        /*  m.objective.objectiveBound := (m.fzModel.search.obj match{
             case FZObjective.MINIMIZE => m.objective.objectiveVar.value-1
             case FZObjective.MAXIMIZE => m.objective.objectiveVar.value+1
           })

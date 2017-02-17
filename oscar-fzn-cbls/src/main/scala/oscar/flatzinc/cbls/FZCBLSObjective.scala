@@ -26,14 +26,14 @@ import oscar.flatzinc.model.Objective
 
 
 class FZCBLSObjective(cblsmodel:FZCBLSModel, log:Log){
-  private val opt = cblsmodel.model.search.obj
-  val objectiveVar = cblsmodel.model.search.variable.map(cblsmodel.getCBLSVar(_)).getOrElse(null)
+  private val opt = cblsmodel.fzModel.search.obj
+  val objectiveVar = cblsmodel.fzModel.search.variable.map(cblsmodel.getCBLSVar(_)).getOrElse(null)
   val violation = cblsmodel.c.violation
- /* val objectiveBound = CBLSIntVarDom(cblsmodel.c.model, opt match {
+ /* val objectiveBound = CBLSIntVarDom(cblsmodel.c.fzModel, opt match {
     case Objective.SATISFY => 0
-    case Objective.MINIMIZE => cblsmodel.model.search.variable.get.max+1
-    case Objective.MAXIMIZE => cblsmodel.model.search.variable.get.min-1
-  }, cblsmodel.model.search.variable.get.domain, "ObjectiveBound")
+    case Objective.MINIMIZE => cblsmodel.fzModel.search.variable.get.max+1
+    case Objective.MAXIMIZE => cblsmodel.fzModel.search.variable.get.min-1
+  }, cblsmodel.fzModel.search.variable.get.domain, "ObjectiveBound")
 */
   val violationWeight = CBLSIntVar(cblsmodel.c.model, 1, 0 to (if(violation.max!=0)Int.MaxValue else 1) , "violation_weight")
   //TODO: The division does not seem right... why max and not min?

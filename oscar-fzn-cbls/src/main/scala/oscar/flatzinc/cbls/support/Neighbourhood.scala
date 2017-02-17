@@ -173,7 +173,7 @@ class GCCNeighborhood(val variables: Array[CBLSIntVarDom],val vals:Array[Int],va
   val ups = vals.toList.zip(up).foldLeft(Map.empty[Int,Int])((map,vl) => map + (vl._1 -> vl._2))
   val alldoms = variables.foldLeft((Int.MaxValue,Int.MinValue))((set,v) => (math.min(set._1,v.dom.min),math.max(set._2,v.dom.max)))
   reset();
-  //TODO: reset() should only be called after the model is closed, in case it makes use of invariants!
+  //TODO: reset() should only be called after the fzModel is closed, in case it makes use of invariants!
   def reset() = {
     //TODO: This reset does not respect the domains of the variables! is it?
     var cur = variables.map(_.value)
