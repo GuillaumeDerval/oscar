@@ -1,4 +1,5 @@
-// Generated from /home/janho/workspace/oscar-dev/oscar-fzn/src/main/java/oscar/flatzinc/parser/Flatzinc.g by ANTLR 4.5.1
+// Generated from /Users/gustavbjordal/OscaR/oscar/oscar-fzn/src/main/java/oscar/flatzinc/parser/Flatzinc.g4 by ANTLR 4.6
+package oscar.flatzinc.parser;
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -14,29 +15,17 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-package oscar.flatzinc.parser;
-import oscar.flatzinc.parser.intermediatemodel.*;
-import oscar.flatzinc.model.Annotation;
-import oscar.flatzinc.model.Domain;
-import oscar.flatzinc.model.DomainSet;
-import oscar.flatzinc.model.DomainRange;
-import oscar.flatzinc.ParsingException;
-import java.util.Set;
-import java.util.HashSet;
-
-
-import org.antlr.v4.runtime.Lexer;
-import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.TokenStream;
+//package oscar.flatzinc.parser;
 import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.atn.*;
+import org.antlr.v4.runtime.atn.ATN;
+import org.antlr.v4.runtime.atn.ATNDeserializer;
+import org.antlr.v4.runtime.atn.LexerATNSimulator;
+import org.antlr.v4.runtime.atn.PredictionContextCache;
 import org.antlr.v4.runtime.dfa.DFA;
-import org.antlr.v4.runtime.misc.*;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
 public class FlatzincLexer extends Lexer {
-	static { RuntimeMetaData.checkVersion("4.5.1", RuntimeMetaData.VERSION); }
+	static { RuntimeMetaData.checkVersion("4.6", RuntimeMetaData.VERSION); }
 
 	protected static final DFA[] _decisionToDFA;
 	protected static final PredictionContextCache _sharedContextCache =
@@ -111,7 +100,7 @@ public class FlatzincLexer extends Lexer {
 	}
 
 	@Override
-	public String getGrammarFileName() { return "Flatzinc.g"; }
+	public String getGrammarFileName() { return "Flatzinc.g4"; }
 
 	@Override
 	public String[] getRuleNames() { return ruleNames; }
