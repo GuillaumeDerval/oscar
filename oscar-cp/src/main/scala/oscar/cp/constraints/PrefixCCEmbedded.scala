@@ -14,11 +14,11 @@
   ******************************************************************************/
 package oscar.cp.constraints
 
+import oscar.algo.Inconsistency
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp.core.CPOutcome._
 import oscar.cp.core.delta.DeltaIntVar
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{CPOutcome, CPPropagStrength, Constraint}
+import oscar.cp.core.variables.{CPIntVar, CPVar}
+import oscar.cp.core.{CPPropagStrength, Constraint}
 
 /**
  * Cardinality constraint on prefixes of a variable array
@@ -35,6 +35,8 @@ import oscar.cp.core.{CPOutcome, CPPropagStrength, Constraint}
 class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int, Int)]],
                    upperLists: Array[Array[(Int, Int)]])
   extends Constraint(X(0).store, "PrefixCCEmbedded") {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   // Handy structures for memorization.
   // They allow to have common code for lower bound and upper bound treatment.
@@ -104,18 +106,17 @@ class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
   private[this] val unbound = Array.fill(nValues)(new UnboundList())
 
   private class FWCStructure(val boundIdx: Int, val boundVal: Int, untilCritical: Int,
-                             val list: UnboundList, val action: CPIntVar => CPOutcome) {
+                             val list: UnboundList, val action: CPIntVar => Unit) {
     val untilCriticalRev = new ReversibleInt(s, untilCritical)
 
-    def update(): CPOutcome = {
+    def update(): Unit = {
       if (untilCriticalRev.decr() == 0) {
         var unboundI = list.firstRev.value
         while (unboundI < boundIdx) {
-          if (action(X(unboundI)) == Failure) return Failure
+          action(X(unboundI))
           unboundI = list.nextRev(unboundI).value
         }
       }
-      Suspend
     }
   }
 
@@ -134,7 +135,7 @@ class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
   // INIT METHODS
   // ============
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
 
     val feasibleLower = (index: Int, value: Int) => value <= index
     val feasibleUpper = (index: Int, value: Int) => value >= 0
@@ -146,16 +147,15 @@ class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
       lower(vi).full = Array.tabulate(nVariables + 1)(i => 0)
       upper(vi).full = Array.tabulate(nVariables + 1)(i => i)
 
-      if (readArguments(lower(vi), lowerLists(vi), feasibleLower) == Failure) return Failure
-      if (readArguments(upper(vi), upperLists(vi), feasibleUpper) == Failure) return Failure
+      readArguments(lower(vi), lowerLists(vi), feasibleLower)
+      readArguments(upper(vi), upperLists(vi), feasibleUpper)
     }
 
     fillBounds()
-    if (testAndDeduceBounds() == Failure) return Failure
+    testAndDeduceBounds()
     filterBounds()
 
-    if (initAndCheck() == Failure) return Failure
-    Success
+    initAndCheck()
   }
 
   /**
@@ -163,10 +163,9 @@ class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
    * @param st The structure into which to copy the bounds
    * @param boundList The given list of bounds
    * @param feasible The feasibility criteria in terms of index and value of the bound
-   * @return [[Failure]] if one of the bounds in unfeasible, [[Suspend]] otherwise
    */
   private def readArguments(st: BoundsStructure, boundList: Array[(Int, Int)],
-                            feasible: (Int, Int) => Boolean): CPOutcome = {
+                            feasible: (Int, Int) => Boolean): Unit = {
     var bound = boundList.length
     while (bound > 0) {
       bound -= 1
@@ -174,12 +173,10 @@ class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
       if (index < 0 || index > nVariables) {
         throw new IllegalArgumentException("Bound cutoff out of range: " + index)
       } else if (!feasible(index, value)) {
-        return Failure
+        throw Inconsistency
       }
       st.full(index) = value
     }
-
-    Suspend
   }
 
   // ---------
@@ -279,9 +276,8 @@ class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
 
   /**
    * Does some basic tests on the bounds and deduces bounds based on the bounds for other values
-   * @return [[Failure]] if the bounds are found to be unfeasible, [[Suspend]] otherwise
    */
-  private def testAndDeduceBounds(): CPOutcome = {
+  private def testAndDeduceBounds(): Unit = {
     var i = nVariables
     while (i > 0) {
       // Compute the sums
@@ -291,12 +287,12 @@ class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
       while (vi > 0) {
         vi -= 1
         // The lower bound cannot be higher than the upper bound
-        if (lower(vi).full(i) > upper(vi).full(i)) return Failure
+        if (lower(vi).full(i) > upper(vi).full(i)) throw Inconsistency
         lowerSum += lower(vi).full(i)
         upperSum += upper(vi).full(i)
       }
       // Test the sums
-      if (lowerSum > i || upperSum < i) return Failure
+      if (lowerSum > i || upperSum < i) throw Inconsistency
       // Deduce some bounds
       vi = nValues
       while (vi > 0) {
@@ -308,7 +304,6 @@ class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
       }
       i -= 1
     }
-    Suspend
   }
 
   // -------------------------
@@ -317,9 +312,8 @@ class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
 
   /**
    * Initializes the memorization structures and performs first checks
-   * @return [[Failure]] if a failure is detected, [[Suspend]] otherwise
    */
-  private def initAndCheck(): CPOutcome = {
+  private def initAndCheck(): Unit = {
 
     // Create the linked list of unbound variables
     val unboundTmp = Array.fill(nValues)(new TempList(nRelevantVariables))
@@ -390,10 +384,8 @@ class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
       val criticalLower = (inter: Int) => nPossibleTmp(vi)(lower(vi).boundIdx(inter)) - lower(vi).boundVal(inter)
       val criticalUpper = (inter: Int) => upper(vi).boundVal(inter) - nMandatoryTmp(vi)(upper(vi).boundIdx(inter))
 
-      if ({/*println("lower:");*/ initFwc(lower(vi), tmpList, unbound(vi), criticalLower, _.assign(v)) == Failure}
-        || {/*println("upper:");*/ initFwc(upper(vi), tmpList, unbound(vi), criticalUpper, _.removeValue(v)) == Failure}) {
-        return Failure
-      }
+      initFwc(lower(vi), tmpList, unbound(vi), criticalLower, _.assign(v))
+      initFwc(upper(vi), tmpList, unbound(vi), criticalUpper, _.removeValue(v))
     }
 
     // Copy the temporary values into the reversible arrays
@@ -402,12 +394,10 @@ class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
       vi -= 1
       copyListToRev(unbound(vi), unboundTmp(vi))
     }
-
-    Suspend
   }
 
   private def initFwc(st: BoundsStructure, tmpList: TempList, list: UnboundList, untilCriticalIn: Int => Int,
-                      action: CPIntVar => CPOutcome): CPOutcome = {
+                      action: CPIntVar => Unit): Unit = {
     import st._
 
     // Create the arrays
@@ -430,13 +420,11 @@ class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
       //println(s"until critical: $untilCritical")
 
       if (untilCritical < 0) {
-        return Failure
+        throw Inconsistency
       } else if (untilCritical == 0) {
         var unboundI = tmpList.first
         while (unboundI < thisIdx) {
-          if (action(X(unboundI)) == Failure) {
-            return Failure
-          }
+          action(X(unboundI))
           unboundI = tmpList.next(unboundI)
         }
       }
@@ -450,8 +438,6 @@ class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
       }
       bound -= 1
     }
-
-    Suspend
   }
 
   /**
@@ -481,9 +467,8 @@ class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
    * Updates the structures and prunes according to the changes made on the variable
    * @param delta The values that were removed
    * @param x The variable they were removed from
-   * @return [[Failure]] if the pruning caused a failure, [[Suspend]] otherwise
    */
-  @inline private def whenDomainChanges(delta: DeltaIntVar, x: CPIntVar): CPOutcome = {
+  @inline private def whenDomainChanges(delta: DeltaIntVar, x: CPIntVar): Boolean = {
     val i = delta.id
 
     //println(s"updating $i")
@@ -503,10 +488,7 @@ class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
         var boundI = lowerBounds.length
         while (boundI > 0) {
           boundI -= 1
-          //println("lower update")
-          if (lowerBounds(boundI).update() == Failure) {
-            return Failure
-          }
+          lowerBounds(boundI).update()
         }
       }
     }
@@ -523,16 +505,11 @@ class PrefixCCEmbedded(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[
         while (boundI > 0) {
           boundI -= 1
           //println("upper update")
-          if (upperBounds(boundI).update() == Failure) {
-            return Failure
-          }
+          upperBounds(boundI).update()
         }
       }
     }
-
-    //printStatus()
-
-    Suspend
+    false
   }
 
   /**

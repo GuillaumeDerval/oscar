@@ -14,17 +14,15 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Hashtable;
+import java.util.*;
 
 import oscar.algo.reversible.ReversibleInt;
-import oscar.cp.core.CPOutcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
-
-
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
 
 
 /**
@@ -73,18 +71,18 @@ public class ElementCst extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x, z));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
 
-		if (x.updateMin(0) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		}
-		if (x.updateMax(y.length-1) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		}
+	@Override
+	public void setup(CPPropagStrength l) {
+
+		x.updateMin(0);
+		x.updateMax(y.length-1);
 		
-		if (propagate() == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		}
+		propagate();
 		if (l == CPPropagStrength.Strong) {
 			initCounters();
 			x.callValRemoveWhenValueIsRemoved(this);
@@ -93,8 +91,6 @@ public class ElementCst extends Constraint {
 		z.callPropagateWhenBoundsChange(this);
 		x.callPropagateWhenDomainChanges(this);		
 		x.callValBindWhenBind(this);
-
-		return CPOutcome.Suspend;
 	}
 	
 	private void initCounters() {
@@ -111,13 +107,11 @@ public class ElementCst extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome valRemove(CPIntVar var, int val) {
+	public void valRemove(CPIntVar var, int val) {
 		if (var == z) {
 			for (int i = 0; i < y.length; i++) {
 				if (y[i] == val) {
-					if (x.removeValue(i) == CPOutcome.Failure) {
-						return CPOutcome.Failure;
-					}
+					x.removeValue(i);
 				}
 			}
 		} else {
@@ -125,50 +119,37 @@ public class ElementCst extends Constraint {
 			ReversibleInt counter = counters.get(y[val]);
 			counter.decr();
 			if (counter.getValue() == 0) {
-				if (z.removeValue(y[val]) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
+				z.removeValue(y[val]);
 			}
 		}
-		return CPOutcome.Suspend;
 	}
 
 	@Override
-	public CPOutcome propagate() {
+	public void propagate() {
 		// z = y[x] 
 		int i = minIndSupp.getValue();
 		while (i<y.length && (y[sortedPerm[i]] < z.getMin() || !x.hasValue(sortedPerm[i]))) {
-			if (x.removeValue(sortedPerm[i]) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
+			x.removeValue(sortedPerm[i]);
 			i++;
 		}
 		minIndSupp.setValue(i);
 		
-		if (z.updateMin(y[sortedPerm[i]]) == CPOutcome.Failure){
-			return CPOutcome.Failure;
-		}
+		z.updateMin(y[sortedPerm[i]]);
 		
 		i = maxIndSupp.getValue();
 		while (i>=0 && (y[sortedPerm[i]] > z.getMax() || !x.hasValue(sortedPerm[i]))) {
-			if (x.removeValue(sortedPerm[i]) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
+			x.removeValue(sortedPerm[i]);
 			i--;
 		}
 		maxIndSupp.setValue(i);
 		
-		if (z.updateMax(y[sortedPerm[i]]) == CPOutcome.Failure){
-			return CPOutcome.Failure;
-		}
-		return CPOutcome.Suspend;
+		z.updateMax(y[sortedPerm[i]]);
 	}
 	@Override
-	public CPOutcome valBind(CPIntVar x) {
+	public void valBind(CPIntVar x) {
 		// x is bound
-		if (z.assign(y[x.min()]) == CPOutcome.Failure)
-			return CPOutcome.Failure;
-		return CPOutcome.Success;
+		z.assign(y[x.min()]);
+		deactivate();
 	}
 
 }

@@ -1,9 +1,8 @@
 package oscar.cp.core.domains
 
-import oscar.algo.reversible.ReversibleContext
-import oscar.algo.reversible.ReversibleInt
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.CPOutcome
+import oscar.algo.Inconsistency
+import oscar.algo.reversible.{ReversibleContext, ReversibleInt}
+
 import scala.util.Random
 
 /**
@@ -135,9 +134,8 @@ final class SparseSetDomain(override val context: ReversibleContext, val minValu
   }
 
   @inline
-  override final def removeValue(value : Int): CPOutcome = {
-    if (!hasValue(value)) Suspend
-    else {
+  override final def removeValue(value : Int): Unit = {
+    if (hasValue(value)) {
       val s = _size.value - 1
       // Swaps the values
       val v1 = value - minValue
@@ -150,13 +148,13 @@ final class SparseSetDomain(override val context: ReversibleContext, val minValu
       indexes(v2) = i1
       // Adjusts the size accordingly
       _size.value = s
-      if (s == 0) Failure
-      else Suspend
+      if (s == 0)
+        throw Inconsistency
     }
   }
 
   /**
-   * @param value
+   * @param v
    * @return smallest value in the domain >= value, value-1 is returned if no such value
    */
   @inline
@@ -175,7 +173,7 @@ final class SparseSetDomain(override val context: ReversibleContext, val minValu
   }
 
   /**
-   * @param value
+   * @param v
    * @return largest value in the domain <= value, value+1 is returned if no such value
    */
   @inline
@@ -194,11 +192,12 @@ final class SparseSetDomain(override val context: ReversibleContext, val minValu
   }
 
   @inline
-  override final def assign(value: Int): CPOutcome = {
+  override final def assign(value: Int): Unit = {
     if (!hasValue(value)) {
       _size.value = 0
-      Failure
-    } else {
+      throw Inconsistency
+    }
+    else {
       val v = values(0)
       val index = indexes(value - minValue)
       indexes(value - minValue) = 0
@@ -208,55 +207,58 @@ final class SparseSetDomain(override val context: ReversibleContext, val minValu
       _min.value = value
       _max.value = value
       _size.value = 1
-      Suspend
     }
   }
 
   @inline
-  override final def updateMin(minv: Int): CPOutcome = {
+  override final def updateMin(minv: Int): Unit = {
     if (isEmpty) sys.error("empty domain")
     else {
       val minVal = min // Lazy update
-      if (minv <= minVal) Suspend
-      else {
+      if (minv > minVal) {
         val maxVal = max // Lazy update
         if (minv > maxVal) {
           _size.value = 0
-          Failure
-        } else if (minv == maxVal) assign(minv)
+          throw Inconsistency
+        }
+        else if (minv == maxVal) {
+          assign(minv)
+        }
         else {
           var cv = minVal
           while (cv < minv) {
             removeValue(cv)
             cv += 1
           }
-          if (hasValue(minv)) _min.value = minv
-          Suspend
+          if (hasValue(minv))
+            _min.value = minv
         }
       }
     }
   }
 
   @inline
-  override final def updateMax(maxv: Int): CPOutcome = {
+  override final def updateMax(maxv: Int): Unit = {
     if (isEmpty) sys.error("empty domain")
     else {
       val maxVal = max // Lazy update
-      if (maxv >= maxVal) Suspend
-      else {
+      if (maxv < maxVal) {
         val minVal = min // Lazy update
         if (maxv < minVal) {
           _size.value = 0
-          Failure
-        } else if (maxv == minVal) assign(maxv)
+          throw Inconsistency
+        }
+        else if (maxv == minVal) {
+          assign(maxv)
+        }
         else {
           var cv = maxVal
           while (cv > maxv) {
             removeValue(cv)
             cv -= 1
           }
-          if (hasValue(maxv)) _max.value = maxv
-          Suspend
+          if (hasValue(maxv))
+            _max.value = maxv
         }
       }
     }

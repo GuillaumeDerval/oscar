@@ -1,17 +1,17 @@
 package oscar.cp.scheduling.constraints
 
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.CPStore
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
 import java.lang.Math._
+
+import oscar.algo.Inconsistency
 import oscar.algo.SortUtils._
+
 import scala.collection.mutable.Set
 import scala.collection.mutable.TreeSet
-import oscar.cp.core.Inconsistency
 
 /*
  * For every pair of activities s.t. height(i) + height(j) > capacity,
@@ -52,8 +52,10 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   private[this] var dminFmax = 0
   private[this] var hminmax = 0
 
-  private[this] val profile = new ProfileStructure(smin, smax, dmin, emin, emax, hmin, required, possible)  
-  
+  private[this] val profile = new ProfileStructure(smin, smax, dmin, emin, emax, hmin, required, possible)
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ heights ++ resources ++ Array(capacity)
+
   @inline private def updateFreeAndMaxs(limit: Int) = {
     dminFmax = 0
     hminmax = 0
@@ -160,7 +162,7 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   
   private[this] val pushees = Array.ofDim[Int](nTasks)
   
-  final override def propagate(): CPOutcome = {
+  final override def propagate(): Unit = {
     updateCache()
     val C = capacity.max
     
@@ -182,7 +184,8 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
     // introduce only those pushers that have allowingDMin < dminmax and allowingHeight < hminmax
     // This should especially filter out pushers of large MOI, which can not filter anything.
     val nPushers = introducePushers(limit, C)
-    if (nPushers == 0) return Suspend
+    if (nPushers == 0)
+      return
 
     // Step 1.3: get max emin and min smax of pushers
     updatePushersTimeBounds(nPushers)
@@ -190,7 +193,8 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
     // Step 1.4: compare the time bounds of every possible pushee to extremal time bounds of pushers 
     // if a pushee would not get pushed by extremal time bound, do not introduce it. 
     val nPushees = introducePushees(limit)
-    if (nPushees == 0) return Suspend
+    if (nPushees == 0)
+      return
     
     // Step 2: confront every pushee to every pusher 
     var i = 0
@@ -204,11 +208,11 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
         
         if (hmin(b) > Ca && a != b) {  // a can push b
           if (eminF(a) > smaxF(b) && emax(b) > smaxF(a)) {
-            if (ends(b).updateMax(smaxF(a)) == Failure) return Failure
+            ends(b).updateMax(smaxF(a))
           }
           
           if (eminF(b) > smaxF(a) && smin(b) < eminF(a)) {
-            if (starts(b).updateMin(eminF(a)) == Failure) return Failure
+            starts(b).updateMin(eminF(a))
           }
         }
         
@@ -216,10 +220,7 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
       }
       i += 1
     }
-    
-    Suspend
   }
-
 }
 
 

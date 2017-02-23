@@ -15,14 +15,14 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 
 import oscar.cp.constraints._
 
 import oscar.cp._
 
 
-class TestOperator extends FunSuite with ShouldMatchers  {
+class TestOperator extends TestSuite  {
   
   
   test("unary operator") { 

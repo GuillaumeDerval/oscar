@@ -14,10 +14,17 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Less Than Constraint ( x < y)
@@ -41,21 +48,22 @@ public class Le extends Constraint {
 	public Le(CPIntVar x, int v) {
 		this(x, CPIntVar.apply(v, v, x.store()));
 	}
-	
+
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x, y));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
+	@Override
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		if (y.isBound()) {
-			if (x.updateMax(y.min()-1) == CPOutcome.Failure){
-				return CPOutcome.Failure;
-			}
-			return CPOutcome.Success;
+			x.updateMax(y.min()-1);
+			return;
 		}
 		
 		// y > x
-		if(s().post(new Gr(y,x)) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		}
-		return CPOutcome.Success;
+		s().post(new Gr(y,x));
 	}
 	
 }

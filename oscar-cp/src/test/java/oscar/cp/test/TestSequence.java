@@ -16,6 +16,7 @@ package oscar.cp.test;
 
 
 import junit.framework.TestCase;
+import oscar.algo.Inconsistency;
 import oscar.algo.reversible.SparseSet;
 import oscar.cp.constraints.EqCons;
 import oscar.cp.constraints.Sequence;
@@ -50,7 +51,7 @@ public class TestSequence extends TestCase {
         s = null;
     }
     
-    public void testSequence1(){
+    public void testSequence1() throws Inconsistency{
     	CPIntVar [] x = new CPIntVar[4];
     	for (int i = 0; i < x.length; i++) {
 			x[i] = CPIntVar.apply(s,0,1);
@@ -67,7 +68,7 @@ public class TestSequence extends TestCase {
         assertFalse(s.isFailed());
     }
 
-    public void testSequence2(){
+    public void testSequence2() throws Inconsistency{
     	CPIntVar [] x = new CPIntVar[4];
     	for (int i = 0; i < x.length; i++) {
 			x[i] = CPIntVar.apply(s,1,5);
@@ -84,7 +85,7 @@ public class TestSequence extends TestCase {
         assertFalse(s.isFailed());
     }
 
-    public void testSequence3(){
+    public void testSequence3() throws Inconsistency{
     	CPIntVar [] x = new CPIntVar[4];
     	for (int i = 0; i < x.length; i++) {
 			x[i] = CPIntVar.apply(s,1,5);
@@ -99,7 +100,7 @@ public class TestSequence extends TestCase {
         assertFalse(s.isFailed());
     }
 
-    public void testSequence4(){
+    public void testSequence4() throws Inconsistency {
     	CPIntVar [] x = new CPIntVar[4];
     	for (int i = 0; i < x.length; i++) {
 			x[i] = CPIntVar.apply(s,1,5);

@@ -1,12 +1,12 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 
 
 import oscar.cp._
 
-class TestSearchNew extends FunSuite with ShouldMatchers {
+class TestSearchNew extends TestSuite {
 
   test("ids search, bug #36") {
     implicit val cp = new CPSolver()
@@ -68,7 +68,7 @@ class TestSearchNew extends FunSuite with ShouldMatchers {
     var best = 0
     cp.onSolution { best = x.value }
     cp.search {
-      binaryStatic(Array(x), _.max)
+      binaryStaticIdx(Array(x), i => x.max)
     }
     val stat = cp.start()
     stat.nSols should be(4)

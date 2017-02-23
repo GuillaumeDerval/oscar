@@ -14,11 +14,18 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.CPStore;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
@@ -77,19 +84,21 @@ public class AtLeastNValueAC extends Constraint {
         this(x, nval);
     }
 
+    @Override
+    public Iterable<CPVar> associatedVars() {
+        List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+        l.add(nValueVar);
+        return JavaConversions.iterableAsScalaIterable(l);
+    }
 
     @Override
-    public CPOutcome setup(CPPropagStrength l) {
+    public void setup(CPPropagStrength l) throws Inconsistency {
         posted = true;
 
         if (nValueVar.getMin() < x.length) {
-            if (s().post(new AtLeastNValueFWC(x, nValueVar)) == CPOutcome.Failure) {
-                return CPOutcome.Failure;
-            }
+            s().post(new AtLeastNValueFWC(x, nValueVar));
         } else { //allDifferent (AtLeastNValueAC is also used to implement the AllDiffAC)
-            if (s().post(new AllDiffFWC(x)) == CPOutcome.Failure) {
-                return CPOutcome.Failure;
-            }
+            s().post(new AllDiffFWC(x));
         }
 
         findValueRange();
@@ -104,19 +113,15 @@ public class AtLeastNValueAC extends Constraint {
 
         int sizeMatching = findMaximalMatching();
 
-        if (nValueVar.updateMax(sizeMatching) == CPOutcome.Failure) {
-            return CPOutcome.Failure;
-        }
+        nValueVar.updateMax(sizeMatching);
 
         if (nValueVar.getMin() > sizeMatching) {
-            return CPOutcome.Failure;
+            throw Inconsistency.get();
         }
 
         allocateSCC();
 
-        if (propagate() == CPOutcome.Failure) {
-            return CPOutcome.Failure;
-        }
+        propagate();
 
         for (int k = 0; k < x.length; k++) {
             if (!x[k].isBound()) {
@@ -127,8 +132,6 @@ public class AtLeastNValueAC extends Constraint {
         if (!nValueVar.isBound()) {
             nValueVar.callPropagateWhenBoundsChange(this);
         }
-
-        return CPOutcome.Suspend;
     }
 
     public boolean hasValInBestAssignment(int i) {
@@ -145,7 +148,7 @@ public class AtLeastNValueAC extends Constraint {
     }
 
     @Override
-    public CPOutcome propagate() {
+    public void propagate() throws Inconsistency {
         nUnBound = 0;
         for (int k = 0; k < x.length; k++) {
             if (match[k] != NONE) {
@@ -163,16 +166,12 @@ public class AtLeastNValueAC extends Constraint {
 
         int maxMatching = findMaximalMatching();
 
-        if (nValueVar.updateMax(maxMatching) == CPOutcome.Failure) {
-            return CPOutcome.Failure;
-        }
+        nValueVar.updateMax(maxMatching);
         if (nValueVar.getMin() > maxMatching) {
-            //System.out.println("fail detected");
-            return CPOutcome.Failure;
+            throw Inconsistency.get();
         }
         //lower bound of nValueVar is pruned by CotCPAtLeastNValueIFW
         prune(maxMatching);
-        return CPOutcome.Suspend;
     }
 
     private void findValueRange() {

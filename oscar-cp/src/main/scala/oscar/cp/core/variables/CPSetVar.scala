@@ -3,28 +3,29 @@ package oscar.cp.core.variables
 import oscar.algo.reversible.ReversibleQueue
 import oscar.algo.reversible.Reversible
 import oscar.cp._
-import oscar.cp.core.CPOutcome._
 import oscar.cp.constraints.sets.Requires
 import oscar.cp.constraints.sets.Excludes
 import oscar.cp.constraints.SetCard
 import oscar.cp.core.domains.SetDomain
 import oscar.algo.reversible.ReversiblePointer
+import oscar.algo.vars.SetVarLike
 import oscar.cp.core.delta._
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.watcher.PropagEventQueueVarSet
 import oscar.cp.core.watcher.WatcherListL2
+
 import scala.collection.JavaConversions.mapAsScalaMap
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
  * @author Renaud Hartert ren.hartert@gmail.com
  */
-class CPSetVar(override val store: CPStore, min: Int, max: Int, override val name: String = "") extends CPVar {
+class CPSetVar(override val store: CPStore, min: Int, max: Int, override val name: String = "") extends CPVar with SetVarLike {
 
   private val dom = new SetDomain(store, min, max)
+  override val context = store
 
   val onDomainL2 = new WatcherListL2(store)
   val onRequiredL1 = new ReversiblePointer[PropagEventQueueVarSet](store, null)
@@ -44,14 +45,14 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
 
   /**
    * Test if a value is in the possible values
-   * @param val
+   * @param value
    * @return  true if value is in the possible values false otherwise
    */
   def isPossible(value: Int) = dom.isPossible(value)
 
   /**
    * Test if a value is in the required values
-   * @param val
+   * @param value
    * @return  true if value is in the required values false otherwise
    */
   def isRequired(value: Int) = dom.isRequired(value)
@@ -79,7 +80,7 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
   }
 
 
-  def filterWhenDomainChangesWithDelta(idempotent: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: DeltaSetVar => CPOutcome): DeltaSetVar = {
+  def filterWhenDomainChangesWithDelta(idempotent: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: DeltaSetVar => Unit)(implicit constraint: Constraint): DeltaSetVar = {
     val propagator = new PropagatorSetVar(this, 0, filter)
     propagator.idempotent = idempotent
     propagator.priorityL2 = priority
@@ -126,7 +127,7 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
     onExcludedIdxL1.setValue(new PropagEventQueueVarSet(onExcludedIdxL1.value, c, this, idx))
   }
 
-  def requires(v: Int): CPOutcome = {
+  def requires(v: Int): Unit = {
     if (dom.isPossible(v) && !dom.isRequired(v)) {
       // -------- AC3 notifications ------------
       onDomainL2.enqueue()
@@ -134,19 +135,15 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
       store.notifyRequired(onRequiredL1.value, this, v)
       store.notifyRequiredIdx(onRequiredIdxL1.value, this, v)
     }
-    val oc = dom.requires(v)
-    if (oc != CPOutcome.Failure) {
-      if (requiredSize == card.max) {
-        for (a: Int <- possibleNotRequiredValues.toSet) {
-          val r = excludes(a)
-          assert(r != CPOutcome.Failure)
-        }
-      }
-      card.updateMin(requiredSize)
-    } else oc
+    dom.requires(v)
+    if (requiredSize == card.max) {
+      for (a: Int <- possibleNotRequiredValues.toSet)
+        excludes(a)
+    }
+    card.updateMin(requiredSize)
   }
 
-  def excludes(v: Int): CPOutcome = {
+  def excludes(v: Int): Unit = {
     if (dom.isPossible(v) && !dom.isRequired(v)) {
       // -------- AC3 notifications ------------
       onDomainL2.enqueue()
@@ -154,19 +151,15 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
       store.notifyExcluded(onExcludedL1.value, this, v)
       store.notifyExcludedIdx(onExcludedIdxL1.value, this, v)
     }
-    val oc = dom.excludes(v)
-    if (oc != CPOutcome.Failure) {
-      if (possibleSize == card.min) {
-        for (a: Int <- possibleNotRequiredValues.toSet) {
-          val r = requires(a)
-          assert(r != CPOutcome.Failure)
-        }
-      }
-      card.updateMax(possibleSize)
-    } else oc
+    dom.excludes(v)
+    if (possibleSize == card.min) {
+      for (a: Int <- possibleNotRequiredValues.toSet)
+        requires(a)
+    }
+    card.updateMax(possibleSize)
   }
 
-  def requiresAll(): CPOutcome = {
+  def requiresAll(): Unit = {
     // -------- AC3 notifications ------------
     if (possibleSize > requiredSize) onDomainL2.enqueue()
     // -------- AC5 notifications ------------
@@ -176,12 +169,11 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
         if (onRequiredIdxL1.hasValue) store.notifyRequiredIdx(onRequiredIdxL1.value, this, v)
       }
     }
-    val oc = dom.requiresAll()
-    assert(oc != CPOutcome.Failure)
+    dom.requiresAll()
     card.assign(requiredSize)
   }
 
-  def excludesAll(): CPOutcome = {
+  def excludesAll(): Unit = {
     // -------- AC3 notifications ------------
     if (possibleSize > requiredSize) onDomainL2.enqueue()
     // -------- AC5 notifications ------------
@@ -191,8 +183,7 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
         if (onExcludedIdxL1.hasValue) store.notifyExcludedIdx(onExcludedIdxL1.value, this, v)
       }
     }
-    val oc = dom.excludesAll()
-    assert(oc != CPOutcome.Failure)
+    dom.excludesAll()
     card.assign(requiredSize)
   }
 

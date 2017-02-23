@@ -15,12 +15,13 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 import oscar.cp._
+import oscar.algo.debug
 import oscar.cp.constraints.{AllDiffAC, AllDiffFWC, CountingBasedAllDifferent}
 
 
-class TestCountingBasedAllDifferent extends FunSuite with ShouldMatchers  {
+class TestCountingBasedAllDifferent extends TestSuite  {
 
 
   test("CountingBasedAllDifferent : small") {
@@ -68,6 +69,7 @@ class TestCountingBasedAllDifferent extends FunSuite with ShouldMatchers  {
 
   test("CountingBasedAllDifferent : random") {
     for (i <- 0 until 200) {
+      if (i == 5) debug = true
       val cp = CPSolver()
       val n = 6
       val x = Array.tabulate(n)(i => CPIntVar(randomDom(n+1))(cp))
@@ -91,14 +93,6 @@ class TestCountingBasedAllDifferent extends FunSuite with ShouldMatchers  {
       assert(stat1.nSols == stat2.nSols)
       assert(stat1.nFails >= stat2.nFails)
       assert(stat2.nFails >= stat3.nFails)
-      
     }
-
-    
-    
-    
   }
-
-  
-
 }

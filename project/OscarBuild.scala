@@ -9,9 +9,11 @@ import sbtunidoc.Plugin._
 
 object OscarBuild extends Build {
 
+  lazy val PerfTest = config("perf") extend(Test)
+
   object BuildSettings {
     val buildOrganization = "oscar"
-    val buildVersion = "4.0.0-SNAPSHOT"
+    val buildVersion = "xcsp3-SNAPSHOT"
     val buildScalaVersion = "2.11.0"
     val buildSbtVersion= "0.13.12"
 
@@ -26,7 +28,9 @@ object OscarBuild extends Build {
     lazy val commonSettings = Defaults.defaultSettings ++  jacoco.settings ++ Seq(
       organization := buildOrganization,
       version := buildVersion,
-      scalacOptions in Compile ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature", "-unchecked", "-Xdisable-assertions"),
+      scalacOptions in Compile ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature",
+                                       "-unchecked", "-Xdisable-assertions", "-language:implicitConversions",
+                                       "-language:postfixOps"),
       scalacOptions in Test := Seq("-optimise"),
       testOptions in Test <+= (target in Test) map {
         t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
@@ -44,11 +48,16 @@ object OscarBuild extends Build {
         else
           Some(artifactoryName at artifactoryUrl + "libs-release-local")
       },
-      credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
+      credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
+      testOptions in PerfTest <+= (target in PerfTest) map {
+        t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
+      fork in PerfTest := true,
+      parallelExecution in PerfTest := false
     )
   }
 
   object Resolvers {
+    val xypron = "Xypron Release" at "http://rsync.xypron.de/repository/"
     val leadoperations = "AWS S3 Release Repository" at "http://maven.leadoperations.co/release"
     val cogcomp = "Cognitive Computation Group" at "http://cogcomp.cs.illinois.edu/m2repo/"
     val ingi = "INGI Snapshots" at "http://artifactory.info.ucl.ac.be/artifactory/libs-snapshot-local/"
@@ -57,6 +66,8 @@ object OscarBuild extends Build {
   object Dependencies {
     // Regular libraries
     val antlr4Runtime = "org.antlr" % "antlr4-runtime" % "latest.milestone"
+    val glpk = "org.gnu.glpk" % "glpk-java" % "1.7.0"
+    val linopt = "de.xypron.linopt" % "linopt" % "1.17"
     val lpsolve = "lpsolve" % "lpsolve" % "5.5.2"
     val jcommon = "org.jfree" % "jcommon" % "latest.milestone"
     val jfreechart = "org.jfree" % "jfreechart" % "latest.milestone"
@@ -67,11 +78,26 @@ object OscarBuild extends Build {
     val swingx = "org.swinglabs" % "swingx" % "1.0"
     val swingxWs = "org.swinglabs" % "swingx-ws" % "1.0"
     val xmlApisExt = "xml-apis" % "xml-apis-ext" % "latest.milestone"
-    val xcsp3 = "xcsp3"  % "xcsp3_2.11" % "1.0.0-SNAPSHOT"
+    val xcsp3 = "xcsp3"  % "xcsp3" % "1.0.0-SNAPSHOT"
+    val graphStreamCore = "org.graphstream" % "gs-core" % "1.3"
+    val graphStreamAlgo = "org.graphstream" % "gs-algo" % "1.3"
+    val graphStreamUI = "org.graphstream" % "gs-ui" % "1.3"
+    val scallop = "org.rogach" % "scallop_2.11" % "1.0.0"
+
+    // Akka
+    val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.4.3"
+    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.4.3"
+    val chill = "com.twitter" % "chill-akka_2.11" % "0.8.0"
+    val spores = "org.scala-lang.modules" %% "spores-core" % "0.2.1"
+
     // Test libraries
     val junit = "junit" % "junit" % "latest.milestone" % Test
     val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.11.+" % Test
     val scalaTest = "org.scalatest" %% "scalatest" % "2.2.+" % Test
+
+    val junit2 = "junit" % "junit" % "latest.milestone" % PerfTest
+    val scalaCheck2 = "org.scalacheck" %% "scalacheck" % "1.11.+" % PerfTest
+    val scalaTest2 = "org.scalatest" %% "scalatest" % "2.2.+" % PerfTest
 
     val testDeps = Seq(junit, scalaCheck, scalaTest)
   }
@@ -89,8 +115,8 @@ object OscarBuild extends Build {
         packSettings ++
         unidocSettings ++
         Seq(libraryDependencies ++= testDeps) :+
-        (unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(oscarFzn, oscarFznCbls)),
-    aggregate = Seq(oscarAlgebra, oscarAlgo, oscarCbls, oscarCp, oscarCPXcsp3, oscarDfo, oscarLinprog, oscarUtil, oscarVisual, oscarFzn, oscarFznCbls, oscarDes, oscarInvariants)
+        (unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(oscarFzn, oscarFznCbls, oscarPerf)),
+    aggregate = Seq(oscarAlgebra, oscarAlgo, oscarCbls, oscarCp, oscarCPXcsp3, oscarPerf, oscarModeling, oscarDfo, oscarLinprog, oscarUtil, oscarVisual, oscarFzn, oscarFznCbls, oscarDes, oscarInvariants)
 
   )
 
@@ -133,6 +159,19 @@ object OscarBuild extends Build {
     dependencies = Seq(oscarAlgo, oscarVisual)
   )
 
+  lazy val oscarModeling = Project(
+    id = "oscar-modeling",
+    base = file("oscar-modeling"),
+    settings =
+      commonSettings ++
+        Seq(
+          scalacOptions in Compile ++= Seq("-language:reflectiveCalls"),
+          resolvers ++= Seq(xypron),
+          libraryDependencies ++= testDeps :+ graphStreamCore :+ graphStreamAlgo :+ graphStreamUI :+ scallop
+                               :+ akkaActor :+ akkaRemote :+ chill :+ spores :+ scalaSwing :+ linopt :+ glpk),
+    dependencies = Seq(oscarCp)
+  )
+
   lazy val oscarCPXcsp3 = Project(
     id = "oscar-cp-xcsp3",
     base = file("oscar-cp-xcsp3"),
@@ -141,8 +180,23 @@ object OscarBuild extends Build {
         Seq(
           resolvers ++= Seq(ingi),
           libraryDependencies ++= testDeps :+ xcsp3),
-    dependencies = Seq(oscarCp)
+    dependencies = Seq(oscarCp, oscarModeling)
   )
+
+  lazy val oscarPerf = Project(
+    id = "oscar-perf",
+    base = file("oscar-perf"),
+    settings = commonSettings ++ Seq(resolvers ++= Seq(ingi), libraryDependencies ++= testDeps :+ xcsp3),
+    dependencies = Seq(oscarCp, oscarCPXcsp3, oscarModeling)
+  ).configs( PerfTest )
+    .settings(libraryDependencies ++= testDeps)
+    .settings(inConfig(PerfTest)(Defaults.testTasks ++ Seq()): _*)
+    .settings(inConfig(PerfTest)(baseDirectory in PerfTest := file(".")))
+    .settings(
+      testOptions in Test := Seq(Tests.Filter(x => !(x endsWith "PerfTest"))),
+      testOptions in PerfTest := Seq(Tests.Filter(_ endsWith "PerfTest"))
+    )
+
 
   // Not included in the root build
   lazy val oscarDes = Project(

@@ -1,9 +1,9 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
+
 import scala.collection.mutable.PriorityQueue
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
   * The StockingCost constraint holds when each item is produced before
@@ -23,6 +23,8 @@ import oscar.cp.core.variables.CPIntVar
   */
 class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIntVar, val c: Int) extends Constraint(Y(0).store, "StockingCost") {
 
+  override def associatedVars(): Iterable[CPVar] = Y ++ Array(H)
+
   val allDiffBC = new AllDiffBC(Y)
   //priorityL2 = 0
   val n = Y.size
@@ -41,7 +43,7 @@ class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIn
   val d = Array.fill(n)(0)
   val vopt = Array.fill(n)(0)
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     X.foreach(_.callPropagateWhenBoundsChange(this))
     H.callPropagateWhenBoundsChange(this)
     propagate()
@@ -105,8 +107,8 @@ class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIn
     
   }  
 
-  override def propagate(): CPOutcome = {
-    if (allDiffBC.propagate() == Failure) return Failure
+  override def propagate(): Unit = {
+    allDiffBC.propagate()
     sortIncremental()
     var t = Xmax(0)
     var i = 0
@@ -152,7 +154,7 @@ class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIn
         t -= 1
       }
     }
-    if (H.updateMin(Hopt) == Failure) return Failure
+    H.updateMin(Hopt)
     val slack = H.max - H.min
     i = 0
     while (i < n) {
@@ -163,9 +165,7 @@ class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIn
       }
       X(i).updateMin(newmin)
       i += 1
-    }    
-    Suspend
-
+    }
   }
 
 }

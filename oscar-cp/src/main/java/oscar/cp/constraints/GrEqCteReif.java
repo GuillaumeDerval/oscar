@@ -14,12 +14,19 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.CPStore;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Reified Greater or Equal Constraint
@@ -44,37 +51,35 @@ public class GrEqCteReif extends Constraint {
 		this.v = v;
 		this.b = b;
 	}
-	
+
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x, b));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
+	@Override
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		priorityBindL1_$eq(CPStore.MAXPRIORL1());
 		priorityL2_$eq(CPStore.MAXPRIORL2()-1);
-		CPOutcome oc = propagate();
-		if(oc == CPOutcome.Suspend){
+		propagate();
+		if(isActive()){
 			b.callValBindWhenBind(this);
 			x.callPropagateWhenBoundsChange(this);
 			if (b.isBound()) {
-				oc = valBind(b);
+				valBind(b);
 			}
 		}
-		return oc;
 	}
 	
 	@Override
-	public CPOutcome propagate() {
+	public void propagate() {
 		if (x.getMin() >= v) {
-			if (b.assign(1) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			return CPOutcome.Success;
+			b.assign(1);
+			deactivate();
 		} else if (x.getMax() < v) {
-			if (b.assign(0) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			return CPOutcome.Success;
-		}
-		else {
-			return CPOutcome.Suspend;
+			b.assign(0);
+			deactivate();
 		}
 	}
 	
@@ -84,19 +89,15 @@ public class GrEqCteReif extends Constraint {
 	}
 		
 	@Override
-	public CPOutcome valBind(CPIntVar var) {
+	public void valBind(CPIntVar var) {
 		if (b.min() == 0) {
 			//x < v
-			if (x.updateMax(v-1) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
+			x.updateMax(v-1);
 		} else {
 			//x >= v
-			if (x.updateMin(v) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}				
+			x.updateMin(v);
 		}
-		return CPOutcome.Success;
+		deactivate();
 	}
 
 }

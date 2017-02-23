@@ -15,16 +15,16 @@
 
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome
+import oscar.algo.Inconsistency
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.util.ArrayUtils
 import oscar.algo.reversible.ReversibleInt
+
 import scala.math.min
 import scala.math.max
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
 import oscar.cp.core.CPSolver
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.reversible.ReversibleSparseSet
@@ -37,7 +37,9 @@ import oscar.cp.core.watcher.Watcher
  * @author Renaud Hartert
  */
 class ElementVarAC3(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constraint(y(0).store, "ACElementVar") {
-    
+
+  override def associatedVars(): Iterable[CPVar] = y ++ Array(x, z)
+
   private[this] val xRange = max(0, x.min) to min(x.max, y.size)
   private[this] val zRange = (z.min max (y.map(_.min).min)) to (z.max min (y.map(_.max).max))
   
@@ -60,46 +62,41 @@ class ElementVarAC3(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constr
   
   
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
-    if (zRange.isEmpty) return Failure
+  override def setup(l: CPPropagStrength): Unit = {
+    if (zRange.isEmpty) throw Inconsistency
     //println("setup:"+x.mkString(","))
     
-    if (z.updateMax((y.map(_.max).max)) == Failure) return Failure
-    if (z.updateMin((y.map(_.min).min)) == Failure) return Failure
+    z.updateMax(y.map(_.max).max)
+    z.updateMin(y.map(_.min).min)
     
-    //if (x.updateMin(0) == Failure) return Failure
-    //if (x.updateMax(y.size - 1) == Failure) return Failure
+    //x.updateMin(0) //x.updateMax(y.size - 1)
+    adjustX()
 
-    if (adjustX() == Failure) Failure
-    else {
+    if (x.isBound) {
+      s.post(new Eq(y(x.min),z))
+      return
+    } else {
 
-      if (x.isBound) {
-        return s.post(new Eq(y(x.min),z))
-      } else {
-        
-        // Replaces this constraint by an Equality constraint.
-        val equality = new ElementEq(y, x, z)
+      // Replaces this constraint by an Equality constraint.
+      val equality = new ElementEq(y, x, z)
 
-        x.filterWhenBind(true,CPStore.MaxPriorityL2) {
-          if (s.post(equality) == Failure) Failure
-          else {
-            deactivate()
-            Success 
-          }            
-        }
-        //println("x::::::::::>"+x)
-        x.callPropagateWhenDomainChanges(this)
-        z.callPropagateWhenDomainChanges(this)
-        for (i <- x.min to x.max; if x hasValue i) {
-          if (z.size > 50) {
-            y(i).callPropagateWhenDomainChanges(this, x.hasValue(i))
-          } else {
-            y(i).callPropagateWhenDomainChanges(this)
-          }
-        }
-        propagate()
+      x.filterWhenBind(true,CPStore.MaxPriorityL2) {
+        s.post(equality)
+        deactivate()
+        true
       }
 
+      //println("x::::::::::>"+x)
+      x.callPropagateWhenDomainChanges(this)
+      z.callPropagateWhenDomainChanges(this)
+      for (i <- x.min to x.max; if x hasValue i) {
+        if (z.size > 50) {
+          y(i).callPropagateWhenDomainChanges(this, x.hasValue(i))
+        } else {
+          y(i).callPropagateWhenDomainChanges(this)
+        }
+      }
+      propagate()
     }
   }
   
@@ -148,7 +145,7 @@ class ElementVarAC3(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constr
     }
   }  
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
     //println("propagate:"+x.mkString(","))
     var mz = z.fillArray(zvalues)
     val mx = x.fillArray(xvalues)
@@ -159,80 +156,65 @@ class ElementVarAC3(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constr
 
     while (i < mz) {
       if (!updateSupportz(zvalues(i),xvalues,mx)) {
-        if (z.removeValue(zvalues(i)) == Failure) {
-          //println("failure")
-           return Failure 
-        }
-        else {
-          zvalues(i) = zvalues(mz-1)
-          mz -= 1
-          i -= 1
-        }
+        z.removeValue(zvalues(i))
+        zvalues(i) = zvalues(mz-1)
+        mz -= 1
+        i -= 1
       }
       i += 1
     }    
     
     i = 0
     while (i < mx) {
-      if (!updateSupporty(xvalues(i),zvalues,mz)) {
-        if (x.removeValue(xvalues(i)) == Failure) {
-           //println("failure")
-           return Failure 
-        }
-      }
+      if (!updateSupporty(xvalues(i),zvalues,mz))
+        x.removeValue(xvalues(i))
       i += 1
-    }    
-    
-
-    
-    
-
-    Suspend
+    }
   }
   
   // Removes each value i in x that is not a valid id in y
-  @inline private def adjustX(): CPOutcome = {
-    if (x.updateMin(0) == Failure) Failure
-    else if (x.updateMax(y.size - 1) == Failure) Failure
-    else if (x.isBound) valBind(x)
-    else Suspend
+  @inline private def adjustX(): Unit = {
+    x.updateMin(0)
+    x.updateMax(y.size - 1)
+    if (x.isBound)
+      valBind(x)
   }
 
   private class ElementEq(ys: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constraint(x.store, "ElementEq") {
+
+    override def associatedVars(): Iterable[CPVar] = ys ++ Array(x, z)
 
     // Used to iterate on the domain of the variables
     private[this] val values = new Array[Int](ys.map(_.size).max max x.size max z.size)
 
     private[this] var y: CPIntVar = null
 
-    final override def setup(l: CPPropagStrength): CPOutcome = {
+    final override def setup(l: CPPropagStrength): Unit = {
       y = ys(x.min)
-      if (propagate() == Failure) Failure
-      else {
-        y.callValRemoveWhenValueIsRemoved(this)
-        z.callValRemoveWhenValueIsRemoved(this)
-        Suspend
-      }
+      propagate()
+      y.callValRemoveWhenValueIsRemoved(this)
+      z.callValRemoveWhenValueIsRemoved(this)
     }
 
-    final override def propagate(): CPOutcome = {
+    final override def propagate(): Unit = {
       var i = y.fillArray(values)
       while (i > 0) {
         i -= 1
         val value = values(i)
-        if (!z.hasValue(value) && y.removeValue(value) == Failure) return Failure
+        if (!z.hasValue(value))
+          y.removeValue(value)
       }
       i = z.fillArray(values)
       while (i > 0) {
         i -= 1
         val value = values(i)
-        if (!y.hasValue(value) && z.removeValue(value) == Failure) return Failure
+        if (!y.hasValue(value))
+          z.removeValue(value)
       }
-      Suspend
     }
 
     // FIXME: should be idempotent (not allowed yet for L1 events)
-    final override def valRemove(intVar: CPIntVar, value: Int): CPOutcome = {
+    final override def valRemove(intVar: CPIntVar, value: Int): Unit = {
       if (intVar == y) z.removeValue(value)
       else y.removeValue(value)
     }

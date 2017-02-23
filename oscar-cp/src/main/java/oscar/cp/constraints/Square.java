@@ -14,10 +14,17 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
@@ -40,106 +47,75 @@ public class Square extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
-		if (y.updateMin(0) == CPOutcome.Failure) { 
-			return CPOutcome.Failure;
-		}
-		CPOutcome ok = propagate();
-		if (ok != CPOutcome.Suspend) {
-			return ok;
-		}
-		if (!x.isBound()) {
-			x.callPropagateWhenBoundsChange(this);
-		}
-		if (!y.isBound()) {
-			y.callPropagateWhenBoundsChange(this);
-		}
-		return CPOutcome.Suspend;
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x, y));
+		return JavaConversions.iterableAsScalaIterable(l);
 	}
 
 	@Override
-	public CPOutcome propagate() {
-		
-		    // propagation of y
-		    
-	
-			int mx = x.getMin();
-			int Mx = x.getMax();
-			int mx2 = mx*mx;
-			int Mx2 = Mx*Mx;
-
-			//propagate y (which is not bound)
-			if (mx >= 0) { // x will be positive
-				if (y.updateMin(mx2) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-				if (y.updateMax(Mx2) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-			} else if (Mx <= 0) { // x is non positive
-				if (y.updateMin(Mx2) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-				if (y.updateMax(mx2) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-			} else if (x.hasValue(0)) {
-				//y min is already >= 0 (post does it)
-				if (y.updateMax(Math.max(mx2, Mx2)) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-			} else {
-				Integer a = (Integer) x.valueBefore(0);
-				Integer b = (Integer) x.valueAfter(0);
-				int a2 = a*a;
-				int b2 = b*b;
-				if (y.updateMin(Math.min(a2, b2)) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-				if (y.updateMax(Math.max(a2, b2)) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
+	public void setup(CPPropagStrength l) throws Inconsistency {
+		y.updateMin(0);
+		propagate();
+		if(isActive()) {
+			if (!x.isBound()) {
+				x.callPropagateWhenBoundsChange(this);
 			}
-			//propagate x (which is not bound)
-			int my = y.getMin();
-			int My = y.getMax();
-			int my2 = my*my;
-			int My2 = My*My;
-
-			int rootm = (int) (Mx <= 0 ? Math.ceil(Math.sqrt(my)) : Math.sqrt(my));
-			int rootM = (int) Math.sqrt(My);
-
-			if (mx >= 0) {
-				if (x.updateMin(rootm) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-				if (x.updateMax(rootM) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-			} else if (Mx <= 0) {
-				if (x.updateMax(-rootm) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-				if (x.updateMin(-rootM) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-			} else {
-				if (x.updateMin(-rootM) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-
-				if (x.updateMax(rootM) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-				/*
-				for (int v = -rootm+1; v < rootm; v++) {
-					if (x.removeValue(v) == CPOutcome.Failure) {
-						return CPOutcome.Failure;
-					}
-				}*/
+			if (!y.isBound()) {
+				y.callPropagateWhenBoundsChange(this);
 			}
-		
-		return CPOutcome.Suspend;
+		}
+	}
+
+	@Override
+	public void propagate() {
+		// propagation of y
+		int mx = x.getMin();
+		int Mx = x.getMax();
+		int mx2 = mx*mx;
+		int Mx2 = Mx*Mx;
+
+		//propagate y (which is not bound)
+		if (mx >= 0) { // x will be positive
+			y.updateMin(mx2);
+			y.updateMax(Mx2);
+		} else if (Mx <= 0) { // x is non positive
+			y.updateMin(Mx2);
+			y.updateMax(mx2);
+		} else if (x.hasValue(0)) {
+			//y min is already >= 0 (post does it)
+			y.updateMax(Math.max(mx2, Mx2));
+		} else {
+			Integer a = (Integer) x.valueBefore(0);
+			Integer b = (Integer) x.valueAfter(0);
+			int a2 = a*a;
+			int b2 = b*b;
+			y.updateMin(Math.min(a2, b2));
+			y.updateMax(Math.max(a2, b2));
+		}
+		//propagate x (which is not bound)
+		int my = y.getMin();
+		int My = y.getMax();
+		int my2 = my*my;
+		int My2 = My*My;
+
+		int rootm = (int) (Mx <= 0 ? Math.ceil(Math.sqrt(my)) : Math.sqrt(my));
+		int rootM = (int) Math.sqrt(My);
+
+		if (mx >= 0) {
+			x.updateMin(rootm);
+			x.updateMax(rootM);
+		} else if (Mx <= 0) {
+			x.updateMax(-rootm);
+			x.updateMin(-rootM);
+		} else {
+			x.updateMin(-rootM);
+
+			x.updateMax(rootM);
+			/*
+			for (int v = -rootm+1; v < rootm; v++) {
+				x.removeValue(v);
+			}*/
+		}
 	}
 
 }

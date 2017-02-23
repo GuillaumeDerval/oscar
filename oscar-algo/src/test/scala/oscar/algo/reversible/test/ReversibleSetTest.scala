@@ -27,7 +27,7 @@ class ReversibleSetTest extends FunSuite {
 
   test("test reversible set 1") {
 
-    val rc = new ReversibleContext()
+    val rc = new ReversibleContextImpl()
 
     val s = new ReversibleSet(rc)
     s.add(5)

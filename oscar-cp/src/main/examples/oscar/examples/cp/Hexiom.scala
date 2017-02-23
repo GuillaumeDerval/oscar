@@ -86,7 +86,7 @@ object Hexiom extends CPModel with App {
   }
   add(gcc(card, 0 to 6, cardinalities, cardinalities), Strong)
 
-  search { binaryStatic(used, _.max) }
+  search { binaryStaticIdx(used,i => used(i).max) }
 
   onSolution {
     println("++++++++++++++++++ solution ++++++++++++++++++++\n")

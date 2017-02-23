@@ -16,9 +16,7 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPBoolVar
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPVar}
 
 /**
  * Implementation of sum_i a(i).x(i) == c <--> b
@@ -26,36 +24,35 @@ import oscar.cp.core.variables.CPBoolVar
  */
 class WeightedSumReif(val a: Array[Int], val x: Array[CPIntVar], val c: Int, val b: CPBoolVar) extends Constraint(b.store, "WeightedSumReif") {
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def associatedVars(): Iterable[CPVar] = x ++ Array(b)
+
+  override def setup(l: CPPropagStrength): Unit = {
     x.foreach(_.callPropagateWhenDomainChanges(this))
     b.callPropagateWhenBind(this)
-    Suspend
   }
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
     if (b.isBoundTo(1)) {
-      if (s.post(new oscar.cp.constraints.WeightedSum(a,x,CPIntVar(c)(s))) == Failure) Failure
-      else Success
-    } else {
+      s.post(new oscar.cp.constraints.WeightedSum(a,x,CPIntVar(c)(s)))
+      deactivate()
+    }
+    else {
       val m = a.zip(x).map{case(ai,xi) => if (ai < 0) ai*xi.max else ai*xi.min}.sum
       if (m > c) {
-        if (b.assign(0) == Failure) return Failure
-        else return Success
+        b.assign(0)
+        deactivate()
       }
       val M = a.zip(x).map{case(ai,xi) => if (ai < 0) ai*xi.min else ai*xi.max}.sum
       if (M < c) {
-        if (b.assign(0) == Failure) return Failure
-        else return Success
+        b.assign(0)
+        deactivate()
       }
       if (m == M) {
-        if (b.assign(1) == Failure) return Failure
-        else return Success
+        b.assign(1)
+        deactivate()
       }
-      Suspend
     }
-    
   }
-
 }
 
 

@@ -15,15 +15,18 @@
 
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.Constraint;
 import oscar.algo.reversible.*;
 import oscar.cp.core.delta.DeltaIntVar;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.variables.CPIntVarAdaptable;
-import oscar.cp.core.variables.CPIntVarAdaptableDomainSparse;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -118,6 +121,11 @@ public class MinAssignment extends Constraint {
 
     }
 
+    @Override
+    public Iterable<CPVar> associatedVars() {
+        return JavaConversions.iterableAsScalaIterable(Arrays.asList(x));
+    }
+
     private void initWeightMatrix(int [][] weightMat) throws RuntimeException {
 
 
@@ -180,7 +188,7 @@ public class MinAssignment extends Constraint {
 
 
     @Override
-    public CPOutcome setup(CPPropagStrength l) {
+    public void setup(CPPropagStrength l) throws Inconsistency {
         initTrails();
 
         markc = new boolean[x.length];
@@ -192,8 +200,7 @@ public class MinAssignment extends Constraint {
         initAssignment();
         findMinimalAssignment();
         updateUnBounds();
-        if (prune() == CPOutcome.Failure)
-            return CPOutcome.Failure;
+        prune() ;
 
         for (int i = 0; i < x.length; i++) {
             if (!x[i].isBound()) {
@@ -207,8 +214,6 @@ public class MinAssignment extends Constraint {
         if (l == CPPropagStrength.Strong) {
             exactReducedCosts = true;
         }
-
-        return CPOutcome.Suspend;
     }
 
     private void reduceMatrix() {
@@ -343,7 +348,7 @@ public class MinAssignment extends Constraint {
     }
 
     @Override
-    public CPOutcome propagate() {
+    public void propagate() {
         // treat the deltas
         for (int r = 0; r < x.length; r++) {
             if (delta[r] != null) { // if variable was not already bound at posting
@@ -375,7 +380,7 @@ public class MinAssignment extends Constraint {
             valr_[i] = valr[i].getValue();
         }
 
-        return prune();
+        prune();
     }
 
 
@@ -485,23 +490,20 @@ public class MinAssignment extends Constraint {
     }
 
 
-    private CPOutcome prune() {
+    private void prune() {
         int sum = 0;
         for (int i = 0; i < x.length; i++) {
             sum += lc[i].getValue();
             sum += lr[i].getValue();
         }
-        if (cost.updateMin(sum) ==  CPOutcome.Failure)
-            return CPOutcome.Failure;
+        cost.updateMin(sum) ;
         int slack = cost.getMax() - sum;
-        if (pruneLPReducedCosts(slack) == CPOutcome.Failure)
-            return CPOutcome.Failure;
-        if (exactReducedCosts && pruneExactReducedCosts(slack) == CPOutcome.Failure)
-            return CPOutcome.Failure;
-        return CPOutcome.Suspend;
+        pruneLPReducedCosts(slack) ;
+        if (exactReducedCosts)
+            pruneExactReducedCosts(slack);
     }
 
-    public CPOutcome pruneLPReducedCosts(int slack) {
+    public void pruneLPReducedCosts(int slack) {
         for (int s = 0; s < nUnboundVars; s++) {
             int i = unboundVars[s];
             int nVals = x[i].fillArray(values);
@@ -512,20 +514,15 @@ public class MinAssignment extends Constraint {
                     int m = val - lc[j].getValue() - lr[i].getValue(); // get reduced cost of assigning i->j
                     if (m > slack) {
                         w[i][j].setValue(M);
-                        if (x[i].removeValue(j) == CPOutcome.Failure) {
-                            return CPOutcome.Failure;
-                        }
+                        x[i].removeValue(j);
                     }
                 }
-
-
             }
         }
-        return CPOutcome.Suspend;
     }
 
 
-    public CPOutcome pruneExactReducedCosts(int slack) {
+    public void pruneExactReducedCosts(int slack) {
 
 
         //updateAllPairsShortestPathBellmanFord();
@@ -551,16 +548,11 @@ public class MinAssignment extends Constraint {
 
                     if (m > slack) {
                         w[i][j].setValue(M);
-                        if (x[i].removeValue(j) == CPOutcome.Failure) {
-                            return CPOutcome.Failure;
-                        }
+                        x[i].removeValue(j);
                     }
                 }
             }
-
         }
-
-        return CPOutcome.Suspend;
     }
 
 

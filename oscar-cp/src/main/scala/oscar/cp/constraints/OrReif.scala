@@ -17,9 +17,8 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
 import oscar.algo.reversible.ReversibleSparseSet
-import oscar.cp.core.variables.CPBoolVar
+import oscar.cp.core.variables.{CPBoolVar, CPVar}
 
 /**
  * y is true if at least one of the xi's is true, false otherwise
@@ -32,7 +31,9 @@ class OrReif(val X: Array[CPBoolVar], y: CPBoolVar) extends Constraint(y.store, 
   val nFalse = new ReversibleInt(s,0)
   var i = 0
   val n = x.size
-  
+
+  override def associatedVars(): Iterable[CPVar] = x ++ Array(y)
+
   private def setBound(i: Int) {
     
     val tmp = x(nFalse.value)
@@ -42,58 +43,50 @@ class OrReif(val X: Array[CPBoolVar], y: CPBoolVar) extends Constraint(y.store, 
   }
   priorityL2 = CPStore.MaxPriorityL2
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
 	  if (x.size == 2) {
-	        if (s.post(new BinaryOr(x(0),x(1),y)) == Failure) return Failure;
-	        else return Success;
+      s.post(new BinaryOr(x(0),x(1),y))
+      return
 	  }
 	  i = 0
 	  while (i < n) {
 		  if (x(i).isFalse) setBound(i)
 		  i += 1
 	  }
-	  val ok = propagate()
-	  if (ok != Suspend) return ok
+	  propagate()
 	  for (z <- x; if !z.isBound) 
 	    z.callPropagateWhenBind(this)
 	  if (!y.isBound) y.callPropagateWhenBind(this)
-	  Suspend
   }
 
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
 
     if (y.isFalse) {
       i = nFalse.value
       while (i < n) {
-    	if (x(i).assign(0) == Failure) {
-    	  return Failure
-    	}
+    	x(i).assign(0)
         i += 1
       }
-      return Success
+      this.deactivate()
+      return
     }
     i = nFalse.value
     while (i < n) {
       if (x(i).isFalse) setBound(i)
       else if (x(i).isTrue) {
-        if (y.assign(1) == Failure) {
-          return Failure
-        }
-        else return Success
+        y.assign(1)
+        this.deactivate()
+        return
       }
       i += 1
     }
     if (nFalse.value == n) {
-      if (y.assign(0) == Failure) {
-        return Failure
-      }
+      y.assign(0)
     }
     if (y.isTrue && nFalse.value == n-1) {
-      if (x(n-1).assign(1) == Failure) return Failure
+      x(n-1).assign(1)
     }
-    Suspend
-
   }
 }
 

@@ -17,9 +17,8 @@ package oscar.cp.constraints.tables
 
 import oscar.algo.reversible.{ReversibleContext, TrailEntry}
 import oscar.cp.core.delta.DeltaIntVar
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{Constraint, CPOutcome, CPPropagStrength}
-import oscar.cp.core.CPOutcome._
+import oscar.cp.core.variables.{CPIntVar, CPVar}
+import oscar.cp.core.{CPPropagStrength, Constraint}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -31,6 +30,8 @@ import scala.collection.mutable.ArrayBuffer
  * @author Pierre Schaus pschaus@gmail.com
  */
 class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Constraint(X(0).store, "TableGAC4") {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   /* Trailable entry to restore the size of support set of the ith value of a variable */
   final class SupportsTrailEntry(supports: VariableSupports, i: Int, size: Int) extends TrailEntry {
@@ -108,29 +109,23 @@ class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Co
 
   /* ----- Setup ----- */
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     /* Only work with allowed tuples */
     fillValidTuples()
 
     /* Fill supports for each (variable, value) pair and remove unsupported values */
-    if (fillSupportsAndRemoveUnsupported() == Failure) {
-      return Failure
-    }
+    fillSupportsAndRemoveUnsupported()
 
     X.zipWithIndex.foreach { case (x, index) =>
-      x.callOnChangesIdx(index,delta => valuesRemoved(delta),idempotent=true)
+      x.callOnChangesIdx(index, delta => valuesRemoved(delta),idempotent=true)
     }
-
-
-
-    Suspend
   }
 
   /**
    * Compute the supports for each variable value pair (x,a) and remove values not supported by any tuple.
    * @return the outcome i.e. Failure or Success.
    */
-  private final def fillSupportsAndRemoveUnsupported(): CPOutcome = {
+  private final def fillSupportsAndRemoveUnsupported(): Unit = {
     /* Fill temp supports */
     val tempSupports = Array.tabulate(arity)(i => Array.tabulate(spans(i))(j => ArrayBuffer[Int]()))
     var tupleIndex = 0
@@ -156,9 +151,7 @@ class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Co
         val value = domainsFillArray(valueIndex)
         val tempSupport = tempSupports(i)(value - originalMin)
         if (tempSupport.isEmpty) {
-          if (X(i).removeValue(value) == Failure) {
-            return Failure
-          }
+          X(i).removeValue(value)
         }
         else {
           variableSupport.initDense(value - originalMin, tempSupport.toArray)
@@ -169,8 +162,6 @@ class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Co
       supports(i) = variableSupport
       i += 1
     }
-
-    Suspend
   }
 
   /**
@@ -216,15 +207,13 @@ class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Co
    * @param varIndex the index of x.
    * @return the outcome i.e. Failure or Success.
    */
-  private final def removeTupleFromSupports(tuple: Array[Int], tupleIndex: Int, varIndex: Int): CPOutcome = {
+  private final def removeTupleFromSupports(tuple: Array[Int], tupleIndex: Int, varIndex: Int): Unit = {
     val valueTuple = tuple(varIndex)
     val valueIndex = valueTuple - originalMins(varIndex)
     val variableSupports = supports(varIndex)
     variableSupports.remove(valueIndex, tupleIndex)
-    if (variableSupports.size(valueIndex) == 0 && X(varIndex).removeValue(tuple(varIndex)) == Failure) {
-      return Failure
-    }
-    Suspend
+    if (variableSupports.size(valueIndex) == 0)
+      X(varIndex).removeValue(tuple(varIndex))
   }
 
   /**
@@ -233,27 +222,22 @@ class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Co
    * @param varIndex the index of the variable for which the invalidation is not necessary.
    * @return the outcome i.e. Failure or Success.
    */
-  private final def invalidateTuple(tupleIndex: Int, varIndex: Int): CPOutcome = {
+  private final def invalidateTuple(tupleIndex: Int, varIndex: Int): Unit = {
     val tuple = tuples(tupleIndex)
     var i = 0
     while (i < varIndex) {
-      if (removeTupleFromSupports(tuple, tupleIndex, i) == Failure) {
-          return Failure
-      }
+      removeTupleFromSupports(tuple, tupleIndex, i)
       i += 1
     }
     
     i = varIndex + 1
     while (i < arity) {
-      if (removeTupleFromSupports(tuple, tupleIndex, i) == Failure) {
-          return Failure
-      }
+      removeTupleFromSupports(tuple, tupleIndex, i)
       i += 1
     }
-    Suspend
   }
 
-  private final def valuesRemoved(delta: DeltaIntVar): CPOutcome = {
+  private final def valuesRemoved(delta: DeltaIntVar): Boolean = {
     val idx = delta.id
     var i = delta.fillArray(domainsFillArray)
     /* Iterate all the values removed in x(idx) */
@@ -269,14 +253,12 @@ class TableGAC4(val X: Array[CPIntVar], initTable: Array[Array[Int]]) extends Co
       var indexSupport = 0
       while (indexSupport < nbSupports) {
         val tupleIndex = valueSupports(indexSupport)
-        if (invalidateTuple(tupleIndex, idx) == Failure) {
-          return Failure
-        }
+        invalidateTuple(tupleIndex, idx)
         indexSupport += 1
       }
       variableSupports.clear(valueIndex)
     }
-    Suspend
+    false
   }
 
 }

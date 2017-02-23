@@ -14,10 +14,17 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Sum Less Or Equal Constraint: x[0]+x[1]+...+x[n] <= y
@@ -27,6 +34,13 @@ public class SumLeEq extends Constraint {
 	
 	private CPIntVar [] x;
 	private CPIntVar y;
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+		l.add(y);
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
 
 	public SumLeEq(CPIntVar [] x, CPIntVar y) {
 		super(x[0].store(),"SumLeq");
@@ -44,21 +58,18 @@ public class SumLeEq extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
-		if (propagate() == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		}
+	public void setup(CPPropagStrength l) throws Inconsistency {
+		propagate();
 		for (int i = 0; i < x.length; i++) {
 			if (!x[i].isBound()) 
 				x[i].callPropagateWhenBoundsChange(this);
 		}
 		if (!y.isBound())
 			y.callPropagateWhenBoundsChange(this);
-		return CPOutcome.Suspend;
 	}
 	
 	@Override
-	public CPOutcome propagate() {
+	public void propagate() {
 		int maxsumx = 0;
 		int minsumx = 0;
 		for (int i = 0; i < x.length; i++) {
@@ -67,21 +78,17 @@ public class SumLeEq extends Constraint {
 		}
 		
 		if (maxsumx <= y.getMin()) {
-			return CPOutcome.Success;
+			deactivate();
+			return;
 		}
 		
-		if (y.updateMax(maxsumx) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		}
+		y.updateMax(maxsumx);
 		
 		for (int i = 0; i < x.length; i++) {
 			int minsumxi = minsumx - x[i].getMin();
 			int maxi = y.getMax() - minsumxi;
-			if (x[i].updateMax(maxi) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
+			x[i].updateMax(maxi);
 		}
-		return CPOutcome.Suspend;
 	}
 	
 	

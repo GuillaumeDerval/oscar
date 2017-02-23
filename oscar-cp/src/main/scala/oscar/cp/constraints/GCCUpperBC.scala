@@ -13,21 +13,12 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
 
-package oscar.cp.constraints;
+package oscar.cp.constraints
 
-import oscar.cp.core.CPOutcome
+import oscar.algo.Inconsistency
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
-import oscar.cp.core.CPSolver
-import oscar.cp.util.ArrayUtils
-import oscar.algo.reversible.ReversibleInt
-
-import scala.math.min
-import scala.math.max
-
-import oscar.cp.core.CPOutcome._
-import oscar.algo.reversible.ReversibleInt
 
 /**
  * Based on Claude-Guy Quimper Implem (personal webpage)
@@ -35,7 +26,9 @@ import oscar.algo.reversible.ReversibleInt
  * @author Pierre Schaus - pschaus@gmail.com
  */
 class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) extends Constraint(x(0).store, "GCCUpperBC") {
-  
+
+  override def associatedVars(): Iterable[CPVar] = x
+
   private[this] val minDomVal = x.map(_.min).min
   private[this] val maxDomVal = x.map(_.max).max
   private[this] val lowCard = Array.fill(maxDomVal-minDomVal+1)(0)
@@ -45,7 +38,7 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
   //println("minVal"+minval)
   //println(upperCard.mkString(","))
   for {
-    i <- 0 until upperCard.length;
+    i <- 0 until upperCard.length
     v = i + minval - minDomVal
     if (v >= 0 && v < upCard.size )
   } {
@@ -110,11 +103,11 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
 
   private[this] val n = x.size
   private[this] var nb = 0
-  private[this] var lastLevel = -1;
+  private[this] var lastLevel = -1
 
-  private[this] val INCONSISTENT = 0;
-  private[this] val CHANGES = 1;
-  private[this] val NO_CHANGES = 2;
+  private[this] val INCONSISTENT = 0
+  private[this] val CHANGES = 1
+  private[this] val NO_CHANGES = 2
   
   // bounds[1..nb] hold set of min & max in the niv intervals
   // while bounds[0] and bounds[nb+1] allow sentinels
@@ -127,7 +120,7 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
   private[this] val d = Array.fill(2 * n + 2)(0) // diffs between critical capacities
   private[this] val h = Array.fill(2 * n + 2)(0) // hall interval links
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
 
     for (i <- 0 until x.size) {
       x(i).callPropagateWhenBoundsChange(this)
@@ -178,10 +171,10 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
   }
 
   def sortIt() {
-    sortMin();
-    sortMax();
+    sortMin()
+    sortMax()
     var min = minSorted(0).min
-    var max = maxSorted(0).max + 1;
+    var max = maxSorted(0).max + 1
     
     
     bounds(0) = l.firstValue + 1
@@ -270,30 +263,30 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
         t(z) = j
       }
 
-      pathSet(t, x + 1, z, z); // path compression
+      pathSet(t, x + 1, z, z) // path compression
       
 
       // bounds(z) - bounds(y)
       //println("..i="+i)
       //println("d(z):"+d(z)+ " u.sum(bounds(y),bounds(z)-1):"+u.sum(bounds(y),bounds(z)-1))
       if (d(z) <  u.sum(bounds(y),bounds(z)-1)) {
-        return INCONSISTENT; // no solution
+        return INCONSISTENT // no solution
       }
       if (h(x) > x) {
         val w = pathMax(h, h(x))
         maxSorted(i).min = bounds(w)
-        pathSet(h, x, w, w); // path compression
-        changes = true;
+        pathSet(h, x, w, w) // path compression
+        changes = true
       }
       // bounds(z) - bounds(y)
       if (d(z) == u.sum(bounds(y),bounds(z)-1)) {
-        pathSet(h, h(y), j - 1, y); // mark hall interval
-        h(y) = j - 1; //("hall interval [%d,%d)\n",bounds[j],bounds[y]);
+        pathSet(h, h(y), j - 1, y) // mark hall interval
+        h(y) = j - 1 //("hall interval [%d,%d)\n",bounds[j],bounds[y])
       }
       i += 1
     }
-    if (changes) CHANGES;
-    else NO_CHANGES;
+    if (changes) CHANGES
+    else NO_CHANGES
   }
 
   def filterUpper(): Int = {
@@ -302,7 +295,7 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
     while (i <= nb) {
       t(i) = i + 1
       h(i) = i + 1
-      d(i) = u.sum(bounds(i),bounds(i+1)-1) // bounds(i + 1) - bounds(i);
+      d(i) = u.sum(bounds(i),bounds(i+1)-1) // bounds(i + 1) - bounds(i)
       i += 1
     }
     i = n-1
@@ -319,25 +312,25 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
       }
       pathSet(t, x - 1, z, z)
       // bounds(y) - bounds(z)
-      if (d(z) < u.sum(bounds(z),bounds(y)-1)) return INCONSISTENT; // no solution
+      if (d(z) < u.sum(bounds(z),bounds(y)-1)) return INCONSISTENT // no solution
       if (h(x) < x) {
         val w = pathMin(h, h(x))
-        minSorted(i).max = bounds(w) - 1;
-        pathSet(h, x, w, w);
-        changes = true;
+        minSorted(i).max = bounds(w) - 1
+        pathSet(h, x, w, w)
+        changes = true
       }
       // bounds(y) - bounds(z)
       if (d(z) == u.sum(bounds(z),bounds(y)-1)) {
-        pathSet(h, h(y), j + 1, y);
-        h(y) = j + 1;
+        pathSet(h, h(y), j + 1, y)
+        h(y) = j + 1
       }
       i -= 1
     }
-    if (changes) CHANGES;
-    else NO_CHANGES;
+    if (changes) CHANGES
+    else NO_CHANGES
   }
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
     // not incremental
     var statusLower = CHANGES
     var statusUpper = CHANGES
@@ -355,17 +348,15 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
     }
 
     if ((statusLower == INCONSISTENT) || (statusUpper == INCONSISTENT)) {
-      return CPOutcome.Failure
+      throw Inconsistency
     } else if ((statusLower == CHANGES) || (statusUpper == CHANGES)) {
-      i = 0;
+      i = 0
       while (i < x.length) {
         x(i).updateMax(iv(i).max)
         x(i).updateMin(iv(i).min)
         i += 1
       }
     }
-
-    Suspend
   }
 
 }

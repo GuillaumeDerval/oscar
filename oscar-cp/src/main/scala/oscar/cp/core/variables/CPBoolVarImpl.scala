@@ -1,19 +1,18 @@
 package oscar.cp.core.variables
 
-import scala.Iterator
+import oscar.algo.Inconsistency
+
 import scala.util.Random
 import oscar.algo.reversible.ReversibleInt
-import oscar.algo.reversible.ReversiblePointer
 import oscar.algo.reversible.TrailEntry
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome.Failure
-import oscar.cp.core.CPOutcome.Suspend
 import oscar.cp.core.CPStore
 import oscar.cp.core.Constraint
 import oscar.cp.core.watcher.WatcherListL2
 import oscar.cp.core.watcher.WatcherListL1
 import oscar.cp.core.watcher.Watcher
 import oscar.cp.core.delta.DeltaIntVar
+
+import scala.collection.mutable
 
 /**
  * @author Renaud Hartert ren.hartert@gmail.com
@@ -22,13 +21,15 @@ import oscar.cp.core.delta.DeltaIntVar
 class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, final override val name: String = "") extends CPBoolVar with TrailEntry {
   
   import CPBoolVarImpl._
-  
+
+  override val context = store
+
   // Registered constraints
   private[this] val onBindL2 = new WatcherListL2(store)
   private[this] val onBoundsL1 = new WatcherListL1(store)
   private[this] val onBindL1 = new WatcherListL1(store)
   private[this] val onDomainL1 = new WatcherListL1(store)
-  
+
   // Number of constraints registered on the variable
   private[this] val degree = new ReversibleInt(store, 0) // should not change often
   
@@ -99,46 +100,41 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     else domain & 1 // min value
   }
 
-  final override def updateMin(value: Int): CPOutcome = {
+  final override def updateMin(value: Int): Unit = {
     if (value == 1) {
       if (domain == UNASSIGNED) setDomainTrue()
-      else if (domain == TRUE) Suspend
-      else setDomainEmpty()
-    } else if (value <= 0) Suspend
-    else setDomainEmpty()
+      else if (domain != TRUE) setDomainEmpty()
+    }
+    else if (value > 0) setDomainEmpty()
   }
 
-  final override def updateMax(value: Int): CPOutcome = {
+  final override def updateMax(value: Int): Unit = {
     if (value == 0) {
       if (domain == UNASSIGNED) setDomainFalse()
-      else if (domain == FALSE) Suspend
-      else setDomainEmpty()
-    } else if (value >= 1) Suspend
-    else setDomainEmpty()
+      else if (domain != FALSE) setDomainEmpty()
+    }
+    else if (value < 1) setDomainEmpty()
   }
   
-  final override def assignTrue(): CPOutcome = {
+  final override def assignTrue(): Unit = {
     if (domain == UNASSIGNED) setDomainTrue()
-    else if (domain == TRUE) Suspend
-    else setDomainEmpty()
+    else if (domain != TRUE) setDomainEmpty()
   }
 
-  final override def assignFalse(): CPOutcome = {
+  final override def assignFalse(): Unit = {
     if (domain == UNASSIGNED) setDomainFalse()
-    else if (domain == FALSE) Suspend
-    else setDomainEmpty()
+    else if (domain != FALSE) setDomainEmpty()
   }
     
-  final override def assign(value: Int): CPOutcome = {
+  final override def assign(value: Int): Unit = {
     if (value == 0) assignFalse()
     else if (value == 1) assignTrue()
-    else Failure
+    else throw Inconsistency
   }
 
   final override def removeValue(value: Int) = {
     if (value == 0) assignTrue() 
     else if (value == 1) assignFalse()
-    else Suspend
   }
   
   final override def restore(): Unit = {
@@ -146,7 +142,7 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     trailedDomain = UNASSIGNED
   }
 
-  @inline private def setDomainTrue(): CPOutcome = {
+  @inline private def setDomainTrue(): Unit = {
     store.trail(this)
     trailedDomain = domain
     domain = TRUE
@@ -155,10 +151,9 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     onBoundsL1.enqueueBounds()
     onBindL1.enqueueBind()
     onBindL2.enqueue()
-    Suspend
   }
 
-  @inline private def setDomainFalse(): CPOutcome = {
+  @inline private def setDomainFalse(): Unit = {
     store.trail(this)
     trailedDomain = domain
     domain = FALSE
@@ -167,14 +162,13 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     onBoundsL1.enqueueBounds()
     onBindL1.enqueueBind()
     onBindL2.enqueue()
-    Suspend
   }
 
-  @inline private def setDomainEmpty(): CPOutcome = {
+  @inline private def setDomainEmpty(): Unit = {
     store.trail(this)
     trailedDomain = domain
     domain = EMPTY
-    Failure
+    throw Inconsistency
   }
 
   final override def iterator = {

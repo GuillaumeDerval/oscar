@@ -14,10 +14,16 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Absolute value constraint
@@ -41,13 +47,15 @@ public class Abs extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
-		if (y.updateMin(0) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		}
-		if (propagate() == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		}
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x, y));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
+	@Override
+	public void setup(CPPropagStrength l) {
+		y.updateMin(0) ;
+		propagate() ;
 		if (!x.isBound()) {
 			x.callPropagateWhenBoundsChange(this);
 			x.callValBindWhenBind(this);
@@ -57,96 +65,57 @@ public class Abs extends Constraint {
 			y.callValBindWhenBind(this);
 		}
 		//we can do more propagation with val remove
-		return CPOutcome.Suspend;
 	}
 	
-	
-
-	
 	@Override
-	public CPOutcome propagate() {
+	public void propagate() {
 		// y = |x|	
 		
 		if (x.getMin() >= 0) {
-			if (y.updateMin(x.getMin()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			if (y.updateMax(x.getMax()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			if (x.updateMin(y.getMin()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			if (x.updateMax(y.getMax()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
+			y.updateMin(x.getMin());
+			y.updateMax(x.getMax());
+			x.updateMin(y.getMin());
+			x.updateMax(y.getMax());
 		}
 		else if (x.getMax() <= 0) {
-			if (y.updateMin(-x.getMax()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			if (y.updateMax(-x.getMin()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			if (x.updateMin(-y.getMax()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			if (x.updateMax(-y.getMin()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
+			y.updateMin(-x.getMax());
+			y.updateMax(-x.getMin());
+			x.updateMin(-y.getMax());
+			x.updateMax(-y.getMin());
 		} else {
 			int maxabsy = Math.max(Math.abs(x.getMax()), Math.abs(x.getMin()));			
-			if (y.updateMax(maxabsy) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			if (x.updateMax(y.getMax()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			if (x.updateMin(-y.getMax()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
+			y.updateMax(maxabsy);
+			x.updateMax(y.getMax());
+			x.updateMin(-y.getMax());
 			
 		}
-		return CPOutcome.Suspend;
 	}
 	
 	@Override
-	public CPOutcome valBind(CPIntVar var) {
-		//return CPOutcome.Suspend;
+	public void valBind(CPIntVar var) {
+		//return Outcome.Suspend;
 		
 		if (x.isBound()) {
-			
-			if (y.assign(Math.abs(x.min())) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			return CPOutcome.Success;
-			
+			y.assign(Math.abs(x.min()));
+			deactivate();
 		} else { // y is bound
 			// y = |x|	
 			if(!x.hasValue(-y.min())) {
-				if (x.assign(y.min()) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
+				x.assign(y.min());
 			}
 			else if(!x.hasValue(y.min())) {
-				if (x.assign(-y.min()) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
+				x.assign(-y.min());
 			}
-
 			else {
 				// x can be (y or -y)
 				// remove everything except y and -y from x
 				for (int v = x.getMin(); v <= x.getMax(); v++) {
 					if(v != y.min() && v != -y.min()) {
-						if (x.removeValue(v) == CPOutcome.Failure) {
-							return CPOutcome.Failure;
-						}
+						x.removeValue(v);
 					}
 				}
 			}
-			return CPOutcome.Success;
-			
+			deactivate();
 		}
 	}
 }

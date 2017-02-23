@@ -1,16 +1,18 @@
 package oscar.cp.scheduling.constraints
 
 import oscar.cp._
-
 import oscar.cp._
-
-import oscar.cp.core.CPOutcome._ ; import oscar.cp.core._ 
-
+import oscar.cp.core._
 import oscar.algo.SortUtils._
 import oscar.algo.reversible.ReversibleInt
+
 import scala.collection.mutable.Set
 import java.lang.Math.min
 import java.lang.Math.max
+
+import oscar.algo.Inconsistency
+import oscar.cp.core.variables.CPVar
+
 
 // @author Steven Gay steven.gay@uclouvain.be
 
@@ -29,12 +31,12 @@ extends Constraint(capacity.store, "NFNLCubic") {
   
   val l2r = new NFNLCubicLR(starts, durations, ends, heights, resources, capacity, id)
   val r2l = new NFNLCubicLR(mstarts, durations, mends, heights, resources, capacity, id)
-  
-  def setup(strength: CPPropagStrength): CPOutcome = {
-    if (l2r.setup(strength) == Failure || r2l.setup(strength) == Failure)
-      Failure
-    else
-      Suspend
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ heights ++ resources ++ Array(capacity)
+
+  def setup(strength: CPPropagStrength): Unit = {
+    l2r.setup(strength)
+    r2l.setup(strength)
   }
   
   override def propagate() = {
@@ -55,7 +57,9 @@ extends Constraint(capacity.store, "NFNLCubicLR") {
   
   val myActs = (0 until n) filter { a => resources(a).hasValue(id) && heights(a).max > 0 }
 
-  def setup(strength: CPPropagStrength): CPOutcome = {
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ heights ++ resources ++ Array(capacity)
+
+  def setup(strength: CPPropagStrength): Unit = {
     priorityL2 = 1
         
     def callbacks(a: Int) = {
@@ -179,7 +183,7 @@ extends Constraint(capacity.store, "NFNLCubicLR") {
     
   }
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
     val C = capacity.max
     updateCache()
     
@@ -230,12 +234,12 @@ extends Constraint(capacity.store, "NFNLCubicLR") {
           }
           
           // check overload
-          if (energy > energyLimit) return Failure
+          if (energy > energyLimit) throw Inconsistency
           
           // check not first condition and push a to the right if necessary
           // it is quite sad that start(a) can be pushed to emin(a), but it is correct
           if (energy - lsrs(a) + hmin(a) * (math.min(emin(a), right) - left) > energyLimit) {
-            if (starts(a).updateMin(eetOmega) == Failure) return Failure
+            starts(a).updateMin(eetOmega)
           }
         }
         pruningEvent -= 1
@@ -243,8 +247,6 @@ extends Constraint(capacity.store, "NFNLCubicLR") {
       
       interval += 1
     }
-    
-    Suspend
   }
 }
 

@@ -16,13 +16,11 @@
  */
 package oscar.cp.constraints
 
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
 
 /**
  * Implementation of AllDifferent
@@ -30,6 +28,8 @@ import oscar.cp.core.CPOutcome._
  * @author Renaud Hartert ren.hartert@gmail.com
  */
 class AllDiffFWC(x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffFWC") {
+
+  override def associatedVars(): Iterable[CPVar] = x
 
   // High priority
   priorityL2 = CPStore.MaxPriorityL2 - 1
@@ -40,15 +40,12 @@ class AllDiffFWC(x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffFWC"
   private[this] val nBoundsRev = new ReversibleInt(s, 0)
   private[this] var nBounds = 0
 
-  final override def setup(l: CPPropagStrength): CPOutcome = {
-    if (propagate() == Failure) Failure
-    else {
-      var i = variables.length
-      while (i > 0) {
-        i -= 1
-        variables(i).callPropagateWhenBind(this)
-      }
-      Suspend
+  final override def setup(l: CPPropagStrength): Unit = {
+    propagate()
+    var i = variables.length
+    while (i > 0) {
+      i -= 1
+      variables(i).callPropagateWhenBind(this)
     }
   }
 
@@ -59,7 +56,7 @@ class AllDiffFWC(x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffFWC"
     nBounds += 1
   }
 
-  final override def propagate(): CPOutcome = {
+  final override def propagate(): Unit = {
     nBounds = nBoundsRev.value // cache 
     var i = nBounds
     while (i < nVariables) {
@@ -68,7 +65,7 @@ class AllDiffFWC(x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffFWC"
         val value = variable.min
         var j = nBounds
         while (j < nVariables) {
-          if (j != i && variables(j).removeValue(value) == Failure) return Failure
+          if (j != i) variables(j).removeValue(value)
           j += 1
         }
         setBound(i)
@@ -76,7 +73,6 @@ class AllDiffFWC(x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffFWC"
       i += 1
     }
     nBoundsRev.value = nBounds // trail
-    Suspend
   }
 }
 

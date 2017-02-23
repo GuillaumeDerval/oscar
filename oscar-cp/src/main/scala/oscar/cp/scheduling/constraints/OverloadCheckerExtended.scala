@@ -1,13 +1,13 @@
 package oscar.cp.scheduling.constraints
 
-import oscar.cp.core.CPOutcome._
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.SortUtils.mergeSort
+
 import scala.annotation.tailrec
 import java.lang.Math.max
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.Inconsistency
+
+import oscar.algo.Inconsistency
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /*
  *  Wolf & Schrader's overload checker, INAP 2005.
@@ -49,7 +49,9 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   priorityL2 = 2
 //  idempotent = true
   private[this] val nTasks = starts.length
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ heights ++ resources ++ Array(capacity)
+
   private def nextPowerOfTwo(k: Int): Int = {
     1 << math.ceil(math.log(k) / math.log(2)).toInt
   }
@@ -83,7 +85,7 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   private[this] val sortedBySMin = Array.tabulate(nTasks){ i => i }
   private[this] val sortedByEMax = Array.tabulate(nTasks){ i => i }
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
     updateCache()
     C = capacity.max
     
@@ -175,7 +177,7 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
         val opt = getMaxOptional(1, rr)
         
         val b = leafActivity(opt-rr)
-        if (resources(b).removeValue(id) == Failure) throw Inconsistency
+        resources(b).removeValue(id)
         
         // remove b from tree
         workloadOpt(opt) = 0
@@ -186,7 +188,6 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
 
       p += 1
     }
-    Suspend
   }
   
   @tailrec

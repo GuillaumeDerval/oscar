@@ -17,15 +17,14 @@ package oscar.cp.constraints
 
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.variables.CPIntVarViewMinus
-import oscar.cp.core.variables.CPIntVarViewOffset
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPIntVarViewMinus, CPIntVarViewOffset, CPVar}
 
 /** author Renaud Hartert ren.hartert@gmail.com */
 final class SoftAllDifferent(variables: Array[CPIntVar], violations: CPIntVar) extends Constraint(violations.store, "SoftAllDifferent") {
 
-  final override def setup(l: CPPropagStrength): CPOutcome = {
+  override def associatedVars(): Iterable[CPVar] = variables ++ Array(violations)
+
+  final override def setup(l: CPPropagStrength): Unit = {
     val nVariables = variables.length
     val nValues = new CPIntVarViewOffset(new CPIntVarViewMinus(violations), nVariables)
     if (l == CPPropagStrength.Weak) s.post(new AtLeastNValueFWC(variables, nValues))

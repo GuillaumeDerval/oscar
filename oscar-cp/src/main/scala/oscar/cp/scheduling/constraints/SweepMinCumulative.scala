@@ -16,11 +16,11 @@
  */
 package oscar.cp.scheduling.constraints
 
+import oscar.algo.Inconsistency
+
 import scala.math.max
 import scala.math.min
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.CPOutcome
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 import oscar.algo.SortUtils.stableSort
@@ -58,6 +58,8 @@ class SweepMinCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
 
   // Contains all the possible events of each task (used for speed-up)
   private val eventList = Array.tabulate(nTasks) { e => new EventList(e) }
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ demands ++ resources ++ Array(capacity)
 
   private def generateCheck(t: Int) {
 
@@ -106,13 +108,10 @@ class SweepMinCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
 
   private def forbidenCheck(t: Int): Boolean = (consSumHeight - consContrib(t) + demands(t).max < capacity.min)
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
-
+  override def setup(l: CPPropagStrength): Unit = {
     priorityL2 = 0
-
     val oc = propagate()
-
-    if (oc == CPOutcome.Suspend) {
+    if (isActive) {
       capacity.callPropagateWhenBoundsChange(this)
       for (t <- Tasks) {
         if (!starts(t).isBound) starts(t).callPropagateWhenBoundsChange(this)
@@ -122,21 +121,15 @@ class SweepMinCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
         if (!resources(t).isBound) resources(t).callPropagateWhenDomainChanges(this)
       }
     }
-
-    return oc
   }
 
-  override def propagate(): CPOutcome = {
-
+  override def propagate(): Unit = {
     // Generates events
     if (!generateEventPointSeries())
-      return CPOutcome.Suspend
+      return
 
     // Performs a sweep on the events
-    if (sweepAlgorithm() == CPOutcome.Failure)
-      return CPOutcome.Failure
-
-    return CPOutcome.Suspend
+    sweepAlgorithm()
   }
 
   private def generateEventPointSeries(): Boolean = {
@@ -192,7 +185,7 @@ class SweepMinCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
     }
   }
 
-  private def sweepAlgorithm(): CPOutcome = {
+  private def sweepAlgorithm(): Unit = {
 
     resetSweepLine
 
@@ -215,11 +208,10 @@ class SweepMinCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
 
           // Consistency check
           if (consistencyCheck)
-            return CPOutcome.Failure
+            throw Inconsistency
 
           // Pruning (this could reduce the size of stackPrune)
-          if (prune(delta, event.date - 1) == CPOutcome.Failure)
-            return CPOutcome.Failure
+          prune(delta, event.date - 1)
 
           // Moves the sweep line
           delta = event.date
@@ -250,16 +242,13 @@ class SweepMinCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
 
     // Checks consistency
     if (consistencyCheck)
-      return CPOutcome.Failure
+      throw Inconsistency
 
     // Final pruning
-    if (prune(delta, delta) == CPOutcome.Failure)
-      return CPOutcome.Failure
-
-    return CPOutcome.Suspend
+    prune(delta, delta)
   }
 
-  private def prune(low: Int, up: Int): CPOutcome = {
+  private def prune(low: Int, up: Int): Unit = {
 
     // Used to adjust stackPrune
     var nRemainingTasksToPrune = 0
@@ -270,16 +259,13 @@ class SweepMinCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
       val t = stackPrune(i)
 
       // Pruning on tasks that must be discarded to respect consistency
-      if (pruneForbiden(t, id, low, up) == CPOutcome.Failure)
-        return CPOutcome.Failure
+      pruneForbiden(t, id, low, up)
 
       // Pruning on tasks that are mandatory to respect consistency
-      if (pruneMandatory(t, id, low, up) == CPOutcome.Failure)
-        return CPOutcome.Failure
+      pruneMandatory(t, id, low, up)
 
       // Adjusts the height's consumption of the tasks
-      if (pruneConsumption(t, id, low, up) == CPOutcome.Failure)
-        return CPOutcome.Failure
+      pruneConsumption(t, id, low, up)
 
       // If the task is still in conflict, we keep it
       if (!(ends(t).max <= up + 1)) {
@@ -292,107 +278,78 @@ class SweepMinCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
 
     // Adjusting stackPrune
     nTasksToPrune = nRemainingTasksToPrune
-
-    return CPOutcome.Suspend
   }
 
-  private def pruneMandatory(t: Int, r: Int, low: Int, up: Int): CPOutcome = {
+  private def pruneMandatory(t: Int, r: Int, low: Int, up: Int): Unit = {
 
     // Checks if the task is mandatory to respect consistency
     if (!mandatoryCheck(t))
-      return CPOutcome.Suspend
+      return
 
     // Fix the activity to the resource r
-    if (resources(t).assign(r) == CPOutcome.Failure)
-      return CPOutcome.Failure
+    resources(t).assign(r)
 
     // Adjust the EST of the activity
-    if (starts(t).updateMin(up - durations(t).max + 1) == CPOutcome.Failure)
-      return CPOutcome.Failure
+    starts(t).updateMin(up - durations(t).max + 1)
 
     // Adjust the LST of the activity
-    if (starts(t).updateMax(low) == CPOutcome.Failure)
-      return CPOutcome.Failure
+    starts(t).updateMax(low)
 
     // Adjust the LCT of the activity
-    if (ends(t).updateMax(low + durations(t).max) == CPOutcome.Failure)
-      return CPOutcome.Failure
+    ends(t).updateMax(low + durations(t).max)
 
     // Adjust the ECT of the activity
-    if (ends(t).updateMin(up + 1) == CPOutcome.Failure)
-      return CPOutcome.Failure
+    ends(t).updateMin(up + 1)
 
     // Adjust the minimal duration of the activity
-    if (durations(t).updateMin(min(up - starts(t).max + 1, ends(t).min - low)) == CPOutcome.Failure)
-      return CPOutcome.Failure
-
-    return CPOutcome.Suspend
+    durations(t).updateMin(min(up - starts(t).max + 1, ends(t).min - low))
   }
 
-  private def pruneForbiden(t: Int, r: Int, low: Int, up: Int): CPOutcome = {
+  private def pruneForbiden(t: Int, r: Int, low: Int, up: Int): Unit = {
 
     // Checks if the task must be discarded to respect consistency
     if (forbidenCheck(t)) {
 
       if (ends(t).min > low && starts(t).max <= up && durations(t).min > 0) {
 
-        if (resources(t).removeValue(r) == CPOutcome.Failure)
-          return CPOutcome.Failure
+        resources(t).removeValue(r)
 
       } else if (resources(t).isBoundTo(r)) {
 
         if (durations(t).min > 0) {
 
-          if (pruneInterval(low - durations(t).min + 1, up, starts(t)) == CPOutcome.Failure)
-            return CPOutcome.Failure
+          pruneInterval(low - durations(t).min + 1, up, starts(t))
         }
 
         if (!durations(t).isBound) {
 
           if (durations(t).min > 0) {
-            if (pruneInterval(low + 1, up + durations(t).min, ends(t)) == CPOutcome.Failure)
-              return CPOutcome.Failure
+            pruneInterval(low + 1, up + durations(t).min, ends(t))
           }
 
           val maxD = max(max(low - starts(t).min, ends(t).max - up - 1), 0)
 
-          if (durations(t).updateMax(maxD) == CPOutcome.Failure)
-            return CPOutcome.Failure
+          durations(t).updateMax(maxD)
         }
       }
     }
-
-    return CPOutcome.Suspend
   }
 
-  private def pruneConsumption(t: Int, r: Int, low: Int, up: Int): CPOutcome = {
+  private def pruneConsumption(t: Int, r: Int, low: Int, up: Int): Unit = {
 
     if (resources(t).isBoundTo(r) && ends(t).min > low && starts(t).max <= up && durations(t).min > 0) {
 
-      if (demands(t).updateMin(capacity.min - (consSumHeight - consContrib(t))) == CPOutcome.Failure)
-        return CPOutcome.Failure
+      demands(t).updateMin(capacity.min - (consSumHeight - consContrib(t)))
     }
-
-    return CPOutcome.Suspend
   }
 
-  private def pruneInterval(low: Int, up: Int, v: CPIntVar): CPOutcome = {
-
+  private def pruneInterval(low: Int, up: Int, v: CPIntVar): Unit = {
     assert(low <= up)
     if (low <= v.min && up <= v.max) {
       v.updateMin(up + 1)
     } else if (up >= v.max && low >= v.min) {
       v.updateMax(low - 1)
-    } else CPOutcome.Suspend
-
-    /*
-	    //create holes, not a good idea Renaud ;-)
-		for (i <- low to up)
-			if (v.removeValue(i) == CPOutcome.Failure)
-				return CPOutcome.Failure
-		*/
-
-    return CPOutcome.Suspend
+    }
   }
 
   private object EventType {

@@ -16,10 +16,9 @@
 package oscar.cp.core
 
 
+import oscar.algo.Inconsistency
 import oscar.cp.constraints.Garded
-import oscar.cp.core.variables.CPSetVar
-import oscar.cp.core.variables.CPBoolVar
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPSetVar, CPVar}
 import oscar.cp.core.delta.Delta
 import oscar.algo.reversible.TrailEntry
 
@@ -30,9 +29,13 @@ import oscar.algo.reversible.TrailEntry
  */
 abstract class Constraint(store: CPStore, val name: String = "cons") extends TrailEntry {
 
+  implicit val thisConstraint = this
+
   private[this] var active: Boolean = true
   private[this] var inQueue: Boolean = false
   private[this] var lastMagicActive = -1L
+
+  def associatedVars(): Iterable[CPVar]
 
   final override def restore(): Unit = active = !active
 
@@ -110,9 +113,10 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
    * - the constraint registers to modifications of the domains of variables in its scope
    * - a first consistency check and propagation is done
    * @param l
-   * @return The outcome of the first propagation and consistency check
+   * @throws Inconsistency
    */
-  def setup(l: CPPropagStrength): CPOutcome
+  @throws(classOf[Inconsistency])
+  def setup(l: CPPropagStrength): Unit
 
   final def priorityL2: Int = priorL2
   final def priorityBindL1: Int = priorBindL1
@@ -185,17 +189,19 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
    * - callPropagateWhenBind <br>
    * The (variable,domain) change that has triggered the call to propagate depends of course
    * on which of the method(s) above was used
-   * @return the outcome i.e. Failure, Success or Suspend
+   * @throws Inconsistency
    */
-  def propagate(): CPOutcome = CPOutcome.Suspend
+  @throws(classOf[Inconsistency])
+  def propagate(): Unit = {}
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
    * with the method call x.callUpdateBoundsIdxWhenBoundsChange(this,idx)
    * @param x has a new minimum and/or maximum value in its domain since last call
-   * @return the outcome i.e. Failure, Success or Suspend
+   * @throws Inconsistency
    */
-  def updateBounds(x: CPIntVar) = CPOutcome.Suspend
+  @throws(classOf[Inconsistency])
+  def updateBounds(x: CPIntVar): Unit = {}
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
@@ -203,17 +209,19 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
    * @param x has a new minimum and/or maximum value in its domain since last call
    * @param idx is a key value that was given to callUpdateMaxIdxWhenMaxChanges(x,this,idx) attached to variable x.
    *        This is typically used to retrieve the index of x in an array of variables in constant time
-   * @return the outcome i.e. Failure, Success or Suspend
+   * @throws Inconsistency
    */
-  def updateBoundsIdx(x: CPIntVar, idx: Int) = CPOutcome.Suspend
+  @throws(classOf[Inconsistency])
+  def updateBoundsIdx(x: CPIntVar, idx: Int): Unit = {}
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
    * with the method call x.callValBind(this)
    * @param x is bind
-   * @return the outcome i.e. Failure, Success or Suspend
+   * @throws Inconsistency
    */
-  def valBind(x: CPIntVar) = CPOutcome.Suspend
+  @throws(classOf[Inconsistency])
+  def valBind(x: CPIntVar): Unit = {}
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
@@ -221,17 +229,19 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
    * @param x is bind
    * @param idx is a key value that was given to callValBindIdx(x,idx) attached to variable x.
    *        This is typically used to retrieve the index of x in an array of variables in constant time
-   * @return the outcome i.e. Failure, Success or Suspend
+   * @throws Inconsistency
    */
-  def valBindIdx(x: CPIntVar, idx: Int) = CPOutcome.Suspend
+  @throws(classOf[Inconsistency])
+  def valBindIdx(x: CPIntVar, idx: Int): Unit = {}
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
    * with the method call x.callValRemoveWhenValueRemoved(this)
    * @param value is a value that has been removed from the domain of x since last call
-   * @return the outcome i.e. Failure, Success or Suspend
+   * @throws Inconsistency
    */
-  def valRemove(x: CPIntVar, value: Int) = CPOutcome.Suspend
+  @throws(classOf[Inconsistency])
+  def valRemove(x: CPIntVar, value: Int): Unit = {}
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
@@ -239,53 +249,67 @@ abstract class Constraint(store: CPStore, val name: String = "cons") extends Tra
    * @param value is a value that has been removed from the domain of x since last call
    * @param idx is a key value that was given to callValBind(x,idx) attached to variable x.
    *        This is typically used to retrieve the index of x in an array of variables in constant time
-   * @return the outcome i.e. Failure, Success or Suspend
+   * @throws Inconsistency
    */
-  def valRemoveIdx(x: CPIntVar, idx: Int, value: Int) = CPOutcome.Suspend
+  @throws(classOf[Inconsistency])
+  def valRemoveIdx(x: CPIntVar, idx: Int, value: Int): Unit = {}
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
    * with the method call x.callValRequiredWhenValueRequired(this)
-   * @param val is a value that has been put as required in the domain of x since last call
-   * @return the outcome i.e. Failure, Success or Suspend
+   * @param value is a value that has been put as required in the domain of x since last call
+   * @throws Inconsistency
    */
-  def valRequired(x: CPSetVar, value: Int) = CPOutcome.Suspend
+  @throws(classOf[Inconsistency])
+  def valRequired(x: CPSetVar, value: Int): Unit = {}
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
    * with the method call x.callValRequiredIdxWhenValueRemovedIdx(this)
-   * @param val is a value that has been put as required in the domain of x since last call
+   * @param value is a value that has been put as required in the domain of x since last call
    * @param idx is a key value that was given to callValRequiredIdxWhenValueRemovedIdx(x,idx) attached to variable x.
    *        This is typically used to retrieve the index of x in an array of variables in constant time
-   * @return the outcome i.e. Failure, Success or Suspend
+   * @throws Inconsistency
    */
-  def valRequiredIdx(x: CPSetVar, idx: Int, value: Int) = CPOutcome.Suspend
+  @throws(classOf[Inconsistency])
+  def valRequiredIdx(x: CPSetVar, idx: Int, value: Int): Unit = {}
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
    * with the method call x.callValExcludeddWhenValueRequired(this)
-   * @param val is a value that has been excluded in the domain of x since last call
-   * @return the outcome i.e. Failure, Success or Suspend
+   * @param value is a value that has been excluded in the domain of x since last call
+   * @throws Inconsistency
    */
-  def valExcluded(x: CPSetVar, value: Int) = CPOutcome.Suspend
+  @throws(classOf[Inconsistency])
+  def valExcluded(x: CPSetVar, value: Int): Unit = {}
 
   /**
    * Propagation method of Level L1 that is called if variable x has asked to do so
    * with the method call x.callValExcludedIdxWhenValueRemovedIdx(this)
-   * @param val is a value that has been put as required in the domain of x since last call
+   * @param value is a value that has been put as required in the domain of x since last call
    * @param idx is a key value that was given to callValExcludedIdxWhenValueRemovedIdx(x,idx) attached to variable x.
    *        This is typically used to retrieve the index of x in an array of variables in constant time
-   * @return the outcome i.e. Failure, Success or Suspend
+   * @throws Inconsistency
    */
-  def valExcludedIdx(x: CPSetVar, idx: Int, value: Int) = CPOutcome.Suspend
+  @throws(classOf[Inconsistency])
+  def valExcludedIdx(x: CPSetVar, idx: Int, value: Int): Unit = {}
 
-  def execute(): CPOutcome = {
+  def execute(): Unit = {
     inQueue = false
     _inPropagate = true
-    val oc = propagate()
-    if (oc != CPOutcome.Failure) updateSnapshots()
-    if (oc == CPOutcome.Success) deactivate()
-    _inPropagate = false
-    oc
+    try {
+      propagate()
+      updateSnapshots()
+      _inPropagate = false
+    }
+    catch {
+      case e: Inconsistency =>
+        _inPropagate = false
+        throw e
+    }
   }
+}
+
+abstract class SubConstraint(store: CPStore, name: String = "cons")
+  extends Constraint(store, name) {
 }

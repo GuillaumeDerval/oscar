@@ -43,7 +43,7 @@ class TestSoftGCC extends TestSuite {
         cp.add(new SoftGCCFWC(X, values.min, lower, upper, viol))
       }
     } catch {
-      case e: oscar.cp.core.NoSolutionException => return (0, 0, 0, 0)
+      case e: NoSolutionException => return (0, 0, 0, 0)
     }
 
     cp.search { binaryStatic(X) }

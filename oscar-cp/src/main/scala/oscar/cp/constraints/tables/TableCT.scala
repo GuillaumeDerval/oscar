@@ -16,11 +16,11 @@
 package oscar.cp.constraints.tables
 
 
+import oscar.algo.Inconsistency
 import oscar.algo.reversible.{ReversibleInt, ReversibleSparseBitSet}
-import oscar.cp.core.CPOutcome._
 import oscar.cp.core.delta.DeltaIntVar
-import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset}
-import oscar.cp.core.{CPOutcome, CPPropagStrength, CPStore, Constraint}
+import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset, CPVar}
+import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -32,6 +32,8 @@ import scala.collection.mutable.ArrayBuffer
  * @author Jordan Demeulenaere j.demeulenaere1@gmail.com
  */
 final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableCT") {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   /* Setting idempotency & lower priority for propagate() */
   idempotent = true
@@ -60,17 +62,17 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
   private[this] val unBoundVars = Array.tabulate(arity)(i => i)
   private[this] val unBoundVarsSize = new ReversibleInt(s, arity)
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
 
     /* Failure if table is empty initially or after initial filtering */
     if (nbTuples == 0)
-      return Failure
+      throw Inconsistency
 
     /* Retrieve the current valid tuples */
     val valids = collectValidTuples()
 
     if (valids.isEmpty)
-      return Failure
+      throw Inconsistency
 
     /* Remove non valid tuples */
     validTuples.collect(new validTuples.BitSet(valids))
@@ -78,8 +80,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
 
     /* Compute Supports = Compute for each for each variable/value pair the supported tuples,
        Remove values not supported by any tuple */
-    if (computeSupportsAndInitialFiltering(valids) == Failure)
-      return Failure
+    computeSupportsAndInitialFiltering(valids)
 
     /* Call propagate() when domains change */
     var i = 0
@@ -87,8 +88,6 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
       deltas(i) = x(i).callPropagateOnChangesWithDelta(this)
       i += 1
     }
-
-    Suspend
   }
 
   private[this] def showTable(): Unit = {
@@ -104,7 +103,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
    * @param delta the set of values removed since the last call.
    * @return the outcome i.e. Failure or Success.
    */
-  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): CPOutcome = {
+  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): Unit = {
 
     val intVar = x(varIndex)
     val varSize = intVar.size
@@ -151,9 +150,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
 
     /* Failure if there are no more valid tuples */
     if (validTuples.isEmpty())
-      return Failure
-
-    Suspend
+      throw Inconsistency
   }
 
 
@@ -162,7 +159,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
    * Unsupported values are removed.
    * @return the outcome i.e. Failure or Success.
    */
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
 
     var nChanged = 0
     var changedVarIdx = 0
@@ -176,9 +173,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
       if (deltas(varIndex).size > 0) {
         nChanged += 1
         changedVarIdx = varIndex
-        if (updateDelta(varIndex, deltas(varIndex)) == Failure) {
-          return Failure
-        }
+        updateDelta(varIndex, deltas(varIndex))
       }
     }
 
@@ -196,9 +191,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
         while (i < domainArraySize) {
           value = domainArray(i)
           if (!validTuples.intersect(variableValueSupports(varIndex)(value))) {
-            if (x(varIndex).removeValue(value) == Failure) {
-              return Failure
-            }
+            x(varIndex).removeValue(value)
           }
           i += 1
         }
@@ -211,8 +204,6 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
       }
     }
     unBoundVarsSize.value = unBoundVarsSize_
-
-    Suspend
   }
 
 
@@ -256,7 +247,7 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
   /**
    * Compute the mask for each variable value pair (x,a).
    */
-  @inline private def computeSupportsAndInitialFiltering(valids: ArrayBuffer[Int]): CPOutcome = {
+  @inline private def computeSupportsAndInitialFiltering(valids: ArrayBuffer[Int]): Unit = {
 
     val varValueSupports = Array.tabulate(x.length)(i => Array.tabulate(spans(i))(v => new ArrayBuffer[Int]()))
 
@@ -282,12 +273,8 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
         variableValueSupports(varIndex)(valueIndex) = new validTuples.BitSet(varValueSupports(varIndex)(valueIndex))
       } else {
         /* This variable-value does not have any support, it can be removed */
-        if (x(varIndex).removeValue(valueIndex) == Failure) {
-          return Failure
-        }
+        x(varIndex).removeValue(valueIndex)
       }
     }
-
-    Suspend
   }
 }

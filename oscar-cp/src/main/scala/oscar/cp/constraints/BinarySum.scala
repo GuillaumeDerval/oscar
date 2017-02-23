@@ -16,8 +16,7 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
  * x + y = z 
@@ -27,8 +26,10 @@ import oscar.cp.core.variables.CPIntVar
  */
 class BinarySum(val x: CPIntVar, val y: CPIntVar, val z: CPIntVar) extends Constraint(x.store, "BinarySum") {
 
+  override def associatedVars(): Iterable[CPVar] = Array(x, y, z)
+
   idempotent = true
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     priorityL2 = CPStore.MaxPriorityL2 - 1
     if (!x.isBound) x.callPropagateWhenBoundsChange(this)
     if (!y.isBound) y.callPropagateWhenBoundsChange(this)
@@ -36,7 +37,7 @@ class BinarySum(val x: CPIntVar, val y: CPIntVar, val z: CPIntVar) extends Const
     propagate()
   }
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
     // While reading this code, remember that there are sorting networks in Java's default sort. Check and compare, this is not so bad.
     // The logic itself is much lighter than the CP variable manipulations, so we add logic to do the fewest manipulations we can.
     
@@ -53,7 +54,7 @@ class BinarySum(val x: CPIntVar, val y: CPIntVar, val z: CPIntVar) extends Const
       
       newbound = xmax + ymax
       if (zmax > newbound) { // update only if necessary
-        if(z.updateMax(newbound) == Failure) return Failure
+        z.updateMax(newbound)
         zmax = z.max
         if(zmax < newbound)  // if zmax is a multiplicative or non bijective view, recompute for idempotence 
           reduce = true
@@ -61,7 +62,7 @@ class BinarySum(val x: CPIntVar, val y: CPIntVar, val z: CPIntVar) extends Const
 
       newbound = zmax - ymin
       if (xmax > newbound) {
-        if(x.updateMax(newbound) == Failure) return Failure
+        x.updateMax(newbound)
         xmax = x.max
         if (xmax < newbound) 
           reduce = true
@@ -69,7 +70,7 @@ class BinarySum(val x: CPIntVar, val y: CPIntVar, val z: CPIntVar) extends Const
 
       newbound = zmax - xmin
       if (ymax > newbound) {
-        if(y.updateMax(newbound) == Failure) return Failure
+        y.updateMax(newbound)
         ymax = y.max
         if (ymax < newbound) 
           reduce = true
@@ -77,7 +78,7 @@ class BinarySum(val x: CPIntVar, val y: CPIntVar, val z: CPIntVar) extends Const
 
       newbound = xmin + ymin
       if (zmin < newbound) {
-        if(z.updateMin(newbound) == Failure) return Failure
+        z.updateMin(newbound)
         zmin = z.min
         if (zmin > newbound) 
           reduce = true
@@ -85,7 +86,7 @@ class BinarySum(val x: CPIntVar, val y: CPIntVar, val z: CPIntVar) extends Const
       
       newbound = zmin - ymax
       if (xmin < newbound) {
-        if(x.updateMin(newbound) == Failure) return Failure
+        x.updateMin(newbound)
         xmin = x.min
         if (xmin > newbound) 
           reduce = true
@@ -93,13 +94,12 @@ class BinarySum(val x: CPIntVar, val y: CPIntVar, val z: CPIntVar) extends Const
             
       newbound = zmin - xmax
       if (ymin < newbound) {
-        if(y.updateMin(newbound) == Failure) return Failure
+        y.updateMin(newbound)
         ymin = y.min
         if (ymin > newbound) 
           reduce = true
       }
     }
-    Suspend
     // Fine-tuning is relaxing for the mind.
     // Except for all this red, it feels like M. Odersky himself punishes my eyes for using so many mutables.  
   }

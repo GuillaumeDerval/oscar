@@ -24,7 +24,7 @@ class ReversibleSetSparsetSetJavaTest extends FunSuite {
 
   test("test reversible set 1") {
 
-    val rc = new ReversibleContext()
+    val rc = new ReversibleContextImpl()
 
     val s = new ReversibleSparseSetJava(rc,0,10,true)
 

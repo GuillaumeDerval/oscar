@@ -16,16 +16,13 @@
 
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 
 import scala.math.min
 import scala.math.max
-
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
 import oscar.cp.core.CPSolver
 
 
@@ -36,14 +33,16 @@ import oscar.cp.core.CPSolver
  */
 class ElementVar(val y: Array[CPIntVar], val x: CPIntVar, val z: CPIntVar) extends Constraint(y(0).store, "ElementVar") {
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def associatedVars(): Iterable[CPVar] = y ++ Array(x, z)
+
+  override def setup(l: CPPropagStrength): Unit = {
     if (l == CPPropagStrength.Strong) {
-      //if (s.post(new ElementVarAC(y,x,z)) == Failure) return Failure
-      if (s.post(new ElementVarAC3(y,x,z)) == Failure) return Failure
-      else Success
+      //s.post(new ElementVarAC(y,x,z))
+      s.post(new ElementVarAC3(y,x,z))
+      this.deactivate()
     } else {
-      if (s.post(new ElementVarBC(y,x,z)) == Failure) return Failure
-      else Success      
+      s.post(new ElementVarBC(y,x,z))
+      this.deactivate()
     }
 
   }

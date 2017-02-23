@@ -16,8 +16,7 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.variables.CPBoolVar
+import oscar.cp.core.variables.{CPBoolVar, CPVar}
 
 /**
  * x & y <--> b 
@@ -25,33 +24,32 @@ import oscar.cp.core.variables.CPBoolVar
  */
 class BinaryAnd(val x: CPBoolVar, val y: CPBoolVar, val b: CPBoolVar) extends Constraint(b.store, "BinaryAndReif") {
 
-  
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def associatedVars(): Iterable[CPVar] = Array(x,y,b)
+
+  override def setup(l: CPPropagStrength): Unit = {
     x.callPropagateWhenBind(this)
     y.callPropagateWhenBind(this)
     b.callPropagateWhenBind(this)
     propagate()
   }
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
     if (b.isBoundTo(0)) {
       if (x.isBoundTo(1)) y.assign(0)
       else if(y.isBoundTo(1)) x.assign(0)
-      else Suspend
     } 
     else if (b.isBoundTo(1)) {
-      if (x.assign(1) == Failure || y.assign(1) == Failure) Failure
-      else Success
+      x.assign(1)
+      y.assign(1)
+      this.deactivate()
     } else {
       // b is not bound
       if (x.isBoundTo(0) || y.isBoundTo(0)) {
-        if (b.assign(0) == Failure) Failure
-        else Success
+        b.assign(0)
+        this.deactivate()
       } else if (x.isBoundTo(1) && y.isBoundTo(1)) {
         b.assign(1)
-        Success
-      } else {
-        Suspend
+        this.deactivate()
       }
     }
   }

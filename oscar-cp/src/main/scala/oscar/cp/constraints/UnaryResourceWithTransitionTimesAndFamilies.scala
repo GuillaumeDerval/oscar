@@ -1,10 +1,11 @@
 package oscar.cp.constraints
 
+import oscar.algo.Inconsistency
 import oscar.algo.SortUtils._
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp._
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{CPOutcome, CPPropagStrength, CPStore, Constraint}
+import oscar.cp.core.variables.{CPIntVar, CPVar}
+import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
 import oscar.cp.scheduling.util.{ThetaLambdaTreeWithTransitionTimesAndFamilies, TransitionLowerBounds}
 
 /**
@@ -15,6 +16,8 @@ import oscar.cp.scheduling.util.{ThetaLambdaTreeWithTransitionTimesAndFamilies, 
 class UnaryResourceWithTransitionTimesAndFamilies(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], familyMatrix: Array[Array[Int]], family: Array[Int]) extends Constraint(starts(0).store) {
   priorityL2_=(CPStore.MaxPriorityL2 - 2)
   idempotent = true
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends
 
   protected[this] val nTasks = starts.length
 
@@ -71,7 +74,7 @@ class UnaryResourceWithTransitionTimesAndFamilies(starts: Array[CPIntVar], durat
   protected[this] var failure = false
   protected[this] var changed = true
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     for (i <- 0 until nTasks) {
       starts(i).callPropagateWhenBoundsChange(this)
       ends(i).callPropagateWhenBoundsChange(this)
@@ -80,7 +83,7 @@ class UnaryResourceWithTransitionTimesAndFamilies(starts: Array[CPIntVar], durat
     propagate()
   }
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
     //    println("#" * 80)
     failure = false
     changed = true
@@ -115,7 +118,7 @@ class UnaryResourceWithTransitionTimesAndFamilies(starts: Array[CPIntVar], durat
     }
 
     if(failure)
-      CPOutcome.Failure
+      throw Inconsistency
     else {
       i = 0
       while(i < nTasks) {
@@ -123,7 +126,6 @@ class UnaryResourceWithTransitionTimesAndFamilies(starts: Array[CPIntVar], durat
         formerMaxStarts(i).setValue(currentMaxStarts(i))
         i += 1
       }
-      CPOutcome.Suspend
     }
 
   }
@@ -399,7 +401,7 @@ class UnaryResourceWithTransitionTimesAndFamilies(starts: Array[CPIntVar], durat
     var i = 0
     while (i < nTasks) {
       if (newMinStarts(i) > currentMinStarts(i)) {
-        if (starts(i).updateMin(newMinStarts(i)) == CPOutcome.Failure || ends(i).updateMin(newMinStarts(i) + currentMinDurations(i)) == CPOutcome.Failure) {
+        if (isInconsistent({starts(i).updateMin(newMinStarts(i)); ends(i).updateMin(newMinStarts(i) + currentMinDurations(i))})) {
           failure = true
           return true
         }
@@ -414,7 +416,7 @@ class UnaryResourceWithTransitionTimesAndFamilies(starts: Array[CPIntVar], durat
         }
       }
       if (newMaxEnds(i) < currentMaxEnds(i)) {
-        if (ends(i).updateMax(newMaxEnds(i)) == CPOutcome.Failure || starts(i).updateMax(newMaxEnds(i) - currentMinDurations(i)) == CPOutcome.Failure) {
+        if (isInconsistent({ends(i).updateMax(newMaxEnds(i));starts(i).updateMax(newMaxEnds(i) - currentMinDurations(i))})) {
           failure = true
           return true
         }
@@ -442,7 +444,7 @@ class UnaryResourceWithTransitionTimesAndFamilies(starts: Array[CPIntVar], durat
     var i = 0
     while (i < nTasks) {
       if (updatedMinStarts(i) > startMins(i)) {
-        if (startVars(i).updateMin(updatedMinStarts(i)) == CPOutcome.Failure || endVars(i).updateMin(updatedMinStarts(i) + currentMinDurations(i)) == CPOutcome.Failure) {
+        if (isInconsistent({startVars(i).updateMin(updatedMinStarts(i)); endVars(i).updateMin(updatedMinStarts(i) + currentMinDurations(i))})) {
           failure = true
           return true
         }
@@ -471,7 +473,7 @@ class UnaryResourceWithTransitionTimesAndFamilies(starts: Array[CPIntVar], durat
     var i = 0
     while (i < nTasks) {
       if (updatedMaxEnds(i) < endMaxs(i)) {
-        if (endVars(i).updateMax(updatedMaxEnds(i)) == CPOutcome.Failure || startVars(i).updateMax(updatedMaxEnds(i) - currentMinDurations(i)) == CPOutcome.Failure) {
+        if (isInconsistent({endVars(i).updateMax(updatedMaxEnds(i)); startVars(i).updateMax(updatedMaxEnds(i) - currentMinDurations(i))})) {
           failure = true
           return true
         }

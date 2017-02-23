@@ -17,8 +17,7 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.variables.CPGraphVar
+import oscar.cp.core.variables.{CPGraphVar, CPVar}
 
 /**
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
@@ -27,28 +26,30 @@ import oscar.cp.core.variables.CPGraphVar
  */
 
 class GraphUndirected(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constraint(g1.s, "Undirected") {
-  
-	override def setup(l: CPPropagStrength): CPOutcome = {
+
+	override def associatedVars(): Iterable[CPVar] = Array(g1, g2)
+
+	override def setup(l: CPPropagStrength): Unit = {
 	  // add filter when domain changes
 	  g1.callPropagateWhenDomainChanges(this)
 	  g2.callPropagateWhenDomainChanges(this)
 	  propagate()
 	}
 	
-	override def propagate(): CPOutcome = {  	  
+	override def propagate(): Unit = {
 	  // we have to check that nodes sets are the same
 	  val g1PossNodes = g1.possibleNodes
 	  val g1ReqNodes = g1.requiredNodes
 	  val g2PossNodes = g2.possibleNodes
 	  val g2ReqNodes = g2.requiredNodes
 	  for (n <- g1PossNodes; if !g2PossNodes.contains(n))
-	      if (g1.removeNodeFromGraph(n) == Failure) return Failure
+	      g1.removeNodeFromGraph(n)
 	  for (n <- g2PossNodes; if !g1PossNodes.contains(n))
-	      if (g2.removeNodeFromGraph(n) == Failure) return Failure      
+	      g2.removeNodeFromGraph(n)
 	  for (n <- g1ReqNodes; if !g2ReqNodes.contains(n))
-	      if (g2.addNodeToGraph(n) == Failure) return Failure
+	      g2.addNodeToGraph(n)
 	  for (n <- g2ReqNodes; if !g1ReqNodes.contains(n))
-	      if (g1.addNodeToGraph(n) == Failure) return Failure
+	      g1.addNodeToGraph(n)
 	  
 	  // Prune G1
 	  //	remove from the possible edges of G all edges that are not possible in G2
@@ -57,7 +58,7 @@ class GraphUndirected(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constrain
 	    for (e <- g1.possibleEdges(n)){
 	      val (src,dest) = g1.edge(e)
 	      if ( ! g2.possibleEdges(n).map(g2.edge(_)).contains((src,dest)))
-	        if (g1.removeEdgeFromGraph(src,dest) == Failure) return Failure
+	        g1.removeEdgeFromGraph(src,dest)
 	    }
 	  }
 	  // 	include in the required set of G if there is a corresponding edge in G2
@@ -67,7 +68,7 @@ class GraphUndirected(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constrain
 	      val (src,dest) = g2.edge(e)
 	      // if g1.possibleEdges contains (src,dest) which is required in g2, set it required in g1 
 	      if (g1.possibleEdges(n).map(g1.edge(_)).contains((src, dest)))
-	    	if (g1.addEdgeToGraph(src, dest) == Failure) return Failure
+	    	g1.addEdgeToGraph(src, dest)
 	    }
 	  }    
 	      
@@ -77,8 +78,8 @@ class GraphUndirected(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constrain
 	  for (n <- newG1ReqNodes){
 	    for (e <- g1.requiredEdges(n)){
 	      val (src,dest) = g1.edge(e)
-	      if (g2.addEdgeToGraph(src, dest) == Failure) return Failure
-	      if (g2.addEdgeToGraph(dest, src) == Failure) return Failure
+	      g2.addEdgeToGraph(src, dest)
+	      g2.addEdgeToGraph(dest, src)
 	    }
 	  }
 	  //    remove from the possible edges of G2 every edge which is not possible in G1 nor the reverse of it
@@ -88,10 +89,8 @@ class GraphUndirected(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constrain
 	      val (src,dest) = g2.edge(e)
 	      val g1PossEdgesMap = g1.possibleEdges(n).map(g1.edge(_))
 	      if ( !g1PossEdgesMap.contains((src,dest)) && !g1PossEdgesMap.contains((dest,src)))
-	        if (g2.removeEdgeFromGraph(src,dest) == Failure) return Failure
+	        g2.removeEdgeFromGraph(src,dest)
 	    }
 	  }
-
-	  Suspend
 	}	
 }

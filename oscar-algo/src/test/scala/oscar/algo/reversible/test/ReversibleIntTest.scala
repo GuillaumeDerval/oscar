@@ -24,7 +24,7 @@ import scala.collection.JavaConversions._
 class ReversibleIntTest extends FunSuite {
 
   test("test reversibility") {
-    val r = new ReversibleContext()
+    val r = new ReversibleContextImpl()
     val a = new ReversibleInt(r, 0)
     val b = new ReversibleInt(r, 0)
 
@@ -71,7 +71,7 @@ class ReversibleIntTest extends FunSuite {
   }
   
   test("test setter/getter and assignment operator") {
-    val r = new ReversibleContext()
+    val r = new ReversibleContextImpl()
     val a = new ReversibleInt(r, 0)
     val b = new ReversibleInt(r, 0)
 
@@ -117,7 +117,7 @@ class ReversibleIntTest extends FunSuite {
   }  
   
   test("test implicit") {
-    val r = new ReversibleContext()
+    val r = new ReversibleContextImpl()
     val a = new ReversibleInt(r, 0)
     val b = new ReversibleInt(r, 0)
 

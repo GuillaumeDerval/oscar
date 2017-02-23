@@ -14,11 +14,10 @@
   ******************************************************************************/
 package oscar.cp.constraints
 
+import oscar.algo.Inconsistency
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
 import oscar.cp.core.Constraint
 
 /**
@@ -35,6 +34,8 @@ final class SubCircuit(succs: Array[CPIntVar]) extends Constraint(succs(0).store
 
   require(succs.length > 0, "no variable.")
 
+  override def associatedVars(): Iterable[CPVar] = succs
+
   private[this] val nSuccs = succs.length
   private[this] val dests = Array.tabulate(nSuccs)(i => new ReversibleInt(s, i))
   private[this] val origs = Array.tabulate(nSuccs)(i => new ReversibleInt(s, i))
@@ -50,23 +51,24 @@ final class SubCircuit(succs: Array[CPIntVar]) extends Constraint(succs(0).store
   private[this] val nUnboundPossSelfLoop = new ReversibleInt(s,nSuccs)
 
 
-  final override def setup(l: CPPropagStrength): CPOutcome = {
-    if (nSuccs == 1) return succs(0).assign(0)
-    if (s.post(new AllDifferent(succs), l) == Failure) Failure // FIXME post two allDifferent in case of symmetry
-    else {
-      for (i <- 0 until nSuccs) {
-        if (!succs(i).isBound) {
-          if (l == CPPropagStrength.Strong)
-            succs(i).callPropagateWhenDomainChanges(this)
-          else
-            succs(i).callPropagateWhenBind(this)
-        }
+  override def setup(l: CPPropagStrength): Unit = {
+    if (nSuccs == 1){
+      succs(0).assign(0)
+      return
+    }
+    s.post(new AllDifferent(succs), l) // FIXME post two allDifferent in case of symmetry
+    for (i <- 0 until nSuccs) {
+      if (!succs(i).isBound) {
+        if (l == CPPropagStrength.Strong)
+          succs(i).callPropagateWhenDomainChanges(this)
+        else
+          succs(i).callPropagateWhenBind(this)
       }
     }
-    return propagate()
+    propagate()
   }
 
-  final override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
 
     // filter-out unbound
     var i = nUnboundPossSelfLoop.value
@@ -98,7 +100,7 @@ final class SubCircuit(succs: Array[CPIntVar]) extends Constraint(succs(0).store
       i -= 1
       val tmp = unboundIdx(i)
       if (succs(unboundIdx(i)).isBound) {
-        if (bind(tmp) == Failure) return Failure
+        bind(tmp)
         unboundIdx(i) =  unboundIdx(nUnbound.value -1)
         unboundIdx(nUnbound.value -1) = tmp
         nUnbound -= 1
@@ -108,32 +110,26 @@ final class SubCircuit(succs: Array[CPIntVar]) extends Constraint(succs(0).store
         val lengthOrigDest = lengthToDest(o)
         if (o != tmp && d == tmp) {
           if (lengthSubCircuit.value - 1 > lengthOrigDest) {
-            if (succs(d).removeValue(o) == Failure) {
-              return Failure
-            }
+            succs(d).removeValue(o)
           }
         }
       }
     }
-    Suspend
   }
 
-  private def close(): CPOutcome = {
+  private def close(): Unit = {
     var i = nUnboundPossSelfLoop
     while (i > 0) {
       i -= 1
-      if (succs(unboundPossSelfLoopIdx(i)).assign(unboundPossSelfLoopIdx(i)) == Failure) {
-        return Failure
-      }
+      succs(unboundPossSelfLoopIdx(i)).assign(unboundPossSelfLoopIdx(i))
     }
-    Suspend
   }
 
-  private def bind(i: Int): CPOutcome = {
+  private def bind(i: Int): Unit = {
     val j = succs(i).min
 
     if (j == i) {
-      Suspend
+      return
     }
     else {
       // o *-> i -> j *-> d
@@ -143,21 +139,20 @@ final class SubCircuit(succs: Array[CPIntVar]) extends Constraint(succs(0).store
       if (o == j && i != j) {
         // a sub-circuit was closed but it appears to be too short
         if (length < lengthSubCircuit) {
-          return Failure
+          throw Inconsistency
         }
         else {
-          return close()
+          close()
+          return
         }
-      } else {
+      }
+      else {
         // maintain the path and path length
         dests(o).value = d
         origs(d).value = o
         if (lengthSubCircuit-1 > length) {
-          if (succs(d).removeValue(o) == Failure) {
-            return Failure
-          }
+          succs(d).removeValue(o)
         }
-        return Suspend
       }
     }
   }

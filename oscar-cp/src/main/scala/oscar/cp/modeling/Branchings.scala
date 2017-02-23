@@ -15,25 +15,31 @@
 
 package oscar.cp.modeling
 
+import oscar.algo.branchings._
 import oscar.algo.search.{Branching, BranchingUtils, DiscrepancyBranching}
 import oscar.cp.scheduling.search.SetTimesBranching
 import oscar.cp.scheduling.search.RankBranching
-import oscar.cp.searches._
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.variables.CPSetVar
-import oscar.algo.reversible.ReversibleContext
+import oscar.algo.vars.{IntVarLike, SetVarLike}
+import oscar.cp._
+import oscar.cp.searches.WeightedDegreeHelper
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
  * @author Renaud Hartert ren.hartert@gmail.com
  */
 trait Branchings extends BranchingUtils {
+  @inline
+  implicit def arrayCPIntToIntLike(orig: Array[CPIntVar]): Array[IntVarLike] = orig.asInstanceOf[Array[IntVarLike]]
+  @inline
+  implicit def arrayCPSetToSetLike(orig: Array[CPSetVar]): Array[SetVarLike] = orig.asInstanceOf[Array[SetVarLike]]
 
-  def binaryIdx(variables: Array[CPIntVar], varHeuristic: (Int => Int), valHeuristic: (Int => Int)): Branching = {
-    new BinaryBranching(variables, varHeuristic, valHeuristic)
+  def binaryIdx[T](variables: Array[CPIntVar], varHeuristic: Int => T, valHeuristic: Int => Int)(implicit orderer: T => Ordered[T]): Branching = {
+    new BinaryBranching(variables.asInstanceOf[Array[IntVarLike]], varHeuristic, valHeuristic, orderer)
   }
 
-  def binaryIdx(variables: Array[CPIntVar], varHeuristic: (Int => Int)): Branching = {
+  def binaryIdx[T](variables: Array[CPIntVar], varHeuristic: (Int => T))(implicit orderer: T => Ordered[T]): Branching = {
     binaryIdx(variables, varHeuristic, variables(_).min)
   }
 
@@ -50,12 +56,12 @@ trait Branchings extends BranchingUtils {
     binaryLastConflict(variables, variables(_).size, variables(_).min)
   }
 
-  def binaryLastConflict(variables: Array[CPIntVar], varHeuristic: (Int => Int)): Branching = {
-    binaryLastConflict(variables, varHeuristic, variables(_).min)
+  def binaryLastConflict[T](variables: Array[CPIntVar], varHeuristic: (Int => T))(implicit orderer: T => Ordered[T]): Branching = {
+    binaryLastConflict(variables, varHeuristic, variables(_).min)(orderer)
   }
 
-  def binaryLastConflict(variables: Array[CPIntVar], varHeuristic: (Int => Int), valHeuristic: (Int => Int)): Branching = {
-    new BinaryLastConflict(variables, varHeuristic, valHeuristic)
+  def binaryLastConflict[T](variables: Array[CPIntVar], varHeuristic: (Int => T), valHeuristic: (Int => Int))(implicit orderer: T => Ordered[T]): Branching = {
+    new BinaryLastConflict[T](variables.asInstanceOf[Array[IntVarLike]], varHeuristic, valHeuristic,orderer)
   }
 
   def splitLastConflict(variables: Array[CPIntVar]): Branching = {
@@ -67,11 +73,11 @@ trait Branchings extends BranchingUtils {
   }
 
   def splitLastConflict(variables: Array[CPIntVar], varHeuristic: (Int => Int), valHeuristic: (Int => Int)): Branching = {
-    new SplitLastConflict(variables, varHeuristic, valHeuristic)
+    new SplitLastConflict(variables.asInstanceOf[Array[IntVarLike]], varHeuristic, valHeuristic)
   }
 
-  def conflictOrderingSearch(variables: Array[CPIntVar], varHeuristic: (Int) => Int, valHeuristic: (Int) => Int, doReset: Boolean = false): Branching = {
-    new ConflictOrderingSearch(variables, varHeuristic, valHeuristic, doReset)
+  def conflictOrderingSearch[T](variables: Array[CPIntVar], varHeuristic: (Int) => T, valHeuristic: (Int) => Int)(implicit orderer: T => Ordered[T]): Branching = {
+    new ConflictOrderingSearch(variables.asInstanceOf[Array[IntVarLike]], varHeuristic, valHeuristic, orderer)
   }
 
 
@@ -83,27 +89,25 @@ trait Branchings extends BranchingUtils {
    */
   def binaryStaticIdx(vars: Seq[CPIntVar], valHeuris: Int => Int): Branching = new BinaryStaticOrderBranching(vars.toArray, valHeuris)
 
-  def binaryStatic(vars: Seq[CPIntVar], valHeuris: (CPIntVar => Int)): Branching = new BinaryStaticOrderBranching(vars.toArray, i => valHeuris(vars(i)))
-
-  def binaryStatic(vars: Seq[CPIntVar]): Branching = binaryStatic(vars, (x: CPIntVar) => x.min)
+  def binaryStatic(vars: Seq[CPIntVar]): Branching = binaryStaticIdx(vars, i => vars(i).min)
 
   /**
    * Binary First Fail (min dom size) on the decision variables vars.
-   * @param vars: the array of variables to assign during the search
+   * @param variables: the array of variables to assign during the search
    * @param valHeuris: gives the value v to try on left branch for the chosen variable, this value is removed on the right branch
    */
   def binaryFirstFailIdx(variables: Seq[CPIntVar], valHeuris: (Int => Int)): Branching = {
     val vars = variables.toArray
-    binaryIdx(vars, vars(_).size, valHeuris)
+    binaryIdx(vars, i => (vars(i).size,i), valHeuris)
   }
-  
+
   def binaryFirstFail(variables: Seq[CPIntVar]): Branching = {
-    val vars = variables.toArray    
+    val vars = variables.toArray
     binaryFirstFailIdx(vars, vars(_).min)
   }
 
   def binaryFirstFail(variables: Seq[CPIntVar], valHeuris: (CPIntVar => Int)): Branching = {
-    val vars = variables.toArray    
+    val vars = variables.toArray
     binaryFirstFailIdx(vars, i => valHeuris(vars(i)))
   }
 
@@ -112,21 +116,52 @@ trait Branchings extends BranchingUtils {
    */
   def binaryMaxDegree(variables: Seq[CPIntVar]): Branching = {
     val vars = variables.toArray
-    binaryIdx(vars, vars(_).constraintDegree, vars(_).min)
+    binaryIdx(vars, -vars(_).constraintDegree, vars(_).min)
   }
-  
+
+  /**
+   * Binary Search based on the weighted degree of each variable, the variable with the greater degree being selected first.
+   * The weighted degree of a var is the number of times a constraint to which it is linked has been involved in a failure.
+   */
+  def binaryMaxWeightedDegree(variables: Seq[CPIntVar], valHeuris: (CPIntVar => Int), decayRatio: Double): Branching = {
+    val vars = variables.toArray
+    val helper = new WeightedDegreeHelper(vars.head.store, vars, decayRatio)
+
+    //TODO find a better way to convert the double to an Int
+    binaryIdx(vars, i => -(helper.getWeightedDegree(vars(i))*1000).round.toInt, i => valHeuris(vars(i)))
+  }
+
+  def binaryMaxWeightedDegree(variables: Seq[CPIntVar], decayRatio: Double = 0.99): Branching = {
+    binaryMaxWeightedDegree(variables, x => x.min, decayRatio)
+  }
+
+  /**
+   * Minimize (domain size)/(weighted degree)
+   */
+  def binaryMinDomOnWeightedDegree(variables: Seq[CPIntVar], valHeuris: (CPIntVar => Int), decayRatio: Double): Branching = {
+    val vars = variables.toArray
+    val helper = new WeightedDegreeHelper(vars.head.store, vars, decayRatio)
+
+    //TODO find a better way to convert the double to an Int
+    binaryIdx(vars, i => (helper.getDomOnWeightedDegree(vars(i))*1000).round.toInt, i => valHeuris(vars(i)))
+  }
+
+  def binaryMinDomOnWeightedDegree(variables: Seq[CPIntVar], decayRatio: Double = 0.99): Branching = {
+    binaryMinDomOnWeightedDegree(variables, x => x.min, decayRatio)
+  }
+
   /**
    * Binary search on the decision variables vars, splitting the domain of the selected variable on the
    * median of the values (left : <= median, right : > median)
    */
-  def binarySplitIdx(x: Seq[CPIntVar], varHeuris: (Int => Int), valHeuris: (Int => Int)): Branching = {
-    val xa = x.toArray
-    new BinaryDomainSplitBranching(xa, varHeuris, valHeuris)
+  def binarySplitIdx[T](x: Seq[CPIntVar], varHeuris: (Int => T), valHeuris: (Int => Int))(implicit orderer: T => Ordered[T]): Branching = {
+    val xa = x.toArray.asInstanceOf[Array[IntVarLike]]
+    new BinaryDomainSplitBranching(xa, varHeuris, valHeuris, orderer)
   }
 
-  def binarySplitIdx(x: Seq[CPIntVar], varHeuris: (Int => Int)): Branching = {
-    val xa = x.toArray
-    new BinaryDomainSplitBranching(xa, varHeuris)
+  def binarySplitIdx[T](x: Seq[CPIntVar], varHeuris: (Int => T))(implicit orderer: T => Ordered[T]): Branching = {
+    val xa = x.toArray.asInstanceOf[Array[IntVarLike]]
+    new BinaryDomainSplitBranching(xa, varHeuris,orderer)
   }
 
   def binarySplit(x: Seq[CPIntVar], varHeuris: (CPIntVar => Int), valHeuris: (CPIntVar => Int)): Branching = {
@@ -138,8 +173,7 @@ trait Branchings extends BranchingUtils {
   }
 
   def binarySplit(x: Seq[CPIntVar]): Branching = {
-    val xa = x.toArray
-    new BinaryDomainSplitBranching(xa, minVar(xa.toArray))
+    binarySplitIdx(x,i => i)
   }
 
   /**
@@ -181,10 +215,6 @@ trait Branchings extends BranchingUtils {
 
   def minDomMaxDegree(x: Array[CPIntVar]): Int => (Int, Int) = (i => (x(i).size, -x(i).constraintDegree))
 
-  def minVar(x: CPIntVar): Int = 1
-
-  def minVar(x: Array[CPIntVar]): Int => Int = i => i
-
   def maxDegree(x: CPIntVar): Int = -x.constraintDegree
 
   def maxDegree(x: Array[CPIntVar]) = (i: Int) => -x(i).constraintDegree
@@ -198,4 +228,40 @@ trait Branchings extends BranchingUtils {
   def maxVal(x: Array[CPIntVar]) = (i: Int) => x(i).max
 
   def minValminVal(x: CPIntVar): (Int, Int) = (x.min, x.min)
+
+  /**
+    * @author Pierre Schaus pschaus@gmail.com
+    * @param x
+    * @param fallBackValHeuristic
+    */
+  class ValueHeuristicLearner(x: Array[CPIntVar], fallBackValHeuristic: (Int => Int)){
+    private[this] val lastValues = Array.fill(x.length)(Int.MinValue)
+
+    x(0).store.onPush {
+      for (i <- 0 until x.length) {
+        if (x(i).isBound) {
+          lastValues(i) = x(i).min
+        }
+      }
+    }
+    def valueHeuristic(i: Int): Int = {
+      if (x(i).hasValue(lastValues(i))) {
+        lastValues(i)
+      } else {
+        fallBackValHeuristic(i)
+      }
+    }
+  }
+
+  /**
+    * Value Heuristic wrapper that will try to learn a successfull heuristic
+    * Basically when a value succeeds, it is recorded and first attempted
+    * whenever it is possible
+    * @param x the variables on which the defaultValueHeuristic is
+    * @param fallBackValHeuristic i => v where i is the variable index, v the value in the domain of x(i)
+    * @return a value heuristic i => v where i is the variable index, v is the value in the domain of x(i)
+    */
+  def learnValueHeuristic(x: Array[CPIntVar], fallBackValHeuristic: (Int => Int)): (Int => Int) = {
+    new ValueHeuristicLearner(x,fallBackValHeuristic).valueHeuristic
+  }
 }

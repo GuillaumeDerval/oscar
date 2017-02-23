@@ -16,12 +16,13 @@ package oscar.algo.reversible.test
 
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
 import oscar.algo.search._
 import oscar.algo.reversible._
+
 import scala.collection.JavaConversions._
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
+import org.scalatest.matchers.ShouldMatchers
 
 
 @RunWith(classOf[JUnitRunner])

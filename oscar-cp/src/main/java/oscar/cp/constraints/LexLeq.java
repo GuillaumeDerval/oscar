@@ -14,12 +14,18 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
+import oscar.algo.Inconsistency;
 import oscar.algo.reversible.ReversibleInt;
 import oscar.cp.core.variables.CPIntVar;
-import oscar.cp.core.CPOutcome;
 import oscar.cp.core.CPPropagStrength;
-import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Lexicographic Less or Equal (LexLeq) Constraint
@@ -66,24 +72,27 @@ public class LexLeq extends Constraint {
 		posted = false;
 	}
 
-	public CPOutcome setup(CPPropagStrength l) {
-		  CPOutcome ok = mySetup(l);
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+		l.addAll(Arrays.asList(y));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
+	public void setup(CPPropagStrength l) throws Inconsistency {
+		  mySetup(l);
 		  posted = true;
-		  if (ok == CPOutcome.Failure) {
-			  return CPOutcome.Failure;
-		  }
-		  return ok;
 	}
 	
 	
 	
 	
-	private CPOutcome mySetup(CPPropagStrength l) {
+	private void mySetup(CPPropagStrength l) throws Inconsistency {
 	   i = 0;
 	   q.setValue(0);
 	   r.setValue(0);
 	   s.setValue(0);
-	   return state1();
+	   state1();
 	}
 	
 	private void setupFrom(int p) {
@@ -99,88 +108,91 @@ public class LexLeq extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome updateBoundsIdx(CPIntVar var, int idx) {
+	public void updateBoundsIdx(CPIntVar var, int idx) throws Inconsistency {
 		i = idx;
-		if (i == q.getValue()) return state1();
-		else if (i == r.getValue()) return state2();
-		else if (u.getValue() == 3 && (i == s.getValue() || (i < s.getValue() && x[i].getMax() != y[i].getMin()))) return state3();
-		else if (u.getValue() == 4 && (i == s.getValue() || (i < s.getValue() && x[i].getMin() != y[i].getMax()))) return state4();
-		else return CPOutcome.Suspend;
+		if (i == q.getValue()) state1();
+		else if (i == r.getValue()) state2();
+		else if (u.getValue() == 3 && (i == s.getValue() || (i < s.getValue() && x[i].getMax() != y[i].getMin()))) state3();
+		else if (u.getValue() == 4 && (i == s.getValue() || (i < s.getValue() && x[i].getMin() != y[i].getMax()))) state4();
 	}
 	
   
-	private CPOutcome state1() {
+	private void state1() throws Inconsistency {
 		while(i < x.length && x[i].getMin() == y[i].getMax()) {
 			int val = x[i].getMin();
-			if (x[i].assign(val) == CPOutcome.Failure || y[i].assign(val) == CPOutcome.Failure)
-				return CPOutcome.Failure;
+			x[i].assign(val);
+			y[i].assign(val);
 			q.setValue(i = i + 1);
 		}
 		if (i >= x.length || x[i].getMax() < y[i].getMin()) {
 			if (posted) deactivate();
-			return CPOutcome.Success; 
+			return;
 		}
-		if (x[i].updateMax(y[i].getMax()) == CPOutcome.Failure  || y[i].updateMin(x[i].getMin()) ==  CPOutcome.Failure)
-			return CPOutcome.Failure;
+		x[i].updateMax(y[i].getMax());
+		y[i].updateMin(x[i].getMin());
 
 		i = i+1 > r.getValue() ? i+1 : r.getValue();
 		r.setValue(i);
 
-		return state2();
+		state2();
 	}
 	   
-	private CPOutcome state2() {
+	private void state2() throws Inconsistency {
 		while(i < x.length && x[i].isBound() && y[i].isBound() && x[i].getMin() == y[i].getMin())  //STATE 2
 			r.setValue(i = i + 1);
+
 		if (i >= x.length || x[i].getMax() < y[i].getMin()) {
 			if (posted) deactivate(); // deactivate the constraint since it is now replaced by a new one
-			CPOutcome ok = super.s().post(new LeEq(x[q.getValue()],y[q.getValue()])); // T3
-			return ok;
-		} else if (x[i].getMin() > y[i].getMax()) {
+			super.s().post(new LeEq(x[q.getValue()],y[q.getValue()])); // T3
+			return;
+		}
+
+		if (x[i].getMin() > y[i].getMax()) {
 			if (posted) deactivate();
-			CPOutcome ok = super.s().post(new Le(x[q.getValue()],y[q.getValue()])); // T2
-			return ok;
-		} else if (x[i].getMax() == y[i].getMin() && x[i].getMin() < y[i].getMax()) {
+			super.s().post(new Le(x[q.getValue()],y[q.getValue()])); // T2
+			return;
+		}
+
+		if (x[i].getMax() == y[i].getMin() && x[i].getMin() < y[i].getMax()) {
 			i = i+1 > s.getValue() ? i+1 : s.getValue();
 			s.setValue(i);
-			return state3();
-		} if (x[i].getMin() == y[i].getMax() && x[i].getMax() > y[i].getMin()) {
+			state3();
+			return;
+		}
+
+		if (x[i].getMin() == y[i].getMax() && x[i].getMax() > y[i].getMin()) {
 			i = i+1 > s.getValue() ? i+1 : s.getValue();
 			s.setValue(i);
-			return state4();
+			state4();
+			return;
 		}
 		setupFrom(q.getValue());
 		u.setValue(2);
-		return CPOutcome.Suspend; // D1
 	}
 	
-	private CPOutcome state3() {
+	private void state3() throws Inconsistency {
 		while(i < x.length && x[i].getMax() == y[i].getMin())
 			i = i+1;
 		s.setValue(i);
 		if (i>= x.length || x[i].getMax() < y[i].getMin()) {
 			if (posted) super.deactivate();
-			CPOutcome ok = super.s().post(new LeEq(x[q.getValue()], y[q.getValue()])); // T3
-			return ok;
+			super.s().post(new LeEq(x[q.getValue()], y[q.getValue()])); // T3
+			return;
 		}
 		setupFrom(q.getValue());
 		u.setValue(3);
-		return CPOutcome.Suspend; // D3
 	}
 	
-	private CPOutcome state4() {
+	private void state4() throws Inconsistency {
 		while (i < x.length && x[i].getMin() == y[i].getMax())
 			i = i + 1;
 		s.setValue(i);
 		if (i < x.length && x[i].getMin() > y[i].getMax()) {
 			if (posted) super.deactivate();
-			CPOutcome ok = super.s().post(new Le(x[q.getValue()], y[q.getValue()]));
-			return ok;
+			super.s().post(new Le(x[q.getValue()], y[q.getValue()]));
+			return;
 		}
 		setupFrom(q.getValue());
 		u.setValue(4);
-		return CPOutcome.Suspend; // D2
 	}
-	
-
 }

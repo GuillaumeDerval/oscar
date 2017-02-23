@@ -16,18 +16,19 @@ package oscar.cp.test
 
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
-import oscar.cp.core.CPOutcome
+import oscar.cp.testUtils.TestSuite
 import oscar.cp.core.CPPropagStrength
 import oscar.cp._
 import oscar.cp.core.delta.DeltaSetVar
+import oscar.cp.core.variables.CPVar
+
 import scala.collection.mutable.ArrayBuffer
 
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
  */
-class TestDeltaSetPropagate extends FunSuite with ShouldMatchers {
+class TestDeltaSetPropagate extends TestSuite {
 
 
 
@@ -37,7 +38,7 @@ class TestDeltaSetPropagate extends FunSuite with ShouldMatchers {
     
     class MyCons(val X: CPSetVar) extends Constraint(X.store, "TestDelta") {
       priorityL2 = CPStore.MaxPriorityL2-5
-      override def setup(l: CPPropagStrength): CPOutcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         //println("setup")
         X.filterWhenDomainChangesWithDelta(){ delta =>
           propag = true
@@ -49,12 +50,9 @@ class TestDeltaSetPropagate extends FunSuite with ShouldMatchers {
           delta.deltaRequired.toSet should be(Set(1,3))
           delta.deltaPossibleSize should be(2)
           delta.deltaPossible.toSet should be(Set(2,4))
-          
-
-          CPOutcome.Suspend
         }
-        CPOutcome.Suspend
       }
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
     val cp = CPSolver()
@@ -81,11 +79,10 @@ class TestDeltaSetPropagate extends FunSuite with ShouldMatchers {
     class MyCons(val X: CPSetVar) extends Constraint(X.store, "TestDelta") {
       priorityL2 = CPStore.MaxPriorityL2-5
       var delta: DeltaSetVar = null
-      override def setup(l: CPPropagStrength): CPOutcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         delta = X.callPropagateOnChangesWithDelta(this)
-        CPOutcome.Suspend
       }
-      override def propagate(): CPOutcome = {
+      override def propagate(): Unit = {
           propag = true
           delta.changed() should be(true)
           delta.requiredChanged should be(true)
@@ -94,10 +91,8 @@ class TestDeltaSetPropagate extends FunSuite with ShouldMatchers {
           delta.deltaRequired().toSet should be(Set(1,3))
           delta.deltaPossibleSize() should be(2)
           delta.deltaPossible().toSet should be(Set(2,4))
-        
-          CPOutcome.Suspend
       }
-      
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
     val cp = CPSolver()

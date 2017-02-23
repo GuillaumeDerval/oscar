@@ -14,12 +14,18 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.CPStore;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Reified constraint.
@@ -44,81 +50,69 @@ public class DiffReif extends Constraint {
 		this.v = v;
 		this.b = b;
 	}
-	
+
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x, b));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
+	@Override
+	public void setup(CPPropagStrength l) {
 		priorityBindL1_$eq(CPStore.MAXPRIORL1());
 		priorityRemoveL1_$eq(CPStore.MAXPRIORL1());
 		
 		if (x.isBound() || b.isBound())
-			return valBind(x);
+			valBind(x);
 		else if (b.isBound())
-			return valBind(b);
+			valBind(b);
 		else {
 			x.callValBindWhenBind(this);
 			b.callValBindWhenBind(this);
 			//x.addAC5Bounds(this);
 			x.callValRemoveWhenValueIsRemoved(this);
-			return CPOutcome.Suspend;
 		}
 	}
 	
 	@Override
-	public CPOutcome updateBounds(CPIntVar x) {
+	public void updateBounds(CPIntVar x) {
 		if (x.getMax() < v || x.getMin() > v) {
-			if (b.assign(1) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			return CPOutcome.Success;
+			b.assign(1);
+			deactivate();
 		}
-		return CPOutcome.Suspend;
 	}
 	
 
 	@Override
-	public CPOutcome valRemove(CPIntVar x, int val) {
+	public void valRemove(CPIntVar x, int val) {
 		if (val == v) {
-			if (b.assign(1) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			return CPOutcome.Success;
+			b.assign(1);
+			deactivate();
 		}
-		return CPOutcome.Suspend;
 	}
 	
 
 	@Override
-	public CPOutcome valBind(CPIntVar var) {
+	public void valBind(CPIntVar var) {
 		if (b.isBound()) {
 			if (b.min() == 1) {
 				//x != v
-				if (x.removeValue(v) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
+				x.removeValue(v);
 			} else {
 				//x == v
-				if (x.assign(v) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}				
+				x.assign(v);
 			}
-			return CPOutcome.Success;
+			deactivate();
 		}
-		
-		if (x.isBound()) {
+		else if (x.isBound()) {
 			if (x.min() == v) {
-				if (b.assign(0) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
+				b.assign(0);
 			}
 			else {
-				if (b.assign(1) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
+				b.assign(1);
 			}
-			return CPOutcome.Success;
+			deactivate();
 		}
-		
-		return CPOutcome.Suspend;
 	}
 
 }

@@ -1,42 +1,39 @@
 package oscar.cp.constraints
 
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPBoolVar
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.CPStore
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
 
 /** @author Renaud Hartert ren.hartert@gmail.com */
 final class EqReif(int: CPIntVar, value: Int, boolean: CPBoolVar) extends Constraint(int.store, "EqReif") {
 
+  override def associatedVars(): Iterable[CPVar] = Array(int, boolean)
+
   idempotent = true
   priorityL2 = CPStore.MaxPriorityL2
 
-  final override def setup(l: CPPropagStrength): CPOutcome = {
-    val outcome = propagate()
-    if (outcome != Suspend) outcome
-    else {
+  final override def setup(l: CPPropagStrength): Unit = {
+    propagate()
+    if(isActive) {
       int.callPropagateWhenDomainChanges(this)
       boolean.callPropagateWhenBind(this)
-      Suspend
     }
   }
 
-  final override def propagate(): CPOutcome = {
+  final override def propagate(): Unit = {
     if (boolean.isTrue) {
-      if (int.assign(value) == Failure) Failure
-      else Success
+      int.assign(value)
+      deactivate()
     } else if (boolean.isFalse) {
-      if (int.removeValue(value) == Failure) Failure
-      else Success
+      int.removeValue(value)
+      deactivate()
     } else if (!int.hasValue(value)) {
-      if (boolean.assignFalse() == Failure) Failure
-      else Success
+      boolean.assignFalse()
+      deactivate()
     } else if (int.isBound) {
-      if (boolean.assignTrue() == Failure) Failure
-      else Success
-    } else Suspend
+      boolean.assignTrue()
+      deactivate()
+    }
   }
 }

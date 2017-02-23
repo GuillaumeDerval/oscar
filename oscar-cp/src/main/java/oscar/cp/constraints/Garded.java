@@ -14,10 +14,16 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class Garded extends Constraint {
 	
@@ -40,28 +46,28 @@ public class Garded extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = JavaConversions.seqAsJavaList(c.associatedVars().toList());
+		l.add(b);
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
+	@Override
+	public void setup(CPPropagStrength l)  throws Inconsistency {
 		if (!b.isBound()) {
 			b.callPropagateWhenBind(this);
-			return CPOutcome.Suspend;
 		} else {
-			if ((b.min() == 1 && onTrue) || (b.min() == 0 && !onTrue)) {
-				if (s().post(c) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-			}
-			return CPOutcome.Success;
+			if ((b.min() == 1 && onTrue) || (b.min() == 0 && !onTrue))
+				s().post(c);
+			deactivate();
 		}	
 	}
 	
 	@Override
-	public CPOutcome propagate() {
-		if ((b.min() == 1 && onTrue) || (b.min() == 0 && !onTrue)) {
-			if (s().post(c) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-		}
-		return CPOutcome.Success;
+	public void propagate() throws Inconsistency {
+		if ((b.min() == 1 && onTrue) || (b.min() == 0 && !onTrue))
+			s().post(c);
+		deactivate();
 	}
 
 }

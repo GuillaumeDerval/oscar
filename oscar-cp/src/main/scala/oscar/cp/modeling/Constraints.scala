@@ -15,11 +15,12 @@
 
 package oscar.cp.modeling
 
+import java.security.InvalidParameterException
+
 import oscar.cp.constraints._
 import oscar.cp.core.variables.CPIntVarViewOffset
 import oscar.cp.core.variables.CPIntVarViewTimes
 import oscar.cp.core.variables.CPIntVarViewMinus
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPPropagStrength
 import oscar.cp._
 import oscar.cp.scheduling.constraints.{DisjunctiveWithTransitionTimes, UnaryResource, _}
@@ -78,8 +79,7 @@ trait Constraints {
     if (y.isBound) plus(x, y.value)
     else {
       val c = CPIntVar(x.min + y.min, x.max + y.max)(x.store)
-      val ok = x.store.post(new oscar.cp.constraints.BinarySum(x, y, c))
-      assert(ok != CPOutcome.Failure)
+      x.store.post(new oscar.cp.constraints.BinarySum(x, y, c))
       c
     }
   }
@@ -109,8 +109,7 @@ trait Constraints {
     import oscar.cp.util.NumberUtils
     val t = Array(NumberUtils.safeMul(a, c), NumberUtils.safeMul(a, d), NumberUtils.safeMul(b, c), NumberUtils.safeMul(b, d))
     val z = CPIntVar(t.min, t.max)(x.store)
-    val ok = x.store.post(new oscar.cp.constraints.MulVar(x, y, z))
-    assert(ok != CPOutcome.Failure)
+    x.store.post(new oscar.cp.constraints.MulVar(x, y, z))
     z
   }
 
@@ -122,8 +121,7 @@ trait Constraints {
    */
   def absolute(x: CPIntVar): CPIntVar = {
     val c = CPIntVar(0, Math.max(Math.abs(x.min), Math.abs(x.max)))(x.store)
-    val ok = x.store.post(new oscar.cp.constraints.Abs(x, c))
-    assert(ok != CPOutcome.Failure)
+    x.store.post(new oscar.cp.constraints.Abs(x, c))
     c
   }
 
@@ -227,7 +225,7 @@ trait Constraints {
   /**
    * allDifferent Constraint (Available Filtering: Weak, Medium, Strong)
     *
-    * @param variables an non empty array of variables
+    * @param variables a non empty array of variables
    * @return a constraint ensure that no value occurs more than once in variables
    */
   def allDifferent(variables: Array[CPIntVar]): Constraint = {
@@ -243,6 +241,15 @@ trait Constraints {
    */
   def softAllDifferent(variables: Array[CPIntVar], violations: CPIntVar): Constraint = {
     new SoftAllDifferent(variables, violations)
+  }
+
+  /**
+    * notAllEqual Constraint
+    * @param variables a non empty array of variables
+    * @return a constraint that ensures there is a least two values in 'variables' that are not equal (they are not all equal)
+    */
+  def notAllEqual(variables: Array[CPIntVar]): Constraint = {
+    new NotAllEqual(variables)
   }
 
   /**
@@ -362,8 +369,7 @@ trait Constraints {
    */
   def element(matrix: Array[Array[Int]], i: CPIntVar, j: CPIntVar): CPIntVar = {
     val z = CPIntVar(matrix.flatten.min to matrix.flatten.max)(i.store)
-    val ok = i.store.post(new ElementCst2D(matrix, i, j, z))
-    assert(ok != CPOutcome.Failure, { println("element on matrix, should not fail") })
+    i.store.post(new ElementCst2D(matrix, i, j, z))
     z
   }
 
@@ -863,8 +869,7 @@ trait Constraints {
    */
   def countGeq(n: CPIntVar, x: IndexedSeq[CPIntVar], y: CPIntVar) = {
     val c = CPIntVar(0 to x.size)(n.store)
-    val ok = n.store.post(n >= c)
-    assert(ok != CPOutcome.Failure)
+    n.store.post(n >= c)
     new Count(c, x, y)
   }
 
@@ -878,8 +883,7 @@ trait Constraints {
    */
   def countGt(n: CPIntVar, x: IndexedSeq[CPIntVar], y: CPIntVar) = {
     val c = CPIntVar(0 to x.size)(n.store)
-    val ok = n.store.post(n > c)
-    assert(ok != CPOutcome.Failure)
+    n.store.post(n > c)
     new Count(c, x, y)
   }
 
@@ -893,8 +897,7 @@ trait Constraints {
    */
   def countLeq(n: CPIntVar, x: IndexedSeq[CPIntVar], y: CPIntVar) = {
     val c = CPIntVar(0 to x.size)(n.store)
-    val ok = n.store.post(n <= c)
-    assert(ok != CPOutcome.Failure)
+    n.store.post(n <= c)
     new Count(c, x, y)
   }
 
@@ -908,8 +911,7 @@ trait Constraints {
    */
   def countLt(n: CPIntVar, x: IndexedSeq[CPIntVar], y: CPIntVar) = {
     val c = CPIntVar(0 to x.size)(n.store)
-    val ok = n.store.post(n < c)
-    assert(ok != CPOutcome.Failure)
+    n.store.post(n < c)
     new Count(c, x, y)
   }
 
@@ -923,9 +925,24 @@ trait Constraints {
    */
   def countNeq(n: CPIntVar, x: IndexedSeq[CPIntVar], y: CPIntVar) = {
     val c = CPIntVar(0 to x.size)(n.store)
-    val ok = n.store.post(n.diff(c))
-    assert(ok != CPOutcome.Failure)
+    n.store.post(n.diff(c))
     new Count(c, x, y)
+  }
+
+
+  /**
+    * Global Cardinality Constraint: every value occurs at least min and at most max
+    *
+    * @param x an non empty array of variables
+    * @param valueMin is the minimum value that is constrained
+    * @param cardMin is the minimum number of occurrences
+    * @param cardMax such that cardMax.size == cardMin.size is the maximum number of occurrences
+    * @return a constraint such that each value v in the range  [valueMin..valueMin+cardMin.size-1]
+    *         occurs at least cardMin[v-minValue] and at most cardMax[v-minValue] times.
+    */
+  def gcc(x: Array[CPIntVar], valueMin: Int, cardMin: Array[Int], cardMax: Array[Int]): Constraint = {
+    if (cardMin.size != cardMax.size) throw new InvalidParameterException("cardMin.size != cardMax.size")
+    new GCC(x, valueMin, cardMin, cardMax)
   }
 
   /**

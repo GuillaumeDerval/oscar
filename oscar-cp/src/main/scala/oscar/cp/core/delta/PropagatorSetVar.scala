@@ -15,11 +15,11 @@
 
 package oscar.cp.core.delta
 
-import oscar.cp.core.{CPPropagStrength, CPOutcome, Constraint}
-import oscar.cp.core.variables.{CPIntVar, CPSetVar}
+import oscar.cp.core.{CPPropagStrength, Constraint}
+import oscar.cp.core.variables.{CPIntVar, CPSetVar, CPVar}
 
-class PropagatorSetVar(x: CPSetVar,id: Int, filter: DeltaSetVar => CPOutcome) extends Constraint(x.store, "PropagatorSetVar") {
-
+class PropagatorSetVar(x: CPSetVar,id: Int, filter: DeltaSetVar => Unit) extends Constraint(x.store, "PropagatorSetVar") {
+  override def associatedVars(): Iterable[CPVar] = Array(x)
 
   private[this] val _delta: DeltaSetVar = x.delta(this,id)
 
@@ -28,9 +28,9 @@ class PropagatorSetVar(x: CPSetVar,id: Int, filter: DeltaSetVar => CPOutcome) ex
 
   @inline final def snapshot = _delta
 
-  override def setup(l: CPPropagStrength): CPOutcome = CPOutcome.Suspend
+  override def setup(l: CPPropagStrength): Unit = {}
 
-  override def propagate(): CPOutcome = filter(_delta)
+  override def propagate(): Unit = filter(_delta)
 
   
 }

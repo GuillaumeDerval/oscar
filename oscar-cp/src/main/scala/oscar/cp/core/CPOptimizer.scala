@@ -15,6 +15,7 @@
 
 package oscar.cp.core
 
+import oscar.algo.Inconsistency
 import oscar.cp.constraints.CPObjectiveUnit
 import oscar.cp.constraints.ParetoConstraint
 import oscar.cp.multiobjective.Pareto
@@ -45,7 +46,12 @@ class CPOptimizer(propagStrength: CPPropagStrength) extends CPStore(propagStreng
 
   def optimize(obj: CPObjective): CPOptimizer = {
     objective = obj
-    postCut(obj)
+    try {
+      postCut(obj)
+    }
+    catch {
+      case _: Inconsistency => fail()
+    }
     this
   }
 

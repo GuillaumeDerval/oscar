@@ -17,13 +17,15 @@ package oscar.cp.constraints
 import oscar.cp.core._
 import oscar.cp._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
+import oscar.cp.core.variables.CPVar
 
 /**
  * Sequence
  * @author Pierre Schaus pschaus@gmail.com
  */
 class SequenceDecomposition(val xinit: Array[CPIntVar], val values: Set[Int], val l: Int, min: Int, max: Int) extends Constraint(xinit(0).store, "Sequence") {
+
+  override def associatedVars(): Iterable[CPVar] = xinit
 
   if (values.size <= 0) throw new IllegalArgumentException("Sequence: values.size <= 0")
   if (l > xinit.size) throw new IllegalArgumentException("Sequence: l > xinit.size")
@@ -33,7 +35,7 @@ class SequenceDecomposition(val xinit: Array[CPIntVar], val values: Set[Int], va
   if (min < 0) throw new IllegalArgumentException("Sequence: min < 0")
   if (max >  l) throw new IllegalArgumentException("Sequence: max > l")
   
-  override def setup(strenght: CPPropagStrength): CPOutcome = {
+  override def setup(strenght: CPPropagStrength): Unit = {
     val x = xinit.map(_.isIn(values))
 
     // cumulatedCounters[i] = x[0]+x[1]+...+x[i]
@@ -59,21 +61,14 @@ class SequenceDecomposition(val xinit: Array[CPIntVar], val values: Set[Int], va
     for (i <- 0 until x.size) {
       for (j <- i + 1 until (x.size.min(i + l))) {
         for (m <- i until j) {
-          if (s.post(new BinarySum(P(i)(m), P(m + 1)(j), P(i)(j))) == CPOutcome.Failure) {
-            return CPOutcome.Failure;
-          }
+          s.post(new BinarySum(P(i)(m), P(m + 1)(j), P(i)(j)))
         }
       }
       if (i <= x.size - l) {
-        if (s.post(P(i)(i + l - 1) >= min) == CPOutcome.Failure) {
-          return CPOutcome.Failure;
-        }
-        if (s.post(P(i)(i + l - 1) <= max) == CPOutcome.Failure) {
-          return CPOutcome.Failure;
-        }
+        s.post(P(i)(i + l - 1) >= min)
+        s.post(P(i)(i + l - 1) <= max)
       }
     }
-    return CPOutcome.Success
   }
 
 }

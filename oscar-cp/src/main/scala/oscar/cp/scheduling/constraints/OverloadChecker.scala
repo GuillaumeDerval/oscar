@@ -1,13 +1,12 @@
 package oscar.cp.scheduling.constraints
 
-import oscar.cp.core.CPOutcome._
+import oscar.algo.Inconsistency
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.SortUtils.mergeSort
+
 import scala.annotation.tailrec
-import scala.math.{min, max}
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.Inconsistency
+import scala.math.{max, min}
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
  * @author Steven Gay steven.gay@uclouvain.be
@@ -42,7 +41,9 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   private[this] val emaxEvent = Array.ofDim[Int](nTasks)
   
   private[this] val tree = new CumulativeLambdaThetaTree(startEventEnvelope, startEventWorkload)
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ heights ++ resources ++ Array(capacity)
+
   override def propagate() = {
     updateCache()
     
@@ -118,14 +119,12 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
         val optEvent = tree.getLambdaEvent()
         val optTask = startEventTask(optEvent)
         
-        if (resources(optTask).removeValue(id) == Failure) throw Inconsistency        
+        resources(optTask).removeValue(id)
         tree.remove(optEvent)
       }      
       
       emaxp += 1
     }
-    
-    Suspend
   }
 }
 

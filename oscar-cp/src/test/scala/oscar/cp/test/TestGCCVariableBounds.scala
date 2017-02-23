@@ -15,12 +15,12 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
 
 
-class TestGCCVariableBounds extends FunSuite with ShouldMatchers {
+class TestGCCVariableBounds extends TestSuite {
 
   def nbSol(domX: Array[Set[Int]], values: Range, min: Array[Int], max: Array[Int], s: CPPropagStrength): (Int, Int, Int) = {
     var nbSol = 0
@@ -33,7 +33,7 @@ class TestGCCVariableBounds extends FunSuite with ShouldMatchers {
       cp.add(gcc(X, cards), s)
 
     } catch {
-      case e: oscar.cp.core.NoSolutionException => return (0, 0, 0)
+      case e: NoSolutionException => return (0, 0, 0)
     }
     cp.search {
       binaryStatic(X)

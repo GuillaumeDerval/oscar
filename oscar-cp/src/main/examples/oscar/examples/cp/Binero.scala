@@ -1,11 +1,13 @@
 package oscar.examples.cp
 
+import oscar.algo.Inconsistency
 import oscar.cp._
 import oscar.algo.search._
 import oscar.algo.reversible._
+
 import scala.io.Source
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
+import oscar.cp.core.variables.CPVar
 
 /**
  * Binero is a grid game, similar to Sudoku.
@@ -93,33 +95,34 @@ object Binero extends CPModel with App {
  */
 class TabNotEqual(val tab1: Array[CPIntVar], val tab2: Array[CPIntVar], val len: Int) extends Constraint(tab1(0).store) {
 
+
   val valuesBin = Array(new ReversibleInt(s, 0), new ReversibleInt(s, 0))
   val numBound = Array(new ReversibleInt(s, 0), new ReversibleInt(s, 0))
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     if (tab1.length != len || tab2.length != len)
-      CPOutcome.Success
+      return
 
     for ((v, i) <- (tab1 ++ tab2).zipWithIndex) {
       if (v.isBound) {
-        val ok = valBindIdx(v, i)
-        if (ok != CPOutcome.Suspend) return ok
-      } else
+        valBindIdx(v, i)
+        if(!isActive)
+          return
+      }
+      else
         v.callValBindIdxWhenBind(this, i)
     }
-    CPOutcome.Suspend
   }
 
-  override def valBindIdx(x: CPIntVar, i: Int): CPOutcome = {
+  override def valBindIdx(x: CPIntVar, i: Int): Unit = {
     valuesBin(i / len).value += x.min * intPow(2, i % len)
     numBound(i / len).incr()
     if (numBound(0).value == len && numBound(1).value == len) {
       if (valuesBin(0).value == valuesBin(1).value)
-        CPOutcome.Failure
+        throw Inconsistency
       else
-        CPOutcome.Success
-    } else
-      CPOutcome.Suspend
+        deactivate()
+    }
   }
 
   /**
@@ -129,5 +132,7 @@ class TabNotEqual(val tab1: Array[CPIntVar], val tab2: Array[CPIntVar], val len:
    * @return a^e, (a up to e)
    */
   def intPow(a: Int, e: Int): Int = if (e == 0) 1 else a * intPow(a, e - 1)
+
+  override def associatedVars(): Iterable[CPVar] = ???
 }
 

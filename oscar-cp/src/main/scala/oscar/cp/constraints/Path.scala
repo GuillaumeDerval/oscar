@@ -15,10 +15,11 @@
 package oscar.cp.constraints
 
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome
 import oscar.cp._
+
 import scala.collection.JavaConversions._
 import oscar.cp.core.CPPropagStrength
+import oscar.cp.core.variables.CPVar
 
 /**
  * Implementation of Path Constraint decomposition as described in 
@@ -37,27 +38,18 @@ import oscar.cp.core.CPPropagStrength
  */
 class Path(succ: Array[CPIntVar], start: CPIntVar, end: CPIntVar, length: CPIntVar) extends Constraint(succ(0).store, "Path") {
 
+  override def associatedVars(): Iterable[CPVar] = succ ++ Array(start, end, length)
+
   // for each node, it's position in the path
-  val y = Array.fill(succ.size)(CPIntVar(0 until succ.size)(s))
-  
+  val y = Array.fill(succ.length)(CPIntVar(succ.indices)(s))
 
-  override def setup(l: CPPropagStrength): CPOutcome = {    
+  override def setup(l: CPPropagStrength): Unit = {
+    s.post(elementVar(y,start,0))
+    s.post(elementVar(y,end,length))
     
-    for (v <- 0 until succ.size; u <- 0 until succ.size; if (u != v)) {
-      // succ(v) == u => succ(u) != u if u != end
-      //if (s.post((((succ(v) ?!== u) or (succ(u) ?!== u)) === 1).when(end ?!== u)) == CPOutcome.Failure) return CPOutcome.Failure
-    }
-
-    if (s.post(elementVar(y,start,0)) == CPOutcome.Failure) return CPOutcome.Failure
-    if (s.post(elementVar(y,end,length)) == CPOutcome.Failure) return CPOutcome.Failure
-    
-    for (v <- 0 until succ.size) {
-       
-       if (s.post((elementVar(y,succ(v),y(v)+1).when((succ(v) ?!== v) && (end ?!== v)))) == CPOutcome.Failure) return CPOutcome.Failure
-    }
-    if (s.post(allDifferent(succ),l) == CPOutcome.Failure) return CPOutcome.Failure
-    
-    return CPOutcome.Success
+    for (v <- succ.indices)
+       s.post(elementVar(y, succ(v), y(v) + 1).when((succ(v) ?!== v) && (end ?!== v)))
+    s.post(allDifferent(succ),l)
   }
 
 }

@@ -1,9 +1,8 @@
 package oscar.cp.constraints.tables
 
 import oscar.algo.reversible.ReversibleSparseBitSet
-import oscar.cp.core.CPOutcome._
 import oscar.cp.core.delta.DeltaIntVar
-import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset}
+import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset, CPVar}
 import oscar.cp.core.{CPStore, Constraint, _}
 
 import scala.collection.mutable.ArrayBuffer
@@ -16,6 +15,8 @@ import scala.collection.mutable.ArrayBuffer
  * @author Helene Verhaeghe helene.verhaeghe27@gmail.com
  */
 final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: Int = -1, needPreprocess: Boolean = true) extends Constraint(X(0).store, "TableCTNegStar") {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   /* Set default star value */
   private[this] val _star = -1
@@ -272,17 +273,17 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
     array
   }
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
 
     /* Success if table is empty initially or after initial filtering */
     if (nbTuples == 0)
-      return Success
+      return
 
     /* Retrieve the current valid tuples */
     val (dangerous, dangerousByHash) = collectDangerousTuples()
 
     if (dangerous.isEmpty)
-      return Success
+      return
 
     /* Remove non dangerous tuples */
     dangerousTuples.collect(new dangerousTuples.BitSet(dangerous))
@@ -317,7 +318,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
    * @param delta the set of values removed since the last call.
    * @return the outcome i.e. Failure or Success.
    */
-  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): CPOutcome = {
+  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): Boolean = {
 
     val intVar = x(varIndex)
     val varSize = intVar.size
@@ -363,10 +364,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
     }
 
     /* Success if there are no more dangerous tuples */
-    if (dangerousTuples.isEmpty())
-      return Success
-
-    Suspend
+    dangerousTuples.isEmpty()
   }
 
   /**
@@ -375,20 +373,19 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
    * Unsupported values are removed.
    * @return the outcome i.e. Failure or Success.
    */
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
 
     var varIndex = arity
     while (varIndex > 0) {
       varIndex -= 1
       if (deltas(varIndex).size > 0) {
-        if (updateDelta(varIndex, deltas(varIndex)) == Success) {
-          return Success
+        if (updateDelta(varIndex, deltas(varIndex))) {
+          this.deactivate()
+          return
         }
       }
     }
-
     basicPropagate()
-
   }
 
   /**
@@ -397,7 +394,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
    * Remove the pair if the number of tuple as reach the threshold
    * @return the outcome i.e. Failure or Suspend
    */
-  @inline def basicPropagate(): CPOutcome = {
+  @inline def basicPropagate(): Unit = {
 
     var varIndex = arity
     while (varIndex > 0) {
@@ -428,25 +425,21 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
         value = domainArray(i)
         val count = dangerousTuples.intersectCount(variableValueAntiSupports(varIndex)(value), hashMult, mult(varIndex))
         if (count == cardinalSize) {
-          if (x(varIndex).removeValue(value) == Failure) {
-            return Failure
-          } else {
-            dangerousTuples.clearCollected()
-            dangerousTuples.collect(variableValueAntiSupportsRM(varIndex)(value))
-            dangerousTuples.removeCollected()
-            if (dangerousTuples.isEmpty()) {
-              return Success
-            }
-            cardinalSizeInit /= sizeTemp(varIndex)
-            sizeTemp(varIndex) -= 1
-            cardinalSizeInit *= sizeTemp(varIndex)
+          x(varIndex).removeValue(value)
+          dangerousTuples.clearCollected()
+          dangerousTuples.collect(variableValueAntiSupportsRM(varIndex)(value))
+          dangerousTuples.removeCollected()
+          if (dangerousTuples.isEmpty()) {
+            this.deactivate()
+            return
           }
+          cardinalSizeInit /= sizeTemp(varIndex)
+          sizeTemp(varIndex) -= 1
+          cardinalSizeInit *= sizeTemp(varIndex)
           updateMultiplicator(varIndex)
         }
       }
     }
-
-    Suspend
   }
 
   /* ----- Functions used during the setup of the constraint ----- */

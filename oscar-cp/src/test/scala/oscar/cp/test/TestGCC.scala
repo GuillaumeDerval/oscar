@@ -1,14 +1,11 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
-
+import oscar.cp.testUtils.TestSuite
 import oscar.cp.constraints._
-
 import oscar.cp._
-import oscar.cp.core.CPOutcome
 
-class TestGCC extends FunSuite with ShouldMatchers {
+class TestGCC extends TestSuite {
 
   val rand = new scala.util.Random(0)
 
@@ -34,13 +31,15 @@ class TestGCC extends FunSuite with ShouldMatchers {
 
     var nb = 0
 
-    if (gccvar) {
-      cp.post(new oscar.cp.constraints.GCCVar(x, -1, o));
-    } else {
-      cp.post(new oscar.cp.constraints.SoftGCCAC(x, -1, randomOcc(0), randomOcc(1), CPIntVar(0)(cp)));
+    val inconsistent = isInconsistent {
+      if (gccvar) {
+        cp.post(new oscar.cp.constraints.GCCVar(x, -1, o));
+      } else {
+        cp.post(new oscar.cp.constraints.SoftGCCAC(x, -1, randomOcc(0), randomOcc(1), CPIntVar(0)(cp)));
+      }
     }
-    if (cp.isFailed()) {
-      return -1;
+    if (inconsistent) {
+      return -1
     }
 
     cp.search {
@@ -74,7 +73,7 @@ class TestGCC extends FunSuite with ShouldMatchers {
 
     cp.post(new oscar.cp.constraints.GCCVarAC(x, 0, o));
 
-    cp.isFailed() should be(false)
+    cp.isFailed should be(false)
 
     for (i <- 0 until o.size) {
       o(i).isBound should be(true)
@@ -90,12 +89,6 @@ class TestGCC extends FunSuite with ShouldMatchers {
     val x = Array.fill(n)(CPIntVar(0 to n - 1))
     val allValues = Array.tabulate(n)(i => (i, x(i)))
 
-    val ok = cp.post(gcc(x, allValues), Strong)
-
-    assert(ok == CPOutcome.Failure)
+    assert(isInconsistent(cp.post(gcc(x, allValues), Strong)))
   }
-
-
-
-
 }

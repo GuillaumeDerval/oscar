@@ -1,10 +1,10 @@
 package oscar.cp.core.variables
 
+import oscar.algo.Inconsistency
+
 import scala.util.Random
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.reversible.TrailEntry
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
 import oscar.cp.core.delta.DeltaIntVarEmpty
@@ -12,7 +12,9 @@ import oscar.cp.core.watcher.Watcher
 import oscar.cp.core.delta.DeltaIntVar
 
 final class CPIntVarSingleton(final override val store: CPStore, initValue: Int, final override val name: String = "") extends CPIntVar {
-  
+
+  final override val context = store
+
   // Number of constraints registered on the variable
   private[this] val degree = new ReversibleInt(store, 0) // should not change often
   
@@ -41,26 +43,26 @@ final class CPIntVarSingleton(final override val store: CPStore, initValue: Int,
   @inline final def isBound: Boolean = true
 
   /**
-   * @param v
+   * @param value
    * @return true if the variable is bound to value v, false if variable is not bound or bound to another value than v
    */
-  @inline final def isBoundTo(value: Int): Boolean = value == initValue
+  @inline final override def isBoundTo(value: Int): Boolean = value == initValue
 
   /**
    * Test if a value is in the domain
-   * @param val
+   * @param value
    * @return  true if the domain contains the value val, false otherwise
    */
   @inline final def hasValue(value: Int): Boolean = value == initValue
 
   /**
-   * @param val
+   * @param value
    * @return the smallest value > val in the domain, None if there is not value > val in the domain
    */
   final def valueAfter(value: Int): Int = initValue
 
   /**
-   * @param val
+   * @param value
    * @return the largest value < val in the domain, None if there is not value < val in the domain
    */
   final def valueBefore(value: Int): Int = initValue
@@ -86,53 +88,58 @@ final class CPIntVarSingleton(final override val store: CPStore, initValue: Int,
 
   /**
    * Reduce the domain to the singleton {val}, and notify appropriately all the propagators registered to this variable
-   * @param val
+   * @param value
    * @return  Suspend if val was in the domain, Failure otherwise
    */
-  @inline final override def assign(value: Int): CPOutcome = {
-    if (_size == 0) Failure
-    else if (value == initValue) Suspend
-    else emptyDomain()
+  @inline final override def assign(value: Int): Unit = {
+    if (_size == 0)
+      throw Inconsistency
+
+    if (value != initValue)
+      emptyDomain()
   }
   
   /**
    * Remove val from the domain, and notify appropriately all the propagators registered to this variable
-   * @param val
+   * @param value
    * @return  Suspend if the domain is not equal to the singleton {val}, Failure otherwise
    */
-  @inline final override def removeValue(value: Int): CPOutcome = {
-    if (value == initValue) emptyDomain()
-    else if (_size == 0) emptyDomain()
-    else Suspend
+  @inline final override def removeValue(value: Int): Unit = {
+    if (value == initValue || _size == 0)
+      emptyDomain()
   }
 
   /**
    * Remove from the domain all values < val, and notify appropriately all the propagators registered to this variable
-   * @param val
+   * @param value
    * @return  Suspend if there is at least one value >= val in the domain, Failure otherwise
    */
-  @inline final override def updateMin(value: Int): CPOutcome = {
-    if (_size == 0) Failure
-    else if (value <= initValue) Suspend
-    else emptyDomain()
+  @inline final override def updateMin(value: Int): Unit = {
+    if (_size == 0)
+      throw Inconsistency
+
+    if (value > initValue)
+      emptyDomain()
   }
 
   /**
    * Remove from the domain all values > val, and notify appropriately all the propagators registered to this variable
-   * @param val
+   * @param value
    * @return  Suspend if there is at least one value <= val in the domain, Failure otherwise
    */
-  @inline final override def updateMax(value: Int): CPOutcome = {
-    if (_size == 0) Failure
-    else if (value >= initValue) Suspend
-    else emptyDomain()
+  @inline final override def updateMax(value: Int): Unit = {
+    if (_size == 0)
+      throw Inconsistency
+
+    if (value < initValue)
+      emptyDomain()
   }
   
   // Trail and empty the domain
-  @inline private def emptyDomain(): CPOutcome = {
+  @inline private def emptyDomain(): Unit = {
     store.trail(trailEntry)
     _size = 0
-    Failure
+    throw Inconsistency
   }
   
   @inline final def restrict(newDomain: Array[Int], newSize: Int): Unit = {

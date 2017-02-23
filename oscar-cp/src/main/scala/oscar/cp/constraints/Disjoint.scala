@@ -16,8 +16,7 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.variables.CPSetVar
+import oscar.cp.core.variables.{CPSetVar, CPVar}
 import oscar.cp.core.delta.{DeltaSetVar, PropagatorSetVar}
 
 /**
@@ -26,21 +25,21 @@ import oscar.cp.core.delta.{DeltaSetVar, PropagatorSetVar}
  */
 class Disjoint(val x: CPSetVar, val y: CPSetVar) extends Constraint(x.store, "Disjoint") {
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def associatedVars(): Iterable[CPVar] = Array(x, y)
+
+  override def setup(l: CPPropagStrength): Unit = {
     
-    def filterY(d: DeltaSetVar): CPOutcome = {
+    def filterY(d: DeltaSetVar): Unit = {
       for (v <- d.deltaRequired) {
-        if (y.excludes(v) == Failure) return Failure
+        y.excludes(v)
       }
-      Suspend
     }
     
-    def filterX(d: DeltaSetVar): CPOutcome = {
+    def filterX(d: DeltaSetVar): Unit = {
       for (v <- d.deltaRequired) {
-        if (x.excludes(v) == Failure) return Failure
+        x.excludes(v)
       }
-      Suspend
-    }    
+    }
     
     x.filterWhenDomainChangesWithDelta() { d =>
     	filterY(d)
@@ -51,13 +50,12 @@ class Disjoint(val x: CPSetVar, val y: CPSetVar) extends Constraint(x.store, "Di
     }
     
     for (v <- x.requiredValues) {
-      if (y.excludes(v) == Failure) return Failure
+      y.excludes(v)
     }
+
     for (v <- y.requiredValues) {
-      if (x.excludes(v) == Failure) return Failure
+      x.excludes(v)
     }
-    
-	Success	
   }
 
 }

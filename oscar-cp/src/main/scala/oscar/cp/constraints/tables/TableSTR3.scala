@@ -1,16 +1,15 @@
 
 package oscar.cp.constraints.tables
 
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.algo.reversible.ReversibleInt
 import oscar.algo.reversible.ReversibleSparseSetManual
 import oscar.algo.array.ArraySet
+
 import scala.collection.mutable.ArrayBuffer
 import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.Constraint
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
 import oscar.cp.core.CPStore
 import oscar.algo.array.ArrayMap
 
@@ -24,6 +23,8 @@ import oscar.algo.array.ArrayMap
  * @author Renaud Hartert ren.hartert@gmail.com
  */
 class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(vars(0).store, "TableSTR3") {
+
+  override def associatedVars(): Iterable[CPVar] = vars
 
   private[this] val arity = vars.length
   private[this] val store = vars(0).store
@@ -41,7 +42,7 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
   private[this] val separators = Array.tabulate(arity)(i => new Array[ReversibleInt](vars(i).max - initMins(i) + 1))
   private[this] val deps: Array[ArrayMap] = Array.fill(table.length)(new ArrayMap(arity, true))
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     invalidTuples.trail() // save state
 
     val tempSupport = Array.tabulate(arity)(i => {
@@ -69,9 +70,7 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
         val value = tmpArray(j)
         val valueId = value - initMins(i)
         if (tempSupport(i)(valueId).isEmpty) {
-          if (vars(i).removeValue(value) == Failure) {
-            return Failure
-          }
+          vars(i).removeValue(value)
         } else {
           separators(i)(valueId) = new ReversibleInt(store, tempSupport(i)(valueId).size - 1)
           val subtable = tempSupport(i)(valueId).toArray
@@ -82,23 +81,21 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
       vars(i).callOnChangesIdx(i, delta => valuesRemoved(delta), true)
       i += 1
     }
-
-    Suspend
   }
 
-  private def valuesRemoved(delta: DeltaIntVar): CPOutcome = {
+  private def valuesRemoved(delta: DeltaIntVar): Boolean = {
     invalidTuples.trail() // save state
     val varId = delta.id
     var i = delta.fillArray(tmpArray)
     while (i > 0) {
       i -= 1
       val value = tmpArray(i)
-      if (valueRemoved(varId, value) == Failure) return Failure
+      valueRemoved(varId, value)
     }
-    Suspend
+    false
   }
 
-  private def valueRemoved(varId: Int, value: Int): CPOutcome = {
+  private def valueRemoved(varId: Int, value: Int): Unit = {
 
     val membersBefore = invalidTuples.size
     val valueId = value - initMins(varId)
@@ -115,7 +112,7 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
 
     // All tuples remain valid
     val membersAfter = invalidTuples.size
-    if (membersAfter == membersBefore) return Suspend
+    if (membersAfter == membersBefore) return
 
     var i = membersBefore
     while (i < membersAfter) {
@@ -144,7 +141,7 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
           while (p >= 0 && invalidTuples.contains(subtable(p))) p -= 1
 
           if (p < 0) {
-            if (x.removeValue(value) == Failure) return Failure
+            x.removeValue(value)
           } else {
             separatorRev.setValue(p)
             deps(tupleId).removeIncluded(varId)
@@ -154,7 +151,6 @@ class TableSTR3(vars: Array[CPIntVar], table: Array[Array[Int]]) extends Constra
       }
       i += 1
     }
-    Suspend
   }
 
   // Return true if the tuple is valid

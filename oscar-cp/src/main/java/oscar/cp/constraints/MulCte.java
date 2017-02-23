@@ -14,11 +14,18 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
 import oscar.cp.util.NumberUtils;
+import scala.collection.Iterable;
+import scala.collection.immutable.List;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import scala.collection.JavaConversions;
 
 /**
  * Multiplication Constraint x * c = z
@@ -42,11 +49,16 @@ public class MulCte extends Constraint {
 		this.z = z;
 		this.c = c;
 	}
-	
+
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
-		CPOutcome ok = propagate();
-		if (ok == CPOutcome.Suspend) {
+	public Iterable<CPVar> associatedVars() {
+		return JavaConversions.iterableAsScalaIterable(Arrays.asList(x, z));
+	}
+
+	@Override
+	public void setup(CPPropagStrength l) throws Inconsistency {
+		propagate();
+		if (isActive()) {
 			x.callPropagateWhenBoundsChange(this);
 			z.callPropagateWhenBoundsChange(this);
 		}
@@ -55,49 +67,28 @@ public class MulCte extends Constraint {
 			if (x.getSize() <= 100) { // remove all numbers not multiples of c if dom size to too big
 				for (int v = z.getMin(); v <= z.getMax(); v++) {
 					if (z.hasValue(v) && (v%c != 0)) {
-						if (z.removeValue(v) == CPOutcome.Failure) {
-							return CPOutcome.Failure;
-						}
+						z.removeValue(v);
 					}
 				}
 			}
 		}*/
-		return ok;
 	}
 	
 	@Override
-	public CPOutcome propagate() {
+	public void propagate() {
 		if (x.isBound()) {
-			
-			if (z.assign(NumberUtils.safeMul(c , x.min())) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			return CPOutcome.Success;
+			z.assign(NumberUtils.safeMul(c , x.min()));
+			deactivate();
 		}
-		else {
-			if (c == 0) {
-				if (z.assign(0) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-				return CPOutcome.Success;
-			} else {
-				if (z.updateMin(Math.min(NumberUtils.safeMul(c , x.getMin()), NumberUtils.safeMul(c , x.getMax()))) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-				if (z.updateMax(Math.max(NumberUtils.safeMul(c , x.getMin()), NumberUtils.safeMul(c , x.getMax()))) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-				if (x.updateMin(Math.min(NumberUtils.ceilDiv(z.getMin(), c), 
-										 NumberUtils.ceilDiv(z.getMax(), c))) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-				if (x.updateMax(Math.max(NumberUtils.floorDiv(z.getMin(), c), 
-										 NumberUtils.floorDiv(z.getMax(), c))) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-
-				return CPOutcome.Suspend;
-			}
-		}
+		else if (c == 0) {
+				z.assign(0);
+                deactivate();
+        }
+        else {
+            z.updateMin(Math.min(NumberUtils.safeMul(c , x.getMin()), NumberUtils.safeMul(c , x.getMax())));
+            z.updateMax(Math.max(NumberUtils.safeMul(c , x.getMin()), NumberUtils.safeMul(c , x.getMax())));
+            x.updateMin(Math.min(NumberUtils.ceilDiv(z.getMin(), c),  NumberUtils.ceilDiv(z.getMax(), c)));
+            x.updateMax(Math.max(NumberUtils.floorDiv(z.getMin(), c), NumberUtils.floorDiv(z.getMax(), c)));
+        }
 	}
 }

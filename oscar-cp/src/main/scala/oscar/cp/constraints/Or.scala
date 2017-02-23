@@ -14,12 +14,11 @@
  ******************************************************************************/
 package oscar.cp.constraints
 
+import oscar.algo.Inconsistency
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
 import oscar.algo.reversible.ReversibleSparseSet
-import oscar.cp.core.variables.CPBoolVar
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPVar}
 
 /**
  * or x_i = true
@@ -32,24 +31,25 @@ class Or(val x: Array[CPBoolVar]) extends Constraint(x(0).store, "Or") {
   var up = 0
   val n = x.size
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def associatedVars(): Iterable[CPVar] = x
+
+  override def setup(l: CPPropagStrength): Unit = {
     i = 0
     while (i < n && x(i).isBound) {
-      if (x(i).isBoundTo(1)) return Success
+      if (x(i).isBoundTo(1)) return
       i += 1
     }
     down = i
     i = n-1
     while (i >= 0 && x(i).isBound && i >= down) {
-      if (x(i).isBoundTo(1)) return Success
+      if (x(i).isBoundTo(1)) return
       i -= 1
     }
     up = i
     if (down > up) {
-      return Failure
+      throw Inconsistency
     } else if (down == up) {
        x(up).assign(1)
-      return Success
     } else {
       assert(down != up)
       x(down).callValBindIdxWhenBind(this,down)
@@ -58,70 +58,94 @@ class Or(val x: Array[CPBoolVar]) extends Constraint(x(0).store, "Or") {
       //x(up).callPropagateWhenBind(this,false)
       //x(down).callPropagateWhenBind(this,false)
     }
-    Suspend
   }
 
-  override def valBindIdx(y: CPIntVar, idx: Int): CPOutcome = {
-    if (y.isBoundTo(1)) return Success
+  override def valBindIdx(y: CPIntVar, idx: Int): Unit = {
+    if (y.isBoundTo(1)) {
+      deactivate()
+      return
+    }
+
     if (down >= n || up < 0 || x(down).isBound || x(up).isBound || (down >= up)) {
       i = 0
       while (i < n && x(i).isBound) {
-        if (x(i).isBoundTo(1)) return Success
+        if (x(i).isBoundTo(1)) {
+          deactivate()
+          return
+        }
         i += 1
       }
       down = i
       i = n - 1
       while (i >= 0 && x(i).isBound && i >= down) {
-        if (x(i).isBoundTo(1)) return Success
+        if (x(i).isBoundTo(1)) {
+          deactivate()
+          return
+        }
         i -= 1
       }
       up = i
     } 
     if (down > up) {
-      return Failure
-    } else if (down == up) { // only one unassigned var
+      throw Inconsistency
+    }
+    else if (down == up) { // only one unassigned var
       x(up).assign(1)
-      return Success
-    } else {
+      deactivate()
+    }
+    else {
       assert(down != up)
       assert(x(down).isBound == false)
       assert(x(up).isBound == false)
       x(down).callValBindIdxWhenBind(this,down)
       x(up).callValBindIdxWhenBind(this,up)
     }
-    Suspend
   }
   
-  override def propagate(): CPOutcome = {
-    if (down < n && x(down).isBoundTo(1)) return Success
-    if (up >= 0 && x(up).isBoundTo(1)) return Success
+  override def propagate(): Unit = {
+    if (down < n && x(down).isBoundTo(1)) {
+      deactivate()
+      return
+    }
+    if (up >= 0 && x(up).isBoundTo(1)) {
+      deactivate()
+      return
+    }
     if (down >= n || up < 0 || x(down).isBound || x(up).isBound || (down >= up)) {
       i = 0
       while (i < n && x(i).isBound) {
-        if (x(i).isBoundTo(1)) return Success
+        if (x(i).isBoundTo(1)){
+          deactivate()
+          return
+        }
         i += 1
       }
       down = i
       i = n - 1
       while (i >= 0 && x(i).isBound && i >= down) {
-        if (x(i).isBoundTo(1)) return Success
+        if (x(i).isBoundTo(1)){
+          deactivate()
+          return
+        }
         i -= 1
       }
       up = i
     } 
     if (down > up) {
-      return Failure
-    } else if (down == up) { // only one unassigned var
+      throw Inconsistency
+    }
+    else if (down == up) { // only one unassigned var
       x(up).assign(1)
-      return Success
-    } else {
+      deactivate()
+      return
+    }
+    else {
       assert(down != up)
       assert(x(down).isBound == false)
       assert(x(up).isBound == false)
       x(down).callPropagateWhenBind(this)
       x(up).callPropagateWhenBind(this)
     }
-    Suspend
   }  
 }
 

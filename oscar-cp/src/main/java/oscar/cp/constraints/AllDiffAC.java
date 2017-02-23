@@ -14,10 +14,17 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
@@ -32,13 +39,14 @@ public class AllDiffAC extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
+	@Override
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		CPIntVar nvalues = CPIntVar.apply(s(), x.length);
-		CPOutcome ok = s().post(new AtLeastNValueAC(x, nvalues));
-		if (ok == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		} else {
-			return CPOutcome.Success;
-		}
+		s().post(new AtLeastNValueAC(x, nvalues));
 	}
 }

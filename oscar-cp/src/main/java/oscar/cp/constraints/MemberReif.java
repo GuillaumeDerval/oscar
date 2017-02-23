@@ -14,14 +14,20 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
+import oscar.algo.Inconsistency;
 import oscar.algo.reversible.ReversibleInt;
 import oscar.algo.reversible.SparseSet;
-import oscar.cp.core.CPOutcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
-import oscar.cp.core.variables.CPIntVar;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 
 /**
@@ -48,13 +54,21 @@ public class MemberReif extends Constraint {
 		this.b = b;
 	}
 
+    @Override
+    public Iterable<CPVar> associatedVars() {
+        List<CPVar> l = new LinkedList<>(Arrays.asList(x, b));
+        return JavaConversions.iterableAsScalaIterable(l);
+    }
+
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		if (b.isBound()) {
-            return valBind(b);
+            valBind(b);
+            return;
         }
         if (x.isBound()) {
-            return valBind(x);
+            valBind(x);
+            return;
         }
 
         int interSize = 0;
@@ -63,10 +77,12 @@ public class MemberReif extends Constraint {
 		}
 
 		if (interSize == 0) { // intersection between the domain of x and set is empty
-			return emptyIntersection();
+			emptyIntersection();
+            return;
 		}
         if (interSize >= x.getSize()) { // D(x) is included in set
-           return fullIntersection();
+            fullIntersection();
+            return;
         }
         inter = new ReversibleInt(s(),interSize);
         xsize = new ReversibleInt(s(),x.getSize());
@@ -74,62 +90,51 @@ public class MemberReif extends Constraint {
 		x.callValBindWhenBind(this);
         b.callValBindWhenBind(this);
         x.callValRemoveWhenValueIsRemoved(this);
-
-		return CPOutcome.Suspend;
-
 	}
 
     @Override
-    public CPOutcome valRemove(CPIntVar var, int val) {
+    public void valRemove(CPIntVar var, int val) {
         xsize.decr();
         if (set.hasValue(val)) {
             inter.decr();
         }
+
         if (inter.getValue() == 0) {
-            return emptyIntersection();
+            emptyIntersection();
         }
-        if (inter.getValue() == xsize.getValue()) { // D(x) is included in set
-           return fullIntersection();
+        else if (inter.getValue() == xsize.getValue()) { // D(x) is included in set
+            fullIntersection();
         }
-        return  CPOutcome.Suspend;
     }
 
     @Override
-    public CPOutcome valBind(CPIntVar var) {
+    public void valBind(CPIntVar var) {
         assert(var.isBound());
 		if (var == x) {
              if (set.hasValue(x.min())) {
-                 if (b.assign(1) == CPOutcome.Failure) {
-                     return CPOutcome.Failure;
-                 }
+                 b.assign(1);
              } else {
-                 if (b.assign(0) == CPOutcome.Failure) {
-                     return CPOutcome.Failure;
-                 }
+                 b.assign(0);
              }
-             return CPOutcome.Success;
+             deactivate();
         } else {
             assert(var == b);
             if (b.min() == 1) { // x must be a member of the set
-                return removeValues(false); // remove all non member values of x and return success if no failure
+                removeValues(false); // remove all non member values of x and return success if no failure
             } else { // x cannot be a member of the set
-                return removeValues(true); // remove all member values of x and return success if no failure
+                removeValues(true); // remove all member values of x and return success if no failure
             }
         }
 	}
 
-    private CPOutcome emptyIntersection() {
-		if (b.assign(0) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		}
-		return CPOutcome.Success;
+    private void emptyIntersection() {
+		b.assign(0);
+        deactivate();
 	}
 
-    private CPOutcome fullIntersection() {
-		if (b.assign(1) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		}
-		return CPOutcome.Success;
+    private void fullIntersection() {
+		b.assign(1);
+        deactivate();
 	}
 
     /**
@@ -137,18 +142,16 @@ public class MemberReif extends Constraint {
      *        memberValue = false then remove all values from x that are not member of set
      * @return Failure if the domain of x becomes empty, Success otherwise
      */
-    private CPOutcome removeValues(boolean memberValue) {
+    private void removeValues(boolean memberValue) {
         assert(b.isBound());
         for (int val = x.min(); val <= x.max(); val++) {
         	if (x.hasValue(val)) {
         		if ((memberValue && set.hasValue(val)) || (!memberValue && !set.hasValue(val))) {
-        			if (x.removeValue(val) == CPOutcome.Failure) {
-        				return CPOutcome.Failure;
-        			}
+        			x.removeValue(val);
         		}
         	}
         }
-		return CPOutcome.Success;
+        deactivate();
 	}
 }
 

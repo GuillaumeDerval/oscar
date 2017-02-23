@@ -14,11 +14,18 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Reified constraint.
@@ -43,17 +50,23 @@ public class DiffReifVar extends Constraint {
 		this.y = y;
 		this.b = b;
 	}
-	
+
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x, y, b));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
+	@Override
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		if (b.isBound()) {
-			return valBind(b);
+			valBind(b);
 		} 
 		else if (x.isBound()) {
-			return valBind(x);
+			valBind(x);
 		} 
 		else if (y.isBound()) {
-			return valBind(y);
+			valBind(y);
 		}
 		else {
 			x.callPropagateWhenDomainChanges(this);
@@ -61,57 +74,42 @@ public class DiffReifVar extends Constraint {
 			b.callValBindWhenBind(this);
 			x.callValBindWhenBind(this);
 			y.callValBindWhenBind(this);
-			return propagate();
+			propagate();
 		}
 	}
 	
 	@Override
-	public CPOutcome valBind(CPIntVar var) {
+	public void valBind(CPIntVar var) throws Inconsistency {
 		if (b.isBound()) {
 			if (b.min() == 1) {
 				// x != y
-				if (s().post(new DiffVar(x,y)) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
+				s().post(new DiffVar(x,y));
 			} else {
 				//x == y
-				if (s().post(new Eq(x,y))  == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
+				s().post(new Eq(x,y));
 			}
-			return CPOutcome.Success;
 		}	
 		else if (x.isBound()) {
-			if (s().post(new DiffReif(y,x.min(),b)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			return CPOutcome.Success;
+			s().post(new DiffReif(y,x.min(),b));
 		}
 		else if (y.isBound()) {
-			if (s().post(new DiffReif(x,y.min(),b)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			return CPOutcome.Success;
+			s().post(new DiffReif(x,y.min(),b));
 		}
-		return CPOutcome.Success;
+		deactivate();
 	}
 	
 	
 	
 	@Override
-	public CPOutcome propagate() {
+	public void propagate() {
 		// if the domains of x and y are disjoint we can set b to false and return success
 		if (x.getMax() < x.getMin()) {
-			if (b.assign(1) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			return CPOutcome.Success;
+			b.assign(1);
+			deactivate();
 		}
 		else if (y.getMax() < x.getMin()) {
-			if (b.assign(1) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			return CPOutcome.Success;
+			b.assign(1);
+			deactivate();
 		}
 		else {
 			// there is an overlap between the domain ranges
@@ -126,14 +124,10 @@ public class DiffReifVar extends Constraint {
 				}
 			}
 			if (!commonValues) {
-				if (b.assign(1) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
-				return CPOutcome.Success;
+				b.assign(1);
+				deactivate();
 			}
-			return CPOutcome.Suspend;
 		}
-		
 	}
 	
 

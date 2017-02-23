@@ -16,10 +16,16 @@ package oscar.cp.constraints;
 
 import oscar.algo.reversible.ReversibleBoolean;
 import oscar.algo.reversible.ReversibleInt;
-import oscar.cp.core.CPOutcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
@@ -47,7 +53,14 @@ public class AtLeastNValueFWC extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+		l.add(nValueVar);
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
+	@Override
+	public void setup(CPPropagStrength l) {
 	    
 	     findValueRange();
 
@@ -74,14 +87,10 @@ public class AtLeastNValueFWC extends Constraint {
 	     }
 
 	     //update lower bound on the number of values
-	     if (nValueVar.updateMin(Math.max(nbValueUsed.getValue(), x.length>0 ? 1:0)) == CPOutcome.Failure) {
-	       return CPOutcome.Failure;
-	     }
+	     nValueVar.updateMin(Math.max(nbValueUsed.getValue(), x.length>0 ? 1:0));
 
 	     //update upper bound on the number of values
-	     if (nValueVar.updateMax(nbValueUsed.getValue()+x.length-nbBound.getValue()) == CPOutcome.Failure) {
-	       return CPOutcome.Failure;
-	     }
+	     nValueVar.updateMax(nbValueUsed.getValue()+x.length-nbBound.getValue());
 
 	     for (int k=0; k < x.length; k++) {
 	       if (!x[k].isBound())
@@ -94,14 +103,12 @@ public class AtLeastNValueFWC extends Constraint {
 
 	     int ubNbValueUsed = nbValueUsed.getValue() + (x.length -nbBound.getValue());
 	     if(ubNbValueUsed <= nValueVar.getMin()){
-	       return prune();
+	       prune();
 	     }
-
-	     return CPOutcome.Suspend;
 	}
 	
 	@Override
-	public CPOutcome valBindIdx(CPIntVar var, int idx) {
+	public void valBindIdx(CPIntVar var, int idx) {
 		
 		int val = var.min();
 		nbBound.incr();
@@ -112,50 +119,40 @@ public class AtLeastNValueFWC extends Constraint {
 
 		int ubNbValueUsed = nbValueUsed.getValue() + (x.length-nbBound.getValue());
 
-		if(nValueVar.updateMin(nbValueUsed.getValue()) == CPOutcome.Failure){
-			return CPOutcome.Failure;
-		}
-		if(nValueVar.updateMax(ubNbValueUsed) == CPOutcome.Failure){
-			return CPOutcome.Failure;
-		}
+		nValueVar.updateMin(nbValueUsed.getValue());
+		nValueVar.updateMax(ubNbValueUsed);
 
 		if(ubNbValueUsed == nValueVar.getMin()){
-			return prune();
+			prune();
 		}
-
-		return CPOutcome.Suspend;
 	}
 	
 	@Override
-	public CPOutcome propagate() {
+	public void propagate() {
 		//_nValueVar has changed
 		int ubNbValueUsed = nbValueUsed.getValue() + (x.length - nbBound.getValue());
 		if (ubNbValueUsed == nValueVar.getMin()) {
-			return prune();
+			prune();
 		}
-		return CPOutcome.Suspend;
 	}
 	
-	public CPOutcome prune(){
-		  //remove used values from unbound variables
-		  int [] values = new int[x.length];
-		  int nb = 0;
-		  for (int k = 0; k < x.length; k++) {
-		    if (x[k].isBound()) {
-		      values[nb] = x[k].min();
-		      nb++;
-		    }
+	public void prune(){
+	  //remove used values from unbound variables
+	  int [] values = new int[x.length];
+	  int nb = 0;
+	  for (int k = 0; k < x.length; k++) {
+		if (x[k].isBound()) {
+		  values[nb] = x[k].min();
+		  nb++;
+		}
+	  }
+	  for (int k = 0; k < x.length; k++) {
+		if (!x[k].isBound()) {
+		  for (int i = 0; i < nb; i++) {
+			x[k].removeValue(values[i]);
 		  }
-		  for (int k = 0; k < x.length; k++) {
-		    if (!x[k].isBound()) {
-		      for (int i = 0; i < nb; i++) {
-		        if (x[k].removeValue(values[i]) == CPOutcome.Failure) {
-		          return CPOutcome.Failure;
-		        }
-		      }
-		    }
-		  }
-		  return CPOutcome.Suspend;
+		}
+	  }
 	}
 	
 	private void findValueRange(){

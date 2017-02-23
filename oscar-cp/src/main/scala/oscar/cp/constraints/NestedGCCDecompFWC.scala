@@ -14,9 +14,9 @@
   ******************************************************************************/
 package oscar.cp.constraints
 
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{CPOutcome, CPPropagStrength, Constraint}
+import oscar.algo.Inconsistency
+import oscar.cp.core.variables.{CPIntVar, CPVar}
+import oscar.cp.core.{CPPropagStrength, Constraint}
 
 /**
  * Cardinality constraint on prefixes of a variable array.
@@ -36,6 +36,8 @@ import oscar.cp.core.{CPOutcome, CPPropagStrength, Constraint}
 class NestedGCCDecompFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int, Int)]],
                   upperLists: Array[Array[(Int, Int)]])
   extends Constraint(X(0).store, "PrefixCCSegment") {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   // Handy structures for memorization.
   // They allow to have common code for lower bound and upper bound treatment.
@@ -97,7 +99,7 @@ class NestedGCCDecompFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Arra
   // INIT METHODS
   // ============
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
 
     val feasibleLower = (index: Int, value: Int) => value <= index
     val feasibleUpper = (index: Int, value: Int) => value >= 0
@@ -109,13 +111,13 @@ class NestedGCCDecompFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Arra
       lower(vi).full = Array.tabulate(nVariables + 1)(i => 0)
       upper(vi).full = Array.tabulate(nVariables + 1)(i => i)
 
-      if (readArguments(lower(vi), lowerLists(vi), feasibleLower) == Failure) return Failure
-      if (readArguments(upper(vi), upperLists(vi), feasibleUpper) == Failure) return Failure
+      readArguments(lower(vi), lowerLists(vi), feasibleLower)
+      readArguments(upper(vi), upperLists(vi), feasibleUpper)
     }
 
     fillBounds()
 
-    if (testAndDeduceBounds() == Failure) return Failure
+    testAndDeduceBounds()
 
 
     filterBounds()
@@ -129,9 +131,8 @@ class NestedGCCDecompFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Arra
       val uppers = Array.tabulate(nValues) (v => upper(v).full(t))
       val lowers = Array.tabulate(nValues) (v => lower(v).full(t))
       if (t > 0)
-        if (s.post(new GCCFWC(X.take(t),minVal,lowers,uppers)) == Failure) return Failure;
+        s.post(new GCCFWC(X.take(t),minVal,lowers,uppers)) ;
     }
-    Success
   }
 
   /**
@@ -139,10 +140,9 @@ class NestedGCCDecompFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Arra
    * @param st The structure into which to copy the bounds
    * @param boundList The given list of bounds
    * @param feasible The feasibility criterion in terms of index and value of the bound
-   * @return [[Failure]] if one of the bounds in unfeasible, [[Suspend]] otherwise
    */
   private def readArguments(st: SegmentStructure, boundList: Array[(Int, Int)],
-                            feasible: (Int, Int) => Boolean): CPOutcome = {
+                            feasible: (Int, Int) => Boolean): Unit = {
     var bound = boundList.length
     while (bound > 0) {
       bound -= 1
@@ -150,12 +150,10 @@ class NestedGCCDecompFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Arra
       if (index < 0 || index > nVariables) {
         throw new IllegalArgumentException("Bound cutoff out of range: " + index)
       } else if (!feasible(index, value)) {
-        return Failure
+        throw Inconsistency
       }
       st.full(index) = value
     }
-
-    Suspend
   }
 
   // ---------
@@ -255,9 +253,8 @@ class NestedGCCDecompFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Arra
 
   /**
    * Does some basic tests on the bounds and deduces bounds based on the bounds for other values
-   * @return [[Failure]] if the bounds are found to be unfeasible, [[Suspend]] otherwise
    */
-  private def testAndDeduceBounds(): CPOutcome = {
+  private def testAndDeduceBounds(): Unit = {
     var i = nVariables
     while (i > 0) {
       // Compute the sums
@@ -267,12 +264,12 @@ class NestedGCCDecompFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Arra
       while (vi > 0) {
         vi -= 1
         // The lower bound cannot be higher than the upper bound
-        if (lower(vi).full(i) > upper(vi).full(i)) return Failure
+        if (lower(vi).full(i) > upper(vi).full(i)) throw Inconsistency
         lowerSum += lower(vi).full(i)
         upperSum += upper(vi).full(i)
       }
       // Test the sums
-      if (lowerSum > i || upperSum < i) return Failure
+      if (lowerSum > i || upperSum < i) throw Inconsistency
       // Deduce some bounds
       vi = nValues
       while (vi > 0) {
@@ -284,8 +281,5 @@ class NestedGCCDecompFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Arra
       }
       i -= 1
     }
-    Suspend
   }
-
-
 }

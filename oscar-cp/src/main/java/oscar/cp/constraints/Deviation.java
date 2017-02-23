@@ -14,10 +14,17 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Deviation Constraint, a constraint for the average absolute deviation to the mean. <br>
@@ -67,15 +74,20 @@ public class Deviation extends Constraint {
     }
 
     @Override
-    public CPOutcome setup(CPPropagStrength l) {
+    public Iterable<CPVar> associatedVars() {
+        List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+        l.add(nd);
+        return JavaConversions.iterableAsScalaIterable(l);
+    }
+
+    @Override
+    public void setup(CPPropagStrength l) throws Inconsistency {
     	// post the decomposition
     	CPIntVar [] devVar = new CPIntVar[n];
     	for (int i = 0; i < x.length; i++) {
     		devVar[i] = oscar.cp.modeling.constraint.absolute(oscar.cp.modeling.constraint.minus(oscar.cp.modeling.constraint.mul(x[i],n),s));
     	}
-    	if (s().post(new Sum(devVar,nd)) == CPOutcome.Failure) {
-    		return CPOutcome.Failure;
-    	}
+    	s().post(new Sum(devVar,nd));
     	
     	//add(vari == sum(periods)(p => (l(p)*nbPeriods - credits.sum).abs))
     	
@@ -85,15 +97,13 @@ public class Deviation extends Constraint {
                 x[i].callPropagateWhenBoundsChange(this);
         }
         nd.callPropagateWhenBoundsChange(this);
-        return propagate();
+        propagate();
     }
 
     @Override
-    public CPOutcome propagate() {
+    public void propagate() {
         // 1) make the sum constraint bound consistent
-        if (propagateSum() == CPOutcome.Failure) {
-            return CPOutcome.Failure;
-        }
+        propagateSum();
         // 2) initialize scaled domain data
         initData(false);
         
@@ -101,20 +111,17 @@ public class Deviation extends Constraint {
         computeMinDevAssignment();
         // 4) compute the deviation of this assignment and prune the lower bound of the deviation var
         int delta_min = computeMinDev();
-        if (nd.updateMin(delta_min) == CPOutcome.Failure) {
-            return CPOutcome.Failure;
-        }
+        nd.updateMin(delta_min);
         // 5) propagate the upper and lower bounds of the x[i]'s
         propagateBounds(delta_min);
         //propagateBoundsShaving(); // replace previous line with this one to use the shaving (debugging purpose, much less efficient)
-        return CPOutcome.Suspend;
     }
 
     /**
      * Bound Consistent propagation for the sum constraint sum x[i] == s
      * @return Suspend if the sum is bound consistent, false otherwise
      */
-    private CPOutcome propagateSum() {
+    private void propagateSum() {
         int maxsum = 0;
         int minsum = 0;
         for (int i = 0; i < x.length; i++) {
@@ -122,14 +129,9 @@ public class Deviation extends Constraint {
             minsum += x[i].getMin();
         }
         for (int i = 0; i < x.length; i++) {
-            if (x[i].updateMax(s - (minsum - x[i].getMin())) == CPOutcome.Failure) {
-                return CPOutcome.Failure;
-            }
-            if (x[i].updateMin(s - (maxsum - x[i].getMax())) == CPOutcome.Failure) {
-                return CPOutcome.Failure;
-            }
+            x[i].updateMax(s - (minsum - x[i].getMin()));
+            x[i].updateMin(s - (maxsum - x[i].getMax()));
         }
-        return CPOutcome.Suspend;
     }
 
     /**
@@ -244,13 +246,9 @@ public class Deviation extends Constraint {
         for (int i = 0; i < n; i++) {
             if (x[i].isBound()) continue;
             int max = boundConsistentValue(i,true);
-            if (x[i].updateMax(max) == CPOutcome.Failure) {
-                assert(false); //should never fail since it is called when the constraint is consistent
-            }
+            x[i].updateMax(max); //should never fail since it is called when the constraint is consistent
             int min = boundConsistentValue(i,false);
-            if (x[i].updateMin(min) == CPOutcome.Failure) {
-                assert(false); //should never fail since it is called when the constraint is consistent
-            }
+            x[i].updateMin(min); //should never fail since it is called when the constraint is consistent
         }
     }
 
@@ -390,8 +388,7 @@ public class Deviation extends Constraint {
                 maxval += (n * delta) / (n + increase_up_down);
                 // bound = floor(maxval/n)
                 int bound = divFloor(maxval,n); // floor(maxval/n)
-                boolean ok = pruneBound(x[i],bound,!upperBounds);
-                assert (ok);  //should never fail
+                pruneBound(x[i],bound,!upperBounds);
                 continue;
             }
             else {
@@ -401,8 +398,7 @@ public class Deviation extends Constraint {
                     if (deltamin > nd.getMax()){
                         assert (maxval % n == 0);
                         int bound = maxval/n;
-                        boolean ok = pruneBound(x[i],bound,!upperBounds);
-                        assert (ok);  //should never fail
+                        pruneBound(x[i],bound,!upperBounds);
                         continue;
                     }
                     maxval += n;
@@ -413,8 +409,7 @@ public class Deviation extends Constraint {
                 int delta = nd.getMax() - deltamin;
                 maxval +=  delta / 2; // n * delta / (2 * n);
                 int bound = divFloor(maxval,n); // floor(maxval/n)
-                boolean ok = pruneBound(x[i],bound,!upperBounds);
-                assert (ok);  //should never fail
+                pruneBound(x[i],bound,!upperBounds);
                 continue;
             }
         }
@@ -424,18 +419,13 @@ public class Deviation extends Constraint {
      * @param x
      * @param bound
      * @param mirror
-     * @return false if Failure during the pruning
      */
-    private boolean pruneBound(CPIntVar x, int bound, boolean mirror) {
+    private void pruneBound(CPIntVar x, int bound, boolean mirror) {
         if (!mirror) {
-            if (x.updateMax(bound) == CPOutcome.Failure)
-                return false;
+            x.updateMax(bound);
         } else {
-            if (x.updateMin(-bound) == CPOutcome.Failure) {
-                return false;
-            }
+            x.updateMin(-bound);
         }
-        return true;
     }
 
 }

@@ -16,13 +16,15 @@
 package oscar.cp.scheduling.constraints
 
 
+import oscar.algo.Inconsistency
+
 import scala.math.max
 import scala.math.min
 import oscar.cp.core._
 import oscar.cp.constraints._
 import oscar.cp._
-import oscar.cp.core.CPOutcome._
 import oscar.algo.SortUtils.stableSort
+import oscar.cp.core.variables.CPVar
 
 /**
  * @author Steven Gay 
@@ -39,18 +41,20 @@ class EnergeticChecker(starts: Array[CPIntVar], durations: Array[CPIntVar], ends
                            extends Constraint(starts.head.store, "EnergeticChecker") {
   private val n = starts.size
   private val Tasks = 0 until n
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ demands ++ resources ++ Array(capacity)
+
   val rstarts:Array[CPIntVar] = starts.map(i => -i)
   val rends:Array[CPIntVar]   =   ends.map(i => -i)
   
   val leftToRight = new EnergeticCheckerLeftToRight(starts, durations,    ends, demands, resources, capacity, id)
   val rightToLeft = new EnergeticCheckerLeftToRight(rends,  durations, rstarts, demands, resources, capacity, id)  
         
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     priorityL2 = 1
       
-    val oc = propagate()
-    if (oc == Suspend) {
+    propagate()
+    if (isActive) {
       capacity.callPropagateWhenBoundsChange(this)
       for (i <- Tasks) {
         if (!starts(i).isBound)       starts(i).callPropagateWhenBoundsChange(this)
@@ -60,17 +64,10 @@ class EnergeticChecker(starts: Array[CPIntVar], durations: Array[CPIntVar], ends
         if (!resources(i).isBound) resources(i).callPropagateWhenBind(this)
       }
     }
-    return oc
   }
   
   override def propagate() = {
-    if (  false
-       || leftToRight.propagate() == Failure
-//       || rightToLeft.propagate() == Failure
-       ) 
-      Failure
-    else
-      Suspend   
+    leftToRight.propagate()
   }
 }
 
@@ -176,7 +173,7 @@ class EnergeticCheckerLeftToRight(startsV: Array[CPIntVar], durationsV: Array[CP
   }
 
     
-  def propagate(): CPOutcome = {
+  def propagate(): Unit = {
     val myTasks = Tasks.filter( i => resourcesV(i).isBoundTo(ressourceId) && demandsV(i).max > 0 && durationsV(i).max > 0 ).toArray
     updateCache()
     
@@ -227,14 +224,14 @@ class EnergeticCheckerLeftToRight(startsV: Array[CPIntVar], durationsV: Array[CP
       while (i <= lastEvent) { 
         val (t_2, eventActivity, eventType) = timeEvents(i)
         load += slope * (t_2 - t_2old)
-        if (load < 0) return Failure
+        if (load < 0)
+          throw Inconsistency
         slope -= W_Sh(eventActivity, t_1, t_2 + 1) - 2 * W_Sh(eventActivity, t_1, t_2) + W_Sh(eventActivity, t_1, t_2 - 1)
         // slope += demands(eventActivity).min * eventType
         t_2old = t_2
         i += 1
       }
     }
-    Suspend
   }
 }
    

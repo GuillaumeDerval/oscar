@@ -17,8 +17,7 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.variables.CPGraphVar
+import oscar.cp.core.variables.{CPGraphVar, CPVar}
 
 /**
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
@@ -27,17 +26,19 @@ import oscar.cp.core.variables.CPGraphVar
  */
 
 class InducedSubGraph(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constraint(g1.s, "InducedSubGraph") {
-  
-	override def setup(l: CPPropagStrength): CPOutcome = {
+
+	override def associatedVars(): Iterable[CPVar] = Array(g1, g2)
+
+	override def setup(l: CPPropagStrength): Unit = {
 	  // InducedSubGraph  =  SubGraph + induced part
-	  if (s.post(new SubGraph(g1,g2)) == Failure) return Failure
+	  s.post(new SubGraph(g1,g2))
 	  // add filter when domain changes
 	  g1.callPropagateWhenDomainChanges(this)
 	  g2.callPropagateWhenDomainChanges(this)
 	  propagate()
 	}
 	
-	override def propagate(): CPOutcome = {
+	override def propagate(): Unit = {
 	  // We only have to deal with the induced part of the constraint
 	  // 	we dealt with the subgraph part by posting constraint in setup()
 	  
@@ -47,10 +48,10 @@ class InducedSubGraph(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constrain
 	  if (! g1ReqN.sameElements(g2ReqN)){
 	    for (n <- g1ReqN)
 	      if( ! g2ReqN.contains(n))
-	        if (g2.addNodeToGraph(n) ==  Failure) return Failure
+	        g2.addNodeToGraph(n)
 	    for (n <- g2ReqN)
 	      if( ! g1ReqN.contains(n))
-	        if (g1.addNodeToGraph(n) ==  Failure) return Failure
+	        g1.addNodeToGraph(n)
 	  }
 	  
 	  // for each edge incident to required nodes,
@@ -60,21 +61,19 @@ class InducedSubGraph(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constrain
 	  for (n <- g1ReqNodes){
 	    for (e <- g1.possibleEdges(n); if (g1ReqNodes.contains(g1.edge(e)._1) && g1ReqNodes.contains(g1.edge(e)._2)) ){
 	      if (g1.requiredEdges(n).contains(e))
-	        if (g2.addEdgeToGraph(g1.edge(e)._1,g1.edge(e)._2) == Failure) return Failure
+	        g2.addEdgeToGraph(g1.edge(e)._1,g1.edge(e)._2)
 	      if (!g2.possibleEdges(n).map(g2.edge(_)).contains(g1.edge(e)))
-	        if (g1.removeNodeFromGraph(e) == Failure) return Failure
+	        g1.removeNodeFromGraph(e)
 	    }
 	  }
 	  val g2ReqNodes : List[Int] = g2.requiredNodes
 	  for (n <- g2ReqNodes){
 	    for (e <- g2.possibleEdges(n); if (g2ReqNodes.contains(g2.edge(e)._1) && g2ReqNodes.contains(g2.edge(e)._2)) ){
 	      if (g2.requiredEdges(n).contains(e))
-	        if (g1.addEdgeToGraph(g2.edge(e)._1,g2.edge(e)._2) == Failure) return Failure
+	        g1.addEdgeToGraph(g2.edge(e)._1,g2.edge(e)._2)
 	      if (!g1.possibleEdges(n).map(g1.edge(_)).contains(g1.edge(e)))
-	        if (g2.removeNodeFromGraph(e) == Failure) return Failure
+	        g2.removeNodeFromGraph(e)
 	    }
-	  } 
-	  
-	  Suspend
+	  }
 	}
 }

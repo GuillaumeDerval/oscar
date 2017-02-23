@@ -14,11 +14,18 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.CPStore;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Greater or Equal Constraint
@@ -44,30 +51,31 @@ public class GrEq extends Constraint {
 	public GrEq(CPIntVar x, int v) {
 		this(x, CPIntVar.apply(v, v, x.store()));
 	}
-	
+
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x, y));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
+	@Override
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		priorityL2_$eq(CPStore.MAXPRIORL2());
-		CPOutcome oc = propagate();
-		if(oc == CPOutcome.Suspend){
+		propagate();
+		if(isActive()){
 			if (!y.isBound()) y.callPropagateWhenBoundsChange(this);
 			if (!x.isBound()) x.callPropagateWhenBoundsChange(this);
 		}
-		return oc;
 	}
 	
 	@Override
-	public CPOutcome propagate() {
+	public void propagate() {
 		if (x.getMin() >= y.getMax()) {
-			return CPOutcome.Success;
+			deactivate();
+			return;
 		}
-		if (x.updateMin(y.getMin()) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		}
-		if (y.updateMax(x.getMax()) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		}
-		return CPOutcome.Suspend;
+		x.updateMin(y.getMin());
+		y.updateMax(x.getMax());
 	}
 
 }

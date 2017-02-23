@@ -26,7 +26,7 @@ class ReversibleSparseBitSetTest extends FunSuite {
 
   test("test reversible sparse bitset 1") {
 
-    val r = new ReversibleContext()
+    val r = new ReversibleContextImpl()
 
     val rset = new ReversibleSparseBitSet(r, 40,Set(0,2,3,4))
 
@@ -63,7 +63,7 @@ class ReversibleSparseBitSetTest extends FunSuite {
 
   test("test reversible sparse bitset 2") {
 
-    val r = new ReversibleContext()
+    val r = new ReversibleContextImpl()
 
     val rset = new ReversibleSparseBitSet(r, 600,Set(0,200,300,400))
 
@@ -103,7 +103,7 @@ class ReversibleSparseBitSetTest extends FunSuite {
   test("test3") {
 
 
-    val r = new ReversibleContext()
+    val r = new ReversibleContextImpl()
     val b = new ReversibleSparseBitSet(r,65,Set(1,2,63,64))//null
     val set1 = new b.BitSet(Set(1,2))
 
@@ -142,7 +142,7 @@ class ReversibleSparseBitSetTest extends FunSuite {
 
 
 
-    val r = new ReversibleContext()
+    val r = new ReversibleContextImpl()
     val b = new ReversibleSparseBitSet(r,65,Set(1,2,63,64))
 
     val set1 = new b.BitSet(Set(1,2))
@@ -165,7 +165,7 @@ class ReversibleSparseBitSetTest extends FunSuite {
 
   test("test5") {
 
-    val r = new ReversibleContext()
+    val r = new ReversibleContextImpl()
     val b = new ReversibleSparseBitSet(r,65,Set(1,2,63,64))
 
     val set1 = new b.BitSet(Set(1,2))

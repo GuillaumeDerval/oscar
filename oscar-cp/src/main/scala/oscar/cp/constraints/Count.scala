@@ -16,8 +16,7 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.delta.DeltaIntVar
 
 
@@ -57,9 +56,11 @@ class Count(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) extends Co
      * 
      * Filtering given by the decomposition with reified constraints:
      * When at most Nmin variables have a non empty intersection with Y, those variables must be equal to Y
-     */  
-  
-  override def setup(l: CPPropagStrength): CPOutcome = {
+     */
+
+  override def associatedVars(): Iterable[CPVar] = X ++ Array(N, Y)
+
+  override def setup(l: CPPropagStrength): Unit = {
     
     val minY = Y.min
     val maxY = Y.max
@@ -98,17 +99,13 @@ class Count(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) extends Co
       currMax
     }
     
-    def filterYBound(): CPOutcome = {
+    def filterYBound(): Boolean = {
       assert(Y.isBound)
       val v = Y.min
       val mincount = X.count(_.isBoundTo(v))
       val maxcount = X.count(_.hasValue(v))
-      if (N.updateMin(mincount) == Failure) {
-        return Failure
-      }
-      else if (N.updateMax(maxcount) == Failure) {
-        return Failure
-      }
+      N.updateMin(mincount)
+      N.updateMax(maxcount)
       
       if (mincount == N.max) {
         // remove the value v from unbound variables
@@ -122,44 +119,38 @@ class Count(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) extends Co
           x.assign(v)
         }
       }
-      //println("FilterYBound"+X.mkString(",")+" Y:"+Y+" N:"+N+" countmin:"+mincount+" countmax:"+maxcount)
-      Suspend
+      false
     }
 
-    def updateN(): CPOutcome = {
-      if (updateSupportMinRequired && N.updateMin(updateSupportMin()) == Failure) {
-        Failure
-      }
-      else if (updateSupportMaxRequired && N.updateMax(updateSupportMax()) == Failure) {
-        Failure
-      }
-      else Suspend
+    def updateN(): Unit = {
+      if (updateSupportMinRequired)
+        N.updateMin(updateSupportMin())
+      if (updateSupportMaxRequired)
+        N.updateMax(updateSupportMax())
     }
         
-    def updateLostValue(v: Int): CPOutcome = {
+    def updateLostValue(v: Int): Unit = {
       if (Y.hasValue(v)) {
         if (supportmax.value == v) {
           updateSupportMaxRequired = true
         }
         countmax(v).decr
         if (countmax(v).value < N.min) {
-          return Y.removeValue(v)
+          Y.removeValue(v)
         }
       }
-      Suspend
     }
     
-    def updateBindValue(v: Int): CPOutcome = {
+    def updateBindValue(v: Int): Unit = {
       if (Y.hasValue(v)) {
         if (supportmin.value == v) {
           updateSupportMinRequired = true
         }
         countmin(v).incr()
         if (countmin(v).value > N.max) {
-          return Y.removeValue(v)
+          Y.removeValue(v)
         }
       }
-      Suspend
     }
     
     Y.filterWhenDomainChangesWithDelta() { d: DeltaIntVar =>
@@ -170,44 +161,50 @@ class Count(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) extends Co
       if (!Y.hasValue(supportmin.value)) {
         updateSupportMinRequired = true
       }
-      if (updateN() == Failure) Failure
-      else if (N.isBound) Success
-      else Suspend
+      updateN()
+      N.isBound
     }
     
     Y.filterWhenBind() {
     	filterYBound()
     }
     
-    def filterX(x: CPIntVar, d: DeltaIntVar): CPOutcome = {
-        //println("FilterX"+X.mkString(",")+" Y:"+Y)
-        for (v <- d.values) {
-          //println("lost value"+v)
-          if (updateLostValue(v) == Failure) return Failure
-        }
-        if (x.isBound) {
-          //println("is now bound")
-          updateBindValue(x.min)
-        }
-        if (updateN() == Failure) Failure
-        else if (Y.isBound) filterYBound()
-        else if (N.isBound) Success
-        else Suspend
-            
+    def filterX(x: CPIntVar, d: DeltaIntVar): Boolean = {
+      //println("FilterX"+X.mkString(",")+" Y:"+Y)
+      for (v <- d.values) {
+        //println("lost value"+v)
+        updateLostValue(v)
+      }
+      if (x.isBound) {
+        //println("is now bound")
+        updateBindValue(x.min)
+      }
+      updateN()
+      if (Y.isBound) filterYBound()
+      else if(N.isBound) true
+      else false
     }
     
     for (x <- X; if !x.isBound) {
       x.filterWhenDomainChangesWithDelta() {d: DeltaIntVar =>
         filterX(x,d)
       }
-
     }
     
-    if (updateN() == Failure) return Failure
-    if (N.isBound) return Success
-    if (Y.isBound) return filterYBound()
-    if (s.post(new Sum(X.map((_ ?=== Y)), N)) == Failure) return Failure
-    Success
+    updateN()
+
+    if (N.isBound) {
+      deactivate()
+      return
+    }
+
+    if (Y.isBound) {
+      filterYBound()
+      return
+    }
+
+    s.post(new Sum(X.map((_ ?=== Y)), N))
+    deactivate()
   }
 
 }

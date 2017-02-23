@@ -2,13 +2,13 @@ package oscar.cp.scheduling.constraints
 
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp._
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.modeling._
 import java.lang.Math._
+
+import oscar.algo.Inconsistency
 import oscar.algo.SortUtils._
-import oscar.cp.core.Inconsistency
+import oscar.cp.core.variables.CPVar
 
 /*
  * TTEF of Vilim 2011 as described in Schutt et al 2013 
@@ -19,15 +19,11 @@ extends Constraint(capacity.store, "TimeTableEdgeFinding") {
   private val lr = new TimeTableEdgeFindingLR(starts, durations, ends, heights, resources, capacity, id) 
   private val rl = new TimeTableEdgeFindingLR(ends map(-_), durations, starts map(-_), heights, resources, capacity, id)
   private val store = capacity.store
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ heights ++ resources ++ Array(capacity)
+
   override def setup(strength: CPPropagStrength) = {
-    try {
-      if (store.post(Array[Constraint](lr, rl)) == Failure) Failure
-      else Suspend
-    }
-    catch {
-      case e: NoSolutionException => Failure
-    }
+    store.post(Array[Constraint](lr, rl))
   }
 }
 
@@ -61,10 +57,12 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
   //  TT structure, needed by ttEn primitive
   private[this] val ttBeforeSMin = Array.ofDim[Long](nTasks)
   private[this] val ttBeforeEMax = Array.ofDim[Long](nTasks)
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ heights ++ resources ++ Array(capacity)
+
   @inline private final def ttEn(a: Int, b: Int): Long = ttBeforeEMax(b) - ttBeforeSMin(a)
   
-  final override def propagate(): CPOutcome = {
+  final override def propagate(): Unit = {
     updateCache()
     C = capacity.max
     
@@ -193,13 +191,14 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
             val allowedLength = (reserve + hmin(u).toLong * max(0, min(dmin(u), end - smax(u)))) / hmin(u)
             val newSMin = end - allowedLength
             
-            if (smin(u) < newSMin && starts(u).updateMin(newSMin.toInt) == Failure) throw Inconsistency
+            if (smin(u) < newSMin)
+              starts(u).updateMin(newSMin.toInt)
           }
           else { // possible(u)
             val newSMin = end - reserve / hmin(u) 
             
             if (smax(u) < newSMin) {
-              if (resources(u).removeValue(id)  == Failure) throw Inconsistency
+              resources(u).removeValue(id)
               possible(u) = false
               energyReqU = 0L
             } 
@@ -211,8 +210,6 @@ extends CumulativeTemplate(starts, durations, ends, heights, resources, capacity
       
       do { y -= 1 } while (y > 0 && emax(activeByEMax(y)) == end)   // find next emax
     }
-    
-    Suspend
   }
 }
 

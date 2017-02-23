@@ -15,11 +15,18 @@
 package oscar.cp.constraints;
 
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Bin-Packing constraint
@@ -50,14 +57,17 @@ public class BinPacking extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength cl) {
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+		l.addAll(Arrays.asList(this.l));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
+	@Override
+	public void setup(CPPropagStrength cl) throws Inconsistency {
 		for (int i = 0; i < x.length; i++) {
-			if (x[i].updateMin(0) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			if (x[i].updateMax(l.length-1) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
+			x[i].updateMin(0);
+			x[i].updateMax(l.length-1);
 		}
 		
 		b = new CPBoolVar[l.length][];
@@ -71,9 +81,7 @@ public class BinPacking extends Constraint {
 			for (int j = 0; j < x.length; j++) {
 				b[i][j] = x[j].isEq(i);
 			}
-			if (s().post(new BinaryKnapsack(b[i],w,l[i]),cl) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
+			s().post(new BinaryKnapsack(b[i],w,l[i]),cl);
 		}
 		for (int j = 0; j < x.length; j++) {
 			CPBoolVar [] itemj = new CPBoolVar[l.length];
@@ -82,9 +90,6 @@ public class BinPacking extends Constraint {
 			}
 		}
 		//redundant constraint
-		if (s().post(new Sum(l,CPIntVar.apply(s(),totW,totW))) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		}
-		return CPOutcome.Success;
+		s().post(new Sum(l,CPIntVar.apply(s(),totW,totW)));
 	}
 }

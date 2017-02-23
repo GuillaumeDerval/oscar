@@ -16,32 +16,28 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
-import oscar.cp.constraints._
-import oscar.cp.modeling._
-import oscar.algo.DisjointSets
-import scala.collection.mutable.ArrayBuffer
-import oscar.cp.core.variables.CPIntVar
+import oscar.algo.Inconsistency
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
  * Alldifferent constraint
  * @author Pierre Schaus pschaus@gmail.com
  */
 class AllDifferent(x: Array[CPIntVar]) extends Constraint(x(0).store) {
-  
-  
+
+  override def associatedVars(): Iterable[CPVar] = x
+
   def this(x: CPIntVar*) =  this(x.toArray)
 
   /**
    * Post the constraint that for every pair of variables in x[i], x[j], we have x[i] != x[j] <br>
    * Available propagation strength are Weak (default) and Strong
    * @see CPPropagStrength
-   * @param x
    */
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
 
     val allValues = x.map(_.toSet).foldLeft(Set[Int]())((u,v) => u.union(v))
-    if (x.size > allValues.size) return Failure
+    if (x.size > allValues.size) throw Inconsistency
     val permutation = allValues.size == x.size
 
     val lightAllDiff = {
@@ -54,7 +50,7 @@ class AllDifferent(x: Array[CPIntVar]) extends Constraint(x(0).store) {
       else new AllDiffFWC(x)
     }
 
-    val ok = l match {
+    l match {
       case CPPropagStrength.Weak => {
         s.post(lightAllDiff)
       }
@@ -71,12 +67,7 @@ class AllDifferent(x: Array[CPIntVar]) extends Constraint(x(0).store) {
         val cards = Array.fill(maxVal - minVal + 1)(1)
         s.post(Array(lightAllDiff, new GCCUpperBC(x, minVal, cards)))
       }
-      
-
     }
-    if (ok == CPOutcome.Failure) return CPOutcome.Failure;
-    else return CPOutcome.Success;
-
   }
 
 }

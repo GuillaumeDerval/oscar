@@ -16,10 +16,11 @@
 package oscar.cp.constraints.tables
 
 
-import oscar.algo.reversible.{TrailEntry, ReversibleInt, ReversibleBoolean}
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{ Constraint, CPStore, CPOutcome, CPPropagStrength }
-import oscar.cp.core.CPOutcome._
+import oscar.algo.Inconsistency
+import oscar.algo.reversible.{ReversibleBoolean, ReversibleInt, TrailEntry}
+import oscar.cp.core.variables.{CPIntVar, CPVar}
+import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
+
 import scala.collection.mutable.ArrayBuffer
 import oscar.cp.core.delta.DeltaIntVar
 
@@ -38,6 +39,8 @@ final class TableCTAC6LongTrailEntry(table: TableCTAC6, i: Int, value: Long) ext
 }
 
 final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableCTAC6") {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   /* Setting idempotency & lower priority for propagate() */
   idempotent = true
@@ -216,18 +219,16 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
 
 
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
 
     /* Retrieve the current valid tuples */
-    if (fillValidTuples() == Failure) return Failure
+    fillValidTuples()
 
     /* Compute the masks for each (x,a) pair */
     fillMasksAndComputeSupports()
 
     /* Remove values not supported by any tuple */
-    if (removeUnsupportedValues() == Failure) {
-      return Failure
-    }
+    removeUnsupportedValues()
 
     /* Call propagate() and update(x, delta) when domains change */
     var i = 0
@@ -236,13 +237,11 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
       deltas(i) = x.callPropagateOnChangesWithDelta(this)
       i += 1
     }
-
-    Suspend
   }
 
 
   /*
-  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): CPOutcome = {
+  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): Unit = {
     //println("delta size:"+delta.size)
     val intVar = X(varIndex)//delta.variable
 
@@ -285,15 +284,12 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
   }*/
 
   /**
-   * Invalidates tuples by handling delta, the set of values removed from D(x) since the last call to this function.
-   * @param intVar the CPIntVar associated to x.
+   * Invalidates tuples by handling delta, the set of values removed from D(x) since the last call to this function
    * @param varIndex the index of x in the array of variables.
    * @param delta the set of values removed since the last call.
    * @return the outcome i.e. Failure or Success.
    */
-
-
-  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): CPOutcome = {
+  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): Unit = {
     //println("delta size:"+delta.size)
     val intVar = X(varIndex)//delta.variable
 
@@ -342,7 +338,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
     if (changed) {
       /* Failure if there are no more valid tuples */
       if (nValidLongs == 0) {
-        return Failure
+        throw Inconsistency
       }
 
       /* We check if x was the only modified variable since last propagate() */
@@ -354,8 +350,6 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
 
     // Trail reversibles
     nValidLongsRev.value = nValidLongs
-
-    Suspend
   }
 
 
@@ -365,7 +359,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
    * @return the outcome i.e. Failure or Success.
    */
   var nCheck = 0
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
     //println("propagate"+scala.util.Random.nextInt(10))
 
     // Cache reversible values
@@ -383,7 +377,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
     i = 0
     while (i < arity) {
       if (deltas(i).size > 0) {
-        if (updateDelta(i,deltas(i)) == Failure) return Failure
+        updateDelta(i,deltas(i))
       }
       i += 1
     }
@@ -401,7 +395,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
 
     // No need for the check if validTuples has not changed
     if (!needPropagate.value) {
-      return Suspend
+      return
     }
 
 
@@ -433,9 +427,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
             lastSupports(varIdx)(valIdx).reversibleRemove()
           }
           else if (/*X(varIdx).hasValue(valIdx+originalMins(varIdx)) &&*/ !supported(varIdx, valIdx)) {
-            if (X(varIdx).removeValue(valIdx + originalMins(varIdx)) == Failure) {
-              return Failure
-            }
+            X(varIdx).removeValue(valIdx + originalMins(varIdx))
           }
         }
         i += 1
@@ -451,22 +443,15 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
       while (i < domainArraySize) {
         value = domainArray(i)
         if (!supported(varIndex, value - originalMins(varIndex))) {
-          if (X(varIndex).removeValue(value) == Failure) {
-            return Failure
-          }
+          X(varIndex).removeValue(value)
         }
         i += 1
       }
       varIndex += 1
     }*/
 
-
-
-
     // Trail reversibles
     nValidLongsRev.value = nValidLongs
-    Suspend
-
   }
 
 
@@ -672,7 +657,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
    * Retrieve the valid tuples from the table and store their index in validTuplesBuffer.
    * @return Failure if there is no valid tuples, Suspend otherwise.
    */
-  @inline private def fillValidTuples(): CPOutcome = {
+  @inline private def fillValidTuples(): Unit = {
     validTuplesBuffer.clear()
     var tupleIndex = 0
     while (tupleIndex < nbTuples) {
@@ -683,13 +668,11 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
     }
 
     if (validTuplesBuffer.isEmpty) {
-      return Failure
+      throw Inconsistency
     }
 
     /* Compute number of Long in a bitset */
     nbLongs = bitLength(validTuplesBuffer.length)
-
-    Suspend
   }
 
   /**
@@ -741,7 +724,7 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
    * Remove values not supported by any tuple.
    * @return the outcome i.e. Failure or Suspend.
    */
-  @inline private def removeUnsupportedValues(): CPOutcome = {
+  @inline private def removeUnsupportedValues(): Unit = {
     var varIndex = 0
     while (varIndex < arity) {
       val intVar = X(varIndex)
@@ -751,16 +734,12 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
         val value = domainArray(i)
         val valueIndex = value - originalMins(varIndex)
         if (masks(varIndex)(valueIndex) == null) {
-          if (intVar.removeValue(value) == Failure) {
-            return Failure
-          }
+          intVar.removeValue(value)
         }
         i += 1
       }
       varIndex += 1
     }
-
-    Suspend
   }
 
 }
