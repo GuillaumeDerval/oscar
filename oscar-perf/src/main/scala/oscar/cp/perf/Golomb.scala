@@ -53,7 +53,7 @@ object Golomb extends CPModel with App {
   // (Cred to Pierre Schaus.)
   differences.foreach(d => add(d > 0))
 
-  search { binaryStatic(mark, _.min) }
+  search { binaryStaticIdx(mark, mark(_).min) }
   /*
   onSolution {
     println("\nSolution:")

@@ -67,8 +67,9 @@ object CookieMonster extends CPModel with App {
     add(lexLeq(bx(m + 1), bx(m)))
   }
 
+  val allB = b.flatten.toArray
   search {
-    binaryStatic(x, _.min) ++ binaryStatic(b.flatten.toSeq, _.min)
+    binaryStaticIdx(x, i => x(i).min) ++ binaryStaticIdx(allB, i => allB(i).min)
   }
 
   println(start())

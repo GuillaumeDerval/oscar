@@ -54,7 +54,7 @@ object LargeScaleGreedyCumulative extends CPModel with App {
   }
   
   search {
-    binaryStatic(startsVar, _.min)
+    binaryStaticIdx(startsVar, startsVar(_).min)
   }
   val stat = start(nSols = 1)
   println(stat)

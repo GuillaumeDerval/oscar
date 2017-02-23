@@ -119,7 +119,7 @@ object Nonogram extends App {
 
 
     search {
-      binaryStatic(X, _.min)
+      binaryStaticIdx(X, X(_).min)
     }
     
     beforeSearch = System.currentTimeMillis()
