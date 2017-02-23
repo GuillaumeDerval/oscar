@@ -17,32 +17,33 @@ package oscar.examples.linprog
 
 import oscar.algebra._
 import oscar.linprog.MPModel
-import oscar.linprog.lpsolve.LPSolve
+import oscar.linprog.lp_solve.LPSolve
 
 object BasicLP extends MPModel(LPSolve) with App {
 
-  val x0 = MPFloatVar("x0", 0, 40)
-  val x1 = MPFloatVar("x1", 0, 1000)
-  val x2 = MPFloatVar("x2", 0, 17)
-  val x3 = MPFloatVar("x3", 2, 3)
+  val x0 = VarNumerical("x0", 0, 40)
+  val x1 = VarNumerical("x1", 0, 1000)
+  val x2 = VarNumerical("x2", 0, 17)
+  val x3 = VarNumerical("x3", 2, 3)
 
-  var cons = Array[LinearConstraint[_]]()
+  var cons = Array[LinearConstraint]()
 
   maximize(x0 + x1*2.0 + x2*3.0 + x3)
   subjectTo(
-    "cons1" |: (x0 * -1.0 + x1     + x2 +  x3*10.0  <= 20.0),
-    "cons2" |: (     x0 - x1*3.0 + x2           <= 30.0),
-    "cons3" |: (          x1          -  x3*3.5 ===  0.0)
+    "cons1" |: (x0 * -1.0 + x1     + x2 +  x3*10.0 <=  20.0),
+    "cons2" |: (     x0 - x1*3.0 + x2              <=  30.0),
+    "cons3" |: (          x1          -  x3*3.5    ===  0.0)
   )
 
   val endStatus = interface.solve(this)
 
   println(s"End status = $endStatus")
-  println("---------------------------------------------")
-  println(s"x0: ${x0.value}")
-  println(s"x1: ${x1.value}")
-  println(s"x2: ${x2.value}")
-  println(s"x3: ${x3.value}")
-  println("---------------------------------------------")
-
+  endStatus.onSolution { sol =>
+    println("---------------------------------------------")
+    println(s"x0: ${sol(x0)}")
+    println(s"x1: ${sol(x1)}")
+    println(s"x2: ${sol(x2)}")
+    println(s"x3: ${sol(x3)}")
+    println("---------------------------------------------")
+  }
 }

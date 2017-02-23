@@ -17,7 +17,7 @@ package oscar.examples.linprog
 
 import oscar.algebra._
 import oscar.linprog.MPModel
-import oscar.linprog.lpsolve.LPSolve
+import oscar.linprog.lp_solve.LPSolve
 
 /**
  *  a magic square of order n is an
@@ -28,48 +28,42 @@ import oscar.linprog.lpsolve.LPSolve
  */
 object MagicSquare extends MPModel(LPSolve) with App {
 
-  implicit
-
   val n = 4
 
   val Numbers = 1 to n * n
   val Lines = 0 until n
   val Columns = 0 until n
 
-
-  val x = Array.tabulate(n, n, n * n)((l, c, N) => MPIntVar("x" + (l, c, N), 0 to 1))
-  val s = MPIntVar("s", 0 to 10000000)
+  val x = Array.tabulate(n, n, n * n)((l, c, N) => VarInt("x" + (l, c, N), 0 to 1))
+  val s = VarInt("s", 0 to 10000000)
 
   /* each cell must be assigned exactly one integer */
   for (l <- Lines; c <- Columns)
-    add( "" |: sum(Numbers)((n) => x(l)(c)(n - 1)) === 1.0)
+    add( "OneIntPerCell" |: sum(Numbers)((n) => x(l)(c)(n - 1)) === 1.0)
 
   /* each integer must be assigned exactly to one cell */
   for (n <- Numbers)
-    add( "" |: sum(Lines, Columns)((l, c) => x(l)(c)(n - 1)) === 1.0)
+    add( "OneCellPerInt" |: sum(Lines, Columns)((l, c) => x(l)(c)(n - 1)) === 1.0)
 
   /* the sum in each row must be the magic sum */
   for (l <- Lines)
-    add( "" |: sum(Columns, Numbers)((c, n) => x(l)(c)(n - 1) * n) === s)
+    add( "RowSum" |: sum(Columns, Numbers)((c, n) => x(l)(c)(n - 1) * n) === s)
 
   /* the sum in each column must be the magic sum */
   for (c <- Columns)
-    add( "" |: sum(Lines, Numbers)((l, n) => x(l)(c)(n - 1) * n) === s)
+    add( "ColSum" |: sum(Lines, Numbers)((l, n) => x(l)(c)(n - 1) * n) === s)
 
   /* the sum in the diagonal must be the magic sum */
-  add( "" |: sum(Lines, Numbers)((l, n) => x(l)(l)(n - 1) * n) === s)
+  add( "DiagonalSum" |: sum(Lines, Numbers)((l, n) => x(l)(l)(n - 1) * n) === s)
 
   /* the sum in the co-diagonal must be the magic sum */
   //mip.add(sum(Lines,Numbers)((l,n) => x(l)(n-l-1)(n-1)*(n))==s) // TODO: fix this constraint
 
   maximize(s)
-  solve match {
-    case Optimal(solution) =>
-      println("objective: " + solution(objective.expression))
-
-      for (l <- Lines) {
-        println(Columns.map(c => Numbers.filter(n => x(l)(c)(n - 1).value.get == 1)).mkString(","))
-      }
+  solve.onSolution { solution =>
+    println("objective: " + solution(objective.expression))
+    for (l <- Lines) {
+      println(Columns.map(c => Numbers.filter(n => solution(x(l)(c)(n - 1)) == 1)).mkString(","))
+    }
   }
-
 }

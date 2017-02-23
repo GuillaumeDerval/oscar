@@ -29,11 +29,12 @@ import oscar.util.Interval
  */
 class DFOFloatVar(val solver: DFOSolver, val varName: String, val lb: Double = 0.0, val ub: Double = Double.PositiveInfinity) extends Var[Double] {
     val id = solver.register(this)
-    override def value = solver.getValue(id)
     def name = varName
     def randVal = rand.nextDouble() * (ub - lb) + lb
   def lowerBound = lb
   def upperBound = ub
+
+	def value = solver.getValue(id)
 }
 
 object DFOFloatVar {

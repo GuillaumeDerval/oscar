@@ -1,13 +1,8 @@
 package oscar.linprog
 
-import org.junit.runner.RunWith
-import org.scalactic.TripleEqualsSupport.Spread
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.{FunSuite, Matchers, Tag}
+import org.scalatest.{FunSuite, Tag}
 import oscar.algebra._
 
-
-@RunWith(classOf[JUnitRunner])
 class InfeasibilityAnalysisTests extends LinearMathSolverTests{
   override def testSuite(interface: Option[SolverInterface[Linear,Linear,Double]], solverName: String): FunSuite = {
     new InfeasibilityAnalysisTester(interface, solverName)
@@ -22,7 +17,7 @@ class InfeasibilityAnalysisTester(interfaceOpt: Option[SolverInterface[Linear, L
     super.test(solverName + " " + testName, testTags: _*)(testFun)
   }
 
-  test("Infeasibility analysis on LP: infeasibilities due to constraints") {
+  ignore("Infeasibility analysis on LP: infeasibilities due to constraints") {
     implicit val model = new Model[Linear, Linear, Double]
 
     val x1 = VarNumerical("x1", 0, 40)
@@ -62,7 +57,7 @@ class InfeasibilityAnalysisTester(interfaceOpt: Option[SolverInterface[Linear, L
     }
   }
 
-  test("Infeasibility analysis on LP: infeasibilities due to var bounds") {
+  ignore("Infeasibility analysis on LP: infeasibilities due to var bounds") {
     implicit val model = new Model[Linear, Linear, Double]
 
     val x = VarNumerical("x", 20, Double.MaxValue)

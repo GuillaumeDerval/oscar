@@ -17,7 +17,7 @@ package oscar.examples.linprog
 
 import oscar.algebra._
 import oscar.linprog.MPModel
-import oscar.linprog.lpsolve.LPSolve
+import oscar.linprog.lp_solve.LPSolve
 
 import scala.concurrent.Future
 
@@ -29,57 +29,62 @@ object Sudoku extends MPModel(LPSolve) with App {
 
   val N = 0 until n
 
-  val x = Array.tabulate(n, n, n)((l, c, n) => MPIntVar("x" + (l, c, n), 0 to 1))
+  val x = Array.tabulate(n, n, n)((l, c, n) => VarBinary("x" + (l, c, n)))
 
   maximize(0.toDouble)
 
   /* each cell must be assigned exactly one integer */
   for (l <- N; c <- N) // for each row, each column
-    add("" |: sum(N)((n) => x(l)(c)(n)) === 1.toDouble)
+    add("OneIntPerCill" |: sum(N)((n) => x(l)(c)(n)) === 1.toDouble)
 
   /* cells in the same row must be assigned distinct numbers */
   for (l <- N; n <- N)
-    add("" |: sum(N)((c) => x(l)(c)(n)) === 1.toDouble)
+    add("DistinctRow" |: sum(N)((c) => x(l)(c)(n)) === 1.toDouble)
 
   /* cells in the same column must be assigned distinct numbers */
   for (c <- N; n <- N)
-    add("" |: sum(N)((l) => x(l)(c)(n)) === 1.toDouble)
+    add("DistinctCol" |: sum(N)((l) => x(l)(c)(n)) === 1.toDouble)
+
   /* cells in the same region must be assigned distinct numbers */
   for (l1 <- 0 until 3; c1 <- 0 until 3; n <- N) {
-    add("" |: sum(0 until 3, 0 until 3)((l, c) => x(l + 3 * l1)(c + 3 * c1)(n)) === 1.toDouble)
+    add("DistinctRegion" |: sum(0 until 3, 0 until 3)((l, c) => x(l + 3 * l1)(c + 3 * c1)(n)) === 1.toDouble)
   }
 
   subjectTo(
-    "" |: x(0)(0)(4) === 1.0,
-    "" |: x(0)(1)(2) === 1.0,
-    "" |: x(0)(4)(6) === 1.0,
-    "" |: x(1)(0)(5) === 1.0,
-    "" |: x(1)(3)(0) === 1.0,
-    "" |: x(1)(4)(8) === 1.0,
-    "" |: x(1)(5)(4) === 1.0,
-    "" |: x(2)(1)(8) === 1.0,
-    "" |: x(2)(2)(7) === 1.0,
-    "" |: x(2)(7)(5) === 1.0,
-    "" |: x(3)(0)(7) === 1.0,
-    "" |: x(3)(4)(5) === 1.0,
-    "" |: x(3)(8)(2) === 1.0,
-    "" |: x(4)(0)(3) === 1.0,
-    "" |: x(4)(3)(7) === 1.0,
-    "" |: x(4)(5)(2) === 1.0,
-    "" |: x(4)(8)(0) === 1.0,
-    "" |: x(5)(0)(6) === 1.0,
-    "" |: x(5)(4)(1) === 1.0,
-    "" |: x(5)(8)(5) === 1.0,
-    "" |: x(6)(1)(5) === 1.0,
-    "" |: x(6)(6)(1) === 1.0,
-    "" |: x(6)(7)(7) === 1.0,
-    "" |: x(7)(3)(3) === 1.0,
-    "" |: x(7)(4)(0) === 1.0,
-    "" |: x(7)(5)(8) === 1.0,
-    "" |: x(7)(8)(4) === 1.0,
-    "" |: x(8)(4)(7) === 1.0,
-    "" |: x(8)(7)(6) === 1.0,
-    "" |: x(8)(8)(8) === 1.0
+    List(
+      x(0)(0)(4) === 1.0,
+      x(0)(1)(2) === 1.0,
+      x(0)(4)(6) === 1.0,
+      x(1)(0)(5) === 1.0,
+      x(1)(3)(0) === 1.0,
+      x(1)(4)(8) === 1.0,
+      x(1)(5)(4) === 1.0,
+      x(2)(1)(8) === 1.0,
+      x(2)(2)(7) === 1.0,
+      x(2)(7)(5) === 1.0,
+      x(3)(0)(7) === 1.0,
+      x(3)(4)(5) === 1.0,
+      x(3)(8)(2) === 1.0,
+      x(4)(0)(3) === 1.0,
+      x(4)(3)(7) === 1.0,
+      x(4)(5)(2) === 1.0,
+      x(4)(8)(0) === 1.0,
+      x(5)(0)(6) === 1.0,
+      x(5)(4)(1) === 1.0,
+      x(5)(8)(5) === 1.0,
+      x(6)(1)(5) === 1.0,
+      x(6)(6)(1) === 1.0,
+      x(6)(7)(7) === 1.0,
+      x(7)(3)(3) === 1.0,
+      x(7)(4)(0) === 1.0,
+      x(7)(5)(8) === 1.0,
+      x(7)(8)(4) === 1.0,
+      x(8)(4)(7) === 1.0,
+      x(8)(7)(6) === 1.0,
+      x(8)(8)(8) === 1.0
+    ).zipWithIndex.map { case (e, i) =>
+      s"init$i" |: e
+    }: _*
   )
 
   val run = interface.run(this)
@@ -88,21 +93,25 @@ object Sudoku extends MPModel(LPSolve) with App {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   Future {
-    run.solve match{
-      case Feasible(solution) =>
-        println("objective: " + solution(objective.expression))
+    val endStatus = run.solve
 
-        for (l <- N) {
-          for (c <- N; n <- N; if x(l)(c)(n).value.get == 1) {
-            print(n + 1 + "\t")
-          }
-          println()
+    println(s"End Status = $endStatus")
+
+    endStatus.onSolution { solution =>
+      println("objective: " + solution(objective.expression))
+
+      for (l <- N) {
+        for (c <- N; n <- N; if solution(x(l)(c)(n)) == 1) {
+          print(n + 1 + "\t")
         }
+        println()
+      }
     }
   }
+
   // wait for 1 minute
   Thread.sleep(1 * 60 * 1000)
 
-  run.abort
-
+  run.abort()
+  run.release()
 }
