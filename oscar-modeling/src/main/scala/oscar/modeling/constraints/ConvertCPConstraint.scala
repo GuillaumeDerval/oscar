@@ -62,8 +62,8 @@ object ConvertCPConstraint {
     * Convert various types of arguments containing IntVar to the same type containing cp.CPIntVar
     */
   private def convertArg(arg: Any): Any = arg match {
-    case intvar: IntVar => intvar.getRepresentative.asInstanceOf[CPIntVar].realCPVar
     case boolvar: BoolVar => boolvar.getRepresentative.asInstanceOf[CPIntVar].realCPVar.asInstanceOf[cp.CPBoolVar]
+    case intvar: IntVar => intvar.getRepresentative.asInstanceOf[CPIntVar].realCPVar
     case int: Int => int
     case long: Long => long
     case double: Double => double
@@ -73,7 +73,6 @@ object ConvertCPConstraint {
     case automaton: Automaton => automaton
     case set: Set[_] => set.map(convertArg)
     case seq: Seq[_] => seq.map(convertArg)
-    case list: List[_] => list.map(convertArg)
     case array: Array[Int] => array
     case array: Array[Long] => array
     case array: Array[Double] => array

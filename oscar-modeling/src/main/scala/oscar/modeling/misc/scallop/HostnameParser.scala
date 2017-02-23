@@ -28,6 +28,7 @@ object HostnameParser {
     value.split(":").toList match {
       case host :: port :: Nil => parsePair(host, port)
       case host :: Nil => parsePair(host, 2001)
+      case _ => throw new Exception("Invalid value")
     }
   }
 

@@ -28,7 +28,9 @@ object OscarBuild extends Build {
     lazy val commonSettings = Defaults.defaultSettings ++  jacoco.settings ++ Seq(
       organization := buildOrganization,
       version := buildVersion,
-      scalacOptions in Compile ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature", "-unchecked", "-Xdisable-assertions"),
+      scalacOptions in Compile ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature",
+                                       "-unchecked", "-Xdisable-assertions", "-language:implicitConversions",
+                                       "-language:postfixOps"),
       scalacOptions in Test := Seq("-optimise"),
       testOptions in Test <+= (target in Test) map {
         t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
@@ -167,6 +169,7 @@ object OscarBuild extends Build {
     settings =
       commonSettings ++
         Seq(
+          scalacOptions in Compile ++= Seq("-language:reflectiveCalls"),
           resolvers ++= Seq(xypron),
           libraryDependencies ++= testDeps :+ graphStreamCore :+ graphStreamAlgo :+ graphStreamUI :+ scallop
                                :+ akkaActor :+ akkaRemote :+ chill :+ spores :+ scalaSwing :+ linopt :+ glpk),

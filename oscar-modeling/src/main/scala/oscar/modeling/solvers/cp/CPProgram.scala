@@ -168,7 +168,7 @@ class CPProgram[RetVal](modelDeclaration: ModelDeclaration = new ModelDeclaratio
     md.apply(cpModel) {
       cpModel.cpSolver.onSolution {solutions += onSolution()}
       cpModel.cpSolver.search(getSearch(cpModel))
-      val result = cpModel.cpSolver.startSubjectTo(stopCondition, Int.MaxValue, null)()
+      val result = cpModel.cpSolver.startSubjectTo(stopCondition, Int.MaxValue, null) {}
       (new SearchStatistics(result), solutions.toList)
     }
   }

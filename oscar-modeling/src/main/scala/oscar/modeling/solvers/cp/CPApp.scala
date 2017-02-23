@@ -21,6 +21,8 @@ import oscar.modeling.models.{ModelDeclaration, UninstantiatedModel}
 import org.rogach.scallop._
 import oscar.modeling.solvers.cp.distributed.{DecomposedCPSolve, SimpleRemoteSolverSystem}
 
+import scala.language.reflectiveCalls
+
 /**
   * Minimal configuration for a DistributedCPApp model; models with arguments should subclass this by doing
   *
@@ -100,7 +102,7 @@ abstract class CPApp[RetVal](modeld: ModelDeclaration with DecomposedCPSolve[Ret
       new SimpleRemoteSolverSystem(completeConfig.client.hostname(), completeConfig.client.port(), completeConfig.client.registerDir.get)
       //Close app, since the client has done its work
       System.exit(0)
-    case None =>
+    case _ =>
       completeConfig.printHelp()
       System.exit(1)
   }

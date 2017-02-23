@@ -41,11 +41,11 @@ object QuadraticAssignment extends CPApp[Int] with App {
   var w: Array[Array[Int]] = Array() //weight matrix
   var d: Array[Array[Int]] = Array() //distance matrix
   for (i <- N) {
-    w = w :+ lines.head.split("[ ,\t]+").filter(_ != "").map(_ toInt).toArray
+    w = w :+ lines.head.split("[ ,\t]+").filter(_ != "").map(_.toInt)
     lines = lines.drop(1)
   }
   for (i <- N) {
-    d = d :+ lines.head.split("[ ,\t]+").filter(_ != "").map(_ toInt).toArray
+    d = d :+ lines.head.split("[ ,\t]+").filter(_ != "").map(_.toInt)
     lines = lines.drop(1)
   }
 

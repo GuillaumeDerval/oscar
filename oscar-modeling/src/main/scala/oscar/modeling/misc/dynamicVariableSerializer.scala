@@ -26,7 +26,7 @@ class dynamicVariableSerializer extends Serializer {
   def identifier = 427892370
 
   def toBinary(obj: AnyRef): Array[Byte] = {
-    assert(obj.isInstanceOf[scala.util.DynamicVariable[Model]])
+    assert(obj.isInstanceOf[scala.util.DynamicVariable[_]]) //should be scala.util.DynamicVariable[Model]
     val model = obj.asInstanceOf[scala.util.DynamicVariable[Model]].value
     new akka.serialization.JavaSerializer().toBinary(model)
   }

@@ -24,6 +24,8 @@ import oscar.modeling.solvers.cp.distributed.SubProblemCartesianProductLog
 import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar
 
+import scala.language.reflectiveCalls
+
 object CartProdExperienceGolombRuler extends CPApp[String] with App {
   override lazy val config = new CPAppConfig {
     val size = trailArg[Int](descr = "Size of the golomb ruler")

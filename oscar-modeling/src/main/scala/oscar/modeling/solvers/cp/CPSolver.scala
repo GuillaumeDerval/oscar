@@ -51,7 +51,7 @@ class CPSolver[RetVal](cpModel: CPModel) extends SolveHolder[RetVal] with CPSear
     assertModel()
     cpModel.cpSolver.searchEngine.onSolution {solutions += onSolution()}
     cpModel.cpSolver.search(getSearch(cpModel))
-    val result = cpModel.cpSolver.startSubjectTo(stopCondition, Int.MaxValue, null)()
+    val result = cpModel.cpSolver.startSubjectTo(stopCondition, Int.MaxValue, null) {}
     cpModel.cpSolver.searchEngine.clearOnSolution()
 
     (new SearchStatistics(result), solutions.toList)
