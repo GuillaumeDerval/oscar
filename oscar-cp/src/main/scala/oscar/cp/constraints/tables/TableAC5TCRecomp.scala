@@ -130,7 +130,6 @@ class TableAC5TCRecomp(val data: TableData, val x: CPIntVar*) extends Constraint
       }
       k += 1
     }
-    true
   }
 
   private final def valuesRemoved(delta: DeltaIntVar): Boolean = {

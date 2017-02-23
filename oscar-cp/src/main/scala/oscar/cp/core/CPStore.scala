@@ -297,9 +297,8 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
   def postCut(c: Constraint): Unit = postCut(c, propagStrength)
 
   def postCut(c: Constraint, st: CPPropagStrength): Unit = {
-    val ok = post(c, st)
+    post(c, st)
     cutConstraints.addLast(c)
-    return ok
   }
 
   def resetCuts(): Unit = {
@@ -529,10 +528,10 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
 object CPStore {
 
   /** The highest priority for an Level 1 filtering method */
-  @deprecated val MAXPRIORL1 = 2
+  @deprecated("Use MaxPriorityL1 instead", "OscaR 3.1.0") val MAXPRIORL1 = 2
 
   /** The highest priority for the propagate method i.e. L2 */
-  @deprecated val MAXPRIORL2 = 7
+  @deprecated("Use MaxPriorityL2 instead", "OscaR 3.1.0") val MAXPRIORL2 = 7
 
   /** The highest priority for an Level 1 filtering method */
   val MaxPriorityL1 = 2

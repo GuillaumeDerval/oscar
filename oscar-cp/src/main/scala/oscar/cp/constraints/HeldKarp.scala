@@ -78,8 +78,7 @@ class HeldKarp(edges: CPSetVar, edgeData: Array[(Int,Int,Int)], cost: CPIntVar) 
       if (edges.isRequired(idx)) forceEdge(i,j)
     }
     edges.callPropagateWhenDomainChanges(this)
-    val oc = propagateNumSteps(100)
-    return oc
+    propagateNumSteps(100)
   }
   
   override def propagate(): Unit = {

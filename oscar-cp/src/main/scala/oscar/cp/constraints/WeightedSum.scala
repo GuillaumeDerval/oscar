@@ -85,26 +85,20 @@ class WeightedSum(val W: Array[Int], val X: Array[CPIntVar], val y: CPIntVar) ex
             val num1 = y.max - minsumxi
             val maxi = (num1.toDouble / w(i)).floor.toInt
             //val maxi = if (num1 % w(i) == 0) num1 / w(i) else (num1.toDouble/w(i)).floor.toInt
-            val oc1 = x(i).updateMax(maxi)
-            oc1
+            x(i).updateMax(maxi)
             val num2 = y.min - maxsumxi
             val mini = (num2.toDouble / w(i)).ceil.toInt
             //val mini = if (num2 % w(i) == 0) num2/w(i) else (num2.toDouble/w(i)).ceil.toInt
-            val oc2 = x(i).updateMin(mini)
-            oc1
-
+            x(i).updateMin(mini)
           } else {
             val num1 = y.min - maxsumxi
             val maxi = (num1.toDouble / w(i)).floor.toInt
             //val maxi = if (num1 % w(i) == 0) num1 / w(i) else (num1.toDouble/w(i)).floor.toInt 
-            val oc1 = x(i).updateMax(maxi)
-            oc1
+            x(i).updateMax(maxi)
             val num2 = y.max - minsumxi
             val mini = (num2.toDouble / w(i)).ceil.toInt
             //val mini = if (num2 % w(i) == 0) num2/w(i) else (num2.toDouble/w(i)).ceil.toInt
-            val oc2 = x(i).updateMin(mini)
-            oc2
-
+            x(i).updateMin(mini)
           }
         }
       } else setBound(i)
