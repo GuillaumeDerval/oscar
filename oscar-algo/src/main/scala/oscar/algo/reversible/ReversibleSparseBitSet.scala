@@ -32,7 +32,11 @@ object BitSetOp {
   def setBit(bitSet: Array[Long], pos: Int): Unit = {
     bitSet(bitOffset(pos)) |= oneBitLong(bitPos(pos))
   }
-
+  // = pos % 63
+  def setBit(bitSet: Array[ReversibleLong], pos: Int): Unit = {
+    val offset = bitOffset(pos)
+    bitSet(offset).setValue(bitSet(offset).getValue | oneBitLong(bitPos(pos)))
+  }
 }
 
 

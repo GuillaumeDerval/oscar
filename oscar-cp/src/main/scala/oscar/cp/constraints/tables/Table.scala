@@ -27,6 +27,7 @@ object TableAlgo extends Enumeration {
   val CompactTableGAC6 = Value("CompactTable GAC6 (Régin,Perrez,Schaus)")
   val CompactTableRefactored = Value("CompactTable Refactored")
   val CompactTableStar = Value("CompactTable for positive * table")
+  val STRbit = Value("STRbit (Wang, Xia, Yap and Li)")
   val GAC4 = Value("GAC4 (Regin)")
   val GAC4R = Value("GAC4R (Perez and Regin")
   val STR2 = Value("STR2 (Lecoutre)")
@@ -46,6 +47,7 @@ object table {
       case CompactTable => compactTable(X, table)
       case CompactTableGAC6 => compactTableGAC6(X, table)
       case CompactTableStar => compactTableStar(X, table)
+      case STRbit       => strBit(X, table)
       case GAC4         => gac4(X, table)
       case GAC4R        => gac4r(X, table)
       case MDD4R        => mdd4r(X, table)
@@ -63,6 +65,8 @@ object table {
   def compactTableGAC6(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableCTAC6(X, table)
 
   def compactTableStar(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableCTStar(X, table)
+
+  def strBit(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableSTRbit(X, table)
 
   def gac4(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableGAC4(X, table)
 
