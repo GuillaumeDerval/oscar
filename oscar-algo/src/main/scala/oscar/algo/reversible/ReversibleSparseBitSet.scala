@@ -165,15 +165,11 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
 
 
   /* Compute number of Long in a bitset */
-  private[this] var nWords = bitLength(n)
-
-  val wordIndicesToTrail = new oscar.algo.reversible.SparseSet(0, nWords, true)
+  private[this] val nWords = bitLength(n)
 
   private[this] val words: Array[Long] = Array.fill(nWords)(0L)
-  private[this] val lastMagics = Array.fill(nWords)(-1L)
 
-
-  private[this] var nonZeroIdx: Array[Int] = Array.tabulate(nWords)(i => i)
+  private[this] val nonZeroIdx: Array[Int] = Array.tabulate(nWords)(i => i)
   private[this] var nNonZero: Int = nWords
 
 
@@ -229,7 +225,7 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
   @inline final def restore(numberOfValues: Int): Unit = {
     var k = numberOfValues
     while (k > 0) {
-      var pos = nTrailEntries - k
+      val pos = nTrailEntries - k
       words(wordIndex(pos)) = wordValue(pos)
       k -= 1
     }
@@ -257,7 +253,7 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
    * Clear all the collected elements
    */
   def clearCollected(): Unit = {
-    wordIndicesToTrail.empty()
+    //wordIndicesToTrail.empty()
     var i: Int = nNonZero
     while (i > 0) {
       i -= 1
