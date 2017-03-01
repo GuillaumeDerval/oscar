@@ -46,7 +46,7 @@ abstract class XCSPSolver {
   //----------------------------- abstract global constraints-------------------------------------
   
  def table(x: Array[CPIntVar], tuples: Array[Array[Int]]) : Constraint
- def tableNe(x: Array[CPIntVar], tuples: Array[Array[Int]]) : Constraint = oscar.cp.table(x,tuples)
+ def tableNe(x: Array[CPIntVar], tuples: Array[Array[Int]]) : Constraint = oscar.cp.negativeTable(x,tuples)
  def allDifferent(vars: Iterable[CPIntVar]) : Constraint
  def weightedSum(w: Array[Int], x: Array[CPIntVar], y: Int) : Constraint
  def among(n: CPIntVar, x: IndexedSeq[CPIntVar], s: Set[Int]) : Constraint
