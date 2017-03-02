@@ -1,5 +1,3 @@
-package oscar.cp.perf
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,6 +12,10 @@ package oscar.cp.perf
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+
+package oscar.cp.perf
+
+
 
 import oscar.cp._
 
