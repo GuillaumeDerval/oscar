@@ -17,13 +17,6 @@ object OscarBuild extends Build {
     val buildScalaVersion = "2.11.0"
     val buildSbtVersion= "0.13.12"
 
-    val (osNativeLibDir, osJavaLibraryPath) = (sys.props("os.name"), sys.props("os.arch")) match {
-      case (os, arch) if os.contains("Mac") && arch.endsWith("64") => ("macos64", sys.env.getOrElse("DYLD_LIBRARY_PATH", ""))
-      case (os, arch) if os.contains("Linux") && arch.endsWith("64") => ("linux64", sys.env.getOrElse("LD_LIBRARY_PATH", ""))
-      case (os, arch) if os.contains("Windows") && arch.endsWith("32") => ("windows32", sys.env.getOrElse("PATH", ""))
-      case (os, arch) if os.contains("Windows") && arch.endsWith("64") => ("windows64", sys.env.getOrElse("PATH", ""))
-      case (os, arch) => sys.error("Unsupported OS [${os}] Architecture [${arch}] combo, OscaR currently supports macos64, linux64, windows32, windows64")
-    }
 
     lazy val commonSettings = Defaults.defaultSettings ++  jacoco.settings ++ Seq(
       organization := buildOrganization,
@@ -36,7 +29,7 @@ object OscarBuild extends Build {
         t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
       parallelExecution in Test := false,
       fork in Test := true,
-      javaOptions in Test += "-Djava.library.path=../lib:../lib/" + osNativeLibDir + ":" + osJavaLibraryPath,
+      javaOptions in Test += "-Djava.library.path=../lib:../lib/",
       javacOptions ++= Seq("-encoding", "UTF-8"),
       scalaVersion := buildScalaVersion,
       unmanagedSourceDirectories in Test += baseDirectory.value / "src" / "main" / "examples",
@@ -66,9 +59,6 @@ object OscarBuild extends Build {
   object Dependencies {
     // Regular libraries
     val antlr4Runtime = "org.antlr" % "antlr4-runtime" % "latest.milestone"
-    val glpk = "org.gnu.glpk" % "glpk-java" % "1.7.0"
-    val linopt = "de.xypron.linopt" % "linopt" % "1.17"
-    val lpsolve = "lpsolve" % "lpsolve" % "5.5.2"
     val jcommon = "org.jfree" % "jcommon" % "latest.milestone"
     val jfreechart = "org.jfree" % "jfreechart" % "latest.milestone"
     val jsci = "net.sf.jsci" % "jsci" % "latest.milestone"
@@ -116,8 +106,7 @@ object OscarBuild extends Build {
         unidocSettings ++
         Seq(libraryDependencies ++= testDeps) :+
         (unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(oscarFzn, oscarFznCbls, oscarPerf)),
-    aggregate = Seq(oscarAlgebra, oscarAlgo, oscarCbls, oscarCp, oscarCPXcsp3, oscarPerf, oscarModeling, oscarDfo, oscarLinprog, oscarUtil, oscarVisual, oscarFzn, oscarFznCbls, oscarDes, oscarInvariants)
-
+    aggregate = Seq(oscarAlgebra, oscarAlgo, oscarCbls, oscarCp, oscarCPXcsp3, oscarPerf, oscarModeling, oscarDfo, oscarUtil, oscarVisual, oscarFzn, oscarFznCbls, oscarDes, oscarInvariants)
   )
 
   lazy val oscarAlgebra = Project(
@@ -168,7 +157,7 @@ object OscarBuild extends Build {
           scalacOptions in Compile ++= Seq("-language:reflectiveCalls"),
           resolvers ++= Seq(xypron),
           libraryDependencies ++= testDeps :+ graphStreamCore :+ graphStreamAlgo :+ graphStreamUI :+ scallop
-                               :+ akkaActor :+ akkaRemote :+ chill :+ spores :+ scalaSwing :+ linopt :+ glpk),
+                               :+ akkaActor :+ akkaRemote :+ chill :+ spores :+ scalaSwing),
     dependencies = Seq(oscarCp)
   )
 
@@ -242,18 +231,6 @@ object OscarBuild extends Build {
     settings =
       commonSettings ++
         Seq(libraryDependencies ++= testDeps)
-  )
-
-  lazy val oscarLinprog = Project(
-    id = "oscar-linprog",
-    base = file("oscar-linprog"),
-    settings =
-      commonSettings ++
-        Seq(
-          resolvers ++= Seq(leadoperations, cogcomp),
-          libraryDependencies ++= testDeps :+ lpsolve
-        ),
-    dependencies = Seq(oscarAlgebra)
   )
 
   lazy val oscarUtil = Project(
