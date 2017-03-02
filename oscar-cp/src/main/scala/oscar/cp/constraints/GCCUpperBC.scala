@@ -220,6 +220,7 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
       val k = l
       l = t(k)
       t(k) = to
+      if(k == l) throw new Exception("pathSet encountered an infinite loop!")
     }
   }
 
