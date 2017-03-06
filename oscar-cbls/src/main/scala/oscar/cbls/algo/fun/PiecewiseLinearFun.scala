@@ -173,6 +173,7 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
   }
 
 
+  /*
   /**
    * flips the function between the given bounds. does not add closing pivots before
    * @param startZoneIncluded
@@ -204,16 +205,17 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
       case Nil =>
     }
   }
+  */
 
   def shiftPivots(pivotList:List[Pivot],delta:Int):List[Pivot] = {
     pivotList.map(_.shiftOnX(delta))
   }
 
-  def pivotsBetween(startPositionIncluded:Int,endPosition:Int,transform:RedBlackTreeMap[Pivot]):List[Pivot] = {
-    transform.biggestLowerOrEqual(endPosition) match {
+  def pivotsBetween(startPositionIncluded:Int,endPositionIncluded:Int,transform:RedBlackTreeMap[Pivot]):List[Pivot] = {
+    transform.biggestLowerOrEqual(endPositionIncluded) match {
       case None => List.empty
-      case Some(k, pivot) =>
-        var explorer = transform.positionOf(k).get
+      case Some((pivotStart, pivot)) =>
+        var explorer = transform.positionOf(pivotStart).get
         var acc : List[Pivot] = List(explorer.value)
         while (explorer.prev match {
           case None => false
@@ -260,7 +262,6 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
       deleteUnnecessaryPivotStartingJustAfter(startZone1Included-1,
         deleteUnnecessaryPivotStartingJustAfter(startZone1Included + widthZone2 - 1,
           deleteUnnecessaryPivotStartingJustAfter(endZone2Included,transformationWithUpdate1Done))))
-
   }
 
   def updateForCompositionBefore(fromIncluded:Int, toIncluded: Int, additionalFAppliedBefore: LinearTransform):PiecewiseLinearFun = {
