@@ -30,9 +30,9 @@ class LinearSelector(isRandomized: Boolean = true) extends LinearSelectorTrait{
   setRandomized(isRandomized)
 }
 
-object SearchEngine extends SearchEngineTrait
+object LinearSelectors extends LinearSelectorTrait
 
-trait SearchEngineTrait{
+trait LinearSelectorTrait{
   var RandomGenerator: Random = null
 
   var Randomized:Boolean = true

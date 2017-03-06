@@ -1,21 +1,20 @@
 package oscar.cbls.scheduling.solver
 
-import oscar.cbls.invariants.core.computation.{CBLSIntVar, Store}
-import oscar.cbls.objective.{IntVarObjective, Objective}
-import oscar.cbls.scheduling.model._
-import oscar.cbls.search.move.Move
-import oscar.cbls.search.{SearchEngine, SearchEngineTrait}
-import oscar.cbls.search.core.EasyNeighborhood
+import oscar.cbls.business.scheduling.model.{Activity, Resource, Planning}
+import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.core.objective.{IntVarObjective, Objective}
+import oscar.cbls.core.search.{Move, EasyNeighborhood}
+import oscar.cbls.lib.search.{LinearSelectorTrait, LinearSelectors}
 
 
 case class FlattenOne(p: Planning,
-                      resourcesForFlattening:Planning=> Iterable[Resource] = (p:Planning) => List(p.resourceArray(SearchEngine.selectFrom(p.worseOvershotResource.value))),
+                      resourcesForFlattening:Planning=> Iterable[Resource] = (p:Planning) => List(p.resourceArray(LinearSelectors.selectFrom(p.worseOvershotResource.value))),
                       timesForFlattening:Resource => Iterable[Int] = (r:Resource) => List(r.worseOverShootTime),
                       candidatesForDependency:(Resource,Int) => Iterable[Activity] = (r:Resource,t:Int) => r.conflictingActivities(t),
                       best:Boolean = false,
                       neighborhoodName:String=null,
                       priorityToPrecedenceToMovableActivities: Boolean = true)
-  extends EasySchedulingNeighborhood[AddDynamicPrecedence](best,neighborhoodName) with SearchEngineTrait {
+  extends EasySchedulingNeighborhood[AddDynamicPrecedence](best,neighborhoodName) with LinearSelectorTrait {
   require(p.isClosed)
 
   //this resets the internal state of the Neighborhood

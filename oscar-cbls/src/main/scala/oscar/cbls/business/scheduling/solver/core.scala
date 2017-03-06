@@ -1,9 +1,9 @@
 package oscar.cbls.scheduling.solver
 
-import oscar.cbls.objective.{IntVarObjective, Objective}
-import oscar.cbls.scheduling.model.{Planning, Activity}
-import oscar.cbls.search.core.EasyNeighborhood
-import oscar.cbls.search.move.Move
+import oscar.cbls.core.objective.{IntVarObjective, Objective}
+import oscar.cbls.business.scheduling.model.{Planning, Activity}
+import oscar.cbls.core.search.EasyNeighborhood
+import oscar.cbls.core.search.Move
 
 /**
  * this neighborhood wants to flatten while minimizing the makepan increase
