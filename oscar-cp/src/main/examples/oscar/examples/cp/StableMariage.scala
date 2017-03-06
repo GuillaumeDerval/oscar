@@ -53,8 +53,8 @@ object StableMariage extends CPModel with App {
   for (m <- Men; w <- Women) {
     val pref_m = element(rankMen(m), wife(m), Weak) // preference of m for his wife
     val pref_w = element(rankWomen(w), husband(w), Weak) // preference of w for her husband
-    add((pref_m >>= rankMen(m)(w)) ==> (pref_w <<= rankWomen(w)(m)))
-    add((pref_w >>= rankWomen(w)(m)) ==> (pref_m <<= rankMen(m)(w)))
+    add((pref_m ?> rankMen(m)(w)) ==> (pref_w ?< rankWomen(w)(m)))
+    add((pref_w ?> rankWomen(w)(m)) ==> (pref_m ?< rankMen(m)(w)))
   }
 
   search { binaryFirstFail(wife) }

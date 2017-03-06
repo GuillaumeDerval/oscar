@@ -26,7 +26,7 @@ class CumulativeDecomp(starts: Array[CPIntVar], durations: Array[CPIntVar], ends
   override def setup(l: CPPropagStrength): CPOutcome = {
     for (t <- Horizon) {
       val tasks = overlapingTasks(t)
-      val overlapingVars = tasks.map(task => ((starts(task) <== t) and (ends(task) >>= t) and (resources(task) === id)) * demands(task))
+      val overlapingVars = tasks.map(task => ((starts(task).isLeEq(t) and (ends(task) ?> t) and (resources(task).isEq(id))) * demands(task)))
       val minDemand = minSum(overlapingVars)
       val maxDemand = maxSum(overlapingVars)
       val totDemand = CPIntVar(minDemand to maxDemand)(s)

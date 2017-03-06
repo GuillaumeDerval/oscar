@@ -73,13 +73,13 @@ object KenKen2 extends CPModel with App  {
       // a lot of possible variants
       val a = x(cc(0)-1)(cc(1)-1)
       val b = x(cc(2)-1)(cc(3)-1)
-      val r1 = a + b === res
-      val r2 = a * b === res
-      val r3 = a * res === b
-      val r4 = b * res === a
-      val r5 = a - b === res
-      val r6 = b - a === res
-     add(r1+r2+r3+r4+r5+r6 >= 1)
+      val r1 = a + b ?=== res
+      val r2 = a * b ?=== res
+      val r3 = a * res ?=== b
+      val r4 = b * res ?=== a
+      val r5 = a - b ?=== res
+      val r6 = b - a ?=== res
+     add(r1 || r2 || r3 || r4 || r5 || r6)
     } else {
       // For length > 2 then res is either the sum
       // or the product of the segment
@@ -87,21 +87,21 @@ object KenKen2 extends CPModel with App  {
       val len = ccLen / 2
         val xx = for{i <- 0 until len} yield x(cc(i*2)-1)(cc(i*2+1)-1)
       // Sum
-      val this_sum = sum(xx) === res
+      val this_sum = sum(xx) ?=== res
       // Product
-      var this_prod = CPIntVar(0 to 9)
-      if (xx.length == 3) {
-        this_prod = (x(cc(0)-1)(cc(1)-1) *
-                     x(cc(2)-1)(cc(3)-1) *
-                     x(cc(4)-1)(cc(5)-1)) === res
-      } else {
-        this_prod = (
-                     x(cc(0)-1)(cc(1)-1) *
-                     x(cc(2)-1)(cc(3)-1) *
-                     x(cc(4)-1)(cc(5)-1) *
-                     x(cc(6)-1)(cc(7)-1)) === res
-      }
-     add(this_sum + this_prod >= 1)
+      val this_prod =
+        if (xx.length == 3) {
+          (x(cc(0) - 1)(cc(1) - 1) *
+            x(cc(2) - 1)(cc(3) - 1) *
+            x(cc(4) - 1)(cc(5) - 1)) ?=== res
+        } else {
+          (
+            x(cc(0) - 1)(cc(1) - 1) *
+              x(cc(2) - 1)(cc(3) - 1) *
+              x(cc(4) - 1)(cc(5) - 1) *
+              x(cc(6) - 1)(cc(7) - 1)) ?=== res
+        }
+     add(this_sum || this_prod)
     }
   }
     //

@@ -72,8 +72,8 @@ object SichermanDice extends CPModel with App  {
       for(k <- 0 until standard_dist.length) {
        add(
                sum(for{i <- RANGE
-                       j <- RANGE} yield x1(i) + x2(j) === (k + 2)) 
-               == standard_dist(k))
+                       j <- RANGE} yield x1(i) + x2(j) ?=== (k + 2))
+               === standard_dist(k))
       }
       // symmetry breaking
       for(i <- RANGE1) {

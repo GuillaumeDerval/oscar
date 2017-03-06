@@ -44,7 +44,7 @@ object ArchFriends extends CPModel with App {
       i <- 0 until len;
       j <- 0 until len
     ) {
-     add((y(j) === i) == (x(i) === j))
+     add((y(j) ?=== i) === (x(i) ?=== j))
     }
   }
   // Convenient function which returns y (for presentation)
@@ -77,15 +77,15 @@ object ArchFriends extends CPModel with App {
   add(allDifferent(shoes), Strong)
   add(allDifferent(shops), Strong)
   // 1. Harriet bought fuchsia flats at Heels in a Handcart.
-  add(fuchsia_flats == heels_in_a_handcart)
+  add(fuchsia_flats === heels_in_a_handcart)
   // 2. The store she visited just after buying her purple
   //    pumps was not Tootsies.
-  add(purple_pumps + 1 != tootsies)
+  add(purple_pumps + 1 !== tootsies)
   //  3. The Foot Farm was Harriet's second stop.
-  add(foot_farm == 1)
+  add(foot_farm === 1)
   // 4. Two stops after leaving The Shoe Place, Harriet 
   //    bought her suede sandals.
-  add(the_shoe_palace + 2 == suede_sandals)
+  add(the_shoe_palace + 2 === suede_sandals)
   search { binaryMaxDegree(shoes ++ shops) }
   onSolution {
     println("Shops: " + shops.mkString(" "))

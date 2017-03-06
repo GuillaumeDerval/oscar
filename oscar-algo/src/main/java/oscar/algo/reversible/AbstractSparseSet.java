@@ -116,7 +116,35 @@ public abstract class AbstractSparseSet implements Iterable<Integer> {
 		assert(val <= _min+values.length-1);
 		return true;
 	}
-	
+
+	/**
+	 * @return an array representation of values present in the set
+	 */
+	public int[] toArray()  {
+		int [] res = new int[getSize()];
+		fillArray(res);
+		return res;
+	}
+
+	/**
+	 * @return set the first values of dest to the ones
+	 *         of the set and return the size of the set
+	 */
+	public int fillArray(int [] dest) {
+		int size = getSize();
+		System.arraycopy(values, 0, dest, 0, size);
+		if (_min != 0) {
+			int i = size;
+			while (i > 0) {
+				i -= 1;
+				dest[i] += _min;
+
+			}
+		}
+		return size;
+	}
+
+
 	/**
 	 * remove all elements in the set
 	 */

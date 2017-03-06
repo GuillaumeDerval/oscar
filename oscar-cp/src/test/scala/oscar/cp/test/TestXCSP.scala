@@ -13,10 +13,10 @@ class TestXCSP extends TestSuite {
     val solver = new XCSPSolver with DefaultConstraints
     val str: String = """<?xml version="1.0" encoding="UTF-8"?> 
 	    <instance> 
-	    		<presentation name="?" maxConstraintArity="3" format="XCSP 2.0"/> 
+	    		<presentation name="?" maxConstraintArity="3" format="XCSP 1.9"/>
 	    </instance>"""
     val thrown = intercept[RuntimeException] { solver.model(str) }
-    assert(thrown.getMessage === "Only XCSP 2.1 format is supported.")
+    assert(thrown.getMessage === "Only XCSP 2.0 or 2.1 format is supported.")
   }
 
   test("nqueen intension") {
@@ -573,7 +573,7 @@ class TestXCSP extends TestSuite {
 	    		<variable name="V2" domain="D0"/>
 	    		<variable name="C" domain="D1"/>
 	  		</variables>
-	    <constraints nbConstraints="1">
+	    <constraints nbConstraints="2">
 	    <constraint name="C1" arity="3" scope="V1 V2 C" reference="global:minimum_weight_all_different">
 	  	<parameters>
 	  		[ V1 V2]
@@ -586,6 +586,11 @@ class TestXCSP extends TestSuite {
 	  		C
 	  	</parameters>
 	  </constraint>
+                        <constraint name="C2" arity="2" scope="V1 V2" reference="global:allDifferent">
+                        	  		<parameters>[      V1 V2 2 ]</parameters>
+                        	  	</constraint>
+
+
 	    </constraints>
 
 	  	</instance>"""

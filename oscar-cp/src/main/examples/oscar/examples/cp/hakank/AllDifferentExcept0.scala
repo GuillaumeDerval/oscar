@@ -29,7 +29,7 @@ object AllDifferentExcept0 extends CPModel with App {
   // Constraints
   // Decomposition of allDifferent_except_0
   for (i <- 0 until x.size; j <- 0 until i) {
-    add(((x(i) !== 0) && (x(j) !== 0)) ==> (x(i) !== x(j)))
+    add(((x(i) ?!== 0) && (x(j) ?!== 0)) ==> (x(i) ?!== x(j)))
   }
   // Just for fun, we add that x should be increasing
   // Decomposition of increasing
@@ -38,7 +38,7 @@ object AllDifferentExcept0 extends CPModel with App {
   }
   // and that there must be exactly 2 0's
   add(gcc(x, occurrences))
-  add(z == 2)
+  add(z === 2)
   search { binaryFirstFail(x) }
   onSolution {
     println("x:" + x.mkString(""))

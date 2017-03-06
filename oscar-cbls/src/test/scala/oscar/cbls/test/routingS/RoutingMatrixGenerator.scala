@@ -1,13 +1,29 @@
 package oscar.cbls.test.routingS
 
-import oscar.cbls.routing.seq.model.{TTFConst, TTFMatrix, PDP}
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
+
+import oscar.cbls.business.routing.model.{TTFConst, TTFMatrix, PDP}
 
 import scala.util.Random
 
 object RoutingMatrixGenerator {
   val random = new Random(0)
 
-  def apply(N: Int, side: Int = 10000): (Array[Array[Int]],Array[(Int,Int)]) = {
+  def apply(N: Int, side: Int = 1000): (Array[Array[Int]],Array[(Int,Int)]) = {
 
     //we generate te cost distance matrix
     def randomXY: Int = (random.nextFloat() * side).toInt
@@ -50,26 +66,14 @@ object RoutingMatrixGenerator {
     toReturn
   }
 
-  def generateTimeWindows(n:Int, v:Int, pickups:Array[Int], deliveries:Array[Int], timeUnitDelta:Int = 50): Array[(Int,(Int,Int))] ={
+  def generateTimeWindows(n:Int, v:Int, pickups:Array[Int], deliveries:Array[Int], timeUnitDelta:Int = 50): Array[(Int,Int,Int,Int)] ={
 
     val maxNodes = n-v
     val maxCouples = maxNodes/2
     val random = new Random(0)
-    val timeWindows = Array.tabulate(n)(tw => (0,(0,0)))
-    val nbOfNodesPerTimeUnit = Array.tabulate(n*timeUnitDelta)(i => 0)
-    var tWGenerated = 0
+    val timeWindows = Array.tabulate(n-v)(tw => (0,0,0,0))
     var tWCoupleGenerated = 0
     var currentTimeUnit = 0
-
-    def currentTWGenerated(): Int ={
-      var res = 0
-      var i = 0
-      while(i < currentTimeUnit) {
-        res += nbOfNodesPerTimeUnit(i)
-        i += 1
-      }
-      res
-    }
 
 
     while(tWCoupleGenerated < maxCouples){
@@ -77,14 +81,11 @@ object RoutingMatrixGenerator {
       //println(nbOfCouplesToAdd)
       for(inc <- 0 until nbOfCouplesToAdd){
         val incDelivery = random.nextInt(50)
-        timeWindows(pickups(tWCoupleGenerated+inc)) = (timeUnitDelta*(currentTimeUnit+1),(0,timeUnitDelta*currentTimeUnit))
-        timeWindows(deliveries(tWCoupleGenerated+inc)) = (timeUnitDelta*(currentTimeUnit+1+incDelivery),(0, timeUnitDelta*(currentTimeUnit+incDelivery)))
-        nbOfNodesPerTimeUnit(currentTimeUnit+incDelivery) += 1
+        timeWindows(pickups(tWCoupleGenerated+inc)-v) = (timeUnitDelta*(currentTimeUnit+1),Int.MaxValue,timeUnitDelta,0)
+        timeWindows(deliveries(tWCoupleGenerated+inc)-v) = (-1,timeUnitDelta*(currentTimeUnit+1+incDelivery),timeUnitDelta,0)
       }
-      nbOfNodesPerTimeUnit(currentTimeUnit) += nbOfCouplesToAdd
-      tWGenerated = currentTWGenerated()
       tWCoupleGenerated += nbOfCouplesToAdd
-      currentTimeUnit += random.nextInt(10000/timeUnitDelta)
+      currentTimeUnit += random.nextInt(10*1000/timeUnitDelta)
     }
     timeWindows
   }

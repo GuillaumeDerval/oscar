@@ -73,12 +73,12 @@ object Lectures extends CPModel with App  {
       // Ensure that there are no clashes
       // also, adjust to 0-base.
       for(i <- 0 until edges) {
-       add(v(g(i)(0)-1) != v(g(i)(1)-1));
+       add(v(g(i)(0)-1) !== v(g(i)(1)-1));
       }
       // Symmetry breaking:
       // - v0 has the color 0,
       // - v1 has either color 0 or 1
-     add(v(0) == 0);
+     add(v(0) === 0);
      add(v(1) <= 1);
     search{
       binaryStatic(v)

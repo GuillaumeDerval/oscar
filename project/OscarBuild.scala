@@ -11,9 +11,9 @@ object OscarBuild extends Build {
 
   object BuildSettings {
     val buildOrganization = "oscar"
-    val buildVersion = "3.1.0-SNAPSHOT"
+    val buildVersion = "4.0.0-SNAPSHOT"
     val buildScalaVersion = "2.11.0"
-    val buildSbtVersion= "0.13.0"
+    val buildSbtVersion= "0.13.12"
 
     val osNativeLibDir = (sys.props("os.name"), sys.props("os.arch")) match {
       case (os, arch) if os.contains("Mac") && arch.endsWith("64") => "macos64"
@@ -23,16 +23,17 @@ object OscarBuild extends Build {
       case (os, arch) => sys.error("Unsupported OS [${os}] Architecture [${arch}] combo, OscaR currently supports macos64, linux64, windows32, windows64")
     }
 
-    lazy val commonSettings = Defaults.defaultSettings ++ jacoco.settings ++ Seq(
+    lazy val commonSettings = Defaults.defaultSettings ++  jacoco.settings ++ Seq(
       organization := buildOrganization,
       version := buildVersion,
       scalacOptions in Compile ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature", "-unchecked", "-Xdisable-assertions"),
       scalacOptions in Test := Seq("-optimise"),
       testOptions in Test <+= (target in Test) map {
-          t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
+        t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
       parallelExecution in Test := false,
       fork in Test := true,
       javaOptions in Test += "-Djava.library.path=../lib:../lib/" + osNativeLibDir,
+      javacOptions ++= Seq("-encoding", "UTF-8"),
       scalaVersion := buildScalaVersion,
       unmanagedSourceDirectories in Test += baseDirectory.value / "src" / "main" / "examples",
       publishTo := {
@@ -46,12 +47,13 @@ object OscarBuild extends Build {
       credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
     )
   }
-  
+
   object Resolvers {
     val xypron = "Xypron Release" at "http://rsync.xypron.de/repository/"
     val leadoperations = "AWS S3 Release Repository" at "http://maven.leadoperations.co/release"
     val cogcomp = "Cognitive Computation Group" at "http://cogcomp.cs.illinois.edu/m2repo/"
-    val mvnrepository = "Maven Repository" at "https://mvnrepository.com/artifact/"
+    val ingi = "INGI Snapshots" at "http://artifactory.info.ucl.ac.be/artifactory/libs-snapshot-local/"
+
   }
 
   object Dependencies {
@@ -67,13 +69,12 @@ object OscarBuild extends Build {
     val scalaParserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "latest.milestone"
     val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "latest.milestone"
     val scalaSwing = "org.scala-lang.modules" %% "scala-swing" % "latest.milestone"
-    val swingx = "org.swinglabs" % "swingx" % "latest.milestone"
-    val swingxWs = "org.swinglabs" % "swingx-ws" % "latest.milestone"
+    //val swingx = "org.swinglabs" % "swingx" % "latest.milestone"
+    // val swingxWs = "org.swinglabs" % "swingx-ws" % "latest.milestone"
+    val swingx = "org.swinglabs" % "swingx" % "1.0"
+    val swingxWs = "org.swinglabs" % "swingx-ws" % "1.0"
     val xmlApisExt = "xml-apis" % "xml-apis-ext" % "latest.milestone"
-    val jxl = "net.sourceforge.jexcelapi" % "jxl" % "2.6.12"
-    val javaxJson = "org.glassfish" % "javax.json" % "1.0.4"
-    val graphhopper = "com.graphhopper" % "graphhopper" % "0.7.0"
-    
+    val xcsp3 = "xcsp3"  % "xcsp3_2.11" % "1.0.0-SNAPSHOT"
     // Test libraries
     val junit = "junit" % "junit" % "latest.milestone" % Test
     val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.11.+" % Test
@@ -81,7 +82,7 @@ object OscarBuild extends Build {
 
     val testDeps = Seq(junit, scalaCheck, scalaTest)
   }
-  
+
   import BuildSettings._
   import Dependencies._
   import Resolvers._
@@ -92,12 +93,12 @@ object OscarBuild extends Build {
     base = file("."),
     settings =
       commonSettings ++
-      packSettings ++
-      unidocSettings ++
-      Seq(libraryDependencies ++= testDeps) :+
+        packSettings ++
+        unidocSettings ++
+        Seq(libraryDependencies ++= testDeps) :+
         (unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(oscarFzn, oscarFznCbls)),
-    aggregate = Seq(oscarAlgebra, oscarAlgo, oscarCbls, oscarCp, oscarDfo, oscarLinprog, oscarUtil, oscarVisual, oscarFzn, oscarFznCbls, oscarDes,oscarInvariants)
-    
+    aggregate = Seq(oscarAlgebra, oscarAlgo, oscarCbls, oscarCp, oscarCPXcsp3, oscarDfo, oscarLinprog, oscarUtil, oscarVisual, oscarFzn, oscarFznCbls, oscarDes, oscarInvariants)
+
   )
 
   lazy val oscarAlgebra = Project(
@@ -105,7 +106,7 @@ object OscarBuild extends Build {
     base = file("oscar-algebra"),
     settings =
       commonSettings ++
-      Seq(libraryDependencies ++= testDeps)
+        Seq(libraryDependencies ++= testDeps)
   )
 
   lazy val oscarAlgo = Project(
@@ -113,7 +114,7 @@ object OscarBuild extends Build {
     base = file("oscar-algo"),
     settings =
       commonSettings ++
-      Seq(libraryDependencies ++= testDeps),
+        Seq(libraryDependencies ++= testDeps),
     dependencies = Seq(oscarUtil, oscarVisual)
   )
 
@@ -122,12 +123,11 @@ object OscarBuild extends Build {
     base = file("oscar-cbls"),
     settings =
       commonSettings ++
-      packAutoSettings ++
-      Seq(
-      	resolvers ++= Seq(mvnrepository),
-        libraryDependencies ++= testDeps :+ scalaSwing :+ jxl :+ javaxJson :+ graphhopper,
-        packGenerateWindowsBatFile := false
-      ),
+        packAutoSettings ++
+        Seq(
+          libraryDependencies ++= testDeps :+ scalaSwing,
+          packGenerateWindowsBatFile := false
+        ),
     dependencies = Seq(oscarVisual)
   )
 
@@ -136,8 +136,19 @@ object OscarBuild extends Build {
     base = file("oscar-cp"),
     settings =
       commonSettings ++
-      Seq(libraryDependencies ++= testDeps :+ scalaParserCombinators),
+        Seq(libraryDependencies ++= testDeps :+ scalaParserCombinators),
     dependencies = Seq(oscarAlgo, oscarVisual)
+  )
+
+  lazy val oscarCPXcsp3 = Project(
+    id = "oscar-cp-xcsp3",
+    base = file("oscar-cp-xcsp3"),
+    settings =
+      commonSettings ++
+        Seq(
+          resolvers ++= Seq(ingi),
+          libraryDependencies ++= testDeps :+ xcsp3),
+    dependencies = Seq(oscarCp)
   )
 
   // Not included in the root build
@@ -146,7 +157,7 @@ object OscarBuild extends Build {
     base = file("oscar-des"),
     settings =
       commonSettings ++
-      Seq(libraryDependencies ++= testDeps :+ jsci),
+        Seq(libraryDependencies ++= testDeps :+ jsci),
     dependencies = Seq(oscarInvariants)
   )
 
@@ -155,7 +166,7 @@ object OscarBuild extends Build {
     base = file("oscar-dfo"),
     settings =
       commonSettings ++
-      Seq(libraryDependencies ++= testDeps :+ jcommon :+ jfreechart),
+        Seq(libraryDependencies ++= testDeps :+ jcommon :+ jfreechart),
     dependencies = Seq(oscarAlgebra, oscarAlgo, oscarVisual)
   )
 
@@ -165,7 +176,7 @@ object OscarBuild extends Build {
     base = file("oscar-fzn"),
     settings =
       commonSettings ++
-      Seq(libraryDependencies ++= testDeps :+ antlr4Runtime)
+        Seq(libraryDependencies ++= testDeps :+ antlr4Runtime)
   )
 
   lazy val oscarFznCbls = Project(
@@ -173,7 +184,7 @@ object OscarBuild extends Build {
     base = file("oscar-fzn-cbls"),
     settings =
       commonSettings ++
-      Seq(libraryDependencies ++= testDeps),
+        Seq(libraryDependencies ++= testDeps),
     dependencies = Seq(oscarCbls,oscarFzn)
   )
 
@@ -183,18 +194,18 @@ object OscarBuild extends Build {
     base = file("oscar-invariants"),
     settings =
       commonSettings ++
-      Seq(libraryDependencies ++= testDeps)
+        Seq(libraryDependencies ++= testDeps)
   )
 
-  lazy val oscarLinprog = Project( 
+  lazy val oscarLinprog = Project(
     id = "oscar-linprog",
     base = file("oscar-linprog"),
     settings =
       commonSettings ++
-      Seq(
-        resolvers ++= Seq(xypron, leadoperations, cogcomp),
-        libraryDependencies ++= testDeps :+ glpk :+ gurobi :+ lpsolve :+ scalaXml
-      ),
+        Seq(
+          resolvers ++= Seq(xypron, leadoperations, cogcomp),
+          libraryDependencies ++= testDeps :+ glpk :+ gurobi :+ lpsolve :+ scalaXml
+        ),
     dependencies = Seq(oscarAlgebra, oscarVisual)
   )
 
@@ -203,7 +214,7 @@ object OscarBuild extends Build {
     base = file("oscar-util"),
     settings =
       commonSettings ++
-      Seq(libraryDependencies ++= testDeps :+ scalaXml)
+        Seq(libraryDependencies ++= testDeps :+ scalaXml)
   )
 
   lazy val oscarVisual = Project(
@@ -211,7 +222,7 @@ object OscarBuild extends Build {
     base = file("oscar-visual"),
     settings =
       commonSettings ++
-      Seq(libraryDependencies ++= testDeps :+ jfreechart :+ swingx :+ swingxWs),
+        Seq(libraryDependencies ++= testDeps :+ jfreechart :+ swingx :+ swingxWs),
     dependencies = Seq(oscarUtil)
   )
 }

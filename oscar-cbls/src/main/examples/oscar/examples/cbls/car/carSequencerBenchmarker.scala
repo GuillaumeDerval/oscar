@@ -15,13 +15,13 @@ package oscar.examples.cbls.car
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.invariants.core.computation.CBLSIntVar
+import oscar.cbls.core.computation.CBLSIntVar
+import oscar.cbls.core.search.{SwapMove, Neighborhood}
+import oscar.cbls.lib.search.neighborhoods.RollNeighborhood
 import oscar.cbls.modeling.CBLSModel
-import oscar.cbls.objective.Objective
-import oscar.cbls.search.core.Neighborhood
-import oscar.cbls.search.{Benchmark, RollNeighborhood}
-import oscar.cbls.search.combinators.{DynAndThen, Profile}
-import oscar.cbls.search.move.SwapMove
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.lib.search.combinators.{DynAndThen, Profile}
+import oscar.cbls.util.Benchmark
 
 import scala.collection.immutable.SortedMap
 import scala.language.postfixOps

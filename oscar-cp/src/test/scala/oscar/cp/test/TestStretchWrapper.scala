@@ -30,7 +30,7 @@ class TestStretchWrapper extends FunSuite with ShouldMatchers  {
     var x = Array.fill(6)(CPIntVar(0 to 2)(cp))
     val automaton = stretchAutomaton(x, 2, 2)
     cp.add(regular(x,automaton))
-    cp.add(x(5) == 0)
+    cp.add(x(5) === 0)
     cp.isFailed should be(false)
     
     //  0-2  0-2  1-2  1-2  0   0

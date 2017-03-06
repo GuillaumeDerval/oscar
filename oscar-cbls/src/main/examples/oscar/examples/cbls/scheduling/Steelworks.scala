@@ -14,11 +14,11 @@
  ******************************************************************************/
 package oscar.examples.cbls.scheduling
 
-import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.scheduling.model.Activity
-import oscar.cbls.scheduling.model.Planning
-import oscar.cbls.scheduling.model.VariableResources
-import oscar.cbls.scheduling.solver.IFlatIRelax
+import oscar.cbls.core.computation.Store
+import oscar.cbls.business.scheduling.model.Activity
+import oscar.cbls.business.scheduling.model.Planning
+import oscar.cbls.business.scheduling.model.VariableResources
+import oscar.cbls.business.scheduling.solver.IFlatIRelax
 
 /**
  * A simple model of a steelworks.

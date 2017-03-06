@@ -1,4 +1,4 @@
-package oscar.examples.cbls.routing.visual.MatrixMap
+package oscar.cbls.visual.MatrixMap
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -15,34 +15,50 @@ package oscar.examples.cbls.routing.visual.MatrixMap
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import java.awt.Color
-import javax.swing.JOptionPane
+import java.awt._
+import java.awt.event.{ItemEvent, ItemListener}
+import javax.swing._
 
-import oscar.visual.shapes.VisualCircle
+import scala.List
 
 /**
   * Created by fabian on 23-02-16.
   */
-trait PickupAndDeliveryPoints extends  MatrixMap{
 
-  override def drawPoints(): Unit ={
-    var v = V
-    for(p <- pointsList){
-      if(v > 0){
-        val tempPoint = new VisualCircle(this,p._1.toInt,p._2.toInt,5)
-        tempPoint.innerCol_$eq(colorValues(v))
+trait RouteToDisplay extends RoutingMap{
+  var container:RoutingMatrixContainer = _
+
+  def initRouteToDisplay(container:RoutingMatrixContainer) {
+    this.container = container
+
+    val routesToDisplay:Array[Boolean] = Array.tabulate(vrp.v)(v =>false)
+
+    val vehicleSelectionPane = new JPanel()
+    vehicleSelectionPane.setLayout(new BoxLayout(vehicleSelectionPane, BoxLayout.Y_AXIS))
+    val allCheckBox = new JCheckBox("All")
+    allCheckBox.addItemListener(new ItemListener {
+      override def itemStateChanged(e: ItemEvent): Unit = {
+        for (c <- vehicleSelectionPane.getComponents) {
+          val box = c.asInstanceOf[JCheckBox]
+          box.setSelected(e.getStateChange == ItemEvent.SELECTED)
+        }
       }
-      else{
-        val tempPoint = new VisualCircle(this,p._1.toInt,p._2.toInt,4)
-        tempPoint.innerCol_$eq(Color.black)
-        tempPoint.toolTip_=(getPointInformation(p))
-      }
-      v -= 1
+    })
+    vehicleSelectionPane.add(allCheckBox)
+    for (i <- 0 until vrp.v) {
+      val checkBox = new JCheckBox("Vehicle : " + i)
+      checkBox.addItemListener(new ItemListener {
+        override def itemStateChanged(e: ItemEvent): Unit = {
+          routesToDisplay(i) = e.getStateChange == ItemEvent.SELECTED
+          setRouteToDisplay(container.allRoutes.map(x => if (routesToDisplay(container.allRoutes.indexOf(x))) x else List.empty))
+        }
+      })
+      vehicleSelectionPane.add(checkBox)
     }
+    container.add(vehicleSelectionPane, BorderLayout.EAST)
   }
 
-  def getPointInformation(point:(Int,Int)): String ={
-    "Some informations about the point"
+  override def setRouteToDisplay(rtd: Array[List[Int]]): Unit = {
+    super.setRouteToDisplay(rtd)
   }
-
 }

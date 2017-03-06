@@ -15,19 +15,20 @@ package oscar.cbls.test.routingS
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.invariants.lib.routing.RouteSuccessorAndPredecessors
-import oscar.cbls.invariants.lib.seq.Size
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.propagation.ErrorChecker
+import oscar.cbls.lib.invariant.routing.RouteSuccessorAndPredecessors
+import oscar.cbls.lib.invariant.seq.Size
 import oscar.cbls.modeling.Algebra._
-import oscar.cbls.objective.Objective
-import oscar.cbls.routing.seq.model._
-import oscar.cbls.routing.seq.neighborhood._
-import oscar.cbls.search.combinators.{BestSlopeFirst, Profile}
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.business.routing.model._
+import oscar.cbls.business.routing.neighborhood._
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
 class MySimpleRoutingWithUnroutedPointsAndNext(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int, pointsList:Array[(Int,Int)] = null)
   extends VRP(n,v,m,maxPivot)
   with TotalConstantDistance with ClosestNeighbors with RoutedAndUnrouted
-  with RoutingMapDisplay
+  //with RoutingMapDisplay
 {
 
   setSymmetricDistanceMatrix(symmetricDistance)
@@ -51,8 +52,8 @@ class MySimpleRoutingWithUnroutedPointsAndNext(n:Int,v:Int,symmetricDistance:Arr
   this.addToStringInfo(() => "next:" + next.map(_.value).mkString(","))
   this.addToStringInfo(() => "prev:" + prev.map(_.value).mkString(","))
 
-  if(pointsList != null)
-    setPointsList(pointsList)
+  //if(pointsList != null)
+    //initializeRoutingMap(Array.tabulate(n)(node => (pointsList(node)._1.toDouble, pointsList(node)._2.toDouble)),this,1000)
 
 
 }
@@ -68,7 +69,7 @@ object TestNext extends App{
 
   val (symmetricDistanceMatrix,pointsList) = RoutingMatrixGenerator(n)
   //  println("restrictions:" + restrictions)
-  val model = new Store()
+  val model = new Store(checker = Some(new ErrorChecker()))
 
   val myVRP = new MySimpleRoutingWithUnroutedPointsAndNext(n,v,symmetricDistanceMatrix,model,maxPivotPerValuePercent,pointsList)
 
@@ -85,13 +86,12 @@ object TestNext extends App{
 
   def threeOpt(k:Int, breakSym:Boolean) = Profile(new ThreeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
-  val search = (BestSlopeFirst(List(routeUnroutedPoint2, routeUnroutedPoint, onePtMove(10),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true))
+  val search = (BestSlopeFirst(List(routeUnroutedPoint2, routeUnroutedPoint, onePtMove(10),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
 
  // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10) guard (() => myVRP.unrouted.value.size != 0)),10)) exhaust BestSlopeFirst(List(onePtMove(20),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
 
   search.verbose = 1
   //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
-  search.paddingLength = 100
 
   print("Doing all moves ...")
 
@@ -99,7 +99,4 @@ object TestNext extends App{
   search.doAllMoves(obj = myVRP.obj)
   model.propagate()
   println(search.profilingStatistics)
-
-
-
 }

@@ -30,8 +30,8 @@ object DivisibleBy9Through1 extends CPModel with App {
 
   add(allDifferent(digits), Strong)
   for (i <- 1 to 9) {
-    add(sum(0 until i)(j => digits(j) * coefs.drop(9 - i)(j)) == numbers(i - 1))
-    add(numbers(i - 1) == divisors(i - 1) * i)
+    add(sum(0 until i)(j => digits(j) * coefs.drop(9 - i)(j)) === numbers(i - 1))
+    add(numbers(i - 1) === divisors(i - 1) * i)
   }
 
   search(binaryFirstFail(digits))

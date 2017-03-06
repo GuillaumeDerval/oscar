@@ -68,7 +68,7 @@ object SetCoveringSkiena extends CPModel with App {
       }
       // number of used elements
      add(
-             tot_elements == 
+             tot_elements ===
              sum( for{i <- 0 until num_sets
                       j <- 0 until num_elements
                 } yield x(i) * belongs(i)(j))

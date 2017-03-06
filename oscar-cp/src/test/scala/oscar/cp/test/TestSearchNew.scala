@@ -116,4 +116,18 @@ class TestSearchNew extends FunSuite with ShouldMatchers {
     cp.start().nFails should be(nFails)
   }
 
+  test("test number of push") {
+    val cp = CPSolver()
+    val x = Array.fill(4)(CPIntVar(0 to 1)(cp))
+    cp.pushState()
+    x.foreach(y => cp.add(y === 0))
+    cp.search {
+      binaryFirstFail(x, _.min)
+    }
+    cp.start()
+    cp.start(nSols = 1)
+    cp.pop()
+    x.foreach(_.size == 2)
+  }
+
 }

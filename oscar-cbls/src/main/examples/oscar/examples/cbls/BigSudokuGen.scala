@@ -21,16 +21,16 @@
 
 package oscar.examples.cbls
 
-import scala.swing.SimpleSwingApplication
-import scala.swing.MainFrame
-import scala.swing.GridPanel
-import scala.swing.Label
-import javax.swing.border.LineBorder
 import java.awt.Color
-import oscar.cbls.search._
-import oscar.cbls.constraints.core._
-import oscar.cbls.constraints.lib.global.AllDiff
-import oscar.cbls.invariants.core.computation._
+import javax.swing.border.LineBorder
+
+import oscar.cbls.core.computation._
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.lib.constraint.AllDiff
+import oscar.cbls.lib.search.LinearSelectorTrait
+import oscar.cbls.util.StopWatch
+
+import scala.swing.{GridPanel, Label, MainFrame, SimpleSwingApplication}
 
 /**
  * Sudoku generator on NxN grids where N is a Square
@@ -41,7 +41,7 @@ import oscar.cbls.invariants.core.computation._
  * - best delta is used and switch cells are added to tabu
  * @author christophe.ponsard@cetic.be
  * */
-object BigSudokuGen extends SimpleSwingApplication with SearchEngineTrait with StopWatch {
+object BigSudokuGen extends SimpleSwingApplication with LinearSelectorTrait with StopWatch {
 
   val C:Int=4
   val N:Int=C*C

@@ -15,11 +15,11 @@ package oscar.examples.cbls.flowShop
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.invariants.core.computation.{CBLSSetVar, CBLSIntConst, CBLSIntVar, IntValue}
-import oscar.cbls.invariants.lib.logic.SelectLESetQueue
+import oscar.cbls.core.computation.{CBLSSetVar, CBLSIntConst, CBLSIntVar, IntValue}
+import oscar.cbls.core.search.ShiftMove
+import oscar.cbls.lib.invariant.logic.SelectLESetQueue
 import oscar.cbls.modeling.CBLSModel
-import oscar.cbls.objective.Objective
-import oscar.cbls.search.move.ShiftMove
+import oscar.cbls.core.objective.Objective
 import oscar.examples.cbls.flowShop.flowShopShiftRestart._
 
 object flowShop  extends CBLSModel with App {

@@ -17,15 +17,15 @@
  * @author Jean-Noël Monette
  */
 package oscar.flatzinc.cbls.support
-import oscar.cbls.invariants.core.computation.CBLSIntVar
-import oscar.cbls.constraints.core.ConstraintSystem
-import oscar.cbls.objective.{ Objective => CBLSObjective }
-import oscar.cbls.invariants.lib.logic.Cluster
-import oscar.cbls.invariants.lib.set.Cardinality
-import oscar.cbls.objective.{Objective => CBLSObjective}
+import oscar.cbls.core.computation.CBLSIntVar
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.core.objective.{ Objective => CBLSObjective }
+import oscar.cbls.lib.invariant.logic.Cluster
+import oscar.cbls.lib.invariant.set.Cardinality
+import oscar.cbls.core.objective.{Objective => CBLSObjective}
 import oscar.cbls.search.SearchEngine
 import scala.collection.mutable.{Map => MMap}
-import oscar.cbls.invariants.core.computation.IntValue
+import oscar.cbls.core.computation.IntValue
 import java.util.Arrays
 
 

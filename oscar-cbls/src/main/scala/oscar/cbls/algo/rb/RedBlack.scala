@@ -31,7 +31,7 @@ private object RedBlackTreeMapLib{
   }
 
   // balance: Balance a tree with balanced subtrees.
-  def balance[V] (c : Boolean) (l : RedBlackTreeMap[V]) (k : Int) (v : Option[V]) (r : RedBlackTreeMap[V]) : RedBlackTreeMap[V] = {
+  def balance[V] (c : Boolean,l : RedBlackTreeMap[V],k : Int,v : Option[V],r : RedBlackTreeMap[V]) : RedBlackTreeMap[V] = {
     (c,l,k,v,r) match {
       case (B,T(R,T(R,a,xK,xV,b),yK,yV,c),zK,zV,d) => T(R,T(B,a,xK,xV,b),yK,yV,T(B,c,zK,zV,d))
       case (B,T(R,a,xK,xV,T(R,b,yK,yV,c)),zK,zV,d) => T(R,T(B,a,xK,xV,b),yK,yV,T(B,c,zK,zV,d))
@@ -42,7 +42,7 @@ private object RedBlackTreeMapLib{
   }
 }
 
-import RedBlackTreeMapLib._
+import oscar.cbls.algo.rb.RedBlackTreeMapLib._
 
 //must use trait here because of specialization, a trait is needed here.
 // we ensure that this trait is compiled into a java interface by avoiding method code in the trait.
@@ -72,7 +72,7 @@ trait RedBlackTreeMap[@specialized(Int) V]{
 
   def biggestLowerOrEqual(k:Int):Option[(Int,V)]
 
-  protected[rb] def getBiggestLowerAcc(k:Int, bestoFar:(Int,V)):Option[(Int,V)]
+  protected[rb] def getBiggestLowerAcc(k:Int, bestKSoFar:Int,bestVSoFar:V):(Int,V)
 
   def smallestBiggerOrEqual(k:Int):Option[(Int,V)]
 
@@ -80,9 +80,9 @@ trait RedBlackTreeMap[@specialized(Int) V]{
 
   def biggest:Option[(Int,V)]
 
-  def biggestPosition:Option[RBTMPosition[V]]
+  def biggestPosition:Option[RedBlackTreeMapExplorer[V]]
 
-  def smallestPosition:Option[RBTMPosition[V]]
+  def smallestPosition:Option[RedBlackTreeMapExplorer[V]]
 
   protected[rb] def getSmallestBiggerAcc(k:Int, bestSoFar:(Int,V)):Option[(Int,V)]
 
@@ -103,12 +103,31 @@ trait RedBlackTreeMap[@specialized(Int) V]{
   def keys:List[Int]
   protected [rb] def keysAcc(keysAfter:List[Int]):List[Int]
 
-  def positionOf(k: Int):Option[RBTMPosition[V]]
-  protected[rb] def positionOfAcc(k:Int,positionAcc:QList[(T[V],Boolean)]):Option[RBTMPosition[V]]
+  def positionOf(k: Int):Option[RedBlackTreeMapExplorer[V]]
+  protected[rb] def positionOfAcc(k:Int,positionAcc:QList[(T[V],Boolean)]):Option[RedBlackTreeMapExplorer[V]]
+
+  def anyValue:Option[V]
+
+  /**
+   * updates a set of values in the tree, designated by an interval on the keys
+   * there is a requirement that the deltaKey must not transform a key in the interval in such a way
+   * that it becomes bigger or smaller than a key out of te interval if it was not the case before the transformation
+   * this is to keep an identical structure of the tree, and maintain the same r/b colouring and balancing of the tree.
+   * this ensures that this method is somehow fast.
+   *
+   * @param fromKeyIncluded the start of the interval defining the set of keys to update
+   * @param toKeyIncluded the end of the interval defining the set of keys to update
+   * @param deltaKey the delata to apply to the keys in the interval
+   * @param transform the transform to apply on the values stored in the transformed interval
+   * @return a new updated balanced rb tree
+   */
+  def update(fromKeyIncluded:Int,toKeyIncluded:Int,deltaKey:Int,transform:(V=>V)):RedBlackTreeMap[V]
 }
 
 // A leaf node.
 case class L[@specialized(Int) V]() extends RedBlackTreeMap[V]  {
+
+  def anyValue:Option[V] = None
 
   def get(k : Int) : Option[V] = None
 
@@ -128,7 +147,7 @@ case class L[@specialized(Int) V]() extends RedBlackTreeMap[V]  {
 
   def biggestLowerOrEqual(k:Int):Option[(Int,V)] = None
 
-  override protected[rb] def getBiggestLowerAcc(k:Int, bestSoFar:(Int,V)) = Some(bestSoFar)
+  override protected[rb] def getBiggestLowerAcc(k:Int, bestKSoFar:Int,bestVSoFar:V) = (bestKSoFar,bestVSoFar)
 
   override def smallestBiggerOrEqual(k: Int):Option[(Int,V)] = None
 
@@ -141,7 +160,7 @@ case class L[@specialized(Int) V]() extends RedBlackTreeMap[V]  {
   protected [rb] def contentAcc(valuesAfter:List[(Int,V)]):List[(Int,V)] = valuesAfter
   protected [rb] def keysAcc(keysAfter:List[Int]):List[Int] = keysAfter
 
-  protected[rb] override def positionOfAcc(k : Int, positionAcc : QList[(T[V],Boolean)]) : Option[RBTMPosition[V]] = None
+  protected[rb] override def positionOfAcc(k : Int, positionAcc : QList[(T[V],Boolean)]) : Option[RedBlackTreeMapExplorer[V]] = None
 
 
   //duplicates
@@ -151,7 +170,7 @@ case class L[@specialized(Int) V]() extends RedBlackTreeMap[V]  {
 
   override def keys : List[Int] = List.empty
 
-  override def positionOf(k: Int):Option[RBTMPosition[V]] = None
+  override def positionOf(k: Int):Option[RedBlackTreeMapExplorer[V]] = None
 
   // insert: Insert a value at a key.
   override def insert (k : Int, v : V) =  T(B, L(), k , Some(v), L())
@@ -163,13 +182,39 @@ case class L[@specialized(Int) V]() extends RedBlackTreeMap[V]  {
 
   override def biggest:Option[(Int,V)] = None
 
-  override def biggestPosition:Option[RBTMPosition[V]] = None
+  override def biggestPosition:Option[RedBlackTreeMapExplorer[V]] = None
 
-  override def smallestPosition:Option[RBTMPosition[V]] = None
+  override def smallestPosition:Option[RedBlackTreeMapExplorer[V]] = None
+
+  override def update(fromKeyIncluded : Int, toKeyIncluded : Int, deltaKey : Int, transform : (V) => V) : RedBlackTreeMap[V] = this
+}
+
+object T{
+  def unapply[V](t:T[V]):Option[(Boolean, RedBlackTreeMap[V], Int, Option[V], RedBlackTreeMap[V])] = {
+    t.unapply
+  }
+
+  def apply[V](c : Boolean, l : RedBlackTreeMap[V], k : Int, v : Option[V], r : RedBlackTreeMap[V]) =
+    new T(c,l,k,v,r)
 }
 
 // A tree node.
-case class T[@specialized(Int) V](c : Boolean, l : RedBlackTreeMap[V], k : Int, v : Option[V], r : RedBlackTreeMap[V]) extends RedBlackTreeMap[V] {
+class T[@specialized(Int) V](private[this]val c : Boolean,
+                             private[this] val l : RedBlackTreeMap[V],
+                             private[this] val k : Int,
+                             private[this] val v : Option[V],
+                             private[this] val r : RedBlackTreeMap[V])
+  extends RedBlackTreeMap[V] {
+
+  def anyValue:Option[V] = v
+
+  def unapply = Some(c,l,k,v,r)
+
+  def pk = k
+  def pl = l
+  def pr = r
+  def pv = v
+
   assert(v.nonEmpty)
 
   lazy val mSize = l.size + r.size + 1
@@ -195,30 +240,30 @@ case class T[@specialized(Int) V](c : Boolean, l : RedBlackTreeMap[V], k : Int, 
 
   def biggestLowerOrEqual(k:Int):Option[(Int,V)] = {
     if (k < this.k) l.biggestLowerOrEqual(k)
-    else if (this.k < k) r.getBiggestLowerAcc(k,(this.k,v.head))
-    else Some(k,v.head)
+    else if (this.k < k) Some(r.getBiggestLowerAcc(k,this.k,v.get))
+    else Some(k,v.get)
   }
 
-  override protected[rb] def getBiggestLowerAcc(k:Int, bestSoFar:(Int,V)):Option[(Int,V)] = {
-    if (k < this.k) l.getBiggestLowerAcc(k, bestSoFar)
-    else if (this.k < k) r.getBiggestLowerAcc(k, (this.k, v.head))
-    else Some(k,v.head)
+  override protected[rb] def getBiggestLowerAcc(k:Int, bestKSoFar:Int, bestVSoFar:V):(Int,V) = {
+    if (k < this.k) l.getBiggestLowerAcc(k, bestKSoFar, bestVSoFar)
+    else if (this.k < k) r.getBiggestLowerAcc(k, this.k, v.get)
+    else (k,v.get)
   }
 
   override def smallestBiggerOrEqual(k: Int):Option[(Int,V)] = {
-    if (k < this.k) l.getSmallestBiggerAcc(k, (this.k, v.head))
+    if (k < this.k) l.getSmallestBiggerAcc(k, (this.k, v.get))
     else if (this.k < k) r.smallestBiggerOrEqual(k)
-    else Some(k,v.head)
+    else Some(k,v.get)
   }
 
   override protected[rb] def getSmallestBiggerAcc(k: Int, bestSoFar: (Int,V)):Option[(Int,V)] = {
-    if (k < this.k) l.getSmallestBiggerAcc(k, (this.k, v.head))
+    if (k < this.k) l.getSmallestBiggerAcc(k, (this.k, v.get))
     else if (this.k < k) r.getSmallestBiggerAcc(k, bestSoFar)
-    else Some(k,v.head)
+    else Some(k,v.get)
   }
 
   override protected[rb] def modWith (k : Int, f : (Int, Option[V]) => Option[V]) : RedBlackTreeMap[V] = {
-    if (k <  this.k) balance (c) (l.modWith(k,f)) (this.k) (this.v) (r)
+    if (k <  this.k) balance(c,l.modWith(k,f),this.k,this.v,r)
     else if (k == this.k) {
       f(this.k, this.v) match{
         case None =>
@@ -233,20 +278,20 @@ case class T[@specialized(Int) V](c : Boolean, l : RedBlackTreeMap[V], k : Int, 
         case x => T(c, l, k, x, r)
       }
     }else {
-      balance(c)(l)(this.k)(this.v)(r.modWith(k, f))
+      balance(c,l,this.k,this.v,r.modWith(k, f))
     }
   }
 
-  override protected[rb] def valuesAcc(valuesAfter : List[V]) : List[V] = l.valuesAcc(v.head :: r.valuesAcc(valuesAfter))
+  override protected[rb] def valuesAcc(valuesAfter : List[V]) : List[V] = l.valuesAcc(v.get :: r.valuesAcc(valuesAfter))
 
-  protected [rb] def contentAcc(valuesAfter:List[(Int,V)]):List[(Int,V)] = l.contentAcc((k,v.head) :: r.contentAcc(valuesAfter))
+  protected [rb] def contentAcc(valuesAfter:List[(Int,V)]):List[(Int,V)] = l.contentAcc((k,v.get) :: r.contentAcc(valuesAfter))
 
   protected [rb] def keysAcc(keysAfter:List[Int]):List[Int] = l.keysAcc(k :: r.keysAcc(keysAfter))
 
-  protected[rb] override def positionOfAcc(k : Int, positionAcc : QList[(T[V],Boolean)]) : Option[RBTMPosition[V]] = {
+  protected[rb] override def positionOfAcc(k : Int, positionAcc : QList[(T[V],Boolean)]) : Option[RedBlackTreeMapExplorer[V]] = {
     if (k < this.k) l.positionOfAcc(k, QList((this,false),positionAcc))
     else if (k > this.k) r.positionOfAcc(k, QList((this,true),positionAcc))
-    else Some(new RBTMPosition[V](QList((this,true),positionAcc)))
+    else Some(new RedBlackTreeMapExplorer[V](QList((this,true),positionAcc)))
   }
 
   def hasLeft:Boolean = l.isInstanceOf[T[V]]
@@ -259,7 +304,7 @@ case class T[@specialized(Int) V](c : Boolean, l : RedBlackTreeMap[V], k : Int, 
 
   override def keys : List[Int] = keysAcc(List.empty)
 
-  override def positionOf(k: Int):Option[RBTMPosition[V]] = positionOfAcc(k:Int,null)
+  override def positionOf(k: Int):Option[RedBlackTreeMapExplorer[V]] = positionOfAcc(k:Int,null)
 
   // insert: Insert a value at a key.
   override def insert (k : Int, v : V) = blacken(modWith(k, (_,_) => Some(v)))
@@ -271,20 +316,51 @@ case class T[@specialized(Int) V](c : Boolean, l : RedBlackTreeMap[V], k : Int, 
 
   override def biggest:Option[(Int,V)] = biggestLowerOrEqual(Int.MaxValue)
 
-  override def biggestPosition:Option[RBTMPosition[V]] = {
+  override def biggestPosition:Option[RedBlackTreeMapExplorer[V]] = {
     biggestLowerOrEqual(Int.MaxValue) match{
       case Some((k,_)) => positionOf(k)
       case None => None
     }
   }
 
-  override def smallestPosition:Option[RBTMPosition[V]] = {
+  override def smallestPosition:Option[RedBlackTreeMapExplorer[V]] = {
     smallestBiggerOrEqual(Int.MinValue) match{
       case Some((k,_)) => positionOf(k)
       case None => None
     }
   }
 
+  override def update(fromKeyIncluded : Int, toKeyIncluded : Int, deltaKey : Int, transform : (V) => V) : RedBlackTreeMap[V] = {
+    val newLeft = if(fromKeyIncluded < k) {
+      l.update(fromKeyIncluded, toKeyIncluded, deltaKey, transform)
+    }else{
+      l
+    }
+    val newRight = if(k < toKeyIncluded){
+      r.update(fromKeyIncluded,toKeyIncluded,deltaKey,transform)
+    }else{
+      r
+    }
+    if(fromKeyIncluded <= k && k <= toKeyIncluded){
+      //this one must be transformed as well
+      new T(c,
+        newLeft,
+        k + deltaKey,
+        Some(transform(v.get)),
+        newRight)
+    }else{
+      //this one does not need transform
+      if(newLeft == l && newRight == r){
+        this
+      }else{
+        new T(c,
+          newLeft,
+          k ,
+          v,
+          newRight)
+      }
+    }
+  }
 }
 
 // A helper object.
@@ -304,14 +380,14 @@ object RedBlackTreeMap {
 
 
   /**
-    * make the red black tree out of already sorted couples (key,value)
-    * they must be sorted by increasing order of key, and a key can only be present once.
-    * There is no check of these properties
-    * This is O(n); thus faster than a n*log(n) if you were building it from unsorted pairs
-    * @param args
-    * @tparam V
-    * @return
-    */
+   * make the red black tree out of already sorted couples (key,value)
+   * they must be sorted by increasing order of key, and a key can only be present once.
+   * There is no check of these properties
+   * This is O(n); thus faster than a n*log(n) if you were building it from unsorted pairs
+   * @param args
+   * @tparam V
+   * @return
+   */
   def makeFromSorted[@specialized(Int) V](args:Iterable [(Int,V)]): RedBlackTreeMap[V] = {
     //root is to be black, beside alternate red and black
     val a = args.toArray
@@ -319,18 +395,43 @@ object RedBlackTreeMap {
     else myMakeFromSorted(a,0,a.length-1,false)
   }
 
+  def makeFromSortedContinuousArray[@specialized V](args:Array[V]):RedBlackTreeMap[V] = {
+    if(args.size == 0) RedBlackTreeMap.empty [V]
+    else myMakeFromContinuousSorted(args, 0, args.length - 1, false)
+  }
+
+  private def myMakeFromContinuousSorted[@specialized(Int) V](args:Array[V],fromIncluded:Int,toIncluded:Int,targetIsRed:Boolean): RedBlackTreeMap[V] = {
+    //root is to be black, beside alternate red and black
+    if(fromIncluded == toIncluded){
+      val value = args(fromIncluded)
+      T(targetIsRed, L(),  fromIncluded, Some(value), L())
+    }else if (fromIncluded + 1 == toIncluded) {
+      val valueL = args(fromIncluded)
+      val valueH = args(toIncluded)
+      T(targetIsRed, T(!targetIsRed, L(),  fromIncluded, Some(valueL), L()),  toIncluded, Some(valueH), L())
+    }else{
+      //there is a middle point
+      val middlePoint = (fromIncluded + toIncluded)/2
+      val left = myMakeFromContinuousSorted(args,fromIncluded,middlePoint-1,!targetIsRed)
+      val right = myMakeFromContinuousSorted(args,middlePoint+1,toIncluded,!targetIsRed)
+      val value = args(middlePoint)
+      T(targetIsRed, left,  middlePoint, Some(value), right)
+    }
+  }
+
+
   /**
-    * make the red black tree out of already sorted couples (key,value)
-    * they must be sorted by increasing order of key, and a key can only be present once.
-    * There is no check of these properties
-    * This is O(n); thus faster than a n*log(n) if you were building it from unsorted pairs
-    * @param args
-    * @tparam V
-    * @return
-    */
+   * make the red black tree out of already sorted couples (key,value)
+   * they must be sorted by increasing order of key, and a key can only be present once.
+   * There is no check of these properties
+   * This is O(n); thus faster than a n*log(n) if you were building it from unsorted pairs
+   * @param args
+   * @tparam V
+   * @return
+   */
   def makeFromSortedArray[@specialized(Int) V](args:Array[(Int,V)]): RedBlackTreeMap[V] = {
     //root is to be black, beside alternate red and black
-    if(args.length <=3) this.apply(args)
+    if(args.length <=1) this.apply(args)
     else myMakeFromSorted(args,0,args.length-1,false)
   }
 
@@ -356,13 +457,13 @@ object RedBlackTreeMap {
 }
 
 //le booléen: true le noeud a déjà été montré (dans un parcour gauche à droite)
-class RBTMPosition[@specialized(Int) V](position:QList[(T[V],Boolean)]){
-  def key:Int = position.head._1.k
-  def value:V = position.head._1.v.head
+class RedBlackTreeMapExplorer[@specialized(Int) V](position:QList[(T[V],Boolean)]){
+  def key:Int = position.head._1.pk
+  def value:V = position.head._1.pv.get
 
   override def toString : String = "RBPosition(key:" + key + " value:" + value + " stack:" + position.toList + ")"
 
-  def next:Option[RBTMPosition[V]] = {
+  def next:Option[RedBlackTreeMapExplorer[V]] = {
 
     def unstack1(position:QList[(T[V],Boolean)]):QList[(T[V],Boolean)] = {
       if (position == null) return null
@@ -378,22 +479,22 @@ class RBTMPosition[@specialized(Int) V](position:QList[(T[V],Boolean)]){
 
     def descendToLeftMost(position:QList[(T[V],Boolean)]):QList[(T[V],Boolean)] = {
       val headTree = position.head._1
-      headTree.l match{
+      headTree.pl match{
         case t:T[V] => descendToLeftMost(QList((t,false),position))
         case _ => QList((headTree,true),position.tail)
       }
     }
 
-    val newStack = position.head._1.r match {
+    val newStack = position.head._1.pr match {
       case t : T[V] => descendToLeftMost(QList((t,false),position))
       case _ => unstack1(position)
     }
 
     if(newStack == null) None
-    else Some(new RBTMPosition[V](newStack))
+    else Some(new RedBlackTreeMapExplorer[V](newStack))
   }
 
-  def prev:Option[RBTMPosition[V]] = {
+  def prev:Option[RedBlackTreeMapExplorer[V]] = {
     def unstack1(position:QList[(T[V],Boolean)]):QList[(T[V],Boolean)] = {
       if (position == null) return null
       val head = position.head
@@ -408,21 +509,21 @@ class RBTMPosition[@specialized(Int) V](position:QList[(T[V],Boolean)]){
 
     def descendToRightMost(position:QList[(T[V],Boolean)]):QList[(T[V],Boolean)] = {
       val headTree = position.head._1
-      headTree.r match{
+      headTree.pr match{
         case t:T[V] => descendToRightMost(QList((t,true),position))
         case _ => QList((headTree,true),position.tail)
       }
     }
 
-    val newStack = position.head._1.l match {
+    val newStack = position.head._1.pl match {
       case t : T[V] => descendToRightMost(QList((t,true),QList((position.head._1,false),position.tail)))
       case _ => unstack1(position.tail)
     }
 
     if(newStack == null) None
     else {
-      assert(new RBTMPosition[V](newStack).next.head.key == this.key, "prev.next.key != this.key; this:" + this + " prev:" + new RBTMPosition[V](newStack))
-      Some(new RBTMPosition[V](newStack))
+      assert(new RedBlackTreeMapExplorer[V](newStack).next.head.key == this.key, "prev.next.key != this.key; this:" + this + " prev:" + new RedBlackTreeMapExplorer[V](newStack))
+      Some(new RedBlackTreeMapExplorer[V](newStack))
     }
   }
 }

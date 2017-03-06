@@ -23,15 +23,12 @@
 
 package oscar.cbls.test.routing
 
-import scala.language.reflectiveCalls
-
-import org.scalatest.{Matchers, FunSuite}
-import org.scalatest.matchers.ShouldMatchers
-
-import oscar.cbls.invariants.core.computation.CBLSIntVar
-import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.invariants.lib.logic.Routes
+import org.scalatest.{FunSuite, Matchers}
+import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.lib.invariant.logic.Routes
 import oscar.cbls.modeling.Algebra._
+
+import scala.language.reflectiveCalls
 
 class TestRouteTwoVehicles extends FunSuite with Matchers {
 

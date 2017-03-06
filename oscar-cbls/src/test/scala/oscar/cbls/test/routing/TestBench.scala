@@ -15,6 +15,8 @@ package oscar.cbls.test.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import oscar.cbls.core.search.{MoveFound, NoMoveFound}
+
 import scala.math.pow
 import scala.math.round
 import scala.math.sqrt
@@ -24,30 +26,28 @@ import org.scalatest.FunSuite
 import org.scalatest.Matchers
 import org.scalatest.prop.Checkers
 
-import oscar.cbls.invariants.core.computation.SetValue.toFunction
-import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.objective.Objective
-import oscar.cbls.routing.model.ClosestNeighbors
-import oscar.cbls.routing.model.HopClosestNeighbors
-import oscar.cbls.routing.model.HopDistanceAsObjectiveTerm
-import oscar.cbls.routing.model.PenaltyForUnrouted
-import oscar.cbls.routing.model.PositionInRouteAndRouteNr
-import oscar.cbls.routing.model.Predecessors
-import oscar.cbls.routing.model.RoutedAndUnrouted
-import oscar.cbls.routing.model.UnroutedImpl
-import oscar.cbls.routing.model.VRP
-import oscar.cbls.routing.model.VRPObjective
-import oscar.cbls.routing.neighborhood.InsertPointUnroutedFirst
-import oscar.cbls.routing.neighborhood.OnePointMove
-import oscar.cbls.routing.neighborhood.OnePointMoveMove
-import oscar.cbls.routing.neighborhood.Swap
-import oscar.cbls.routing.neighborhood.SwapMove
-import oscar.cbls.routing.neighborhood.ThreeOpt
-import oscar.cbls.routing.neighborhood.ThreeOptMove
-import oscar.cbls.routing.neighborhood.TwoOpt
-import oscar.cbls.routing.neighborhood.TwoOptMove
-import oscar.cbls.search.core.MoveFound
-import oscar.cbls.search.core.NoMoveFound
+import oscar.cbls.core.computation.SetValue.toFunction
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.business.routing.legacy.model.ClosestNeighbors
+import oscar.cbls.business.routing.legacy.model.HopClosestNeighbors
+import oscar.cbls.business.routing.legacy.model.HopDistanceAsObjectiveTerm
+import oscar.cbls.business.routing.legacy.model.PenaltyForUnrouted
+import oscar.cbls.business.routing.legacy.model.PositionInRouteAndRouteNr
+import oscar.cbls.business.routing.legacy.model.Predecessors
+import oscar.cbls.business.routing.legacy.model.RoutedAndUnrouted
+import oscar.cbls.business.routing.legacy.model.UnroutedImpl
+import oscar.cbls.business.routing.legacy.model.VRP
+import oscar.cbls.business.routing.legacy.model.VRPObjective
+import oscar.cbls.business.routing.legacy.neighborhood.InsertPointUnroutedFirst
+import oscar.cbls.business.routing.legacy.neighborhood.OnePointMove
+import oscar.cbls.business.routing.legacy.neighborhood.OnePointMoveMove
+import oscar.cbls.business.routing.legacy.neighborhood.Swap
+import oscar.cbls.business.routing.legacy.neighborhood.SwapMove
+import oscar.cbls.business.routing.legacy.neighborhood.ThreeOpt
+import oscar.cbls.business.routing.legacy.neighborhood.ThreeOptMove
+import oscar.cbls.business.routing.legacy.neighborhood.TwoOpt
+import oscar.cbls.business.routing.legacy.neighborhood.TwoOptMove
 
 object RandomInsert {
   /**

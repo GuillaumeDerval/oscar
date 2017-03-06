@@ -45,11 +45,11 @@ object ParcelShipment extends CPModel with App {
   val totDist = CPIntVar(0 to distance.flatten.sum)
   val predStart = CPIntVar(0 until n)
 
-  add(load(start) == 0) // start initially empty
+  add(load(start) === 0) // start initially empty
   for (i <- 0 until n) {
     add(elementVar(load, succ(i), load(i) + toLoad(succ(i))))
   }
-  add(sum(0 until n)(i => distance(i)(succ(i))) == totDist)
+  add(sum(0 until n)(i => distance(i)(succ(i))) === totDist)
   add(circuit(succ), Strong)
 
   var currNode = 0
@@ -62,14 +62,14 @@ object ParcelShipment extends CPModel with App {
         val v = x.min
         val parent = currNode
         branch {
-          post(x == v)
+          post(x === v)
           currNode += 1
           val nodeId = currNode
           tree.createBranch(parent, currNode, currNode.toString, "left") {
             println("left in node" + nodeId)
           }
         } {
-          post(x != v)
+          post(x !== v)
           currNode += 1
           val nodeId = currNode
           tree.createBranch(parent, currNode, currNode.toString, "right") {

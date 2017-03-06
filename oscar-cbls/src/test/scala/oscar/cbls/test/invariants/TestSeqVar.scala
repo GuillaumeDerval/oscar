@@ -16,9 +16,9 @@ package oscar.cbls.test.invariants
   ******************************************************************************/
 
 import oscar.cbls.algo.seq.functional.{IntSequence, UniqueIntSequence}
-import oscar.cbls.invariants.core.computation.{IntValue, SeqValue, Store, CBLSSeqVar}
-import oscar.cbls.invariants.core.propagation.ErrorChecker
-import oscar.cbls.invariants.lib.seq.{PositionsOf, Content, Size}
+import oscar.cbls.core.computation.{IntValue, SeqValue, Store, CBLSSeqVar}
+import oscar.cbls.core.propagation.ErrorChecker
+import oscar.cbls.lib.invariant.seq.{PositionsOf, Content, Size}
 
 import scala.collection.immutable.SortedSet
 
@@ -65,7 +65,7 @@ object TestSeqVar extends App{
   require(5 == size2.value)
 
   println("\n\n")
-  a.rollbackToCurrentCheckpoint(checkpoint)
+  a.rollbackToTopCheckpoint(checkpoint)
   require(size2.value == 5, "size2 " + size2 + " should==5 " + a.toStringNoPropagate)
   require(content.value equals SortedSet(1,2,3,5,45))
   println(content)

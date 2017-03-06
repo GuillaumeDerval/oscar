@@ -15,11 +15,11 @@ package oscar.examples.cbls.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.routing.model._
-import oscar.cbls.routing.neighborhood._
-import oscar.cbls.search.{Benchmark, StopWatch}
-import oscar.cbls.search.combinators.{Profile, BestSlopeFirst}
+import oscar.cbls.core.computation.Store
+import oscar.cbls.business.routing.legacy.model._
+import oscar.cbls.business.routing.legacy.neighborhood._
+import oscar.cbls.lib.search.combinators.{Profile, BestSlopeFirst}
+import oscar.cbls.util.StopWatch
 
 class MyVRPHS(n:Int, v:Int, model:Store, distanceMatrix: Array[Array[Int]],unroutedPenaltyWeight:Int)
   extends VRP(n,v,model)

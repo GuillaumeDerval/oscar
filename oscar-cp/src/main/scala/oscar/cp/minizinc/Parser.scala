@@ -838,7 +838,7 @@ class Parser extends JavaTokenParsers { // RegexParsers {
       case "set_card" =>
         val s = getCPSetVar(varList(0))
         val i = getCPIntVar(varList(1))
-        addCstr(s.card == i, ann)
+        addCstr(s.card.eq(i), ann)
       case "set_diff" =>
         set_cstr(varList, ann, cstr)
       case "set_eq" =>
@@ -859,7 +859,7 @@ class Parser extends JavaTokenParsers { // RegexParsers {
         // to be tested
         val array = getCPIntVarArray(varList(0))
         for (i <- 0 to array.length - 2) {
-          addCstr(array(i) == array(i + 1), ann)
+          addCstr(array(i).eq(array(i + 1)), ann)
         }
       case "oscar_among" =>
         // no need to create the vals, can get while adding constraint, what is better ?
@@ -911,7 +911,7 @@ class Parser extends JavaTokenParsers { // RegexParsers {
       case "oscar_decreasing_int" =>
         val array = getCPIntVarArray(varList(0))
         for (i <- 0 to array.length - 2) {
-          addCstr(array(i) >= array(i + 1), ann)
+          addCstr(array(i).grEq(array(i + 1)), ann)
         }
       case "oscar_diffn" =>
         val x = getCPIntVarArray(varList(0))
@@ -942,7 +942,7 @@ class Parser extends JavaTokenParsers { // RegexParsers {
       case "oscar_increasing_int" =>
         val array = getCPIntVarArray(varList(0))
         for (i <- 0 to array.length - 2) {
-          addCstr(array(i) <= array(i + 1), ann)
+          addCstr(array(i).leEq(array(i + 1)), ann)
         }
       case "oscar_int_set_channel" =>
         System.err.println(cstr + " not implemented")
@@ -1206,7 +1206,7 @@ class Parser extends JavaTokenParsers { // RegexParsers {
    * @param x, y
    */
   def diff_array_cstr(x: Array[CPIntVar], y: Array[CPIntVar]) {
-    addCstr(sum(x) != sum(y))
+    addCstr(sum(x).diff(sum(y)))
   }
 
   /**
@@ -1287,31 +1287,31 @@ class Parser extends JavaTokenParsers { // RegexParsers {
       cpvar :+= getCPBoolVar(e)
     }
     cstr match {
-      case "bool_and" => addCstr((cpvar(0) && cpvar(1)) == cpvar(2))
-      case "bool_eq" => addCstr(cpvar(0) == cpvar(1))
+      case "bool_and" => addCstr((cpvar(0) && cpvar(1)).eq(cpvar(2)))
+      case "bool_eq" => addCstr(cpvar(0).eq(cpvar(1)))
       case "bool_eq_reif" => {
         if (cpvar(0).isBoundTo(0)) {
-          addCstr(cpvar(1) != cpvar(2))
+          addCstr(cpvar(1).diff(cpvar(2)))
         } else if(cpvar(1).isBoundTo(0)) {
-          addCstr(cpvar(0) != cpvar(2))
+          addCstr(cpvar(0).diff(cpvar(2)))
         } else {
           addCstr(new EqReifVar(cpvar(0), cpvar(1), cpvar(2)))
         }
         
       }
-      case "bool_le" => addCstr(cpvar(0) <= cpvar(1))
+      case "bool_le" => addCstr(cpvar(0).leEq(cpvar(1)))
       case "bool_le_reif" => addCstr(new GrEqVarReif(cpvar(1), cpvar(0), cpvar(2)))
       case "bool_lt" => {
-        addCstr(cpvar(0) == 0)
-        addCstr(cpvar(1) == 1)
+        addCstr(cpvar(0).eq(0))
+        addCstr(cpvar(1).eq(1))
         //cp.add(!cpvar(0) && cpvar(1))
       }
       case "bool_lt_reif" => {
         addCstr(new GrEqVarReif(cpvar(1) - 1, cpvar(0), cpvar(2)))
         //cp.add((!cpvar(0) && cpvar(1)) == cpvar(2))
       }
-      case "bool_not" => addCstr(!cpvar(0) == cpvar(1))
-      case "bool_or" => addCstr((cpvar(0) || cpvar(1)) == cpvar(2))
+      case "bool_not" => addCstr(cpvar(0).diff(cpvar(1)))
+      case "bool_or" => addCstr(cpvar(0).or(cpvar(1)).eq(cpvar(2)))
       case "bool_xor" => addCstr(new DiffReifVar(cpvar(0), cpvar(1), cpvar(2)))
     }
   }
@@ -1329,14 +1329,14 @@ class Parser extends JavaTokenParsers { // RegexParsers {
     }
     cstr match {
       case "int_abs" => addCstr(new Abs(cpvar(0), cpvar(1)))
-      case "int_eq" => addCstr(cpvar(0) == cpvar(1))
+      case "int_eq" => addCstr(cpvar(0).eq((1)))
       case "int_le" =>
         //addCstr(cpvar(0) <= cpvar(1), ann) //example of adding constraint with annotation
-        addCstr(cpvar(0) <= cpvar(1))
-      case "int_lt" => addCstr(cpvar(0) < cpvar(1))
-      case "int_ne" => addCstr(cpvar(0) != cpvar(1))
-      case "int_plus" => addCstr(cpvar(0) + cpvar(1) == cpvar(2))
-      case "int_times" => addCstr(cpvar(0) * cpvar(1) == cpvar(2))
+        addCstr(cpvar(0).leEq(cpvar(1)))
+      case "int_lt" => addCstr(cpvar(0).le(cpvar(1)))
+      case "int_ne" => addCstr(cpvar(0).diff(cpvar(1)))
+      case "int_plus" => addCstr((cpvar(0) + cpvar(1)).eq(cpvar(2)))
+      case "int_times" => addCstr((cpvar(0) * cpvar(1)).eq(cpvar(2)))
     }
   }
 

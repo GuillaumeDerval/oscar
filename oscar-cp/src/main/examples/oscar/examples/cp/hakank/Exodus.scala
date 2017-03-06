@@ -73,7 +73,7 @@ object Exodus extends CPModel with App {
       i <- 0 until len;
       j <- 0 until len
     ) {
-      add((y(j) === i) == (x(i) === j))
+      add((y(j) ?=== i) === (x(i) ?=== j))
     }
   }
   // Convenient function which returns y (for presentation)
@@ -110,17 +110,17 @@ object Exodus extends CPModel with App {
   add(allDifferent(story), Strong)
   add(allDifferent(country), Strong)
   add(allDifferent(age), Strong)
-  add(lithuania == debby)
-  add(age(passover) == age(bernice) + 2)
+  add(lithuania === debby)
+  add(age(passover) === age(bernice) + 2)
   add(age(yemen) < age(ethiopia))
-  add(age(morocco) == age(ted) + 3)
-  add(age(sammy) == age(mosessyouth) + 3)
-  add(captivity == carl)
-  add(age(tencommandments) == 5)
+  add(age(morocco) === age(ted) + 3)
+  add(age(sammy) === age(mosessyouth) + 3)
+  add(captivity === carl)
+  add(age(tencommandments) === 5)
   add(
-    (age(burningbush) === age(kazakhstan) + 2)
+    (age(burningbush) ?=== age(kazakhstan) + 2)
       ||
-      (age(burningbush) === age(kazakhstan) + 3)
+      (age(burningbush) ?=== age(kazakhstan) + 3)
   )
   search {
     binaryStatic(story ++ country ++ age)

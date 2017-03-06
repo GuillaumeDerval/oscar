@@ -1,9 +1,9 @@
 package oscar.cbls.test.invariants
 
 import oscar.cbls.algo.seq.functional.IntSequence
-import oscar.cbls.invariants.core.computation.{CBLSSeqVar, Store}
-import oscar.cbls.invariants.core.propagation.ErrorChecker
-import oscar.cbls.invariants.lib.seq._
+import oscar.cbls.core.computation.{CBLSSeqVar, Store}
+import oscar.cbls.core.propagation.ErrorChecker
+import oscar.cbls.lib.invariant.seq._
 
 /**
  * Created by rdl on 27-07-16.

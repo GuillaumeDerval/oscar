@@ -15,11 +15,11 @@ package oscar.examples.cbls.flowShop
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.invariants.core.computation.{CBLSIntConst, CBLSIntVar, IntValue}
+import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, IntValue}
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.lib.search.combinators.BestSlopeFirst
+import oscar.cbls.lib.search.neighborhoods.SwapsNeighborhood
 import oscar.cbls.modeling.CBLSModel
-import oscar.cbls.objective.Objective
-import oscar.cbls.search.combinators.BestSlopeFirst
-import oscar.cbls.search.{SwapsNeighborhood, RollNeighborhood, WideningFlipNeighborhood}
 
 object flowShopShiftRestart  extends CBLSModel with App {
 

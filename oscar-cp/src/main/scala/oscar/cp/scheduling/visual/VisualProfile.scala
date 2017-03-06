@@ -73,16 +73,16 @@ class VisualProfile(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: A
 
     val points = Array((start,0)) ++ profile.flatMap{case(s,d,h) => Array((s,h),(s+d,h))} ++ Array((end,0))
 
-    val min = points.map(_._1).min
-    val max = points.map(_._1).max
+    val minY = points.map(_._2).min
+    val maxX = points.map(_._1).max
 
-    polygon.update(points.map(p => (p._1 * xScale, (p._2 + min) * yScale)))
+    polygon.update(points.map(p => (p._1 * xScale, (p._2 + minY) * yScale)))
 
-    capaLine.orig = (0, (capa + min) * yScale)
-    capaLine.dest = (xScale * max, (capa + min) * yScale)
+    capaLine.orig = (0, (capa + minY) * yScale)
+    capaLine.dest = (xScale * maxX, (capa + minY) * yScale)
 
-    zeroLine.orig = (0, min * yScale)
-    zeroLine.dest = (xScale * max, min * yScale)
+    zeroLine.orig = (0, minY * yScale)
+    zeroLine.dest = (xScale * maxX, minY * yScale)
 
     repaint()
   }

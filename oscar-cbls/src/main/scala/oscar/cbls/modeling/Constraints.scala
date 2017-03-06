@@ -14,9 +14,8 @@
  ******************************************************************************/
 package oscar.cbls.modeling
 
-import oscar.cbls.constraints.lib.basic.BelongsTo
-import oscar.cbls.constraints.lib.global.{AllDiff, AtLeast, AtMost, MultiKnapsack, Sequence}
-import oscar.cbls.invariants.core.computation.{CBLSIntVar, IntValue, SetValue}
+import oscar.cbls.core.computation.{CBLSIntVar, IntValue, SetValue}
+import oscar.cbls.lib.constraint._
 
 import scala.collection.immutable.SortedMap
 

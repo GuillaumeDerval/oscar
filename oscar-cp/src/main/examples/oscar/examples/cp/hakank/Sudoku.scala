@@ -58,7 +58,7 @@ object Sudoku extends CPModel with App  {
     var numSols = 0
   
       // fill with the hints
-      NRANGE.foreach(i=>NRANGE.foreach(j=>if (problem(i)(j) > 0)add(x(i)(j) == problem(i)(j))))
+      NRANGE.foreach(i=>NRANGE.foreach(j=>if (problem(i)(j) > 0)add(x(i)(j) === problem(i)(j))))
       // rows and columns
       NRANGE.foreach(i=>add(allDifferent(x(i)), Strong))
       NRANGE.foreach(j=>add(allDifferent(x_t(j)), Strong))

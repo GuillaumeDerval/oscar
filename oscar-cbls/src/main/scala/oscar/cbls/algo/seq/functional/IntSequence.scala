@@ -14,20 +14,35 @@ package oscar.cbls.algo.seq.functional
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.algo.fun.{PiecewiseLinearFun, LinearTransform, PiecewiseLinearBijectionNaive, Pivot}
+import oscar.cbls.algo.fun.{LinearTransform, PiecewiseLinearBijectionNaive, PiecewiseLinearFun, Pivot}
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.algo.rb.{RBTMPosition, RedBlackTreeMap}
+import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 
-import scala.collection.immutable.{SortedMap, SortedSet}
+import scala.collection.immutable.SortedSet
 import scala.language.implicitConversions
 
 object IntSequence{
   def apply(values:Iterable[Int]):IntSequence = {
-    var toReturn = empty()
-    for (i <- values) {
-      toReturn = toReturn.insertAtPosition(i, toReturn.size, false, false)
+    val valuesArray = values.toArray
+    val forwardRedBlack = RedBlackTreeMap.makeFromSortedContinuousArray(values.toArray)
+    val backwardRedBlack:RedBlackTreeMap[RedBlackTreeMap[Int]] = aggregatePosOnValToInternalPosFrom(valuesArray)
+
+    new ConcreteIntSequence(
+      forwardRedBlack,
+      backwardRedBlack,
+      PiecewiseLinearBijectionNaive.identity,
+      valuesArray.length
+    )
+  }
+
+  private def aggregatePosOnValToInternalPosFrom(values:Array[Int]):RedBlackTreeMap[RedBlackTreeMap[Int]] = {
+    var valToPoses = RedBlackTreeMap.empty[RedBlackTreeMap[Int]]
+    for(pos <- values.indices){
+      val value = values(pos)
+      val existingPos = valToPoses.getOrElse(value,RedBlackTreeMap.empty[Int])
+      valToPoses = valToPoses.insert(value,existingPos.insert(pos,pos))
     }
-    toReturn
+    valToPoses
   }
 
   def empty():IntSequence = new ConcreteIntSequence(
@@ -38,12 +53,6 @@ object IntSequence{
   )
 
   implicit def toIterable(seq:IntSequence):IterableIntSequence = new IterableIntSequence(seq)
-
-  private var nextUniqueID:Int = Int.MinValue
-  def getNewUniqueID():Int = {
-    nextUniqueID +=1
-    nextUniqueID
-  }
 }
 
 class IterableIntSequence(sequence:IntSequence) extends Iterable[Int]{
@@ -58,7 +67,12 @@ class IterableIntSequence(sequence:IntSequence) extends Iterable[Int]{
   override def lastOption : Option[Int] = sequence.valueAtPosition(sequence.size-1)
 }
 
-abstract class IntSequence(protected[cbls] val uniqueID:Int = IntSequence.getNewUniqueID()) {
+class Token()
+object Token{
+  def apply():Token = new Token()
+}
+
+abstract class IntSequence(protected[cbls] val token: Token = Token()) {
 
   def size : Int
 
@@ -88,12 +102,11 @@ abstract class IntSequence(protected[cbls] val uniqueID:Int = IntSequence.getNew
 
   def map(fun:Int=>Int):IntSequence = {
     val l:List[Int] = this.iterator.toList
-    println("l:" + l)
     val l2 = l.map(fun)
     IntSequence.apply(l2)
   }
 
-  def valuesBetweenPositions(fromPositionIncluded:Int,toPositionIncluded:Int):SortedSet[Int] = {
+  def valuesBetweenPositionsSet(fromPositionIncluded:Int,toPositionIncluded:Int):SortedSet[Int] = {
     var toReturn = SortedSet.empty[Int]
     var e = explorerAtPosition(fromPositionIncluded)
     while(e match{
@@ -101,6 +114,21 @@ abstract class IntSequence(protected[cbls] val uniqueID:Int = IntSequence.getNew
       case Some(explorer) =>
         if (explorer.position <= toPositionIncluded){
           toReturn = toReturn + explorer.value
+          e = explorer.next
+          true
+        }else false
+    }){}
+    toReturn
+  }
+
+  def valuesBetweenPositionsQList(fromPositionIncluded:Int,toPositionIncluded:Int):QList[Int] = {
+    var toReturn:QList[Int] = null
+    var e = explorerAtPosition(fromPositionIncluded)
+    while(e match{
+      case None => false
+      case Some(explorer) =>
+        if (explorer.position <= toPositionIncluded){
+          toReturn = QList(explorer.value,toReturn)
           e = explorer.next
           true
         }else false
@@ -141,7 +169,7 @@ abstract class IntSequence(protected[cbls] val uniqueID:Int = IntSequence.getNew
   }
 
   def explorerAtAnyOccurrence(value : Int) : Option[IntSequenceExplorer] = {
-    positionOfAnyOccurrence(value : Int) match {
+    positionOfAnyOccurrence(value) match {
       case None => None
       case Some(x) => explorerAtPosition(x)
     }
@@ -177,14 +205,14 @@ abstract class IntSequence(protected[cbls] val uniqueID:Int = IntSequence.getNew
     if(this.isEmpty) this
     else moveAfter(0, this.size-1, -1, flip = true, fast, autoRework)
 
-  def regularizeToMaxPivot(maxPivotPerValuePercent: Int, targetUniqueID: Int = this.uniqueID) :ConcreteIntSequence
+  def regularizeToMaxPivot(maxPivotPerValuePercent: Int, targetToken: Token = this.token) :ConcreteIntSequence
 
-  def regularize(targetUniqueID:Int = this.uniqueID):ConcreteIntSequence
+  def regularize(targetToken:Token = this.token):ConcreteIntSequence
   def commitPendingMoves:IntSequence
 
   def check{}
 
-  def quickEquals(that:IntSequence):Boolean = that != null && this.uniqueID == that.uniqueID
+  def quickEquals(that:IntSequence):Boolean = that != null && this.token == that.token
   def equals(that:IntSequence):Boolean = {
     quickEquals(that) || (that != null && (this.toList equals that.toList))
   }
@@ -204,11 +232,12 @@ abstract class IntSequence(protected[cbls] val uniqueID:Int = IntSequence.getNew
   }
 }
 
+
 class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeMap[Int],
                           private[seq] val valueToInternalPositions:RedBlackTreeMap[RedBlackTreeMap[Int]],
                           private[seq] val externalToInternalPosition:PiecewiseLinearBijectionNaive,
                           private[seq] val startFreeRangeForInternalPosition:Int,
-                          uniqueID:Int = IntSequence.getNewUniqueID()) extends IntSequence(uniqueID) {
+                          token:Token = Token()) extends IntSequence(token) {
 
   override def descriptorString : String = "[" + this.iterator.toList.mkString(",") + "]_impl:concrete"
 
@@ -261,14 +290,14 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     if (position >= this.size) None
     else {
       val currentPivotPosition = externalToInternalPosition.forward.pivotWithPositionApplyingTo(position)
-      val (pivotAbovePosition : Option[RBTMPosition[Pivot]], internalPosition) = currentPivotPosition match {
+      val (pivotAbovePosition : Option[RedBlackTreeMapExplorer[Pivot]], internalPosition) = currentPivotPosition match {
         case None => (externalToInternalPosition.forward.firstPivotAndPosition, position)
         case Some(p) => (p.next, p.value.f(position))
       }
 
       Some(new ConcreteIntSequenceExplorer(this,
         position,
-        internalPositionToValue.positionOf(internalPosition).head,
+        internalPositionToValue.positionOf(internalPosition).get,
         currentPivotPosition,
         pivotAbovePosition)()
       )
@@ -314,12 +343,16 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
       //inserting at end of the sequence
       externalToInternalPosition.updateBefore(
         (size, size, LinearTransform(oldExternalPosRelatedToFreeInternalPos - pos, false)))
-      //TODO: this migfht be always identity, actually, so useless!
+      //TODO: this might be always identity, actually, so useless!
     } else {
       //inserting somewhere within the sequence, need to shift upper part
-      externalToInternalPosition.updateBefore(
+
+      val tmp = externalToInternalPosition.swapAdjacentZonesShiftFirst(pos,size-1,size,false)
+
+      assert(tmp.forward equals externalToInternalPosition.updateBefore(
         (pos + 1, size, LinearTransform(-1, false)),
-        (pos, pos, LinearTransform(oldExternalPosRelatedToFreeInternalPos - pos, false)))
+        (pos, pos, LinearTransform(oldExternalPosRelatedToFreeInternalPos - pos, false))).forward)
+      tmp
     }
 
     new ConcreteIntSequence(
@@ -363,12 +396,14 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     //now, update the fct knowing the move and remove
     val externalPositionAssociatedToLargestInternalPosition = externalToInternalPosition.backward(largestInternalPosition)
 
+    //TODO: this is overly complex and probably very slow
     val newExternalToInternalPosition = externalToInternalPosition.updateBefore(
       (externalPositionAssociatedToLargestInternalPosition,
         externalPositionAssociatedToLargestInternalPosition,
         LinearTransform(pos - externalPositionAssociatedToLargestInternalPosition, false)),
       (pos, pos, LinearTransform(externalPositionAssociatedToLargestInternalPosition - pos, false))).updateBefore(
-      (pos, size - 2, LinearTransform(1, false)), (size - 1, size - 1, LinearTransform(pos - size + 1, false)))
+      (pos, size - 2, LinearTransform(1, false)),
+      (size - 1, size - 1, LinearTransform(pos - size + 1, false)))
 
     new ConcreteIntSequence(
       newInternalPositionToValue,
@@ -410,14 +445,40 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     } else {
       if (moveAfterPosition > startPositionIncluded) {
         //move upwards
-        val newExternalToInternalPosition = externalToInternalPosition.updateBefore(
+        val newExternalToInternalPosition = if(!flip) {
+          externalToInternalPosition.swapAdjacentZonesShiftBest(
+            startPositionIncluded,
+            endPositionIncluded,
+            moveAfterPosition)
+
+        }else{
+
+          val tmp = externalToInternalPosition.swapAdjacentZonesShiftSecond(
+            startPositionIncluded,
+            endPositionIncluded,
+            moveAfterPosition:Int,
+            true)
+
+          assert(tmp.forward equals externalToInternalPosition.updateBefore(
+            (startPositionIncluded,
+              moveAfterPosition + startPositionIncluded - endPositionIncluded - 1,
+              LinearTransform(endPositionIncluded + 1 - startPositionIncluded, false)),
+            (startPositionIncluded + moveAfterPosition - endPositionIncluded,
+              moveAfterPosition,
+              LinearTransform(if (flip) startPositionIncluded + moveAfterPosition
+              else endPositionIncluded - moveAfterPosition, flip))).forward)
+
+          tmp
+        }
+
+        assert(newExternalToInternalPosition.forward equals externalToInternalPosition.updateBefore(
           (startPositionIncluded,
             moveAfterPosition + startPositionIncluded - endPositionIncluded - 1,
             LinearTransform(endPositionIncluded + 1 - startPositionIncluded, false)),
           (startPositionIncluded + moveAfterPosition - endPositionIncluded,
             moveAfterPosition,
             LinearTransform(if (flip) startPositionIncluded + moveAfterPosition
-            else endPositionIncluded - moveAfterPosition, flip)))
+            else endPositionIncluded - moveAfterPosition, flip))).forward)
 
         new ConcreteIntSequence(
           internalPositionToValue,
@@ -427,13 +488,26 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
 
       } else {
         //move downwards
-        val newExternalToInternalPosition = externalToInternalPosition.updateBefore(
+        val newExternalToInternalPosition = if(!flip) {
+          externalToInternalPosition.swapAdjacentZonesShiftBest(
+            moveAfterPosition+1,
+            startPositionIncluded-1,
+            endPositionIncluded)
+        }else{
+          externalToInternalPosition.swapAdjacentZonesShiftFirst(
+            moveAfterPosition+1,
+            startPositionIncluded-1,
+            endPositionIncluded,true)
+        }
+
+        assert(externalToInternalPosition.updateBefore(
           (moveAfterPosition + 1,
             moveAfterPosition + endPositionIncluded - startPositionIncluded + 1,
             LinearTransform(if (flip) endPositionIncluded + moveAfterPosition + 1 else startPositionIncluded - moveAfterPosition - 1, flip)),
           (moveAfterPosition + endPositionIncluded - startPositionIncluded + 2,
             endPositionIncluded,
-            LinearTransform(startPositionIncluded - endPositionIncluded - 1, false)))
+            LinearTransform(startPositionIncluded - endPositionIncluded - 1, false))).forward equals newExternalToInternalPosition.forward)
+
 
         new ConcreteIntSequence(
           internalPositionToValue,
@@ -444,20 +518,20 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     }
   }
 
-  override def regularizeToMaxPivot(maxPivotPerValuePercent: Int, targetUniqueID: Int = this.uniqueID) :ConcreteIntSequence = {
+  override def regularizeToMaxPivot(maxPivotPerValuePercent: Int, targetToken: Token = this.token) :ConcreteIntSequence = {
     if(this.externalToInternalPosition.forward.nbPivot * 100 > maxPivotPerValuePercent * this.size){
-      regularize(targetUniqueID)
+      regularize(targetToken)
     }else{
-      if (targetUniqueID != this.uniqueID){
+      if (targetToken != this.token){
         new ConcreteIntSequence(internalPositionToValue,
           valueToInternalPositions,
           externalToInternalPosition,
-          size, targetUniqueID)
+          size, targetToken)
       }else this
     }
   }
 
-  def regularize(targetUniqueID : Int = this.uniqueID) : ConcreteIntSequence = {
+  def regularize(targetToken : Token = this.token) : ConcreteIntSequence = {
     //TODO: maybe we can go faster with newValueToInternalPositions?
     var explorer = this.explorerAtPosition(0)
     val newInternalPositionToValues:Array[(Int,Int)] = Array.fill[(Int,Int)](this.size)(null)
@@ -489,7 +563,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     new ConcreteIntSequence(RedBlackTreeMap.makeFromSortedArray(newInternalPositionToValues),
       RedBlackTreeMap.makeFromSortedArray(sortedValuesAndEmptyAccumulatorsArray.map({case (value,accumulator) => (value,accumulator.positions)})),
       PiecewiseLinearBijectionNaive.identity,
-      newInternalPositionToValues.length, targetUniqueID)
+      newInternalPositionToValues.length, targetToken)
   }
 
   override def commitPendingMoves : IntSequence = this
@@ -523,9 +597,9 @@ abstract class IntSequenceExplorer{
 
 class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
                                   override val position:Int,
-                                  positionInRB:RBTMPosition[Int],
-                                  currentPivotPosition:Option[RBTMPosition[Pivot]],
-                                  pivotAbovePosition:Option[RBTMPosition[Pivot]])(
+                                  positionInRB:RedBlackTreeMapExplorer[Int],
+                                  currentPivotPosition:Option[RedBlackTreeMapExplorer[Pivot]],
+                                  pivotAbovePosition:Option[RedBlackTreeMapExplorer[Pivot]])(
                                    limitAboveForCurrentPivot:Int = pivotAbovePosition match{
                                      case None => Int.MaxValue
                                      case Some(p) => p.value.fromValue-1},
@@ -627,65 +701,22 @@ abstract class StackedUpdateIntSequence extends IntSequence(){
   }
 
 
-  override def regularizeToMaxPivot(maxPivotPerValuePercent: Int, targetUniqueID: Int = this.uniqueID) : ConcreteIntSequence =
-    commitPendingMoves.regularizeToMaxPivot(maxPivotPerValuePercent : Int, targetUniqueID : Int)
+  override def regularizeToMaxPivot(maxPivotPerValuePercent: Int, targetToken: Token = this.token) : ConcreteIntSequence =
+    commitPendingMoves.regularizeToMaxPivot(maxPivotPerValuePercent, targetToken)
 
-  override def regularize(targetUniqueID:Int = this.uniqueID) : ConcreteIntSequence = commitPendingMoves.regularize(targetUniqueID)
+  override def regularize(targetToken:Token = this.token) : ConcreteIntSequence = commitPendingMoves.regularize(targetToken)
 }
 
 object MovedIntSequence{
+
+  @inline
   def bijectionForMove(startPositionIncluded:Int,
                        endPositionIncluded:Int,
                        moveAfterPosition:Int,
-                       flip:Boolean):PiecewiseLinearBijectionNaive =
-    bijectionForMoveNaive(startPositionIncluded:Int,
-      endPositionIncluded:Int,
-      moveAfterPosition:Int,
-      flip:Boolean)
-
-  @inline
-  private def bijectionForMoveNaive(startPositionIncluded:Int,
-                            endPositionIncluded:Int,
-                            moveAfterPosition:Int,
-                            flip:Boolean):PiecewiseLinearBijectionNaive = {
+                       flip:Boolean):PiecewiseLinearBijectionNaive = {
     if(moveAfterPosition + 1 == startPositionIncluded) {
       //not moving
-      if(flip) { //just flipping
-        PiecewiseLinearBijectionNaive.identity.updateBefore(
-          (startPositionIncluded,endPositionIncluded,LinearTransform(endPositionIncluded + startPositionIncluded,true)))
-      }else{
-        PiecewiseLinearBijectionNaive.identity
-      }
-    }else {
-      if (moveAfterPosition > startPositionIncluded) {
-        //move upwards
-        PiecewiseLinearBijectionNaive.identity.updateBefore(
-          (startPositionIncluded, moveAfterPosition + startPositionIncluded - endPositionIncluded - 1,
-            LinearTransform(endPositionIncluded + 1 - startPositionIncluded, false)),
-          (startPositionIncluded + moveAfterPosition - endPositionIncluded,moveAfterPosition,
-            LinearTransform(if (flip) startPositionIncluded + moveAfterPosition
-            else endPositionIncluded - moveAfterPosition, flip)))
-      } else {
-        //move downwards
-        PiecewiseLinearBijectionNaive.identity.updateBefore(
-          (moveAfterPosition + 1, moveAfterPosition + endPositionIncluded - startPositionIncluded + 1,
-            LinearTransform(if (flip) endPositionIncluded + moveAfterPosition + 1 else startPositionIncluded - moveAfterPosition - 1, flip)),
-          (moveAfterPosition + endPositionIncluded - startPositionIncluded + 2, endPositionIncluded,
-            LinearTransform(startPositionIncluded - endPositionIncluded - 1, false)))
-      }
-    }
-  }
-
-
-  //this is another impleme of the above method, supposedly faster because using arrays and not requiring log(n) inserts into the redBlack.
-  //This is not as efficient as possible because there is another sort performed anyway since it is a bijection.
-  def bijectionForMoveArray(startPositionIncluded:Int,
-                            endPositionIncluded:Int,
-                            moveAfterPosition:Int,
-                            flip:Boolean):PiecewiseLinearBijectionNaive= {
-    if (moveAfterPosition + 1 == startPositionIncluded) {
-      //not moving
-      if (flip) {
+      if(flip) {
         //just flipping
         if (startPositionIncluded == 0) {
           PiecewiseLinearBijectionNaive(new PiecewiseLinearFun(RedBlackTreeMap.makeFromSortedArray(Array(
@@ -697,48 +728,83 @@ object MovedIntSequence{
             (startPositionIncluded, new Pivot(startPositionIncluded, new LinearTransform(endPositionIncluded + startPositionIncluded, true))),
             (endPositionIncluded + 1, new Pivot(endPositionIncluded + 1, LinearTransform.identity))))))
         }
-      } else {
+
+      }else{
+        //nop
         PiecewiseLinearBijectionNaive.identity
       }
-    } else {
+    }else{
+      if (moveAfterPosition > startPositionIncluded) {
+        //move upwards
+        PiecewiseLinearBijectionNaive(new PiecewiseLinearFun(RedBlackTreeMap.makeFromSortedArray(Array(
+          (startPositionIncluded, new Pivot(startPositionIncluded, LinearTransform(endPositionIncluded + 1 - startPositionIncluded, false))),
+          (moveAfterPosition + startPositionIncluded - endPositionIncluded, new Pivot(moveAfterPosition + startPositionIncluded - endPositionIncluded,
+            LinearTransform(if (flip) startPositionIncluded + moveAfterPosition else endPositionIncluded - moveAfterPosition, flip))),
+          (moveAfterPosition + 1, new Pivot(moveAfterPosition + 1, LinearTransform.identity))))))
+      } else {
+        //move downwards
+        PiecewiseLinearBijectionNaive(new PiecewiseLinearFun(RedBlackTreeMap.makeFromSortedArray(Array(
+          (moveAfterPosition + 1,
+            new Pivot(moveAfterPosition + 1,LinearTransform(if (flip) endPositionIncluded + moveAfterPosition + 1
+            else startPositionIncluded - moveAfterPosition - 1, flip))),
+          (moveAfterPosition + endPositionIncluded - startPositionIncluded + 2,
+            new Pivot(moveAfterPosition + endPositionIncluded - startPositionIncluded + 2,
+              LinearTransform(startPositionIncluded - endPositionIncluded - 1, false))),
+          (endPositionIncluded +1,
+            new Pivot(endPositionIncluded +1, LinearTransform.identity))
+        ))))
+      }
+    }
+  }
 
-      bijectionForMoveNaive(startPositionIncluded : Int,
-        endPositionIncluded : Int,
-        moveAfterPosition : Int,
-        flip : Boolean)
+  @inline
+  def oldPosToNewPos(oldPos : Int, fromIncluded:Int, toIncluded:Int, after:Int, flip:Boolean) : Int = {
+    //println("oldPosToNewPos(oldPos:"  + oldPos + " fromIncluded:" + fromIncluded + " toIncluded:" + toIncluded + " after:" + after +" flip:" + flip + ")")
 
-      /*        if (moveAfterPosition > startPositionIncluded) {
-          //move upwards
-          Array(
-            new Pivot(0,LinearTransform.identity), //TODO: pas sûr su'ils soient ordonnés correctement
-            new Pivot(startPositionIncluded, LinearTransform(endPositionIncluded + 1 - startPositionIncluded, false)),
-            new Pivot(moveAfterPosition + startPositionIncluded - endPositionIncluded,
-              LinearTransform(if (flip) startPositionIncluded + moveAfterPosition else endPositionIncluded - moveAfterPosition, flip)),
-            new Pivot(moveAfterPosition + 1,LinearTransform.identity))
-        } else {
-          //move downwards
-          PiecewiseLinearBijectionNaive.identity.updateBefore(
-            (moveAfterPosition + 1, moveAfterPosition + endPositionIncluded - startPositionIncluded + 1,
-              LinearTransform(if (flip) endPositionIncluded + moveAfterPosition + 1 else startPositionIncluded - moveAfterPosition - 1, flip)),
-            (moveAfterPosition + endPositionIncluded - startPositionIncluded + 2, endPositionIncluded,
-              LinearTransform(startPositionIncluded - endPositionIncluded - 1, false)))
+    if(after+1 == fromIncluded && !flip) oldPos
+    else if(after+1 == fromIncluded && flip){
+      if(oldPos < fromIncluded || oldPos > toIncluded) oldPos
+      else fromIncluded + toIncluded - oldPos
+    }else if(fromIncluded < after){
+      //println("move upwards")
+      if(oldPos < fromIncluded || oldPos > after) oldPos
+      else if(oldPos <= toIncluded){
+        //println("in the moved segment")
+        if(flip){
+          fromIncluded - oldPos + after
+        }else{
+          oldPos + after - toIncluded
+        }
+      }else{
+        //println("not in the moved segment")
+        oldPos - toIncluded + fromIncluded - 1
+      }
+    }else{
+      //println("move downwards")
+      if(oldPos <= after || oldPos > toIncluded) oldPos
+      else if(oldPos < fromIncluded){
+        //println("not in the moved segment")
+        oldPos + toIncluded - fromIncluded + 1
+      }else{
+        //println("in the moved segment")
+        if(flip){
+          after + 1 + toIncluded - oldPos
+        }else{
+          oldPos + after - fromIncluded + 1
         }
       }
-    */
     }
   }
 }
 
 class MovedIntSequence(val seq:IntSequence,
-                       startPositionIncluded:Int,
-                       endPositionIncluded:Int,
-                       moveAfterPosition:Int,
-                       flip:Boolean)
+                       val startPositionIncluded:Int,
+                       val endPositionIncluded:Int,
+                       val moveAfterPosition:Int,
+                       val flip:Boolean)
   extends StackedUpdateIntSequence{
 
-
   override def unorderedContentNoDuplicate : List[Int] = seq.unorderedContentNoDuplicate
-
 
   override def unorderedContentNoDuplicateWithNBOccurences : List[(Int, Int)] = seq.unorderedContentNoDuplicateWithNBOccurences
 
@@ -764,8 +830,14 @@ class MovedIntSequence(val seq:IntSequence,
     }
   }
 
+  def oldPosToNewPos(oldPos : Int) :Int = {
+    val tmp = MovedIntSequence.oldPosToNewPos(oldPos, startPositionIncluded, endPositionIncluded, moveAfterPosition, flip)
+    assert(tmp == localBijection.backward(oldPos), "oldPosToNewPos got" + tmp + " expected " + localBijection.backward(oldPos))
+    tmp
+  }
+
   override def positionsOfValue(value : Int) : SortedSet[Int] = {
-    seq.positionsOfValue(value).map(localBijection.backward(_))
+    seq.positionsOfValue(value).map(oldPosToNewPos)
   }
 
   override def contains(value : Int) : Boolean = seq.contains(value)
@@ -775,15 +847,13 @@ class MovedIntSequence(val seq:IntSequence,
   override def valueAtPosition(position : Int) : Option[Int] = {
     seq.valueAtPosition(localBijection.forward(position))
   }
-
-  assert(this equals seq.moveAfter(startPositionIncluded,endPositionIncluded,moveAfterPosition,flip,fast=false))
 }
 
 class MovedIntSequenceExplorer(sequence:MovedIntSequence,
                                override val position:Int,
                                positionInBasicSequence:IntSequenceExplorer,
-                               currentPivotPosition:Option[RBTMPosition[Pivot]],
-                               pivotAbovePosition:Option[RBTMPosition[Pivot]])(
+                               currentPivotPosition:Option[RedBlackTreeMapExplorer[Pivot]],
+                               pivotAbovePosition:Option[RedBlackTreeMapExplorer[Pivot]])(
                                 limitAboveForCurrentPivot:Int = pivotAbovePosition match{
                                   case None => Int.MaxValue
                                   case Some(p) => p.value.fromValue-1},
@@ -794,9 +864,6 @@ class MovedIntSequenceExplorer(sequence:MovedIntSequence,
                                   case None => true
                                   case Some(p) => !p.value.f.minus}
                                 ) extends IntSequenceExplorer{
-
-  //  override def toString : String = "MovedIntSequenceExplorer(position:" + position + " value:" + value + " currentPivotPosition:" + currentPivotPosition + " pivotAbovePosition:" +
-  //    pivotAbovePosition + " basicPositionn:" + positionInBasicSequence + ")"
 
   override val value : Int = positionInBasicSequence.value
 

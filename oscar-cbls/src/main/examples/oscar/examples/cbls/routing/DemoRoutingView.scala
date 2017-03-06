@@ -24,11 +24,11 @@ import java.awt._
 import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing._
 
-import oscar.cbls.invariants.core.computation.IntValue
-import oscar.cbls.search.StopWatch
+import oscar.cbls.core.computation.IntValue
+import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.FunctionGraphic.{ObjFunctionGraphicContainer, Zoom}
 import oscar.examples.cbls.routing.visual.ColorGenerator
-import oscar.examples.cbls.routing.visual.MatrixMap.RoutingMatrixVisual
+import oscar.cbls.visual.MatrixMap.RoutingMatrixContainer
 
 import scala.swing.{Dimension, Insets}
 
@@ -44,7 +44,7 @@ object DemoRoutingView extends StopWatch{
   var pointsList:scala.List[(Int, Int)] = Nil
   var colorValues:Array[Color] = null
 
-  val routingMap = new RoutingMatrixVisual(pickupAndDeliveryPoints = true)
+  val routingMap = new RoutingMatrixContainer(myVRP = controller.myVRP,pickupAndDeliveryPoints = true)
   //new Thread(routingMap,"RoutingMap Thread").start()
 
   val objGraph = new ObjFunctionGraphicContainer(dimension = new Dimension(f.getWidth-routingMap.getWidth,360)) with Zoom
@@ -208,10 +208,10 @@ object DemoRoutingView extends StopWatch{
     * Initiate the different values needed to draw the map
     * DO NOT switch setMapSize and setPointsList (setPointsList needs the mapSize)
     */
-  def initiateMap(mapSize:Int,points:scala.List[(Int,Int)]): Unit ={
+  def initiateMap(mapSize:Int,points:scala.List[(Double,Double)]): Unit ={
     routingMap.setColorValues(colorValues)
     routingMap.setMapSize(mapSize)
-    routingMap.setPointsList(points,warehouseNumber)
+    routingMap.setPointsList(points)
     routingMap.drawPoints()
     f.validate()
   }
@@ -270,7 +270,6 @@ object DemoRoutingView extends StopWatch{
   def resetProblem() = {
     mapSize = Int.MaxValue
     pointsList = Nil
-    routingMap.clear()
     objGraph.clear()
     controller.resetProblem
     routesPanel.removeAll()

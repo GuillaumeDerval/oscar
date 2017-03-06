@@ -20,10 +20,8 @@
 
 package oscar.examples.cbls.queens
 
-import org.junit.rules.Stopwatch
-import oscar.cbls.invariants.core.computation.CBLSIntVar
 import oscar.cbls.modeling._
-import oscar.cbls.search.StopWatch
+import oscar.cbls.util.StopWatch
 
 import scala.util.Random
 

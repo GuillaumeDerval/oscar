@@ -16,9 +16,24 @@ package oscar.cbls.algo.fun
  * ****************************************************************************
  */
 
-import oscar.cbls.algo.rb.{RedBlackTreeMap, RBTMPosition}
+import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 
 import scala.language.implicitConversions
+
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
 
 object PiecewiseLinearFun{
   def identity = new PiecewiseLinearFun()
@@ -43,25 +58,20 @@ class CachedPiecewiseLinearFun(f:PiecewiseLinearFun) extends PiecewiseLinearFun(
   override def apply(value:Int):Int = {
     val toReturn = if(cachedPivotF != null && (cachedPivotStart <= value) && (value <= cachedPivotEnd)){
       cachedPivotF(value)
-    }else if(cachedPivotF == null && cachedPivotEnd>=value){
-      value
     }else {
       transformation.biggestLowerOrEqual(value) match {
         case None =>
-          cachedPivotEnd = transformation.smallestBiggerOrEqual(value) match {
-            case None => Int.MaxValue
-            case Some((kAbove, _)) => kAbove-1
-          }
-          value
+          cachedPivotF = LinearTransform.identity
+          cachedPivotStart = Int.MinValue
         case Some((k,pivot)) =>
-          cachedPivotStart = k
-          cachedPivotEnd = transformation.smallestBiggerOrEqual(value) match {
-            case None => Int.MaxValue
-            case Some((kAbove, _)) => kAbove-1
-          }
           cachedPivotF = pivot.f
-          cachedPivotF(value)
+          cachedPivotStart = k
       }
+      cachedPivotEnd = transformation.smallestBiggerOrEqual(value) match {
+        case None => Int.MaxValue
+        case Some((kAbove, _)) => kAbove-1
+      }
+      cachedPivotF(value)
     }
     assert(toReturn == super.apply(value))
     toReturn
@@ -71,9 +81,18 @@ class CachedPiecewiseLinearFun(f:PiecewiseLinearFun) extends PiecewiseLinearFun(
 
 class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot] = RedBlackTreeMap.empty) {
 
+  def equals(that:PiecewiseLinearFun):Boolean = {
+    if(this.nbPivot != that.nbPivot) return false
+    for((thisPivot,thatPivot) <- this.pivots.zip(that.pivots)){
+      if(thisPivot.fromValue != thatPivot.fromValue) return false
+      if(! thisPivot.f.equals(thatPivot.f)) return false
+    }
+    return true
+  }
+
   def firstPivot:Option[(Int,Pivot)] = transformation.smallestBiggerOrEqual(Int.MinValue)
 
-  def positionOfValue(value:Int):Option[RBTMPosition[(Pivot)]] = transformation.positionOf(value)
+  def positionOfValue(value:Int):Option[RedBlackTreeMapExplorer[(Pivot)]] = transformation.positionOf(value)
 
   def isIdentity = transformation.isEmpty
 
@@ -95,11 +114,96 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
   def updateForCompositionBefore(updates:(Int,Int,LinearTransform)*):PiecewiseLinearFun = {
     var updatedTransform=transformation
     for((fromIncluded,toIncluded,update) <- updates) {
-      updatedTransform = deleteUnnecessaryPivotStartingJustAfter(toIncluded,myUpdateForCompositionBefore(fromIncluded, toIncluded, update, removePivotsBetween(fromIncluded, toIncluded, updatedTransform)))
+      updatedTransform = deleteUnnecessaryPivotStartingJustAfter(
+        toIncluded,
+        myUpdateForCompositionBefore(
+          fromIncluded,
+          toIncluded,
+          update,
+          removePivotsBetween(
+            fromIncluded,
+            toIncluded,
+            updatedTransform)))
     }
     new PiecewiseLinearFun(updatedTransform)
   }
 
+  def swapAdjacentZonesShiftBest(startZone1Included:Int, endZone1Included:Int, endZone2Included:Int):PiecewiseLinearFun = {
+    val widthZone1 = endZone1Included - startZone1Included + 1
+    val widthZone2 = endZone2Included - endZone1Included
+    //TODO: the choice is based on the number of positions, it should be based on the number of segments instead (but this is probably the same very often)
+    if(widthZone1 > widthZone2){
+      swapAdjacentZonesShiftFirst(startZone1Included, endZone1Included, endZone2Included, false)
+    }else{
+      val tmp = swapAdjacentZonesShiftSecond(startZone1Included, endZone1Included, endZone2Included, false)
+      assert(tmp equals swapAdjacentZonesShiftFirst(startZone1Included, endZone1Included, endZone2Included, false))
+      tmp
+    }
+  }
+
+  def swapAdjacentZonesShiftFirst(startZone1Included:Int, endZone1Included:Int, endZone2Included:Int, flipZone2:Boolean):PiecewiseLinearFun = {
+    val widthZone2 = endZone2Included - endZone1Included
+    val widthZone1 = endZone1Included - startZone1Included + 1
+
+    //remove pivot for destination of zone1
+    val transformWithTargetZone2Cleaned = removePivotsBetween(endZone1Included+1, endZone2Included,transformation)
+
+    //a pivot must be added after the end of update1 if 2 is the first zone
+    val transformReadyForShiftOfZone1 = addRedundantPivotAt(startZone1Included,transformWithTargetZone2Cleaned)
+
+    val f2 = LinearTransform(-widthZone2,false)
+    val f3 = LinearTransform(widthZone2,false)
+
+    val transformWithZone1Shifted =
+      transformReadyForShiftOfZone1.update(
+        startZone1Included,
+        endZone1Included,
+        widthZone2,
+        (p:Pivot) => new Pivot(p.fromValue+widthZone2,if(p.f.minus) f3(p.f) else f2(p.f)))
+
+    //now, we apply the second transformation that will add pivots at the zone occupied by zone1 (which is now cleaned)
+    val transformationWithUpdate2Done = myUpdateForCompositionBefore(startZone1Included, startZone1Included + widthZone2 - 1,
+      LinearTransform(if(flipZone2) endZone2Included + startZone1Included else widthZone1,flipZone2), transformWithZone1Shifted)
+
+    //finally, we can clean the potentially redundant pivots
+    new PiecewiseLinearFun(
+      deleteUnnecessaryPivotStartingJustAfter(startZone1Included-1,
+      deleteUnnecessaryPivotStartingJustAfter(startZone1Included + widthZone2 - 1,
+        deleteUnnecessaryPivotStartingJustAfter(endZone2Included,transformationWithUpdate2Done))))
+  }
+
+  def swapAdjacentZonesShiftSecond(startZone1Included:Int, endZone1Included:Int, endZone2Included:Int, flipZone1:Boolean):PiecewiseLinearFun = {
+
+    val widthZone2 = endZone2Included - endZone1Included
+    val widthZone1 = endZone1Included - startZone1Included + 1
+
+    //remove pivot for destination of zone1
+    val transformWithTargetZone1Cleaned = removePivotsBetween(startZone1Included, endZone1Included,transformation)
+
+    //a pivot must be added after the end of update1 if 2 is the first zone
+    val transformReadyForShiftOfZone2 = addRedundantPivotAt(endZone2Included+1,transformWithTargetZone1Cleaned)
+
+    val f2 = LinearTransform(widthZone1,false)
+    val f3 = LinearTransform(-widthZone1,false)
+
+    val transformWithZone2Shifted =
+      transformReadyForShiftOfZone2.update(
+        endZone1Included +1,
+        endZone2Included,
+        -widthZone1,
+        (p:Pivot) => new Pivot(p.fromValue-widthZone1,if(p.f.minus) f3(p.f) else f2(p.f)))
+
+    //now, we apply the second transformation that will add pivots at the zone occupied by zone2 (which is now cleaned)
+    val transformationWithUpdate1Done = myUpdateForCompositionBefore(startZone1Included+widthZone2, endZone2Included,
+      LinearTransform(if(flipZone1) endZone1Included + startZone1Included + widthZone2 else -widthZone2,flipZone1), transformWithZone2Shifted)
+
+    //finally, we can clean the potentially redundant pivots
+    new PiecewiseLinearFun(
+      deleteUnnecessaryPivotStartingJustAfter(startZone1Included-1,
+        deleteUnnecessaryPivotStartingJustAfter(startZone1Included + widthZone2 - 1,
+          deleteUnnecessaryPivotStartingJustAfter(endZone2Included,transformationWithUpdate1Done))))
+
+  }
 
   def updateForCompositionBefore(fromIncluded:Int, toIncluded: Int, additionalFAppliedBefore: LinearTransform):PiecewiseLinearFun = {
     //step1: remove all pivots between fromIncluded and toIncluded
@@ -145,7 +249,7 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
           val (nextCurrentIncludedFrom, nextPivotPosition) = if (isAdditionaFNegativeSlope) {
             (toIncluded+1, None)
           } else {
-            val nextPivotPosition:Option[RBTMPosition[Pivot]] = transformation.smallestPosition
+            val nextPivotPosition:Option[RedBlackTreeMapExplorer[Pivot]] = transformation.smallestPosition
             (nextPivotPosition match{case None => toIncluded+1 case Some(position) => additionalFAppliedBefore.unApply(position.value.fromValue)},
               nextPivotPosition)
           }
@@ -196,16 +300,22 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
   }
 
 
+  private def addRedundantPivotAt(addedPivot:Int,transform:RedBlackTreeMap[Pivot]):RedBlackTreeMap[Pivot] = {
+    transform.biggestLowerOrEqual(addedPivot) match {
+      case Some((key, pivot)) =>
+        if (key == addedPivot) transform
+        else transform.insert(addedPivot, new Pivot(addedPivot, pivot.f))
+      case _ => transform.insert(addedPivot, new Pivot(addedPivot, LinearTransform.identity))
+    }
+  }
+
   /**
    * removes all pivots between fromIncluded and toIncluded
    * also adds a pivot at toIncluded+1 if necessary to ensure that values starting at toIncluded+1 onwards are not impacted
    */
   private def removePivotsBetween(fromIncluded:Int,toIncluded:Int, transformToClean:RedBlackTreeMap[Pivot]):RedBlackTreeMap[Pivot] = {
 
-    val transformWithAddedFinishingPivot = transformToClean.biggestLowerOrEqual(toIncluded + 1) match {
-      case Some((key, pivot)) => transformToClean.insert(toIncluded + 1, new Pivot(toIncluded + 1, pivot.f))
-      case _ => transformToClean.insert(toIncluded + 1, new Pivot(toIncluded + 1, LinearTransform.identity))
-    }
+    val transformWithAddedFinishingPivot = addRedundantPivotAt(toIncluded+1,transformToClean)
 
     var currentCleanedTransform = transformWithAddedFinishingPivot
     var pivotToRemove = currentCleanedTransform.biggestLowerOrEqual(toIncluded)
@@ -220,14 +330,14 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
     null
   }
 
-  def pivotWithPositionApplyingTo(value:Int):Option[RBTMPosition[Pivot]] = {
+  def pivotWithPositionApplyingTo(value:Int):Option[RedBlackTreeMapExplorer[Pivot]] = {
     transformation.biggestLowerOrEqual(value) match{
       case None => None
       case Some((fromValueOfPivot,_)) => transformation.positionOf(fromValueOfPivot)
     }
   }
 
-  def pivotWithPositionAfter(value:Int):Option[RBTMPosition[Pivot]] = {
+  def pivotWithPositionAfter(value:Int):Option[RedBlackTreeMapExplorer[Pivot]] = {
     transformation.smallestBiggerOrEqual(value) match{
       case None => None
       case Some((fromValueOfPivot,_)) => transformation.positionOf(fromValueOfPivot)
@@ -248,14 +358,14 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
     }
   }
 
-  def firstPivotAndPosition:Option[RBTMPosition[Pivot]] = {
+  def firstPivotAndPosition:Option[RedBlackTreeMapExplorer[Pivot]] = {
     transformation.smallest match{
       case None => None
       case Some((fromValueOfPivot,_)) => transformation.positionOf(fromValueOfPivot)
     }
   }
 
-  def lastPivotAndPosition:Option[RBTMPosition[Pivot]] = {
+  def lastPivotAndPosition:Option[RedBlackTreeMapExplorer[Pivot]] = {
     transformation.biggest match{
       case None => None
       case Some((fromValueOfPivot,_)) => transformation.positionOf(fromValueOfPivot)
@@ -264,5 +374,5 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
 }
 
 class Pivot(val fromValue:Int, val f: LinearTransform){
-  override def toString = "Pivot(from:" + fromValue + " " + f + ")"
+  override def toString = "Pivot(from:" + fromValue + " " + f + " f(from)=" + f(fromValue) +")"
 }

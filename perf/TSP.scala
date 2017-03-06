@@ -57,7 +57,7 @@ object TSP extends CPModel with App {
       case Some(x) => {
         // Select the closest successors of the city x
         val v = selectMin(Cities)(succ(x).hasValue(_))(distMatrix(x)(_)).get
-        branch(post(succ(x) == v))(post(succ(x) != v))
+        branch(post(succ(x) === v))(post(succ(x) !== v))
       }
     }
   }

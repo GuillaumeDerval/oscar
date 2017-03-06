@@ -52,7 +52,7 @@ object CostasArray extends CPModel with App {
   // difference matrix to -n+1. This removes variants
   // of the difference matrix for the the same Costas array.
   for (i <- 0 until n; j <- 0 to i) {
-    add(differences(i)(j) == -n + 1)
+    add(differences(i)(j) === -n + 1)
   }
   add(allDifferent(costas), Strong)
   // hakank: All the following constraints (and comments)
@@ -62,7 +62,7 @@ object CostasArray extends CPModel with App {
   // "How do the positions in the Costas array relate
   //  to the elements of the distance triangle."
   for (i <- 0 until n; j <- 0 until n if i < j) {
-    add(differences(i)(j) == (costas(j) - costas(j - i - 1)))
+    add(differences(i)(j) === (costas(j) - costas(j - i - 1)))
   }
   // "All entries in a particular row of the difference
   //  triangle must be distint."
@@ -75,13 +75,13 @@ object CostasArray extends CPModel with App {
   //
   // "We can never place a 'token' in the same row as any other."
   for (i <- 0 until n; j <- 0 until n if i < j) {
-    add(differences(i)(j) != 0, Strong)
-    add(differences(i)(j) != 0, Strong)
+    add(differences(i)(j) !== 0, Strong)
+    add(differences(i)(j) !== 0, Strong)
   }
   for (k <- 2 until n; l <- 2 until n if k < l) {
     add(
       (differences(k - 2)(l - 1) + differences(k)(l)) -
-        (differences(k - 1)(l - 1) + differences(k - 1)(l)) == 0)
+        (differences(k - 1)(l - 1) + differences(k - 1)(l)) === 0)
   }
   search {
     binaryFirstFail(costas)

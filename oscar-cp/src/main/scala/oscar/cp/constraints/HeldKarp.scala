@@ -365,7 +365,7 @@ class ChannelTSP(val succ: Array[CPIntVar],val distMatrix: Array[Array[Int]]) ex
   
   
   override def setup(l: CPPropagStrength): CPOutcome = {
-	s.post(edgeVar.card == 2*n)
+	s.post(edgeVar.card === 2*n)
     
     for (i <- 0 until n) {
       succ(i).callValRemoveIdxWhenValueIsRemoved(this,i)

@@ -18,24 +18,20 @@
  */
 package oscar.flatzinc.cbls.support
 
-import oscar.cbls.invariants.core.computation.Store
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.lib.constraint.{BelongsTo, EQ, GE, LE}
 import oscar.flatzinc.model.Domain
 import oscar.flatzinc.model.DomainRange
 import oscar.flatzinc.model.DomainSet
-import oscar.cbls.invariants.core.computation.CBLSIntVar
+import oscar.cbls.core.computation.CBLSIntVar
 import scala.util.Random
 import oscar.flatzinc.model.DomainRange
-import oscar.cbls.invariants.core.computation.IntValue
-import oscar.cbls.invariants.core.computation.CBLSIntConst
-import oscar.cbls.constraints.core.ConstraintSystem
+import oscar.cbls.core.computation.IntValue
+import oscar.cbls.core.computation.CBLSIntConst
 import scala.collection.immutable.SortedSet
-import oscar.cbls.constraints.core.{Constraint => CBLSConstraint}
-import oscar.cbls.invariants.core.computation.CBLSSetConst
-import oscar.cbls.constraints.lib.basic.BelongsTo
-import oscar.cbls.constraints.lib.basic.EQ
-import oscar.cbls.invariants.lib.numeric.Prod2
-import oscar.cbls.constraints.lib.basic.LE
-import oscar.cbls.constraints.lib.basic.GE
+import oscar.cbls.core.computation.CBLSSetConst
+import oscar.cbls.lib.invariant.numeric.Prod2
 import oscar.flatzinc.model.DomainRange
 
 /*trait IntValueDom extends IntValue{
@@ -79,9 +75,9 @@ class CBLSIntVarDom(model: Store,Value: Int,  val dom: Domain, n: String = null)
 
 //TODO: Should not extend it anymore!
 //Need the store while it extends CBLSIntVar, as sometimes it is requested (e.g., to find the Model in some invariants)
-class CBLSIntConstDom(model:Store,value:Int) extends CBLSIntVarDom(model,value,DomainRange(value,value),value.toString()){
-  override def getValue(NewValue:Boolean=false):Int = value //pour pas avoir de propagation
-  override def toString:String = "IntConst("+ value + ")"
+class CBLSIntConstDom(model:Store,_value:Int) extends CBLSIntVarDom(model,_value,DomainRange(_value,_value),_value.toString()){
+  override def value:Int = _value //pour pas avoir de propagation
+  override def toString:String = "IntConst("+ _value + ")"
 }
 /*  extends CBLSIntConst(value) with IntValueDom{
   override def inDomain(v:Int): Boolean = v==value 
@@ -141,7 +137,7 @@ object EnsureDomain{
  * returns a constraint that has the same semantics but with scaled violation weight
  */
   object Weight{
-    def apply(c: CBLSConstraint,w:Int):CBLSConstraint = {
+    def apply(c: Constraint,w:Int):Constraint = {
         EQ(0,Prod2(c.violation,CBLSIntConst(w)))
     }
   }

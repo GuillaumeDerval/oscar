@@ -15,8 +15,8 @@
 
 package oscar.examples.cbls
 
-import oscar.cbls.binPacking.model.BinPackingProblem
-import oscar.cbls.binPacking.solver.{EmptyMostViolatedBin, JumpSwapItems, SwapItems, MoveItem}
+import oscar.cbls.business.binPacking.model.BinPackingProblem
+import oscar.cbls.business.binPacking.solver.{EmptyMostViolatedBin, JumpSwapItems, SwapItems, MoveItem}
 import oscar.cbls.modeling.CBLSModel
 
 object BinPackingAndCombinators extends CBLSModel with App{

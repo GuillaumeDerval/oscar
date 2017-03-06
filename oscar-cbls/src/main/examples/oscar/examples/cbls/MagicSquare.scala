@@ -21,17 +21,18 @@
 
 package oscar.examples.cbls
 
-import oscar.cbls.search._
-import oscar.cbls.constraints.core._
-import oscar.cbls.constraints.lib.basic._
-import oscar.cbls.invariants.core.computation._
-import oscar.cbls.invariants.lib.numeric._
+import oscar.cbls.core.computation._
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.lib.constraint.EQ
+import oscar.cbls.lib.invariant.numeric._
+import oscar.cbls.lib.search.LinearSelector
+import oscar.cbls.util.StopWatch
 
 /**
  * Example showing how to use Asteroid on the magic square problem  
  * @author christophe.ponsard@cetic.be
  * */
-object MagicSquare extends SearchEngine with StopWatch {
+object MagicSquare extends LinearSelector with StopWatch {
   
   def main(args: Array[String]) {
     

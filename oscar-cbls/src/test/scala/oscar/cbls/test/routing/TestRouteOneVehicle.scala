@@ -23,13 +23,12 @@
 
 package oscar.cbls.test.routing
 
-import org.scalatest.{Matchers, FunSuite}
-import org.scalatest.matchers.ShouldMatchers
-import oscar.cbls.invariants.core.computation.{ CBLSIntVar, Store }
-import oscar.cbls.invariants.lib.logic.Routes
-import scala.language.reflectiveCalls
-
+import org.scalatest.{FunSuite, Matchers}
+import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.lib.invariant.logic.Routes
 import oscar.cbls.modeling.Algebra._
+
+import scala.language.reflectiveCalls
 /**
  * The tests marked with a star (*) require the assertion mechanism of IntVar in ComputationStructure file, which
  * verifies the domain of a variable variable.

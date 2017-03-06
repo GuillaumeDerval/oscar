@@ -90,7 +90,7 @@ object Steel {
     cp.minimize(obj)
     cp.add(binPacking(x, weight, l), Strong)
     for (s <- Slabs) {
-      def colPresent(c: Int) = isOr((for (o <- colorOrders(c)) yield x(o) === s)) //return a CPBoolVar telling whether color c is present is slab s
+      def colPresent(c: Int) = isOr((for (o <- colorOrders(c)) yield x(o) ?=== s)) //return a CPBoolVar telling whether color c is present is slab s
       cp.add(sum(Cols)(c => colPresent(c)) <= 2) //at most two colors present in each slab
     }
     cp.search {
@@ -99,7 +99,7 @@ object Steel {
         case Some(y) => {
           // dynamic symmetry breaking
           val maxUsed = x.maxBoundOrElse(-1)
-          branchAll((0 to maxUsed + 1).filter(y.hasValue(_)))(v => cp.add(y == v))
+          branchAll((0 to maxUsed + 1).filter(y.hasValue(_)))(v => cp.add(y === v))
         }
       }
     }

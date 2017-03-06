@@ -31,13 +31,13 @@ import scala.math.sqrt
 import org.scalatest.{Matchers, FunSuite}
 import org.scalatest.matchers.ShouldMatchers
 
-import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.routing.model.HopDistanceAsObjectiveTerm
-import oscar.cbls.routing.model.PenaltyForUnrouted
-import oscar.cbls.routing.model.PositionInRouteAndRouteNr
-import oscar.cbls.routing.model.UnroutedImpl
-import oscar.cbls.routing.model.VRP
-import oscar.cbls.routing.model.VRPObjective
+import oscar.cbls.core.computation.Store
+import oscar.cbls.business.routing.legacy.model.HopDistanceAsObjectiveTerm
+import oscar.cbls.business.routing.legacy.model.PenaltyForUnrouted
+import oscar.cbls.business.routing.legacy.model.PositionInRouteAndRouteNr
+import oscar.cbls.business.routing.legacy.model.UnroutedImpl
+import oscar.cbls.business.routing.legacy.model.VRP
+import oscar.cbls.business.routing.legacy.model.VRPObjective
 
 class TestUnroutedAndPenalty extends FunSuite with Matchers {
 

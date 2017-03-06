@@ -20,8 +20,8 @@
 
 package oscar.cbls.algo.dag
 
-import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.heap.BinomialHeap
+import oscar.cbls.algo.quick.QList
 
 import scala.collection.immutable.SortedSet
 

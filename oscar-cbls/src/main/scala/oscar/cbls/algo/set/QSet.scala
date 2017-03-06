@@ -15,8 +15,6 @@ package oscar.cbls.algo.set
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.algo.quick.QList
-
 /*
 class QSet(maxVal:Int) extends Set[Int]{
   //this is an over-approximate of elements in the set, no duplicates

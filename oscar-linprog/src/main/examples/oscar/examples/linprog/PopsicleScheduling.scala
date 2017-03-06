@@ -1,21 +1,23 @@
 /*******************************************************************************
- * OscaR is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 2.1 of the License, or
- * (at your option) any later version.
- *   
- * OscaR is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License  for more details.
- *   
- * You should have received a copy of the GNU Lesser General Public License along with OscaR.
- * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
- ******************************************************************************/
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
 package oscar.examples.linprog
 
-import oscar.linprog.modeling._
 import oscar.algebra._
+import oscar.linprog.MPModel
+import oscar.linprog.lpsolve.LPSolve
 
 /**
  * Workforce management is central to efficient operations and good customer service.
@@ -26,15 +28,17 @@ import oscar.algebra._
  * Assume the same staffing requirements continue week after week.
  * Full Time employees work 5 consecutive days and earn $100 per day.
  * Part Time employees work 2 consecutive days and earn $150 per day.
+ *
  * Question:  What is the minimal weekly staffing cost you can achieve while meeting the required staffing levels?
+ *
  * @author Pierre Schaus pschaus@gmail.com
  */
-object PropsicleScheduling extends MIPModelLPSolve with App {
+object PopsicleScheduling extends MPModel(LPSolve) with App {
 
   val demand = Array(5, 7, 7, 10, 16, 18, 12)
 
   def generateConfig(start: Int, length: Int) = {
-    val config = Array.fill(7)(0);
+    val config = Array.fill(7)(0)
     for (j <- 0 until length) {
       config((start + j) % 7) = 1
     }
@@ -42,27 +46,28 @@ object PropsicleScheduling extends MIPModelLPSolve with App {
   }
 
 
-  val configs = Array.tabulate(7)(i => (MIPIntVar("x", 0 to demand.max), 100, generateConfig(i, 5))) ++
-    Array.tabulate(7)(i => (MIPIntVar("x", 0 to demand.max), 150, generateConfig(i, 2)))
+  val configs =
+    Array.tabulate(7)(i => (MPIntVar(s"FTE_$i", 0 to demand.max), 100, generateConfig(i, 5))) ++
+    Array.tabulate(7)(i => (MPIntVar(s"PTE_$i", 0 to demand.max), 150, generateConfig(i, 2)))
 
   minimize(sum(configs)(c => c._1 * (c._2 * c._3.sum)))
   for ((d, i) <- demand.zipWithIndex) {
     println("demand:" + d)
-    add(sum(configs)(c => c._1 * c._3(i)) >= d)
+    add( "" |: sum(configs)(c => c._1 * c._3(i).toDouble) >= d.toDouble)
   }
-  start()
-  
-  println(objectiveValue)
-  for (c <- configs; if (c._1.value.get > 0)) {
-    println(c._1.value.get + " X \t" + c._3.mkString("\t"))
-  }
-  println("--------------")
-  val cover = for ((d, i) <- demand.zipWithIndex) yield {
-    configs.map(c => c._1.value.get * c._3(i)).sum
-  }
-  println("\t" + cover.mkString("\t"))
 
+  solve match {
+    case Optimal(solution) =>
+
+      println(solution(objective.expression))
+      for (c <- configs; if (solution(c._1) > 0)) {
+        println(solution(c._1) + " X \t" + c._3.mkString("\t"))
+      }
+      println("--------------")
+      val cover = for ((d, i) <- demand.zipWithIndex) yield {
+        configs.map(c => solution(c._1) * c._3(i)).sum
+      }
+      println("\t" + cover.mkString("\t"))
+
+  }
 }
-
-
-  

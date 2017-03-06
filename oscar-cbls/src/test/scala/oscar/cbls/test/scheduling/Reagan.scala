@@ -37,11 +37,11 @@ package oscar.cbls.test.scheduling
  *         by Renaud De Landtsheer
  ******************************************************************************/
 
-import oscar.cbls.invariants.core.computation.Store
-import oscar.cbls.scheduling._
+import oscar.cbls.core.computation.Store
+import oscar.cbls.business.scheduling._
 import model.{Planning, SuperActivity, Activity, CumulativeResource}
-import oscar.cbls.invariants.core.propagation.Checker
-import oscar.cbls.scheduling.solver.IFlatIRelax
+import oscar.cbls.core.propagation.Checker
+import oscar.cbls.business.scheduling.solver.IFlatIRelax
 
 /**a simple model of Reagan president of USA
  * he is partly multitask, can do two things at the same time, except eating, which requires his full attention

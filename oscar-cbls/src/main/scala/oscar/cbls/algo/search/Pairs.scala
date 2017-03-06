@@ -24,7 +24,7 @@ object Pairs {
    * @param l a list
    * @return a list of all pairs of element made from two elements in l
    */
-  def makeAllUnsortedPairs[@specialized T](l:List[T]):List[(T,T)] = {
+  def makeAllUnsortedPairs[T](l:List[T]):List[(T,T)] = {
     def makeAllUnsortedPairsWithHead(head:T, tail:List[T], toAppend:List[(T,T)]):List[(T,T)] = {
       tail match{
         case other :: newTail => makeAllUnsortedPairsWithHead(head, newTail, (head,other) :: toAppend)
@@ -38,7 +38,7 @@ object Pairs {
     }
   }
 
-  def makeAllSortedPairs[@specialized T](l:List[T]):List[(T,T)] = {
+  def makeAllSortedPairs[T](l:List[T]):List[(T,T)] = {
     def makeAllSortedPairsWithHead(head:T,
                                    tail:List[T],
                                    toAppend:List[(T,T)]):List[(T,T)] = {
@@ -53,7 +53,7 @@ object Pairs {
     }
   }
 
-  def makeAllHeadAndTails[@specialized T](l:List[T]):List[(T,List[T])] = {
+  def makeAllHeadAndTails[T](l:List[T]):List[(T,List[T])] = {
     l match{
       case Nil => Nil
       case h::t => (h,t) :: makeAllHeadAndTails(t)

@@ -22,7 +22,6 @@ import oscar.algo.paretofront.LinearList
 import oscar.algo.paretofront.ParetoFront
 import scala.Array.canBuildFrom
 import oscar.dfo.multiobjective.mogen.algos.ComparativeAlgorithm
-import oscar.dfo.multiobjective.mogen.algos.states.NelderMeadState
 
 class MOGEN(var evaluator: MOEvaluator) {
 

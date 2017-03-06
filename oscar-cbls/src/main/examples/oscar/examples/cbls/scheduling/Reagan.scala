@@ -23,12 +23,12 @@
 
 package oscar.examples.cbls.scheduling
 
-import oscar.cbls.invariants.core.computation.{CBLSIntVar, Store}
-import oscar.cbls.scheduling._
-import oscar.cbls.scheduling.model._
-import oscar.cbls.invariants.core.propagation.Checker
-import oscar.cbls.scheduling.model.CumulativeResource
-import oscar.cbls.scheduling.solver.IFlatIRelax
+import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.business.scheduling._
+import oscar.cbls.business.scheduling.model._
+import oscar.cbls.core.propagation.Checker
+import oscar.cbls.business.scheduling.model.CumulativeResource
+import oscar.cbls.business.scheduling.solver.IFlatIRelax
 
 /**a simple model of Reagan president of USA
  * he is partly multitask, can do two things at the same time, except eating, which requires his full attention

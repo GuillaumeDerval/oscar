@@ -12,7 +12,7 @@ import oscar.cp._
 object GuessTheNumber extends CPModel with App {
   //  model imagined by JF Puget
   val x = CPIntVar(0 to 100000)
-  add(x * 10 + 1 == (x + 100000) * 3)
+  add(x * 10 + 1 === (x + 100000) * 3)
   search { binaryStatic(Seq(x)) }
   onSolution {
     println(s"x => $x")

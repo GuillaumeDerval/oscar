@@ -92,7 +92,7 @@ object PMedian extends CPModel with App {
   }
 
   add(binPacking(x, demand, load))
-  add(sum(0 until nbCust)(i => load(i) >>= 0) <= nbMed)
+  add(sum(0 until nbCust)(i => load(i) ?> 0) <= nbMed)
   
   minimize(totCost) search {
     binaryFirstFail(x, _.randomValue)

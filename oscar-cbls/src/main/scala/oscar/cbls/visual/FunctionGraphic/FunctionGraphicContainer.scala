@@ -17,12 +17,10 @@ package oscar.cbls.visual.FunctionGraphic
   * ****************************************************************************
   */
 
-import java.awt.{Color, BorderLayout}
+import java.awt.{BorderLayout, Color, Dimension}
 import javax.swing._
 
-
 import scala.collection.immutable.HashMap
-import scala.swing.Dimension
 
 /**
   * This abstract class represent the JInternalFrame that will contain
