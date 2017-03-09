@@ -181,7 +181,7 @@ class AllDiffBC(val x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffB
     while (i <= nb + 1) {
       t(i) = i - 1
       h(i) = i - 1
-      d(i) = bounds(i) - bounds(i - 1);
+      d(i) = bounds(i) - bounds(i - 1)
       i += 1
     }
     i = 0

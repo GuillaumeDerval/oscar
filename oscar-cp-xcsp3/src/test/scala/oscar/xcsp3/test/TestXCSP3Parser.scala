@@ -105,7 +105,7 @@ class TestXCSP3Parser extends TestSuite {
     "testExtension1.xml",
     "testExtension2.xml",
     "BinPacking-mdd-ft060-00.xml",
-    //"BinPacking-mdd-n1c1w4a.xml",
+    "BinPacking-mdd-n1c1w4a.xml",
     "Sudoku-s01a-alldiff.xml",
     "AllInterval-005.xml",
     "GolombRuler-09-a3.xml",

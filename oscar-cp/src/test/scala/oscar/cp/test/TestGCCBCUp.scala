@@ -97,4 +97,245 @@ class TestGCCBCUp extends TestSuite {
     }
   }
 
+  test("GCCUpperBC 3") {
+    implicit val cp = CPSolver()
+    val domains = Array((0,1),
+      (1,2),
+      (2,2))
+    val minval = 0
+    val upperBound = Array(0,1,1,0)
+    val x = domains.map(i => CPIntVar(i._1, i._2))
+    val constraint = new GCCUpperBC(x, minval, upperBound)
+    //Should not infinitely loop
+  }
+
+  test("GCCUpperBC 4") {
+    implicit val cp = CPSolver()
+    val domains = Array((0,1),
+      (0,1),
+      (1,2),
+      (2,2))
+    val minval = 0
+    val upperBound = Array(0,1,1)
+    val x = domains.map(i => CPIntVar(i._1, i._2))
+    val constraint = new GCCUpperBC(x, minval, upperBound)
+    //Should fail, but not infinite loop.
+    isInconsistent(cp.post(constraint)) should equal(true)
+  }
+
+  test("GCCUpperBC 5") {
+    implicit val cp = CPSolver()
+    val domains = Array(
+      (0,0),
+      (0,2),
+      (0,2),
+      (2,2))
+    val minval = 0
+    val upperBound = Array(1,0,1)     //10-17
+    val x = domains.map(i => CPIntVar(i._1, i._2))
+    val constraint = new GCCUpperBC(x, minval, upperBound)
+    //Should fail, but not infinite loop.
+    isInconsistent(cp.post(constraint)) should equal(true)
+  }
+
+  test("GCCUpperBC 9") {
+    implicit val cp = CPSolver()
+    val domains = Array(
+      (2,6),
+      (0,0),
+      (2,2),
+      (3,3),
+      (0,6),
+      (3,6),
+      (3,5),
+      (0,2),
+      (0,2),
+      (0,2))
+    val minval = 0
+    val upperBound = Array(1,0,1,2,0,1,1)
+    val x = domains.map(i => CPIntVar(i._1, i._2))
+    val constraint = new GCCUpperBC(x, minval, upperBound)
+    //Should fail, but not infinite loop.
+    isInconsistent(cp.post(constraint)) should equal(true)
+  }
+
+  test("GCCUpperBC 6") {
+    implicit val cp = CPSolver()
+    val domains = Array(
+      (2,6),
+      (0,0),
+      (6,6),
+      (5,6),
+      (2,2),
+      (3,6),
+      (3,3),
+      (0,6),
+      (3,6),
+      (3,6),
+      (3,5),
+      (0,2),
+      (0,2),
+      (0,2))
+    val minval = 0
+    val upperBound = Array(1,0,1,2,0,1,1)
+    val x = domains.map(i => CPIntVar(i._1, i._2))
+    val constraint = new GCCUpperBC(x, minval, upperBound)
+    //Should fail, but not infinite loop.
+    isInconsistent(cp.post(constraint)) should equal(true)
+  }
+
+  test("GCCUpperBC 7") {
+    implicit val cp = CPSolver()
+    val domains = Array(
+      (44,99),
+      (0,0),
+      (0,0),
+      (44,99),
+      (0,0),
+      (0,0),
+      (44,99),
+      (0,0),
+      (0,0),
+      (44,99),
+      (0,0),
+      (0,0),
+      (44,99),
+      (0,0),
+      (0,0),
+      (44,99),
+      (0,0),
+      (0,0),
+      (44,99),
+      (0,0),
+      (0,0),
+      (44,99),
+      (0,0),
+      (0,0),
+      (44,99),
+      (0,0),
+      (0,0),
+      (44,99),
+      (0,0),
+      (0,0),
+      (44,99),
+      (0,0),
+      (0,0),
+      (44,99),
+      (0,0),
+      (0,0),
+      (44,99),
+      (0,50),
+      (0,0),
+      (44,99),
+      (0,50),
+      (0,0),
+      (44,65),
+      (32,32),
+      (0,0),
+      (44,65),
+      (31,31),
+      (0,0),
+      (44,65),
+      (31,31),
+      (0,0),
+      (41,60),
+      (40,50),
+      (0,0),
+      (41,60),
+      (0,0),
+      (0,0),
+      (41,60),
+      (0,0),
+      (0,0),
+      (41,60),
+      (0,0),
+      (0,0),
+      (41,60),
+      (0,0),
+      (0,0),
+      (41,60),
+      (0,0),
+      (0,0),
+      (41,60),
+      (0,0),
+      (0,0),
+      (41,60),
+      (0,0),
+      (0,0),
+      (41,60),
+      (0,0),
+      (0,0),
+      (41,60),
+      (0,0),
+      (0,0),
+      (41,60),
+      (0,0),
+      (0,0),
+      (41,60),
+      (0,0),
+      (0,0),
+      (41,60),
+      (0,0),
+      (0,0),
+      (41,60),
+      (0,0),
+      (0,0),
+      (40,56),
+      (34,34),
+      (0,0),
+      (35,53),
+      (35,35),
+      (0,0),
+      (35,53),
+      (0,50),
+      (0,0),
+      (35,53),
+      (35,50),
+      (0,0),
+      (35,53),
+      (30,30),
+      (0,0),
+      (0,53),
+      (0,0),
+      (0,0),
+      (0,53),
+      (0,0),
+      (0,0),
+      (0,53),
+      (0,0),
+      (0,0),
+      (0,53),
+      (0,0),
+      (0,0))
+    val minval = 0
+    val upperBound = Array(
+      70,0,0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,
+      1,2,1,0,1,2,0,0,0,0,
+      3,2,0,0,1,0,0,1,0,2,
+      2,1,1,2,0,0,2,0,0,0,
+      1,0,0,2,2,1,0,0,0,1,
+      0,0,1,0,0,0,1,1,0,1,
+      2,0,0,0,3,1,0,0,2,2,
+      0,1,1,1,0,1,0,0,0,1)
+    val x = domains.map(i => CPIntVar(i._1, i._2))
+    val constraint = new GCCUpperBC(x, minval, upperBound)
+    //Should fail, but not infinite loop.
+    isInconsistent(cp.post(constraint)) should equal(true)
+  }
+
+  test("GCCUpperBC 8") {
+    implicit val cp = CPSolver()
+    val domains = Array(
+      (0,0),
+      (2,4),
+      (3,3))
+    val minval = 0
+    val upperBound = Array(1,0,1,1,1)
+    val x = domains.map(i => CPIntVar(i._1, i._2))
+    val constraint = new GCCUpperBC(x, minval, upperBound)
+    //Should not fail, not infinitely loop.
+    isInconsistent(cp.post(constraint)) should equal(false)
+  }
 }

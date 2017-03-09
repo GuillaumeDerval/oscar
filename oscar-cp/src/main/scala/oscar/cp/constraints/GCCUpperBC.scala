@@ -31,12 +31,8 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
 
   private[this] val minDomVal = x.map(_.min).min
   private[this] val maxDomVal = x.map(_.max).max
-  private[this] val lowCard = Array.fill(maxDomVal-minDomVal+1)(0)
   private[this] val upCard = Array.fill(maxDomVal-minDomVal+1)(2*x.length)
-  
-  //println(x.mkString(","))
-  //println("minVal"+minval)
-  //println(upperCard.mkString(","))
+
   for {
     i <- 0 until upperCard.length
     v = i + minval - minDomVal
@@ -46,16 +42,6 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
   }
   
   val u = new PartialSum(minDomVal,upCard)
-  val l = new PartialSum(minDomVal,lowCard)
-  
-  /*
-  private[this] val partialSumUp = Array.fill(maxDomVal-minDomVal+1)(0)
-  
-  partialSumUp(0) = up(0)
-  for (i <- 1 until up.length) {
-    partialSumUp(i) = up(i) + partialSumUp(i-1)
-  }
-  */
   
   protected[GCCUpperBC] class PartialSum(firstVal: Int,elem: Array[Int]) {
   
@@ -70,11 +56,8 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
       psum(i+1) = psum(i) + elem(i-2)
       i += 1
     }
-    psum(i+1) = psum(i) +1
-    psum(i+2) = psum(i+1) +1
-    //println("elem:"+elem.mkString(","))
-    //println(x.mkString(","))
-    //println("partial sum:"+psum.mkString(","))
+    psum(i+1) = psum(i) + 1
+    psum(i+2) = psum(i+1) + 1
     def sum(from: Int, to: Int): Int = {
       if (from <= to) {
         psum(to - firstValue) - psum(from - firstValue -1)
@@ -85,34 +68,38 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
     
     val minValue = firstValue + 3
     
-    val maxValue = lastValue -2
-    /*
-    val ds = Array.ofDim[Int](count+1+2+1)
-    i = count +3
-    var j = i+1
-    while (i > 0) {
-      
-    }
-    */
+    val maxValue = lastValue - 2
   }
   
 
-  protected[GCCUpperBC] class Interval(var min: Int, var max: Int, var minRank: Int, var maxRank: Int) {
+  protected[GCCUpperBC] class Interval(val idx: Int, private var _min: Int, private var _max: Int, var minRank: Int, var maxRank: Int) {
+    @inline def update(): Unit = {
+      _min = x(idx).min
+      _max = x(idx).max
+    }
+
+    @inline def min: Int = _min
+    @inline def setMin(v: Int): Unit = {
+      _min = v
+      x(idx).updateMin(_min)
+    }
+
+    @inline def max: Int = _max
+    @inline def setMax(v: Int): Unit = {
+      _max = v
+      x(idx).updateMax(_max)
+    }
+
     override def toString = "["+min+","+max+"]"
   }
 
   private[this] val n = x.size
   private[this] var nb = 0
-  private[this] var lastLevel = -1
-
-  private[this] val INCONSISTENT = 0
-  private[this] val CHANGES = 1
-  private[this] val NO_CHANGES = 2
   
   // bounds[1..nb] hold set of min & max in the niv intervals
   // while bounds[0] and bounds[nb+1] allow sentinels
   private[this] val bounds = Array.fill(2 * n + 2)(0)
-  private[this] val iv = Array.fill(n)(new Interval(0, 0, 0, 0))
+  private[this] val iv = Array.tabulate(n)(i => new Interval(i, 0, 0, 0, 0))
   private[this] val minSorted = iv.map(i => i)
   private[this] val maxSorted = iv.map(i => i)
 
@@ -122,12 +109,16 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
 
   override def setup(l: CPPropagStrength): Unit = {
 
-    for (i <- 0 until x.size) {
+    // Remove values with upperCard == 0
+    for (i <- 0 until upperCard.length)
+      if(upperCard(i) == 0)
+        for(v <- x)
+          v.removeValue(minval+i)
+
+    for (i <- 0 until x.size)
       x(i).callPropagateWhenBoundsChange(this)
-    }
 
     propagate()
-
   }
 
   // sort the intervals of minSorted such that minSorted(i).min < minSorted(i+1).min forall i
@@ -177,7 +168,7 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
     var max = maxSorted(0).max + 1
     
     
-    bounds(0) = l.firstValue + 1
+    bounds(0) = u.firstValue + 1
     var last = bounds(0)
     
     nb = 0
@@ -220,7 +211,11 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
       val k = l
       l = t(k)
       t(k) = to
-      if(k == l) throw new Exception("pathSet encountered an infinite loop!")
+      if(k == l) {
+        println(x.map(i => (i.min, i.max)).mkString(","))
+        println(upperCard.mkString(","))
+        throw new Exception("pathSet encountered an infinite loop on "+l+"!")
+      }
     }
   }
 
@@ -240,21 +235,30 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
     i
   }
 
-  def filterlower(): Int = {
-    var changes = false
+  def filterlower(): Unit = {
     var i = 1
+    var last_t = 0
+    var last_h = 0
     while (i <= nb + 1) {
-      t(i) = i - 1
-      h(i) = i - 1
-      //println("bounds(i-1):"+bounds(i-1)+" bounds(i)-1:"+(bounds(i)-1)+ " sum:"+u.sum(bounds(i-1),bounds(i)-1))
-      d(i) =  u.sum(bounds(i-1),bounds(i)-1)
+      d(i) = u.sum(bounds(i-1),bounds(i)-1)
+      if(d(i) > 0) {
+        t(i) = last_t
+        h(i-1) = last_h
+        last_t = i
+        last_h = i - 1
+      }
+      else {
+        t(i) = i + 1
+        h(i - 1) = i
+      }
+
       i += 1
     }
-    //println(d.mkString(","))
+
     i = 0
     while (i < n) {
       val x = maxSorted(i).minRank
-      val y = maxSorted(i).maxRank
+      var y = maxSorted(i).maxRank
       var z = pathMax(t, x + 1)
       val j = t(z)
       d(z) -= 1
@@ -268,41 +272,51 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
       
 
       // bounds(z) - bounds(y)
-      //println("..i="+i)
-      //println("d(z):"+d(z)+ " u.sum(bounds(y),bounds(z)-1):"+u.sum(bounds(y),bounds(z)-1))
       if (d(z) <  u.sum(bounds(y),bounds(z)-1)) {
-        return INCONSISTENT // no solution
+        throw Inconsistency
       }
       if (h(x) > x) {
         val w = pathMax(h, h(x))
-        maxSorted(i).min = bounds(w)
+        maxSorted(i).setMin(bounds(w)) //updates the domain
         pathSet(h, x, w, w) // path compression
-        changes = true
       }
       // bounds(z) - bounds(y)
       if (d(z) == u.sum(bounds(y),bounds(z)-1)) {
-        pathSet(h, h(y), j - 1, y) // mark hall interval
-        h(y) = j - 1 //("hall interval [%d,%d)\n",bounds[j],bounds[y])
+        y = pathMax(h, y)
+        val tmp = pathMax(h, j)
+        val w = h(tmp)
+        pathSet(h, h(y), w, y)
+        pathSet(h, j, tmp, y)
+        h(y) = w
       }
       i += 1
     }
-    if (changes) CHANGES
-    else NO_CHANGES
   }
 
-  def filterUpper(): Int = {
-    var changes = false
-    var i = 0
-    while (i <= nb) {
-      t(i) = i + 1
-      h(i) = i + 1
-      d(i) = u.sum(bounds(i),bounds(i+1)-1) // bounds(i + 1) - bounds(i)
-      i += 1
+  def filterUpper(): Unit = {
+    var i = nb
+    var last_t = nb + 1
+    var last_h = nb + 1
+    while (i >= 0) {
+      d(i) = u.sum(bounds(i),bounds(i+1)-1)
+      if(d(i) > 0) {
+        t(i) = last_t
+        h(i+1) = last_h
+        last_t = i
+        last_h = i + 1
+      }
+      else {
+        t(i) = i - 1
+        h(i + 1) = i
+      }
+
+      i -= 1
     }
+
     i = n-1
     while (i >= 0) { // visit intervals in decreasing min order
       val x = minSorted(i).maxRank
-      val y = minSorted(i).minRank
+      var y = minSorted(i).minRank
       var z = pathMin(t, x - 1)
       val j = t(z)
       d(z) -= 1
@@ -313,51 +327,39 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
       }
       pathSet(t, x - 1, z, z)
       // bounds(y) - bounds(z)
-      if (d(z) < u.sum(bounds(z),bounds(y)-1)) return INCONSISTENT // no solution
+      if (d(z) < u.sum(bounds(z),bounds(y)-1))
+        throw Inconsistency // no solution
+
       if (h(x) < x) {
         val w = pathMin(h, h(x))
-        minSorted(i).max = bounds(w) - 1
+        minSorted(i).setMax(bounds(w) - 1) //updates the domain
         pathSet(h, x, w, w)
-        changes = true
       }
+
       // bounds(y) - bounds(z)
       if (d(z) == u.sum(bounds(z),bounds(y)-1)) {
-        pathSet(h, h(y), j + 1, y)
-        h(y) = j + 1
+        y = pathMin(h, y)
+        val tmp = pathMin(h, j)
+        val w = h(tmp)
+        pathSet(h, h(y), w, y)
+        pathSet(h, j, tmp, y)
+        h(y) = w
       }
       i -= 1
     }
-    if (changes) CHANGES
-    else NO_CHANGES
   }
 
   override def propagate(): Unit = {
-    // not incremental
-    var statusLower = CHANGES
-    var statusUpper = CHANGES
     var i = 0
     while (i < x.length) {
-      iv(i).min = x(i).min
-      iv(i).max = x(i).max
+      iv(i).update()
       i += 1
     }
-    sortIt()
-    statusLower = filterlower()
-    
-    if (statusLower != INCONSISTENT) {
-      statusUpper = filterUpper()
-    }
 
-    if ((statusLower == INCONSISTENT) || (statusUpper == INCONSISTENT)) {
-      throw Inconsistency
-    } else if ((statusLower == CHANGES) || (statusUpper == CHANGES)) {
-      i = 0
-      while (i < x.length) {
-        x(i).updateMax(iv(i).max)
-        x(i).updateMin(iv(i).min)
-        i += 1
-      }
-    }
+    sortIt()
+
+    filterlower()
+    filterUpper()
   }
 
 }
