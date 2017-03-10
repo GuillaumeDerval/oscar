@@ -68,6 +68,9 @@ class ReversibleContextImpl extends ReversibleContext {
   /** Returns the magic number of the context */
   final def magic: Long = magicNumber
 
+  /** Returns the number of pushed states */
+  final def nLevel: Int = levelStack.length
+
   /** Returns the maximal size of the trailing stack */
   final def maxSize: Int = maxTrailSize
 

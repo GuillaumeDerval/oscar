@@ -33,6 +33,7 @@ class DFSReplayer(node: DFSearchNode, decisionVariables: Seq[IntVarLike]) {
     node.resetStats()
     val nModifications = decisions.length
     var i = 0
+    val baseLevel = node.nLevel
 
     val beforeSolvingTime = timeThreadBean.getCurrentThreadUserTime
 
@@ -97,6 +98,12 @@ class DFSReplayer(node: DFSearchNode, decisionVariables: Seq[IntVarLike]) {
     val replayIsComplete = i == nModifications
 
     val timeInMillis = ((timeThreadBean.getCurrentThreadUserTime - beforeSolvingTime - totalPanicTime) / math.pow(10, 6)).toLong
+
+    // Check that we are on the right "level" (that we popped all the pushed states)
+    // problems can happen when a timeout occurs
+    while(node.nLevel > baseLevel)
+      node.pop()
+
     new SearchStatistics(nNodes,nBacktracks,timeInMillis,replayIsComplete,node.time,node.maxSize,nSols)
 
   }
