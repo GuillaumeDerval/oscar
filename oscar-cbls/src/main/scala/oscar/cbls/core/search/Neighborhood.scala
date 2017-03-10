@@ -666,7 +666,24 @@ case object NoMoveNeighborhood extends Neighborhood {
  * @param m the move to return when the neighborhood is queried for a move
  */
 case class ConstantMoveNeighborhood(m: Move) extends Neighborhood {
-  override def getMove(obj: Objective, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = m
+  override def getMove(obj: Objective, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+    m
+  }
+}
+
+case class DoNothingNeighborhood() extends Neighborhood {
+  override def getMove(obj: Objective, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+    val objValue = obj.value
+    if(acceptanceCriterion(objValue,objValue)){
+      MoveFound(DoNothingMove(objValue))
+    }else{
+      NoMoveFound
+    }
+  }
+}
+
+case class DoNothingMove(override val objAfter:Int) extends Move(objAfter){
+  override def commit() : Unit = {}
 }
 
 trait SupportForAndThenChaining[MoveType<:Move] extends Neighborhood{
@@ -721,8 +738,6 @@ abstract class EasyNeighborhood[M<:Move](best:Boolean = false, neighborhoodName:
     this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
     if (printPerformedSearches)
       println(neighborhoodNameToString + ": start exploration")
-
-    //    if (printExploredNeighbors) println(obj.detailedString(false, 2))
 
     exploreNeighborhood()
 
