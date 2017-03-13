@@ -788,9 +788,10 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
     //println("notify define checkpoint " + this.toNotify.newValue)
 
     //that previous checkpoints must be explicitely freeed, so I do not needto earch for checkpoints to remove at this point
+    //Also, we only perform aa regularization (that also included flattening on pushed updates) if defining a checkpoint at level zero
     toNotify = SeqUpdateDefineCheckpoint(
       trimUpdatesCheckpointDefinitionsForbidden(toNotify,maxHistorySize),
-      starModeExploration,maxPivotPerValuePercent,doRegularize = true,levelOfTopCheckpoint+1)
+      starModeExploration,maxPivotPerValuePercent,doRegularize = levelOfTopCheckpoint == -1,levelOfTopCheckpoint+1)
 
     //pushing top checkpoint
     if(topCheckpoint != null){

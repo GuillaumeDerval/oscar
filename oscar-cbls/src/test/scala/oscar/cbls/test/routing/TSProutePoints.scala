@@ -60,7 +60,7 @@ object TSProutePoints extends App {
   val n = 10000
   val v = 100
 
-  val verbose = 1
+  val verbose = 2
   val maxPivotPerValuePercent = 4
   new TSPRoutePointsS(1000,100,4,verbose)
   System.gc()
@@ -109,7 +109,7 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) exte
 
   val routeUnroutdPoint =  Profile(InsertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,best=bestInsert,neighborhoodName = "InsertUF"))
 
-  //TODO: using post-filters on k-nearest is probably crap
+  //TODO: using post-filters on k-nearest is probably a bit slower than possible in this context
   val routeUnroutdPoint2 =  Profile(InsertPointRoutedFirst(myVRP.routed,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,x => !myVRP.isRouted(x)),myVRP,best=bestInsert,neighborhoodName = "InsertRF")  guard(() => myVRP.size < n/2))
 
   def onePtMove(k:Int) = Profile(OnePointMove(myVRP.routed, () => myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP))
@@ -120,13 +120,13 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) exte
 
   val vlsn1pt = Mu[OnePointMoveMove](
   OnePointMove(myVRP.routed, () => myVRP.kFirst(5,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP),
-  l => Some(OnePointMove(() => List(l.head.newPredecessor), () => myVRP.kFirst(5,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP)),
+  l => Some(OnePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(3,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP)),
   intermediaryStops = true,
   maxDepth = 7)
 
-  val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, onePtMove(10),twoOpt, threeOpt(10,true),vlsn1pt)) exhaust threeOpt(20,true))
+  val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt, onePtMove(10),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true) exhaust vlsn1pt)
+  //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
-  // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10) guard (() => myVRP.unrouted.value.size != 0)),10)) exhaust BestSlopeFirst(List(onePtMove(20),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
 
   search.verbose = verbose
   //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
