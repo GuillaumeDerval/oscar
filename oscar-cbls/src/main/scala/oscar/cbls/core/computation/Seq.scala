@@ -197,7 +197,7 @@ class SeqUpdateMove(val fromIncluded:Int,val toIncluded:Int,val after:Int, val f
 
   assert({seq match{case m:MovedIntSequence => m.localBijection.checkBijection() case _ => ;};true})
 
-  //TODO: find O(1) solution
+  //TODO: use the TODO oldPos2NewPos of object MovedIntSequence
   private var localBijection:PiecewiseLinearBijectionNaive = null
   private def ensureBijection(){
     if(localBijection == null) {

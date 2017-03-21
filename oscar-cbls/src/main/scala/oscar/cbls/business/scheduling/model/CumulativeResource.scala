@@ -73,7 +73,7 @@ class CumulativeResource(planning: Planning, val maxAmount: Int = 1, name: Strin
   }
 
   /**these are the activities that you can use for ejecting one of the conflicting activities*/
-  def activitieUsingResourceAtThisTime(t: Int): Iterable[Activity] = {
+  def activitiesUsingResourceAtThisTime(t: Int): Iterable[Activity] = {
     activitiesAndUse(t).map(_._1)
   }
 

@@ -795,6 +795,9 @@ object MovedIntSequence{
       }
     }
   }
+
+  //TODO: newPosToOldPos
+
 }
 
 class MovedIntSequence(val seq:IntSequence,
@@ -810,6 +813,7 @@ class MovedIntSequence(val seq:IntSequence,
 
   override def descriptorString : String = seq.descriptorString + ".moved(startPos:" + startPositionIncluded + " endPos:" + endPositionIncluded + " targetPos:" + moveAfterPosition + " flip:" + flip + ")"
 
+  //TODO: this should be lazy, only use the oldPos2NewPos when possible (also maybe find better explorers that do not use the bijection)
   val localBijection = MovedIntSequence.bijectionForMove(startPositionIncluded, endPositionIncluded, moveAfterPosition, flip)
 
   override val size : Int = seq.size
