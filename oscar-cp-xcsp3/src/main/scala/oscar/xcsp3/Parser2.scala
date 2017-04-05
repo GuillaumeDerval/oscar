@@ -729,7 +729,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   override def buildObjToMinimize(id: String, objtype: TypeObjective, list: Array[XVarInteger], coeffs: Array[Int]): Unit = {
-    modelDeclaration.maximize(_getExprForTypeObjective(objtype, list, coeffs).reify())
+    modelDeclaration.minimize(_getExprForTypeObjective(objtype, list, coeffs).reify())
   }
 
   override def buildObjToMaximize(id: String, objtype: TypeObjective, list: Array[XVarInteger], coeffs: Array[Int]): Unit = {
