@@ -124,7 +124,7 @@ class TestXCSP3Parser2_Objective extends TestSuite {
 
   for (t <- OKTests) {
     test(t) {
-      assert(testObjective("data/xcsp3/instancesTest/"+t))
+      assert(testObjective("../data/xcsp3/instancesTest/"+t))
     }
   }
 }
