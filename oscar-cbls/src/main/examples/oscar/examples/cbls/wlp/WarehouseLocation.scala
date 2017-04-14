@@ -24,7 +24,6 @@ import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.neighborhoods.{RandomizeNeighborhood, SwapsNeighborhood, AssignNeighborhood}
 import oscar.cbls.modeling.AlgebraTrait
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.search._
 import oscar.cbls.lib.search.combinators.BestSlopeFirst
 
 import scala.language.postfixOps

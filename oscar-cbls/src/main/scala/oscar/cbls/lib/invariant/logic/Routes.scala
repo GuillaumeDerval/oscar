@@ -102,12 +102,16 @@ class Routes(V: Int,
     routeLength(v) := positionInRoute(currentID).newValue + 1
   }
 
-  var ToUpdate: List[Int] = List.empty
-  var ToUpdateCount: Int = 0
+  var toUpdateList: List[Int] = List.empty
+  var toUpdateCount: Int = 0
+  val isInToUpdateArray:Array[Boolean] = Array.fill(UNROUTED)(false)
 
   override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Int, NewVal: Int) {
-    ToUpdate = i :: ToUpdate
-    ToUpdateCount += 1
+    if(!isInToUpdateArray(i)) {
+      toUpdateList = i :: toUpdateList
+      toUpdateCount += 1
+      isInToUpdateArray(i) = true
+    }
     scheduleForPropagation()
     assert(next(i) == OldVal)
     next(i) = NewVal
@@ -123,7 +127,8 @@ class Routes(V: Int,
   val heap = new BinomialHeap[(Int, Int)]((a: (Int, Int)) => a._2, UNROUTED)
 
   override def performInvariantPropagation() {
-    for (node <- ToUpdate) {
+    for (node <- toUpdateList) {
+      isInToUpdateArray(node) = false
       if (next(node) == UNROUTED) {
         //node is unrouted now
         routeNr(node) := V
@@ -134,8 +139,8 @@ class Routes(V: Int,
         heap.insert((node, positionInRoute(node).newValue))
       }
     }
-    ToUpdate = List.empty
-    ToUpdateCount = 0
+    toUpdateList = List.empty
+    toUpdateCount = 0
 
     while (!heap.isEmpty) {
       val currentNodeForUpdate = heap.popFirst()._1

@@ -41,7 +41,7 @@ import oscar.cbls.business.routing.legacy.model.VRPObjective
 
 class TestUnroutedAndPenalty extends FunSuite with Matchers {
 
-  def fixture =
+  def fixture(unroutedPenaltyWeight:Int) =
     new {
       /**
        * Gives a distance matrix by entering the abscissa and
@@ -62,35 +62,34 @@ class TestUnroutedAndPenalty extends FunSuite with Matchers {
 
       val vrp = new VRP(N, V, model) with UnroutedImpl with VRPObjective with HopDistanceAsObjectiveTerm with PositionInRouteAndRouteNr with PenaltyForUnrouted
       vrp.installCostMatrix(matrix)
+      vrp.setUnroutedPenaltyWeight(unroutedPenaltyWeight)
+      vrp.closeUnroutedPenaltyWeight()
       model.close()
       vrp.setCircuit(List(0, 1, 2, 3, 4, 5, 6, 7, 8))
       // 0 -> 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 (-> 0)
     }
 
   test("instantiation") {
-    val f = fixture
+    val f = fixture(0)
     f.vrp.unroutedPenalty.value should be(0)
   }
 
   test("fixe a penalty of 100 on node 1") {
-    val f = fixture
-    f.vrp.setUnroutedPenaltyWeight(100)
+    val f = fixture(100)
     f.vrp.unroutedPenalty.value should be(100 * f.vrp.unrouted.value.size)
   }
 
   test("fixe a penalty of 1000 on each node") {
-    val f = fixture
-    f.vrp.setUnroutedPenaltyWeight(1000)
+    val f = fixture(1000)
     f.vrp.unroutedPenalty.value should be(0)
   }
 
   test("fixe a penalty of 100 on node 1 and unroute 1") {
-    val f = fixture
-    f.vrp.setUnroutedPenaltyWeight(1, 100)
+    val f = fixture(10)
     f.vrp.unroutedPenalty.value should be(0)
 
     f.vrp.unroute()
 
-    f.vrp.unroutedPenalty.value should be(100)
+    f.vrp.unroutedPenalty.value should be(80)
   }
 }

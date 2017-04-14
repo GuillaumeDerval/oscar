@@ -532,36 +532,26 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
   }
 
   def regularize(targetToken : Token = this.token) : ConcreteIntSequence = {
-    //TODO: maybe we can go faster with newValueToInternalPositions?
-    var explorer = this.explorerAtPosition(0)
-    val newInternalPositionToValues:Array[(Int,Int)] = Array.fill[(Int,Int)](this.size)(null)
+    var explorerOpt = this.explorerAtPosition(0)
+    val newInternalPositionToValues:Array[(Int,Int)] = Array.ofDim[(Int,Int)](this.size)
+    val oldInternalPosToNewInternalPos:Array[Int] = Array.ofDim[Int](this.size)
 
-    class Accumulator(var positions:RedBlackTreeMap[Int] = RedBlackTreeMap.empty[Int]){
-      def addPosition(position:Int){
-        positions = positions.insert(position,position)
-      }
-    }
-
-    var sortedValuesList = valueToInternalPositions.keys
-    val sortedValuesAndEmptyAccumulatorsArray = Array.fill(valueToInternalPositions.size)({
-      val tmp = sortedValuesList.head
-      sortedValuesList = sortedValuesList.tail
-      (tmp,new Accumulator)
-    })
-
-    val valuesToPositionAccumulators = RedBlackTreeMap.makeFromSortedArray(sortedValuesAndEmptyAccumulatorsArray)
-
-    while (explorer match {
+    while (explorerOpt match {
       case None => false
-      case Some(position) =>
-        newInternalPositionToValues(position.position) = (position.position,position.value)
-        valuesToPositionAccumulators.get(position.value).head.addPosition(position.position)
-        explorer = position.next
+      case Some(explorer) =>
+        newInternalPositionToValues(explorer.position) = (explorer.position,explorer.value)
+        oldInternalPosToNewInternalPos(explorer.asInstanceOf[ConcreteIntSequenceExplorer].internalPos) = explorer.position
+        explorerOpt = explorer.next
         true
     }) {}
 
     new ConcreteIntSequence(RedBlackTreeMap.makeFromSortedArray(newInternalPositionToValues),
-      RedBlackTreeMap.makeFromSortedArray(sortedValuesAndEmptyAccumulatorsArray.map({case (value,accumulator) => (value,accumulator.positions)})),
+      valueToInternalPositions.updateAll(0,
+        oldInternalPositions => {
+          val newPositions = oldInternalPositions.keys.map(oldInt => {
+            val newInternalPosition = oldInternalPosToNewInternalPos(oldInt)
+            (newInternalPosition,newInternalPosition)})
+          RedBlackTreeMap(newPositions)}),
       PiecewiseLinearBijectionNaive.identity,
       newInternalPositionToValues.length, targetToken)
   }
@@ -614,6 +604,8 @@ class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
   override def toString : String = "ConcreteIntSequenceExplorer(position:" + position + " value:" + value + " currentPivotPosition:" + currentPivotPosition + " pivotAbovePosition:" + pivotAbovePosition + " positionInRB:" + positionInRB + ")"
 
   override val value : Int = positionInRB.value
+
+  private[seq] def internalPos = positionInRB.key
 
   override def next : Option[IntSequenceExplorer] = {
     if(position == sequence.size-1) return None

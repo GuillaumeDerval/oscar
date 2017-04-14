@@ -1,0 +1,40 @@
+node {
+    env.JAVA_HOME="${tool 'jdk-1.8.121'}"
+    env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
+    env.SBT_HOME = "${tool 'sbt-1.0.0-M4'}"
+    env.SBT_CMD = "${env.SBT_HOME}/bin/sbt -Dsbt.log.noformat=true 'project oscar-cbls'"
+
+    email_to = "dimitri.durieux@cetic.be,yoann.guyot@cetic.be"
+
+    try{
+        stage('scm') {
+            checkout scm: [
+                $class: 'MercurialSCM',
+                source: 'https://bitbucket.org/oscarlib/oscar',
+                revision: 'CBLS',
+                revisionType: 'BRANCH',
+                clean: true
+            ],
+            poll: false
+        }
+        stage('Build') {
+            sh "${env.SBT_CMD} compile"
+        }
+        stage('Test') {
+            sh "${env.SBT_CMD} test"
+        }
+        stage('Package') {
+            sh "${env.SBT_CMD} package"
+        }
+    }
+    catch (err) {
+        currentBuild.result = "FAILURE"
+
+        step([$class: 'Mailer',
+           notifyEveryUnstableBuild: true,
+           recipients: "${email_to}",
+           sendToIndividuals: true])
+
+        throw err
+    }
+}
