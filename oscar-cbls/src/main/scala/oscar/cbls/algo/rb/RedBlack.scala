@@ -122,6 +122,14 @@ trait RedBlackTreeMap[@specialized(Int) V]{
    * @return a new updated balanced rb tree
    */
   def update(fromKeyIncluded:Int,toKeyIncluded:Int,deltaKey:Int,transform:(V=>V)):RedBlackTreeMap[V]
+
+  def updateAll(deltaKey:Int,transform:(V=>V)):RedBlackTreeMap[V] = {
+    (this.smallest,this.biggest) match{
+      case (None,None) => this
+      case (Some((smallestKey,_)),Some((biggestKey,_))) =>   update(smallestKey,biggestKey,deltaKey,transform)
+      case _ => throw new Error("unexpected error")
+    }
+  }
 }
 
 // A leaf node.
