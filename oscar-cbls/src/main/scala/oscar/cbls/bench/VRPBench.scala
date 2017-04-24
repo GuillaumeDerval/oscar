@@ -15,6 +15,8 @@ package oscar.cbls.bench
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import java.io.{PrintWriter, File}
+
 import oscar.cbls.core.computation.Store
 import oscar.cbls.lib.invariant.seq.Size
 import oscar.cbls.modeling.Algebra._
@@ -23,6 +25,8 @@ import oscar.cbls.business.routing.model._
 import oscar.cbls.business.routing.neighborhood._
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 import oscar.cbls.util.StopWatch
+
+import scala.io.Source
 
 class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int)
   extends VRP(n,v,m,maxPivot)
@@ -46,42 +50,99 @@ class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Arra
 
 object TSProutePoints extends App {
 
-  val n = 10000
-  val v = 100
-
-  val verbose = 0
-  val maxPivotPerValuePercent = 4
-  new TSPRoutePointsS(1000,100,4,verbose)
-  System.gc()
-
-  val nbTrials = 10
-
-  println()
-  print("n\tv\tpercent")
-  for (t <- 1 to nbTrials) {
-    print("\ttime")
+  def generateSymmetricTSP(n:Int,fileName:String){
+    println("generating TSP n:" + n + " to file:" + fileName)
+    val symmetricDistanceMatrix = RoutingMatrixGenerator(n)._1
+    saveMatrixToFile(fileName,symmetricDistanceMatrix)
   }
-  println
+
+  def benchmarkOnProblem(fileName:String){
+    warmUp(1000)
+    val matrix = loadMatrixFromFile(fileName:String)
+    val n = matrix.length
+    val v = 1
+    val percent = 3
+    println("benchmarking " + fileName)
+    print("n\tv\tpercent\ttime")
+    print(n + "\t" + v + "\t" + percent + "\t")
+    new TSPRoutePointsS(n, v, percent, 0, matrix)
+  }
+
+  def warmUp(n:Int = 10000){
+    val verbose = 0
+    val maxPivotPerValuePercent = 4
+    val v = 100
+    val symmetricDistanceMatrix = RoutingMatrixGenerator(n)._1
+    new TSPRoutePointsS(n, v, maxPivotPerValuePercent, verbose, symmetricDistanceMatrix)
+    System.gc()
+  }
+
+  def performRandomBenchmark() {
+    warmUp()
+
+    val nbTrials = 10
+
+    println()
+    print("n\tv\tpercent")
+    for (t <- 1 to nbTrials) {
+      print("\ttime")
+    }
+    println
 
 
-  for(n <- 1000 to 11000 by 2000){
-    for(v <- List(100)){
-      for (maxPivotPerValuePercent <- List(0,1,2,3,4,5,20)) {
-        print(n + "\t" + v + "\t" + maxPivotPerValuePercent + "\t")
-        for (t <- 1 to nbTrials){
-          new TSPRoutePointsS(n, v, maxPivotPerValuePercent, verbose)
-          print("\t")
-          System.gc()
+    for (n <- 11000 to 11000 by 2000) {
+      for (v <- List(100)) {
+        for (maxPivotPerValuePercent <- List(0, 1, 2, 3, 4, 5, 20)) {
+          print(n + "\t" + v + "\t" + maxPivotPerValuePercent + "\t")
+          for (t <- 1 to nbTrials) {
+            val symmetricDistanceMatrix = RoutingMatrixGenerator(n)._1
+            new TSPRoutePointsS(n, v, maxPivotPerValuePercent, 0, symmetricDistanceMatrix)
+            print("\t")
+            System.gc()
+          }
+          println
         }
-        println
       }
     }
   }
+
+  def loadMatrixFromFile(filename:String):Array[Array[Int]] = {
+    val file = Source.fromFile(filename)
+    val words: Array[String] = file.mkString.split("\\s+")
+    file.close()
+    val reader = words.iterator
+
+    val n = reader.next().toInt
+
+    val matrix = Array.tabulate(n)(_ => Array.fill(n)(-1))
+
+    for(i <- 0 to n){
+      for(j <- 0 to n){
+        matrix(i)(j) = reader.next().toInt
+      }
+    }
+    require(!reader.hasNext)
+    matrix
+  }
+
+  def saveMatrixToFile(fileName:String,matrix:Array[Array[Int]]){
+    val writer = new PrintWriter(new File(fileName))
+    writer.write(matrix.length + "\n")
+    val n = matrix.length
+    for(i <- 0 to n){
+      for(j <- 0 to n){
+        writer.write(matrix(i)(j) + " ")
+      }
+      writer.write("\n")
+    }
+    writer.write("\n")
+    writer.close()
+  }
+
+  performRandomBenchmark()
 }
 
-class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) extends StopWatch{
-
-  val symmetricDistanceMatrix = RoutingMatrixGenerator(n)._1
+class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symmetricDistanceMatrix:Array[Array[Int]]) extends StopWatch{
 
   startWatch()
   //  println("restrictions:" + restrictions)
