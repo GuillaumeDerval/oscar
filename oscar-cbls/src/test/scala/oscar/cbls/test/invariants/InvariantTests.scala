@@ -593,11 +593,11 @@ class InvariantTests extends FunSuite with Checkers {
     bench.run()
   }
 
-  test("Constant routing distance - global distance - symetric"){
+  test("Constant routing distance - global distance - symmetric"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff(),Shuffle()))
     val n = 100
     val v = 5
-    val route = bench.genRouteOfNodes(n,v)
+    val route = bench.genRouteOfNodes(n-1,v)
     val distanceMatrix = RoutingMatrixGenerator(n)._1
     ConstantRoutingDistance(route,v,false,distanceMatrix,true)
     bench.run()
@@ -607,7 +607,7 @@ class InvariantTests extends FunSuite with Checkers {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff(),Shuffle()))
     val n = 100
     val v = 5
-    val route = bench.genRouteOfNodes(n,v)
+    val route = bench.genRouteOfNodes(n-1,v)
     val distanceMatrix = RoutingMatrixGenerator(n)._1
     ConstantRoutingDistance(route,v,true,distanceMatrix,true)
     bench.run()
@@ -800,7 +800,7 @@ class InvariantTests extends FunSuite with Checkers {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), Shuffle(), MultipleMove()))
     val n = 100
     val v = 4
-    val route = bench.genRouteOfNodesForCheckPoint(n,v)
+    val route = bench.genRouteOfNodesForCheckPoint(n-1,v)
     val distanceMatrix = RoutingMatrixGenerator(n)._1
     ConstantRoutingDistance(route,v,true,distanceMatrix,true)
     bench.run()

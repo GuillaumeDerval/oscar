@@ -50,10 +50,12 @@ class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Arra
 
 object TSProutePoints extends App {
 
+
   def generateSymmetricTSP(n:Int,fileName:String){
-    println("generating TSP n:" + n + " to file:" + fileName)
-    val symmetricDistanceMatrix = RoutingMatrixGenerator(n)._1
-    saveMatrixToFile(fileName,symmetricDistanceMatrix)
+  }
+
+  def printMatrix(m:Array[Array[Int]]){
+    println(m.map(l => l.mkString(" ")).mkString("\n"))
   }
 
   def benchmarkOnProblem(fileName:String){
@@ -116,8 +118,8 @@ object TSProutePoints extends App {
 
     val matrix = Array.tabulate(n)(_ => Array.fill(n)(-1))
 
-    for(i <- 0 to n){
-      for(j <- 0 to n){
+    for(i <- 0 until n){
+      for(j <- 0 until n){
         matrix(i)(j) = reader.next().toInt
       }
     }
@@ -125,24 +127,74 @@ object TSProutePoints extends App {
     matrix
   }
 
-  def saveMatrixToFile(fileName:String,matrix:Array[Array[Int]]){
-    val writer = new PrintWriter(new File(fileName))
-    writer.write(matrix.length + "\n")
+
+
+
+
+  def writeMatrix(writer:PrintWriter,matrix:Array[Array[Int]]){
     val n = matrix.length
-    for(i <- 0 to n){
-      for(j <- 0 to n){
+    for(i <- 0 until n){
+      for(j <- 0 until n){
         writer.write(matrix(i)(j) + " ")
       }
       writer.write("\n")
     }
-    writer.write("\n")
+  }
+
+  def saveMatrixToFile(fileName:String,matrix:Array[Array[Int]]){
+    val writer = new PrintWriter(new File(fileName))
+    writer.write(matrix.length + "\n")
+    writeMatrix(writer,matrix)
     writer.close()
   }
 
-  performRandomBenchmark()
+  def saveMatrixToLocalSolverFile(fileName:String,matrix:Array[Array[Int]]){
+    val writer = new PrintWriter(new File(fileName))
+    val n = matrix.length
+    writer.write("NAME: RANDOM" + fileName + "\n")
+    writer.write("TYPE: TSP\n")
+    writer.write("COMMENT: " + n + " city problem\n")
+    writer.write("DIMENSION: " + n + "\n")
+    writer.write("EDGE_WEIGHT_TYPE: EXPLICIT\n")
+    writer.write("EDGE_WEIGHT_FORMAT: FULL_MATRIX\n")
+    writer.write("EDGE_WEIGHT_SECTION\n")
+    writeMatrix(writer,matrix)
+    writer.write("EOF\n")
+    writer.close()
+  }
+
+  val fileName = "C:\\Users\\rdl\\Documents\\Oscar\\BitBucket3\\oscar-cbls\\src\\main\\examples\\oscar\\examples\\cbls\\routing\\data\\bench"
+
+  def generateAllBenchmarks(){
+    for(n <- 500 to 5000 by 500){
+      println("generating TSP n:" + n + " to file:" + fileName)
+      val symmetricDistanceMatrix = RoutingMatrixGenerator(n)._1
+      saveMatrixToFile(fileName + n + ".bench",symmetricDistanceMatrix)
+      saveMatrixToLocalSolverFile(fileName + "_localSolver_" + n + ".tsp",symmetricDistanceMatrix)
+    }
+  }
+
+  def runAllBenchmarks(){
+    new TSPRoutePointsS(1000, 100, 3, 0, RoutingMatrixGenerator(1000)._1)
+
+    println()
+    print("n\ttime\tobj")
+    println
+
+    for(n <- 500 to 5000 by 500){
+      print(n + "\t")
+      val matrix = loadMatrixFromFile(fileName + n + ".bench")
+      new TSPRoutePointsS(n, 1, 4, 0, matrix,true)
+      print("\n")
+      System.gc()
+    }
+  }
+
+ // generateAllBenchmarks()
+  runAllBenchmarks()
 }
 
-class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symmetricDistanceMatrix:Array[Array[Int]]) extends StopWatch{
+class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symmetricDistanceMatrix:Array[Array[Int]],printobj:Boolean = false) extends StopWatch{
 
   startWatch()
   //  println("restrictions:" + restrictions)
@@ -176,4 +228,7 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
   search.doAllMoves(obj=myVRP.obj)
 
   print(getWatch)
+  if(printobj){
+    print("\t" + myVRP.obj.value)
+  }
 }
