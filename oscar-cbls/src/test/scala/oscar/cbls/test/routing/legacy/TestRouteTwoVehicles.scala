@@ -21,7 +21,7 @@
  * ****************************************************************************
  */
 
-package oscar.cbls.test.routing
+package oscar.cbls.test.routing.legacy
 
 import org.scalatest.{FunSuite, Matchers}
 import oscar.cbls.core.computation.{CBLSIntVar, Store}

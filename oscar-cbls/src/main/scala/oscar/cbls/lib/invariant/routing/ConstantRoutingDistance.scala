@@ -63,8 +63,22 @@ object ConstantRoutingDistance {
     distance
   }
 
-  def isDistanceSymmetric(distanceMatrix : Array[Array[Int]]):Boolean = {
+  def isDistanceSymmetricArray(distanceMatrix : Array[Array[Int]]):Boolean = {
     val n = distanceMatrix.length
+    var i = 0
+    while(i < n){
+      var j = 0
+      while(j <= i){
+        if (distanceMatrix(i)(j) != distanceMatrix(j)(i))
+          return false
+        j += 1
+      }
+      i += 1
+    }
+    true
+  }
+
+  def isDistanceSymmetric(distanceMatrix : Int => Int => Int, n:Int):Boolean = {
     var i = 0
     while(i < n){
       var j = 0
@@ -100,8 +114,15 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
                               v:Int,
                               distanceMatrix:Array[Array[Int]],
                               distance:Array[CBLSIntVar],
-                              distanceIsSymmetric:Boolean)
+                              distanceIsSymmetric:Boolean,
+                              nodeToMatrixID:Int=>Int = x => x)
   extends Invariant() with SeqNotificationTarget{
+
+  val n = routes.maxValue + 1
+
+  protected def distanceMatrixOnNode(from:Int)(to:Int):Int = {
+    distanceMatrix(nodeToMatrixID(from))(nodeToMatrixID(to))
+  }
 
   val perVehicle:Boolean = distance.length >1
   require(distance.length == 1 || distance.length == v)
@@ -168,9 +189,9 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
           case Some(oldSuccIfNoLoop) =>  if(oldSuccIfNoLoop < v) oldSuccIfNoLoop-1 else oldSuccIfNoLoop
         }
 
-        val oldDistance = distanceMatrix(oldPrev)(oldSucc)
-        val newDistance = distanceMatrix(oldPrev)(value) + distanceMatrix(value)(oldSucc)
-        val nodeCost = distanceMatrix(value)(value)
+        val oldDistance = distanceMatrixOnNode(oldPrev)(oldSucc)
+        val newDistance = distanceMatrixOnNode(oldPrev)(value) + distanceMatrixOnNode(value)(oldSucc)
+        val nodeCost = distanceMatrixOnNode(value)(value)
 
         if(perVehicle) {
           val vehicle = vehicleSearcher(newSeq, pos)
@@ -195,10 +216,10 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
           val fromValue = x.fromValue
           val toValue = x.toValue
 
-          val oldHopBeforeMovedSegment = distanceMatrix(oldPrevFromValue)(fromValue)
-          val oldHopAfterMovedSegment = distanceMatrix(toValue)(oldSuccToValue)
-          val newHopBeforeMovedSegment = distanceMatrix(oldPrevFromValue)(toValue)
-          val newHopAfterMovedSegment = distanceMatrix(fromValue)(oldSuccToValue)
+          val oldHopBeforeMovedSegment = distanceMatrixOnNode(oldPrevFromValue)(fromValue)
+          val oldHopAfterMovedSegment = distanceMatrixOnNode(toValue)(oldSuccToValue)
+          val newHopBeforeMovedSegment = distanceMatrixOnNode(oldPrevFromValue)(toValue)
+          val newHopAfterMovedSegment = distanceMatrixOnNode(fromValue)(oldSuccToValue)
 
           //for simple flip, there is no node cost to consider
           if(perVehicle) {
@@ -249,13 +270,13 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
 
           val oldSuccAfterValue = RoutingConventionMethods.routingSuccPos2Val(after, prev.newValue, v)
 
-          val oldHopBeforeMovedSegment = distanceMatrix(oldPrevFromValue)(fromValue)
-          val oldHopAfterMovedSegment = distanceMatrix(toValue)(oldSuccToValue)
-          val oldHopAfterAfter = distanceMatrix(afterValue)(oldSuccAfterValue)
+          val oldHopBeforeMovedSegment = distanceMatrixOnNode(oldPrevFromValue)(fromValue)
+          val oldHopAfterMovedSegment = distanceMatrixOnNode(toValue)(oldSuccToValue)
+          val oldHopAfterAfter = distanceMatrixOnNode(afterValue)(oldSuccAfterValue)
 
-          val newHopBeforeMovedSegment = distanceMatrix(afterValue)(if(flip) toValue else fromValue)
-          val newHopAfterMovedSegment = distanceMatrix(if(flip) fromValue else toValue)(oldSuccAfterValue)
-          val newHopReplacingSegment = distanceMatrix(oldPrevFromValue)(oldSuccToValue)
+          val newHopBeforeMovedSegment = distanceMatrixOnNode(afterValue)(if(flip) toValue else fromValue)
+          val newHopAfterMovedSegment = distanceMatrixOnNode(if(flip) fromValue else toValue)(oldSuccAfterValue)
+          val newHopReplacingSegment = distanceMatrixOnNode(oldPrevFromValue)(oldSuccToValue)
 
           if(!perVehicle){
             //not per vehicle, so no node cost to consider
@@ -341,10 +362,10 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
 
         val oldPrevValue = prev.newValue.valueAtPosition(positionOfDelete-1).get //vehicles are never deleted
         val oldSuccValue = RoutingConventionMethods.routingSuccPos2Val(positionOfDelete, prev.newValue,v)
-        val newDistance = distanceMatrix(oldPrevValue)(oldSuccValue)
-        val oldDistanceBefore = distanceMatrix(oldPrevValue)(removedValue)
-        val oldDistanceAfter = distanceMatrix(removedValue)(oldSuccValue)
-        val nodeCost = distanceMatrix(removedValue)(removedValue)
+        val newDistance = distanceMatrixOnNode(oldPrevValue)(oldSuccValue)
+        val oldDistanceBefore = distanceMatrixOnNode(oldPrevValue)(removedValue)
+        val oldDistanceAfter = distanceMatrixOnNode(removedValue)(oldSuccValue)
+        val nodeCost = distanceMatrixOnNode(removedValue)(removedValue)
 
         if(perVehicle){
           val vehicle = vehicleSearcher(prev.newValue,positionOfDelete)
@@ -421,21 +442,21 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
   protected def computeValueBetween(s:IntSequence, vehicle:Int, fromPosIncluded:Int, fromValueIncluded:Int, toPosIncluded:Int, toValueIncluded:Int):Int = {
     if(fromPosIncluded <= toPosIncluded) {
       var e = s.explorerAtPosition(fromPosIncluded).get
-      var toReturn = distanceMatrix(e.value)(e.value)
+      var toReturn = distanceMatrixOnNode(e.value)(e.value)
 
       while (e.position < toPosIncluded) {
         val nextPos = e.next.get
-        toReturn += distanceMatrix(e.value)(nextPos.value) + distanceMatrix(nextPos.value)(nextPos.value)
+        toReturn += distanceMatrixOnNode(e.value)(nextPos.value) + distanceMatrixOnNode(nextPos.value)(nextPos.value)
         e = nextPos
       }
       toReturn
     }else{
       var e = s.explorerAtPosition(fromPosIncluded).get
-      var toReturn = distanceMatrix(e.value)(e.value)
+      var toReturn = distanceMatrixOnNode(e.value)(e.value)
 
       while (e.position > toPosIncluded) {
         val prevPos = e.prev.get
-        toReturn += distanceMatrix(e.value)(prevPos.value) + distanceMatrix(prevPos.value)(prevPos.value)
+        toReturn += distanceMatrixOnNode(e.value)(prevPos.value) + distanceMatrixOnNode(prevPos.value)(prevPos.value)
         e = prevPos
       }
       toReturn
@@ -448,7 +469,7 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
    * @return the distance per vehicle or the total distance in a singleton array, according to the global "perVehicle" flag
    */
   private def computeValueFromScratch(s:IntSequence):Array[Int] = {
-    val toReturn = Array.tabulate(v)(v => distanceMatrix(v)(v))
+    val toReturn = Array.tabulate(v)(v => distanceMatrixOnNode(v)(v))
     val it = s.iterator
 
     var prevNode:Int = it.next()
@@ -459,23 +480,23 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
       if(node < v){
         //reaching a new vehicle start
         //finishing the circle (cost of vehicle node already added)
-        toReturn(currentVehicle) = toReturn(currentVehicle) + distanceMatrix(prevNode)(currentVehicle)
+        toReturn(currentVehicle) = toReturn(currentVehicle) + distanceMatrixOnNode(prevNode)(currentVehicle)
         currentVehicle = node
       }else{
         //continuing on the same vehicle
-        toReturn(currentVehicle) = toReturn(currentVehicle) + distanceMatrix(prevNode)(node) +  distanceMatrix(node)(node)
+        toReturn(currentVehicle) = toReturn(currentVehicle) + distanceMatrixOnNode(prevNode)(node) +  distanceMatrixOnNode(node)(node)
       }
       prevNode = node
     }
     //for the last vehicle, the finishing operation in the loop will not be executed, so we have to add one here
-    toReturn(currentVehicle) = toReturn(currentVehicle) + distanceMatrix(prevNode)(currentVehicle)
+    toReturn(currentVehicle) = toReturn(currentVehicle) + distanceMatrixOnNode(prevNode)(currentVehicle)
 
     if(perVehicle) toReturn
     else Array.fill(1)(toReturn.sum)
   }
 
   override def checkInternals(c : Checker) : Unit = {
-    c.check(!distanceIsSymmetric || ConstantRoutingDistance.isDistanceSymmetric(distanceMatrix),Some("distance matrix should be symmetric if invariant told so"))
+    c.check(!distanceIsSymmetric || ConstantRoutingDistance.isDistanceSymmetric(distanceMatrixOnNode,n),Some("distance matrix should be symmetric if invariant told so"))
 
     if(perVehicle){
       val values = computeValueFromScratch(routes.value)
@@ -531,8 +552,6 @@ class ConstantRoutingDistancePrecompute(routes:ChangingSeqValue,
     distance:Array[CBLSIntVar],
     distanceIsSymmetric:Boolean) {
 
-  val n = routes.maxValue + 1
-
   //TODO: for stacked updates, we will use someting like magic arrays here, indiced by level of checkpoints, with constant limit on the stack, so that all arrays can be allocated at startups
   val isFWPrecomputeUpToDate:Array[Boolean] = Array.fill(v)(false)
   val isBWPrecomputeUpToDate:Array[Boolean] = Array.fill(v)(false)
@@ -561,8 +580,8 @@ class ConstantRoutingDistancePrecompute(routes:ChangingSeqValue,
         if(value != vehicle+1){
           precomputedForwardCumulatedCostAtCheckpoint(value) =
             precomputedForwardCumulatedCostAtCheckpoint(prevValue) +
-              distanceMatrix(prevValue)(value) +
-              distanceMatrix(prevValue)(prevValue)
+              distanceMatrixOnNode(prevValue)(value) +
+              distanceMatrixOnNode(prevValue)(prevValue)
           explorerOPt = explorer.next
           prevValue = value
           true
@@ -580,8 +599,8 @@ class ConstantRoutingDistancePrecompute(routes:ChangingSeqValue,
         if(value != vehicle+1) {
           precomputedBackwardCumulatedCostAtCheckpont(value) =
             precomputedBackwardCumulatedCostAtCheckpont(prevValue) +
-              distanceMatrix(value)(prevValue) +
-              distanceMatrix(value)(value)
+              distanceMatrixOnNode(value)(prevValue) +
+              distanceMatrixOnNode(value)(value)
           explorerOPt = explorer.next
           prevValue = value
           true
@@ -596,13 +615,13 @@ class ConstantRoutingDistancePrecompute(routes:ChangingSeqValue,
     val forwardRequired = fromPosIncluded < toPosIncluded
 
     if(fromPosIncluded == toPosIncluded) {
-      distanceMatrix(fromValueIncluded)(fromValueIncluded)
+      distanceMatrixOnNode(fromValueIncluded)(fromValueIncluded)
     } else if(((atCheckpoint && !perVehicle)|| (perVehicle && !isVehicleChangedSinceCheckpoint(vehicle)))&& precomputeFW && forwardRequired){
       //we need the or here above because we could be in single vehicle mode, where isVehicleChanged is always true
       //Forward
       doFWPrecomputeForVehicle(vehicle)
       val toReturn = (precomputedForwardCumulatedCostAtCheckpoint(toValueIncluded)
-        + distanceMatrix(fromValueIncluded)(fromValueIncluded)
+        + distanceMatrixOnNode(fromValueIncluded)(fromValueIncluded)
         - precomputedForwardCumulatedCostAtCheckpoint(fromValueIncluded))
       assert(toReturn == super.computeValueBetween(s, vehicle, fromPosIncluded, fromValueIncluded,toPosIncluded,toValueIncluded))
       toReturn
@@ -610,7 +629,7 @@ class ConstantRoutingDistancePrecompute(routes:ChangingSeqValue,
       //backward
       doBWPrecomputeForVehicle(vehicle)
       val toReturn = (precomputedBackwardCumulatedCostAtCheckpont(fromValueIncluded)
-        + distanceMatrix(toValueIncluded)(toValueIncluded)
+        + distanceMatrixOnNode(toValueIncluded)(toValueIncluded)
         - precomputedBackwardCumulatedCostAtCheckpont(toValueIncluded))
       assert(toReturn == super.computeValueBetween(s, vehicle, fromPosIncluded, fromValueIncluded, toPosIncluded, toValueIncluded))
       toReturn
@@ -620,7 +639,7 @@ class ConstantRoutingDistancePrecompute(routes:ChangingSeqValue,
         //getting a BW distance from a FW precompute
         doFWPrecomputeForVehicle(vehicle)
         val toReturn = (precomputedForwardCumulatedCostAtCheckpoint(fromValueIncluded)
-          + distanceMatrix(toValueIncluded)(toValueIncluded)
+          + distanceMatrixOnNode(toValueIncluded)(toValueIncluded)
           - precomputedForwardCumulatedCostAtCheckpoint(toValueIncluded))
         assert(toReturn == super.computeValueBetween(s, vehicle, fromPosIncluded, fromValueIncluded,toPosIncluded,toValueIncluded))
         toReturn
@@ -628,7 +647,7 @@ class ConstantRoutingDistancePrecompute(routes:ChangingSeqValue,
         //getting a FW distance from a BW precompute
         doBWPrecomputeForVehicle(vehicle)
         val toReturn = (precomputedBackwardCumulatedCostAtCheckpont(toValueIncluded)
-          + distanceMatrix(fromValueIncluded)(fromValueIncluded)
+          + distanceMatrixOnNode(fromValueIncluded)(fromValueIncluded)
           - precomputedBackwardCumulatedCostAtCheckpont(fromValueIncluded))
         assert(toReturn == super.computeValueBetween(s, vehicle, fromPosIncluded, fromValueIncluded, toPosIncluded, toValueIncluded))
         toReturn

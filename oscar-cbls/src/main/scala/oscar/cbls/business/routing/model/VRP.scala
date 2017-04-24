@@ -296,7 +296,7 @@ trait ConstantDistancePerVehicle extends TotalConstantDistance{
   var distancePerVehicle:Array[CBLSIntVar] = null
 
   override def setSymmetricDistanceMatrix(symmetricDistanceMatrix:Array[Array[Int]],precomputeFW : Boolean = true, precomputeBW : Boolean = true){
-    assert(ConstantRoutingDistance.isDistanceSymmetric(symmetricDistanceMatrix))
+    assert(ConstantRoutingDistance.isDistanceSymmetricArray(symmetricDistanceMatrix))
     this.distanceMatrix = symmetricDistanceMatrix
     this.matrixIsSymmetric = true
     require(distancePerVehicle == null)
@@ -319,7 +319,7 @@ trait TotalConstantDistance extends VRP{
   var matrixIsSymmetric = false
 
   def setDistanceMatrix(distanceMatrix:Array[Array[Int]]){
-    if(ConstantRoutingDistance.isDistanceSymmetric(distanceMatrix)){
+    if(ConstantRoutingDistance.isDistanceSymmetricArray(distanceMatrix)){
       setSymmetricDistanceMatrix(distanceMatrix)
     }else{
       setAsymmetricDistanceMatrix(distanceMatrix)
@@ -328,7 +328,7 @@ trait TotalConstantDistance extends VRP{
 
   def setSymmetricDistanceMatrix(symmetricDistanceMatrix:Array[Array[Int]],precomputeFW : Boolean = true, precomputeBW : Boolean = true){
     require(totalDistance == null)
-    assert(ConstantRoutingDistance.isDistanceSymmetric(symmetricDistanceMatrix))
+    assert(ConstantRoutingDistance.isDistanceSymmetricArray(symmetricDistanceMatrix))
     this.distanceMatrix = symmetricDistanceMatrix
     this.matrixIsSymmetric = true
     totalDistance = ConstantRoutingDistance(routes, v ,false, symmetricDistanceMatrix, true)(0)

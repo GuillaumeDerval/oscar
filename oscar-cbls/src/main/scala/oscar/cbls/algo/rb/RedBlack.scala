@@ -121,12 +121,21 @@ trait RedBlackTreeMap[@specialized(Int) V]{
    * @param transform the transform to apply on the values stored in the transformed interval
    * @return a new updated balanced rb tree
    */
-  def update(fromKeyIncluded:Int,toKeyIncluded:Int,deltaKey:Int,transform:(V=>V)):RedBlackTreeMap[V]
+  def updateDelta(fromKeyIncluded:Int,toKeyIncluded:Int,deltaKey:Int,transform:(V=>V)):RedBlackTreeMap[V]
+
+  /**
+   * this method ensures that the key are traversed in ascending order.
+   * @param fromKeyIncluded
+   * @param toKeyIncluded
+   * @param transform
+   * @return
+   */
+  def update(fromKeyIncluded:Int,toKeyIncluded:Int,transform:((Int,V) => (Int,V))):RedBlackTreeMap[V]
 
   def updateAll(deltaKey:Int,transform:(V=>V)):RedBlackTreeMap[V] = {
     (this.smallest,this.biggest) match{
       case (None,None) => this
-      case (Some((smallestKey,_)),Some((biggestKey,_))) =>   update(smallestKey,biggestKey,deltaKey,transform)
+      case (Some((smallestKey,_)),Some((biggestKey,_))) => updateDelta(smallestKey,biggestKey,deltaKey,transform)
       case _ => throw new Error("unexpected error")
     }
   }
@@ -194,7 +203,9 @@ case class L[@specialized(Int) V]() extends RedBlackTreeMap[V]  {
 
   override def smallestPosition:Option[RedBlackTreeMapExplorer[V]] = None
 
-  override def update(fromKeyIncluded : Int, toKeyIncluded : Int, deltaKey : Int, transform : (V) => V) : RedBlackTreeMap[V] = this
+  override def updateDelta(fromKeyIncluded : Int, toKeyIncluded : Int, deltaKey : Int, transform : (V) => V) : RedBlackTreeMap[V] = this
+
+  override def update(fromKeyIncluded:Int,toKeyIncluded:Int,transform:((Int,V) => (Int,V))):RedBlackTreeMap[V] = this
 }
 
 object T{
@@ -338,14 +349,54 @@ class T[@specialized(Int) V](private[this]val c : Boolean,
     }
   }
 
-  override def update(fromKeyIncluded : Int, toKeyIncluded : Int, deltaKey : Int, transform : (V) => V) : RedBlackTreeMap[V] = {
+  override def update(fromKeyIncluded : Int, toKeyIncluded : Int, transform : (Int, V) => (Int, V)) : RedBlackTreeMap[V] = {
     val newLeft = if(fromKeyIncluded < k) {
-      l.update(fromKeyIncluded, toKeyIncluded, deltaKey, transform)
+      l.update(fromKeyIncluded, toKeyIncluded, transform)
+    }else{
+      l
+    }
+    //this method ensures that the keys are traversed in ascending order,
+    //so the code is structures in this  way with identical fragments of code that must not not be factorized
+    if(fromKeyIncluded <= k && k <= toKeyIncluded){
+      //this one must be transformed as well
+      val (newK,newV) = transform(k,v.get)
+      val newRight = if(k < toKeyIncluded){
+        r.update(fromKeyIncluded,toKeyIncluded,transform)
+      }else{
+        r
+      }
+      new T(c,
+        newLeft,
+        newK,
+        Some(newV),
+        newRight)
+    }else{
+      //this one does not need transform
+      val newRight = if(k < toKeyIncluded){
+        r.update(fromKeyIncluded,toKeyIncluded,transform)
+      }else{
+        r
+      }
+      if(newLeft == l && newRight == r){
+        this
+      }else{
+        new T(c,
+          newLeft,
+          k ,
+          v,
+          newRight)
+      }
+    }
+  }
+
+  override def updateDelta(fromKeyIncluded : Int, toKeyIncluded : Int, deltaKey : Int, transform : (V) => V) : RedBlackTreeMap[V] = {
+    val newLeft = if(fromKeyIncluded < k) {
+      l.updateDelta(fromKeyIncluded, toKeyIncluded, deltaKey, transform)
     }else{
       l
     }
     val newRight = if(k < toKeyIncluded){
-      r.update(fromKeyIncluded,toKeyIncluded,deltaKey,transform)
+      r.updateDelta(fromKeyIncluded,toKeyIncluded,deltaKey,transform)
     }else{
       r
     }

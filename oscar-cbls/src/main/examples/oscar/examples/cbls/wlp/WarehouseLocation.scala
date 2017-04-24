@@ -54,10 +54,12 @@ object WarehouseLocation extends App with AlgebraTrait{
 
   m.close()
 
-  val neighborhood = (BestSlopeFirst(List(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
-    SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),refresh = W/10)
-    onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, W/10), 2, obj)
-    saveBestAndRestoreOnExhaust obj)
+  val neighborhood =(
+    BestSlopeFirst(
+      List(
+        AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
+        SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),refresh = W/10)
+    onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, W/10), 2, obj))
 
   neighborhood.verbose = 1
   

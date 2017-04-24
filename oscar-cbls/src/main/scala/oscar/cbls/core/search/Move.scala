@@ -293,12 +293,24 @@ case class CompositeMove(ml:List[Move], override val objAfter:Int, override val 
   }
 
   override def toString: String  = {
-    neighborhoodNameToString + "CompositeMove(" + ml.mkString(", ") + objToString + ")"
+    neighborhoodNameToString + "CompositeMove(globalSize:" + globalSize + " " + simpleMLString + objToString + ")"
   }
 
   override def touchedVariables: List[Variable] = ml.flatMap(_.touchedVariables)
-}
 
+  def globalSize:Int = {
+    ml.map(
+    {case c:CompositeMove => c.globalSize
+    case d:DoNothingMove => 0
+    case m:Move => 1}).sum
+  }
+
+  def simpleMLString:String = {
+    "[" + ml.map(
+    {case c:CompositeMove => c.simpleMLString
+    case m:Move => m.toString}).mkString(",") + "]"
+  }
+}
 
 case class NamedMove(m:Move, override val neighborhoodName:String = null)
   extends Move(m.objAfter, neighborhoodName){

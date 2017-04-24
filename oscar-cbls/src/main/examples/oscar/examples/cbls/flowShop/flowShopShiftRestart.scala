@@ -18,7 +18,7 @@ package oscar.examples.cbls.flowShop
 import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, IntValue}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.search.combinators.BestSlopeFirst
-import oscar.cbls.lib.search.neighborhoods.SwapsNeighborhood
+import oscar.cbls.lib.search.neighborhoods.{WideningFlipNeighborhood, SwapsNeighborhood}
 import oscar.cbls.modeling.CBLSModel
 
 object flowShopShiftRestart  extends CBLSModel with App {
@@ -60,7 +60,7 @@ object flowShopShiftRestart  extends CBLSModel with App {
   println("closing model")
   s.close()
 
-  val search = (BestSlopeFirst(List(shiftNeighborhood(jobSequence), rollNeighborhood(jobSequence), SwapsNeighborhood(jobSequence)))
+  val search = (BestSlopeFirst(List(shiftNeighborhood(jobSequence), rollNeighborhood(jobSequence), SwapsNeighborhood(jobSequence),WideningFlipNeighborhood(jobSequence)))
     onExhaustRestartAfter (shuffleNeighborhood(jobSequence, numberOfShuffledPositions=() => nbJobs/2),3,obj)
     onExhaustRestartAfter (shuffleNeighborhood(jobSequence),2,obj))
 
