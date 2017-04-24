@@ -35,6 +35,7 @@ object ConstantRoutingDistance {
    * @return
    */
   def apply(routes : ChangingSeqValue,
+           n:Int,
             v : Int,
             perVehicle:Boolean,
             distanceMatrix : Array[Array[Int]],
@@ -48,6 +49,7 @@ object ConstantRoutingDistance {
 
     if(precomputeFW || precomputeBW){
       new ConstantRoutingDistancePrecompute(routes,
+      n,
         v,
         distanceMatrix,
         distance,
@@ -55,6 +57,7 @@ object ConstantRoutingDistance {
         precomputeFW,precomputeBW)
     }else{
       new ConstantRoutingDistance(routes,
+      n,
         v,
         distanceMatrix,
         distance,
@@ -111,14 +114,13 @@ object ConstantRoutingDistance {
  * they cannot be included within a moved segment
  */
 class ConstantRoutingDistance(routes:ChangingSeqValue,
+                              n:Int,
                               v:Int,
                               distanceMatrix:Array[Array[Int]],
                               distance:Array[CBLSIntVar],
                               distanceIsSymmetric:Boolean,
                               nodeToMatrixID:Int=>Int = x => x)
   extends Invariant() with SeqNotificationTarget{
-
-  val n = routes.maxValue + 1
 
   protected def distanceMatrixOnNode(from:Int)(to:Int):Int = {
     distanceMatrix(nodeToMatrixID(from))(nodeToMatrixID(to))
@@ -540,6 +542,7 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
  * they cannot be included within a moved segment
  */
 class ConstantRoutingDistancePrecompute(routes:ChangingSeqValue,
+                                       n:Int,
                                         v:Int,
                                         distanceMatrix:Array[Array[Int]],
                                         distance:Array[CBLSIntVar],
@@ -547,6 +550,7 @@ class ConstantRoutingDistancePrecompute(routes:ChangingSeqValue,
                                         precomputeFW:Boolean,
                                         precomputeBW:Boolean)
   extends ConstantRoutingDistance(routes:ChangingSeqValue,
+  n,
     v:Int,
     distanceMatrix:Array[Array[Int]],
     distance:Array[CBLSIntVar],

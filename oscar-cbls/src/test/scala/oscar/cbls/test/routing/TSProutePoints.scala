@@ -43,7 +43,7 @@ class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Arra
   m.registerForPartialPropagation(unrouted)
   m.registerForPartialPropagation(routed)
 
-  val totalDistance = ConstantRoutingDistance(routes, v ,false, symmetricDistance, true)(0)
+  val totalDistance = ConstantRoutingDistance(routes, n, v ,false, symmetricDistance, true)(0)
 
   val obj = Objective(totalDistance + (penaltyForUnrouted*(n - Size(routes))))
 

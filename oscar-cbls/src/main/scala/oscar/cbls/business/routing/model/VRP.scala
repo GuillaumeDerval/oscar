@@ -300,7 +300,7 @@ trait ConstantDistancePerVehicle extends TotalConstantDistance{
     this.distanceMatrix = symmetricDistanceMatrix
     this.matrixIsSymmetric = true
     require(distancePerVehicle == null)
-    distancePerVehicle = ConstantRoutingDistance(routes, v ,true, symmetricDistanceMatrix, true, precomputeFW = true)
+    distancePerVehicle = ConstantRoutingDistance(routes, n, v ,true, symmetricDistanceMatrix, true, precomputeFW = true)
     totalDistance = Sum(distancePerVehicle)
   }
 
@@ -308,7 +308,7 @@ trait ConstantDistancePerVehicle extends TotalConstantDistance{
     this.distanceMatrix = asymetricDistanceMatrix
     this.matrixIsSymmetric = false
     require(distancePerVehicle == null)
-    distancePerVehicle = ConstantRoutingDistance(routes, v ,true, asymetricDistanceMatrix, false, precomputeFW, precomputeBW)
+    distancePerVehicle = ConstantRoutingDistance(routes, n, v ,true, asymetricDistanceMatrix, false, precomputeFW, precomputeBW)
     totalDistance = Sum(distancePerVehicle)
   }
 }
@@ -331,14 +331,14 @@ trait TotalConstantDistance extends VRP{
     assert(ConstantRoutingDistance.isDistanceSymmetricArray(symmetricDistanceMatrix))
     this.distanceMatrix = symmetricDistanceMatrix
     this.matrixIsSymmetric = true
-    totalDistance = ConstantRoutingDistance(routes, v ,false, symmetricDistanceMatrix, true)(0)
+    totalDistance = ConstantRoutingDistance(routes, n, v ,false, symmetricDistanceMatrix, true)(0)
   }
 
   def setAsymmetricDistanceMatrix(asymetricDistanceMatrix:Array[Array[Int]],precomputeFW : Boolean = true, precomputeBW : Boolean = true){
     require(totalDistance == null)
     this.distanceMatrix = asymetricDistanceMatrix
     this.matrixIsSymmetric = false
-    totalDistance = ConstantRoutingDistance(routes, v ,false, asymetricDistanceMatrix, false,precomputeFW = true, precomputeBW = true)(0)
+    totalDistance = ConstantRoutingDistance(routes, n, v ,false, asymetricDistanceMatrix, false,precomputeFW = true, precomputeBW = true)(0)
   }
 }
 
