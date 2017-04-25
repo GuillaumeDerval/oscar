@@ -31,7 +31,7 @@ import scala.io.Source
 class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int)
   extends VRP(n,v,m,maxPivot)
   with TotalConstantDistance with ClosestNeighbors with RoutedAndUnrouted{
-
+//setAsymmetricDistanceMatrix(symmetricDistance)
   setSymmetricDistanceMatrix(symmetricDistance)
 
   override protected def getDistance(from : Int, to : Int) : Int = symmetricDistance(from)(to)
@@ -49,10 +49,6 @@ class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Arra
 }
 
 object TSProutePoints extends App {
-
-
-  def generateSymmetricTSP(n:Int,fileName:String){
-  }
 
   def printMatrix(m:Array[Array[Int]]){
     println(m.map(l => l.mkString(" ")).mkString("\n"))
@@ -127,10 +123,6 @@ object TSProutePoints extends App {
     matrix
   }
 
-
-
-
-
   def writeMatrix(writer:PrintWriter,matrix:Array[Array[Int]]){
     val n = matrix.length
     for(i <- 0 until n){
@@ -163,10 +155,8 @@ object TSProutePoints extends App {
     writer.close()
   }
 
-  val fileName = "C:\\Users\\rdl\\Documents\\Oscar\\BitBucket3\\oscar-cbls\\src\\main\\examples\\oscar\\examples\\cbls\\routing\\data\\bench"
-
   def generateAllBenchmarks(){
-    for(n <- 500 to 5000 by 500){
+    for(n <- benchmarkSizes){
       println("generating TSP n:" + n + " to file:" + fileName)
       val symmetricDistanceMatrix = RoutingMatrixGenerator(n)._1
       saveMatrixToFile(fileName + n + ".bench",symmetricDistanceMatrix)
@@ -175,23 +165,38 @@ object TSProutePoints extends App {
   }
 
   def runAllBenchmarks(){
-    new TSPRoutePointsS(1000, 100, 3, 0, RoutingMatrixGenerator(1000)._1)
-
+    new TSPRoutePointsS(1000, 1, 3, 0, RoutingMatrixGenerator(1000)._1)
     println()
     print("n\ttime\tobj")
     println
 
-    for(n <- 500 to 5000 by 500){
+    for(n <- benchmarkSizes){
       print(n + "\t")
       val matrix = loadMatrixFromFile(fileName + n + ".bench")
-      new TSPRoutePointsS(n, 1, 4, 0, matrix,true)
+      new TSPRoutePointsS(n, 1, 3, 0, matrix,true)
       print("\n")
       System.gc()
     }
   }
 
+  def runBenchmark(fileName:String,n:Int){
+    new TSPRoutePointsS(1000, 100, 3, 0, RoutingMatrixGenerator(1000)._1)
+
+    println()
+    print("n\ttime\tobj")
+    println
+      print(n + "\t")
+      val matrix = loadMatrixFromFile(fileName + n + ".bench")
+      new TSPRoutePointsS(n, 1, 4, 0, matrix,true)
+      print("\n")
+      System.gc()
+  }
+
+  val benchmarkSizes = 500 to 5000 by 500
+  val fileName = "C:\\Users\\rdl\\Documents\\Oscar\\BitBucket3\\oscar-cbls\\src\\main\\examples\\oscar\\examples\\cbls\\routing\\data\\bench"
+  runBenchmark(fileName,1000)
  // generateAllBenchmarks()
-  runAllBenchmarks()
+  //runAllBenchmarks()
 }
 
 class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symmetricDistanceMatrix:Array[Array[Int]],printobj:Boolean = false) extends StopWatch{
