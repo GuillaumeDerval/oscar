@@ -29,7 +29,7 @@ import oscar.cbls.util.StopWatch
 import scala.collection.immutable.SortedSet
 
 
-class MySimpleDemoWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[Int]],pointsPositions:Array[(Int,Int)],m:Store, maxPivot:Int)
+class MySimpleDemoWithUnroutedPoints2(n:Int,v:Int,symmetricDistance:Array[Array[Int]],pointsPositions:Array[(Int,Int)],m:Store, maxPivot:Int)
   extends VRP(n,v,m,maxPivot)
     with ClosestNeighbors
     with RoutingMapDisplay
@@ -60,15 +60,12 @@ class MySimpleDemoWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[I
 
 object TSPDemo extends App {
 
-  val n = 10000
-  val v = 100
-
-  val verbose = 0
+  val n = 1000
+  val v = 10
+  val verbose = 1
   val maxPivotPerValuePercent = 4
-  new TSPDemo(1000,1,4,verbose)
-  System.gc()
 
-  val nbTrials = 3
+  new TSPDemo(n,v,maxPivotPerValuePercent,verbose)
 }
 
 class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) extends StopWatch{
@@ -80,7 +77,7 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) extends Stop
   startWatch()
   val model = new Store()
 
-  val myVRP = new MySimpleDemoWithUnroutedPoints(n,v,symmetricDistanceMatrix,pointsPositions,model,maxPivotPerValuePercent)
+  val myVRP = new MySimpleDemoWithUnroutedPoints2(n,v,symmetricDistanceMatrix,pointsPositions,model,maxPivotPerValuePercent)
   val nodes = myVRP.nodes
 
   model.close()
@@ -104,7 +101,10 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) extends Stop
     intermediaryStops = true,
     maxDepth = 7)
 
-  val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt, onePtMove(10),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true) exhaust vlsn1pt).afterMove(myVRP.drawRoutes())
+  var lastDisplay = this.getWatch
+
+  val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt, onePtMove(10),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true) exhaust vlsn1pt).afterMove(
+    if(this.getWatch > lastDisplay + 500) {myVRP.drawRoutes(); lastDisplay = this.getWatch})
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
@@ -113,5 +113,8 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) extends Stop
 
   search.doAllMoves(obj=myVRP.obj)
 
+  myVRP.drawRoutes()
   print(getWatch)
+
+  print(myVRP)
 }
