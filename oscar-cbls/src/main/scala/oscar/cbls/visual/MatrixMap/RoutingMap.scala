@@ -28,7 +28,7 @@ import org.jxmapviewer.{JXMapKit, JXMapViewer}
 import oscar.cbls.business.routing.model.{PDP, VRP}
 import oscar.examples.cbls.routing.visual.ColorGenerator
 import oscar.visual.VisualDrawing
-import oscar.visual.shapes.{VisualArrow, VisualCircle, VisualShape}
+import oscar.visual.shapes.{VisualArrow, VisualCircle, VisualLine, VisualShape}
 
 import scala.collection.mutable.ListBuffer
 
@@ -79,7 +79,11 @@ trait RoutingMap{
   }
 }
 
-class BasicRoutingMap extends VisualDrawing(false,false) with RoutingMap{
+class BasicRoutingMap(pdpOption:Option[PDP], vrpOption:Option[VRP]) extends VisualDrawing(false,false) with RoutingMap{
+  pdpOption.getOrElse(vrpOption.get) match{
+    case p:PDP => setPDP(p)
+    case v:VRP => setVRP(v)
+  }
 
   val points:Array[VisualCircle] = new Array[VisualCircle](vrp.n)
 
@@ -90,13 +94,13 @@ class BasicRoutingMap extends VisualDrawing(false,false) with RoutingMap{
   def drawPoints() ={
     var index = 0
     for(p <- pointsList){
-      if(index > vrp.v){
-        val tempPoint = new VisualCircle(this,p._1.toInt,p._2.toInt,5)
-        tempPoint.innerCol_$eq(colorValues(pointsList.indexOf(p)))
+      if(index < vrp.v){
+        val tempPoint = new VisualCircle(this,p._1.toInt,p._2.toInt,3)
+        tempPoint.innerCol_$eq(colorValues(index))
         points(index) = tempPoint
       }
       else{
-        val tempPoint = new VisualCircle(this,p._1.toInt,p._2.toInt,3)
+        val tempPoint = new VisualCircle(this,p._1.toInt,p._2.toInt,1)
         tempPoint.innerCol_$eq(Color.black)
         points(index) = tempPoint
       }
@@ -114,13 +118,21 @@ class BasicRoutingMap extends VisualDrawing(false,false) with RoutingMap{
       color = colorValues(r)
       for (p <- routesToDraw(r)) {
         if(previousPoint >= 0){
-          val tempRoute = new VisualArrow(this, new Double(pointsList(previousPoint)._1, pointsList(previousPoint)._2, pointsList(p)._1, pointsList(p)._2), 4)
+          val tempRoute =
+            if(vrp.n <= 10)
+              new VisualArrow(this, new Double(pointsList(previousPoint)._1, pointsList(previousPoint)._2, pointsList(p)._1, pointsList(p)._2), 4)
+            else
+              new VisualLine(this,new Double(pointsList(previousPoint)._1, pointsList(previousPoint)._2, pointsList(p)._1, pointsList(p)._2))
           tempRoute.outerCol_$eq(color)
           tempRoute.borderWidth = 2
         }
         previousPoint = p
       }
-      val tempRoute = new VisualArrow(this, new Double(pointsList(previousPoint)._1, pointsList(previousPoint)._2, pointsList(r)._1, pointsList(r)._2), 4)
+      val tempRoute =
+        if(vrp.n <= 10)
+          new VisualArrow(this, new Double(pointsList(previousPoint)._1, pointsList(previousPoint)._2, pointsList(r)._1, pointsList(r)._2), 4)
+        else
+          new VisualLine(this,new Double(pointsList(previousPoint)._1, pointsList(previousPoint)._2, pointsList(r)._1, pointsList(r)._2))
       tempRoute.outerCol_$eq(color)
       tempRoute.borderWidth = 2
       previousPoint = -1

@@ -503,7 +503,7 @@ trait VehicleOfNode extends CloneOfRouteForLightPartialPropagation{
 
 }
 
-trait RoutingMapDisplay extends VRP with ConstantDistancePerVehicle{
+trait RoutingMapDisplay extends VRP{
   var routingMap:RoutingMatrixContainer = null
 
   /**
@@ -513,7 +513,7 @@ trait RoutingMapDisplay extends VRP with ConstantDistancePerVehicle{
     * @param pickupAndDeliveryNodes if true, the map will show specific information about pickup and delivery nodes
     * @param geolocalisationMap if true, the geoRoutingMap will be used
     */
-  def initializeRoutingMap(list:Array[(Double,Double)], vrp:VRP = this, mapSize: Int = 0, pickupAndDeliveryNodes: Boolean = false, geolocalisationMap: Boolean = false, routeToDisplay: Boolean = false): Unit ={
+  def initializeRoutingMap(list:Array[(Double,Double)], vrp:VRP = this, mapSize: Int = 1000, pickupAndDeliveryNodes: Boolean = false, geolocalisationMap: Boolean = false, routeToDisplay: Boolean = false): Unit ={
     routingMap = new RoutingMatrixContainer(myVRP = vrp, pickupAndDeliveryPoints = pickupAndDeliveryNodes, geolocalisationMap = geolocalisationMap, routeToDisplay = routeToDisplay)
     routingMap.setMapSize(mapSize)
     routingMap.setPointsList(list.toList)
