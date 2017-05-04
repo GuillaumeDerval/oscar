@@ -31,9 +31,30 @@ import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.tarjan._;
 
+
+/**
+ * lazy scheduling
+ *
+ * schedule for propagation:
+ * the scheduler is notified by the PE.
+ * the PE is put on a list by the Scheduler.
+ * the scheduler notifies the listening scheduler, based on dynamic dependencies
+ *
+ * adding dependencies
+ * is the listened PE is in a shceduler, and listened dynamically OR STATICALY? by a PE in another scheduler, it must notify its own scheduler aboutthe dependency to the other scheduler
+ *
+ *performing propagation
+ *
+ * scheduling handlers are sent to the runner.
+ *
+ *
+ * what is the definition of a shceduling handler?
+ * its goal is to divite the graph into bits whose frontier denoter sctions of the graph that might not need propagation
+ *
+ */
+
 /**
  * a schedulingHandler handles the scheduling for a set of PE.
- *
  */
 trait SchedulingHandler {
   /**
@@ -51,6 +72,62 @@ trait SchedulingHandler {
 
 
 }
+
+
+/**
+ * this is a scheduler rooted at a given node, and scheduling a set of nodes
+ */
+class PropagationScheduler(root:PropagationElement, otherNodes:QList[PropagationElement], runner:PropagationRunner){
+  override val propagationStructure = root.propagationStructure
+  /**
+   * when a PE needs propagation, it schedules itself to his SH through this method
+   * notice that a PE cannot schedule itself for propagation if it has already been, and has not been propagated since
+   * PE should ensure this by themselves, EG through an internal boolean variable
+   * @param e the PE that is to be scheduled
+   */
+  override def scheduleForPropagation(e : PropagationElement) : Unit = ???
+
+
+  override def triggerPropagation(target:PropagationElement){
+
+  }
+}
+
+//propagation d'un noeud:
+//il se schedule, il est dans la file de son propagationScheduler.
+
+//le propagationScheduler notifie le propagationScheduler écoutant qu'il faut scheduler celui-ci
+
+//lorsuq'un propagationScheduler est notifié d'un travail de propagation, il notifie son propagationScheduler écoutant, etc.
+//ok, mais si c'est des dépendances variables?? on le fait également parce-que il y a peut-être pas de changement dans l'index.
+//un PS maintient une liste des PS fils à propager (+ tableau booléen magique)
+
+
+
+
+//il faut qu'un scheduler sache immédiatement en cours de propagation si une dépendance est ajoutée à un scheduler d'entrée.
+//donc dans verying dependencies, il faut notifier le schedulingHandler de l'élément écouté (directement ou indirectement)
+//et celui-ci doit s'ajouter dans le runner.
+
+
+class PropagationRunner(p:PropagationStructure){
+
+  def enqueueAll(s:PropagationScheduler)
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * This class manages propagation among propagation elements.
@@ -85,11 +162,10 @@ trait SchedulingHandler {
  * @param verbose requires that the propagation structure prints a trace of what it is doing.
  * @param checker set a Some[Checker] top check all internal properties of invariants after propagation, set to None for regular execution
  * @param noCycle is to be set to true only if the static dependency graph is acyclic.
- * @param topologicalSort if true, use topological sort, false, use distance to input, and associated faster heap data structure
  * @param sortScc true if SCC should be sorted, false otherwise. Set to true, unless you know what your are doing. Setting to false might provide a speedup, but propagation will not be single pass on SCC anymore
  * @author renaud.delandtsheer@cetic.be
  */
-abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Checker] = None, val noCycle: Boolean, val topologicalSort: Boolean, val sortScc: Boolean = true)
+abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Checker] = None, val noCycle: Boolean, val sortScc: Boolean = true)
   extends SchedulingHandler {
 
   protected var closed: Boolean = false
@@ -115,7 +191,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
    * of the propagation elements
    * The method is expected to return consistent result once the setupPropagationStructure method is called
    */
-  private var MaxID: Int = -1
+  private[this] var MaxID: Int = -1
 
   def getMaxID = MaxID
 
@@ -124,16 +200,16 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
     MaxID
   }
 
-  private var acyclic: Boolean = false
+
+  private[this] var stronglyConnectedComponentsList: List[StronglyConnectedComponent] = List.empty
 
   /**
-   * @return true if the propagation structure consider that his graph is acyclic, false otherwise.
+   * @return true if the propagation graph is acyclic, false otherwise.
    * call this after the call to setupPropagationStructure
    * If the propagation structure has been created with NoCycle set to true, this will return true
    */
-  def isAcyclic: Boolean = acyclic
+  def isAcyclic: Boolean = stronglyConnectedComponentsList.isEmpty
 
-  private var stronglyConnectedComponentsList: List[StronglyConnectedComponent] = List.empty
 
   /**
    * To call when one has defined all the propagation elements on which propagation will ever be triggered.
@@ -153,14 +229,11 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
         getPropagationElements,
         p => p.getStaticallyListeningElements,
         storageForTarjan.get)
-      acyclic = true
       stronglyConnectedComponentsList = List.empty
       stronglyConnectedComponents.map((a: QList[PropagationElement]) =>
         if (a.tail == null) {
           a.head
         } else {
-          acyclic = false
-
           val c: StronglyConnectedComponent = if (sortScc) new StronglyConnectedComponentTopologicalSort(a, this, GetNextID())
           else new StronglyConnectedComponentNoSort(a, this, GetNextID())
           stronglyConnectedComponentsList = c :: stronglyConnectedComponentsList
@@ -173,13 +246,8 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
     //this performs the sort on Propagation Elements that do not belong to a strongly connected component,
     // plus the strongly connected components, considered as a single node. */
     var LayerCount = 0
-    if (topologicalSort) {
-      computePositionsThroughTopologicalSort(ClusteredPropagationComponents)
-      executionQueue = new BinomialHeap[PropagationElement](p => p.position, ClusteredPropagationComponents.size)
-    } else {
-      LayerCount = computePositionsThroughDistanceToInput(ClusteredPropagationComponents) + 1
-      executionQueue = new AggregatedBinomialHeapQList[PropagationElement](p => p.position, LayerCount)
-    }
+    LayerCount = computePositionsThroughDistanceToInput(ClusteredPropagationComponents) + 1
+    executionQueue = new AggregatedBinomialHeapQList[PropagationElement](p => p.position, LayerCount)
 
     propagating = false
     previousPropagationTrack = null
@@ -603,7 +671,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
       "  declaredAcyclic: " + noCycle + "\n" +
       "  topologicalSort:" + topologicalSort + (if (!topologicalSort) " (layerCount:" + (executionQueue.asInstanceOf[AggregatedBinomialHeapQList[PropagationElement]].maxPosition) + ")" else "") + "\n" +
       "  sortScc:" + sortScc + "\n" +
-      "  actuallyAcyclic:" + acyclic + "\n" +
+      "  actuallyAcyclic:" + stronglyConnectedComponentsList.isEmpty + "\n" +
       "  TotalPropagationElementCount:" + getPropagationElements.size + "\n" +
       "  StronglyConnectedComponentsCount:" + stronglyConnectedComponentsList.size + "\n" +
       stronglyConnectedComponentsList.map(_.stats).mkString("\n") + "\n" +
@@ -926,7 +994,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
   }
 
   /**
-   * the thing to which we schedult ourselves for propagation
+   * the thing to which we schedule ourselves for propagation
    * can be a SCC or a PS
    */
   override def schedulingHandler: SchedulingHandler = mySchedulingHandler
@@ -1119,7 +1187,6 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
 }
 
 trait VaryingDependenciesPE extends PropagationElement {
-  //for cycle managing
   /**
    * set to true if the PropagationElement is one that can break
    * or make dependency cycles in the dynamic dependency graph
