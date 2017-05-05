@@ -56,16 +56,16 @@ case class SparseCluster[T<:IntValue](values:Array[T], Clusters:SortedMap[Int,CB
     if(y != null) y.insertValue(index)
   }
 
-  override def checkInternals(c:Checker){
+  override def checkInternals() {
     for(v <- values.indices){
       if (Clusters.isDefinedAt(values(v).value)) {
-        c.check(Clusters(values(v).value).value.contains(v),
+        require(Clusters(values(v).value).value.contains(v),
           Some("Clusters(values(v (" + v + ")).value (" + values(v).value + ")).value.contains(v)"))
       }
     }
     for(value <- Clusters.keys){
       for (indices <- Clusters(value).value){
-        c.check(values(indices).value == value,
+        require(values(indices).value == value,
           Some("values(indices).value (" + values(indices).value + ") == value (" + value + ")"))
       }
     }
@@ -109,14 +109,14 @@ case class DenseCluster[T<:IntValue](values:Array[T], clusters:Array[CBLSSetVar]
 
   //This method is optional, it is called by the model when its debug mode is activated (see the constructor of model)
   //In this method, we check that the outputs are correct, based on non-incremental code
-  override def checkInternals(c:Checker){
+  override def checkInternals() {
     for(v <- values.indices){
-      c.check(clusters(values(v).value).value.contains(v),
+      require(clusters(values(v).value).value.contains(v),
         Some("clusters(values(v (" + v + ")).value (" + values(v).value + ")).value.contains(v)"))
     }
     for(value <- clusters.indices){
       for (indices <- clusters(value).value){
-        c.check(values(indices).value == value,
+        require(values(indices).value == value,
           Some("values(indices).value (" + values(indices).value + ") == value (" + value + ")"))
       }
     }
@@ -161,14 +161,14 @@ case class TranslatedDenseCluster(values:Array[CBLSIntVar],  indicesArray:Array[
 
   //This method is optional, it is called by the model when its debug mode is activated (see the constructor of model)
   //In this method, we check that the outputs are correct, based on non-incremental code
-  override def checkInternals(c:Checker){
+  override def checkInternals() {
     for(v <- values.indices){
-      c.check(clusters(values(v).value).value.contains(indicesArray(v)),
+      require(clusters(values(v).value).value.contains(indicesArray(v)),
         Some("clusters(values(v (" + v + ")).value (" + values(v).value + ")).value.contains(v)"))
     }
     for(value <- clusters.indices){
       for (indices1 <- clusters(value).value; indices = indicesArray(indices1)){
-        c.check(values(indices).value == value,
+        require(values(indices).value == value,
           Some("values(indices).value (" + values(indices).value + ") == value (" + value + ")"))
       }
     }

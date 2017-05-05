@@ -440,8 +440,8 @@ class VehicleCapacity(routes:ChangingSeqValue,
   override def checkInternals(c : Checker) : Unit = {
     for(v <- vehicles){
       val (viol,contentAtEnd) = computeViolationFromScratchNoPrecompute(routes.value,v)
-      c.check(violation(v).value == viol, Some("Error on violation of vehicle " + v + " expected:" + viol + " actual output:" + violation(v).value))
-      c.check(contentAtEndOfVehicleRoute(v).value == contentAtEnd, Some("Error on content at end of vehicle route v:" + v + " expected:" + contentAtEnd + " actual output:" + contentAtEndOfVehicleRoute(v).value))
+      require(violation(v).value == viol, Some("Error on violation of vehicle " + v + " expected:" + viol + " actual output:" + violation(v).value))
+      require(contentAtEndOfVehicleRoute(v).value == contentAtEnd, Some("Error on content at end of vehicle route v:" + v + " expected:" + contentAtEnd + " actual output:" + contentAtEndOfVehicleRoute(v).value))
     }
   }
 }

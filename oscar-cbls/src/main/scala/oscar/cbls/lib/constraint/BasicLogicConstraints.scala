@@ -54,7 +54,7 @@ protected class LEA(val left: IntValue, val right: IntValue) extends Constraint 
 
   override def checkInternals(c: Checker) {
     val diff = left.value - right.value
-    c.check(violation.value == (if (diff <= 0) 0 else diff),
+    require(violation.value == (if (diff <= 0) 0 else diff),
       Some("Violation.value (" + violation.value
         + ") == (if (left.value - right.value (" + diff + ") <= 0) 0 else " + diff + ")"))
   }
@@ -95,7 +95,7 @@ protected class LA(val left: IntValue, val right: IntValue) extends Constraint {
 
   override def checkInternals(c: Checker) {
     val diff = left.value - right.value
-    c.check(violation.value == (if (diff < 0) 0 else diff + 1),
+    require(violation.value == (if (diff < 0) 0 else diff + 1),
       Some("Violation.value (" + violation.value
         + ") == (if (left.value - right.value (" + diff + ") < 0) 0 else " + (diff + 1) + ")"))
   }
@@ -136,8 +136,8 @@ case class NE(left: IntValue, right: IntValue) extends Invariant with Constraint
   /** the violation is 1 if the variables are equal, 0 otherwise*/
   override def violation(v: Value): IntValue = { if (left == v || right == v) violation else 0 }
 
-  override def checkInternals(c: Checker) {
-    c.check(violation.value == (if (left.value == right.value) 1 else 0),
+  override def checkInternals() {
+    require(violation.value == (if (left.value == right.value) 1 else 0),
       Some("Violation.value (" + violation.value
         + ") == (if (left.value (" + left.value + ") == right.value (" + right.value + ")) 1 else 0)"))
   }
@@ -159,7 +159,7 @@ case class EQ(left: IntValue, right: IntValue) extends Constraint {
 
   override def checkInternals(c: Checker) {
     val myViolation = abs(left.value - right.value)
-    c.check(violation.value == (if (left.value == right.value) 0 else myViolation),
+    require(violation.value == (if (left.value == right.value) 0 else myViolation),
       Some("Violation.value (" + violation.value
         + ") == (if (left.value (" + left.value + ") == right.value (" + right.value
         + ")) 0 else " + myViolation + ")"))

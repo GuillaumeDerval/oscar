@@ -177,17 +177,17 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
     successorValues
   }
 
-  override def checkInternals(c : Checker){
+  override def checkInternals() {
     val fromScratch = computeSuccessorsFromScratchNoAffect(routes.value)
     for(node <- 0 until n){
-      c.check(successorValues(node).newValue == fromScratch(node),
+      require(successorValues(node).newValue == fromScratch(node),
         Some("error on next for node " + node + ": " + successorValues(node) + " should== " + fromScratch(node)))
 
       if(fromScratch(node)== defaultWhenNotInSequence){
-        c.check(predecessorValues(node).newValue == defaultWhenNotInSequence,
+        require(predecessorValues(node).newValue == defaultWhenNotInSequence,
           Some("error on predecessor for node " + node))
       }else {
-        c.check(predecessorValues(fromScratch(node)).newValue == node,
+        require(predecessorValues(fromScratch(node)).newValue == node,
           Some("error on predecessor for node " + node))
       }
     }

@@ -89,7 +89,7 @@ class Bulk(m: Store, val bulkedVars: Array[Value], val bulkedComputationResult: 
   finishInitialization(m)
   override def getDotNode: String = "[label=\"Bulk\" shape=diamond]"
 
-  override def checkInternals(c: Checker) = c.check(true)
+  override def checkInternals() = require(true)
 }
 
 /**This is the dictionaries where bulks are stored, and can be searched for

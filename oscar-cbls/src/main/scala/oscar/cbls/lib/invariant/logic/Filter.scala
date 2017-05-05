@@ -52,11 +52,11 @@ case class Filter(values:Array[IntValue], cond:(Int=>Boolean)=_>0)
     else if(NewCond && !OldCond) this.insertValue(index)
   }
 
-  override def checkInternals(c:Checker){
+  override def checkInternals() {
     for(i <- values.indices){
-      c.check(!cond(values(i).value) || this.value.contains(i),
+      require(!cond(values(i).value) || this.value.contains(i),
           Some("!cond(values(i).value) || this.value.contains(i)"))
-      c.check(cond(values(i).value) || !this.value.contains(i),
+      require(cond(values(i).value) || !this.value.contains(i),
           Some("cond(values(i).value) || !this.value.contains(i)"))
     }
   }

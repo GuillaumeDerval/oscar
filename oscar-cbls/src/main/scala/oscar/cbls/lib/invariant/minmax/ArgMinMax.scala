@@ -183,26 +183,26 @@ abstract class ArgMiax(vars: Array[IntValue], cond: SetValue, default: Int)
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     var count: Int = 0
     for (i <- vars.indices) {
       if (cond == null || (cond != null && cond.value.contains(i))) {
         if (vars(i).value == Miax) {
-          c.check(this.value.contains(i),
+          require(this.value.contains(i),
             Some("this.value.contains(" + i + ")"))
           count += 1
         } else {
-          c.check(Ord(Miax) < Ord(vars(i).value),
+          require(Ord(Miax) < Ord(vars(i).value),
             Some("Ord(" + Miax + ") < Ord(vars(" + i + ").value ("
               + vars(i).value + "))"))
         }
       }
     }
-    c.check(this.value.size == count, Some("this.value.size == count"))
+    require(this.value.size == count, Some("this.value.size == count"))
     h.checkInternals(c: Checker)
-    c.check(h.getFirsts.length == this.value.size, Some("h.getFirsts.length == this.value.size"))
+    require(h.getFirsts.length == this.value.size, Some("h.getFirsts.length == this.value.size"))
     if (cond != null)
-      c.check(this.value.subsetOf(cond.value), Some("this.newValue.subsetOf(cond.newValue)"))
+      require(this.value.subsetOf(cond.value), Some("this.newValue.subsetOf(cond.newValue)"))
   }
 }
 

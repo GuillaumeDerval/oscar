@@ -497,27 +497,27 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
     else Array.fill(1)(toReturn.sum)
   }
 
-  override def checkInternals(c : Checker) : Unit = {
-    c.check(!distanceIsSymmetric || ConstantRoutingDistance.isDistanceSymmetric(distanceMatrixOnNode,n),Some("distance matrix should be symmetric if invariant told so"))
+  override def checkInternals() : Unit = {
+    require(!distanceIsSymmetric || ConstantRoutingDistance.isDistanceSymmetric(distanceMatrixOnNode,n),Some("distance matrix should be symmetric if invariant told so"))
 
     if(perVehicle){
       val values = computeValueFromScratch(routes.value)
       for (vehicle <- 0 to v-1){
-        c.check(distance(vehicle).value == values(vehicle),Some("distance("+vehicle+").value=" + distance(vehicle).newValue + " should== computeValueFromScratch(routes.value)(0)" + values(vehicle)))
+        require(distance(vehicle).value == values(vehicle),Some("distance("+vehicle+").value=" + distance(vehicle).newValue + " should== computeValueFromScratch(routes.value)(0)" + values(vehicle)))
       }
 
       if(checkpoint != null) {
         val values = computeValueFromScratch(checkpoint)
         for (vehicle <- 0 to v - 1) {
           if(isVehicleChangedSinceCheckpoint(vehicle))
-            c.check(savedValues(vehicle) == values(vehicle))
+            require(savedValues(vehicle) == values(vehicle))
         }
       }
 
     }else{
-      c.check(distance(0).newValue == computeValueFromScratch(routes.value)(0),Some("distance(0).value=" + distance(0).newValue + " should== computeValueFromScratch(routes.value)(0)" + computeValueFromScratch(routes.value)(0)))
+      require(distance(0).newValue == computeValueFromScratch(routes.value)(0),Some("distance(0).value=" + distance(0).newValue + " should== computeValueFromScratch(routes.value)(0)" + computeValueFromScratch(routes.value)(0)))
       if(checkpoint != null){
-        c.check(savedValues(0) == computeValueFromScratch(checkpoint)(0))
+        require(savedValues(0) == computeValueFromScratch(checkpoint)(0))
       }
     }
   }

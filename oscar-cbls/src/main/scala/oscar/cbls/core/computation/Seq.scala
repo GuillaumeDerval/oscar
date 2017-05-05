@@ -1177,8 +1177,8 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
     }
   }
 
-  override def checkInternals(c:Checker){
-    c.check(toValue.value equals fromValue.value,
+  override def checkInternals() {
+    require(toValue.value equals fromValue.value,
       Some("IdentitySeq: toValue.value=" +toValue.value + " should equal fromValue.value=" + fromValue.value))
   }
 }
@@ -1284,8 +1284,8 @@ class IdentitySeqTopMostCheckpointCircleAbove(fromValue:ChangingSeqValue, toValu
     }
   }
 
-  override def checkInternals(c:Checker){
-    c.check(toValue.value equals fromValue.value,
+  override def checkInternals() {
+    require(toValue.value equals fromValue.value,
       Some("IdentitySeqTopMostCheckpointCircleAbove: toValue.value=" +toValue.value + " should equal fromValue.value=" + fromValue.value))
   }
 }

@@ -92,11 +92,11 @@ case class MinSet(v: SetValue, Default: Int = Int.MaxValue) extends MiaxSet(v) {
     }
   }
 
-  override def checkInternals(c:Checker){
+  override def checkInternals() {
     if (v.value.isEmpty){
-      c.check(this.value == Default, Some("this.value == Default"))
+      require(this.value == Default, Some("this.value == Default"))
     }else{
-      c.check(this.value == v.value.foldLeft(Int.MaxValue)((acc,value) => if (acc > value) value else acc),
+      require(this.value == v.value.foldLeft(Int.MaxValue)((acc,value) => if (acc > value) value else acc),
         Some("this.value == v.value.foldLeft(Int.MaxValue)((acc,value) => if (acc > value) value else acc)"))
     }
   }
@@ -122,11 +122,11 @@ case class MaxSet(v: SetValue, Default: Int = Int.MinValue) extends MiaxSet(v) {
     }
   }
 
-  override def checkInternals(c:Checker){
+  override def checkInternals() {
     if (v.value.isEmpty){
-      c.check(this.value == Default, Some("this.value == Default"))
+      require(this.value == Default, Some("this.value == Default"))
     }else{
-      c.check(this.value == v.value.foldLeft(Int.MinValue)((acc,value) => if (acc < value) value else acc),
+      require(this.value == v.value.foldLeft(Int.MinValue)((acc,value) => if (acc < value) value else acc),
         Some("this.value == v.value.foldLeft(Int.MinValue)((acc,value) => if (acc < value) value else acc)"))
     }
   }

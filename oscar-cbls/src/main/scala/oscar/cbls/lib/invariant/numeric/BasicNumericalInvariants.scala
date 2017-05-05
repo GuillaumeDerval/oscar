@@ -60,8 +60,8 @@ class Sum(vars: Iterable[IntValue])
     this :+= NewVal - OldVal
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value == vars.foldLeft(0)((acc, intvar) => acc + intvar.value),
+  override def checkInternals() {
+    require(this.value == vars.foldLeft(0)((acc, intvar) => acc + intvar.value),
       Some("output.value == vars.foldLeft(0)((acc,intvar) => acc+intvar.value)"))
   }
 }
@@ -91,8 +91,8 @@ class Linear(vars: Iterable[IntValue], coeffs: IndexedSeq[Int])
     this :+= (NewVal - OldVal) * coeffs(idx)
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value == vars.zip(coeffs).foldLeft(0)((acc, intvar) => acc + intvar._1.value*intvar._2),
+  override def checkInternals() {
+    require(this.value == vars.zip(coeffs).foldLeft(0)((acc, intvar) => acc + intvar._1.value*intvar._2),
       Some("output.value == vars.zip(coeff).foldLeft(0)((acc, intvar) => acc + intvar._1.value*intvar._2)"))
   }
 }
@@ -123,8 +123,8 @@ class ExtendableSum(model: Store, domain: Domain)
     this :+= NewVal - OldVal
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value == this.getDynamicallyListenedElements.foldLeft(0)((acc, intvar) => acc + intvar.asInstanceOf[IntValue].value),
+  override def checkInternals() {
+    require(this.value == this.getDynamicallyListenedElements.foldLeft(0)((acc, intvar) => acc + intvar.asInstanceOf[IntValue].value),
       Some("output.value == vars.foldLeft(0)((acc,intvar) => acc+intvar.value)"))
   }
 }
@@ -177,10 +177,10 @@ with IntNotificationTarget{
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     var prod = 1
     for (v <- vars) prod *= v.value
-    c.check(this.value == prod,
+    require(this.value == prod,
       Some("output.value (" + this.value + ") == prod (" + prod + ")"))
   }
 }

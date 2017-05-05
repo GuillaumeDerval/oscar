@@ -173,11 +173,11 @@ class Successors(sequence:ChangingSeqValue, successorValues:Array[CBLSSetVar])
     successorValues
   }
 
-  override def checkInternals(c : Checker){
+  override def checkInternals() {
     val fromScratch = computeAllFromScratchNoAffect(sequence.value)
     println(successorValues.map(_.value).toList)
     for(node <- 0 to sequence.maxValue){  //TODO: sequence .value.size, and we can have redundant values in the equence!!!
-      c.check(
+      require(
         successorValues(node).value
           ==
         fromScratch(node),

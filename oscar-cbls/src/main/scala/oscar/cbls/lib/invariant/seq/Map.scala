@@ -101,8 +101,8 @@ with SeqNotificationTarget{
     }
   }
 
-  override def checkInternals(c : Checker) : Unit = {
-    c.check(this.value.toList equals seq.value.toList.map(transform))
+  override def checkInternals() : Unit = {
+    require(this.value.toList equals seq.value.toList.map(transform))
   }
 }
 
@@ -152,8 +152,8 @@ class MapThroughArray(seq:ChangingSeqValue,
     }
   }
 
-  override def checkInternals(c : Checker) : Unit = {
-    c.check(this.value.toList equals seq.value.toList.map(x => transform(x).value))
+  override def checkInternals() : Unit = {
+    require(this.value.toList equals seq.value.toList.map(x => transform(x).value))
   }
 }
 

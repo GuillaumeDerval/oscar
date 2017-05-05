@@ -410,7 +410,7 @@ trait Invariant extends PropagationElement{
     * this will be called for each invariant after propagation is performed.
     * It requires that the Model is instantiated with the variable debug set to true.
     */
-  override def checkInternals(c:Checker){c.check(false, Some("DEFAULT EMPTY CHECK " + this.toString() + ".checkInternals"))}
+  override def checkInternals() {require(false, Some("DEFAULT EMPTY CHECK " + this.toString() + ".checkInternals"))}
 
   def getDotNode = "[label = \"" + this.getClass.getSimpleName + "\" shape = box]"
 

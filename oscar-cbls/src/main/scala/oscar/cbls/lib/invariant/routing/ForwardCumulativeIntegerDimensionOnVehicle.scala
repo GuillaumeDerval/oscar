@@ -239,18 +239,18 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
     }
   }
 
-  override def checkInternals(c : Checker) : Unit = {
+  override def checkInternals() : Unit = {
     val (nodeToContent,vehicleToContentAtEnd,vehicleLocation) = computeNodeToContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch(routes.value,defaultVehicleContentForUnroutedNodes)
     for(node <- 0 until n){
-      c.check(nodeToContent(node) == getVehicleContentAtNode(node),
+      require(nodeToContent(node) == getVehicleContentAtNode(node),
         Some("Vehicle content at node(" + node + ") at pos : "+ routes.value.positionsOfValue(node)+ " := " + getVehicleContentAtNode(node) + " should be :=" + nodeToContent(node)+ " routes:" + routes.value.mkString(",")  + " contentAtStart:" + contentAtStart.mkString(",")))
     }
     for(vehicle <- 0 until v){
-      c.check(vehicleLocation.startPosOfVehicle(vehicle) == routes.value.positionOfAnyOccurrence(vehicle).get,
+      require(vehicleLocation.startPosOfVehicle(vehicle) == routes.value.positionOfAnyOccurrence(vehicle).get,
         Some("Found start of vehicle(" + vehicle + "):=" + vehicleLocation.startPosOfVehicle(vehicle) + " should be :=" + routes.value.positionOfAnyOccurrence(vehicle) +" seq :"+routes.value.mkString(",")))
-      c.check(contentAtEnd(vehicle).value == vehicleToContentAtEnd(vehicle))
+      require(contentAtEnd(vehicle).value == vehicleToContentAtEnd(vehicle))
 
-      c.check(currentVehicleLocation.startPosOfVehicle(vehicle) == vehicleLocation.startPosOfVehicle(vehicle),Some("x"))
+      require(currentVehicleLocation.startPosOfVehicle(vehicle) == vehicleLocation.startPosOfVehicle(vehicle),Some("x"))
     }
 
   }

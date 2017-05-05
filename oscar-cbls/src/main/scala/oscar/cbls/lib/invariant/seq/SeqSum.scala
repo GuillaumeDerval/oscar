@@ -42,7 +42,6 @@ case class SeqSum(v: SeqValue, f:(Int => Int) = (a:Int) => a)
   val checkpointStack = new SeqCheckpointedValueStack[Int]()
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
-    checkInternals(new ErrorChecker())
     if (!digestChanges(changes)) {
       this := computeSumFromScratch(changes.newValue)
     }
@@ -99,9 +98,9 @@ case class SeqSum(v: SeqValue, f:(Int => Int) = (a:Int) => a)
     }
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.newValue == v.value.toList.foldLeft(0)(_+_))
-    c.check(this.newValue == computeSumFromScratch(v.value),Some("this.newValue(="+ this.newValue+") == Sum(v.value(="+ computeSumFromScratch(v.value)+ ")"))
+  override def checkInternals() {
+    require(this.newValue == v.value.toList.foldLeft(0)(_+_))
+    require(this.newValue == computeSumFromScratch(v.value),"this.newValue(="+ this.newValue+") == Sum(v.value(="+ computeSumFromScratch(v.value)+ ")")
   }
 }
 

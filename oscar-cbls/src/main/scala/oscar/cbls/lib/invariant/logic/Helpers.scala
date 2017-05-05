@@ -61,8 +61,8 @@ class Int2Int(a:IntValue, fun:Int => Int, domain:Domain = FullRange,cached:Boole
     }
   }
 
-  override def checkInternals(c:Checker){
-    c.check(this.value == fun(a.value), Some("output.value == fun(a.value)"))
+  override def checkInternals() {
+    require(this.value == fun(a.value), Some("output.value == fun(a.value)"))
   }
 }
 
@@ -87,8 +87,8 @@ class IntInt2Int(a:IntValue, b:IntValue, fun:((Int, Int) => Int), domain:Domain 
     this := fun(a.value,b.value)
   }
 
-  override def checkInternals(c:Checker){
-    c.check(this.value == fun(a.value,b.value), Some("output.value == fun(a.value,b.value)"))
+  override def checkInternals() {
+    require(this.value == fun(a.value,b.value), Some("output.value == fun(a.value,b.value)"))
   }
 }
 
@@ -117,7 +117,7 @@ class LazyIntInt2Int(a:IntValue, b:IntValue, fun:((Int, Int) => Int), domain:Dom
     this := fun(a.value,b.value)
   }
 
-  override def checkInternals(c: Checker){
-    c.check(this.value == fun(a.value,b.value), Some("checking output of LazyIntVarIntVar2IntVarFun"))
+  override def checkInternals() {
+    require(this.value == fun(a.value,b.value), Some("checking output of LazyIntVarIntVar2IntVarFun"))
   }
 }

@@ -113,17 +113,17 @@ case class AllDiff(variables: Iterable[IntValue]) extends Invariant with Constra
     tmp
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     var MyValueCount: Array[Int] = (for (i <- 0 to N) yield 0).toArray
     for (v <- variables) MyValueCount(v.value + offset) += 1
     for (v <- range) {
-      c.check(ValueCount(v).newValue == MyValueCount(v),
+      require(ValueCount(v).newValue == MyValueCount(v),
         Some("ValueCount(" + v + ").newValue (" + ValueCount(v).newValue
           + ") == MyValueCount(" + v + ") (" + MyValueCount(v)))
     }
 
     for (v <- variables) {
-      c.check(violation(v).value == MyValueCount(v.value + offset) - 1,
+      require(violation(v).value == MyValueCount(v.value + offset) - 1,
         Some("violation(" + v.name + ").value (" + violation(v).value
           + ") != MyValueCount(" + v.name + ".value + offset) - 1 ("
           + (MyValueCount(v.value + offset) - 1) + ")"))
@@ -131,7 +131,7 @@ case class AllDiff(variables: Iterable[IntValue]) extends Invariant with Constra
 
     var MyViol: Int = 0
     for (v <- range) MyViol += 0.max(MyValueCount(v) - 1)
-    c.check(MyViol == Violation.value, Some("MyViol (" + MyViol
+    require(MyViol == Violation.value, Some("MyViol (" + MyViol
         + ") == Violation.value (" + Violation.value + ")"))
   }
 }

@@ -100,11 +100,11 @@ case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Int, IntValu
 
     for (v <- minMin to maxMax) {
       if (MyValueCount.isDefinedAt(v)){
-        c.check(valueCount(v+offset).newValue == MyValueCount(v),
+        require(valueCount(v+offset).newValue == MyValueCount(v),
           Some("ValueCount(" + v + "+offset).newValue (" + valueCount(v).newValue
             + ") == MyValueCount(" + v + ") (" + MyValueCount(v) + ")"))
       }else{
-        c.check(valueCount(v+offset).newValue == 0,
+        require(valueCount(v+offset).newValue == 0,
           Some("ValueCount(" + v + "+offset).newValue (" + valueCount(v).newValue
             + ") == 0"))
       }
@@ -114,15 +114,15 @@ case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Int, IntValu
     for (v <- bounds.keys) {
       MyViol += 0.max(bounds(v).value - MyValueCount.getOrElse(v + offset,0))
     }
-    c.check(Violation.value == MyViol,
+    require(Violation.value == MyViol,
       Some("Violation.value (" + Violation.value + ") == MyViol (" + MyViol + ")"))
 
     for (v <- variables) {
       if (bounds.contains(v.value) && (MyValueCount(v.value + offset) <= bounds(v.value).value)) {
-        c.check(violation(v).value == 0,
+        require(violation(v).value == 0,
             Some("violation(" + v.name + ").value (" + violation(v).value + ") == 0"))
       } else {
-        c.check(violation(v).value == Violation.value,
+        require(violation(v).value == Violation.value,
             Some("violation(" + v.name + ").value (" + violation(v).value
             + ") == Violation.value (" + Violation.value + ")"))
       }

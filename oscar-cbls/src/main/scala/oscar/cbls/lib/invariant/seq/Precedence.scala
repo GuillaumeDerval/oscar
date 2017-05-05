@@ -431,7 +431,7 @@ class Precedence(seq:ChangingSeqValue,
     * this will be called for each invariant after propagation is performed.
     * It requires that the Model is instantiated with the variable debug set to true.
     */
-  override def checkInternals(c : Checker) : Unit = {
+  override def checkInternals() : Unit = {
     var nbViol = 0
     val s = seq.value
 
@@ -440,20 +440,20 @@ class Precedence(seq:ChangingSeqValue,
 
       s.positionOfAnyOccurrence(startValue) match {
         case None => ;
-          c.check(!isPrecedenceViolated(precedenceID))
+          require(!isPrecedenceViolated(precedenceID))
         case Some(positionOfStartValue) =>
           s.positionOfAnyOccurrence(endValue) match {
             case None => ;
-              c.check(!isPrecedenceViolated(precedenceID))
+              require(!isPrecedenceViolated(precedenceID))
             case Some(positionOfEndValue) =>
-              c.check(isPrecedenceViolated(precedenceID) == (positionOfStartValue > positionOfEndValue),
+              require(isPrecedenceViolated(precedenceID) == (positionOfStartValue > positionOfEndValue),
                 Some("error on violation of precedence " + precedenceID + " considered as violated:" + isPrecedenceViolated(precedenceID)
                   + ":(" + precedencesArray(precedenceID) + ")"))
               if(isPrecedenceViolated(precedenceID)) nbViol += 1
           }
       }
     }
-    c.check(this.value == nbViol,
+    require(this.value == nbViol,
       Some("this.value=" + this.newValue
         + " should== nbViol=" + nbViol))
   }

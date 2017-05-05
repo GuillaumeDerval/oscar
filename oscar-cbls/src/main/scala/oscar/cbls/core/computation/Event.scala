@@ -232,7 +232,7 @@ class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
     }
   }
 
-  override def checkInternals(c: Checker) = c.check(true, Some("Event.checkInternals"))
+  override def checkInternals() = require(true, Some("Event.checkInternals"))
 
 }
 

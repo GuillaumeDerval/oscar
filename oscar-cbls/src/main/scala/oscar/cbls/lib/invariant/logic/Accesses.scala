@@ -68,8 +68,8 @@ case class IntITE(ifVar: IntValue, thenVar: IntValue, elseVar: IntValue, pivot: 
     "ITE(" + ifVar + ',' + thenVar + "," + elseVar + ")"
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value == (if (ifVar.value <= pivot) elseVar.value else thenVar.value),
+  override def checkInternals() {
+    require(this.value == (if (ifVar.value <= pivot) elseVar.value else thenVar.value),
       Some("output.value (" + this.value
         + ") == (if (ifVar.value (" + ifVar.value + ") <= " + pivot + ") elseVar.value (" + elseVar.value
         + ") else thenVar.value (" + thenVar.value + "))"))
@@ -117,8 +117,8 @@ case class IntElement(index: IntValue, inputarray: Array[IntValue])
     }
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value == inputarray(index.value).value,
+  override def checkInternals() {
+    require(this.value == inputarray(index.value).value,
       Some("output.value (" + this.value + ") == inputarray(index.value ("
         + index.value + ")).value (" + inputarray(index.value).value + ")"))
   }
@@ -153,8 +153,8 @@ case class IntElementNoVar(index: IntValue, inputarray: Array[Int])
     this := inputarray(NewVal)
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value == inputarray(index.value),
+  override def checkInternals() {
+    require(this.value == inputarray(index.value),
       Some("output.value (" + this.value + ") == inputarray(index.value ("
         + index.value + ")) (" + inputarray(index.value) + ")"))
   }
@@ -251,13 +251,13 @@ case class Elements[T <:IntValue](index: SetValue, inputarray: Array[T])
     }
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(KeysToInputArray.indices.forall(i => (KeysToInputArray(i) != null) == index.value.contains(i)),
+  override def checkInternals() {
+    require(KeysToInputArray.indices.forall(i => (KeysToInputArray(i) != null) == index.value.contains(i)),
       Some("KeysToInputArray.indices.forall(i => ((KeysToInputArray(i) != null) == index.value.contains(i)))"))
-    c.check(index.value.forall((i: Int) =>
+    require(index.value.forall((i: Int) =>
       this.value.contains(inputarray(i).value)),
       Some("index.value.forall((i: Int) => output.value.contains(inputarray(i).value))"))
-    c.check(this.value.size <= index.value.size,
+    require(this.value.size <= index.value.size,
       Some("output.value.size (" + this.value.size + ") <= index.value.size (" + index.value.size + ")"))
   }
 
@@ -312,8 +312,8 @@ case class SetElement(index: IntValue, inputarray: Array[SetValue])
     this := newValue
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value.intersect(inputarray(index.value).value).size == this.value.size,
+  override def checkInternals() {
+    require(this.value.intersect(inputarray(index.value).value).size == this.value.size,
       Some("output.value.intersect(inputarray(index.value (" + index.value + ")).value ("
         + inputarray(index.value).value + ")).size ("
         + this.value.intersect(inputarray(index.value).value).size

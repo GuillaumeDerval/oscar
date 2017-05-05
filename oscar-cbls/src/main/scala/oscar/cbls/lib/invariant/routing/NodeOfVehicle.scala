@@ -217,17 +217,17 @@ class NodeOfVehicle(routes:ChangingSeqValue,
     toReturn
   }
 
-  override def checkInternals(c : Checker) : Unit = {
+  override def checkInternals() : Unit = {
     val values = computeValueFromScratch(routes.value)
     for (vehicle <- 0 to v){
-      c.check(nodesOfVehicleOrUnrouted(vehicle).value equals values(vehicle), Some("error on vehicle " + v + " output-correct:" + (nodesOfVehicleOrUnrouted(vehicle).value.diff(values(vehicle))) + " correct-output:" + (values(vehicle).diff(nodesOfVehicleOrUnrouted(vehicle).value))))
+      require(nodesOfVehicleOrUnrouted(vehicle).value equals values(vehicle), Some("error on vehicle " + v + " output-correct:" + (nodesOfVehicleOrUnrouted(vehicle).value.diff(values(vehicle))) + " correct-output:" + (values(vehicle).diff(nodesOfVehicleOrUnrouted(vehicle).value))))
     }
 
     if(savedCheckpoint != null) {
       val nodesOfVehicleFromScratch = computeValueFromScratch(savedCheckpoint)
       for (node <- 0 to n-1) {
         if(movedNodesSinceCheckpointArray(node))
-          c.check(nodesOfVehicleFromScratch(vehicleOfNodeAtCheckpointForMovedPoints(node)).contains(node))
+          require(nodesOfVehicleFromScratch(vehicleOfNodeAtCheckpointForMovedPoints(node)).contains(node))
       }
     }
   }

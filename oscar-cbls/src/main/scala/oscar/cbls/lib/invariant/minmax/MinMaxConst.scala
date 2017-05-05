@@ -34,9 +34,9 @@ case class MinConstArray(varss: Array[Int], ccond: SetValue, default: Int = Int.
 
   override def Ord(v: Int): Int = v
 
-  override def checkInternals(c: Checker): Unit = {
-    if(ccond.value.isEmpty) c.check(value == default)
-    else  c.check(value == ccond.value.minBy(varss(_)))
+  override def checkInternals() : Unit = {
+    if(ccond.value.isEmpty) require(value == default)
+    else  require(value == ccond.value.minBy(varss(_)))
   }
 }
 
@@ -53,9 +53,9 @@ case class MaxConstArray(varss: Array[Int], ccond: SetValue, default: Int = Int.
 
   override def Ord(v: Int): Int = -v
 
-  override def checkInternals(c: Checker): Unit = {
-    if(ccond.value.isEmpty) c.check(value == default)
-    else  c.check(value == ccond.value.maxBy(varss(_)))
+  override def checkInternals() : Unit = {
+    if(ccond.value.isEmpty) require(value == default)
+    else  require(value == ccond.value.maxBy(varss(_)))
   }
 }
 
@@ -79,9 +79,9 @@ case class MinConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = 
 
   override def Ord(v: Int): Int = v
 
-  override def checkInternals(c: Checker): Unit = {
-    if(ccond.value.isEmpty) c.check(value == default)
-    else  c.check(value == ccond.value.minBy(varss(_)))
+  override def checkInternals() : Unit = {
+    if(ccond.value.isEmpty) require(value == default)
+    else  require(value == ccond.value.minBy(varss(_)))
   }
 
   @inline
@@ -109,9 +109,9 @@ case class MaxConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = 
   @inline
   override def Ord(v: Int): Int = -v
 
-  override def checkInternals(c: Checker): Unit = {
-    if(ccond.value.isEmpty) c.check(value == default)
-    else  c.check(value == ccond.value.maxBy(varss(_)))
+  override def checkInternals() : Unit = {
+    if(ccond.value.isEmpty) require(value == default)
+    else  require(value == ccond.value.maxBy(varss(_)))
   }
 
   @inline
@@ -177,9 +177,9 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
     }
   }
 
-  override def checkInternals(c: Checker): Unit = {
-    if(cond.value.isEmpty) c.check(value == default)
-    else  c.check(value == cond.value.maxBy(vars(_)))
+  override def checkInternals() : Unit = {
+    if(cond.value.isEmpty) require(value == default)
+    else  require(value == cond.value.maxBy(vars(_)))
   }
 }
 

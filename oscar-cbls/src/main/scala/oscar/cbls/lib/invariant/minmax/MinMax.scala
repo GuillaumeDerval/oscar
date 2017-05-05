@@ -79,8 +79,8 @@ abstract class MiaxLin(vars: SortedSet[IntValue])
     }
   }
 
-  override def checkInternals(c: Checker) {
-    vars.foreach(v => c.check(better(this.value, v.value) || this.value == v.value,
+  override def checkInternals() {
+    vars.foreach(v => require(better(this.value, v.value) || this.value == v.value,
       Some("better(output.value (" + this.value + "), " + v.value
         + ") || output.value == " + v.value)))
   }
@@ -138,8 +138,8 @@ abstract class Miax(vars: SortedSet[IntValue])
     this := h.getFirst.value
   }
 
-  override def checkInternals(c: Checker) {
-    vars.foreach(v => c.check(better(this.value, v.value)
+  override def checkInternals() {
+    vars.foreach(v => require(better(this.value, v.value)
       || this.value == v.value,
       Some("better(this.value (" + this.value + "), " + v.value
         + ") || this.value == " + v.value)))

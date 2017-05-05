@@ -99,7 +99,7 @@ case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue])
       val expectedViolation =
         if (checkBounds.isDefinedAt(v.value)) 0.max(checkBounds(v.value) - bounds(v.value).value)
         else 0
-      c.check(violationOfV.value == expectedViolation, Some("" + violationOfV + " == expectedViolation (" + expectedViolation + ")"))
+      require(violationOfV.value == expectedViolation, Some("" + violationOfV + " == expectedViolation (" + expectedViolation + ")"))
     }
 
     /*The violation of the constraint is the sum on all bound of the number of variable that are in excess.
@@ -109,7 +109,7 @@ case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue])
     for(i <- bounds.keys){
       if (checkBounds(i) > bounds(i).value) summedViolation += (checkBounds(i) - bounds(i).value)
     }
-    c.check(summedViolation == violation.value, Some("summedViolation ("+summedViolation+") == violation.value ("+violation.value+")"))
+    require(summedViolation == violation.value, Some("summedViolation ("+summedViolation+") == violation.value ("+violation.value+")"))
   }
 }
 

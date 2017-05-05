@@ -150,7 +150,7 @@ case class Sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:A
     * this will be called for each invariant after propagation is performed.
     * It requires that the Model is instantiated with the variable debug set to true.
     */
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     val countCheck:Array[Int] = Array.tabulate(sequences.size)(i => 0)
     /**the violation of the sequence starting here*/
     val violatedCheck = Array.tabulate(sequences.size)(i => 0)
@@ -169,8 +169,8 @@ case class Sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:A
       }
     }
 
-    for(s <- sequences)c.check(countCheck(s) == count(s),Some("countCheck(s) == count(s)"))
-    for(s <- sequences)c.check(violatedCheck(s) == violated(s).value,Some("violatedCheck(s) == violated(s).value"))
-    c.check(violationCheck == violation.value)
+    for(s <- sequences)require(countCheck(s) == count(s),Some("countCheck(s) == count(s)"))
+    for(s <- sequences)require(violatedCheck(s) == violated(s).value,Some("violatedCheck(s) == violated(s).value"))
+    require(violationCheck == violation.value)
   }
 }

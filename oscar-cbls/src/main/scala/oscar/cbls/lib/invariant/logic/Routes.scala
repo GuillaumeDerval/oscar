@@ -169,22 +169,22 @@ class Routes(V: Int,
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     for (n <- next.indices) {
       val nextNode = next(n)
       if (nextNode != UNROUTED) {
-        c.check(routeNr(nextNode).value == routeNr(n).value, Some("routeNr(nextNode).value == routeNr(n).value"))
+        require(routeNr(nextNode).value == routeNr(n).value, Some("routeNr(nextNode).value == routeNr(n).value"))
         if (nextNode < V) {
-          c.check(positionInRoute(nextNode).value == 0, Some("positionInRoute(nextNode).value == 0"))
-          c.check(routeNr(nextNode).value == nextNode, Some("routeNr(nextNode).value == nextNode"))
+          require(positionInRoute(nextNode).value == 0, Some("positionInRoute(nextNode).value == 0"))
+          require(routeNr(nextNode).value == nextNode, Some("routeNr(nextNode).value == nextNode"))
         } else {
-          c.check(positionInRoute(nextNode).value == (positionInRoute(n).value + 1) % (routeLength(routeNr(n).value).value),
+          require(positionInRoute(nextNode).value == (positionInRoute(n).value + 1) % (routeLength(routeNr(n).value).value),
             Some("positionInRoute(nextNode).value == (positionInRoute(n).value +1)%(routeLength(routeNr(n).value).value)"))
-          c.check(routeNr(n).value == routeNr(nextNode).value, Some("routeNr(n).value == routeNr(nextNode).value"))
+          require(routeNr(n).value == routeNr(nextNode).value, Some("routeNr(n).value == routeNr(nextNode).value"))
         }
       } else {
-        c.check(routeNr(n).value == V, Some("routeNr(n).value == V"))
-        c.check(positionInRoute(n).value == UNROUTED, Some("positionInRoute(n).value == UNROUTED"))
+        require(routeNr(n).value == V, Some("routeNr(n).value == V"))
+        require(positionInRoute(n).value == UNROUTED, Some("positionInRoute(n).value == UNROUTED"))
       }
     }
   }

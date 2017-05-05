@@ -55,12 +55,12 @@ case class Predecessor(next:Array[IntValue],V:Int)
     else preds(NewVal) := index
   }
 
-  override def checkInternals(c:Checker){
+  override def checkInternals() {
     for(n<- 0 until N){
       //n is unrouted
-      if(next(n).value==N) c.check(preds(n).value==N, Some("preds(n).value==N"))
+      if(next(n).value==N) require(preds(n).value==N, Some("preds(n).value==N"))
       // n is routed
-      else  c.check(n == preds(next(n).value).value, Some("n == preds(next(n).value).value"))
+      else  require(n == preds(next(n).value).value, Some("n == preds(next(n).value).value"))
       }
   }
 

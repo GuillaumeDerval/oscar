@@ -138,8 +138,8 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
     }
   }
 
-  override def checkInternals(c:Checker){
-    c.check(mOldValue == mNewValue)
+  override def checkInternals() {
+    require(mOldValue == mNewValue)
   }
 
   protected def :=(v: Int) {
@@ -333,7 +333,7 @@ class IdentityInt(toValue:CBLSIntVar, fromValue:IntValue) extends Invariant with
     toValue := NewVal
   }
 
-  override def checkInternals(c:Checker){
-    c.check(toValue.value == fromValue.value)
+  override def checkInternals() {
+    require(toValue.value == fromValue.value)
   }
 }

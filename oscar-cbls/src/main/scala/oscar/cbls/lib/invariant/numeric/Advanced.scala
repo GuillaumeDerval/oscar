@@ -47,8 +47,8 @@ case class SumConstants(vars: Array[Int], cond: SetValue)
     * this will be called for each invariant after propagation is performed.
     * It requires that the Model is instantiated with the variable debug set to true.
     */
-  override def checkInternals(c: Checker){
-    c.check(this.value == cond.value.foldLeft(0)((acc, i) => acc + vars(i)),
+  override def checkInternals() {
+    require(this.value == cond.value.foldLeft(0)((acc, i) => acc + vars(i)),
       Some("output.value == cond.value.foldLeft(0)((acc, i) => acc + vars(i).value)"))
   }
 }
@@ -112,8 +112,8 @@ case class SumElements(vars: Array[IntValue], cond: SetValue)
     this :-= vars(value).value
   }
 
-  override def checkInternals(c:Checker) {
-    c.check(this.value == cond.value.foldLeft(0)((acc, i) => acc + vars(i).value),
+  override def checkInternals() {
+    require(this.value == cond.value.foldLeft(0)((acc, i) => acc + vars(i).value),
         Some("output.value == cond.value.foldLeft(0)((acc, i) => acc + vars(i).value)"))
   }
 }
@@ -172,8 +172,8 @@ case class ProdConstants(vars: Array[Int], cond: SetValue)
     affectOutput()
   }
 
-  override def checkInternals(c:Checker) {
-    c.check(this.value == cond.value.foldLeft(1)((acc, i) => acc * vars(i)),
+  override def checkInternals() {
+    require(this.value == cond.value.foldLeft(1)((acc, i) => acc * vars(i)),
       Some("output.value (" + this.value
         + ") == cond.value.foldLeft(1)((acc, i) => acc * vars(i).value) ("
         + cond.value.foldLeft(1)((acc, i) => acc * vars(i)) + ")"))
@@ -274,8 +274,8 @@ case class ProdElements(vars: Array[IntValue], cond: SetValue)
     affectOutput()
   }
 
-  override def checkInternals(c:Checker) {
-    c.check(this.value == cond.value.foldLeft(1)((acc, i) => acc * vars(i).value),
+  override def checkInternals() {
+    require(this.value == cond.value.foldLeft(1)((acc, i) => acc * vars(i).value),
         Some("output.value (" + this.value
             + ") == cond.value.foldLeft(1)((acc, i) => acc * vars(i).value) ("
             + cond.value.foldLeft(1)((acc, i) => acc * vars(i).value) + ")"))

@@ -81,7 +81,7 @@ case class DenseCount(values: Array[IntValue], counts: Array[CBLSIntVar], offset
     counts(NewVal + offset) :+= 1
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     /**
      * Maintains a count of the indexes of array:
      * count(j) = #{i in index of values | values[i] == j}
@@ -96,7 +96,7 @@ case class DenseCount(values: Array[IntValue], counts: Array[CBLSIntVar], offset
     }
 
     for (j <- counts.indices) {
-      c.check(counts(j+offset).value == myCounts(j+offset),
+      require(counts(j+offset).value == myCounts(j+offset),
         Some("counts(" + j + "+offset).getValue(false) (" + counts(j+offset).value
           + ") == myCounts(" + j + "+offset) (" + myCounts(j+offset) + ")"))
     }

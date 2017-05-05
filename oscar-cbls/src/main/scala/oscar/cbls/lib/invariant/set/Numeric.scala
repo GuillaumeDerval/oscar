@@ -50,10 +50,10 @@ case class SetSum(on: SetValue, fun: (Int => Int) = (a: Int) => a)
     this :+= delta
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     var count = 0
     for (v <- on.value) count += fun(v)
-    c.check(this.value == count, Some("this.value == count"))
+    require(this.value == count, Some("this.value == count"))
   }
 }
 
@@ -88,15 +88,15 @@ case class SetProd(on: SetValue)
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     var countNZ = 1
     for (v <- on.value) if(v !=0) countNZ *= v
-    c.check(nonZeroProduct == countNZ,
+    require(nonZeroProduct == countNZ,
       Some("non zero product (" + nonZeroProduct + ") == product of non zero items (" + countNZ + ") and on is " + on))
 
     var count = 1
     for (v <- on.value) count *= v
-    c.check(this.value == count,
+    require(this.value == count,
       Some("this.value (" + this.value + ") == count (" + count + ") and on is " + on))
   }
 }

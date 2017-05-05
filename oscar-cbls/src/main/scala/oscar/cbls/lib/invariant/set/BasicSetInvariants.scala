@@ -72,8 +72,8 @@ with SetNotificationTarget{
     }
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value.intersect(left.value.union(right.value)).size == this.value.size,
+  override def checkInternals() {
+    require(this.value.intersect(left.value.union(right.value)).size == this.value.size,
       Some("this.value.intersect(left.value.union(right.value)).size == this.value.size"))
   }
 }
@@ -129,10 +129,10 @@ case class UnionAll(sets: Iterable[SetValue])
     count(i) = count(i) - 1
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     this.min to this.max foreach {
       value =>
-        c.check(this.value.iterator.contains(value) == (count(value - offset) > 0),
+        require(this.value.iterator.contains(value) == (count(value - offset) > 0),
           Some("this.value.iterator.contains(value) == (count(value (" + value + ") - offset (" + offset + ")) > 0)"))
     }
   }
@@ -180,8 +180,8 @@ with SetNotificationTarget{
     this.deleteValue(value)
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value.intersect(left.value.intersect(right.value)).size == this.value.size,
+  override def checkInternals() {
+    require(this.value.intersect(left.value.intersect(right.value)).size == this.value.size,
       Some("this.value.intersect(left.value.intersect(right.value)).size == this.value.size"))
   }
 }
@@ -231,8 +231,8 @@ with SetNotificationTarget{
 
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value.intersect(a.value.map(fun)).size == this.value.size)
+  override def checkInternals() {
+    require(this.value.intersect(a.value.map(fun)).size == this.value.size)
   }
 }
 
@@ -287,8 +287,8 @@ case class Diff(left: SetValue, right: SetValue)
     }
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value.intersect(left.value.diff(right.value)).size == this.value.size,
+  override def checkInternals() {
+    require(this.value.intersect(left.value.diff(right.value)).size == this.value.size,
       Some("this.value.intersect(left.value.diff(right.value)).size == this.value.size"))
   }
 }
@@ -309,8 +309,8 @@ case class Cardinality(v: SetValue)
    this := newValue.size
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value == v.value.size, Some("this.value == v.value.size"))
+  override def checkInternals() {
+    require(this.value == v.value.size, Some("this.value == v.value.size"))
   }
 }
 
@@ -351,14 +351,14 @@ case class MakeSet(on: SortedSet[IntValue])
     }
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value.size <= on.size,
+  override def checkInternals() {
+    require(this.value.size <= on.size,
       Some("this.value.size (" + this.value.size
         + ") <= on.size (" + on.size + ")"))
-    for (v <- on) c.check(this.value.contains(v.value),
+    for (v <- on) require(this.value.contains(v.value),
       Some("this.value.contains(v.value (" + v.value + "))"))
 
-    for (v <- this.value) c.check(on.exists(i => i.value == v),
+    for (v <- this.value) require(on.exists(i => i.value == v),
       Some("on.exists(i => i.value == " + v + ")"))
 
   }
@@ -412,15 +412,15 @@ case class Interval(lb: IntValue, ub: IntValue)
     }
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value.size == 0.max(ub.value - lb.value + 1),
+  override def checkInternals() {
+    require(this.value.size == 0.max(ub.value - lb.value + 1),
       Some("this.value.size (" + this.value.size
         + ") == 0.max(ub.value (" + ub.value
         + ") - lb.value (" + lb.value + ") + 1) ("
         + 0.max(ub.value - lb.value + 1) + ")"))
     if (ub.value >= lb.value) {
       for (i <- lb.value to ub.value)
-        c.check(this.value.contains(i),
+        require(this.value.contains(i),
           Some("this.value.contains(" + i + ")"))
     }
   }
@@ -467,13 +467,13 @@ with SetNotificationTarget{
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     if (from.value.isEmpty) {
-      c.check(this.value == default,
+      require(this.value == default,
         Some("this.value (" + this.value
           + ") == default (" + default + ")"))
     } else {
-      c.check(from.value.contains(this.value),
+      require(from.value.contains(this.value),
         Some("from.value.contains(this.value (" + this.value + "))"))
     }
   }
@@ -490,7 +490,7 @@ case class Singleton(v: IntValue)
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     assert(this.value.size == 1)
     assert(this.value.head == v.value)
   }
@@ -543,15 +543,15 @@ case class TakeAnyToSet(from: SetValue)
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     if (from.value.isEmpty) {
-      c.check(this.value.isEmpty,
+      require(this.value.isEmpty,
         Some("output.value (" + this.value
           + ") is empty set"))
     } else {
-      c.check(from.value.contains(this.value.head),
+      require(from.value.contains(this.value.head),
         Some("from.value.contains(output.value (" + this.value.head + "))"))
-      c.check(this.value.size == 1,
+      require(this.value.size == 1,
         Some("output is a singleton"))
     }
   }
@@ -581,7 +581,7 @@ case class BelongsTo(v: IntValue, set: SetValue)
     }
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value == (if (set.value.contains(v.value)) 1 else 0))
+  override def checkInternals() {
+    require(this.value == (if (set.value.contains(v.value)) 1 else 0))
   }
 }

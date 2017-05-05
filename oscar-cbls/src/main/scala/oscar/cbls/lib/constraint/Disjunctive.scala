@@ -102,7 +102,7 @@ case class Disjunctive(start: Array[IntValue],
     Violations(v.asInstanceOf[IntValue])
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     //TODO
   }
 }

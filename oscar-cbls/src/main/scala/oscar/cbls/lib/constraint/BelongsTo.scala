@@ -60,8 +60,8 @@ case class BelongsTo(v: IntValue, set: SetValue)
    * this will be called for each invariant after propagation is performed.
    * It requires that the Model is instantiated with the variable debug set to true.
    */
-  override def checkInternals(c: Checker) {
-    c.check(violation.value == (if (set.value.contains(v.value)) 0 else 1),
+  override def checkInternals() {
+    require(violation.value == (if (set.value.contains(v.value)) 0 else 1),
       Some("Violation.value (" + violation.value
         + ") == (if(set.value" + set.value + ".contains(v.value (" + v.value + "))) 0 else 1)"))
   }

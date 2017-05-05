@@ -159,13 +159,14 @@ class PropagationRunner(p:PropagationStructure){
  *  If unsure, set to false (or do not set; it is false by default),
  *  the engine will discover it by itself. See also method isAcyclic to query a propagation structure.
  *
- * @param verbose requires that the propagation structure prints a trace of what it is doing.
- * @param checker set a Some[Checker] top check all internal properties of invariants after propagation, set to None for regular execution
+ * @param debugLevel 0 for normal execution
+ *                   1 for a verbose mode: the propagation structure prints a trace of what it is doing.
+ *                   2 for a debug mode: all invariants check their internal properties after propagation
  * @param noCycle is to be set to true only if the static dependency graph is acyclic.
  * @param sortScc true if SCC should be sorted, false otherwise. Set to true, unless you know what your are doing. Setting to false might provide a speedup, but propagation will not be single pass on SCC anymore
  * @author renaud.delandtsheer@cetic.be
  */
-abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Checker] = None, val noCycle: Boolean, val sortScc: Boolean = true)
+abstract class PropagationStructure(val debugLevel: Int, val noCycle: Boolean, val sortScc: Boolean = true)
   extends SchedulingHandler {
 
   protected var closed: Boolean = false
@@ -375,6 +376,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
    * @param UpTo: the optional target of partial propagation
    */
   final def propagate(UpTo: PropagationElement = null) {
+    val verbose = debugLevel == 1
     if (!propagating) {
       if (UpTo != null) {
         val Track = fastPropagationTracks.getOrElse(UpTo.uniqueID, null)
@@ -539,12 +541,10 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
     }
 
     if (Track == null) {
-      checker match {
-        case Some(c) =>
+      if (debugLevel == 2){
           for (p <- getPropagationElements) {
-            p.checkInternals(c)
+            p.checkInternals()
           }
-        case None =>
       }
     }
     propagating = false
@@ -748,8 +748,8 @@ abstract class StronglyConnectedComponent(val propagationElements: Iterable[Prop
   override private[core] def rescheduleIfNeeded() {}
   //we do nothing, since it is the propagation elements that trigger the registration if needed of SCC
 
-  override def checkInternals(c: Checker) {
-    for (e <- propagationElements) { e.checkInternals(c) }
+  override def checkInternals() {
+    for (e <- propagationElements) { e.checkInternals() }
   }
 
   def stats:String = {
@@ -1177,7 +1177,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
    * that the incremental computation they perform through the performPropagation method is correct
    * overriding this method is optional, so an empty body is provided by default
    */
-  def checkInternals(c: Checker) {}
+  def checkInternals() {}
 
   /**
    * This returns the dot node to display on the DOT output for the node. Only the argument of the nodes

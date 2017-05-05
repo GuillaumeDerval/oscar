@@ -112,8 +112,8 @@ class Concatenate(a:ChangingSeqValue,b:ChangingSeqValue,maxPivotPerValuePercent:
     }
   }
 
-  override def checkInternals(c : Checker) : Unit = {
-    c.check((a.value.toList ++ b.value.toList) equals this.value.toList,Some("a.value.toList:" + a.value.toList + " b.value.toList:" + b.value.toList + " should== this.value.toList" + this.value.toList))
+  override def checkInternals() : Unit = {
+    require((a.value.toList ++ b.value.toList) equals this.value.toList,Some("a.value.toList:" + a.value.toList + " b.value.toList:" + b.value.toList + " should== this.value.toList" + this.value.toList))
   }
 }
 
@@ -177,8 +177,8 @@ class ConcatenateFirstConstant(a:List[Int],b:ChangingSeqValue,maxPivotPerValuePe
     }
   }
 
-  override def checkInternals(c : Checker) : Unit = {
-    c.check((a ++ b.value.toList) equals this.value.toList,
+  override def checkInternals() : Unit = {
+    require((a ++ b.value.toList) equals this.value.toList,
       Some("a.value.toList:" + a + " b.value.toList:" +
         b.value.toList + " should== this.value.toList" + this.value.toList))
   }
@@ -240,7 +240,7 @@ class ConcatenateSecondConstant(a:ChangingSeqValue,b:List[Int],maxPivotPerValueP
     }
   }
 
-  override def checkInternals(c : Checker) : Unit = {
-    c.check((a.value.toList ++ b) equals this.value.toList,Some("a.value.toList:" + a.value.toList + " b.value.toList:" + b + " should== this.value.toList" + this.value.toList))
+  override def checkInternals() : Unit = {
+    require((a.value.toList ++ b) equals this.value.toList,Some("a.value.toList:" + a.value.toList + " b.value.toList:" + b + " should== this.value.toList" + this.value.toList))
   }
 }

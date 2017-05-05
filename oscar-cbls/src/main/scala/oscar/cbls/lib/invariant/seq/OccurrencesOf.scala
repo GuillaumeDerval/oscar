@@ -46,8 +46,8 @@ case class OccurrencesOf(v: SeqValue, a:IntValue)
     this := v.value.nbOccurrence(a.value)
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value equals v.value.positionsOfValue(a.value).size)
+  override def checkInternals() {
+    require(this.value equals v.value.positionsOfValue(a.value).size)
   }
 }
 

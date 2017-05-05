@@ -200,14 +200,14 @@ case class RoundUpCustom(from: IntValue, duration: IntValue, forbiddenZones: Lis
     else down
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(from.value <= this.value)
+  override def checkInternals() {
+    require(from.value <= this.value)
     for ((a, b) <- forbiddenZones) {
-      c.check((this.value > b) || (this.value + duration.value - 1 < a), Some("from.value = " + from.value + " (this.value " + this.value + " > zoneEnd " + b + ") || (this.value " + this.value + "+ duration.value " + duration.value + " -1 < zoneStart " + a + ")"))
+      require((this.value > b) || (this.value + duration.value - 1 < a), Some("from.value = " + from.value + " (this.value " + this.value + " > zoneEnd " + b + ") || (this.value " + this.value + "+ duration.value " + duration.value + " -1 < zoneStart " + a + ")"))
     }
 
     for (i <- from.value until this.value) {
-      c.check(forbiddenZones.exists(ab =>
+      require(forbiddenZones.exists(ab =>
         !((i + duration.value - 1 < ab._1) || (ab._2 < i))),
         Some("should be not suitable at position " + i + " " + duration + " exists:"
           + forbiddenZones.exists(ab =>

@@ -103,19 +103,19 @@ class Sort(var values:Array[IntValue], ReversePerm:Array[CBLSIntVar])
     ForwardPerm(PositionInInitialArray2) := PositionInSorting1
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     val range = values.indices
     for (i <- range) {
-      c.check(ReversePerm(ForwardPerm(i).value).value == i,
+      require(ReversePerm(ForwardPerm(i).value).value == i,
         Some("ReversePerm(ForwardPerm(" + i
           + ").value ("+ForwardPerm(i).value+")).value  ("+ ReversePerm(ForwardPerm(i).value).value+") == " + i))
-      c.check(ForwardPerm(ReversePerm(i).value).value == i,
+      require(ForwardPerm(ReversePerm(i).value).value == i,
         Some("ForwardPerm(ReversePerm(" + i
           + ").value ("+ReversePerm(i).value+")).value ("+ ForwardPerm(ReversePerm(i).value).value+ ") == " + i))
     }
     for (i <- range) {
       for (j <- range if i < j) {
-        c.check((values(ReversePerm(i).newValue).value <= values(ReversePerm(j).newValue).value),
+        require((values(ReversePerm(i).newValue).value <= values(ReversePerm(j).newValue).value),
           Some("(values(ReversePerm(" + i + ").newValue).value ("
             + values(ReversePerm(i).newValue).value
             + ") <= values(ReversePerm(" + j + ").newValue).value "

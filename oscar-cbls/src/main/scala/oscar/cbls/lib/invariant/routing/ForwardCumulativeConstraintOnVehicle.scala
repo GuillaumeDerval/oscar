@@ -277,26 +277,26 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
     }
   }
 
-  override def checkInternals(c: Checker): Unit = {
+  override def checkInternals() : Unit = {
     val (nodeToContent,_,vehicleStartPos) = computeNodeToContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch(routes.value, 0)
     for(node <- routes.value){
-      c.check(nodeToContent(node) equals getVehicleContentAtNode(node),
+      require(nodeToContent(node) equals getVehicleContentAtNode(node),
         Some("GenericCumulativeConstraint : Error on content at node(" + node + ") at pos : "+ routes.newValue.positionsOfValue(node)+ " :=" + getVehicleContentAtNode(node) + " should be :=" + nodeToContent(node) + " route:" + routes.value))
     }
     val computedViolation = nodeToContent.foldLeft(0)({case (acc,nodeContent) => acc + contentToViolation(nodeContent)})
-    c.check(computedViolation == violation.value, Some("GenericCumulativeConstraint : " + violation + " should be :="+computedViolation))
+    require(computedViolation == violation.value, Some("GenericCumulativeConstraint : " + violation + " should be :="+computedViolation))
     for(node <- 0 until n){
       if(routes.value.contains(node)){
-        c.check(nodeToContent(node) == getVehicleContentAtNode(node),Some("Error on content of routed node " + node))
+        require(nodeToContent(node) == getVehicleContentAtNode(node),Some("Error on content of routed node " + node))
       }else{
-        c.check(nodeToContent(node) == 0 ,Some("Error on computed content of unrouted node " + node))
-        c.check(getVehicleContentAtNode(node) == 0 ,Some("Error on content of unrouted node " + node + " is " + getVehicleContentAtNode(node) + " should be 0"))
+        require(nodeToContent(node) == 0 ,Some("Error on computed content of unrouted node " + node))
+        require(getVehicleContentAtNode(node) == 0 ,Some("Error on content of unrouted node " + node + " is " + getVehicleContentAtNode(node) + " should be 0"))
       }
     }
 
     for(vehicle <- 0 until v) {
-      c.check(routes.value.valueAtPosition(vehicleStartPos.startPosOfVehicle(vehicle)).get == vehicle,Some("a"))
-      c.check(routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(vehicle)).get == vehicle,
+      require(routes.value.valueAtPosition(vehicleStartPos.startPosOfVehicle(vehicle)).get == vehicle,Some("a"))
+      require(routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(vehicle)).get == vehicle,
         Some("routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(" + vehicle + ")) is" + routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(vehicle)) + " should be " + vehicle))
     }
   }
