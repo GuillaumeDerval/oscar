@@ -62,13 +62,14 @@ object TSPDemo extends App {
 
   val n = 1000
   val v = 10
+  val displayDelay = 500 //ms
   val verbose = 1
-  val maxPivotPerValuePercent = 4
+  val maxPivotPerValuePercent = 3
 
-  new TSPDemo(n,v,maxPivotPerValuePercent,verbose)
+  new TSPDemo(n,v,maxPivotPerValuePercent,verbose,displayDelay)
 }
 
-class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) extends StopWatch{
+class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay:Int) extends StopWatch{
 
   val routingMatrix = RoutingMatrixGenerator(n)
   val symmetricDistanceMatrix = routingMatrix._1
@@ -97,16 +98,15 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) extends Stop
 
   val vlsn1pt = Mu[OnePointMoveMove](
     OnePointMove(myVRP.routed, () => myVRP.kFirst(5,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP),
-    l => Some(OnePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(3,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP)),
+    l => Some(OnePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(3,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP, hotRestart = false)),
     intermediaryStops = true,
-    maxDepth = 7)
+    maxDepth = 6)
 
+  def segExchange(k:Int) = SegmentExchange(myVRP,()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted),() => myVRP.vehicles)
   var lastDisplay = this.getWatch
 
-  val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt, onePtMove(10),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true) exhaust vlsn1pt).afterMove(
-    if(this.getWatch > lastDisplay + 500) {myVRP.drawRoutes(); lastDisplay = this.getWatch})
-  //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
-
+  val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt, onePtMove(10),twoOpt, threeOpt(10,true),segExchange(10))) exhaust BestSlopeFirst(List(threeOpt(30,true),vlsn1pt))).afterMove(
+    if(this.getWatch > lastDisplay + displayDelay) {myVRP.drawRoutes(); lastDisplay = this.getWatch})
 
   search.verbose = verbose
   //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
@@ -114,7 +114,5 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) extends Stop
   search.doAllMoves(obj=myVRP.obj)
 
   myVRP.drawRoutes()
-  print(getWatch)
-
   print(myVRP)
 }

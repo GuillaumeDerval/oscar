@@ -21,7 +21,7 @@ import oscar.cbls.business.routing.model.{TTFConst, TTFMatrix, PDP}
 import scala.util.Random
 
 object RoutingMatrixGenerator {
-  val random = new Random(0)
+  val random = new Random(System.currentTimeMillis)
 
   def apply(N: Int, side: Int = 1000): (Array[Array[Int]],Array[(Int,Int)]) = {
 
