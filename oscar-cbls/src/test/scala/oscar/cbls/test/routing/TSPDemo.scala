@@ -65,7 +65,7 @@ object TSPDemo extends App {
 
   val verbose = 0
   val maxPivotPerValuePercent = 4
-  new TSPDemo(1000,1,4,verbose)
+  new TSPDemo(10000,1,4,verbose)
   System.gc()
 
   val nbTrials = 3

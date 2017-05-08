@@ -165,8 +165,8 @@ class BasicRoutingMap(pdpOption:Option[PDP], vrpOption:Option[VRP]) extends Visu
 
     def getPointInformation(p:Int): String ={
       "Some informations about the point : " + p + "\n" +
-        "Arrival time : " + pdp.arrivalTime(p).value + "\n" +
-        "Leave time : " + pdp.leaveTime(p).value + "\n" +
+        "Arrival time : " + pdp.arrivalTimes(p).value + "\n" +
+        "Leave time : " + pdp.leaveTimes(p).value + "\n" +
         "Passengers on board : " + pdp.arrivalLoadValue(p).value
     }
   }
@@ -304,8 +304,8 @@ class GeoRoutingMap extends JXMapKit with RoutingMap {
           val point = new Point(pointsList(i)._1.toInt - rect.x, pointsList(i)._2.toInt - rect.y)
           if(point.distance(e.getPoint) < 10) {
             println("Some informations about the point : " + i)
-            println("Arrival time : " + pdp.arrivalTime(i).value)
-            println("Leave time : " + pdp.leaveTime(i).value)
+            println("Arrival time : " + pdp.arrivalTimes(i).value)
+            println("Leave time : " + pdp.leaveTimes(i).value)
             println("Passengers on board : " + pdp.arrivalLoadValue(i).value)
             println()
           }

@@ -292,13 +292,13 @@ class PDP(override val n:Int, override val v:Int, override val m:Store, maxPivot
 
   var defaultArrivalTime:CBLSIntConst = _
 
-  var arrivalTime:Array[CBLSIntVar] = Array.empty
+  var arrivalTimes:Array[CBLSIntVar] = Array.empty
 
-  var leaveTime:Array[CBLSIntVar] = Array.empty
+  var leaveTimes:Array[CBLSIntVar] = Array.empty
 
-  var travelOutDuration:Array[CBLSIntVar] = Array.empty
+  var travelOutDurations:Array[CBLSIntVar] = Array.empty
 
-  var arrivalTimeToNext:Array[IntValue] = Array.empty
+  var arrivalTimesToNext:Array[IntValue] = Array.empty
 
   var travelDurationMatrix: TravelTimeFunction = _
 
@@ -306,69 +306,69 @@ class PDP(override val n:Int, override val v:Int, override val m:Store, maxPivot
 
   var arrivalTimeCluster: DenseCluster[IntValue] = _
 
-  var waitingDuration: Array[IntValue] = Array.empty
+  var waitingDurations: Array[IntValue] = Array.empty
 
   def initiateTimeWindowInvariants(): Unit ={
     defaultArrivalTime = new CBLSIntConst(0)
 
-    arrivalTime = Array.tabulate(n) {
+    arrivalTimes = Array.tabulate(n) {
       (i: Int) => CBLSIntVar(m, 0, 0 to Int.MaxValue / n, "arrivalTimeAtNode" + i)
     }
-    leaveTime = Array.tabulate(n) {
+    leaveTimes = Array.tabulate(n) {
       (i: Int) => CBLSIntVar(m, 0, 0 to Int.MaxValue / n, "leaveTimeAtNode" + i)
     }
-    travelOutDuration = Array.tabulate(n) {
+    travelOutDurations = Array.tabulate(n) {
       (i: Int) => CBLSIntVar(m, 0, 0 to Int.MaxValue / n, "travelDurationToLeave" + i)
     }
-    arrivalTimeToNext = Array.tabulate(n + 1) {
+    arrivalTimesToNext = Array.tabulate(n + 1) {
       (i: Int) =>
         if (i == n) defaultArrivalTime
-        else travelOutDuration(i) + leaveTime(i)
+        else travelOutDurations(i) + leaveTimes(i)
     }
 
     for (i <- 0 until n) {
-      arrivalTime(i) <== arrivalTimeToNext.element(prev(i))
+      arrivalTimes(i) <== arrivalTimesToNext.element(prev(i))
     }
 
-    arrivalTimeCluster = Cluster.MakeDenseAssumingMinMax(leaveTime.map(x => Div(x,900)),0,192)
+    arrivalTimeCluster = Cluster.MakeDenseAssumingMinMax(leaveTimes.map(x => Div(x,900)),0,192)
   }
 
   def addTimeWindowStringInfo() {
-    addToStringInfo(() => "arrivalTime:      " + arrivalTime.toList.mkString(","))
-    addToStringInfo(() => "leaveTime:        " + leaveTime.toList.mkString(","))
-    addToStringInfo(() => "travelOutDuration:" + travelOutDuration.toList.mkString(","))
-    addToStringInfo(() => "arrivalTimeToNext:" + arrivalTimeToNext.toList.mkString(","))
+    addToStringInfo(() => "arrivalTime:      " + arrivalTimes.toList.mkString(","))
+    addToStringInfo(() => "leaveTime:        " + leaveTimes.toList.mkString(","))
+    addToStringInfo(() => "travelOutDuration:" + travelOutDurations.toList.mkString(","))
+    addToStringInfo(() => "arrivalTimeToNext:" + arrivalTimesToNext.toList.mkString(","))
   }
 
   //Leave before ...
   def setEndWindow(node: Int, endWindow: Int) {
     require(node >= v, "only for specifying time windows on nodes, not on vehicles")
-    slowConstraints.post(LE(IntITE(next(node), 0, leaveTime(node), n-1), endWindow).nameConstraint("end of time window on node " + node))
+    slowConstraints.post(LE(IntITE(next(node), 0, leaveTimes(node), n-1), endWindow).nameConstraint("end of time window on node " + node))
   }
 
   def setVehicleEnd(vehicle: Int, endTime: Int) {
     require(vehicle < v, "only for specifying end time of vehicles")
-    slowConstraints.post(LE(arrivalTime(vehicle), endTime).nameConstraint("end of time for vehicle " + vehicle))
+    slowConstraints.post(LE(arrivalTimes(vehicle), endTime).nameConstraint("end of time for vehicle " + vehicle))
   }
 
   def setNodeDuration(node: Int, duration: IntValue) {
     assert(node >= v)
-    leaveTime(node) <== (arrivalTime(node) + duration)
+    leaveTimes(node) <== (arrivalTimes(node) + duration)
   }
 
   def setNodeDuration(node: Int, durationWithoutWait: IntValue, startWindow: Int) {
-    leaveTime(node) <== (Max2(arrivalTime(node), startWindow) + durationWithoutWait)
+    leaveTimes(node) <== (Max2(arrivalTimes(node), startWindow) + durationWithoutWait)
   }
 
   def setNodeDuration(node: Int, durationWithoutWait: IntValue, startWindow: Int, maxWaiting: Int) {
     setNodeDuration(node, durationWithoutWait, startWindow)
-    slowConstraints.post(GE(arrivalTime(node), startWindow - maxWaiting).nameConstraint("end of time window on node (with duration)" + node))
+    slowConstraints.post(GE(arrivalTimes(node), startWindow - maxWaiting).nameConstraint("end of time window on node (with duration)" + node))
   }
 
   def setTravelTimeFunctions(travelCosts: TravelTimeFunction) {
     travelDurationMatrix = travelCosts
     for (i <- 0 until n) {
-      travelOutDuration(i) <== new IntInt2Int(leaveTime(i), next(i),
+      travelOutDurations(i) <== new IntInt2Int(leaveTimes(i), next(i),
         (leaveTime, successor) =>
           if (successor == n) 0
           else travelCosts.getTravelDuration(i, leaveTime, successor))
@@ -405,10 +405,10 @@ class PDP(override val n:Int, override val v:Int, override val m:Store, maxPivot
     this.timeWindows = tWS
 
 
-    waitingDuration = Array.tabulate(n){
+    waitingDurations = Array.tabulate(n){
       (i:Int) =>
         if(i >= v)
-          Max2(leaveTime(i) - timeWindows(i-v)._3 - arrivalTime(i), CBLSIntConst(0))
+          Max2(leaveTimes(i) - timeWindows(i-v)._3 - arrivalTimes(i), CBLSIntConst(0))
         else
           new CBLSIntConst(0)
     }
@@ -421,21 +421,21 @@ class PDP(override val n:Int, override val v:Int, override val m:Store, maxPivot
       //TODO: on ne peu pas appeler leaveTime(p).value; c'est hors du moteur d'optim.
       //à prioris, on cherche plutôt la durée du trajet à l'heure de pick-up demandée
       if(multiple)
-        slowConstraints.post(LE(arrivalTime(d) - leaveTime(p), (value*travelDurationMatrix.getTravelDuration(p, 0, d)).toInt))
+        slowConstraints.post(LE(arrivalTimes(d) - leaveTimes(p), (value*travelDurationMatrix.getTravelDuration(p, 0, d)).toInt))
       else
-        slowConstraints.post(LE(arrivalTime(d) - leaveTime(p), (value+travelDurationMatrix.getTravelDuration(p, 0, d)).toInt))
+        slowConstraints.post(LE(arrivalTimes(d) - leaveTimes(p), (value+travelDurationMatrix.getTravelDuration(p, 0, d)).toInt))
     }
   }
-  
+
   def setMultipleMaxTravelDistance(values:Array[Double], multiple:Boolean = false): Unit ={
     require(values.length == (n-v)/2, "The size of values must be equals to the number of couple pickup/delivery")
     for(i <- values.indices){
       val p = pickupNodes(i)
       val d = getRelatedDelivery(p)
       if(multiple)
-        slowConstraints.post(LE(arrivalTime(d) - leaveTime(p), (values(i)*travelDurationMatrix.getTravelDuration(p, leaveTime(p).value, d)).toInt))
+        slowConstraints.post(LE(arrivalTimes(d) - leaveTimes(p), (values(i)*travelDurationMatrix.getTravelDuration(p, leaveTimes(p).value, d)).toInt))
       else
-        slowConstraints.post(LE(arrivalTime(d) - leaveTime(p), (values(i)+travelDurationMatrix.getTravelDuration(p, leaveTime(p).value, d)).toInt))
+        slowConstraints.post(LE(arrivalTimes(d) - leaveTimes(p), (values(i)+travelDurationMatrix.getTravelDuration(p, leaveTimes(p).value, d)).toInt))
     }
   }
 
@@ -449,9 +449,9 @@ class PDP(override val n:Int, override val v:Int, override val m:Store, maxPivot
       val res:ListBuffer[Int] = new ListBuffer[Int]()
       for(i <- 0 to Math.min(arrivalTimeCluster.clusters.length, nodeCluster))
         for(neighbor <- arrivalTimeCluster.clusters(i).value.toList if isRouted(neighbor) && filter(n,neighbor))
-          if(leaveTime(neighbor).value+travelDurationMatrix.getTravelDuration(neighbor, 0, node) < timeWindows(node)._2) {
+          if(leaveTimes(neighbor).value+travelDurationMatrix.getTravelDuration(neighbor, 0, node) < timeWindows(node)._2) {
             val nextOfNeighbor = next(neighbor).value
-            val neighborToNode = max(leaveTime(neighbor).value + travelDurationMatrix.getTravelDuration(neighbor, 0, node), timeWindows(node)._1)
+            val neighborToNode = max(leaveTimes(neighbor).value + travelDurationMatrix.getTravelDuration(neighbor, 0, node), timeWindows(node)._1)
             val neighborToNodeToNext = neighborToNode + timeWindows(node)._3 + travelDurationMatrix.getTravelDuration(node, 0, nextOfNeighbor)
             if(neighborToNodeToNext < timeWindows(nextOfNeighbor)._2)
               res.append(neighbor)
