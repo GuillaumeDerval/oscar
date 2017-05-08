@@ -16,7 +16,7 @@ trait Benchmark {
       println("solution")
     }
 
-    cp.search(binaryStatic(decisionVariables))
+       cp.search(binaryStatic(decisionVariables))
 
     cp.start()
 
