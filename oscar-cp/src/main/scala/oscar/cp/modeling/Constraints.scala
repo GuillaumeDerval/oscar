@@ -21,8 +21,8 @@ import oscar.cp.constraints._
 import oscar.cp.core.variables.CPIntVarViewOffset
 import oscar.cp.core.variables.CPIntVarViewTimes
 import oscar.cp.core.variables.CPIntVarViewMinus
-import oscar.cp.core.CPPropagStrength
-import oscar.cp._
+import oscar.cp.core.{CPPropagStrength, Constraint}
+import oscar.cp.{sum, _}
 import oscar.cp.scheduling.constraints.{DisjunctiveWithTransitionTimes, UnaryResource, _}
 
 import scala.collection.mutable.ArrayBuffer
@@ -1220,15 +1220,15 @@ trait Constraints {
   }
 
   /**
-   * Constraints enforcing that variables in s are variables from x sorted in increasing order (i.e. s_i <= s_{i+1})
-   * where values in p represent the position/index in x at which values of s are (i.e. x(p_i) = s_i)
+    * Constraints enforcing that variables in s are variables from x sorted in increasing order (i.e. s_i <= s_{i+1})
+    * where values in p represent the position/index in x at which values of s are (i.e. x(p_i) = s_i)
     *
-    * @param x a non empty collection of variable
-   * @param s a non empty collection of variable of same size as x
-   * @param p a non empty collection of variable of same size as x
-   * @param strictly boolean set to true if the order must be strict
-   * @return a constraint enforcing that s is the sorted version of variables in x where x(p_i) = s_i
-   */
+    * @param x        a non empty collection of variable
+    * @param s        a non empty collection of variable of same size as x
+    * @param p        a non empty collection of variable of same size as x
+    * @param strictly boolean set to true if the order must be strict
+    * @return a constraint enforcing that s is the sorted version of variables in x where x(p_i) = s_i
+    */
   def sortedness(x: IndexedSeq[CPIntVar], s: IndexedSeq[CPIntVar], p: IndexedSeq[CPIntVar], strictly: Boolean = false): Array[Constraint] = {
     val cp = x.head.store
     val n = x.size
@@ -1299,8 +1299,30 @@ trait Constraints {
    *         all values in X are different and H represents an upper bound of the sum of the differences between
    *         deadlines and variables (sum_i(d_i - X_i) <= H)
    */
-  def stockingCost(X: Array[CPIntVar], d: Array[Int], H: CPIntVar): Constraint = {
+  def stockingCost(X: Array[CPIntVar], d: Array[Int], H: CPIntVar) = {
     new StockingCost(X, d, H, 1)
+  }
+
+
+  /**
+    * The IDStockingCost constraint holds when each item is produced before
+    * its due date ($X_i <= d_i$), the capacity of the machine is respected
+    * (i.e. no more than $c$ variables $X_i$ have the same value), and $H$
+    * is an upper bound on the total stocking cost ($sum_i((d_i - X_i)*h_i) <= H$).
+    *
+    * This constraint is the generalization of StockingCost constraint to
+    * item dependent stocking cost and useful for modeling
+    * Production Planning Problem such as Lot Sizing Problems
+    *
+    * @param X        , the variable $X_i$ is the date of production of item $i$ on the machine
+    * @param deadline , the integer $deadline_i$ is the due-date for item $i$
+    * @param h        , the integer $h_i$ is the stocking cost for item $i$
+    * @param H        , the variable $H$ is an upper bound on the total number of slots all the items are need in stock.
+    * @param cap      , the integer $cap_t$ is the maximum number of items the machine can produce during one time slot $t$ (capacity),
+    *                 if an item is produced before its due date, then it must be stocked.
+    */
+  def stockingCost(X: Array[CPIntVar],deadline: Array[Int], h: Array[Int],H: CPIntVar,cap: Array[Int]) = {
+    new IDStockingCost(X,deadline,h,H,cap)
   }
 
   /**

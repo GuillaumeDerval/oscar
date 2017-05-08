@@ -1,9 +1,25 @@
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
 package oscar.cp.constraints
 
 import oscar.cp.core._
 
 import scala.collection.mutable.PriorityQueue
 import oscar.cp.core.variables.{CPIntVar, CPVar}
+import oscar.cp.sum
 
 /**
   * The StockingCost constraint holds when each item is produced before
@@ -14,8 +30,8 @@ import oscar.cp.core.variables.{CPIntVar, CPVar}
   * This constraint is useful for modeling
   * Production Planning Problem such as Lot Sizing Problems
   * 
-  * @param X, the variable $X_i$ is the date of production of item $i$ on the machine
-  * @param d, the integer $d_i$ is the due-date for item $i$
+  * @param Y, the variable $X_i$ is the date of production of item $i$ on the machine
+  * @param deadline, the integer $d_i$ is the due-date for item $i$
   * @param H, the variable $H$ is an upper bound on the total number of slots all the items are need in stock.
   * @param c is the maximum number of items the machine can produce during one time slot (capacity), 
   *        if an item is produced before its due date, then it must be stocked.
@@ -44,6 +60,9 @@ class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIn
   val vopt = Array.fill(n)(0)
   
   override def setup(l: CPPropagStrength): Unit = {
+
+    X(0).store.add(H === -sum(0 until X.size)(i => (X(i) - deadline(i))))
+
     X.foreach(_.callPropagateWhenBoundsChange(this))
     H.callPropagateWhenBoundsChange(this)
     propagate()
