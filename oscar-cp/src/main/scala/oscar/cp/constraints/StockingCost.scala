@@ -19,6 +19,7 @@ import oscar.cp.core._
 
 import scala.collection.mutable.PriorityQueue
 import oscar.cp.core.variables.{CPIntVar, CPVar}
+import oscar.cp.sum
 
 /**
   * The StockingCost constraint holds when each item is produced before
@@ -29,8 +30,8 @@ import oscar.cp.core.variables.{CPIntVar, CPVar}
   * This constraint is useful for modeling
   * Production Planning Problem such as Lot Sizing Problems
   * 
-  * @param X, the variable $X_i$ is the date of production of item $i$ on the machine
-  * @param d, the integer $d_i$ is the due-date for item $i$
+  * @param Y, the variable $X_i$ is the date of production of item $i$ on the machine
+  * @param deadline, the integer $d_i$ is the due-date for item $i$
   * @param H, the variable $H$ is an upper bound on the total number of slots all the items are need in stock.
   * @param c is the maximum number of items the machine can produce during one time slot (capacity), 
   *        if an item is produced before its due date, then it must be stocked.
@@ -59,6 +60,9 @@ class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIn
   val vopt = Array.fill(n)(0)
   
   override def setup(l: CPPropagStrength): Unit = {
+
+    X(0).store.add(H === -sum(0 until X.size)(i => (X(i) - deadline(i))))
+
     X.foreach(_.callPropagateWhenBoundsChange(this))
     H.callPropagateWhenBoundsChange(this)
     propagate()

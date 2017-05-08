@@ -103,11 +103,11 @@ class IDStockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val h: Ar
   }
 
   override def setup(l: CPPropagStrength) = {
-    //s.post(allDiffBC)
+    X(0).store.add(H === -sum(0 until X.size)(i => (X(i) - deadline(i)) * h(i)))
+
     Y.foreach(_.callPropagateWhenBoundsChange(this))
     H.callPropagateWhenBoundsChange(this)
-    //H.callPropagateWhenBind(this)
-    //    s.post((-sum(0 until Y.size)(k => (Y(k) - deadline(k)) * h(k))) <== H)
+
     propagate()
   }
 
