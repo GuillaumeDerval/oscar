@@ -84,7 +84,28 @@ class PDPv2 (override val n:Int, override val v:Int, override val m:Store, val c
     * @return An array of unrouted Drives
     */
   def unroutedDrives={
+    chains.filter(c => !isRouted(c.head))
+  }
+
+  /**
+    * @return An array of routed Drives
+    */
+  def routedDrives={
     chains.filter(c => isRouted(c.head))
+  }
+
+  /**
+    * @return An array of unrouted Pickups
+    */
+  def unroutedPickups={
+    unroutedDrives.map(_.head)
+  }
+
+  /**
+    * @return An array of routed Pickups
+    */
+  def routedPickups={
+    routedDrives.map(_.head)
   }
 
   def pickupOfChain(chain: Int) = chains(chain).head
@@ -95,7 +116,31 @@ class PDPv2 (override val n:Int, override val v:Int, override val m:Store, val c
   def isDelivery(node: Int) = chainOfNode(node).last == node
   def getRelatedDelivery(node: Int) = chainOfNode(node).last
 
+  /**
+    * @param node The node
+    * @return The nodes between the previous node (in chain) of node
+    *         and the next node (in chain) of node
+    */
+  def relevantNewPredecessorsOf(node: Int) = {
+    getNodesBetween(
+      if(prevNode(node) == node) None else Some(prevNode(node)),
+      if(nextNode(node) == node) None else Some(nextNode(node))
+    )
+  }
 
+  /**
+    * @param from The left border (inclusive)
+    * @param to The right border (exclusive)
+    * @return preceding nodes of node int the route
+    */
+  def getNodesBetween(from: Option[Int], to: Option[Int]): Iterable[Int] ={
+    require(from.isDefined || to.isDefined, "Either from or to must be defined !")
+    def buildList(node: Int): List[Int] ={
+      if(node == to.getOrElse(-1) || node < v) return List.empty
+      List(node) ++ buildList(next(node).value)
+    }
+    buildList(from.getOrElse(getVehicleOfNode(to.get)))
+  }
 
 
   /**
