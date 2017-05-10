@@ -1,45 +1,48 @@
 package oscar.anytime.lns
 
-import oscar.algo.search.DFSearch
 import oscar.anytime.lns.utils.XmlWriter
-import oscar.cp._
 import oscar.cp.core.variables.CPIntVar
-
-import scala.collection.mutable
+import oscar.cp.searches.lns.operators.ALNSBuilder
+import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch}
 
 trait Benchmark {
 
   def decisionVariables: Array[CPIntVar]
   def objective: CPIntVar
-  def bestKnownObjective: Int //Should be an option?
+  def bestKnownObjective: Int
 
   def main(args: Array[String]): Unit = {
     val cp = objective.store
     val timeout = args(0).toLong * 1000000000L
 
-    val startTime = System.nanoTime()
-    val endTime = startTime + timeout
-    val solutions = mutable.ListBuffer[(Long, Int)]()
+    val alns = ALNSSearch(
+      decisionVariables,
+      objective,
+      new ALNSConfig(
+        timeout = timeout,
+        coupled = true,
+        learning = false,
+        Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided),
+        Array(
+          ALNSBuilder.ConfOrder,
+          ALNSBuilder.FirstFail,
+          ALNSBuilder.LastConf,
+          ALNSBuilder.BinSplit,
+          ALNSBuilder.ConfOrderValLearn,
+          ALNSBuilder.FirstFailValLearn,
+          ALNSBuilder.LastConfValLearn,
+          ALNSBuilder.BinSplitValLearn
+        ),
+        ALNSBuilder.Priority,
+        ALNSBuilder.RWheel,
+        ALNSBuilder.TTI,
+        ALNSBuilder.TTI
+      )
+    )
 
-    cp.onSolution {
-      val time = System.nanoTime() - startTime //This will have to change in case of parralelisation
-      solutions += ((time, objective.value))
-      if(!cp.silent) println("Solution found: " + objective.value + " at " + time/1000000000.0 + "s")
-    }
+    val result = alns.search()
 
-    val nSols = 0
-    val stopCondition: (DFSearch) => Boolean = (s: DFSearch) => {
-      var stop = false
-      stop |= (nSols != 0 && s.nSolutions >= nSols)
-      stop |= (System.nanoTime() >= endTime)
-      stop
-    }
-
-    val stats = cp.startSubjectTo(stopCondition, Int.MaxValue, null) {
-      cp.search(binaryStatic(decisionVariables))
-    }
-
-    XmlWriter.writeToXml("../ALNS-bench-results/", "testMethod", "testInstance", Some(bestKnownObjective), maxObjective = false, solutions)
+    XmlWriter.writeToXml("../ALNS-bench-results/", "testMethod", "testInstance", bestKnownObjective, maxObjective = false, result.solutions)
   }
 
 }

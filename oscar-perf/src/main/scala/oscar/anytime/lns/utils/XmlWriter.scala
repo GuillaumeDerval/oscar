@@ -2,25 +2,21 @@ package oscar.anytime.lns.utils
 
 import java.io.{File, FileWriter}
 
+import oscar.cp.searches.lns.CPIntSol
+
 import scala.xml.{Elem, NodeBuffer, PrettyPrinter}
 
 
 object XmlWriter{
 
-  private def resultsToXml(bestKnown:Option[Int], maxObjective:Boolean, solutions: Iterable[(Long, Int)]): Elem = {
+  private def resultsToXml(bestKnown:Int, maxObjective:Boolean, solutions: Iterable[CPIntSol]): Elem = {
 
     val xml = new NodeBuffer()
 
     xml += <objective_type>{if(maxObjective) "max" else "min"}</objective_type>
-    if(bestKnown.isDefined) xml += <best_known_objective>{bestKnown.get}</best_known_objective>
+    if(bestKnown < Int.MaxValue && bestKnown > Int.MinValue) xml += <best_known_objective>{bestKnown}</best_known_objective>
 
-    xml += (<solutions>{solutions.map{
-      case (time: Long, objective: Int) =>
-        <solution>
-          <time>{time}</time>
-          <objective>{objective}</objective>
-        </solution>
-    }}</solutions>)
+    xml += (<solutions>{solutions.map(_.asXml)}</solutions>)
 
     <results>{xml}</results>
   }
@@ -35,7 +31,7 @@ object XmlWriter{
     * @param solutions an iterable of pairs Time (Long) - solution objective (Int).
     * @return an xml node.
     */
-  def writeToXml(directory:String, method: String, instance:String, bestKnown:Option[Int] = None, maxObjective:Boolean, solutions: Iterable[(Long, Int)]): Unit = {
+  def writeToXml(directory:String, method: String, instance:String, bestKnown:Int = Int.MaxValue, maxObjective:Boolean, solutions: Iterable[CPIntSol]): Unit = {
     val xml = resultsToXml(bestKnown, maxObjective, solutions)
 
     val output = new File(directory + "/" + method + "_" + instance + ".xml")
