@@ -23,15 +23,15 @@ object ALNSBuilder{
   val Random_Param1 = Array(0.10, 0.25, 0.50, 0.75) //Percentage of the neighbourhood which is relaxed
 
   // K successive relaxation:
-  val KSuccessive = "K successive"
+  val KSuccessive = "KSuccessive"
   val KSuccessive_Param1 = Array(0.10, 0.25, 0.50, 0.75) //Percentage of the neighbourhood which is relaxed
 
   // Propagation guided relaxation:
-  val PropGuided = "Propagation guided"
+  val PropGuided = "PropGuided"
   val PropGuided_Param1 = Array(0.10, 0.25, 0.50, 0.75) //Percentage of the neighbourhood which is relaxed
 
   // Reversed propagation guided relaxation:
-  val RevPropGuided  = "Reversed Propagation guided"
+  val RevPropGuided  = "RevPropGuided"
   val RevPropGuided_Param1 = Array(0.10, 0.25, 0.50, 0.75) //Percentage of the neighbourhood which is relaxed
 
   //TODO: implement other relaxation functions
@@ -40,35 +40,35 @@ object ALNSBuilder{
     * Available search operators:
     */
   // Conflict ordering search:
-  val ConfOrder = "Conflict ordering"
-  val ConfOrderValLearn = "Conflict ordering with value learning"
+  val ConfOrder = "ConfOrder"
+  val ConfOrderValLearn = "ConfOrderValLearn"
 
   // First fail search:
-  val FirstFail = "First fail"
-  val FirstFailValLearn = "First fail with value learning"
+  val FirstFail = "FirstFail"
+  val FirstFailValLearn = "FirstFailValLearn"
 
   // Last conflict search:
-  val LastConf = "Last conflict"
-  val LastConfValLearn = "Last conflict with value learning"
+  val LastConf = "LastConf"
+  val LastConfValLearn = "LastConfValLearn"
 
   // Binary split search:
-  val BinSplit = "Binary split"
-  val BinSplitValLearn = "Binary split with value learning"
+  val BinSplit = "BinSplit"
+  val BinSplitValLearn = "BinSplitValLearn"
 
   //TODO: implement other search heuristics
 
   /**
     * Available adaptive stores:
     */
-  val RWheel = "Roulette wheel"
-  val Priority = "Priority store"
+  val RWheel = "RWheel"
+  val Priority = "Priority"
 
   /**
     * Available performance metrics:
     */
-  val LastImprov = "Last improvement"
-  val AvgImprov = "Average improvement"
-  val TTI = "Time to improvement"
+  val LastImprov = "LastImprov"
+  val AvgImprov = "AvgImprov"
+  val TTI = "TTI"
 
   /**
     * Default values:

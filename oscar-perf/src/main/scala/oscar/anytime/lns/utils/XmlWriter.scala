@@ -1,7 +1,5 @@
 package oscar.anytime.lns.utils
 
-import java.io.{File, FileWriter}
-
 import oscar.cp.searches.lns.CPIntSol
 
 import scala.xml.{Elem, NodeBuffer, PrettyPrinter}
@@ -9,10 +7,20 @@ import scala.xml.{Elem, NodeBuffer, PrettyPrinter}
 
 object XmlWriter{
 
-  private def resultsToXml(bestKnown:Int, maxObjective:Boolean, solutions: Iterable[CPIntSol]): Elem = {
+  private def resultsToXml(
+                            method: String,
+                            instance: String,
+                            problem: String,
+                            bestKnown: Int,
+                            maxObjective: Boolean,
+                            solutions: Iterable[CPIntSol]
+                          ): Elem = {
 
     val xml = new NodeBuffer()
 
+    xml += <method>{method}</method>
+    xml += <instance>{instance}</instance>
+    xml += <problem>{problem}</problem>
     xml += <objective_type>{if(maxObjective) "max" else "min"}</objective_type>
     if(bestKnown < Int.MaxValue && bestKnown > Int.MinValue) xml += <best_known_objective>{bestKnown}</best_known_objective>
 
@@ -31,17 +39,17 @@ object XmlWriter{
     * @param solutions an iterable of pairs Time (Long) - solution objective (Int).
     * @return an xml node.
     */
-  def writeToXml(directory:String, method: String, instance:String, bestKnown:Int = Int.MaxValue, maxObjective:Boolean, solutions: Iterable[CPIntSol]): Unit = {
-    val xml = resultsToXml(bestKnown, maxObjective, solutions)
-
-    val output = new File(directory + "/" + method + "_" + instance + ".xml")
-    if(!output.exists()){
-      output.getParentFile.mkdirs()
-      output.createNewFile()
-    }
-
-    val writer = new FileWriter(output, true)
-    writer.write(new PrettyPrinter(80, 4).format(xml))
-    writer.close()
+  def writeToXml(
+                  directory: String,
+                  method: String,
+                  instance: String,
+                  problem: String = "unknown",
+                  bestKnown: Int = Int.MaxValue,
+                  maxObjective: Boolean,
+                  solutions: Iterable[CPIntSol]
+                ): Unit = {
+    val xml = resultsToXml(method, instance, problem, bestKnown, maxObjective, solutions)
+    val output = directory + "/" + problem + "/" + method + "_" + instance + ".xml"
+    IOUtils.saveToFile(output, new PrettyPrinter(80, 4).format(xml))
   }
 }

@@ -51,4 +51,7 @@ class QuadraticAssignment(val instance: String, val bestObj: Int = Int.MaxValue)
 
   def objective: CPIntVar = obj
 
+  override def problem: String = "QAP"
+
+  override def isMax: Boolean = false
 }

@@ -63,7 +63,9 @@ class RCPSP(val instance: String, val bestObj: Int = Int.MaxValue) extends Bench
 
   def objective: CPIntVar = makespan
 
+  override def problem: String = "RCPSP"
 
+  override def isMax: Boolean = false
 }
 
 import scala.io.Source

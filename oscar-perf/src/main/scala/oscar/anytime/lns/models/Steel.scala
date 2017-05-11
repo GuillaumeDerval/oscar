@@ -27,7 +27,7 @@ import scala.util.Random
  *
  * @author Pierre Schaus pschaus@gmail.com
  */
-class Steel(val instance: String,val bestObj: Int = Int.MaxValue) extends CPModel with Benchmark {
+class Steel(val instance: String, val bestObj: Int = Int.MaxValue) extends CPModel with Benchmark {
 
   def readData(): (Array[Int], Array[Int], Array[Int]) = {
     val lines = Source.fromFile(instance).getLines.reduceLeft(_ + " " + _)
@@ -88,6 +88,7 @@ class Steel(val instance: String,val bestObj: Int = Int.MaxValue) extends CPMode
 
   override def objective: CPIntVar = obj
 
+  override def problem: String = "Steel"
 
-
+  override def isMax: Boolean = false
 }

@@ -54,6 +54,8 @@ class ProductMatrixTSP(val instance: String, val bestObj: Int = Int.MaxValue) ex
     (fullMatrix, consumptions, prices)
   }
 
+  override def problem: String = "ProdMatrixTSP"
 
+  override def isMax: Boolean = false
 }
 

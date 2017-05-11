@@ -1,4 +1,4 @@
-package oscar.anytime.lns.benchmarks.xcsp
+package oscar.anytime.lns.benchmarks.xcsp.vrp
 
 import oscar.anytime.lns.models.XCSP
 

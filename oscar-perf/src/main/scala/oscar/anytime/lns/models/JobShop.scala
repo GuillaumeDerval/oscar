@@ -119,7 +119,9 @@ class JobShop(val instance: String, val bestObj: Int = Int.MaxValue) extends Ben
 
   def objective: CPIntVar = makespan
 
+  override def problem: String = "JobShop"
 
+  override def isMax: Boolean = false
 }
 
 

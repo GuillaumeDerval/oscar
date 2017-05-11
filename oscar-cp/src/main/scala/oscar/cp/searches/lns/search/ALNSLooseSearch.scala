@@ -24,7 +24,7 @@ class ALNSLooseSearch(vars: Array[CPIntVar], objective: CPIntVar, config: ALNSCo
   lazy val nOpCombinations: Int = relaxOps.filter(_.isActive).map(_.nParamVals).sum * searchOps.filter(_.isActive).map(_.nParamVals).sum
 
   override def alnsLearning(): Unit = {
-    val initObj = objective.value
+    val initObj = currentSol.objective
     val initSol = currentSol
 
     val multFactor = 2.0
@@ -45,7 +45,7 @@ class ALNSLooseSearch(vars: Array[CPIntVar], objective: CPIntVar, config: ALNSCo
         lnsSearch(relax, search)
 
       val time = System.nanoTime() - sStart
-      val improvement = Math.abs(objective.value - initObj)
+      val improvement = Math.abs(currentSol.objective - initObj)
       //TODO: adapt time and improvement bounds
 //      if(model.cpObjective.best != initObj && sTime * 3 < tAvail) tAvail = sTime*3
 

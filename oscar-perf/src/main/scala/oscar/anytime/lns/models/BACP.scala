@@ -25,9 +25,9 @@ import scala.io.Source
  * An optimal balanced curriculum balances academic load for all periods.
  * @author Pierre Schaus pschaus@gmail.com
  */
-class BACP(file: String) extends CPModel with Benchmark {
+class BACP(val instance: String) extends CPModel with Benchmark {
 
-  val lines = Source.fromFile(file).getLines.reduceLeft(_ + " " + _)
+  val lines = Source.fromFile(instance).getLines.reduceLeft(_ + " " + _)
   val vals = lines.split("[ ,\t]").toList.filterNot(_ == "").map(_.toInt)
   var index = 0
   def next() = {
@@ -64,4 +64,8 @@ class BACP(file: String) extends CPModel with Benchmark {
   override def bestKnownObjective: Int = Int.MaxValue
 
   override def objective: CPIntVar = vari
+
+  override def problem: String = "BACP"
+
+  override def isMax: Boolean = false
 }

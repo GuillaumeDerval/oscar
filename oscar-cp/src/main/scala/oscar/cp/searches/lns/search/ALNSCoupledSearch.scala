@@ -18,7 +18,7 @@ class ALNSCoupledSearch(vars: Array[CPIntVar], objective: CPIntVar, config: ALNS
 
   //TODO: implement exponential timeout
   override def alnsLearning(): Unit = {
-    val initObj = objective.value
+    val initObj = currentSol.objective
     val initSol = currentSol
 
     val multFactor = 2.0
@@ -32,11 +32,11 @@ class ALNSCoupledSearch(vars: Array[CPIntVar], objective: CPIntVar, config: ALNS
       val start = System.nanoTime()
       endSearch = System.nanoTime() + tAvail
 
-      while(System.nanoTime() < endSearch && objective.value == initObj && operator.isActive)
+      while(System.nanoTime() < endSearch && currentSol.objective == initObj && operator.isActive)
         lnsSearch(operator)
 
       val time = System.nanoTime() - start
-      val improvement = Math.abs(objective.value - initObj)
+      val improvement = Math.abs(currentSol.objective - initObj)
       opPerf += ((operator, time, improvement))
       //TODO: adapt time and improvement bounds
 
