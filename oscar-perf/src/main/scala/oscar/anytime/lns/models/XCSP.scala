@@ -16,6 +16,7 @@ class XCSP(val instance: String) extends Benchmark{
 
   val model: CPModel = CPInstantiate(md.getCurrentModel.asInstanceOf[UninstantiatedModel])
 
+  //TODO: get only decision variables
   override def decisionVariables: Array[CPIntVar] = vars.map(model.getRepresentative(_).realCPVar)
 
   override def solver: CPSolver = model.cpSolver

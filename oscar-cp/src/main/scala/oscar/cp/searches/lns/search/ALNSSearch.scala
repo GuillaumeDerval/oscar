@@ -79,6 +79,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
     }
 
     //LNS loop
+    //TODO: implement stagnation mechanism
     if(!solver.silent) println("\nStarting adaptive LNS...")
     alnsLoop()
 

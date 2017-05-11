@@ -23,8 +23,9 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
 
   lazy val nOpCombinations: Int = relaxOps.filter(_.isActive).map(_.nParamVals).sum * searchOps.filter(_.isActive).map(_.nParamVals).sum
 
+  //TODO: implement exponential timeout
+  //TODO: add multiobjective support
   override def alnsLearning(): Unit = {
-    val initObj = currentSol.objective
     val initSol = currentSol
 
     val multFactor = 2.0
@@ -45,7 +46,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
         lnsSearch(relax, search)
 
       val time = System.nanoTime() - sStart
-      val improvement = Math.abs(currentSol.objective - initObj)
+      val improvement = Math.abs(currentSol.objective - initSol.objective)
       //TODO: adapt time and improvement bounds
 //      if(model.cpObjective.best != initObj && sTime * 3 < tAvail) tAvail = sTime*3
 
@@ -54,9 +55,8 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       if(!searchPerf.contains(search.name)) searchPerf += search.name -> (relax, mutable.ArrayBuffer[(Long, Int)]())
       searchPerf(search.name)._2 += ((time, improvement))
 
-      //TODO: restore initial solution bounds
-//      model.cpObjective.relax()
-//      model.cpObjective.best = initObj
+      solver.objective.objs.head.relax()
+      solver.objective.objs.head.best = initSol.objective
       currentSol = initSol
     }
 
@@ -85,8 +85,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
     }
 
     currentSol = bestSol
-    //TODO: set best sol bounds
-//    model.cpObjective.best = bestSol.objective
+    solver.objective.objs.head.best = bestSol.objective
   }
 
   override def alnsLoop(): Unit = {

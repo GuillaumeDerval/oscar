@@ -17,8 +17,8 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
   lazy val opStore: AdaptiveStore[ALNSOperator] = builder.instantiateOperatorStore(operators)
 
   //TODO: implement exponential timeout
+  //TODO: add multiobjective support
   override def alnsLearning(): Unit = {
-    val initObj = currentSol.objective
     val initSol = currentSol
 
     val multFactor = 2.0
@@ -32,17 +32,17 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
       val start = System.nanoTime()
       endSearch = System.nanoTime() + tAvail
 
-      while(System.nanoTime() < endSearch && currentSol.objective == initObj && operator.isActive)
+      while(System.nanoTime() < endSearch && currentSol.objective == initSol.objective && operator.isActive)
         lnsSearch(operator)
 
       val time = System.nanoTime() - start
-      val improvement = Math.abs(currentSol.objective - initObj)
+      val improvement = Math.abs(currentSol.objective - initSol.objective)
       opPerf += ((operator, time, improvement))
-      //TODO: adapt time and improvement bounds
+      //TODO: update time and improvement bounds
 
-      //TODO: restore initial solution bounds
-//      model.cpObjective.relax()
-//      model.cpObjective.best = initObj
+      //Restoring initial objective:
+      solver.objective.objs.head.relax()
+      solver.objective.objs.head.best = initSol.objective
       currentSol = initSol
     })
 
@@ -56,8 +56,7 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
     if(!solver.silent) println(opStore.nElements + " operators remaining.")
 
     currentSol = bestSol
-    //TODO: set best sol bounds
-//    model.cpObjective.best = bestSol.objective
+    solver.objective.objs.head.best = bestSol.objective
   }
 
   override def alnsLoop(): Unit = {
