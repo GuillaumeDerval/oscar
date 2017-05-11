@@ -1,13 +1,6 @@
 package oscar.anytime.lns.models
-
-import java.awt.Color
-
 import oscar.cp._
 import oscar.anytime.lns.Benchmark
-import oscar.util._
-import oscar.visual._
-import oscar.visual.plot.PlotLine
-import oscar.visual.shapes.VisualLine
 
 import scala.io.Source
 import scala.util.Random
@@ -86,9 +79,5 @@ class Steel(val instance: String, val bestObj: Int = Int.MaxValue) extends CPMod
 
   override def bestKnownObjective: Int = bestObj
 
-  override def objective: CPIntVar = obj
-
   override def problem: String = "Steel"
-
-  override def isMax: Boolean = false
 }

@@ -1,15 +1,15 @@
 package oscar.cp.searches.lns.search
 
 import oscar.algo.Inconsistency
-import oscar.cp.CPIntVar
+import oscar.cp.{CPIntVar, CPSolver}
 import oscar.cp.searches.lns.operators.ALNSOperator
 import oscar.cp.searches.lns.selection.AdaptiveStore
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
-class ALNSCoupledSearch(vars: Array[CPIntVar], objective: CPIntVar, config: ALNSConfig)
-  extends ALNSSearch(vars, objective, config) {
+class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
+  extends ALNSSearch(solver, vars, config) {
 
   //Instantiating operators:
   lazy val operators: Array[ALNSOperator] = builder.instantiateCoupledOperators
@@ -28,7 +28,7 @@ class ALNSCoupledSearch(vars: Array[CPIntVar], objective: CPIntVar, config: ALNS
     val opPerf = ArrayBuffer[(ALNSOperator, Long, Int)]()
 
     Random.shuffle(operators.toSeq).foreach(operator =>{
-      println("Avail time: " + tAvail/1000000000.0 + "s")
+      if(!solver.silent) println ("Avail time: " + tAvail/1000000000.0 + "s")
       val start = System.nanoTime()
       endSearch = System.nanoTime() + tAvail
 
@@ -50,10 +50,10 @@ class ALNSCoupledSearch(vars: Array[CPIntVar], objective: CPIntVar, config: ALNS
       val op = tuple._1
       op.setActive(false)
       opStore.remove(op)
-      println("Operator " + op.name + " deactivated.")
+      if(!solver.silent) println("Operator " + op.name + " deactivated.")
     })
 
-    println(opStore.nElements + " operators remaining.")
+    if(!solver.silent) println(opStore.nElements + " operators remaining.")
 
     currentSol = bestSol
     //TODO: set best sol bounds
@@ -67,13 +67,13 @@ class ALNSCoupledSearch(vars: Array[CPIntVar], objective: CPIntVar, config: ALNS
 
   def lnsSearch(operator: ALNSOperator): Unit = {
 
-    println("Starting new search with: " + operator.name)
+    if(!solver.silent) println("Starting new search with: " + operator.name)
 
     val oldObjective = currentSol.objective
 
     //New search using selected strategies:
     var relaxDone = true
-    val stats = cp.startSubjectTo(stopCondition, Int.MaxValue, null) {
+    val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
       try {
         operator(currentSol)
       }
@@ -85,13 +85,13 @@ class ALNSCoupledSearch(vars: Array[CPIntVar], objective: CPIntVar, config: ALNS
     val improvement = math.abs(currentSol.objective - oldObjective)
 
     if (relaxDone) {
-      println("Search done, Improvement: " + improvement + "\n")
+      if(!solver.silent) println("Search done, Improvement: " + improvement + "\n")
 
       //Updating probability distributions:
       operator.update(improvement, stats, fail = false)
     }
     else {
-      println("Search space empty, search not applied, improvement: " + improvement + "\n")
+      if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement + "\n")
 
       //Updating only relax as the the search has not been done:
       operator.update(improvement, stats, fail = true)

@@ -1,13 +1,9 @@
 package oscar.anytime.lns.models
 
-
-
 import oscar.cp._
 import oscar.anytime.lns.Benchmark
 
-
 class RCPSP(val instance: String, val bestObj: Int = Int.MaxValue) extends Benchmark {
-
 
   val resourceid = 1
   val (nTasks, nRes, resourcesCapacities, taskDescriptions) = RCPReader.readInstance(instance)
@@ -41,8 +37,6 @@ class RCPSP(val instance: String, val bestObj: Int = Int.MaxValue) extends Bench
   for (t <- taskIds)
     cp.add(ends(t) === starts(t) + durations(t))
 
-
-
   // Cumulative
   for (r <- resIds) {
     add(maxCumulativeResource(starts, durations, ends, demands(r), resources, capacities(r), 1), Weak)
@@ -52,20 +46,15 @@ class RCPSP(val instance: String, val bestObj: Int = Int.MaxValue) extends Bench
   for (t <- taskIds; succ <- successors(t))
     cp.add(ends(t) <= starts(succ))
 
-
-
   minimize(makespan)
 
+  override def solver: CPSolver = cp
 
-  def decisionVariables: Array[CPIntVar] = starts
+  override def decisionVariables: Array[CPIntVar] = starts
 
-  def bestKnownObjective: Int = bestObj
-
-  def objective: CPIntVar = makespan
+  override def bestKnownObjective: Int = bestObj
 
   override def problem: String = "RCPSP"
-
-  override def isMax: Boolean = false
 }
 
 import scala.io.Source

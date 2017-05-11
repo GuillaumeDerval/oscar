@@ -80,6 +80,8 @@ object BACP extends CPModel with App {
 
   val valueHeuris: (Int => Int) = learnValueHeuristic(x,i => selectMin(periods)(x(i).hasValue(_))(l(_).min).get)
 
+  solver.obj(vari).relax()
+
   // Search
   minimize(vari) search {
     binaryFirstFailIdx(x, valueHeuris)

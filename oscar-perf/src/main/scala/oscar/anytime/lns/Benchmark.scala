@@ -1,6 +1,7 @@
 package oscar.anytime.lns
 
 import oscar.anytime.lns.utils.{IOUtils, XmlWriter}
+import oscar.cp.CPSolver
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.searches.lns.operators.ALNSBuilder
 import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch}
@@ -9,12 +10,11 @@ import scala.collection.mutable
 
 trait Benchmark {
 
+  def solver: CPSolver
   def decisionVariables: Array[CPIntVar]
-  def objective: CPIntVar
   def bestKnownObjective: Int
   def instance: String
   def problem: String
-  def isMax: Boolean
 
   def main(args: Array[String]): Unit = {
 
@@ -52,7 +52,7 @@ trait Benchmark {
       argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String]
     )
 
-    val alns = ALNSSearch(decisionVariables, objective, config)
+    val alns = ALNSSearch(solver, decisionVariables, config)
 
     val result = alns.search()
 
@@ -62,7 +62,7 @@ trait Benchmark {
       IOUtils.getFileName(instance),
       problem,
       bestKnownObjective,
-      isMax,
+      solver.objective.objs.head.isMax,
       result.solutions
     )
   }

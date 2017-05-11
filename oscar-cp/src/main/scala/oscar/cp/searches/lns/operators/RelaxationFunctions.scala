@@ -1,7 +1,7 @@
 package oscar.cp.searches.lns.operators
 
 import oscar.algo.Inconsistency
-import oscar.cp.{CPIntVar, CPStore}
+import oscar.cp.{CPIntVar, CPSolver}
 import oscar.cp.searches.lns.CPIntSol
 
 import scala.util.Random
@@ -13,7 +13,7 @@ object RelaxationFunctions {
     * Relaxes randomly k variables.
     * @param k The number of variables to relax (must be >= 0 and < vars.size)
     */
-  def randomRelax(store: CPStore, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit = {
+  def randomRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit = {
     val varSeq = vars.toSeq
     val varArray = varSeq.indices.toArray //map to real indice of variable
     var boundStart = varArray.length //Elements of varArray from this index are bound
@@ -23,7 +23,7 @@ object RelaxationFunctions {
     while(nToFreeze > 0){
       val i = Random.nextInt(boundStart) //Selecting new var to freeze randomly
       val x = varArray(i)
-      store.assign(varSeq(x), currentSol.values(x))
+      solver.add(varSeq(x) === currentSol.values(x))
       if(! varSeq(x).isBound) throw Inconsistency
 
       //marking var as bound:
@@ -41,7 +41,7 @@ object RelaxationFunctions {
     * Relaxes randomly k successive variables.
     * @param k The number of variables to relax (must be >= 0 and < vars.size)
     */
-  def successiveRelax(store: CPStore, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit = {
+  def successiveRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit = {
     //TODO: Detect vars frozen by propagation
 //    println("relaxing " + k + " variables")
     val varSeq = vars.toSeq
@@ -50,14 +50,14 @@ object RelaxationFunctions {
     if(start + k > varSeq.length)
       varSeq.indices.filter(i => i < start && i >= (start+k)-varSeq.length).foreach(
         i => {
-          store.assign(varSeq(i), currentSol.values(i))
+          solver.add(varSeq(i) === currentSol.values(i))
           if(! varSeq(i).isBound) throw Inconsistency
         }
       )
     else
       varSeq.indices.filter(i => i < start || i >= start+k).foreach(
         i => {
-          store.assign(varSeq(i), currentSol.values(i))
+          solver.add(varSeq(i) === currentSol.values(i))
           if(! varSeq(i).isBound) throw Inconsistency
         }
       )
@@ -69,7 +69,7 @@ object RelaxationFunctions {
     * Relaxes variables using propagation to guide the relaxation until the estimated size s of the neighbourhood is attained.
     * @param s The estimated size of the neighbourhood to attain.
     */
-  def propagationGuidedRelax(store: CPStore, vars: Iterable[CPIntVar], currentSol: CPIntSol, closeness:ClosenessStore, s: Double): Unit = {
+  def propagationGuidedRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, closeness:ClosenessStore, s: Double): Unit = {
 //    println("relaxing to size " + s)
     val varSeq = vars.toSeq
     val varArray = varSeq.indices.toArray //map to real index of variables
@@ -83,7 +83,7 @@ object RelaxationFunctions {
 
       val next = if (toFreezeNext == -1) varArray(Random.nextInt(boundStart)) //If no var to freeze next, selecting random var
       else toFreezeNext
-      store.assign(varSeq(next), currentSol.values(next)) //Freezing var
+      solver.add(varSeq(next) === currentSol.values(next)) //Freezing var
       // propagation should be called as var is frozen
       if (!varSeq(next).isBound) throw Inconsistency
 
@@ -129,7 +129,7 @@ object RelaxationFunctions {
     * Relaxes variables using propagation to guide the relaxation until the estimated size s of the neighbourhood is attained.
     * @param s The estimated size of the neighbourhood to attain.
     */
-  def reversedPropagationGuidedRelax(store: CPStore, vars: Iterable[CPIntVar], currentSol: CPIntSol, closeness: ClosenessStore, s: Double): Unit = {
+  def reversedPropagationGuidedRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, closeness: ClosenessStore, s: Double): Unit = {
 //    println("relaxing to size " + s)
     val varSeq = vars.toSeq
     val varArray = varSeq.indices.toArray //map to real index of variables
@@ -163,7 +163,7 @@ object RelaxationFunctions {
     }
 
     for(i <- (0 until relaxStart).map(x => varArray(x))){
-      store.assign(varSeq(i), currentSol.values(i)) //Freezing var
+      solver.add(varSeq(i) === currentSol.values(i)) //Freezing var
       if (!varSeq(i).isBound) throw Inconsistency
     }
 

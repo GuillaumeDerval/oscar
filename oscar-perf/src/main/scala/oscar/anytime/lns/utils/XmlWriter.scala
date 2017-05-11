@@ -8,7 +8,7 @@ import scala.xml.{Elem, NodeBuffer, PrettyPrinter}
 object XmlWriter{
 
   private def resultsToXml(
-                            method: String,
+                            config: String,
                             instance: String,
                             problem: String,
                             bestKnown: Int,
@@ -18,7 +18,7 @@ object XmlWriter{
 
     val xml = new NodeBuffer()
 
-    xml += <method>{method}</method>
+    xml += <config>{config}</config>
     xml += <instance>{instance}</instance>
     xml += <problem>{problem}</problem>
     xml += <objective_type>{if(maxObjective) "max" else "min"}</objective_type>
@@ -32,7 +32,7 @@ object XmlWriter{
   /**
     * writes the specified elements into an xml file.
     * @param directory the path of a directory where the file will be created
-    * @param method the name of the method which is the first part of the filename
+    * @param config the name of the config which is the first part of the filename
     * @param instance the name of the instance which is the second part of the filename
     * @param bestKnown the objective value of the best known solution if known.
     * @param maxObjective whether the objective is to maximise (true) or minimise (false).
@@ -41,15 +41,15 @@ object XmlWriter{
     */
   def writeToXml(
                   directory: String,
-                  method: String,
+                  config: String,
                   instance: String,
                   problem: String = "unknown",
                   bestKnown: Int = Int.MaxValue,
                   maxObjective: Boolean,
                   solutions: Iterable[CPIntSol]
                 ): Unit = {
-    val xml = resultsToXml(method, instance, problem, bestKnown, maxObjective, solutions)
-    val output = directory + "/" + problem + "/" + method + "_" + instance + ".xml"
+    val xml = resultsToXml(config, instance, problem, bestKnown, maxObjective, solutions)
+    val output = directory + "/" + problem + "/" + config + "_" + instance + ".xml"
     IOUtils.saveToFile(output, new PrettyPrinter(80, 4).format(xml))
   }
 }

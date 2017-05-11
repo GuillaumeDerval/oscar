@@ -2,7 +2,6 @@ package oscar.anytime.lns.models
 
 import oscar.cp._
 import oscar.anytime.lns.Benchmark
-import oscar.util._
 
 import scala.io.Source
 
@@ -63,9 +62,5 @@ class BACP(val instance: String) extends CPModel with Benchmark {
 
   override def bestKnownObjective: Int = Int.MaxValue
 
-  override def objective: CPIntVar = vari
-
   override def problem: String = "BACP"
-
-  override def isMax: Boolean = false
 }

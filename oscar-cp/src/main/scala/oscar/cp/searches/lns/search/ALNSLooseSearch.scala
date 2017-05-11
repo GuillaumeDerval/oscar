@@ -1,7 +1,7 @@
 package oscar.cp.searches.lns.search
 
 import oscar.algo.Inconsistency
-import oscar.cp.CPIntVar
+import oscar.cp.{CPIntVar, CPSolver}
 import oscar.cp.searches.lns.operators.{ALNSOperator, ALNSReifiedOperator, ALNSSingleParamOperator, ALNSTwoParamsOperator}
 import oscar.cp.searches.lns.selection.AdaptiveStore
 
@@ -9,8 +9,8 @@ import scala.collection.mutable
 import scala.util.Random
 
 
-class ALNSLooseSearch(vars: Array[CPIntVar], objective: CPIntVar, config: ALNSConfig)
-  extends ALNSSearch(vars, objective, config) {
+class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
+  extends ALNSSearch(solver, vars, config) {
 
   //Instantiating relax operators:
   lazy val relaxOps: Array[ALNSOperator] = builder.instantiateRelaxOperators
@@ -64,7 +64,7 @@ class ALNSLooseSearch(vars: Array[CPIntVar], objective: CPIntVar, config: ALNSCo
       case (op, perfs) =>
         if(perfs.map(_._1).min > tAvail){
           op.setActive(false)
-          println("Operator " + op.name + " deactivated")
+          if(!solver.silent) println("Operator " + op.name + " deactivated")
         }
     }
 
@@ -72,16 +72,17 @@ class ALNSLooseSearch(vars: Array[CPIntVar], objective: CPIntVar, config: ALNSCo
       case (op, perfs) =>
         if(perfs.map(_._1).min > tAvail - 1000000L){
           op.setActive(false)
-          println("Operator " + op.name + " deactivated")
+          if(!solver.silent) println("Operator " + op.name + " deactivated")
         }
     }
 
     relaxOps.filter(!_.isActive).foreach(relaxStore.remove)
     searchOps.filter(!_.isActive).foreach(searchStore.remove)
 
-
-    println(relaxStore.nElements + " relax operators remaining.")
-    println(searchStore.nElements + " search operators remaining.")
+    if(!solver.silent) {
+      println(relaxStore.nElements + " relax operators remaining.")
+      println(searchStore.nElements + " search operators remaining.")
+    }
 
     currentSol = bestSol
     //TODO: set best sol bounds
@@ -95,13 +96,13 @@ class ALNSLooseSearch(vars: Array[CPIntVar], objective: CPIntVar, config: ALNSCo
 
   def lnsSearch(relax: ALNSOperator, search: ALNSOperator): Unit = {
 
-    println("Starting new search with: " + relax.name + " and " + search.name)
+    if(!solver.silent) println("Starting new search with: " + relax.name + " and " + search.name)
 
     val oldObjective = currentSol.objective
 
     //New search using selected strategies:
     var relaxDone = true
-    val stats = cp.startSubjectTo(stopCondition, Int.MaxValue, null) {
+    val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
       try {
         relax(currentSol)
       }
@@ -114,7 +115,7 @@ class ALNSLooseSearch(vars: Array[CPIntVar], objective: CPIntVar, config: ALNSCo
     val improvement = math.abs(currentSol.objective - oldObjective)
 
     if (relaxDone) {
-      println("Search done, Improvement: " + improvement + "\n")
+      if(!solver.silent) println("Search done, Improvement: " + improvement + "\n")
 
       //Updating probability distributions:
       relax.update(improvement, stats, fail = false)
@@ -123,7 +124,7 @@ class ALNSLooseSearch(vars: Array[CPIntVar], objective: CPIntVar, config: ALNSCo
       if(!relax.isInstanceOf[ALNSReifiedOperator]) searchStore.adapt(search, metric(search, improvement, stats))
     }
     else {
-      println("Search space empty, search not applied, improvement: " + improvement + "\n")
+      if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement + "\n")
 
       //Updating only relax as the the search has not been done:
       relax.update(improvement, stats, fail = true)
