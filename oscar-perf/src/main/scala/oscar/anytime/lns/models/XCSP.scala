@@ -1,24 +1,24 @@
-package oscar.anytime.lns
+package oscar.anytime.lns.models
 
 import oscar.anytime.lns.utils.XmlWriter
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.searches.lns.operators.ALNSBuilder
-import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch}
+import oscar.cp.searches.lns.search.ALNSConfig
+import oscar.modeling.models.ModelDeclaration
+import oscar.modeling.solvers.cp.searches.alns.operators.ALNSBuilder
+import oscar.modeling.solvers.cp.searches.alns.search.ALNSSearch
+import oscar.xcsp3.XCSP3Parser2
 
-trait Benchmark {
-
-  def decisionVariables: Array[CPIntVar]
-  def objective: CPIntVar
-  def bestKnownObjective: Int
+class XCSP(file: String){
+  val md = new ModelDeclaration
 
   def main(args: Array[String]): Unit = {
     val timeout = args(0).toLong * 1000000000L
 
-    //TODO: Parse args
+    //Parsing the instance and instantiating model declaration
+    val (vars, solutionGenerator) = XCSP3Parser2.parse(md, file)
 
     val alns = ALNSSearch(
-      decisionVariables,
-      objective,
+      md,
+      vars,
       new ALNSConfig(
         timeout = timeout,
         coupled = true,
@@ -38,13 +38,13 @@ trait Benchmark {
         ALNSBuilder.RWheel,
         ALNSBuilder.TTI,
         ALNSBuilder.TTI
-      )
+      ),
+      solutionGenerator
     )
 
     val result = alns.search()
 
-    XmlWriter.writeToXml("../ALNS-bench-results/", "default", "test", bestKnownObjective, maxObjective = false, result.solutions)
+    XmlWriter.writeToXml("../ALNS-bench-results/", "default", "test", Int.MaxValue, maxObjective = false, result.solutions)
   }
 
 }
-
