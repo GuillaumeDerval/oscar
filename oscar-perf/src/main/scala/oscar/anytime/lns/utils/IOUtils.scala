@@ -12,9 +12,14 @@ object IOUtils {
     }
   }
 
-  def getFileName(path: String): String = {
+  def getFileName(path: String, keepExtension: Boolean = true): String = {
     val file = new File(path)
-    file.getName
+    if(keepExtension) file.getName
+    else{
+      val splitName = file.getName.split("\\.")
+      if(splitName.nonEmpty) splitName(0)
+      else file.getName
+    }
   }
 
   def getParentName(path: String): String = {
@@ -22,11 +27,11 @@ object IOUtils {
     file.getParentFile.getName
   }
 
-  def getInstanceFiles(dir: String, extension: String): List[(String, String, String)] = getFolderContent(dir)
+  def getFiles(dir: String, extension: String): List[File] = getFolderContent(dir)
     .filter(f => f.isDirectory || f.getName.endsWith(extension))
     .flatMap(f => {
-      if(f.isDirectory) getInstanceFiles(dir + "/" + f.getName, extension)
-      else List[(String, String, String)]((f.getName, f.getParentFile.getName, f.getAbsolutePath))
+      if(f.isDirectory) getFiles(dir + "/" + f.getName, extension)
+      else List[File](f)
     })
 
   def saveToFile(filePath:String, s:String): Unit = {

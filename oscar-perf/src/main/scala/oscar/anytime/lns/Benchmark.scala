@@ -59,7 +59,7 @@ trait Benchmark {
     XmlWriter.writeToXml(
       argMap.getOrElse('out, "../ALNS-bench-results/").asInstanceOf[String],
       argMap.getOrElse('name, "default").asInstanceOf[String],
-      IOUtils.getFileName(instance),
+      IOUtils.getFileName(instance, keepExtension = false),
       problem,
       bestKnownObjective,
       solver.objective.objs.head.isMax,

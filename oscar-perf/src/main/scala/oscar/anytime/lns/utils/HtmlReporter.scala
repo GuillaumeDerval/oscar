@@ -1,6 +1,5 @@
 package oscar.anytime.lns.utils
 
-
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.xml.{Node, XML}
@@ -8,43 +7,68 @@ import scala.xml.{Node, XML}
 /**
   * Utility class to generate an html report from a benchmark directory.
   */
-object HtmlReporter{
+//TODO: make stepped graphs, add timeouts, add search information
+object HtmlReporter extends App{
+  if(args.length == 1) generateHtml(args(0))
+  else println("Incorrect number of arguments!")
 
   /**
     * Generates an html report from the given xml object.
     */
-  def generateHtml(directory: String, output: String = ""): Unit = {
+  def generateHtml(directory: String): Unit = {
+    val (instances, configs, instanceTypes, data) = scanInstances(directory)
+    val (bestSols, anyTimeScores, anyTimeGaps, instanceStats) = processStats(instances, configs, data)
 
-//    val htmlWriter = new HtmlWriter("resources/chart_report_template.html", directory + "htmlReport.html")
-//    htmlWriter.addHeading("General statistics")
-//
-//    htmlWriter.addParagraph("Best solution found per method")
-//    htmlWriter.addElement(
-//      "table",
-//      "Best solution found",
-//      HtmlWriter.tableToHtmlString(scanBestSols(results, configKeys))
-//    )
-//
-//    htmlWriter.addElement(
-//      "line",
-//      "Number of best solutions found per method over time",
-//      HtmlWriter.tableToHtmlString(scanAnyTimeBest(results, configKeys, timeout, makeStep = true))
-//    )
-//
-//    htmlWriter.addHeading("Instances statistics")
-//
-//    //Scanning each instance node:
-//    (results \ "instance").foreach(instanceNode => {
-//      htmlWriter.addParagraph((instanceNode \ "name").head.text)
-//
-//      htmlWriter.addElement(
-//        "line",
-//        "Search evolution",
-//        HtmlWriter.tableToHtmlString(scanSearchSols(instanceNode, configKeys, timeout, makeStep = true))
-//      )
-//    })
-//
-//    htmlWriter.writeToHtml()
+    val htmlWriter = new HtmlWriter("oscar-perf/src/main/scala/oscar/anytime/lns/utils/chart_report_template.html", directory + "/htmlReport.html")
+    htmlWriter.addHeading("General statistics")
+
+    htmlWriter.addParagraph("Best solution found per method")
+    htmlWriter.addElement(
+      "table",
+      "Best solution found",
+      HtmlWriter.tableToHtmlString(renderBestSols(bestSols, configs, instances, instanceTypes.toMap))
+    )
+
+    htmlWriter.addElement(
+      "line",
+      "Score per method over time",
+      HtmlWriter.tableToHtmlString(renderScoresByTime(anyTimeScores, configs))
+    )
+
+    val anyTimeGapsArray = renderGapsByTime(anyTimeGaps, configs)
+    if(anyTimeGapsArray.length > 1)
+      htmlWriter.addElement(
+        "line",
+        "Gap per method over time",
+        HtmlWriter.tableToHtmlString(anyTimeGapsArray)
+      )
+
+    htmlWriter.addHeading("Instances statistics")
+
+    instanceStats.foreach{case(name, sols, scores, gaps) =>
+      htmlWriter.addParagraph(name)
+
+      htmlWriter.addElement(
+        "line",
+        "Search evolution",
+        HtmlWriter.tableToHtmlString(renderSolsByTime(sols, configs))
+      )
+
+      htmlWriter.addElement(
+        "line",
+        "Score evolution",
+        HtmlWriter.tableToHtmlString(renderScoresByTime(scores, configs))
+      )
+
+      if(gaps.isDefined)
+        htmlWriter.addElement(
+          "line",
+          "Gap evolution",
+          HtmlWriter.tableToHtmlString(renderGapsByTime(gaps.get, configs))
+        )
+    }
+
+    htmlWriter.writeToHtml()
   }
 
 
@@ -53,16 +77,16 @@ object HtmlReporter{
     Seq[String],
     Seq[String],
     mutable.Map[String, String],
-    mutable.Map[String, (Boolean, Option[Int], ListBuffer[(Long, String, Int)])]
+    mutable.Map[String, (Boolean, Option[Int], ArrayBuffer[(Long, String, Int)])]
   ) = {
 
-    val data = mutable.Map[String, (Boolean, Option[Int], ListBuffer[(Long, String, Int)])]()
+    val data = mutable.Map[String, (Boolean, Option[Int], ArrayBuffer[(Long, String, Int)])]()
     val instances = mutable.HashSet[String]()
     val instanceTypes = mutable.Map[String, String]()
     val configs = mutable.HashSet[String]()
-    val files = IOUtils.getFolderContent(directory)
+    val files = IOUtils.getFiles(directory, ".xml")
 
-    files.foreach(file => if(file.getName.endsWith(".xml")){
+    files.foreach(file => {
 
       val(config, instance, problem, isMax, bestKnown, sols) = readXml(XML.loadFile(file))
 
@@ -71,7 +95,7 @@ object HtmlReporter{
       configs.add(config)
 
       if(data.contains(instance)) data(instance)._3 ++= sols
-      else data += instance -> (isMax, bestKnown, sols.to[ListBuffer])
+      else data += instance -> (isMax, bestKnown, sols.to[ArrayBuffer])
     })
 
     (instances.toSeq.sorted, configs.toSeq.sorted, instanceTypes, data)
@@ -102,7 +126,7 @@ object HtmlReporter{
 
 
   //Aggregates sols by time
-  def solsByTime(configs: Seq[String], sols: ArrayBuffer[(Long, String, Int)]): Seq[(Long, Array[Option[Int]])] = {
+  def solsByTime(configs: Seq[String], sols: Seq[(Long, String, Int)]): Seq[(Long, Array[Option[Int]])] = {
     val mapping = configs.zipWithIndex.toMap
 
     val currentSols: Array[Option[Int]] = Array.fill(configs.length)(None)
@@ -121,7 +145,11 @@ object HtmlReporter{
 
   //Aggreagates gaps by time
   //TODO: make generic method for this and scores by time
-  def gapsByTime(instances: Seq[String], configs: Seq[String], gaps: ArrayBuffer[(Long, String, Array[Option[Double]])]): ArrayBuffer[(Long, Array[Array[Option[Double]]])] = {
+  def gapsByTime(
+                  instances: Seq[String],
+                  configs: Seq[String],
+                  gaps: ArrayBuffer[(Long, String, Array[Option[Double]])]
+                ): ArrayBuffer[(Long, Array[Array[Option[Double]]])] = {
     val instMapping = instances.zipWithIndex.toMap
 
     val currentGaps: Array[Array[Option[Double]]] = Array.fill(instances.length, configs.length)(None)
@@ -140,7 +168,11 @@ object HtmlReporter{
   }
 
   //Aggregates scores by time
-  def scoresByTime(instances: Seq[String], configs: Seq[String], scores: ArrayBuffer[(Long, String, Array[Int])]): ArrayBuffer[(Long, Array[Array[Int]])] = {
+  def scoresByTime(
+                    instances: Seq[String],
+                    configs: Seq[String],
+                    scores: ArrayBuffer[(Long, String, Array[Int])]
+                  ): ArrayBuffer[(Long, Array[Array[Int]])] = {
     val instMapping = instances.zipWithIndex.toMap
 
     val currentScores: Array[Array[Int]] = Array.fill(instances.length, configs.length)(0)
@@ -159,7 +191,16 @@ object HtmlReporter{
   }
 
   //Process statistics
-  def processGlobalStats(instances: Seq[String], configs: Seq[String], data: mutable.Map[String, (Boolean, Option[Int], ArrayBuffer[(Long, String, Int)])]) = {
+  def processStats(
+                    instances: Seq[String],
+                    configs: Seq[String],
+                    data: mutable.Map[String, (Boolean, Option[Int], ArrayBuffer[(Long, String, Int)])]
+                  ): (
+    Array[Array[Option[Int]]],
+    ArrayBuffer[(Long, Array[Int])],
+    ArrayBuffer[(Long, Array[Option[Double]])],
+    ArrayBuffer[(String, Seq[(Long, Array[Option[Int]])], Seq[(Long, Array[Int])], Option[Seq[(Long, Array[Option[Double]])]])]
+  ) = {
 
     val nBests = 3 //Number of best configs to reward (the reward is proportional to the place in the ranking)
 
@@ -168,9 +209,15 @@ object HtmlReporter{
 
     val scores = mutable.ArrayBuffer[(Long, String, Array[Int])]()
     val gaps = mutable.ArrayBuffer[(Long, String, Array[Option[Double]])]()
-    val bestSols = Array.fill[Option[Int]](configs.length, instances.length)(None)
-//    val instanceStats = ArrayBuffer[()]() // Instance stats: (name, sols, gaps, scores)
+    val bestSols = Array.fill[Option[Int]](instances.length, configs.length)(None)
 
+    // Instance stats: (name, sols, gaps, scores)
+    val instanceStats = mutable.ArrayBuffer[(
+      String,
+      Seq[(Long, Array[Option[Int]])],
+      Seq[(Long, Array[Int])],
+      Option[Seq[(Long, Array[Option[Double]])]]
+    )]()
 
     //Scanning each instance data:
     data.foreach(instanceData => {
@@ -181,7 +228,7 @@ object HtmlReporter{
       //Computing best sols:
       val bests = sortedSols.last._2
       val instanceIndex = instMapping(name)
-      configs.indices.foreach(configIndex => bestSols(configIndex)(instanceIndex) = bests(configIndex))
+      configs.indices.foreach(configIndex => bestSols(instanceIndex)(configIndex) = bests(configIndex))
 
       //Computing gaps:
       val instanceGaps: Option[Seq[(Long, Array[Option[Double]])]] = if(bestKnown.isDefined)
@@ -193,10 +240,11 @@ object HtmlReporter{
         })
       else None
 
-//      //Adding gaps:
-//      if(instanceGaps.isDefined) instanceGaps.foreach{case (time, gapValues) => }
+      //Adding gaps:
+      if(instanceGaps.isDefined) instanceGaps.get.foreach{case (time, gapValues) => gaps += ((time, name, gapValues))}
 
       //Computing scores:
+      val instanceScores = ListBuffer[(Long, Array[Int])]()
       sortedSols.foreach{case (time, sols) =>
         val objectives = mutable.Map[Int, mutable.Set[String]]()
 
@@ -221,10 +269,11 @@ object HtmlReporter{
           i+=1
         }
 
+        instanceScores += ((time, score))
         scores += ((time, name, score))
       }
 
-//      instanceStats +=(name, sortedSols)
+      instanceStats += ((name, sortedSols, instanceScores, instanceGaps))
     })
 
     //Computing any time gaps:
@@ -234,13 +283,58 @@ object HtmlReporter{
         if(gapValues.length == gapOptions.length)
           Some(Math.pow(gapValues.foldLeft(1.0) { _ * _ }, 1.0/gapValues.length))
         else None
-      }))
+      }).toArray)
     }
 
     //Computing any time scores:
     val anyTimeScore = scoresByTime(instances, configs, scores).sortBy(_._1).map{case (time, scoreValues) =>
-      (time, configs.indices.map(i =>{scoreValues.map(_(i)).sum}))
+      (time, configs.indices.map(i =>{scoreValues.map(_(i)).sum}).toArray)
     }
 
+    (bestSols, anyTimeScore, anyTimeGap, instanceStats)
+  }
+
+  def renderBestSols(
+                      bestSols: Array[Array[Option[Int]]],
+                      configs: Seq[String],
+                      instances: Seq[String],
+                      instanceTypes: Map[String, String]
+                    ): Array[Array[String]] = {
+    val array = ArrayBuffer[Array[String]]()
+    array += Array("'Instance'", "'Set'") ++ configs.map("'" + _ + "'")
+    bestSols.indices.foreach(i => {
+      array += Array("'" + instances(i) + "'", "'" + instanceTypes(instances(i)) + "'") ++ bestSols(i).map{
+        case None => "null"
+        case Some(bestSol: Int) => bestSol.toString
+      }
+    })
+    array.toArray
+  }
+
+  def renderScoresByTime(scores: Seq[(Long, Array[Int])], configs: Seq[String]): Array[Array[String]] = {
+    val array = ArrayBuffer[Array[String]]()
+    array += Array("'Time'") ++ configs.map("'" + _ + "'")
+    scores.foreach{case (time, scoreValues) => array += Array((time/1000000000.0).toString) ++ scoreValues.map(_.toString)}
+    array.toArray
+  }
+
+  def renderGapsByTime(gaps: Seq[(Long, Array[Option[Double]])], configs: Seq[String]): Array[Array[String]] = {
+    val array = ArrayBuffer[Array[String]]()
+    array += Array("'Time'") ++ configs.map("'" + _ + "'")
+    gaps.foreach{case (time, gapValues) => array += Array((time/1000000000.0).toString) ++ gapValues.map{
+      case None => "null"
+      case Some(gap: Double) => gap.toString
+    }}
+    array.toArray
+  }
+
+  def renderSolsByTime(sols: Seq[(Long, Array[Option[Int]])], configs: Seq[String]): Array[Array[String]] ={
+    val array = ArrayBuffer[Array[String]]()
+    array += Array("'Time'") ++ configs.map("'" + _ + "'")
+    sols.foreach{case (time, solValues) => array += Array((time/1000000000.0).toString) ++ solValues.map{
+      case None => "null"
+      case Some(sol: Int) => sol.toString
+    }}
+    array.toArray
   }
 }
