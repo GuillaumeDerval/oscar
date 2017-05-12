@@ -1,12 +1,9 @@
 package oscar.cbls.lib.invariant.routing
 
-import oscar.cbls.business.routing.legacy.model.TTFMatrix
 import oscar.cbls.business.routing.model.PDPv2
-import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue, IntValue}
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.lib.constraint.{GE, LE}
 import oscar.cbls.lib.invariant.logic.IntITE
-import oscar.cbls.lib.invariant.minmax.Max2
 import oscar.cbls.lib.invariant.seq.Precedence
 
 /**
@@ -15,23 +12,28 @@ import oscar.cbls.lib.invariant.seq.Precedence
 object PDPConstraints {
   def apply(
              pdp: PDPv2,
+             additionalPrecedences: List[(Int,Int)] = List.empty,
              maxDetours: List[(Int,Int,Int)] = List.empty,
-             multiple: Boolean = false
+             maxDetourCalculation:(Int,Int) => Int = (a,b) => a + b
            ): ConstraintSystem ={
-    val constrains = new ConstraintSystem(pdp.routes.model)
+    val constraints = new ConstraintSystem(pdp.routes.model)
 
-    val pDPConstraints = new PDPConstraints(constrains, pdp.routes)
-    pDPConstraints.addCapacityConstraint(pdp.n,pdp.v,pdp.vehicleMaxCapacity,pdp.contentsFlow)
-    pDPConstraints.addTimeWindowConstraints(pdp)
-    pDPConstraints.addPrecedencesConstraints(pdp.chains)
-    pDPConstraints.addMaxDetoursConstraints(maxDetours,pdp,multiple)
+    val pDPConstraints = new PDPConstraints(constraints, pdp)
+    pDPConstraints.addCapacityConstraint()
+    pDPConstraints.addTimeWindowConstraints()
+    pDPConstraints.addPrecedencesConstraints(additionalPrecedences)
+    pDPConstraints.addMaxDetoursConstraints(maxDetours,maxDetourCalculation)
 
-    constrains
+    constraints
   }
 }
 
-class PDPConstraints(constraints: ConstraintSystem, routes: ChangingSeqValue) {
+class PDPConstraints(constraints: ConstraintSystem, pdp: PDPv2) {
   import oscar.cbls.modeling.Algebra._
+
+  val routes = pdp.routes
+  val n = pdp.n
+  val v = pdp.v
 
   /**
     * This method adds the maxDetour constraints to the constraints system.
@@ -43,44 +45,45 @@ class PDPConstraints(constraints: ConstraintSystem, routes: ChangingSeqValue) {
     *                   1° from node
     *                   2° to node
     *                   3° maximum detour (x)
-    * @param pdp The Pickup and Delivery Problem containing all the information needed
-    * @param multiple If true, we multiply the shortest distance by a certain value instead of adding seconds to it
+    * @param maxDetourCalculation This function define the way we want the maxDetour to be calculate.
+    *                             By default, we simply add the maxDetour value to the travel duration between from and to
     */
-  def addMaxDetoursConstraints(maxDetours: List[(Int, Int, Int)], pdp: PDPv2, multiple:Boolean) = {
+  def addMaxDetoursConstraints(maxDetours: List[(Int, Int, Int)], maxDetourCalculation:(Int,Int) => Int) = {
     val arrivalTimes = pdp.arrivalTimes
     val leaveTimes = pdp.leaveTimes
     val travelDurationMatrix = pdp.travelDurationMatrix
 
     for(maxDetour <- maxDetours){
-      if(multiple)
-        constraints.add(LE(arrivalTimes(maxDetour._2) - leaveTimes(maxDetour._1), maxDetour._3+travelDurationMatrix.getTravelDuration(maxDetour._1, leaveTimes(maxDetour._1).value, maxDetour._2)))
-      else
-        constraints.add(LE(arrivalTimes(maxDetour._2) - leaveTimes(maxDetour._1), maxDetour._3+travelDurationMatrix.getTravelDuration(maxDetour._1, leaveTimes(maxDetour._1).value, maxDetour._2)))
-
+      constraints.add(LE(arrivalTimes(maxDetour._2) - leaveTimes(maxDetour._1),
+        maxDetourCalculation(maxDetour._3,
+          travelDurationMatrix.getTravelDuration(maxDetour._1, leaveTimes(maxDetour._1).value, maxDetour._2))))
     }
   }
 
   /**
     * Add the precedences constraints.
     * Typically, we want to keep the order of the nodes of each chain
-    * @param chains The chains
+    * @param additionalPrecedences an additional list of precedences we want to add
     */
-  def addPrecedencesConstraints(chains:Array[Array[Int]]): Unit ={
+  def addPrecedencesConstraints(additionalPrecedences:List[(Int,Int)]): Unit ={
+    val chains = pdp.chains
 
-    def chainToTuple(chain: Array[Int]): List[(Int,Int)] ={
-      if(chain.tail.isEmpty)
-        List.empty
+    def chainToTuple(chain: List[Int], tuples:List[(Int,Int)]): List[(Int,Int)] ={
+      if(chain.length <= 1)
+        tuples
       else
-        List((chain.head,chain.tail.head)) ++ chainToTuple(chain.tail)
+        chainToTuple(chain.tail, (chain.head,chain.tail.head) :: tuples)
     }
 
-    val test = List.tabulate(chains.length)(c => chainToTuple(chains(c)))
-    new Precedence(routes, test.flatten)
+    val chainsPrecedences = List.tabulate(chains.length)(c => chainToTuple(chains(c).toList, List.empty).reverse)
+    new Precedence(routes, chainsPrecedences.flatten ++ additionalPrecedences)
   }
 
-  def addCapacityConstraint(n:Int, v:Int, vehicleMaxCapacity:Array[Int], contentsFlow:Array[Int]): Unit ={
-    val vehiclesMaxCapacity:Int = vehicleMaxCapacity.sortBy(x => x).last
-    val contentAtVehicleStart = Array.tabulate(v)(i => vehiclesMaxCapacity-vehicleMaxCapacity(i))
+  def addCapacityConstraint(): Unit ={
+    val vehiclesMaxCapacities = pdp.vehiclesMaxCapacities
+    val contentsFlow = pdp.contentsFlow
+    val vehiclesMaxCapacity:Int = vehiclesMaxCapacities.max
+    val contentAtVehicleStart = Array.tabulate(v)(i => vehiclesMaxCapacity-vehiclesMaxCapacities(i))
     ForwardCumulativeConstraintOnVehicle(
       routes,
       n,
@@ -99,12 +102,9 @@ class PDPConstraints(constraints: ConstraintSystem, routes: ChangingSeqValue) {
     *   1° : Maximum arrival time at depot (for vehicle)
     *   2° : Maximum arrival time at node
     *   3° : Maximum departure time at node (using maxWaitingTime)
-    * @param pdp The Pickup and Delivery Problem containing all the information needed
     */
-  def addTimeWindowConstraints(pdp: PDPv2)={
+  def addTimeWindowConstraints()={
 
-    val n = pdp.n
-    val v = pdp.v
     val earlylines = pdp.earlylines
     val maxWaitingDurations = pdp.maxWaitingDurations
     val deadlines = pdp.deadlines

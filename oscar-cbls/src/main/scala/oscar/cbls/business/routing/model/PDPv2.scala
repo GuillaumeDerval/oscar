@@ -1,16 +1,13 @@
 package oscar.cbls.business.routing.model
 
 import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, IntValue, Store}
-import oscar.cbls.core.constraint.ConstraintSystem
-import oscar.cbls.lib.constraint.{GE, LE}
-import oscar.cbls.lib.invariant.logic.{Cluster, DenseCluster, IntITE, IntInt2Int}
+import oscar.cbls.lib.invariant.logic.{Cluster, DenseCluster, IntInt2Int}
 import oscar.cbls.lib.invariant.minmax.Max2
 import oscar.cbls.lib.invariant.numeric.Div
 import oscar.cbls.modeling.Algebra._
 
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
-import scala.math._
 
 /**
   * Created by fg on 28/04/17.
@@ -24,20 +21,17 @@ import scala.math._
   * @param n the number of points (deposits and customers) in the problem.
   * @param v the number of vehicles.
   * @param m the model.
-  * @param c the number of chains (drives)
+  * @param chains the chains (drives)
   * @param timeLimit the maximum time value supported in seconds (by default 2 days => 172800 s)
   * @param maxPivotPerValuePercent
   */
-class PDPv2 (override val n:Int, override val v:Int, override val m:Store, val c:Int, val timeLimit:Int = 172800, maxPivotPerValuePercent:Int = 4)
+class PDPv2 (override val n:Int,
+             override val v:Int,
+             override val m:Store,
+             val chains:Array[Array[Int]],
+             val timeLimit:Int = 172800,
+             maxPivotPerValuePercent:Int = 4)
   extends VRP(n,v,m,maxPivotPerValuePercent) with NextAndPrev{
-
-  /**
-    * This list represents a list of chain.
-    * Each chain is represented by an array of node (at least 2).
-    * Each node represents a step of the chain.
-    * The first node is the pickup node and the last node the delivery node
-    */
-  val chains:Array[Array[Int]] = Array.tabulate(c)(_ => Array.empty)
 
   // The chain of each node
   val chainOfNode:Array[Array[Int]] = Array.tabulate(n-v)(_ => Array.empty)
@@ -45,26 +39,13 @@ class PDPv2 (override val n:Int, override val v:Int, override val m:Store, val c
   /**
     * This array represents the next node of each node (in his chain).
     */
-  val nextNode:Array[Int] = Array.tabulate(n)(_ => 0)
+  val nextNode:Array[Option[Int]] = Array.tabulate(n)(_ => None)
 
   /**
     * This array represents the previous node of each node (in his chain).
     */
-  val prevNode:Array[Int] = Array.tabulate(n)(_ => 0)
+  val prevNode:Array[Option[Int]] = Array.tabulate(n)(_ => None)
 
-  /**
-    * This method is used to set the chains of the problem.
-    * @param chains array list of chains
-    */
-  def addDrives(chains: Array[Array[Int]]): Unit ={
-    require(chains.length == c, "The chains length must have the same value as c (the number of chain). " +
-      "\nchains.length : " + chains.length + "    number of chains : " + c)
-    for(i <- chains.indices) {
-      val drive = chains(i)
-      this.chains(i) = drive
-      setPrevNext(drive)
-    }
-  }
 
   /**
     * This method is used to set the prevStep/nextStep value of each node contained in a chain.
@@ -74,8 +55,10 @@ class PDPv2 (override val n:Int, override val v:Int, override val m:Store, val c
   private def setPrevNext(chain: Array[Int]){
     for(i <- chain.indices){
       val node = chain(i)
-      prevNode(node) = if(i == 0) node else chain(i-1)
-      nextNode(node) = if(i == chain.length-1) node else chain(i+1)
+      if (i > 0)
+        prevNode(node) = Some(chain(i-1))
+      if (i < chain.length-1)
+        nextNode(node) = Some(chain(i+1))
       chainOfNode(node) = chain
     }
   }
@@ -83,14 +66,14 @@ class PDPv2 (override val n:Int, override val v:Int, override val m:Store, val c
   /**
     * @return An array of unrouted Drives
     */
-  def unroutedDrives={
+  def unroutedChains={
     chains.filter(c => !isRouted(c.head))
   }
 
   /**
     * @return An array of routed Drives
     */
-  def routedDrives={
+  def routedChains={
     chains.filter(c => isRouted(c.head))
   }
 
@@ -98,14 +81,14 @@ class PDPv2 (override val n:Int, override val v:Int, override val m:Store, val c
     * @return An array of unrouted Pickups
     */
   def unroutedPickups={
-    unroutedDrives.map(_.head)
+    unroutedChains.map(_.head)
   }
 
   /**
     * @return An array of routed Pickups
     */
   def routedPickups={
-    routedDrives.map(_.head)
+    routedChains.map(_.head)
   }
 
   def pickupOfChain(chain: Int) = chains(chain).head
@@ -121,12 +104,8 @@ class PDPv2 (override val n:Int, override val v:Int, override val m:Store, val c
     * @return The nodes between the previous node (in chain) of node
     *         and the next node (in chain) of node
     */
-  def relevantNewPredecessorsOf(node: Int) = {
-    getNodesBetween(
-      if(prevNode(node) == node) None else Some(prevNode(node)),
-      if(nextNode(node) == node) None else Some(nextNode(node))
-    )
-  }
+  def relevantNewPredecessorsOf(node: Int) = getNodesBetween(prevNode(node),nextNode(node))
+
 
   /**
     * @param from The left border (inclusive)
@@ -135,11 +114,11 @@ class PDPv2 (override val n:Int, override val v:Int, override val m:Store, val c
     */
   def getNodesBetween(from: Option[Int], to: Option[Int]): Iterable[Int] ={
     require(from.isDefined || to.isDefined, "Either from or to must be defined !")
-    def buildList(node: Int): List[Int] ={
-      if(node == to.getOrElse(-1) || node < v) return List.empty
-      List(node) ++ buildList(next(node).value)
+    def buildList(node: Int, betweenList: List[Int]): List[Int] ={
+      if(node == to.getOrElse(-1) || (node < v && node != from.get)) return betweenList
+      buildList(next(node).value, List(node) ++ betweenList)
     }
-    buildList(from.getOrElse(getVehicleOfNode(to.get)))
+    buildList(from.getOrElse(next(getVehicleOfNode(to.get)).value), List.empty)
   }
 
 
@@ -153,7 +132,6 @@ class PDPv2 (override val n:Int, override val v:Int, override val m:Store, val c
     * @param routeNumber the number of the route
     * @return the list of all the complete segment present in the route
     */
-  // TODO improve this method, it seems to have to much loop
   def getCompleteSegments(routeNumber:Int): List[(Int,Int)] ={
     val route = getRouteOfVehicle(routeNumber)
     /**
@@ -161,53 +139,35 @@ class PDPv2 (override val n:Int, override val v:Int, override val m:Store, val c
       * The Int value represents the amount of pickup nodes whose related delivery node isn't currently in the segment
       * The List[Int] value represents the segment
       */
-    val segmentsArray:Array[(Int,List[Int])] = new Array[(Int, List[Int])](c)
+    var pickupInc = 0
+    val segmentsArray:Array[List[Int]] = Array.tabulate(chains.length)(_ => List.empty)
+    var completeSegments: List[(Int, Int)] = List.empty
 
-    for(i <- route.indices){
-      if(isPickup(route(i))){
-        //If the node is a pickup one, we add the node to all the active segment and we create a new one
-        for(j <- segmentsArray.indices)
-          if(segmentsArray(j) != null)
-            if (segmentsArray(j)._1 != 0)
-              segmentsArray(j) = (segmentsArray(j)._1 + 1, segmentsArray(j)._2 :+ route(i))
-        segmentsArray(i) = (1,route(i)::Nil)
-      }
-      else if(isDelivery(route(i))){
-        for(j <- segmentsArray.indices)
-          if(segmentsArray(j) != null)
-            if (segmentsArray(j)._1 != 0) {
-              /**
-                * If the segment doesn't contain the related pickup node it means that the related pickup node is before
-                * the beginning of the segment and thus this is not possible to create a complete segment beginning
-                * at this position.
-                */
-              if (!segmentsArray(j)._2.contains(getRelatedPickup(route(i))))
-                segmentsArray(j) = null
-              /**
-                * Else we decrement the number of single pickup
-                */
-              else
-                segmentsArray(j) = (segmentsArray(j)._1 - 1, segmentsArray(j)._2 :+ route(i))
-            }
-      }
-    }
-
-    var completeSegments: List[(Int, Int)] = Nil
-
-    /**
-      * We loop only on the segment that are not null and whose the number of single pickup is equals to 0
-      */
-    for(i <- segmentsArray.indices)if(segmentsArray(i) != null && segmentsArray(i)._1 == 0){
-      val currentSegment = segmentsArray(i)._2
-      completeSegments = (currentSegment.head, currentSegment.last) :: completeSegments
-      var j = i-1
-      var currentPreds = route(i-1)
-      while(j != -1){
-        if(segmentsArray(j) != null && currentPreds == segmentsArray(j)._2.last){
-          completeSegments = (segmentsArray(j)._2.head, currentSegment.last) :: completeSegments
-          currentPreds = route(j-1)
+    for(node <- route) {
+      for (j <- 0 to pickupInc if segmentsArray(j) != null){
+        if (isPickup(node)) {
+          //If the node is a pickup one, we add the node to all the active segment and the one at position route(i)
+          segmentsArray(j) = segmentsArray(j) :+ node
+          pickupInc += 1
         }
-        j -= 1
+        else if (isDelivery(node)) {
+          /**
+            * If the segment doesn't contain the related pickup node it means that the related pickup node is before
+            * the beginning of the segment and thus this is not possible to create a complete segment beginning
+            * at this position.
+            */
+          if (!segmentsArray(j).contains(getRelatedPickup(route(node))))
+            segmentsArray(j) = null
+           /**
+            * Else we decrement the number of single pickup
+            */
+          else {
+            segmentsArray(j) = segmentsArray(j) :+ route(node)
+            //TODO : Check if this solution wroks properly. It should.
+            if (segmentsArray(j).length == 2*(pickupInc-j))
+              completeSegments = List((segmentsArray(j).head, segmentsArray(j).last)) ++ completeSegments
+          }
+        }
       }
     }
     completeSegments
@@ -216,7 +176,7 @@ class PDPv2 (override val n:Int, override val v:Int, override val m:Store, val c
 
   // --------------------------------- Capacities -------------------------------------- //
 
-  val vehicleMaxCapacity: Array[Int] = Array.tabulate(v)(_ => 0)
+  val vehiclesMaxCapacities: Array[Int] = Array.tabulate(v)(_ => 0)
 
   /**
     * This array contains the content flow of each node of the problem.
@@ -225,16 +185,16 @@ class PDPv2 (override val n:Int, override val v:Int, override val m:Store, val c
     */
   val contentsFlow:Array[Int] = Array.tabulate(n)(_ => 0)
 
-  def setVehicleMaxCapacities(maxCapacities: Array[Int]) = vehicleMaxCapacity.map(maxCapacities(_))
+  def setVehicleMaxCapacities(maxCapacities: Array[Int]) = vehiclesMaxCapacities.map(maxCapacities(_))
 
   /**
     * This method is used to set the content flow of each node except vehicle ones.
     * @param contents An array that contains the content flow of each node (except vehicle ones)
     */
   def defineContentsFlow(contents: Array[Int]): Unit ={
-    require(contents.length == n-v,
-      "Contents must have the size of the number of nodes (n-v)." +
-        "\nn-v = " + (n-v) + ", contents's size : " + contents.length)
+    require(contents.length == n,
+      "Contents must have the size of the number of nodes (n)." +
+        "\nn = " + (n) + ", contents's size : " + contents.length)
     contentsFlow.map(n => contents(n))
   }
 
@@ -284,10 +244,6 @@ class PDPv2 (override val n:Int, override val v:Int, override val m:Store, val c
         setNodeDuration(i + v, timeWindows(i)._3, timeWindows(i)._1)
     }
 
-    for(i <- timeWindows.indices){
-
-    }
-
     waitingDurations = Array.tabulate(n){
       (i:Int) =>
         if(i >= v && maxWaitingDurations(i) != Int.MaxValue)
@@ -329,8 +285,8 @@ class PDPv2 (override val n:Int, override val v:Int, override val m:Store, val c
     leaveTimes(node) <== (arrivalTimes(node) + duration)
   }
 
-  def setNodeDuration(node: Int, durationWithoutWait: IntValue, startWindow: Int) {
-    leaveTimes(node) <== (Max2(arrivalTimes(node), startWindow) + durationWithoutWait)
+  def setNodeDuration(node: Int, duration: IntValue, startWindow: Int) {
+    leaveTimes(node) <== (Max2(arrivalTimes(node), startWindow) + duration)
   }
 
   def setTravelTimeFunctions(travelCosts: TravelTimeFunction) {
@@ -352,47 +308,17 @@ class PDPv2 (override val n:Int, override val v:Int, override val m:Store, val c
 
   /**
     * This method compute the closest neighbor of a node base on arrivalTime.
-    * TODO : Transform it into a lambda method ?
     */
   def computeClosestNeighborInTime(filter : ((Int,Int) => Boolean) = (_,_) => true): Array[Iterable[Int]] ={
     Array.tabulate(n)(node => {
       val nodeCluster = arrivalTimeCluster.values(node).value
       val res:ListBuffer[Int] = new ListBuffer[Int]()
-      //for(i <- 0 to Math.min(arrivalTimeCluster.clusters.length, nodeCluster))
       for(i <- 0 to nodeCluster)
         for(neighbor <- arrivalTimeCluster.clusters(i).value.toList if isRouted(neighbor) && filter(n,neighbor))
           if(leaveTimes(neighbor).value+travelDurationMatrix.getTravelDuration(neighbor, 0, node) < deadlines(node)) {
-            val nextOfNeighbor = next(neighbor).value
-            val neighborToNode = max(leaveTimes(neighbor).value + travelDurationMatrix.getTravelDuration(neighbor, 0, node), earlylines(node))
-            val neighborToNodeToNext = neighborToNode + taskDurations(node) + travelDurationMatrix.getTravelDuration(node, 0, nextOfNeighbor)
-            if(neighborToNodeToNext < deadlines(nextOfNeighbor))
-              res.append(neighbor)
+            res.append(neighbor)
           }
       res.reverse.toList
     })
   }
-
-
-/*
-  //Draft for Jannou algo
-
-  ForwardCumulativeIntegerDimensionOnVehicle(
-    routes,
-    n,
-    v,
-    (from,to,fromArrivalTime) => {
-      val fromLeaveTime = fromArrivalTime + taskDuration(from)
-      fromLeaveTime + Math.max(travelCosts.getTravelDuration(from, fromLeaveTime, to),earlylines(to))
-    },
-    Array.tabulate(v)(v => CBLSIntVar(m,0)),
-    0,
-    (node) => {
-      if(maxWaitingTime(node) == Int.MaxValue)
-        0
-      else
-        earlylines(node)-maxWaitingTime(node)
-    },
-    (node) => deadlines(node),
-    contentName = "Arrival time"
-  )*/
 }
