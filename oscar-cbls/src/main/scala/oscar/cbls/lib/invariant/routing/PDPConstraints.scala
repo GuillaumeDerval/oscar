@@ -2,7 +2,8 @@ package oscar.cbls.lib.invariant.routing
 
 import oscar.cbls.business.routing.model.PDPv2
 import oscar.cbls.core.constraint.ConstraintSystem
-import oscar.cbls.lib.constraint.{GE, LE}
+import oscar.cbls.core.objective.IntVarObjective
+import oscar.cbls.lib.constraint.{EQ, GE, LE}
 import oscar.cbls.lib.invariant.logic.IntITE
 import oscar.cbls.lib.invariant.seq.Precedence
 
@@ -18,22 +19,40 @@ object PDPConstraints {
            ): ConstraintSystem ={
     val constraints = new ConstraintSystem(pdp.routes.model)
 
-    val pDPConstraints = new PDPConstraints(constraints, pdp)
-    pDPConstraints.addCapacityConstraint()
+    val pDPConstraints = new PDPConstraints(pdp, constraints)
+    //pDPConstraints.addCapacityConstraint()
     pDPConstraints.addTimeWindowConstraints()
-    pDPConstraints.addPrecedencesConstraints(additionalPrecedences)
+    pDPConstraints.addPrecedencesConstraints()
     pDPConstraints.addMaxDetoursConstraints(maxDetours,maxDetourCalculation)
 
     constraints
   }
 }
 
-class PDPConstraints(constraints: ConstraintSystem, pdp: PDPv2) {
+class PDPConstraints(pdp: PDPv2, constraints: ConstraintSystem){
   import oscar.cbls.modeling.Algebra._
 
   val routes = pdp.routes
   val n = pdp.n
   val v = pdp.v
+
+  /**
+    * Add the precedences constraints.
+    * Typically, we want to keep the order of the nodes of each chain
+    */
+  def addPrecedencesConstraints() {
+    val chains = pdp.chains
+
+    def chainToTuple(chain: List[Int], tuples: List[(Int, Int)]): List[(Int, Int)] = {
+        if (chain.length <= 1)
+          tuples
+        else
+          chainToTuple(chain.tail, (chain.head, chain.tail.head) :: tuples)
+      }
+
+    val chainsPrecedences = List.tabulate(chains.length)(c => chainToTuple(chains(c), List.empty).reverse)
+    constraints.add(EQ(0,new Precedence(routes, chainsPrecedences.flatten)))
+  }
 
   /**
     * This method adds the maxDetour constraints to the constraints system.
@@ -54,30 +73,13 @@ class PDPConstraints(constraints: ConstraintSystem, pdp: PDPv2) {
     val travelDurationMatrix = pdp.travelDurationMatrix
 
     for(maxDetour <- maxDetours){
-      constraints.add(LE(arrivalTimes(maxDetour._2) - leaveTimes(maxDetour._1),
+      constraints.post(LE(arrivalTimes(maxDetour._2) - leaveTimes(maxDetour._1),
         maxDetourCalculation(maxDetour._3,
           travelDurationMatrix.getTravelDuration(maxDetour._1, leaveTimes(maxDetour._1).value, maxDetour._2))))
     }
   }
 
-  /**
-    * Add the precedences constraints.
-    * Typically, we want to keep the order of the nodes of each chain
-    * @param additionalPrecedences an additional list of precedences we want to add
-    */
-  def addPrecedencesConstraints(additionalPrecedences:List[(Int,Int)]): Unit ={
-    val chains = pdp.chains
 
-    def chainToTuple(chain: List[Int], tuples:List[(Int,Int)]): List[(Int,Int)] ={
-      if(chain.length <= 1)
-        tuples
-      else
-        chainToTuple(chain.tail, (chain.head,chain.tail.head) :: tuples)
-    }
-
-    val chainsPrecedences = List.tabulate(chains.length)(c => chainToTuple(chains(c).toList, List.empty).reverse)
-    new Precedence(routes, chainsPrecedences.flatten ++ additionalPrecedences)
-  }
 
   def addCapacityConstraint(): Unit ={
     val vehiclesMaxCapacities = pdp.vehiclesMaxCapacities
@@ -92,7 +94,7 @@ class PDPConstraints(constraints: ConstraintSystem, pdp: PDPv2) {
       vehiclesMaxCapacity,
       contentAtVehicleStart,
       4,
-      4,
+      1,
       "VehicleMaxCapacity"
     )
   }
