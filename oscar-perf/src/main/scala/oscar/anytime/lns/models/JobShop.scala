@@ -42,7 +42,6 @@ class JobShop(val instance: String, val bestObj: Int = Int.MaxValue) extends Ben
   lines = lines.drop(3)
   val l1 = lines(0).trim().split(" ").map(_.toInt)
   lines = lines.drop(1)
-  println(l1.mkString(","))
 
 
   val nJobs = l1(0)
@@ -63,8 +62,6 @@ class JobShop(val instance: String, val bestObj: Int = Int.MaxValue) extends Ben
   for (j <- 0 until nJobs) {
 
     val (resource,duration) = lines(0).trim().split("\\s+").map(_.toInt).sliding(2,2).toArray.map(a => (a(0),a(1))).unzip
-    println(resource.mkString(","))
-    println(duration.mkString(","))
     for (r <- 0 until nResources) {
       resources(i) = resource(r)
       durations(i) = duration(r)

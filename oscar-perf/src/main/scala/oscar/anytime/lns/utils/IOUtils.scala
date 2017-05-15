@@ -41,7 +41,7 @@ object IOUtils {
       output.createNewFile()
     }
 
-    val writer = new FileWriter(output, true)
+    val writer = new FileWriter(output, false)
 
     writer.write(s)
 

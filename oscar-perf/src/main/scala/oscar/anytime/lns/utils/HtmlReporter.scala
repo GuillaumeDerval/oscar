@@ -7,7 +7,7 @@ import scala.xml.{Node, XML}
 /**
   * Utility class to generate an html report from a benchmark directory.
   */
-//TODO: make stepped graphs, add timeouts, add search information
+//TODO: add timeouts, add search information
 object HtmlReporter extends App{
   if(args.length == 1) generateHtml(args(0))
   else println("Incorrect number of arguments!")
@@ -88,6 +88,7 @@ object HtmlReporter extends App{
 
     files.foreach(file => {
 
+//      println("reading: " + file.getPath)
       val(config, instance, problem, isMax, bestKnown, sols) = readXml(XML.loadFile(file))
 
       instances.add(instance)
@@ -311,29 +312,56 @@ object HtmlReporter extends App{
     array.toArray
   }
 
-  def renderScoresByTime(scores: Seq[(Long, Array[Int])], configs: Seq[String]): Array[Array[String]] = {
+  def renderScoresByTime(scores: Seq[(Long, Array[Int])], configs: Seq[String], stepped: Boolean = false): Array[Array[String]] = {
     val array = ArrayBuffer[Array[String]]()
+    var previous = Array[String]()
     array += Array("'Time'") ++ configs.map("'" + _ + "'")
-    scores.foreach{case (time, scoreValues) => array += Array((time/1000000000.0).toString) ++ scoreValues.map(_.toString)}
-    array.toArray
-  }
-
-  def renderGapsByTime(gaps: Seq[(Long, Array[Option[Double]])], configs: Seq[String]): Array[Array[String]] = {
-    val array = ArrayBuffer[Array[String]]()
-    array += Array("'Time'") ++ configs.map("'" + _ + "'")
-    gaps.foreach{case (time, gapValues) => array += Array((time/1000000000.0).toString) ++ gapValues.map{
-      case None => "null"
-      case Some(gap: Double) => gap.toString
+    scores.foreach{case (time, scoreValues) => {
+      val t = (time/1000000000.0).toString
+      if(stepped && previous.nonEmpty){
+        previous(0) = t
+        array += previous
+      }
+      previous = Array(t) ++ scoreValues.map(_.toString)
+      array += previous
     }}
     array.toArray
   }
 
-  def renderSolsByTime(sols: Seq[(Long, Array[Option[Int]])], configs: Seq[String]): Array[Array[String]] ={
+  def renderGapsByTime(gaps: Seq[(Long, Array[Option[Double]])], configs: Seq[String], stepped: Boolean = false): Array[Array[String]] = {
     val array = ArrayBuffer[Array[String]]()
+    var previous = Array[String]()
     array += Array("'Time'") ++ configs.map("'" + _ + "'")
-    sols.foreach{case (time, solValues) => array += Array((time/1000000000.0).toString) ++ solValues.map{
-      case None => "null"
-      case Some(sol: Int) => sol.toString
+    gaps.foreach{case (time, gapValues) => {
+      val t = (time/1000000000.0).toString
+      if(stepped && previous.nonEmpty){
+        previous(0) = t
+        array += previous
+      }
+      previous = Array(t) ++ gapValues.map{
+        case None => "null"
+        case Some(gap: Double) => gap.toString
+      }
+      array += previous
+    }}
+    array.toArray
+  }
+
+  def renderSolsByTime(sols: Seq[(Long, Array[Option[Int]])], configs: Seq[String], stepped: Boolean = false): Array[Array[String]] ={
+    val array = ArrayBuffer[Array[String]]()
+    var previous = Array[String]()
+    array += Array("'Time'") ++ configs.map("'" + _ + "'")
+    sols.foreach{case (time, solValues) => {
+      val t = (time/1000000000.0).toString
+      if(stepped && previous.nonEmpty){
+        previous(0) = t
+        array += previous
+      }
+      previous = Array(t) ++ solValues.map{
+        case None => "null"
+        case Some(sol: Int) => sol.toString
+      }
+      array += previous
     }}
     array.toArray
   }

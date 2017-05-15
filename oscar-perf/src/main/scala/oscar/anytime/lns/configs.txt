@@ -1,0 +1,2 @@
+-t 30 --name RW-LastImprov-Loose-NoLearn --selection RWheel --metric LastImprov --coupled false --learning false
+-t 30 --name Priority-TTI-Coupled-Learn --selection Priority --metric TTI --coupled true --learning true
