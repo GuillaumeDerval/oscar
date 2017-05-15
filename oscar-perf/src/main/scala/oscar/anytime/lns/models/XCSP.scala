@@ -8,7 +8,7 @@ import oscar.modeling.models.cp.CPModel
 import oscar.modeling.models.operators.CPInstantiate
 import oscar.xcsp3.XCSP3Parser2
 
-class XCSP(val instance: String) extends Benchmark{
+class XCSP(val instance: String, override val bestKnownObjective: Int = Int.MaxValue) extends Benchmark{
   val md = new ModelDeclaration
 
   //Parsing the instance and instantiating model declaration
@@ -20,8 +20,6 @@ class XCSP(val instance: String) extends Benchmark{
   override def decisionVariables: Array[CPIntVar] = vars.map(model.getRepresentative(_).realCPVar)
 
   override def solver: CPSolver = model.cpSolver
-
-  override def bestKnownObjective: Int = Int.MaxValue
 
   override def problem: String = IOUtils.getParentName(instance)
 }

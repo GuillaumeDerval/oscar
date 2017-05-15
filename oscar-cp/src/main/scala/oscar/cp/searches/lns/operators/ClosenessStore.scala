@@ -6,7 +6,10 @@ import scala.collection.mutable
   * This class keeps track of the closeness relationship between variables. The closeness is defined as the average
   * volume of propagation that is involved on one variable when another is instantiated.
   */
+
+//TODO: Manage memory with closeness store better
 class ClosenessStore(val length: Int){
+  //If too much variables, these arrays are way to big!
   val nImpacted: Array[Array[Int]] = Array.tabulate(length, length){(_, _) => 0}
   val closeness: Array[Array[Double]] = Array.tabulate(length, length){(i, j) => if(i == j) 1.0 else 0.0}
 

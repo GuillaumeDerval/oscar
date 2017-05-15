@@ -126,7 +126,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement + "\n")
 
       //Updating only relax as the the search has not been done:
-      relax.update(improvement, stats, fail = true)
+      relax.update(improvement, stats, fail = false) //TODO:Review failure system
       if(relax.isActive && !relax.isInstanceOf[ALNSReifiedOperator]) relaxStore.adapt(relax, metric(relax, improvement, stats))
       else relaxStore.remove(relax)
     }

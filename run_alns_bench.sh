@@ -6,7 +6,9 @@ VNum=`hg id -i`
 BenchDir=$"oscar-perf/src/main/scala/oscar/anytime/lns"
 BenchRoot=$"oscar.anytime.lns"
 #CP=$"./target/scala-2.11/classes/.:./oscar-cp/target/scala-2.11/classes/.:./oscar-algo/target/scala-2.11/classes/.:./oscar-modeling/target/scala-2.11/classes/.:./oscar-perf/target/scala-2.11/classes/."
-CP=`cat $BenchDir/classpath.txt`
+#CP=`cat $BenchDir/classpath.txt`
+SbtOutput=`sbt "project oscar-perf" "export runtime:fullClasspath"`
+CP=${SbtOutput##*$'\n'}
 ConfigsFile=$"$BenchDir/configs.txt"
 Out=$"../ALNS-bench-results/$Date-$VNum"
 
@@ -41,4 +43,4 @@ while read config; do
     done
 done <$ConfigsFile
 
-scala -Xmx1g -cp $CP $BenchRoot.utils.HtmlReporter $Out
+scala -J-Xmx1g -cp $CP $BenchRoot.utils.HtmlReporter $Out

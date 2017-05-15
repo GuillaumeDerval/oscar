@@ -93,7 +93,7 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
       if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement + "\n")
 
       //Updating only relax as the the search has not been done:
-      operator.update(improvement, stats, fail = true)
+      operator.update(improvement, stats, fail = false) //TODO:Review failure system
     }
 
     if(operator.isActive) opStore.adapt(operator, metric(operator, improvement, stats))

@@ -32,10 +32,10 @@ object HtmlReporter extends App{
     htmlWriter.addElement(
       "line",
       "Score per method over time",
-      HtmlWriter.tableToHtmlString(renderScoresByTime(anyTimeScores, configs))
+      HtmlWriter.tableToHtmlString(renderScoresByTime(anyTimeScores, configs, stepped = true))
     )
 
-    val anyTimeGapsArray = renderGapsByTime(anyTimeGaps, configs)
+    val anyTimeGapsArray = renderGapsByTime(anyTimeGaps, configs, stepped = true)
     if(anyTimeGapsArray.length > 1)
       htmlWriter.addElement(
         "line",
@@ -51,20 +51,20 @@ object HtmlReporter extends App{
       htmlWriter.addElement(
         "line",
         "Search evolution",
-        HtmlWriter.tableToHtmlString(renderSolsByTime(sols, configs))
+        HtmlWriter.tableToHtmlString(renderSolsByTime(sols, configs, stepped = true))
       )
 
       htmlWriter.addElement(
         "line",
         "Score evolution",
-        HtmlWriter.tableToHtmlString(renderScoresByTime(scores, configs))
+        HtmlWriter.tableToHtmlString(renderScoresByTime(scores, configs, stepped = true))
       )
 
       if(gaps.isDefined)
         htmlWriter.addElement(
           "line",
           "Gap evolution",
-          HtmlWriter.tableToHtmlString(renderGapsByTime(gaps.get, configs))
+          HtmlWriter.tableToHtmlString(renderGapsByTime(gaps.get, configs, stepped = true))
         )
     }
 

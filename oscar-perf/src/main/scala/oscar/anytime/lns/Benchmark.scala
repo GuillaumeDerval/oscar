@@ -12,7 +12,7 @@ trait Benchmark {
 
   def solver: CPSolver
   def decisionVariables: Array[CPIntVar]
-  def bestKnownObjective: Int
+  def bestKnownObjective: Int = Int.MaxValue
   def instance: String
   def problem: String
 
@@ -29,7 +29,7 @@ trait Benchmark {
 
       argMap.getOrElse(
         'relax,
-        Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided)
+        Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided) //(Reversed) propagation guided may cause out of memory on big instances
       ).asInstanceOf[Array[String]],
 
       argMap.getOrElse(
