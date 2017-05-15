@@ -1665,8 +1665,12 @@ class SeqCheckpointedValueStack[@specialized T]{
   }
 
   private def popCheckpoint(){
+    require(checkpointStackLevel >=0)
     if(checkpointStackLevel>0){
-      (_topCheckpoint,_outputAtTopCheckpoint) :: checkpointStackNotTop = checkpointStackNotTop
+      val top = checkpointStackNotTop.head
+      checkpointStackNotTop = checkpointStackNotTop.tail
+      _topCheckpoint = top._1
+      _outputAtTopCheckpoint = top._2
     }else{
       _topCheckpoint = null
       _outputAtTopCheckpoint = null.asInstanceOf[T]
