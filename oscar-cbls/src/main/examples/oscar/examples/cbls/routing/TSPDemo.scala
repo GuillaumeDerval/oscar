@@ -1,4 +1,4 @@
-package oscar.cbls.test.routing
+package oscar.examples.cbls.routing
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -62,18 +62,16 @@ object TSPDemo extends App {
 
   val n = 10000
   val v = 100
+  val displayDelay = 1000 //ms
+  val verbose = 1
+  val maxPivotPerValuePercent = 3
 
-  val verbose = 0
-  val maxPivotPerValuePercent = 4
-  new TSPDemo(1000,1,4,verbose)
-  System.gc()
-
-  val nbTrials = 3
+  new TSPDemo(n,v,maxPivotPerValuePercent,verbose,displayDelay)
 }
 
-class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) extends StopWatch{
+class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay:Int) extends StopWatch{
 
-  val routingMatrix = RoutingMatrixGenerator(n)
+  val routingMatrix = RoutingMatrixGenerator(n,side=1000)
   val symmetricDistanceMatrix = routingMatrix._1
   val pointsPositions = routingMatrix._2
 
@@ -100,18 +98,21 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) extends Stop
 
   val vlsn1pt = Mu[OnePointMoveMove](
     OnePointMove(myVRP.routed, () => myVRP.kFirst(5,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP),
-    l => Some(OnePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(3,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP)),
+    l => Some(OnePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(3,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP, hotRestart = false)),
     intermediaryStops = true,
-    maxDepth = 7)
+    maxDepth = 6)
 
-  val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt, onePtMove(10),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true) exhaust vlsn1pt).afterMove(myVRP.drawRoutes())
-  //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
+  def segExchange(k:Int) = SegmentExchange(myVRP,()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted),() => myVRP.vehicles)
+  var lastDisplay = this.getWatch
 
+  val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt, onePtMove(10),twoOpt, threeOpt(10,true),segExchange(10))) exhaust BestSlopeFirst(List(threeOpt(30,true),vlsn1pt))).afterMove(
+    if(this.getWatch > lastDisplay + displayDelay) {myVRP.drawRoutes(); lastDisplay = this.getWatch})
 
   search.verbose = verbose
   //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
 
   search.doAllMoves(obj=myVRP.obj)
 
-  print(getWatch)
+  myVRP.drawRoutes()
+  print(myVRP)
 }
