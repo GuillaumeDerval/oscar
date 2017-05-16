@@ -8,7 +8,7 @@ BenchRoot=$"oscar.anytime.lns"
 SbtOutput=`sbt "project oscar-perf" "export runtime:fullClasspath"`
 CP=${SbtOutput##*$'\n'}
 ConfigsFile=$"$BenchDir/configs.txt"
-Out=$"../ALNS-bench-results/$Date-$VNum"
+Out=$"ALNS-bench-results/$Date-$VNum"
 
 echo "Date -> $Date"
 echo "Version Number -> $VNum"

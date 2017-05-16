@@ -24,6 +24,10 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
   var endSearch: Long = endTime
 
   val learnRatio = 0.3 //The ratio of remaining time that a learning phase will have
+  var learning = false
+  var maxSuccessOpTime: Long = config.timeout
+  var stagnation = 0
+  val stagnationThreshold = 100
 
   val maximizeObjective: Boolean = solver.objective.objs.head.isMax
   if(!solver.silent) println("Objective type: " + (if(maximizeObjective) "max" else "min"))
@@ -70,21 +74,21 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
 
     if(!solver.silent) println("Time elapsed: " + (System.nanoTime() - startTime)/1000000000.0 + "s")
 
-    //learning phase:
-    if(config.learning){
-      if(!solver.silent) println("\nStarting learning phase...")
-      alnsLearning()
-      if(!solver.silent){
-        println("Learning phase done.")
-        println("Time elapsed: " + (System.nanoTime() - startTime)/1000000000.0 + "s")
+    while(System.nanoTime() < endTime && !solver.objective.isOptimum()) {
+      //learning phase:
+      if (config.learning) {
+        if (!solver.silent) println("\nStarting learning phase...")
+        alnsLearning()
+        if (!solver.silent) {
+          println("Learning phase done.")
+          println("Time elapsed: " + (System.nanoTime() - startTime) / 1000000000.0 + "s")
+        }
       }
+
+      //LNS loop
+      if (!solver.silent) println("\nStarting adaptive LNS...")
+      alnsLoop()
     }
-
-    //LNS loop
-    //TODO: implement stagnation mechanism
-    if(!solver.silent) println("\nStarting adaptive LNS...")
-    alnsLoop()
-
     ALNSElement.resetWorstTTI()
     getSearchResults
   }

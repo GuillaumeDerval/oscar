@@ -6,7 +6,7 @@ import oscar.cp.searches.lns.operators.ALNSElement
 object Metrics {
 
   def lastImprovement(element: ALNSElement, improvement: Int, stats: SearchStatistics): Double = {
-    improvement.toDouble / (stats.time + 1).toDouble
+    improvement.toDouble / (stats.time * 1000000 + 1).toDouble
   }
 
   def averageImprovement(element: ALNSElement, improvement: Int, stats: SearchStatistics): Double = {

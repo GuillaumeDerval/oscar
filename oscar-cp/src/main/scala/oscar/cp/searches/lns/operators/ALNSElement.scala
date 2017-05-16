@@ -54,7 +54,7 @@ abstract class ALNSElement(val failThreshold: Int){
     execs += 1
     successfulRuns += Math.min(stats.nSols, 1)
     sols += stats.nSols
-    time += stats.time
+    time += stats.time * 1000000
     improvement += costImprovement
 
     if(fail){

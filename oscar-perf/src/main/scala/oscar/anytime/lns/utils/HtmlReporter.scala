@@ -19,7 +19,7 @@ object HtmlReporter extends App{
     val (timeout, instances, configs, instanceTypes, data) = scanInstances(directory)
     val (bestSols, anyTimeScores, anyTimeGaps, instanceStats) = processStats(instances, configs, data)
 
-    val htmlWriter = new HtmlWriter("oscar-perf/src/main/scala/oscar/anytime/lns/utils/chart_report_template.html", directory + "/htmlReport.html")
+    val htmlWriter = new HtmlWriter("oscar-perf/src/main/scala/oscar/anytime/lns/utils/chart_report_template.html", directory + "/" + IOUtils.getFileName(directory) + "_htmlReport.html")
     htmlWriter.addHeading("General statistics")
 
     htmlWriter.addParagraph("Best solution found per method")
