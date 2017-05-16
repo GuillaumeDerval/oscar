@@ -22,11 +22,10 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
     val initSol = currentSol
 
     val learningStart = System.nanoTime()
-    var tAvail = (((endTime - learningStart) * learnRatio) / operators.length).toLong
+    val tAvail = (((endTime - learningStart) * learnRatio) / operators.length).toLong
     val opPerf = ArrayBuffer[(ALNSOperator, Long, Int)]()
 
     Random.shuffle(operators.toSeq).foreach(operator =>{
-      if(!solver.silent) println ("Avail time: " + tAvail/1000000000.0 + "s")
       val start = System.nanoTime()
       endSearch = start + tAvail
 
@@ -54,6 +53,7 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
 
     currentSol = bestSol
     solver.objective.objs.head.best = bestSol.objective
+    endSearch = endTime
   }
 
   override def alnsLoop(): Unit = {

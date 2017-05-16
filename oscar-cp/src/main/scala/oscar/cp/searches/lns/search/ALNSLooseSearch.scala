@@ -32,7 +32,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
     val initSol = currentSol
 
     val learningStart = System.nanoTime()
-    var tAvail = (((endTime - learningStart) * learnRatio) / nOpCombinations).toLong
+    val tAvail = (((endTime - learningStart) * learnRatio) / nOpCombinations).toLong
     val relaxPerf = mutable.Map[String, (ALNSOperator, mutable.ArrayBuffer[(Long, Int)])]()
     val searchPerf = mutable.Map[String, (ALNSOperator, mutable.ArrayBuffer[(Long, Int)])]()
 
@@ -82,6 +82,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
 
     currentSol = bestSol
     solver.objective.objs.head.best = bestSol.objective
+    endSearch = endTime
     learning = false
   }
 
