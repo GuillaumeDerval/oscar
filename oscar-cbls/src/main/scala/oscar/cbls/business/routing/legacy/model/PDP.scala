@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.model
+package oscar.cbls.business.routing.legacy.model
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
