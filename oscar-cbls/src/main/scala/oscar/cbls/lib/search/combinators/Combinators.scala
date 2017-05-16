@@ -1312,7 +1312,7 @@ object Mu {
       generateNextNeighborhood(List.empty, maxDepth - 1, x0)) name "Mu(" + firstNeighborhood + ")"
   }
 
-  def applyMap[MoveType <: Move, X](firstNeighborhood : Neighborhood with SupportForAndThenChaining[MoveType],
+  def map[MoveType <: Move, X](firstNeighborhood : Neighborhood with SupportForAndThenChaining[MoveType],
                                     neighborhoodGenerator : (List[(MoveType)], X) => Option[(Neighborhood with SupportForAndThenChaining[MoveType], X)],
                                     x0 : X): Neighborhood with SupportForAndThenChaining[CompositeMove] = {
 
