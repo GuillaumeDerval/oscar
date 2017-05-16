@@ -23,7 +23,7 @@ trait Benchmark {
       println("WARNING: A config name should be provided if using custom parameters!")
 
     val config = new ALNSConfig(
-      timeout = argMap.getOrElse('timeout, 0L).asInstanceOf[Long] * 1000000000L,
+      timeout = argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
       coupled = argMap.getOrElse('coupled, true).asInstanceOf[Boolean],
       learning = argMap.getOrElse('learning, false).asInstanceOf[Boolean],
 
@@ -59,6 +59,7 @@ trait Benchmark {
     XmlWriter.writeToXml(
       argMap.getOrElse('out, "../ALNS-bench-results/").asInstanceOf[String],
       argMap.getOrElse('name, "default").asInstanceOf[String],
+      config.timeout,
       IOUtils.getFileName(instance, keepExtension = false),
       problem,
       bestKnownObjective,

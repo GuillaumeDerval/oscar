@@ -9,6 +9,7 @@ object XmlWriter{
 
   private def resultsToXml(
                             config: String,
+                            timeout: Long,
                             instance: String,
                             problem: String,
                             bestKnown: Int,
@@ -19,6 +20,7 @@ object XmlWriter{
     val xml = new NodeBuffer()
 
     xml += <config>{config}</config>
+    xml += <timeout>{timeout}</timeout>
     xml += <instance>{instance}</instance>
     xml += <problem>{problem}</problem>
     xml += <objective_type>{if(maxObjective) "max" else "min"}</objective_type>
@@ -42,13 +44,14 @@ object XmlWriter{
   def writeToXml(
                   directory: String,
                   config: String,
+                  timeout: Long,
                   instance: String,
                   problem: String = "unknown",
                   bestKnown: Int = Int.MaxValue,
                   maxObjective: Boolean,
                   solutions: Iterable[CPIntSol]
                 ): Unit = {
-    val xml = resultsToXml(config, instance, problem, bestKnown, maxObjective, solutions)
+    val xml = resultsToXml(config, timeout, instance, problem, bestKnown, maxObjective, solutions)
     val output = directory + "/" + problem + "/" + config + "_" + instance + ".xml"
     IOUtils.saveToFile(output, new PrettyPrinter(80, 4).format(xml))
   }

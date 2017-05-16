@@ -7,7 +7,7 @@ import scala.xml.{Node, XML}
 /**
   * Utility class to generate an html report from a benchmark directory.
   */
-//TODO: add timeouts, add search information
+//TODO: add search information
 object HtmlReporter extends App{
   if(args.length == 1) generateHtml(args(0))
   else println("Incorrect number of arguments!")
@@ -16,7 +16,7 @@ object HtmlReporter extends App{
     * Generates an html report from the given xml object.
     */
   def generateHtml(directory: String): Unit = {
-    val (instances, configs, instanceTypes, data) = scanInstances(directory)
+    val (timeout, instances, configs, instanceTypes, data) = scanInstances(directory)
     val (bestSols, anyTimeScores, anyTimeGaps, instanceStats) = processStats(instances, configs, data)
 
     val htmlWriter = new HtmlWriter("oscar-perf/src/main/scala/oscar/anytime/lns/utils/chart_report_template.html", directory + "/htmlReport.html")
@@ -32,10 +32,10 @@ object HtmlReporter extends App{
     htmlWriter.addElement(
       "line",
       "Score per method over time",
-      HtmlWriter.tableToHtmlString(renderScoresByTime(anyTimeScores, configs, stepped = true))
+      HtmlWriter.tableToHtmlString(renderScoresByTime(anyTimeScores, configs, timeout, stepped = true))
     )
 
-    val anyTimeGapsArray = renderGapsByTime(anyTimeGaps, configs, stepped = true)
+    val anyTimeGapsArray = renderGapsByTime(anyTimeGaps, configs, timeout, stepped = true)
     if(anyTimeGapsArray.length > 1)
       htmlWriter.addElement(
         "line",
@@ -45,26 +45,26 @@ object HtmlReporter extends App{
 
     htmlWriter.addHeading("Instances statistics")
 
-    instanceStats.foreach{case(name, sols, scores, gaps) =>
+    instanceStats.sortBy(_._1).foreach{case(name, sols, scores, gaps) =>
       htmlWriter.addParagraph(name)
 
       htmlWriter.addElement(
         "line",
         "Search evolution",
-        HtmlWriter.tableToHtmlString(renderSolsByTime(sols, configs, stepped = true))
+        HtmlWriter.tableToHtmlString(renderSolsByTime(sols, configs, timeout, stepped = true))
       )
 
       htmlWriter.addElement(
         "line",
         "Score evolution",
-        HtmlWriter.tableToHtmlString(renderScoresByTime(scores, configs, stepped = true))
+        HtmlWriter.tableToHtmlString(renderScoresByTime(scores, configs, timeout, stepped = true))
       )
 
       if(gaps.isDefined)
         htmlWriter.addElement(
           "line",
           "Gap evolution",
-          HtmlWriter.tableToHtmlString(renderGapsByTime(gaps.get, configs, stepped = true))
+          HtmlWriter.tableToHtmlString(renderGapsByTime(gaps.get, configs, timeout, stepped = true))
         )
     }
 
@@ -74,6 +74,7 @@ object HtmlReporter extends App{
 
   //Scans each config_instance file
   def scanInstances(directory: String): (
+    Long,
     Seq[String],
     Seq[String],
     mutable.Map[String, String],
@@ -85,11 +86,14 @@ object HtmlReporter extends App{
     val instanceTypes = mutable.Map[String, String]()
     val configs = mutable.HashSet[String]()
     val files = IOUtils.getFiles(directory, ".xml")
+    var maxTimeout = 0L
 
     files.foreach(file => {
 
 //      println("reading: " + file.getPath)
-      val(config, instance, problem, isMax, bestKnown, sols) = readXml(XML.loadFile(file))
+      val(config, timeout, instance, problem, isMax, bestKnown, sols) = readXml(XML.loadFile(file))
+
+      if(timeout > maxTimeout) maxTimeout = timeout
 
       instances.add(instance)
       if(!instanceTypes.contains(instance)) instanceTypes += instance -> problem
@@ -99,12 +103,13 @@ object HtmlReporter extends App{
       else data += instance -> (isMax, bestKnown, sols.to[ArrayBuffer])
     })
 
-    (instances.toSeq.sorted, configs.toSeq.sorted, instanceTypes, data)
+    (maxTimeout, instances.toSeq.sorted, configs.toSeq.sorted, instanceTypes, data)
   }
 
   //Reads an xml config_instance file
-  def readXml(content: Node): (String, String, String, Boolean, Option[Int], Seq[(Long, String, Int)]) = {
+  def readXml(content: Node): (String, Long, String, String, Boolean, Option[Int], Seq[(Long, String, Int)]) = {
     val config = (content \ "config").head.text
+    val timeout = (content \ "timeout").head.text.toLong
     val instance = (content \ "instance").head.text
     val problem = (content \ "problem").head.text
 
@@ -122,7 +127,7 @@ object HtmlReporter extends App{
       (solNode \ "objective").head.text.toInt
     ))
 
-    (config, instance, problem, isMax, bestKnown, sols)
+    (config, timeout, instance, problem, isMax, bestKnown, sols)
   }
 
 
@@ -312,57 +317,51 @@ object HtmlReporter extends App{
     array.toArray
   }
 
-  def renderScoresByTime(scores: Seq[(Long, Array[Int])], configs: Seq[String], stepped: Boolean = false): Array[Array[String]] = {
+  def renderScoresByTime(scores: Seq[(Long, Array[Int])], configs: Seq[String], timeout: Long, stepped: Boolean = false): Array[Array[String]] = {
     val array = ArrayBuffer[Array[String]]()
     var previous = Array[String]()
     array += Array("'Time'") ++ configs.map("'" + _ + "'")
     scores.foreach{case (time, scoreValues) => {
-      val t = (time/1000000000.0).toString
-      if(stepped && previous.nonEmpty){
-        previous(0) = t
-        array += previous
-      }
-      previous = Array(t) ++ scoreValues.map(_.toString)
-      array += previous
+      val t = Array((time/1000000000.0).toString)
+      if(stepped && previous.nonEmpty) array += t ++ previous
+      previous = scoreValues.map(_.toString)
+      array += t ++ previous
     }}
+    array += Array((timeout/1000000000.0).toString) ++ previous
     array.toArray
   }
 
-  def renderGapsByTime(gaps: Seq[(Long, Array[Option[Double]])], configs: Seq[String], stepped: Boolean = false): Array[Array[String]] = {
+  def renderGapsByTime(gaps: Seq[(Long, Array[Option[Double]])], configs: Seq[String], timeout: Long, stepped: Boolean = false): Array[Array[String]] = {
     val array = ArrayBuffer[Array[String]]()
     var previous = Array[String]()
     array += Array("'Time'") ++ configs.map("'" + _ + "'")
     gaps.foreach{case (time, gapValues) => {
-      val t = (time/1000000000.0).toString
-      if(stepped && previous.nonEmpty){
-        previous(0) = t
-        array += previous
-      }
-      previous = Array(t) ++ gapValues.map{
+      val t = Array((time/1000000000.0).toString)
+      if(stepped && previous.nonEmpty) array += t ++ previous
+      previous = gapValues.map{
         case None => "null"
         case Some(gap: Double) => gap.toString
       }
-      array += previous
+      array += t ++ previous
     }}
+    array += Array((timeout/1000000000.0).toString) ++ previous
     array.toArray
   }
 
-  def renderSolsByTime(sols: Seq[(Long, Array[Option[Int]])], configs: Seq[String], stepped: Boolean = false): Array[Array[String]] ={
+  def renderSolsByTime(sols: Seq[(Long, Array[Option[Int]])], configs: Seq[String], timeout: Long, stepped: Boolean = false): Array[Array[String]] ={
     val array = ArrayBuffer[Array[String]]()
     var previous = Array[String]()
     array += Array("'Time'") ++ configs.map("'" + _ + "'")
     sols.foreach{case (time, solValues) => {
-      val t = (time/1000000000.0).toString
-      if(stepped && previous.nonEmpty){
-        previous(0) = t
-        array += previous
-      }
-      previous = Array(t) ++ solValues.map{
+      val t = Array((time/1000000000.0).toString)
+      if(stepped && previous.nonEmpty) array += t ++ previous
+      previous = solValues.map{
         case None => "null"
         case Some(sol: Int) => sol.toString
       }
-      array += previous
+      array += t ++ previous
     }}
+    array += Array((timeout/1000000000.0).toString) ++ previous
     array.toArray
   }
 }

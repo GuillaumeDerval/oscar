@@ -37,14 +37,13 @@ abstract class ALNSOperator(val name: String, failThreshold: Int) extends ALNSEl
     */
   def nParamVals: Int
 
-  override def setActive(state: Boolean): Unit = {
-    if(!state) println("Operator " + name + " deactivated")
-    super.setActive(state)
-  }
+  override def setActive(state: Boolean): Unit = super.setActive(state)
 
   //Two operators are considered equals if their name is equal
   override def equals(obj: scala.Any): Boolean = obj match{
     case operator: ALNSOperator => name.equals(operator.name)
     case _ => false
   }
+
+  override def toString: String = name
 }

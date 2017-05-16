@@ -23,6 +23,8 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
   val endTime: Long = startTime + config.timeout
   var endSearch: Long = endTime
 
+  val learnRatio = 0.3 //The ratio of remaining time that a learning phase will have
+
   val maximizeObjective: Boolean = solver.objective.objs.head.isMax
   if(!solver.silent) println("Objective type: " + (if(maximizeObjective) "max" else "min"))
 

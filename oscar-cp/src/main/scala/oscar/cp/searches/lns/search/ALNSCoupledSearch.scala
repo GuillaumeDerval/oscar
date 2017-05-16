@@ -21,24 +21,20 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
   override def alnsLearning(): Unit = {
     val initSol = currentSol
 
-    val multFactor = 2.0
-
     val learningStart = System.nanoTime()
-    var tAvail = (endTime - learningStart) / operators.length
+    var tAvail = (((endTime - learningStart) * learnRatio) / operators.length).toLong
     val opPerf = ArrayBuffer[(ALNSOperator, Long, Int)]()
 
     Random.shuffle(operators.toSeq).foreach(operator =>{
       if(!solver.silent) println ("Avail time: " + tAvail/1000000000.0 + "s")
       val start = System.nanoTime()
-      endSearch = System.nanoTime() + tAvail
+      endSearch = start + tAvail
 
-      while(System.nanoTime() < endSearch && currentSol.objective == initSol.objective && operator.isActive)
-        lnsSearch(operator)
+      lnsSearch(operator)
 
       val time = System.nanoTime() - start
       val improvement = Math.abs(currentSol.objective - initSol.objective)
       opPerf += ((operator, time, improvement))
-      //TODO: update time and improvement bounds
 
       //Restoring initial objective:
       solver.objective.objs.head.relax()
@@ -46,12 +42,13 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
       currentSol = initSol
     })
 
-    opPerf.filter(_._2 > tAvail - 1000000L).foreach(tuple => {
-      val op = tuple._1
+    opPerf.filter{case (op, time, improvement) =>
+      op.isActive && improvement == 0
+    }.foreach{case (op, _, _) =>
       op.setActive(false)
-      opStore.remove(op)
       if(!solver.silent) println("Operator " + op.name + " deactivated.")
-    })
+      opStore.remove(op)
+    }
 
     if(!solver.silent) println(opStore.nElements + " operators remaining.")
 
@@ -93,11 +90,14 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
       if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement + "\n")
 
       //Updating only relax as the the search has not been done:
-      operator.update(improvement, stats, fail = false) //TODO:Review failure system
+      operator.update(improvement, stats, fail = true)
     }
 
     if(operator.isActive) opStore.adapt(operator, metric(operator, improvement, stats))
-    else opStore.remove(operator)
+    else{
+      if(!solver.silent) println("Operator " + operator.name + " deactivated.")
+      opStore.remove(operator)
+    }
   }
 
   override def getSearchResults = new ALNSSearchResults(

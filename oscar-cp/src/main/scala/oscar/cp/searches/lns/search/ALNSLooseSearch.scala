@@ -23,15 +23,16 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
 
   lazy val nOpCombinations: Int = relaxOps.filter(_.isActive).map(_.nParamVals).sum * searchOps.filter(_.isActive).map(_.nParamVals).sum
 
+  var learning = false
+
   //TODO: implement exponential timeout
   //TODO: add multiobjective support
   override def alnsLearning(): Unit = {
+    learning = true
     val initSol = currentSol
 
-    val multFactor = 2.0
-
-    val lStart = System.nanoTime()
-    var tAvail = (endTime - lStart) / nOpCombinations
+    val learningStart = System.nanoTime()
+    var tAvail = (((endTime - learningStart) * learnRatio) / nOpCombinations).toLong
     val relaxPerf = mutable.Map[String, (ALNSOperator, mutable.ArrayBuffer[(Long, Int)])]()
     val searchPerf = mutable.Map[String, (ALNSOperator, mutable.ArrayBuffer[(Long, Int)])]()
 
@@ -39,16 +40,13 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       relax <- Random.shuffle(getReifiedOperators(relaxOps))
       search <- Random.shuffle(getReifiedOperators(searchOps))
     }{
-      val sStart = System.nanoTime()
-      endSearch = Math.min(System.nanoTime() + tAvail, endTime)
+      val start = System.nanoTime()
+      endSearch = Math.min(start + tAvail, endTime)
 
-      while(System.nanoTime() < endSearch && relax.isActive && search.isActive)
-        lnsSearch(relax, search)
+      lnsSearch(relax, search)
 
-      val time = System.nanoTime() - sStart
+      val time = System.nanoTime() - start
       val improvement = Math.abs(currentSol.objective - initSol.objective)
-      //TODO: adapt time and improvement bounds
-//      if(model.cpObjective.best != initObj && sTime * 3 < tAvail) tAvail = sTime*3
 
       if(!relaxPerf.contains(relax.name)) relaxPerf += relax.name -> (relax, mutable.ArrayBuffer[(Long, Int)]())
       relaxPerf(relax.name)._2 += ((time, improvement))
@@ -60,20 +58,18 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       currentSol = initSol
     }
 
-    relaxPerf.values.foreach{
-      case (op, perfs) =>
-        if(perfs.map(_._1).min > tAvail){
-          op.setActive(false)
-          if(!solver.silent) println("Operator " + op.name + " deactivated")
-        }
+    relaxPerf.values.filter{ case (op, perfs) =>
+      op.isActive && perfs.map(_._2).max == 0
+    }.foreach{ case (op, _) =>
+      op.setActive(false)
+      if(!solver.silent) println("Operator " + op.name + " deactivated")
     }
 
-    searchPerf.values.foreach{
-      case (op, perfs) =>
-        if(perfs.map(_._1).min > tAvail - 1000000L){
-          op.setActive(false)
-          if(!solver.silent) println("Operator " + op.name + " deactivated")
-        }
+    searchPerf.values.filter{ case (op, perfs) =>
+      op.isActive && perfs.map(_._2).max == 0
+    }.foreach{ case (op, _) =>
+      op.setActive(false)
+      if(!solver.silent) println("Operator " + op.name + " deactivated")
     }
 
     relaxOps.filter(!_.isActive).foreach(relaxStore.remove)
@@ -86,6 +82,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
 
     currentSol = bestSol
     solver.objective.objs.head.best = bestSol.objective
+    learning = false
   }
 
   override def alnsLoop(): Unit = {
@@ -126,9 +123,12 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement + "\n")
 
       //Updating only relax as the the search has not been done:
-      relax.update(improvement, stats, fail = false) //TODO:Review failure system
+      relax.update(improvement, stats, fail = true)
       if(relax.isActive && !relax.isInstanceOf[ALNSReifiedOperator]) relaxStore.adapt(relax, metric(relax, improvement, stats))
-      else relaxStore.remove(relax)
+      else{
+        if(!solver.silent) println("Operator " + relax.name + " deactivated")
+        if(!learning) relaxStore.remove(relax)
+      }
     }
   }
 
