@@ -1,4 +1,4 @@
-package oscar.cbls.bench
+package oscar.cbls.benchmarks.CP2017
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify

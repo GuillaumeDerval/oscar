@@ -1,4 +1,4 @@
-package oscar.cbls.bench
+package oscar.cbls.benchmarks.CP2017
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -15,15 +15,15 @@ package oscar.cbls.bench
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import java.io.{PrintWriter, File}
+import java.io.{File, PrintWriter}
 
-import oscar.cbls.core.computation.Store
-import oscar.cbls.lib.invariant.seq.Size
-import oscar.cbls.modeling.Algebra._
-import oscar.cbls.core.objective.Objective
 import oscar.cbls.business.routing.model._
 import oscar.cbls.business.routing.neighborhood._
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.lib.invariant.seq.Size
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
+import oscar.cbls.modeling.Algebra._
 import oscar.cbls.util.StopWatch
 
 import scala.io.Source

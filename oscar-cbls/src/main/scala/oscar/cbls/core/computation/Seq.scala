@@ -1701,7 +1701,7 @@ class SeqCheckpointedValueStack[@specialized T]{
   }
 
   def defineCheckpoint(checkpoint:IntSequence,checkpointLevel:Int,savedValue:T){
-    require(checkpointLevel <= checkpointStackLevel)
+    require(checkpointLevel <= checkpointStackLevel+1)
     require(checkpointLevel >= 0)
     popCheckpointStackToLevel(checkpointLevel,true)
     defineTopCheckpoint(checkpoint:IntSequence,savedValue:T)

@@ -671,7 +671,7 @@ case class ConstantMoveNeighborhood(m: Move) extends Neighborhood {
   }
 }
 
-case class DoNothingNeighborhood() extends Neighborhood {
+case class DoNothingNeighborhood() extends Neighborhood with SupportForAndThenChaining[DoNothingMove]{
   override def getMove(obj: Objective, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
     val objValue = obj.value
     if(acceptanceCriterion(objValue,objValue)){
@@ -680,6 +680,8 @@ case class DoNothingNeighborhood() extends Neighborhood {
       NoMoveFound
     }
   }
+
+  override def instantiateCurrentMove(newObj : Int) : DoNothingMove = DoNothingMove(newObj)
 }
 
 case class DoNothingMove(override val objAfter:Int) extends Move(objAfter){

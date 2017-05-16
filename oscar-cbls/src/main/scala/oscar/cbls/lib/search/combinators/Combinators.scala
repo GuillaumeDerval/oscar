@@ -1198,11 +1198,26 @@ case class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThen
           override def valueNoSearch : Int = obj.valueNoSearch
         }
 
-        currentB.getMove(new secondInstrumentedObjective(obj), secondAcceptanceCriteria) match {
-          case NoMoveFound => Int.MaxValue
-          case MoveFound(m: Move) =>
-            if(compositeMove == null || m.objAfter < compositeMove.objAfter) compositeMove = CompositeMove(List(currentMoveFromA, m), m.objAfter,enclosingDynAndThen.toString)
-            m.objAfter
+        if(currentB == null) {
+          val realObjValue =
+            if (maximalIntermediaryDegradation != Int.MaxValue && intermediaryObjValue != Int.MaxValue) {
+              //we need to ensure that intermediary step is admissible
+              intermediaryObjValue
+            }else{
+              obj.value
+            }
+          if(firstAcceptanceCriterion(oldObj,realObjValue)){
+            compositeMove = CompositeMove(List(a.instantiateCurrentMove(realObjValue)), realObjValue, "")
+          }
+          realObjValue
+
+        }else{
+          currentB.getMove(new secondInstrumentedObjective(obj), secondAcceptanceCriteria) match {
+            case NoMoveFound => Int.MaxValue
+            case MoveFound(m : Move) =>
+              if (compositeMove == null || m.objAfter < compositeMove.objAfter) compositeMove = CompositeMove(List(currentMoveFromA, m), m.objAfter, enclosingDynAndThen.toString)
+              m.objAfter
+          }
         }
       }
     }
@@ -1268,10 +1283,10 @@ object Mu {
                                  neighborhoodGenerator : (List[(MoveType)], X) => Option[(Neighborhood with SupportForAndThenChaining[MoveType], X)],
                                  x0 : X,
                                  maxDepth : Int,
-                                 intermediaryStops : Boolean) = {
+                                 intermediaryStops : Boolean): Neighborhood = {
     require(maxDepth >= 1)
 
-    def generateNextNeighborhood(oldMoves : List[MoveType], remainingDepth : Int, prevX : X)(newMove : MoveType) : Neighborhood = {
+    def generateNextNeighborhood(oldMoves : List[MoveType], remainingDepth : Int, prevX : X)(newMove : MoveType):Neighborhood = {
 
       if (remainingDepth == 0) {
         DoNothingNeighborhood()
@@ -1295,6 +1310,23 @@ object Mu {
     }
     DynAndThen(firstNeighborhood,
       generateNextNeighborhood(List.empty, maxDepth - 1, x0)) name "Mu(" + firstNeighborhood + ")"
+  }
+
+  def applyMap[MoveType <: Move, X](firstNeighborhood : Neighborhood with SupportForAndThenChaining[MoveType],
+                                    neighborhoodGenerator : (List[(MoveType)], X) => Option[(Neighborhood with SupportForAndThenChaining[MoveType], X)],
+                                    x0 : X): Neighborhood with SupportForAndThenChaining[CompositeMove] = {
+
+    def generateNextNeighborhood(oldMoves : List[MoveType], prevX : X)(newMove : MoveType):Neighborhood with SupportForAndThenChaining[CompositeMove]= {
+
+      val newMoveList = newMove :: oldMoves
+      neighborhoodGenerator(newMove :: oldMoves, prevX) match {
+        case Some((nextAtomicNeighborhood, newX)) =>
+          val generatorForNext = generateNextNeighborhood(newMoveList, newX) _
+          DynAndThen(nextAtomicNeighborhood, generatorForNext)
+        case None => null
+      }
+    }
+    DynAndThen(firstNeighborhood,generateNextNeighborhood(List.empty, x0))
   }
 }
 

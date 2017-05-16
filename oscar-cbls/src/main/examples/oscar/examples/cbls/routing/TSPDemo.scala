@@ -1,4 +1,4 @@
-package oscar.cbls.test.routing
+package oscar.examples.cbls.routing
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -60,9 +60,9 @@ class MySimpleDemoWithUnroutedPoints2(n:Int,v:Int,symmetricDistance:Array[Array[
 
 object TSPDemo extends App {
 
-  val n = 1000
-  val v = 10
-  val displayDelay = 500 //ms
+  val n = 10000
+  val v = 100
+  val displayDelay = 1000 //ms
   val verbose = 1
   val maxPivotPerValuePercent = 3
 
@@ -71,7 +71,7 @@ object TSPDemo extends App {
 
 class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay:Int) extends StopWatch{
 
-  val routingMatrix = RoutingMatrixGenerator(n)
+  val routingMatrix = RoutingMatrixGenerator(n,side=1000)
   val symmetricDistanceMatrix = routingMatrix._1
   val pointsPositions = routingMatrix._2
 
