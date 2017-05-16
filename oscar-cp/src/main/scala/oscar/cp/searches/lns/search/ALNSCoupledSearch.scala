@@ -26,17 +26,11 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
     learning = true
     val initSol = currentSol
 
-    if(removedOperators.nonEmpty){
-      removedOperators.foreach(operator => opStore.add(operator, metric(operator, 0, new SearchStatistics(0, 0, 0L, false,0L, 0, 0))))
-      removedOperators.clear()
-    }
-
     val learningStart = System.nanoTime()
     val tAvail = (((endTime - learningStart) * learnRatio) / operators.length).toLong
     val opPerf = ArrayBuffer[(ALNSOperator, Long, Int)]()
 
     Random.shuffle(operators.toSeq).foreach(operator =>{
-      operator.setActive(true)
       val start = System.nanoTime()
       endSearch = start + tAvail
 
@@ -130,4 +124,16 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
     solsFound.toArray,
     operators.map(x => x.name -> x.getStats).toMap
   )
+
+  /**
+    * resets the store(s)
+    */
+  override def resetStore(): Unit = {
+    operators.foreach(_.setActive(true))
+
+    if(removedOperators.nonEmpty){
+      removedOperators.foreach(operator => opStore.add(operator, metric(operator, 0, new SearchStatistics(0, 0, 0L, false,0L, 0, 0))))
+      removedOperators.clear()
+    }
+  }
 }

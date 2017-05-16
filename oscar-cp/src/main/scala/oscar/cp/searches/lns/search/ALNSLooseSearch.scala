@@ -33,16 +33,6 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
     learning = true
     val initSol = currentSol
 
-    if(removedRelaxations.nonEmpty){
-      removedRelaxations.foreach(operator => relaxStore.add(operator, metric(operator, 0, new SearchStatistics(0, 0, 0L, false,0L, 0, 0))))
-      removedRelaxations.clear()
-    }
-
-    if(removedSearches.nonEmpty){
-      removedSearches.foreach(operator => searchStore.add(operator, metric(operator, 0, new SearchStatistics(0, 0, 0L, false,0L, 0, 0))))
-      removedSearches.clear()
-    }
-
     val learningStart = System.nanoTime()
     val tAvail = (((endTime - learningStart) * learnRatio) / nOpCombinations).toLong
     val relaxPerf = mutable.Map[String, (ALNSOperator, mutable.ArrayBuffer[(Long, Int)])]()
@@ -193,5 +183,23 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
     case op: ALNSSingleParamOperator[_] => op.getReifiedParameters
     case op: ALNSTwoParamsOperator[_,_] => op.getReifiedParameters
     case op: ALNSOperator => Seq(op)
+  }
+
+  /**
+    * resets the store(s)
+    */
+  override def resetStore(): Unit = {
+    relaxOps.foreach(_.setActive(true))
+    searchOps.foreach(_.setActive(true))
+
+    if(removedRelaxations.nonEmpty){
+      removedRelaxations.foreach(operator => relaxStore.add(operator, metric(operator, 0, new SearchStatistics(0, 0, 0L, false,0L, 0, 0))))
+      removedRelaxations.clear()
+    }
+
+    if(removedSearches.nonEmpty){
+      removedSearches.foreach(operator => searchStore.add(operator, metric(operator, 0, new SearchStatistics(0, 0, 0L, false,0L, 0, 0))))
+      removedSearches.clear()
+    }
   }
 }

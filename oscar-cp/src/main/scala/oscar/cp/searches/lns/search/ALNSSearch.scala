@@ -88,6 +88,8 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
       //LNS loop
       if (!solver.silent) println("\nStarting adaptive LNS...")
       alnsLoop()
+
+      resetStore()
     }
     ALNSElement.resetWorstTTI()
     getSearchResults
@@ -102,6 +104,11 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
     * Performs a sequential ALNS loop
     */
   def alnsLoop(): Unit
+
+  /**
+    * resets the store(s)
+    */
+  def resetStore(): Unit
 
   /**
     * Creates the search results object.
