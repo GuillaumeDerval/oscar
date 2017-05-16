@@ -1,14 +1,12 @@
 package oscar.cbls.business.routing.model
 
-import oscar.cbls.core.computation._
+import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, IntValue, Store}
 import oscar.cbls.lib.invariant.logic.{Cluster, DenseCluster, IntInt2Int}
 import oscar.cbls.lib.invariant.minmax.Max2
 import oscar.cbls.lib.invariant.numeric.Div
-import oscar.cbls.lib.invariant.seq.Content
-import oscar.cbls.lib.invariant.set.Diff
 import oscar.cbls.modeling.Algebra._
 
-import scala.collection.immutable.{List, SortedSet}
+import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -30,13 +28,13 @@ import scala.collection.mutable.ListBuffer
 class PDPv2 (override val n:Int,
              override val v:Int,
              override val m:Store,
-             val chains:List[List[Int]],
+             val chains:Array[Array[Int]],
              val timeLimit:Int = 172800,
              maxPivotPerValuePercent:Int = 4)
   extends VRP(n,v,m,maxPivotPerValuePercent) with NextAndPrev{
 
   // The chain of each node
-  val chainOfNode:Array[List[Int]] = Array.tabulate(n)(_ => List.empty)
+  val chainOfNode:Array[Array[Int]] = Array.tabulate(n-v)(_ => Array.empty)
 
   /**
     * This array represents the next node of each node (in his chain).
@@ -48,15 +46,19 @@ class PDPv2 (override val n:Int,
     */
   val prevNode:Array[Option[Int]] = Array.tabulate(n)(_ => None)
 
-  val chainDico = chains.map(c => c.head -> c.tail).toMap
 
-  for(chain <- chains) {
-    for (i <- chain.indices) {
+  /**
+    * This method is used to set the prevStep/nextStep value of each node contained in a chain.
+    * The prevStep of the first node is himself and the nextStep of the last node is himself.
+    * @param chain the chain
+    */
+  private def setPrevNext(chain: Array[Int]){
+    for(i <- chain.indices){
       val node = chain(i)
       if (i > 0)
-        prevNode(node) = Some(chain(i - 1))
-      if (i < chain.length - 1)
-        nextNode(node) = Some(chain(i + 1))
+        prevNode(node) = Some(chain(i-1))
+      if (i < chain.length-1)
+        nextNode(node) = Some(chain(i+1))
       chainOfNode(node) = chain
     }
   }
@@ -78,20 +80,22 @@ class PDPv2 (override val n:Int,
   /**
     * @return An array of unrouted Pickups
     */
-  def unroutedPickups(): Iterable[Int]={
-    unroutedChains.map(_.head).filter(!isRouted(_))
+  def unroutedPickups={
+    unroutedChains.map(_.head)
   }
 
   /**
     * @return An array of routed Pickups
     */
-  def routedPickups(): Iterable[Int]={
-    routedChains.map(_.head).filter(isRouted)
+  def routedPickups={
+    routedChains.map(_.head)
   }
 
+  def pickupOfChain(chain: Int) = chains(chain).head
   def isPickup(node: Int) = chainOfNode(node).head == node
   def getRelatedPickup(node: Int) = chainOfNode(node).head
 
+  def deliveryOfChain(chain: Int) = chains(chain).last
   def isDelivery(node: Int) = chainOfNode(node).last == node
   def getRelatedDelivery(node: Int) = chainOfNode(node).last
 
@@ -100,7 +104,7 @@ class PDPv2 (override val n:Int,
     * @return The nodes between the previous node (in chain) of node
     *         and the next node (in chain) of node
     */
-  def relevantNewPredecessorsOf()(node: Int) = getNodesBetween(prevNode(node),nextNode(node))
+  def relevantNewPredecessorsOf(node: Int) = getNodesBetween(prevNode(node),nextNode(node))
 
 
   /**
@@ -154,7 +158,7 @@ class PDPv2 (override val n:Int,
             */
           if (!segmentsArray(j).contains(getRelatedPickup(route(node))))
             segmentsArray(j) = null
-           /**
+          /**
             * Else we decrement the number of single pickup
             */
           else {
@@ -289,9 +293,9 @@ class PDPv2 (override val n:Int,
     travelDurationMatrix = travelCosts
     for (i <- 0 until n) {
       travelOutDurations(i) <== new IntInt2Int(leaveTimes(i), next(i),
-      (leaveTime, successor) =>
-      if (successor == n) 0
-      else travelCosts.getTravelDuration(i, leaveTime, successor))
+        (leaveTime, successor) =>
+          if (successor == n) 0
+          else travelCosts.getTravelDuration(i, leaveTime, successor))
     }
   }
 

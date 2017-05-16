@@ -29,7 +29,7 @@ import oscar.cbls.util.StopWatch
 import scala.collection.immutable.SortedSet
 
 
-class MySimpleDemoWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[Int]],pointsPositions:Array[(Int,Int)],m:Store, maxPivot:Int)
+class MySimpleDemoWithUnroutedPoints2(n:Int,v:Int,symmetricDistance:Array[Array[Int]],pointsPositions:Array[(Int,Int)],m:Store, maxPivot:Int)
   extends VRP(n,v,m,maxPivot)
     with ClosestNeighbors
     with RoutingMapDisplay
@@ -65,7 +65,7 @@ object TSPDemo extends App {
 
   val verbose = 0
   val maxPivotPerValuePercent = 4
-  new TSPDemo(10000,1,4,verbose)
+  new TSPDemo(1000,1,4,verbose)
   System.gc()
 
   val nbTrials = 3
@@ -80,7 +80,7 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) extends Stop
   startWatch()
   val model = new Store()
 
-  val myVRP = new MySimpleDemoWithUnroutedPoints(n,v,symmetricDistanceMatrix,pointsPositions,model,maxPivotPerValuePercent)
+  val myVRP = new MySimpleDemoWithUnroutedPoints2(n,v,symmetricDistanceMatrix,pointsPositions,model,maxPivotPerValuePercent)
   val nodes = myVRP.nodes
 
   model.close()

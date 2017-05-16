@@ -20,7 +20,8 @@ package oscar.cbls.visual.MatrixMap
 import java.awt.{BorderLayout, Color, Dimension}
 import javax.swing.{JFrame, JPanel}
 
-import oscar.cbls.business.routing.model.{PDP, VRP}
+import oscar.cbls.business.routing.model.PDP
+import oscar.cbls.business.routing.model.VRP
 
 
 /**

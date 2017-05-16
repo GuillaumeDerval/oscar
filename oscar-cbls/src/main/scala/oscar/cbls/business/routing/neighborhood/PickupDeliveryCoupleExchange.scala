@@ -16,7 +16,8 @@ package oscar.cbls.business.routing.neighborhood
   ******************************************************************************/
 
 
-import oscar.cbls.business.routing.model.{ClosestNeighbors, PDP}
+import oscar.cbls.business.routing.model.PDP
+import oscar.cbls.business.routing.model.ClosestNeighbors
 import oscar.cbls.core.search.EasyNeighborhood
 
 /**
@@ -73,12 +74,12 @@ case class PickupDeliveryCoupleExchange(pdp: PDP with ClosestNeighbors,
     val closestRoutedNeighboursInTime = pdp.computeClosestNeighborInTime()
     for(r1 <- 0 until pdp.v-1){
       exchange(0) = r1
-      for(p1 <- pdp.getRoutedPickups.filter(pdp.getVehicleOfNode(_) == r1)){
+      for(p1 <- pdp.routedPickups.filter(pdp.getVehicleOfNode(_) == r1)){
         exchange(1) = p1
         exchange(2) = pdp.getRelatedDelivery(p1)
         for(r2 <- r1+1 until pdp.v){
           exchange(5) = r2
-          for(p2 <- pdp.getRoutedPickups.filter(pdp.getVehicleOfNode(_) == r2)){
+          for(p2 <- pdp.routedPickups.filter(pdp.getVehicleOfNode(_) == r2)){
             exchange(6) = p2
             exchange(7) = pdp.getRelatedDelivery(p2)
             val closestNeighborsForP1 = pdp.kFirst(k,closestRoutedNeighboursInTime)(p1).filter(customFilter(_,r2,p2,exchange(7)))

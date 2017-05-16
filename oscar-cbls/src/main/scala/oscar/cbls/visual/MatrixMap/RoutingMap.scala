@@ -25,7 +25,8 @@ import java.awt.{BasicStroke, Color, Graphics2D, Point, Rectangle, RenderingHint
 import org.jxmapviewer.painter.Painter
 import org.jxmapviewer.viewer.GeoPosition
 import org.jxmapviewer.{JXMapKit, JXMapViewer}
-import oscar.cbls.business.routing.model.{PDP, VRP}
+import oscar.cbls.business.routing.model.PDP
+import oscar.cbls.business.routing.model.VRP
 import oscar.examples.cbls.routing.visual.ColorGenerator
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualArrow, VisualCircle, VisualLine, VisualShape}
@@ -166,8 +167,7 @@ class BasicRoutingMap(pdpOption:Option[PDP], vrpOption:Option[VRP]) extends Visu
     def getPointInformation(p:Int): String ={
       "Some informations about the point : " + p + "\n" +
         "Arrival time : " + pdp.arrivalTimes(p).value + "\n" +
-        "Leave time : " + pdp.leaveTimes(p).value + "\n" +
-        "Passengers on board : " + pdp.arrivalLoadValue(p).value
+        "Leave time : " + pdp.leaveTimes(p).value + "\n"
     }
   }
 }
@@ -306,7 +306,6 @@ class GeoRoutingMap extends JXMapKit with RoutingMap {
             println("Some informations about the point : " + i)
             println("Arrival time : " + pdp.arrivalTimes(i).value)
             println("Leave time : " + pdp.leaveTimes(i).value)
-            println("Passengers on board : " + pdp.arrivalLoadValue(i).value)
             println()
           }
         }

@@ -1655,22 +1655,29 @@ class SeqCheckpointedValueStack[@specialized T]{
   private def popCheckpointStackToLevel(level:Int,included:Boolean){
     if(included){
       while(checkpointStackLevel>=level) {
-        val tmp = checkpointStackNotTop.head
-        _topCheckpoint = tmp._1
-        _outputAtTopCheckpoint = tmp._2
-        checkpointStackNotTop = checkpointStackNotTop.tail
-        checkpointStackLevel -=1
+        popCheckpoint()
       }
     }else{
       while(checkpointStackLevel>level) {
-        val tmp = checkpointStackNotTop.head
-        _topCheckpoint = tmp._1
-        _outputAtTopCheckpoint = tmp._2
-        checkpointStackNotTop = checkpointStackNotTop.tail
-        checkpointStackLevel -= 1
+        popCheckpoint()
       }
     }
   }
+
+  private def popCheckpoint(){
+    require(checkpointStackLevel >=0)
+    if(checkpointStackLevel>0){
+      val top = checkpointStackNotTop.head
+      checkpointStackNotTop = checkpointStackNotTop.tail
+      _topCheckpoint = top._1
+      _outputAtTopCheckpoint = top._2
+    }else{
+      _topCheckpoint = null
+      _outputAtTopCheckpoint = null.asInstanceOf[T]
+    }
+    checkpointStackLevel -= 1
+  }
+
 
   def outputAtTopCheckpoint(checkpoint:IntSequence):T = {
     require(topCheckpoint quickEquals checkpoint)
@@ -1694,6 +1701,8 @@ class SeqCheckpointedValueStack[@specialized T]{
   }
 
   def defineCheckpoint(checkpoint:IntSequence,checkpointLevel:Int,savedValue:T){
+    require(checkpointLevel <= checkpointStackLevel+1)
+    require(checkpointLevel >= 0)
     popCheckpointStackToLevel(checkpointLevel,true)
     defineTopCheckpoint(checkpoint:IntSequence,savedValue:T)
   }

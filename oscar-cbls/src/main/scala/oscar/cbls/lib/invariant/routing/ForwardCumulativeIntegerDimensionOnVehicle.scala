@@ -156,14 +156,14 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
 
 
   def digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(changes:SeqUpdate,
-                                                                       toUpdateZonesAndVehiceStartOpt:Option[(RedBlackTreeMap[List[(Int,Int)]],VehicleLocation)],
+                                                                       toUpdateZonesAndVehicleStartOpt:Option[(RedBlackTreeMap[List[(Int,Int)]],VehicleLocation)],
                                                                        potentiallyRemovedPoints:List[Int],
                                                                        previousSequence:IntSequence)
   :(Option[(RedBlackTreeMap[List[(Int,Int)]],VehicleLocation)],List[Int]) = {
 
     changes match {
       case s@SeqUpdateInsert(value : Int, posOfInsert : Int, prev : SeqUpdate) =>
-        digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence) match {
+        digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints, previousSequence) match {
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), potentiallyRemovedPointsAfterPrev) =>
             val vehicleLocationAfyterInsert = vehicleLocationAfterPrev.push(s.oldPosToNewPos,maxStack)
             val updatedZones =
@@ -178,7 +178,7 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
         }
 
       case r@SeqUpdateRemove(pos : Int, prev : SeqUpdate) =>
-        digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence) match {
+        digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints, previousSequence) match {
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), potentiallyRemovedPointsAfterPrev) =>
             val updatedZones =
               updateZoneToUpdateAfterRemove(
@@ -191,7 +191,7 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
         }
 
       case m@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
-        digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence) match {
+        digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints, previousSequence) match {
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), potentiallyRemovedPointsAfterPrev) =>
             val vehicleLocationAfterMove = vehicleLocationAfterPrev.push(m.oldPosToNewPos,maxStack)
             val updatedZones =
@@ -211,10 +211,10 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
         (None, potentiallyRemovedPoints ::: previousSequence.unorderedContentNoDuplicate)
 
       case SeqUpdateLastNotified(value : IntSequence) =>
-        (toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints)
+        (toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints)
 
       case s@SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode:Boolean, checkpointLevel:Int) =>
-        digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence) match {
+        digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints, previousSequence) match {
           //checkpoints are managed about the vehicleLocation exclusively
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), removedPointsAfterPrev) =>
             val regularizedVehicleLocation = vehicleLocationAfterPrev.regularize
@@ -225,7 +225,7 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
         }
 
       case u@SeqUpdateRollBackToCheckpoint(checkpoint : IntSequence, level:Int) =>
-        digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(u.howToRollBack,toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence) match {
+        digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(u.howToRollBack,toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints, previousSequence) match {
           //checkpoints are managed about the vehicleLocation exclusively
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), removedPointsAfterPrev) =>
             val regularizedVehicleLocation = vehicleLocationAndCheckpointStack.rollBackAndOutputValue(checkpoint,level)
@@ -252,6 +252,6 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
 
       c.check(currentVehicleLocation.startPosOfVehicle(vehicle) == vehicleLocation.startPosOfVehicle(vehicle),Some("x"))
     }
-
   }
 }
+

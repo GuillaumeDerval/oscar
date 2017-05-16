@@ -1,8 +1,7 @@
 package oscar.cbls.lib.invariant.routing
 
-import oscar.cbls.business.routing.model.PDPv2
+import oscar.cbls.business.routing.model.PDP
 import oscar.cbls.core.constraint.ConstraintSystem
-import oscar.cbls.core.objective.IntVarObjective
 import oscar.cbls.lib.constraint.{EQ, GE, LE}
 import oscar.cbls.lib.invariant.logic.IntITE
 import oscar.cbls.lib.invariant.seq.Precedence
@@ -12,15 +11,14 @@ import oscar.cbls.lib.invariant.seq.Precedence
   */
 object PDPConstraints {
   def apply(
-             pdp: PDPv2,
-             additionalPrecedences: List[(Int,Int)] = List.empty,
+             pdp: PDP,
              maxDetours: List[(Int,Int,Int)] = List.empty,
              maxDetourCalculation:(Int,Int) => Int = (a,b) => a + b
            ): ConstraintSystem ={
     val constraints = new ConstraintSystem(pdp.routes.model)
 
     val pDPConstraints = new PDPConstraints(pdp, constraints)
-    //pDPConstraints.addCapacityConstraint()
+    pDPConstraints.addCapacityConstraint()
     pDPConstraints.addTimeWindowConstraints()
     pDPConstraints.addPrecedencesConstraints()
     pDPConstraints.addMaxDetoursConstraints(maxDetours,maxDetourCalculation)
@@ -29,7 +27,7 @@ object PDPConstraints {
   }
 }
 
-class PDPConstraints(pdp: PDPv2, constraints: ConstraintSystem){
+class PDPConstraints(pdp: PDP, constraints: ConstraintSystem){
   import oscar.cbls.modeling.Algebra._
 
   val routes = pdp.routes

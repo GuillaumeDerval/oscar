@@ -259,7 +259,6 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
           digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence)
         }
       case u@SeqUpdateRollBackToCheckpoint(checkpoint : IntSequence, level:Int) =>
-        println("ROLLBACK performed")
         if(level <= maxCheckpointLevel){
 
           while (contentAtNode.level >= level) {

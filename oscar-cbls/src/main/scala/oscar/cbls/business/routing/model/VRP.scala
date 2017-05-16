@@ -500,7 +500,6 @@ trait VehicleOfNode extends CloneOfRouteForLightPartialPropagation{
   override def getVehicleOfNode(node:Int):Int = vehicleOfNode(node).value
 
   override def isRouted(node: Int): Boolean = vehicleOfNode(node).value!=v
-
 }
 
 trait RoutingMapDisplay extends VRP{
@@ -514,14 +513,13 @@ trait RoutingMapDisplay extends VRP{
     * @param geolocalisationMap if true, the geoRoutingMap will be used
     */
   def initializeRoutingMap(list:Array[(Double,Double)], vrp:VRP = this, mapSize: Int = 1000, pickupAndDeliveryNodes: Boolean = false, geolocalisationMap: Boolean = false, routeToDisplay: Boolean = false): Unit ={
-    routingMap = new RoutingMatrixContainer(myVRP = vrp, pickupAndDeliveryPoints = pickupAndDeliveryNodes, geolocalisationMap = geolocalisationMap, routeToDisplay = routeToDisplay)
+    routingMap = new RoutingMatrixContainer(title="toto",myVRP = vrp, pickupAndDeliveryPoints = pickupAndDeliveryNodes, geolocalisationMap = geolocalisationMap, routeToDisplay = routeToDisplay)
     routingMap.setMapSize(mapSize)
     routingMap.setPointsList(list.toList)
     routingMap.setColorValues(ColorGenerator.generateRandomColors(v))
     routingMap.drawPoints()
     new Thread(routingMap,"routing thread").start()
   }
-
 
   def drawRoutes(): Unit ={
     routingMap.allRoutes = Array.tabulate(v)(vehicle => getRouteOfVehicle(vehicle))

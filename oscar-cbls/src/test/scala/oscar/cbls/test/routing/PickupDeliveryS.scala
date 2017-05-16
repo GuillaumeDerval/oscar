@@ -16,6 +16,7 @@ package oscar.cbls.test.routing
   ******************************************************************************/
 
 
+import oscar.cbls.business.routing.model.PDP
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.core.search.CompositeMove
@@ -24,15 +25,17 @@ import oscar.cbls.modeling.Algebra._
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.business.routing.model._
 import oscar.cbls.business.routing.neighborhood._
+import oscar.cbls.lib.invariant.routing.PDPConstraints
 import oscar.cbls.lib.search.combinators._
 
 import scala.util.Random
-
 import scala.util.Random
 
 /**
   * Created by fabian on 04-07-16.
   */
+
+/*
 
 class MyPDP(n:Int, v:Int, m:Store,
             symmetricDistance:Array[Array[Int]], maxPivot:Int,
@@ -57,16 +60,11 @@ class MyPDP(n:Int, v:Int, m:Store,
   this.addToStringInfo(() => "prev:" + prev.map(_.value).mkString(","))
 
 
-  addPickupDeliveryCouples(pickups,deliveries)
-  setArrivalLeaveLoadValue()
-  setVehiclesMaxCargo(5)
-  setVehiclesCapacityStrongConstraint()
-  setTimeWindows(timeWindows)
-  setTravelTimeFunctions(ttf)
+  setVehicleMaxCapacities(Array.tabulate(v)(_ => 5))
 
-  val obj = new CascadingObjective(fastConstraints,
-    new CascadingObjective(slowConstraints,
-      new CascadingObjective(precedenceObj, Objective(totalDistance + (penaltyForUnrouted*(n - Size(routes)))))))
+  val constraints = PDPConstraints(this)
+
+  val obj = new CascadingObjective(constraints,Objective(totalDistance + (penaltyForUnrouted*(n - Size(routes))))))
 }
 
 object PickupDeliveryS extends App{
@@ -316,3 +314,4 @@ object PickupDeliveryS extends App{
   println(search4.profilingStatistics)
 
 }
+*/

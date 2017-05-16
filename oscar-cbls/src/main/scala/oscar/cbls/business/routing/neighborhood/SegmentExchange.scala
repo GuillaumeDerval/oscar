@@ -16,7 +16,8 @@ package oscar.cbls.business.routing.neighborhood
   ******************************************************************************/
 
 import oscar.cbls.algo.search.HotRestart
-import oscar.cbls.business.routing.model.{PDP, VRP}
+import oscar.cbls.business.routing.model.PDP
+import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.EasyNeighborhood
 
 import scala.collection.immutable.SortedSet
@@ -279,14 +280,14 @@ case class PickupDeliverySegmentExchange(pdp: PDP,
             secondSegmentStartPosition = positionsOfValue(secondSegment._1).get
             secondSegmentEndPosition = positionsOfValue(secondSegment._2).get
 
-            val (firstStartEarly,firstStartDead) = (if(pdp.timeWindows(firstSegment._1)._1 == -1)Int.MaxValue else pdp.timeWindows(firstSegment._1)._1,
-              if(pdp.timeWindows(firstSegment._1)._2 == -1)Int.MaxValue else pdp.timeWindows(firstSegment._1)._2)
-            val (firstEndEarly,firstEndDead) = (if(pdp.timeWindows(firstSegment._2)._1 == -1)Int.MaxValue else pdp.timeWindows(firstSegment._2)._1,
-              if(pdp.timeWindows(firstSegment._2)._2 == -1)Int.MaxValue else pdp.timeWindows(firstSegment._2)._2)
-            val (secondStartEarly,secondStartDead) = (if(pdp.timeWindows(secondSegment._1)._1 == -1)Int.MaxValue else pdp.timeWindows(secondSegment._1)._1,
-              if(pdp.timeWindows(secondSegment._1)._2 == -1)Int.MaxValue else pdp.timeWindows(secondSegment._1)._2)
-            val (secondEndEarly,secondEndDead) = (if(pdp.timeWindows(secondSegment._2)._1 == -1)Int.MaxValue else pdp.timeWindows(secondSegment._2)._1,
-              if(pdp.timeWindows(secondSegment._2)._2 == -1)Int.MaxValue else pdp.timeWindows(secondSegment._2)._2)
+            val (firstStartEarly,firstStartDead) = (if(pdp.earlylines(firstSegment._1) == -1)Int.MaxValue else pdp.earlylines(firstSegment._1),
+              if(pdp.deadlines(firstSegment._1) == -1)Int.MaxValue else pdp.deadlines(firstSegment._1))
+            val (firstEndEarly,firstEndDead) = (if(pdp.earlylines(firstSegment._2) == -1)Int.MaxValue else pdp.earlylines(firstSegment._2),
+              if(pdp.deadlines(firstSegment._2) == -1)Int.MaxValue else pdp.deadlines(firstSegment._2))
+            val (secondStartEarly,secondStartDead) = (if(pdp.earlylines(secondSegment._1) == -1)Int.MaxValue else pdp.earlylines(secondSegment._1),
+              if(pdp.deadlines(secondSegment._1) == -1)Int.MaxValue else pdp.deadlines(secondSegment._1))
+            val (secondEndEarly,secondEndDead) = (if(pdp.earlylines(secondSegment._2) == -1)Int.MaxValue else pdp.earlylines(secondSegment._2),
+              if(pdp.deadlines(secondSegment._2) == -1)Int.MaxValue else pdp.deadlines(secondSegment._2))
 
 
             if(secondStartEarly != Int.MaxValue && firstStartDead != Int.MaxValue && secondStartEarly > firstStartDead){}

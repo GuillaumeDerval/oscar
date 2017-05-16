@@ -400,7 +400,6 @@ class Precedence(seq:ChangingSeqValue,
                 //it was not violated, thus is can only get violated is the segment moves downwards and the other value passes up
                 // of if the other value is also in the segment and there is a flip, but the flip case is handled in the precedenceStarted at value
 
-
                 if (moveDownwards) {
                   val startValueOfPrecedence = precedencesArray(precedenceEndingAtValue)._1
                   cachedPositionFinderAtCheckpoint.positionOfAnyOccurrence(prev.newValue,startValueOfPrecedence) match {

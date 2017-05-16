@@ -49,6 +49,8 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
   private var PostedConstraints:List[(Constraint,IntValue)] = List.empty
   //private var AllVars:SortedMap[Variable,List[(Constraint,IntVar)]]=SortedMap.empty
 
+  private var PostedInvariants:List[ChangingIntValue] = List.empty
+
   private var VarInConstraints:List[AbstractVariable] = List.empty
   private var VarsWatchedForViolation:List[AbstractVariable] = List.empty
 
@@ -76,6 +78,10 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
     * @param weight is the weight that is used in the weighted sum of the violation degrees.
     */
   def add(c:Constraint,weight:IntValue=null) = post(c,weight)
+
+  def addToViolation(i:ChangingIntValue){
+    PostedInvariants = i :: PostedInvariants
+  }
 
   /**Method used to post a constraint in the constraint system. (synonym of add)
    * Cannot be called after the constraint system has been closed.
@@ -143,7 +149,7 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
       Violation = new Sum(PostedConstraints.map((constraintANDintvar) => {
         if(constraintANDintvar._2 == null) constraintANDintvar._1.violation
         else Prod(List(constraintANDintvar._1.violation,constraintANDintvar._2))
-      })).setName("violation")
+      }) ::: PostedInvariants).setName("violation")
       if(Violation.model==null){
         assert(PostedConstraints.size==0,"Null model but has constraints")
         Violation.model = model
