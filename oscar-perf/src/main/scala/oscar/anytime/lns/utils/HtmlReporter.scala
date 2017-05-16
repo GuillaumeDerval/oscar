@@ -16,17 +16,27 @@ object HtmlReporter extends App{
     * Generates an html report from the given xml object.
     */
   def generateHtml(directory: String): Unit = {
-    val (timeout, instances, configs, instanceTypes, data) = scanInstances(directory)
-    val (bestSols, anyTimeScores, anyTimeGaps, instanceStats) = processStats(instances, configs, data)
+    val (timeout, instances, configs, instanceTypes, bestknownSolutions, data) = scanInstances(directory)
+    val nBks = bestknownSolutions.values.count(_.isDefined)
+    val (bestSols, anyTimeScores, anyTimeGaps, instanceStats) = processStats(instances, configs, data, nBks)
 
     val htmlWriter = new HtmlWriter("oscar-perf/src/main/scala/oscar/anytime/lns/utils/chart_report_template.html", directory + "/" + IOUtils.getFileName(directory) + "_htmlReport.html")
+    htmlWriter.addHeading("Benchmark configuration")
+
+    htmlWriter.addParagraph("Time allocated: " + timeout/1000000000.0 + " seconds")
+
+    htmlWriter.addHeading("Search configurations", 2)
+    configs.foreach(config => {
+      htmlWriter.addParagraph(config)
+    })
+
     htmlWriter.addHeading("General statistics")
 
-    htmlWriter.addParagraph("Best solution found per method")
+    htmlWriter.addHeading("Best solution found per method", 2)
     htmlWriter.addElement(
       "table",
       "Best solution found",
-      HtmlWriter.tableToHtmlString(renderBestSols(bestSols, configs, instances, instanceTypes.toMap))
+      HtmlWriter.tableToHtmlString(renderBestSols(bestSols, configs, instances, instanceTypes.toMap, bestknownSolutions.toMap))
     )
 
     htmlWriter.addElement(
@@ -35,18 +45,18 @@ object HtmlReporter extends App{
       HtmlWriter.tableToHtmlString(renderScoresByTime(anyTimeScores, configs, timeout, stepped = true))
     )
 
-    val anyTimeGapsArray = renderGapsByTime(anyTimeGaps, configs, timeout, stepped = true)
-    if(anyTimeGapsArray.length > 1)
-      htmlWriter.addElement(
-        "line",
-        "Gap per method over time",
-        HtmlWriter.tableToHtmlString(anyTimeGapsArray)
-      )
+//    val anyTimeGapsArray = renderGapsByTime(anyTimeGaps, configs, timeout, stepped = true)
+//    if(anyTimeGapsArray.length > 1)
+//      htmlWriter.addElement(
+//        "line",
+//        "Gap per method over time",
+//        HtmlWriter.tableToHtmlString(anyTimeGapsArray)
+//      )
 
     htmlWriter.addHeading("Instances statistics")
 
     instanceStats.sortBy(_._1).foreach{case(name, sols, scores, gaps) =>
-      htmlWriter.addParagraph(name)
+      htmlWriter.addHeading(name, 2)
 
       htmlWriter.addElement(
         "line",
@@ -78,12 +88,14 @@ object HtmlReporter extends App{
     Seq[String],
     Seq[String],
     mutable.Map[String, String],
+    mutable.Map[String, Option[Int]],
     mutable.Map[String, (Boolean, Option[Int], ArrayBuffer[(Long, String, Int)])]
   ) = {
 
     val data = mutable.Map[String, (Boolean, Option[Int], ArrayBuffer[(Long, String, Int)])]()
     val instances = mutable.HashSet[String]()
     val instanceTypes = mutable.Map[String, String]()
+    val bks = mutable.Map[String, Option[Int]]()
     val configs = mutable.HashSet[String]()
     val files = IOUtils.getFiles(directory, ".xml")
     var maxTimeout = 0L
@@ -97,13 +109,14 @@ object HtmlReporter extends App{
 
       instances.add(instance)
       if(!instanceTypes.contains(instance)) instanceTypes += instance -> problem
+      if(!bks.contains(instance)) bks += instance -> bestKnown
       configs.add(config)
 
       if(data.contains(instance)) data(instance)._3 ++= sols
       else data += instance -> (isMax, bestKnown, sols.to[ArrayBuffer])
     })
 
-    (maxTimeout, instances.toSeq.sorted, configs.toSeq.sorted, instanceTypes, data)
+    (maxTimeout, instances.toSeq.sorted, configs.toSeq.sorted, instanceTypes, bks, data)
   }
 
   //Reads an xml config_instance file
@@ -200,7 +213,8 @@ object HtmlReporter extends App{
   def processStats(
                     instances: Seq[String],
                     configs: Seq[String],
-                    data: mutable.Map[String, (Boolean, Option[Int], ArrayBuffer[(Long, String, Int)])]
+                    data: mutable.Map[String, (Boolean, Option[Int], ArrayBuffer[(Long, String, Int)])],
+                    nBks: Int
                   ): (
     Array[Array[Option[Int]]],
     ArrayBuffer[(Long, Array[Int])],
@@ -241,7 +255,11 @@ object HtmlReporter extends App{
         Some(sortedSols.map {case (time, sols) =>
           (time, sols.map {
             case None => None
-            case objective: Option[Int] => Some(Math.abs(bestKnown.get - objective.get).toDouble / bestKnown.get.toDouble)
+            case objective: Option[Int] => {
+              val diff = objective.get - bestKnown.get //TODO take into account objective type
+              if(bestKnown.get == 0) Some(diff.toDouble)
+              else Some(diff.toDouble / bestKnown.get.toDouble)
+            }
           })
         })
       else None
@@ -286,7 +304,7 @@ object HtmlReporter extends App{
     val anyTimeGap = gapsByTime(instances, configs, gaps).sortBy(_._1).map{case (time, gapOptions) =>
       (time, configs.indices.map(i =>{
         val gapValues = gapOptions.map(_(i)).filter(_.isDefined).map(_.get)
-        if(gapValues.length == gapOptions.length)
+        if(gapValues.length == nBks)
           Some(Math.pow(gapValues.foldLeft(1.0) { _ * _ }, 1.0/gapValues.length))
         else None
       }).toArray)
@@ -304,12 +322,16 @@ object HtmlReporter extends App{
                       bestSols: Array[Array[Option[Int]]],
                       configs: Seq[String],
                       instances: Seq[String],
-                      instanceTypes: Map[String, String]
+                      instanceTypes: Map[String, String],
+                      bestKnownSolutions: Map[String, Option[Int]]
                     ): Array[Array[String]] = {
     val array = ArrayBuffer[Array[String]]()
-    array += Array("'Instance'", "'Set'") ++ configs.map("'" + _ + "'")
+    array += Array("'Instance'", "'Set'", "'Best known solution'") ++ configs.map("'" + _ + "'")
     bestSols.indices.foreach(i => {
-      array += Array("'" + instances(i) + "'", "'" + instanceTypes(instances(i)) + "'") ++ bestSols(i).map{
+      array += Array("'" + instances(i) + "'", "'" + instanceTypes(instances(i)) + "'", bestKnownSolutions(instances(i)) match{
+        case None => "null"
+        case Some(bks: Int) => bks.toString
+      }) ++ bestSols(i).map{
         case None => "null"
         case Some(bestSol: Int) => bestSol.toString
       }

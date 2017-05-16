@@ -42,8 +42,9 @@ class HtmlWriter(templatePath: String, outputPath: String){
     * Adds a heading to the html document.
     * @param text the text of the heading.
     */
-  def addHeading(text: String): Unit = {
-    document += (("heading", text))
+  def addHeading(text: String, level: Int = 1): Unit = {
+    if(level == 2) document += (("sub-heading", text))
+    else document += (("heading", text))
   }
 
   /**
@@ -103,12 +104,12 @@ class HtmlWriter(templatePath: String, outputPath: String){
     .map(tuple => "[\n'" + tuple._1 + "',\n'" + tuple._2 + "',\n" + tuple._3 + ",\n" + tuple._4 + "\n]")
     .mkString(",\n")
 
-  private def renderDocument(): String = document
-    .map(tuple => tuple._1 match {
-      case "heading" => "<h1>" + tuple._2 + "</h1>"
-      case "paragraph" => "<p>" + tuple._2 + "</p>"
-      case "elem" => "<div id=" + tuple._2 + "></div>"
-    })
+  private def renderDocument(): String = document.map{
+      case ("heading", text) => "<h1>" + text + "</h1>"
+      case ("sub-heading", text) => "<h2>" + text + "</h2>"
+      case ("paragraph", text) => "<p>" + text + "</p>"
+      case ("elem", text) => "<div id=" + text + "></div>"
+    }
     .mkString("\n")
 
   private def getNextDefaultId: String = {
