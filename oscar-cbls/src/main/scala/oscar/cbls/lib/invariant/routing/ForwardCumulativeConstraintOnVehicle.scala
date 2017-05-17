@@ -37,7 +37,7 @@ object ForwardCumulativeConstraintOnVehicle {
    * @param maxCheckpointLevel the maximal level of checkpoints that this should support.
    *                           it consumes O(n) memory per level, so do not overdrive uselessly
    * @param maxStack the max levels of stack used for some internal data structure related to vehicle start.
-   *                 if you use lin-kerninghan-like neighborhood, or circle-mode exploration,
+   *                 if you use lin-kerninghan-like neighborhood, or other circle-mode exploration,
    *                 you might want to set it to some relatively small value, compared to the number of vehicles, such as 1%
    */
   def apply (routes:ChangingSeqValue,
@@ -107,7 +107,6 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
   private val contentAtNode = new MagicIntArrayStacked(maxCheckpointLevel, _ => 0, n)
   private val violationAndVehicleStartStack = new SeqCheckpointedValueStack[(Int,VehicleLocation)]()
   private var currentVehicleLocation:VehicleLocation = computeAndAffectContentAndVehicleStartPositionsFromScratch(routes.value,false)
-
 
   override def getContentAtVehicleStart(vehicle : Int) : Int = contentAtVehicleStart(vehicle)
 
@@ -217,7 +216,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
         (toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints)
 
       case s@SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode:Boolean, checkpointLevel:Int) =>
-        if(checkpointLevel <= maxCheckpointLevel) {
+        if(checkpointLevel < maxCheckpointLevel) {
           digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence) match {
             //checkpoints are managed about the vehicleLocation exclusively
             case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), removedPointsAfterPrev) =>

@@ -19,7 +19,7 @@ import oscar.cbls.algo.magicArray.MagicBoolArray
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.functional.IntSequence
 import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls.core.propagation.{ErrorChecker, Checker}
 import oscar.cbls.lib.invariant.routing.convention.CachedPositionOf
 
 import scala.collection.immutable.SortedSet
@@ -170,10 +170,12 @@ class Precedence(seq:ChangingSeqValue,
   }
 
   override def notifySeqChanges(v : ChangingSeqValue, d : Int, changes : SeqUpdate) {
+    checkInternals(new ErrorChecker())
     if (!digestUpdates(changes)) {
       //this also updates checkpoint links
       computeAndAffectViolationsFromScratch(changes.newValue)
     }
+    println("notifySeqChanges" + changes)
   }
 
   //should always be false when not in use
@@ -290,7 +292,7 @@ class Precedence(seq:ChangingSeqValue,
           var movedValues = x.movedValuesQList
           tmpArrayForDigestUpdate.all = false
           while(movedValues != null) {
-            tmpArrayForDigestUpdate(movedValues.head)
+            tmpArrayForDigestUpdate.update(movedValues.head,true)
             movedValues = movedValues.tail
           }
 

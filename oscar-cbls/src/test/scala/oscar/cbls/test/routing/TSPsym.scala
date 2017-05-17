@@ -16,6 +16,7 @@ package oscar.cbls.test.routing
   ******************************************************************************/
 
 import oscar.cbls.core.computation.Store
+import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.invariant.routing.NodeVehicleRestrictions
 import oscar.cbls.lib.invariant.seq.{PositionsOf, Size}
@@ -51,7 +52,7 @@ class MySimpleRouting(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, m
 
 object TSPsym extends App{
 
-  val n = 10000
+  val n = 1000
   val v = 1
 
   val maxPivotPerValuePercent = 4
@@ -61,7 +62,7 @@ object TSPsym extends App{
   val symmetricDistanceMatrix = RoutingMatrixGenerator(n)._1
 
   //  println("restrictions:" + restrictions)
-  val model = new Store() //checker = Some(new ErrorChecker()))
+  val model = new Store(checker = Some(new ErrorChecker()))
 
   val myVRP = new MySimpleRouting(n,v,symmetricDistanceMatrix,model,maxPivotPerValuePercent)
   val nodes = myVRP.nodes
