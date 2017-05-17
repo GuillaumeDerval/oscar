@@ -170,12 +170,10 @@ class Precedence(seq:ChangingSeqValue,
   }
 
   override def notifySeqChanges(v : ChangingSeqValue, d : Int, changes : SeqUpdate) {
-    checkInternals(new ErrorChecker())
     if (!digestUpdates(changes)) {
       //this also updates checkpoint links
       computeAndAffectViolationsFromScratch(changes.newValue)
     }
-    println("notifySeqChanges" + changes)
   }
 
   //should always be false when not in use
@@ -289,11 +287,13 @@ class Precedence(seq:ChangingSeqValue,
           //that'w why there is only the loop on precedences considering the precedences started at the flipped values,
           // not the ones ended at the flipped values
 
-          var movedValues = x.movedValuesQList
+          val movedValues = x.movedValuesQList
+
+          var digestedMovedValues = movedValues
           tmpArrayForDigestUpdate.all = false
-          while(movedValues != null) {
-            tmpArrayForDigestUpdate.update(movedValues.head,true)
-            movedValues = movedValues.tail
+          while(digestedMovedValues != null) {
+            tmpArrayForDigestUpdate.update(digestedMovedValues.head,true)
+            digestedMovedValues = digestedMovedValues.tail
           }
 
           for(value <- movedValues){
