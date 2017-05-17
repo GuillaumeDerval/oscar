@@ -37,16 +37,16 @@ run_search () {
 
 export -f run_search
 
-for d in `ls $BenchDir/benchmarks`; do
-    for d2 in `ls $BenchDir/benchmarks/$d`; do
+for d in `ls ${BenchDir}/benchmarks`; do
+    for d2 in `ls ${BenchDir}/benchmarks/${d}`; do
         if [ "${d2: -6}" == ".scala" ]; then
             f=${d2%%??????}
-            echo "$BenchRoot.benchmarks.$d.$f" >> $InstancesToRun
+            echo "$BenchRoot.benchmarks.$d.$f" >> ${InstancesToRun}
         elif [ -d "$BenchDir/benchmarks/$d/$d2" ]; then
-            for d3 in `ls $BenchDir/benchmarks/$d/$d2`; do
+            for d3 in `ls ${BenchDir}/benchmarks/${d}/${d2}`; do
                 if [ "${d3: -6}" == ".scala" ]; then
                     f=${d3%%??????}
-                    echo "$BenchRoot.benchmarks.$d.$d2.$f" >> $InstancesToRun
+                    echo "$BenchRoot.benchmarks.$d.$d2.$f" >> ${InstancesToRun}
                 fi
             done
         else
@@ -55,8 +55,10 @@ for d in `ls $BenchDir/benchmarks`; do
     done
 done
 
-parallel --progress --jobs 50% run_search $CP $Out :::: $InstancesToRun :::: $ConfigsFile
+parallel --progress --jobs 50% run_search ${CP} ${Out} :::: ${InstancesToRun} :::: ${ConfigsFile}
 
-rm $InstancesToRun
+rm ${InstancesToRun}
 
-scala -J-Xmx1g -cp $CP $BenchRoot.utils.HtmlReporter $Out
+scala -J-Xmx1g -cp ${CP} ${BenchRoot}.utils.HtmlReporter ${Out}
+
+cat "${Out}/${Date}-${VNum}_htmlReport.html" > report.html
