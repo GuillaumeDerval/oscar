@@ -1,11 +1,14 @@
-#!/bin/sh
+#!/bin/bash
+
+SCALA=/home/oscar/scala-2.11.8/bin
+SBT=/home/oscar/sbt-3/bin
 
 
 Date=$(date +"%m-%d-%y")
 VNum=`hg id -i`
 BenchDir="oscar-perf/src/main/scala/oscar/anytime/lns"
 BenchRoot="oscar.anytime.lns"
-SbtOutput=`sbt "project oscar-perf" "export runtime:fullClasspath"`
+SbtOutput=`$SBT/sbt "project oscar-perf" "export runtime:fullClasspath"`
 #echo $SbtOutput
 CP=${SbtOutput##*$'\n'}
 ConfigsFile="$BenchDir/configs.txt"
@@ -31,7 +34,7 @@ run_search () {
 #    echo "Output: $2"
     echo "instance: $3"
     echo "Config: $4"
-    scala -J-Xmx1g -cp $1 $3 $4 --out $2
+    $SCALA/scala -J-Xmx1g -cp $1 $3 $4 --out $2
     echo "\n\n\n"
 }
 
