@@ -117,13 +117,14 @@ class PDP(override val n:Int,
     * @param to The right border (exclusive)
     * @return preceding nodes of node int the route
     */
+  //TODO Clean this method
   def getNodesBetween(from: Option[Int], to: Option[Int]): Iterable[Int] ={
     require(from.isDefined || to.isDefined, "Either from or to must be defined !")
     def buildList(node: Int, betweenList: List[Int]): List[Int] ={
-      if(node == to.getOrElse(-1) || (node < v && node != from.get)) return betweenList
+      if(node == to.getOrElse(-1) || (node < v && node != from.getOrElse(getVehicleOfNode(to.get))) || node == n) return betweenList
       buildList(next(node).value, List(node) ++ betweenList)
     }
-    buildList(from.getOrElse(next(getVehicleOfNode(to.get)).value), List.empty)
+    buildList(from.getOrElse(getVehicleOfNode(to.get)), List.empty)
   }
 
 

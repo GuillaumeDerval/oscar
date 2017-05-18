@@ -298,9 +298,7 @@ abstract class AbstractVehicleCapacity(n:Int,
         else smartPrepend(0, 0, removedZones)
 
       val relativeAfterInNewSequence = m.oldPosToNewPos(m.after).get - vehicleLocationAfterMove.startPosOfVehicle(destinationVehicle)
-      val relativeAfterWhenSegmentIsRemoved = if(sourceVehicle != destinationVehicle) relativeAfterInNewSequence else if(m.moveDownwards) relativeAfterInNewSequence else relativeAfterInNewSequence - nbPointsInMovedSegment
-      def insertMovedZones(listOfZonesForVehicle : List[(Int, Int)], zonesToInsert : List[(Int, Int)],insertionPosition:Int = relativeAfterWhenSegmentIsRemoved +1) : List[(Int, Int)] = {
-
+      def insertMovedZones(listOfZonesForVehicle : List[(Int, Int)], zonesToInsert : List[(Int, Int)],insertionPosition:Int = relativeAfterInNewSequence +1) : List[(Int, Int)] = {
         listOfZonesForVehicle match {
           case Nil =>
 

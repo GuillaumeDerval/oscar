@@ -34,7 +34,7 @@ import scala.math._
   * Created by fabian on 04-07-16.
   */
 class PDP(override val n:Int, override val v:Int, override val m:Store, maxPivotPerValuePercent:Int = 4)
-  extends VRP(n,v,m,maxPivotPerValuePercent) with NextAndPrev{
+  extends oscar.cbls.business.routing.model.VRP(n,v,m,maxPivotPerValuePercent) with oscar.cbls.business.routing.model.NextAndPrev{
 
   /**
     * The array that maintains pickup and delivery node.

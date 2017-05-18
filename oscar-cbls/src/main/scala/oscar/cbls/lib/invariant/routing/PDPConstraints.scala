@@ -84,17 +84,18 @@ class PDPConstraints(pdp: PDP, constraints: ConstraintSystem){
     val contentsFlow = pdp.contentsFlow
     val vehiclesMaxCapacity:Int = vehiclesMaxCapacities.max
     val contentAtVehicleStart = Array.tabulate(v)(i => vehiclesMaxCapacity-vehiclesMaxCapacities(i))
-    ForwardCumulativeConstraintOnVehicle(
+    val maxChainLength = pdp.chains.map(_.length).max
+    constraints.add(EQ(0,ForwardCumulativeConstraintOnVehicle(
       routes,
       n,
       v,
       (from,to,fromContent) => fromContent + contentsFlow(to),
       vehiclesMaxCapacity,
       contentAtVehicleStart,
-      4,
+      maxChainLength,
       1,
       "VehicleMaxCapacity"
-    )
+    )))
   }
 
   /**

@@ -33,6 +33,7 @@ class MySimplePickupAndDeliveryProblem(n: Int, v: Int, m: Store,
 
   val constraints = PDPConstraints(this)
 
+  val closestNeighboursForward = computeClosestNeighborsForward()
 
   val routed = Content(routes.createClone(50)).setName("routed nodes")
   val unrouted = Diff(CBLSSetConst(SortedSet(nodes:_*)),routed).setName("unrouted nodes")
