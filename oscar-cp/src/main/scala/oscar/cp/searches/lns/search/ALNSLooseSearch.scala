@@ -88,6 +88,8 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       println(searchStore.nElements + " search operators remaining.")
     }
 
+    if(relaxStore.nElements == 0 || searchStore.nElements == 0) learnRatio += 0.2
+
     currentSol = bestSol
     solver.objective.objs.head.best = bestSol.objective
     endSearch = endTime
@@ -189,8 +191,14 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
     * resets the store(s)
     */
   override def resetStore(): Unit = {
-    relaxOps.foreach(_.setActive(true))
-    searchOps.foreach(_.setActive(true))
+    relaxOps.foreach(operator => {
+      operator.resetFails()
+      operator.setActive(true)
+    })
+    searchOps.foreach(operator => {
+      operator.resetFails()
+      operator.setActive(true)
+    })
 
     if(removedRelaxations.nonEmpty){
       removedRelaxations.foreach(operator => relaxStore.add(operator, metric(operator, 0, new SearchStatistics(0, 0, 0L, false,0L, 0, 0))))

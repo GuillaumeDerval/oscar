@@ -23,7 +23,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
   val endTime: Long = startTime + config.timeout
   var endSearch: Long = endTime
 
-  val learnRatio = 0.3 //The ratio of remaining time that a learning phase will have
+  var learnRatio = 0.3 //The ratio of remaining time that a learning phase will have
   var learning = false
   var maxSuccessOpTime: Long = config.timeout
   var stagnation = 0

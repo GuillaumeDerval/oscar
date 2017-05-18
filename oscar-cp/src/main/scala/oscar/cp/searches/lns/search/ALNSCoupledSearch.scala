@@ -57,6 +57,8 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
 
     if(!solver.silent) println(opStore.nElements + " operators remaining.")
 
+    if(opStore.nElements == 0) learnRatio += 0.2
+
     currentSol = bestSol
     solver.objective.objs.head.best = bestSol.objective
     endSearch = endTime
@@ -74,7 +76,7 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
     if(!learning) endSearch = Math.min(System.nanoTime() + maxSuccessOpTime * 10, endTime)
 
     if(!solver.silent) println("Starting new search with: " + operator.name)
-    if(!solver.silent) println("Operator timeout: " + Math.min(maxSuccessOpTime * 10, endTime - System.nanoTime())/1000000000.0 + "s")
+    if(!solver.silent) println("Operator timeout: " + (endSearch - System.nanoTime())/1000000000.0 + "s")
 
     val oldObjective = currentSol.objective
 
@@ -129,10 +131,15 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
     * resets the store(s)
     */
   override def resetStore(): Unit = {
-    operators.foreach(_.setActive(true))
+    operators.foreach(operator => {
+      operator.resetFails()
+      operator.setActive(true)
+    })
 
     if(removedOperators.nonEmpty){
-      removedOperators.foreach(operator => opStore.add(operator, metric(operator, 0, new SearchStatistics(0, 0, 0L, false,0L, 0, 0))))
+      removedOperators.foreach(operator => {
+        opStore.add(operator, metric(operator, 0, new SearchStatistics(0, 0, 0L, false,0L, 0, 0)))
+      })
       removedOperators.clear()
     }
   }

@@ -57,7 +57,7 @@ trait Benchmark {
     val result = alns.search()
 
     XmlWriter.writeToXml(
-      argMap.getOrElse('out, "../ALNS-bench-results/").asInstanceOf[String],
+      argMap.getOrElse('out, "ALNS-bench-results/").asInstanceOf[String],
       argMap.getOrElse('name, "default").asInstanceOf[String],
       config.timeout,
       IOUtils.getFileName(instance, keepExtension = false),

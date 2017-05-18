@@ -10,13 +10,12 @@ BenchDir="oscar-perf/src/main/scala/oscar/anytime/lns"
 BenchRoot="oscar.anytime.lns"
 SbtOutput=`$SBT/sbt "project oscar-perf" "export runtime:fullClasspath"`
 #echo $SbtOutput
-CP=${SbtOutput##*$'\n'}
+CP=${SbtOutput##*$'\n'}cat
 ConfigsFile="$BenchDir/configs.txt"
 Out="ALNS-bench-results/$Date-$VNum"
-Cores=4
 InstancesToRun="parallel-instances.txt"
 
-echo "\n\n\n"
+echo -e "\n\n\n"
 echo "Date -> $Date"
 echo "Version Number -> $VNum"
 echo "Benchmarks directory -> $BenchDir"
@@ -24,18 +23,20 @@ echo "Benchmark root -> $BenchRoot"
 echo "Classpath -> $CP"
 echo "Configs file -> $ConfigsFile"
 echo "Output parameter -> $Out"
-echo "Cores -> $Cores"
 echo "instances file -> $InstancesToRun"
-echo "\n\n\n"
+echo -e "\n\n\n"
+
+cat ${ConfigsFile}
+cat ${InstancesToRun}
 
 run_search () {
     echo "Starting new search:"
 #    echo "Classpath: $1"
 #    echo "Output: $2"
-    echo "instance: $3"
+    echo "Instance: $3"
     echo "Config: $4"
-    $SCALA/scala -J-Xmx1g -cp $1 $3 $4 --out $2
-    echo "\n\n\n"
+    ${SCALA}/scala -J-Xmx1g -cp $1 $3 $4 --out $2
+    echo -e "\n\n\n"
 }
 
 export -f run_search
@@ -58,10 +59,10 @@ for d in `ls ${BenchDir}/benchmarks`; do
     done
 done
 
-parallel --progress --jobs 50% run_search ${CP} ${Out} :::: ${InstancesToRun} :::: ${ConfigsFile}
+parallel --gnu --jobs 50% run_search ${CP} ${Out} :::: ${InstancesToRun} :::: ${ConfigsFile}
 
 rm ${InstancesToRun}
 
-scala -J-Xmx1g -cp ${CP} ${BenchRoot}.utils.HtmlReporter ${Out}
+${SCALA}/scala -J-Xmx1g -cp ${CP} ${BenchRoot}.utils.HtmlReporter ${Out}
 
 cat "${Out}/${Date}-${VNum}_htmlReport.html" > report.html

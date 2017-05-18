@@ -1,7 +1,10 @@
 package oscar.cp.searches.lns.selection
 
+import java.util.PriorityQueue
+
 import scala.collection.mutable
 import scala.util.Random
+import scala.collection.JavaConversions._
 
 /**
  * Adaptive store backed by a priority queue.
@@ -13,12 +16,12 @@ class PriorityStore[T](
                         val min: Boolean
                       ) extends AdaptiveStore[T]{
 
-  implicit val ordering: Ordering[(T, Double)] =
+  val ordering: Ordering[(T, Double)] =
     if(min) Ordering.by(x => (x._2, Random.nextInt()))
     else Ordering.by(x => (-x._2, Random.nextInt()))
 
-  val priority = new PriorityQueue[(T, Double)]
-  (e zip w).foreach(priority += _)
+  val priority = new PriorityQueue[(T, Double)](e.length, ordering)
+  (e zip w).foreach(priority.add)
 
   //Used to store the last selected elements which have not been adapted yet and are thus not in the PQ:
   var lastSelected = new mutable.HashSet[(T, Double)]()
@@ -31,13 +34,13 @@ class PriorityStore[T](
 
     //Adding the elements that have not been updated to the PQ
     if(lastSelected.nonEmpty){
-      lastSelected.foreach(i => priority += i)
+      lastSelected.foreach(priority.add)
       lastSelected.clear()
     }
 
     //Selecting next elem
-    val wrapper = priority.dequeue()
-    lastSelected.add(wrapper)
+    val wrapper = priority.poll()
+    lastSelected += wrapper
     wrapper._1
   }
 
@@ -45,15 +48,19 @@ class PriorityStore[T](
     getWrapper(elem) match{
       case None => throw new Exception("Element " + elem + " is not in store.")
       case Some((wrapper, cached: Boolean)) =>
-        if(cached) lastSelected.remove(wrapper)
-        else priority -= wrapper
-        priority += ((wrapper._1, (1.0 - rFactor) * wrapper._2 + rFactor * sFactor))
+        if(cached) lastSelected -= wrapper
+        else priority.remove(wrapper)
+        priority.add((wrapper._1, (1.0 - rFactor) * wrapper._2 + rFactor * sFactor))
     }
   }
 
   def getWrapper(elem: T): Option[((T, Double), Boolean)] = {
-    lastSelected.foreach(x => if(x._1.equals(elem)) return Some(x, true))
-    priority.foreach(x => if(x._1.equals(elem)) return Some(x, false))
+    lastSelected.foreach(x =>{
+      if(x._1.equals(elem)) return Some(x, true)
+    })
+    for(x <- priority){
+      if(x._1.equals(elem)) return Some(x, false)
+    }
     None
   }
 
@@ -63,13 +70,13 @@ class PriorityStore[T](
     getWrapper(elem) match{
       case None => throw new Exception("Element " + elem + " is not in store.")
       case Some((wrapper, cached: Boolean)) =>
-        if(cached) lastSelected.remove(wrapper)
-        else priority -= wrapper
+        if(cached) lastSelected -= wrapper
+        else priority.remove(wrapper)
     }
   }
 
   override def add(elem: T, sFactor: Double): Unit = {
-    priority += ((elem, sFactor))
+    priority.add((elem, sFactor))
   }
 
   override def nElements: Int = lastSelected.size + priority.size
