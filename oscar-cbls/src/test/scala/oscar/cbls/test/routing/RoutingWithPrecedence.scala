@@ -95,7 +95,6 @@ object RoutingWithPrecedence extends App{
   //search.verboseWithExtraInfo(2, ()=> "" + myVRP)
   search.verbose = 1
 
-
   search.doAllMoves(obj=myVRP.obj)
 
   println("final propagation: ")
