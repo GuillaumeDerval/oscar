@@ -16,6 +16,7 @@ package oscar.cbls.test.routing
   ******************************************************************************/
 
 import oscar.cbls.core.computation.Store
+import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.invariant.routing.NodeVehicleRestrictions
 import oscar.cbls.lib.invariant.seq.{PositionsOf, Size}
@@ -78,7 +79,7 @@ object RoutingWithNodeVehicleRestriction extends App{
   val restrictions = RoutingMatrixGenerator.generateRestrictions(n,v,nbRestrictions)
 
   //  println("restrictions:" + restrictions)
-  val model = new Store() //checker = Some(new ErrorChecker()))
+  val model = new Store(checker = Some(new ErrorChecker())) //
 
   val myVRP = new VRPWithNodeVehicleRestriction(n,v,symmetricDistanceMatrix,model,maxPivotPerValuePercent,restrictions)
   val nodes = myVRP.nodes

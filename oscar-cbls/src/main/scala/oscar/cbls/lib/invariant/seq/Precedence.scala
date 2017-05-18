@@ -19,7 +19,7 @@ import oscar.cbls.algo.magicArray.MagicBoolArray
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.functional.IntSequence
 import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls.core.propagation.{ErrorChecker, Checker}
 import oscar.cbls.lib.invariant.routing.convention.CachedPositionOf
 
 import scala.collection.immutable.SortedSet
@@ -287,11 +287,13 @@ class Precedence(seq:ChangingSeqValue,
           //that'w why there is only the loop on precedences considering the precedences started at the flipped values,
           // not the ones ended at the flipped values
 
-          var movedValues = x.movedValuesQList
+          val movedValues = x.movedValuesQList
+
+          var digestedMovedValues = movedValues
           tmpArrayForDigestUpdate.all = false
-          while(movedValues != null) {
-            tmpArrayForDigestUpdate(movedValues.head)
-            movedValues = movedValues.tail
+          while(digestedMovedValues != null) {
+            tmpArrayForDigestUpdate.update(digestedMovedValues.head,true)
+            digestedMovedValues = digestedMovedValues.tail
           }
 
           for(value <- movedValues){

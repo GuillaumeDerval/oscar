@@ -1343,7 +1343,6 @@ case class SnapShotOnEntry(a: Neighborhood, valuesToSave:Iterable[AbstractVariab
   }
 }
 
-
 /**
  * bounds the number of tolerated moves without improvements over the best value
  * the count is reset by the reset action.

@@ -67,7 +67,7 @@ object RoutingWithPrecedence extends App{
   val precedences = RoutingMatrixGenerator.generatePrecedence(n,v,nbPRecedences)
 
   //  println("restrictions:" + restrictions)
-  val model = new Store() //checker = Some() //new ErrorChecker()))
+  val model = new Store(checker = Some(new ErrorChecker())) //)) //checker = Some() //new ErrorChecker()))
 
   val myVRP = new MySimpleRoutingP(n,v,symmetricDistanceMatrix,model,maxPivotPerValuePercent,precedences)
   val nodes = myVRP.nodes
