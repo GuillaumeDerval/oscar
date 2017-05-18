@@ -26,8 +26,8 @@ echo "Output parameter -> $Out"
 echo "instances file -> $InstancesToRun"
 echo -e "\n\n\n"
 
-cat ${ConfigsFile}
-cat ${InstancesToRun}
+#cat ${ConfigsFile}
+#cat ${InstancesToRun}
 
 run_search () {
     echo "Starting new search:"

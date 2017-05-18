@@ -88,7 +88,11 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       println(searchStore.nElements + " search operators remaining.")
     }
 
-    if(relaxStore.nElements == 0 || searchStore.nElements == 0) learnRatio += 0.2
+    if(relaxStore.nElements == 0 || searchStore.nElements == 0){
+      learnRatio *= 2
+      learnFail += 1
+    }
+    else learnFail = 0
 
     currentSol = bestSol
     solver.objective.objs.head.best = bestSol.objective

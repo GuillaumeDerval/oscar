@@ -57,7 +57,11 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
 
     if(!solver.silent) println(opStore.nElements + " operators remaining.")
 
-    if(opStore.nElements == 0) learnRatio += 0.2
+    if(opStore.nElements == 0){
+      learnRatio *= 2
+      learnFail += 1
+    }
+    else learnFail = 0
 
     currentSol = bestSol
     solver.objective.objs.head.best = bestSol.objective
