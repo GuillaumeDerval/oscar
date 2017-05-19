@@ -25,8 +25,8 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
 
   var learnRatio = 0.3 //The ratio of remaining time that a learning phase will have
   var learning = false
-  var maxSuccessOpTime: Long = config.timeout
-  var learnFail = 0
+  var iterTimeout: Long = config.timeout
+  var searchFail = 0
   var stagnation = 0
   val stagnationThreshold = 100
 
@@ -75,7 +75,9 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
 
     if(!solver.silent) println("Time elapsed: " + (System.nanoTime() - startTime)/1000000000.0 + "s")
 
-    while(System.nanoTime() < endTime && !solver.objective.isOptimum() && learnFail < 10) {
+    while(System.nanoTime() < endTime && !solver.objective.isOptimum() && searchFail < 10) {
+      val startObjective = bestSol.objective
+
       //learning phase:
       if (config.learning) {
         if (!solver.silent) println("\nStarting learning phase...")
@@ -87,12 +89,16 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
       }
 
       //LNS loop
-      if (!solver.silent) println("\nStarting adaptive LNS...")
       alnsLoop()
 
+      if(bestSol.objective == startObjective) searchFail += 1
+      else searchFail = 0
+
+      if(!solver.silent) println("ALNS Search done, resetting operators...")
       resetStore()
     }
     ALNSElement.resetWorstTTI()
+    if(!solver.silent) println("Search done, retrieving results")
     getSearchResults
   }
 

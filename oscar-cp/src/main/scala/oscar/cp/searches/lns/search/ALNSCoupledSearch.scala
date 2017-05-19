@@ -57,11 +57,8 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
 
     if(!solver.silent) println(opStore.nElements + " operators remaining.")
 
-    if(opStore.nElements == 0){
-      learnRatio *= 2
-      learnFail += 1
-    }
-    else learnFail = 0
+    if(opStore.nElements == 0) learnRatio *= 2
+    else searchFail = 0
 
     currentSol = bestSol
     solver.objective.objs.head.best = bestSol.objective
@@ -70,14 +67,15 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
   }
 
   override def alnsLoop(): Unit = {
-    while (System.nanoTime() < endTime && opStore.nonEmpty && stagnation < stagnationThreshold) {
-      stagnation = 0
+    if (!solver.silent) println("\nStarting adaptive LNS...")
+    stagnation = 0
+    while (System.nanoTime() < endTime && opStore.nonEmpty && (!config.learning || stagnation < stagnationThreshold)) {
       lnsSearch(opStore.select())
     }
   }
 
   def lnsSearch(operator: ALNSOperator): Unit = {
-    if(!learning) endSearch = Math.min(System.nanoTime() + maxSuccessOpTime * 10, endTime)
+    if(!learning) endSearch = Math.min(System.nanoTime() + iterTimeout, endTime)
 
     if(!solver.silent) println("Starting new search with: " + operator.name)
     if(!solver.silent) println("Operator timeout: " + (endSearch - System.nanoTime())/1000000000.0 + "s")
@@ -98,7 +96,7 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
     val improvement = math.abs(currentSol.objective - oldObjective)
     if(improvement > 0){
       stagnation = 0
-      if(maxSuccessOpTime >= config.timeout || stats.time * 1000000 > maxSuccessOpTime) maxSuccessOpTime = stats.time * 1000000
+      if(iterTimeout >= config.timeout || stats.time * 1000000 > iterTimeout) iterTimeout = stats.time * 1000000 * 10
     }
     else stagnation += 1
 
@@ -106,7 +104,7 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
       if(!solver.silent) println("Search done, Improvement: " + improvement + "\n")
 
       //Updating probability distributions:
-      operator.update(improvement, stats, fail = stats.time > maxSuccessOpTime * 10)
+      operator.update(improvement, stats, fail = stats.time > iterTimeout)
     }
     else {
       if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement + "\n")

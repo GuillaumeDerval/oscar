@@ -25,6 +25,7 @@ class ALNSSingleParamOperator[T](
   private var selected: Option[ALNSParameter[T]] = None
   private var currentId = 0L
   private lazy val selectedMap: mutable.Map[Long, ALNSParameter[T]] = mutable.Map[Long, ALNSParameter[T]]()
+  private val removedParams = mutable.HashSet[ALNSParameter[T]]()
   //TODO: review selection mechanism
 
   /**
@@ -88,7 +89,11 @@ class ALNSSingleParamOperator[T](
       paramStore.adapt(param, metric(param, costImprovement, stats))
     else{
       paramStore.remove(param)
-      if(paramStore.isEmpty) setActive(false)
+      removedParams += param
+      if(paramStore.isEmpty){
+        println("Operator " + name + " deactivated")
+        setActive(false)
+      }
     }
   }
 
@@ -108,4 +113,19 @@ class ALNSSingleParamOperator[T](
   )
 
   override def nParamVals: Int = paramStore.nElements
+
+  override def setActive(state: Boolean): Unit = {
+    if(state){
+      removedParams.foreach(param =>{
+        param.setActive(state)
+        paramStore.add(param, metric(param, 0, new SearchStatistics(0, 0, 0L, false,0L, 0, 0)))
+      })
+    }
+    super.setActive(state)
+  }
+  override def resetFails(): Unit = {
+    removedParams.foreach(_.resetFails())
+    paramStore.getElements.foreach(_.resetFails())
+    super.resetFails()
+  }
 }

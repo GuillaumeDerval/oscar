@@ -88,11 +88,8 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       println(searchStore.nElements + " search operators remaining.")
     }
 
-    if(relaxStore.nElements == 0 || searchStore.nElements == 0){
-      learnRatio *= 2
-      learnFail += 1
-    }
-    else learnFail = 0
+    if(relaxStore.nElements == 0 || searchStore.nElements == 0) learnRatio *= 2
+    else searchFail = 0
 
     currentSol = bestSol
     solver.objective.objs.head.best = bestSol.objective
@@ -101,17 +98,18 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
   }
 
   override def alnsLoop(): Unit = {
-    while (System.nanoTime() < endTime  && relaxStore.nonEmpty && searchStore.nonEmpty && stagnation < stagnationThreshold) {
-      stagnation = 0
+    if (!solver.silent) println("\nStarting adaptive LNS...")
+    stagnation = 0
+    while (System.nanoTime() < endTime  && relaxStore.nonEmpty && searchStore.nonEmpty && (!config.learning || stagnation < stagnationThreshold)) {
       lnsSearch(relaxStore.select(), searchStore.select())
     }
   }
 
   def lnsSearch(relax: ALNSOperator, search: ALNSOperator): Unit = {
-    if(!learning) endSearch = Math.min(System.nanoTime() + maxSuccessOpTime * 10, endTime)
+    if(!learning) endSearch = Math.min(System.nanoTime() + iterTimeout * 10, endTime)
 
     if(!solver.silent) println("Starting new search with: " + relax.name + " and " + search.name)
-    if(!solver.silent) println("Operator timeout: " + Math.min(maxSuccessOpTime * 10, endTime - System.nanoTime())/1000000000.0 + "s")
+    if(!solver.silent) println("Operator timeout: " + Math.min(iterTimeout * 10, endTime - System.nanoTime())/1000000000.0 + "s")
 
     val oldObjective = currentSol.objective
 
@@ -130,7 +128,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
     val improvement = math.abs(currentSol.objective - oldObjective)
     if(improvement > 0){
       stagnation = 0
-      if(maxSuccessOpTime >= config.timeout || stats.time * 1000000 > maxSuccessOpTime) maxSuccessOpTime = stats.time * 1000000
+      if(iterTimeout >= config.timeout || stats.time * 1000000 > iterTimeout) iterTimeout = stats.time * 1000000
     }
     else stagnation += 1
 
@@ -138,7 +136,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       if(!solver.silent) println("Search done, Improvement: " + improvement + "\n")
 
       //Updating probability distributions:
-      relax.update(improvement, stats, fail = stats.time > maxSuccessOpTime * 10)
+      relax.update(improvement, stats, fail = stats.time > iterTimeout * 10)
       if(!relax.isInstanceOf[ALNSReifiedOperator]){
         if (relax.isActive) relaxStore.adapt(relax, metric(relax, improvement, stats))
         else {
@@ -149,7 +147,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
           }
         }
       }
-      search.update(improvement, stats, fail = stats.time > maxSuccessOpTime * 10)
+      search.update(improvement, stats, fail = stats.time > iterTimeout * 10)
       if(!relax.isInstanceOf[ALNSReifiedOperator]){
         if (search.isActive) searchStore.adapt(search, metric(search, improvement, stats))
         else {

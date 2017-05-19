@@ -28,6 +28,8 @@ class ALNSTwoParamsOperator[T1, T2](
   private var selected2: Option[ALNSParameter[T2]] = None
   private var currentId = 0L
   private lazy val selectedMap: mutable.Map[Long, (ALNSParameter[T1], ALNSParameter[T2])] = mutable.Map[Long, (ALNSParameter[T1], ALNSParameter[T2])]()
+  private val removedParam1 = mutable.HashSet[ALNSParameter[T1]]()
+  private val removedParam2 = mutable.HashSet[ALNSParameter[T2]]()
   //TODO: Review selection mechanism
 
   /**
@@ -102,6 +104,7 @@ class ALNSTwoParamsOperator[T1, T2](
       param1Store.adapt(param1, metric(param1, costImprovement, stats))
     else{
       param1Store.remove(param1)
+      removedParam1 += param1
       if(param1Store.isEmpty) setActive(false)
     }
 
@@ -110,6 +113,7 @@ class ALNSTwoParamsOperator[T1, T2](
       param2Store.adapt(param2, metric(param2, costImprovement, stats))
     else{
       param2Store.remove(param2)
+      removedParam2 += param2
       if(param2Store.isEmpty) setActive(false)
     }
   }
@@ -140,5 +144,26 @@ class ALNSTwoParamsOperator[T1, T2](
   def nParamVals(param: Int): Int = param match{
     case 1 => param1Store.nElements
     case 2 => param2Store.nElements
+  }
+
+  override def setActive(state: Boolean): Unit = {
+    if(state){
+      removedParam1.foreach(param =>{
+        param.setActive(state)
+        param1Store.add(param, metric(param, 0, new SearchStatistics(0, 0, 0L, false,0L, 0, 0)))
+      })
+      removedParam2.foreach(param =>{
+        param.setActive(state)
+        param2Store.add(param, metric(param, 0, new SearchStatistics(0, 0, 0L, false,0L, 0, 0)))
+      })
+    }
+    super.setActive(state)
+  }
+  override def resetFails(): Unit = {
+    removedParam1.foreach(_.resetFails())
+    removedParam2.foreach(_.resetFails())
+    param1Store.getElements.foreach(_.resetFails())
+    param2Store.getElements.foreach(_.resetFails())
+    super.resetFails()
   }
 }
