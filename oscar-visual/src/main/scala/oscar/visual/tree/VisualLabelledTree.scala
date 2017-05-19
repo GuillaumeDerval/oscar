@@ -14,9 +14,12 @@
  ******************************************************************************/
 package oscar.visual.tree
 
+import java.awt.Color
+
 import oscar.util.tree.Node
 import oscar.util.tree.PositionedNode
 import javax.swing.SwingUtilities
+
 import oscar.visual.shapes.VisualLabelledRoundRectangle
 import oscar.visual.VisualDrawing
 import oscar.visual.VisualFrame
@@ -69,6 +72,9 @@ class VisualLabelledTree[T](var tree: PositionedNode[T]) extends VisualDrawing(f
       val newNode = new VisualLabelledRoundRectangle(this, accOffset + node.pos - node.getMaxStringWidth(this) / 2, levelHeights(level), node.label.toString, 10)
       newNode.innerCol = node.col
       newNode.onClick(node.action())
+      newNode.onClick {
+        newNode.innerCol = Color.gray;
+      }
       rectSet += newNode
       for (i <- node.sons.indices) {
         branchSet += new VisualLabelledBranch(this,

@@ -274,6 +274,7 @@ class ReversibleSparseSet(s: ReversibleContext, val minValue: Int, val maxValue:
       var i = 0
       while (i < size) {
         dest(i) += offset
+        i += 1
       }
     }
     size
