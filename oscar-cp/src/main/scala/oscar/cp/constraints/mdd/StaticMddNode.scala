@@ -96,7 +96,6 @@ class StaticMddNode(val layer : Int) extends GlobalNode{
         val inEdge = addedNode.pollFirstInEdge()
         inEdge.unlink()
         val newEdge = new StaticMddEdge(inEdge.topNode, this, inEdge.value)
-        newEdge.link()
       }
 
       /** Unlink bottom edges **/

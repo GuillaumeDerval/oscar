@@ -180,14 +180,12 @@ class StaticMddImpl(val arity: Int) extends StaticMdd {
             val newNode = new StaticMddNode(splitted_Node.originalNode.layer)
             layers(newNode.layer).add(newNode)
             val newInEdge = new StaticMddEdge(oldInEdge.topNode, newNode, oldInEdge.value)
-            newInEdge.link()
             // Now add the outEdges (that are still valid for this splittedNode)
             val outIterator = splitted_Node.getOutEdges().keySet().iterator()
             while (outIterator.hasNext) {
               val outVal = outIterator.next()
               val destNode = splitted_Node.getOutEdges().get(outVal)
               val newOut = new StaticMddEdge(newNode, destNode, outVal)
-              newOut.link()
             }
             for (j <- 0 until constraints.size()) {
               constraints.get(j).computeDownStates(newNode)
@@ -384,12 +382,10 @@ class StaticMddImpl(val arity: Int) extends StaticMdd {
           val outEdge = curNode.getOutEdge(tuple(i))
           outEdge.unlink()
           val newInEdge = new StaticMddEdge(curNode, newNode, tuple(i))
-          newInEdge.link()
           val outIterator = outEdge.bottomNode.getOutEdgeIterator()
           while (outIterator.hasNext) {
             val outToCopy = outIterator.next()
             val copiedEdge = new StaticMddEdge(newNode, outToCopy.bottomNode, outToCopy.value)
-            copiedEdge.link()
           }
           curNode = newNode
           alreadySplitted = true
@@ -408,13 +404,11 @@ class StaticMddImpl(val arity: Int) extends StaticMdd {
       val newNode = new StaticMddNode(i+1)
       layers(i+1).add(newNode)
       val newEdge = new StaticMddEdge(curNode,newNode,tuple(i))
-      newEdge.link()
       curNode = newNode
       modifiedNode(i+1).add(newNode)
       i += 1
     }
     val lastEdge = new StaticMddEdge(curNode,end,tuple(i))
-    lastEdge.link()
     /** Step 3 : Incremental reduce **/
     pReduce(modifiedNode,stringHashToRemove)
 
@@ -456,12 +450,10 @@ class StaticMddImpl(val arity: Int) extends StaticMdd {
         val outEdge = curNode.getOutEdge(tuple(i))
         outEdge.unlink()
         val newInEdge = new StaticMddEdge(curNode, newNode, tuple(i))
-        newInEdge.link()
         val outIterator = outEdge.bottomNode.getOutEdgeIterator()
         while (outIterator.hasNext) {
           val outToCopy = outIterator.next()
           val copiedEdge = new StaticMddEdge(newNode, outToCopy.bottomNode, outToCopy.value)
-          copiedEdge.link()
         }
         curNode = newNode
         alreadySplitted = true
@@ -668,4 +660,19 @@ class StaticMddImpl(val arity: Int) extends StaticMdd {
     nodes.foreach(_.createReversibleStructures)
     map
   }
+
+
+  def createNode(layer: Int): StaticMddNode = {
+    val node = new StaticMddNode(layer)
+    layers(layer).add(node)
+    node
+  }
+
+
+  def addEdge(fromNode: StaticMddNode, toNode: StaticMddNode, value: Int): StaticMddEdge = {
+    val edge = new StaticMddEdge(fromNode,toNode,value)
+    edge
+  }
+
+
 }

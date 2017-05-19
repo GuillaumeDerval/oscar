@@ -1,9 +1,3 @@
-package oscar.cp.constraints.mdd
-
-
-import java.util
-
-import oscar.algo.reversible.ReversibleSparseSet
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +13,12 @@ import oscar.algo.reversible.ReversibleSparseSet
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+package oscar.cp.constraints.mdd
 
+
+import java.util
+
+import oscar.algo.Inconsistency
 import oscar.algo.reversible.{ReversibleContext, ReversibleInt, ReversibleSharedSparseSet}
 import oscar.cp._
 import oscar.cp.core.variables.CPVar
@@ -53,11 +52,11 @@ class Mdd4RConstraint(variables: Array[CPIntVar], mdd: StaticMdd, reversibleCont
     **/
 
   // Values active for each variable in the mdd
-  private[this] val activeValues: Array[ReversibleSharedSparseSet] = Array.tabulate(nVariables)(x => new ReversibleSharedSparseSet(reversibleContext, staticDomains(x).last() + 1))
+  private[this] var activeValues: Array[ReversibleSharedSparseSet] = null
   // Number of remaining edges per layer (need to be set in setup)
-  private[this] val edgeCount: Array[ReversibleInt] = Array.fill(nVariables)(ReversibleInt(0)(reversibleContext))
+  private[this] var edgeCount: Array[ReversibleInt] = null
   // Nodes that are actives on each layer
-  private[this] val activeNodes: Array[ReversibleSharedSparseSet] = Array.fill(nVariables + 1)(new ReversibleSharedSparseSet(reversibleContext, nNodes))
+  private[this] var activeNodes: Array[ReversibleSharedSparseSet] = null
 
 
   /**
@@ -68,6 +67,13 @@ class Mdd4RConstraint(variables: Array[CPIntVar], mdd: StaticMdd, reversibleCont
     * 4 : Propagate
     */
   override def setup(l: _root_.oscar.cp.core.CPPropagStrength) = {
+    if (nEdges == 0) throw Inconsistency
+
+    activeValues = Array.tabulate(nVariables)(x => new ReversibleSharedSparseSet(reversibleContext, staticDomains(x).last() + 1))
+    edgeCount = Array.fill(nVariables)(ReversibleInt(0)(reversibleContext))
+    activeNodes = Array.fill(nVariables + 1)(new ReversibleSharedSparseSet(reversibleContext, nNodes))
+
+
     /** Step 1 **/
     var i = 0
     var j = 0
@@ -546,7 +552,7 @@ class Mdd4RConstraint(variables: Array[CPIntVar], mdd: StaticMdd, reversibleCont
   private def setSupports(): Array[Array[ReversibleSharedSparseSet]] = {
     //val outputSupportSet = Array.fill[util.HashMap[Int, ReversibleSharedSparseSet]](nVariables)(new util.HashMap[Int, ReversibleSharedSparseSet]())
 
-    val nValues = staticDomains.map(_.last()).max + 1
+    val nValues = if (nEdges == 0) 0 else staticDomains.map(_.last()).max + 1
 
     val outputSupportSet = Array.ofDim[ReversibleSharedSparseSet](nVariables,nValues)
 

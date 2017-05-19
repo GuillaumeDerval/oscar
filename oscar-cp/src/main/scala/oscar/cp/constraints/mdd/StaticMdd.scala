@@ -133,12 +133,10 @@ object StaticMdd {
               val newNode = new StaticMddNode(i + 1)
               mdd.layers(i + 1).add(newNode)
               val newEdge = new StaticMddEdge(curNode, newNode, value)
-              newEdge.link()
               curNode = newNode
             }
             else {
               val newEdge = new StaticMddEdge(curNode, mdd.end, value)
-              newEdge.link()
             }
           }
           i += 1
@@ -196,7 +194,6 @@ object StaticMdd {
       var i = 0
       while (i < bucket.size()) {
         val newEdge = new StaticMddEdge(curNode, mdd.end, bucket.get(i)(curDepth))
-        newEdge.link()
         i += 1
       }
     }
@@ -220,7 +217,6 @@ object StaticMdd {
           val newNode = new StaticMddNode(curDepth + 1)
           mdd.layers(curDepth + 1).add(newNode)
           val newEdge = new StaticMddEdge(curNode, newNode, mini + i)
-          newEdge.link()
           utilRecursiveBuilding(mdd, buckets(i), newNode, bucketsMin(i), bucketsMax(i), curDepth + 1)
         }
         i += 1
@@ -249,7 +245,6 @@ object StaticMdd {
       }
       for (value <- domains(i)) {
         val edge = new StaticMddEdge(curNode, dest, value)
-        edge.link()
       }
       i += 1
       curNode = dest
@@ -291,7 +286,6 @@ object StaticMdd {
           val nextState = transition(stateVal)(letter)
           if(nextState!=nullState){
             val newMddEdge = new StaticMddEdge(stateNode,layerBelow(nextState),letter)
-            newMddEdge.link()
           }
         }
       }
@@ -322,7 +316,6 @@ object StaticMdd {
         if(acceptingStates.contains(dest)){
           // Add the edge
           val newEdge = new StaticMddEdge(node,mdd.end,letter)
-          newEdge.link()
         }
       }
       // If no edge lead to final state, add it to deadEnds
@@ -389,7 +382,6 @@ object StaticMdd {
               }
               // Now add the arc
               val edge = new StaticMddEdge(u,v,value)
-              edge.link()
             }
           }
 

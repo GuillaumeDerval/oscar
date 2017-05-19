@@ -13,14 +13,8 @@ package oscar.cp.constraints.mdd
 
 class StaticMddEdge(val topNode: StaticMddNode, val bottomNode: StaticMddNode, val value: Int) extends Ordered[StaticMddEdge] {
   private[this] val id: Long = StaticMddEdge.getId
-
-  /**
-    * Link / unlink the edge to the top/bot node
-    */
-  def link(): Unit = {
-    topNode.addOutEdge(value, this)
-    bottomNode.addInEdge(this)
-  }
+  topNode.addOutEdge(value, this)
+  bottomNode.addInEdge(this)
 
   def unlink(): Unit = {
     topNode.removeOutEdge(value)
