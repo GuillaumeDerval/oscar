@@ -2,6 +2,7 @@ package oscar.anytime.lns.utils
 
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.reflect.ClassTag
 import scala.xml.{Node, XML}
 
 /**
@@ -70,12 +71,12 @@ object HtmlReporter extends App{
         HtmlWriter.tableToHtmlString(renderScoresByTime(scores, configs, timeout, stepped = true))
       )
 
-      if(gaps.isDefined)
-        htmlWriter.addElement(
-          "line",
-          "Gap evolution",
-          HtmlWriter.tableToHtmlString(renderGapsByTime(gaps.get, configs, timeout, stepped = true))
-        )
+//      if(gaps.isDefined)
+//        htmlWriter.addElement(
+//          "line",
+//          "Gap evolution",
+//          HtmlWriter.tableToHtmlString(renderGapsByTime(gaps.get, configs, timeout, stepped = true))
+//        )
     }
 
     htmlWriter.writeToHtml()
@@ -179,8 +180,8 @@ object HtmlReporter extends App{
       gapValues.indices.foreach(configIndex =>{
         currentGaps(instanceIndex)(configIndex) = gapValues(configIndex)
       })
-      if(gapsByTime.nonEmpty && gapsByTime.last._1 == time) gapsByTime.last._2(instanceIndex) = currentGaps(instanceIndex)
-      else gapsByTime += ((time, currentGaps.clone()))
+      if(gapsByTime.nonEmpty && gapsByTime.last._1 == time) gapsByTime.last._2(instanceIndex) = currentGaps(instanceIndex).clone
+      else gapsByTime += ((time, arrayCopy(currentGaps)))
     }
 
     gapsByTime
@@ -197,13 +198,13 @@ object HtmlReporter extends App{
     val currentScores: Array[Array[Int]] = Array.fill(instances.length, configs.length)(0)
     val scoresByTime = mutable.ArrayBuffer[(Long, Array[Array[Int]])]()
 
-    scores.sortBy(_._1).foreach{case (time, instance, gapValues) =>
+    scores.sortBy(_._1).foreach{case (time, instance, scoreValues) =>
       val instanceIndex = instMapping(instance)
-      gapValues.indices.foreach(configIndex =>{
-        currentScores(instanceIndex)(configIndex) = gapValues(configIndex)
+      scoreValues.indices.foreach(configIndex =>{
+        currentScores(instanceIndex)(configIndex) = scoreValues(configIndex)
       })
-      if(scoresByTime.nonEmpty && scoresByTime.last._1 == time) scoresByTime.last._2(instanceIndex) = currentScores(instanceIndex)
-      else scoresByTime += ((time, currentScores.clone()))
+      if(scoresByTime.nonEmpty && scoresByTime.last._1 == time) scoresByTime.last._2(instanceIndex) = currentScores(instanceIndex).clone()
+      else scoresByTime += ((time, arrayCopy(currentScores)))
     }
 
     scoresByTime
@@ -305,7 +306,7 @@ object HtmlReporter extends App{
       (time, configs.indices.map(i =>{
         val gapValues = gapOptions.map(_(i)).filter(_.isDefined).map(_.get)
         if(gapValues.length == nBks)
-          Some(Math.pow(gapValues.foldLeft(1.0) { _ * _ }, 1.0/gapValues.length))
+          Some(Math.pow(gapValues.map(value => if(value <= 0.0) 0.000001 else value).foldLeft(1.0) { _ * _ }, 1.0/gapValues.length))
         else None
       }).toArray)
     }
@@ -386,4 +387,6 @@ object HtmlReporter extends App{
     array += Array((timeout/1000000000.0).toString) ++ previous
     array.toArray
   }
+
+  private def arrayCopy[T](array: Array[Array[T]])(implicit e: ClassTag[T]): Array[Array[T]] = array.map(_.clone)
 }

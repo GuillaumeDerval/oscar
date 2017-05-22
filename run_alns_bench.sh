@@ -10,7 +10,7 @@ BenchDir="oscar-perf/src/main/scala/oscar/anytime/lns"
 BenchRoot="oscar.anytime.lns"
 SbtOutput=`$SBT/sbt "project oscar-perf" "export runtime:fullClasspath"`
 #echo $SbtOutput
-CP=${SbtOutput##*$'\n'}cat
+CP=${SbtOutput##*$'\n'}
 ConfigsFile="$BenchDir/configs.txt"
 Out="ALNS-bench-results/$Date-$VNum"
 InstancesToRun="parallel-instances.txt"
@@ -24,10 +24,7 @@ echo "Classpath -> $CP"
 echo "Configs file -> $ConfigsFile"
 echo "Output parameter -> $Out"
 echo "instances file -> $InstancesToRun"
-echo -e "\n\n\n"
-
-#cat ${ConfigsFile}
-#cat ${InstancesToRun}
+echo -e "\n"
 
 run_search () {
     echo "Starting new search:"
@@ -58,6 +55,12 @@ for d in `ls ${BenchDir}/benchmarks`; do
         fi
     done
 done
+
+echo -e "\nConfigurations:"
+cat ${ConfigsFile}
+echo -e "\nInstances:"
+cat ${InstancesToRun}
+echo -e "\n\n\n"
 
 parallel --gnu --jobs 50% run_search ${CP} ${Out} :::: ${InstancesToRun} :::: ${ConfigsFile}
 
