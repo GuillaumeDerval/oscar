@@ -39,7 +39,6 @@ package oscar.cbls.business.routing.neighborhood
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.EasyNeighborhood
@@ -66,12 +65,11 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
   //the indice to start with for the exploration
   var startIndice: Int = 0
 
-  var pointToRemove:Int = 0;
-  var positionOfPointToRemove:Int = 0;
+  var pointToRemove:Int = -1
+  var positionOfPointToRemove:Int = -1
 
   val v = vrp.v
   val seq = vrp.routes
-
 
   override def exploreNeighborhood(): Unit = {
 
@@ -99,11 +97,13 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
           if (evaluateCurrentMoveObjTrueIfStopRequired(evalObjAndRollBack())) {
             seq.releaseTopCheckpoint()
             startIndice = pointToRemove + 1
+            positionOfPointToRemove = -1
             return
           }
       }
     }
     seq.releaseTopCheckpoint()
+    positionOfPointToRemove = -1
   }
 
   override def instantiateCurrentMove(newObj: Int) =

@@ -1764,7 +1764,15 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
     padToLength("" + avgTimeSpendMove,12)+ " " +
     totalTimeSpentNoMoveFound)
 
-  private def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
+  private def padToLength(s: String, l: Int) = {
+    val extended = (s + nStrings(l+1, " "))
+    val nextchar = extended.substring(l+1, l+1)
+    if(nextchar equals " "){
+      extended.substring(0, l-1) + "§"
+    }else{
+      extended.substring(0, l)
+    }
+  }
   private def nStrings(n: Int, s: String): String = if (n <= 0) "" else s + nStrings(n - 1, s)
 
   //  override def toString: String = "Statistics(" + a + " nbCalls:" + nbCalls + " nbFound:" + nbFound + " totalGain:" + totalGain + " totalTimeSpent " + totalTimeSpent + " ms timeSpendWithMove:" + totalTimeSpentMoveFound + " ms totalTimeSpentNoMoveFound " + totalTimeSpentNoMoveFound + " ms)"
