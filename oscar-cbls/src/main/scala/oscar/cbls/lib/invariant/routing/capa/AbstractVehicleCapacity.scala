@@ -1,4 +1,4 @@
-package oscar.cbls.lib.invariant.routing.capa
+/*package oscar.cbls.lib.invariant.routing.capa
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -595,3 +595,4 @@ object AbstractVehicleCapacity{
     throw new Error("should not happen")
   }
 }
+*/

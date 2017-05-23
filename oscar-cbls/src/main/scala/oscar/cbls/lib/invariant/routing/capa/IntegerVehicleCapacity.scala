@@ -1,4 +1,6 @@
+/*
 package oscar.cbls.lib.invariant.routing.capa
+
 
 /**
  * Created by rdl on 18-05-17.
@@ -21,3 +23,5 @@ abstract class IntegerVehicleCapacity {
   def setVehicleContentAtEnd(vehicle:Int,content:Int)
 
 }
+
+*/
