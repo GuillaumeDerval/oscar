@@ -8,7 +8,7 @@ import oscar.cbls.lib.invariant.seq.Content
 import oscar.cbls.lib.invariant.set.Diff
 import oscar.cbls.modeling.Algebra._
 
-import scala.collection.immutable.{List, SortedSet}
+import scala.collection.immutable.{HashMap, List, SortedSet}
 import scala.collection.mutable.ListBuffer
 import scala.math._
 
@@ -49,7 +49,7 @@ class PDP(override val n:Int,
     */
   val prevNode:Array[Option[Int]] = Array.tabulate(n)(_ => None)
 
-  val chainDico = chains.flatMap(c => {
+  val nextNodesInChains = chains.flatMap(c => {
     def generateDico(currentList: List[Int], dico : List[(Int,List[Int])]): List[(Int,List[Int])] ={
       if(currentList.isEmpty)
         dico
@@ -57,6 +57,16 @@ class PDP(override val n:Int,
         generateDico(currentList.tail, List(currentList.head -> currentList.tail) ++ dico)
     }
     generateDico(c, List.empty)
+  }).toMap
+
+  val prevNodesInChains = chains.flatMap(c => {
+    def generateDico(currentList: List[Int], dico : List[(Int,List[Int])]): List[(Int,List[Int])] ={
+      if(currentList.isEmpty)
+        dico.map(x => (x._1,x._2.reverse))
+      else
+        generateDico(currentList.tail, List(currentList.head -> currentList.tail) ++ dico)
+    }
+    generateDico(c.reverse, List.empty)
   }).toMap
 
   for(chain <- chains) {
@@ -88,14 +98,14 @@ class PDP(override val n:Int,
     * @return An array of unrouted Pickups
     */
   def unroutedPickups: Iterable[Int]={
-    unroutedChains.map(_.head).filter(!isRouted(_))
+    unroutedChains.map(_.head)
   }
 
   /**
     * @return An array of routed Pickups
     */
   def routedPickups: Iterable[Int]={
-    routedChains.map(_.head).filter(isRouted)
+    routedChains.map(_.head)
   }
 
   def isPickup(node: Int) = chainOfNode(node).head == node
@@ -316,21 +326,32 @@ class PDP(override val n:Int,
 
   /**
     * This method compute the closest neighbor of a node base on arrivalTime.
+    * The clusterRange is used to filter the cluster that we want to inspect
+    * If the node isn't routed yet, we add his chain's last previous node
+    * (we should add them first, otherwise the router won't be able to add this one => use Mu combinator)
     */
-  def computeClosestNeighborInTime(filter : ((Int,Int) => Boolean) = (_,_) => true): Array[Iterable[Int]] ={
-    Array.tabulate(n)(node => {
-      val nodeCluster = arrivalTimeCluster.values(node).value
-      val res:ListBuffer[Int] = new ListBuffer[Int]()
-      for(i <- 0 to nodeCluster)
-        for(neighbor <- arrivalTimeCluster.clusters(i).value.toList if isRouted(neighbor) && filter(n,neighbor))
-          if(leaveTimes(neighbor).value+travelDurationMatrix.getTravelDuration(neighbor, 0, node) < deadlines(node)) {
-            val nextOfNeighbor = next(neighbor).value
-            val neighborToNode = max(leaveTimes(neighbor).value + travelDurationMatrix.getTravelDuration(neighbor, 0, node), earlylines(node))
-            val neighborToNodeToNext = neighborToNode + taskDurations(node) + travelDurationMatrix.getTravelDuration(node, 0, nextOfNeighbor)
-            if(neighborToNodeToNext < deadlines(nextOfNeighbor))
-              res.append(neighbor)
-          }
-      res.reverse.toList
-    })
+  def computeClosestNeighborInTime( clusterRange: (Int) => Range = (_) => arrivalTimeCluster.clusters.indices,
+                                    k: Int = Int.MaxValue,
+                                    filterNode: (Int) => Boolean = (_) => true
+                                  )(node:Int): Iterable[Int] ={
+
+    def buildClosestNeighbor(neighbors: List[Int], closestNeighbors: List[(Int,Int)]): List[(Int,Int)] ={
+      if(neighbors.isEmpty)
+        return closestNeighbors
+      val neighbor = neighbors.head
+      if (leaveTimes(neighbor).value + travelDurationMatrix.getTravelDuration(neighbor, 0, node) <= deadlines(node)) {
+        val nextOfNeighbor = next(neighbor).value
+        val neighborToNode = max(leaveTimes(neighbor).value + travelDurationMatrix.getTravelDuration(neighbor, 0, node), earlylines(node))
+        val neighborToNodeToNext = neighborToNode + taskDurations(node) + travelDurationMatrix.getTravelDuration(node, 0, nextOfNeighbor)
+        if (neighborToNodeToNext <= deadlines(nextOfNeighbor) && filterNode(node))
+          return buildClosestNeighbor(neighbors.tail, List((neighbor,neighborToNodeToNext)) ++ closestNeighbors)
+      }
+      buildClosestNeighbor(neighbors.tail, closestNeighbors)
+    }
+
+    buildClosestNeighbor(
+      (for(c <- clusterRange(node)) yield arrivalTimeCluster.clusters(c).value.filter(isRouted)).flatten.toList,
+      List.empty[(Int,Int)]
+    ).sortBy(_._2).map(_._1).take(k)
   }
 }

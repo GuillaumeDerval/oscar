@@ -71,7 +71,6 @@ case class PickupDeliveryCoupleExchange(pdp: PDP with ClosestNeighbors,
       pdp.getVehicleOfNode(x) == v && x != p && x != d
     }
 
-    val closestRoutedNeighboursInTime = pdp.computeClosestNeighborInTime()
     for(r1 <- 0 until pdp.v-1){
       exchange(0) = r1
       for(p1 <- pdp.routedPickups.filter(pdp.getVehicleOfNode(_) == r1)){
@@ -82,10 +81,10 @@ case class PickupDeliveryCoupleExchange(pdp: PDP with ClosestNeighbors,
           for(p2 <- pdp.routedPickups.filter(pdp.getVehicleOfNode(_) == r2)){
             exchange(6) = p2
             exchange(7) = pdp.getRelatedDelivery(p2)
-            val closestNeighborsForP1 = pdp.kFirst(k,closestRoutedNeighboursInTime)(p1).filter(customFilter(_,r2,p2,exchange(7)))
-            val closestNeighborsForP2 = pdp.kFirst(k,closestRoutedNeighboursInTime)(p2).filter(customFilter(_,r1,p1,exchange(2)))
-            val closestNeighborsForD1 = pdp.kFirst(k,closestRoutedNeighboursInTime)(exchange(2)).filter(customFilter(_,r2,p2,exchange(7)))
-            val closestNeighborsForD2 = pdp.kFirst(k,closestRoutedNeighboursInTime)(exchange(7)).filter(customFilter(_,r1,p1,exchange(2)))
+            val closestNeighborsForP1 = pdp.computeClosestNeighborInTime()(p1).filter(customFilter(_,r2,p2,exchange(7)))
+            val closestNeighborsForP2 = pdp.computeClosestNeighborInTime()(p2).filter(customFilter(_,r1,p1,exchange(2)))
+            val closestNeighborsForD1 = pdp.computeClosestNeighborInTime()(exchange(2)).filter(customFilter(_,r2,p2,exchange(7)))
+            val closestNeighborsForD2 = pdp.computeClosestNeighborInTime()(exchange(7)).filter(customFilter(_,r1,p1,exchange(2)))
             for(newPredsP2 <- closestNeighborsForP2){
               for(newPredsD2 <- closestNeighborsForD2){
                 for(newPredsP1 <- closestNeighborsForP1){

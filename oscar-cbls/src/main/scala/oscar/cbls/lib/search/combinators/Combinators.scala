@@ -1236,7 +1236,9 @@ case class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThen
 
   override def instantiateCurrentMove(newObj: Int): CompositeMove ={
     currentB match{
-      case null => throw new Error("DynAndThen is not presently exploring something")
+      case null =>
+        val moveFromA = a.instantiateCurrentMove(Int.MaxValue)
+        CompositeMove(List(moveFromA),newObj,"DynAndThen(" + moveFromA + "," + "null" + ")")
       case s:SupportForAndThenChaining[_] =>
         val moveFromB = s.instantiateCurrentMove(Int.MaxValue)
         val moveFromA = a.instantiateCurrentMove(Int.MaxValue)

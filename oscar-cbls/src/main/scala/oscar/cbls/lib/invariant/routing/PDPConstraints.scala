@@ -14,20 +14,21 @@ object PDPConstraints {
              pdp: PDP,
              maxDetours: List[(Int,Int,Int)] = List.empty,
              maxDetourCalculation:(Int,Int) => Int = (a,b) => a + b
-           ): ConstraintSystem ={
-    val constraints = new ConstraintSystem(pdp.routes.model)
+           ): (ConstraintSystem,ConstraintSystem) ={
+    val fastConstraints = new ConstraintSystem(pdp.routes.model)
+    val slowConstraints = new ConstraintSystem(pdp.routes.model)
 
-    val pDPConstraints = new PDPConstraints(pdp, constraints)
+    val pDPConstraints = new PDPConstraints(pdp, fastConstraints, slowConstraints)
     pDPConstraints.addCapacityConstraint()
     pDPConstraints.addTimeWindowConstraints()
     pDPConstraints.addPrecedencesConstraints()
     pDPConstraints.addMaxDetoursConstraints(maxDetours,maxDetourCalculation)
 
-    constraints
+    (fastConstraints, slowConstraints)
   }
 }
 
-class PDPConstraints(pdp: PDP, constraints: ConstraintSystem){
+class PDPConstraints(pdp: PDP, fastConstraints: ConstraintSystem, slowConstraints: ConstraintSystem){
   import oscar.cbls.modeling.Algebra._
 
   val routes = pdp.routes
@@ -49,7 +50,7 @@ class PDPConstraints(pdp: PDP, constraints: ConstraintSystem){
       }
 
     val chainsPrecedences = List.tabulate(chains.length)(c => chainToTuple(chains(c), List.empty).reverse)
-    constraints.add(EQ(0,new Precedence(routes, chainsPrecedences.flatten)))
+    fastConstraints.add(EQ(0,new Precedence(routes, chainsPrecedences.flatten)))
   }
 
   /**
@@ -71,7 +72,7 @@ class PDPConstraints(pdp: PDP, constraints: ConstraintSystem){
     val travelDurationMatrix = pdp.travelDurationMatrix
 
     for(maxDetour <- maxDetours){
-      constraints.post(LE(arrivalTimes(maxDetour._2) - leaveTimes(maxDetour._1),
+      slowConstraints.post(LE(arrivalTimes(maxDetour._2) - leaveTimes(maxDetour._1),
         maxDetourCalculation(maxDetour._3,
           travelDurationMatrix.getTravelDuration(maxDetour._1, leaveTimes(maxDetour._1).value, maxDetour._2))))
     }
@@ -85,7 +86,7 @@ class PDPConstraints(pdp: PDP, constraints: ConstraintSystem){
     val vehiclesMaxCapacity:Int = vehiclesMaxCapacities.max
     val contentAtVehicleStart = Array.tabulate(v)(i => vehiclesMaxCapacity-vehiclesMaxCapacities(i))
     val maxChainLength = pdp.chains.map(_.length).max
-    constraints.add(EQ(0,ForwardCumulativeConstraintOnVehicle(
+    fastConstraints.add(EQ(0,ForwardCumulativeConstraintOnVehicle(
       routes,
       n,
       v,
@@ -115,12 +116,12 @@ class PDPConstraints(pdp: PDP, constraints: ConstraintSystem){
 
     for(i <- 0 until n){
       if(i < v && deadlines(i) != Int.MaxValue) {
-        constraints.post(LE(arrivalTimes(i), deadlines(i)).nameConstraint("end of time for vehicle " + i))
+        slowConstraints.post(LE(arrivalTimes(i), deadlines(i)).nameConstraint("end of time for vehicle " + i))
       } else {
         if(deadlines(i) != Int.MaxValue)
-          constraints.post(LE(IntITE(pdp.next(i), 0, leaveTimes(i), n-1), deadlines(i)).nameConstraint("end of time window on node " + i))
+          slowConstraints.post(LE(IntITE(pdp.next(i), 0, leaveTimes(i), n - 1), deadlines(i)).nameConstraint("end of time window on node " + i))
         if(maxWaitingDurations(i) != Int.MaxValue)
-          constraints.post(GE(arrivalTimes(i), earlylines(i) - waitingDurations(i)).nameConstraint("start of time window on node (with duration)" + i))
+          slowConstraints.post(GE(arrivalTimes(i), earlylines(i) - waitingDurations(i)).nameConstraint("start of time window on node (with duration)" + i))
       }
     }
 

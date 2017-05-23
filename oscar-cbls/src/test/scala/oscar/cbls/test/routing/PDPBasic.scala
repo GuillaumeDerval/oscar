@@ -31,7 +31,7 @@ class MySimplePickupAndDeliveryProblem(n: Int, v: Int, m: Store,
   setVehicleMaxCapacities(vehiclesCapacities)
   addTimeWindows(timeWindows)
 
-  val constraints = PDPConstraints(this)
+  val (fastConstraints, slowConstraints) = PDPConstraints(this)
 
   val closestNeighboursForward = computeClosestNeighborsForward()
 
@@ -40,7 +40,11 @@ class MySimplePickupAndDeliveryProblem(n: Int, v: Int, m: Store,
 
   val totalDistance = ConstantRoutingDistance(routes, n, v ,false, symmetricDistance, true)(0)
 
-  val obj = new CascadingObjective(constraints,new CascadingObjective(constraints, totalDistance + (penaltyForUnrouted*(n - Size(routes)))))
+  val obj = new CascadingObjective(
+    mustBeZeroObjective = fastConstraints,
+    new CascadingObjective(
+      mustBeZeroObjective = slowConstraints,
+      totalDistance + (penaltyForUnrouted*(n - Size(routes)))))
 }
 
 object PDPBasic extends App{
@@ -57,7 +61,7 @@ object PDPBasic extends App{
 
   m.close()
 
-  println(pdp.chainDico)
+  println(pdp.nextNodesInChains)
 
   // REMOVING
 
@@ -67,7 +71,7 @@ object PDPBasic extends App{
     (exploredMoves:List[RemovePointMove], t:Option[List[Int]]) => {
       val chainTail: List[Int] = t match {
         case None => val removedPoint = exploredMoves.head.pointToRemove
-          pdp.chainDico(removedPoint)
+          pdp.nextNodesInChains(removedPoint)
         case Some(tail:List[Int]) => tail
       }
 
@@ -96,7 +100,7 @@ object PDPBasic extends App{
     (exploredMoves:List[OnePointMoveMove], t:Option[List[Int]]) => {
       val chainTail: List[Int] = t match {
         case None => val movedPoint = exploredMoves.head.movedPoint
-          pdp.chainDico(movedPoint)
+          pdp.nextNodesInChains(movedPoint)
         case Some(tail:List[Int]) => tail
       }
 
@@ -127,7 +131,7 @@ object PDPBasic extends App{
     (exploredMoves:List[InsertPointMove], t:Option[List[Int]]) => {
       val chainTail: List[Int] = t match {
         case None => val insertedPickup = exploredMoves.head.insertedPoint
-          pdp.chainDico(insertedPickup)
+          pdp.nextNodesInChains(insertedPickup)
         case Some(tail:List[Int]) => tail
       }
 
