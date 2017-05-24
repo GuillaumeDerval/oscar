@@ -85,7 +85,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], maximizeObjective: Bo
   // lazy vals used for some operators:
   lazy val N: Int = vars.length // The number of vars
   lazy val maxNeighSize: Double = vars.map(x => math.log(x.size)).sum // Max neighbourhood size for propagation guided relax
-  lazy val closeness = new ClosenessStore(N) // Closeness store used for propagation guided relax
+  lazy val closeness: Option[ClosenessStore] = if(N*N*16 > 1000000000) None else Some(new ClosenessStore(N)) // Closeness store used for propagation guided relax
 
   private def wrapSearch(search: Branching): (CPIntSol) => Unit = {
     (sol: CPIntSol) => solver.search(search)
@@ -95,8 +95,10 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], maximizeObjective: Bo
     (for(relaxKey <- config.relaxOperatorKeys; searchKey <- config.searchOperatorKeys) yield (relaxKey, searchKey))
     .flatMap(pair => instantiateCoupledOperator(pair._1, pair._2))
 
-  def instantiateRelaxOperators: Array[ALNSOperator] =
-    config.relaxOperatorKeys.map(x => instantiateLooseOperator(x, config.paramSelectionKey, config.paramMetricKey))
+  def instantiateRelaxOperators: Array[ALNSOperator] = {
+    if (closeness.isDefined) config.relaxOperatorKeys.map(x => instantiateLooseOperator(x, config.paramSelectionKey, config.paramMetricKey))
+    else config.relaxOperatorKeys.filter(x => !x.equals(ALNSBuilder.RevPropGuided)).map(x => instantiateLooseOperator(x, config.paramSelectionKey, config.paramMetricKey))
+  }
 
   def instantiateSearchOperators: Array[ALNSOperator] =
     config.searchOperatorKeys.map(x => instantiateLooseOperator(x, config.paramSelectionKey, config.paramMetricKey))
@@ -146,12 +148,15 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], maximizeObjective: Bo
         )
 
     case ALNSBuilder.RevPropGuided =>
-      ALNSBuilder.RevPropGuided_Param1
-        .map(x => maxNeighSize * x)
-        .map(x => (
-          x.toString,
-          (sol: CPIntSol) => RelaxationFunctions.reversedPropagationGuidedRelax(solver, vars, sol, closeness, x))
-        )
+      if(closeness.isDefined) {
+        ALNSBuilder.RevPropGuided_Param1
+          .map(x => maxNeighSize * x)
+          .map(x => (
+            x.toString,
+            (sol: CPIntSol) => RelaxationFunctions.reversedPropagationGuidedRelax(solver, vars, sol, closeness.get, x))
+          )
+      }
+      else Array[(String, CPIntSol => Unit)]()
   }
 
   private def instantiateSearchFunctions(opKey: String): Array[(String, CPIntSol => Unit)] = opKey match{
@@ -239,7 +244,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], maximizeObjective: Bo
     case ALNSBuilder.RevPropGuided => new ALNSSingleParamOperator[Double](
       ALNSBuilder.RevPropGuided,
       ALNSBuilder.DefWithParamFailThreshold,
-      RelaxationFunctions.reversedPropagationGuidedRelax(solver, vars, _:CPIntSol, closeness, _:Double),
+      RelaxationFunctions.reversedPropagationGuidedRelax(solver, vars, _:CPIntSol, closeness.get, _:Double),
       instantiateAdaptiveStore(
         paramSelectKey,
         ALNSBuilder.RevPropGuided_Param1
