@@ -11,4 +11,8 @@ class ALNSSearchResults(
   def this(solutions:Array[CPIntSol], operatorStats: Map[String, ALNSStatistics]){
     this(solutions, Map(), operatorStats)
   }
+
+  def this(solutions:Array[CPIntSol]){
+    this(solutions, Map(), Map())
+  }
 }
