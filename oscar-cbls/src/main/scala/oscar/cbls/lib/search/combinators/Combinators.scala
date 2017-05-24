@@ -1752,7 +1752,8 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
   override def collectProfilingStatistics: List[String] =
     collectThisProfileStatistics :: super.collectProfilingStatistics
 
-  def collectThisProfileStatistics:String = (padToLength("" + a,31) + " " +
+  def collectThisProfileStatistics:String =
+    padToLength("" + a,31) + " " +
     padToLength("" + nbCalls,6) + " " +
     padToLength("" + nbFound,6) + " " +
     padToLength("" + totalGain.toInt,8) + " " +
@@ -1762,10 +1763,10 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
     padToLength("" + slope,11)+ " " +
     padToLength("" + avgTimeSpendNoMove,13)+ " " +
     padToLength("" + avgTimeSpendMove,12)+ " " +
-    totalTimeSpentNoMoveFound)
+    totalTimeSpentNoMoveFound
 
   private def padToLength(s: String, l: Int) = {
-    val extended = (s + nStrings(l+1, " "))
+    val extended = s + nStrings(l+1, " ")
     val nextchar = extended.substring(l+1, l+1)
     if(nextchar equals " "){
       extended.substring(0, l-1) + "§"

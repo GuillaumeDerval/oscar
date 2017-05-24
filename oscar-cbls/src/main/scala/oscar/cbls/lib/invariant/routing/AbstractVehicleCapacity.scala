@@ -154,7 +154,6 @@ abstract class AbstractVehicleCapacity(n:Int,
     zoneToUpdate.insert(vehicleOfRemove, updatedZoneToUpdateOfVehicleOfRemove)
   }
 
-
   // @Note => O(listToInsert+toInsert)
   private def insertInList(listToInsert: List[(Int, Int)], toInsert: List[(Int, Int)]): List[(Int, Int)] = {
     listToInsert match {
@@ -183,6 +182,7 @@ abstract class AbstractVehicleCapacity(n:Int,
                                   sequenceBeforeMove:IntSequence,
                                   vehicleLocationBeforeMove:VehicleLocation,
                                   vehicleLocationAfterMove:VehicleLocation):RedBlackTreeMap[List[(Int, Int)]] = {
+
     if (zonesToUpdate == null) return null
     if (m.isNop) return zonesToUpdate
 
@@ -298,8 +298,8 @@ abstract class AbstractVehicleCapacity(n:Int,
         else smartPrepend(0, 0, removedZones)
 
       val relativeAfterInNewSequence = m.oldPosToNewPos(m.after).get - vehicleLocationAfterMove.startPosOfVehicle(destinationVehicle)
-      val relativeAfterWhenSegmentIsRemoved = if(sourceVehicle != destinationVehicle) relativeAfterInNewSequence else if(m.moveDownwards) relativeAfterInNewSequence else relativeAfterInNewSequence - nbPointsInMovedSegment
-      def insertMovedZones(listOfZonesForVehicle : List[(Int, Int)], zonesToInsert : List[(Int, Int)],insertionPosition:Int = relativeAfterWhenSegmentIsRemoved +1) : List[(Int, Int)] = {
+
+      def insertMovedZones(listOfZonesForVehicle : List[(Int, Int)], zonesToInsert : List[(Int, Int)],insertionPosition:Int = relativeAfterInNewSequence +1) : List[(Int, Int)] = {
 
         listOfZonesForVehicle match {
           case Nil =>
@@ -344,6 +344,7 @@ abstract class AbstractVehicleCapacity(n:Int,
       //also need to insert a single zone at the end, and perform a relative shift of the sequence.
       val zonesToUpdateTo = zonesToUpdateWithVehicleFromUpdated.getOrElse(destinationVehicle, Nil)
       val updatedZonesTo = insertMovedZones(zonesToUpdateTo, relativeZonesToInsert)
+
       zonesToUpdateWithVehicleFromUpdated.insert(destinationVehicle, updatedZonesTo)
     }
   }
@@ -482,6 +483,7 @@ abstract class AbstractVehicleCapacity(n:Int,
   private def updateUntilAbsolutePositionAndSaturatedOrVehicleEnd(previousUpdatedPosition:IntSequenceExplorer,
                                                                   valueAtPreviousUpdatedPosition:Int,
                                                                   endCompulsoryAbsolute:Int,vehicle:Int):Option[IntSequenceExplorer] = {
+
     previousUpdatedPosition.next match{
       case None => None //we'v reached the end of the sequence
       case Some(positionOfCurrent) =>
@@ -520,6 +522,7 @@ abstract class AbstractVehicleCapacity(n:Int,
    * @return (VehicleLocation)
    */
   def computeAndAffectContentAndVehicleStartPositionsFromScratch(s:IntSequence,unrouteAllNodes:Boolean):(ConcreteVehicleLocation) = {
+
     val vehicleLocation = Array.fill(v)(0)
 
     if(unrouteAllNodes) setNodesUnrouted(v until n)

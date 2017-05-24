@@ -17,7 +17,7 @@ package oscar.cbls.lib.invariant.routing
 
 import oscar.cbls.algo.seq.functional.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls.core.propagation.{ErrorChecker, Checker}
 import oscar.cbls.lib.invariant.routing.convention.RoutingConventionMethods
 
 import scala.collection.immutable.SortedSet
@@ -55,7 +55,6 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
 
     val startValuesOfImpactedZone = computeStartValuesOfImpactedZone(changes:SeqUpdate)
-
     startValuesOfImpactedZone match{
       case None =>  computeAllFromScratch(changes.newValue)
       case Some(startUpdateValues) =>
@@ -178,10 +177,10 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
   }
 
   override def checkInternals(c : Checker){
-    val fromScratch = computeSuccessorsFromScratchNoAffect(routes.value)
+    val fromScratch = computeSuccessorsFromScratchNoAffect(routes.newValue)
     for(node <- 0 until n){
       c.check(successorValues(node).newValue == fromScratch(node),
-        Some("error on next for node " + node + ": " + successorValues(node) + " should== " + fromScratch(node)))
+        Some("error on next for node " + node + ": " + successorValues(node).newValue + " should== " + fromScratch(node)))
 
       if(fromScratch(node)== defaultWhenNotInSequence){
         c.check(predecessorValues(node).newValue == defaultWhenNotInSequence,

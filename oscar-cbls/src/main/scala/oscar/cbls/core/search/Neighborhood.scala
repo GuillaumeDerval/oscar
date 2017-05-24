@@ -236,7 +236,7 @@ abstract class Neighborhood(name:String = null) {
             //TODO: additionalString shuld be handled with synthesis!
             if (printSynthesis && additionalStringGenerator != null) println("after move is committed: " + additionalStringGenerator())
             if (obj.value == Int.MaxValue) println("Warning : objective == MaxInt, maybe you have some strong constraint violated?")
-            assert(obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
+            require(m.objAfter == Int.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
 
           }else if (printTakenMoves) {
 

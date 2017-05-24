@@ -267,10 +267,10 @@ object SeqUpdateRemove {
 class SeqUpdateRemove(val position:Int,prev:SeqUpdate,seq:IntSequence)
   extends SeqUpdateWithPrev(prev,seq){
 
-  assert(seq equals prev.newValue.delete(position,fast=true))
+  assert(seq equals prev.newValue.delete(position,fast=true),"wrong promize on seq value when building SeqUpdateRemove")
 
   val removedValue:Int = seq match{
-    case d:RemovedIntSequence => d.removedValue
+    case d:RemovedIntSequence if position == d.positionOfDelete && (d.seq quickEquals prev.newValue) => d.removedValue
     case _ => prev.newValue.valueAtPosition(position).head}
 
   override protected[computation] def reverse(target:IntSequence, newPrev:SeqUpdate) : SeqUpdate = {
