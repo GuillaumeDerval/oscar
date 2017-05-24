@@ -4,7 +4,7 @@ import oscar.anytime.lns.utils.{IOUtils, XmlWriter}
 import oscar.cp.CPSolver
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.searches.lns.operators.ALNSBuilder
-import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch}
+import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch, ALNSSearchResults}
 
 import scala.collection.mutable
 
@@ -16,12 +16,29 @@ trait Benchmark {
   def instance: String
   def problem: String
 
+  type ArgMap = Map[Symbol, Any]
+
   def main(args: Array[String]): Unit = {
 
     val argMap = parseArgs(Map(), args.toList)
     if(argMap.nonEmpty && !argMap.contains('name))
       println("WARNING: A config name should be provided if using custom parameters!")
 
+    val result = performALNS(argMap)
+
+    XmlWriter.writeToXml(
+      argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
+      argMap.getOrElse('name, "default").asInstanceOf[String],
+      argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
+      IOUtils.getFileName(instance, keepExtension = false),
+      problem,
+      bestKnownObjective,
+      solver.objective.objs.head.isMax,
+      result.solutions
+    )
+  }
+
+  def performALNS(argMap: ArgMap): ALNSSearchResults = {
     val config = new ALNSConfig(
       timeout = argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
       coupled = argMap.getOrElse('coupled, true).asInstanceOf[Boolean],
@@ -54,21 +71,8 @@ trait Benchmark {
 
     val alns = ALNSSearch(solver, decisionVariables, config)
 
-    val result = alns.search()
-
-    XmlWriter.writeToXml(
-      argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
-      argMap.getOrElse('name, "default").asInstanceOf[String],
-      config.timeout,
-      IOUtils.getFileName(instance, keepExtension = false),
-      problem,
-      bestKnownObjective,
-      solver.objective.objs.head.isMax,
-      result.solutions
-    )
+    alns.search()
   }
-
-  type ArgMap = Map[Symbol, Any]
 
   def parseArgs(map : ArgMap, list: List[String]) : ArgMap = {
     def isSwitch(s : String) = s(0) == '-'
