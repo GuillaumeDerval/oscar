@@ -21,5 +21,5 @@ class XCSP(val instance: String, override val bestKnownObjective: Int = Int.MaxV
 
   override def solver: CPSolver = model.cpSolver
 
-  override def problem: String = IOUtils.getParentName(instance)
+  override def problem: String = "XCSP_" + IOUtils.getParentName(instance)
 }
