@@ -1,7 +1,7 @@
 package oscar.cbls.business.routing.model
 
 import oscar.cbls.core.computation._
-import oscar.cbls.lib.invariant.logic.{Cluster, DenseCluster, IntInt2Int}
+import oscar.cbls.lib.invariant.logic.{Cluster, DenseCluster, IntITE, IntInt2Int}
 import oscar.cbls.lib.invariant.minmax.Max2
 import oscar.cbls.lib.invariant.numeric.Div
 import oscar.cbls.lib.invariant.seq.Content
@@ -201,7 +201,11 @@ class PDP(override val n:Int,
     */
   val contentsFlow:Array[Int] = Array.tabulate(n)(_ => 0)
 
-  def setVehicleMaxCapacities(maxCapacities: Array[Int]) = for(i <- vehiclesMaxCapacities.indices) vehiclesMaxCapacities(i) = maxCapacities(i)
+  val contentAtNode:Array[CBLSIntVar] =
+    Array.tabulate(n+1)(c => CBLSIntVar(m, 0, 0 to Int.MaxValue / n, "content at node " + c))
+
+  def setVehicleMaxCapacities(maxCapacities: Array[Int]) =
+    for(i <- vehiclesMaxCapacities.indices) vehiclesMaxCapacities(i) = maxCapacities(i)
 
   /**
     * This method is used to set the content flow of each node except vehicle ones.
@@ -211,7 +215,14 @@ class PDP(override val n:Int,
     require(contents.length == n,
       "Contents must have the size of the number of nodes (n)." +
         "\nn = " + (n) + ", contents's size : " + contents.length)
-    contentsFlow.map(n => contents(n))
+    val vehicleMaxCapacity = vehiclesMaxCapacities.max
+    for(i <- contents.indices) {
+      contentsFlow(i) = contents(i)
+      if(i < v)
+        contentAtNode(i) <== vehicleMaxCapacity - vehiclesMaxCapacities(i)
+      else
+        contentAtNode(i) <== IntITE(prev(i), 0, contentAtNode.element(prev(i)) + contentsFlow(i), n - 1)
+    }
   }
 
   // --------------------------------- Time ---------------------------------------- //

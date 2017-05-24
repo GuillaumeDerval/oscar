@@ -1269,7 +1269,7 @@ object Mu {
   def apply[MoveType <: Move](firstNeighborhood : Neighborhood with SupportForAndThenChaining[MoveType],
                               neighborhoodGenerator : List[(MoveType)] => Option[Neighborhood with SupportForAndThenChaining[MoveType]],
                               maxDepth : Int,
-                              intermediaryStops : Boolean) = {
+                              intermediaryStops : Boolean): Neighborhood  with SupportForAndThenChaining[CompositeMove] = {
     Mu[MoveType,Any](
     firstNeighborhood,
     (l,_) => neighborhoodGenerator(l) match{
@@ -1285,7 +1285,7 @@ object Mu {
                                  neighborhoodGenerator : (List[(MoveType)], X) => Option[(Neighborhood with SupportForAndThenChaining[MoveType], X)],
                                  x0 : X,
                                  maxDepth : Int,
-                                 intermediaryStops : Boolean): Neighborhood = {
+                                 intermediaryStops : Boolean): Neighborhood  with SupportForAndThenChaining[CompositeMove] = {
     require(maxDepth >= 1)
 
     def generateNextNeighborhood(oldMoves : List[MoveType], remainingDepth : Int, prevX : X)(newMove : MoveType):Neighborhood = {
@@ -1310,25 +1310,8 @@ object Mu {
         }
       }
     }
-    DynAndThen(firstNeighborhood,
-      generateNextNeighborhood(List.empty, maxDepth - 1, x0)) name "Mu(" + firstNeighborhood + ")"
-  }
-
-  def map[MoveType <: Move, X](firstNeighborhood : Neighborhood with SupportForAndThenChaining[MoveType],
-                                    neighborhoodGenerator : (List[(MoveType)], X) => Option[(Neighborhood with SupportForAndThenChaining[MoveType], X)],
-                                    x0 : X): Neighborhood with SupportForAndThenChaining[CompositeMove] = {
-
-    def generateNextNeighborhood(oldMoves : List[MoveType], prevX : X)(newMove : MoveType):Neighborhood with SupportForAndThenChaining[CompositeMove]= {
-
-      val newMoveList = newMove :: oldMoves
-      neighborhoodGenerator(newMove :: oldMoves, prevX) match {
-        case Some((nextAtomicNeighborhood, newX)) =>
-          val generatorForNext = generateNextNeighborhood(newMoveList, newX) _
-          DynAndThen(nextAtomicNeighborhood, generatorForNext)
-        case None => null
-      }
-    }
-    DynAndThen(firstNeighborhood,generateNextNeighborhood(List.empty, x0))
+    new ChainableName(DynAndThen(firstNeighborhood,
+      generateNextNeighborhood(List.empty, maxDepth - 1, x0)),"Mu(" + firstNeighborhood + ")")
   }
 }
 
@@ -1474,6 +1457,32 @@ class Name(a: Neighborhood, val name: String) extends NeighborhoodCombinator(a) 
   }
 
   override def toString: String = name
+}
+
+/**
+ * the purpose of this combinator is to change the name of the neighborhood it is given as parameter.
+ * it will add a prefix to all moves sent back by this combinator
+ * the only purposes are documentation and debug
+ *
+ * @param a
+ * @param name
+ */
+class ChainableName[MoveType <: Move](a: Neighborhood with SupportForAndThenChaining[MoveType], val name: String) extends NeighborhoodCombinator(a) with SupportForAndThenChaining[MoveType]{
+  /**
+   * @param acceptanceCriterion oldObj,newObj => should the move to the newObj be kept (default is oldObj > newObj)
+   *                            beware that a changing criteria might interact unexpectedly with stateful neighborhood combinators
+   * @return an improving move
+   */
+  override def getMove(obj: Objective, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+    a.getMove(obj, acceptanceCriterion) match {
+      case NoMoveFound => NoMoveFound
+      case MoveFound(m) => NamedMove(m, name)
+    }
+  }
+
+  override def toString: String = name
+
+  override def instantiateCurrentMove(newObj : Int) : MoveType = a.instantiateCurrentMove(newObj)
 }
 
 /**

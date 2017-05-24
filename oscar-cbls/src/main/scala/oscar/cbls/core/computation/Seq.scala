@@ -1680,7 +1680,7 @@ class SeqCheckpointedValueStack[@specialized T]{
 
 
   def outputAtTopCheckpoint(checkpoint:IntSequence):T = {
-    require(topCheckpoint quickEquals checkpoint)
+    require(topCheckpoint quickEquals checkpoint, "topCheckpoint:" + topCheckpoint + " not quickEquals checkpoint:" + checkpoint)
     _outputAtTopCheckpoint
   }
 

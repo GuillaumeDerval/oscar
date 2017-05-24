@@ -23,7 +23,7 @@ import oscar.cbls.modeling.Algebra._
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.business.routing.model._
 import oscar.cbls.business.routing.neighborhood._
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
+import oscar.cbls.lib.search.combinators.{Mu, BestSlopeFirst, Profile}
 
 class MySimpleRoutingWithUnroutedPointsAndNext(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int, pointsList:Array[(Int,Int)] = null)
   extends VRP(n,v,m,maxPivot)
@@ -60,7 +60,7 @@ class MySimpleRoutingWithUnroutedPointsAndNext(n:Int,v:Int,symmetricDistance:Arr
 
 object TestNext extends App{
 
-  val n = 2000
+  val n = 200
   val v = 10
 
   val maxPivotPerValuePercent = 4
@@ -75,7 +75,7 @@ object TestNext extends App{
 
   model.close()
 
-  val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,neighborhoodName = "InsertUF"))
+  def routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,neighborhoodName = "InsertUF"))
 
   //TODO: using post-filters on k-nearest is probably crap
   val routeUnroutedPoint2 =  Profile(new InsertPointRoutedFirst(myVRP.routed,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,x => !myVRP.isRouted(x)),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.size < n/2))
@@ -86,7 +86,13 @@ object TestNext extends App{
 
   def threeOpt(k:Int, breakSym:Boolean) = Profile(new ThreeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
-  val search = (BestSlopeFirst(List(routeUnroutedPoint2, routeUnroutedPoint, onePtMove(10),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
+  val vlsn1pt = Profile(Mu[OnePointMoveMove](
+    OnePointMove(myVRP.routed, () => myVRP.kFirst(5,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP),
+    l => Some(OnePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(3,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP, hotRestart = false)),
+    intermediaryStops = true,
+    maxDepth = 6))
+
+  val search = (BestSlopeFirst(List(routeUnroutedPoint2, routeUnroutedPoint, onePtMove(10),twoOpt, threeOpt(10,true),vlsn1pt, routeUnroutedPoint andThen routeUnroutedPoint)) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
 
  // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10) guard (() => myVRP.unrouted.value.size != 0)),10)) exhaust BestSlopeFirst(List(onePtMove(20),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
 
