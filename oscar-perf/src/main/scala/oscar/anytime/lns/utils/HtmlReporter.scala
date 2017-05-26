@@ -247,9 +247,11 @@ object HtmlReporter extends App{
       val sortedSols = solsByTime(configs, solsFound)
 
       //Computing best sols:
-      val bests = sortedSols.last._2
-      val instanceIndex = instMapping(name)
-      configs.indices.foreach(configIndex => bestSols(instanceIndex)(configIndex) = bests(configIndex))
+      if(sortedSols.nonEmpty){
+        val bests = sortedSols.last._2
+        val instanceIndex = instMapping(name)
+        configs.indices.foreach(configIndex => bestSols(instanceIndex)(configIndex) = bests(configIndex))
+      }
 
       //Computing gaps:
       val instanceGaps: Option[Seq[(Long, Array[Option[Double]])]] = if(bestKnown.isDefined)
