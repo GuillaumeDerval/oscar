@@ -30,7 +30,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
   var stagnation = 0
   val stagnationThreshold = 100
 
-  val maximizeObjective: Boolean = solver.objective.objs.head.isMax
+  val maximizeObjective: Boolean = solver.objective.objs.head.isMax //TODO: deal with CSP
   if(!solver.silent) println("Objective type: " + (if(maximizeObjective) "max" else "min"))
 
   //What to do on solution:

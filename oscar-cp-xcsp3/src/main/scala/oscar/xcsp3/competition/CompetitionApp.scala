@@ -2,8 +2,10 @@ package oscar.xcsp3.competition
 
 import org.rogach.scallop.{ScallopConf, ScallopOption}
 
+import scala.util.Random
+
 class CompetitionConf(arguments: Seq[String]) extends ScallopConf(arguments){
-  val randomseed: ScallopOption[Int] = opt[Int]()
+  val randomseed: ScallopOption[Int] = opt[Int](default = Some(Random.nextInt()))
   val timelimit: ScallopOption[Int] = opt[Int]()
   val memlimit: ScallopOption[Int] = opt[Int]()
   val nbcore: ScallopOption[Int] = opt[Int]()
