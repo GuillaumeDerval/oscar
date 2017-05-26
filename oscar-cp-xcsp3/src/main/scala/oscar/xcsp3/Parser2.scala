@@ -467,20 +467,11 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     val constraintType: (Array[IntExpression], Array[IntExpression]) => Constraint = operator match {
       case TypeOperatorRel.GE => LexGeq.apply
       case TypeOperatorRel.GT => LexGr.apply
-      case TypeOperatorRel.LE => LexLeq
+      case TypeOperatorRel.LE => LexLeq.apply
       case TypeOperatorRel.LT => LexLr.apply
     }
     lists.map(tuple => tuple.map(x => varHashMap(x.id()))).sliding(2).foreach(tuples => modelDeclaration.add(constraintType(tuples(0), tuples(1))))
   }
-
-  override def buildCtrLexMatrix(id: String, matrix: Array[Array[XVarInteger]], operator:TypeOperatorRel): Unit = {
-    buildCtrLex(id,matrix,operator)
-    val n = matrix.size
-    val m = matrix(0).size
-    val matrixTranspose = Array.tabulate(m,n)((i,j) => matrix(j)(i))
-    buildCtrLex(id,matrixTranspose,operator)
-  }
-
 
   def _getConditionVar(condition: Condition): IntExpression = condition match {
     case c: ConditionVal => c.k.toInt
