@@ -92,7 +92,8 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
   override def buildCtrAllDifferent(id: String, list: Array[XVarInteger]): Unit = {
     //println("Adding AllDifferent "+id)
     val cons = allDifferent(list.map(elem => varHashMap(elem.id())))
-    cp.add(cons)
+    //println("alldifferent")
+    cp.add(cons,Weak)
     cstHashMap += (id->cons)
   }
 
@@ -621,8 +622,14 @@ object RunXCSP3 extends App {
   val parser = XCSP3Parser(instance)
 
   val vars = parser.varHashMap.values.toArray
+
+  println(vars.mkString(","))
+  println(vars.filter(_.isBound).mkString(","))
+
+  val valueHeuris: (Int => Int) = learnValueHeuristic(vars,i => vars(i).min)
+
   parser.cp.search {
-    conflictOrderingSearch(vars,i => vars(i).size, i => vars(i).min)
+    conflictOrderingSearch(vars,i => vars(i).size, valueHeuris)
     //binaryFirstFail(vars)
   }
 
