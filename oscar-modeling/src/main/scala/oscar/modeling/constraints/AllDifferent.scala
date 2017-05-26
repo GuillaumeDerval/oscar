@@ -19,11 +19,10 @@ import oscar.modeling.algebra.floating.FloatExpression
 import oscar.modeling.algebra.integer.IntExpression
 
 /**
- * Imposes that a given BoolExpression is true
- *
- * @param array
+ * Values assigned to all variables in array must be different.
+ * If except is defined, then the values in except are not taken into account.
  */
-case class AllDifferent(array: Array[IntExpression]) extends Constraint {
+case class AllDifferent(array: Array[IntExpression], except: Set[Int] = Set()) extends Constraint {
   /**
    * @return a list of all the IntExpression associated to this constraint
    */

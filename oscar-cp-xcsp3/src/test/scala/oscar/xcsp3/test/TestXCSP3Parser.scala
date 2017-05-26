@@ -94,7 +94,7 @@ class TestXCSP3Parser extends TestSuite {
     "Nonogram-001-regular.xml",
     "Opd-07-007-003.xml",
     "Ramsey-12.xml"
-    )
+  )
 
 
   // objectif: ramener tout dans OKTests ;-)
@@ -236,7 +236,7 @@ class TestXCSP3Parser extends TestSuite {
 
   for (t <- OKTests) {
     test(t) {
-      assert(isValid("data/xcsp3/instancesTest/"+t))
+      assert(isValid("../data/xcsp3/instancesTest/"+t))
     }
   }
 

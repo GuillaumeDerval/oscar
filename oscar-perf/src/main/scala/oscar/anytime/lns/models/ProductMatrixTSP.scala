@@ -1,8 +1,7 @@
 package oscar.anytime.lns.models
 
 import oscar.anytime.lns.Benchmark
-import oscar.cp.constraints.{CPObjective, CPObjectiveUnitMinimize}
-import oscar.cp.{CPIntVar, CPSolver, Weak, binaryStatic, circuit, conflictOrderingSearch, element, learnValueHeuristic, minAssignment, minimize, post, search, sum}
+import oscar.cp.{CPIntVar, CPSolver, Weak, circuit, element, minAssignment, post, sum}
 
 class ProductMatrixTSP(val instance: String, val bestObj: Int = Int.MaxValue) extends  Benchmark{
 
@@ -22,8 +21,6 @@ class ProductMatrixTSP(val instance: String, val bestObj: Int = Int.MaxValue) ex
   val maxProduct = CPIntVar(0 until Int.MaxValue)
   solver.minimize(maxProduct)
 
-
-
   val pricesForVariable: Array[Array[Int]] = matrix
 
   val individualConsumptions = Array.tabulate(x.length)(i => element(pricesForVariable(i), x(i)))
@@ -32,13 +29,6 @@ class ProductMatrixTSP(val instance: String, val bestObj: Int = Int.MaxValue) ex
 
   post(circuit(x, false))
   post(minAssignment(x, pricesForVariable, maxProduct), Weak)
-
-
-  def decisionVariables: Array[CPIntVar] = x
-
-  override def bestKnownObjective: Int = bestObj
-
-  override def objective: CPIntVar = maxProduct
 
   def readInstanceForCP(fileURI: String): (Array[Array[Int]], Array[Int], Array[Int]) = {
 
@@ -54,6 +44,10 @@ class ProductMatrixTSP(val instance: String, val bestObj: Int = Int.MaxValue) ex
     (fullMatrix, consumptions, prices)
   }
 
+  override def decisionVariables: Array[CPIntVar] = x
 
+  override def bestKnownObjective: Int = bestObj
+
+  override def problem: String = "ProdMatrixTSP"
 }
 

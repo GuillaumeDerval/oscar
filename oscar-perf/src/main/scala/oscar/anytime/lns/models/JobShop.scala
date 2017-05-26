@@ -16,12 +16,8 @@
 package oscar.anytime.lns.models
 
 import oscar.cp._
-import oscar.cp.scheduling.visual.VisualGanttChart
 import oscar.anytime.lns.Benchmark
-import oscar.util.RandomGenerator
-import oscar.visual._
 
-import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 
 
@@ -46,7 +42,6 @@ class JobShop(val instance: String, val bestObj: Int = Int.MaxValue) extends Ben
   lines = lines.drop(3)
   val l1 = lines(0).trim().split(" ").map(_.toInt)
   lines = lines.drop(1)
-  println(l1.mkString(","))
 
 
   val nJobs = l1(0)
@@ -110,14 +105,13 @@ class JobShop(val instance: String, val bestObj: Int = Int.MaxValue) extends Ben
 
   minimize(makespan) 
 
+  override def solver: CPSolver = cp
 
-  def decisionVariables: Array[CPIntVar] = startsVar
+  override def decisionVariables: Array[CPIntVar] = startsVar
 
-  def bestKnownObjective: Int = bestObj
+  override def bestKnownObjective: Int = bestObj
 
-  def objective: CPIntVar = makespan
-
-
+  override def problem: String = "JobShop"
 }
 
 

@@ -29,7 +29,6 @@ import scala.io.Source
   */
 class PigmentSequencing(val instance: String, val bestObj: Int = Int.MaxValue) extends Benchmark {
 
-
   implicit val cp = CPSolver()
   //cp.silent = true
   val lines = Source.fromFile(instance).getLines.reduceLeft(_ + " " + _)
@@ -108,8 +107,9 @@ class PigmentSequencing(val instance: String, val bestObj: Int = Int.MaxValue) e
 
   def decisionVariables: Array[CPIntVar] = date
 
-  def bestKnownObjective: Int = bestObj
+  override def bestKnownObjective: Int = bestObj
 
-  def objective: CPIntVar = obj
+  override def solver: CPSolver = cp
 
+  override def problem: String = "PSP"
 }

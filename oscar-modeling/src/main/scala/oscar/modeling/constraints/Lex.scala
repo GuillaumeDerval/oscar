@@ -68,7 +68,10 @@ object LexLr
     * @param a
     * @param b
     */
-  def apply(a: Array[IntExpression], b: Array[IntExpression]) = LexLeq(a.map(_+1),b)
+  def apply(a: Array[IntExpression], b: Array[IntExpression]) = {
+    a(a.length-1) += 1
+    LexLeq(a,b)
+  }
 }
 
 object LexGr
@@ -83,5 +86,8 @@ object LexGr
     * @param a
     * @param b
     */
-  def apply(a: Array[IntExpression], b: Array[IntExpression]) = LexLr(b.map(_+1),a)
+  def apply(a: Array[IntExpression], b: Array[IntExpression]) = {
+    b(b.length-1) += 1
+    LexLeq(b,a)
+  }
 }
