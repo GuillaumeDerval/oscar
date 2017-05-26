@@ -16,13 +16,17 @@ class CompetitionConf(arguments: Seq[String]) extends ScallopConf(arguments){
 object CompetitionApp extends App{
   val conf = new CompetitionConf(args)
 
-  //Parsing instance:
-  val parser = XCSP3Parser(conf.benchname())
+  //TODO: Parse Instance and launch search
 
-  //TODO: Launch search
+  /**
+    * Use the following functions to print your outputs. Only the best solution should be printed.
+    * You can print comments with the printComment method.
+    */
 
+  //Each time a new solution is found, it's objective should be printed:
   def printObjective(obj: Int): Unit = println("o " + obj)
 
+  //Use this only for the last solution:
   def printSolution(sol: String, optimum:Boolean = false): Unit = {
     if(optimum) println("s OPTIMUM FOUND")
     else println("s SATISFIABLE")
@@ -38,5 +42,6 @@ object CompetitionApp extends App{
     */
   def printStatus(status: String): Unit = println("s " + status)
 
+  //For any comment:
   def printComment(com: String): Unit = println("c " + com.split("\\r?\\n").mkString("\nc "))
 }
