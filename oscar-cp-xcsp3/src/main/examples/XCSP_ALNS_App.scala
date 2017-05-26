@@ -1,47 +1,45 @@
-package oscar.anytime.lns
 
-import oscar.algo.search.DFSearch
-import oscar.anytime.lns.utils.{IOUtils, XmlWriter}
 import oscar.cp.CPSolver
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.searches.lns.CPIntSol
-import oscar.cp.searches.lns.operators.{ALNSBuilder, SearchFunctions}
+import oscar.cp.searches.lns.operators.ALNSBuilder
 import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch, ALNSSearchResults}
+import oscar.modeling.models.{ModelDeclaration, UninstantiatedModel}
+import oscar.modeling.models.cp.CPModel
+import oscar.modeling.models.operators.CPInstantiate
+import oscar.xcsp3.XCSP3Parser2
 
 import scala.collection.mutable
 import scala.util.Random
 
-trait Benchmark {
-
-  def solver: CPSolver
-  def decisionVariables: Array[CPIntVar]
-  def bestKnownObjective: Int = Int.MaxValue
-  def instance: String
-  def problem: String
+object XCSP_ALNS_App extends App{
 
   type ArgMap = Map[Symbol, Any]
 
-  def main(args: Array[String]): Unit = {
-
-    val argMap = parseArgs(Map(), args.toList)
-    if(argMap.nonEmpty && !argMap.contains('name))
-      println("WARNING: A config name should be provided if using custom parameters!")
-
-//    println("args:\n" + argMap.mkString("\n") + "\n")
-
-    val result = if(argMap.getOrElse('NOLNS, false).asInstanceOf[Boolean]) performBasicSearch(argMap) else performALNS(argMap)
-
-    XmlWriter.writeToXml(
-      argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
-      argMap.getOrElse('name, "default").asInstanceOf[String],
-      argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
-      IOUtils.getFileName(instance, keepExtension = false),
-      problem,
-      bestKnownObjective,
-      solver.objective.objs.head.isMax,
-      result.solutions
-    )
+  val argMap = parseArgs(Map(), args.toList)
+  val instance = argMap.getOrElse('instance, "unknown").asInstanceOf[String]
+  if(instance == "unknown"){
+    println("No instance has been provided!")
+    sys.exit(1)
   }
+
+  val md = new ModelDeclaration
+
+  //Parsing the instance and instantiating model declaration
+  val (vars, solutionGenerator) = XCSP3Parser2.parse(md, instance)
+
+  val model: CPModel = CPInstantiate(md.getCurrentModel.asInstanceOf[UninstantiatedModel])
+
+  //TODO: get only decision variables
+  val decisionVariables: Array[CPIntVar] = vars.map(model.getRepresentative(_).realCPVar)
+
+  val solver: CPSolver = model.cpSolver
+
+  //    println("args:\n" + argMap.mkString("\n") + "\n")
+
+  val result = performALNS(argMap)
+
+  println("solutions found: ")
+  result.solutions.foreach(println)
 
   def performALNS(argMap: ArgMap): ALNSSearchResults = {
     val seed = Random.nextInt()
@@ -82,31 +80,6 @@ trait Benchmark {
     alns.search()
   }
 
-  def performBasicSearch(argMap: ArgMap): ALNSSearchResults = {
-    val startTime: Long = System.nanoTime()
-    val endTime: Long = startTime + (argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L)
-
-    val maximizeObjective: Boolean = solver.objective.objs.head.isMax
-    if(!solver.silent) println("Objective type: " + (if(maximizeObjective) "max" else "min"))
-
-    val solsFound = new mutable.ListBuffer[CPIntSol]()
-
-    solver.onSolution{
-      val time = System.nanoTime() - startTime
-      solsFound += new CPIntSol(decisionVariables.map(_.value), solver.objective.objs.head.best, time)
-    }
-
-    val stopCondition: (DFSearch) => Boolean = (_: DFSearch) => System.nanoTime() >= endTime
-
-    if(!solver.silent) println("Starting search...")
-    val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
-      solver.search(SearchFunctions.conflictOrdering(decisionVariables, maximizeObjective, valLearn = true))
-    }
-
-    if(!solver.silent) println("Search done, retrieving results")
-    new ALNSSearchResults(solsFound.toArray)
-  }
-
   def parseArgs(map : ArgMap, list: List[String]) : ArgMap = {
 
     def isSwitch(s : String) = s(0) == '-'
@@ -116,15 +89,6 @@ trait Benchmark {
 
       case "--timeout" :: value :: tail =>
         parseArgs(map ++ Map('timeout -> value.toLong), tail)
-
-      case "--name" :: value :: tail =>
-        parseArgs(map ++ Map('name -> value), tail)
-
-      case "--out" :: value :: tail =>
-        parseArgs(map ++ Map('out -> value), tail)
-
-      case "--NOLNS" :: tail =>
-        parseArgs(map ++ Map('NOLNS -> true), tail)
 
       case "--coupled" :: tail => tail match{
         case value :: remTail =>
@@ -164,12 +128,17 @@ trait Benchmark {
       case "--metric" :: value :: tail =>
         parseArgs(map ++ Map('metric -> value), tail)
 
+      case value :: tail =>
+        if(!isSwitch(value)) parseArgs(map ++ Map('instance -> value), tail)
+        else {
+          println("Unknown option " + value)
+          sys.exit(1)
+        }
+
       case option :: tail =>
         if(isSwitch(option) && tail.isEmpty) println("Option " + option + " has no value")
         else println("Unknown option " + option)
         sys.exit(1)
     }
   }
-
 }
-

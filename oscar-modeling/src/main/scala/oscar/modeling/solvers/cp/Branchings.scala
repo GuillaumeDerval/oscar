@@ -237,4 +237,41 @@ object Branchings {
   def maxVal(x: Array[IntVar]) = (i: Int) => x(i).max
 
   def minValminVal(x: IntVar): (Int, Int) = (x.min, x.min)
+
+  /**
+    * @author Pierre Schaus pschaus@gmail.com
+    * @param x
+    * @param fallBackValHeuristic
+    */
+  class ValueHeuristicLearner(x: Array[IntVar], fallBackValHeuristic: (Int => Int)){
+    private[this] val lastValues = Array.fill(x.length)(Int.MinValue)
+
+    x(0).getRepresentative.asInstanceOf[CPIntVar].realCPVar.store.onPush{
+      for (i <- x.indices) {
+        if (x(i).isBound) {
+          lastValues(i) = x(i).min
+        }
+      }
+    }
+
+    def valueHeuristic(i: Int): Int = {
+      if (x(i).hasValue(lastValues(i))) {
+        lastValues(i)
+      } else {
+        fallBackValHeuristic(i)
+      }
+    }
+  }
+
+  /**
+    * Value Heuristic wrapper that will try to learn a successfull heuristic
+    * Basically when a value succeeds, it is recorded and first attempted
+    * whenever it is possible
+    * @param x the variables on which the defaultValueHeuristic is
+    * @param fallBackValHeuristic i => v where i is the variable index, v the value in the domain of x(i)
+    * @return a value heuristic i => v where i is the variable index, v is the value in the domain of x(i)
+    */
+  def learnValueHeuristic(x: Array[IntVar], fallBackValHeuristic: (Int => Int)): (Int => Int) = {
+    new ValueHeuristicLearner(x, fallBackValHeuristic).valueHeuristic
+  }
 }

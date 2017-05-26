@@ -2,7 +2,6 @@ package oscar.anytime.lns.models
 
 import oscar.cp._
 import oscar.anytime.lns.Benchmark
-import oscar.util._
 
 import scala.io.Source
 
@@ -45,10 +44,9 @@ class QuadraticAssignment(val instance: String, val bestObj: Int = Int.MaxValue)
   minimize(obj)
 
 
-  def decisionVariables: Array[CPIntVar] = x
+  override def decisionVariables: Array[CPIntVar] = x
 
-  def bestKnownObjective: Int = bestObj
+  override def bestKnownObjective: Int = bestObj
 
-  def objective: CPIntVar = obj
-
+  override def problem: String = "QAP"
 }
