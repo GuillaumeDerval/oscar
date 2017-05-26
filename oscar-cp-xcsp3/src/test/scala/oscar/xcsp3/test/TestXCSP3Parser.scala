@@ -46,7 +46,7 @@ class TestXCSP3Parser extends TestSuite {
     "ChessboardColoration-07-07.xml", // contains NotAllEqual cst
     "MagicSquare-6-mdd.xml", // take long time
     "MagicSquare-9-f10-01.xml", // take long time
-    "PrizeCollecting-15-3-5-0.xml", // Empty solution des le depart?
+    "PrizeCollecting-15-3-5-0.xml", // contains Short Table cst
     "RadarSurveillance-8-24-3-2-00.xml", // contains Intentional cst
     "StripPacking-C1P1.xml", // contains NoOverlap2D cst
     "Tpp-3-3-20-1.xml", // contains Circuit cst
