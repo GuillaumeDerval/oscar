@@ -115,7 +115,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
   override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = {
     val cons = new AllDifferentExcept(list.map(elem => varHashMap(elem.id())), except.toSet)
     cp.add(cons)
-    cstHashMap += (id->cons)
+    cstHashMap += (id -> cons)
   }
 
   override def buildCtrPrimitive(id: String, xvi: XVarInteger, op: TypeConditionOperatorSet, t: Array[Int]): Unit = {
@@ -313,12 +313,18 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     cp.add(csts.toArray)
   }
 
-  override def buildCtrExtension(id: String, x: XVarInteger, values: Array[Int], positive: Boolean, flags: util.Set[TypeFlag]): Unit = {
+  override def buildCtrExtension(id: String, xvi: XVarInteger, values: Array[Int], positive: Boolean, flags: util.Set[TypeFlag]): Unit = {
+    val x = varHashMap(xvi.id())
+    val set = values.toSet
     if (positive) {
-      cp.add(varHashMap(x.id()).in(values.toSet))
-    }
-    else {
-      cp.add(values.map(varHashMap(x.id()) !== _))
+      val dom = x.toArray
+      for (v <- dom; if !set.contains(v)) {
+        cp.remove(x, v)
+      }
+    } else {
+      for (v <- set) {
+        cp.remove(x, v)
+      }
     }
   }
 
@@ -338,23 +344,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     val csts = list.zip(values).map { case (x, v) => varHashMap(x.id()) === v }
     cp.add(csts)
   }
-
-//  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int): Unit = {
-//
-//
-//    throw new Exception("Single subcircuit constraint is not implemented")
-//  }
-
-//  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: Int): Unit = throw new Exception("Single subcircuit constraint is not implemented")
-//
-//  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: XVarInteger): Unit = throw new Exception("Single subcircuit constraint is not implemented")
-//
-//  override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occurs: Array[XVarInteger]): Unit = throw new Exception("GCC with var cardinalities is not implemented")
-//
-//  override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occurs: Array[Int]): Unit = throw new Exception("GCC with var cardinalities is not implemented")
-//
-//  override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occursMin: Array[Int], occursMax: Array[Int]): Unit = throw new Exception("GCC with var cardinalities is not implemented")
-
+  
   // Objectives
   def _getExprForTypeObjective(objtype: TypeObjective, list: Array[XVarInteger]): CPIntVar = {
     objtype match {
@@ -424,9 +414,10 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     case c: ConditionVal => CPIntVar(c.k.toInt)
     case c: ConditionVar => varHashMap(c.x.id())
   }
+
   def _buildCumulativeConditionCst(id: String, starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], demands: Array[CPIntVar], condition: ConditionRel) = {
     //Ensure start+durations==end
-    for(i <- starts.indices)
+    for (i <- starts.indices)
       cp.add(starts(i) + durations(i) === ends(i))
     condition.operator match {
       case TypeConditionOperatorRel.EQ =>
@@ -435,11 +426,11 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
       case TypeConditionOperatorRel.GE =>
         buildCtrCumulative(id, starts, durations, ends, demands, false, _getConditionVar(condition))
       case TypeConditionOperatorRel.GT =>
-        buildCtrCumulative(id, starts, durations, ends, demands, false, _getConditionVar(condition)+1)
+        buildCtrCumulative(id, starts, durations, ends, demands, false, _getConditionVar(condition) + 1)
       case TypeConditionOperatorRel.LE =>
         buildCtrCumulative(id, starts, durations, ends, demands, true, _getConditionVar(condition))
       case TypeConditionOperatorRel.LT =>
-        buildCtrCumulative(id, starts, durations, ends, demands, true, _getConditionVar(condition)-1)
+        buildCtrCumulative(id, starts, durations, ends, demands, true, _getConditionVar(condition) - 1)
       case TypeConditionOperatorRel.NE =>
         val tVar = CPIntVar(0, demands.map(_.max).sum)
         cp.add(tVar !== _getConditionVar(condition))
@@ -449,7 +440,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
   }
 
   def buildCtrCumulative(id: String, starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], demands: Array[CPIntVar], maxCum: Boolean, limit: CPIntVar): Unit = {
-    if(maxCum)
+    if (maxCum)
       cp.add(maxCumulativeResource(starts, durations, ends, demands, limit))
     else
       cp.add(minCumulativeResource(starts, durations, ends, demands, limit))
@@ -482,18 +473,18 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
   }
 
   override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[Int], ends: Array[XVarInteger], heights: Array[XVarInteger], condition: Condition): Unit = {
-    val mOrigins = origins map(x => varHashMap(x.id()))
-    val mLengths = lengths map(x => CPIntVar(x))
-    val mEnds = ends map(x => varHashMap(x.id()))
-    val mHeights = heights map(x => varHashMap(x.id()))
+    val mOrigins = origins map (x => varHashMap(x.id()))
+    val mLengths = lengths map (x => CPIntVar(x))
+    val mEnds = ends map (x => varHashMap(x.id()))
+    val mHeights = heights map (x => varHashMap(x.id()))
     buildCtrCumulative(id, mOrigins, mLengths, mEnds, mHeights, condition)
   }
 
   override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], ends: Array[XVarInteger], heights: Array[Int], condition: Condition): Unit = {
-    val mOrigins = origins map(x => varHashMap(x.id()))
-    val mLengths = lengths map(x => varHashMap(x.id()))
-    val mEnds = ends map(x => varHashMap(x.id()))
-    val mHeights = heights map(x => CPIntVar(x))
+    val mOrigins = origins map (x => varHashMap(x.id()))
+    val mLengths = lengths map (x => varHashMap(x.id()))
+    val mEnds = ends map (x => varHashMap(x.id()))
+    val mHeights = heights map (x => CPIntVar(x))
     buildCtrCumulative(id, mOrigins, mLengths, mEnds, mHeights, condition)
   }
 
