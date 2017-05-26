@@ -259,7 +259,11 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
           val cpResources = resources map postIntExpressionAndGetVar
           val cpCapacity = postIntExpressionAndGetVar(capacity)
           p(constraint,cp.modeling.constraint.maxCumulativeResource(cpStart, cpDuration, cpEnds, cpDemands, cpResources, cpCapacity, id))
-        case AllDifferent(array) => p(constraint,cp.modeling.constraint.allDifferent(array.map(postIntExpressionAndGetVar)))
+        case AllDifferent(array, exclude) =>
+          if(exclude.isEmpty)
+            p(constraint,cp.modeling.constraint.allDifferent(array.map(postIntExpressionAndGetVar)))
+          else
+            p(constraint,new oscar.cp.constraints.AllDifferentExcept(array.map(postIntExpressionAndGetVar), exclude))
         case LexLeq(a, b) => p(constraint,cp.modeling.constraint.lexLeq(a.map(postIntExpressionAndGetVar), b.map(postIntExpressionAndGetVar)))
         case Table(array, values, None) =>
           p(constraint,cp.modeling.constraint.table(array.map(postIntExpressionAndGetVar), values))

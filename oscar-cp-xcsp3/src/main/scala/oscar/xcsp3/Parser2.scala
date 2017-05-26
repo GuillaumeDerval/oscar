@@ -3,17 +3,14 @@ package oscar.xcsp3
 import java.io.File
 import java.util
 
-import org.xcsp.common.Condition
+import org.xcsp.common.{Condition, IVar}
 import org.xcsp.common.Condition.{ConditionIntvl, ConditionRel, ConditionVal, ConditionVar}
-import org.xcsp.common.IVar
 import org.xcsp.common.Types._
 import org.xcsp.common.predicates.{XNode, XNodeLeaf, XNodeParent}
 import org.xcsp.parser.XCallbacks
 import org.xcsp.parser.XCallbacks.{Implem, XCallbacksParameters}
-import org.xcsp.parser.entries.XVariables.{XVar, XVarInteger}
-import oscar.cp.CPIntVar
+import org.xcsp.parser.entries.XVariables.XVarInteger
 import oscar.cp.constraints.Automaton
-import oscar.modeling.algebra._
 import oscar.modeling.algebra.bool._
 import oscar.modeling.algebra.integer._
 import oscar.modeling.constraints._
@@ -25,6 +22,7 @@ import oscar.modeling.vars.IntVar
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.language.reflectiveCalls
 
 /**
   * An XCSP3 parser that converts an XCSP3 instance to an OscaR-Modeling model
@@ -78,8 +76,12 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
 
   // Constraints
   override def buildCtrAllDifferent(id: String, list: Array[XVarInteger]): Unit = {
-    //println("Adding AllDifferent "+id)
     val cst = AllDifferent(list.map(elem => varHashMap(elem.id())))
+    modelDeclaration.add(cst)
+  }
+
+  override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = {
+    val cst = AllDifferent(list.map(elem => varHashMap(elem.id())), except.toSet)
     modelDeclaration.add(cst)
   }
 
@@ -113,6 +115,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeArithmeticOperator.MUL => x * p
       case TypeArithmeticOperator.SUB => x - p
       case TypeArithmeticOperator.MOD => throw new Exception("Modulo between vars is not implemented")
+      case TypeArithmeticOperator.POW => throw new Exception("Pow between vars is not implemented")
     }
     val r2 = (op match {
       case TypeConditionOperatorRel.EQ => {
@@ -139,6 +142,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeArithmeticOperator.MUL => x * y
       case TypeArithmeticOperator.SUB => x - y
       case TypeArithmeticOperator.MOD => throw new Exception("Modulo between vars is not implemented")
+      case TypeArithmeticOperator.POW => throw new Exception("Pow between vars is not implemented")
     }
     val r2 = (op match {
       case TypeConditionOperatorRel.EQ => r === k
@@ -175,6 +179,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeArithmeticOperator.MUL => x * y
       case TypeArithmeticOperator.SUB => x - y
       case TypeArithmeticOperator.MOD => throw new Exception("Modulo between vars is not implemented")
+      case TypeArithmeticOperator.POW => throw new Exception("Pow between vars is not implemented")
     }
     val r2 = (op match {
       case TypeConditionOperatorRel.EQ => r === z
@@ -244,6 +249,10 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     node.getType match {
       case TypeExpr.VAR => varHashMap(node.value.toString)
       case TypeExpr.LONG => node.value.asInstanceOf[Long].toInt
+      case TypeExpr.RATIONAL => ???
+      case TypeExpr.SYMBOL => ???
+      case TypeExpr.DECIMAL => ???
+      case _ => ???
     }
   }
 
@@ -330,6 +339,13 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeExpr.SINH => ??? //1
       case TypeExpr.COSH => ??? //1
       case TypeExpr.TANH => ??? //1
+      case TypeExpr.NOTIN => ??? //TODO
+      case TypeExpr.PAR => ???
+      case TypeExpr.VAR => throw new Exception("Variable in non-leaf node")
+      case TypeExpr.LONG => throw new Exception("Variable in non-leaf node")
+      case TypeExpr.RATIONAL => throw new Exception("Variable in non-leaf node")
+      case TypeExpr.SYMBOL => throw new Exception("Variable in non-leaf node")
+      case TypeExpr.DECIMAL => throw new Exception("Variable in non-leaf node")
     }
   }
 
@@ -754,7 +770,6 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = ???
-  override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = throw new Exception("AllDifferentExcept is not implemented")
   override def buildCtrMinimum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = throw new Exception("Minimum/MinArg is not implemented")
   override def buildCtrMaximum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = throw new Exception("Maximum/MaxArg is not implemented")
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occurs: Array[XVarInteger]): Unit = throw new Exception("GCC with var cardinalities is not implemented")

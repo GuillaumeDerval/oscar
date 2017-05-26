@@ -14,7 +14,7 @@ import org.xcsp.parser.entries.AnyEntry.{CEntry, OEntry, VEntry}
 import org.xcsp.parser.entries.XConstraints.{XBlock, XGroup, XSlide}
 import org.xcsp.parser.entries.XVariables.{XArray, XVarInteger, XVarSymbolic}
 import oscar.cp._
-import oscar.cp.constraints.EqCons
+import oscar.cp.constraints.{AllDifferentExcept, EqCons}
 import oscar.cp.core.{CPSolver, Constraint}
 
 import scala.collection.mutable.ArrayBuffer
@@ -96,6 +96,12 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     cstHashMap += (id->cons)
   }
 
+  override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = {
+    val cons = new AllDifferentExcept(list.map(elem => varHashMap(elem.id())), except.toSet)
+    cp.add(cons)
+    cstHashMap += (id->cons)
+  }
+
   override def buildCtrPrimitive(id: String, xvi: XVarInteger, op: TypeConditionOperatorSet, t: Array[Int]): Unit = {
     val x = varHashMap(xvi.id())
     val set = t.toSet
@@ -125,6 +131,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
       case TypeArithmeticOperator.MUL => x * p
       case TypeArithmeticOperator.SUB => x - p
       case TypeArithmeticOperator.MOD => throw new Exception("Modulo between vars is not implemented")
+      case TypeArithmeticOperator.POW => throw new Exception("Pow between vars is not implemented")
     }
     val r2: Constraint = op match {
       case TypeConditionOperatorRel.EQ => {
@@ -153,6 +160,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
       case TypeArithmeticOperator.MUL => x * y
       case TypeArithmeticOperator.SUB => x - y
       case TypeArithmeticOperator.MOD => throw new Exception("Modulo between vars is not implemented")
+      case TypeArithmeticOperator.POW => throw new Exception("Pow between vars is not implemented")
     }
     val r2: Constraint = op match {
       case TypeConditionOperatorRel.EQ => r === k
@@ -196,6 +204,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
       case TypeArithmeticOperator.MUL => x * y
       case TypeArithmeticOperator.SUB => x - y
       case TypeArithmeticOperator.MOD => throw new Exception("Modulo between vars is not implemented")
+      case TypeArithmeticOperator.POW => throw new Exception("Pow between vars is not implemented")
     }
     val r2: Constraint = op match {
       case TypeConditionOperatorRel.EQ => r === z
@@ -584,7 +593,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     }
   }
 
-  override def buildCtrLexMatrix(id: String, matrix: Array[Array[XVarInteger]], operator: TypeOperator): Unit = ???
+  override def buildCtrLexMatrix(id: String, matrix: Array[Array[XVarInteger]], operator: TypeOperatorRel): Unit = ???
 
   override def buildCtrMinimum(id: String, list: Array[XVarInteger], condition: Condition): Unit = {
     _buildCrtWithCondition(id, minimum(toCPIntVar(list)),condition)
@@ -593,8 +602,6 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
   override def buildCtrMinimum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = ???
 
   override def buildCtrAtLeast(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = ???
-
-  override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = ???
 
   override def buildCtrAllDifferent(id: String, list: Array[XVarSymbolic]): Unit = ???
 
