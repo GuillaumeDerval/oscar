@@ -718,7 +718,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
 
   override def buildCtrMaximum(id: String, list: Array[XVarInteger], condition: Condition): Unit =
     _buildCrtWithCondition(id, maximum(list.map(x => varHashMap(x.id()))), condition)
-  
+
 }
 
 object XCSP3Parser {
