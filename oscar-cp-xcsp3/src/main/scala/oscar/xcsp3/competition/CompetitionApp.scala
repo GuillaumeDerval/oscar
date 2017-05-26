@@ -1,4 +1,4 @@
-package oscar.xcsp3
+package oscar.xcsp3.competition
 
 import org.rogach.scallop.{ScallopConf, ScallopOption}
 
@@ -13,11 +13,15 @@ class CompetitionConf(arguments: Seq[String]) extends ScallopConf(arguments){
   verify()
 }
 
-object CompetitionApp extends App{
+abstract class CompetitionApp extends App{
   val conf = new CompetitionConf(args)
+  runSolver(conf)
 
-  //TODO: Parse Instance and launch search
+  //TODO: Parse Instance, launch search and print results
+  def runSolver(conf: CompetitionConf)
+}
 
+object CompetitionOutput{
   /**
     * Use the following functions to print your outputs. Only the best solution should be printed.
     * You can print comments with the printComment method.
