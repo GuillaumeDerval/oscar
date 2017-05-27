@@ -2,6 +2,7 @@ package oscar.xcsp3.competition.solvers
 
 import oscar.cp.CPSolver
 import oscar.cp.core.variables.CPIntVar
+import oscar.cp.searches.lns.CPIntSol
 import oscar.cp.searches.lns.operators.ALNSBuilder
 import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch}
 import oscar.xcsp3.XCSP3Parser
@@ -16,15 +17,16 @@ object ALNSSolver extends CompetitionApp with App{
     //Parsing the instance
     val parser = XCSP3Parser(conf.benchname())
 
-    val decisionVariables: Array[CPIntVar] = parser.varHashMap.values.toArray
+    val vars: Array[CPIntVar] = parser.varHashMap.values.toArray
 
     val solver: CPSolver = parser.cp
     solver.silent = true
 
     Random.setSeed(conf.randomseed())
+    val timeout = (conf.timelimit().toLong - 5L) * 1000000000L
 
     val config = new ALNSConfig(
-      timeout = conf.timelimit().toLong * 1000000000L,
+      timeout = timeout,
       coupled = true,
       learning = true,
       Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided),
@@ -32,10 +34,11 @@ object ALNSSolver extends CompetitionApp with App{
       ALNSBuilder.Priority,
       ALNSBuilder.Priority,
       ALNSBuilder.TTI,
-      ALNSBuilder.TTI
+      ALNSBuilder.TTI,
+      () => CPIntSol.getXCSPInstantiation(vars)
     )
 
-    val alns = ALNSSearch(solver, decisionVariables, config)
+    val alns = ALNSSearch(solver, vars, config)
 
     val result = alns.search()
     val sols = result.solutions

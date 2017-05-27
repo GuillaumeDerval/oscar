@@ -1,19 +1,21 @@
 package oscar.xcsp3.competition.solvers
 
-import oscar.cp.CPSolver
+import oscar.algo.search.DFSearch
+import oscar.cp.{CPSolver, conflictOrderingSearch, learnValueHeuristic}
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.searches.lns.CPIntSol
 import oscar.cp.searches.lns.operators.ALNSBuilder
 import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch}
-import oscar.modeling.models.{ModelDeclaration, UninstantiatedModel}
 import oscar.modeling.models.cp.CPModel
 import oscar.modeling.models.operators.CPInstantiate
+import oscar.modeling.models.{ModelDeclaration, UninstantiatedModel}
 import oscar.xcsp3.XCSP3Parser2
 import oscar.xcsp3.competition.{CompetitionApp, CompetitionConf, CompetitionOutput}
 
+import scala.collection.mutable
 import scala.util.Random
 
-object ALNSSolver2 extends CompetitionApp with App{
+object HybridSolver extends CompetitionApp with App {
 
   override def runSolver(conf: CompetitionConf): Unit = {
 
@@ -32,8 +34,11 @@ object ALNSSolver2 extends CompetitionApp with App{
     Random.setSeed(conf.randomseed())
     val timeout = (conf.timelimit().toLong - 5L) * 1000000000L
 
+    val startTime = System.nanoTime()
+    val endTime: Long = startTime + timeout
+
     val config = new ALNSConfig(
-      timeout = timeout,
+      timeout = (timeout * 0.75).toLong,
       coupled = true,
       learning = true,
       Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided),
@@ -48,12 +53,28 @@ object ALNSSolver2 extends CompetitionApp with App{
 
     val alns = ALNSSearch(solver, decisionVariables, config)
 
-    val result = alns.search()
-    val sols = result.solutions
+    val sols = mutable.ArrayBuffer[CPIntSol]()
 
-    if(sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation)
+    val result = alns.search()
+    sols ++= result.solutions
+
+    CompetitionOutput.printComment("ALNS done, starting conflict ordering search")
+
+    solver.onSolution {
+      val time = System.nanoTime() - startTime
+      val sol = new CPIntSol(decisionVariables.map(_.value), solver.objective.objs.head.best, time, /*solutionGenerator()*/CPIntSol.getXCSPInstantiation(decisionVariables)) //TODO: fix this
+      println("o " + sol.objective)
+      sols += sol
+    }
+
+    val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime
+
+    val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
+      solver.search(conflictOrderingSearch(decisionVariables, i => decisionVariables(i).size, learnValueHeuristic(decisionVariables, i => decisionVariables(i).min)))
+    }
+
+    if (sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation)
     else CompetitionOutput.printStatus("UNSATISFIABLE")
 
   }
-
 }

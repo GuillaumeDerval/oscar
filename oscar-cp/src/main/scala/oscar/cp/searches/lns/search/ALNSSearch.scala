@@ -40,7 +40,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
 
   solver.onSolution{
     val time = System.nanoTime() - startTime
-    currentSol = new CPIntSol(vars.map(_.value), solver.objective.objs.head.best, time, CPIntSol.getXCSPInstantiation(vars))
+    currentSol = new CPIntSol(vars.map(_.value), solver.objective.objs.head.best, time, config.solutionGenerator())
     if((maximizeObjective && currentSol.objective > bestSol.objective) || (!maximizeObjective && currentSol.objective < bestSol.objective)){
       bestSol = currentSol
       solsFound += currentSol

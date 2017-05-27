@@ -14,6 +14,7 @@ class ALNSConfig(
                   val opSelectionKey: String = ALNSBuilder.RWheel, //The operators selection mechanism
                   val paramSelectionKey: String = ALNSBuilder.RWheel, //The parameters selection mechanism
                   val opMetricKey: String = ALNSBuilder.LastImprov, //The operators performance metric
-                  val paramMetricKey: String = ALNSBuilder.LastImprov //The parameters performance metric
+                  val paramMetricKey: String = ALNSBuilder.LastImprov, //The parameters performance metric
+                  val solutionGenerator: () => String = () => ""
                 ) {
 }
