@@ -93,7 +93,7 @@ trait Benchmark {
 
     solver.onSolution{
       val time = System.nanoTime() - startTime
-      solsFound += new CPIntSol(decisionVariables.map(_.value), solver.objective.objs.head.best, time)
+      solsFound += new CPIntSol(decisionVariables.map(_.value), solver.objective.objs.head.best, time, "")
     }
 
     val stopCondition: (DFSearch) => Boolean = (_: DFSearch) => System.nanoTime() >= endTime

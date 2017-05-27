@@ -64,7 +64,7 @@ object Eternity extends CPModel with App {
   }
   
   for (i <- 0 until nCols; j <- 0 until nRows) {
-    add(table(Array(id(i)(j), up(i)(j), right(i)(j), down(i)(j), left(i)(j)), tableData.toArray, TableAlgo.CompactTable));
+    add(table(Array(id(i)(j), up(i)(j), right(i)(j), down(i)(j), left(i)(j)), tableData.toArray, TableAlgo.MDDGeneric));
   }
 
   add(allDifferent(id.flatten))

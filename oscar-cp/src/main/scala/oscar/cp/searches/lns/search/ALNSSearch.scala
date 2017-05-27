@@ -30,20 +30,21 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
   var stagnation = 0
   val stagnationThreshold = 100
 
-  val maximizeObjective: Boolean = solver.objective.objs.head.isMax
+  val maximizeObjective: Boolean = solver.objective.objs.head.isMax //TODO: deal with CSP
   if(!solver.silent) println("Objective type: " + (if(maximizeObjective) "max" else "min"))
 
   //What to do on solution:
   val solsFound = new mutable.ListBuffer[CPIntSol]()
-  var currentSol: CPIntSol = new CPIntSol(new Array[Int](0), if(maximizeObjective) Int.MinValue else Int.MaxValue, 0)  //Current solution
+  var currentSol: CPIntSol = new CPIntSol(new Array[Int](0), if(maximizeObjective) Int.MinValue else Int.MaxValue, 0, "")  //Current solution
   var bestSol: CPIntSol = currentSol //Best solution so far
 
   solver.onSolution{
     val time = System.nanoTime() - startTime
-    currentSol = new CPIntSol(vars.map(_.value), solver.objective.objs.head.best, time)
+    currentSol = new CPIntSol(vars.map(_.value), solver.objective.objs.head.best, time, CPIntSol.getXCSPInstantiation(vars))
     if((maximizeObjective && currentSol.objective > bestSol.objective) || (!maximizeObjective && currentSol.objective < bestSol.objective)){
       bestSol = currentSol
       solsFound += currentSol
+      println("o " + currentSol.objective)
     }
   }
 

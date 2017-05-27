@@ -3,15 +3,14 @@ package oscar.xcsp3
 import java.io.File
 import java.util
 
-import org.xcsp.common.Condition
+import org.xcsp.common.{Condition, IVar}
 import org.xcsp.common.Condition.{ConditionIntvl, ConditionRel, ConditionVal, ConditionVar}
-import org.xcsp.common.Interfaces.IVar
 import org.xcsp.common.Types._
 import org.xcsp.common.predicates.{XNode, XNodeLeaf, XNodeParent}
+import org.xcsp.parser.XCallbacks
 import org.xcsp.parser.XCallbacks.{Implem, XCallbacksParameters}
-import org.xcsp.parser.entries.XVariables.{XVar, XVarInteger}
+import org.xcsp.parser.entries.XVariables.XVarInteger
 import oscar.cp.constraints.Automaton
-import oscar.modeling.algebra._
 import oscar.modeling.algebra.bool._
 import oscar.modeling.algebra.integer._
 import oscar.modeling.constraints._
@@ -23,6 +22,7 @@ import oscar.modeling.vars.IntVar
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.language.reflectiveCalls
 
 /**
   * An XCSP3 parser that converts an XCSP3 instance to an OscaR-Modeling model
@@ -33,18 +33,36 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   implicit val implModelDeclaration = modelDeclaration
   val varHashMap = collection.mutable.LinkedHashMap[String, IntExpression]() //automagically maintains the order of insertion
 
-  val implem = new Implem(this)
-  implem.currentParameters.clear()
-  implem.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_UNARY_INTENSION_CASES, new Object)
-  implem.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_BINARY_INTENSION_CASES,  new Object)
-  implem.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_TERNARY_INTENSION_CASES,  new Object)
-  implem.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_NVALUES_CASES,  new Object)
-  implem.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, 0:java.lang.Integer) // included
-  implem.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000:java.lang.Integer)
-  implem.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, false:java.lang.Boolean)
+  val impl = new Implem(this)
+
+  impl.currParameters.clear()
+
+  /*
+  RECOGNIZE_UNARY_PRIMITIVES,
+  RECOGNIZE_BINARY_PRIMITIVES,
+  RECOGNIZE_TERNARY_PRIMITIVES,
+  RECOGNIZE_LOGIC_CASES,
+  RECOGNIZE_EXTREMUM_CASES,
+  RECOGNIZE_COUNT_CASES,
+  RECOGNIZE_NVALUES_CASES,
+  INTENSION_TO_EXTENSION_ARITY_LIMIT,
+  INTENSION_TO_EXTENSION_SPACE_LIMIT,
+  INTENSION_TO_EXTENSION_PRIORITY;
+*/
+  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_UNARY_PRIMITIVES, new Object)
+  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_BINARY_PRIMITIVES,  new Object)
+  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_TERNARY_PRIMITIVES,  new Object)
+  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_NVALUES_CASES,  new Object)
+  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, 1000:java.lang.Integer) // included
+  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000:java.lang.Integer)
+  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, java.lang.Boolean.FALSE)
 
 
   loadInstance(filename)
+
+  override def implem(): XCallbacks.Implem = {
+    impl
+  }
 
   // Variables
   override def buildVarInteger(x: XVarInteger, minValue: Int, maxValue: Int): Unit = {
@@ -58,10 +76,60 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
 
   // Constraints
   override def buildCtrAllDifferent(id: String, list: Array[XVarInteger]): Unit = {
-    //println("Adding AllDifferent "+id)
     val cst = AllDifferent(list.map(elem => varHashMap(elem.id())))
     modelDeclaration.add(cst)
   }
+
+  override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = {
+    val cst = AllDifferent(list.map(elem => varHashMap(elem.id())), except.toSet)
+    modelDeclaration.add(cst)
+  }
+
+  override def buildCtrPrimitive(id: String, xvi: XVarInteger, op: TypeConditionOperatorSet, t: Array[Int]): Unit = {
+    val x = varHashMap(xvi.id())
+    // todo: ask Guillaume if it is the best way
+    val set = t.toSet
+    op match {
+      case TypeConditionOperatorSet.IN => {
+        val dom = x.values().toSet
+        for (v <- dom; if !set.contains(v)) {
+          modelDeclaration.add((x !== v).toConstraint)
+        }
+      }
+      case TypeConditionOperatorSet.NOTIN => {
+        for (v <- set) {
+          modelDeclaration.add((x !== v).toConstraint)
+        }
+      }
+    }
+
+  }
+
+  override def buildCtrPrimitive(id: String, xvi: XVarInteger, opa: TypeArithmeticOperator, p: Int, op: TypeConditionOperatorRel, yvi: XVarInteger): Unit = {
+    val x = varHashMap(xvi.id())
+    val y = varHashMap(yvi.id())
+    val r: IntExpression = opa match {
+      case TypeArithmeticOperator.ADD => x + p
+      case TypeArithmeticOperator.DIST => Dist(x,p)
+      case TypeArithmeticOperator.DIV => x / p
+      case TypeArithmeticOperator.MUL => x * p
+      case TypeArithmeticOperator.SUB => x - p
+      case TypeArithmeticOperator.MOD => throw new Exception("Modulo between vars is not implemented")
+      case TypeArithmeticOperator.POW => throw new Exception("Pow between vars is not implemented")
+    }
+    val r2 = (op match {
+      case TypeConditionOperatorRel.EQ => {
+        r === y
+      }
+      case TypeConditionOperatorRel.GE => r >= y
+      case TypeConditionOperatorRel.GT => r > y
+      case TypeConditionOperatorRel.LE => r <= y
+      case TypeConditionOperatorRel.LT => r < y
+      case TypeConditionOperatorRel.NE => r !== y
+    }).toConstraint
+    modelDeclaration.add(r2)
+  }
+
 
   override def buildCtrPrimitive(id: String, xvi: XVarInteger, opa: TypeArithmeticOperator, yvi: XVarInteger, op: TypeConditionOperatorRel, k: Int): Unit = {
     //println(id)
@@ -74,6 +142,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeArithmeticOperator.MUL => x * y
       case TypeArithmeticOperator.SUB => x - y
       case TypeArithmeticOperator.MOD => throw new Exception("Modulo between vars is not implemented")
+      case TypeArithmeticOperator.POW => throw new Exception("Pow between vars is not implemented")
     }
     val r2 = (op match {
       case TypeConditionOperatorRel.EQ => r === k
@@ -110,6 +179,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeArithmeticOperator.MUL => x * y
       case TypeArithmeticOperator.SUB => x - y
       case TypeArithmeticOperator.MOD => throw new Exception("Modulo between vars is not implemented")
+      case TypeArithmeticOperator.POW => throw new Exception("Pow between vars is not implemented")
     }
     val r2 = (op match {
       case TypeConditionOperatorRel.EQ => r === z
@@ -125,13 +195,14 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   def _buildCrtWithCondition(id: String, expr: IntExpression, operator: Condition): Unit = {
     val expr2: Array[BoolExpression] = operator match {
       case c: ConditionVal =>
+        val cst = c.k.toInt
         c.operator match {
-          case TypeConditionOperatorRel.EQ => Array(expr === c.k)
-          case TypeConditionOperatorRel.GE => Array(expr >= c.k)
-          case TypeConditionOperatorRel.GT => Array(expr > c.k)
-          case TypeConditionOperatorRel.LE => Array(expr <= c.k)
-          case TypeConditionOperatorRel.LT => Array(expr < c.k)
-          case TypeConditionOperatorRel.NE => Array(expr !== c.k)
+          case TypeConditionOperatorRel.EQ => Array(expr === cst)
+          case TypeConditionOperatorRel.GE => Array(expr >= cst)
+          case TypeConditionOperatorRel.GT => Array(expr > cst)
+          case TypeConditionOperatorRel.LE => Array(expr <= cst)
+          case TypeConditionOperatorRel.LT => Array(expr < cst)
+          case TypeConditionOperatorRel.NE => Array(expr !== cst)
         }
       case c: ConditionVar =>
         c.operator match {
@@ -144,8 +215,8 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
         }
       case c: ConditionIntvl =>
         c.operator match {
-          case TypeConditionOperatorSet.IN => Array(expr <= c.max, expr >= c.min)
-          case TypeConditionOperatorSet.NOTIN => Array(Or(Array(expr > c.max, expr < c.min)))
+          case TypeConditionOperatorSet.IN => Array(expr <= c.max.toInt, expr >= c.min.toInt)
+          case TypeConditionOperatorSet.NOTIN => Array(Or(Array(expr > c.max.toInt, expr < c.min.toInt)))
         }
     }
     expr2.map(_.toConstraint).foreach(modelDeclaration.add)
@@ -178,6 +249,10 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     node.getType match {
       case TypeExpr.VAR => varHashMap(node.value.toString)
       case TypeExpr.LONG => node.value.asInstanceOf[Long].toInt
+      case TypeExpr.RATIONAL => ???
+      case TypeExpr.SYMBOL => ???
+      case TypeExpr.DECIMAL => ???
+      case _ => ???
     }
   }
 
@@ -264,6 +339,13 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeExpr.SINH => ??? //1
       case TypeExpr.COSH => ??? //1
       case TypeExpr.TANH => ??? //1
+      case TypeExpr.NOTIN => ??? //TODO
+      case TypeExpr.PAR => ???
+      case TypeExpr.VAR => throw new Exception("Variable in non-leaf node")
+      case TypeExpr.LONG => throw new Exception("Variable in non-leaf node")
+      case TypeExpr.RATIONAL => throw new Exception("Variable in non-leaf node")
+      case TypeExpr.SYMBOL => throw new Exception("Variable in non-leaf node")
+      case TypeExpr.DECIMAL => throw new Exception("Variable in non-leaf node")
     }
   }
 
@@ -287,16 +369,14 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     modelDeclaration.add(cst)
   }
 
-  override def buildCtrOrdered(id: String, list: Array[XVarInteger], operator: TypeOperator): Unit = {
+
+
+  override def buildCtrOrdered(id: String, list: Array[XVarInteger], operator: TypeOperatorRel): Unit = {
     val rel: (IntExpression, IntExpression) => Constraint = operator match {
-      case TypeOperator.GE => (a, b) => a >= b
-      case TypeOperator.GT => (a, b) => a > b
-      case TypeOperator.LE => (a, b) => a <= b
-      case TypeOperator.LT => (a, b) => a < b
-      case TypeOperator.SUBSEQ => ???
-      case TypeOperator.SUBSET => ???
-      case TypeOperator.SUPSEQ => ???
-      case TypeOperator.SUPSET => ???
+      case TypeOperatorRel.GE => (a, b) => a >= b
+      case TypeOperatorRel.GT => (a, b) => a > b
+      case TypeOperatorRel.LE => (a, b) => a <= b
+      case TypeOperatorRel.LT => (a, b) => a < b
     }
     list.map(i => varHashMap(i.id())).sliding(2).foreach({
       case Array(x, y) => modelDeclaration.post(rel(x, y))
@@ -382,18 +462,28 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     _buildCrtWithCondition(id, Max(list.map(x => varHashMap(x.id()))), condition)
   }
 
-  override def buildCtrLex(id: String, lists: Array[Array[XVarInteger]], operator: TypeOperator): Unit = {
+
+  override def buildCtrLex(id: String, lists: Array[Array[XVarInteger]], operator: TypeOperatorRel): Unit = {
     val constraintType: (Array[IntExpression], Array[IntExpression]) => Constraint = operator match {
-      case TypeOperator.GE => LexGeq.apply
-      case TypeOperator.GT => LexGr.apply
-      case TypeOperator.LE => LexLeq
-      case TypeOperator.LT => LexLr.apply
+      case TypeOperatorRel.GE => LexGeq.apply
+      case TypeOperatorRel.GT => LexGr.apply
+      case TypeOperatorRel.LE => LexLeq
+      case TypeOperatorRel.LT => LexLr.apply
     }
     lists.map(tuple => tuple.map(x => varHashMap(x.id()))).sliding(2).foreach(tuples => modelDeclaration.add(constraintType(tuples(0), tuples(1))))
   }
 
+  override def buildCtrLexMatrix(id: String, matrix: Array[Array[XVarInteger]], operator:TypeOperatorRel): Unit = {
+    buildCtrLex(id,matrix,operator)
+    val n = matrix.size
+    val m = matrix(0).size
+    val matrixTranspose = Array.tabulate(m,n)((i,j) => matrix(j)(i))
+    buildCtrLex(id,matrixTranspose,operator)
+  }
+
+
   def _getConditionVar(condition: Condition): IntExpression = condition match {
-    case c: ConditionVal => c.k
+    case c: ConditionVal => c.k.toInt
     case c: ConditionVar => varHashMap(c.x.id())
   }
 
@@ -433,12 +523,12 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case c: ConditionVar => _buildCumulativeConditionCst(id, starts, durations, ends, demands, c)
       case c: ConditionIntvl => c.operator match {
         case TypeConditionOperatorSet.IN =>
-          val tVar = IntVar(condition.asInstanceOf[ConditionIntvl].min, c.max)
+          val tVar = IntVar(condition.asInstanceOf[ConditionIntvl].min.toInt, c.max.toInt)
           buildCtrCumulative(id, starts, durations, ends, demands, true, tVar)
           buildCtrCumulative(id, starts, durations, ends, demands, false, tVar)
         case TypeConditionOperatorSet.NOTIN =>
           val tVar = IntVar(0, demands.map(_.max).sum)
-          modelDeclaration.add(Or(Array(tVar < condition.asInstanceOf[ConditionIntvl].min, tVar > c.max)))
+          modelDeclaration.add(Or(Array(tVar < condition.asInstanceOf[ConditionIntvl].min.toInt, tVar > c.max.toInt)))
           buildCtrCumulative(id, starts, durations, ends, demands, true, tVar)
           buildCtrCumulative(id, starts, durations, ends, demands, false, tVar)
       }
@@ -605,22 +695,22 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
         val max = condition.asInstanceOf[ConditionIntvl].max
         condition.operator match {
           case TypeConditionOperatorSet.IN =>
-            modelDeclaration.add(counterVar <= max)
-            modelDeclaration.add(counterVar >= min)
+            modelDeclaration.add(counterVar <= max.toInt)
+            modelDeclaration.add(counterVar >= min.toInt)
           case TypeConditionOperatorSet.NOTIN =>
             for (v <- min to max) {
-              modelDeclaration.add(counterVar !== v)
+              modelDeclaration.add(counterVar !== v.toInt)
             }
         }
       case condition: ConditionVal =>
         val c = condition.asInstanceOf[ConditionVal].k
         condition.operator match {
-          case TypeConditionOperatorRel.LE => modelDeclaration.add(counterVar <= c)
-          case TypeConditionOperatorRel.GE => modelDeclaration.add(counterVar >= c)
-          case TypeConditionOperatorRel.GT => modelDeclaration.add(counterVar > c)
-          case TypeConditionOperatorRel.LT => modelDeclaration.add(counterVar < c)
-          case TypeConditionOperatorRel.EQ => modelDeclaration.add(counterVar === c)
-          case TypeConditionOperatorRel.NE => modelDeclaration.add(counterVar !== c)
+          case TypeConditionOperatorRel.LE => modelDeclaration.add(counterVar <= c.toInt)
+          case TypeConditionOperatorRel.GE => modelDeclaration.add(counterVar >= c.toInt)
+          case TypeConditionOperatorRel.GT => modelDeclaration.add(counterVar > c.toInt)
+          case TypeConditionOperatorRel.LT => modelDeclaration.add(counterVar < c.toInt)
+          case TypeConditionOperatorRel.EQ => modelDeclaration.add(counterVar === c.toInt)
+          case TypeConditionOperatorRel.NE => modelDeclaration.add(counterVar !== c.toInt)
           case _ => throw new RuntimeException("not supported operator")
         }
 
@@ -680,7 +770,6 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = ???
-  override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = throw new Exception("AllDifferentExcept is not implemented")
   override def buildCtrMinimum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = throw new Exception("Minimum/MinArg is not implemented")
   override def buildCtrMaximum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = throw new Exception("Maximum/MaxArg is not implemented")
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[XVarInteger], occurs: Array[XVarInteger]): Unit = throw new Exception("GCC with var cardinalities is not implemented")

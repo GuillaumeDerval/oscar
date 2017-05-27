@@ -14,7 +14,7 @@ import org.xcsp.parser.entries.AnyEntry.{CEntry, OEntry, VEntry}
 import org.xcsp.parser.entries.XConstraints.{XBlock, XGroup, XSlide}
 import org.xcsp.parser.entries.XVariables.{XArray, XVarInteger, XVarSymbolic}
 import oscar.cp._
-import oscar.cp.constraints.EqCons
+import oscar.cp.constraints.{AllDifferentExcept, EqCons}
 import oscar.cp.core.{CPSolver, Constraint}
 
 import scala.collection.mutable.ArrayBuffer
@@ -22,14 +22,28 @@ import scala.collection.mutable.ArrayBuffer
 class XCSP3Parser(filename: String) extends XCallbacksDecomp {
 
   val impl = new Implem(this)
-  impl.currentParameters.clear()
-  impl.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_UNARY_INTENSION_CASES, new Object)
-  impl.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_BINARY_INTENSION_CASES,  new Object)
-  impl.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_TERNARY_INTENSION_CASES,  new Object)
-  impl.currentParameters.put(XCallbacksParameters.RECOGNIZE_SPECIAL_NVALUES_CASES,  new Object)
-  impl.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, 1000:java.lang.Integer) // included
-  impl.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000:java.lang.Integer)
-  impl.currentParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, java.lang.Boolean.FALSE)
+
+  impl.currParameters.clear()
+
+  /*
+  RECOGNIZE_UNARY_PRIMITIVES,
+  RECOGNIZE_BINARY_PRIMITIVES,
+  RECOGNIZE_TERNARY_PRIMITIVES,
+  RECOGNIZE_LOGIC_CASES,
+  RECOGNIZE_EXTREMUM_CASES,
+  RECOGNIZE_COUNT_CASES,
+  RECOGNIZE_NVALUES_CASES,
+  INTENSION_TO_EXTENSION_ARITY_LIMIT,
+  INTENSION_TO_EXTENSION_SPACE_LIMIT,
+  INTENSION_TO_EXTENSION_PRIORITY;
+*/
+  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_UNARY_PRIMITIVES, new Object)
+  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_BINARY_PRIMITIVES,  new Object)
+  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_TERNARY_PRIMITIVES,  new Object)
+  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_NVALUES_CASES,  new Object)
+  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, 1000:java.lang.Integer) // included
+  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000:java.lang.Integer)
+  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, java.lang.Boolean.FALSE)
 
 
   override def implem(): XCallbacks.Implem = {
@@ -82,6 +96,59 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     cstHashMap += (id->cons)
   }
 
+  override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = {
+    val cons = new AllDifferentExcept(list.map(elem => varHashMap(elem.id())), except.toSet)
+    cp.add(cons)
+    cstHashMap += (id->cons)
+  }
+
+  override def buildCtrPrimitive(id: String, xvi: XVarInteger, op: TypeConditionOperatorSet, t: Array[Int]): Unit = {
+    val x = varHashMap(xvi.id())
+    val set = t.toSet
+    op match {
+      case TypeConditionOperatorSet.IN => {
+        val dom = x.toArray
+        for (v <- dom; if !set.contains(v)) {
+          cp.remove(x,v)
+        }
+      }
+      case TypeConditionOperatorSet.NOTIN => {
+        for (v <- set) {
+          cp.remove(x,v)
+        }
+      }
+    }
+
+  }
+
+  override def buildCtrPrimitive(id: String, xvi: XVarInteger, opa: TypeArithmeticOperator, p: Int, op: TypeConditionOperatorRel, yvi: XVarInteger): Unit = {
+    val x = varHashMap(xvi.id())
+    val y = varHashMap(yvi.id())
+    val r: CPIntVar = opa match {
+      case TypeArithmeticOperator.ADD => x + p
+      case TypeArithmeticOperator.DIST => (x-p).abs
+      case TypeArithmeticOperator.DIV => throw new Exception("Division between vars is not implemented")
+      case TypeArithmeticOperator.MUL => x * p
+      case TypeArithmeticOperator.SUB => x - p
+      case TypeArithmeticOperator.MOD => throw new Exception("Modulo between vars is not implemented")
+      case TypeArithmeticOperator.POW => throw new Exception("Pow between vars is not implemented")
+    }
+    val r2: Constraint = op match {
+      case TypeConditionOperatorRel.EQ => {
+
+        r === y
+      }
+      case TypeConditionOperatorRel.GE => r >= y
+      case TypeConditionOperatorRel.GT => r > y
+      case TypeConditionOperatorRel.LE => r <= y
+      case TypeConditionOperatorRel.LT => r < y
+      case TypeConditionOperatorRel.NE => r !== y
+    }
+    cp.add(r2)
+    cstHashMap += ((id, r2))
+
+  }
+
   override def buildCtrPrimitive(id: String, xvi: XVarInteger, opa: TypeArithmeticOperator, yvi: XVarInteger, op: TypeConditionOperatorRel, k: Int): Unit = {
     //println(id)
     val x = varHashMap(xvi.id())
@@ -93,6 +160,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
       case TypeArithmeticOperator.MUL => x * y
       case TypeArithmeticOperator.SUB => x - y
       case TypeArithmeticOperator.MOD => throw new Exception("Modulo between vars is not implemented")
+      case TypeArithmeticOperator.POW => throw new Exception("Pow between vars is not implemented")
     }
     val r2: Constraint = op match {
       case TypeConditionOperatorRel.EQ => r === k
@@ -120,6 +188,11 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     cstHashMap += ((id, r2))
   }
 
+  override def buildCtrPrimitive(s: String, xVarInteger: XVarInteger, typeArithmeticOperator: TypeArithmeticOperator, i: Int, typeConditionOperatorRel: TypeConditionOperatorRel, i1: Int): Unit = {
+    println("here")
+    super.buildCtrPrimitive(s, xVarInteger, typeArithmeticOperator, i, typeConditionOperatorRel, i1)
+  }
+
   override def buildCtrPrimitive(id: String, xvi: XVarInteger, opa: TypeArithmeticOperator, yvi: XVarInteger, op: TypeConditionOperatorRel, zvi: XVarInteger): Unit = {
     val x = varHashMap(xvi.id())
     val y = varHashMap(yvi.id())
@@ -131,6 +204,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
       case TypeArithmeticOperator.MUL => x * y
       case TypeArithmeticOperator.SUB => x - y
       case TypeArithmeticOperator.MOD => throw new Exception("Modulo between vars is not implemented")
+      case TypeArithmeticOperator.POW => throw new Exception("Pow between vars is not implemented")
     }
     val r2: Constraint = op match {
       case TypeConditionOperatorRel.EQ => r === z
@@ -148,12 +222,12 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     val cons: Constraint = operator match {
       case c: ConditionVal =>
         c.operator match {
-          case TypeConditionOperatorRel.EQ => expr === c.k
-          case TypeConditionOperatorRel.GE => expr >= c.k
-          case TypeConditionOperatorRel.GT => expr > c.k
-          case TypeConditionOperatorRel.LE => expr <= c.k
-          case TypeConditionOperatorRel.LT => expr < c.k
-          case TypeConditionOperatorRel.NE => expr !== c.k
+          case TypeConditionOperatorRel.EQ => expr === c.k.toInt
+          case TypeConditionOperatorRel.GE => expr >= c.k.toInt
+          case TypeConditionOperatorRel.GT => expr > c.k.toInt
+          case TypeConditionOperatorRel.LE => expr <= c.k.toInt
+          case TypeConditionOperatorRel.LT => expr < c.k.toInt
+          case TypeConditionOperatorRel.NE => expr !== c.k.toInt
         }
       case c: ConditionVar =>
         c.operator match {
@@ -209,16 +283,13 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
 
   }
 
-  override def buildCtrOrdered(id: String, list: Array[XVarInteger], operator: TypeOperator): Unit = {
+
+  override def buildCtrOrdered(id: String, list: Array[XVarInteger], operator: TypeOperatorRel): Unit = {
     val rel: (CPIntVar, CPIntVar) => Constraint = operator match {
-      case TypeOperator.GE => (a, b) => a >= b
-      case TypeOperator.GT => (a, b) => a > b
-      case TypeOperator.LE => (a, b) => a <= b
-      case TypeOperator.LT => (a, b) => a < b
-      case TypeOperator.SUBSEQ => ???
-      case TypeOperator.SUBSET => ???
-      case TypeOperator.SUPSEQ => ???
-      case TypeOperator.SUPSET => ???
+      case TypeOperatorRel.GE => (a, b) => a >= b
+      case TypeOperatorRel.GT => (a, b) => a > b
+      case TypeOperatorRel.LE => (a, b) => a <= b
+      case TypeOperatorRel.LT => (a, b) => a < b
     }
     val csts = list.map(i => varHashMap(i.id())).sliding(2).map{x => rel(x(0),x(1))}
 
@@ -366,8 +437,8 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     val counterVar: CPIntVar = sum(list.map(x => varHashMap(x.id())).map(_.isIn(setOfVal).asInstanceOf[CPIntVar]))
     conditionL match {
       case condition:ConditionIntvl =>
-        val min = condition.asInstanceOf[ConditionIntvl].min
-        val max = condition.asInstanceOf[ConditionIntvl].max
+        val min = condition.asInstanceOf[ConditionIntvl].min.toInt
+        val max = condition.asInstanceOf[ConditionIntvl].max.toInt
         condition.operator match {
           case TypeConditionOperatorSet.IN =>
             cp.add(counterVar <= max)
@@ -378,7 +449,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
             }
         }
       case condition:ConditionVal =>
-        val c = condition.asInstanceOf[ConditionVal].k
+        val c = condition.asInstanceOf[ConditionVal].k.toInt
         condition.operator match {
           case TypeConditionOperatorRel.LE => cp.add(counterVar <= c)
           case TypeConditionOperatorRel.GE => cp.add(counterVar >= c)
@@ -455,21 +526,21 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
 
   */
 
-  override def buildCtrLex(id: String, lists: Array[Array[XVarInteger]], operator: TypeOperator): Unit = {
+
+  override def buildCtrLex(id: String, lists: Array[Array[XVarInteger]], operator: TypeOperatorRel): Unit = {
     operator match {
-      case TypeOperator.GE => {
+      case TypeOperatorRel.GE => {
         for (i <- 0 until lists.size-1) {
           cp.add(lexLeq(lists(i+1).map(x => varHashMap(x.id())),lists(i).map(x =>varHashMap(x.id()))))
         }
       }
-      case TypeOperator.LE => {
+      case TypeOperatorRel.LE => {
         for (i <- 0 until lists.size-1) {
           cp.add(lexLeq(lists(i).map(x => varHashMap(x.id())),lists(i+1).map(x =>varHashMap(x.id()))))
         }
       }
-      case TypeOperator.LT =>
-      case TypeOperator.GT =>
-      case _ => ???
+      case TypeOperatorRel.LT => ???
+      case TypeOperatorRel.GT => ???
     }
 
   }
@@ -522,7 +593,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     }
   }
 
-  override def buildCtrLexMatrix(id: String, matrix: Array[Array[XVarInteger]], operator: TypeOperator): Unit = ???
+  override def buildCtrLexMatrix(id: String, matrix: Array[Array[XVarInteger]], operator: TypeOperatorRel): Unit = ???
 
   override def buildCtrMinimum(id: String, list: Array[XVarInteger], condition: Condition): Unit = {
     _buildCrtWithCondition(id, minimum(toCPIntVar(list)),condition)
@@ -531,8 +602,6 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
   override def buildCtrMinimum(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, condition: Condition): Unit = ???
 
   override def buildCtrAtLeast(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = ???
-
-  override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = ???
 
   override def buildCtrAllDifferent(id: String, list: Array[XVarSymbolic]): Unit = ???
 

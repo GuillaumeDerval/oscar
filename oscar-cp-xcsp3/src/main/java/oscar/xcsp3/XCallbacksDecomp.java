@@ -259,7 +259,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
      * @param operator
      */
     @Override
-    public void buildCtrLexMatrix(String id, XVariables.XVarInteger[][] matrix, Types.TypeOperator operator) {
+    public void buildCtrLexMatrix(String id, XVariables.XVarInteger[][] matrix, Types.TypeOperatorRel operator) {
         buildCtrLex(id, matrix, operator);
 
         XVariables.XVarInteger[][] mt = new XVariables.XVarInteger[matrix[0].length][matrix.length];

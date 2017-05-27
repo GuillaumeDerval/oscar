@@ -15,6 +15,7 @@
 
 package oscar.cp.constraints.tables
 
+import oscar.cp.constraints.mdd.{Mdd4Constraint, Mdd4RConstraint, StaticMdd}
 import oscar.cp.core.Constraint
 import oscar.cp.core.variables.CPIntVar
 
@@ -36,6 +37,8 @@ object TableAlgo extends Enumeration {
   val AC5TCRecomp = Value("AC5TCRecomp (Mairy et al)")
   val Decomp = Value("Basic Decomposition")
   val ShortSTR2 = Value("ShortSTR2")
+  val MDDGeneric = Value("MDD Generic")
+  val MDD4RGeneric = Value("MDD4R Generic")
 }
 
 object table {
@@ -56,6 +59,16 @@ object table {
       case AC5TCRecomp  => ac5tcRecomp(X, table)
       case Decomp       => decomp(X, table)
       case ShortSTR2    => shortSTR2(X,table)
+      case MDDGeneric    => {
+        val mddStatic = StaticMdd.buildMddFromTableRegin(table,X.size)
+        val cons = new Mdd4Constraint(X,mddStatic,X(0).store)
+        cons
+      }
+      case MDD4RGeneric    => {
+        val mddStatic = StaticMdd.buildMddFromTableRegin(table,X.size)
+        val cons = new Mdd4RConstraint(X,mddStatic,X(0).store)
+        cons
+      }
       case _            => compactTable(X, table)
     }
   }
