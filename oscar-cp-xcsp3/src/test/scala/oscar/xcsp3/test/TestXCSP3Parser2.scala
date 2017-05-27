@@ -158,7 +158,7 @@ class TestXCSP3Parser2 extends TestSuite {
 
   for (t <- OKTestsStatic) {
     test(t) {
-      assert(isValid("data/xcsp3/instancesTest/"+t, useStaticOrdering = true))
+      assert(isValid("../data/xcsp3/instancesTest/"+t, useStaticOrdering = true))
     }
   }
 }
