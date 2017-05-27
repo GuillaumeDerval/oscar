@@ -5,7 +5,7 @@ import org.rogach.scallop.{ScallopConf, ScallopOption}
 import scala.util.Random
 
 class CompetitionConf(arguments: Seq[String]) extends ScallopConf(arguments){
-  val randomseed: ScallopOption[Int] = opt[Int](default = Some(Random.nextInt())) //A random seed
+  val randomseed: ScallopOption[Int] = opt[Int](default = Some(Random.nextInt(Int.MaxValue))) //A random seed
   val timelimit: ScallopOption[Int] = opt[Int](default = Some(240)) //The time available in seconds
   val memlimit: ScallopOption[Int] = opt[Int](default = Some(1000)) //The memory available in mb
   val nbcore: ScallopOption[Int] = opt[Int](default = Some(1)) //The number of cores available

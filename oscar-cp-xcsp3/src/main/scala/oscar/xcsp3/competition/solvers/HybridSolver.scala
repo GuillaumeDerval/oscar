@@ -58,7 +58,7 @@ object HybridSolver extends CompetitionApp with App {
     val result = alns.search()
     sols ++= result.solutions
 
-    CompetitionOutput.printComment("ALNS done, starting conflict ordering search")
+    CompetitionOutput.printComment("ALNS done, starting conflict ordering search (" + (endTime - System.nanoTime())/1000000000L + "s remaining)")
 
     solver.onSolution {
       val time = System.nanoTime() - startTime
@@ -70,7 +70,7 @@ object HybridSolver extends CompetitionApp with App {
     val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime
 
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
-      solver.search(conflictOrderingSearch(decisionVariables, i => decisionVariables(i).size, learnValueHeuristic(decisionVariables, i => decisionVariables(i).min)))
+      solver.search(conflictOrderingSearch(decisionVariables, i => decisionVariables(i).size, learnValueHeuristic(decisionVariables, i => decisionVariables(i).max)))
     }
 
     if (sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation)
