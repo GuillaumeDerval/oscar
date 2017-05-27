@@ -74,7 +74,8 @@ trait Benchmark {
       argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
       argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
       argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String],
-      argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String]
+      argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String],
+      () => ""
     )
 
     val alns = ALNSSearch(solver, decisionVariables, config)
@@ -93,7 +94,7 @@ trait Benchmark {
 
     solver.onSolution{
       val time = System.nanoTime() - startTime
-      solsFound += new CPIntSol(decisionVariables.map(_.value), solver.objective.objs.head.best, time)
+      solsFound += new CPIntSol(decisionVariables.map(_.value), solver.objective.objs.head.best, time, "")
     }
 
     val stopCondition: (DFSearch) => Boolean = (_: DFSearch) => System.nanoTime() >= endTime

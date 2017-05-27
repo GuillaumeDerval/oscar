@@ -388,7 +388,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
   }
 
   override def buildObjToMinimize(id: String, objtype: TypeObjective, list: Array[XVarInteger], coeffs: Array[Int]): Unit = {
-    cp.maximize(_getExprForTypeObjective(objtype, list, coeffs))
+    cp.minimize(_getExprForTypeObjective(objtype, list, coeffs))
   }
 
   override def buildObjToMaximize(id: String, objtype: TypeObjective, list: Array[XVarInteger], coeffs: Array[Int]): Unit = {
