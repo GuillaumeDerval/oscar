@@ -16,6 +16,8 @@
 
 package oscar.cp.constraints
 
+import java.util
+
 import oscar.algo.Inconsistency
 import oscar.algo.reversible.{ReversibleInt, ReversibleSparseSet}
 import oscar.cp.core.{CPPropagStrength, Constraint}
@@ -27,17 +29,19 @@ import oscar.cp.core.variables.{CPIntVar, CPVar}
   * @author Guillaume Derval
   */
 class AtMostNValue(val x: Array[CPIntVar], val c: CPIntVar) extends Constraint(x(0).store, "At Most NValue") {
-  val n = x.size
+  private[this] val n = x.size
 
-  val nUnbounds = new ReversibleInt(s,n)
-  val unBounds = Array.tabulate(n)(i => i)
+  private[this] val nUnbounds = new ReversibleInt(s,n)
+  private[this] val unBounds = Array.tabulate(n)(i => i)
 
-  val minVal = x.map(_.min).min
-  val maxVal = x.map(_.max).max
+  private[this] val minVal = x.map(_.min).min
+  private[this] val maxVal = x.map(_.max).max
 
-  val nVal = maxVal-minVal +1
+  private[this] val nVal = maxVal-minVal +1
 
-  val unAssignedValues = new ReversibleSparseSet(s,minVal,maxVal)
+  private[this] val unAssignedValues = new ReversibleSparseSet(s,minVal,maxVal)
+
+  private[this] var strength: CPPropagStrength = _
 
   private[this] val values = Array.ofDim[Int](nVal)
 
@@ -46,7 +50,7 @@ class AtMostNValue(val x: Array[CPIntVar], val c: CPIntVar) extends Constraint(x
   override def setup(l: CPPropagStrength): Unit = {
     x.foreach(_.callPropagateWhenBind(this))
     c.callPropagateWhenBoundsChange(this)
-
+    strength = l
     propagate()
   }
 
@@ -68,7 +72,10 @@ class AtMostNValue(val x: Array[CPIntVar], val c: CPIntVar) extends Constraint(x
 
     c.updateMin(nVal - unAssignedValues.size)
 
-    if ((nVal - unAssignedValues.size) == c.max) {
+    if((nVal - unAssignedValues.size) > c.max) {
+      throw Inconsistency
+    }
+    else if ((nVal - unAssignedValues.size) == c.max) {
       var i = unAssignedValues.fillArray(values)
       while (i > 0) {
         i -= 1
@@ -80,14 +87,69 @@ class AtMostNValue(val x: Array[CPIntVar], val c: CPIntVar) extends Constraint(x
       }
       deactivate() //this constraint is satisfied from here
     }
-    else if((nVal - unAssignedValues.size) > c.max)
-      throw Inconsistency
-
-    /*else if((nVal - unAssignedValues.size) == c.max - 1){
-
-    }*/
+    else if(strength == CPPropagStrength.Strong && (nVal - unAssignedValues.size) == c.max - 1){
+      filterUpM1()
+    }
   }
-  
- 
+
+  private[this] val assignedValuesCache = Array.ofDim[Int](unAssignedValues.size)
+  private[this] val fillArrayCache = Array.ofDim[Int](unAssignedValues.size)
+
+  // helps to compute the intersection in filterUpM1. A value idx is in the intersection if valueCount(idx) == nIntersectableVariable
+  private[this] val valueCount = Array.ofDim[Int](unAssignedValues.size)
+  private[this] var nIntersectableVariable = 0
+  def filterUpM1(): Unit = {
+    //The remaining unbound value is in the intersection of the domains of all variables
+    //that do not contain an already-used value
+    nIntersectableVariable = 0
+    util.Arrays.fill(valueCount, 0)
+
+    var nAssignedValues = unAssignedValues.removedFillArray(assignedValuesCache)
+    var idx = x.length
+    while(idx != 0) {
+      idx -= 1
+      if(!x(idx).isBound) {
+        var ok = true
+        var vidx = 0
+        while (vidx < nAssignedValues && ok) {
+          ok &= !x(idx).hasValue(assignedValuesCache(vidx))
+          vidx += 1
+        }
+        if(ok) {
+          var domainSize = x(idx).fillArray(fillArrayCache)
+          while(domainSize != 0) {
+            domainSize -= 1
+            valueCount(fillArrayCache(domainSize)-minVal) += 1
+          }
+          nIntersectableVariable += 1
+        }
+      }
+    }
+
+    //If we have at least one such set...
+    if(nIntersectableVariable >= 1) {
+
+      // Values that are in the already selected values can still be taken, add them to the intersection
+      var valIdx = 0
+      while (valIdx < nAssignedValues) {
+        valueCount(assignedValuesCache(valIdx)-minVal) = nIntersectableVariable
+        valIdx += 1
+      }
+
+      idx = x.length
+      while(idx != 0) {
+        idx -= 1
+        if(!x(idx).isBound) {
+          var domainSize = x(idx).fillArray(fillArrayCache)
+          while(domainSize != 0) {
+            domainSize -= 1
+            if(valueCount(fillArrayCache(domainSize)-minVal) != nIntersectableVariable) {
+              x(idx).removeValue(fillArrayCache(domainSize))
+            }
+          }
+        }
+      }
+    }
+  }
 
 }

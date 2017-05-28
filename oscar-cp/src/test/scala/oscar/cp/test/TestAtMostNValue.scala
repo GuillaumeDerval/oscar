@@ -21,8 +21,9 @@ import oscar.cp.testUtils._
 class TestAtMostNValue extends TestSuite {
   
   val rand = new scala.util.Random(0)
-  
-  def randomDom: Set[Int] = Array.fill(10)(rand.nextInt(8)).toSet
+
+  // test with minVal != 0
+  def randomDom: Set[Int] = Array.fill(10)(3+rand.nextInt(8)).toSet
   
   def atMostNValueDecomp(cp: CPSolver, X: Array[CPIntVar], N: CPIntVar) = {
     val minVal = X.map(_.min).min

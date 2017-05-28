@@ -278,8 +278,33 @@ class ReversibleSparseSet(s: ReversibleContext, val minValue: Int, val maxValue:
       }
     }
     size
-  }  
-  
+  }
+
+  /**
+   * @return an array representation of values present that have been removed from the set
+   */
+  def removedToArray: Array[Int] = {
+    val res = Array.ofDim[Int](values.length-size)
+    removedFillArray(res)
+    res
+  }
+
+  /**
+   * @return set the first values of dest to the ones removed
+   *         from the set and return the size of the set
+   */
+  def removedFillArray(dest: Array[Int]): Int = {
+    System.arraycopy(values, size, dest, 0, values.length-size)
+    if (offset != 0) {
+      var i = 0
+      while (i < values.length-size) {
+        dest(i) += offset
+        i += 1
+      }
+    }
+    values.length-size
+  }
+
   /**
    * get the i_th value in the sparse-set
    */
