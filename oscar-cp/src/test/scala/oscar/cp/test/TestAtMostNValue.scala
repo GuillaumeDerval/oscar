@@ -58,11 +58,19 @@ class TestAtMostNValue extends TestSuite {
   }
   
 
-    for (i <- 0 to 100) {
-      test("atMost2"+i) {
-        val X = Array.fill(6)(randomDom)
-        nbSol(X, 2, 3, false) should equal(nbSol(X, 2, 3, true))
-      }
+  for (i <- 0 to 100) {
+    test("atMost2"+i) {
+      val X = Array.fill(6)(randomDom)
+      nbSol(X, 2, 3, false) should equal(nbSol(X, 2, 3, true))
     }
+  }
 
+  test("AtMost5-AlreadyOver") {
+    implicit val cp = CPSolver()
+    val N = CPIntVar(5)
+    val X = Array.tabulate(6)(i => CPIntVar(i))
+    intercept[NoSolutionException] {
+      cp.add(new AtMostNValue(X,N))
+    }
+  }
 }

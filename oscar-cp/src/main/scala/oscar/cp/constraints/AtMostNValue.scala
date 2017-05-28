@@ -16,6 +16,7 @@
 
 package oscar.cp.constraints
 
+import oscar.algo.Inconsistency
 import oscar.algo.reversible.{ReversibleInt, ReversibleSparseSet}
 import oscar.cp.core.{CPPropagStrength, Constraint}
 import oscar.cp.core.variables.{CPIntVar, CPVar}
@@ -45,6 +46,8 @@ class AtMostNValue(val x: Array[CPIntVar], val c: CPIntVar) extends Constraint(x
   override def setup(l: CPPropagStrength): Unit = {
     x.foreach(_.callPropagateWhenBind(this))
     c.callPropagateWhenBoundsChange(this)
+
+    propagate()
   }
 
   override def propagate(): Unit = {
@@ -75,9 +78,12 @@ class AtMostNValue(val x: Array[CPIntVar], val c: CPIntVar) extends Constraint(x
           x(unBounds(j)).removeValue(values(i))
         }
       }
+      deactivate() //this constraint is satisfied from here
     }
-    /*
-    else if((nVal - unAssignedValues.size) == c.max - 1){
+    else if((nVal - unAssignedValues.size) > c.max)
+      throw Inconsistency
+
+    /*else if((nVal - unAssignedValues.size) == c.max - 1){
 
     }*/
   }
