@@ -23,6 +23,7 @@ object ALNSSolver2 extends CompetitionApp with App{
     val (vars, solutionGenerator) = XCSP3Parser2.parse(md, conf.benchname())
 
     val model: CPModel = CPInstantiate(md.getCurrentModel.asInstanceOf[UninstantiatedModel])
+    md.setCurrentModel(model)
 
     val decisionVariables: Array[CPIntVar] = vars.map(model.getRepresentative(_).realCPVar)
 
@@ -42,8 +43,7 @@ object ALNSSolver2 extends CompetitionApp with App{
       ALNSBuilder.Priority,
       ALNSBuilder.TTI,
       ALNSBuilder.TTI,
-//      solutionGenerator //TODO: fix this
-      () => CPIntSol.getXCSPInstantiation(decisionVariables)
+      solutionGenerator
     )
 
     val alns = ALNSSearch(solver, decisionVariables, config)

@@ -15,6 +15,7 @@ class XCSP(val instance: String, override val bestKnownObjective: Int = Int.MaxV
   val (vars, solutionGenerator) = XCSP3Parser2.parse(md, instance)
 
   val model: CPModel = CPInstantiate(md.getCurrentModel.asInstanceOf[UninstantiatedModel])
+  md.setCurrentModel(model)
 
   //TODO: get only decision variables
   override def decisionVariables: Array[CPIntVar] = vars.map(model.getRepresentative(_).realCPVar)

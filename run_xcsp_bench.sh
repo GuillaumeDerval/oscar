@@ -95,6 +95,6 @@ $BIN/parallel --gnu --jobs 50% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memo
 rm ${InstancesToRun}
 rm ${SolversToRun}
 
-cp -r "${Out}/${VNum}" "/etinfo/users2/cthomas/Workspace/${Out}/${VNum}"
+cp -r --parents "${Out}/${VNum}" "/etinfo/users2/cthomas/Workspace/"
 
-#scala -J-Xmx1g -cp ${CP} oscar.xcsp3.competition.Reporter ${Out}
+scala -J-Xmx1g -cp ${CP} oscar.xcsp3.competition.html.HtmlReporter ${Out}

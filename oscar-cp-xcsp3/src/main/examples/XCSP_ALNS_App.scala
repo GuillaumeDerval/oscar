@@ -28,8 +28,8 @@ object XCSP_ALNS_App extends App{
   val (vars, solutionGenerator) = XCSP3Parser2.parse(md, instance)
 
   val model: CPModel = CPInstantiate(md.getCurrentModel.asInstanceOf[UninstantiatedModel])
+  md.setCurrentModel(model)
 
-  //TODO: get only decision variables
   val decisionVariables: Array[CPIntVar] = vars.map(model.getRepresentative(_).realCPVar)
 
   val solver: CPSolver = model.cpSolver

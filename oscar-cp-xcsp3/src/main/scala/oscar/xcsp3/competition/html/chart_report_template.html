@@ -1,0 +1,70 @@
+<html>
+<head>
+    <!--Load the AJAX API-->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+
+        // Load the Visualization API and the chart packages.
+        google.charts.load('current', {'packages':['corechart', 'table', 'bar']});
+
+        // Set a callback to run when the Google Visualization API is loaded.
+        google.charts.setOnLoadCallback(drawData);
+
+        /**
+         * Draws the data.
+         */
+        function drawData(){
+
+            // elem template: [id, type, data source, options]
+            var data = [
+                /*<data>*/
+            ];
+
+            for(var i = 0; i < data.length; i++){
+                drawElement(data[i][0], data[i][1], data[i][2], data[i][3]);
+            }
+        }
+
+        /**
+         * Draws a data element.
+         * @param id the id of the element.
+         * @param type the type of the element.
+         * @param src the data source of the element.
+         * @param options the options to use for drawing the element.
+         */
+        function drawElement(id, type, src, options) {
+
+            // Creating the data table:
+            var data = google.visualization.arrayToDataTable(src, false);
+
+            // Instantiating and drawing the correct element type:
+            switch(type){
+                case 'table':
+                    var table = new google.visualization.Table(document.getElementById(id));
+                    table.draw(data, options);
+                    break;
+                case 'pie':
+                    var pchart = new google.visualization.PieChart(document.getElementById(id));
+                    pchart.draw(data, options);
+                    break;
+                case 'bar':
+                    var bchart = new google.visualization.BarChart(document.getElementById(id));
+                    bchart.draw(data, options);
+                    break;
+                case 'stacked bar':
+                    var schart = new google.visualization.BarChart(document.getElementById(id));
+                    schart.draw(data, options);
+                    break;
+                case 'line':
+                    var lchart = new google.visualization.LineChart(document.getElementById(id));
+                    lchart.draw(data, options);
+            }
+        }
+
+    </script>
+</head>
+
+<body>
+<!--<document>-->
+</body>
+</html>

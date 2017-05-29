@@ -18,7 +18,6 @@ object ALNSSearch{
   * Instantiates a CPModel and performs an ALNS search over it.
   */
 abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) {
-
   val startTime: Long = System.nanoTime()
   val endTime: Long = startTime + config.timeout
   var endSearch: Long = endTime
