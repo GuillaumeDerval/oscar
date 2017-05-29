@@ -344,7 +344,7 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     val csts = list.zip(values).map { case (x, v) => varHashMap(x.id()) === v }
     cp.add(csts)
   }
-  
+
   // Objectives
   def _getExprForTypeObjective(objtype: TypeObjective, list: Array[XVarInteger]): CPIntVar = {
     objtype match {
