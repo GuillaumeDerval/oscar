@@ -27,6 +27,8 @@ object ConfOrderSolver extends CompetitionApp with App{
     val startTime = System.nanoTime()
     val endTime: Long = startTime + timeout
 
+    val maximizeObjective: Boolean = solver.objective.objs.head.isMax
+
     val sols = mutable.ArrayBuffer[CPIntSol]()
 
     solver.onSolution{
@@ -39,7 +41,7 @@ object ConfOrderSolver extends CompetitionApp with App{
     val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime
 
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
-      solver.search(conflictOrderingSearch(vars,i => vars(i).size, learnValueHeuristic(vars, i => vars(i).max)))
+      solver.search(conflictOrderingSearch(vars,i => vars(i).size, learnValueHeuristic(vars, i => if(maximizeObjective) vars(i).min else vars(i).max)))
     }
 
     if(sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation)

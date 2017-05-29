@@ -1,10 +1,11 @@
 package oscar.xcsp3.competition.solvers
 
-import oscar.algo.search.DFSearch
-import oscar.cp.{CPSolver, conflictOrderingSearch, learnValueHeuristic}
+import oscar.algo.search.{Branching, DFSearch}
+import oscar.cp.CPSolver
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.searches.lns.CPIntSol
 import oscar.cp.searches.lns.operators.ALNSBuilder
+import oscar.cp.searches.lns.operators.SearchFunctions._
 import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch}
 import oscar.modeling.models.cp.CPModel
 import oscar.modeling.models.operators.CPInstantiate
@@ -58,11 +59,47 @@ object HybridSolver extends CompetitionApp with App {
     val result = alns.search()
     sols ++= result.solutions
 
-    CompetitionOutput.printComment("ALNS done, starting conflict ordering search (" + (endTime - System.nanoTime())/1000000000L + "s remaining)")
+    CompetitionOutput.printComment("ALNS done, starting complete search (" + (endTime - System.nanoTime())/1000000000L + "s remaining)")
+
+    val maximizeObjective: Boolean = solver.objective.objs.head.isMax
+
+    //Selecting search function based on operator that induced the most improvement:
+    val bestOperator = result.searchStats.minBy(_._2.improvement)._1
+    CompetitionOutput.printComment("Best operator: " + bestOperator)
+    val search: Branching = {
+      if(bestOperator.contains(ALNSBuilder.BinSplitValLearn))
+        binarySplit(decisionVariables, maximizeObjective, valLearn = true)
+
+      else if(bestOperator.contains(ALNSBuilder.ConfOrderValLearn))
+        conflictOrdering(decisionVariables, maximizeObjective, valLearn = true)
+
+      else if(bestOperator.contains(ALNSBuilder.FirstFailValLearn))
+        firstFail(decisionVariables, maximizeObjective, valLearn = true)
+
+      else if(bestOperator.contains(ALNSBuilder.LastConfValLearn))
+        lastConflict(decisionVariables, maximizeObjective, valLearn = true)
+
+      else if(bestOperator.contains(ALNSBuilder.BinSplitValLearn))
+        binarySplit(decisionVariables, maximizeObjective, valLearn = false)
+
+      else if(bestOperator.contains(ALNSBuilder.ConfOrder))
+        conflictOrdering(decisionVariables, maximizeObjective, valLearn = false)
+
+      else if(bestOperator.contains(ALNSBuilder.FirstFailValLearn))
+        firstFail(decisionVariables, maximizeObjective, valLearn = false)
+
+      else if(bestOperator.contains(ALNSBuilder.LastConfValLearn))
+        lastConflict(decisionVariables, maximizeObjective, valLearn = false)
+
+      //Default search: Conflict ordering with value heuristic:
+      else conflictOrdering(decisionVariables, maximizeObjective, valLearn = true)
+    }
+
+    println("starting search")
 
     solver.onSolution {
       val time = System.nanoTime() - startTime
-      val sol = new CPIntSol(decisionVariables.map(_.value), solver.objective.objs.head.best, time, /*solutionGenerator()*/CPIntSol.getXCSPInstantiation(decisionVariables)) //TODO: fix this
+      val sol = new CPIntSol(decisionVariables.map(_.value), solver.objective.objs.head.best, time, solutionGenerator())
       println("o " + sol.objective)
       sols += sol
     }
@@ -70,7 +107,7 @@ object HybridSolver extends CompetitionApp with App {
     val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime
 
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
-      solver.search(conflictOrderingSearch(decisionVariables, i => decisionVariables(i).size, learnValueHeuristic(decisionVariables, i => decisionVariables(i).max)))
+      solver.search(search)
     }
 
     if (sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation)

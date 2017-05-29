@@ -28,6 +28,8 @@ object FirstFailSolver extends CompetitionApp with App{
     val startTime = System.nanoTime()
     val endTime: Long = startTime + timeout
 
+    val maximizeObjective: Boolean = solver.objective.objs.head.isMax
+
     val sols = mutable.ArrayBuffer[CPIntSol]()
 
     solver.onSolution{
@@ -40,7 +42,7 @@ object FirstFailSolver extends CompetitionApp with App{
     val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime
 
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
-      solver.search(binaryFirstFail(vars))
+      solver.search(binaryFirstFail(vars, i => if(maximizeObjective) vars(i).min else vars(i).max))
     }
 
     if(sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation)

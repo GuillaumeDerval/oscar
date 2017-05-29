@@ -18,7 +18,7 @@ object SearchFunctions {
   def binarySplit(vars: Array[CPIntVar], maximizeObjective: Boolean, valLearn: Boolean): Branching =
     binarySplitIdx(vars, vars(_).size, defaultValueHeuristic(vars, maximizeObjective, valLearn))
 
-  private def defaultValueHeuristic(vars: Array[CPIntVar], maximizeObjective: Boolean, valLearn: Boolean): Int => Int = {
+  def defaultValueHeuristic(vars: Array[CPIntVar], maximizeObjective: Boolean, valLearn: Boolean): Int => Int = {
     if (valLearn)
       learnValueHeuristic(vars, if (maximizeObjective) vars(_).min else vars(_).max)
     else if (maximizeObjective) vars(_).min else vars(_).max
