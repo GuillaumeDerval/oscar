@@ -90,7 +90,7 @@ then
     mkdir "${Out}/${VNum}"
 fi
 
-$BIN/parallel --gnu --jobs 50% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${InstancesToRun} :::: ${SolversToRun}
+$BIN/parallel --gnu --jobs 75% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${InstancesToRun} :::: ${SolversToRun}
 
 rm ${InstancesToRun}
 rm ${SolversToRun}
