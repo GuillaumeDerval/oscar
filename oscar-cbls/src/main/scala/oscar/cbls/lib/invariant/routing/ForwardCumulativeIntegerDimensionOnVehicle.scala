@@ -20,6 +20,7 @@ import oscar.cbls.algo.seq.functional.IntSequence
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.routing.convention.VehicleLocation
+import oscar.cbls.lib.invariant.routing.oldCapa.AbstractVehicleCapacity
 
 /**
  * Created by  Jannou Brohée on 3/10/16.
@@ -80,7 +81,7 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
                                                  lastPointOfVehicle:Array[CBLSIntVar],
                                                  defaultVehicleContentForUnroutedNodes:Int,
                                                  maxStack:Int = 4)
-  extends AbstractVehicleCapacity(n,v,op)
+  extends oldCapa.AbstractVehicleCapacity(n,v,op)
    with SeqNotificationTarget with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(routes)

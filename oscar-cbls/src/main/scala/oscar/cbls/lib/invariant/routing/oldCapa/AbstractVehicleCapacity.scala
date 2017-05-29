@@ -1,4 +1,4 @@
-/*package oscar.cbls.lib.invariant.routing.capa
+package oscar.cbls.lib.invariant.routing.oldCapa
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -24,9 +24,11 @@ import oscar.cbls.lib.invariant.routing.convention.{ConcreteVehicleLocation, Veh
  * Maintains the content of vehicles at each node and the starting position of each vehicle
  * @param n The maximum number of nodes
  * @param v The number of vehicles
+ * @param op A function which describes the capacity between two nodes : (startingNode,destinationNode,capacityAtStartingNode)=> capacityAtDestinationNode
  */
 abstract class AbstractVehicleCapacity(n:Int,
-                                       v:Int) extends Invariant{
+                                       v:Int,
+                                       op:(Int,Int,Int)=>Int) extends Invariant{
 
   /**
    * we only require that zoneStart is <= list.head._2 if exists
@@ -152,7 +154,6 @@ abstract class AbstractVehicleCapacity(n:Int,
     zoneToUpdate.insert(vehicleOfRemove, updatedZoneToUpdateOfVehicleOfRemove)
   }
 
-
   // @Note => O(listToInsert+toInsert)
   private def insertInList(listToInsert: List[(Int, Int)], toInsert: List[(Int, Int)]): List[(Int, Int)] = {
     listToInsert match {
@@ -181,6 +182,7 @@ abstract class AbstractVehicleCapacity(n:Int,
                                   sequenceBeforeMove:IntSequence,
                                   vehicleLocationBeforeMove:VehicleLocation,
                                   vehicleLocationAfterMove:VehicleLocation):RedBlackTreeMap[List[(Int, Int)]] = {
+
     if (zonesToUpdate == null) return null
     if (m.isNop) return zonesToUpdate
 
@@ -296,8 +298,8 @@ abstract class AbstractVehicleCapacity(n:Int,
         else smartPrepend(0, 0, removedZones)
 
       val relativeAfterInNewSequence = m.oldPosToNewPos(m.after).get - vehicleLocationAfterMove.startPosOfVehicle(destinationVehicle)
-      val relativeAfterWhenSegmentIsRemoved = if(sourceVehicle != destinationVehicle) relativeAfterInNewSequence else if(m.moveDownwards) relativeAfterInNewSequence else relativeAfterInNewSequence - nbPointsInMovedSegment
-      def insertMovedZones(listOfZonesForVehicle : List[(Int, Int)], zonesToInsert : List[(Int, Int)],insertionPosition:Int = relativeAfterWhenSegmentIsRemoved +1) : List[(Int, Int)] = {
+
+      def insertMovedZones(listOfZonesForVehicle : List[(Int, Int)], zonesToInsert : List[(Int, Int)],insertionPosition:Int = relativeAfterInNewSequence +1) : List[(Int, Int)] = {
 
         listOfZonesForVehicle match {
           case Nil =>
@@ -342,29 +344,28 @@ abstract class AbstractVehicleCapacity(n:Int,
       //also need to insert a single zone at the end, and perform a relative shift of the sequence.
       val zonesToUpdateTo = zonesToUpdateWithVehicleFromUpdated.getOrElse(destinationVehicle, Nil)
       val updatedZonesTo = insertMovedZones(zonesToUpdateTo, relativeZonesToInsert)
+
       zonesToUpdateWithVehicleFromUpdated.insert(destinationVehicle, updatedZonesTo)
     }
   }
 
+  def getVehicleContentAtNode(node: Int): Int
+
+  /**
+   * sets the conent of the vehicle at node "node"
+   * if a node is unrouted, you should call setVehicleContentToUnroutedNode instead
+   * @param node the node
+   * @param newValueAtNode the new value for the content of the vehicle at this node
+   */
+  def setVehicleContentAtNode(node: Int, newValueAtNode: Int) : Unit
+
+  def getContentAtVehicleStart(vehicle:Int): Int
+
+  def setVehicleContentAtEnd(vehicle:Int,content:Int)
+
+  def setEndNodeOfVehicle(vehicle:Int,lastNode:Int)
+
   def setNodesUnrouted(unroutedNodes:Iterable[Int])
-
-  /**
-   *
-   * @param prevNode
-   * @param node
-   * @return true if changed, false otherwise
-   */
-  def setVehicleContentAtNode(prevNode:Int, node: Int):Boolean
-
-  def setVehicleContentAtEnd(vehicle:Int, lastNode:Int)
-
-  /**
-   *
-   * @param vehicle
-   * @return true if changed, false otherwise
-   */
-  def setVehicleContentAtStart(vehicle:Int):Boolean
-
 
   /**
    * updates the output, based on the zones to updata, for all vehicles
@@ -387,13 +388,15 @@ abstract class AbstractVehicleCapacity(n:Int,
 
       tmpExplorer match{
         case Some(e) if e.position+1 == s.size || (vehicle+1 < v && e.position + 1 == vehicleLocationInSequence.startPosOfVehicle(vehicle+1)) =>
-          setVehicleContentAtEnd(vehicle,e.value)
+          setVehicleContentAtEnd(vehicle,getVehicleContentAtNode(e.value))
+          setEndNodeOfVehicle(vehicle,e.value)
         case _ => ;
           //we did not reach th end of the vehicle route in the update, yet the last node might have hanged, so we have to update this
           val positionOfEndNodeOfVehicle = if(vehicle == v-1) s.size-1 else vehicleLocationInSequence.startPosOfVehicle(vehicle+1) -1
           val explorerAtEndNodeOfVehicleOpt = s.explorerAtPosition(positionOfEndNodeOfVehicle)
           val explorerAtEndNodeOfVehicle = explorerAtEndNodeOfVehicleOpt.get
-          setVehicleContentAtEnd(vehicle,explorerAtEndNodeOfVehicle.value)
+          setEndNodeOfVehicle(vehicle,explorerAtEndNodeOfVehicle.value)
+          setVehicleContentAtEnd(vehicle,getVehicleContentAtNode(explorerAtEndNodeOfVehicle.value))
           tmpExplorer = explorerAtEndNodeOfVehicleOpt
       }
     }
@@ -438,10 +441,13 @@ abstract class AbstractVehicleCapacity(n:Int,
 
             if (positionToStartFromAbsolute == startPositionOfVehicle) {
               //we need to update the value at vehicle start
-              val changedStart = setVehicleContentAtStart(vehicle)
-              if(changedStart || endCompulsoryAbsolute > 0) {
+              val newValueAtStart:Int = getContentAtVehicleStart(vehicle)
+              val oldValueAtStart = getVehicleContentAtNode(vehicle)
+              if(newValueAtStart != oldValueAtStart || endCompulsoryAbsolute > 0) {
                 //start iterate from here
+                setVehicleContentAtNode(vehicle, newValueAtStart)
                 updateUntilAbsolutePositionAndSaturatedOrVehicleEnd(explorerToStartUpdate,
+                  newValueAtStart,
                   endCompulsoryAbsolute, vehicle)
               }else {
                 //we do not need to iterate on this because there was no change at this point, and we already reached the end of the compulsory zone
@@ -453,6 +459,7 @@ abstract class AbstractVehicleCapacity(n:Int,
 
               val explorerAtPrev = explorerToStartUpdate.prev.get
               updateUntilAbsolutePositionAndSaturatedOrVehicleEnd(explorerAtPrev,
+                getVehicleContentAtNode(explorerAtPrev.value),
                 endCompulsoryAbsolute, vehicle)
             }
           }
@@ -466,13 +473,17 @@ abstract class AbstractVehicleCapacity(n:Int,
   }
 
   /**
+   *
    * @param previousUpdatedPosition
+   * @param valueAtPreviousUpdatedPosition
    * @param endCompulsoryAbsolute
-   * @param vehicle the vehicle to which this belongs
+   *                              @param vehicle the vehicle to which this belongs
    * @return the last position where an update was performed
    */
   private def updateUntilAbsolutePositionAndSaturatedOrVehicleEnd(previousUpdatedPosition:IntSequenceExplorer,
+                                                                  valueAtPreviousUpdatedPosition:Int,
                                                                   endCompulsoryAbsolute:Int,vehicle:Int):Option[IntSequenceExplorer] = {
+
     previousUpdatedPosition.next match{
       case None => None //we'v reached the end of the sequence
       case Some(positionOfCurrent) =>
@@ -482,12 +493,20 @@ abstract class AbstractVehicleCapacity(n:Int,
           Some(previousUpdatedPosition)
         }else {
           //(startingNode,destinationNode,capacityAtStartingNode)=> capacityAtDestinationNode
+          val oldValueForCurrentNode = getVehicleContentAtNode(currentNode)
+          val newValueForCurrentNode = op(previousUpdatedPosition.value, currentNode, valueAtPreviousUpdatedPosition)
 
-          val changedAtNode = setVehicleContentAtNode(previousUpdatedPosition.value, currentNode)
-          if (changedAtNode || positionOfCurrent.position < endCompulsoryAbsolute) {
-            //changed or in the compulsory zone
+          if (oldValueForCurrentNode != newValueForCurrentNode) {
+            setVehicleContentAtNode(currentNode, newValueForCurrentNode)
             updateUntilAbsolutePositionAndSaturatedOrVehicleEnd(
               positionOfCurrent,
+              newValueForCurrentNode,
+              endCompulsoryAbsolute, vehicle)
+          } else if (positionOfCurrent.position < endCompulsoryAbsolute) {
+            //thre is no update, but we are in the compulsory zone
+            updateUntilAbsolutePositionAndSaturatedOrVehicleEnd(
+              positionOfCurrent,
+              newValueForCurrentNode,
               endCompulsoryAbsolute, vehicle)
           } else {
             //there is no update, and we are not in the compulsory zone anymore, so we can stop, and return the position
@@ -503,60 +522,52 @@ abstract class AbstractVehicleCapacity(n:Int,
    * @return (VehicleLocation)
    */
   def computeAndAffectContentAndVehicleStartPositionsFromScratch(s:IntSequence,unrouteAllNodes:Boolean):(ConcreteVehicleLocation) = {
+
     val vehicleLocation = Array.fill(v)(0)
 
     if(unrouteAllNodes) setNodesUnrouted(v until n)
 
     var previousPosition = s.explorerAtPosition(0).get
     var currentVehicle = 0
-    setVehicleContentAtStart(0)
+    var previousContent = getContentAtVehicleStart(0)
+    setVehicleContentAtNode(0, previousContent)
 
     while(true) {
       previousPosition.next match {
         case None => //we'v reached the end of the sequence
-          setVehicleContentAtEnd(currentVehicle,previousPosition.value)
+          setVehicleContentAtEnd(currentVehicle,previousContent)
+          setEndNodeOfVehicle(currentVehicle,previousPosition.value)
           require(currentVehicle == v-1)
           return VehicleLocation(vehicleLocation)
         case Some(currentPosition) =>
           val currentNode = currentPosition.value
           if (currentNode < v) {
             //we'v reached a new vehicle
-            setVehicleContentAtEnd(currentVehicle,previousPosition.value)
+            setVehicleContentAtEnd(currentVehicle,previousContent)
+            setEndNodeOfVehicle(currentVehicle,previousPosition.value)
             vehicleLocation(currentNode) = currentPosition.position
-            setVehicleContentAtStart(currentNode)
+            previousContent = getContentAtVehicleStart(currentNode)
+            setVehicleContentAtNode(currentNode, previousContent)
             previousPosition = currentPosition
             currentVehicle = currentNode
           } else {
             //carry on the same vehicle
             //(startingNode,destinationNode,capacityAtStartingNode)=> capacityAtDestinationNode
-            setVehicleContentAtNode(currentNode, previousPosition.value)
+            previousContent = op(previousPosition.value, currentNode,previousContent)
+            setVehicleContentAtNode(currentNode, previousContent)
             previousPosition = currentPosition
           }
       }
     }
     throw new Error("should not happen")
   }
-}
 
-
-
-
-
-
-object AbstractVehicleCapacity{
   /**
    *Computes content of vehicle and their starting position from scratch
    * @param s the sequence
    * @return (nodeToContent,vehicleToContentAtEnd,vehicleLocation)
    */
-  def computeNodeToIntContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch
-  (n:Int,
-   v:Int,
-   op:(Int,Int,Int) => Int,
-   getContentAtVehicleStart:Int=>Int,
-   s:IntSequence,
-   defaultVehicleContentForUnroutedNodes:Int):(Array[Int],Array[Int],ConcreteVehicleLocation) = {
-
+  def computeNodeToContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch(s:IntSequence,defaultVehicleContentForUnroutedNodes:Int):(Array[Int],Array[Int],ConcreteVehicleLocation) = {
     val vehicleLocation = Array.fill(v)(0)
     val vehicleContent = Array.fill(n)(defaultVehicleContentForUnroutedNodes)
     val vehicleContentAtEndOfRoute = Array.fill(v)(0)
@@ -595,4 +606,3 @@ object AbstractVehicleCapacity{
     throw new Error("should not happen")
   }
 }
-*/

@@ -1,5 +1,3 @@
-/*
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -16,7 +14,7 @@
   ******************************************************************************/
 
 
-package oscar.cbls.lib.invariant.routing.capa
+package oscar.cbls.lib.invariant.routing.oldCapa
 
 import oscar.cbls.algo.magicArray.MagicIntArrayStacked
 import oscar.cbls.algo.rb.RedBlackTreeMap
@@ -92,10 +90,10 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                                            op :(Int,Int,Int)=>Int,
                                            cMax:Int,
                                            contentAtVehicleStart:Array[Int],
-                                           violation:CBLSIntVar,
+                                           val violation:CBLSIntVar,
                                            maxCheckpointLevel:Int,
                                            maxStack:Int)
-  extends AbstractVehicleCapacity(n,v) with SeqNotificationTarget {
+  extends AbstractVehicleCapacity(n,v,op) with SeqNotificationTarget {
   require(contentAtVehicleStart.length==v)
   require(cMax >=0,"cMax should be >=0")
   require(contentAtVehicleStart.forall(_ <= cMax),"cannot exceed cMax in intitial values (ok this is because implementer was lazy, just remplace violation :=0 by violation := sum(contentToViolation(initValue))")
@@ -110,36 +108,27 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
   private val violationAndVehicleStartStack = new SeqCheckpointedValueStack[(Int,VehicleLocation)]()
   private var currentVehicleLocation:VehicleLocation = computeAndAffectContentAndVehicleStartPositionsFromScratch(routes.value,false)
 
-  for(vehicle <- 0 until v){
-    contentAtNode(vehicle) = contentAtVehicleStart(vehicle)
-  }
+  def contentOfVehicle:Array[Int] = Array.tabulate(n)(contentAtNode(_))
 
-  override def setVehicleContentAtNode(prevNode:Int, node: Int):Boolean = {
+  override def getContentAtVehicleStart(vehicle : Int) : Int = contentAtVehicleStart(vehicle)
+
+  override def setEndNodeOfVehicle(vehicle : Int, lastNode : Int){}
+
+  override def setVehicleContentAtEnd(vehicle : Int, content : Int){}
+
+  override def getVehicleContentAtNode(node : Int) : Int = contentAtNode(node)
+
+  override def setVehicleContentAtNode(node: Int, newContentAtNode: Int) {
     val oldContent = contentAtNode(node)
-    val newContentAtNode = op(prevNode,node,contentAtNode(prevNode))
-
-    if(newContentAtNode == oldContent) return false
     contentAtNode(node) = newContentAtNode
     violation :+= (contentToViolation(newContentAtNode) - contentToViolation(oldContent))
-    true
   }
 
   override def setNodesUnrouted(unroutedNodes : Iterable[Int]){
     for(node <- unroutedNodes){
-      violation :-= contentToViolation(contentAtNode(node))
+      violation :-= contentToViolation(getVehicleContentAtNode(node))
       contentAtNode(node) = 0
     }
-  }
-
-  override def setVehicleContentAtEnd(vehicle : Int, lastNode : Int) : Unit = {}
-
-  /**
-   * @param vehicle
-   * @return true if changed, false otherwise
-   */
-  override def setVehicleContentAtStart(vehicle : Int) : Boolean = {
-    assert(contentAtNode(vehicle) == contentAtVehicleStart(vehicle))
-    false
   }
 
   @inline
@@ -245,7 +234,8 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
               updateVehicleContentOnAllVehicle(prev.newValue,
                 zonesAfterPrev,
                 regularizedVehicleLocation)
-
+              contentAtNode.pushLevel()
+              require(contentAtNode.level == checkpointLevel, "contentAtNode.level:" + contentAtNode.level  + " checkpointLevel:" + (checkpointLevel))
               currentVehicleLocation = regularizedVehicleLocation
               violationAndVehicleStartStack.defineCheckpoint(prev.newValue, checkpointLevel, (violation.newValue, regularizedVehicleLocation))
 
@@ -258,6 +248,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                 contentAtNode.popLevel(true)
               }
               contentAtNode.pushLevel()
+              require(contentAtNode.level == checkpointLevel)
               setNodesUnrouted(v until n)
               violation :=0
               //we have to set all unrouted nodes to unrouted, since we have lost continuity on routes nodes because of the popLevel(true) hereabove
@@ -271,12 +262,13 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
           digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence)
         }
       case u@SeqUpdateRollBackToCheckpoint(checkpoint : IntSequence, level:Int) =>
-        println("ROLLBACK performed")
         if(level <= maxCheckpointLevel){
 
           while (contentAtNode.level >= level) {
             contentAtNode.popLevel(true)
           }
+          contentAtNode.pushLevel()
+          require(contentAtNode.level == level)
           val (violation,vehicleLocation) = violationAndVehicleStartStack.rollBackAndOutputValue(checkpoint, level)
           currentVehicleLocation = vehicleLocation
           this.violation := violation
@@ -290,28 +282,31 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
   }
 
   override def checkInternals(c: Checker): Unit = {
-    val (nodeToContent,_,vehicleStartPos) = AbstractVehicleCapacity.computeNodeToIntContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch(n,v,op,this.contentAtVehicleStart,routes.value, 0)
-    for(node <- routes.value){
-      c.check(nodeToContent(node) equals contentAtNode(node),
-        Some("GenericCumulativeConstraint : Error on content at node(" + node + ") at pos : "+ routes.newValue.positionsOfValue(node)+ " :=" + contentAtNode(node) + " should be :=" + nodeToContent(node) + " route:" + routes.value))
+    check(c, routes.value)
+  }
+
+  def check(c: Checker,s:IntSequence): Unit = {
+    val (nodeToContent,_,vehicleStartPos) = computeNodeToContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch(s, 0)
+    for(node <- s){
+      c.check(nodeToContent(node) equals getVehicleContentAtNode(node),
+        Some("GenericCumulativeConstraint : Error on content at node(" + node + ") at pos : "+ s.positionsOfValue(node)+ " :=" + getVehicleContentAtNode(node) + " should be :=" + nodeToContent(node) + " route:" + routes.value))
     }
     val computedViolation = nodeToContent.foldLeft(0)({case (acc,nodeContent) => acc + contentToViolation(nodeContent)})
-    c.check(computedViolation == violation.value, Some("GenericCumulativeConstraint : " + violation + " should be :="+computedViolation))
+    c.check(computedViolation == violation.newValue, Some("GenericCumulativeConstraint : " + violation + " should be :="+computedViolation))
     for(node <- 0 until n){
-      if(routes.value.contains(node)){
-        c.check(nodeToContent(node) == contentAtNode(node),Some("Error on content of routed node " + node))
+      if(s.contains(node)){
+        c.check(nodeToContent(node) == getVehicleContentAtNode(node),Some("Error on content of routed node " + node))
       }else{
         c.check(nodeToContent(node) == 0 ,Some("Error on computed content of unrouted node " + node))
-        c.check(contentAtNode(node) == 0 ,Some("Error on content of unrouted node " + node + " is " + contentAtNode(node) + " should be 0"))
+        c.check(getVehicleContentAtNode(node) == 0 ,Some("Error on content of unrouted node " + node + " is " + getVehicleContentAtNode(node) + " should be 0"))
       }
     }
 
     for(vehicle <- 0 until v) {
-      c.check(routes.value.valueAtPosition(vehicleStartPos.startPosOfVehicle(vehicle)).get == vehicle,Some("a"))
-      c.check(routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(vehicle)).get == vehicle,
-        Some("routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(" + vehicle + ")) is" + routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(vehicle)) + " should be " + vehicle))
+      c.check(s.valueAtPosition(vehicleStartPos.startPosOfVehicle(vehicle)).get == vehicle,Some("a"))
+      c.check(s.valueAtPosition(currentVehicleLocation.startPosOfVehicle(vehicle)).get == vehicle,
+        Some("routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(" + vehicle + ")) is" + s.valueAtPosition(currentVehicleLocation.startPosOfVehicle(vehicle)) + " should be " + vehicle))
     }
   }
 }
 
-*/

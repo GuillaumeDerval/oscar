@@ -15,31 +15,16 @@ package oscar.cbls.test.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.business.routing.model.ClosestNeighbors
-import oscar.cbls.business.routing.model.RoutedAndUnrouted
-import oscar.cbls.business.routing.model.TotalConstantDistance
-import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.business.routing.neighborhood.InsertPointRoutedFirst
-import oscar.cbls.business.routing.neighborhood.InsertPointUnroutedFirst
-import oscar.cbls.business.routing.neighborhood.OnePointMove
-import oscar.cbls.business.routing.neighborhood.OnePointMoveMove
-import oscar.cbls.business.routing.neighborhood.ThreeOpt
-import oscar.cbls.business.routing.neighborhood.TwoOpt1
+import oscar.cbls.business.routing.model.{ClosestNeighbors, RoutedAndUnrouted, TotalConstantDistance, VRP}
+import oscar.cbls.business.routing.neighborhood.{InsertPointRoutedFirst, InsertPointUnroutedFirst, OnePointMove, OnePointMoveMove, ThreeOpt, TwoOpt1, _}
 import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
-import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.constraint.LE
 import oscar.cbls.lib.invariant.routing.{ForwardCumulativeConstraintOnVehicle, RouteSuccessorAndPredecessors}
 import oscar.cbls.lib.invariant.seq.Size
-import oscar.cbls.lib.invariant.seq.Size
-import oscar.cbls.lib.search.combinators.BestSlopeFirst
-import oscar.cbls.lib.search.combinators.Mu
-import oscar.cbls.lib.search.combinators.Profile
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
 import oscar.cbls.modeling.Algebra._
-import oscar.cbls.business.routing.model._
-import oscar.cbls.business.routing.neighborhood._
-import oscar.cbls.lib.search.combinators.{Mu, BestSlopeFirst, Profile}
 
 class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int, deltaAtNode:Array[Int], maxCapa:Int)
   extends VRP(n,v,m,maxPivot) with TotalConstantDistance with ClosestNeighbors with RoutedAndUnrouted{
@@ -63,7 +48,6 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
   maxCapa,
   Array.tabulate(v)(deltaAtNode),
   violation,
-  6,
   6)
 
   val obj = new CascadingObjective(
@@ -83,13 +67,13 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
 
   this.addToStringInfo(() => "next: [" + next.map(_.value).mkString(",") + "]")
   this.addToStringInfo(() => "prev: [" + prev.map(_.value).mkString(",") + "]")
-  this.addToStringInfo(() => "content: [" + contentConstraint.contentOfVehicle.mkString(",") + "]")
+  this.addToStringInfo(() => "content: [" + contentConstraint.contentAtNodes.mkString(",") + "]")
 }
 
 object TestCumulatives extends App{
 
   val n = 10
-  val v = 2
+  val v = 5
   val delta = Array(0,1,-1,2,-2,3,-3,4,-4,0)
   val maxPivotPerValuePercent = 4
 

@@ -1,5 +1,3 @@
-/*
-
 package oscar.cbls.lib.invariant.routing.capa
 
 
@@ -22,6 +20,7 @@ import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.functional.IntSequence
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.Checker
+import oscar.cbls.lib.invariant.routing.AbstractVehicleCapacity
 import oscar.cbls.lib.invariant.routing.convention.VehicleLocation
 
 /**
@@ -37,9 +36,8 @@ object ForwardCumulativeIntegerDimensionOnVehicle {
    * @param op A function which returns the capacity change between two nodes : (fromNode,toNode,contentAtFromNode)=> contentAtToNode
    * @param contentAtStart Array of lenght = v where initValue(car) = content at start pos of vehicle #car
    * @param defaultForUnroutedNodes is the content of a node that is not routed
-   * @param minContent Min content of a node
-   * @param maxContent Max content of a node
-   * @param maxStack Maximum depth of vehicleLocation history
+   * @param minContent Min content of a node (used for creating the output variable, but not considered as a constraint)
+   * @param maxContent Max content of a node (used for creating the output variable, but not considered as a constraint)
    * @param contentName the name of this content, for debug purpose. it is atributed to all variales created by this invairant
    * @return  (contentAtNode,contentAtEnd,lastPointOfVehicle)
    */
@@ -51,13 +49,12 @@ object ForwardCumulativeIntegerDimensionOnVehicle {
             defaultForUnroutedNodes:Int,
             minContent:Int = 0,
             maxContent:Int = Int.MaxValue,
-            maxStack:Int = 4,
             contentName:String = "content"):(Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar]) ={
     val contentAtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent).union(defaultForUnroutedNodes), contentName + " at node "+node))
     val contentAtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent), contentName + " at end of route " + vehicle))
     val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, n-1, "last point of vehicle" + vehicle))
 
-    new ForwardCumulativeIntegerDimensionOnVehicle(routes,n,v,op,contentAtStart,contentAtNode,contentAtEnd,lastPointOfVehicle,defaultForUnroutedNodes,maxStack)
+    new ForwardCumulativeIntegerDimensionOnVehicle(routes,n,v,op,contentAtStart,contentAtNode,contentAtEnd,lastPointOfVehicle,defaultForUnroutedNodes)
     (contentAtNode,contentAtEnd,lastPointOfVehicle)
   }
 }
@@ -70,26 +67,71 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
                                                  contentAtNode:Array[CBLSIntVar],
                                                  contentAtEnd:Array[CBLSIntVar],
                                                  lastPointOfVehicle:Array[CBLSIntVar],
-                                                 defaultVehicleContentForUnroutedNodes:Int,
-                                                 maxStack:Int = 4)
-  extends AbstractForwardCumulativeDimensionOnVehicle(routes,n,v,maxStack:Int){
+                                                 defaultVehicleContentForUnroutedNodes:Int)
 
+  extends AbstractForwardCumulativeDimensionOnVehicle(routes,n,v) with IntNotificationTarget{
+
+  registerStaticAndDynamicDependency(routes)
+  registerStaticAndDynamicDependencyArrayIndex(contentAtStart)
+  finishInitialization()
+  for(i <- contentAtNode) i.setDefiningInvariant(this)
+  for(i <- contentAtEnd) i.setDefiningInvariant(this)
+
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int){
+    toUpdateZonesAndVehicleStartAfter match {
+      case None => ;
+      case Some((toUpdateZones,vehicleLocation)) =>
+        toUpdateZonesAndVehicleStartAfter = Some((toUpdateZones.insert(id, smartPrepend(0,0,toUpdateZones.getOrElse(id,List.empty[(Int,Int)]))),vehicleLocation))
+    }
+    scheduleForPropagation()
+  }
 
   /**
-   *
    * @param vehicle
    * @return true if changed, false otherwise
    */
-  override def setVehicleContentAtStart(vehicle : Int) : Boolean = ???
+  override def setVehicleContentAtStart(vehicle : Int) : Boolean = {
+    val newValue = contentAtStart(vehicle).value
+    val oldValue = contentAtNode(vehicle).newValue
+    if(oldValue == newValue){
+      false
+    }else{
+      contentAtNode(vehicle) := newValue
+      true
+    }
+  }
 
+  /**
+   * @param prevNode
+   * @param node
+   * @return true if changed, false otherwise
+   */
+  override def setVehicleContentAtNode(prevNode : Int, node : Int) : Boolean = {
+    val oldValue = contentAtNode(node).newValue
+    val newValue = op(prevNode,node,contentAtNode(prevNode).newValue)  //(fromNode,toNode,contentAtFromNode)=> contentAtToNode
+    if(oldValue != newValue) {
+      contentAtNode(node) := newValue
+      true
+    }else{
+      false
+    }
+  }
 
-  override def setVehicleContentAtNode(node : Int, newValueAtNode : Int) : Unit = super.setVehicleContentAtNode(node, newValueAtNode)
+  override def setVehicleContentAtEnd(vehicle : Int, lastNode : Int){
+    contentAtEnd(vehicle) := contentAtNode(lastNode).newValue
+    lastPointOfVehicle(vehicle) := lastNode
+  }
+
+  override def setNodesUnrouted(unroutedNodes : Iterable[Int]){
+    for(node <- unroutedNodes)
+      contentAtNode(node) := defaultVehicleContentForUnroutedNodes
+  }
 
   override def checkInternals(c : Checker) : Unit = {
     val (nodeToContent,vehicleToContentAtEnd,vehicleLocation) = AbstractVehicleCapacity.computeNodeToIntContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch(n,v,op,v => contentAtStart(v).value,routes.value,defaultVehicleContentForUnroutedNodes)
     for(node <- 0 until n){
-      c.check(nodeToContent(node) == getVehicleContentAtNode(node),
-        Some("Vehicle content at node(" + node + ") at pos : "+ routes.value.positionsOfValue(node)+ " := " + getVehicleContentAtNode(node) + " should be :=" + nodeToContent(node)+ " routes:" + routes.value.mkString(",")  + " contentAtStart:" + contentAtStart.mkString(",")))
+      c.check(nodeToContent(node) == contentAtNode(node).newValue,
+        Some("Vehicle content at node(" + node + ") at pos : "+ routes.value.positionsOfValue(node)+ " := " + contentAtNode(node).newValue + " should be :=" + nodeToContent(node)+ " routes:" + routes.value.mkString(",")  + " contentAtStart:" + contentAtStart.mkString(",")))
     }
     for(vehicle <- 0 until v){
       c.check(vehicleLocation.startPosOfVehicle(vehicle) == routes.value.positionOfAnyOccurrence(vehicle).get,
@@ -101,6 +143,3 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
   }
 }
 
-
-
-*/

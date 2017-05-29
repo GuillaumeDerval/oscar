@@ -2,10 +2,17 @@
 package oscar.cbls.lib.invariant.routing.capa
 
 
+
 /**
  * Created by rdl on 18-05-17.
  */
 abstract class IntegerVehicleCapacity {
+
+  registerStaticAndDynamicDependency(routes)
+  registerStaticAndDynamicDependencyArrayIndex(contentAtStart)
+  finishInitialization()
+  for(i <- contentAtNode) i.setDefiningInvariant(this)
+  for(i <- contentAtEnd) i.setDefiningInvariant(this)
 
 
   def getVehicleContentAtNode(node: Int): Int
@@ -23,5 +30,4 @@ abstract class IntegerVehicleCapacity {
   def setVehicleContentAtEnd(vehicle:Int,content:Int)
 
 }
-
 */
