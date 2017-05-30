@@ -30,6 +30,9 @@ abstract class CompetitionApp extends App{
     case e: Exception =>
       CompetitionOutput.printStatus("UNKNWOWN")
       CompetitionOutput.printDiagnostic("EXCEPTION", e.getMessage)
+      CompetitionOutput.printComment(e.getStackTrace.mkString("\n"))
+      Console.flush()
+      throw e
   }
 
   //TODO: Parse Instance, launch search and print results
