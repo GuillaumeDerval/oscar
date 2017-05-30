@@ -2,6 +2,7 @@ package oscar.xcsp3.competition.solvers
 
 import oscar.cp.CPSolver
 import oscar.cp.core.variables.CPIntVar
+import oscar.cp.searches.lns.CPIntSol
 import oscar.cp.searches.lns.operators.ALNSBuilder
 import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch}
 import oscar.modeling.models.{ModelDeclaration, UninstantiatedModel}
@@ -22,6 +23,7 @@ object ALNSSolver2 extends CompetitionApp with App{
     val (vars, solutionGenerator) = XCSP3Parser2.parse(md, conf.benchname())
 
     val model: CPModel = CPInstantiate(md.getCurrentModel.asInstanceOf[UninstantiatedModel])
+    md.setCurrentModel(model)
 
     val decisionVariables: Array[CPIntVar] = vars.map(model.getRepresentative(_).realCPVar)
 
@@ -29,17 +31,22 @@ object ALNSSolver2 extends CompetitionApp with App{
     solver.silent = true
 
     Random.setSeed(conf.randomseed())
+    val timeout = (conf.timelimit().toLong - 5L) * 1000000000L
 
     val config = new ALNSConfig(
-      timeout = conf.timelimit().toLong * 1000000000L,
+      timeout,
+      conf.memlimit(),
       coupled = true,
       learning = true,
       Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided),
-      Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit, ALNSBuilder.ConfOrderValLearn, ALNSBuilder.FirstFailValLearn, ALNSBuilder.LastConfValLearn, ALNSBuilder.BinSplitValLearn),
+      Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit),
+      ALNSBuilder.ValHeurisBoth,
+      valLearn = true,
       ALNSBuilder.Priority,
       ALNSBuilder.Priority,
       ALNSBuilder.TTI,
-      ALNSBuilder.TTI
+      ALNSBuilder.TTI,
+      solutionGenerator
     )
 
     val alns = ALNSSearch(solver, decisionVariables, config)
@@ -47,9 +54,11 @@ object ALNSSolver2 extends CompetitionApp with App{
     val result = alns.search()
     val sols = result.solutions
 
-    if(sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation)
-    else CompetitionOutput.printStatus("UNSATISFIABLE")
-
+    if(sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation, solver.objective.isOptimum())
+    else{
+      CompetitionOutput.printStatus("UNKNOWN")
+      CompetitionOutput.printDiagnostic("NO_SOL_FOUND")
+    }
   }
 
 }

@@ -4,7 +4,7 @@
 SBT_HOME=/etinfo/users2/cthomas/sbt/bin
 BIN=/etinfo/users2/cthomas/bin
 
-ReRun="false"
+ReRun="true"
 Timeout=240
 Memory=1000
 
@@ -45,14 +45,14 @@ run_search () {
         if [ "$ReRun" = "true" ]
         then
             echo "Re-running bench"
-            echo "c $InstanceName" > $OutPath
-            echo "c $SolverName" >> $OutPath
+            echo "c instance: $InstanceName" > $OutPath
+            echo "c solver: $SolverName" >> $OutPath
             scala -J-Xmx${5}m -cp $1 $7 --timelimit $4 $6 >> $OutPath
         fi
     else
         echo "Running bench"
-        echo "c $InstanceName" > $OutPath
-        echo "c $SolverName" >> $OutPath
+        echo "c instance: $InstanceName" > $OutPath
+        echo "c solver: $SolverName" >> $OutPath
         scala -J-Xmx${5}m -cp $1 $7 --timelimit $4 $6 >> $OutPath
     fi
 
@@ -71,7 +71,6 @@ for s in `ls ${SolversDir}`; do
 done
 
 for i in `ls ${BenchDir}`; do
-    echo $i
     if [ "${i: -4}" == ".xml" ]; then
         echo "$BenchDir/$i" >> ${InstancesToRun}
     else
@@ -84,16 +83,18 @@ cat ${SolversToRun}
 echo -e "\nInstances:"
 cat ${InstancesToRun}
 echo -e "\n\n\n"
-mk
+
 if [ ! -e "${Out}/${VNum}" ]
 then
     echo "Creating directory: ${Out}/${VNum}"
     mkdir "${Out}/${VNum}"
 fi
 
-$BIN/parallel --gnu --jobs 50% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${InstancesToRun} :::: ${SolversToRun}
+$BIN/parallel --gnu --jobs 75% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${InstancesToRun} :::: ${SolversToRun}
 
 rm ${InstancesToRun}
 rm ${SolversToRun}
 
-#scala -J-Xmx1g -cp ${CP} oscar.xcsp3.competition.Reporter ${Out}
+cp -r --parents "${Out}/${VNum}" "/etinfo/users2/cthomas/Workspace/"
+
+scala -J-Xmx1g -cp ${CP} oscar.xcsp3.competition.html.HtmlReporter ${Out}

@@ -18,7 +18,6 @@ object ALNSSearch{
   * Instantiates a CPModel and performs an ALNS search over it.
   */
 abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) {
-
   val startTime: Long = System.nanoTime()
   val endTime: Long = startTime + config.timeout
   var endSearch: Long = endTime
@@ -40,11 +39,12 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
 
   solver.onSolution{
     val time = System.nanoTime() - startTime
-    currentSol = new CPIntSol(vars.map(_.value), solver.objective.objs.head.best, time, CPIntSol.getXCSPInstantiation(vars))
+    currentSol = new CPIntSol(vars.map(_.value), solver.objective.objs.head.best, time, config.solutionGenerator())
     if((maximizeObjective && currentSol.objective > bestSol.objective) || (!maximizeObjective && currentSol.objective < bestSol.objective)){
       bestSol = currentSol
       solsFound += currentSol
-      println("o " + currentSol.objective)
+      println("o " + currentSol.objective) //For XCSP competition
+      Console.flush()
     }
   }
 
@@ -57,7 +57,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
     stop
   }
 
-  val builder = new ALNSBuilder(solver, vars, maximizeObjective, config)
+  val builder = new ALNSBuilder(solver, vars, config)
 
   val metric: (ALNSElement, Int, SearchStatistics) => Double = builder.instantiateMetric()
 
@@ -71,7 +71,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
     if(!solver.silent) println("Starting first solution search...")
 
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
-      solver.search(SearchFunctions.conflictOrdering(vars, maximizeObjective, valLearn = false))
+      solver.search(SearchFunctions.conflictOrdering(vars, !maximizeObjective, valLearn = false))
     }
 
     if(!solver.silent) println("Time elapsed: " + (System.nanoTime() - startTime)/1000000000.0 + "s")

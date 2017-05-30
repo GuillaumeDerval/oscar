@@ -6,6 +6,8 @@ import oscar.cp.searches.lns.CPIntSol
 import oscar.cp.searches.lns.search.ALNSConfig
 import oscar.cp.searches.lns.selection.{AdaptiveStore, Metrics, PriorityStore, RouletteWheel}
 
+import scala.collection.mutable.ArrayBuffer
+
 /**
   * Companion object for the ALNSBuilder class. Contains the keys and default values for the ALNS elements
   * supported by the ALNSBuilder.
@@ -38,19 +40,20 @@ object ALNSBuilder{
     */
   // Conflict ordering search:
   val ConfOrder = "ConfOrder"
-  val ConfOrderValLearn = "ConfOrderValLearn"
 
   // First fail search:
   val FirstFail = "FirstFail"
-  val FirstFailValLearn = "FirstFailValLearn"
 
   // Last conflict search:
   val LastConf = "LastConf"
-  val LastConfValLearn = "LastConfValLearn"
 
   // Binary split search:
   val BinSplit = "BinSplit"
-  val BinSplitValLearn = "BinSplitValLearn"
+
+  // Available value Heuristic functions:
+  val ValHeurisMin = "Min"
+  val ValHeurisMax = "Max"
+  val ValHeurisBoth = "Both"
 
   //TODO: implement other search heuristics
 
@@ -80,28 +83,30 @@ object ALNSBuilder{
   * Builder class for ALNS elements (operators, adaptive stores and performance metrics). The elements are built based
   * on the key(s) given when calling a method. These keys are defined in the companion object.
   */
-class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], maximizeObjective: Boolean, config: ALNSConfig){
+class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
 
   // lazy vals used for some operators:
   lazy val N: Int = vars.length // The number of vars
   lazy val maxNeighSize: Double = vars.map(x => math.log(x.size)).sum // Max neighbourhood size for propagation guided relax
-  lazy val closeness: Option[ClosenessStore] = if(N*N*16 > 1000000000) None else Some(new ClosenessStore(N)) // Closeness store used for propagation guided relax
+  lazy val closeness: Option[ClosenessStore] = if(N*N*16 > (config.memLimit * 1000000)) None else Some(new ClosenessStore(N)) // Closeness store used for propagation guided relax
 
   private def wrapSearch(search: Branching): (CPIntSol) => Unit = {
     (sol: CPIntSol) => solver.search(search)
   }
 
-  def instantiateCoupledOperators: Array[ALNSOperator] =
-    (for(relaxKey <- config.relaxOperatorKeys; searchKey <- config.searchOperatorKeys) yield (relaxKey, searchKey))
-    .flatMap(pair => instantiateCoupledOperator(pair._1, pair._2))
+  def instantiateCoupledOperators: Array[ALNSOperator] =(
+    for(
+      relaxKey <- config.relaxOperatorKeys;
+      searchKey <- config.searchOperatorKeys
+    )yield (relaxKey, searchKey)
+    ).flatMap(pair => instantiateCoupledOperator(pair._1, pair._2))
 
   def instantiateRelaxOperators: Array[ALNSOperator] = {
-    if (closeness.isDefined) config.relaxOperatorKeys.map(x => instantiateLooseOperator(x, config.paramSelectionKey, config.paramMetricKey))
-    else config.relaxOperatorKeys.filter(x => !x.equals(ALNSBuilder.RevPropGuided)).map(x => instantiateLooseOperator(x, config.paramSelectionKey, config.paramMetricKey))
+    if (closeness.isDefined) config.relaxOperatorKeys.map(x => instantiateRelaxOperator(x, config.paramSelectionKey, config.paramMetricKey))
+    else config.relaxOperatorKeys.filter(x => !x.equals(ALNSBuilder.RevPropGuided)).map(x => instantiateRelaxOperator(x, config.paramSelectionKey, config.paramMetricKey))
   }
 
-  def instantiateSearchOperators: Array[ALNSOperator] =
-    config.searchOperatorKeys.map(x => instantiateLooseOperator(x, config.paramSelectionKey, config.paramMetricKey))
+  def instantiateSearchOperators: Array[ALNSOperator] = config.searchOperatorKeys.flatMap(instantiateSearchOperators(_))
 
   def instantiateOperatorStore(operators: Array[ALNSOperator]): AdaptiveStore[ALNSOperator] =
     instantiateAdaptiveStore[ALNSOperator](config.opSelectionKey, operators, config.opMetricKey)
@@ -116,10 +121,10 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], maximizeObjective: Bo
     */
   private def instantiateCoupledOperator(relaxKey: String, searchKey: String): Array[ALNSOperator] =
     for {
-      (relaxParam, relaxFunction) <- instantiateRelaxFunctions(relaxKey)
-      (searchParam, searchFunction) <- instantiateSearchFunctions(searchKey)
+      (relaxName, relaxFunction) <- instantiateRelaxFunctions(relaxKey)
+      (searchName, searchFunction) <- instantiateSearchFunctions(searchKey)
     } yield new ALNSNoParamOperator(
-      relaxKey + "(" + relaxParam + ")_" + searchKey + "(" + searchParam + ")",
+      relaxName + "_" + searchName,
       ALNSBuilder.DefNoParamFailThreshold,
       (sol: CPIntSol) => {
         relaxFunction(sol)
@@ -132,18 +137,24 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], maximizeObjective: Bo
     case ALNSBuilder.Random =>
       ALNSBuilder.Random_Param1
         .map(x => Math.round(N * x).toInt)
-        .map(x => (x.toString, (sol: CPIntSol) => RelaxationFunctions.randomRelax(solver, vars, sol, x)))
+        .map(x => (
+          opKey + "(" + x.toString + ")",
+          (sol: CPIntSol) => RelaxationFunctions.randomRelax(solver, vars, sol, x))
+        )
 
     case ALNSBuilder.KSuccessive =>
       ALNSBuilder.KSuccessive_Param1
         .map(x => Math.round(N * x).toInt)
-        .map(x => (x.toString, (sol: CPIntSol) => RelaxationFunctions.successiveRelax(solver, vars, sol, x)))
+        .map(x => (
+          opKey + "(" + x.toString + ")",
+          (sol: CPIntSol) => RelaxationFunctions.successiveRelax(solver, vars, sol, x))
+        )
 
     case ALNSBuilder.PropGuided =>
       ALNSBuilder.PropGuided_Param1
         .map(x => maxNeighSize * x)
         .map(x => (
-          x.toString,
+          opKey + "(" + x.toString + ")",
           (sol: CPIntSol) => RelaxationFunctions.propagationGuidedRelax(solver, vars, sol, closeness, x))
         )
 
@@ -152,58 +163,53 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], maximizeObjective: Bo
         ALNSBuilder.RevPropGuided_Param1
           .map(x => maxNeighSize * x)
           .map(x => (
-            x.toString,
+            opKey + "(" + x.toString + ")",
             (sol: CPIntSol) => RelaxationFunctions.reversedPropagationGuidedRelax(solver, vars, sol, closeness.get, x))
           )
       }
       else Array[(String, CPIntSol => Unit)]()
   }
 
-  private def instantiateSearchFunctions(opKey: String): Array[(String, CPIntSol => Unit)] = opKey match{
+  private def instantiateSearchFunctions(opKey: String): Array[(String, CPIntSol => Unit)] = {
+    val functions = ArrayBuffer[(String, CPIntSol => Unit)]()
+    if(config.valHeuristic == ALNSBuilder.ValHeurisMin || config.valHeuristic == ALNSBuilder.ValHeurisBoth){
+      functions += instantiateSearchFunction(opKey, valMax = false, valLearn = false)
+      if(config.valLearn) functions += instantiateSearchFunction(opKey, valMax = false, valLearn = true)
+    }
+    if(config.valHeuristic == ALNSBuilder.ValHeurisMax || config.valHeuristic == ALNSBuilder.ValHeurisBoth){
+      functions += instantiateSearchFunction(opKey, valMax = true, valLearn = false)
+      if(config.valLearn) functions += instantiateSearchFunction(opKey, valMax = true, valLearn = true)
+    }
+    functions.toArray
+  }
 
-    case ALNSBuilder.ConfOrder =>
-      Array(("", wrapSearch(SearchFunctions.conflictOrdering(vars, maximizeObjective, valLearn = false))))
-
-    case ALNSBuilder.ConfOrderValLearn =>
-      Array(("", wrapSearch(SearchFunctions.conflictOrdering(vars, maximizeObjective, valLearn = true))))
-
-    case ALNSBuilder.FirstFail =>
-      Array(("", wrapSearch(SearchFunctions.firstFail(vars, maximizeObjective, valLearn = false))))
-
-    case ALNSBuilder.FirstFailValLearn =>
-      Array(("", wrapSearch(SearchFunctions.firstFail(vars, maximizeObjective, valLearn = true))))
-
-    case ALNSBuilder.LastConf =>
-      Array(("", wrapSearch(SearchFunctions.lastConflict(vars, maximizeObjective, valLearn = false))))
-
-    case ALNSBuilder.LastConfValLearn =>
-      Array(("", wrapSearch(SearchFunctions.lastConflict(vars, maximizeObjective, valLearn = true))))
-
-    case ALNSBuilder.BinSplit =>
-      Array(("", wrapSearch(SearchFunctions.binarySplit(vars, maximizeObjective, valLearn = false))))
-
-    case ALNSBuilder.BinSplitValLearn =>
-      Array(("", wrapSearch(SearchFunctions.binarySplit(vars, maximizeObjective, valLearn = true))))
+  private def instantiateSearchFunction(opKey: String, valMax: Boolean, valLearn: Boolean): (String, CPIntSol => Unit) = {
+    val opName = opKey + (if(valLearn) "(valLearn" else "(") + (if(valMax) "Max)" else "Min)")
+    opKey match{
+      case ALNSBuilder.ConfOrder => (opName, wrapSearch(SearchFunctions.conflictOrdering(vars, valMax, valLearn)))
+      case ALNSBuilder.FirstFail => (opName, wrapSearch(SearchFunctions.firstFail(vars, valMax, valLearn)))
+      case ALNSBuilder.LastConf => (opName, wrapSearch(SearchFunctions.lastConflict(vars, valMax, valLearn)))
+      case ALNSBuilder.BinSplit => (opName, wrapSearch(SearchFunctions.binarySplit(vars, valMax, valLearn)))
+    }
   }
 
   /**
-    * Instantiate a loose ANLS operator with the given parameters.
+    * Instantiate a loose ANLS relax operator with the given parameters.
     * @param opKey The operator key
     * @param paramSelectKey The parameter selection key (only if the operator uses adaptive parameters)
     * @param paramMetricKey The parameter metric key (only if the operator uses adaptive parameters)
     * @return an ALNSOperator object
     */
-  private def instantiateLooseOperator(
+  private def instantiateRelaxOperator(
                                         opKey: String,
                                         paramSelectKey: String = ALNSBuilder.DefParamSelectKey,
                                         paramMetricKey: String = ALNSBuilder.DefParamMetricKey
-                              ): ALNSOperator = opKey match{
+                              ): ALNSOperator = opKey match {
 
-    // Relaxation operators:
     case ALNSBuilder.Random => new ALNSSingleParamOperator[Int](
       ALNSBuilder.Random,
       ALNSBuilder.DefWithParamFailThreshold,
-      RelaxationFunctions.randomRelax(solver, vars, _:CPIntSol, _:Int),
+      RelaxationFunctions.randomRelax(solver, vars, _: CPIntSol, _: Int),
       instantiateAdaptiveStore(
         paramSelectKey,
         ALNSBuilder.Random_Param1
@@ -217,7 +223,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], maximizeObjective: Bo
     case ALNSBuilder.KSuccessive => new ALNSSingleParamOperator[Int](
       ALNSBuilder.KSuccessive,
       ALNSBuilder.DefWithParamFailThreshold,
-      RelaxationFunctions.successiveRelax(solver, vars, _:CPIntSol, _:Int),
+      RelaxationFunctions.successiveRelax(solver, vars, _: CPIntSol, _: Int),
       instantiateAdaptiveStore(
         paramSelectKey,
         ALNSBuilder.KSuccessive_Param1
@@ -231,7 +237,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], maximizeObjective: Bo
     case ALNSBuilder.PropGuided => new ALNSSingleParamOperator[Double](
       ALNSBuilder.PropGuided,
       ALNSBuilder.DefWithParamFailThreshold,
-      RelaxationFunctions.propagationGuidedRelax(solver, vars, _:CPIntSol, closeness, _:Double),
+      RelaxationFunctions.propagationGuidedRelax(solver, vars, _: CPIntSol, closeness, _: Double),
       instantiateAdaptiveStore(
         paramSelectKey,
         ALNSBuilder.PropGuided_Param1
@@ -244,7 +250,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], maximizeObjective: Bo
     case ALNSBuilder.RevPropGuided => new ALNSSingleParamOperator[Double](
       ALNSBuilder.RevPropGuided,
       ALNSBuilder.DefWithParamFailThreshold,
-      RelaxationFunctions.reversedPropagationGuidedRelax(solver, vars, _:CPIntSol, closeness.get, _:Double),
+      RelaxationFunctions.reversedPropagationGuidedRelax(solver, vars, _: CPIntSol, closeness.get, _: Double),
       instantiateAdaptiveStore(
         paramSelectKey,
         ALNSBuilder.RevPropGuided_Param1
@@ -253,55 +259,15 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], maximizeObjective: Bo
         paramMetricKey),
       instantiateMetric(paramMetricKey)
     )
+  }
 
-    //Search operators:
-    case ALNSBuilder.ConfOrder => new ALNSNoParamOperator(
-      ALNSBuilder.ConfOrder,
-      ALNSBuilder.DefNoParamFailThreshold,
-      wrapSearch(SearchFunctions.conflictOrdering(vars, maximizeObjective, valLearn = false))
-    )
-
-    case ALNSBuilder.ConfOrderValLearn => new ALNSNoParamOperator(
-      ALNSBuilder.ConfOrderValLearn,
-      ALNSBuilder.DefNoParamFailThreshold,
-      wrapSearch(SearchFunctions.conflictOrdering(vars, maximizeObjective, valLearn = true))
-    )
-
-    case ALNSBuilder.FirstFail => new ALNSNoParamOperator(
-      ALNSBuilder.FirstFail,
-      ALNSBuilder.DefNoParamFailThreshold,
-      wrapSearch(SearchFunctions.firstFail(vars, maximizeObjective, valLearn = false))
-    )
-
-    case ALNSBuilder.FirstFailValLearn => new ALNSNoParamOperator(
-      ALNSBuilder.FirstFailValLearn,
-      ALNSBuilder.DefNoParamFailThreshold,
-      wrapSearch(SearchFunctions.firstFail(vars, maximizeObjective, valLearn = true))
-    )
-
-    case ALNSBuilder.LastConf => new ALNSNoParamOperator(
-      ALNSBuilder.LastConf,
-      ALNSBuilder.DefNoParamFailThreshold,
-      wrapSearch(SearchFunctions.lastConflict(vars, maximizeObjective, valLearn = false))
-    )
-
-    case ALNSBuilder.LastConfValLearn => new ALNSNoParamOperator(
-      ALNSBuilder.LastConfValLearn,
-      ALNSBuilder.DefNoParamFailThreshold,
-      wrapSearch(SearchFunctions.lastConflict(vars, maximizeObjective, valLearn = true))
-    )
-
-    case ALNSBuilder.BinSplit => new ALNSNoParamOperator(
-      ALNSBuilder.BinSplit,
-      ALNSBuilder.DefNoParamFailThreshold,
-      wrapSearch(SearchFunctions.binarySplit(vars, maximizeObjective, valLearn = false))
-    )
-
-    case ALNSBuilder.BinSplitValLearn => new ALNSNoParamOperator(
-      ALNSBuilder.BinSplitValLearn,
-      ALNSBuilder.DefNoParamFailThreshold,
-      wrapSearch(SearchFunctions.binarySplit(vars, maximizeObjective, valLearn = true))
-    )
+  /**
+    * Instantiate loose ANLS search operators for the given keys.
+    * @param opKey The operator key
+    * @return an array of ALNSOperator objects
+    */
+  private def instantiateSearchOperators(opKey: String): Array[ALNSOperator] = instantiateSearchFunctions(opKey).map{
+    case (name, function) => new ALNSNoParamOperator(name, ALNSBuilder.DefNoParamFailThreshold, function)
   }
 
   /**

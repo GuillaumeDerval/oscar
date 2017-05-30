@@ -28,8 +28,8 @@ object XCSP_ALNS_App extends App{
   val (vars, solutionGenerator) = XCSP3Parser2.parse(md, instance)
 
   val model: CPModel = CPInstantiate(md.getCurrentModel.asInstanceOf[UninstantiatedModel])
+  md.setCurrentModel(model)
 
-  //TODO: get only decision variables
   val decisionVariables: Array[CPIntVar] = vars.map(model.getRepresentative(_).realCPVar)
 
   val solver: CPSolver = model.cpSolver
@@ -46,33 +46,29 @@ object XCSP_ALNS_App extends App{
     println("Seed: " + seed)
     Random.setSeed(seed)
     val config = new ALNSConfig(
-      timeout = argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
+      argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
+      1000,
       coupled = argMap.getOrElse('coupled, false).asInstanceOf[Boolean],
       learning = argMap.getOrElse('learning, false).asInstanceOf[Boolean],
 
       argMap.getOrElse(
         'relax,
-        Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided) //(Reversed) propagation guided may cause out of memory on big instances
+        Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided)
       ).asInstanceOf[Array[String]],
 
       argMap.getOrElse(
         'search,
-        Array(
-          ALNSBuilder.ConfOrder,
-          ALNSBuilder.FirstFail,
-          ALNSBuilder.LastConf,
-          ALNSBuilder.BinSplit,
-          ALNSBuilder.ConfOrderValLearn,
-          ALNSBuilder.FirstFailValLearn,
-          ALNSBuilder.LastConfValLearn,
-          ALNSBuilder.BinSplitValLearn
-        )
+        Array( ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit)
       ).asInstanceOf[Array[String]],
+
+      argMap.getOrElse('valHeuristic, ALNSBuilder.ValHeurisBoth).asInstanceOf[String],
+      argMap.getOrElse('valLearn, true).asInstanceOf[Boolean],
 
       argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
       argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
       argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String],
-      argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String]
+      argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String],
+      solutionGenerator
     )
 
     val alns = ALNSSearch(solver, decisionVariables, config)
@@ -121,6 +117,16 @@ object XCSP_ALNS_App extends App{
           next = next.tail
         }
         parseArgs(map ++ Map('search -> search), next)
+
+      case "--val-heuristic" :: value :: tail =>
+        parseArgs(map ++ Map('valHeuristic -> value), tail)
+
+      case "--val-learn" :: tail => tail match{
+        case value :: remTail =>
+          if(isSwitch(value)) parseArgs(map ++ Map('valLearn -> true), tail)
+          else parseArgs(map ++ Map('valLearn -> value.toBoolean), remTail)
+        case Nil => map ++ Map('valLearn -> true)
+      }
 
       case "--selection" :: value :: tail =>
         parseArgs(map ++ Map('selection -> value), tail)
