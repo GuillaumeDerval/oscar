@@ -98,3 +98,5 @@ rm ${SolversToRun}
 cp -r --parents "${Out}/${VNum}" "/etinfo/users2/cthomas/Workspace/"
 
 scala -J-Xmx1g -cp ${CP} oscar.xcsp3.competition.html.HtmlReporter ${Out}
+
+cat "${Out}/htmlreport.html" > "/etinfo/users2/cthomas/Workspace/${Out}/htmlReport.html"

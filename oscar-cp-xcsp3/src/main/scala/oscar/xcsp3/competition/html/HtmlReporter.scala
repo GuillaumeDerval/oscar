@@ -44,27 +44,29 @@ object HtmlReporter extends App{
     instances.foreach(i => {
       val bests = mutable.HashSet[String]()
       val objType = objTypes(i)
-      var bestVal = objType match{
-        case "min" | "unknown" => Int.MaxValue //If unknown, we assume minimisation
-        case "max" => Int.MinValue
-      }
+      if(objType != "unknown") {
+        var bestVal = objType match {
+          case "max" => Int.MinValue
+          case "min" => Int.MaxValue
+        }
 
-      if(allSols.contains(i)) allSols(i).foreach{case (config, sols) =>
-          if(sols.nonEmpty){
+        if (allSols.contains(i)) allSols(i).foreach { case (config, sols) =>
+          if (sols.nonEmpty) {
             val last = sols.last
-            if(((objType == "min" || objType == "unknown") && last < bestVal) || (objType == "max" && last > bestVal)){
+            if ((objType == "min" && last < bestVal) || (objType == "max" && last > bestVal)) {
               bests.clear()
               bests += config
               bestVal = last
             }
-            else if(last == bestVal) bests += config
+            else if (last == bestVal) bests += config
           }
-      }
+        }
 
-      bests.foreach(config => {
-        if(allScores.contains(config)) allScores(config) += 1
-        else allScores += config -> 1
-      })
+        bests.foreach(config => {
+          if (allScores.contains(config)) allScores(config) += 1
+          else allScores += config -> 1
+        })
+      }
     })
 
     solsByCommit.foreach{case (commit, sols) =>
@@ -73,27 +75,29 @@ object HtmlReporter extends App{
       instances.foreach(i => {
         val bests = mutable.HashSet[String]()
         val objType = objTypes(i)
-        var bestVal = objType match{
-          case "min" | "unknown" => Int.MaxValue //If unknown, we assume minimisation
-          case "max" => Int.MinValue
-        }
-
-        if(sols.contains(i)) sols(i).foreach{case (solver, solValues) =>
-          if(solValues.nonEmpty){
-            val last = solValues.last
-            if(((objType == "min" || objType == "unknown") && last < bestVal) || (objType == "max" && last > bestVal)){
-              bests.clear()
-              bests += solver
-              bestVal = last
-            }
-            else if(last == bestVal) bests += solver
+        if(objType != "unknown") {
+          var bestVal = objType match {
+            case "max" => Int.MinValue
+            case "min" => Int.MaxValue
           }
-        }
 
-        bests.foreach(solver => {
-          if(scores.contains(solver)) scores(solver) += 1
-          else scores += solver -> 1
-        })
+          if (sols.contains(i)) sols(i).foreach { case (solver, solValues) =>
+            if (solValues.nonEmpty) {
+              val last = solValues.last
+              if ((objType == "min" && last < bestVal) || (objType == "max" && last > bestVal)) {
+                bests.clear()
+                bests += solver
+                bestVal = last
+              }
+              else if (last == bestVal) bests += solver
+            }
+          }
+
+          bests.foreach(solver => {
+            if (scores.contains(solver)) scores(solver) += 1
+            else scores += solver -> 1
+          })
+        }
       })
 
       scoresByCommit += commit -> scores
@@ -145,7 +149,7 @@ object HtmlReporter extends App{
       htmlWriter.addElement(
         "table",
         "Best solutions found",
-        HtmlWriter.tableToHtmlString(renderBestSols(solvers, instances, sols, commitStatus))
+        HtmlWriter.tableToHtmlString(renderBestSols(solvers, instances, objTypes, sols, commitStatus))
       )
     }
 
@@ -267,14 +271,15 @@ object HtmlReporter extends App{
   def renderBestSols(
                       solvers: Seq[String],
                       instances: Seq[String],
+                      objTypes: mutable.Map[String, String],
                       sols: mutable.Map[String, mutable.Map[String, Seq[Int]]],
                       status: mutable.Map[String, mutable.Map[String, String]]
                     ): Array[Array[String]] = {
     val array = ArrayBuffer[Array[String]]()
-    array += Array("'Instance'") ++ solvers.map("'" + _ + "'")
+    array += Array("'Instance'", "'Objective'") ++ solvers.map("'" + _ + "'")
     instances.foreach(instance => {
       if(sols.contains(instance))
-        array += Array("'" + instance + "'") ++ solvers.map(solver => {
+        array += Array("'" + instance + "'", "'" + objTypes.getOrElse(instance, "unknown") + "'") ++ solvers.map(solver => {
           val solStatus = if(status.contains(instance) && status(instance).contains(solver)) "'" + status(instance)(solver) + "'" else "'UNKNOWN'"
           if(sols(instance).contains(solver)){
             val solValues = sols(instance)(solver)
@@ -284,9 +289,9 @@ object HtmlReporter extends App{
             }
             else solStatus
           }
-          else solStatus
+          else "'NO_DATA'"
         })
-      else array += Array("'" + instance + "'") ++ Array.fill[String](solvers.length)("'UNKNOWN'")
+      else array += Array("'" + instance + "'") ++ Array.fill[String](solvers.length)("'NO_DATA'")
     })
     array.toArray
   }

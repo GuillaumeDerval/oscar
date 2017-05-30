@@ -1,10 +1,13 @@
 package oscar.xcsp3.competition.solvers
 
-import oscar.algo.search.{DFSearch, SearchStatistics}
+import oscar.algo.search.DFSearch
 import oscar.cp.{CPSolver, _}
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.searches.lns.CPIntSol
-import oscar.xcsp3.XCSP3Parser
+import oscar.modeling.models.{ModelDeclaration, UninstantiatedModel}
+import oscar.modeling.models.cp.CPModel
+import oscar.modeling.models.operators.CPInstantiate
+import oscar.xcsp3.XCSP3Parser2
 import oscar.xcsp3.competition.{CompetitionApp, CompetitionConf, CompetitionOutput}
 
 import scala.collection.mutable
@@ -14,12 +17,17 @@ object ConfOrderSolver extends CompetitionApp with App{
 
   override def runSolver(conf: CompetitionConf): Unit = {
 
-    //Parsing the instance
-    val parser = XCSP3Parser(conf.benchname())
+    val md = new ModelDeclaration
 
-    val vars: Array[CPIntVar] = parser.varHashMap.values.toArray
+    //Parsing the instance and instantiating model declaration
+    val (vars, solutionGenerator) = XCSP3Parser2.parse(md, conf.benchname())
 
-    val solver: CPSolver = parser.cp
+    val model: CPModel = CPInstantiate(md.getCurrentModel.asInstanceOf[UninstantiatedModel])
+    md.setCurrentModel(model)
+
+    val decisionVariables: Array[CPIntVar] = vars.map(model.getRepresentative(_).realCPVar)
+
+    val solver: CPSolver = model.cpSolver
     solver.silent = true
 
     Random.setSeed(conf.randomseed())
@@ -33,7 +41,7 @@ object ConfOrderSolver extends CompetitionApp with App{
 
     solver.onSolution{
       val time = System.nanoTime() - startTime
-      val sol = new CPIntSol(vars.map(_.value), solver.objective.objs.head.best, time, CPIntSol.getXCSPInstantiation(vars))
+      val sol = new CPIntSol(decisionVariables.map(_.value), solver.objective.objs.head.best, time, solutionGenerator())
       println("o " + sol.objective)
       sols += sol
     }
@@ -41,14 +49,20 @@ object ConfOrderSolver extends CompetitionApp with App{
     val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime
 
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
-      solver.search(conflictOrderingSearch(vars,i => vars(i).size, learnValueHeuristic(vars, if(maximizeObjective) vars(_).min else vars(_).max)))
+      solver.search(
+        conflictOrderingSearch(
+          decisionVariables,
+          i => decisionVariables(i).size,
+          learnValueHeuristic(decisionVariables, if(maximizeObjective) decisionVariables(_).min else decisionVariables(_).max)
+        )
+      )
     }
 
     if(sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation, solver.objective.isOptimum() || stats.completed)
+    else if(stats.completed) CompetitionOutput.printStatus("UNSATISFIABLE")
     else{
       CompetitionOutput.printStatus("UNKNOWN")
       CompetitionOutput.printDiagnostic("NO_SOL_FOUND")
     }
   }
-
 }
