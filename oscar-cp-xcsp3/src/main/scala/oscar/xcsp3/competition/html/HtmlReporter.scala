@@ -1,6 +1,7 @@
 package oscar.xcsp3.competition.html
 
 import java.io.File
+import java.text.NumberFormat
 
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
@@ -17,7 +18,7 @@ object HtmlReporter extends App{
     * Generates an html report from the given xml object.
     */
   def generateHtml(directory: String): Unit = {
-    val (timeout, instances, solvers, configs, allSols, solsByCommit) = scanInstances(directory)
+    val (timeout, instances, solvers, configs, allSols, solsByCommit, statusByCommit) = scanInstances(directory)
 
     val objTypes = mutable.Map[String, String]()
 
@@ -38,7 +39,7 @@ object HtmlReporter extends App{
     })
 
     val allScores = mutable.Map[String, Int]()
-    val scoresByCommits = mutable.Map[String, mutable.Map[String, Int]]()
+    val scoresByCommit = mutable.Map[String, mutable.Map[String, Int]]()
 
     instances.foreach(i => {
       val bests = mutable.HashSet[String]()
@@ -95,7 +96,7 @@ object HtmlReporter extends App{
         })
       })
 
-      scoresByCommits += commit -> scores
+      scoresByCommit += commit -> scores
     }
 
     val htmlWriter = new HtmlWriter("oscar-perf/src/main/scala/oscar/anytime/lns/utils/chart_report_template.html", directory + "/" + "htmlReport.html")
@@ -134,16 +135,17 @@ object HtmlReporter extends App{
     htmlWriter.addElement(
       "table",
       "Score per solver per version",
-      HtmlWriter.tableToHtmlString(renderScores(solvers, scoresByCommits))
+      HtmlWriter.tableToHtmlString(renderScores(solvers, scoresByCommit))
     )
 
-    htmlWriter.addHeading("Best solutions")
+    htmlWriter.addHeading("Results")
     solsByCommit.foreach{case (commit, sols) =>
+      val commitStatus = statusByCommit.getOrElse(commit, mutable.Map[String, mutable.Map[String, String]]())
       htmlWriter.addHeading(commit, 2)
       htmlWriter.addElement(
         "table",
         "Best solutions found",
-        HtmlWriter.tableToHtmlString(renderBestSols(solvers, instances, sols))
+        HtmlWriter.tableToHtmlString(renderBestSols(solvers, instances, sols, commitStatus))
       )
     }
 
@@ -158,26 +160,30 @@ object HtmlReporter extends App{
     Seq[String],
     Seq[String],
     mutable.Map[String, mutable.Map[String, Seq[Int]]],
-    mutable.Map[String, mutable.Map[String, mutable.Map[String, Seq[Int]]]]
+    mutable.Map[String, mutable.Map[String, mutable.Map[String, Seq[Int]]]],
+    mutable.Map[String, mutable.Map[String, mutable.Map[String, String]]]
   ) = {
 
-    val allSols = mutable.Map[String, mutable.Map[String, Seq[Int]]]()
-    val solsByCommit = mutable.Map[String, mutable.Map[String, mutable.Map[String, Seq[Int]]]]()
     val instances = mutable.HashSet[String]()
     val solvers = mutable.HashSet[String]()
     val configs = mutable.HashSet[String]()
+    val allSols = mutable.Map[String, mutable.Map[String, Seq[Int]]]()
+    val solsByCommit = mutable.Map[String, mutable.Map[String, mutable.Map[String, Seq[Int]]]]()
+    val statusByCommit = mutable.Map[String, mutable.Map[String, mutable.Map[String, String]]]()
+
     val dirs = IOUtils.getFolderContent(directory).filter(d => d.isDirectory && !d.getName.startsWith("."))
     var maxTimeout = 0L
 
     dirs.foreach(dir => {
       val dirName = dir.getName
 
-      val solsByInstances = mutable.Map[String, mutable.Map[String, Seq[Int]]]()
+      val solsByInstance = mutable.Map[String, mutable.Map[String, Seq[Int]]]()
+      val statusByInstance = mutable.Map[String, mutable.Map[String, String]]()
 
 //      println("reading: " + file.getPath)
       val files = IOUtils.getFiles(dir.getAbsolutePath, ".txt")
       files.foreach(file =>{
-        val(solver, timeout, instance, sols) = readFile(file)
+        val(solver, timeout, instance, sols, status) = readFile(file)
 
         if(timeout > maxTimeout) maxTimeout = timeout
 
@@ -186,11 +192,18 @@ object HtmlReporter extends App{
         val config = solver + "-" + dirName
         configs += config
 
-        if(solsByInstances.contains(instance)) solsByInstances(instance) += solver -> sols
+        if(solsByInstance.contains(instance)) solsByInstance(instance) += solver -> sols
         else{
           val map = mutable.Map[String, Seq[Int]]()
           map += solver -> sols
-          solsByInstances += instance -> map
+          solsByInstance += instance -> map
+        }
+
+        if(statusByInstance.contains(instance)) statusByInstance(instance) += solver -> status
+        else{
+          val map = mutable.Map[String, String]()
+          map += solver -> status
+          statusByInstance += instance -> map
         }
 
         if(allSols.contains(instance)) allSols(instance) += config -> sols
@@ -201,18 +214,20 @@ object HtmlReporter extends App{
         }
       })
 
-      solsByCommit += dirName -> solsByInstances
+      solsByCommit += dirName -> solsByInstance
+      statusByCommit += dirName -> statusByInstance
     })
 
-    (maxTimeout, instances.toSeq.sorted, solvers.toSeq.sorted, configs.toSeq.sorted, allSols, solsByCommit)
+    (maxTimeout, instances.toSeq.sorted, solvers.toSeq.sorted, configs.toSeq.sorted, allSols, solsByCommit, statusByCommit)
   }
 
-  def readFile(file: File): (String, Int, String, Seq[Int]) = {
+  def readFile(file: File): (String, Int, String, Seq[Int], String) = {
 
     var solver = ""
     var timeout = 240
     var instance = ""
     val sols = ListBuffer[Int]()
+    var status = "UNKNOWN"
 
     for (line <- Source.fromFile(file).getLines()) {
       val words = line.split(" ")
@@ -227,11 +242,17 @@ object HtmlReporter extends App{
 
         case "o" => sols += words(1).toInt
 
+        case "s" => status = words(1)
+
+        case "d" => status = words(1)
+
         case _ =>
       }
+
+      if(line == "Missing Implementation") status = "UNSUPPORTED"
     }
 
-    (solver, timeout, instance, sols)
+    (solver, timeout, instance, sols, status)
   }
 
   def renderScores(solvers: Seq[String], scoresByCommits: mutable.Map[String, mutable.Map[String, Int]]): Array[Array[String]] = {
@@ -243,20 +264,29 @@ object HtmlReporter extends App{
     array.toArray
   }
 
-  def renderBestSols(solvers: Seq[String], instances: Seq[String], sols: mutable.Map[String, mutable.Map[String, Seq[Int]]]): Array[Array[String]] = {
+  def renderBestSols(
+                      solvers: Seq[String],
+                      instances: Seq[String],
+                      sols: mutable.Map[String, mutable.Map[String, Seq[Int]]],
+                      status: mutable.Map[String, mutable.Map[String, String]]
+                    ): Array[Array[String]] = {
     val array = ArrayBuffer[Array[String]]()
     array += Array("'Instance'") ++ solvers.map("'" + _ + "'")
     instances.foreach(instance => {
       if(sols.contains(instance))
         array += Array("'" + instance + "'") ++ solvers.map(solver => {
+          val solStatus = if(status.contains(instance) && status(instance).contains(solver)) "'" + status(instance)(solver) + "'" else "'UNKNOWN'"
           if(sols(instance).contains(solver)){
             val solValues = sols(instance)(solver)
-            if(solValues.nonEmpty) solValues.last.toString
-            else "null"
+            if(solValues.nonEmpty){
+              val last = NumberFormat.getIntegerInstance().format(solValues.last)
+              if(solStatus == "'OPTIMUM'") "'" + last + "*'" else "'" + last + "'"
+            }
+            else solStatus
           }
-          else "null"
+          else solStatus
         })
-      else array += Array("'" + instance + "'") ++ Array.fill[String](solvers.length)("null")
+      else array += Array("'" + instance + "'") ++ Array.fill[String](solvers.length)("'UNKNOWN'")
     })
     array.toArray
   }

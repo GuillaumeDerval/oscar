@@ -95,8 +95,10 @@ object HybridSolver extends CompetitionApp with App {
       solver.search(search)
     }
 
-    if (sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation, solver.objective.isOptimum())
-    else CompetitionOutput.printStatus("UNSATISFIABLE")
-
+    if (sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation, solver.objective.isOptimum() || stats.completed)
+    else{
+      CompetitionOutput.printStatus("UNKNOWN")
+      CompetitionOutput.printDiagnostic("NO_SOL_FOUND")
+    }
   }
 }

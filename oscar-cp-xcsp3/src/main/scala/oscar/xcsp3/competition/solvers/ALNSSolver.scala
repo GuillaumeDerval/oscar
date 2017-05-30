@@ -47,7 +47,10 @@ object ALNSSolver extends CompetitionApp with App{
     val sols = result.solutions
 
     if(sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation, solver.objective.isOptimum())
-    else CompetitionOutput.printStatus("UNSATISFIABLE")
+    else{
+      CompetitionOutput.printStatus("UNKNOWN")
+      CompetitionOutput.printDiagnostic("NO_SOL_FOUND")
+    }
 
   }
 

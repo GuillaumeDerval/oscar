@@ -1,6 +1,6 @@
 package oscar.xcsp3.competition.solvers
 
-import oscar.algo.search.DFSearch
+import oscar.algo.search.{DFSearch, SearchStatistics}
 import oscar.cp.{CPSolver, _}
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.searches.lns.CPIntSol
@@ -44,9 +44,11 @@ object ConfOrderSolver extends CompetitionApp with App{
       solver.search(conflictOrderingSearch(vars,i => vars(i).size, learnValueHeuristic(vars, if(maximizeObjective) vars(_).min else vars(_).max)))
     }
 
-    if(sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation, solver.objective.isOptimum())
-    else CompetitionOutput.printStatus("UNSATISFIABLE")
-
+    if(sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation, solver.objective.isOptimum() || stats.completed)
+    else{
+      CompetitionOutput.printStatus("UNKNOWN")
+      CompetitionOutput.printDiagnostic("NO_SOL_FOUND")
+    }
   }
 
 }
