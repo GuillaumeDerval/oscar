@@ -48,7 +48,8 @@ trait Benchmark {
     println("Seed: " + seed)
     Random.setSeed(seed)
     val config = new ALNSConfig(
-      timeout = argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
+      argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
+      1000,
       coupled = argMap.getOrElse('coupled, false).asInstanceOf[Boolean],
       learning = argMap.getOrElse('learning, false).asInstanceOf[Boolean],
 
@@ -59,17 +60,11 @@ trait Benchmark {
 
       argMap.getOrElse(
         'search,
-        Array(
-          ALNSBuilder.ConfOrder,
-          ALNSBuilder.FirstFail,
-          ALNSBuilder.LastConf,
-          ALNSBuilder.BinSplit,
-          ALNSBuilder.ConfOrderValLearn,
-          ALNSBuilder.FirstFailValLearn,
-          ALNSBuilder.LastConfValLearn,
-          ALNSBuilder.BinSplitValLearn
-        )
+        Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit)
       ).asInstanceOf[Array[String]],
+
+      argMap.getOrElse('valHeuristic, ALNSBuilder.ValHeurisBoth).asInstanceOf[String],
+      argMap.getOrElse('valLearn, true).asInstanceOf[Boolean],
 
       argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
       argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
@@ -158,6 +153,16 @@ trait Benchmark {
           next = next.tail
         }
         parseArgs(map ++ Map('search -> search), next)
+
+      case "--val-heuristic" :: value :: tail =>
+        parseArgs(map ++ Map('valHeuristic -> value), tail)
+
+      case "--val-learn" :: tail => tail match{
+        case value :: remTail =>
+          if(isSwitch(value)) parseArgs(map ++ Map('valLearn -> true), tail)
+          else parseArgs(map ++ Map('valLearn -> value.toBoolean), remTail)
+        case Nil => map ++ Map('valLearn -> true)
+      }
 
       case "--selection" :: value :: tail =>
         parseArgs(map ++ Map('selection -> value), tail)

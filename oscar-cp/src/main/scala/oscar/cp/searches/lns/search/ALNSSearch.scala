@@ -56,7 +56,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
     stop
   }
 
-  val builder = new ALNSBuilder(solver, vars, maximizeObjective, config)
+  val builder = new ALNSBuilder(solver, vars, config)
 
   val metric: (ALNSElement, Int, SearchStatistics) => Double = builder.instantiateMetric()
 
@@ -70,7 +70,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
     if(!solver.silent) println("Starting first solution search...")
 
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
-      solver.search(SearchFunctions.conflictOrdering(vars, maximizeObjective, valLearn = false))
+      solver.search(SearchFunctions.conflictOrdering(vars, !maximizeObjective, valLearn = false))
     }
 
     if(!solver.silent) println("Time elapsed: " + (System.nanoTime() - startTime)/1000000000.0 + "s")

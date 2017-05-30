@@ -26,11 +26,14 @@ object ALNSSolver extends CompetitionApp with App{
     val timeout = (conf.timelimit().toLong - 5L) * 1000000000L
 
     val config = new ALNSConfig(
-      timeout = timeout,
+      timeout,
+      conf.memlimit(),
       coupled = true,
       learning = true,
       Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided),
-      Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit, ALNSBuilder.ConfOrderValLearn, ALNSBuilder.FirstFailValLearn, ALNSBuilder.LastConfValLearn, ALNSBuilder.BinSplitValLearn),
+      Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit),
+      ALNSBuilder.ValHeurisBoth,
+      valLearn = true,
       ALNSBuilder.Priority,
       ALNSBuilder.Priority,
       ALNSBuilder.TTI,
@@ -43,7 +46,7 @@ object ALNSSolver extends CompetitionApp with App{
     val result = alns.search()
     val sols = result.solutions
 
-    if(sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation)
+    if(sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation, solver.objective.isOptimum())
     else CompetitionOutput.printStatus("UNSATISFIABLE")
 
   }

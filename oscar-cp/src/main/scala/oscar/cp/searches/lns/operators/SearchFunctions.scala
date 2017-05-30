@@ -6,21 +6,21 @@ import oscar.cp._
 
 object SearchFunctions {
 
-  def conflictOrdering(vars: Array[CPIntVar], maximizeObjective: Boolean, valLearn: Boolean): Branching =
-    conflictOrderingSearch(vars, vars(_).size, defaultValueHeuristic(vars, maximizeObjective, valLearn))
+  def conflictOrdering(vars: Array[CPIntVar], valMax: Boolean, valLearn: Boolean): Branching =
+    conflictOrderingSearch(vars, vars(_).size, setValueHeuristic(vars, valMax, valLearn))
 
-  def firstFail(vars: Array[CPIntVar], maximizeObjective: Boolean, valLearn: Boolean): Branching =
-    binaryFirstFailIdx(vars, defaultValueHeuristic(vars, maximizeObjective, valLearn))
+  def firstFail(vars: Array[CPIntVar], valMax: Boolean, valLearn: Boolean): Branching =
+    binaryFirstFailIdx(vars, setValueHeuristic(vars, valMax, valLearn))
 
-  def lastConflict(vars: Array[CPIntVar], maximizeObjective: Boolean, valLearn: Boolean): Branching =
-    binaryLastConflict(vars, vars(_).size, defaultValueHeuristic(vars, maximizeObjective, valLearn))
+  def lastConflict(vars: Array[CPIntVar], valMax: Boolean, valLearn: Boolean): Branching =
+    binaryLastConflict(vars, vars(_).size, setValueHeuristic(vars, valMax, valLearn))
 
-  def binarySplit(vars: Array[CPIntVar], maximizeObjective: Boolean, valLearn: Boolean): Branching =
-    binarySplitIdx(vars, vars(_).size, defaultValueHeuristic(vars, maximizeObjective, valLearn))
+  def binarySplit(vars: Array[CPIntVar], valMax: Boolean, valLearn: Boolean): Branching =
+    binarySplitIdx(vars, vars(_).size, setValueHeuristic(vars, valMax, valLearn))
 
-  def defaultValueHeuristic(vars: Array[CPIntVar], maximizeObjective: Boolean, valLearn: Boolean): Int => Int = {
+  def setValueHeuristic(vars: Array[CPIntVar], valMax: Boolean, valLearn: Boolean): Int => Int = {
     if (valLearn)
-      learnValueHeuristic(vars, if (maximizeObjective) vars(_).min else vars(_).max)
-    else if (maximizeObjective) vars(_).min else vars(_).max
+      learnValueHeuristic(vars, if (valMax) vars(_).max else vars(_).min)
+    else if (valMax) vars(_).max else vars(_).min
   }
 }

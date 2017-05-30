@@ -42,10 +42,10 @@ object FirstFailSolver extends CompetitionApp with App{
     val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime
 
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
-      solver.search(binaryFirstFail(vars, i => if(maximizeObjective) vars(i).min else vars(i).max))
+      solver.search(binaryFirstFail(vars))
     }
 
-    if(sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation)
+    if(sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation, solver.objective.isOptimum())
     else CompetitionOutput.printStatus("UNSATISFIABLE")
 
   }

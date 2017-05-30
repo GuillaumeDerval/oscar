@@ -40,11 +40,14 @@ object HybridSolver extends CompetitionApp with App {
     val endTime: Long = startTime + timeout
 
     val config = new ALNSConfig(
-      timeout = (timeout * 0.75).toLong,
+      (timeout * 0.75).toLong,
+      conf.memlimit(),
       coupled = true,
       learning = true,
       Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided),
-      Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit, ALNSBuilder.ConfOrderValLearn, ALNSBuilder.FirstFailValLearn, ALNSBuilder.LastConfValLearn, ALNSBuilder.BinSplitValLearn),
+      Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit),
+      ALNSBuilder.ValHeurisBoth,
+      valLearn = true,
       ALNSBuilder.Priority,
       ALNSBuilder.Priority,
       ALNSBuilder.TTI,
@@ -61,41 +64,23 @@ object HybridSolver extends CompetitionApp with App {
 
     CompetitionOutput.printComment("ALNS done, starting complete search (" + (endTime - System.nanoTime())/1000000000L + "s remaining)")
 
-    val maximizeObjective: Boolean = solver.objective.objs.head.isMax
-
     //Selecting search function based on operator that induced the most improvement:
-    val bestOperator = result.searchStats.minBy(_._2.improvement)._1
-    CompetitionOutput.printComment("Best operator: " + bestOperator)
     val search: Branching = {
-      if(bestOperator.contains(ALNSBuilder.BinSplitValLearn))
-        binarySplit(decisionVariables, maximizeObjective, valLearn = true)
+      val (bestOperator, opStats) = result.searchStats.maxBy(_._2.improvement)
+      if(opStats.improvement > 0){
+        CompetitionOutput.printComment("Best operator: " + bestOperator + " with improvement of: " + opStats.improvement)
 
-      else if(bestOperator.contains(ALNSBuilder.ConfOrderValLearn))
-        conflictOrdering(decisionVariables, maximizeObjective, valLearn = true)
+        val valLearn = bestOperator.contains("valLearn")
+        val valMax = bestOperator.contains("Max")
 
-      else if(bestOperator.contains(ALNSBuilder.FirstFailValLearn))
-        firstFail(decisionVariables, maximizeObjective, valLearn = true)
-
-      else if(bestOperator.contains(ALNSBuilder.LastConfValLearn))
-        lastConflict(decisionVariables, maximizeObjective, valLearn = true)
-
-      else if(bestOperator.contains(ALNSBuilder.BinSplitValLearn))
-        binarySplit(decisionVariables, maximizeObjective, valLearn = false)
-
-      else if(bestOperator.contains(ALNSBuilder.ConfOrder))
-        conflictOrdering(decisionVariables, maximizeObjective, valLearn = false)
-
-      else if(bestOperator.contains(ALNSBuilder.FirstFailValLearn))
-        firstFail(decisionVariables, maximizeObjective, valLearn = false)
-
-      else if(bestOperator.contains(ALNSBuilder.LastConfValLearn))
-        lastConflict(decisionVariables, maximizeObjective, valLearn = false)
-
-      //Default search: Conflict ordering with value heuristic:
-      else conflictOrdering(decisionVariables, maximizeObjective, valLearn = true)
+        if(bestOperator.contains(ALNSBuilder.BinSplit)) binarySplit(decisionVariables, valMax, valLearn)
+        else if(bestOperator.contains(ALNSBuilder.FirstFail)) firstFail(decisionVariables, valMax, valLearn)
+        else if(bestOperator.contains(ALNSBuilder.LastConf)) lastConflict(decisionVariables, valMax, valLearn)
+        else conflictOrdering(decisionVariables, valMax, valLearn)
+      }
+      else //Default search: Conflict ordering with value heuristic:
+        conflictOrdering(decisionVariables, valMax = false, valLearn = false)
     }
-
-    println("starting search")
 
     solver.onSolution {
       val time = System.nanoTime() - startTime
@@ -110,7 +95,7 @@ object HybridSolver extends CompetitionApp with App {
       solver.search(search)
     }
 
-    if (sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation)
+    if (sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation, solver.objective.isOptimum())
     else CompetitionOutput.printStatus("UNSATISFIABLE")
 
   }

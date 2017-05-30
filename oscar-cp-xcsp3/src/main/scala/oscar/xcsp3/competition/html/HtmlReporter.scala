@@ -25,10 +25,12 @@ object HtmlReporter extends App{
       var c = 0
       var objective = "unknown"
       while(objective == "unknown" && c < configs.length){
-        val sols = allSols(i)(configs(c))
-        if(sols.length > 1){
-          if(sols.last < sols.head) objective = "min"
-          else objective = "max"
+        if(allSols.contains(i) && allSols(i).contains(configs(c))) {
+          val sols = allSols(i)(configs(c))
+          if (sols.length > 1) {
+            if (sols.last < sols.head) objective = "min"
+            else objective = "max"
+          }
         }
         c +=1
       }
