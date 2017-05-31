@@ -68,7 +68,8 @@ object XCSP_ALNS_App extends App{
       argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
       argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String],
       argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String],
-      solutionGenerator
+      solutionGenerator,
+      () => Unit
     )
 
     val alns = ALNSSearch(solver, decisionVariables, config)

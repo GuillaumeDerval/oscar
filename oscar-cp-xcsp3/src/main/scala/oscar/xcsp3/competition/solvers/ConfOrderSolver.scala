@@ -8,10 +8,9 @@ import oscar.modeling.models.{ModelDeclaration, UninstantiatedModel}
 import oscar.modeling.models.cp.CPModel
 import oscar.modeling.models.operators.CPInstantiate
 import oscar.xcsp3.XCSP3Parser2
-import oscar.xcsp3.competition.{CompetitionApp, CompetitionConf, CompetitionOutput}
+import oscar.xcsp3.competition.{CompetitionApp, CompetitionConf}
 
 import scala.collection.mutable
-import scala.util.Random
 
 object ConfOrderSolver extends CompetitionApp with App{
 
@@ -19,50 +18,68 @@ object ConfOrderSolver extends CompetitionApp with App{
 
     val md = new ModelDeclaration
 
-    //Parsing the instance and instantiating model declaration
-    val (vars, solutionGenerator) = XCSP3Parser2.parse(md, conf.benchname())
+    //Parsing the instance
+    val parsingResult = try {
+      val (vars, solutionGenerator) = XCSP3Parser2.parse(md, conf.benchname())
 
-    val model: CPModel = CPInstantiate(md.getCurrentModel.asInstanceOf[UninstantiatedModel])
-    md.setCurrentModel(model)
+      val model: CPModel = CPInstantiate(md.getCurrentModel.asInstanceOf[UninstantiatedModel])
+      md.setCurrentModel(model)
 
-    val decisionVariables: Array[CPIntVar] = vars.map(model.getRepresentative(_).realCPVar)
+      val cpVars: Array[CPIntVar] = vars.map(model.getRepresentative(_).realCPVar)
+      val solver: CPSolver = model.cpSolver
 
-    val solver: CPSolver = model.cpSolver
-    solver.silent = true
+      Some(cpVars, solver, solutionGenerator)
+    }catch {
+      case _: NotImplementedError =>
+        printStatus("UNSUPPORTED")
+        None
 
-    Random.setSeed(conf.randomseed())
-    val timeout = (conf.timelimit().toLong - 5L) * 1000000000L
-    val startTime = System.nanoTime()
-    val endTime: Long = startTime + timeout
+      case _: NoSolutionException =>
+        printStatus("UNSATISFIABLE")
+        None
 
-    val maximizeObjective: Boolean = solver.objective.objs.head.isMax
-
-    val sols = mutable.ArrayBuffer[CPIntSol]()
-
-    solver.onSolution{
-      val time = System.nanoTime() - startTime
-      val sol = new CPIntSol(decisionVariables.map(_.value), solver.objective.objs.head.best, time, solutionGenerator())
-      println("o " + sol.objective)
-      sols += sol
+      case e => throw e
     }
 
-    val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime
+    if (parsingResult.isDefined){
+      val (vars, solver, solutionGenerator) = parsingResult.get
+      solver.silent = true
 
-    val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
-      solver.search(
-        conflictOrderingSearch(
-          decisionVariables,
-          i => decisionVariables(i).size,
-          learnValueHeuristic(decisionVariables, if(maximizeObjective) decisionVariables(_).min else decisionVariables(_).max)
+      val timeout = (conf.timelimit().toLong - 5L) * 1000000000L
+      val startTime = System.nanoTime()
+      val endTime: Long = startTime + timeout
+
+      val maximizeObjective: Boolean = solver.objective.objs.head.isMax
+
+      val sols = mutable.ArrayBuffer[CPIntSol]()
+
+      solver.onSolution{
+        val time = System.nanoTime() - startTime
+        val sol = new CPIntSol(vars.map(_.value), solver.objective.objs.head.best, time, solutionGenerator())
+        println("o " + sol.objective)
+        sols += sol
+      }
+
+      val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime
+
+      printComment("Parsing done, starting search")
+
+      val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
+        solver.search(
+          conflictOrderingSearch(
+            vars,
+            i => vars(i).size,
+            learnValueHeuristic(vars, if(maximizeObjective) vars(_).min else vars(_).max)
+          )
         )
-      )
-    }
+      }
 
-    if(sols.nonEmpty) CompetitionOutput.printSolution(sols.last.instantiation, solver.objective.isOptimum() || stats.completed)
-    else if(stats.completed) CompetitionOutput.printStatus("UNSATISFIABLE")
-    else{
-      CompetitionOutput.printStatus("UNKNOWN")
-      CompetitionOutput.printDiagnostic("NO_SOL_FOUND")
+      if(sols.nonEmpty) printSolution(sols.last.instantiation, solver.objective.isOptimum() || stats.completed)
+      else if(stats.completed) printStatus("UNSATISFIABLE")
+      else{
+        printStatus("UNKNOWN")
+        printDiagnostic("NO_SOL_FOUND")
+      }
     }
   }
 }

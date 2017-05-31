@@ -43,8 +43,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
     if((maximizeObjective && currentSol.objective > bestSol.objective) || (!maximizeObjective && currentSol.objective < bestSol.objective)){
       bestSol = currentSol
       solsFound += currentSol
-      println("o " + currentSol.objective) //For XCSP competition
-      Console.flush()
+      config.onSolution()
     }
   }
 

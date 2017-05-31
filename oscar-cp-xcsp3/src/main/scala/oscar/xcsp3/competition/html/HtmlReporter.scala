@@ -29,7 +29,7 @@ object HtmlReporter extends App{
         if(allSols.contains(i) && allSols(i).contains(configs(c))) {
           val sols = allSols(i)(configs(c))
           if (sols.length > 1) {
-            if (sols.last < sols.head) objective = "min"
+            if (sols.last._1 < sols.head._1) objective = "min"
             else objective = "max"
           }
         }
@@ -49,16 +49,25 @@ object HtmlReporter extends App{
           case "max" => Int.MinValue
           case "min" => Int.MaxValue
         }
+        var bestTime = Long.MaxValue
 
         if (allSols.contains(i)) allSols(i).foreach { case (config, sols) =>
           if (sols.nonEmpty) {
-            val last = sols.last
-            if ((objType == "min" && last < bestVal) || (objType == "max" && last > bestVal)) {
+            val (lastVal, lastTime) = sols.last
+            if ((objType == "min" && lastVal < bestVal) || (objType == "max" && lastVal > bestVal)){
               bests.clear()
               bests += config
-              bestVal = last
+              bestVal = lastVal
+              bestTime = lastTime
             }
-            else if (last == bestVal) bests += config
+            else if (lastVal == bestVal){
+              if(lastTime < bestTime){
+                bests.clear()
+                bests += config
+                bestTime = lastTime
+              }
+              else if(lastTime == bestTime) bests += config
+            }
           }
         }
 
@@ -80,16 +89,25 @@ object HtmlReporter extends App{
             case "max" => Int.MinValue
             case "min" => Int.MaxValue
           }
+          var bestTime = Long.MaxValue
 
           if (sols.contains(i)) sols(i).foreach { case (solver, solValues) =>
             if (solValues.nonEmpty) {
-              val last = solValues.last
-              if ((objType == "min" && last < bestVal) || (objType == "max" && last > bestVal)) {
+              val (lastVal, lastTime) = solValues.last
+              if ((objType == "min" && lastVal < bestVal) || (objType == "max" && lastVal > bestVal)) {
                 bests.clear()
                 bests += solver
-                bestVal = last
+                bestVal = lastVal
+                bestTime = lastTime
               }
-              else if (last == bestVal) bests += solver
+              else if (lastVal == bestVal){
+                if(lastTime < bestTime){
+                  bests.clear()
+                  bests += solver
+                  bestTime = lastTime
+                }
+                else if(lastTime == bestTime) bests += solver
+              }
             }
           }
 
@@ -118,10 +136,10 @@ object HtmlReporter extends App{
       htmlWriter.addParagraph(version)
     })
 
-    htmlWriter.addHeading("Instances", 2)
-    instances.foreach(instance => {
-      htmlWriter.addParagraph(instance)
-    })
+//    htmlWriter.addHeading("Instances", 2)
+//    instances.foreach(instance => {
+//      htmlWriter.addParagraph(instance)
+//    })
 
     htmlWriter.addHeading("Scores")
 
@@ -144,7 +162,7 @@ object HtmlReporter extends App{
 
     htmlWriter.addHeading("Results")
     solsByCommit.foreach{case (commit, sols) =>
-      val commitStatus = statusByCommit.getOrElse(commit, mutable.Map[String, mutable.Map[String, String]]())
+      val commitStatus = statusByCommit.getOrElse(commit, mutable.Map[String, mutable.Map[String, (String, Long)]]())
       htmlWriter.addHeading(commit, 2)
       htmlWriter.addElement(
         "table",
@@ -163,17 +181,17 @@ object HtmlReporter extends App{
     Seq[String],
     Seq[String],
     Seq[String],
-    mutable.Map[String, mutable.Map[String, Seq[Int]]],
-    mutable.Map[String, mutable.Map[String, mutable.Map[String, Seq[Int]]]],
-    mutable.Map[String, mutable.Map[String, mutable.Map[String, String]]]
+    mutable.Map[String, mutable.Map[String, Seq[(Int, Long)]]],
+    mutable.Map[String, mutable.Map[String, mutable.Map[String, Seq[(Int, Long)]]]],
+    mutable.Map[String, mutable.Map[String, mutable.Map[String, (String, Long)]]]
   ) = {
 
     val instances = mutable.HashSet[String]()
     val solvers = mutable.HashSet[String]()
     val configs = mutable.HashSet[String]()
-    val allSols = mutable.Map[String, mutable.Map[String, Seq[Int]]]()
-    val solsByCommit = mutable.Map[String, mutable.Map[String, mutable.Map[String, Seq[Int]]]]()
-    val statusByCommit = mutable.Map[String, mutable.Map[String, mutable.Map[String, String]]]()
+    val allSols = mutable.Map[String, mutable.Map[String, Seq[(Int, Long)]]]()
+    val solsByCommit = mutable.Map[String, mutable.Map[String, mutable.Map[String, Seq[(Int, Long)]]]]()
+    val statusByCommit = mutable.Map[String, mutable.Map[String, mutable.Map[String, (String, Long)]]]()
 
     val dirs = IOUtils.getFolderContent(directory).filter(d => d.isDirectory && !d.getName.startsWith("."))
     var maxTimeout = 0L
@@ -181,8 +199,8 @@ object HtmlReporter extends App{
     dirs.foreach(dir => {
       val dirName = dir.getName
 
-      val solsByInstance = mutable.Map[String, mutable.Map[String, Seq[Int]]]()
-      val statusByInstance = mutable.Map[String, mutable.Map[String, String]]()
+      val solsByInstance = mutable.Map[String, mutable.Map[String, Seq[(Int, Long)]]]()
+      val statusByInstance = mutable.Map[String, mutable.Map[String, (String, Long)]]()
 
 //      println("reading: " + file.getPath)
       val files = IOUtils.getFiles(dir.getAbsolutePath, ".txt")
@@ -198,21 +216,21 @@ object HtmlReporter extends App{
 
         if(solsByInstance.contains(instance)) solsByInstance(instance) += solver -> sols
         else{
-          val map = mutable.Map[String, Seq[Int]]()
+          val map = mutable.Map[String, Seq[(Int, Long)]]()
           map += solver -> sols
           solsByInstance += instance -> map
         }
 
         if(statusByInstance.contains(instance)) statusByInstance(instance) += solver -> status
         else{
-          val map = mutable.Map[String, String]()
+          val map = mutable.Map[String, (String, Long)]()
           map += solver -> status
           statusByInstance += instance -> map
         }
 
         if(allSols.contains(instance)) allSols(instance) += config -> sols
         else{
-          val map = mutable.Map[String, Seq[Int]]()
+          val map = mutable.Map[String, Seq[(Int, Long)]]()
           map += config -> sols
           allSols += instance -> map
         }
@@ -225,35 +243,36 @@ object HtmlReporter extends App{
     (maxTimeout, instances.toSeq.sorted, solvers.toSeq.sorted, configs.toSeq.sorted, allSols, solsByCommit, statusByCommit)
   }
 
-  def readFile(file: File): (String, Int, String, Seq[Int], String) = {
+  def readFile(file: File): (String, Int, String, Seq[(Int, Long)], (String, Long)) = {
 
     var solver = ""
     var timeout = 240
     var instance = ""
-    val sols = ListBuffer[Int]()
-    var status = "UNKNOWN"
+    val sols = ListBuffer[(Int, Long)]()
+    var status = ("UNKNOWN", 0L)
 
     for (line <- Source.fromFile(file).getLines()) {
       val words = line.split(" ")
+      val time = words(0).toLong
 
-      words(0) match{
-        case "c" => words(1) match{
-          case "instance:" => instance = words(2).stripSuffix(".xml")
-          case "solver:" => solver = words(2)
-          case "timeout:" => timeout = words(2).toInt
+      words(1) match{
+        case "c" => words(2) match{
+          case "instance:" => instance = words(3).stripSuffix(".xml")
+          case "solver:" => solver = words(3)
+          case "timeout:" => timeout = words(3).toInt
           case _ =>
         }
 
-        case "o" => sols += words(1).toInt
+        case "o" => sols += ((words(2).toInt, time))
 
-        case "s" => status = words(1)
+        case "s" => status = (words(2), time)
 
-        case "d" => status = words(1)
+        case "d" => status = (words(2), time)
 
         case _ =>
       }
 
-      if(line == "Missing Implementation") status = "UNSUPPORTED"
+      if(line == "Missing Implementation") status = ("UNSUPPORTED", 0L)
     }
 
     (solver, timeout, instance, sols, status)
@@ -272,26 +291,28 @@ object HtmlReporter extends App{
                       solvers: Seq[String],
                       instances: Seq[String],
                       objTypes: mutable.Map[String, String],
-                      sols: mutable.Map[String, mutable.Map[String, Seq[Int]]],
-                      status: mutable.Map[String, mutable.Map[String, String]]
+                      sols: mutable.Map[String, mutable.Map[String, Seq[(Int, Long)]]],
+                      status: mutable.Map[String, mutable.Map[String, (String, Long)]]
                     ): Array[Array[String]] = {
     val array = ArrayBuffer[Array[String]]()
     array += Array("'Instance'", "'Objective'") ++ solvers.map("'" + _ + "'")
     instances.foreach(instance => {
       if(sols.contains(instance))
         array += Array("'" + instance + "'", "'" + objTypes.getOrElse(instance, "unknown") + "'") ++ solvers.map(solver => {
-          val solStatus = if(status.contains(instance) && status(instance).contains(solver)) "'" + status(instance)(solver) + "'" else "'UNKNOWN'"
+          val solStatus = if(status.contains(instance) && status(instance).contains(solver)) "'" + status(instance)(solver)._1 + "'" else "'UNKNOWN'"
           if(sols(instance).contains(solver)){
             val solValues = sols(instance)(solver)
             if(solValues.nonEmpty){
-              val last = NumberFormat.getIntegerInstance().format(solValues.last)
-              if(solStatus == "'OPTIMUM'") "'" + last + "*'" else "'" + last + "'"
+              val lastValue = NumberFormat.getIntegerInstance().format(solValues.last._1)
+              val lastTime = solValues.last._2/1000.0
+              if(solStatus == "'OPTIMUM'") "'" + lastValue + "* (" + lastTime + ", " + (status(instance)(solver)._2/1000.0) + ")'"
+              else "'" + lastValue + " (" + lastTime + ")'"
             }
             else solStatus
           }
           else "'NO_DATA'"
         })
-      else array += Array("'" + instance + "'") ++ Array.fill[String](solvers.length)("'NO_DATA'")
+      else array += Array("'" + instance + "'", "'unknown'") ++ Array.fill[String](solvers.length)("'NO_DATA'")
     })
     array.toArray
   }
