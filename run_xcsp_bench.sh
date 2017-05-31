@@ -13,7 +13,7 @@ VNum=`hg id -i`
 BenchDir="data/xcsp3/xcspBench"
 SolversDir="oscar-cp-xcsp3/src/main/scala/oscar/xcsp3/competition/solvers"
 SolversRoot="oscar.xcsp3.competition.solvers"
-SbtOutput=`$SBT_HOME/sbt "project oscar-cp-xcsp3" "export runtime:fullClasspath"`
+SbtOutput=`$SBT_HOME/sbt "project oscar-cp-xcsp3" "update" "compile" "export runtime:fullClasspath"`
 #echo $SbtOutput
 CP=${SbtOutput##*$'\n'}
 Out="XCSP-bench-results"
