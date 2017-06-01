@@ -13,7 +13,7 @@ VNum=`hg id -i`
 BenchDir="data/xcsp3/xcspBench"
 SolversDir="oscar-cp-xcsp3/src/main/scala/oscar/xcsp3/competition/solvers"
 SolversRoot="oscar.xcsp3.competition.solvers"
-SbtOutput=`$SBT_HOME/sbt "project oscar-cp-xcsp3" "export runtime:fullClasspath"`
+SbtOutput=`$SBT_HOME/sbt "project oscar-cp-xcsp3" "update" "compile" "export runtime:fullClasspath"`
 #echo $SbtOutput
 CP=${SbtOutput##*$'\n'}
 Out="XCSP-bench-results"
@@ -45,14 +45,14 @@ run_search () {
         if [ "$ReRun" = "true" ]
         then
             echo "Re-running bench"
-            echo "c instance: $InstanceName" > $OutPath
-            echo "c solver: $SolverName" >> $OutPath
+            echo "0 c instance: $InstanceName" > $OutPath
+            echo "0 c solver: $SolverName" >> $OutPath
             scala -J-Xmx${5}m -cp $1 $7 --timelimit $4 $6 >> $OutPath
         fi
     else
         echo "Running bench"
-        echo "c instance: $InstanceName" > $OutPath
-        echo "c solver: $SolverName" >> $OutPath
+        echo "0 c instance: $InstanceName" > $OutPath
+        echo "0 c solver: $SolverName" >> $OutPath
         scala -J-Xmx${5}m -cp $1 $7 --timelimit $4 $6 >> $OutPath
     fi
 
@@ -98,3 +98,5 @@ rm ${SolversToRun}
 cp -r --parents "${Out}/${VNum}" "/etinfo/users2/cthomas/Workspace/"
 
 scala -J-Xmx1g -cp ${CP} oscar.xcsp3.competition.html.HtmlReporter ${Out}
+
+cat "${Out}/htmlReport.html" > "/etinfo/users2/cthomas/Workspace/${Out}/htmlReport.html"

@@ -70,7 +70,8 @@ trait Benchmark {
       argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
       argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String],
       argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String],
-      () => ""
+      () => "",
+      () => Unit
     )
 
     val alns = ALNSSearch(solver, decisionVariables, config)
