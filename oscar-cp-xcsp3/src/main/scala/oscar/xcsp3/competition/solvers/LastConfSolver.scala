@@ -1,16 +1,18 @@
 package oscar.xcsp3.competition.solvers
 
+import oscar.algo.search.DFSearch
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.searches.lns.operators.ALNSBuilder
-import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch}
-import oscar.cp.{CPSolver, NoSolutionException}
+import oscar.cp.searches.lns.CPIntSol
+import oscar.cp.{CPSolver, _}
 import oscar.modeling.models.cp.CPModel
 import oscar.modeling.models.operators.CPInstantiate
 import oscar.modeling.models.{ModelDeclaration, UninstantiatedModel}
 import oscar.xcsp3.XCSP3Parser2
 import oscar.xcsp3.competition.{CompetitionApp, CompetitionConf}
 
-object ALNSSolver extends CompetitionApp with App {
+import scala.collection.mutable
+
+object LastConfSolver extends CompetitionApp with App{
 
   override def runSolver(conf: CompetitionConf): Unit = {
 
@@ -44,33 +46,37 @@ object ALNSSolver extends CompetitionApp with App {
       solver.silent = true
 
       val timeout = (conf.timelimit().toLong - 5L) * 1000000000L
+      val startTime = System.nanoTime()
+      val endTime: Long = startTime + timeout
 
-      val config = new ALNSConfig(
-        timeout,
-        conf.memlimit(),
-        coupled = true,
-        learning = true,
-        Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided),
-        Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit),
-        ALNSBuilder.ValHeurisBoth,
-        valLearn = true,
-        ALNSBuilder.RWheel,
-        ALNSBuilder.RWheel,
-        ALNSBuilder.AvgImprov,
-        ALNSBuilder.AvgImprov,
-        solutionGenerator,
-        () => printObjective(solver.objective.objs.head.best)
-      )
+      val maximizeObjective: Boolean = solver.objective.objs.head.isMax
 
-      val alns = ALNSSearch(solver, vars, config)
+      val sols = mutable.ArrayBuffer[CPIntSol]()
+
+      solver.onSolution{
+        val time = System.nanoTime() - startTime
+        val sol = new CPIntSol(vars.map(_.value), solver.objective.objs.head.best, time, solutionGenerator())
+        printObjective(sol.objective)
+        sols += sol
+      }
+
+      val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime
 
       printComment("Parsing done, starting search")
 
-      val result = alns.search()
-      val sols = result.solutions
+      val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
+        solver.search(
+          binaryLastConflict(
+            vars,
+            i => vars(i).size,
+            learnValueHeuristic(vars, if(maximizeObjective) vars(_).min else vars(_).max)
+          )
+        )
+      }
 
-      if (sols.nonEmpty) printSolution(sols.last.instantiation, solver.objective.isOptimum())
-      else {
+      if(sols.nonEmpty) printSolution(sols.last.instantiation, solver.objective.isOptimum() || stats.completed)
+      else if(stats.completed) printStatus("UNSATISFIABLE")
+      else{
         printStatus("UNKNOWN")
         printDiagnostic("NO_SOL_FOUND")
       }

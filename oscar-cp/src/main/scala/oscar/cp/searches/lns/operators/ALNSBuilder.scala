@@ -19,19 +19,19 @@ object ALNSBuilder{
     */
   // Random relaxation:
   val Random = "Random"
-  val Random_Param1 = Array(0.10, 0.25, 0.50, 0.75, 1) //Percentage of the neighbourhood which is relaxed
+  val Random_Param1 = Array(0.25, 0.5, 0.75) //Percentage of the neighbourhood which is relaxed
 
   // K successive relaxation:
   val KSuccessive = "KSuccessive"
-  val KSuccessive_Param1 = Array(0.10, 0.25, 0.50, 0.75, 1) //Percentage of the neighbourhood which is relaxed
+  val KSuccessive_Param1 = Array(0.25, 0.50, 0.75) //Percentage of the neighbourhood which is relaxed
 
   // Propagation guided relaxation:
   val PropGuided = "PropGuided"
-  val PropGuided_Param1 = Array(0.10, 0.25, 0.50, 0.75, 1) //Percentage of the neighbourhood which is relaxed
+  val PropGuided_Param1 = Array(0.25, 0.50, 0.75) //Percentage of the neighbourhood which is relaxed
 
   // Reversed propagation guided relaxation:
   val RevPropGuided  = "RevPropGuided"
-  val RevPropGuided_Param1 = Array(0.10, 0.25, 0.50, 0.75, 1) //Percentage of the neighbourhood which is relaxed
+  val RevPropGuided_Param1 = Array(0.25, 0.50, 0.75) //Percentage of the neighbourhood which is relaxed
 
   //TODO: implement other relaxation functions
 
