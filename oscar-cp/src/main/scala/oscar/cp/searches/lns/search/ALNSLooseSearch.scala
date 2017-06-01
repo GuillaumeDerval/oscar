@@ -95,8 +95,10 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
   def lnsSearch(relax: ALNSOperator, search: ALNSOperator): Unit = {
     if(!learning) endSearch = Math.min(System.nanoTime() + iterTimeout * 10, endTime)
 
-    if(!solver.silent) println("Starting new search with: " + relax.name + " and " + search.name)
-    if(!solver.silent) println("Operator timeout: " + (endSearch - System.nanoTime())/1000000000.0 + "s")
+    if(!solver.silent){
+      println("\nStarting new search with: " + relax.name + " and " + search.name)
+      println("Operator timeout: " + (endSearch - System.nanoTime())/1000000000.0 + "s")
+    }
 
     val oldObjective = currentSol.objective
 
@@ -122,13 +124,14 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
 
     if (relaxDone) {
       if(stats.completed){
-        if(!solver.silent) println("Search space completely explored, improvement: " + improvement + "\n")
+        if(!solver.silent) println("Search space completely explored, improvement: " + improvement)
         //Updating probability distributions:
         relax.update(improvement, stats, fail = !learning)
-        search.update(improvement, stats, fail = !learning)
+        search.update(improvement, stats, fail = false)
+        relax.setActive(false)
       }
       else {
-        if(!solver.silent) println("Search done, Improvement: " + improvement + "\n")
+        if(!solver.silent) println("Search done, Improvement: " + improvement)
         //Updating probability distributions:
         relax.update(improvement, stats, fail = !learning && stats.time > iterTimeout * 10)
         search.update(improvement, stats, fail = !learning && stats.time > iterTimeout * 10)
@@ -150,7 +153,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       }
     }
     else {
-      if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement + "\n")
+      if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement)
       //Updating only relax as the the search has not been done:
       relax.update(improvement, stats, fail = !learning)
       if(!relax.isInstanceOf[ALNSReifiedOperator]) {

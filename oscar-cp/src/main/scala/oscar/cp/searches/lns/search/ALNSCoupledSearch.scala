@@ -69,8 +69,10 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
   def lnsSearch(operator: ALNSOperator): Unit = {
     if(!learning) endSearch = Math.min(System.nanoTime() + iterTimeout, endTime)
 
-    if(!solver.silent) println("Starting new search with: " + operator.name)
-    if(!solver.silent) println("Operator timeout: " + (endSearch - System.nanoTime())/1000000000.0 + "s")
+    if(!solver.silent){
+      println("\nStarting new search with: " + operator.name)
+      println("Operator timeout: " + (endSearch - System.nanoTime())/1000000000.0 + "s")
+    }
 
     val oldObjective = currentSol.objective
 
@@ -95,18 +97,19 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
 
     if (relaxDone) {
       if(stats.completed){
-        if(!solver.silent) println("Search space completely explored, improvement: " + improvement + "\n")
+        if(!solver.silent) println("Search space completely explored, improvement: " + improvement)
         //Updating probability distributions:
         operator.update(improvement, stats, fail = !learning)
+        operator.setActive(false)
       }
       else {
-        if (!solver.silent) println("Search done, Improvement: " + improvement + "\n")
+        if (!solver.silent) println("Search done, Improvement: " + improvement)
         //Updating probability distributions:
         operator.update(improvement, stats, fail = !learning && stats.time > iterTimeout)
       }
     }
     else {
-      if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement + "\n")
+      if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement)
       //Updating only relax as the the search has not been done:
       operator.update(improvement, stats, fail = !learning)
     }
