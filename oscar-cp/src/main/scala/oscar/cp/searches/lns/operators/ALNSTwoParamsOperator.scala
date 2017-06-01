@@ -26,11 +26,6 @@ class ALNSTwoParamsOperator[T1, T2](
 
   private var selected1: Option[ALNSParameter[T1]] = None
   private var selected2: Option[ALNSParameter[T2]] = None
-  private var currentId = 0L
-  private lazy val selectedMap: mutable.Map[Long, (ALNSParameter[T1], ALNSParameter[T2])] = mutable.Map[Long, (ALNSParameter[T1], ALNSParameter[T2])]()
-  private val removedParam1 = mutable.HashSet[ALNSParameter[T1]]()
-  private val removedParam2 = mutable.HashSet[ALNSParameter[T2]]()
-  //TODO: Review selection mechanism
 
   /**
     * returns a reified operator representing this operator with the given parameter value.
@@ -45,12 +40,12 @@ class ALNSTwoParamsOperator[T1, T2](
       (improvement, stats, fail) => updateParam(param1, param2, improvement, stats, fail),
       (state) => {
         if(!param1.isActive) {
-          param1Store.remove(param1)
-          if (param1Store.isEmpty) setActive(false)
+          param1Store.deactivate(param1)
+          if (param1Store.isActiveEmpty) setActive(false)
         }
         if(!param2.isActive) {
-          param2Store.remove(param2)
-          if (param2Store.isEmpty) setActive(false)
+          param2Store.deactivate(param2)
+          if (param2Store.isActiveEmpty) setActive(false)
         }
       }
     )
@@ -63,20 +58,11 @@ class ALNSTwoParamsOperator[T1, T2](
 
   override def apply(model:CPIntSol): Unit = {
     if(selected1.isEmpty && selected2.isEmpty) {
-      if(selected1.isEmpty) selected1 = Some(param1Store.select())
-      if(selected2.isEmpty) selected2 = Some(param2Store.select())
+      selected1 = Some(param1Store.select())
+      selected2 = Some(param2Store.select())
       function(model, selected1.get.value, selected2.get.value)
     }
-    else ??? //TODO: Throw exception
-  }
-
-  override def get(): (Long, (CPIntSol) => Unit) = {
-    val param1 = param1Store.select()
-    val param2 = param2Store.select()
-    val id = currentId
-    currentId += 1
-    selectedMap += id -> (param1, param2)
-    (id, function(_, param1.value, param2.value))
+    else throw new Exception("This operator has already been used but not updated!")
   }
 
   override def update(costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit = {
@@ -85,15 +71,7 @@ class ALNSTwoParamsOperator[T1, T2](
       selected1 = None
       selected2 = None
     }
-    else ??? //TODO: Throw exception
-  }
-
-  override def update(id: Long, costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit = {
-    if(selectedMap.contains(id)){
-      updateParam(selectedMap(id)._1, selectedMap(id)._2, costImprovement, stats, fail)
-      selectedMap -= id
-    }
-    else ??? //TODO: Throw exception
+    else throw new Exception("This operator has not been used!")
   }
 
   private def updateParam(param1: ALNSParameter[T1], param2: ALNSParameter[T2], costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit ={
@@ -103,18 +81,16 @@ class ALNSTwoParamsOperator[T1, T2](
     if(param1.isActive)
       param1Store.adapt(param1, metric(param1, costImprovement, stats))
     else{
-      param1Store.remove(param1)
-      removedParam1 += param1
-      if(param1Store.isEmpty) setActive(false)
+      param1Store.deactivate(param1)
+      if(param1Store.isActiveEmpty) setActive(false)
     }
 
     param2.update(costImprovement, stats, fail)
     if(param2.isActive)
       param2Store.adapt(param2, metric(param2, costImprovement, stats))
     else{
-      param2Store.remove(param2)
-      removedParam2 += param2
-      if(param2Store.isEmpty) setActive(false)
+      param2Store.deactivate(param2)
+      if(param2Store.isActiveEmpty) setActive(false)
     }
   }
 
@@ -139,29 +115,23 @@ class ALNSTwoParamsOperator[T1, T2](
   override def nParamVals: Int = nParamVals(1) * nParamVals(2)
 
   /**
-    * Returns the number of different values for the specified parameter.
+    * Returns the number of active values for the specified parameter.
     */
   def nParamVals(param: Int): Int = param match{
-    case 1 => param1Store.nElements
-    case 2 => param2Store.nElements
+    case 1 => param1Store.nActive
+    case 2 => param2Store.nActive
   }
 
   override def setActive(state: Boolean): Unit = {
     if(state){
-      removedParam1.foreach(param =>{
-        param.setActive(state)
-        param1Store.add(param, metric(param, 0, new SearchStatistics(0, 0, 0L, false,0L, 0, 0)))
-      })
-      removedParam2.foreach(param =>{
-        param.setActive(state)
-        param2Store.add(param, metric(param, 0, new SearchStatistics(0, 0, 0L, false,0L, 0, 0)))
-      })
+      param1Store.getElements.foreach(_.setActive(state))
+      param2Store.getElements.foreach(_.setActive(state))
+      param1Store.reset()
+      param2Store.reset()
     }
     super.setActive(state)
   }
   override def resetFails(): Unit = {
-    removedParam1.foreach(_.resetFails())
-    removedParam2.foreach(_.resetFails())
     param1Store.getElements.foreach(_.resetFails())
     param2Store.getElements.foreach(_.resetFails())
     super.resetFails()

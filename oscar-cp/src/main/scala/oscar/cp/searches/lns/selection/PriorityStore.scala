@@ -10,78 +10,86 @@ import scala.collection.JavaConversions._
  * Adaptive store backed by a priority queue.
  */
 class PriorityStore[T](
-                        e: Seq[T],
-                        w: Seq[Double],
+                        val elems: Array[T],
+                        val weights: Array[Double],
                         var rFactor: Double,
                         val min: Boolean
                       ) extends AdaptiveStore[T]{
 
-  val ordering: Ordering[(T, Double)] =
-    if(min) Ordering.by(x => (x._2, Random.nextInt()))
-    else Ordering.by(x => (-x._2, Random.nextInt()))
+  private val ordering: Ordering[Int] =
+    if(min) Ordering.by(x => (weights(x), Random.nextInt()))
+    else Ordering.by(x => (-weights(x), Random.nextInt()))
 
-  val priority = new PriorityQueue[(T, Double)](e.length, ordering)
-  (e zip w).foreach(priority.add)
+  private val priority = new PriorityQueue[Int](elems.length, ordering)
+  elems.indices.foreach(priority.add)
 
   //Used to store the last selected elements which have not been adapted yet and are thus not in the PQ:
-  var lastSelected = new mutable.HashSet[(T, Double)]()
+  private val lastSelected = new mutable.HashMap[T, Int]()
+  private val deactivated = new mutable.HashSet[Int]()
 
-  def this(elems: Seq[T], rFactor: Double, min: Boolean){
+  def this(elems: Array[T], rFactor: Double, min: Boolean){
     this(elems, if(min) Array.fill(elems.length){0.0} else Array.fill(elems.length){Double.MaxValue}, rFactor, min)
   }
 
+  private def getIndex(elem: T): Int = lastSelected.getOrElse(elem, elems.indexOf(elem))
+
+  private def isCached(index: Int): Boolean = lastSelected.contains(elems(index))
+
+  private def isActive(index: Int): Boolean = !deactivated.contains(index)
+
   override def select(): T = {
+    if(isActiveEmpty) throw new Exception("There is no active element in the store.")
 
     //Adding the elements that have not been updated to the PQ
     if(lastSelected.nonEmpty){
-      lastSelected.foreach(priority.add)
+      lastSelected.values.foreach(priority.add)
       lastSelected.clear()
     }
 
     //Selecting next elem
-    val wrapper = priority.poll()
-    lastSelected += wrapper
-    wrapper._1
+    val index = priority.poll()
+    lastSelected += elems(index) -> index
+    elems(index)
   }
 
   override def adapt(elem: T, sFactor: Double, rFactor: Double): Unit = {
-    getWrapper(elem) match{
-      case None => throw new Exception("Element " + elem + " is not in store.")
-      case Some((wrapper, cached: Boolean)) =>
-        if(cached) lastSelected -= wrapper
-        else priority.remove(wrapper)
-        priority.add((wrapper._1, (1.0 - rFactor) * wrapper._2 + rFactor * sFactor))
-    }
+    val index = getIndex(elem)
+    if(index == -1) throw new Exception("Element " + elem + " is not in store.")
+    if(isCached(index)) lastSelected.remove(elem)
+    else priority.remove(index)
+    weights(index) = (1.0 - rFactor) * weights(index) + rFactor * sFactor
+    priority.add(index)
   }
 
-  def getWrapper(elem: T): Option[((T, Double), Boolean)] = {
-    lastSelected.foreach(x =>{
-      if(x._1.equals(elem)) return Some(x, true)
-    })
-    for(x <- priority){
-      if(x._1.equals(elem)) return Some(x, false)
-    }
-    None
+  override def getElements: Seq[T] = elems
+
+  override def nElements: Int = elems.length
+
+  override def getActive: Iterable[T] = (lastSelected.values ++ priority.toSeq).map(elems(_))
+
+  override def nActive: Int = elems.length - deactivated.size
+
+  override def isActiveEmpty: Boolean = lastSelected.isEmpty && priority.isEmpty
+
+  override def nonActiveEmpty: Boolean = !isActiveEmpty
+
+  override def deactivate(elem: T): Unit = {
+    val index = getIndex(elem)
+    if(index == -1) throw new Exception("Element " + elem + " is not in store.")
+    if(isCached(index)) lastSelected.remove(elem)
+    else priority.remove(index)
+    deactivated += index
   }
 
-  override def getElements: Seq[T] = (lastSelected.map(_._1) ++ priority.map(_._1)).toSeq
-
-  override def remove(elem: T): Unit = {
-    getWrapper(elem) match{
-      case None => throw new Exception("Element " + elem + " is not in store.")
-      case Some((wrapper, cached: Boolean)) =>
-        if(cached) lastSelected -= wrapper
-        else priority.remove(wrapper)
-    }
+  override def reset(sFactor: Double): Unit = {
+    weights.indices.foreach(weights(_) = sFactor)
+    reset()
   }
 
-  override def add(elem: T, sFactor: Double): Unit = {
-    priority.add((elem, sFactor))
+  override def reset(): Unit = {
+    priority.clear()
+    lastSelected.clear()
+    deactivated.clear()
+    elems.indices.foreach(priority.add)
   }
-
-  override def nElements: Int = lastSelected.size + priority.size
-
-  override def isEmpty: Boolean = lastSelected.isEmpty && priority.isEmpty
-
-  override def nonEmpty: Boolean = !isEmpty
 }

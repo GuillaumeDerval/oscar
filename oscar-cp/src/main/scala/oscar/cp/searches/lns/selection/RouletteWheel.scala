@@ -8,77 +8,85 @@ import scala.util.Random
  * The purpose of the Roulette wheel is to select randomly an element based on adaptive probabilities.
  */
 class RouletteWheel[T](
-                        e: Seq[T],
-                        w: Seq[Double],
+                        val elems: Array[T],
+                        val weights: Array[Double],
                         var rFactor: Double,
                         val reversed: Boolean
                       ) extends AdaptiveStore[T]{
 
-  private val elems = ArrayBuffer[T](e: _*) //Elements
-  private val weights = ArrayBuffer[Double](w: _*) //Weights
-  private var lastSelected: mutable.Set[Int] = mutable.HashSet() //caching for quick access to last selected elem(s)
+  private val lastSelected = mutable.HashMap[T, Int]() //caching for quick access to last selected elem(s)
+  private val active = mutable.HashSet[Int](elems.indices: _*)
 
-  def this(elems: Seq[T], rFactor: Double, reversed:Boolean){this(elems, Array.fill(elems.size){1.0}, rFactor, reversed)}
+  def this(elems: Array[T], rFactor: Double, reversed:Boolean){this(elems, Array.fill(elems.length){1.0}, rFactor, reversed)}
 
-  private def getIndex(elem: T): Int = {
-    lastSelected.foreach(i => if(elems(i).equals(elem)) return i)
-    elems.indexOf(elem)
+  private def getIndex(elem: T): Int = lastSelected.getOrElse(elem, elems.indexOf(elem))
+
+  private def isActive(index: Int): Boolean = active.contains(index)
+
+  private def isCached(index: Int): Boolean = lastSelected.contains(elems(index))
+
+  private def processProbas(activeSeq: Seq[Int]): Seq[Double] = {
+    val activeWeights = activeSeq.map(weights(_))
+    val wSum = activeWeights.sum
+
+    //If all weights are at 0, giving equiprobability to all elems:
+    if(wSum == 0.0) Seq.fill(activeSeq.length)(1.0/activeSeq.length)
+
+    //If probabilities must be reversed, reversing weights:
+    else if (reversed) {
+      val reversedWeights = activeWeights.map(1.0 - _/wSum)
+      val rwSum = reversedWeights.sum
+      if(rwSum == 0.0) Seq.fill(activeSeq.length)(1.0/activeSeq.length)
+      else reversedWeights.map(_  / rwSum)
+    }
+
+    else activeWeights.map(_ / wSum)
   }
 
   override def select(): T = {
-    // random between 0 and 1
-    val rand = Random.nextFloat()
+    val rand = Random.nextDouble()
+    val activeSeq = active.toSeq
 
     // Computing cumulative probabilities and returning first index for which it is greater than rand
-    val selected = processProbas.scanLeft(0.0)(_+_).drop(1).indexWhere(_ > rand)
-    lastSelected += selected
+    val selected = activeSeq(processProbas(activeSeq).scanLeft(0.0)(_+_).drop(1).indexWhere(_ > rand))
+    lastSelected += elems(selected) -> selected
     elems(selected)
   }
 
   override def adapt(elem: T, sFactor: Double, rFactor: Double): Unit = {
-    val i = getIndex(elem)
-    if(i == -1) throw  new Exception("Element " + elem + " is not in store.")
-    weights(i) = (1.0 - rFactor) * weights(i) + rFactor * sFactor
-    lastSelected.remove(i)
-  }
-
-  def processProbas: Seq[Double] = {
-    val wSum = weights.sum
-
-    //If all weights are at 0, giving equiprobability to all elems:
-    if(wSum == 0.0) weights.map(_ => 1.0/weights.length)
-
-    //If probabilities must be reversed, reversing weights:
-    else if (reversed) {
-      val reversedWeights = weights.map(1.0 - _/wSum)
-      val rwSum = reversedWeights.sum
-      if(rwSum == 0.0) reversedWeights.map(_ => 1.0/reversedWeights.length)
-      else reversedWeights.map(_ / rwSum)
-    }
-
-    else weights.map(_ / wSum)
+    val index = getIndex(elem)
+    if(index == -1) throw  new Exception("Element " + elem + " is not in store.")
+    weights(index) = (1.0 - rFactor) * weights(index) + rFactor * sFactor
+    if(isCached(index)) lastSelected.remove(elem)
   }
 
   override def getElements: Seq[T] = elems
 
-  override def add(elem: T, sFactor: Double): Unit = {
-    if(getIndex(elem) != -1) throw new Exception("Element " + elem + " is already in store.")
-    elems += elem
-    weights += sFactor
-  }
-
-  override def remove(elem: T): Unit = {
-    val i = getIndex(elem)
-    if(i != -1){
-      elems.remove(i)
-      weights.remove(i)
-      lastSelected.clear()
-    }
-  }
-
   override def nElements: Int = elems.length
 
-  override def isEmpty: Boolean = elems.isEmpty
+  override def getActive: Iterable[T] = active.map(elems(_))
 
-  override def nonEmpty: Boolean = !isEmpty
+  override def nActive: Int = active.size
+
+  override def isActiveEmpty: Boolean = active.isEmpty
+
+  override def nonActiveEmpty: Boolean = !isActiveEmpty
+
+  override def deactivate(elem: T): Unit = {
+    val index = getIndex(elem)
+    if(index == -1) throw new Exception("Element " + elem + " is not in store.")
+    active.remove(index)
+    if(isCached(index)) lastSelected.remove(elem)
+  }
+
+  override def reset(sFactor: Double): Unit = {
+    weights.indices.foreach(weights(_) = sFactor)
+    reset()
+  }
+
+  override def reset(): Unit = {
+    lastSelected.clear()
+    active.clear()
+    active ++= elems.indices
+  }
 }
