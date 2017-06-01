@@ -205,34 +205,41 @@ object HtmlReporter extends App{
 //      println("reading: " + file.getPath)
       val files = IOUtils.getFiles(dir.getAbsolutePath, ".txt")
       files.foreach(file =>{
-        val(solver, timeout, instance, sols, status) = readFile(file)
+        try {
+          val (solver, timeout, instance, sols, status) = readFile(file)
 
-        if(timeout > maxTimeout) maxTimeout = timeout
+          if (timeout > maxTimeout) maxTimeout = timeout
 
-        instances += instance
-        solvers += solver
-        val config = solver + "-" + dirName
-        configs += config
+          instances += instance
+          solvers += solver
+          val config = solver + "-" + dirName
+          configs += config
 
-        if(solsByInstance.contains(instance)) solsByInstance(instance) += solver -> sols
-        else{
-          val map = mutable.Map[String, Seq[(Int, Long)]]()
-          map += solver -> sols
-          solsByInstance += instance -> map
-        }
+          if (solsByInstance.contains(instance)) solsByInstance(instance) += solver -> sols
+          else {
+            val map = mutable.Map[String, Seq[(Int, Long)]]()
+            map += solver -> sols
+            solsByInstance += instance -> map
+          }
 
-        if(statusByInstance.contains(instance)) statusByInstance(instance) += solver -> status
-        else{
-          val map = mutable.Map[String, (String, Long)]()
-          map += solver -> status
-          statusByInstance += instance -> map
-        }
+          if (statusByInstance.contains(instance)) statusByInstance(instance) += solver -> status
+          else {
+            val map = mutable.Map[String, (String, Long)]()
+            map += solver -> status
+            statusByInstance += instance -> map
+          }
 
-        if(allSols.contains(instance)) allSols(instance) += config -> sols
-        else{
-          val map = mutable.Map[String, Seq[(Int, Long)]]()
-          map += config -> sols
-          allSols += instance -> map
+          if (allSols.contains(instance)) allSols(instance) += config -> sols
+          else {
+            val map = mutable.Map[String, Seq[(Int, Long)]]()
+            map += config -> sols
+            allSols += instance -> map
+          }
+        }catch{
+          case _: NumberFormatException =>
+            println("file " + file.getName + " has not a correct format! Ignoring file.")
+
+          case _ =>
         }
       })
 
@@ -251,8 +258,11 @@ object HtmlReporter extends App{
     val sols = ListBuffer[(Int, Long)]()
     var status = ("UNKNOWN", 0L)
 
+    println("file: " + file.getName)
+
     for (line <- Source.fromFile(file).getLines()) {
       val words = line.split(" ")
+      println("words: " + words.mkString(", "))
       val time = words(0).toLong
 
       words(1) match{

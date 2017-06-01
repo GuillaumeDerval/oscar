@@ -45,14 +45,14 @@ run_search () {
         if [ "$ReRun" = "true" ]
         then
             echo "Re-running bench"
-            echo "c instance: $InstanceName" > $OutPath
-            echo "c solver: $SolverName" >> $OutPath
+            echo "0 c instance: $InstanceName" > $OutPath
+            echo "0 c solver: $SolverName" >> $OutPath
             scala -J-Xmx${5}m -cp $1 $7 --timelimit $4 $6 >> $OutPath
         fi
     else
         echo "Running bench"
-        echo "c instance: $InstanceName" > $OutPath
-        echo "c solver: $SolverName" >> $OutPath
+        echo "0 c instance: $InstanceName" > $OutPath
+        echo "0 c solver: $SolverName" >> $OutPath
         scala -J-Xmx${5}m -cp $1 $7 --timelimit $4 $6 >> $OutPath
     fi
 
@@ -99,4 +99,4 @@ cp -r --parents "${Out}/${VNum}" "/etinfo/users2/cthomas/Workspace/"
 
 scala -J-Xmx1g -cp ${CP} oscar.xcsp3.competition.html.HtmlReporter ${Out}
 
-cat "${Out}/htmlreport.html" > "/etinfo/users2/cthomas/Workspace/${Out}/htmlReport.html"
+cat "${Out}/htmlReport.html" > "/etinfo/users2/cthomas/Workspace/${Out}/htmlReport.html"
