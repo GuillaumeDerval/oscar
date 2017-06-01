@@ -261,28 +261,30 @@ object HtmlReporter extends App{
     println("file: " + file.getName)
 
     for (line <- Source.fromFile(file).getLines()) {
-      val words = line.split(" ")
-      println("words: " + words.mkString(", "))
-      val time = words(0).toLong
+      if(line == "**********************")
+        return (solver, timeout, instance, sols, ("UNSUPPORTED", 0L))
+      else {
+        val words = line.split(" ")
+        println("words: " + words.mkString(", "))
+        val time = words(0).toLong
 
-      words(1) match{
-        case "c" => words(2) match{
-          case "instance:" => instance = words(3).stripSuffix(".xml")
-          case "solver:" => solver = words(3)
-          case "timeout:" => timeout = words(3).toInt
+        words(1) match {
+          case "c" => words(2) match {
+            case "instance:" => instance = words(3).stripSuffix(".xml")
+            case "solver:" => solver = words(3)
+            case "timeout:" => timeout = words(3).toInt
+            case _ =>
+          }
+
+          case "o" => sols += ((words(2).toInt, time))
+
+          case "s" => status = (words(2), time)
+
+          case "d" => status = (words(2), time)
+
           case _ =>
         }
-
-        case "o" => sols += ((words(2).toInt, time))
-
-        case "s" => status = (words(2), time)
-
-        case "d" => status = (words(2), time)
-
-        case _ =>
       }
-
-      if(line == "Missing Implementation") status = ("UNSUPPORTED", 0L)
     }
 
     (solver, timeout, instance, sols, status)
