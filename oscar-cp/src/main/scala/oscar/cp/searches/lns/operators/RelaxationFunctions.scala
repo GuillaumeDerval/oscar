@@ -17,10 +17,8 @@ object RelaxationFunctions {
     val varSeq = vars.toSeq
     val varArray = varSeq.indices.toArray //map to real indice of variable
     var boundStart = varArray.length //Elements of varArray from this index are bound
-    var nToFreeze = varSeq.size - k
 
-    //TODO: Detect vars frozen by propagation
-    while(nToFreeze > 0){
+    while(vars.count(!_.isBound) > k){
       val i = Random.nextInt(boundStart) //Selecting new var to freeze randomly
       val x = varArray(i)
       solver.add(varSeq(x) === currentSol.values(x))
@@ -30,8 +28,6 @@ object RelaxationFunctions {
       boundStart -= 1
       varArray(i) = varArray(boundStart)
       varArray(boundStart) = x
-
-      nToFreeze -= 1
     }
 
 //    println("relaxation done, " + (vars.size - k) + " vars frozen")
@@ -42,25 +38,18 @@ object RelaxationFunctions {
     * @param k The number of variables to relax (must be >= 0 and < vars.size)
     */
   def successiveRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit = {
-    //TODO: Detect vars frozen by propagation
 //    println("relaxing " + k + " variables")
     val varSeq = vars.toSeq
-    val start = Random.nextInt(vars.size) //start of the relaxed sequence (inclusive)
-    //If the sequence ends after the last var, the remaining vars are relaxed at the beginning of the var array.
-    if(start + k > varSeq.length)
-      varSeq.indices.filter(i => i < start && i >= (start+k)-varSeq.length).foreach(
-        i => {
-          solver.add(varSeq(i) === currentSol.values(i))
-          if(! varSeq(i).isBound) throw Inconsistency
-        }
-      )
-    else
-      varSeq.indices.filter(i => i < start || i >= start+k).foreach(
-        i => {
-          solver.add(varSeq(i) === currentSol.values(i))
-          if(! varSeq(i).isBound) throw Inconsistency
-        }
-      )
+    var i = Random.nextInt(vars.size)-1 //start of the relaxed sequence (inclusive)
+    if(i < 0) i = varSeq.length-1
+
+    while(i > 0 && vars.count(!_.isBound) > k) {
+      solver.add(varSeq(i) === currentSol.values(i))
+      if (!varSeq(i).isBound) throw Inconsistency
+
+      i -= 1
+      if(i < 0) i = varSeq.length-1
+    }
 
 //    println("relaxation done, " + (varSeq.length - k) + " vars frozen")
   }
