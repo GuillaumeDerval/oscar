@@ -139,7 +139,7 @@ class SeqUpdateInsert(val value:Int,val pos:Int,prev:SeqUpdate, seq:IntSequence)
   override protected[computation] def prepend(u : SeqUpdate) : SeqUpdate =
     SeqUpdateInsert(value, pos, prev.prepend(u), seq)
 
-  override def toString : String = "SeqUpdateInsert(value:" + value + " pos:" + pos + " prev:" + prev + ")"
+  override def toString : String = "SeqUpdateInsert(value:" + value + " position:" + pos + " prev:" + prev + ")"
 }
 
 object SeqUpdateMove{
@@ -367,7 +367,7 @@ class SeqUpdateDefineCheckpoint(mprev:SeqUpdate,val activeCheckpoint:Boolean, ma
     SeqUpdateDefineCheckpoint(mprev.prepend(u), activeCheckpoint, maxPivotPerValuePercent, doRegularize,level)
   }
 
-  override def toString : String = "SeqUpdateDefineCheckpoint(prev:" + mprev + ")"
+  override def toString : String = "SeqUpdateDefineCheckpoint(level:" + level + " prev:" + mprev + ")"
 }
 
 object SeqUpdateRollBackToCheckpoint{
@@ -403,7 +403,7 @@ class SeqUpdateRollBackToCheckpoint(val checkpointValue:IntSequence,howToRollBac
   }
 
   override def toString : String =
-    "SeqUpdateRollBackToCheckpoint(checkpoint:" + checkpointValue + ")" //+ " howTo:" +  howToRollBack + ")"
+    "SeqUpdateRollBackToCheckpoint(level:" + level + " checkpoint:" + checkpointValue + ")" //+ " howTo:" +  howToRollBack + ")"
 
   override def depth : Int = 0
 

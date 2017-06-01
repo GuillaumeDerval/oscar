@@ -6,6 +6,8 @@ import oscar.cbls.core.computation._
 import oscar.cbls.lib.invariant.routing.AbstractVehicleCapacity
 import oscar.cbls.lib.invariant.routing.convention.VehicleLocation
 
+import scala.collection.immutable.SortedSet
+
 
 /**
  * creates a GenericCumulativeIntegerDimensionOnVehicle Invariant
@@ -17,18 +19,14 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
                                                            n:Int,
                                                            v:Int)
   extends AbstractVehicleCapacity(n,v)
-  with SeqNotificationTarget with IntNotificationTarget{
-
-  //the output is initialized here, together with the currentVehicleLocation
-  protected var currentVehicleLocation:VehicleLocation =
-    computeAndAffectContentAndVehicleStartPositionsFromScratch(routes.value,true)
+  with SeqNotificationTarget{
 
   private val vehicleLocationAndCheckpointStack = new SeqCheckpointedValueStack[VehicleLocation]()
 
   protected var toUpdateZonesAndVehicleStartAfter:Option[(RedBlackTreeMap[List[(Int,Int)]],VehicleLocation)] =
-    Some(RedBlackTreeMap.empty[List[(Int,Int)]],currentVehicleLocation)
+    Some(RedBlackTreeMap.empty[List[(Int,Int)]], computeAndAffectContentAndVehicleStartPositionsFromScratch(routes.value,true))
 
-  protected var potentiallyRemovedNodes:List[Int] = List.empty
+  protected var potentiallyRemovedNodes:SortedSet[Int] = SortedSet.empty
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate){
     val tmp = digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(
@@ -58,33 +56,35 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
         updateVehicleContentOnAllVehicle(routes.value,
           vehiclesToZonesToUpdate,
           vehicleLocation)
-        currentVehicleLocation = vehicleLocation
+
+        toUpdateZonesAndVehicleStartAfter = Some(RedBlackTreeMap.empty[List[(Int,Int)]],vehicleLocation)
       case None =>
-        currentVehicleLocation = computeAndAffectContentAndVehicleStartPositionsFromScratch(routes.value,false)
+        val currentVehicleLocation = computeAndAffectContentAndVehicleStartPositionsFromScratch(routes.value,false)
+        toUpdateZonesAndVehicleStartAfter = Some(RedBlackTreeMap.empty[List[(Int,Int)]],currentVehicleLocation)
     }
-    toUpdateZonesAndVehicleStartAfter = Some(RedBlackTreeMap.empty[List[(Int,Int)]],currentVehicleLocation)
-    potentiallyRemovedNodes = List.empty
+
+    potentiallyRemovedNodes = SortedSet.empty
   }
 
 
   def digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(changes:SeqUpdate,
                                                                        toUpdateZonesAndVehicleStartOpt:Option[(RedBlackTreeMap[List[(Int,Int)]],VehicleLocation)],
-                                                                       potentiallyRemovedPoints:List[Int],
+                                                                       potentiallyRemovedPoints:SortedSet[Int],
                                                                        previousSequence:IntSequence)
-  :(Option[(RedBlackTreeMap[List[(Int,Int)]],VehicleLocation)],List[Int]) = {
-
+  :(Option[(RedBlackTreeMap[List[(Int,Int)]],VehicleLocation)],SortedSet[Int]) = {
     changes match {
       case s@SeqUpdateInsert(value : Int, posOfInsert : Int, prev : SeqUpdate) =>
         digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints, previousSequence) match {
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), potentiallyRemovedPointsAfterPrev) =>
-            val vehicleLocationAfyterInsert = vehicleLocationAfterPrev.push(s.oldPosToNewPos)
+            val vehicleLocationAfterInsert = vehicleLocationAfterPrev.push(s.oldPosToNewPos)
             val updatedZones =
               updateZoneToUpdateAfterInsert(
                 zonesAfterPrev,
                 posOfInsert,
                 prev.newValue,
-                vehicleLocationAfterPrev,vehicleLocationAfyterInsert)
-            (Some((updatedZones,  vehicleLocationAfyterInsert)), potentiallyRemovedPointsAfterPrev)
+                vehicleLocationAfterPrev,vehicleLocationAfterInsert)
+
+            (Some((updatedZones,  vehicleLocationAfterInsert)), potentiallyRemovedPointsAfterPrev)
           case (None,potentiallyRemovedPointsAfterPrev) =>
             (None, potentiallyRemovedPointsAfterPrev)
         }
@@ -92,14 +92,16 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
       case r@SeqUpdateRemove(pos : Int, prev : SeqUpdate) =>
         digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints, previousSequence) match {
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), potentiallyRemovedPointsAfterPrev) =>
-            val updatedZones =
+            val updatedZonesAfterRemove =
               updateZoneToUpdateAfterRemove(
                 zonesAfterPrev,
                 pos : Int,
                 prev.newValue, vehicleLocationAfterPrev)
-            (Some((updatedZones, vehicleLocationAfterPrev.push(r.oldPosToNewPos))), r.removedValue :: potentiallyRemovedPointsAfterPrev)
+            vehicleLocationAfterPrev.checkOnSequence(prev.newValue)
+            vehicleLocationAfterPrev.push(r.oldPosToNewPos).checkOnSequence(r.newValue)
+            (Some((updatedZonesAfterRemove, vehicleLocationAfterPrev.push(r.oldPosToNewPos))),  potentiallyRemovedPointsAfterPrev + r.removedValue)
           case (None,potentiallyRemovedPointsAfterPrev) =>
-            (None, r.removedValue :: potentiallyRemovedPointsAfterPrev)
+            (None, potentiallyRemovedPointsAfterPrev + r.removedValue)
         }
 
       case m@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
@@ -120,7 +122,7 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
         }
 
       case SeqUpdateAssign(value : IntSequence) =>
-        (None, potentiallyRemovedPoints ::: previousSequence.unorderedContentNoDuplicate)
+        (None, potentiallyRemovedPoints ++ previousSequence.unorderedContentNoDuplicate)
 
       case SeqUpdateLastNotified(value : IntSequence) =>
         (toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints)
@@ -129,8 +131,9 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
         digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints, previousSequence) match {
           //checkpoints are managed about the vehicleLocation exclusively
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), removedPointsAfterPrev) =>
-            vehicleLocationAndCheckpointStack.defineCheckpoint(prev.newValue,checkpointLevel,vehicleLocationAfterPrev)
-            (Some((zonesAfterPrev, vehicleLocationAfterPrev)), removedPointsAfterPrev)
+            val vehicleLocationToSave = if(checkpointLevel == 0) vehicleLocationAfterPrev.regularize else vehicleLocationAfterPrev
+            vehicleLocationAndCheckpointStack.defineCheckpoint(prev.newValue,checkpointLevel,vehicleLocationToSave)
+            (Some((zonesAfterPrev, vehicleLocationToSave)), removedPointsAfterPrev)
           case (None,potentiallyRemovedPointsAfterPrev) =>
             (None, potentiallyRemovedPointsAfterPrev)
         }

@@ -21,6 +21,7 @@ import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.constraint.LE
+import oscar.cbls.lib.invariant.routing.capa.ForwardCumulativeIntegerDimensionOnVehicle
 import oscar.cbls.lib.invariant.routing.{ForwardCumulativeConstraintOnVehicle, RouteSuccessorAndPredecessors}
 import oscar.cbls.lib.invariant.seq.Size
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
@@ -35,8 +36,7 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
 
   val penaltyForUnrouted  = 10000
 
-  val maxNodes = LE(Size(routes),5).violation
-
+  val maxNodes = LE(Size(routes),n/2).violation
 
   val violation = new CBLSIntVar(routes.model, 0, 0 to Int.MaxValue, "violation of capacity test")
 
@@ -50,10 +50,13 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
   violation,
   6)
 
+  val contentAtStart = Array.tabulate(v)(vehicle => CBLSIntVar(m,0,0 to 10,"start content of vehicle " + vehicle))
+  val cumulative2 = ForwardCumulativeIntegerDimensionOnVehicle(routes,n,v,{case (fromNode,toNode,fromContent) => fromNode+toNode+(2*fromContent)},contentAtStart,-1)
+
   val obj = new CascadingObjective(
     contentConstraint.violation,
     new CascadingObjective(maxNodes,
-      Objective(totalDistance + (penaltyForUnrouted*(n - Size(routes))))))
+      Objective(cumulative2._3(1) + cumulative2._2(1) + totalDistance + (penaltyForUnrouted*(n - Size(routes))))))
 
   this.addToStringInfo(() => "objective: " + obj.value)
   this.addToStringInfo(() => "n:" + n + " v:" + v)
@@ -72,9 +75,9 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
 
 object TestCumulatives extends App{
 
-  val n = 10
+  val n = 30
   val v = 5
-  val delta = Array(0,1,-1,2,-2,3,-3,4,-4,0)
+  val delta = Array(0,1,1,2,2,3,-3,4,-4,0,0,1,-1,2,-2,3,-3,4,-4,0,0,1,-1,2,-2,3,-3,4,-4,0)
   val maxPivotPerValuePercent = 4
 
   println("VRP(n:" + n + " v:" + v + ")")
@@ -83,7 +86,7 @@ object TestCumulatives extends App{
   //  println("restrictions:" + restrictions)
   val model = new Store(checker = Some(new ErrorChecker()))
 
-  val myVRP = new MySimpleRoutingWithCumulatives(n,v,symmetricDistanceMatrix,model,maxPivotPerValuePercent,delta,5)
+  val myVRP = new MySimpleRoutingWithCumulatives(n,v,symmetricDistanceMatrix,model,maxPivotPerValuePercent,delta,10)
 
   model.close()
 
@@ -100,7 +103,7 @@ object TestCumulatives extends App{
 
   val vlsn1pt = Profile(Mu[OnePointMoveMove](
     OnePointMove(myVRP.routed, () => myVRP.kFirst(5,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP),
-    l => Some(OnePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(3,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP, hotRestart = false)),
+    l => Some(OnePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(5,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP, hotRestart = false)),
     intermediaryStops = true,
     maxDepth = 6))
 
@@ -112,7 +115,7 @@ object TestCumulatives extends App{
   // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10) guard (() => myVRP.unrouted.value.size != 0)),10)) exhaust BestSlopeFirst(List(onePtMove(20),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
 
   search.verbose = 1
-  //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
+  //search.verboseWithExtraInfo(5, ()=> "" + myVRP)
 
   print("Doing all moves ...")
 

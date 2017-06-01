@@ -103,7 +103,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
     contentAtNode(vehicle) = contentAtVehicleStart(vehicle)
     violation :+= (contentToViolation(contentAtNode(vehicle)) - contentToViolation(0))
   }
-  
+
   //this also sets the violation, supposing it is at zero before,
   // and it reads content at the start of vehicle  at start, so it must be up to date as well
   private var currentVehicleLocation:VehicleLocation =
@@ -287,18 +287,13 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
   }
 
   override def checkInternals(c: Checker): Unit = {
-    println("contentAtStart: " + contentAtVehicleStart.mkString(","))
-    println("content: [" + contentAtNodes.mkString(",") + "]")
-    println("coutes: " + routes)
-    println("v:" + v)
-    val (nodeToContent,_,vehicleStartPos) = AbstractVehicleCapacity.computeNodeToIntContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch(n,v,op,this.contentAtVehicleStart,routes.value, 0)
-
-    println("from scratch content: " + nodeToContent.mkString(","))
-    println("from scratch vehicleStartPos:" +vehicleStartPos)
+    val (nodeToContent,_,vehicleStartPos) = AbstractVehicleCapacity.
+      computeNodeToIntContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch(n,v,op,this.contentAtVehicleStart,routes.value, 0)
 
     for(node <- routes.value){
       c.check(nodeToContent(node) equals contentAtNode(node),
-        Some("GenericCumulativeConstraint : Error on content at node(" + node + ") at pos : "+ routes.newValue.positionsOfValue(node)+ " :=" + contentAtNode(node) + " should be :=" + nodeToContent(node) + " route:" + routes.value))
+        Some("GenericCumulativeConstraint : Error on content at node(" + node + ") at pos : " +
+          routes.newValue.positionsOfValue(node)+ " :=" + contentAtNode(node) + " should be :=" + nodeToContent(node) + " route:" + routes.value))
     }
     val computedViolation = nodeToContent.foldLeft(0)({case (acc,nodeContent) => acc + contentToViolation(nodeContent)})
     c.check(computedViolation == violation.value, Some("GenericCumulativeConstraint : " + violation + " should be :="+computedViolation))
@@ -314,7 +309,8 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
     for(vehicle <- 0 until v) {
       c.check(routes.value.valueAtPosition(vehicleStartPos.startPosOfVehicle(vehicle)).get == vehicle,Some("a"))
       c.check(routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(vehicle)).get == vehicle,
-        Some("routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(" + vehicle + ")) is" + routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(vehicle)) + " should be " + vehicle))
+        Some("routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(" + vehicle + ")) is" +
+          routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(vehicle)) + " should be " + vehicle))
     }
   }
 }

@@ -19,7 +19,7 @@ package oscar.cbls.lib.invariant.routing.capa
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.functional.IntSequence
 import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls.core.propagation.{ErrorChecker, Checker}
 import oscar.cbls.lib.invariant.routing.AbstractVehicleCapacity
 import oscar.cbls.lib.invariant.routing.convention.VehicleLocation
 
@@ -128,17 +128,26 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
   }
 
   override def checkInternals(c : Checker) : Unit = {
-    val (nodeToContent,vehicleToContentAtEnd,vehicleLocation) = AbstractVehicleCapacity.computeNodeToIntContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch(n,v,op,v => contentAtStart(v).value,routes.value,defaultVehicleContentForUnroutedNodes)
+    check(c,routes.value)
+  }
+  def check(c : Checker,s:IntSequence){
+    val (nodeToContent,vehicleToContentAtEnd,vehicleLocation) =
+      AbstractVehicleCapacity.computeNodeToIntContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch(n,v,op,v => contentAtStart(v).value,s,defaultVehicleContentForUnroutedNodes)
+    val currentVehicleLocation = this.toUpdateZonesAndVehicleStartAfter.get._2
+
+    for(vehicle <- 0 until v){
+      c.check(vehicleLocation.startPosOfVehicle(vehicle) == s.positionOfAnyOccurrence(vehicle).get,
+        Some("Found start of vehicle(" + vehicle + "):=" + vehicleLocation.startPosOfVehicle(vehicle) + " should be :=" + s.positionOfAnyOccurrence(vehicle) +" seq :"+ s.mkString(",")))
+      c.check(currentVehicleLocation.startPosOfVehicle(vehicle) == vehicleLocation.startPosOfVehicle(vehicle),Some("x"))
+    }
+
     for(node <- 0 until n){
       c.check(nodeToContent(node) == contentAtNode(node).newValue,
-        Some("Vehicle content at node(" + node + ") at pos : "+ routes.value.positionsOfValue(node)+ " := " + contentAtNode(node).newValue + " should be :=" + nodeToContent(node)+ " routes:" + routes.value.mkString(",")  + " contentAtStart:" + contentAtStart.mkString(",")))
+        Some("Vehicle content at node(" + node + ") at pos : "+ s.positionsOfValue(node)+ " := " + contentAtNode(node).newValue + " should be :=" + nodeToContent(node)+ " routes:" + s.mkString(",")  + " contentAtStart:" + contentAtStart.mkString(",")))
     }
-    for(vehicle <- 0 until v){
-      c.check(vehicleLocation.startPosOfVehicle(vehicle) == routes.value.positionOfAnyOccurrence(vehicle).get,
-        Some("Found start of vehicle(" + vehicle + "):=" + vehicleLocation.startPosOfVehicle(vehicle) + " should be :=" + routes.value.positionOfAnyOccurrence(vehicle) +" seq :"+routes.value.mkString(",")))
-      c.check(contentAtEnd(vehicle).value == vehicleToContentAtEnd(vehicle))
 
-      c.check(currentVehicleLocation.startPosOfVehicle(vehicle) == vehicleLocation.startPosOfVehicle(vehicle),Some("x"))
+    for(vehicle <- 0 until v){
+      c.check(contentAtEnd(vehicle).newValue == vehicleToContentAtEnd(vehicle), Some("Error on vehicle content at end vehicle:" + vehicle + " contentAtEnd(vehicle).newValue:" + contentAtEnd(vehicle).newValue + " should be:" +  vehicleToContentAtEnd(vehicle)))
     }
   }
 }
