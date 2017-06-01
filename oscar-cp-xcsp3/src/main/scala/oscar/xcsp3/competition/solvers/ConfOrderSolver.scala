@@ -56,7 +56,7 @@ object ConfOrderSolver extends CompetitionApp with App{
       solver.onSolution{
         val time = System.nanoTime() - startTime
         val sol = new CPIntSol(vars.map(_.value), solver.objective.objs.head.best, time, solutionGenerator())
-        println("o " + sol.objective)
+        printObjective(sol.objective)
         sols += sol
       }
 
