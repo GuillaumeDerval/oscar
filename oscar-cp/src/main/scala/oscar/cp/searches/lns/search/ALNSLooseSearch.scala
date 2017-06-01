@@ -9,26 +9,19 @@ import oscar.cp.searches.lns.selection.AdaptiveStore
 import scala.collection.mutable
 import scala.util.Random
 
-
 class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
   extends ALNSSearch(solver, vars, config) {
 
   //Instantiating relax operators:
   lazy val relaxOps: Array[ALNSOperator] = builder.instantiateRelaxOperators
+  lazy val relaxStore: AdaptiveStore[ALNSOperator] = builder.instantiateOperatorStore(relaxOps)
 
   //Instantiating search operators:
   lazy val searchOps: Array[ALNSOperator] = builder.instantiateSearchOperators
-
-  lazy val relaxStore: AdaptiveStore[ALNSOperator] = builder.instantiateOperatorStore(relaxOps)
   lazy val searchStore: AdaptiveStore[ALNSOperator] = builder.instantiateOperatorStore(searchOps)
 
   lazy val nOpCombinations: Int = relaxOps.filter(_.isActive).map(_.nParamVals).sum * searchOps.filter(_.isActive).map(_.nParamVals).sum
 
-  val removedRelaxations: mutable.HashSet[ALNSOperator] = mutable.HashSet[ALNSOperator]()
-  val removedSearches: mutable.HashSet[ALNSOperator] = mutable.HashSet[ALNSOperator]()
-
-  //TODO: implement exponential timeout
-  //TODO: add multiobjective support
   override def alnsLearning(): Unit = {
     learning = true
     val initSol = currentSol
@@ -74,21 +67,15 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       if(!solver.silent) println("Operator " + op.name + " deactivated")
     }
 
-    relaxOps.filter(!_.isActive).foreach(operator => {
-      relaxStore.remove(operator)
-      removedRelaxations += operator
-    })
-    searchOps.filter(!_.isActive).foreach(operator => {
-      searchStore.remove(operator)
-      removedSearches += operator
-    })
+    relaxOps.filter(!_.isActive).foreach(relaxStore.deactivate)
+    searchOps.filter(!_.isActive).foreach(searchStore.deactivate)
 
     if(!solver.silent) {
-      println(relaxStore.nElements + " relax operators remaining.")
-      println(searchStore.nElements + " search operators remaining.")
+      println(relaxStore.nActive + " relax operators remaining.")
+      println(searchStore.nActive + " search operators remaining.")
     }
 
-    if(relaxStore.nElements == 0 || searchStore.nElements == 0) learnRatio *= 2
+    if(relaxStore.nActive == 0 || searchStore.nActive == 0) learnRatio *= 2
     else searchFail = 0
 
     currentSol = bestSol
@@ -100,7 +87,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
   override def alnsLoop(): Unit = {
     if (!solver.silent) println("\nStarting adaptive LNS...")
     stagnation = 0
-    while (System.nanoTime() < endTime  && relaxStore.nonEmpty && searchStore.nonEmpty && (!config.learning || stagnation < stagnationThreshold)) {
+    while (System.nanoTime() < endTime  && relaxStore.nonActiveEmpty && searchStore.nonActiveEmpty && (!config.learning || stagnation < stagnationThreshold)) {
       lnsSearch(relaxStore.select(), searchStore.select())
     }
   }
@@ -108,8 +95,10 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
   def lnsSearch(relax: ALNSOperator, search: ALNSOperator): Unit = {
     if(!learning) endSearch = Math.min(System.nanoTime() + iterTimeout * 10, endTime)
 
-    if(!solver.silent) println("Starting new search with: " + relax.name + " and " + search.name)
-    if(!solver.silent) println("Operator timeout: " + Math.min(iterTimeout * 10, endTime - System.nanoTime())/1000000000.0 + "s")
+    if(!solver.silent){
+      println("\nStarting new search with: " + relax.name + " and " + search.name)
+      println("Operator timeout: " + (endSearch - System.nanoTime())/1000000000.0 + "s")
+    }
 
     val oldObjective = currentSol.objective
 
@@ -126,6 +115,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
     }
 
     val improvement = math.abs(currentSol.objective - oldObjective)
+
     if(improvement > 0){
       stagnation = 0
       if(iterTimeout >= config.timeout || stats.time * 1000000 > iterTimeout) iterTimeout = stats.time * 1000000
@@ -133,45 +123,44 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
     else stagnation += 1
 
     if (relaxDone) {
-      if(!solver.silent) println("Search done, Improvement: " + improvement + "\n")
+      if(stats.completed){
+        if(!solver.silent) println("Search space completely explored, improvement: " + improvement)
+        //Updating probability distributions:
+        relax.update(improvement, stats, fail = !learning)
+        search.update(improvement, stats, fail = false)
+        relax.setActive(false)
+      }
+      else {
+        if(!solver.silent) println("Search done, Improvement: " + improvement)
+        //Updating probability distributions:
+        relax.update(improvement, stats, fail = !learning && stats.time > iterTimeout * 10)
+        search.update(improvement, stats, fail = !learning && stats.time > iterTimeout * 10)
+      }
 
-      //Updating probability distributions:
-      relax.update(improvement, stats, fail = stats.time > iterTimeout * 10)
       if(!relax.isInstanceOf[ALNSReifiedOperator]){
         if (relax.isActive) relaxStore.adapt(relax, metric(relax, improvement, stats))
         else {
           if (!solver.silent) println("Operator " + relax.name + " deactivated")
-          if (!learning){
-            relaxStore.remove(relax)
-            removedRelaxations += relax
-          }
+          if (!learning) relaxStore.deactivate(relax)
         }
       }
-      search.update(improvement, stats, fail = stats.time > iterTimeout * 10)
       if(!relax.isInstanceOf[ALNSReifiedOperator]){
         if (search.isActive) searchStore.adapt(search, metric(search, improvement, stats))
         else {
           if (!solver.silent) println("Operator " + search.name + " deactivated")
-          if (!learning){
-            searchStore.remove(search)
-            removedSearches += search
-          }
+          if (!learning) searchStore.deactivate(search)
         }
       }
     }
     else {
-      if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement + "\n")
-
+      if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement)
       //Updating only relax as the the search has not been done:
-      relax.update(improvement, stats, fail = true)
+      relax.update(improvement, stats, fail = !learning)
       if(!relax.isInstanceOf[ALNSReifiedOperator]) {
         if (relax.isActive) relaxStore.adapt(relax, metric(relax, improvement, stats))
         else {
           if (!solver.silent) println("Operator " + relax.name + " deactivated")
-          if (!learning){
-            relaxStore.remove(relax)
-            removedRelaxations += relax
-          }
+          if (!learning) relaxStore.deactivate(relax)
         }
       }
     }
@@ -201,15 +190,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       operator.resetFails()
       operator.setActive(true)
     })
-
-    if(removedRelaxations.nonEmpty){
-      removedRelaxations.foreach(operator => relaxStore.add(operator, metric(operator, 0, new SearchStatistics(0, 0, 0L, false,0L, 0, 0))))
-      removedRelaxations.clear()
-    }
-
-    if(removedSearches.nonEmpty){
-      removedSearches.foreach(operator => searchStore.add(operator, metric(operator, 0, new SearchStatistics(0, 0, 0L, false,0L, 0, 0))))
-      removedSearches.clear()
-    }
+    relaxStore.reset()
+    searchStore.reset()
   }
 }

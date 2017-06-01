@@ -15,7 +15,5 @@ class ALNSNoParamOperator(
 
   override def apply(sol: CPIntSol): Unit = function(sol)
 
-  override def get(): (Long, CPIntSol => Unit) = (0L, function)
-
   override def nParamVals = 1
 }

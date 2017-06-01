@@ -27,22 +27,34 @@ trait AdaptiveStore[T]{
     */
   def getElements: Iterable[T]
 
-  /**
-    * Removes and returns the given element from the store.
-    * @param elem The element to remove.
-    */
-  def remove(elem: T): Unit
-
-  /**
-    * adds the element to the store.
-    * @param elem The element to add.
-    * @param sFactor The initial selection factor value.
-    */
-  def add(elem: T, sFactor: Double): Unit
-
   def nElements: Int
 
-  def isEmpty: Boolean
+  /**
+    * Returns all the active elements contained in the store.
+    * @return an iterable of all the active elements in the store.
+    */
+  def getActive: Iterable[T]
 
-  def nonEmpty: Boolean
+  def nActive: Int
+
+  def isActiveEmpty: Boolean
+
+  def nonActiveEmpty: Boolean
+
+  /**
+    * deactivates the given element from the store.
+    * @param elem The element to remove.
+    */
+  def deactivate(elem: T): Unit
+
+  /**
+    * Resets all elements of the store to the given factor.
+    * @param sFactor The selection factor value to give to all elements.
+    */
+  def reset(sFactor: Double): Unit
+
+  /**
+    * Resets all elements of the store.
+    */
+  def reset(): Unit
 }

@@ -23,10 +23,6 @@ class ALNSSingleParamOperator[T](
                                 ) extends ALNSOperator(name, failThreshold){
 
   private var selected: Option[ALNSParameter[T]] = None
-  private var currentId = 0L
-  private lazy val selectedMap: mutable.Map[Long, ALNSParameter[T]] = mutable.Map[Long, ALNSParameter[T]]()
-  private val removedParams = mutable.HashSet[ALNSParameter[T]]()
-  //TODO: review selection mechanism
 
   /**
     * returns a reified operator representing this operator with the given parameter value.
@@ -41,8 +37,8 @@ class ALNSSingleParamOperator[T](
       (state) => {
         param.setActive(state)
         if(!param.isActive) {
-          paramStore.remove(param)
-          if (paramStore.isEmpty) setActive(false)
+          paramStore.deactivate(param)
+          if (paramStore.isActiveEmpty) setActive(false)
         }
       }
     )
@@ -50,28 +46,12 @@ class ALNSSingleParamOperator[T](
 
   def getReifiedParameters: Iterable[ALNSReifiedOperator] = paramStore.getElements.map(getReified)
 
-  override def apply(model: CPIntSol): Unit = {
+  override def apply(sol: CPIntSol): Unit = {
     if(selected.isEmpty) {
-      if (selected.isEmpty) selected = Some(paramStore.select())
-      function(model, selected.get.value)
+      selected = Some(paramStore.select())
+      function(sol, selected.get.value)
     }
-    else ??? //TODO: Throw exception
-  }
-
-  override def get(): (Long, (CPIntSol) => Unit) = {
-    val param = paramStore.select()
-    val id = currentId
-    currentId += 1
-    selectedMap += id -> param
-    (id, function(_, param.value))
-  }
-
-  override def update(id: Long, costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit = {
-    if(selectedMap.contains(id)){
-      updateParam(selectedMap(id), costImprovement, stats, fail)
-      selectedMap -= id
-    }
-    else ??? //TODO: Throw exception
+    else throw new Exception("This operator has already been used but not updated!")
   }
 
   override def update(costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit = {
@@ -79,7 +59,7 @@ class ALNSSingleParamOperator[T](
       updateParam(selected.get, improvement, stats, fail)
       selected = None
     }
-    else ??? //TODO: Throw exception
+    else throw new Exception("This operator has not been used!")
   }
 
   private def updateParam(param: ALNSParameter[T], costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit ={
@@ -88,9 +68,8 @@ class ALNSSingleParamOperator[T](
     if(param.isActive)
       paramStore.adapt(param, metric(param, costImprovement, stats))
     else{
-      paramStore.remove(param)
-      removedParams += param
-      if(paramStore.isEmpty){
+      paramStore.deactivate(param)
+      if(paramStore.isActiveEmpty){
         println("Operator " + name + " deactivated")
         setActive(false)
       }
@@ -112,19 +91,16 @@ class ALNSSingleParamOperator[T](
     Array(paramStore.getElements.map(x => (x.value.toString, x.getStats)).toArray)
   )
 
-  override def nParamVals: Int = paramStore.nElements
+  override def nParamVals: Int = paramStore.nActive
 
   override def setActive(state: Boolean): Unit = {
     if(state){
-      removedParams.foreach(param =>{
-        param.setActive(state)
-        paramStore.add(param, metric(param, 0, new SearchStatistics(0, 0, 0L, false,0L, 0, 0)))
-      })
+      paramStore.getElements.foreach(_.setActive(state))
+      paramStore.reset()
     }
     super.setActive(state)
   }
   override def resetFails(): Unit = {
-    removedParams.foreach(_.resetFails())
     paramStore.getElements.foreach(_.resetFails())
     super.resetFails()
   }
