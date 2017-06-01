@@ -3,7 +3,6 @@ package oscar.cbls.lib.invariant.routing.capa
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.functional.IntSequence
 import oscar.cbls.core.computation._
-import oscar.cbls.lib.invariant.routing.AbstractVehicleCapacity
 import oscar.cbls.lib.invariant.routing.convention.VehicleLocation
 
 import scala.collection.immutable.SortedSet

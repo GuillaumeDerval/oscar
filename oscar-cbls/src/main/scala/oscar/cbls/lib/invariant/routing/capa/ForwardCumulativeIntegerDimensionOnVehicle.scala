@@ -1,6 +1,5 @@
 package oscar.cbls.lib.invariant.routing.capa
 
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -16,12 +15,9 @@ package oscar.cbls.lib.invariant.routing.capa
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.functional.IntSequence
 import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.{ErrorChecker, Checker}
-import oscar.cbls.lib.invariant.routing.AbstractVehicleCapacity
-import oscar.cbls.lib.invariant.routing.convention.VehicleLocation
+import oscar.cbls.core.propagation.Checker
 
 /**
  * Created by  Jannou Brohée on 3/10/16.

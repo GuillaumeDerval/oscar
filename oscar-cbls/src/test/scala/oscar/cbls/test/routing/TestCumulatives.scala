@@ -21,8 +21,8 @@ import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.constraint.LE
-import oscar.cbls.lib.invariant.routing.capa.ForwardCumulativeIntegerDimensionOnVehicle
-import oscar.cbls.lib.invariant.routing.{ForwardCumulativeConstraintOnVehicle, RouteSuccessorAndPredecessors}
+import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeIntegerDimensionOnVehicle, ForwardCumulativeConstraintOnVehicle}
+import oscar.cbls.lib.invariant.routing.RouteSuccessorAndPredecessors
 import oscar.cbls.lib.invariant.seq.Size
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
 import oscar.cbls.modeling.Algebra._
