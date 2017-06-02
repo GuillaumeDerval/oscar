@@ -570,22 +570,25 @@ abstract class AbstractVehicleCapacity(n:Int,
 }
 
 object AbstractVehicleCapacity{
+
+
   /**
    *Computes content of vehicle and their starting position from scratch
    * @param s the sequence
    * @return (nodeToContent,vehicleToContentAtEnd,vehicleLocation)
    */
-  def computeNodeToIntContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch
+  def computeNodeToContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch[T]
   (n:Int,
    v:Int,
-   op:(Int,Int,Int) => Int,
-   getContentAtVehicleStart:Int=>Int,
+   op:(Int,Int,T) => T,
+   getContentAtVehicleStart:Int=>T,
    s:IntSequence,
-   defaultVehicleContentForUnroutedNodes:Int):(Array[Int],Array[Int],ConcreteVehicleLocation) = {
+   defaultVehicleContentForUnroutedNodes:T)
+  (implicit X: Manifest[T]):(Array[T],Array[T],ConcreteVehicleLocation) = {
 
     val vehicleLocation = Array.fill(v)(0)
-    val vehicleContent = Array.fill(n)(defaultVehicleContentForUnroutedNodes)
-    val vehicleContentAtEndOfRoute = Array.fill(v)(0)
+    val vehicleContent = Array.fill[T](n)(defaultVehicleContentForUnroutedNodes)
+    val vehicleContentAtEndOfRoute = Array.fill[T](v)(defaultVehicleContentForUnroutedNodes)
 
     var previousPosition = s.explorerAtPosition(0).get
     var currentVehicle = 0

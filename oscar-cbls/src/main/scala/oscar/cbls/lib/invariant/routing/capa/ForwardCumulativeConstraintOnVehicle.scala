@@ -288,7 +288,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
 
   override def checkInternals(c: Checker): Unit = {
     val (nodeToContent,_,vehicleStartPos) = AbstractVehicleCapacity.
-      computeNodeToIntContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch(n,v,op,this.contentAtVehicleStart,routes.value, 0)
+      computeNodeToContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch[Int](n,v,op,this.contentAtVehicleStart,routes.value, 0)
 
     for(node <- routes.value){
       c.check(nodeToContent(node) equals contentAtNode(node),

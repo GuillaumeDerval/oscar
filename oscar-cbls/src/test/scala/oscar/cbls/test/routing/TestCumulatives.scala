@@ -36,7 +36,7 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
 
   val penaltyForUnrouted  = 10000
 
-  val maxNodes = LE(Size(routes),n/2).violation
+  val maxNodes = LE(Size(routes),n-3).violation
 
   val violation = new CBLSIntVar(routes.model, 0, 0 to Int.MaxValue, "violation of capacity test")
 
@@ -65,7 +65,7 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
 
   def size = routes.value.size
 
-  //TODO: how about using NextAndPRev trait? or use a clone of route?
+
   val (next,prev) = RouteSuccessorAndPredecessors(routes,v,n)
 
   this.addToStringInfo(() => "next: [" + next.map(_.value).mkString(",") + "]")
@@ -79,14 +79,14 @@ object TestCumulatives extends App{
   val v = 5
   val delta = Array(0,1,1,2,2,3,-3,4,-4,0,0,1,-1,2,-2,3,-3,4,-4,0,0,1,-1,2,-2,3,-3,4,-4,0)
   val maxPivotPerValuePercent = 4
-
+  val maxcapa = 15
   println("VRP(n:" + n + " v:" + v + ")")
 
   val (symmetricDistanceMatrix,pointsList) = RoutingMatrixGenerator(n)
   //  println("restrictions:" + restrictions)
   val model = new Store(checker = Some(new ErrorChecker()))
 
-  val myVRP = new MySimpleRoutingWithCumulatives(n,v,symmetricDistanceMatrix,model,maxPivotPerValuePercent,delta,10)
+  val myVRP = new MySimpleRoutingWithCumulatives(n,v,symmetricDistanceMatrix,model,maxPivotPerValuePercent,delta,maxcapa)
 
   model.close()
 
@@ -102,17 +102,15 @@ object TestCumulatives extends App{
   def threeOpt(k:Int, breakSym:Boolean) = Profile(new ThreeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
   val vlsn1pt = Profile(Mu[OnePointMoveMove](
-    OnePointMove(myVRP.routed, () => myVRP.kFirst(5,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP),
-    l => Some(OnePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(5,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP, hotRestart = false)),
+    OnePointMove(myVRP.routed, () => myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP),
+    l => Some(OnePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP, hotRestart = false)),
     intermediaryStops = true,
-    maxDepth = 6))
+    maxDepth = 3))
 
   val remove = RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP)
 
-  val swapInOut = Profile((remove andThen routeUnroutedPoint) name ("SWAP"))
+  val swapInOut = Profile((remove andThen routeUnroutedPoint) name ("SWAPInsert"))
   val search = (BestSlopeFirst(List(routeUnroutedPoint2, routeUnroutedPoint, swapInOut, onePtMove(10),twoOpt, threeOpt(10,true),vlsn1pt, routeUnroutedPoint)) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
-
-  // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10) guard (() => myVRP.unrouted.value.size != 0)),10)) exhaust BestSlopeFirst(List(onePtMove(20),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
 
   search.verbose = 1
   //search.verboseWithExtraInfo(5, ()=> "" + myVRP)

@@ -128,7 +128,7 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
   }
   def check(c : Checker,s:IntSequence){
     val (nodeToContent,vehicleToContentAtEnd,vehicleLocation) =
-      AbstractVehicleCapacity.computeNodeToIntContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch(n,v,op,v => contentAtStart(v).value,s,defaultVehicleContentForUnroutedNodes)
+      AbstractVehicleCapacity.computeNodeToContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch(n,v,op,v => contentAtStart(v).value,s,defaultVehicleContentForUnroutedNodes)
     val currentVehicleLocation = this.toUpdateZonesAndVehicleStartAfter.get._2
 
     for(vehicle <- 0 until v){
