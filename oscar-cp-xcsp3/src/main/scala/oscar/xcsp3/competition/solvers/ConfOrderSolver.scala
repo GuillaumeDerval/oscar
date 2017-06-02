@@ -15,6 +15,7 @@ import scala.collection.mutable
 object ConfOrderSolver extends CompetitionApp with App{
 
   override def runSolver(conf: CompetitionConf): Unit = {
+    val startTime = System.nanoTime()
 
     val md = new ModelDeclaration
 
@@ -37,30 +38,29 @@ object ConfOrderSolver extends CompetitionApp with App{
       case _: NoSolutionException =>
         printStatus("UNSATISFIABLE")
         None
-
-      case e => throw e
     }
 
     if (parsingResult.isDefined){
       val (vars, solver, solutionGenerator) = parsingResult.get
       solver.silent = true
 
-      val timeout = (conf.timelimit().toLong - 5L) * 1000000000L
-      val startTime = System.nanoTime()
-      val endTime: Long = startTime + timeout
+      val timeout = ((conf.timelimit().toLong - 5L) * 1000000000L) - (System.nanoTime() - startTime)
+      val endTime: Long = System.nanoTime() + timeout
 
-      val maximizeObjective: Boolean = solver.objective.objs.head.isMax
+      val maximizeObjective: Option[Boolean] = if(solver.objective.objs.nonEmpty) Some(solver.objective.objs.head.isMax) else None
+      var optimumFound = false
 
-      val sols = mutable.ArrayBuffer[CPIntSol]()
-
-      solver.onSolution{
+      val sols = mutable.ListBuffer[(CPIntSol, String)]()
+      solver.onSolution {
         val time = System.nanoTime() - startTime
-        val sol = new CPIntSol(vars.map(_.value), solver.objective.objs.head.best, time, solutionGenerator())
-        printObjective(sol.objective)
-        sols += sol
+        val sol = new CPIntSol(vars.map(_.value), if(maximizeObjective.isDefined) solver.objective.objs.head.best else 0, time)
+        val instantiation = solutionGenerator()
+        optimumFound = if(maximizeObjective.isDefined) solver.objective.isOptimum() else true //In case of CSP, no point of searching another solution
+        if(maximizeObjective.isDefined) printObjective(sol.objective)
+        sols += ((sol, instantiation))
       }
 
-      val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime
+      val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime || optimumFound
 
       printComment("Parsing done, starting search")
 
@@ -69,14 +69,14 @@ object ConfOrderSolver extends CompetitionApp with App{
           conflictOrderingSearch(
             vars,
             i => vars(i).size,
-            learnValueHeuristic(vars, if(maximizeObjective) vars(_).min else vars(_).max)
+            learnValueHeuristic(vars, if(maximizeObjective.isDefined) if(maximizeObjective.get) vars(_).min else vars(_).max else vars(_).max)
           )
         )
       }
 
-      if(sols.nonEmpty) printSolution(sols.last.instantiation, solver.objective.isOptimum() || stats.completed)
-      else if(stats.completed) printStatus("UNSATISFIABLE")
-      else{
+      if (sols.nonEmpty) printSolution(sols.last._2, maximizeObjective.isDefined && (optimumFound || stats.completed))
+      else if (stats.completed) printStatus("UNSATISFIABLE")
+      else {
         printStatus("UNKNOWN")
         printDiagnostic("NO_SOL_FOUND")
       }

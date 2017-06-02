@@ -17,7 +17,7 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
 
   override def alnsLearning(): Unit = {
     learning = true
-    val initSol = currentSol
+    val initSol = currentSol.get
 
     val learningStart = System.nanoTime()
     val tAvail = (((endTime - learningStart) * learnRatio) / operators.length).toLong
@@ -30,13 +30,13 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
       lnsSearch(operator)
 
       val time = System.nanoTime() - start
-      val improvement = Math.abs(currentSol.objective - initSol.objective)
+      val improvement = Math.abs(currentSol.get.objective - initSol.objective)
       opPerf += ((operator, time, improvement))
 
       //Restoring initial objective:
       solver.objective.objs.head.relax()
       solver.objective.objs.head.best = initSol.objective
-      currentSol = initSol
+      currentSol = Some(initSol)
     })
 
     opPerf.filter{case (op, time, improvement) =>
@@ -53,7 +53,7 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
     else searchFail = 0
 
     currentSol = bestSol
-    solver.objective.objs.head.best = bestSol.objective
+    solver.objective.objs.head.best = bestSol.get.objective
     endSearch = endTime
     learning = false
   }
@@ -61,7 +61,8 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
   override def alnsLoop(): Unit = {
     if (!solver.silent) println("\nStarting adaptive LNS...")
     stagnation = 0
-    while (System.nanoTime() < endTime && opStore.nonActiveEmpty && (!config.learning || stagnation < stagnationThreshold)) {
+    while (
+      System.nanoTime() < endTime && opStore.nonActiveEmpty && (!config.learning || stagnation < stagnationThreshold) && !optimumFound) {
       lnsSearch(opStore.select())
     }
   }
@@ -74,20 +75,20 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
       println("Operator timeout: " + (endSearch - System.nanoTime())/1000000000.0 + "s")
     }
 
-    val oldObjective = currentSol.objective
+    val oldObjective = currentSol.get.objective
 
     //New search using selected strategies:
     var relaxDone = true
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
       try {
-        operator(currentSol)
+        operator(currentSol.get)
       }
       catch {
         case i: Inconsistency => relaxDone = false
       }
     }
 
-    val improvement = math.abs(currentSol.objective - oldObjective)
+    val improvement = math.abs(currentSol.get.objective - oldObjective)
 
     if(improvement > 0){
       stagnation = 0
@@ -126,7 +127,8 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
 
   override def getSearchResults = new ALNSSearchResults(
     solsFound.toArray,
-    operators.map(x => x.name -> x.getStats).toMap
+    operators.map(x => x.name -> x.getStats).toMap,
+    maximizeObjective.isDefined & optimumFound
   )
 
   /**

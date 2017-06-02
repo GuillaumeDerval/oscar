@@ -1,6 +1,7 @@
 package oscar.xcsp3.competition.solvers
 
 import oscar.cp.core.variables.CPIntVar
+import oscar.cp.searches.lns.CPIntSol
 import oscar.cp.searches.lns.operators.ALNSBuilder
 import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch}
 import oscar.cp.{CPSolver, NoSolutionException}
@@ -10,9 +11,12 @@ import oscar.modeling.models.{ModelDeclaration, UninstantiatedModel}
 import oscar.xcsp3.XCSP3Parser2
 import oscar.xcsp3.competition.{CompetitionApp, CompetitionConf}
 
+import scala.collection.mutable
+
 object ALNSSolver extends CompetitionApp with App {
 
   override def runSolver(conf: CompetitionConf): Unit = {
+    val startTime = System.nanoTime()
 
     val md = new ModelDeclaration
 
@@ -35,15 +39,26 @@ object ALNSSolver extends CompetitionApp with App {
       case _: NoSolutionException =>
         printStatus("UNSATISFIABLE")
         None
-
-      case e => throw e
     }
 
     if (parsingResult.isDefined){
       val (vars, solver, solutionGenerator) = parsingResult.get
       solver.silent = true
 
-      val timeout = (conf.timelimit().toLong - 5L) * 1000000000L
+      val timeout = ((conf.timelimit().toLong - 5L) * 1000000000L) - (System.nanoTime() - startTime)
+
+      val maximizeObjective: Option[Boolean] = if(solver.objective.objs.nonEmpty) Some(solver.objective.objs.head.isMax) else None
+
+      val sols = mutable.ListBuffer[(CPIntSol, String)]()
+      solver.onSolution{
+        val time = System.nanoTime() - startTime
+        val sol = new CPIntSol(vars.map(_.value), if (maximizeObjective.isDefined) solver.objective.objs.head.best else 0, time)
+        val instantiation = solutionGenerator()
+        if(sols.isEmpty || (maximizeObjective.isDefined && ((maximizeObjective.get && sol.objective > sols.last._1.objective) || (!maximizeObjective.get && sol.objective < sols.last._1.objective)))){
+          if(maximizeObjective.isDefined) printObjective(sol.objective)
+          sols += ((sol, instantiation))
+        }
+      }
 
       val config = new ALNSConfig(
         timeout,
@@ -54,12 +69,10 @@ object ALNSSolver extends CompetitionApp with App {
         Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit),
         ALNSBuilder.ValHeurisBoth,
         valLearn = true,
-        ALNSBuilder.RWheel,
-        ALNSBuilder.RWheel,
+        ALNSBuilder.Priority,
+        ALNSBuilder.Priority,
         ALNSBuilder.AvgImprov,
-        ALNSBuilder.AvgImprov,
-        solutionGenerator,
-        () => printObjective(solver.objective.objs.head.best)
+        ALNSBuilder.AvgImprov
       )
 
       val alns = ALNSSearch(solver, vars, config)
@@ -67,9 +80,8 @@ object ALNSSolver extends CompetitionApp with App {
       printComment("Parsing done, starting search")
 
       val result = alns.search()
-      val sols = result.solutions
 
-      if (sols.nonEmpty) printSolution(sols.last.instantiation, solver.objective.isOptimum())
+      if (sols.nonEmpty) printSolution(sols.last._2, solver.objective.objs.nonEmpty && result.optimumFound)
       else {
         printStatus("UNKNOWN")
         printDiagnostic("NO_SOL_FOUND")

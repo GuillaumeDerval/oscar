@@ -16,6 +16,7 @@ import scala.collection.mutable
 object FirstFailSolver extends CompetitionApp with App{
 
   override def runSolver(conf: CompetitionConf): Unit = {
+    val startTime = System.nanoTime()
 
     val md = new ModelDeclaration
 
@@ -38,28 +39,29 @@ object FirstFailSolver extends CompetitionApp with App{
       case _: NoSolutionException =>
         printStatus("UNSATISFIABLE")
         None
-
-      case e => throw e
     }
 
     if (parsingResult.isDefined) {
       val (vars, solver, solutionGenerator) = parsingResult.get
       solver.silent = true
 
-      val timeout = (conf.timelimit().toLong - 5L) * 1000000000L
-      val startTime = System.nanoTime()
-      val endTime: Long = startTime + timeout
+      val timeout = ((conf.timelimit().toLong - 5L) * 1000000000L) - (System.nanoTime() - startTime)
+      val endTime: Long = System.nanoTime() + timeout
 
-      val sols = mutable.ArrayBuffer[CPIntSol]()
+      val isCOP: Boolean = solver.objective.objs.nonEmpty
+      var optimumFound = false
 
+      val sols = mutable.ListBuffer[(CPIntSol, String)]()
       solver.onSolution {
         val time = System.nanoTime() - startTime
-        val sol = new CPIntSol(vars.map(_.value), solver.objective.objs.head.best, time, solutionGenerator())
-        printObjective(sol.objective)
-        sols += sol
+        val sol = new CPIntSol(vars.map(_.value), if(isCOP) solver.objective.objs.head.best else 0, time)
+        val instantiation = solutionGenerator()
+        optimumFound = if(isCOP) solver.objective.isOptimum() else true //In case of CSP, no point of searching another solution
+        if(isCOP) printObjective(sol.objective)
+        sols += ((sol, instantiation))
       }
 
-      val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime
+      val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime || optimumFound
 
       printComment("Parsing done, starting search")
 
@@ -67,7 +69,7 @@ object FirstFailSolver extends CompetitionApp with App{
         solver.search(binaryFirstFail(vars))
       }
 
-      if (sols.nonEmpty) printSolution(sols.last.instantiation, solver.objective.isOptimum() || stats.completed)
+      if (sols.nonEmpty) printSolution(sols.last._2, isCOP && (optimumFound || stats.completed))
       else if (stats.completed) printStatus("UNSATISFIABLE")
       else {
         printStatus("UNKNOWN")

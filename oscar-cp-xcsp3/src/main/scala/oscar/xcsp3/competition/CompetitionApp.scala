@@ -35,22 +35,22 @@ abstract class CompetitionApp extends App{
       Console.flush()
   }
 
-  //TODO: Parse Instance, launch search and print results
+  /**
+    * TODO: Parse Instance, launch search and print results
+    */
   def runSolver(conf: CompetitionConf)
 
-  /**
-    * Use the following functions to print your outputs. Only the best solution should be printed.
-    * You can print comments with the printComment method.
-    */
+  // Use the following functions to print your outputs. Only the best solution should be printed.
 
-  //Each time a new solution is found, it's objective should be printed:
+  //Each time a new best solution is found, it's objective should be printed:
   def printObjective(obj: Int): Unit = {
     println(tElapsed + " o " + obj)
     Console.flush()
   }
 
   //Use this only for the last solution:
-  def printSolution(sol: String, optimum:Boolean = false): Unit = {
+  //Sol should be a valid instantiation (see rules)
+  def printSolution(sol: String, optimum: Boolean = false): Unit = {
     if(optimum) printStatus("OPTIMUM FOUND")
     else printStatus("SATISFIABLE")
 
