@@ -1198,12 +1198,12 @@ case class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThen
           override def valueNoSearch : Int = obj.valueNoSearch
         }
 
-        currentB.getMove(new secondInstrumentedObjective(obj), secondAcceptanceCriteria) match {
-          case NoMoveFound => Int.MaxValue
-          case MoveFound(m: Move) =>
-            if(compositeMove == null || m.objAfter < compositeMove.objAfter) compositeMove = CompositeMove(List(currentMoveFromA, m), m.objAfter,enclosingDynAndThen.toString)
-            m.objAfter
-        }
+          currentB.getMove(new secondInstrumentedObjective(obj), secondAcceptanceCriteria) match {
+            case NoMoveFound => Int.MaxValue
+            case MoveFound(m : Move) =>
+              if (compositeMove == null || m.objAfter < compositeMove.objAfter) compositeMove = CompositeMove(List(currentMoveFromA, m), m.objAfter, enclosingDynAndThen.toString)
+              m.objAfter
+          }
       }
     }
 
@@ -1252,7 +1252,7 @@ object Mu {
   def apply[MoveType <: Move](firstNeighborhood : Neighborhood with SupportForAndThenChaining[MoveType],
                               neighborhoodGenerator : List[(MoveType)] => Option[Neighborhood with SupportForAndThenChaining[MoveType]],
                               maxDepth : Int,
-                              intermediaryStops : Boolean) = {
+                              intermediaryStops : Boolean): Neighborhood  with SupportForAndThenChaining[CompositeMove] = {
     Mu[MoveType,Any](
     firstNeighborhood,
     (l,_) => neighborhoodGenerator(l) match{
@@ -1268,10 +1268,10 @@ object Mu {
                                  neighborhoodGenerator : (List[(MoveType)], X) => Option[(Neighborhood with SupportForAndThenChaining[MoveType], X)],
                                  x0 : X,
                                  maxDepth : Int,
-                                 intermediaryStops : Boolean) = {
+                                 intermediaryStops : Boolean): Neighborhood  with SupportForAndThenChaining[CompositeMove] = {
     require(maxDepth >= 1)
 
-    def generateNextNeighborhood(oldMoves : List[MoveType], remainingDepth : Int, prevX : X)(newMove : MoveType) : Neighborhood = {
+    def generateNextNeighborhood(oldMoves : List[MoveType], remainingDepth : Int, prevX : X)(newMove : MoveType):Neighborhood = {
 
       if (remainingDepth == 0) {
         DoNothingNeighborhood()
@@ -1293,8 +1293,8 @@ object Mu {
         }
       }
     }
-    DynAndThen(firstNeighborhood,
-      generateNextNeighborhood(List.empty, maxDepth - 1, x0)) name "Mu(" + firstNeighborhood + ")"
+    new ChainableName(DynAndThen(firstNeighborhood,
+      generateNextNeighborhood(List.empty, maxDepth - 1, x0)),"Mu(" + firstNeighborhood + ")")
   }
 }
 
@@ -1310,7 +1310,6 @@ case class SnapShotOnEntry(a: Neighborhood, valuesToSave:Iterable[AbstractVariab
     a.getMove(obj,acceptanceCriterion)
   }
 }
-
 
 /**
  * bounds the number of tolerated moves without improvements over the best value
@@ -1441,6 +1440,32 @@ class Name(a: Neighborhood, val name: String) extends NeighborhoodCombinator(a) 
   }
 
   override def toString: String = name
+}
+
+/**
+ * the purpose of this combinator is to change the name of the neighborhood it is given as parameter.
+ * it will add a prefix to all moves sent back by this combinator
+ * the only purposes are documentation and debug
+ *
+ * @param a
+ * @param name
+ */
+class ChainableName[MoveType <: Move](a: Neighborhood with SupportForAndThenChaining[MoveType], val name: String) extends NeighborhoodCombinator(a) with SupportForAndThenChaining[MoveType]{
+  /**
+   * @param acceptanceCriterion oldObj,newObj => should the move to the newObj be kept (default is oldObj > newObj)
+   *                            beware that a changing criteria might interact unexpectedly with stateful neighborhood combinators
+   * @return an improving move
+   */
+  override def getMove(obj: Objective, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+    a.getMove(obj, acceptanceCriterion) match {
+      case NoMoveFound => NoMoveFound
+      case MoveFound(m) => NamedMove(m, name)
+    }
+  }
+
+  override def toString: String = name
+
+  override def instantiateCurrentMove(newObj : Int) : MoveType = a.instantiateCurrentMove(newObj)
 }
 
 /**
@@ -1727,7 +1752,8 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
   override def collectProfilingStatistics: List[String] =
     collectThisProfileStatistics :: super.collectProfilingStatistics
 
-  def collectThisProfileStatistics:String = (padToLength("" + a,31) + " " +
+  def collectThisProfileStatistics:String =
+    padToLength("" + a,31) + " " +
     padToLength("" + nbCalls,6) + " " +
     padToLength("" + nbFound,6) + " " +
     padToLength("" + totalGain.toInt,8) + " " +
@@ -1737,9 +1763,17 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
     padToLength("" + slope,11)+ " " +
     padToLength("" + avgTimeSpendNoMove,13)+ " " +
     padToLength("" + avgTimeSpendMove,12)+ " " +
-    totalTimeSpentNoMoveFound)
+    totalTimeSpentNoMoveFound
 
-  private def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
+  private def padToLength(s: String, l: Int) = {
+    val extended = s + nStrings(l+1, " ")
+    val nextchar = extended.substring(l+1, l+1)
+    if(nextchar equals " "){
+      extended.substring(0, l-1) + "§"
+    }else{
+      extended.substring(0, l)
+    }
+  }
   private def nStrings(n: Int, s: String): String = if (n <= 0) "" else s + nStrings(n - 1, s)
 
   //  override def toString: String = "Statistics(" + a + " nbCalls:" + nbCalls + " nbFound:" + nbFound + " totalGain:" + totalGain + " totalTimeSpent " + totalTimeSpent + " ms timeSpendWithMove:" + totalTimeSpentMoveFound + " ms totalTimeSpentNoMoveFound " + totalTimeSpentNoMoveFound + " ms)"

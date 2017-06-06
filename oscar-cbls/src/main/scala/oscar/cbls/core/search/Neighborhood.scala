@@ -236,7 +236,7 @@ abstract class Neighborhood(name:String = null) {
             //TODO: additionalString shuld be handled with synthesis!
             if (printSynthesis && additionalStringGenerator != null) println("after move is committed: " + additionalStringGenerator())
             if (obj.value == Int.MaxValue) println("Warning : objective == MaxInt, maybe you have some strong constraint violated?")
-            assert(obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
+            require(m.objAfter == Int.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
 
           }else if (printTakenMoves) {
 
@@ -671,7 +671,7 @@ case class ConstantMoveNeighborhood(m: Move) extends Neighborhood {
   }
 }
 
-case class DoNothingNeighborhood() extends Neighborhood {
+case class DoNothingNeighborhood() extends Neighborhood with SupportForAndThenChaining[DoNothingMove]{
   override def getMove(obj: Objective, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
     val objValue = obj.value
     if(acceptanceCriterion(objValue,objValue)){
@@ -680,6 +680,8 @@ case class DoNothingNeighborhood() extends Neighborhood {
       NoMoveFound
     }
   }
+
+  override def instantiateCurrentMove(newObj : Int) : DoNothingMove = DoNothingMove(newObj)
 }
 
 case class DoNothingMove(override val objAfter:Int) extends Move(objAfter){

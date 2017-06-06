@@ -35,22 +35,18 @@ class RoutingMatrixContainer(title:String = "Routing map",
                              routeToDisplay:Boolean = false
                             ) extends JFrame with Runnable{
   setLayout(new BorderLayout())
-  val thiss = this
 
   var routingMap:JPanel with RoutingMap = _
 
   routingMap = (geolocalisationMap,routeToDisplay) match {
     case(true,true) => new GeoRoutingMap with RouteToDisplay
     case(true,false) => new GeoRoutingMap
-    case(false,true) => new BasicRoutingMap with RouteToDisplay
-    case(false,false) => new BasicRoutingMap
+    case(false,true) => new BasicRoutingMap(if (pickupAndDeliveryPoints) Some(myVRP.asInstanceOf[PDP]) else None, Some(myVRP)) with RouteToDisplay
+    case(false,false) => new BasicRoutingMap(if (pickupAndDeliveryPoints) Some(myVRP.asInstanceOf[PDP]) else None, Some(myVRP))
   }
-  if(pickupAndDeliveryPoints)
-    routingMap.setPDP(myVRP.asInstanceOf[PDP])
-  else
-    routingMap.setVRP(myVRP)
+
   if(routeToDisplay)
-    routingMap.asInstanceOf[RoutingMap with RouteToDisplay].initRouteToDisplay(thiss)
+    routingMap.asInstanceOf[RoutingMap with RouteToDisplay].initRouteToDisplay(this)
 
   var mustRefresh = false
 
@@ -61,7 +57,7 @@ class RoutingMatrixContainer(title:String = "Routing map",
   def run(): Unit ={
     while (true) {
       try {
-        Thread.sleep(500)
+        Thread.sleep(100)
         if(setMustRefresh(false))
           routingMap.setRouteToDisplay(allRoutes)
       }catch{

@@ -33,7 +33,7 @@ abstract class InsertPoint(vrp: VRP,
   val seq = vrp.routes
 
   var insertAtPositionForInstantiation:Int = -1
-  var insertedPointForInstantiation:Int = -1
+  var insertedPointForInstantiation:Int = -2
 
   override def instantiateCurrentMove(newObj: Int) =
     InsertPointMove(insertedPointForInstantiation, insertAtPositionForInstantiation, newObj, this, vrp, neighborhoodNameToString)
@@ -79,7 +79,7 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
   var startIndice: Int = 0
 
   override def exploreNeighborhood(): Unit = {
-
+    require(insertAtPositionForInstantiation < 0, "not reentrant class, must use different instances for cross product combinator")
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
 
     def evalObjAndRollBack() : Int = {
@@ -121,8 +121,9 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
                 if (iterationSchemeIterator.hasNext)
                   iterationSchemeIterator.next()
                 else iterationScheme.head
-              } else insertedPointForInstantiation + 1
-              insertAtPositionForInstantiation = -1
+              } else{insertedPointForInstantiation + 1}
+
+              insertAtPositionForInstantiation = -5
               return
             }
         }
@@ -130,7 +131,7 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
     }
 
     seq.releaseTopCheckpoint()
-    insertAtPositionForInstantiation = -1
+    insertAtPositionForInstantiation = -4
   }
 
   //this resets the internal state of the Neighborhood
@@ -168,7 +169,7 @@ case class InsertPointRoutedFirst(insertionPoints:()=>Iterable[Int],
   var startIndice: Int = 0
 
   override def exploreNeighborhood(): Unit = {
-
+    require(insertAtPositionForInstantiation < 0, "not reentrant class, must use different instances for cross product combinator")
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
 
     def evalObjAndRollBack() : Int = {
@@ -205,7 +206,7 @@ case class InsertPointRoutedFirst(insertionPoints:()=>Iterable[Int],
             if (evaluateCurrentMoveObjTrueIfStopRequired(evalObjAndRollBack())) {
               seq.releaseTopCheckpoint()
               startIndice = pointWhereToInsertAfter + 1
-              insertAtPositionForInstantiation = -1
+              insertAtPositionForInstantiation = -6
               return
             }
           }
@@ -214,7 +215,7 @@ case class InsertPointRoutedFirst(insertionPoints:()=>Iterable[Int],
 
     }
     seq.releaseTopCheckpoint()
-    insertAtPositionForInstantiation = -1
+    insertAtPositionForInstantiation = -7
   }
 
   //this resets the internal state of the Neighborhood

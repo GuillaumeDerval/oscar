@@ -17,7 +17,7 @@ package oscar.cbls.lib.invariant.routing
 
 import oscar.cbls.algo.seq.functional.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls.core.propagation.{ErrorChecker, Checker}
 import oscar.cbls.lib.invariant.routing.convention.RoutingConventionMethods
 
 import scala.collection.immutable.SortedSet
@@ -55,7 +55,6 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
 
     val startValuesOfImpactedZone = computeStartValuesOfImpactedZone(changes:SeqUpdate)
-
     startValuesOfImpactedZone match{
       case None =>  computeAllFromScratch(changes.newValue)
       case Some(startUpdateValues) =>
@@ -177,17 +176,17 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
     successorValues
   }
 
-  override def checkInternals() {
-    val fromScratch = computeSuccessorsFromScratchNoAffect(routes.value)
+  override def checkInternals(c : Checker){
+    val fromScratch = computeSuccessorsFromScratchNoAffect(routes.newValue)
     for(node <- 0 until n){
-      require(successorValues(node).newValue == fromScratch(node),
-        Some("error on next for node " + node + ": " + successorValues(node) + " should== " + fromScratch(node)))
+      c.check(successorValues(node).newValue == fromScratch(node),
+        Some("error on next for node " + node + ": " + successorValues(node).newValue + " should== " + fromScratch(node)))
 
       if(fromScratch(node)== defaultWhenNotInSequence){
-        require(predecessorValues(node).newValue == defaultWhenNotInSequence,
+        c.check(predecessorValues(node).newValue == defaultWhenNotInSequence,
           Some("error on predecessor for node " + node))
       }else {
-        require(predecessorValues(fromScratch(node)).newValue == node,
+        c.check(predecessorValues(fromScratch(node)).newValue == node,
           Some("error on predecessor for node " + node))
       }
     }

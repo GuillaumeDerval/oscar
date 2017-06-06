@@ -4,7 +4,7 @@ node {
     env.SBT_HOME = "${tool 'sbt-1.0.0-M4'}"
     env.SBT_CMD = "${env.SBT_HOME}/bin/sbt -Dsbt.log.noformat=true 'project oscar-cbls'"
 
-    email_to = "dimitri.durieux@cetic.be,yoann.guyot@cetic.be"
+    email_to = "oscar.cbls-cetic@lists.cetic.be"
 
     try{
         stage('scm') {

@@ -139,7 +139,7 @@ class SeqUpdateInsert(val value:Int,val pos:Int,prev:SeqUpdate, seq:IntSequence)
   override protected[computation] def prepend(u : SeqUpdate) : SeqUpdate =
     SeqUpdateInsert(value, pos, prev.prepend(u), seq)
 
-  override def toString : String = "SeqUpdateInsert(value:" + value + " pos:" + pos + " prev:" + prev + ")"
+  override def toString : String = "SeqUpdateInsert(value:" + value + " position:" + pos + " prev:" + prev + ")"
 }
 
 object SeqUpdateMove{
@@ -267,10 +267,10 @@ object SeqUpdateRemove {
 class SeqUpdateRemove(val position:Int,prev:SeqUpdate,seq:IntSequence)
   extends SeqUpdateWithPrev(prev,seq){
 
-  assert(seq equals prev.newValue.delete(position,fast=true))
+  assert(seq equals prev.newValue.delete(position,fast=true),"wrong promize on seq value when building SeqUpdateRemove")
 
   val removedValue:Int = seq match{
-    case d:RemovedIntSequence => d.removedValue
+    case d:RemovedIntSequence if position == d.positionOfDelete && (d.seq quickEquals prev.newValue) => d.removedValue
     case _ => prev.newValue.valueAtPosition(position).head}
 
   override protected[computation] def reverse(target:IntSequence, newPrev:SeqUpdate) : SeqUpdate = {
@@ -367,7 +367,7 @@ class SeqUpdateDefineCheckpoint(mprev:SeqUpdate,val activeCheckpoint:Boolean, ma
     SeqUpdateDefineCheckpoint(mprev.prepend(u), activeCheckpoint, maxPivotPerValuePercent, doRegularize,level)
   }
 
-  override def toString : String = "SeqUpdateDefineCheckpoint(prev:" + mprev + ")"
+  override def toString : String = "SeqUpdateDefineCheckpoint(level:" + level + " prev:" + mprev + ")"
 }
 
 object SeqUpdateRollBackToCheckpoint{
@@ -403,7 +403,7 @@ class SeqUpdateRollBackToCheckpoint(val checkpointValue:IntSequence,howToRollBac
   }
 
   override def toString : String =
-    "SeqUpdateRollBackToCheckpoint(checkpoint:" + checkpointValue + ")" //+ " howTo:" +  howToRollBack + ")"
+    "SeqUpdateRollBackToCheckpoint(level:" + level + " checkpoint:" + checkpointValue + ")" //+ " howTo:" +  howToRollBack + ")"
 
   override def depth : Int = 0
 
@@ -455,31 +455,54 @@ class CBLSSeqVar(givenModel:Store,
 
   override def name: String = if (n == null) defaultName else n
 
-  //-1 for first position
+  /**
+   * inserts the value at the postion in the sequence, and shifts the tail by one position accordingly
+   * @param value the inserted value
+   * @param pos the position where the value is located afer the insert is completed
+   */
   override def insertAtPosition(value:Int,pos:Int){
     super.insertAtPosition(value,pos)
   }
 
-  //-1 for first position
+  /**
+   * inserts the value at the postion in the sequence, and shifts the tail by one position accordingly
+   * @param value the inserted value
+   * @param pos the position where the value is located afer the insert is completed
+   * @param seqAfter the sequence after the insert if performed. if you have it you can set it here, for speed
+   */
   override def insertAtPosition(value:Int,pos:Int,seqAfter:IntSequence){
     super.insertAtPosition(value,pos,seqAfter)
   }
 
-
+  /**
+   * removes the value at the given position in the sequence, and shifts the tail by one position accordingly
+   * @param position the position where the value is removed
+   */
   override  def remove(position:Int){
     super.remove(position)
   }
 
+  /**
+   * removes the value at the given position in the sequence, and shifts the tail by one position accordingly
+   * @param position the position where the value is removed
+   * @param seqAfter the sequence after the remove if performed. if you have it you can set it here, for speed
+   */
   override  def remove(position:Int,seqAfter:IntSequence){
     super.remove(position,seqAfter)
   }
 
-  //-1 for first position
-  override  def move(fromIncludedPosition:Int,toIncludedPosition:Int,afterPosition:Int,flip:Boolean){
+  /**
+   *
+   * @param fromIncludedPosition
+   * @param toIncludedPosition
+   * @param afterPosition
+   * @param flip
+   */
+  override def move(fromIncludedPosition:Int,toIncludedPosition:Int,afterPosition:Int,flip:Boolean){
     super.move(fromIncludedPosition,toIncludedPosition,afterPosition,flip)
   }
 
-  override  def move(fromIncludedPosition:Int,toIncludedPosition:Int,afterPosition:Int,flip:Boolean,seqAfter:IntSequence){
+  override def move(fromIncludedPosition:Int,toIncludedPosition:Int,afterPosition:Int,flip:Boolean,seqAfter:IntSequence){
     super.move(fromIncludedPosition,toIncludedPosition,afterPosition,flip,seqAfter)
   }
 
@@ -1655,22 +1678,29 @@ class SeqCheckpointedValueStack[@specialized T]{
   private def popCheckpointStackToLevel(level:Int,included:Boolean){
     if(included){
       while(checkpointStackLevel>=level) {
-        val tmp = checkpointStackNotTop.head
-        _topCheckpoint = tmp._1
-        _outputAtTopCheckpoint = tmp._2
-        checkpointStackNotTop = checkpointStackNotTop.tail
-        checkpointStackLevel -=1
+        popCheckpoint()
       }
     }else{
       while(checkpointStackLevel>level) {
-        val tmp = checkpointStackNotTop.head
-        _topCheckpoint = tmp._1
-        _outputAtTopCheckpoint = tmp._2
-        checkpointStackNotTop = checkpointStackNotTop.tail
-        checkpointStackLevel -= 1
+        popCheckpoint()
       }
     }
   }
+
+  private def popCheckpoint(){
+    require(checkpointStackLevel >=0)
+    if(checkpointStackLevel>0){
+      val top = checkpointStackNotTop.head
+      checkpointStackNotTop = checkpointStackNotTop.tail
+      _topCheckpoint = top._1
+      _outputAtTopCheckpoint = top._2
+    }else{
+      _topCheckpoint = null
+      _outputAtTopCheckpoint = null.asInstanceOf[T]
+    }
+    checkpointStackLevel -= 1
+  }
+
 
   def outputAtTopCheckpoint(checkpoint:IntSequence):T = {
     require(topCheckpoint quickEquals checkpoint)
@@ -1694,6 +1724,8 @@ class SeqCheckpointedValueStack[@specialized T]{
   }
 
   def defineCheckpoint(checkpoint:IntSequence,checkpointLevel:Int,savedValue:T){
+    require(checkpointLevel <= checkpointStackLevel+1)
+    require(checkpointLevel >= 0)
     popCheckpointStackToLevel(checkpointLevel,true)
     defineTopCheckpoint(checkpoint:IntSequence,savedValue:T)
   }

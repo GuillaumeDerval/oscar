@@ -40,7 +40,7 @@ object MagicBoolArray {
  */
 class MagicBoolArray(val length:Int,initVal:Boolean = false){
 
-  private[this] val threshold:Int = Int.MaxValue-1
+  private[this] val threshold:Int = Int.MaxValue-10
 
   private[this] var global:Int = 1
 
@@ -84,7 +84,7 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
         global = 0
         resetArray()
       } else {
-        global = -Math.abs(global)
+        global = -Math.abs(global)-1
       }
     }else{
       if(Math.abs(global)==threshold){

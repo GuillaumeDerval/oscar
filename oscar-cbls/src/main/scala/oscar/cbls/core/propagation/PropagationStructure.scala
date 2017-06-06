@@ -69,8 +69,6 @@ trait SchedulingHandler {
    * @return the propagation structure that contains this, itself if it is a PS
    */
   def propagationStructure: PropagationStructure
-
-
 }
 
 
