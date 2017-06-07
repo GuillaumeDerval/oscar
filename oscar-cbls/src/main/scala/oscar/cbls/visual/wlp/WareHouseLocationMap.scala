@@ -10,7 +10,6 @@ import oscar.visual.shapes.{VisualRectangle, VisualCircle, VisualLine, VisualSha
 
 import scala.collection.immutable.SortedSet
 
-
 class WareHouseLocationWindow(deliveryCoordinates:Array[(Int,Int)],
                               wareHouseCoordinates:Array[(Int,Int)],
                               distanceCostD2W:Array[Array[Int]],
@@ -30,8 +29,6 @@ class WareHouseLocationWindow(deliveryCoordinates:Array[(Int,Int)],
   frame.revalidate()
   frame.setVisible(true)
 }
-
-
 
 class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
                            wareHouseCoordinates:Array[(Int,Int)],
@@ -73,7 +70,6 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
 
   private def drawMap(closestWarehouses:Array[Int],openWarehouses:SortedSet[Int]) ={
 
-
     val xMultiplier = this.getWidth.toDouble / maxX.toDouble
     val yMultiplier = this.getHeight.toDouble / maxY.toDouble
 
@@ -81,21 +77,13 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
 
     for(delivery <- 0 until d){
       val warehouse = closestWarehouses(delivery)
-      val color =
-        if(warehouse == -1)Color.red
-        else Color.black
-      val tempPoint = new VisualCircle(this,
-        deliveryCoordinates(delivery)._1 * xMultiplier,
-        deliveryCoordinates(delivery)._2 * yMultiplier,2)
-      tempPoint.innerCol_$eq(color)
-
       if(warehouse != -1){
         val line = new VisualLine(this,new Double(
           deliveryCoordinates(delivery)._1 * xMultiplier,
           deliveryCoordinates(delivery)._2 * yMultiplier,
           wareHouseCoordinates(warehouse)._1 * xMultiplier,
           wareHouseCoordinates(warehouse)._2 * yMultiplier))
-        tempPoint.toolTip = "distanceCost:" + distanceCostD2W(delivery)(warehouse)
+        line.dashed = true
       }
     }
 
@@ -116,8 +104,21 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
       drawWarehouse(warehouse, Color.green)
     }
 
+    for(delivery <- 0 until d){
+      val warehouse = closestWarehouses(delivery)
+      val color =
+        if(warehouse == -1)Color.red
+        else Color.black
+      val tempPoint = new VisualCircle(this,
+        deliveryCoordinates(delivery)._1 * xMultiplier,
+        deliveryCoordinates(delivery)._2 * yMultiplier,2)
+      tempPoint.innerCol_$eq(color)
+
+      if(warehouse != -1){
+        tempPoint.toolTip = "distanceCost:" + distanceCostD2W(delivery)(warehouse)
+      }
+    }
+
     repaint()
   }
-
-
 }

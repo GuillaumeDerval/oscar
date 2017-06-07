@@ -205,6 +205,7 @@ abstract class Neighborhood(name:String = null) {
         case m: MoveFound =>
           if(printMoveSythesis){
 
+            //TODO: we should force print before a jump that degrades obj, and force print just after such moves so that they are on a single line
             val neighborhoodName = m.m.neighborhoodName
             moveSynthesis = moveSynthesis + ((neighborhoodName,moveSynthesis.getOrElse(neighborhoodName,0)+1))
 
