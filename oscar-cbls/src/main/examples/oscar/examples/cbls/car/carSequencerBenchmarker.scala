@@ -98,7 +98,7 @@ object carSequencerBenchmarker  extends CBLSModel with App {
   val swap = swapsNeighborhood(carSequence,"swapCars")
   val rollViolated = RollNeighborhood(carSequence, name = "RollViolatedCars", maxShiftSize = _ => 20, searchZone = violatedCars)
   val roll = RollNeighborhood(carSequence, name = "RollAllCars", maxShiftSize = _ => 10)
-  val mostViolatedSwap = swapsNeighborhood(carSequence,"mostViolatedSwap", searchZone2 = mostViolatedCars, symmetryCanBeBrokenOnIndices = false)
+  val mostViolatedSwap = swapsNeighborhood(carSequence,"mostViolatedSwap", searchZone2 = (_,_) => mostViolatedCars.value, symmetryCanBeBrokenOnIndices = false)
   val shiftNeighbor = shiftNeighborhood(carSequence, searchZone1 =() => violatedCars.value.toList, maxShiftSize = carSequence.length/2/*, maxOffsetSize = carSequence.length/2*/, hotRestart = true)
   val rollNeighbor = rollNeighborhood(carSequence)
 
@@ -116,7 +116,7 @@ object carSequencerBenchmarker  extends CBLSModel with App {
     ((swapMove:SwapMove) => {
       val firstSwappedCar = 0.max(swapMove.idI - impactZone) until (nbCars).min(swapMove.idI + impactZone)
       val otherSwappedCar = (nbCars-1).min(swapMove.idJ+1) until nbCars
-      swapsNeighborhood(carSequence, "swapCars2", searchZone1 = () => firstSwappedCar, searchZone2 = () => otherSwappedCar, symmetryCanBeBrokenOnIndices = false)
+      swapsNeighborhood(carSequence, "swapCars2", searchZone1 = () => firstSwappedCar, searchZone2 = (_,_) => otherSwappedCar, symmetryCanBeBrokenOnIndices = false)
     })) name "looselyLinkedDoubleSwaps"
 
 

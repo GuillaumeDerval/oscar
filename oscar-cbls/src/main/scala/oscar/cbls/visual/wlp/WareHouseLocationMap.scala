@@ -20,6 +20,7 @@ class WareHouseLocationWindow(deliveryCoordinates:Array[(Int,Int)],
     visual.redraw(openWarehouses)
   }
   val frame = new JFrame()
+  frame.setTitle("Uncapacitated Warehouse Location Problem")
   frame.setLayout(new BorderLayout())
   frame.setPreferredSize(new Dimension(960,960))
   frame.add(visual, BorderLayout.CENTER)

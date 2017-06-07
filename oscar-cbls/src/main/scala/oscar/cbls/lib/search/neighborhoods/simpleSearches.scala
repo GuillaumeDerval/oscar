@@ -130,6 +130,7 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
  *                   If none is provided, all the array will be considered each time
  * @param searchZone2 a subset of the indices of vars to consider for the second moved point
  *                   If none is provided, all the array will be considered each time
+ *                   it receives the indice of the first var, and the old value of the first var
  * @param symmetryCanBeBrokenOnIndices if set to true, the neighborhood will break symmetries on indices of swapped vars
  *                            that is: thee first variable will always have an indice strictly smaller than the second swapped variable
  *                            typically, you always want it except if you have specified one or two searchZones, and they are different
@@ -156,7 +157,7 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
 case class SwapsNeighborhood(vars:Array[CBLSIntVar],
                              name:String = "SwapsNeighborhood",
                              searchZone1:()=>Iterable[Int] = null,
-                             searchZone2:()=>Iterable[Int] = null,
+                             searchZone2:(Int,Int)=>Iterable[Int] = null,
                              symmetryCanBeBrokenOnIndices:Boolean = true,
                              symmetryCanBeBrokenOnValue:Boolean = false,
                              best:Boolean = false,
@@ -181,18 +182,18 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
       case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(firstIterationSchemeZone, s)
     }
 
-    val secondIterationSchemeZone = if (searchZone2 == null) vars.indices else searchZone2()
-
-    val secondIterationScheme = symmetryClassOfVariables2 match {
-      case None => secondIterationSchemeZone
-      case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(secondIterationSchemeZone, s)
-    }
-
     val iIterator = firstIterationScheme.iterator
     while (iIterator.hasNext) {
       val i = iIterator.next()
       val firstVar = vars(i)
       val oldValOfFirstVar = firstVar.newValue
+
+      val secondIterationSchemeZone = if (searchZone2 == null) vars.indices else searchZone2(i,oldValOfFirstVar)
+
+      val secondIterationScheme = symmetryClassOfVariables2 match {
+        case None => secondIterationSchemeZone
+        case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(secondIterationSchemeZone, s)
+      }
 
       val jIterator = secondIterationScheme.iterator
       while (jIterator.hasNext) {

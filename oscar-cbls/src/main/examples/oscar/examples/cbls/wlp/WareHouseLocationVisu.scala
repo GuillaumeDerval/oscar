@@ -20,12 +20,14 @@ package oscar.examples.cbls.wlp
 import java.awt.{Dimension, BorderLayout}
 import javax.swing.JFrame
 
+import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.search.{CompositeMove, SupportForAndThenChaining, Neighborhood}
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.{ArgMin, MinConstArrayLazy}
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.search.combinators.BestSlopeFirst
+import oscar.cbls.lib.search.combinators.{Profile, Mu, BestSlopeFirst}
 import oscar.cbls.lib.search.neighborhoods.{AssignNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
 import oscar.cbls.modeling.AlgebraTrait
 import oscar.cbls.visual.wlp.{WareHouseLocationWindow, WareHouseLocationMap}
@@ -44,7 +46,7 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
-  val (_,distanceCost,warehousePositions,deliveryPositions) = WarehouseLocationGenerator.problemWithPositions(W,D,0,100,3)
+  val (_,distanceCost,warehousePositions,deliveryPositions,warehouseToWarehouseDistances) = WarehouseLocationGenerator.problemWithPositions(W,D,0,100,3)
 
   val costForOpeningWarehouse = Array.fill(W)(100)
 
@@ -64,12 +66,28 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
 
   var bestObj = Int.MaxValue
 
+
+
+
+  //instantiating value ofr smart swap:
+  val k = 20
+  val closestWarehouses = Array.tabulate(W)(warehouse =>
+    KSmallest.lazySort(
+      Array.tabulate(W)(warehouse => warehouse),
+      otherwarehouse => warehouseToWarehouseDistances(warehouse)(otherwarehouse)
+    ))
+  def kNearestClosedWarehouses(warehouse:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).value == 0)
+
   val neighborhood =(
     BestSlopeFirst(
       List(
-        AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
-        SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),refresh = W/10)
-      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, W/10), 1, obj)
+        Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
+          Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),
+          Profile(SwapsNeighborhood(warehouseOpenArray,
+            searchZone1 = openWarehouses,
+            searchZone2 = (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse),name = "Swap" + k + "Nearest", symmetryCanBeBrokenOnIndices = false))
+      ),refresh = W/10)
+      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, W/10), 2, obj)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, W/3), 1, obj))afterMove(
     if(obj.value < bestObj){
       bestObj = obj.value
@@ -81,6 +99,9 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
   neighborhood.doAllMoves(obj=obj)
 
   visual.redraw(openWarehouses.value)
+
+  println(neighborhood.profilingStatistics)
+
   println(openWarehouses)
 }
 

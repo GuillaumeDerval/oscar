@@ -60,9 +60,9 @@ object WarehouseLocationGenerator {
    * @param minXY
    * @param maxXY
    * @param weightingForOpeningWarehouseCost cost for openingwarehouse = rand(0,1)*side*weightingForOpeningWarehouseCost
-   * @return (costForOpeningWarehouse,distanceCost,warehousePositions,deliveryPositions)
+   * @return (costForOpeningWarehouse,distanceCost,warehousePositions,deliveryPositions,warehouseToWarehouseDistances)
    */
-  def problemWithPositions(W:Int,D:Int,minXY:Int = 0,maxXY:Int = 100, weightingForOpeningWarehouseCost:Int = 3):(Array[Int],Array[Array[Int]],Array[(Int,Int)],Array[(Int,Int)]) = {
+  def problemWithPositions(W:Int,D:Int,minXY:Int = 0,maxXY:Int = 100, weightingForOpeningWarehouseCost:Int = 3):(Array[Int],Array[Array[Int]],Array[(Int,Int)],Array[(Int,Int)],Array[Array[Int]]) = {
     // we put the locations randomly on a square map
     val side = maxXY - minXY
 
@@ -82,7 +82,11 @@ object WarehouseLocationGenerator {
       d => Array.tabulate(W)(
         w => distance(warehousePositions(w), deliveryPositions(d))))
 
-    (costForOpeningWarehouse,distanceCost,warehousePositions,deliveryPositions)
+    val warehouseToWarehouseDistances = Array.tabulate(W)(
+      w1 => Array.tabulate(W)(
+        w2 => distance(warehousePositions(w1), warehousePositions(w2))))
+
+    (costForOpeningWarehouse,distanceCost,warehousePositions,deliveryPositions,warehouseToWarehouseDistances)
   }
 
 }
