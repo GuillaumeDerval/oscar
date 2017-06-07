@@ -46,9 +46,9 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
-  val (_,distanceCost,warehousePositions,deliveryPositions,warehouseToWarehouseDistances) = WarehouseLocationGenerator.problemWithPositions(W,D,0,100,3)
+  val (costForOpeningWarehouse,distanceCost,warehousePositions,deliveryPositions,warehouseToWarehouseDistances) = WarehouseLocationGenerator.problemWithPositions(W,D,0,1000,3)
 
-  val costForOpeningWarehouse = Array.fill(W)(100)
+//  val costForOpeningWarehouse = Array.fill(W)(1000)
 
   val m = Store()
 
@@ -62,17 +62,20 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
 
   m.close()
 
-  val visual = new WareHouseLocationWindow(deliveryPositions,warehousePositions,distanceCost)
+  val visual = new WareHouseLocationWindow(deliveryPositions,warehousePositions,distanceCost,costForOpeningWarehouse)
 
   var bestObj = Int.MaxValue
 
-  //instantiating value ofr smart swap:
+
   val k = 20
+  //this is an array, that, for each warehouse, keeps the sorted closest warehouses in a lazy way.
   val closestWarehouses = Array.tabulate(W)(warehouse =>
     KSmallest.lazySort(
       Array.tabulate(W)(warehouse => warehouse),
       otherwarehouse => warehouseToWarehouseDistances(warehouse)(otherwarehouse)
     ))
+
+  //this procedure returns the k closest closed warehouses
   def kNearestClosedWarehouses(warehouse:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).value == 0)
 
   val neighborhood =(
@@ -91,7 +94,7 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
       visual.redraw(openWarehouses.value)
     })
 
-  neighborhood.verbose = 1
+  neighborhood.verbose = 2
 
   neighborhood.doAllMoves(obj=obj)
 

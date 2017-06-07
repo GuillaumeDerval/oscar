@@ -1,20 +1,22 @@
 package oscar.cbls.visual.wlp
 
+import java.awt.geom.Rectangle2D
 import java.awt.{Dimension, BorderLayout, Color}
 import java.awt.geom.Line2D.Double
 import javax.swing.JFrame
 
 import oscar.visual.VisualDrawing
-import oscar.visual.shapes.{VisualCircle, VisualLine, VisualShape}
+import oscar.visual.shapes.{VisualRectangle, VisualCircle, VisualLine, VisualShape}
 
 import scala.collection.immutable.SortedSet
 
 
 class WareHouseLocationWindow(deliveryCoordinates:Array[(Int,Int)],
                               wareHouseCoordinates:Array[(Int,Int)],
-                              distanceCostD2W:Array[Array[Int]]){
+                              distanceCostD2W:Array[Array[Int]],
+                              warehouseCosts:Array[Int]){
 
-  val visual = new WareHouseLocationMap(deliveryCoordinates,wareHouseCoordinates,distanceCostD2W)
+  val visual = new WareHouseLocationMap(deliveryCoordinates,wareHouseCoordinates,distanceCostD2W,warehouseCosts)
 
   def redraw(openWarehouses:SortedSet[Int]){
     visual.redraw(openWarehouses)
@@ -27,14 +29,14 @@ class WareHouseLocationWindow(deliveryCoordinates:Array[(Int,Int)],
   frame.pack()
   frame.revalidate()
   frame.setVisible(true)
-
 }
 
 
 
 class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
                            wareHouseCoordinates:Array[(Int,Int)],
-                           distanceCostD2W:Array[Array[Int]])
+                           distanceCostD2W:Array[Array[Int]],
+                           warehouseCosts:Array[Int])
   extends VisualDrawing(false,false){
 
   val maxX = math.max(deliveryCoordinates.map(_._1).max,wareHouseCoordinates.map(_._1).max)
@@ -72,8 +74,8 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
   private def drawMap(closestWarehouses:Array[Int],openWarehouses:SortedSet[Int]) ={
 
 
-    val xMultiplier = (this.getWidth / maxX.toDouble).toInt
-    val yMultiplier = (this.getHeight / maxY.toDouble).toInt
+    val xMultiplier = this.getWidth.toDouble / maxX.toDouble
+    val yMultiplier = this.getHeight.toDouble / maxY.toDouble
 
     super.clear()
 
@@ -84,29 +86,38 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
         else Color.black
       val tempPoint = new VisualCircle(this,
         deliveryCoordinates(delivery)._1 * xMultiplier,
-        deliveryCoordinates(delivery)._2 * yMultiplier,1)
+        deliveryCoordinates(delivery)._2 * yMultiplier,2)
       tempPoint.innerCol_$eq(color)
 
-
       if(warehouse != -1){
-        new VisualLine(this,new Double(
+        val line = new VisualLine(this,new Double(
           deliveryCoordinates(delivery)._1 * xMultiplier,
           deliveryCoordinates(delivery)._2 * yMultiplier,
           wareHouseCoordinates(warehouse)._1 * xMultiplier,
           wareHouseCoordinates(warehouse)._2 * yMultiplier))
+        tempPoint.toolTip = "distanceCost:" + distanceCostD2W(delivery)(warehouse)
       }
     }
 
-    for(warehouse <- 0 until w){
-      val color =
-        if(openWarehouses contains warehouse)Color.green
-        else Color.red
-      val tempPoint = new VisualCircle(this,
-        wareHouseCoordinates(warehouse)._1 * xMultiplier,
-        wareHouseCoordinates(warehouse)._2 * yMultiplier,4)
+    def drawWarehouse(warehouse:Int,color:Color){
+      val tempPoint = new VisualRectangle(this, new Rectangle2D.Double(
+        wareHouseCoordinates(warehouse)._1 * xMultiplier - 4,
+        wareHouseCoordinates(warehouse)._2 * yMultiplier - 4,
+        8,
+        8))
       tempPoint.innerCol_$eq(color)
+      tempPoint.toolTip = "warehouseCost:" + warehouseCosts(warehouse)
+    }
+
+    for(warehouse <- 0 until w if !(openWarehouses contains warehouse)) {
+      drawWarehouse(warehouse, Color.PINK)
+    }
+    for(warehouse <- 0 until w if openWarehouses contains warehouse) {
+      drawWarehouse(warehouse, Color.green)
     }
 
     repaint()
   }
+
+
 }
