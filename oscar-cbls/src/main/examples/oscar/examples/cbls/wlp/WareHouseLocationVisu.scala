@@ -66,9 +66,6 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
 
   var bestObj = Int.MaxValue
 
-
-
-
   //instantiating value ofr smart swap:
   val k = 20
   val closestWarehouses = Array.tabulate(W)(warehouse =>

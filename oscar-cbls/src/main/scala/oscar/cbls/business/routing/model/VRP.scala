@@ -417,20 +417,7 @@ trait ClosestNeighbors extends VRP {
   def kFirst(k: Int, values:Array[Iterable[Int]], filter: (Int => Boolean) = _ => true)(node: Int): Iterable[Int] = {
     if (k >= n - 1) return nodes.filter(filter)
 
-    def kNearestAccumulator(sortedNeighbors: Iterator[Int], k: Int, kNearestAcc: List[Int]): List[Int] = {
-      require(k >= 0)
-      if(k == 0 || !sortedNeighbors.hasNext){
-        kNearestAcc.reverse
-      }else{
-        val neighbor = sortedNeighbors.next()
-        if (filter(neighbor))
-          kNearestAccumulator(sortedNeighbors, k - 1, neighbor :: kNearestAcc)
-        else
-          kNearestAccumulator(sortedNeighbors, k, kNearestAcc)
-      }
-    }
-
-    kNearestAccumulator(values(node).iterator, k, Nil)
+    KSmallest.kFirst(k: Int, values(node), filter)
   }
 }
 
