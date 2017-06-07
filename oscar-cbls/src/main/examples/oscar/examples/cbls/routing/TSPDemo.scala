@@ -60,9 +60,9 @@ class MySimpleDemoWithUnroutedPoints2(n:Int,v:Int,symmetricDistance:Array[Array[
 
 object TSPDemo extends App {
 
-  val n = 1000
+  val n = 10000
   val v = 10
-  val displayDelay = 500 //ms
+  val displayDelay = 1000 //ms
   val verbose = 1
   val maxPivotPerValuePercent = 3
 

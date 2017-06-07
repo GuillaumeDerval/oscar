@@ -164,6 +164,12 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
     setValue(1 + newValue)
   }
 
+  def createClone:CBLSIntVar = {
+    val clone = new CBLSIntVar(model, this.value, this.domain, "clone of " + this.name)
+    clone <== this
+    clone
+  }
+
   def compare(that: ChangingIntValue): Int = {
     assert(this.uniqueID != -1, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
     assert(that.uniqueID != -1, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")

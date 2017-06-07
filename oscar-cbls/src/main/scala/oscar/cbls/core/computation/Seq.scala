@@ -542,11 +542,7 @@ class CBLSSeqVar(givenModel:Store,
 
   def <==(i: SeqValue) {IdentitySeq(i,this)}
 
-  def createClone(maxDepth:Int=50):CBLSSeqVar = {
-    val clone = new CBLSSeqVar(model,this.value,this.maxValue,"clone_of_" + this.name,maxPivotPerValuePercent,maxDepth)
-    IdentitySeq(this,clone)
-    clone
-  }
+
 
   override def performPropagation(){performSeqPropagation()}
 }
@@ -742,6 +738,11 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
     notifyChanged()
   }
 
+  def createClone(maxDepth:Int=50):CBLSSeqVar = {
+    val clone = new CBLSSeqVar(model,this.value,this.maxValue,"clone_of_" + this.name,maxPivotPerValuePercent,maxDepth)
+    IdentitySeq(this,clone)
+    clone
+  }
 
   // CHECKPOINT STUFF
 

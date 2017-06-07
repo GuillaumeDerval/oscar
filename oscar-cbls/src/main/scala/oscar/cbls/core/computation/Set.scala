@@ -210,6 +210,12 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
   protected def :+=(i:Int) {this.insertValue(i)}
   protected def :-=(i:Int) {this.deleteValue(i)}
 
+  def createClone:CBLSSetVar = {
+    val clone = new CBLSSetVar(model, this.value, this.domain, "clone of " + this.name)
+    clone <== this
+    clone
+  }
+
   override def checkInternals(c:Checker){
     assert(this.definingInvariant == null || OldValue.intersect(m_NewValue).size == m_NewValue.size,
       "internal error: " + "Value: " + m_NewValue + " OldValue: " + OldValue)

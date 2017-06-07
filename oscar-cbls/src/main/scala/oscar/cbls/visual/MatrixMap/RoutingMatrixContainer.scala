@@ -26,8 +26,6 @@ import oscar.cbls.business.routing.model.{PDP, VRP}
 /**
   * @author fabian.germeau@student.vinci.be
   */
-
-
 class RoutingMatrixContainer(title:String = "Routing map",
                              myVRP:VRP = null,
                              geolocalisationMap: Boolean = false,
