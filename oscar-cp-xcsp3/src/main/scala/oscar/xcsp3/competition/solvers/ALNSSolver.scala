@@ -66,7 +66,7 @@ object ALNSSolver extends CompetitionApp with App {
         coupled = true,
         learning = true,
         Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided),
-        Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit),
+        Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.ExtOriented),
         ALNSBuilder.ValHeurisBoth,
         valLearn = true,
         ALNSBuilder.Priority,

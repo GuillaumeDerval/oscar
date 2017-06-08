@@ -89,7 +89,7 @@ object HybridSolver extends CompetitionApp with App {
           coupled = true,
           learning = true,
           Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided),
-          Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf),
+          Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.ExtOriented),
           ALNSBuilder.ValHeurisBoth,
           valLearn = true,
           ALNSBuilder.Priority,
@@ -116,6 +116,7 @@ object HybridSolver extends CompetitionApp with App {
             if (bestOperator.contains(ALNSBuilder.BinSplit)) binarySplit(vars, valMax, valLearn)
             else if (bestOperator.contains(ALNSBuilder.FirstFail)) firstFail(vars, valMax, valLearn)
             else if (bestOperator.contains(ALNSBuilder.LastConf)) lastConflict(vars, valMax, valLearn)
+            else if(bestOperator.contains(ALNSBuilder.ExtOriented)) extentionnalOriented(vars, valMax, valLearn)
             else conflictOrdering(vars, valMax, valLearn)
           }
           else //Default search: Conflict ordering:
