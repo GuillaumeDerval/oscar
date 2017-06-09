@@ -22,15 +22,18 @@ import scala.collection.mutable.ListBuffer
 
 object ComputeTimeTaken {
   val results: ListBuffer[(String, String, Double)] = ListBuffer()
-
-  def reset() = results.clear()
+  var silent: Boolean = true
+  def reset(silent: Boolean) = {
+    this.silent = silent
+    results.clear()
+  }
 
   def computeTimeTaken[T](name: String, category: String = "")(v: => T): T = {
     val t0 = getClockTime
     val r: T = v
     val t1 = getClockTime
-    println("Time taken by " +name + "[" + category + "]: "+(t1.toDouble - t0.toDouble)/math.pow(10, 9) +" s")
-
+    if(!silent)
+      println("Time taken by " +name + "[" + category + "]: "+(t1.toDouble - t0.toDouble)/math.pow(10, 9) +" s")
     results += ((name, category, t1.toDouble-t0.toDouble))
     r
   }

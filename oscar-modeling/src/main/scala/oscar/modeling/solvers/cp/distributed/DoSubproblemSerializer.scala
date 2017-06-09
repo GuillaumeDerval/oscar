@@ -88,7 +88,7 @@ object DoSubproblemSerializer {
     * @param modelDeclaration
     */
   def add(modelDeclaration: ModelDeclaration): Unit = {
-    println("Adding "+modelDeclaration.uuid)
+    //println("Adding "+modelDeclaration.uuid)
     clientModels += ((modelDeclaration.uuid, modelDeclaration))
   }
 

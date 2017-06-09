@@ -112,7 +112,7 @@ class SolverActor[RetVal](parameters: ActorParameters[RetVal]) extends Actor wit
     case StartMessage() => master ! AwaitingSPMessage()
     case DoSubproblemMessage(spid: Int, sp: List[Constraint]) =>
       Future {
-        println("start")
+        //println("start")
         try{
           solve_subproblem(spid, sp)
         }
