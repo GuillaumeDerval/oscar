@@ -46,9 +46,13 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
     super.addShape(shape,false)
   }
 
+  var prevOpenWarehouse:SortedSet[Int] = SortedSet.empty
+  var prevNearestOpenWarehouse = Array.fill(d)(-1)
   def redraw(openWarehouses:SortedSet[Int]){
     val closestWarehouses:Array[Int] = Array.tabulate(d)(nearestOpenWareHouse(openWarehouses,_))
-    drawMap(closestWarehouses,openWarehouses)
+    drawMap(closestWarehouses,openWarehouses,prevOpenWarehouse,prevNearestOpenWarehouse)
+    prevOpenWarehouse = openWarehouses
+    prevNearestOpenWarehouse = closestWarehouses
   }
 
   /**
@@ -68,44 +72,52 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
     closestW
   }
 
-  private def drawMap(closestWarehouses:Array[Int],openWarehouses:SortedSet[Int]) ={
-
+  private def drawMap(closestWarehouses:Array[Int],openWarehouses:SortedSet[Int],prevOpenWarehouse:SortedSet[Int],prevClosestWarehouse:Array[Int]) ={
     val xMultiplier = this.getWidth.toDouble / maxX.toDouble
     val yMultiplier = this.getHeight.toDouble / maxY.toDouble
 
-    super.clear()
+    super.clear(false)
 
-    for(delivery <- 0 until d){
-      val warehouse = closestWarehouses(delivery)
-      if(warehouse != -1){
-        val line = new VisualLine(this,new Double(
-          deliveryCoordinates(delivery)._1 * xMultiplier,
-          deliveryCoordinates(delivery)._2 * yMultiplier,
-          wareHouseCoordinates(warehouse)._1 * xMultiplier,
-          wareHouseCoordinates(warehouse)._2 * yMultiplier))
-        line.dashed = true
+    //drawind links
+    if (openWarehouses.nonEmpty) {
+      for (delivery <- 0 until d) {
+        val warehouse = closestWarehouses(delivery)
+        if (warehouse != -1) {
+          val line = new VisualLine(this, new Double(
+            deliveryCoordinates(delivery)._1 * xMultiplier,
+            deliveryCoordinates(delivery)._2 * yMultiplier,
+            wareHouseCoordinates(warehouse)._1 * xMultiplier,
+            wareHouseCoordinates(warehouse)._2 * yMultiplier))
+          line.dashed = true
+        }
       }
     }
 
-    def drawWarehouse(warehouse:Int,color:Color){
+    def drawWarehouse(warehouse:Int,color:Color,focus:Boolean){
       val tempPoint = new VisualRectangle(this, new Rectangle2D.Double(
         wareHouseCoordinates(warehouse)._1 * xMultiplier - 4,
         wareHouseCoordinates(warehouse)._2 * yMultiplier - 4,
         8,
         8))
       tempPoint.innerCol_$eq(color)
+      if(focus){
+        tempPoint.borderWidth = 4
+      }
       tempPoint.toolTip = "warehouseCost:" + warehouseCosts(warehouse)
     }
 
+    //drawing warehouses
     for(warehouse <- 0 until w if !(openWarehouses contains warehouse)) {
-      drawWarehouse(warehouse, Color.PINK)
+      drawWarehouse(warehouse, Color.PINK,prevOpenWarehouse contains warehouse)
     }
     for(warehouse <- 0 until w if openWarehouses contains warehouse) {
-      drawWarehouse(warehouse, Color.green)
+      drawWarehouse(warehouse, Color.green,!(prevOpenWarehouse contains warehouse))
     }
 
+    //drawing delivery points
     for(delivery <- 0 until d){
       val warehouse = closestWarehouses(delivery)
+      val changed = warehouse != prevClosestWarehouse(delivery)
       val color =
         if(warehouse == -1)Color.red
         else Color.black
@@ -113,7 +125,7 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
         deliveryCoordinates(delivery)._1 * xMultiplier,
         deliveryCoordinates(delivery)._2 * yMultiplier,2)
       tempPoint.innerCol_$eq(color)
-
+      if(changed) tempPoint.setRadius(4)
       if(warehouse != -1){
         tempPoint.toolTip = "distanceCost:" + distanceCostD2W(delivery)(warehouse)
       }

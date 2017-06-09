@@ -59,7 +59,7 @@ object WarehouseLocation extends App with AlgebraTrait{
       List(
         AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
         SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),refresh = W/10)
-    onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, W/10), 2, obj))
+    onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/10), 2, obj))
 
   neighborhood.verbose = 1
   

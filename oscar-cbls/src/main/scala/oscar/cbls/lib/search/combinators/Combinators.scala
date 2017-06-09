@@ -1264,6 +1264,17 @@ object Mu {
     intermediaryStops)
   }
 
+  /**
+   *
+   * @param firstNeighborhood
+   * @param neighborhoodGenerator latest moves are closer to the head
+   * @param x0
+   * @param maxDepth
+   * @param intermediaryStops
+   * @tparam MoveType
+   * @tparam X
+   * @return
+   */
   def apply[MoveType <: Move, X](firstNeighborhood : Neighborhood with SupportForAndThenChaining[MoveType],
                                  neighborhoodGenerator : (List[(MoveType)], X) => Option[(Neighborhood with SupportForAndThenChaining[MoveType], X)],
                                  x0 : X,

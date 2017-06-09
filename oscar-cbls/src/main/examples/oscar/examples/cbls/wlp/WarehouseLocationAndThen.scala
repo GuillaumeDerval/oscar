@@ -53,7 +53,7 @@ object WarehouseLocationAndThen extends App with AlgebraTrait{
 
   val neighborhood = (AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
                       exhaustBack (AssignNeighborhood(warehouseOpenArray,"1") andThen AssignNeighborhood(warehouseOpenArray,"2"))
-                      orElse (RandomizeNeighborhood(warehouseOpenArray, W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
+                      orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
   neighborhood.verbose = 1
   neighborhood.doAllMoves(_ >= W+D, obj)
