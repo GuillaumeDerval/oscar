@@ -50,6 +50,7 @@ import scala.concurrent.Await
 class CPProgram[RetVal](modelDeclaration: ModelDeclaration = new ModelDeclaration())
   extends SolveHolder[RetVal] with CPSearchHolder with CPDecompositionHolder with ModelDeclarationProxy {
   implicit val program = this
+  var silent: Boolean = true
   override implicit val md = modelDeclaration
 
   protected val registeredWatchers: scala.collection.mutable.ListBuffer[(
@@ -184,11 +185,12 @@ class CPProgram[RetVal](modelDeclaration: ModelDeclaration = new ModelDeclaratio
     */
   def solveDistributed(model: UninstantiatedModel, subproblemCount: Int, systemConfig: Config, createSolvers: (ActorSystem, ActorRef) => List[ActorRef], nSols: Int, maxTime: Int): (SearchStatistics, List[RetVal]) = {
     md.apply(model) {
-      ComputeTimeTaken.reset()
+      ComputeTimeTaken.reset(silent)
       val subproblems: List[SubProblem] = computeTimeTaken("decomposition", "solving") {
         getDecompositionStrategy.decompose(model, subproblemCount)
       }
-      println("Subproblems: " + subproblems.length.toString)
+      if(!silent)
+        println("Subproblems: " + subproblems.length.toString)
 
       val queue = new LinkedBlockingQueue[(Int, List[Constraint])]()
       val outputQueue = new LinkedBlockingQueue[SolvingMessage]()
@@ -240,7 +242,8 @@ class CPProgram[RetVal](modelDeclaration: ModelDeclaration = new ModelDeclaratio
       }
       watcher_thread.join()
 
-      showSummary()
+      if(!silent)
+        showSummary()
       statWatcher.get
     }
   }

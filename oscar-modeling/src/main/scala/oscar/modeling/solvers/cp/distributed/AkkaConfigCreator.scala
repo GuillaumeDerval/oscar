@@ -24,6 +24,8 @@ object AkkaConfigCreator {
   def remote(hostname: String, port: Int): Config = {
     ConfigFactory.parseString(s"""
        akka {
+         stdout-loglevel = "OFF"
+         loglevel = "OFF"
          #loglevel = "DEBUG"
          actor {
            provider = "akka.remote.RemoteActorRefProvider"
@@ -64,6 +66,11 @@ object AkkaConfigCreator {
   }
 
   def local(): Config = {
-    ConfigFactory.load()
+    ConfigFactory.parseString(s"""
+       akka {
+         stdout-loglevel = "OFF"
+         loglevel = "OFF"
+       }
+     """)
   }
 }
