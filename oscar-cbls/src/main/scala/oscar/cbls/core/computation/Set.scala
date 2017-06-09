@@ -165,7 +165,6 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
         var currentElement = headPhantom.next
         while (currentElement != headPhantom) {
           val e = currentElement.elem
-          currentElement = currentElement.next
           val inv : SetNotificationTarget = e._1.asInstanceOf[SetNotificationTarget]
           assert({
             this.model.NotifiedInvariant = inv.asInstanceOf[Invariant]; true
@@ -174,6 +173,9 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
           assert({
             this.model.NotifiedInvariant = null; true
           })
+          //we go to the next to be robust against invariant that change their dependencies when notified
+          //this might cause crash because dynamicallyListenedInvariants is a mutable data structure
+          currentElement = currentElement.next
         }
       }
       //puis, on fait une affectation en plus, pour garbage collecter l'ancienne structure de donnees.

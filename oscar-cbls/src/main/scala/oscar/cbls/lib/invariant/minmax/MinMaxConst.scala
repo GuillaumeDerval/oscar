@@ -352,6 +352,4 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
       putIntoBackLog(value)
     }
   }
-
-
 }

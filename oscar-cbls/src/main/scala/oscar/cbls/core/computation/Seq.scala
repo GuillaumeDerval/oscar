@@ -714,7 +714,6 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
 
     while (currentElement != headPhantom) {
       val e = currentElement.elem
-      currentElement = currentElement.next
       val inv : SeqNotificationTarget = e._1.asInstanceOf[SeqNotificationTarget]
       assert({
         this.model.NotifiedInvariant = inv.asInstanceOf[Invariant]; true
@@ -723,6 +722,10 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
       assert({
         this.model.NotifiedInvariant = null; true
       })
+
+      //we go to the next to be robust against invariant that change their dependencies when notified
+      //this might cause crash because dynamicallyListenedInvariants is a mutable data structure
+      currentElement = currentElement.next
     }
 
     val theNewValue = toNotify.newValue
