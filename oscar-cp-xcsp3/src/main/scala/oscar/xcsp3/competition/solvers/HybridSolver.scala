@@ -54,11 +54,14 @@ object HybridSolver extends CompetitionApp with App {
       var optimumFound = false
 
       val timeout = ((conf.timelimit().toLong - 5L) * 1000000000L) - (System.nanoTime() - startTime)
-      var endTime: Long = System.nanoTime() + (if(maximizeObjective.isDefined) (timeout * 0.1).toLong else timeout)
+      var endSearch: Long = System.nanoTime() + (if(maximizeObjective.isDefined) (timeout * 0.1).toLong else timeout)
+      val endTime = System.nanoTime() + timeout
+      var lastSolTime = 0
 
       val sols = mutable.ListBuffer[(CPIntSol, String)]()
       solver.onSolution{
         val time = System.nanoTime() - startTime
+        lastSolTime = time
         val sol = new CPIntSol(vars.map(_.value), if (maximizeObjective.isDefined) solver.objective.objs.head.best else 0, time)
         val instantiation = solutionGenerator()
         optimumFound = if (maximizeObjective.isDefined) solver.objective.isOptimum() else true //In case of CSP, no point of searching another solution
@@ -68,7 +71,21 @@ object HybridSolver extends CompetitionApp with App {
         }
       }
 
-      val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime || optimumFound
+      /**
+        * Stop condition of the first complete search.
+        * It's goal is to find and prove quickly the optimum on small instances and to get a good first solution for
+        * the alns on larger instances.
+        */
+      var stopCondition = (_: DFSearch) => {
+        val now = System.nanoTime()
+        var stop = false
+        //We stop if:
+        stop |= now >= endTime //Total time used
+        stop |= sols.nonEmpty && now >= endSearch //At least one solution found and search time used
+        stop |= optimumFound //An optimum has been found
+        stop |= sols.nonEmpty && (now - startTime) > (lastSolTime * 2L) //At least one solution has been found and more than twice time has been used since then
+        stop
+      }
 
       printComment("Parsing done, starting first complete search")
 
@@ -116,14 +133,26 @@ object HybridSolver extends CompetitionApp with App {
             if (bestOperator.contains(ALNSBuilder.BinSplit)) binarySplit(vars, valMax, valLearn)
             else if (bestOperator.contains(ALNSBuilder.FirstFail)) firstFail(vars, valMax, valLearn)
             else if (bestOperator.contains(ALNSBuilder.LastConf)) lastConflict(vars, valMax, valLearn)
-            else if(bestOperator.contains(ALNSBuilder.ExtOriented)) extentionnalOriented(vars, valMax, valLearn)
+            else if(bestOperator.contains(ALNSBuilder.ExtOriented)) extensionalOriented(vars, valMax, valLearn)
             else conflictOrdering(vars, valMax, valLearn)
           }
           else //Default search: Conflict ordering:
             conflictOrdering(vars, valMax = false, valLearn = false)
         }
 
-        endTime = startTime + timeout
+        /**
+          * Stop condition of the second complete search.
+          * It's goal is to prove an eventual optimum for the last solution found by the alns search.
+          */
+        stopCondition = (_: DFSearch) => {
+          val now = System.nanoTime()
+          var stop = false
+          //We stop if:
+          stop |= now >= endTime //Total time used
+          stop |= optimumFound //An optimum has been found
+          stop
+        }
+
         stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
           solver.search(search)
         }

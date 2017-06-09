@@ -194,7 +194,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
         case ALNSBuilder.FirstFail => SearchFunctions.firstFail(vars, valMax, valLearn)
         case ALNSBuilder.LastConf => SearchFunctions.lastConflict(vars, valMax, valLearn)
         case ALNSBuilder.BinSplit => SearchFunctions.binarySplit(vars, valMax, valLearn)
-        case ALNSBuilder.ExtOriented => SearchFunctions.extentionnalOriented(vars, valMax, valLearn)
+        case ALNSBuilder.ExtOriented => SearchFunctions.extensionalOriented(vars, valMax, valLearn)
       }
     ))
   }
