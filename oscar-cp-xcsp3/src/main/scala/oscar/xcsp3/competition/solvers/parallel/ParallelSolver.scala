@@ -13,17 +13,16 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
 
-package oscar.xcsp3.competition.solvers
+package oscar.xcsp3.competition.solvers.parallel
 
 import oscar.algo.Inconsistency
-import oscar.algo.branchings.ConflictOrderingSearch
 import oscar.cp.NoSolutionException
 import oscar.cp.searches.lns.CPIntSol
 import oscar.modeling.algebra.integer.IntExpression
 import oscar.modeling.models.{Maximisation, Minimisation}
-import oscar.modeling.solvers.cp.{Branchings, CPProgram}
 import oscar.modeling.solvers.cp.Branchings._
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
+import oscar.modeling.solvers.cp.{Branchings, CPProgram}
 import oscar.xcsp3.XCSP3Parser2
 import oscar.xcsp3.competition.{CompetitionApp, CompetitionConf}
 

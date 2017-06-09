@@ -19,6 +19,7 @@ CP=${SbtOutput##*$'\n'}
 Out="XCSP-bench-results"
 
 SolversToRun="solvers_to_run.txt"
+ParallelSolvers="solvers_to_run_parallel.txt"
 InstancesToRun="instances_to_run.txt"
 
 echo -e "\n\n\n"
@@ -47,13 +48,13 @@ run_search () {
             echo "Re-running bench"
             echo "0 c instance: $InstanceName" > $OutPath
             echo "0 c solver: $SolverName" >> $OutPath
-            scala -J-Xmx${5}m -cp $1 $7 --timelimit $4 $6 >> $OutPath
+            scala -J-Xmx${5}m -cp $1 $7 --timelimit $4 --nbcore 4 $6 >> $OutPath
         fi
     else
         echo "Running bench"
         echo "0 c instance: $InstanceName" > $OutPath
         echo "0 c solver: $SolverName" >> $OutPath
-        scala -J-Xmx${5}m -cp $1 $7 --timelimit $4 $6 >> $OutPath
+        scala -J-Xmx${5}m -cp $1 $7 --timelimit $4 --nbcore 4 $6 >> $OutPath
     fi
 
     echo -e "\n\n\n"
@@ -65,8 +66,17 @@ for s in `ls ${SolversDir}`; do
     if [ "${s: -6}" == ".scala" ]; then
         f=${s%%??????}
         echo "$SolversRoot.$f" >> ${SolversToRun}
+    elif [ -d "$SolversDir/s" ]; then
+        for s2 in `ls ${SolversDir}/${s}`; do
+            if [ "${s2: -6}" == ".scala" ]; then
+                f=${s2%%??????}
+                echo "$SolversRoot.$s.$f" >> ${ParallelSolvers}
+            else
+                echo "file $s ignored!"
+            fi
+        done
     else
-        echo "file $s is not a scala file!"
+        echo "file $s ignored!"
     fi
 done
 
@@ -80,6 +90,8 @@ done
 
 echo -e "\nSolvers:"
 cat ${SolversToRun}
+echo -e "\nParallel solvers:"
+cat ${ParallelSolvers}
 echo -e "\nInstances:"
 cat ${InstancesToRun}
 echo -e "\n\n\n"
@@ -91,9 +103,11 @@ then
 fi
 
 $BIN/parallel --gnu --jobs 75% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${InstancesToRun} :::: ${SolversToRun}
+$BIN/parallel --gnu --jobs 20% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${InstancesToRun} :::: ${ParallelSolvers}
 
 rm ${InstancesToRun}
 rm ${SolversToRun}
+rm ${ParallelSolvers}
 
 cp -r --parents "${Out}/${VNum}" "/etinfo/users2/cthomas/Workspace/"
 

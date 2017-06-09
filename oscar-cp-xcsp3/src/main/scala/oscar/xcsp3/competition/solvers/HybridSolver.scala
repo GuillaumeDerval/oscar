@@ -56,7 +56,7 @@ object HybridSolver extends CompetitionApp with App {
       val timeout = ((conf.timelimit().toLong - 5L) * 1000000000L) - (System.nanoTime() - startTime)
       var endSearch: Long = System.nanoTime() + (if(maximizeObjective.isDefined) (timeout * 0.1).toLong else timeout)
       val endTime = System.nanoTime() + timeout
-      var lastSolTime = 0
+      var lastSolTime = 0L
 
       val sols = mutable.ListBuffer[(CPIntSol, String)]()
       solver.onSolution{
