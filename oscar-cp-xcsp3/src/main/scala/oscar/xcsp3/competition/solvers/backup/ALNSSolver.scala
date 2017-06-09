@@ -1,4 +1,4 @@
-package oscar.xcsp3.competition.solvers
+package oscar.xcsp3.competition.solvers.backup
 
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.searches.lns.CPIntSol

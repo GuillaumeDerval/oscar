@@ -66,17 +66,17 @@ for s in `ls ${SolversDir}`; do
     if [ "${s: -6}" == ".scala" ]; then
         f=${s%%??????}
         echo "$SolversRoot.$f" >> ${SolversToRun}
-    elif [ -d "$SolversDir/$s" ]; then
+    elif [ "$s" == parallel ]; then
         for s2 in `ls ${SolversDir}/${s}`; do
             if [ "${s2: -6}" == ".scala" ]; then
                 f=${s2%%??????}
                 echo "$SolversRoot.$s.$f" >> ${ParallelSolvers}
             else
-                echo "file $s ignored!"
+                echo "$s ignored!"
             fi
         done
     else
-        echo "file $s ignored!"
+        echo "$s ignored!"
     fi
 done
 

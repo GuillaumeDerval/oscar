@@ -1,12 +1,12 @@
-package oscar.xcsp3.competition.solvers
+package oscar.xcsp3.competition.solvers.backup
 
 import oscar.algo.search.{Branching, DFSearch}
-import oscar.cp.{CPSolver, NoSolutionException, binaryLastConflict, learnValueHeuristic}
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.searches.lns.CPIntSol
 import oscar.cp.searches.lns.operators.ALNSBuilder
 import oscar.cp.searches.lns.operators.SearchFunctions._
 import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch}
+import oscar.cp.{CPSolver, NoSolutionException, binaryLastConflict, learnValueHeuristic}
 import oscar.modeling.models.cp.CPModel
 import oscar.modeling.models.operators.CPInstantiate
 import oscar.modeling.models.{ModelDeclaration, UninstantiatedModel}
