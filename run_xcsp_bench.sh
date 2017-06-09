@@ -66,7 +66,7 @@ for s in `ls ${SolversDir}`; do
     if [ "${s: -6}" == ".scala" ]; then
         f=${s%%??????}
         echo "$SolversRoot.$f" >> ${SolversToRun}
-    elif [ -d "$SolversDir/s" ]; then
+    elif [ -d "$SolversDir/$s" ]; then
         for s2 in `ls ${SolversDir}/${s}`; do
             if [ "${s2: -6}" == ".scala" ]; then
                 f=${s2%%??????}
