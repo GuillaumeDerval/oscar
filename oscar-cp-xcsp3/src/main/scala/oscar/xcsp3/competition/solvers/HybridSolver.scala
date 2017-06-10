@@ -1,4 +1,4 @@
-package oscar.xcsp3.competition.solvers.backup
+package oscar.xcsp3.competition.solvers
 
 import oscar.algo.search.{Branching, DFSearch}
 import oscar.cp.core.variables.CPIntVar
@@ -6,7 +6,7 @@ import oscar.cp.searches.lns.CPIntSol
 import oscar.cp.searches.lns.operators.ALNSBuilder
 import oscar.cp.searches.lns.operators.SearchFunctions._
 import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch}
-import oscar.cp.{CPSolver, NoSolutionException, binaryLastConflict, learnValueHeuristic}
+import oscar.cp.{CPSolver, NoSolutionException, conflictOrderingSearch, learnValueHeuristic}
 import oscar.modeling.models.cp.CPModel
 import oscar.modeling.models.operators.CPInstantiate
 import oscar.modeling.models.{ModelDeclaration, UninstantiatedModel}
@@ -48,7 +48,7 @@ object HybridSolver extends CompetitionApp with App {
 
     if (parsingResult.isDefined) {
       val (vars, solver, solutionGenerator) = parsingResult.get
-      solver.silent = true
+//      solver.silent = true
 
       val maximizeObjective: Option[Boolean] = if(solver.objective.objs.nonEmpty) Some(solver.objective.objs.head.isMax) else None
       var optimumFound = false
@@ -90,11 +90,13 @@ object HybridSolver extends CompetitionApp with App {
       printComment("Parsing done, starting first complete search")
 
       var stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
-        solver.search(binaryLastConflict(
-          vars,
-          i => vars(i).size,
-          learnValueHeuristic(vars, if(maximizeObjective.isDefined) if(maximizeObjective.get) vars(_).min else vars(_).max else vars(_).max)
-        ))
+        solver.search(
+          conflictOrderingSearch(
+            vars,
+            i => vars(i).size,
+            learnValueHeuristic(vars, if(maximizeObjective.isDefined) if(maximizeObjective.get) vars(_).min else vars(_).max else vars(_).max)
+          )
+        )
       }
 
       if(!optimumFound && !stats.completed) {
@@ -105,7 +107,7 @@ object HybridSolver extends CompetitionApp with App {
           conf.memlimit(),
           coupled = true,
           learning = true,
-          Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided),
+          Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided, ALNSBuilder.FullRelax),
           Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.ExtOriented),
           ALNSBuilder.ValHeurisBoth,
           valLearn = true,

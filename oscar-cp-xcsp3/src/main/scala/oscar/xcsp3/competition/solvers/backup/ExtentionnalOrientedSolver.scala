@@ -1,4 +1,4 @@
-package oscar.xcsp3.competition.solvers
+package oscar.xcsp3.competition.solvers.backup
 
 import oscar.algo.search.DFSearch
 import oscar.cp.core.variables.CPIntVar
@@ -12,7 +12,7 @@ import oscar.xcsp3.competition.{CompetitionApp, CompetitionConf}
 
 import scala.collection.mutable
 
-object LastConfSolver extends CompetitionApp with App{
+object ExtentionnalOrientedSolver extends CompetitionApp with App{
 
   override def runSolver(conf: CompetitionConf): Unit = {
     val startTime = System.nanoTime()
@@ -60,17 +60,16 @@ object LastConfSolver extends CompetitionApp with App{
         sols += ((sol, instantiation))
       }
 
-      val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime || optimumFound
-
       printComment("Parsing done, starting search")
 
+      val stopCondition = (s: DFSearch) => {
+        var stop = false
+        stop |= (System.nanoTime() >= endTime)
+        stop
+      }
       val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
         solver.search(
-          binaryLastConflict(
-            vars,
-            i => vars(i).size,
-            learnValueHeuristic(vars, if (maximizeObjective.isDefined) if (maximizeObjective.get) vars(_).min else vars(_).max else vars(_).max)
-          )
+          binaryIdx(vars,i => -(vars(i).constraintDegree << 7) / vars(i).size, i => vars(i).min)
         )
       }
 

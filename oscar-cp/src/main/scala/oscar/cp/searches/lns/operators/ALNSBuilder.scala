@@ -33,6 +33,9 @@ object ALNSBuilder{
   val RevPropGuided  = "RevPropGuided"
   val RevPropGuided_Param1 = Array(0.25, 0.50, 0.75) //Percentage of the neighbourhood which is relaxed
 
+  // Full relaxation:
+  val FullRelax = "FullRelax"
+
   //TODO: implement other relaxation functions
 
   /**
@@ -171,6 +174,8 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
           )
       }
       else Array[(String, CPIntSol => Unit)]()
+
+    case ALNSBuilder.FullRelax => Array((opKey, _ => Unit))
   }
 
   private def instantiateSearchFunctions(opKey: String): Array[(String, CPIntSol => Unit)] = {
@@ -264,6 +269,12 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
           .map(x => new ALNSParameter[Double](x, ALNSBuilder.DefNoParamFailThreshold)),
         paramMetricKey),
       instantiateMetric(paramMetricKey)
+    )
+
+    case ALNSBuilder.FullRelax => new ALNSNoParamOperator(
+      ALNSBuilder.FullRelax,
+      ALNSBuilder.DefNoParamFailThreshold,
+      _ => Unit
     )
   }
 

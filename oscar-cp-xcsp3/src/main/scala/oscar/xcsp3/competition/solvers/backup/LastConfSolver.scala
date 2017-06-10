@@ -1,4 +1,4 @@
-package oscar.xcsp3.competition.solvers
+package oscar.xcsp3.competition.solvers.backup
 
 import oscar.algo.search.DFSearch
 import oscar.cp.core.variables.CPIntVar
@@ -12,7 +12,7 @@ import oscar.xcsp3.competition.{CompetitionApp, CompetitionConf}
 
 import scala.collection.mutable
 
-object FirstFailSolver extends CompetitionApp with App{
+object LastConfSolver extends CompetitionApp with App{
 
   override def runSolver(conf: CompetitionConf): Unit = {
     val startTime = System.nanoTime()
@@ -30,7 +30,7 @@ object FirstFailSolver extends CompetitionApp with App{
       val solver: CPSolver = model.cpSolver
 
       Some(cpVars, solver, solutionGenerator)
-    } catch {
+    }catch {
       case _: NotImplementedError =>
         printStatus("UNSUPPORTED")
         None
@@ -47,16 +47,16 @@ object FirstFailSolver extends CompetitionApp with App{
       val timeout = ((conf.timelimit().toLong - 5L) * 1000000000L) - (System.nanoTime() - startTime)
       val endTime: Long = System.nanoTime() + timeout
 
-      val isCOP: Boolean = solver.objective.objs.nonEmpty
+      val maximizeObjective: Option[Boolean] = if (solver.objective.objs.nonEmpty) Some(solver.objective.objs.head.isMax) else None
       var optimumFound = false
 
       val sols = mutable.ListBuffer[(CPIntSol, String)]()
       solver.onSolution {
         val time = System.nanoTime() - startTime
-        val sol = new CPIntSol(vars.map(_.value), if(isCOP) solver.objective.objs.head.best else 0, time)
+        val sol = new CPIntSol(vars.map(_.value), if(maximizeObjective.isDefined) solver.objective.objs.head.best else 0, time)
         val instantiation = solutionGenerator()
-        optimumFound = if(isCOP) solver.objective.isOptimum() else true //In case of CSP, no point of searching another solution
-        if(isCOP) printObjective(sol.objective)
+        optimumFound = if(maximizeObjective.isDefined) solver.objective.isOptimum() else true //In case of CSP, no point of searching another solution
+        if(maximizeObjective.isDefined) printObjective(sol.objective)
         sols += ((sol, instantiation))
       }
 
@@ -65,10 +65,16 @@ object FirstFailSolver extends CompetitionApp with App{
       printComment("Parsing done, starting search")
 
       val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
-        solver.search(binaryFirstFail(vars))
+        solver.search(
+          binaryLastConflict(
+            vars,
+            i => vars(i).size,
+            learnValueHeuristic(vars, if (maximizeObjective.isDefined) if (maximizeObjective.get) vars(_).min else vars(_).max else vars(_).max)
+          )
+        )
       }
 
-      if (sols.nonEmpty) printSolution(sols.last._2, isCOP && (optimumFound || stats.completed))
+      if (sols.nonEmpty) printSolution(sols.last._2, maximizeObjective.isDefined && (optimumFound || stats.completed))
       else if (stats.completed) printStatus("UNSATISFIABLE")
       else {
         printStatus("UNKNOWN")

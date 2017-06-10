@@ -1,4 +1,4 @@
-package oscar.xcsp3.competition.solvers.backup
+package oscar.xcsp3.competition.solvers
 
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.searches.lns.CPIntSol
@@ -65,7 +65,7 @@ object ALNSSolver extends CompetitionApp with App {
         conf.memlimit(),
         coupled = true,
         learning = true,
-        Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided),
+        Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided, ALNSBuilder.FullRelax),
         Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.ExtOriented),
         ALNSBuilder.ValHeurisBoth,
         valLearn = true,
