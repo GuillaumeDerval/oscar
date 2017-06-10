@@ -1,5 +1,6 @@
 package oscar.xcsp3.competition.solvers
 
+import oscar.algo.Inconsistency
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.searches.lns.CPIntSol
 import oscar.cp.searches.lns.operators.ALNSBuilder
@@ -37,6 +38,10 @@ object ALNSSolver extends CompetitionApp with App {
         None
 
       case _: NoSolutionException =>
+        printStatus("UNSATISFIABLE")
+        None
+
+      case _: Inconsistency =>
         printStatus("UNSATISFIABLE")
         None
     }

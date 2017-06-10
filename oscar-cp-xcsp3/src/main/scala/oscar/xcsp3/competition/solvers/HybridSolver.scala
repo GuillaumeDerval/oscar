@@ -1,5 +1,6 @@
 package oscar.xcsp3.competition.solvers
 
+import oscar.algo.Inconsistency
 import oscar.algo.search.{Branching, DFSearch}
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.searches.lns.CPIntSol
@@ -44,11 +45,15 @@ object HybridSolver extends CompetitionApp with App {
       case _: NoSolutionException =>
         printStatus("UNSATISFIABLE")
         None
+
+      case _: Inconsistency =>
+        printStatus("UNSATISFIABLE")
+        None
     }
 
     if (parsingResult.isDefined) {
       val (vars, solver, solutionGenerator) = parsingResult.get
-//      solver.silent = true
+      solver.silent = true
 
       val maximizeObjective: Option[Boolean] = if(solver.objective.objs.nonEmpty) Some(solver.objective.objs.head.isMax) else None
       var optimumFound = false

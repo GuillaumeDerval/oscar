@@ -1,5 +1,6 @@
 package oscar.xcsp3.competition.solvers
 
+import oscar.algo.Inconsistency
 import oscar.algo.search.DFSearch
 import oscar.cp.{CPSolver, _}
 import oscar.cp.core.variables.CPIntVar
@@ -36,6 +37,10 @@ object ConfOrderSolver extends CompetitionApp with App{
         None
 
       case _: NoSolutionException =>
+        printStatus("UNSATISFIABLE")
+        None
+
+      case _: Inconsistency =>
         printStatus("UNSATISFIABLE")
         None
     }

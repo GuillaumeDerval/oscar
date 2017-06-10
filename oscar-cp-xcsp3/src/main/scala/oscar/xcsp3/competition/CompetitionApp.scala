@@ -1,6 +1,7 @@
 package oscar.xcsp3.competition
 
 import org.rogach.scallop.{ScallopConf, ScallopOption}
+import oscar.xcsp3.CheckerLib
 
 import scala.util.Random
 
@@ -22,6 +23,7 @@ abstract class CompetitionApp extends App{
   printComment("seed: " + conf.randomseed())
   printComment("timeout: " + conf.timelimit())
   printComment("memlimit: " + conf.memlimit())
+  printComment("nbcore: " + conf.nbcore())
 
   Random.setSeed(conf.randomseed())
 
@@ -29,7 +31,7 @@ abstract class CompetitionApp extends App{
     runSolver(conf)
   }catch{
     case e: Exception =>
-      printStatus("UNKNWOWN")
+      printStatus("UNKNOWN")
       printDiagnostic("EXCEPTION", e.getMessage)
       printComment(e.getStackTrace.mkString("\n"))
       Console.flush()
@@ -51,10 +53,17 @@ abstract class CompetitionApp extends App{
   //Use this only for the last solution:
   //Sol should be a valid instantiation (see rules)
   def printSolution(sol: String, optimum: Boolean = false): Unit = {
-    if(optimum) printStatus("OPTIMUM FOUND")
-    else printStatus("SATISFIABLE")
+//    if(new CheckerLib(conf.benchname(), sol).valid){
+      if (optimum) printStatus("OPTIMUM FOUND")
+      else printStatus("SATISFIABLE")
 
-    println(tElapsed + " v " + sol.split("\\r?\\n").mkString("\n" + tElapsed + " v "))
+      println(tElapsed + " v " + sol.split("\\r?\\n").mkString("\n" + tElapsed + " v "))
+//    }
+//    else{
+//      printStatus("UNKNOWN")
+//      printDiagnostic("SOL_NOT_VALID")
+//      printComment(sol)
+//    }
   }
 
   /**
