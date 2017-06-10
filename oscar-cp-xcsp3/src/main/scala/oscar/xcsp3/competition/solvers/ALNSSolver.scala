@@ -22,6 +22,7 @@ object ALNSSolver extends CompetitionApp with App {
     val md = new ModelDeclaration
 
     //Parsing the instance
+    printComment("Parsing instance...")
     val parsingResult = try {
       val (vars, solutionGenerator) = XCSP3Parser2.parse(md, conf.benchname())
 
@@ -38,7 +39,7 @@ object ALNSSolver extends CompetitionApp with App {
         None
 
       case _: NoSolutionException =>
-        printStatus("UNSATISFIABLE")
+        printStatus("UNKNOWN")
         None
 
       case _: Inconsistency =>
@@ -82,7 +83,7 @@ object ALNSSolver extends CompetitionApp with App {
 
       val alns = ALNSSearch(solver, vars, config)
 
-      printComment("Parsing done, starting search")
+      printComment("Parsing done, starting search...")
 
       val result = alns.search()
 

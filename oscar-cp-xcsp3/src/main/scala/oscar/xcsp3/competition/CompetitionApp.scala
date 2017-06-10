@@ -17,7 +17,6 @@ class CompetitionConf(arguments: Seq[String]) extends ScallopConf(arguments){
 }
 
 abstract class CompetitionApp extends App{
-  val tStart = System.nanoTime()
   val conf = new CompetitionConf(args)
 
   printComment("seed: " + conf.randomseed())
@@ -26,6 +25,7 @@ abstract class CompetitionApp extends App{
   printComment("nbcore: " + conf.nbcore())
 
   Random.setSeed(conf.randomseed())
+  var statusPrinted = false
 
   try {
     runSolver(conf)
@@ -37,6 +37,8 @@ abstract class CompetitionApp extends App{
       Console.flush()
   }
 
+  if(!statusPrinted) printStatus("UNKNOWN")
+
   /**
     * TODO: Parse Instance, launch search and print results
     */
@@ -46,7 +48,7 @@ abstract class CompetitionApp extends App{
 
   //Each time a new best solution is found, it's objective should be printed:
   def printObjective(obj: Int): Unit = {
-    println(tElapsed + " o " + obj)
+    println("o " + obj)
     Console.flush()
   }
 
@@ -57,7 +59,7 @@ abstract class CompetitionApp extends App{
       if (optimum) printStatus("OPTIMUM FOUND")
       else printStatus("SATISFIABLE")
 
-      println(tElapsed + " v " + sol.split("\\r?\\n").mkString("\n" + tElapsed + " v "))
+      println("v " + sol.split("\\r?\\n").mkString("\nv "))
 //    }
 //    else{
 //      printStatus("UNKNOWN")
@@ -74,17 +76,17 @@ abstract class CompetitionApp extends App{
     * UNSUPPORTED: unsupported constraint
     * UNKNOWN: other (no solution has been found or there was a problem, use printDiagnostic to precise information)
     */
-  def printStatus(status: String): Unit = println(tElapsed + " s " + status)
+  def printStatus(status: String): Unit = {
+    statusPrinted = true
+    println("s " + status)
+  }
 
   //For any comment:
-  def printComment(com: String): Unit = println(tElapsed + " c " + com.split("\\r?\\n").mkString("\n" + tElapsed + " c "))
+  def printComment(com: String): Unit = println("c " + com.split("\\r?\\n").mkString("\nc "))
 
   //For diagnostic information, name should be a keyword and value no more than one line.
-  def printDiagnostic(name: String, value: String): Unit = println(tElapsed + " d " + name + " " + value)
+  def printDiagnostic(name: String, value: String): Unit = println("d " + name + " " + value)
 
   //For diagnostic information, name should be a keyword.
-  def printDiagnostic(name: String): Unit = println(tElapsed + " d " + name)
-
-  //Computes the time elapsed since the beginning of the search in ms
-  def tElapsed: Long = (System.nanoTime() - tStart)/1000000
+  def printDiagnostic(name: String): Unit = println("d " + name)
 }

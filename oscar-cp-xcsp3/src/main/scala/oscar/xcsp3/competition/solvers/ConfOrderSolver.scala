@@ -21,6 +21,7 @@ object ConfOrderSolver extends CompetitionApp with App{
     val md = new ModelDeclaration
 
     //Parsing the instance
+    printComment("Parsing instance...")
     val parsingResult = try {
       val (vars, solutionGenerator) = XCSP3Parser2.parse(md, conf.benchname())
 
@@ -37,7 +38,7 @@ object ConfOrderSolver extends CompetitionApp with App{
         None
 
       case _: NoSolutionException =>
-        printStatus("UNSATISFIABLE")
+        printStatus("UNKNOWN")
         None
 
       case _: Inconsistency =>
@@ -67,7 +68,7 @@ object ConfOrderSolver extends CompetitionApp with App{
 
       val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime || optimumFound
 
-      printComment("Parsing done, starting search")
+      printComment("Parsing done, starting search...")
 
       val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
         solver.search(

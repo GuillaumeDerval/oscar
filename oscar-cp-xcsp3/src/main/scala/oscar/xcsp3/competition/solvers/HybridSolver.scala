@@ -27,6 +27,7 @@ object HybridSolver extends CompetitionApp with App {
     val md = new ModelDeclaration
 
     //Parsing the instance
+    printComment("Parsing instance...")
     val parsingResult = try {
       val (vars, solutionGenerator) = XCSP3Parser2.parse(md, conf.benchname())
 
@@ -43,7 +44,7 @@ object HybridSolver extends CompetitionApp with App {
         None
 
       case _: NoSolutionException =>
-        printStatus("UNSATISFIABLE")
+        printStatus("UNKNOWN")
         None
 
       case _: Inconsistency =>
@@ -92,7 +93,7 @@ object HybridSolver extends CompetitionApp with App {
         stop
       }
 
-      printComment("Parsing done, starting first complete search")
+      printComment("Parsing done, starting first complete search...")
 
       var stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
         solver.search(
@@ -105,7 +106,7 @@ object HybridSolver extends CompetitionApp with App {
       }
 
       if(!optimumFound && !stats.completed) {
-        printComment("Complete search done, starting ALNS search")
+        printComment("First complete search done, starting ALNS search...")
 
         val config = new ALNSConfig(
           (timeout * 0.7).toLong,
@@ -126,7 +127,7 @@ object HybridSolver extends CompetitionApp with App {
         val result = if(sols.isEmpty) alns.search() else alns.searchFrom(sols.last._1)
         optimumFound = result.optimumFound
 
-        printComment("ALNS done, starting complete search")
+        printComment("ALNS done, starting second complete search")
 
         //Selecting search function based on operator that induced the most improvement:
         val search: Branching = {

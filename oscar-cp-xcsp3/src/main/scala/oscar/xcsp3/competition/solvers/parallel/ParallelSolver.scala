@@ -35,6 +35,7 @@ object ParallelSolver extends CompetitionApp with App{
     val program = new CPProgram[Unit]()
 
     //Parsing the instance
+    printComment("Parsing instance...")
     val (vars, solutionGenerator) = try {
       XCSP3Parser2.parse(program.md, conf.benchname())
     } catch {
@@ -42,12 +43,11 @@ object ParallelSolver extends CompetitionApp with App{
         printStatus("UNSUPPORTED")
         (null, null)
       case _: NoSolutionException =>
-        printStatus("UNSATISFIABLE")
+        printStatus("UNKNOWN")
         (null, null)
       case _: Inconsistency =>
         printStatus("UNSATISFIABLE")
         (null, null)
-      case e => throw e
     }
 
     if (vars != null){
@@ -73,7 +73,7 @@ object ParallelSolver extends CompetitionApp with App{
         }
       })
 
-      printComment("Parsing done, starting search")
+      printComment("Parsing done, starting search...")
 
       val search = Branchings.conflictOrderingSearch(vars, i => vars(i).size, learnValueHeuristic(vars, if(obj.isDefined && obj.get._1) vars(_).min else vars(_).max))
       program.setDecompositionStrategy(new CartProdRefinement(vars, search))
