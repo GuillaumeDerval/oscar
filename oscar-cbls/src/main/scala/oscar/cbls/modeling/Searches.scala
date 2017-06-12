@@ -102,6 +102,7 @@ trait Search {
    *                   If none is provided, all the array will be considered each time
    * @param searchZone2 a subset of the indices of vars to consider for the second moved point
    *                   If none is provided, all the array will be considered each time
+   *                   it receives the indice of the first var, and the old value of the first var
    * @param symmetryCanBeBrokenOnIndices if set to true, the neighborhood will break symmetries on indices of swapped vars
    *                            that is: the first variable will always have an indice strictly smaller than the second swapped variable
    *                            typically, you always want it except if you have specified one or two searchZones, and they are different
@@ -128,7 +129,7 @@ trait Search {
   def swapsNeighborhood(vars:Array[CBLSIntVar],
                         name:String = "SwapsNeighborhood",
                         searchZone1:()=>Iterable[Int] = null,
-                        searchZone2:()=>Iterable[Int] = null,
+                        searchZone2:(Int,Int)=>Iterable[Int] = null,
                         symmetryCanBeBrokenOnIndices:Boolean = true,
                         symmetryCanBeBrokenOnValue:Boolean = false,
                         best:Boolean = false,

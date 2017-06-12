@@ -45,6 +45,25 @@ object KSmallest {
   def doSortGetLater(a:Array[Int],key:Int => Int):KSmallest = new KSmallest(a,key)
 
   def lazySort(a:Array[Int], key:Int=>Int):Iterable[Int] = new LazyQuicksort(a,key)
+
+
+  def kFirst(k: Int, values:Iterable[Int], filter: (Int => Boolean) = _ => true): Iterable[Int] = {
+
+    def kFirstAccumulator(sortedNeighbors: Iterator[Int], k: Int, kNearestAcc: List[Int]): List[Int] = {
+      require(k >= 0)
+      if(k == 0 || !sortedNeighbors.hasNext){
+        kNearestAcc.reverse
+      }else{
+        val neighbor = sortedNeighbors.next()
+        if (filter(neighbor))
+          kFirstAccumulator(sortedNeighbors, k - 1, neighbor :: kNearestAcc)
+        else
+          kFirstAccumulator(sortedNeighbors, k, kNearestAcc)
+      }
+    }
+
+    kFirstAccumulator(values.iterator, k, Nil)
+  }
 }
 
 class KSmallest(a:Array[Int],key:Int => Int = a => a){
@@ -91,9 +110,9 @@ object testQuickSort extends App with StopWatch{
 }
 
 /**
- * this implemetnation will perform a lazy sort.
+ * this implementation will perform a lazy sort.
  * it will sort on demand, as required by the iterator, or by an explicit call to sortUntil
- * @param array
+ * @param array an array containing the values to sort. the array will be modified by this procedure, to clone it if you need it somewhere else!
  */
 class LazyQuicksort(val array:Array[Int], key:Int => Int = a => a) extends Iterable[Int] {
 

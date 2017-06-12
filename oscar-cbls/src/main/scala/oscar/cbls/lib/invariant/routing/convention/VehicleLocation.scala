@@ -1,5 +1,7 @@
 package oscar.cbls.lib.invariant.routing.convention
 
+import oscar.cbls.algo.seq.functional.IntSequence
+
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -29,6 +31,13 @@ object VehicleLocation{
  * @author renaud.delandtsheer@cetic.be
  */
 abstract class VehicleLocation(val v : Int, val level:Int){
+
+
+  def checkOnSequence(s:IntSequence){
+    for(vehicle <- 0 until v){
+      require(s.positionOfAnyOccurrence(vehicle).get == startPosOfVehicle(vehicle),vehicle)
+    }
+  }
 
   def regularize:ConcreteVehicleLocation = VehicleLocation(v,startPosOfVehicle)
 

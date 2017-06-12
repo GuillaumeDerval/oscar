@@ -15,31 +15,17 @@ package oscar.cbls.test.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.business.routing.model.ClosestNeighbors
-import oscar.cbls.business.routing.model.RoutedAndUnrouted
-import oscar.cbls.business.routing.model.TotalConstantDistance
-import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.business.routing.neighborhood.InsertPointRoutedFirst
-import oscar.cbls.business.routing.neighborhood.InsertPointUnroutedFirst
-import oscar.cbls.business.routing.neighborhood.OnePointMove
-import oscar.cbls.business.routing.neighborhood.OnePointMoveMove
-import oscar.cbls.business.routing.neighborhood.ThreeOpt
-import oscar.cbls.business.routing.neighborhood.TwoOpt1
+import oscar.cbls.business.routing.model.{ClosestNeighbors, RoutedAndUnrouted, TotalConstantDistance, VRP}
+import oscar.cbls.business.routing.neighborhood.{InsertPointRoutedFirst, InsertPointUnroutedFirst, OnePointMove, OnePointMoveMove, ThreeOpt, TwoOpt1, _}
 import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.core.propagation.ErrorChecker
-import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.constraint.LE
-import oscar.cbls.lib.invariant.routing.{ForwardCumulativeConstraintOnVehicle, RouteSuccessorAndPredecessors}
+import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeIntegerDimensionOnVehicle, ForwardCumulativeConstraintOnVehicle}
+import oscar.cbls.lib.invariant.routing.RouteSuccessorAndPredecessors
 import oscar.cbls.lib.invariant.seq.Size
-import oscar.cbls.lib.invariant.seq.Size
-import oscar.cbls.lib.search.combinators.BestSlopeFirst
-import oscar.cbls.lib.search.combinators.Mu
-import oscar.cbls.lib.search.combinators.Profile
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
 import oscar.cbls.modeling.Algebra._
-import oscar.cbls.business.routing.model._
-import oscar.cbls.business.routing.neighborhood._
-import oscar.cbls.lib.search.combinators.{Mu, BestSlopeFirst, Profile}
 
 class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int, deltaAtNode:Array[Int], maxCapa:Int)
   extends VRP(n,v,m,maxPivot) with TotalConstantDistance with ClosestNeighbors with RoutedAndUnrouted{
@@ -50,8 +36,7 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
 
   val penaltyForUnrouted  = 10000
 
-  val maxNodes = LE(Size(routes),5).violation
-
+  val maxNodes = LE(Size(routes),n-3).violation
 
   val violation = new CBLSIntVar(routes.model, 0, 0 to Int.MaxValue, "violation of capacity test")
 
@@ -63,13 +48,15 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
   maxCapa,
   Array.tabulate(v)(deltaAtNode),
   violation,
-  6,
   6)
+
+  val contentAtStart = Array.tabulate(v)(vehicle => CBLSIntVar(m,0,0 to 10,"start content of vehicle " + vehicle))
+  val cumulative2 = ForwardCumulativeIntegerDimensionOnVehicle(routes,n,v,{case (fromNode,toNode,fromContent) => fromNode+toNode+(2*fromContent)},contentAtStart,-1)
 
   val obj = new CascadingObjective(
     contentConstraint.violation,
     new CascadingObjective(maxNodes,
-      Objective(totalDistance + (penaltyForUnrouted*(n - Size(routes))))))
+      Objective(cumulative2._3(1) + cumulative2._2(1) + totalDistance + (penaltyForUnrouted*(n - Size(routes))))))
 
   this.addToStringInfo(() => "objective: " + obj.value)
   this.addToStringInfo(() => "n:" + n + " v:" + v)
@@ -78,28 +65,28 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
 
   def size = routes.value.size
 
-  //TODO: how about using NextAndPRev trait? or use a clone of route?
+
   val (next,prev) = RouteSuccessorAndPredecessors(routes,v,n)
 
   this.addToStringInfo(() => "next: [" + next.map(_.value).mkString(",") + "]")
   this.addToStringInfo(() => "prev: [" + prev.map(_.value).mkString(",") + "]")
-  this.addToStringInfo(() => "content: [" + contentConstraint.contentOfVehicle.mkString(",") + "]")
+  this.addToStringInfo(() => "content: [" + contentConstraint.contentAtNodes.mkString(",") + "]")
 }
 
 object TestCumulatives extends App{
 
-  val n = 10
-  val v = 2
-  val delta = Array(0,1,-1,2,-2,3,-3,4,-4,0)
+  val n = 30
+  val v = 5
+  val delta = Array(0,1,1,2,2,3,-3,4,-4,0,0,1,-1,2,-2,3,-3,4,-4,0,0,1,-1,2,-2,3,-3,4,-4,0)
   val maxPivotPerValuePercent = 4
-
+  val maxcapa = 15
   println("VRP(n:" + n + " v:" + v + ")")
 
   val (symmetricDistanceMatrix,pointsList) = RoutingMatrixGenerator(n)
   //  println("restrictions:" + restrictions)
   val model = new Store(checker = Some(new ErrorChecker()))
 
-  val myVRP = new MySimpleRoutingWithCumulatives(n,v,symmetricDistanceMatrix,model,maxPivotPerValuePercent,delta,5)
+  val myVRP = new MySimpleRoutingWithCumulatives(n,v,symmetricDistanceMatrix,model,maxPivotPerValuePercent,delta,maxcapa)
 
   model.close()
 
@@ -115,20 +102,18 @@ object TestCumulatives extends App{
   def threeOpt(k:Int, breakSym:Boolean) = Profile(new ThreeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
   val vlsn1pt = Profile(Mu[OnePointMoveMove](
-    OnePointMove(myVRP.routed, () => myVRP.kFirst(5,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP),
-    l => Some(OnePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(3,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP, hotRestart = false)),
+    OnePointMove(myVRP.routed, () => myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP),
+    l => Some(OnePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP, hotRestart = false)),
     intermediaryStops = true,
-    maxDepth = 6))
+    maxDepth = 3))
 
   val remove = RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP)
 
-  val swapInOut = Profile((remove andThen routeUnroutedPoint) name ("SWAP"))
+  val swapInOut = Profile((remove andThen routeUnroutedPoint) name ("SWAPInsert"))
   val search = (BestSlopeFirst(List(routeUnroutedPoint2, routeUnroutedPoint, swapInOut, onePtMove(10),twoOpt, threeOpt(10,true),vlsn1pt, routeUnroutedPoint)) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
 
-  // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10) guard (() => myVRP.unrouted.value.size != 0)),10)) exhaust BestSlopeFirst(List(onePtMove(20),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
-
   search.verbose = 1
-  //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
+  //search.verboseWithExtraInfo(5, ()=> "" + myVRP)
 
   print("Doing all moves ...")
 
