@@ -267,10 +267,10 @@ object SeqUpdateRemove {
 class SeqUpdateRemove(val position:Int,prev:SeqUpdate,seq:IntSequence)
   extends SeqUpdateWithPrev(prev,seq){
 
-  assert(seq equals prev.newValue.delete(position,fast=true))
+  assert(seq equals prev.newValue.delete(position,fast=true),"wrong promize on seq value when building SeqUpdateRemove")
 
   val removedValue:Int = seq match{
-    case d:RemovedIntSequence => d.removedValue
+    case d:RemovedIntSequence if position == d.positionOfDelete && (d.seq quickEquals prev.newValue) => d.removedValue
     case _ => prev.newValue.valueAtPosition(position).head}
 
   override protected[computation] def reverse(target:IntSequence, newPrev:SeqUpdate) : SeqUpdate = {
@@ -455,31 +455,54 @@ class CBLSSeqVar(givenModel:Store,
 
   override def name: String = if (n == null) defaultName else n
 
-  //-1 for first position
+  /**
+   * inserts the value at the postion in the sequence, and shifts the tail by one position accordingly
+   * @param value the inserted value
+   * @param pos the position where the value is located afer the insert is completed
+   */
   override def insertAtPosition(value:Int,pos:Int){
     super.insertAtPosition(value,pos)
   }
 
-  //-1 for first position
+  /**
+   * inserts the value at the postion in the sequence, and shifts the tail by one position accordingly
+   * @param value the inserted value
+   * @param pos the position where the value is located afer the insert is completed
+   * @param seqAfter the sequence after the insert if performed. if you have it you can set it here, for speed
+   */
   override def insertAtPosition(value:Int,pos:Int,seqAfter:IntSequence){
     super.insertAtPosition(value,pos,seqAfter)
   }
 
-
+  /**
+   * removes the value at the given position in the sequence, and shifts the tail by one position accordingly
+   * @param position the position where the value is removed
+   */
   override  def remove(position:Int){
     super.remove(position)
   }
 
+  /**
+   * removes the value at the given position in the sequence, and shifts the tail by one position accordingly
+   * @param position the position where the value is removed
+   * @param seqAfter the sequence after the remove if performed. if you have it you can set it here, for speed
+   */
   override  def remove(position:Int,seqAfter:IntSequence){
     super.remove(position,seqAfter)
   }
 
-  //-1 for first position
-  override  def move(fromIncludedPosition:Int,toIncludedPosition:Int,afterPosition:Int,flip:Boolean){
+  /**
+   *
+   * @param fromIncludedPosition
+   * @param toIncludedPosition
+   * @param afterPosition
+   * @param flip
+   */
+  override def move(fromIncludedPosition:Int,toIncludedPosition:Int,afterPosition:Int,flip:Boolean){
     super.move(fromIncludedPosition,toIncludedPosition,afterPosition,flip)
   }
 
-  override  def move(fromIncludedPosition:Int,toIncludedPosition:Int,afterPosition:Int,flip:Boolean,seqAfter:IntSequence){
+  override def move(fromIncludedPosition:Int,toIncludedPosition:Int,afterPosition:Int,flip:Boolean,seqAfter:IntSequence){
     super.move(fromIncludedPosition,toIncludedPosition,afterPosition,flip,seqAfter)
   }
 

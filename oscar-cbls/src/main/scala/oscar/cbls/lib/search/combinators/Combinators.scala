@@ -1198,27 +1198,12 @@ case class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThen
           override def valueNoSearch : Int = obj.valueNoSearch
         }
 
-        if(currentB == null) {
-          val realObjValue =
-            if (maximalIntermediaryDegradation != Int.MaxValue && intermediaryObjValue != Int.MaxValue) {
-              //we need to ensure that intermediary step is admissible
-              intermediaryObjValue
-            }else{
-              obj.value
-            }
-          if(firstAcceptanceCriterion(oldObj,realObjValue)){
-            compositeMove = CompositeMove(List(a.instantiateCurrentMove(realObjValue)), realObjValue, "")
-          }
-          realObjValue
-
-        }else{
           currentB.getMove(new secondInstrumentedObjective(obj), secondAcceptanceCriteria) match {
             case NoMoveFound => Int.MaxValue
             case MoveFound(m : Move) =>
               if (compositeMove == null || m.objAfter < compositeMove.objAfter) compositeMove = CompositeMove(List(currentMoveFromA, m), m.objAfter, enclosingDynAndThen.toString)
               m.objAfter
           }
-        }
       }
     }
 
@@ -1769,7 +1754,8 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
   override def collectProfilingStatistics: List[String] =
     collectThisProfileStatistics :: super.collectProfilingStatistics
 
-  def collectThisProfileStatistics:String = (padToLength("" + a,31) + " " +
+  def collectThisProfileStatistics:String =
+    padToLength("" + a,31) + " " +
     padToLength("" + nbCalls,6) + " " +
     padToLength("" + nbFound,6) + " " +
     padToLength("" + totalGain.toInt,8) + " " +
@@ -1779,9 +1765,17 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
     padToLength("" + slope,11)+ " " +
     padToLength("" + avgTimeSpendNoMove,13)+ " " +
     padToLength("" + avgTimeSpendMove,12)+ " " +
-    totalTimeSpentNoMoveFound)
+    totalTimeSpentNoMoveFound
 
-  private def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
+  private def padToLength(s: String, l: Int) = {
+    val extended = s + nStrings(l+1, " ")
+    val nextchar = extended.substring(l+1, l+1)
+    if(nextchar equals " "){
+      extended.substring(0, l-1) + "§"
+    }else{
+      extended.substring(0, l)
+    }
+  }
   private def nStrings(n: Int, s: String): String = if (n <= 0) "" else s + nStrings(n - 1, s)
 
   //  override def toString: String = "Statistics(" + a + " nbCalls:" + nbCalls + " nbFound:" + nbFound + " totalGain:" + totalGain + " totalTimeSpent " + totalTimeSpent + " ms timeSpendWithMove:" + totalTimeSpentMoveFound + " ms totalTimeSpentNoMoveFound " + totalTimeSpentNoMoveFound + " ms)"

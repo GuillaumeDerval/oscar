@@ -1051,7 +1051,7 @@ class InsertedIntSequenceExplorer(seq:InsertedIntSequence,
   }
 }
 
-class RemovedIntSequence(seq:IntSequence,
+class RemovedIntSequence(val seq:IntSequence,
                          val positionOfDelete:Int)
   extends StackedUpdateIntSequence{
 
