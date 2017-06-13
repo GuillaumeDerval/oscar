@@ -73,7 +73,7 @@ trait Search {
    * @param name the name of the neighborhood
    */
   def randomizeNeighborhood(vars:Array[CBLSIntVar],
-                            degree:Int = 1,
+                            degree:() => Int = () => 1,
                             name:String = "RandomizeNeighborhood",
                             searchZone:() => SortedSet[Int],
                             valuesToConsider:(CBLSIntVar,Int) => Iterable[Int] = (variable,_) => variable.domain)

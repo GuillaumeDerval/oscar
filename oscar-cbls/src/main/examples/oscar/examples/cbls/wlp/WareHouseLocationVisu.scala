@@ -23,7 +23,7 @@ import javax.swing.JFrame
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{CompositeMove, SupportForAndThenChaining, Neighborhood}
+import oscar.cbls.core.search._
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.{ArgMin, MinConstArrayLazy}
 import oscar.cbls.lib.invariant.numeric.Sum
@@ -46,9 +46,9 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
-  val (costForOpeningWarehouse,distanceCost,warehousePositions,deliveryPositions,warehouseToWarehouseDistances) = WarehouseLocationGenerator.problemWithPositions(W,D,0,1000,3)
+  val (costForOpeningWarehouse1,distanceCost,warehousePositions,deliveryPositions,warehouseToWarehouseDistances) = WarehouseLocationGenerator.problemWithPositions(W,D,0,1000,3)
 
-//  val costForOpeningWarehouse = Array.fill(W)(1000)
+    val costForOpeningWarehouse = Array.fill(W)(1000)
 
   val m = Store()
 
@@ -67,7 +67,6 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
   var bestObj = Int.MaxValue
 
 
-  val k = 20
   //this is an array, that, for each warehouse, keeps the sorted closest warehouses in a lazy way.
   val closestWarehouses = Array.tabulate(W)(warehouse =>
     KSmallest.lazySort(
@@ -76,19 +75,44 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
     ))
 
   //this procedure returns the k closest closed warehouses
-  def kNearestClosedWarehouses(warehouse:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).value == 0)
+  def kNearestClosedWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).value == 0)
+  //this procedure returns the k closest open warehouses
+  def kNearestOpenWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).value != 0)
+  def kNearestdWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse))
+
+  def mu(depth:Int,kOpen:Int,kClosed:Int ) = Mu[AssignMove](
+  AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
+  (assignList:List[AssignMove]) =>
+  {
+  val lastChangedWarehouse = assignList.head.id
+  val setTo = assignList.head.v
+  val otherWarehouses = if(setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse,kClosed) else kNearestOpenWarehouses(lastChangedWarehouse,kOpen)
+  Some(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse",searchZone = () => otherWarehouses,hotRestart = false))
+  },
+  maxDepth = depth,
+  intermediaryStops = true)
+
+
+  def swapsK(k:Int,openWarehoueseTocConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
+    searchZone1 = openWarehoueseTocConsider,
+    searchZone2 = (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
+    name = "Swap" + k + "Nearest",
+    symmetryCanBeBrokenOnIndices = false)
+
+  def doubleSwap(k:Int) = (swapsK(k) dynAndThen((firstSwap:SwapMove) => swapsK(k,() => kNearestOpenWarehouses(firstSwap.idI,k)))) name "DoubleSwap"
+
 
   val neighborhood =(
     BestSlopeFirst(
       List(
         Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
-          Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),
-          Profile(SwapsNeighborhood(warehouseOpenArray,
-            searchZone1 = openWarehouses,
-            searchZone2 = (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse),name = "Swap" + k + "Nearest", symmetryCanBeBrokenOnIndices = false))
+        Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),
+        Profile(swapsK(20))
+//       Profile(doubleSwap(10))
       ),refresh = W/10)
-      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, W/10), 2, obj)
-      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, W/3), 1, obj))afterMove(
+      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 2, obj)
+//      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/3), 1, obj))
+    ) /*exhaust mu(4,5,10)*/ afterMove(
     if(obj.value < bestObj){
       bestObj = obj.value
       visual.redraw(openWarehouses.value)

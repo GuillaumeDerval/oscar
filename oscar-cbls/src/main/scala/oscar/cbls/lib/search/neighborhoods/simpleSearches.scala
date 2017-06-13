@@ -245,7 +245,7 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
  * @param name the name of the neighborhood
  */
 case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
-                                 degree:Int = 1,
+                                 degree:() => Int = ()=>1,
                                  name:String = "RandomizeNeighborhood",
                                  searchZone:() => SortedSet[Int] = null,
                                  valuesToConsider:(CBLSIntVar,Int) => Iterable[Int] = (variable,_) => variable.domain)
@@ -256,7 +256,9 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
 
     var toReturn:List[Move] = List.empty
 
-    if(searchZone != null && searchZone().size <= degree){
+    val degreeNow = degree()
+
+    if(searchZone != null && searchZone().size <= degreeNow){
       //We move everything
       for(i <- searchZone()){
 
@@ -264,7 +266,7 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
       }
     }else{
       var touchedVars:Set[Int] = SortedSet.empty
-      for(r <- 1 to degree){
+      for(r <- 1 to degreeNow){
         val i = selectFrom(vars.indices,(j:Int) => (searchZone == null || searchZone().contains(j)) && !touchedVars.contains(j))
         touchedVars = touchedVars + i
         val oldVal = vars(i).value

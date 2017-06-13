@@ -54,7 +54,7 @@ object WarehouseLocationStatistics extends App with AlgebraTrait{
 
   val neighborhood = (Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),true)
     exhaustBack Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses"))
-    orElse (RandomizeNeighborhood(warehouseOpenArray, W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
+    orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
   neighborhood.verbose = 1
 
