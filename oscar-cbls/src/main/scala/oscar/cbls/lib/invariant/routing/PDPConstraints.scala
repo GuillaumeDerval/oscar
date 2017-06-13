@@ -41,12 +41,15 @@ class PDPConstraints(pdp: PDP, fastConstraints: ConstraintSystem, slowConstraint
     */
   def addPrecedencesConstraints() {
     val chains = pdp.chains
+    val vehicleOfNodes = VehicleOfNodes(pdp.routes,pdp.v)
 
     def chainToTuple(chain: List[Int], tuples: List[(Int, Int)]): List[(Int, Int)] = {
         if (chain.length <= 1)
           tuples
-        else
+        else {
+          if(v > 1) fastConstraints.add(EQ(vehicleOfNodes(chain.head),vehicleOfNodes(chain.tail.head)))
           chainToTuple(chain.tail, (chain.head, chain.tail.head) :: tuples)
+        }
       }
 
     val chainsPrecedences = List.tabulate(chains.length)(c => chainToTuple(chains(c), List.empty).reverse)

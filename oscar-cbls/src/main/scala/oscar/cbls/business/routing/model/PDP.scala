@@ -149,7 +149,7 @@ class PDP(override val n:Int,
     * @return the list of all the complete segment present in the route
     */
   def getCompleteSegments(routeNumber:Int): List[(Int,Int)] ={
-    val route = getRouteOfVehicle(routeNumber)
+    val route = getRouteOfVehicle(routeNumber).drop(1);
     /**
       * Each value of segmentsArray represent a possible complete segment.
       * The Int value represents the amount of pickup nodes whose related delivery node isn't currently in the segment
@@ -160,11 +160,11 @@ class PDP(override val n:Int,
     var completeSegments: List[(Int, Int)] = List.empty
 
     for(node <- route) {
-      for (j <- 0 to pickupInc if segmentsArray(j) != null){
+      if(isPickup(node)) pickupInc += 1
+      for (j <- 0 until pickupInc if segmentsArray(j) != null){
         if (isPickup(node)) {
           //If the node is a pickup one, we add the node to all the active segment and the one at position route(i)
           segmentsArray(j) = segmentsArray(j) :+ node
-          pickupInc += 1
         }
         else if (isDelivery(node)) {
           /**
@@ -172,14 +172,13 @@ class PDP(override val n:Int,
             * the beginning of the segment and thus this is not possible to create a complete segment beginning
             * at this position.
             */
-          if (!segmentsArray(j).contains(getRelatedPickup(route(node))))
+          if (!segmentsArray(j).contains(getRelatedPickup(node)))
             segmentsArray(j) = null
            /**
             * Else we decrement the number of single pickup
             */
           else {
-            segmentsArray(j) = segmentsArray(j) :+ route(node)
-            //TODO : Check if this solution wroks properly. It should.
+            segmentsArray(j) = segmentsArray(j) :+ node
             if (segmentsArray(j).length == 2*(pickupInc-j))
               completeSegments = List((segmentsArray(j).head, segmentsArray(j).last)) ++ completeSegments
           }
@@ -341,20 +340,20 @@ class PDP(override val n:Int,
     * If the node isn't routed yet, we add his chain's last previous node
     * (we should add them first, otherwise the router won't be able to add this one => use Mu combinator)
     */
-  def computeClosestNeighborInTime( clusterRange: (Int) => Range = (_) => arrivalTimeCluster.clusters.indices,
+  def computeClosestNeighborsInTime(clusterRange: (Int) => Range = (_) => arrivalTimeCluster.clusters.indices,
                                     k: Int = Int.MaxValue,
-                                    filterNode: (Int) => Boolean = (_) => true
+                                    filterNeighbor: (Int) => Boolean = (_) => true
                                   )(node:Int): Iterable[Int] ={
 
     def buildClosestNeighbor(neighbors: List[Int], closestNeighbors: List[(Int,Int)]): List[(Int,Int)] ={
       if(neighbors.isEmpty)
         return closestNeighbors
       val neighbor = neighbors.head
-      if (leaveTimes(neighbor).value + travelDurationMatrix.getTravelDuration(neighbor, 0, node) <= deadlines(node)) {
+      if (filterNeighbor(neighbor) && leaveTimes(neighbor).value + travelDurationMatrix.getTravelDuration(neighbor, 0, node) <= deadlines(node)) {
         val nextOfNeighbor = next(neighbor).value
         val neighborToNode = max(leaveTimes(neighbor).value + travelDurationMatrix.getTravelDuration(neighbor, 0, node), earlylines(node))
         val neighborToNodeToNext = neighborToNode + taskDurations(node) + travelDurationMatrix.getTravelDuration(node, 0, nextOfNeighbor)
-        if (neighborToNodeToNext <= deadlines(nextOfNeighbor) && filterNode(node))
+        if (neighborToNodeToNext <= deadlines(nextOfNeighbor))
           return buildClosestNeighbor(neighbors.tail, List((neighbor,neighborToNodeToNext)) ++ closestNeighbors)
       }
       buildClosestNeighbor(neighbors.tail, closestNeighbors)
@@ -364,5 +363,27 @@ class PDP(override val n:Int,
       (for(c <- clusterRange(node)) yield arrivalTimeCluster.clusters(c).value.filter(isRouted)).flatten.toList,
       List.empty[(Int,Int)]
     ).sortBy(_._2).map(_._1).take(k)
+  }
+
+  def computeClosestNeighborsInChains(k: Int = Int.MaxValue,
+                                     filterNeighbor: (Int) => Boolean = (_) => true)(node:Int): Iterable[Int] ={
+    val clusterRange = (node:Int) => {
+      val fromCluster = prevNode(node) match {
+        case Some(x) => isRouted(x) match {
+          case true => arrivalTimeCluster.values(x).value
+          case false => 0
+        }
+        case None => 0
+      }
+      val toCluster = nextNode(node) match {
+        case Some(x) => isRouted(x) match {
+          case true => arrivalTimeCluster.values(x).value
+          case false => arrivalTimeCluster.clusters.length-1
+        }
+        case None => arrivalTimeCluster.clusters.length-1
+      }
+      fromCluster to toCluster
+    }
+    computeClosestNeighborsInTime(clusterRange,k,filterNeighbor)(node)
   }
 }
