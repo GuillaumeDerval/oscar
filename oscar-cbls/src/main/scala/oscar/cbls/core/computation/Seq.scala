@@ -353,6 +353,14 @@ object SeqUpdateDefineCheckpoint{
   def unapply(u:SeqUpdateDefineCheckpoint):Option[(SeqUpdate,Boolean,Int)] = Some(u.prev,u.activeCheckpoint,u.level)
 }
 
+/**
+ *
+ * @param mprev
+ * @param activeCheckpoint
+ * @param maxPivotPerValuePercent
+ * @param doRegularize
+ * @param level the first checkpoint to be declared is 0, the second in stack is 1
+ */
 class SeqUpdateDefineCheckpoint(mprev:SeqUpdate,val activeCheckpoint:Boolean, maxPivotPerValuePercent:Int,val doRegularize:Boolean, val level:Int)
   extends SeqUpdateWithPrev(mprev,if(doRegularize) mprev.newValue.regularizeToMaxPivot(maxPivotPerValuePercent) else mprev.newValue){
   protected[computation]  def reverse(target : IntSequence, from : SeqUpdate) : SeqUpdate = mprev.reverse(target,from)

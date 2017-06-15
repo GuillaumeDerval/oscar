@@ -1,10 +1,23 @@
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
 package oscar.cbls.lib.invariant.routing
 
-import oscar.cbls.algo.quick.QList
-import oscar.cbls.algo.seq.functional.{IntSequenceExplorer, IntSequence}
+import oscar.cbls.algo.seq.functional.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.Checker
-import oscar.cbls.lib.invariant.routing.convention.RoutingConventionMethods
 
 import scala.collection.immutable.SortedSet
 
@@ -14,15 +27,11 @@ class MovingVehicles(routes:ChangingSeqValue, v:Int)
   registerStaticAndDynamicDependency(routes)
   finishInitialization()
 
-  private val savedValues:Array[SortedSet[Int]] = null
-  private var savedCheckpoint:IntSequence = null
-
-  affect(computeValueFromScratch(routes.value))
+  this := computeValueFromScratch(routes.value)
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes:SeqUpdate){
     if(!digestUpdates(changes)) {
-      dropCheckpoint()
-      affect(computeValueFromScratch(changes.newValue))
+      this := computeValueFromScratch(changes.newValue)
     }
   }
 
@@ -33,10 +42,13 @@ class MovingVehicles(routes:ChangingSeqValue, v:Int)
       case SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         //on which vehicle did we insert?
         if(!digestUpdates(prev)) return false
-        val insertedVehicle = RoutingConventionMethods.searchVehicleReachingPosition(pos,newValue,v)
-        nodesOfVehicleOrUnrouted(insertedVehicle) :+= value
-        nodesOfVehicleOrUnrouted(v) :-= value
-        recordMovedPoint(value, v, insertedVehicle)
+
+        require(pos != 0, "cannot insert at pos zero in routing")
+        val prevValue = prev.newValue.valueAtPosition(pos-1).get
+        if(prevValue < v && !this.newValue.contains(prevValue)){
+          //prevValue is a vehicle that now goes out
+          this.insertValue(prevValue)
+        }
 
         true
       case x@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
@@ -47,92 +59,73 @@ class MovingVehicles(routes:ChangingSeqValue, v:Int)
         else if(x.isSimpleFlip){
           true
         }else {
-          val oldValue = prev.newValue
-          val vehicleOfMovedSegment = RoutingConventionMethods.searchVehicleReachingPosition(fromIncluded,oldValue,v)
-          val targetVehicleOfMove = RoutingConventionMethods.searchVehicleReachingPosition(after,oldValue,v)
-          if(vehicleOfMovedSegment != targetVehicleOfMove){
-            //we moved all the points to another vehicle
-            for(movedValue <- x.movedValuesQList) {
-              nodesOfVehicleOrUnrouted(vehicleOfMovedSegment) :-= movedValue
-              nodesOfVehicleOrUnrouted(targetVehicleOfMove) :+= movedValue
-              recordMovedPoint(movedValue, vehicleOfMovedSegment, targetVehicleOfMove)
+
+          //chek what is before the moved segment; if it is a vehicle start, we should also check what is after the segment start
+          val prevValueOfMovedSegment = prev.newValue.valueAtPosition(fromIncluded-1).get
+          if(prevValueOfMovedSegment < v){
+            assert(this.newValue.contains(prevValueOfMovedSegment))
+
+            //We removed this segment from vehicle prevValueOfMovedSegment,
+            // and it starts at vehicle start, so check that domething is left after the moved segment in this vehicle
+            prev.newValue.valueAtPosition(fromIncluded+1) match{
+              case None =>
+                require(prevValueOfMovedSegment == v-1)
+                assert(toIncluded == prev.newValue.size)
+                this.deleteValue(prevValueOfMovedSegment)
+              case Some(node) if node < v =>
+                //we reach another vehicle, so there is nothing left in vehicle prevValueOfMovedSegment
+                require(node == prevValueOfMovedSegment +1)
+                this.deleteValue(prevValueOfMovedSegment)
+              case _ =>
+                ;
             }
+          }
+
+          //where is the segment inserted?
+          val valueBeforeSegmentAterMove = prev.newValue.valueAtPosition(after).get
+          if(valueBeforeSegmentAterMove < v && !this.newValue.contains(valueBeforeSegmentAterMove)){
+            //prevValue is a vehicle that now goes out
+            this.insertValue(valueBeforeSegmentAterMove)
           }
           true
         }
 
       case x@SeqUpdateRemove(position: Int, prev : SeqUpdate) =>
-        //on which vehicle did we remove?
-        //on which vehicle did we insert?
         if(!digestUpdates(prev)) return false
-        val oldValue = prev.newValue
-        val impactedVehicle = RoutingConventionMethods.searchVehicleReachingPosition(position,oldValue,v)
-        val removedValue = x.removedValue
-        nodesOfVehicleOrUnrouted(impactedVehicle) :-= removedValue
-        nodesOfVehicleOrUnrouted(v) :+= removedValue
-        recordMovedPoint(removedValue, impactedVehicle, v)
+
+        require(position != 0, "cannot remove at pos zero in routing")
+
+        val prevValue = prev.newValue.valueAtPosition(position-1).get
+        if(prevValue < v) {
+          val vehicleOfRemove = prevValue
+          assert(this.newValue.contains(vehicleOfRemove))
+          //prevValue is a vehicle that used to go out, and we remove its first node,
+          // so we check that the node after the deleted one is not a vehicle start
+          prev.newValue.valueAtPosition(position + 1) match {
+            case None =>
+              //we remove at the last position in the sequence,
+              // so we removed the only point of the last vehicle
+              require(vehicleOfRemove == v - 1)
+              this.deleteValuePreviouslyIn(vehicleOfRemove)
+            case Some(vehicleAfterRemove) if vehicleAfterRemove < v =>
+              //the node after the remove is another vehicle start, so we removed the only node reached by the vehicle of remove
+              require(vehicleAfterRemove == vehicleOfRemove + 1)
+              this.deleteValuePreviouslyIn(vehicleOfRemove)
+            case _ =>
+            //nothing to do
+          }
+        }
+
         true
+
       case SeqUpdateAssign(value : IntSequence) =>
         false //impossible to go incremental
       case SeqUpdateLastNotified(value:IntSequence) =>
         true //we are starting from the previous value
       case SeqUpdateDefineCheckpoint(prev,isStarMode,checkpointLevel) =>
-        if(checkpointLevel == 0) {
-          if (!digestUpdates(prev)) {
-            affect(computeValueFromScratch(changes.newValue))
-          }
-          saveCurrentCheckpoint(prev.newValue)
-          true
-        }else{
-          //we do not handle other checkpoint, so ignore declaration
-          digestUpdates(prev)
-        }
+        digestUpdates(prev)
       case r@SeqUpdateRollBackToCheckpoint(checkpoint,checkpointLevel) =>
-
-        if(checkpoint == null) false //it has been dropped following a Set
-        else {
-          if(checkpointLevel == 0) {
-            require(checkpoint quickEquals savedCheckpoint)
-            restoreCheckpoint()
-            true
-          }else{
             digestUpdates(r.howToRollBack)
-          }
-        }
-    }
-  }
-
-  private def dropCheckpoint(){
-    saveCurrentCheckpoint(null)
-  }
-
-  private def saveCurrentCheckpoint(s:IntSequence){
-    savedCheckpoint = s
-    while (movedNodesSinceCheckpointList!= null) {
-      movedNodesSinceCheckpointArray(movedNodesSinceCheckpointList.head) = false
-      movedNodesSinceCheckpointList = movedNodesSinceCheckpointList.tail
-    }
-  }
-
-  private def restoreCheckpoint(){
-    while (movedNodesSinceCheckpointList!= null) {
-      val node= movedNodesSinceCheckpointList.head
-      movedNodesSinceCheckpointArray(movedNodesSinceCheckpointList.head) = false
-      movedNodesSinceCheckpointList = movedNodesSinceCheckpointList.tail
-      nodesOfVehicleOrUnrouted(vehicleOfNodeAfterMoveForMovedPoints(node)) :-= node
-      nodesOfVehicleOrUnrouted(vehicleOfNodeAtCheckpointForMovedPoints(node)) :+= node
-    }
-  }
-
-  private def recordMovedPoint(node:Int, oldVehicle:Int, newVehicle:Int){
-    require(oldVehicle != newVehicle)
-    if(savedCheckpoint!= null) {
-      if (!movedNodesSinceCheckpointArray(node)) {
-        movedNodesSinceCheckpointList = QList(node, movedNodesSinceCheckpointList)
-        movedNodesSinceCheckpointArray(node) = true
-        vehicleOfNodeAtCheckpointForMovedPoints(node) = oldVehicle
-      }
-      vehicleOfNodeAfterMoveForMovedPoints(node) = newVehicle
     }
   }
 
@@ -161,17 +154,8 @@ class MovingVehicles(routes:ChangingSeqValue, v:Int)
   }
 
   override def checkInternals(c : Checker) : Unit = {
-    val values = computeValueFromScratch(routes.value)
-    for (vehicle <- 0 to v){
-      c.check(nodesOfVehicleOrUnrouted(vehicle).value equals values(vehicle), Some("error on vehicle " + v + " output-correct:" + (nodesOfVehicleOrUnrouted(vehicle).value.diff(values(vehicle))) + " correct-output:" + (values(vehicle).diff(nodesOfVehicleOrUnrouted(vehicle).value))))
-    }
-
-    if(savedCheckpoint != null) {
-      val nodesOfVehicleFromScratch = computeValueFromScratch(savedCheckpoint)
-      for (node <- 0 to n-1) {
-        if(movedNodesSinceCheckpointArray(node))
-          c.check(nodesOfVehicleFromScratch(vehicleOfNodeAtCheckpointForMovedPoints(node)).contains(node))
-      }
-    }
+    val valuesFromScratch = computeValueFromScratch(routes.value)
+    c.check(valuesFromScratch equals this.newValue,
+      Some("error on moving vehicle, got " + this.newValue.toList + " should be " + valuesFromScratch.toList))
   }
 }
