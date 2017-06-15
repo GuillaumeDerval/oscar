@@ -36,7 +36,6 @@ class MovingVehicles(routes:ChangingSeqValue, v:Int)
   }
 
   private def digestUpdates(changes:SeqUpdate):Boolean = {
-    val newValue = changes.newValue
 
     changes match {
       case SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
@@ -159,3 +158,4 @@ class MovingVehicles(routes:ChangingSeqValue, v:Int)
       Some("error on moving vehicle, got " + this.newValue.toList + " should be " + valuesFromScratch.toList))
   }
 }
+
