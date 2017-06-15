@@ -87,8 +87,7 @@ object TSProutePoints extends App {
     }
     println
 
-
-    for (n <- 11000 to 11000 by 2000) {
+    for (n <- 1000 to 11000 by 2000) {
       for (v <- List(100)) {
         for (maxPivotPerValuePercent <- List(0, 1, 2, 3, 4, 5, 20)) {
           print(n + "\t" + v + "\t" + maxPivotPerValuePercent + "\t")
@@ -197,6 +196,7 @@ object TSProutePoints extends App {
   runBenchmark(fileName,1000)
  // generateAllBenchmarks()
   //runAllBenchmarks()
+  performRandomBenchmark()
 }
 
 class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symmetricDistanceMatrix:Array[Array[Int]],printobj:Boolean = false) extends StopWatch{

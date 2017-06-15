@@ -44,7 +44,6 @@ object QList{
 
   def apply[T](head:T,tail:QList[T] = null):QList[T] = new QList(head,tail)
 
-
   implicit def toIterable[T](l:QList[T]):Iterable[T] = new IterableQList(l)
 
   def buildFromIterable[T](l:Iterable[T]):QList[T] = {
@@ -54,6 +53,11 @@ object QList{
       acc = QList(it.next(),acc)
     }
     acc
+  }
+
+  def qMap[T,X](q:QList[T],fun:T => X):QList[X] = {
+    if(q == null) null
+    else q.qMap(fun)
   }
 }
 

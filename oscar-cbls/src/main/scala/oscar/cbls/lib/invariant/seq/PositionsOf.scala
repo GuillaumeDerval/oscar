@@ -45,7 +45,7 @@ object PositionsOf{
  * @param a is the value that is to locate in the sequence
  */
 class PositionsOf(v: SeqValue, a:IntValue)
-  extends SetInvariant(v.value.positionsOfValue(a.value), 0 to DomainHelper.safeAddMax(v.max,1))
+  extends SetInvariant(v.value.positionsOfValueSet(a.value), 0 to DomainHelper.safeAddMax(v.max,1))
   with SeqNotificationTarget with IntNotificationTarget{
 
   setName("PositionOf(" + a.name + " in " + v.name + ")")
@@ -64,7 +64,7 @@ class PositionsOf(v: SeqValue, a:IntValue)
   }
 
   override def performInvariantPropagation() {
-    this := v.value.positionsOfValue(a.value)
+    this := v.value.positionsOfValueSet(a.value)
   }
 
   override def checkInternals(c: Checker) {
@@ -78,7 +78,7 @@ class PositionsOf(v: SeqValue, a:IntValue)
  * @param a is the value that is to locate in the sequence
  */
 class PositionsOfConst(v: SeqValue, a:Int)
-  extends SetInvariant(v.value.positionsOfValue(a), 0 to DomainHelper.safeAddMax(v.max,1))
+  extends SetInvariant(v.value.positionsOfValueSet(a), 0 to DomainHelper.safeAddMax(v.max,1))
   with SeqNotificationTarget{
 
   setName("PositionOf(" + a + " in " + v.name + ")")
@@ -91,10 +91,11 @@ class PositionsOfConst(v: SeqValue, a:Int)
   }
 
   override def performInvariantPropagation() {
-    this := v.value.positionsOfValue(a)
+    this := v.value.positionsOfValueSet(a)
   }
 
   override def checkInternals(c: Checker) {
     c.check(this.value equals v.value.positionsOfValue(a))
   }
 }
+
