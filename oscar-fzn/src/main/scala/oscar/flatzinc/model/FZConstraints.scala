@@ -144,7 +144,7 @@ case class array_var_bool_element(b: IntegerVariable, as: Array[BooleanVariable]
 
 case class array_var_int_element(b: IntegerVariable, as: Array[IntegerVariable], c: IntegerVariable, ann: List[Annotation] = List.empty[Annotation])
   extends SimpleDefiningConstraint(as++Array(b,c),c,ann){
-  override def toString() ={"array_var_int_element("+b+","+as.mkString("[", ",", "]")+","+c+","+ann+")"}
+  override def toString() ={"array_var_int_element("+b+","+as.mkString("[", ", ", "]")+","+c+","+ann+")"}
 }
 
 case class array_bool_xor(as: Array[BooleanVariable], ann: List[Annotation] = List.empty[Annotation]) 
@@ -202,9 +202,9 @@ case class int_lin_eq(params:Array[IntegerVariable],vars:Array[IntegerVariable],
   extends Constraint(vars++Array.empty[Variable],ann){
   override def canDefineVar = true
   override def getMaybeCandidateDefVars():Array[Variable]  = {
-    return vars.zip(params).filter((t) => Math.abs(t._2.min) == 1 && t._1.domainSize > 2).map(_._1)
+    return vars.zip(params).filter((t) => Math.abs(t._2.min) == 1 && t._1.domainSize >= 1).map(_._1)
   }
-  override def toString() ={"int_lin_eq("+params.mkString("[", ",", "]")+","+vars.mkString("[", ",", "]")+","+sum+","+ann+")"}
+  override def toString() ={"int_lin_eq("+params.mkString("[", ", ", "]")+","+vars.mkString("[", ", ", "]")+","+sum+","+ann+")"}
 }
 
 case class int_lin_le(params:Array[IntegerVariable],vars:Array[IntegerVariable], sum:IntegerVariable, ann: List[Annotation] = List.empty[Annotation]) 
@@ -239,7 +239,9 @@ case class set_in(x: IntegerVariable, s: Domain, ann: List[Annotation] = List.em
 
 
 case class all_different_int(xs: Array[IntegerVariable], ann: List[Annotation] = List.empty[Annotation]) 
-  extends Constraint(xs++Array.empty[Variable],ann)
+  extends Constraint(xs++Array.empty[Variable],ann){
+  override def toString() = {"all_different_int(" +xs.mkString("[",", ","]") + ") :: " + ann.mkString(" :: ")}
+}
 
 
 case class at_least_int(n:IntegerVariable,x:Array[IntegerVariable],v:IntegerVariable, ann: List[Annotation] = List.empty[Annotation]) 

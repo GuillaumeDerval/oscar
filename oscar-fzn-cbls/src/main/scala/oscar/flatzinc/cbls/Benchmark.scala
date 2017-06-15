@@ -40,7 +40,7 @@ object Benchmark extends App{
       val opts = new Options("",true,file)
       opts.timeOut = timeOut;
 
-      val solutions = new FZCBLSModelBuilder().solve(opts)
+      val solutions = new FZCBLSBuilder().solve(opts)
 /*
       for ((runtime, objective, iteration, solution) <- solutions) {
         pw.println("Runtime: " + runtime + " Objective: " + objective + " Iterations: " + iteration)

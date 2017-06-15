@@ -44,7 +44,7 @@ object FznOscarAnalyser extends FznOscarMain{
   def printInfo(model: Model, log: Log){
     val log = new Log(1);
     log("Variables: "+model.problem.variables.size)
-    log("Introduced Variables: "+model.problem.variables.filter(v => model.dicoAnnot.contains(v.id) && model.isIntroducedVar(v.id)).size)
+    log("Introduced Variables: "+model.problem.variables.filter(v => !v.anns.isEmpty && model.isIntroducedVar(v.id)).size)
     log("Defined Variables: "+model.problem.variables.filter(v => v.isDefined).size)
     log("Bound Variables: "+model.problem.variables.filter(v => v.isBound).size)
     log("Boolean Variables: "+model.problem.variables.filter(v => v.isInstanceOf[BooleanVariable]).size)

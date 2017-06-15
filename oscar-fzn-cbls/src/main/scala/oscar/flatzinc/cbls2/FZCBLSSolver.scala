@@ -87,7 +87,7 @@ class FZCBLSModel(val model: FZProblem, val c: ConstraintSystem, val m: Store, v
      //Only create variables that are not fixed by an invariant.
     for (parsedVariable <- model.variables if !parsedVariable.isDefined) {
       parsedVariable match {
-        case IntegerVariable(id, dom) =>
+        case IntegerVariable(id, dom,anns) =>
           //TODO: Put this in a method! or make it deterministic as the neighbourhoods should take care of the assignments!
           val initialValue = (dom match {
             case oscar.flatzinc.model.DomainRange(min, max) =>

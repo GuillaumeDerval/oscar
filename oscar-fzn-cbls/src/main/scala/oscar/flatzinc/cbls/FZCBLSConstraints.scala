@@ -567,7 +567,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
       case Some(v) =>
         val inv = constructCBLSIntInvariant(constraint,v.id)
         val dom = v match{
-          case IntegerVariable(i,d) => d
+          case IntegerVariable(i,d,ann) => d
           case bv: BooleanVariable => DomainRange(if(bv.isTrue) 1 else 0, if(bv.isFalse) 0 else 1)
         }
         EnsureDomain(inv,dom,c)

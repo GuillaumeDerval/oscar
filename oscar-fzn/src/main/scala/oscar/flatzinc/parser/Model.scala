@@ -18,36 +18,70 @@
 package oscar.flatzinc.parser
 
 import oscar.flatzinc.model.FZProblem
+
+import scala.collection.JavaConversions._
 import scala.collection.mutable.{Map, Set => MSet}
 import oscar.flatzinc.parser.intermediatemodel._
 import oscar.flatzinc.model.Annotation
+
 import scala.collection.JavaConverters._
 import java.util.ArrayList
+
 import oscar.flatzinc.model.FZProblem
 import oscar.flatzinc.model._
 import oscar.flatzinc.NoSuchConstraintException
 import java.lang.reflect.Constructor
+
 import oscar.flatzinc.ParsingException
 import oscar.flatzinc.Log
+import oscar.flatzinc.parser.intermediatemodel.ASTDecls.{ASTParamDecl, ASTVarDecl}
+import oscar.flatzinc.parser.intermediatemodel.ASTLiterals._
+
 import scala.collection.mutable.WrappedArray
 
 
 
 //class VarRef(val v: Variable) extends Element()
 
-class Model(val log: Log, val acceptAnyCstr: Boolean) {
-  
+class OldModel(val log: Log, val acceptAnyCstr: Boolean) {
+
+  def handleModel(m:ASTModel) = {
+    //Add params
+    for(pd:ASTParamDecl <- m.getParamDecls){
+
+    }
+
+    //Add Vars
+    for(vd:ASTVarDecl <- m.getVarDecls){
+
+    }
+  }
+
+  def elementFromASTLit(l:ASTLit):Element = {
+    l match {
+      case array:ASTArray =>
+        val a = new ArrayOfElement()
+        a.typ = new Type(Type.NULL); a.typ.isArray = true;  a.typ.size = 0
+        for(e <- array.getElems){
+          val tmp:Element = elementFromASTLit(e)
+          a.elements.add(tmp); a.typ.size +=1;if(tmp.typ.isVar){a.typ.isVar}
+        }
+        a.close(); a
+
+    }
+  }
+
   val problem: FZProblem = new FZProblem()
-  val dico: Map[String,Element] = Map.empty[String,Element]
-  val dicoAnnot: Map[String, Iterable[Annotation]] = Map.empty[String,Iterable[Annotation]]
-  
+  val dict: Map[String,Element] = Map.empty[String,Element]
+  val dictAnn: Map[String, Iterable[Annotation]] = Map.empty[String,Iterable[Annotation]] // Maps ids (vars and cons) to which annotations they have
+
   def addId(id: String, e: Element)={
     //Console.err.println("% added" + id)
-    dico(id) = e
+    dict(id) = e
   }
-  def hasId(id: String) = dico.contains(id)
+  def hasId(id: String) = dict.contains(id)
   def findId(id: String): Element = {
-    if(dico.contains(id))dico(id)
+    if(dict.contains(id))dict(id)
     else{//TODO: That should be an annotation, how to check this?
       val e = new Element();
       e.name = id;
@@ -56,21 +90,21 @@ class Model(val log: Log, val acceptAnyCstr: Boolean) {
       e
     }
   }
-  
+
   def createDomain(e: Domain,t: Integer): Domain  = {
     if(e==null){
       if(t==Type.BOOL) new DomainRange(0,1)
       else new DomainRange(Helper.FznMinInt, Helper.FznMaxInt)//TODO: This is dangerous!
-    }else e;      
+    }else e;
   }
   def copy(d: Domain): Domain = {
     d match {
       case DomainSet(v) => new DomainSet(v)
-      case DomainRange(mi,ma) => new DomainRange(mi,ma)
+      case DomainRange(mi, ma) => new DomainRange(mi, ma)
       case _ => null.asInstanceOf[Domain]
     }
   }
-  
+
   def addNewVariable(t: Type, de: Element, name: String, anns0: java.util.List[Annotation])={
     if(!(t.typ == Type.INT||t.typ == Type.BOOL))
       throw new ParsingException("Only Supporting Int and Bool variables.");
@@ -127,30 +161,30 @@ class Model(val log: Log, val acceptAnyCstr: Boolean) {
     addId(name,e);
     handleVarAnnotations(name, e, anns.asScala)
   }
-  
+
   def isIntroducedVar(id: String): Boolean = {
-    dicoAnnot.contains(id) &&
-    dicoAnnot(id).exists(_.name == "var_is_introduced");
+    dictAnn.contains(id) &&
+    dictAnn(id).exists(_.name == "var_is_introduced");
   }
   def isDefinedVar(id: String): Boolean = {
-    dicoAnnot(id).exists(_.name == "is_defined_var");
+    dictAnn(id).exists(_.name == "is_defined_var");
   }
   def isOutputVar(id: String): Boolean = {
-    dicoAnnot(id).exists(_.name == "output_var")
+    dictAnn(id).exists(_.name == "output_var")
   }
   def isOutputArray(id: String): Boolean = {
-    dicoAnnot(id).exists(_.name == "output_array")
+    dictAnn(id).exists(_.name == "output_array")
   }
-  
+
   private def handleVarAnnotations(name: String, e: Element, anns: Iterable[oscar.flatzinc.model.Annotation]): Any = {
-    dicoAnnot(name) = anns;
+    dictAnn(name) = anns;
     if(e.typ.isArray){
       if (anns.exists((a: Annotation) => a.name == "output_array")) {
-        
         val a = e.asInstanceOf[ArrayOfElement]
           if(e.typ.typ==Type.INT){
-            problem.solution.addOutputArrayVarInt(name,a.elements.asScala.toArray.map(e => e.value match{case vr: Variable => vr.id; case other => if(e.name==null)other.toString() else e.name}),
-                           anns.find((p:Annotation) => p.name == "output_array").get.args(0).asInstanceOf[Array[Domain]].map(e=>e.asInstanceOf[DomainRange].toRange).toList)
+            problem.solution.addOutputArrayVarInt(name,
+                                                  a.elements.asScala.toArray.map(e => e.value match{case vr: Variable => vr.id; case other => if(e.name==null)other.toString() else e.name}),
+                                                  anns.find((p:Annotation) => p.name == "output_array").get.args(0).asInstanceOf[Array[Domain]].map(e=>e.asInstanceOf[DomainRange].toRange).toList)
           }
           if(e.typ.typ==Type.BOOL){
             problem.solution.addOutputArrayVarBool(name,a.elements.asScala.toArray.map(e => e.value match{case vr: Variable => vr.id; case other => if(e.name==null)other.toString() else e.name}),
@@ -263,15 +297,15 @@ class Model(val log: Log, val acceptAnyCstr: Boolean) {
     }
   }
   
-  val cdico: Map[String,(List[Element],List[Annotation])=>Constraint] = Map(
+  val dictCons: Map[String,(List[Element],List[Annotation])=>Constraint] = Map(
     "int_eq" -> ((varList,ann) => int_eq(getIntVar(varList(0)),getIntVar(varList(1)),ann)),
     "int_eq_reif" -> ((varList,ann) => reif(int_eq(getIntVar(varList(0)),getIntVar(varList(1)),ann),getBoolVar(varList(2)))),
     "int_ne" -> ((varList,ann) => int_ne(getIntVar(varList(0)),getIntVar(varList(1)),ann)),
-    "int_ne_reif" -> ((varList,ann) => reif(int_ne(getIntVar(varList(0)),getIntVar(varList(1)),ann),getBoolVar(varList(2)))), 
+    "int_ne_reif" -> ((varList,ann) => reif(int_ne(getIntVar(varList(0)),getIntVar(varList(1)),ann),getBoolVar(varList(2)))),
     "int_le" -> ((varList,ann) => int_le(getIntVar(varList(0)),getIntVar(varList(1)),ann)),
-    "int_le_reif" -> ((varList,ann) => reif(int_le(getIntVar(varList(0)),getIntVar(varList(1)),ann),getBoolVar(varList(2)))), 
+    "int_le_reif" -> ((varList,ann) => reif(int_le(getIntVar(varList(0)),getIntVar(varList(1)),ann),getBoolVar(varList(2)))),
     "int_lt" -> ((varList,ann) => int_lt(getIntVar(varList(0)),getIntVar(varList(1)),ann)),
-    "int_lt_reif" -> ((varList,ann) => reif(int_lt(getIntVar(varList(0)),getIntVar(varList(1)),ann),getBoolVar(varList(2)))), 
+    "int_lt_reif" -> ((varList,ann) => reif(int_lt(getIntVar(varList(0)),getIntVar(varList(1)),ann),getBoolVar(varList(2)))),
     "bool_eq" -> ((varList,ann) => bool_eq(getBoolVar(varList(0)),getBoolVar(varList(1)),ann) ),
     "bool_lt" -> ((varList,ann) => bool_lt(getBoolVar(varList(0)),getBoolVar(varList(1)),ann) ),
     "bool_le" -> ((varList,ann) => bool_le(getBoolVar(varList(0)),getBoolVar(varList(1)),ann) ),
@@ -322,25 +356,24 @@ class Model(val log: Log, val acceptAnyCstr: Boolean) {
     "bin_packing_load" -> ((varList,ann) => bin_packing_load(getIntVarArray(varList(0)),getIntVarArray(varList(1)),getIntVarArray(varList(2)),ann)),
     "table_int" -> ((varList,ann) => table_int(getIntVarArray(varList(0)),getIntVarArray(varList(1)),ann)),
     "table_bool" -> ((varList,ann) => table_bool(getBoolVarArray(varList(0)),getBoolVarArray(varList(1)),ann))
-
   )
-  
-  
+
+
   def constructConstraint(cstr: String, varList: List[Element], ann:List[Annotation]): Constraint = {
     //special case
 //    if(cstr=="bool_eq_reif" && !varList(1).typ.isVar && !varList(1).value.asInstanceOf[Boolean]){
 //      makeConstraint("bool_not",varList.head :: varList.tail.tail,ann)
-//    }else 
+//    }else
       if(cstr.endsWith("_reif")){
       reif(makeConstraint(cstr.substring(0,cstr.length-5),varList.dropRight(1),ann),getBoolVar(varList.last))
     }else{
-      makeConstraint(cstr,varList,ann)    
+      makeConstraint(cstr,varList,ann)
     }
   }
-  
-  
+
+
   def makeConstraint(c: String, args:List[Element], ann:List[Annotation]): Constraint = {
-    cdico.getOrElse(c, (varList: List[Element], ann:List[Annotation]) =>
+    dictCons.getOrElse(c, (varList: List[Element], ann:List[Annotation]) =>
       try{
         val cl = Class.forName("oscar.flatzinc.model."+c)
         Console.err.println("MISSING CONSTRAINT: "+c)

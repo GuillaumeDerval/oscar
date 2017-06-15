@@ -18,7 +18,8 @@
  */
 package oscar.flatzinc.model
 
-class Annotation (
+class
+Annotation (
     val name: String,
     var args: List[Any]
 	){

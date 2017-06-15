@@ -29,10 +29,24 @@ import scala.collection.immutable.SortedSet
 class FZProblem {
   val variables: MSet[Variable] = MSet.empty[Variable]
   val constraints: MSet[Constraint] = MSet.empty[Constraint]
+  val neighbourhoods: MSet[FZNeighbourhood] = MSet.empty[FZNeighbourhood]
 
   val solution:FZSolution = new FZSolution();
   val search = new Search();
   
+  def addVariable(variable:Variable) {
+    variables += variable
+  }
+
+  def addConstraint(c: Constraint) {
+    constraints += c
+  }
+
+  def addNeighbourhood(n: FZNeighbourhood): Unit ={
+    neighbourhoods += n
+  }
+
+
   def addVariable(id: String, dom: Domain, bool: Boolean): Variable = {
     if(bool) addBooleanVariable(id,dom)
     else addIntegerVariable(id,dom)
@@ -47,10 +61,9 @@ class FZProblem {
     variables += variable
     variable
   }
+
   
-  def addConstraint(c: Constraint) {
-    constraints += c
-  }
+
   
   def satisfy(anns:Iterable[Annotation]) {
     search.obj = Objective.SATISFY

@@ -1,4 +1,4 @@
-// Generated from /Users/gustavbjordal/OscaR/oscar/oscar-fzn/src/main/java/oscar/flatzinc/parser/Flatzinc.g4 by ANTLR 4.6
+// Generated from /Users/gustavbjordal/OscaR/oscar/oscar-fzn/src/main/java/oscar/flatzinc/parser/Flatzinc.g4 by ANTLR 4.7
 package oscar.flatzinc.parser;
 
 /*******************************************************************************
@@ -15,6 +15,17 @@ package oscar.flatzinc.parser;
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+//package oscar.flatzinc.parser;
+import oscar.flatzinc.parser.intermediatemodel.*;
+import oscar.flatzinc.parser.intermediatemodel.ASTLiterals.*;
+import oscar.flatzinc.parser.intermediatemodel.ASTDecls.*;
+import oscar.flatzinc.parser.intermediatemodel.ASTTypes.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -43,49 +54,85 @@ public class FlatzincBaseListener implements FlatzincListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterPreddecl(FlatzincParser.PreddeclContext ctx) { }
+	@Override public void enterPred_decl(FlatzincParser.Pred_declContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitPreddecl(FlatzincParser.PreddeclContext ctx) { }
+	@Override public void exitPred_decl(FlatzincParser.Pred_declContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterPredparam(FlatzincParser.PredparamContext ctx) { }
+	@Override public void enterPred_param(FlatzincParser.Pred_paramContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitPredparam(FlatzincParser.PredparamContext ctx) { }
+	@Override public void exitPred_param(FlatzincParser.Pred_paramContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterParamdecl(FlatzincParser.ParamdeclContext ctx) { }
+	@Override public void enterParam_decl(FlatzincParser.Param_declContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitParamdecl(FlatzincParser.ParamdeclContext ctx) { }
+	@Override public void exitParam_decl(FlatzincParser.Param_declContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterVardecl(FlatzincParser.VardeclContext ctx) { }
+	@Override public void enterFunc_decl(FlatzincParser.Func_declContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitVardecl(FlatzincParser.VardeclContext ctx) { }
+	@Override public void exitFunc_decl(FlatzincParser.Func_declContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterLet_expr(FlatzincParser.Let_exprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLet_expr(FlatzincParser.Let_exprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterLet_body(FlatzincParser.Let_bodyContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLet_body(FlatzincParser.Let_bodyContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterVar_decl(FlatzincParser.Var_declContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitVar_decl(FlatzincParser.Var_declContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -103,109 +150,121 @@ public class FlatzincBaseListener implements FlatzincListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSolvegoal(FlatzincParser.SolvegoalContext ctx) { }
+	@Override public void enterSolve_goal(FlatzincParser.Solve_goalContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSolvegoal(FlatzincParser.SolvegoalContext ctx) { }
+	@Override public void exitSolve_goal(FlatzincParser.Solve_goalContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterBasicpartype(FlatzincParser.BasicpartypeContext ctx) { }
+	@Override public void enterBasic_par_type(FlatzincParser.Basic_par_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitBasicpartype(FlatzincParser.BasicpartypeContext ctx) { }
+	@Override public void exitBasic_par_type(FlatzincParser.Basic_par_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterBasicvartype(FlatzincParser.BasicvartypeContext ctx) { }
+	@Override public void enterBasic_var_type(FlatzincParser.Basic_var_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitBasicvartype(FlatzincParser.BasicvartypeContext ctx) { }
+	@Override public void exitBasic_var_type(FlatzincParser.Basic_var_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterPartype(FlatzincParser.PartypeContext ctx) { }
+	@Override public void enterPar_type(FlatzincParser.Par_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitPartype(FlatzincParser.PartypeContext ctx) { }
+	@Override public void exitPar_type(FlatzincParser.Par_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterVartype(FlatzincParser.VartypeContext ctx) { }
+	@Override public void enterVar_type(FlatzincParser.Var_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitVartype(FlatzincParser.VartypeContext ctx) { }
+	@Override public void exitVar_type(FlatzincParser.Var_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterArraytype(FlatzincParser.ArraytypeContext ctx) { }
+	@Override public void enterArray_type(FlatzincParser.Array_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitArraytype(FlatzincParser.ArraytypeContext ctx) { }
+	@Override public void exitArray_type(FlatzincParser.Array_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterPredparamtype(FlatzincParser.PredparamtypeContext ctx) { }
+	@Override public void enterPar_array_type(FlatzincParser.Par_array_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitPredparamtype(FlatzincParser.PredparamtypeContext ctx) { }
+	@Override public void exitPar_array_type(FlatzincParser.Par_array_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterBasicpredparamtype(FlatzincParser.BasicpredparamtypeContext ctx) { }
+	@Override public void enterPred_param_type(FlatzincParser.Pred_param_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitBasicpredparamtype(FlatzincParser.BasicpredparamtypeContext ctx) { }
+	@Override public void exitPred_param_type(FlatzincParser.Pred_param_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterPredarraytype(FlatzincParser.PredarraytypeContext ctx) { }
+	@Override public void enterBasic_pred_param_type(FlatzincParser.Basic_pred_param_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitPredarraytype(FlatzincParser.PredarraytypeContext ctx) { }
+	@Override public void exitBasic_pred_param_type(FlatzincParser.Basic_pred_param_typeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterPred_array_type(FlatzincParser.Pred_array_typeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitPred_array_type(FlatzincParser.Pred_array_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -223,49 +282,61 @@ public class FlatzincBaseListener implements FlatzincListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterIdorannot(FlatzincParser.IdorannotContext ctx) { }
+	@Override public void enterLit_expr(FlatzincParser.Lit_exprContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitIdorannot(FlatzincParser.IdorannotContext ctx) { }
+	@Override public void exitLit_expr(FlatzincParser.Lit_exprContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterIntorsetconst(FlatzincParser.IntorsetconstContext ctx) { }
+	@Override public void enterConst_set(FlatzincParser.Const_setContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitIntorsetconst(FlatzincParser.IntorsetconstContext ctx) { }
+	@Override public void exitConst_set(FlatzincParser.Const_setContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSetconst(FlatzincParser.SetconstContext ctx) { }
+	@Override public void enterConst_range(FlatzincParser.Const_rangeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSetconst(FlatzincParser.SetconstContext ctx) { }
+	@Override public void exitConst_range(FlatzincParser.Const_rangeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterArrayexpr(FlatzincParser.ArrayexprContext ctx) { }
+	@Override public void enterConst_float_range(FlatzincParser.Const_float_rangeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitArrayexpr(FlatzincParser.ArrayexprContext ctx) { }
+	@Override public void exitConst_float_range(FlatzincParser.Const_float_rangeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterArray_expr(FlatzincParser.Array_exprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitArray_expr(FlatzincParser.Array_exprContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -295,73 +366,73 @@ public class FlatzincBaseListener implements FlatzincListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterPredannid(FlatzincParser.PredannidContext ctx) { }
+	@Override public void enterPred_ann_id(FlatzincParser.Pred_ann_idContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitPredannid(FlatzincParser.PredannidContext ctx) { }
+	@Override public void exitPred_ann_id(FlatzincParser.Pred_ann_idContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterBoolconst(FlatzincParser.BoolconstContext ctx) { }
+	@Override public void enterBool_const(FlatzincParser.Bool_constContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitBoolconst(FlatzincParser.BoolconstContext ctx) { }
+	@Override public void exitBool_const(FlatzincParser.Bool_constContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterFloatconst(FlatzincParser.FloatconstContext ctx) { }
+	@Override public void enterFloat_const(FlatzincParser.Float_constContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitFloatconst(FlatzincParser.FloatconstContext ctx) { }
+	@Override public void exitFloat_const(FlatzincParser.Float_constContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterIntconst(FlatzincParser.IntconstContext ctx) { }
+	@Override public void enterInt_const(FlatzincParser.Int_constContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitIntconst(FlatzincParser.IntconstContext ctx) { }
+	@Override public void exitInt_const(FlatzincParser.Int_constContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterStringconstant(FlatzincParser.StringconstantContext ctx) { }
+	@Override public void enterString_constant(FlatzincParser.String_constantContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitStringconstant(FlatzincParser.StringconstantContext ctx) { }
+	@Override public void exitString_constant(FlatzincParser.String_constantContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterVarparid(FlatzincParser.VarparidContext ctx) { }
+	@Override public void enterVar_par_id(FlatzincParser.Var_par_idContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitVarparid(FlatzincParser.VarparidContext ctx) { }
+	@Override public void exitVar_par_id(FlatzincParser.Var_par_idContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

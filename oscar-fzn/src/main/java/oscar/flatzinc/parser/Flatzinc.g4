@@ -33,192 +33,202 @@ grammar Flatzinc;
   ******************************************************************************/
 //package oscar.flatzinc.parser;
 import oscar.flatzinc.parser.intermediatemodel.*;
-import oscar.flatzinc.model.Annotation;
-import oscar.flatzinc.model.Domain;
-import oscar.flatzinc.model.DomainSet;
-import oscar.flatzinc.model.DomainRange;
-import oscar.flatzinc.ParsingException;
-import java.util.Set;
+import oscar.flatzinc.parser.intermediatemodel.ASTLiterals.*;
+import oscar.flatzinc.parser.intermediatemodel.ASTDecls.*;
+import oscar.flatzinc.parser.intermediatemodel.ASTTypes.*;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 }
 
 @parser::members{
 	private Model m;
+	private ASTModel astM;
+	private IDContainer idC;
 	public FlatzincParser(TokenStream input,Model m){
 		this(input);
 		this.m = m;
+		this.astM = new ASTModel();
+		idC = new IDContainer();
 	}
 }
 
-flatzinc_model : preddecl* paramdecl* vardecl* constraint* solvegoal;
+//Assume correct model, i.e., only one solvegoal
+flatzinc_model
+    :( pred_decl
+      |param_decl ';' {astM.addParamDecl($param_decl.d);}
+      |var_decl ';'  {astM.addVarDecl($var_decl.d);}
+      |constraint ';' {astM.addConstraint($constraint.c);}
+      |solve_goal ';'{astM.setSolve($solve_goal.s);}
+      |func_decl ';' {astM.addFuncDecl($func_decl.f);}
+     )*{m.buildModel(astM);};
+// Shoudln't depend on order
+///flatzinc_model : preddecl* paramdecl* vardecl* constraint* solvegoal;
 //changed to accomodate Mzn 2.0
 //flatzinc_model : preddecl* (paramdecl|vardecl)* constraint* solvegoal;
 
 //Nothing is done for the predicate declarations
-preddecl : 'predicate' PREDANNID '(' predparam ( ',' predparam)* ')' ';' ;
+pred_decl : 'predicate' PREDANNID '(' pred_param ( ',' pred_param)* ')' ';' ;
 
-predparam : predparamtype ':' predannid ;
+pred_param : pred_param_type ':' pred_ann_id ;
 
-
-paramdecl : partype ':' varparid '=' expr ';' 
-	{Element e = $expr.e;
-	e.name = $varparid.text;
-	e.typ = $partype.t;
-	m.addId(e.name,e);
-	//TODO: Check that expr is a boolconst, floatconst, intconst, setconst, or an array thereof.
-	};
+param_decl returns [ASTParamDecl d]
+    : par_type ':' var_par_id '=' expr
+	{$d = new ASTParamDecl($var_par_id.text, $par_type.t, $expr.e);};
 // expr must be a boolconst, floatconst, intconst, setconst, or an array thereof.
 
+func_decl returns [ASTFuncDecl f] locals [ArrayList<ASTVarDecl> params = new ArrayList<ASTVarDecl>();]
+    : 'function' 'ann' ':' pred_ann_id ('(' (var_decl {$params.add($var_decl.d);} (',' var_decl {$params.add($var_decl.d);})*)? ')')?
+       '=' let_expr
+    {$f = new ASTFuncDecl($pred_ann_id.text, $params, $let_expr.l);};
+
+let_expr returns [ASTLet l] locals [ArrayList<ASTNode> body]
+    : 'let' '{' {$body = new ArrayList<ASTNode>();}
+     (let_body {$body.add($let_body.n);} (',' let_body {$body.add($let_body.n);})*)?
+     '}' 'in' '(' annotation ')' { $l = new ASTLet($body, $annotation.ann);};
+
+let_body returns [ASTNode n]
+    : var_decl {$n = $var_decl.d;}
+    | param_decl {$n = $param_decl.d;}
+    | constraint {$n = $constraint.c;} ;
+
+var_decl returns [ASTVarDecl d] locals [ASTLit e = null;]
+	: var_type ':' var_par_id annotations
+	( '=' expr {$e = $expr.e;})?
+	{$d = new ASTVarDecl($var_par_id.text, $var_type.t, $annotations.anns, $e);};
 
 
-vardecl locals [Element e = null]
-	: vartype ':' varparid annotations ( '=' expr {$e = $expr.e;})? ';'
-	{if($e==null){
-	  m.addNewVariable($vartype.t,$vartype.d,$varparid.text, $annotations.anns);
-	}else{
-	  m.addAliasVariable($vartype.t,$vartype.d,$varparid.text, $e, $annotations.anns);
-	}
-	// TODO: Check that Any vars in assignments must be declared earlier.
-	};
+
+constraint returns [ASTConstraint c] locals [ArrayList<ASTLit> args]: 'constraint' pred_ann_id
+	'(' e=expr {$args = new ArrayList<ASTLit>(); $args.add($e.e);}(',' e1=expr {$args.add($e1.e);})* ')'
+	annotations {$c = new ASTConstraint($pred_ann_id.text, $args, $annotations.anns);} ;
 
 
-
-constraint locals [List<Element> args = null;]: 'constraint' predannid 
-	'(' e=expr {$args = new ArrayList<Element>(); $args.add($e.e);}(',' e1=expr {$args.add($e1.e);})* ')' 
-	annotations {m.addConstraint($predannid.text,$args,$annotations.anns);} ';' ;
-
-
-solvegoal 
+solve_goal  returns [ASTSolve s] locals [ASTLit e, int t]
 	: 'solve' annotations 
-	( 'satisfy' ';' {m.setSATObjective($annotations.anns);} 
-	| 'minimize' expr ';' {m.setMINObjective($expr.e,$annotations.anns);}
-	| 'maximize' expr ';' {m.setMAXObjective($expr.e,$annotations.anns);}
-	)
+	( 'satisfy' {$e = null; $t = ASTSolve.SAT;}
+	| 'minimize' expr {$e = $expr.e;$t = ASTSolve.MIN;}
+	| 'maximize' expr {$e = $expr.e;$t = ASTSolve.MAX;}
+	){$s = new ASTSolve($t,$e,$annotations.anns);}
 	;
 //expr must be a var name or var array element.
 
-
-
-
-
 //TYPES
 
-basicpartype returns [Type t]
-	: 'bool' {$t = new Type(Type.BOOL);}
-	| 'float' {$t = new Type(Type.FLOAT);}
-	| 'int' {$t = new Type(Type.INT);}
-	| 'set' 'of' 'int' {$t = new Type(Type.SET);}
+basic_par_type returns [ASTType t]
+	: 'bool' {$t = ASTConstants.BOOL;}
+	| 'float' {$t = ASTConstants.FLOAT;}
+	| 'int' {$t = ASTConstants.INT;}
+	| 'set' 'of' 'int' {$t = ASTConstants.SET;}
 	;
 
-basicvartype returns [Type t, Element d]
+basic_var_type returns [ASTVarType t]
 	: 'var'
-	( 'bool' {$t = new Type(Type.BOOL); ($t).isVar = true;}
-	| 'float' {$t = new Type(Type.FLOAT); ($t).isVar = true;}
-	| floatconst '..' floatconst {$t = new Type(Type.FLOAT); ($t).isVar = true;} 
- 	| 'int' {$t = new Type(Type.INT); ($t).isVar = true;}
- 	| setconst {$t = new Type(Type.INT); ($t).isVar = true; $d = $setconst.e;}
- 	| 'set' 'of' setconst {$t = new Type(Type.SET); ($t).isVar = true; $d = $setconst.e;}
+	( 'bool' {$t = new ASTVarType(ASTConstants.BOOL);}
+	| 'float' {$t = new ASTVarType(ASTConstants.FLOAT);}
+	| const_float_range {$t = new ASTVarType(ASTConstants.FLOAT,$const_float_range.r);}
+ 	| 'int' {$t = new ASTVarType(ASTConstants.INT);}
+ 	| const_range {$t = new ASTVarType(ASTConstants.INT, $const_range.r);}
+ 	| const_set {$t = new ASTVarType(ASTConstants.INT, $const_set.r);}
+ 	| 'set' 'of' const_range {$t = new ASTVarType(ASTConstants.SET, $const_range.r);}
+ 	| 'set' 'of' const_set {$t = new ASTVarType(ASTConstants.SET, $const_set.r);}
  	);
 	
-partype returns [Type t]
-	: basicpartype {$t = $basicpartype.t;}
-	| arraytype basicpartype {$t = $basicpartype.t; ($t).isArray=true; ($t).size = $arraytype.size;}
+par_type returns [ASTType t]
+	: basic_par_type {$t = $basic_par_type.t;}
+	| par_array_type {$t = $par_array_type.t;}
 	;
 	
-vartype returns [Type t, Element d]
-	: basicvartype {$t = $basicvartype.t; $d = $basicvartype.d;}
-	| arraytype basicvartype {$t = $basicvartype.t; ($t).isArray=true; ($t).size = $arraytype.size; $d = $basicvartype.d;}
+var_type returns [ASTType t]
+	: basic_var_type {$t = $basic_var_type.t;}
+	| array_type {$t = $array_type.t;}
 	;
 	
 
-arraytype returns [int size]:  'array' '[' lb=intconst '..' ub=intconst 
-	{$size = $ub.i; if($lb.i!=1) throw new ParsingException("Ranges of array must start at 1");} 
-  ']' 'of' ;
+array_type returns [ASTArrayType t]:
+    'array' '[' const_range ']' 'of' basic_var_type {$t = new ASTArrayType($const_range.r, $basic_var_type.t);};
 
-predparamtype returns [Type t] 
-	: basicpredparamtype {$t = $basicpredparamtype.t;}
-	| predarraytype basicpredparamtype {$t = $basicpredparamtype.t; ($t).isArray=true; ($t).size = $predarraytype.size;}
+par_array_type returns [ASTArrayType t]:
+    'array' '[' const_range ']' 'of' basic_par_type {$t = new ASTArrayType($const_range.r, $basic_par_type.t);};
+
+
+pred_param_type
+	: basic_pred_param_type
+	| pred_array_type
 	;
-basicpredparamtype returns [Type t]
-	: basicvartype {$t = $basicvartype.t;}
-	| basicpartype {$t = $basicpartype.t;}
-	| floatconst '..' floatconst {$t = new Type(Type.FLOAT);}
-	| setconst {$t = new Type(Type.INT);}
-	| 'set' 'of' setconst {$t = new Type(Type.SET);}
-	| 'var' 'set' 'of' 'int' {$t = new Type(Type.SET); ($t).isVar = true;}
+basic_pred_param_type
+	: basic_var_type
+	| basic_par_type
+	| float_const '..' float_const
+	| const_set
+	| const_range
+	| 'set' 'of' const_range
+	| 'set' 'of' const_set
+	| 'var' 'set' 'of' 'int'
 	;
-
-
-predarraytype returns [int size]:  'array' '[' ( lb=intconst '..' ub=intconst {$size = $ub.i; if($lb.i!=1) throw new ParsingException("Ranges of array must start at 1");}
-  | 'int' {$size = -1;}
-  | 'int' ',' 'int' {$size = -1;}) ']' 'of'
+pred_array_type:  'array' '[' (const_range
+  | 'int'
+  | 'int' (',' 'int') ) ']' 'of' basic_pred_param_type
   ;
 	
 	
 
 
-expr returns [Element e]
-	: boolconst {$e = new Element(); ($e).value = $boolconst.b; ($e).typ = new Type(Type.BOOL);} 
-	| floatconst {$e = new Element(); ($e).value = $floatconst.f; ($e).typ = new Type(Type.FLOAT);}
-	| intorsetconst {$e = $intorsetconst.e;}
-	| idorannot {$e = $idorannot.e;}
-	| arrayexpr {$e = $arrayexpr.a;} 
-	| stringconstant {$e = new Element(); ($e).value = $stringconstant.str; ($e).typ = new Type(Type.STRING);// TODO: Check this: Annotation and string expressions are only permitted in annotation arguments. 
-	}
-	;
-	
-	//here: relaxed the definition of annotation from predannid to varparid
-idorannot returns [Element e] locals [Annotation ann]
-  : varparid  
-    ({$e = m.findId($varparid.text); } //empty alternative
-    |'[' intconst ']' {$e = ((ArrayOfElement)m.findId($varparid.text)).elements.get($intconst.i-1); }
-    | {$ann = new Annotation($varparid.text); $e = new Element(); ($e).value = $ann; ($e).typ = new Type(Type.ANNOTATION);} 
-       '(' expr {m.addAnnArg($ann,$expr.e);} (',' expr {m.addAnnArg($ann,$expr.e);} )* ')' 
-    ) 
-  ;
-  //TODO: annotations without parenthesis are not treated the same way as annotations with parenthesis
-  
-intorsetconst returns [Element e] locals [Set<Integer> s]
-	: lb=intconst 
-		({$e = new Element(); ($e).value = $intconst.i; ($e).typ = new Type(Type.INT);}
-		| '..' ub=intconst {$e = new Element(); ($e).value = new DomainRange($lb.i,$ub.i); ($e).typ = new Type(Type.SET);}
-	)
-	| '{' {$s = new HashSet<Integer>();} (f=intconst { $s.add($f.i); } (',' n=intconst { $s.add($n.i);})*)? '}'  {$e = new Element(); ($e).value =m.createDomainSet($s); ($e).typ = new Type(Type.SET);}
-	;
-	//setconst {$e = $setconst.e; ($e).typ = new Type(Type.SET);};
-
-// TODO: Check this: Annotation and string expressions are only permitted in annotation arguments.
-
-
-//TODO: Why is it called "Domain"?
-setconst returns [Element e] locals [Set<Integer> s]
-	: lb=intconst '..' ub=intconst {$e = new Element(); ($e).value = new DomainRange($lb.i,$ub.i); }
-	| '{' {$s = new HashSet<Integer>();} (f=intconst { $s.add($f.i); } (',' n=intconst { $s.add($n.i);})*)? '}'  {$e = new Element(); ($e).value =m.createDomainSet($s);}
+expr returns [ASTLit e]
+	: lit_expr {$e = $lit_expr.e;}
 	;
 
-arrayexpr returns [ArrayOfElement a]:
-	'[' {$a = new ArrayOfElement(); ($a).typ = new Type(Type.NULL); ($a).typ.isArray = true; $a.typ.size = 0;} 
-		(e=expr {$a.elements.add($e.e); $a.typ.size+=1; if($e.e.typ.isVar)$a.typ.isVar = true; } 
-		(',' e=expr {$a.elements.add($e.e); $a.typ.size+=1; if($e.e.typ.isVar)$a.typ.isVar = true; } )* )? ']' {$a.close();};
+lit_expr returns [ASTLit e]
+    :bool_const {$e = $bool_const.b;}
+    | float_const {$e = $float_const.f;}
+    | int_const {$e = $int_const.i;}
+    | const_range {$e = $const_range.r;}
+    | const_set {$e = $const_set.r;}
+    | annotation {$e = $annotation.ann;}
+    //| var_par_id {$e = $var_par_id.text;}
+    | array_expr {$e = $array_expr.a;}
+	| string_constant {$e = $string_constant.str;};
 
-annotations returns [ArrayList<Annotation> anns]
-	: {$anns = new ArrayList<Annotation>();} ( '::' annotation {$anns.add($annotation.ann);} )* ;
+const_set returns [ASTSet r] locals [Set<ASTInt> s] :
+    '{' {$s = new HashSet<ASTInt>();} (f=int_const { $s.add($f.i); } (',' n=int_const { $s.add($n.i);})*)? '}'  {$r = new ASTSet($s);}
+	;
 
-annotation returns [Annotation ann] 
-	: predannid {$ann = new Annotation($predannid.text);} ( '(' expr {m.addAnnArg($ann,$expr.e);} (',' expr {m.addAnnArg($ann,$expr.e);} )* ')' )?
+const_range returns [ASTRange r]
+	: lb=int_const '..' ub=int_const {$r = new ASTRange($lb.i,$ub.i);};
+
+
+const_float_range returns [ASTFloatRange r]
+	: lb=float_const '..' ub=float_const {$r = new ASTFloatRange($lb.f,$ub.f);};
+
+
+array_expr returns [ASTArray a] locals [ArrayList<ASTLit> elems]:
+	'[' {$elems = new ArrayList<ASTLit>();}
+		(e=lit_expr {$elems.add($e.e);}
+		(',' e=lit_expr {$elems.add($e.e);} )* )? ']' {$a = new ASTArray($elems);};
+
+annotations returns [ArrayList<ASTLit> anns]
+	: {$anns = new ArrayList<ASTLit>();} ( '::' annotation {$anns.add($annotation.ann);} )* ;
+
+annotation returns [ASTLit ann] locals [ArrayList<ASTLit> args]
+	: pred_ann_id {$ann = $pred_ann_id.text;}
+	| pred_ann_id {$args = new ArrayList<ASTLit>();} (('()')|( '(' expr {$args.add($expr.e);} (',' expr {$args.add($expr.e);} )* ')' ))
+	{$ann = new ASTAnnotation($pred_ann_id.text, $args);}
 	;
 // Whether an identifier is an annotation or a variable name can be identified from its type.
 // FlatZinc does not permit overloading of names
 
 
 //Pseudo-lexer rules
-predannid returns [String text]: PREDANNID {$text=$PREDANNID.getText();};
-boolconst returns [boolean b]: Boolconst {$b = $Boolconst.getText().equals("true");};
-floatconst returns [float f]: Floatconst {$f = Float.parseFloat($Floatconst.getText());};
-intconst returns [int i]: INT {$i = Integer.parseInt($INT.getText());};
-stringconstant returns [String str]: STRING {$str = $STRING.getText().substring(1,$STRING.getText().length()-1);};
-varparid returns [String text]:  VARPARID {$text=$VARPARID.getText();}|PREDANNID {$text=$PREDANNID.getText();} ;
+pred_ann_id returns [ASTId text]: PREDANNID {$text= idC.getId($PREDANNID.getText());};
+bool_const returns [ASTBool b]: Boolconst {$b = idC.getBool($Boolconst.getText().equals("true"));};
+float_const returns [ASTFloat f]: Floatconst {$f = idC.getFloat(Float.parseFloat($Floatconst.getText()));};
+int_const returns [ASTInt i]: INT {$i = idC.getInt(Integer.parseInt($INT.getText()));};
+string_constant returns [ASTString str]: STRING {$str = idC.getString($STRING.getText().substring(1,$STRING.getText().length()-1));};
+var_par_id returns [ASTId text]
+    : pred_ann_id {$text= $pred_ann_id.text;};
+    //| VARPARID {$text= idC.getId($VARPARID.getText());}
 
 //LEXER rules
 Boolconst : 'true' | 'false' ;
@@ -228,5 +238,5 @@ Floatconst : INT '.' NUM (('e'|'E') INT )? | INT ('e'|'E') INT;
 INT : ('+' | '-')? NUM ;
 fragment NUM : ('0'..'9')+;
 STRING :  '"' ~('"')+ '"' ;
-WS : (' ' | '\t' | '\n' |'\r\n' ) {skip();} ;
+WS : (' ' | '\t' | '\n' |'\r\n' )+  -> skip;
 //WS : (' ' | '\t' | '\n' |'\r\n' )+ -> channel(HIDDEN);

@@ -17,12 +17,24 @@
  */
 package oscar.flatzinc.cbls
 
+import oscar.cp.core.NoSolutionException
 import oscar.flatzinc._
 
 object FznOscarCbls extends FznOscarMain {
   checkAntlr()   
   withCheck{
     val opts = options("fzn-oscar-cbls",cbls=true)
-	val solutions = new FZCBLSModelBuilder().solve(opts)
+    try {
+      val solutions = new FZCBLSBuilder().solve(opts)
+    }catch{
+      case e: NoSolutionException => {
+        println("====UNSATISFIABLE=====")
+      }
+      case e: Exception => {//catch-all clause...
+        //System.err.println(e.getMessage())
+        e.printStackTrace()
+        System.err.println("\tPlease report the error to "+mail+" with all relevant info and data.")
+      }
+    }
   }
 }

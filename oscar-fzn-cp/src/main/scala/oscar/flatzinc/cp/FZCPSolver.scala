@@ -30,34 +30,34 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
   implicit val solver: CPSolver = CPSolver(pstrength)
   solver.silent = true
   val poster = new CPConstraintPoster(pstrength);
-  val dicoVars = MMap.empty[String,CPIntVar]
+  val dictVars = MMap.empty[String,CPIntVar]
   def getIntVar(v:Variable):CPIntVar = {
-    dicoVars.get(v.id) match {
+    dictVars.get(v.id) match {
       case None if v.isBound =>
         val c = v match{
           case v:IntegerVariable => CPIntVar(v.value);
           case v:BooleanVariable => CPBoolVar(v.boolValue);
         }
-        dicoVars += v.id -> c;
+        dictVars += v.id -> c;
         c
 	  case Some(c) => c;
 
 	}
   }
   def getBoolVar(v:Variable):CPBoolVar = {
-	dicoVars.get(v.id) match {
+	dictVars.get(v.id) match {
 	  case None if v.isBound =>
 	    val c = v match{
 	      case v:BooleanVariable => CPBoolVar(v.boolValue);
 	    }
-	    dicoVars += v.id -> c;
+	    dictVars += v.id -> c;
 	    c
 	  case Some(c) => c.asInstanceOf[CPBoolVar];
 	}
   }
   def createVariables(){
     for(v <- model.variables){
-      dicoVars(v.id) = v match{
+      dictVars(v.id) = v match{
         case bv:BooleanVariable => CPBoolVar()
         case iv:IntegerVariable => iv.domain match{
           case DomainRange(min, max) => CPIntVar(min, max)
@@ -120,7 +120,7 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
   }
   def handleSolution() = {
      model.solution.handleSolution(
-      (s: String) => dicoVars.get(s) match {
+      (s: String) => dictVars.get(s) match {
         case Some(intVar) =>
           intVar.value + ""
         case r => if(s=="true" || s=="false") s 

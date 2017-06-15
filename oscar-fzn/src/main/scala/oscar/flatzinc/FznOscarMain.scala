@@ -19,7 +19,7 @@ package oscar.flatzinc
 
 
 trait FznOscarMain extends App{
-  val mail = "jean-noel.monette@it.uu.se"
+  val mail = "gustav.bjordal@it.uu.se"
     
   def options(name: String,cbls: Boolean): Options = new Options(name,cbls,args)
   

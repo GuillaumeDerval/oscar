@@ -27,7 +27,7 @@ import oscar.flatzinc.UnsatException
 //TODO: CheckEmpty should go to the variables, as the domains are also used for normal sets that can be empty.
 //TODO: differentiate between Int and Bool
 //TODO: Add set variables
-abstract class Variable(val id: String) {
+abstract class Variable(val id: String, val anns: Iterable[oscar.flatzinc.model.Annotation] = List.empty) {
   def isDefined: Boolean = {
     definingConstraint.isDefined//annotations.foldLeft(false)((acc,x) => x.name=="is_defined_var" || acc)
   }
@@ -44,8 +44,12 @@ abstract class Variable(val id: String) {
   def isBound: Boolean;
 }
 
-case class BooleanVariable(i: String, private var _value: Option[Boolean] = None) extends Variable(i) {
+case class BooleanVariable(i: String,
+                           private var _value: Option[Boolean] = None,
+                           a: Iterable[oscar.flatzinc.model.Annotation] = List.empty) extends Variable(i,a) {
   def this(s:String, dom: Domain) = this(s, {if (dom.min==dom.max) Some(dom.min==1) else None})
+  def this(s:String, dom: Domain, anns: Iterable[oscar.flatzinc.model.Annotation]) =
+    this(s, {if (dom.min==dom.max) Some(dom.min==1) else None},anns)
   def isTrue: Boolean = _value.getOrElse(false)
   def isFalse: Boolean = !_value.getOrElse(true)
   override def isBound: Boolean = _value.isDefined
@@ -53,10 +57,12 @@ case class BooleanVariable(i: String, private var _value: Option[Boolean] = None
   def bind(v: Boolean) = if(isBound && v!=_value.get) throw new UnsatException("Empty Domain"); else _value = Some(v)
   def boolValue: Boolean = _value.get
   def intValue: Int = if(_value.get) 1 else 0
-  override def toString = {this.id + (if(isBound) "="+_value.get else "");}
+  override def toString = {this.id + (if(isBound) "="+_value.get else "") /*+ (if(!anns.isEmpty) " :: " + anns.mkString(" :: ") else "" )*/}
 }
 
-case class IntegerVariable(i: String, private var dom: Domain) extends Variable(i) {
+case class IntegerVariable(i: String,
+                           private var dom: Domain,
+                           a: Iterable[oscar.flatzinc.model.Annotation] = List.empty) extends Variable(i,a) {
   def this(i: String, v: Int) = this(i,DomainRange(v,v));
   def domain = dom
   override def domainSize = dom.size
@@ -86,5 +92,5 @@ case class IntegerVariable(i: String, private var dom: Domain) extends Variable(
   override def isBound: Boolean = min == max
   def bind(v: Int) = {geq(v); leq(v);}
   def value:Int = {if(isBound) min else throw new Exception("Asking for the value of an unbound variable")}
-  override def toString = {this.id + (if(isBound) "="+value else "");}
+  override def toString = {this.id + (if(isBound) "="+value else "") /*+ (if(!anns.isEmpty) " :: " +  anns.mkString(" :: ") else "" )*/}
 }

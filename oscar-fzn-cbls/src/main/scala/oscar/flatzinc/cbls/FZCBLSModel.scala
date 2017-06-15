@@ -74,7 +74,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
   }
   def addDefaultNeighbourhoods(){
     if (vars.length > 0) {
-      val varsToSwap = vars.groupBy(v => v.dom)
+      //val varsToSwap = vars.groupBy(v => v.dom)
       addNeighbourhood((o,c) => new MaxViolating(vars.toArray, o, c),Array.empty[CBLSIntVarDom])
 
       val boolVars = vars.filter((v: CBLSIntVar) => v.min == 0 && v.max == 1)
@@ -92,7 +92,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
      //Only create variables that are not fixed by an invariant.
     for (parsedVariable <- fzModel.variables if !parsedVariable.isDefined) {
       parsedVariable match {
-        case IntegerVariable(id, dom) =>
+        case IntegerVariable(id, dom,ann) =>
           //TODO: Put this in a method! or make it deterministic as the neighbourhoods should take care of the assignments!
           val initialValue = dom match {
             case oscar.flatzinc.model.DomainRange(min, max) =>
