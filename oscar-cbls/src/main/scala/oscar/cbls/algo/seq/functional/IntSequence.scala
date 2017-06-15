@@ -94,7 +94,11 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
 
   def valueAtPosition(position : Int) : Option[Int]
 
-  def positionsOfValue(value : Int) : SortedSet[Int]
+  def positionsOfValue(value : Int) : Iterable[Int]
+
+  final def positionsOfValueSet(value : Int) : SortedSet[Int] = {
+    SortedSet.empty[Int] ++ positionsOfValue(value)
+  }
 
   def contains(value : Int) : Boolean
 
@@ -279,11 +283,27 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     internalPositionToValue.get(internalPosition)
   }
 
-  def positionsOfValue(value : Int) : SortedSet[Int] = {
+
+  def positionsOfValue(value : Int) : Iterable[Int] = {
     valueToInternalPositions.get(value) match {
       case None => SortedSet.empty
       case Some(internalPositions) =>
-        SortedSet.empty ++ internalPositions.values.map(externalToInternalPosition.backward(_))
+        internalPositions.values.map(externalToInternalPosition.backward(_))
+    }
+  }
+
+
+  def positionsOfValueQ(value : Int) : QList[Int] = {
+    valueToInternalPositions.get(value) match {
+      case None => null
+      case Some(internalPositions) =>
+        var toReturn:QList[Int] = null
+        var toDigest:List[Int] = internalPositions.keys
+        while(toDigest.nonEmpty){
+          toReturn = QList(externalToInternalPosition.backward(toDigest.head),toReturn)
+          toDigest = toDigest.tail
+        }
+        toReturn
     }
   }
 
@@ -829,7 +849,7 @@ class MovedIntSequence(val seq:IntSequence,
     tmp
   }
 
-  override def positionsOfValue(value : Int) : SortedSet[Int] = {
+  def positionsOfValue(value : Int) : Iterable[Int] = {
     seq.positionsOfValue(value).map(oldPosToNewPos)
   }
 
@@ -940,9 +960,9 @@ class InsertedIntSequence(seq:IntSequence,
 
   override def unorderedContentNoDuplicate : List[Int] = if(seq.nbOccurrence(insertedValue) == 0) insertedValue :: seq.unorderedContentNoDuplicate else seq.unorderedContentNoDuplicate
 
-  override def positionsOfValue(value : Int) : SortedSet[Int] = {
-    val translatedPos:SortedSet[Int] = seq.positionsOfValue(value).map(oldPOsition => oldPos2NewPos(oldPOsition))
-    if(value == this.insertedValue) translatedPos.+(pos)
+  override def positionsOfValue(value : Int) : Iterable[Int] = {
+    val translatedPos:Iterable[Int] = seq.positionsOfValue(value).map(oldPOsition => oldPos2NewPos(oldPOsition))
+    if(value == this.insertedValue) translatedPos.++(List(pos))
     else translatedPos
   }
 
@@ -1081,9 +1101,10 @@ class RemovedIntSequence(val seq:IntSequence,
     }
   }
 
-  override def positionsOfValue(value : Int) : SortedSet[Int] = {
-    val oldPosSet = seq.positionsOfValue(value).-(positionOfDelete)
-    oldPosSet.map(oldPos2NewPos)
+  override def positionsOfValue(value : Int) : Iterable[Int] = {
+    seq.positionsOfValue(value).flatMap(
+      oldPos =>
+        if(oldPos == positionOfDelete) None else Some(oldPos2NewPos(oldPos)))
   }
 
   def oldPos2NewPos(oldPos:Int) = {

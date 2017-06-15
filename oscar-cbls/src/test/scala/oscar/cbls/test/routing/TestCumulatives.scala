@@ -24,7 +24,7 @@ import oscar.cbls.lib.constraint.LE
 import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeIntegerDimensionOnVehicle, ForwardCumulativeConstraintOnVehicle}
 import oscar.cbls.lib.invariant.routing.RouteSuccessorAndPredecessors
 import oscar.cbls.lib.invariant.seq.Size
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
+import oscar.cbls.lib.search.combinators.{RoundRobin, BestSlopeFirst, Mu, Profile}
 import oscar.cbls.modeling.Algebra._
 
 class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int, deltaAtNode:Array[Int], maxCapa:Int)
@@ -90,7 +90,7 @@ object TestCumulatives extends App{
 
   model.close()
 
-  def routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,neighborhoodName = "InsertUF",best=true))
+  def routeUnroutedPoint(k:Int) =  new InsertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,neighborhoodName = "InsertUF",best=true)
 
   //TODO: using post-filters on k-nearest is probably crap
   val routeUnroutedPoint2 =  Profile(new InsertPointRoutedFirst(myVRP.routed,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,x => !myVRP.isRouted(x)),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.size < n/2))
@@ -107,12 +107,19 @@ object TestCumulatives extends App{
     intermediaryStops = true,
     maxDepth = 3))
 
-  val remove = RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP)
 
-  val swapInOut = Profile((remove andThen routeUnroutedPoint) name ("SWAPInsert"))
-  val search = (BestSlopeFirst(List(routeUnroutedPoint2, routeUnroutedPoint, swapInOut, onePtMove(10),twoOpt, threeOpt(10,true),vlsn1pt, routeUnroutedPoint)) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
+  val vlsnInsert = Mu[InsertPointMove](
+  routeUnroutedPoint(3),
+  l => if (myVRP.unroutedNodes.isEmpty) None else Some(routeUnroutedPoint(5)),
+  intermediaryStops = false,
+  maxDepth = 2)
 
-  search.verbose = 1
+  val remove = RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,best=true)
+
+  val swapInOut = Profile((remove andThen routeUnroutedPoint(10)) name ("SWAPInsert"))
+  val search = new RoundRobin(List(swapInOut,vlsnInsert)) exhaust onePtMove(10) //(BestSlopeFirst(List(vlsnInsert, routeUnroutedPoint2, routeUnroutedPoint(10), swapInOut, onePtMove(10),twoOpt, threeOpt(10,true),vlsn1pt, routeUnroutedPoint)) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
+
+  search.verbose = 3
   //search.verboseWithExtraInfo(5, ()=> "" + myVRP)
 
   print("Doing all moves ...")

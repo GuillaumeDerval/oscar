@@ -16,6 +16,7 @@ package oscar.cbls.business.routing.neighborhood
   ******************************************************************************/
 
 import oscar.cbls.algo.search.HotRestart
+import oscar.cbls.algo.seq.functional.IntSequence
 import oscar.cbls.business.routing.model.PDP
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.EasyNeighborhood
@@ -258,7 +259,7 @@ case class PickupDeliverySegmentExchange(pdp: PDP,
 
   override def exploreNeighborhood(): Unit = {
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
-    def positionsOfValue(value:Int) = pdp.routes.newValue.positionOfAnyOccurrence(value)
+    def routePosition(node: Int) = pdp.routes.value.positionOfAnyOccurrence(node)
 
     def evalObjAndRollBack() : Int = {
       val a = obj.value
@@ -273,30 +274,24 @@ case class PickupDeliverySegmentExchange(pdp: PDP,
     val relevantNeighborsNow = relevantNeighbors()
     for(firstVehicle <- startVehicle until pdp.v - 1){
       for(firstSegment <- completeSegments(firstVehicle)){
-        firstSegmentStartPosition = positionsOfValue(firstSegment._1).get
-        firstSegmentEndPosition = positionsOfValue(firstSegment._2).get
+        firstSegmentStartPosition = routePosition(firstSegment._1).get
+        firstSegmentEndPosition = routePosition(firstSegment._2).get
+        val prevOfFirstSegment = pdp.prev(firstSegment._1).value
+        val nextOfFirstSegment = pdp.next(firstSegment._2).value
+        val durationOfFirstSegment = pdp.leaveTimes(firstSegment._2).value - Math.max(pdp.arrivalTimes(firstSegment._1).value,pdp.earlylines(firstSegment._1))
         for(secondVehicle <- firstVehicle+1 until pdp.v){
           for(secondSegment <- completeSegments(secondVehicle) if relevantNeighborsNow(firstSegment._1).toList.contains(pdp.prev(secondSegment._1).value)){
-            secondSegmentStartPosition = positionsOfValue(secondSegment._1).get
-            secondSegmentEndPosition = positionsOfValue(secondSegment._2).get
+            secondSegmentStartPosition = routePosition(secondSegment._1).get
+            secondSegmentEndPosition = routePosition(secondSegment._2).get
+            val prevOfSecondSegment = pdp.prev(secondSegment._1).value
+            val nextOfSecondSegment = pdp.next(secondSegment._2).value
+            val durationOfSecondSegment = pdp.leaveTimes(secondSegment._2).value - Math.max(pdp.arrivalTimes(secondSegment._1).value,pdp.earlylines(secondSegment._1))
 
-            val (firstStartEarly,firstStartDead) = (if(pdp.earlylines(firstSegment._1) == -1)Int.MaxValue else pdp.earlylines(firstSegment._1),
-              if(pdp.deadlines(firstSegment._1) == -1)Int.MaxValue else pdp.deadlines(firstSegment._1))
-            val (firstEndEarly,firstEndDead) = (if(pdp.earlylines(firstSegment._2) == -1)Int.MaxValue else pdp.earlylines(firstSegment._2),
-              if(pdp.deadlines(firstSegment._2) == -1)Int.MaxValue else pdp.deadlines(firstSegment._2))
-            val (secondStartEarly,secondStartDead) = (if(pdp.earlylines(secondSegment._1) == -1)Int.MaxValue else pdp.earlylines(secondSegment._1),
-              if(pdp.deadlines(secondSegment._1) == -1)Int.MaxValue else pdp.deadlines(secondSegment._1))
-            val (secondEndEarly,secondEndDead) = (if(pdp.earlylines(secondSegment._2) == -1)Int.MaxValue else pdp.earlylines(secondSegment._2),
-              if(pdp.deadlines(secondSegment._2) == -1)Int.MaxValue else pdp.deadlines(secondSegment._2))
-
-
-            if(secondStartEarly != Int.MaxValue && firstStartDead != Int.MaxValue && secondStartEarly > firstStartDead){}
-            else if(secondStartDead != Int.MaxValue && firstStartEarly != Int.MaxValue && secondStartDead < firstStartEarly){}
-            else if(secondEndEarly != Int.MaxValue && firstEndDead != Int.MaxValue && secondEndEarly > firstEndDead){}
-            else if(secondEndDead != Int.MaxValue && firstEndEarly != Int.MaxValue && secondEndDead < firstEndEarly){}
-            else if(secondStartEarly != Int.MaxValue && firstEndDead != Int.MaxValue && secondStartEarly > firstEndDead){}
-            else if(secondEndDead != Int.MaxValue && firstStartEarly != Int.MaxValue && secondEndDead < firstStartEarly){}
-            else {
+            if(pdp.leaveTimes(prevOfFirstSegment).value < pdp.deadlines(secondSegment._1) &&
+              pdp.leaveTimes(prevOfSecondSegment).value < pdp.deadlines(firstSegment._1) &&
+              pdp.deadlines(nextOfFirstSegment) > (pdp.leaveTimes(prevOfFirstSegment).value + durationOfSecondSegment) &&
+              pdp.deadlines(nextOfSecondSegment) > (pdp.leaveTimes(prevOfSecondSegment).value + durationOfFirstSegment))
+            {
               doMove(firstSegmentStartPosition, firstSegmentEndPosition, secondSegmentStartPosition, secondSegmentEndPosition)
               if (evaluateCurrentMoveObjTrueIfStopRequired(evalObjAndRollBack())) {
                 seq.releaseTopCheckpoint()

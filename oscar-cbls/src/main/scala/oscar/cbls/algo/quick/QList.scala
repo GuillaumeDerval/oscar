@@ -55,6 +55,11 @@ object QList{
     }
     acc
   }
+
+  def qMap[T,X](q:QList[T],fun:T => X):QList[X] = {
+    if(q == null) null
+    else q.qMap(fun)
+  }
 }
 
 class IterableQList[@specialized T](l:QList[T]) extends Iterable[T]{

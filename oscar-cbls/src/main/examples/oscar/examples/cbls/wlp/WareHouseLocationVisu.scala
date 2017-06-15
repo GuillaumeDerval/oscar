@@ -107,11 +107,11 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
       List(
         Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
         Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),
-        Profile(swapsK(20))
+        Profile(swapsK(20)), Profile(mu(4,5,10))
 //       Profile(doubleSwap(10))
       ),refresh = W/10)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 2, obj)
-//      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/3), 1, obj))
+      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/3), 1, obj)
     ) /*exhaust mu(4,5,10)*/ afterMove(
     if(obj.value < bestObj){
       bestObj = obj.value

@@ -132,7 +132,7 @@ class Successors(sequence:ChangingSeqValue, successorValues:Array[CBLSSetVar])
 
   def computeForValues(seq:IntSequence, values:SortedSet[Int]){
     for(value <- values){
-      successorValues(value) := seq.positionsOfValue(value).flatMap(position => seq.successorPos2Val(position))
+      successorValues(value) := SortedSet.empty[Int] ++ seq.positionsOfValue(value).flatMap(position => seq.successorPos2Val(position))
     }
   }
 
