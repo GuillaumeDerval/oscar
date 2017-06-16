@@ -39,7 +39,33 @@ object TestRedBlackTree extends App{
     }
   }
 
-  def performRandomInsertAndRemoves() {
+
+  def testReachesMin(t:RedBlackTreeMap[Boolean]){
+    println("TestReachesMin")
+    if(t.isEmpty) return
+    val smallestKey = t.smallest.get._1
+    for(i <- t.keys){
+      testReachesMinFrom(t,i,smallestKey)
+    }
+
+    require(smallestKey == t.keys.min)
+  }
+
+  def testReachesMinFrom(t:RedBlackTreeMap[Boolean],i:Int,minValue:Int){
+
+    var explorer = t.positionOf(i).get
+
+    while(explorer.prev match{
+      case None =>
+        require(explorer.key == minValue)
+        false
+      case Some(e) =>
+        explorer = e
+        true
+    }){}
+  }
+
+    def performRandomInsertAndRemoves() {
     var reference : SortedMap[Int, Boolean] = SortedMap.empty
     var sut = RedBlackTreeMap.empty[Boolean]
     val random = new Random()
@@ -63,6 +89,8 @@ object TestRedBlackTree extends App{
       //create set from sorted
 
       checkEqual(reference, RedBlackTreeMap.makeFromSorted(reference.toList.sortBy(_._1)))
+
+      if(it % 113 == 0) testReachesMin(sut)
     }
   }
 
