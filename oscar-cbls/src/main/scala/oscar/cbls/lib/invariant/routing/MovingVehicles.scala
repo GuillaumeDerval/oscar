@@ -158,4 +158,3 @@ class MovingVehicles(routes:ChangingSeqValue, v:Int)
       Some("error on moving vehicle, got " + this.newValue.toList + " should be " + valuesFromScratch.toList))
   }
 }
-
