@@ -23,7 +23,7 @@ case class SortSequence(v: SeqValue,sortValue:Int => Int)
   extends SeqInvariant(IntSequence.empty(),v.max)
   with SeqNotificationTarget{
 
-  setName("Sort(" + v.name + ")")
+  setName("SortSequence(" + v.name + ")")
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
@@ -73,7 +73,7 @@ case class SortSequence(v: SeqValue,sortValue:Int => Int)
     changes match {
       case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         digestChanges(prev)
-        //find where the value should be located by dychotomy
+        //find where the value should be located by dichotomy
         val transformedPositionOfInsert = searchPositionOfInsert(prev.newValue, value)
         this.insertAtPosition(value,transformedPositionOfInsert)
 
