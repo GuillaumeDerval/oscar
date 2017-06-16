@@ -16,30 +16,9 @@ package oscar.cbls.lib.invariant.seq
   ******************************************************************************/
 
 import oscar.cbls.algo.seq.functional.IntSequence
-import oscar.cbls.algo.seq.functional.IntSequence
-import oscar.cbls.core.computation.ChangingSeqValue
-import oscar.cbls.core.computation.SeqCheckpointedValueStack
-import oscar.cbls.core.computation.SeqInvariant
-import oscar.cbls.core.computation.SeqNotificationTarget
-import oscar.cbls.core.computation.SeqUpdate
-import oscar.cbls.core.computation.SeqUpdateAssign
-import oscar.cbls.core.computation.SeqUpdateDefineCheckpoint
-import oscar.cbls.core.computation.SeqUpdateInsert
-import oscar.cbls.core.computation.SeqUpdateLastNotified
-import oscar.cbls.core.computation.SeqUpdateMove
-import oscar.cbls.core.computation.SeqUpdateRemove
-import oscar.cbls.core.computation.SeqUpdateRollBackToCheckpoint
-import oscar.cbls.core.computation.SeqValue
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls.core.computation.{ChangingSeqValue, SeqCheckpointedValueStack, SeqInvariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint, SeqValue}
 import oscar.cbls.core.propagation.Checker
 
-/**
- * maintains this as the flipped value of v
- * @param v
- * @param maxPivotPerValuePercent
- * @param maxHistorySize
- */
 case class SortSequence(v: SeqValue,sortValue:Int => Int)
   extends SeqInvariant(IntSequence.empty(),v.max)
   with SeqNotificationTarget{
@@ -55,15 +34,48 @@ case class SortSequence(v: SeqValue,sortValue:Int => Int)
     digestChanges(changes)
   }
 
+  def searchPositionOfInsert(seq:IntSequence, value:Int):Int = {
+    val transformedValue = sortValue(value)
+
+    def otherIsSmaller(otherValue:Int):Boolean = {
+      val otherTransformedValue = sortValue(otherValue)
+      if(otherTransformedValue < transformedValue) true
+      else if (otherTransformedValue > transformedValue) false
+      else otherValue < value // tie break based on value because it must be deterministic.
+    }
+
+    if(seq.size == 0) return 0
+    if(seq.size == 1) {
+      if (otherIsSmaller(seq.head)) {
+        return 0
+      } else {
+        return 1
+      }
+    }
+
+    if(otherIsSmaller(seq.last)) return seq.size
+
+    var lowerPositionOfInsert = 0
+    var upperPositionOfInsert = seq.size-1
+
+    while(lowerPositionOfInsert + 1 < upperPositionOfInsert) {
+      val midPosition = (lowerPositionOfInsert + upperPositionOfInsert) / 2
+      if (otherIsSmaller(seq.valueAtPosition(midPosition).get)) {
+        lowerPositionOfInsert = midPosition
+      } else {
+        upperPositionOfInsert = midPosition
+      }
+    }
+    lowerPositionOfInsert
+  }
+
   def digestChanges(changes : SeqUpdate){
     changes match {
       case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         digestChanges(prev)
-
         //find where the value should be located by dychotomy
-        
-
-
+        val transformedPositionOfInsert = searchPositionOfInsert(prev.newValue, value)
+        this.insertAtPosition(value,transformedPositionOfInsert)
 
       case m@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         digestChanges(prev)
@@ -98,8 +110,7 @@ case class SortSequence(v: SeqValue,sortValue:Int => Int)
   private def sortSequenceBy(i:IntSequence,by:Int => Int):IntSequence = IntSequence(i.toList.sortBy(by))
 
   override def checkInternals(c: Checker) {
-    c.check(this.newValue.toList equals v.value.toList.reverse, Some("this.newValue(=" + this.newValue.toList + ") == v.value.flip(=" + v.value.toList.reverse + ")"))
-    c.check(this.newValue.toList.reverse equals v.value.toList, Some("this.newValue.flip(="+ this.newValue.toList.reverse +") == v.value(="+ v.value.toList+ ")"))
+    c.check(this.newValue.toList equals sortSequenceBy(v.value,sortValue), Some("this.newValue(=" + this.newValue.toList + ") == v.value.flip(=" + v.value.toList.reverse + ")"))
   }
 }
 
