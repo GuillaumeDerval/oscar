@@ -24,6 +24,7 @@
 
 package oscar.cbls.lib.invariant.set
 
+import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.Checker
 
@@ -37,7 +38,7 @@ import scala.collection.immutable.{SortedMap, SortedSet};
  */
 case class Union(left: SetValue, right: SetValue)
   extends SetInvariant(left.value.union(right.value), left.min.min(right.min) to left.max.max(right.max))
-with SetNotificationTarget{
+  with SetNotificationTarget{
   require(left != right, "left and right canot be the same instance for Union!")
 
   registerStaticAndDynamicDependency(left)
@@ -109,9 +110,9 @@ case class UnionAll(sets: Iterable[SetValue])
   @inline
   def notifyInsertOn(v: ChangingSetValue, value: Int) {
     assert(sets.exists(_ == v))
-    
+
     val i = value + offset
-    
+
     if (count(i) == 0) {
       this.insertValue(value)
     }
@@ -121,10 +122,10 @@ case class UnionAll(sets: Iterable[SetValue])
   @inline
   def notifyDeleteOn(v: ChangingSetValue, value: Int) {
     assert(sets.exists(_ == v))
-    
+
     val i = value + offset
     assert(count(i) >= 1)
-    
+
     if (count(i) == 1) this.deleteValue(value)
     count(i) = count(i) - 1
   }
@@ -147,7 +148,7 @@ case class UnionAll(sets: Iterable[SetValue])
 case class Inter(left: SetValue, right: SetValue)
   extends SetInvariant(left.value.intersect(right.value),
     left.min.max(right.min) to left.max.min(right.max))
-with SetNotificationTarget{
+  with SetNotificationTarget{
   require(left != right,"left and right cannot hte the same instance for Inter")
   registerStaticAndDynamicDependency(left)
   registerStaticAndDynamicDependency(right)
@@ -189,7 +190,7 @@ with SetNotificationTarget{
 case class SetMap(a: SetValue, fun: Int => Int,
                   initialDomain: Domain = FullRange)
   extends SetInvariant(SortedSet.empty, initialDomain)
-with SetNotificationTarget{
+  with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(a)
   finishInitialization()
@@ -306,7 +307,7 @@ case class Cardinality(v: SetValue)
   finishInitialization()
 
   override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
-   this := newValue.size
+    this := newValue.size
   }
 
   override def checkInternals(c: Checker) {
@@ -435,7 +436,7 @@ case class Interval(lb: IntValue, ub: IntValue)
  */
 case class TakeAny(from: SetValue, default: Int)
   extends IntInvariant(default, from.min to from.max)
-with SetNotificationTarget{
+  with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(from)
   finishInitialization()
@@ -585,3 +586,70 @@ case class BelongsTo(v: IntValue, set: SetValue)
     c.check(this.value == (if (set.value.contains(v.value)) 1 else 0))
   }
 }
+
+
+/**
+ *
+ * @param s
+ * @param subsetToMonitorAndMaxValues iterable of (subset, max occurrents in the subset, weight in case of violation)
+ */
+//TO TEST!!!!
+case class Occurrences(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(Iterable[Int],Int,Int)])
+  extends IntInvariant(0,0 to subsetToMonitorAndMaxValues.size)
+  with SetNotificationTarget{
+
+  registerStaticAndDynamicDependenciesNoID(s)
+  finishInitialization()
+
+  require(s.min == 0)
+
+  val subsetAndMaxAndWeightArray = subsetToMonitorAndMaxValues.toArray
+  val n = subsetAndMaxAndWeightArray.length
+
+  val valueToSubsetID:Array[QList[Int]] = Array.fill(s.max+1)(null)
+
+  for (forbiddenID <- subsetAndMaxAndWeightArray.indices) {
+    val (values,maxNumber,weight) = subsetAndMaxAndWeightArray(forbiddenID)
+    for(value <- values){
+      valueToSubsetID(value) = QList(forbiddenID,valueToSubsetID(value))
+    }
+  }
+
+  this :+= 0
+  val subsetToNbPresent:Array[Int] = Array.fill(n)(0)
+  for(value <- s.value){
+    notifyInsert(value)
+  }
+
+  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int],
+                                removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
+    for (added <- addedValues) notifyInsert(added)
+    for(deleted <- removedValues) notifyDelete(deleted)
+  }
+
+  @inline
+  private def notifyInsert(value: Int) {
+    for(subset <- QList.toIterable(valueToSubsetID(value))){
+      subsetToNbPresent(subset) = subsetToNbPresent(subset) + 1
+      if(subsetToNbPresent(subset) == subsetAndMaxAndWeightArray(subset)._2 + 1) {
+        this :+= subsetAndMaxAndWeightArray(subset)._3
+      }
+    }
+  }
+
+  @inline
+  private def notifyDelete(value: Int) {
+    for(subset <- QList.toIterable(valueToSubsetID(value))){
+      subsetToNbPresent(subset) = subsetToNbPresent(subset) + 1
+      if(subsetToNbPresent(subset) == subsetAndMaxAndWeightArray(subset)._2){
+        this :-= subsetAndMaxAndWeightArray(subset)._3
+      }
+    }
+  }
+
+  override def checkInternals(c: Checker) {
+    val violation = subsetToMonitorAndMaxValues.map({case (values,maxValue,weight) => if(values.count(v => s.value.contains(v)) > maxValue) weight else 0})
+    c.check(this.value == violation)
+  }
+}
+
