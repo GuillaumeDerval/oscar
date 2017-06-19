@@ -29,36 +29,73 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  val checkpointStack = new SeqCheckpointedValueStack[IntSequence]()
+  this := sortSequenceBy(value,sortValue)
+
+  private val checkpointStack = new SeqCheckpointedValueStack[IntSequence]()
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
     digestChanges(changes)
   }
 
   def positionOfSmallestGE(value:Int):Option[IntSequenceExplorer] = {
-    val position = searchPositionOfInsert(this.value, value)
-    this.value.explorerAtPosition(position)
+    if(this.value.isEmpty) {
+      None
+    }else {
+      val position = searchPositionOfInsert(this.value, value)
+      if(position == this.value.size){
+        None
+      }else{
+        this.value.explorerAtPosition(position)
+      }
+    }
   }
 
   def positionOfLargestSE(value:Int):Option[IntSequenceExplorer] = {
-    var explorerOpt = positionOfSmallestGE(this.value,value)
-    while(explorerOpt match{
-      case None => return None
-      case Some(e) => {
-        val e = if e.value
+    if(this.value.isEmpty) {
+      None
+    }else {
+      val transformedValue = sortValue(value)
+
+      val seq = v.value
+      def otherIsSmaller(otherValue:Int):Boolean = {
+        isSmaller(value,otherValue)(transformedValue)
       }
-    })
+
+      if(seq.size == 0) return None
+      
+      if(seq.size == 1) {
+        if (otherIsSmaller(seq.head)) {
+          return seq.explorerAtPosition(0)
+        } else {
+          return None
+        }
+      }
+
+      if(otherIsSmaller(seq.last)) return seq.explorerAtPosition(seq.size-1)
+
+      var lowerPositionOfSearch = 0
+      var upperPositionOfSearch = seq.size-1
+
+      while(lowerPositionOfSearch + 1 < upperPositionOfSearch) {
+        val midPosition = (lowerPositionOfSearch + upperPositionOfSearch) / 2
+        if (otherIsSmaller(seq.valueAtPosition(midPosition).get)) {
+          lowerPositionOfSearch = midPosition
+        } else {
+          upperPositionOfSearch = midPosition
+        }
+      }
+      seq.explorerAtPosition(lowerPositionOfSearch)
+    }
   }
 
-  def isSmaller(firstValue:Int,secondValue:Int)(firstTransformedValue:Int = sortValue(firstValue)):Boolean = {
-    val firstTransformedValue = sortValue(firstValue)
-    val secondTransformedValue = sortValue(secondValue)
+  private def isSmaller(firstValue:Int,secondValue:Int)
+                       (firstTransformedValue:Int = sortValue(firstValue),secondTransformedValue:Int = sortValue(secondValue)):Boolean = {
     if(firstTransformedValue < secondTransformedValue) true
     else if (firstTransformedValue > secondTransformedValue) false
     else firstValue < secondValue
   }
 
-   def searchPositionOfInsert(seq:IntSequence, value:Int):Int = {
+  private def searchPositionOfInsert(seq:IntSequence, value:Int):Int = {
     val transformedValue = sortValue(value)
 
     def otherIsSmaller(otherValue:Int):Boolean = {
@@ -90,7 +127,8 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
     lowerPositionOfInsert
   }
 
-  def digestChanges(changes : SeqUpdate){
+
+  private def digestChanges(changes : SeqUpdate){
     changes match {
       case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         digestChanges(prev)
