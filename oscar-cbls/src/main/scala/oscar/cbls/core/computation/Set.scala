@@ -21,8 +21,9 @@
 
 package oscar.cbls.core.computation
 
+import oscar.cbls.algo.dll.DPFDLLStorageElement
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls.core.propagation.{KeyForElementRemoval, PropagationElement, Checker}
 
 import scala.collection.immutable.SortedSet
 import scala.language.implicitConversions
@@ -234,7 +235,25 @@ trait SetNotificationTarget {
    * @param newValue
    */
   def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int])
+
+  def registerDynamicValueWiseDependency(s:SetValue):ValueWiseKey = ???
 }
+
+
+class ValueWiseKey(keyForListenedElement: DPFDLLStorageElement[(PropagationElement, Int)], keyForListeningElement: DPFDLLStorageElement[PropagationElement])
+  extends KeyForElementRemoval(keyForListenedElement, keyForListeningElement){
+
+
+  override def performRemove() : Unit = {
+    //remove all values in the focus of this key
+    super.performRemove
+  }
+
+  def addToKey(value:Int) = ???
+  def removeFromKey(value:Int) = ???
+}
+
+
 
 object ChangingSetValue{
   implicit val ord:Ordering[ChangingSetValue] = new Ordering[ChangingSetValue]{

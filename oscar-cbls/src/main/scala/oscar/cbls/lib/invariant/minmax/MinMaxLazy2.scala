@@ -15,8 +15,8 @@ abstract class MinConstArrayLazy2(constArray: Array[Int], condSet: SetValue, def
   val n = constArray.length
   val positionsSortedByIncreasingValue:Array[Int] = constArray.sortBy(a => a)
 
-  registerStaticDependency(cond)
-  val key = registerDynamicValueWiseDependency(cond)
+  registerStaticDependency(condSet)
+  val key:ValueWiseKey = registerDynamicValueWiseDependency(condSet)
   finishInitialization()
 
   //only the smallest position in cond
@@ -96,18 +96,5 @@ abstract class MinConstArrayLazy2(constArray: Array[Int], condSet: SetValue, def
 
   }
 
-}
-
-class ValueWiseKey(keyForListenedElement: DPFDLLStorageElement[(PropagationElement, Int)], keyForListeningElement: DPFDLLStorageElement[PropagationElement])
-  extends KeyForElementRemoval(keyForListenedElement, keyForListeningElement){
-
-
-  override def performRemove() : Unit = {
-    //remove all values in the focus of this key
-    super.performRemove
-  }
-
-  def addToKey(value:Int) = ???
-  def removeFromKey(value:Int) = ???
 }
 

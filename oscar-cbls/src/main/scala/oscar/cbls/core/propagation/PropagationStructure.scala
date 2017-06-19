@@ -1204,7 +1204,7 @@ trait BulkPropagator extends PropagationElement {
 /**
  * @author renaud.delandtsheer@cetic.be
  */
-trait Checker {
+abstract class Checker {
   def check(verity: Boolean, traceOption: Option[String] = None)
 }
 
