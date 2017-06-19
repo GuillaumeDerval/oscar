@@ -15,15 +15,16 @@ package oscar.cbls.lib.invariant.seq
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.algo.seq.functional.IntSequence
+import oscar.cbls.algo.seq.functional.{IntSequenceExplorer, IntSequence}
 import oscar.cbls.core.computation.{ChangingSeqValue, SeqCheckpointedValueStack, SeqInvariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint, SeqValue}
 import oscar.cbls.core.propagation.Checker
 
-case class SortSequence(v: SeqValue,sortValue:Int => Int)
+
+case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="order")
   extends SeqInvariant(IntSequence.empty(),v.max)
   with SeqNotificationTarget{
 
-  setName("SortSequence(" + v.name + ")")
+  setName("SortSequence(" + v.name + " by:" + orderName + ")")
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
@@ -34,14 +35,34 @@ case class SortSequence(v: SeqValue,sortValue:Int => Int)
     digestChanges(changes)
   }
 
-  def searchPositionOfInsert(seq:IntSequence, value:Int):Int = {
+  def positionOfSmallestGE(value:Int):Option[IntSequenceExplorer] = {
+    val position = searchPositionOfInsert(this.value, value)
+    this.value.explorerAtPosition(position)
+  }
+
+  def positionOfLargestSE(value:Int):Option[IntSequenceExplorer] = {
+    var explorerOpt = positionOfSmallestGE(this.value,value)
+    while(explorerOpt match{
+      case None => return None
+      case Some(e) => {
+        val e = if e.value
+      }
+    })
+  }
+
+  def isSmaller(firstValue:Int,secondValue:Int)(firstTransformedValue:Int = sortValue(firstValue)):Boolean = {
+    val firstTransformedValue = sortValue(firstValue)
+    val secondTransformedValue = sortValue(secondValue)
+    if(firstTransformedValue < secondTransformedValue) true
+    else if (firstTransformedValue > secondTransformedValue) false
+    else firstValue < secondValue
+  }
+
+   def searchPositionOfInsert(seq:IntSequence, value:Int):Int = {
     val transformedValue = sortValue(value)
 
     def otherIsSmaller(otherValue:Int):Boolean = {
-      val otherTransformedValue = sortValue(otherValue)
-      if(otherTransformedValue < transformedValue) true
-      else if (otherTransformedValue > transformedValue) false
-      else otherValue < value // tie break based on value because it must be deterministic.
+      isSmaller(value,otherValue)(transformedValue)
     }
 
     if(seq.size == 0) return 0
