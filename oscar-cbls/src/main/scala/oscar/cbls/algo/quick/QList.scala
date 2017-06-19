@@ -44,7 +44,6 @@ object QList{
 
   def apply[T](head:T,tail:QList[T] = null):QList[T] = new QList(head,tail)
 
-
   implicit def toIterable[T](l:QList[T]):Iterable[T] = new IterableQList(l)
 
   def buildFromIterable[T](l:Iterable[T]):QList[T] = {

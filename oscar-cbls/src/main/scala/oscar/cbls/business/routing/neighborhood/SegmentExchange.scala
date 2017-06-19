@@ -228,21 +228,21 @@ case class SegmentExchangeMove(firstSegmentStartPosition:Int,
 
 
 /**
-  * This is a version of segmentExchange specialized for the pickup & delivery problems.
-  * It uses a method called computeCompleteSegments that returns the list of segments the neighborhood will use during his search.
-  * So no relevant neighbors or whatsoever is needed.
-  * Due to the precedence constraint, it isn't allowed to flip a segment.
-  *
-  * @param pdp The PDP object specific for pickup & delivery problems
-  * @param neighborhoodName the name of the neighborhood, used for verbosities
-  * @param hotRestart true if you doesn't wan't to test all the route each time the neighborhood is called
-  * @param best true if you want the best move false if you want the first acceptable move
-  */
+ * This is a version of segmentExchange specialized for the pickup & delivery problems.
+ * It uses a method called computeCompleteSegments that returns the list of segments the neighborhood will use during his search.
+ * So no relevant neighbors or whatsoever is needed.
+ * Due to the precedence constraint, it isn't allowed to flip a segment.
+ *
+ * @param pdp The PDP object specific for pickup & delivery problems
+ * @param neighborhoodName the name of the neighborhood, used for verbosities
+ * @param hotRestart true if you doesn't wan't to test all the route each time the neighborhood is called
+ * @param best true if you want the best move false if you want the first acceptable move
+ */
 case class PickupDeliverySegmentExchange(pdp: PDP,
                                          relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
                                          neighborhoodName:String = "PickupDeliverySegmentExchange",
-                                             hotRestart:Boolean = true,
-                                             best:Boolean = false)
+                                         hotRestart:Boolean = true,
+                                         best:Boolean = false)
   extends EasyNeighborhood[PickupDeliverySegmentExchangeMove](best,neighborhoodName){
 
   var firstSegmentStartPosition:Int = -1
@@ -323,9 +323,6 @@ case class PickupDeliverySegmentExchange(pdp: PDP,
       false)
   }
 }
-
-
-
 
 case class PickupDeliverySegmentExchangeMove(firstSegmentStartPosition:Int,
                                              firstSegmentEndPosition:Int,
