@@ -11,9 +11,7 @@ import oscar.cbls.lib.invariant.seq.Precedence
   */
 object PDPConstraints {
   def apply(
-             pdp: PDP,
-             maxDetours: List[(Int,Int,Int)] = List.empty,
-             maxDetourCalculation:(Int,Int) => Int = (a,b) => a + b
+             pdp: PDP
            ): (ConstraintSystem,ConstraintSystem) ={
     val fastConstraints = new ConstraintSystem(pdp.routes.model)
     val slowConstraints = new ConstraintSystem(pdp.routes.model)
@@ -22,7 +20,7 @@ object PDPConstraints {
     pDPConstraints.addCapacityConstraint()
     pDPConstraints.addTimeWindowConstraints()
     pDPConstraints.addPrecedencesConstraints()
-    pDPConstraints.addMaxDetoursConstraints(maxDetours,maxDetourCalculation)
+    pDPConstraints.addMaxDetoursConstraints()
 
     (fastConstraints, slowConstraints)
   }
@@ -62,22 +60,13 @@ class PDPConstraints(pdp: PDP, fastConstraints: ConstraintSystem, slowConstraint
     * The actual travel duration between two nodes can't be more than x seconds longer than
     * the shortest travel duration between this two nodes.
     * (If there is some nodes between from and to, the shortest path go through this nodes)
-    * @param maxDetours a tuple of Int where :
-    *                   1° from node
-    *                   2° to node
-    *                   3° maximum detour (x)
-    * @param maxDetourCalculation This function define the way we want the maxDetour to be calculate.
-    *                             By default, we simply add the maxDetour value to the travel duration between from and to
     */
-  def addMaxDetoursConstraints(maxDetours: List[(Int, Int, Int)], maxDetourCalculation:(Int,Int) => Int) = {
+  def addMaxDetoursConstraints() = {
     val arrivalTimes = pdp.arrivalTimes
     val leaveTimes = pdp.leaveTimes
-    val travelDurationMatrix = pdp.travelDurationMatrix
 
-    for(maxDetour <- maxDetours){
-      slowConstraints.post(LE(arrivalTimes(maxDetour._2) - leaveTimes(maxDetour._1),
-        maxDetourCalculation(maxDetour._3,
-          travelDurationMatrix.getTravelDuration(maxDetour._1, leaveTimes(maxDetour._1).value, maxDetour._2))))
+    for(maxDetour <- pdp.maxDetours){
+      slowConstraints.post(LE(arrivalTimes(maxDetour._2) - leaveTimes(maxDetour._1),maxDetour._3))
     }
   }
 

@@ -1,15 +1,12 @@
 package oscar.cbls.business.routing.model
 
+import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 import oscar.cbls.core.computation._
-import oscar.cbls.lib.invariant.logic.{Cluster, DenseCluster, IntITE, IntInt2Int}
+import oscar.cbls.lib.invariant.logic.{IntITE, IntInt2Int}
 import oscar.cbls.lib.invariant.minmax.Max2
-import oscar.cbls.lib.invariant.numeric.Div
-import oscar.cbls.lib.invariant.seq.Content
-import oscar.cbls.lib.invariant.set.Diff
 import oscar.cbls.modeling.Algebra._
 
-import scala.collection.immutable.{HashMap, List, SortedSet}
-import scala.collection.mutable.ListBuffer
+import scala.collection.immutable.List
 import scala.math._
 
 /**
@@ -25,19 +22,14 @@ import scala.math._
   * @param v the number of vehicles.
   * @param m the model.
   * @param chains the chains (drives)
-  * @param timeLimit the maximum time value supported in seconds (by default 2 days => 172800 s)
   * @param maxPivotPerValuePercent
   */
 class PDP(override val n:Int,
           override val v:Int,
           override val m:Store,
           val chains:List[List[Int]],
-          val timeLimit:Int = 172800,
           maxPivotPerValuePercent:Int = 4)
   extends VRP(n,v,m,maxPivotPerValuePercent) with NextAndPrev{
-
-  // The size of cluster (to sort nodes into clusters)
-  private val clusterSizeInSec = 900
 
   // The chain of each node
   val chainOfNode:Array[List[Int]] = Array.tabulate(n)(_ => List.empty)
@@ -130,7 +122,6 @@ class PDP(override val n:Int,
     * @param to The right border (exclusive)
     * @return preceding nodes of node int the route
     */
-  //TODO Clean this method
   def getNodesBetween(from: Option[Int], to: Option[Int]): Iterable[Int] ={
     require(from.isDefined || to.isDefined, "Either from or to must be defined !")
     def buildList(node: Int, betweenList: List[Int]): List[Int] ={
@@ -152,10 +143,9 @@ class PDP(override val n:Int,
     * @return the list of all the complete segment present in the route
     */
   def getCompleteSegments(routeNumber:Int): List[(Int,Int)] ={
-    val route = getRouteOfVehicle(routeNumber).drop(1);
+    val route = getRouteOfVehicle(routeNumber).drop(1)
     /**
       * Each value of segmentsArray represent a possible complete segment.
-      * The Int value represents the amount of pickup nodes whose related delivery node isn't currently in the segment
       * The List[Int] value represents the segment
       */
     var pickupInc = 0
@@ -216,7 +206,7 @@ class PDP(override val n:Int,
   def defineContentsFlow(contents: Array[Int]): Unit ={
     require(contents.length == n,
       "Contents must have the size of the number of nodes (n)." +
-        "\nn = " + (n) + ", contents's size : " + contents.length)
+        "\nn = " + n + ", contents's size : " + contents.length)
     val vehicleMaxCapacity = vehiclesMaxCapacities.max
     for(i <- contents.indices) {
       contentsFlow(i) = contents(i)
@@ -238,6 +228,10 @@ class PDP(override val n:Int,
   // The maxWaitingDuration at point
   val maxWaitingDurations = Array.tabulate(n)(_ => Int.MaxValue)
 
+  var earlylinesBlackTree: RedBlackTreeMap[List[Int]] = _
+
+  var maxDetours:Array[(Int,Int,Int)] = Array.empty
+
   var arrivalTimes:Array[CBLSIntVar] = Array.empty
 
   var leaveTimes:Array[CBLSIntVar] = Array.empty
@@ -245,8 +239,6 @@ class PDP(override val n:Int,
   var travelOutDurations:Array[CBLSIntVar] = Array.empty
 
   var arrivalTimesToNext:Array[IntValue] = Array.empty
-
-  var arrivalTimeCluster: DenseCluster[IntValue] = _
 
   var travelDurationMatrix: TravelTimeFunction = _
 
@@ -269,19 +261,39 @@ class PDP(override val n:Int,
 
       if(i >= v) {
         if (earlylines(i) == 0)
-          setNodeDuration(i, taskDurations(i))
+        setNodeDuration(i, taskDurations(i))
         else
-          setNodeDuration(i, taskDurations(i), earlylines(i))
+        setNodeDuration(i, taskDurations(i), earlylines(i))
       }
     }
 
     waitingDurations = Array.tabulate(n){
       (i:Int) =>
         if(i >= v)
-          Max2(leaveTimes(i) - taskDurations(i) - arrivalTimes(i), CBLSIntConst(0))
-        else
-          new CBLSIntConst(0)
+        Max2(leaveTimes(i) - taskDurations(i) - arrivalTimes(i), CBLSIntConst(0))
+      else
+        new CBLSIntConst(0)
     }
+  }
+
+  def addMaxDetours(maxDetours:(List[(Int,Int,Int)]), maxDetourCalculation:(Int,Int) => Int = (a,b) => a + b): Unit ={
+    this.maxDetours = Array.tabulate(maxDetours.size)(_ => (0,0,0))
+    for(i <- maxDetours.indices){
+      val maxDetour = maxDetours(i)
+      this.maxDetours(i) = (maxDetour._1, maxDetour._2, maxDetourCalculation(maxDetour._3,
+        travelDurationMatrix.getTravelDuration(maxDetour._1, leaveTimes(maxDetour._1).value, maxDetour._2)))
+      deadlines(maxDetour._2) = Math.min(deadlines(maxDetour._2),deadlines(maxDetour._1) + this.maxDetours(i)._3)
+    }
+
+    //TODO : Move this, it doesn't belong here !!!
+    for(chain <- chains){
+      for(node <- chain  if !isPickup(node) && earlylines(node) == 0){
+        val previous = prevNode(node).get
+        earlylines(node) = earlylines(previous) + taskDurations(previous) +
+          travelDurationMatrix.getTravelDuration(previous,earlylines(previous),node)
+      }
+    }
+    earlylinesBlackTree = RedBlackTreeMap(earlylines.toList.zipWithIndex.groupBy(_._1).map(x => (x._1,x._2.map(_._2))))
   }
 
 
@@ -306,8 +318,11 @@ class PDP(override val n:Int,
     for (i <- 0 until n) {
       arrivalTimes(i) <== arrivalTimesToNext.element(prev(i))
     }
+  }
 
-    arrivalTimeCluster = Cluster.MakeDenseAssumingMinMax(leaveTimes.map(x => Div(x,clusterSizeInSec)),0,timeLimit/clusterSizeInSec)
+  def setVehicleNodeDuration(node: Int): Unit ={
+    assert(node < v)
+    leaveTimes(node) <== earlylines(node)
   }
 
   def setNodeDuration(node: Int, duration: IntValue) {
@@ -316,6 +331,7 @@ class PDP(override val n:Int,
   }
 
   def setNodeDuration(node: Int, duration: IntValue, startWindow: Int) {
+    assert(node >= v)
     leaveTimes(node) <== (Max2(arrivalTimes(node), startWindow) + duration)
   }
 
@@ -337,26 +353,32 @@ class PDP(override val n:Int,
   }
 
   /**
-    *
-    */
-  /**
     * This method compute the closest neighbor of a node base on arrivalTime.
-    * @param clusterRange   filter the cluster that we want to inspect
     * @param k  the max number of closestNeighbor we want to inspect
     * @param filter an undefined filter used to filter the neighbor (neighbor,node) => Boolean
     * @param node the node we want to find neighbor for
     * @return the k closest neighbor of the node
     */
-  def computeClosestNeighborsInTime(clusterRange: (Int) => Range = (_) => arrivalTimeCluster.clusters.indices,
-                                    k: Int = Int.MaxValue,
+  def computeClosestNeighborsInTime(k: Int = Int.MaxValue,
                                     filter: (Int,Int) => Boolean = (_,_) => true
                                   )(node:Int): Iterable[Int] ={
+    val smallestBiggerEarlylines = earlylinesBlackTree.smallestBiggerOrEqual(deadlines(node)).
+        getOrElse(Int.MaxValue,List.empty)
+    val redBlackExplorer = earlylinesBlackTree.positionOf(smallestBiggerEarlylines._1)
+    def buildPotentialNeighbors(currentTree: Option[RedBlackTreeMapExplorer[List[Int]]], potentialNeighbors: List[Int]): List[Int] = {
+      if (currentTree.isEmpty){
+        potentialNeighbors
+      } else {
+        val newValues = for(value <- currentTree.get.value if isRouted(value)) yield value
+        buildPotentialNeighbors(currentTree.get.prev,newValues ++ potentialNeighbors)
+      }
+    }
     buildClosestNeighbor(
       node,
-      (for(c <- clusterRange(node)) yield arrivalTimeCluster.clusters(c).value.filter(isRouted)).flatten.toList,
+      buildPotentialNeighbors(redBlackExplorer,List.empty).filter(isRouted),  // arrival time of a node is 0 by default.
       filter,
       List.empty[(Int,Int)]
-    ).take(k) ++ (for(i <- 0 until v if getRouteOfVehicle(i).size == 1)yield i)
+    ).take(k)
   }
 
   /**
