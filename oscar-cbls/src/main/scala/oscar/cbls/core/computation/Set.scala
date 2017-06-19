@@ -236,7 +236,9 @@ trait SetNotificationTarget {
    */
   def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int])
 
-  def registerDynamicValueWiseDependency(s:SetValue):ValueWiseKey = ???
+  def registerDynamicValueWiseDependency(s:SetValue):ValueWiseKey = {
+    registerDynamicDependency(
+  }
 }
 
 

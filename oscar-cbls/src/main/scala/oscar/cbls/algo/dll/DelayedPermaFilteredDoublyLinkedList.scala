@@ -21,10 +21,12 @@
 
 package oscar.cbls.algo.dll
 
+import oscar.cbls.algo.quick.QList
+
 /**this is a mutable data structure that is able to represent sets through doubly-lined lists, with insert
   * and delete in O(1) through reference
   * and to update in parallel another set that is a filter of the first one through a specified function
-  * the filter can be specified anytime and filtering can be cascaded, but a PermaFilteresDLL can have only one filter
+  * the filter can be specified anytime and filtering can be cascaded
   *
   * You should not perform any operation on the slave DLL,
   * although this will not be detected and reported as an error
@@ -43,9 +45,19 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef, F <: AnyRef] extends Ite
     * -an insert function that performs the insert,
     * -a query function that can be called to check if the element is still in the list
     */
-  private[this] var mFilter:(T,()=>Unit, ()=> Boolean) => Unit = null
-  private[this] var mMap:T => F = null
-  private[this] var filtered:DoublyLinkedList[F] = null
+  class Filtered[F](val filter:(T,()=>Unit, ()=> Boolean) => Unit,
+                 val map:T => F,
+                 val filtered:DoublyLinkedList[F]){
+    def notifyInsert(inserted: DPFDLLStorageElement[T]): Unit = {
+      def injector():Unit = {
+        inserted.filtered = QList(filtered.addElem(map(inserted.elem)),inserted.filtered)
+      }
+      def isStillValid():Boolean = {inserted.prev != null}
+      filter(inserted.elem, injector, isStillValid)
+    }
+  }
+
+  private[this] var filtered:QList[Filtered[_]] = null
 
   def headPhantom = phantom
 
@@ -70,8 +82,11 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef, F <: AnyRef] extends Ite
     d.setNext(phantom.next)
     phantom.setNext(d)
 
-    if(mFilter != null) notifyInsert(d)
-
+    var toNotify = filtered
+    while(toNotify!=null){
+      toNotify.head.notifyInsert(d)
+      toNotify = toNotify.tail
+    }
     d
   }
 
@@ -81,37 +96,24 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef, F <: AnyRef] extends Ite
   /**adds a bunch of items to the data structures*/
   def ++(elems:Iterable[T]) {for(elem <- elems) addElem(elem)}
 
-  @inline
-  private def notifyInsert(inserted: DPFDLLStorageElement[T]): Unit = {
-    def injector():Unit = {inserted.filtered = filtered.addElem(mMap(inserted.elem))}
-    def isStillValid():Boolean = {inserted.prev != null}
-    mFilter(inserted.elem, injector, isStillValid)
-  }
-
   override def isEmpty:Boolean = phantom.next == phantom
 
   override def iterator = new DPFDLLIterator[T](phantom,phantom)
 
   def delayedPermaFilter(filter:(T,()=>Unit, ()=> Boolean) => Unit,
-                                      mMap:T => F = (t:T) => t.asInstanceOf[F]):DoublyLinkedList[F] = {
-    assert(mFilter == null,"DelayedPermaFilteredDoublyLinkedList can only accept a single filter")
+                         map:T => F = (t:T) => t.asInstanceOf[F]):DoublyLinkedList[F] = {
 
-    val filtered = new DoublyLinkedList[F]
 
-    mFilter = filter
-    this.mMap = mMap
-    this.filtered = filtered
-    filterElementsForNewFilter()
+    val newFiltered = new Filtered(filter,map,new DoublyLinkedList[F])
+    filtered = QList(newFiltered,filtered)
 
-    filtered
-  }
-
-  private def filterElementsForNewFilter(){
-    var currentstorageElement:DPFDLLStorageElement[T]=phantom.next
-    while(currentstorageElement!=phantom){
-      notifyInsert(currentstorageElement)
-      currentstorageElement = currentstorageElement.next
+    var currentStorageElement:DPFDLLStorageElement[T] = phantom.next
+    while(currentStorageElement != phantom){
+      newFiltered.notifyInsert(currentStorageElement)
+      currentStorageElement = currentStorageElement.next
     }
+
+    newFiltered.filtered
   }
 
   /**
@@ -128,7 +130,7 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef, F <: AnyRef] extends Ite
     toReturn
   }
 
-  override def foreach[U](f: (T) => U): Unit = {
+  override def foreach[U](f: (T) => U){
     var currentPos = headPhantom.next
     while(currentPos != headPhantom){
       f(currentPos.elem)
@@ -145,23 +147,25 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef, F <: AnyRef] extends Ite
 class DPFDLLStorageElement[T](val elem:T){
   var next:DPFDLLStorageElement[T] = null
   var prev:DPFDLLStorageElement[T] = null
-  var filtered: AnyRef = null
+  var filtered: QList[DLLStorageElement[_]] = null
 
   def setNext(d:DPFDLLStorageElement[T]){
     this.next = d
     d.prev = this
   }
 
-  def delete(): Unit =
-  {
+  def delete(){
     prev.setNext(next)
     prev = null //this is checked by the delayed perma filter, so DO NOT REMOVE THIS SEEMIGNLY USELESS INSTRUCTION
-    if(filtered != null) filtered.asInstanceOf[DLLStorageElement[_]].delete()
+    while(filtered != null) {
+      filtered.head.delete()
+      filtered = filtered.tail
+    }
   }
 }
 
 class DPFDLLIterator[T](var CurrentKey:DPFDLLStorageElement[T],
-                       val phantom:DPFDLLStorageElement[T]) extends Iterator[T]{
+                        val phantom:DPFDLLStorageElement[T]) extends Iterator[T]{
   def next():T = {
     CurrentKey = CurrentKey.next
     CurrentKey.elem
