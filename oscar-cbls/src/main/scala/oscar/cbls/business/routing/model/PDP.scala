@@ -229,7 +229,7 @@ class PDP(override val n:Int,
   // The maxWaitingDuration at point
   val maxWaitingDurations = Array.tabulate(n)(_ => Int.MaxValue)
 
-  val sortedRouteByEarlylines = SortSequence(routes, node => node)
+  val sortedRouteByEarlylines = SortSequence(routes, node => earlylines(node))
 
   var maxDetours:Array[(Int,Int,Int)] = Array.empty
 
@@ -364,8 +364,7 @@ class PDP(override val n:Int,
   def computeClosestNeighborsInTime(k: Int = Int.MaxValue,
                                     filter: (Int,Int) => Boolean = (_,_) => true
                                   )(node:Int): Iterable[Int] ={
-    val smallestBiggerEarlyline = sortedRouteByEarlylines.searchPositionOfInsert(routes.value,deadlines(node))
-    val explorer = sortedRouteByEarlylines.value.explorerAtPosition(smallestBiggerEarlyline)
+    val explorer = sortedRouteByEarlylines.positionOfSmallestGE(deadlines(node))
     def buildPotentialNeighbors(explorer: Option[IntSequenceExplorer], potentialNeighbors: List[Int]): List[Int] = {
       if (explorer.isEmpty)
         potentialNeighbors
