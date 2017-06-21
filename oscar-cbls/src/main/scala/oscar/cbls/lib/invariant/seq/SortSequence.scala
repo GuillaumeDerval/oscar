@@ -33,16 +33,22 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
   this := sortSequenceBy(v.value,sortValue)
 
   /**
+   *
    * @param value a value, that is compared against value in the current sequence
+   * @param transformedValue is an optional argument that you can pass to this method.
+   *                         Values v in the output sequence are ordered by lexicographic order on (sortValue(v),v)
+   *                         if you want to use another value for the first position in this couple, and just for this query, you can specify it throug hthis parameter.
+   *                         notice that if you search for a value and this value is already present in teh sequence, it might result in erroneous result,
+   *                         so do not use this parameter unless you are sure that "value" is not in the output of this invariant (so not in the input sequence variable)
    * @return the position of the smallest value in the current output of this invariant such that it is the smallest one that is greater or equal to "value".
    *         It is actually the first value in the sequence starting from position zero that is greater or equal
    *         in case case there is no such value (including empty sequence), it returns None
    */
-  def positionOfSmallestGreaterOrEqual(value:Int):Option[IntSequenceExplorer] = {
+  def positionOfSmallestGreaterOrEqual(value:Int)(transformedValue:Int = sortValue(value)):Option[IntSequenceExplorer] = {
     if(this.value.isEmpty) {
       None
     }else {
-      val position = searchPositionOfInsert(this.value, value)
+      val position = searchPositionOfInsert(this.value, value)(transformedValue)
       if(position == this.value.size){
         None
       }else{
@@ -74,14 +80,11 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
     else firstValue < secondValue
   }
 
-  private def searchPositionOfInsert(seq:IntSequence, value:Int):Int = {
+  private def searchPositionOfInsert(seq:IntSequence, value:Int)(transformedValue:Int = sortValue(value)):Int = {
 
     //the position of insert is the position where the value is the first occurrence
     // in the supposedly sorted sequence such that the value at this position is g value
     //println("searchPositionOfInsert(seq:" + seq + " valueToInsert:" + value + ")")
-
-    val transformedValue = sortValue(value)
-
     def otherIsSmaller(otherValue:Int):Boolean = {
       !isSmaller(value,otherValue)(firstTransformedValue = transformedValue)
     }
@@ -140,7 +143,7 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
         digestChanges(prev)
         //find where the value should be located by dichotomy
         //println("this.newValue:" + this.newValue)
-        val positionOfInsert = searchPositionOfInsert(this.newValue, value)
+        val positionOfInsert = searchPositionOfInsert(this.newValue, value)()
         //println("foud position:" + positionOfInsert)
         this.insertAtPosition(value,positionOfInsert)
 
