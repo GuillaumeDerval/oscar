@@ -1,9 +1,10 @@
 package oscar.cbls.business.routing.model
 
-import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
+import oscar.cbls.algo.seq.functional.IntSequenceExplorer
 import oscar.cbls.core.computation._
 import oscar.cbls.lib.invariant.logic.{IntITE, IntInt2Int}
 import oscar.cbls.lib.invariant.minmax.Max2
+import oscar.cbls.lib.invariant.seq.SortSequence
 import oscar.cbls.modeling.Algebra._
 
 import scala.collection.immutable.List
@@ -228,7 +229,7 @@ class PDP(override val n:Int,
   // The maxWaitingDuration at point
   val maxWaitingDurations = Array.tabulate(n)(_ => Int.MaxValue)
 
-  var earlylinesBlackTree: RedBlackTreeMap[List[Int]] = _
+  val sortedRouteByEarlylines = SortSequence(routes, node => node)
 
   var maxDetours:Array[(Int,Int,Int)] = Array.empty
 
@@ -283,6 +284,8 @@ class PDP(override val n:Int,
       this.maxDetours(i) = (maxDetour._1, maxDetour._2, maxDetourCalculation(maxDetour._3,
         travelDurationMatrix.getTravelDuration(maxDetour._1, leaveTimes(maxDetour._1).value, maxDetour._2)))
       deadlines(maxDetour._2) = Math.min(deadlines(maxDetour._2),deadlines(maxDetour._1) + this.maxDetours(i)._3)
+      if(deadlines(maxDetour._2) < 0)
+        println("plop")
     }
 
     //TODO : Move this, it doesn't belong here !!!
@@ -293,7 +296,6 @@ class PDP(override val n:Int,
           travelDurationMatrix.getTravelDuration(previous,earlylines(previous),node)
       }
     }
-    earlylinesBlackTree = RedBlackTreeMap(earlylines.toList.zipWithIndex.groupBy(_._1).map(x => (x._1,x._2.map(_._2))))
   }
 
 
@@ -362,20 +364,17 @@ class PDP(override val n:Int,
   def computeClosestNeighborsInTime(k: Int = Int.MaxValue,
                                     filter: (Int,Int) => Boolean = (_,_) => true
                                   )(node:Int): Iterable[Int] ={
-    val smallestBiggerEarlylines = earlylinesBlackTree.smallestBiggerOrEqual(deadlines(node)).
-        getOrElse(Int.MaxValue,List.empty)
-    val redBlackExplorer = earlylinesBlackTree.positionOf(smallestBiggerEarlylines._1)
-    def buildPotentialNeighbors(currentTree: Option[RedBlackTreeMapExplorer[List[Int]]], potentialNeighbors: List[Int]): List[Int] = {
-      if (currentTree.isEmpty){
+    val smallestBiggerEarlyline = sortedRouteByEarlylines.searchPositionOfInsert(routes.value,deadlines(node))
+    val explorer = sortedRouteByEarlylines.value.explorerAtPosition(smallestBiggerEarlyline)
+    def buildPotentialNeighbors(explorer: Option[IntSequenceExplorer], potentialNeighbors: List[Int]): List[Int] = {
+      if (explorer.isEmpty)
         potentialNeighbors
-      } else {
-        val newValues = for(value <- currentTree.get.value if isRouted(value)) yield value
-        buildPotentialNeighbors(currentTree.get.prev,newValues ++ potentialNeighbors)
-      }
+      else
+        buildPotentialNeighbors(explorer.get.prev,List(explorer.get.value) ++ potentialNeighbors)
     }
     buildClosestNeighbor(
       node,
-      buildPotentialNeighbors(redBlackExplorer,List.empty).filter(isRouted),  // arrival time of a node is 0 by default.
+      buildPotentialNeighbors(explorer,List.empty).filter(isRouted),  // arrival time of a node is 0 by default.
       filter,
       List.empty[(Int,Int)]
     ).take(k)

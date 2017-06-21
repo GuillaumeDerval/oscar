@@ -27,6 +27,7 @@ case class SortSequence(v: SeqValue,sortValue:Int => Int)
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
+  this := sortSequenceBy(v.value,sortValue)
 
   val checkpointStack = new SeqCheckpointedValueStack[IntSequence]()
 

@@ -5,13 +5,15 @@ import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.lib.constraint.{EQ, GE, LE}
 import oscar.cbls.lib.invariant.logic.IntITE
 import oscar.cbls.lib.invariant.seq.Precedence
+import oscar.cbls.lib.invariant.set.Occurrences
 
 /**
   * Created by fg on 5/05/17.
   */
 object PDPConstraints {
   def apply(
-             pdp: PDP
+             pdp: PDP,
+             exclusiveCars: List[List[Int]]
            ): (ConstraintSystem,ConstraintSystem) ={
     val fastConstraints = new ConstraintSystem(pdp.routes.model)
     val slowConstraints = new ConstraintSystem(pdp.routes.model)
@@ -21,6 +23,7 @@ object PDPConstraints {
     pDPConstraints.addTimeWindowConstraints()
     pDPConstraints.addPrecedencesConstraints()
     pDPConstraints.addMaxDetoursConstraints()
+    pDPConstraints.addExclusiveCarConstraints(exclusiveCars)
 
     (fastConstraints, slowConstraints)
   }
@@ -52,6 +55,22 @@ class PDPConstraints(pdp: PDP, fastConstraints: ConstraintSystem, slowConstraint
 
     val chainsPrecedences = List.tabulate(chains.length)(c => chainToTuple(chains(c), List.empty).reverse)
     fastConstraints.add(EQ(0,new Precedence(routes, chainsPrecedences.flatten)))
+  }
+
+  /**
+    * Given a list of lists of cars, this constraints ensure that for each List[car]
+    * only one car will be used.
+    * @param exclusiveCars the list of lists of cars
+    */
+  def addExclusiveCarConstraints(exclusiveCars: List[List[Int]]): Unit ={
+    fastConstraints.add(
+      EQ(0,
+        Occurrences(
+          new MovingVehicles(routes,pdp.v),
+          exclusiveCars.map(carList => (carList,1,1))
+        )
+      )
+    )
   }
 
   /**

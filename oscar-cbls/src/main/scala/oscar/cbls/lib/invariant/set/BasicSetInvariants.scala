@@ -640,7 +640,7 @@ case class Occurrences(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(Iterab
   @inline
   private def notifyDelete(value: Int) {
     for(subset <- QList.toIterable(valueToSubsetID(value))){
-      subsetToNbPresent(subset) = subsetToNbPresent(subset) + 1
+      subsetToNbPresent(subset) = subsetToNbPresent(subset) - 1
       if(subsetToNbPresent(subset) == subsetAndMaxAndWeightArray(subset)._2){
         this :-= subsetAndMaxAndWeightArray(subset)._3
       }

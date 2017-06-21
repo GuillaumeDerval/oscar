@@ -22,7 +22,7 @@ import oscar.cbls.core.propagation.Checker
 import scala.collection.immutable.SortedSet
 
 class MovingVehicles(routes:ChangingSeqValue, v:Int)
-  extends SetInvariant() with SeqNotificationTarget{
+  extends SetInvariant(initialDomain = 0 until v) with SeqNotificationTarget{
 
   registerStaticAndDynamicDependency(routes)
   finishInitialization()
@@ -139,7 +139,7 @@ class MovingVehicles(routes:ChangingSeqValue, v:Int)
       currentExplorer.next match{
         case None =>
           //we are at the last vehicle, and it does not move
-          require(vehicle == v)
+          require(vehicle == v-1)
         case Some(e) if e.value != vehicle + 1 =>
           //there is a node after, and it is not hte next vehicle, so vehicle is moving
           toReturn += vehicle
