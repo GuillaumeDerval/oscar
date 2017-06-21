@@ -584,6 +584,14 @@ class InvariantTests extends FunSuite with Checkers {
     bench.run()
   }
 
+  test("SortSequence maintains a sorted sequence out of a non-sorted one and a function (value => value for sort)"){
+    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff(),Shuffle()))
+    val seqVar = bench.genIntSeqVar()
+    SortSequence(seqVar, a => a)// -(a*3), "-a%3")
+    bench.run()
+  }
+
+
   // ---- Routing tests ---- //
   test("Node of vehicle"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff(),Shuffle()))
