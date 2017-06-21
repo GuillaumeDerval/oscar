@@ -15,34 +15,92 @@ package oscar.cbls.lib.invariant.seq
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.algo.seq.functional.IntSequence
+import oscar.cbls.algo.seq.functional.{IntSequenceExplorer, IntSequence}
 import oscar.cbls.core.computation.{ChangingSeqValue, SeqCheckpointedValueStack, SeqInvariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint, SeqValue}
 import oscar.cbls.core.propagation.Checker
 
-case class SortSequence(v: SeqValue,sortValue:Int => Int)
+
+case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="order")
   extends SeqInvariant(IntSequence.empty(),v.max)
   with SeqNotificationTarget{
 
-  setName("SortSequence(" + v.name + ")")
+  setName("SortSequence(" + v.name + " by:" + orderName + ")")
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
   this := sortSequenceBy(v.value,sortValue)
 
-  val checkpointStack = new SeqCheckpointedValueStack[IntSequence]()
+  this := sortSequenceBy(value,sortValue)
+
+  private val checkpointStack = new SeqCheckpointedValueStack[IntSequence]()
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
     digestChanges(changes)
   }
 
-  def searchPositionOfInsert(seq:IntSequence, value:Int):Int = {
+  def positionOfSmallestGE(value:Int):Option[IntSequenceExplorer] = {
+    if(this.value.isEmpty) {
+      None
+    }else {
+      val position = searchPositionOfInsert(this.value, value)
+      if(position == this.value.size){
+        None
+      }else{
+        this.value.explorerAtPosition(position)
+      }
+    }
+  }
+
+  def positionOfLargestSE(value:Int):Option[IntSequenceExplorer] = {
+    if(this.value.isEmpty) {
+      None
+    }else {
+      val transformedValue = sortValue(value)
+
+      val seq = v.value
+      def otherIsSmaller(otherValue:Int):Boolean = {
+        isSmaller(value,otherValue)(transformedValue)
+      }
+
+      if(seq.size == 0) return None
+      
+      if(seq.size == 1) {
+        if (otherIsSmaller(seq.head)) {
+          return seq.explorerAtPosition(0)
+        } else {
+          return None
+        }
+      }
+
+      if(otherIsSmaller(seq.last)) return seq.explorerAtPosition(seq.size-1)
+
+      var lowerPositionOfSearch = 0
+      var upperPositionOfSearch = seq.size-1
+
+      while(lowerPositionOfSearch + 1 < upperPositionOfSearch) {
+        val midPosition = (lowerPositionOfSearch + upperPositionOfSearch) / 2
+        if (otherIsSmaller(seq.valueAtPosition(midPosition).get)) {
+          lowerPositionOfSearch = midPosition
+        } else {
+          upperPositionOfSearch = midPosition
+        }
+      }
+      seq.explorerAtPosition(lowerPositionOfSearch)
+    }
+  }
+
+  private def isSmaller(firstValue:Int,secondValue:Int)
+                       (firstTransformedValue:Int = sortValue(firstValue),secondTransformedValue:Int = sortValue(secondValue)):Boolean = {
+    if(firstTransformedValue < secondTransformedValue) true
+    else if (firstTransformedValue > secondTransformedValue) false
+    else firstValue < secondValue
+  }
+
+  private def searchPositionOfInsert(seq:IntSequence, value:Int):Int = {
     val transformedValue = sortValue(value)
 
     def otherIsSmaller(otherValue:Int):Boolean = {
-      val otherTransformedValue = sortValue(otherValue)
-      if(otherTransformedValue < transformedValue) true
-      else if (otherTransformedValue > transformedValue) false
-      else otherValue < value // tie break based on value because it must be deterministic.
+      isSmaller(value,otherValue)(transformedValue)
     }
 
     if(seq.size == 0) return 0
@@ -70,7 +128,8 @@ case class SortSequence(v: SeqValue,sortValue:Int => Int)
     lowerPositionOfInsert
   }
 
-  def digestChanges(changes : SeqUpdate){
+
+  private def digestChanges(changes : SeqUpdate){
     changes match {
       case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         digestChanges(prev)
