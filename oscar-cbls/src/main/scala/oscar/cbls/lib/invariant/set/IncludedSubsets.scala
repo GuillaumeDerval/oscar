@@ -41,7 +41,7 @@ case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(It
   override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int],
                                 removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
     for (added <- addedValues) notifyInsert(added)
-    for(deleted <- removedValues) notifyDelete(deleted)
+    for (deleted <- removedValues) notifyDelete(deleted)
   }
 
   @inline
@@ -67,6 +67,8 @@ case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(It
   override def checkInternals(c: Checker) {
     val violation = subsetToMonitorAndMaxValues.map({case (values,maxValue,weight) => if(values.count(v => s.value.contains(v)) > maxValue) weight else 0}).sum
     c.check(this.value == violation,Some("included subset Error value=" + this.value  + " should be:" + violation))
+
+
   }
 }
 
