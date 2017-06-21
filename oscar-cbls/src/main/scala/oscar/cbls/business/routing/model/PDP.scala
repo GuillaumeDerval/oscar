@@ -364,7 +364,7 @@ class PDP(override val n:Int,
   def computeClosestNeighborsInTime(k: Int = Int.MaxValue,
                                     filter: (Int,Int) => Boolean = (_,_) => true
                                   )(node:Int): Iterable[Int] ={
-    val explorer = sortedRouteByEarlylines.positionOfSmallestGE(deadlines(node))
+    val explorer = sortedRouteByEarlylines.positionOfSmallestGreaterOrEqual(node)(deadlines(node))
     def buildPotentialNeighbors(explorer: Option[IntSequenceExplorer], potentialNeighbors: List[Int]): List[Int] = {
       if (explorer.isEmpty)
         potentialNeighbors
