@@ -21,9 +21,10 @@
 
 package oscar.cbls.core.computation
 
-import oscar.cbls.algo.dll.DPFDLLStorageElement
+import oscar.cbls.algo.dll.{DelayedPermaFilteredDoublyLinkedList, DPFDLLStorageElement}
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.core.propagation.{KeyForElementRemoval, PropagationElement, Checker}
+import oscar.cbls.algo.rb.RedBlackTreeMap
+import oscar.cbls.core.propagation._
 
 import scala.collection.immutable.SortedSet
 import scala.language.implicitConversions
@@ -74,6 +75,21 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
     */
   def toStringNoPropagate: String = name + ":={" + m_NewValue.foldLeft("")(
     (acc,intval) => if(acc.equalsIgnoreCase("")) ""+intval else acc+","+intval) + "}"
+
+  //mechanis that manage key with value changes
+  private val listeningElementsValueWise = getDynamicallyListeningElements.permaFilter({case (pe,id) => id == Int.MinValue})
+  private val listeningElementsNonValueWise = getDynamicallyListeningElements.permaFilter({case (pe,id) => id != Int.MinValue})
+
+  override protected[propagation] def registerDynamicallyListeningElementNoKey(listening : PropagationElement, i : Int) : Unit = {
+    require(i != Int.MinValue,"you cannot register with id set to Int.MinValue")
+    super.registerDynamicallyListeningElementNoKey(listening, i)
+  }
+
+
+  def instrumentKeyToValueWiseKey(key:KeyForElementRemoval):ValueWiseKey = {
+    new ValueWiseKey(key,this)
+  }
+
 
   /**The values that have bee impacted since last propagation was performed.
     * null if set was assigned
@@ -161,7 +177,7 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
       assert((OldValue ++ addedValues -- deletedValues).equals(m_NewValue))
 
       if(addedValues.nonEmpty || deletedValues.nonEmpty) {
-        val dynListElements = getDynamicallyListeningElements
+        val dynListElements = listeningElementsValueWise
         val headPhantom = dynListElements.headPhantom
         var currentElement = headPhantom.next
         while (currentElement != headPhantom) {
@@ -224,7 +240,7 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
       "internal error: " + "Value: " + m_NewValue + " OldValue: " + OldValue)
   }
 }
-trait SetNotificationTarget {
+trait SetNotificationTarget extends PropagationElement{
   /**
    * this method will be called just before the variable "v" is actually updated.
    * @param v
@@ -237,24 +253,45 @@ trait SetNotificationTarget {
   def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int])
 
   def registerDynamicValueWiseDependency(s:SetValue):ValueWiseKey = {
-    registerDynamicDependency(
+    s match{
+      case c:ChangingSetValue =>
+        val key = registerDynamicallyListenedElement(this,Int.MinValue)
+        c.instrumentKeyToValueWiseKey(key)
+      case _ =>
+        DoNothingValueWiseKey
+    }
   }
 }
 
-
-class ValueWiseKey(keyForListenedElement: DPFDLLStorageElement[(PropagationElement, Int)], keyForListeningElement: DPFDLLStorageElement[PropagationElement])
-  extends KeyForElementRemoval(keyForListenedElement, keyForListeningElement){
+class ValueWiseKey(originalKey:KeyForElementRemoval,value:ChangingSetValue){
 
 
-  override def performRemove() : Unit = {
+  def performRemove(){
     //remove all values in the focus of this key
-    super.performRemove
+    originalKey.performRemove()
   }
 
-  def addToKey(value:Int) = ???
-  def removeFromKey(value:Int) = ???
+  val minValue = value.min
+  val maxValue = value.max
+
+  var valueToKey:Array[DPFDLLStorageElement[Int]] = Array.fill[DPFDLLStorageElement[Int]](1 + maxValue - minValue)(null)
+
+  def addToKey(value:Int) {
+    require(valueToKey(value) == null)
+    valueToKey(value) = value.addValueWiseTarget(target,value)
+  }
+
+  def removeFromKey(value:Int){
+    valueToKey(value).delete()
+    valueToKey(value) = null
+  }
 }
 
+case object DoNothingValueWiseKey extends ValueWiseKey(DummyKeyForElementRemoval,null){
+  override def addToKey(value : Int){}
+
+  override def removeFromKey(value : Int){}
+}
 
 
 object ChangingSetValue{

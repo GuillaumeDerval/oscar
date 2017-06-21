@@ -116,6 +116,17 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef, F <: AnyRef] extends Ite
     newFiltered.filtered
   }
 
+  def permaFilter[F](filter:T => Boolean, map:T => F = (t:T) => t.asInstanceOf[F]):DoublyLinkedList[F] = {
+
+    def calledWhenAddInFirst(added:T,injector:()=>Unit,isStillValid:() => Boolean):Unit = {
+      if(filter(added)){injector()}
+    }
+
+    delayedPermaFilter(calledWhenAddInFirst,map)
+  }
+
+
+
   /**
    * @param fn the function to execute on each items included in this list
    * @tparam U the output type of the function
