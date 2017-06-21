@@ -18,7 +18,8 @@ package oscar.cbls.test.invariants
 import org.scalacheck.Gen
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
-import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
+import oscar.cbls.core.computation.{SetValue, CBLSIntVar, IntValue}
+import oscar.cbls.lib.constraint.BelongsTo
 import oscar.cbls.lib.constraint._
 import oscar.cbls.lib.invariant.logic.{DenseCount, Elements, Filter, IntElement, IntITE, SelectLEHeapHeap, SetElement, _}
 import oscar.cbls.lib.invariant.minmax.{ArgMax, ArgMin, Max2, MaxArray, MaxLin, MaxSet, Min2, MinArray, MinLin, MinSet}
@@ -26,7 +27,7 @@ import oscar.cbls.lib.invariant.numeric.{Abs, Div, Minus, Mod, Prod, Prod2, Prod
 import oscar.cbls.lib.invariant.routing._
 import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeIntegerDimensionOnVehicle, ForwardCumulativeConstraintOnVehicle}
 import oscar.cbls.lib.invariant.seq._
-import oscar.cbls.lib.invariant.set.{Cardinality, Diff, Inter, Interval, MakeSet, SetProd, SetSum, TakeAny, Union, UnionAll}
+import oscar.cbls.lib.invariant.set._
 import oscar.cbls.modeling.Algebra._
 import oscar.cbls.test.invariants.bench._
 import oscar.cbls.test.routing.RoutingMatrixGenerator
@@ -51,7 +52,7 @@ class InvariantTests extends FunSuite with Checkers {
   test("BelongsTo maintains the violation of a membership.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
-    new BelongsTo(bench.genIntVar(0 to 10), bench.genIntSetVar(5, 0 to 10))
+    new oscar.cbls.lib.invariant.set.BelongsTo(bench.genIntVar(0 to 10), bench.genIntSetVar(5, 0 to 10))
     bench.run
   }
 
@@ -448,6 +449,15 @@ class InvariantTests extends FunSuite with Checkers {
     new Cardinality(bench.genIntSetVar())
     bench.run
   }
+
+  test("IncludedSubsets counts the number of included subsets from a specified list") {
+    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
+    new IncludedSubsets(bench.genIntSetVar(), List((List(0,1,2,3,4,5),2,2),(List(0,1,4,5),1,3),(List(0,1,24,5),2,2),(List(0,1,2,3,4,5),2,2)))
+    bench.run
+  }
+
+
+
 
   test("MakeSet maintains an IntSetVar given a set of IntVar.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
