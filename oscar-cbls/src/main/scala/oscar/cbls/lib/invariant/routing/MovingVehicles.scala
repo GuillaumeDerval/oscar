@@ -27,8 +27,10 @@ import scala.collection.immutable.SortedSet
  * @param routes the routes
  * @param v the number of vehicle
  */
-class MovingVehicles(routes:ChangingSeqValue, v:Int)
+case class MovingVehicles(routes:ChangingSeqValue, v:Int)
   extends SetInvariant() with SeqNotificationTarget{
+
+  setName("MovingVehicles in route" + routes.name)
 
   registerStaticAndDynamicDependency(routes)
   finishInitialization()
@@ -145,12 +147,11 @@ class MovingVehicles(routes:ChangingSeqValue, v:Int)
       currentExplorer.next match{
         case None =>
           //we are at the last vehicle, and it does not move
-          require(vehicle == v)
-        case Some(e) if e.value != vehicle + 1 =>
-          //there is a node after, and it is not hte next vehicle, so vehicle is moving
-          require(e.value >= v)
+          require(vehicle == v-1)
+        case Some(e) if e.value != vehicle + 1 || e.value >= v =>
+          //there is a node after, and it is not the next vehicle, so vehicle is moving
           toReturn += vehicle
-        case Some(e) if e.value == vehicle + 1 =>
+        case Some(e) if e.value == vehicle + 1 && e.value < v =>
           //there is a node after, and it is the next vehicle, so vehicle is not moving
           //and we have an explorer at the next vehicle, so we save it for the next iteration
           currentExplorer = e
@@ -162,6 +163,6 @@ class MovingVehicles(routes:ChangingSeqValue, v:Int)
   override def checkInternals(c : Checker) : Unit = {
     val valuesFromScratch = computeValueFromScratch(routes.value)
     c.check(valuesFromScratch equals this.newValue,
-      Some("error on moving vehicle, got " + this.newValue.toList + " should be " + valuesFromScratch.toList))
+      Some("error on moving vehicle, got " + this.newValue.toList + " should be " + valuesFromScratch.toList + " routes: " + routes.value))
   }
 }

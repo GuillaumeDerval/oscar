@@ -22,7 +22,7 @@ import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.constraint.LE
 import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeIntegerDimensionOnVehicle, ForwardCumulativeConstraintOnVehicle}
-import oscar.cbls.lib.invariant.routing.RouteSuccessorAndPredecessors
+import oscar.cbls.lib.invariant.routing.{MovingVehicles, RouteSuccessorAndPredecessors}
 import oscar.cbls.lib.invariant.seq.Size
 import oscar.cbls.lib.search.combinators.{RoundRobin, BestSlopeFirst, Mu, Profile}
 import oscar.cbls.modeling.Algebra._
@@ -68,9 +68,12 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
 
   val (next,prev) = RouteSuccessorAndPredecessors(routes,v,n)
 
+  val movingVehicles = MovingVehicles(routes,v)
+
   this.addToStringInfo(() => "next: [" + next.map(_.value).mkString(",") + "]")
   this.addToStringInfo(() => "prev: [" + prev.map(_.value).mkString(",") + "]")
   this.addToStringInfo(() => "content: [" + contentConstraint.contentAtNodes.mkString(",") + "]")
+  this.addToStringInfo(() => "" + movingVehicles)
 }
 
 object TestCumulatives extends App{
