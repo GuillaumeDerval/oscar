@@ -19,12 +19,12 @@ object ALNSSearch{
   */
 abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) {
   val startTime: Long = System.nanoTime()
-  val endTime: Long = startTime + config.timeout
+  val endTime: Long = if(config.timeout > 0) startTime + config.timeout else Long.MaxValue
   var endSearch: Long = endTime
 
   var learnRatio = 0.3 //The ratio of remaining time that a learning phase will have
   var learning = false
-  var iterTimeout: Long = config.timeout
+  var iterTimeout: Long = if(config.timeout > 0) config.timeout else Long.MaxValue
   var searchFail = 0
   var stagnation = 0
   val stagnationThreshold = 100

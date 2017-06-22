@@ -100,6 +100,8 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
     (sol: CPIntSol) => solver.search(search)
   }
 
+
+
   def instantiateCoupledOperators: Array[ALNSOperator] =(
     for(
       relaxKey <- config.relaxOperatorKeys;
