@@ -703,7 +703,7 @@ abstract class StackedUpdateIntSequence extends IntSequence(){
   }
 
   override def insertAtPosition(value : Int, pos : Int, fast:Boolean,autoRework:Boolean) : IntSequence = {
-    require(pos >= 0 && pos <= size , "pos=" + pos + " should be in [0,size="+size+"] in UniqueIntSequence.insertAt")
+    require(pos >= 0 && pos <= size , "pos=" + pos + " should be in [0,size="+size+"] in IntSequence.insertAt")
     new InsertedIntSequence(this,value:Int,pos:Int)
   }
 
