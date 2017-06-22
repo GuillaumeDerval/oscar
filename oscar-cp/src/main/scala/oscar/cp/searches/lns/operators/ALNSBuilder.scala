@@ -19,19 +19,22 @@ object ALNSBuilder{
     */
   // Random relaxation:
   val Random = "Random"
-  val Random_Param1 = Array(0.10, 0.25, 0.50, 0.75, 1) //Percentage of the neighbourhood which is relaxed
+  val Random_Param1 = Array(0.25, 0.5, 0.75) //Percentage of the neighbourhood which is relaxed
 
   // K successive relaxation:
   val KSuccessive = "KSuccessive"
-  val KSuccessive_Param1 = Array(0.10, 0.25, 0.50, 0.75, 1) //Percentage of the neighbourhood which is relaxed
+  val KSuccessive_Param1 = Array(0.25, 0.50, 0.75) //Percentage of the neighbourhood which is relaxed
 
   // Propagation guided relaxation:
   val PropGuided = "PropGuided"
-  val PropGuided_Param1 = Array(0.10, 0.25, 0.50, 0.75, 1) //Percentage of the neighbourhood which is relaxed
+  val PropGuided_Param1 = Array(0.25, 0.50, 0.75) //Percentage of the neighbourhood which is relaxed
 
   // Reversed propagation guided relaxation:
   val RevPropGuided  = "RevPropGuided"
-  val RevPropGuided_Param1 = Array(0.10, 0.25, 0.50, 0.75, 1) //Percentage of the neighbourhood which is relaxed
+  val RevPropGuided_Param1 = Array(0.25, 0.50, 0.75) //Percentage of the neighbourhood which is relaxed
+
+  // Full relaxation:
+  val FullRelax = "FullRelax"
 
   //TODO: implement other relaxation functions
 
@@ -49,6 +52,9 @@ object ALNSBuilder{
 
   // Binary split search:
   val BinSplit = "BinSplit"
+
+  //Extentionnal Oriented search:
+  val ExtOriented = "ExtOriented"
 
   // Available value Heuristic functions:
   val ValHeurisMin = "Min"
@@ -168,6 +174,8 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
           )
       }
       else Array[(String, CPIntSol => Unit)]()
+
+    case ALNSBuilder.FullRelax => Array((opKey, _ => Unit))
   }
 
   private def instantiateSearchFunctions(opKey: String): Array[(String, CPIntSol => Unit)] = {
@@ -185,12 +193,15 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
 
   private def instantiateSearchFunction(opKey: String, valMax: Boolean, valLearn: Boolean): (String, CPIntSol => Unit) = {
     val opName = opKey + (if(valLearn) "(valLearn" else "(") + (if(valMax) "Max)" else "Min)")
-    opKey match{
-      case ALNSBuilder.ConfOrder => (opName, wrapSearch(SearchFunctions.conflictOrdering(vars, valMax, valLearn)))
-      case ALNSBuilder.FirstFail => (opName, wrapSearch(SearchFunctions.firstFail(vars, valMax, valLearn)))
-      case ALNSBuilder.LastConf => (opName, wrapSearch(SearchFunctions.lastConflict(vars, valMax, valLearn)))
-      case ALNSBuilder.BinSplit => (opName, wrapSearch(SearchFunctions.binarySplit(vars, valMax, valLearn)))
-    }
+    (opName, wrapSearch(
+      opKey match{
+        case ALNSBuilder.ConfOrder => SearchFunctions.conflictOrdering(vars, valMax, valLearn)
+        case ALNSBuilder.FirstFail => SearchFunctions.firstFail(vars, valMax, valLearn)
+        case ALNSBuilder.LastConf => SearchFunctions.lastConflict(vars, valMax, valLearn)
+        case ALNSBuilder.BinSplit => SearchFunctions.binarySplit(vars, valMax, valLearn)
+        case ALNSBuilder.ExtOriented => SearchFunctions.extensionalOriented(vars, valMax, valLearn)
+      }
+    ))
   }
 
   /**
@@ -258,6 +269,12 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
           .map(x => new ALNSParameter[Double](x, ALNSBuilder.DefNoParamFailThreshold)),
         paramMetricKey),
       instantiateMetric(paramMetricKey)
+    )
+
+    case ALNSBuilder.FullRelax => new ALNSNoParamOperator(
+      ALNSBuilder.FullRelax,
+      ALNSBuilder.DefNoParamFailThreshold,
+      _ => Unit
     )
   }
 

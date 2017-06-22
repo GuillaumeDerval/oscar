@@ -1,8 +1,7 @@
 package oscar.cp.searches.lns.operators
 
 import oscar.algo.search.Branching
-import oscar.cp.CPIntVar
-import oscar.cp._
+import oscar.cp.{CPIntVar, binaryIdx, _}
 
 object SearchFunctions {
 
@@ -17,6 +16,9 @@ object SearchFunctions {
 
   def binarySplit(vars: Array[CPIntVar], valMax: Boolean, valLearn: Boolean): Branching =
     binarySplitIdx(vars, vars(_).size, setValueHeuristic(vars, valMax, valLearn))
+
+  def extensionalOriented(vars: Array[CPIntVar], valMax: Boolean, valLearn: Boolean): Branching =
+    binaryIdx(vars, i => -(vars(i).constraintDegree << 7) / vars(i).size, setValueHeuristic(vars, valMax, valLearn))
 
   def setValueHeuristic(vars: Array[CPIntVar], valMax: Boolean, valLearn: Boolean): Int => Int = {
     if (valLearn)

@@ -1,6 +1,7 @@
 package oscar.xcsp3.competition
 
 import org.rogach.scallop.{ScallopConf, ScallopOption}
+import oscar.xcsp3.CheckerLib
 
 import scala.util.Random
 
@@ -16,45 +17,55 @@ class CompetitionConf(arguments: Seq[String]) extends ScallopConf(arguments){
 }
 
 abstract class CompetitionApp extends App{
-  val tStart = System.nanoTime()
   val conf = new CompetitionConf(args)
 
   printComment("seed: " + conf.randomseed())
   printComment("timeout: " + conf.timelimit())
   printComment("memlimit: " + conf.memlimit())
+  printComment("nbcore: " + conf.nbcore())
 
   Random.setSeed(conf.randomseed())
+  var statusPrinted = false
 
   try {
     runSolver(conf)
   }catch{
     case e: Exception =>
-      printStatus("UNKNWOWN")
+      printStatus("UNKNOWN")
       printDiagnostic("EXCEPTION", e.getMessage)
       printComment(e.getStackTrace.mkString("\n"))
       Console.flush()
   }
 
-  //TODO: Parse Instance, launch search and print results
-  def runSolver(conf: CompetitionConf)
+  if(!statusPrinted) printStatus("UNKNOWN")
 
   /**
-    * Use the following functions to print your outputs. Only the best solution should be printed.
-    * You can print comments with the printComment method.
+    * TODO: Parse Instance, launch search and print results
     */
+  def runSolver(conf: CompetitionConf)
 
-  //Each time a new solution is found, it's objective should be printed:
+  // Use the following functions to print your outputs. Only the best solution should be printed.
+
+  //Each time a new best solution is found, it's objective should be printed:
   def printObjective(obj: Int): Unit = {
-    println(tElapsed + " o " + obj)
+    println("o " + obj)
     Console.flush()
   }
 
   //Use this only for the last solution:
-  def printSolution(sol: String, optimum:Boolean = false): Unit = {
-    if(optimum) printStatus("OPTIMUM FOUND")
-    else printStatus("SATISFIABLE")
+  //Sol should be a valid instantiation (see rules)
+  def printSolution(sol: String, optimum: Boolean = false): Unit = {
+//    if(new CheckerLib(conf.benchname(), sol).valid){
+      if (optimum) printStatus("OPTIMUM FOUND")
+      else printStatus("SATISFIABLE")
 
-    println(tElapsed + " v " + sol.split("\\r?\\n").mkString("\n" + tElapsed + " v "))
+      println("v " + sol.split("\\r?\\n").mkString("\nv "))
+//    }
+//    else{
+//      printStatus("UNKNOWN")
+//      printDiagnostic("SOL_NOT_VALID")
+//      printComment(sol)
+//    }
   }
 
   /**
@@ -65,17 +76,17 @@ abstract class CompetitionApp extends App{
     * UNSUPPORTED: unsupported constraint
     * UNKNOWN: other (no solution has been found or there was a problem, use printDiagnostic to precise information)
     */
-  def printStatus(status: String): Unit = println(tElapsed + " s " + status)
+  def printStatus(status: String): Unit = {
+    statusPrinted = true
+    println("s " + status)
+  }
 
   //For any comment:
-  def printComment(com: String): Unit = println(tElapsed + " c " + com.split("\\r?\\n").mkString("\n" + tElapsed + " c "))
+  def printComment(com: String): Unit = println("c " + com.split("\\r?\\n").mkString("\nc "))
 
   //For diagnostic information, name should be a keyword and value no more than one line.
-  def printDiagnostic(name: String, value: String): Unit = println(tElapsed + " d " + name + " " + value)
+  def printDiagnostic(name: String, value: String): Unit = println("d " + name + " " + value)
 
   //For diagnostic information, name should be a keyword.
-  def printDiagnostic(name: String): Unit = println(tElapsed + " d " + name)
-
-  //Computes the time elapsed since the beginning of the search in ms
-  def tElapsed: Long = (System.nanoTime() - tStart)/1000000
+  def printDiagnostic(name: String): Unit = println("d " + name)
 }

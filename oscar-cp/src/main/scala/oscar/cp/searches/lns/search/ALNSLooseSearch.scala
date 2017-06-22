@@ -24,7 +24,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
 
   override def alnsLearning(): Unit = {
     learning = true
-    val initSol = currentSol
+    val initSol = currentSol.get
 
     val learningStart = System.nanoTime()
     val tAvail = (((endTime - learningStart) * learnRatio) / nOpCombinations).toLong
@@ -41,7 +41,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       lnsSearch(relax, search)
 
       val time = System.nanoTime() - start
-      val improvement = Math.abs(currentSol.objective - initSol.objective)
+      val improvement = Math.abs(currentSol.get.objective - initSol.objective)
 
       if(!relaxPerf.contains(relax.name)) relaxPerf += relax.name -> (relax, mutable.ArrayBuffer[(Long, Int)]())
       relaxPerf(relax.name)._2 += ((time, improvement))
@@ -50,7 +50,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
 
       solver.objective.objs.head.relax()
       solver.objective.objs.head.best = initSol.objective
-      currentSol = initSol
+      currentSol = Some(initSol)
     }
 
     relaxPerf.values.filter{ case (op, perfs) =>
@@ -79,7 +79,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
     else searchFail = 0
 
     currentSol = bestSol
-    solver.objective.objs.head.best = bestSol.objective
+    solver.objective.objs.head.best = bestSol.get.objective
     endSearch = endTime
     learning = false
   }
@@ -87,7 +87,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
   override def alnsLoop(): Unit = {
     if (!solver.silent) println("\nStarting adaptive LNS...")
     stagnation = 0
-    while (System.nanoTime() < endTime  && relaxStore.nonActiveEmpty && searchStore.nonActiveEmpty && (!config.learning || stagnation < stagnationThreshold)) {
+    while (System.nanoTime() < endTime  && relaxStore.nonActiveEmpty && searchStore.nonActiveEmpty && (!config.learning || stagnation < stagnationThreshold) && !optimumFound) {
       lnsSearch(relaxStore.select(), searchStore.select())
     }
   }
@@ -100,21 +100,21 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       println("Operator timeout: " + (endSearch - System.nanoTime())/1000000000.0 + "s")
     }
 
-    val oldObjective = currentSol.objective
+    val oldObjective = currentSol.get.objective
 
     //New search using selected strategies:
     var relaxDone = true
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
       try {
-        relax(currentSol)
+        relax(currentSol.get)
       }
       catch {
         case _: Inconsistency => relaxDone = false
       }
-      if (relaxDone) search(currentSol)
+      if (relaxDone) search(currentSol.get)
     }
 
-    val improvement = math.abs(currentSol.objective - oldObjective)
+    val improvement = math.abs(currentSol.get.objective - oldObjective)
 
     if(improvement > 0){
       stagnation = 0
@@ -169,7 +169,8 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
   override def getSearchResults = new ALNSSearchResults(
     solsFound.toArray,
     relaxOps.map(x => x.name -> x.getStats).toMap,
-    searchOps.map(x => x.name -> x.getStats).toMap
+    searchOps.map(x => x.name -> x.getStats).toMap,
+    maximizeObjective.isDefined & optimumFound
   )
 
   private def getReifiedOperators(operators: Seq[ALNSOperator]) = operators.flatMap{

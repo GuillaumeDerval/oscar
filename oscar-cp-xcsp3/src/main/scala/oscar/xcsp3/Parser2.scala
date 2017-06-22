@@ -19,6 +19,7 @@ import oscar.modeling.models.{ModelDeclaration, NoSolException}
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar
+import oscar.modeling.algebra.integer.IntExpression._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -172,6 +173,28 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     val x = varHashMap(xvi.id())
     val y = varHashMap(yvi.id())
     val z = varHashMap(zvi.id())
+    val r: IntExpression = opa match {
+      case TypeArithmeticOperator.ADD => x + y
+      case TypeArithmeticOperator.DIST => Dist(x, y)
+      case TypeArithmeticOperator.DIV => x / y.evaluate()
+      case TypeArithmeticOperator.MUL => x * y
+      case TypeArithmeticOperator.SUB => x - y
+      case TypeArithmeticOperator.MOD => throw new Exception("Modulo between vars is not implemented")
+      case TypeArithmeticOperator.POW => throw new Exception("Pow between vars is not implemented")
+    }
+    val r2 = (op match {
+      case TypeConditionOperatorRel.EQ => r === z
+      case TypeConditionOperatorRel.GE => r >= z
+      case TypeConditionOperatorRel.GT => r > z
+      case TypeConditionOperatorRel.LE => r <= z
+      case TypeConditionOperatorRel.LT => r < z
+      case TypeConditionOperatorRel.NE => r !== z
+    }).toConstraint
+    modelDeclaration.add(r2)
+  }
+
+  override def buildCtrPrimitive(id: String, xvi: XVarInteger, opa: TypeArithmeticOperator, y: Int, op: TypeConditionOperatorRel, z: Int): Unit = {
+    val x = varHashMap(xvi.id())
     val r: IntExpression = opa match {
       case TypeArithmeticOperator.ADD => x + y
       case TypeArithmeticOperator.DIST => Dist(x, y)
@@ -428,6 +451,14 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     val array = list.map(x => varHashMap(x.id()))
     val indexExpr = if(startIndex == 0) varHashMap(index.id()) else varHashMap(index.id()) - startIndex
     modelDeclaration.add(array(indexExpr) === value)
+  }
+
+  override def buildCtrElement(id: String, list: Array[Int], startIndex: Int, index: XVarInteger, rank: TypeRank, value: XVarInteger): Unit = {
+    if(rank != TypeRank.ANY)
+      throw new Exception("Element constraint only supports ANY as position for the index")
+    val indexExpr = if(startIndex == 0) varHashMap(index.id()) else varHashMap(index.id()) - startIndex
+    val valueExpr = varHashMap(value.id())
+    modelDeclaration.add(list(indexExpr) === valueExpr)
   }
 
   override def buildCtrAmong(id: String, list: Array[XVarInteger], values: Array[Int], k: Int): Unit = {

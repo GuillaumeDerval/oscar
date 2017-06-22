@@ -15,7 +15,7 @@ object CPIntSol{
   }
 }
 
-class CPIntSol(val values: Array[Int], val objective: Int, val time: Long, val instantiation: String){
+class CPIntSol(val values: Array[Int], val objective: Int, val time: Long){
 
   def asXml: Elem = {
     <solution>

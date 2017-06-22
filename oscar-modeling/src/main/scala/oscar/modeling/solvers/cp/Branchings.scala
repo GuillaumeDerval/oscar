@@ -245,16 +245,21 @@ object Branchings {
     */
   class ValueHeuristicLearner(x: Array[IntVar], fallBackValHeuristic: (Int => Int)){
     private[this] val lastValues = Array.fill(x.length)(Int.MinValue)
+    private[this] var init = false
 
-    x(0).getRepresentative.asInstanceOf[CPIntVar].realCPVar.store.onPush{
-      for (i <- x.indices) {
-        if (x(i).isBound) {
-          lastValues(i) = x(i).min
-        }
-      }
-    }
 
     def valueHeuristic(i: Int): Int = {
+      if(!init) {
+        x(0).getRepresentative.asInstanceOf[CPIntVar].realCPVar.store.onPush{
+          for (i <- x.indices) {
+            if (x(i).isBound) {
+              lastValues(i) = x(i).min
+            }
+          }
+        }
+        init = true
+      }
+
       if (x(i).hasValue(lastValues(i))) {
         lastValues(i)
       } else {
@@ -274,4 +279,6 @@ object Branchings {
   def learnValueHeuristic(x: Array[IntVar], fallBackValHeuristic: (Int => Int)): (Int => Int) = {
     new ValueHeuristicLearner(x, fallBackValHeuristic).valueHeuristic
   }
+
+  implicit def arrayIntVarToArrayIntVarLike(x: Array[IntVar]): Array[IntVarLike] = x.asInstanceOf[Array[IntVarLike]]
 }
