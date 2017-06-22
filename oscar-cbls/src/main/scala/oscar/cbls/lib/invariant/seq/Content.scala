@@ -35,6 +35,7 @@ case class Content(v:SeqValue)
   finishInitialization()
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) : Unit = {
+    println("content.notifySeqChanges " + changes)
     if(!digestUpdates(changes)) {
       updateFromScratch(changes.newValue)
     }
@@ -50,6 +51,7 @@ case class Content(v:SeqValue)
       case SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         if (!digestUpdates(prev)) return false
         this :+= value
+        println("content.digestUpdate, inserting " + value)
         true
       case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         digestUpdates(prev)
@@ -58,9 +60,13 @@ case class Content(v:SeqValue)
         val value = r.removedValue
         if (changes.newValue.nbOccurrence(value) == 0){
           this :-= value
+          println("content.digestUpdate, removing " + value)
         }
         true
       case r@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
+
+        println("content.digestUpdate(SeqUpdateRollBackToCheckpoint) howTo:" + r.howToRollBack)
+
         digestUpdates(r.howToRollBack)
 
       case SeqUpdateLastNotified(value) =>

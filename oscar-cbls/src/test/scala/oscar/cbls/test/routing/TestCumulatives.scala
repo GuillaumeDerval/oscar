@@ -51,12 +51,12 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
   6)
 
   val contentAtStart = Array.tabulate(v)(vehicle => CBLSIntVar(m,0,0 to 10,"start content of vehicle " + vehicle))
-  val cumulative2 = ForwardCumulativeIntegerDimensionOnVehicle(routes,n,v,{case (fromNode,toNode,fromContent) => fromNode+toNode+(2*fromContent)},contentAtStart,-1)
+//  val cumulative2 = ForwardCumulativeIntegerDimensionOnVehicle(routes,n,v,{case (fromNode,toNode,fromContent) => fromNode+toNode+(2*fromContent)},contentAtStart,-1)
 
   val obj = new CascadingObjective(
     contentConstraint.violation,
     new CascadingObjective(maxNodes,
-      Objective(cumulative2._3(1) + cumulative2._2(1) + totalDistance + (penaltyForUnrouted*(n - Size(routes))))))
+      Objective(/*cumulative2._3(1) + cumulative2._2(1) + */ totalDistance + (penaltyForUnrouted*(n - Size(routes))))))
 
   this.addToStringInfo(() => "objective: " + obj.value)
   this.addToStringInfo(() => "n:" + n + " v:" + v)
@@ -71,6 +71,8 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
   this.addToStringInfo(() => "next: [" + next.map(_.value).mkString(",") + "]")
   this.addToStringInfo(() => "prev: [" + prev.map(_.value).mkString(",") + "]")
   this.addToStringInfo(() => "content: [" + contentConstraint.contentAtNodes.mkString(",") + "]")
+  this.addToStringInfo(()=> "routed:" + this.routed.value)
+  this.addToStringInfo(()=> "unRouted:" + this.unrouted.value)
 }
 
 object TestCumulatives extends App{
@@ -120,7 +122,7 @@ object TestCumulatives extends App{
   val search = new RoundRobin(List(swapInOut,vlsnInsert)) exhaust onePtMove(10) //(BestSlopeFirst(List(vlsnInsert, routeUnroutedPoint2, routeUnroutedPoint(10), swapInOut, onePtMove(10),twoOpt, threeOpt(10,true),vlsn1pt, routeUnroutedPoint)) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
 
   search.verbose = 3
-  //search.verboseWithExtraInfo(5, ()=> "" + myVRP)
+  search.verboseWithExtraInfo(3, ()=> "" + myVRP)
 
   print("Doing all moves ...")
 

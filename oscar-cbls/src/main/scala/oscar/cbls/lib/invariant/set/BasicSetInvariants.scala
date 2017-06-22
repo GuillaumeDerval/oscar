@@ -247,15 +247,16 @@ case class Diff(left: SetValue, right: SetValue)
   extends SetInvariant(left.value.diff(right.value), left.min to left.max)
   with SetNotificationTarget{
 
-  require(left != right,"left and right cannot he the same ionstance for Diff")
+  require(left != right,"left and right cannot be the same instance for Diff")
   registerStaticAndDynamicDependency(left)
   registerStaticAndDynamicDependency(right)
   finishInitialization()
 
   //TODO: handle left == right
   override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
-    for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
-    for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
+    require(((oldValue ++ addedValues) -- removedValues).toList equals newValue.toList,"oldValue:" + oldValue + " addedValues:" + addedValues + " removedValues:" + removedValues + " newValue:" + newValue)
+    for (added <- addedValues) notifyInsertOn(v, added)
+    for (deleted <- removedValues) notifyDeleteOn(v, deleted)
   }
 
   @inline
@@ -263,13 +264,15 @@ case class Diff(left: SetValue, right: SetValue)
     if (v == left) {
       if (!right.value.contains(value)) {
         this.insertValue(value)
+        println("diff insertingA " + value)
       }
     } else if (v == right) {
       if (left.value.contains(value)) {
         this.deleteValue(value)
+        println("diff removingA " + value)
       }
     } else {
-      assert(false)
+      require(false)
     }
   }
 
@@ -278,19 +281,21 @@ case class Diff(left: SetValue, right: SetValue)
     if (v == left) {
       if (!right.value.contains(value)) {
         this.deleteValue(value)
+        println("diff removingB " + value)
       }
     } else if (v == right) {
       if (left.value.contains(value)) {
         this.insertValue(value)
+        println("diff insertingB " + value)
       }
     } else {
-      assert(false)
+      require(false)
     }
   }
 
   override def checkInternals(c: Checker) {
-    c.check(this.value.intersect(left.value.diff(right.value)).size == this.value.size,
-      Some("this.value.intersect(left.value.diff(right.value)).size == this.value.size"))
+    c.check(this.value equals (left.value diff (right.value)),
+      Some("Diff error! out:" + this.value.toList + " left:" + left.value.toList + " right:" + right.value.toList + " computed diff:" + (left.value diff(right.value))))
   }
 }
 

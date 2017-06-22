@@ -24,6 +24,9 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
   extends SeqInvariant(IntSequence.empty(),v.max)
   with SeqNotificationTarget{
 
+  //TODO: this invariant is rather slow for updating on inserts and on its get method because it ues dichotomy.
+  // possible to maintain a set of represented values, update log(n) query log(n)
+
   setName("SortSequence(" + v.name + " by:" + orderName + ")")
 
   registerStaticAndDynamicDependency(v)

@@ -1092,26 +1092,26 @@ case class AndThen(a: Neighborhood, b: Neighborhood, maximalIntermediaryDegradat
       acceptanceCriteria(oldObj, newObj)
     }
 
-    class InstrumentedObjective() extends Objective {
+    class InstrumentedObjectiveForFirstNeighborhood(initialObj:Objective) extends Objective {
 
       override def detailedString(short: Boolean, indent: Int = 0): String = nSpace(indent) + "AndThenInstrumentedObjective(initialObjective:" + obj.detailedString(short) + ")"
 
-      override def model = obj.model
+      override def model = initialObj.model
 
-      override def valueNoSearch:Int = obj.valueNoSearch
+      override def valueNoSearch:Int = initialObj.valueNoSearch
 
       override def value: Int = {
 
         if (maximalIntermediaryDegradation != Int.MaxValue) {
           //we need to ensure that intermediary step is admissible
-          val intermediaryVal = obj.valueNoSearch
+          val intermediaryVal = initialObj.valueNoSearch
           val intermediaryDegradation = intermediaryVal - oldObj
           if (intermediaryDegradation > maximalIntermediaryDegradation)
             return Int.MaxValue //we do not consider this first step
         }
 
         //now, we need to check the other neighborhood
-        b.getMove(obj, secondAcceptanceCriteria) match {
+        b.getMove(initialObj, secondAcceptanceCriteria) match {
           case NoMoveFound =>
             Int.MaxValue
           case MoveFound(m: Move) =>
@@ -1121,7 +1121,9 @@ case class AndThen(a: Neighborhood, b: Neighborhood, maximalIntermediaryDegradat
       }
     }
 
-    a.getMove(new InstrumentedObjective(), firstAcceptanceCriterion) match {
+    //TODO: does not work if "a"  is doing best search!
+
+    a.getMove(new InstrumentedObjectiveForFirstNeighborhood(obj), firstAcceptanceCriterion) match {
       case NoMoveFound => NoMoveFound
       case MoveFound(m: Move) => if(secondMove == null){
         println("WARNING: " + this + " the neighborhood on the left returned a move without querying the objective value, the move of andThen is therefore not a composite")
