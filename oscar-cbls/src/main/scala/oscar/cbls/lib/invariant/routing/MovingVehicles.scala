@@ -21,6 +21,12 @@ import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
 
+/**
+ * maintains the set of vehicle that moves, that is the ones tht reach one point that is not their starting (=ending) point
+ * this invariant relies on the routing convension.
+ * @param routes the routes
+ * @param v the number of vehicle
+ */
 class MovingVehicles(routes:ChangingSeqValue, v:Int)
   extends SetInvariant() with SeqNotificationTarget{
 
@@ -142,6 +148,7 @@ class MovingVehicles(routes:ChangingSeqValue, v:Int)
           require(vehicle == v)
         case Some(e) if e.value != vehicle + 1 =>
           //there is a node after, and it is not hte next vehicle, so vehicle is moving
+          require(e.value >= v)
           toReturn += vehicle
         case Some(e) if e.value == vehicle + 1 =>
           //there is a node after, and it is the next vehicle, so vehicle is not moving
