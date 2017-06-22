@@ -138,20 +138,20 @@ trait Benchmark {
       case "--relax" :: value :: tail if !isSwitch(value) =>
         val relax = mutable.ListBuffer[String]()
         var next = list.tail
-        while(next.nonEmpty || !isSwitch(next.head)){
+        while(next.nonEmpty && !isSwitch(next.head)){
           relax += next.head
           next = next.tail
         }
-        parseArgs(map ++ Map('relax -> relax), next)
+        parseArgs(map ++ Map('relax -> relax.toArray), next)
 
       case "--search" :: value :: tail if !isSwitch(value) =>
         val search = mutable.ListBuffer[String]()
         var next = list.tail
-        while(next.nonEmpty || !isSwitch(next.head)){
+        while(next.nonEmpty && !isSwitch(next.head)){
           search += next.head
           next = next.tail
         }
-        parseArgs(map ++ Map('search -> search), next)
+        parseArgs(map ++ Map('search -> search.toArray), next)
 
       case "--val-heuristic" :: value :: tail =>
         parseArgs(map ++ Map('valHeuristic -> value), tail)

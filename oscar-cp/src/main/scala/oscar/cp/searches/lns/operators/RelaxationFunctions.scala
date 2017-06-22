@@ -4,6 +4,7 @@ import oscar.algo.Inconsistency
 import oscar.cp.{CPIntVar, CPSolver}
 import oscar.cp.searches.lns.CPIntSol
 
+import scala.collection.mutable
 import scala.util.Random
 
 
@@ -157,5 +158,43 @@ object RelaxationFunctions {
     }
 
 //    println("relaxation done, " + relaxStart + " vars frozen")
+  }
+
+  /**
+    * Relaxes variables using their values to guide the relaxation.
+    * @param k The number of variables to relax (must be >= 0 and < vars.size)
+    * @param scheme The way to relax variables. Possible keys:
+    *               Random: selects the groups randomly
+    *               MaxGroup: relaxes first the biggest groups of variables having the same value
+    *               MinGroup: relaxes first the smallest groups of variables having the same values
+    *               MaxVal: relaxes first the groups of variables having the biggest values
+    *               MinVal: relaxes first the groups of variables having the smallest values
+    */
+  def valueGuidedRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int, scheme: String): Unit = {
+
+    //Identifying groups of variables
+    val varGroups = mutable.HashMap[Int, mutable.HashSet[Int]]()
+    val varSeq = vars.toSeq
+    varSeq.indices.foreach(i =>{
+      val value = currentSol.values(i)
+      if(varGroups.contains(value)) varGroups(value) += i
+      else varGroups += value -> mutable.HashSet[Int](i)
+    })
+
+    val varList: Seq[Int] = scheme match{
+      case "Random" => Random.shuffle(varGroups.toSeq).flatMap(_._2)
+      case "MaxGroup" => varGroups.toSeq.sortWith(_._2.size < _._2.size).flatMap(_._2)
+      case "MinGroup" => varGroups.toSeq.sortWith(_._2.size > _._2.size).flatMap(_._2)
+      case "MaxVal" => varGroups.toSeq.sortWith(_._1 < _._1).flatMap(_._2)
+      case "MinVal" => varGroups.toSeq.sortWith(_._1 > _._1).flatMap(_._2)
+    }
+
+    var i = 0
+    while(i < varSeq.length && vars.count(!_.isBound) > k){
+      val x = varList(i)
+      solver.add(varSeq(x) === currentSol.values(x))
+      if(! varSeq(x).isBound) throw Inconsistency
+      i += 1
+    }
   }
 }

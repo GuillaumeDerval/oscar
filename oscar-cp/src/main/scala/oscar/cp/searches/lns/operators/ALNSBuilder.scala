@@ -30,6 +30,10 @@ object ALNSBuilder{
   // Reversed propagation guided relaxation:
   val RevPropGuided  = "RevPropGuided"
 
+  // Value guided relaxation:
+  val ValGuided = "ValGuided"
+  val DefValGuidedParam2 = Array("Random", "MaxGroup", "MinGroup", "MaxVal", "MinVal")
+
   // Full relaxation:
   val FullRelax = "FullRelax"
 
@@ -177,6 +181,15 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       }
       else Array[(String, CPIntSol => Unit)]()
 
+    case ALNSBuilder.ValGuided =>
+      for(
+        k <- ALNSBuilder.DefRelaxParam.map(x => Math.round(N * x).toInt);
+        scheme <- ALNSBuilder.DefValGuidedParam2
+      )yield (
+        opKey + "(" + k.toString + "," + scheme + ")",
+        (sol: CPIntSol) => RelaxationFunctions.valueGuidedRelax(solver, vars, sol, k, scheme)
+      )
+
     case ALNSBuilder.FullRelax => Array((opKey, _ => Unit))
   }
 
@@ -270,6 +283,25 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
           .map(x => x * maxNeighSize)
           .map(x => new ALNSParameter[Double](x, ALNSBuilder.DefNoParamFailThreshold)),
         paramMetricKey),
+      instantiateMetric(paramMetricKey)
+    )
+
+    case ALNSBuilder.ValGuided => new ALNSTwoParamsOperator[Int, String](
+      ALNSBuilder.ValGuided,
+      ALNSBuilder.DefWithParamFailThreshold,
+      RelaxationFunctions.valueGuidedRelax(solver, vars, _:CPIntSol, _: Int, _: String),
+      instantiateAdaptiveStore(
+        paramSelectKey,
+        ALNSBuilder.DefRelaxParam
+          .map(x => Math.round(N * x).toInt)
+          .map(x => new ALNSParameter[Int](x, ALNSBuilder.DefNoParamFailThreshold)),
+        paramMetricKey
+      ),
+      instantiateAdaptiveStore(
+        paramSelectKey,
+        ALNSBuilder.DefValGuidedParam2.map(x => new ALNSParameter[String](x, ALNSBuilder.DefNoParamFailThreshold)),
+        paramMetricKey
+      ),
       instantiateMetric(paramMetricKey)
     )
 
