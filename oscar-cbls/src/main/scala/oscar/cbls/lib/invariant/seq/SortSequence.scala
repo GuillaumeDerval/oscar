@@ -92,15 +92,18 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
     if(seq.size == 0) {
       return 0
     } else if(seq.size == 1) {
-      if (otherIsSmaller(seq.head)) {
-        return 1
-      } else {
+      val headValue = seq.head
+      if (headValue == value || !otherIsSmaller(seq.head)) {
         return 0
+      } else {
+        return 1
       }
     }
 
     val last = seq.last
-    if(otherIsSmaller(last) || last == value){
+    if(last == value){
+      return seq.size-1
+    }else if (otherIsSmaller(last)){
       return seq.size
     }
 
@@ -183,6 +186,17 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
   }
   def check(c:Checker,in:IntSequence,out:IntSequence){
     c.check(out.toList equals sortSequenceBy(in,sortValue).toList, Some("this.out=" + out.toList + " should be " +sortSequenceBy(in,sortValue).toList))
+
+
+    for (value <-  if(in.nonEmpty) {in.min to in.max} else List(0,1,10)) {
+      val optPositionOfSMallestGE = positionOfSmallestGreaterOrEqual(value)()
+      optPositionOfSMallestGE match {
+        case None =>
+          c.check(in.isEmpty || out.forall((otherValue => isSmaller(otherValue, value)())), Some("None on search " + value + " on " + out))
+        case Some(positionOfSMallestGE) =>
+          c.check(isSmaller(value, positionOfSMallestGE.value)() || positionOfSMallestGE.value == value, Some(positionOfSMallestGE + " on search " + value + " on " + out))
+      }
+    }
   }
 }
 
@@ -213,7 +227,7 @@ object TestSort extends App{
     */
   m.propagate()
 
-  a:= IntSequence(List(56,41,67,44))
+  a:= IntSequence(List(56))
   m.propagate()
   a.insertAtPosition(30,0)
   m.propagate()

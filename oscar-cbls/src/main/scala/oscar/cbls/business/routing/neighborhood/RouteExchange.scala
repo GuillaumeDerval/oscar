@@ -6,8 +6,8 @@ import oscar.cbls.core.search.EasyNeighborhood
 /**
   * Created by fg on 20/06/17.
   */
-class RouteExchange(val vrp: VRP,
-                    vehicles:() => Iterable[Int],
+case class RouteExchange(val vrp: VRP,
+                    vehicles: Array[Int],
                     neighborhoodName:String = "RouteExchange",
                     hotRestart:Boolean = true,
                     best:Boolean = false,
@@ -31,6 +31,9 @@ class RouteExchange(val vrp: VRP,
   override def exploreNeighborhood(): Unit = {
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
 
+    val vehiclesNow = vehicles.filter(vrp.getRouteOfVehicle(_).size > 1)
+    val routePositions = vrp.routes.value.toList.zipWithIndex.toMap
+
     def evalObjAndRollBack() : Int = {
       val a = obj.value
       seq.rollbackToTopCheckpoint(seqValue)
@@ -39,14 +42,14 @@ class RouteExchange(val vrp: VRP,
 
     if(!hotRestart)startVehicle = 0
 
-    for(v1 <- startVehicle to vehicles().size){
-      val route1 = vrp.getRouteOfVehicle(v1)
-      for(v2 <- v1 to vehicles().size){
-        val route2 = vrp.getRouteOfVehicle(v2)
-        firstRouteHead = route1.head
-        firstRouteLast= route1.last
-        secondRouteHead = route2.head
-        secondRouteLast = route2.last
+    for(v1 <- startVehicle until vehiclesNow.length){
+      val route1 = vrp.getRouteOfVehicle(vehiclesNow(v1))
+      for(v2 <- v1+1 until vehiclesNow.length){
+        val route2 = vrp.getRouteOfVehicle(vehiclesNow(v2))
+        firstRouteHead = routePositions(route1.head)
+        firstRouteLast= routePositions(route1.last)
+        secondRouteHead = routePositions(route2.head)
+        secondRouteLast = routePositions(route2.last)
         if(tryFlip) {
           for(r1 <- 0 to 2; r2 <- 0 to 2) {
             
@@ -57,6 +60,9 @@ class RouteExchange(val vrp: VRP,
               return
             }
           }
+        }
+        else{
+
         }
       }
     }

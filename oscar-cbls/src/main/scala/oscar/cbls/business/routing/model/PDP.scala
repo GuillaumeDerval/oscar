@@ -1,10 +1,13 @@
 package oscar.cbls.business.routing.model
 
+import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.functional.IntSequenceExplorer
 import oscar.cbls.core.computation._
 import oscar.cbls.lib.invariant.logic.{IntITE, IntInt2Int}
 import oscar.cbls.lib.invariant.minmax.Max2
+import oscar.cbls.lib.invariant.routing.MovingVehicles
 import oscar.cbls.lib.invariant.seq.SortSequence
+import oscar.cbls.lib.invariant.set.IncludedSubsets
 import oscar.cbls.modeling.Algebra._
 
 import scala.collection.immutable.List
@@ -64,6 +67,8 @@ class PDP(override val n:Int,
     }
     generateDico(c.reverse, List.empty)
   }).toMap
+
+  var exclusiveCarsSubsets: IncludedSubsets = _
 
   for(chain <- chains) {
     for (i <- chain.indices) {
@@ -130,6 +135,23 @@ class PDP(override val n:Int,
       buildList(next(node).value, List(node) ++ betweenList)
     }
     buildList(from.getOrElse(getVehicleOfNode(to.get)), List.empty)
+  }
+
+  def addExclusiveCarsSubsests(exclusiveCars: List[List[Int]]): Unit ={
+    exclusiveCarsSubsets = IncludedSubsets(
+      new MovingVehicles(routes,v),
+      exclusiveCars.map(carList => (carList,1,1))
+    )
+  }
+
+  val exclusiveCarsFilter: (Int) => Boolean = (node: Int) => {
+    if (node < v){
+      (QList.toIterable(exclusiveCarsSubsets.valueToSubsetID(node)).
+          map(x => exclusiveCarsSubsets.subsetToNbPresent(x)).sum == 0) ||
+        (prev(node).value != node)
+    }
+    else
+      true
   }
 
 
@@ -229,7 +251,7 @@ class PDP(override val n:Int,
   // The maxWaitingDuration at point
   val maxWaitingDurations = Array.tabulate(n)(_ => Int.MaxValue)
 
-  val sortedRouteByEarlylines = SortSequence(routes, node => earlylines(node))
+  var sortedRouteByEarlylines: SortSequence = null
 
   var maxDetours:Array[(Int,Int,Int)] = Array.empty
 
@@ -275,6 +297,8 @@ class PDP(override val n:Int,
       else
         new CBLSIntConst(0)
     }
+
+    sortedRouteByEarlylines = SortSequence(routes, node => earlylines(node))
   }
 
   def addMaxDetours(maxDetours:(List[(Int,Int,Int)]), maxDetourCalculation:(Int,Int) => Int = (a,b) => a + b): Unit ={
@@ -364,16 +388,19 @@ class PDP(override val n:Int,
   def computeClosestNeighborsInTime(k: Int = Int.MaxValue,
                                     filter: (Int,Int) => Boolean = (_,_) => true
                                   )(node:Int): Iterable[Int] ={
-    val explorer = sortedRouteByEarlylines.positionOfSmallestGreaterOrEqual(node)(deadlines(node))
     def buildPotentialNeighbors(explorer: Option[IntSequenceExplorer], potentialNeighbors: List[Int]): List[Int] = {
       if (explorer.isEmpty)
         potentialNeighbors
       else
-        buildPotentialNeighbors(explorer.get.prev,List(explorer.get.value) ++ potentialNeighbors)
+        buildPotentialNeighbors(explorer.get.prev, List(explorer.get.value) ++ potentialNeighbors)
     }
+    val explorer = sortedRouteByEarlylines.positionOfSmallestGreaterOrEqual(node)(deadlines(node))
+    val potentialNeighbors = (
+      if(explorer.isDefined) buildPotentialNeighbors(explorer,List.empty)
+      else List.tabulate(v)(x => prev(x).value)).filter(exclusiveCarsFilter(_))
     buildClosestNeighbor(
       node,
-      buildPotentialNeighbors(explorer,List.empty).filter(isRouted),  // arrival time of a node is 0 by default.
+      potentialNeighbors,  // arrival time of a node is 0 by default.
       filter,
       List.empty[(Int,Int)]
     ).take(k)
