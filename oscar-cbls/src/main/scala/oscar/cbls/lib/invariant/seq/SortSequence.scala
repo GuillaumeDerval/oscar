@@ -43,7 +43,8 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
    *         It is actually the first value in the sequence starting from position zero that is greater or equal
    *         in case case there is no such value (including empty sequence), it returns None
    */
-  def positionOfSmallestGreaterOrEqual(value:Int,sortedSequence:IntSequence)(transformedValue:Int = sortValue(value)):Option[IntSequenceExplorer] = {
+  def positionOfSmallestGreaterOrEqual(value:Int)(transformedValue:Int = sortValue(value)):Option[IntSequenceExplorer] = {
+    val sortedSequence:IntSequence = this.value
     if(sortedSequence.isEmpty) {
       None
     }else {
@@ -189,10 +190,11 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
     check(c, v.value,this.value)
   }
   def check(c:Checker,in:IntSequence,out:IntSequence){
+    require(out quickEquals this.value)
     c.check(out.toList equals sortSequenceBy(in,sortValue).toList, Some("this.out=" + out.toList + " should be " +sortSequenceBy(in,sortValue).toList))
-
+    /*
     for (value <-  if(in.nonEmpty) {in.min to in.max} else List(0,1,10)) {
-      val optPositionOfSMallestGE = positionOfSmallestGreaterOrEqual(value,out)()
+      val optPositionOfSMallestGE = positionOfSmallestGreaterOrEqual(value)()
       optPositionOfSMallestGE match {
         case None =>
           c.check(in.isEmpty || out.forall((otherValue => otherValue != value && isSmaller(otherValue, value)())),
@@ -202,6 +204,7 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
           c.check(isSmaller(value, positionOfSMallestGE.value)() || positionOfSMallestGE.value == value, Some("returned value " + positionOfSMallestGE.value + " on search " + value + " on " + out))
       }
     }
+    */
   }
 }
 

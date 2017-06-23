@@ -18,7 +18,7 @@ case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(It
   registerStaticAndDynamicDependenciesNoID(s)
   finishInitialization()
 
-  require(s.min == 0)
+  require(s.min == 0, "SetValue min domain should be equal to 0 instead of " + s.min)
 
   val subsetAndMaxAndWeightArray = subsetToMonitorAndMaxValues.toArray
   val n = subsetAndMaxAndWeightArray.length

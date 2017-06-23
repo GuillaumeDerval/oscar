@@ -11,7 +11,7 @@ case class RouteExchange(val vrp: VRP,
                     neighborhoodName:String = "RouteExchange",
                     hotRestart:Boolean = true,
                     best:Boolean = false,
-                    tryFlip:Boolean = true) extends EasyNeighborhood[RouteExchangeMove]{
+                    tryFlip:Boolean = false) extends EasyNeighborhood[RouteExchangeMove]{
 
   val seq = vrp.routes
   var startVehicle = 0
@@ -46,14 +46,15 @@ case class RouteExchange(val vrp: VRP,
       val route1 = vrp.getRouteOfVehicle(vehiclesNow(v1))
       for(v2 <- v1+1 until vehiclesNow.length){
         val route2 = vrp.getRouteOfVehicle(vehiclesNow(v2))
-        firstRouteHead = routePositions(route1.head)
+        firstRouteHead = routePositions(route1.tail.head)
         firstRouteLast= routePositions(route1.last)
-        secondRouteHead = routePositions(route2.head)
+        secondRouteHead = routePositions(route2.tail.head)
         secondRouteLast = routePositions(route2.last)
         if(tryFlip) {
-          for(r1 <- 0 to 2; r2 <- 0 to 2) {
-            
-            doMove(firstRouteHead, firstRouteLast, secondRouteHead, secondRouteLast)
+          for(r1 <- 0 until 2; r2 <- 0 until 2) {
+            firstRouteFlip = r1 == 1
+            secondRouteFlip = r2 == 1
+            doMove(firstRouteHead, firstRouteLast, firstRouteFlip, secondRouteHead, secondRouteLast, secondRouteFlip)
             if (evaluateCurrentMoveObjTrueIfStopRequired(evalObjAndRollBack())) {
               seq.releaseTopCheckpoint()
               startVehicle = v1 + 1
@@ -62,7 +63,12 @@ case class RouteExchange(val vrp: VRP,
           }
         }
         else{
-
+          doMove(firstRouteHead, firstRouteLast, firstRouteFlip, secondRouteHead, secondRouteLast, secondRouteFlip)
+          if (evaluateCurrentMoveObjTrueIfStopRequired(evalObjAndRollBack())) {
+            seq.releaseTopCheckpoint()
+            startVehicle = v1 + 1
+            return
+          }
         }
       }
     }
@@ -71,24 +77,25 @@ case class RouteExchange(val vrp: VRP,
 
   override def instantiateCurrentMove(newObj: Int): RouteExchangeMove = {
     RouteExchangeMove(
-      firstRouteHead, firstRouteLast,
-      secondRouteHead, secondRouteLast,
+      firstRouteHead, firstRouteLast, firstRouteFlip,
+      secondRouteHead, secondRouteLast, secondRouteFlip,
       newObj, this, neighborhoodName)
   }
 
-  def doMove(firstRouteHead: Int, firstRouteLast: Int, secondRouteHead: Int, secondRouteLast: Int){
+  def doMove(firstRouteHead: Int, firstRouteLast: Int, firstFlip: Boolean,
+             secondRouteHead: Int, secondRouteLast: Int, secondFlip: Boolean){
     seq.swapSegments(firstRouteHead,
       firstRouteLast,
-      false,
+      firstFlip,
       secondRouteHead,
       secondRouteLast,
-      false)
+      secondFlip)
   }
 }
 
 
-case class RouteExchangeMove(firstRouteHead: Int, firstRouteLast: Int,
-                             secondRouteHead: Int, secondRouteLast: Int,
+case class RouteExchangeMove(firstRouteHead: Int, firstRouteLast: Int, firstFlip: Boolean,
+                             secondRouteHead: Int, secondRouteLast: Int, secondFlip: Boolean,
                              override val objAfter: Int,
                              override val neighborhood:RouteExchange,
                              override val neighborhoodName:String = "RouteExchangeMove") extends VRPSMove(objAfter, neighborhood, neighborhoodName,neighborhood.vrp) {
@@ -99,8 +106,8 @@ case class RouteExchangeMove(firstRouteHead: Int, firstRouteLast: Int,
   /** to actually take the move */
   override def commit(): Unit = {
     neighborhood.doMove(
-      firstRouteHead, firstRouteLast,
-      secondRouteHead, secondRouteLast)
+      firstRouteHead, firstRouteLast, firstFlip,
+      secondRouteHead, secondRouteLast, secondFlip)
   }
 
   override def toString: String = {

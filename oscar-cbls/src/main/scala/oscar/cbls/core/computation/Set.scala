@@ -309,8 +309,8 @@ case class CBLSSetConst(override val value:SortedSet[Int])
   extends SetValue{
   override def toString:String = "Set{" + value.mkString(",") + "}"
   override def domain:Domain = DomainRange(value.min,value.max)
-  override val min: Int = if (value.isEmpty) Int.MaxValue else value.min
-  override val max: Int = if(value.isEmpty) Int.MinValue else value.max
+  override val min: Int = if (value.isEmpty) Int.MinValue else value.min
+  override val max: Int = if(value.isEmpty) Int.MaxValue else value.max
   override def name: String = toString
 }
 
