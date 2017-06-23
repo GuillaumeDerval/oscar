@@ -22,11 +22,12 @@ import oscar.cbls.core.propagation.Checker
 import scala.collection.immutable.SortedSet
 
 /**
+ * sum(on s:subsetToMonitorAndMaxValues if #(s._1 inter s) > s._2 of s._3 )
  * @param s
- * @param subsetToMonitorAndMaxValues iterable of (subset, max occurrence in the subset, weight in case of violation)
+ * @param clauseMaxOccAndPenalty iterable of (subset, max occurrence in the subset, weight in case of violation)
  */
-case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(Iterable[Int],Int,Int)])
-  extends IntInvariant(0,0 to subsetToMonitorAndMaxValues.size)
+case class IncludedSubsets(s: SetValue, clauseMaxOccAndPenalty:Iterable[(Iterable[Int],Int,Int)])
+  extends IntInvariant(0,0 to clauseMaxOccAndPenalty.size)
   with SetNotificationTarget{
 
   registerStaticAndDynamicDependenciesNoID(s)
@@ -34,8 +35,8 @@ case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(It
 
   require(s.min >= 0, "restricting assumption on this invariant: s.min >= 0")
 
-  val subsetAndMaxAndWeightArray = subsetToMonitorAndMaxValues.toArray
-  val n = subsetAndMaxAndWeightArray.length
+  val subsetAndMaxAndWeightArray = clauseMaxOccAndPenalty.toArray
+  val numberOfClauses = subsetAndMaxAndWeightArray.length
 
   //building valueToSubsetID
   val valueToSubsetID:Array[QList[Int]] = Array.fill(s.max+1)(null)
@@ -47,14 +48,15 @@ case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(It
   }
 
   //internal value for quick update
-  val subsetToNbPresent:Array[Int] = Array.fill(n)(0)
+  val subsetToNbPresent:Array[Int] = Array.fill(numberOfClauses)(0)
 
   //initializing
   this := 0
   s.value.foreach(notifyInsert)
 
-  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int],
-                                removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, d: Int,
+                                addedValues: Iterable[Int],removedValues: Iterable[Int],
+                                oldValue: SortedSet[Int], newValue: SortedSet[Int]){
     for (added <- addedValues) notifyInsert(added)
     for (deleted <- removedValues) notifyRemove(deleted)
   }
@@ -80,7 +82,9 @@ case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(It
   }
 
   override def checkInternals(c: Checker) {
-    val violation = subsetToMonitorAndMaxValues.map({case (values,maxValue,weight) => if(values.count(v => s.value.contains(v)) > maxValue) weight else 0}).sum
+    val violation = clauseMaxOccAndPenalty.map(
+    {case (values,maxValue,weight) => if(values.count(v => s.value.contains(v)) > maxValue) weight else 0}).sum
+
     c.check(this.value == violation,Some("included subset Error value=" + this.value  + " should be:" + violation))
   }
 }
