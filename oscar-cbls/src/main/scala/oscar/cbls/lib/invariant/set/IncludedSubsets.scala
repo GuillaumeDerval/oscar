@@ -87,8 +87,8 @@ case class PossibleExtensions(s: SetValue, allVal:SortedSet[Int], subsetToMonito
   val subsetAndMax = subsetToMonitorAndMaxOcc.toArray
   val n = subsetAndMax.length
 
+  //building valueToClauseIDs
   val valueToClauseIDs:Array[QList[Int]] = Array.fill(s.max+1)(null)
-
   for (clauseID <- subsetAndMax.indices) {
     val (values,maxNumber,weight) = subsetAndMax(clauseID)
     for(value <- values){
@@ -96,6 +96,13 @@ case class PossibleExtensions(s: SetValue, allVal:SortedSet[Int], subsetToMonito
     }
   }
 
+  //value to number of violated clauses this is in
+val valToNumberOfViolatedClauses:Array[Int] = Array.fill(n)(0)
+
+  //clause to number of values in it
+
+
+  //init
   this := allVal
   val subsetToNbPresent:Array[Int] = Array.fill(n)(0)
   for(value <- s.value){
