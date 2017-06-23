@@ -7,9 +7,8 @@ import oscar.cbls.core.propagation.Checker
 import scala.collection.immutable.SortedSet
 
 /**
- *
  * @param s
- * @param subsetToMonitorAndMaxValues iterable of (subset, max occurrents in the subset, weight in case of violation)
+ * @param subsetToMonitorAndMaxValues iterable of (subset, max occurrence in the subset, weight in case of violation)
  */
 case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(Iterable[Int],Int,Int)])
   extends IntInvariant(0,0 to subsetToMonitorAndMaxValues.size)
