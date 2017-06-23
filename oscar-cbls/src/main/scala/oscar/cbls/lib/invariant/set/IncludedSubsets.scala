@@ -37,7 +37,7 @@ case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(It
   val subsetAndMaxAndWeightArray = subsetToMonitorAndMaxValues.toArray
   val n = subsetAndMaxAndWeightArray.length
 
-  //bulding valueToSubsetID
+  //building valueToSubsetID
   val valueToSubsetID:Array[QList[Int]] = Array.fill(s.max+1)(null)
   for (forbiddenID <- subsetAndMaxAndWeightArray.indices) {
     val (values,maxNumber,weight) = subsetAndMaxAndWeightArray(forbiddenID)
@@ -46,12 +46,12 @@ case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(It
     }
   }
 
+  //internal value for quick update
+  val subsetToNbPresent:Array[Int] = Array.fill(n)(0)
+
   //initializing
   this := 0
-  val subsetToNbPresent:Array[Int] = Array.fill(n)(0)
-  for(value <- s.value){
-    notifyInsert(value)
-  }
+  s.value.foreach(notifyInsert)
 
   override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int],
                                 removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
