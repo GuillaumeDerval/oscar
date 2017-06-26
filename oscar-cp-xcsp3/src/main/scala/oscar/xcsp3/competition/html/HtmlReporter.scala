@@ -18,24 +18,26 @@ object HtmlReporter extends App{
     * Generates an html report from the given xml object.
     */
   def generateHtml(directory: String): Unit = {
-    val (timeout, instances, solvers, configs, allSols, solsByCommit, statusByCommit) = scanInstances(directory)
+    val (timeout, instances, objTypes, solvers, configs, allSols, solsByCommit, statusByCommit) = scanInstances(directory)
 
-    val objTypes = mutable.Map[String, String]()
+
 
     instances.foreach(i => {
-      var c = 0
-      var objective = "unknown"
-      while(objective == "unknown" && c < configs.length){
-        if(allSols.contains(i) && allSols(i).contains(configs(c))) {
-          val sols = allSols(i)(configs(c))
-          if (sols.length > 1) {
-            if (sols.last._1 < sols.head._1) objective = "min"
-            else objective = "max"
+      if(objTypes(i) != "none") {
+        var c = 0
+        var objective = "unknown"
+        while (objective == "unknown" && c < configs.length) {
+          if (allSols.contains(i) && allSols(i).contains(configs(c))) {
+            val sols = allSols(i)(configs(c))
+            if (sols.length > 1) {
+              if (sols.last._1 < sols.head._1) objective = "min"
+              else objective = "max"
+            }
           }
+          c += 1
         }
-        c +=1
+        objTypes(i) = objective
       }
-      objTypes += i -> objective
     })
 
     val allScores = mutable.Map[String, Int]()
@@ -179,6 +181,7 @@ object HtmlReporter extends App{
   def scanInstances(directory: String): (
     Long,
     Seq[String],
+    mutable.Map[String, String],
     Seq[String],
     Seq[String],
     mutable.Map[String, mutable.Map[String, Seq[(Int, Long)]]],
@@ -187,6 +190,7 @@ object HtmlReporter extends App{
   ) = {
 
     val instances = mutable.HashSet[String]()
+    val objTypes = mutable.Map[String, String]()
     val solvers = mutable.HashSet[String]()
     val configs = mutable.HashSet[String]()
     val allSols = mutable.Map[String, mutable.Map[String, Seq[(Int, Long)]]]()
@@ -205,7 +209,7 @@ object HtmlReporter extends App{
 //      println("reading: " + file.getPath)
       val files = IOUtils.getFiles(dir.getAbsolutePath, ".txt")
       files.foreach(file =>{
-        val (solver, timeout, instance, sols, status) = readFile(file)
+        val (solver, timeout, instance, itype, sols, status) = readFile(file)
 
         if (timeout > maxTimeout) maxTimeout = timeout
 
@@ -213,6 +217,9 @@ object HtmlReporter extends App{
         solvers += solver
         val config = solver + "-" + dirName
         configs += config
+
+        if(itype == "csp") objTypes += instance -> "none"
+        else objTypes += instance -> "unknown"
 
         if (solsByInstance.contains(instance)) solsByInstance(instance) += solver -> sols
         else {
@@ -240,14 +247,15 @@ object HtmlReporter extends App{
       statusByCommit += dirName -> statusByInstance
     })
 
-    (maxTimeout, instances.toSeq.sorted, solvers.toSeq.sorted, configs.toSeq.sorted, allSols, solsByCommit, statusByCommit)
+    (maxTimeout, instances.toSeq.sorted, objTypes, solvers.toSeq.sorted, configs.toSeq.sorted, allSols, solsByCommit, statusByCommit)
   }
 
-  def readFile(file: File): (String, Int, String, Seq[(Int, Long)], (String, Long)) = {
+  def readFile(file: File): (String, Int, String, String, Seq[(Int, Long)], (String, Long)) = {
 
     var solver = ""
     var timeout = 240
     var instance = ""
+    var itype = "unknown"
     val sols = ListBuffer[(Int, Long)]()
     var status = ("UNKNOWN", 0L)
 
@@ -260,6 +268,7 @@ object HtmlReporter extends App{
             case "instance:" => instance = words(3).stripSuffix(".xml")
             case "solver:" => solver = words(3)
             case "timeout:" => timeout = words(3).toInt
+            case "type:" => itype = words(3)
             case _ =>
           }
 
@@ -278,7 +287,7 @@ object HtmlReporter extends App{
       }
     }
 
-    (solver, timeout, instance, sols, status)
+    (solver, timeout, instance, itype, sols, status)
   }
 
   def renderScores(solvers: Seq[String], scoresByCommits: mutable.Map[String, mutable.Map[String, Int]]): Array[Array[String]] = {
