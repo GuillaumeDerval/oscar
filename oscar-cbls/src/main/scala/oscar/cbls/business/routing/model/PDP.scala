@@ -216,6 +216,8 @@ class PDP(override val n:Int,
     */
   val contentsFlow:Array[Int] = Array.tabulate(n)(_ => 0)
 
+  def orderPickups(ord : (Int) => Int) = chains.map(_.head).sortBy(ord(_))
+
   val contentAtNode:Array[CBLSIntVar] =
     Array.tabulate(n+1)(c => CBLSIntVar(m, 0, 0 to Int.MaxValue / n, "content at node " + c))
 
@@ -304,12 +306,11 @@ class PDP(override val n:Int,
   def addMaxDetours(maxDetours:(List[(Int,Int,Int)]), maxDetourCalculation:(Int,Int) => Int = (a,b) => a + b): Unit ={
     this.maxDetours = Array.tabulate(maxDetours.size)(_ => (0,0,0))
     for(i <- maxDetours.indices){
-      val maxDetour = maxDetours(i)
-      this.maxDetours(i) = (maxDetour._1, maxDetour._2, maxDetourCalculation(maxDetour._3,
-        travelDurationMatrix.getTravelDuration(maxDetour._1, leaveTimes(maxDetour._1).value, maxDetour._2)))
-      deadlines(maxDetour._2) = Math.min(deadlines(maxDetour._2),deadlines(maxDetour._1) + this.maxDetours(i)._3)
-      if(deadlines(maxDetour._2) < 0)
-        println("plop")
+      val (from,to,value) = maxDetours(i)
+      this.maxDetours(i) = (from,
+        to,
+        maxDetourCalculation(value, travelDurationMatrix.getTravelDuration(from, leaveTimes(from).value, to)))
+      deadlines(to) = Math.min(deadlines(to),deadlines(from) + this.maxDetours(i)._3 + taskDurations(to))
     }
 
     //TODO : Move this, it doesn't belong here !!!
@@ -396,8 +397,10 @@ class PDP(override val n:Int,
     }
     val explorer = sortedRouteByEarlylines.positionOfSmallestGreaterOrEqual(node)(deadlines(node))
     val potentialNeighbors = (
-      if(explorer.isDefined) buildPotentialNeighbors(explorer,List.empty)
-      else List.tabulate(v)(x => prev(x).value)).filter(exclusiveCarsFilter(_))
+    if(explorer.isDefined) buildPotentialNeighbors(explorer,List.empty)
+    else List.tabulate(v)(x => prev(x).value)).
+      filter(exclusiveCarsFilter(_)).
+      filter(prevNode => if(prevNode < v) vehiclesMaxCapacities(prevNode) >= contentsFlow(node) else true)
     buildClosestNeighbor(
       node,
       potentialNeighbors,  // arrival time of a node is 0 by default.

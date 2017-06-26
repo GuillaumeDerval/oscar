@@ -271,7 +271,8 @@ case class PickupDeliverySegmentExchange(pdp: PDP,
 
     if(!hotRestart)startVehicle = 0
 
-    val relevantNeighborsNow = relevantNeighbors()
+    val relevantNeighborsNow = completeSegments.flatten.map(x => x._1 -> relevantNeighbors()(x._2)).toMap
+
     for(firstVehicle <- startVehicle until pdp.v - 1){
       for(firstSegment <- completeSegments(firstVehicle)){
         firstSegmentStartPosition = routePosition(firstSegment._1).get
