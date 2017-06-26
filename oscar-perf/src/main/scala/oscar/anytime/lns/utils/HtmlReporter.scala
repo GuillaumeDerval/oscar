@@ -329,7 +329,7 @@ object HtmlReporter extends App{
                       bestKnownSolutions: Map[String, Option[Int]]
                     ): Array[Array[String]] = {
     val array = ArrayBuffer[Array[String]]()
-    array += Array("'Instance'", "'Set'", "'Best known solution'") ++ configs.map("'" + _ + "'")
+    array += Array("'Instance'", "'Set'", "'Best known solution'") ++ configs.map("{label: '" + _ + "', type: 'number'}")
     bestSols.indices.foreach(i => {
       array += Array("'" + instances(i) + "'", "'" + instanceTypes(instances(i)) + "'", bestKnownSolutions(instances(i)) match{
         case None => "null"
@@ -345,7 +345,7 @@ object HtmlReporter extends App{
   def renderScoresByTime(scores: Seq[(Long, Array[Int])], configs: Seq[String], timeout: Long, stepped: Boolean = false): Array[Array[String]] = {
     val array = ArrayBuffer[Array[String]]()
     var previous = Array[String]()
-    array += Array("'Time'") ++ configs.map("'" + _ + "'")
+    array += Array("'Time'") ++ configs.map("{label: '" + _ + "', type: 'number'}")
     scores.foreach{case (time, scoreValues) => {
       val t = Array((time/1000000000.0).toString)
       if(stepped && previous.nonEmpty) array += t ++ previous
@@ -359,7 +359,7 @@ object HtmlReporter extends App{
   def renderGapsByTime(gaps: Seq[(Long, Array[Option[Double]])], configs: Seq[String], timeout: Long, stepped: Boolean = false): Array[Array[String]] = {
     val array = ArrayBuffer[Array[String]]()
     var previous = Array[String]()
-    array += Array("'Time'") ++ configs.map("'" + _ + "'")
+    array += Array("'Time'") ++ configs.map("{label: '" + _ + "', type: 'number'}")
     gaps.foreach{case (time, gapValues) => {
       val t = Array((time/1000000000.0).toString)
       if(stepped && previous.nonEmpty) array += t ++ previous
@@ -376,7 +376,7 @@ object HtmlReporter extends App{
   def renderSolsByTime(sols: Seq[(Long, Array[Option[Int]])], configs: Seq[String], timeout: Long, stepped: Boolean = false): Array[Array[String]] ={
     val array = ArrayBuffer[Array[String]]()
     var previous = Array[String]()
-    array += Array("'Time'") ++ configs.map("'" + _ + "'")
+    array += Array("'Time'") ++ configs.map("{label: '" + _ + "', type: 'number'}")
     sols.foreach{case (time, solValues) => {
       val t = Array((time/1000000000.0).toString)
       if(stepped && previous.nonEmpty) array += t ++ previous

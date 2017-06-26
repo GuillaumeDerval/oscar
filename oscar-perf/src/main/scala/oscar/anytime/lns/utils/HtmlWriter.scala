@@ -108,12 +108,13 @@ class HtmlWriter(templatePath: String, outputPath: String){
       case ("heading", text) => "<h1>" + text + "</h1>"
       case ("sub-heading", text) => "<h2>" + text + "</h2>"
       case ("paragraph", text) => "<p>" + text + "</p>"
-      case ("elem", text) => "<div id=" + text + "></div>"
+      case ("elem", id) => "<button onclick=\"display(\'" + id + "\')\">Display</button>\n<div id=" + id + "></div>"
     }
     .mkString("\n")
 
   private def getNextDefaultId: String = {
+    val id = "elem_" + defaultId
     defaultId += 1
-    "elem_" + defaultId
+    id
   }
 }

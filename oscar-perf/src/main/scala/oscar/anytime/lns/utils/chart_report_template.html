@@ -8,18 +8,17 @@
         google.charts.load('current', {'packages':['corechart', 'table', 'bar']});
 
         // Set a callback to run when the Google Visualization API is loaded.
-        google.charts.setOnLoadCallback(drawData);
+        // google.charts.setOnLoadCallback(drawData);
+
+        // elem template: [id, type, data source, options]
+        var data = [
+            /*<data>*/
+        ];
 
         /**
          * Draws the data.
          */
         function drawData(){
-
-            // elem template: [id, type, data source, options]
-            var data = [
-                /*<data>*/
-            ];
-
             for(var i = 0; i < data.length; i++){
                 drawElement(data[i][0], data[i][1], data[i][2], data[i][3]);
             }
@@ -61,6 +60,16 @@
             }
         }
 
+        function display(id) {
+            var x = document.getElementById(id);
+            if (x.style.display === 'none' || x.style.display === '') {
+                var i = id.split('_')[1];
+                drawElement(data[i][0], data[i][1], data[i][2], data[i][3]);
+                x.style.display = 'block';
+            } else {
+                x.style.display = 'none';
+            }
+        }
     </script>
 </head>
 
