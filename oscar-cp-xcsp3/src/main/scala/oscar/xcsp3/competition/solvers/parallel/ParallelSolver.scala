@@ -81,7 +81,7 @@ object ParallelSolver extends CompetitionApp with App{
 
       val out = program.solveParallel(conf.nbcore(), 200, 0, (conf.timelimit() - 5) * 1000)
 
-      if(sols.nonEmpty) printSolution(sols.last._2, out._1.completed)
+      if(sols.nonEmpty) printSolution(sols.last._2, obj.isDefined && out._1.completed)
       else if(out._1.completed) printStatus("UNSATISFIABLE")
       else{
         printStatus("UNKNOWN")
