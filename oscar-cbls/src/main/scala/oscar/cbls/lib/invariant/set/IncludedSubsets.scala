@@ -75,8 +75,8 @@ case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(It
  * @param s
  * @param clauseAndMaxOccList iterable of (subset, max occurrence in the subset)
  */
-case class ValuesInViolatedClauses(s: SetValue, allVal:SortedSet[Int], clauseAndMaxOccList:Iterable[(Iterable[Int],Int)])
-  extends SetInvariant(initialDomain = Domain(allVal))
+case class ValuesInViolatedClauses(s: SetValue, clauseAndMaxOccList:Iterable[(Iterable[Int],Int)])
+  extends SetInvariant(initialDomain = s.domain)
   with SetNotificationTarget{
 
   registerStaticAndDynamicDependenciesNoID(s)
@@ -85,7 +85,7 @@ case class ValuesInViolatedClauses(s: SetValue, allVal:SortedSet[Int], clauseAnd
   require(s.min == 0)
 
   val clauseAndMaxOccArray = clauseAndMaxOccList.toArray
-  val n = clauseAndMaxOccArray.length
+  val numberOfClauses = clauseAndMaxOccArray.length
 
   //building valueToClauseIDs
   val valueToClauseIDs:Array[QList[Int]] = Array.fill(s.max+1)(null)
@@ -97,13 +97,13 @@ case class ValuesInViolatedClauses(s: SetValue, allVal:SortedSet[Int], clauseAnd
   }
 
   //value to number of violated clauses this is in
-  val valToNumberOfViolatedClauses:Array[Int] = Array.fill(n)(0)
+  val valToNumberOfViolatedClauses:Array[Int] = Array.fill(s.max + 1)(0)
 
   //clause to number of values in s in it
-  val clauseToNbPresent:Array[Int] = Array.fill(n)(0)
+  val clauseToNbPresent:Array[Int] = Array.fill(numberOfClauses)(0)
 
   //init
-  this := allVal
+  this := SortedSet.empty
   for(value <- s.value){
     notifyInsert(value)
   }
