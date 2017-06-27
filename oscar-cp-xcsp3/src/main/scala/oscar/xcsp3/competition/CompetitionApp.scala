@@ -36,6 +36,8 @@ abstract class CompetitionApp extends App{
   var status = "UNKNOWN"
   var currentSol = ""
 
+  val tstart = System.nanoTime()
+
   try {
     runSolver(conf)
   }catch{
@@ -57,7 +59,8 @@ abstract class CompetitionApp extends App{
   def updateSol(sol: String, obj: Int): Unit = {
     currentSol = sol
     if(status == "UNKNOWN") status = "SATISFIABLE"
-    println("o " + obj)
+    println(tElapsed + " o " + obj)
+//    println("o " + obj)
     Console.flush()
   }
 
@@ -66,7 +69,8 @@ abstract class CompetitionApp extends App{
   def printSolution(): Unit = {
     if(currentSol.nonEmpty) {
 //      if(new CheckerLib(conf.benchname(), sol).valid)
-      println("v " + currentSol.split("\\r?\\n").mkString("\nv "))
+      println(tElapsed + " v " + currentSol.split("\\r?\\n").mkString("\n" + tElapsed + " v "))
+//      println("v " + currentSol.split("\\r?\\n").mkString("\nv "))
 //      else{
 //        printStatus("UNKNOWN")
 //        printDiagnostic("SOL_NOT_VALID")
@@ -84,17 +88,29 @@ abstract class CompetitionApp extends App{
     * UNKNOWN: other (no solution has been found or there was a problem, use printDiagnostic to precise information)
     */
   def printStatus(): Unit = {
-    println("s " + status)
+    println(tElapsed + " s " + status)
+//    println("s " + status)
     if(status == "OPTIMUM FOUND" || status == "SATISFIABLE") printSolution()
     statusPrinted = true
   }
 
   //For any comment:
-  def printComment(com: String): Unit = println("c " + com.split("\\r?\\n").mkString("\nc "))
+  def printComment(com: String): Unit = {
+    println(tElapsed + " c " + com.split("\\r?\\n").mkString("\n" + tElapsed + " c "))
+//    println("c " + com.split("\\r?\\n").mkString("\nc "))
+  }
 
   //For diagnostic information, name should be a keyword and value no more than one line.
-  def printDiagnostic(name: String, value: String): Unit = println("d " + name + " " + value)
+  def printDiagnostic(name: String, value: String): Unit = {
+    println(tElapsed + " d " + name + " " + value)
+//    println("d " + name + " " + value)
+  }
 
   //For diagnostic information, name should be a keyword.
-  def printDiagnostic(name: String): Unit = println("d " + name)
+  def printDiagnostic(name: String): Unit = {
+    println(tElapsed + " d " + name)
+//    println("d " + name)
+  }
+
+  def tElapsed: Long = (System.nanoTime() - tstart)/1000000
 }
