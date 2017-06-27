@@ -35,7 +35,6 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
   this := sortSequenceBy(v.value,sortValue)
 
   /**
-   *
    * @param value a value, that is compared against value in the current sequence
    * @param transformedValue is an optional argument that you can pass to this method.
    *                         Values v in the output sequence are ordered by lexicographic order on (sortValue(v),v)
@@ -46,15 +45,15 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
    *         It is actually the first value in the sequence starting from position zero that is greater or equal
    *         in case case there is no such value (including empty sequence), it returns None
    */
-  def positionOfSmallestGreaterOrEqual(value:Int)(transformedValue:Int = sortValue(value)):Option[IntSequenceExplorer] = {
-    if(this.value.isEmpty) {
+  def positionOfSmallestGreaterOrEqual(value:Int,sortedSequence:IntSequence)(transformedValue:Int = sortValue(value)):Option[IntSequenceExplorer] = {
+    if(sortedSequence.isEmpty) {
       None
     }else {
-      val position = searchPositionOfInsert(this.value, value)(transformedValue)
-      if(position == this.value.size){
+      val position = searchPositionOfInsert(sortedSequence, value)(transformedValue)
+      if(position == sortedSequence.size){
         None
       }else{
-        var toReturn = this.value.explorerAtPosition(position).get
+        var toReturn = sortedSequence.explorerAtPosition(position).get
         //we move a bit to the left in case of equal values
         while (toReturn.prev match{
           case Some(explorerAtPrevPosition) if explorerAtPrevPosition.value == value =>
@@ -73,12 +72,16 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
    * @param secondValue
    * @param firstTransformedValue
    * @param secondTransformedValue
-   * @return trus if firstValue is smaller than secondValue
+   * @return true if firstValue is smaller than secondValue
    */
   private def isSmaller(firstValue:Int,secondValue:Int)
                        (firstTransformedValue:Int = sortValue(firstValue),secondTransformedValue:Int = sortValue(secondValue)):Boolean = {
+
+    assert(firstTransformedValue == sortValue(firstValue))
+    assert(secondTransformedValue == sortValue(secondValue))
+
     if(firstTransformedValue < secondTransformedValue) true
-    else if (firstTransformedValue > secondTransformedValue) false
+    else if(firstTransformedValue > secondTransformedValue) false
     else firstValue < secondValue
   }
 
@@ -90,6 +93,8 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
     def otherIsSmaller(otherValue:Int):Boolean = {
       !isSmaller(value,otherValue)(firstTransformedValue = transformedValue)
     }
+
+    assert(seq.size == seq.toList.size, "size error")
 
     if(seq.size == 0) {
       return 0
@@ -118,8 +123,8 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
     var upperPositionOfInsert = seq.size-1
 
     while(lowerPositionOfInsert + 1 < upperPositionOfInsert) {
-      require(isSmaller(seq.valueAtPosition(lowerPositionOfInsert).get,value)(),"expected "+ seq.valueAtPosition(lowerPositionOfInsert).get + " l "+ value)
-      require(isSmaller(value, seq.valueAtPosition(upperPositionOfInsert).get)())
+      assert(isSmaller(seq.valueAtPosition(lowerPositionOfInsert).get,value)(),"expected "+ seq.valueAtPosition(lowerPositionOfInsert).get + " l "+ value)
+      assert(isSmaller(value, seq.valueAtPosition(upperPositionOfInsert).get)(),"A")
 
       val midPosition = (lowerPositionOfInsert + upperPositionOfInsert) / 2
       val valueAtMidPosition = seq.valueAtPosition(midPosition).get
@@ -137,7 +142,6 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
   private val checkpointStack = new SeqCheckpointedValueStack[IntSequence]()
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
-    //println("notifySeqChanges(changes:" + changes)
     digestChanges(changes)
     //check(new ErrorChecker(),v.newValue,this.newValue)
   }
@@ -147,9 +151,9 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
       case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         digestChanges(prev)
         //find where the value should be located by dichotomy
-        //println("this.newValue:" + this.newValue)
+        //println("inserting " + value + " into this.newValue:" + this.newValue)
         val positionOfInsert = searchPositionOfInsert(this.newValue, value)()
-        //println("foud position:" + positionOfInsert)
+        //println("found position:" + positionOfInsert)
         this.insertAtPosition(value,positionOfInsert)
 
       case m@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
@@ -181,7 +185,7 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
     }
   }
 
-  private def sortSequenceBy(i:IntSequence,by:Int => Int):IntSequence = IntSequence(i.toList.sortBy(by))
+  private def sortSequenceBy(i:IntSequence,by:Int => Int):IntSequence = IntSequence(i.toList.sortBy(i => (by(i),i)))
 
   override def checkInternals(c: Checker) {
     check(c, v.value,this.value)
@@ -189,14 +193,15 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
   def check(c:Checker,in:IntSequence,out:IntSequence){
     c.check(out.toList equals sortSequenceBy(in,sortValue).toList, Some("this.out=" + out.toList + " should be " +sortSequenceBy(in,sortValue).toList))
 
-
     for (value <-  if(in.nonEmpty) {in.min to in.max} else List(0,1,10)) {
-      val optPositionOfSMallestGE = positionOfSmallestGreaterOrEqual(value)()
+      val optPositionOfSMallestGE = positionOfSmallestGreaterOrEqual(value,out)()
       optPositionOfSMallestGE match {
         case None =>
-          c.check(in.isEmpty || out.forall((otherValue => isSmaller(otherValue, value)())), Some("None on search " + value + " on " + out))
+          c.check(in.isEmpty || out.forall((otherValue => otherValue != value && isSmaller(otherValue, value)())),
+            Some("None on search " + value + " on " + out + " but there are: " + out.toList.filter(otherValue => otherValue == value || isSmaller(value,otherValue)())))
+
         case Some(positionOfSMallestGE) =>
-          c.check(isSmaller(value, positionOfSMallestGE.value)() || positionOfSMallestGE.value == value, Some(positionOfSMallestGE + " on search " + value + " on " + out))
+          c.check(isSmaller(value, positionOfSMallestGE.value)() || positionOfSMallestGE.value == value, Some("returned value " + positionOfSMallestGE.value + " on search " + value + " on " + out))
       }
     }
   }
