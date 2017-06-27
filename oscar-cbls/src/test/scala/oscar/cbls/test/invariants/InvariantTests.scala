@@ -18,14 +18,13 @@ package oscar.cbls.test.invariants
 import org.scalacheck.Gen
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
-import oscar.cbls.core.computation.{SetValue, CBLSIntVar, IntValue}
-import oscar.cbls.lib.constraint.BelongsTo
+import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
 import oscar.cbls.lib.constraint._
 import oscar.cbls.lib.invariant.logic.{DenseCount, Elements, Filter, IntElement, IntITE, SelectLEHeapHeap, SetElement, _}
 import oscar.cbls.lib.invariant.minmax.{ArgMax, ArgMin, Max2, MaxArray, MaxLin, MaxSet, Min2, MinArray, MinLin, MinSet}
 import oscar.cbls.lib.invariant.numeric.{Abs, Div, Minus, Mod, Prod, Prod2, ProdElements, RoundUpModulo, Step, Sum, Sum2, SumElements}
 import oscar.cbls.lib.invariant.routing._
-import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeIntegerDimensionOnVehicle, ForwardCumulativeConstraintOnVehicle}
+import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
 import oscar.cbls.lib.invariant.seq._
 import oscar.cbls.lib.invariant.set._
 import oscar.cbls.modeling.Algebra._
@@ -456,8 +455,11 @@ class InvariantTests extends FunSuite with Checkers {
     bench.run
   }
 
-
-
+  test("ValuesInViolatedClauses includes all values in violated clauses") {
+    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
+    ValuesInViolatedClauses(bench.genIntSetVar(), List((List(0,1,2,3,4,5),2),(List(0,1,4,5),1),(List(0,1,24,5),2),(List(0,1,2,3,4,5),2)))
+    bench.run
+  }
 
   test("MakeSet maintains an IntSetVar given a set of IntVar.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
