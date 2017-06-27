@@ -4,7 +4,7 @@ import oscar.algo.search.{Branching, SearchStatistics}
 import oscar.cp.{CPIntVar, CPSolver}
 import oscar.cp.searches.lns.CPIntSol
 import oscar.cp.searches.lns.search.ALNSConfig
-import oscar.cp.searches.lns.selection.{AdaptiveStore, Metrics, PriorityStore, RouletteWheel}
+import oscar.cp.searches.lns.selection._
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -14,27 +14,31 @@ import scala.collection.mutable.ArrayBuffer
   */
 object ALNSBuilder{
 
+  // Random keyword:
+  val Random = "Random"
+
   /**
     * Available relax operators:
     */
-  // Random relaxation:
-  val Random = "Random"
-  val Random_Param1 = Array(0.25, 0.5, 0.75) //Percentage of the neighbourhood which is relaxed
 
   // K successive relaxation:
   val KSuccessive = "KSuccessive"
-  val KSuccessive_Param1 = Array(0.25, 0.50, 0.75) //Percentage of the neighbourhood which is relaxed
 
   // Propagation guided relaxation:
   val PropGuided = "PropGuided"
-  val PropGuided_Param1 = Array(0.25, 0.50, 0.75) //Percentage of the neighbourhood which is relaxed
 
   // Reversed propagation guided relaxation:
   val RevPropGuided  = "RevPropGuided"
-  val RevPropGuided_Param1 = Array(0.25, 0.50, 0.75) //Percentage of the neighbourhood which is relaxed
+
+  // Value guided relaxation:
+  val ValGuided = "ValGuided"
+  val DefValGuidedParam2 = Array("Random", "MaxGroup", "MinGroup", "MaxVal", "MinVal")
 
   // Full relaxation:
   val FullRelax = "FullRelax"
+
+  // Default relaxation parameters (percentage)
+  val DefRelaxParam = Array(0.25, 0.50, 0.75) //Percentage of the neighbourhood which is relaxed
 
   //TODO: implement other relaxation functions
 
@@ -100,6 +104,8 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
     (sol: CPIntSol) => solver.search(search)
   }
 
+
+
   def instantiateCoupledOperators: Array[ALNSOperator] =(
     for(
       relaxKey <- config.relaxOperatorKeys;
@@ -141,7 +147,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
   private def instantiateRelaxFunctions(opKey: String): Array[(String, CPIntSol => Unit)] = opKey match{
 
     case ALNSBuilder.Random =>
-      ALNSBuilder.Random_Param1
+      ALNSBuilder.DefRelaxParam
         .map(x => Math.round(N * x).toInt)
         .map(x => (
           opKey + "(" + x.toString + ")",
@@ -149,7 +155,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
         )
 
     case ALNSBuilder.KSuccessive =>
-      ALNSBuilder.KSuccessive_Param1
+      ALNSBuilder.DefRelaxParam
         .map(x => Math.round(N * x).toInt)
         .map(x => (
           opKey + "(" + x.toString + ")",
@@ -157,7 +163,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
         )
 
     case ALNSBuilder.PropGuided =>
-      ALNSBuilder.PropGuided_Param1
+      ALNSBuilder.DefRelaxParam
         .map(x => maxNeighSize * x)
         .map(x => (
           opKey + "(" + x.toString + ")",
@@ -166,7 +172,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
 
     case ALNSBuilder.RevPropGuided =>
       if(closeness.isDefined) {
-        ALNSBuilder.RevPropGuided_Param1
+        ALNSBuilder.DefRelaxParam
           .map(x => maxNeighSize * x)
           .map(x => (
             opKey + "(" + x.toString + ")",
@@ -174,6 +180,15 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
           )
       }
       else Array[(String, CPIntSol => Unit)]()
+
+    case ALNSBuilder.ValGuided =>
+      for(
+        k <- ALNSBuilder.DefRelaxParam.map(x => Math.round(N * x).toInt);
+        scheme <- ALNSBuilder.DefValGuidedParam2
+      )yield (
+        opKey + "(" + k.toString + "," + scheme + ")",
+        (sol: CPIntSol) => RelaxationFunctions.valueGuidedRelax(solver, vars, sol, k, scheme)
+      )
 
     case ALNSBuilder.FullRelax => Array((opKey, _ => Unit))
   }
@@ -223,7 +238,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       RelaxationFunctions.randomRelax(solver, vars, _: CPIntSol, _: Int),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.Random_Param1
+        ALNSBuilder.DefRelaxParam
           .map(x => Math.round(N * x).toInt)
           .map(x => new ALNSParameter[Int](x, ALNSBuilder.DefNoParamFailThreshold)),
         paramMetricKey
@@ -237,7 +252,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       RelaxationFunctions.successiveRelax(solver, vars, _: CPIntSol, _: Int),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.KSuccessive_Param1
+        ALNSBuilder.DefRelaxParam
           .map(x => Math.round(N * x).toInt)
           .map(x => new ALNSParameter[Int](x, ALNSBuilder.DefNoParamFailThreshold)),
         paramMetricKey
@@ -251,7 +266,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       RelaxationFunctions.propagationGuidedRelax(solver, vars, _: CPIntSol, closeness, _: Double),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.PropGuided_Param1
+        ALNSBuilder.DefRelaxParam
           .map(x => x * maxNeighSize)
           .map(x => new ALNSParameter[Double](x, ALNSBuilder.DefNoParamFailThreshold)),
         paramMetricKey),
@@ -264,10 +279,29 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       RelaxationFunctions.reversedPropagationGuidedRelax(solver, vars, _: CPIntSol, closeness.get, _: Double),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.RevPropGuided_Param1
+        ALNSBuilder.DefRelaxParam
           .map(x => x * maxNeighSize)
           .map(x => new ALNSParameter[Double](x, ALNSBuilder.DefNoParamFailThreshold)),
         paramMetricKey),
+      instantiateMetric(paramMetricKey)
+    )
+
+    case ALNSBuilder.ValGuided => new ALNSTwoParamsOperator[Int, String](
+      ALNSBuilder.ValGuided,
+      ALNSBuilder.DefWithParamFailThreshold,
+      RelaxationFunctions.valueGuidedRelax(solver, vars, _:CPIntSol, _: Int, _: String),
+      instantiateAdaptiveStore(
+        paramSelectKey,
+        ALNSBuilder.DefRelaxParam
+          .map(x => Math.round(N * x).toInt)
+          .map(x => new ALNSParameter[Int](x, ALNSBuilder.DefNoParamFailThreshold)),
+        paramMetricKey
+      ),
+      instantiateAdaptiveStore(
+        paramSelectKey,
+        ALNSBuilder.DefValGuidedParam2.map(x => new ALNSParameter[String](x, ALNSBuilder.DefNoParamFailThreshold)),
+        paramMetricKey
+      ),
       instantiateMetric(paramMetricKey)
     )
 
@@ -328,6 +362,8 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
         case ALNSBuilder.TTI => true
       }
     )
+
+    case ALNSBuilder.Random => new RandomStore[T](elems)
   }
 
   /**
