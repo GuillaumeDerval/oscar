@@ -79,7 +79,7 @@ class PDPConstraints(pdp: PDP, fastConstraints: ConstraintSystem, slowConstraint
     val leaveTimes = pdp.leaveTimes
 
     for(maxDetour <- pdp.maxDetours){
-      slowConstraints.post(LE(arrivalTimes(maxDetour._2) - leaveTimes(maxDetour._1),maxDetour._3))
+      slowConstraints.post(LE(arrivalTimes(maxDetour._1) - leaveTimes(maxDetour._2._1),maxDetour._2._2))
     }
   }
 

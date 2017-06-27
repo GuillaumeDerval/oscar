@@ -10,7 +10,7 @@ import oscar.cbls.lib.invariant.seq.SortSequence
 import oscar.cbls.lib.invariant.set.IncludedSubsets
 import oscar.cbls.modeling.Algebra._
 
-import scala.collection.immutable.List
+import scala.collection.immutable.{HashMap, List}
 import scala.math._
 
 /**
@@ -109,11 +109,17 @@ class PDP(override val n:Int,
     routedChains.map(_.head)
   }
 
-  def isPickup(node: Int) = chainOfNode(node).head == node
-  def getRelatedPickup(node: Int) = chainOfNode(node).head
+  def isPickup(node: Int) = node >= v && chainOfNode(node).head == node
+  def getRelatedPickup(node: Int) = {
+    require(node >= v, "This node is a depot !")
+    chainOfNode(node).head
+  }
 
-  def isDelivery(node: Int) = chainOfNode(node).last == node
-  def getRelatedDelivery(node: Int) = chainOfNode(node).last
+  def isDelivery(node: Int) = node >= v && chainOfNode(node).last == node
+  def getRelatedDelivery(node: Int) = {
+    require(node >= v, "This node is a depot !")
+    chainOfNode(node).last
+  }
 
   /**
     * @param node The node
@@ -255,7 +261,7 @@ class PDP(override val n:Int,
 
   var sortedRouteByEarlylines: SortSequence = null
 
-  var maxDetours:Array[(Int,Int,Int)] = Array.empty
+  var maxDetours:Map[Int,(Int,Int)] = HashMap.empty
 
   var arrivalTimes:Array[CBLSIntVar] = Array.empty
 
@@ -303,16 +309,21 @@ class PDP(override val n:Int,
     sortedRouteByEarlylines = SortSequence(routes, node => earlylines(node))
   }
 
-  def addMaxDetours(maxDetours:(List[(Int,Int,Int)]), maxDetourCalculation:(Int,Int) => Int = (a,b) => a + b): Unit ={
-    this.maxDetours = Array.tabulate(maxDetours.size)(_ => (0,0,0))
-    for(i <- maxDetours.indices){
-      val (from,to,value) = maxDetours(i)
-      this.maxDetours(i) = (from,
-        to,
-        maxDetourCalculation(value, travelDurationMatrix.getTravelDuration(from, leaveTimes(from).value, to)))
-      deadlines(to) = Math.min(deadlines(to),deadlines(from) + this.maxDetours(i)._3 + taskDurations(to))
-    }
+  def addMaxDetours(maxDetourCalculation:(List[Int],TravelTimeFunction) => List[(Int,Int,Int)]): Unit ={
+    maxDetours = (
+      for(chain <- chains)
+        yield maxDetourCalculation(chain, travelDurationMatrix)
+    ).toArray.flatten.map(x => x._2 -> (x._1,x._3)).toMap
 
+    for(to <- 0 until n if !isPickup(to))
+      deadlines(to) = maxDetours.get(to) match{
+        case None =>
+          nextNode(to) match{
+            case None => Int.MaxValue
+            case Some(nextN) => Math.min(deadlines(to), deadlines(nextN) - travelDurationMatrix.getTravelDuration(to,0,nextN) - taskDurations(nextN))
+          }
+        case Some((from,value)) => Math.min(deadlines(to), deadlines(from) + value + taskDurations(to))
+      }
     //TODO : Move this, it doesn't belong here !!!
     for(chain <- chains){
       for(node <- chain  if !isPickup(node) && earlylines(node) == 0){
