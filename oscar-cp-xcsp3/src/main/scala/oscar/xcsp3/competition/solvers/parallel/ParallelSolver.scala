@@ -40,13 +40,16 @@ object ParallelSolver extends CompetitionApp with App{
       XCSP3Parser2.parse(program.md, conf.benchname())
     } catch {
       case _: NotImplementedError =>
-        printStatus("UNSUPPORTED")
+        status = "UNSUPPORTED"
+        printStatus()
         (null, null)
       case _: NoSolutionException =>
-        printStatus("UNKNOWN")
+        status = "UNSATISFIABLE"
+        printStatus()
         (null, null)
       case _: Inconsistency =>
-        printStatus("UNSATISFIABLE")
+        status = "UNSATISFIABLE"
+        printStatus()
         (null, null)
     }
 
@@ -67,7 +70,7 @@ object ParallelSolver extends CompetitionApp with App{
           val sol = new CPIntSol(vars.map(_.min), if(obj.isDefined) obj.get._2.evaluate() else 0, time)
           val instantiation = solutionGenerator()
           if(sols.isEmpty || (obj.isDefined && ((obj.get._1 && sol.objective > sols.last._1.objective) || (!obj.get._1 && sol.objective < sols.last._1.objective)))){
-            if(obj.isDefined) printObjective(sol.objective)
+            if(obj.isDefined) updateSol(instantiation, sol.objective)
             sols += ((sol, instantiation))
           }
         }
@@ -81,12 +84,12 @@ object ParallelSolver extends CompetitionApp with App{
 
       val out = program.solveParallel(conf.nbcore(), 200, 0, (conf.timelimit() - 5) * 1000)
 
-      if(sols.nonEmpty) printSolution(sols.last._2, obj.isDefined && out._1.completed)
-      else if(out._1.completed) printStatus("UNSATISFIABLE")
-      else{
-        printStatus("UNKNOWN")
-        printDiagnostic("NO_SOL_FOUND")
+      if(sols.nonEmpty){
+        if(obj.isDefined && out._1.completed) status = "OPTIMUM FOUND"
       }
+      else if(out._1.completed) status = "UNSATISFIABLE"
+      else printDiagnostic("NO_SOL_FOUND")
+      printStatus()
     }
   }
 }

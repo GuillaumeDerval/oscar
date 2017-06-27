@@ -40,15 +40,18 @@ object HybridSolver extends CompetitionApp with App {
       Some(cpVars, solver, solutionGenerator)
     } catch {
       case _: NotImplementedError =>
-        printStatus("UNSUPPORTED")
+        status = "UNSUPPORTED"
+        printStatus()
         None
 
       case _: NoSolutionException =>
-        printStatus("UNKNOWN")
+        status = "UNSATISFIABLE"
+        printStatus()
         None
 
       case _: Inconsistency =>
-        printStatus("UNSATISFIABLE")
+        status = "UNSATISFIABLE"
+        printStatus()
         None
     }
 
@@ -72,7 +75,7 @@ object HybridSolver extends CompetitionApp with App {
         val instantiation = solutionGenerator()
         optimumFound = if (maximizeObjective.isDefined) solver.objective.isOptimum() else true //In case of CSP, no point of searching another solution
         if(sols.isEmpty || (maximizeObjective.isDefined && ((maximizeObjective.get && sol.objective > sols.last._1.objective) || (!maximizeObjective.get && sol.objective < sols.last._1.objective)))){
-          if(maximizeObjective.isDefined) printObjective(sol.objective)
+          if(maximizeObjective.isDefined) updateSol(instantiation, sol.objective)
           sols += ((sol, instantiation))
         }
       }
@@ -166,12 +169,12 @@ object HybridSolver extends CompetitionApp with App {
         }
       }
 
-      if (sols.nonEmpty) printSolution(sols.last._2, maximizeObjective.isDefined && (optimumFound || stats.completed))
-      else if (stats.completed) printStatus("UNSATISFIABLE")
-      else {
-        printStatus("UNKNOWN")
-        printDiagnostic("NO_SOL_FOUND")
+      if (sols.nonEmpty){
+        if(maximizeObjective.isDefined && (optimumFound || stats.completed)) status = "OPTIMUM FOUND"
       }
+      else if (stats.completed) status = "UNSATISFIABLE"
+      else printDiagnostic("NO_SOL_FOUND")
+      printStatus()
     }
   }
 }

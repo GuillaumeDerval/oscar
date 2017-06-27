@@ -17,6 +17,13 @@ class CompetitionConf(arguments: Seq[String]) extends ScallopConf(arguments){
 }
 
 abstract class CompetitionApp extends App{
+  //Setting up shutdown hook:
+  Runtime.getRuntime.addShutdownHook(new Thread{
+    override def run() {
+      if(!statusPrinted) printStatus()
+    }
+  })
+
   val conf = new CompetitionConf(args)
 
   printComment("seed: " + conf.randomseed())
@@ -26,46 +33,46 @@ abstract class CompetitionApp extends App{
 
   Random.setSeed(conf.randomseed())
   var statusPrinted = false
+  var status = "UNKNOWN"
+  var currentSol = ""
 
   try {
     runSolver(conf)
   }catch{
     case e: Exception =>
-      printStatus("UNKNOWN")
+      if(!statusPrinted) printStatus()
       printDiagnostic("EXCEPTION", e.getMessage)
       printComment(e.getStackTrace.mkString("\n"))
       Console.flush()
   }
 
-  if(!statusPrinted) printStatus("UNKNOWN")
-
   /**
     * TODO: Parse Instance, launch search and print results
     */
-  def runSolver(conf: CompetitionConf)
+  def runSolver(conf: CompetitionConf): Unit
 
   // Use the following functions to print your outputs. Only the best solution should be printed.
 
-  //Each time a new best solution is found, it's objective should be printed:
-  def printObjective(obj: Int): Unit = {
+  //Each time a new best solution is found, this method should be called:
+  def updateSol(sol: String, obj: Int): Unit = {
+    currentSol = sol
+    if(status == "UNKNOWN") status = "SATISFIABLE"
     println("o " + obj)
     Console.flush()
   }
 
   //Use this only for the last solution:
   //Sol should be a valid instantiation (see rules)
-  def printSolution(sol: String, optimum: Boolean = false): Unit = {
-//    if(new CheckerLib(conf.benchname(), sol).valid){
-      if (optimum) printStatus("OPTIMUM FOUND")
-      else printStatus("SATISFIABLE")
-
-      println("v " + sol.split("\\r?\\n").mkString("\nv "))
-//    }
-//    else{
-//      printStatus("UNKNOWN")
-//      printDiagnostic("SOL_NOT_VALID")
-//      printComment(sol)
-//    }
+  def printSolution(): Unit = {
+    if(currentSol.nonEmpty) {
+//      if(new CheckerLib(conf.benchname(), sol).valid)
+      println("v " + currentSol.split("\\r?\\n").mkString("\nv "))
+//      else{
+//        printStatus("UNKNOWN")
+//        printDiagnostic("SOL_NOT_VALID")
+//        printComment(sol)
+//      }
+    }
   }
 
   /**
@@ -76,9 +83,10 @@ abstract class CompetitionApp extends App{
     * UNSUPPORTED: unsupported constraint
     * UNKNOWN: other (no solution has been found or there was a problem, use printDiagnostic to precise information)
     */
-  def printStatus(status: String): Unit = {
-    statusPrinted = true
+  def printStatus(): Unit = {
     println("s " + status)
+    if(status == "OPTIMUM FOUND" || status == "SATISFIABLE") printSolution()
+    statusPrinted = true
   }
 
   //For any comment:

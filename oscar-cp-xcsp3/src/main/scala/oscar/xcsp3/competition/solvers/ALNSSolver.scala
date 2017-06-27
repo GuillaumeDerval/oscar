@@ -33,17 +33,20 @@ object ALNSSolver extends CompetitionApp with App {
       val solver: CPSolver = model.cpSolver
 
       Some(cpVars, solver, solutionGenerator)
-    }catch {
+    } catch {
       case _: NotImplementedError =>
-        printStatus("UNSUPPORTED")
+        status = "UNSUPPORTED"
+        printStatus()
         None
 
       case _: NoSolutionException =>
-        printStatus("UNKNOWN")
+        status = "UNSATISFIABLE"
+        printStatus()
         None
 
       case _: Inconsistency =>
-        printStatus("UNSATISFIABLE")
+        status = "UNSATISFIABLE"
+        printStatus()
         None
     }
 
@@ -61,7 +64,7 @@ object ALNSSolver extends CompetitionApp with App {
         val sol = new CPIntSol(vars.map(_.value), if (maximizeObjective.isDefined) solver.objective.objs.head.best else 0, time)
         val instantiation = solutionGenerator()
         if(sols.isEmpty || (maximizeObjective.isDefined && ((maximizeObjective.get && sol.objective > sols.last._1.objective) || (!maximizeObjective.get && sol.objective < sols.last._1.objective)))){
-          if(maximizeObjective.isDefined) printObjective(sol.objective)
+          if(maximizeObjective.isDefined) updateSol(instantiation, sol.objective)
           sols += ((sol, instantiation))
         }
       }
@@ -87,11 +90,11 @@ object ALNSSolver extends CompetitionApp with App {
 
       val result = alns.search()
 
-      if (sols.nonEmpty) printSolution(sols.last._2, solver.objective.objs.nonEmpty && result.optimumFound)
-      else {
-        printStatus("UNKNOWN")
-        printDiagnostic("NO_SOL_FOUND")
+      if (sols.nonEmpty){
+        if(solver.objective.objs.nonEmpty && result.optimumFound) status = "OPTIMUM FOUND"
       }
+      else printDiagnostic("NO_SOL_FOUND")
+      printStatus()
     }
   }
 }
