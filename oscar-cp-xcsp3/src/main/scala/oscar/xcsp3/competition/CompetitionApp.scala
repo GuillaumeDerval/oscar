@@ -36,7 +36,7 @@ abstract class CompetitionApp extends App{
   var status = "UNKNOWN"
   var currentSol = ""
 
-  val tstart = System.nanoTime()
+  final lazy val tstart = System.nanoTime()
 
   try {
     runSolver(conf)
@@ -68,14 +68,18 @@ abstract class CompetitionApp extends App{
   //Sol should be a valid instantiation (see rules)
   def printSolution(): Unit = {
     if(currentSol.nonEmpty) {
-//      if(new CheckerLib(conf.benchname(), sol).valid)
-      println(tElapsed + " v " + currentSol.split("\\r?\\n").mkString("\n" + tElapsed + " v "))
-//      println("v " + currentSol.split("\\r?\\n").mkString("\nv "))
-//      else{
-//        printStatus("UNKNOWN")
-//        printDiagnostic("SOL_NOT_VALID")
-//        printComment(sol)
-//      }
+      if(new CheckerLib(conf.benchname(), currentSol).valid) {
+        println(tElapsed + " s " + status)
+//        println("s " + status)
+        println(tElapsed + " v " + currentSol.split("\\r?\\n").mkString("\n" + tElapsed + " v "))
+//        println("v " + currentSol.split("\\r?\\n").mkString("\nv "))
+      }
+      else{
+        printDiagnostic("SOL_NOT_VALID")
+        printComment(currentSol)
+        println(tElapsed + " s " + "UNKNOWN")
+//        println("s " + "UNKNOWN")
+      }
     }
   }
 
@@ -88,9 +92,10 @@ abstract class CompetitionApp extends App{
     * UNKNOWN: other (no solution has been found or there was a problem, use printDiagnostic to precise information)
     */
   def printStatus(): Unit = {
-    println(tElapsed + " s " + status)
-//    println("s " + status)
     if(status == "OPTIMUM FOUND" || status == "SATISFIABLE") printSolution()
+    else
+      println(tElapsed + " s " + status)
+//      println("s " + status)
     statusPrinted = true
   }
 
