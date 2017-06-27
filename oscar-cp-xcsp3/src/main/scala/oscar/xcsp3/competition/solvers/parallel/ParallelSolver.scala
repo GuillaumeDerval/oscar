@@ -70,7 +70,7 @@ object ParallelSolver extends CompetitionApp with App{
           val sol = new CPIntSol(vars.map(_.min), if(obj.isDefined) obj.get._2.evaluate() else 0, time)
           val instantiation = solutionGenerator()
           if(sols.isEmpty || (obj.isDefined && ((obj.get._1 && sol.objective > sols.last._1.objective) || (!obj.get._1 && sol.objective < sols.last._1.objective)))){
-            if(obj.isDefined) updateSol(instantiation, sol.objective)
+            updateSol(instantiation, sol.objective, obj.isDefined)
             sols += ((sol, instantiation))
           }
         }

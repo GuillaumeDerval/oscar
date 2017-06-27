@@ -42,9 +42,9 @@ abstract class CompetitionApp extends App{
     runSolver(conf)
   }catch{
     case e: Exception =>
-      if(!statusPrinted) printStatus()
       printDiagnostic("EXCEPTION", e.getMessage)
       printComment(e.getStackTrace.mkString("\n"))
+      if(!statusPrinted) printStatus()
       Console.flush()
   }
 
@@ -56,12 +56,14 @@ abstract class CompetitionApp extends App{
   // Use the following functions to print your outputs. Only the best solution should be printed.
 
   //Each time a new best solution is found, this method should be called:
-  def updateSol(sol: String, obj: Int): Unit = {
+  def updateSol(sol: String, obj: Int, cop: Boolean): Unit = {
     currentSol = sol
     if(status == "UNKNOWN") status = "SATISFIABLE"
-    println(tElapsed + " o " + obj)
-//    println("o " + obj)
-    Console.flush()
+    if(cop){
+      println(tElapsed + " o " + obj)
+//      println("o " + obj)
+      Console.flush()
+    }
   }
 
   //Use this only for the last solution:

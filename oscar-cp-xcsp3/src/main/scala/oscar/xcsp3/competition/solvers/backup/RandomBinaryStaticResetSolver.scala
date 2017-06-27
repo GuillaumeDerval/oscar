@@ -65,7 +65,7 @@ object RandomBinaryStaticResetSolver extends CompetitionApp with App {
         val sol = new CPIntSol(vars.map(_.value), solver.objective.objs.head.best, time)
         val instantiation = solutionGenerator()
         optimumFound = if(isCOP) solver.objective.isOptimum() else true //In case of CSP, no point of searching another solution
-        if(isCOP) updateSol(instantiation, sol.objective)
+        updateSol(instantiation, sol.objective, isCOP)
         sols += ((sol, instantiation))
       }
 

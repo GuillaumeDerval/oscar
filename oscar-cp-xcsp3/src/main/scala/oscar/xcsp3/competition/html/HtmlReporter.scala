@@ -46,7 +46,7 @@ object HtmlReporter extends App{
     instances.foreach(i => {
       val bests = mutable.HashSet[String]()
       val objType = objTypes(i)
-      if(objType != "unknown") {
+      if(objType == "max" || objType == "min") {
         var bestVal = objType match {
           case "max" => Int.MinValue
           case "min" => Int.MaxValue
@@ -86,7 +86,7 @@ object HtmlReporter extends App{
       instances.foreach(i => {
         val bests = mutable.HashSet[String]()
         val objType = objTypes(i)
-        if(objType != "unknown") {
+        if(objType == "max" || objType == "min") {
           var bestVal = objType match {
             case "max" => Int.MinValue
             case "min" => Int.MaxValue

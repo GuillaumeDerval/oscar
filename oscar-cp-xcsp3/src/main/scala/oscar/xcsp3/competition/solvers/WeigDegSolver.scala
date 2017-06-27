@@ -65,7 +65,7 @@ object WeigDegSolver extends CompetitionApp with App{
         val sol = new CPIntSol(vars.map(_.value), if(maximizeObjective.isDefined) solver.objective.objs.head.best else 0, time)
         val instantiation = solutionGenerator()
         optimumFound = if(maximizeObjective.isDefined) solver.objective.isOptimum() else true //In case of CSP, no point of searching another solution
-        if(maximizeObjective.isDefined) updateSol(instantiation, sol.objective)
+        updateSol(instantiation, sol.objective, maximizeObjective.isDefined)
         sols += ((sol, instantiation))
       }
 

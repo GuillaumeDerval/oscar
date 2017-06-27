@@ -75,7 +75,7 @@ object HybridSolver2 extends CompetitionApp with App {
         val instantiation = solutionGenerator()
         optimumFound = if (maximizeObjective.isDefined) solver.objective.isOptimum() else true //In case of CSP, no point of searching another solution
         if(sols.isEmpty || (maximizeObjective.isDefined && ((maximizeObjective.get && sol.objective > sols.last._1.objective) || (!maximizeObjective.get && sol.objective < sols.last._1.objective)))){
-          if(maximizeObjective.isDefined) updateSol(instantiation, sol.objective)
+          updateSol(instantiation, sol.objective, maximizeObjective.isDefined)
           sols += ((sol, instantiation))
         }
       }

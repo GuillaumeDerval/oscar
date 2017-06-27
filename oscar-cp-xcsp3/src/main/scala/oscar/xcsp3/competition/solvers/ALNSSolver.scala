@@ -64,7 +64,7 @@ object ALNSSolver extends CompetitionApp with App {
         val sol = new CPIntSol(vars.map(_.value), if (maximizeObjective.isDefined) solver.objective.objs.head.best else 0, time)
         val instantiation = solutionGenerator()
         if(sols.isEmpty || (maximizeObjective.isDefined && ((maximizeObjective.get && sol.objective > sols.last._1.objective) || (!maximizeObjective.get && sol.objective < sols.last._1.objective)))){
-          if(maximizeObjective.isDefined) updateSol(instantiation, sol.objective)
+          updateSol(instantiation, sol.objective, maximizeObjective.isDefined)
           sols += ((sol, instantiation))
         }
       }
