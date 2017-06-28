@@ -93,6 +93,7 @@ object ALNSSolver extends CompetitionApp with App {
       if (sols.nonEmpty){
         if(solver.objective.objs.nonEmpty && result.optimumFound) status = "OPTIMUM FOUND"
       }
+      else if(result.unsat) status = "UNSATISFIABLE"
       else printDiagnostic("NO_SOL_FOUND")
       printStatus()
     }
