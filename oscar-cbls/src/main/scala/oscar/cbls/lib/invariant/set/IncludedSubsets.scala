@@ -136,7 +136,7 @@ case class ValuesInViolatedClauses(s: SetValue, clauseAndMaxOccList:Iterable[(It
       val oldCount = valToNumberOfViolatedClauses(number)
       valToNumberOfViolatedClauses(number) = oldCount + 1
       if(oldCount == 0){
-        this.insertValueNotPreviouslyIn(number)
+        this.insertValue(number)
       }
     }
   }
@@ -147,7 +147,7 @@ case class ValuesInViolatedClauses(s: SetValue, clauseAndMaxOccList:Iterable[(It
       val oldCount = valToNumberOfViolatedClauses(number)
       valToNumberOfViolatedClauses(number) = oldCount - 1
       if(oldCount == 1){
-        this.deleteValuePreviouslyIn(number)
+        this.deleteValue(number)
       }
     }
   }
@@ -180,7 +180,7 @@ case class ValuesInViolatedClauses(s: SetValue, clauseAndMaxOccList:Iterable[(It
   }
 
   override def checkInternals(c: Checker) {
-    c.check(this.value equals computeFromScratch(this.value) ,Some("included subset Error value=" + this.value  + " should be:" + computeFromScratch(this.value)))
+    c.check(this.value equals computeFromScratch(s.value) ,Some("included subset Error value=" + this.value  + " should be:" + computeFromScratch(s.value)))
   }
 }
 
