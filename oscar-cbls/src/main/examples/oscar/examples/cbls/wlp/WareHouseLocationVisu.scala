@@ -115,7 +115,7 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
     if(obj.value < bestObj){
       bestObj = obj.value
       visual.redraw(openWarehouses.value,obj.value)
-    })
+    }) showObjectiveFunction(obj)
 
   neighborhood.verbose = 2
 
