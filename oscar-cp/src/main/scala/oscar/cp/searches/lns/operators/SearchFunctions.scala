@@ -20,6 +20,9 @@ object SearchFunctions {
   def extensionalOriented(vars: Array[CPIntVar], valMax: Boolean, valLearn: Boolean): Branching =
     binaryIdx(vars, i => -(vars(i).constraintDegree << 7) / vars(i).size, setValueHeuristic(vars, valMax, valLearn))
 
+  def weightedDegree(vars: Array[CPIntVar], valMax: Boolean, decayRatio: Double): Branching =
+    binaryMaxWeightedDegree(vars, if(valMax) _.max else _.min, decayRatio)
+
   def setValueHeuristic(vars: Array[CPIntVar], valMax: Boolean, valLearn: Boolean): Int => Int = {
     if (valLearn)
       learnValueHeuristic(vars, if (valMax) vars(_).max else vars(_).min)

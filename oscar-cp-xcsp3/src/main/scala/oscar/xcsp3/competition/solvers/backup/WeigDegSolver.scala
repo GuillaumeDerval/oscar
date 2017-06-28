@@ -1,4 +1,4 @@
-package oscar.xcsp3.competition.solvers
+package oscar.xcsp3.competition.solvers.backup
 
 import oscar.algo.Inconsistency
 import oscar.algo.search.DFSearch
