@@ -1,7 +1,9 @@
 package oscar.xcsp3.competition
 
+import java.io.ByteArrayInputStream
+
 import org.rogach.scallop.{ScallopConf, ScallopOption}
-import oscar.xcsp3.CheckerLib
+import org.xcsp.checker.SolutionChecker
 
 import scala.util.Random
 
@@ -17,6 +19,8 @@ class CompetitionConf(arguments: Seq[String]) extends ScallopConf(arguments){
 }
 
 abstract class CompetitionApp extends App{
+  final val tstart = System.nanoTime()
+
   //Setting up shutdown hook:
   Runtime.getRuntime.addShutdownHook(new Thread{
     override def run() {
@@ -35,8 +39,6 @@ abstract class CompetitionApp extends App{
   var statusPrinted = false
   var status = "UNKNOWN"
   var currentSol = ""
-
-  final lazy val tstart = System.nanoTime()
 
   try {
     runSolver(conf)
@@ -70,7 +72,8 @@ abstract class CompetitionApp extends App{
   //Sol should be a valid instantiation (see rules)
   def printSolution(): Unit = {
     if(currentSol.nonEmpty) {
-      if(new CheckerLib(conf.benchname(), currentSol).valid) {
+      val solutionChecker = new SolutionChecker(true, conf.benchname(), new ByteArrayInputStream(("s " + status + "\nv " + currentSol.split("\\r?\\n").mkString("\nv ")).getBytes))
+      if(solutionChecker.violatedCtrs.isEmpty && solutionChecker.invalidObjs.isEmpty){
         println(tElapsed + " s " + status)
 //        println("s " + status)
         println(tElapsed + " v " + currentSol.split("\\r?\\n").mkString("\n" + tElapsed + " v "))
