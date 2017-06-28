@@ -54,7 +54,7 @@ object ALNSSolver extends CompetitionApp with App {
       val (vars, solver, solutionGenerator) = parsingResult.get
       solver.silent = true
 
-      val timeout = ((conf.timelimit().toLong - 5L) * 1000000000L) - (System.nanoTime() - startTime)
+      val timeout = ((conf.timelimit() -5).toLong * 1000000000L) - (System.nanoTime() - tstart)
 
       val maximizeObjective: Option[Boolean] = if(solver.objective.objs.nonEmpty) Some(solver.objective.objs.head.isMax) else None
 

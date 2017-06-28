@@ -62,7 +62,7 @@ object HybridSolver2 extends CompetitionApp with App {
       val maximizeObjective: Option[Boolean] = if(solver.objective.objs.nonEmpty) Some(solver.objective.objs.head.isMax) else None
       var optimumFound = false
 
-      val timeout = ((conf.timelimit().toLong - 5L) * 1000000000L) - (System.nanoTime() - startTime)
+      val timeout = ((conf.timelimit() -5).toLong * 1000000000L) - (System.nanoTime() - tstart)
       var endSearch: Long = System.nanoTime() + (if(maximizeObjective.isDefined) (timeout * 0.1).toLong else timeout)
       val endTime = System.nanoTime() + timeout
       var lastSolTime = 0L

@@ -53,7 +53,7 @@ object ConfOrderSolver extends CompetitionApp with App{
       val (vars, solver, solutionGenerator) = parsingResult.get
       solver.silent = false
 
-      val timeout = ((conf.timelimit().toLong - 5L) * 1000000000L) - (System.nanoTime() - startTime)
+      val timeout = ((conf.timelimit() -5).toLong * 1000000000L) - (System.nanoTime() - tstart)
       val endTime: Long = System.nanoTime() + timeout
 
       val maximizeObjective: Option[Boolean] = if(solver.objective.objs.nonEmpty) Some(solver.objective.objs.head.isMax) else None

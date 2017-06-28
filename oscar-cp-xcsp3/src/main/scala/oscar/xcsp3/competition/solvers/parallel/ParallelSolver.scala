@@ -82,7 +82,7 @@ object ParallelSolver extends CompetitionApp with App{
       program.setDecompositionStrategy(new CartProdRefinement(vars, search))
       program.setSearch(search)
 
-      val out = program.solveParallel(conf.nbcore(), 200, 0, (conf.timelimit() - 5) * 1000)
+      val out = program.solveParallel(conf.nbcore(), 200, 0, (conf.timelimit() -((System.nanoTime() - tstart)/1000000000 + 5).toInt) * 1000)
 
       if(sols.nonEmpty){
         if(obj.isDefined && out._1.completed) status = "OPTIMUM FOUND"
