@@ -109,6 +109,15 @@ class PDP(override val n:Int,
     routedChains.map(_.head)
   }
 
+  /**
+    * @param ord A method that set the order of the pickup
+    * @return A list of all the pickups ordered by ord
+    */
+  def orderPickups(ord : (Int) => Int): Iterable[Int] = {
+    chains.map(_.head).sortBy(ord(_))
+  }
+
+
   def isPickup(node: Int) = node >= v && chainOfNode(node).head == node
   def getRelatedPickup(node: Int) = {
     require(node >= v, "This node is a depot !")
@@ -221,8 +230,6 @@ class PDP(override val n:Int,
     * If the value is positive => load, negative => unload, zero => do nothing.
     */
   val contentsFlow:Array[Int] = Array.tabulate(n)(_ => 0)
-
-  def orderPickups(ord : (Int) => Int) = chains.map(_.head).sortBy(ord(_))
 
   val contentAtNode:Array[CBLSIntVar] =
     Array.tabulate(n+1)(c => CBLSIntVar(m, 0, 0 to Int.MaxValue / n, "content at node " + c))
