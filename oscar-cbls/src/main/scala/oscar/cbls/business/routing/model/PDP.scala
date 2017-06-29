@@ -7,9 +7,10 @@ import oscar.cbls.lib.invariant.logic.{IntITE, IntInt2Int}
 import oscar.cbls.lib.invariant.minmax.Max2
 import oscar.cbls.lib.invariant.routing.MovingVehicles
 import oscar.cbls.lib.invariant.seq.SortSequence
-import oscar.cbls.lib.invariant.set.{IncludedSubsets, ValuesInViolatedClauses}
+import oscar.cbls.lib.invariant.set.{Diff, IncludedSubsets, ValuesInViolatedClauses}
 import oscar.cbls.modeling.Algebra._
 
+import scala.collection.SortedSet
 import scala.collection.immutable.{HashMap, List}
 import scala.math._
 
@@ -70,7 +71,9 @@ class PDP(override val n:Int,
 
   var exclusiveCarsSubsets: IncludedSubsets = _
 
-  var valuesInViolatedClauses: ValuesInViolatedClauses = _
+  var availableVehicles: SetValue = _
+
+  val movingVehicles: MovingVehicles = new MovingVehicles(routes,v)
 
   for(chain <- chains) {
     for (i <- chain.indices) {
@@ -159,10 +162,10 @@ class PDP(override val n:Int,
       new MovingVehicles(routes,v),
       exclusiveCars.map(carList => (carList,1,1))
     )
-    valuesInViolatedClauses = ValuesInViolatedClauses(
-      new MovingVehicles(routes,v),
-      exclusiveCars.map(carList => (carList,1))
-    )
+    availableVehicles = Diff(CBLSSetConst(SortedSet.empty[Int] ++ (0 to v-1)),Diff(ValuesInViolatedClauses(
+      movingVehicles,
+      exclusiveCars.map(carList => (carList,0))
+    ), movingVehicles))
   }
 
 
@@ -406,14 +409,15 @@ class PDP(override val n:Int,
     def buildPotentialNeighbors(explorer: Option[IntSequenceExplorer], potentialNeighbors: List[Int]): List[Int] = {
       if (explorer.isEmpty)
         potentialNeighbors
+      else if (explorer.get.value < v && !availableVehicles.value.contains(explorer.get.value))
+        buildPotentialNeighbors(explorer.get.prev, potentialNeighbors)
       else
         buildPotentialNeighbors(explorer.get.prev, List(explorer.get.value) ++ potentialNeighbors)
     }
     val explorer = sortedRouteByEarlylines.positionOfSmallestGreaterOrEqual(node)(deadlines(node))
     val potentialNeighbors = (
     if(explorer.isDefined) buildPotentialNeighbors(explorer,List.empty)
-    else List.tabulate(v)(x => prev(x).value)).
-      diff(valuesInViolatedClauses.value.toList).
+    else availableVehicles.value.toList.map(x => prev(x).value)).
       filter(prevNode => if(prevNode < v) vehiclesMaxCapacities(prevNode) >= contentsFlow(node) else true)
     buildClosestNeighbor(
       node,
