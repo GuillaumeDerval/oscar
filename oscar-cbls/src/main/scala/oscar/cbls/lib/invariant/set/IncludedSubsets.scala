@@ -180,7 +180,7 @@ case class ValuesInViolatedClauses(s: SetValue, clauseAndMaxOccList:Iterable[(It
   }
 
   override def checkInternals(c: Checker) {
-    c.check(this.value equals computeFromScratch(this.value) ,Some("included subset Error value=" + this.value  + " should be:" + computeFromScratch(this.value)))
+    c.check(this.value equals computeFromScratch(s.value) ,Some("included subset Error value=" + this.value  + " should be:" + computeFromScratch(s.value)))
   }
 }
 
