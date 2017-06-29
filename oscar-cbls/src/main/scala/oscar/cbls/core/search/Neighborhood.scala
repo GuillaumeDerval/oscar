@@ -230,7 +230,6 @@ abstract class Neighborhood(name:String = null) {
 
               moveSynthesis = SortedMap.empty[String,Int]
               nanoTimeAtNextSynthesis = System.nanoTime() + (1000*1000*100) //100ms
-
             }
 
             m.commit()
