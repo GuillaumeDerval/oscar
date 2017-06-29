@@ -264,12 +264,10 @@ case class Diff(left: SetValue, right: SetValue)
     if (v == left) {
       if (!right.value.contains(value)) {
         this.insertValue(value)
-        println("diff insertingA " + value)
       }
     } else if (v == right) {
       if (left.value.contains(value)) {
         this.deleteValue(value)
-        println("diff removingA " + value)
       }
     } else {
       require(false)
@@ -281,12 +279,10 @@ case class Diff(left: SetValue, right: SetValue)
     if (v == left) {
       if (!right.value.contains(value)) {
         this.deleteValue(value)
-        println("diff removingB " + value)
       }
     } else if (v == right) {
       if (left.value.contains(value)) {
         this.insertValue(value)
-        println("diff insertingB " + value)
       }
     } else {
       require(false)

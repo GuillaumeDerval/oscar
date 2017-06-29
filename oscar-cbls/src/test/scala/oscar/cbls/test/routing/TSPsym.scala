@@ -44,8 +44,7 @@ class MySimpleRouting(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, m
   //val obj = new CascadingObjective(totalViolationOnRestriction, totalDistance)
   val obj = Objective(totalDistance)
 
-  this.addToStringInfo(() => "objective: " + obj.value)
-  this.addToStringInfo(() => "n:" + n + " v:" + v)
+  override def toString : String = super.toString + "objective: " + obj.value + "\n"
 
   val closestNeighboursForward = computeClosestNeighborsForward()
 }

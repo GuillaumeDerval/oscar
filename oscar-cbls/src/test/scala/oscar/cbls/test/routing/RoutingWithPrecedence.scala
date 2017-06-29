@@ -45,9 +45,9 @@ class MySimpleRoutingP(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, 
   val obj = new CascadingObjective(new IntVarObjective(precedenceInvar), totalDistance)
   //val obj = Objective(totalDistance)
 
-  this.addToStringInfo(() => "precedences: " + precedences)
-  this.addToStringInfo(() => "objective: " + obj)
-  this.addToStringInfo(() => "n:" + n + " v:" + v)
+  override def toString : String = super.toString +
+  "precedences: " + precedences + "\n" +
+  "objective: " + obj  + "\n"
 
   val nearestForward:Array[Iterable[Int]] = computeClosestNeighborsForward()
 }

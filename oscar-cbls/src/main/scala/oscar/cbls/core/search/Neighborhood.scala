@@ -205,7 +205,6 @@ abstract class Neighborhood(name:String = null) {
           return toReturn;
         case m: MoveFound =>
           if(printMoveSythesis){
-
             //TODO: we should force print before a jump that degrades obj, and force print just after such moves so that they are on a single line
             val neighborhoodName = m.m.neighborhoodName
             moveSynthesis = moveSynthesis + ((neighborhoodName,moveSynthesis.getOrElse(neighborhoodName,0)+1))
@@ -235,7 +234,7 @@ abstract class Neighborhood(name:String = null) {
             }
 
             m.commit()
-            //TODO: additionalString shuld be handled with synthesis!
+            //TODO: additionalString should be handled with synthesis!
             if (printSynthesis && additionalStringGenerator != null) println("after move is committed: " + additionalStringGenerator())
             if (obj.value == Int.MaxValue) println("Warning : objective == MaxInt, maybe you have some strong constraint violated?")
             require(m.objAfter == Int.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)

@@ -88,7 +88,6 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
       a
     }
 
-    println("starting InsertPoint, unroutedNodesToInsert:" + unroutedNodesToInsert())
     val iterationSchemeOnZone =
       if (hotRestart && !best) HotRestart(unroutedNodesToInsert(), startIndice)
       else unroutedNodesToInsert()
