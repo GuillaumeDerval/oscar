@@ -52,6 +52,7 @@ class CompetitionConf(args: Seq[String]){
 
 abstract class CompetitionApp extends App{
   final val tstart = System.nanoTime()
+  final val version = "1.1"
 
   //Setting up shutdown hook:
   Runtime.getRuntime.addShutdownHook(new Thread{
@@ -62,6 +63,7 @@ abstract class CompetitionApp extends App{
 
   val conf = new CompetitionConf(args)
 
+  printComment("version: " + version)
   printComment("seed: " + conf.randomseed())
   printComment("timeout: " + conf.timelimit())
   printComment("memlimit: " + conf.memlimit())
