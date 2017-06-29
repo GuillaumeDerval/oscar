@@ -99,7 +99,7 @@ trait Benchmark {
     }
 
     if(!solver.silent) println("Search done, retrieving results")
-    new ALNSSearchResults(solsFound.toArray, stats.completed || solver.objective.isOptimum())
+    new ALNSSearchResults(solsFound.toArray, stats.completed || solver.objective.isOptimum(), false)
   }
 
   def parseArgs(map : ArgMap, list: List[String]) : ArgMap = {
