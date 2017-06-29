@@ -7,7 +7,7 @@ import oscar.cbls.lib.invariant.logic.{IntITE, IntInt2Int}
 import oscar.cbls.lib.invariant.minmax.Max2
 import oscar.cbls.lib.invariant.routing.MovingVehicles
 import oscar.cbls.lib.invariant.seq.SortSequence
-import oscar.cbls.lib.invariant.set.IncludedSubsets
+import oscar.cbls.lib.invariant.set.{IncludedSubsets, ValuesInViolatedClauses}
 import oscar.cbls.modeling.Algebra._
 
 import scala.collection.immutable.{HashMap, List}
@@ -69,6 +69,8 @@ class PDP(override val n:Int,
   }).toMap
 
   var exclusiveCarsSubsets: IncludedSubsets = _
+
+  var valuesInViolatedClauses: ValuesInViolatedClauses = _
 
   for(chain <- chains) {
     for (i <- chain.indices) {
@@ -157,16 +159,10 @@ class PDP(override val n:Int,
       new MovingVehicles(routes,v),
       exclusiveCars.map(carList => (carList,1,1))
     )
-  }
-
-  val exclusiveCarsFilter: (Int) => Boolean = (node: Int) => {
-    if (node < v){
-      (QList.toIterable(exclusiveCarsSubsets.valueToSubsetID(node)).
-          map(x => exclusiveCarsSubsets.subsetToNbPresent(x)).sum == 0) ||
-        (prev(node).value != node)
-    }
-    else
-      true
+    valuesInViolatedClauses = ValuesInViolatedClauses(
+      new MovingVehicles(routes,v),
+      exclusiveCars.map(carList => (carList,1))
+    )
   }
 
 
@@ -417,7 +413,7 @@ class PDP(override val n:Int,
     val potentialNeighbors = (
     if(explorer.isDefined) buildPotentialNeighbors(explorer,List.empty)
     else List.tabulate(v)(x => prev(x).value)).
-      filter(exclusiveCarsFilter(_)).
+      diff(valuesInViolatedClauses.value.toList).
       filter(prevNode => if(prevNode < v) vehiclesMaxCapacities(prevNode) >= contentsFlow(node) else true)
     buildClosestNeighbor(
       node,
