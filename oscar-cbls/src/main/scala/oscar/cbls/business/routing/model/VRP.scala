@@ -273,10 +273,10 @@ class VRP(val n: Int, val v: Int, val m: Store, maxPivotPerValuePercent:Int = 4)
         toReturn +=  "vehicle " + vehicle + ": " +  routeOfV.mkString("->") + "\n"
       }
     }
-    "n:" + n + " v:" + v + "\n" +
+    "Vehicle Routing n:" + n + " v:" + v + "\n" +
     "unrouted nodes: " + unroutedNodes.toList.mkString(",") + "\n" +
     "not used vehicles:" + notMoving.reverse.mkString(",") + "\n" +
-      toReturn + "\n"
+      toReturn
   }
 
   def onTheSameRoute(node1:Int,node2:Int):Boolean = getVehicleOfNode(node1) == getVehicleOfNode(node2)
