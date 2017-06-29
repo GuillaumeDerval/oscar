@@ -101,6 +101,8 @@ class EasyMove(override val objAfter:Int, override val neighborhoodName:String =
 case class LoadSolutionMove(s:Solution,override val objAfter:Int, override val neighborhoodName:String = null) extends Move(objAfter,neighborhoodName){
   /** to actually take the move */
   override def commit(): Unit = s.model.restoreSolution(s)
+
+  override def toString : String = "LoadSolutionMove(objAfter:" + objAfter + ")"
 }
 
 

@@ -273,7 +273,7 @@ class VRP(val n: Int, val v: Int, val m: Store, maxPivotPerValuePercent:Int = 4)
         toReturn +=  "vehicle " + vehicle + ": " +  routeOfV.mkString("->") + "\n"
       }
     }
-    "Vehicle Routing n:" + n + " v:" + v + "\n" +
+    "Vehicle routing n:" + n + " v:" + v + "\n" +
     "unrouted nodes: " + unroutedNodes.toList.mkString(",") + "\n" +
     "not used vehicles:" + notMoving.reverse.mkString(",") + "\n" +
       toReturn

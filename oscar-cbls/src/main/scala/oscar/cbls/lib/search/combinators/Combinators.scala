@@ -1525,18 +1525,28 @@ class Metropolis(a: Neighborhood, temperature: Int => Float = _ => 100, base: Fl
  */
 case class Atomic(a: Neighborhood, name: String = "Atomic", bound: Int = Int.MaxValue) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
+    CallBackMove(() => a.doAllMoves(_ > bound, obj, acceptanceCriterion), Int.MaxValue, this.getClass.getSimpleName, () => name)
+  }
+}
 
-    val startSolution = obj.model.solution()
+case class Atomic2(a: Neighborhood, name: String = "Atomic", bound: Int = Int.MaxValue) extends NeighborhoodCombinator(a) {
+  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
+
+    val startSolution = obj.model.solution(true)
 
     val nbSteps = a.doAllMoves(_ > bound, obj, acceptanceCriterion)
 
     //restore the initial solution
-    val endSolution = obj.model.solution()
+    val endSolution = obj.model.solution(true)
     val endObj = obj.value
     obj.model.restoreSolution(startSolution)
 
-    if(nbSteps == 0 || !acceptanceCriterion(initialObj,endObj)) NoMoveFound
-    else LoadSolutionMove(endSolution,endObj,name)
+    if(nbSteps == 0){
+      NoMoveFound
+    } else {
+      println("LOADING")
+      LoadSolutionMove(endSolution,endObj,name)
+    }
   }
 }
 
