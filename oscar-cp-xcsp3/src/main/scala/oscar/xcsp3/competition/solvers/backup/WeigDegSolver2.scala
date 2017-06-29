@@ -1,11 +1,10 @@
-package oscar.xcsp3.competition.solvers
+package oscar.xcsp3.competition.solvers.backup
 
 import oscar.algo.Inconsistency
+import oscar.algo.search.DFSearch
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.searches.lns.CPIntSol
-import oscar.cp.searches.lns.operators.ALNSBuilder
-import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch}
-import oscar.cp.{CPSolver, NoSolutionException}
+import oscar.cp.{CPSolver, _}
 import oscar.modeling.models.cp.CPModel
 import oscar.modeling.models.operators.CPInstantiate
 import oscar.modeling.models.{ModelDeclaration, UninstantiatedModel}
@@ -14,7 +13,7 @@ import oscar.xcsp3.competition.{CompetitionApp, CompetitionConf}
 
 import scala.collection.mutable
 
-object ALNSSolver extends CompetitionApp with App {
+object WeigDegSolver2 extends CompetitionApp with App{
 
   override def runSolver(conf: CompetitionConf): Unit = {
     val startTime = System.nanoTime()
@@ -33,7 +32,7 @@ object ALNSSolver extends CompetitionApp with App {
       val solver: CPSolver = model.cpSolver
 
       Some(cpVars, solver, solutionGenerator)
-    } catch {
+    }catch {
       case _: NotImplementedError =>
         status = "UNSUPPORTED"
         printStatus()
@@ -54,46 +53,34 @@ object ALNSSolver extends CompetitionApp with App {
       val (vars, solver, solutionGenerator) = parsingResult.get
       solver.silent = true
 
-      val timeout = ((conf.timelimit() -5).toLong * 1000000000L) - (System.nanoTime() - tstart)
+      val timeout = ((conf.timelimit().toLong - 5L) * 1000000000L) - (System.nanoTime() - startTime)
+      val endTime: Long = System.nanoTime() + timeout
 
       val maximizeObjective: Option[Boolean] = if(solver.objective.objs.nonEmpty) Some(solver.objective.objs.head.isMax) else None
+      var optimumFound = false
 
       val sols = mutable.ListBuffer[(CPIntSol, String)]()
-      solver.onSolution{
+      solver.onSolution {
         val time = System.nanoTime() - startTime
-        val sol = new CPIntSol(vars.map(_.value), if (maximizeObjective.isDefined) solver.objective.objs.head.best else 0, time)
+        val sol = new CPIntSol(vars.map(_.value), if(maximizeObjective.isDefined) solver.objective.objs.head.best else 0, time)
         val instantiation = solutionGenerator()
-        if(sols.isEmpty || (maximizeObjective.isDefined && ((maximizeObjective.get && sol.objective > sols.last._1.objective) || (!maximizeObjective.get && sol.objective < sols.last._1.objective)))){
-          updateSol(instantiation, sol.objective, maximizeObjective.isDefined)
-          sols += ((sol, instantiation))
-        }
+        optimumFound = if(maximizeObjective.isDefined) solver.objective.isOptimum() else true //In case of CSP, no point of searching another solution
+        updateSol(instantiation, sol.objective, maximizeObjective.isDefined)
+        sols += ((sol, instantiation))
       }
 
-      val config = new ALNSConfig(
-        timeout,
-        conf.memlimit(),
-        coupled = true,
-        learning = true,
-        Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided, ALNSBuilder.FullRelax),
-        Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.ExtOriented, ALNSBuilder.WeightDeg),
-        ALNSBuilder.ValHeurisBoth,
-        valLearn = true,
-        ALNSBuilder.Priority,
-        ALNSBuilder.Priority,
-        ALNSBuilder.AvgImprov,
-        ALNSBuilder.AvgImprov
-      )
-
-      val alns = ALNSSearch(solver, vars, config)
+      val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime || optimumFound
 
       printComment("Parsing done, starting search...")
 
-      val result = alns.search()
+      val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
+        solver.search(binaryMinDomOnWeightedDegree(vars, _.min, 0.99))
+      }
 
       if (sols.nonEmpty){
-        if(solver.objective.objs.nonEmpty && result.optimumFound) status = "OPTIMUM FOUND"
+        if(maximizeObjective.isDefined && (optimumFound || stats.completed)) status = "OPTIMUM FOUND"
       }
-      else if(result.unsat) status = "UNSATISFIABLE"
+      else if (stats.completed) status = "UNSATISFIABLE"
       else printDiagnostic("NO_SOL_FOUND")
       printStatus()
     }

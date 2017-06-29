@@ -34,23 +34,26 @@ object ConfOrderSolver extends CompetitionApp with App{
       Some(cpVars, solver, solutionGenerator)
     }catch {
       case _: NotImplementedError =>
-        printStatus("UNSUPPORTED")
+        status = "UNSUPPORTED"
+        printStatus()
         None
 
       case _: NoSolutionException =>
-        printStatus("UNKNOWN")
+        status = "UNSATISFIABLE"
+        printStatus()
         None
 
       case _: Inconsistency =>
-        printStatus("UNSATISFIABLE")
+        status = "UNSATISFIABLE"
+        printStatus()
         None
     }
 
     if (parsingResult.isDefined){
       val (vars, solver, solutionGenerator) = parsingResult.get
-      solver.silent = true
+      solver.silent = false
 
-      val timeout = ((conf.timelimit().toLong - 5L) * 1000000000L) - (System.nanoTime() - startTime)
+      val timeout = ((conf.timelimit() -5).toLong * 1000000000L) - (System.nanoTime() - tstart)
       val endTime: Long = System.nanoTime() + timeout
 
       val maximizeObjective: Option[Boolean] = if(solver.objective.objs.nonEmpty) Some(solver.objective.objs.head.isMax) else None
@@ -62,7 +65,7 @@ object ConfOrderSolver extends CompetitionApp with App{
         val sol = new CPIntSol(vars.map(_.value), if(maximizeObjective.isDefined) solver.objective.objs.head.best else 0, time)
         val instantiation = solutionGenerator()
         optimumFound = if(maximizeObjective.isDefined) solver.objective.isOptimum() else true //In case of CSP, no point of searching another solution
-        if(maximizeObjective.isDefined) printObjective(sol.objective)
+        updateSol(instantiation, sol.objective, maximizeObjective.isDefined)
         sols += ((sol, instantiation))
       }
 
@@ -80,12 +83,12 @@ object ConfOrderSolver extends CompetitionApp with App{
         )
       }
 
-      if (sols.nonEmpty) printSolution(sols.last._2, maximizeObjective.isDefined && (optimumFound || stats.completed))
-      else if (stats.completed) printStatus("UNSATISFIABLE")
-      else {
-        printStatus("UNKNOWN")
-        printDiagnostic("NO_SOL_FOUND")
+      if (sols.nonEmpty){
+        if(maximizeObjective.isDefined && (optimumFound || stats.completed)) status = "OPTIMUM FOUND"
       }
+      else if (stats.completed) status = "UNSATISFIABLE"
+      else printDiagnostic("NO_SOL_FOUND")
+      printStatus()
     }
   }
 }

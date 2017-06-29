@@ -19,7 +19,7 @@ import scala.collection.mutable
 /**
   * This Hybrid solver uses a mix of complete search and ALNS search.
   */
-object HybridSolver extends CompetitionApp with App {
+object HybridSolver2 extends CompetitionApp with App {
 
   override def runSolver(conf: CompetitionConf): Unit = {
     val startTime = System.nanoTime()
@@ -117,7 +117,7 @@ object HybridSolver extends CompetitionApp with App {
           coupled = true,
           learning = true,
           Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided, ALNSBuilder.FullRelax),
-          Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.ExtOriented),
+          Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.ExtOriented, ALNSBuilder.WeightDeg),
           ALNSBuilder.ValHeurisBoth,
           valLearn = true,
           ALNSBuilder.Priority,

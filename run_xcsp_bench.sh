@@ -14,18 +14,19 @@ BenchDir="data/xcsp3/xcspBench"
 SolversDir="oscar-cp-xcsp3/src/main/scala/oscar/xcsp3/competition/solvers"
 JarsDir="xcsp-competition-jars"
 SolversRoot="oscar.xcsp3.competition.solvers"
-#SbtOutput=`$SBT_HOME/sbt "project oscar-cp-xcsp3" "update" "compile" "export runtime:fullClasspath"`
+SbtOutput=`$SBT_HOME/sbt "project oscar-cp-xcsp3" "update" "compile" "export runtime:fullClasspath"`
 #SbtOutput=`sbt "project oscar-cp-xcsp3" "update" "compile" "export runtime:fullClasspath"`
 #echo $SbtOutput
-#CP=${SbtOutput##*$'\n'}
-CP="Test"
+CP=${SbtOutput##*$'\n'}
+#CP="None"
 Out="XCSP-bench-results"
 
-SolversToRun="solvers_to_run.txt"
-ParallelSolvers="solvers_to_run_parallel.txt"
-JarsToRun="jars_to_run.txt"
-ParallelJars="jars_to_run_parallel.txt"
-InstancesToRun="instances_to_run.txt"
+Solvers="solvers.txt"
+ParallelSolvers="solvers_parallel.txt"
+Jars="jars_.txt"
+ParallelJars="jars_parallel.txt"
+CopInstances="cop_instances.txt"
+CspInstances="csp_instances.txt"
 
 echo -e "\n\n\n"
 echo "Version Number -> $VNum"
@@ -39,8 +40,10 @@ run_search () {
 #    echo "Classpath: $1"
 #    echo "Output: $2"
     InstanceName=${6##*/}
+    InstanceType=`basename "$(dirname $6)"`
     SolverName=${7##*.}
     echo "Instance: $InstanceName"
+    echo "Type: $InstanceType"
     echo "Solver: $SolverName"
 
     OutPath="${2}/${3}/${InstanceName%.*}-${SolverName}.txt"
@@ -52,12 +55,14 @@ run_search () {
         then
             echo "Re-running bench"
             echo "0 c instance: $InstanceName" > $OutPath
+            echo "0 c type: $InstanceType" >> $OutPath
             echo "0 c solver: $SolverName" >> $OutPath
             scala -J-Xmx${5}m -cp $1 $7 --timelimit $4 --nbcore 4 $6 >> $OutPath
         fi
     else
         echo "Running bench"
         echo "0 c instance: $InstanceName" > $OutPath
+        echo "0 c type: $InstanceType" >> $OutPath
         echo "0 c solver: $SolverName" >> $OutPath
         scala -J-Xmx${5}m -cp $1 $7 --timelimit $4 --nbcore 4 $6 >> $OutPath
     fi
@@ -71,8 +76,10 @@ run_jar () {
 #    echo "Classpath: $1"
 #    echo "Output: $2"
     InstanceName=${6##*/}
+    InstanceType=`basename "$(dirname $6)"`
     SolverName=${7##*/}
     echo "Instance: $InstanceName"
+    echo "Type: $InstanceType"
     echo "Solver: $SolverName"
 
     OutPath="${2}/${3}/${InstanceName%.*}-${SolverName%.*}.txt"
@@ -84,12 +91,14 @@ run_jar () {
         then
             echo "Re-running bench"
             echo "0 c instance: $InstanceName" > $OutPath
+            echo "0 c type: $InstanceType" >> $OutPath
             echo "0 c solver: $SolverName" >> $OutPath
             java -jar -Xmx${5}m $7 --timelimit $4 --nbcore 4 $6 >> $OutPath
         fi
     else
         echo "Running bench"
         echo "0 c instance: $InstanceName" > $OutPath
+        echo "0 c type: $InstanceType" >> $OutPath
         echo "0 c solver: $SolverName" >> $OutPath
         java -jar -Xmx${5}m $7 --timelimit $4 --nbcore 4 $6 >> $OutPath
     fi
@@ -102,7 +111,7 @@ export -f run_jar
 for s in `ls ${SolversDir}`; do
     if [ "${s: -6}" == ".scala" ]; then
         f=${s%%??????}
-        echo "$SolversRoot.$f" >> ${SolversToRun}
+        echo "$SolversRoot.$f" >> ${Solvers}
     elif [ "$s" == parallel ]; then
         for s2 in `ls ${SolversDir}/${s}`; do
             if [ "${s2: -6}" == ".scala" ]; then
@@ -119,7 +128,7 @@ done
 
 for s in `ls ${JarsDir}`; do
     if [ "${s: -4}" == ".jar" ]; then
-        echo "$JarsDir/$s" >> ${JarsToRun}
+        echo "$JarsDir/$s" >> ${Jars}
     elif [ "$s" == parallel ]; then
         for s2 in `ls ${JarsDir}/${s}`; do
             if [ "${s2: -4}" == ".jar" ]; then
@@ -133,24 +142,34 @@ for s in `ls ${JarsDir}`; do
     fi
 done
 
-for i in `ls ${BenchDir}`; do
+for i in `ls ${BenchDir}/cop`; do
     if [ "${i: -4}" == ".xml" ]; then
-        echo "$BenchDir/$i" >> ${InstancesToRun}
+        echo "$BenchDir/cop/$i" >> ${CopInstances}
+    else
+        echo "file $i is not a xml file!"
+    fi
+done
+
+for i in `ls ${BenchDir}/csp`; do
+    if [ "${i: -4}" == ".xml" ]; then
+        echo "$BenchDir/csp/$i" >> ${CspInstances}
     else
         echo "file $i is not a xml file!"
     fi
 done
 
 echo -e "\nSolvers:"
-cat ${SolversToRun}
+cat ${Solvers}
 echo -e "\nParallel solvers:"
 cat ${ParallelSolvers}
 echo -e "\nJars:"
-cat ${JarsToRun}
+cat ${Jars}
 echo -e "\nParallel jars:"
 cat ${ParallelJars}
-echo -e "\nInstances:"
-cat ${InstancesToRun}
+echo -e "\nCop Instances:"
+cat ${CopInstances}
+echo -e "\nCsp Instances:"
+cat ${CspInstances}
 echo -e "\n\n\n"
 
 if [ ! -e "${Out}/${VNum}" ]
@@ -159,22 +178,23 @@ then
     mkdir "${Out}/${VNum}"
 fi
 
-#$BIN/parallel --gnu --jobs 75% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${InstancesToRun} :::: ${SolversToRun}
-#$BIN/parallel --gnu --jobs 20% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${InstancesToRun} :::: ${ParallelSolvers}
+$BIN/parallel --gnu --jobs 75% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${Solvers}
+#$BIN/parallel --gnu --jobs 20% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${ParallelSolvers}
 
-$BIN/parallel --gnu --jobs 75% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${InstancesToRun} :::: ${JarsToRun}
-$BIN/parallel --gnu --jobs 20% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${InstancesToRun} :::: ${ParallelJars}
+#$BIN/parallel --gnu --jobs 75% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${Jars}
+$BIN/parallel --gnu --jobs 20% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${ParallelJars}
 
-#parallel --gnu --jobs 75% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${InstancesToRun} :::: ${SolversToRun}
-#parallel --gnu --jobs 20% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${InstancesToRun} :::: ${ParallelSolvers}
+$BIN/parallel --gnu --jobs 75% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${Solvers}
+#$BIN/parallel --gnu --jobs 20% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${ParallelSolvers}
 
-#parallel --gnu --jobs 75% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${InstancesToRun} :::: ${JarsToRun}
-#parallel --gnu --jobs 20% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${InstancesToRun} :::: ${ParallelJars}
+#$BIN/parallel --gnu --jobs 75% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${Jars}
+$BIN/parallel --gnu --jobs 20% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${ParallelJars}
 
-rm ${InstancesToRun}
-rm ${SolversToRun}
+rm ${CopInstances}
+rm ${CspInstances}
+rm ${Solvers}
 rm ${ParallelSolvers}
-rm ${JarsToRun}
+rm ${Jars}
 rm ${ParallelJars}
 
 cp -r --parents "${Out}/${VNum}" "/etinfo/users2/cthomas/Workspace/"

@@ -312,9 +312,23 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
 
   // ----------------------------------
   
-  final override def fillDeltaArray(oldMin: Int, oldMax: Int, oldSize: Int, arr: Array[Int]): Int = ???
+  final override def fillDeltaArray(oldMin: Int, oldMax: Int, oldSize: Int, arr: Array[Int]): Int = {
+    var i = 0
+    if(oldMin != min){
+      arr(i) = 0
+      i += 1
+    }
+    if(oldMax != max){
+      arr(i) = 1
+    }
+    i
+  }
 
-  final override def delta(oldMin: Int, oldMax: Int, oldSize: Int): Iterator[Int] = ???
+  final override def delta(oldMin: Int, oldMax: Int, oldSize: Int): Iterator[Int] = {
+    val newarray = new Array[Int](oldSize - size)
+    fillDeltaArray(oldMin, oldMax, oldSize, newarray)
+    newarray.iterator
+  }
 }
 
 object CPBoolVarImpl {

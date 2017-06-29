@@ -128,7 +128,8 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
   override def getSearchResults = new ALNSSearchResults(
     solsFound.toArray,
     operators.map(x => x.name -> x.getStats).toMap,
-    maximizeObjective.isDefined & optimumFound
+    maximizeObjective.isDefined & optimumFound,
+    solsFound.isEmpty & optimumFound
   )
 
   /**

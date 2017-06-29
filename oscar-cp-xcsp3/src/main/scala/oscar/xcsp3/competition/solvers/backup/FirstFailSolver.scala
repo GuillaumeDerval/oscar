@@ -1,5 +1,6 @@
 package oscar.xcsp3.competition.solvers.backup
 
+import oscar.algo.Inconsistency
 import oscar.algo.search.DFSearch
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.searches.lns.CPIntSol
@@ -32,11 +33,18 @@ object FirstFailSolver extends CompetitionApp with App{
       Some(cpVars, solver, solutionGenerator)
     } catch {
       case _: NotImplementedError =>
-        printStatus("UNSUPPORTED")
+        status = "UNSUPPORTED"
+        printStatus()
         None
 
       case _: NoSolutionException =>
-        printStatus("UNSATISFIABLE")
+        status = "UNSATISFIABLE"
+        printStatus()
+        None
+
+      case _: Inconsistency =>
+        status = "UNSATISFIABLE"
+        printStatus()
         None
     }
 
@@ -56,7 +64,7 @@ object FirstFailSolver extends CompetitionApp with App{
         val sol = new CPIntSol(vars.map(_.value), if(isCOP) solver.objective.objs.head.best else 0, time)
         val instantiation = solutionGenerator()
         optimumFound = if(isCOP) solver.objective.isOptimum() else true //In case of CSP, no point of searching another solution
-        if(isCOP) printObjective(sol.objective)
+        updateSol(instantiation, sol.objective, isCOP)
         sols += ((sol, instantiation))
       }
 
@@ -68,12 +76,12 @@ object FirstFailSolver extends CompetitionApp with App{
         solver.search(binaryFirstFail(vars))
       }
 
-      if (sols.nonEmpty) printSolution(sols.last._2, isCOP && (optimumFound || stats.completed))
-      else if (stats.completed) printStatus("UNSATISFIABLE")
-      else {
-        printStatus("UNKNOWN")
-        printDiagnostic("NO_SOL_FOUND")
+      if (sols.nonEmpty){
+        if(isCOP && (optimumFound || stats.completed)) status = "OPTIMUM FOUND"
       }
+      else if (stats.completed) status = "UNSATISFIABLE"
+      else printDiagnostic("NO_SOL_FOUND")
+      printStatus()
     }
   }
 }

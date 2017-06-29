@@ -36,7 +36,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
   val solsFound = new mutable.ListBuffer[CPIntSol]()
   var currentSol: Option[CPIntSol] = None  //Current solution
   var bestSol: Option[CPIntSol] = currentSol //Best solution so far
-  var optimumFound = false
+  var optimumFound = false //True if the whole search space has been explored (csp and cop) or the optimum has been found (cop)
 
   solver.onSolution{
     val time = System.nanoTime() - startTime

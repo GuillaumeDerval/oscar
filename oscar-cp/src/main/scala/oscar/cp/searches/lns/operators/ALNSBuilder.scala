@@ -60,6 +60,9 @@ object ALNSBuilder{
   //Extentionnal Oriented search:
   val ExtOriented = "ExtOriented"
 
+  //Max weighted degree
+  val WeightDeg = "WeightDeg"
+
   // Available value Heuristic functions:
   val ValHeurisMin = "Min"
   val ValHeurisMax = "Max"
@@ -103,8 +106,6 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
   private def wrapSearch(search: Branching): (CPIntSol) => Unit = {
     (sol: CPIntSol) => solver.search(search)
   }
-
-
 
   def instantiateCoupledOperators: Array[ALNSOperator] =(
     for(
@@ -207,7 +208,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
   }
 
   private def instantiateSearchFunction(opKey: String, valMax: Boolean, valLearn: Boolean): (String, CPIntSol => Unit) = {
-    val opName = opKey + (if(valLearn) "(valLearn" else "(") + (if(valMax) "Max)" else "Min)")
+    val opName = opKey + (if(valLearn && opKey != ALNSBuilder.WeightDeg) "(valLearn" else "(") + (if(valMax) "Max)" else "Min)")
     (opName, wrapSearch(
       opKey match{
         case ALNSBuilder.ConfOrder => SearchFunctions.conflictOrdering(vars, valMax, valLearn)
@@ -215,6 +216,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
         case ALNSBuilder.LastConf => SearchFunctions.lastConflict(vars, valMax, valLearn)
         case ALNSBuilder.BinSplit => SearchFunctions.binarySplit(vars, valMax, valLearn)
         case ALNSBuilder.ExtOriented => SearchFunctions.extensionalOriented(vars, valMax, valLearn)
+        case ALNSBuilder.WeightDeg => SearchFunctions.weightedDegree(vars, valMax, 0.99)
       }
     ))
   }

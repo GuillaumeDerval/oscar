@@ -14,7 +14,7 @@ import scala.collection.JavaConversions._
   * @param solution the solution, as an XCSP3-valid XML string
   */
 class CheckerLib(filename: String, solution: String)
-  extends SolutionChecker(filename, new ByteArrayInputStream(solution.getBytes)) {
+  extends SolutionChecker(false, filename, new ByteArrayInputStream(solution.getBytes)) {
   def getViolatedCtrs: List[String] = violatedCtrs.toList
   def getInvalidObjs: List[String] = invalidObjs.toList
   def valid: Boolean = violatedCtrs.isEmpty && invalidObjs.isEmpty

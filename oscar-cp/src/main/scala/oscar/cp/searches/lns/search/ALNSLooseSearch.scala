@@ -170,7 +170,8 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
     solsFound.toArray,
     relaxOps.map(x => x.name -> x.getStats).toMap,
     searchOps.map(x => x.name -> x.getStats).toMap,
-    maximizeObjective.isDefined & optimumFound
+    maximizeObjective.isDefined & optimumFound,
+    solsFound.isEmpty & optimumFound
   )
 
   private def getReifiedOperators(operators: Seq[ALNSOperator]) = operators.flatMap{
