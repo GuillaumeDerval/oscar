@@ -183,6 +183,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                 prev.newValue,
                 vehicleLocationAfterPrev,
                 vehicleLocationAfterInsert)
+
             (Some((updatedZones, vehicleLocationAfterInsert)), potentiallyRemovedPointsAfterPrev)
           case (None,potentiallyRemovedPointsAfterPrev) =>
             (None, potentiallyRemovedPointsAfterPrev)
@@ -196,6 +197,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                 zonesAfterPrev,
                 pos : Int,
                 prev.newValue, vehicleLocationAfterPrev)
+
             (Some((updatedZones, vehicleLocationAfterPrev.push(r.oldPosToNewPos))), r.removedValue :: potentiallyRemovedPointsAfterPrev)
           case (None,potentiallyRemovedPointsAfterPrev) =>
             (None, r.removedValue :: potentiallyRemovedPointsAfterPrev)
@@ -235,7 +237,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                 contentAtNode.popLevel(false)
               }
 
-              setNodesUnrouted(potentiallyRemovedPoints)
+              setNodesUnrouted(removedPointsAfterPrev)
               updateVehicleContentOnAllVehicle(prev.newValue,
                 zonesAfterPrev,
                 vehicleLocationAfterPrev)
@@ -243,6 +245,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
               require(contentAtNode.level == checkpointLevel, "contentAtNode.level:" + contentAtNode.level  + " checkpointLevel:" + (checkpointLevel))
 
               violationAndVehicleStartStack.defineCheckpoint(prev.newValue, checkpointLevel, (violation.newValue, vehicleLocationAfterPrev))
+              currentVehicleLocation = vehicleLocationAfterPrev
 
               (Some(RedBlackTreeMap.empty[List[(Int, Int)]], currentVehicleLocation), List.empty)
 
@@ -253,7 +256,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                 contentAtNode.popLevel(true)
               }
               contentAtNode.pushLevel()
-              setNodesUnrouted(v until n)
+              setNodesUnrouted(v until n) //unroutes all nodes
               violation := 0
               //we have to set all unrouted nodes to unrouted, since we have lost continuity on routes nodes because of the popLevel(true) hereabove
               currentVehicleLocation = computeAndAffectContentAndVehicleStartPositionsFromScratch(routes.value, false)
@@ -281,7 +284,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
         }else{
           //We are above the max checkpoint level
           digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(u.howToRollBack, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence)
-          //TODO: we could save and restore the regularized vehicle start, but his is probably not useful
+          //we could save and restore the regularized vehicle start, but his is probably not useful
         }
     }
   }
@@ -306,12 +309,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
       }
     }
 
-    for(vehicle <- 0 until v) {
-      c.check(routes.value.valueAtPosition(vehicleStartPos.startPosOfVehicle(vehicle)).get == vehicle,Some("a"))
-      c.check(routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(vehicle)).get == vehicle,
-        Some("routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(" + vehicle + ")) is" +
-          routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(vehicle)) + " should be " + vehicle))
-    }
+    vehicleStartPos.checkOnSequence(routes.value)
   }
 }
 

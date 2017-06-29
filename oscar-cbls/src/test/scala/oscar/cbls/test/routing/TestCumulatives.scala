@@ -51,15 +51,13 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
   6)
 
   val contentAtStart = Array.tabulate(v)(vehicle => CBLSIntVar(m,0,0 to 10,"start content of vehicle " + vehicle))
-  val cumulative2 = ForwardCumulativeIntegerDimensionOnVehicle(routes,n,v,{case (fromNode,toNode,fromContent) => fromNode+toNode+(2*fromContent)},contentAtStart,-1)
+  //  val cumulative2 = ForwardCumulativeIntegerDimensionOnVehicle(routes,n,v,{case (fromNode,toNode,fromContent) => fromNode+toNode+(2*fromContent)},contentAtStart,-1)
 
   val obj = new CascadingObjective(
     contentConstraint.violation,
     new CascadingObjective(maxNodes,
-      Objective(cumulative2._3(1) + cumulative2._2(1) + totalDistance + (penaltyForUnrouted*(n - Size(routes))))))
+      Objective(/*cumulative2._3(1) + cumulative2._2(1) + */ totalDistance + (penaltyForUnrouted*(n - Size(routes))))))
 
-  this.addToStringInfo(() => "objective: " + obj.value)
-  this.addToStringInfo(() => "n:" + n + " v:" + v)
 
   val closestNeighboursForward = computeClosestNeighborsForward()
 
@@ -70,10 +68,13 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
 
   val movingVehicles = MovingVehicles(routes,v)
 
-  this.addToStringInfo(() => "next: [" + next.map(_.value).mkString(",") + "]")
-  this.addToStringInfo(() => "prev: [" + prev.map(_.value).mkString(",") + "]")
-  this.addToStringInfo(() => "content: [" + contentConstraint.contentAtNodes.mkString(",") + "]")
-  this.addToStringInfo(() => "" + movingVehicles)
+  override def toString : String = super.toString +
+    "objective: " + obj.value + "\n" +
+    "next: [" + next.map(_.value).mkString(",") + "]" + "\n" +
+    "prev: [" + prev.map(_.value).mkString(",") + "]" + "\n" +
+    "content: [" + contentConstraint.contentAtNodes.mkString(",") + "]" + "\n" +
+    "routed:" + this.routed.value + "\n" +
+    "unRouted:" + this.unrouted.value + "\n"
 }
 
 object TestCumulatives extends App{
@@ -117,13 +118,13 @@ object TestCumulatives extends App{
   intermediaryStops = false,
   maxDepth = 2)
 
-  val remove = RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,best=false)
+  val remove = RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,best=true)
 
   val swapInOut = Profile((remove andThen routeUnroutedPoint(10)) name ("SWAPInsert"))
   val search = new RoundRobin(List(swapInOut,vlsnInsert)) exhaust onePtMove(10) //(BestSlopeFirst(List(vlsnInsert, routeUnroutedPoint2, routeUnroutedPoint(10), swapInOut, onePtMove(10),twoOpt, threeOpt(10,true),vlsn1pt, routeUnroutedPoint)) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
 
-  search.verbose = 3
-  //search.verboseWithExtraInfo(5, ()=> "" + myVRP)
+  search.verbose = 1
+  //search.verboseWithExtraInfo(3, ()=> "" + myVRP)
 
   print("Doing all moves ...")
 

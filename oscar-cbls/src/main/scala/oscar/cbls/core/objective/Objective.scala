@@ -113,13 +113,6 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
     else secondObjective.value
   }
 
-
-  override def valueNoSearch : Int = {
-    val firstObjectiveValue = mustBeZeroObjective.valueNoSearch
-    if (firstObjectiveValue!=0) cascadeSize + firstObjectiveValue
-    else secondObjective.valueNoSearch
-  }
-
   override def model: Store = mustBeZeroObjective.model
 }
 
@@ -143,14 +136,6 @@ trait Objective {
   def detailedString(short:Boolean, indent:Int = 0):String
 
   def model:Store
-
-  /**
-   * this one is to get the value of the obhjective function, and tell that it is not in the context
-   * of neighborhood exploration
-   * basically, there will be "no" backtrack from the move that is propagated upon call of this method.
-   * @return
-   */
-  def valueNoSearch:Int = value
 
   /**
    * This method returns the actual objective value.
@@ -257,11 +242,8 @@ class LoggingObjective(baseObjective:Objective) extends Objective{
   override def value: Int = {
     val toReturn = baseObjective.value
     evaluationsLog = baseObjective.detailedString(true) :: evaluationsLog
-//    throw new Error()
     toReturn
   }
-
-  override def valueNoSearch : Int = baseObjective.valueNoSearch
 
   def getAndCleanEvaluationLog:List[String] = {
     val toReturn = evaluationsLog

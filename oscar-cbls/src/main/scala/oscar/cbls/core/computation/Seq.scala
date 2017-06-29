@@ -461,6 +461,11 @@ class CBLSSeqVar(givenModel:Store,
 
   model = givenModel
 
+  override def checkInternals(c : Checker){
+    c.check(this.value.toList equals this.newValue.toList)
+    c.check(this.toNotify.isInstanceOf[SeqUpdateLastNotified], Some("toNotify:" + toNotify))
+  }
+
   override def name: String = if (n == null) defaultName else n
 
   /**
@@ -1210,8 +1215,8 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
   }
 
   override def checkInternals(c:Checker){
-    c.check(toValue.value equals fromValue.value,
-      Some("IdentitySeq: toValue.value=" +toValue.value + " should equal fromValue.value=" + fromValue.value))
+    c.check(toValue.value.toList equals fromValue.value.toList,
+      Some("IdentitySeq: toValue.value=" + toValue.value + " should equal fromValue.value=" + fromValue.value))
   }
 }
 

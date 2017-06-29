@@ -333,13 +333,6 @@ class PDP(override val n:Int, override val v:Int, override val m:Store, maxPivot
     arrivalTimeCluster = Cluster.MakeDenseAssumingMinMax(leaveTimes.map(x => Div(x,900)),0,192)
   }
 
-  def addTimeWindowStringInfo() {
-    addToStringInfo(() => "arrivalTime:      " + arrivalTimes.toList.mkString(","))
-    addToStringInfo(() => "leaveTime:        " + leaveTimes.toList.mkString(","))
-    addToStringInfo(() => "travelOutDuration:" + travelOutDurations.toList.mkString(","))
-    addToStringInfo(() => "arrivalTimeToNext:" + arrivalTimesToNext.toList.mkString(","))
-  }
-
   //Leave before ...
   def setEndWindow(node: Int, endWindow: Int) {
     require(node >= v, "only for specifying time windows on nodes, not on vehicles")
@@ -386,7 +379,6 @@ class PDP(override val n:Int, override val v:Int, override val m:Store, maxPivot
     */
   def setTimeWindows(timeWindows : Array[(Int,Int,Int,Int)]): Unit ={
     initiateTimeWindowInvariants()
-    addTimeWindowStringInfo()
     val tWS:Array[(Int,Int,Int,Int)] = new Array[(Int,Int,Int,Int)](n)
 
     for(k <- 0 until v)

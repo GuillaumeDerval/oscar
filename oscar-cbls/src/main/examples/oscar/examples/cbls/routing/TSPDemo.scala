@@ -49,9 +49,13 @@ class MySimpleDemoWithUnroutedPoints2(n:Int,v:Int,symmetricDistance:Array[Array[
 
   val obj = Objective(totalDistance + (penaltyForUnrouted*(n - Size(routes))))
 
-  this.addToStringInfo(() => "objective: " + obj.value)
-  this.addToStringInfo(() => "n:" + n + " v:" + v)
   this.initializeRoutingMap(pointsPositions.map(pp => (pp._1.toDouble,pp._2.toDouble)))
+
+  /**
+   * Redefine the toString method.
+   * @return the VRP problem as a String.
+   */
+  override def toString : String = super.toString + "objective: " + obj.value + "\n"
 
   val closestNeighboursForward = computeClosestNeighborsForward()
 
@@ -94,7 +98,8 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay
 
   val twoOpt = Profile(TwoOpt1(myVRP.routed, ()=>myVRP.kFirst(20,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP))
 
-  def threeOpt(k:Int, breakSym:Boolean) = Profile(ThreeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
+  def threeOpt(k:Int, breakSym:Boolean) =
+    Profile(ThreeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
   val vlsn1pt = Mu[OnePointMoveMove](
     OnePointMove(myVRP.routed, () => myVRP.kFirst(5,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP),

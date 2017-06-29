@@ -40,8 +40,7 @@ class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Arra
 
   val obj = Objective(totalDistance + (penaltyForUnrouted*(n - Size(routes))))
 
-  this.addToStringInfo(() => "objective: " + obj.value)
-  this.addToStringInfo(() => "n:" + n + " v:" + v)
+  override def toString : String = super.toString +  "objective: " + obj.value + "\n"
 
   val closestNeighboursForward = computeClosestNeighborsForward()
 
@@ -87,7 +86,7 @@ object TSProutePoints extends App {
     }
     println
 
-    for (n <- 1000 to 11000 by 2000) {
+    for (n <- 1000 to 3000 by 1000) {
       for (v <- List(100)) {
         for (maxPivotPerValuePercent <- List(0, 1, 2, 3, 4, 5, 20)) {
           print(n + "\t" + v + "\t" + maxPivotPerValuePercent + "\t")
@@ -193,7 +192,7 @@ object TSProutePoints extends App {
 
   val benchmarkSizes = 500 to 5000 by 500
   val fileName = "C:\\Users\\rdl\\Documents\\Oscar\\BitBucket3\\oscar-cbls\\src\\main\\examples\\oscar\\examples\\cbls\\routing\\data\\bench"
-  runBenchmark(fileName,1000)
+  //runBenchmark(fileName,1000)
  // generateAllBenchmarks()
   //runAllBenchmarks()
   performRandomBenchmark()

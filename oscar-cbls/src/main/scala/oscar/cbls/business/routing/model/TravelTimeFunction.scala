@@ -23,10 +23,10 @@ import oscar.cbls.lib.invariant.minmax.Max2
 import oscar.cbls.modeling.Algebra._
 
 /**
-  * an abstract class representing a travel time function
-  *
-  * @author renaud.delandtsheer@cetic.be
-  */
+ * an abstract class representing a travel time function
+ *
+ * @author renaud.delandtsheer@cetic.be
+ */
 abstract class TravelTimeFunction {
   def getTravelDuration(from: Int, leaveTime: Int, to: Int): Int
   def getBackwardTravelDuration(from: Int, arrivalTime: Int, to: Int): Int
@@ -39,10 +39,10 @@ abstract class TravelTimeFunction {
 }
 
 /**
-  * adds the notion of time to your VRP
-  *
-  * @author renaud.delandtsheer@cetic.be
-  */
+ * adds the notion of time to your VRP
+ *
+ * @author renaud.delandtsheer@cetic.be
+ */
 trait Time extends VRP with NextAndPrev{
   val defaultArrivalTime = new CBLSIntConst(0)
   //TODO: on peut améliorer le codate en enlevant des variables.
@@ -70,28 +70,38 @@ trait Time extends VRP with NextAndPrev{
     arrivalTime(i) <== arrivalTimeToNext.element(prev(i))
   }
 
-  addToStringInfo(() => "arrivalTime:      " + arrivalTime.toList.mkString(","))
-  addToStringInfo(() => "leaveTime:        " + leaveTime.toList.mkString(","))
-  addToStringInfo(() => "travelOutDuration:" + travelOutDuration.toList.mkString(","))
-  addToStringInfo(() => "arrivalTimeToNext:" + arrivalTimeToNext.toList.mkString(","))
+
+
+
+  /**
+   * Redefine the toString method.
+   * @return the VRP problem as a String.
+   */
+  override def toString : String = {
+    super.toString +
+      "arrivalTime:      " + arrivalTime.toList.mkString(",") + "\n" +
+      "leaveTime:        " + leaveTime.toList.mkString(",")  + "\n" +
+      "travelOutDuration:" + travelOutDuration.toList.mkString(",") + "\n" +
+      "arrivalTimeToNext:" + arrivalTimeToNext.toList.mkString(",") + "\n"
+  }
 }
 
 /**
-  * when the cost of a hop is more complex than a distance matrix.
-  * Beware, you must still define the leaveTime from the ArrivalTime (or not)
-  * and you can post strong constraints on these values
-  *
-  * @author renaud.delandtsheer@cetic.be
-  */
+ * when the cost of a hop is more complex than a distance matrix.
+ * Beware, you must still define the leaveTime from the ArrivalTime (or not)
+ * and you can post strong constraints on these values
+ *
+ * @author renaud.delandtsheer@cetic.be
+ */
 trait TravelTimeAsFunction extends Time {
 
   var travelDurationMatrix: TravelTimeFunction = null
 
   /**
-    * sets the cost function
-    *
-    * @param travelCosts
-    */
+   * sets the cost function
+   *
+   * @param travelCosts
+   */
   def setTravelTimeFunctions(travelCosts: TravelTimeFunction) {
     this.travelDurationMatrix = travelCosts
     for (i <- 0 to n - 1) {
@@ -104,10 +114,10 @@ trait TravelTimeAsFunction extends Time {
 }
 
 /**
-  * to post time window constraints
-  *
-  * @author renaud.delandtsheer@cetic.be
-  */
+ * to post time window constraints
+ *
+ * @author renaud.delandtsheer@cetic.be
+ */
 trait TimeWindow extends Time {
 
   def setEndWindow(node: Int, endWindow: Int, constraintSystem: ConstraintSystem) {
@@ -132,10 +142,10 @@ trait TimeWindow extends Time {
 }
 
 /**
-  * addition ot the [[oscar.cbls.business.routing.legacy.model.TimeWindow]] trait, adds a variable representing the waiting duration
-  *
-  * @author renaud.delandtsheer@cetic.be
-  */
+ * addition ot the [[oscar.cbls.business.routing.legacy.model.TimeWindow]] trait, adds a variable representing the waiting duration
+ *
+ * @author renaud.delandtsheer@cetic.be
+ */
 trait WaitingDuration extends TimeWindow {
   val waitingDuration = Array.tabulate(n) {
     (i: Int) => CBLSIntVar(m, 0, 0 to Int.MaxValue / n, "WaitingDurationBefore" + i)
@@ -158,11 +168,11 @@ trait WaitingDuration extends TimeWindow {
 }
 
 /**
-  * Computes the nearest neighbors of each point.
-  * Used by some neighborhood searches.
-  *
-  * @author renaud.delandtsheer@cetic.be
-  */
+ * Computes the nearest neighbors of each point.
+ * Used by some neighborhood searches.
+ *
+ * @author renaud.delandtsheer@cetic.be
+ */
 trait TimeClosestNeighbors extends ClosestNeighbors with TravelTimeAsFunction {
   final override protected def getDistance(from: Int, to: Int): Int = {
     travelDurationMatrix.getMinTravelDuration(from, to)

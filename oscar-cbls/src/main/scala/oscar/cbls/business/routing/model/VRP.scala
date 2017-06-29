@@ -97,21 +97,7 @@ class VRP(val n: Int, val v: Int, val m: Store, maxPivotPerValuePercent:Int = 4)
     for(v <- 0 until v) require(routes.value.contains(v))
   }
 
-  /**
-   * @return the list of unrouted nodes as a String.
-   */
-  def unroutedToString: String = {
-    "unrouted: " + unroutedNodes.toList + "\n"
-  }
-
   def unroutedNodes:Iterable[Int] = nodes.filterNot(isRouted)
-
-  /**
-   * @return the route of a vehicle as a String.
-   */
-  def routeToString(vehicle: Int): String = {
-    "Vehicle " + vehicle + ": " + getRouteOfVehicle(vehicle).mkString("->")
-  }
 
   /**
    * the route of the vehicle, starting at the vehicle node, and not including the last vehicle node
@@ -259,26 +245,38 @@ class VRP(val n: Int, val v: Int, val m: Store, maxPivotPerValuePercent:Int = 4)
   }
 
   /**
-   * Redefine the toString method.
-    *
-    * @return the VRP problem as a String.
+   * @return the route of a vehicle as a String.
    */
-  override def toString: String = {
-    var toReturn = unroutedToString
-
-    for (v <- 0 to v - 1) {
-      toReturn += routeToString(v)
-      toReturn += "\n"
-    }
-    for (additionalStringFunction <- additionalStrings) {
-      toReturn += additionalStringFunction() + "\n"
-    }
-    toReturn
+  def routeToString(vehicle: Int): String = {
+    "vehicle " + vehicle + ": " + getRouteOfVehicle(vehicle).mkString("->")
+  }
+  /**
+   * @return the list of unrouted nodes as a String.
+   */
+  def unroutedToString: String = {
+    "unrouted nodes: " + unroutedNodes.toList + "\n"
   }
 
-  private var additionalStrings: List[() => String] = List.empty
-  protected def addToStringInfo(a: () => String) {
-    additionalStrings = a :: additionalStrings
+  /**
+   * Redefine the toString method.
+   * @return the VRP problem as a String.
+   */
+  override def toString: String = {
+    var toReturn = ""
+    var notMoving:List[Int] = List.empty
+
+    for (vehicle <- 0 to v - 1) {
+      val routeOfV = getRouteOfVehicle(vehicle)
+      if(routeOfV.length == 1){
+        notMoving  = vehicle :: notMoving
+      }else{
+        toReturn +=  "vehicle " + vehicle + ": " +  routeOfV.mkString("->") + "\n"
+      }
+    }
+    "Vehicle Routing n:" + n + " v:" + v + "\n" +
+    "unrouted nodes: " + unroutedNodes.toList.mkString(",") + "\n" +
+    "not used vehicles:" + notMoving.reverse.mkString(",") + "\n" +
+      toReturn
   }
 
   def onTheSameRoute(node1:Int,node2:Int):Boolean = getVehicleOfNode(node1) == getVehicleOfNode(node2)
@@ -290,7 +288,6 @@ trait NextAndPrev extends VRP{
   val (next,prev) = RouteSuccessorAndPredecessors(routes.createClone(),v,n)
 
 }
-
 
 trait ConstantDistancePerVehicle extends TotalConstantDistance{
   var distancePerVehicle:Array[CBLSIntVar] = null
@@ -447,7 +444,12 @@ trait AbstractPenaltyForUnrouted extends VRP{
    * the variable which maintains the sum of penalty of unrouted nodes, thanks to invariant SumElements.
    */
   var unroutedPenalty:ChangingIntValue=null
-  addToStringInfo(() => ""+unroutedPenalty)
+
+  /**
+   * Redefine the toString method.
+   * @return the VRP problem as a String.
+   */
+  override def toString : String = super.toString + unroutedPenalty +"\n"
 }
 
 /**

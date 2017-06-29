@@ -49,22 +49,33 @@ class MyPDP(n:Int, v:Int, m:Store,
 
   val penaltyForUnrouted  = 100000
 
-  this.addToStringInfo(() => "objective: " + obj.value)
-  this.addToStringInfo(() => "n:" + n + " v:" + v)
+
+
 
   def closestNeighboursInTime = computeClosestNeighborInTime()
 
   def size = routes.value.size
 
-  this.addToStringInfo(() => "next:" + next.map(_.value).mkString(","))
-  this.addToStringInfo(() => "prev:" + prev.map(_.value).mkString(","))
 
 
   setVehicleMaxCapacities(Array.tabulate(v)(_ => 5))
 
   val constraints = PDPConstraints(this)
 
-  val obj = new CascadingObjective(constraints,Objective(totalDistance + (penaltyForUnrouted*(n - Size(routes))))))
+  /**
+   * Redefine the toString method.
+   * @return the VRP problem as a String.
+   */
+  override def toString : String =
+    super.toString +
+      "objective: " + obj.value + "\n" +
+      "next:" + next.map(_.value).mkString(",") + "\n" +
+      "prev:" + prev.map(_.value).mkString(",") + "\n"
+
+
+  val obj = new CascadingObjective(fastConstraints,
+    new CascadingObjective(slowConstraints,
+      new CascadingObjective(precedenceObj, Objective(totalDistance + (penaltyForUnrouted*(n - Size(routes)))))))
 }
 
 object PickupDeliveryS extends App{

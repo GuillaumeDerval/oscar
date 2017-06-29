@@ -288,7 +288,6 @@ class PDP(override val n:Int,
       " TimeWindows supposed size : " + n + " , actual size : " + timeWindows.length)
 
     initiateTimeWindowInvariants()
-    addTimeWindowStringInfo()
 
     for(i <- timeWindows.indices){
       earlylines(i) = timeWindows(i)._1
@@ -387,13 +386,6 @@ class PDP(override val n:Int,
       if (successor == n) 0
       else travelCosts.getTravelDuration(i, leaveTime, successor))
     }
-  }
-
-  def addTimeWindowStringInfo() {
-    addToStringInfo(() => "arrivalTime:      " + arrivalTimes.toList.mkString(","))
-    addToStringInfo(() => "leaveTime:        " + leaveTimes.toList.mkString(","))
-    addToStringInfo(() => "travelOutDuration:" + travelOutDurations.toList.mkString(","))
-    addToStringInfo(() => "arrivalTimeToNext:" + arrivalTimesToNext.toList.mkString(","))
   }
 
   /**
