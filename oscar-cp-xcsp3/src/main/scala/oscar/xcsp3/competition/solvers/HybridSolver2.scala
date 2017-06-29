@@ -116,7 +116,7 @@ object HybridSolver2 extends CompetitionApp with App {
           conf.memlimit(),
           coupled = true,
           learning = true,
-          Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided, ALNSBuilder.FullRelax),
+          Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided, ALNSBuilder.FullRelax, ALNSBuilder.ValGuided),
           Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.ExtOriented, ALNSBuilder.WeightDeg),
           ALNSBuilder.ValHeurisBoth,
           valLearn = true,
