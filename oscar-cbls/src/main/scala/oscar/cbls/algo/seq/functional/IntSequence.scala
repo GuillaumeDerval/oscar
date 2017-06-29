@@ -82,7 +82,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
 
   def iterator : Iterator[Int] = new IntSequenceIterator(this.explorerAtPosition(0))
 
-  def iterateFromAnyOcurrenceOfValue(value:Int):Iterator[Int] = new IntSequenceIterator(this.explorerAtAnyOccurrence(value))
+  def iterateFromAnyOccurrenceOfValue(value:Int):Iterator[Int] = new IntSequenceIterator(this.explorerAtAnyOccurrence(value))
 
   def iterable : Iterable[Int] = new IterableIntSequence(this)
 
@@ -1107,7 +1107,7 @@ class RemovedIntSequence(val seq:IntSequence,
   override def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
     seq.explorerAtPosition(if (position < this.positionOfDelete) position else position + 1) match {
       case None => None
-      case Some(e) => Some(new DeletedIntSequenceExplorer(this, position, e))
+      case Some(e) => Some(new RemovedIntSequenceExplorer(this, position, e))
     }
   }
 
@@ -1144,7 +1144,7 @@ class RemovedIntSequence(val seq:IntSequence,
   }
 }
 
-class DeletedIntSequenceExplorer(seq:RemovedIntSequence,
+class RemovedIntSequenceExplorer(seq:RemovedIntSequence,
                                  val position:Int,
                                  explorerInOriginalSeq:IntSequenceExplorer)
   extends IntSequenceExplorer{
@@ -1157,9 +1157,9 @@ class DeletedIntSequenceExplorer(seq:RemovedIntSequence,
         if(tentativePos.position == seq.positionOfDelete)
           tentativePos.prev match {
             case None => None
-            case Some(secondTentativePos) => Some(new DeletedIntSequenceExplorer(seq, position - 1, secondTentativePos))
+            case Some(secondTentativePos) => Some(new RemovedIntSequenceExplorer(seq, position - 1, secondTentativePos))
           }
-        else Some(new DeletedIntSequenceExplorer(seq, position - 1, tentativePos))
+        else Some(new RemovedIntSequenceExplorer(seq, position - 1, tentativePos))
     }
   }
 
@@ -1170,9 +1170,9 @@ class DeletedIntSequenceExplorer(seq:RemovedIntSequence,
         if(tentativePos.position == seq.positionOfDelete)
           tentativePos.next match {
             case None => None
-            case Some(secondTentativePos) => Some(new DeletedIntSequenceExplorer(seq, position + 1, secondTentativePos))
+            case Some(secondTentativePos) => Some(new RemovedIntSequenceExplorer(seq, position + 1, secondTentativePos))
           }
-        else Some(new DeletedIntSequenceExplorer(seq, position + 1, tentativePos))
+        else Some(new RemovedIntSequenceExplorer(seq, position + 1, tentativePos))
     }
   }
 }

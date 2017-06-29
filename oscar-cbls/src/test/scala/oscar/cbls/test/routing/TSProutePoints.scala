@@ -47,8 +47,8 @@ class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Arra
 
   val obj = Objective(totalDistance + (penaltyForUnrouted*(n - Size(routes))))
 
-  this.addToStringInfo(() => "objective: " + obj.value)
-  this.addToStringInfo(() => "n:" + n + " v:" + v)
+  override def toString : String = super.toString +
+    "objective: " + obj.value + "\n"
 
   val closestNeighboursForward = computeClosestNeighborsForward()
 

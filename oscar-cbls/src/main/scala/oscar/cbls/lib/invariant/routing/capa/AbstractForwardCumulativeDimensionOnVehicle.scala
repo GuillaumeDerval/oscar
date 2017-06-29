@@ -96,8 +96,7 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
                 zonesAfterPrev,
                 pos : Int,
                 prev.newValue, vehicleLocationAfterPrev)
-            vehicleLocationAfterPrev.checkOnSequence(prev.newValue)
-            vehicleLocationAfterPrev.push(r.oldPosToNewPos).checkOnSequence(r.newValue)
+
             (Some((updatedZonesAfterRemove, vehicleLocationAfterPrev.push(r.oldPosToNewPos))),  potentiallyRemovedPointsAfterPrev + r.removedValue)
           case (None,potentiallyRemovedPointsAfterPrev) =>
             (None, potentiallyRemovedPointsAfterPrev + r.removedValue)

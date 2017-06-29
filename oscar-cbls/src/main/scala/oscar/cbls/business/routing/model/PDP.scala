@@ -334,10 +334,10 @@ class PDP(override val n:Int, override val v:Int, override val m:Store, maxPivot
   }
 
   def addTimeWindowStringInfo() {
-    addToStringInfo(() => "arrivalTime:      " + arrivalTime.toList.mkString(","))
-    addToStringInfo(() => "leaveTime:        " + leaveTime.toList.mkString(","))
-    addToStringInfo(() => "travelOutDuration:" + travelOutDuration.toList.mkString(","))
-    addToStringInfo(() => "arrivalTimeToNext:" + arrivalTimeToNext.toList.mkString(","))
+    //addToStringInfo(() => "arrivalTime:      " + arrivalTime.toList.mkString(","))
+    //addToStringInfo(() => "leaveTime:        " + leaveTime.toList.mkString(","))
+    //addToStringInfo(() => "travelOutDuration:" + travelOutDuration.toList.mkString(","))
+    //addToStringInfo(() => "arrivalTimeToNext:" + arrivalTimeToNext.toList.mkString(","))
   }
 
   //Leave before ...

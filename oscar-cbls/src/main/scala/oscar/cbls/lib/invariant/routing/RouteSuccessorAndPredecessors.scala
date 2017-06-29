@@ -69,13 +69,20 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
     }
   }
 
+  /**
+   *
+   * @param changes
+   * @return the set of values that require updating for next and prev
+   */
   def computeStartValuesOfImpactedZone(changes:SeqUpdate):Option[SortedSet[Int]] = {
     changes match {
       case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         computeStartValuesOfImpactedZone(prev) match{
           case None => None
           case Some(startsOfImpactedZone) =>
-            Some(startsOfImpactedZone + value + RoutingConventionMethods.routingPredVal2Val(value,s.newValue,v))
+            Some(startsOfImpactedZone + value
+              + RoutingConventionMethods.routingPredVal2Val(value,s.newValue,v)
+              + RoutingConventionMethods.routingSuccVal2Val(value,s.newValue,v))
         }
 
       case m@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
@@ -83,8 +90,9 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
           case None => None
           case Some(startsOfImpactedZone) => Some(
             startsOfImpactedZone +
-              RoutingConventionMethods.routingPredPos2Val(fromIncluded,prev.newValue,v) +
-              m.fromValue + m.toValue + m.afterValue)
+              m.fromValue + RoutingConventionMethods.routingPredPos2Val(fromIncluded,prev.newValue,v) + RoutingConventionMethods.routingSuccPos2Val(fromIncluded,prev.newValue,v) +
+              m.toValue + RoutingConventionMethods.routingPredPos2Val(toIncluded,prev.newValue,v) + RoutingConventionMethods.routingSuccPos2Val(toIncluded,prev.newValue,v) +
+              m.afterValue+ RoutingConventionMethods.routingPredPos2Val(after,prev.newValue,v) + RoutingConventionMethods.routingSuccPos2Val(after,prev.newValue,v))
         }
 
       case r@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
@@ -92,8 +100,10 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
         computeStartValuesOfImpactedZone(prev) match{
           case None => None
           case Some(startsOfImpactedZone) => Some(
-            startsOfImpactedZone + removedValue +
-              RoutingConventionMethods.routingPredPos2Val(position,prev.newValue,v) )
+            startsOfImpactedZone +
+              removedValue +
+              RoutingConventionMethods.routingPredPos2Val(position,prev.newValue,v)
+              + RoutingConventionMethods.routingSuccPos2Val(position,prev.newValue,v))
         }
 
       case SeqUpdateLastNotified(value) =>
@@ -177,6 +187,7 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
   }
 
   override def checkInternals(c : Checker){
+    require(routes.value quickEquals routes.newValue)
     val fromScratch = computeSuccessorsFromScratchNoAffect(routes.newValue)
     for(node <- 0 until n){
       c.check(successorValues(node).newValue == fromScratch(node),
@@ -184,10 +195,10 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
 
       if(fromScratch(node)== defaultWhenNotInSequence){
         c.check(predecessorValues(node).newValue == defaultWhenNotInSequence,
-          Some("error on predecessor for node " + node))
+          Some("error on predecessor for node " + node + " it is not routed, but got " + predecessorValues(node).newValue))
       }else {
         c.check(predecessorValues(fromScratch(node)).newValue == node,
-          Some("error on predecessor for node " + node))
+          Some("error on predecessor for node " + node + " successor from scratch:" + fromScratch(node) + " predecessor of this is: " + predecessorValues(fromScratch(node)).newValue + "seq:" + routes.value))
       }
     }
   }
