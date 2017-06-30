@@ -63,7 +63,6 @@ final class TableCT(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constr
   private[this] val unBoundVarsSize = new ReversibleInt(s, arity)
 
   override def setup(l: CPPropagStrength): Unit = {
-
     /* Failure if table is empty initially or after initial filtering */
     if (nbTuples == 0)
       throw Inconsistency

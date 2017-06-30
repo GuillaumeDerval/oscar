@@ -666,10 +666,11 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     // In this form, each variable has only domain 0/1. 'pos' should point to the index of the first variable having 1 as value
     val vars = list.map(e => varHashMap(e.id()))
     val posVar = varHashMap(pos.id())
-    val newVars = list.indices.map(idx => IntVar(Set(idx, list.length))).toArray
-    modelDeclaration.post(Inverse(newVars :+ posVar, newVars :+ posVar))
-    for(i <- vars.indices)
-      modelDeclaration.post(vars(i) === (newVars(i) === i))
+
+    if(startIndex == 0)
+      modelDeclaration.post(Channel(vars, posVar))
+    else
+      modelDeclaration.post(Channel(vars, posVar - startIndex))
   }
 
   override def buildCtrClause(id: String, pos: Array[XVarInteger], neg: Array[XVarInteger]): Unit = {

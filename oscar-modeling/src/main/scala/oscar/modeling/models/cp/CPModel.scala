@@ -272,8 +272,10 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         case NegativeTable(array, values, Some(starred)) => p(constraint,new oscar.cp.constraints.tables.TableCTNegStar(array.map(postIntExpressionAndGetVar), values, starred))
         case MinCircuit(succ, distMatrixSucc, cost) => p(constraint,cp.modeling.constraint.minCircuit(succ.map(postIntExpressionAndGetVar), distMatrixSucc, postIntExpressionAndGetVar(cost)))
         case MinCircuitWeak(succ, distMatrixSucc, cost) => p(constraint,cp.modeling.constraint.minCircuit(succ.map(postIntExpressionAndGetVar), distMatrixSucc, postIntExpressionAndGetVar(cost)))
-        case GCC(x, minVal, low, up) => p(constraint,new cp.constraints.GCC(x.map(postIntExpressionAndGetVar), minVal, low, up))
-        case GCCVar(x, y) => p(constraint,cp.modeling.constraint.gcc(x.map(postIntExpressionAndGetVar), y.map(a => (a._1, postIntExpressionAndGetVar(a._2)))))
+        case GCC(x, minVal, low, up) =>
+          p(constraint,new cp.constraints.GCC(x.map(postIntExpressionAndGetVar), minVal, low, up))
+        case GCCVar(x, y) =>
+          p(constraint,cp.modeling.constraint.gcc(x.map(postIntExpressionAndGetVar), y.map(a => (a._1, postIntExpressionAndGetVar(a._2)))))
         case BinPacking(x, w, l) => p(constraint,new cp.constraints.BinPacking(x.map(postIntExpressionAndGetVar), w, l.map(postIntExpressionAndGetVar)))
         case Circuit(succ, symmetric) => p(constraint,new cp.constraints.Circuit(succ.map(postIntExpressionAndGetVar), symmetric))
         case SubCircuit(succ, offset) => p(constraint,cp.constraints.SubCircuit(succ.map(postIntExpressionAndGetVar), offset))
@@ -308,6 +310,8 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
           p(constraint,cp.modeling.constraint.regular(on.map(postIntExpressionAndGetVar), automaton))
         case NotAllEqual(x) =>
           p(constraint,cp.modeling.constraint.notAllEqual(x.map(postIntExpressionAndGetVar)))
+        case Channel(x, pos) =>
+          p(constraint,new cp.constraints.Channel(x.map(postIntExpressionAndGetVar), postIntExpressionAndGetVar(pos)))
         case default => throw new Exception("Unknown constraint " + constraint.getClass.toString) //TODO: put a real exception here
       }
   }
