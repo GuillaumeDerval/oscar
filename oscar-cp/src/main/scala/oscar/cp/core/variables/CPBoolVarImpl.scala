@@ -320,6 +320,7 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     }
     if(oldMax != max){
       arr(i) = 1
+      i += 1
     }
     i
   }
