@@ -19,6 +19,7 @@ import oscar.cbls.business.routing.model._
 import oscar.cbls.business.routing.neighborhood._
 import oscar.cbls.core.computation.{CBLSSetConst, Store}
 import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.search.{Best, First, LoopBehavior}
 import oscar.cbls.lib.invariant.routing.ConstantRoutingDistance
 import oscar.cbls.lib.invariant.seq.{Content, Size}
 import oscar.cbls.lib.invariant.set.Diff
@@ -31,8 +32,8 @@ import scala.collection.immutable.SortedSet
 
 class MySimpleDemoWithUnroutedPoints2(n:Int,v:Int,symmetricDistance:Array[Array[Int]],pointsPositions:Array[(Int,Int)],m:Store, maxPivot:Int)
   extends VRP(n,v,m,maxPivot)
-    with ClosestNeighbors
-    with RoutingMapDisplay
+  with ClosestNeighbors
+  with RoutingMapDisplay
 {
 
   override protected def getDistance(from : Int, to : Int) : Int = symmetricDistance(from)(to)
@@ -64,7 +65,7 @@ class MySimpleDemoWithUnroutedPoints2(n:Int,v:Int,symmetricDistance:Array[Array[
 
 object TSPDemo extends App {
 
-  val n = 1000
+  val n = 100
   val v = 10
   val displayDelay = 500 //ms
   val verbose = 1
@@ -89,9 +90,17 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay
 
   val bestInsert = false
 
-  val routeUnroutdPoint =  Profile(InsertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,best=bestInsert,neighborhoodName = "InsertUF"))
+  val routeUnroutdPoint =  Profile(InsertPointUnroutedFirst2(myVRP.unrouted,
+    ()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted),
+    myVRP,
+    neighborhoodName = "InsertUF",
+    hotRestart = false,
+    selectNodeBehavior = First(),
+    selectInsertionPointBehavior = Best()))
 
-  //TODO: using post-filters on k-nearest is probably a bit slower than possible in this context
+
+  //using post-filters on k-nearest is probably a bit slower than possible for large problems.
+  //thwt's why we prefer to block this neighborhood when many nodes are already routed (so few are unrouted, so the filter filters many nodes away)
   val routeUnroutdPoint2 =  Profile(InsertPointRoutedFirst(myVRP.routed,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,x => !myVRP.isRouted(x)),myVRP,best=bestInsert,neighborhoodName = "InsertRF")  guard(() => myVRP.size < n/2))
 
   def onePtMove(k:Int) = Profile(OnePointMove(myVRP.routed, () => myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP))
@@ -111,11 +120,11 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay
   var lastDisplay = this.getWatch
 
   val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt, onePtMove(10),twoOpt, threeOpt(10,true),segExchange(10))) exhaust BestSlopeFirst(List(threeOpt(30,true),vlsn1pt))).afterMove(
-    if(this.getWatch > lastDisplay + displayDelay) {myVRP.drawRoutes(); lastDisplay = this.getWatch}) showObjectiveFunction(myVRP.obj)
+    if(this.getWatch > lastDisplay + displayDelay) {myVRP.drawRoutes(); lastDisplay = this.getWatch}) //showObjectiveFunction(myVRP.obj)
 
   search.verbose = verbose
   //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
-
+//  routeUnroutdPoint.verbose= 4
   search.doAllMoves(obj=myVRP.obj)
 
   myVRP.drawRoutes()

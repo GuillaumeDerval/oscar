@@ -1529,23 +1529,22 @@ case class Atomic(a: Neighborhood, name: String = "Atomic", bound: Int = Int.Max
   }
 }
 
-case class Atomic2(a: Neighborhood, name: String = "Atomic", bound: Int = Int.MaxValue) extends NeighborhoodCombinator(a) {
+case class Atomic2(a: Neighborhood, name: String = "Atomic", shouldStop:Int => Boolean) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
 
     val startSolution = obj.model.solution(true)
 
-    val nbSteps = a.doAllMoves(_ > bound, obj, acceptanceCriterion)
+    val allMoves = a.getAllMoves(shouldStop, obj, acceptanceCriterion)
 
     //restore the initial solution
-    val endSolution = obj.model.solution(true)
     val endObj = obj.value
     obj.model.restoreSolution(startSolution)
 
-    if(nbSteps == 0){
+    if(allMoves.isEmpty){
       NoMoveFound
     } else {
       println("LOADING")
-      LoadSolutionMove(endSolution,endObj,name)
+      CompositeMove(allMoves,endObj,"Atomic" + a)
     }
   }
 }

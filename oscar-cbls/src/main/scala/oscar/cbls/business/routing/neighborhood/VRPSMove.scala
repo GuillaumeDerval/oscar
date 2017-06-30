@@ -18,10 +18,10 @@ package oscar.cbls.business.routing.neighborhood
 import oscar.cbls.business.routing.legacy.model.HotSpottingInfo
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.computation.Variable
-import oscar.cbls.core.search.{EasyNeighborhood, Move}
+import oscar.cbls.core.search.{Neighborhood, EasyNeighborhood, Move}
 
 abstract class VRPSMove(override val objAfter: Int,
-                       val neighborhood: EasyNeighborhood[_],
+                       val neighborhood:Neighborhood,
                        override val neighborhoodName:String = null, vrp:VRP)
   extends Move(objAfter, neighborhoodName) with HotSpottingInfo{
 
