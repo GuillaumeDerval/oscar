@@ -96,8 +96,8 @@ abstract class CompetitionApp extends App{
     currentSol = sol
     if(status == "UNKNOWN") status = "SATISFIABLE"
     if(cop){
-      println(tElapsed + " o " + obj)
-//      println("o " + obj)
+//      println(tElapsed + " o " + obj)
+      println("o " + obj)
       Console.flush()
     }
   }
@@ -106,19 +106,19 @@ abstract class CompetitionApp extends App{
   //Sol should be a valid instantiation (see rules)
   def printSolution(): Unit = {
     if(currentSol.nonEmpty) {
-      val solutionChecker = new SolutionChecker(true, conf.benchname(), new ByteArrayInputStream(("s " + status + "\nv " + currentSol.split("\\r?\\n").mkString("\nv ")).getBytes))
-      if(solutionChecker.violatedCtrs.isEmpty && solutionChecker.invalidObjs.isEmpty){
-        println(tElapsed + " s " + status)
-//        println("s " + status)
-        println(tElapsed + " v " + currentSol.split("\\r?\\n").mkString("\n" + tElapsed + " v "))
-//        println("v " + currentSol.split("\\r?\\n").mkString("\nv "))
-      }
-      else{
-        printDiagnostic("SOL_NOT_VALID")
-        printComment(currentSol)
-        println(tElapsed + " s " + "UNKNOWN")
-//        println("s " + "UNKNOWN")
-      }
+//      val solutionChecker = new SolutionChecker(true, conf.benchname(), new ByteArrayInputStream(("s " + status + "\nv " + currentSol.split("\\r?\\n").mkString("\nv ")).getBytes))
+//      if(solutionChecker.violatedCtrs.isEmpty && solutionChecker.invalidObjs.isEmpty){
+//        println(tElapsed + " s " + status)
+        println("s " + status)
+//        println(tElapsed + " v " + currentSol.split("\\r?\\n").mkString("\n" + tElapsed + " v "))
+        println("v " + currentSol.split("\\r?\\n").mkString("\nv "))
+//      }
+//      else{
+//        printDiagnostic("SOL_NOT_VALID")
+//        printComment(currentSol)
+//        println(tElapsed + " s " + "UNKNOWN")
+////        println("s " + "UNKNOWN")
+//      }
     }
   }
 
@@ -133,28 +133,28 @@ abstract class CompetitionApp extends App{
   def printStatus(): Unit = {
     if(status == "OPTIMUM FOUND" || status == "SATISFIABLE") printSolution()
     else
-      println(tElapsed + " s " + status)
-//      println("s " + status)
+//      println(tElapsed + " s " + status)
+      println("s " + status)
     statusPrinted = true
   }
 
   //For any comment:
   def printComment(com: String): Unit = {
-    println(tElapsed + " c " + com.split("\\r?\\n").mkString("\n" + tElapsed + " c "))
-//    println("c " + com.split("\\r?\\n").mkString("\nc "))
+//    println(tElapsed + " c " + com.split("\\r?\\n").mkString("\n" + tElapsed + " c "))
+    println("c " + com.split("\\r?\\n").mkString("\nc "))
   }
 
   //For diagnostic information, name should be a keyword and value no more than one line.
   def printDiagnostic(name: String, value: String): Unit = {
-    println(tElapsed + " d " + name + " " + value)
-//    println("d " + name + " " + value)
+//    println(tElapsed + " d " + name + " " + value)
+    println("d " + name + " " + value)
   }
 
   //For diagnostic information, name should be a keyword.
   def printDiagnostic(name: String): Unit = {
-    println(tElapsed + " d " + name)
-//    println("d " + name)
+//    println(tElapsed + " d " + name)
+    println("d " + name)
   }
 
-  def tElapsed: Long = (System.nanoTime() - tstart)/1000000
+//  def tElapsed: Long = (System.nanoTime() - tstart)/1000000
 }
