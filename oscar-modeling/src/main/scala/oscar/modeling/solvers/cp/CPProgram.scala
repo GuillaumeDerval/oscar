@@ -192,6 +192,9 @@ class CPProgram[RetVal](modelDeclaration: ModelDeclaration = new ModelDeclaratio
       if(!silent)
         println("Subproblems: " + subproblems.length.toString)
 
+      if(subproblems.isEmpty)
+        return (SearchStatistics(0, 0, 0, true, 0, 0, 0, 0), List())
+
       val queue = new LinkedBlockingQueue[(Int, List[Constraint])]()
       val outputQueue = new LinkedBlockingQueue[SolvingMessage]()
 

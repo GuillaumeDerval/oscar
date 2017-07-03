@@ -51,7 +51,7 @@ object ConfOrderSolver extends CompetitionApp with App{
 
     if (parsingResult.isDefined){
       val (vars, solver, solutionGenerator) = parsingResult.get
-      solver.silent = false
+      solver.silent = true
 
       val timeout = ((conf.timelimit() -5).toLong * 1000000000L) - (System.nanoTime() - tstart)
       val endTime: Long = System.nanoTime() + timeout

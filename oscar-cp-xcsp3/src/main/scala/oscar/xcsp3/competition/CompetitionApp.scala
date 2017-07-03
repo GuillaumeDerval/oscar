@@ -2,24 +2,57 @@ package oscar.xcsp3.competition
 
 import java.io.ByteArrayInputStream
 
-import org.rogach.scallop.{ScallopConf, ScallopOption}
 import org.xcsp.checker.SolutionChecker
 
 import scala.util.Random
 
-class CompetitionConf(arguments: Seq[String]) extends ScallopConf(arguments){
-  val randomseed: ScallopOption[Int] = opt[Int](default = Some(Random.nextInt(Int.MaxValue))) //A random seed
-  val timelimit: ScallopOption[Int] = opt[Int](default = Some(240)) //The time available in seconds
-  val memlimit: ScallopOption[Int] = opt[Int](default = Some(1000)) //The memory available in mb
-  val nbcore: ScallopOption[Int] = opt[Int](default = Some(1)) //The number of cores available
-  val tmpdir: ScallopOption[Int] = opt[Int]() //A temporary directory to write files
-  val dir: ScallopOption[Int] = opt[Int]() //The directory containing the program
-  val benchname: ScallopOption[String] = trailArg[String]() //The path to the instance file
-  verify()
+class CompetitionConf(args: Seq[String]){
+  type ArgMap = Map[Symbol, Any]
+  val argMap: ArgMap = parseArgs(Map(), args.toList)
+
+  def randomseed(): Long = argMap.getOrElse('randomseed, Random.nextInt(Int.MaxValue).toLong).asInstanceOf[Long] //A random seed
+  def timelimit(): Int = argMap.getOrElse('timelimit, 240).asInstanceOf[Int] //The time available in seconds
+  def memlimit(): Int = argMap.getOrElse('memlimit, 1000).asInstanceOf[Int] //The memory available in mb
+  def nbcore(): Int = argMap.getOrElse('nbcore, 1).asInstanceOf[Int] //The number of cores available
+  def tmpdir(): String = argMap.getOrElse('tmpdir, "tmpdir").asInstanceOf[String] //A temporary directory to write files
+  def dir(): String = argMap.getOrElse('dir, "dir").asInstanceOf[String] //The directory containing the program
+  def benchname(): String = {
+    val path = argMap.getOrElse('benchname, "").asInstanceOf[String]
+    if(path.isEmpty) throw new Exception("Instance path not provided!")
+    path
+  } //The path to the instance file
+
+  def parseArgs(map : ArgMap, list: List[String]) : ArgMap = {
+    list match {
+      case Nil => map
+
+      case "--randomseed" :: value :: tail =>
+        parseArgs(map ++ Map('randomseed -> value.toLong), tail)
+
+      case "--timelimit" :: value :: tail =>
+        parseArgs(map ++ Map('timelimit -> value.toInt), tail)
+
+      case "--memlimit" :: value :: tail =>
+        parseArgs(map ++ Map('memlimit -> value.toInt), tail)
+
+      case "--nbcore" :: value :: tail =>
+        parseArgs(map ++ Map('nbcore -> value.toInt), tail)
+
+      case "--tmpdir" :: value :: tail =>
+        parseArgs(map ++ Map('tmpdir -> value), tail)
+
+      case "--dir" :: value :: tail =>
+        parseArgs(map ++ Map('dir -> value), tail)
+
+      case benchname :: tail =>
+        parseArgs(map ++ Map('benchname -> benchname), tail)
+    }
+  }
 }
 
 abstract class CompetitionApp extends App{
   final val tstart = System.nanoTime()
+  final val version = "2017-07-03"
 
   //Setting up shutdown hook:
   Runtime.getRuntime.addShutdownHook(new Thread{
@@ -30,6 +63,7 @@ abstract class CompetitionApp extends App{
 
   val conf = new CompetitionConf(args)
 
+  printComment("version: " + version)
   printComment("seed: " + conf.randomseed())
   printComment("timeout: " + conf.timelimit())
   printComment("memlimit: " + conf.memlimit())
@@ -62,8 +96,8 @@ abstract class CompetitionApp extends App{
     currentSol = sol
     if(status == "UNKNOWN") status = "SATISFIABLE"
     if(cop){
-      println(tElapsed + " o " + obj)
-//      println("o " + obj)
+//      println(tElapsed + " o " + obj)
+      println("o " + obj)
       Console.flush()
     }
   }
@@ -72,19 +106,19 @@ abstract class CompetitionApp extends App{
   //Sol should be a valid instantiation (see rules)
   def printSolution(): Unit = {
     if(currentSol.nonEmpty) {
-      val solutionChecker = new SolutionChecker(true, conf.benchname(), new ByteArrayInputStream(("s " + status + "\nv " + currentSol.split("\\r?\\n").mkString("\nv ")).getBytes))
-      if(solutionChecker.violatedCtrs.isEmpty && solutionChecker.invalidObjs.isEmpty){
-        println(tElapsed + " s " + status)
-//        println("s " + status)
-        println(tElapsed + " v " + currentSol.split("\\r?\\n").mkString("\n" + tElapsed + " v "))
-//        println("v " + currentSol.split("\\r?\\n").mkString("\nv "))
-      }
-      else{
-        printDiagnostic("SOL_NOT_VALID")
-        printComment(currentSol)
-        println(tElapsed + " s " + "UNKNOWN")
-//        println("s " + "UNKNOWN")
-      }
+//      val solutionChecker = new SolutionChecker(true, conf.benchname(), new ByteArrayInputStream(("s " + status + "\nv " + currentSol.split("\\r?\\n").mkString("\nv ")).getBytes))
+//      if(solutionChecker.violatedCtrs.isEmpty && solutionChecker.invalidObjs.isEmpty){
+//        println(tElapsed + " s " + status)
+        println("s " + status)
+//        println(tElapsed + " v " + currentSol.split("\\r?\\n").mkString("\n" + tElapsed + " v "))
+        println("v " + currentSol.split("\\r?\\n").mkString("\nv "))
+//      }
+//      else{
+//        printDiagnostic("SOL_NOT_VALID")
+//        printComment(currentSol)
+//        println(tElapsed + " s " + "UNKNOWN")
+////        println("s " + "UNKNOWN")
+//      }
     }
   }
 
@@ -99,28 +133,28 @@ abstract class CompetitionApp extends App{
   def printStatus(): Unit = {
     if(status == "OPTIMUM FOUND" || status == "SATISFIABLE") printSolution()
     else
-      println(tElapsed + " s " + status)
-//      println("s " + status)
+//      println(tElapsed + " s " + status)
+      println("s " + status)
     statusPrinted = true
   }
 
   //For any comment:
   def printComment(com: String): Unit = {
-    println(tElapsed + " c " + com.split("\\r?\\n").mkString("\n" + tElapsed + " c "))
-//    println("c " + com.split("\\r?\\n").mkString("\nc "))
+//    println(tElapsed + " c " + com.split("\\r?\\n").mkString("\n" + tElapsed + " c "))
+    println("c " + com.split("\\r?\\n").mkString("\nc "))
   }
 
   //For diagnostic information, name should be a keyword and value no more than one line.
   def printDiagnostic(name: String, value: String): Unit = {
-    println(tElapsed + " d " + name + " " + value)
-//    println("d " + name + " " + value)
+//    println(tElapsed + " d " + name + " " + value)
+    println("d " + name + " " + value)
   }
 
   //For diagnostic information, name should be a keyword.
   def printDiagnostic(name: String): Unit = {
-    println(tElapsed + " d " + name)
-//    println("d " + name)
+//    println(tElapsed + " d " + name)
+    println("d " + name)
   }
 
-  def tElapsed: Long = (System.nanoTime() - tstart)/1000000
+//  def tElapsed: Long = (System.nanoTime() - tstart)/1000000
 }

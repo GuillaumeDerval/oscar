@@ -108,7 +108,6 @@ class GCCUpperBC(val x: Array[CPIntVar],minval: Int, upperCard: Array[Int]) exte
   private[this] val h = Array.fill(2 * n + 2)(0) // hall interval links
 
   override def setup(l: CPPropagStrength): Unit = {
-
     // Remove values with upperCard == 0
     for (i <- 0 until upperCard.length)
       if(upperCard(i) == 0)

@@ -34,7 +34,6 @@ class AllDifferentExcept(x: Array[CPIntVar], exclude: Set[Int]) extends Constrai
    * @see CPPropagStrength
    */
   override def setup(l: CPPropagStrength): Unit = {
-
     val allValues = x.map(_.toSet).foldLeft(Set[Int]())((u,v) => u.union(v))
     if (x.size > allValues.size) throw Inconsistency
     val permutation = allValues.size == x.size
@@ -61,7 +60,7 @@ class AllDifferentExcept(x: Array[CPIntVar], exclude: Set[Int]) extends Constrai
       val maxVal = x.map(_.max).max
       val cards = Array.fill(maxVal - minVal + 1)(1)
       for(i <- exclude)
-        cards(i - minVal) = Int.MaxValue
+        cards(i - minVal) = x.length
       s.post(new GCCUpperBC(x, minVal, cards))
     }
   }

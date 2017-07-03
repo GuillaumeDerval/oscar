@@ -116,8 +116,8 @@ object HybridSolver extends CompetitionApp with App {
           conf.memlimit(),
           coupled = true,
           learning = true,
-          Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided, ALNSBuilder.FullRelax),
-          Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.ExtOriented),
+          Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided, ALNSBuilder.FullRelax, ALNSBuilder.ValGuided),
+          Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.ExtOriented, ALNSBuilder.WeightDeg),
           ALNSBuilder.ValHeurisBoth,
           valLearn = true,
           ALNSBuilder.Priority,
@@ -144,7 +144,8 @@ object HybridSolver extends CompetitionApp with App {
             if (bestOperator.contains(ALNSBuilder.BinSplit)) binarySplit(vars, valMax, valLearn)
             else if (bestOperator.contains(ALNSBuilder.FirstFail)) firstFail(vars, valMax, valLearn)
             else if (bestOperator.contains(ALNSBuilder.LastConf)) lastConflict(vars, valMax, valLearn)
-            else if(bestOperator.contains(ALNSBuilder.ExtOriented)) extensionalOriented(vars, valMax, valLearn)
+            else if (bestOperator.contains(ALNSBuilder.ExtOriented)) extensionalOriented(vars, valMax, valLearn)
+            else if (bestOperator.contains(ALNSBuilder.WeightDeg)) weightedDegree(vars, valMax = false, 0.99)
             else conflictOrdering(vars, valMax, valLearn)
           }
           else //Default search: Conflict ordering:

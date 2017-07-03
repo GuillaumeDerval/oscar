@@ -591,12 +591,12 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
     // In this form, each variable has only domain 0/1. 'pos' should point to the index of the first variable having 1 as value
     val vars = list.map(e => varHashMap(e.id()))
     val posVar = varHashMap(pos.id())
-    val newVars = list.indices.map(idx => CPIntVar(Set(idx, list.length))).toArray
-    cp.add(new Inverse(newVars :+ posVar, newVars :+ posVar))
-    for (i <- vars.indices)
-      cp.add((newVars(i) ?=== i) === vars(i))
-  }
 
+    if(startIndex == 0)
+      cp.add(new Channel(vars, posVar))
+    else
+      cp.add(new Channel(vars, posVar - startIndex))
+  }
 
   override def buildCtrRegular(id: String, list: Array[XVarInteger], transitionsBase: Array[Array[AnyRef]], startStateBase: String, finalStatesBase: Array[String]): Unit = {
     val transitionsString = transitionsBase.map(x => (x(0).asInstanceOf[String], x(1).asInstanceOf[Long].toInt, x(2).asInstanceOf[String]))

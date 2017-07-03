@@ -52,7 +52,13 @@ abstract class RefinementStrategy[SubproblemOrdering](searchInstantiator: Branch
       return List[SubProblem](new SubProblem(List()))
 
     //Initialise a CP Model
-    val model = new MemoCPModel(baseModel.removeOptimisation())
+    val model = try {
+      new MemoCPModel(baseModel.removeOptimisation())
+    }
+    catch {
+      case _: NoSolutionException => return List[SubProblem]()
+    }
+
 
     //Initialise the Priority Queue
     val q = mutable.PriorityQueue[SubproblemInfo]()
