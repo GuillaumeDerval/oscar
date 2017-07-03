@@ -144,7 +144,8 @@ object HybridSolver extends CompetitionApp with App {
             if (bestOperator.contains(ALNSBuilder.BinSplit)) binarySplit(vars, valMax, valLearn)
             else if (bestOperator.contains(ALNSBuilder.FirstFail)) firstFail(vars, valMax, valLearn)
             else if (bestOperator.contains(ALNSBuilder.LastConf)) lastConflict(vars, valMax, valLearn)
-            else if(bestOperator.contains(ALNSBuilder.ExtOriented)) extensionalOriented(vars, valMax, valLearn)
+            else if (bestOperator.contains(ALNSBuilder.ExtOriented)) extensionalOriented(vars, valMax, valLearn)
+            else if (bestOperator.contains(ALNSBuilder.WeightDeg)) weightedDegree(vars, valMax = false, 0.99)
             else conflictOrdering(vars, valMax, valLearn)
           }
           else //Default search: Conflict ordering:
