@@ -74,7 +74,7 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
 
             //We removed this segment from vehicle prevValueOfMovedSegment,
             // and it starts at vehicle start, so check that domething is left after the moved segment in this vehicle
-            prev.newValue.valueAtPosition(fromIncluded+1) match{
+            prev.newValue.valueAtPosition(toIncluded+1) match{
               case None =>
                 require(prevValueOfMovedSegment == v-1)
                 assert(toIncluded == prev.newValue.size)

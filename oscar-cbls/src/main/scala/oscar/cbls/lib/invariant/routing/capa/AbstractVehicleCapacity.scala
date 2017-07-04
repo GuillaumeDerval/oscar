@@ -599,14 +599,14 @@ object AbstractVehicleCapacity{
     while(true) {
       previousPosition.next match {
         case None => //we'v reached the end of the sequence
-          vehicleContentAtEndOfRoute(currentVehicle) = previousContent
+          vehicleContentAtEndOfRoute(currentVehicle) = op(previousPosition.value, currentVehicle, previousContent)
           require(currentVehicle == v-1)
           return (vehicleContent,vehicleContentAtEndOfRoute,VehicleLocation(vehicleLocation))
         case Some(currentPosition) =>
           val currentNode = currentPosition.value
           if (currentNode < v) {
             //we'v reached a new vehicle
-            vehicleContentAtEndOfRoute(currentVehicle) = previousContent
+            vehicleContentAtEndOfRoute(currentVehicle) = op(previousPosition.value, currentNode, previousContent)
             vehicleLocation(currentNode) = currentPosition.position
             previousContent = getContentAtVehicleStart(currentNode)
             vehicleContent(currentNode) = previousContent
