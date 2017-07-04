@@ -153,6 +153,18 @@ class BasicSaveBest(a: Neighborhood, o: Objective) extends NeighborhoodCombinato
     } else if (verbose >= 1) println("no better solution to restore")
   }
 
+  def anythingToRestore:Boolean = {
+    best != null && (o.value > bestObj || !currentSolutionIsAcceptable)
+  }
+
+  def getBestSolutionToRestore:Option[(Solution,Int)] = {
+    if(best != null && (o.value > bestObj || !currentSolutionIsAcceptable)) {
+      Some((best,bestObj))
+    }else {
+      None
+    }
+  }
+
   /**
    * same as doAllImprovingMoves and calling restoreBest after.
    *
@@ -195,8 +207,15 @@ class SaveBestWhen(a: Neighborhood, o: Objective, shouldSave: () => Boolean) ext
 
 class RestoreBestOnExhaust(a: BasicSaveBest) extends NeighborhoodCombinator(a) {
 
+  var childExhausted = false
+
   def restoreBest(): Unit = {
     a.restoreBest()
+  }
+
+  override def reset() : Unit = {
+    childExhausted = false
+    super.reset()
   }
 
   /**
@@ -214,11 +233,20 @@ class RestoreBestOnExhaust(a: BasicSaveBest) extends NeighborhoodCombinator(a) {
   }
 
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
-    a.getMove(obj, initialObj, acceptanceCriteria) match {
-      case m: MoveFound => m
-      case x =>
-        restoreBest()
-        x
+    if(childExhausted) {
+      childExhausted = false
+      NoMoveFound
+    } else {
+      a.getMove(obj, initialObj, acceptanceCriteria) match {
+        case m : MoveFound => m
+        case x =>
+          a.getBestSolutionToRestore match {
+            case None => NoMoveFound
+            case Some((s, bestObj)) =>
+              childExhausted = true
+              MoveFound(LoadSolutionMove(s, bestObj, "RestoreBestOnExhaust"))
+          }
+      }
     }
   }
 }
@@ -1543,12 +1571,10 @@ case class Atomic2(a: Neighborhood, name: String = "Atomic", shouldStop:Int => B
     if(allMoves.isEmpty){
       NoMoveFound
     } else {
-      println("LOADING")
       CompositeMove(allMoves,endObj,"Atomic" + a)
     }
   }
 }
-
 
 /**
  * This represents a guided local search where a series of objective criterion are optimized one after the other

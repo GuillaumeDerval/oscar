@@ -829,7 +829,12 @@ abstract class EasyNeighborhood[M<:Move](best:Boolean = false, neighborhoodName:
 
 sealed abstract class LoopBehavior(){
   def toIterable[T](baseIterable:Iterable[T]):(Iterable[T],()=>Unit)
+  def toIterator[T](baseIterable:Iterable[T]):(Iterator[T],()=>Unit) = {
+    val (iterable,stop) = toIterable(baseIterable)
+    (iterable.iterator,stop)
+  }
 }
+
 //TODO: randomized
 case class First(maxNeighbors:() => Int = () => Int.MaxValue) extends LoopBehavior(){
   override def toIterable[T](baseIterable : Iterable[T]) : (Iterable[T],()=>Unit) = {
@@ -844,9 +849,11 @@ case class First(maxNeighbors:() => Int = () => Int.MaxValue) extends LoopBehavi
     }
 
     def notifyFound(){iterable.foundMove = true}
+
     (iterable,notifyFound)
   }
 }
+
 //TODO: randomized
 case class Best(maxNeighbors:() => Int = () => Int.MaxValue) extends LoopBehavior(){
   override def toIterable[T](baseIterable : Iterable[T]) : (Iterable[T],()=>Unit) = {

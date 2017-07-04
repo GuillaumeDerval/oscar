@@ -102,7 +102,7 @@ case class LoadSolutionMove(s:Solution,override val objAfter:Int, override val n
   /** to actually take the move */
   override def commit(): Unit = s.model.restoreSolution(s)
 
-  override def toString : String = "LoadSolutionMove(objAfter:" + objAfter + ")"
+  override def toString : String = neighborhoodNameToString + "LoadSolutionMove(objAfter:" + objAfter + ")"
 }
 
 

@@ -270,12 +270,12 @@ class VRP(val n: Int, val v: Int, val m: Store, maxPivotPerValuePercent:Int = 4)
       if(routeOfV.length == 1){
         notMoving  = vehicle :: notMoving
       }else{
-        toReturn +=  "vehicle " + vehicle + ": " +  routeOfV.mkString("->") + "\n"
+        toReturn +=  "vehicle " + vehicle + ": " +  routeOfV.mkString("->") + "->" + vehicle + "\n"
       }
     }
     "Vehicle routing n:" + n + " v:" + v + "\n" +
-    "unrouted nodes: " + unroutedNodes.toList.mkString(",") + "\n" +
-    "not used vehicles:" + notMoving.reverse.mkString(",") + "\n" +
+    "unrouted nodes:{" + unroutedNodes.toList.mkString(",") + "}\n" +
+    "not used vehicles:{" + notMoving.reverse.mkString(",") + "}\n" +
       toReturn
   }
 
