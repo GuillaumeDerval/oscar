@@ -282,13 +282,14 @@ class VRP(val n: Int, val v: Int, val m: Store, maxPivotPerValuePercent:Int = 4)
   def onTheSameRoute(node1:Int,node2:Int):Boolean = getVehicleOfNode(node1) == getVehicleOfNode(node2)
 }
 
-
+@deprecated("Routing model based on trait is deprecated")
 trait NextAndPrev extends VRP{
   //TODO: ensure that we REALLY need such an expensive invariant, if yes, use it from the adequate trait, and use clone to speed up exploration!!!
   val (next,prev) = RouteSuccessorAndPredecessors(routes.createClone(),v,n)
 
 }
 
+@deprecated("Routing model based on trait is deprecated")
 trait ConstantDistancePerVehicle extends TotalConstantDistance{
   var distancePerVehicle:Array[CBLSIntVar] = null
 
@@ -310,6 +311,7 @@ trait ConstantDistancePerVehicle extends TotalConstantDistance{
   }
 }
 
+@deprecated("Routing model based on trait is deprecated")
 trait TotalConstantDistance extends VRP{
   var totalDistance:IntValue = null
   var distanceMatrix:Array[Array[Int]] = null
@@ -347,6 +349,7 @@ trait TotalConstantDistance extends VRP{
  * @author Florent Ghilain (UMONS)
  * @author yoann.guyot@cetic.be
  */
+@deprecated("Routing model based on trait is deprecated")
 trait ClosestNeighbors extends VRP {
 
   protected def getDistance(from: Int, to: Int): Int
@@ -427,6 +430,7 @@ trait ClosestNeighbors extends VRP {
  * @author Florent Ghilain (UMONS)
  * @author yoann.guyot@cetic.be
  */
+@deprecated("Routing model based on trait is deprecated")
 trait RoutedAndUnrouted extends VRP{
   /**
    * the data structure set which maintains the unrouted nodes.
@@ -439,6 +443,7 @@ trait RoutedAndUnrouted extends VRP{
   override def unroutedNodes : Iterable[Int] = unrouted.value
 }
 
+@deprecated("Routing model based on trait is deprecated")
 trait AbstractPenaltyForUnrouted extends VRP{
   /**
    * the variable which maintains the sum of penalty of unrouted nodes, thanks to invariant SumElements.
@@ -459,6 +464,7 @@ trait AbstractPenaltyForUnrouted extends VRP{
  * @author Florent Ghilain (UMONS)
  * @author yoann.guyot@cetic.be
  */
+@deprecated("Routing model based on trait is deprecated")
 trait DetailedPenaltyForUnrouted extends AbstractPenaltyForUnrouted with RoutedAndUnrouted{
   def setDetailedUnroutedPenaltyWeights(penalties : Array[Int]) {
     require(unroutedPenalty == null)
@@ -466,6 +472,7 @@ trait DetailedPenaltyForUnrouted extends AbstractPenaltyForUnrouted with RoutedA
   }
 }
 
+@deprecated("Routing model based on trait is deprecated")
 trait StandardPenaltyForUnrouted extends AbstractPenaltyForUnrouted {
   def setStandardUnroutedPenaltyWeight(standardWeight:Int){
     require(unroutedPenalty == null)
@@ -473,16 +480,19 @@ trait StandardPenaltyForUnrouted extends AbstractPenaltyForUnrouted {
   }
 }
 
+@deprecated("Routing model based on trait is deprecated")
 trait CloneOfRouteForLightPartialPropagation extends VRP{
   val cloneOfRoute = routes
 }
 
+@deprecated("Routing model based on trait is deprecated")
 trait NodesOfVehicle extends CloneOfRouteForLightPartialPropagation{
   val nodesOfVehicle=NodeOfVehicle(cloneOfRoute,v)
 
   override def getNodesOfVehicle(vehicle:Int):SortedSet[Int] = nodesOfVehicle(vehicle).value
 }
 
+@deprecated("Routing model based on trait is deprecated")
 trait VehicleOfNode extends CloneOfRouteForLightPartialPropagation{
   val vehicleOfNode = VehicleOfNodes(cloneOfRoute,v)
 
@@ -491,6 +501,7 @@ trait VehicleOfNode extends CloneOfRouteForLightPartialPropagation{
   override def isRouted(node: Int): Boolean = vehicleOfNode(node).value!=v
 }
 
+@deprecated("Routing model based on trait is deprecated")
 trait RoutingMapDisplay extends VRP{
   var routingMap:RoutingMatrixContainer = null
 

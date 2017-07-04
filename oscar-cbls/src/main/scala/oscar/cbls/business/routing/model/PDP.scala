@@ -6,6 +6,7 @@ import oscar.cbls.core.computation._
 import oscar.cbls.lib.invariant.logic.{IntITE, IntInt2Int}
 import oscar.cbls.lib.invariant.minmax.Max2
 import oscar.cbls.lib.invariant.routing.MovingVehicles
+import oscar.cbls.lib.invariant.routing.capa.ForwardCumulativeConstraintOnVehicle
 import oscar.cbls.lib.invariant.seq.SortSequence
 import oscar.cbls.lib.invariant.set.{Diff, IncludedSubsets, ValuesInViolatedClauses}
 import oscar.cbls.modeling.Algebra._
@@ -230,8 +231,8 @@ class PDP(override val n:Int,
     */
   val contentsFlow:Array[Int] = Array.tabulate(n)(_ => 0)
 
-  val contentAtNode:Array[CBLSIntVar] =
-    Array.tabulate(n+1)(c => CBLSIntVar(m, 0, 0 to Int.MaxValue / n, "content at node " + c))
+  var contentAtNode: ChangingIntValue = _
+
 
   def setVehicleMaxCapacities(maxCapacities: Array[Int]) =
     for(i <- vehiclesMaxCapacities.indices) vehiclesMaxCapacities(i) = maxCapacities(i)
@@ -247,11 +248,14 @@ class PDP(override val n:Int,
     val vehicleMaxCapacity = vehiclesMaxCapacities.max
     for(i <- contents.indices) {
       contentsFlow(i) = contents(i)
-      if(i < v)
-        contentAtNode(i) <== vehicleMaxCapacity - vehiclesMaxCapacities(i)
-      else
-        contentAtNode(i) <== IntITE(prev(i), 0, contentAtNode.element(prev(i)) + contentsFlow(i), n - 1)
     }
+
+    contentAtNode = ForwardCumulativeConstraintOnVehicle(routes,n,v,
+      (from,to,fromContent) => fromContent + contentsFlow(to),
+      vehiclesMaxCapacities.max,
+      vehiclesMaxCapacities.map(vehiclesMaxCapacities.max-_),
+      chains.length*2,
+      "Content at node")
   }
 
   // --------------------------------- Time ---------------------------------------- //

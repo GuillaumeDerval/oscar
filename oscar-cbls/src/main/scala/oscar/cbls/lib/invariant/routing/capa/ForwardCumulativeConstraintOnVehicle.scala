@@ -237,15 +237,17 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                 contentAtNode.popLevel(false)
               }
 
+              val fastVehicleLocationAfterPrev = if(checkpointLevel == 0) vehicleLocationAfterPrev.regularize else vehicleLocationAfterPrev
+
               setNodesUnrouted(removedPointsAfterPrev)
               updateVehicleContentOnAllVehicle(prev.newValue,
                 zonesAfterPrev,
-                vehicleLocationAfterPrev)
+                fastVehicleLocationAfterPrev)
               contentAtNode.pushLevel()
               require(contentAtNode.level == checkpointLevel, "contentAtNode.level:" + contentAtNode.level  + " checkpointLevel:" + (checkpointLevel))
 
-              violationAndVehicleStartStack.defineCheckpoint(prev.newValue, checkpointLevel, (violation.newValue, vehicleLocationAfterPrev))
-              currentVehicleLocation = vehicleLocationAfterPrev
+              violationAndVehicleStartStack.defineCheckpoint(prev.newValue, checkpointLevel, (violation.newValue, fastVehicleLocationAfterPrev))
+              currentVehicleLocation = fastVehicleLocationAfterPrev
 
               (Some(RedBlackTreeMap.empty[List[(Int, Int)]], currentVehicleLocation), List.empty)
 

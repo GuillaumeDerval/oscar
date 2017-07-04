@@ -86,10 +86,7 @@ class PDPConstraints(pdp: PDP, fastConstraints: ConstraintSystem, slowConstraint
 
 
   def addCapacityConstraint(): Unit ={
-    val vehiclesMaxCapacity:Int = pdp.vehiclesMaxCapacities.max
-    val contentAtNode = pdp.contentAtNode
-    for(i <- contentAtNode.indices)
-      fastConstraints.post(LE(contentAtNode(i),vehiclesMaxCapacity))
+    fastConstraints.post(LE(pdp.contentAtNode,pdp.vehiclesMaxCapacities.max))
   }
 
   /**
