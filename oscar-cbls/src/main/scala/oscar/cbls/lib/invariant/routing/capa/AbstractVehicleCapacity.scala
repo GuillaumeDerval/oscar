@@ -50,7 +50,7 @@ abstract class AbstractVehicleCapacity(n:Int,
           (zoneStart,zoneEnd) :: list
         } else {
           //the new interval touches the old one, there will be some merge
-          require(Math.min(zoneStart, oldStart) <= Math.max(zoneEnd, oldEnd))
+          assert(Math.min(zoneStart, oldStart) <= Math.max(zoneEnd, oldEnd))
           smartPrepend(Math.min(zoneStart, oldStart), Math.max(zoneEnd, oldEnd), tail)
         }
     }
