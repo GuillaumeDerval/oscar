@@ -606,7 +606,7 @@ object AbstractVehicleCapacity{
           val currentNode = currentPosition.value
           if (currentNode < v) {
             //we'v reached a new vehicle
-            vehicleContentAtEndOfRoute(currentVehicle) = op(previousPosition.value, currentNode, previousContent)
+            vehicleContentAtEndOfRoute(currentVehicle) = op(previousPosition.value, currentVehicle, previousContent)
             vehicleLocation(currentNode) = currentPosition.position
             previousContent = getContentAtVehicleStart(currentNode)
             vehicleContent(currentNode) = previousContent
