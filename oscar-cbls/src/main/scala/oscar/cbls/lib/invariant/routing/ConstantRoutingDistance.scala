@@ -363,7 +363,7 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
         val positionOfDelete = x.position
 
         val oldPrevValue = prev.newValue.valueAtPosition(positionOfDelete-1).get //vehicles are never deleted
-      val oldSuccValue = RoutingConventionMethods.routingSuccPos2Val(positionOfDelete, prev.newValue,v)
+        val oldSuccValue = RoutingConventionMethods.routingSuccPos2Val(positionOfDelete, prev.newValue,v)
         val newDistance = distanceMatrixOnNode(oldPrevValue)(oldSuccValue)
         val oldDistanceBefore = distanceMatrixOnNode(oldPrevValue)(removedValue)
         val oldDistanceAfter = distanceMatrixOnNode(removedValue)(oldSuccValue)

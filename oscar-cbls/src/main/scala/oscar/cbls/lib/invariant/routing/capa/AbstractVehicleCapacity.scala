@@ -50,7 +50,7 @@ abstract class AbstractVehicleCapacity(n:Int,
           (zoneStart,zoneEnd) :: list
         } else {
           //the new interval touches the old one, there will be some merge
-          require(Math.min(zoneStart, oldStart) <= Math.max(zoneEnd, oldEnd))
+          assert(Math.min(zoneStart, oldStart) <= Math.max(zoneEnd, oldEnd))
           smartPrepend(Math.min(zoneStart, oldStart), Math.max(zoneEnd, oldEnd), tail)
         }
     }
@@ -599,14 +599,14 @@ object AbstractVehicleCapacity{
     while(true) {
       previousPosition.next match {
         case None => //we'v reached the end of the sequence
-          vehicleContentAtEndOfRoute(currentVehicle) = previousContent
+          vehicleContentAtEndOfRoute(currentVehicle) = op(previousPosition.value, currentVehicle, previousContent)
           require(currentVehicle == v-1)
           return (vehicleContent,vehicleContentAtEndOfRoute,VehicleLocation(vehicleLocation))
         case Some(currentPosition) =>
           val currentNode = currentPosition.value
           if (currentNode < v) {
             //we'v reached a new vehicle
-            vehicleContentAtEndOfRoute(currentVehicle) = previousContent
+            vehicleContentAtEndOfRoute(currentVehicle) = op(previousPosition.value, currentNode, previousContent)
             vehicleLocation(currentNode) = currentPosition.position
             previousContent = getContentAtVehicleStart(currentNode)
             vehicleContent(currentNode) = previousContent
