@@ -297,8 +297,8 @@ class PDP(override val n:Int,
         val leaveTimeAtToNode = Math.max(arrivalTimeAtToNode,earlylines(toNode)) + taskDurations(toNode)
         (arrivalTimeAtToNode,leaveTimeAtToNode)
       },
-      Array.fill(v)(new CBLSIntConst(0)),
-      Array.fill(v)(new CBLSIntConst(0)),
+      Array.tabulate(v)(x => new CBLSIntConst(0)),
+      Array.tabulate(v)(x => new CBLSIntConst(earlylines(x)+taskDurations(x))),
       0,
       0,
       contentName = "Time at node"
