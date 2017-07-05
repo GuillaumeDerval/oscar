@@ -102,16 +102,15 @@ class PDPConstraints(pdp: PDP, fastConstraints: ConstraintSystem, slowConstraint
     val deadlines = pdp.deadlines
     val arrivalTimes = pdp.arrivalTimes
     val leaveTimes = pdp.leaveTimes
-    val waitingDurations = pdp.waitingDurations
 
     for(i <- 0 until n){
       if(i < v && deadlines(i) != Int.MaxValue) {
-        slowConstraints.post(LE(arrivalTimes(i), deadlines(i)).nameConstraint("end of time for vehicle " + i))
+        slowConstraints.post(LE(pdp.arrivalTimesAtEnd(i), deadlines(i)).nameConstraint("end of time for vehicle " + i))
       } else {
         if(deadlines(i) != Int.MaxValue)
-          slowConstraints.post(LE(IntITE(pdp.next(i), 0, leaveTimes(i), n - 1), deadlines(i)).nameConstraint("end of time window on node " + i))
+          slowConstraints.post(LE(leaveTimes(i), deadlines(i)).nameConstraint("end of time window on node " + i))
         if(maxWaitingDurations(i) != Int.MaxValue)
-          slowConstraints.post(GE(arrivalTimes(i), earlylines(i) - waitingDurations(i)).nameConstraint("start of time window on node (with duration)" + i))
+          slowConstraints.post(GE(arrivalTimes(i), earlylines(i)).nameConstraint("start of time window on node (with duration)" + i))
       }
     }
 

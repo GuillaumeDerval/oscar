@@ -1,15 +1,11 @@
 package oscar.cbls.business.routing.model
 
-import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.functional.IntSequenceExplorer
 import oscar.cbls.core.computation._
-import oscar.cbls.lib.invariant.logic.{IntITE, IntInt2Int}
-import oscar.cbls.lib.invariant.minmax.Max2
 import oscar.cbls.lib.invariant.routing.MovingVehicles
-import oscar.cbls.lib.invariant.routing.capa.ForwardCumulativeConstraintOnVehicle
+import oscar.cbls.lib.invariant.routing.capa.{ForwardCulumativeIntegerIntegerDimensionOnVehicle, ForwardCumulativeConstraintOnVehicle}
 import oscar.cbls.lib.invariant.seq.SortSequence
 import oscar.cbls.lib.invariant.set.{Diff, IncludedSubsets, ValuesInViolatedClauses}
-import oscar.cbls.modeling.Algebra._
 
 import scala.collection.SortedSet
 import scala.collection.immutable.{HashMap, List}
@@ -269,53 +265,53 @@ class PDP(override val n:Int,
   // The maxWaitingDuration at point
   val maxWaitingDurations = Array.tabulate(n)(_ => Int.MaxValue)
 
+  var arrivalTimes:Array[CBLSIntVar] = _
+  var leaveTimes:Array[CBLSIntVar] = _
+  var arrivalTimesAtEnd:Array[CBLSIntVar] = _
+  var leaveTimesAtEnd:Array[CBLSIntVar] = _
+  var lastPointOfVehicles:Array[CBLSIntVar] = _
+
   var sortedRouteByEarlylines: SortSequence = null
 
   var maxDetours:Map[Int,(Int,Int)] = HashMap.empty
 
-  var arrivalTimes:Array[CBLSIntVar] = Array.empty
-
-  var leaveTimes:Array[CBLSIntVar] = Array.empty
-
-  var travelOutDurations:Array[CBLSIntVar] = Array.empty
-
-  var arrivalTimesToNext:Array[IntValue] = Array.empty
-
   var travelDurationMatrix: TravelTimeFunction = _
-
-  var waitingDurations: Array[IntValue] = Array.empty
-
 
   //TODO Int or Option[Int] (in case we don't want to specify anything)
   def addTimeWindows(timeWindows: Array[(Int,Int,Int,Int)]): Unit ={
     require(timeWindows.length == n, "You must specified vehicles and nodes timeWindows.\n" +
       " TimeWindows supposed size : " + n + " , actual size : " + timeWindows.length)
 
-    initiateTimeWindowInvariants()
-
     for(i <- timeWindows.indices){
       earlylines(i) = timeWindows(i)._1
       deadlines(i) = timeWindows(i)._2
       taskDurations(i) = timeWindows(i)._3
       maxWaitingDurations(i) = timeWindows(i)._4
-
-      if(i >= v) {
-        if (earlylines(i) == 0)
-        setNodeDuration(i, taskDurations(i))
-        else
-        setNodeDuration(i, taskDurations(i), earlylines(i))
-      }
     }
 
-    waitingDurations = Array.tabulate(n){
-      (i:Int) =>
-        if(i >= v)
-        Max2(leaveTimes(i) - taskDurations(i) - arrivalTimes(i), CBLSIntConst(0))
-      else
-        new CBLSIntConst(0)
-    }
 
-    sortedRouteByEarlylines = SortSequence(routes, node => earlylines(node))
+    val timeInvariant = ForwardCulumativeIntegerIntegerDimensionOnVehicle(
+      routes,n,v,
+      (fromNode,toNode,arrivalTimeAtFromNode,leaveTimeAtFromNode)=> {
+        val arrivalTimeAtToNode = leaveTimeAtFromNode + travelDurationMatrix.getTravelDuration(fromNode,0,toNode)
+        val leaveTimeAtToNode = Math.max(arrivalTimeAtToNode,earlylines(toNode)) + taskDurations(toNode)
+        (arrivalTimeAtToNode,leaveTimeAtToNode)
+      },
+      Array.fill(v)(new CBLSIntConst(0)),
+      Array.fill(v)(new CBLSIntConst(0)),
+      0,
+      0,
+      contentName = "Time at node"
+    )
+
+    arrivalTimes = timeInvariant._1
+    leaveTimes = timeInvariant._2
+    arrivalTimesAtEnd = timeInvariant._3
+    leaveTimesAtEnd = timeInvariant._4
+    lastPointOfVehicles = timeInvariant._5
+
+
+      sortedRouteByEarlylines = SortSequence(routes, node => earlylines(node))
   }
 
   def addMaxDetours(maxDetourCalculation:(List[Int],TravelTimeFunction) => List[(Int,Int,Int)]): Unit ={
@@ -343,53 +339,8 @@ class PDP(override val n:Int,
     }
   }
 
-
-  def initiateTimeWindowInvariants(): Unit ={
-    val defaultArrivalTime = new CBLSIntConst(0)
-
-    arrivalTimes = Array.tabulate(n) {
-      (i: Int) => CBLSIntVar(m, 0, 0 to Int.MaxValue / n, "arrivalTimeAtNode" + i)
-    }
-    leaveTimes = Array.tabulate(n) {
-      (i: Int) => CBLSIntVar(m, 0, 0 to Int.MaxValue / n, "leaveTimeAtNode" + i)
-    }
-    travelOutDurations = Array.tabulate(n) {
-      (i: Int) => CBLSIntVar(m, 0, 0 to Int.MaxValue / n, "travelDurationToLeave" + i)
-    }
-    arrivalTimesToNext = Array.tabulate(n + 1) {
-      (i: Int) =>
-        if (i == n) defaultArrivalTime
-        else travelOutDurations(i) + leaveTimes(i)
-    }
-
-    for (i <- 0 until n) {
-      arrivalTimes(i) <== arrivalTimesToNext.element(prev(i))
-    }
-  }
-
-  def setVehicleNodeDuration(node: Int): Unit ={
-    assert(node < v)
-    leaveTimes(node) <== earlylines(node)
-  }
-
-  def setNodeDuration(node: Int, duration: IntValue) {
-    assert(node >= v)
-    leaveTimes(node) <== (arrivalTimes(node) + duration)
-  }
-
-  def setNodeDuration(node: Int, duration: IntValue, startWindow: Int) {
-    assert(node >= v)
-    leaveTimes(node) <== (Max2(arrivalTimes(node), startWindow) + duration)
-  }
-
   def setTravelTimeFunctions(travelCosts: TravelTimeFunction) {
     travelDurationMatrix = travelCosts
-    for (i <- 0 until n) {
-      travelOutDurations(i) <== new IntInt2Int(leaveTimes(i), next(i),
-      (leaveTime, successor) =>
-      if (successor == n) 0
-      else travelCosts.getTravelDuration(i, leaveTime, successor))
-    }
   }
 
   /**
