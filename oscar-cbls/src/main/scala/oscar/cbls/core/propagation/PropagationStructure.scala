@@ -296,7 +296,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
 
   def isPropagating: Boolean = propagating
 
-  private [this] val debugMode = checker match{case Some(_) => true; case None => false}
+ // private [this] val debugMode = checker match{case Some(_) => true; case None => false}
 
   /**
    * triggers the propagation in the graph.
@@ -308,7 +308,8 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
    */
   final def propagate(UpTo: PropagationElement = null) {
     if (!propagating) {
-      if (UpTo != null && !debugMode) {
+      if (UpTo != null) {
+        //partial propagation, only if requested
         val Track = fastPropagationTracks.getOrElse(UpTo.uniqueID, null)
         val SameAsBefore = Track != null && previousPropagationTrack == Track
         propagating = true
@@ -318,6 +319,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
         propagateOnTrack(Track, SameAsBefore)
         previousPropagationTrack = Track
       } else {
+        //total propagation
         propagating = true
         if (verbose) {
           println("PropagationStructure: total propagation triggered manually")
