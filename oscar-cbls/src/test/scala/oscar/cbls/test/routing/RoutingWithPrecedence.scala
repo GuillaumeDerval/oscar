@@ -17,6 +17,7 @@ package oscar.cbls.test.routing
 
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.propagation.ErrorChecker
+import oscar.cbls.core.search.Best
 import oscar.cbls.lib.invariant.seq.Precedence
 import oscar.cbls.core.objective.{Objective, CascadingObjective, IntVarObjective}
 import oscar.cbls.business.routing.model._
@@ -46,8 +47,8 @@ class MySimpleRoutingP(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, 
   //val obj = Objective(totalDistance)
 
   override def toString : String = super.toString +
-  "precedences: " + precedences + "\n" +
-  "objective: " + obj  + "\n"
+    "precedences: " + precedences + "\n" +
+    "objective: " + obj  + "\n"
 
   val nearestForward:Array[Iterable[Int]] = computeClosestNeighborsForward()
 }
@@ -79,8 +80,22 @@ object RoutingWithPrecedence extends App{
   def onePtMove = Profile(OnePointMove(() => nodes, ()=>myVRP.kFirst(10,myVRP.nearestForward), myVRP))
 
   val twoPointMove = (OnePointMove(() => nodes, ()=>myVRP.kFirst(40,myVRP.nearestForward), myVRP,"firstPointMove") andThen OnePointMove(() => nodes, ()=>myVRP.kFirst(40,myVRP.nearestForward), myVRP,"secondPointMove")) name("TwoPointMove")
-  val twoPointMoveSmart = Profile((OnePointMove(() => myVRP.nodesStartingAPrecedence, ()=>myVRP.kFirst(40,myVRP.nearestForward), myVRP,"firstPointMove",best=true) dynAndThen ((o:OnePointMoveMove) => {
-    OnePointMove(() => myVRP.nodesEndingAPrecedenceStartedAt(o.movedPoint), ()=>myVRP.kFirst(40,myVRP.nearestForward), myVRP,"secondPointMove",best=true)})) name("SmartTwoPtMove"))
+  val twoPointMoveSmart = Profile(
+    (OnePointMove(
+      () => myVRP.nodesStartingAPrecedence,
+      ()=>myVRP.kFirst(40,myVRP.nearestForward),
+      myVRP,
+      "firstPointMove",
+      selectPointToMoveBehavior= Best(),
+      selectDestinationBehavior=Best())
+      dynAndThen ((o:OnePointMoveMove) => {
+      OnePointMove(
+        () => myVRP.nodesEndingAPrecedenceStartedAt(o.movedPoint),
+        ()=>myVRP.kFirst(40,myVRP.nearestForward),
+        myVRP,
+        "secondPointMove",
+        selectPointToMoveBehavior= Best(),
+        selectDestinationBehavior=Best())})) name("SmartTwoPtMove"))
 
   val twoOpt = Profile(new TwoOpt1(() => nodes, ()=>myVRP.kFirst(40,myVRP.nearestForward), myVRP))
 

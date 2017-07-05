@@ -20,6 +20,7 @@ import oscar.cbls.business.routing.neighborhood.{InsertPointRoutedFirst, InsertP
 import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.core.propagation.ErrorChecker
+import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.LE
 import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeIntegerDimensionOnVehicle, ForwardCumulativeConstraintOnVehicle}
 import oscar.cbls.lib.invariant.routing.{MovingVehicles, RouteSuccessorAndPredecessors}
@@ -94,7 +95,7 @@ object TestCumulatives extends App{
 
   model.close()
 
-  def routeUnroutedPoint(k:Int) =  new InsertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,neighborhoodName = "InsertUF",best=true)
+  def routeUnroutedPoint(k:Int) =  new InsertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,neighborhoodName = "InsertUF",selectNodeBehavior = Best(),selectInsertionPointBehavior = Best())
 
   //TODO: using post-filters on k-nearest is probably crap
   val routeUnroutedPoint2 =  Profile(new InsertPointRoutedFirst(myVRP.routed,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,x => !myVRP.isRouted(x)),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.size < n/2))

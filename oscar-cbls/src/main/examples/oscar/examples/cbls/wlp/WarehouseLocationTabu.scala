@@ -16,7 +16,7 @@ package oscar.examples.cbls.wlp
   ******************************************************************************/
 
 import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, Store}
-import oscar.cbls.core.search.Move
+import oscar.cbls.core.search.{Best, Move}
 import oscar.cbls.lib.invariant.logic.{Filter, SelectLESetQueue}
 import oscar.cbls.lib.invariant.minmax.MinConstArray
 import oscar.cbls.lib.invariant.numeric.Sum
@@ -78,7 +78,7 @@ object WarehouseLocationTabu extends App with AlgebraTrait{
   // *the protection of the objectiveFunction
   val tabuTenure = 3
   val switchWithTabuNeighborhood = (AssignNeighborhood(warehouseOpenArray, "SwitchWarehouseTabu",
-    searchZone = nonTabuWarehouses, best = true)
+    searchZone = nonTabuWarehouses,selectIndiceBehavior = Best(),selectValueBehavior = Best())
     beforeMove((mo:Move) => {
     for (v <- mo.touchedVariables) {
       TabuArray(v.getStorageAt[Int](warehouseKey)) := It.value + tabuTenure

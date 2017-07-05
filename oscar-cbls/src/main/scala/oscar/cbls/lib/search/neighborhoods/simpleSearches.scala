@@ -31,7 +31,6 @@ import scala.util.Random
  *
  * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
  * @param name the name of the neighborhood
- * @param best true for the best move, false for the first move, default false
  * @param searchZone a subset of the indices of vars to consider.
  *                   If none is provided, all the array will be considered each time
  * @param symmetryClassOfVariables a function that input the ID of a variable and returns a symmetry class;
@@ -54,13 +53,14 @@ import scala.util.Random
  */
 case class AssignNeighborhood(vars:Array[CBLSIntVar],
                               name:String = "AssignNeighborhood",
-                              best:Boolean = false,
+                              selectIndiceBehavior:LoopBehavior = First(),
+                              selectValueBehavior:LoopBehavior = First(),
                               searchZone:() => Iterable[Int] = null,
                               symmetryClassOfVariables:Option[Int => Int] = None,
                               symmetryClassOfValues:Option[Int => Int => Int] = None,
                               domain:(CBLSIntVar,Int) => Iterable[Int] = (v,i) => v.domain,
                               hotRestart:Boolean = true)
-  extends EasyNeighborhood[AssignMove](best,name) with AlgebraTrait{
+  extends EasyNeighborhoodMultilevel[AssignMove](name) with AlgebraTrait{
   //the indice to start with for the exploration
   var startIndice:Int = 0
 
@@ -75,7 +75,7 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
       else searchZone()
 
     val iterationSchemeOnZone =
-      if (hotRestart && !best) HotRestart(iterationZone, startIndice)
+      if (hotRestart) HotRestart(iterationZone, startIndice)
       else iterationZone
 
     val iterationSchemeOnSymmetryFreeZone = symmetryClassOfVariables match {
@@ -84,7 +84,7 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
     }
 
     //iterating over the variables to consider
-    val indicesIterator = iterationSchemeOnSymmetryFreeZone.iterator
+    val (indicesIterator,notifyFound1) = selectIndiceBehavior.toIterator(iterationSchemeOnSymmetryFreeZone)
     while(indicesIterator.hasNext){
       currentIndice = indicesIterator.next()
       currentVar = vars(currentIndice)
@@ -98,19 +98,22 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
       }
 
       //iterating over the values of the variable
-      val domainIterationSchemeIterator = domainIterationScheme.iterator
+      val (domainIterationSchemeIterator,notifyFound2) = selectValueBehavior.toIterator(domainIterationScheme)
       while(domainIterationSchemeIterator.hasNext){
         newVal = domainIterationSchemeIterator.next()
         if (newVal != oldVal){
           //testing newValue
           val newObj = obj.assignVal(currentVar,newVal)
-          if (evaluateCurrentMoveObjTrueIfStopRequired(newObj)){
-            startIndice = currentIndice + 1
-            return
+
+          if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
+            notifyFound1()
+            notifyFound2()
           }
         }
       }
     }
+
+    startIndice = currentIndice + 1
   }
 
   override def instantiateCurrentMove(newObj:Int) =

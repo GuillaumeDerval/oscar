@@ -18,8 +18,9 @@ package oscar.cbls.test.routing
 
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.propagation.ErrorChecker
-import oscar.cbls.core.search.CompositeMove
+import oscar.cbls.core.search.{Best, CompositeMove}
 import oscar.cbls.lib.invariant.seq.Size
+import oscar.cbls.lib.search.combinators.Best
 import oscar.cbls.modeling.Algebra._
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.business.routing.model._
@@ -116,7 +117,7 @@ object PickupDeliveryS extends App{
     (moveResult:InsertPointMove) => InsertPointUnroutedFirst(
       unroutedNodesToInsert = () => Iterable(myPDP.getRelatedDelivery(moveResult.insertedPoint)),
       relevantPredecessor = () => myPDP.getNodesAfterRelatedPickup(),
-      vrp = myPDP, best = true))name "insertCoupleFast")
+      vrp = myPDP,selectNodeBehavior = Best(),selectInsertionPointBehavior = Best()))name "insertCoupleFast")
 
   val insertCoupleSlow = Profile(DynAndThen(
     InsertPointUnroutedFirst(
@@ -126,7 +127,7 @@ object PickupDeliveryS extends App{
     (moveResult:InsertPointMove) => InsertPointUnroutedFirst(
       unroutedNodesToInsert = () => Iterable(myPDP.getRelatedDelivery(moveResult.insertedPoint)),
       relevantPredecessor = () => myPDP.getNodesAfterRelatedPickup(),
-      vrp = myPDP, best = true))name "insertCoupleSlow")
+      vrp = myPDP,selectNodeBehavior = Best(),selectInsertionPointBehavior = Best()))name "insertCoupleSlow")
   /*
 
     val insertCoupleCloseToDepot = Profile(DynAndThen(
@@ -152,7 +153,9 @@ object PickupDeliveryS extends App{
     (moveResult:OnePointMoveMove) => OnePointMove(
       nodesToMove = () => List(myPDP.getRelatedDelivery(moveResult.movedPoint)),
       relevantNewPredecessors= () => myPDP.getNodesAfterRelatedPickup(),
-      vrp = myPDP, best = true))name "oneCoupleMove")
+      vrp = myPDP,
+      selectPointToMoveBehavior= Best(),
+      selectDestinationBehavior=Best())) name "oneCoupleMove")
 
   val onePointMovePD = Profile(new RoundRobin(List(OnePointMove(
     nodesToMove = () => myPDP.getRoutedPickups,
@@ -169,7 +172,9 @@ object PickupDeliveryS extends App{
     (moveResult:OnePointMoveMove) => OnePointMove(
       nodesToMove = () => List(myPDP.getRelatedDelivery(moveResult.movedPoint)),
       relevantNewPredecessors = () => myPDP.getNodesAfterRelatedPickup(),
-      vrp = myPDP, best = true))name "pickupDeliveryCoupleShift")
+      vrp = myPDP,
+      selectPointToMoveBehavior= Best(),
+      selectDestinationBehavior=Best()))name "pickupDeliveryCoupleShift")
 
   val removeCouple = Profile(new DynAndThen(new RemovePoint(
     relevantPointsToRemove = () => myPDP.getRoutedPickups,
@@ -272,7 +277,9 @@ object PickupDeliveryS extends App{
               OnePointMove(
                 nodesToMove = () => List(myPDP.getRelatedDelivery(moveResult3.movedPoint)),
                 relevantNewPredecessors= () => myPDP.getNodesAfterRelatedPickup(),
-                vrp = myPDP, best = true)}
+                vrp = myPDP,
+                selectPointToMoveBehavior= Best(),
+                selectDestinationBehavior=Best())}
             )
             ,(moveResult4:CompositeMove) =>{
               //And finally we insert the first couple in the second route
@@ -285,7 +292,7 @@ object PickupDeliveryS extends App{
                 InsertPointUnroutedFirst(
                   unroutedNodesToInsert = () => Iterable(myPDP.getRelatedDelivery(moveResult5.insertedPoint)),
                   relevantPredecessor = () => myPDP.getNodesAfterRelatedPickup(),
-                  vrp = myPDP, best = true)}
+                  vrp = myPDP, selectNodeBehavior = Best(),selectInsertionPointBehavior = Best())}
               )}
             , maximalIntermediaryDegradation = Int.MaxValue/2
           )}

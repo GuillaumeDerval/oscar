@@ -90,7 +90,7 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay
 
   model.close()
 
-  val routeUnroutedPoint =  Profile(InsertPointUnroutedFirst2(myVRP.unrouted,
+  val routeUnroutedPoint =  Profile(InsertPointUnroutedFirst(myVRP.unrouted,
     ()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted),
     myVRP,
     neighborhoodName = "InsertUF",
@@ -102,8 +102,7 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay
     ()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted),
     myVRP,
     neighborhoodName = "InsertUF",
-    hotRestart = false,
-    best=false))
+    hotRestart = false))
 
 
   //using post-filters on k-nearest is probably a bit slower than possible for large problems.
@@ -112,11 +111,14 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay
     myVRP.routed,
     ()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,x => !myVRP.isRouted(x)),  //should be the backward ones but this is a symmetric distance so we do not care
     myVRP,
-    best=false,
     neighborhoodName = "InsertRF")
     guard(() => myVRP.nbRouted < n/2))
 
-  def onePtMove(k:Int) = Profile(OnePointMove(myVRP.routed, () => myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP))
+  def onePtMove(k:Int) = Profile(OnePointMove(
+    myVRP.routed,
+    () => myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted),
+    myVRP,
+    selectDestinationBehavior = Best()))
 
   val twoOpt = Profile(TwoOpt1(myVRP.routed, ()=>myVRP.kFirst(20,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP))
 

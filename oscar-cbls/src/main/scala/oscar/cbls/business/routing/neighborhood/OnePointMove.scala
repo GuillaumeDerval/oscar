@@ -27,7 +27,7 @@ package oscar.cbls.business.routing.neighborhood
 
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.core.search.EasyNeighborhood
+import oscar.cbls.core.search.{EasyNeighborhoodMultilevel, First, LoopBehavior, EasyNeighborhood}
 
 /**
  * Moves a point of a route to another place in the same or in an other route.
@@ -40,10 +40,12 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
                         relevantNewPredecessors: () => Int => Iterable[Int],
                         vrp:VRP,
                         neighborhoodName: String = "OnePointMove",
-                        best: Boolean = false,
+                        selectPointToMoveBehavior:LoopBehavior = First(),
+                        selectDestinationBehavior:LoopBehavior = First(),
                         hotRestart: Boolean = true,
                         allPointsToMoveAreRouted:Boolean = true,
-                        allRelevantNeighborsAreRouted:Boolean = true) extends EasyNeighborhood[OnePointMoveMove](best, neighborhoodName) {
+                        allRelevantNeighborsAreRouted:Boolean = true)
+  extends EasyNeighborhoodMultilevel[OnePointMoveMove](neighborhoodName) {
 
   val seq = vrp.routes
   val v = vrp.v
@@ -55,7 +57,7 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
   override def exploreNeighborhood() {
 
     val iterationSchemeOnZone =
-      if (hotRestart && !best) HotRestart(nodesToMove(), startIndice)
+      if (hotRestart) HotRestart(nodesToMove(), startIndice)
       else nodesToMove()
 
     //TODO: we might also want to go for checkpoint less neighborhood to avoid invariants computing checkpoint values for small neighborhoods.
@@ -69,7 +71,7 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
 
     val relevantNeighborsNow = relevantNewPredecessors()
 
-    val movedPointsIt = iterationSchemeOnZone.iterator
+    val (movedPointsIt,notifyFound1) = selectPointToMoveBehavior.toIterator(iterationSchemeOnZone)
     while (movedPointsIt.hasNext) {
       movedPointForInstantiation = movedPointsIt.next()
 
@@ -80,7 +82,7 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
           case Some(positionOfMovedPoint) =>
             this.positionOfMovedPointForInstantiation = positionOfMovedPoint
 
-            val insertionPointIt = relevantNeighborsNow(movedPointForInstantiation).iterator
+            val (insertionPointIt,notifyFound2) = selectDestinationBehavior.toIterator(relevantNeighborsNow(movedPointForInstantiation))
             while (insertionPointIt.hasNext) {
               newPredecessorForInstantiation = insertionPointIt.next()
               if (movedPointForInstantiation != newPredecessorForInstantiation) {
@@ -93,11 +95,9 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
 
                       doMove(positionOfMovedPoint, positionOfNewPredecessor)
 
-                      if (evaluateCurrentMoveObjTrueIfStopRequired(evalObjAndRollBack())) {
-                        seq.releaseTopCheckpoint()
-                        startIndice = movedPointForInstantiation + 1
-                        positionOfMovedPointForInstantiation = -1
-                        return
+                      if(evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
+                        notifyFound1()
+                        notifyFound2()
                       }
                     }
                 }
@@ -107,7 +107,7 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
       }
     }
     seq.releaseTopCheckpoint()
-    positionOfMovedPointForInstantiation = -1
+    startIndice = movedPointForInstantiation + 1
   }
   var movedPointForInstantiation:Int = -1
   var newPredecessorForInstantiation:Int = -1
