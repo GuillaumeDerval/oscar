@@ -132,6 +132,7 @@ class ForwardCulumativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
   override def setVehicleContentAtNode(prevNode : Int, node : Int) : Boolean = {
     val oldValue1 = content1AtNode(node).newValue
     val oldValue2 = content2AtNode(node).newValue
+    //(fromNode,toNode,content1AtFromNode,content2AtFromNode)=> (content1AtToNode,content2AtToNode)
     val (newValue1,newValue2) = op(prevNode,node,content1AtNode(prevNode).newValue,content2AtNode(prevNode).newValue)
     if(oldValue1 != newValue1 || oldValue2 != newValue2) {
       content1AtNode(node) := newValue1
@@ -144,6 +145,7 @@ class ForwardCulumativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
 
   override def setVehicleContentAtEnd(vehicle : Int, lastNode : Int){
     lastPointOfVehicle(vehicle) := lastNode
+    //(fromNode,toNode,content1AtFromNode,content2AtFromNode)=> (content1AtToNode,content2AtToNode)
     val (newValue1,newValue2) = op(lastNode,vehicle,content1AtNode(lastNode).newValue,content2AtNode(lastNode).newValue)
     content1AtEnd(vehicle) := newValue1
     content2AtEnd(vehicle) := newValue2
@@ -161,6 +163,7 @@ class ForwardCulumativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
   }
   def check(c : Checker,s:IntSequence){
 
+    //(fromNode,toNode,content1AtFromNode,content2AtFromNode)=> (content1AtToNode,content2AtToNode)
     def op2(fromNode:Int,toNode:Int,content:(Int,Int)) = op(fromNode,toNode,content._1,content._2)
 
     val (nodeToContent,vehicleToContentAtEnd,vehicleLocation) =
