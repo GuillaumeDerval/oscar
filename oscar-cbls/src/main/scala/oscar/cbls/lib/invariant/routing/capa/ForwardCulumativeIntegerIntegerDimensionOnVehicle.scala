@@ -45,7 +45,7 @@ object ForwardCulumativeIntegerIntegerDimensionOnVehicle {
    * @param minContent Min content of a node (used for creating the output variable, but not considered as a constraint)
    * @param maxContent Max content of a node (used for creating the output variable, but not considered as a constraint)
    * @param contentName the name of this content, for debug purpose. it is atributed to all variales created by this invairant
-   * @return  (content1AtNode,content2AtNode,content1AtEnd,content2AtEnd,lastPointOfVehicle)
+   * @return  (content1AtNode,content2AtNode,content1AtEnd,content2AtEnd,lastPointOfVehicle) content at end is the content when back at the vehicle start
    */
   def apply(routes:ChangingSeqValue,
             n:Int,
@@ -143,9 +143,10 @@ class ForwardCulumativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
   }
 
   override def setVehicleContentAtEnd(vehicle : Int, lastNode : Int){
-    content1AtEnd(vehicle) := content1AtNode(lastNode).newValue
-    content2AtEnd(vehicle) := content2AtNode(lastNode).newValue
     lastPointOfVehicle(vehicle) := lastNode
+    val (newValue1,newValue2) = op(lastNode,vehicle,content1AtNode(lastNode).newValue,content2AtNode(lastNode).newValue)
+    content1AtEnd(vehicle) := newValue1
+    content2AtEnd(vehicle) := newValue2
   }
 
   override def setNodesUnrouted(unroutedNodes : Iterable[Int]){
