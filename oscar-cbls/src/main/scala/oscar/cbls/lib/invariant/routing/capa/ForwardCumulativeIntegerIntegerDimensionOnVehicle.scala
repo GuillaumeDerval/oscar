@@ -16,22 +16,10 @@ package oscar.cbls.lib.invariant.routing.capa
   ******************************************************************************/
 
 import oscar.cbls.algo.seq.functional.IntSequence
-import oscar.cbls.algo.seq.functional.IntSequence
-import oscar.cbls.core.computation.CBLSIntVar
-import oscar.cbls.core.computation.ChangingIntValue
-import oscar.cbls.core.computation.ChangingSeqValue
-import oscar.cbls.core.computation.Domain
-import oscar.cbls.core.computation.IntNotificationTarget
-import oscar.cbls.core.computation.IntValue
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingIntValue, ChangingSeqValue, Domain, IntNotificationTarget, IntValue}
 import oscar.cbls.core.propagation.Checker
 
-/**
- * Created by  Jannou Brohée on 3/10/16.
- */
-
-object ForwardCulumativeIntegerIntegerDimensionOnVehicle {
+object ForwardCumulativeIntegerIntegerDimensionOnVehicle {
   /**
    * creates a GenericCumulativeIntegerDimensionOnVehicle Invariant
    * @param routes The sequence representing the route associated at each vehicle
@@ -67,12 +55,12 @@ object ForwardCulumativeIntegerIntegerDimensionOnVehicle {
 
     val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, n-1, "last point of vehicle" + vehicle))
 
-    new ForwardCulumativeIntegerIntegerDimensionOnVehicle(routes,n,v,op,content1AtStart,content2AtStart,content1AtNode,content2AtNode,content1AtEnd,content2AtEnd,lastPointOfVehicle,default1ForUnroutedNodes,default2ForUnroutedNodes)
+    new ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes,n,v,op,content1AtStart,content2AtStart,content1AtNode,content2AtNode,content1AtEnd,content2AtEnd,lastPointOfVehicle,default1ForUnroutedNodes,default2ForUnroutedNodes)
     (content1AtNode,content2AtNode,content1AtEnd,content2AtEnd,lastPointOfVehicle)
   }
 }
 
-class ForwardCulumativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
+class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
                                                         n:Int,
                                                         v:Int,
                                                         op:(Int,Int,Int,Int)=>(Int,Int),
@@ -132,6 +120,7 @@ class ForwardCulumativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
   override def setVehicleContentAtNode(prevNode : Int, node : Int) : Boolean = {
     val oldValue1 = content1AtNode(node).newValue
     val oldValue2 = content2AtNode(node).newValue
+    //(fromNode,toNode,content1AtFromNode,content2AtFromNode)=> (content1AtToNode,content2AtToNode)
     val (newValue1,newValue2) = op(prevNode,node,content1AtNode(prevNode).newValue,content2AtNode(prevNode).newValue)
     if(oldValue1 != newValue1 || oldValue2 != newValue2) {
       content1AtNode(node) := newValue1
@@ -144,6 +133,7 @@ class ForwardCulumativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
 
   override def setVehicleContentAtEnd(vehicle : Int, lastNode : Int){
     lastPointOfVehicle(vehicle) := lastNode
+    //(fromNode,toNode,content1AtFromNode,content2AtFromNode)=> (content1AtToNode,content2AtToNode)
     val (newValue1,newValue2) = op(lastNode,vehicle,content1AtNode(lastNode).newValue,content2AtNode(lastNode).newValue)
     content1AtEnd(vehicle) := newValue1
     content2AtEnd(vehicle) := newValue2
@@ -161,6 +151,7 @@ class ForwardCulumativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
   }
   def check(c : Checker,s:IntSequence){
 
+    //(fromNode,toNode,content1AtFromNode,content2AtFromNode)=> (content1AtToNode,content2AtToNode)
     def op2(fromNode:Int,toNode:Int,content:(Int,Int)) = op(fromNode,toNode,content._1,content._2)
 
     val (nodeToContent,vehicleToContentAtEnd,vehicleLocation) =

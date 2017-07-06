@@ -26,7 +26,7 @@ class InvariantChecker(verbose: Int = 0) extends Checker {
   var firstCheck = true
   var invariantChecked = false
 
-  def check(verity: Boolean, traceOption: Option[String]) = {
+  def check(verity: Boolean, traceOption: => Option[String]) = {
     if (traceOption.isDefined) {
       val trace = traceOption.get
       if (!verity)

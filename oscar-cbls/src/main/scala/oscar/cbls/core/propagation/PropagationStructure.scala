@@ -309,6 +309,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
   final def propagate(UpTo: PropagationElement = null) {
     if (!propagating) {
       if (UpTo != null && !debugMode) {
+        //partial propagation, only if requested
         val Track = fastPropagationTracks.getOrElse(UpTo.uniqueID, null)
         val SameAsBefore = Track != null && previousPropagationTrack == Track
         propagating = true
@@ -318,6 +319,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
         propagateOnTrack(Track, SameAsBefore)
         previousPropagationTrack = Track
       } else {
+        //total propagation
         propagating = true
         if (verbose) {
           println("PropagationStructure: total propagation triggered manually")
@@ -452,6 +454,8 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
 
     var previousLayer = 0
 
+    val anythingDone = executionQueue.nonEmpty
+
     while (!executionQueue.isEmpty) {
       val first = executionQueue.popFirst()
       first.propagate()
@@ -470,7 +474,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
       }
     }
 
-    if (Track == null) {
+    if (Track == null && anythingDone) {
       checker match {
         case Some(c) =>
           for (p <- getPropagationElements) {
@@ -1207,7 +1211,7 @@ trait BulkPropagator extends PropagationElement {
  * @author renaud.delandtsheer@cetic.be
  */
 trait Checker {
-  def check(verity: Boolean, traceOption: Option[String] = None)
+  def check(verity: Boolean, traceOption: => Option[String] = None)
 }
 
 /**
@@ -1215,7 +1219,7 @@ trait Checker {
  * @author renaud.delandtsheer@cetic.be
  */
 case class ErrorChecker() extends Checker {
-  def check(verity: Boolean, traceOption: Option[String]) = {
+  def check(verity: Boolean, traceOption: => Option[String]) = {
     if (!verity)
       throw new Error("Error in checker, debug: " + traceOption)
   }
