@@ -9,7 +9,7 @@ import scala.collection.mutable.ArrayBuffer
 
 
 /**
-  * @author Charles THOMAS (cftmthomas@gmail.com)
+  * @author Charles Thomas (cftmthomas@gmail.com)
   * based on VRPTW example by Renaud Hartert
   */
 object VRPTW extends CPModel with App {
@@ -100,16 +100,16 @@ object VRPTW extends CPModel with App {
   /** ALNS Settings */
 
   val config = new ALNSConfig(
-    1500000000000L,
+    300000000000L,
     1000,
     coupled = true,
     learning = true,
 
     //Relax Operators
-    Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided, ALNSBuilder.FullRelax),
+    Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided, ALNSBuilder.FullRelax, ALNSBuilder.PredRelax),
 
     //Search Operators
-    Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit, ALNSBuilder.ExtOriented),
+    Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit, ALNSBuilder.ExtOriented, ALNSBuilder.WeightDeg),
 
     ALNSBuilder.ValHeurisBoth,
     valLearn = true,

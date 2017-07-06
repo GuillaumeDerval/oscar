@@ -34,10 +34,13 @@ object ALNSBuilder{
   val ValGuided = "ValGuided"
   val DefValGuidedParam2 = Array("Random", "MaxGroup", "MinGroup", "MaxVal", "MinVal")
 
+  // Predecessor relaxation:
+  val PredRelax = "PredRelax"
+
   // Full relaxation:
   val FullRelax = "FullRelax"
 
-  // Default relaxation parameters (percentage)
+  // Default relaxation size (percentage)
   val DefRelaxParam = Array(0.25, 0.50, 0.75) //Percentage of the neighbourhood which is relaxed
 
   //TODO: implement other relaxation functions
@@ -191,6 +194,14 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
         (sol: CPIntSol) => RelaxationFunctions.valueGuidedRelax(solver, vars, sol, k, scheme)
       )
 
+    case ALNSBuilder.PredRelax =>
+      ALNSBuilder.DefRelaxParam
+        .map(x => Math.round(N * x).toInt)
+        .map(x => (
+          opKey + "(" + x.toString + ")",
+          (sol: CPIntSol) => RelaxationFunctions.predecessorRelax(solver, vars, sol, x))
+        )
+
     case ALNSBuilder.FullRelax => Array((opKey, _ => Unit))
   }
 
@@ -302,6 +313,20 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       instantiateAdaptiveStore(
         paramSelectKey,
         ALNSBuilder.DefValGuidedParam2.map(x => new ALNSParameter[String](x, ALNSBuilder.DefNoParamFailThreshold)),
+        paramMetricKey
+      ),
+      instantiateMetric(paramMetricKey)
+    )
+
+    case ALNSBuilder.PredRelax => new ALNSSingleParamOperator[Int](
+      ALNSBuilder.PredRelax,
+      ALNSBuilder.DefWithParamFailThreshold,
+      RelaxationFunctions.predecessorRelax(solver, vars, _: CPIntSol, _: Int),
+      instantiateAdaptiveStore(
+        paramSelectKey,
+        ALNSBuilder.DefRelaxParam
+          .map(x => Math.round(N * x).toInt)
+          .map(x => new ALNSParameter[Int](x, ALNSBuilder.DefNoParamFailThreshold)),
         paramMetricKey
       ),
       instantiateMetric(paramMetricKey)

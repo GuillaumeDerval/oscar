@@ -197,4 +197,32 @@ object RelaxationFunctions {
       i += 1
     }
   }
+
+  /**
+    * Makes the hypothesis of a predecessor model: relaxes a sequence of k variables by using their value to find the
+    * next variable in the sequence.
+    * @param k The number of variables to relax (must be >= 0 and < vars.size)
+    */
+  def predecessorRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit = {
+    val varSeq = vars.toSeq
+    val varArray = varSeq.indices.toArray //map to real indice of variable
+    val mapToIdx = varArray.indices.toArray //map to indice of variable in varArray
+    var boundStart = varArray.length //Elements of varArray from this index are bound
+    var lastVal = -1
+
+    while(vars.count(!_.isBound) > k){
+      val x = if(lastVal >= 0 && lastVal < varSeq.length && !varSeq(lastVal).isBound) lastVal else varArray(Random.nextInt(boundStart))
+      solver.add(varSeq(x) === currentSol.values(x))
+      if(! varSeq(x).isBound) throw Inconsistency
+      lastVal = currentSol.values(x)
+
+      //marking var as bound:
+      boundStart -= 1
+      val i = mapToIdx(x)
+      varArray(i) = varArray(boundStart)
+      mapToIdx(varArray(boundStart)) = i
+      varArray(boundStart) = x
+      mapToIdx(x) = boundStart
+    }
+  }
 }
