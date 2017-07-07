@@ -100,7 +100,12 @@ object TestCumulatives extends App{
   //TODO: using post-filters on k-nearest is probably crap
   val routeUnroutedPoint2 =  Profile(new InsertPointRoutedFirst(myVRP.routed,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,x => !myVRP.isRouted(x)),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.size < n/2))
 
-  def onePtMove(k:Int) = Profile(new OnePointMove(myVRP.routed, () => myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,best=true))
+  def onePtMove(k:Int) = Profile(new OnePointMove(
+    myVRP.routed,
+    () => myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted),
+    myVRP,
+    selectPointToMoveBehavior = Best(),
+    selectDestinationBehavior = Best()))
 
   val twoOpt = Profile(new TwoOpt1(myVRP.routed, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP))
 

@@ -106,7 +106,7 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay
 
 
   //using post-filters on k-nearest is probably a bit slower than possible for large problems.
-  //thwt's why we prefer to block this neighborhood when many nodes are already routed (so few are unrouted, so the filter filters many nodes away)
+  //that's why we prefer to block this neighborhood when many nodes are already routed (so few are unrouted, so the filter filters many nodes away)
   val routeUnroutedPoint2 =  Profile(InsertPointRoutedFirst(
     myVRP.routed,
     ()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,x => !myVRP.isRouted(x)),  //should be the backward ones but this is a symmetric distance so we do not care

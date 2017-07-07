@@ -134,13 +134,14 @@ trait Search {
                         searchZone2:(Int,Int)=>Iterable[Int] = null,
                         symmetryCanBeBrokenOnIndices:Boolean = true,
                         symmetryCanBeBrokenOnValue:Boolean = false,
-                        best:Boolean = false,
+                        selectFirstVariableBehavior:LoopBehavior = First(),
+                        selectSecondVariableBehavior:LoopBehavior = First(),
                         symmetryClassOfVariables1:Option[Int => Int] = None,
                         symmetryClassOfVariables2:Option[Int => Int] = None,
                         hotRestart:Boolean = true)
   = SwapsNeighborhood(vars,name,searchZone1,searchZone2,
     symmetryCanBeBrokenOnIndices,symmetryCanBeBrokenOnValue,
-    best,symmetryClassOfVariables1,symmetryClassOfVariables2,hotRestart)
+    selectFirstVariableBehavior, selectSecondVariableBehavior,symmetryClassOfVariables1,symmetryClassOfVariables2,hotRestart)
 
 
 
