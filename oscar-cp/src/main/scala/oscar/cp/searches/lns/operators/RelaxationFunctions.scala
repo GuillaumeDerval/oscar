@@ -207,22 +207,28 @@ object RelaxationFunctions {
     val varSeq = vars.toSeq
     val varArray = varSeq.indices.toArray //map to real indice of variable
     val mapToIdx = varArray.indices.toArray //map to indice of variable in varArray
-    var boundStart = varArray.length //Elements of varArray from this index are bound
+    var boundStart = varArray.length //Elements of varArray from this index are to be relaxed
     var lastVal = -1
 
-    while(vars.count(!_.isBound) > k){
+    while(varArray.length - boundStart < k){
       val x = if(lastVal >= 0 && lastVal < varSeq.length && !varSeq(lastVal).isBound) lastVal else varArray(Random.nextInt(boundStart))
-      solver.add(varSeq(x) === currentSol.values(x))
-      if(! varSeq(x).isBound) throw Inconsistency
       lastVal = currentSol.values(x)
 
-      //marking var as bound:
+      //marking var as to relax:
       boundStart -= 1
       val i = mapToIdx(x)
       varArray(i) = varArray(boundStart)
       mapToIdx(varArray(boundStart)) = i
       varArray(boundStart) = x
       mapToIdx(x) = boundStart
+    }
+
+    var i = 0
+    while(vars.count(!_.isBound) > k) {
+      val x = varArray(i)
+      solver.add(varSeq(x) === currentSol.values(x))
+      if (!varSeq(x).isBound) throw Inconsistency
+      i += 1
     }
   }
 }
