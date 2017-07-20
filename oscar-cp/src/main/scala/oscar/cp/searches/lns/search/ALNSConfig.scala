@@ -12,7 +12,6 @@ class ALNSConfig(
                   val learning: Boolean = false, //Learning phase
                   val relaxOperatorKeys: Array[String], //The relax operators to use
                   val searchOperatorKeys: Array[String], //The search operators to use
-                  val valHeuristic: String = ALNSBuilder.ValHeurisBoth, //The value heuristic
                   val valLearn: Boolean = false, //Value learning heuristic
                   val opSelectionKey: String = ALNSBuilder.RWheel, //The operators selection mechanism
                   val paramSelectionKey: String = ALNSBuilder.RWheel, //The parameters selection mechanism

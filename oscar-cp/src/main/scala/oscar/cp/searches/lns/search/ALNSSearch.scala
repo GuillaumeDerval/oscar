@@ -73,7 +73,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
     if(!solver.silent) println("Starting first solution search...")
 
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
-      solver.search(SearchFunctions.conflictOrdering(vars, if(maximizeObjective.isDefined) !maximizeObjective.get else false, valLearn = false))
+      solver.search(SearchFunctions.conflictOrdering(vars, if(maximizeObjective.isDefined) if(maximizeObjective.get) "Min" else "Max"  else "Max", valLearn = false))
     }
 
     if(!solver.silent) println("Time elapsed: " + (System.nanoTime() - startTime)/1000000000.0 + "s")

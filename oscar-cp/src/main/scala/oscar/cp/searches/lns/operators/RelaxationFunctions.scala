@@ -199,7 +199,7 @@ object RelaxationFunctions {
   }
 
   /**
-    * Makes the hypothesis of a predecessor model: relaxes a sequence of k variables by using their value to find the
+    * Makes the hypothesis of a predecessor/successor model: relaxes a sequence of k variables by using their value to find the
     * next variable in the sequence.
     * @param k The number of variables to relax (must be >= 0 and < vars.size)
     */

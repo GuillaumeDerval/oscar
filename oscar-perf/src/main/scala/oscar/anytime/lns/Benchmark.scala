@@ -63,7 +63,6 @@ trait Benchmark {
         Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit, ALNSBuilder.ExtOriented, ALNSBuilder.WeightDeg)
       ).asInstanceOf[Array[String]],
 
-      argMap.getOrElse('valHeuristic, ALNSBuilder.ValHeurisBoth).asInstanceOf[String],
       argMap.getOrElse('valLearn, true).asInstanceOf[Boolean],
 
       argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
@@ -95,7 +94,7 @@ trait Benchmark {
 
     if(!solver.silent) println("Starting search...")
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
-      solver.search(SearchFunctions.conflictOrdering(decisionVariables, maximizeObjective, valLearn = true))
+      solver.search(SearchFunctions.conflictOrdering(decisionVariables, if(maximizeObjective) "Min" else "Max", valLearn = true))
     }
 
     if(!solver.silent) println("Search done, retrieving results")
@@ -152,9 +151,6 @@ trait Benchmark {
           next = next.tail
         }
         parseArgs(map ++ Map('search -> search.toArray), next)
-
-      case "--val-heuristic" :: value :: tail =>
-        parseArgs(map ++ Map('valHeuristic -> value), tail)
 
       case "--val-learn" :: tail => tail match{
         case value :: remTail =>

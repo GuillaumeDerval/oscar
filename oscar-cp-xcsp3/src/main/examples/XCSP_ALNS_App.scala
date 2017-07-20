@@ -61,7 +61,6 @@ object XCSP_ALNS_App extends App{
         Array( ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit)
       ).asInstanceOf[Array[String]],
 
-      argMap.getOrElse('valHeuristic, ALNSBuilder.ValHeurisBoth).asInstanceOf[String],
       argMap.getOrElse('valLearn, true).asInstanceOf[Boolean],
 
       argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],

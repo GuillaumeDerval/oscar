@@ -1,8 +1,7 @@
-package oscar.examples.cp.lns
+package oscar.anytime.lns.models
 
+import oscar.anytime.lns.Benchmark
 import oscar.cp._
-import oscar.cp.searches.lns.operators.ALNSBuilder
-import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch, ALNSSearchResults}
 
 import scala.io.Source
 import scala.collection.mutable.ArrayBuffer
@@ -12,30 +11,27 @@ import scala.collection.mutable.ArrayBuffer
   * @author Charles Thomas (cftmthomas@gmail.com)
   * based on VRPTW example by Renaud Hartert
   */
-object VRPTW extends CPModel with App {
+class VRPTW(val instance: String, override val bestKnownObjective: Int = Int.MaxValue) extends CPModel with Benchmark {
 
-//  solver.silent = true
-
-  val instanceFile = "data/VRPTW/Solomon/R105.txt"
-  val instance = VRPTWParser.parse(instanceFile)
+  val parsedInstance = VRPTWParser.parse(instance)
 
   // Data
-  val nCustomers = instance.nCustomers
-  val nVehicles = instance.nVehicles
-  val nSites = instance.nSites
-  val capacity = instance.capacity
-  val Vehicles = instance.Vehicles
-  val Customers = instance.Customers
-  val Sites = instance.Sites
-  val Depots = instance.Depots
-  val outDepots = instance.Depots
-  val inDepots = instance.Depots
-  val demands = instance.demands
-  val startsMin = instance.startsMin
-  val startsMax = instance.startsMax
-  val durations = instance.durations
-  val coordinates = instance.coordinates
-  val distances = instance.distances
+  val nCustomers = parsedInstance.nCustomers
+  val nVehicles = parsedInstance.nVehicles
+  val nSites = parsedInstance.nSites
+  val capacity = parsedInstance.capacity
+  val Vehicles = parsedInstance.Vehicles
+  val Customers = parsedInstance.Customers
+  val Sites = parsedInstance.Sites
+  val Depots = parsedInstance.Depots
+  val outDepots = parsedInstance.Depots
+  val inDepots = parsedInstance.Depots
+  val demands = parsedInstance.demands
+  val startsMin = parsedInstance.startsMin
+  val startsMax = parsedInstance.startsMax
+  val durations = parsedInstance.durations
+  val coordinates = parsedInstance.coordinates
+  val distances = parsedInstance.distances
 
   val pred = Array.fill(nSites)(CPIntVar.sparse(Sites))
   val succ = Array.fill(nSites)(CPIntVar.sparse(Sites))
@@ -65,7 +61,7 @@ object VRPTW extends CPModel with App {
     add(vehicles(first) === v)
     add(vehicles(last) === v)
   }
-  
+
   // Links the depots
   add(succ(Depots.max) === Depots.min)
   for (v <- 0 until nVehicles - 1) {
@@ -82,7 +78,7 @@ object VRPTW extends CPModel with App {
     add(starts(c) >= ends(pred(c)) + distances(c)(pred(c)))
     add(starts(succ(c)) >= ends(c) + distances(c)(succ(c)))
   }
-  
+
   for (v <- Vehicles) {
     val first = nCustomers + v
     val last = first + nVehicles
@@ -90,78 +86,22 @@ object VRPTW extends CPModel with App {
     add(ends(last) === startsMax(last))
   }
 
-  val visu = new VisualVRPTW(coordinates, succ, vehicles)
+  override def decisionVariables: Array[CPIntVar] = pred
 
-  onSolution {
-    println(totalDistance)
-    visu.updateTour()
-  }
-
-  /** ALNS Settings */
-
-  val config = new ALNSConfig(
-    300000000000L,
-    1000,
-    coupled = true,
-    learning = true,
-
-    //Relax Operators
-    Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided, ALNSBuilder.FullRelax, ALNSBuilder.PredRelax),
-
-    //Search Operators
-    Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit, ALNSBuilder.ExtOriented, ALNSBuilder.WeightDeg),
-
-    valLearn = true,
-    ALNSBuilder.RWheel,
-    ALNSBuilder.RWheel,
-    ALNSBuilder.AvgImprov,
-    ALNSBuilder.AvgImprov
-  )
-
-  // Custom search Heuristic: Conflict set / max regret search
-  val customSearch = binaryLastConflict(pred, i => -pred(i).maxRegret(distances(i)), i => pred(i).minBy(distances(i)))
-  //TODO: pass this to the alns search
-
-  val alns = ALNSSearch(solver, pred, config)
-
-  val alnsResult: ALNSSearchResults = alns.search()
-}
-
-class VisualVRPTW(coordinates: Array[(Int, Int)], succ: Array[CPIntVar], vehicles: Array[CPIntVar]) {
-
-  import oscar.visual._
-
-  val Customers = 0 until coordinates.size
-  val colors = VisualUtil.getRandomColors(vehicles.length, true)
-  val frame = VisualFrame("Visualization")
-
-  val tour = VisualTour(coordinates)
-  frame.createFrame("VRPTW").add(tour)
-  frame.pack()
-
-  Customers.foreach(c => tour.nodeRadius(c, 1))
-
-  // Updates the visualization  
-  def updateTour(): Unit = {
-    Customers.foreach(i => {
-      tour.edgeDest(i, succ(i).value)
-      tour.edgeColor(i, colors(vehicles(i).value))
-    })
-    tour.repaint()
-  }
+  override def problem: String = "VRPTW"
 }
 
 class VRPTWInstance(
-  val nCustomers: Int,
-  val nVehicles: Int,
-  val nSites: Int,
-  val capacity: Int,
-  val demands: Array[Int],
-  val startsMin: Array[Int],
-  val startsMax: Array[Int],
-  val durations: Array[Int],
-  val coordinates: Array[(Int, Int)],
-  val distances: Array[Array[Int]]){
+                     val nCustomers: Int,
+                     val nVehicles: Int,
+                     val nSites: Int,
+                     val capacity: Int,
+                     val demands: Array[Int],
+                     val startsMin: Array[Int],
+                     val startsMax: Array[Int],
+                     val durations: Array[Int],
+                     val coordinates: Array[(Int, Int)],
+                     val distances: Array[Array[Int]]){
   def Customers = 0 until nCustomers
   def Vehicles = 0 until nVehicles
   def Sites = 0 until nSites
@@ -211,7 +151,7 @@ object VRPTWParser {
     val nCustomers = durationsBf.length - 1
     val nSites = nCustomers + 2 * nVehicles
     val Sites = 0 until nSites
-    
+
     val demands = new Array[Int](nSites)
     val startsMin = new Array[Int](nSites)
     val startsMax = new Array[Int](nSites)
@@ -251,3 +191,4 @@ object VRPTWParser {
     )
   }
 }
+

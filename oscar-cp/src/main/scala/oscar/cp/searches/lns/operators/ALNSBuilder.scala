@@ -65,11 +65,10 @@ object ALNSBuilder{
 
   //Max weighted degree
   val WeightDeg = "WeightDeg"
+  val DefWeigDegreeParam2 = 0.99
 
   // Available value Heuristic functions:
-  val ValHeurisMin = "Min"
-  val ValHeurisMax = "Max"
-  val ValHeurisBoth = "Both"
+  val DefValHeuris = Array("Min", "Max", "Median", "Random")
 
   //TODO: implement other search heuristics
 
@@ -207,27 +206,23 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
 
   private def instantiateSearchFunctions(opKey: String): Array[(String, CPIntSol => Unit)] = {
     val functions = ArrayBuffer[(String, CPIntSol => Unit)]()
-    if(config.valHeuristic == ALNSBuilder.ValHeurisMin || config.valHeuristic == ALNSBuilder.ValHeurisBoth){
-      functions += instantiateSearchFunction(opKey, valMax = false, valLearn = false)
-      if(config.valLearn) functions += instantiateSearchFunction(opKey, valMax = false, valLearn = true)
-    }
-    if(config.valHeuristic == ALNSBuilder.ValHeurisMax || config.valHeuristic == ALNSBuilder.ValHeurisBoth){
-      functions += instantiateSearchFunction(opKey, valMax = true, valLearn = false)
-      if(config.valLearn) functions += instantiateSearchFunction(opKey, valMax = true, valLearn = true)
-    }
+    ALNSBuilder.DefValHeuris.foreach(heuristic =>{
+      functions += instantiateSearchFunction(opKey, heuristic, valLearn = false)
+      if(config.valLearn && opKey != ALNSBuilder.WeightDeg) functions += instantiateSearchFunction(opKey, heuristic, valLearn = true)
+    })
     functions.toArray
   }
 
-  private def instantiateSearchFunction(opKey: String, valMax: Boolean, valLearn: Boolean): (String, CPIntSol => Unit) = {
-    val opName = opKey + (if(valLearn && opKey != ALNSBuilder.WeightDeg) "(valLearn" else "(") + (if(valMax) "Max)" else "Min)")
+  private def instantiateSearchFunction(opKey: String, valHeuristic: String, valLearn: Boolean): (String, CPIntSol => Unit) = {
+    val opName = opKey + (if(valLearn && opKey != ALNSBuilder.WeightDeg) "(valLearn" else "(") + valHeuristic + ")"
     (opName, wrapSearch(
       opKey match{
-        case ALNSBuilder.ConfOrder => SearchFunctions.conflictOrdering(vars, valMax, valLearn)
-        case ALNSBuilder.FirstFail => SearchFunctions.firstFail(vars, valMax, valLearn)
-        case ALNSBuilder.LastConf => SearchFunctions.lastConflict(vars, valMax, valLearn)
-        case ALNSBuilder.BinSplit => SearchFunctions.binarySplit(vars, valMax, valLearn)
-        case ALNSBuilder.ExtOriented => SearchFunctions.extensionalOriented(vars, valMax, valLearn)
-        case ALNSBuilder.WeightDeg => SearchFunctions.weightedDegree(vars, valMax, 0.99)
+        case ALNSBuilder.ConfOrder => SearchFunctions.conflictOrdering(vars, valHeuristic, valLearn)
+        case ALNSBuilder.FirstFail => SearchFunctions.firstFail(vars, valHeuristic, valLearn)
+        case ALNSBuilder.LastConf => SearchFunctions.lastConflict(vars, valHeuristic, valLearn)
+        case ALNSBuilder.BinSplit => SearchFunctions.binarySplit(vars, valHeuristic, valLearn)
+        case ALNSBuilder.ExtOriented => SearchFunctions.extensionalOriented(vars, valHeuristic, valLearn)
+        case ALNSBuilder.WeightDeg => SearchFunctions.weightedDegree(vars, valHeuristic, ALNSBuilder.DefWeigDegreeParam2)
       }
     ))
   }
