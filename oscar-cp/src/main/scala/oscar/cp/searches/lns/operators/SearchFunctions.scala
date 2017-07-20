@@ -44,12 +44,44 @@ object SearchFunctions {
     }
   }
 
-  //TODO: Implement efficient median algorithm
-  //TODO: Deal with empty domain
-  //TODO: Better deal with even case (mean? lower val?)
   //TODO: Move this to CPIntVar?
-  private def median(s: Seq[Int]): Int = {
-    val (lower, upper) = s.sortWith(_<_).splitAt(s.size / 2)
-    if (s.size % 2 == 0) (lower.last + upper.head) / 2 else upper.head
+  /**
+    * Finds the median of an array of values. (In place, based on the pivot method)
+    * If the array has an even number of elements, the lowest of the two elements in the middle is considered as the median
+    */
+  private def median(values: Array[Int]): Int = findKth(values, (values.length + 1)/2)
+
+  /**
+    * Finds the kth value of the given array. (In place, based on the pivot method)
+    * @param values the array of values
+    * @param k the place of the value to find
+    * @return the kth value in values
+    */
+  private def findKth(values: Array[Int], k: Int): Int = {
+    //Auxillary recursive method
+    def findKthAux(li: Int, ui: Int): Int = {
+      var p = li //Selecting first element as pivot
+
+      //Partitioning:
+      val pivotVal = values(p)
+      var i = li
+      while(i < ui){
+        if(values(i) < pivotVal){
+          //Three way swap:
+          values(p) = values(i)
+          values(i) = values(p+1)
+          values(p+1) = pivotVal
+          p += 1
+        }
+        i += 1
+      }
+
+      if(p == k) values(p)
+      else if(p < k) findKthAux(p, ui)
+      else findKthAux(li, p)
+    }
+    findKthAux(0, values.length)
   }
+
+
 }
