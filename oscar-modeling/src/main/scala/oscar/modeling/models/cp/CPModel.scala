@@ -40,19 +40,80 @@ object CPModel {
   case class InstantiateAndReuse(reuseFrom: IntExpression, toInstantiate: IntExpression) extends Constraint
 
   /**
-    * Preprocess some things in order to improve performance of the solver
-    * Currently preprocessed:
-    * - Eq constraints
-    *
-    * TODO merge IntVars together
-    */
+   * Preprocess some things in order to improve performance of the solver
+   * Currently preprocessed:
+   * - Eq constraints
+   * - Tables with some variables appearing more than one time
+   *
+   * TODO merge IntVars together
+   */
   private def preprocessCP(p: UninstantiatedModel): UninstantiatedModel = {
+    val (p2, exprCache) = preprocessEq(p)
+    preprocessTables(p2, exprCache)
+  }
+
+  private def preprocessTables(p: UninstantiatedModel, exprCache: mutable.HashMap[IntExpression, IntExpression]): UninstantiatedModel = {
+    // Find all the Table csts
+    val tblcsts = p.constraints.filter{case Table(x, y, z) => true; case _ => false}
+    if(tblcsts.isEmpty) //nothing to do here
+      return p
+
+    val otherConstraints = p.constraints.filter{case Table(x, y, z) => false; case _ => true}
+
+    val newConstraints = tblcsts.map{case tab@Table(vars, tuples, star) => {
+      val same = Array.fill(vars.length)(-1)
+      val tocheck = Array.fill(vars.length)(-1)
+      var nToCheck = 0
+      var i = 0
+      var j = 1
+      while(i != vars.length) {
+        j = i+1
+        while (j != vars.length) {
+          if(exprCache.getOrElse(vars(i), vars(i)) == exprCache.getOrElse(vars(j), vars(j))) {
+            same(i) = j
+            tocheck(nToCheck) = i
+            nToCheck += 1
+            j = vars.length
+          }
+          else
+            j += 1
+        }
+        i += 1
+      }
+
+      if(nToCheck != 0) {
+        val keep = same.zipWithIndex.filter((x) => x._1 == -1).map(x => x._2)
+        val newTuples = tuples.filter(t => {
+          var ok = true
+          var k = 0
+          while (k != nToCheck && ok) {
+            val a = t(tocheck(k))
+            val b = t(same(tocheck(k)))
+            ok &= a == b || (star.isDefined && (a == star.get || b == star.get))
+            k += 1
+          }
+          ok
+        }).map(t => {
+          keep.map(x => t(x))
+        })
+        val newVars = keep.map(x => vars(x))
+        Table(newVars, newTuples)
+      }
+      else
+        tab
+    }}
+
+    UninstantiatedModel(p.declaration, otherConstraints++newConstraints, p.intRepresentatives, p.floatRepresentatives, p.optimisationMethod)
+  }
+
+
+  private def preprocessEq(p: UninstantiatedModel): (UninstantiatedModel, mutable.HashMap[IntExpression, IntExpression]) = {
     var representatives = p.intRepresentatives
 
     // Find all the Eq
     val eqs = p.constraints.filter{case ExpressionConstraint(eq: Eq) => true; case _ => false}.map{case ExpressionConstraint(eq: Eq) => eq}.toArray
     if(eqs.isEmpty) //nothing to do here
-      return p
+      return (p, mutable.HashMap())
 
     val otherConstraints = p.constraints.filter{case ExpressionConstraint(eq: Eq) => false; case _ => true}
 
@@ -122,13 +183,17 @@ object CPModel {
       }
     }
 
+    //Create a cache to help further processing
+    val equivalentExpr = new mutable.HashMap[IntExpression, IntExpression]()
+
     // Create InstantiateAndReuse for all the other values (linked to the Eq, in the order of the toposort)
     for((expr,idx) <- topoSortOrder.zipWithIndex; if !exprUsed(idx)) {
       newEqConstraints += InstantiateAndReuse(eqFirstExpr(exprToEq(expr)), expr)
+      equivalentExpr.put(expr, eqFirstExpr(exprToEq(expr)))
     }
 
     val newConstraints: List[Constraint]= newEqConstraints.toList ++ otherConstraints
-    UninstantiatedModel(p.declaration, newConstraints, representatives, p.floatRepresentatives, p.optimisationMethod)
+    (UninstantiatedModel(p.declaration, newConstraints, representatives, p.floatRepresentatives, p.optimisationMethod), equivalentExpr)
   }
 
   private def expressionTopoSort(expressions: Set[IntExpression]): Array[IntExpression] = {

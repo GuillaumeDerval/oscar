@@ -44,8 +44,8 @@ class SolverMaster[RetVal](modelDeclaration: ModelDeclaration,
   val solverForcedToSendImmediately = maxSols != 0 || maxTime != 0 || !uninstantiatedModel.optimisationMethod.isInstanceOf[NoOptimisation]
 
   @volatile private var boundary: Int = uninstantiatedModel.optimisationMethod match {
-    case m: Minimisation => m.objective.max
-    case m: Maximisation => m.objective.min
+    case m: Minimisation => if(m.objective.max != Int.MaxValue) m.objective.max + 1 else Int.MaxValue
+    case m: Maximisation => if(m.objective.min != Int.MinValue) m.objective.min - 1 else Int.MinValue
     case _               => 0
   }
 
