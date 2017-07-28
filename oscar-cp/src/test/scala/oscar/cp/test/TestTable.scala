@@ -3,21 +3,21 @@
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 2.1 of the License, or
  * (at your option) any later version.
- *   
+ *
  * OscaR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License  for more details.
- *   
+ *
  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
 package oscar.cp.test
 
-import org.scalatest.FunSuite
-import oscar.cp.constraints.tables.{TableAC5TCRecomp, TableAlgo, TableDecomp, TableSTR2}
-import oscar.cp.testUtils._
+import oscar.algo.Inconsistency
 import oscar.cp._
+import oscar.cp.constraints.tables.{TableAlgo, TableDecomp}
+import oscar.cp.testUtils._
 
 /**
  * @author Pierre Schaus  pschaus@gmail.com
@@ -30,14 +30,14 @@ class TestTable extends TestSuite {
   private def randomTuples(dim: Int, n: Int, minValue: Int, maxValue: Int) = {
     Array.fill(n, dim)(rand.nextInt(maxValue - minValue) + minValue)
   }
-  
+
   // Create the unit tests
   for (i <- 1 to 1000) {
-    
+
     val tuples1 = randomTuples(3, 100, 3, 8)
     val tuples2 = randomTuples(3, 100, 2, 7)
     val tuples3 = randomTuples(3, 100, 1, 6)
-    
+
     for (algo <- TableAlgo.values) {
       test("Test random tables " + i + " (" + algo.toString + ")") {
         testTable(Array(tuples1, tuples2, tuples3), algo)
@@ -51,7 +51,7 @@ class TestTable extends TestSuite {
     val x = Array.fill(5)(CPIntVar(1 to 8))
 
     solver.add(allDifferent(x))
-    solver.search(binaryFirstFailIdx(x,i => x(i).max))
+    solver.search(binaryFirstFailIdx(x, i => x(i).max))
 
     val statRef = solver.startSubjectTo() {
       val cons = Seq(
@@ -82,16 +82,15 @@ class TestTable extends TestSuite {
   }
 
 
-
   for (algo <- TableAlgo.values) {
 
-    test("test 1 "+algo) {
+    test("test 1 " + algo) {
       val cp = CPSolver()
       var x = Array.fill(3)(CPIntVar(1 to 3)(cp))
 
-      val tuples = Array(Array(1, 1, 1),Array(1, 2, 3))
+      val tuples = Array(Array(1, 1, 1), Array(1, 2, 3))
 
-      cp.post(table(Array(x(0), x(1), x(2)),tuples,algo))
+      cp.post(table(Array(x(0), x(1), x(2)), tuples, algo))
 
       x(0).isBound should be(true)
       x(0).value should be(1)
@@ -104,7 +103,7 @@ class TestTable extends TestSuite {
       x(2).value should be(1)
     }
 
-    test("test 2 "+algo) {
+    test("test 2 " + algo) {
       val cp = CPSolver()
 
       var x = CPIntVar(0 to 4)(cp)
@@ -112,7 +111,7 @@ class TestTable extends TestSuite {
       var z = CPIntVar(0 to 24)(cp)
 
       val tuples = (for (i <- 0 until 5; j <- i + 1 until 5) yield Array(i, j, i * 4 + j - 1)).toArray
-      cp.post(table(Array(x, y, z), tuples,algo))
+      cp.post(table(Array(x, y, z), tuples, algo))
       cp.post(z === 0)
       x.value should be(0)
       y.value should be(1)
@@ -121,32 +120,32 @@ class TestTable extends TestSuite {
     }
 
 
-    test("test 3 "+algo) {
+    test("test 3 " + algo) {
       val cp = CPSolver()
       var x = Array.fill(3)(CPIntVar(1 to 7)(cp))
       val tuples = Array(Array(1, 1, 1), Array(1, 2, 3), Array(1, 2, 7), Array(2, 1, 4))
       var nbSol = 0
-      cp.add(table(x, tuples,algo))
+      cp.add(table(x, tuples, algo))
       cp.search {
         binaryStatic(x)
       } onSolution {
         nbSol += 1
-      } start ()
+      } start()
       nbSol should be(4)
     }
 
-    test("test 4 "+algo) {
+    test("test 4 " + algo) {
       val cp = CPSolver()
       var x = Array.fill(2)(CPIntVar(1 to 1)(cp))
 
       val tuples = Array(Array(1, 2), Array(2, 1))
 
-      postAndCheckFailure(cp, table(x, tuples,algo))
+      postAndCheckFailure(cp, table(x, tuples, algo))
       cp.isFailed should be(true)
     }
 
 
-    test("test5 "+algo) {
+    test("test5 " + algo) {
 
       def nbSol(newcons: Boolean) = {
         val cp = CPSolver()
@@ -161,14 +160,14 @@ class TestTable extends TestSuite {
           Array(1, 9, 9, 9),
           Array(3, 6, 6, 6))
 
-        val cons = if (newcons) table(x, tuples,algo) else new TableDecomp(x,tuples)
+        val cons = if (newcons) table(x, tuples, algo) else new TableDecomp(x, tuples)
         cp.post(cons)
         var nbSol = 0
         cp.search {
           binaryFirstFail(x)
         } onSolution {
           nbSol += 1
-        } start ()
+        } start()
         nbSol
       }
       nbSol(false) should be(nbSol(true))
@@ -176,18 +175,18 @@ class TestTable extends TestSuite {
     }
 
 
-    test("test 6 "+algo) {
+    test("test 6 " + algo) {
       implicit val cp = CPSolver()
       var x = Array.fill(6)(CPIntVar(2 to 3)(cp))
       var nbSol = 0
 
       val tuples = Array(
-        Array(2,2,3,2,2,3),
-        Array(2,3,2,2,3,2)
+        Array(2, 2, 3, 2, 2, 3),
+        Array(2, 3, 2, 2, 3, 2)
       )
 
 
-      cp.post(table(x,tuples,algo))
+      cp.post(table(x, tuples, algo))
       cp.search(binaryStatic(x))
       cp.onSolution {
         //println(x.mkString(", "))
@@ -198,7 +197,7 @@ class TestTable extends TestSuite {
 
     }
 
-    test("test 7 "+algo) {
+    test("test 7 " + algo) {
       implicit val cp = CPSolver()
       var x = Array.fill(6)(CPIntVar(0 to 5)(cp))
       var nbSol = 0
@@ -209,8 +208,7 @@ class TestTable extends TestSuite {
         Array(3, 1, 4, 2, 3, 1)
       )
 
-
-      cp.post(table(x,tuples,algo))
+      cp.post(table(x, tuples, algo))
       cp.search(binaryStatic(x))
       cp.onSolution {
         //println(x.mkString(", "))
@@ -220,7 +218,7 @@ class TestTable extends TestSuite {
       nbSol should be(3)
     }
 
-    test("test 8 "+algo) {
+    test("test 8 " + algo) {
       implicit val cp = CPSolver()
       var x = Array.fill(7)(CPIntVar(0 to 3)(cp))
       var nbSol = 0
@@ -231,7 +229,7 @@ class TestTable extends TestSuite {
         Array(1, 0, 3, 0, 0, 3, 1)
       )
 
-      cp.post(table(x,tuples,algo))
+      cp.post(table(x, tuples, algo))
       cp.search(binaryStatic(x))
       cp.onSolution {
         //println(x.mkString(", "))
@@ -241,9 +239,26 @@ class TestTable extends TestSuite {
       nbSol should be(3)
     }
 
+    test("test 9 (empty table) " + algo) {
+      implicit val cp = CPSolver()
+      val x = Array.fill(3)(CPIntVar(0 to 3)(cp))
+      val tuples: Array[Array[Int]] = Array()
 
+      intercept[Inconsistency] {
+            cp.post(table(x, tuples, algo))
+          }
+    }
 
+    test("test 10 (becoming empty table) " + algo) {
+      implicit val cp = CPSolver()
+      val x = Array.fill(3)(CPIntVar(0 to 3)(cp))
+      val tuples: Array[Array[Int]] = Array(Array(0, 1, 2))
 
+      intercept[Inconsistency] {
+            cp.post(x(0) !== 0)
+            cp.post(table(x, tuples, algo))
+          }
+    }
 
   }
 
