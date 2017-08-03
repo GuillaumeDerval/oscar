@@ -93,7 +93,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
   }
 
   def lnsSearch(relax: ALNSOperator, search: ALNSOperator): Unit = {
-    if(!learning) endSearch = Math.min(System.nanoTime() + iterTimeout * 10, endTime)
+    if(!learning) endSearch = Math.min(System.nanoTime() + iterTimeout, endTime)
 
     if(!solver.silent){
       println("\nStarting new search with: " + relax.name + " and " + search.name)
@@ -118,7 +118,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
 
     if(improvement > 0){
       stagnation = 0
-      if(iterTimeout >= config.timeout || stats.time * 1000000 > iterTimeout) iterTimeout = stats.time * 1000000
+      if(iterTimeout >= config.timeout || stats.time * 1000000 > iterTimeout) iterTimeout = stats.time * 1000000 * 2
     }
     else stagnation += 1
 
@@ -133,8 +133,8 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       else {
         if(!solver.silent) println("Search done, Improvement: " + improvement)
         //Updating probability distributions:
-        relax.update(improvement, stats, fail = !learning && stats.time > iterTimeout * 10)
-        search.update(improvement, stats, fail = !learning && stats.time > iterTimeout * 10)
+        relax.update(improvement, stats, fail = !learning && stats.time > iterTimeout)
+        search.update(improvement, stats, fail = !learning && stats.time > iterTimeout)
       }
 
       if(!relax.isInstanceOf[ALNSReifiedOperator]){

@@ -1,4 +1,4 @@
---timeout 300 --name NOLNS --NOLNS
---timeout 300 --name RANDOM --selection Random --coupled false --learning false
---timeout 300 --name Laborie --selection RWheel --metric LastImprov --coupled false --learning false
---timeout 300 --name Priority-TTI-Coupled-Learn --selection Priority --metric TTI --coupled true --learning true
+--timeout 900 --name RANDOM --selection Random --coupled false --learning false
+--timeout 900 --name Laborie --selection RWheel --metric LastImprov --coupled false --learning false
+--timeout 900 --name RWheel-AvgImprov-Coupled --selection RWheel --metric AvgImprov --coupled true --learning false
+--timeout 900 --name Priority-TTI-Coupled-Learn --selection Priority --metric TTI --coupled true --learning true

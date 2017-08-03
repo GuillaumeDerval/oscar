@@ -24,7 +24,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
 
   var learnRatio = 0.3 //The ratio of remaining time that a learning phase will have
   var learning = false
-  var iterTimeout: Long = if(config.timeout > 0) config.timeout else Long.MaxValue
+  var iterTimeout: Long = if(config.timeout > 0) config.timeout / 300 else Long.MaxValue
   var searchFail = 0
   var stagnation = 0
   val stagnationThreshold = 100
@@ -77,6 +77,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
     }
 
     if(!solver.silent) println("Time elapsed: " + (System.nanoTime() - startTime)/1000000000.0 + "s")
+    iterTimeout = stats.time * 1000000 * 4
     stats.completed || solver.objective.isOptimum()
   }
 

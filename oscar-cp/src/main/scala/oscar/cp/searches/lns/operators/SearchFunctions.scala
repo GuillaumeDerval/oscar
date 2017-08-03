@@ -60,13 +60,20 @@ object SearchFunctions {
   private def findKth(values: Array[Int], k: Int): Int = {
     //Auxillary recursive method
     def findKthAux(li: Int, ui: Int): Int = {
-      var p = li //Selecting first element as pivot
-
-      //Partitioning:
+      var p = li + ((ui - li) / 2) + ((ui - li) % 2) //Selecting middle element as pivot
       val pivotVal = values(p)
       var i = li
+
+      //Partitioning:
       while(i < ui){
-        if(values(i) < pivotVal){
+        if(i < p && values(i) >= pivotVal){
+          //Three way swap:
+          values(p) = values(i)
+          values(i) = values(p-1)
+          values(p-1) = pivotVal
+          p -= 1
+        }
+        else if(i > p && values(i) < pivotVal){
           //Three way swap:
           values(p) = values(i)
           values(i) = values(p+1)
