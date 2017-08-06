@@ -17,25 +17,49 @@ package oscar.algo.reversible
 
 object BitSetOp {
 
-  def bitLength(size: Int): Int = (size + 63) >>> 6
+  /**
+   * Compute number of words needed to store
+   * the given number of item
+   * @param nb number of item
+   * @return number of words
+   */
+  def bitLength(nb: Int): Int = (nb + 63) >>> 6
 
-  // = size / 64 + 1
+  /**
+   * Create a word with a single bit set to 1
+   * placed at given position
+   * (<< is a cyclic shift, (1L << 64) == 1L)
+   * @param pos position required for the bit
+   * @return word with one bit set to 1
+   */
   def oneBitLong(pos: Int): Long = 1L << pos
 
-  // = pos / 64 (64 = 2^6)
+  /**
+   * Compute word id corresponding to given position
+   * @param pos position of the bit
+   * @return word id
+   */
   def bitOffset(pos: Int): Int = pos >>> 6
 
-  // = pos % 64
-  def bitPos(pos: Int): Int = pos & 63
-
-  // = pos % 63
+  /**
+   * Put the bit corresponding to the given
+   * position in the bitSet to 1
+   * @param bitSet array of Long representing the bitset
+   * @param pos position of the bit to pass to 1
+   */
   def setBit(bitSet: Array[Long], pos: Int): Unit = {
-    bitSet(bitOffset(pos)) |= oneBitLong(bitPos(pos))
+    bitSet(bitOffset(pos)) |= oneBitLong(pos)
   }
-  // = pos % 63
+
+  /**
+   * Put the bit corresponding to the given
+   * position in the reversibleBitSet to 1
+   * @param bitSet array of ReversibleLong representing the reversible bitset
+   * @param pos position of the bit to pass to 1
+   */
   def setBit(bitSet: Array[ReversibleLong], pos: Int): Unit = {
     val offset = bitOffset(pos)
-    bitSet(offset).setValue(bitSet(offset).getValue | oneBitLong(bitPos(pos)))
+    bitSet(offset).setValue(bitSet(offset).getValue | oneBitLong(pos))
   }
 }
 
@@ -51,7 +75,7 @@ final class ReversibleSparseBitSetEntry(set: ReversibleSparseBitSet, numberOfVal
  * A reversible set with an internal bit-set representation.
  * This set can remove efficiently its elements from another bit-set
  * This set can compute efficiently its intersection with another bit-set
- * @param context
+ * @param context reversible context used for trailing
  * @param n initial values must be taken from {0,...,n-1}
  * @param initialValues the initial values contained in the set
  * @author Pierre Schaus pschaus@gmail.com
@@ -64,16 +88,42 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
    * @param values initial values, they must be in {0,...,n-1}
    */
   class BitSet(values: Iterable[Int]) {
+    assert(values.forall(v => v < n && v >= 0), "Trying to put a value out of the bound of the BitSet")
 
-    protected[ReversibleSparseBitSet] var lastSupport = 0
-
+    /* Variable used to store value of the bitset */
     protected[ReversibleSparseBitSet] var words: Array[Long] = Array.fill(nWords)(0L)
 
-    assert(values.forall(v => v < n && v >= 0))
+    /* Variable used to keep track of the last word intersecting with this */
+    protected[ReversibleSparseBitSet] var lastSupport = 0
 
+    private[this] val mask: Long = ~0L >>> (64 - (n % 64))
+
+    /* Put initial values */
     values.foreach(v => setBit(words, v))
 
-    def &=(bs: BitSet) = {
+    /**
+     * Put value of given bit b to 1
+     * @param b id of bit
+     */
+    def set(b:Int): Unit = {
+      assert(b < n && b >= 0, "Trying to put a value out of the bound of the BitSet")
+      setBit(words, b)
+    }
+
+    /**
+     * Check if this is empty
+     * @return true if this is empty
+     */
+    def isEmpty: Boolean = {
+      words.forall(_ == 0)
+    }
+
+    /**
+     * Compute intersection between this and bs
+     * This contains the result
+     * @param bs bitset to intersect
+     */
+    def &=(bs: BitSet): Unit = {
       var i = words.length
       while (i > 0) {
         i -= 1
@@ -81,7 +131,12 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
       }
     }
 
-    def &~=(bs: BitSet) = {
+    /**
+     * Compute intersection between this and logical negation of bs
+     * This contains the result
+     * @param bs bitset to intersect
+     */
+    def &~=(bs: BitSet): Unit = {
       var i = words.length
       while (i > 0) {
         i -= 1
@@ -89,44 +144,12 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
       }
     }
 
-    def operation(fct: (Long) => Long) = {
-      var i = words.length
-      while (i > 0) {
-        i -= 1
-        words(i) = fct(words(i))
-      }
-    }
-
-    def operation(fct: (Long, Long) => Long, bs: BitSet) = {
-      var i = words.length
-      while (i > 0) {
-        i -= 1
-        words(i) = fct(words(i), bs.words(i))
-      }
-    }
-
-    def operation(fct: (Long, Long, Long) => Long, bs1: BitSet, bs2: BitSet) = {
-      var i = words.length
-      while (i > 0) {
-        i -= 1
-        words(i) = fct(words(i), bs1.words(i), bs2.words(i))
-      }
-    }
-
-    def operation(fct: (Long, Iterable[Long]) => Long, bs: Iterable[BitSet]) = {
-      var i = words.length
-      while (i > 0) {
-        i -= 1
-        words(i) = fct(words(i), bs.map(_.words(i)))
-      }
-    }
-
-    def isZero: Boolean = {
-      words.forall(_ == 0)
-    }
-
-
-    def |=(bs: BitSet) = {
+    /**
+     * Compute union between this and bs
+     * This contains the result
+     * @param bs bitset to unite
+     */
+    def |=(bs: BitSet): Unit = {
       var i = words.length
       while (i > 0) {
         i -= 1
@@ -134,9 +157,11 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
       }
     }
 
-    val mask: Long = ~0L >>> (64 - (n % 64))
-
-    def unary_~ = {
+    /**
+     * Compute logical negation of this
+     * This contains the result
+     */
+    def unary_~ : Unit = {
       var i = words.length
       while (i > 0) {
         i -= 1
@@ -145,47 +170,48 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
       words(words.length - 1) = words(words.length - 1) & mask
     }
 
-    def indexOfFirstNonZero: Int = {
-      var i = 0
-      while (i < words.length && words(i) == 0) {
-        i += 1
-      }
-      (i + 1) * 64 - java.lang.Long.numberOfLeadingZeros(words(i)) - 1
-    }
 
     override def toString: String = {
       val size = n min 64
       words.map(e => String.format(s"%${size}s", java.lang.Long.toBinaryString(e)).replace(' ', '0')).mkString(" ")
     }
-
   }
 
+  assert(initialValues.forall(v => v < n && v >= 0), "Trying to put a value out of the bound of the ReversibleSparseBitSet")
 
-  private[this] var timeStamp = -1L
-
-
-  /* Compute number of Long in a bitset */
+  /* Variables used to store value of the bitset */
   private[this] val nWords = bitLength(n)
-
   private[this] val words: Array[Long] = Array.fill(nWords)(0L)
 
+  /* Variables used to make set sparse */
   private[this] val nonZeroIdx: Array[Int] = Array.tabulate(nWords)(i => i)
   private[this] var nNonZero: Int = nWords
 
-
+  /* Variable used to make computation */
   private[this] val tempMask = Array.fill(nWords)(0L)
 
-  assert(initialValues.forall(v => v < n && v >= 0))
-
-  initialValues.foreach(v => setBit(words, v))
-
-
+  /* Variables used for the trailing */
+  private[this] var timeStamp = -1L
   private[this] var innerTrailSize = 1000
   private[this] var nTrailEntries = 0
   private[this] var wordIndex = Array.ofDim[Int](innerTrailSize)
   private[this] var wordValue = Array.ofDim[Long](innerTrailSize)
 
+  /* Put initial values and find initial nonEmpty words */
+  initialValues.foreach(v => setBit(words, v))
+  var i: Int = nNonZero
+  while (i > 0) {
+    i -= 1
+    if (words(nonZeroIdx(i)) == 0L) {
+      nNonZero -= 1
+      nonZeroIdx(i) = nonZeroIdx(nNonZero)
+      nonZeroIdx(nNonZero) = i
+    }
+  }
 
+  /**
+   * Grow trailing array variables
+   */
   @inline private[this] def growInnerTrail(): Unit = {
     val newWordIndex = new Array[Int](innerTrailSize * 2)
     val newWordValue = new Array[Long](innerTrailSize * 2)
@@ -196,32 +222,9 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     innerTrailSize *= 2
   }
 
-
-  // Remove the zero words from sparse set
-  var i: Int = nNonZero
-  while (i > 0) {
-    i -= 1
-
-    if (words(nonZeroIdx(i)) == 0L) {
-      nNonZero -= 1
-      nonZeroIdx(i) = nonZeroIdx(nNonZero)
-      nonZeroIdx(nNonZero) = i
-    }
-
-  }
-
-  def isEmpty(): Boolean = {
-    nNonZero == 0
-  }
-
-  override def toString(): String = {
-    val size = n min 64
-    def format(l: Long) = String.format(s"%${size}s", java.lang.Long.toBinaryString(l)).replace(' ', '0')
-
-    "NonZeroWords:" + nNonZero + " words:" + words.map(format(_)).mkString(" , ")
-  }
-
-
+  /**
+   * Restore structure to a previous state
+   */
   @inline final def restore(numberOfValues: Int): Unit = {
     var k = numberOfValues
     while (k > 0) {
@@ -233,7 +236,9 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     nNonZero = numberOfValues
   }
 
-
+  /**
+   * Save current state of structure
+   */
   private[this] def trail(): Unit = {
     while (nTrailEntries + nNonZero > innerTrailSize) growInnerTrail()
     var i: Int = nNonZero
@@ -250,10 +255,16 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
   }
 
   /**
-   * Clear all the collected elements
+   * Return true if this is empty
+   */
+  def isEmpty(): Boolean = {
+    nNonZero == 0
+  }
+
+  /**
+   * Clear the collected elements set
    */
   def clearCollected(): Unit = {
-    //wordIndicesToTrail.empty()
     var i: Int = nNonZero
     while (i > 0) {
       i -= 1
@@ -262,19 +273,25 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
   }
 
   /**
-   * Add the elements in set in the set of collected elements
-   * to be used with a subsequent intersectCollected() or removeCollected() operation
-   * @param set
+   * Compute intersection between set of already
+   * collected elements and bs
+   * Intersection is stored internally
+   * @param bs bitset to intersect
    */
-  def collect(set: BitSet): Unit = {
+  def collect(bs: BitSet): Unit = {
     var i: Int = nNonZero
     while (i > 0) {
       i -= 1
       val offset = nonZeroIdx(i)
-      tempMask(offset) |= set.words(offset)
+      tempMask(offset) |= bs.words(offset)
     }
   }
 
+  /**
+   * Compute logical negation of the set of
+   * already collected elements
+   * Negation is stored internally
+   */
   def reverseCollected(): Unit = {
     var i: Int = nNonZero
     while (i > 0) {
@@ -285,9 +302,10 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
   }
 
   /**
-   * Change the bit set such that only the elements
-   * also present in the collected set are kept
-   * @return true if the set has changed, false otherwise.
+   * Compute intersection between set of
+   * collected elements and this
+   * This contains the intersection
+   * @return true if this has changed, false otherwise
    */
   def intersectCollected(): Boolean = {
     if (context.magic != timeStamp) {
@@ -300,7 +318,6 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     while (i > 0) {
       i -= 1
       val offset = nonZeroIdx(i)
-      val storeMagic = context.magic
       val oldLong: Long = words(offset)
       val newLong: Long = oldLong & tempMask(offset)
       words(offset) = newLong
@@ -316,9 +333,10 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
   }
 
   /**
-   * Change the bit set such that all the elements collected
-   * are removed from the bit-set
-   * @return true if the set has changed, false otherwise.
+   * Compute intersection between logical negation of set of
+   * collected elements and this
+   * This contains the intersection
+   * @return true if this has changed, false otherwise
    */
   def removeCollected(): Boolean = {
     reverseCollected()
@@ -327,32 +345,16 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     b
   }
 
-  @inline private def andWordWithMask(position: Int, offset: Int, mask: Long): Unit = {
-
-    val storeMagic = context.magic
-
-    val oldLong: Long = words(offset)
-    val newLong: Long = oldLong & mask
-
-    words(offset) = newLong
-
-    /* Remove the word from the sparse set if equal to 0 */
-    if (newLong == 0L) {
-      nNonZero -= 1
-      nonZeroIdx(position) = nonZeroIdx(nNonZero)
-      nonZeroIdx(nNonZero) = offset
-    }
-  }
 
   /**
-   * @param set
-   * @return true if set has a non empty intersection with the bit-set
+   * Check if there is a non-empty intersection between this and bs
+   * @param bs bitset to intersect
+   * @return true if intersection is non-empty
    */
-  def intersect(set: BitSet): Boolean = {
+  def intersect(bs: BitSet): Boolean = {
+    val support = bs.lastSupport
 
-    val support = set.lastSupport
-
-    if ((words(support) & set.words(support)) != 0L) {
+    if ((words(support) & bs.words(support)) != 0L) {
       return true
     }
 
@@ -360,9 +362,9 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
     while (i > 0) {
       i -= 1
       val offset = nonZeroIdx(i)
-      if ((words(offset) & set.words(offset)) != 0L) {
+      if ((words(offset) & bs.words(offset)) != 0L) {
         /* We found a support and we store the index of the Long where the support is */
-        set.lastSupport = offset
+        bs.lastSupport = offset
         return true
       }
     }
@@ -371,55 +373,68 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
   }
 
   /**
-   * @param set
-   * @return the number of bits of the intersection of the bitSet and this
+   * Count the number of elements in intersection
+   * between this and bs
+   * @param bs bitset to intersect
+   * @return number of elements in intersection
    */
-  def intersectCount(set: BitSet): Int = {
+  def intersectCount(bs: BitSet): Int = {
     var count = 0
 
     var i: Int = nNonZero
     while (i > 0) {
       i -= 1
       val offset = nonZeroIdx(i)
-      count += java.lang.Long.bitCount(words(offset) & set.words(offset))
+      count += java.lang.Long.bitCount(words(offset) & bs.words(offset))
     }
 
     count
   }
 
   /**
-   * @param set1 set2
-   * @return the number of bits of the intersection of the bitSet and this
+   * Count the number of elements in intersection
+   * between this, bs1 and bs2
+   * @param bs1, bs2 bitsets to intersect
+   * @return number of elements in intersection
    */
-  def intersectCount(set1: BitSet, set2: BitSet): Int = {
+  def intersectCount(bs1: BitSet, bs2: BitSet): Int = {
     var count = 0
 
     var i: Int = nNonZero
     while (i > 0) {
       i -= 1
       val offset = nonZeroIdx(i)
-      count += java.lang.Long.bitCount(words(offset) & set1.words(offset) & set2.words(offset))
+      count += java.lang.Long.bitCount(words(offset) & bs1.words(offset) & bs2.words(offset))
     }
 
     count
   }
 
   /**
-   * @param set
-   * @return the number of bits of the intersection of the bitSet and this
+   * Compute weighted count of intersection
+   * between this and bs
+   * @param bs bitset to intersect
+   * @param offsetToWeightId array to map word id to corresponding weight id
+   * @param weightFct array to map weight id to the corresponding weight function
+   * @return weighted count of intersection
    */
-  def intersectCount(set: BitSet, hashMult: Array[Int], multiplicator: Array[()=>Int]): Int = {
+  def intersectCount(bs: BitSet, offsetToWeightId: Array[Int], weightFct: Array[() => Int]): Int = {
     var count = 0
 
     var i: Int = nNonZero
     while (i > 0) {
       i -= 1
       val offset = nonZeroIdx(i)
-      count += java.lang.Long.bitCount(words(offset) & set.words(offset)) * multiplicator(hashMult(offset))()
+      count += java.lang.Long.bitCount(words(offset) & bs.words(offset)) * weightFct(offsetToWeightId(offset))()
     }
 
     count
   }
 
+  override def toString(): String = {
+    val size = n min 64
+    def format(l: Long) = String.format(s"%${size}s", java.lang.Long.toBinaryString(l)).replace(' ', '0')
+    "NonZeroWords:" + nNonZero + " words:" + words.map(format(_)).mkString(" , ")
+  }
 
 }
