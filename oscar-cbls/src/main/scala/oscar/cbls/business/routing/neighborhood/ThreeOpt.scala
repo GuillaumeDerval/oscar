@@ -31,7 +31,7 @@ package oscar.cbls.business.routing.neighborhood
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.{HotRestart, Pairs}
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.core.search.EasyNeighborhood
+import oscar.cbls.core.search._
 
 /**
  * Removes three edges of routes, and rebuilds routes from the segments.
@@ -48,12 +48,14 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
                     relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
                     vrp: VRP,
                     neighborhoodName:String = "ThreeOpt",
-                    best:Boolean = false,
+                    selectInsertionPointBehavior:LoopBehavior = First(),
+                    selectMovedSegmentBehavior:LoopBehavior = First(),
+                    selectFlipBehavior:LoopBehavior = Best(),
                     hotRestart:Boolean = true,
                     skipOnePointMove:Boolean = false,
                     breakSymmetry:Boolean = true,
                     tryFlip:Boolean = true)
-  extends EasyNeighborhood[ThreeOptMove](best,neighborhoodName) {
+  extends EasyNeighborhoodMultilevel[ThreeOptMove](neighborhoodName) {
 
   //the indice to start with for the exploration
   var startIndice: Int = 0
@@ -64,9 +66,9 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
   def exploreNeighborhood(): Unit = {
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
 
-    val iterationSchemeOnZone =
-      if (hotRestart && !best) HotRestart(potentialInsertionPoints(), startIndice)
-      else potentialInsertionPoints()
+    val (iterationSchemeOnZone,notifyFound1) = selectInsertionPointBehavior.toIterable(
+      if (hotRestart) HotRestart(potentialInsertionPoints(), startIndice)
+      else potentialInsertionPoints())
 
     def evalObjAndRollBack() : Int = {
       val a = obj.value
@@ -78,7 +80,10 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
 
     val nodeToVehicle = vrp.getVehicleOfAllNodes
 
-    for (insertionPoint <- iterationSchemeOnZone){
+    var insertionPoint = -1
+    for (insertionPointTmp <- iterationSchemeOnZone){
+      insertionPoint = insertionPointTmp
+
       seqValue.positionOfAnyOccurrence(insertionPoint) match{
         case None => //not routed?!
         case Some(insertionPosition) =>
@@ -88,14 +93,16 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
           val relevantNeighbors = relevantNeighborsNow(insertionPoint)
           val routedRelevantNeighbors = relevantNeighbors.filter((neighbor : Int) => nodeToVehicle(neighbor) != -1 && neighbor != insertionPoint && neighbor > v)
 
-          val routedRelevantNeighborsByVehicle = routedRelevantNeighbors.groupBy(nodeToVehicle).toList
+          val (routedRelevantNeighborsByVehicle,notifyFound2) = selectMovedSegmentBehavior.toIterable(routedRelevantNeighbors.groupBy(nodeToVehicle).toList)
 
           for((vehicleOfMovedSegment,relevantNodes) <- routedRelevantNeighborsByVehicle if vehicleOfMovedSegment != v){
             val pairsOfNodesWithPosition = Pairs.makeAllSortedPairs(relevantNodes.map(node => (node,seqValue.positionOfAnyOccurrence(node).head)).toList)
             val orderedPairsOfNode = pairsOfNodesWithPosition.map({case (a, b) => if (a._2 < b._2) (a, b) else (b, a)})
 
-            val relevantPairsToExplore = if (skipOnePointMove) orderedPairsOfNode.filter({case (a, b) => a._1 != b._1})
-            else orderedPairsOfNode
+            val (relevantPairsToExplore,notifyFound3) =
+              selectMovedSegmentBehavior.toIterable(
+                if (skipOnePointMove) orderedPairsOfNode.filter({case (a, b) => a._1 != b._1})
+                else orderedPairsOfNode)
 
             for (((segmentStart,segmentStartPosition), (segmentEnd,segmentEndPosition)) <- relevantPairsToExplore) {
 
@@ -109,27 +116,21 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
                 //skip this if same vehicle, no flip, and to the left
 
                 if(!breakSymmetry || vehicleForInsertion != vehicleOfMovedSegment || insertionPosition > segmentStartPosition){
-                  //try move no flip
-                  flipForInstantiation = false
-                  doMove(insertionPosition, segmentStartPosition, segmentEndPosition, false)
 
-                  if (evaluateCurrentMoveObjTrueIfStopRequired(evalObjAndRollBack())) {
-                    seq.releaseTopCheckpoint()
-                    startIndice = insertionPoint + 1
-                    return
-                  }
-                }
+                  val (flipValuesToTest,notifyFound4) =
+                    selectFlipBehavior.toIterable(if(tryFlip) List(false,true) else List(false))
 
-                if(tryFlip) {
-                  //try move with flip
-                  flipForInstantiation = true
-                  doMove(insertionPosition, segmentStartPosition, segmentEndPosition, true)
 
-                  if (evaluateCurrentMoveObjTrueIfStopRequired(evalObjAndRollBack())) {
-                    seq.releaseTopCheckpoint()
-                    startIndice = insertionPoint + 1
-                    segmentStartPositionForInstantiation = -1
-                    return
+                  for(flipForInstantiationTmp <- flipValuesToTest){
+                    flipForInstantiation = flipForInstantiationTmp
+                    doMove(insertionPosition, segmentStartPosition, segmentEndPosition, flipForInstantiation)
+
+                    if (evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
+                      notifyFound1()
+                      notifyFound2()
+                      notifyFound3()
+                      notifyFound4()
+                    }
                   }
                 }
               }
@@ -138,6 +139,7 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
       }
     }
     seq.releaseTopCheckpoint()
+    startIndice = insertionPoint + 1
     segmentStartPositionForInstantiation = -1
   }
 

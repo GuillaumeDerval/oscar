@@ -16,7 +16,7 @@ package oscar.cbls.test.routing
   ******************************************************************************/
 
 import oscar.cbls.business.routing.model.{ClosestNeighbors, RoutedAndUnrouted, TotalConstantDistance, VRP}
-import oscar.cbls.business.routing.neighborhood.{InsertPointRoutedFirst, InsertPointUnroutedFirst, OnePointMove, OnePointMoveMove, ThreeOpt, TwoOpt1, _}
+import oscar.cbls.business.routing.neighborhood.{InsertPointRoutedFirst, InsertPointUnroutedFirst, OnePointMove, OnePointMoveMove, ThreeOpt, TwoOpt, _}
 import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.core.propagation.ErrorChecker
@@ -107,7 +107,7 @@ object TestCumulatives extends App{
     selectPointToMoveBehavior = Best(),
     selectDestinationBehavior = Best()))
 
-  val twoOpt = Profile(new TwoOpt1(myVRP.routed, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP))
+  val twoOpt = Profile(new TwoOpt(myVRP.routed, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP))
 
   def threeOpt(k:Int, breakSym:Boolean) = Profile(new ThreeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
@@ -124,12 +124,12 @@ object TestCumulatives extends App{
   intermediaryStops = false,
   maxDepth = 2)
 
-  val remove = RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,best=true)
+  val remove = RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,selectNodeBehavior = Best())
   def segExchange(k:Int) = SegmentExchange(myVRP,()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted),() => myVRP.vehicles)
 
   val swapInOut = Profile((remove andThen routeUnroutedPoint(10)) name ("SWAPInsert"))
   val doubleInsert = Profile((routeUnroutedPoint(10) andThen routeUnroutedPoint(10)) name ("doubleInsert"))
-  val doubleRemove = Profile(( RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,best=true)) andThen  RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,best=true) name ("doubleRemove"))
+  val doubleRemove = Profile(( RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,selectNodeBehavior = Best())) andThen  RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,selectNodeBehavior = Best()) name ("doubleRemove"))
 
   val search = new RoundRobin(List(onePtMove(100),doubleInsert,doubleRemove,swapInOut,vlsnInsert,threeOpt(5,false),twoOpt,segExchange(10))) exhaust onePtMove(10) //(BestSlopeFirst(List(vlsnInsert, routeUnroutedPoint2, routeUnroutedPoint(10), swapInOut, onePtMove(10),twoOpt, threeOpt(10,true),vlsn1pt, routeUnroutedPoint)) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
 

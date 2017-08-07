@@ -15,6 +15,8 @@ package oscar.examples.cbls.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+/*
+import oscar.cbls.business.routing.draft.HotSpot
 import oscar.cbls.core.computation.Store
 import oscar.cbls.business.routing.legacy.model._
 import oscar.cbls.business.routing.legacy.neighborhood._
@@ -166,3 +168,4 @@ object RoutingTestHotSpot extends App with StopWatch{
  */
     println("\nresult:\n" + vrp)
 }
+*/

@@ -23,7 +23,7 @@ import oscar.cbls.lib.invariant.seq.{PositionsOf, Size}
 import oscar.cbls.modeling.Algebra._
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.business.routing.model._
-import oscar.cbls.business.routing.neighborhood.{SegmentExchange, OnePointMove, ThreeOpt, TwoOpt1}
+import oscar.cbls.business.routing.neighborhood.{SegmentExchange, OnePointMove, ThreeOpt, TwoOpt}
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
 import scala.util.Random
@@ -101,7 +101,7 @@ object RoutingWithNodeVehicleRestriction extends App{
       guard(() => myVRP.totalViolationOnRestriction.value >0)
       name "MoveForRestr")
 
-  val twoOpt = Profile(new TwoOpt1(() => nodes, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward), myVRP))
+  val twoOpt = Profile(new TwoOpt(() => nodes, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward), myVRP))
 
   def threeOpt(k:Int, breakSym:Boolean) = Profile(new ThreeOpt(() => nodes, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 

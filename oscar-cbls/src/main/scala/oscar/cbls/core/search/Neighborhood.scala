@@ -729,6 +729,7 @@ trait SupportForAndThenChaining[MoveType<:Move] extends Neighborhood{
  * @param best true if you want the best move false if you want the first acceptable move
  * @param neighborhoodName the name of the neighborhood, used for verbosities
  */
+@deprecated("use EasyNeighborhoodMultilevel Instead")
 abstract class EasyNeighborhood[M<:Move](best:Boolean = false, neighborhoodName:String=null)
   extends Neighborhood with SupportForAndThenChaining[M]{
 

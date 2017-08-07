@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.legacy.model
+package oscar.cbls.business.routing.draft
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -14,8 +14,9 @@ package oscar.cbls.business.routing.legacy.model
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
+/*
 import oscar.cbls.algo.search.HotRestart
+import oscar.cbls.business.routing.legacy.model.{PositionInRouteAndRouteNr, RoutedAndUnrouted, VRP}
 import oscar.cbls.business.routing.legacy.neighborhood.VRPMove
 import oscar.cbls.core.search.{CompositeMove, Move}
 
@@ -239,3 +240,4 @@ abstract class HotSpotViewOfNodes(vrp:VRP with HotSpot, hotRestart:Boolean){
 }
 
 
+*/

@@ -74,7 +74,7 @@ class DemoRoutingController extends StopWatch{
        relevantNewPredecessors = () => myVRP.kFirst(50,myVRP.closestNeighboursForward, myVRP.isRouted),
        vrp = myVRP))
 
-     val twoOpt = Profile(TwoOpt1(
+     val twoOpt = Profile(TwoOpt(
        segmentStartValues = myVRP.routed,
        relevantNewSuccessors = () => myVRP.kFirst(20,myVRP.closestNeighboursForward, myVRP.isRouted),
        vrp = myVRP))

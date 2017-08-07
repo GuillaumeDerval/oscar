@@ -15,15 +15,16 @@ package oscar.cbls.business.routing.neighborhood
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.business.routing.legacy.model.HotSpottingInfo
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.computation.Variable
-import oscar.cbls.core.search.{Neighborhood, EasyNeighborhood, Move}
+import oscar.cbls.core.search.{Move, Neighborhood}
 
 abstract class VRPSMove(override val objAfter: Int,
                        val neighborhood:Neighborhood,
                        override val neighborhoodName:String = null, vrp:VRP)
-  extends Move(objAfter, neighborhoodName) with HotSpottingInfo{
+  extends Move(objAfter, neighborhoodName){
 
   override def touchedVariables: List[Variable] = List(vrp.routes)
+
+  def impactedPoints:Iterable[Int]
 }

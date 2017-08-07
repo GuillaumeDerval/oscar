@@ -21,7 +21,7 @@ import oscar.cbls.core.search.Best
 import oscar.cbls.lib.invariant.seq.Precedence
 import oscar.cbls.core.objective.{Objective, CascadingObjective, IntVarObjective}
 import oscar.cbls.business.routing.model._
-import oscar.cbls.business.routing.neighborhood.{OnePointMoveMove, OnePointMove, ThreeOpt, TwoOpt1}
+import oscar.cbls.business.routing.neighborhood.{OnePointMoveMove, OnePointMove, ThreeOpt, TwoOpt}
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
 import scala.collection.immutable.SortedSet
@@ -97,7 +97,7 @@ object RoutingWithPrecedence extends App{
         selectPointToMoveBehavior= Best(),
         selectDestinationBehavior=Best())})) name("SmartTwoPtMove"))
 
-  val twoOpt = Profile(new TwoOpt1(() => nodes, ()=>myVRP.kFirst(40,myVRP.nearestForward), myVRP))
+  val twoOpt = Profile(new TwoOpt(() => nodes, ()=>myVRP.kFirst(40,myVRP.nearestForward), myVRP))
 
   def threeOpt(k:Int, breakSym:Boolean) = Profile(new ThreeOpt(() => nodes, ()=>myVRP.kFirst(k,myVRP.nearestForward), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
