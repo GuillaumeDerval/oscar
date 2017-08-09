@@ -99,7 +99,7 @@ class CPConstraintPoster(val pstrength: oscar.cp.core.CPPropagStrength){
       case set_in(x, s, ann)                          => new oscar.cp.constraints.InSet(getVar(x),s.toSortedSet)
       case reif(set_in(x, s, ann),b)                  => new oscar.cp.constraints.InSetReif(getVar(x),s.toSortedSet,getBoolVar(b))
       case table_int(xs,ts,ann)                       => oscar.cp.table(xs.map(getVar(_)), Array.tabulate(ts.size/xs.size)(row => Array.tabulate(xs.size)(i => ts(row*xs.size + i).value)))
-      case default => Console.err.println("% No CP constraint found for " + default)
+      case default => Console.out.println("% This is not an error but, no CP constraint was found for " + default)
         Array.empty
     } 
   }

@@ -356,7 +356,7 @@ class FZCBLSSolver extends LinearSelector with StopWatch {
       val hardPoster: FZCBLSConstraintPoster = new FZCBLSConstraintPoster(hardCS,cblsmodel.getCBLSVar);
       for(c <- implcstrs){
         try{
-        hardPoster.add_constraint(c)
+        hardPoster.construct_and_add_constraint(c)
         } catch {
           case e: NoSuchConstraintException => log("Warning: Do not check that "+c+" is always respected.")
         }
@@ -378,7 +378,7 @@ class FZCBLSSolver extends LinearSelector with StopWatch {
     val softConstraints = softcstrs;
     for (invariant <- invariants){
       log(2,"Posting as Invariant "+invariant)
-      val inv = poster.add_invariant(invariant)
+      val inv = poster.construct_and_add_invariant(invariant)
       cblsmodel.cblsIntMap += invariant.definedVar.get.id -> inv;
     }
     log("Posted "+invariants.length+" Invariants")
@@ -386,7 +386,7 @@ class FZCBLSSolver extends LinearSelector with StopWatch {
     Helper.getCstrsByName(invariants).map{ case (n:String,l:List[Constraint]) => l.length +"\t"+n}.toList.sorted.foreach(s => log(" "+s))
     for (constraint <- softConstraints) {
       log(2,"Posting as Soft "+constraint)
-      poster.add_constraint(constraint);
+      poster.construct_and_add_constraint(constraint);
     }
     log("Posted "+softConstraints.length+" Soft Constraints")
     

@@ -28,7 +28,8 @@ object FznOscarCbls extends FznOscarMain {
       val solutions = new FZCBLSBuilder().solve(opts)
     }catch{
       case e: NoSolutionException => {
-        println("====UNSATISFIABLE=====")
+        System.out.println("=====UNSATISFIABLE=====")
+        System.out.flush()
       }
       case e: Exception => {//catch-all clause...
         //System.err.println(e.getMessage())

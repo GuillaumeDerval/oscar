@@ -131,7 +131,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   def get_array_int_element_inv(b: IntegerVariable, as: Array[IntegerVariable], r: IntegerVariable, defId: String, ann: List[Annotation]) = {
    val idx = Sum2(b,-1)
     val k = Max2(0,Min2(idx,as.length-1))
-    c.add(EQ(k,idx))
+    add_constraint(EQ(k,idx))
     
     if(as.forall(_.isBound)) IntElementNoVar(k, as.map(_.value))
     else IntElement(k, as.map(getCBLSVar(_)))
@@ -143,7 +143,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   def get_array_bool_element_inv(b: IntegerVariable, as: Array[BooleanVariable], r: BooleanVariable, defId: String, ann: List[Annotation]) = {
     val idx = Sum2(b,-1)
     val k = Max2(0,Min2(idx,as.length-1))
-    c.add(EQ(k,idx))
+    add_constraint(EQ(k,idx))
 
     if(as.forall(_.isBound)) IntElementNoVar(k, as.map(_.intValue))
     else IntElement(k, as.map(getCBLSVar(_)))
@@ -152,10 +152,26 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     //else IntElement(Sum2(b,-1), as.map(getCBLSVar(_)))
     //TODO: Integrate the offset in the invariant?
   }
-  
+
+  def get_array_bool_or(as: Array[BooleanVariable], r: BooleanVariable, ann: List[Annotation]) = {
+    if(r.isTrue){
+      System.err.println("% Warning: creating duplicate constraint to get better violation function on array_bool_or")
+      EQ(0, Min(as.map( v => v.definingConstraint match {
+        case Some(c:Constraint) => c match {
+          case reif(cons,rv) => constructCBLSConstraint(cons).violation
+          case _ => Minus(1,getCBLSVar(v))
+        }
+        case None => Minus(1,getCBLSVar(v))
+      })))
+    }else{
+      EQ(r,get_array_bool_or_inv(as, r,r.id, ann))
+    }
+  }
+
   def get_array_bool_or_inv(as: Array[BooleanVariable], r: BooleanVariable, defId: String, ann: List[Annotation]) = {
     Step(Sum(as.map(getCBLSVar(_))))//TODO: Do it in one object.
   }
+
   def get_array_bool_xor(as: Array[BooleanVariable], ann: List[Annotation]) = {
     EQ(Mod(Sum(as.map(getCBLSVar(_))), 2), 1)
   }
@@ -309,6 +325,19 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     }
   }
 
+  def get_int_pow(a: IntegerVariable, b: IntegerVariable, c: IntegerVariable, ann: List[Annotation]) = {
+    EQ(Pow(a, b), c)
+  }
+  def get_int_pow_inv(a: IntegerVariable, b: IntegerVariable, c: IntegerVariable, defId: String, ann: List[Annotation]) = {
+    if (defId == c.id) {
+      Pow(a, b)
+    } else if (defId == a.id) { // This should never happen...
+      Pow(c, b)
+    } else {
+      Pow(a, c)
+    }
+  }
+
   def get_int_mod_inv(a: IntegerVariable, b: IntegerVariable, c: IntegerVariable, defId: String, ann: List[Annotation]) = {
     Mod(a, b)
   }
@@ -365,7 +394,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     val newY = Sum2(y,dc.offset)
 
     val k = Max2(0,Min2(newY,cnts.length-1))
-    c.add(EQ(k,newY))
+    add_constraint(EQ(k,newY))
 
     IntElement(k,cnts)
     //IntElement(newY,cnts);
@@ -459,7 +488,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
       
       case array_bool_and(as, r, ann)                 => EQ(r,get_array_bool_and_inv(as, r,r.id, ann))
       case array_bool_element(b, as, r, ann)          => EQ(r,get_array_bool_element_inv(b, as, r, r.id, ann))
-      case array_bool_or(as, r, ann)                  => EQ(r,get_array_bool_or_inv(as, r,r.id, ann))
+      case array_bool_or(as, r, ann)                  =>  get_array_bool_or(as,r, ann)//EQ(r,get_array_bool_or_inv(as, r,r.id, ann))//
       case array_bool_xor(as, ann)                    => get_array_bool_xor(as, ann)
       case array_int_element(b, as, r, ann)           => EQ(r,get_array_int_element_inv(b, as, r,r.id, ann))
       case array_var_bool_element(b, as, r, ann)      => EQ(r,get_array_bool_element_inv(b, as, r,r.id, ann))
@@ -492,6 +521,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
       case int_plus(x, y, z, ann)                     => get_int_plus(x, y, z, ann)
       case int_times(x, y, z, ann)                    => EQ(z,get_int_times_inv(x, y, z,z.id, ann))
       case set_in(x, s, ann)                          => get_set_in(x, s, ann)
+      case int_pow(a,b,c,ann)                         => get_int_pow(a,b,c,ann)
       
       case all_different_int(xs, ann)                 => get_alldifferent(xs, ann)
       case at_least_int(n,xs,v,ann)                   => get_at_least_int(n,xs,v,ann)
@@ -545,22 +575,28 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
       case int_mod(x, y, z, ann)                      => get_int_mod_inv(x, y, z, id, ann)
       case int_plus(x, y, z, ann)                     => get_int_plus_inv(x, y, z, id, ann)
       case int_times(x, y, z, ann)                    => get_int_times_inv(x, y, z, id, ann)
+      case int_pow(x, y, z, ann)                      => get_int_pow_inv(x, y, z, id, ann)
      
       case count_eq(xs,y,cnt,ann)                     => get_count_eq_inv(xs,y,cnt,id,ann)
       case maximum_int(y,xs,ann)                      => get_maximum_inv(xs,ann)//assumes that the id is y.
       case minimum_int(y,xs,ann)                      => get_minimum_inv(xs,ann)
-      case nvalue_int(y,xs,ann)                      => get_nvalue_inv(xs,ann)
+      case nvalue_int(y,xs,ann)                       => get_nvalue_inv(xs,ann)
       //case bin_packing_load(load,bin,w,ann)           => get_bin_packing_load_inv(load,bin,w,ann) //defining multiple variables is not supported by the fzn backend yet.
 
       case notimplemented                             => throw new NoSuchConstraintException(notimplemented.toString(),"CBLS Solver");
     }
   }
   
-  
-  def add_constraint(constraint: Constraint) = {
-    c.add(constructCBLSConstraint(constraint))
+
+  def add_constraint(constraint: CBLSConstraint) = {
+    c.add(constraint)
   }
-  def add_invariant(constraint: Constraint):IntValue = {
+
+  def construct_and_add_constraint(constraint: Constraint) = {
+    add_constraint(constructCBLSConstraint(constraint))
+  }
+
+  def construct_and_add_invariant(constraint: Constraint):IntValue = {
     constraint.definedVar match {
       case None =>
         throw new Exception("Constraint "+constraint+" is not supposed to be an invariant.")

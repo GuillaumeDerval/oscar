@@ -58,6 +58,8 @@ trait NumericInvariants{
     * where output and v are IntVar*/
   def abs(v:IntValue) = Abs(v:IntValue)
 
+  def pow(a:IntValue, b:IntValue) = Pow(a,b)
+
 
   /**
    * This invariant implements the identity function within the min-max range.

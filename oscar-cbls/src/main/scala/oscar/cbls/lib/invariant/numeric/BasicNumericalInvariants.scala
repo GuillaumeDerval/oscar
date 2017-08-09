@@ -246,6 +246,18 @@ with IntNotificationTarget{
 }
 
 /**
+  * a^b
+  * where a, b are IntValue
+  *
+  * @author gustav.bjordal@it.uu.se
+  */
+case class Pow(a: IntValue, b: IntValue)
+  extends IntInt2Int(a, b, (if(DomainHelper2.isSafePow(a,b))
+    (l,r) => Math.pow(l,r).toInt
+  else ((l: Int, r: Int) => DomainHelper2.safePow(l,r))),
+                     DomainHelper2.safePow(a.min, b.min) to DomainHelper2.safePow(a.max, b.max))
+
+/**
  * left - right
  * where left, right, and output are IntVar
   *
@@ -435,6 +447,9 @@ object DomainHelper2 {
     val m4 = x.min.toLong * y.min.toLong
     math.max(math.max(m1,m2), math.max(m3,m4)) <= Int.MaxValue && math.min(math.min(m1,m2), math.min(m3,m4)) >= Int.MinValue
   }
+  def isSafePow(x: IntValue, y:IntValue): Boolean = {
+    Math.pow(x.max, y.max) <= Int.MaxValue/10
+  }
     //Safe addition
   def safeAdd(x: Int, y: Int): Int = {
     if (x.toLong + y.toLong > Int.MaxValue) {
@@ -463,6 +478,14 @@ object DomainHelper2 {
       Int.MinValue
     } else {
       x * y
+    }
+  }
+  //Safe multiplication
+  def safePow(x: Int, y: Int): Int = {
+    if (Math.pow(x,y) > Int.MaxValue/10 || Math.pow(x,y).isInfinity) {
+      Int.MaxValue/10
+    } else {
+      Math.pow(x,y).toInt
     }
   }
   //Division of integers is always safe.

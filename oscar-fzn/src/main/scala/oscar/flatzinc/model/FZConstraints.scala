@@ -232,7 +232,10 @@ case class int_plus(x: IntegerVariable, y: IntegerVariable, z: IntegerVariable, 
   extends AllDefiningConstraint(Array(x,y,z),ann)
 
 case class int_times(x: IntegerVariable, y: IntegerVariable, z: IntegerVariable, ann: List[Annotation] = List.empty[Annotation])
-  extends SimpleDefiningConstraint(Array(x,y,z),z,ann) 
+  extends SimpleDefiningConstraint(Array(x,y,z),z,ann)
+
+case class int_pow(a: IntegerVariable, b: IntegerVariable, c: IntegerVariable, ann: List[Annotation] = List.empty[Annotation])
+  extends SimpleDefiningConstraint(Array(a,b,c),c,ann)
 
 case class set_in(x: IntegerVariable, s: Domain, ann: List[Annotation] = List.empty[Annotation]) 
   extends Constraint(Array(x),ann)
