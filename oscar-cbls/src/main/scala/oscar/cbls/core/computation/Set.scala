@@ -148,7 +148,7 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
 
   private def createValueWiseMechanicsIfNeeded(){
     if(valueToValueWiseKeys == null){
-      valueToValueWiseKeys = Array.tabulate(this.domain.max - this.domain.min)(_ => new DoublyLinkedList()[ValueWiseKey])
+      valueToValueWiseKeys = Array.tabulate(this.domain.max - this.domain.min + 1)(_ => new DoublyLinkedList[ValueWiseKey]())
     }
   }
   private[this] var valueToValueWiseKeys:Array[DoublyLinkedList[ValueWiseKey]] = null
