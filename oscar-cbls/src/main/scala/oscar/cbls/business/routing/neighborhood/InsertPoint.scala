@@ -18,7 +18,7 @@ package oscar.cbls.business.routing.neighborhood
 
 import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.core.search.{First, EasyNeighborhoodMultilevel, LoopBehavior}
+import oscar.cbls.core.search.{First, EasyNeighborhoodMultiLevel, LoopBehavior}
 
 /**
  * base class for point insertion moves
@@ -26,7 +26,7 @@ import oscar.cbls.core.search.{First, EasyNeighborhoodMultilevel, LoopBehavior}
  */
 abstract class InsertPoint(vrp: VRP,
                             neighborhoodName: String)
-  extends EasyNeighborhoodMultilevel[InsertPointMove](neighborhoodName){
+  extends EasyNeighborhoodMultiLevel[InsertPointMove](neighborhoodName){
 
   val v = vrp.v
   val seq = vrp.routes
@@ -151,8 +151,8 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
 
     //hotRestart stuff for next call
     startIndice = if (hotRestartOnNextSymmetryClass) {
-      if (nodeToInsertIterator.hasNext)
-        nodeToInsertIterator.next()
+      if (nodeToInsertIterator.hasUnboundedNext())
+        nodeToInsertIterator.unboundedNext()
       else iterationScheme.head
     } else{insertedPointForInstantiation + 1}
 

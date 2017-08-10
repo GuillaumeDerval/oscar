@@ -27,7 +27,7 @@ package oscar.cbls.business.routing.neighborhood
 
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.core.search.{EasyNeighborhoodMultilevel, First, LoopBehavior, EasyNeighborhood}
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, EasyNeighborhood}
 
 /**
  * Moves a point of a route to another place in the same or in an other route.
@@ -45,7 +45,7 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
                         hotRestart: Boolean = true,
                         allPointsToMoveAreRouted:Boolean = true,
                         allRelevantNeighborsAreRouted:Boolean = true)
-  extends EasyNeighborhoodMultilevel[OnePointMoveMove](neighborhoodName) {
+  extends EasyNeighborhoodMultiLevel[OnePointMoveMove](neighborhoodName) {
 
   val seq = vrp.routes
   val v = vrp.v

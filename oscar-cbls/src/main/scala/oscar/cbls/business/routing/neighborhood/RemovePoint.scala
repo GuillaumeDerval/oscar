@@ -41,7 +41,7 @@ package oscar.cbls.business.routing.neighborhood
 
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.core.search.{EasyNeighborhoodMultilevel, First, LoopBehavior, EasyNeighborhood}
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, EasyNeighborhood}
 
 /**
  * Removes a point of route.
@@ -60,7 +60,7 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
                        neighborhoodName:String = "RemovePoint",
                        selectNodeBehavior:LoopBehavior = First(),
                        hotRestart:Boolean = true)
-  extends EasyNeighborhoodMultilevel[RemovePointMove](neighborhoodName){
+  extends EasyNeighborhoodMultiLevel[RemovePointMove](neighborhoodName){
 
   //the indice to start with for the exploration
   var startIndice: Int = 0

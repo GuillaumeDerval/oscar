@@ -26,7 +26,7 @@ package oscar.cbls.business.routing.neighborhood
 
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.core.search.{EasyNeighborhoodMultilevel, First, LoopBehavior}
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
 import oscar.cbls.lib.invariant.routing.convention.VehicleLocation
 
 /**
@@ -45,7 +45,7 @@ case class TwoOpt(segmentStartValues:()=>Iterable[Int],
                   selectSegmentStartBehavior:LoopBehavior = First(),
                   selectSegmentEndBehavior:LoopBehavior = First(),
                   hotRestart:Boolean = true)
-  extends EasyNeighborhoodMultilevel[TwoOptMove](neighborhoodName){
+  extends EasyNeighborhoodMultiLevel[TwoOptMove](neighborhoodName){
 
   val v = vrp.v
   val seq = vrp.routes

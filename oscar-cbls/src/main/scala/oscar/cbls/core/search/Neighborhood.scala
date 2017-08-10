@@ -829,23 +829,36 @@ abstract class EasyNeighborhood[M<:Move](best:Boolean = false, neighborhoodName:
 
 
 sealed abstract class LoopBehavior(){
-  def toIterable[T](baseIterable:Iterable[T]):(Iterable[T],()=>Unit)
-  def toIterator[T](baseIterable:Iterable[T]):(Iterator[T],()=>Unit) = {
+  def toIterable[T](baseIterable:Iterable[T]):(BoundedIterable[T],()=>Unit)
+  def toIterator[T](baseIterable:Iterable[T]):(BoundedIterator[T],()=>Unit) = {
     val (iterable,stop) = toIterable(baseIterable)
     (iterable.iterator,stop)
   }
 }
 
+trait BoundedIterator[T] extends Iterator[T]{
+  def hasUnboundedNext():Boolean
+  def unboundedNext():T
+}
+
+trait BoundedIterable[T] extends Iterable[T]{
+  override def iterator : BoundedIterator[T]
+}
+
+
 //TODO: randomized
+
 case class First(maxNeighbors:() => Int = () => Int.MaxValue) extends LoopBehavior(){
-  override def toIterable[T](baseIterable : Iterable[T]) : (Iterable[T],()=>Unit) = {
-    val iterable = new Iterable[T]{
+  override def toIterable[T](baseIterable : Iterable[T]) : (BoundedIterable[T],()=>Unit) = {
+    val iterable = new BoundedIterable[T]{
       var foundMove:Boolean = false
       var remainingNeighbors = maxNeighbors()
-      override def iterator : Iterator[T] = new Iterator[T]{
+      override def iterator : BoundedIterator[T] = new BoundedIterator[T]{
         val baseIterator = baseIterable.iterator
         override def hasNext : Boolean = baseIterator.hasNext && !foundMove && remainingNeighbors>0
         override def next() : T = {remainingNeighbors -= 1; baseIterator.next}
+        override def hasUnboundedNext() : Boolean = baseIterator.hasNext
+        override def unboundedNext() : T = baseIterator.next
       }
     }
 
@@ -855,15 +868,16 @@ case class First(maxNeighbors:() => Int = () => Int.MaxValue) extends LoopBehavi
   }
 }
 
-//TODO: randomized
 case class Best(maxNeighbors:() => Int = () => Int.MaxValue) extends LoopBehavior(){
-  override def toIterable[T](baseIterable : Iterable[T]) : (Iterable[T],()=>Unit) = {
-    val iterable = new Iterable[T]{
+  override def toIterable[T](baseIterable : Iterable[T]) : (BoundedIterable[T],()=>Unit) = {
+    val iterable = new BoundedIterable[T]{
       var remainingNeighbors = maxNeighbors()
-      override def iterator : Iterator[T] = new Iterator[T]{
+      override def iterator : BoundedIterator[T] = new BoundedIterator[T]{
         val baseIterator = baseIterable.iterator
         override def hasNext : Boolean = baseIterator.hasNext && remainingNeighbors>0
         override def next() : T = {remainingNeighbors -= 1; baseIterator.next}
+        override def hasUnboundedNext() : Boolean = baseIterator.hasNext
+        override def unboundedNext() : T = baseIterator.next
       }
     }
 
@@ -872,7 +886,7 @@ case class Best(maxNeighbors:() => Int = () => Int.MaxValue) extends LoopBehavio
   }
 }
 
-abstract class EasyNeighborhoodMultilevel[M<:Move](neighborhoodName:String=null)
+abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
   extends Neighborhood with SupportForAndThenChaining[M]{
 
   protected def neighborhoodNameToString: String = if (neighborhoodName != null) neighborhoodName else this.getClass().getSimpleName()

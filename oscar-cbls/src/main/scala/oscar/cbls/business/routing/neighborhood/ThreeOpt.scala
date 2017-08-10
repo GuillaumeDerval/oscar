@@ -55,7 +55,7 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
                     skipOnePointMove:Boolean = false,
                     breakSymmetry:Boolean = true,
                     tryFlip:Boolean = true)
-  extends EasyNeighborhoodMultilevel[ThreeOptMove](neighborhoodName) {
+  extends EasyNeighborhoodMultiLevel[ThreeOptMove](neighborhoodName) {
 
   //the indice to start with for the exploration
   var startIndice: Int = 0

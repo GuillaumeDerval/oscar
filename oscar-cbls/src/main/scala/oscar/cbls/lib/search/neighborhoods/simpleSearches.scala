@@ -60,7 +60,7 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
                               symmetryClassOfValues:Option[Int => Int => Int] = None,
                               domain:(CBLSIntVar,Int) => Iterable[Int] = (v,i) => v.domain,
                               hotRestart:Boolean = true)
-  extends EasyNeighborhoodMultilevel[AssignMove](name) with AlgebraTrait{
+  extends EasyNeighborhoodMultiLevel[AssignMove](name) with AlgebraTrait{
   //the indice to start with for the exploration
   var startIndice:Int = 0
 
@@ -168,7 +168,7 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
                              symmetryClassOfVariables1:Option[Int => Int] = None,
                              symmetryClassOfVariables2:Option[Int => Int] = None,
                              hotRestart:Boolean = true)
-  extends EasyNeighborhoodMultilevel[SwapMove](name) with AlgebraTrait{
+  extends EasyNeighborhoodMultiLevel[SwapMove](name) with AlgebraTrait{
   //the indice to start with for the exploration
   var indiceOfFirstVariable:Int = 0
   override def exploreNeighborhood() {

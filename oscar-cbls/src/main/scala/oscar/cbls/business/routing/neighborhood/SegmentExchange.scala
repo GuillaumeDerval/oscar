@@ -17,7 +17,7 @@ package oscar.cbls.business.routing.neighborhood
 
 import oscar.cbls.algo.search.{Pairs, HotRestart}
 import oscar.cbls.business.routing.model.{PDP, VRP}
-import oscar.cbls.core.search.{First, LoopBehavior, EasyNeighborhoodMultilevel, EasyNeighborhood}
+import oscar.cbls.core.search.{First, LoopBehavior, EasyNeighborhoodMultiLevel, EasyNeighborhood}
 
 import scala.collection.immutable.SortedSet
 
@@ -45,7 +45,7 @@ case class SegmentExchange(val vrp: VRP,
                            selectSecondNodeOfSecondSegmentBehavior:LoopBehavior = First(),
 
                            tryFlip:Boolean = true)
-  extends EasyNeighborhoodMultilevel[SegmentExchangeMove](neighborhoodName) {
+  extends EasyNeighborhoodMultiLevel[SegmentExchangeMove](neighborhoodName) {
 
   var firstSegmentStartPosition:Int = -1
   var firstSegmentEndPosition:Int = -1
