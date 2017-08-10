@@ -95,7 +95,7 @@ class PositionsOfConst(v: SeqValue, a:Int)
   }
 
   override def checkInternals(c: Checker) {
-    c.check(this.value equals v.value.positionsOfValue(a))
+    c.check(this.value equals v.value.positionsOfValueSet(a))
   }
 }
 
