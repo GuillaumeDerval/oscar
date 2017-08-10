@@ -21,7 +21,7 @@
 
 package oscar.cbls.core.computation
 
-import oscar.cbls.algo.dll.{DLLStorageElement, DoublyLinkedList, DelayedPermaFilteredDoublyLinkedList, DPFDLLStorageElement}
+import oscar.cbls.algo.dll._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.core.propagation._
@@ -47,6 +47,7 @@ class ChangingSetValueSnapShot(val variable:ChangingSetValue,val savedValue:Sort
   override protected def doRestore() : Unit = {variable.asInstanceOf[CBLSSetVar] := savedValue}
 }
 
+class ValueWisePropagationWaveIdentifier()
 
 abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domain)
   extends AbstractVariable with SetValue{
@@ -77,7 +78,6 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
     (acc,intval) => if(acc.equalsIgnoreCase("")) ""+intval else acc+","+intval) + "}"
 
   //mechanism that manage key with value changes
-  private val listeningElementsValueWise:DoublyLinkedList[(PropagationElement,Int)] = getDynamicallyListeningElements.permaFilter({case (pe,id) => id == Int.MinValue})
   private val listeningElementsNonValueWise:DoublyLinkedList[(PropagationElement,Int)] = getDynamicallyListeningElements.permaFilter({case (pe,id) => id != Int.MinValue})
 
   override protected[core] def registerDynamicallyListeningElementNoKey(listening : PropagationElement, i : Int) : Unit = {
@@ -87,7 +87,7 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
 
   def instrumentKeyToValueWiseKey(key:KeyForElementRemoval):ValueWiseKey = {
     createValueWiseMechanicsIfNeeded()
-    new ValueWiseKey(key,this)
+    new ValueWiseKey(key,this,null)
   }
 
   /**The values that have bee impacted since last propagation was performed.
@@ -146,7 +146,6 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
     notifyChanged()
   }
 
-
   private def createValueWiseMechanicsIfNeeded(){
     if(valueToValueWiseKeys == null){
       valueToValueWiseKeys = Array.tabulate(this.domain.max - this.domain.min)(_ => new DoublyLinkedList()[ValueWiseKey])
@@ -159,15 +158,7 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
     valueToValueWiseKeys(value - offsetForValueWiseKey).addElem(key)
   }
 
-  def keysAtValueWiseKey(value:Int):DoublyLinkedList[ValueWiseKey] = valueToValueWiseKeys(value - offsetForValueWiseKey)
-
-  private[this] var lastValueWiseNotification:Int = 0
-  def getNextValueWiseNotification():Int = {
-    lastValueWiseNotification += 1
-    if(lastValueWiseNotification == Int.MaxValue){
-      for((pe,_) <- listeningElementsValueWise
-    }
-  }
+  def valueWiseKeysAtValue(value:Int):DoublyLinkedList[ValueWiseKey] = valueToValueWiseKeys(value - offsetForValueWiseKey)
 
   override def performPropagation(){performSetPropagation()}
 
@@ -220,31 +211,38 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
 
         //notifying the PE that listen to only a few values in the set
         //TODO
-        def notifyForValues(values:Iterable[Int]) {
-          for (value <- values) {
-            val valueWiseKeys = keysAtValueWiseKey(value)
-            val headPhantom = valueWiseKeys.phantom
-            var currentElement:DLLStorageElement[ValueWiseKey] = headPhantom.next
-            while (currentElement != headPhantom) {
-              val e:ValueWiseKey = currentElement.elem
-              val target = e.target
-              assert({
-                this.model.NotifiedInvariant = inv.asInstanceOf[Invariant];
-                true
-              })
-              inv.notifySetChanges(this, e._2, addedValues, deletedValues, OldValue, m_NewValue)
-              assert({
-                this.model.NotifiedInvariant = null;
-                true
-              })
-              //we go to the next to be robust against invariant that change their dependencies when notified
-              //this might cause crash because dynamicallyListenedInvariants is a mutable data structure
-              currentElement = currentElement.next
+        if(valueToValueWiseKeys != null) {
+          val currentValueWisePropagationWaveIdentifier = new ValueWisePropagationWaveIdentifier()
+
+          def notifyForValues(values : Iterable[Int]) {
+            for (value <- values) {
+              val valueWiseKeys = valueWiseKeysAtValue(value)
+              val headPhantom = valueWiseKeys.phantom
+              var currentElement : DLLStorageElement[ValueWiseKey] = headPhantom.next
+              while (currentElement != headPhantom) {
+                val e : ValueWiseKey = currentElement.elem
+                val target = e.target
+                if(e.currentValueWisePropagationWaveIdentifier != currentValueWisePropagationWaveIdentifier) {
+                  e.currentValueWisePropagationWaveIdentifier = currentValueWisePropagationWaveIdentifier
+                  assert({
+                    this.model.NotifiedInvariant = e.asInstanceOf[Invariant]
+                    true
+                  })
+                  target.notifySetChanges(this, Int.MinValue, addedValues, deletedValues, OldValue, m_NewValue)
+                  assert({
+                    this.model.NotifiedInvariant = null
+                    true
+                  })
+                }
+                //we go to the next to be robust against invariant that change their dependencies when notified
+                //this might cause crash because dynamicallyListenedInvariants is a mutable data structure
+                currentElement = currentElement.next
+              }
             }
           }
+          notifyForValues(addedValues)
+          notifyForValues(deletedValues)
         }
-
-
 
       }
       //puis, on fait une affectation en plus, pour garbage collecter l'ancienne structure de donnees.
@@ -308,39 +306,48 @@ trait SetNotificationTarget extends PropagationElement{
     s match{
       case c:ChangingSetValue =>
         val key = registerDynamicallyListenedElement(this,Int.MinValue)
-        c.instrumentKeyToValueWiseKey(key)
+        val valueWiseKey = c.instrumentKeyToValueWiseKey(key)
+        valueWiseKey.target = this
+        valueWiseKey
       case _ =>
         DoNothingValueWiseKey
     }
   }
 }
 
-class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,target:SetNotificationTarget){
+class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,var target:SetNotificationTarget){
 
-  var lastNotifiedPropagationNumber:Int = 0
+  var currentValueWisePropagationWaveIdentifier:ValueWisePropagationWaveIdentifier = null
 
   def performRemove(){
     //remove all values in the focus of this key
+    for((value,key) <- valueToKey.content){
+      key.delete()
+    }
     originalKey.performRemove()
   }
 
   val minValue = setValue.min
   val maxValue = setValue.max
 
-  var valueToKey:Array[DPFDLLStorageElement[Int]] = Array.fill[DPFDLLStorageElement[Int]](1 + maxValue - minValue)(null)
+  var valueToKey:RedBlackTreeMap[DLLStorageElement[ValueWiseKey]] = RedBlackTreeMap.empty
 
   def addToKey(value:Int) {
-    require(valueToKey(value) == null)
-    setValue.valueToValueWiseKeys
+    //TODO: change to assert
+    require(!valueToKey.contains(value))
+    valueToKey = valueToKey.insert(value,setValue.addToValueWiseKeys(this,value))
   }
 
   def removeFromKey(value:Int){
-    valueToKey(value).delete()
-    valueToKey(value) = null
+    valueToKey.get(value) match{
+      case None => require(false)
+      case Some(k) => k.delete()
+        valueToKey = valueToKey.remove(value)
+    }
   }
 }
 
-case object DoNothingValueWiseKey extends ValueWiseKey(DummyKeyForElementRemoval,null){
+case object DoNothingValueWiseKey extends ValueWiseKey(DummyKeyForElementRemoval,null,null){
   override def addToKey(value : Int){}
 
   override def removeFromKey(value : Int){}
