@@ -35,7 +35,7 @@ import oscar.cbls.algo.quick.QList
   * @author renaud.delandtsheer@cetic.be
   * @author gael.thouvenin@student.umons.ac.be
   * */
-class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef, F <: AnyRef] extends Iterable[T]{
+class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
 
   private[this] val phantom:DPFDLLStorageElement[T] = new DPFDLLStorageElement[T](null.asInstanceOf[T])
   phantom.setNext(phantom)
@@ -100,7 +100,7 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef, F <: AnyRef] extends Ite
 
   override def iterator = new DPFDLLIterator[T](phantom,phantom)
 
-  def delayedPermaFilter(filter:(T,()=>Unit, ()=> Boolean) => Unit,
+  def delayedPermaFilter[F](filter:(T,()=>Unit, ()=> Boolean) => Unit,
                          map:T => F = (t:T) => t.asInstanceOf[F]):DoublyLinkedList[F] = {
 
 
