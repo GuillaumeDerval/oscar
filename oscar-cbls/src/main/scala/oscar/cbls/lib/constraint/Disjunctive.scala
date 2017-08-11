@@ -12,11 +12,6 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-/******************************************************************************
- * Contributors:
- *     This code has been initially developed by CETIC www.cetic.be
- *         by Renaud De Landtsheer
- ******************************************************************************/
 
 
 package oscar.cbls.lib.constraint
@@ -26,7 +21,8 @@ import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.Constraint
 import oscar.cbls.core.propagation.Checker
 
-import scala.collection.immutable.SortedMap
+import scala.collection.immutable.{SortedSet, SortedMap}
+
 
 /**
  * Implement the Disjunctive constraint.
@@ -34,16 +30,15 @@ import scala.collection.immutable.SortedMap
  * @param duration: the duration of each task
  * @author Jean-Noël Monette 
  */
-case class Disjunctive(start: Array[IntValue],
-                      duration: Array[Int]) extends Invariant with Constraint with IntNotificationTarget{
-//TODO: Make duration also a var
-  
+case class DisjunctiveConstDuration(start: Array[IntValue],
+                                    duration: Array[Int]) extends Invariant with Constraint with IntNotificationTarget{
+
   registerStaticAndDynamicDependencyArrayIndex(start)
   registerConstrainedVariables(start)
   finishInitialization()
-  
+
   private val sumdur = duration.foldLeft(0)((acc,v) => acc + v);
-  
+
   private val Violation: CBLSIntVar = new CBLSIntVar(model, 0, (0 to sumdur*start.length), "ViolationOfDisjunctive")
   Violation.setDefiningInvariant(this)
 
@@ -51,11 +46,11 @@ case class Disjunctive(start: Array[IntValue],
   //the degree of violation of a task is the sum of the sizes of its overlap with other tasks.
   private val Violations: SortedMap[IntValue, CBLSIntVar] = start.foldLeft(
     SortedMap.empty[IntValue, CBLSIntVar])(
-      (acc, intvar) => {
-        val newvar = new CBLSIntVar(model, 0, (0 to sumdur), "Violation_Disjunctive_" + intvar.name)
-        acc + ((intvar, newvar))
-      })
-  
+    (acc, intvar) => {
+      val newvar = new CBLSIntVar(model, 0, (0 to sumdur), "Violation_Disjunctive_" + intvar.name)
+      acc + ((intvar, newvar))
+    })
+
   for(i <- 0 until start.length){
     val curstart = start(i).value
     val curduration = duration(i)
@@ -70,10 +65,10 @@ case class Disjunctive(start: Array[IntValue],
       Violation :+= overlap
     }
   }
-  
+
   //oldstarts is used to make sure that only one variable is handled at a time.
   private val oldstarts = start.map(v => v.value)
-  
+
   @inline
   override def notifyIntChanged(v: ChangingIntValue, index: Int, oldstart: Int, newstart: Int) {
     //TODO: This is not completely incremental (but still linear instead of quadratic)!
@@ -95,7 +90,6 @@ case class Disjunctive(start: Array[IntValue],
     oldstarts(index) = newstart
   }
 
-
   override def violation = Violation
 
   override def violation(v: Value): IntValue = {
@@ -108,3 +102,125 @@ case class Disjunctive(start: Array[IntValue],
 }
 
 
+/**
+ * Implement the Disjunctive constraint.
+ * @param start: the start time of each task
+ * @param duration: the duration of each task
+ * @author Jean-Noël Monette
+ * @author Renaud De Landtsheer
+ */
+case class Disjunctive(start: Array[IntValue],
+                       duration: Array[IntValue]) extends Invariant with Constraint with IntNotificationTarget{
+
+  require(start.length == duration.length,"start and duration array do not have the same size?!")
+
+  val taskIndices:Range = start.indices
+  val nbTask = start.length
+
+  registerStaticAndDynamicDependencyArrayIndex(start)
+  registerStaticAndDynamicDependencyArrayIndex(duration,-nbTask)
+
+  registerConstrainedVariables(start)
+  finishInitialization()
+
+  private val sumMaxDur = duration.foldLeft(0)((acc,v) => acc + v.max);
+
+  private val violationVar: CBLSIntVar = new CBLSIntVar(model, 0, (0 to sumMaxDur*start.length), "ViolationOfDisjunctive")
+  violationVar.setDefiningInvariant(this)
+
+  //the degree of violation of a task is the sum of the sizes of its overlap with other tasks.
+  //opnly tasks with nonZero durations are taken into account (obviously)
+  private val violationsVars: SortedMap[IntValue, CBLSIntVar] = start.foldLeft(
+    SortedMap.empty[IntValue, CBLSIntVar])(
+    (acc, intvar) => {
+      val newvar = new CBLSIntVar(model, 0, (0 to sumMaxDur), "Violation_Disjunctive_" + intvar.name)
+      acc + ((intvar, newvar))
+    })
+
+  private var nonZeroTasks:SortedSet[Int] = SortedSet.empty[Int] ++ taskIndices.filter(i => duration(i).value != 0)
+
+  for(taskID <- nonZeroTasks){
+    val curStart = start(taskID).value
+    val curDuration = duration(taskID).value
+    val curEnd = curStart + curDuration
+
+    for(otherTaskID <- nonZeroTasks if taskID < otherTaskID){
+      val otherStart = start(otherTaskID).value
+      val otherDuration = duration(otherTaskID).value
+      val otherEnd = otherStart + otherDuration
+      val overlap = math.max(0,
+        math.min(
+          math.min(otherEnd-curStart,curEnd-otherStart),
+          math.min(curDuration,otherDuration)))
+      violationsVars(start(taskID)) :+= overlap
+      violationsVars(start(otherTaskID)) :+= overlap
+      violationVar :+= overlap
+    }
+  }
+
+  @inline
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, oldValue: Int, newValue: Int) {
+    if(index <0){
+      //a duration has changed
+      notifyDurChanged(index + nbTask,oldValue, newValue)
+    }else{
+      // a start has changed
+      notifyStartChanged(index,oldValue, newValue)
+    }
+  }
+
+  def notifyStartChanged(taskID:Int,oldStart:Int,newStart:Int) {
+    val dur = duration(taskID).value
+    if (dur == 0) return
+
+    val oldEnd = oldStart + dur
+    val newEnd = newStart + dur
+
+    updateTask(taskID,oldStart,newStart,oldEnd,newEnd)
+  }
+
+  def notifyDurChanged(taskID:Int,oldDur:Int,newDur:Int){
+    if(oldDur == 0 && newDur !=0){
+      nonZeroTasks = nonZeroTasks + taskID
+    }else if (oldDur !=0 && newDur == 0){
+      nonZeroTasks = nonZeroTasks - taskID
+    }
+
+    val startTask = start(taskID).value
+    val oldEnd = startTask + oldDur
+    val newEnd = startTask + newDur
+
+    updateTask(taskID,startTask,startTask,oldEnd,newEnd)
+  }
+
+  def updateTask(taskID:Int,oldStart:Int,newStart:Int,oldEnd:Int,newEnd:Int){
+    //TODO: This is not completely incremental (but still linear instead of quadratic)!
+    val oldDuration = oldEnd - oldStart
+    val newDuration = newEnd - newStart
+    for(otherTaskID <- nonZeroTasks if taskID != otherTaskID){
+      val otherStart = start(otherTaskID).value
+      val otherDuration = duration(otherTaskID).value
+      val otherEnd = otherStart + otherDuration
+      val oldOverlap = math.max(0,math.min(math.min(otherEnd-oldStart,oldEnd-otherStart),math.min(oldDuration,otherDuration)))
+      val newOverlap = math.max(0,math.min(math.min(otherEnd-newStart,newEnd-otherStart),math.min(newDuration,otherDuration)))
+      val deltaViolation = newOverlap - oldOverlap
+      if(deltaViolation !=0) {
+        violationsVars(duration(taskID)) :+= deltaViolation
+        violationsVars(duration(taskID)) :+= deltaViolation
+        violationsVars(start(otherTaskID)) :+= deltaViolation
+        violationsVars(start(otherTaskID)) :+= deltaViolation
+        violationVar :+= deltaViolation
+      }
+    }
+  }
+  
+  override def violation = violationVar
+
+  override def violation(v: Value): IntValue = {
+    violationsVars(v.asInstanceOf[IntValue])
+  }
+
+  override def checkInternals(c: Checker) {
+    //TODO
+  }
+}
