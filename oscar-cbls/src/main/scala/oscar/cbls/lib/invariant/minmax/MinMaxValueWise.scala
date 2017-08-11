@@ -8,7 +8,7 @@ import oscar.cbls.core.propagation.{PropagationElement, KeyForElementRemoval}
 import scala.collection.immutable.SortedSet
 
 
-abstract class MinConstArrayLazy2(constArray: Array[Int], condSet: SetValue, default: Int)(diameter:Int = constArray.length)
+abstract class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default: Int)(diameter:Int = constArray.length)
   extends IntInvariant
   with SetNotificationTarget{
 

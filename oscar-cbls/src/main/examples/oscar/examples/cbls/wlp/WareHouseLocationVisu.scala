@@ -48,7 +48,7 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
 
   val (costForOpeningWarehouse1,distanceCost,warehousePositions,deliveryPositions,warehouseToWarehouseDistances) = WarehouseLocationGenerator.problemWithPositions(W,D,0,1000,3)
 
-    val costForOpeningWarehouse = Array.fill(W)(1000)
+    val costForOpeningWarehouse = costForOpeningWarehouse1 // Array.fill(W)(1000)
 
   val m = Store()
 
