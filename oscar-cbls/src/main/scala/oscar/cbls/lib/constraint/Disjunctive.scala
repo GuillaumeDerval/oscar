@@ -213,7 +213,7 @@ case class Disjunctive(start: Array[IntValue],
       }
     }
   }
-  
+
   override def violation = violationVar
 
   override def violation(v: Value): IntValue = {
@@ -221,6 +221,37 @@ case class Disjunctive(start: Array[IntValue],
   }
 
   override def checkInternals(c: Checker) {
-    //TODO
+
+    var violationFromScratch = 0
+    val violationArrayFromScratch = Array.fill(nbTask)(0)
+
+    for(taskID <- taskIndices){
+      val curStart = start(taskID).value
+      val curDuration = duration(taskID).value
+      val curEnd = curStart + curDuration
+
+      for(otherTaskID <- taskIndices if taskID < otherTaskID){
+        val otherStart = start(otherTaskID).value
+        val otherDuration = duration(otherTaskID).value
+        val otherEnd = otherStart + otherDuration
+        val overlap = math.max(0,
+          math.min(
+            math.min(otherEnd-curStart,curEnd-otherStart),
+            math.min(curDuration,otherDuration)))
+        violationArrayFromScratch(taskID) += overlap
+        violationArrayFromScratch(otherTaskID) += overlap
+        violationFromScratch += overlap
+      }
+    }
+
+    c.check(violation.value == violationFromScratch)
+    for(t <- taskIndices){
+      c.check(violation(start(t)).value == violationArrayFromScratch(t))
+      c.check(violation(duration(t)).value == violationArrayFromScratch(t))
+    }
+
+    val nonZeroTasksFromScratch = SortedSet.empty[Int] ++ taskIndices.filter(i => duration(i).value != 0)
+    c.check(nonZeroTasksFromScratch equals nonZeroTasks)
+
   }
 }
