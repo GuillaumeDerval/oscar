@@ -331,6 +331,30 @@ class BinomialHeapWithMove[T](getKey:T => Int,val maxsize:Int)(implicit val A:Or
       pushDown(pushUp(startposition))
     }
   }
+
+  /**
+   * removes one elem from the heap if present
+   * @param elem
+   * @return trus if it was in the heap, false otherwise
+   */
+  def deleteIfPresent(elem:T):Boolean = {
+    position.get(elem) match{
+      case None => false
+      case Some(startposition) =>
+        if (startposition == size-1){
+          size -=1
+          position -= elem
+          heapArray(size)=null.asInstanceOf[T]
+        }else{
+          swapPositions(startposition,size-1)
+          size -=1
+          position -= elem
+          heapArray(size)=null.asInstanceOf[T]
+          pushDown(pushUp(startposition))
+        }
+        true
+    }
+  }
 }
 
 /**
@@ -339,8 +363,14 @@ class BinomialHeapWithMove[T](getKey:T => Int,val maxsize:Int)(implicit val A:Or
  */
 class ArrayMap(maxId:Int) extends scala.collection.mutable.Map[Int, Int]{
   
-  val array:Array[Int] = new Array[Int](maxId)
-  def get(key: Int): Option[Int] =  Some(array(key))
+  val array:Array[Int] = Array.fill[Int](maxId)(-1)
+  def get(key: Int): Option[Int] =  {
+    val v = array(key)
+    if(v == -1) None
+    else Some(array(key))
+  }
+
+  override def contains(key : Int) : Boolean = array(key) != -1
 
   def iterator: Iterator[(Int, Int)] = {throw new Exception("enumeration not supported"); null}
 
@@ -350,7 +380,7 @@ class ArrayMap(maxId:Int) extends scala.collection.mutable.Map[Int, Int]{
   }
 
   def -=(key: Int): this.type = {
-    array(key) = null.asInstanceOf[Int]
+    array(key) = -1
     this
   }
 }
@@ -400,6 +430,9 @@ class BinomialHeapWithMoveExtMem[T](GetKey:T => Int,val maxsize:Int, position:sc
   def getElements:Iterable[T] = {
     position.keys
   }
+
+  def contains(value:T):Boolean = position.contains(value)
+
 
   private def swapPositions(position1:Int,position2:Int){
     position+=((HeapArray(position1),position2))
@@ -498,6 +531,18 @@ class BinomialHeapWithMoveExtMem[T](GetKey:T => Int,val maxsize:Int, position:sc
       position -= elem
       pushDown(pushUp(startposition))
     }
+  }
+
+  /**
+   * removes one elem from the heap if present
+   * @param elem
+   * @return trus if it was in the heap, false otherwise
+   */
+  def deleteIfPresent(elem:T):Boolean = {
+    if(contains(elem)){
+      delete(elem)
+      true
+    }else false
   }
 }
 

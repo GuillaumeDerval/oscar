@@ -21,11 +21,12 @@ import java.awt.{Dimension, BorderLayout}
 import javax.swing.JFrame
 
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.core.computation.{SetValue, CBLSIntVar, Store}
 import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.core.search._
 import oscar.cbls.lib.invariant.logic.Filter
-import oscar.cbls.lib.invariant.minmax.{ArgMin, MinConstArrayLazy}
+import oscar.cbls.lib.invariant.minmax.{MinConstArrayValueWise, ArgMin, MinConstArrayLazy}
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.combinators.{Profile, Mu, BestSlopeFirst}
 import oscar.cbls.lib.search.neighborhoods.{AssignNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
@@ -37,7 +38,7 @@ import scala.language.postfixOps
 object WareHouseLocationVisu extends App with AlgebraTrait{
 
   //the number of warehouses
-  val W:Int = 200
+  val W:Int = 10000
 
   //the number of delivery points
   val D:Int = 1000
@@ -48,15 +49,19 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
 
   val (costForOpeningWarehouse1,distanceCost,warehousePositions,deliveryPositions,warehouseToWarehouseDistances) = WarehouseLocationGenerator.problemWithPositions(W,D,0,1000,3)
 
-    val costForOpeningWarehouse = costForOpeningWarehouse1 // Array.fill(W)(1000)
+    val costForOpeningWarehouse =  Array.fill(W)(1000)
 
-  val m = Store()
+  val m = Store() //checker = Some(new ErrorChecker()))
 
   val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
+  //val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
+  //  MinConstArrayLazy(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse))
+
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
-    MinConstArrayLazy(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse))
+    new MinConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse,maxDiameter = 2))
+
 
   val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses))
 
@@ -106,13 +111,13 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
     BestSlopeFirst(
       List(
         Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
-        Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),
-        Profile(swapsK(20))
+        Profile(swapsK(20)),
+        Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses"))
 //       Profile(doubleSwap(10))
       ),refresh = W/10)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 2, obj)
 //      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/3), 1, obj))
-    ) exhaust mu(5,3,15) afterMove(
+    ) exhaust Profile(mu(4,3,15)) afterMove(
     if(obj.value < bestObj){
       bestObj = obj.value
       visual.redraw(openWarehouses.value)

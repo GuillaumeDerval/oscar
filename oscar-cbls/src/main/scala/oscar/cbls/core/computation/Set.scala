@@ -81,7 +81,6 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
   private val listeningElementsNonValueWise:DoublyLinkedList[(PropagationElement,Int)] = getDynamicallyListeningElements.permaFilter({case (pe,id) => id != Int.MinValue})
 
   override protected[core] def registerDynamicallyListeningElementNoKey(listening : PropagationElement, i : Int) : Unit = {
-    require(i != Int.MinValue,"you cannot register with id set to Int.MinValue")
     super.registerDynamicallyListeningElementNoKey(listening, i)
   }
 
@@ -305,7 +304,7 @@ trait SetNotificationTarget extends PropagationElement{
   def registerDynamicValueWiseDependency(s:SetValue):ValueWiseKey = {
     s match{
       case c:ChangingSetValue =>
-        val key = registerDynamicallyListenedElement(this,Int.MinValue)
+        val key = registerDynamicallyListenedElement(c,Int.MinValue)
         val valueWiseKey = c.instrumentKeyToValueWiseKey(key)
         valueWiseKey.target = this
         valueWiseKey
@@ -317,12 +316,14 @@ trait SetNotificationTarget extends PropagationElement{
 
 class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,var target:SetNotificationTarget){
 
+  val sizeOfSet = setValue.max - setValue.min +1
+  val offset = setValue.min
   var currentValueWisePropagationWaveIdentifier:ValueWisePropagationWaveIdentifier = null
 
   def performRemove(){
     //remove all values in the focus of this key
-    for((value,key) <- valueToKey.content){
-      key.delete()
+    for(i <- valueToKeyArray){
+      if(i != null) i.delete()
     }
     originalKey.performRemove()
   }
@@ -330,20 +331,20 @@ class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,va
   val minValue = setValue.min
   val maxValue = setValue.max
 
-  var valueToKey:RedBlackTreeMap[DLLStorageElement[ValueWiseKey]] = RedBlackTreeMap.empty
+  //var valueToKey:RedBlackTreeMap[DLLStorageElement[ValueWiseKey]] = RedBlackTreeMap.empty
+
+  val valueToKeyArray = Array.fill[DLLStorageElement[ValueWiseKey]](sizeOfSet)(null)
 
   def addToKey(value:Int) {
     //TODO: change to assert
-    require(!valueToKey.contains(value))
-    valueToKey = valueToKey.insert(value,setValue.addToValueWiseKeys(this,value))
+    require(valueToKeyArray(value) == null)
+    valueToKeyArray(value) = setValue.addToValueWiseKeys(this,value)
   }
 
   def removeFromKey(value:Int){
-    valueToKey.get(value) match{
-      case None => require(false)
-      case Some(k) => k.delete()
-        valueToKey = valueToKey.remove(value)
-    }
+    val k = valueToKeyArray(value)
+    k.delete()
+    valueToKeyArray(value) = null
   }
 }
 
