@@ -60,7 +60,7 @@ trait Benchmark {
 
       argMap.getOrElse(
         'search,
-        Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit, ALNSBuilder.ExtOriented, ALNSBuilder.WeightDeg)
+        Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.ExtOriented, ALNSBuilder.WeightDeg)
       ).asInstanceOf[Array[String]],
 
       argMap.getOrElse('valLearn, true).asInstanceOf[Boolean],

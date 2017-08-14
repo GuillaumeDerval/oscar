@@ -32,7 +32,7 @@ object ALNSBuilder{
 
   // Value guided relaxation:
   val ValGuided = "ValGuided"
-  val DefValGuidedParam2 = Array("Random", "MaxGroup", "MinGroup", "MaxVal", "MinVal")
+  val DefValGuidedParam2 = Array("Random", "MaxVal", "MinVal")
 
   // Predecessor relaxation:
   val PredRelax = "PredRelax"
@@ -68,7 +68,7 @@ object ALNSBuilder{
   val DefWeigDegreeParam2 = 0.99
 
   // Available value Heuristic functions:
-  val DefValHeuris = Array("Min", "Max", "Median", "Random")
+  val DefValHeuris = Array("Min", "Max")
 
   //TODO: implement other search heuristics
 

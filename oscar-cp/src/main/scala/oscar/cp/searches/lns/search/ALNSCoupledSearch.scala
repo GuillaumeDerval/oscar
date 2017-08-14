@@ -60,6 +60,7 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
 
   override def alnsLoop(): Unit = {
     if (!solver.silent) println("\nStarting adaptive LNS...")
+    println("n operators: " + operators.length)
     stagnation = 0
     while (
       System.nanoTime() < endTime && opStore.nonActiveEmpty && (!config.learning || stagnation < stagnationThreshold) && !optimumFound) {
@@ -74,8 +75,6 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
       println("\nStarting new search with: " + operator.name)
       println("Operator timeout: " + (endSearch - System.nanoTime())/1000000000.0 + "s")
     }
-
-    println("n operators: " + operators.length)
 
     val oldObjective = currentSol.get.objective
 
