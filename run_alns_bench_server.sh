@@ -31,7 +31,7 @@ run_search () {
 #    echo "Output: $2"
     echo "Instance: $3"
     echo "Config: $4"
-    `scala -J-Xmx1g -cp $1 $3 $4 --out $2`
+    scala -J-Xmx1g -cp $1 $3 $4 --out $2
     echo -e "\n\n\n"
 }
 
@@ -61,12 +61,12 @@ echo -e "\nInstances:"
 cat ${InstancesToRun}
 echo -e "\n\n\n"
 
-parallel --gnu --jobs 50% run_search ${CP} ${Out} :::: ${InstancesToRun} :::: ${ConfigsFile}
+$BIN/parallel --gnu --jobs 80% run_search ${CP} ${Out} :::: ${InstancesToRun} :::: ${ConfigsFile}
 
 rm ${InstancesToRun}
 
 cp -r --parents "${Out}" "/etinfo/users2/cthomas/Workspace/"
 
-`scala -J-Xmx1g -cp ${CP} ${BenchRoot}.utils.HtmlReporter ${Out}`
+scala -J-Xmx1g -cp ${CP} ${BenchRoot}.utils.HtmlReporter ${Out}
 
 cat "${Out}/${Date}-${VNum}_htmlReport.html" > "/etinfo/users2/cthomas/Workspace/${Out}/htmlReport.html"

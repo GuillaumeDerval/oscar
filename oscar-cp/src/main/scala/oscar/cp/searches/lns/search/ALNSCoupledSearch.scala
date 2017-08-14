@@ -75,6 +75,8 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
       println("Operator timeout: " + (endSearch - System.nanoTime())/1000000000.0 + "s")
     }
 
+    println("n operators: " + operators.length)
+
     val oldObjective = currentSol.get.objective
 
     //New search using selected strategies:
