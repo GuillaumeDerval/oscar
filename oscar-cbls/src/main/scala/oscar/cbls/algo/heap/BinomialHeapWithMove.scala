@@ -124,8 +124,8 @@ class BinomialHeap[@specialized T](initialGetKey:T => Int,val maxsize:Int)(impli
   }
 
   private def leftChild(position:Int):Int = (position+1)*2-1
-  private def rightChild(position:Int):Int =(position+1)*2
-  private def father(position:Int):Int = position/2
+  private def rightChild(position:Int):Int = (position+1)*2
+  private def father(position:Int):Int = (position-1)/2
 
   /**O(firsts)*/
   override def getFirsts:List[T] = {
@@ -205,12 +205,12 @@ class BinomialHeapWithMove[T](getKey:T => Int,val maxsize:Int)(implicit val A:Or
   def checkInternals(c:Checker){
     for(i <- heapArray.indices if i < size-1){
       if (leftChild(i) < size){
-        assert(getKey(heapArray(i)) <= getKey(heapArray(leftChild(i))),"heap error " + this + i)
-        assert(father(leftChild(i)) == i,"heap error " + this)
+        require(getKey(heapArray(i)) <= getKey(heapArray(leftChild(i))),"heap error " + this + i)
+        require(father(leftChild(i)) == i,"heap error " + this)
       }
       if (rightChild(i) < size){
-        assert(getKey(heapArray(i)) <= getKey(heapArray(rightChild(i))),"heap error " + this)
-        assert(father(rightChild(i)) == i,"heap error " + this)
+        require(getKey(heapArray(i)) <= getKey(heapArray(rightChild(i))),"heap error " + this)
+        require(father(rightChild(i)) == i,"heap error " + this)
       }
     }
 
@@ -285,7 +285,7 @@ class BinomialHeapWithMove[T](getKey:T => Int,val maxsize:Int)(implicit val A:Or
 
   private def leftChild(position:Int):Int = (position+1)*2-1
   private def rightChild(position:Int):Int =(position+1)*2
-  private def father(position:Int):Int = position/2
+  private def father(position:Int):Int =  (position-1)/2
 
   def getFirsts:List[T] = {
     def ExploreFirsts(value:Int,startposition:Int,acc:List[T]):List[T] = {
@@ -403,12 +403,12 @@ class BinomialHeapWithMoveExtMem[T](GetKey:T => Int,val maxsize:Int, position:sc
   def checkInternals(c:Checker){
     for(i <- HeapArray.indices if i < size-1){
       if (leftChild(i) < size){
-        assert(GetKey(HeapArray(i)) <= GetKey(HeapArray(leftChild(i))),"heap error " + this + i)
-        assert(father(leftChild(i)) == i,"heap error " + this)
+        require(GetKey(HeapArray(i)) <= GetKey(HeapArray(leftChild(i))),"heap error " + this + i)
+        require(father(leftChild(i)) == i,"heap error " + this)
       }
       if (rightChild(i) < size){
-        assert(GetKey(HeapArray(i)) <= GetKey(HeapArray(rightChild(i))),"heap error " + this)
-        assert(father(rightChild(i)) == i,"heap error " + this)
+        require(GetKey(HeapArray(i)) <= GetKey(HeapArray(rightChild(i))),"heap error " + this)
+        require(father(rightChild(i)) == i,"heap error " + this)
       }
     }
   }
@@ -488,7 +488,7 @@ class BinomialHeapWithMoveExtMem[T](GetKey:T => Int,val maxsize:Int, position:sc
   @inline
   private def rightChild(position:Int):Int =(position+1)*2
   @inline
-  private def father(position:Int):Int = position/2
+  private def father(position:Int):Int =  (position-1)/2
 
   def getFirsts:List[T] = {
     def ExploreFirsts(value:Int,startposition:Int,acc:List[T]):List[T] = {
@@ -568,12 +568,12 @@ class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int)
   def checkInternals(c:Checker){
     for(i <- heapArray.indices if i < size-1){
       if (leftChild(i) < size){
-        assert(getKey(heapArray(i)) <= getKey(heapArray(leftChild(i))),"heap error " + this + i)
-        assert(father(leftChild(i)) == i,"heap error " + this)
+        require(getKey(heapArray(i)) <= getKey(heapArray(leftChild(i))),"heap error " + this + i)
+        require(father(leftChild(i)) == i,"heap error " + this)
       }
       if (rightChild(i) < size){
-        assert(getKey(heapArray(i)) <= getKey(heapArray(rightChild(i))),"heap error " + this)
-        assert(father(rightChild(i)) == i,"heap error " + this)
+        require(getKey(heapArray(i)) <= getKey(heapArray(rightChild(i))),"heap error " + this)
+        require(father(rightChild(i)) == i,"heap error " + this)
       }
     }
   }
@@ -650,7 +650,7 @@ class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int)
   @inline
   private def rightChild(position:Int):Int =(position+1)*2
   @inline
-  private def father(position:Int):Int = position/2
+  private def father(position:Int):Int =  (position-1)/2
 
   def getFirsts:List[Int] = {
     def ExploreFirsts(value:Int,startposition:Int,acc:List[Int]):List[Int] = {

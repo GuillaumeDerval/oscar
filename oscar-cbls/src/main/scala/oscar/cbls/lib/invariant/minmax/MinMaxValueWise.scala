@@ -1,6 +1,6 @@
 package oscar.cbls.lib.invariant.minmax
 
-import oscar.cbls.algo.heap.{BinomialHeapWithMoveInt, ArrayMap, BinomialHeapWithMoveExtMem, BinomialHeapWithMove}
+import oscar.cbls.algo.heap.BinomialHeapWithMoveInt
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.Checker
 
