@@ -39,12 +39,12 @@ import scala.language.postfixOps
 object WareHouseLocationVisu extends App with AlgebraTrait with StopWatch{
 
   //the number of warehouses
-  val W:Int = 1000
+  val W:Int = 10000
 
   //the number of delivery points
   val D:Int = 1000
 
-  val displayDelay = 100
+  val displayDelay = 1000
 
   println("WarehouseLocation(W:" + W + ", D:" + D + ")")
   //the cost per delivery point if no location is open
@@ -63,14 +63,14 @@ object WareHouseLocationVisu extends App with AlgebraTrait with StopWatch{
   //  MinConstArrayLazy(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse))
 
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
-    new MinConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse,maxDiameter = 1))
+    new MinConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse,maxDiameter = 2))
 
 
   val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses))
 
   m.close()
 
-  val visual = new WareHouseLocationWindow(deliveryPositions,warehousePositions,distanceCost,costForOpeningWarehouse)
+//  val visual = new WareHouseLocationWindow(deliveryPositions,warehousePositions,distanceCost,costForOpeningWarehouse)
 
   var bestObj = Int.MaxValue
 
@@ -88,7 +88,7 @@ object WareHouseLocationVisu extends App with AlgebraTrait with StopWatch{
   def kNearestOpenWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).value != 0)
   def kNearestdWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse))
 
-  def mu(depth:Int,kOpen:Int,kClosed:Int ) = Mu[AssignMove](
+  def muLine(depth:Int,kOpen:Int,kClosed:Int ) = Mu[AssignMove](
   AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
   (assignList:List[AssignMove]) =>
   {
@@ -98,6 +98,19 @@ object WareHouseLocationVisu extends App with AlgebraTrait with StopWatch{
   Some(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse",searchZone = () => otherWarehouses,hotRestart = false))
   },
   maxDepth = depth,
+  intermediaryStops = true)
+
+
+  def muStar(width:Int,kOpen:Int,kClosed:Int ) = Mu[AssignMove](
+  AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
+  (assignList:List[AssignMove]) =>
+  {
+  val lastChangedWarehouse = assignList.last.id
+  val setTo = assignList.head.v
+  val otherWarehouses = if(setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse,kClosed) else kNearestOpenWarehouses(lastChangedWarehouse,kOpen)
+  Some(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse",searchZone = () => otherWarehouses,hotRestart = false))
+  },
+  maxDepth = width,
   intermediaryStops = true)
 
   def swapsK(k:Int,openWarehoueseTocConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
@@ -116,21 +129,19 @@ object WareHouseLocationVisu extends App with AlgebraTrait with StopWatch{
         Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
         Profile(swapsK(20)),
         Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses"))
-//       Profile(doubleSwap(10))
       ),refresh = W/10)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 2, obj)
-//      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/3), 1, obj))
-    ) exhaust Profile(mu(3,3,15)) exhaust Profile(mu(4,3,15)) afterMove(
+    ) exhaust (Profile(muLine(3,3,15)) exhaustAndContinueIfMovesFound Profile(muLine(4,3,15))) afterMove(
     if(obj.value < bestObj){
       bestObj = obj.value
-      if(this.getWatch > lastDisplay + displayDelay) {visual.redraw(openWarehouses.value); lastDisplay = this.getWatch}
+//      if(this.getWatch > lastDisplay + displayDelay) {visual.redraw(openWarehouses.value); lastDisplay = this.getWatch}
     })
 
   neighborhood.verbose = 2
 
   neighborhood.doAllMoves(obj=obj)
 
-  visual.redraw(openWarehouses.value,false)
+  //visual.redraw(openWarehouses.value,false)
 
   println(neighborhood.profilingStatistics)
 

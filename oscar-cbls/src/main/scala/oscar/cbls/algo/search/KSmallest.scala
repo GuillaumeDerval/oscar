@@ -18,6 +18,7 @@
 package oscar.cbls.algo.search
 
 import oscar.cbls.algo.heap.BinomialHeap
+import oscar.cbls.algo.quick.QList
 import oscar.cbls.util.StopWatch
 
 /**
@@ -49,20 +50,20 @@ object KSmallest {
 
   def kFirst(k: Int, values:Iterable[Int], filter: (Int => Boolean) = _ => true): Iterable[Int] = {
 
-    def kFirstAccumulator(sortedNeighbors: Iterator[Int], k: Int, kNearestAcc: List[Int]): List[Int] = {
+    def kFirstAccumulator(sortedNeighbors: Iterator[Int], k: Int): QList[Int] = {
       require(k >= 0)
       if(k == 0 || !sortedNeighbors.hasNext){
-        kNearestAcc.reverse
+        null
       }else{
         val neighbor = sortedNeighbors.next()
         if (filter(neighbor))
-          kFirstAccumulator(sortedNeighbors, k - 1, neighbor :: kNearestAcc)
+          QList(neighbor,kFirstAccumulator(sortedNeighbors, k - 1))
         else
-          kFirstAccumulator(sortedNeighbors, k, kNearestAcc)
+          kFirstAccumulator(sortedNeighbors, k)
       }
     }
 
-    kFirstAccumulator(values.iterator, k, Nil)
+    QList.toIterable(kFirstAccumulator(values.iterator, k))
   }
 }
 

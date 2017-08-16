@@ -577,6 +577,7 @@ trait AbstractVariable
 
   /**this method s to be called by any method that internally modifies the value of the variable
     * it schedules the variable for propagation, and performs a basic check of the identify of the executing invariant*/
+  @inline
   final def notifyChanged(){
     if(isScheduled) return
     //modifier le test.
