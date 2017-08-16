@@ -50,7 +50,7 @@ abstract class AbstractVehicleCapacity(n:Int,
           (zoneStart,zoneEnd) :: list
         } else {
           //the new interval touches the old one, there will be some merge
-          require(Math.min(zoneStart, oldStart) <= Math.max(zoneEnd, oldEnd))
+          assert(Math.min(zoneStart, oldStart) <= Math.max(zoneEnd, oldEnd))
           smartPrepend(Math.min(zoneStart, oldStart), Math.max(zoneEnd, oldEnd), tail)
         }
     }
@@ -112,7 +112,6 @@ abstract class AbstractVehicleCapacity(n:Int,
     val startPosOfVehicle = vehicleLocationBeforeRemove.startPosOfVehicle(vehicleOfRemove)
     val relativePosOfRemove = posOfRemove - startPosOfVehicle
 
-
     val shouldNextNodeBeIncluded = sequenceBeforeRemove.valueAtPosition(posOfRemove + 1) match {
       case Some(x) if x >= v => true
       case _ => false
@@ -163,7 +162,6 @@ abstract class AbstractVehicleCapacity(n:Int,
         }
     }
   }
-
 
   // @Note => O(listToInsert+toInsert)
   private def insertInList(listToInsert: List[(Int, Int)], toInsert: List[(Int, Int)]): List[(Int, Int)] = {
@@ -503,7 +501,8 @@ abstract class AbstractVehicleCapacity(n:Int,
    * @return the last position where an update was performed
    */
   private def updateUntilAbsolutePositionAndSaturatedOrVehicleEnd(previousUpdatedPosition:IntSequenceExplorer,
-                                                                  endCompulsoryAbsolute:Int,vehicle:Int):Option[IntSequenceExplorer] = {
+                                                                  endCompulsoryAbsolute:Int,
+                                                                  vehicle:Int):Option[IntSequenceExplorer] = {
     previousUpdatedPosition.next match{
       case None => None //we'v reached the end of the sequence
       case Some(positionOfCurrent) =>
@@ -560,7 +559,7 @@ abstract class AbstractVehicleCapacity(n:Int,
           } else {
             //carry on the same vehicle
             //(startingNode,destinationNode,capacityAtStartingNode)=> capacityAtDestinationNode
-            setVehicleContentAtNode(currentNode, previousPosition.value)
+            setVehicleContentAtNode(previousPosition.value,currentNode)
             previousPosition = currentPosition
           }
       }
@@ -570,8 +569,6 @@ abstract class AbstractVehicleCapacity(n:Int,
 }
 
 object AbstractVehicleCapacity{
-
-
   /**
    *Computes content of vehicle and their starting position from scratch
    * @param s the sequence
@@ -599,14 +596,14 @@ object AbstractVehicleCapacity{
     while(true) {
       previousPosition.next match {
         case None => //we'v reached the end of the sequence
-          vehicleContentAtEndOfRoute(currentVehicle) = previousContent
+          vehicleContentAtEndOfRoute(currentVehicle) = op(previousPosition.value, currentVehicle, previousContent)
           require(currentVehicle == v-1)
           return (vehicleContent,vehicleContentAtEndOfRoute,VehicleLocation(vehicleLocation))
         case Some(currentPosition) =>
           val currentNode = currentPosition.value
           if (currentNode < v) {
             //we'v reached a new vehicle
-            vehicleContentAtEndOfRoute(currentVehicle) = previousContent
+            vehicleContentAtEndOfRoute(currentVehicle) = op(previousPosition.value, currentVehicle, previousContent)
             vehicleLocation(currentNode) = currentPosition.position
             previousContent = getContentAtVehicleStart(currentNode)
             vehicleContent(currentNode) = previousContent

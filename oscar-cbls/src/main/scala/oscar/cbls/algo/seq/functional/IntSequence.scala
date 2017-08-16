@@ -15,7 +15,7 @@ package oscar.cbls.algo.seq.functional
   ******************************************************************************/
 
 import oscar.cbls.algo.fun.{LinearTransform, PiecewiseLinearBijectionNaive, PiecewiseLinearFun, Pivot}
-import oscar.cbls.algo.quick.QList
+import oscar.cbls.algo.quick.{IterableQList, QList}
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 
 import scala.collection.immutable.SortedSet
@@ -82,7 +82,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
 
   def iterator : Iterator[Int] = new IntSequenceIterator(this.explorerAtPosition(0))
 
-  def iterateFromAnyOcurrenceOfValue(value:Int):Iterator[Int] = new IntSequenceIterator(this.explorerAtAnyOccurrence(value))
+  def iterateFromAnyOccurrenceOfValue(value:Int):Iterator[Int] = new IntSequenceIterator(this.explorerAtAnyOccurrence(value))
 
   def iterable : Iterable[Int] = new IterableIntSequence(this)
 
@@ -94,7 +94,15 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
 
   def valueAtPosition(position : Int) : Option[Int]
 
-  def positionsOfValue(value : Int) : SortedSet[Int]
+  final def positionsOfValue(value : Int) : Iterable[Int] = {
+    new IterableQList[Int](positionsOfValueQ(value))
+  }
+
+  final def positionsOfValueSet(value : Int) : SortedSet[Int] = {
+    SortedSet.empty[Int] ++ positionsOfValue(value)
+  }
+
+  def positionsOfValueQ(value : Int) : QList[Int]
 
   def contains(value : Int) : Boolean
 
@@ -279,11 +287,17 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     internalPositionToValue.get(internalPosition)
   }
 
-  def positionsOfValue(value : Int) : SortedSet[Int] = {
+  override def positionsOfValueQ(value : Int) : QList[Int] = {
     valueToInternalPositions.get(value) match {
-      case None => SortedSet.empty
+      case None => null
       case Some(internalPositions) =>
-        SortedSet.empty ++ internalPositions.values.map(externalToInternalPosition.backward(_))
+        var toReturn:QList[Int] = null
+        var toDigest:List[Int] = internalPositions.keys
+        while(toDigest.nonEmpty){
+          toReturn = QList(externalToInternalPosition.backward(toDigest.head),toReturn)
+          toDigest = toDigest.tail
+        }
+        toReturn
     }
   }
 
@@ -689,7 +703,7 @@ abstract class StackedUpdateIntSequence extends IntSequence(){
   }
 
   override def insertAtPosition(value : Int, pos : Int, fast:Boolean,autoRework:Boolean) : IntSequence = {
-    require(pos >= 0 && pos <= size , "pos=" + pos + " should be in [0,size="+size+"] in UniqueIntSequence.insertAt")
+    require(pos >= 0 && pos <= size , "pos=" + pos + " should be in [0,size="+size+"] in IntSequence.insertAt")
     new InsertedIntSequence(this,value:Int,pos:Int)
   }
 
@@ -829,8 +843,16 @@ class MovedIntSequence(val seq:IntSequence,
     tmp
   }
 
-  override def positionsOfValue(value : Int) : SortedSet[Int] = {
-    seq.positionsOfValue(value).map(oldPosToNewPos)
+  override def positionsOfValueQ(value : Int) : QList[Int] = {
+    var positionsBefore = seq.positionsOfValueQ(value)
+    var toReturn:QList[Int] = null
+    while(positionsBefore != null){
+      val oldPos = positionsBefore.head
+      positionsBefore = positionsBefore.tail
+      val newPos = oldPosToNewPos(oldPos)
+      toReturn = QList(newPos,toReturn)
+    }
+    toReturn
   }
 
   override def contains(value : Int) : Boolean = seq.contains(value)
@@ -940,12 +962,20 @@ class InsertedIntSequence(seq:IntSequence,
 
   override def unorderedContentNoDuplicate : List[Int] = if(seq.nbOccurrence(insertedValue) == 0) insertedValue :: seq.unorderedContentNoDuplicate else seq.unorderedContentNoDuplicate
 
-  override def positionsOfValue(value : Int) : SortedSet[Int] = {
-    val translatedPos:SortedSet[Int] = seq.positionsOfValue(value).map(oldPOsition => oldPos2NewPos(oldPOsition))
-    if(value == this.insertedValue) translatedPos.+(pos)
-    else translatedPos
+  override def positionsOfValueQ(value : Int) : QList[Int] = {
+    var positionsBefore = seq.positionsOfValueQ(value)
+    var toReturn:QList[Int] = null
+    while(positionsBefore != null){
+      val oldPos = positionsBefore.head
+      positionsBefore = positionsBefore.tail
+      val newPos = oldPos2NewPos(oldPos)
+      toReturn = QList(newPos,toReturn)
+    }
+    if(value == insertedValue) QList(pos,toReturn)
+    else toReturn
   }
 
+  @inline
   private def oldPos2NewPos(oldPOs:Int):Int = {
     if(oldPOs < pos) oldPOs else oldPOs +1
   }
@@ -1077,13 +1107,23 @@ class RemovedIntSequence(val seq:IntSequence,
   override def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
     seq.explorerAtPosition(if (position < this.positionOfDelete) position else position + 1) match {
       case None => None
-      case Some(e) => Some(new DeletedIntSequenceExplorer(this, position, e))
+      case Some(e) => Some(new RemovedIntSequenceExplorer(this, position, e))
     }
   }
 
-  override def positionsOfValue(value : Int) : SortedSet[Int] = {
-    val oldPosSet = seq.positionsOfValue(value).-(positionOfDelete)
-    oldPosSet.map(oldPos2NewPos)
+  override def positionsOfValueQ(value : Int) : QList[Int] = {
+    var positionsBefore = seq.positionsOfValueQ(value)
+    var toReturn:QList[Int] = null
+    while(positionsBefore != null){
+      val oldPos = positionsBefore.head
+      positionsBefore = positionsBefore.tail
+      if (oldPos < this.positionOfDelete) {
+        toReturn = QList(oldPos, toReturn)
+      }else if (oldPos > positionOfDelete) {
+        toReturn = QList(oldPos - 1, toReturn)
+      }
+    }
+    toReturn
   }
 
   def oldPos2NewPos(oldPos:Int) = {
@@ -1104,7 +1144,7 @@ class RemovedIntSequence(val seq:IntSequence,
   }
 }
 
-class DeletedIntSequenceExplorer(seq:RemovedIntSequence,
+class RemovedIntSequenceExplorer(seq:RemovedIntSequence,
                                  val position:Int,
                                  explorerInOriginalSeq:IntSequenceExplorer)
   extends IntSequenceExplorer{
@@ -1117,9 +1157,9 @@ class DeletedIntSequenceExplorer(seq:RemovedIntSequence,
         if(tentativePos.position == seq.positionOfDelete)
           tentativePos.prev match {
             case None => None
-            case Some(secondTentativePos) => Some(new DeletedIntSequenceExplorer(seq, position - 1, secondTentativePos))
+            case Some(secondTentativePos) => Some(new RemovedIntSequenceExplorer(seq, position - 1, secondTentativePos))
           }
-        else Some(new DeletedIntSequenceExplorer(seq, position - 1, tentativePos))
+        else Some(new RemovedIntSequenceExplorer(seq, position - 1, tentativePos))
     }
   }
 
@@ -1130,9 +1170,9 @@ class DeletedIntSequenceExplorer(seq:RemovedIntSequence,
         if(tentativePos.position == seq.positionOfDelete)
           tentativePos.next match {
             case None => None
-            case Some(secondTentativePos) => Some(new DeletedIntSequenceExplorer(seq, position + 1, secondTentativePos))
+            case Some(secondTentativePos) => Some(new RemovedIntSequenceExplorer(seq, position + 1, secondTentativePos))
           }
-        else Some(new DeletedIntSequenceExplorer(seq, position + 1, tentativePos))
+        else Some(new RemovedIntSequenceExplorer(seq, position + 1, tentativePos))
     }
   }
 }

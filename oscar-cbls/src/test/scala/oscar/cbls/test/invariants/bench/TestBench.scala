@@ -754,10 +754,10 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
     * and to its model.
     */
   def genIntSeqVar(
-                  nbVars: Int = 5,
+                  maxLength: Int = 5,
                   range: Range = 0 to 100,
                   isInput:Boolean = true) = {
-    val risVar = InvGen.randomIntSeqVar(nbVars, range, model).sample.get
+    val risVar = InvGen.randomIntSeqVar(maxLength, range, model).sample.get
     addVar(isInput, risVar)
     risVar.randomVar
   }

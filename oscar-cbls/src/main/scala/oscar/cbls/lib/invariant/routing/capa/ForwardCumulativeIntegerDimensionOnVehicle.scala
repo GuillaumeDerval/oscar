@@ -34,8 +34,8 @@ object ForwardCumulativeIntegerDimensionOnVehicle {
    * @param defaultForUnroutedNodes is the content of a node that is not routed
    * @param minContent Min content of a node (used for creating the output variable, but not considered as a constraint)
    * @param maxContent Max content of a node (used for creating the output variable, but not considered as a constraint)
-   * @param contentName the name of this content, for debug purpose. it is atributed to all variales created by this invairant
-   * @return  (contentAtNode,contentAtEnd,lastPointOfVehicle)
+   * @param contentName the name of this content, for debug purpose. it is atributed to all variales created by this invariant
+   * @return (contentAtNode,contentAtEnd,lastPointOfVehicle) content at node, of vehice nodes (0..v-1) is the content on vehicle start. content on vehicle end is in contentAtEnd.
    */
   def apply(routes:ChangingSeqValue,
             n:Int,
@@ -64,7 +64,6 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
                                                  contentAtEnd:Array[CBLSIntVar],
                                                  lastPointOfVehicle:Array[CBLSIntVar],
                                                  defaultVehicleContentForUnroutedNodes:Int)
-
   extends AbstractForwardCumulativeDimensionOnVehicle(routes,n,v) with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(routes)
@@ -114,8 +113,8 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
   }
 
   override def setVehicleContentAtEnd(vehicle : Int, lastNode : Int){
-    contentAtEnd(vehicle) := contentAtNode(lastNode).newValue
     lastPointOfVehicle(vehicle) := lastNode
+    contentAtEnd(vehicle) := op(lastNode,vehicle,contentAtNode(lastNode).newValue)
   }
 
   override def setNodesUnrouted(unroutedNodes : Iterable[Int]){

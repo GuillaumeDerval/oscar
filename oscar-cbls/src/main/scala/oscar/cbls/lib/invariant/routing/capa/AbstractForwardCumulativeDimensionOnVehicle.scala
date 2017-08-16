@@ -94,10 +94,10 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
             val updatedZonesAfterRemove =
               updateZoneToUpdateAfterRemove(
                 zonesAfterPrev,
-                pos : Int,
-                prev.newValue, vehicleLocationAfterPrev)
-            vehicleLocationAfterPrev.checkOnSequence(prev.newValue)
-            vehicleLocationAfterPrev.push(r.oldPosToNewPos).checkOnSequence(r.newValue)
+                pos,
+                prev.newValue,
+                vehicleLocationAfterPrev)
+
             (Some((updatedZonesAfterRemove, vehicleLocationAfterPrev.push(r.oldPosToNewPos))),  potentiallyRemovedPointsAfterPrev + r.removedValue)
           case (None,potentiallyRemovedPointsAfterPrev) =>
             (None, potentiallyRemovedPointsAfterPrev + r.removedValue)

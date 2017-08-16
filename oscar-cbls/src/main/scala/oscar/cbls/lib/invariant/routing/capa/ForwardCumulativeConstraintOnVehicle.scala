@@ -62,7 +62,6 @@ object ForwardCumulativeConstraintOnVehicle {
   }
 }
 
-
 /**
  * the violation maintained by this invariant is the sum over all routed nodes of the overshoot
  * strictly above cMax and the undershoot strictly below 0 of the content of the vehicles
@@ -87,7 +86,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
   extends AbstractVehicleCapacity(n,v) with SeqNotificationTarget {
   require(contentAtVehicleStart.length==v)
   require(cMax >=0,"cMax should be >=0")
-  require(contentAtVehicleStart.forall(_ <= cMax),"cannot exceed cMax in intitial values (ok this is because implementer was lazy, just remplace violation :=0 by violation := sum(contentToViolation(initValue))")
+  require(contentAtVehicleStart.forall(_ <= cMax),"cannot exceed cMax in initial values (ok this is because implementer was lazy, just replace violation :=0 by violation := sum(contentToViolation(initValue))")
 
   registerStaticAndDynamicDependency(routes)
   finishInitialization()
@@ -183,6 +182,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                 prev.newValue,
                 vehicleLocationAfterPrev,
                 vehicleLocationAfterInsert)
+
             (Some((updatedZones, vehicleLocationAfterInsert)), potentiallyRemovedPointsAfterPrev)
           case (None,potentiallyRemovedPointsAfterPrev) =>
             (None, potentiallyRemovedPointsAfterPrev)
@@ -196,6 +196,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                 zonesAfterPrev,
                 pos : Int,
                 prev.newValue, vehicleLocationAfterPrev)
+
             (Some((updatedZones, vehicleLocationAfterPrev.push(r.oldPosToNewPos))), r.removedValue :: potentiallyRemovedPointsAfterPrev)
           case (None,potentiallyRemovedPointsAfterPrev) =>
             (None, r.removedValue :: potentiallyRemovedPointsAfterPrev)
@@ -235,14 +236,17 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                 contentAtNode.popLevel(false)
               }
 
-              setNodesUnrouted(potentiallyRemovedPoints)
+              val fastVehicleLocationAfterPrev = if(checkpointLevel == 0) vehicleLocationAfterPrev.regularize else vehicleLocationAfterPrev
+
+              setNodesUnrouted(removedPointsAfterPrev)
               updateVehicleContentOnAllVehicle(prev.newValue,
                 zonesAfterPrev,
-                vehicleLocationAfterPrev)
+                fastVehicleLocationAfterPrev)
               contentAtNode.pushLevel()
               require(contentAtNode.level == checkpointLevel, "contentAtNode.level:" + contentAtNode.level  + " checkpointLevel:" + (checkpointLevel))
 
-              violationAndVehicleStartStack.defineCheckpoint(prev.newValue, checkpointLevel, (violation.newValue, vehicleLocationAfterPrev))
+              violationAndVehicleStartStack.defineCheckpoint(prev.newValue, checkpointLevel, (violation.newValue, fastVehicleLocationAfterPrev))
+              currentVehicleLocation = fastVehicleLocationAfterPrev
 
               (Some(RedBlackTreeMap.empty[List[(Int, Int)]], currentVehicleLocation), List.empty)
 
@@ -253,7 +257,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                 contentAtNode.popLevel(true)
               }
               contentAtNode.pushLevel()
-              setNodesUnrouted(v until n)
+              setNodesUnrouted(v until n) //unroutes all nodes
               violation := 0
               //we have to set all unrouted nodes to unrouted, since we have lost continuity on routes nodes because of the popLevel(true) hereabove
               currentVehicleLocation = computeAndAffectContentAndVehicleStartPositionsFromScratch(routes.value, false)
@@ -281,7 +285,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
         }else{
           //We are above the max checkpoint level
           digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(u.howToRollBack, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence)
-          //TODO: we could save and restore the regularized vehicle start, but his is probably not useful
+          //we could save and restore the regularized vehicle start, but his is probably not useful
         }
     }
   }
@@ -306,12 +310,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
       }
     }
 
-    for(vehicle <- 0 until v) {
-      c.check(routes.value.valueAtPosition(vehicleStartPos.startPosOfVehicle(vehicle)).get == vehicle,Some("a"))
-      c.check(routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(vehicle)).get == vehicle,
-        Some("routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(" + vehicle + ")) is" +
-          routes.value.valueAtPosition(currentVehicleLocation.startPosOfVehicle(vehicle)) + " should be " + vehicle))
-    }
+    vehicleStartPos.checkOnSequence(routes.value)
   }
 }
 

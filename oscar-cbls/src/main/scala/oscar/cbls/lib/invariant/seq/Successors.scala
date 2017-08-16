@@ -132,7 +132,7 @@ class Successors(sequence:ChangingSeqValue, successorValues:Array[CBLSSetVar])
 
   def computeForValues(seq:IntSequence, values:SortedSet[Int]){
     for(value <- values){
-      successorValues(value) := seq.positionsOfValue(value).flatMap(position => seq.successorPos2Val(position))
+      successorValues(value) := SortedSet.empty[Int] ++ seq.positionsOfValue(value).flatMap(position => seq.successorPos2Val(position))
     }
   }
 
@@ -175,7 +175,6 @@ class Successors(sequence:ChangingSeqValue, successorValues:Array[CBLSSetVar])
 
   override def checkInternals(c : Checker){
     val fromScratch = computeAllFromScratchNoAffect(sequence.value)
-    println(successorValues.map(_.value).toList)
     for(node <- 0 to sequence.maxValue){  //TODO: sequence .value.size, and we can have redundant values in the equence!!!
       c.check(
         successorValues(node).value

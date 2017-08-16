@@ -31,8 +31,8 @@ import scala.util.Random
 import scala.util.Random
 
 /**
-  * Created by fabian on 04-07-16.
-  */
+ * Created by fabian on 04-07-16.
+ */
 
 class MyPDP(n:Int, v:Int, m:Store,
             symmetricDistance:Array[Array[Int]], maxPivot:Int,
@@ -46,15 +46,14 @@ class MyPDP(n:Int, v:Int, m:Store,
 
   val penaltyForUnrouted  = 100000
 
-  this.addToStringInfo(() => "objective: " + obj.value)
-  this.addToStringInfo(() => "n:" + n + " v:" + v)
+
+
 
   def closestNeighboursInTime = computeClosestNeighborInTime()
 
   def size = routes.value.size
 
-  this.addToStringInfo(() => "next:" + next.map(_.value).mkString(","))
-  this.addToStringInfo(() => "prev:" + prev.map(_.value).mkString(","))
+
 
 
   addPickupDeliveryCouples(pickups,deliveries)
@@ -63,6 +62,17 @@ class MyPDP(n:Int, v:Int, m:Store,
   setVehiclesCapacityStrongConstraint()
   setTimeWindows(timeWindows)
   setTravelTimeFunctions(ttf)
+
+  /**
+   * Redefine the toString method.
+   * @return the VRP problem as a String.
+   */
+  override def toString : String =
+    super.toString +
+      "objective: " + obj.value + "\n" +
+      "next:" + next.map(_.value).mkString(",") + "\n" +
+      "prev:" + prev.map(_.value).mkString(",") + "\n"
+
 
   val obj = new CascadingObjective(fastConstraints,
     new CascadingObjective(slowConstraints,
@@ -117,23 +127,23 @@ object PickupDeliveryS extends App{
       unroutedNodesToInsert = () => Iterable(myPDP.getRelatedDelivery(moveResult.insertedPoint)),
       relevantPredecessor = () => myPDP.getNodesAfterRelatedPickup(),
       vrp = myPDP, best = true))name "insertCoupleSlow")
-/*
+  /*
 
-  val insertCoupleCloseToDepot = Profile(DynAndThen(
-    InsertPointUnroutedFirst(
-      unroutedNodesToInsert = () => {
-        var tempList:List[Int] = List.empty
-        for(i <- 0 until v){
-          tempList = myPDP.kFirst(n/v,myPDP.closestNeighboursForward,myPDP.isUnroutedPickup)(i).toList ::: tempList
-        }
-        tempList
-      },
-      relevantPredecessor = () => myPDP.kFirst(n/10,myPDP.closestNeighboursInTime,myPDP.isRouted),
-      vrp = myPDP),
-    (moveResult:InsertPointMove) => InsertPointUnroutedFirst(
-      unroutedNodesToInsert =  () => Iterable(myPDP.getRelatedDelivery(moveResult.insertedPoint)),
-      relevantPredecessor = () => myPDP.getNodesAfterRelatedPickup(),
-      vrp = myPDP, best = true))name "insertCoupleCloseToDepot")*/
+    val insertCoupleCloseToDepot = Profile(DynAndThen(
+      InsertPointUnroutedFirst(
+        unroutedNodesToInsert = () => {
+          var tempList:List[Int] = List.empty
+          for(i <- 0 until v){
+            tempList = myPDP.kFirst(n/v,myPDP.closestNeighboursForward,myPDP.isUnroutedPickup)(i).toList ::: tempList
+          }
+          tempList
+        },
+        relevantPredecessor = () => myPDP.kFirst(n/10,myPDP.closestNeighboursInTime,myPDP.isRouted),
+        vrp = myPDP),
+      (moveResult:InsertPointMove) => InsertPointUnroutedFirst(
+        unroutedNodesToInsert =  () => Iterable(myPDP.getRelatedDelivery(moveResult.insertedPoint)),
+        relevantPredecessor = () => myPDP.getNodesAfterRelatedPickup(),
+        vrp = myPDP, best = true))name "insertCoupleCloseToDepot")*/
 
   val oneCoupleMove = Profile(DynAndThen(OnePointMove(
     nodesToMove = () => myPDP.getRoutedPickups,
@@ -267,11 +277,11 @@ object PickupDeliveryS extends App{
             ,(moveResult4:CompositeMove) =>{
               //And finally we insert the first couple in the second route
               new DynAndThen(InsertPointUnroutedFirst(
-                  unroutedNodesToInsert = () => {
-                    Iterable(moveResult2.ml.head.asInstanceOf[RemovePointMove].pointToRemove)
-                  },
-                  relevantPredecessor = () => (i:Int) => myPDP.getNodesOfVehicle(secondVehicle),
-                  vrp = myPDP), (moveResult5:InsertPointMove) =>{
+                unroutedNodesToInsert = () => {
+                  Iterable(moveResult2.ml.head.asInstanceOf[RemovePointMove].pointToRemove)
+                },
+                relevantPredecessor = () => (i:Int) => myPDP.getNodesOfVehicle(secondVehicle),
+                vrp = myPDP), (moveResult5:InsertPointMove) =>{
                 InsertPointUnroutedFirst(
                   unroutedNodesToInsert = () => Iterable(myPDP.getRelatedDelivery(moveResult5.insertedPoint)),
                   relevantPredecessor = () => myPDP.getNodesAfterRelatedPickup(),

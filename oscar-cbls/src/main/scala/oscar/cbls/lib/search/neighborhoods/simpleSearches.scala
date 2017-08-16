@@ -251,7 +251,7 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
                                  valuesToConsider:(CBLSIntVar,Int) => Iterable[Int] = (variable,_) => variable.domain)
   extends Neighborhood(name) with AlgebraTrait with LinearSelectorTrait{
 
-  override def getMove(obj: Objective, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
+  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
     if(printPerformedSearches) println("applying " + name)
 
     var toReturn:List[Move] = List.empty
@@ -294,7 +294,7 @@ case class RandomSwapNeighborhood(vars:Array[CBLSIntVar],
                                   searchZone:() => SortedSet[Int] = null)  //TODO: search zone does not work!
   extends Neighborhood(name) with AlgebraTrait with LinearSelectorTrait{
 
-  override def getMove(obj: Objective, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
+  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
     if(printPerformedSearches) println("applying " + name)
 
     var toReturn:List[Move] = List.empty
@@ -331,7 +331,7 @@ case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
                                checkNoMoveFound:Boolean = true)
   extends Neighborhood(name) with AlgebraTrait with LinearSelectorTrait{
 
-  override def getMove(obj: Objective, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
+  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
     if(printPerformedSearches) println("applying " + name)
 
     val (realIndicesToConsider:List[Int],numberOfIndicesToConsider:Int) =

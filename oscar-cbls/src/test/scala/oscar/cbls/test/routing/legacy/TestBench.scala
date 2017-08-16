@@ -79,7 +79,7 @@ object TestBench extends FunSuite with Matchers with Checkers {
       relevantNeighbors,
       f.vrp,
       best = best,
-      hotRestart = false).getMove(f.vrp.getObjective,
+      hotRestart = false).getMove(f.vrp.getObjective,f.vrp.getObjective.value,
         (oldVal, newVal) => oldVal > newVal) match {
           case MoveFound(m) => {
             m.isInstanceOf[OnePointMoveMove] should be(true)
@@ -122,7 +122,7 @@ object TestBench extends FunSuite with Matchers with Checkers {
       relevantNeighbors,
       f.vrp,
       best = best,
-      hotRestart = false).getMove(f.vrp.getObjective) match {
+      hotRestart = false).getMove(f.vrp.getObjective,f.vrp.getObjective.value) match {
         case MoveFound(m) => {
           m.isInstanceOf[SwapMove] should be(true)
           val swap = m.asInstanceOf[SwapMove]
@@ -163,7 +163,7 @@ object TestBench extends FunSuite with Matchers with Checkers {
       relevantNeighbors,
       f.vrp,
       best = best,
-      hotRestart = true).getMove(f.vrp.getObjective) match {
+      hotRestart = true).getMove(f.vrp.getObjective,f.vrp.getObjective.value) match {
         case MoveFound(m) => {
           m.isInstanceOf[TwoOptMove] should be(true)
           val move = m.asInstanceOf[TwoOptMove]
@@ -204,7 +204,7 @@ object TestBench extends FunSuite with Matchers with Checkers {
       f.vrp,
       best = best,
       hotRestart = false,
-      KKIterationScheme = kk).getMove(f.vrp.getObjective,
+      KKIterationScheme = kk).getMove(f.vrp.getObjective,f.vrp.getObjective.value,
         (oldVal, newVal) => oldVal > newVal) match {
           case MoveFound(m) => {
             m.isInstanceOf[ThreeOptMove] should be(true)

@@ -46,6 +46,7 @@ object RoutingConventionMethods {
     findVehicleReachingPosition
   }
 
+  @deprecated("use the VehicleLocation method instead","we use stacked checkpoints")
   def searchVehicleReachingPosition(position:Int, seq:IntSequence, v:Int):Int = {
     var upperVehicle = v-1
     var upperVehiclePosition = seq.positionOfAnyOccurrence(upperVehicle).get

@@ -40,29 +40,87 @@ object TestRedBlackTree extends App{
   }
 
 
-  var reference:SortedMap[Int,Boolean] = SortedMap.empty
-  var sut = RedBlackTreeMap.empty[Boolean]
-  val random = new Random()
-
-  for(it <- 0 to 10000){
-    if(random.nextBoolean()){
-      //insert something
-      val key:Int = (random.nextDouble()*1000).toInt
-      val value = random.nextBoolean()
-      reference = reference + ((key,value))
-      sut = sut.insert(key,value)
-      println("step " + it + " inserting " + key)
-    }else if (reference.size > 2){
-      //remove something
-      val key:Int = (reference.keys.toList.apply((random.nextDouble()*reference.size).toInt))
-      reference = reference - (key)
-      sut = sut.remove(key)
-      println("step " + it + " removing " + key)
+  def testReachesMin(t:RedBlackTreeMap[Boolean]){
+    println("TestReachesMin")
+    if(t.isEmpty) return
+    val smallestKey = t.smallest.get._1
+    for(i <- t.keys){
+      testReachesMinFrom(t,i,smallestKey)
     }
-    checkEqual(reference,sut)
-    //create set from sorted
 
-    checkEqual(reference,RedBlackTreeMap.makeFromSorted(reference.toList.sortBy(_._1)))
+    require(smallestKey == t.keys.min)
   }
 
+  def testReachesMinFrom(t:RedBlackTreeMap[Boolean],i:Int,minValue:Int){
+
+    var explorer = t.positionOf(i).get
+
+    while(explorer.prev match{
+      case None =>
+        require(explorer.key == minValue)
+        false
+      case Some(e) =>
+        explorer = e
+        true
+    }){}
+  }
+
+    def performRandomInsertAndRemoves() {
+    var reference : SortedMap[Int, Boolean] = SortedMap.empty
+    var sut = RedBlackTreeMap.empty[Boolean]
+    val random = new Random()
+
+    for (it <- 0 to 10000) {
+      if (random.nextBoolean()) {
+        //insert something
+        val key : Int = (random.nextDouble() * 1000).toInt
+        val value = random.nextBoolean()
+        reference = reference + ((key, value))
+        sut = sut.insert(key, value)
+        println("step " + it + " inserting " + key)
+      } else if (reference.size > 2) {
+        //remove something
+        val key : Int = (reference.keys.toList.apply((random.nextDouble() * reference.size).toInt))
+        reference = reference - (key)
+        sut = sut.remove(key)
+        println("step " + it + " removing " + key)
+      }
+      checkEqual(reference, sut)
+      //create set from sorted
+
+      checkEqual(reference, RedBlackTreeMap.makeFromSorted(reference.toList.sortBy(_._1)))
+
+      if(it % 113 == 0) testReachesMin(sut)
+    }
+  }
+
+
+  def testExplorer(){
+
+    val n = 100
+    val reference:Array[(Int,String)] = Array.tabulate(n)(i => (i*2,"value at " + i*2))
+
+    val testedValue = RedBlackTreeMap.makeFromSorted(reference)
+
+    println(testedValue.content.mkString("\n"))
+
+    var e = testedValue.positionOf(20)
+    var currentIndice = 10
+
+    while(e match {
+      case None =>
+        require(currentIndice == -1)
+        false
+      case Some(ex) =>
+        println(ex.key + "," + ex.value)
+        require(reference(currentIndice)._1 == ex.key)
+        e = ex.prev
+        currentIndice -= 1
+        true
+    }){}
+
+  }
+
+  performRandomInsertAndRemoves()
+  testExplorer()
 }

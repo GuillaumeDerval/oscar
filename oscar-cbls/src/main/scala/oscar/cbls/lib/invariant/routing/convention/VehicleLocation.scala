@@ -32,7 +32,6 @@ object VehicleLocation{
  */
 abstract class VehicleLocation(val v : Int, val level:Int){
 
-
   def checkOnSequence(s:IntSequence){
     for(vehicle <- 0 until v){
       require(s.positionOfAnyOccurrence(vehicle).get == startPosOfVehicle(vehicle),vehicle)
@@ -41,7 +40,13 @@ abstract class VehicleLocation(val v : Int, val level:Int){
 
   def regularize:ConcreteVehicleLocation = VehicleLocation(v,startPosOfVehicle)
 
-  def push(oldPosToNewPos:(Int)=> Option[Int], maxStackLevel:Int = Int.MaxValue): VehicleLocation = {
+  /**
+   *
+   * @param oldPosToNewPos a description of the move through a function that maps old position to new position for all values in the sequence.
+   * @param maxStackLevel is the maximal level of stack before a regularization automatically takes place. by default it is set to 2*v
+   * @return a vehicle location reflecting the start position of vehicle after the move is performed
+   */
+  def push(oldPosToNewPos:(Int)=> Option[Int], maxStackLevel:Int = 2*v): VehicleLocation = {
     val tmp = new StackedVehicleLocation(oldPosToNewPos,this)
     if(tmp.level > maxStackLevel) tmp.regularize
     else tmp

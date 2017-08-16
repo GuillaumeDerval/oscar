@@ -54,7 +54,6 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
 
 
   def computeFromScratch(s:IntSequence): IntSequence = {
-    println("Computing from scratch")
     var explorer = s.explorerAtPosition(index)
     var subSeq = IntSequence.empty()
 
@@ -150,7 +149,6 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
   }
 
   override def checkInternals(c: Checker) {
-    println(this.newValue,v.value.size)
     c.check(this.newValue.toList equals computeFromScratch(v.value).toList, Some("this.newValue(=" + this.newValue.toList + ") == v.value.subSequence(=" + v.value.toList.reverse + ")"))
    }
 }
@@ -185,7 +183,6 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
 
 
   def computeFromScratch(s:IntSequence, idx:Int): IntSequence = {
-    println("Computing from scratch")
     var explorer = s.explorerAtPosition(idx)
     var subSeq = IntSequence.empty()
 
@@ -305,7 +302,6 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
   }
 
   override def checkInternals(c: Checker) {
-    println(this.newValue,originalSeq.value.size)
     c.check(this.newValue.toList equals computeFromScratch(originalSeq.value,index.value).toList, Some("this.newValue(=" + this.newValue.toList + ") == v.value.subSequence(=" + originalSeq.value.toList.reverse + ")"))
   }
 }

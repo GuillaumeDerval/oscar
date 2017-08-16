@@ -39,12 +39,10 @@ class VRPWithNodeVehicleRestriction(n:Int,v:Int,symmetricDistance:Array[Array[In
 
   //this is useless, but it makes some fun.
   val positionOf48 = PositionsOf(cloneOfRoute, 48)
-  this.addToStringInfo(()=>"" + positionOf48)
+
 
   val size = Size(cloneOfRoute)
-  this.addToStringInfo(()=>"" + size)
 
-  this.addToStringInfo(()=>"number of restrictions:" + nodeVehicleRestriction.size)
 
   //initializes to something simple
   setCircuit(nodes)
@@ -56,9 +54,16 @@ class VRPWithNodeVehicleRestriction(n:Int,v:Int,symmetricDistance:Array[Array[In
   //val obj = new CascadingObjective(totalViolationOnRestriction, totalDistance)
   val obj = Objective(totalViolationOnRestriction*10000 + totalDistance)
 
-  this.addToStringInfo(() => "objective: " + obj.value)
 
-  this.addToStringInfo(() => "violationOfRestriction:[" + violationOfRestriction.toList.map(_.value).mkString(",") + "]")
+
+
+
+  override def toString : String = super.toString +
+    positionOf48 + "\n" +
+    "objective: " + obj.value  + "\n" +
+    "violationOfRestriction:[" + violationOfRestriction.toList.map(_.value).mkString(",") + "]"  + "\n" +
+    size + "\n" +
+    "number of restrictions:" + nodeVehicleRestriction.size
 
   val nodesThanShouldBeMovedToOtherVehicle = NodeVehicleRestrictions.violatedNodes(vehicleOfNode,v,nodeVehicleRestriction)
 

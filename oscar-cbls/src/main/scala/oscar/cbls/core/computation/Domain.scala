@@ -19,6 +19,7 @@
   ******************************************************************************/
 package oscar.cbls.core.computation
 
+import scala.collection.immutable.SortedSet
 import scala.language.implicitConversions
 import scala.util.Random
 
@@ -43,6 +44,7 @@ object Domain{
   def apply(v:Iterable[Int]):Domain =
     v match{
       case r:Range => r
+      case s:SortedSet[Int] => s.firstKey to s.lastKey
     }
 }
 
@@ -62,6 +64,7 @@ sealed abstract class Domain extends Iterable[Int]{
 
   override def iterator: Iterator[Int] = values.iterator
 }
+
 
 /**this is an inclusive domain*/
 case class DomainRange(override val min: Int, override val max: Int) extends Domain {

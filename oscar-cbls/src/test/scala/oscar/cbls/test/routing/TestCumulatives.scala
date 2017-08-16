@@ -22,9 +22,9 @@ import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.constraint.LE
 import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeIntegerDimensionOnVehicle, ForwardCumulativeConstraintOnVehicle}
-import oscar.cbls.lib.invariant.routing.RouteSuccessorAndPredecessors
+import oscar.cbls.lib.invariant.routing.{MovingVehicles, RouteSuccessorAndPredecessors}
 import oscar.cbls.lib.invariant.seq.Size
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
+import oscar.cbls.lib.search.combinators.{RoundRobin, BestSlopeFirst, Mu, Profile}
 import oscar.cbls.modeling.Algebra._
 
 class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int, deltaAtNode:Array[Int], maxCapa:Int)
@@ -51,15 +51,13 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
   6)
 
   val contentAtStart = Array.tabulate(v)(vehicle => CBLSIntVar(m,0,0 to 10,"start content of vehicle " + vehicle))
-  val cumulative2 = ForwardCumulativeIntegerDimensionOnVehicle(routes,n,v,{case (fromNode,toNode,fromContent) => fromNode+toNode+(2*fromContent)},contentAtStart,-1)
+    val cumulative2 = ForwardCumulativeIntegerDimensionOnVehicle(routes,n,v,{case (fromNode,toNode,fromContent) => ((fromNode*toNode)/2)+toNode/(fromNode+1)+(2*fromContent)+1},contentAtStart,-1)
 
   val obj = new CascadingObjective(
     contentConstraint.violation,
     new CascadingObjective(maxNodes,
       Objective(cumulative2._3(1) + cumulative2._2(1) + totalDistance + (penaltyForUnrouted*(n - Size(routes))))))
 
-  this.addToStringInfo(() => "objective: " + obj.value)
-  this.addToStringInfo(() => "n:" + n + " v:" + v)
 
   val closestNeighboursForward = computeClosestNeighborsForward()
 
@@ -68,9 +66,15 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
 
   val (next,prev) = RouteSuccessorAndPredecessors(routes,v,n)
 
-  this.addToStringInfo(() => "next: [" + next.map(_.value).mkString(",") + "]")
-  this.addToStringInfo(() => "prev: [" + prev.map(_.value).mkString(",") + "]")
-  this.addToStringInfo(() => "content: [" + contentConstraint.contentAtNodes.mkString(",") + "]")
+  val movingVehicles = MovingVehicles(routes,v)
+
+  override def toString : String = super.toString +
+    "objective: " + obj.value + "\n" +
+    "next: [" + next.map(_.value).mkString(",") + "]" + "\n" +
+    "prev: [" + prev.map(_.value).mkString(",") + "]" + "\n" +
+    "content: [" + contentConstraint.contentAtNodes.mkString(",") + "]" + "\n" +
+    "routed:" + this.routed.value + "\n" +
+    "unRouted:" + this.unrouted.value + "\n"
 }
 
 object TestCumulatives extends App{
@@ -90,12 +94,12 @@ object TestCumulatives extends App{
 
   model.close()
 
-  def routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,neighborhoodName = "InsertUF",best=true))
+  def routeUnroutedPoint(k:Int) =  new InsertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,neighborhoodName = "InsertUF",best=true)
 
   //TODO: using post-filters on k-nearest is probably crap
   val routeUnroutedPoint2 =  Profile(new InsertPointRoutedFirst(myVRP.routed,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,x => !myVRP.isRouted(x)),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.size < n/2))
 
-  def onePtMove(k:Int) = Profile(new OnePointMove(myVRP.routed, () => myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP))
+  def onePtMove(k:Int) = Profile(new OnePointMove(myVRP.routed, () => myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,best=true))
 
   val twoOpt = Profile(new TwoOpt1(myVRP.routed, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP))
 
@@ -107,13 +111,24 @@ object TestCumulatives extends App{
     intermediaryStops = true,
     maxDepth = 3))
 
-  val remove = RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP)
 
-  val swapInOut = Profile((remove andThen routeUnroutedPoint) name ("SWAPInsert"))
-  val search = (BestSlopeFirst(List(routeUnroutedPoint2, routeUnroutedPoint, swapInOut, onePtMove(10),twoOpt, threeOpt(10,true),vlsn1pt, routeUnroutedPoint)) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
+  val vlsnInsert = Mu[InsertPointMove](
+  routeUnroutedPoint(3),
+  l => if (myVRP.unroutedNodes.isEmpty) None else Some(routeUnroutedPoint(5)),
+  intermediaryStops = false,
+  maxDepth = 2)
+
+  val remove = RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,best=true)
+  def segExchange(k:Int) = SegmentExchange(myVRP,()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted),() => myVRP.vehicles)
+
+  val swapInOut = Profile((remove andThen routeUnroutedPoint(10)) name ("SWAPInsert"))
+  val doubleInsert = Profile((routeUnroutedPoint(10) andThen routeUnroutedPoint(10)) name ("doubleInsert"))
+  val doubleRemove = Profile(( RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,best=true)) andThen  RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,best=true) name ("doubleRemove"))
+
+  val search = new RoundRobin(List(onePtMove(100),doubleInsert,doubleRemove,swapInOut,vlsnInsert,threeOpt(5,false),twoOpt,segExchange(10))) exhaust onePtMove(10) //(BestSlopeFirst(List(vlsnInsert, routeUnroutedPoint2, routeUnroutedPoint(10), swapInOut, onePtMove(10),twoOpt, threeOpt(10,true),vlsn1pt, routeUnroutedPoint)) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
 
   search.verbose = 1
-  //search.verboseWithExtraInfo(5, ()=> "" + myVRP)
+  //search.verboseWithExtraInfo(3, ()=> "" + myVRP)
 
   print("Doing all moves ...")
 

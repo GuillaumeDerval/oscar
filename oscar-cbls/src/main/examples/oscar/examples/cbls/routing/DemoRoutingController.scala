@@ -127,8 +127,7 @@ class DrcVRP(n:Int, v:Int, m:Store, pointsList:Array[(Double,Double)],
 
   val obj = Objective(totalDistance + (penaltyForUnrouted*(n - Size(routes))))
 
-  this.addToStringInfo(() => "objective: " + obj.value)
-
+  override def toString : String = super.toString + "objective: " + obj.value + "\n"
 
   val closestNeighboursForward = computeClosestNeighborsForward()
 }

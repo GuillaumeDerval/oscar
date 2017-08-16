@@ -39,8 +39,6 @@ class MySimpleRoutingWithUnroutedPointsAndNext(n:Int,v:Int,symmetricDistance:Arr
 
   val obj = Objective(totalDistance + (penaltyForUnrouted*(n - Size(routes))))
 
-  this.addToStringInfo(() => "objective: " + obj.value)
-  this.addToStringInfo(() => "n:" + n + " v:" + v)
 
   val closestNeighboursForward = computeClosestNeighborsForward()
 
@@ -49,13 +47,10 @@ class MySimpleRoutingWithUnroutedPointsAndNext(n:Int,v:Int,symmetricDistance:Arr
   //TODO: how about using NextAndPRev trait? or use a clone of route?
   val (next,prev) = RouteSuccessorAndPredecessors(routes,v,n)
 
-  this.addToStringInfo(() => "next:" + next.map(_.value).mkString(","))
-  this.addToStringInfo(() => "prev:" + prev.map(_.value).mkString(","))
-
-  //if(pointsList != null)
-    //initializeRoutingMap(Array.tabulate(n)(node => (pointsList(node)._1.toDouble, pointsList(node)._2.toDouble)),this,1000)
-
-
+  override def toString : String = super.toString +
+    "objective: " + obj.value + "\n" +
+    "next:" + next.map(_.value).mkString(",") + "\n" +
+    "prev:" + prev.map(_.value).mkString(",") + "\n"
 }
 
 object TestNext extends App{
@@ -92,9 +87,9 @@ object TestNext extends App{
     intermediaryStops = true,
     maxDepth = 6))
 
-  val search = (BestSlopeFirst(List(routeUnroutedPoint2, routeUnroutedPoint, onePtMove(10),twoOpt, threeOpt(10,true),vlsn1pt, routeUnroutedPoint andThen routeUnroutedPoint)) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
+  val search = (BestSlopeFirst(List(routeUnroutedPoint2, routeUnroutedPoint, onePtMove(10),twoOpt, threeOpt(10,true),vlsn1pt, new InsertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,neighborhoodName = "InsertUF") andThen routeUnroutedPoint)) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
 
- // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10) guard (() => myVRP.unrouted.value.size != 0)),10)) exhaust BestSlopeFirst(List(onePtMove(20),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
+  // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10) guard (() => myVRP.unrouted.value.size != 0)),10)) exhaust BestSlopeFirst(List(onePtMove(20),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
 
   search.verbose = 1
   //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
