@@ -17,8 +17,8 @@ class WareHouseLocationWindow(deliveryCoordinates:Array[(Int,Int)],
 
   val visual = new WareHouseLocationMap(deliveryCoordinates,wareHouseCoordinates,distanceCostD2W,warehouseCosts)
 
-  def redraw(openWarehouses:SortedSet[Int]){
-    visual.redraw(openWarehouses)
+  def redraw(openWarehouses:SortedSet[Int],boldChanges:Boolean=true){
+    visual.redraw(openWarehouses,boldChanges)
   }
   val frame = new JFrame()
   frame.setTitle("Uncapacitated Warehouse Location Problem")
@@ -48,9 +48,9 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
 
   var prevOpenWarehouse:SortedSet[Int] = SortedSet.empty
   var prevNearestOpenWarehouse = Array.fill(d)(-1)
-  def redraw(openWarehouses:SortedSet[Int]){
+  def redraw(openWarehouses:SortedSet[Int],boldChanges:Boolean=true){
     val closestWarehouses:Array[Int] = Array.tabulate(d)(nearestOpenWareHouse(openWarehouses,_))
-    drawMap(closestWarehouses,openWarehouses,prevOpenWarehouse,prevNearestOpenWarehouse)
+    drawMap(closestWarehouses,openWarehouses,prevOpenWarehouse,prevNearestOpenWarehouse,boldChanges)
     prevOpenWarehouse = openWarehouses
     prevNearestOpenWarehouse = closestWarehouses
   }
@@ -72,7 +72,7 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
     closestW
   }
 
-  private def drawMap(closestWarehouses:Array[Int],openWarehouses:SortedSet[Int],prevOpenWarehouse:SortedSet[Int],prevClosestWarehouse:Array[Int]) ={
+  private def drawMap(closestWarehouses:Array[Int],openWarehouses:SortedSet[Int],prevOpenWarehouse:SortedSet[Int],prevClosestWarehouse:Array[Int],boldChanges:Boolean) ={
     val xMultiplier = this.getWidth.toDouble / maxX.toDouble
     val yMultiplier = this.getHeight.toDouble / maxY.toDouble
 
@@ -108,10 +108,10 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
 
     //drawing warehouses
     for(warehouse <- 0 until w if !(openWarehouses contains warehouse)) {
-      drawWarehouse(warehouse, Color.PINK,prevOpenWarehouse contains warehouse)
+      drawWarehouse(warehouse, Color.PINK, boldChanges && (prevOpenWarehouse contains warehouse))
     }
     for(warehouse <- 0 until w if openWarehouses contains warehouse) {
-      drawWarehouse(warehouse, Color.green,!(prevOpenWarehouse contains warehouse))
+      drawWarehouse(warehouse, Color.green, boldChanges && !(prevOpenWarehouse contains warehouse))
     }
 
     //drawing delivery points
@@ -125,7 +125,7 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
         deliveryCoordinates(delivery)._1 * xMultiplier,
         deliveryCoordinates(delivery)._2 * yMultiplier,2)
       tempPoint.innerCol_$eq(color)
-      if(changed) tempPoint.setRadius(4)
+      if(boldChanges && changed) tempPoint.setRadius(4)
       if(warehouse != -1){
         tempPoint.toolTip = "distanceCost:" + distanceCostD2W(delivery)(warehouse)
       }

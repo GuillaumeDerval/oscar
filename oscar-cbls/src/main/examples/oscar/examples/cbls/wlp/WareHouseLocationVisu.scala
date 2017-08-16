@@ -31,17 +31,20 @@ import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.combinators.{Profile, Mu, BestSlopeFirst}
 import oscar.cbls.lib.search.neighborhoods.{AssignNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
 import oscar.cbls.modeling.AlgebraTrait
+import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.wlp.{WareHouseLocationWindow, WareHouseLocationMap}
 
 import scala.language.postfixOps
 
-object WareHouseLocationVisu extends App with AlgebraTrait{
+object WareHouseLocationVisu extends App with AlgebraTrait with StopWatch{
 
   //the number of warehouses
-  val W:Int = 10000
+  val W:Int = 1000
 
   //the number of delivery points
   val D:Int = 1000
+
+  val displayDelay = 100
 
   println("WarehouseLocation(W:" + W + ", D:" + D + ")")
   //the cost per delivery point if no location is open
@@ -60,7 +63,7 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
   //  MinConstArrayLazy(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse))
 
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
-    new MinConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse,maxDiameter = 2))
+    new MinConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse,maxDiameter = 1))
 
 
   val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses))
@@ -97,7 +100,6 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
   maxDepth = depth,
   intermediaryStops = true)
 
-
   def swapsK(k:Int,openWarehoueseTocConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
     searchZone1 = openWarehoueseTocConsider,
     searchZone2 = (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
@@ -106,6 +108,7 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
 
   def doubleSwap(k:Int) = (swapsK(k) dynAndThen((firstSwap:SwapMove) => swapsK(k,() => kNearestOpenWarehouses(firstSwap.idI,k)))) name "DoubleSwap"
 
+  var lastDisplay = this.getWatch
 
   val neighborhood =(
     BestSlopeFirst(
@@ -117,17 +120,17 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
       ),refresh = W/10)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 2, obj)
 //      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/3), 1, obj))
-    ) exhaust Profile(mu(4,3,15)) afterMove(
+    ) exhaust Profile(mu(3,3,15)) exhaust Profile(mu(4,3,15)) afterMove(
     if(obj.value < bestObj){
       bestObj = obj.value
-      visual.redraw(openWarehouses.value)
+      if(this.getWatch > lastDisplay + displayDelay) {visual.redraw(openWarehouses.value); lastDisplay = this.getWatch}
     })
 
   neighborhood.verbose = 2
 
   neighborhood.doAllMoves(obj=obj)
 
-  visual.redraw(openWarehouses.value)
+  visual.redraw(openWarehouses.value,false)
 
   println(neighborhood.profilingStatistics)
 

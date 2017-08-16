@@ -939,7 +939,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
    * this is managed by the PropagationElement
    */
   private[this] var internalIsScheduled: Boolean = false
-  protected def isScheduled: Boolean = internalIsScheduled
+  def isScheduled: Boolean = internalIsScheduled
 
   private[propagation] var staticallyListenedElements: List[PropagationElement] = List.empty
   private[propagation] var staticallyListeningElements: List[PropagationElement] = List.empty

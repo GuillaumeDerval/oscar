@@ -1,6 +1,6 @@
 package oscar.cbls.lib.invariant.minmax
 
-import oscar.cbls.algo.heap.{ArrayMap, BinomialHeapWithMoveExtMem, BinomialHeapWithMove}
+import oscar.cbls.algo.heap.{BinomialHeapWithMoveInt, ArrayMap, BinomialHeapWithMoveExtMem, BinomialHeapWithMove}
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.Checker
 
@@ -31,7 +31,8 @@ class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default:
 
   //only the smallest position in cond
   //we listen to these ones (and to the no-included smaller ones as well)
-  val heapOfConsideredPositions:BinomialHeapWithMoveExtMem[Int] = new BinomialHeapWithMoveExtMem[Int](i => constArray(i), n, new ArrayMap(n))
+  //TODO: make a specialized version for int because we waste too much time in boxing and unboxing
+  val heapOfConsideredPositions = new BinomialHeapWithMoveInt(i => constArray(i),n, n)
 
   //GetKey:T => Int,val maxsize:Int, position:scala.collection.mutable.Map[T,Int])(implicit val A:Ordering[T],implicit val X:Manifest[T]){
   addValuesIntoListenedUntilDiameterIsStrictlyBiggerThanZeroOrFullScope(condSet.value)
@@ -46,14 +47,15 @@ class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default:
     //we start wit the added because we want to avoid exploring the values for nothing
     require(d == Int.MinValue)
 
-    for (added <- addedValues) {
-      if(idToTheirPositionNumber(added) < nbListenedVals) {
-        heapOfConsideredPositions.insert(added)
-      }
-    }
     for (deleted <- removedValues) {
       if(idToTheirPositionNumber(deleted) < nbListenedVals) {
         heapOfConsideredPositions.delete(deleted)
+      }
+    }
+
+    for (added <- addedValues) {
+      if(idToTheirPositionNumber(added) < nbListenedVals) {
+        heapOfConsideredPositions.insert(added)
       }
     }
 
