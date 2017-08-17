@@ -250,9 +250,13 @@ class PDP(override val n:Int,
       (from,to,fromContent) => fromContent + contentsFlow(to),
       vehiclesMaxCapacities.max,
       vehiclesMaxCapacities.map(vehiclesMaxCapacities.max-_),
-      chains.length*2,
+      chains.map(_.length).max*2,
       "Content at node")
   }
+
+
+
+
 
   // --------------------------------- Time ---------------------------------------- //
 
@@ -289,12 +293,13 @@ class PDP(override val n:Int,
       maxWaitingDurations(i) = timeWindows(i)._4
     }
 
-
     val timeInvariant = ForwardCulumativeIntegerIntegerDimensionOnVehicle(
       routes,n,v,
       (fromNode,toNode,arrivalTimeAtFromNode,leaveTimeAtFromNode)=> {
         val arrivalTimeAtToNode = leaveTimeAtFromNode + travelDurationMatrix.getTravelDuration(fromNode,0,toNode)
-        val leaveTimeAtToNode = Math.max(arrivalTimeAtToNode,earlylines(toNode)) + taskDurations(toNode)
+        val leaveTimeAtToNode =
+          if(toNode < v) 0
+          else Math.max(arrivalTimeAtToNode,earlylines(toNode)) + taskDurations(toNode)
         (arrivalTimeAtToNode,leaveTimeAtToNode)
       },
       Array.tabulate(v)(x => new CBLSIntConst(0)),
@@ -311,7 +316,7 @@ class PDP(override val n:Int,
     lastPointOfVehicles = timeInvariant._5
 
 
-      sortedRouteByEarlylines = SortSequence(routes, node => earlylines(node))
+    sortedRouteByEarlylines = SortSequence(routes, node => earlylines(node))
   }
 
   def addMaxDetours(maxDetourCalculation:(List[Int],TravelTimeFunction) => List[(Int,Int,Int)]): Unit ={
@@ -320,7 +325,7 @@ class PDP(override val n:Int,
         yield maxDetourCalculation(chain, travelDurationMatrix)
     ).toArray.flatten.map(x => x._2 -> (x._1,x._3)).toMap
 
-    for(to <- 0 until n if !isPickup(to))
+    for(to <- 0 until n if !isPickup(to) && to >= v)
       deadlines(to) = maxDetours.get(to) match{
         case None =>
           nextNode(to) match{

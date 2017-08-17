@@ -1,9 +1,11 @@
 package oscar.cbls.lib.invariant.routing
 
 import oscar.cbls.business.routing.model.PDP
+import oscar.cbls.core.computation.CBLSIntVar
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.lib.constraint.{EQ, GE, LE}
 import oscar.cbls.lib.invariant.logic.IntITE
+import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.invariant.seq.Precedence
 
 /**
@@ -11,7 +13,8 @@ import oscar.cbls.lib.invariant.seq.Precedence
   */
 object PDPConstraints {
   def apply(
-             pdp: PDP
+             pdp: PDP,
+             restrictions: List[(Int,Int)] = List.empty
            ): (ConstraintSystem,ConstraintSystem) ={
     val fastConstraints = new ConstraintSystem(pdp.routes.model)
     val slowConstraints = new ConstraintSystem(pdp.routes.model)
@@ -22,6 +25,7 @@ object PDPConstraints {
     pDPConstraints.addPrecedencesConstraints()
     pDPConstraints.addMaxDetoursConstraints()
     pDPConstraints.addExclusiveCarConstraints()
+    pDPConstraints.addVehiclesRestrictions(restrictions)
 
     (fastConstraints, slowConstraints)
   }
@@ -97,22 +101,21 @@ class PDPConstraints(pdp: PDP, fastConstraints: ConstraintSystem, slowConstraint
     */
   def addTimeWindowConstraints()={
 
-    val earlylines = pdp.earlylines
-    val maxWaitingDurations = pdp.maxWaitingDurations
-    val deadlines = pdp.deadlines
-    val arrivalTimes = pdp.arrivalTimes
-    val leaveTimes = pdp.leaveTimes
-
     for(i <- 0 until n){
-      if(i < v && deadlines(i) != Int.MaxValue) {
-        slowConstraints.post(LE(pdp.arrivalTimesAtEnd(i), deadlines(i)).nameConstraint("end of time for vehicle " + i))
+      if(i < v && pdp.deadlines(i) != Int.MaxValue) {
+        slowConstraints.post(LE(pdp.arrivalTimesAtEnd(i), pdp.deadlines(i)).nameConstraint("end of time for vehicle " + i))
       } else {
-        if(deadlines(i) != Int.MaxValue)
-          slowConstraints.post(LE(leaveTimes(i), deadlines(i)).nameConstraint("end of time window on node " + i))
-        if(maxWaitingDurations(i) != Int.MaxValue)
-          slowConstraints.post(GE(arrivalTimes(i), earlylines(i)).nameConstraint("start of time window on node (with duration)" + i))
+        if(pdp.deadlines(i) != Int.MaxValue)
+          slowConstraints.post(LE(pdp.leaveTimes(i), pdp.deadlines(i)).nameConstraint("end of time window on node " + i))
+        if(pdp.maxWaitingDurations(i) != Int.MaxValue)
+          slowConstraints.post(GE(pdp.arrivalTimes(i), pdp.earlylines(i)).nameConstraint("start of time window on node (with duration)" + i))
       }
     }
 
+  }
+
+  def addVehiclesRestrictions(restrictions: List[(Int,Int)])={
+    if(v > 1)
+      fastConstraints.post(EQ(0, Sum(NodeVehicleRestrictions(routes,v,restrictions))))
   }
 }

@@ -31,7 +31,6 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
-  this := sortSequenceBy(v.value,sortValue)
 
   this := sortSequenceBy(v.value,sortValue)
 
