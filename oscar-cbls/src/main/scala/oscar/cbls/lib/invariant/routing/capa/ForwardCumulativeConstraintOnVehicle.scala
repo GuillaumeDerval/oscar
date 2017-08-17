@@ -62,7 +62,6 @@ object ForwardCumulativeConstraintOnVehicle {
   }
 }
 
-
 /**
  * the violation maintained by this invariant is the sum over all routed nodes of the overshoot
  * strictly above cMax and the undershoot strictly below 0 of the content of the vehicles

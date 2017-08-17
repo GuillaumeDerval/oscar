@@ -19,7 +19,7 @@ import oscar.cbls.algo.seq.functional.IntSequence
 import oscar.cbls.core.computation.{CBLSIntVar, ChangingIntValue, ChangingSeqValue, Domain, IntNotificationTarget, IntValue}
 import oscar.cbls.core.propagation.Checker
 
-object ForwardCulumativeIntegerIntegerDimensionOnVehicle {
+object ForwardCumulativeIntegerIntegerDimensionOnVehicle {
   /**
    * creates a GenericCumulativeIntegerDimensionOnVehicle Invariant
    * @param routes The sequence representing the route associated at each vehicle
@@ -55,12 +55,12 @@ object ForwardCulumativeIntegerIntegerDimensionOnVehicle {
 
     val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, n-1, "last point of vehicle" + vehicle))
 
-    new ForwardCulumativeIntegerIntegerDimensionOnVehicle(routes,n,v,op,content1AtStart,content2AtStart,content1AtNode,content2AtNode,content1AtEnd,content2AtEnd,lastPointOfVehicle,default1ForUnroutedNodes,default2ForUnroutedNodes)
+    new ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes,n,v,op,content1AtStart,content2AtStart,content1AtNode,content2AtNode,content1AtEnd,content2AtEnd,lastPointOfVehicle,default1ForUnroutedNodes,default2ForUnroutedNodes)
     (content1AtNode,content2AtNode,content1AtEnd,content2AtEnd,lastPointOfVehicle)
   }
 }
 
-class ForwardCulumativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
+class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
                                                         n:Int,
                                                         v:Int,
                                                         op:(Int,Int,Int,Int)=>(Int,Int),
