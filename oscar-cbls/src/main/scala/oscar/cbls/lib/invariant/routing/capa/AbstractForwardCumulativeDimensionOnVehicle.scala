@@ -134,6 +134,11 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
             vehicleLocationAndCheckpointStack.defineCheckpoint(prev.newValue,checkpointLevel,vehicleLocationToSave)
             (Some((zonesAfterPrev, vehicleLocationToSave)), removedPointsAfterPrev)
           case (None,potentiallyRemovedPointsAfterPrev) =>
+
+            //TODO: strange that vehicle location was not saved on stack here.
+            val vehicleLocationToSave = VehicleLocation.apply(v,node => prev.newValue.positionOfAnyOccurrence(node).get)
+            vehicleLocationAndCheckpointStack.defineCheckpoint(prev.newValue,checkpointLevel,vehicleLocationToSave)
+
             (None, potentiallyRemovedPointsAfterPrev)
         }
 
