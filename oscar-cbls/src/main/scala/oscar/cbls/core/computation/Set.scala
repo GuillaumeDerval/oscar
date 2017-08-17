@@ -170,7 +170,10 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
       val (addedValues,deletedValues):(Iterable[Int],Iterable[Int]) = if (nbTouched == -1) {
         //need to call every listening one, so gradual approach required
         if(m_NewValue == OldValue) (List.empty,List.empty) else (m_NewValue.diff(OldValue),OldValue.diff(m_NewValue))
+
       }else {
+        //we have the set of values that have been touched (added or deleted)
+        //but we need to check for each opf them if they have been both added and deleted
         var addedUnique = SortedSet.empty[Int] ++ this.addedValues
         var removedUnique = SortedSet.empty[Int] ++ this.removedValues
         for(inter <- addedUnique.intersect(removedUnique)){
@@ -208,8 +211,6 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
           currentElement = currentElement.next
         }
 
-        //notifying the PE that listen to only a few values in the set
-        //TODO
         if(valueToValueWiseKeys != null) {
           val currentValueWisePropagationWaveIdentifier = new ValueWisePropagationWaveIdentifier()
 
