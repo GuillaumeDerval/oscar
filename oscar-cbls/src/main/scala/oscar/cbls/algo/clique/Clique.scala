@@ -15,7 +15,7 @@
 
 package oscar.cbls.algo.clique
 
-import scala.collection.immutable.SortedSet
+import scala.collection.immutable.{SortedMap, SortedSet}
 
 /**
  * Created by rdl on 17-08-17.
@@ -33,7 +33,7 @@ object Clique {
     var allCliques:List[SortedSet[Int]] = List.empty
     def addMaximalClique(clique:SortedSet[Int]) = allCliques = clique::allCliques
 
-    def allNodes = 0 to nbNodes
+    def allNodes = 0 until nbNodes
 
     def bronKerbosch2Search(r:SortedSet[Int],p0:SortedSet[Int],x0:SortedSet[Int]) {
       //  BronKerbosch2(R,P,X):
@@ -54,8 +54,8 @@ object Clique {
 
           //      BronKerbosch2(R ⋃ {v}, P ⋂ N(v), X ⋂ N(v))
           bronKerbosch2Search(r + v,
-            SortedSet.empty[Int] ++ allNeighborsOfV.filter(p contains _),
-            SortedSet.empty[Int] ++ allNeighborsOfV.filter(x contains _))
+            SortedSet.empty[Int] ++ allNeighborsOfV.filter(p.contains),
+            SortedSet.empty[Int] ++ allNeighborsOfV.filter(x.contains))
           //    P := P \ {v}
           p = p - v
           //    X := X ⋃ {v}
@@ -67,4 +67,16 @@ object Clique {
 
     allCliques
   }
+}
+
+object TestCliques extends App{
+
+  val nbNodes = 10
+  val adjacencyList:List[(Int,Int)] = List((0,2),(2,8),(3,1),(1,4),(3,4),(7,5),(3,6))
+
+  val adjacencyDico = SortedSet.empty ++ adjacencyList ++ adjacencyList.map{case (a,b) => (b,a)}
+  def isNeighbor(a:Int,b:Int) = adjacencyDico.contains((a,b))
+
+  val cliques = Clique.bronKerbosch2(nbNodes,isNeighbor:(Int,Int)=>Boolean)
+  println(cliques.map(_.toList))
 }
