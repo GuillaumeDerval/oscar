@@ -3,7 +3,7 @@ package oscar.cbls.business.routing.model
 import oscar.cbls.algo.seq.functional.IntSequenceExplorer
 import oscar.cbls.core.computation._
 import oscar.cbls.lib.invariant.routing.MovingVehicles
-import oscar.cbls.lib.invariant.routing.capa.{ForwardCulumativeIntegerIntegerDimensionOnVehicle, ForwardCumulativeConstraintOnVehicle}
+import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeIntegerIntegerDimensionOnVehicle, ForwardCumulativeConstraintOnVehicle}
 import oscar.cbls.lib.invariant.seq.SortSequence
 import oscar.cbls.lib.invariant.set.{Diff, IncludedSubsets, ValuesInViolatedClauses}
 
@@ -293,7 +293,7 @@ class PDP(override val n:Int,
       maxWaitingDurations(i) = timeWindows(i)._4
     }
 
-    val timeInvariant = ForwardCulumativeIntegerIntegerDimensionOnVehicle(
+    val timeInvariant = ForwardCumulativeIntegerIntegerDimensionOnVehicle(
       routes,n,v,
       (fromNode,toNode,arrivalTimeAtFromNode,leaveTimeAtFromNode)=> {
         val arrivalTimeAtToNode = leaveTimeAtFromNode + travelDurationMatrix.getTravelDuration(fromNode,0,toNode)

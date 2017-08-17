@@ -33,7 +33,7 @@ object Clique {
     var allCliques:List[SortedSet[Int]] = List.empty
     def addMaximalClique(clique:SortedSet[Int]) = allCliques = clique::allCliques
 
-    def allNodes = 0 to nbNodes
+    def allNodes = 0 until nbNodes
 
     def bronKerbosch2Search(r:SortedSet[Int],p0:SortedSet[Int],x0:SortedSet[Int]) {
       //  BronKerbosch2(R,P,X):
