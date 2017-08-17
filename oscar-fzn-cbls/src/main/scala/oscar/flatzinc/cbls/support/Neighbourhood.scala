@@ -213,48 +213,6 @@ class GCCNeighborhood(val variables: Array[CBLSIntVarDom], val vals: Array[Int],
       if (variables(i).min > cur(i) || variables(i).max < cur(i)) throw new Exception("Problem")
       variables(i) := cur(i)
     }
-    /*
-    var v = vals(0)
-    var i = 0;
-    var untouched = Set.empty[Int]
-    for(v <- 0 until vals.length){
-      var c = 0;
-      while(c < low(v)){
-        if(variables(i).inDomain(vals(v))){
-          variables(i) := vals(v)
-          c += 1
-        }else{
-          untouched += i
-        }
-        i += 1
-      }
-    }
-    for(v <- 0 until vals.length){
-      var c = low(v)
-      while(i < variables.length && c < up(v)){
-        variables(i) := vals(v)
-        c += 1
-        i += 1
-      }
-    }
-    //need to put some variables outside, can only happen if not closed 
-    if(i < variables.length){
-      if(closed){
-        throw new Exception("Closed GCC cannot be satisfied")
-      }
-      //TODO I am not happy with this code.
-      while(i < variables.length){
-        var found = false
-        var v = variables(i).minVal
-        while(!found){
-          if(vals.forall(_!=v)){
-            variables(i) := v
-            i += 1
-            found = true
-          }
-        }
-      }
-    }*/
   }
 
   def getSwapMove(idx1: Int, idx2: Int, accept: Move => Boolean): Move = {
@@ -767,6 +725,9 @@ class Inverse(xs: Array[CBLSIntVarDom], invXs: Array[CBLSIntVarDom], objective: 
       val invV2 = invXs(v2 + offset).value
       if (invXs(v1 + offset).dom.contains(invV2) && invXs(v2 + offset).dom.contains(invV1)) {
         assert(invV1 + offset == idx1 && invV2 + offset == idx2)
+        if(!(invV1 + offset == idx1 && invV2 + offset == idx2)){
+          throw new RuntimeException("Invers neighbourhood is not satisfied...")
+        }
         xs(idx1) :=: xs(idx2)
         invXs(v1 + offset) :=: invXs(v2 + offset)
         val newObj = constraintSystem.violation.value
@@ -806,8 +767,11 @@ class Inverse(xs: Array[CBLSIntVarDom], invXs: Array[CBLSIntVarDom], objective: 
   }
 
   def getBest(rng1: Iterable[Int], rng2: Iterable[Int], accept: Move => Boolean): Move = {
-    val bestSwap = selectMin2(rng1, rng2, (idx: Int, next: Int) => getSwapMove(idx, next, accept).value,
-                              (idx: Int, v: Int) => idx != v)
+    //TODO: Iterate over every variable in index range and for each variable swap with variable form domain...
+    val bestSwap = selectMin2(rng1, rng2, (idx1: Int, idx2: Int) => getSwapMove(idx1, idx2, accept).value,
+                              (idx1: Int, idx2: Int) =>
+                                idx1 != idx2 &&
+                                  xs(idx1).dom.contains(xs(idx2).value) && xs(idx2).dom.contains(xs(idx1).value))
     bestSwap match {
       case (i1, i2) => getSwapMove(i1, i2, accept)
       case _ => new NoMove(Int.MaxValue)

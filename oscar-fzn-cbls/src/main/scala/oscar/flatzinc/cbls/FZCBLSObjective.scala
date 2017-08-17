@@ -25,7 +25,7 @@ import oscar.flatzinc.Log
 import oscar.flatzinc.model.Objective
 
 
-class FZCBLSObjective(cblsmodel:FZCBLSModel, log:Log){
+class FZCBLSObjective(cblsmodel:FZCBLSModel, val bound:Option[CBLSIntVar] = None, log:Log){
   private val opt = cblsmodel.fzModel.search.obj
   val objectiveVar = cblsmodel.fzModel.search.variable.map(cblsmodel.getCBLSVar(_)).getOrElse(null)
   val violation = cblsmodel.c.violation

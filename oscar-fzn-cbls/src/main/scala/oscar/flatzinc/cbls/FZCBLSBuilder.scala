@@ -131,9 +131,11 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
     //Create variable violation before closing the constraint system!
     cblsmodel.initiateVariableViolation()
 
-    cblsmodel.closeConstraintSystem() //The objective depends on the violation of the CS, so it must be first closed
+    //cblsmodel.closeConstraintSystem() //The objective depends on the violation of the CS, so it must be first closed
     // before creating the Objective.
-    cblsmodel.initObjective() //But objective is needed in neighbourhoods
+    //cblsmodel.initObjective() //But objective is needed in neighbourhoods
+    cblsmodel.initObjectiveAndCloseConstraintSystem()
+
     cblsmodel.createNeighbourhoods() //So we actually create the neighbourhoods only after!
 
 
@@ -217,7 +219,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
   def postConstraints(poster: FZCBLSConstraintPoster, softConstraints: List[Constraint], log: Log): Unit = {
     for (constraint <- softConstraints) {
       log(2, "Posting as Soft " + constraint)
-      poster.add_constraint(constraint);
+      poster.construct_and_add_constraint(constraint);
     }
     log("Posted " + softConstraints.length + " Soft Constraints")
     Helper.getCstrsByName(softConstraints).map
@@ -230,7 +232,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
                      log: Log): Unit = {
     for (invariant <- invariants) {
       log(2, "Posting as Invariant " + invariant)
-      val inv = poster.add_invariant(invariant)
+      val inv = poster.construct_and_add_invariant(invariant)
       cblsmodel.cblsIntMap += invariant.definedVar.get.id -> inv;
     }
 
@@ -258,7 +260,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
       val hardPoster: FZCBLSConstraintPoster = new FZCBLSConstraintPoster(hardCS, cblsmodel.getCBLSVar);
       for (c <- implicitConstraints) {
         try {
-          hardPoster.add_constraint(c)
+          hardPoster.construct_and_add_constraint(c)
         } catch {
           case e: NoSuchConstraintException => log("Warning: Do not check that " + c + " is always respected.")
         }
@@ -349,11 +351,11 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
       constraints.partition(c => c.definedVar.isDefined)
 
     for (invariant <- invariants) {
-      val inv = whereConstraintPoster.add_invariant(invariant)
+      val inv = whereConstraintPoster.construct_and_add_invariant(invariant)
       cblsmodel.cblsIntMap += invariant.definedVar.get.id -> inv;
     }
     for (constraint <- softConstraints) {
-      whereConstraintPoster.add_constraint(constraint)
+      whereConstraintPoster.construct_and_add_constraint(constraint)
     }
     whereConstraintSystem.close()
     whereConstraintSystem

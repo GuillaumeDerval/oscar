@@ -21,6 +21,7 @@ package oscar.flatzinc.cbls
 import oscar.cbls.core.computation.{CBLSIntVar, IntValue, Store}
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.{Objective => CBLSObjective}
+import oscar.cbls.lib.constraint.GE
 import oscar.flatzinc.Log
 import oscar.flatzinc.cbls.support._
 import oscar.flatzinc.cp.FZCPModel
@@ -63,7 +64,28 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
   }
 
   def initObjective() = {
-    objective = new FZCBLSObjective(this,log)
+    objective = new FZCBLSObjective(this,None,log)
+  }
+
+  def initObjectiveAndCloseConstraintSystem():Unit = {
+
+    val objectiveVar = fzModel.search.variable.map(getCBLSVar(_)).getOrElse(null)
+    val bound = fzModel.search.obj match {
+      case Objective.SATISFY => None
+      case Objective.MAXIMIZE => Some(CBLSIntVar(c.model, objectiveVar.min, objectiveVar.domain, "Objective bound"))
+      case Objective.MINIMIZE => Some(CBLSIntVar(c.model, objectiveVar.max, objectiveVar.domain, "Objective bound"))
+    }
+
+    fzModel.search.obj match {
+      case Objective.SATISFY => ()
+      case Objective.MAXIMIZE => c.add(GE(objectiveVar,bound.get),CBLSIntVar(c.model,1,1 to 1000000, "Weight for bound"))
+      case Objective.MINIMIZE => c.add(GE(bound.get,objectiveVar),CBLSIntVar(c.model,1,1 to 1000000, "Weight for  bound"))
+    }
+
+    c.close()
+
+    objective = new FZCBLSObjective(this,bound,log)
+
   }
 
 
@@ -136,6 +158,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
   def getCBLSVarDom(v: Variable) = {
     getCBLSVar(v).asInstanceOf[CBLSIntVarDom]
   }
+
   implicit def getCBLSVar(v: Variable) = {
     v match {
       case v:IntegerVariable =>
@@ -160,6 +183,20 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
 
   def handleSolution() = {
     println("% time from start: "+getWatch())
+    log("Updating objective bound")
+    log("Violation before: " + c.violation.value)
+    objective.bound match {
+      case Some(v) => v := objective.getObjectiveValue() + (fzModel.search.obj match {
+        case Objective.MAXIMIZE => 1
+        case Objective.MINIMIZE => -1
+        case _ => 0
+      })
+      case _ => ()
+    }
+
+    log("Violation after: " + c.violation.value)
+    log("Objective bound updated")
+
     fzModel.solution.handleSolution(
       (s: String) => cblsIntMap.get(s) match {
         case Some(intVar) =>
@@ -180,6 +217,8 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
       cpmodel.updateModelDomains()
       updateVarDomains()
       log("Variable domains updated")
+
+
     }
   }
   var cpmodel = null.asInstanceOf[FZCPModel]

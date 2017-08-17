@@ -154,7 +154,12 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   }
 
   def get_array_bool_or(as: Array[BooleanVariable], r: BooleanVariable, ann: List[Annotation]) = {
-    if(r.isTrue){
+    if(false && r.isTrue && as.forall(v =>
+                               v.definingConstraint.isInstanceOf[Option[ReifiedConstraint]] &&
+                                 v.definingConstraint.asInstanceOf[Option[ReifiedConstraint]].isDefined &&
+                                 v.definingConstraint.asInstanceOf[Option[ReifiedConstraint]].get.isInstanceOf[reif] &&
+                                 v.definingConstraint.asInstanceOf[Option[reif]].get.c.isInstanceOf[int_lin_le])
+    ){
       System.err.println("% Warning: creating duplicate constraint to get better violation function on array_bool_or")
       EQ(0, Min(as.map( v => v.definingConstraint match {
         case Some(c:Constraint) => c match {
@@ -186,9 +191,23 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   }
 
   def get_bool_clause(as: Array[BooleanVariable], bs: Array[BooleanVariable], ann: List[Annotation]) = {
-    //GE(Minus(Sum(as.map(getCBLSVar(_))),Prod(bs.map(getCBLSVar(_)))),0)
-    GE(Sum(as.map(getCBLSVar(_))),Prod(bs.map(getCBLSVar(_))))
-    //NE(Sum2(Step(Sum(as.map(getCBLSVar(_)))), EQ(Prod(bs.map(getCBLSVar(_))), 0).truthValue), 0)
+
+    val experimental = false
+
+    if (experimental) {
+      System.err.println("% Warning: creating duplicate constraint to get better violation function on bool_clause")
+      EQ(0, Min(as.map( v => v.definingConstraint match {
+        case Some(c:Constraint) => c match {
+          case reif(cons,rv) => constructCBLSConstraint(cons).violation
+          case _ => Minus(1,getCBLSVar(v))
+        }
+        case None => Minus(1,getCBLSVar(v))
+      }) ++ bs.map( v => Minus(1,getCBLSVar(v)))))
+    } else {
+      //GE(Minus(Sum(as.map(getCBLSVar(_))),Prod(bs.map(getCBLSVar(_)))),0)
+      GE(Sum(as.map(getCBLSVar(_))), Prod(bs.map(getCBLSVar(_))))
+      //NE(Sum2(Step(Sum(as.map(getCBLSVar(_)))), EQ(Prod(bs.map(getCBLSVar(_))), 0).truthValue), 0)
+    }
   }
 
   def get_bool_not_inv(a: BooleanVariable, b: BooleanVariable, defId: String, ann: List[Annotation]) = {
@@ -589,7 +608,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   
 
   def add_constraint(constraint: CBLSConstraint) = {
-    c.add(constraint)
+    c.add(constraint) //, CBLSIntVar(c.model,1,1 to 1000000, "Weight for "+ constraint.toString))
   }
 
   def construct_and_add_constraint(constraint: Constraint) = {

@@ -98,6 +98,8 @@ object CBLSIntVarDom {
 object EnsureDomain{
   val weight = CBLSIntConst(10);
   def apply(i:IntValue,d: Domain,c: ConstraintSystem) = {
+    //System.err.println("% Using variables for in domain weights")
+    //val weightVar = CBLSIntVar(c.model,1,1 to 1000000, "in domain weight")
     d match{
       case DomainRange(min, max) =>{
         if(i.min < min){

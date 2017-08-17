@@ -46,12 +46,12 @@ abstract class Constraint(val variables: Array[Variable],val annotations: List[A
   //The variable the constraint functionally defines
   //TODO: generalize to arrays of defined variables (e.g. in sort/bin-packing)
   def setDefinedVar(v: Variable) = {
-    definedVars match {
+      definedVars match {
       case None => v.definingConstraint match {
         case None =>
           //Make sure that this can indeed be defined. It might be that some annotations from fzn are wrong. We simply ignore those.
           if(getCandidateDefVars().contains(v)){
-            v.definingConstraint= Some(this);
+            v.definingConstraint = Some(this);
             definedVars = Some(v);
           }
           /*else{
