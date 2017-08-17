@@ -1,3 +1,18 @@
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
 package oscar.cbls.algo.clique
 
 import scala.collection.immutable.SortedSet
@@ -7,6 +22,12 @@ import scala.collection.immutable.SortedSet
  */
 object Clique {
 
+  /**
+   * from https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm
+   * @param nbNodes nodes are from 0 to nbNodes-1
+   * @param isNeighbor true if teh two nodes ade adjacent
+   * @return a list of all the maximal cliques
+   */
   def bronKerbosch2(nbNodes:Int,isNeighbor:(Int,Int)=>Boolean):List[SortedSet[Int]] = {
 
     var allCliques:List[SortedSet[Int]] = List.empty
