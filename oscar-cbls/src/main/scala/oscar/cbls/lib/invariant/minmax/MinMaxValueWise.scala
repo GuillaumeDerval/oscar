@@ -16,23 +16,22 @@ import scala.collection.immutable.SortedSet
 class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default: Int,maxDiameter:Int = 2)
   extends IntInvariant with SetNotificationTarget{
 
-  val n = constArray.length
-  val range = 0 until n
-  val idSortedByIncreasingValue:Array[Int] = range.toArray.sortBy(a => constArray(a))
-  var nbListenedVals = 0
-  val idToTheirPositionNumber:Array[Int] = Array.fill(n)(-1)
+  private val n = constArray.length
+  private val range = 0 until n
+  private val idSortedByIncreasingValue:Array[Int] = range.toArray.sortBy(a => constArray(a))
+  private var nbListenedVals = 0
+  private val idToTheirPositionNumber:Array[Int] = Array.fill(n)(-1)
   for(i <- range){
     idToTheirPositionNumber(idSortedByIncreasingValue(i)) = i
   }
 
   registerStaticDependency(condSet)
-  val key:ValueWiseKey = registerDynamicValueWiseDependency(condSet)
+  private val key:ValueWiseKey = registerDynamicValueWiseDependency(condSet)
   finishInitialization()
 
   //only the smallest position in cond
   //we listen to these ones (and to the no-included smaller ones as well)
-  //TODO: make a specialized version for int because we waste too much time in boxing and unboxing
-  val heapOfConsideredPositions = new BinomialHeapWithMoveInt(i => constArray(i),n, n)
+  private val heapOfConsideredPositions = new BinomialHeapWithMoveInt(i => constArray(i),n, n)
 
   //GetKey:T => Int,val maxsize:Int, position:scala.collection.mutable.Map[T,Int])(implicit val A:Ordering[T],implicit val X:Manifest[T]){
   addValuesIntoListenedUntilDiameterIsStrictlyBiggerThanZeroOrFullScope(condSet.value)
@@ -78,14 +77,14 @@ class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default:
    * does not add into the heapOfConsideredPositions
    * @return the iD added into the scope
    */
-  def addOneMoveValueIntoScope():Int = {
+  private def addOneMoveValueIntoScope():Int = {
     val IdToAddIntoTheScope = idSortedByIncreasingValue(nbListenedVals)
     nbListenedVals += 1
     key.addToKey(IdToAddIntoTheScope)
     IdToAddIntoTheScope
   }
 
-  def removeValuesFromListenedUntilDiameterSmallerOrEqualToMaxDiameter(){
+  private def removeValuesFromListenedUntilDiameterSmallerOrEqualToMaxDiameter(){
     while(heapOfConsideredPositions.size > maxDiameter) {
       require(nbListenedVals >0)
       val removedValue = idSortedByIncreasingValue(nbListenedVals-1)
@@ -95,7 +94,7 @@ class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default:
     }
   }
 
-  def trimNotListenedTail(){
+  private def trimNotListenedTail(){
     while(true) {
       val removedValue = idSortedByIncreasingValue(nbListenedVals-1)
       if(heapOfConsideredPositions.contains(removedValue)) return
@@ -105,7 +104,7 @@ class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default:
     }
   }
 
-  def addValuesIntoListenedUntilDiameterIsStrictlyBiggerThanZeroOrFullScope(condValue:SortedSet[Int]){
+  private def addValuesIntoListenedUntilDiameterIsStrictlyBiggerThanZeroOrFullScope(condValue:SortedSet[Int]){
     while(heapOfConsideredPositions.size == 0 && nbListenedVals < n) {
       val addedValue = addOneMoveValueIntoScope()
       if(condValue contains addedValue) {
@@ -114,10 +113,6 @@ class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default:
     }
   }
 
-  /** To override whenever possible to spot errors in invariants.
-    * this will be called for each invariant after propagation is performed.
-    * It requires that the Model is instantiated with the variable debug set to true.
-    */
   override def checkInternals(c : Checker) {
     if (condSet.value.isEmpty) c.check(value == default)
     else c.check(value == constArray(condSet.value.minBy(constArray(_))))

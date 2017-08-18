@@ -39,7 +39,7 @@ import scala.language.postfixOps
 object WareHouseLocationVisu extends App with AlgebraTrait with StopWatch{
 
   //the number of warehouses
-  val W:Int = 10000
+  val W:Int = 200
 
   //the number of delivery points
   val D:Int = 1000
@@ -70,7 +70,7 @@ object WareHouseLocationVisu extends App with AlgebraTrait with StopWatch{
 
   m.close()
 
-//  val visual = new WareHouseLocationWindow(deliveryPositions,warehousePositions,distanceCost,costForOpeningWarehouse)
+  val visual = new WareHouseLocationWindow(deliveryPositions,warehousePositions,distanceCost,costForOpeningWarehouse)
 
   var bestObj = Int.MaxValue
 
@@ -134,14 +134,14 @@ object WareHouseLocationVisu extends App with AlgebraTrait with StopWatch{
     ) exhaust (Profile(muLine(3,3,15)) exhaustAndContinueIfMovesFound Profile(muLine(4,3,15))) afterMove(
     if(obj.value < bestObj){
       bestObj = obj.value
-//      if(this.getWatch > lastDisplay + displayDelay) {visual.redraw(openWarehouses.value); lastDisplay = this.getWatch}
+      if(this.getWatch > lastDisplay + displayDelay) {visual.redraw(openWarehouses.value); lastDisplay = this.getWatch}
     })
 
   neighborhood.verbose = 2
 
   neighborhood.doAllMoves(obj=obj)
 
-  //visual.redraw(openWarehouses.value,false)
+  visual.redraw(openWarehouses.value,false)
 
   println(neighborhood.profilingStatistics)
 
