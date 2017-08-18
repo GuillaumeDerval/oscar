@@ -54,8 +54,8 @@ case class Store(override val verbose:Boolean = false,
   extends PropagationStructure(verbose,checker,noCycle,topologicalSort, sortScc)
   with Bulker with StorageUtilityManager{
 
-
-  assert({println("You are using a CBLS store with asserts activated. It makes the engine slower. Recompile it with -Xdisable-assertions"); true})
+  assert({System.err.println("You are using a CBLS store with asserts activated. It makes the engine slower. Recompile it with -Xdisable-assertions"); true})
+  if(checker.nonEmpty) System.err.println("OscaR.cbls is running in debug mode. It makes the engine slower.")
 
   private[this] var variables:QList[AbstractVariable] = null
   private var propagationElements:QList[PropagationElement] = null
