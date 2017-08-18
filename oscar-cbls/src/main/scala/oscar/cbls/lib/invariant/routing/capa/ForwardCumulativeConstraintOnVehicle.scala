@@ -220,7 +220,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
         }
 
       case SeqUpdateAssign(value : IntSequence) =>
-        (None, potentiallyRemovedPoints ::: previousSequence.unorderedContentNoDuplicate)
+        (None, potentiallyRemovedPoints ::: (previousSequence.unorderedContentNoDuplicate.filter(_>=v)))
 
       case SeqUpdateLastNotified(value : IntSequence) =>
         (toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints)
@@ -295,6 +295,11 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
       computeNodeToContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch[Int](n,v,op,this.contentAtVehicleStart,routes.value, 0)
 
     for(node <- routes.value){
+
+      if(node < v){
+        c.check(nodeToContent(node) equals contentAtVehicleStart(node),Some("error on initial vehicle content on vehicle " + node))
+      }
+
       c.check(nodeToContent(node) equals contentAtNode(node),
         Some("GenericCumulativeConstraint : Error on content at node(" + node + ") at pos : " +
           routes.newValue.positionsOfValue(node)+ " :=" + contentAtNode(node) + " should be :=" + nodeToContent(node) + " route:" + routes.value))
