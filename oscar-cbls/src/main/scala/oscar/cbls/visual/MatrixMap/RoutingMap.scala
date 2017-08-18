@@ -25,8 +25,7 @@ import java.awt.{BasicStroke, Color, Graphics2D, Point, Rectangle, RenderingHint
 import org.jxmapviewer.painter.Painter
 import org.jxmapviewer.viewer.GeoPosition
 import org.jxmapviewer.{JXMapKit, JXMapViewer}
-import oscar.cbls.business.routing.model.PDP
-import oscar.cbls.business.routing.model.VRP
+import oscar.cbls.business.routing.model.{PDP, VRP}
 import oscar.examples.cbls.routing.visual.ColorGenerator
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualArrow, VisualCircle, VisualLine, VisualShape}

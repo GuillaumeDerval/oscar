@@ -559,7 +559,7 @@ abstract class AbstractVehicleCapacity(n:Int,
           } else {
             //carry on the same vehicle
             //(startingNode,destinationNode,capacityAtStartingNode)=> capacityAtDestinationNode
-            setVehicleContentAtNode(previousPosition.value, currentNode)
+            setVehicleContentAtNode(previousPosition.value,currentNode)
             previousPosition = currentPosition
           }
       }

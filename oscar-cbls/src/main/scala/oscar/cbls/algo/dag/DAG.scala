@@ -54,7 +54,7 @@ trait DAGNode extends Ordered[DAGNode]{
  * @author renaud.delandtsheer@cetic.be
  * @param n a node that is involved in the cycle
  */
-case class CycleException(msg:String) extends Exception(msg)
+class CycleException(n: DAGNode) extends Exception
 
 /**This data structure performs dynamic topological sort on DAG
   * the topological sort can be performed either from scratch or maintained incrementally.
@@ -222,7 +222,7 @@ trait DAG {
       })
     }
     if (position != nodes.size) {
-      throw new CycleException("")
+      throw new CycleException(null)
     }
   }
 
@@ -266,7 +266,7 @@ trait DAG {
         if (p.position == ub) {
           toreturn.foreach(q => q.visited = false)
           h.foreach(q => q.visited = false)
-          throw new CycleException("Nodes in cycle : \n\t" + getCycle(p).mkString("\n\t") + "End of cycle\n")
+          throw new CycleException(p)
         }
         if (!p.visited && p.position < ub) {
           h.insert(p)
