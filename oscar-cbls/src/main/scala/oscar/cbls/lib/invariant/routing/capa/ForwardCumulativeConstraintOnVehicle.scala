@@ -86,7 +86,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
   extends AbstractVehicleCapacity(n,v) with SeqNotificationTarget {
   require(contentAtVehicleStart.length==v)
   require(cMax >=0,"cMax should be >=0")
-  require(contentAtVehicleStart.forall(_ <= cMax),"cannot exceed cMax in initial values (ok this is because implementer was lazy, just replace violation :=0 by violation := sum(contentToViolation(initValue))")
+  require(contentAtVehicleStart.forall(_ <= cMax),"cannot exceed cMax in initial values")
 
   registerStaticAndDynamicDependency(routes)
   finishInitialization()
