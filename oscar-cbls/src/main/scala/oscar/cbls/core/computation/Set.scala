@@ -172,6 +172,7 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
         if(m_NewValue == OldValue) (List.empty,List.empty) else (m_NewValue.diff(OldValue),OldValue.diff(m_NewValue))
 
       }else {
+        //TODO: this is slow, and it delives TreeSet. TreeSet are slow fo valueWise notifications
         //we have the set of values that have been touched (added or deleted)
         //but we need to check for each opf them if they have been both added and deleted
         var addedUnique = SortedSet.empty[Int] ++ this.addedValues
@@ -215,7 +216,9 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
           val currentValueWisePropagationWaveIdentifier = new ValueWisePropagationWaveIdentifier()
 
           def notifyForValues(values : Iterable[Int]) {
-            for (value <- values) {
+            val valuesIt = values.iterator
+            while(valuesIt.hasNext){
+              val value = valuesIt.next
               val valueWiseKeys = valueWiseKeysAtValue(value)
               val headPhantom = valueWiseKeys.phantom
               var currentElement : DLLStorageElement[ValueWiseKey] = headPhantom.next

@@ -56,7 +56,8 @@ object ForwardCumulativeConstraintOnVehicle {
       cMax,
       contentAtVehicleStart,
       violation,
-      maxCheckpointLevel)
+      maxCheckpointLevel,
+      capacityName)
 
     violation
   }
@@ -82,7 +83,8 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                                            cMax:Int,
                                            contentAtVehicleStart:Array[Int],
                                            val violation:CBLSIntVar,
-                                           maxCheckpointLevel:Int)
+                                           maxCheckpointLevel:Int,
+                                           capacityName:String = "")
   extends AbstractVehicleCapacity(n,v) with SeqNotificationTarget {
   require(contentAtVehicleStart.length==v)
   require(cMax >=0,"cMax should be >=0")
@@ -288,6 +290,31 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
           //we could save and restore the regularized vehicle start, but his is probably not useful
         }
     }
+  }
+
+  override def toString : String = {
+    "ForwardCumulativeConstraintOnVehicle(routes:" + routes.name + " n:" + n + " v:" + v + " cMax:" + cMax + " capacityName:" + capacityName + " violation:=" + violation.value +"){\n" +
+      ((0 until v).toList.map((vehicle:Int) =>
+
+      {
+        val header = "\tvehicle" + vehicle + " contentAtVehicleStart:" + contentAtVehicleStart(vehicle) + "\n"
+        var explorerOpt = routes.value.explorerAtAnyOccurrence(vehicle).get.next
+        var acc:String = ""
+
+        while(explorerOpt match{
+          case None => //at end of last vehicle
+            false
+          case Some(explorer) if explorer.value < v =>
+            //reached another vehicle
+            false
+          case Some(explorer) if explorer.value >= v =>
+            val node =explorer.value
+            acc += "\t\tnode:" + node + "\t" + " content:" + contentAtNode(node) + "\n"
+            explorerOpt = explorer.next
+            true
+        }){}
+        header+acc}
+        ).mkString("\n"))
   }
 
   override def checkInternals(c: Checker): Unit = {
