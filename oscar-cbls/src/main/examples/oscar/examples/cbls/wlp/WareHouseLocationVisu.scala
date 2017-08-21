@@ -39,7 +39,7 @@ import scala.language.postfixOps
 object WareHouseLocationVisu extends App with AlgebraTrait with StopWatch{
 
   //the number of warehouses
-  val W:Int = 200
+  val W:Int = 1000
 
   //the number of delivery points
   val D:Int = 1000

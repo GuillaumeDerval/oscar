@@ -169,10 +169,12 @@ class VRP(val n: Int, val v: Int, val m: Store, maxPivotPerValuePercent:Int = 4)
     acc.reverse
   }
 
+  @deprecated("in neighborhoods, use oscar.cbls.lib.invariant.routing.StartPointOfVehicles, much faster","")
   def notOnSameVehicle(nodes: Iterable[Int], vehicle:Int): Iterable[Int]={
     nodes.filterNot(getVehicleOfNode(_) == vehicle)
   }
 
+  @deprecated("in neighborhoods, use oscar.cbls.lib.invariant.routing.StartPointOfVehicles, much faster","")
   def notOnSameVehicle(nodes: Array[Iterable[Int]])(vehicle:Int): Array[Iterable[Int]]={
     val resNodes = nodes.clone()
     for(i <- resNodes.indices){
