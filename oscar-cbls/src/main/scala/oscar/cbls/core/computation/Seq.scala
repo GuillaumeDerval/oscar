@@ -537,6 +537,7 @@ class CBLSSeqVar(givenModel:Store,
     val tmp = super.defineCurrentValueAsCheckpoint(checkPointIsActive:Boolean)
     //this is added to prevent losing checkpoint definitions in the toNotify list.
     //TODO However, checkpoint should be pervasive, so not bound to a particular variable.
+    //TODO: THIS is awfully slow in practice
     model.propagate()
     tmp
   }

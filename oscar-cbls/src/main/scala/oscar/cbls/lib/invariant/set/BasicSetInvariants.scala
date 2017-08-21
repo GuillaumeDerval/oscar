@@ -104,7 +104,7 @@ case class UnionAll(sets: Iterable[SetValue])
 
   override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
-    for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
+    for (deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
   @inline
@@ -157,7 +157,7 @@ case class Inter(left: SetValue, right: SetValue)
   //TODO: handle left == right!
   override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
-    for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
+    for (deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
   @inline
@@ -208,7 +208,7 @@ case class SetMap(a: SetValue, fun: Int => Int,
 
   override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
-    for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
+    for (deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
   @inline
@@ -229,7 +229,6 @@ case class SetMap(a: SetValue, fun: Int => Int,
       this :-= mappedV
     }
     outputCount += ((mappedV, oldCount - 1))
-
   }
 
   override def checkInternals(c: Checker) {
@@ -247,16 +246,25 @@ case class Diff(left: SetValue, right: SetValue)
   extends SetInvariant(left.value.diff(right.value), left.min to left.max)
   with SetNotificationTarget{
 
+  //TODO: handle left == right
   require(left != right,"left and right cannot be the same instance for Diff")
+
   registerStaticAndDynamicDependency(left)
   registerStaticAndDynamicDependency(right)
   finishInitialization()
 
-  //TODO: handle left == right
   override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
-    require(((oldValue ++ addedValues) -- removedValues).toList equals newValue.toList,"oldValue:" + oldValue + " addedValues:" + addedValues + " removedValues:" + removedValues + " newValue:" + newValue)
-    for (added <- addedValues) notifyInsertOn(v, added)
-    for (deleted <- removedValues) notifyDeleteOn(v, deleted)
+    assert(((oldValue ++ addedValues) -- removedValues).toList equals newValue.toList,"oldValue:" + oldValue + " addedValues:" + addedValues + " removedValues:" + removedValues + " newValue:" + newValue)
+
+    val addedIt = addedValues.iterator
+    while(addedIt.hasNext){
+      notifyInsertOn(v, addedIt.next())
+    }
+
+    val deletedIt = removedValues.iterator
+    while(deletedIt.hasNext){
+      notifyDeleteOn(v, deletedIt.next())
+    }
   }
 
   @inline
