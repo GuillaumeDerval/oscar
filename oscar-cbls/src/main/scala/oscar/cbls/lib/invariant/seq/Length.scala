@@ -21,6 +21,7 @@ import oscar.cbls.core.propagation.Checker
 /**
  * length of sequence (rememver that a sequecne can include the same int value several times)
  * @param v is a SeqValue, containing a number of values, to count
+ * @param maxSequenceLength is the maximal length of the sequence
  * @author renaud.delandtsheer@cetic.be
  */
 case class Length(v: SeqValue,maxSequenceLength:Int = Int.MaxValue)
