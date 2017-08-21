@@ -280,11 +280,11 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
   @inline
   private[this] def processThisRealBackLog(condValue:Int): Unit ={
     if(consideredValue(condValue)){ //should be removed
-      assert(!cond.value.contains(condValue))
+      assert(cond.value.contains(condValue))
       h.delete(condValue)
       consideredValue(condValue) = false
     }else{ //should be added
-      assert(cond.value.contains(condValue))
+      assert(!cond.value.contains(condValue))
       h.insert(condValue)
       consideredValue(condValue) = true
     }

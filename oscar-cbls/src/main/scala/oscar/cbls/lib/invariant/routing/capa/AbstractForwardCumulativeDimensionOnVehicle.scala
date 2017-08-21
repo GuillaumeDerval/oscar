@@ -121,7 +121,7 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
         }
 
       case SeqUpdateAssign(value : IntSequence) =>
-        (None, potentiallyRemovedPoints ++ previousSequence.unorderedContentNoDuplicate)
+        (None, potentiallyRemovedPoints ++ previousSequence.unorderedContentNoDuplicate.filter(_>=v))
 
       case SeqUpdateLastNotified(value : IntSequence) =>
         (toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints)

@@ -18,7 +18,7 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.search.Move
-import oscar.cbls.lib.invariant.seq.Size
+import oscar.cbls.lib.invariant.seq.Length
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.business.routing.model.{ClosestNeighbors, ConstantDistancePerVehicle, RoutedAndUnrouted, VRP}
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile, RoundRobin}
@@ -125,7 +125,7 @@ class DrcVRP(n:Int, v:Int, m:Store, pointsList:Array[(Double,Double)],
 
   val penaltyForUnrouted = 100000
 
-  val obj = Objective(totalDistance + (penaltyForUnrouted*(n - Size(routes))))
+  val obj = Objective(totalDistance + (penaltyForUnrouted*(n - Length(routes))))
 
   override def toString : String = super.toString + "objective: " + obj.value + "\n"
 

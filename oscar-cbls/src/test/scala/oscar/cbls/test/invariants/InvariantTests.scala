@@ -518,7 +518,7 @@ class InvariantTests extends FunSuite with Checkers {
     //val seqVars = bench.genIntSeqVars(2)
     val seqVar1 = bench.genIntSeqVar()
     val seqVar2 = bench.genIntSeqVar()
-    Size(new Concatenate(seqVar1,seqVar2,4,20))
+    Length(new Concatenate(seqVar1,seqVar2,4,20))
     bench.run
   }
 
@@ -527,7 +527,7 @@ class InvariantTests extends FunSuite with Checkers {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     //val seqVars = bench.genIntSeqVars(2)
     val seqVar2 = bench.genIntSeqVar()
-    Size(new ConcatenateFirstConstant(List(1,6,8,30),seqVar2,4,20))
+    Length(new ConcatenateFirstConstant(List(1,6,8,30),seqVar2,4,20))
     bench.run
   }
 
@@ -564,7 +564,7 @@ class InvariantTests extends FunSuite with Checkers {
   test ("Size maintains the size of the sequence"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     val seqVar = bench.genIntSeqVar(25)
-    new Size(seqVar)
+    new Length(seqVar)
     bench.run()
   }
 
@@ -711,9 +711,17 @@ class InvariantTests extends FunSuite with Checkers {
 
     def start() : Array[IntValue]= { Array.tabulate(v)((car:Int)=> scala.util.Random.nextInt(limite))}
     val  s = start()
-    val inv = ForwardCumulativeIntegerDimensionOnVehicle(route,n,v,op,s,-1)
+    val inv = ForwardCumulativeIntegerDimensionOnVehicle(routes=route,
+      n=n,
+      v=v,
+      op=op,
+      contentAtStart = s,
+      defaultForUnroutedNodes = -1,
+      minContent = Int.MinValue,
+      maxContent = Int.MaxValue
+    )
 
-    bench.run()
+      bench.run()
   }
 
   test("GenericCumulativeIntegerDimensionOnVehicleWithVar"){
@@ -759,14 +767,14 @@ class InvariantTests extends FunSuite with Checkers {
     def start() : Array[CBLSIntVar]= { Array.tabulate(v)((car:Int)=> CBLSIntVar(route.model,op(car,car,0)))}
     val  s = start()
 
-    var inv = ForwardCumulativeIntegerDimensionOnVehicle(route,n,v,op,contentAtStart,defaultForUnroutedNodes= -1,maxContent = 6)
+    var inv = ForwardCumulativeIntegerDimensionOnVehicle(route,n,v,op,contentAtStart,defaultForUnroutedNodes= -1,maxContent = Int.MaxValue,minContent = Int.MinValue)
 
     val go = System.nanoTime()
     bench.run()
     print("GenericCumulativeIntegerDimensionOnVehicleWithVar(n ="+n+" v ="+v+") : "+((System.nanoTime()-go)/Math.pow(10,9))+" s")
   }
 
-  test("GenericCumulativeConstraint"){
+  test("ForwardCumulativeConstraintOnVehicle"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff(), Shuffle()))
     val n = 100
     val v = 5

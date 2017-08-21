@@ -20,7 +20,7 @@ import oscar.cbls.business.routing.model.PDP
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.core.search.CompositeMove
-import oscar.cbls.lib.invariant.seq.Size
+import oscar.cbls.lib.invariant.seq.Length
 import oscar.cbls.modeling.Algebra._
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.business.routing.model._
@@ -75,7 +75,7 @@ class MyPDP(n:Int, v:Int, m:Store,
 
   val obj = new CascadingObjective(fastConstraints,
     new CascadingObjective(slowConstraints,
-      new CascadingObjective(precedenceObj, Objective(totalDistance + (penaltyForUnrouted*(n - Size(routes)))))))
+      new CascadingObjective(precedenceObj, Objective(totalDistance + (penaltyForUnrouted*(n - Length(routes)))))))
 }
 
 object PickupDeliveryS extends App{

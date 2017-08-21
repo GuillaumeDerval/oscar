@@ -19,7 +19,7 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.invariant.routing.NodeVehicleRestrictions
-import oscar.cbls.lib.invariant.seq.{PositionsOf, Size}
+import oscar.cbls.lib.invariant.seq.{PositionsOf, Length}
 import oscar.cbls.modeling.Algebra._
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.business.routing.model._
@@ -41,7 +41,7 @@ class VRPWithNodeVehicleRestriction(n:Int,v:Int,symmetricDistance:Array[Array[In
   val positionOf48 = PositionsOf(cloneOfRoute, 48)
 
 
-  val size = Size(cloneOfRoute)
+  val size = Length(cloneOfRoute)
 
 
   //initializes to something simple

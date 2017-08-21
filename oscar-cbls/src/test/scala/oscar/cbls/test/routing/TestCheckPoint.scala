@@ -19,7 +19,7 @@ package oscar.cbls.test.routing
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.invariant.routing.RouteSuccessorAndPredecessors
-import oscar.cbls.lib.invariant.seq.Size
+import oscar.cbls.lib.invariant.seq.Length
 import oscar.cbls.modeling.Algebra._
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.business.routing.model._
@@ -38,7 +38,7 @@ class MyVRP(n:Int,v:Int,model:Store,symmetricDistanceMatrix:Array[Array[Int]]) e
 
   val penaltyForUnrouted = 10000
 
-  val obj = Objective(totalDistance + (penaltyForUnrouted*(n - Size(routes))))
+  val obj = Objective(totalDistance + (penaltyForUnrouted*(n - Length(routes))))
 
   val closestNeighborsForward = computeClosestNeighborsForward()
 }
