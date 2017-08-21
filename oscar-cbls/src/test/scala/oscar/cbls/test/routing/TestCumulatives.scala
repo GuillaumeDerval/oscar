@@ -23,7 +23,7 @@ import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.constraint.LE
 import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeIntegerDimensionOnVehicle, ForwardCumulativeConstraintOnVehicle}
 import oscar.cbls.lib.invariant.routing.{MovingVehicles, RouteSuccessorAndPredecessors}
-import oscar.cbls.lib.invariant.seq.Size
+import oscar.cbls.lib.invariant.seq.Length
 import oscar.cbls.lib.search.combinators.{RoundRobin, BestSlopeFirst, Mu, Profile}
 import oscar.cbls.modeling.Algebra._
 
@@ -36,7 +36,7 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
 
   val penaltyForUnrouted  = 10000
 
-  val maxNodes = LE(Size(routes),n-3).violation
+  val maxNodes = LE(Length(routes),n-3).violation
 
   val violation = new CBLSIntVar(routes.model, 0, 0 to Int.MaxValue, "violation of capacity test")
 
@@ -56,7 +56,7 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
   val obj = new CascadingObjective(
     contentConstraint.violation,
     new CascadingObjective(maxNodes,
-      Objective(cumulative2._3(1) + cumulative2._2(1) + totalDistance + (penaltyForUnrouted*(n - Size(routes))))))
+      Objective(cumulative2._3(1) + cumulative2._2(1) + totalDistance + (penaltyForUnrouted*(n - Length(routes))))))
 
 
   val closestNeighboursForward = computeClosestNeighborsForward()

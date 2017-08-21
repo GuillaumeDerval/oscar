@@ -21,7 +21,7 @@ import oscar.cbls.core.computation._
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.invariant.routing._
 import oscar.cbls.lib.invariant.routing.convention.RoutingConventionMethods
-import oscar.cbls.lib.invariant.seq.{Content, Size}
+import oscar.cbls.lib.invariant.seq.{Content, Length}
 import oscar.cbls.lib.invariant.set.Diff
 import oscar.cbls.modeling.Algebra._
 import oscar.cbls.visual.MatrixMap.RoutingMatrixContainer
@@ -477,7 +477,7 @@ trait DetailedPenaltyForUnrouted extends AbstractPenaltyForUnrouted with RoutedA
 trait StandardPenaltyForUnrouted extends AbstractPenaltyForUnrouted {
   def setStandardUnroutedPenaltyWeight(standardWeight:Int){
     require(unroutedPenalty == null)
-    unroutedPenalty = (standardWeight * (n - Size(routes))).setName("TotalPenaltyForUnroutedNodes (standard penalties)")
+    unroutedPenalty = (standardWeight * (n - Length(routes))).setName("TotalPenaltyForUnroutedNodes (standard penalties)")
   }
 }
 

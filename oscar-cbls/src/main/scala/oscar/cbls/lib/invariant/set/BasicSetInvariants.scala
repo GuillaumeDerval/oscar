@@ -268,7 +268,7 @@ case class Diff(left: SetValue, right: SetValue)
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Int) {
+  private def notifyInsertOn(v: ChangingSetValue, value: Int) {
     if (v == left) {
       if (!right.value.contains(value)) {
         this.insertValue(value)
@@ -283,7 +283,7 @@ case class Diff(left: SetValue, right: SetValue)
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
+  private def notifyDeleteOn(v: ChangingSetValue, value: Int) {
     if (v == left) {
       if (!right.value.contains(value)) {
         this.deleteValue(value)

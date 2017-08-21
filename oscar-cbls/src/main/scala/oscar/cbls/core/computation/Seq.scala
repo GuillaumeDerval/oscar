@@ -534,12 +534,7 @@ class CBLSSeqVar(givenModel:Store,
   override  def :=(seq:IntSequence) {super.setValue(seq)}
 
   override def defineCurrentValueAsCheckpoint(checkPointIsActive:Boolean):IntSequence = {
-    val tmp = super.defineCurrentValueAsCheckpoint(checkPointIsActive:Boolean)
-    //this is added to prevent losing checkpoint definitions in the toNotify list.
-    //TODO However, checkpoint should be pervasive, so not bound to a particular variable.
-    //TODO: THIS is awfully slow in practice
-    model.propagate()
-    tmp
+    super.defineCurrentValueAsCheckpoint(checkPointIsActive:Boolean)
   }
 
   override def rollbackToTopCheckpoint(checkpoint:IntSequence) {

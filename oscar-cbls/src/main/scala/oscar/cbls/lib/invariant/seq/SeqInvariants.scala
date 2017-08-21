@@ -142,7 +142,7 @@ trait SeqInvariants{
    * @param v is a SeqValue, containing a number of values, to count
    * @author renaud.delandtsheer@cetic.be
    */
-  def size(v: SeqValue) = Size(v)
+  def size(v: SeqValue) = Length(v)
 
   /**
    * Maintains and array telling, for each value (indice of the array) the set of value that can succeed it in the sequence.
