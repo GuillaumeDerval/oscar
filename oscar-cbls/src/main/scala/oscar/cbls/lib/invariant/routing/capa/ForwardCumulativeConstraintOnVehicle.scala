@@ -309,7 +309,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
             false
           case Some(explorer) if explorer.value >= v =>
             val node = explorer.value
-            acc += "\t\tnode:" + node + "\t" + " content:" + contentAtNode(node) + "\n"
+            acc += "\t\tnode:" + node + "\t" + " content:" + contentAtNode(node) + (if (contentAtNode(node) > cMax) " violation:" + (contentAtNode(node) - cMax) else "") + "\n"
             explorerOpt = explorer.next
             true
         }){}
