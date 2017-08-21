@@ -130,9 +130,9 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
       while(currentElement != headPhantom){
         val e = currentElement.elem
         val inv:IntNotificationTarget = e._1.asInstanceOf[IntNotificationTarget]
-        assert({this.model.NotifiedInvariant=inv.asInstanceOf[Invariant]; true})
+        assert({this.model.notifiedInvariant=inv.asInstanceOf[Invariant]; true})
         inv.notifyIntChanged(this,e._2,old,mNewValue)
-        assert({this.model.NotifiedInvariant=null; true})
+        assert({this.model.notifiedInvariant=null; true})
         //we go to the next to be robust against invariant that change their dependencies when notified
         //this might cause crash because dynamicallyListenedInvariants is a mutable data structure
         currentElement = currentElement.next

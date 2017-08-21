@@ -160,21 +160,21 @@ case class Store(override val verbose:Boolean = false,
     * */
   def checkExecutingInvariantOK(i:Invariant):Boolean = {
     if(i != null){
-      if (NotifiedInvariant != null && NotifiedInvariant != i){
+      if (notifiedInvariant != null && notifiedInvariant != i){
         return false
       }
-      if (NotifiedInvariant == null && getPropagatingElement != null &&  getPropagatingElement != i){
+      if (notifiedInvariant == null && getPropagatingElement != null &&  getPropagatingElement != i){
         return false
       }
     }else{
-      if (NotifiedInvariant != null || getPropagatingElement != null){
+      if (notifiedInvariant != null || getPropagatingElement != null){
         return false
       }
     }
     true
   }
 
-  var NotifiedInvariant:Invariant=null
+  var notifiedInvariant:Invariant=null
 
   override def toString:String = "Store(vars:{" + variables.toIterable.mkString(";") + "})"
 

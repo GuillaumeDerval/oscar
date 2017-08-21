@@ -200,11 +200,11 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
           val e = currentElement.elem
           val inv : SetNotificationTarget = e._1.asInstanceOf[SetNotificationTarget]
           assert({
-            this.model.NotifiedInvariant = inv.asInstanceOf[Invariant]; true
+            this.model.notifiedInvariant = inv.asInstanceOf[Invariant]; true
           })
           inv.notifySetChanges(this, e._2, addedValues, deletedValues, OldValue, m_NewValue)
           assert({
-            this.model.NotifiedInvariant = null; true
+            this.model.notifiedInvariant = null; true
           })
           //we go to the next to be robust against invariant that change their dependencies when notified
           //this might cause crash because dynamicallyListenedInvariants is a mutable data structure
@@ -225,12 +225,12 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
                 if(e.currentValueWisePropagationWaveIdentifier != currentValueWisePropagationWaveIdentifier) {
                   e.currentValueWisePropagationWaveIdentifier = currentValueWisePropagationWaveIdentifier
                   assert({
-                    this.model.NotifiedInvariant = e.asInstanceOf[Invariant]
+                    this.model.notifiedInvariant = e.target.asInstanceOf[Invariant]
                     true
                   })
                   target.notifySetChanges(this, Int.MinValue, addedValues, deletedValues, OldValue, m_NewValue)
                   assert({
-                    this.model.NotifiedInvariant = null
+                    this.model.notifiedInvariant = null
                     true
                   })
                 }

@@ -725,11 +725,11 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
       val e = currentElement.elem
       val inv : SeqNotificationTarget = e._1.asInstanceOf[SeqNotificationTarget]
       assert({
-        this.model.NotifiedInvariant = inv.asInstanceOf[Invariant]; true
+        this.model.notifiedInvariant = inv.asInstanceOf[Invariant]; true
       })
       inv.notifySeqChanges(this, e._2, toNotify)
       assert({
-        this.model.NotifiedInvariant = null; true
+        this.model.notifiedInvariant = null; true
       })
 
       //we go to the next to be robust against invariant that change their dependencies when notified
