@@ -39,6 +39,7 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
   val maxNodes = LE(Length(routes),n-3).violation
 
   val violation = new CBLSIntVar(routes.model, 0, 0 to Int.MaxValue, "violation of capacity test")
+  val violation2 = new CBLSIntVar(routes.model, 0, 0 to Int.MaxValue, "violation of capacity2 test")
 
   val contentConstraint = new ForwardCumulativeConstraintOnVehicle(
   routes,
@@ -49,6 +50,18 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
   Array.tabulate(v)(deltaAtNode),
   violation,
   6)
+
+
+  val contentConstraint2 = new ForwardCumulativeConstraintOnVehicle(
+  routes,
+  n,
+  v,
+  {case (fromNode,toNode,content) => content + deltaAtNode(fromNode)},
+  maxCapa-2,
+  Array.tabulate(v)(deltaAtNode),
+  violation2,
+  6,"content-2")
+
 
   val contentAtStart = Array.tabulate(v)(vehicle => CBLSIntVar(m,0,0 to 10,"start content of vehicle " + vehicle))
     val cumulative2 = ForwardCumulativeIntegerDimensionOnVehicle(routes,n,v,{case (fromNode,toNode,fromContent) => ((fromNode*toNode)/2)+toNode/(fromNode+1)+(2*fromContent)+1},contentAtStart,-1)
@@ -75,7 +88,7 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
     "content: [" + contentConstraint.contentAtNodes.mkString(",") + "]" + "\n" +
     "routed:" + this.routed.value + "\n" +
     "unRouted:" + this.unrouted.value + "\n" +
-    contentConstraint + "\n"
+    contentConstraint + "\n" + contentConstraint2 + "\n"
 }
 
 object TestCumulatives extends App{
