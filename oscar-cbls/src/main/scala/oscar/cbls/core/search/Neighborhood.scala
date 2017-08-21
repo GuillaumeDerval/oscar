@@ -262,17 +262,14 @@ abstract class Neighborhood(name:String = null) {
             m.commit()
             if (additionalStringGenerator != null) println("after move is committed: " + additionalStringGenerator())
             if (obj.value == Int.MaxValue) println("Warning : objective == MaxInt, maybe you have some strong constraint violated?")
-            assert(obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
+            assert(m.objAfter == Int.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
 
           }else{
             m.commit()
             if (additionalStringGenerator != null) println("after move is committed: " + additionalStringGenerator())
             if (obj.value == Int.MaxValue) println("Warning : objective == MaxInt, maybe you have some strong constraint violated?")
-            assert(obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
+            assert(m.objAfter == Int.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
           }
-
-
-          true
       }
       toReturn += 1
       moveCount += 1

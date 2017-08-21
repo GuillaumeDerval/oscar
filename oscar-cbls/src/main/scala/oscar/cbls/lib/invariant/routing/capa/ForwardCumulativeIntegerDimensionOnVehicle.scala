@@ -48,7 +48,7 @@ object ForwardCumulativeIntegerDimensionOnVehicle {
             contentName:String = "content"):(Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar]) ={
     val contentAtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent).union(defaultForUnroutedNodes), contentName + " at node "+node))
     val contentAtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent), contentName + " at end of route " + vehicle))
-    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, n-1, "last point of vehicle" + vehicle))
+    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, 0 to n-1, "last point of vehicle" + vehicle))
 
     new ForwardCumulativeIntegerDimensionOnVehicle(routes,n,v,op,contentAtStart,contentAtNode,contentAtEnd,lastPointOfVehicle,defaultForUnroutedNodes)
     (contentAtNode,contentAtEnd,lastPointOfVehicle)
@@ -71,6 +71,8 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
   finishInitialization()
   for(i <- contentAtNode) i.setDefiningInvariant(this)
   for(i <- contentAtEnd) i.setDefiningInvariant(this)
+  for(i <- lastPointOfVehicle) i.setDefiningInvariant(this)
+
 
   override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int){
     toUpdateZonesAndVehicleStartAfter match {

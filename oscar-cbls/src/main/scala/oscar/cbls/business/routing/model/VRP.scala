@@ -21,7 +21,7 @@ import oscar.cbls.core.computation._
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.invariant.routing._
 import oscar.cbls.lib.invariant.routing.convention.RoutingConventionMethods
-import oscar.cbls.lib.invariant.seq.{Content, Size}
+import oscar.cbls.lib.invariant.seq.{Content, Length}
 import oscar.cbls.lib.invariant.set.Diff
 import oscar.cbls.modeling.Algebra._
 import oscar.cbls.visual.MatrixMap.RoutingMatrixContainer
@@ -182,18 +182,25 @@ class VRP(val n: Int, val v: Int, val m: Store, maxPivotPerValuePercent:Int = 4)
     resNodes
   }
 
+  @deprecated("in neighborhoods, use oscar.cbls.lib.invariant.routing.StartPointOfVehicles, much faster","")
   def onSameVehicle()(node1:Int,node2:Int): Boolean={
     getVehicleOfNode(node1)==getVehicleOfNode(node2)
   }
 
+  @deprecated("in neighborhoods, use  oscar.cbls.lib.invariant.routing.StartPointOfVehicles, much faster","")
+  def onTheSameRoute(node1:Int,node2:Int):Boolean = getVehicleOfNode(node1) == getVehicleOfNode(node2)
+
+  @deprecated("in neighborhoods, use  oscar.cbls.lib.invariant.routing.StartPointOfVehicles, much faster","")
   def notOnSameVehicle()(node1:Int,node2:Int): Boolean={
     getVehicleOfNode(node1)!=getVehicleOfNode(node2)
   }
 
+  @deprecated("in neighborhoods, use  oscar.cbls.lib.invariant.routing.StartPointOfVehicles, much faster","")
   def onVehicle(vehicle:Int)(node:Int): Boolean={
     getVehicleOfNode(vehicle)==getVehicleOfNode(node)
   }
 
+  @deprecated("in neighborhoods, use  oscar.cbls.lib.invariant.routing.StartPointOfVehicles, much faster","")
   def notOnVehicle(vehicle:Int)(node:Int): Boolean={
     getVehicleOfNode(vehicle)!=getVehicleOfNode(node)
   }
@@ -203,6 +210,7 @@ class VRP(val n: Int, val v: Int, val m: Store, maxPivotPerValuePercent:Int = 4)
    * @param node a node
    * @return the vehicle reaching the node, v is it is unrouted
    */
+  @deprecated("in neighborhoods, use  oscar.cbls.lib.invariant.routing.StartPointOfVehicles, much faster","")
   def getVehicleOfNode(node:Int):Int = {
     val routeValue = routes.value
     routeValue.positionOfAnyOccurrence(node) match{
@@ -279,7 +287,7 @@ class VRP(val n: Int, val v: Int, val m: Store, maxPivotPerValuePercent:Int = 4)
       toReturn
   }
 
-  def onTheSameRoute(node1:Int,node2:Int):Boolean = getVehicleOfNode(node1) == getVehicleOfNode(node2)
+
 }
 
 
@@ -469,7 +477,7 @@ trait DetailedPenaltyForUnrouted extends AbstractPenaltyForUnrouted with RoutedA
 trait StandardPenaltyForUnrouted extends AbstractPenaltyForUnrouted {
   def setStandardUnroutedPenaltyWeight(standardWeight:Int){
     require(unroutedPenalty == null)
-    unroutedPenalty = (standardWeight * (n - Size(routes))).setName("TotalPenaltyForUnroutedNodes (standard penalties)")
+    unroutedPenalty = (standardWeight * (n - Length(routes))).setName("TotalPenaltyForUnroutedNodes (standard penalties)")
   }
 }
 

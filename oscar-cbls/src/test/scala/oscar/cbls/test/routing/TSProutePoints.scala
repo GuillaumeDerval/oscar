@@ -17,7 +17,7 @@ package oscar.cbls.test.routing
 
 import oscar.cbls.core.computation.{CBLSSetConst, Store}
 import oscar.cbls.lib.invariant.routing.ConstantRoutingDistance
-import oscar.cbls.lib.invariant.seq.{Content, Size}
+import oscar.cbls.lib.invariant.seq.{Content, Length}
 import oscar.cbls.lib.invariant.set.Diff
 import oscar.cbls.modeling.Algebra._
 import oscar.cbls.core.objective.Objective
@@ -45,7 +45,7 @@ class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Arra
 
   val totalDistance = ConstantRoutingDistance(routes, n, v ,false, symmetricDistance, true)(0)
 
-  val obj = Objective(totalDistance + (penaltyForUnrouted*(n - Size(routes))))
+  val obj = Objective(totalDistance + (penaltyForUnrouted*(n - Length(routes))))
 
   override def toString : String = super.toString +
     "objective: " + obj.value + "\n"

@@ -19,12 +19,13 @@ import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.Checker
 
 /**
- * #(v) (cardinality, or length (since a SeqValue can only contain at most one instance of any int value)
+ * length of sequence (rememver that a sequecne can include the same int value several times)
  * @param v is a SeqValue, containing a number of values, to count
+ * @param maxSequenceLength is the maximal length of the sequence
  * @author renaud.delandtsheer@cetic.be
  */
-case class Size(v: SeqValue)
-  extends IntInvariant(v.value.size, 0 to DomainHelper.safeAddMax(v.max,1))
+case class Length(v: SeqValue,maxSequenceLength:Int = Int.MaxValue)
+  extends IntInvariant(v.value.size, 0 to maxSequenceLength)
   with SeqNotificationTarget{
 
   setName("Size(" + v.name + ")")
