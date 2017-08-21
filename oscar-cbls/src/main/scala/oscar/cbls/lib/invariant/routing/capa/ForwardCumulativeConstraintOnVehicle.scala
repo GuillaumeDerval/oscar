@@ -313,7 +313,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
             explorerOpt = explorer.next
             true
         }){}
-        header+acc}).mkString("\n")
+        header+acc}).mkString("")
   }
 
 

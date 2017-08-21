@@ -74,7 +74,8 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
     "prev: [" + prev.map(_.value).mkString(",") + "]" + "\n" +
     "content: [" + contentConstraint.contentAtNodes.mkString(",") + "]" + "\n" +
     "routed:" + this.routed.value + "\n" +
-    "unRouted:" + this.unrouted.value + "\n"
+    "unRouted:" + this.unrouted.value + "\n" +
+    contentConstraint + "\n"
 }
 
 object TestCumulatives extends App{
@@ -83,7 +84,7 @@ object TestCumulatives extends App{
   val v = 5
   val delta = Array(0,1,1,2,2,3,-3,4,-4,0,0,1,-1,2,-2,3,-3,4,-4,0,0,1,-1,2,-2,3,-3,4,-4,0)
   val maxPivotPerValuePercent = 4
-  val maxcapa = 15
+  val maxcapa = 4
   println("VRP(n:" + n + " v:" + v + ")")
 
   val (symmetricDistanceMatrix,pointsList) = RoutingMatrixGenerator(n)
@@ -125,10 +126,13 @@ object TestCumulatives extends App{
   val doubleInsert = Profile((routeUnroutedPoint(10) andThen routeUnroutedPoint(10)) name ("doubleInsert"))
   val doubleRemove = Profile(( RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,best=true)) andThen  RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,best=true) name ("doubleRemove"))
 
-  val search = new RoundRobin(List(onePtMove(100),doubleInsert,doubleRemove,swapInOut,vlsnInsert,threeOpt(5,false),twoOpt,segExchange(10))) exhaust onePtMove(10) //(BestSlopeFirst(List(vlsnInsert, routeUnroutedPoint2, routeUnroutedPoint(10), swapInOut, onePtMove(10),twoOpt, threeOpt(10,true),vlsn1pt, routeUnroutedPoint)) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
+  val search = new RoundRobin(List(onePtMove(100),doubleInsert,doubleRemove,swapInOut,vlsnInsert,threeOpt(5,false),twoOpt,segExchange(10))) exhaust onePtMove(10)
 
-  search.verbose = 1
-  //search.verboseWithExtraInfo(3, ()=> "" + myVRP)
+
+  //(BestSlopeFirst(List(vlsnInsert, routeUnroutedPoint2, routeUnroutedPoint(10), swapInOut, onePtMove(10),twoOpt, threeOpt(10,true),vlsn1pt, routeUnroutedPoint)) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
+
+  //search.verbose = 1
+  search.verboseWithExtraInfo(3, ()=> "" + myVRP)
 
   print("Doing all moves ...")
 
