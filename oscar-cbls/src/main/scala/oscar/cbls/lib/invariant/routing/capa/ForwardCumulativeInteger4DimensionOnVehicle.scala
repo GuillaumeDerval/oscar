@@ -46,7 +46,7 @@ object ForwardCumulativeInteger4DimensionOnVehicle {
   def apply(routes:ChangingSeqValue,
             n:Int,
             v:Int,
-            op:(Int,Int,Int,Int)=>(Int,Int),
+            op:(Int,Int,Int,Int,Int,Int)=>(Int,Int,Int,Int),
             content1AtStart:Array[IntValue],
             content2AtStart:Array[IntValue],
             content3AtStart:Array[IntValue],
@@ -233,9 +233,9 @@ class ForwardCumulativeInteger4DimensionOnVehicle(routes:ChangingSeqValue,
         n,
         v,
         op4,
-        v => (content1AtStart(v).value,content2AtStart(v).value),
+        v => (content1AtStart(v).value,content2AtStart(v).value,content3AtStart(v).value,content4AtStart(v).value),
         s,
-        (defaultVehicleContent1ForUnroutedNodes,defaultVehicleContent2ForUnroutedNodes))
+        (defaultVehicleContent1ForUnroutedNodes,defaultVehicleContent2ForUnroutedNodes,defaultVehicleContent3ForUnroutedNodes,defaultVehicleContent4ForUnroutedNodes))
 
     val currentVehicleLocation = this.toUpdateZonesAndVehicleStartAfter.get._2
 
