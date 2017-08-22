@@ -36,15 +36,9 @@ trait Bulked[VarType <: Value, BulkedComputationResult] extends Invariant {
    * registers a static dependency to all variables mentioned in the bulkedVars.
    * @param bulkedVars: an iterable of variables to bulk together
    * @param id a reference name to identify to which bulk in the invariant this belongs to. Several bulks can be done with a single invariants
-   * @param noBulk set to false if you want to bypass the bulk mechanism actually
    * @return the result of performBulkComputation(bulkedVars),  possibly computed by co-bulking invariants
    */
-  final def bulkRegister(bulkedVars: Array[VarType], id: Int = 0, noBulk: Boolean = false): BulkedComputationResult = {
-
-    if (noBulk) {
-      this.registerStaticDependencies(bulkedVars:_*)
-      return performBulkComputation(bulkedVars)
-    }
+  final def bulkRegister(bulkedVars: Array[VarType], id: Int = 0): BulkedComputationResult = {
 
     val m = this.preFinishInitialization()
     if (m == null) {

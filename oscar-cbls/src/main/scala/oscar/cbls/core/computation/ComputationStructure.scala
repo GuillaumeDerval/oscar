@@ -54,8 +54,8 @@ case class Store(override val verbose:Boolean = false,
   extends PropagationStructure(verbose,checker,noCycle,topologicalSort, sortScc)
   with Bulker with StorageUtilityManager{
 
-
-  assert({println("You are using a CBLS store with asserts activated. It makes the engine slower. Recompile it with -Xdisable-assertions"); true})
+  assert({System.err.println("You are using a CBLS store with asserts activated. It makes the engine slower. Recompile it with -Xdisable-assertions"); true})
+  if(checker.nonEmpty) System.err.println("OscaR.cbls is running in debug mode. It makes the engine slower.")
 
   private[this] var variables:QList[AbstractVariable] = null
   private var propagationElements:QList[PropagationElement] = null
@@ -160,21 +160,21 @@ case class Store(override val verbose:Boolean = false,
     * */
   def checkExecutingInvariantOK(i:Invariant):Boolean = {
     if(i != null){
-      if (NotifiedInvariant != null && NotifiedInvariant != i){
+      if (notifiedInvariant != null && notifiedInvariant != i){
         return false
       }
-      if (NotifiedInvariant == null && getPropagatingElement != null &&  getPropagatingElement != i){
+      if (notifiedInvariant == null && getPropagatingElement != null &&  getPropagatingElement != i){
         return false
       }
     }else{
-      if (NotifiedInvariant != null || getPropagatingElement != null){
+      if (notifiedInvariant != null || getPropagatingElement != null){
         return false
       }
     }
     true
   }
 
-  var NotifiedInvariant:Invariant=null
+  var notifiedInvariant:Invariant=null
 
   override def toString:String = "Store(vars:{" + variables.toIterable.mkString(";") + "})"
 
@@ -577,7 +577,9 @@ trait AbstractVariable
 
   /**this method s to be called by any method that internally modifies the value of the variable
     * it schedules the variable for propagation, and performs a basic check of the identify of the executing invariant*/
-  def notifyChanged(){
+  @inline
+  final def notifyChanged(){
+    if(isScheduled) return
     //modifier le test.
     if (this.model == null ||(!this.model.isClosed && this.getDynamicallyListeningElements.isEmpty)){
       performPropagation()

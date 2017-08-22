@@ -77,9 +77,9 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
   override def snapshot : ChangingIntValueSnapShot = new ChangingIntValueSnapShot(this,this.value)
   def valueAtSnapShot(s:Snapshot):Int = s(this) match{case s:ChangingIntValueSnapShot => s.savedValue case _ => throw new Error("cannot find value of " + this + " in snapshot")}
 
-  private var privatedomain:Domain = initialDomain
-  private var mNewValue: Int = initialValue
-  private var mOldValue = mNewValue
+  private[this] var privatedomain:Domain = initialDomain
+  private[this] var mNewValue: Int = initialValue
+  private[this] var mOldValue = mNewValue
 
   def domain:Domain = privatedomain
 
@@ -95,6 +95,7 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
   }
   override def toStringNoPropagate = s"$name:=$mNewValue"
 
+  @inline
   def setValue(v:Int){
     if (v != mNewValue){
       assert(domain.contains(v),v+ " is not in the domain of "+this+"("+min+".."+max+"). This might indicate an integer overflow.")
@@ -129,11 +130,13 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
       var currentElement = headPhantom.next
       while(currentElement != headPhantom){
         val e = currentElement.elem
-        currentElement = currentElement.next
         val inv:IntNotificationTarget = e._1.asInstanceOf[IntNotificationTarget]
-        assert({this.model.NotifiedInvariant=inv.asInstanceOf[Invariant]; true})
+        assert({this.model.notifiedInvariant=inv.asInstanceOf[Invariant]; true})
         inv.notifyIntChanged(this,e._2,old,mNewValue)
-        assert({this.model.NotifiedInvariant=null; true})
+        assert({this.model.notifiedInvariant=null; true})
+        //we go to the next to be robust against invariant that change their dependencies when notified
+        //this might cause crash because dynamicallyListenedInvariants is a mutable data structure
+        currentElement = currentElement.next
       }
     }
   }
@@ -147,15 +150,15 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
   }
 
   protected def :+=(v: Int) {
-    setValue(v + newValue)
+    setValue(v + mNewValue)
   }
 
   protected def :*=(v: Int) {
-    setValue(v * newValue)
+    setValue(v * mNewValue)
   }
 
   protected def :-=(v:Int) {
-    setValue(newValue - v)
+    setValue(mNewValue - v)
   }
 
   /** increments the variable by one

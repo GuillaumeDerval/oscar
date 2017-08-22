@@ -31,7 +31,6 @@ import scala.util.Random
  *
  * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
  * @param name the name of the neighborhood
- * @param best true for the best move, false for the first move, default false
  * @param searchZone a subset of the indices of vars to consider.
  *                   If none is provided, all the array will be considered each time
  * @param symmetryClassOfVariables a function that input the ID of a variable and returns a symmetry class;
@@ -54,13 +53,14 @@ import scala.util.Random
  */
 case class AssignNeighborhood(vars:Array[CBLSIntVar],
                               name:String = "AssignNeighborhood",
-                              best:Boolean = false,
+                              selectIndiceBehavior:LoopBehavior = First(),
+                              selectValueBehavior:LoopBehavior = First(),
                               searchZone:() => Iterable[Int] = null,
                               symmetryClassOfVariables:Option[Int => Int] = None,
                               symmetryClassOfValues:Option[Int => Int => Int] = None,
                               domain:(CBLSIntVar,Int) => Iterable[Int] = (v,i) => v.domain,
                               hotRestart:Boolean = true)
-  extends EasyNeighborhood[AssignMove](best,name) with AlgebraTrait{
+  extends EasyNeighborhoodMultiLevel[AssignMove](name) with AlgebraTrait{
   //the indice to start with for the exploration
   var startIndice:Int = 0
 
@@ -75,7 +75,7 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
       else searchZone()
 
     val iterationSchemeOnZone =
-      if (hotRestart && !best) HotRestart(iterationZone, startIndice)
+      if (hotRestart) HotRestart(iterationZone, startIndice)
       else iterationZone
 
     val iterationSchemeOnSymmetryFreeZone = symmetryClassOfVariables match {
@@ -84,7 +84,7 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
     }
 
     //iterating over the variables to consider
-    val indicesIterator = iterationSchemeOnSymmetryFreeZone.iterator
+    val (indicesIterator,notifyFound1) = selectIndiceBehavior.toIterator(iterationSchemeOnSymmetryFreeZone)
     while(indicesIterator.hasNext){
       currentIndice = indicesIterator.next()
       currentVar = vars(currentIndice)
@@ -98,19 +98,22 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
       }
 
       //iterating over the values of the variable
-      val domainIterationSchemeIterator = domainIterationScheme.iterator
+      val (domainIterationSchemeIterator,notifyFound2) = selectValueBehavior.toIterator(domainIterationScheme)
       while(domainIterationSchemeIterator.hasNext){
         newVal = domainIterationSchemeIterator.next()
         if (newVal != oldVal){
           //testing newValue
           val newObj = obj.assignVal(currentVar,newVal)
-          if (evaluateCurrentMoveObjTrueIfStopRequired(newObj)){
-            startIndice = currentIndice + 1
-            return
+
+          if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
+            notifyFound1()
+            notifyFound2()
           }
         }
       }
     }
+
+    startIndice = currentIndice + 1
   }
 
   override def instantiateCurrentMove(newObj:Int) =
@@ -160,48 +163,50 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
                              searchZone2:(Int,Int)=>Iterable[Int] = null,
                              symmetryCanBeBrokenOnIndices:Boolean = true,
                              symmetryCanBeBrokenOnValue:Boolean = false,
-                             best:Boolean = false,
+                             selectFirstVariableBehavior:LoopBehavior = First(),
+                             selectSecondVariableBehavior:LoopBehavior = First(),
                              symmetryClassOfVariables1:Option[Int => Int] = None,
                              symmetryClassOfVariables2:Option[Int => Int] = None,
                              hotRestart:Boolean = true)
-  extends EasyNeighborhood[SwapMove](best,name) with AlgebraTrait{
+  extends EasyNeighborhoodMultiLevel[SwapMove](name) with AlgebraTrait{
   //the indice to start with for the exploration
-  var startIndice:Int = 0
+  var indiceOfFirstVariable:Int = 0
   override def exploreNeighborhood() {
 
     val firstIterationSchemeZone =
       if (searchZone1 == null) {
-        if (hotRestart && !best) {
-          if (startIndice >= vars.size) startIndice = 0
-          vars.indices startBy startIndice
+        if (hotRestart) {
+          if (indiceOfFirstVariable >= vars.size) indiceOfFirstVariable = 0
+          vars.indices startBy indiceOfFirstVariable
         } else vars.indices
-      } else if (hotRestart && !best) HotRestart(searchZone1(), startIndice) else searchZone1()
+      } else if (hotRestart) HotRestart(searchZone1(), indiceOfFirstVariable) else searchZone1()
 
     val firstIterationScheme = symmetryClassOfVariables1 match {
       case None => firstIterationSchemeZone
       case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(firstIterationSchemeZone, s)
     }
 
-    val iIterator = firstIterationScheme.iterator
+    val (iIterator,notifyFound1) = selectFirstVariableBehavior.toIterator(firstIterationScheme)
     while (iIterator.hasNext) {
-      val i = iIterator.next()
-      val firstVar = vars(i)
+      indiceOfFirstVariable = iIterator.next()
+
+      val firstVar = vars(indiceOfFirstVariable)
       val oldValOfFirstVar = firstVar.newValue
 
-      val secondIterationSchemeZone = if (searchZone2 == null) vars.indices else searchZone2(i,oldValOfFirstVar)
+      val secondIterationSchemeZone = if (searchZone2 == null) vars.indices else searchZone2(indiceOfFirstVariable,oldValOfFirstVar)
 
       val secondIterationScheme = symmetryClassOfVariables2 match {
         case None => secondIterationSchemeZone
         case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(secondIterationSchemeZone, s)
       }
 
-      val jIterator = secondIterationScheme.iterator
+      val (jIterator,notifyFound2) = selectSecondVariableBehavior.toIterator(secondIterationScheme)
       while (jIterator.hasNext) {
         val j = jIterator.next()
         val secondVar = vars(j)
         val oldValOfSecondVar = secondVar.newValue
-        if ((!symmetryCanBeBrokenOnIndices || i < j) //we break symmetry on variables
-          && i != j
+        if ((!symmetryCanBeBrokenOnIndices || indiceOfFirstVariable < j) //we break symmetry on variables
+          && indiceOfFirstVariable != j
           && (!symmetryCanBeBrokenOnValue || oldValOfFirstVar < oldValOfSecondVar) //we break symmetry on values
           && oldValOfFirstVar != oldValOfSecondVar
           && secondVar.domain.contains(oldValOfFirstVar)
@@ -209,15 +214,17 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
 
           this.firstVar = firstVar
           this.secondVar = secondVar
-          this.firstVarIndice = i
+          this.firstVarIndice = indiceOfFirstVariable
           this.secondVarIndice = j
-          if (evaluateCurrentMoveObjTrueIfStopRequired(obj.swapVal(firstVar, secondVar))) {
-            startIndice = i + 1
-            return
+
+          if(evaluateCurrentMoveObjTrueIfSomethingFound(obj.swapVal(firstVar, secondVar))) {
+            notifyFound1()
+            notifyFound2()
           }
         }
       }
     }
+    indiceOfFirstVariable = indiceOfFirstVariable +1
   }
 
   var firstVar:CBLSIntVar = null
@@ -229,7 +236,7 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
 
   //this resets the internal state of the Neighborhood
   override def reset(): Unit = {
-    startIndice = 0
+    indiceOfFirstVariable = 0
   }
 }
 
@@ -658,7 +665,7 @@ case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
                                     minFlipSize:Int = 2,
                                     exploreLargerOpportunitiesFirst:Boolean = true,
                                     best:Boolean = false,
-                                    hotRestart:Boolean = true) //TODO
+                                    hotRestart:Boolean = true)
   extends EasyNeighborhood[FlipMove](best,name) with AlgebraTrait {
   require(minFlipSize > 1, "minFlipSize should be >1")
 
@@ -709,17 +716,17 @@ case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
   override def exploreNeighborhood(): Unit = {
     //build allowed array
 
-    val isAllowed = (if (allowedPositions != null) {
+    val isAllowed = if (allowedPositions != null) {
       val tmp = Array.fill(varSize)(false)
       for (p <- allowedPositions()) tmp(p) = true
       tmp
     } else {
       allAllowed
-    })
+    }
 
     val flipCenterIterable:Iterable[(Int,Int,Int)] =
-      (if(exploreLargerOpportunitiesFirst) computeFlipCentersLargestFirst(isAllowed)
-      else computeFlipCentersLeftFirst(isAllowed))
+      if(exploreLargerOpportunitiesFirst) computeFlipCentersLargestFirst(isAllowed)
+      else computeFlipCentersLeftFirst(isAllowed)
 
     val flipCenterITerator = flipCenterIterable.iterator
     while(flipCenterITerator.hasNext){

@@ -16,6 +16,7 @@ package oscar.cbls.modeling
   ******************************************************************************/
 
 import oscar.cbls.core.computation.CBLSIntVar
+import oscar.cbls.core.search.{First, LoopBehavior}
 import oscar.cbls.lib.search.neighborhoods._
 
 import scala.collection.immutable.SortedSet
@@ -53,13 +54,14 @@ trait Search {
    */
   def assignNeighborhood(vars:Array[CBLSIntVar],
                          name:String = "AssignNeighborhood",
-                         best:Boolean = false,
+                         selectIndiceBehavior:LoopBehavior = First(),
+                         selectValueBehavior:LoopBehavior = First(),
                          searchZone:() => Iterable[Int] = null,
                          symmetryClassOfVariables:Option[Int => Int] = None,
                          symmetryClassOfValues:Option[Int => Int => Int] = None,
                          domain:(CBLSIntVar,Int) => Iterable[Int] = (v,i) => v.domain,
                          hotRestart:Boolean = true)
-  = AssignNeighborhood(vars,name,best,searchZone,symmetryClassOfVariables,symmetryClassOfValues,domain,hotRestart)
+  = AssignNeighborhood(vars,name,selectIndiceBehavior,selectValueBehavior,searchZone,symmetryClassOfVariables,symmetryClassOfValues,domain,hotRestart)
 
 
   /**
@@ -132,13 +134,14 @@ trait Search {
                         searchZone2:(Int,Int)=>Iterable[Int] = null,
                         symmetryCanBeBrokenOnIndices:Boolean = true,
                         symmetryCanBeBrokenOnValue:Boolean = false,
-                        best:Boolean = false,
+                        selectFirstVariableBehavior:LoopBehavior = First(),
+                        selectSecondVariableBehavior:LoopBehavior = First(),
                         symmetryClassOfVariables1:Option[Int => Int] = None,
                         symmetryClassOfVariables2:Option[Int => Int] = None,
                         hotRestart:Boolean = true)
   = SwapsNeighborhood(vars,name,searchZone1,searchZone2,
     symmetryCanBeBrokenOnIndices,symmetryCanBeBrokenOnValue,
-    best,symmetryClassOfVariables1,symmetryClassOfVariables2,hotRestart)
+    selectFirstVariableBehavior, selectSecondVariableBehavior,symmetryClassOfVariables1,symmetryClassOfVariables2,hotRestart)
 
 
 

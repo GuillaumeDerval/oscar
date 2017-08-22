@@ -86,6 +86,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                                            maxCheckpointLevel:Int,
                                            capacityName:String = "capacity")
   extends AbstractVehicleCapacity(n,v) with SeqNotificationTarget {
+
   require(contentAtVehicleStart.length==v)
   require(cMax >=0,"cMax should be >=0")
   require(contentAtVehicleStart.forall(_ <= cMax),"cannot exceed cMax in initial values")
@@ -292,7 +293,6 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
     }
   }
 
-
   override def toString : String = {
     "ForwardCumulativeConstraintOnVehicle(routes:" + routes.name + " n:" + n + " v:" + v + " cMax:" + cMax + " capacityName:" + capacityName + " violation:=" + violation.value +"){\n" +
       (0 until v).toList.map((vehicle:Int) =>
@@ -315,7 +315,6 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
         }){}
         header+acc}).mkString("")
   }
-
 
   override def checkInternals(c: Checker): Unit = {
     val (nodeToContent,_,vehicleStartPos) = AbstractVehicleCapacity.

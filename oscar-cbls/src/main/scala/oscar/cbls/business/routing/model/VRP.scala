@@ -169,10 +169,12 @@ class VRP(val n: Int, val v: Int, val m: Store, maxPivotPerValuePercent:Int = 4)
     acc.reverse
   }
 
+  @deprecated("in neighborhoods, use oscar.cbls.lib.invariant.routing.StartPointOfVehicles, much faster","")
   def notOnSameVehicle(nodes: Iterable[Int], vehicle:Int): Iterable[Int]={
     nodes.filterNot(getVehicleOfNode(_) == vehicle)
   }
 
+  @deprecated("in neighborhoods, use oscar.cbls.lib.invariant.routing.StartPointOfVehicles, much faster","")
   def notOnSameVehicle(nodes: Array[Iterable[Int]])(vehicle:Int): Array[Iterable[Int]]={
     val resNodes = nodes.clone()
     for(i <- resNodes.indices){
@@ -278,12 +280,12 @@ class VRP(val n: Int, val v: Int, val m: Store, maxPivotPerValuePercent:Int = 4)
       if(routeOfV.length == 1){
         notMoving  = vehicle :: notMoving
       }else{
-        toReturn +=  "vehicle " + vehicle + ": " +  routeOfV.mkString("->") + "\n"
+        toReturn +=  "vehicle " + vehicle + ": " +  routeOfV.mkString("->") + "->" + vehicle + "\n"
       }
     }
     "Vehicle routing n:" + n + " v:" + v + "\n" +
-    "unrouted nodes: " + unroutedNodes.toList.mkString(",") + "\n" +
-    "not used vehicles:" + notMoving.reverse.mkString(",") + "\n" +
+    "unrouted nodes:{" + unroutedNodes.toList.mkString(",") + "}\n" +
+    "not used vehicles:{" + notMoving.reverse.mkString(",") + "}\n" +
       toReturn
   }
 
