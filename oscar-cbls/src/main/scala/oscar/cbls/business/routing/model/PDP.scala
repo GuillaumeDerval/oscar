@@ -227,7 +227,9 @@ class PDP(override val n:Int,
     */
   val contentsFlow:Array[Int] = Array.tabulate(n)(_ => 0)
 
-  var contentAtNode: ChangingIntValue = _
+  val contentAtNode = new CBLSIntVar(routes.model, 0, 0 to Int.MaxValue, "violation of capacity " + "Content at node")
+
+  var contentConstraint: ForwardCumulativeConstraintOnVehicle = _
 
 
   def setVehicleMaxCapacities(maxCapacities: Array[Int]) =
@@ -246,10 +248,11 @@ class PDP(override val n:Int,
       contentsFlow(i) = contents(i)
     }
 
-    contentAtNode = ForwardCumulativeConstraintOnVehicle(routes,n,v,
+    contentConstraint = new ForwardCumulativeConstraintOnVehicle(routes,n,v,
       (from,to,fromContent) => fromContent + contentsFlow(to),
       vehiclesMaxCapacities.max,
       vehiclesMaxCapacities.map(vehiclesMaxCapacities.max-_),
+      contentAtNode,
       chains.map(_.length).max*2,
       "Content at node")
   }

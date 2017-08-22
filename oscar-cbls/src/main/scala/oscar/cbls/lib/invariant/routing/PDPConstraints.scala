@@ -90,7 +90,7 @@ class PDPConstraints(pdp: PDP, fastConstraints: ConstraintSystem, slowConstraint
 
 
   def addCapacityConstraint(): Unit ={
-    fastConstraints.post(LE(pdp.contentAtNode,pdp.vehiclesMaxCapacities.max))
+    fastConstraints.post(EQ(pdp.contentAtNode,0))
   }
 
   /**

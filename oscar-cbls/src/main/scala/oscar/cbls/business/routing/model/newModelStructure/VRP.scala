@@ -15,15 +15,12 @@ package oscar.cbls.business.routing.model.newModelStructure
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.algo.seq.functional.IntSequence
 import oscar.cbls.core.computation._
-import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.invariant.routing._
 import oscar.cbls.lib.invariant.routing.convention.RoutingConventionMethods
-import oscar.cbls.lib.invariant.seq.{Content, Size}
+import oscar.cbls.lib.invariant.seq.Content
 import oscar.cbls.lib.invariant.set.Diff
-import oscar.cbls.modeling.Algebra._
 import oscar.cbls.visual.MatrixMap.RoutingMatrixContainer
 import oscar.examples.cbls.routing.visual.ColorGenerator
 
