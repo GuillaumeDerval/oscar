@@ -48,7 +48,6 @@ class ChangingSetValueSnapShot(val variable:ChangingSetValue,val savedValue:Sort
 }
 
 class ValueWisePropagationWaveIdentifier()
-
 abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domain)
   extends AbstractVariable with SetValue{
   private var privatedomain:Domain = initialDomain

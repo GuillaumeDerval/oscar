@@ -71,7 +71,7 @@ object TestCheckPoint extends App{
     vrp = myVRP
   ))
 
-  val twoOpt = Profile(TwoOpt1(
+  val twoOpt = Profile(TwoOpt(
     segmentStartValues = myVRP.routed,
     relevantNewSuccessors = () => myVRP.kFirst(n/10, myVRP.closestNeighborsForward,myVRP.isRouted),
     vrp = myVRP

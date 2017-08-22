@@ -17,7 +17,7 @@
 package oscar.examples.cbls.routing
 
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.search.Move
+import oscar.cbls.core.search.{Best, Move}
 import oscar.cbls.lib.invariant.seq.Length
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.business.routing.model.{ClosestNeighbors, ConstantDistancePerVehicle, RoutedAndUnrouted, VRP}
@@ -65,7 +65,7 @@ class DemoRoutingController extends StopWatch{
        unroutedNodesToInsert= () => myVRP.unroutedNodes,
        relevantPredecessor = () => myVRP.kFirst(10,myVRP.closestNeighboursForward, myVRP.isRouted),
        neighborhoodName = "insertPointUnroutedFirstBest",
-       vrp = myVRP, best = true))
+       vrp = myVRP,selectNodeBehavior = Best(),selectInsertionPointBehavior = Best()))
 
      val pivot = myVRP.n/2
 
@@ -74,7 +74,7 @@ class DemoRoutingController extends StopWatch{
        relevantNewPredecessors = () => myVRP.kFirst(50,myVRP.closestNeighboursForward, myVRP.isRouted),
        vrp = myVRP))
 
-     val twoOpt = Profile(TwoOpt1(
+     val twoOpt = Profile(TwoOpt(
        segmentStartValues = myVRP.routed,
        relevantNewSuccessors = () => myVRP.kFirst(20,myVRP.closestNeighboursForward, myVRP.isRouted),
        vrp = myVRP))

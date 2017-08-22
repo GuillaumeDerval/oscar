@@ -188,7 +188,6 @@ abstract class Neighborhood(name:String = null) {
       println("initial objective function:" + obj)
     }
     var moveSynthesis = SortedMap.empty[String,Int]
-    val neighborhoodNameToCol=SortedMap.empty[String,Int]
 
     val startSearchNanotime = System.nanoTime()
     var nanoTimeAtNextSynthesis = startSearchNanotime + (1000*1000*100) //100ms
@@ -280,6 +279,17 @@ abstract class Neighborhood(name:String = null) {
     toReturn
   }
 
+  def getAllMoves(shouldStop: Int => Boolean = _ => false, obj: Objective, acceptanceCriterion: (Int, Int) => Boolean = (oldObj, newObj) => oldObj > newObj): List[Move] = {
+
+    var toReturn : List[Move] = List.empty
+
+    val instrumentedThis = this afterMoveOnMove(m => toReturn = m :: toReturn)
+    instrumentedThis.doAllMoves(shouldStop,obj,acceptanceCriterion)
+
+    toReturn.reverse
+  }
+
+
   /**
    * this combinator randomly tries one neighborhood.
    * it tries the other if the first did not find any move
@@ -339,7 +349,7 @@ abstract class Neighborhood(name:String = null) {
    *
    * @author renaud.delandtsheer@cetic.be
    */
-  def best(b: Neighborhood): Neighborhood = new Best(this, b)
+  def best(b: Neighborhood): Neighborhood = new oscar.cbls.lib.search.combinators.Best(this, b)
 
   /**
    * this combinator is stateful.
@@ -716,6 +726,7 @@ trait SupportForAndThenChaining[MoveType<:Move] extends Neighborhood{
  * @param best true if you want the best move false if you want the first acceptable move
  * @param neighborhoodName the name of the neighborhood, used for verbosities
  */
+@deprecated("use EasyNeighborhoodMultilevel Instead")
 abstract class EasyNeighborhood[M<:Move](best:Boolean = false, neighborhoodName:String=null)
   extends Neighborhood with SupportForAndThenChaining[M]{
 
@@ -812,6 +823,148 @@ abstract class EasyNeighborhood[M<:Move](best:Boolean = false, neighborhoodName:
 
   def afterMoveOnMove(proc:M => Unit):Neighborhood = super.afterMoveOnMove((m:Move) => proc(m.asInstanceOf[M]))
 }
+
+
+sealed abstract class LoopBehavior(){
+  def toIterable[T](baseIterable:Iterable[T]):(BoundedIterable[T],()=>Unit)
+  def toIterator[T](baseIterable:Iterable[T]):(BoundedIterator[T],()=>Unit) = {
+    val (iterable,stop) = toIterable(baseIterable)
+    (iterable.iterator,stop)
+  }
+}
+
+trait BoundedIterator[T] extends Iterator[T]{
+  def hasUnboundedNext():Boolean
+  def unboundedNext():T
+}
+
+trait BoundedIterable[T] extends Iterable[T]{
+  override def iterator : BoundedIterator[T]
+}
+
+
+//TODO: randomized
+
+case class First(maxNeighbors:() => Int = () => Int.MaxValue) extends LoopBehavior(){
+  override def toIterable[T](baseIterable : Iterable[T]) : (BoundedIterable[T],()=>Unit) = {
+    val iterable = new BoundedIterable[T]{
+      var foundMove:Boolean = false
+      var remainingNeighbors = maxNeighbors()
+      override def iterator : BoundedIterator[T] = new BoundedIterator[T]{
+        val baseIterator = baseIterable.iterator
+        override def hasNext : Boolean = baseIterator.hasNext && !foundMove && remainingNeighbors>0
+        override def next() : T = {remainingNeighbors -= 1; baseIterator.next}
+        override def hasUnboundedNext() : Boolean = baseIterator.hasNext
+        override def unboundedNext() : T = baseIterator.next
+      }
+    }
+
+    def notifyFound(){iterable.foundMove = true}
+
+    (iterable,notifyFound)
+  }
+}
+
+case class Best(maxNeighbors:() => Int = () => Int.MaxValue) extends LoopBehavior(){
+  override def toIterable[T](baseIterable : Iterable[T]) : (BoundedIterable[T],()=>Unit) = {
+    val iterable = new BoundedIterable[T]{
+      var remainingNeighbors = maxNeighbors()
+      override def iterator : BoundedIterator[T] = new BoundedIterator[T]{
+        val baseIterator = baseIterable.iterator
+        override def hasNext : Boolean = baseIterator.hasNext && remainingNeighbors>0
+        override def next() : T = {remainingNeighbors -= 1; baseIterator.next}
+        override def hasUnboundedNext() : Boolean = baseIterator.hasNext
+        override def unboundedNext() : T = baseIterator.next
+      }
+    }
+
+    def notifyFound(){}
+    (iterable,notifyFound)
+  }
+}
+
+abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
+  extends Neighborhood with SupportForAndThenChaining[M]{
+
+  protected def neighborhoodNameToString: String = if (neighborhoodName != null) neighborhoodName else this.getClass().getSimpleName()
+
+  override def toString: String = neighborhoodNameToString
+
+  //passing parameters, and getting return values from the search
+  private var oldObj: Int = 0
+  private var acceptanceCriterion: (Int, Int) => Boolean = null
+  private var toReturnMove: Move = null
+  private var bestNewObj: Int = Int.MaxValue
+  protected var obj: Objective = null
+  private var exploring = false // to check that it is not called recursiely because it is not reentrant
+
+  override final def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+
+    require(!exploring,this + " is not a re-entrant neighborhood")
+    exploring = true
+
+    oldObj = initialObj
+    this.acceptanceCriterion = acceptanceCriterion
+    toReturnMove = null
+    bestNewObj = Int.MaxValue
+    this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
+    if (printPerformedSearches)
+      println(neighborhoodNameToString + ": start exploration")
+
+    exploreNeighborhood()
+
+    exploring = false
+
+    if (toReturnMove == null) {
+      if (printPerformedSearches) {
+        println(neighborhoodNameToString + ": no move found")
+      }
+      NoMoveFound
+    } else {
+      if (printPerformedSearches) {
+        println(neighborhoodNameToString + ": move found: " + toReturnMove)
+      }
+      toReturnMove
+    }
+  }
+
+  /**
+   * This is the method you must implement and that performs the search of your neighborhood.
+   * every time you explore a neighbor, you must perform the calls to notifyMoveExplored or moveRequested(newObj) && submitFoundMove(myMove)){
+   * as explained in the documentation of this class
+   */
+  def exploreNeighborhood()
+
+  def instantiateCurrentMove(newObj: Int): M
+
+  def evaluateCurrentMoveObjTrueIfSomethingFound(newObj: Int): Boolean = {
+    //on teste l'acceptance criterion sur tout
+    //on garde toujours le meilleur mouvement
+    //on dit juste si un mouvement a été accepté et améliore le best so far ou pas
+
+    val myPrintExploredNeighbors = printExploredNeighbors
+
+    if (newObj < bestNewObj && acceptanceCriterion(oldObj, newObj)) {
+      bestNewObj = newObj
+      toReturnMove = instantiateCurrentMove(newObj)
+      if (myPrintExploredNeighbors) {
+        println("Explored " + toReturnMove + ", new best accepted)")
+        //println(obj.asInstanceOf[LoggingObjective].getAndCleanEvaluationLog.mkString("\n"))
+      }
+      true
+    } else {
+      if (myPrintExploredNeighbors) {
+        println("Explored " + instantiateCurrentMove(newObj) + ", not the new best or not accepted, not saved")
+        //println(obj.asInstanceOf[LoggingObjective].getAndCleanEvaluationLog.mkString("\n"))
+      }
+      false
+    }
+  }
+
+  def afterMoveOnMove(proc:M => Unit):Neighborhood = super.afterMoveOnMove((m:Move) => proc(m.asInstanceOf[M]))
+}
+
+
 
 class ObjWithStringGenerator(obj: Objective, additionalStringGenerator: () => String) extends Objective {
   override def detailedString(short: Boolean, indent: Int): String = {
