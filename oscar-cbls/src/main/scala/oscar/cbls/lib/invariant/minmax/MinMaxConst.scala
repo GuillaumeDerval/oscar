@@ -15,7 +15,7 @@ package oscar.cbls.lib.invariant.minmax
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.algo.heap.{ArrayMap, BinomialHeapWithMoveExtMem}
+import oscar.cbls.algo.heap.BinomialHeapWithMoveInt
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.computation.{ChangingSetValue, IntInvariant, SetNotificationTarget, SetValue}
 import oscar.cbls.core.propagation.Checker
@@ -131,7 +131,7 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
   extends IntInvariant
   with SetNotificationTarget{
 
-  var h: BinomialHeapWithMoveExtMem[Int] = new BinomialHeapWithMoveExtMem[Int](i => Ord(vars(i)), vars.length, new ArrayMap(vars.length))
+  var h: BinomialHeapWithMoveInt = new BinomialHeapWithMoveInt(i => Ord(vars(i)), vars.length, vars.length)
 
   registerStaticAndDynamicDependency(cond)
   finishInitialization()
@@ -199,7 +199,7 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
   //  var nbDoIt = 0
 
   val n = vars.length
-  var h: BinomialHeapWithMoveExtMem[Int] = new BinomialHeapWithMoveExtMem[Int](i => Ord(vars(i)), vars.length, new ArrayMap(vars.length))
+  var h: BinomialHeapWithMoveInt = new BinomialHeapWithMoveInt(i => Ord(vars(i)), vars.length, vars.length)
 
   var backLog:QList[Int] = null
   var backlogSize:Int = 0
@@ -352,6 +352,4 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
       putIntoBackLog(value)
     }
   }
-
-
 }

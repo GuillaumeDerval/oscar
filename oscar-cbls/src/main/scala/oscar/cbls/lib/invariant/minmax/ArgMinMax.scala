@@ -22,7 +22,7 @@
 
 package oscar.cbls.lib.invariant.minmax
 
-import oscar.cbls.algo.heap.{ArrayMap, BinomialHeapWithMoveExtMem}
+import oscar.cbls.algo.heap.BinomialHeapWithMoveInt
 import oscar.cbls.core.computation.Invariant._
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.{Checker, KeyForElementRemoval}
@@ -77,7 +77,7 @@ abstract class ArgMiax(vars: Array[IntValue], cond: SetValue, default: Int)
   }
 
   var keyForRemoval: Array[KeyForElementRemoval] = new Array(vars.length)
-  var h: BinomialHeapWithMoveExtMem[Int] = new BinomialHeapWithMoveExtMem[Int](i => Ord(vars(i)), vars.length, new ArrayMap(vars.length))
+  var h: BinomialHeapWithMoveInt = new BinomialHeapWithMoveInt(i => Ord(vars(i)), vars.length, vars.length)
 
   if (cond != null) {
     registerStaticDependency(cond)

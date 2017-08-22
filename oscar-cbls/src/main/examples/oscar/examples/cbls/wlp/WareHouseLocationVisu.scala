@@ -21,26 +21,30 @@ import java.awt.{Dimension, BorderLayout}
 import javax.swing.JFrame
 
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.core.computation.{SetValue, CBLSIntVar, Store}
 import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.core.search._
 import oscar.cbls.lib.invariant.logic.Filter
-import oscar.cbls.lib.invariant.minmax.{ArgMin, MinConstArrayLazy}
+import oscar.cbls.lib.invariant.minmax.{MinConstArrayValueWise, ArgMin, MinConstArrayLazy}
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.combinators.{Profile, Mu, BestSlopeFirst}
 import oscar.cbls.lib.search.neighborhoods.{AssignNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
 import oscar.cbls.modeling.AlgebraTrait
+import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.wlp.{WareHouseLocationWindow, WareHouseLocationMap}
 
 import scala.language.postfixOps
 
-object WareHouseLocationVisu extends App with AlgebraTrait{
+object WareHouseLocationVisu extends App with AlgebraTrait with StopWatch{
 
   //the number of warehouses
-  val W:Int = 200
+  val W:Int = 300
 
   //the number of delivery points
   val D:Int = 1000
+
+  val displayDelay = 100
 
   println("WarehouseLocation(W:" + W + ", D:" + D + ")")
   //the cost per delivery point if no location is open
@@ -48,15 +52,19 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
 
   val (costForOpeningWarehouse1,distanceCost,warehousePositions,deliveryPositions,warehouseToWarehouseDistances) = WarehouseLocationGenerator.problemWithPositions(W,D,0,1000,3)
 
-    val costForOpeningWarehouse = Array.fill(W)(1000)
+    val costForOpeningWarehouse =  Array.fill(W)(1000)
 
-  val m = Store()
+  val m = Store() //checker = Some(new ErrorChecker()))
 
   val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
+  //val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
+  //  MinConstArrayLazy(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse))
+
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
-    MinConstArrayLazy(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse))
+    new MinConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse,maxDiameter = 2))
+
 
   val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses))
 
@@ -66,7 +74,6 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
 
   var bestObj = Int.MaxValue
 
-
   //this is an array, that, for each warehouse, keeps the sorted closest warehouses in a lazy way.
   val closestWarehouses = Array.tabulate(W)(warehouse =>
     KSmallest.lazySort(
@@ -75,12 +82,12 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
     ))
 
   //this procedure returns the k closest closed warehouses
-  def kNearestClosedWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).value == 0)
+  def kNearestClosedWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue == 0)
   //this procedure returns the k closest open warehouses
-  def kNearestOpenWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).value != 0)
+  def kNearestOpenWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue != 0)
   def kNearestdWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse))
 
-  def mu(depth:Int,kOpen:Int,kClosed:Int ) = Mu[AssignMove](
+  def muLine(depth:Int,kOpen:Int,kClosed:Int ) = Mu[AssignMove](
   AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
   (assignList:List[AssignMove]) =>
   {
@@ -93,6 +100,18 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
   intermediaryStops = true)
 
 
+  def muStar(width:Int,kOpen:Int,kClosed:Int ) = Mu[AssignMove](
+  AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
+  (assignList:List[AssignMove]) =>
+  {
+  val lastChangedWarehouse = assignList.last.id
+  val setTo = assignList.head.v
+  val otherWarehouses = if(setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse,kClosed) else kNearestOpenWarehouses(lastChangedWarehouse,kOpen)
+  Some(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse",searchZone = () => otherWarehouses,hotRestart = false))
+  },
+  maxDepth = width,
+  intermediaryStops = true)
+
   def swapsK(k:Int,openWarehoueseTocConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
     searchZone1 = openWarehoueseTocConsider,
     searchZone2 = (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
@@ -101,27 +120,29 @@ object WareHouseLocationVisu extends App with AlgebraTrait{
 
   def doubleSwap(k:Int) = (swapsK(k) dynAndThen((firstSwap:SwapMove) => swapsK(k,() => kNearestOpenWarehouses(firstSwap.idI,k)))) name "DoubleSwap"
 
+  var lastDisplay = this.getWatch
 
   val neighborhood =(
     BestSlopeFirst(
       List(
         Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
-        Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),
-        Profile(swapsK(20))) //       Profile(doubleSwap(10)
-      ,refresh = W/10)
+        Profile(swapsK(20) guard(() => openWarehouses.value.size >= 5)), //we set a minimal size because the KNearest is very expensive if the size is small
+        Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
+      ),refresh = W/10)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 2, obj)
-      //onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/3), 1, obj)
-    )  exhaust mu(4,5,10) afterMove(
+    ) exhaust (Profile(muLine(3,3,15)) exhaustAndContinueIfMovesFound Profile(muLine(4,3,15))) afterMove(
     if(obj.value < bestObj){
       bestObj = obj.value
-      visual.redraw(openWarehouses.value,obj.value)
-    }) showObjectiveFunction(obj)
+      if(this.getWatch > lastDisplay + displayDelay) {
+        visual.redraw(openWarehouses.value)
+        lastDisplay = this.getWatch}
+    })
 
   neighborhood.verbose = 2
 
   neighborhood.doAllMoves(obj=obj)
 
-  visual.redraw(openWarehouses.value,obj.value)
+  visual.redraw(openWarehouses.value,false)
 
   println(neighborhood.profilingStatistics)
 

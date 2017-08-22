@@ -254,4 +254,5 @@ case class Disjunctive(start: Array[IntValue],
     c.check(nonZeroTasksFromScratch equals nonZeroTasks)
 
   }
+
 }

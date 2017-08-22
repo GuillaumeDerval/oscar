@@ -1,18 +1,3 @@
-/*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
-
 package oscar.cbls.visual.wlp
 
 import java.awt.geom.Rectangle2D
@@ -21,7 +6,7 @@ import java.awt.geom.Line2D.Double
 import javax.swing.JFrame
 
 import oscar.visual.VisualDrawing
-import oscar.visual.shapes._
+import oscar.visual.shapes.{VisualRectangle, VisualCircle, VisualLine, VisualShape}
 
 import scala.collection.immutable.SortedSet
 
@@ -32,8 +17,8 @@ class WareHouseLocationWindow(deliveryCoordinates:Array[(Int,Int)],
 
   val visual = new WareHouseLocationMap(deliveryCoordinates,wareHouseCoordinates,distanceCostD2W,warehouseCosts)
 
-  def redraw(openWarehouses:SortedSet[Int],obj:Int){
-    visual.redraw(openWarehouses,obj)
+  def redraw(openWarehouses:SortedSet[Int],boldChanges:Boolean=true){
+    visual.redraw(openWarehouses,boldChanges)
   }
   val frame = new JFrame()
   frame.setTitle("Uncapacitated Warehouse Location Problem")
@@ -63,9 +48,9 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
 
   var prevOpenWarehouse:SortedSet[Int] = SortedSet.empty
   var prevNearestOpenWarehouse = Array.fill(d)(-1)
-  def redraw(openWarehouses:SortedSet[Int],obj:Int){
+  def redraw(openWarehouses:SortedSet[Int],boldChanges:Boolean=true){
     val closestWarehouses:Array[Int] = Array.tabulate(d)(nearestOpenWareHouse(openWarehouses,_))
-    drawMap(closestWarehouses,openWarehouses,prevOpenWarehouse,prevNearestOpenWarehouse,obj)
+    drawMap(closestWarehouses,openWarehouses,prevOpenWarehouse,prevNearestOpenWarehouse,boldChanges)
     prevOpenWarehouse = openWarehouses
     prevNearestOpenWarehouse = closestWarehouses
   }
@@ -87,7 +72,7 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
     closestW
   }
 
-  private def drawMap(closestWarehouses:Array[Int],openWarehouses:SortedSet[Int],prevOpenWarehouse:SortedSet[Int],prevClosestWarehouse:Array[Int],obj:Int) ={
+  private def drawMap(closestWarehouses:Array[Int],openWarehouses:SortedSet[Int],prevOpenWarehouse:SortedSet[Int],prevClosestWarehouse:Array[Int],boldChanges:Boolean) ={
     val xMultiplier = this.getWidth.toDouble / maxX.toDouble
     val yMultiplier = this.getHeight.toDouble / maxY.toDouble
 
@@ -122,15 +107,14 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
     }
 
     //drawing warehouses
-    //closed first, so in case of overlap, we will see the open one
     for(warehouse <- 0 until w if !(openWarehouses contains warehouse)) {
-      drawWarehouse(warehouse, Color.PINK,prevOpenWarehouse contains warehouse)
+      drawWarehouse(warehouse, Color.PINK, boldChanges && (prevOpenWarehouse contains warehouse))
     }
     for(warehouse <- 0 until w if openWarehouses contains warehouse) {
-      drawWarehouse(warehouse, Color.green,!(prevOpenWarehouse contains warehouse))
+      drawWarehouse(warehouse, Color.green, boldChanges && !(prevOpenWarehouse contains warehouse))
     }
 
-    //drawing delivery points, so they are above warehouses
+    //drawing delivery points
     for(delivery <- 0 until d){
       val warehouse = closestWarehouses(delivery)
       val changed = warehouse != prevClosestWarehouse(delivery)
@@ -141,13 +125,12 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
         deliveryCoordinates(delivery)._1 * xMultiplier,
         deliveryCoordinates(delivery)._2 * yMultiplier,2)
       tempPoint.innerCol_$eq(color)
-      if(changed) tempPoint.setRadius(4)
+      if(boldChanges && changed) tempPoint.setRadius(4)
       if(warehouse != -1){
         tempPoint.toolTip = "distanceCost:" + distanceCostD2W(delivery)(warehouse)
       }
     }
 
-    new VisualText(this,10,10,"obj:" + obj)
     repaint()
   }
 }

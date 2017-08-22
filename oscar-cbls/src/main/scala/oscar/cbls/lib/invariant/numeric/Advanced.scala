@@ -40,7 +40,7 @@ case class SumConstants(vars: Array[Int], cond: SetValue)
 
   override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
     for (added <- addedValues)  this :+= vars(added)
-    for(deleted <- removedValues) this :-= vars(deleted)
+    for (deleted <- removedValues) this :-= vars(deleted)
   }
 
   /** To override whenever possible to spot errors in invariants.

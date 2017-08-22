@@ -19,7 +19,7 @@ import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.functional.{IntSequence, Token}
 
 object RoutingConventionMethods {
-  @deprecated("use the VehicleLocation method instead","we use stacked checkpoints")
+
   def cachedVehicleReachingPosition(checkpoint:IntSequence,v:Int):((IntSequence,Int) => Int) = {
 
     val batch = batchVehicleReachingPosition(checkpoint,v:Int)

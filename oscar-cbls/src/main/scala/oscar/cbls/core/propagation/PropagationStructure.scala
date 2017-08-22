@@ -884,7 +884,7 @@ trait BasicPropagationElement {
   protected[propagation] def registerDynamicallyListeningElement(listening: PropagationElement,
                                                                  i: Int,
                                                                  sccOfListening: StronglyConnectedComponentTopologicalSort,
-                                                                 dynamicallyListenedElementDLLOfListening: DelayedPermaFilteredDoublyLinkedList[PropagationElement, PropagationElement]): KeyForElementRemoval = DummyKeyForElementRemoval
+                                                                 dynamicallyListenedElementDLLOfListening:DelayedPermaFilteredDoublyLinkedList[PropagationElement]): KeyForElementRemoval = DummyKeyForElementRemoval
 
   def schedulingHandler: SchedulingHandler = null
 }
@@ -945,12 +945,12 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
    * this is managed by the PropagationElement
    */
   private[this] var internalIsScheduled: Boolean = false
-  protected def isScheduled: Boolean = internalIsScheduled
+  def isScheduled: Boolean = internalIsScheduled
 
   private[propagation] var staticallyListenedElements: List[PropagationElement] = List.empty
   private[propagation] var staticallyListeningElements: List[PropagationElement] = List.empty
 
-  private final val dynamicallyListeningElements: DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int), PropagationElement] = new DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int), PropagationElement]
+  private final val dynamicallyListeningElements: DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)] = new DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)]
 
   /**
    * through this method, the PropagationElement must declare which PropagationElement it is listening to
@@ -966,7 +966,8 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
    */
   protected[core] final def getStaticallyListeningElements: Iterable[PropagationElement] = staticallyListeningElements
 
-  private[core] final def getDynamicallyListeningElements: DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int), PropagationElement] = dynamicallyListeningElements
+  private[core] final def getDynamicallyListeningElements:DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)]
+  = dynamicallyListeningElements
 
   protected[core] def getDynamicallyListenedElements: Iterable[PropagationElement] = staticallyListenedElements
 
@@ -1006,7 +1007,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
    */
   override protected[propagation] def registerDynamicallyListeningElement(listening: PropagationElement, i: Int,
                                                                           sccOfListening: StronglyConnectedComponentTopologicalSort,
-                                                                          dynamicallyListenedElementDLLOfListening: DelayedPermaFilteredDoublyLinkedList[PropagationElement, PropagationElement]): KeyForElementRemoval = {
+                                                                          dynamicallyListenedElementDLLOfListening: DelayedPermaFilteredDoublyLinkedList[PropagationElement]): KeyForElementRemoval = {
     if (sccOfListening != null && sccOfListening == this.mySchedulingHandler) {
       //this is only called once the component is established, so no worries.
       //we must call this before performing the injection to create the waitingDependency in the SCC
@@ -1167,7 +1168,7 @@ trait VaryingDependenciesPE extends PropagationElement {
     }
   }
 
-  private[propagation] final val dynamicallyListenedElements: DelayedPermaFilteredDoublyLinkedList[PropagationElement, PropagationElement] = new DelayedPermaFilteredDoublyLinkedList[PropagationElement, PropagationElement]
+  private[propagation] final val dynamicallyListenedElements: DelayedPermaFilteredDoublyLinkedList[PropagationElement] = new DelayedPermaFilteredDoublyLinkedList[PropagationElement]
 
   override protected[core] def getDynamicallyListenedElements: Iterable[PropagationElement] = dynamicallyListenedElements
 
@@ -1210,7 +1211,7 @@ trait BulkPropagator extends PropagationElement {
 /**
  * @author renaud.delandtsheer@cetic.be
  */
-trait Checker {
+abstract class Checker {
   def check(verity: Boolean, traceOption: => Option[String] = None)
 }
 
