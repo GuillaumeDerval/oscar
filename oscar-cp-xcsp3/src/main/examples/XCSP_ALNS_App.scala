@@ -47,6 +47,7 @@ object XCSP_ALNS_App extends App{
     Random.setSeed(seed)
     val config = new ALNSConfig(
       argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
+      None,
       1000,
       coupled = argMap.getOrElse('coupled, false).asInstanceOf[Boolean],
       learning = argMap.getOrElse('learning, false).asInstanceOf[Boolean],
@@ -61,7 +62,8 @@ object XCSP_ALNS_App extends App{
         Array( ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit)
       ).asInstanceOf[Array[String]],
 
-      argMap.getOrElse('valLearn, true).asInstanceOf[Boolean],
+      argMap.getOrElse('valLearn, false).asInstanceOf[Boolean],
+      argMap.getOrElse('opDeactivation, false).asInstanceOf[Boolean],
 
       argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
       argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
@@ -124,6 +126,13 @@ object XCSP_ALNS_App extends App{
           if(isSwitch(value)) parseArgs(map ++ Map('valLearn -> true), tail)
           else parseArgs(map ++ Map('valLearn -> value.toBoolean), remTail)
         case Nil => map ++ Map('valLearn -> true)
+      }
+
+      case "--op-deactivation" :: tail => tail match{
+        case value :: remTail =>
+          if(isSwitch(value)) parseArgs(map ++ Map('opDeactivation -> true), tail)
+          else parseArgs(map ++ Map('opDeactivation -> value.toBoolean), remTail)
+        case Nil => map ++ Map('opDeactivation -> true)
       }
 
       case "--selection" :: value :: tail =>

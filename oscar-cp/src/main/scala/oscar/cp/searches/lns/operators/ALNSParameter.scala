@@ -14,4 +14,6 @@ class ALNSParameter[T](val value: T, failThreshold: Int) extends ALNSElement(fai
   }
 
   override def hashCode(): Int = value.hashCode()
+
+  override def toString: String = value.toString
 }

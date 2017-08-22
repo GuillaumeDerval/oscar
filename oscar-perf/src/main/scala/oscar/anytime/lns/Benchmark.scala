@@ -15,7 +15,7 @@ trait Benchmark {
 
   def solver: CPSolver
   def decisionVariables: Array[CPIntVar]
-  def bestKnownObjective: Int = Int.MaxValue
+  def bestKnownObjective: Option[Int] = None
   def instance: String
   def problem: String
 
@@ -29,33 +29,41 @@ trait Benchmark {
 
 //    println("args:\n" + argMap.mkString("\n") + "\n")
 
-    val result = if(argMap.getOrElse('NOLNS, false).asInstanceOf[Boolean]) performBasicSearch(argMap) else performALNS(argMap)
+    solver.silent = !argMap.getOrElse('verbose, false).asInstanceOf[Boolean]
+
+    val seed = argMap.getOrElse('seed, Random.nextInt(Int.MaxValue)).asInstanceOf[Int]
+    if(!solver.silent) println("Seed: " + seed)
+    Random.setSeed(seed)
+
+    val maximizeObjective: Boolean = solver.objective.objs.head.isMax
+
+    val result = if(argMap.getOrElse('NOLNS, false).asInstanceOf[Boolean]) performBasicSearch(argMap, maximizeObjective) else performALNS(argMap)
 
     XmlWriter.writeToXml(
       argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
       argMap.getOrElse('name, "default").asInstanceOf[String],
+      seed,
       argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
       IOUtils.getFileName(instance, keepExtension = false),
       problem,
-      bestKnownObjective,
-      solver.objective.objs.head.isMax,
-      result.solutions
+      bestKnownObjective.getOrElse(if(maximizeObjective) Int.MinValue else Int.MaxValue),
+      maximizeObjective,
+      result.solutions,
+      if(result.relaxStats.isEmpty) Map("Coupled" -> result.searchStats) else Map("Relax" -> result.relaxStats, "Search" -> result.searchStats)
     )
   }
 
   def performALNS(argMap: ArgMap): ALNSSearchResults = {
-    val seed = Random.nextInt()
-    println("Seed: " + seed)
-    Random.setSeed(seed)
     val config = new ALNSConfig(
       argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
+      bestKnownObjective,
       1000,
       coupled = argMap.getOrElse('coupled, false).asInstanceOf[Boolean],
       learning = argMap.getOrElse('learning, false).asInstanceOf[Boolean],
 
       argMap.getOrElse(
         'relax,
-        Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided, ALNSBuilder.ValGuided, ALNSBuilder.PredRelax, ALNSBuilder.FullRelax) //(Reversed) propagation guided may cause out of memory on big instances
+        Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided, ALNSBuilder.ValGuided, ALNSBuilder.FullRelax) //(Reversed) propagation guided may cause out of memory on big instances
       ).asInstanceOf[Array[String]],
 
       argMap.getOrElse(
@@ -63,7 +71,8 @@ trait Benchmark {
         Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.ExtOriented, ALNSBuilder.WeightDeg)
       ).asInstanceOf[Array[String]],
 
-      argMap.getOrElse('valLearn, true).asInstanceOf[Boolean],
+      argMap.getOrElse('valLearn, false).asInstanceOf[Boolean],
+      argMap.getOrElse('opDeactivation, false).asInstanceOf[Boolean],
 
       argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
       argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
@@ -76,11 +85,10 @@ trait Benchmark {
     alns.search()
   }
 
-  def performBasicSearch(argMap: ArgMap): ALNSSearchResults = {
+  def performBasicSearch(argMap: ArgMap, maximizeObjective: Boolean): ALNSSearchResults = {
     val startTime: Long = System.nanoTime()
     val endTime: Long = startTime + (argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L)
 
-    val maximizeObjective: Boolean = solver.objective.objs.head.isMax
     if(!solver.silent) println("Objective type: " + (if(maximizeObjective) "max" else "min"))
 
     val solsFound = new mutable.ListBuffer[CPIntSol]()
@@ -107,6 +115,16 @@ trait Benchmark {
 
     list match {
       case Nil => map
+
+      case "--seed" :: value :: tail =>
+        parseArgs(map ++ Map('seed -> value.toInt), tail)
+
+      case "--verbose" :: tail => tail match{
+        case value :: remTail =>
+          if(isSwitch(value)) parseArgs(map ++ Map('verbose -> true), tail)
+          else parseArgs(map ++ Map('verbose -> value.toBoolean), remTail)
+        case Nil => map ++ Map('verbose -> true)
+      }
 
       case "--timeout" :: value :: tail =>
         parseArgs(map ++ Map('timeout -> value.toLong), tail)
@@ -157,6 +175,13 @@ trait Benchmark {
           if(isSwitch(value)) parseArgs(map ++ Map('valLearn -> true), tail)
           else parseArgs(map ++ Map('valLearn -> value.toBoolean), remTail)
         case Nil => map ++ Map('valLearn -> true)
+      }
+
+      case "--op-deactivation" :: tail => tail match{
+        case value :: remTail =>
+          if(isSwitch(value)) parseArgs(map ++ Map('opDeactivation -> true), tail)
+          else parseArgs(map ++ Map('opDeactivation -> value.toBoolean), remTail)
+        case Nil => map ++ Map('opDeactivation -> true)
       }
 
       case "--selection" :: value :: tail =>

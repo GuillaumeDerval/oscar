@@ -46,7 +46,7 @@ class QuadraticAssignment(val instance: String, val bestObj: Int = Int.MaxValue)
 
   override def decisionVariables: Array[CPIntVar] = x
 
-  override def bestKnownObjective: Int = bestObj
+  override def bestKnownObjective: Option[Int] = Some(bestObj)
 
   override def problem: String = "QAP"
 }

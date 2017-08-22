@@ -1,6 +1,7 @@
 package oscar.anytime.lns.utils
 
 import oscar.cp.searches.lns.CPIntSol
+import oscar.cp.searches.lns.search.ALNSStatistics
 
 import scala.xml.{Elem, NodeBuffer, PrettyPrinter}
 
@@ -9,17 +10,20 @@ object XmlWriter{
 
   private def resultsToXml(
                             config: String,
+                            seed: Int,
                             timeout: Long,
                             instance: String,
                             problem: String,
                             bestKnown: Int,
                             maxObjective: Boolean,
-                            solutions: Iterable[CPIntSol]
+                            solutions: Iterable[CPIntSol],
+                            operators: Map[String, Map[String, ALNSStatistics]]
                           ): Elem = {
 
     val xml = new NodeBuffer()
 
     xml += <config>{config}</config>
+    xml += <config>{seed}</config>
     xml += <timeout>{timeout}</timeout>
     xml += <instance>{instance}</instance>
     xml += <problem>{problem}</problem>
@@ -27,6 +31,10 @@ object XmlWriter{
     if(bestKnown < Int.MaxValue && bestKnown > Int.MinValue) xml += <best_known_objective>{bestKnown}</best_known_objective>
 
     xml += (<solutions>{solutions.map(_.asXml)}</solutions>)
+
+    xml += (<operators>{operators.flatMap{
+      case (category, operators) => operators.map{case (name, stats) => stats.asXml(name, category)}
+    }}</operators>)
 
     <results>{xml}</results>
   }
@@ -44,15 +52,24 @@ object XmlWriter{
   def writeToXml(
                   directory: String,
                   config: String,
+                  seed: Int,
                   timeout: Long,
                   instance: String,
                   problem: String = "unknown",
                   bestKnown: Int = Int.MaxValue,
                   maxObjective: Boolean,
-                  solutions: Iterable[CPIntSol]
+                  solutions: Iterable[CPIntSol],
+                  operators: Map[String, Map[String, ALNSStatistics]]
                 ): Unit = {
-    val xml = resultsToXml(config, timeout, instance, problem, bestKnown, maxObjective, solutions)
-    val output = directory + "/" + problem + "/" + config + "_" + instance + ".xml"
+    val xml = resultsToXml(config, seed, timeout, instance, problem, bestKnown, maxObjective, solutions, operators)
+    var output = directory + "/" + problem + "/" + config + "_" + instance + ".xml"
+    if(IOUtils.fileExists(output)){
+      var i = 0
+      do{
+        i += 1
+        output = directory + "/" + problem + "/" + config + "_" + instance + "_" + i + ".xml"
+      }while(IOUtils.fileExists(output))
+    }
     IOUtils.saveToFile(output, new PrettyPrinter(80, 4).format(xml))
   }
 }

@@ -5,20 +5,7 @@ import scala.xml.Elem
 /**
   * ALNS statistics
   */
-class ALNSStatistics(
-                    val execs: Int,
-                    val sols: Int,
-                    val successfulRuns: Int,
-                    val time: Long,
-                    val avgTime: Double,
-                    val improvement: Int,
-                    val avgImprovement: Double,
-                    val successRate: Double,
-                    val timeToImprovement: Double,
-                    val active: Boolean,
-                    val fails: Int,
-                    val paramStats: Array[Array[(String, ALNSStatistics)]]
-               ){
+class ALNSStatistics(val execs: Int, val sols: Int, val successfulRuns: Int, val time: Long, val avgTime: Double, val improvement: Long, val avgImprovement: Double, val successRate: Double, val timeToImprovement: Double, val active: Boolean, val fails: Int, val paramStats: Array[Array[(String, ALNSStatistics)]]) {
 
 
   def asXml(name: String, opType:String): Elem = {
@@ -44,12 +31,13 @@ class ALNSStatistics(
     s += "\n\texecs: " + execs
     s += "\n\tsols: " + sols
     s += "\n\tsuccessful runs: " + successfulRuns
-    s += "\n\ttime: " + time
-    s += "\n\taverage time: " + avgTime
+    s += "\n\ttime(s): " + time / 1000000000.0
+    s += "\n\taverage time(s): " + avgTime / 1000000000.0
     s += "\n\timprovement: " + improvement
     s += "\n\taverage improvement: " + avgImprovement
+    s += "\n\taverage improvement ratio: " + (improvement / (time / 1000000.0 + 1))
     s += "\n\tsuccess rate: " + successRate
-    s += "\n\ttime to improvement: " + timeToImprovement
+    s += "\n\ttime to improvement(s): " + timeToImprovement / 1000000000.0
     s += "\n\tstatus: " + (if(active) "active" else "inactive")
     s += "\n\tfails: " + fails
     s

@@ -42,7 +42,10 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
     val time = System.nanoTime() - startTime
     if(maximizeObjective.isDefined) {
       currentSol = Some(new CPIntSol(vars.map(_.value), solver.objective.objs.head.best, time))
-      optimumFound = solver.objective.isOptimum()
+      optimumFound = solver.objective.isOptimum() || (config.objective.isDefined && (
+        (maximizeObjective.get && solver.objective.objs.head.best >= config.objective.get) ||
+        (!maximizeObjective.get && solver.objective.objs.head.best <= config.objective.get)
+      ))
       if (bestSol.isEmpty || (maximizeObjective.get && currentSol.get.objective > bestSol.get.objective) || (!maximizeObjective.get && currentSol.get.objective < bestSol.get.objective)) {
         bestSol = currentSol
         solsFound += currentSol.get
@@ -127,7 +130,9 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
     if(optimumFound && !solver.silent) println("Optimal solution Found!")
     ALNSElement.resetWorstTTI()
     if(!solver.silent) println("Search done, retrieving results")
-    getSearchResults
+    val results = getSearchResults
+    if(!solver.silent) println(results)
+    results
   }
 
   /**

@@ -94,23 +94,10 @@ class ALNSTwoParamsOperator[T1, T2](
     }
   }
 
-  override def getStats: ALNSStatistics = new ALNSStatistics(
-    execs,
-    sols,
-    successfulRuns,
-    time,
-    avgTime,
-    improvement,
-    avgImprovement,
-    successRate,
-    timeToImprovement,
-    isActive,
-    nFails,
-    Array(
-      param1Store.getElements.map(x => (x.value.toString, x.getStats)).toArray,
-      param2Store.getElements.map(x => (x.value.toString, x.getStats)).toArray
-    )
-  )
+  override def getStats: ALNSStatistics = new ALNSStatistics(execs, sols, successfulRuns, time, avgTime, improvement, avgImprovement, successRate, timeToImprovement, isActive, nFails, Array(
+        param1Store.getElements.map(x => (x.value.toString, x.getStats)).toArray,
+        param2Store.getElements.map(x => (x.value.toString, x.getStats)).toArray
+      ))
 
   override def nParamVals: Int = nParamVals(1) * nParamVals(2)
 

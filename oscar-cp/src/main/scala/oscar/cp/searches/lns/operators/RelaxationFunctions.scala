@@ -200,27 +200,27 @@ object RelaxationFunctions {
 
   /**
     * Makes the hypothesis of a predecessor/successor model: relaxes a sequence of k variables by using their value to find the
-    * next variable in the sequence.
+    * next variable in the sequence. Reordering is only allowed within the relaxed sequence.
     * @param k The number of variables to relax (must be >= 0 and < vars.size)
     */
-  def predecessorRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit = {
+  def predRelaxSeqFixed(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit = {
     val varSeq = vars.toSeq
     val varArray = varSeq.indices.toArray //map to real indice of variable
     val mapToIdx = varArray.indices.toArray //map to indice of variable in varArray
-    var boundStart = varArray.length //Elements of varArray from this index are to be relaxed
+    var relaxStart = varArray.length //Elements of varArray from this index are to be relaxed
     var lastVal = -1
 
-    while(varArray.length - boundStart < k){
-      val x = if(lastVal >= 0 && lastVal < varSeq.length && !varSeq(lastVal).isBound) lastVal else varArray(Random.nextInt(boundStart))
+    while(varArray.length - relaxStart < k){
+      val x = if(lastVal >= 0 && lastVal < relaxStart) lastVal else varArray(Random.nextInt(relaxStart))
       lastVal = currentSol.values(x)
 
       //marking var as to relax:
-      boundStart -= 1
+      relaxStart -= 1
       val i = mapToIdx(x)
-      varArray(i) = varArray(boundStart)
-      mapToIdx(varArray(boundStart)) = i
-      varArray(boundStart) = x
-      mapToIdx(x) = boundStart
+      varArray(i) = varArray(relaxStart)
+      mapToIdx(varArray(relaxStart)) = i
+      varArray(relaxStart) = x
+      mapToIdx(x) = relaxStart
     }
 
     var i = 0
@@ -230,5 +230,46 @@ object RelaxationFunctions {
       if (!varSeq(x).isBound) throw Inconsistency
       i += 1
     }
+  }
+
+  /**
+    * Makes the hypothesis of a predecessor/successor model: relaxes k edges and allows change of direction between
+    * fixed paths.
+    * @param k The number of edges (variables) to relax (must be >= 0 and <= vars.size/2)
+    */
+  def predRelaxKopt(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit = {
+    //Computing predecessors:
+    val pred = Array.fill[Int](vars.size)(-1)
+    currentSol.values.filter(x => x >= 0 && x < vars.size).zipWithIndex.foreach{ case(x,i) => pred(x) = i }
+
+    val varSeq = vars.toSeq
+    val varArray = varSeq.indices.toArray //map to real indice of variable
+    var relaxStart = varArray.length //Elements of varArray from this index are to be relaxed
+
+    val endPoints = mutable.Set[Int]()
+
+    while(varArray.length - relaxStart < k){
+      val i = Random.nextInt(relaxStart)
+      val x = varArray(i)
+
+      //marking var as to relax:
+      relaxStart -= 1
+      varArray(i) = varArray(relaxStart)
+      varArray(relaxStart) = x
+
+      //adding self and sucessor as endpoints:
+      endPoints += x
+      val successor = currentSol.values(x)
+      if(successor >= 0 && successor < varSeq.length) endPoints += successor
+    }
+
+    //Fixing other vars (allowing existing edges inversion)
+    (0 until relaxStart).foreach(i => {
+      val x = varArray(i)
+      var succX = currentSol.values(x)
+      var predX = pred(x)
+      if(endPoints.contains(x)) solver.add(varSeq(x) in endPoints.toSet + succX + predX)
+      else solver.add(varSeq(x) in Set(succX, predX))
+    })
   }
 }

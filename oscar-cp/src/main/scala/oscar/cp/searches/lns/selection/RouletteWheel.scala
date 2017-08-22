@@ -17,7 +17,7 @@ class RouletteWheel[T](
   private val lastSelected = mutable.HashMap[T, Int]() //caching for quick access to last selected elem(s)
   private val active = mutable.HashSet[Int](elems.indices: _*)
 
-  def this(elems: Array[T], rFactor: Double, reversed:Boolean){this(elems, Array.fill(elems.length){1.0}, rFactor, reversed)}
+  def this(elems: Array[T], rFactor: Double, reversed:Boolean){this(elems, Array.fill(elems.length){(Double.MaxValue - 1) / elems.length}, rFactor, reversed)}
 
   private def getIndex(elem: T): Int = lastSelected.getOrElse(elem, elems.indexOf(elem))
 
@@ -27,7 +27,8 @@ class RouletteWheel[T](
 
   private def processProbas(activeSeq: Seq[Int]): Seq[Double] = {
     val activeWeights = activeSeq.map(weights(_))
-    val wSum = activeWeights.sum
+    var wSum = activeWeights.sum
+    if(wSum.isInfinity) wSum = Double.MaxValue - 1
 
     //If all weights are at 0, giving equiprobability to all elems:
     if(wSum == 0.0) Seq.fill(activeSeq.length)(1.0/activeSeq.length)
@@ -56,8 +57,9 @@ class RouletteWheel[T](
   override def adapt(elem: T, sFactor: Double, rFactor: Double): Unit = {
     val index = getIndex(elem)
     if(index == -1) throw  new Exception("Element " + elem + " is not in store.")
-    weights(index) = (1.0 - rFactor) * weights(index) + rFactor * sFactor
+    weights(index) = (1.0 - rFactor) * weights(index) + rFactor * (sFactor / elems.length) //received val divided by the number of elems to avoid overflow when processing max values
     if(isCached(index)) lastSelected.remove(elem)
+//    println("elem " + elem + " has now weight: " + weights(index))
   }
 
   override def getElements: Seq[T] = elems

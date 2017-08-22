@@ -109,7 +109,7 @@ class JobShop(val instance: String, val bestObj: Int = Int.MaxValue) extends Ben
 
   override def decisionVariables: Array[CPIntVar] = startsVar
 
-  override def bestKnownObjective: Int = bestObj
+  override def bestKnownObjective: Option[Int] = Some(bestObj)
 
   override def problem: String = "JobShop"
 }

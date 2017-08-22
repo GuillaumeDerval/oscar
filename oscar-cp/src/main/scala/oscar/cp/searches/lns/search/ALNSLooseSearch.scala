@@ -53,22 +53,24 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       currentSol = Some(initSol)
     }
 
-    relaxPerf.values.filter{ case (op, perfs) =>
-      op.isActive && perfs.map(_._2).max == 0
-    }.foreach{ case (op, _) =>
-      op.setActive(false)
-      if(!solver.silent) println("Operator " + op.name + " deactivated")
-    }
+    if(config.opDeactivation) {
+      relaxPerf.values.filter { case (op, perfs) =>
+        op.isActive && perfs.map(_._2).max == 0
+      }.foreach { case (op, _) =>
+        op.setActive(false)
+        if (!solver.silent) println("Operator " + op.name + " deactivated")
+      }
 
-    searchPerf.values.filter{ case (op, perfs) =>
-      op.isActive && perfs.map(_._2).max == 0
-    }.foreach{ case (op, _) =>
-      op.setActive(false)
-      if(!solver.silent) println("Operator " + op.name + " deactivated")
-    }
+      searchPerf.values.filter { case (op, perfs) =>
+        op.isActive && perfs.map(_._2).max == 0
+      }.foreach { case (op, _) =>
+        op.setActive(false)
+        if (!solver.silent) println("Operator " + op.name + " deactivated")
+      }
 
-    relaxOps.filter(!_.isActive).foreach(relaxStore.deactivate)
-    searchOps.filter(!_.isActive).foreach(searchStore.deactivate)
+      relaxOps.filter(!_.isActive).foreach(relaxStore.deactivate)
+      searchOps.filter(!_.isActive).foreach(searchStore.deactivate)
+    }
 
     if(!solver.silent) {
       println(relaxStore.nActive + " relax operators remaining.")
@@ -128,7 +130,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
         //Updating probability distributions:
         relax.update(improvement, stats, fail = !learning)
         search.update(improvement, stats, fail = false)
-        relax.setActive(false)
+        if(config.opDeactivation) relax.setActive(false)
       }
       else {
         if(!solver.silent) println("Search done, Improvement: " + improvement)

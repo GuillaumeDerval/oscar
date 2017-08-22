@@ -56,7 +56,7 @@ class ALNSSingleParamOperator[T](
 
   override def update(costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit = {
     if(selected.isDefined){
-      updateParam(selected.get, improvement, stats, fail)
+      updateParam(selected.get, costImprovement, stats, fail)
       selected = None
     }
     else throw new Exception("This operator has not been used!")
@@ -76,20 +76,7 @@ class ALNSSingleParamOperator[T](
     }
   }
 
-  override def getStats: ALNSStatistics = new ALNSStatistics(
-    execs,
-    sols,
-    successfulRuns,
-    time,
-    avgTime,
-    improvement,
-    avgImprovement,
-    successRate,
-    timeToImprovement,
-    isActive,
-    nFails,
-    Array(paramStore.getElements.map(x => (x.value.toString, x.getStats)).toArray)
-  )
+  override def getStats: ALNSStatistics = new ALNSStatistics(execs, sols, successfulRuns, time, avgTime, improvement, avgImprovement, successRate, timeToImprovement, isActive, nFails, Array(paramStore.getElements.map(x => (x.value.toString, x.getStats)).toArray))
 
   override def nParamVals: Int = paramStore.nActive
 

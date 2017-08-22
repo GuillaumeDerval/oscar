@@ -25,7 +25,7 @@ abstract class ALNSElement(val failThreshold: Int){
   var execs: Int = 0
   var sols: Int = 0
   var time: Long = 0
-  var improvement: Int = 0
+  var improvement: Long = 0
 
 
   protected var nFails = 0 //Number of failures of the element
@@ -66,20 +66,7 @@ abstract class ALNSElement(val failThreshold: Int){
   /**
     * Returns the statistics of the element as an ALNSStatistics object.
     */
-  def getStats: ALNSStatistics = new ALNSStatistics(
-    execs,
-    sols,
-    successfulRuns,
-    time,
-    avgTime,
-    improvement,
-    avgImprovement,
-    successRate,
-    timeToImprovement,
-    isActive,
-    nFails,
-    Array[Array[(String, ALNSStatistics)]]()
-  )
+  def getStats: ALNSStatistics = new ALNSStatistics(execs, sols, successfulRuns, time, avgTime, improvement, avgImprovement, successRate, timeToImprovement, isActive, nFails, Array[Array[(String, ALNSStatistics)]]())
 
   /**
     * Activates or deactivates the element

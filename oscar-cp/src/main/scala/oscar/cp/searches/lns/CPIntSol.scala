@@ -27,7 +27,7 @@ class CPIntSol(val values: Array[Int], val objective: Int, val time: Long){
   override def toString: String = {
     var s = "solution:"
     s += "\n\tobjective: " + objective
-    s += "\n\ttime: " + time
+    s += "\n\ttime: " + time / 1000000000.0
     s += "\n\tvalues: [" + values.mkString(", ")
     s += "]"
     s

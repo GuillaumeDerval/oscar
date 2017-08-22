@@ -39,12 +39,14 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
       currentSol = Some(initSol)
     })
 
-    opPerf.filter{case (op, time, improvement) =>
-      op.isActive && improvement == 0
-    }.foreach{case (op, _, _) =>
-      op.setActive(false)
-      opStore.deactivate(op)
-      if(!solver.silent) println("Operator " + op.name + " deactivated.")
+    if(config.opDeactivation) {
+      opPerf.filter { case (op, time, improvement) =>
+        op.isActive && improvement == 0
+      }.foreach { case (op, _, _) =>
+        op.setActive(false)
+        opStore.deactivate(op)
+        if (!solver.silent) println("Operator " + op.name + " deactivated.")
+      }
     }
 
     if(!solver.silent) println(opStore.nActive + " operators remaining.")
@@ -102,7 +104,7 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
         if(!solver.silent) println("Search space completely explored, improvement: " + improvement)
         //Updating probability distributions:
         operator.update(improvement, stats, fail = !learning)
-        operator.setActive(false)
+        if(config.opDeactivation) operator.setActive(false)
       }
       else {
         if (!solver.silent) println("Search done, Improvement: " + improvement)
@@ -112,7 +114,6 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
     }
     else {
       if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement)
-      //Updating only relax as the the search has not been done:
       operator.update(improvement, stats, fail = !learning)
     }
 

@@ -46,7 +46,7 @@ class ProductMatrixTSP(val instance: String, val bestObj: Int = Int.MaxValue) ex
 
   override def decisionVariables: Array[CPIntVar] = x
 
-  override def bestKnownObjective: Int = bestObj
+  override def bestKnownObjective: Option[Int] = Some(bestObj)
 
   override def problem: String = "ProdMatrixTSP"
 }

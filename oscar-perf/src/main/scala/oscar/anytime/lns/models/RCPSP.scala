@@ -52,7 +52,7 @@ class RCPSP(val instance: String, val bestObj: Int = Int.MaxValue) extends Bench
 
   override def decisionVariables: Array[CPIntVar] = starts
 
-  override def bestKnownObjective: Int = bestObj
+  override def bestKnownObjective: Option[Int] = Some(bestObj)
 
   override def problem: String = "RCPSP"
 }

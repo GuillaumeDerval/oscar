@@ -113,12 +113,14 @@ object HybridSolver extends CompetitionApp with App {
 
         val config = new ALNSConfig(
           (timeout * 0.7).toLong,
+          None,
           conf.memlimit(),
           coupled = true,
           learning = true,
           Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided, ALNSBuilder.FullRelax, ALNSBuilder.ValGuided),
           Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.ExtOriented, ALNSBuilder.WeightDeg),
           valLearn = true,
+          opDeactivation = false,
           ALNSBuilder.Priority,
           ALNSBuilder.Priority,
           ALNSBuilder.AvgImprov,

@@ -13,6 +13,7 @@ CP=${SbtOutput##*$'\n'}
 ConfigsFile="$BenchDir/configs.txt"
 Out="ALNS-bench-results/$Date-$VNum"
 InstancesToRun="parallel-instances.txt"
+N=1
 
 echo -e "\n\n\n"
 echo "Date -> $Date"
@@ -23,6 +24,7 @@ echo "Classpath -> $CP"
 echo "Configs file -> $ConfigsFile"
 echo "Output parameter -> $Out"
 echo "instances file -> $InstancesToRun"
+echo "N -> $N"
 echo -e "\n"
 
 run_search () {
@@ -61,12 +63,14 @@ echo -e "\nInstances:"
 cat ${InstancesToRun}
 echo -e "\n\n\n"
 
-$BIN/parallel --gnu --jobs 80% run_search ${CP} ${Out} :::: ${InstancesToRun} :::: ${ConfigsFile}
+for i in {1..$N}; do
+    $BIN/parallel --gnu --jobs 80% run_search ${CP} ${Out} :::: ${InstancesToRun} :::: ${ConfigsFile};
+done
 
 rm ${InstancesToRun}
 
 cp -r --parents "${Out}" "/etinfo/users2/cthomas/Workspace/"
 
-scala -J-Xmx1g -cp ${CP} ${BenchRoot}.utils.HtmlReporter ${Out}
+#scala -J-Xmx1g -cp ${CP} ${BenchRoot}.utils.HtmlReporter ${Out}
 
-cat "${Out}/${Date}-${VNum}_htmlReport.html" > "/etinfo/users2/cthomas/Workspace/${Out}/htmlReport.html"
+#cat "${Out}/${Date}-${VNum}_htmlReport.html" > "/etinfo/users2/cthomas/Workspace/${Out}/htmlReport.html"

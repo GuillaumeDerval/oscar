@@ -35,13 +35,15 @@ object ALNSBuilder{
   val DefValGuidedParam2 = Array("Random", "MaxVal", "MinVal")
 
   // Predecessor relaxation:
-  val PredRelax = "PredRelax"
+  val PredRelaxSeqFixed = "PredRelaxSeqFixed"
+  val PredRelaxKopt = "PredRelaxKopt"
 
   // Full relaxation:
   val FullRelax = "FullRelax"
 
   // Default relaxation size (percentage)
   val DefRelaxParam = Array(0.25, 0.50, 0.75) //Percentage of the neighbourhood which is relaxed
+//  val DefRelaxParam = (0.1 to 0.9 by 0.1).toArray //Percentage of the neighbourhood which is relaxed
 
   //TODO: implement other relaxation functions
 
@@ -68,7 +70,7 @@ object ALNSBuilder{
   val DefWeigDegreeParam2 = 0.99
 
   // Available value Heuristic functions:
-  val DefValHeuris = Array("Min", "Max")
+  val DefValHeuris = Array("Min"/*, "Max", "Median", "Random"*/)
 
   //TODO: implement other search heuristics
 
@@ -82,7 +84,9 @@ object ALNSBuilder{
     * Available performance metrics:
     */
   val LastImprov = "LastImprov"
+  val LastImprovRatio = "LastImprov"
   val AvgImprov = "AvgImprov"
+  val AvgImprovRatio = "AvgImprovRatio"
   val TTI = "TTI"
 
   /**
@@ -140,7 +144,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       (searchName, searchFunction) <- instantiateSearchFunctions(searchKey)
     } yield new ALNSNoParamOperator(
       relaxName + "_" + searchName,
-      ALNSBuilder.DefNoParamFailThreshold,
+      if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0,
       (sol: CPIntSol) => {
         relaxFunction(sol)
         searchFunction(sol)
@@ -193,12 +197,20 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
         (sol: CPIntSol) => RelaxationFunctions.valueGuidedRelax(solver, vars, sol, k, scheme)
       )
 
-    case ALNSBuilder.PredRelax =>
+    case ALNSBuilder.PredRelaxSeqFixed =>
       ALNSBuilder.DefRelaxParam
         .map(x => Math.round(N * x).toInt)
         .map(x => (
           opKey + "(" + x.toString + ")",
-          (sol: CPIntSol) => RelaxationFunctions.predecessorRelax(solver, vars, sol, x))
+          (sol: CPIntSol) => RelaxationFunctions.predRelaxSeqFixed(solver, vars, sol, x))
+        )
+
+    case ALNSBuilder.PredRelaxKopt =>
+      ALNSBuilder.DefRelaxParam
+        .map(x => Math.round(N * x).toInt / 2)
+        .map(x => (
+          opKey + "(" + x.toString + ")",
+          (sol: CPIntSol) => RelaxationFunctions.predRelaxKopt(solver, vars, sol, x))
         )
 
     case ALNSBuilder.FullRelax => Array((opKey, _ => Unit))
@@ -248,7 +260,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
         paramSelectKey,
         ALNSBuilder.DefRelaxParam
           .map(x => Math.round(N * x).toInt)
-          .map(x => new ALNSParameter[Int](x, ALNSBuilder.DefNoParamFailThreshold)),
+          .map(x => new ALNSParameter[Int](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       ),
       instantiateMetric(paramMetricKey)
@@ -262,7 +274,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
         paramSelectKey,
         ALNSBuilder.DefRelaxParam
           .map(x => Math.round(N * x).toInt)
-          .map(x => new ALNSParameter[Int](x, ALNSBuilder.DefNoParamFailThreshold)),
+          .map(x => new ALNSParameter[Int](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       ),
       instantiateMetric(paramMetricKey)
@@ -276,7 +288,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
         paramSelectKey,
         ALNSBuilder.DefRelaxParam
           .map(x => x * maxNeighSize)
-          .map(x => new ALNSParameter[Double](x, ALNSBuilder.DefNoParamFailThreshold)),
+          .map(x => new ALNSParameter[Double](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey),
       instantiateMetric(paramMetricKey)
     )
@@ -289,7 +301,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
         paramSelectKey,
         ALNSBuilder.DefRelaxParam
           .map(x => x * maxNeighSize)
-          .map(x => new ALNSParameter[Double](x, ALNSBuilder.DefNoParamFailThreshold)),
+          .map(x => new ALNSParameter[Double](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey),
       instantiateMetric(paramMetricKey)
     )
@@ -302,26 +314,40 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
         paramSelectKey,
         ALNSBuilder.DefRelaxParam
           .map(x => Math.round(N * x).toInt)
-          .map(x => new ALNSParameter[Int](x, ALNSBuilder.DefNoParamFailThreshold)),
+          .map(x => new ALNSParameter[Int](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       ),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.DefValGuidedParam2.map(x => new ALNSParameter[String](x, ALNSBuilder.DefNoParamFailThreshold)),
+        ALNSBuilder.DefValGuidedParam2.map(x => new ALNSParameter[String](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       ),
       instantiateMetric(paramMetricKey)
     )
 
-    case ALNSBuilder.PredRelax => new ALNSSingleParamOperator[Int](
-      ALNSBuilder.PredRelax,
+    case ALNSBuilder.PredRelaxSeqFixed => new ALNSSingleParamOperator[Int](
+      ALNSBuilder.PredRelaxSeqFixed,
       ALNSBuilder.DefWithParamFailThreshold,
-      RelaxationFunctions.predecessorRelax(solver, vars, _: CPIntSol, _: Int),
+      RelaxationFunctions.predRelaxSeqFixed(solver, vars, _: CPIntSol, _: Int),
       instantiateAdaptiveStore(
         paramSelectKey,
         ALNSBuilder.DefRelaxParam
           .map(x => Math.round(N * x).toInt)
-          .map(x => new ALNSParameter[Int](x, ALNSBuilder.DefNoParamFailThreshold)),
+          .map(x => new ALNSParameter[Int](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+        paramMetricKey
+      ),
+      instantiateMetric(paramMetricKey)
+    )
+
+    case ALNSBuilder.PredRelaxKopt => new ALNSSingleParamOperator[Int](
+      ALNSBuilder.PredRelaxKopt,
+      ALNSBuilder.DefWithParamFailThreshold,
+      RelaxationFunctions.predRelaxKopt(solver, vars, _: CPIntSol, _: Int),
+      instantiateAdaptiveStore(
+        paramSelectKey,
+        ALNSBuilder.DefRelaxParam
+          .map(x => Math.round(N * x).toInt / 2)
+          .map(x => new ALNSParameter[Int](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       ),
       instantiateMetric(paramMetricKey)
@@ -329,7 +355,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
 
     case ALNSBuilder.FullRelax => new ALNSNoParamOperator(
       ALNSBuilder.FullRelax,
-      ALNSBuilder.DefNoParamFailThreshold,
+      if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0,
       _ => Unit
     )
   }
@@ -340,7 +366,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
     * @return an array of ALNSOperator objects
     */
   private def instantiateSearchOperators(opKey: String): Array[ALNSOperator] = instantiateSearchFunctions(opKey).map{
-    case (name, function) => new ALNSNoParamOperator(name, ALNSBuilder.DefNoParamFailThreshold, function)
+    case (name, function) => new ALNSNoParamOperator(name, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0, function)
   }
 
   /**
@@ -361,12 +387,16 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       elems,
       metricKey match{
         case ALNSBuilder.LastImprov => 0.5
+        case ALNSBuilder.LastImprovRatio => 0.5
         case ALNSBuilder.AvgImprov => 1.0
+        case ALNSBuilder.AvgImprovRatio => 1.0
         case ALNSBuilder.TTI => 1.0
       },
       metricKey match{
         case ALNSBuilder.LastImprov => false
+        case ALNSBuilder.LastImprovRatio => false
         case ALNSBuilder.AvgImprov => false
+        case ALNSBuilder.AvgImprovRatio => false
         case ALNSBuilder.TTI => true
       }
     )
@@ -375,12 +405,16 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       elems,
       metricKey match{
         case ALNSBuilder.LastImprov => 0.5
+        case ALNSBuilder.LastImprovRatio => 0.5
         case ALNSBuilder.AvgImprov => 1.0
+        case ALNSBuilder.AvgImprovRatio => 1.0
         case ALNSBuilder.TTI => 1.0
       },
       metricKey match{
         case ALNSBuilder.LastImprov => false
+        case ALNSBuilder.LastImprovRatio => false
         case ALNSBuilder.AvgImprov => false
+        case ALNSBuilder.AvgImprovRatio => false
         case ALNSBuilder.TTI => true
       }
     )
@@ -395,7 +429,9 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
     */
   private def instantiateMetric(metricKey: String): (ALNSElement, Int, SearchStatistics) => Double = metricKey match{
     case ALNSBuilder.LastImprov => Metrics.lastImprovement
+    case ALNSBuilder.LastImprovRatio => Metrics.lastImprovementRatio
     case ALNSBuilder.AvgImprov => Metrics.averageImprovement
+    case ALNSBuilder.AvgImprovRatio => Metrics.averageImprovementRatio
     case ALNSBuilder.TTI => Metrics.timeToImprovement
   }
 }

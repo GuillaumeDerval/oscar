@@ -59,6 +59,7 @@ class PriorityStore[T](
     else priority.remove(index)
     weights(index) = (1.0 - rFactor) * weights(index) + rFactor * sFactor
     priority.add(index)
+//    println("elem " + elem + " has now weight: " + weights(index))
   }
 
   override def getElements: Seq[T] = elems

@@ -17,4 +17,20 @@ class ALNSSearchResults(
   def this(solutions:Array[CPIntSol], optimumFound: Boolean, unsat: Boolean){
     this(solutions, Map(), Map(), optimumFound, unsat)
   }
+
+  override def toString: String = {
+    val s = new StringBuilder
+    s.append(
+      if(unsat) "Unsatisfiable\n"
+      else if(solutions.isEmpty) "No solution found\n"
+      else "Last " + solutions.last + "\n\toptimum: " + (if(optimumFound) "true\n" else "unknown\n")
+    )
+    if(relaxStats.nonEmpty){
+      s.append("Relaxation operators stats:\n")
+      s.append(relaxStats.mkString("\n"))
+      s.append("\nSearch operators stats:\n")
+    }
+    s.append(searchStats.mkString("\n"))
+    s.mkString
+  }
 }
