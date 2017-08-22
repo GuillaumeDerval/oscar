@@ -55,8 +55,16 @@ object ForwardCumulativeIntegerIntegerDimensionOnVehicle {
 
     val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, 0 to n-1, "last point of vehicle" + vehicle))
 
-    new ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes,n,v,op,content1AtStart,content2AtStart,content1AtNode,content2AtNode,content1AtEnd,content2AtEnd,lastPointOfVehicle,default1ForUnroutedNodes,default2ForUnroutedNodes)
-    (content1AtNode,content2AtNode,content1AtEnd,content2AtEnd,lastPointOfVehicle)
+    new ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes,n,v,op,
+      content1AtStart,content2AtStart,
+      content1AtNode,content2AtNode,
+      content1AtEnd,content2AtEnd,
+      lastPointOfVehicle,
+      default1ForUnroutedNodes,default2ForUnroutedNodes,
+      contentName)
+    (content1AtNode,content2AtNode,
+      content1AtEnd,content2AtEnd,
+      lastPointOfVehicle)
   }
 }
 
@@ -72,7 +80,8 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
                                                         content2AtEnd:Array[CBLSIntVar],
                                                         lastPointOfVehicle:Array[CBLSIntVar],
                                                         defaultVehicleContent1ForUnroutedNodes:Int,
-                                                        defaultVehicleContent2ForUnroutedNodes:Int)
+                                                        defaultVehicleContent2ForUnroutedNodes:Int,
+                                                         contentName:String = "content")
 
   extends AbstractForwardCumulativeDimensionOnVehicle(routes,n,v) with IntNotificationTarget{
 
@@ -148,6 +157,36 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
       content2AtNode(node) := defaultVehicleContent2ForUnroutedNodes
     }
   }
+
+
+  override def toString : String = {
+    "ForwardCumulativeIntegeIntegerDimensionOnVehicle(routes:" + routes.name + " n:" + n + " v:" + v + " contentName:" + contentName +"){\n" +
+      (0 until v).toList.map((vehicle:Int) =>
+      {
+        val header = "\tvehicle" + vehicle + " contentAtStart:" + (content1AtStart,content2AtStart) + "\n"
+        var explorerOpt = routes.value.explorerAtAnyOccurrence(vehicle).get.next
+        var acc:String = ""
+
+        while(explorerOpt match{
+          case None => //at end of last vehicle
+            val vehicle = v-1
+            acc += "endOfRoute of vehicle" + vehicle + " contentAtEnd:" + (content1AtEnd(vehicle).value,content2AtEnd(vehicle).value) + "\n"
+            false
+          case Some(explorer) if explorer.value < v =>
+            //reached another vehicle
+            val vehicle = explorer.value-1
+            acc += "endOfRoute of vehicle" + vehicle + " contentAtEnd:" + (content1AtEnd(vehicle).value,content2AtEnd(vehicle).value) + "\n"
+            false
+          case Some(explorer) if explorer.value >= v =>
+            val node = explorer.value
+            acc += "\t\tnode:" + node + "\t" + " content:" + (content1AtNode(node).value,content2AtNode(node).value) + "\n"
+            explorerOpt = explorer.next
+            true
+        }){}
+        header+acc}).mkString("")
+  }
+
+
 
   override def checkInternals(c : Checker) : Unit = {
     check(c,routes.value)
