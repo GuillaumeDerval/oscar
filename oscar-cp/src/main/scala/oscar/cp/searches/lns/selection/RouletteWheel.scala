@@ -17,7 +17,7 @@ class RouletteWheel[T](
   private val lastSelected = mutable.HashMap[T, Int]() //caching for quick access to last selected elem(s)
   private val active = mutable.HashSet[Int](elems.indices: _*)
 
-  def this(elems: Array[T], rFactor: Double, reversed:Boolean){this(elems, Array.fill(elems.length){(Double.MaxValue - 1) / elems.length}, rFactor, reversed)}
+  def this(elems: Array[T], rFactor: Double, reversed:Boolean){this(elems, Array.fill(elems.length){if(reversed) 0 else Double.MaxValue/elems.length}, rFactor, reversed)}
 
   private def getIndex(elem: T): Int = lastSelected.getOrElse(elem, elems.indexOf(elem))
 

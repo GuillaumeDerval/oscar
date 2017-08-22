@@ -24,5 +24,5 @@ class XCSP(val instance: String, val bestObj: Int = Int.MaxValue) extends Benchm
 
   override def problem: String = "XCSP_" + IOUtils.getParentName(instance)
 
-  override def bestKnownObjective: Option[Int] = Some(bestObj)
+  override def bestKnownObjective: Option[Int] = if(bestObj == Int.MaxValue || bestObj == Int.MinValue) None else Some(bestObj)
 }

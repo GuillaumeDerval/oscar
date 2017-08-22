@@ -3,7 +3,7 @@ package oscar.anytime.lns.models
 import oscar.anytime.lns.Benchmark
 import oscar.cp.{CPIntVar, CPSolver, Weak, circuit, element, minAssignment, post, sum}
 
-class ProductMatrixTSP(val instance: String, val bestObj: Int = Int.MaxValue) extends  Benchmark{
+class ProductMatrixTSP(val instance: String, val bestObj: Int = 0) extends  Benchmark{
 
   val NO_EDGE = 400
   val FAKE_WEIGHT = 100

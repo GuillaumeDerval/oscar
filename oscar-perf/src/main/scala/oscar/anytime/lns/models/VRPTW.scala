@@ -11,7 +11,7 @@ import scala.collection.mutable.ArrayBuffer
   * @author Charles Thomas (cftmthomas@gmail.com)
   * based on VRPTW example by Renaud Hartert
   */
-class VRPTW(val instance: String, val bestObj: Int = Int.MaxValue) extends CPModel with Benchmark {
+class VRPTW(val instance: String, val bestObj: Int = 0) extends CPModel with Benchmark {
 
   val parsedInstance = VRPTWParser.parse(instance)
 

@@ -16,7 +16,7 @@ import scala.io.Source
  *
  * @author Pierre Schaus pschaus@gmail.com
  */
-class QuadraticAssignment(val instance: String, val bestObj: Int = Int.MaxValue) extends CPModel with Benchmark {
+class QuadraticAssignment(val instance: String, val bestObj: Int = 0) extends CPModel with Benchmark {
 
   // Read the data
   var lines = Source.fromFile(instance).getLines.toList.filter(_ != "")

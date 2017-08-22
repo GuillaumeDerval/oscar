@@ -13,7 +13,7 @@ CP=${SbtOutput##*$'\n'}
 ConfigsFile="$BenchDir/configs.txt"
 Out="ALNS-bench-results/$Date-$VNum"
 InstancesToRun="parallel-instances.txt"
-N=1
+N=10
 
 echo -e "\n\n\n"
 echo "Date -> $Date"

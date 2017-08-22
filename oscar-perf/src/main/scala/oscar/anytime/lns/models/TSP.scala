@@ -11,7 +11,7 @@ import scala.io.Source
   * Given a distance matrix between n cities,
   * find the shortest tour visiting each city exactly once.
   */
-class TSP(val instance: String, val bestObj: Int = Int.MaxValue) extends CPModel with Benchmark {
+class TSP(val instance: String, val bestObj: Int = 0) extends CPModel with Benchmark {
 
   //DATA:
   val lines: Array[String] = Source.fromFile(instance).getLines.toArray

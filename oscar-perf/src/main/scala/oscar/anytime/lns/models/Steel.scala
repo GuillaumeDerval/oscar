@@ -20,7 +20,7 @@ import scala.util.Random
  *
  * @author Pierre Schaus pschaus@gmail.com
  */
-class Steel(val instance: String, val bestObj: Int = Int.MaxValue) extends CPModel with Benchmark {
+class Steel(val instance: String, val bestObj: Int = 0) extends CPModel with Benchmark {
 
   def readData(): (Array[Int], Array[Int], Array[Int]) = {
     val lines = Source.fromFile(instance).getLines.reduceLeft(_ + " " + _)
