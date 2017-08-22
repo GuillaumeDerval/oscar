@@ -13,7 +13,7 @@ import scala.collection.immutable.SortedSet
  * @param maxDiameter is the maximal number of values in condSet that are monitored in the set, must be >=1.
  *                    the actual diameter is kept between 1 and tis value, lazily
  */
-class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default: Int,maxDiameter:Int = 2)
+class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default: Int, maxDiameter:Int = 2)
   extends IntInvariant with SetNotificationTarget{
 
   private val n = constArray.length

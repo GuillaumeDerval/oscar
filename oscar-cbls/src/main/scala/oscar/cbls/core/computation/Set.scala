@@ -153,11 +153,13 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
   private[this] var valueToValueWiseKeys:Array[DoublyLinkedList[ValueWiseKey]] = null
   private[this] val offsetForValueWiseKey = domain.min
 
+  @inline
   def addToValueWiseKeys(key:ValueWiseKey,value:Int):DLLStorageElement[ValueWiseKey] = {
     valueToValueWiseKeys(value - offsetForValueWiseKey).addElem(key)
   }
 
-  def valueWiseKeysAtValue(value:Int):DoublyLinkedList[ValueWiseKey] = valueToValueWiseKeys(value - offsetForValueWiseKey)
+  @inline
+  private def valueWiseKeysAtValue(value:Int):DoublyLinkedList[ValueWiseKey] = valueToValueWiseKeys(value - offsetForValueWiseKey)
 
   override def performPropagation(){performSetPropagation()}
 
@@ -215,36 +217,8 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
         if(valueToValueWiseKeys != null) {
           val currentValueWisePropagationWaveIdentifier = new ValueWisePropagationWaveIdentifier()
 
-          def notifyForValues(values : Iterable[Int]) {
-            val valuesIt = values.iterator
-            while(valuesIt.hasNext){
-              val value = valuesIt.next
-              val valueWiseKeys = valueWiseKeysAtValue(value)
-              val headPhantom = valueWiseKeys.phantom
-              var currentElement : DLLStorageElement[ValueWiseKey] = headPhantom.next
-              while (currentElement != headPhantom) {
-                val e : ValueWiseKey = currentElement.elem
-                val target = e.target
-                if(e.currentValueWisePropagationWaveIdentifier != currentValueWisePropagationWaveIdentifier) {
-                  e.currentValueWisePropagationWaveIdentifier = currentValueWisePropagationWaveIdentifier
-                  assert({
-                    this.model.notifiedInvariant = e.target.asInstanceOf[Invariant]
-                    true
-                  })
-                  target.notifySetChanges(this, Int.MinValue, addedValues, deletedValues, OldValue, m_NewValue)
-                  assert({
-                    this.model.notifiedInvariant = null
-                    true
-                  })
-                }
-                //we go to the next to be robust against invariant that change their dependencies when notified
-                //this might cause crash because dynamicallyListenedInvariants is a mutable data structure
-                currentElement = currentElement.next
-              }
-            }
-          }
-          notifyForValues(addedValues)
-          notifyForValues(deletedValues)
+          notifyForValues(addedValues, addedValues, deletedValues, currentValueWisePropagationWaveIdentifier)
+          notifyForValues(deletedValues, addedValues, deletedValues, currentValueWisePropagationWaveIdentifier)
         }
 
       }
@@ -255,6 +229,39 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
     this.removedValues = null
     nbTouched = 0
   }
+
+  @inline  //This method is awfully slow, ad we do not know why
+  private def notifyForValues(values : Iterable[Int],addedValues:Iterable[Int], deletedValues:Iterable[Int], currentValueWisePropagationWaveIdentifier:ValueWisePropagationWaveIdentifier) {
+    val valuesIt = values.iterator
+    while(valuesIt.hasNext){
+      val value = valuesIt.next()
+      val valueWiseKeys = valueWiseKeysAtValue(value)
+      val headPhantom = valueWiseKeys.phantom
+      var currentElement : DLLStorageElement[ValueWiseKey] = headPhantom.next
+      while (currentElement != headPhantom) {
+        val e : ValueWiseKey = currentElement.elem
+        if(e.currentValueWisePropagationWaveIdentifier != currentValueWisePropagationWaveIdentifier) {
+          e.currentValueWisePropagationWaveIdentifier = currentValueWisePropagationWaveIdentifier
+          val target = e.target
+          assert({
+            this.model.notifiedInvariant = target.asInstanceOf[Invariant]
+            true
+          })
+          target.notifySetChanges(this, Int.MinValue, addedValues, deletedValues, OldValue, m_NewValue)
+          assert({
+            this.model.notifiedInvariant = null
+            true
+          })
+        }
+        //we go to the next to be robust against invariant that change their dependencies when notified
+        //this might cause crash because dynamicallyListenedInvariants is a mutable data structure
+        currentElement = currentElement.next
+      }
+    }
+  }
+
+
+
 
   def value:SortedSet[Int] = getValue(false)
 
