@@ -86,6 +86,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                                            maxCheckpointLevel:Int,
                                            capacityName:String = "capacity")
   extends AbstractVehicleCapacity(n,v) with SeqNotificationTarget {
+
   require(contentAtVehicleStart.length==v)
   require(cMax >=0,"cMax should be >=0")
   require(contentAtVehicleStart.forall(_ <= cMax),"cannot exceed cMax in initial values")
@@ -294,32 +295,6 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
 
   override def toString : String = {
     "ForwardCumulativeConstraintOnVehicle(routes:" + routes.name + " n:" + n + " v:" + v + " cMax:" + cMax + " capacityName:" + capacityName + " violation:=" + violation.value +"){\n" +
-      ((0 until v).toList.map((vehicle:Int) =>
-
-      {
-        val header = "\tvehicle" + vehicle + " contentAtVehicleStart:" + contentAtVehicleStart(vehicle) + "\n"
-        var explorerOpt = routes.value.explorerAtAnyOccurrence(vehicle).get.next
-        var acc:String = ""
-
-        while(explorerOpt match{
-          case None => //at end of last vehicle
-            false
-          case Some(explorer) if explorer.value < v =>
-            //reached another vehicle
-            false
-          case Some(explorer) if explorer.value >= v =>
-            val node =explorer.value
-            acc += "\t\tnode:" + node + "\t" + " content:" + contentAtNode(node) + "\n"
-            explorerOpt = explorer.next
-            true
-        }){}
-        header+acc}
-        ).mkString("\n"))
-  }
-
-
-  override def toString : String = {
-    "ForwardCumulativeConstraintOnVehicle(routes:" + routes.name + " n:" + n + " v:" + v + " cMax:" + cMax + " capacityName:" + capacityName + " violation:=" + violation.value +"){\n" +
       (0 until v).toList.map((vehicle:Int) =>
       {
         val header = "\tvehicle" + vehicle + " contentAtVehicleStart:" + contentAtVehicleStart(vehicle) + "\n"
@@ -340,7 +315,6 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
         }){}
         header+acc}).mkString("")
   }
-
 
   override def checkInternals(c: Checker): Unit = {
     val (nodeToContent,_,vehicleStartPos) = AbstractVehicleCapacity.
