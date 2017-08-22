@@ -22,7 +22,7 @@ class TSP(val instance: String, val bestObj: Int = 0) extends CPModel with Bench
   //Model:
   val succ: Array[CPIntVar] = Array.fill(n)(CPIntVar(0 until n))
   val obj = CPIntVar(0 until Int.MaxValue)
-  add(minCircuit(succ, distMatrix,obj),Strong)
+  add(minCircuit(succ, distMatrix, obj), Strong)
 
   // Search
   minimize(obj)
@@ -36,7 +36,7 @@ class TSP(val instance: String, val bestObj: Int = 0) extends CPModel with Bench
   //TSP Utils (from Oscar CP -> Examples -> util.reader -> TSPUtils):
   def parseCoordinates(data: Array[String]): Array[(Int, Int)] = {
     var lines = data.drop(6)
-    val n = lines.length - 1
+    val n = if(lines.last == "EOF") lines.length - 1 else lines.length
     val coordinates = Array.tabulate(n)(i => {
       val l = lines.head.trim.split("[ ,\t]+").map(_.toInt)
       val x = l(1)
