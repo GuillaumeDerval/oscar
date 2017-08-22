@@ -23,6 +23,7 @@ import oscar.cbls.core.search.EasyNeighborhood
   * Created by f.germeau on 16/09/2016.
  * THIS is EXPERIMENTAL!!
   */
+@deprecated("this neighborhood seems buggy","")
 case class PickupDeliveryCoupleExchange(pdp: PDP with ClosestNeighbors,
                                         neighborhoodName:String = "PickupDeliveryCoupleExchange",
                                         best:Boolean = false,
