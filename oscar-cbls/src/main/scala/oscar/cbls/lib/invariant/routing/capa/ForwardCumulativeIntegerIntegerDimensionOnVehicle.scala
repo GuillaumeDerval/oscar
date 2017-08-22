@@ -160,7 +160,7 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
 
 
   override def toString : String = {
-    "ForwardCumulativeIntegeIntegerDimensionOnVehicle(routes:" + routes.name + " n:" + n + " v:" + v + " contentName:" + contentName +"){\n" +
+    "ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:" + routes.name + " n:" + n + " v:" + v + " contentName:" + contentName +"){\n" +
       (0 until v).toList.map((vehicle:Int) =>
       {
         val header = "\tvehicle" + vehicle + " contentAtStart:" + (content1AtStart,content2AtStart) + "\n"
