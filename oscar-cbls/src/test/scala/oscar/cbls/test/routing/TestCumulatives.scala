@@ -145,10 +145,15 @@ object TestCumulatives extends App{
   val doubleInsert = Profile((routeUnroutedPoint(10) andThen routeUnroutedPoint(10)) name ("doubleInsert"))
   val doubleRemove = Profile(( RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,selectNodeBehavior = Best())) andThen  RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,selectNodeBehavior = Best()) name ("doubleRemove"))
 
-  val search = new RoundRobin(List(onePtMove(100),doubleInsert,doubleRemove,swapInOut,vlsnInsert,threeOpt(5,false),twoOpt,segExchange(10))) exhaust onePtMove(10)
-
-
-  //(BestSlopeFirst(List(vlsnInsert, routeUnroutedPoint2, routeUnroutedPoint(10), swapInOut, onePtMove(10),twoOpt, threeOpt(10,true),vlsn1pt, routeUnroutedPoint)) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
+  val search = new RoundRobin(List(onePtMove(100),
+    doubleInsert,
+    doubleRemove,
+    swapInOut,
+    vlsnInsert,
+    vlsn1pt,
+    threeOpt(5,false),
+    twoOpt,
+    segExchange(10))) onExhaustRestartAfter (doubleRemove acceptAll(),5,myVRP.obj)
 
   //search.verbose = 1
   search.verboseWithExtraInfo(3, ()=> "" + myVRP)
