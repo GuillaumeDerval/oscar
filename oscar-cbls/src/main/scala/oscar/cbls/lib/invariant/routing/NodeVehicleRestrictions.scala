@@ -25,9 +25,20 @@ import oscar.cbls.lib.invariant.set.BelongsTo
 
 import scala.collection.immutable.SortedSet
 
+
 object NodeVehicleRestrictions{
-  def apply(routes:ChangingSeqValue,v:Int, nodeVehicleRestrictions:Iterable[(Int,Int)]):Array[CBLSIntVar] = {
-    val violationPerVehicle =  Array.tabulate(v)(vehicle => CBLSIntVar(routes.model,name="violation_of_nodeRoute restriction_vehicle:" + vehicle))
+  /**
+   * this invariant maintains a degree of violation for route restriction constraints.
+   * there is a set of restrictions node<->vehicle,
+   * the invariant maintains, for each vehicle, the number of node
+   * that it reaches although it should not, according to the mentioned restrictions.
+   * @param routes
+   * @param v
+   * @param nodeVehicleRestrictions the restrictions that we are monitoring
+   * @return an array telling the violation per vehicle
+   */
+  def apply(routes:ChangingSeqValue, v:Int, nodeVehicleRestrictions:Iterable[(Int,Int)]):Array[CBLSIntVar] = {
+    val violationPerVehicle =  Array.tabulate(v)(vehicle => CBLSIntVar(routes.model,name="violation of nodeVehicleRestriction for vehicle" + vehicle))
 
     new NodeVehicleRestrictions(routes, v, nodeVehicleRestrictions, violationPerVehicle)
 
