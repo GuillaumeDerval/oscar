@@ -28,11 +28,15 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
   protected var potentiallyRemovedNodes:SortedSet[Int] = SortedSet.empty
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate){
+    println("notifySeqChanges:" + changes)
     val tmp = digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(
       changes,
       toUpdateZonesAndVehicleStartAfter,
       potentiallyRemovedNodes,
       v.value)
+
+
+    println("toUpdateZonesAndVehicleStartAfter:" + printToUpdateZonesAndVehicleStartAfter(tmp._1))
 
     toUpdateZonesAndVehicleStartAfter = tmp._1
     potentiallyRemovedNodes = tmp._2

@@ -28,7 +28,7 @@ object TestCumulative extends App{
 
   val m = new Store(checker = Some(new ErrorChecker()))
 
-  val n = 10
+  val n = 15
   val v = 2
   val startingValue:Array[IntValue] = Array(CBLSIntConst(0),CBLSIntConst(1))
 
@@ -73,9 +73,11 @@ object TestCumulative extends App{
   println("contentAtEnd:" + contentAtEnd.mkString(","))
   println("lastPointOfVehicle:" + lastPointOfVehicle.mkString(","))
 
-  route.remove(7)
-  route.remove(7)
-  route.remove(6)
+  route.remove(3)
+  route.insertAtPosition(11,7)
+  route.remove(8)
+  route.move(2,4,7,false)
+
 
   m.propagate()
 
