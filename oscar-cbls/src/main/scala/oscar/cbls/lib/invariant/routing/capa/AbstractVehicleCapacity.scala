@@ -145,9 +145,9 @@ abstract class AbstractVehicleCapacity(n:Int,
         }else if(relativePosOfRemove == endZone){
           //remove is on the endZone
           if(shouldNextNodeBeIncluded) {
-            (startZone, endZone) :: shiftPlusDelta(tail, -1)
+            smartPrepend(startZone, endZone, shiftPlusDelta(tail, -1))
           }else{
-            require(tail.isEmpty)
+            require(tail.isEmpty,"deleted last node on route, yet we have more zoneToUpdate after the remove:" + tail)
             if(startZone == endZone){
               List.empty
             }else {
