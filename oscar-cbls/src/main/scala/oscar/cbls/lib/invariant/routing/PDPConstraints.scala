@@ -14,7 +14,7 @@ import oscar.cbls.lib.invariant.seq.Precedence
 object PDPConstraints {
   def apply(
              pdp: PDP,
-             restrictions: List[(Int,Int)] = List.empty
+             obligations: Map[Int,Set[Int]] = Map.empty
            ): (ConstraintSystem,ConstraintSystem) ={
     val fastConstraints = new ConstraintSystem(pdp.routes.model)
     val slowConstraints = new ConstraintSystem(pdp.routes.model)
@@ -25,7 +25,7 @@ object PDPConstraints {
     pDPConstraints.addPrecedencesConstraints()
     pDPConstraints.addMaxDetoursConstraints()
     pDPConstraints.addExclusiveCarConstraints()
-    pDPConstraints.addVehiclesRestrictions(restrictions)
+    pDPConstraints.addVehiclesObligations(obligations)
 
     (fastConstraints, slowConstraints)
   }
@@ -114,8 +114,8 @@ class PDPConstraints(pdp: PDP, fastConstraints: ConstraintSystem, slowConstraint
 
   }
 
-  def addVehiclesRestrictions(restrictions: List[(Int,Int)])={
+  def addVehiclesObligations(obligations: Map[Int,Set[Int]])={
     if(v > 1)
-      fastConstraints.post(EQ(0, Sum(NodeVehicleRestrictions(routes,v,restrictions))))
+      fastConstraints.post(EQ(0, Sum(NodeVehicleObligation(routes,v,n,obligations))))
   }
 }
