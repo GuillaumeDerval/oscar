@@ -155,7 +155,7 @@ case class RouteExchangeMove(firstVehicle:Int,
                              secondVehicleIsEmpty:Boolean,
                              override val objAfter: Int,
                              override val neighborhood: RouteExchange,
-                             override val neighborhoodName: String = "OnePointMoveMove")
+                             override val neighborhoodName: String = "RouteExchangeMove")
   extends VRPSMove(objAfter, neighborhood, neighborhoodName, neighborhood.vrp){
 
   override def impactedPoints: Iterable[Int] = ???
