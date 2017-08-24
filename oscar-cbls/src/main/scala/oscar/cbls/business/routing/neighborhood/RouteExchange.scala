@@ -143,10 +143,6 @@ case class RouteExchange(firstVehicles:()=>Iterable[Int],
 }
 
 /**
- * Models a one-point-move operator of a given VRP problem.
- * @param newPredecessor the place where insert the moving point.
- * @param objAfter the objective value if we performed this one-point-move operator.
- * @param neighborhood the originating neighborhood
  * @author renaud.delandtsheer@cetic.be
  */
 case class RouteExchangeMove(firstVehicle:Int,
