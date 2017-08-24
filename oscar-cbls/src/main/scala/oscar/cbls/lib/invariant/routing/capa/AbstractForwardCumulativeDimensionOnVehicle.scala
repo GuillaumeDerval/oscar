@@ -35,7 +35,6 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
       potentiallyRemovedNodes,
       v.value)
 
-
     println("toUpdateZonesAndVehicleStartAfter:" + printToUpdateZonesAndVehicleStartAfter(tmp._1))
 
     toUpdateZonesAndVehicleStartAfter = tmp._1
