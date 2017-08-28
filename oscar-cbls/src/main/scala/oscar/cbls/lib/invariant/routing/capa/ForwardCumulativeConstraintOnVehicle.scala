@@ -20,7 +20,7 @@ import oscar.cbls.algo.magicArray.MagicIntArrayStacked
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.functional.IntSequence
 import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls.core.propagation.{ErrorChecker, Checker}
 import oscar.cbls.lib.invariant.routing.convention.VehicleLocation
 
 
@@ -294,6 +294,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
   }
 
   override def toString : String = {
+    //this will trigger a propagation because of violation.value
     "ForwardCumulativeConstraintOnVehicle(routes:" + routes.name + " n:" + n + " v:" + v + " cMax:" + cMax + " capacityName:" + capacityName + " violation:=" + violation.value +"){\n" +
       (0 until v).toList.map((vehicle:Int) =>
       {
@@ -340,7 +341,6 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
         c.check(contentAtNode(node) == 0 ,Some("Error on content of unrouted node " + node + " is " + contentAtNode(node) + " should be 0"))
       }
     }
-
     vehicleStartPos.checkOnSequence(routes.value)
   }
 }

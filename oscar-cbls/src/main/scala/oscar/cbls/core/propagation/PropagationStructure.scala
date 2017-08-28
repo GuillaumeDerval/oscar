@@ -309,7 +309,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
   final def propagate(UpTo: PropagationElement = null) {
     if (!propagating) {
       if (UpTo != null && !debugMode) {
-        //partial propagation, only if requested
+        //partial propagation, only if requested and not in debug mode (so in debug mode, it will always be total, and with debug)
         val Track = fastPropagationTracks.getOrElse(UpTo.uniqueID, null)
         val SameAsBefore = Track != null && previousPropagationTrack == Track
         propagating = true

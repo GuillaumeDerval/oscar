@@ -148,7 +148,6 @@ abstract class AbstractVehicleCapacity(n:Int,
             //(startZone, endZone) :: shiftPlusDelta(tail, -1)
             smartPrepend(startZone, endZone, shiftPlusDelta(tail, -1))
           }else{
-            println("TOTO")
             require(tail.isEmpty,"deleted last node on route, yet we have more zoneToUpdate after the remove:" + tail)
             if(startZone == endZone){
               List.empty
@@ -579,7 +578,7 @@ object AbstractVehicleCapacity{
   def computeNodeToContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch[T]
   (n:Int,
    v:Int,
-   op:(Int,Int,T) => T,
+   op:(Int,Int,T) => T,  //fomNode,toNode,contentAtFomNode,contentAtToNode
    getContentAtVehicleStart:Int=>T,
    s:IntSequence,
    defaultVehicleContentForUnroutedNodes:T)
