@@ -63,7 +63,8 @@ echo -e "\nInstances:"
 cat ${InstancesToRun}
 echo -e "\n\n\n"
 
-for i in {1..$N}; do
+for ((i=1; i<=$N; i++)); do
+    echo "Run $i:";
     $BIN/parallel --gnu --jobs 80% run_search ${CP} ${Out} :::: ${InstancesToRun} :::: ${ConfigsFile};
 done
 

@@ -2,8 +2,8 @@ package oscar.anytime.lns.benchmarks.vrptw
 
 import oscar.anytime.lns.models.VRPTW
 
-object R104 extends App {
-  new VRPTW("data/VRPTW/Solomon/R104.txt", 100731).main(args)
+object C105 extends App {
+  new VRPTW("data/VRPTW/Solomon/C105.txt", 82901).main(args)
 }
 
 

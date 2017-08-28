@@ -1,5 +1,6 @@
 --timeout 600 --name Random --selection RWheel --metric TTI --coupled false --learning false --relax Random --search ConfOrder --val-learn false
 --timeout 600 --name PredKopt --selection RWheel --metric TTI --coupled false --learning false --relax PredRelaxKopt --search ConfOrder --val-learn false
 --timeout 600 --name PredSeq --selection RWheel --metric TTI --coupled false --learning false --relax PredRelaxSeqFixed --search ConfOrder --val-learn false
---timeout 600 --name AllPred --selection RWheel --metric TTI --coupled false --learning false --relax Random PredRelaxKopt PredRelaxSeqFixed --search ConfOrder --val-learn false
---timeout 600 --name AllPred --selection RWheel --metric AvgImprovRatio --coupled false --learning false --relax Random PredRelaxKopt PredRelaxSeqFixed --search ConfOrder --val-learn false
+--timeout 600 --name AllPredTTI --selection RWheel --metric TTI --coupled false --learning false --relax Random PredRelaxKopt PredRelaxSeqFixed --search ConfOrder --val-learn false
+--timeout 600 --name AllPredAvgRatio --selection RWheel --metric AvgImprovRatio --coupled false --learning false --relax Random PredRelaxKopt PredRelaxSeqFixed --search ConfOrder --val-learn false
+--timeout 600 --name AllPredRandom --selection RANDOM --coupled false --learning false --relax Random PredRelaxKopt PredRelaxSeqFixed --search ConfOrder --val-learn false
