@@ -369,7 +369,7 @@ abstract class AbstractVehicleCapacity(n:Int,
 
     for (vehicle <- zonesToUpdate.keys) {
       val theZone = zonesToUpdate.get(vehicle).get
-      println("toUpodateZone vehicle:" + vehicle + "  zone:" + theZone)
+      //println("toUpodateZone vehicle:" + vehicle + "  zone:" + theZone)
       require(0 <= vehicle)
       require(vehicle < v)
 
