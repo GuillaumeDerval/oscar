@@ -45,12 +45,12 @@ object ForwardCumulativeIntegerDimensionOnVehicle {
             defaultForUnroutedNodes:Int,
             minContent:Int = 0,
             maxContent:Int = Int.MaxValue,
-            contentName:String = "content"):(Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar],ForwardCumulativeIntegerDimensionOnVehicle) ={
+            contentName:String = "content",fullDebug:Boolean = false):(Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar],ForwardCumulativeIntegerDimensionOnVehicle) ={
     val contentAtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent).union(defaultForUnroutedNodes), contentName + " at node "+node))
     val contentAtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent), contentName + " at end of route " + vehicle))
     val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, 0 to n-1, "last point of vehicle" + vehicle))
 
-    val invariant = new ForwardCumulativeIntegerDimensionOnVehicle(routes,n,v,op,contentAtStart,contentAtNode,contentAtEnd,lastPointOfVehicle,defaultForUnroutedNodes,contentName)
+    val invariant = new ForwardCumulativeIntegerDimensionOnVehicle(routes,n,v,op,contentAtStart,contentAtNode,contentAtEnd,lastPointOfVehicle,defaultForUnroutedNodes,contentName,fullDebug)
     (contentAtNode,contentAtEnd,lastPointOfVehicle,invariant)
   }
 }
@@ -64,8 +64,9 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
                                                  contentAtEnd:Array[CBLSIntVar],
                                                  lastPointOfVehicle:Array[CBLSIntVar],
                                                  defaultVehicleContentForUnroutedNodes:Int,
-                                                 contentName:String = "content")
-  extends AbstractForwardCumulativeDimensionOnVehicle(routes,n,v) with IntNotificationTarget{
+                                                 contentName:String = "content",
+                                                 fullDebug:Boolean = false)
+  extends AbstractForwardCumulativeDimensionOnVehicle(routes,n,v,fullDebug) with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(routes)
   registerStaticAndDynamicDependencyArrayIndex(contentAtStart)

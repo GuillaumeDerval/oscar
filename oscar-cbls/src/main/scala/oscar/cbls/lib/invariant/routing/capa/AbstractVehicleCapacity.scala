@@ -18,7 +18,7 @@ package oscar.cbls.lib.invariant.routing.capa
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.functional.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation._
-import oscar.cbls.lib.invariant.routing.convention.{ConcreteVehicleLocation, VehicleLocation}
+import oscar.cbls.lib.invariant.routing.convention.{RoutingConventionMethods, ConcreteVehicleLocation, VehicleLocation}
 
 /**
  * Maintains the content of vehicles at each node and the starting position of each vehicle
@@ -219,7 +219,8 @@ abstract class AbstractVehicleCapacity(n:Int,
         case Some(x) if x >= v => true
         case _ => false
       }
-      val shouldNextNodeBeIncludedInVehicleTo = m.newValue.valueAtPosition(m.oldPosToNewPos(m.toIncluded).get + 1) match {
+
+      val shouldNextNodeBeIncludedInVehicleTo = sequenceBeforeMove.valueAtPosition(m.after+1) match {
         case Some(x) if x >= v => true
         case _ => false
       }
@@ -304,7 +305,10 @@ abstract class AbstractVehicleCapacity(n:Int,
       //building the sequence to insert back. also adding a compulsory zone at start of this zone (since its pred has changed)
       val relativeZonesToInsert =
         if (m.flip) List((0, nbPointsInMovedSegment - 1))
-        else smartPrepend(0, 0, removedZones)
+         else smartPrepend(0, 0, removedZones)
+
+      //println("shouldNextNodeBeIncludedInVehicleTo:" + shouldNextNodeBeIncludedInVehicleTo)
+      //println("relativeZonesToInsert:" + relativeZonesToInsert)
 
       val relativeAfterInNewSequence = m.oldPosToNewPos(m.after).get - vehicleLocationAfterMove.startPosOfVehicle(destinationVehicle)
       val relativeAfterWhenSegmentIsRemoved = relativeAfterInNewSequence
@@ -357,6 +361,58 @@ abstract class AbstractVehicleCapacity(n:Int,
       zonesToUpdateWithVehicleFromUpdated.insert(destinationVehicle, updatedZonesTo)
     }
   }
+
+
+  //this is a debug procedure
+  def checkZonesToUpdate(zonesToUpdate: RedBlackTreeMap[List[(Int, Int)]],
+                         sequenceAfterMovesBeforeUpdates:IntSequence) {
+
+    for (vehicle <- zonesToUpdate.keys) {
+      val theZone = zonesToUpdate.get(vehicle).get
+      println("toUpodateZone vehicle:" + vehicle + "  zone:" + theZone)
+      require(0 <= vehicle)
+      require(vehicle < v)
+
+      val startPosOfVehicle = sequenceAfterMovesBeforeUpdates.positionOfAnyOccurrence(vehicle).get
+      val lastPointPosOfVehicle = if (vehicle == v - 1) sequenceAfterMovesBeforeUpdates.size - 1 else sequenceAfterMovesBeforeUpdates.positionOfAnyOccurrence(vehicle + 1).get - 1
+      val vehicleRouteLength = lastPointPosOfVehicle - startPosOfVehicle
+
+      if(theZone.nonEmpty) {
+        val (start, end) = checkZone(theZone)
+
+        require(start >= 0)
+        require(end <= vehicleRouteLength, "end:" + end + " vehicleRouteLength:" + vehicleRouteLength + " theZone:" + theZone + " vehicle:" + vehicle + " routes:" + sequenceAfterMovesBeforeUpdates)
+      }
+    }
+
+    def checkZone(toUpdateZone : List[(Int, Int)]) : (Int, Int) = {
+      toUpdateZone match {
+        case List((a, b)) =>
+          require(a <= b)
+          (a, b)
+        case (a, b) :: tail =>
+          require(a <= b)
+          (a, checkZoneLoop(b, tail))
+
+      }
+    }
+    def checkZoneLoop(endOfPrev : Int, toUpdateZone : List[(Int, Int)]) : Int = {
+      toUpdateZone match {
+        case List((a, b)) =>
+          require(a <= b)
+          require(endOfPrev + 1 < a)
+          b
+        case (a, b) :: tail =>
+          require(a <= b)
+          require(endOfPrev + 1 < a)
+          checkZoneLoop(b, tail)
+      }
+    }
+  }
+
+
+
+
 
   def setNodesUnrouted(unroutedNodes:Iterable[Int])
 

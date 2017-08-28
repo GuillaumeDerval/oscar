@@ -84,7 +84,8 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                                            contentAtVehicleStart:Array[Int],
                                            val violation:CBLSIntVar,
                                            maxCheckpointLevel:Int,
-                                           capacityName:String = "capacity")
+                                           capacityName:String = "capacity",
+                                           fullDebug:Boolean = false)
   extends AbstractVehicleCapacity(n,v) with SeqNotificationTarget {
 
   require(contentAtVehicleStart.length==v)
@@ -151,13 +152,16 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
   }
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate){
+
     val (toUpdateZonesAndVehicleStartAfter,potentiallyRemovedNodes) =
       digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(changes,Some(RedBlackTreeMap.empty[List[(Int,Int)]],currentVehicleLocation),List.empty,v.value)
+
 
     setNodesUnrouted(potentiallyRemovedNodes)
 
     toUpdateZonesAndVehicleStartAfter match{
       case Some((vehiclesToZonesToUpdate,vehicleLocation)) =>
+        if(fullDebug) {checkZonesToUpdate(vehiclesToZonesToUpdate, changes.newValue)}
         updateVehicleContentOnAllVehicle(changes.newValue,
           vehiclesToZonesToUpdate,
           vehicleLocation)
@@ -172,6 +176,14 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                                                                        potentiallyRemovedPoints:List[Int],
                                                                        previousSequence:IntSequence)
   :(Option[(RedBlackTreeMap[List[(Int,Int)]],VehicleLocation)],List[Int]) = {
+
+    if(fullDebug) {
+      toUpdateZonesAndVehiceStartOpt match {
+        case Some((list, _)) =>
+          checkZonesToUpdate(list, previousSequence : IntSequence)
+        case _ => ;
+      }
+    }
 
     changes match {
       case s@SeqUpdateInsert(value : Int, posOfInsert : Int, prev : SeqUpdate) =>

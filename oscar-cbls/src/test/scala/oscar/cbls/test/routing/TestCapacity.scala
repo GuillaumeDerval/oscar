@@ -51,7 +51,7 @@ class RoutingWithCapacityMax(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:S
   maxCapa,
   Array.tabulate(v)(deltaAtNode),
   violation,
-  6)
+  6,fullDebug=true)
 
   val violation2 = new CBLSIntVar(routes.model, 0, 0 to Int.MaxValue, "violation of capacity test2")
   val contentConstraint2 = new ForwardCumulativeConstraintOnVehicle(
@@ -66,7 +66,7 @@ class RoutingWithCapacityMax(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:S
   maxCapa-1,
   Array.tabulate(v)(deltaAtNode),
   violation2,
-  6)
+  6,fullDebug=true)
 
   val obj = new CascadingObjective(
     contentConstraint.violation,
@@ -92,7 +92,7 @@ object TestCapacity extends App{
 
   val (symmetricDistanceMatrix,pointsList) = RoutingMatrixGenerator(n)
   //  println("restrictions:" + restrictions)
-  val model = new Store(checker = Some(new ErrorChecker()))
+  val model = new Store() //checker = Some(new ErrorChecker()))
 
 
   println("Delta At Nodes: " )
@@ -138,11 +138,17 @@ object TestCapacity extends App{
 
   val swapInOut = Profile((remove andThen routeUnroutedPoint(10)) name ("SWAPInsert"))
   val doubleInsert = Profile((routeUnroutedPoint(10) andThen routeUnroutedPoint(10)) name ("doubleInsert"))
-  val doubleRemove = Profile(( RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,selectNodeBehavior = Best())) andThen  RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,selectNodeBehavior = Best()) name ("doubleRemove"))
+  val doubleRemove = Profile(( RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,selectNodeBehavior = First())) andThen
+    RemovePoint(() => myVRP.routed.value.filter(_>=v), myVRP,selectNodeBehavior = Best()) name ("doubleRemove"))
 
   val search = new RoundRobin(List(onePtMove(100),
     doubleInsert,
+    doubleInsert,
+    swapInOut,
     doubleRemove,
+    swapInOut,
+    doubleInsert,
+
     swapInOut,
     Profile(vlsnInsert),
     Profile(vlsnInsert andThen vlsn1pt),

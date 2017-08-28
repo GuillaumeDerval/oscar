@@ -16,7 +16,7 @@ import scala.collection.immutable.SortedSet
  */
 abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqValue,
                                                            n:Int,
-                                                           v:Int)
+                                                           v:Int,fullDebug:Boolean = false)
   extends AbstractVehicleCapacity(n,v)
   with SeqNotificationTarget{
 
@@ -29,6 +29,7 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate){
     println("notifySeqChanges:" + changes)
+    println("seq After:" + changes.newValue)
     val tmp = digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(
       changes,
       toUpdateZonesAndVehicleStartAfter,
@@ -37,10 +38,19 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
 
     println("toUpdateZonesAndVehicleStartAfter:" + printToUpdateZonesAndVehicleStartAfter(tmp._1))
 
+    if(fullDebug) {
+      tmp._1 match {
+        case Some((list, _)) =>
+            checkZonesToUpdate(list, changes.newValue)
+        case _ => ;
+      }
+    }
+
     toUpdateZonesAndVehicleStartAfter = tmp._1
     potentiallyRemovedNodes = tmp._2
     scheduleForPropagation()
   }
+
 
   private def printToUpdateZonesAndVehicleStartAfter(toUpdateZonesAndVehicleStartAfter:Option[(RedBlackTreeMap[List[(Int,Int)]],VehicleLocation)]):String = {
     toUpdateZonesAndVehicleStartAfter match{
@@ -138,7 +148,6 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
             (Some((zonesAfterPrev, vehicleLocationToSave)), removedPointsAfterPrev)
           case (None,potentiallyRemovedPointsAfterPrev) =>
 
-            //TODO: strange that vehicle location was not saved on stack here.
             val vehicleLocationToSave = VehicleLocation.apply(v,node => prev.newValue.positionOfAnyOccurrence(node).get)
             vehicleLocationAndCheckpointStack.defineCheckpoint(prev.newValue,checkpointLevel,vehicleLocationToSave)
 

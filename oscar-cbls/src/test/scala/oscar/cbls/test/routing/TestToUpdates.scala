@@ -40,7 +40,7 @@ object TestCumulative extends App{
   //op: (fromNode,toNode,contentAtFromNode)=> contentAtToNode
   def op(fromNode:Int,toNode:Int,contentAtFromNode:Int) = if(toNode%2 == 0) fromNode + toNode + contentAtFromNode else toNode
 
-  val  (contentAtNode,contentAtEnd,lastPointOfVehicle,inv) = ForwardCumulativeIntegerDimensionOnVehicle(route,n,v,op,startingValue,-1)
+  val (contentAtNode,contentAtEnd,lastPointOfVehicle,inv) = ForwardCumulativeIntegerDimensionOnVehicle(route,n,v,op,startingValue,-1,fullDebug=true)
 
   m.close()
 
@@ -57,33 +57,19 @@ object TestCumulative extends App{
   println("contentAtNode:" + contentAtNode.mkString(","))
   println("contentAtEnd:" + contentAtEnd.mkString(","))
   println("lastPointOfVehicle:" + lastPointOfVehicle.mkString(","))
-
+  println(inv)
   println()
 
-  route.insertAtPosition(9,5)
-  route.insertAtPosition(8,8)
-
-  route.move(2,6,8,false)
+route.move(3,5,6,true)
 
   m.propagate()
 
   println("routes:" + route.value)
-  println(inv)
   println("contentAtNode:" + contentAtNode.mkString(","))
   println("contentAtEnd:" + contentAtEnd.mkString(","))
   println("lastPointOfVehicle:" + lastPointOfVehicle.mkString(","))
-
-  route.remove(3)
-  route.insertAtPosition(11,7)
-  route.remove(8)
-  route.move(2,4,7,false)
-
-
-  m.propagate()
-
-  println("routes:" + route.value)
   println(inv)
-
+  println()
 
   /*
 
