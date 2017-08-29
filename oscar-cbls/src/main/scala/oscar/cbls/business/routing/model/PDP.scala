@@ -227,7 +227,7 @@ class PDP(override val n:Int,
     */
   val contentsFlow:Array[Int] = Array.tabulate(n)(_ => 0)
 
-  val contentAtNode = new CBLSIntVar(routes.model, 0, 0 to Int.MaxValue, "violation of capacity " + "Content at node")
+  val violationOfContentAtNode = new CBLSIntVar(routes.model, 0, 0 to Int.MaxValue, "violation of capacity " + "Content at node")
 
   var contentConstraint: ForwardCumulativeConstraintOnVehicle = _
 
@@ -243,7 +243,6 @@ class PDP(override val n:Int,
     require(contents.length == n,
       "Contents must have the size of the number of nodes (n)." +
         "\nn = " + n + ", contents's size : " + contents.length)
-    val vehicleMaxCapacity = vehiclesMaxCapacities.max
     for(i <- contents.indices) {
       contentsFlow(i) = contents(i)
     }
@@ -252,8 +251,8 @@ class PDP(override val n:Int,
       (from,to,fromContent) => fromContent + contentsFlow(to),
       vehiclesMaxCapacities.max,
       vehiclesMaxCapacities.map(vehiclesMaxCapacities.max-_),
-      contentAtNode,
-      chains.map(_.length).max*2,
+      violationOfContentAtNode,
+      if(chains.isEmpty) 1 else chains.map(_.length).max*2,
       "Content at node")
   }
 
@@ -363,7 +362,7 @@ class PDP(override val n:Int,
                                   )(node:Int): Iterable[Int] ={
     def buildPotentialNeighbors(explorer: Option[IntSequenceExplorer], potentialNeighbors: List[Int]): List[Int] = {
       if (explorer.isEmpty)
-        potentialNeighbors
+        potentialNeighbors.reverse
       else if (explorer.get.value < v && !availableVehicles.value.contains(explorer.get.value))
         buildPotentialNeighbors(explorer.get.prev, potentialNeighbors)
       else
@@ -378,8 +377,9 @@ class PDP(override val n:Int,
       node,
       potentialNeighbors,  // arrival time of a node is 0 by default.
       filter,
+      k,
       List.empty[(Int,Int)]
-    ).take(k)
+    )
   }
 
   /**
@@ -391,8 +391,9 @@ class PDP(override val n:Int,
   private def buildClosestNeighbor(node: Int,
                                    neighbors: List[Int],
                                    filter: (Int,Int) => Boolean = (_,_) => true,
+                                   k: Int,
                                    closestNeighbors: List[(Int,Int)]): List[Int] ={
-    if(neighbors.isEmpty)
+    if(neighbors.isEmpty || closestNeighbors.size == k)
       return closestNeighbors.sortBy(_._2).map(_._1)
     val neighbor = neighbors.head
     if (filter(neighbor,node)  &&
@@ -401,9 +402,9 @@ class PDP(override val n:Int,
       val neighborToNode = max(leaveTimes(neighbor).value + travelDurationMatrix.getTravelDuration(neighbor, 0, node), earlylines(node))
       val neighborToNodeToNext = neighborToNode + taskDurations(node) + travelDurationMatrix.getTravelDuration(node, 0, nextOfNeighbor)
       if (neighborToNodeToNext <= deadlines(nextOfNeighbor))
-        return buildClosestNeighbor(node, neighbors.tail, filter, List((neighbor,neighborToNodeToNext)) ++ closestNeighbors)
+        return buildClosestNeighbor(node, neighbors.tail, filter, k, List((neighbor,neighborToNodeToNext)) ++ closestNeighbors)
     }
-    buildClosestNeighbor(node, neighbors.tail, filter, closestNeighbors)
+    buildClosestNeighbor(node, neighbors.tail, filter, k, closestNeighbors)
   }
 
   /**
@@ -424,6 +425,6 @@ class PDP(override val n:Int,
     val pickup = getRelatedPickup(node)
     val pickupEarlyLine = earlylines(pickup)
     val neighbors = routeOfNode.getOrElse(getRouteOfVehicle(getVehicleOfNode(node))).dropWhile(leaveTimes(_).value < pickupEarlyLine)
-    buildClosestNeighbor(node, neighbors, filter, List.empty).take(k)
+    buildClosestNeighbor(node, neighbors, filter, k, List.empty)
   }
 }

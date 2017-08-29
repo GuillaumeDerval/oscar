@@ -90,7 +90,7 @@ class PDPConstraints(pdp: PDP, fastConstraints: ConstraintSystem, slowConstraint
 
 
   def addCapacityConstraint(): Unit ={
-    fastConstraints.post(EQ(pdp.contentAtNode,0))
+    fastConstraints.post(EQ(pdp.violationOfContentAtNode,0))
   }
 
   /**
