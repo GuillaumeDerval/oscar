@@ -356,7 +356,7 @@ class PDP(override val n:Int,
     * @param node the node we want to find neighbor for
     * @return the k closest neighbor of the node
     */
-  def buildCosestNeighborsInTime(k: Int, filter: (Int,Int) => Boolean = (_,_) => true)(node:Int): Iterable[Int] = {
+  def computeClosestNeighborsInTime(k: Int = Int.MaxValue, filter: (Int,Int) => Boolean = (_,_) => true)(node:Int): Iterable[Int] = {
     val iterator = ClosestNeighborsInTime(filter,node)
     var kClosestNeighborsIntTime = if(iterator.hasNext)List(iterator.next()) else List.empty
     while(iterator.hasNext && kClosestNeighborsIntTime.size < k)
@@ -365,7 +365,7 @@ class PDP(override val n:Int,
     kClosestNeighborsIntTime.reverse
   }
 
-  private case class ClosestNeighborsInTime(filter: (Int,Int,) => Boolean = (_,_) => true, node:Int) extends Iterator[Int]{
+  private case class ClosestNeighborsInTime(filter: (Int,Int) => Boolean = (_,_) => true, node:Int) extends Iterator[Int]{
     var explorer = sortedRouteByEarlylines.positionOfSmallestGreaterOrEqual(node)(deadlines(node))
     val vehicles = availableVehicles.value.toIterator
     val usingExplorer = explorer.isDefined
