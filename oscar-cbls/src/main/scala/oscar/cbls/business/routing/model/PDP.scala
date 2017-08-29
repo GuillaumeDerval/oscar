@@ -3,13 +3,13 @@ package oscar.cbls.business.routing.model
 import oscar.cbls.algo.seq.functional.IntSequenceExplorer
 import oscar.cbls.core.computation._
 import oscar.cbls.lib.invariant.routing.MovingVehicles
-import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeIntegerIntegerDimensionOnVehicle, ForwardCumulativeConstraintOnVehicle}
+import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerIntegerDimensionOnVehicle}
 import oscar.cbls.lib.invariant.seq.SortSequence
 import oscar.cbls.lib.invariant.set.{Diff, IncludedSubsets, ValuesInViolatedClauses}
 
 import scala.collection.SortedSet
 import scala.collection.immutable.{HashMap, List}
-import scala.math._
+import scala.math.{max, _}
 
 /**
   * Created by fg on 28/04/17.
@@ -352,79 +352,59 @@ class PDP(override val n:Int,
 
   /**
     * This method compute the closest neighbor of a node base on arrivalTime.
-    * @param k  the max number of closestNeighbor we want to inspect
     * @param filter an undefined filter used to filter the neighbor (neighbor,node) => Boolean
     * @param node the node we want to find neighbor for
     * @return the k closest neighbor of the node
     */
-  def computeClosestNeighborsInTime(k: Int = Int.MaxValue,
-                                    filter: (Int,Int) => Boolean = (_,_) => true
-                                  )(node:Int): Iterable[Int] ={
-    def buildPotentialNeighbors(explorer: Option[IntSequenceExplorer], potentialNeighbors: List[Int]): List[Int] = {
-      if (explorer.isEmpty)
-        potentialNeighbors.reverse
-      else if (explorer.get.value < v && !availableVehicles.value.contains(explorer.get.value))
-        buildPotentialNeighbors(explorer.get.prev, potentialNeighbors)
-      else
-        buildPotentialNeighbors(explorer.get.prev, List(explorer.get.value) ++ potentialNeighbors)
-    }
-    val explorer = sortedRouteByEarlylines.positionOfSmallestGreaterOrEqual(node)(deadlines(node))
-    val potentialNeighbors = (
-    if(explorer.isDefined) buildPotentialNeighbors(explorer,List.empty)
-    else availableVehicles.value.toList.map(x => prev(x).value)).
-      filter(prevNode => if(prevNode < v) vehiclesMaxCapacities(prevNode) >= contentsFlow(node) else true)
-    buildClosestNeighbor(
-      node,
-      potentialNeighbors,  // arrival time of a node is 0 by default.
-      filter,
-      k,
-      List.empty[(Int,Int)]
-    )
+  def buildCosestNeighborsInTime(k: Int, filter: (Int,Int) => Boolean = (_,_) => true)(node:Int): Iterable[Int] = {
+    val iterator = ClosestNeighborsInTime(filter,node)
+    var kClosestNeighborsIntTime = if(iterator.hasNext)List(iterator.next()) else List.empty
+    while(iterator.hasNext && kClosestNeighborsIntTime.size < k)
+      kClosestNeighborsIntTime = iterator.next :: kClosestNeighborsIntTime
+
+    kClosestNeighborsIntTime.reverse
   }
 
-  /**
-    *
-    * @param neighbors
-    * @param closestNeighbors
-    * @return
-    */
-  private def buildClosestNeighbor(node: Int,
-                                   neighbors: List[Int],
-                                   filter: (Int,Int) => Boolean = (_,_) => true,
-                                   k: Int,
-                                   closestNeighbors: List[(Int,Int)]): List[Int] ={
-    if(neighbors.isEmpty || closestNeighbors.size == k)
-      return closestNeighbors.sortBy(_._2).map(_._1)
-    val neighbor = neighbors.head
-    if (filter(neighbor,node)  &&
-      leaveTimes(neighbor).value + travelDurationMatrix.getTravelDuration(neighbor, 0, node) <= deadlines(node)) {
-      val nextOfNeighbor = next(neighbor).value
-      val neighborToNode = max(leaveTimes(neighbor).value + travelDurationMatrix.getTravelDuration(neighbor, 0, node), earlylines(node))
-      val neighborToNodeToNext = neighborToNode + taskDurations(node) + travelDurationMatrix.getTravelDuration(node, 0, nextOfNeighbor)
-      if (neighborToNodeToNext <= deadlines(nextOfNeighbor))
-        return buildClosestNeighbor(node, neighbors.tail, filter, k, List((neighbor,neighborToNodeToNext)) ++ closestNeighbors)
+  private case class ClosestNeighborsInTime(filter: (Int,Int,) => Boolean = (_,_) => true, node:Int) extends Iterator[Int]{
+    var explorer = sortedRouteByEarlylines.positionOfSmallestGreaterOrEqual(node)(deadlines(node))
+    val vehicles = availableVehicles.value.toIterator
+    val usingExplorer = explorer.isDefined
+    var nextNeighbor: Option[Int] = generateNextNode()
+
+    def generateNextNode(): Option[Int] ={
+      if(usingExplorer){
+        if(explorer.isDefined) {
+          val neighbor = explorer.get.value
+          explorer = explorer.get.prev
+          if(filter(neighbor,node)){
+            if(isDelivery(neighbor))
+              return Some(neighbor)
+            else {
+              if (leaveTimes(neighbor).value + travelDurationMatrix.getTravelDuration(neighbor, 0, node) <= deadlines(node)) {
+                val nextNodeInChainOfNeighbor = nextNode(neighbor).get
+                val neighborToNode = Math.max(leaveTimes(neighbor).value + travelDurationMatrix.getTravelDuration(neighbor, 0, node), earlylines(node))
+                val neighborToNodeToNext = neighborToNode + taskDurations(node) + travelDurationMatrix.getTravelDuration(node, 0, nextNodeInChainOfNeighbor)
+                if (neighborToNodeToNext <= deadlines(nextNodeInChainOfNeighbor))
+                  return Some(neighbor)
+              }
+            }
+          }
+        }
+      }else{
+        if(vehicles.hasNext)
+          return Some(vehicles.next())
+      }
+      None
     }
-    buildClosestNeighbor(node, neighbors.tail, filter, k, closestNeighbors)
+
+    override def hasNext: Boolean = nextNeighbor.isDefined
+
+    override def next(): Int = {
+      require(nextNeighbor.isDefined, "Next Node must be defined")
+      val result = nextNeighbor.get
+      nextNeighbor = generateNextNode()
+      result
+    }
   }
 
-  /**
-    * This method compute the closest neighbor of a node base on arrivalTime.
-    * It filter the clusters to avoid checking neighbor belonging to cluster
-    * before the prevNode's cluster or after nextNode's cluster.
-    * @param k  the max number of closestNeighbor we want to inspect
-    * @param routeOfNode The route we want to find closest neighbor within
-    *                    If you use this method many times, try to get the route once and for all
-    *                    in the calling method.
-    * @param filter an undefined filter used to filter the neighbor (neighbor,node) => Boolean
-    * @param node the node we want to find neighbor for
-    * @return the k closest neighbor of the node
-    */
-  def computeClosestNeighborsInTimeInRoute(k: Int = Int.MaxValue,
-                                      routeOfNode: Option[List[Int]],
-                                      filter: (Int,Int) => Boolean = (_,_) => true)(node:Int): Iterable[Int] ={
-    val pickup = getRelatedPickup(node)
-    val pickupEarlyLine = earlylines(pickup)
-    val neighbors = routeOfNode.getOrElse(getRouteOfVehicle(getVehicleOfNode(node))).dropWhile(leaveTimes(_).value < pickupEarlyLine)
-    buildClosestNeighbor(node, neighbors, filter, k, List.empty)
-  }
 }
