@@ -154,7 +154,8 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   }
 
   def get_array_bool_or(as: Array[BooleanVariable], r: BooleanVariable, ann: List[Annotation]) = {
-    if(false && r.isTrue && as.forall(v =>
+    val experimental = false
+    if(experimental && r.isTrue && as.forall(v =>
                                v.definingConstraint.isInstanceOf[Option[ReifiedConstraint]] &&
                                  v.definingConstraint.asInstanceOf[Option[ReifiedConstraint]].isDefined &&
                                  v.definingConstraint.asInstanceOf[Option[ReifiedConstraint]].get.isInstanceOf[reif] &&
@@ -202,7 +203,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
           case _ => Minus(1,getCBLSVar(v))
         }
         case None => Minus(1,getCBLSVar(v))
-      }) ++ bs.map( v => Minus(1,getCBLSVar(v)))))
+      }) ++ bs.map( v => getCBLSVar(v))))
     } else {
       //GE(Minus(Sum(as.map(getCBLSVar(_))),Prod(bs.map(getCBLSVar(_)))),0)
       GE(Sum(as.map(getCBLSVar(_))), Prod(bs.map(getCBLSVar(_))))
@@ -608,7 +609,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   
 
   def add_constraint(constraint: CBLSConstraint) = {
-    c.add(constraint) //, CBLSIntVar(c.model,1,1 to 1000000, "Weight for "+ constraint.toString))
+    c.add(constraint)// , CBLSIntVar(c.model,1,1 to 1000000, "Weight for "+ constraint.toString))
   }
 
   def construct_and_add_constraint(constraint: Constraint) = {

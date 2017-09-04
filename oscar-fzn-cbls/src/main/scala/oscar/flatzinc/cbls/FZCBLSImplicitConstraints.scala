@@ -126,7 +126,7 @@ class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
       }
     }
     def tryGCClu(xs: Array[IntegerVariable],vals: Array[IntegerVariable], low: Array[IntegerVariable],up: Array[IntegerVariable],closed: Boolean):Boolean ={
-      if (allOK(xs) && false){ //TODO: Something is not working here
+      if (allOK(xs)){ //TODO: Something is not working here
         val vars = xs.map(cblsmodel.getCBLSVarDom(_))
         cblsmodel.addNeighbourhood((o,c) => new GCCNeighborhood(vars,vals.map(_.min),low.map(_.min),up.map(_.max),closed,o,c),vars)
         true

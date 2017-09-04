@@ -167,7 +167,7 @@ class GCCNeighborhood(val variables: Array[CBLSIntVarDom], val vals: Array[Int],
   reset();
 
   //TODO: reset() should only be called after the fzModel is closed, in case it makes use of invariants!
-  def reset() = {
+  def reset():Unit = {
     //TODO: This reset does not respect the domains of the variables! is it?
     var cur = variables.map(_.value)
     var cnts = cur.foldLeft(MMap.empty[Int, Int])((map, v) => map + (v -> (map.getOrElse(v, 0) + 1)))

@@ -45,6 +45,7 @@ class FZCBLSObjective(cblsmodel:FZCBLSModel, val bound:Option[CBLSIntVar] = None
       }
   val objective: CBLSObjective = new IntVarObjective(objective2.asInstanceOf[ChangingIntValue])
   def apply() = objective
+
   def getObjectiveValue(): Int = {
    opt match {
         case Objective.SATISFY => 0

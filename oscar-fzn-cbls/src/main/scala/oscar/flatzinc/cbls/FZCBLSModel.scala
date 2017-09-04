@@ -48,6 +48,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
   var neighbourhoods: List[Neighbourhood] = List.empty[Neighbourhood]
   var neighbourhoodGenerator: List[(CBLSObjective,ConstraintSystem) => Neighbourhood] = List.empty[(CBLSObjective,ConstraintSystem) => Neighbourhood]
 
+  var bestKnownObjective = Int.MaxValue
   def close():Unit ={
     m.close()
   }
@@ -78,8 +79,8 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
 
     fzModel.search.obj match {
       case Objective.SATISFY => ()
-      case Objective.MAXIMIZE => c.add(GE(objectiveVar,bound.get),CBLSIntVar(c.model,1,1 to 1000000, "Weight for bound"))
-      case Objective.MINIMIZE => c.add(GE(bound.get,objectiveVar),CBLSIntVar(c.model,1,1 to 1000000, "Weight for  bound"))
+      case Objective.MAXIMIZE => c.add(GE(objectiveVar,bound.get))
+      case Objective.MINIMIZE => c.add(GE(bound.get,objectiveVar))
     }
 
     c.close()
@@ -182,11 +183,11 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
 
 
   def handleSolution() = {
-    println("% time from start: "+getWatch())
+
     log("Updating objective bound")
     log("Violation before: " + c.violation.value)
     objective.bound match {
-      case Some(v) => v := objective.getObjectiveValue() + (fzModel.search.obj match {
+      case Some(v) => v := objective.objectiveVar.value + (fzModel.search.obj match {
         case Objective.MAXIMIZE => 1
         case Objective.MINIMIZE => -1
         case _ => 0
@@ -197,20 +198,25 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
     log("Violation after: " + c.violation.value)
     log("Objective bound updated")
 
-    fzModel.solution.handleSolution(
-      (s: String) => cblsIntMap.get(s) match {
-        case Some(intVar) =>
-          intVar.value + ""
-        case r => if(s=="true" || s=="false") s
-        else try{
-          s.toInt.toString()
-        }catch{
-          case e: NumberFormatException => {
-            throw new Exception("Unhappy: "+r+ " "+s)
+    log("Found solution with objective: " + objective.getObjectiveValue())
+    if(objective.getObjectiveValue() < bestKnownObjective) {
+      println("% time from start: "+getWatch())
+      bestKnownObjective = objective.getObjectiveValue()
+      fzModel.solution.handleSolution(
+        (s: String) => cblsIntMap.get(s) match {
+          case Some(intVar) =>
+            intVar.value + ""
+          case r => if (s == "true" || s == "false") s
+          else try {
+            s.toInt.toString()
+          } catch {
+            case e: NumberFormatException => {
+              throw new Exception("Unhappy: " + r + " " + s)
+            }
           }
-        }
-     });
-    if(cpmodel!=null && fzModel.search.obj != Objective.SATISFY){
+        });
+    }
+    if(useCP && fzModel.search.obj != Objective.SATISFY){
       log("Calling the CP solver")
       cpmodel.updateBestObjectiveValue(getCBLSVar(fzModel.search.variable.get).value)
     //TODO: ignore variables whose domain should not be reduced (e.g. variables in the Circuit constraint)
@@ -222,9 +228,11 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
     }
   }
   var cpmodel = null.asInstanceOf[FZCPModel]
+  var useCP = false
   def useCPsolver(cpm: FZCPModel){
     assert(cpm.model == fzModel);
     cpmodel = cpm
+    useCP = true
   }
   def updateVarDomains(){
     //TODO: Make sure this is necessary,as it is not clear from which domain the moves are drawn from.

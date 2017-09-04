@@ -90,6 +90,10 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
       }
   }
 
+  def expandDomain(d:Domain): Unit = {
+    privatedomain = privatedomain.union(d)
+  }
+
   override def toString = {
     if(model != null && model.propagateOnToString) s"$name:=$value" else s"$name:=$mNewValue"
   }

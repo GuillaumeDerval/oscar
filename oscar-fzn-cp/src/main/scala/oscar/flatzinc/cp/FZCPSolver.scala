@@ -142,6 +142,12 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
     try{
       for(v <- model.variables){
         val domSizeBefore = v.domainSize
+        val oldDomain = v match {
+          case bv:BooleanVariable =>
+            DomainRange(0,1)
+          case iv:IntegerVariable =>
+            DomainRange(iv.min,iv.max)
+        }
 
         v match{
           case bv:BooleanVariable =>
@@ -157,7 +163,7 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
         }
         //
         //if(v.domainSize < domSizeBefore)
-          //Console.err.println("% Reducing for " + v + " by " + (domSizeBefore-v.domainSize))
+        //  Console.err.println("% Reducing for " + v + " by " + (domSizeBefore-v.domainSize) + " from  " + oldDomain + " to " + v.asInstanceOf[IntegerVariable].domain)
       }
     }catch{
       case e:UnsatException => false
