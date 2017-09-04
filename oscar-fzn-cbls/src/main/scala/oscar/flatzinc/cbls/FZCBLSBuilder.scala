@@ -156,35 +156,18 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
       20 * 60
     }) * 1000
     log("Timeout is set to " + timeout + " milliseconds");
-    val sc: SearchControl = fzModel.search.obj match {
-      case Objective.SATISFY => new SearchControl(cblsmodel, 0, timeout, true);
-      case Objective.MAXIMIZE => new SearchControl(cblsmodel, -fzModel.search.variable.get.max, timeout, false);
-      case Objective.MINIMIZE => new SearchControl(cblsmodel, fzModel.search.variable.get.min, timeout, false);
-    }
 
+    val timeLimit = (timeout*0.04).toInt
+    //val (sc: SearchControl, search: Chain) = createSearchProcedure(timeout, log, fzModel, opts, cblsmodel)
 
-    //TODO: The search should print the solution if, by chance, the initial assingnment is a solution!
-    val search = new Chain(
-      new ActionSearch(() => {
-        sc.cancelObjective()
-      }),
-      if (!opts.is("no-sls")) new SimpleLocalSearch(cblsmodel, sc) else new ActionSearch(() => {}),
-      new NeighbourhoodSearchSAT(cblsmodel, sc),
-      new ActionSearch(() => {
-        sc.restoreObjective()
-      }),
-      fzModel.search.obj match {
-        case Objective.SATISFY => new ActionSearch(() => {})
-        case Objective.MAXIMIZE => new NeighbourhoodSearchOPT(cblsmodel, sc)
-        case Objective.MINIMIZE => new NeighbourhoodSearchOPT(cblsmodel,
-                                                              sc); //new NeighbourhoodSearchOPTbySAT(cblsmodel,sc)//
-      });
+    //val bets = Array.tabulate(10)(i => createSearchProcedure(timeLimit+i*timeLimit, false, log, fzModel, opts, cblsmodel))
+    val finalRun = createSearchProcedure(timeout, true, log, fzModel, opts, cblsmodel)
 
-    log("Search created")
     cblsmodel.close()
     log("Model closed");
 
-
+    var sc:SearchControl = finalRun._1
+    var bestKnownObjective = Int.MaxValue
     if (opts.is("no-run")) {
       log("Not running the search...")
     } else {
@@ -192,9 +175,32 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
       if (cblsmodel.c.violatedConstraints.length == 0 && fzModel.search.obj == Objective.SATISFY) {
         cblsmodel.handleSolution()
       } else {
-        search.run()
+        //Bet and run precedure:
+        /*val res = bets.map( (s:(SearchControl,SearchProcedure)) => {
+          cblsmodel.neighbourhoods.foreach(_.reset())
+          val c = s._1
+          val sr = s._2
+          System.err.println("% Starting new bet in bet-and-run scheme")
+          sr.run()
+          if (c.bestKnownObjective < bestKnownObjective){
+            System.err.println("% Found new best known objective: " + c.bestKnownObjective)
+            bestKnownObjective = c.bestKnownObjective
+            sc = c
+          }
+          c.bestKnownObjective
+        }
+        )
+        System.err.println("% Result of bets: " + res.mkString(", "))*/
       }
+      System.err.println("% Best result after bets = " + bestKnownObjective)
+      System.err.println("% Starting long run ")
+      sc.restoreBestSolution()
+      finalRun._2.run()
+      finalRun._1.bestKnownObjective = sc.bestKnownObjective
+      finalRun._1.restoreBestSolution()
+      sc = finalRun._1
       log("Done at " + getWatchString)
+
       if (sc.bestKnownObjective == Int.MaxValue && cblsmodel.c.violatedConstraints.length > 0) {
         log("Did not find any solution.")
         log("Smallest violation: " + sc.bestPair._1)
@@ -207,6 +213,52 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
     System.exit(0)
   }
 
+  private def createSearchProcedure(timeout: Int, useCP: Boolean, log: Log,
+                                    fzModel: FZProblem, opts: Options,
+                                    cblsmodel: FZCBLSModel) = {
+    val sc: SearchControl = fzModel.search.obj match {
+      case Objective.SATISFY => new SearchControl(cblsmodel, 0, timeout, true);
+      case Objective.MAXIMIZE => new SearchControl(cblsmodel, -fzModel.search.variable.get.max, timeout, false);
+      case Objective.MINIMIZE => new SearchControl(cblsmodel, fzModel.search.variable.get.min, timeout, false);
+    }
+
+    val objDom = cblsmodel.objective.objectiveVar.domain
+    log("Objective dom is: " + objDom)
+    //TODO: The search should print the solution if, by chance, the initial assingnment is a solution!
+    val search = new Chain(
+      new ActionSearch(() => {
+        if(opts.is("usecp")){
+          cblsmodel.useCP = useCP
+        }
+        log("Objective dom is: " + objDom)
+        cblsmodel.objective.objectiveVar.asInstanceOf[ChangingIntValue].expandDomain(objDom)
+        cblsmodel.objective.bound.get := (fzModel.search.obj match {
+          case Objective.MAXIMIZE => cblsmodel.objective.objectiveVar.min
+          case Objective.MINIMIZE => cblsmodel.objective.objectiveVar.max
+         })
+      }),
+      new ActionSearch(() => {
+        val searchVariables = cblsmodel.neighbourhoods.foldLeft(Set.empty[CBLSIntVarDom])((acc: Set[CBLSIntVarDom], x: Neighbourhood) => acc ++ x.getVariables().filterNot(_.isInstanceOf[CBLSIntConstDom])).toArray
+        System.err.println("%Variable values: " + searchVariables.map(_.value).mkString(", "))
+        sc.cancelObjective()
+      }),
+      if (!opts.is("no-sls")) new SimpleLocalSearch(cblsmodel, sc) else new ActionSearch(() => {}),
+      new NeighbourhoodSearchSAT(cblsmodel, sc),
+      new ActionSearch(() => {
+        val searchVariables = cblsmodel.neighbourhoods.foldLeft(Set.empty[CBLSIntVarDom])((acc: Set[CBLSIntVarDom], x: Neighbourhood) => acc ++ x.getVariables().filterNot(_.isInstanceOf[CBLSIntConstDom])).toArray
+        System.err.println("%After greedy climb: " + searchVariables.map(_.value).mkString(", "))
+        sc.restoreObjective()
+      }),
+      fzModel.search.obj match {
+        case Objective.SATISFY => new ActionSearch(() => {})
+        case Objective.MAXIMIZE => new NeighbourhoodSearchOPT(cblsmodel, sc)
+        case Objective.MINIMIZE => new NeighbourhoodSearchOPT(cblsmodel,
+                                                              sc); //new NeighbourhoodSearchOPTbySAT(cblsmodel,sc)//
+      });
+
+    log("Search created")
+    (sc, search)
+  }
 
   private def removeNeighbourhoodVariables(fzModel: FZProblem,
                                            cblsmodel: FZCBLSModel) = {
