@@ -182,11 +182,30 @@ object RelaxationFunctions {
     })
 
     val varList: Seq[Int] = scheme match{
-      case "Random" => Random.shuffle(varGroups.toSeq).flatMap(_._2)
-      case "MaxGroup" => varGroups.toSeq.sortWith(_._2.size < _._2.size).flatMap(_._2)
-      case "MinGroup" => varGroups.toSeq.sortWith(_._2.size > _._2.size).flatMap(_._2)
+
+      case "RandomGroups" => Random.shuffle(varGroups.toSeq).flatMap(_._2)
+
+      case "MaxGroups" => varGroups.toSeq.sortWith(_._2.size < _._2.size).flatMap(_._2)
+
+      case "MinGroups" => varGroups.toSeq.sortWith(_._2.size > _._2.size).flatMap(_._2)
+
       case "MaxVal" => varGroups.toSeq.sortWith(_._1 < _._1).flatMap(_._2)
+
       case "MinVal" => varGroups.toSeq.sortWith(_._1 > _._1).flatMap(_._2)
+
+      case "MinMaxVal" =>
+        val sortedVars = varGroups.toSeq.sortWith(_._1 > _._1).flatMap(_._2)
+        val minMaxVars = mutable.ListBuffer[Int]()
+        var i = 0
+        var j = sortedVars.length - 1
+        while(i < j){
+          minMaxVars += sortedVars(i)
+          minMaxVars += sortedVars(j)
+          i += 1
+          j -= 1
+        }
+        if(i == j) minMaxVars += sortedVars(i)
+        sortedVars
     }
 
     var i = 0
@@ -197,6 +216,25 @@ object RelaxationFunctions {
       i += 1
     }
   }
+
+  def randomGroupsRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit =
+    valueGuidedRelax(solver, vars, currentSol, k, "RandomGroups")
+
+  def maxGroupsRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit =
+    valueGuidedRelax(solver, vars, currentSol, k, "MaxGroups")
+
+  def minGroupsRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit =
+    valueGuidedRelax(solver, vars, currentSol, k, "MinGroups")
+
+  def maxValRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit =
+    valueGuidedRelax(solver, vars, currentSol, k, "MaxVal")
+
+  def minValRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit =
+    valueGuidedRelax(solver, vars, currentSol, k, "MinVal")
+
+  def minMaxValRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit =
+    valueGuidedRelax(solver, vars, currentSol, k, "MinMaxVal")
+
 
   /**
     * Makes the hypothesis of a predecessor/successor model: relaxes a sequence of k variables by using their value to find the
@@ -235,7 +273,7 @@ object RelaxationFunctions {
   /**
     * Makes the hypothesis of a predecessor/successor model: relaxes k edges and allows change of direction between
     * fixed paths.
-    * @param k The number of edges (variables) to relax (must be >= 0 and <= vars.size/2)
+    * @param k The number of edges (variables) to relax (must be >= 0 and <= vars.size)
     */
   def predRelaxKopt(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit = {
     //Computing predecessors:
@@ -257,7 +295,7 @@ object RelaxationFunctions {
       varArray(i) = varArray(relaxStart)
       varArray(relaxStart) = x
 
-      //adding self and sucessor as endpoints:
+      //adding self and sucessor as endpoints (extremities of a seq of connected edges):
       endPoints += x
       val successor = currentSol.values(x)
       if(successor >= 0 && successor < varSeq.length) endPoints += successor
@@ -266,10 +304,23 @@ object RelaxationFunctions {
     //Fixing other vars (allowing existing edges inversion)
     (0 until relaxStart).foreach(i => {
       val x = varArray(i)
-      var succX = currentSol.values(x)
-      var predX = pred(x)
-      if(endPoints.contains(x)) solver.add(varSeq(x) in endPoints.toSet + succX + predX)
-      else solver.add(varSeq(x) in Set(succX, predX))
+      var valSet = Set(currentSol.values(x)) //Adding successor as potential val
+      if(pred(x) != -1) valSet += pred(x) //Adding predecessor as potential val
+      if(endPoints.contains(x)) valSet ++= endPoints //If endpoint, other endpoints are potential vals
+      solver.add(varSeq(x) in valSet)
     })
+  }
+
+  /**
+    * TODO
+    */
+  def valWindowRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, lr: Double, ur: Double): Unit = {
+    vars.zipWithIndex.foreach{case(x, i) =>{
+      val sTime = currentSol.values(i)
+      val lb = sTime - (lr * (sTime - x.min)).floor.toInt
+      val ub = sTime + (ur * (x.max - sTime)).ceil.toInt
+      solver.add(x >= lb)
+      solver.add(x <= ub)
+    }}
   }
 }

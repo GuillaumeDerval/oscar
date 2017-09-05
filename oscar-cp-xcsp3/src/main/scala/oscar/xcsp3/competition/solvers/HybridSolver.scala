@@ -117,8 +117,8 @@ object HybridSolver extends CompetitionApp with App {
           conf.memlimit(),
           coupled = true,
           learning = true,
-          Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided, ALNSBuilder.FullRelax, ALNSBuilder.ValGuided),
-          Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.ExtOriented, ALNSBuilder.WeightDeg),
+          Array(ALNSBuilder.Random, ALNSBuilder.KSuccessiveRelax, ALNSBuilder.PropGuidedRelax, ALNSBuilder.RevPropGuidedRelax, ALNSBuilder.FullRelax),
+          Array(ALNSBuilder.ConfOrderSearch, ALNSBuilder.FirstFailSearch, ALNSBuilder.LastConfSearch, ALNSBuilder.ExtOrientedSearch, ALNSBuilder.WeightDegSearch),
           valLearn = true,
           opDeactivation = false,
           ALNSBuilder.Priority,
@@ -144,11 +144,11 @@ object HybridSolver extends CompetitionApp with App {
             val iEnd = bestOperator.lastIndexOf(')')
             val valHeuris = bestOperator.substring(iStart, iEnd)
 
-            if (bestOperator.contains(ALNSBuilder.BinSplit)) binarySplit(vars, valHeuris, valLearn)
-            else if (bestOperator.contains(ALNSBuilder.FirstFail)) firstFail(vars, valHeuris, valLearn)
-            else if (bestOperator.contains(ALNSBuilder.LastConf)) lastConflict(vars, valHeuris, valLearn)
-            else if (bestOperator.contains(ALNSBuilder.ExtOriented)) extensionalOriented(vars, valHeuris, valLearn)
-            else if (bestOperator.contains(ALNSBuilder.WeightDeg)) weightedDegree(vars, valHeuris, 0.99)
+            if (bestOperator.contains(ALNSBuilder.BinSplitSearch)) binarySplit(vars, valHeuris, valLearn)
+            else if (bestOperator.contains(ALNSBuilder.FirstFailSearch)) firstFail(vars, valHeuris, valLearn)
+            else if (bestOperator.contains(ALNSBuilder.LastConfSearch)) lastConflict(vars, valHeuris, valLearn)
+            else if (bestOperator.contains(ALNSBuilder.ExtOrientedSearch)) extensionalOriented(vars, valHeuris, valLearn)
+            else if (bestOperator.contains(ALNSBuilder.WeightDegSearch)) weightedDegree(vars, valHeuris, 0.99)
             else conflictOrdering(vars, valHeuris, valLearn)
           }
           else //Default search: Conflict ordering with min val heuristic and no learning:

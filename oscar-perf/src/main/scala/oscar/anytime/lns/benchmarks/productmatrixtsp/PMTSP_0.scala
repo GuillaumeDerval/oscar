@@ -1,4 +1,4 @@
-package oscar.anytime.lns.disabled_benchs.productmatrixtsp
+package oscar.anytime.lns.benchmarks.productmatrixtsp
 
 import oscar.anytime.lns.models.ProductMatrixTSP
 
@@ -7,6 +7,6 @@ import oscar.anytime.lns.models.ProductMatrixTSP
   */
 object PMTSP_0 extends App {
 
-  new ProductMatrixTSP("data/pmtsp/pmtsp-0.txt").main(args)
+  new ProductMatrixTSP("data/pmtsp/pmtsp-0.txt", 4302).main(args)
 
 }

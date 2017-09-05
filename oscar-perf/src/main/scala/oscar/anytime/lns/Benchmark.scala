@@ -63,12 +63,12 @@ trait Benchmark {
 
       argMap.getOrElse(
         'relax,
-        Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided, ALNSBuilder.ValGuided, ALNSBuilder.FullRelax) //(Reversed) propagation guided may cause out of memory on big instances
+        Array(ALNSBuilder.Random, ALNSBuilder.KSuccessiveRelax, ALNSBuilder.PropGuidedRelax, ALNSBuilder.RevPropGuidedRelax, ALNSBuilder.FullRelax) //(Reversed) propagation guided may cause out of memory on big instances
       ).asInstanceOf[Array[String]],
 
       argMap.getOrElse(
         'search,
-        Array(ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.ExtOriented, ALNSBuilder.WeightDeg)
+        Array(ALNSBuilder.ConfOrderSearch, ALNSBuilder.FirstFailSearch, ALNSBuilder.LastConfSearch, ALNSBuilder.ExtOrientedSearch, ALNSBuilder.WeightDegSearch)
       ).asInstanceOf[Array[String]],
 
       argMap.getOrElse('valLearn, false).asInstanceOf[Boolean],

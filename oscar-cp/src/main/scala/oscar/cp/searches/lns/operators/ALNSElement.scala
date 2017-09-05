@@ -24,7 +24,7 @@ abstract class ALNSElement(val failThreshold: Int){
   var successfulRuns: Int = 0
   var execs: Int = 0
   var sols: Int = 0
-  var time: Long = 0
+  var time: Long = 0 //time in nanoseconds
   var improvement: Long = 0
 
 
@@ -52,7 +52,7 @@ abstract class ALNSElement(val failThreshold: Int){
     */
   def update(costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit = {
     execs += 1
-    successfulRuns += Math.min(stats.nSols, 1)
+    if(stats.nSols > 0) successfulRuns += 1
     sols += stats.nSols
     time += stats.time * 1000000
     improvement += costImprovement

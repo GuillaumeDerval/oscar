@@ -54,12 +54,12 @@ object XCSP_ALNS_App extends App{
 
       argMap.getOrElse(
         'relax,
-        Array(ALNSBuilder.Random, ALNSBuilder.KSuccessive, ALNSBuilder.PropGuided, ALNSBuilder.RevPropGuided)
+        Array(ALNSBuilder.Random, ALNSBuilder.KSuccessiveRelax, ALNSBuilder.PropGuidedRelax, ALNSBuilder.RevPropGuidedRelax)
       ).asInstanceOf[Array[String]],
 
       argMap.getOrElse(
         'search,
-        Array( ALNSBuilder.ConfOrder, ALNSBuilder.FirstFail, ALNSBuilder.LastConf, ALNSBuilder.BinSplit)
+        Array( ALNSBuilder.ConfOrderSearch, ALNSBuilder.FirstFailSearch, ALNSBuilder.LastConfSearch, ALNSBuilder.BinSplitSearch)
       ).asInstanceOf[Array[String]],
 
       argMap.getOrElse('valLearn, false).asInstanceOf[Boolean],
