@@ -57,6 +57,7 @@ case class BooleanVariable(i: String,
   def bind(v: Boolean) = if(isBound && v!=_value.get) throw new UnsatException("Empty Domain"); else _value = Some(v)
   def boolValue: Boolean = _value.get
   def intValue: Int = if(_value.get) 1 else 0
+  def violValue: Int = if(_value.get) 0 else 1 // true (0), false (1)
   override def toString = {this.id + (if(isBound) "="+_value.get else "") /*+ (if(!anns.isEmpty) " :: " + anns.mkString(" :: ") else "" )*/}
 }
 

@@ -27,7 +27,9 @@ package oscar.cbls.lib.constraint
 import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.Constraint
 import oscar.cbls.core.propagation.Checker
-import oscar.cbls.lib.invariant.numeric.{Dist, MinusOffsetPos, ReifViol}
+import oscar.cbls.lib.invariant.logic.{BoolLEInv, BoolLTInv}
+import oscar.cbls.lib.invariant.minmax.Max2
+import oscar.cbls.lib.invariant.numeric.{Dist, Minus, MinusOffsetPos, ReifViol}
 
 import scala.math.abs
 
@@ -165,6 +167,68 @@ case class EQ(left: IntValue, right: IntValue) extends Constraint {
         + ")) 0 else " + myViolation + ")"))
   }
 }
+
+
+case class BoolEQ(a: IntValue, b: IntValue) extends Constraint {
+
+  registerConstrainedVariables(a, b)
+
+  override val violation = BoolEQInv(a, b)
+
+  override def violation(v: Value) = { if (a == v || b == v) violation else 0 }
+  //override def violation(v: Value) = { if (a == v) Max2(0,Minus(violation,b)) else if (b == v) Max2(0,Minus(violation,a)) else 0 }
+}
+
+
+/**
+  * BoolEQInv(a,b)
+  *
+  * ouputs true (0) iff a == b otherwise violation is equal to (max(a,b)+1)
+  *
+  *
+  * @param a IntValue
+  * @param b IntValue
+  * @author gustav.bjordal@it.uu.se
+  */
+case class BoolEQInv(a: IntValue, b:IntValue)
+  extends IntInvariant(if((a.value > 0 && b.value > 0) || (a.value == 0 && b.value == 0)) 0 else a.value+b.value+1,
+                       0 to Math.max(a.max,b.max))
+    with IntNotificationTarget{
+
+  registerStaticAndDynamicDependency(a)
+  registerStaticAndDynamicDependency(b)
+  finishInitialization()
+
+  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
+    val other = if(a==v) b else a
+    if((NewVal>0 && other.value >0) || (NewVal==0 && other.value ==0)){
+      this := 0
+    }else{
+      this := (NewVal + other.value + 1)/2
+    }
+  }
+}
+
+
+case class BoolLE(a: IntValue, b: IntValue) extends Constraint {
+
+  registerConstrainedVariables(a, b)
+
+  override val violation = BoolLEInv(a, b)
+
+  override def violation(v: Value) = { if (a == v || b == v) violation else 0 }
+}
+
+case class BoolLT(a: IntValue, b: IntValue) extends Constraint {
+
+  registerConstrainedVariables(a, b)
+
+  override val violation = BoolLTInv(a, b)
+
+  override def violation(v: Value) = { if (a == v || b == v) violation else 0 }
+}
+
+
 /**
  * constraints b <=> c, i.e., b is true iff c is satisfied.
  * @author jean-noel.monette@it.uu.se 

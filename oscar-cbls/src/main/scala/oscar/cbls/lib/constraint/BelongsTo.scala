@@ -42,9 +42,14 @@ case class BelongsTo(v: IntValue, set: SetValue)
 
   violation.setDefiningInvariant(this)
 
+  def dist(value:Int, s:Set[Int]):Int ={
+    s.map(x => Math.abs(value - x)).min
+  }
+
   @inline
   override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
-    violation := (if (set.value.contains(v.value)) 0 else 1)
+    violation := dist(NewVal,set.value)
+    //violation := (if (set.value.contains(v.value)) 0 else 1)
   }
 
   override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {

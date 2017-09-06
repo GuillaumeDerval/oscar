@@ -157,7 +157,9 @@ case class bool_and(a: BooleanVariable, b: BooleanVariable, r: BooleanVariable, 
   extends SimpleDefiningConstraint(Array(a,b,r),r,ann);
   
 case class bool_clause(a: Array[BooleanVariable], b: Array[BooleanVariable], ann: List[Annotation] = List.empty[Annotation]) 
-  extends Constraint(a++b,ann)
+  extends Constraint(a++b,ann){
+  override def toString() ={"bool_clause("+a.mkString("[", ", ", "]")+","+b.mkString("[", ", ", "]")+","+ann+")"}
+}
 
 case class bool_eq(x: BooleanVariable, y: BooleanVariable, ann: List[Annotation] = List.empty[Annotation]) 
   extends AllDefiningConstraint(Array(x,y),ann)
@@ -166,10 +168,11 @@ case class bool_le(a: BooleanVariable, b: BooleanVariable, ann: List[Annotation]
   extends Constraint(Array(a,b),ann)
 
 case class bool_lin_eq(params:Array[IntegerVariable],vars:Array[BooleanVariable], sum:IntegerVariable, ann: List[Annotation] = List.empty[Annotation]) 
-  extends Constraint(vars++Array.empty[Variable],ann)
-  //TODO: This should only define variables that have a unit coeff, and with a small domain. 
-  //Removed this because that is often wrong.
-  //extends AllDefiningConstraint(vars,ann)
+  extends Constraint(vars++Array.empty[Variable],ann){
+  override def canDefineVar = true
+  override def getMaybeCandidateDefVars():Array[Variable] = Array(sum)
+  override def toString() ={"bool_lin_eq("+params.mkString("[", ", ", "]")+","+vars.mkString("[", ", ", "]")+","+sum+","+ann+")"}
+}
 
 case class bool_lin_le(params:Array[IntegerVariable],vars:Array[BooleanVariable], sum:IntegerVariable, ann: List[Annotation] = List.empty[Annotation]) 
   extends Constraint(vars++Array.empty[Variable],ann)
@@ -199,7 +202,7 @@ case class int_le(a: IntegerVariable, b: IntegerVariable, ann: List[Annotation] 
   extends Constraint(Array(a,b),ann)
 
 case class int_lin_eq(params:Array[IntegerVariable],vars:Array[IntegerVariable], sum:IntegerVariable, ann: List[Annotation] = List.empty[Annotation]) 
-  extends Constraint(vars++Array.empty[Variable],ann){
+  extends Constraint(vars++Array(sum),ann){
   override def canDefineVar = true
   override def getMaybeCandidateDefVars():Array[Variable]  = {
     return vars.zip(params).filter((t) => Math.abs(t._2.min) == 1 && t._1.domainSize >= 1).map(_._1)

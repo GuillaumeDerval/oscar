@@ -222,11 +222,15 @@ object FZFindDefined {
     explore()
     exploreBackward()
     if(!mapping.isEmpty){
-      log("There is a cycle in the set of invariants.!"+mapping.size)
+      log("There is a cycle in the set of invariants! "+mapping.size)
       //print(mapping.mkString("\n"))
     }
     while(!mapping.isEmpty){
-      val remc = mapping.keys.minBy(c => (c.definedVar.get.domainSize,-mapping(c),-mappingB(c)))//foldLeft((null.asInstanceOf[Constraint],Int.MinValue))((best,cur) => {val curval = - cur.definedVar.get.domainSize/*mapping(cur)*//*cur.definedVar.get.cstrs.filter(c => c!=cur && mapping.contains(c) && mapping(c)==1).length*/; if(curval > best._2) (cur,curval) else best;});
+      val remc = mapping.keys.minBy(c =>
+                                      (c.definedVar.get.domainSize,
+                                        if (c.annotations.length>0) 1 else 0,
+                                        -mapping(c),
+                                        -mappingB(c)))//foldLeft((null.asInstanceOf[Constraint],Int.MinValue))((best,cur) => {val curval = - cur.definedVar.get.domainSize/*mapping(cur)*//*cur.definedVar.get.cstrs.filter(c => c!=cur && mapping.contains(c) && mapping(c)==1).length*/; if(curval > best._2) (cur,curval) else best;});
       mapping.remove(remc)
       mappingB.remove(remc)
       for(j <- remc.definedVar.get.cstrs){

@@ -131,7 +131,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
           val sc = parsedVariable.cstrs.map{
           	case c:subcircuit => c.variables.length;
           	case c:circuit => c.variables.length;
-          	case _ => 0}.fold(0)((x, y) => if (x > y) x else y)
+          	case _ => 0}.fold(0)((acc, v) => Math.min(acc,v)) //Min here, right?
           val thedom = if(sc > 0){oscar.flatzinc.model.DomainRange(1, sc)}else{dom}
           val cblsVariable = CBLSIntVarDom(m, initialValue, thedom,  id);
           //TODO: handle constant variables here.
@@ -139,7 +139,8 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
           variables = cblsVariable :: variables;
 
        case bv:BooleanVariable =>
-         val dom = oscar.flatzinc.model.DomainRange(if(bv.isTrue) 1 else 0, if(bv.isFalse) 0 else 1)
+         //WARNING: Changed the representation of true and false so that false is 1 and true is 0
+         val dom = oscar.flatzinc.model.DomainRange(if(bv.isTrue) 0 else if(bv.isFalse) 1 else 0, if(bv.isFalse) 1 else if(bv.isTrue) 0 else 1)
           //TODO: Put this in a method! or make it deterministic as the neighbourhoods should take care of the assignments!
           val initialValue = {
                 val range = (dom.min to dom.max);
@@ -173,7 +174,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
       case v:BooleanVariable =>
         cblsIntMap.get(v.id) match {
           case None if v.isBound =>
-            val c = new CBLSIntConstDom(m,v.intValue);
+            val c = new CBLSIntConstDom(m,v.violValue);
             cblsIntMap += v.id -> c;
             c;
           case Some(c) => c;

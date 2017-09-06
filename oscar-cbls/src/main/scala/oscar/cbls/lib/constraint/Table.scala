@@ -47,7 +47,10 @@ case class Table(variables: Array[IntValue], table:Array[Array[Int]]) extends In
 
 
   val rowViolation:Array[CBLSIntVar] = Array.tabulate(table.size)( i => {
-    val tmp = CBLSIntVar(this.model, table(i).zip(variables).foldLeft(0)((acc, p) => acc + (if (p._1 == p._2.value) 0 else 1)), 0 to table.size)
+    val tmp = CBLSIntVar(this.model,
+                         table(i).zip(variables).foldLeft(0)((acc, p) => acc + (if (p._1 == p._2.value) 0 else 1)),
+                         //table(i).zip(variables).foldLeft(0)((acc, p) => acc + Math.abs(p._1 - p._2.value)),
+                         0 to table.size)
     tmp.setDefiningInvariant(this)
     tmp
   }
@@ -58,7 +61,7 @@ case class Table(variables: Array[IntValue], table:Array[Array[Int]]) extends In
   val aMinViolatingRow = TakeAny(minViolatingRows,0)
 
   val variableViolation:Array[IntValue] = Array.tabulate(variables.length)( i =>
-    Step( Dist(variables(i), IntElementNoVar(aMinViolatingRow, table.map(_(i)))) , 0,1,0)
+    Step(Dist(variables(i), IntElementNoVar(aMinViolatingRow, table.map(_(i)))), 0,1,0)
   )
   /** returns the violation associated with variable v in this constraint
     * all variables that are declared as constraint should have an associated violation degree.
@@ -95,6 +98,8 @@ case class Table(variables: Array[IntValue], table:Array[Array[Int]]) extends In
    assert(OldVal != NewVal)
    for(r <- table.indices) {
      val row = table(r)
+     //rowViolation(r) :+= Math.abs(NewVal-row(index))-Math.abs(OldVal-row(index))
+
      if(row(index) == OldVal){
        rowViolation(r) :+= 1
      }else if(row(index) == NewVal){

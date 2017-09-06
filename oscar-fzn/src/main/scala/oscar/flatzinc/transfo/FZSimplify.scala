@@ -34,6 +34,9 @@ object FZSimplify{
         throw new UnsatException(c.toString())
       }
       if(log.level > 0){
+        if(c.isInstanceOf[bool_clause]){
+          log(2,"propagating "+c)
+        }
         val bef = c.variables.map(v => v.domainSize).fold(1)((a,b) => a * b)
         propagate(c)
         val aft = c.variables.map(v => v.domainSize).fold(1)((a,b) => a * b)
@@ -89,6 +92,10 @@ object FZSimplify{
     c match{
       case reif(bool_eq(x,y,ann),b) if x.isFalse => bool_not(y,b,ann)
       case reif(bool_eq(x,y,ann),b) if y.isFalse => bool_not(x,b,ann)
+      case array_bool_or(as,r, ann) if r.isTrue && as.exists(_.isFalse)=>
+        array_bool_or(as.filterNot(_.isFalse),r,ann)
+      case array_bool_and(as,r, ann) if r.isTrue && as.exists(_.isTrue)=>
+        array_bool_and(as.filterNot(_.isTrue),r,ann)
       case bool_xor(x,y,z,ann) => 
         if (x.isTrue) bool_not(y,z,ann)
         else if (y.isTrue) bool_not(x,z,ann)
@@ -109,13 +116,15 @@ object FZSimplify{
   
   def isBound(c: Constraint) = c.variables.forall(_.isBound)
 
-  def isEntailed(c: Constraint) = if(isBound(c)){
+  def isEntailed(c: Constraint):Boolean = if(isBound(c)){
     c match {
       case bool2int(x,y,_) => x.intValue==y.value
       case int_eq(x,y,_) => x.value ==y.value
       case int_ne(x,y,_) => x.value !=y.value
       case int_lt(x,y,_) => x.value < y.value
       case int_le(x,y,_) => x.value <= y.value
+      case int_times(a,b,c,_) => a.value*b.value == c.value
+      case int_pow(a,e,b,_) => Math.pow(a.value,e.value).toInt == b.value
       case bool_eq(x,y,_) => x.intValue ==y.intValue
       case bool_lt(x,y,_) => x.intValue < y.intValue
       case bool_le(x,y,_) => x.intValue <= y.intValue
@@ -139,6 +148,9 @@ object FZSimplify{
     case int_le(x,y,_) => x.max <= y.min
     case set_in(x,y,_) => x.domainSize <= y.size && x.domain.toSortedSet.forall(y.contains(_))
     case all_different_int(x,_) => x.length<=1
+    case bool_clause(x,y,_) => x.exists(_.isTrue) || y.exists(_.isFalse)
+    case array_bool_and(x,y,_) => (x.exists(_.isFalse) && y.isFalse)
+    case array_bool_or(x,y,_) => (x.exists(_.isTrue) && y.isTrue)
     case int_max(a,b,c,_) if a.isBound && c.isBound => 
       (a.value==c.value && b.max <= c.value) 
     case int_max(a,b,c,_) if b.isBound && c.isBound => 
@@ -147,12 +159,44 @@ object FZSimplify{
       (a.value==c.value && b.min >= c.value) 
     case int_min(a,b,c,_) if b.isBound && c.isBound => 
       (b.value==c.value && a.min >= c.value)
+    case reif(c2,b) =>
+      if(b.isTrue && isEntailed(c2)){true}
+      else if(b.isFalse && isUnsatisfiable(c2)){true}
+      else false
     case _ => false
   }
   
-  def isUnsatisfiable(c: Constraint) = //if(isBound(c)) !isEntailed(c) else 
-    false
-  
+  def isUnsatisfiable(c: Constraint) = if(isBound(c)){
+    c match {
+      case bool2int(x,y,_) => x.intValue!=y.value
+      case int_eq(x,y,_) => x.value !=y.value
+      case int_ne(x,y,_) => x.value ==y.value
+      case int_lt(x,y,_) => x.value >= y.value
+      case int_le(x,y,_) => x.value > y.value
+      case bool_eq(x,y,_) => x.intValue != y.intValue
+      case bool_lt(x,y,_) => x.intValue >= y.intValue
+      case bool_le(x,y,_) => x.intValue > y.intValue
+      case int_lin_eq(c,x,y,_) => c.zip(x).foldLeft(0)((acc,cur) => acc + cur._1.value*cur._2.value)!=y.value
+      case int_lin_le(c,x,y,_) => c.zip(x).foldLeft(0)((acc,cur) => acc + cur._1.value*cur._2.value)>y.value
+      case int_lin_ne(c,x,y,_) => c.zip(x).foldLeft(0)((acc,cur) => acc + cur._1.value*cur._2.value)==y.value
+      case bool_clause(x,y,_) => x.forall(_.isFalse) && y.forall(_.isTrue)
+      case set_in(x,y,_) => !y.contains(x.value)
+      case array_bool_and(x,y,_) => (x.exists(_.isFalse) && y.isTrue) || (x.forall(_.isTrue) && y.isFalse)
+      case array_bool_or(x,y,_) => (x.exists(_.isTrue) && y.isFalse) || (x.forall(_.isFalse) && y.isTrue)
+      case int_max(x,y,z,_) => x.value.max(y.value) != z .value
+      case int_min(x,y,z,_) => x.value.min(y.value) != z .value
+      case _ => false
+    }
+  }else c match{
+    case int_lt(x,y,_) => x.min >= y.max
+    case int_le(x,y,_) => x.min > y.max
+    case array_bool_and(x,y,_) => (x.exists(_.isFalse) && y.isTrue)
+    case array_bool_or(x,y,_) => (x.exists(_.isTrue) && y.isFalse)
+    case set_in(x,y,_) =>
+      x.domain.toSortedSet.forall(v => !y.contains(v))
+    case _ => false
+  }
+
   def negate(c: Constraint): Constraint = { 
     c match {
       case int_eq(x,y,a) => int_ne(x,y,a)
@@ -171,6 +215,10 @@ object FZSimplify{
         case int_le(x, y, _) if y.isBound => x.leq(y.value); true
         case int_lt(x, y, _) if x.isBound=> y.geq(x.value+1); true
         case int_lt(x, y, _) if y.isBound=> x.leq(y.value-1); true
+        case int_pow(a,e,b,_) =>
+          b.leq(Math.pow(a.max,e.max).toInt);
+          b.geq(Math.max(0, Math.pow(a.min,e.min).toInt));
+          true
         case bool_le(x, y, _) if x.isBound => if(x.boolValue) y.bind(true); true
         case bool_le(x, y, _) if y.isBound => if(!y.boolValue) x.bind(false); true
         case int_eq(x, y, _) if x.isBound => y.bind(x.value); true

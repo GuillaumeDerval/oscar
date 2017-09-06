@@ -24,6 +24,7 @@ import oscar.cbls.core.computation.{Variable => CBLSVariable}
 import oscar.cbls.lib.invariant.logic._
 import oscar.cbls.lib.invariant.minmax._
 import oscar.cbls.lib.invariant.numeric._
+import oscar.cbls.lib.constraint._
 import oscar.flatzinc.model._
 import oscar.flatzinc.model.Variable
 import oscar.flatzinc.model.Constraint
@@ -122,11 +123,11 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   
   
   def get_array_bool_and_inv(as: Array[BooleanVariable], r: BooleanVariable, defId: String, ann: List[Annotation]) = {
-    Prod(as.map(getCBLSVar(_)))
+    And(as.map(getCBLSVar(_)))
   }
   
   def get_bool_and_inv(a: BooleanVariable, b: BooleanVariable, ann: List[Annotation]) = {
-    Prod2(a,b)
+    And(List(a,b))
   }
   def get_array_int_element_inv(b: IntegerVariable, as: Array[IntegerVariable], r: IntegerVariable, defId: String, ann: List[Annotation]) = {
    val idx = Sum2(b,-1)
@@ -145,7 +146,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     val k = Max2(0,Min2(idx,as.length-1))
     add_constraint(EQ(k,idx))
 
-    if(as.forall(_.isBound)) IntElementNoVar(k, as.map(_.intValue))
+    if(as.forall(_.isBound)) IntElementNoVar(k, as.map(_.violValue))
     else IntElement(k, as.map(getCBLSVar(_)))
 
     //if(as.forall(_.isBound)) IntElementNoVar(Sum2(b,-1), as.map(_.intValue))
@@ -154,33 +155,17 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   }
 
   def get_array_bool_or(as: Array[BooleanVariable], r: BooleanVariable, ann: List[Annotation]) = {
-    val experimental = false
-    if(experimental && r.isTrue && as.forall(v =>
-                               v.definingConstraint.isInstanceOf[Option[ReifiedConstraint]] &&
-                                 v.definingConstraint.asInstanceOf[Option[ReifiedConstraint]].isDefined &&
-                                 v.definingConstraint.asInstanceOf[Option[ReifiedConstraint]].get.isInstanceOf[reif] &&
-                                 v.definingConstraint.asInstanceOf[Option[reif]].get.c.isInstanceOf[int_lin_le])
-    ){
-      System.err.println("% Warning: creating duplicate constraint to get better violation function on array_bool_or")
-      EQ(0, Min(as.map( v => v.definingConstraint match {
-        case Some(c:Constraint) => c match {
-          case reif(cons,rv) => constructCBLSConstraint(cons).violation
-          case _ => Minus(1,getCBLSVar(v))
-        }
-        case None => Minus(1,getCBLSVar(v))
-      })))
-    }else{
-      EQ(r,get_array_bool_or_inv(as, r,r.id, ann))
-    }
+    BoolEQ(Or(as.map(getCBLSVar(_))),getCBLSVar(r))
   }
 
   def get_array_bool_or_inv(as: Array[BooleanVariable], r: BooleanVariable, defId: String, ann: List[Annotation]) = {
-    Step(Sum(as.map(getCBLSVar(_))))//TODO: Do it in one object.
+    Or(as.map(getCBLSVar(_)))
   }
 
   def get_array_bool_xor(as: Array[BooleanVariable], ann: List[Annotation]) = {
-    EQ(Mod(Sum(as.map(getCBLSVar(_))), 2), 1)
+    EQ(0,XOR(as.map(getCBLSVar(_)))) //EQ(Mod(Sum(as.map(getCBLSVar(_))), 2), 1)
   }
+
   def get_array_bool_xor_inv(as: Array[BooleanVariable], defId: String, ann: List[Annotation]) = {
     val index = as.indexWhere(p => p.id == defId);
     if(index < 0){
@@ -188,41 +173,23 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     }
     val defVar = as(index);
     val vars2 = (as.take(index) ++ as.drop(index + 1)).map(getCBLSVar(_));
-    Mod(Sum2(Sum(vars2), 1), 2)
+    Not(XOR(vars2))
   }
 
   def get_bool_clause(as: Array[BooleanVariable], bs: Array[BooleanVariable], ann: List[Annotation]) = {
-
-    val experimental = false
-
-    if (experimental) {
-      System.err.println("% Warning: creating duplicate constraint to get better violation function on bool_clause")
-      EQ(0, Min(as.map( v => v.definingConstraint match {
-        case Some(c:Constraint) => c match {
-          case reif(cons,rv) => constructCBLSConstraint(cons).violation
-          case _ => Minus(1,getCBLSVar(v))
-        }
-        case None => Minus(1,getCBLSVar(v))
-      }) ++ bs.map( v => getCBLSVar(v))))
-    } else {
-      //GE(Minus(Sum(as.map(getCBLSVar(_))),Prod(bs.map(getCBLSVar(_)))),0)
-      GE(Sum(as.map(getCBLSVar(_))), Prod(bs.map(getCBLSVar(_))))
-      //NE(Sum2(Step(Sum(as.map(getCBLSVar(_)))), EQ(Prod(bs.map(getCBLSVar(_))), 0).truthValue), 0)
-    }
+    BoolLE(Or(as.map(getCBLSVar(_))),And(bs.map(getCBLSVar(_))))
   }
 
   def get_bool_not_inv(a: BooleanVariable, b: BooleanVariable, defId: String, ann: List[Annotation]) = {
     if (a.id == defId) {
-      //EQ(b, 0)
-      Minus(1,b)
+      Not(b)
     } else {
-      //EQ(a, 0)
-      Minus(1,a)
+      Not(a)
     }
   }
 
   def get_bool_or_inv(a: BooleanVariable, b: BooleanVariable, r: BooleanVariable, defId: String, ann: List[Annotation]) = {
-    Max2(a, b)
+    Or(Array(a,b))
   }
 
   
@@ -236,47 +203,53 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     Div(a, b)
   }
 
-  def get_int_or_bool_eq_inv(x: Variable, y: Variable, defId: String, ann: List[Annotation]) = {
+  def get_bool_eq_inv(x: Variable, y: Variable, defId: String, ann: List[Annotation]) = {
     if (x.id == defId) {
-      //val yy = 
-        getCBLSVar(y)
-//      val xx = CBLSIntVar(m,yy.value,yy.domain) 
-//      IdentityInt(xx,yy)//TODO: Might not work correctly! need to clone?
-//      xx
+      getCBLSVar(y)
     } else {
       getCBLSVar(x)
-//      val yy = CBLSIntVar(m,xx.value,xx.domain) 
-//      IdentityInt(yy,xx)//TODO: Might not work correctly! need to clone?
-//      yy
-      //getCBLSVar(x)//TODO: Might not work correctly! need to clone?
     }
   }
 
-
-  def get_int_or_bool_le(x: Variable, y: Variable, ann: List[Annotation]) = {
-    LE(x, y)
+  def get_int_eq_inv(x: Variable, y: Variable, defId: String, ann: List[Annotation]) = {
+    if (x.id == defId) {
+      getCBLSVar(y)
+    } else {
+      getCBLSVar(x)
+    }
   }
+
+  def get_bool_2_int_inv(x: Variable, y: Variable, defId: String, ann: List[Annotation]) = {
+    if (y.id == defId) {
+      Bool2Int(x)
+    } else {
+      //Ensure domain before restricting it in case something has been posted on the old domain.
+      EnsureDomain(getCBLSVar(y),DomainRange(0,1),c)
+      getCBLSVar(y).restrictDomain(0 to 1)
+      Minus(1,getCBLSVar(y))
+    }
+  }
+
 
   def get_int_lin_eq(params: Array[IntegerVariable], vars: Array[IntegerVariable], sum: IntegerVariable, ann: List[Annotation]) = {
     EQ(new Linear(vars.map(getCBLSVar(_)),params.map(_.value)), sum)
   }
   def get_bool_lin_eq(params: Array[IntegerVariable], vars: Array[BooleanVariable], sum: IntegerVariable, ann: List[Annotation]) = {
-    EQ(new Linear(vars.map(getCBLSVar(_)),params.map(_.value)), sum)
+    EQ(new Linear(vars.map(Bool2Int(_)),params.map(_.value)), sum)
   }
   //TODO: Why is params an array of _Variable_ and not _Parameters_?
   def get_int_lin_eq_inv(params: Array[IntegerVariable], vars: Array[IntegerVariable], sum: IntegerVariable, defId: String, ann: List[Annotation]) = {
+    //Note that sum is always a constant
     val index = vars.indexWhere(p => p.id == defId);
     val defParam = params(index);
     val defVar = vars(index);
     val params2 = params.take(index) ++ params.drop(index + 1)
     val vars2 = vars.take(index) ++ vars.drop(index + 1)
-    //val prodArray = Array.tabulate(vars2.length)(n => Prod2(params2(n), vars2(n)).toIntVar);
+
     val linear = new Linear(vars2.map(getCBLSVar(_)),params2.map(_.value))
     if (defParam.value == 1) {
-     // println("%post "+sum+ " - sum("+prodArray.mkString(", ")+")")
       Minus(sum, linear)
     } else if (defParam.value == -1) {
-     // println("%post - "+sum+ " + sum("+prodArray.mkString(", ")+")")
       Minus(linear, sum)
     } else {
       Console.err.println("% Defining var with a scalar that isn't +-1, this can cause serious problems")
@@ -284,23 +257,9 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     }
   }
   def get_bool_lin_eq_inv(params: Array[IntegerVariable], vars: Array[BooleanVariable], sum: IntegerVariable, defId: String, ann: List[Annotation]) = {
-    val index = vars.indexWhere(p => p.id == defId);
-    val defParam = params(index);
-    val defVar = vars(index);
-    val params2 = params.take(index) ++ params.drop(index + 1)
-    val vars2 = vars.take(index) ++ vars.drop(index + 1)
-    //val prodArray = Array.tabulate(vars2.length)(n => Prod2(params2(n), vars2(n)).toIntVar);
-    val linear = new Linear(vars2.map(getCBLSVar(_)),params2.map(_.value))
-    if (defParam.value == 1) {
-     // println("%post "+sum+ " - sum("+prodArray.mkString(", ")+")")
-      Minus(sum, linear)
-    } else if (defParam.value == -1) {
-     // println("%post - "+sum+ " + sum("+prodArray.mkString(", ")+")")
-      Minus(linear, sum)
-    } else {
-      Console.err.println("% Defining var with a scalar that isn't +-1, this can cause serious problems")
-      Div(Minus(sum, linear), defParam)
-    }
+    //Note that sum is NOT a constant!!!
+    //We can only define sum!!
+    new Linear(vars.map(Bool2Int(_)),params.map(_.value))
   }
   
   def get_int_lin_le(params: Array[IntegerVariable], vars: Array[IntegerVariable], sum: IntegerVariable, ann: List[Annotation]) = {
@@ -309,14 +268,10 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   }
   def get_bool_lin_le(params: Array[IntegerVariable], vars: Array[BooleanVariable], sum: IntegerVariable, ann: List[Annotation]) = {
     //LE(new Sum(vars.zip(params).map{ case (v,p) => Prod2(getCBLSVar(v),p.value)}), sum)
-    LE(new Linear(vars.map(getCBLSVar(_)),params.map(_.value)), sum)
+    LE(new Linear(vars.map(Bool2Int(_)),params.map(_.value)), sum)
   }
   def get_int_lin_ne(params: Array[IntegerVariable], vars: Array[IntegerVariable], sum: IntegerVariable, ann: List[Annotation]) = {
     NE(new Linear(vars.map(getCBLSVar(_)),params.map(_.value)), sum)
-  }
-
-  def get_int_or_bool_lt(a: Variable, b: Variable, ann: List[Annotation]) = {
-    L(a, b)
   }
 
   def get_int_max(a: IntegerVariable, b: IntegerVariable, c: IntegerVariable, ann: List[Annotation]) = {
@@ -362,7 +317,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     Mod(a, b)
   }
 
-  def get_int_or_bool_ne(x: Variable, y: Variable, ann: List[Annotation]) = {
+  def get_int_ne(x: Variable, y: Variable, ann: List[Annotation]) = {
     NE(x, y)
   }
 
@@ -484,7 +439,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
 
   def get_table_bool(xs: Array[BooleanVariable], ts:Array[BooleanVariable], ann: List[Annotation]): CBLSConstraint = {
     val foldedTs:Array[Array[Int]] = Array.tabulate(ts.size/xs.size)(row =>
-      Array.tabulate(xs.size)(i => ts(row*xs.size + i).intValue)
+      Array.tabulate(xs.size)(i => ts(row*xs.size + i).violValue)
     )
     Table(xs.map(getCBLSVar(_)),foldedTs)
   }
@@ -503,41 +458,41 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
 
   def constructCBLSConstraint(constraint: Constraint):CBLSConstraint = {
     constraint match {
-      case reif(cstr,r) => EQ(r,constructCBLSConstraint(cstr).truthValue)
-      //TODO: Make a special Reif Constraint for the pattern "EQ(b,X.truthValue)", with a specific invariant.
+      case reif(cstr,r) =>
+        BoolEQ(r,constructCBLSConstraint(cstr).violation)
       
-      case array_bool_and(as, r, ann)                 => EQ(r,get_array_bool_and_inv(as, r,r.id, ann))
-      case array_bool_element(b, as, r, ann)          => EQ(r,get_array_bool_element_inv(b, as, r, r.id, ann))
-      case array_bool_or(as, r, ann)                  =>  get_array_bool_or(as,r, ann)//EQ(r,get_array_bool_or_inv(as, r,r.id, ann))//
+      case array_bool_and(as, r, ann)                 => BoolEQ(r,get_array_bool_and_inv(as, r,r.id, ann))
+      case array_bool_element(b, as, r, ann)          => BoolEQ(r,get_array_bool_element_inv(b, as, r, r.id, ann))
+      case array_bool_or(as, r, ann)                  => get_array_bool_or(as,r, ann)
       case array_bool_xor(as, ann)                    => get_array_bool_xor(as, ann)
       case array_int_element(b, as, r, ann)           => EQ(r,get_array_int_element_inv(b, as, r,r.id, ann))
-      case array_var_bool_element(b, as, r, ann)      => EQ(r,get_array_bool_element_inv(b, as, r,r.id, ann))
+      case array_var_bool_element(b, as, r, ann)      => BoolEQ(r,get_array_bool_element_inv(b, as, r,r.id, ann))
       case array_var_int_element(b, as, r, ann)       => EQ(r,get_array_int_element_inv(b, as, r,r.id, ann))
 
-      case bool2int(x, y, ann)                        => EQ(x,y)
-      case bool_and(a, b, r, ann)                     => EQ(r,get_bool_and_inv(a, b, ann))
+      case bool2int(x, y, ann)                        => EQ(Bool2Int(x),y)
+      case bool_and(a, b, r, ann)                     => BoolEQ(r,get_bool_and_inv(a, b, ann))
       case bool_clause(a, b, ann)                     => get_bool_clause(a, b, ann)
-      case bool_eq(a, b, ann)                         => EQ(a,b)
-      case bool_le(a, b, ann)                         => get_int_or_bool_le(a, b, ann)
+      case bool_eq(a, b, ann)                         => BoolEQ(a,b)
+      case bool_le(a, b, ann)                         => BoolLE(a, b)
       case bool_lin_eq(params, vars, sum, ann)        => get_bool_lin_eq(params, vars, sum, ann)
       case bool_lin_le(params, vars, sum, ann)        => get_bool_lin_le(params, vars, sum, ann)
-      case bool_lt(a, b, ann)                         => get_int_or_bool_lt(a, b, ann)
-      case bool_not(a, b, ann)                        => get_int_or_bool_ne(a, b, ann)
-      case bool_or(a, b, r, ann)                      => EQ(r,get_bool_or_inv(a, b, r, r.id, ann))
-      case bool_xor(a, b, r, ann)                     => EQ(r,get_int_or_bool_ne(a, b, ann).truthValue)
+      case bool_lt(a, b, ann)                         => BoolLT(a,b)
+      case bool_not(a, b, ann)                        => BoolEQ(Not(a),b)
+      case bool_or(a, b, r, ann)                      => EQ(r,Or(Array(a,b)))
+      case bool_xor(a, b, r, ann)                     => BoolEQ(r,XOR(a,b))
 
       case int_abs(x, y, ann)                         => EQ(y,get_int_abs_inv(x, y, y.id,ann))
       case int_div(x, y, z, ann)                      => EQ(x,get_int_times_inv(y,z,x,x.id,ann))//EQ(z,get_int_div_inv(x, y, z,z.id, ann))
       case int_eq(x, y, ann)                          => EQ(x,y)
-      case int_le(x, y, ann)                          => get_int_or_bool_le(x, y, ann)
+      case int_le(x, y, ann)                          => LE(x, y)
       case int_lin_eq(params, vars, sum, ann)         => get_int_lin_eq(params, vars, sum, ann)
       case int_lin_le(params, vars, sum, ann)         => get_int_lin_le(params, vars, sum, ann)
       case int_lin_ne(params, vars, sum, ann)         => get_int_lin_ne(params, vars, sum, ann)
-      case int_lt(x, y, ann)                          => get_int_or_bool_lt(x, y, ann)
+      case int_lt(x, y, ann)                          => L(x,y)
       case int_max(x, y, z, ann)                      => get_int_max(x, y, z, ann)
       case int_min(x, y, z, ann)                      => get_int_min(x, y, z, ann)
       case int_mod(x, y, z, ann)                      => EQ(z,get_int_mod_inv(x, y, z,z.id, ann))
-      case int_ne(x, y, ann)                          => get_int_or_bool_ne(x, y, ann)
+      case int_ne(x, y, ann)                          => get_int_ne(x, y, ann)
       case int_plus(x, y, z, ann)                     => get_int_plus(x, y, z, ann)
       case int_times(x, y, z, ann)                    => EQ(z,get_int_times_inv(x, y, z,z.id, ann))
       case set_in(x, s, ann)                          => get_set_in(x, s, ann)
@@ -555,6 +510,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
       case global_cardinality_low_up_closed(xs,vs,ls,us,ann) => get_global_cardinality_low_up(true,xs,vs,ls.map(_.min),us.map(_.min))
       case global_cardinality_low_up(xs,vs,ls,us,ann) => get_global_cardinality_low_up(false,xs,vs,ls.map(_.min),us.map(_.min))
       case maximum_int(y,xs,ann)                      => EQ(y,get_maximum_inv(xs,ann))
+
      // case member_int(xs,y,ann)                       => get_member(xs,y) use the decomposition
       case minimum_int(y,xs,ann)                      => EQ(y,get_minimum_inv(xs,ann))
       case nvalue_int(y,xs,ann)                       => EQ(y,get_nvalue_inv(xs,ann))
@@ -568,7 +524,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
 
   def constructCBLSIntInvariant(constraint: Constraint, id:String): IntValue = {
     constraint match {
-      case reif(cstr,r) => constructCBLSConstraint(cstr).truthValue//.asInstanceOf[Invariant]
+      case reif(cstr,r) => constructCBLSConstraint(cstr).violation
       
       case array_bool_and(as, r, ann)                 => get_array_bool_and_inv(as, r, id, ann)
       case array_bool_element(b, as, r, ann)          => get_array_bool_element_inv(b, as, r, id, ann)
@@ -578,17 +534,17 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
       case array_var_bool_element(b, as, r, ann)      => get_array_bool_element_inv(b, as, r, id, ann)
       case array_var_int_element(b, as, r, ann)       => get_array_int_element_inv(b, as, r, id, ann)
 
-      case bool2int(x, y, ann)                        => get_int_or_bool_eq_inv(x, y, id, ann)
+      case bool2int(x, y, ann)                        => get_bool_2_int_inv(x, y, id, ann)
       case bool_and(a, b, r, ann)                     => get_bool_and_inv(a, b, ann)
-      case bool_eq(a, b, ann)                         => get_int_or_bool_eq_inv(a, b, id, ann)
+      case bool_eq(a, b, ann)                         => get_bool_eq_inv(a, b, id, ann)
       case bool_lin_eq(params, vars, sum, ann)        => get_bool_lin_eq_inv(params, vars, sum, id, ann)
       case bool_not(a, b, ann)                        => get_bool_not_inv(a, b, id, ann)
       case bool_or(a, b, r, ann)                      => get_bool_or_inv(a, b, r, id, ann)
-      case bool_xor(a, b, r, ann)                     => get_int_or_bool_ne(a, b, ann).truthValue//This assumes that only r can be defined!
+      case bool_xor(a, b, r, ann)                     => XOR(a,b) //This assumes that only r can be defined!
 
       case int_abs(x, y, ann)                         => get_int_abs_inv(x, y, id, ann)
       case int_div(x, y, z, ann)                      => get_int_div_inv(x, y, z, id, ann)
-      case int_eq(x, y, ann)                          => get_int_or_bool_eq_inv(x, y, id, ann)
+      case int_eq(x, y, ann)                          => get_int_eq_inv(x, y, id, ann)
       case int_lin_eq(params, vars, sum, ann)         => get_int_lin_eq_inv(params, vars, sum, id, ann)
       case int_max(x, y, z, ann)                      => get_int_max_inv(x, y, z, id, ann)
       case int_min(x, y, z, ann)                      => get_int_min_inv(x, y, z, id, ann)
@@ -623,10 +579,11 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
       case Some(v) =>
         val inv = constructCBLSIntInvariant(constraint,v.id)
         val dom = v match{
-          case IntegerVariable(i,d,ann) => d
+          case IntegerVariable(i,d,ann) => EnsureDomain(inv,d,c)
           case bv: BooleanVariable => DomainRange(if(bv.isTrue) 1 else 0, if(bv.isFalse) 0 else 1)
         }
-        EnsureDomain(inv,dom,c)
+        //WARNING: removing ensuredom from booleanvariables...
+        //EnsureDomain(inv,dom,c)
         inv
     }
   }

@@ -52,6 +52,11 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
     val cpmodel = new FZCPModel(fzModel, oscar.cp.Strong)
     //println(fzModel.variables.toList.map(v => v.domainSize))
 
+
+    val foo = fzModel.constraints
+              .filter(_.isInstanceOf[int_lin_eq])
+              .map(_.asInstanceOf[int_lin_eq])
+              .filter(_.vars.exists(_.id == "X_INTRODUCED_117_"))
     simplifyFlatZincModel(opts, log, useCP, fzModel, cpmodel)
 
 
@@ -383,6 +388,8 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
       log("No domain reduction")
     } else {
       //TODO: check which part of the following is still necessary after using CP for bounds reduction.
+      FZModelTransfo.simplify(model)(log);
+      log("Reduced Domains")
       FZModelTransfo.simplify(model)(log);
       log("Reduced Domains")
     }

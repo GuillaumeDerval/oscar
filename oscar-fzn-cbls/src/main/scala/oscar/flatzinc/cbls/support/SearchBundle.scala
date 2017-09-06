@@ -19,14 +19,11 @@
 package oscar.flatzinc.cbls.support
 
 import oscar.cbls.core.computation.CBLSIntVar
-import oscar.cbls.core.constraint.{Constraint, ConstraintSystem}
+import oscar.cbls.core.constraint.{ConstraintSystem}
 import oscar.cbls.lib.invariant.logic._
-import oscar.cbls.core.objective.{Objective => CBLSObjective}
-import oscar.flatzinc.model.{Domain, DomainRange, DomainSet, Objective => FZObjective}
 import oscar.flatzinc.cbls.FZCBLSModel
 import oscar.cbls.core.computation.IntValue
 import oscar.cbls.lib.search.LinearSelector
-import oscar.util.RandomGenerator
 
 import scala.collection.mutable
 
@@ -271,7 +268,7 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
 
 
 
-
+    val foo  = m.c.getPostedConstraints.map(_._1).filter(_.violation.value>0)
 
     if(bestNeighbour!=null){
       //TODO: Aspiration sometimes accepts moves that do not improve but seem to improve because of changing weights. 
@@ -292,8 +289,8 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
       //tabu(index) := it.value + tenure;
       tabu(index) := it.value + Math.min(MaxTenure, tenure + RandomGenerator.nextInt(tenureIncrement));
     }
-
-/*    val hc = searchVariables.toList.map(_.value).hashCode
+/*
+    val hc = searchVariables.toList.map(_.value).hashCode
     if(visitedStates.contains(hc)){
       log("hash code: " + hc + " has been visited before - "+"Storing " + visitedStates.size + " violation: " +m.c.violation.value)
       //log(searchVariables.map(_.value).mkString(", "))

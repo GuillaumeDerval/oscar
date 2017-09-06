@@ -79,8 +79,6 @@ trait Constraint{
     * */
   final def isTrue: Boolean = (violation.value == 0)
 
-  final def truthValue = Step(violation,0,0,1)
-
   /**the variables that are constrained by the constraint.
    * This should be read only. If you want to declare more constrained variables,
    * use the registerConstrainedVariable method. */
