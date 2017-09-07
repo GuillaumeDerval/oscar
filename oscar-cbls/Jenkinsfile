@@ -7,9 +7,7 @@ node {
     email_to = "oscar.cbls-cetic@lists.cetic.be"
 
     try{
-        steps {
-                sh 'printenv'
-            }
+        
         stage('scm') {
             checkout scm: [
                 $class: 'MercurialSCM',
