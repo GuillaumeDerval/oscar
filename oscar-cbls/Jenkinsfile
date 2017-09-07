@@ -18,16 +18,16 @@ node {
             poll: false
         }
         stage('Build') {
-            sh "${env.SBT_CMD} compile"
+            sh "${env.SBT_CMD} 'project oscar-cbls' compile"
         }
         stage('Test') {
-            sh "${env.SBT_CMD} test"
+            sh "${env.SBT_CMD} 'project oscar-cbls' test"
         }
         stage('Package') {
-            sh "${env.SBT_CMD} package"
+            sh "${env.SBT_CMD} 'project oscar-cbls' package"
         }
         stage('Publish') {
-            sh "${env.SBT_CMD} publish"
+            sh "${env.SBT_CMD} 'project oscar-cbls' publish"
         }
         
     }
