@@ -22,7 +22,7 @@ class TSP(val instance: String, val bestObj: Int = 0) extends CPModel with Bench
   //Model:
   val succ: Array[CPIntVar] = Array.fill(n)(CPIntVar(0 until n))
   val obj = CPIntVar(0 until Int.MaxValue)
-  add(minCircuit(succ, distMatrix, obj), Strong)
+  add(minCircuit(succ, distMatrix, obj), Weak)
 
   // Search
   minimize(obj)

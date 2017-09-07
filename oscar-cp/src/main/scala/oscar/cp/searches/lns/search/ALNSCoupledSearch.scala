@@ -25,9 +25,9 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
 
     Random.shuffle(operators.toSeq).foreach(operator =>{
       val start = System.nanoTime()
-      endSearch = start + tAvail
+      endIter = start + tAvail
 
-      lnsSearch(operator)
+      while(System.nanoTime() < endIter) lnsIter(operator)
 
       val time = System.nanoTime() - start
       val improvement = Math.abs(currentSol.get.objective - initSol.objective)
@@ -56,7 +56,7 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
 
     currentSol = bestSol
     solver.objective.objs.head.best = bestSol.get.objective
-    endSearch = endTime
+    endIter = endTime
     learning = false
   }
 
@@ -66,30 +66,35 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
     stagnation = 0
     while (
       System.nanoTime() < endTime && opStore.nonActiveEmpty && (!config.learning || stagnation < stagnationThreshold) && !optimumFound) {
-      lnsSearch(opStore.select())
+      lnsIter(opStore.select())
     }
   }
 
-  def lnsSearch(operator: ALNSOperator): Unit = {
-    if(!learning) endSearch = Math.min(System.nanoTime() + iterTimeout, endTime)
+  def lnsIter(operator: ALNSOperator): Unit = {
+    if(!learning) endIter = Math.min(System.nanoTime() + iterTimeout, endTime)
 
     if(!solver.silent){
       println("\nStarting new search with: " + operator.name)
-      println("Operator timeout: " + (endSearch - System.nanoTime())/1000000000.0 + "s")
+      println("Operator timeout: " + (endIter - System.nanoTime())/1000000000.0 + "s")
     }
 
     val oldObjective = currentSol.get.objective
 
     //New search using selected strategies:
+    val (opFunction, opFailures, opDiscrepancy) = operator.getFunction
+    if(opFailures.isDefined) nFailures = opFailures.get
+
     var relaxDone = true
-    val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
+    val stats = solver.startSubjectTo(stopCondition, opDiscrepancy.getOrElse(Int.MaxValue), null) {
       try {
-        operator(currentSol.get)
+        opFunction(currentSol.get)
       }
       catch {
         case i: Inconsistency => relaxDone = false
       }
     }
+
+    if(opFailures.isDefined) nFailures = 0 //Restauring failures number to 0
 
     val improvement = math.abs(currentSol.get.objective - oldObjective)
 

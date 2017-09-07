@@ -36,9 +36,9 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       search <- Random.shuffle(getReifiedOperators(searchOps))
     }{
       val start = System.nanoTime()
-      endSearch = Math.min(start + tAvail, endTime)
+      endIter = Math.min(start + tAvail, endTime)
 
-      lnsSearch(relax, search)
+      lnsIter(relax, search)
 
       val time = System.nanoTime() - start
       val improvement = Math.abs(currentSol.get.objective - initSol.objective)
@@ -82,7 +82,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
 
     currentSol = bestSol
     solver.objective.objs.head.best = bestSol.get.objective
-    endSearch = endTime
+    endIter = endTime
     learning = false
   }
 
@@ -90,31 +90,37 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
     if (!solver.silent) println("\nStarting adaptive LNS...")
     stagnation = 0
     while (System.nanoTime() < endTime  && relaxStore.nonActiveEmpty && searchStore.nonActiveEmpty && (!config.learning || stagnation < stagnationThreshold) && !optimumFound) {
-      lnsSearch(relaxStore.select(), searchStore.select())
+      lnsIter(relaxStore.select(), searchStore.select())
     }
   }
 
-  def lnsSearch(relax: ALNSOperator, search: ALNSOperator): Unit = {
-    if(!learning) endSearch = Math.min(System.nanoTime() + iterTimeout, endTime)
+  def lnsIter(relax: ALNSOperator, search: ALNSOperator): Unit = {
+    if(!learning) endIter = Math.min(System.nanoTime() + iterTimeout, endTime)
 
     if(!solver.silent){
       println("\nStarting new search with: " + relax.name + " and " + search.name)
-      println("Operator timeout: " + (endSearch - System.nanoTime())/1000000000.0 + "s")
+      println("Operator timeout: " + (endIter - System.nanoTime())/1000000000.0 + "s")
     }
 
     val oldObjective = currentSol.get.objective
 
     //New search using selected strategies:
+    val (relaxFunction, _, _) = relax.getFunction
+    val (searchFunction, searchFailures, searchDiscrepancy) = search.getFunction
+    if(searchFailures.isDefined) nFailures = searchFailures.get
+
     var relaxDone = true
-    val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
+    val stats = solver.startSubjectTo(stopCondition, searchDiscrepancy.getOrElse(Int.MaxValue), null) {
       try {
-        relax(currentSol.get)
+        relaxFunction(currentSol.get)
       }
       catch {
         case _: Inconsistency => relaxDone = false
       }
-      if (relaxDone) search(currentSol.get)
+      if (relaxDone) searchFunction(currentSol.get)
     }
+
+    if(searchFailures.isDefined) nFailures = 0 //Restauring failures number to 0
 
     val improvement = math.abs(currentSol.get.objective - oldObjective)
 

@@ -11,10 +11,10 @@ import oscar.cp.searches.lns.CPIntSol
 abstract class ALNSOperator(val name: String, failThreshold: Int) extends ALNSElement(failThreshold){
 
   /**
-    * Applies the operator
+    * Returns the operator function to apply as well as optional meta-parameter values.
     * Warning: Should only be used in a Sequential setting!
     */
-  def apply(model: CPIntSol): Unit
+  def getFunction: (CPIntSol => Unit, Option[Int], Option[Int])
 
   /**
     * Updates the operators stats and eventual parameters (indicated by id) based on the improvement and

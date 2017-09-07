@@ -17,7 +17,7 @@ import oscar.cp.searches.lns.CPIntSol
 class ALNSReifiedOperator(
                            name:String,
                            failThreshold: Int,
-                           function: CPIntSol => Unit,
+                           function: () => (CPIntSol => Unit, Option[Int], Option[Int]),
                            val updateFunction: (Int, SearchStatistics, Boolean) => Unit,
                            val activationFunction: (Boolean) => Unit
                      ) extends ALNSNoParamOperator(name, failThreshold, function){

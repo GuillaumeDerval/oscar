@@ -19,15 +19,20 @@ object ALNSSearch{
   */
 abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) {
   val startTime: Long = System.nanoTime()
-  val endTime: Long = if(config.timeout > 0) startTime + config.timeout else Long.MaxValue
-  var endSearch: Long = endTime
+
+  //Configuration:
+  val endTime: Long = if(config.timeout > 0) startTime + config.timeout else Long.MaxValue //Maximal allocated time
+  var endIter: Long = endTime //Maximal allocated time for the current iteration
 
   var learnRatio = 0.3 //The ratio of remaining time that a learning phase will have
-  var learning = false
-  var iterTimeout: Long = if(config.timeout > 0) config.timeout / 300 else Long.MaxValue
+  var learning = false //Currently in learning phase
+  var iterTimeout: Long = if(config.timeout > 0) config.timeout / 300 else Long.MaxValue //The iteration allocated time
   var searchFail = 0
   var stagnation = 0
   val stagnationThreshold = 100
+
+  var nSols = 0
+  var nFailures = 0
 
   val maximizeObjective: Option[Boolean] = if(solver.objective.objs.nonEmpty) Some(solver.objective.objs.head.isMax) else None
   if(!solver.silent) println("Objective type: " + (if(maximizeObjective.isDefined) if(maximizeObjective.get) "max" else "min" else "none"))
@@ -59,12 +64,12 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
     }
   }
 
-  val nSols = 1
   val stopCondition: (DFSearch) => Boolean = (s: DFSearch) => {
     var stop = false
-    stop |= (nSols != 0 && s.nSolutions >= nSols)
-    stop |= (System.nanoTime() >= endTime)
-    stop |= (System.nanoTime() >= endSearch)
+    stop |= nSols != 0 && s.nSolutions >= nSols
+    stop |= nFailures != 0 && s.nBacktracks >= nFailures
+    stop |= System.nanoTime() >= endTime
+    stop |= System.nanoTime() >= endIter
     stop
   }
 
@@ -75,9 +80,13 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
   def searchFirstSol(): Boolean = {
     if(!solver.silent) println("Starting first solution search...")
 
+    nSols = 1
+
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
       solver.search(SearchFunctions.conflictOrdering(vars, if(maximizeObjective.isDefined) if(maximizeObjective.get) "Min" else "Max"  else "Max", valLearn = false))
     }
+
+    nSols = 0
 
     if(!solver.silent) println("Time elapsed: " + (System.nanoTime() - startTime)/1000000000.0 + "s")
     iterTimeout = stats.time * 1000000 * 4

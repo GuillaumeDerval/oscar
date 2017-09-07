@@ -17,7 +17,7 @@ import scala.collection.mutable
 class ALNSSingleParamOperator[T](
                                   name: String,
                                   failThreshold: Int,
-                                  val function: (CPIntSol, T) => Unit,
+                                  val function: (T) => (CPIntSol => Unit, Option[Int], Option[Int]),
                                   val paramStore: AdaptiveStore[ALNSParameter[T]],
                                   val metric: (ALNSElement, Int, SearchStatistics) => Double
                                 ) extends ALNSOperator(name, failThreshold){
@@ -32,7 +32,7 @@ class ALNSSingleParamOperator[T](
     new ALNSReifiedOperator(
       name + "(" + param.value + ")",
       param.failThreshold,
-      function(_:CPIntSol, param.value),
+      () => function(param.value),
       (improvement, stats, fail) => updateParam(param, improvement, stats, fail),
       (state) => {
         param.setActive(state)
@@ -46,12 +46,10 @@ class ALNSSingleParamOperator[T](
 
   def getReifiedParameters: Iterable[ALNSReifiedOperator] = paramStore.getElements.map(getReified)
 
-  override def apply(sol: CPIntSol): Unit = {
-    if(selected.isEmpty) {
-      selected = Some(paramStore.select())
-      function(sol, selected.get.value)
-    }
-    else throw new Exception("This operator has already been used but not updated!")
+  //Warning: risk if used concurrently!
+  override def getFunction: (CPIntSol => Unit, Option[Int], Option[Int]) = {
+    selected = Some(paramStore.select())
+    function(selected.get.value)
   }
 
   override def update(costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit = {
@@ -87,6 +85,7 @@ class ALNSSingleParamOperator[T](
     }
     super.setActive(state)
   }
+
   override def resetFails(): Unit = {
     paramStore.getElements.foreach(_.resetFails())
     super.resetFails()

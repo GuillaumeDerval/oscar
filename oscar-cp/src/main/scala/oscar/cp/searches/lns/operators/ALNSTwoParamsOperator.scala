@@ -18,7 +18,7 @@ import scala.collection.mutable
 class ALNSTwoParamsOperator[T1, T2](
                                      name: String,
                                      failThreshold: Int,
-                                     val function: (CPIntSol, T1, T2) => Unit,
+                                     val function: (T1, T2) => (CPIntSol => Unit, Option[Int], Option[Int]),
                                      val param1Store: AdaptiveStore[ALNSParameter[T1]],
                                      val param2Store: AdaptiveStore[ALNSParameter[T2]],
                                      val metric: (ALNSElement, Int, SearchStatistics) => Double
@@ -36,8 +36,8 @@ class ALNSTwoParamsOperator[T1, T2](
     new ALNSReifiedOperator(
       name + "(" + param1.value + ", " + param2.value + ")",
       Math.min(param1.failThreshold, param2.failThreshold),
-      function(_:CPIntSol, param1.value, param2.value),
-      (improvement, stats, fail) => updateParam(param1, param2, improvement, stats, fail),
+      () => function(param1.value, param2.value),
+      (improvement, stats, fail) => updateParams(param1, param2, improvement, stats, fail),
       (state) => {
         if(!param1.isActive) {
           param1Store.deactivate(param1)
@@ -56,27 +56,24 @@ class ALNSTwoParamsOperator[T1, T2](
     p2 <- param2Store.getElements
   } yield getReified(p1, p2)
 
-  override def apply(model:CPIntSol): Unit = {
-    if(selected1.isEmpty && selected2.isEmpty) {
-      selected1 = Some(param1Store.select())
-      selected2 = Some(param2Store.select())
-      function(model, selected1.get.value, selected2.get.value)
-    }
-    else throw new Exception("This operator has already been used but not updated!")
+  //Warning: risk if used concurrently!
+  override def getFunction: (CPIntSol => Unit, Option[Int], Option[Int]) = {
+    selected1 = Some(param1Store.select())
+    selected2 = Some(param2Store.select())
+    function(selected1.get.value, selected2.get.value)
   }
 
   override def update(costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit = {
     if(selected1.isDefined && selected2.isDefined){
-      updateParam(selected1.get, selected2.get, costImprovement, stats, fail)
+      updateParams(selected1.get, selected2.get, costImprovement, stats, fail)
       selected1 = None
       selected2 = None
+      super.update(costImprovement, stats, fail)
     }
     else throw new Exception("This operator has not been used!")
   }
 
-  private def updateParam(param1: ALNSParameter[T1], param2: ALNSParameter[T2], costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit ={
-    super.update(costImprovement, stats, fail)
-
+  private def updateParams(param1: ALNSParameter[T1], param2: ALNSParameter[T2], costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit ={
     param1.update(costImprovement, stats, fail)
     if(param1.isActive)
       param1Store.adapt(param1, metric(param1, costImprovement, stats))
@@ -118,6 +115,7 @@ class ALNSTwoParamsOperator[T1, T2](
     }
     super.setActive(state)
   }
+
   override def resetFails(): Unit = {
     param1Store.getElements.foreach(_.resetFails())
     param2Store.getElements.foreach(_.resetFails())

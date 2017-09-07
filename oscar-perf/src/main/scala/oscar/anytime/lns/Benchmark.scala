@@ -55,7 +55,7 @@ trait Benchmark {
 
   def performALNS(argMap: ArgMap): ALNSSearchResults = {
     val config = new ALNSConfig(
-      argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
+      argMap.getOrElse('timeout, 0L).asInstanceOf[Long] * 1000000000L,
       bestKnownObjective,
       1000,
       coupled = argMap.getOrElse('coupled, false).asInstanceOf[Boolean],
