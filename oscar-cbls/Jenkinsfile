@@ -26,6 +26,10 @@ node {
         stage('Package') {
             sh "${env.SBT_CMD} package"
         }
+        stage('Publish') {
+            sh "${env.SBT_CMD} publish"
+        }
+        
     }
     catch (err) {
         currentBuild.result = "FAILURE"
