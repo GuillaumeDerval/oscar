@@ -72,7 +72,6 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
     new CascadingObjective(maxNodes,
       Objective(cumulative2._3(1) + cumulative2._2(1) + totalDistance + (penaltyForUnrouted*(n - Length(routes))))))
 
-
   val closestNeighboursForward = computeClosestNeighborsForward()
 
   def size = routes.value.size
