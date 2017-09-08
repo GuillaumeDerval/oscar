@@ -27,10 +27,10 @@ node {
             sh "${env.SBT_CMD} test"
         }
         stage('Package') {
-            sh "${env.SBT_CMD} package"
+            sh "${env.SBT_CMD} package -Xdisable-assertions"
         }
         stage('Publish') {
-            sh "${env.SBT_CMD} publish"
+            sh "${env.SBT_CMD} publish -Xdisable-assertions"
         }
         
     }
