@@ -7,11 +7,14 @@ node {
     email_to = "oscar.cbls-cetic@lists.cetic.be"
 
     try{
+    stage('print') {
+        sh 'printenv'
+    }
         stage('scm') {
             checkout scm: [
                 $class: 'MercurialSCM',
                 source: 'https://bitbucket.org/oscarlib/oscar',
-                revision: 'CBLS',
+                revision: env.BRANCH_NAME,
                 revisionType: 'BRANCH',
                 clean: true
             ],
@@ -24,8 +27,12 @@ node {
             sh "${env.SBT_CMD} test"
         }
         stage('Package') {
-            sh "${env.SBT_CMD} package"
+            sh "${env.SBT_CMD} package -Xdisable-assertions"
         }
+        stage('Publish') {
+            sh "${env.SBT_CMD} publish -Xdisable-assertions"
+        }
+        
     }
     catch (err) {
         currentBuild.result = "FAILURE"
