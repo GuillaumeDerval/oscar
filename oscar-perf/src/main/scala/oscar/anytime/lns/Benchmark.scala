@@ -77,7 +77,10 @@ trait Benchmark {
       argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
       argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
       argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String],
-      argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String]
+      argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String],
+
+      argMap.getOrElse('relaxSize, ALNSBuilder.DefRelaxParam).asInstanceOf[Array[Double]],
+      argMap.getOrElse('nFailures, ALNSBuilder.DefNFailures).asInstanceOf[Array[Int]]
     )
 
     val alns = ALNSSearch(solver, decisionVariables, config)
@@ -161,6 +164,15 @@ trait Benchmark {
         }
         parseArgs(map ++ Map('relax -> relax.toArray), next)
 
+      case "--relax-size" :: value :: tail if !isSwitch(value) =>
+        val relaxSize = mutable.ListBuffer[Double]()
+        var next = list.tail
+        while(next.nonEmpty && !isSwitch(next.head)){
+          relaxSize += next.head.toDouble
+          next = next.tail
+        }
+        parseArgs(map ++ Map('relaxSize -> relaxSize.toArray), next)
+
       case "--search" :: value :: tail if !isSwitch(value) =>
         val search = mutable.ListBuffer[String]()
         var next = list.tail
@@ -169,6 +181,15 @@ trait Benchmark {
           next = next.tail
         }
         parseArgs(map ++ Map('search -> search.toArray), next)
+
+      case "--n-failures" :: value :: tail if !isSwitch(value) =>
+        val nFailures = mutable.ListBuffer[Int]()
+        var next = list.tail
+        while(next.nonEmpty && !isSwitch(next.head)){
+          nFailures += next.head.toInt
+          next = next.tail
+        }
+        parseArgs(map ++ Map('nFailures -> nFailures.toArray), next)
 
       case "--val-learn" :: tail => tail match{
         case value :: remTail =>

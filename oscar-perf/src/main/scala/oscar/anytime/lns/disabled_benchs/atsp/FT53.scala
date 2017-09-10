@@ -1,4 +1,4 @@
-package oscar.anytime.lns.benchmarks.atsp
+package oscar.anytime.lns.disabled_benchs.atsp
 
 import oscar.anytime.lns.models.{ATSP, TSP}
 

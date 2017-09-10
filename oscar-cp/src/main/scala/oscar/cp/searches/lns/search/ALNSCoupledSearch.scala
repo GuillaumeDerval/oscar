@@ -19,11 +19,21 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
     learning = true
     val initSol = currentSol.get
 
+//    solver.onSolution {
+//      val time = System.nanoTime() - startTime
+//      val objective = solver.objective.objs.head.best
+//      println(time/1000000000 + "," + objective)
+//    }
+//    println("0," + solver.objective.objs.head.best)
+
     val learningStart = System.nanoTime()
     val tAvail = (((endTime - learningStart) * learnRatio) / operators.length).toLong
+//    val tAvail = 600000000000L
     val opPerf = ArrayBuffer[(ALNSOperator, Long, Int)]()
 
     Random.shuffle(operators.toSeq).foreach(operator =>{
+//    operators.foreach(operator =>{
+//      println(operator.name)
       val start = System.nanoTime()
       endIter = start + tAvail
 
@@ -38,6 +48,15 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
       solver.objective.objs.head.best = initSol.objective
       currentSol = Some(initSol)
     })
+
+    if(!solver.silent){
+      println("Operators performances:")
+      println("operator,time,objective")
+      println(opPerf.map{ case(operator, time, objective) => operator.name + "," + time/1000000000 + "," + objective}.mkString("\n"))
+    }
+
+    //Stopping search here:
+//    optimumFound = true
 
     if(config.opDeactivation) {
       opPerf.filter { case (op, time, improvement) =>

@@ -20,7 +20,7 @@ class ATSP(val instance: String, val bestObj: Int = 0) extends CPModel with Benc
 
   val succ = Array.fill(n)(CPIntVar(0 until n))
   val obj = CPIntVar(0 until 1000000)
-  add(minCircuit(succ, distMatrixSucc,obj),Strong)
+  add(minCircuit(succ, distMatrixSucc,obj), Weak)
 
   minimize(obj)
 

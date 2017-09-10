@@ -1,4 +1,4 @@
-package oscar.anytime.lns.disabled_benchs.qap
+package oscar.anytime.lns.benchmarks.qap
 
 import oscar.anytime.lns.models.QuadraticAssignment
 

@@ -1,6 +1,25 @@
---timeout 600 --name Random --selection RWheel --metric TTI --coupled false --learning false --relax RandomRelax --search ConfOrderSearch --val-learn false
---timeout 600 --name Kopt --selection RWheel --metric TTI --coupled false --learning false --relax CircuitKoptRelax --search ConfOrderSearch --val-learn false
---timeout 600 --name Seq --selection RWheel --metric TTI --coupled false --learning false --relax CircuitSeqRelax --search ConfOrderSearch --val-learn false
---timeout 600 --name AllPredTTI --selection RWheel --metric TTI --coupled false --learning false --relax RandomRelax CircuitSeqRelax CircuitKoptRelax --search ConfOrderSearch --val-learn false
---timeout 600 --name AllPredAvgRatio --selection RWheel --metric AvgImprovRatio --coupled false --learning false --relax RandomRelax CircuitSeqRelax CircuitKoptRelax --search ConfOrderSearch --val-learn false
---timeout 600 --name AllPredRandom --selection Random --coupled false --learning false --relax RandomRelax CircuitSeqRelax CircuitKoptRelax --search ConfOrderSearch --val-learn false
+--timeout 600 --name 2-10 --coupled true --relax RandomRelax --relax-size 0.02 --search ConfOrderSearch --n-failures 10
+--timeout 600 --name 5-10 --coupled true --relax RandomRelax --relax-size 0.05 --search ConfOrderSearch --n-failures 10
+--timeout 600 --name 10-10 --coupled true --relax RandomRelax --relax-size 0.1 --search ConfOrderSearch --n-failures 10
+--timeout 600 --name 20-10 --coupled true --relax RandomRelax --relax-size 0.2 --search ConfOrderSearch --n-failures 10
+--timeout 600 --name 40-10 --coupled true --relax RandomRelax --relax-size 0.4 --search ConfOrderSearch --n-failures 10
+--timeout 600 --name 2-100 --coupled true --relax RandomRelax --relax-size 0.02 --search ConfOrderSearch --n-failures 100
+--timeout 600 --name 5-100 --coupled true --relax RandomRelax --relax-size 0.05 --search ConfOrderSearch --n-failures 100
+--timeout 600 --name 10-100 --coupled true --relax RandomRelax --relax-size 0.1 --search ConfOrderSearch --n-failures 100
+--timeout 600 --name 20-100 --coupled true --relax RandomRelax --relax-size 0.2 --search ConfOrderSearch --n-failures 100
+--timeout 600 --name 40-100 --coupled true --relax RandomRelax --relax-size 0.4 --search ConfOrderSearch --n-failures 100
+--timeout 600 --name 2-1000 --coupled true --relax RandomRelax --relax-size 0.02 --search ConfOrderSearch --n-failures 1000
+--timeout 600 --name 5-1000 --coupled true --relax RandomRelax --relax-size 0.05 --search ConfOrderSearch --n-failures 1000
+--timeout 600 --name 10-1000 --coupled true --relax RandomRelax --relax-size 0.1 --search ConfOrderSearch --n-failures 1000
+--timeout 600 --name 20-1000 --coupled true --relax RandomRelax --relax-size 0.2 --search ConfOrderSearch --n-failures 1000
+--timeout 600 --name 40-1000 --coupled true --relax RandomRelax --relax-size 0.4 --search ConfOrderSearch --n-failures 1000
+--timeout 600 --name 2-10000 --coupled true --relax RandomRelax --relax-size 0.02 --search ConfOrderSearch --n-failures 10000
+--timeout 600 --name 5-10000 --coupled true --relax RandomRelax --relax-size 0.05 --search ConfOrderSearch --n-failures 10000
+--timeout 600 --name 10-10000 --coupled true --relax RandomRelax --relax-size 0.1 --search ConfOrderSearch --n-failures 10000
+--timeout 600 --name 20-10000 --coupled true --relax RandomRelax --relax-size 0.2 --search ConfOrderSearch --n-failures 10000
+--timeout 600 --name 40-10000 --coupled true --relax RandomRelax --relax-size 0.4 --search ConfOrderSearch --n-failures 10000
+--timeout 600 --name 2-100000 --coupled true --relax RandomRelax --relax-size 0.02 --search ConfOrderSearch --n-failures 100000
+--timeout 600 --name 5-100000 --coupled true --relax RandomRelax --relax-size 0.05 --search ConfOrderSearch --n-failures 100000
+--timeout 600 --name 10-100000 --coupled true --relax RandomRelax --relax-size 0.1 --search ConfOrderSearch --n-failures 100000
+--timeout 600 --name 20-100000 --coupled true --relax RandomRelax --relax-size 0.2 --search ConfOrderSearch --n-failures 100000
+--timeout 600 --name 40-100000 --coupled true --relax RandomRelax --relax-size 0.4 --search ConfOrderSearch --n-failures 100000

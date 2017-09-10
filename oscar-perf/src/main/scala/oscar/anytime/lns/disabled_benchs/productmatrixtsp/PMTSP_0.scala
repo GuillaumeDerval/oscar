@@ -1,4 +1,4 @@
-package oscar.anytime.lns.benchmarks.productmatrixtsp
+package oscar.anytime.lns.disabled_benchs.productmatrixtsp
 
 import oscar.anytime.lns.models.ProductMatrixTSP
 

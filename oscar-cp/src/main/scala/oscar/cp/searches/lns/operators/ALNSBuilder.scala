@@ -121,6 +121,8 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
   lazy val N: Int = vars.length // The number of vars
   lazy val maxNeighSize: Double = vars.map(x => math.log(x.size)).sum // Max neighbourhood size for propagation guided relax
   lazy val closeness: Option[ClosenessStore] = if(N*N*16 > (config.memLimit * 1000000)) None else Some(new ClosenessStore(N)) // Closeness store used for propagation guided relax
+  lazy val relaxSize: Array[Double] = config.relaxSize
+  lazy val nFailures: Array[Int] = config.nFailures
 
   def instantiateCoupledOperators: Array[ALNSOperator] =(
     for(
@@ -136,17 +138,17 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
     * @param searchKey the search function key
     * @return an array of coupled operator (one for each possible parameter combination)
     */
-  private def instantiateCoupledOperator(relaxKey: String, searchKey: String): Array[ALNSOperator] =
+  private def instantiateCoupledOperator(relaxKey: String, searchKey: String): Array[ALNSOperator] = {
     for {
       (relaxName, relaxFunction) <- instantiateRelaxFunctions(relaxKey)
       (searchName, searchFunction) <- instantiateSearchFunctions(searchKey)
-      nFailures <- ALNSBuilder.DefNFailures
+      nFailures <- nFailures
       maxDiscrepancy <- ALNSBuilder.DefMaxDiscrepancy
     } yield new ALNSNoParamOperator(
-      relaxName + "_" + searchName + "(" + (if(nFailures == 0) "NoFailLimit" else nFailures) + "," + (if(maxDiscrepancy == Int.MaxValue) "NoMaxDiscrepancy" else maxDiscrepancy) + ")",
-      if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0,
+      relaxName + "_" + searchName + "(" + (if (nFailures == 0) "NoFailLimit" else nFailures) + "," + (if (maxDiscrepancy == Int.MaxValue) "NoMaxDiscrepancy" else maxDiscrepancy) + ")",
+      if (config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0,
       () => (
-        (sol:CPIntSol) => {
+        (sol: CPIntSol) => {
           relaxFunction(sol)
           searchFunction(sol)
         },
@@ -154,6 +156,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
         Some(maxDiscrepancy)
       )
     )
+  }
 
   def instantiateRelaxOperators: Array[ALNSOperator] = {
     if (closeness.isDefined) config.relaxOperatorKeys.map(x => instantiateRelaxOperator(x, config.paramSelectionKey, config.paramMetricKey))
@@ -167,28 +170,26 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
 
   def instantiateMetric(): (ALNSElement, Int, SearchStatistics) => Double = instantiateMetric(config.opMetricKey)
 
-
-
   private def instantiateRelaxFunctions(opKey: String): Array[(String, CPIntSol => Unit)] = opKey match{
 
     case ALNSBuilder.RandomRelax =>
-      ALNSBuilder.DefRelaxParam
-        .map(x => Math.round(N * x).toInt)
+      relaxSize
+        .map(x => Math.ceil(N * x).toInt)
         .map(x => (
           opKey + "(" + x.toString + ")",
           (sol: CPIntSol) => RelaxationFunctions.randomRelax(solver, vars, sol, x))
         )
 
     case ALNSBuilder.KSuccessiveRelax =>
-      ALNSBuilder.DefRelaxParam
-        .map(x => Math.round(N * x).toInt)
+      relaxSize
+        .map(x => Math.ceil(N * x).toInt)
         .map(x => (
           opKey + "(" + x.toString + ")",
           (sol: CPIntSol) => RelaxationFunctions.successiveRelax(solver, vars, sol, x))
         )
 
     case ALNSBuilder.PropGuidedRelax =>
-      ALNSBuilder.DefRelaxParam
+      relaxSize
         .map(x => maxNeighSize * x)
         .map(x => (
           opKey + "(" + x.toString + ")",
@@ -197,7 +198,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
 
     case ALNSBuilder.RevPropGuidedRelax =>
       if(closeness.isDefined) {
-        ALNSBuilder.DefRelaxParam
+        relaxSize
           .map(x => maxNeighSize * x)
           .map(x => (
             opKey + "(" + x.toString + ")",
@@ -207,64 +208,64 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       else Array[(String, CPIntSol => Unit)]()
 
     case ALNSBuilder.RandomValGroupsRelax =>
-      ALNSBuilder.DefRelaxParam
-        .map(x => Math.round(N * x).toInt)
+      relaxSize
+        .map(x => Math.ceil(N * x).toInt)
         .map(x => (
           opKey + "(" + x.toString + ")",
           (sol: CPIntSol) => RelaxationFunctions.randomGroupsRelax(solver, vars, sol, x))
         )
 
     case ALNSBuilder.MinValGroupsRelax =>
-      ALNSBuilder.DefRelaxParam
-        .map(x => Math.round(N * x).toInt)
+      relaxSize
+        .map(x => Math.ceil(N * x).toInt)
         .map(x => (
           opKey + "(" + x.toString + ")",
           (sol: CPIntSol) => RelaxationFunctions.minGroupsRelax(solver, vars, sol, x))
         )
 
     case ALNSBuilder.MaxValGroupsRelax =>
-      ALNSBuilder.DefRelaxParam
-        .map(x => Math.round(N * x).toInt)
+      relaxSize
+        .map(x => Math.ceil(N * x).toInt)
         .map(x => (
           opKey + "(" + x.toString + ")",
           (sol: CPIntSol) => RelaxationFunctions.maxGroupsRelax(solver, vars, sol, x))
         )
 
     case ALNSBuilder.MinValRelax =>
-      ALNSBuilder.DefRelaxParam
-        .map(x => Math.round(N * x).toInt)
+      relaxSize
+        .map(x => Math.ceil(N * x).toInt)
         .map(x => (
           opKey + "(" + x.toString + ")",
           (sol: CPIntSol) => RelaxationFunctions.minValRelax(solver, vars, sol, x))
         )
 
     case ALNSBuilder.MaxValRelax =>
-      ALNSBuilder.DefRelaxParam
-        .map(x => Math.round(N * x).toInt)
+      relaxSize
+        .map(x => Math.ceil(N * x).toInt)
         .map(x => (
           opKey + "(" + x.toString + ")",
           (sol: CPIntSol) => RelaxationFunctions.maxValRelax(solver, vars, sol, x))
         )
 
     case ALNSBuilder.MinMaxValRelax =>
-      ALNSBuilder.DefRelaxParam
-        .map(x => Math.round(N * x).toInt)
+      relaxSize
+        .map(x => Math.ceil(N * x).toInt)
         .map(x => (
           opKey + "(" + x.toString + ")",
           (sol: CPIntSol) => RelaxationFunctions.minMaxValRelax(solver, vars, sol, x))
         )
 
     case ALNSBuilder.CircuitSeqRelax =>
-      ALNSBuilder.DefRelaxParam
-        .map(x => Math.round(N * x).toInt)
+      relaxSize
+        .map(x => Math.ceil(N * x).toInt)
         .map(x => (
           opKey + "(" + x.toString + ")",
           (sol: CPIntSol) => RelaxationFunctions.predRelaxSeqFixed(solver, vars, sol, x))
         )
 
     case ALNSBuilder.CircuitKoptRelax =>
-      ALNSBuilder.DefRelaxParam
-        .map(x => Math.round(N * x).toInt / 2)
+      relaxSize
+        .map(x => Math.ceil(N * x).toInt / 2)
         .map(x => (
           opKey + "(" + x.toString + ")",
           (sol: CPIntSol) => RelaxationFunctions.predRelaxKopt(solver, vars, sol, x))
@@ -322,8 +323,8 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.randomRelax(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.DefRelaxParam
-          .map(x => Math.round(N * x).toInt)
+        relaxSize
+          .map(x => Math.ceil(N * x).toInt)
           .map(x => new ALNSParameter[Int](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       ),
@@ -336,8 +337,8 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.successiveRelax(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.DefRelaxParam
-          .map(x => Math.round(N * x).toInt)
+        relaxSize
+          .map(x => Math.ceil(N * x).toInt)
           .map(x => new ALNSParameter[Int](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       ),
@@ -350,7 +351,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       (param: Double) => ((sol:CPIntSol) => RelaxationFunctions.propagationGuidedRelax(solver, vars, sol: CPIntSol, closeness, param: Double), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.DefRelaxParam
+        relaxSize
           .map(x => x * maxNeighSize)
           .map(x => new ALNSParameter[Double](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey),
@@ -363,7 +364,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       (param: Double) => ((sol:CPIntSol) => RelaxationFunctions.reversedPropagationGuidedRelax(solver, vars, sol: CPIntSol, closeness.get, param: Double), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.DefRelaxParam
+        relaxSize
           .map(x => x * maxNeighSize)
           .map(x => new ALNSParameter[Double](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey),
@@ -376,8 +377,8 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.randomGroupsRelax(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.DefRelaxParam
-          .map(x => Math.round(N * x).toInt)
+        relaxSize
+          .map(x => Math.ceil(N * x).toInt)
           .map(x => new ALNSParameter[Int](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       ),
@@ -390,8 +391,8 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.minGroupsRelax(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.DefRelaxParam
-          .map(x => Math.round(N * x).toInt)
+        relaxSize
+          .map(x => Math.ceil(N * x).toInt)
           .map(x => new ALNSParameter[Int](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       ),
@@ -404,8 +405,8 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.maxGroupsRelax(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.DefRelaxParam
-          .map(x => Math.round(N * x).toInt)
+        relaxSize
+          .map(x => Math.ceil(N * x).toInt)
           .map(x => new ALNSParameter[Int](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       ),
@@ -418,8 +419,8 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.minValRelax(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.DefRelaxParam
-          .map(x => Math.round(N * x).toInt)
+        relaxSize
+          .map(x => Math.ceil(N * x).toInt)
           .map(x => new ALNSParameter[Int](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       ),
@@ -432,8 +433,8 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.maxValRelax(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.DefRelaxParam
-          .map(x => Math.round(N * x).toInt)
+        relaxSize
+          .map(x => Math.ceil(N * x).toInt)
           .map(x => new ALNSParameter[Int](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       ),
@@ -446,8 +447,8 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.minMaxValRelax(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.DefRelaxParam
-          .map(x => Math.round(N * x).toInt)
+        relaxSize
+          .map(x => Math.ceil(N * x).toInt)
           .map(x => new ALNSParameter[Int](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       ),
@@ -460,8 +461,8 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.predRelaxSeqFixed(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.DefRelaxParam
-          .map(x => Math.round(N * x).toInt)
+        relaxSize
+          .map(x => Math.ceil(N * x).toInt)
           .map(x => new ALNSParameter[Int](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       ),
@@ -474,8 +475,8 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.predRelaxKopt(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.DefRelaxParam
-          .map(x => Math.round(N * x).toInt / 2)
+        relaxSize
+          .map(x => Math.ceil(N * x).toInt / 2)
           .map(x => new ALNSParameter[Int](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       ),
@@ -523,8 +524,7 @@ class ALNSBuilder(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
         (param1: Int, param2: Int) => (function, Some(param1), Some(param2)),
         instantiateAdaptiveStore(
           paramSelectKey,
-          ALNSBuilder.DefNFailures
-            .map(x => new ALNSParameter[Int](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+          nFailures.map(x => new ALNSParameter[Int](x, if(config.opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
           paramMetricKey
         ),
         instantiateAdaptiveStore(

@@ -1,4 +1,4 @@
-package oscar.anytime.lns.benchmarks.vrptw
+package oscar.anytime.lns.disabled_benchs.vrptw
 
 import oscar.anytime.lns.models.VRPTW
 
