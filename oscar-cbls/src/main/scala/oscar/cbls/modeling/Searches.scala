@@ -15,6 +15,7 @@ package oscar.cbls.modeling
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import oscar.cbls._
 import oscar.cbls.core.computation.CBLSIntVar
 import oscar.cbls.core.search.{First, LoopBehavior}
 import oscar.cbls.lib.search.neighborhoods._
@@ -24,7 +25,7 @@ import scala.collection.immutable.SortedSet
 /** A trait that interfaces some of the neighborhoods of OScaR.CBLS
   *
   */
-trait Search {
+trait Searches {
 
   /**
    * will find a variable in the array, and find a value from its range that improves the objective function
@@ -143,6 +144,7 @@ trait Search {
     symmetryCanBeBrokenOnIndices,symmetryCanBeBrokenOnValue,
     selectFirstVariableBehavior, selectSecondVariableBehavior,symmetryClassOfVariables1,symmetryClassOfVariables2,hotRestart)
 
+  type SwapMove = oscar.cbls.core.search.SwapMove
 
 
   /**
@@ -163,22 +165,22 @@ trait Search {
     ShuffleNeighborhood(vars, indicesToConsider, numberOfShuffledPositions, name, checkNoMoveFound)
 
   /**
-    * will shift a block of value to the right(doing it also to the left is redundant)
-    *
-    * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
-    * @param searchZone1 a subset of the indices of vars to consider in order to determine the block's extremities
-    *                   if none provided, all the array will be considered each time
-    * @param maxShiftSize the max size of the shift, given the first indice considered in the shift
-    * @param maxOffsetLength the max size of the offset
-    * @param best if true, the neighborhood will try to find the best solution possible
-    *             (not very usefull because browsing all the possibilities can be very long)
-    * @param name the name of the neighborhood
-    * @param hotRestart  if true, the exploration order in case you ar not going for the best
-    *                    is a hotRestart for the first swapped variable
-    *                    even if you specify a searchZone that is: the exploration starts again
-    *                    at the position where it stopped, and consider the indices in increasing order
-    *                    if false, consider the exploration range in natural order from the first position.
-    */
+   * will shift a block of value to the right(doing it also to the left is redundant)
+   *
+   * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
+   * @param searchZone1 a subset of the indices of vars to consider in order to determine the block's extremities
+   *                   if none provided, all the array will be considered each time
+   * @param maxShiftSize the max size of the shift, given the first indice considered in the shift
+   * @param maxOffsetLength the max size of the offset
+   * @param best if true, the neighborhood will try to find the best solution possible
+   *             (not very usefull because browsing all the possibilities can be very long)
+   * @param name the name of the neighborhood
+   * @param hotRestart  if true, the exploration order in case you ar not going for the best
+   *                    is a hotRestart for the first swapped variable
+   *                    even if you specify a searchZone that is: the exploration starts again
+   *                    at the position where it stopped, and consider the indices in increasing order
+   *                    if false, consider the exploration range in natural order from the first position.
+   */
   def shiftNeighborhood(vars:Array[CBLSIntVar],
                         name:String = "ShiftNeighborhood",
                         searchZone1:()=>Iterable[Int] = null,
@@ -197,5 +199,36 @@ trait Search {
                        hotRestart:Boolean = true) =
     RollNeighborhood(vars, name, searchZone, bridgeOverFrozenVariables, maxShiftSize, best, hotRestart)
 
+
+
+  /**
+   * flips a section of the array, only contiguous zones are searched
+   * the search is organized efficiently by widening a flip zone around a central pint, that is moved in the outer loop
+   * this allows us to reduce the number of updates between successive neighbors, possibly reducing run time by a factor O5),
+   * also depending on the model impacted by vars.
+   * also, we consider flip with an orr or even number of involved variables
+   *
+   * for each center of flip zone, taken as all flippeable positions in the array, sorted by decreasing maximal flip size
+   *    for each width of the fliped zone, by increasing order, and interrupted whenever a non-flippeable position is reached
+   *      test flipping
+   */
+  //TODO add the possibility to specify positions that must be in the limit of the flip?
+  //TODO: hotRestart
+  def wideningFlipNeighborhood(vars:Array[CBLSIntVar],
+                               name:String = "WideningFlipNeighborhood",
+                               allowedPositions:()=>Iterable[Int] = null,
+                               maxFlipSize:Int = Int.MaxValue,
+                               minFlipSize:Int = 2,
+                               exploreLargerOpportunitiesFirst:Boolean = true,
+                               best:Boolean = false,
+                               hotRestart:Boolean = true) =
+    new WideningFlipNeighborhood(vars,
+      name,
+      allowedPositions,
+      maxFlipSize,
+      minFlipSize,
+      exploreLargerOpportunitiesFirst,
+      best,
+      hotRestart)
 }
 

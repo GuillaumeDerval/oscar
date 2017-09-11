@@ -43,6 +43,37 @@ import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, EasyNeighborhood}
 
+trait RemovePointAPI{
+
+  type RemovePointMove = oscar.cbls.business.routing.neighborhood.RemovePointMove
+
+  /**
+   * Removes a point of route.
+   * The search complexity is O(n).
+   * @param relevantPointsToRemove: the predecessors ofthe points that we will try to remove
+   * @param vrp the routing problem
+   * @param neighborhoodName the name of the neighborhood, for verbosities
+   * @param selectNodeBehavior how to select node to remove
+   * @param hotRestart true if hotRestart is needed, false otherwise
+   * @author renaud.delandtsheer@cetic.be
+   * @author yoann.guyot@cetic.be
+   * @author Florent Ghilain (UMONS)
+   */
+  def removePoint(relevantPointsToRemove:()=>Iterable[Int],
+                  vrp: VRP,
+                  neighborhoodName:String = "RemovePoint",
+                  selectNodeBehavior:LoopBehavior = First(),
+                  hotRestart:Boolean = true) =
+    RemovePoint(
+      relevantPointsToRemove,
+      vrp,
+      neighborhoodName,
+      selectNodeBehavior,
+      hotRestart)
+
+}
+
+
 /**
  * Removes a point of route.
  * The search complexity is O(n).

@@ -1,31 +1,40 @@
 package oscar.cbls
 
-import oscar.cbls._
 /**
  * Created by rdl on 11-09-17.
  */
 package object core {
+
   type Invariant = oscar.cbls.core.computation.Invariant
+  val InvariantHelper = oscar.cbls.core.computation.InvariantHelper
+
+  val DomainHelper = oscar.cbls.core.computation.DomainHelper
+
   type Checker = oscar.cbls.core.propagation.Checker
-  type KeyForElementRemoval = oscar.cbls.core.propagation.KeyForElementRemoval
+
   type VaryingDependencies = oscar.cbls.core.computation.VaryingDependencies
+  type KeyForElementRemoval = oscar.cbls.core.propagation.KeyForElementRemoval
+
   type Bulked[A<: Value,B] = oscar.cbls.core.computation.Bulked[A,B]
 
+  //Int types
   type IntInvariant = oscar.cbls.core.computation.IntInvariant
   type ChangingIntValue = oscar.cbls.core.computation.ChangingIntValue
   type IntNotificationTarget = oscar.cbls.core.computation.IntNotificationTarget
 
+  //set types
   type SetInvariant = oscar.cbls.core.computation.SetInvariant
   type ChangingSetValue = oscar.cbls.core.computation.ChangingSetValue
   type SetNotificationTarget = oscar.cbls.core.computation.SetNotificationTarget
-
   type ValueWiseKey = oscar.cbls.core.computation.ValueWiseKey
 
+  //sequence types
   type SeqInvariant = oscar.cbls.core.computation.SeqInvariant
   type SeqNotificationTarget = oscar.cbls.core.computation.SeqNotificationTarget
   type ChangingSeqValue = oscar.cbls.core.computation.ChangingSeqValue
 
   type SeqCheckpointedValueStack[T] = oscar.cbls.core.computation.SeqCheckpointedValueStack[T]
+
   type SeqUpdate = oscar.cbls.core.computation.SeqUpdate
 
   type SeqUpdateInsert = oscar.cbls.core.computation.SeqUpdateInsert
@@ -48,12 +57,5 @@ package object core {
 
   type SeqUpdateRollBackToCheckpoint = oscar.cbls.core.computation.SeqUpdateRollBackToCheckpoint
   val SeqUpdateRollBackToCheckpoint = oscar.cbls.core.computation.SeqUpdateRollBackToCheckpoint
-
-
-
-
-  val DomainHelper = oscar.cbls.core.computation.DomainHelper
-
-
-  val InvariantHelper = oscar.cbls.core.computation.InvariantHelper
 }
+

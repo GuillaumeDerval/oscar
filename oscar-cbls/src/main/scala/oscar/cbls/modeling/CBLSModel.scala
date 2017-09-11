@@ -42,14 +42,10 @@ class CBLSModel(val verbose:Boolean = false,
                  val propagateOnToString:Boolean = true)
   extends LinearSelectorTrait
   with Constraints
-  with ClusterInvariants
-  with ComplexLogicInvariants
-  with ElementInvariants
-  with MinMaxInvariants
-  with NumericInvariants
-  with SetInvariants
+  with Invariants
   with StopWatch
-  with Search{
+  with Combinators
+  with Searches{
 
   implicit val s = new Store(verbose, checker, noCycle, topologicalSort,propagateOnToString)
   implicit val c = new ConstraintSystem(s)

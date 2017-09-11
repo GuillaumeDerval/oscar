@@ -4,6 +4,36 @@ import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
+
+trait RouteExchangeAPI{
+  type RouteExchangeMove= oscar.cbls.business.routing.neighborhood.RouteExchangeMove
+
+  /**
+   * a neighborhood that exchanges the route of two vehicles.
+   * It does not modifies the routes themselves. It just exchanges the vehicles
+   * @author renaud.delandtsheer@cetic.be
+   */
+  def routeExchange(firstVehicles:()=>Iterable[Int],
+                    secondVehicles:()=>Int=>Iterable[Int],
+                    vrp:VRP,
+                    neighborhoodName: String = "RouteExchange",
+                    selectFirstVehicleBehavior:LoopBehavior = First(),
+                    selectSecondVehicleBehavior:LoopBehavior = First(),
+                    hotRestart: Boolean = true,
+                    breakSymmetriesAmongVehicles:Boolean = true,
+                    skipFirstVehicleIfEmptyRoute:Boolean = false)
+  = RouteExchange(
+    firstVehicles,
+    secondVehicles,
+    vrp,
+    neighborhoodName,
+    selectFirstVehicleBehavior,
+    selectSecondVehicleBehavior,
+    hotRestart,
+    breakSymmetriesAmongVehicles,
+    skipFirstVehicleIfEmptyRoute)
+
+}
 /**
  * a neighborhood that exchanges the route of two vehicles.
  * It does not modifies the routes themselves. It just exchanges the vehicles

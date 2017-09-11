@@ -6,22 +6,21 @@ import oscar.cbls.lib.constraint.{NE, EQ, GE, LE}
 import oscar.cbls.lib.invariant.logic._
 import oscar.cbls.lib.invariant.numeric._
 import oscar.cbls.lib.invariant.set._
+import oscar.cbls.modeling.{Searches, Combinators, Constraints, Invariants}
 
 import scala.language.implicitConversions
 
 /**
  * Created by rdl on 08-09-17.
  */
-package object cbls {
+package object cbls extends Constraints with Invariants with Searches with Combinators{
   // Alias to useful classes and companion objects
-
 
   type Store = oscar.cbls.core.computation.Store
   final val Store = oscar.cbls.core.computation.Store
 
   type ErrorChecker = oscar.cbls.core.propagation.ErrorChecker
   final val ErrorChecker = oscar.cbls.core.propagation.ErrorChecker
-
 
   type Domain = oscar.cbls.core.computation.Domain
   final val Domain = oscar.cbls.core.computation.Domain
@@ -80,7 +79,6 @@ package object cbls {
 
   type ConstraintSystem = oscar.cbls.core.constraint.ConstraintSystem
   final val ConstraintSystem = oscar.cbls.core.constraint.ConstraintSystem
-
 
   //implicits
   implicit def intToIntVarOps(i:Int):IntVarOps = IntVarOps(CBLSIntConst(i))

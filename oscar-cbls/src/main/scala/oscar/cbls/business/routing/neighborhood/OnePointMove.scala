@@ -29,6 +29,40 @@ import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, EasyNeighborhood}
 
+trait OnePointMovsAPI{
+
+  type OnePointMoveMove = oscar.cbls.business.routing.neighborhood.OnePointMoveMove
+  val OnePointMoveMove = oscar.cbls.business.routing.neighborhood.OnePointMoveMove
+
+  /**
+   * Moves a point of a route to another place in the same or in an other route.
+   * The search complexity is O(nk).
+   * @author renaud.delandtsheer@cetic.be
+   * @author yoann.guyot@cetic.be
+   * @author Florent Ghilain (UMONS)
+   */
+  def onePointMove(nodesToMove: () => Iterable[Int],
+                   relevantNewPredecessors: () => Int => Iterable[Int],
+                   vrp:VRP,
+                   neighborhoodName: String = "OnePointMove",
+                   selectPointToMoveBehavior:LoopBehavior = First(),
+                   selectDestinationBehavior:LoopBehavior = First(),
+                   hotRestart: Boolean = true,
+                   allPointsToMoveAreRouted:Boolean = true,
+                   allRelevantNeighborsAreRouted:Boolean = true) =
+    OnePointMove(nodesToMove,
+      relevantNewPredecessors,
+      vrp,
+      neighborhoodName,
+      selectPointToMoveBehavior,
+      selectDestinationBehavior,
+      hotRestart,
+      allPointsToMoveAreRouted,
+      allRelevantNeighborsAreRouted)
+
+}
+
+
 /**
  * Moves a point of a route to another place in the same or in an other route.
  * The search complexity is O(nk).
