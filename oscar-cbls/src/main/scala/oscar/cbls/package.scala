@@ -6,14 +6,15 @@ import oscar.cbls.lib.constraint.{NE, EQ, GE, LE}
 import oscar.cbls.lib.invariant.logic._
 import oscar.cbls.lib.invariant.numeric._
 import oscar.cbls.lib.invariant.set._
-import oscar.cbls.modeling.{Searches, Combinators, Constraints, Invariants}
+import oscar.cbls.lib.search.combinators.CombinatorsAPI
+import oscar.cbls.modeling.{Searches, Constraints, Invariants}
 
 import scala.language.implicitConversions
 
 /**
  * Created by rdl on 08-09-17.
  */
-package object cbls extends Constraints with Invariants with Searches with Combinators{
+package object cbls extends Constraints with Invariants with Searches with CombinatorsAPI{
   // Alias to useful classes and companion objects
 
   type Store = oscar.cbls.core.computation.Store

@@ -22,6 +22,7 @@ import oscar.cbls.lib.invariant.minmax.MinMaxInvariants
 import oscar.cbls.lib.invariant.numeric.NumericInvariants
 import oscar.cbls.lib.invariant.set.SetInvariants
 import oscar.cbls.lib.search.LinearSelectorTrait
+import oscar.cbls.lib.search.combinators.CombinatorsAPI
 import oscar.cbls.util.StopWatch
 
 
@@ -44,7 +45,7 @@ class CBLSModel(val verbose:Boolean = false,
   with Constraints
   with Invariants
   with StopWatch
-  with Combinators
+  with CombinatorsAPI
   with Searches{
 
   implicit val s = new Store(verbose, checker, noCycle, topologicalSort,propagateOnToString)
