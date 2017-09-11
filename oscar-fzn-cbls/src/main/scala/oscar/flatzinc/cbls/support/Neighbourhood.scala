@@ -162,7 +162,7 @@ class SumNeighborhood(val variables: Array[CBLSIntVarDom],val coeffs:Array[Int],
 class GCCNeighborhood(val variables: Array[CBLSIntVarDom],val vals:Array[Int],val low:Array[Int],val up:Array[Int], val closed:Boolean, objective: CBLSObjective, cs: ConstraintSystem)extends Neighbourhood(variables){
   val variableViolation: Array[IntValue] = variables.map(cs.violation(_)).toArray
 
-  val clusters = Cluster.MakeSparse(variables.map(c => c), vals).Clusters
+  val clusters = Cluster.makeSparse(variables.map(c => c), vals).Clusters
   val counts = clusters.foldLeft(Map.empty[Int,IntValue])((map,ic) => map + (ic._1 -> Cardinality(ic._2)))
   //foldLeft(Map.empty[Int,CBLSIntVar])((map,ic) => map + (ic._1 -> Cardinality(ic._2).output))
   val lows = vals.toList.zip(low).foldLeft(Map.empty[Int,Int])((map,vl) => map + (vl._1 -> vl._2))

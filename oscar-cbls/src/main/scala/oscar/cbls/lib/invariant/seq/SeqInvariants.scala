@@ -20,7 +20,7 @@ import oscar.cbls.algo.seq.functional.IntSequence
 import oscar.cbls._
 import oscar.cbls.core._
 
-trait SeqInvariants{
+trait SeqInvariants {
   /**
    * builds a changing seq value that is maintained as the concatenation of a and b.
    * if either of them is a constant, the instantiated class is adapted
@@ -32,10 +32,10 @@ trait SeqInvariants{
    * @return a changing seq value that is maintained as teh concatenation of a and b
    */
   def concatenate(a : SeqValue, b : SeqValue, maxPivotPerValuePercent : Int = 4, maxHistorySize : Int = 20) : SeqValue = {
-    (a,b) match {
-      case (ac : CBLSSeqConst,bc : CBLSSeqConst) =>
+    (a, b) match {
+      case (ac : CBLSSeqConst, bc : CBLSSeqConst) =>
         CBLSSeqConst(IntSequence(ac.value ++ bc.value))
-      case (ac : CBLSSeqConst,bv : ChangingSeqValue) =>
+      case (ac : CBLSSeqConst, bv : ChangingSeqValue) =>
         new ConcatenateFirstConstant(ac.value.toList, bv, maxPivotPerValuePercent, maxHistorySize)
       case (av : ChangingSeqValue, bc : CBLSSeqConst) =>
         new ConcatenateSecondConstant(av, bc.value.toList, maxPivotPerValuePercent, maxHistorySize)
@@ -50,7 +50,7 @@ trait SeqInvariants{
    * @param v is a SeqValue, the values appearing in the sequence
    * @author renaud.delandtsheer@cetic.be
    */
-  def content(v:SeqValue) = new Content(v)
+  def content(v : SeqValue) = new Content(v)
 
   /**
    * maintains this as the flipped value of v
@@ -58,17 +58,23 @@ trait SeqInvariants{
    * @param maxPivotPerValuePercent
    * @param maxHistorySize
    */
-  def flip(v: SeqValue, maxPivotPerValuePercent:Int = 10, maxHistorySize:Int = 10) =
-    new Flip(v: SeqValue, maxPivotPerValuePercent, maxHistorySize)
+  def flip(v : SeqValue, maxPivotPerValuePercent : Int = 10, maxHistorySize : Int = 10) =
+    new Flip(v : SeqValue, maxPivotPerValuePercent, maxHistorySize)
 
+  /**
+   * #(v) (cardinality, or length (since a SeqValue can only contain at most one instance of any int value)
+   * @param v is a SeqValue, containing a number of values, to count
+   * @author renaud.delandtsheer@cetic.be
+   */
+  def length(v : SeqValue) = Length(v)
 
   /**
    * @param seq a sequence of integers
    * @param mapArray an array that is taken as a function (it cannot be modified after this call)
    * @return a sequence where the value at any position p is equal to mapArray(seq(p))
    */
-  def map(seq:ChangingSeqValue,mapArray:Array[Int]):MapConstantFun = {
-    new MapConstantFun(seq,mapArray,InvariantHelper.getMinMaxBoundsInt(mapArray)._2)
+  def map(seq : ChangingSeqValue, mapArray : Array[Int]) : MapConstantFun = {
+    new MapConstantFun(seq, mapArray, InvariantHelper.getMinMaxBoundsInt(mapArray)._2)
   }
 
   /**
@@ -76,23 +82,23 @@ trait SeqInvariants{
    * @param transform a function to apply to each value occuring in the sequence (it cannot be modified after this call)
    * @return a sequence where the value at any position p is equal to transform(seq(p))
    */
-  def map(seq:ChangingSeqValue, transform:Int=>Int,maxTransform:Int) =
-    new MapConstantFun(seq:ChangingSeqValue, transform:Int=>Int,maxTransform:Int)
+  def map(seq : ChangingSeqValue, transform : Int => Int, maxTransform : Int) =
+    new MapConstantFun(seq : ChangingSeqValue, transform : Int => Int, maxTransform : Int)
 
   /**
    * @param seq a sequence of integers
    * @param mapArray an array that is taken as a function The value in this array an be variable that change value (althoug hthe content of the array cannot change after this call)
    * @return a sequence where the value at any position p is equal to mapArray(seq(p)).value
    */
-  def map(seq:ChangingSeqValue, mapArray:Array[IntValue]) =
-    new MapThroughArray(seq:ChangingSeqValue, mapArray)
+  def map(seq : ChangingSeqValue, mapArray : Array[IntValue]) =
+    new MapThroughArray(seq : ChangingSeqValue, mapArray)
 
   /**
    * the position of value a in sequence v; default if not in the sequence
    * @param v is a SeqValue
    * @param a is the value that is to locate in the sequence
    */
-  def occurrencesOf(v: SeqValue, a:IntValue) = OccurrencesOf(v: SeqValue, a:IntValue)
+  def occurrencesOf(v : SeqValue, a : IntValue) = OccurrencesOf(v : SeqValue, a : IntValue)
 
   /**
    * Maintains the position of value of variable a in the sequence v.
@@ -100,7 +106,7 @@ trait SeqInvariants{
    * @param a an intValue, which can be a CBLSIntVar for instance
    * @return a ChangingSetValue that is maintained as the set of position in v where the value is the one of a
    */
-  def positionsOf(v: SeqValue, a:IntValue) = new PositionsOf(v, a)
+  def positionsOf(v : SeqValue, a : IntValue) = new PositionsOf(v, a)
 
   /**
    * Maintains the position of value of variable a in the sequence v.
@@ -108,7 +114,7 @@ trait SeqInvariants{
    * @param a an integer
    * @return a ChangingSetValue that is maintained as the set of position in v where the value is a
    */
-  def positionsOf(v: SeqValue, a:Int) = new PositionsOfConst(v, a)
+  def positionsOf(v : SeqValue, a : Int) = new PositionsOfConst(v, a)
 
   /**
    * precedence assumes that number can occur only once in the sequence
@@ -123,8 +129,8 @@ trait SeqInvariants{
    * @param beforeAfter
    * @author renaud.delandtsheer@cetic.be
    */
-  def precedence(seq:ChangingSeqValue, beforeAfter:List[(Int,Int)]) =
-    Precedence(seq,beforeAfter)
+  def precedence(seq : ChangingSeqValue, beforeAfter : List[(Int, Int)]) =
+    Precedence(seq, beforeAfter)
 
 
   /**
@@ -135,14 +141,21 @@ trait SeqInvariants{
    * @param f is a function that is applied to every value in f prior to the sum
    * @author renaud.delandtsheer@cetic.be
    */
-  def seqSum(v: SeqValue, f:(Int => Int) = (a:Int) => a) = SeqSum(v, f)
+  def seqSum(v : SeqValue, f : (Int => Int) = (a : Int) => a) = SeqSum(v, f)
 
   /**
-   * #(v) (cardinality, or length (since a SeqValue can only contain at most one instance of any int value)
-   * @param v is a SeqValue, containing a number of values, to count
-   * @author renaud.delandtsheer@cetic.be
+   * maintains a sorted sequence out of a non-sorted one.
+   * they have the same length
+   * the sort is based on the sortValue,smaller first
+   *
+   * @param v the input sequence
+   * @param sortValue a constant function that maps each value in v to a value that is used for the sort.
+   *                  This value is not the one being put into the output sequence
+   * @param orderName a name for the order
    */
-  def size(v: SeqValue) = Length(v)
+  def sortSequence(v : SeqValue, sortValue : Int => Int, orderName : String = "order")
+  = SortSequence(v, sortValue, orderName)
+
 
   /**
    * Maintains and array telling, for each value (indice of the array) the set of value that can succeed it in the sequence.
@@ -154,5 +167,4 @@ trait SeqInvariants{
    * @author renaud.delandtsheer@cetic.be
    */
   def successors(seq : ChangingSeqValue) : Array[CBLSSetVar] = Successors(seq : ChangingSeqValue)
-
 }

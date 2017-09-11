@@ -26,6 +26,7 @@ package oscar.cbls.lib.invariant.logic
 
 import oscar.cbls._
 import oscar.cbls.core._
+import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
 
 /**
  * Author: Jean-Noël Monette
@@ -112,4 +113,19 @@ object DenseCount{
     val counts = Array.tabulate(mbValues)(i => CBLSIntVar(m,0, 0 to nbVars, "count_" + (i-minMin)))
     DenseCount(vars,counts,-minMin)
   }
+}
+
+trait CountInvariants {
+  /**
+   * Maintains a count of the indexes of array: count(j) = #{i in index of values | values[i] == j}
+   * This is considered as a dense count because counts is an array and must cover all the possibles values of the values in the array ''values''
+   **/
+  def denseCount(values : Array[IntValue], counts : Array[CBLSIntVar]) = DenseCount(values, counts)
+
+  def makeDenseCount(vars: Array[IntValue]):DenseCount = DenseCount.makeDenseCount(vars)
+
+    /**
+   * Author: Jean-Noël Monette
+   */
+  def sparseCount(values: Array[IntValue], counts: Map[Int,CBLSIntVar]) = SparseCount(values, counts)
 }

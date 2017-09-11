@@ -7,6 +7,7 @@ import oscar.cbls.core._
 import scala.collection.immutable.SortedSet
 
 /**
+ *
  * @param constArray
  * @param condSet
  * @param default

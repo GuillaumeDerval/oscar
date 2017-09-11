@@ -20,6 +20,16 @@ import oscar.cbls._
 import oscar.cbls.core._
 
 
+/**
+ * maintains a sorted sequence out of a non-sorted one.
+ * they have the same length
+ * the sort is based on the sortValue,smaller first
+ *
+ * @param v the input sequence
+ * @param sortValue a constant function that maps each value in v to a value that is used for the sort.
+ *                  This value is not the one being put into the output sequence
+ * @param orderName a name for the order
+ */
 case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="order")
   extends SeqInvariant(IntSequence.empty(),v.max)
   with SeqNotificationTarget{

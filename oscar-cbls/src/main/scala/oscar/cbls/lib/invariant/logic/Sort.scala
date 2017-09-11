@@ -25,6 +25,7 @@ package oscar.cbls.lib.invariant.logic
 
 import oscar.cbls._
 import oscar.cbls.core._
+import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
 
 /**
  * maintains a sorting of the ''values'' array:
@@ -139,3 +140,24 @@ object Sort {
 
   def apply(values:Array[IntValue], reversePerm:Array[CBLSIntVar]) = new Sort(values,reversePerm)
 }
+
+
+/**
+ * modeling interface presenting the complex logic invariants
+ * @author renaud.delandtsheer@cetic.be
+ */
+trait SortInvariants{
+
+  /**maintains a sorting of the ''values'' array:
+    * @param ReversePerm   i < j => values(ReversePerm(i)) < values(ReversePerm(j))
+    * see method GetForwardPerm() for the forward permutation: ReversePerm(ForwardPerm(i)) == i
+    * */
+  def sort(values:Array[IntValue], ReversePerm:Array[CBLSIntVar]) = new Sort(values, ReversePerm)
+
+  /**returns the ForwardPerm for a given array
+    * It instantiates an array of the appropriate size and populates it with IntVar.
+    */
+  def makeSort(values:Array[IntValue]) = Sort.MakeSort(values)
+}
+
+

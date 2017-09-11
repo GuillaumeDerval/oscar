@@ -47,7 +47,7 @@ case class MultiKnapsack(items: Array[IntValue], itemsizes: Array[IntValue], bin
   registerConstrainedVariables(itemsizes)
   registerConstrainedVariables(binsizes)
 
-  private val bincontents:Array[SetValue] = Cluster.MakeDense(items).clusters
+  private val bincontents:Array[SetValue] = Cluster.makeDense(items).clusters
   private val binfilling:Array[IntValue] = bincontents.map(bincontent => Sum(itemsizes,bincontent))
 
   private val binviolations:Array[IntValue] = (

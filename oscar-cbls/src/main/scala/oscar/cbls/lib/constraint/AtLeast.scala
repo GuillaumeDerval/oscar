@@ -23,7 +23,7 @@ package oscar.cbls.lib.constraint
 
 import oscar.cbls._
 import oscar.cbls.core._
-import oscar.cbls.lib.invariant.logic.{DenseCount, IntITE}
+import oscar.cbls.lib.invariant.logic.{IntITE, DenseCount}
 import oscar.cbls.lib.invariant.minmax.Max2
 import oscar.cbls.lib.invariant.numeric.Sum
 

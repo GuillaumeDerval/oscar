@@ -57,14 +57,14 @@ trait MinMaxInvariants{
     * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
     * update is O(log(n))
     * */
-  def maxArray(varss: Array[IntValue], ccond: SetValue = null, default: Int = Int.MinValue) = MaxArray(varss, ccond, default)
+  def maxNaive(varss: Array[IntValue], ccond: SetValue = null, default: Int = Int.MinValue) = MaxArray(varss, ccond, default)
 
   /** Maintains Min(Var(i) | i in cond)
     * @param varss is an array of IntVar, which can be bulked
     * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
     * update is O(log(n))
     * */
-  def minArray(varss: Array[IntValue], ccond: SetValue = null, default: Int = Int.MaxValue) = MinArray(varss, ccond, default)
+  def minNaive(varss: Array[IntValue], ccond: SetValue = null, default: Int = Int.MaxValue) = MinArray(varss, ccond, default)
 
   /** maintains output = Min(v)
     * where
@@ -83,6 +83,74 @@ trait MinMaxInvariants{
     * update is O(log(n))
     * */
   def maxSet(v: SetValue, default: Int = Int.MinValue) = new MaxSet(v, default)
+
+
+  /**
+   * Maintains Max(Var(i) | i in cond)
+   * @param varss is an array of IntVar, which can be bulked
+   * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
+   * update is O(log(n))
+   * @author renaud.delandtsheer@cetic.be
+   * */
+  def maxConstArray(varss: Array[Int], ccond: SetValue, default: Int = Int.MinValue) = MaxConstArray(varss, ccond, default)
+
+  /**
+   * Maintains Min(Var(i) | i in cond)
+   * @param varss is an array of Int
+   * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
+   * update is O(log(n))
+   * @author renaud.delandtsheer@cetic.be
+   * */
+  def minConstArray(varss: Array[Int], ccond: SetValue, default: Int = Int.MaxValue) = MinConstArray(varss, ccond, default)
+
+  /**
+   * Maintains Max(Var(i) | i in cond)
+   * this is a variant that is lazy, and maintains a TODO-list of postponed updates.
+   * postponed updates are ones that do not impact on the outout of the invariant.
+   * when there is an update, it is first checked against the TODO-list, for cancellation.
+   * if the update does not impact the output, it is postponed
+   * if it affects the output, it is performed
+   * @param varss is an array of IntVar, which can be bulked
+   * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
+   * @param default the value if ccond is empty
+   * @param maxBackLogSize is the maximal number of postponed updates (TODOlist is handled as a FIFO)
+   * update is O(log(n)), faster (O(1) if you do updates and backtracks
+   * @author renaud.delandtsheer@cetic.be
+   * */
+  def maxConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = Int.MaxValue, maxBackLogSize:Int = 10) =
+    MaxConstArrayLazy(varss, ccond, default, maxBackLogSize)
+
+
+  /**
+   * Maintains Min(Var(i) | i in cond)
+   * this is a variant that is lazy, and maintains a TODO-list of postponed updates.
+   * postponed updates are ones that do not impact on the outout of the invariant.
+   * when there is an update, it is first checked against the TODO-list, for cancellation.
+   * if the update does not impact the output, it is postponed
+   * if it affects the output, it is performed
+   * @param varss is an array of Int
+   * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
+   * @param default the value if ccond is empty
+   * @param maxBackLogSize is the maximal number of postponed updates (TODOlist is handled as a FIFO)
+   * update is O(log(n)), faster (O(1) if you do updates and backtracks
+   * @author renaud.delandtsheer@cetic.be
+   * */
+  def minConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = Int.MaxValue, maxBackLogSize:Int = Int.MaxValue)
+   = MinConstArrayLazy(varss, ccond, default, maxBackLogSize)
+
+
+  /**
+   *
+   * @param constArray
+   * @param condSet
+   * @param default
+   * @param maxDiameter is the maximal number of values in condSet that are monitored in the set, must be >=1.
+   *                    the actual diameter is kept between 1 and tis value, lazily
+   */
+  def minConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default: Int, maxDiameter:Int = 2) =
+    new MinConstArrayValueWise(constArray, condSet, default, maxDiameter)
+
+
 }
 
 

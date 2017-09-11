@@ -1,3 +1,5 @@
+package oscar.cbls.lib.invariant.logic
+
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -13,19 +15,17 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-package oscar.cbls.modeling
-
-import oscar.cbls.lib.invariant.logic.LogicInvariants
-import oscar.cbls.lib.invariant.minmax.MinMaxInvariants
-import oscar.cbls.lib.invariant.numeric.NumericInvariants
-import oscar.cbls.lib.invariant.seq.SeqInvariants
-import oscar.cbls.lib.invariant.set.SetInvariants
-
-
-trait Invariants
-  extends LogicInvariants
-  with MinMaxInvariants
-  with NumericInvariants
-  with SetInvariants
-  with SeqInvariants
-//TODO: routing seq invariants
+/**
+ * modeling interface presenting the logic invariants
+ * @author renaud.delandtsheer@cetic.be
+ */
+trait LogicInvariants extends
+ElementInvariants
+with ClusterInvariants
+with CountInvariants
+with RefInvariants
+with CumulativeInvariants
+with FilterInvariants
+with HelperInvariants
+with PivotInvariants
+with SortInvariants

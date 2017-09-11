@@ -17,7 +17,6 @@ package oscar.cbls.business.routing.neighborhood
 
 
 import oscar.cbls.business.routing.model.PDP
-import oscar.cbls.business.routing.neighborhood.VRPSMove
 import oscar.cbls.core.search.EasyNeighborhood
 
 /**
