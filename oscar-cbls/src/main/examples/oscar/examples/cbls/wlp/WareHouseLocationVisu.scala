@@ -20,23 +20,21 @@ package oscar.examples.cbls.wlp
 import java.awt.{Dimension, BorderLayout}
 import javax.swing.JFrame
 
+import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.core.computation.{SetValue, CBLSIntVar, Store}
-import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.core.search._
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.{MinConstArrayValueWise, ArgMin, MinConstArrayLazy}
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.combinators.{Profile, Mu, BestSlopeFirst}
 import oscar.cbls.lib.search.neighborhoods.{AssignNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
-import oscar.cbls.modeling.AlgebraTrait
+
 import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.wlp.{WareHouseLocationWindow, WareHouseLocationMap}
 
 import scala.language.postfixOps
 
-object WareHouseLocationVisu extends App with AlgebraTrait with StopWatch{
+object WareHouseLocationVisu extends App with StopWatch{
 
   //the number of warehouses
   val W:Int = 300

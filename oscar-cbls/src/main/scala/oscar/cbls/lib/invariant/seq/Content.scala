@@ -16,8 +16,8 @@ package oscar.cbls.lib.invariant.seq
   ******************************************************************************/
 
 import oscar.cbls.algo.seq.functional.IntSequence
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
 
 import scala.collection.immutable.SortedSet
 

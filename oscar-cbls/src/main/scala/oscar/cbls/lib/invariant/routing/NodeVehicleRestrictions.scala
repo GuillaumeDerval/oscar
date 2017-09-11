@@ -15,6 +15,7 @@ package oscar.cbls.lib.invariant.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.functional.IntSequence
 import oscar.cbls.core.computation._
@@ -38,7 +39,7 @@ object NodeVehicleRestrictions{
    * @return an array telling the violation per vehicle
    */
   def apply(routes:ChangingSeqValue, v:Int, nodeVehicleRestrictions:Iterable[(Int,Int)]):Array[CBLSIntVar] = {
-    val violationPerVehicle =  Array.tabulate(v)(vehicle => CBLSIntVar(routes.model,name="violation of nodeVehicleRestriction for vehicle" + vehicle))
+    val violationPerVehicle =  Array.tabulate(v)(vehicle => CBLSIntVar(routes.model, name="violation of nodeVehicleRestriction for vehicle" + vehicle))
 
     new NodeVehicleRestrictions(routes, v, nodeVehicleRestrictions, violationPerVehicle)
 
@@ -66,7 +67,7 @@ object NodeVehicleRestrictions{
 
     Filter(Array.tabulate(n)(node => {
       val forbiddenVehicleForNode = forbiddenVehicleForNodes(node)
-      if(forbiddenVehicleForNode == null) 0
+      if(forbiddenVehicleForNode == null) CBLSIntConst(0)
       else BelongsTo(vehicleOfNode(node),forbiddenVehicleForNode)}
     ))
   }

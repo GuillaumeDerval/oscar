@@ -15,8 +15,7 @@ package oscar.examples.cbls.flowShop
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, IntValue}
-import oscar.cbls.core.objective.Objective
+import oscar.cbls._
 import oscar.cbls.lib.search.combinators.BestSlopeFirst
 import oscar.cbls.lib.search.neighborhoods.{WideningFlipNeighborhood, SwapsNeighborhood}
 import oscar.cbls.modeling.CBLSModel
@@ -44,14 +43,14 @@ object flowShopShiftRestart  extends CBLSModel with App {
 
   for(m <- machines){
     for(round <- jobs){
-      val start = (m,round) match{
+      val start:IntValue = (m,round) match{
         case (0,0) => CBLSIntConst(0)
         case (0,_) => machineToRoundToEndingTimes(0)(round-1)
         case (_,0) => machineToRoundToEndingTimes(m-1)(0)
         case (_,_) => max2(machineToRoundToEndingTimes(m)(round-1), machineToRoundToEndingTimes(m-1)(round))
       }
       machineToRoundToStartingTimes(m)(round) = start
-      machineToRoundToEndingTimes(m)(round) = start + machineToJobToDuration(m).element(jobSequence(round))
+      machineToRoundToEndingTimes(m)(round) = start + machineToJobToDuration(m)(jobSequence(round))
     }
   }
 

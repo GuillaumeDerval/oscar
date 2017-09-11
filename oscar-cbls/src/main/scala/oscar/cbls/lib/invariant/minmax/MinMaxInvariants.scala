@@ -15,7 +15,7 @@ package oscar.cbls.lib.invariant.minmax
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.core.computation.{IntValue, SetValue}
+import oscar.cbls._
 
 /**
  * modeling interface presenting the min-max invariants

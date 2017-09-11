@@ -15,6 +15,7 @@ package oscar.examples.cbls.userguide
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import oscar.cbls._
 import oscar.cbls.modeling.CBLSModel
 import scala.util.Random
 

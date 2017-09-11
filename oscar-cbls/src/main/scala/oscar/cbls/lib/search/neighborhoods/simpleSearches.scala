@@ -15,13 +15,12 @@ package oscar.cbls.lib.search.neighborhoods
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import oscar.cbls._
 import oscar.cbls.algo.lazyIt.LazyMap
 import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator, KSmallest}
-import oscar.cbls.core.computation.{CBLSIntVar, InvariantHelper}
-import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.computation.InvariantHelper
 import oscar.cbls.core.search._
 import oscar.cbls.lib.search.LinearSelectorTrait
-import oscar.cbls.modeling.AlgebraTrait
 
 import scala.collection.immutable.SortedSet
 import scala.util.Random
@@ -60,7 +59,7 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
                               symmetryClassOfValues:Option[Int => Int => Int] = None,
                               domain:(CBLSIntVar,Int) => Iterable[Int] = (v,i) => v.domain,
                               hotRestart:Boolean = true)
-  extends EasyNeighborhoodMultiLevel[AssignMove](name) with AlgebraTrait{
+  extends EasyNeighborhoodMultiLevel[AssignMove](name){
   //the indice to start with for the exploration
   var startIndice:Int = 0
 
@@ -168,7 +167,7 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
                              symmetryClassOfVariables1:Option[Int => Int] = None,
                              symmetryClassOfVariables2:Option[Int => Int] = None,
                              hotRestart:Boolean = true)
-  extends EasyNeighborhoodMultiLevel[SwapMove](name) with AlgebraTrait{
+  extends EasyNeighborhoodMultiLevel[SwapMove](name){
   //the indice to start with for the exploration
   var indiceOfFirstVariable:Int = 0
   override def exploreNeighborhood() {
@@ -256,7 +255,7 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
                                  name:String = "RandomizeNeighborhood",
                                  searchZone:() => SortedSet[Int] = null,
                                  valuesToConsider:(CBLSIntVar,Int) => Iterable[Int] = (variable,_) => variable.domain)
-  extends Neighborhood(name) with AlgebraTrait with LinearSelectorTrait{
+  extends Neighborhood(name) with LinearSelectorTrait{
 
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
     if(printPerformedSearches) println("applying " + name)
@@ -299,7 +298,7 @@ case class RandomSwapNeighborhood(vars:Array[CBLSIntVar],
                                   degree:Int = 1,
                                   name:String = "RandomSwapNeighborhood",
                                   searchZone:() => SortedSet[Int] = null)  //TODO: search zone does not work!
-  extends Neighborhood(name) with AlgebraTrait with LinearSelectorTrait{
+  extends Neighborhood(name) with LinearSelectorTrait{
 
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
     if(printPerformedSearches) println("applying " + name)
@@ -336,7 +335,7 @@ case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
                                numberOfShuffledPositions:() => Int = () => Int.MaxValue,
                                name:String = "ShuffleNeighborhood",
                                checkNoMoveFound:Boolean = true)
-  extends Neighborhood(name) with AlgebraTrait with LinearSelectorTrait{
+  extends Neighborhood(name) with LinearSelectorTrait{
 
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
     if(printPerformedSearches) println("applying " + name)
@@ -399,7 +398,7 @@ case class RollNeighborhood(vars:Array[CBLSIntVar],
                             checkForDifferentValues:Boolean = false,
                             best:Boolean = false,
                             hotRestart:Boolean = true)
-  extends EasyNeighborhood[RollMove](best,name) with AlgebraTrait{
+  extends EasyNeighborhood[RollMove](best,name){
   //the indice to start with for the exploration
   var startIndice:Int = 0
   override def exploreNeighborhood(){
@@ -539,7 +538,7 @@ case class ShiftNeighborhood(vars:Array[CBLSIntVar],
                              maxOffsetLength:Int = Int.MaxValue,
                              best:Boolean = false,
                              hotRestart: Boolean = true)
-  extends EasyNeighborhood[ShiftMove](best,name) with AlgebraTrait{
+  extends EasyNeighborhood[ShiftMove](best,name){
   /**
    * This is the method you must implement and that performs the search of your neighborhood.
    * every time you explore a neighbor, you must perform the calls to notifyMoveExplored or moveRequested(newObj) && submitFoundMove(myMove)){
@@ -666,7 +665,7 @@ case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
                                     exploreLargerOpportunitiesFirst:Boolean = true,
                                     best:Boolean = false,
                                     hotRestart:Boolean = true)
-  extends EasyNeighborhood[FlipMove](best,name) with AlgebraTrait {
+  extends EasyNeighborhood[FlipMove](best,name) {
   require(minFlipSize > 1, "minFlipSize should be >1")
 
   val varSize = vars.length

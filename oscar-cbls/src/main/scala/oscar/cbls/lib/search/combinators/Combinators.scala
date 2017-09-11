@@ -20,17 +20,14 @@ import java.awt.{Color, Dimension}
 import javax.swing.JFrame
 
 import oscar.cbls.algo.heap.{BinomialHeap, BinomialHeapWithMove}
-import oscar.cbls.core.computation._
-import oscar.cbls.core.objective.{CascadingObjective, Objective}
+import oscar.cbls._
+import oscar.cbls.core._
 import oscar.cbls.core.search._
 import oscar.cbls.util.{Statistics, StopWatch}
 import oscar.cbls.visual.FunctionGraphic.{AdjustMaxValue, ObjFunctionGraphicContainer, Zoom}
 
 import scala.collection.immutable.SortedMap
 import scala.language.implicitConversions
-
-//TODO: les combinateurs devraient avoir une liste de voisinnages (ou neighborhood*), pas juste un seul.
-//TODO: proposer du benchmarking des voisinages (nombre de moves trouvés, gain moyen sur une fct objectif, temps de recherche, nombre de recherche effectuées, ...)
 
 /**
  * @author renaud.delandtsheer@cetic.be

@@ -16,8 +16,7 @@ package oscar.cbls.benchmarks
  * ****************************************************************************
  */
 
-import oscar.cbls.core.computation.CBLSIntVar
-import oscar.cbls.core.objective.Objective
+import oscar.cbls._
 import oscar.cbls.lib.search.combinators.Profile
 import oscar.cbls.lib.search.neighborhoods.WideningFlipNeighborhood
 import oscar.cbls.modeling.CBLSModel

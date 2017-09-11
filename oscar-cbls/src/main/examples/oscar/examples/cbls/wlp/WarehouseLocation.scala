@@ -17,18 +17,16 @@
 
 package oscar.examples.cbls.wlp
 
-import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls._
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.MinConstArrayLazy
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.neighborhoods.{RandomizeNeighborhood, SwapsNeighborhood, AssignNeighborhood}
-import oscar.cbls.modeling.AlgebraTrait
-import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.search.combinators.BestSlopeFirst
 
 import scala.language.postfixOps
 
-object WarehouseLocation extends App with AlgebraTrait{
+object WarehouseLocation extends App{
 
   //the number of warehouses
   val W:Int = 1000

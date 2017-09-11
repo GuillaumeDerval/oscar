@@ -216,7 +216,7 @@ object DemoRoutingView extends StopWatch{
     f.validate()
   }
 
-  def drawMove(routes:scala.List[scala.List[Int]],objInfo:(Int,Long,String), hopDistances:Array[IntValue]): Unit ={
+  def drawMove(routes:scala.List[scala.List[Int]],objInfo:(Int,Long,String), hopDistances:Array[_<:IntValue]): Unit ={
     objGraph.objCurveDatas.synchronized{
       objGraph.objCurveDatas = (objInfo._1,objInfo._2,objInfo._3,ColorGenerator.generateColorFromHash(objInfo.hashCode())) :: objGraph.objCurveDatas
     }
@@ -227,7 +227,7 @@ object DemoRoutingView extends StopWatch{
     updateRoutes(hopDistances)
   }
 
-  def updateRoutes(hopDistance:Array[IntValue]): Unit ={
+  def updateRoutes(hopDistance:Array[_<:IntValue]): Unit ={
     for(h <- hopDistance.indices){
       routesValue(h).setText(hopDistance(h).valueString)
     }

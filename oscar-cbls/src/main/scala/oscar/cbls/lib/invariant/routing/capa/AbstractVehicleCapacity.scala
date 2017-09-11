@@ -17,8 +17,9 @@ package oscar.cbls.lib.invariant.routing.capa
 
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.functional.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.core.computation._
-import oscar.cbls.lib.invariant.routing.convention.{RoutingConventionMethods, ConcreteVehicleLocation, VehicleLocation}
+import oscar.cbls._
+import oscar.cbls.core._
+import oscar.cbls.lib.invariant.routing.convention.{ConcreteVehicleLocation, VehicleLocation}
 
 /**
  * Maintains the content of vehicles at each node and the starting position of each vehicle

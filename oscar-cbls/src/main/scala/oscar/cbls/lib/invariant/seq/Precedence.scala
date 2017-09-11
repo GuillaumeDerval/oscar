@@ -18,8 +18,8 @@ package oscar.cbls.lib.invariant.seq
 import oscar.cbls.algo.magicArray.MagicBoolArray
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.functional.IntSequence
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.{ErrorChecker, Checker}
+import oscar.cbls._
+import oscar.cbls.core._
 import oscar.cbls.lib.invariant.routing.convention.CachedPositionOf
 
 import scala.collection.immutable.SortedSet

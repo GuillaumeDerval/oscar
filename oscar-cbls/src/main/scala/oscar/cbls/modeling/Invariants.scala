@@ -31,7 +31,6 @@ trait Invariants
   with NumericInvariants
   with SetInvariants
 
-
 /**
  * modeling interface presenting the cluster invariants
  * @author renaud.delandtsheer@cetic.be

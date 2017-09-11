@@ -21,8 +21,8 @@
 
 package oscar.cbls.lib.invariant.logic
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
 
 import scala.collection.immutable.SortedSet
 
@@ -71,7 +71,7 @@ object DenseRef{
     val (minMin,maxMax) = InvariantHelper.getMinMaxBoundsSet(references)
     val m:Store = InvariantHelper.findModel(references)
     assert(minMin == 0)
-    val referencing = Array.tabulate(maxMax + 1)(i => new CBLSSetVar(m,SortedSet.empty, 0 to references.length - 1, "referencing_" + i))
+    val referencing = Array.tabulate(maxMax + 1)(i => new CBLSSetVar(m,SortedSet.empty, references.indices, "referencing_" + i))
     new DenseRef(references,referencing)
   }
 }

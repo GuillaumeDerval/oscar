@@ -25,8 +25,8 @@
 package oscar.cbls.lib.invariant.logic
 
 import oscar.cbls.algo.heap.BinomialHeap
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
 
 /**
  * This invariants maintains data structures representing a VRP and his

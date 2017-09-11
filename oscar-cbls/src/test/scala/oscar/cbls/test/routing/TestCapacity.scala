@@ -15,18 +15,15 @@ package oscar.cbls.test.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import oscar.cbls._
 import oscar.cbls.business.routing.model.{ClosestNeighbors, RoutedAndUnrouted, TotalConstantDistance, VRP}
 import oscar.cbls.business.routing.neighborhood.{InsertPointRoutedFirst, InsertPointUnroutedFirst, OnePointMove, OnePointMoveMove, ThreeOpt, TwoOpt, _}
-import oscar.cbls.core.computation.{CBLSIntVar, Store}
-import oscar.cbls.core.objective.{CascadingObjective, Objective}
-import oscar.cbls.core.propagation.ErrorChecker
-import oscar.cbls.core.search.{First, Best}
-import oscar.cbls.lib.constraint.LE
-import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeIntegerDimensionOnVehicle, ForwardCumulativeConstraintOnVehicle}
-import oscar.cbls.lib.invariant.routing.{MovingVehicles, RouteSuccessorAndPredecessors}
+import oscar.cbls.core.objective.CascadingObjective
+import oscar.cbls.core.search.{Best, First}
+import oscar.cbls.lib.invariant.routing.capa.ForwardCumulativeConstraintOnVehicle
 import oscar.cbls.lib.invariant.seq.Length
-import oscar.cbls.lib.search.combinators.{RoundRobin, BestSlopeFirst, Mu, Profile}
-import oscar.cbls.modeling.Algebra._
+import oscar.cbls.lib.search.combinators.{Mu, Profile, RoundRobin}
+
 
 class RoutingWithCapacityMax(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int, deltaAtNode:Array[Int], maxCapa:Int)
   extends VRP(n,v,m,maxPivot) with TotalConstantDistance with ClosestNeighbors with RoutedAndUnrouted{

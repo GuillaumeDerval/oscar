@@ -2,7 +2,8 @@ package oscar.cbls.lib.invariant.routing.capa
 
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.functional.IntSequence
-import oscar.cbls.core.computation._
+
+import oscar.cbls.core._
 import oscar.cbls.lib.invariant.routing.convention.VehicleLocation
 
 import scala.collection.immutable.SortedSet
@@ -47,13 +48,14 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
     scheduleForPropagation()
   }
 
-
+/*
   private def printToUpdateZonesAndVehicleStartAfter(toUpdateZonesAndVehicleStartAfter:Option[(RedBlackTreeMap[List[(Int,Int)]],VehicleLocation)]):String = {
     toUpdateZonesAndVehicleStartAfter match{
       case None => "None"
-      case Some((a,b)) => "Some(" + a.content.map({case (a,l) => a + "->" + l}).mkString(",") + "," + b + ")"
+      case Some((a,b)) => "Some(" + a.content.map({case (c,l) => c + "->" + l}).mkString(",") + "," + b + ")"
     }
   }
+*/
 
   override def performPropagation(){
     setNodesUnrouted(potentiallyRemovedNodes)

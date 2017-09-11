@@ -1,6 +1,6 @@
 package oscar.cbls.lib.invariant.set
 
-import oscar.cbls.core.computation.{IntValue, SetValue}
+import oscar.cbls._
 
 import scala.collection.immutable.SortedSet
 

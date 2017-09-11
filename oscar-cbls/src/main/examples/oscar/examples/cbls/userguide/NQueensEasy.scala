@@ -20,6 +20,7 @@
 
 package oscar.examples.cbls.userguide
 
+import oscar.cbls._
 import oscar.cbls.modeling._
 import oscar.cbls.util.StopWatch
 

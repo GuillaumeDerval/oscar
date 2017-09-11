@@ -16,8 +16,8 @@ package oscar.cbls.lib.invariant.seq
   ******************************************************************************/
 
 import oscar.cbls.algo.seq.functional.{IntSequenceExplorer, IntSequence}
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.{ErrorChecker, Checker}
+import oscar.cbls._
+import oscar.cbls.core._
 
 
 case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="order")
@@ -207,7 +207,7 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
   }
 }
 
-
+/*
 object TestSort extends App{
 
   val m = new Store(verbose = false,propagateOnToString = true, checker = Some(new ErrorChecker()))
@@ -244,3 +244,4 @@ object TestSort extends App{
 
 
 }
+*/

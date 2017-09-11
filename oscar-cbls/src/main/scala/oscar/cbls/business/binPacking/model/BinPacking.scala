@@ -45,9 +45,9 @@ class Item(val number:Int,
 object Bin{
   def apply(number:Int,
             size:Int,
-            items:CBLSSetVar = null,
-            violation:CBLSIntVar = null,
-            content:CBLSIntVar = null) =
+            items:SetValue = null,
+            violation:IntValue = null,
+            content:IntValue = null) =
     new Bin(number,size,items,violation,content)
   }
 
@@ -56,7 +56,7 @@ object Bin{
  */
 class Bin(val number:Int,
                val size:Int,
-               var items:CBLSSetVar = null,
+               var items:SetValue = null,
                var violation:IntValue = null,
                var content:IntValue = null){
   override def toString: String = "Bin(nr:" + number + " size:" + size + " content:" + content.value + " items:" + items.valueString + " viol:" + violation.value +")"

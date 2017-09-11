@@ -17,8 +17,8 @@ package oscar.cbls.lib.invariant.routing
 
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.functional.IntSequence
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
 import oscar.cbls.lib.invariant.routing.convention.RoutingConventionMethods
 
 import scala.collection.immutable.SortedSet

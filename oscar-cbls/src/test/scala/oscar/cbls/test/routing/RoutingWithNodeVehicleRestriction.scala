@@ -15,18 +15,14 @@ package oscar.cbls.test.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.core.computation.Store
+import oscar.cbls._
+import oscar.cbls.business.routing.model._
+import oscar.cbls.business.routing.neighborhood.{OnePointMove, SegmentExchange, ThreeOpt, TwoOpt}
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.invariant.routing.NodeVehicleRestrictions
-import oscar.cbls.lib.invariant.seq.{PositionsOf, Length}
-import oscar.cbls.modeling.Algebra._
-import oscar.cbls.core.objective.{CascadingObjective, Objective}
-import oscar.cbls.business.routing.model._
-import oscar.cbls.business.routing.neighborhood.{SegmentExchange, OnePointMove, ThreeOpt, TwoOpt}
+import oscar.cbls.lib.invariant.seq.{Length, PositionsOf}
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
-
-import scala.util.Random
 
 
 class VRPWithNodeVehicleRestriction(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int, nodeVehicleRestriction:Iterable[(Int,Int)])

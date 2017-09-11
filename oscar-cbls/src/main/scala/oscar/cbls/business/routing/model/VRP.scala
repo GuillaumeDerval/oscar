@@ -15,15 +15,14 @@ package oscar.cbls.business.routing.model
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.algo.seq.functional.IntSequence
-import oscar.cbls.core.computation._
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.invariant.routing._
 import oscar.cbls.lib.invariant.routing.convention.RoutingConventionMethods
 import oscar.cbls.lib.invariant.seq.{Content, Length}
 import oscar.cbls.lib.invariant.set.Diff
-import oscar.cbls.modeling.Algebra._
 import oscar.cbls.visual.MatrixMap.RoutingMatrixContainer
 import oscar.examples.cbls.routing.visual.ColorGenerator
 
@@ -453,7 +452,7 @@ trait AbstractPenaltyForUnrouted extends VRP{
   /**
    * the variable which maintains the sum of penalty of unrouted nodes, thanks to invariant SumElements.
    */
-  var unroutedPenalty:ChangingIntValue=null
+  var unroutedPenalty:IntValue=null
 
   /**
    * Redefine the toString method.

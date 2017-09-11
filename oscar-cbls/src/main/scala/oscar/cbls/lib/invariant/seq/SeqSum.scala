@@ -16,8 +16,8 @@ package oscar.cbls.lib.invariant.seq
   ******************************************************************************/
 
 import oscar.cbls.algo.seq.functional.IntSequence
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.{Checker, ErrorChecker}
+import oscar.cbls._
+import oscar.cbls.core._
 
 
 /**
@@ -42,7 +42,6 @@ case class SeqSum(v: SeqValue, f:(Int => Int) = (a:Int) => a)
   val checkpointStack = new SeqCheckpointedValueStack[Int]()
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
-    checkInternals(new ErrorChecker())
     if (!digestChanges(changes)) {
       this := computeSumFromScratch(changes.newValue)
     }
@@ -100,7 +99,7 @@ case class SeqSum(v: SeqValue, f:(Int => Int) = (a:Int) => a)
   }
 
   override def checkInternals(c: Checker) {
-    c.check(this.newValue == v.value.toList.foldLeft(0)(_+_))
+    c.check(this.newValue == v.value.toList.sum)
     c.check(this.newValue == computeSumFromScratch(v.value),Some("this.newValue(="+ this.newValue+") == Sum(v.value(="+ computeSumFromScratch(v.value)+ ")"))
   }
 }

@@ -16,11 +16,10 @@ package oscar.cbls.test.routing
   ******************************************************************************/
 
 
-import oscar.cbls.core.computation.Store
+import oscar.cbls._
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.invariant.routing.RouteSuccessorAndPredecessors
 import oscar.cbls.lib.invariant.seq.Length
-import oscar.cbls.modeling.Algebra._
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.business.routing.model._
 import oscar.cbls.business.routing.neighborhood._

@@ -15,7 +15,8 @@ package oscar.cbls.lib.invariant.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue}
+import oscar.cbls._
+import oscar.cbls.core._
 
 object NodeVehicleObligation{
   /**

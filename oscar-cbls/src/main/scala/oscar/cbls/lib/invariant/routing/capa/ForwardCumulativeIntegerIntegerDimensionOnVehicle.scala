@@ -16,8 +16,8 @@ package oscar.cbls.lib.invariant.routing.capa
   ******************************************************************************/
 
 import oscar.cbls.algo.seq.functional.IntSequence
-import oscar.cbls.core.computation.{CBLSIntVar, ChangingIntValue, ChangingSeqValue, Domain, IntNotificationTarget, IntValue}
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
 
 object ForwardCumulativeIntegerIntegerDimensionOnVehicle {
   /**

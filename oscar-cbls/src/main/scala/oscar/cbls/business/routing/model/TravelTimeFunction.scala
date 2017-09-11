@@ -15,12 +15,11 @@ package oscar.cbls.business.routing.model
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, IntValue}
-import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls._
 import oscar.cbls.lib.constraint.{GE, LE}
 import oscar.cbls.lib.invariant.logic.{IntITE, IntInt2Int}
 import oscar.cbls.lib.invariant.minmax.Max2
-import oscar.cbls.modeling.Algebra._
+
 
 /**
  * an abstract class representing a travel time function
@@ -67,7 +66,7 @@ trait Time extends VRP with NextAndPrev{
   }
 
   for (i <- 0 until n) {
-    arrivalTime(i) <== arrivalTimeToNext.element(prev(i))
+    arrivalTime(i) <== arrivalTimeToNext(prev(i))
   }
 
 

@@ -20,13 +20,12 @@
 
 package oscar.examples.cbls.queens
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls._
 import oscar.cbls.lib.constraint.AllDiff
 import oscar.cbls.lib.invariant.logic.SelectLESetQueue
 import oscar.cbls.lib.invariant.minmax._
 import oscar.cbls.lib.search.LinearSelector
-import oscar.cbls.modeling.Algebra._
+
 import oscar.cbls.util.StopWatch
 
 import scala.language.postfixOps

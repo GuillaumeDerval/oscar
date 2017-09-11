@@ -22,8 +22,8 @@
 
 package oscar.cbls.lib.invariant.logic
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.{Checker, KeyForElementRemoval}
+import oscar.cbls._
+import oscar.cbls.core._
 
 import scala.collection.immutable.SortedSet
 
@@ -141,7 +141,7 @@ case class IntElement(index: IntValue, inputarray: Array[IntValue])
  * @author jean-noel.monette@it.uu.se
  * */
 case class IntElementNoVar(index: IntValue, inputarray: Array[Int])
-  extends IntInvariant(initialValue = inputarray(index.value),DomainRange(inputarray.min,inputarray.max))
+  extends IntInvariant(initialValue = inputarray(index.value),inputarray.min to inputarray.max)
   with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(index)
@@ -277,9 +277,9 @@ case class Elements[T <:IntValue](index: SetValue, inputarray: Array[T])
  * @param index is the index of the array access
  * @author renaud.delandtsheer@cetic.be
  * */
-case class SetElement(index: IntValue, inputarray: Array[SetValue])
+case class SetElement[X<:SetValue](index: IntValue, inputarray: Array[X])
   extends SetInvariant(inputarray.apply(index.value).value)
-  with Bulked[SetValue, Domain]
+  with Bulked[X, Domain]
   with VaryingDependencies
   with IntNotificationTarget
   with SetNotificationTarget{
@@ -295,7 +295,7 @@ case class SetElement(index: IntValue, inputarray: Array[SetValue])
 
   finishInitialization()
 
-  override def performBulkComputation(bulkedVar: Array[SetValue]): Domain =
+  override def performBulkComputation(bulkedVar: Array[X]): Domain =
     InvariantHelper.getMinMaxBoundsSet(bulkedVar)
 
   @inline

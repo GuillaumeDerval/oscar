@@ -22,9 +22,9 @@
 
 package oscar.cbls.lib.invariant.logic
 
+import oscar.cbls._
+import oscar.cbls.core._
 import oscar.cbls.algo.heap.{BinomialHeap, BinomialHeapWithMove}
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable.Queue
@@ -126,7 +126,7 @@ case class SelectLEHeapHeap(values: Array[IntValue], boundary: IntValue)
  * @param boundary: the boundary for comparison
  * @author renaud.delandtsheer@cetic.be
  * */
-case class SelectLESetQueue(values: Array[IntValue], boundary: IntValue)
+case class SelectLESetQueue[X<:IntValue](values: Array[X], boundary: IntValue)
   extends SetInvariant(initialDomain = values.indices.start to values.indices.end)
   with IntNotificationTarget{
 

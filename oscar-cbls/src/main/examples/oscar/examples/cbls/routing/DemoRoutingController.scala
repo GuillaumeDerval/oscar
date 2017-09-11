@@ -16,13 +16,11 @@
  */
 package oscar.examples.cbls.routing
 
-import oscar.cbls.core.computation.Store
+import oscar.cbls._
 import oscar.cbls.core.search.{Best, Move}
 import oscar.cbls.lib.invariant.seq.Length
-import oscar.cbls.core.objective.Objective
 import oscar.cbls.business.routing.model.{ClosestNeighbors, ConstantDistancePerVehicle, RoutedAndUnrouted, VRP}
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile, RoundRobin}
-import oscar.cbls.modeling.Algebra._
 import oscar.cbls.business.routing.neighborhood._
 import oscar.cbls.util.StopWatch
 

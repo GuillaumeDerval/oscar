@@ -17,13 +17,11 @@ package oscar.cbls.benchmarks.CP2017
 
 import java.io.{File, PrintWriter}
 
+import oscar.cbls._
 import oscar.cbls.business.routing.model._
 import oscar.cbls.business.routing.neighborhood._
-import oscar.cbls.core.computation.Store
-import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.invariant.seq.Length
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
-import oscar.cbls.modeling.Algebra._
 import oscar.cbls.util.StopWatch
 
 import scala.io.Source
@@ -38,8 +36,7 @@ class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Arra
 
   val penaltyForUnrouted  = 10000
 
-  val obj = Objective(totalDistance + (penaltyForUnrouted*(n - Length(routes))))
-
+  val obj = Objective(totalDistance + (penaltyForUnrouted * (n - Length(routes))))
   override def toString : String = super.toString +  "objective: " + obj.value + "\n"
 
   val closestNeighboursForward = computeClosestNeighborsForward()

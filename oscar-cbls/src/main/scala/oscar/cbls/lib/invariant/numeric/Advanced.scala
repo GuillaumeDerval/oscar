@@ -20,8 +20,8 @@
 
 package oscar.cbls.lib.invariant.numeric
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation._
+import oscar.cbls._
+import oscar.cbls.core._
 
 import scala.collection.immutable.SortedSet
 

@@ -21,13 +21,11 @@
 
 package oscar.cbls.lib.constraint
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.constraint.Constraint
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
 import oscar.cbls.lib.invariant.logic.{DenseCount, IntITE}
 import oscar.cbls.lib.invariant.minmax.Max2
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.modeling.Algebra._
 
 import scala.collection.immutable.SortedMap
 
@@ -56,7 +54,7 @@ case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Int, IntValu
     Sum(bounds.toList.map((value_bound) => Max2(noViolation,value_bound._2 - valueCount(value_bound._1+offset))))
     .setName("ViolationsOfAtLeast")
 
-  private val violationByVal=Array.tabulate(valueCount.length)(value => {
+  private val violationByVal:Array[IntValue]=Array.tabulate(valueCount.length)(value => {
     if(bounds.contains(value + offset))
       IntITE(valueCount(value + offset) - bounds(value + offset), Violation, noViolation)
     else Violation
