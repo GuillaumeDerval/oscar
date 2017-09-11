@@ -46,11 +46,11 @@ object flowShop  extends CBLSModel with App {
     for(jPos <- jobs){
       MachineToJobToStartingTimes(m)(jPos) = (m,jPos) match{
         case (0,0) => CBLSIntConst(0)
-        case (0,_) => machineToJobToDuration(0)(jobSequence(jPos-1)) + MachineToJobToStartingTimes(0)(jPos-1)
-        case (_,0) => machineToJobToDuration(m-1)(jobSequence(0)) + MachineToJobToStartingTimes(m-1)(0)
+        case (0,_) => machineToJobToDuration(0).element(jobSequence(jPos-1)) + MachineToJobToStartingTimes(0)(jPos-1)
+        case (_,0) => machineToJobToDuration(m-1).element(jobSequence(0)) + MachineToJobToStartingTimes(m-1)(0)
         case (_,_) => max2(
-          machineToJobToDuration(m)(jobSequence(jPos-1)) + MachineToJobToStartingTimes(m)(jPos-1),
-          machineToJobToDuration(m-1)(jobSequence(jPos)) + MachineToJobToStartingTimes(m-1)(jPos))
+          machineToJobToDuration(m).element(jobSequence(jPos-1)) + MachineToJobToStartingTimes(m)(jPos-1),
+          machineToJobToDuration(m-1).element(jobSequence(jPos)) + MachineToJobToStartingTimes(m-1)(jPos))
       }
     }
   }
@@ -58,7 +58,7 @@ object flowShop  extends CBLSModel with App {
   println("closing model")
 
   val obj:Objective =
-    MachineToJobToStartingTimes(nbMachines-1)(nbJobs-1) + machineToJobToDuration(nbMachines-1)(jobSequence(nbJobs-1))
+    MachineToJobToStartingTimes(nbMachines-1)(nbJobs-1) + machineToJobToDuration(nbMachines-1).element(jobSequence(nbJobs-1))
 
   val tabu = Array.tabulate(nbJobs)(j => CBLSIntVar(0,name = "tabu_" + j))
   val it = CBLSIntVar(0,name="it")

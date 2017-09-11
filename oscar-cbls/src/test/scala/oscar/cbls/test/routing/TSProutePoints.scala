@@ -15,12 +15,11 @@ package oscar.cbls.test.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.core.computation.{CBLSSetConst, Store}
+import oscar.cbls._
+
 import oscar.cbls.lib.invariant.routing.ConstantRoutingDistance
 import oscar.cbls.lib.invariant.seq.{Content, Length}
 import oscar.cbls.lib.invariant.set.Diff
-import oscar.cbls.modeling.Algebra._
-import oscar.cbls.core.objective.Objective
 import oscar.cbls.business.routing.model._
 import oscar.cbls.business.routing.neighborhood._
 import oscar.cbls.lib.search.combinators.{Mu, BestSlopeFirst, Profile}

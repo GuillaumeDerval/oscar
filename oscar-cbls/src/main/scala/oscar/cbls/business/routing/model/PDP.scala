@@ -270,7 +270,7 @@ class PDP(override val n:Int, override val v:Int, override val m:Store, maxPivot
           arrivalLoadValue(i) + loadValueAtNode(i)
     }
     for(i <- 0 until n){
-      arrivalLoadValue(i) <== leaveLoadValue(prev(i))
+      arrivalLoadValue(i) <== leaveLoadValue.element(prev(i))
     }
   }
 
@@ -281,7 +281,7 @@ class PDP(override val n:Int, override val v:Int, override val m:Store, maxPivot
 
   def setVehiclesCapacityStrongConstraint(): Unit ={
     for(i <- arrivalLoadValue.indices)
-      slowConstraints.post(LE(arrivalLoadValue(i), vehicleMaxCapacity(vehicleOfNodes(i))))
+      slowConstraints.post(LE(arrivalLoadValue(i), vehicleMaxCapacity.element(vehicleOfNodes(i))))
   }
 
   def isNotFull()(node:Int): Boolean ={
@@ -304,7 +304,7 @@ class PDP(override val n:Int, override val v:Int, override val m:Store, maxPivot
 
   var timeWindows: Array[(Int,Int,Int,Int)] = Array.empty
 
-  var arrivalTimeCluster: DenseCluster[IntValue] = _
+  var arrivalTimeCluster: DenseCluster = _
 
   var waitingDuration: Array[IntValue] = Array.empty
 
@@ -327,7 +327,7 @@ class PDP(override val n:Int, override val v:Int, override val m:Store, maxPivot
     }
 
     for (i <- 0 until n) {
-      arrivalTime(i) <== arrivalTimeToNext(prev(i))
+      arrivalTime(i) <== arrivalTimeToNext.element(prev(i))
     }
 
     arrivalTimeCluster = Cluster.MakeDenseAssumingMinMax(leaveTime.map(x => Div(x,900)),0,192)

@@ -50,7 +50,7 @@ object flowShopShiftRestart  extends CBLSModel with App {
         case (_,_) => max2(machineToRoundToEndingTimes(m)(round-1), machineToRoundToEndingTimes(m-1)(round))
       }
       machineToRoundToStartingTimes(m)(round) = start
-      machineToRoundToEndingTimes(m)(round) = start + machineToJobToDuration(m)(jobSequence(round))
+      machineToRoundToEndingTimes(m)(round) = start + machineToJobToDuration(m).element(jobSequence(round))
     }
   }
 

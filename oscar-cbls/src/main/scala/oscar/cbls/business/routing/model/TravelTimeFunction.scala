@@ -66,7 +66,7 @@ trait Time extends VRP with NextAndPrev{
   }
 
   for (i <- 0 until n) {
-    arrivalTime(i) <== arrivalTimeToNext(prev(i))
+    arrivalTime(i) <== arrivalTimeToNext.element(prev(i))
   }
 
 

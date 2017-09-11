@@ -37,21 +37,21 @@ trait Invariants
  */
 trait ClusterInvariants{
 
-  def makeSparseCluster[T<:IntValue](values:Array[T], clusters: Iterable[Int]) = Cluster.MakeSparse(values, clusters)
+  def makeSparseCluster(values:Array[IntValue], clusters: Iterable[Int]) = Cluster.MakeSparse(values, clusters)
 
-  def makeDenseCluster[T<:IntValue](values:Array[T]) = Cluster.MakeDense(values)
+  def makeDenseCluster(values:Array[IntValue]) = Cluster.MakeDense(values)
 
-  def makeDenseClusterAssumingMinMax[T<:IntValue](values:Array[T],themin:Int,themax:Int) = Cluster.MakeDenseAssumingMinMax(values,themin,themax)
+  def makeDenseClusterAssumingMinMax(values:Array[IntValue],themin:Int,themax:Int) = Cluster.MakeDenseAssumingMinMax(values,themin,themax)
 
   /**maintains a cluster of the indexes of array:  cluster(j) = {i in index of values | values[i] == j}
     * This is considered as a sparse cluster because Cluster is a map and must not cover all possibles values of the values in the array ''values''
     * */
-  def sparseCluster[T<:IntValue](values:Array[T], Clusters:SortedMap[Int,CBLSSetVar]) = SparseCluster(values, Clusters)
+  def sparseCluster(values:Array[IntValue], Clusters:SortedMap[Int,CBLSSetVar]) = SparseCluster(values, Clusters)
 
   /**Maintains a cluster of the indexes of array: cluster(j) = {i in index of values | values[i] == j}
     * This is considered as a dense cluster because Cluster is an array and must cover all the possibles values of the values in the array ''values''
     * */
-  def denseCluster[T<:IntValue](values:Array[T], clusters:Array[CBLSSetVar]) = DenseCluster(values, clusters)
+  def denseCluster(values:Array[IntValue], clusters:Array[CBLSSetVar]) = DenseCluster(values, clusters)
 
   /**
    * Maintains a count of the indexes of array: count(j) = #{i in index of values | values[i] == j}
