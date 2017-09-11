@@ -30,6 +30,7 @@ package object cbls {
   final val positiveOrNullRange = oscar.cbls.core.computation.PositiveOrNullRange
 
   type Value = oscar.cbls.core.computation.Value
+  type Variable = oscar.cbls.core.computation.Variable
 
   type Solution = oscar.cbls.core.computation.Solution
   type Snapshot = oscar.cbls.core.computation.Snapshot

@@ -207,7 +207,7 @@ class InvariantTests extends FunSuite with Checkers {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     new DenseCount(
       bench.genIntVarsArray(10, 0 to 19),
-      bench.genIntVarsArray(20, 0 to 19, false))
+      bench.genIntVarsArray(20, 0 to 19, false).asInstanceOf[Array[CBLSIntVar]])
     bench.run
   }
 
