@@ -59,7 +59,7 @@ object RelaxationFunctions {
     * Relaxes variables using propagation to guide the relaxation until the estimated size s of the neighbourhood is attained.
     * @param s The estimated size of the neighbourhood to attain.
     */
-  def propagationGuidedRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, closeness:Option[ClosenessStore], s: Double): Unit = {
+  def propagationGuidedRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, closeness: ClosenessStore, s: Double): Unit = {
 //    println("relaxing to size " + s)
     val varSeq = vars.toSeq
     val varArray = varSeq.indices.toArray //map to real index of variables
@@ -109,7 +109,7 @@ object RelaxationFunctions {
         else i += 1
       }
 
-      if(closeness.isDefined) closeness.get.update(next, propagation)
+      closeness.update(next, propagation)
     }
 
 //    println("relaxation done, " + (varSeq.length - boundStart) + " vars frozen")

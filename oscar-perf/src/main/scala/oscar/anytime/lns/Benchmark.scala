@@ -54,16 +54,17 @@ trait Benchmark {
   }
 
   def performALNS(argMap: ArgMap): ALNSSearchResults = {
-    val config = new ALNSConfig(
-      argMap.getOrElse('timeout, 0L).asInstanceOf[Long] * 1000000000L,
-      bestKnownObjective,
-      1000,
-      coupled = argMap.getOrElse('coupled, false).asInstanceOf[Boolean],
-      learning = argMap.getOrElse('learning, false).asInstanceOf[Boolean],
+
+    val coupled = argMap.getOrElse('coupled, false).asInstanceOf[Boolean]
+    val opDeactivation = argMap.getOrElse('opDeactivation, false).asInstanceOf[Boolean]
+
+    val builder = new ALNSBuilder(
+      solver,
+      decisionVariables,
 
       argMap.getOrElse(
         'relax,
-        Array(ALNSBuilder.Random, ALNSBuilder.KSuccessiveRelax, ALNSBuilder.PropGuidedRelax, ALNSBuilder.RevPropGuidedRelax, ALNSBuilder.FullRelax) //(Reversed) propagation guided may cause out of memory on big instances
+        Array(ALNSBuilder.RandomRelax, ALNSBuilder.KSuccessiveRelax, ALNSBuilder.PropGuidedRelax, ALNSBuilder.RevPropGuidedRelax, ALNSBuilder.FullRelax) //(Reversed) propagation guided may cause out of memory on big instances
       ).asInstanceOf[Array[String]],
 
       argMap.getOrElse(
@@ -71,16 +72,36 @@ trait Benchmark {
         Array(ALNSBuilder.ConfOrderSearch, ALNSBuilder.FirstFailSearch, ALNSBuilder.LastConfSearch, ALNSBuilder.ExtOrientedSearch, ALNSBuilder.WeightDegSearch)
       ).asInstanceOf[Array[String]],
 
-      argMap.getOrElse('valLearn, false).asInstanceOf[Boolean],
-      argMap.getOrElse('opDeactivation, false).asInstanceOf[Boolean],
-
-      argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
       argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
       argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String],
+      argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
       argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String],
 
       argMap.getOrElse('relaxSize, ALNSBuilder.DefRelaxParam).asInstanceOf[Array[Double]],
-      argMap.getOrElse('nFailures, ALNSBuilder.DefNFailures).asInstanceOf[Array[Int]]
+      argMap.getOrElse('nFailures, ALNSBuilder.DefNFailures).asInstanceOf[Array[Int]],
+
+      argMap.getOrElse('valLearn, false).asInstanceOf[Boolean],
+      opDeactivation
+    )
+
+    lazy val searchStore = builder.instantiateOperatorStore(
+      if(coupled) builder.instantiateCoupledOperators
+      else builder.instantiateSearchOperators
+    )
+
+    lazy val relaxStore = if(coupled) None
+    else Some(builder.instantiateOperatorStore(builder.instantiateRelaxOperators))
+
+    val config = new ALNSConfig(
+      argMap.getOrElse('timeout, 0L).asInstanceOf[Long] * 1000000000L,
+      bestKnownObjective,
+      1000,
+      coupled,
+      learning = argMap.getOrElse('learning, false).asInstanceOf[Boolean],
+      relaxStore,
+      searchStore,
+      opDeactivation,
+      builder.instantiateMetric()
     )
 
     val alns = ALNSSearch(solver, decisionVariables, config)

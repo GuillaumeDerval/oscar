@@ -3,7 +3,7 @@ package oscar.cp.searches.lns.search
 import oscar.algo.Inconsistency
 import oscar.algo.search.SearchStatistics
 import oscar.cp.{CPIntVar, CPSolver}
-import oscar.cp.searches.lns.operators.{ALNSOperator, ALNSReifiedOperator, ALNSSingleParamOperator, ALNSTwoParamsOperator}
+import oscar.cp.searches.lns.operators._
 import oscar.cp.searches.lns.selection.AdaptiveStore
 
 import scala.collection.mutable
@@ -13,14 +13,15 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
   extends ALNSSearch(solver, vars, config) {
 
   //Instantiating relax operators:
-  lazy val relaxOps: Array[ALNSOperator] = builder.instantiateRelaxOperators
-  lazy val relaxStore: AdaptiveStore[ALNSOperator] = builder.instantiateOperatorStore(relaxOps)
+  lazy val relaxStore: AdaptiveStore[ALNSOperator] = config.relaxStore.get
+  lazy val relaxOps: Array[ALNSOperator] = relaxStore.getElements.toArray
 
   //Instantiating search operators:
-  lazy val searchOps: Array[ALNSOperator] = builder.instantiateSearchOperators
-  lazy val searchStore: AdaptiveStore[ALNSOperator] = builder.instantiateOperatorStore(searchOps)
+  lazy val searchStore: AdaptiveStore[ALNSOperator] = config.searchStore
+  lazy val searchOps: Array[ALNSOperator] = searchStore.getElements.toArray
 
   lazy val nOpCombinations: Int = relaxOps.filter(_.isActive).map(_.nParamVals).sum * searchOps.filter(_.isActive).map(_.nParamVals).sum
+  val metric: (ALNSElement, Int, SearchStatistics) => Double = config.metric
 
   override def alnsLearning(): Unit = {
     learning = true

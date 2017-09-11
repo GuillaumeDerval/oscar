@@ -1,8 +1,9 @@
 package oscar.cp.searches.lns.search
 
 import oscar.algo.Inconsistency
+import oscar.algo.search.SearchStatistics
 import oscar.cp.{CPIntVar, CPSolver}
-import oscar.cp.searches.lns.operators.{ALNSOperator, ALNSReifiedOperator}
+import oscar.cp.searches.lns.operators.{ALNSElement, ALNSOperator, ALNSReifiedOperator}
 import oscar.cp.searches.lns.selection.AdaptiveStore
 
 import scala.collection.mutable.ArrayBuffer
@@ -11,9 +12,9 @@ import scala.util.Random
 class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
   extends ALNSSearch(solver, vars, config) {
 
-  //Instantiating operators:
-  lazy val operators: Array[ALNSOperator] = builder.instantiateCoupledOperators
-  lazy val opStore: AdaptiveStore[ALNSOperator] = builder.instantiateOperatorStore(operators)
+  lazy val opStore: AdaptiveStore[ALNSOperator] = config.searchStore
+  lazy val operators: Array[ALNSOperator] = opStore.getElements.toArray
+  val metric: (ALNSElement, Int, SearchStatistics) => Double = config.metric
 
   override def alnsLearning(): Unit = {
     learning = true

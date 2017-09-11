@@ -1,6 +1,8 @@
 package oscar.cp.searches.lns.search
 
-import oscar.cp.searches.lns.operators.ALNSBuilder
+import oscar.algo.search.SearchStatistics
+import oscar.cp.searches.lns.operators.{ALNSBuilder, ALNSElement, ALNSOperator}
+import oscar.cp.searches.lns.selection.AdaptiveStore
 
 /**
   * Search configuration
@@ -11,15 +13,9 @@ class ALNSConfig(
                   val memLimit: Int = 1000, //Memory limit (mb)
                   val coupled: Boolean = false, //Coupled operators
                   val learning: Boolean = false, //Learning phase
-                  val relaxOperatorKeys: Array[String], //The relax operators to use
-                  val searchOperatorKeys: Array[String], //The search operators to use
-                  val valLearn: Boolean = false, //Value learning heuristic
+                  val relaxStore: Option[AdaptiveStore[ALNSOperator]], //The relax operators to use
+                  val searchStore: AdaptiveStore[ALNSOperator], //The search operators to use
                   val opDeactivation: Boolean = false, //Wether Failing operators can be deactivated or not
-                  val opSelectionKey: String = ALNSBuilder.RWheel, //The operators selection mechanism
-                  val paramSelectionKey: String = ALNSBuilder.RWheel, //The parameters selection mechanism
-                  val opMetricKey: String = ALNSBuilder.LastImprov, //The operators performance metric
-                  val paramMetricKey: String = ALNSBuilder.LastImprov, //The parameters performance metric
-                  val relaxSize: Array[Double] = ALNSBuilder.DefRelaxParam,
-                  val nFailures: Array[Int] = ALNSBuilder.DefNFailures
+                  val metric: (ALNSElement, Int, SearchStatistics) => Double //The operators performance metric
                 ) {
 }

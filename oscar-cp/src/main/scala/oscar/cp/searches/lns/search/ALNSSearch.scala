@@ -1,9 +1,9 @@
 package oscar.cp.searches.lns.search
 
-import oscar.algo.search.{DFSearch, SearchStatistics}
+import oscar.algo.search.DFSearch
 import oscar.cp.{CPIntVar, CPSolver}
 import oscar.cp.searches.lns.CPIntSol
-import oscar.cp.searches.lns.operators.{ALNSBuilder, ALNSElement, SearchFunctions}
+import oscar.cp.searches.lns.operators.{ALNSElement, SearchFunctions}
 
 import scala.collection.mutable
 
@@ -72,10 +72,6 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
     stop |= System.nanoTime() >= endIter
     stop
   }
-
-  val builder = new ALNSBuilder(solver, vars, config)
-
-  val metric: (ALNSElement, Int, SearchStatistics) => Double = builder.instantiateMetric()
 
   def searchFirstSol(): Boolean = {
     if(!solver.silent) println("Starting first solution search...")
