@@ -25,44 +25,6 @@ import oscar.cbls._
 import oscar.cbls.core._
 
 
-trait HelperInvariants{
-  /** This is a helper to define an invariant from an Int -> Int function.
-    * Ths invariant is not incremental, so it should only be used for very simple functions.
-    * it maintains output = fun(a)
-    * @param a the parameter of the function
-    * @param fun the function to maintain, it is supposed not to listen to any variable in the model
-    * @param domain the expected domain of the output
-    * @param cached set to true to have a cache of size 1, zero to have no cache. cache can provide speedup if fun is time-consuming
-    * @author renaud.delandtsheer@cetic.be
-    * */
-  def int2Int(a:IntValue, fun:Int => Int, domain:Domain = fullRange,cached:Boolean = false)
-  = new Int2Int(a, fun, domain,cached)
-
-  /** This is a helper to define an invariant from an Int x Int -> Int function.
-    * Ths invariant is not incremental, so this should only be used for very simple functions.
-    * it maintains output = fun(a,b)
-    * @param a the first parameter of the function
-    * @param b the second parameter of the function
-    * @param fun the function to maintain, it is supposed not to listen to any variable in the model
-    * @param domain the expected domain of the output
-    * @author renaud.delandtsheer@cetic.be
-    * */
-  def intInt2Int(a:IntValue, b:IntValue, fun:((Int, Int) => Int), domain:Domain = fullRange) =
-    new IntInt2Int(a, b, fun, domain)
-
-  /** This is a helper to define an invariant from an Int x Int -> Int function.
-    * Ths invariant is not incremental, so this should only be used for very simple functions.
-    * it maintains output = fun(a,b) The difference with [[oscar.cbls.lib.invariant.logic.IntInt2Int]] is that this one performs the computation only after both variables have been updated.
-    * @param a the first parameter of the function
-    * @param b the second parameter of the function
-    * @param fun the function to maintain, it is supposed not to listen to any variable in the model
-    * @param domain the expected domain of the output
-    * @author renaud.delandtsheer@cetic.be
-    * */
-  def lazyIntInt2Int(a:IntValue, b:IntValue, fun:((Int, Int) => Int), domain:Domain = fullRange)
-  = new LazyIntInt2Int(a, b, fun, domain)
-}
-
 /** This is a helper to define an invariant from an Int -> Int function.
   * Ths invariant is not incremental, so it should only be used for very simple functions.
   * it maintains output = fun(a)

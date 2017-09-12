@@ -21,14 +21,14 @@ import oscar.cbls.algo.search.IdenticalAggregator
 import oscar.cbls.business.binPacking.model.{Bin, BinPackingProblem, Item}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search._
-import oscar.cbls.lib.search.LinearSelectorTrait
+import oscar.cbls.lib.search.LinearSelectors
 
 /**
  * this is a standard solver for a binPacking. 
  * it performs a combination of MoveItem, Swaps, randomSwaps and binEmptying
  * @author renaud.delandtsheer@cetic.be 
  */
-object BinPackingSolver extends LinearSelectorTrait {
+object BinPackingSolver extends LinearSelectors {
   def solveBinPacking(p: BinPackingProblem, maxStep: Int){
 
     val x = ((MoveItem(p) exhaustBack SwapItems(p))
@@ -60,7 +60,7 @@ case class MoveItem(p:BinPackingProblem,
                     best:Boolean = false,
                     areItemsIdentical: (Item,Item) => Boolean = null,
                     areBinsIdentical: (Bin,Bin) => Boolean = null)
-  extends Neighborhood with LinearSelectorTrait{
+  extends Neighborhood with LinearSelectors{
 
   val binList:List[Bin] = p.bins.toList.map(_._2)
 
@@ -123,7 +123,7 @@ case class MoveItem(p:BinPackingProblem,
 case class SwapItems(p:BinPackingProblem,
                      best:Boolean = false,
                      areItemsIdentical: (Item,Item) => Boolean = null)
-  extends Neighborhood with LinearSelectorTrait{
+  extends Neighborhood with LinearSelectors{
 
   val itemList:List[Item] = p.items.toList.map(_._2)
   val binList:List[Bin] = p.bins.toList.map(_._2)
@@ -188,7 +188,7 @@ case class SwapItems(p:BinPackingProblem,
   * @author renaud.delandtsheer@cetic.be
   * */
 case class JumpSwapItems(p:BinPackingProblem)
-  extends Neighborhood with LinearSelectorTrait {
+  extends Neighborhood with LinearSelectors {
 
   val itemList: List[Item] = p.items.toList.map(_._2)
   val binList: List[Bin] = p.bins.toList.map(_._2)
@@ -225,7 +225,7 @@ case class JumpSwapItems(p:BinPackingProblem)
   * @author renaud.delandtsheer@cetic.be
   */
 case class EmptyMostViolatedBin(p:BinPackingProblem)
-  extends Neighborhood with LinearSelectorTrait {
+  extends Neighborhood with LinearSelectors {
 
   val itemList: List[Item] = p.items.toList.map(_._2)
   val binList: List[Bin] = p.bins.toList.map(_._2)

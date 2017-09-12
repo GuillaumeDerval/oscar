@@ -18,10 +18,7 @@ import oscar.cbls._
 import oscar.cbls.core.computation.Variable
 
 import oscar.cbls.core.propagation.Checker
-import oscar.cbls.lib.invariant.minmax.MinMaxInvariants
-import oscar.cbls.lib.invariant.numeric.NumericInvariants
-import oscar.cbls.lib.invariant.set.SetInvariants
-import oscar.cbls.lib.search.LinearSelectorTrait
+import oscar.cbls.lib.search.LinearSelectors
 import oscar.cbls.lib.search.combinators.CombinatorsAPI
 import oscar.cbls.util.StopWatch
 
@@ -41,7 +38,7 @@ class CBLSModel(val verbose:Boolean = false,
                  val noCycle:Boolean = true,
                  val topologicalSort:Boolean = false,
                  val propagateOnToString:Boolean = true)
-  extends LinearSelectorTrait
+  extends LinearSelectors
   with Constraints
   with Invariants
   with StopWatch

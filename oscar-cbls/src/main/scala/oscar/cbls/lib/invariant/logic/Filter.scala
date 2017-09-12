@@ -59,12 +59,3 @@ case class Filter(values:Array[IntValue], cond:(Int=>Boolean)=_>0)
     }
   }
 }
-
-trait FilterInvariants{
-  /** { i in index(values) | cond(values[i] }
-    * @param values is an array of IntVar
-    * @param cond is a function that selects values to be includes in the output set.
-    * This ''cond'' function cannot depend on any IntVar, as updates to these IntVars will not trigger propagation of this invariant.
-    */
-  def filter(values:Array[IntValue], cond:(Int=>Boolean) = _ != 0) = Filter(values:Array[IntValue], cond:(Int=>Boolean))
-}

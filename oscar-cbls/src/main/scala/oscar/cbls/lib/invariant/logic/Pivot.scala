@@ -30,27 +30,6 @@ import oscar.cbls.core.computation.IntValue
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable.Queue
 
-
-trait PivotInvariants{
-  /** {i in index of values | values[i] <= boundary}
-    * It is based on two heap data structure, hence updates are log(n) and all updates are allowed
-    * @param values an array of intvar
-    * @param boundary the boundary for comparison
-    */
-  def selectLEHeapHeap(values:Array[IntValue], boundary: IntValue) = SelectLEHeapHeap(values:Array[IntValue], boundary: IntValue)
-
-
-  /**{i \in index of values | values[i] <= boundary}
-    * It is based on a queue for the values above the boundary, hence all updates must be accepted by this scheme:
-     - SelectLESetQueue does not allow boundary to decrease
-     - SelectLESetQueue does not allow elements above boundary to change
-     - SelectLESetQueue requires latest variables passing above boundary to be the biggest one
-    * @param values: an array of intvar
-    * @param boundary: the boundary for comparison
-    */
-  def selectLESetQueue(values:Array[IntValue], boundary: IntValue) = SelectLESetQueue(values, boundary)
-
-}
 /**
  * {i in index of values | values[i] <= boundary}
  * It is based on two heap data structure, hence updates are log(n) and all updates are allowed

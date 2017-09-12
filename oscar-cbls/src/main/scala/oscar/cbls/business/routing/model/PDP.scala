@@ -20,7 +20,6 @@ import oscar.cbls.core.computation.FullRange
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.IntVarObjective
 import oscar.cbls.lib.constraint.{EQ, GE, LE}
-import oscar.cbls.lib.invariant.logic.cluster.Cluster
 import oscar.cbls.lib.invariant.logic.{IntITE, Cluster, DenseCluster, IntInt2Int}
 import oscar.cbls.lib.invariant.minmax.Max2
 import oscar.cbls.lib.invariant.numeric.Div

@@ -21,44 +21,6 @@ import oscar.cbls.core._
 import scala.collection.immutable.SortedSet
 
 
-/**
- * modeling interface presenting the element invariants
- * @author renaud.delandtsheer@cetic.be
- */
-trait ElementInvariants{
-  /** if (ifVar >0) then thenVar else elveVar
-    * @param ifVar the condition (IntVar)
-    * @param thenVar the returned value if ifVar > 0
-    * @param elseVar the returned value if ifVar <= 0
-    * */
-  def intITE(ifVar:IntValue, thenVar:IntValue, elseVar:IntValue, pivot: Int = 0) = IntITE(ifVar, thenVar, elseVar, pivot)
-
-  /** inputarray[index]
-    * @param inputarray is an array of IntVar
-    * @param index is the index accessing the array*/
-  def intElement(index:IntValue, inputarray:Array[IntValue]) = IntElement(index:IntValue, inputarray:Array[IntValue])
-
-  /**Union(i in index) (array[i])
-    * @param index is an IntSetVar denoting the set of positions in the array to consider
-    * @param inputarray is the array of intvar that can be selected by the index
-    */
-  def intElements(index:SetValue, inputarray:Array[IntValue]) = Elements(index, inputarray)
-
-  /** inputarray[index] on an array of IntSetVar
-    * @param inputarray is the array of intsetvar
-    * @param index is the index of the array access
-    **/
-  def intSetElement(index:IntValue, inputarray:Array[SetValue]) = SetElement(index, inputarray)
-
-  /**
-   * inputarray[index]
-   * @param inputArray is an array of int
-   * @param index is the index accessing the array
-   * @author renaud.delandtsheer@cetic.be
-   * */
-  def constantIntElement(index: IntValue, inputArray: Array[Int]) = ConstantIntElement(index, inputArray)
-}
-
 
 /**
  * if (ifVar > pivot) then thenVar else elveVar

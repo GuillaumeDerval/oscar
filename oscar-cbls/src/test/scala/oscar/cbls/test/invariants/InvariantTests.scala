@@ -20,8 +20,7 @@ import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 import oscar.cbls._
 import oscar.cbls.lib.constraint._
-import oscar.cbls.lib.invariant.logic.element.SetElement
-import oscar.cbls.lib.invariant.logic._
+import oscar.cbls.lib.invariant.logic.{SetElement, _}
 import oscar.cbls.lib.invariant.minmax.{ArgMax, ArgMin, Max2, MaxArray, MaxLin, MaxSet, Min2, MinArray, MinLin, MinSet}
 import oscar.cbls.lib.invariant.numeric.{Abs, Div, Minus, Mod, Prod, Prod2, ProdElements, RoundUpModulo, Step, Sum, Sum2, SumElements}
 import oscar.cbls.lib.invariant.routing._

@@ -26,11 +26,11 @@ import scala.util.Random
   * @param isRandomized can be set to false if one wants a reproductible behavior of the search engine
   * @author renaud.delandtsheer@cetic.be
   * */
-class LinearSelector(isRandomized: Boolean = true) extends LinearSelectorTrait{
+class LinearSelectorClass(isRandomized: Boolean = true) extends LinearSelectors{
   setRandomized(isRandomized)
 }
 
-trait LinearSelectorTrait{
+trait LinearSelectors{
   var RandomGenerator: Random = null
 
   var Randomized:Boolean = true
@@ -252,41 +252,4 @@ trait LinearSelectorTrait{
     }
     intarray.iterator
   }
-
-  /**choses an laternative among a list of them, ponderated with their associated probability
-    * the returned pair includes the probability, divided by the total priority, so if it is not one, things get corrected*/
-  def PonderatedChoose[T](alternatives:Iterable[(T, Float)]):(T, Float) = {
-    var Ptot:Float = alternatives.map(tAndP => tAndP._2).foldLeft[Float](0)((a:Float, b:Float) => a+b)
-    var choice = Ptot*RandomGenerator.nextFloat()
-    for (a <- alternatives){
-      if (choice <= a._2){
-        return (a._1,a._2/Ptot)
-      }else{
-        choice -= a._2
-      }
-    }
-    null //should not happen
-  }
 }
-
-/*
-class selectFirst[R](r: Iterable[R],st: (R => Boolean)){
-  def apply(doIt:R => Unit, ifNone: (()=> Unit)= ()=>{println("no suitable item found in " + r)}){
-    for(rr <- r) if(st(rr)) {
-      doIt(rr)
-      return
-    }
-    ifNone()
-  }
-
-  def getIt:R ={
-    for(rr <- r) if(st(rr)) return rr
-    null.asInstanceOf[R]
-  }
-}
-
-object selectFirst{
-  def apply[R](r: Iterable[R],st: (R => Boolean) = ((r:R) => true)):selectFirst[R] = new selectFirst[R](r,st)
-  implicit def selectToR[R](s:selectFirst[R]):R = s.getIt
-}
-*/

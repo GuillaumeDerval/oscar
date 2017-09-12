@@ -20,7 +20,7 @@ import oscar.cbls.algo.lazyIt.LazyMap
 import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator, KSmallest}
 import oscar.cbls.core.computation.InvariantHelper
 import oscar.cbls.core.search._
-import oscar.cbls.lib.search.LinearSelectorTrait
+import oscar.cbls.lib.search.LinearSelectors
 
 import scala.collection.immutable.SortedSet
 import scala.util.Random
@@ -255,7 +255,7 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
                                  name:String = "RandomizeNeighborhood",
                                  searchZone:() => SortedSet[Int] = null,
                                  valuesToConsider:(CBLSIntVar,Int) => Iterable[Int] = (variable,_) => variable.domain)
-  extends Neighborhood(name) with LinearSelectorTrait{
+  extends Neighborhood(name) with LinearSelectors{
 
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
     if(printPerformedSearches) println("applying " + name)
@@ -298,7 +298,7 @@ case class RandomSwapNeighborhood(vars:Array[CBLSIntVar],
                                   degree:Int = 1,
                                   name:String = "RandomSwapNeighborhood",
                                   searchZone:() => SortedSet[Int] = null)  //TODO: search zone does not work!
-  extends Neighborhood(name) with LinearSelectorTrait{
+  extends Neighborhood(name) with LinearSelectors{
 
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
     if(printPerformedSearches) println("applying " + name)
@@ -335,7 +335,7 @@ case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
                                numberOfShuffledPositions:() => Int = () => Int.MaxValue,
                                name:String = "ShuffleNeighborhood",
                                checkNoMoveFound:Boolean = true)
-  extends Neighborhood(name) with LinearSelectorTrait{
+  extends Neighborhood(name) with LinearSelectors{
 
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
     if(printPerformedSearches) println("applying " + name)

@@ -191,33 +191,3 @@ case class CumulativeNoSet(start: Array[IntValue],
 
   //TODO: checkInternals.
 }
-
-trait CumulativeInvariants{
-
-  /**
-   * Maintains a resource usage profile.
-   * @param indices the indices of tasks
-   * @param start the start time of tasks
-   * @param duration the duration of tasks
-   * @param amount the amount that tasks use of this resource
-   * @param profile the usage profile of the resource maintained to profile(time) <== sum(task.amount | task.start <= time <= t.start+t.duration)
-   * @param active the tasks that are active maintained to active(time) <== (task.indices | task.start <= time <= t.start+t.duration)
-   */
-  def cumulative(indices:Array[Int], start:Array[IntValue], duration:Array[IntValue], amount:Array[IntValue], profile:Array[CBLSIntVar], active:Array[CBLSSetVar])  =
-    Cumulative(indices:Array[Int], start, duration, amount, profile, active)
-
-  /**
-   * Maintains a resource usage profile.
-   * @param start the start time of tasks
-   * @param duration the duration of tasks
-   * @param amount the amount that tasks use of this resource
-   * @param profile the usage profile of the resource maintained to profile(time) <== sum(task.amount | task.start <= time <= t.start+t.duration)
-   * @author renaud.delandtsheer@cetic.be
-   * @author Jean-Noel Monette
-   */
-  def cumulativeNoSet(start: Array[IntValue],
-                      duration: Array[IntValue],
-                      amount: Array[IntValue],
-                      profile: Array[CBLSIntVar])
-  = CumulativeNoSet(start, duration, amount, profile)
-}

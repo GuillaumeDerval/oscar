@@ -76,12 +76,3 @@ object DenseRef{
     new DenseRef(references,referencing)
   }
 }
-
-trait RefInvariants{
-  /**
-   * Maintains the reverse references. Referencing(i) = {j | Reference(j) includes i}
-   * */
-  def denseRef(references:Array[SetValue], referencing:Array[CBLSSetVar]) = DenseRef(references, referencing)
-
-  def makeDenseRef(references:Array[SetValue]) = DenseRef.makeDenseRef(references)
-}

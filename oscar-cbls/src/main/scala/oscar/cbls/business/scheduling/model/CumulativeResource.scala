@@ -29,7 +29,7 @@ import oscar.cbls._
 import oscar.cbls.algo.conflict.ConflictSearch
 import oscar.cbls.lib.invariant.logic.Cumulative
 import oscar.cbls.lib.invariant.minmax.{ArgMax, Max}
-import oscar.cbls.lib.search.LinearSelectorTrait
+import oscar.cbls.lib.search.LinearSelectors
 
 import scala.collection.SortedMap
 
@@ -43,7 +43,7 @@ import scala.collection.SortedMap
  * @author renaud.delandtsheer@cetic.be
  */
 class CumulativeResource(planning: Planning, val maxAmount: Int = 1, name: String = null)
-  extends Resource(planning: Planning, name) with LinearSelectorTrait {
+  extends Resource(planning: Planning, name) with LinearSelectors {
   require(maxAmount >= 0) // The IntVar that store the useAmount would break if their domain of lb > ub.
 
   val useAmount = Array.tabulate(maxDuration + 1)(t => CBLSIntVar(model, 0, 0 to Int.MaxValue, s"use_amount_${name}_at_time_$t"))

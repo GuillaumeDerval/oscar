@@ -206,22 +206,3 @@ object Cluster{
 }
 
 
-trait ClusterInvariants {
-
-  def makeSparseCluster(values : Array[IntValue], clusters : Iterable[Int]) = Cluster.makeSparse(values, clusters)
-
-  def makeDenseCluster(values : Array[IntValue]) = Cluster.makeDense(values)
-
-  def makeDenseClusterAssumingMinMax(values : Array[IntValue], themin : Int, themax : Int) = Cluster.makeDenseAssumingMinMax(values, themin, themax)
-
-  /** maintains a cluster of the indexes of array:  cluster(j) = {i in index of values | values[i] == j}
-    * This is considered as a sparse cluster because Cluster is a map and must not cover all possibles values of the values in the array ''values''
-    * */
-  def sparseCluster(values : Array[IntValue], Clusters : SortedMap[Int, CBLSSetVar]) = SparseCluster(values, Clusters)
-
-  /** Maintains a cluster of the indexes of array: cluster(j) = {i in index of values | values[i] == j}
-    * This is considered as a dense cluster because Cluster is an array and must cover all the possibles values of the values in the array ''values''
-    * */
-  def denseCluster(values : Array[IntValue], clusters : Array[CBLSSetVar]) = DenseCluster(values, clusters)
-
-}

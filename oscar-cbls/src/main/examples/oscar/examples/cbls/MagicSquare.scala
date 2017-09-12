@@ -25,14 +25,14 @@ import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.lib.constraint.EQ
 import oscar.cbls.lib.invariant.numeric._
-import oscar.cbls.lib.search.LinearSelector
+import oscar.cbls.lib.search.LinearSelectorClass
 import oscar.cbls.util.StopWatch
 
 /**
  * Example showing how to use Asteroid on the magic square problem  
  * @author christophe.ponsard@cetic.be
  * */
-object MagicSquare extends LinearSelector with StopWatch {
+object MagicSquare extends LinearSelectorClass with StopWatch {
   
   def main(args: Array[String]) {
     
