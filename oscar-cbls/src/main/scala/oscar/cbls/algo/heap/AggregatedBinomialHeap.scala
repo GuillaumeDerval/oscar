@@ -40,7 +40,7 @@ class AggregatedBinomialHeapQList[@specialized T](GetKey:T => Int,val maxPositio
 
   private[this] var empty:Boolean = true
 
-  /**makes the datastruct empty*/
+  /**makes the datastruct empty**/
   override def dropAll(){
     for (i <- b) a(i) = null
     empty = true

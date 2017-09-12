@@ -29,13 +29,13 @@ trait StopWatch {
 
   /**starts or resets the stopwatch*/
   def startWatch(){
-    starttime = System.currentTimeMillis
+    starttime = System.nanoTime()
   }
 
   /**returns the time elapsed since the last call to startWatch.
    * time is wall clock time in milliseconds
    */
-  def getWatch:Long = (System.currentTimeMillis - starttime)
+  def getWatch:Long = (System.nanoTime() - starttime)/1000
 
   /**returns a string describing the time elapsed since last startWatch
    * formatted for humans: hh:mm:ss:ms

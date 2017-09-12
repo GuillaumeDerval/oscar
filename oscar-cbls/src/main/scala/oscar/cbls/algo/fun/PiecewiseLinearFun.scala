@@ -36,8 +36,11 @@ import scala.language.implicitConversions
   ******************************************************************************/
 
 object PiecewiseLinearFun{
+
   def identity = new PiecewiseLinearFun()
+
   implicit def toIterable(f:PiecewiseLinearFun):Iterable[Pivot] = f.transformation.values
+
   def createFromPivots(pivots:Iterable[Pivot]):PiecewiseLinearFun = {
     var acc = RedBlackTreeMap.empty[Pivot]
     val pivotIt = pivots.toIterator
