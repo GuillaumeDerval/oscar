@@ -43,7 +43,7 @@ class CBLSModel(val verbose:Boolean = false,
   with Invariants
   with StopWatch
   with CombinatorsAPI
-  with Searches{
+  with StandardNeighborhoods{
 
   implicit val s = new Store(verbose, checker, noCycle, topologicalSort,propagateOnToString)
   implicit val c = new ConstraintSystem(s)

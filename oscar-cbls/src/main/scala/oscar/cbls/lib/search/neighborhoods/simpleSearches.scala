@@ -30,6 +30,8 @@ import scala.util.Random
  *
  * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
  * @param name the name of the neighborhood
+ * @param selectIndiceBehavior how should it iterate on the variables?
+ * @param selectValueBehavior how should it iterate over the possible values to affect to the variable?
  * @param searchZone a subset of the indices of vars to consider.
  *                   If none is provided, all the array will be considered each time
  * @param symmetryClassOfVariables a function that input the ID of a variable and returns a symmetry class;
@@ -125,7 +127,7 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
 }
 
 /**
- * this neighborhood consider swap moves that swap the value of two CBLSIntVar
+ * will iteratively swap the value of two different variables in the array
  *
  * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
  * @param searchZone1 a subset of the indices of vars to consider for the first moved point
@@ -134,11 +136,13 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
  *                   If none is provided, all the array will be considered each time
  *                   it receives the indice of the first var, and the old value of the first var
  * @param symmetryCanBeBrokenOnIndices if set to true, the neighborhood will break symmetries on indices of swapped vars
- *                            that is: thee first variable will always have an indice strictly smaller than the second swapped variable
+ *                            that is: the first variable will always have an indice strictly smaller than the second swapped variable
  *                            typically, you always want it except if you have specified one or two searchZones, and they are different
  * @param symmetryCanBeBrokenOnValue if set to true, the neighborhood will break symmetries on values of swapped vars
  *                            that is: thee first variable will always have a value strictly smaller than the value of second swapped variable
  *                            you do not want to have both symmetryCanBeBrokenOnIndices and symmetryCanBeBrokenOnValue
+ * @param selectFirstVariableBehavior how should iterate over the first variable?
+ * @param selectSecondVariableBehavior how should it iterate over the second variable?
  * @param name the name of the neighborhood
  * @param symmetryClassOfVariables1 a function that input the ID of a variable and returns a symmetry class;
  *                      for each role of the move, ony one of the variable in each class will be considered for the vars in searchZone1
@@ -243,7 +247,7 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
  * Will randomize the array, typically to get out of a local minimal
  * This will not consider the objective function, even if it includes some strong constraints
  *
- * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
+ * @param vars an array of CBLSIntVar defining the search space
  * @param degree the number of variables to change randomly
  * @param searchZone a subset of the indices of vars to consider.
  *                   If none is provided, all the array will be considered each time

@@ -358,7 +358,7 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
           //per vehicle, there might be some node cost to consider
           val vehicleOfMovedSegment = vehicleSearcher(prev.newValue, fromIncluded)
           val targetVehicleOfMove = vehicleSearcher(prev.newValue, after)
-          assert(vehicleOfMovedSegment == RoutingConventionMethods.searchVehicleReachingPosition(toIncluded, prev.newValue, v))
+          //assert(vehicleOfMovedSegment == RoutingConventionMethods.searchVehicleReachingPosition(toIncluded, prev.newValue, v))
 
           if (vehicleOfMovedSegment == targetVehicleOfMove) {
             //moving within the vehicle; same as flip, actually

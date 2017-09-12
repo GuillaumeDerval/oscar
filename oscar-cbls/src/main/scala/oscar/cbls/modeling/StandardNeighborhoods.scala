@@ -25,14 +25,15 @@ import scala.collection.immutable.SortedSet
 /** A trait that interfaces some of the neighborhoods of OScaR.CBLS
   *
   */
-trait Searches {
+trait StandardNeighborhoods {
 
   /**
    * will find a variable in the array, and find a value from its range that improves the objective function
    *
    * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
    * @param name the name of the neighborhood
-   * @param best true for the best move, false for the first move, default false
+   * @param selectIndiceBehavior how should it iterate on the variables?
+   * @param selectValueBehavior how should it iterate over the possible values to affect to the variable?
    * @param searchZone a subset of the indices of vars to consider.
    *                   If none is provided, all the array will be considered each time
    * @param symmetryClassOfVariables a function that input the ID of a variable and returns a symmetry class;
@@ -112,6 +113,8 @@ trait Searches {
    * @param symmetryCanBeBrokenOnValue if set to true, the neighborhood will break symmetries on values of swapped vars
    *                            that is: thee first variable will always have a value strictly smaller than the value of second swapped variable
    *                            you do not want to have both symmetryCanBeBrokenOnIndices and symmetryCanBeBrokenOnValue
+   * @param selectFirstVariableBehavior how should iterate over the first variable?
+   * @param selectSecondVariableBehavior how should it iterate over the second variable?
    * @param name the name of the neighborhood
    * @param symmetryClassOfVariables1 a function that input the ID of a variable and returns a symmetry class;
    *                      for each role of the move, ony one of the variable in each class will be considered for the vars in searchZone1
@@ -190,16 +193,44 @@ trait Searches {
                         hotRestart:Boolean = true) =
     ShiftNeighborhood(vars, name, searchZone1, maxShiftSize, maxOffsetLength, best, hotRestart)
 
+
+
+  /**
+   * This neighborhood will consider roll moves that roll the value of contiguous CBLSIntVar in the given array
+   *
+   * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
+   * @param searchZone a subset of the indices of vars to consider for the roll
+   *                   If none is provided, all the array will be considered each time
+   * @param bridgeOverFrozenVariables if false, contiguous variables are the ones that are adjacent in the array,
+   *                                  so that if a variable is not in the search zone,
+   *                                  no roll can involve vars on its left and on its right
+   *                                  if true, variable in the search zone will simply be ignored
+   * @param maxShiftSize the max size of the roll, given the first indice considered in the roll
+   * @param name the name of the neighborhood
+   * @param hotRestart  if true, the exploration order in case you ar not going for the best
+   *                    is a hotRestart for the first swapped variable
+   *                    even if you specify a searchZone that is: the exploration starts again
+   *                    at the position where it stopped, and consider the indices in increasing order
+   *                    if false, consider the exploration range in natural order from the first position.
+   *  @param checkForDifferentValues if true, will check that vars involved in roll have different values before exploring
+   **/
   def rollNeighborhood(vars:Array[CBLSIntVar],
                        name:String = "RollNeighborhood",
                        searchZone:()=>Set[Int] = null,
                        bridgeOverFrozenVariables:Boolean = false,
                        maxShiftSize:Int=>Int = _ => Int.MaxValue, //the max size of the roll, given the ID of the first variable
+                       checkForDifferentValues:Boolean = false,
                        best:Boolean = false,
-                       hotRestart:Boolean = true) =
-    RollNeighborhood(vars, name, searchZone, bridgeOverFrozenVariables, maxShiftSize, best, hotRestart)
-
-
+                       hotRestart:Boolean = true)
+  = RollNeighborhood(
+    vars,
+    name,
+    searchZone,
+    bridgeOverFrozenVariables,
+    maxShiftSize,
+    checkForDifferentValues,
+    best,
+    hotRestart)
 
   /**
    * flips a section of the array, only contiguous zones are searched
@@ -212,8 +243,6 @@ trait Searches {
    *    for each width of the fliped zone, by increasing order, and interrupted whenever a non-flippeable position is reached
    *      test flipping
    */
-  //TODO add the possibility to specify positions that must be in the limit of the flip?
-  //TODO: hotRestart
   def wideningFlipNeighborhood(vars:Array[CBLSIntVar],
                                name:String = "WideningFlipNeighborhood",
                                allowedPositions:()=>Iterable[Int] = null,
