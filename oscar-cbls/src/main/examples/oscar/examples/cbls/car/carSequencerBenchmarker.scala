@@ -94,6 +94,7 @@ object carSequencerBenchmarker  extends CBLSModel with App {
   val obj:Objective = c.violation
 
   s.close()
+  println("model closed")
 
   val swap = swapsNeighborhood(carSequence,"swapCars")
   val rollViolated = RollNeighborhood(carSequence, name = "RollViolatedCars", maxShiftSize = _ => 20, searchZone = violatedCars)
@@ -175,6 +176,6 @@ object carSequencerBenchmarker  extends CBLSModel with App {
       guard (() => c.violation.value > 0)
       saveBestAndRestoreOnExhaust obj)
 
-  println(Benchmark.benchToStringSimple(obj, 50, List(search1,search2,search3, search4,search5,search6),verbose = 0))
+  println(Benchmark.benchToStringSimple(obj, 5, List(search1,search2,search3, search4,search5,search6),verbose = 3))
 
 }

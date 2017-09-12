@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.examples.cbls.scheduling
 
-import oscar.cbls.core.computation.Store
+import oscar.cbls._
 import oscar.cbls.business.scheduling.model.Activity
 import oscar.cbls.business.scheduling.model.Planning
 import oscar.cbls.business.scheduling.model.VariableResources

@@ -37,13 +37,13 @@ package oscar.examples.cbls.scheduling
  *         by Renaud De Landtsheer
  ******************************************************************************/
 
-import oscar.cbls.core.computation.Store
+import oscar.cbls._
+import oscar.cbls.business.scheduling._
+import oscar.cbls.business.scheduling.model.{Activity, CumulativeResource, Planning}
 import oscar.cbls.business.scheduling.solver.IFlatIRelax
 import oscar.cbls.util.StopWatch
-import io.Source
-import oscar.visual.{VisualUtil, VisualFrame}
-import oscar.cbls.business.scheduling._
-import model.{Planning, Activity, CumulativeResource}
+
+import scala.io.Source
 
 /**this class loads JobShop problems as defined in
  * http://people.brunel.ac.uk/~mastjjb/jeb/orlib/files/jobshop1.txt

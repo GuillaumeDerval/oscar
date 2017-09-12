@@ -29,7 +29,7 @@ import scala.util.Random
 /** Local Search for NQueens
  *  Moves are operated by swapping variables, using a standard neighborhood
  */
-object NQueensEasy1 extends CBLSModel with App with StopWatch{
+object NQueensStandardNeighbourhoods extends CBLSModel with App with StopWatch{
 
   startWatch()
   val N = 1000

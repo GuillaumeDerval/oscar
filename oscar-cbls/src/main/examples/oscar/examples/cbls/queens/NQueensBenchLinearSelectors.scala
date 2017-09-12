@@ -46,7 +46,7 @@ import scala.util.Random
  * The program accepts an argument which is the problem size
  * Otherwise it performs a benchmarking over a range of sizes (this takes time)
  */
-object NQueensBench1 extends LinearSelectorClass(true) with StopWatch{
+object NQueensBenchLinearSelectors extends LinearSelectorClass(true) with StopWatch{
 
   def nStrings(N: Int, C: String): String = if (N <= 0) "" else "" + C + nStrings(N - 1, C)
   def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)

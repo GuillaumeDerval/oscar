@@ -29,7 +29,7 @@ import oscar.cbls.util.StopWatch
 import scala.collection.immutable.SortedSet
 
 
-class MySimpleDemoWithUnroutedPoints2(n:Int,v:Int,symmetricDistance:Array[Array[Int]],pointsPositions:Array[(Int,Int)],m:Store, maxPivot:Int)
+class VRPModelWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[Int]],pointsPositions:Array[(Int,Int)],m:Store, maxPivot:Int)
   extends VRP(n,v,m,maxPivot)
   with ClosestNeighbors
   with RoutingMapDisplay
@@ -84,7 +84,7 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay
   startWatch()
   val model = new Store()
 
-  val myVRP = new MySimpleDemoWithUnroutedPoints2(n,v,symmetricDistanceMatrix,pointsPositions,model,maxPivotPerValuePercent)
+  val myVRP = new VRPModelWithUnroutedPoints(n,v,symmetricDistanceMatrix,pointsPositions,model,maxPivotPerValuePercent)
   val nodes = myVRP.nodes
 
   model.close()
