@@ -18,22 +18,19 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing.model._
 import oscar.cbls.business.routing.neighborhood._
-import oscar.cbls.core.search.{Best, First, LoopBehavior}
+import oscar.cbls.core.search.{Best, First}
 import oscar.cbls.lib.invariant.routing.ConstantRoutingDistance
 import oscar.cbls.lib.invariant.seq.{Content, Length}
 import oscar.cbls.lib.invariant.set.Diff
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
-
 import oscar.cbls.util.StopWatch
 
 import scala.collection.immutable.SortedSet
 
 
-class VRPModelWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[Int]],pointsPositions:Array[(Int,Int)],m:Store, maxPivot:Int)
+class SimpleVRPSymModelWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int)
   extends VRP(n,v,m,maxPivot)
-  with ClosestNeighbors
-  with RoutingMapDisplay
-{
+  with ClosestNeighbors{
 
   override protected def getDistance(from : Int, to : Int) : Int = symmetricDistance(from)(to)
 
@@ -49,42 +46,30 @@ class VRPModelWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[Int]]
 
   val obj = Objective(totalDistance + (penaltyForUnrouted*(n - Length(routes))))
 
-  this.initializeRoutingMap(pointsPositions.map(pp => (pp._1.toDouble,pp._2.toDouble)))
+  override def toString : String = super.toString +
+    "objective: " + obj.value + "\n"
 
-  /**
-   * Redefine the toString method.
-   * @return the VRP problem as a String.
-   */
-  override def toString : String = super.toString + "objective: " + obj.value + "\n"
+  val closestNeighboursForward = computeClosestNeighborsForward()
 
-//  val closestNeighboursForward = computeClosestNeighborsForward()
-
-//  val closestNeighboursBackward = computeClosestNeighborsMinFWBW()
- val closestNeighboursForward = computeClosestNeighborsForward()
-  def nbRouted = routes.value.size
+  def size = routes.value.size
+  def nbRouted = size
 }
 
-object TSPDemo extends App {
-
+object VRPSymExample extends App {
   val n = 1000
   val v = 10
-  val displayDelay = 500 //ms
   val verbose = 1
-  val maxPivotPerValuePercent = 3
-
-  new TSPDemo(n,v,maxPivotPerValuePercent,verbose,displayDelay)
+  new SimpleVRPSymSolver(n,v,4,verbose)
 }
 
-class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay:Int) extends StopWatch{
-
+class SimpleVRPSymSolver(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int){
   val routingMatrix = RoutingMatrixGenerator(n,side=1000)
   val symmetricDistanceMatrix = routingMatrix._1
   val pointsPositions = routingMatrix._2
 
-  startWatch()
   val model = new Store()
 
-  val myVRP = new VRPModelWithUnroutedPoints(n,v,symmetricDistanceMatrix,pointsPositions,model,maxPivotPerValuePercent)
+  val myVRP = new SimpleVRPSymModelWithUnroutedPoints(n,v,symmetricDistanceMatrix,model,maxPivotPerValuePercent)
   val nodes = myVRP.nodes
 
   model.close()
@@ -96,14 +81,7 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay
     hotRestart = false,
     selectNodeBehavior = First(),
     selectInsertionPointBehavior = Best()))
-
-  val routeUnroutedPointBad =  Profile(InsertPointUnroutedFirst(myVRP.unrouted,
-    ()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted),
-    myVRP,
-    neighborhoodName = "InsertUF",
-    hotRestart = false))
-
-
+  
   //using post-filters on k-nearest is probably a bit slower than possible for large problems.
   //that's why we prefer to block this neighborhood when many nodes are already routed (so few are unrouted, so the filter filters many nodes away)
   val routeUnroutedPoint2 =  Profile(InsertPointRoutedFirst(
@@ -131,16 +109,27 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay
     maxDepth = 6)
 
   def segExchange(k:Int) = SegmentExchange(myVRP,()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted),() => myVRP.vehicles)
-  var lastDisplay = this.getWatch
 
-  val search = (BestSlopeFirst(List(routeUnroutedPoint, routeUnroutedPoint2, vlsn1pt, onePtMove(10),twoOpt, threeOpt(10,true),segExchange(10))) exhaust BestSlopeFirst(List(threeOpt(30,true),vlsn1pt))).afterMove(
-    if(this.getWatch > lastDisplay + displayDelay) {myVRP.drawRoutes(); lastDisplay = this.getWatch}) //showObjectiveFunction(myVRP.obj)
+  val search =
+    (BestSlopeFirst(
+      List(
+        routeUnroutedPoint,
+        routeUnroutedPoint2,
+        vlsn1pt,
+        onePtMove(10),
+        twoOpt,
+        threeOpt(10,true),
+        segExchange(10)))
+      exhaust
+      BestSlopeFirst(
+        List(
+          threeOpt(30,true),
+          vlsn1pt)))
 
   search.verbose = verbose
-  //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
-//  routeUnroutdPoint.verbose= 4
+
   search.doAllMoves(obj=myVRP.obj)
 
-  myVRP.drawRoutes()
   print(myVRP)
 }
+

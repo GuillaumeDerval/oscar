@@ -18,18 +18,18 @@ package oscar.cbls.test.routing
 import oscar.cbls._
 import oscar.cbls.business.routing.model._
 import oscar.cbls.business.routing.neighborhood.{OnePointMove, ThreeOpt, TwoOpt}
+import oscar.cbls.lib.invariant.routing.ConstantRoutingDistance
 import oscar.cbls.lib.search.combinators.Profile
 
 
 class MySimpleRouting(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int)
-  extends VRP(n,v,m,maxPivot)
-  with TotalConstantDistance with ClosestNeighbors {
+  extends VRP(n,v,m,maxPivot) with ClosestNeighbors {
 
   //initializes to something simple; vehicle v-1 does all nodes (but other vehicles)
   //initialization must be done ASAP, to encure that invariants will initialize straight based on this value
   setCircuit(nodes)
 
-  setSymmetricDistanceMatrix(symmetricDistance)
+  val totalDistance = ConstantRoutingDistance(routes, n, v ,false, symmetricDistance, true)(0)
 
   override protected def getDistance(from : Int, to : Int) : Int = symmetricDistance(from)(to)
 
@@ -43,8 +43,8 @@ class MySimpleRouting(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, m
 
 object TSPsym extends App{
 
-  val n = 1000
-  val v = 1
+  val n = 100
+  val v = 1 //the script is really made for a single vehicle, as it initializes on a singel vehicle solution so 1 here should not be changed.
 
   val maxPivotPerValuePercent = 4
 
@@ -68,9 +68,7 @@ object TSPsym extends App{
 
   def threeOpt(k:Int, breakSym:Boolean) = Profile(new ThreeOpt(() => nodes, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
-  //val search = BestSlopeFirst(List(onePtMove,twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
-
-  val search = threeOpt(10,true)
+  val search = bestSlopeFirst(List(onePtMove,twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
 
   search.verbose = 1
 
