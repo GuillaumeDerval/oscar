@@ -138,9 +138,8 @@ object SimpleSudoku extends LinearSelectorClass with StopWatch {
       println("it: "+ it + " " + c.violation + " (swapped "+ grid(v1) + " and " + grid(v2) + ") in square "+squareOf(v1))
     }
 
-    println("Solution: "+m.solution(true))
-
     if (c.violation.value==0) {
+      println("problem solved")
       showGrid(grid,N)    
     } else {
       println("Not found after "+MAX_IT+" iterations")

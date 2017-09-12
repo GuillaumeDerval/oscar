@@ -27,12 +27,6 @@ import oscar.cbls.lib.invariant.set._
 import scala.collection.immutable.{SortedSet, SortedMap}
 
 
-trait Invariants
-  extends LogicInvariants
-  with MinMaxInvariants
-  with NumericInvariants
-  with SetInvariants
-  with SeqInvariants
 //TODO: routing seq invariants
 
 /**
@@ -469,7 +463,16 @@ trait NumericInvariants{
   /** sum(vars)
     * @param vars is an iterable of IntVars
     * */
-  def sum(vars:Iterable[IntValue]) = Sum(vars:Iterable[IntValue])
+//  def sum(vars:Iterable[IntValue]) = Sum(vars:Iterable[IntValue])
+
+  /** sum(i in cond) vars(i)
+    * @param vars is an array of IntVars
+    * @param cond is the condition for selecting variables in the array of summed ones, cannot be null
+    * @author renaud.delandtsheer@cetic.be
+    * */
+  //def sumConstants(vars: Array[Int], cond: SetValue) = SumConstants(vars, cond)
+
+  val sum = oscar.cbls.lib.invariant.numeric.Sum
 
   /** prod(vars)
     * @param vars is a set of IntVars

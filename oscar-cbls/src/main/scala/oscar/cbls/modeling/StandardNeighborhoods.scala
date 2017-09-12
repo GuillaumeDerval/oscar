@@ -79,9 +79,10 @@ trait StandardNeighborhoods {
   def randomizeNeighborhood(vars:Array[CBLSIntVar],
                             degree:() => Int = () => 1,
                             name:String = "RandomizeNeighborhood",
-                            searchZone:() => SortedSet[Int],
+                            searchZone:() => SortedSet[Int] = null,
                             valuesToConsider:(CBLSIntVar,Int) => Iterable[Int] = (variable,_) => variable.domain)
   = RandomizeNeighborhood(vars,degree,name,searchZone,valuesToConsider)
+
 
   /**
    * will randomize the array, by performing swaps only.

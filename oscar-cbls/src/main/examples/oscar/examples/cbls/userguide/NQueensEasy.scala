@@ -32,7 +32,7 @@ object NQueensEasy extends CBLSModel with App{
 
   val N = 1000
 
-  println("NQueenEasy(" + N + ") more efficient, uses standard neighborhoods")
+  println("NQueenEasy(" + N + ")")
   val range:Range = Range(0,N)
 
   val init = Random.shuffle(range.toList).iterator

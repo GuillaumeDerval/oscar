@@ -40,7 +40,11 @@ class CBLSModel(val verbose:Boolean = false,
                  val propagateOnToString:Boolean = true)
   extends LinearSelectors
   with Constraints
-  with Invariants
+  with LogicInvariants
+  with MinMaxInvariants
+  with NumericInvariants
+  with SetInvariants
+  with SeqInvariants
   with StopWatch
   with CombinatorsAPI
   with StandardNeighborhoods{
