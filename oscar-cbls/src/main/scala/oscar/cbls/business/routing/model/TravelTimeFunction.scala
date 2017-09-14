@@ -42,6 +42,7 @@ abstract class TravelTimeFunction {
  *
  * @author renaud.delandtsheer@cetic.be
  */
+@deprecated("routing model based on trait is hard to read and understand","next release")
 trait Time extends VRP with NextAndPrev{
   val defaultArrivalTime = new CBLSIntConst(0)
   //TODO: on peut améliorer le codate en enlevant des variables.
@@ -92,6 +93,7 @@ trait Time extends VRP with NextAndPrev{
  *
  * @author renaud.delandtsheer@cetic.be
  */
+@deprecated("routing model based on trait is hard to read and understand","next release")
 trait TravelTimeAsFunction extends Time {
 
   var travelDurationMatrix: TravelTimeFunction = null
@@ -117,6 +119,7 @@ trait TravelTimeAsFunction extends Time {
  *
  * @author renaud.delandtsheer@cetic.be
  */
+@deprecated("routing model based on trait is hard to read and understand","next release")
 trait TimeWindow extends Time {
 
   def setEndWindow(node: Int, endWindow: Int, constraintSystem: ConstraintSystem) {
@@ -145,6 +148,7 @@ trait TimeWindow extends Time {
  *
  * @author renaud.delandtsheer@cetic.be
  */
+@deprecated("routing model based on trait is hard to read and understand","next release")
 trait WaitingDuration extends TimeWindow {
   val waitingDuration = Array.tabulate(n) {
     (i: Int) => CBLSIntVar(m, 0, 0 to Int.MaxValue / n, "WaitingDurationBefore" + i)
@@ -172,32 +176,9 @@ trait WaitingDuration extends TimeWindow {
  *
  * @author renaud.delandtsheer@cetic.be
  */
+@deprecated("routing model based on trait is hard to read and understand","next release")
 trait TimeClosestNeighbors extends ClosestNeighbors with TravelTimeAsFunction {
   final override protected def getDistance(from: Int, to: Int): Int = {
     travelDurationMatrix.getMinTravelDuration(from, to)
   }
 }
-
-/*
-/**
-  * @author renaud.delandtsheer@cetic.be
-  */
-trait TotalTimeSpentByVehiclesOutOfDepotAsObjectiveTerm extends Time {
-  for (v <- 0 to v - 1) {
-    addObjectiveTerm(arrivalTime(v) - leaveTime(v))
-  }
-}
-
-/**
-  * @author renaud.delandtsheer@cetic.be
-  */
-trait TimeSpentOnRouteAsObjectiveTerm extends Time {
-  addObjectiveTerm(Sum(travelOutDuration))
-}
-
-/**
-  * @author renaud.delandtsheer@cetic.be
-  */
-trait WaitingTimeAsObjectiveTerm extends WaitingDuration {
-  addObjectiveTerm(Sum(waitingDuration))
-}*/
