@@ -147,7 +147,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
       //identification des composantes connexes
       val storageForTarjan = this.getNodeStorage[TarjanNodeData]
       storageForTarjan.initialize(() => new TarjanNodeData)
-      val stronglyConnectedComponents: List[QList[PropagationElement]] = TarjanWithExternalStorage.getStronlyConnexComponents[PropagationElement](
+      val stronglyConnectedComponents: List[QList[PropagationElement]] = TarjanWithExternalStorage.getStronglyConnexComponents[PropagationElement](
         getPropagationElements,
         p => p.getStaticallyListeningElements,
         storageForTarjan.get)

@@ -22,7 +22,7 @@ package oscar.cbls.algo.heap
  ******************************************************************************/
 
 /**
-* @author renaud.delandtsheer@cetic.be
+ * @author renaud.delandtsheer@cetic.be
  * @tparam T
  */
 abstract class AbstractHeap[T] extends Iterable[T] {
