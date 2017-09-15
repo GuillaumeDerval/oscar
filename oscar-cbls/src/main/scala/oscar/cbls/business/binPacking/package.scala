@@ -1,4 +1,4 @@
-package oscar.cbls
+package oscar.cbls.business
 /**
  * *****************************************************************************
  * OscaR is free software: you can redistribute it and/or modify
