@@ -15,7 +15,6 @@ class ALNSConfig(
                   val learning: Boolean = false, //Learning phase
                   val relaxStore: Option[AdaptiveStore[ALNSOperator]], //The relax operators to use
                   val searchStore: AdaptiveStore[ALNSOperator], //The search operators to use
-                  val opDeactivation: Boolean = false, //Wether Failing operators can be deactivated or not
-                  val metric: (ALNSElement, Int, SearchStatistics) => Double //The operators performance metric
+                  val opDeactivation: Boolean = false //Wether Failing operators can be deactivated or not
                 ) {
 }

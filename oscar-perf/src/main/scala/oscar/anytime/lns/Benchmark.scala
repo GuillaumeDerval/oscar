@@ -1,11 +1,12 @@
 package oscar.anytime.lns
 
-import oscar.algo.search.DFSearch
+import oscar.algo.Inconsistency
+import oscar.algo.search.{Branching, DFSearch}
 import oscar.anytime.lns.utils.{IOUtils, XmlWriter}
 import oscar.cp.CPSolver
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.searches.lns.CPIntSol
-import oscar.cp.searches.lns.operators.{ALNSBuilder, SearchFunctions}
+import oscar.cp.searches.lns.operators.{ALNSBuilder, ALNSOperator, RelaxationFunctions, SearchFunctions}
 import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch, ALNSSearchResults}
 
 import scala.collection.mutable
@@ -37,20 +38,25 @@ trait Benchmark {
 
     val maximizeObjective: Boolean = solver.objective.objs.head.isMax
 
-    val result = if(argMap.getOrElse('NOLNS, false).asInstanceOf[Boolean]) performBasicSearch(argMap, maximizeObjective) else performALNS(argMap)
+    if(argMap.getOrElse('XP, false).asInstanceOf[Boolean]) performXP(argMap)
+    else {
+      val result =
+        if (argMap.getOrElse('NOLNS, false).asInstanceOf[Boolean]) performBasicSearch(argMap, maximizeObjective)
+        else performALNS(argMap)
 
-    XmlWriter.writeToXml(
-      argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
-      argMap.getOrElse('name, "default").asInstanceOf[String],
-      seed,
-      argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
-      IOUtils.getFileName(instance, keepExtension = false),
-      problem,
-      bestKnownObjective.getOrElse(if(maximizeObjective) Int.MinValue else Int.MaxValue),
-      maximizeObjective,
-      result.solutions,
-      if(result.relaxStats.isEmpty) Map("Coupled" -> result.searchStats) else Map("Relax" -> result.relaxStats, "Search" -> result.searchStats)
-    )
+      XmlWriter.writeToXml(
+        argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
+        argMap.getOrElse('name, "default").asInstanceOf[String],
+        seed,
+        argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
+        IOUtils.getFileName(instance, keepExtension = false),
+        problem,
+        bestKnownObjective.getOrElse(if (maximizeObjective) Int.MinValue else Int.MaxValue),
+        maximizeObjective,
+        result.solutions,
+        if (result.relaxOperators.isEmpty) Map("Coupled" -> result.searchOperators) else Map("Relax" -> result.relaxOperators, "Search" -> result.searchOperators)
+      )
+    }
   }
 
   def performALNS(argMap: ArgMap): ALNSSearchResults = {
@@ -100,8 +106,7 @@ trait Benchmark {
       learning = argMap.getOrElse('learning, false).asInstanceOf[Boolean],
       relaxStore,
       searchStore,
-      opDeactivation,
-      builder.instantiateMetric()
+      opDeactivation
     )
 
     val alns = ALNSSearch(solver, decisionVariables, config)
@@ -161,6 +166,9 @@ trait Benchmark {
 
       case "--NOLNS" :: tail =>
         parseArgs(map ++ Map('NOLNS -> true), tail)
+
+      case "--XP" :: tail =>
+        parseArgs(map ++ Map('XP -> true), tail)
 
       case "--coupled" :: tail => tail match{
         case value :: remTail =>
@@ -239,5 +247,122 @@ trait Benchmark {
     }
   }
 
+  /**
+    * Experiments:
+    */
+
+  def performXP(argMap: ArgMap): Unit = {
+
+//    val coupled = argMap.getOrElse('coupled, false).asInstanceOf[Boolean]
+//    val opDeactivation = argMap.getOrElse('opDeactivation, false).asInstanceOf[Boolean]
+//
+//    val builder = new ALNSBuilder(
+//      solver,
+//      decisionVariables,
+//
+//      argMap.getOrElse(
+//        'relax,
+//        Array(ALNSBuilder.RandomRelax) //(Reversed) propagation guided may cause out of memory on big instances
+//      ).asInstanceOf[Array[String]],
+//
+//      argMap.getOrElse(
+//        'search,
+//        Array(ALNSBuilder.ConfOrderSearch)
+//      ).asInstanceOf[Array[String]],
+//
+//      argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
+//      argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String],
+//      argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
+//      argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String],
+//
+//      argMap.getOrElse('relaxSize, ALNSBuilder.DefRelaxParam).asInstanceOf[Array[Double]],
+//      argMap.getOrElse('nFailures, ALNSBuilder.DefNFailures).asInstanceOf[Array[Int]],
+//
+//      argMap.getOrElse('valLearn, false).asInstanceOf[Boolean],
+//      opDeactivation
+//    )
+
+    val params = tuneParameters(0, Array(), Array())
+
+//    lazy val operator: ALNSOperator = ???
+//    lazy val searchStore = builder.instantiateOperatorStore(Array(operator))
+//
+//    lazy val relaxStore = None
+//
+//    val config = new ALNSConfig(
+//      argMap.getOrElse('timeout, 0L).asInstanceOf[Long] * 1000000000L,
+//      bestKnownObjective,
+//      1000,
+//      true,
+//      false,
+//      relaxStore,
+//      searchStore,
+//      opDeactivation,
+//      builder.instantiateMetric()
+//    )
+//
+//    val stats = solver.startSubjectTo((s: DFSearch) => s.nSolutions >=1, Int.MaxValue, null){
+//      solver.onSolution{
+//        currentSol = Some(new CPIntSol(decisionVariables.map(_.value), solver.objective.objs.head.best, 0L))
+//      }
+//      solver.search(SearchFunctions.conflictOrdering(decisionVariables, "Max", valLearn = false))
+//    }
+//
+//    val alns = ALNSSearch(solver, decisionVariables, config)
+//
+//    alns.searchFrom(currentSol.get)
+  }
+
+  def tuneParameters(startObjective: Int, relaxSize: Array[Double], nFailures: Array[Int]): (Double, Int) = {
+    ???
+//    val R = org.ddahl.rscala.RClient() //Instantiating R client
+//
+//    //Setting up packages:
+//    R eval """
+//          spot.ok <- require('SPOT')
+//          if(!spot.ok){
+//            install.packages('SPOT')
+//            spot.ok <- require('SPOT')
+//          }
+//           """
+//    if(R.getL0("spot.ok")){
+//
+//      //TODO
+//
+//      (0.0, 0)
+//    } else{
+//      throw new Exception("Unable to load SPOT!")
+//    }
+  }
+
+  val searchTimeout = 10000000000L
+  var currentSol: Option[CPIntSol] = None
+  lazy val searchBranching: Branching = SearchFunctions.conflictOrdering(decisionVariables, "Max", valLearn = false)
+
+  def performSearch(relaxSize: Double, nFailures: Int): Int = {
+    val endTime = System.nanoTime() + searchTimeout
+    val stopCondition: (DFSearch) => Boolean = (s: DFSearch) => {
+      var stop = false
+      stop |= nFailures != 0 && s.nBacktracks >= nFailures
+      stop |= System.nanoTime() >= endTime
+      stop
+    }
+
+    var relaxDone = true
+    val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
+      try {
+        RelaxationFunctions.randomRelax(solver, decisionVariables, currentSol.get, Math.ceil(decisionVariables.length * relaxSize).toInt)
+      }
+      catch {
+        case i: Inconsistency => relaxDone = false
+      }
+      if(relaxDone) searchBranching
+    }
+
+    val objective = solver.objective.objs.head.best
+    solver.objective.objs.head.relax()
+    solver.objective.objs.head.best = currentSol.get.objective
+    objective
+  }
 }
 

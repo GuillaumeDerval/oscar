@@ -4,6 +4,7 @@ import oscar.algo.search.DFSearch
 import oscar.cp.{CPIntVar, CPSolver}
 import oscar.cp.searches.lns.CPIntSol
 import oscar.cp.searches.lns.operators.{ALNSElement, SearchFunctions}
+import oscar.cp.searches.lns.selection.Metrics
 
 import scala.collection.mutable
 
@@ -19,6 +20,7 @@ object ALNSSearch{
   */
 abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) {
   val startTime: Long = System.nanoTime()
+  var iter: Long = 1L
 
   //Configuration:
   val endTime: Long = if(config.timeout > 0) startTime + config.timeout else Long.MaxValue //Maximal allocated time
@@ -29,7 +31,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
   var iterTimeout: Long = if(config.timeout > 0) config.timeout / 300 else Long.MaxValue //The iteration allocated time
   var searchFail = 0
   var stagnation = 0
-  val stagnationThreshold = 100
+  val stagnationThreshold = 50
 
   var nSols = 0
   var nFailures = 0
@@ -41,6 +43,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
   val solsFound = new mutable.ListBuffer[CPIntSol]()
   var currentSol: Option[CPIntSol] = None  //Current solution
   var bestSol: Option[CPIntSol] = currentSol //Best solution so far
+  var previousBest: Option[CPIntSol] = None //Previous best solution
   var optimumFound = false //True if the whole search space has been explored (csp and cop) or the optimum has been found (cop)
 
   solver.onSolution{
@@ -52,6 +55,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
         (!maximizeObjective.get && solver.objective.objs.head.best <= config.objective.get)
       ))
       if (bestSol.isEmpty || (maximizeObjective.get && currentSol.get.objective > bestSol.get.objective) || (!maximizeObjective.get && currentSol.get.objective < bestSol.get.objective)) {
+        previousBest = bestSol
         bestSol = currentSol
         solsFound += currentSol.get
       }
@@ -76,7 +80,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
   def searchFirstSol(): Boolean = {
     if(!solver.silent) println("Starting first solution search...")
 
-    nSols = 1
+    nSols = 2
 
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
       solver.search(SearchFunctions.conflictOrdering(vars, if(maximizeObjective.isDefined) if(maximizeObjective.get) "Min" else "Max"  else "Max", valLearn = false))
@@ -133,7 +137,7 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
     }
 
     if(optimumFound && !solver.silent) println("Optimal solution Found!")
-    ALNSElement.resetWorstTTI()
+    Metrics.worstTTI = 1.0
     if(!solver.silent) println("Search done, retrieving results")
     val results = getSearchResults
     if(!solver.silent) println(results)
@@ -144,6 +148,13 @@ abstract class ALNSSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSC
     * Performs a learning phase where each operator is tried at least once from the same solution.
     */
   def alnsLearning(): Unit
+
+  def onStagnation(): Unit
+
+  /**
+    * Performs a parameter configuration phase where each operator is configured using SPOT.
+    */
+  def spotTuning(): Unit
 
   /**
     * Performs a sequential ALNS loop

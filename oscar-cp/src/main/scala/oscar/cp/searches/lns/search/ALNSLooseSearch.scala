@@ -1,7 +1,6 @@
 package oscar.cp.searches.lns.search
 
 import oscar.algo.Inconsistency
-import oscar.algo.search.SearchStatistics
 import oscar.cp.{CPIntVar, CPSolver}
 import oscar.cp.searches.lns.operators._
 import oscar.cp.searches.lns.selection.AdaptiveStore
@@ -21,7 +20,6 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
   lazy val searchOps: Array[ALNSOperator] = searchStore.getElements.toArray
 
   lazy val nOpCombinations: Int = relaxOps.filter(_.isActive).map(_.nParamVals).sum * searchOps.filter(_.isActive).map(_.nParamVals).sum
-  val metric: (ALNSElement, Int, SearchStatistics) => Double = config.metric
 
   override def alnsLearning(): Unit = {
     learning = true
@@ -87,6 +85,10 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
     learning = false
   }
 
+  override def onStagnation(): Unit = ???
+
+  override def spotTuning(): Unit = ???
+
   override def alnsLoop(): Unit = {
     if (!solver.silent) println("\nStarting adaptive LNS...")
     stagnation = 0
@@ -135,26 +137,26 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       if(stats.completed){
         if(!solver.silent) println("Search space completely explored, improvement: " + improvement)
         //Updating probability distributions:
-        relax.update(improvement, stats, fail = !learning)
-        search.update(improvement, stats, fail = false)
+        relax.update(improvement, stats, fail = !learning, iter)
+        search.update(improvement, stats, fail = false, iter)
         if(config.opDeactivation) relax.setActive(false)
       }
       else {
         if(!solver.silent) println("Search done, Improvement: " + improvement)
         //Updating probability distributions:
-        relax.update(improvement, stats, fail = !learning && stats.time > iterTimeout)
-        search.update(improvement, stats, fail = !learning && stats.time > iterTimeout)
+        relax.update(improvement, stats, fail = !learning && stats.time > iterTimeout, iter)
+        search.update(improvement, stats, fail = !learning && stats.time > iterTimeout, iter)
       }
 
       if(!relax.isInstanceOf[ALNSReifiedOperator]){
-        if (relax.isActive) relaxStore.adapt(relax, metric(relax, improvement, stats))
+        if (relax.isActive) relaxStore.adapt(relax)
         else {
           if (!solver.silent) println("Operator " + relax.name + " deactivated")
           if (!learning) relaxStore.deactivate(relax)
         }
       }
       if(!relax.isInstanceOf[ALNSReifiedOperator]){
-        if (search.isActive) searchStore.adapt(search, metric(search, improvement, stats))
+        if (search.isActive) searchStore.adapt(search)
         else {
           if (!solver.silent) println("Operator " + search.name + " deactivated")
           if (!learning) searchStore.deactivate(search)
@@ -164,21 +166,23 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
     else {
       if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement)
       //Updating only relax as the the search has not been done:
-      relax.update(improvement, stats, fail = !learning)
+      relax.update(improvement, stats, fail = !learning, iter)
       if(!relax.isInstanceOf[ALNSReifiedOperator]) {
-        if (relax.isActive) relaxStore.adapt(relax, metric(relax, improvement, stats))
+        if (relax.isActive) relaxStore.adapt(relax)
         else {
           if (!solver.silent) println("Operator " + relax.name + " deactivated")
           if (!learning) relaxStore.deactivate(relax)
         }
       }
     }
+
+    iter += 1
   }
 
   override def getSearchResults = new ALNSSearchResults(
     solsFound.toArray,
-    relaxOps.map(x => x.name -> x.getStats).toMap,
-    searchOps.map(x => x.name -> x.getStats).toMap,
+    relaxOps,
+    searchOps,
     maximizeObjective.isDefined & optimumFound,
     solsFound.isEmpty & optimumFound
   )

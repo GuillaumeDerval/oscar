@@ -1,7 +1,7 @@
 package oscar.anytime.lns.utils
 
 import oscar.cp.searches.lns.CPIntSol
-import oscar.cp.searches.lns.search.ALNSStatistics
+import oscar.cp.searches.lns.operators.ALNSOperator
 
 import scala.xml.{Elem, NodeBuffer, PrettyPrinter}
 
@@ -17,7 +17,7 @@ object XmlWriter{
                             bestKnown: Int,
                             maxObjective: Boolean,
                             solutions: Iterable[CPIntSol],
-                            operators: Map[String, Map[String, ALNSStatistics]]
+                            operators: Map[String, Array[ALNSOperator]]
                           ): Elem = {
 
     val xml = new NodeBuffer()
@@ -33,7 +33,7 @@ object XmlWriter{
     xml += (<solutions>{solutions.map(_.asXml)}</solutions>)
 
     xml += (<operators>{operators.flatMap{
-      case (category, operators) => operators.map{case (name, stats) => stats.asXml(name, category)}
+      case (category, operators) => operators.map(_.asXml(category))
     }}</operators>)
 
     <results>{xml}</results>
@@ -59,7 +59,7 @@ object XmlWriter{
                   bestKnown: Int = Int.MaxValue,
                   maxObjective: Boolean,
                   solutions: Iterable[CPIntSol],
-                  operators: Map[String, Map[String, ALNSStatistics]]
+                  operators: Map[String, Array[ALNSOperator]]
                 ): Unit = {
     val xml = resultsToXml(config, seed, timeout, instance, problem, bestKnown, maxObjective, solutions, operators)
     var output = directory + "/" + problem + "/" + config + "_" + instance + ".xml"

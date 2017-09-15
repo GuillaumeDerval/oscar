@@ -2,10 +2,9 @@ package oscar.cp.searches.lns.operators
 
 import oscar.algo.search.SearchStatistics
 import oscar.cp.searches.lns.CPIntSol
-import oscar.cp.searches.lns.search.ALNSStatistics
 import oscar.cp.searches.lns.selection.AdaptiveStore
 
-import scala.collection.mutable
+import scala.xml.Elem
 
 /**
   * Adaptive large neighbourhood search operator with two parameters of type T1 and T2.
@@ -13,16 +12,17 @@ import scala.collection.mutable
   * @param function the function that the operator applies.
   * @param param1Store: an AdaptiveStore containing the possible values for the 1st parameter.
   * @param param2Store: an AdaptiveStore containing the possible values for the 2nd parameter.
-  * @param metric the metric function used when adapting the operator parameters values.
   */
 class ALNSTwoParamsOperator[T1, T2](
                                      name: String,
+                                     perfMetric: (ALNSElement, Int, SearchStatistics) => Double,
+                                     score: Double = 0.0,
+                                     rFactor: Double = 1.0,
                                      failThreshold: Int,
                                      val function: (T1, T2) => (CPIntSol => Unit, Option[Int], Option[Int]),
                                      val param1Store: AdaptiveStore[ALNSParameter[T1]],
-                                     val param2Store: AdaptiveStore[ALNSParameter[T2]],
-                                     val metric: (ALNSElement, Int, SearchStatistics) => Double
-                                   ) extends ALNSOperator(name, failThreshold){
+                                     val param2Store: AdaptiveStore[ALNSParameter[T2]]
+                                   ) extends ALNSOperator(name, perfMetric, score, rFactor, failThreshold){
 
   private var selected1: Option[ALNSParameter[T1]] = None
   private var selected2: Option[ALNSParameter[T2]] = None
@@ -37,7 +37,7 @@ class ALNSTwoParamsOperator[T1, T2](
       name + "(" + param1.value + ", " + param2.value + ")",
       Math.min(param1.failThreshold, param2.failThreshold),
       () => function(param1.value, param2.value),
-      (improvement, stats, fail) => updateParams(param1, param2, improvement, stats, fail),
+      (improvement, stats, fail, iter) => updateParams(param1, param2, improvement, stats, fail, iter),
       (state) => {
         if(!param1.isActive) {
           param1Store.deactivate(param1)
@@ -63,38 +63,35 @@ class ALNSTwoParamsOperator[T1, T2](
     function(selected1.get.value, selected2.get.value)
   }
 
-  override def update(costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit = {
+  override def update(costImprovement: Int, stats: SearchStatistics, fail: Boolean, iter: Long): Unit = {
     if(selected1.isDefined && selected2.isDefined){
-      updateParams(selected1.get, selected2.get, costImprovement, stats, fail)
+      updateParams(selected1.get, selected2.get, costImprovement, stats, fail, iter)
       selected1 = None
       selected2 = None
-      super.update(costImprovement, stats, fail)
+      super.update(costImprovement, stats, fail, iter)
     }
     else throw new Exception("This operator has not been used!")
   }
 
-  private def updateParams(param1: ALNSParameter[T1], param2: ALNSParameter[T2], costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit ={
-    param1.update(costImprovement, stats, fail)
-    if(param1.isActive)
-      param1Store.adapt(param1, metric(param1, costImprovement, stats))
-    else{
+  private def updateParams(param1: ALNSParameter[T1], param2: ALNSParameter[T2], costImprovement: Int, stats: SearchStatistics, fail: Boolean, iter: Long): Unit ={
+    param1.update(costImprovement, stats, fail, iter)
+    param1Store.adapt(param1)
+    if(!param1.isActive){
       param1Store.deactivate(param1)
       if(param1Store.isActiveEmpty) setActive(false)
+      println("Operator " + name + " deactivated")
     }
 
-    param2.update(costImprovement, stats, fail)
-    if(param2.isActive)
-      param2Store.adapt(param2, metric(param2, costImprovement, stats))
-    else{
+    param2.update(costImprovement, stats, fail, iter)
+    param2Store.adapt(param2)
+    if(!param2.isActive){
       param2Store.deactivate(param2)
       if(param2Store.isActiveEmpty) setActive(false)
+      println("Operator " + name + " deactivated")
     }
   }
 
-  override def getStats: ALNSStatistics = new ALNSStatistics(execs, sols, successfulRuns, time, avgTime, improvement, avgImprovement, successRate, timeToImprovement, isActive, nFails, Array(
-        param1Store.getElements.map(x => (x.value.toString, x.getStats)).toArray,
-        param2Store.getElements.map(x => (x.value.toString, x.getStats)).toArray
-      ))
+  override def tuneParameters(): ALNSNoParamOperator = ???
 
   override def nParamVals: Int = nParamVals(1) * nParamVals(2)
 
@@ -120,5 +117,24 @@ class ALNSTwoParamsOperator[T1, T2](
     param1Store.getElements.foreach(_.resetFails())
     param2Store.getElements.foreach(_.resetFails())
     super.resetFails()
+  }
+
+  override def asXml(cat: String): Elem = {
+    <operator>
+      <name>{name}</name>
+      <type>{cat}</type>
+      {super.wrapStatsToXml()}
+      <parameter1>{param1Store.getElements.map(_.asXml("parameter"))}</parameter1>
+      <parameter2>{param2Store.getElements.map(_.asXml("parameter"))}</parameter2>
+    </operator>
+  }
+
+  override def toString: String = {
+    var s = "Operator:"
+    s += "\n\tname: " + name
+    s += "\n" + super.toString
+    s += "\n\tParameter 1:" + param1Store.getElements.mkString("\n\t")
+    s += "\n\tParameter 2:" + param2Store.getElements.mkString("\n\t")
+    s
   }
 }

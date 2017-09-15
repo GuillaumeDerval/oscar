@@ -2,6 +2,8 @@ package oscar.cp.searches.lns.selection
 
 import java.util.PriorityQueue
 
+import oscar.cp.searches.lns.operators.ALNSElement
+
 import scala.collection.mutable
 import scala.util.Random
 import scala.collection.JavaConversions._
@@ -9,16 +11,14 @@ import scala.collection.JavaConversions._
 /**
  * Adaptive store backed by a priority queue.
  */
-class PriorityStore[T](
+class PriorityStore[T <: ALNSElement](
                         val elems: Array[T],
-                        val weights: Array[Double],
-                        var rFactor: Double,
                         val min: Boolean
                       ) extends AdaptiveStore[T]{
 
   private val ordering: Ordering[Int] =
-    if(min) Ordering.by(x => (weights(x), Random.nextInt()))
-    else Ordering.by(x => (-weights(x), Random.nextInt()))
+    if(min) Ordering.by(x => (elems(x).score, Random.nextInt()))
+    else Ordering.by(x => (-elems(x).score, Random.nextInt()))
 
   private val priority = new PriorityQueue[Int](elems.length, ordering)
   elems.indices.foreach(priority.add)
@@ -26,10 +26,6 @@ class PriorityStore[T](
   //Used to store the last selected elements which have not been adapted yet and are thus not in the PQ:
   private val lastSelected = new mutable.HashMap[T, Int]()
   private val deactivated = new mutable.HashSet[Int]()
-
-  def this(elems: Array[T], rFactor: Double, min: Boolean){
-    this(elems, if(min) Array.fill(elems.length){0.0} else Array.fill(elems.length){Double.MaxValue}, rFactor, min)
-  }
 
   private def getIndex(elem: T): Int = lastSelected.getOrElse(elem, elems.indexOf(elem))
 
@@ -52,14 +48,12 @@ class PriorityStore[T](
     elems(index)
   }
 
-  override def adapt(elem: T, sFactor: Double, rFactor: Double): Unit = {
+  override def adapt(elem: T): Unit = {
     val index = getIndex(elem)
     if(index == -1) throw new Exception("Element " + elem + " is not in store.")
     if(isCached(index)) lastSelected.remove(elem)
     else priority.remove(index)
-    weights(index) = (1.0 - rFactor) * weights(index) + rFactor * sFactor
     priority.add(index)
-//    println("elem " + elem + " has now weight: " + weights(index))
   }
 
   override def getElements: Seq[T] = elems
@@ -80,11 +74,6 @@ class PriorityStore[T](
     if(isCached(index)) lastSelected.remove(elem)
     else priority.remove(index)
     deactivated += index
-  }
-
-  override def reset(sFactor: Double): Unit = {
-    weights.indices.foreach(weights(_) = sFactor)
-    reset()
   }
 
   override def reset(): Unit = {

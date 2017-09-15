@@ -1,9 +1,8 @@
 package oscar.cp.searches.lns.search
 
 import oscar.algo.Inconsistency
-import oscar.algo.search.SearchStatistics
 import oscar.cp.{CPIntVar, CPSolver}
-import oscar.cp.searches.lns.operators.{ALNSElement, ALNSOperator, ALNSReifiedOperator}
+import oscar.cp.searches.lns.operators.{ALNSOperator, ALNSReifiedOperator}
 import oscar.cp.searches.lns.selection.AdaptiveStore
 
 import scala.collection.mutable.ArrayBuffer
@@ -14,7 +13,6 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
 
   lazy val opStore: AdaptiveStore[ALNSOperator] = config.searchStore
   lazy val operators: Array[ALNSOperator] = opStore.getElements.toArray
-  val metric: (ALNSElement, Int, SearchStatistics) => Double = config.metric
 
   override def alnsLearning(): Unit = {
     learning = true
@@ -52,8 +50,8 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
 
     if(!solver.silent){
       println("Operators performances:")
-      println("operator,time,objective")
-      println(opPerf.map{ case(operator, time, objective) => operator.name + "," + time/1000000000 + "," + objective}.mkString("\n"))
+      println("operator, time, objective")
+      println(opPerf.map{ case(operator, time, objective) => operator.name + ", " + time/1000000000 + ", " + objective}.mkString("\n"))
     }
 
     //Stopping search here:
@@ -80,13 +78,64 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
     learning = false
   }
 
+  override def onStagnation(): Unit = {
+    println("Stagnation")
+
+    learning = true
+    val initSol = previousBest.get
+    val bestObjective = bestSol.get.objective
+    val tAvail = iterTimeout
+    currentSol = Some(initSol)
+
+    val sortedOps = operators.toSeq.sortBy(op => (iter - op.lastSucessIter, op.score))
+    var i = 0
+    var newSolFound = false
+    while(i < sortedOps.length && !newSolFound){
+      endIter = System.nanoTime() + tAvail
+      val operator = sortedOps(i)
+      var bestReached = false
+      while(System.nanoTime() < endIter && !bestReached){
+        lnsIter(operator)
+        bestReached = (maximizeObjective.get && currentSol.get.objective >= bestObjective) || (!maximizeObjective.get && currentSol.get.objective <= bestObjective)
+        newSolFound = (maximizeObjective.get && currentSol.get.objective > bestObjective) || (!maximizeObjective.get && currentSol.get.objective < bestObjective)
+      }
+
+      if(bestReached){
+        endIter = System.nanoTime() + tAvail
+        while(System.nanoTime() < endIter && !newSolFound) {
+          lnsIter(operator)
+          newSolFound = (maximizeObjective.get && currentSol.get.objective > bestObjective) || (!maximizeObjective.get && currentSol.get.objective < bestObjective)
+        }
+      }
+
+      //Restoring initial objective:
+      solver.objective.objs.head.relax()
+      solver.objective.objs.head.best = initSol.objective
+      currentSol = Some(initSol)
+      i += 1
+    }
+
+    currentSol = bestSol
+    solver.objective.objs.head.best = bestSol.get.objective
+    endIter = endTime
+    learning = false
+
+    if(newSolFound){
+      stagnation = 0
+      println("Stagnation over")
+    }
+  }
+
+  override def spotTuning(): Unit = ???
+
   override def alnsLoop(): Unit = {
     if (!solver.silent) println("\nStarting adaptive LNS...")
     println("n operators: " + operators.length)
     stagnation = 0
     while (
-      System.nanoTime() < endTime && opStore.nonActiveEmpty && (!config.learning || stagnation < stagnationThreshold) && !optimumFound) {
+      System.nanoTime() < endTime && opStore.nonActiveEmpty && !optimumFound) {
       lnsIter(opStore.select())
+      if(stagnation > stagnationThreshold) onStagnation()
     }
   }
 
@@ -119,42 +168,44 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
     val improvement = math.abs(currentSol.get.objective - oldObjective)
 
     if(improvement > 0){
-      stagnation = 0
+      if(!learning) stagnation = 0
       if(iterTimeout >= config.timeout || stats.time * 1000000 > iterTimeout) iterTimeout = stats.time * 1000000 * 2
     }
-    else stagnation += 1
+    else if(!learning) stagnation += 1
 
     if (relaxDone) {
       if(stats.completed){
         if(!solver.silent) println("Search space completely explored, improvement: " + improvement)
         //Updating probability distributions:
-        operator.update(improvement, stats, fail = !learning)
+        operator.update(improvement, stats, fail = !learning, iter)
         if(config.opDeactivation) operator.setActive(false)
       }
       else {
         if (!solver.silent) println("Search done, Improvement: " + improvement)
         //Updating probability distributions:
-        operator.update(improvement, stats, fail = !learning && stats.time > iterTimeout)
+        operator.update(improvement, stats, fail = !learning && stats.time > iterTimeout, iter)
       }
     }
     else {
       if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement)
-      operator.update(improvement, stats, fail = !learning)
+      operator.update(improvement, stats, fail = !learning, iter)
     }
 
     if(!operator.isInstanceOf[ALNSReifiedOperator]) {
       if (operator.isActive)
-        opStore.adapt(operator, metric(operator, improvement, stats))
+        opStore.adapt(operator)
       else {
         opStore.deactivate(operator)
         if (!solver.silent) println("Operator " + operator.name + " deactivated.")
       }
     }
+
+    iter += 1
   }
 
   override def getSearchResults = new ALNSSearchResults(
     solsFound.toArray,
-    operators.map(x => x.name -> x.getStats).toMap,
+    operators,
     maximizeObjective.isDefined & optimumFound,
     solsFound.isEmpty & optimumFound
   )

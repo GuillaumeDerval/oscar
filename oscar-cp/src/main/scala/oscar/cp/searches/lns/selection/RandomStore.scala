@@ -1,12 +1,14 @@
 package oscar.cp.searches.lns.selection
 
+import oscar.cp.searches.lns.operators.ALNSElement
+
 import scala.collection.mutable
 import scala.util.Random
 
 /**
  * Fully random adaptive store.
  */
-class RandomStore[T](val elems: Array[T]) extends AdaptiveStore[T]{
+class RandomStore[T <: ALNSElement](val elems: Array[T]) extends AdaptiveStore[T]{
   var rFactor = 0.0
 
   private val active = mutable.HashSet[Int](elems.indices: _*)
@@ -15,7 +17,7 @@ class RandomStore[T](val elems: Array[T]) extends AdaptiveStore[T]{
 
   override def select(): T = elems(active.toSeq(Random.nextInt(active.size)))
 
-  override def adapt(elem: T, sFactor: Double, rFactor: Double): Unit = Unit
+  override def adapt(elem: T): Unit = Unit
 
   override def getElements: Seq[T] = elems
 
@@ -34,8 +36,6 @@ class RandomStore[T](val elems: Array[T]) extends AdaptiveStore[T]{
     if(index == -1) throw new Exception("Element " + elem + " is not in store.")
     active.remove(index)
   }
-
-  override def reset(sFactor: Double): Unit = reset()
 
   override def reset(): Unit = {
     active.clear()
