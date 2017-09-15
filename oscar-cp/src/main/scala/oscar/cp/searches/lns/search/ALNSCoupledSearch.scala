@@ -79,7 +79,7 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
   }
 
   override def onStagnation(): Unit = {
-    println("Stagnation")
+    if(!solver.silent) println("Stagnation")
 
     learning = true
     val initSol = previousBest.get
@@ -122,7 +122,7 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
 
     if(newSolFound){
       stagnation = 0
-      println("Stagnation over")
+      if(!solver.silent) println("Stagnation over")
     }
   }
 
