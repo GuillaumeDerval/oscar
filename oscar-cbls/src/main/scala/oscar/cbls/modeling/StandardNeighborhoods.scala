@@ -148,9 +148,6 @@ trait StandardNeighborhoods {
     symmetryCanBeBrokenOnIndices,symmetryCanBeBrokenOnValue,
     selectFirstVariableBehavior, selectSecondVariableBehavior,symmetryClassOfVariables1,symmetryClassOfVariables2,hotRestart)
 
-  type SwapMove = oscar.cbls.core.search.SwapMove
-
-
   /**
    * will randomize the array, by performing shuffle on a subset of the variables
    * This will not consider the objective function, even if it includes some strong constraints

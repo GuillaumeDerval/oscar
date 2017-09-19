@@ -16,12 +16,11 @@ package oscar.examples.cbls.wlp
   ******************************************************************************/
 
 import oscar.cbls._
-import oscar.cbls.core.search.AssignMove
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.MinConstArrayLazy
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, FastestFirst, LearningRandom}
-import oscar.cbls.lib.search.neighborhoods.{AssignNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
+import oscar.cbls.lib.search.neighborhoods.{AssignMove, AssignNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
 import oscar.cbls.util.Benchmark
 
 import scala.language.postfixOps

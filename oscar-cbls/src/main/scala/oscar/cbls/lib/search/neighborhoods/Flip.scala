@@ -15,6 +15,7 @@
 
 package oscar.cbls.lib.search.neighborhoods
 
+import oscar.cbls._
 import oscar.cbls.algo.lazyIt.LazyMap
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.computation.CBLSIntVar

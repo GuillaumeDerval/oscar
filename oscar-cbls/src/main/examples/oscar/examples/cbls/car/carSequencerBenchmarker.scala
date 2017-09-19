@@ -16,11 +16,10 @@ package oscar.examples.cbls.car
   ******************************************************************************/
 
 import oscar.cbls.core.computation.CBLSIntVar
-import oscar.cbls.core.search.{SwapMove, Neighborhood}
-import oscar.cbls.lib.search.neighborhoods.RollNeighborhood
-import oscar.cbls.modeling.CBLSModel
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.search.combinators.{DynAndThen, Profile}
+import oscar.cbls.lib.search.neighborhoods.{SwapMove, RollNeighborhood}
+import oscar.cbls.modeling.CBLSModel
 import oscar.cbls.util.Benchmark
 
 import scala.collection.immutable.SortedMap

@@ -22,6 +22,7 @@ import oscar.cbls.business.binPacking.model.{Bin, BinPackingProblem, Item}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search._
 import oscar.cbls.lib.search.LinearSelectors
+import oscar.cbls.lib.search.neighborhoods.{SwapMove, AssignMove}
 
 /**
  * this is a standard solver for a binPacking. 

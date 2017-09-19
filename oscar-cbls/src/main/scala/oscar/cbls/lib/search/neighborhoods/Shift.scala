@@ -15,6 +15,7 @@
 
 package oscar.cbls.lib.search.neighborhoods
 
+import oscar.cbls._
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.core.computation.CBLSIntVar
 import oscar.cbls.core.search.{Move, EasyNeighborhood}
