@@ -306,6 +306,7 @@ object PickupDeliveryS extends App{
 
   val removeOnExhaust = removeCouple maxMoves((n-v)/20)
 
+  //TODO: c'est un peu bizarre de faire un reset sur un autre voisinage dans un afterMove.
   val removeMaxCouple = Profile(Atomic(removeOnExhaust) name "remove Some Couples") afterMove(removeOnExhaust reset())
 
   val search4 = BestSlopeFirst(List(insertCoupleFast,onePointMovePD),refresh = 5) exhaust

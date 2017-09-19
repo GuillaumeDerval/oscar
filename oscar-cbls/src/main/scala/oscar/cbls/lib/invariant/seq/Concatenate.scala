@@ -1,7 +1,7 @@
 package oscar.cbls.lib.invariant.seq
 
-import oscar.cbls.algo.seq.functional.IntSequence
 import oscar.cbls._
+import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core._
 
 /*******************************************************************************

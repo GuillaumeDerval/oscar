@@ -16,7 +16,7 @@
 package oscar.cbls.modeling
 
 import oscar.cbls._
-import oscar.cbls.algo.seq.functional.IntSequence
+import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core._
 import oscar.cbls.lib.invariant.logic._
 import oscar.cbls.lib.invariant.minmax._

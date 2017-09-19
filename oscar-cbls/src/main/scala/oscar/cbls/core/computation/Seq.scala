@@ -16,7 +16,7 @@ package oscar.cbls.core.computation
   ******************************************************************************/
 
 import oscar.cbls.algo.fun.PiecewiseLinearBijectionNaive
-import oscar.cbls.algo.seq.functional._
+import oscar.cbls.algo.seq.{ConcreteIntSequence, IntSequence, MovedIntSequence, RemovedIntSequence}
 import oscar.cbls.core.propagation.Checker
 
 import scala.language.implicitConversions

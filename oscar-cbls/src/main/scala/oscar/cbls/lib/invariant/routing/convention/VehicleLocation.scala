@@ -1,6 +1,6 @@
 package oscar.cbls.lib.invariant.routing.convention
 
-import oscar.cbls.algo.seq.functional.IntSequence
+import oscar.cbls.algo.seq.IntSequence
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify

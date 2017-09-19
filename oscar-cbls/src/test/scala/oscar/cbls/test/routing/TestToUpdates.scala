@@ -15,8 +15,7 @@ package oscar.cbls.test.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-
-import oscar.cbls.algo.seq.functional.IntSequence
+import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core.computation.{IntValue, CBLSIntConst, CBLSSeqVar, Store}
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.invariant.routing.capa.ForwardCumulativeIntegerDimensionOnVehicle

@@ -2,10 +2,12 @@ package oscar
 
 import oscar.cbls.algo.search.InstrumentedRange
 import oscar.cbls.core.computation._
+import oscar.cbls.core.search.{NeighborhoodCombinator, Neighborhood}
 import oscar.cbls.lib.constraint.{EQ, GE, LE, NE}
 import oscar.cbls.lib.invariant.logic._
 import oscar.cbls.lib.invariant.numeric._
 import oscar.cbls.lib.invariant.set._
+import oscar.cbls.lib.search.combinators.InstrumentedNeighborhood
 import oscar.cbls.modeling.ModelingAPI
 
 import scala.language.implicitConversions
@@ -37,6 +39,10 @@ package object cbls extends ModelingAPI{
   type AbstractVariable= oscar.cbls.core.computation.AbstractVariable
 
   type CascadingObjective = oscar.cbls.core.objective.CascadingObjective
+
+  implicit def instrumentNeighborhood(n:Neighborhood) = new InstrumentedNeighborhood(n)
+  implicit def instrumentNeighborhood2(n:NeighborhoodCombinator) = new InstrumentedNeighborhood(n)
+
 
   type LoopBehavior = oscar.cbls.core.search.LoopBehavior
   final val LoopBehavior = oscar.cbls.core.search.LoopBehavior

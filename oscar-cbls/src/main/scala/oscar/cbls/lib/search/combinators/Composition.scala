@@ -264,13 +264,13 @@ case class SnapShotOnEntry(a: Neighborhood, valuesToSave:Iterable[AbstractVariab
  * @param a
  * @param name
  */
-case class Atomic(a: Neighborhood, name: String = "Atomic", bound: Int = Int.MaxValue) extends NeighborhoodCombinator(a) {
+case class Atomic(a: Neighborhood, bound: Int = Int.MaxValue) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
-    CallBackMove(() => a.doAllMoves(_ > bound, obj, acceptanceCriterion), Int.MaxValue, this.getClass.getSimpleName, () => name)
+    CallBackMove(() => a.doAllMoves(_ > bound, obj, acceptanceCriterion), Int.MaxValue, this.getClass.getSimpleName, () => "Atomic(" + a + ")")
   }
 }
 
-case class Atomic2(a: Neighborhood, name: String = "Atomic", shouldStop:Int => Boolean) extends NeighborhoodCombinator(a) {
+case class Atomic2(a: Neighborhood, shouldStop:Int => Boolean) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
 
     val startSolution = obj.model.solution(true)
@@ -284,7 +284,7 @@ case class Atomic2(a: Neighborhood, name: String = "Atomic", shouldStop:Int => B
     if(allMoves.isEmpty){
       NoMoveFound
     } else {
-      CompositeMove(allMoves,endObj,"Atomic" + a)
+      CompositeMove(allMoves,endObj,"Aomic(" + a + ")")
     }
   }
 }

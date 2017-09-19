@@ -16,7 +16,7 @@ package oscar.cbls.lib.invariant.routing.convention
   ******************************************************************************/
 
 import oscar.cbls.algo.rb.RedBlackTreeMap
-import oscar.cbls.algo.seq.functional.{IntSequence, Token}
+import oscar.cbls.algo.seq.{IntSequence, Token}
 
 object RoutingConventionMethods {
 

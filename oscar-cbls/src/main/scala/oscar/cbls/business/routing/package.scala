@@ -12,7 +12,7 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-package oscar.cbls
+package oscar.cbls.business
 
 import oscar.cbls.business.routing.neighborhood.RoutingNeighborhoods
 
@@ -30,9 +30,6 @@ package object routing extends RoutingNeighborhoods{
 
 
   type VRP = oscar.cbls.business.routing.model.VRP
-
-
-
 
 }
 

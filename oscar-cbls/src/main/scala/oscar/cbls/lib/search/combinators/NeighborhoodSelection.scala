@@ -260,7 +260,7 @@ class RoundRobin(l: List[Neighborhood], steps: Int = 1) extends NeighborhoodComb
    * @param b
    * @return
    */
-  override def step(b: Neighborhood): RoundRobin = new RoundRobin(l ::: List(b))
+  def step(b: Neighborhood): RoundRobin = new RoundRobin(l ::: List(b))
 
   def repeat(i: Int): RoundRobin = {
     val last = l.last

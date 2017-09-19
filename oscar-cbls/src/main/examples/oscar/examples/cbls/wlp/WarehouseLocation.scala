@@ -18,11 +18,6 @@
 package oscar.examples.cbls.wlp
 
 import oscar.cbls._
-import oscar.cbls.lib.invariant.logic.Filter
-import oscar.cbls.lib.invariant.minmax.MinConstArrayLazy
-import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.search.neighborhoods.{RandomizeNeighborhood, SwapsNeighborhood, AssignNeighborhood}
-import oscar.cbls.lib.search.combinators.BestSlopeFirst
 
 import scala.language.postfixOps
 
@@ -43,21 +38,21 @@ object WarehouseLocation extends App{
   val m = Store()
 
   val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
-  val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
+  val openWarehouses = filter(warehouseOpenArray).setName("openWarehouses")
 
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
-    MinConstArrayLazy(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse))
+    minConstArrayLazy(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse))
 
-  val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses))
+  val obj = Objective(sum(distanceToNearestOpenWarehouseLazy) + sum(costForOpeningWarehouse, openWarehouses))
 
   m.close()
 
   val neighborhood =(
-    BestSlopeFirst(
+    bestSlopeFirst(
       List(
-        AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
-        SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),refresh = W/10)
-    onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/10), 2, obj))
+        assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
+        swapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),refresh = W/10)
+    onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/10), 2, obj))
 
   neighborhood.verbose = 1
   

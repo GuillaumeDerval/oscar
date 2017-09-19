@@ -15,6 +15,7 @@ package oscar.cbls.business.scheduling.solver
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import oscar.cbls._
 import oscar.cbls.business.scheduling.algo.CriticalPathFinder
 import oscar.cbls.business.scheduling.model.{Activity, NonMoveableActivity, Planning, PrecedenceCleaner, Resource}
 import oscar.cbls.core.computation.IntValue.toFunction
@@ -23,7 +24,7 @@ import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.objective.Objective.objToFun
 import oscar.cbls.core.search.{JumpNeighborhood, JumpNeighborhoodParam, Neighborhood}
 import oscar.cbls.lib.search.LinearSelectors
-import oscar.cbls.lib.search.combinators.BasicSaveBest
+import oscar.cbls.lib.search.combinators.{Atomic, BasicSaveBest}
 
 import scala.language.postfixOps
 
@@ -281,7 +282,7 @@ object SchedulingStrategies {
 
     val searchStep = (relax untilImprovement (p.makeSpan, nbRelax, maxIterationsForFlatten)) exhaust (flatten maxMoves 1)
 
-    (flatten sequence (searchStep atomic ()) maxMoves stable withoutImprovementOver objective
+    (flatten sequence (Atomic(searchStep)) maxMoves stable withoutImprovementOver objective
       saveBest objective whenEmpty p.worseOvershotResource)
   }
 

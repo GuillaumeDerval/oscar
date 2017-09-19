@@ -17,7 +17,7 @@ package oscar.cbls.business.routing.model
 
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.algo.seq.functional.IntSequence
+import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.invariant.routing._
 import oscar.cbls.lib.invariant.routing.convention.RoutingConventionMethods

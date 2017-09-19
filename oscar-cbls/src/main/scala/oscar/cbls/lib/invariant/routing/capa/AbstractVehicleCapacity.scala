@@ -16,8 +16,7 @@ package oscar.cbls.lib.invariant.routing.capa
   ******************************************************************************/
 
 import oscar.cbls.algo.rb.RedBlackTreeMap
-import oscar.cbls.algo.seq.functional.{IntSequence, IntSequenceExplorer}
-import oscar.cbls._
+import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core._
 import oscar.cbls.lib.invariant.routing.convention.{ConcreteVehicleLocation, VehicleLocation}
 
