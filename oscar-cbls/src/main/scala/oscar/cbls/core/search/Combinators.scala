@@ -14,19 +14,8 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  * ****************************************************************************
  */
-package oscar.cbls.lib.search.combinators
+package oscar.cbls.core.search
 
-import java.awt.{Color, Dimension}
-import javax.swing.JFrame
-
-import oscar.cbls.algo.heap.{BinomialHeap, BinomialHeapWithMove}
-import oscar.cbls._
-import oscar.cbls.core._
-import oscar.cbls.core.search._
-import oscar.cbls.util.{Statistics, StopWatch}
-import oscar.cbls.visual.FunctionGraphic.{AdjustMaxValue, ObjFunctionGraphicContainer, Zoom}
-
-import scala.collection.immutable.SortedMap
 import scala.language.implicitConversions
 
 /**
@@ -50,10 +39,5 @@ abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {
   override def toString: String = this.getClass.getSimpleName + "(" + a.mkString(",") + ")"
 
   override def collectProfilingStatistics: List[String] = a.flatMap(_.collectProfilingStatistics).toList
-}
-
-abstract class NeighborhoodCombinatorNoProfile(a: Neighborhood*) extends NeighborhoodCombinator(a:_*){
-  override def collectProfilingStatistics: List[String] = List.empty
-  override def resetStatistics(){}
 }
 

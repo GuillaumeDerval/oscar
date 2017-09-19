@@ -229,7 +229,6 @@ case class StopWhen(a: Neighborhood, cond: () => Boolean) extends NeighborhoodCo
   }
 }
 
-
 /**
  * calls the neighborhood until an improvement over obj is achieved
  * the improvement is "since the last reset"
@@ -262,7 +261,6 @@ class UntilImprovement(a: Neighborhood, over: () => Int, val minMoves: Int = 0, 
     super.reset()
   }
 }
-
 
 /**
  * this combinator bounds the number of time the search is actually performed

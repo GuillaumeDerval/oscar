@@ -2,7 +2,7 @@ package oscar.cbls.lib.search.combinators
 
 import oscar.cbls._
 import oscar.cbls.algo.heap.{BinomialHeapWithMove, BinomialHeap}
-import oscar.cbls.core.search.{MoveFound, NoMoveFound, SearchResult, Neighborhood}
+import oscar.cbls.core.search._
 
 
 case class BestSlopeFirst(l:List[Neighborhood],
