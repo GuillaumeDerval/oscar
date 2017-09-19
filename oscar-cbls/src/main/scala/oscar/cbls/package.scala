@@ -40,9 +40,7 @@ package object cbls extends ModelingAPI{
 
   type CascadingObjective = oscar.cbls.core.objective.CascadingObjective
 
-  implicit def instrumentNeighborhood(n:Neighborhood) = new InstrumentedNeighborhood(n)
-  implicit def instrumentNeighborhood2(n:NeighborhoodCombinator) = new InstrumentedNeighborhood(n)
-
+  implicit def instrumentNeighborhood(n:Neighborhood):InstrumentedNeighborhood = new InstrumentedNeighborhood(n)
 
   type LoopBehavior = oscar.cbls.core.search.LoopBehavior
   final val LoopBehavior = oscar.cbls.core.search.LoopBehavior
