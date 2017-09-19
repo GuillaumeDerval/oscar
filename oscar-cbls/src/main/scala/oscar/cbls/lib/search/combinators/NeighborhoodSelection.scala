@@ -4,25 +4,6 @@ import oscar.cbls._
 import oscar.cbls.algo.heap.{BinomialHeapWithMove, BinomialHeap}
 import oscar.cbls.core.search.{MoveFound, NoMoveFound, SearchResult, Neighborhood}
 
-/**
- * this combinator always selects the best move between the two parameters
- * notice that this combinator makes more sense
- * if the two neighborhood return their best found move,
- * and not their first found move, as usually done.
- *
- * @author renaud.delandtsheer@cetic.be
- */
-class Best(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a, b) {
-
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
-    (a.getMove(obj, initialObj:Int, acceptanceCriteria), b.getMove(obj, initialObj:Int, acceptanceCriteria)) match {
-      case (NoMoveFound, x) => x
-      case (x, NoMoveFound) => x
-      case (x: MoveFound, y: MoveFound) => if (x.objAfter < y.objAfter) x else y
-    }
-  }
-}
-
 
 case class BestSlopeFirst(l:List[Neighborhood],
                           tabuLength:Int = 10,

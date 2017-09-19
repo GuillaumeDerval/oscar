@@ -5,6 +5,26 @@ import oscar.cbls.core.search._
 
 
 /**
+ * this combinator always selects the best move between the two parameters
+ * notice that this combinator makes more sense
+ * if the two neighborhood return their best found move,
+ * and not their first found move, as usually done.
+ *
+ * @author renaud.delandtsheer@cetic.be
+ */
+class Best(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a, b) {
+
+  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
+    (a.getMove(obj, initialObj:Int, acceptanceCriteria), b.getMove(obj, initialObj:Int, acceptanceCriteria)) match {
+      case (NoMoveFound, x) => x
+      case (x, NoMoveFound) => x
+      case (x: MoveFound, y: MoveFound) => if (x.objAfter < y.objAfter) x else y
+    }
+  }
+}
+
+
+/**
  * this combinator sequentially tries all neighborhoods until one move is found
  * between calls, it will roll back to the first neighborhood
  * it tries a first, and if no move it found, tries b
@@ -337,28 +357,5 @@ class Retry(a: Neighborhood, cond: Int => Boolean = _ <= 1) extends Neighborhood
   override def reset() {
     super.reset()
     consecutiveFails = 0
-  }
-}
-
-case class NoReset(a: Neighborhood) extends NeighborhoodCombinator(a) {
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean) =
-    a.getMove(obj, initialObj:Int, acceptanceCriteria)
-
-  //this resets the internal state of the move combinators
-  override def reset() {}
-}
-
-
-/**
- * @author renaud.delandtsheer@cetic.be
- */
-class ResetOnExhausted(a: Neighborhood) extends NeighborhoodCombinator(a) {
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
-    a.getMove(obj, initialObj:Int, acceptanceCriteria) match {
-      case NoMoveFound =>
-        a.reset()
-        a.getMove(obj, initialObj:Int, acceptanceCriteria)
-      case m: MoveFound => m
-    }
   }
 }

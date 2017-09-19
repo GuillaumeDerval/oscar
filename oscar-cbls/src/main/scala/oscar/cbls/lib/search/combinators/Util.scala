@@ -262,3 +262,27 @@ object Profile{
     (statisticsHeader :: i.toList.map(_.collectThisProfileStatistics)).mkString("\n")
   }
 }
+
+
+case class NoReset(a: Neighborhood) extends NeighborhoodCombinator(a) {
+  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean) =
+    a.getMove(obj, initialObj:Int, acceptanceCriteria)
+
+  //this resets the internal state of the move combinators
+  override def reset() {}
+}
+
+
+/**
+ * @author renaud.delandtsheer@cetic.be
+ */
+class ResetOnExhausted(a: Neighborhood) extends NeighborhoodCombinator(a) {
+  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
+    a.getMove(obj, initialObj:Int, acceptanceCriteria) match {
+      case NoMoveFound =>
+        a.reset()
+        a.getMove(obj, initialObj:Int, acceptanceCriteria)
+      case m: MoveFound => m
+    }
+  }
+}
