@@ -106,135 +106,10 @@ case class LoadSolutionMove(s:Solution,override val objAfter:Int, override val n
 }
 
 
-/** standard move that assigns an int value to a CBLSIntVar
-  *
-  * @param i the variable
-  * @param v the value to assign
-  * @param id an ID that is used by the neighborhood to pass additional information
-  * @param objAfter the objective after this assignation will be performed
-  * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
-  * @author renaud.delandtsheer@cetic.be
-  */
-case class AssignMove(i:CBLSIntVar,v:Int, id:Int, override val objAfter:Int, override val neighborhoodName:String = null)
-  extends Move(objAfter, neighborhoodName){
-
-  override def commit() {i := v}
-
-  override def toString: String = {
-    neighborhoodNameToString + "AssignMove(" + i + " set to " + v + objToString + ")"
-  }
-
-  override def touchedVariables: List[Variable] = List(i)
-}
-
-case class RollMove(l:List[CBLSIntVar],offset:Int, override val objAfter:Int, override val neighborhoodName:String = null)
-  extends Move(objAfter,neighborhoodName){
-  /** to actually take the move */
-  override def commit(){
-    val variables = l.toArray
-    val initialValues:Array[Int] = variables.map(_.value)
-    for(i <- variables.indices){
-      variables(i) := initialValues((i+offset) % variables.length)
-    }
-  }
-
-  override def toString: String = {
-    neighborhoodNameToString + "RollMove(" + l + ", offset:" + offset + objToString + ")"
-  }
-
-}
-
-/** standard move that switch a block of value to the right
-  *
-  * @param startIndice the indice of the item beginning the block to switch
-  * @param length the length of the block to switch
-  * @param offset the size off the movement that has to be performed to the right
-  * @param objAfter the objective after this assignation will be performed
-  * @param neighborhoodName the name of the neighborhood that generated this move, used for pretty printing purpose.
-  *                         Notice that the name is not the type of the neighborhood.
-  * @author fabian.germeau@student.vinci.be
-  * */
-case class ShiftMove(startIndice:Int,length:Int,offset:Int,variables:Array[CBLSIntVar], override val objAfter:Int, override val neighborhoodName:String = null)
-  extends Move(objAfter,neighborhoodName){
-
-  def shiftedElements = startIndice to startIndice + length
-  override def toString: String = {
-    neighborhoodNameToString + "ShiftMove(startIndice:" + startIndice + "; length:" + length + "; offset:" + offset + objToString + ")"
-  }
-
-  /** to actually take the move */
-  override def commit() {
-    val initialValues: Array[Int] = Array.tabulate(variables.length)(variables(_).value)
-    //If the block is moved on the right
-    if(offset > 0){
-      //The values are changed
-      for(i <- startIndice to startIndice + offset + length - 1){
-        if(i < startIndice + offset){
-          variables(i) := initialValues(i + length)
-        }
-        else{
-          variables(i) := initialValues(i - offset)
-        }
-      }
-    }
-    //If the block is moved on the left
-    else{
-      //The values are changed (and don't forget, here offset is negative
-      for(i <- startIndice + offset to startIndice + length - 1){
-        if(i < startIndice + offset + length){
-          variables(i) := initialValues(i - offset)
-        }
-        else{
-          variables(i) := initialValues(i - length)
-        }
-      }
-    }
-  }
-}
-
-object FlipMove{
-  def doFlip(fromPosition:Int,toPosition:Int,variables:Array[CBLSIntVar]){
-    if(fromPosition < toPosition){
-      variables(fromPosition) :=: variables(toPosition)
-      doFlip(fromPosition+1,toPosition-1,variables)
-    }
-  }
-}
-case class FlipMove(fromPosition:Int,toPosition:Int,variables:Array[CBLSIntVar], override val objAfter:Int, override val neighborhoodName:String = null)
-  extends Move(objAfter, neighborhoodName) {
-
-  require(fromPosition < toPosition)
-
-  override def commit(): Unit = {
-    FlipMove.doFlip(fromPosition,toPosition,variables)
-  }
-
-  override def toString: String = {
-    neighborhoodNameToString + "FlipMove(fromPosition:" + fromPosition + " toPosition:" + toPosition + " size:" + (toPosition - fromPosition) +  objToString + ")"
-  }
-
-}
 
 
-/** standard move that swaps the value of two CBLSIntVar
-  *
-  * @param i the variable
-  * @param j the other variable
-  * @param objAfter the objective after this assignation will be performed
-  * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
-  * @author renaud.delandtsheer@cetic.be
-  */
-case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Int, idJ:Int, override val objAfter:Int, override val neighborhoodName:String = null)
-  extends Move(objAfter, neighborhoodName){
 
-  override def commit() {i :=: j}
 
-  override def toString: String  = {
-    neighborhoodNameToString + "SwapMove(" + i + " swapped with " + j + objToString + ")"
-  }
-
-  override def touchedVariables: List[Variable] = List(i,j)
-}
 
 /** standard move that adds a value to a CBLSSetVar
   *
@@ -275,6 +150,35 @@ case class RemoveFromSetMove(s:CBLSSetVar,v:Int, override val objAfter:Int, over
 
   override def touchedVariables: List[Variable] = List(s)
 }
+
+/**
+ * This neighborhood always returns the same move, given in the constructor
+ *
+ * @param m the move to return when the neighborhood is queried for a move
+ */
+case class ConstantMoveNeighborhood(m: Move) extends Neighborhood {
+  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+    m
+  }
+}
+
+case class DoNothingNeighborhood() extends Neighborhood with SupportForAndThenChaining[DoNothingMove]{
+  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+    val objValue = obj.value
+    if(acceptanceCriterion(objValue,objValue)){
+      MoveFound(DoNothingMove(objValue))
+    }else{
+      NoMoveFound
+    }
+  }
+
+  override def instantiateCurrentMove(newObj : Int) : DoNothingMove = DoNothingMove(newObj)
+}
+
+case class DoNothingMove(override val objAfter:Int) extends Move(objAfter){
+  override def commit() : Unit = {}
+}
+
 
 /** a composition of a list of moves; the move will be taken in the order given by the list
   *

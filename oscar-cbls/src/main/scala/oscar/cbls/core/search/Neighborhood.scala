@@ -646,33 +646,6 @@ case object NoMoveNeighborhood extends Neighborhood {
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = NoMoveFound
 }
 
-/**
- * This neighborhood always returns the same move, given in the constructor
- *
- * @param m the move to return when the neighborhood is queried for a move
- */
-case class ConstantMoveNeighborhood(m: Move) extends Neighborhood {
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
-    m
-  }
-}
-
-case class DoNothingNeighborhood() extends Neighborhood with SupportForAndThenChaining[DoNothingMove]{
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
-    val objValue = obj.value
-    if(acceptanceCriterion(objValue,objValue)){
-      MoveFound(DoNothingMove(objValue))
-    }else{
-      NoMoveFound
-    }
-  }
-
-  override def instantiateCurrentMove(newObj : Int) : DoNothingMove = DoNothingMove(newObj)
-}
-
-case class DoNothingMove(override val objAfter:Int) extends Move(objAfter){
-  override def commit() : Unit = {}
-}
 
 trait SupportForAndThenChaining[MoveType<:Move] extends Neighborhood{
 
