@@ -16,11 +16,11 @@ package oscar.cbls.test.invariants.bench
   ******************************************************************************/
 
 import org.scalacheck.{Gen, Prop}
-import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.algo.seq.functional.ConcreteIntSequence
-import oscar.cbls._
-import scala.collection.immutable.{SortedMap, SortedSet}
 import org.scalatest.prop.Checkers
+import oscar.cbls._
+import oscar.cbls.algo.seq.IntSequence
+
+import scala.collection.immutable.{SortedMap, SortedSet}
 
 /**
  * This class represents a move in the model, that is, one or several
