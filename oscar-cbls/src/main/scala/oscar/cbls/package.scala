@@ -38,6 +38,9 @@ package object cbls extends ModelingAPI{
 
   type CascadingObjective = oscar.cbls.core.objective.CascadingObjective
 
+  type LoopBehavior = oscar.cbls.core.search.LoopBehavior
+  final val LoopBehavior = oscar.cbls.core.search.LoopBehavior
+
   // Alias to useful classes and companion objects
   type CBLSIntVar = oscar.cbls.core.computation.CBLSIntVar
   final val CBLSIntVar = oscar.cbls.core.computation.CBLSIntVar
@@ -70,7 +73,6 @@ package object cbls extends ModelingAPI{
   final val CBLSSeqConst = oscar.cbls.core.computation.CBLSSeqConst
 
   //objective types
-
   type Objective = oscar.cbls.core.objective.Objective
   final val Objective = oscar.cbls.core.objective.Objective
 
