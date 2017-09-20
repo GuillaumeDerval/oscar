@@ -72,7 +72,7 @@ object ForwardCumulativeConstraintOnVehicle {
  * @param op A function which describes the capacity between two nodes : (startingNode,destinationNode,capacityAtStartingNode)=> capacityAtDestinationNode
  * @param cMax the maximal capacity of all vehicles (it is shared among all vehicles, so if you do not like it, you can use contentAtVehicleStart to make up for this)
  * @param contentAtVehicleStart the content of the vehicle at its start point
- * @param violation the violation that will be controled by the invariant
+ * @param violation the violation that will be controlled by the invariant
  * @param maxCheckpointLevel the maximal level of checkpoints that this should support.
  *                           it consumes O(n) memory per level, so do not overdrive uselessly
  */

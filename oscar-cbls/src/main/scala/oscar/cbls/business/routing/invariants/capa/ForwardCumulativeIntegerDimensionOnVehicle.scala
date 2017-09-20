@@ -55,16 +55,32 @@ object ForwardCumulativeIntegerDimensionOnVehicle {
   }
 }
 
+
+
+/**
+ * ia generic invariant for representing a dimension on a vehicle, that is an integer value that travels with the vehicle and changes at each poit according to a function "op"
+ * @param routes The sequence representing the route associated at each vehicle
+ * @param n The maximum number of nodes
+ * @param v The number of vehicles
+ * @param op A function which returns the capacity change between two nodes : (fromNode,toNode,contentAtFromNode)=> contentAtToNode
+ * @param contentAtStart Array of lenght = v where initValue(car) = content at start pos of vehicle #car
+ * @param contentAtNode output: the content of the vehicle at each node (content at node 0 to v-1 is equal to contentAtStart)
+ * @param contentAtEnd output: the content at the end of the route of each vehicle (that is whent hey come back to their departure point)
+ * @param lastPointOfVehicle output: the last point of the vehicle before coming back to its departure point
+ * @param defaultVehicleContentForUnroutedNodes is the content of a node that is not routed
+ * @param contentName the name of this content, for debug purpose. it is atributed to all variales created by this invariant
+ * @param fullDebug to activate some internal debug stuff (do not use)
+ */
 class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
                                                  n:Int,
                                                  v:Int,
                                                  op:(Int,Int,Int)=>Int,
                                                  contentAtStart:Array[IntValue],
-                                                 contentAtNode:Array[CBLSIntVar],
-                                                 contentAtEnd:Array[CBLSIntVar],
-                                                 lastPointOfVehicle:Array[CBLSIntVar],
+                                                 val contentAtNode:Array[CBLSIntVar],
+                                                 val contentAtEnd:Array[CBLSIntVar],
+                                                 val lastPointOfVehicle:Array[CBLSIntVar],
                                                  defaultVehicleContentForUnroutedNodes:Int,
-                                                 contentName:String = "content",
+                                                 val contentName:String = "content",
                                                  fullDebug:Boolean = false)
   extends AbstractForwardCumulativeDimensionOnVehicle(routes,n,v,fullDebug) with IntNotificationTarget{
 

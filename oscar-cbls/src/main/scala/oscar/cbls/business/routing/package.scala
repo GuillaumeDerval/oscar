@@ -15,20 +15,18 @@
 package oscar.cbls.business
 
 import oscar.cbls.business.routing.invariants.RoutingInvriants
-import oscar.cbls.business.routing.neighborhood.RoutingNeighborhoods
+import oscar.cbls.business.routing.modeling._
 
-/**
- *
- * This is a package to solve routing problems.
- * It includes modeling features as well as standard neighbor to conduct the search.
- * It also encompasses some heuristics to construct the initial solution for the search.
- *
- * @author renaud.delandtsheer@cetic.be
- * @author yoann.guyot@cetic.be
- * @author Florent Ghilain (UMONS)
- * */
-package object routing extends RoutingNeighborhoods with RoutingInvriants{
-
+package object routing
+  extends RoutingNeighborhoods
+  with RoutingInvriants
+  with InsertPointAPI
+  with OnePointMovsAPI
+  with RemovePointAPI
+  with RouteExchangeAPI
+  with SegmentExchangeAPI
+  with ThreeOptAPI
+  with TwoOptAPI{
 
   type VRP = oscar.cbls.business.routing.model.VRP
 

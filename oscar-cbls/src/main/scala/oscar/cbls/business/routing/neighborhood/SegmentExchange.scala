@@ -21,47 +21,6 @@ import oscar.cbls.core.search.{First, LoopBehavior, EasyNeighborhoodMultiLevel, 
 
 import scala.collection.immutable.SortedSet
 
-
-trait SegmentExchangeAPI{
-
-  type SegmentExchangeMove = oscar.cbls.business.routing.neighborhood.SegmentExchangeMove
-
-  /**
-   * exchanges segments of different vehicles (not on the same vehicle!)
-   *
-   * @param vrp the routing problem
-   * @param relevantNeighbors given the start and end of the first segment, which are the relevant neighbors for the other segment? (will be filtered for vehicle by the neighborhood)
-   * @param vehicles the set of vehicles to consider
-   * @param neighborhoodName the name of the neighborhood, used for verbosities
-   * @param hotRestart
-   * @param tryFlip if false, will not flip any segment (maybe you do not want flipping if using time windows?)
-   */
-  def segmentExchange(vrp: VRP,
-                      relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
-                      vehicles:() => Iterable[Int],
-                      neighborhoodName:String = "SegmentExchange",
-                      hotRestart:Boolean = true,
-                      selectFirstVehicleBehavior:LoopBehavior = First(),
-                      selectFirstNodeOfFirstSegmentBehavior:LoopBehavior = First(),
-                      selectSecondNodeOfFirstSegmentBehavior:LoopBehavior = First(),
-                      selectFirstNodeOfSecondSegmentBehavior:LoopBehavior = First(),
-                      selectSecondNodeOfSecondSegmentBehavior:LoopBehavior = First(),
-                      tryFlip:Boolean = true)
-  = SegmentExchange(
-    vrp,
-    relevantNeighbors,
-    vehicles,
-    neighborhoodName,
-    hotRestart,
-    selectFirstVehicleBehavior,
-    selectFirstNodeOfFirstSegmentBehavior,
-    selectSecondNodeOfFirstSegmentBehavior,
-    selectFirstNodeOfSecondSegmentBehavior,
-    selectSecondNodeOfSecondSegmentBehavior,
-    tryFlip)
-}
-
-
 /**
  * exchanges segments of different vehicles (not on the same vehicle!)
  *

@@ -29,37 +29,6 @@ import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
 import oscar.cbls.business.routing.invariants.convention.VehicleLocation
 
-trait TwoOptAPI{
-
-  type TwoOptMove = oscar.cbls.business.routing.neighborhood.TwoOptMove
-
-
-  /**
-   * Removes two edges of routes, and rebuilds routes from the segments.
-   * (with one reverse required)
-   *
-   * The search complexity is O(n²).
-   * @author renaud.delandtsheer@cetic.be
-   * @author yoann.guyot@cetic.be
-   * @author Florent Ghilain (UMONS)
-   * */
-  def twoOpt(segmentStartValues:()=>Iterable[Int],
-                    relevantNewSuccessors:()=>Int=>Iterable[Int],
-                    vrp: VRP,
-                    neighborhoodName:String = "TwoOpt",
-                    selectSegmentStartBehavior:LoopBehavior = First(),
-                    selectSegmentEndBehavior:LoopBehavior = First(),
-                    hotRestart:Boolean = true) =
-  TwoOpt(segmentStartValues,
-                    relevantNewSuccessors,
-                    vrp,
-                    neighborhoodName,
-                    selectSegmentStartBehavior,
-                    selectSegmentEndBehavior,
-                    hotRestart)
-
-}
-
 /**
  * Removes two edges of routes, and rebuilds routes from the segments.
  * (with one reverse required)

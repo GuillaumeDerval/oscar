@@ -33,45 +33,6 @@ import oscar.cbls.algo.search.{HotRestart, Pairs}
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search._
 
-trait ThreeOptAPI{
-
-  type ThreeOptMove = oscar.cbls.business.routing.neighborhood.ThreeOptMove
-
-  /**
-   * Removes three edges of routes, and rebuilds routes from the segments.
-   * Finds 3 candidate points for a 3-opt move, and then
-   * chooses on-the-fly between simple 3-opt move and reverse 3-opt move.
-   *
-   * Info : it also could be saw as the move of a route's segment to another place.
-   * The search complexity is O(n³).
-   * @author renaud.delandtsheer@cetic.be
-   * @author yoann.guyot@cetic.be
-   * @author Florent Ghilain (UMONS)
-   */
-  def threeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
-               relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
-               vrp: VRP,
-               neighborhoodName:String = "ThreeOpt",
-               selectInsertionPointBehavior:LoopBehavior = First(),
-               selectMovedSegmentBehavior:LoopBehavior = First(),
-               selectFlipBehavior:LoopBehavior = Best(),
-               hotRestart:Boolean = true,
-               skipOnePointMove:Boolean = false,
-               breakSymmetry:Boolean = true,
-               tryFlip:Boolean = true)
-  = ThreeOpt(
-    potentialInsertionPoints,
-    relevantNeighbors,
-    vrp,
-    neighborhoodName,
-    selectInsertionPointBehavior,
-    selectMovedSegmentBehavior,
-    selectFlipBehavior,
-    hotRestart,
-    skipOnePointMove,
-    breakSymmetry,
-    tryFlip)
-}
 
 /**
  * Removes three edges of routes, and rebuilds routes from the segments.

@@ -7,7 +7,7 @@ import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import scala.collection.immutable.SortedSet
 
 /**
- * maintains the set of vehicle that moves, that is the ones tht reach one point that is not their starting (=ending) point
+ * maintains the set of vehicle that have at least one point to visit (beyond their start point)
  * this invariant relies on the routing convension.
  * @param routes the routes
  * @param v the number of vehicle
