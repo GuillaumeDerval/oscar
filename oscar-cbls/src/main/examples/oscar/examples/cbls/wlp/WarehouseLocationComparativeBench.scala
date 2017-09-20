@@ -65,8 +65,10 @@ object WarehouseLocationComparativeBench extends App{
     exhaustBack SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")
     orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
-  val neighborhood2 = ()=>("random",AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
-    random SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")
+  val neighborhood2 = ()=>("random",
+    random(
+      AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
+      SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses"))
     orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
   val neighborhood3 = ()=>("LearningRandom",new LearningRandom(List(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),

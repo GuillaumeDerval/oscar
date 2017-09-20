@@ -3,7 +3,15 @@ package oscar.cbls.lib.search.combinators
 import oscar.cbls._
 import oscar.cbls.core.search._
 
+//there is no API here because the relevant api are all available infix.
 
+/**
+ * saves the best solution when encountered during the search
+ * IT DOES NOT RESTORE THE SOLUTION, but it provides methods to get the best solution, know about it, and restore it.
+ * @note this combinator is not in te the API because it is kinda primitive for the relevant ones
+ * @param a a neighborhood
+ * @param o the objective function
+ */
 class BasicSaveBest(a: Neighborhood, o: Objective) extends NeighborhoodCombinator(a) {
 
   protected val s = o.model
@@ -64,23 +72,7 @@ class BasicSaveBest(a: Neighborhood, o: Objective) extends NeighborhoodCombinato
     }
   }
 
-  /**
-   * same as doAllImprovingMoves and calling restoreBest after.
-   *
-   * @param shouldStop a function that takes the iteration number and returns true if search should be stopped
-   *                   eg if the problem is considered as solved
-   *                   you can evaluate some objective function there such as a violation degree
-   *                   notice that although you can use it to stop your algorithm, the primary purpose is to avoid blow-up.
-   *                   Smarter stop criterion cen be made using combinators, and this stop should be considered only as a protection againt blow up.
-   * @param acceptanceCriterion a criterion for accepting a move
-   *                            by default, we only accept strictly improving moves
-   * @return the number of moves performed
-   */
-  def doAllMovesAndRestoreBest(shouldStop: Int => Boolean = _ => false, obj: Objective, acceptanceCriterion: (Int, Int) => Boolean = (oldObj, newObj) => oldObj > newObj): Int = {
-    val toReturn = doAllMoves(shouldStop, obj, acceptanceCriterion)
-    restoreBest()
-    toReturn
-  }
+
 
   def restoreBestOnExhaust: RestoreBestOnExhaust = new RestoreBestOnExhaust(this)
 }
@@ -117,20 +109,6 @@ class RestoreBestOnExhaust(a: BasicSaveBest) extends NeighborhoodCombinator(a) {
   override def reset() : Unit = {
     childExhausted = false
     super.reset()
-  }
-
-  /**
-   * same as doAllImprovingMoves and calling restoreBest after.
-   *
-   * @param shouldStop a function that takes the iteration number and returns true if search should be stopped
-   *                   eg if the problem is considered as solved
-   *                   you can evaluate some objective function there such as a violation degree
-   * @param acceptanceCriterion a criterion for accepting a move
-   *                            by default, we only accept strictly improving moves
-   * @return the number of moves performed
-   */
-  def doAllMovesAndRestoreBest(shouldStop: Int => Boolean, obj: Objective, acceptanceCriterion: (Int, Int) => Boolean = (oldObj, newObj) => oldObj > newObj): Int = {
-    a.doAllMovesAndRestoreBest(shouldStop, obj, acceptanceCriterion)
   }
 
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {

@@ -7,8 +7,7 @@ import oscar.cbls.lib.constraint.{EQ, GE, LE, NE}
 import oscar.cbls.lib.invariant.logic._
 import oscar.cbls.lib.invariant.numeric._
 import oscar.cbls.lib.invariant.set._
-import oscar.cbls.lib.search.combinators.InstrumentedNeighborhood
-import oscar.cbls.modeling.ModelingAPI
+import oscar.cbls.modeling.{InstrumentedNeighborhood, ModelingAPI}
 
 import scala.language.implicitConversions
 
@@ -118,7 +117,7 @@ package object cbls extends ModelingAPI{
 
     def minus(v: SetValue): SetInvariant = Diff(x, v)
 
-    def map(fun: Int => Int, myMin: Int = Int.MinValue, myMax: Int = Int.MaxValue) = SetMap(x, fun, myMin to myMax)
+    def map(fun: Int => Int,outputDomain:Domain) = SetMap(x, fun, outputDomain)
   }
 
   implicit class IntValueArrayOps(intValueArray: Array[IntValue]) {

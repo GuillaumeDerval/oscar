@@ -19,7 +19,7 @@ import oscar.cbls.core.computation.Variable
 
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.search.LinearSelectors
-import oscar.cbls.lib.search.combinators.CombinatorsAPI
+import oscar.cbls.modeling.CombinatorsAPI
 import oscar.cbls.util.StopWatch
 
 

@@ -8,6 +8,10 @@ import oscar.cbls.core.search._
 import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.FunctionGraphic.{AdjustMaxValue, Zoom, ObjFunctionGraphicContainer}
 
+trait UtilityCombinators{
+
+}
+
 
 /**
  * This combinator create a frame that draw the evolution curve of the objective function.

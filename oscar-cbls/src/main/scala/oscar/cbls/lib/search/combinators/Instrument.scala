@@ -4,6 +4,7 @@ import oscar.cbls._
 import oscar.cbls.core.search._
 
 
+
 /**
  * this combinator attaches a custom code to a given neighborhood.
  * the code is called whenever a move is asked to the neighborhood.
@@ -84,7 +85,7 @@ case class DoOnMove(a: Neighborhood,
   }
 }
 
-case class OnExhaust(a:Neighborhood, proc:(()=>Unit),onlyFirst:Boolean) extends NeighborhoodCombinator(a) {
+case class DoOnExhaust(a:Neighborhood, proc:(()=>Unit),onlyFirst:Boolean) extends NeighborhoodCombinator(a) {
 
   var alreadyExhaustedOnce = false
   override def getMove(obj : Objective, initialObj:Int, acceptanceCriterion : (Int, Int) => Boolean) : SearchResult =

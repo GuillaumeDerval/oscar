@@ -1,8 +1,30 @@
 package oscar.cbls.lib.search.combinators
 
 import oscar.cbls._
-import oscar.cbls.core.objective.CascadingObjective
+import oscar.cbls.core.objective.{Objective, CascadingObjective}
 import oscar.cbls.core.search._
+
+object Restart{
+  /**
+   * performs a restart of the search for a number of time.
+   * it queries neighborhood on the left every time (this is the search neighborhood)
+   * if the search neighborhood is exhausted, it queries the randomizationNeighborhood once (this is the randomization neighborhood, and resets the neighborhood on the left
+   * the process of restarting is allowed maxRestartWithoutImprovement time without improvement over the objective function obj,
+   * that is: every time the search neighborhood is exhausted, it checks if the search delivered an improvement over the objective function,
+   * and the restart is only performed if it could find an improvement at least once in the last "maxRestartWithoutImprovement" descents.
+   *
+   * the best solution is reloaded at exhaustion of this neighborhood.
+   *
+   * @param randomizationNeighborhood the neighborhood that will randomize the current solution
+   * @param maxRestartWithoutImprovement the stop criterion of the restarting
+   * @param obj the objective function
+   */
+  def apply(n:Neighborhood,randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Int, obj:Objective) = {
+    (n orElse (randomizationNeighborhood
+      maxMoves maxRestartWithoutImprovement withoutImprovementOver obj improvementBeignMeasuredBeforeNeighborhoodExploration)
+      ) saveBestAndRestoreOnExhaust obj
+  }
+}
 
 
 /**
@@ -56,6 +78,7 @@ class Metropolis(a: Neighborhood, temperature: Int => Float = _ => 100, base: Fl
  * @param objectives the list of objective to consider
  * @param resetOnExhaust  on exhaustion of the current objective, restores the best value for this objective before switching to the next objective
  */
+//TODO: test this and add to API
 class GuidedLocalSearch(a: Neighborhood, objectives: List[Objective], resetOnExhaust: Boolean) extends NeighborhoodCombinator(a) {
 
   var currentObjective: Objective = null
@@ -120,6 +143,7 @@ class GuidedLocalSearch(a: Neighborhood, objectives: List[Objective], resetOnExh
  * @param firstObjective the first objective function
  * @param secondObjective the second objective function
  */
+//TODO: test this and add to API
 class AccumulatingSearch(a: Neighborhood, firstObjective: Objective, secondObjective: Objective) extends NeighborhoodCombinator(a) {
 
   val fullSecondObjective = new CascadingObjective(firstObjective, secondObjective)

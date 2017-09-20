@@ -24,7 +24,7 @@ import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.objective.Objective.objToFun
 import oscar.cbls.core.search.{JumpNeighborhood, JumpNeighborhoodParam, Neighborhood}
 import oscar.cbls.lib.search.LinearSelectors
-import oscar.cbls.lib.search.combinators.{Atomic, BasicSaveBest}
+import oscar.cbls.lib.search.combinators.Atomic
 
 import scala.language.postfixOps
 
@@ -270,7 +270,7 @@ object SchedulingStrategies {
                                      pKillPerRelax: Int = 50,
                                      stable: Int,
                                      objective: Objective,
-                                     displayPlanning: Boolean = false): BasicSaveBest = {
+                                     displayPlanning: Boolean = false): Neighborhood = {
     require(p.model.isClosed, "model should be closed before iFlatRelax algo can be instantiated")
     val maxIterationsForFlatten = (p.activityCount * (p.activityCount - 1)) / 2
 

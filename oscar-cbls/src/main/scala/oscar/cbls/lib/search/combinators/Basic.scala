@@ -52,7 +52,7 @@ class OrElse(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a,
  *
  * @author renaud.delandtsheer@cetic.be
  */
-class MaxMoves(a: Neighborhood, val maxMove: Int, cond: Move => Boolean = null) extends NeighborhoodCombinator(a) {
+class MaxMoves(a: Neighborhood, val maxMove: Int, cond: Option[Move => Boolean] = None) extends NeighborhoodCombinator(a) {
   var remainingMoves = maxMove
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
     if (remainingMoves > 0) {
@@ -74,7 +74,11 @@ class MaxMoves(a: Neighborhood, val maxMove: Int, cond: Move => Boolean = null) 
   }
 
   def notifyMoveTaken(m: Move) {
-    if (cond == null || cond(m)) remainingMoves -= 1
+    val shouldMoveBeConsidered = cond match{
+      case None => true
+      case Some(c) => c(m)}
+
+    if (shouldMoveBeConsidered) remainingMoves -= 1
   }
 
   /**
@@ -83,18 +87,24 @@ class MaxMoves(a: Neighborhood, val maxMove: Int, cond: Move => Boolean = null) 
    */
   def withoutImprovementOver(obj: () => Int) = new MaxMovesWithoutImprovement(a, cond, maxMove, obj)
 
-  def suchThat(cond: Move => Boolean) = new MaxMoves(a, maxMove, if (this.cond == null) cond else (m: Move) => this.cond(m) && cond(m))
+  def suchThat(cond: Move => Boolean) = new MaxMoves(a, maxMove, this.cond match{
+    case None => Some(cond)
+    case Some(oldCond) => Some((m: Move) => oldCond(m) && cond(m))})
 }
 
 
 /**
  * bounds the number of tolerated moves without improvements over the best value
  * the count is reset by the reset action.
- *
  * @author renaud.delandtsheer@cetic.be
+ * @param a a neighborhood
+ * @param cond an optional condition that specifies if the move should be taken into account into this stop criterion
+ * @param maxMovesWithoutImprovement the maximal number of moves (accepted by cond) that have no improvememnt over the best obj. if more moves are searched, it returns NoMoveFound
+ * @param obj the objective function that is watched for improvement by this combinator
+ * @param countBeforeMove true if the count should be done before the move, false otherwise.
  */
 class MaxMovesWithoutImprovement(a: Neighborhood,
-                                 val cond: Move => Boolean,
+                                 val cond: Option[Move => Boolean],
                                  val maxMovesWithoutImprovement: Int,
                                  obj: () => Int,
                                  countBeforeMove:Boolean = false)
@@ -147,7 +157,11 @@ class MaxMovesWithoutImprovement(a: Neighborhood,
   }
 
   def notifyMoveTaken(m: Move) {
-    if (cond == null || cond(m)) {
+    val shouldMoveBeConsidered = cond match{
+      case None => true
+      case Some(c) => c(m)}
+
+    if (shouldMoveBeConsidered) {
       val newObj = obj()
       if (newObj < bestObj) {
         bestObj = newObj
@@ -267,7 +281,7 @@ class UntilImprovement(a: Neighborhood, over: () => Int, val minMoves: Int = 0, 
  *
  * @author renaud.delandtsheer@cetic.be
  */
-class BoundSearches(a: Neighborhood, val maxMove: Int) extends NeighborhoodCombinator(a) {
+class MaxSearches(a: Neighborhood, val maxMove: Int) extends NeighborhoodCombinator(a) {
   var remainingMoves = maxMove
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
     if (remainingMoves > 0) {

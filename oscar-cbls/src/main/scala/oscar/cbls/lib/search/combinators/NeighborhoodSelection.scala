@@ -5,6 +5,18 @@ import oscar.cbls.algo.heap.{BinomialHeapWithMove, BinomialHeap}
 import oscar.cbls.core.search._
 
 
+
+/**
+ * At each invocation, this combinator explores one of the neighborhoods in l (and repeat if it is exhausted)
+ * neighborhoods are selected based on their slope. the slope is the total gain in objective function performed by the neighborhood, divided by the total amount of time spend exploring the neighborhood.
+ * a tabu is added: in case a neighborhood is exhausted, it is not explored for a number of exploration of this combinator
+ * the tabu can be overriden if all neighborhoods explored are exhausted. tabu neighborhood can be explored anyway if they are still tabu, but for less than overrideTabuOnFullExhaust invocations of this combinator
+ * the refresh parameter forces the combinator to try all neighborhoods every "refresh" invocation. it is useful because some neighorhood can perform poorly at the beginning of search and much better later on, and we do not want the combinator to just "stick to its first impression"
+ * @param l the neighborhoods to select from
+ * @param tabuLength the number of invocation that they will not be explored when exhausted
+ * @param overrideTabuOnFullExhaust the tabu can be overriden if all explored neighbors are exhausted, for each neighborhood that is tabu for les than this override
+ * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
+ */
 case class BestSlopeFirst(l:List[Neighborhood],
                           tabuLength:Int = 10,
                           overrideTabuOnFullExhaust:Int = 9, refresh:Int = 100)
@@ -12,6 +24,17 @@ case class BestSlopeFirst(l:List[Neighborhood],
   override protected def bestKey(p:Profile):Int = -(p.slopeForCombinators())
 }
 
+/**
+ * At each invocation, this combinator explores one of the neighborhoods in l (and repeat if it is exhausted)
+ * neighborhoods are selected based on their speed the fasted one to find a move is selected
+ * a tabu is added: in case a neighborhood is exhausted, it is not explored for a number of exploration of this combinator
+ * the tabu can be overriden if all neighborhoods explored are exhausted. tabu neighborhood can be explored anyway if they are still tabu, but for less than overrideTabuOnFullExhaust invocations of this combinator
+ * the refresh parameter forces the combinator to try all neighborhoods every "refresh" invocation. it is useful because some neighorhood can perform poorly at the beginning of search and much better later on, and we do not want the combinator to just "stick to its first impression"
+ * @param l the neighborhoods to select from
+ * @param tabuLength the number of invocation that they will not be explored when exhausted
+ * @param overrideTabuOnFullExhaust the tabu can be overriden if all explored neighbors are exhausted, for each neighborhood that is tabu for les than this override
+ * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
+ */
 case class FastestFirst(l:List[Neighborhood],
                         tabuLength:Int = 10,
                         overrideTabuOnFullExhaust:Int = 9,  refresh:Int = 100)
@@ -109,7 +132,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
 }
 
 
-
+//TODO: this is a prototype that wants to improve over the BestFirst because the refresh mechanism might possibly be improved. a sliding window approach is suggested
 abstract class BestNeighborhoodFirstSlidingWindow(l:List[Neighborhood], windowsSize:Int,
                                                   tabuLength:Int,
                                                   overrideTabuOnFullExhaust:Int, refresh:Int)
@@ -200,17 +223,14 @@ abstract class BestNeighborhoodFirstSlidingWindow(l:List[Neighborhood], windowsS
 }
 
 
-object RoundRobin {
-  implicit def NeighborhoodToRoundRobin(n: Neighborhood): RoundRobin = new RoundRobin(List(n), 1)
-}
-
 /**
- * makes a round robin on the neighborhood. it swaps as soon as one does not find a move
- * and swaps neighborhood after "step" invocations
+ * performs a round robin on the neighborhood.
+ * It proceeds to the next one after "step" invocations or if the explored one is exhausted
  *
  * @author renaud.delandtsheer@cetic.be
  */
-class RoundRobin(l: List[Neighborhood], steps: Int = 1) extends NeighborhoodCombinator(l: _*) {
+class RoundRobin(l: List[Neighborhood], steps: Int = 1)
+  extends NeighborhoodCombinator(l: _*) {
   val robins = l.length
   var remainingSteps: Int = steps
   var tail: List[Neighborhood] = l
@@ -272,50 +292,6 @@ class RoundRobinNoParam(val a: Neighborhood, val b: Neighborhood) {
   def step(s: Int): Neighborhood = new RoundRobin(List(a, b), s)
 }
 
-object RoundRobinNoParam {
-  implicit def toNeighBorHood(rr: RoundRobinNoParam): Neighborhood = {
-    val toReturn = new RoundRobin(List(rr.a, rr.b), 1)
-    toReturn.verbose = rr.a.verbose
-    toReturn
-  }
-}
-
-
-/**
- * This combinators queries a once every n time it is queried.
- * the other times, it returns NoMovesFound.
- * if n finds no moves, depending on retryOnNoMoveFound,
- * it will either keep on querying n until a move is found, or continue its sequence of one out of n
- *
- * @param a the initial neighborhood
- * @param n the size of the sequence
- * @param retryOnNoMoveFound if true, keeps on querying a on NoMoveFound, otherwise, continues the sequence
- */
-class OnceEvery(a: Neighborhood, n: Int, retryOnNoMoveFound: Boolean = false) extends NeighborhoodCombinator(a) {
-  var remainingMoves = n - 1
-
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
-    if (remainingMoves > 0) {
-      remainingMoves -= 1
-      NoMoveFound
-    } else {
-      a.getMove(obj, initialObj:Int, acceptanceCriteria) match {
-        case NoMoveFound =>
-          if (!retryOnNoMoveFound) remainingMoves = n - 1
-          NoMoveFound
-        case x =>
-          remainingMoves = n - 1
-          x
-      }
-    }
-  }
-
-  //this resets the internal state of the move combinators
-  override def reset() {
-    remainingMoves = n - 1
-    super.reset()
-  }
-}
 
 
 /**
@@ -325,7 +301,7 @@ class OnceEvery(a: Neighborhood, n: Int, retryOnNoMoveFound: Boolean = false) ex
  * @param a a neighborhood
  * @author renaud.delandtsheer@cetic.be
  */
-class Random(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
+class RandomCombinator(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
   private val r = new scala.util.Random()
 
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
@@ -417,6 +393,7 @@ class BiasedRandom(a: (Neighborhood,Double)*)(noRetryOnExhaust:Boolean = false) 
  * @param weightUpdate a function that updates the weight of a neighborhood. if the function returns a negative number, the neighborhood gets the average weight thatthe other received.
  * @param updateEveryXCalls
  */
+@deprecated("use the bestSlopeFirst instead","")
 class LearningRandom(l:List[Neighborhood],
                      weightUpdate:(Profile,Double) => Double =
                      (stat,oldWeight) => {if (stat.nbCalls == 0) -1 else {

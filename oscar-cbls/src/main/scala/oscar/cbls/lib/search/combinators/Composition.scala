@@ -3,12 +3,14 @@ package oscar.cbls.lib.search.combinators
 import oscar.cbls._
 import oscar.cbls.core.search._
 
+
+
+
+
 abstract class NeighborhoodCombinatorNoProfile(a: Neighborhood*) extends NeighborhoodCombinator(a:_*){
   override def collectProfilingStatistics: List[String] = List.empty
   override def resetStatistics(){}
 }
-
-
 
 object Mu {
 
@@ -122,7 +124,7 @@ case class AndThen[FirstMoveType<:Move](a: Neighborhood with SupportForAndThenCh
  *
  * @param a the first neighborhood, all moves delivered by this one will be considered
  * @param b given that the move returned by the first neighborhood is committed, we explore the globally improving moves of this one
- *          you pass a methoid to instantiate b, based on,the currently explored move from a
+ *          you pass a method to instantiate b, based on,the currently explored move from a
  * @param maximalIntermediaryDegradation the maximal degradation that is admitted for the intermediary step; the higher, the more moves will be considered
  * @author renaud.delandtsheer@cetic.be
  */
@@ -218,6 +220,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
   }
 }
 
+@deprecated("should use the modeling interface instead of this object","")
 object DynAndThen {
   def apply[FirstMoveType <: Move](a : Neighborhood with SupportForAndThenChaining[FirstMoveType],
                                    b : (FirstMoveType => Neighborhood),
@@ -262,7 +265,6 @@ case class SnapShotOnEntry(a: Neighborhood, valuesToSave:Iterable[AbstractVariab
  * Also, Atomic is a jump neighborhood as it cannot evaluate any objective function before the move is committed.
  *
  * @param a
- * @param name
  */
 case class Atomic(a: Neighborhood, bound: Int = Int.MaxValue) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
