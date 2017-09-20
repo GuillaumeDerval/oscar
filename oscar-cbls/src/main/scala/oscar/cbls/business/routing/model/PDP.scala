@@ -16,6 +16,7 @@ package oscar.cbls.business.routing.model
   ******************************************************************************/
 
 import oscar.cbls._
+import oscar.cbls.business.routing.model.invariants.VehicleOfNodes
 import oscar.cbls.core.computation.FullRange
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.IntVarObjective
@@ -23,7 +24,6 @@ import oscar.cbls.lib.constraint.{EQ, GE, LE}
 import oscar.cbls.lib.invariant.logic.{IntITE, Cluster, DenseCluster, IntInt2Int}
 import oscar.cbls.lib.invariant.minmax.Max2
 import oscar.cbls.lib.invariant.numeric.Div
-import oscar.cbls.lib.invariant.routing.VehicleOfNodes
 import oscar.cbls.lib.invariant.seq.Precedence
 
 import scala.collection.immutable.List

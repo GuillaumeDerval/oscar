@@ -17,8 +17,8 @@ package oscar.cbls.test.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing.model._
+import oscar.cbls.business.routing.model.invariants.ConstantRoutingDistance
 import oscar.cbls.business.routing.neighborhood.{OnePointMove, ThreeOpt, TwoOpt}
-import oscar.cbls.lib.invariant.routing.ConstantRoutingDistance
 import oscar.cbls.lib.search.combinators.Profile
 
 

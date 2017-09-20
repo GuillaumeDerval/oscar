@@ -7,7 +7,7 @@ import oscar.cbls.lib.constraint.{EQ, GE, LE, NE}
 import oscar.cbls.lib.invariant.logic._
 import oscar.cbls.lib.invariant.numeric._
 import oscar.cbls.lib.invariant.set._
-import oscar.cbls.modeling.{InstrumentedNeighborhood, ModelingAPI}
+import oscar.cbls.modeling.{NeighborhoodOps, ModelingAPI}
 
 import scala.language.implicitConversions
 
@@ -39,7 +39,7 @@ package object cbls extends ModelingAPI{
 
   type CascadingObjective = oscar.cbls.core.objective.CascadingObjective
 
-  implicit def instrumentNeighborhood(n:Neighborhood):InstrumentedNeighborhood = new InstrumentedNeighborhood(n)
+  implicit def instrumentNeighborhood(n:Neighborhood):NeighborhoodOps = new NeighborhoodOps(n)
 
   type LoopBehavior = oscar.cbls.core.search.LoopBehavior
   final val LoopBehavior = oscar.cbls.core.search.LoopBehavior

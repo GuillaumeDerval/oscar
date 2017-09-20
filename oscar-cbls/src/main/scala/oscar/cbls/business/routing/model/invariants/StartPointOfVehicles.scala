@@ -1,9 +1,8 @@
-package oscar.cbls.lib.invariant.routing
+package oscar.cbls.business.routing.model.invariants
 
-import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core._
-import oscar.cbls.lib.invariant.routing.convention.VehicleLocation
+import oscar.cbls.business.routing.model.invariants.convention.VehicleLocation
 
 /**
  * This invariant has no output, only a method to get the vehicle reaching a given position, and a method to get the stat point of a vehicle

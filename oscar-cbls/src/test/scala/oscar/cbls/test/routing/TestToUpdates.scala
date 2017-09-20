@@ -18,7 +18,7 @@ package oscar.cbls.test.routing
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core.computation.{IntValue, CBLSIntConst, CBLSSeqVar, Store}
 import oscar.cbls.core.propagation.ErrorChecker
-import oscar.cbls.lib.invariant.routing.capa.ForwardCumulativeIntegerDimensionOnVehicle
+import oscar.cbls.business.routing.model.invariants.capa.ForwardCumulativeIntegerDimensionOnVehicle
 
 /**
  * Created by rdl on 03-01-17.

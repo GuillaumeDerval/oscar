@@ -20,7 +20,7 @@ import oscar.cbls.business.routing.model.{ClosestNeighbors, RoutedAndUnrouted, T
 import oscar.cbls.business.routing.neighborhood.{InsertPointRoutedFirst, InsertPointUnroutedFirst, OnePointMove, OnePointMoveMove, ThreeOpt, TwoOpt, _}
 import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.{Best, First}
-import oscar.cbls.lib.invariant.routing.capa.ForwardCumulativeConstraintOnVehicle
+import oscar.cbls.business.routing.model.invariants.capa.ForwardCumulativeConstraintOnVehicle
 import oscar.cbls.lib.invariant.seq.Length
 import oscar.cbls.lib.search.combinators.{Mu, Profile, RoundRobin}
 

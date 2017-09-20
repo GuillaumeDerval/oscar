@@ -16,10 +16,8 @@ package oscar.cbls.modeling
 
 import oscar.cbls._
 import oscar.cbls.core.computation.Variable
-
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.search.LinearSelectors
-import oscar.cbls.modeling.CombinatorsAPI
 import oscar.cbls.util.StopWatch
 
 

@@ -18,9 +18,9 @@ package oscar.cbls.business.routing.model
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.business.routing.model.invariants.{VehicleOfNodes, RouteSuccessorAndPredecessors, NodeOfVehicle, ConstantRoutingDistance}
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.invariant.routing._
-import oscar.cbls.lib.invariant.routing.convention.RoutingConventionMethods
+import oscar.cbls.business.routing.model.invariants.convention.RoutingConventionMethods
 import oscar.cbls.lib.invariant.seq.{Content, Length}
 import oscar.cbls.lib.invariant.set.Diff
 import oscar.cbls.visual.MatrixMap.RoutingMatrixContainer

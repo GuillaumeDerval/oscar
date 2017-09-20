@@ -19,12 +19,12 @@ import org.scalacheck.Gen
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 import oscar.cbls._
+import oscar.cbls.business.routing.model.invariants._
 import oscar.cbls.lib.constraint._
 import oscar.cbls.lib.invariant.logic.{SetElement, _}
 import oscar.cbls.lib.invariant.minmax.{ArgMax, ArgMin, Max2, MaxArray, MaxLin, MaxSet, Min2, MinArray, MinLin, MinSet}
 import oscar.cbls.lib.invariant.numeric.{Abs, Div, Minus, Mod, Prod, Prod2, ProdElements, RoundUpModulo, Step, Sum, Sum2, SumElements}
-import oscar.cbls.lib.invariant.routing._
-import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
+import oscar.cbls.business.routing.model.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
 import oscar.cbls.lib.invariant.seq._
 import oscar.cbls.lib.invariant.set._
 import oscar.cbls.test.invariants.bench._

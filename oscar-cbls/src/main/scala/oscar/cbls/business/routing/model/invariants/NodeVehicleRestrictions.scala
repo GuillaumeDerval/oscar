@@ -1,4 +1,4 @@
-package oscar.cbls.lib.invariant.routing
+package oscar.cbls.business.routing.model.invariants
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@ import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.logic.Filter
-import oscar.cbls.lib.invariant.routing.convention.RoutingConventionMethods
+import oscar.cbls.business.routing.model.invariants.convention.RoutingConventionMethods
 import oscar.cbls.lib.invariant.set.BelongsTo
 
 import scala.collection.immutable.SortedSet

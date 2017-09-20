@@ -17,9 +17,9 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing.model._
+import oscar.cbls.business.routing.model.invariants.ConstantRoutingDistance
 import oscar.cbls.business.routing.neighborhood._
 import oscar.cbls.core.search.{Best, First}
-import oscar.cbls.lib.invariant.routing.ConstantRoutingDistance
 import oscar.cbls.lib.invariant.seq.{Content, Length}
 import oscar.cbls.lib.invariant.set.Diff
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}

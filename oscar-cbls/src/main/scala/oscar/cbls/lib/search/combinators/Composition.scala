@@ -63,13 +63,13 @@ object Mu {
         neighborhoodGenerator(newMove :: oldMoves, prevX) match {
           case Some((nextAtomicNeighborhood, newX)) =>
             val generatorForNext = generateNextNeighborhood(newMoveList, remainingDepth - 1, newX) _
-            if (intermediaryStops) DoNothingNeighborhood() orElse DynAndThen(nextAtomicNeighborhood, generatorForNext)
-            else DynAndThen(nextAtomicNeighborhood, generatorForNext)
+            if (intermediaryStops) DoNothingNeighborhood() orElse dynAndThen(nextAtomicNeighborhood, generatorForNext)
+            else dynAndThen(nextAtomicNeighborhood, generatorForNext)
           case None => DoNothingNeighborhood()
         }
       }
     }
-    new ChainableName(DynAndThen(firstNeighborhood,
+    new ChainableName(dynAndThen(firstNeighborhood,
       generateNextNeighborhood(List.empty, maxDepth - 1, x0)),"Mu(" + firstNeighborhood + ")")
   }
 }
@@ -218,14 +218,6 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
       case _ => throw new Error("DynAndThen: Neighborhood on the right cannot be chained")
     }
   }
-}
-
-@deprecated("should use the modeling interface instead of this object","")
-object DynAndThen {
-  def apply[FirstMoveType <: Move](a : Neighborhood with SupportForAndThenChaining[FirstMoveType],
-                                   b : (FirstMoveType => Neighborhood),
-                                   maximalIntermediaryDegradation : Int = Int.MaxValue) =
-    new DynAndThen[FirstMoveType](a, b, maximalIntermediaryDegradation)
 }
 
 case class DynAndThenWithPrev[FirstMoveType<:Move](x:Neighborhood with SupportForAndThenChaining[FirstMoveType],

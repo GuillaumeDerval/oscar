@@ -303,7 +303,7 @@ trait SupportForAndThenChaining[MoveType<:Move] extends Neighborhood{
   def instantiateCurrentMove(newObj:Int):MoveType
 
   def dynAndThen(other:MoveType => Neighborhood,maximalIntermediaryDegradation: Int = Int.MaxValue):DynAndThen[MoveType] = {
-    DynAndThen[MoveType](this,other,maximalIntermediaryDegradation)
+    new DynAndThen[MoveType](this,other,maximalIntermediaryDegradation)
   }
 
   /**

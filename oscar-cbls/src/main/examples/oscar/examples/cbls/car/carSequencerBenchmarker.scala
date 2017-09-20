@@ -102,7 +102,7 @@ object carSequencerBenchmarker  extends CBLSModel with App {
   val shiftNeighbor = shiftNeighborhood(carSequence, searchZone1 =() => violatedCars.value.toList, maxShiftSize = carSequence.length/2/*, maxOffsetSize = carSequence.length/2*/, hotRestart = true)
   val rollNeighbor = rollNeighborhood(carSequence)
 
-  val linkedDoubleSwaps = DynAndThen(
+  val linkedDoubleSwaps = dynAndThen(
     swapsNeighborhood(carSequence,"swapCars1"),
     ((swapMove:SwapMove) => {
       val indices = List(swapMove.idI, swapMove.idJ)
@@ -111,7 +111,7 @@ object carSequencerBenchmarker  extends CBLSModel with App {
 
   val doubleSwaps = (swapsNeighborhood(carSequence,"swapCars1") andThen swapsNeighborhood(carSequence,"swapCars2")) name "doubleSwaps"
 
-  val looselyLinkedDoubleSwaps = DynAndThen(
+  val looselyLinkedDoubleSwaps = dynAndThen(
     swapsNeighborhood(carSequence,"swapCars1", symmetryCanBeBrokenOnIndices = false),
     ((swapMove:SwapMove) => {
       val firstSwappedCar = 0.max(swapMove.idI - impactZone) until (nbCars).min(swapMove.idI + impactZone)

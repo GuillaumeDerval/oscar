@@ -16,14 +16,14 @@ package oscar.cbls.test.routing
   ******************************************************************************/
 
 import oscar.cbls._
+import oscar.cbls.business.routing.model.invariants.{RouteSuccessorAndPredecessors, MovingVehicles}
 import oscar.cbls.business.routing.model.{ClosestNeighbors, RoutedAndUnrouted, TotalConstantDistance, VRP}
 import oscar.cbls.business.routing.neighborhood.{InsertPointRoutedFirst, InsertPointUnroutedFirst, OnePointMove, OnePointMoveMove, ThreeOpt, TwoOpt, _}
 import oscar.cbls.core.objective.{CascadingObjective}
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.LE
-import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
-import oscar.cbls.lib.invariant.routing.{MovingVehicles, RouteSuccessorAndPredecessors}
+import oscar.cbls.business.routing.model.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
 import oscar.cbls.lib.invariant.seq.Length
 import oscar.cbls.lib.search.combinators.{Mu, Profile, RoundRobin}
 

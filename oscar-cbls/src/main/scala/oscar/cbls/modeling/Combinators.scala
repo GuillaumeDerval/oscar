@@ -8,8 +8,14 @@ import oscar.cbls.lib.search.combinators._
 import oscar.cbls.util.StopWatch
 import oscar.examples.cbls.routing.visual.ColorGenerator
 
-object TmpCombinatorAPI extends BasicCombinators with CompositionCombinators with InstrumentNeighborhoodsCombinator with MetaheuristicCombinators with NeighborhoodSelectionCombinators with UtilityCombinators
-trait CombinatorsAPI extends BasicCombinators with CompositionCombinators with InstrumentNeighborhoodsCombinator with MetaheuristicCombinators with NeighborhoodSelectionCombinators with UtilityCombinators
+
+trait CombinatorsAPI
+  extends BasicCombinators
+  with CompositionCombinators
+  with InstrumentNeighborhoodsCombinator
+  with MetaheuristicCombinators
+  with NeighborhoodSelectionCombinators
+  with UtilityCombinators
 
 
 trait BasicCombinators{
@@ -373,7 +379,7 @@ trait NeighborhoodSelectionCombinators{
 }
 
 
-class InstrumentedNeighborhood(n:Neighborhood){
+class NeighborhoodOps(n:Neighborhood){
 
   /**
    * this combinator sequentially tries all neighborhoods until one move is found

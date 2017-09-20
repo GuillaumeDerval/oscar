@@ -18,9 +18,8 @@
 package oscar.examples.cbls.userguide
 
 import oscar.cbls._
-import oscar.cbls.modeling.{TmpCombinatorAPI, CBLSModel}
+import oscar.cbls.modeling._
 import oscar.examples.cbls.wlp.WarehouseLocationGenerator
-import TmpCombinatorAPI._
 
 import scala.language.postfixOps
 

@@ -17,10 +17,10 @@ package oscar.cbls.test.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing.model._
+import oscar.cbls.business.routing.model.invariants.NodeVehicleRestrictions
 import oscar.cbls.business.routing.neighborhood.{OnePointMove, SegmentExchange, ThreeOpt, TwoOpt}
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.invariant.routing.NodeVehicleRestrictions
 import oscar.cbls.lib.invariant.seq.{Length, PositionsOf}
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 

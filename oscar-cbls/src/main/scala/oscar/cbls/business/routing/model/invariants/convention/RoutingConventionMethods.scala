@@ -1,4 +1,4 @@
-package oscar.cbls.lib.invariant.routing.convention
+package oscar.cbls.business.routing.model.invariants.convention
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
