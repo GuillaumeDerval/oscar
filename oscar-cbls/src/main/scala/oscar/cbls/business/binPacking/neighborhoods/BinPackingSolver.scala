@@ -13,7 +13,7 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-package oscar.cbls.business.binPacking.solver
+package oscar.cbls.business.binPacking.neighborhoods
 
 //TODO: tabu
 

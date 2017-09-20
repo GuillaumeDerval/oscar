@@ -16,7 +16,7 @@ package oscar.cbls.business.routing.model
   ******************************************************************************/
 
 import oscar.cbls._
-import oscar.cbls.business.routing.model.invariants.VehicleOfNodes
+import oscar.cbls.business.routing.invariants.VehicleOfNodes
 import oscar.cbls.core.computation.FullRange
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.IntVarObjective

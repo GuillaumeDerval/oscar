@@ -14,6 +14,7 @@
   ******************************************************************************/
 package oscar.cbls.business
 
+import oscar.cbls.business.routing.invariants.RoutingInvriants
 import oscar.cbls.business.routing.neighborhood.RoutingNeighborhoods
 
 /**
@@ -26,7 +27,7 @@ import oscar.cbls.business.routing.neighborhood.RoutingNeighborhoods
  * @author yoann.guyot@cetic.be
  * @author Florent Ghilain (UMONS)
  * */
-package object routing extends RoutingNeighborhoods{
+package object routing extends RoutingNeighborhoods with RoutingInvriants{
 
 
   type VRP = oscar.cbls.business.routing.model.VRP

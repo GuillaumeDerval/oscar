@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.model.invariants
+package oscar.cbls.business.routing.invariants
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@ import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core._
-import oscar.cbls.business.routing.model.invariants.convention.RoutingConventionMethods
+import oscar.cbls.business.routing.invariants.convention.RoutingConventionMethods
 
 object ConstantRoutingDistance {
 

@@ -17,7 +17,7 @@ package oscar.cbls.test.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing.model._
-import oscar.cbls.business.routing.model.invariants.ConstantRoutingDistance
+import oscar.cbls.business.routing.invariants.ConstantRoutingDistance
 import oscar.cbls.business.routing.neighborhood._
 import oscar.cbls.lib.invariant.seq.{Content, Length}
 import oscar.cbls.lib.invariant.set.Diff

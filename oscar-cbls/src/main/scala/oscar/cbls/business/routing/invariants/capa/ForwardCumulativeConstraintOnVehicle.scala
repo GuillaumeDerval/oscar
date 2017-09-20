@@ -14,14 +14,14 @@
   ******************************************************************************/
 
 
-package oscar.cbls.business.routing.model.invariants.capa
+package oscar.cbls.business.routing.invariants.capa
 
 import oscar.cbls.algo.magicArray.MagicIntArrayStacked
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core._
-import oscar.cbls.business.routing.model.invariants.convention.VehicleLocation
+import oscar.cbls.business.routing.invariants.convention.VehicleLocation
 
 
 object ForwardCumulativeConstraintOnVehicle {

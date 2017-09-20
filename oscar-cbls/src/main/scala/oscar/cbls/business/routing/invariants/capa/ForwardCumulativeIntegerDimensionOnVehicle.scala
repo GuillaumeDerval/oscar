@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.model.invariants.capa
+package oscar.cbls.business.routing.invariants.capa
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify

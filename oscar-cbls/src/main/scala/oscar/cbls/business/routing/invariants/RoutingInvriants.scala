@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.model.invariants
+package oscar.cbls.business.routing.invariants
 
 /**
  * Created by rdl on 11-09-17.

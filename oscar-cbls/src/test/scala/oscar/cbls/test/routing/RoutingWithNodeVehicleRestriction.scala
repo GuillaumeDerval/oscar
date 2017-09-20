@@ -17,7 +17,7 @@ package oscar.cbls.test.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing.model._
-import oscar.cbls.business.routing.model.invariants.NodeVehicleRestrictions
+import oscar.cbls.business.routing.invariants.NodeVehicleRestrictions
 import oscar.cbls.business.routing.neighborhood.{OnePointMove, SegmentExchange, ThreeOpt, TwoOpt}
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.invariant.numeric.Sum

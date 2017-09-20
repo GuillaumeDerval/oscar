@@ -16,7 +16,7 @@ package oscar.cbls.test.routing
   ******************************************************************************/
 
 import oscar.cbls._
-import oscar.cbls.business.routing.model.invariants.RouteSuccessorAndPredecessors
+import oscar.cbls.business.routing.invariants.RouteSuccessorAndPredecessors
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.invariant.seq.Length
 import oscar.cbls.business.routing.model._
