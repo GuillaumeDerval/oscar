@@ -21,13 +21,11 @@
 
 package oscar.examples.cbls
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls._
 import oscar.cbls.lib.constraint.{EQ, NE}
 import oscar.cbls.lib.invariant.logic._
 import oscar.cbls.lib.invariant.minmax._
-import oscar.cbls.lib.search.LinearSelector
-import oscar.cbls.modeling.Algebra._
+import oscar.cbls.lib.search.LinearSelectorClass
 import oscar.cbls.util.StopWatch
 
 /**
@@ -35,7 +33,7 @@ import oscar.cbls.util.StopWatch
  * Using a generic constrained directed search
  * @author christophe.ponsard@cetic.be
  */
-object SendMoreMoney extends LinearSelector with StopWatch {
+object SendMoreMoney extends LinearSelectorClass with StopWatch {
   
   def main(args: Array[String]) {
     

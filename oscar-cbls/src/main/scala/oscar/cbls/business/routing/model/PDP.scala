@@ -15,16 +15,16 @@ package oscar.cbls.business.routing.model
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.core.computation._
+import oscar.cbls._
+import oscar.cbls.business.routing.invariants.VehicleOfNodes
+import oscar.cbls.core.computation.FullRange
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.IntVarObjective
 import oscar.cbls.lib.constraint.{EQ, GE, LE}
-import oscar.cbls.lib.invariant.logic.{Cluster, DenseCluster, IntITE, IntInt2Int}
+import oscar.cbls.lib.invariant.logic.{IntITE, Cluster, DenseCluster, IntInt2Int}
 import oscar.cbls.lib.invariant.minmax.Max2
 import oscar.cbls.lib.invariant.numeric.Div
-import oscar.cbls.lib.invariant.routing.VehicleOfNodes
 import oscar.cbls.lib.invariant.seq.Precedence
-import oscar.cbls.modeling.Algebra._
 
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
@@ -304,7 +304,7 @@ class PDP(override val n:Int, override val v:Int, override val m:Store, maxPivot
 
   var timeWindows: Array[(Int,Int,Int,Int)] = Array.empty
 
-  var arrivalTimeCluster: DenseCluster[IntValue] = _
+  var arrivalTimeCluster: DenseCluster = _
 
   var waitingDuration: Array[IntValue] = Array.empty
 
@@ -330,7 +330,7 @@ class PDP(override val n:Int, override val v:Int, override val m:Store, maxPivot
       arrivalTime(i) <== arrivalTimeToNext.element(prev(i))
     }
 
-    arrivalTimeCluster = Cluster.MakeDenseAssumingMinMax(leaveTime.map(x => Div(x,900)),0,192)
+    arrivalTimeCluster = Cluster.makeDenseAssumingMinMax(leaveTime.map(x => Div(x,900)),0,192)
   }
 
   def addTimeWindowStringInfo() {

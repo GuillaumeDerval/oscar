@@ -21,8 +21,9 @@
 
 package oscar.cbls.lib.invariant.logic
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
+
 
 /** This is a helper to define an invariant from an Int -> Int function.
   * Ths invariant is not incremental, so it should only be used for very simple functions.
@@ -33,7 +34,7 @@ import oscar.cbls.core.propagation.Checker
   * @param cached set to true to have a cache of size 1, zero to have no cache. cache can provide speedup if fun is time-consuming
   * @author renaud.delandtsheer@cetic.be
   * */
-class Int2Int(a:IntValue, fun:Int => Int, domain:Domain = FullRange,cached:Boolean = false) extends IntInvariant(fun(a.value),domain) with IntNotificationTarget{
+class Int2Int(a:IntValue, fun:Int => Int, domain:Domain = fullRange,cached:Boolean = false) extends IntInvariant(fun(a.value),domain) with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(a)
   finishInitialization()
@@ -75,7 +76,7 @@ class Int2Int(a:IntValue, fun:Int => Int, domain:Domain = FullRange,cached:Boole
   * @param domain the expected domain of the output
   * @author renaud.delandtsheer@cetic.be
   * */
-class IntInt2Int(a:IntValue, b:IntValue, fun:((Int, Int) => Int), domain:Domain = FullRange)
+class IntInt2Int(a:IntValue, b:IntValue, fun:((Int, Int) => Int), domain:Domain = fullRange)
   extends IntInvariant(fun(a.value,b.value),domain)
   with IntNotificationTarget{
 
@@ -101,7 +102,7 @@ class IntInt2Int(a:IntValue, b:IntValue, fun:((Int, Int) => Int), domain:Domain 
   * @param domain the expected domain of the output
   * @author renaud.delandtsheer@cetic.be
   * */
-class LazyIntInt2Int(a:IntValue, b:IntValue, fun:((Int, Int) => Int), domain:Domain = FullRange)
+class LazyIntInt2Int(a:IntValue, b:IntValue, fun:((Int, Int) => Int), domain:Domain = fullRange)
   extends IntInvariant(fun(a.value,b.value),domain)
   with IntNotificationTarget{
 

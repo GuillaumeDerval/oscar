@@ -15,9 +15,9 @@ package oscar.cbls.benchmarks
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import oscar.cbls._
 import oscar.cbls.core.computation.Store
 import oscar.cbls.lib.invariant.seq.Length
-import oscar.cbls.modeling.Algebra._
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.business.routing.model._
 import oscar.cbls.business.routing.neighborhood._
@@ -47,8 +47,8 @@ class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Arra
 
 object SymmetricVRPBench extends App {
 
-  val n = 10000
-  val v = 100
+  val n = 1000
+  val v = 10
 
   val verbose = 0
   val maxPivotPerValuePercent = 4
@@ -65,7 +65,7 @@ object SymmetricVRPBench extends App {
   println
 
 
-  for(n <- 11000 to 11000 by 2000){
+  for(n <- 1000 to 5000 by 2000){
     for(v <- List(100)){
       for (maxPivotPerValuePercent <- List(0,1,2,3,4,5,20)) {
         print(n + "\t" + v + "\t" + maxPivotPerValuePercent + "\t")

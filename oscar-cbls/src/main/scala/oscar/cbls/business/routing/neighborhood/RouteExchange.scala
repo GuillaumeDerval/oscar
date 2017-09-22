@@ -4,6 +4,7 @@ import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
+
 /**
  * a neighborhood that exchanges the route of two vehicles.
  * It does not modifies the routes themselves. It just exchanges the vehicles

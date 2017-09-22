@@ -24,10 +24,9 @@
  */
 
 package oscar.cbls.business.scheduling.model
-
+import oscar.cbls._
 import oscar.cbls.core.computation.{CBLSIntVar, FullRange, IntValue}
 import oscar.cbls.lib.invariant.minmax.Max2
-import oscar.cbls.modeling.Algebra.InstrumentIntVar
 
 /**
  * @author yoann.guyot@cetic.be

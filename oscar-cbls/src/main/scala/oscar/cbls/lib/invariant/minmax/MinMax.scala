@@ -26,9 +26,9 @@ package oscar.cbls.lib.invariant.minmax
 /**This package proposes a set of logic invariants, which are used to define the structure of the problem*/
 
 import oscar.cbls.algo.heap._
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
-import oscar.cbls.lib.invariant.logic._
+import oscar.cbls._
+import oscar.cbls.core._
+import oscar.cbls.lib.invariant.logic.IntInt2Int
 
 import scala.collection.immutable.SortedSet
 
@@ -66,7 +66,7 @@ abstract class MiaxLin(vars: SortedSet[IntValue])
   LoadNewMiax()
 
   override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
-    assert(vars.contains(v), this + " notified for not interesting var")
+    assert(vars.contains(v), this.toString + " notified for not interesting var")
     val MiaxVal = this.newValue
     if (OldVal == MiaxVal && better(MiaxVal, NewVal)) {
       MiaxCount -= 1
@@ -185,7 +185,7 @@ case class Max(vars: SortedSet[IntValue]) extends Miax(vars) {
 }
 
 object Max{
-  def apply(varss: Array[IntValue], ccond: SetValue = null, default: Int = Int.MinValue) = MaxArray(varss, ccond, default)
+  def apply(vars: Array[IntValue], cond: SetValue = null, default: Int = Int.MinValue) = MaxArray(vars, cond, default)
 }
 
 /**

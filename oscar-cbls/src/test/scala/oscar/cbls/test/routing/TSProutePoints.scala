@@ -15,16 +15,13 @@ package oscar.cbls.test.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.core.computation.{CBLSSetConst, Store}
-import oscar.cbls.lib.invariant.routing.ConstantRoutingDistance
+import oscar.cbls._
+import oscar.cbls.business.routing.model._
+import oscar.cbls.business.routing.invariants.ConstantRoutingDistance
+import oscar.cbls.business.routing.neighborhood._
 import oscar.cbls.lib.invariant.seq.{Content, Length}
 import oscar.cbls.lib.invariant.set.Diff
-import oscar.cbls.modeling.Algebra._
-import oscar.cbls.core.objective.Objective
-import oscar.cbls.business.routing.model._
-import oscar.cbls.business.routing.neighborhood._
-import oscar.cbls.lib.search.combinators.{Mu, BestSlopeFirst, Profile}
-import oscar.cbls.util.StopWatch
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
 
 import scala.collection.immutable.SortedSet
 
@@ -56,45 +53,16 @@ class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Arra
 }
 
 object TSProutePoints extends App {
-
   val n = 10000
   val v = 100
-
-  val verbose = 2
-  val maxPivotPerValuePercent = 4
-  new TSPRoutePointsS(1000,100,4,verbose)
-  System.gc()
-
-  val nbTrials = 3
-
-  println()
-  print("n\tv\tpercent")
-  for (t <- 1 to nbTrials) {
-    print("\ttime")
-  }
-  println
-
-
-  for(n <- 1000 to 11000 by 2000){
-    for(v <- List(100)){
-      for (maxPivotPerValuePercent <- List(0,1,2,3,4,5,20)) {
-        print(n + "\t" + v + "\t" + maxPivotPerValuePercent + "\t")
-        for (t <- 1 to nbTrials){
-          new TSPRoutePointsS(n, v, maxPivotPerValuePercent, verbose)
-          print("\t")
-          System.gc()
-        }
-        println
-      }
-    }
-  }
+  val verbose = 1
+  new TSPRoutePointsS(n,v,4,verbose)
 }
 
-class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) extends StopWatch{
+class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int){
 
   val symmetricDistanceMatrix = RoutingMatrixGenerator(n)._1
 
-  startWatch()
   //  println("restrictions:" + restrictions)
   val model = new Store() //checker = Some(new ErrorChecker()))
 
@@ -128,6 +96,4 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) exte
   //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
 
   search.doAllMoves(obj=myVRP.obj)
-
-  print(getWatch)
 }

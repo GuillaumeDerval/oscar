@@ -27,7 +27,7 @@ package oscar.cbls.business.routing.neighborhood
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
-import oscar.cbls.lib.invariant.routing.convention.VehicleLocation
+import oscar.cbls.business.routing.invariants.convention.VehicleLocation
 
 /**
  * Removes two edges of routes, and rebuilds routes from the segments.

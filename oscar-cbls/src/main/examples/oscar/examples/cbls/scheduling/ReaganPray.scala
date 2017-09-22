@@ -23,10 +23,8 @@
 
 package oscar.examples.cbls.scheduling
 
-import oscar.cbls.core.computation.{CBLSIntVar, Store}
-import oscar.cbls.business.scheduling._
+import oscar.cbls._
 import oscar.cbls.business.scheduling.model._
-import oscar.cbls.core.propagation.Checker
 import oscar.cbls.business.scheduling.model.CumulativeResource
 import oscar.cbls.business.scheduling.solver.IFlatIRelax
 

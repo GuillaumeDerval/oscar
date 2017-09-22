@@ -19,7 +19,7 @@
  ******************************************************************************/
 
 
-package oscar.cbls.invariants.core
+package oscar.cbls.core
 
 /**This package includes all the class that make it possible to define variables and invariants.
   * @author renaud.delandtsheer@cetic.be

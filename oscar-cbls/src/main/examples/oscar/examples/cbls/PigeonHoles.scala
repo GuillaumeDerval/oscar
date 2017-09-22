@@ -21,10 +21,9 @@
 
 package oscar.examples.cbls
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.constraint.ConstraintSystem
-import oscar.cbls.lib.search.LinearSelector
-import oscar.cbls.modeling.Algebra._
+
+import oscar.cbls._
+import oscar.cbls.lib.search.LinearSelectorClass
 import oscar.cbls.util.StopWatch
 
 /**
@@ -32,7 +31,7 @@ import oscar.cbls.util.StopWatch
  * Using constraint system (better alternative: use ArgMax to keep track of violation)
  * @author christophe.ponsard@cetic.be
  * */
-object PigeonHoles extends LinearSelector with StopWatch {
+object PigeonHoles extends LinearSelectorClass with StopWatch {
   
   def main(args: Array[String]) {
 

@@ -21,9 +21,8 @@
 
 package oscar.cbls.lib.constraint
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.constraint.Constraint
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
 import oscar.cbls.lib.invariant.logic.LazyIntInt2Int
 import oscar.cbls.lib.invariant.numeric.Sum
 
@@ -41,7 +40,7 @@ import scala.collection.immutable.SortedMap
   *                                                it is the other definition, if it does not, it is zero
   * @author renaud.delandtsheer@cetic.be
   */
-case class Sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:Array[Boolean], predicateIsToBeConsideredInVarViolation:Boolean = false)
+case class Sequence(variables: Array[_ <: IntValue], length:Int, Max:Int, predicate:Array[Boolean], predicateIsToBeConsideredInVarViolation:Boolean = false)
   extends Invariant with Constraint with IntNotificationTarget{
 
   assert(Max <= length, "the specified maximum is bigger than the ength of the sequences to consider")

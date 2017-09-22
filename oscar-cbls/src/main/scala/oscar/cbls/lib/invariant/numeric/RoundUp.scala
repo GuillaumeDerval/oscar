@@ -24,8 +24,8 @@ package oscar.cbls.lib.invariant.numeric
  * ****************************************************************************
  */
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
 import oscar.cbls.lib.invariant.logic.LazyIntInt2Int
 
 /**
@@ -81,8 +81,8 @@ object TestRoundUpModulo extends App {
     }
   val m = new Store()
 
-  val from = CBLSIntVar(m, 0, FullRange, "from")
-  val duration = CBLSIntVar(m, 2, FullRange, "duration")
+  val from = CBLSIntVar(m, 0, fullRange, "from")
+  val duration = CBLSIntVar(m, 2, fullRange, "duration")
 
   val r = RoundUpModulo(from, duration, 7, 2, 0)
 
@@ -233,8 +233,8 @@ object TestRoundUpCustom extends App {
     }
   val m = new Store()
 
-  val from = CBLSIntVar(m, 0, FullRange, "from")
-  val duration = CBLSIntVar(m, 2, FullRange, "duration")
+  val from = CBLSIntVar(m, 0, fullRange, "from")
+  val duration = CBLSIntVar(m, 2, fullRange, "duration")
 
   val r = new RoundUpCustom(from, duration, List((3, 4), (9, 12)))
 
@@ -290,8 +290,8 @@ case class PreEmption(startTime: IntValue, duration: IntValue,
 object TestPreEmption extends App {
   val m = new Store()
 
-  val from = CBLSIntVar(m, 0, FullRange, "from")
-  val duration = CBLSIntVar(m, 4, FullRange, "duration")
+  val from = CBLSIntVar(m, 0, fullRange, "from")
+  val duration = CBLSIntVar(m, 4, fullRange, "duration")
 
   val preEmptionFrom = 2
   val preEmptionDuration = 3

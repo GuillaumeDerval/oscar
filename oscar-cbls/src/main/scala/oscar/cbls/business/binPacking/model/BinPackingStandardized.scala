@@ -24,10 +24,8 @@
 
 package oscar.cbls.business.binPacking.model
 
+import oscar.cbls._
 import oscar.cbls.core.computation.Domain.rangeToDomain
-import oscar.cbls.core.computation.IntValue.int2IntValue
-import oscar.cbls.core.computation.{CBLSIntVar, CBLSSetVar, IntValue, Store}
-import oscar.cbls.core.constraint.{Constraint, ConstraintSystem}
 import oscar.cbls.lib.constraint.LE
 import oscar.cbls.lib.invariant.logic.DenseCluster
 import oscar.cbls.lib.invariant.set.SetSum

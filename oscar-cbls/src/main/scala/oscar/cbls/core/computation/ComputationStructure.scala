@@ -246,7 +246,7 @@ case class Solution(saves:Iterable[AbstractVariableSnapShot],model:Store){
  * @param model
  */
 class Snapshot(toRecord:Iterable[AbstractVariable], val model:Store) {
-  val varDico:SortedMap[AbstractVariable, AbstractVariableSnapShot] = SortedMap.empty[AbstractVariable, AbstractVariableSnapShot] ++ toRecord.map(v => ((v,v.snapshot)))
+  lazy val varDico:SortedMap[AbstractVariable, AbstractVariableSnapShot] = SortedMap.empty[AbstractVariable, AbstractVariableSnapShot] ++ toRecord.map(v => ((v,v.snapshot)))
 
   def restoreDecisionVariables() {
     for(snapshot <- varDico.values) snapshot.restoreIfDecisionVariable()

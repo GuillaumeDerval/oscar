@@ -15,14 +15,11 @@ package oscar.cbls.lib.invariant.seq
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.algo.seq.functional.IntSequence
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.core._
 
-/**
-  *
-  *                       THIS IS EXPERIMENTAL!
-  */
+//TODO: document, test and put into modeling API
 case class SubSequence(v: SeqValue,index:Int, length: Int,
                        override val maxPivotPerValuePercent:Int = 10,
                        override val maxHistorySize:Int = 10)
@@ -153,6 +150,7 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
    }
 }
 
+//TODO: document, test and put into modeling API
 case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length: Int, override val maxPivotPerValuePercent:Int = 10,
                           override val maxHistorySize:Int = 10)(shiftLimitBeforeRecompute:Int = length/2)
   extends SeqInvariant(IntSequence.empty(), originalSeq.max, maxPivotPerValuePercent, maxHistorySize)

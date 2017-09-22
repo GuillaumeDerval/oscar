@@ -66,7 +66,7 @@ trait Constraints {
    * @param itemsizes the size of the items
    * @param binsizes the max size of the available bins
    */
-  def multiKnapsack(items: Array[CBLSIntVar], itemsizes: Array[IntValue], binsizes:Array[IntValue]) = MultiKnapsack(items, itemsizes, binsizes)
+  def multiKnapsack(items: Array[IntValue], itemsizes: Array[IntValue], binsizes:Array[IntValue]) = MultiKnapsack(items, itemsizes, binsizes)
 
 
   /**implements the sequence constraint:
@@ -79,7 +79,7 @@ trait Constraints {
    *                                                the violation is dependent on whether the variable enforces the predicate; if it enforces it,
    *                                                it is the other definition, if it does not, it is zero
    */
-  def sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:Array[Boolean],predicateIsToBeConsideredInVarViolation:Boolean = false) =
+  def sequence(variables: Array[_ <:IntValue], length:Int, Max:Int, predicate:Array[Boolean],predicateIsToBeConsideredInVarViolation:Boolean = false) =
     Sequence(variables, length, Max, predicate,predicateIsToBeConsideredInVarViolation)
 
 }

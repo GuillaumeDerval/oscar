@@ -25,7 +25,7 @@ package oscar.cbls.business.scheduling.model
  * ****************************************************************************
  */
 
-import oscar.cbls.core.computation._
+import oscar.cbls._
 import oscar.cbls.lib.invariant.logic.{DenseRef, Filter}
 import oscar.cbls.lib.invariant.minmax.ArgMax
 import oscar.cbls.lib.invariant.numeric.Sum

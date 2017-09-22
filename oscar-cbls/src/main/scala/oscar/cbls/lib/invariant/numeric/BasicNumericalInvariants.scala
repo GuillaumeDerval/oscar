@@ -25,9 +25,8 @@
 
 package oscar.cbls.lib.invariant.numeric
 
-import oscar.cbls.core.computation.Domain.rangeToDomain
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
 import oscar.cbls.lib.invariant.logic.{Int2Int, IntInt2Int}
 
 object Sum {

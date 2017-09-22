@@ -15,15 +15,14 @@ package oscar.cbls.business.routing.model
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.algo.seq.functional.IntSequence
-import oscar.cbls.core.computation._
+import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.business.routing.invariants.{VehicleOfNodes, RouteSuccessorAndPredecessors, NodesOfVehicle, ConstantRoutingDistance}
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.invariant.routing._
-import oscar.cbls.lib.invariant.routing.convention.RoutingConventionMethods
+import oscar.cbls.business.routing.invariants.convention.RoutingConventionMethods
 import oscar.cbls.lib.invariant.seq.{Content, Length}
 import oscar.cbls.lib.invariant.set.Diff
-import oscar.cbls.modeling.Algebra._
 import oscar.cbls.visual.MatrixMap.RoutingMatrixContainer
 import oscar.examples.cbls.routing.visual.ColorGenerator
 
@@ -292,13 +291,14 @@ class VRP(val n: Int, val v: Int, val m: Store, maxPivotPerValuePercent:Int = 4)
 
 }
 
-
+@deprecated("routing model based on trait is hard to read and understand","next release")
 trait NextAndPrev extends VRP{
   //TODO: ensure that we REALLY need such an expensive invariant, if yes, use it from the adequate trait, and use clone to speed up exploration!!!
   val (next,prev) = RouteSuccessorAndPredecessors(routes.createClone(),v,n)
 
 }
 
+@deprecated("routing model based on trait is hard to read and understand","next release")
 trait ConstantDistancePerVehicle extends TotalConstantDistance{
   var distancePerVehicle:Array[CBLSIntVar] = null
 
@@ -320,6 +320,7 @@ trait ConstantDistancePerVehicle extends TotalConstantDistance{
   }
 }
 
+@deprecated("routing model based on trait is hard to read and understand","next release")
 trait TotalConstantDistance extends VRP{
   var totalDistance:IntValue = null
   var distanceMatrix:Array[Array[Int]] = null
@@ -357,6 +358,7 @@ trait TotalConstantDistance extends VRP{
  * @author Florent Ghilain (UMONS)
  * @author yoann.guyot@cetic.be
  */
+@deprecated("routing model based on trait is hard to read and understand","next release")
 trait ClosestNeighbors extends VRP {
 
   protected def getDistance(from: Int, to: Int): Int
@@ -437,6 +439,7 @@ trait ClosestNeighbors extends VRP {
  * @author Florent Ghilain (UMONS)
  * @author yoann.guyot@cetic.be
  */
+@deprecated("routing model based on trait is hard to read and understand","next release")
 trait RoutedAndUnrouted extends VRP{
   /**
    * the data structure set which maintains the unrouted nodes.
@@ -449,11 +452,12 @@ trait RoutedAndUnrouted extends VRP{
   override def unroutedNodes : Iterable[Int] = unrouted.value
 }
 
+@deprecated("routing model based on trait is hard to read and understand","next release")
 trait AbstractPenaltyForUnrouted extends VRP{
   /**
    * the variable which maintains the sum of penalty of unrouted nodes, thanks to invariant SumElements.
    */
-  var unroutedPenalty:ChangingIntValue=null
+  var unroutedPenalty:IntValue=null
 
   /**
    * Redefine the toString method.
@@ -469,6 +473,7 @@ trait AbstractPenaltyForUnrouted extends VRP{
  * @author Florent Ghilain (UMONS)
  * @author yoann.guyot@cetic.be
  */
+@deprecated("routing model based on trait is hard to read and understand","next release")
 trait DetailedPenaltyForUnrouted extends AbstractPenaltyForUnrouted with RoutedAndUnrouted{
   def setDetailedUnroutedPenaltyWeights(penalties : Array[Int]) {
     require(unroutedPenalty == null)
@@ -476,6 +481,7 @@ trait DetailedPenaltyForUnrouted extends AbstractPenaltyForUnrouted with RoutedA
   }
 }
 
+@deprecated("routing model based on trait is hard to read and understand","next release")
 trait StandardPenaltyForUnrouted extends AbstractPenaltyForUnrouted {
   def setStandardUnroutedPenaltyWeight(standardWeight:Int){
     require(unroutedPenalty == null)
@@ -483,16 +489,19 @@ trait StandardPenaltyForUnrouted extends AbstractPenaltyForUnrouted {
   }
 }
 
+@deprecated("routing model based on trait is hard to read and understand","next release")
 trait CloneOfRouteForLightPartialPropagation extends VRP{
   val cloneOfRoute = routes
 }
 
+@deprecated("routing model based on trait is hard to read and understand","next release")
 trait NodesOfVehicle extends CloneOfRouteForLightPartialPropagation{
-  val nodesOfVehicle=NodeOfVehicle(cloneOfRoute,v)
+  val nodesOfVehicle=NodesOfVehicle(cloneOfRoute,v)
 
   override def getNodesOfVehicle(vehicle:Int):SortedSet[Int] = nodesOfVehicle(vehicle).value
 }
 
+@deprecated("routing model based on trait is hard to read and understand","next release")
 trait VehicleOfNode extends CloneOfRouteForLightPartialPropagation{
   val vehicleOfNode = VehicleOfNodes(cloneOfRoute,v)
 
@@ -501,6 +510,7 @@ trait VehicleOfNode extends CloneOfRouteForLightPartialPropagation{
   override def isRouted(node: Int): Boolean = vehicleOfNode(node).value!=v
 }
 
+@deprecated("routing model based on trait is hard to read and understand","next release")
 trait RoutingMapDisplay extends VRP{
   var routingMap:RoutingMatrixContainer = null
 

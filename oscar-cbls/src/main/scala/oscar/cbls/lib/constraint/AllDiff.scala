@@ -21,11 +21,9 @@
 
 package oscar.cbls.lib.constraint
 
-import oscar.cbls.core.computation.CBLSIntVar._
-import oscar.cbls.core.computation._
-import oscar.cbls.core.constraint.Constraint
-import oscar.cbls.core.propagation.Checker
-import oscar.cbls.modeling.Algebra._
+import oscar.cbls._
+import oscar.cbls.core._
+import language.postfixOps
 
 import scala.collection.immutable.SortedMap
 
@@ -133,7 +131,7 @@ case class AllDiff(variables: Iterable[IntValue])
     }
 
     var MyViol: Int = 0
-    for (v <- range) MyViol += 0.max(myValueCount(v) - 1)
+    for (v <- range) MyViol += (0.max(myValueCount(v) - 1))
     c.check(MyViol == violationVariable.value, Some("MyViol (" + MyViol
         + ") == violationVariable.value (" + violationVariable.value + ")"))
   }

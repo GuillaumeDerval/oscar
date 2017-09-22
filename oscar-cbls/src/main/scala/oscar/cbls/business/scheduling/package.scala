@@ -18,7 +18,7 @@
  *         by Renaud De Landtsheer
  ******************************************************************************/
 
-package oscar.cbls
+package oscar.cbls.business
 
 /**
  *
