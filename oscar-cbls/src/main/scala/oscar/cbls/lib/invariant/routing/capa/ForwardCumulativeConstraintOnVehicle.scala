@@ -99,6 +99,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
   private val violationAndVehicleStartStack = new SeqCheckpointedValueStack[(Int,VehicleLocation)]()
 
   def contentAtNodes:Array[Int] = Array.tabulate(n)(contentAtNode(_))
+  def freeSpaceAtNode(node:Int): Int = cMax - contentAtNodes(node)
 
   violation := 0
   for(vehicle <- 0 until v){
