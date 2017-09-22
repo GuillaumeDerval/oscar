@@ -106,7 +106,7 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
 
             for (((segmentStart,segmentStartPosition), (segmentEnd,segmentEndPosition)) <- relevantPairsToExplore) {
 
-              if (nodeToVehicle(segmentStart) != vehicleForInsertion || insertionPosition < segmentStartPosition || segmentEndPosition < insertionPosition) {
+              if (insertionPosition < segmentStartPosition || segmentEndPosition < insertionPosition) {
 
                 segmentStartPositionForInstantiation = segmentStartPosition
                 segmentEndPositionForInstantiation = segmentEndPosition

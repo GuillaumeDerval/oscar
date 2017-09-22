@@ -16,7 +16,7 @@ package oscar.cbls.business.routing.neighborhood
   ******************************************************************************/
 
 import oscar.cbls.algo.search.{Pairs, HotRestart}
-import oscar.cbls.business.routing.model.{PDP, VRP}
+import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.{First, LoopBehavior, EasyNeighborhoodMultiLevel, EasyNeighborhood}
 
 import scala.collection.immutable.SortedSet
@@ -28,6 +28,8 @@ import scala.collection.immutable.SortedSet
  * @param relevantNeighbors given the start and end of the first segment, which are the relevant neighbors for the other segment? (will be filtered for vehicle by the neighborhood)
  * @param vehicles the set of vehicles to consider
  * @param neighborhoodName the name of the neighborhood, used for verbosities
+ * @param segmentsToExchangeGroupedByVehicles Lists of tuples that represent the starting node position and
+  *                                            the ending node position of the segment grouped by vehicles
  * @param hotRestart
  * @param tryFlip if false, will not flip any segment (maybe you do not want flipping if using time windows?)
  */
@@ -35,6 +37,7 @@ import scala.collection.immutable.SortedSet
 case class SegmentExchange(val vrp: VRP,
                            relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
                            vehicles:() => Iterable[Int],
+                           segmentsToExchangeGroupedByVehicles: Option[Map[Int,List[(Int,Int)]]] = None,
                            neighborhoodName:String = "SegmentExchange",
                            hotRestart:Boolean = true,
 
@@ -46,6 +49,9 @@ case class SegmentExchange(val vrp: VRP,
 
                            tryFlip:Boolean = true)
   extends EasyNeighborhoodMultiLevel[SegmentExchangeMove](neighborhoodName) {
+
+  require(segmentsToExchangeGroupedByVehicles.isEmpty || segmentsToExchangeGroupedByVehicles.get.size == vrp.v,
+    "If defined, segmentsToExchangeGroupedByVehicles must content segments for all vehicle therefore it must have a size of " + vrp.v)
 
   var firstSegmentStartPosition:Int = -1
   var firstSegmentEndPosition:Int = -1
@@ -86,7 +92,15 @@ case class SegmentExchange(val vrp: VRP,
 
       allVehiclesToIterateOn = allVehiclesToIterateOn - firstVehicle
 
-      val routeOfVehicle1 = vrp.getRouteOfVehicle(firstVehicle)
+      val routeOfVehicle1: List[Int] = {
+        if(segmentsToExchangeGroupedByVehicles.isDefined) {
+          val segments = segmentsToExchangeGroupedByVehicles.get(firstVehicle)
+          val segmentsStart = segments.map(_._1)
+          segmentsStart
+        } else {
+          vrp.getRouteOfVehicle(firstVehicle)
+        }
+      }
 
       val routeWithRelevantNeighborsTheirVehicleAndPositionGroupedByVehicles:List[(Int,Int,Map[Int,Iterable[(Int,Int,Int)]])] = routeOfVehicle1.map(node =>
         (node, seqValue.positionOfAnyOccurrence(node).head, relevantNeighborsNow(node)
@@ -98,7 +112,7 @@ case class SegmentExchange(val vrp: VRP,
 
       val (routeWithRelevantNeighborsTheirVehicleAndPositionGroupedByVehiclesIterableAndTail,notifyFound2) =
         selectFirstNodeOfFirstSegmentBehavior.toIterable(Pairs.makeAllHeadAndTails(routeWithRelevantNeighborsTheirVehicleAndPositionGroupedByVehicles))
-      for(((firstNode, positionOfFistNode, firstNodeVehicleToNodeRoutePosition),candidateForAfterEndOfFirstSegment)
+      for(((firstNode, positionOfFirstNode, firstNodeVehicleToNodeRoutePosition),candidateForAfterEndOfFirstSegment)
           <- routeWithRelevantNeighborsTheirVehicleAndPositionGroupedByVehiclesIterableAndTail){
 
         val (candidateForAfterEndOfFirstSegmentIterable,notifyFound3) = selectSecondNodeOfFirstSegmentBehavior.toIterable(candidateForAfterEndOfFirstSegment)
@@ -108,13 +122,13 @@ case class SegmentExchange(val vrp: VRP,
           //we define the first segment
 
           val isReversedFromFirstSecondNodesFirstSegment =
-            if (positionOfFistNode < positionOfSecondNode) {
-              firstSegmentStartPosition = positionOfFistNode + 1
+            if (positionOfFirstNode < positionOfSecondNode) {
+              firstSegmentStartPosition = positionOfFirstNode + 1
               firstSegmentEndPosition = positionOfSecondNode - 1
               false
             } else {
               firstSegmentStartPosition = positionOfSecondNode + 1
-              firstSegmentEndPosition = positionOfFistNode - 1
+              firstSegmentEndPosition = positionOfFirstNode - 1
               true
             }
 
@@ -223,7 +237,7 @@ case class SegmentExchangeMove(firstSegmentStartPosition:Int,
 
 
 
-
+/*
 /**
  * This is a version of segmentExchange specialized for the pickup & delivery problems.
  * It uses a method called computeCompleteSegments that returns the list of segments the neighborhood will use during his search.
@@ -345,3 +359,4 @@ case class PickupDeliverySegmentExchangeMove(firstSegmentStartPosition:Int,
       " secondSegmentStartPosition:" + secondSegmentStartPosition + " secondSegmentEndPosition:" + secondSegmentEndPosition + objToString + ")"
   }
 }
+*/
