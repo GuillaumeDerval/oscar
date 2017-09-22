@@ -27,7 +27,7 @@ import oscar.cbls.lib.invariant.logic.LazyIntInt2Int
 import oscar.cbls.lib.invariant.numeric.Sum
 
 import scala.collection.immutable.SortedMap
-;
+import scala.language.existentials
 
 /**implments the sequence constraint:
   *

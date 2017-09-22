@@ -7,7 +7,7 @@ import oscar.cbls.core.search.{Move, Neighborhood, SupportForAndThenChaining}
 import oscar.cbls.lib.search.combinators._
 import oscar.cbls.util.StopWatch
 import oscar.examples.cbls.routing.visual.ColorGenerator
-
+import scala.language.postfixOps
 
 trait CombinatorsAPI
   extends BasicCombinators

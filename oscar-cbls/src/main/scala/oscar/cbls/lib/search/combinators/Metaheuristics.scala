@@ -3,6 +3,7 @@ package oscar.cbls.lib.search.combinators
 import oscar.cbls._
 import oscar.cbls.core.objective.{Objective, CascadingObjective}
 import oscar.cbls.core.search._
+import scala.language.postfixOps
 
 object Restart{
   /**
