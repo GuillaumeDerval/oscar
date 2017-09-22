@@ -45,7 +45,7 @@ object ForwardCumulativeIntegerIntegerDimensionOnVehicle {
             default2ForUnroutedNodes:Int,
             minContent:Int = 0,
             maxContent:Int = Int.MaxValue,
-            contentName:String = "content"):(Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar]) ={
+            contentName:String = "content"): ForwardCumulativeIntegerIntegerDimensionOnVehicle ={
 
     val content1AtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent).union(default1ForUnroutedNodes), contentName + "1 at node "+node))
     val content2AtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent).union(default2ForUnroutedNodes), contentName + "2 at node "+node))
@@ -62,9 +62,6 @@ object ForwardCumulativeIntegerIntegerDimensionOnVehicle {
       lastPointOfVehicle,
       default1ForUnroutedNodes,default2ForUnroutedNodes,
       contentName)
-    (content1AtNode,content2AtNode,
-      content1AtEnd,content2AtEnd,
-      lastPointOfVehicle)
   }
 }
 
@@ -72,13 +69,13 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
                                                         n:Int,
                                                         v:Int,
                                                         op:(Int,Int,Int,Int)=>(Int,Int),
-                                                        content1AtStart:Array[IntValue],
-                                                        content2AtStart:Array[IntValue],
-                                                        content1AtNode:Array[CBLSIntVar],
-                                                        content2AtNode:Array[CBLSIntVar],
-                                                        content1AtEnd:Array[CBLSIntVar],
-                                                        content2AtEnd:Array[CBLSIntVar],
-                                                        lastPointOfVehicle:Array[CBLSIntVar],
+                                                        val content1AtStart:Array[IntValue],
+                                                        val content2AtStart:Array[IntValue],
+                                                        val content1AtNode:Array[CBLSIntVar],
+                                                        val content2AtNode:Array[CBLSIntVar],
+                                                        val content1AtEnd:Array[CBLSIntVar],
+                                                        val content2AtEnd:Array[CBLSIntVar],
+                                                        val lastPointOfVehicle:Array[CBLSIntVar],
                                                         defaultVehicleContent1ForUnroutedNodes:Int,
                                                         defaultVehicleContent2ForUnroutedNodes:Int,
                                                          contentName:String = "content")
