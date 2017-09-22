@@ -18,7 +18,7 @@ package oscar.cbls.business.routing.model
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.routing.invariants.{VehicleOfNodes, RouteSuccessorAndPredecessors, NodeOfVehicle, ConstantRoutingDistance}
+import oscar.cbls.business.routing.invariants.{VehicleOfNodes, RouteSuccessorAndPredecessors, NodesOfVehicle, ConstantRoutingDistance}
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.business.routing.invariants.convention.RoutingConventionMethods
 import oscar.cbls.lib.invariant.seq.{Content, Length}
@@ -496,7 +496,7 @@ trait CloneOfRouteForLightPartialPropagation extends VRP{
 
 @deprecated("routing model based on trait is hard to read and understand","next release")
 trait NodesOfVehicle extends CloneOfRouteForLightPartialPropagation{
-  val nodesOfVehicle=NodeOfVehicle(cloneOfRoute,v)
+  val nodesOfVehicle=NodesOfVehicle(cloneOfRoute,v)
 
   override def getNodesOfVehicle(vehicle:Int):SortedSet[Int] = nodesOfVehicle(vehicle).value
 }

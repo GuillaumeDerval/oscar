@@ -19,7 +19,6 @@ package oscar.cbls.business
 /**
  * @author renaud.delandtsheer@cetic.be
  */
-
 package object binPacking {
 
 }

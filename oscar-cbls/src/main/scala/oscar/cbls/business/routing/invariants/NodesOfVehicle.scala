@@ -23,7 +23,13 @@ import oscar.cbls.business.routing.invariants.convention.RoutingConventionMethod
 
 import scala.collection.immutable.SortedSet
 
-object NodeOfVehicle{
+object NodesOfVehicle{
+  /**
+   * this invariant ensures that nodesOfVehicle(p) is maintained to the nodes reached vy vehicle p according to the sequence routes.
+   * @param routes a sequence value representing routes
+   * @param v the number of vehicles
+   * @return an array nodesOfVehicle maintained to the nodes reached y each vehicle
+   */
   def apply(routes:ChangingSeqValue,v:Int):Array[CBLSSetVar] = {
     val model = routes.model
     val emptySet = SortedSet.empty[Int]
@@ -35,22 +41,19 @@ object NodeOfVehicle{
         domain,
         if(vehicle== v) "unrouted nodes" else "nodes_o_vehicle_" + vehicle))
 
-    new NodeOfVehicle(routes, nodesOfVehicle)
+    new NodesOfVehicle(routes, nodesOfVehicle)
 
     nodesOfVehicle
   }
 }
 
 /**
- * @param routes the routes of all the vehicles
- *
- * This invariant relies on the vehicle model assumption:
- * there are v vehicles
- * They are supposed to start from point of values 0 to v-1
- * These values must always be present in the sequence in increasing order
- * they cannot be included within a moved segment
+ * this invariant ensures that nodesOfVehicleOrUnrouted(p) is maintained to the ndes reached vy vehicle p according to the sequence routes.
+ * the size of the array is supposed to equal to v
+ * @param routes a sequence value representing routes
+ * @param nodesOfVehicleOrUnrouted an array of v CBLSSetVar
  */
-class NodeOfVehicle(routes:ChangingSeqValue,
+class NodesOfVehicle(routes:ChangingSeqValue,
                     nodesOfVehicleOrUnrouted:Array[CBLSSetVar])  //there is actually one more vehicle, for unrouted nodes.
   extends Invariant() with SeqNotificationTarget{
 

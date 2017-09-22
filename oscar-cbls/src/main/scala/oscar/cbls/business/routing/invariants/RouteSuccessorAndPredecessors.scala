@@ -37,6 +37,15 @@ object RouteSuccessorAndPredecessors{
   }
 }
 
+/**
+ * This array will maintain successorValues and successorValues to be the successor and predecessors of nodes in the route
+ * it comes handy to spcify constraints or objectives. But it really slows down your model
+ * @param routes a sequece representing the route, according to the routing convention
+ * @param v the number of vehicles
+ * @param successorValues an array of CBLSIntVar that are maintained to map node to the next reached node, according to the sequence
+ * @param predecessorValues an array of CBLSIntVar that are maintained to map node to the prev reached node, according to the sequence
+ * @param defaultWhenNotInSequence the value to put in the two arrays for nodes that  are not in the sequence
+ */
 class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
                      v:Int,
                      successorValues:Array[CBLSIntVar],

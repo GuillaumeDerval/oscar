@@ -60,7 +60,6 @@ sealed abstract class SeqUpdate(val newValue:IntSequence){
 
 sealed abstract class SeqUpdateWithPrev(val prev:SeqUpdate,newValue:IntSequence) extends SeqUpdate(newValue) {
 
-
   override def anyCheckpointDefinition:Boolean = this.isInstanceOf[SeqUpdateDefineCheckpoint] || prev.anyCheckpointDefinition
 
   def oldPosToNewPos(oldPos:Int):Option[Int]
@@ -400,6 +399,7 @@ class SeqUpdateRollBackToCheckpoint(val checkpointValue:IntSequence,howToRollBac
     this
   }
 
+  //TODO: there might still be overflows during howToRollBack?!
   private var reversedInstructions:SeqUpdate = null
   def howToRollBack:SeqUpdate = {
     if (reversedInstructions != null) reversedInstructions

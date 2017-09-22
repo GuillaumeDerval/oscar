@@ -1,7 +1,8 @@
-package oscar.cbls.business.routing.invariants
+package oscar.cbls.business.routing.modeling
 
 import oscar.cbls._
 import oscar.cbls.core._
+import oscar.cbls.business.routing.invariants._
 
 /**
  * Created by rdl on 11-09-17.
@@ -85,8 +86,46 @@ trait RoutingInvriants {
     NodeVehicleRestrictions(routes, v, nodeVehicleRestrictions)
 
 
+  /**
+   * This array will maintain successorValues and successorValues to be the successor and predecessors of nodes in the route
+   * it comes handy to spcify constraints or objectives. But it really slows down your model
+   * @param routes a sequece representing the route, according to the routing convention
+   * @param v the number of vehicles
+   * @param successorValues an array of CBLSIntVar that are maintained to map node to the next reached node, according to the sequence
+   * @param predecessorValues an array of CBLSIntVar that are maintained to map node to the prev reached node, according to the sequence
+   * @param defaultWhenNotInSequence the value to put in the two arrays for nodes that  are not in the sequence
+   */
+  def routeSuccessorAndPredecessors(routes:ChangingSeqValue,
+                                    v:Int,
+                                    successorValues:Array[CBLSIntVar],
+                                    predecessorValues:Array[CBLSIntVar],
+                                    defaultWhenNotInSequence:Int) =
+    new RouteSuccessorAndPredecessors(routes,
+      v,
+      successorValues,
+      predecessorValues,
+      defaultWhenNotInSequence)
+
+  /**
+   * this invariant ensures that nodesOfVehicle(p) is maintained to the nodes reached vy vehicle p according to the sequence routes.
+   * @param routes a sequence value representing routes
+   * @param v the number of vehicles
+   * @return an array nodesOfVehicle maintained to the nodes reached y each vehicle
+   */
+  def nodesOfVehicle(routes:ChangingSeqValue,v:Int):Array[CBLSSetVar] =
+    NodesOfVehicle(routes:ChangingSeqValue,v:Int):Array[CBLSSetVar]
 
 
+
+  /**
+   * maintains an array mapping each node to the vehicle reaching it.
+   * if the node is unrouted, its corresponding vehicle is set to v
+   * @param routes a sequence representing all routed
+   * @param v the number of vehicles
+   * @return an array that mas each node in 0..route.maxValue to the vehicle reaching it
+   */
+  def vehicleOfNodes(routes:ChangingSeqValue,v:Int):Array[CBLSIntVar] =
+    VehicleOfNodes(routes:ChangingSeqValue,v:Int):Array[CBLSIntVar]
 
 
 }

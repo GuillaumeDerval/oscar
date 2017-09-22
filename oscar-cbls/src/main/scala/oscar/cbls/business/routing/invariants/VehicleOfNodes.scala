@@ -22,6 +22,14 @@ import oscar.cbls.core._
 import oscar.cbls.business.routing.invariants.convention.RoutingConventionMethods
 
 object VehicleOfNodes{
+
+  /**
+   * maintains an array mapping each node to the vehicle reaching it.
+   * if the node is unrouted, its corresponding vehicle is set to v
+   * @param routes a sequence representing all routed
+   * @param v the number of vehicles
+   * @return an array that mas each node in 0..route.maxValue to the vehicle reaching it
+   */
   def apply(routes:ChangingSeqValue,v:Int):Array[CBLSIntVar] = {
     val model = routes.model
     val domain = routes.domain
@@ -38,15 +46,6 @@ object VehicleOfNodes{
   }
 }
 
-/**
- * @param routes the routes of all the vehicles
- *
- * This invariant relies on the vehicle model assumption:
- * there are v vehicles
- * They are supposed to start from point of values 0 to v-1
- * These values must always be present in the sequence in increasing order
- * they cannot be included within a moved segment
- */
 class VehicleOfNodes(routes:ChangingSeqValue,
                      v:Int,
                      vehicleOrUnroutedOfNode:Array[CBLSIntVar])

@@ -19,7 +19,7 @@ import oscar.cbls._
 import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
 import oscar.cbls.core._
 
-class CapacityInvariants {
+trait CapacityInvariants {
 
   /**
    * the violation maintained by this invariant is the sum over all routed nodes of the overshoot
