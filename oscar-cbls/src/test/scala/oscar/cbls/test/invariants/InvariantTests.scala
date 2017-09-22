@@ -205,9 +205,9 @@ class InvariantTests extends FunSuite with Checkers {
 
   test("Dense Count maintains count(j) = #{i in index of values | values[i] == j}") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new DenseCount(
-      bench.genIntVarsArray(10, 0 to 19),
-      bench.genIntVarsArray(20, 0 to 19, false).asInstanceOf[Array[CBLSIntVar]])
+
+    makeDenseCount(bench.genIntVarsArray(10, 0 to 19))
+    
     bench.run
   }
 
