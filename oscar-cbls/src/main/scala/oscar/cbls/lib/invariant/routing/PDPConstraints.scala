@@ -1,74 +1,72 @@
 package oscar.cbls.lib.invariant.routing
 
-import oscar.cbls.business.routing.model.PDP
+import oscar.cbls.business.routing.model.VRP
+import oscar.cbls.business.routing.model.extensions._
 import oscar.cbls.core.computation.CBLSIntVar
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.lib.constraint.{EQ, GE, LE}
-import oscar.cbls.lib.invariant.logic.IntITE
 import oscar.cbls.lib.invariant.numeric.Sum
+import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerIntegerDimensionOnVehicle}
 import oscar.cbls.lib.invariant.seq.Precedence
+import oscar.cbls.lib.invariant.set.IncludedSubsets
 
 /**
   * Created by fg on 5/05/17.
   */
 object PDPConstraints {
   def apply(
-             pdp: PDP,
-             obligations: Map[Int,Set[Int]] = Map.empty
+             vrp: VRP,
+             capacityInvariant: Option[ForwardCumulativeConstraintOnVehicle] = None,
+             timeWindow: Option[TimeWindow] = None,
+             timeWindowInvariant: Option[ForwardCumulativeIntegerIntegerDimensionOnVehicle] = None,
+             maxDetours: Option[Array[(Int,Int,Int)]] = None,
+             precedences: Option[Precedence] = None,
+             carExclusivitiesSubsets: Option[IncludedSubsets] = None,
+             nodeVehicleObligations: Option[Array[CBLSIntVar]] = None
            ): (ConstraintSystem,ConstraintSystem) ={
-    val fastConstraints = new ConstraintSystem(pdp.routes.model)
-    val slowConstraints = new ConstraintSystem(pdp.routes.model)
+    require((timeWindow.isDefined && timeWindowInvariant.isDefined) || (timeWindow.isEmpty && timeWindowInvariant.isEmpty),
+    "You can either define the timeWindow and the timeWindowInvariant or you defined neither of them")
+    require((maxDetours.isDefined && timeWindowInvariant.isDefined) || maxDetours.isEmpty,
+    "If you use maxDetours constraints, you must defined a timeWindowInvariant")
 
-    val pDPConstraints = new PDPConstraints(pdp, fastConstraints, slowConstraints)
-    pDPConstraints.addCapacityConstraint()
-    pDPConstraints.addTimeWindowConstraints()
-    pDPConstraints.addPrecedencesConstraints()
-    pDPConstraints.addMaxDetoursConstraints()
-    pDPConstraints.addExclusiveCarConstraints()
-    pDPConstraints.addVehiclesObligations(obligations)
+    val fastConstraints = new ConstraintSystem(vrp.routes.model)
+    val slowConstraints = new ConstraintSystem(vrp.routes.model)
+
+    val pDPConstraints = new PDPConstraints(vrp, fastConstraints, slowConstraints)
+    if(capacityInvariant.isDefined) pDPConstraints.addCapacityConstraint(capacityInvariant.get)
+    if(timeWindowInvariant.isDefined && timeWindow.isDefined) pDPConstraints.addTimeWindowConstraints(timeWindow.get,timeWindowInvariant.get)
+    if(precedences.isDefined) pDPConstraints.addPrecedencesConstraints(precedences.get)
+    if(maxDetours.isDefined) pDPConstraints.addMaxDetoursConstraints(timeWindowInvariant.get,maxDetours.get)
+    if(carExclusivitiesSubsets.isDefined) pDPConstraints.addExclusiveCarConstraints(carExclusivitiesSubsets.get)
+    if(nodeVehicleObligations.isDefined) pDPConstraints.addVehiclesObligations(nodeVehicleObligations.get)
 
     (fastConstraints, slowConstraints)
   }
 }
 
-class PDPConstraints(pdp: PDP, fastConstraints: ConstraintSystem, slowConstraints: ConstraintSystem){
+class PDPConstraints(vrp: VRP, fastConstraints: ConstraintSystem, slowConstraints: ConstraintSystem){
   import oscar.cbls.modeling.Algebra._
 
-  val routes = pdp.routes
-  val n = pdp.n
-  val v = pdp.v
+  val n = vrp.n
+  val v = vrp.v
 
   /**
     * Add the precedences constraints.
     * Typically, we want to keep the order of the nodes of each chain
     */
-  def addPrecedencesConstraints() {
-    val chains = pdp.chains
-    val vehicleOfNodes = VehicleOfNodes(pdp.routes,pdp.v)
-
-    def chainToTuple(chain: List[Int], tuples: List[(Int, Int)]): List[(Int, Int)] = {
-        if (chain.length <= 1)
-          tuples
-        else {
-          if(v > 1) fastConstraints.add(EQ(vehicleOfNodes(chain.head),vehicleOfNodes(chain.tail.head)))
-          chainToTuple(chain.tail, (chain.head, chain.tail.head) :: tuples)
-        }
-      }
-
-    val chainsPrecedences = List.tabulate(chains.length)(c => chainToTuple(chains(c), List.empty).reverse)
-    fastConstraints.add(EQ(0,new Precedence(routes, chainsPrecedences.flatten)))
+  private def addPrecedencesConstraints(precedences: Precedence) {
+    val vehicleOfNodes = VehicleOfNodes(vrp.routes,v)
+    for(start <- precedences.nodesStartingAPrecedence)
+      fastConstraints.add(EQ(vehicleOfNodes(start),vehicleOfNodes(precedences.nodesEndingAPrecedenceStartedAt(start).head)))
+    fastConstraints.add(EQ(0,precedences))
   }
 
   /**
     * Given a list of lists of cars, this constraints ensure that for each List[car]
     * only one car will be used.
     */
-  def addExclusiveCarConstraints(): Unit ={
-    fastConstraints.add(
-      EQ(0,
-        pdp.exclusiveCarsSubsets
-      )
-    )
+  private def addExclusiveCarConstraints(exclusivesCarSubset: IncludedSubsets): Unit ={
+    fastConstraints.add(EQ(0,exclusivesCarSubset))
   }
 
   /**
@@ -78,19 +76,19 @@ class PDPConstraints(pdp: PDP, fastConstraints: ConstraintSystem, slowConstraint
     * the shortest travel duration between this two nodes.
     * (If there is some nodes between from and to, the shortest path go through this nodes)
     */
-  def addMaxDetoursConstraints() = {
-    val arrivalTimes = pdp.arrivalTimes
-    val leaveTimes = pdp.leaveTimes
+  private def addMaxDetoursConstraints(timeWindowInvariant: ForwardCumulativeIntegerIntegerDimensionOnVehicle, maxDetours: Array[(Int,Int,Int)]) = {
+    val arrivalTimes = timeWindowInvariant.content1AtNode
+    val leaveTimes = timeWindowInvariant.content2AtNode
 
-    for(maxDetour <- pdp.maxDetours){
-      slowConstraints.post(LE(arrivalTimes(maxDetour._1) - leaveTimes(maxDetour._2._1),maxDetour._2._2))
+    for(maxDetour <- maxDetours){
+      slowConstraints.post(LE(arrivalTimes(maxDetour._1) - leaveTimes(maxDetour._2),maxDetour._3))
     }
   }
 
 
 
-  def addCapacityConstraint(): Unit ={
-    fastConstraints.post(EQ(pdp.violationOfContentAtNode,0))
+  private def addCapacityConstraint(capacityInvariant: ForwardCumulativeConstraintOnVehicle): Unit ={
+    fastConstraints.post(EQ(capacityInvariant.violation,0))
   }
 
   /**
@@ -99,23 +97,29 @@ class PDPConstraints(pdp: PDP, fastConstraints: ConstraintSystem, slowConstraint
     *   2° : Maximum arrival time at node
     *   3° : Maximum departure time at node (using maxWaitingTime)
     */
-  def addTimeWindowConstraints()={
+  private def addTimeWindowConstraints(timeWindow: TimeWindow, timeWindowInvariant: ForwardCumulativeIntegerIntegerDimensionOnVehicle)={
+    val earlylines = timeWindow.earlylines
+    val deadlines = timeWindow.deadlines
+    val maxWaitingDurations = timeWindow.maxWaitingDurations
+    val arrivalTimes = timeWindowInvariant.content1AtNode
+    val leaveTimes = timeWindowInvariant.content2AtNode
+    val arrivalTimesAtEnd = timeWindowInvariant.content1AtEnd
 
     for(i <- 0 until n){
-      if(i < v && pdp.deadlines(i) != Int.MaxValue) {
-        slowConstraints.post(LE(pdp.arrivalTimesAtEnd(i), pdp.deadlines(i)).nameConstraint("end of time for vehicle " + i))
+      if(i < v && deadlines(i) != Int.MaxValue) {
+        slowConstraints.post(LE(arrivalTimesAtEnd(i), deadlines(i)).nameConstraint("end of time for vehicle " + i))
       } else {
-        if(pdp.deadlines(i) != Int.MaxValue)
-          slowConstraints.post(LE(pdp.leaveTimes(i), pdp.deadlines(i)).nameConstraint("end of time window on node " + i))
-        if(pdp.maxWaitingDurations(i) != Int.MaxValue)
-          slowConstraints.post(GE(pdp.arrivalTimes(i), pdp.earlylines(i)).nameConstraint("start of time window on node (with duration)" + i))
+        if(deadlines(i) != Int.MaxValue)
+          slowConstraints.post(LE(leaveTimes(i), deadlines(i)).nameConstraint("end of time window on node " + i))
+        if(maxWaitingDurations(i) != Int.MaxValue)
+          slowConstraints.post(GE(arrivalTimes(i), earlylines(i)).nameConstraint("start of time window on node (with duration)" + i))
       }
     }
 
   }
 
-  def addVehiclesObligations(obligations: Map[Int,Set[Int]])={
+  private def addVehiclesObligations(obligations: Array[CBLSIntVar])={
     if(v > 1)
-      fastConstraints.post(EQ(0, Sum(NodeVehicleObligation(routes,v,n,obligations))))
+      fastConstraints.post(EQ(0, Sum(obligations)))
   }
 }
