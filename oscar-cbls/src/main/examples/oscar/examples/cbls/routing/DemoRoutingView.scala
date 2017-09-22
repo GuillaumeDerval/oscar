@@ -28,10 +28,10 @@ import oscar.cbls.core.computation.IntValue
 import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.FunctionGraphic.{ObjFunctionGraphicContainer, Zoom}
 import oscar.examples.cbls.routing.visual.ColorGenerator
-import oscar.cbls.visual.MatrixMap.RoutingMatrixContainer
+import oscar.cbls.visual.MatrixMap.RoutingMapContainer
 
 import scala.swing.{Dimension, Insets}
-
+/*
 object DemoRoutingView extends StopWatch{
   val controller:DemoRoutingController = new DemoRoutingController
 
@@ -282,3 +282,4 @@ object DemoRoutingView extends StopWatch{
   }
 
 }
+*/
