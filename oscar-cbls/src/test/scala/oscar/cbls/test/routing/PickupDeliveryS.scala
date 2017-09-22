@@ -15,13 +15,11 @@ package oscar.cbls.test.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-
-import oscar.cbls.business.routing.model.PDP
+/*
+import oscar.cbls.business.routing.model.newModelStructure._
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.core.search.{Best, CompositeMove}
 import oscar.cbls.lib.invariant.seq.Length
-import oscar.cbls.lib.search.combinators.Best
 import oscar.cbls.modeling.Algebra._
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.business.routing.model._
@@ -37,48 +35,7 @@ import scala.util.Random
  * Created by fabian on 04-07-16.
  */
 
-class MyPDP(n:Int, v:Int, m:Store,
-            symmetricDistance:Array[Array[Int]], maxPivot:Int,
-            pickups:Array[Int], deliveries:Array[Int],
-            timeWindows:Array[(Int,Int,Int,Int)], ttf:TTFMatrix)
-  extends PDP(n,v,m,maxPivot) with ConstantDistancePerVehicle with ClosestNeighbors {
-
-  setSymmetricDistanceMatrix(symmetricDistance)
-
-  override protected def getDistance(from : Int, to : Int) : Int = symmetricDistance(from)(to)
-
-  val penaltyForUnrouted  = 100000
-
-
-
-
-  def closestNeighboursInTime = computeClosestNeighborInTime()
-
-  def size = routes.value.size
-
-
-
-  setVehicleMaxCapacities(Array.tabulate(v)(_ => 5))
-
-  val constraints = PDPConstraints(this)
-
-  /**
-   * Redefine the toString method.
-   * @return the VRP problem as a String.
-   */
-  override def toString : String =
-    super.toString +
-      "objective: " + obj.value + "\n" +
-      "next:" + next.map(_.value).mkString(",") + "\n" +
-      "prev:" + prev.map(_.value).mkString(",") + "\n"
-
-
-  val obj = new CascadingObjective(fastConstraints,
-    new CascadingObjective(slowConstraints,
-      new CascadingObjective(precedenceObj, Objective(totalDistance + (penaltyForUnrouted*(n - Length(routes)))))))
-}
-
-object PickupDeliveryS extends App{
+object NewVRPExample extends App{
   val n = 110
   val v = 10
 
@@ -98,15 +55,13 @@ object PickupDeliveryS extends App{
 
   val ttf = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistanceMatrix)
 
-  val myPDP = new MyPDP(n,v,model,symmetricDistanceMatrix,maxPivotPerValuePercent,pickups,deliveries,timeWindows,ttf)
-  val nodes = myPDP.nodes
+  val builder = new VRPBuilder(model,n,v)
 
-
+  builder withDistanceMatrix symmetricDistanceMatrix carsArrivingAtNodeAfter timeWindows.map(_._1) build()
 
   model.close()
 
-  println(model.stats)
-
+  /*
   val insertCoupleFast = Profile(DynAndThen(
     InsertPointUnroutedFirst(
       unroutedNodesToInsert = () => myPDP.getUnroutedPickups,
@@ -325,10 +280,7 @@ object PickupDeliveryS extends App{
 
   search4.verbose = 2
 
-  search4.doAllMoves(obj=myPDP.obj)
-
-  println(myPDP)
-  println(search4.profilingStatistics)
+  search4.doAllMoves(obj=myPDP.obj)*/
 
 }
 */

@@ -28,7 +28,7 @@ import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
 import scala.util.Random
 
-
+/*
 class MySimpleRouting(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int)
   extends VRP(n,v,m,maxPivot)
   with TotalConstantDistance with ClosestNeighbors {
@@ -91,3 +91,4 @@ object TSPsym extends App{
   println
   println(search.profilingStatistics)
 }
+*/

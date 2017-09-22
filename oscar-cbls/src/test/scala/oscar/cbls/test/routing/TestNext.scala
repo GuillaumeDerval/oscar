@@ -24,7 +24,7 @@ import oscar.cbls.core.objective.Objective
 import oscar.cbls.business.routing.model._
 import oscar.cbls.business.routing.neighborhood._
 import oscar.cbls.lib.search.combinators.{Mu, BestSlopeFirst, Profile}
-
+/*
 class MySimpleRoutingWithUnroutedPointsAndNext(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int, pointsList:Array[(Int,Int)] = null)
   extends VRP(n,v,m,maxPivot)
   with TotalConstantDistance with ClosestNeighbors with RoutedAndUnrouted
@@ -100,4 +100,4 @@ object TestNext extends App{
   search.doAllMoves(obj = myVRP.obj)
   model.propagate()
   println(search.profilingStatistics)
-}
+}*/

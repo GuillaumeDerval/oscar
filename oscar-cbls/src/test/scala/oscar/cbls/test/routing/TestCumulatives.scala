@@ -14,7 +14,7 @@ package oscar.cbls.test.routing
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
+/*
 import oscar.cbls.business.routing.model.{ClosestNeighbors, RoutedAndUnrouted, TotalConstantDistance, VRP}
 import oscar.cbls.business.routing.neighborhood.{InsertPointRoutedFirst, InsertPointUnroutedFirst, OnePointMove, OnePointMoveMove, ThreeOpt, TwoOpt, _}
 import oscar.cbls.core.computation.{CBLSIntVar, Store}
@@ -166,4 +166,4 @@ object TestCumulatives extends App{
   println(search.profilingStatistics)
 
   println(myVRP)
-}
+}*/

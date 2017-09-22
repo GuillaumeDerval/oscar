@@ -25,7 +25,7 @@ import oscar.cbls.core.objective.Objective
 import oscar.cbls.business.routing.model._
 import oscar.cbls.business.routing.neighborhood._
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, DynAndThen, Profile}
-
+/*
 /**
   * Created by f.germeau on 07/09/2016.
   */
@@ -120,3 +120,4 @@ object TestCheckPoint extends App{
   model.propagate()
   println(search.profilingStatistics)
 }
+*/

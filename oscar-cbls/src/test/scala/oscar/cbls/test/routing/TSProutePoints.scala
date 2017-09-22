@@ -27,7 +27,7 @@ import oscar.cbls.lib.search.combinators.{Mu, BestSlopeFirst, Profile}
 import oscar.cbls.util.StopWatch
 
 import scala.collection.immutable.SortedSet
-
+/*
 
 class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int)
   extends VRP(n,v,m,maxPivot)
@@ -131,3 +131,4 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) exte
 
   print(getWatch)
 }
+*/

@@ -25,7 +25,7 @@ import oscar.cbls.business.routing.neighborhood.{OnePointMoveMove, OnePointMove,
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
 import scala.collection.immutable.SortedSet
-
+/*
 
 class MySimpleRoutingP(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int, precedences:List[(Int,Int)])
   extends VRP(n,v,m,maxPivot)
@@ -124,3 +124,4 @@ object RoutingWithPrecedence extends App{
   println
   println(search.profilingStatistics)
 }
+*/

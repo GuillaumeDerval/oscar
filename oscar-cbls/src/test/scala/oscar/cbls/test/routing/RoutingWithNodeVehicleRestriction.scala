@@ -28,7 +28,7 @@ import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
 import scala.util.Random
 
-
+/*
 class VRPWithNodeVehicleRestriction(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int, nodeVehicleRestriction:Iterable[(Int,Int)])
   extends VRP(n,v,m,maxPivot)
   with TotalConstantDistance with ClosestNeighbors with VehicleOfNode{
@@ -124,3 +124,4 @@ object RoutingWithNodeVehicleRestriction extends App{
   println
   println(search.profilingStatistics)
 }
+*/
