@@ -16,7 +16,7 @@
 package oscar.cbls.business.routing.modeling
 
 import oscar.cbls._
-import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
+import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle, ForwardCumulativeIntegerIntegerDimensionOnVehicle}
 import oscar.cbls.core._
 
 trait CapacityInvariants {
@@ -88,6 +88,44 @@ trait CapacityInvariants {
     contentAtEnd,
     lastPointOfVehicle,
     defaultVehicleContentForUnroutedNodes,
+    contentName)
+
+  /**
+    * ia generic invariant for representing a dimension on a vehicle, that is an integer value that travels with the vehicle and changes at each poit according to a function "op"
+    * @param routes The sequence representing the route associated at each vehicle
+    * @param n The maximum number of nodes
+    * @param v The number of vehicles
+    * @param op A function which returns the capacity change between two nodes : (fromNode,toNode,content1AtFromNode,content2AtFromNode)=> (content1AtToNode,content2AtToNode)
+    * @param content1AtStart Array of lenght = v where initValue(car) = content at start pos of vehicle #car
+    * @param content2AtStart Array of lenght = v where initValue(car) = content at start pos of vehicle #car
+    * @param default1ForUnroutedNodes is the content1 of a node that is not routed
+    * @param default2ForUnroutedNodes is the content2 of a node that is not routed
+    * @param minContent Min content of a node (used for creating the output variable, but not considered as a constraint)
+    * @param maxContent Max content of a node (used for creating the output variable, but not considered as a constraint)
+    * @param contentName the name of this content, for debug purpose. it is atributed to all variales created by this invariant
+    */
+  def forwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
+                                                        n:Int,
+                                                        v:Int,
+                                                        op:(Int,Int,Int,Int)=>(Int,Int),
+                                                        content1AtStart:Array[IntValue],
+                                                        content2AtStart:Array[IntValue],
+                                                        default1ForUnroutedNodes:Int,
+                                                        default2ForUnroutedNodes:Int,
+                                                        minContent:Int = 0,
+                                                        maxContent:Int = Int.MaxValue,
+                                                        contentName:String = "content")
+  = ForwardCumulativeIntegerIntegerDimensionOnVehicle(
+    routes,
+    n,
+    v,
+    op,
+    content1AtStart,
+    content2AtStart,
+    default1ForUnroutedNodes,
+    default2ForUnroutedNodes,
+    minContent,
+    maxContent,
     contentName)
 
 }

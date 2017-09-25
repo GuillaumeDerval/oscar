@@ -1,12 +1,11 @@
 package oscar.cbls.lib.invariant.routing
 
-import oscar.cbls.business.routing.model.VRP
+import oscar.cbls._
+import oscar.cbls.business.routing._
+import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerIntegerDimensionOnVehicle}
 import oscar.cbls.business.routing.model.extensions._
-import oscar.cbls.core.computation.CBLSIntVar
-import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.lib.constraint.{EQ, GE, LE}
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerIntegerDimensionOnVehicle}
 import oscar.cbls.lib.invariant.seq.Precedence
 import oscar.cbls.lib.invariant.set.IncludedSubsets
 
@@ -45,17 +44,16 @@ object PDPConstraints {
 }
 
 class PDPConstraints(vrp: VRP, fastConstraints: ConstraintSystem, slowConstraints: ConstraintSystem){
-  import oscar.cbls.modeling.Algebra._
 
-  val n = vrp.n
-  val v = vrp.v
+  private val n = vrp.n
+  private val v = vrp.v
 
   /**
     * Add the precedences constraints.
     * Typically, we want to keep the order of the nodes of each chain
     */
   private def addPrecedencesConstraints(precedences: Precedence) {
-    val vehicleOfNodes = VehicleOfNodes(vrp.routes,v)
+    val vehicleOfNodes = vrp.vehicleOfNode
     for(start <- precedences.nodesStartingAPrecedence)
       fastConstraints.add(EQ(vehicleOfNodes(start),vehicleOfNodes(precedences.nodesEndingAPrecedenceStartedAt(start).head)))
     fastConstraints.add(EQ(0,precedences))

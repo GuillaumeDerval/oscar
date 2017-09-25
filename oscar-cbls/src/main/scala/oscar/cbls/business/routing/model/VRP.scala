@@ -2,10 +2,10 @@ package oscar.cbls.business.routing.model
 
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.algo.seq.functional.IntSequence
+import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.extensions.VRPExtension
 import oscar.cbls.core.computation.{CBLSSeqVar, CBLSSetConst, Store}
-import oscar.cbls.lib.invariant.routing.{ConstantRoutingDistance, RouteSuccessorAndPredecessors, StartPointOfVehicles}
+import oscar.cbls.business.routing._
 import oscar.cbls.lib.invariant.seq.Content
 import oscar.cbls.lib.invariant.set.Diff
 
@@ -31,7 +31,7 @@ class VRP(val m: Store, val n: Int, val v: Int,
     */
   val vehicles = 0 until v
 
-  val startPointOfVehicles = new StartPointOfVehicles(routes,v)
+  val vehicleOfNode = vehicleOfNodes(routes,v)
 
   val routed = Content(routes.createClone(50)).setName("routed nodes")
   val unrouted = Diff(CBLSSetConst(SortedSet(nodes:_*)),routed).setName("unrouted nodes")
@@ -68,19 +68,11 @@ class VRP(val m: Store, val n: Int, val v: Int,
   def unroutedNodes:Iterable[Int] = nodes.filterNot(isRouted)
 
   def onSameVehicle()(node1:Int,node2:Int): Boolean = {
-    startPointOfVehicles.onSameVehicleOrBothUnrouted(node1,node2) && isRouted(node1)
+    vehicleOfNode(node1) == vehicleOfNode(node2) && isRouted(node1)
   }
 
   def onVehicle(vehicle:Int)(node:Int): Boolean={
-    startPointOfVehicles.onVehicle(vehicle,node)
-  }
-
-  /**
-    * @param node a node
-    * @return the vehicle reaching the node, v is it is unrouted
-    */
-  def getVehicleOfNode(node:Int):Int = {
-    startPointOfVehicles.vehicleReachingNode(node).getOrElse(v)
+    vehicleOfNode(node).value == vehicle
   }
 
   /**
@@ -100,21 +92,6 @@ class VRP(val m: Store, val n: Int, val v: Int,
         true
       case _ => false}) {}
     acc.reverse
-  }
-
-  def getVehicleOfAllNodes:Array[Int] = {
-    val nodeToVehicle = Array.fill(n)(v)
-    val it = routes.value.iterator
-    var currentVehicle = it.next
-    nodeToVehicle(0) = 0
-    while(it.hasNext){
-      val node = it.next()
-      if(node < v){
-        currentVehicle = node
-      }
-      nodeToVehicle(node) = currentVehicle
-    }
-    nodeToVehicle
   }
 
   def getRoutePositionOfAllNode:Array[Int] = {
@@ -171,7 +148,7 @@ class VRP(val m: Store, val n: Int, val v: Int,
     var toReturn = ""
     var notMoving:List[Int] = List.empty
 
-    for (vehicle <- 0 to v - 1) {
+    for (vehicle <- 0 u) {
       val routeOfV = getRouteOfVehicle(vehicle)
       if(routeOfV.length == 1){
         notMoving  = vehicle :: notMoving

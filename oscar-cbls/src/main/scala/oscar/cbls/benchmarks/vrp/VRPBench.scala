@@ -1,4 +1,4 @@
-package oscar.cbls.benchmarks.CP2017
+package oscar.cbls.benchmarks.vrp
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -18,8 +18,7 @@ package oscar.cbls.benchmarks.CP2017
 import java.io.{File, PrintWriter}
 
 import oscar.cbls._
-import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.business.routing.model._
+import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.model.extensions.Distance
 import oscar.cbls.business.routing.neighborhood._
 import oscar.cbls.lib.invariant.seq.Length
@@ -187,8 +186,8 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
 
   val myVRP = new VRP(model,n,v)
 
-  val constantRoutingDistance = ConstantRoutingDistance(myVRP.routes,n,v,false,symmetricDistanceMatrix,true,true,false)
-  val distanceExtension = new Distance(myVRP,symmetricDistanceMatrix,constantRoutingDistance)
+  val routingDistance = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistanceMatrix,true,true,false)
+  val distanceExtension = new Distance(myVRP,symmetricDistanceMatrix,routingDistance)
   val closestRelevantNeighborsByDistance = Array.tabulate(n)(distanceExtension.computeClosestPathFromNeighbor(myVRP.preComputedRelevantNeighborsOfNodes))
 
   val penaltyForUnrouted  = 10000

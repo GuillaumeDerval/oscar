@@ -134,3 +134,4 @@ class SimpleVRPSymSolver(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int){
   print(myVRP)
 }
 
+*/

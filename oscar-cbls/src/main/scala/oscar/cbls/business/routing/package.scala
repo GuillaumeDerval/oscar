@@ -29,7 +29,7 @@ import oscar.cbls.business.routing.modeling._
  * Tt defines a type that is a VRP. it only packs a sequence variable and , which is set at the beginning of all optimization
  */
 package object routing
-  extends RoutingInvriants
+  extends RoutingInvariants
   with CapacityInvariants
   with InsertPointAPI
   with OnePointMovsAPI

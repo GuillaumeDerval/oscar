@@ -7,7 +7,7 @@ import oscar.cbls.business.routing.invariants._
 /**
  * Created by rdl on 11-09-17.
  */
-trait RoutingInvriants {
+trait RoutingInvariants {
 
   /**
    * The distance computed by this invariant considers the values o the diagonal as part of the cost (node cost are added to the distance)

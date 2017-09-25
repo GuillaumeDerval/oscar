@@ -1,4 +1,4 @@
-package oscar.cbls.test.routing
+package oscar.examples.cbls.routing
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -66,11 +66,11 @@ object RoutingMatrixGenerator {
     toReturn
   }
 
-  def addLonelyNodesToPrecedences(n: Int, v: Int, precedences: List[List[Int]]): List[List[Int]]={
-    val lonelyNodes = Range(v,n).toList.diff(precedences.flatten)
+  def addLonelyNodesToPrecedences(n: Int, precedences: List[List[Int]]): List[List[Int]]={
+    val lonelyNodes = Range(0,n).toList.diff(precedences.flatten)
     var precedencesWithLonelyNodes = precedences
     for(lonelyNode <- lonelyNodes)
-      precedencesWithLonelyNodes = List(lonelyNode) :: precedencesWithLonelyNodes
+      lonelyNode :: precedencesWithLonelyNodes
     precedencesWithLonelyNodes
   }
 
@@ -86,7 +86,7 @@ object RoutingMatrixGenerator {
     def randomExtraTravelTime = random.nextInt(maxExtraTravelTimeInSec)
     def randomTaskDuration = random.nextInt(maxTaskDurationInSec)
 
-    val precedencesWithLonelyNodes = Random.shuffle(addLonelyNodesToPrecedences(n, v, precedences))
+    val precedencesWithLonelyNodes = addLonelyNodesToPrecedences(n, precedences)
     val endOfLastActionOfVehicles = Array.fill(v)(0)
     val lastNodeVisitedOfVehicles = Array.tabulate(v)(x => x)
     val extraTravelTimeOfNodes = Array.tabulate(n)(node => if(node < v)0 else randomExtraTravelTime)
@@ -114,9 +114,10 @@ object RoutingMatrixGenerator {
 
       earlyLines(node) = endOfLastActionOfVehicles(onVehicle)
       endOfLastActionOfVehicles(onVehicle) += taskDurations(node)
-      deadLines(node) = endOfLastActionOfVehicles(onVehicle)// + extraTravelTimeOfNodes(node) + extraTravelTimeOfNodes(previousNode)
+      deadLines(node) = endOfLastActionOfVehicles(onVehicle) + extraTravelTimeOfNodes(node) + extraTravelTimeOfNodes(previousNode)
       lastNodeVisitedOfVehicles(onVehicle) = node
     }
+
     for(precedence <- precedencesWithLonelyNodes){
       val vehicle = randomVehicleSelection
       //Add some idle time
@@ -136,3 +137,5 @@ object RoutingMatrixGenerator {
     ttf
   }
 }
+
+

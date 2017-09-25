@@ -1,17 +1,14 @@
 package oscar.examples.cbls.routing
 
-import oscar.cbls.benchmarks.CP2017.RoutingMatrixGenerator
-import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.business.routing.model.extensions.{Chains, Distance, TimeWindow}
-import oscar.cbls.business.routing.neighborhood._
+import oscar.cbls.business.routing.model.extensions._
+import oscar.cbls.business.routing._
+import oscar.cbls._
+import oscar.cbls.modeling.ModelingAPI
 import oscar.cbls.core.computation.{CBLSIntConst, Store}
 import oscar.cbls.core.objective.CascadingObjective
-import oscar.cbls.core.propagation.ErrorChecker
-import oscar.cbls.lib.invariant.routing.capa.ForwardCumulativeIntegerIntegerDimensionOnVehicle
-import oscar.cbls.lib.invariant.routing.{ConstantRoutingDistance, PDPConstraints}
+import oscar.cbls.lib.invariant.routing.PDPConstraints
 import oscar.cbls.lib.invariant.seq.{Length, Precedence}
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, DynAndThen, Mu, Profile}
-import oscar.cbls.modeling.Algebra._
+import oscar.cbls.lib.search.combinators.Profile
 
 /**
   * Created by fg on 12/05/17.
@@ -30,11 +27,11 @@ object SimpleVRPWithTimeWindow extends App{
   val myVRP =  new VRP(m,n,v)
 
   // Distance
-  val constantRoutingDistance = ConstantRoutingDistance(myVRP.routes,n,v,false,symmetricDistance,true,true,false)
-  val distanceExtension = new Distance(myVRP,symmetricDistance,constantRoutingDistance)
+  val routingDistance = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistance,true,true,false)
+  val distanceExtension = new Distance(myVRP,symmetricDistance,routingDistance)
 
   //TimeWindow
-  val tiweWindowInvariant = ForwardCumulativeIntegerIntegerDimensionOnVehicle(
+  val tiweWindowInvariant = forwardCumulativeIntegerIntegerDimensionOnVehicle(
     myVRP.routes,n,v,
     (fromNode,toNode,arrivalTimeAtFromNode,leaveTimeAtFromNode)=> {
       val arrivalTimeAtToNode = leaveTimeAtFromNode + travelDurationMatrix.getTravelDuration(fromNode,0,toNode)
@@ -88,21 +85,21 @@ object SimpleVRPWithTimeWindow extends App{
         case Nil => None
         case head :: Nil => None
         case nextNodeToMove :: newTail =>
-          val moveNeighborhood = OnePointMove(() => Some(nextNodeToMove),
+          val moveNeighborhood = onePointMove(() => Some(nextNodeToMove),
             () => chainsExtension.computeRelevantNeighborsForInternalNodes(), myVRP)
           Some(moveNeighborhood, Some(newTail))
       }
     }
   }
 
-  val firstNodeOfChainMove = new OnePointMove(() => chainsExtension.heads.filter(myVRP.isRouted),()=> myVRP.kFirst(v*2,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "MoveHeadOfChain")
+  val firstNodeOfChainMove = onePointMove(() => chainsExtension.heads.filter(myVRP.isRouted),()=> myVRP.kFirst(v*2,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "MoveHeadOfChain")
 
-  def lastNodeOfChainMove(lastNode:Int) = new OnePointMove(() => List(lastNode),()=> myVRP.kFirst(v*2,chainsExtension.computeRelevantNeighborsForLastNode), myVRP,neighborhoodName = "MoveLastOfChain")
+  def lastNodeOfChainMove(lastNode:Int) = onePointMove(() => List(lastNode),()=> myVRP.kFirst(v*2,chainsExtension.computeRelevantNeighborsForLastNode), myVRP,neighborhoodName = "MoveLastOfChain")
 
   val oneChainMove = {
-    DynAndThen(firstNodeOfChainMove,
+    dynAndThen(firstNodeOfChainMove,
       (moveMove: OnePointMoveMove) => {
-        Mu[OnePointMoveMove, Option[List[Int]]](
+        mu[OnePointMoveMove, Option[List[Int]]](
           lastNodeOfChainMove(chainsExtension.lastNodeInChainOfNode(moveMove.movedPoint)),
           nextMoveGenerator,
           None,
@@ -113,7 +110,7 @@ object SimpleVRPWithTimeWindow extends App{
 
   }
 
-  def onePtMove(k:Int) = Profile(new OnePointMove(myVRP.routed, () => myVRP.kFirst(k,filteredClosestRelevantNeighborsByDistance), myVRP))
+  def onePtMove(k:Int) = Profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,filteredClosestRelevantNeighborsByDistance), myVRP))
 
   // INSERTING
 
@@ -131,22 +128,22 @@ object SimpleVRPWithTimeWindow extends App{
         case Nil => None
         case head :: Nil => None
         case nextNodeToInsert :: newTail =>
-          val insertNeighborhood = InsertPointUnroutedFirst(() => Some(nextNodeToInsert),
+          val insertNeighborhood = insertPointUnroutedFirst(() => Some(nextNodeToInsert),
             () => chainsExtension.computeRelevantNeighborsForInternalNodes(), myVRP)
           Some(insertNeighborhood, Some(newTail))
       }
     }
   }
 
-  val firstNodeOfChainInsertion = new InsertPointUnroutedFirst(() => chainsExtension.heads.filter(n => !myVRP.isRouted(n)),()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF")
+  val firstNodeOfChainInsertion = insertPointUnroutedFirst(() => chainsExtension.heads.filter(n => !myVRP.isRouted(n)),()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF")
 
-  def lastNodeOfChainInsertion(lastNode:Int) = new InsertPointUnroutedFirst(() => List(lastNode),()=> myVRP.kFirst(v*2,chainsExtension.computeRelevantNeighborsForLastNode), myVRP,neighborhoodName = "InsertUF")
+  def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(() => List(lastNode),()=> myVRP.kFirst(v*2,chainsExtension.computeRelevantNeighborsForLastNode), myVRP,neighborhoodName = "InsertUF")
 
   val oneChainInsert = {
-    DynAndThen(firstNodeOfChainInsertion,
+    dynAndThen(firstNodeOfChainInsertion,
       (insertMove: InsertPointMove) => {
         println("Insert Mu " + insertMove.insertedPoint)
-        Mu[InsertPointMove,Option[List[Int]]](
+        mu[InsertPointMove,Option[List[Int]]](
           lastNodeOfChainInsertion(chainsExtension.lastNodeInChainOfNode(insertMove.insertedPoint)),
           nextInsertGenerator,
           None,
@@ -159,7 +156,7 @@ object SimpleVRPWithTimeWindow extends App{
   //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
 
 
-  val search = BestSlopeFirst(List(oneChainInsert,oneChainMove,onePtMove(20)))
+  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,onePtMove(20)))
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 

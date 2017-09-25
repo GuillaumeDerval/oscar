@@ -87,7 +87,7 @@ case class TwoOpt(segmentStartValues:()=>Iterable[Int],
 
     val relevantNeighborsNow = relevantNewSuccessors()
 
-    val nodesToVehicle = vrp.getVehicleOfAllNodes
+    val nodesToVehicle = vrp.vehicleOfNode.map(_.value)
 
     val vehicleSearcher = VehicleLocation(v,seqValue.positionOfAnyOccurrence(_).get)
 

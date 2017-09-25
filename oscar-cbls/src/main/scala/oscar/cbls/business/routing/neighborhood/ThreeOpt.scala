@@ -79,7 +79,7 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
 
     val relevantNeighborsNow = relevantNeighbors()
 
-    val nodeToVehicle = vrp.getVehicleOfAllNodes
+    val nodeToVehicle = vrp.vehicleOfNode.map(_.value)
 
     var insertionPoint = -1
     for (insertionPointTmp <- iterationSchemeOnZone){

@@ -224,6 +224,7 @@ trait SegmentExchangeAPI{
   def segmentExchange(vrp: VRP,
                       relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
                       vehicles:() => Iterable[Int],
+                      segmentsToExchangeGroupedByVehicles: Option[Map[Int,List[(Int,Int)]]] = None,
                       neighborhoodName:String = "SegmentExchange",
                       hotRestart:Boolean = true,
                       selectFirstVehicleBehavior:LoopBehavior = First(),
@@ -236,6 +237,7 @@ trait SegmentExchangeAPI{
     vrp,
     relevantNeighbors,
     vehicles,
+    segmentsToExchangeGroupedByVehicles,
     neighborhoodName,
     hotRestart,
     selectFirstVehicleBehavior,

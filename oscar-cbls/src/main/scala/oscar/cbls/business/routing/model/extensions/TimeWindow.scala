@@ -1,7 +1,7 @@
 package oscar.cbls.business.routing.model.extensions
 
+import oscar.cbls.business.routing.invariants.capa.ForwardCumulativeIntegerIntegerDimensionOnVehicle
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.lib.invariant.routing.capa.ForwardCumulativeIntegerIntegerDimensionOnVehicle
 
 import scala.collection.immutable.HashSet
 

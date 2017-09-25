@@ -40,7 +40,6 @@ case class SegmentExchange(val vrp: VRP,
                            segmentsToExchangeGroupedByVehicles: Option[Map[Int,List[(Int,Int)]]] = None,
                            neighborhoodName:String = "SegmentExchange",
                            hotRestart:Boolean = true,
-
                            selectFirstVehicleBehavior:LoopBehavior = First(),
                            selectFirstNodeOfFirstSegmentBehavior:LoopBehavior = First(),
                            selectSecondNodeOfFirstSegmentBehavior:LoopBehavior = First(),
@@ -78,7 +77,7 @@ case class SegmentExchange(val vrp: VRP,
 
     val relevantNeighborsNow = relevantNeighbors()
 
-    val nodeToRoute:Array[Int] = vrp.getVehicleOfAllNodes
+    val nodeToRoute:Array[Int] = vrp.vehicleOfNode.map(_.value)
 
     val listOfVehiclesToIterateOn = (if (hotRestart) HotRestart(vehicles(), startVehicle) else vehicles()).toList
     var allVehiclesToIterateOn = SortedSet.empty[Int] ++ listOfVehiclesToIterateOn
