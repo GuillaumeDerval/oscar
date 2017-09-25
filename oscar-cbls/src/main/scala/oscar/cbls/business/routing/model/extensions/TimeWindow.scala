@@ -25,8 +25,8 @@ class TimeWindow(vrp: VRP,
       case successor if deadlines(successor) >= earlylines(node) => successor
     }: _*)).toMap
 
-  override def preComputeRelevantNeighborsOfNode(node: Int, potentialRelevantNeighbors: HashSet[Int]): HashSet[Int] = {
-    potentialRelevantNeighbors.intersect(relevantPredecessorsOfNodes(node))
+  override def preComputeRelevantNeighborsOfNode(node: Int, potentialRelevantNeighbors: List[Int]): List[Int] = {
+    potentialRelevantNeighbors.filter(relevantPredecessorsOfNodes(node))
   }
 
   override def postFilter(node: Int) = (neighbor: Int) => {

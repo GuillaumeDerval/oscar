@@ -47,13 +47,13 @@ class Chains(vrp: VRP, chains: List[List[Int]]) extends VRPExtension(vrp){
 
   def preComputeRelevantNeighborsForFirstNode(firstNode: Int): Iterable[Int] ={
     require(isHead(firstNode), "The referenced node has to be the first node of a chain.")
-    vrp.preComputedRelevantNeighborsOfNodes(firstNode)
+    vrp.preComputedRelevantNeighborsOfNodes(true)(firstNode)
   }
 
   def computeRelevantNeighborsForLastNode(lastNode: Int): Iterable[Int] = {
     require(isLast(lastNode), "The referenced node has to be the last node of a chain.")
-    val potentialRelevantNeighborsOfLastNode: HashSet[Int] =
-      vrp.preComputedRelevantNeighborsOfNodes(lastNode)
+    val potentialRelevantNeighborsOfLastNode: List[Int] =
+      vrp.preComputedRelevantNeighborsOfNodes(true)(lastNode)
 
     var nextOfHeadExplorer = vrp.routes.value.explorerAtAnyOccurrence(chainOfNode(lastNode).head)
     var relevantNeighborsOfLastNode: List[Int] = List.empty
@@ -85,7 +85,7 @@ class Chains(vrp: VRP, chains: List[List[Int]]) extends VRPExtension(vrp){
     relevantNeighbors
   }
 
-  override def preComputeRelevantNeighborsOfNode(node: Int, potentialRelevantNeighbors: HashSet[Int]): HashSet[Int] = {
+  override def preComputeRelevantNeighborsOfNode(node: Int, potentialRelevantNeighbors: List[Int]): List[Int] = {
     potentialRelevantNeighbors
   }
 

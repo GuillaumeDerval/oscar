@@ -10,7 +10,7 @@ import scala.collection.immutable.HashSet
   */
 class Capacity(vrp:VRP, contentFlow: Array[Int], forwardCumulativeConstraintOnVehicle: ForwardCumulativeConstraintOnVehicle) extends VRPExtension(vrp){
 
-  override def preComputeRelevantNeighborsOfNode(node: Int, potentialRelevantNeighbors: HashSet[Int]): HashSet[Int] = {
+  override def preComputeRelevantNeighborsOfNode(node: Int, potentialRelevantNeighbors: List[Int]): List[Int] = {
     potentialRelevantNeighbors
   }
 

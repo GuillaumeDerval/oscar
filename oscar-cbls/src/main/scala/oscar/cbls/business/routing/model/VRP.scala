@@ -130,14 +130,15 @@ class VRP(val m: Store, val n: Int, val v: Int,
     filterAll
   }
 
-  lazy val preComputedRelevantNeighborsOfNodes: Array[HashSet[Int]] ={
-    def preComputeRelevantNeighborsOfNode(node: Int): HashSet[Int] = {
-      var relevantNeighbors: HashSet[Int] = HashSet(nodes:_*).-(node)
+  def preComputedRelevantNeighborsOfNodes(routedNodes:Boolean): Array[List[Int]] ={
+    val nodesList = if(routedNodes) routed.value.toList else unrouted.value.toList
+    def preComputeRelevantNeighborsOfNode(node: Int): List[Int] = {
+      var relevantNeighbors: List[Int] = nodesList
       for (extension <- vRPExtensions)
         relevantNeighbors = extension.preComputeRelevantNeighborsOfNode(node, relevantNeighbors)
       relevantNeighbors
     }
-    Array.tabulate(n)(node => if(node < v) HashSet.empty else preComputeRelevantNeighborsOfNode(node))
+    Array.tabulate(n)(node => if(node < v) List.empty else preComputeRelevantNeighborsOfNode(node))
   }
 
   /**
@@ -148,7 +149,7 @@ class VRP(val m: Store, val n: Int, val v: Int,
     var toReturn = ""
     var notMoving:List[Int] = List.empty
 
-    for (vehicle <- 0 u) {
+    for (vehicle <- 0 until v) {
       val routeOfV = getRouteOfVehicle(vehicle)
       if(routeOfV.length == 1){
         notMoving  = vehicle :: notMoving

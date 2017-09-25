@@ -17,7 +17,7 @@ class Distance(vrp: VRP, distanceMatrix: Array[Array[Int]], constantRoutingDista
 
   private def getDistance(from: Int,to: Int) = distanceMatrix(from)(to)
 
-  override def preComputeRelevantNeighborsOfNode(node: Int, potentialRelevantNeighbors: HashSet[Int]): HashSet[Int] = {
+  override def preComputeRelevantNeighborsOfNode(node: Int, potentialRelevantNeighbors: List[Int]): List[Int] = {
     potentialRelevantNeighbors
   }
 
@@ -47,7 +47,7 @@ class Distance(vrp: VRP, distanceMatrix: Array[Array[Int]], constantRoutingDista
     * @param node The node
     * @param neighbors An array of filtered neighbors
     */
-  def computeClosestPathFromNeighbor(neighbors: (Int) => HashSet[Int])(node: Int): Iterable[Int] ={
+  def computeClosestPathFromNeighbor(neighbors: (Int) => List[Int])(node: Int): Iterable[Int] ={
     KSmallest.lazySort(neighbors(node).toArray,
       neighbor => getDistance(neighbor, node)
     )

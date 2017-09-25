@@ -64,8 +64,9 @@ object SimpleVRPWithTimeWindow extends App{
 
   m.close()
   def postFilter(node:Int) = myVRP.generatePostFilters(node, myVRP.isRouted)
-  val closestRelevantNeighborsByDistance = Array.tabulate(n)(distanceExtension.computeClosestPathFromNeighbor(myVRP.preComputedRelevantNeighborsOfNodes))
-  def filteredClosestRelevantNeighborsByDistance(node: Int) = closestRelevantNeighborsByDistance(node).filter(postFilter(node)(_))
+  val closestRoutedRelevantNeighborsByDistance = Array.tabulate(n)(distanceExtension.computeClosestPathFromNeighbor(myVRP.preComputedRelevantNeighborsOfNodes(true)))
+  val closestUnRoutedRelevantNeighborsByDistance = Array.tabulate(n)(distanceExtension.computeClosestPathFromNeighbor(myVRP.preComputedRelevantNeighborsOfNodes(false)))
+  def filteredClosestRoutedRelevantNeighborsByDistance(node: Int) = closestRoutedRelevantNeighborsByDistance(node).filter(postFilter(node)(_))
 
 
   // MOVING
@@ -92,7 +93,7 @@ object SimpleVRPWithTimeWindow extends App{
     }
   }
 
-  val firstNodeOfChainMove = onePointMove(() => chainsExtension.heads.filter(myVRP.isRouted),()=> myVRP.kFirst(v*2,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "MoveHeadOfChain")
+  val firstNodeOfChainMove = onePointMove(() => chainsExtension.heads.filter(myVRP.isRouted),()=> myVRP.kFirst(v*2,filteredClosestRoutedRelevantNeighborsByDistance), myVRP,neighborhoodName = "MoveHeadOfChain")
 
   def lastNodeOfChainMove(lastNode:Int) = onePointMove(() => List(lastNode),()=> myVRP.kFirst(v*2,chainsExtension.computeRelevantNeighborsForLastNode), myVRP,neighborhoodName = "MoveLastOfChain")
 
@@ -110,7 +111,7 @@ object SimpleVRPWithTimeWindow extends App{
 
   }
 
-  def onePtMove(k:Int) = Profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,filteredClosestRelevantNeighborsByDistance), myVRP))
+  def onePtMove(k:Int) = Profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,filteredClosestRoutedRelevantNeighborsByDistance), myVRP))
 
   // INSERTING
 
@@ -135,7 +136,7 @@ object SimpleVRPWithTimeWindow extends App{
     }
   }
 
-  val firstNodeOfChainInsertion = insertPointUnroutedFirst(() => chainsExtension.heads.filter(n => !myVRP.isRouted(n)),()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF")
+  val firstNodeOfChainInsertion = insertPointUnroutedFirst(() => chainsExtension.heads.filter(n => !myVRP.isRouted(n)),()=> myVRP.kFirst(10,filteredClosestRoutedRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF")
 
   def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(() => List(lastNode),()=> myVRP.kFirst(v*2,chainsExtension.computeRelevantNeighborsForLastNode), myVRP,neighborhoodName = "InsertUF")
 

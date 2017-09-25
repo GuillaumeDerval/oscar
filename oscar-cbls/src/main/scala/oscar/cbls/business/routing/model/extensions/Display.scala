@@ -26,7 +26,7 @@ class Display(vrp: VRP,
     RoutingMapContainer.setMustRefresh(true)
   }
 
-  override def preComputeRelevantNeighborsOfNode(node: Int, potentialRelevantNeighbors: HashSet[Int]): HashSet[Int] = {
+  override def preComputeRelevantNeighborsOfNode(node: Int, potentialRelevantNeighbors: List[Int]): List[Int] = {
     potentialRelevantNeighbors
   }
 

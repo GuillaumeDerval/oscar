@@ -11,7 +11,7 @@ abstract class VRPExtension(vrp: VRP){
 
   vrp.addExtension(this)
 
-  def preComputeRelevantNeighborsOfNode(node:Int, potentialRelevantNeighbors: HashSet[Int]): HashSet[Int]
+  def preComputeRelevantNeighborsOfNode(node:Int, potentialRelevantNeighbors: List[Int]): List[Int]
 
   def postFilter(node: Int): (Int) => Boolean
 

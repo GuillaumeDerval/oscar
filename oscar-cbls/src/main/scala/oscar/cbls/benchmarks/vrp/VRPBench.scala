@@ -20,9 +20,7 @@ import java.io.{File, PrintWriter}
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.model.extensions.Distance
-import oscar.cbls.business.routing.neighborhood._
-import oscar.cbls.lib.invariant.seq.Length
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
+import oscar.cbls.lib.search.combinators.Profile
 import oscar.cbls.util.StopWatch
 
 import scala.io.Source
@@ -188,11 +186,12 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
 
   val routingDistance = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistanceMatrix,true,true,false)
   val distanceExtension = new Distance(myVRP,symmetricDistanceMatrix,routingDistance)
-  val closestRelevantNeighborsByDistance = Array.tabulate(n)(distanceExtension.computeClosestPathFromNeighbor(myVRP.preComputedRelevantNeighborsOfNodes))
+  val closestRoutedRelevantNeighborsByDistance = Array.tabulate(n)(distanceExtension.computeClosestPathFromNeighbor(myVRP.preComputedRelevantNeighborsOfNodes(true)))
+  val closestUnRoutedRelevantNeighborsByDistance = Array.tabulate(n)(distanceExtension.computeClosestPathFromNeighbor(myVRP.preComputedRelevantNeighborsOfNodes(false)))
 
   val penaltyForUnrouted  = 10000
 
-  val obj = Objective(distanceExtension.totalDistance + (penaltyForUnrouted*(n - Length(myVRP.routes))))
+  val obj = Objective(distanceExtension.totalDistance + (penaltyForUnrouted*(n - length(myVRP.routes))))
 
   override def toString : String = super.toString +  "objective: " + obj.value + "\n"
 
@@ -200,18 +199,18 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
 
   model.close()
 
-  val routeUnroutdPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,closestRelevantNeighborsByDistance,myVRP.isRouted), myVRP,neighborhoodName = "InsertUF"))
+  val routeUnroutdPoint =  Profile(insertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,closestRoutedRelevantNeighborsByDistance,myVRP.isRouted), myVRP,neighborhoodName = "InsertUF"))
 
   //TODO: using post-filters on k-nearest is probably crap
-  val routeUnroutdPoint2 =  Profile(new InsertPointRoutedFirst(myVRP.routed,()=> myVRP.kFirst(10,closestRelevantNeighborsByDistance,x => !myVRP.isRouted(x)),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.routes.value.size < n/2))
+  val routeUnroutdPoint2 =  Profile(insertPointRoutedFirst(myVRP.routed,()=> myVRP.kFirst(10,closestRoutedRelevantNeighborsByDistance, x => !myVRP.isRouted(x)),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.routes.value.size < n/2))
 
-  def onePtMove(k:Int) = Profile(new OnePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance,myVRP.isRouted), myVRP))
+  def onePtMove(k:Int) = Profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRoutedRelevantNeighborsByDistance,myVRP.isRouted), myVRP))
 
-  val twoOpt = Profile(new TwoOpt(myVRP.routed, ()=> myVRP.kFirst(20,closestRelevantNeighborsByDistance,myVRP.isRouted), myVRP))
+  val customTwoOpt = Profile(twoOpt(myVRP.routed, ()=> myVRP.kFirst(20,closestRoutedRelevantNeighborsByDistance,myVRP.isRouted), myVRP))
 
-  def threeOpt(k:Int, breakSym:Boolean) = Profile(new ThreeOpt(myVRP.routed, ()=> myVRP.kFirst(k,closestRelevantNeighborsByDistance), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
+  def customThreeOpt(k:Int, breakSym:Boolean) = Profile(threeOpt(myVRP.routed, ()=> myVRP.kFirst(k,closestRoutedRelevantNeighborsByDistance), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
-  val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, onePtMove(10),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true))
+  val search = (bestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, onePtMove(10),customTwoOpt, customThreeOpt(10,true))) exhaust customThreeOpt(20,true))
 
   // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10) guard (() => myVRP.unrouted.value.size != 0)),10)) exhaust BestSlopeFirst(List(onePtMove(20),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
 
