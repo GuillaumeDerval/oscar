@@ -30,8 +30,8 @@ object ConflictSearch {
   /**Computes a minimal conflict over a list of thinks.
    *Implements the famous quickXplain algorithm in a generic way
    *[Ulrich Junker and F Valbonne, QuickXPlain: Conflict Detection for Arbitrary Constraint Propagation Algorithms, 2001]
-   * and proposes a faster implementation in case additional operation can be performed on the state
-    *
+   * and proposes a faster implementation in case that additional operations can be performed on the state
+   *
    * @param init the initial S, typically empty
    * @param toInject a list of C among which the minimal conflict must be searched
    * @param inject the procedure to inject a C into the S, going towards conflict

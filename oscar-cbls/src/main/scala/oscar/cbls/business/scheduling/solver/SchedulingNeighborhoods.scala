@@ -15,6 +15,7 @@ package oscar.cbls.business.scheduling.solver
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import oscar.cbls._
 import oscar.cbls.business.scheduling.algo.CriticalPathFinder
 import oscar.cbls.business.scheduling.model.{Activity, NonMoveableActivity, Planning, PrecedenceCleaner, Resource}
 import oscar.cbls.core.computation.IntValue.toFunction
@@ -22,8 +23,8 @@ import oscar.cbls.core.computation.SetValue.toFunction
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.objective.Objective.objToFun
 import oscar.cbls.core.search.{JumpNeighborhood, JumpNeighborhoodParam, Neighborhood}
-import oscar.cbls.lib.search.LinearSelectorTrait
-import oscar.cbls.lib.search.combinators.BasicSaveBest
+import oscar.cbls.lib.search.LinearSelectors
+import oscar.cbls.lib.search.combinators.Atomic
 
 import scala.language.postfixOps
 
@@ -42,7 +43,7 @@ case class FlattenWorseFirst(p: Planning,
                              maxIterations: Int,
                              estimateMakespanExpansionForNewDependency: (Activity, Activity) => Int = (from: Activity, to: Activity) => from.earliestEndDate.value - to.latestStartDate.value,
                              priorityToPrecedenceToMovableActivities: Boolean = true)(supportForSuperActivities: Boolean = p.isThereAnySuperActitity)
-  extends JumpNeighborhood with LinearSelectorTrait {
+  extends JumpNeighborhood with LinearSelectors {
 
   require(p.isClosed)
   override def shortDescription(): String = "Flattening worse first"
@@ -138,7 +139,7 @@ case class FlattenWorseFirst(p: Planning,
  */
 case class Relax(p: Planning, pKill: Int,
                  doRelax: (Activity, Activity, Boolean) => Unit = (from: Activity, to: Activity, verbose: Boolean) => to.removeDynamicPredecessor(from, verbose))(activitiesToRelax: () => Iterable[Int] = p.sentinelActivity.staticPredecessorsID)
-  extends JumpNeighborhoodParam[List[(Activity, Activity)]] with LinearSelectorTrait {
+  extends JumpNeighborhoodParam[List[(Activity, Activity)]] with LinearSelectors {
 
   override def doIt(potentiallyKilledPrecedences: List[(Activity, Activity)]) {
     for ((from, to) <- potentiallyKilledPrecedences) {
@@ -180,7 +181,7 @@ case class Relax(p: Planning, pKill: Int,
  *                      it has no influence on the result, only on the speed of this neighborhood.
  */
 case class RelaxNoConflict(p: Planning, twoPhaseCheck: Boolean = false)
-  extends JumpNeighborhood with LinearSelectorTrait {
+  extends JumpNeighborhood with LinearSelectors {
 
   override def doIt(): Unit = {
     require(p.worseOvershotResource.value.isEmpty)
@@ -217,7 +218,7 @@ case class RelaxNoConflict(p: Planning, twoPhaseCheck: Boolean = false)
  * @param p the planning to relax
  * THIS IS COMPLETELY NEW EXPERIMENTAL AND UNTESTED
  */
-case class CleanPrecedences(p: Planning) extends JumpNeighborhood with LinearSelectorTrait {
+case class CleanPrecedences(p: Planning) extends JumpNeighborhood with LinearSelectors {
 
   override def doIt() {
     for (t: Activity <- p.activityArray) {
@@ -269,7 +270,7 @@ object SchedulingStrategies {
                                      pKillPerRelax: Int = 50,
                                      stable: Int,
                                      objective: Objective,
-                                     displayPlanning: Boolean = false): BasicSaveBest = {
+                                     displayPlanning: Boolean = false): Neighborhood = {
     require(p.model.isClosed, "model should be closed before iFlatRelax algo can be instantiated")
     val maxIterationsForFlatten = (p.activityCount * (p.activityCount - 1)) / 2
 
@@ -281,7 +282,7 @@ object SchedulingStrategies {
 
     val searchStep = (relax untilImprovement (p.makeSpan, nbRelax, maxIterationsForFlatten)) exhaust (flatten maxMoves 1)
 
-    (flatten sequence (searchStep atomic ()) maxMoves stable withoutImprovementOver objective
+    (flatten sequence (Atomic(searchStep)) maxMoves stable withoutImprovementOver objective
       saveBest objective whenEmpty p.worseOvershotResource)
   }
 

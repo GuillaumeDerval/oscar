@@ -1,4 +1,4 @@
-package oscar.cbls
+package oscar.cbls.business
 /**
  * *****************************************************************************
  * OscaR is free software: you can redistribute it and/or modify
@@ -19,7 +19,6 @@ package oscar.cbls
 /**
  * @author renaud.delandtsheer@cetic.be
  */
-
 package object binPacking {
 
 }

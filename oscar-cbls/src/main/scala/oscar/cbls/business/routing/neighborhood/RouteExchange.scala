@@ -1,117 +1,176 @@
 package oscar.cbls.business.routing.neighborhood
 
+import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.core.search.EasyNeighborhood
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
+
 
 /**
-  * Created by fg on 20/06/17.
-  */
-case class RouteExchange(val vrp: VRP,
-                    vehicles: Array[Int],
-                    neighborhoodName:String = "RouteExchange",
-                    hotRestart:Boolean = true,
-                    best:Boolean = false,
-                    tryFlip:Boolean = false) extends EasyNeighborhood[RouteExchangeMove]{
+ * a neighborhood that exchanges the route of two vehicles.
+ * It does not modifies the routes themselves. It just exchanges the vehicles
+ * @author renaud.delandtsheer@cetic.be
+ */
+case class RouteExchange(firstVehicles:()=>Iterable[Int],
+                         secondVehicles:()=>Int=>Iterable[Int],
+                         vrp:VRP,
+                         neighborhoodName: String = "RouteExchange",
+                         selectFirstVehicleBehavior:LoopBehavior = First(),
+                         selectSecondVehicleBehavior:LoopBehavior = First(),
+                         hotRestart: Boolean = true,
+                         breakSymmetriesAmongVehicles:Boolean = true,
+                         skipFirstVehicleIfEmptyRoute:Boolean = false)
+  extends EasyNeighborhoodMultiLevel[RouteExchangeMove](neighborhoodName) {
 
   val seq = vrp.routes
-  var startVehicle = 0
+  val v = vrp.v
+  val n = vrp.n
 
-  var firstRouteHead = -1
-  var firstRouteLast = -1
-  var secondRouteHead = -1
-  var secondRouteLast = -1
-  var firstRouteFlip = false
-  var secondRouteFlip = false
+  //the indice to start with for the exploration
+  var startFirstVehicle: Int = 0
 
-  /**
-    * This is the method you must implement and that performs the search of your neighborhood.
-    * every time you explore a neighbor, you must perform the calls to notifyMoveExplored or moveRequested(newObj) && submitFoundMove(myMove)){
-    * as explained in the documentation of this class
-    */
-  override def exploreNeighborhood(): Unit = {
-    val seqValue = seq.defineCurrentValueAsCheckpoint(true)
+  var firstVehicle:Int = -1
+  var secondVehicle:Int = -1
+  var positionOfFirstVehicle:Int = -1
+  var positionOfVehicleNextToFirst:Int = -1
+  var firstVehicleIsEmpty:Boolean = false
+  var positionOfSecondVehicle:Int = -1
+  var positionOfVehicleNextToSecond:Int = -1
+  var secondVehicleIsEmpty:Boolean = false
 
-    val vehiclesNow = vehicles.filter(vrp.getRouteOfVehicle(_).size > 1)
-    val routePositions = vrp.routes.value.toList.zipWithIndex.toMap
+  override def exploreNeighborhood() {
+
+    val iterationSchemeOnZone =
+      if (hotRestart) HotRestart(firstVehicles(), startFirstVehicle)
+      else firstVehicles()
+
+    val startValue = seq.defineCurrentValueAsCheckpoint(true)
 
     def evalObjAndRollBack() : Int = {
       val a = obj.value
-      seq.rollbackToTopCheckpoint(seqValue)
+      seq.rollbackToTopCheckpoint(startValue)
       a
     }
 
-    if(!hotRestart)startVehicle = 0
+    val secondVehiclesNow = secondVehicles()
 
-    for(v1 <- startVehicle until vehiclesNow.length){
-      val route1 = vrp.getRouteOfVehicle(vehiclesNow(v1))
-      for(v2 <- v1+1 until vehiclesNow.length){
-        val route2 = vrp.getRouteOfVehicle(vehiclesNow(v2))
-        firstRouteHead = routePositions(route1.tail.head)
-        firstRouteLast= routePositions(route1.last)
-        secondRouteHead = routePositions(route2.tail.head)
-        secondRouteLast = routePositions(route2.last)
-        if(tryFlip) {
-          for(r1 <- 0 until 2; r2 <- 0 until 2) {
-            firstRouteFlip = r1 == 1
-            secondRouteFlip = r2 == 1
-            doMove(firstRouteHead, firstRouteLast, firstRouteFlip, secondRouteHead, secondRouteLast, secondRouteFlip)
-            if (evaluateCurrentMoveObjTrueIfStopRequired(evalObjAndRollBack())) {
-              seq.releaseTopCheckpoint()
-              startVehicle = v1 + 1
-              return
+    val (firstVehicleIt,notifyFound1) = selectFirstVehicleBehavior.toIterator(iterationSchemeOnZone)
+    while (firstVehicleIt.hasNext) {
+      firstVehicle = firstVehicleIt.next()
+
+      require(firstVehicle < v,"first vehicle is not <v:" + firstVehicle)
+
+      positionOfFirstVehicle = startValue.positionOfAnyOccurrence(firstVehicle).get
+      positionOfVehicleNextToFirst = if(firstVehicle == v-1) startValue.size else startValue.positionOfAnyOccurrence(firstVehicle+1).get
+      firstVehicleIsEmpty = positionOfFirstVehicle+1 == positionOfVehicleNextToFirst
+
+      if(!skipFirstVehicleIfEmptyRoute || !firstVehicleIsEmpty){
+
+        val secondVehiclesZone = secondVehiclesNow(firstVehicle)
+        val (secondVehicleIt,notifyFound2) = selectSecondVehicleBehavior.toIterator(secondVehiclesZone)
+        while (secondVehicleIt.hasNext) {
+          secondVehicle = secondVehicleIt.next()
+          require(firstVehicle < v,"first vehicle is not <v:" + firstVehicle)
+
+          if(!breakSymmetriesAmongVehicles || secondVehicle > firstVehicle){
+
+            positionOfSecondVehicle = startValue.positionOfAnyOccurrence(secondVehicle).get
+            positionOfVehicleNextToSecond = if(secondVehicle == v-1) startValue.size else startValue.positionOfAnyOccurrence(secondVehicle+1).get
+            secondVehicleIsEmpty = positionOfSecondVehicle +1 == positionOfVehicleNextToSecond
+
+            if(!firstVehicleIsEmpty || !secondVehicleIsEmpty){
+
+              doMove(positionOfFirstVehicle,positionOfVehicleNextToFirst,firstVehicleIsEmpty,
+                positionOfSecondVehicle,positionOfVehicleNextToSecond,secondVehicleIsEmpty)
+
+              if(evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
+                notifyFound1()
+                notifyFound2()
+              }
             }
-          }
-        }
-        else{
-          doMove(firstRouteHead, firstRouteLast, firstRouteFlip, secondRouteHead, secondRouteLast, secondRouteFlip)
-          if (evaluateCurrentMoveObjTrueIfStopRequired(evalObjAndRollBack())) {
-            seq.releaseTopCheckpoint()
-            startVehicle = v1 + 1
-            return
           }
         }
       }
     }
     seq.releaseTopCheckpoint()
+    //For the hotRestart
+    startFirstVehicle = firstVehicle + 1
+
+    //to ensure that we do not access these values without assigning them first, we set a trap value
+    firstVehicle = -1
+    secondVehicle = -1
+    positionOfFirstVehicle = -1
+    positionOfVehicleNextToFirst = -1
+    positionOfSecondVehicle = -1
+    positionOfVehicleNextToSecond = -1
   }
 
-  override def instantiateCurrentMove(newObj: Int): RouteExchangeMove = {
-    RouteExchangeMove(
-      firstRouteHead, firstRouteLast, firstRouteFlip,
-      secondRouteHead, secondRouteLast, secondRouteFlip,
+
+  override def instantiateCurrentMove(newObj: Int) =
+    RouteExchangeMove(firstVehicle:Int,
+      positionOfFirstVehicle:Int,
+      positionOfVehicleNextToFirst:Int,
+      firstVehicleIsEmpty:Boolean,
+      secondVehicle:Int,
+      positionOfSecondVehicle:Int,
+      positionOfVehicleNextToSecond:Int,
+      secondVehicleIsEmpty:Boolean,
       newObj, this, neighborhoodName)
+
+  override def reset(): Unit = {
+    startFirstVehicle = 0
   }
 
-  def doMove(firstRouteHead: Int, firstRouteLast: Int, firstFlip: Boolean,
-             secondRouteHead: Int, secondRouteLast: Int, secondFlip: Boolean){
-    seq.swapSegments(firstRouteHead,
-      firstRouteLast,
-      firstFlip,
-      secondRouteHead,
-      secondRouteLast,
-      secondFlip)
+  def doMove(positionOfFirstVehicle:Int,
+             positionOfVehicleNextToFirst:Int,
+             firstVehicleIsEmpty:Boolean,
+             positionOfSecondVehicle:Int,
+             positionOfVehicleNextToSecond:Int,
+             secondVehicleIsEmpty:Boolean) {
+    if (firstVehicleIsEmpty) {
+      if (secondVehicleIsEmpty) {
+        System.err.println("doing Route exchange with two empty routes")
+      } else {
+        seq.move(positionOfSecondVehicle + 1, positionOfVehicleNextToSecond - 1, positionOfFirstVehicle, false)
+      }
+    } else {
+      if (secondVehicleIsEmpty) {
+        seq.move(positionOfFirstVehicle + 1, positionOfVehicleNextToFirst - 1, positionOfSecondVehicle, false)
+      } else {
+        seq.swapSegments(positionOfFirstVehicle + 1, positionOfVehicleNextToFirst - 1, false,
+          positionOfSecondVehicle + 1, positionOfVehicleNextToSecond - 1, false)
+      }
+    }
   }
 }
 
-
-case class RouteExchangeMove(firstRouteHead: Int, firstRouteLast: Int, firstFlip: Boolean,
-                             secondRouteHead: Int, secondRouteLast: Int, secondFlip: Boolean,
+/**
+ * @author renaud.delandtsheer@cetic.be
+ */
+case class RouteExchangeMove(firstVehicle:Int,
+                             positionOfFirstVehicle:Int,
+                             positionOfVehicleNextToFirst:Int,
+                             firstVehicleIsEmpty:Boolean,
+                             secondVehicle:Int,
+                             positionOfSecondVehicle:Int,
+                             positionOfVehicleNextToSecond:Int,
+                             secondVehicleIsEmpty:Boolean,
                              override val objAfter: Int,
-                             override val neighborhood:RouteExchange,
-                             override val neighborhoodName:String = "RouteExchangeMove") extends VRPSMove(objAfter, neighborhood, neighborhoodName,neighborhood.vrp) {
-  override def impactedPoints: Iterable[Int] =
-    neighborhood.vrp.routes.value.valuesBetweenPositionsQList(firstRouteHead,firstRouteLast) ++
-    neighborhood.vrp.routes.value.valuesBetweenPositionsQList(secondRouteHead,secondRouteLast)
+                             override val neighborhood: RouteExchange,
+                             override val neighborhoodName: String = "RouteExchangeMove")
+  extends VRPSMove(objAfter, neighborhood, neighborhoodName, neighborhood.vrp){
 
-  /** to actually take the move */
-  override def commit(): Unit = {
-    neighborhood.doMove(
-      firstRouteHead, firstRouteLast, firstFlip,
-      secondRouteHead, secondRouteLast, secondFlip)
+  override def impactedPoints: Iterable[Int] = ???
+
+  override def commit() {
+    neighborhood.doMove(positionOfFirstVehicle,
+      positionOfVehicleNextToFirst,
+      firstVehicleIsEmpty,
+      positionOfSecondVehicle,
+      positionOfVehicleNextToSecond,
+      secondVehicleIsEmpty)
   }
 
-  override def toString: String = {
-    neighborhoodNameToString + "RouteExchange(firstRouteHead:" + firstRouteHead + " firstRouteLast:" + firstRouteLast +
-      " secondRouteHead:" + secondRouteHead + " secondRouteLast:" + secondRouteLast + objToString + ")"
-  }
+  override def toString: String =
+    neighborhoodNameToString + "RouteExchangeMove(vehicle:" + firstVehicle + " other vehicle:" + secondVehicle + objToString + ")"
 }
+

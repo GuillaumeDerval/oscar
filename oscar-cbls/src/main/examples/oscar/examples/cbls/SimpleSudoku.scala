@@ -24,7 +24,7 @@ package oscar.examples.cbls
 import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.lib.constraint.AllDiff
-import oscar.cbls.lib.search.LinearSelector
+import oscar.cbls.lib.search.LinearSelectorClass
 import oscar.cbls.util.StopWatch
 
 /**
@@ -36,7 +36,7 @@ import oscar.cbls.util.StopWatch
  * - could be generalised
  * @author christophe.ponsard@cetic.be
  */
-object SimpleSudoku extends LinearSelector with StopWatch {
+object SimpleSudoku extends LinearSelectorClass with StopWatch {
   
   def main(args: Array[String]) {
  
@@ -138,9 +138,8 @@ object SimpleSudoku extends LinearSelector with StopWatch {
       println("it: "+ it + " " + c.violation + " (swapped "+ grid(v1) + " and " + grid(v2) + ") in square "+squareOf(v1))
     }
 
-    println("Solution: "+m.solution(true))
-
     if (c.violation.value==0) {
+      println("problem solved")
       showGrid(grid,N)    
     } else {
       println("Not found after "+MAX_IT+" iterations")

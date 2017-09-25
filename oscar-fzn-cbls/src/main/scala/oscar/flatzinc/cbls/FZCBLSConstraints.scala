@@ -20,6 +20,7 @@ package oscar.flatzinc.cbls
 
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.lib.constraint._
+import oscar.cbls.lib.invariant.logic.element.IntElementNoVar
 
 import scala.collection.mutable.{ Map => MMap }
 import oscar.cbls.search._

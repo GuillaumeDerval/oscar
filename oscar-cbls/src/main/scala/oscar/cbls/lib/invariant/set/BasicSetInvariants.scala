@@ -25,8 +25,8 @@
 package oscar.cbls.lib.invariant.set
 
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
 
 import scala.collection.immutable.{SortedMap, SortedSet};
 
@@ -188,7 +188,7 @@ case class Inter(left: SetValue, right: SetValue)
 }
 
 case class SetMap(a: SetValue, fun: Int => Int,
-                  initialDomain: Domain = FullRange)
+                  initialDomain: Domain = fullRange)
   extends SetInvariant(SortedSet.empty, initialDomain)
   with SetNotificationTarget{
 

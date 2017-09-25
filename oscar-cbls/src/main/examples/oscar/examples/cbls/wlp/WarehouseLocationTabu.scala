@@ -15,14 +15,12 @@ package oscar.examples.cbls.wlp
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, Store}
+import oscar.cbls._
 import oscar.cbls.core.search.{Best, Move}
 import oscar.cbls.lib.invariant.logic.{Filter, SelectLESetQueue}
 import oscar.cbls.lib.invariant.minmax.MinConstArray
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.neighborhoods.AssignNeighborhood
-import oscar.cbls.modeling.AlgebraTrait
-import oscar.cbls.core.objective.Objective
 
 import scala.language.postfixOps
 
@@ -32,7 +30,7 @@ import scala.language.postfixOps
  * additional behaviors. Here, we restrict a neighborhood to a specific set of variables that not tabu
  * this set of variables is maintained through invariants
  */
-object WarehouseLocationTabu extends App with AlgebraTrait{
+object WarehouseLocationTabu extends App{
 
   //the number of warehouses
   val W:Int = 15

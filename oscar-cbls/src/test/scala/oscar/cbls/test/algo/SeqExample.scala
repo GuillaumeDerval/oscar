@@ -1,6 +1,7 @@
 package oscar.cbls.test.algo
 
-import oscar.cbls.algo.seq.functional.{ConcreteIntSequence, IntSequence}
+import oscar.cbls.algo.seq.{ConcreteIntSequence, IntSequence}
+import oscar.cbls.algo.seq.ConcreteIntSequence
 
 
 /**

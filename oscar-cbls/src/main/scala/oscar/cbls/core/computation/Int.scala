@@ -20,6 +20,7 @@
 
 package oscar.cbls.core.computation
 
+import oscar.cbls._
 import oscar.cbls.core.propagation.Checker
 
 import scala.collection.mutable.{Map => MMap}
@@ -42,7 +43,6 @@ sealed trait IntValue extends Value{
 }
 
 object IntValue {
-  implicit def int2IntValue(a: Int): IntValue = CBLSIntConst(a)
 
   implicit def intArray2IntValueArray(a: Array[Int]): Array[CBLSIntConst] = a.map(CBLSIntConst(_))
 

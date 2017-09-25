@@ -430,13 +430,17 @@ object CBLSSetVar{
   }
 }
 
+object CBLSSetConst {
+  def apply(value : SortedSet[Int]) = new CBLSSetConst(value)
+}
+
 /**
  * An IntSetConst is an IntSetVar that has a constant value, defined by a set of integer.
  * It has no associated model, as there is no need to incorporate it into any propagation process.
  * @param value: the value of the constant
  * @author renaud.delandtsheer@cetic.be
  * */
-case class CBLSSetConst(override val value:SortedSet[Int])
+class CBLSSetConst(override val value:SortedSet[Int])
   extends SetValue{
   override def toString:String = "Set{" + value.mkString(",") + "}"
   override def domain:Domain = DomainRange(value.min,value.max)

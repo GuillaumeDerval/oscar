@@ -20,6 +20,7 @@
 
 package oscar.cbls.test.contraints
 
+import oscar.cbls._
 import oscar.cbls.modeling._
 
 /**

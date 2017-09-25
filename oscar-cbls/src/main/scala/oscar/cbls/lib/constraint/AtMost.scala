@@ -20,13 +20,12 @@
 
 package oscar.cbls.lib.constraint
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.constraint.Constraint
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
 import oscar.cbls.lib.invariant.logic.DenseCount
 import oscar.cbls.lib.invariant.minmax.Max2
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.modeling.Algebra._
+
 
 import scala.collection.immutable.SortedMap
 
@@ -50,7 +49,7 @@ case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue])
   private val valueCount = countInvariant.counts //v => #occurrence of v+offset in variables
 
   private val noViolation:IntValue = 0
-  private val violationByVal=Array.tabulate(valueCount.length)(_ => noViolation)
+  private val violationByVal:Array[IntValue] = Array.tabulate(valueCount.length)(_ => noViolation)
 
   for((value,bound) <- bounds){
     violationByVal(value+offset) = Max2(noViolation,valueCount(value+offset) - bound)
@@ -64,11 +63,11 @@ case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue])
             case None => (variable,violation)})
 
     val violationForArray = variables.foldLeft(SortedMap.empty[IntValue,IntValue])(
-      (acc,intvar) => accumulate(acc,intvar, violationByVal.element(intvar + offset).setName("Violation_AtMost_"+intvar.name))
+      (acc,intvar) => accumulate(acc,intvar, violationByVal.element(intvar + offset))
     )
     bounds.foldLeft(violationForArray)(
       (acc,boundAndVariable) => {
-        val viol = violationByVal.element(boundAndVariable._1 +offset).setName("Violation_AtMost_"+bounds(boundAndVariable._1).name)
+        val viol = violationByVal(boundAndVariable._1 +offset)
         accumulate(acc,boundAndVariable._2, viol)
       })
   }

@@ -3,7 +3,7 @@ package oscar.cbls.business.scheduling.solver
 import oscar.cbls.business.scheduling.algo.CriticalPathFinder
 import oscar.cbls.business.scheduling.model._
 import oscar.cbls.core.computation.{Solution, Store}
-import oscar.cbls.lib.search.LinearSelectorTrait
+import oscar.cbls.lib.search.LinearSelectors
 
 /**
  * *****************************************************************************
@@ -39,7 +39,7 @@ import oscar.cbls.lib.search.LinearSelectorTrait
 class IFlatIRelax(p: Planning,
                   verbose: Boolean = true,
                   nbRelax: Int = 4,
-                  pkillPerRelax: Int = 50) extends LinearSelectorTrait {
+                  pkillPerRelax: Int = 50) extends LinearSelectors {
   val model: Store = p.model
 
   require(model.isClosed, "model should be closed before iFlatRelax algo can be instantiated")

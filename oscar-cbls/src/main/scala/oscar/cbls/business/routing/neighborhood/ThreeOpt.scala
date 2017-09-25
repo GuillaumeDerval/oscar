@@ -33,6 +33,7 @@ import oscar.cbls.algo.search.{HotRestart, Pairs}
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search._
 
+
 /**
  * Removes three edges of routes, and rebuilds routes from the segments.
  * Finds 3 candidate points for a 3-opt move, and then

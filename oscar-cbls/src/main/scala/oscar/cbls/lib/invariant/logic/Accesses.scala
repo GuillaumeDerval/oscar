@@ -12,20 +12,15 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-/*******************************************************************************
-  * Contributors:
-  *     This code has been initially developed by CETIC www.cetic.be
-  *         by Renaud De Landtsheer
-  *            Yoann Guyot
-  * ****************************************************************************
-  */
 
 package oscar.cbls.lib.invariant.logic
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.{Checker, KeyForElementRemoval}
+import oscar.cbls._
+import oscar.cbls.core._
 
 import scala.collection.immutable.SortedSet
+
+
 
 /**
  * if (ifVar > pivot) then thenVar else elveVar
@@ -76,6 +71,12 @@ case class IntITE(ifVar: IntValue, thenVar: IntValue, elseVar: IntValue, pivot: 
   }
 }
 
+/**
+ * inputarray[index]
+ * @param inputArray is an array of int
+ * @param index is the index accessing the array
+ * @author renaud.delandtsheer@cetic.be
+ * */
 case class ConstantIntElement(index: IntValue, inputArray: Array[Int])
   extends Int2Int(index, inputArray(_), InvariantHelper.getMinMaxRangeInt(inputArray))
 
@@ -129,42 +130,6 @@ case class IntElement(index: IntValue, inputarray: Array[IntValue])
       "Array(" +inputs.take(4).map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
     }else{
       "Array(" +inputs.map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
-    }
-  }
-}
-
-/**
- * inputarray[index]
- * @param inputarray is an array of Int
- * @param index is the index accessing the array (its value must be always inside the array range)
- * @author renaud.delandtsheer@cetic.be
- * @author jean-noel.monette@it.uu.se
- * */
-case class IntElementNoVar(index: IntValue, inputarray: Array[Int])
-  extends IntInvariant(initialValue = inputarray(index.value),DomainRange(inputarray.min,inputarray.max))
-  with IntNotificationTarget{
-
-  registerStaticAndDynamicDependency(index)
-  finishInitialization()
-
-  @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
-   // println(OldVal + " "+ NewVal)
-    this := inputarray(NewVal)
-  }
-
-  override def checkInternals(c: Checker) {
-    c.check(this.value == inputarray(index.value),
-      Some("output.value (" + this.value + ") == inputarray(index.value ("
-        + index.value + ")) (" + inputarray(index.value) + ")"))
-  }
-
-  override def toString: String = {
-    val inputs = inputarray.toList
-    if(inputs.length > 4){
-      "Array(" +inputs.take(4).map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "] = " + this.value
-    }else{
-      "Array(" +inputs.map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "] = " + this.value
     }
   }
 }
@@ -277,9 +242,9 @@ case class Elements[T <:IntValue](index: SetValue, inputarray: Array[T])
  * @param index is the index of the array access
  * @author renaud.delandtsheer@cetic.be
  * */
-case class SetElement(index: IntValue, inputarray: Array[SetValue])
+case class SetElement[X<:SetValue](index: IntValue, inputarray: Array[X])
   extends SetInvariant(inputarray.apply(index.value).value)
-  with Bulked[SetValue, Domain]
+  with Bulked[X, Domain]
   with VaryingDependencies
   with IntNotificationTarget
   with SetNotificationTarget{
@@ -295,7 +260,7 @@ case class SetElement(index: IntValue, inputarray: Array[SetValue])
 
   finishInitialization()
 
-  override def performBulkComputation(bulkedVar: Array[SetValue]): Domain =
+  override def performBulkComputation(bulkedVar: Array[X]): Domain =
     InvariantHelper.getMinMaxBoundsSet(bulkedVar)
 
   @inline

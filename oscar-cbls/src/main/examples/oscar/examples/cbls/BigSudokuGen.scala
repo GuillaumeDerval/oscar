@@ -27,7 +27,7 @@ import javax.swing.border.LineBorder
 import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.lib.constraint.AllDiff
-import oscar.cbls.lib.search.LinearSelectorTrait
+import oscar.cbls.lib.search.LinearSelectors
 import oscar.cbls.util.StopWatch
 
 import scala.swing.{GridPanel, Label, MainFrame, SimpleSwingApplication}
@@ -41,7 +41,7 @@ import scala.swing.{GridPanel, Label, MainFrame, SimpleSwingApplication}
  * - best delta is used and switch cells are added to tabu
  * @author christophe.ponsard@cetic.be
  * */
-object BigSudokuGen extends SimpleSwingApplication with LinearSelectorTrait with StopWatch {
+object BigSudokuGen extends SimpleSwingApplication with LinearSelectors with StopWatch {
 
   val C:Int=4
   val N:Int=C*C

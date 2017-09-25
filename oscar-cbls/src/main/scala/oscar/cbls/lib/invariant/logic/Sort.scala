@@ -23,8 +23,9 @@
 package oscar.cbls.lib.invariant.logic
 /**This package proposes a set of logic invariants, which are used to define the structure of the problem*/
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
+import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
 
 /**
  * maintains a sorting of the ''values'' array:
@@ -139,3 +140,4 @@ object Sort {
 
   def apply(values:Array[IntValue], reversePerm:Array[CBLSIntVar]) = new Sort(values,reversePerm)
 }
+

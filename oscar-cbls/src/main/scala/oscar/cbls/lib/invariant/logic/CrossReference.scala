@@ -3,12 +3,12 @@
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 2.1 of the License, or
  * (at your option) any later version.
- *   
+ *
  * OscaR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License  for more details.
- *   
+ *
  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
@@ -21,8 +21,9 @@
 
 package oscar.cbls.lib.invariant.logic
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
+import oscar.cbls.core.computation.{CBLSSetVar, SetValue}
 
 import scala.collection.immutable.SortedSet
 
@@ -71,7 +72,7 @@ object DenseRef{
     val (minMin,maxMax) = InvariantHelper.getMinMaxBoundsSet(references)
     val m:Store = InvariantHelper.findModel(references)
     assert(minMin == 0)
-    val referencing = Array.tabulate(maxMax + 1)(i => new CBLSSetVar(m,SortedSet.empty, 0 to references.length - 1, "referencing_" + i))
+    val referencing = Array.tabulate(maxMax + 1)(i => new CBLSSetVar(m,SortedSet.empty, references.indices, "referencing_" + i))
     new DenseRef(references,referencing)
   }
 }

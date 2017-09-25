@@ -15,10 +15,12 @@ package oscar.cbls.business.routing.neighborhood
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-
 import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.{First, EasyNeighborhoodMultiLevel, LoopBehavior}
+
+
+
 
 /**
  * base class for point insertion moves

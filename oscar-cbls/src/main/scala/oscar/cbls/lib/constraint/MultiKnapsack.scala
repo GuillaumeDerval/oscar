@@ -21,12 +21,10 @@
 
 package oscar.cbls.lib.constraint
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.constraint.Constraint
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
 import oscar.cbls.lib.invariant.logic.Cluster
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.modeling.Algebra._
 
 import scala.collection.immutable.SortedMap
 ;
@@ -38,7 +36,7 @@ import scala.collection.immutable.SortedMap
  * @param binsizes the max size of the available bins
   * @author renaud.delandtsheer@cetic.be
  */
-case class MultiKnapsack(items: Array[CBLSIntVar], itemsizes: Array[IntValue], binsizes:Array[IntValue])
+case class MultiKnapsack(items: Array[IntValue], itemsizes: Array[IntValue], binsizes:Array[IntValue])
   extends Constraint {
 
   assert(items.map(_.min).min == 0, "bin 0 must be included in possible bins of items")
@@ -49,14 +47,14 @@ case class MultiKnapsack(items: Array[CBLSIntVar], itemsizes: Array[IntValue], b
   registerConstrainedVariables(itemsizes)
   registerConstrainedVariables(binsizes)
 
-  private val bincontents = Cluster.MakeDense(items).clusters
-  private val binfilling = bincontents.map(bincontent => Sum(itemsizes,bincontent))
+  private val bincontents:Array[SetValue] = Cluster.makeDense(items).clusters
+  private val binfilling:Array[IntValue] = bincontents.map(bincontent => Sum(itemsizes,bincontent))
 
-  private val binviolations = (
+  private val binviolations:Array[IntValue] = (
     for (binid <- binsizes.indices)
     yield (binfilling(binid) le binsizes(binid)).violation).toArray
 
-  private val itemviolations = items.map(itemval =>  binviolations.element(itemval))
+  private val itemviolations = items.map(itemval => binviolations.element(itemval))
 
   /**The violation of the constraint is the sum on all excess in all bins.
     */

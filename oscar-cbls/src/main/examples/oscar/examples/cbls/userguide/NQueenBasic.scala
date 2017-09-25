@@ -15,13 +15,15 @@ package oscar.examples.cbls.userguide
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import oscar.cbls._
 import oscar.cbls.modeling.CBLSModel
+
 import scala.util.Random
 
 object NQueenBasic extends CBLSModel with App{
 
   val nQueens = 100
-  println("NQueenBasic(" + nQueens + ") (not efficient, but simple)")
+  println("NQueenBasic(" + nQueens + ")")
 
   val queensRange:Range = Range(0,nQueens)
   val init = Random.shuffle(queensRange.toList).iterator

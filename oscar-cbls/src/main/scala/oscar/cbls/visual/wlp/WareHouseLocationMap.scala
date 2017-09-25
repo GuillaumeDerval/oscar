@@ -42,7 +42,7 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
   val w = wareHouseCoordinates.length
   val d = deliveryCoordinates.length
 
-  override def addShape(shape: VisualShape, repaintAfter: Boolean = true): Unit ={
+  override def addShape(shape: VisualShape, repaintAfter: Boolean): Unit ={
     super.addShape(shape,false)
   }
 

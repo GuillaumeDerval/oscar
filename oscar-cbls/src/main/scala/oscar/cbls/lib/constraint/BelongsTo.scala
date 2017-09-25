@@ -17,9 +17,8 @@ package oscar.cbls.lib.constraint
  * ****************************************************************************
  */
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.constraint.Constraint
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
 
 import scala.collection.immutable.SortedSet
 
@@ -53,7 +52,8 @@ case class BelongsTo(v: IntValue, set: SetValue)
   }
 
   /** the violation is 1 v is not is set, 0 otherwise*/
-  override def violation(v: Value): IntValue = { if (this.v == v || this.set == v) violation else 0 }
+  val constZero:IntValue = 0
+  override def violation(v: Value): IntValue = { if (this.v == v || this.set == v) violation else constZero}
 
   /**
    * To override whenever possible to spot errors in invariants.

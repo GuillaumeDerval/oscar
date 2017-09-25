@@ -18,16 +18,15 @@ package oscar.cbls.test.invariants
 import org.scalacheck.Gen
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
-import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
+import oscar.cbls._
+import oscar.cbls.business.routing.invariants._
 import oscar.cbls.lib.constraint._
-import oscar.cbls.lib.invariant.logic.{DenseCount, Elements, Filter, IntElement, IntITE, SelectLEHeapHeap, SetElement, _}
+import oscar.cbls.lib.invariant.logic.{SetElement, _}
 import oscar.cbls.lib.invariant.minmax.{ArgMax, ArgMin, Max2, MaxArray, MaxLin, MaxSet, Min2, MinArray, MinLin, MinSet}
 import oscar.cbls.lib.invariant.numeric.{Abs, Div, Minus, Mod, Prod, Prod2, ProdElements, RoundUpModulo, Step, Sum, Sum2, SumElements}
-import oscar.cbls.lib.invariant.routing._
-import oscar.cbls.lib.invariant.routing.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
+import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
 import oscar.cbls.lib.invariant.seq._
 import oscar.cbls.lib.invariant.set._
-import oscar.cbls.modeling.Algebra._
 import oscar.cbls.test.invariants.bench._
 import oscar.cbls.test.routing.RoutingMatrixGenerator
 
@@ -186,29 +185,29 @@ class InvariantTests extends FunSuite with Checkers {
 
   test("Sparse Cluster maintains a cluster of the indexes of an array.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    Cluster.MakeSparse(bench.genIntVarsArray(50),
+    Cluster.makeSparse(bench.genIntVarsArray(50),
       (Gen.containerOfN[List, Int](100, Gen.choose(0, 100))).sample.get)
     bench.run
   }
 
   test("Dense Cluster maintains a cluster of all the indexes of an array.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    Cluster.MakeDense(bench.genIntVarsArray(50))
+    Cluster.makeDense(bench.genIntVarsArray(50))
     bench.run
   }
 
   test("Dense Cluster maintains a cluster of all the indexes of an array"
     + " (assuming min and max).") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    Cluster.MakeDenseAssumingMinMax(bench.genIntVarsArray(50), 0, 100)
+    Cluster.makeDenseAssumingMinMax(bench.genIntVarsArray(50), 0, 100)
     bench.run
   }
 
   test("Dense Count maintains count(j) = #{i in index of values | values[i] == j}") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new DenseCount(
-      bench.genIntVarsArray(10, 0 to 19),
-      bench.genIntVarsArray(20, 0 to 19, false))
+
+    makeDenseCount(bench.genIntVarsArray(10, 0 to 19))
+    
     bench.run
   }
 
@@ -616,7 +615,7 @@ class InvariantTests extends FunSuite with Checkers {
     val n = 100
     val v = 5
     val route = bench.genRouteOfNodes(n,v)
-    NodeOfVehicle(route,v)
+    NodesOfVehicle(route,v)
     bench.run()
   }
 

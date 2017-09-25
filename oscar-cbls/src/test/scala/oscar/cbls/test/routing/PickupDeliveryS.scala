@@ -16,26 +16,64 @@ package oscar.cbls.test.routing
   ******************************************************************************/
 
 /*
-import oscar.cbls.business.routing.model.newModelStructure._
-import oscar.cbls.core.computation.Store
-import oscar.cbls.core.search.{Best, CompositeMove}
-import oscar.cbls.lib.invariant.seq.Length
-import oscar.cbls.modeling.Algebra._
-import oscar.cbls.core.objective.{CascadingObjective, Objective}
+import oscar.cbls._
 import oscar.cbls.business.routing.model._
 import oscar.cbls.business.routing.neighborhood._
-import oscar.cbls.lib.invariant.routing.PDPConstraints
+import oscar.cbls.core.objective.{CascadingObjective, Objective}
+import oscar.cbls.core.search.{Best, CompositeMove}
+import oscar.cbls.lib.invariant.seq.Length
 import oscar.cbls.lib.search.combinators._
-
-import scala.util.Random
-
-import scala.util.Random
 
 /**
  * Created by fabian on 04-07-16.
  */
 
-object NewVRPExample extends App{
+class MyPDP(n:Int, v:Int, m:Store,
+            symmetricDistance:Array[Array[Int]], maxPivot:Int,
+            pickups:Array[Int], deliveries:Array[Int],
+            timeWindows:Array[(Int,Int,Int,Int)], ttf:TTFMatrix)
+  extends PDP(n,v,m,maxPivot) with ConstantDistancePerVehicle with ClosestNeighbors {
+
+  setSymmetricDistanceMatrix(symmetricDistance)
+
+  override protected def getDistance(from : Int, to : Int) : Int = symmetricDistance(from)(to)
+
+  val penaltyForUnrouted  = 100000
+
+
+
+
+  def closestNeighboursInTime = computeClosestNeighborInTime()
+
+  def size = routes.value.size
+
+
+
+
+  addPickupDeliveryCouples(pickups,deliveries)
+  setArrivalLeaveLoadValue()
+  setVehiclesMaxCargo(5)
+  setVehiclesCapacityStrongConstraint()
+  setTimeWindows(timeWindows)
+  setTravelTimeFunctions(ttf)
+
+  /**
+   * Redefine the toString method.
+   * @return the VRP problem as a String.
+   */
+  override def toString : String =
+    super.toString +
+      "objective: " + obj.value + "\n" +
+      "next:" + next.map(_.value).mkString(",") + "\n" +
+      "prev:" + prev.map(_.value).mkString(",") + "\n"
+
+
+  val obj = new CascadingObjective(fastConstraints,
+    new CascadingObjective(slowConstraints,
+      new CascadingObjective(precedenceObj, Objective(totalDistance + (penaltyForUnrouted*(n - Length(routes)))))))
+}
+
+object PickupDeliveryS extends App{
   val n = 110
   val v = 10
 
@@ -55,14 +93,16 @@ object NewVRPExample extends App{
 
   val ttf = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistanceMatrix)
 
-  val builder = new VRPBuilder(model,n,v)
+  val myPDP = new MyPDP(n,v,model,symmetricDistanceMatrix,maxPivotPerValuePercent,pickups,deliveries,timeWindows,ttf)
+  val nodes = myPDP.nodes
 
-  builder withDistanceMatrix symmetricDistanceMatrix carsArrivingAtNodeAfter timeWindows.map(_._1) build()
+
 
   model.close()
 
-  /*
-  val insertCoupleFast = Profile(DynAndThen(
+  println(model.stats)
+
+  val insertCoupleFast = Profile(dynAndThen(
     InsertPointUnroutedFirst(
       unroutedNodesToInsert = () => myPDP.getUnroutedPickups,
       relevantPredecessor = ()=>myPDP.kFirst(n/10,myPDP.closestNeighboursInTime,myPDP.isRouted),
@@ -72,7 +112,7 @@ object NewVRPExample extends App{
       relevantPredecessor = () => myPDP.getNodesAfterRelatedPickup(),
       vrp = myPDP,selectNodeBehavior = Best(),selectInsertionPointBehavior = Best()))name "insertCoupleFast")
 
-  val insertCoupleSlow = Profile(DynAndThen(
+  val insertCoupleSlow = Profile(dynAndThen(
     InsertPointUnroutedFirst(
       unroutedNodesToInsert = () => myPDP.getUnroutedPickups,
       relevantPredecessor = ()=> myPDP.kFirst(n/5,myPDP.closestNeighboursInTime,myPDP.isRouted),
@@ -83,23 +123,23 @@ object NewVRPExample extends App{
       vrp = myPDP,selectNodeBehavior = Best(),selectInsertionPointBehavior = Best()))name "insertCoupleSlow")
   /*
 
-  val insertCoupleCloseToDepot = Profile(DynAndThen(
-    InsertPointUnroutedFirst(
-      unroutedNodesToInsert = () => {
-        var tempList:List[Int] = List.empty
-        for(i <- 0 until v){
-          tempList = myPDP.kFirst(n/v,myPDP.closestNeighboursForward,myPDP.isUnroutedPickup)(i).toList ::: tempList
-        }
-        tempList
-      },
-      relevantPredecessor = () => myPDP.kFirst(n/10,myPDP.closestNeighboursInTime,myPDP.isRouted),
-      vrp = myPDP),
-    (moveResult:InsertPointMove) => InsertPointUnroutedFirst(
-      unroutedNodesToInsert =  () => Iterable(myPDP.getRelatedDelivery(moveResult.insertedPoint)),
-      relevantPredecessor = () => myPDP.getNodesAfterRelatedPickup(),
-      vrp = myPDP, best = true))name "insertCoupleCloseToDepot")*/
+    val insertCoupleCloseToDepot = Profile(dynAndThen(
+      InsertPointUnroutedFirst(
+        unroutedNodesToInsert = () => {
+          var tempList:List[Int] = List.empty
+          for(i <- 0 until v){
+            tempList = myPDP.kFirst(n/v,myPDP.closestNeighboursForward,myPDP.isUnroutedPickup)(i).toList ::: tempList
+          }
+          tempList
+        },
+        relevantPredecessor = () => myPDP.kFirst(n/10,myPDP.closestNeighboursInTime,myPDP.isRouted),
+        vrp = myPDP),
+      (moveResult:InsertPointMove) => InsertPointUnroutedFirst(
+        unroutedNodesToInsert =  () => Iterable(myPDP.getRelatedDelivery(moveResult.insertedPoint)),
+        relevantPredecessor = () => myPDP.getNodesAfterRelatedPickup(),
+        vrp = myPDP, best = true))name "insertCoupleCloseToDepot")*/
 
-  val oneCoupleMove = Profile(DynAndThen(OnePointMove(
+  val oneCoupleMove = Profile(dynAndThen(OnePointMove(
     nodesToMove = () => myPDP.getRoutedPickups,
     relevantNewPredecessors= () => myPDP.kFirst(20,myPDP.closestNeighboursInTime,myPDP.isRouted),
     vrp = myPDP),
@@ -118,7 +158,7 @@ object NewVRPExample extends App{
     relevantNewPredecessors = () => myPDP.getNodesAfterRelatedPickup(),
     vrp = myPDP)))name "OnePointMove PickupDelivery")
 
-  val pickupDeliveryCoupleShift = Profile(DynAndThen(OnePointMove(
+  val pickupDeliveryCoupleShift = Profile(dynAndThen(OnePointMove(
     nodesToMove = () => myPDP.getRoutedPickups,
     relevantNewPredecessors = () => myPDP.kFirst(20,myPDP.closestNeighboursInTime,myPDP.isRouted),
     vrp = myPDP),
@@ -129,7 +169,7 @@ object NewVRPExample extends App{
       selectPointToMoveBehavior= Best(),
       selectDestinationBehavior=Best()))name "pickupDeliveryCoupleShift")
 
-  val removeCouple = Profile(new DynAndThen(new RemovePoint(
+  val removeCouple = Profile(dynAndThen(new RemovePoint(
     relevantPointsToRemove = () => myPDP.getRoutedPickups,
     vrp = myPDP),
     (moveResult1:RemovePointMove) =>
@@ -139,8 +179,8 @@ object NewVRPExample extends App{
     , maximalIntermediaryDegradation = Int.MaxValue)
   )
 
-  val smartInsertCoupleNotFair = Profile(DynAndThen(
-    DynAndThen(InsertPointUnroutedFirst(
+  val smartInsertCoupleNotFair = Profile(dynAndThen(
+    dynAndThen(InsertPointUnroutedFirst(
       unroutedNodesToInsert = () => myPDP.getUnroutedPickups,
       relevantPredecessor = () => myPDP.kFirst(n/10, myPDP.closestNeighboursInTime,myPDP.isRouted),
       vrp = myPDP
@@ -159,7 +199,7 @@ object NewVRPExample extends App{
       }
     ),
     (moveResult2:CompositeMove) =>{
-      DynAndThen(RemovePoint(
+      dynAndThen(RemovePoint(
         relevantPointsToRemove = () => Iterable(myPDP.getRelatedNode(moveResult2.ml(1).asInstanceOf[RemovePointMove].pointToRemove)),
         vrp = myPDP
       ),
@@ -170,8 +210,8 @@ object NewVRPExample extends App{
         ))
     })name "smartInsertCoupleNotFair")
 
-  val insertCoupleNotFair = Profile(DynAndThen(
-    DynAndThen(RemovePoint(
+  val insertCoupleNotFair = Profile(dynAndThen(
+    dynAndThen(RemovePoint(
       relevantPointsToRemove = () => myPDP.getRoutedPickups,
       vrp = myPDP
     ),
@@ -185,7 +225,7 @@ object NewVRPExample extends App{
         moveResult2.ml.head.asInstanceOf[RemovePointMove].positionOfPointToRemove)
       val removedDelivery = (myPDP.getRelatedDelivery(removedPickup._1),
         moveResult2.ml(1).asInstanceOf[RemovePointMove].positionOfPointToRemove)
-      DynAndThen(InsertPointUnroutedFirst(
+      dynAndThen(InsertPointUnroutedFirst(
         unroutedNodesToInsert = () => myPDP.getUnroutedDeliverys.filter(_ != removedDelivery._1),
         relevantPredecessor = () => (x:Int) => Iterable(myPDP.routes.value.valueAtPosition(removedDelivery._2-1).get),
         vrp = myPDP
@@ -206,9 +246,9 @@ object NewVRPExample extends App{
     var firstVehicle = 10
     var secondVehicle = 10
     Profile(
-      new DynAndThen(
+      dynAndThen(
         //We first remove a PD couple from a first route
-        new DynAndThen(new RemovePoint(
+        dynAndThen(new RemovePoint(
           relevantPointsToRemove = () => {
             myPDP.getRoutedPickups
           },
@@ -221,8 +261,8 @@ object NewVRPExample extends App{
         )
         ,(moveResult2:CompositeMove) =>{
           //Then we move a PD couple from a second route to the first route
-          new DynAndThen(
-            new DynAndThen(OnePointMove(
+          dynAndThen(
+            dynAndThen(OnePointMove(
               nodesToMove = () => myPDP.notOnSameVehicle(myPDP.getRoutedPickups,firstVehicle),
               relevantNewPredecessors = () => (i:Int) => myPDP.getNodesOfVehicle(firstVehicle),
               vrp = myPDP), (moveResult3:OnePointMoveMove) =>{
@@ -236,12 +276,12 @@ object NewVRPExample extends App{
             )
             ,(moveResult4:CompositeMove) =>{
               //And finally we insert the first couple in the second route
-              new DynAndThen(InsertPointUnroutedFirst(
-                  unroutedNodesToInsert = () => {
-                    Iterable(moveResult2.ml.head.asInstanceOf[RemovePointMove].pointToRemove)
-                  },
-                  relevantPredecessor = () => (i:Int) => myPDP.getNodesOfVehicle(secondVehicle),
-                  vrp = myPDP), (moveResult5:InsertPointMove) =>{
+              dynAndThen(InsertPointUnroutedFirst(
+                unroutedNodesToInsert = () => {
+                  Iterable(moveResult2.ml.head.asInstanceOf[RemovePointMove].pointToRemove)
+                },
+                relevantPredecessor = () => (i:Int) => myPDP.getNodesOfVehicle(secondVehicle),
+                vrp = myPDP), (moveResult5:InsertPointMove) =>{
                 InsertPointUnroutedFirst(
                   unroutedNodesToInsert = () => Iterable(myPDP.getRelatedDelivery(moveResult5.insertedPoint)),
                   relevantPredecessor = () => myPDP.getNodesAfterRelatedPickup(),
@@ -266,6 +306,7 @@ object NewVRPExample extends App{
 
   val removeOnExhaust = removeCouple maxMoves((n-v)/20)
 
+  //TODO: c'est un peu bizarre de faire un reset sur un autre voisinage dans un afterMove.
   val removeMaxCouple = Profile(Atomic(removeOnExhaust) name "remove Some Couples") afterMove(removeOnExhaust reset())
 
   val search4 = BestSlopeFirst(List(insertCoupleFast,onePointMovePD),refresh = 5) exhaust
@@ -280,7 +321,9 @@ object NewVRPExample extends App{
 
   search4.verbose = 2
 
-  search4.doAllMoves(obj=myPDP.obj)*/
+  search4.doAllMoves(obj=myPDP.obj)
+
+  println(myPDP)
+  println(search4.profilingStatistics)
 
 }
-*/

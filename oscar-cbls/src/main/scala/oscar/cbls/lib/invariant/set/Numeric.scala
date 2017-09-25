@@ -25,9 +25,8 @@
 
 package oscar.cbls.lib.invariant.set
 
-import oscar.cbls.core.computation.{ChangingSetValue, IntInvariant, SetNotificationTarget, SetValue}
-import oscar.cbls.core.propagation.Checker
-
+import oscar.cbls._
+import oscar.cbls.core._
 import scala.collection.immutable.SortedSet
 
 /**

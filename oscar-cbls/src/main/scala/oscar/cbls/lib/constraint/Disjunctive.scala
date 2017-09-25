@@ -16,10 +16,8 @@
 
 package oscar.cbls.lib.constraint
 
-import oscar.cbls.core.computation.CBLSIntVar._
-import oscar.cbls.core.computation._
-import oscar.cbls.core.constraint.Constraint
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
 
 import scala.collection.immutable.{SortedSet, SortedMap}
 

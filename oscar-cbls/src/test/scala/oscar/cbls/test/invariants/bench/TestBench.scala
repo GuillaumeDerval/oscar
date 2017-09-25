@@ -16,10 +16,11 @@ package oscar.cbls.test.invariants.bench
   ******************************************************************************/
 
 import org.scalacheck.{Gen, Prop}
-import oscar.cbls.algo.seq.functional.{ConcreteIntSequence, IntSequence}
-import oscar.cbls.core.computation._
-import scala.collection.immutable.{SortedMap, SortedSet}
 import org.scalatest.prop.Checkers
+import oscar.cbls._
+import oscar.cbls.algo.seq.IntSequence
+
+import scala.collection.immutable.{SortedMap, SortedSet}
 
 /**
  * This class represents a move in the model, that is, one or several
@@ -688,7 +689,7 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
                        nbVars: Int = 4,
                        range: Range = 0 to 100,
                        isInput: Boolean = true,
-                       constraint: Int => Boolean = (v: Int) => true): Array[CBLSIntVar] = {
+                       constraint: Int => Boolean = (v: Int) => true): Array[IntValue] = {
     genIntVars(nbVars, range, isInput, constraint).toArray
   }
 
@@ -700,7 +701,7 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
                         nbVars: Int,
                         range: Range,
                         isInput: Boolean = true,
-                        constraint: Int => Boolean = (v: Int) => true): SortedSet[CBLSIntVar] = {
+                        constraint: Int => Boolean = (v: Int) => true): SortedSet[IntValue] = {
     val riVars = InvGen.randomIntVars(nbVars, range, model, constraint).sample.get
     addVar(isInput, riVars)
     val iVars = riVars.map((riv: RandomIntVar) => { riv.randomVar })
@@ -712,7 +713,7 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
                         rangeValue: Range,
                         rangeBound: Range,
                         isInput: Boolean = true,
-                        constraint: Int => Boolean = (v: Int) => true): SortedMap[Int, CBLSIntVar] = {
+                        constraint: Int => Boolean = (v: Int) => true): SortedMap[Int, IntValue] = {
     val boundVars = genIntVars(nbVars, rangeBound, isInput, constraint)
     val map = boundVars.map((boundVar: CBLSIntVar) =>
       (Gen.choose(rangeValue.min, rangeValue.max).sample.get, boundVar))

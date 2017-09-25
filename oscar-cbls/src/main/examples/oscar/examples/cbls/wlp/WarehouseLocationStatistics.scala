@@ -15,18 +15,17 @@ package oscar.examples.cbls.wlp
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.core.computation.{CBLSIntVar, Store}
-import oscar.cbls.core.objective.Objective
+import oscar.cbls._
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.MinConstArrayLazy
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.combinators.Profile
 import oscar.cbls.lib.search.neighborhoods.{AssignNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
-import oscar.cbls.modeling.AlgebraTrait
+
 
 import scala.language.postfixOps
 
-object WarehouseLocationStatistics extends App with AlgebraTrait{
+object WarehouseLocationStatistics extends App{
 
   //the number of warehouses
   val W:Int = 1000

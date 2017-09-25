@@ -19,7 +19,7 @@
   ******************************************************************************/
 
 
-package oscar.cbls.invariants.core
+package oscar.cbls.core
 
 /**
  * This package proposes a model of propagation.
