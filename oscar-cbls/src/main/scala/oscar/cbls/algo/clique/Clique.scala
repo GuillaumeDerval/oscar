@@ -15,7 +15,7 @@
 
 package oscar.cbls.algo.clique
 
-import scala.collection.immutable.{SortedMap, SortedSet}
+import scala.collection.immutable.SortedSet
 
 /**
  * Created by rdl on 17-08-17.
@@ -27,7 +27,7 @@ object Clique {
    * @param nbNodes nodes are from 0 to nbNodes-1
    * @param isNeighbor true if the two nodes are adjacent
    * @return a list of all the maximal cliques of the graph represented by the nodes
-   *         (0..nbNodes-1) and the adjacencies (isNeighbor function)
+   *         (0..nbNodes-1) and the adjacency (isNeighbor function)
    */
   def bronKerbosch2(nbNodes:Int,isNeighbor:(Int,Int)=>Boolean):List[SortedSet[Int]] = {
 
