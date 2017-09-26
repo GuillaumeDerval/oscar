@@ -33,18 +33,17 @@ class VRP(val m: Store, val n: Int, val v: Int,
 
   val vehicleOfNode = vehicleOfNodes(routes,v)
 
-  val routed = Content(routes.createClone(50)).setName("routed nodes")
+  val routed = Content(routes.createClone(Int.MaxValue)).setName("routed nodes")
   val unrouted = Diff(CBLSSetConst(SortedSet(nodes:_*)),routed).setName("unrouted nodes")
 
   m.registerForPartialPropagation(unrouted)
 
   def isADepot(node: Int) = node < v
 
-  def kFirst(k: Int, values:(Int) => Iterable[Int], filter: Int => Boolean = _ => true)(node: Int): Iterable[Int] = {
-    val filteredValues = values(node).filter(filter)
-    if (k >= n - 1) return filteredValues
+  def kFirst(k: Int, values:(Int) => Iterable[Int], filter: Int => Int => Boolean = _ => _ => true)(node: Int): Iterable[Int] = {
+    if (k >= n - 1) return values(node).filter(filter(node))
 
-    KSmallest.kFirst(k: Int, filteredValues, filter)
+    KSmallest.kFirst(k: Int, values(node), filter(node))
   }
 
   /**
@@ -115,7 +114,7 @@ class VRP(val m: Store, val n: Int, val v: Int,
     vRPExtensions = QList(extension,vRPExtensions)
   }
 
-  def generatePostFilters(node: Int, additionnalFilter: (Int) => Boolean = _ => true): (Int) => Boolean = {
+  def generatePostFilters(additionnalFilter: (Int) => Boolean = _ => true)(node:Int): (Int) => Boolean = {
     val filters: List[(Int) => Boolean] = List(additionnalFilter) ++ vRPExtensions.map(_.postFilter(node))
     def filterAll(neighbor: Int): Boolean ={
       val filtersIterator = filters.toIterator
@@ -130,8 +129,8 @@ class VRP(val m: Store, val n: Int, val v: Int,
     filterAll
   }
 
-  def preComputedRelevantNeighborsOfNodes(routedNodes:Boolean): Array[List[Int]] ={
-    val nodesList = if(routedNodes) routed.value.toList else unrouted.value.toList
+  def preComputedRelevantNeighborsOfNodes: Array[List[Int]] ={
+    val nodesList = nodes.toList
     def preComputeRelevantNeighborsOfNode(node: Int): List[Int] = {
       var relevantNeighbors: List[Int] = nodesList
       for (extension <- vRPExtensions)

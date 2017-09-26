@@ -129,6 +129,20 @@ object RoutingMatrixGenerator {
     (earlyLines,deadLines,taskDurations,maxWaitingDuration)
   }
 
+  def generateMaxTravelDurations(precedences: List[List[Int]],
+                                 earlylines: Array[Int],
+                                 travelDurationMatrix: TTFMatrix): Map[(Int,Int),Int] ={
+    def maxTravelDurationOfPrecedence(from: Int, toProceed: List[Int], maxTravelDurations: List[((Int,Int),Int)]): List[((Int,Int),Int)] ={
+      toProceed match{
+        case Nil => maxTravelDurations
+        case to::Nil => ((from,to),(travelDurationMatrix.getTravelDuration(from,earlylines(from),to)*1.5).toInt) :: maxTravelDurations
+        case to::tail => maxTravelDurationOfPrecedence(to, tail,((from,to),(travelDurationMatrix.getTravelDuration(from,earlylines(from),to)*1.5).toInt) :: maxTravelDurations)
+      }
+    }
+
+    precedences.flatMap(p => maxTravelDurationOfPrecedence(p.head,p.tail,List.empty)).toMap
+  }
+
   def generateLinearTravelTimeFunction(n:Int,distanceMatrix: Array[Array[Int]]): TTFMatrix = {
     val ttf = new TTFMatrix(n, new TTFConst(500))
     for (i <- 0 until n)

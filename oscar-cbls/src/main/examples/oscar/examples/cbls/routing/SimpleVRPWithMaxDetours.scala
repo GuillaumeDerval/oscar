@@ -11,7 +11,7 @@ import oscar.cbls.lib.search.combinators.Profile
   * Created by fg on 12/05/17.
   */
 
-object SimpleVRPWithTimeWindow extends App{
+object SimpleVRPWithMaxDetours extends App{
   val m = new Store(noCycle = false/*, checker = Some(new ErrorChecker)*/)
   val v = 10
   val n = 100
@@ -20,7 +20,8 @@ object SimpleVRPWithTimeWindow extends App{
   val travelDurationMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistance)
   val precedences = RoutingMatrixGenerator.generatePrecedence(n,v,(n-v)/2).map(p => List(p._1,p._2))
   val (earlylines, deadlines, taskDurations, maxWaitingDurations) = RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,travelDurationMatrix,precedences)
-  
+  val maxTravelDurations = RoutingMatrixGenerator.generateMaxTravelDurations(precedences,earlylines,travelDurationMatrix)
+
   val myVRP =  new VRP(m,n,v)
 
   // Distance
@@ -48,7 +49,8 @@ object SimpleVRPWithTimeWindow extends App{
     addEarlylines(earlylines).
     addDeadlines(deadlines).
     addTaskDurations(taskDurations).
-    addMaxWaitingDurations(maxWaitingDurations).build()
+    addMaxWaitingDurations(maxWaitingDurations).
+    addMaxTravelDurations(maxTravelDurations).build()
 
   //Chains
   val precedenceInvariant = new Precedence(myVRP.routes,precedences.map(p => (p.head,p.last)))
@@ -58,7 +60,8 @@ object SimpleVRPWithTimeWindow extends App{
   val (fastConstrains,slowConstraints) = PDPConstraints(myVRP,
     timeWindow = Some(timeWindowExtension),
     timeWindowInvariant = Some(tiweWindowInvariant),
-    precedences = Some(precedenceInvariant))
+    precedences = Some(precedenceInvariant),
+    maxTravelDurations = Some(maxTravelDurations))
   val obj = new CascadingObjective(fastConstrains,
     new CascadingObjective(slowConstraints,
       distanceExtension.totalDistance + (penaltyForUnrouted*(n - length(myVRP.routes)))))
@@ -106,7 +109,7 @@ object SimpleVRPWithTimeWindow extends App{
           Int.MaxValue,
           false)
       }
-      )
+    )
 
   }
 

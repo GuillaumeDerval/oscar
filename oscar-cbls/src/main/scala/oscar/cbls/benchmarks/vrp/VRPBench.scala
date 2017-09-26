@@ -186,8 +186,9 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
 
   val routingDistance = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistanceMatrix,true,true,false)
   val distanceExtension = new Distance(myVRP,symmetricDistanceMatrix,routingDistance)
-  val closestRoutedRelevantNeighborsByDistance = Array.tabulate(n)(distanceExtension.computeClosestPathFromNeighbor(myVRP.preComputedRelevantNeighborsOfNodes(true)))
-  val closestUnRoutedRelevantNeighborsByDistance = Array.tabulate(n)(distanceExtension.computeClosestPathFromNeighbor(myVRP.preComputedRelevantNeighborsOfNodes(false)))
+  val closestRelevantNeighborsByDistance = Array.tabulate(n)(distanceExtension.computeClosestPathFromNeighbor(myVRP.preComputedRelevantNeighborsOfNodes))
+  def routedPostFilter(node:Int) = myVRP.generatePostFilters(myVRP.isRouted)(node)
+  def unroutedPostFilter(node:Int) = myVRP.generatePostFilters((x: Int) => !myVRP.isRouted(x))(node)
 
   val penaltyForUnrouted  = 10000
 
@@ -199,18 +200,18 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
 
   model.close()
 
-  val routeUnroutdPoint =  Profile(insertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,closestRoutedRelevantNeighborsByDistance,myVRP.isRouted), myVRP,neighborhoodName = "InsertUF"))
+  val routeUnroutdPoint =  Profile(insertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,closestRelevantNeighborsByDistance,routedPostFilter), myVRP,neighborhoodName = "InsertUF"))
 
   //TODO: using post-filters on k-nearest is probably crap
-  val routeUnroutdPoint2 =  Profile(insertPointRoutedFirst(myVRP.routed,()=> myVRP.kFirst(10,closestRoutedRelevantNeighborsByDistance, x => !myVRP.isRouted(x)),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.routes.value.size < n/2))
+  val routeUnroutdPoint2 =  Profile(insertPointRoutedFirst(myVRP.routed,()=> myVRP.kFirst(10,closestRelevantNeighborsByDistance,unroutedPostFilter),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.routes.value.size < n/2))
 
-  def onePtMove(k:Int) = Profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRoutedRelevantNeighborsByDistance,myVRP.isRouted), myVRP))
+  def onePtMove(k:Int) = Profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), myVRP))
 
-  val customTwoOpt = Profile(twoOpt(myVRP.routed, ()=> myVRP.kFirst(20,closestRoutedRelevantNeighborsByDistance,myVRP.isRouted), myVRP))
+  val customTwoOpt = Profile(twoOpt(myVRP.routed, ()=> myVRP.kFirst(20,closestRelevantNeighborsByDistance,routedPostFilter), myVRP))
 
-  def customThreeOpt(k:Int, breakSym:Boolean) = Profile(threeOpt(myVRP.routed, ()=> myVRP.kFirst(k,closestRoutedRelevantNeighborsByDistance), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
+  def customThreeOpt(k:Int, breakSym:Boolean) = Profile(threeOpt(myVRP.routed, ()=> myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
-  val search = (bestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, onePtMove(10),customTwoOpt, customThreeOpt(10,true))) exhaust customThreeOpt(20,true))
+  val search = bestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, onePtMove(10),customTwoOpt, customThreeOpt(10,true))) exhaust customThreeOpt(20,true)
 
   // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10) guard (() => myVRP.unrouted.value.size != 0)),10)) exhaust BestSlopeFirst(List(onePtMove(20),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
 

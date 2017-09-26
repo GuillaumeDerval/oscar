@@ -18,15 +18,15 @@ object PDPConstraints {
              capacityInvariant: Option[ForwardCumulativeConstraintOnVehicle] = None,
              timeWindow: Option[TimeWindow] = None,
              timeWindowInvariant: Option[ForwardCumulativeIntegerIntegerDimensionOnVehicle] = None,
-             maxDetours: Option[Array[(Int,Int,Int)]] = None,
+             maxTravelDurations: Option[Map[(Int,Int),Int]] = None,
              precedences: Option[Precedence] = None,
              carExclusivitiesSubsets: Option[IncludedSubsets] = None,
              nodeVehicleObligations: Option[Array[CBLSIntVar]] = None
            ): (ConstraintSystem,ConstraintSystem) ={
     require((timeWindow.isDefined && timeWindowInvariant.isDefined) || (timeWindow.isEmpty && timeWindowInvariant.isEmpty),
     "You can either define the timeWindow and the timeWindowInvariant or you defined neither of them")
-    require((maxDetours.isDefined && timeWindowInvariant.isDefined) || maxDetours.isEmpty,
-    "If you use maxDetours constraints, you must defined a timeWindowInvariant")
+    require((maxTravelDurations.isDefined && timeWindowInvariant.isDefined) || maxTravelDurations.isEmpty,
+    "If you use maxTravelDurations constraints, you must defined a timeWindowInvariant")
 
     val fastConstraints = new ConstraintSystem(vrp.routes.model)
     val slowConstraints = new ConstraintSystem(vrp.routes.model)
@@ -35,7 +35,7 @@ object PDPConstraints {
     if(capacityInvariant.isDefined) pDPConstraints.addCapacityConstraint(capacityInvariant.get)
     if(timeWindowInvariant.isDefined && timeWindow.isDefined) pDPConstraints.addTimeWindowConstraints(timeWindow.get,timeWindowInvariant.get)
     if(precedences.isDefined) pDPConstraints.addPrecedencesConstraints(precedences.get)
-    if(maxDetours.isDefined) pDPConstraints.addMaxDetoursConstraints(timeWindowInvariant.get,maxDetours.get)
+    if(maxTravelDurations.isDefined) pDPConstraints.addMaxTravelDurationConstraint(timeWindowInvariant.get,maxTravelDurations.get)
     if(carExclusivitiesSubsets.isDefined) pDPConstraints.addExclusiveCarConstraints(carExclusivitiesSubsets.get)
     if(nodeVehicleObligations.isDefined) pDPConstraints.addVehiclesObligations(nodeVehicleObligations.get)
 
@@ -73,13 +73,15 @@ class PDPConstraints(vrp: VRP, fastConstraints: ConstraintSystem, slowConstraint
     * The actual travel duration between two nodes can't be more than x seconds longer than
     * the shortest travel duration between this two nodes.
     * (If there is some nodes between from and to, the shortest path go through this nodes)
+    * @param timeWindowInvariant The timeWindowInvariant to which the maxTravelDurations are attached
+    * @param maxTravelDurations A map : ((from,to) => maxTravelDuration)
     */
-  private def addMaxDetoursConstraints(timeWindowInvariant: ForwardCumulativeIntegerIntegerDimensionOnVehicle, maxDetours: Array[(Int,Int,Int)]) = {
+  private def addMaxTravelDurationConstraint(timeWindowInvariant: ForwardCumulativeIntegerIntegerDimensionOnVehicle, maxTravelDurations: Map[(Int,Int),Int]) = {
     val arrivalTimes = timeWindowInvariant.content1AtNode
     val leaveTimes = timeWindowInvariant.content2AtNode
 
-    for(maxDetour <- maxDetours){
-      slowConstraints.post(LE(arrivalTimes(maxDetour._1) - leaveTimes(maxDetour._2),maxDetour._3))
+    for(maxDetour <- maxTravelDurations){
+      slowConstraints.post(LE(arrivalTimes(maxDetour._1._2) - leaveTimes(maxDetour._1._1),maxDetour._2))
     }
   }
 

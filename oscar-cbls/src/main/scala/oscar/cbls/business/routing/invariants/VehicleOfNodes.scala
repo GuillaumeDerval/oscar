@@ -24,12 +24,12 @@ import oscar.cbls.business.routing.invariants.convention.RoutingConventionMethod
 object VehicleOfNodes{
 
   /**
-   * maintains an array mapping each node to the vehicle reaching it.
-   * if the node is unrouted, its corresponding vehicle is set to v
-   * @param routes a sequence representing all routed
-   * @param v the number of vehicles
-   * @return an array that mas each node in 0..route.maxValue to the vehicle reaching it
-   */
+    * maintains an array mapping each node to the vehicle reaching it.
+    * if the node is unrouted, its corresponding vehicle is set to v
+    * @param routes a sequence representing all routed
+    * @param v the number of vehicles
+    * @return an array that mas each node in 0..route.maxValue to the vehicle reaching it
+    */
   def apply(routes:ChangingSeqValue,v:Int):Array[CBLSIntVar] = {
     val model = routes.model
     val domain = routes.domain
@@ -224,7 +224,9 @@ class VehicleOfNodes(routes:ChangingSeqValue,
       val vehicleOfNodeFromScratch = computeValueFromScratch(savedCheckpoint)
       for (node <- 0 to n-1) {
         if(movedNodesSinceCheckpointArray(node)) {
-          c.check(vehicleOfNodeFromScratch(node) == vehicleOfNodeAtCheckpointForMovedPoints(node))
+          c.check(vehicleOfNodeFromScratch(node) == vehicleOfNodeAtCheckpointForMovedPoints(node),
+            Some("vehicleOfNodeAtCheckpointForMovedPoints(node)=" + vehicleOfNodeAtCheckpointForMovedPoints(node) +
+              " should== vehicleOfNodeFromScratch(node)=" + vehicleOfNodeFromScratch(node)))
         }
       }
     }
