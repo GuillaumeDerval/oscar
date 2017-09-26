@@ -9,7 +9,17 @@ import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.FunctionGraphic.{AdjustMaxValue, Zoom, ObjFunctionGraphicContainer}
 
 trait UtilityCombinators{
-
+  /**
+    * collects statistics about the run time and progress achieved by neighborhood a
+    * they can be obtained by querying this object with method toString
+    * or globally on the whole neighborhood using the method statistics
+    * WARNING: do not use this inside an AndThen,
+    *          since the objective function is instrumented by this combinator, so the statistics will be counter-intuitive
+    *
+    * @param a
+    * @param ignoreInitialObj
+    */
+  def profile(a:Neighborhood,ignoreInitialObj:Boolean = false) = Profile(a,ignoreInitialObj)
 }
 
 

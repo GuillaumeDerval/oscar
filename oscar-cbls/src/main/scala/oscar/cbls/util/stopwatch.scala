@@ -35,7 +35,7 @@ trait StopWatch {
   /**returns the time elapsed since the last call to startWatch.
    * time is wall clock time in milliseconds
    */
-  def getWatch:Long = (System.nanoTime() - starttime)/1000
+  def getWatch:Long = (System.nanoTime() - starttime)/(1000*1000)
 
   /**returns a string describing the time elapsed since last startWatch
    * formatted for humans: hh:mm:ss:ms

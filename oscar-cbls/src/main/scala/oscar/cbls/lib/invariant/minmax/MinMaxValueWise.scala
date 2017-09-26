@@ -19,12 +19,17 @@ class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default:
 
   private val n = constArray.length
   private val range = 0 until n
+
+  //TODO: this is very slow!
   private val idSortedByIncreasingValue:Array[Int] = range.toArray.sortBy(a => constArray(a))
+
   private var nbListenedVals = 0
   private val idToTheirPositionNumber:Array[Int] = Array.fill(n)(-1)
   for(i <- range){
     idToTheirPositionNumber(idSortedByIncreasingValue(i)) = i
   }
+
+  //TODO: should be total registration in case there are less than, say, 10 values in the set!
 
   registerStaticDependency(condSet)
   private val key:ValueWiseKey = registerDynamicValueWiseDependency(condSet)
