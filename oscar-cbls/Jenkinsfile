@@ -2,7 +2,7 @@ node {
     env.JAVA_HOME="${tool 'jdk-1.8.121'}"
     env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
     env.SBT_HOME = "${tool 'sbt-1.0.0-M4'}"
-    env.PARAMS = "-Dis_cetic=true -DBRANCH_NAME=${env.BRANCH_NAME} -DREVISION_ID=${env.MERCURIAL_REVISION} -DBUILD_ID=${env.BUILD_TAG}"
+    env.PARAMS = "-Dis_cetic=true -DBRANCH_NAME='${env.BRANCH_NAME}' -DREVISION_ID='${env.MERCURIAL_REVISION}' -DBUILD_ID='${env.BUILD_TAG}'"
     env.SBT_CMD = "${env.SBT_HOME}/bin/sbt -Dsbt.log.noformat=true ${env.PARAMS} 'project oscar-cbls'"
 
     email_to = "oscar.cbls-cetic@lists.cetic.be"
