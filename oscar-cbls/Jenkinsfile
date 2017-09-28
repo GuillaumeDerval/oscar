@@ -21,16 +21,16 @@ node {
             poll: false
         }
         stage('Build') {
-            sh "${env.SBT_CMD} compile"
+            sh "${env.SBT_CMD} compile -Dis_cetic=true"
         }
         stage('Test') {
-            sh "${env.SBT_CMD} test"
+            sh "${env.SBT_CMD} test -Dis_cetic=true"
         }
         stage('Package') {
-            sh "${env.SBT_CMD} package -Xdisable-assertions"
+            sh "${env.SBT_CMD} package -Xdisable-assertions -Dis_cetic=true"
         }
         stage('Publish') {
-            sh "${env.SBT_CMD} publish -Xdisable-assertions"
+            sh "${env.SBT_CMD} publish -Xdisable-assertions -Dis_cetic=true"
         }
         
     }
