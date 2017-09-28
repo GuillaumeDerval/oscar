@@ -91,7 +91,10 @@ object SimpleVRPWithTimeWindow extends App{
     }
   }
 
-  val firstNodeOfChainMove = onePointMove(() => myVRP.routed.value.filter(x => x >= v && chainsExtension.isHead(x)),()=> myVRP.kFirst(v*2,closestRelevantNeighborsByDistance,postFilter), myVRP,neighborhoodName = "MoveHeadOfChain")
+  val firstNodeOfChainMove = onePointMove(
+    () => myVRP.routed.value.filter(chainsExtension.isHead),
+    ()=> myVRP.kFirst(v*2,closestRelevantNeighborsByDistance,postFilter),
+    myVRP,neighborhoodName = "MoveHeadOfChain")
 
   def lastNodeOfChainMove(lastNode:Int) = onePointMove(() => List(lastNode),()=> myVRP.kFirst(v*2,chainsExtension.computeRelevantNeighborsForLastNode,postFilter), myVRP,neighborhoodName = "MoveLastOfChain")
 

@@ -33,7 +33,7 @@ class VRP(val m: Store, val n: Int, val v: Int,
 
   val vehicleOfNode = vehicleOfNodes(routes,v)
 
-  val routed = Content(routes.createClone(Int.MaxValue)).setName("routed nodes")
+  val routed = Content(routes.createClone(50)).setName("routed nodes")
   val unrouted = Diff(CBLSSetConst(SortedSet(nodes:_*)),routed).setName("unrouted nodes")
 
   m.registerForPartialPropagation(unrouted)
