@@ -35,6 +35,7 @@ case class Content(v:SeqValue)
   finishInitialization()
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) : Unit = {
+    println("NNNNNNNNNNNNNNNNnotifySeqChanges + size:" +changes.depth)
     if(!digestUpdates(changes)) {
       updateFromScratch(changes.newValue)
     }
@@ -48,13 +49,15 @@ case class Content(v:SeqValue)
   def digestUpdates(changes : SeqUpdate):Boolean = {
     changes match {
       case SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
+        println("Content::SeqUpdateInsert")
         if (!digestUpdates(prev)) return false
         this :+= value
         true
       case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
-        //println("SeqUpdateMove(fromIncluded : " + fromIncluded +  " toIncluded : " + toIncluded +  " after : " + after + " flip : " + flip  + ")")
+        println("Content::SeqUpdateMove(fromIncluded : " + fromIncluded +  " toIncluded : " + toIncluded +  " after : " + after + " flip : " + flip  + ")")
         digestUpdates(prev)
       case r@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
+        println("Content::SeqUpdateRemove")
         if (!digestUpdates(prev)) return false
         val value = r.removedValue
         if (changes.newValue.nbOccurrence(value) == 0){
@@ -62,17 +65,21 @@ case class Content(v:SeqValue)
         }
         true
       case r@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
-        //println("SeqUpdateRollBackToCheckpoint(checkpointLevel:" + checkpointLevel + ")")
+        println("Content::SeqUpdateRollBackToCheckpoint(checkpointLevel:" + checkpointLevel + ")")
         digestUpdates(r.howToRollBack)
 
       case SeqUpdateLastNotified(value) =>
+        println("Content::SeqUpdateLastNotified")
+
         require(value quickEquals v.value)
         //start at the previous value; easy game.
         true
       case SeqUpdateAssign(value:IntSequence) =>
         //raw assign, no incremental possible
+        println("Content::SeqUpdateAssign")
         false
       case SeqUpdateDefineCheckpoint(prev:SeqUpdate,isStarMode:Boolean,checkpointLevel) =>
+        println("Content::SeqUpdateDefineCheckpoint")
         digestUpdates(prev)
     }
   }
