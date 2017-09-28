@@ -63,7 +63,7 @@ object SimpleVRPWithTimeWindow extends App{
       distanceExtension.totalDistance + (penaltyForUnrouted*(n - length(myVRP.routes)))))
 
   m.close()
-  def postFilter(node:Int) = myVRP.generatePostFilters(myVRP.isRouted)(node)
+  val postFilter = Array.tabulate(n)(myVRP.generatePostFilters(myVRP.isRouted))
   val closestRelevantNeighborsByDistance = Array.tabulate(n)(distanceExtension.computeClosestPathFromNeighbor(myVRP.preComputedRelevantNeighborsOfNodes))
 
 
@@ -93,8 +93,7 @@ object SimpleVRPWithTimeWindow extends App{
 
   val firstNodeOfChainMove = onePointMove(
     () => myVRP.routed.value.filter(chainsExtension.isHead),
-    ()=> myVRP.kFirst(v*2,closestRelevantNeighborsByDistance,postFilter),
-    myVRP,neighborhoodName = "MoveHeadOfChain")
+    ()=> myVRP.kFirst(v*2,closestRelevantNeighborsByDistance,postFilter), myVRP,neighborhoodName = "MoveHeadOfChain")
 
   def lastNodeOfChainMove(lastNode:Int) = onePointMove(() => List(lastNode),()=> myVRP.kFirst(v*2,chainsExtension.computeRelevantNeighborsForLastNode,postFilter), myVRP,neighborhoodName = "MoveLastOfChain")
 

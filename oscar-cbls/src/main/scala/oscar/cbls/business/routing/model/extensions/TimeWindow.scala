@@ -17,16 +17,18 @@ class TimeWindow(vrp: VRP,
                  val maxWaitingDurations: Array[Int],
                  val maxTravelDurations: Map[(Int,Int),Int]) extends VRPExtension(vrp){
 
-  val arrivalTime = (timeInvariant.content1AtEnd ++ timeInvariant.content1AtNode).map(_.value)
-  val leaveTime = (timeInvariant.content2AtStart ++ timeInvariant.content2AtNode).map(_.value)
+  def arrivalTime = (timeInvariant.content1AtEnd ++ timeInvariant.content1AtNode).map(_.value)
+  def leaveTime = (timeInvariant.content2AtStart ++ timeInvariant.content2AtNode).map(_.value)
 
   private val relevantPredecessorsOfNodes =
     Array.tabulate(vrp.n)(node => node -> HashSet(vrp.nodes.collect{
-      case predecessor if earlylines(predecessor) <= deadlines(node) && predecessor != node => predecessor
+      case predecessor if earlylines(predecessor) + taskDurations(predecessor) + timeMatrix.getTravelDuration(predecessor, earlylines(predecessor) + taskDurations(predecessor), node) + taskDurations(node) <= deadlines(node) && predecessor != node => predecessor
     }:_*)).toMap
 
-  private def relevantSuccessorsOfNode(node: Int, successor: Int) =
-    deadlines(successor) >= (earlylines(node) + timeMatrix.getTravelDuration(node,earlylines(node) + taskDurations(node),successor))
+  private val relevantSuccessorsOfNodes =
+    Array.tabulate(vrp.n)(node => node -> HashSet(vrp.nodes.collect{
+      case successor if deadlines(successor) >= (earlylines(node) + timeMatrix.getTravelDuration(node,earlylines(node) + taskDurations(node),successor) + taskDurations(successor)) => successor
+    }:_*)).toMap
 
   override def preComputeRelevantNeighborsOfNode(node: Int, potentialRelevantNeighbors: List[Int]): List[Int] = {
     potentialRelevantNeighbors.filter(relevantPredecessorsOfNodes(node))
@@ -43,7 +45,7 @@ class TimeWindow(vrp: VRP,
     val routeExplorer = vrp.routes.value.explorerAtAnyOccurrence(neighbor)
     val successor = if(routeExplorer.isDefined) routeExplorer.get.next else None
 
-    (successor.isDefined && relevantSuccessorsOfNode(node, successor.get.value)) || successor.isEmpty
+    (successor.isDefined && relevantSuccessorsOfNodes(node).contains(successor.get.value)) || successor.isEmpty
   }
 
 
