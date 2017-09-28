@@ -1,10 +1,8 @@
 package oscar.cbls.business.routing.model.extensions
 
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.visual.MatrixMap.{RoutingMap, RoutingMapContainer}
+import oscar.cbls.business.routing.visual.routingMap.{RoutingMap, RoutingMapContainer}
 import oscar.examples.cbls.routing.visual.ColorGenerator
-
-import scala.collection.immutable.HashSet
 
 /**
   * Created by fg on 18/09/17.

@@ -28,7 +28,7 @@ import oscar.cbls.core.computation.IntValue
 import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.FunctionGraphic.{ObjFunctionGraphicContainer, Zoom}
 import oscar.examples.cbls.routing.visual.ColorGenerator
-import oscar.cbls.visual.MatrixMap.RoutingMapContainer
+import oscar.cbls.business.routing.visual.routingMap.RoutingMapContainer
 
 import scala.swing.{Dimension, Insets}
 /*
