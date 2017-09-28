@@ -2,7 +2,8 @@ node {
     env.JAVA_HOME="${tool 'jdk-1.8.121'}"
     env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
     env.SBT_HOME = "${tool 'sbt-1.0.0-M4'}"
-    env.SBT_CMD = "${env.SBT_HOME}/bin/sbt -Dsbt.log.noformat=true 'project oscar-cbls'"
+    env.PARAMS = "-Dis_cetic=true -DBRANCH_NAME=${env.BRANCH_NAME} -DREVISION_ID=${env.MERCURIAL_REVISION} -DBUILD_ID=${env.BUILD_TAG}"
+    env.SBT_CMD = "${env.SBT_HOME}/bin/sbt -Dsbt.log.noformat=true ${env.PARAMS} 'project oscar-cbls'"
 
     email_to = "oscar.cbls-cetic@lists.cetic.be"
 
@@ -21,16 +22,16 @@ node {
             poll: false
         }
         stage('Build') {
-            sh "${env.SBT_CMD} compile -Dis_cetic=true"
+            sh "${env.SBT_CMD} compile"
         }
         stage('Test') {
-            sh "${env.SBT_CMD} test -Dis_cetic=true"
+            sh "${env.SBT_CMD} test"
         }
         stage('Package') {
-            sh "${env.SBT_CMD} package -Xdisable-assertions -Dis_cetic=true"
+            sh "${env.SBT_CMD} package -Xdisable-assertions "
         }
         stage('Publish') {
-            sh "${env.SBT_CMD} publish -Xdisable-assertions -Dis_cetic=true"
+            sh "${env.SBT_CMD} publish -Xdisable-assertions"
         }
         
     }
