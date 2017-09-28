@@ -1,4 +1,4 @@
-if(System.setProperty("is_cetic")){
+if(System.getProperty("is_cetic")){
   publishTo := {
     val artifactory = "http://maven.oscar.ext.cetic.be:8081/artifactory/"
     if (isSnapshot.value)
