@@ -26,11 +26,13 @@ import oscar.cbls.util.StopWatch
 
 object TSPDemo extends App {
 
-  val n = 1000
-  val v = 1
-  val displayDelay = 2000 //ms
+  println("usage: VRPDemo n v")
+  val n:Int=args(0).toInt
+  val v = args(1).toInt
+
+  val displayDelay = if (n >= 1000) 1500 else 500 //ms
   val verbose = 1
-  val maxPivotPerValuePercent = 3
+  val maxPivotPerValuePercent = 4
   val mapSide = 1000
 
   new TSPDemo(n,v,maxPivotPerValuePercent,verbose,displayDelay, mapSide)

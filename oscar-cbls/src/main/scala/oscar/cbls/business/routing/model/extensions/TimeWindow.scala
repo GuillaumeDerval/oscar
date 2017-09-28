@@ -25,15 +25,8 @@ class TimeWindow(vrp: VRP,
       case predecessor if earlylines(predecessor) <= deadlines(node) && predecessor != node => predecessor
     }:_*)).toMap
 
-  private val relevantSuccessorsOfNode =
-    Array.tabulate(vrp.n)(node => node -> HashSet(vrp.nodes.collect{
-      case successor if deadlines(successor) >=
-        (earlylines(node) + timeMatrix.getTravelDuration(node,earlylines(node) + taskDurations(node),successor)) => successor
-    }: _*)).toMap
-
-
-
-
+  private def relevantSuccessorsOfNode(node: Int, successor: Int) =
+    deadlines(successor) >= (earlylines(node) + timeMatrix.getTravelDuration(node,earlylines(node) + taskDurations(node),successor))
 
   override def preComputeRelevantNeighborsOfNode(node: Int, potentialRelevantNeighbors: List[Int]): List[Int] = {
     potentialRelevantNeighbors.filter(relevantPredecessorsOfNodes(node))
@@ -50,7 +43,7 @@ class TimeWindow(vrp: VRP,
     val routeExplorer = vrp.routes.value.explorerAtAnyOccurrence(neighbor)
     val successor = if(routeExplorer.isDefined) routeExplorer.get.next else None
 
-    (successor.isDefined && relevantSuccessorsOfNode(node).contains(successor.get.value)) || successor.isEmpty
+    (successor.isDefined && relevantSuccessorsOfNode(node, successor.get.value)) || successor.isEmpty
   }
 
 

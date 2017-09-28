@@ -1,15 +1,15 @@
 package oscar.cbls.business.routing.model
 
+import oscar.cbls.business.routing.model.extensions.VRPExtension
+import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.routing.model.extensions.VRPExtension
-import oscar.cbls.core.computation.{CBLSSeqVar, CBLSSetConst, Store}
 import oscar.cbls.business.routing._
 import oscar.cbls.lib.invariant.seq.Content
 import oscar.cbls.lib.invariant.set.Diff
 
-import scala.collection.immutable.{HashSet, List, SortedSet}
+import scala.collection.immutable.{List, SortedSet}
 
 /**
   * Created by fg on 12/09/17.
@@ -129,7 +129,7 @@ class VRP(val m: Store, val n: Int, val v: Int,
     filterAll
   }
 
-  def preComputedRelevantNeighborsOfNodes: Array[List[Int]] ={
+  lazy val preComputedRelevantNeighborsOfNodes: Array[List[Int]] ={
     val nodesList = nodes.toList
     def preComputeRelevantNeighborsOfNode(node: Int): List[Int] = {
       var relevantNeighbors: List[Int] = nodesList

@@ -192,7 +192,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
           case MoveFound(m : Move) =>
             require(m.objAfter < bestObj)
             bestObj = m.objAfter
-            toReturn = MoveFound(CompositeMove(List(a.instantiateCurrentMove(intermediaryObjValue),m),bestObj))
+            toReturn = MoveFound(CompositeMove(List(a.instantiateCurrentMove(intermediaryObjValue),m),bestObj,"DynAndThen"))
             bestObj
         }
       }

@@ -770,7 +770,7 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
   private[this] var topCheckpointIsStarMode : Boolean = false
   private[this] var levelOfTopCheckpoint:Int = -1
 
-
+  def currentCheckpointLevel = levelOfTopCheckpoint
   def getTopCheckpoint : IntSequence = topCheckpoint
   def getTopCheckpointIsStarMode : Boolean = topCheckpointIsStarMode
   def getLevelOfTopCheckpoint:Int = levelOfTopCheckpoint

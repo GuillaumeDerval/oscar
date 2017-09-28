@@ -88,14 +88,14 @@ object RoutingConventionMethods {
 
   def routingPredVal2Val(value:Int, seq:IntSequence, v:Int):Int = {
     if(value < v) {
-        //looking for the end node of vehicle value
-        if(value == v-1) {
-          //it is the last vehicle
-          seq.valueAtPosition(seq.size-1).get
-        }else {
-          //there is oe vehicle above
-          seq.valueAtPosition(seq.positionOfAnyOccurrence(value+1).get-1).get
-        }
+      //looking for the end node of vehicle value
+      if(value == v-1) {
+        //it is the last vehicle
+        seq.valueAtPosition(seq.size-1).get
+      }else {
+        //there is oe vehicle above
+        seq.valueAtPosition(seq.positionOfAnyOccurrence(value+1).get-1).get
+      }
     }else {
       //simple predecessor
       seq.valueAtPosition(seq.positionOfAnyOccurrence(value).get-1).get
@@ -105,6 +105,10 @@ object RoutingConventionMethods {
 
   def routingPredPos2Val(position:Int, seq:IntSequence, v:Int):Int = {
     routingPredVal2Val(seq.valueAtPosition(position).get, seq, v)
+  }
+
+  def isVehicleMoving(vehicle:Int, seq:IntSequence, v:Int):Boolean = {
+    routingSuccVal2Val(vehicle, seq:IntSequence, v:Int) != vehicle
   }
 }
 

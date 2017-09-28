@@ -41,7 +41,7 @@ class Chains(vrp: VRP, chains: List[List[Int]]) extends VRPExtension(vrp){
   def firstNodeInChainOfNode(node: Int): Int = chainOfNode(node).head
   def lastNodeInChainOfNode(node: Int): Int = chainOfNode(node).last
 
-  private def isHead(node: Int): Boolean = chainOfNode(node).head == node
+  def isHead(node: Int): Boolean = chainOfNode(node).head == node
   private def isLast(node: Int): Boolean = chainOfNode(node).last == node
 
 

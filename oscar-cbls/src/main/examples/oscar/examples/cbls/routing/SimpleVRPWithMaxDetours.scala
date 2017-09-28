@@ -4,7 +4,6 @@ import oscar.cbls.business.routing.model.extensions._
 import oscar.cbls.business.routing._
 import oscar.cbls._
 import oscar.cbls.lib.invariant.routing.PDPConstraints
-import oscar.cbls.lib.invariant.seq.Precedence
 import oscar.cbls.lib.search.combinators.Profile
 
 /**
@@ -53,7 +52,7 @@ object SimpleVRPWithMaxDetours extends App{
     addMaxTravelDurations(maxTravelDurations).build()
 
   //Chains
-  val precedenceInvariant = new Precedence(myVRP.routes,precedences.map(p => (p.head,p.last)))
+  val precedenceInvariant = precedence(myVRP.routes,precedences.map(p => (p.head,p.last)))
   val chainsExtension = new Chains(myVRP,precedences)
 
   //Constraints & objective
@@ -95,7 +94,7 @@ object SimpleVRPWithMaxDetours extends App{
     }
   }
 
-  val firstNodeOfChainMove = onePointMove(() => chainsExtension.heads.filter(myVRP.isRouted),()=> myVRP.kFirst(v*2,closestRelevantNeighborsByDistance,postFilter), myVRP,neighborhoodName = "MoveHeadOfChain")
+  val firstNodeOfChainMove = onePointMove(() => myVRP.routed.value.filter(chainsExtension.isHead),()=> myVRP.kFirst(v*2,closestRelevantNeighborsByDistance,postFilter), myVRP,neighborhoodName = "MoveHeadOfChain")
 
   def lastNodeOfChainMove(lastNode:Int) = onePointMove(() => List(lastNode),()=> myVRP.kFirst(v*2,chainsExtension.computeRelevantNeighborsForLastNode,postFilter), myVRP,neighborhoodName = "MoveLastOfChain")
 

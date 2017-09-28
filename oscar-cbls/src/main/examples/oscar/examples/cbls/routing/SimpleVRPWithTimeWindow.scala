@@ -5,7 +5,6 @@ import oscar.cbls.business.routing._
 import oscar.cbls._
 import oscar.cbls.lib.invariant.routing.PDPConstraints
 import oscar.cbls.lib.invariant.seq.Precedence
-import oscar.cbls.lib.search.combinators.Profile
 
 /**
   * Created by fg on 12/05/17.
@@ -14,7 +13,7 @@ import oscar.cbls.lib.search.combinators.Profile
 object SimpleVRPWithTimeWindow extends App{
   val m = new Store(noCycle = false/*, checker = Some(new ErrorChecker)*/)
   val v = 10
-  val n = 100
+  val n = 1000
   val penaltyForUnrouted = 10000
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
   val travelDurationMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistance)
@@ -92,7 +91,7 @@ object SimpleVRPWithTimeWindow extends App{
     }
   }
 
-  val firstNodeOfChainMove = onePointMove(() => chainsExtension.heads.filter(myVRP.isRouted),()=> myVRP.kFirst(v*2,closestRelevantNeighborsByDistance,postFilter), myVRP,neighborhoodName = "MoveHeadOfChain")
+  val firstNodeOfChainMove = onePointMove(() => myVRP.routed.value.filter(x => x >= v && chainsExtension.isHead(x)),()=> myVRP.kFirst(v*2,closestRelevantNeighborsByDistance,postFilter), myVRP,neighborhoodName = "MoveHeadOfChain")
 
   def lastNodeOfChainMove(lastNode:Int) = onePointMove(() => List(lastNode),()=> myVRP.kFirst(v*2,chainsExtension.computeRelevantNeighborsForLastNode,postFilter), myVRP,neighborhoodName = "MoveLastOfChain")
 
@@ -105,12 +104,10 @@ object SimpleVRPWithTimeWindow extends App{
           None,
           Int.MaxValue,
           false)
-      }
-      )
-
+      })name "OneChainMove"
   }
 
-  def onePtMove(k:Int) = Profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance,postFilter), myVRP))
+  def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance,postFilter), myVRP))
 
   // INSERTING
 
@@ -148,7 +145,7 @@ object SimpleVRPWithTimeWindow extends App{
           None,
           Int.MaxValue,
           false)
-      })
+      })name "OneChainInsert"
 
   }
 
@@ -159,7 +156,7 @@ object SimpleVRPWithTimeWindow extends App{
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
-  search.verbose = 2
+  search.verbose = 1
   //search.verboseWithExtraInfo(4, ()=> "" + myVRP)
 
 
