@@ -105,14 +105,15 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       println("Operator timeout: " + (endIter - System.nanoTime())/1000000000.0 + "s")
     }
 
-    val oldObjective = currentSol.get.objective
-
     //New search using selected strategies:
     val (relaxFunction, _, _) = relax.getFunction
     val (searchFunction, searchFailures, searchDiscrepancy) = search.getFunction
     if(searchFailures.isDefined) nFailures = searchFailures.get
 
     var relaxDone = true
+    val oldObjective = currentSol.get.objective
+    val iterStart = System.nanoTime()
+
     val stats = solver.startSubjectTo(stopCondition, searchDiscrepancy.getOrElse(Int.MaxValue), null) {
       try {
         relaxFunction(currentSol.get)
@@ -123,30 +124,28 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       if (relaxDone) searchFunction(currentSol.get)
     }
 
+    val iterEnd = System.nanoTime()
+    val newObjective = currentSol.get.objective
+
     if(searchFailures.isDefined) nFailures = 0 //Restauring failures number to 0
 
     val improvement = math.abs(currentSol.get.objective - oldObjective)
+    val time = iterEnd - iterStart
 
     if(improvement > 0){
       stagnation = 0
-      if(iterTimeout >= config.timeout || stats.time * 1000000 > iterTimeout) iterTimeout = stats.time * 1000000 * 2
+      if(iterTimeout >= config.timeout || time > iterTimeout) iterTimeout = time * 2
     }
     else stagnation += 1
 
     if (relaxDone) {
-      if(stats.completed){
+      //Updating probability distributions:
+      relax.update(iterStart, iterEnd, oldObjective, newObjective, stats, fail = false, iter)
+      search.update(iterStart, iterEnd, oldObjective, newObjective, stats, fail = false, iter)
+      if(stats.completed)
         if(!solver.silent) println("Search space completely explored, improvement: " + improvement)
-        //Updating probability distributions:
-        relax.update(improvement, stats, fail = !learning, iter)
-        search.update(improvement, stats, fail = false, iter)
-        if(config.opDeactivation) relax.setActive(false)
-      }
-      else {
+      else
         if(!solver.silent) println("Search done, Improvement: " + improvement)
-        //Updating probability distributions:
-        relax.update(improvement, stats, fail = !learning && stats.time > iterTimeout, iter)
-        search.update(improvement, stats, fail = !learning && stats.time > iterTimeout, iter)
-      }
 
       if(!relax.isInstanceOf[ALNSReifiedOperator]){
         if (relax.isActive) relaxStore.adapt(relax)
@@ -166,7 +165,7 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
     else {
       if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement)
       //Updating only relax as the the search has not been done:
-      relax.update(improvement, stats, fail = !learning, iter)
+      relax.update(iterStart, iterEnd, oldObjective, newObjective, stats, fail = !learning, iter)
       if(!relax.isInstanceOf[ALNSReifiedOperator]) {
         if (relax.isActive) relaxStore.adapt(relax)
         else {

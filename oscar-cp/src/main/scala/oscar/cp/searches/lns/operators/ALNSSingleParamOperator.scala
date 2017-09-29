@@ -14,13 +14,10 @@ import scala.xml.Elem
   */
 class ALNSSingleParamOperator[T](
                                   name: String,
-                                  perfMetric: (ALNSElement, Int, SearchStatistics) => Double,
-                                  score: Double = 0.0,
-                                  rFactor: Double = 1.0,
                                   failThreshold: Int,
                                   val function: (T) => (CPIntSol => Unit, Option[Int], Option[Int]),
                                   val paramStore: AdaptiveStore[ALNSParameter[T]]
-                                ) extends ALNSOperator(name, perfMetric, score, rFactor, failThreshold){
+                                ) extends ALNSOperator(name, failThreshold){
 
   private var selected: Option[ALNSParameter[T]] = None
 
@@ -33,7 +30,8 @@ class ALNSSingleParamOperator[T](
       name + "(" + param.value + ")",
       param.failThreshold,
       () => function(param.value),
-      (improvement, stats, fail, iter) => updateParam(param, improvement, stats, fail, iter),
+      (tStart, tEnd, objStart, objEnd, iterStats, fail, iter) =>
+        updateParam(param, tStart, tEnd, objStart, objEnd, iterStats, fail, iter),
       (state) => {
         param.setActive(state)
         if(!param.isActive) {
@@ -52,17 +50,34 @@ class ALNSSingleParamOperator[T](
     function(selected.get.value)
   }
 
-  override def update(costImprovement: Int, stats: SearchStatistics, fail: Boolean, iter: Long): Unit = {
+  override def update(
+                       tStart: Long,
+                       tEnd: Long,
+                       objStart: Int,
+                       objEnd: Int,
+                       iterStats: SearchStatistics,
+                       fail: Boolean,
+                       iter: Long
+                     ): Unit = {
     if(selected.isDefined){
-      updateParam(selected.get, costImprovement, stats, fail, iter)
+      updateParam(selected.get, tStart, tEnd, objStart, objEnd, iterStats, fail, iter)
       selected = None
+      super.update(tStart, tEnd, objStart, objEnd, iterStats, fail, iter)
     }
     else throw new Exception("This operator has not been used!")
   }
 
-  private def updateParam(param: ALNSParameter[T], costImprovement: Int, stats: SearchStatistics, fail: Boolean, iter: Long): Unit ={
-    super.update(costImprovement, stats, fail, iter)
-    param.update(costImprovement, stats, fail, iter)
+  private def updateParam(
+                           param: ALNSParameter[T],
+                           tStart: Long,
+                           tEnd: Long,
+                           objStart: Int,
+                           objEnd: Int,
+                           iterStats: SearchStatistics,
+                           fail: Boolean,
+                           iter: Long
+                         ): Unit ={
+    param.update(tStart, tEnd, objStart, objEnd, iterStats, fail, iter)
     paramStore.adapt(param)
     if(!param.isActive){
       paramStore.deactivate(param)

@@ -1,7 +1,6 @@
 package oscar.cp.searches.lns.search
 
-import oscar.algo.search.SearchStatistics
-import oscar.cp.searches.lns.operators.{ALNSBuilder, ALNSElement, ALNSOperator}
+import oscar.cp.searches.lns.operators.ALNSOperator
 import oscar.cp.searches.lns.selection.AdaptiveStore
 
 /**
@@ -15,6 +14,7 @@ class ALNSConfig(
                   val learning: Boolean = false, //Learning phase
                   val relaxStore: Option[AdaptiveStore[ALNSOperator]], //The relax operators to use
                   val searchStore: AdaptiveStore[ALNSOperator], //The search operators to use
-                  val opDeactivation: Boolean = false //Wether Failing operators can be deactivated or not
+                  val strategy: String = "default", //The ALNS search strategy to use
+                  val opDeactivation: Boolean = false //Whether Failing operators can be deactivated or not
                 ) {
 }

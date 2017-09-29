@@ -2,6 +2,7 @@ package oscar.cp.searches.lns.operators
 
 import oscar.algo.search.SearchStatistics
 
+import scala.collection.mutable
 import scala.xml.{Elem, NodeBuffer}
 
 /**
@@ -9,19 +10,31 @@ import scala.xml.{Elem, NodeBuffer}
   *
   * @param failThreshold The number of failures after which the element should be deactivated.
   */
-abstract class ALNSElement(
-                            val perfMetric: (ALNSElement, Int, SearchStatistics) => Double,
-                            var score: Double = 0.0,
-                            var rFactor: Double = 1.0,
-                            val failThreshold: Int = 0
-                          ){
+abstract class ALNSElement(val failThreshold: Int = 0){
 
+  protected class ExecStats(
+                             val tStart: Long,
+                             val tEnd: Long,
+                             val objStart: Int,
+                             val objEnd: Int,
+                             val nSols: Int,
+                             val searchCompleted: Boolean,
+                             val nFails: Int,
+                             val iter: Long
+                         ){
+    def time: Long = tEnd - tStart
+
+    def improvement: Int = Math.abs(objEnd - objStart)
+
+    def isSuccessful: Boolean = nSols > 0
+  }
+
+  val stats: mutable.ArrayBuffer[ExecStats] = new mutable.ArrayBuffer[ExecStats]()
   var successfulRuns: Int = 0
-  var execs: Int = 0
   var sols: Int = 0
   var time: Long = 0 //time in nanoseconds
   var improvement: Long = 0
-  var lastSucessIter: Long = 0L
+  var lastSuccessIter: Long = 0L
 
   protected var nFails = 0 //Number of failures of the element
   private var active: Boolean = true
@@ -29,47 +42,62 @@ abstract class ALNSElement(
   /**
     * Updates the element stats and eventual parameters based on the improvement and search statistics given.
     */
-  def update(costImprovement: Int, stats: SearchStatistics, fail: Boolean, iter: Long): Unit = {
-    if(stats.nSols > 0){
-      successfulRuns += 1
-      lastSucessIter = iter
-    }
-    sols += stats.nSols
-    time += stats.time * 1000000
-    improvement += costImprovement
+  def update(
+              tStart: Long,
+              tEnd: Long,
+              objStart: Int,
+              objEnd: Int,
+              iterStats: SearchStatistics,
+              fail: Boolean,
+              iter: Long
+            ): Unit = {
 
-    val perf = perfMetric(this, costImprovement, stats)
-    if(execs > 0) score = rFactor * perf + (1.0 - rFactor) * score
-    else score = perf
+    val execStats = new ExecStats(tStart, tEnd, objStart, objEnd, iterStats.nSols, iterStats.completed, iterStats.nFails, iter)
+    stats += execStats
+
+    if(execStats.isSuccessful){
+      successfulRuns += 1
+      lastSuccessIter = iter
+    }
+
+    sols += execStats.nSols
+    time += execStats.time
+    improvement += execStats.improvement
 
     if(fail){
       nFails +=1
       if(failThreshold != 0 && nFails >= failThreshold) setActive(false)
     }
+  }
 
-    execs += 1
+  def lastExecStats: ExecStats = stats.last
+
+  def execs: Int = stats.length
+
+  def efficiency(duration: Long): Double = {
+    ???
   }
 
   def asXml(cat: String): Elem
 
+  //TODO: Print each exec stats
   protected def wrapStatsToXml(): NodeBuffer = {
     <execs>{execs}</execs>
     <sols>{sols}</sols>
     <successful_runs>{successfulRuns}</successful_runs>
     <time>{time}</time>
     <improvement>{improvement}</improvement>
-    <score>{score}</score>
     <state>{if(active) "active" else "inactive"}</state>
     <fails>{nFails}</fails>
   }
 
+  //TODO: Print each exec stats
   override def toString: String = {
     var s = "\texecs: " + execs
     s += "\n\tsols: " + sols
     s += "\n\tsuccessful runs: " + successfulRuns
     s += "\n\ttime(s): " + time / 1000000000.0
     s += "\n\timprovement: " + improvement
-    s += "\n\tscore: " + score
     s += "\n\tstatus: " + (if(active) "active" else "inactive")
     s += "\n\tfails: " + nFails
     s

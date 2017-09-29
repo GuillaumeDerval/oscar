@@ -150,7 +150,7 @@ class ALNSBuilder(
   def instantiateOperatorStore(operators: Array[ALNSOperator]): AdaptiveStore[ALNSOperator] =
     instantiateAdaptiveStore[ALNSOperator](opSelectionKey, operators, opMetricKey)
 
-  def instantiateMetric(): (ALNSElement, Int, SearchStatistics) => Double = instantiateMetric(opMetricKey)
+  def instantiateMetric(): (ALNSElement) => Double = instantiateMetric(opMetricKey)
 
   /**
     * Instantiates one or more coupled operators depending on the default parameters of the relaxation and search functions.
@@ -166,9 +166,6 @@ class ALNSBuilder(
       maxDiscrepancy <- ALNSBuilder.DefMaxDiscrepancy
     } yield new ALNSNoParamOperator(
       relaxName + "_" + searchName + "(" + (if (nFailures == 0) "NoFailLimit" else nFailures) + "," + (if (maxDiscrepancy == Int.MaxValue) "NoMaxDiscrepancy" else maxDiscrepancy) + ")",
-      instantiateMetric(opMetricKey),
-      computeInitScore(opMetricKey),
-      computeRFactor(opMetricKey),
       if (opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0,
       () => (
         (sol: CPIntSol) => {
@@ -196,218 +193,176 @@ class ALNSBuilder(
 
     case ALNSBuilder.RandomRelax => new ALNSSingleParamOperator[Int](
       ALNSBuilder.RandomRelax,
-      instantiateMetric(opMetricKey),
-      computeInitScore(opMetricKey),
-      computeRFactor(opMetricKey),
       ALNSBuilder.DefWithParamFailThreshold,
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.randomRelax(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
         relaxSize
           .map(x => Math.ceil(N * x).toInt)
-          .map(x => instantiateParameter(x, paramMetricKey, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+          .map(x => instantiateParameter(x, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       )
     )
 
     case ALNSBuilder.KSuccessiveRelax => new ALNSSingleParamOperator[Int](
       ALNSBuilder.KSuccessiveRelax,
-      instantiateMetric(opMetricKey),
-      computeInitScore(opMetricKey),
-      computeRFactor(opMetricKey),
       ALNSBuilder.DefWithParamFailThreshold,
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.successiveRelax(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
         relaxSize
           .map(x => Math.ceil(N * x).toInt)
-          .map(x => instantiateParameter(x, paramMetricKey, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+          .map(x => instantiateParameter(x, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       )
     )
 
     case ALNSBuilder.PropGuidedRelax => new ALNSSingleParamOperator[Double](
       ALNSBuilder.PropGuidedRelax,
-      instantiateMetric(opMetricKey),
-      computeInitScore(opMetricKey),
-      computeRFactor(opMetricKey),
       ALNSBuilder.DefWithParamFailThreshold,
       (param: Double) => ((sol:CPIntSol) => RelaxationFunctions.propagationGuidedRelax(solver, vars, sol: CPIntSol, param: Double), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
         relaxSize
           .map(x => x * maxNeighSize)
-          .map(x => instantiateParameter(x, paramMetricKey, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+          .map(x => instantiateParameter(x, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey)
     )
 
     case ALNSBuilder.RevPropGuidedRelax => new ALNSSingleParamOperator[Double](
       ALNSBuilder.RevPropGuidedRelax,
-      instantiateMetric(opMetricKey),
-      computeInitScore(opMetricKey),
-      computeRFactor(opMetricKey),
       ALNSBuilder.DefWithParamFailThreshold,
       (param: Double) => ((sol:CPIntSol) => RelaxationFunctions.reversedPropagationGuidedRelax(solver, vars, sol: CPIntSol, param: Double), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
         relaxSize
           .map(x => x * maxNeighSize)
-          .map(x => instantiateParameter(x, paramMetricKey, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+          .map(x => instantiateParameter(x, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey)
     )
 
     case ALNSBuilder.RandomValGroupsRelax => new ALNSSingleParamOperator[Int](
       ALNSBuilder.RandomValGroupsRelax,
-      instantiateMetric(opMetricKey),
-      computeInitScore(opMetricKey),
-      computeRFactor(opMetricKey),
       ALNSBuilder.DefWithParamFailThreshold,
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.randomGroupsRelax(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
         relaxSize
           .map(x => Math.ceil(N * x).toInt)
-          .map(x => instantiateParameter(x, paramMetricKey, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+          .map(x => instantiateParameter(x, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       )
     )
 
     case ALNSBuilder.MinValGroupsRelax => new ALNSSingleParamOperator[Int](
       ALNSBuilder.MinValGroupsRelax,
-      instantiateMetric(opMetricKey),
-      computeInitScore(opMetricKey),
-      computeRFactor(opMetricKey),
       ALNSBuilder.DefWithParamFailThreshold,
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.minGroupsRelax(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
         relaxSize
           .map(x => Math.ceil(N * x).toInt)
-          .map(x => instantiateParameter(x, paramMetricKey, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+          .map(x => instantiateParameter(x, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       )
     )
 
     case ALNSBuilder.MaxValGroupsRelax => new ALNSSingleParamOperator[Int](
       ALNSBuilder.MaxValGroupsRelax,
-      instantiateMetric(opMetricKey),
-      computeInitScore(opMetricKey),
-      computeRFactor(opMetricKey),
       ALNSBuilder.DefWithParamFailThreshold,
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.maxGroupsRelax(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
         relaxSize
           .map(x => Math.ceil(N * x).toInt)
-          .map(x => instantiateParameter(x, paramMetricKey, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+          .map(x => instantiateParameter(x, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       )
     )
 
     case ALNSBuilder.MinValRelax => new ALNSSingleParamOperator[Int](
       ALNSBuilder.MinValRelax,
-      instantiateMetric(opMetricKey),
-      computeInitScore(opMetricKey),
-      computeRFactor(opMetricKey),
       ALNSBuilder.DefWithParamFailThreshold,
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.minValRelax(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
         relaxSize
           .map(x => Math.ceil(N * x).toInt)
-          .map(x => instantiateParameter(x, paramMetricKey, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+          .map(x => instantiateParameter(x, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       )
     )
 
     case ALNSBuilder.MaxValRelax => new ALNSSingleParamOperator[Int](
       ALNSBuilder.MaxValRelax,
-      instantiateMetric(opMetricKey),
-      computeInitScore(opMetricKey),
-      computeRFactor(opMetricKey),
       ALNSBuilder.DefWithParamFailThreshold,
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.maxValRelax(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
         relaxSize
           .map(x => Math.ceil(N * x).toInt)
-          .map(x => instantiateParameter(x, paramMetricKey, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+          .map(x => instantiateParameter(x, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       )
     )
 
     case ALNSBuilder.MinMaxValRelax => new ALNSSingleParamOperator[Int](
       ALNSBuilder.MinMaxValRelax,
-      instantiateMetric(opMetricKey),
-      computeInitScore(opMetricKey),
-      computeRFactor(opMetricKey),
       ALNSBuilder.DefWithParamFailThreshold,
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.minMaxValRelax(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
         relaxSize
           .map(x => Math.ceil(N * x).toInt)
-          .map(x => instantiateParameter(x, paramMetricKey, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+          .map(x => instantiateParameter(x, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       )
     )
 
     case ALNSBuilder.CircuitSeqRelax => new ALNSSingleParamOperator[Int](
       ALNSBuilder.CircuitSeqRelax,
-      instantiateMetric(opMetricKey),
-      computeInitScore(opMetricKey),
-      computeRFactor(opMetricKey),
       ALNSBuilder.DefWithParamFailThreshold,
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.predRelaxSeqFixed(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
         relaxSize
           .map(x => Math.ceil(N * x).toInt)
-          .map(x => instantiateParameter(x, paramMetricKey, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+          .map(x => instantiateParameter(x, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       )
     )
 
     case ALNSBuilder.CircuitKoptRelax => new ALNSSingleParamOperator[Int](
       ALNSBuilder.CircuitKoptRelax,
-      instantiateMetric(opMetricKey),
-      computeInitScore(opMetricKey),
-      computeRFactor(opMetricKey),
       ALNSBuilder.DefWithParamFailThreshold,
       (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.predRelaxKopt(solver, vars, sol: CPIntSol, param: Int), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
         relaxSize
           .map(x => Math.ceil(N * x).toInt / 2)
-          .map(x => instantiateParameter(x, paramMetricKey, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+          .map(x => instantiateParameter(x, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       )
     )
 
     case ALNSBuilder.ValWindowRelax => new ALNSTwoParamsOperator[Double, Double](
       ALNSBuilder.ValWindowRelax,
-      instantiateMetric(opMetricKey),
-      computeInitScore(opMetricKey),
-      computeRFactor(opMetricKey),
       ALNSBuilder.DefWithParamFailThreshold,
       (param1: Double, param2: Double) => ((sol:CPIntSol) => RelaxationFunctions.valWindowRelax(solver, vars, sol: CPIntSol, param1: Double, param2:Double), None, None),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.DefValWindowParam1.map(x => instantiateParameter(x, paramMetricKey, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+        ALNSBuilder.DefValWindowParam1.map(x => instantiateParameter(x, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       ),
       instantiateAdaptiveStore(
         paramSelectKey,
-        ALNSBuilder.DefValWindowParam2.map(x => instantiateParameter(x, paramMetricKey, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+        ALNSBuilder.DefValWindowParam2.map(x => instantiateParameter(x, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
         paramMetricKey
       )
     )
 
     case ALNSBuilder.FullRelax => new ALNSNoParamOperator(
       ALNSBuilder.FullRelax,
-      instantiateMetric(opMetricKey),
-      computeInitScore(opMetricKey),
-      computeRFactor(opMetricKey),
       if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0,
       () => (_ => Unit, None, None)
     )
@@ -426,20 +381,17 @@ class ALNSBuilder(
     instantiateSearchFunctions(opKey).map{
       case (name, function) => new ALNSTwoParamsOperator[Int, Int](
         name,
-        instantiateMetric(opMetricKey),
-        computeInitScore(opMetricKey),
-        computeRFactor(opMetricKey),
         if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0,
         (param1: Int, param2: Int) => (function, Some(param1), Some(param2)),
         instantiateAdaptiveStore(
           paramSelectKey,
-          nFailures.map(x => instantiateParameter(x, paramMetricKey, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+          nFailures.map(x => instantiateParameter(x, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
           paramMetricKey
         ),
         instantiateAdaptiveStore(
           paramSelectKey,
           ALNSBuilder.DefMaxDiscrepancy
-            .map(x => instantiateParameter(x, paramMetricKey, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+            .map(x => instantiateParameter(x, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
           paramMetricKey
         )
       )
@@ -592,12 +544,16 @@ class ALNSBuilder(
 
     case ALNSBuilder.RWheel => new RouletteWheel[T](
       elems,
-      computeStoreDirection(metricKey)
+      computeRFactor(metricKey),
+      computeStoreDirection(metricKey),
+      instantiateMetric(metricKey)
     )
 
     case ALNSBuilder.Priority => new PriorityStore[T](
       elems,
-      computeStoreDirection(metricKey)
+      computeRFactor(metricKey),
+      computeStoreDirection(metricKey),
+      instantiateMetric(metricKey)
     )
 
     case ALNSBuilder.Random => new RandomStore[T](elems)
@@ -608,7 +564,7 @@ class ALNSBuilder(
     * @param metricKey the key of the metric function
     * @return a metric function
     */
-  private def instantiateMetric(metricKey: String): (ALNSElement, Int, SearchStatistics) => Double = metricKey match{
+  private def instantiateMetric(metricKey: String): (ALNSElement) => Double = metricKey match{
     case ALNSBuilder.LastImprov => Metrics.lastImprovement
     case ALNSBuilder.LastImprovRatio => Metrics.lastImprovementRatio
     case ALNSBuilder.AvgImprov => Metrics.averageImprovement
@@ -616,17 +572,14 @@ class ALNSBuilder(
     case ALNSBuilder.TTI => Metrics.timeToImprovement
   }
 
-  private def instantiateParameter[T](value: T, metricKey: String, failThreshold: Int): ALNSParameter[T] = new ALNSParameter[T](
+  private def instantiateParameter[T](value: T, failThreshold: Int): ALNSParameter[T] = new ALNSParameter[T](
     value,
-    instantiateMetric(metricKey),
-    computeInitScore(metricKey),
-    computeRFactor(metricKey),
     failThreshold
   )
 
   private def computeRFactor(metricKey: String): Double = metricKey match{
-    case ALNSBuilder.LastImprov => 0.5
-    case ALNSBuilder.LastImprovRatio => 0.5
+    case ALNSBuilder.LastImprov => 0.05
+    case ALNSBuilder.LastImprovRatio => 0.05
     case ALNSBuilder.AvgImprov => 1.0
     case ALNSBuilder.AvgImprovRatio => 1.0
     case ALNSBuilder.TTI => 1.0

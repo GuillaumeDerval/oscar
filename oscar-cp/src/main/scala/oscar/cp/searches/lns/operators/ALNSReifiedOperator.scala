@@ -19,11 +19,19 @@ class ALNSReifiedOperator(
                            name:String,
                            failThreshold: Int,
                            function: () => (CPIntSol => Unit, Option[Int], Option[Int]),
-                           val updateFunction: (Int, SearchStatistics, Boolean, Long) => Unit,
+                           val updateFunction: (Long, Long, Int, Int, SearchStatistics, Boolean, Long) => Unit,
                            val activationFunction: (Boolean) => Unit
-                     ) extends ALNSNoParamOperator(name, (_, _, _) => 0.0, 0.0, 0.0, failThreshold, function){
+                     ) extends ALNSNoParamOperator(name, failThreshold, function){
 
-  override def update(costImprovement: Int, stats: SearchStatistics, fail: Boolean, iter: Long): Unit = updateFunction(costImprovement, stats, fail, iter)
+  override def update(
+                       tStart: Long,
+                       tEnd: Long,
+                       objStart: Int,
+                       objEnd: Int,
+                       iterStats: SearchStatistics,
+                       fail: Boolean,
+                       iter: Long
+                     ): Unit = updateFunction(tStart, tEnd, objStart, objEnd, iterStats, fail, iter)
 
   override def setActive(state: Boolean): Unit = activationFunction(state)
 

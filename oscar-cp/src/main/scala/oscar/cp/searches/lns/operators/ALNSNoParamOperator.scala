@@ -1,6 +1,5 @@
 package oscar.cp.searches.lns.operators
 
-import oscar.algo.search.SearchStatistics
 import oscar.cp.searches.lns.CPIntSol
 
 /**
@@ -10,12 +9,9 @@ import oscar.cp.searches.lns.CPIntSol
   */
 class ALNSNoParamOperator(
                            name: String,
-                           perfMetric: (ALNSElement, Int, SearchStatistics) => Double,
-                           score: Double = 0.0,
-                           rFactor: Double = 1.0,
                            failThreshold: Int,
                            val function: () => (CPIntSol => Unit, Option[Int], Option[Int])
-                         ) extends ALNSOperator(name, perfMetric, score, rFactor, failThreshold){
+                         ) extends ALNSOperator(name, failThreshold){
 
   override def getFunction: (CPIntSol => Unit, Option[Int], Option[Int]) = function()
 

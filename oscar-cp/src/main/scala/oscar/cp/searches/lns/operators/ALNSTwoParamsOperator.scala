@@ -15,14 +15,11 @@ import scala.xml.Elem
   */
 class ALNSTwoParamsOperator[T1, T2](
                                      name: String,
-                                     perfMetric: (ALNSElement, Int, SearchStatistics) => Double,
-                                     score: Double = 0.0,
-                                     rFactor: Double = 1.0,
                                      failThreshold: Int,
                                      val function: (T1, T2) => (CPIntSol => Unit, Option[Int], Option[Int]),
                                      val param1Store: AdaptiveStore[ALNSParameter[T1]],
                                      val param2Store: AdaptiveStore[ALNSParameter[T2]]
-                                   ) extends ALNSOperator(name, perfMetric, score, rFactor, failThreshold){
+                                   ) extends ALNSOperator(name, failThreshold){
 
   private var selected1: Option[ALNSParameter[T1]] = None
   private var selected2: Option[ALNSParameter[T2]] = None
@@ -37,7 +34,8 @@ class ALNSTwoParamsOperator[T1, T2](
       name + "(" + param1.value + ", " + param2.value + ")",
       Math.min(param1.failThreshold, param2.failThreshold),
       () => function(param1.value, param2.value),
-      (improvement, stats, fail, iter) => updateParams(param1, param2, improvement, stats, fail, iter),
+      (tStart, tEnd, objStart, objEnd, iterStats, fail, iter) =>
+        updateParams(param1, param2, tStart, tEnd, objStart, objEnd, iterStats, fail, iter),
       (state) => {
         if(!param1.isActive) {
           param1Store.deactivate(param1)
@@ -63,18 +61,36 @@ class ALNSTwoParamsOperator[T1, T2](
     function(selected1.get.value, selected2.get.value)
   }
 
-  override def update(costImprovement: Int, stats: SearchStatistics, fail: Boolean, iter: Long): Unit = {
+  override def update(
+                       tStart: Long,
+                       tEnd: Long,
+                       objStart: Int,
+                       objEnd: Int,
+                       iterStats: SearchStatistics,
+                       fail: Boolean,
+                       iter: Long
+                     ): Unit = {
     if(selected1.isDefined && selected2.isDefined){
-      updateParams(selected1.get, selected2.get, costImprovement, stats, fail, iter)
+      updateParams(selected1.get, selected2.get, tStart, tEnd, objStart, objEnd, iterStats, fail, iter)
       selected1 = None
       selected2 = None
-      super.update(costImprovement, stats, fail, iter)
+      super.update(tStart, tEnd, objStart, objEnd, iterStats, fail, iter)
     }
     else throw new Exception("This operator has not been used!")
   }
 
-  private def updateParams(param1: ALNSParameter[T1], param2: ALNSParameter[T2], costImprovement: Int, stats: SearchStatistics, fail: Boolean, iter: Long): Unit ={
-    param1.update(costImprovement, stats, fail, iter)
+  private def updateParams(
+                            param1: ALNSParameter[T1],
+                            param2: ALNSParameter[T2],
+                            tStart: Long,
+                            tEnd: Long,
+                            objStart: Int,
+                            objEnd: Int,
+                            iterStats: SearchStatistics,
+                            fail: Boolean,
+                            iter: Long
+                          ): Unit ={
+    param1.update(tStart, tEnd, objStart, objEnd, iterStats, fail, iter)
     param1Store.adapt(param1)
     if(!param1.isActive){
       param1Store.deactivate(param1)
@@ -82,7 +98,7 @@ class ALNSTwoParamsOperator[T1, T2](
       println("Operator " + name + " deactivated")
     }
 
-    param2.update(costImprovement, stats, fail, iter)
+    param2.update(tStart, tEnd, objStart, objEnd, iterStats, fail, iter)
     param2Store.adapt(param2)
     if(!param2.isActive){
       param2Store.deactivate(param2)

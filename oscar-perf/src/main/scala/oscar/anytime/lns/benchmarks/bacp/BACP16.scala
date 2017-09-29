@@ -5,6 +5,6 @@ import oscar.anytime.lns.models.BACP
 
 object BACP16 extends App {
 
-  new BACP("data/bacp/instances12/inst16.txt").main(args)
+  new BACP("data/bacp/instances12/inst16.txt", 2979).main(args)
 
 }

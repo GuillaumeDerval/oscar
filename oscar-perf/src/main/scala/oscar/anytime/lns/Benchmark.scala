@@ -106,6 +106,7 @@ trait Benchmark {
       learning = argMap.getOrElse('learning, false).asInstanceOf[Boolean],
       relaxStore,
       searchStore,
+      argMap.getOrElse('strategy, "default").asInstanceOf[String],
       opDeactivation
     )
 

@@ -10,13 +10,7 @@ import scala.xml.Elem
   *
   * @param name the name of the operator (should be unique for operators used in the same adaptive store).
   */
-abstract class ALNSOperator(
-                             val name: String,
-                             perfMetric: (ALNSElement, Int, SearchStatistics) => Double,
-                             score: Double = 0.0,
-                             rFactor: Double = 1.0,
-                             failThreshold: Int
-                           ) extends ALNSElement(perfMetric, score, rFactor, failThreshold){
+abstract class ALNSOperator(val name: String, failThreshold: Int) extends ALNSElement(failThreshold){
 
   /**
     * Returns the operator function to apply as well as optional meta-parameter values.
@@ -30,8 +24,16 @@ abstract class ALNSOperator(
     *
     * @param id The id of the parameter(s) to update
     */
-  def update(id: Long, costImprovement: Int, stats: SearchStatistics, fail: Boolean, iter: Long): Unit =
-    update(costImprovement, stats, fail, iter)
+  def update(
+              id: Long,
+              tStart: Long,
+              tEnd: Long,
+              objStart: Int,
+              objEnd: Int,
+              iterStats: SearchStatistics,
+              fail: Boolean,
+              iter: Long
+            ): Unit = update(tStart, tEnd, objStart, objEnd, iterStats, fail, iter)
 
   /**
     * Returns the number of active parameter values that the operator holds.

@@ -1,7 +1,5 @@
 package oscar.cp.searches.lns.operators
 
-import oscar.algo.search.SearchStatistics
-
 import scala.xml.Elem
 
 /**
@@ -9,13 +7,7 @@ import scala.xml.Elem
   *
   * @param value The value of the parameter (should be unique for parameters used in the same adaptive store)
   */
-class ALNSParameter[T](
-                        val value: T,
-                        perfMetric: (ALNSElement, Int, SearchStatistics) => Double,
-                        score: Double = 0.0,
-                        rFactor: Double = 1.0,
-                        failThreshold: Int
-                      ) extends ALNSElement(perfMetric, score, rFactor, failThreshold){
+class ALNSParameter[T](val value: T, failThreshold: Int) extends ALNSElement(failThreshold){
 
   //Two parameters are considered equals if their value is equal
   override def equals(obj: scala.Any): Boolean = obj match{
