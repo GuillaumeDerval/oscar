@@ -17,7 +17,7 @@ package oscar.cbls.core.computation
 
 import oscar.cbls.algo.fun.PiecewiseLinearBijectionNaive
 import oscar.cbls.algo.seq.{ConcreteIntSequence, IntSequence, MovedIntSequence, RemovedIntSequence}
-import oscar.cbls.core.propagation.{Checker, ErrorChecker}
+import oscar.cbls.core.propagation.Checker
 
 import scala.language.implicitConversions
 
@@ -1180,7 +1180,6 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
     assert(v == fromValue)
     digestChanges(changes)
-    checkInternals(new ErrorChecker())
   }
 
   private var checkPointStackNotTop:List[IntSequence] = List.empty
