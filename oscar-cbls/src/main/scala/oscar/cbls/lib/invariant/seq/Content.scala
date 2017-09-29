@@ -52,7 +52,6 @@ case class Content(v:SeqValue)
         this :+= value
         true
       case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
-        //println("SeqUpdateMove(fromIncluded : " + fromIncluded +  " toIncluded : " + toIncluded +  " after : " + after + " flip : " + flip  + ")")
         digestUpdates(prev)
       case r@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
         if (!digestUpdates(prev)) return false
@@ -62,7 +61,6 @@ case class Content(v:SeqValue)
         }
         true
       case r@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
-        //println("SeqUpdateRollBackToCheckpoint(checkpointLevel:" + checkpointLevel + ")")
         digestUpdates(r.howToRollBack)
 
       case SeqUpdateLastNotified(value) =>
