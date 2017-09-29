@@ -24,6 +24,6 @@ val ceticSpecificsBuild = Def.taskDyn {
     } 
   }
   else{
-    Def.task { }
+    Def.task { ; }
   }
 }
