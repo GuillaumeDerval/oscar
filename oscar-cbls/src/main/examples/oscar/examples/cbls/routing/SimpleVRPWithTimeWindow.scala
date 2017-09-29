@@ -91,18 +91,11 @@ object SimpleVRPWithTimeWindow extends App{
     }
   }
 
-  //causes an overflow!
-  val firstNodeOfChainMove =
-    onePointMove(
-      () => chainsExtension.heads.filter(myVRP.isRouted),
-      ()=> myVRP.kFirst(v*2,closestRelevantNeighborsByDistance,postFilter),
-      myVRP,neighborhoodName = "MoveHeadOfChain")
-
-/*  val firstNodeOfChainMove = onePointMove(
+  val firstNodeOfChainMove = onePointMove(
     () => myVRP.routed.value.filter(chainsExtension.isHead),
     ()=> myVRP.kFirst(v*2,closestRelevantNeighborsByDistance,postFilter),
     myVRP,neighborhoodName = "MoveHeadOfChain")
-*/
+
   def lastNodeOfChainMove(lastNode:Int) = onePointMove(() => List(lastNode),()=> myVRP.kFirst(v*2,chainsExtension.computeRelevantNeighborsForLastNode,postFilter), myVRP,neighborhoodName = "MoveLastOfChain")
 
   val oneChainMove = {
@@ -117,7 +110,7 @@ object SimpleVRPWithTimeWindow extends App{
       })name "OneChainMove"
   }
 
-  def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance,postFilter), myVRP) name "I will crash you!")
+  def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance,postFilter), myVRP))
 
   // INSERTING
 
