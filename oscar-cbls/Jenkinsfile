@@ -20,7 +20,7 @@ node {
             poll: false
         }
         
-        env.PARAMS = "-Dis_cetic=true -DBRANCH_NAME='${env.BRANCH_NAME}' -DREVISION_ID='${env.MERCURIAL_REVISION}' -DBUILD_ID='${env.BUILD_ID}'"
+        env.PARAMS = "-Dcetic -DBRANCH_NAME='${env.BRANCH_NAME}' -DREVISION_ID='${env.MERCURIAL_REVISION}' -DBUILD_ID='${env.BUILD_ID}'"
         env.SBT_CMD = "${env.SBT_HOME}/bin/sbt -Dsbt.log.noformat=true ${env.PARAMS} 'project oscar-cbls'"
 
         stage('Build') {

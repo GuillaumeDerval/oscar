@@ -92,7 +92,7 @@ object OscarBuild extends Build {
 
 
   def ceticSpecificSettings = {
-    if(Option(System.getProperty("is_cetic")).isDefined) Seq(
+    if(Option(System.getProperty("cetic")).isDefined) Seq(
       publishTo := {
         val artifactory = "http://maven.oscar.ext.cetic.be:8081/artifactory/"
         if (isSnapshot.value)
