@@ -19,7 +19,7 @@ import java.io.{File, PrintWriter}
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.model.extensions.Distance
+import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.lib.search.combinators.Profile
 import oscar.cbls.util.StopWatch
 
@@ -180,30 +180,30 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
 
   startWatch()
   //  println("restrictions:" + restrictions)
-  val model = new Store() //checker = Some(new ErrorChecker()))
+  val model = new Store()//checker = Some(new ErrorChecker))
 
   val myVRP = new VRP(model,n,v)
 
   val routingDistance = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistanceMatrix,true,true,false)
-  val distanceExtension = new Distance(myVRP,symmetricDistanceMatrix,routingDistance)
-  val closestRelevantNeighborsByDistance = Array.tabulate(n)(distanceExtension.computeClosestPathFromNeighbor(myVRP.preComputedRelevantNeighborsOfNodes))
-  def routedPostFilter(node:Int) = myVRP.generatePostFilters(myVRP.isRouted)(node)
-  def unroutedPostFilter(node:Int) = myVRP.generatePostFilters((x: Int) => !myVRP.isRouted(x))(node)
 
   val penaltyForUnrouted  = 10000
 
-  val obj = Objective(distanceExtension.totalDistance + (penaltyForUnrouted*(n - length(myVRP.routes))))
+  val obj = Objective(DistanceHelper.totalDistance(routingDistance) + (penaltyForUnrouted*(n - length(myVRP.routes))))
 
   override def toString : String = super.toString +  "objective: " + obj.value + "\n"
 
-  val nodes = myVRP.nodes
-
   model.close()
+
+  val relevantPredecessorsOfNodes = (node:Int) => myVRP.nodes
+  val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.computeClosestPathFromNeighbor(symmetricDistanceMatrix,relevantPredecessorsOfNodes))
+
+  val routedPostFilter = (node:Int) => (neighbor:Int) => myVRP.isRouted(neighbor)
+  val unRoutedPostFilter = (node:Int) => (neighbor:Int) => !myVRP.isRouted(neighbor)
 
   val routeUnroutdPoint =  Profile(insertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,closestRelevantNeighborsByDistance,routedPostFilter), myVRP,neighborhoodName = "InsertUF"))
 
   //TODO: using post-filters on k-nearest is probably crap
-  val routeUnroutdPoint2 =  Profile(insertPointRoutedFirst(myVRP.routed,()=> myVRP.kFirst(10,closestRelevantNeighborsByDistance,unroutedPostFilter),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.routes.value.size < n/2))
+  val routeUnroutdPoint2 =  Profile(insertPointRoutedFirst(() => myVRP.routed.value.toList.filter(_>=v),()=> myVRP.kFirst(10,closestRelevantNeighborsByDistance,unRoutedPostFilter),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.routes.value.size < n/2))
 
   def onePtMove(k:Int) = Profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), myVRP))
 

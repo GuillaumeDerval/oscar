@@ -13,7 +13,7 @@ class Display(vrp: VRP,
               selectRouteToDisplay: Boolean = false,
               sizeOfMap: Option[Int] = None,
               refreshRate: Int = 100
-             ) extends VRPExtension(vrp) {
+             ) {
 
   val routingMap = RoutingMap(vrp,nodePositions, ColorGenerator.generateRandomColors(vrp.v),displayOnRealMap = displayOnRealMap, size = sizeOfMap)
 
@@ -23,11 +23,5 @@ class Display(vrp: VRP,
   def drawRoutes(): Unit ={
     RoutingMapContainer.setMustRefresh(true)
   }
-
-  override def preComputeRelevantNeighborsOfNode(node: Int, potentialRelevantNeighbors: List[Int]): List[Int] = {
-    potentialRelevantNeighbors
-  }
-
-  override def postFilter(node: Int) = (neighbor: Int) => true
 
 }

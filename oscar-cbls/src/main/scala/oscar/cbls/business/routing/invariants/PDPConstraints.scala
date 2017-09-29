@@ -1,4 +1,4 @@
-package oscar.cbls.lib.invariant.routing
+package oscar.cbls.business.routing.invariants
 
 import oscar.cbls._
 import oscar.cbls.business.routing._

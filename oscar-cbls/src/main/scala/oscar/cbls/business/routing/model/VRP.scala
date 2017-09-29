@@ -1,8 +1,6 @@
 package oscar.cbls.business.routing.model
 
-import oscar.cbls.business.routing.model.extensions.VRPExtension
 import oscar.cbls._
-import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing._
@@ -17,7 +15,6 @@ import scala.collection.immutable.{List, SortedSet}
 class VRP(val m: Store, val n: Int, val v: Int,
           val maxPivotPerValuePercent: Int = 4){
 
-  var vRPExtensions: QList[VRPExtension] = null
 
   val routes = new CBLSSeqVar(m, IntSequence(0 until v), n-1, "routes", maxPivotPerValuePercent=maxPivotPerValuePercent)
 
@@ -75,6 +72,25 @@ class VRP(val m: Store, val n: Int, val v: Int,
   }
 
   /**
+    * Return the next node of the given node
+    *   or n if the node isn't routed
+    *   or None if the node is last of his route
+    * @param node The node we want to get the next
+    * @return the next node of the given node or None
+    */
+  def nextNodeOf(node: Int): Option[Int]={
+    val routeExplorer = routes.value.explorerAtAnyOccurrence(node)
+    if(routeExplorer.isDefined) {
+      val nextNode = routeExplorer.get.next
+      if(nextNode.isDefined && nextNode.get.value > v)
+        return Some(nextNode.get.value)
+      else
+        return None
+    }
+    return Some(n)
+  }
+
+  /**
     * the route of the vehicle, starting at the vehicle node, and not including the last vehicle node
     *
     * @param vehicle
@@ -108,36 +124,6 @@ class VRP(val m: Store, val n: Int, val v: Int,
     }
     val it = routes.value.iterator
     buildRoutePositionOfAllNode(it,0,List.empty)
-  }
-
-  def addExtension(extension: VRPExtension): Unit ={
-    vRPExtensions = QList(extension,vRPExtensions)
-  }
-
-  def generatePostFilters(additionnalFilter: (Int) => Boolean = _ => true)(node:Int): (Int) => Boolean = {
-    val filters: List[(Int) => Boolean] = List(additionnalFilter) ++ vRPExtensions.map(_.postFilter(node))
-    def filterAll(neighbor: Int): Boolean ={
-      val filtersIterator = filters.toIterator
-      var isNeighborValid = true
-      while(filtersIterator.hasNext && isNeighborValid) {
-        if (!filtersIterator.next()(neighbor))
-          isNeighborValid = false
-      }
-      return isNeighborValid
-    }
-
-    filterAll
-  }
-
-  lazy val preComputedRelevantNeighborsOfNodes: Array[List[Int]] ={
-    val nodesList = nodes.toList
-    def preComputeRelevantNeighborsOfNode(node: Int): List[Int] = {
-      var relevantNeighbors: List[Int] = nodesList
-      for (extension <- vRPExtensions)
-        relevantNeighbors = extension.preComputeRelevantNeighborsOfNode(node, relevantNeighbors)
-      relevantNeighbors
-    }
-    Array.tabulate(n)(node => if(node < v) List.empty else preComputeRelevantNeighborsOfNode(node))
   }
 
   /**

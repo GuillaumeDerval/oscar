@@ -2,6 +2,7 @@ package oscar.cbls.business.routing.model.helpers
 
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.model.TTFMatrix
+import oscar.cbls.business.routing.model.extensions.TimeWindow
 
 import scala.collection.immutable.HashSet
 
@@ -28,24 +29,29 @@ object TimeWindowHelper{
     * So we can use them to precompute the relevant predecessors.
     *
     * @param vrp The vehicle routing problem
-    * @param earlylines The earlyline of all nodes (meaning, we can't start the task at node x before (earlyline(x))
-    * @param deadlines The deadline of all nodes (meaning, the task at node x must be finished before (earlyline(x))
+    * @param timeExtension The timeExtension model
     * @return true if the node is relevant
     */
   def relevantPredecessorsOfNodes(vrp: VRP,
-                                  earlylines: Array[Int],
-                                  deadlines: Array[Int],
-                                  taskDurations: Array[Int],
-                                  timeMatrix: TTFMatrix): Map[Int,HashSet[Int]] =
-    Array.tabulate(vrp.n)(node => node -> HashSet(vrp.nodes.collect{
-      case predecessor if earlylines(predecessor) <= deadlines(node) && predecessor != node => predecessor
-    }:_*)).toMap
-
-
+                                  timeExtension: TimeWindow,
+                                  timeMatrix: TTFMatrix): Map[Int,HashSet[Int]] = {
+    val earlylines = timeExtension.earlylines
+    val deadlines = timeExtension.deadlines
+    val taskDurations = timeExtension.taskDurations
+    Array.tabulate(vrp.n)(node => node -> HashSet(vrp.nodes.collect {
+      case predecessor if
+        earlylines(predecessor) +
+          taskDurations(predecessor) +
+          timeMatrix.getTravelDuration(predecessor,earlylines(predecessor)+taskDurations(predecessor),node) +
+          taskDurations(node)
+          <= deadlines(node) &&
+          predecessor != node => predecessor
+    }: _*)).toMap
+  }
   /**
-    * This method is meant to post-filter a relevant predecessor.
+    * This method is meant to precompute the relevant successors of all node.
     *
-    * A node x is an open predecessor of another node y if (considering z, the current next node of x)
+    * A node z is an relevant successor of another node y if
     *   earlyline(y) +
     *   taskDurations(y) +
     *   timeMatrix.getTravelDuration(y, earlylines(y) + taskDurations(y), z) +
@@ -59,28 +65,30 @@ object TimeWindowHelper{
     * and finish the task at z before the deadline of z, then x is an open relevant neighbor of y.
     *
     * All these informations are used to define the problem, therefore they are static.
-    * The only information that's not static is the current next of the relevant predecessor
+    * The only information that's not static is the current next of the relevant predecessor we want to insert after.
+    * But we can precompute all the relevant successor of the node we want to insert
     *
     * @param vrp The vehicle routing problem
-    * @param earlylines The earlyline of all nodes (meaning, we can't start the task at node x before (earlyline(x))
-    * @param deadlines The deadline of all nodes (meaning, the task at node x must be finished before (earlyline(x))
-    * @return true if the node is open
+    * @param timeExtension The timeExtension model
+    * @return An array of precomputed
     */
-  def isPredecessorOpen(vrp: VRP,
-                   earlylines: Array[Int],
-                   deadlines: Array[Int],
-                   taskDurations: Array[Int],
-                   timeMatrix: TTFMatrix)
-                  (node: Int,
-                   neighbor: Int): Boolean = {
-    val routeExplorer = vrp.routes.value.explorerAtAnyOccurrence(neighbor)
-    val successor = if(routeExplorer.isDefined) routeExplorer.get.next else None
+  def relevantSuccessorsOfNodes(vrp: VRP,
+                        timeExtension: TimeWindow,
+                        timeMatrix: TTFMatrix): Map[Int,HashSet[Int]] = {
+    val earlylines = timeExtension.earlylines
+    val deadlines = timeExtension.deadlines
+    val taskDurations = timeExtension.taskDurations
 
-    successor match{
-      case Some(x) =>
-        deadlines(x.value) >= (earlylines(node) + timeMatrix.getTravelDuration(node, earlylines(node) + taskDurations(node), x.value))
-      case None => true
-    }
+    Array.tabulate(vrp.n)(node => node -> HashSet(vrp.nodes.collect {
+      case successor if
+        deadlines(successor)
+        >= (earlylines(node) +
+          taskDurations(node) +
+          timeMatrix.getTravelDuration(node, earlylines(node) + taskDurations(node), successor) +
+          taskDurations(successor)) &&
+        successor != node
+        => successor
+    }: _*)).toMap
   }
 
 
