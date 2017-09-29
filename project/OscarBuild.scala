@@ -5,6 +5,7 @@ import sbt.Keys._
 import de.johoop.jacoco4sbt.JacocoPlugin._
 import xerial.sbt.Pack._
 import sbtunidoc.Plugin._
+import java.util.Date
 
 
 object OscarBuild extends Build {
@@ -89,6 +90,26 @@ object OscarBuild extends Build {
   import Resolvers._
   import UnidocKeys._
 
+
+  def ceticSpecificSettings = {
+    if(Option(System.getProperty("is_cetic")).isDefined) Seq(
+      publishTo := {
+        val artifactory = "http://maven.oscar.ext.cetic.be:8081/artifactory/"
+        if (isSnapshot.value)
+          Some("Artifactory Realm" at artifactory + "sbt-dev;build.timestamp=" + new java.util.Date().getTime)
+        else
+          Some("Artifactory Realm" at artifactory + "sbt-release")
+      },
+      packageOptions += Package.ManifestAttributes(
+        ("REVISION_ID", System.getProperty("REVISION_ID")),
+        ("REVISION_URL", ("https://bitbucket.org/oscarlib/oscar/commits/"+System.getProperty("REVISION_ID")) ),
+        ("JENKINS_BUILD_ID", System.getProperty("BUILD_ID")),
+        ("BUILD_DATE", new Date().toString())
+      )
+    )
+    else Seq()
+  }
+
   lazy val oscar = Project(
     id = "oscar",
     base = file("."),
@@ -125,6 +146,7 @@ object OscarBuild extends Build {
     settings =
       commonSettings ++
         packAutoSettings ++
+        ceticSpecificSettings ++
         Seq(
           resolvers ++= Seq(mvnrepository),
           libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2,
