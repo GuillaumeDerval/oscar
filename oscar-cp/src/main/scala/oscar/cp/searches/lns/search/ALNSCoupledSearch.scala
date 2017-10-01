@@ -1,10 +1,12 @@
 package oscar.cp.searches.lns.search
 
 import oscar.algo.Inconsistency
+import oscar.cp.searches.lns.CPIntSol
 import oscar.cp.{CPIntVar, CPSolver}
-import oscar.cp.searches.lns.operators.{ALNSOperator, ALNSReifiedOperator}
-import oscar.cp.searches.lns.selection.{AdaptiveStore, Metrics}
+import oscar.cp.searches.lns.operators.{ALNSElement, ALNSOperator, ALNSReifiedOperator}
+import oscar.cp.searches.lns.selection.{AdaptiveStore, Metrics, PriorityStore, RouletteWheel}
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
@@ -129,16 +131,19 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
   override def spotTuning(): Unit = ???
 
   override def alnsLoop(): Unit = {
-    if(config.strategy == "alternate") alnsAlternate()
-    else {
-      if (!solver.silent) println("\nStarting adaptive LNS...")
-      println("n operators: " + operators.length)
-      stagnation = 0
-      while (
-        System.nanoTime() < endTime && opStore.nonActiveEmpty && !optimumFound) {
-        lnsIter(opStore.select())
-        if (stagnation > stagnationThreshold) onStagnation()
-      }
+    config.strategy match {
+      case "alternate" => alnsAlternate()
+      case "vbs" => vbs()
+      case _ =>
+        if (!solver.silent) {
+          println("\nStarting adaptive LNS...")
+          println("n operators: " + operators.length)
+        }
+        stagnation = 0
+        while (System.nanoTime() < endTime && opStore.nonActiveEmpty && !optimumFound) {
+          lnsIter(opStore.select())
+          if (stagnation > stagnationThreshold) onStagnation()
+        }
     }
   }
 
@@ -177,17 +182,16 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
 
     if(improvement > 0){
       if(!learning) stagnation = 0
-      if(iterTimeout >= config.timeout || time > iterTimeout) iterTimeout = time * 2
     }
     else if(!learning) stagnation += 1
 
     if (relaxDone) {
       //Updating probability distributions:
       operator.update(iterStart, iterEnd, oldObjective, newObjective, stats, fail = false, iter)
-      if(stats.completed)
-        if(!solver.silent) println("Search space completely explored, improvement: " + improvement)
-      else
-        if(!solver.silent) println("Search done, Improvement: " + improvement)
+      if(stats.completed) {
+        if (!solver.silent) println("Search space completely explored, improvement: " + improvement)
+      }
+      else if(!solver.silent) println("Search done, Improvement: " + improvement)
     }
     else {
       if(!solver.silent) println("Search space empty, search not applied, improvement: " + improvement)
@@ -224,13 +228,93 @@ class ALNSCoupledSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
     opStore.reset()
   }
 
+  val minEfficiencyThreshold = 0.001
+  val efficiencyEvalTime = 10000000000L
 
-
-  def alnsAlternate(): Unit = ???
-
-  def timeLearning(): Unit = {
-    operators.foreach(lnsIter)
+  def alnsAlternate(): Unit = {
+    if (!solver.silent){
+      println("\nStarting adaptive LNS...")
+      println("n operators: " + operators.length)
+    }
+    iterTimeout = config.timeout
+    timeLearning()
+    if(!solver.silent) println("\nStarting dive...")
+    dive()
+    if(!solver.silent) println("\nStagnation, starting exploration")
+    explore()
   }
 
-  def dive(): Unit = ???
+  def timeLearning(): Unit = {
+    Random.shuffle(operators.toSeq).foreach(lnsIter)
+  }
+
+  def dive(): Unit = {
+    val priority = new PriorityStore[ALNSOperator](operators, operators.map(Metrics.timeToImprovement), 1.0, true, Metrics.timeToImprovement)
+    while(System.nanoTime() < endTime && priority.nonActiveEmpty && !optimumFound){
+      val op = priority.select()
+      lnsIter(op)
+      if(op.time >= efficiencyEvalTime && op.efficiency(efficiencyEvalTime) >= minEfficiencyThreshold){
+        op.setActive(false)
+        if(!solver.silent) println("\nOperator " + op.name + " deactivated due to low efficiency!")
+      }
+      if(op.lastExecStats.improvement == 0) priority.deactivate(op)
+      else priority.reset()
+    }
+  }
+
+  def explore(): Unit = {
+    val rwheel = new RouletteWheel[ALNSOperator](operators.filter(_.isActive), operators.filter(_.isActive).map(mab), 1.0, false, mab)
+    while(System.nanoTime() < endTime && rwheel.nonActiveEmpty && !optimumFound){
+      val op = rwheel.select()
+      lnsIter(op)
+      if(op.time >= efficiencyEvalTime && op.efficiency(efficiencyEvalTime) >= minEfficiencyThreshold){
+        op.setActive(false)
+        rwheel.deactivate(op)
+        if(!solver.silent) println("\nOperator " + op.name + " deactivated due to low efficiency!")
+      }
+    }
+  }
+
+  def mab(elem: ALNSElement): Double = {
+    elem.efficiency(efficiencyEvalTime) + Math.sqrt((2 * Math.log(iter))/elem.execs)
+  }
+
+  def vbs(): Unit = {
+    if (!solver.silent){
+      println("\nStarting VBS...")
+      println("n operators: " + operators.length)
+    }
+    var cumulatedTime = 0L
+    iterTimeout = config.timeout
+    endTime = Long.MaxValue
+    val keptSols = new mutable.ListBuffer[CPIntSol]()
+    keptSols ++= solsFound
+
+    while(cumulatedTime < config.timeout && !optimumFound){
+      val startSol = bestSol.get
+      var tUsed = Long.MaxValue
+      var bestPerf = 0.0
+
+      operators.foreach(op =>{
+        lnsIter(op)
+
+        val perf = op.lastExecStats.improvement / (op.lastExecStats.time + 1L)
+        if(perf < bestPerf){
+          bestPerf = perf
+          tUsed = op.lastExecStats.time
+        }
+        else if(perf == bestPerf) tUsed = Math.min(tUsed, op.lastExecStats.time)
+
+        solver.objective.objs.head.relax()
+        solver.objective.objs.head.best = startSol.objective
+        currentSol = Some(startSol)
+      })
+
+      cumulatedTime += tUsed
+      keptSols += new CPIntSol(bestSol.get.values, bestSol.get.objective, cumulatedTime)
+    }
+
+    solsFound.clear()
+    solsFound ++= keptSols
+  }
 }

@@ -1,2 +1,3 @@
---timeout 300 --name Laborie --selection RWheel --metric LastImprov --coupled false --relax RandomRelax --search ConfOrderSearch
---timeout 300 --name OurVersion --selection RWheel --metric LastImprovRatio --coupled true --relax RandomRelax --search ConfOrderSearch
+--timeout 300 --name VBS --coupled true --strategy vbs --relax RandomRelax CircuitSeqRelax CircuitKoptRelax --search ConfOrderSearch --n-failures 1000 --relax-size 0.1
+--timeout 300 --name Alternate --coupled true --strategy alternate --relax RandomRelax CircuitSeqRelax CircuitKoptRelax PropGuidedRelax MinValRelax --search ConfOrderSearch --n-failures 1000 --relax-size 0.1
+--timeout 300 --name Laborie --coupled false --selection RWheel --metric LastImprov --strategy default --relax RandomRelax CircuitSeqRelax CircuitKoptRelax PropGuidedRelax MinValRelax --search ConfOrderSearch --n-failures 1000 --relax-size 0.1

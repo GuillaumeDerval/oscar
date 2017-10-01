@@ -75,8 +75,30 @@ abstract class ALNSElement(val failThreshold: Int = 0){
   def execs: Int = stats.length
 
   def efficiency(duration: Long): Double = {
-    ???
+    var time = 0L
+    var improvement = 0
+    var i = stats.length-1
+    while(time < duration && i >= 0){
+      time += stats(i).time
+      improvement += stats(i).improvement
+      i -= 1
+    }
+    improvement/time
   }
+
+  def efficiency(iterations: Int): Double = {
+    var time = 0L
+    var improvement = 0
+    var i = stats.length-1
+    while(i >= stats.length-iterations && i >= 0){
+      time += stats(i).time
+      improvement += stats(i).improvement
+      i -= 1
+    }
+    improvement/time
+  }
+
+  def efficiency: Double = efficiency(stats.length)
 
   def asXml(cat: String): Elem
 

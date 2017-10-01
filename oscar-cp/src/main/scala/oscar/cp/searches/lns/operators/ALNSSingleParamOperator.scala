@@ -115,10 +115,8 @@ class ALNSSingleParamOperator[T](
   }
 
   override def toString: String = {
-    var s = "Operator:"
-    s += "\n\tname: " + name
-    s += "\n" + super.toString
-    s += "\n\tParameters:" + paramStore.getElements.mkString("\n\t")
+    var s = super.toString
+    s += "\n\tParameters:\n\t" + paramStore.getElements.mkString("\n\t")
     s
   }
 }

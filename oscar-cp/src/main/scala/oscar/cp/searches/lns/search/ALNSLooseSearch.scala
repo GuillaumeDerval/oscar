@@ -142,10 +142,10 @@ class ALNSLooseSearch(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfi
       //Updating probability distributions:
       relax.update(iterStart, iterEnd, oldObjective, newObjective, stats, fail = false, iter)
       search.update(iterStart, iterEnd, oldObjective, newObjective, stats, fail = false, iter)
-      if(stats.completed)
-        if(!solver.silent) println("Search space completely explored, improvement: " + improvement)
-      else
-        if(!solver.silent) println("Search done, Improvement: " + improvement)
+      if(stats.completed) {
+        if (!solver.silent) println("Search space completely explored, improvement: " + improvement)
+      }
+      else if(!solver.silent) println("Search done, Improvement: " + improvement)
 
       if(!relax.isInstanceOf[ALNSReifiedOperator]){
         if (relax.isActive) relaxStore.adapt(relax)

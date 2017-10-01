@@ -146,11 +146,9 @@ class ALNSTwoParamsOperator[T1, T2](
   }
 
   override def toString: String = {
-    var s = "Operator:"
-    s += "\n\tname: " + name
-    s += "\n" + super.toString
-    s += "\n\tParameter 1:" + param1Store.getElements.mkString("\n\t")
-    s += "\n\tParameter 2:" + param2Store.getElements.mkString("\n\t")
+    var s = super.toString
+    s += "\n\tParameter 1:\n\t" + param1Store.getElements.mkString("\n\t")
+    s += "\n\tParameter 2:\n\t" + param2Store.getElements.mkString("\n\t")
     s
   }
 }

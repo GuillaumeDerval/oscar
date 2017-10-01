@@ -91,6 +91,6 @@ class PriorityStore[T <: ALNSElement](
     priority.clear()
     lastSelected.clear()
     deactivated.clear()
-    elems.indices.foreach(priority.add)
+    elems.indices.filter(elems(_).isActive).foreach(priority.add)
   }
 }

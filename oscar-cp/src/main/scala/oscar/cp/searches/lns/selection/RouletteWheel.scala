@@ -91,6 +91,6 @@ class RouletteWheel[T <: ALNSElement](
     weights.indices.foreach(i => weights(i) = perfMetric(elems(i)))
     lastSelected.clear()
     active.clear()
-    active ++= elems.indices
+    active ++= elems.indices.filter(elems(_).isActive)
   }
 }

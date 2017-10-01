@@ -76,7 +76,7 @@ object ALNSBuilder{
   val DefWeigDegreeParam2 = 0.99
 
   // Available value Heuristic functions:
-  val DefValHeuris = Array("Min", "Max"/*, "Median", "Random"*/)
+  val DefValHeuris = Array(/*"Min", */"Max"/*, "Median", "Random"*/)
 
   //Default Backtracking:
   val DefNFailures = Array(10, 100, 1000, 10000, 0)

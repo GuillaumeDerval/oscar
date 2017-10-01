@@ -241,6 +241,9 @@ trait Benchmark {
       case "--metric" :: value :: tail =>
         parseArgs(map ++ Map('metric -> value), tail)
 
+      case "--strategy" :: value :: tail =>
+        parseArgs(map ++ Map('strategy -> value), tail)
+
       case option :: tail =>
         if(isSwitch(option) && tail.isEmpty) println("Option " + option + " has no value")
         else println("Unknown option " + option)
