@@ -327,8 +327,14 @@ class ThreeOpt(variables: Array[CBLSIntVarDom], objective: CBLSObjective, cs: Co
     val idx = selectMax(rng, (i: Int) => variableViolation(i - offset).value);
     val next = selectMin(rng)(next => getMove(idx, next, accept).value)
     // println(idx +  " "+ getMove(idx,vars(idx).value))
-    getMove(idx, next, accept)
 
+/*    cs.getPostedConstraints.foreach({
+    case (c,w) => if(c.violation.value > 0){
+      searchVariables.foreach( v =>
+                                 println("Violation of " +v +" for c " + c+ " : " + c.violation(v)))}
+  })
+  */
+    getMove(idx, next, accept)
   }
 
   def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
@@ -730,7 +736,7 @@ class Inverse(xs: Array[CBLSIntVarDom], invXs: Array[CBLSIntVarDom], objective: 
         }
         xs(idx1) :=: xs(idx2)
         invXs(v1 + offset) :=: invXs(v2 + offset)
-        val newObj = constraintSystem.violation.value
+        val newObj = objective.value
         xs(idx1) :=: xs(idx2)
         invXs(v1 + offset) :=: invXs(v2 + offset)
         acceptOr(new ChainMoves(Array(new SwapMove(xs(idx1), xs(idx2), newObj),

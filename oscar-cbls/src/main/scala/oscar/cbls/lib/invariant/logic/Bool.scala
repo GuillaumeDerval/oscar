@@ -87,7 +87,8 @@ case class Or(vars: Array[IntValue]) extends MiaxArray(vars, null, vars.foldLeft
               Some("this.value (" + this.value + ") <= " + v.name + ".value (" + v.value + ")"))
     }
   }
-}*/
+}
+*/
 
 case class Or(vars: Array[IntValue])
   extends IntInvariant(
@@ -111,6 +112,7 @@ case class Or(vars: Array[IntValue])
             Some("output.value == vars.foldLeft(0)((acc,intvar) => acc+intvar.value)"))
   }
 }
+
 
 /**
   * bool2int(var)
@@ -190,7 +192,7 @@ case class BoolLTInv(a: IntValue, b:IntValue)
   finishInitialization()
 
   override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
-    this :+=
+    /* this :+=
       (if(v == a){
         NewVal-OldVal
       }else{
@@ -200,21 +202,21 @@ case class BoolLTInv(a: IntValue, b:IntValue)
           if(OldVal == 0) 1 else 0
         }
       })
+*/
 
-    /*
     this :=
       (if(v == a){
         if(NewVal == 0 && b.value>0)
           0
         else
-          (NewVal + b.value + 1)/2
+          (NewVal + b.value + 1) / 2
       }else{
         if(NewVal >0 && a.value == 0)
           0
         else
-         (NewVal + a.value + 1)/2
+         (NewVal + a.value + 1) / 2
       })
-    */
+
   }
 }
 

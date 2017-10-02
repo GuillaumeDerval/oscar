@@ -44,6 +44,8 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
   //Create variables from FlatZinc model.
   var vars: List[CBLSIntVarDom] = createVariables()
 
+  var neighbourhoodVars: List[CBLSIntVarDom] = List.empty
+
   var objective = null.asInstanceOf[FZCBLSObjective]
   var neighbourhoods: List[Neighbourhood] = List.empty[Neighbourhood]
   var neighbourhoodGenerator: List[(CBLSObjective,ConstraintSystem) => Neighbourhood] = List.empty[(CBLSObjective,ConstraintSystem) => Neighbourhood]
@@ -57,10 +59,11 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
   }
 
   def initiateVariableViolation() = {
-    vars.map(c.violation(_))
+    vars.foreach(c.violation(_))
+    neighbourhoodVars.foreach(c.violation(_))
   }
 
-  def removeVariablesFromNeighbourhood(condition:(CBLSIntVarDom => Boolean)) = {
+  def removeControlledVariables(condition:(CBLSIntVarDom => Boolean)) = {
     vars = vars.filterNot(condition)
   }
 
@@ -90,10 +93,11 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
   }
 
 
-  def addNeighbourhood(n: (CBLSObjective,ConstraintSystem) => Neighbourhood,removeVars: Array[CBLSIntVarDom]){
+  def addNeighbourhood(n: (CBLSObjective,ConstraintSystem) => Neighbourhood,controlledVars: Array[CBLSIntVarDom]){
     neighbourhoodGenerator = n :: neighbourhoodGenerator
     //neighbourhoods = n :: neighbourhoods
-    vars = vars.filterNot(removeVars.contains(_))
+    vars = vars.filterNot(controlledVars.contains(_))
+    neighbourhoodVars = neighbourhoodVars ++ controlledVars.toList
   }
   def addDefaultNeighbourhoods(){
     if (vars.length > 0) {
