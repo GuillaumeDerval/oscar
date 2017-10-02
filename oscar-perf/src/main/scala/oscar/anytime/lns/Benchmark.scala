@@ -6,8 +6,9 @@ import oscar.anytime.lns.utils.{IOUtils, XmlWriter}
 import oscar.cp.CPSolver
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.searches.lns.CPIntSol
-import oscar.cp.searches.lns.operators.{ALNSBuilder, ALNSOperator, RelaxationFunctions, SearchFunctions}
+import oscar.cp.searches.lns.operators._
 import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch, ALNSSearchResults}
+import oscar.cp.searches.lns.selection.RandomStore
 
 import scala.collection.mutable
 import scala.util.Random
@@ -95,19 +96,23 @@ trait Benchmark {
       else builder.instantiateSearchOperators
     )
 
-    lazy val relaxStore = if(coupled) None
-    else Some(builder.instantiateOperatorStore(builder.instantiateRelaxOperators))
+    lazy val relaxStore = if(coupled) new RandomStore[ALNSOperator](Array(new ALNSNoParamOperator("dummy", 0, () => (_ => Unit, None, None))))
+    else builder.instantiateOperatorStore(builder.instantiateRelaxOperators)
+
+    val metaParams: Map[Symbol, Any] = Map(
+      'coupled -> coupled,
+      'learning -> argMap.getOrElse('learning, false).asInstanceOf[Boolean],
+      'opDeactivation -> opDeactivation
+    )
 
     val config = new ALNSConfig(
+      relaxStore,
+      searchStore,
       argMap.getOrElse('timeout, 0L).asInstanceOf[Long] * 1000000000L,
       bestKnownObjective,
       1000,
-      coupled,
-      learning = argMap.getOrElse('learning, false).asInstanceOf[Boolean],
-      relaxStore,
-      searchStore,
       argMap.getOrElse('strategy, "default").asInstanceOf[String],
-      opDeactivation
+      metaParams
     )
 
     val alns = ALNSSearch(solver, decisionVariables, config)
