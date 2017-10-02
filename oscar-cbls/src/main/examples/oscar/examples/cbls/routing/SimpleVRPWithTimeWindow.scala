@@ -12,7 +12,7 @@ import oscar.cbls.lib.invariant.seq.Precedence
   */
 
 object SimpleVRPWithTimeWindow extends App{
-  val m = new Store(noCycle = false/*, checker = Some(new ErrorChecker)*/)
+  val m = new Store(noCycle = false)
   val v = 10
   val n = 1000
   val penaltyForUnrouted = 10000
@@ -100,7 +100,16 @@ object SimpleVRPWithTimeWindow extends App{
     () => myVRP.routed.value.filter(chainsExtension.isHead),
     ()=> myVRP.kFirst(v*2,closestRelevantPredecessorsByDistance,postFilter), myVRP,neighborhoodName = "MoveHeadOfChain")
 
-  def lastNodeOfChainMove(lastNode:Int) = onePointMove(() => List(lastNode),()=> myVRP.kFirst(v*2,ChainsHelper.relevantNeighborsForLastNodeAfterHead(myVRP,chainsExtension)), myVRP,neighborhoodName = "MoveLastOfChain")
+  def lastNodeOfChainMove(lastNode:Int) = onePointMove(
+    () => List(lastNode),
+    ()=> myVRP.kFirst(v*2,
+      ChainsHelper.relevantNeighborsForLastNodeAfterHead(
+        myVRP,
+        chainsExtension,
+        Some(relevantPredecessorsOfNodes(lastNode).toList)),
+      postFilter),
+    myVRP,
+    neighborhoodName = "MoveLastOfChain")
 
   val oneChainMove = {
     dynAndThen(firstNodeOfChainMove,
@@ -143,7 +152,17 @@ object SimpleVRPWithTimeWindow extends App{
     myVRP.kFirst(v*2,closestRelevantPredecessorsByDistance, postFilter)
   }, myVRP,neighborhoodName = "InsertUF")
 
-  def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(() => List(lastNode),()=> myVRP.kFirst(v*2,ChainsHelper.relevantNeighborsForLastNodeAfterHead(myVRP,chainsExtension)), myVRP,neighborhoodName = "InsertUF")
+  def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(
+    () => List(lastNode),
+    ()=> myVRP.kFirst(
+      v*2,
+      ChainsHelper.relevantNeighborsForLastNodeAfterHead(
+        myVRP,
+        chainsExtension,
+        Some(relevantPredecessorsOfNodes(lastNode).toList)),
+      postFilter),
+    myVRP,
+    neighborhoodName = "InsertUF")
 
   val oneChainInsert = {
     dynAndThen(firstNodeOfChainInsertion,
@@ -176,3 +195,4 @@ object SimpleVRPWithTimeWindow extends App{
 
   search.profilingStatistics
 }
+// TODO : Il faut vérifier le filtrage. En k = v*2, on arrive à tous insérer mais pas en v*2 => pas assez de filtrage

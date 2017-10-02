@@ -82,7 +82,7 @@ class VRP(val m: Store, val n: Int, val v: Int,
     val routeExplorer = routes.value.explorerAtAnyOccurrence(node)
     if(routeExplorer.isDefined) {
       val nextNode = routeExplorer.get.next
-      if(nextNode.isDefined && nextNode.get.value > v)
+      if(nextNode.isDefined && nextNode.get.value >= v)
         return Some(nextNode.get.value)
       else
         return None

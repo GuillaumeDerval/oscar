@@ -14,7 +14,7 @@ import oscar.examples.cbls.routing.SimpleVRPWithTimeWindow.{myVRP, relevantSucce
 object SimpleVRPWithMaxDetours extends App{
   val m = new Store(noCycle = false/*, checker = Some(new ErrorChecker)*/)
   val v = 10
-  val n = 100
+  val n = 1000
   val penaltyForUnrouted = 10000
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
   val travelDurationMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistance)
@@ -65,7 +65,7 @@ object SimpleVRPWithMaxDetours extends App{
   val relevantSuccessorsOfNodes = TimeWindowHelper.relevantSuccessorsOfNodes(myVRP, timeWindowExtension, travelDurationMatrix)
   val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.computeClosestPathFromNeighbor(symmetricDistance,relevantPredecessorsOfNodes))
 
-  val relevantPredecessorsForLastNode = ChainsHelper.relevantNeighborsForLastNodeAfterHead(myVRP,chainsExtension)_
+  def relevantPredecessorsForLastNode(lastNode: Int) = ChainsHelper.relevantNeighborsForLastNodeAfterHead(myVRP,chainsExtension,Some(relevantPredecessorsOfNodes(lastNode).toList))(lastNode)
   val relevantPredecessorsForInternalNodes = ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP, chainsExtension)_
 
   def postFilter(node:Int): (Int) => Boolean = {
@@ -116,11 +116,11 @@ object SimpleVRPWithMaxDetours extends App{
           Int.MaxValue,
           false)
       }
-    )
+    ) name("One Chain Move")
 
   }
 
-  def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance,postFilter), myVRP))
+  def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance,postFilter), myVRP)) name("One Point Move")
 
   // INSERTING
 
@@ -158,7 +158,7 @@ object SimpleVRPWithMaxDetours extends App{
           None,
           Int.MaxValue,
           false)
-      })
+      }) name("One Chain Insert")
 
   }
 
@@ -169,7 +169,7 @@ object SimpleVRPWithMaxDetours extends App{
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
-  search.verbose = 2
+  search.verbose = 1
   //search.verboseWithExtraInfo(4, ()=> "" + myVRP)
 
 
