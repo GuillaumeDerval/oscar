@@ -341,9 +341,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   }
   
   def get_set_in(x: IntegerVariable, s: Domain, ann: List[Annotation]) = {
-    var sset = s.toSortedSet
-    val setVar = new CBLSSetConst(sset)
-    BelongsTo(x, setVar)
+    BelongsToConst(x, s.toSortedSet)
   }
   
   def get_maximum_inv(x: Array[IntegerVariable], ann: List[Annotation]) = {
@@ -405,8 +403,8 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   }*/
   //constrains all variables in xs to take their value in dom
   def domains(xs: Array[IntegerVariable], dom: Array[Int]) = {
-    val setVar = new CBLSSetConst(dom.to[SortedSet])
-    xs.toList.map(x => Weight(BelongsTo(getCBLSVar(x),setVar),100))//TODO: Why 100?
+      //val setVar = new CBLSSetConst(dom.to[SortedSet])
+    xs.toList.map(x => Weight(BelongsToConst(getCBLSVar(x),dom.toSet),100))//TODO: Why 100?
   }
   def get_global_cardinality_low_up(closed: Boolean, xs: Array[IntegerVariable],vs: Array[IntegerVariable],lows: Array[Int],ups:Array[Int]) = {
     //TODO: Use a lighter version!

@@ -20,7 +20,7 @@ package oscar.flatzinc.cbls.support
 
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.constraint.{Constraint, ConstraintSystem}
-import oscar.cbls.lib.constraint.{BelongsTo, EQ, GE, LE}
+import oscar.cbls.lib.constraint._
 import oscar.flatzinc.model.Domain
 import oscar.flatzinc.model.DomainRange
 import oscar.flatzinc.model.DomainSet
@@ -102,14 +102,18 @@ object EnsureDomain{
     //val weight = CBLSIntVar(c.model,10,1 to 1000000, "in domain weight")
     d match{
       case DomainRange(min, max) =>{
-        if(i.min < min){
-//          Console.err.println("added "+i)
-          c.add(GE(i, min),weight)
+        if(min == max){
+          c.add(EQ(i,min),weight)
+        }else{
+          if(i.min < min){
+  //          Console.err.println("added "+i)
+            c.add(GE(i, min),weight)
+          }
+          if(i.max > max){
+  //          Console.err.println("added "+i)
+            c.add(LE(i, max),weight)
+          }
         }
-        if(i.max > max){
-//          Console.err.println("added "+i)
-          c.add(LE(i, max),weight)
-        } 
       } 
       case DomainSet(vals) => {
         if(i.min < d.min){
@@ -121,7 +125,7 @@ object EnsureDomain{
 //          Console.err.println("added "+i)
         }
 //        Console.err.println("addedX "+i)
-        c.add(BelongsTo(i,CBLSSetConst(SortedSet[Int]()++vals)) /*.nameConstraint("EnsureDomain constraint of " + c)*/)//no weight
+        c.add(BelongsToConst(i,vals.toSet) /*.nameConstraint("EnsureDomain constraint of " + c)*/)//no weight
       }
     }
   }

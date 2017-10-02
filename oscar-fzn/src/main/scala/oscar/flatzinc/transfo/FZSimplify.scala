@@ -92,9 +92,9 @@ object FZSimplify{
     c match{
       case reif(bool_eq(x,y,ann),b) if x.isFalse => bool_not(y,b,ann)
       case reif(bool_eq(x,y,ann),b) if y.isFalse => bool_not(x,b,ann)
-      case array_bool_or(as,r, ann) if r.isTrue && as.exists(_.isFalse)=>
+      case array_bool_or(as,r, ann) if as.exists(_.isFalse)=>
         array_bool_or(as.filterNot(_.isFalse),r,ann)
-      case array_bool_and(as,r, ann) if r.isTrue && as.exists(_.isTrue)=>
+      case array_bool_and(as,r, ann) if as.exists(_.isTrue)=>
         array_bool_and(as.filterNot(_.isTrue),r,ann)
       case bool_xor(x,y,z,ann) => 
         if (x.isTrue) bool_not(y,z,ann)
@@ -219,6 +219,10 @@ object FZSimplify{
           b.leq(Math.pow(a.max,e.max).toInt);
           b.geq(Math.max(0, Math.pow(a.min,e.min).toInt));
           true
+          //This is incorrect due to rounding...
+        //case int_div(a,b,c,_) if b.isBound => {
+        //  a.inter(DomainSet(c.domain.toSortedSet.map(_*b.value)))
+       // }; true
         case bool_le(x, y, _) if x.isBound => if(x.boolValue) y.bind(true); true
         case bool_le(x, y, _) if y.isBound => if(!y.boolValue) x.bind(false); true
         case int_eq(x, y, _) if x.isBound => y.bind(x.value); true

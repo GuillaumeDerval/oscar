@@ -103,6 +103,57 @@ case class DenseCount(values: Array[IntValue], counts: Array[CBLSIntVar], offset
   }
 }
 
+/**
+  * Maintains the number of occurances of c \in values
+  *
+  * @author gustav.bjordal@it.uu.se
+  * */
+/*
+case class ConstCount(values: Array[IntValue], c: Int)
+  extends IntInvariant
+    with IntNotificationTarget{
+
+  registerStaticAndDynamicDependencyArrayIndex(values)
+
+  this := values.count(v => v.value == c)
+  for (v <- values.indices) {
+    counts(values(v).value+offset) :+= 1
+  }
+
+  finishInitialization()
+
+  for (c <- counts) { c.setDefiningInvariant(this) }
+
+  @inline
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
+    assert(values(index) == v)
+    counts(OldVal + offset) :-= 1
+    counts(NewVal + offset) :+= 1
+  }
+
+  override def checkInternals(c: Checker) {
+    /**
+      * Maintains a count of the indexes of array:
+      * count(j) = #{i in index of values | values[i] == j}
+      * This is considered as a dense count because counts is
+      * an array and must cover all the possibles values of the values
+      * in the array ''values''
+      */
+    val myCounts = Array.fill[Int](counts.length)(0)
+    for (i <- values.indices) {
+      val v = values(i).value
+      myCounts(v+offset) = myCounts(v+offset) + 1
+    }
+
+    for (j <- counts.indices) {
+      c.check(counts(j+offset).value == myCounts(j+offset),
+              Some("counts(" + j + "+offset).getValue(false) (" + counts(j+offset).value
+                     + ") == myCounts(" + j + "+offset) (" + myCounts(j+offset) + ")"))
+    }
+  }
+}
+*/
+
 object DenseCount{
   def makeDenseCount(vars: Array[IntValue]):DenseCount = {
     val ((minMin,maxMax)) = InvariantHelper.getMinMaxBounds(vars)
