@@ -44,26 +44,7 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
   val maximizeObjective: Option[Boolean] = if(solver.objective.objs.nonEmpty) Some(solver.objective.objs.head.isMax) else None
   if(!solver.silent) println("Objective type: " + (if(maximizeObjective.isDefined) if(maximizeObjective.get) "max" else "min" else "none"))
 
-  solver.onSolution{
-    val time = System.nanoTime() - startTime
-
-    if(maximizeObjective.isDefined) {
-      currentSol = Some(new CPIntSol(vars.map(_.value), solver.objective.objs.head.best, time))
-      optimumFound = solver.objective.isOptimum() || (config.objective.isDefined && ((maximizeObjective.get && solver.objective.objs.head.best >= config.objective.get) || (!maximizeObjective.get && solver.objective.objs.head.best <= config.objective.get)))
-      if(bestSol.isEmpty || (maximizeObjective.get && currentSol.get.objective > bestSol.get.objective) || (!maximizeObjective.get && currentSol.get.objective < bestSol.get.objective)){
-        previousBest = bestSol
-        bestSol = currentSol
-        solsFound += currentSol.get
-      }
-    }
-
-    else{
-      currentSol = Some(new CPIntSol(vars.map(_.value), 0, time))
-      optimumFound = true //In case of CSP, no point of searching another solution
-      bestSol = currentSol
-      solsFound += currentSol.get
-    }
-  }
+  solver.onSolution(onSolution())
 
   //Learning phase:
   var learning = false //Currently in learning phase
@@ -82,6 +63,26 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
   lazy val searchOps: Array[ALNSOperator] = searchStore.getElements.toArray
 
   lazy val nOpCombinations: Int = relaxOps.filter(_.isActive).map(_.nParamVals).sum * searchOps.filter(_.isActive).map(_.nParamVals).sum
+
+  protected def onSolution(): Unit = {
+    val time = System.nanoTime() - startTime
+
+    if(maximizeObjective.isDefined) {
+      currentSol = Some(new CPIntSol(vars.map(_.value), solver.objective.objs.head.best, time))
+      optimumFound = solver.objective.isOptimum() || (config.objective.isDefined && ((maximizeObjective.get && solver.objective.objs.head.best >= config.objective.get) || (!maximizeObjective.get && solver.objective.objs.head.best <= config.objective.get)))
+      if (bestSol.isEmpty || (maximizeObjective.get && currentSol.get.objective > bestSol.get.objective) || (!maximizeObjective.get && currentSol.get.objective < bestSol.get.objective)) {
+        previousBest = bestSol
+        bestSol = currentSol
+        solsFound += currentSol.get
+      }
+    }
+    else{
+      currentSol = Some(new CPIntSol(vars.map(_.value), 0, time))
+      optimumFound = true //In case of CSP, no point of searching another solution
+      bestSol = currentSol
+      solsFound += currentSol.get
+    }
+  }
 
   protected def searchFirstSol(): Unit = {
     if(!solver.silent) println("Starting first solution search...")
