@@ -31,7 +31,7 @@ import scala.collection.immutable.SortedSet
  * @param hotRestart
  * @param tryFlip if false, will not flip any segment (maybe you do not want flipping if using time windows?)
  */
-case class SegmentExchange(val vrp: VRP,
+case class SegmentExchange(vrp: VRP,
                            relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
                            vehicles:() => Iterable[Int],
                            neighborhoodName:String = "SegmentExchange",
@@ -90,7 +90,7 @@ case class SegmentExchange(val vrp: VRP,
       val routeWithRelevantNeighborsTheirVehicleAndPositionGroupedByVehicles:List[(Int,Int,Map[Int,Iterable[(Int,Int,Int)]])] = routeOfVehicle1.map(node =>
         (node, seqValue.positionOfAnyOccurrence(node).head, relevantNeighborsNow(node)
           .map(node => (node,if(node >=v && nodeToRoute(node)!=n) nodeToRoute(node) else -1))
-          .filter({case (node,routeNr) => node >= v && allVehiclesToIterateOn.contains(routeNr)})
+          .filter({case (nodeNr,routeNr) => nodeNr >= v && allVehiclesToIterateOn.contains(routeNr)})
           .map(nodeAndRoute => (nodeAndRoute._1,nodeAndRoute._2,seqValue.positionOfAnyOccurrence(nodeAndRoute._1).head))
           .groupBy(nodeAndRoute => nodeAndRoute._2))
       )
@@ -219,7 +219,3 @@ case class SegmentExchangeMove(firstSegmentStartPosition:Int,
       " secondSegmentStartPosition:" + secondSegmentStartPosition + " secondSegmentEndPosition:" + secondSegmentEndPosition + " flipSecondSegment:" + flipSecondSegment + objToString + ")"
   }
 }
-
-
-
-

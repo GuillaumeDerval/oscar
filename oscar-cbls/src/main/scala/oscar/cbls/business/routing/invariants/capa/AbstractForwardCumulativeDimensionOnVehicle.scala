@@ -167,4 +167,3 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
     }
   }
 }
-

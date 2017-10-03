@@ -176,7 +176,7 @@ class Activity(var duration: IntValue, val planning: Planning, val name: String 
 
       potentiallyKilledPredecessors = Inter(definingPredecessors, additionalPredecessors)
 
-      allSucceedingActivities = new CBLSSetVar(planning.model, SortedSet.empty, 0 to planning.activityCount - 1,
+      allSucceedingActivities = new CBLSSetVar(planning.model, SortedSet.empty, 0 until planning.activityCount,
         "succeeding_activities_of_" + name)
 
       latestEndDate <== MinArray(planning.latestStartDates, allSucceedingActivities,

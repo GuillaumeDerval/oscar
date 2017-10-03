@@ -66,7 +66,7 @@ case class MoveItem(p:BinPackingProblem,
   val binList:List[Bin] = p.bins.toList.map(_._2)
 
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean = (oldObj,newObj) => oldObj > newObj):SearchResult = {
-    require(!p.mostViolatedBins.value.isEmpty)
+    require(p.mostViolatedBins.value.nonEmpty)
 
     val oldViolation:Int = initialObj
     val bin1 = p.bins(selectFrom(p.mostViolatedBins.value))
@@ -80,13 +80,13 @@ case class MoveItem(p:BinPackingProblem,
 
     val itemsOfBin1GroupedBySize = itemOfBin1.groupBy(_.size).values
     val itemsOfBin1Canonical:Iterable[Item] = if(areItemsIdentical == null) itemsOfBin1GroupedBySize.map(l => l.head)
-    else itemsOfBin1GroupedBySize.map(l => IdenticalAggregator.removeIdenticals(l,areItemsIdentical)).flatten
+    else itemsOfBin1GroupedBySize.flatMap(l => IdenticalAggregator.removeIdenticals(l,areItemsIdentical))
 
     val binsNotBin1GroupedBySpareSize = binList
       .filter(bin => bin.number != bin1.number && bin.violation.value == 0)
       .groupBy(bin => bin.size - bin.content.value).values
     val binsNotBin1Canonical:Iterable[Bin] = if(areBinsIdentical == null) binsNotBin1GroupedBySpareSize.map(l => l.head)
-    else binsNotBin1GroupedBySpareSize.map(l => IdenticalAggregator.removeIdenticals(l,areBinsIdentical)).flatten
+    else binsNotBin1GroupedBySpareSize.flatMap(l => IdenticalAggregator.removeIdenticals(l,areBinsIdentical))
 
     (if (best)
       selectMin2(itemsOfBin1Canonical,
@@ -130,7 +130,7 @@ case class SwapItems(p:BinPackingProblem,
   val binList:List[Bin] = p.bins.toList.map(_._2)
 
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean = (oldObj,newObj) => oldObj > newObj): SearchResult = {
-    require(!p.mostViolatedBins.value.isEmpty)
+    require(p.mostViolatedBins.value.nonEmpty)
 
     val oldViolation:Int = initialObj
     val bin1 = p.bins(selectFrom(p.mostViolatedBins.value))
@@ -146,7 +146,7 @@ case class SwapItems(p:BinPackingProblem,
     val itemsOfBin1Canonical:Iterable[Item] = if(areItemsIdentical == null){
       itemsOfBin1GroupedBySize.map(l => l.head)
     }else{
-      itemsOfBin1GroupedBySize.map(l => IdenticalAggregator.removeIdenticals(l,areItemsIdentical)).flatten
+      itemsOfBin1GroupedBySize.flatMap(l => IdenticalAggregator.removeIdenticals(l,areItemsIdentical))
     }
 
     //TODO: this should be made lazy in case we go for the first improving move
@@ -156,7 +156,7 @@ case class SwapItems(p:BinPackingProblem,
       if(areItemsIdentical == null){
         itemsOfSameBinGroupedBySize.map(l => l.head)
       }else{
-        itemsOfSameBinGroupedBySize.map(l => IdenticalAggregator.removeIdenticals(l,areItemsIdentical)).flatten
+        itemsOfSameBinGroupedBySize.flatMap(l => IdenticalAggregator.removeIdenticals(l,areItemsIdentical))
       })
 
     val itemsNotOfBin1Canonical:Iterable[Item] = itemsGroupedByBinsAndCanonicals.flatten

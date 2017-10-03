@@ -179,7 +179,7 @@ class VRP(val n: Int, val v: Int, val m: Store, maxPivotPerValuePercent:Int = 4)
     for(i <- resNodes.indices){
       resNodes(i) = nodes(i).filterNot(getVehicleOfNode(_) == vehicle)
     }
-    require(nodes != resNodes,"ERROR")
+    require(!(nodes sameElements resNodes),"ERROR")
     resNodes
   }
 
@@ -274,7 +274,7 @@ class VRP(val n: Int, val v: Int, val m: Store, maxPivotPerValuePercent:Int = 4)
     var toReturn = ""
     var notMoving:List[Int] = List.empty
 
-    for (vehicle <- 0 to v - 1) {
+    for (vehicle <- 0 until v) {
       val routeOfV = getRouteOfVehicle(vehicle)
       if(routeOfV.length == 1){
         notMoving  = vehicle :: notMoving
@@ -529,5 +529,3 @@ trait RoutingMapDisplay extends VRP{
     routingMap.setMustRefresh(true)
   }
 }
-
-

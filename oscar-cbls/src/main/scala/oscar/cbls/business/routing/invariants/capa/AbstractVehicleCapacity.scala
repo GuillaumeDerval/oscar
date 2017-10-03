@@ -168,10 +168,10 @@ abstract class AbstractVehicleCapacity(n:Int,
   private def insertInList(listToInsert: List[(Int, Int)], toInsert: List[(Int, Int)]): List[(Int, Int)] = {
     listToInsert match {
       case Nil => toInsert
-      case (start, end) :: tail =>
+      case (start, end) :: _ =>
         toInsert match {
           case Nil => listToInsert
-          case (s, e) :: tail =>
+          case (s, e) :: _ =>
             if (s > end) smartPrepend(start, end, insertInList(listToInsert.drop(1), toInsert))
             else if (s == start && end == e) insertInList(listToInsert, toInsert.drop(1))
             else smartPrepend(s, e, insertInList(listToInsert, toInsert.drop(1)))
@@ -251,7 +251,7 @@ abstract class AbstractVehicleCapacity(n:Int,
                 val (updatedZones, removedZones) = removeMovedZoneFromZonesToUpdateWithin(listOfZonesForVehicle)
 
                 val updatedZoneWithIncludedPoint = updatedZones match{
-                  case (a,b) :: tail if b <= relativeFromIncluded => smartPrepend(a,b,smartPrepend(relativeFromIncluded, relativeFromIncluded, tail))
+                  case (a,b) :: updZs if b <= relativeFromIncluded => smartPrepend(a,b,smartPrepend(relativeFromIncluded, relativeFromIncluded, updZs))
                   case _ => smartPrepend(relativeFromIncluded, relativeFromIncluded, updatedZones)
                 }
                 (updatedZoneWithIncludedPoint, removedZones)

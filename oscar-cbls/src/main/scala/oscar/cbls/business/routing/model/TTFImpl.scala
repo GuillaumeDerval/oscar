@@ -144,7 +144,7 @@ class TTFHistogram(val nbSlots: Int, val overallDuration: Int) extends Primitive
   private def rectifySlot(slotNr: Int): Int = {
     var tmp: Int = slotNr % nbSlots
     if (tmp < 0) tmp += nbSlots
-    return tmp
+    tmp
   }
 
   override def getTravelDuration(leaveTime: Int): Int =
@@ -187,10 +187,11 @@ class TTFHistogram(val nbSlots: Int, val overallDuration: Int) extends Primitive
         minslot = medslot
       }
       if (medslotstart + slotDuration + getTravelDurationAtSlot(medslot) >= arrivalTime) {
-        maxslot = medslot;
+        maxslot = medslot
       }
     }
-    return 0;
+    // Default return value
+    0
   }
 }
 
@@ -237,7 +238,7 @@ class TTFSegments(val NbPoints: Int, val overallDuration: Int) extends Primitive
 
   def getPoint(pointNr: Int): (Int, Int) = {
     var rectifiedPoint: Int = pointNr % NbPoints
-    var shifting: Int = (math.floor(pointNr / NbPoints)).toInt * overallDuration
+    var shifting: Int = math.floor(pointNr / NbPoints).toInt * overallDuration
     while (rectifiedPoint < 0) {
       rectifiedPoint += NbPoints
       shifting -= overallDuration
@@ -349,7 +350,7 @@ class TTFSegments(val NbPoints: Int, val overallDuration: Int) extends Primitive
   }
 
   override def toString = ("TTFSegments(NbPoints: " + NbPoints + " overallDuration: " + overallDuration + " points: ["
-    + ((0 until NbPoints) map (i => "(" + pointX(i) + ";" + pointY(i) + ")") mkString (",")) + "])")
+    + ((0 until NbPoints) map (i => "(" + pointX(i) + ";" + pointY(i) + ")") mkString ",") + "])")
 
 }
 
@@ -389,4 +390,3 @@ object TTFHistoTest extends App{
     println(i + "\t" + t.getTravelDuration(i) + "\t" + t.getBackwardTravelDuration(t.getTravelDuration(i) + i))
   }
 }
-

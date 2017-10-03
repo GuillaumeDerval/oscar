@@ -507,13 +507,13 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
 
     if (perVehicle) {
       val values = computeValueFromScratch(s)
-      for (vehicle <- 0 to v - 1) {
+      for (vehicle <- 0 until v) {
         c.check(distance(vehicle).newValue == values(vehicle), Some("distance(" + vehicle + ").value=" + distance(vehicle).newValue + " should == computeValueFromScratch(routes.value)(0)" + values(vehicle)))
       }
 
       if (checkpoint != null) {
         val values = computeValueFromScratch(checkpoint)
-        for (vehicle <- 0 to v - 1) {
+        for (vehicle <- 0 until v) {
           if (isVehicleChangedSinceCheckpoint(vehicle))
             c.check(savedValues(vehicle) == values(vehicle))
         }

@@ -140,9 +140,9 @@ class PDP(override val n:Int, override val v:Int, override val m:Store, maxPivot
 
   def getDeliverys: Iterable[Int] = deliveryNodes
 
-  def getRoutedPickups: Iterable[Int] = pickupNodes.filter(isRouted(_))
+  def getRoutedPickups: Iterable[Int] = pickupNodes.filter(isRouted)
 
-  def getRoutedDeliverys: Iterable[Int] = deliveryNodes.filter(isRouted(_))
+  def getRoutedDeliverys: Iterable[Int] = deliveryNodes.filter(isRouted)
 
   def getUnroutedPickups: Iterable[Int] = pickupNodes.filter(!isRouted(_))
 

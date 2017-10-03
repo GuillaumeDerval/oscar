@@ -228,7 +228,7 @@ class NodesOfVehicle(routes:ChangingSeqValue,
 
     if(savedCheckpoint != null) {
       val nodesOfVehicleFromScratch = computeValueFromScratch(savedCheckpoint)
-      for (node <- 0 to n-1) {
+      for (node <- 0 until n) {
         if(movedNodesSinceCheckpointArray(node))
           c.check(nodesOfVehicleFromScratch(vehicleOfNodeAtCheckpointForMovedPoints(node)).contains(node))
       }
