@@ -30,7 +30,7 @@ object PiecewiseLinearBijectionNaive{
         val invert = fun.invert
         val newPivot = new PivotWithTo(fun(if (fun.minus) p2.fromValue - 1 else p1.fromValue), invert, fun(if (fun.minus) p1.fromValue else p2.fromValue - 1))
         computeInvertedPivots(p1, p2 :: tail, QList(newPivot, newPivots))
-      case p1 :: tail =>
+      case p1 :: _ =>
         val fun = p1.f
         require(!fun.minus)
         val invert = fun.invert

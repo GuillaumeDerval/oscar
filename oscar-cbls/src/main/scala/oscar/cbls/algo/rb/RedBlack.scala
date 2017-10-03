@@ -290,7 +290,7 @@ class T[@specialized(Int) V](private[this]val c : Boolean,
           else if (r.isEmpty) l
           else{
             r.smallest match{
-              case Some((k,v)) => T(c, l, k, Some(v), r.remove(k))
+              case Some((rk,rv)) => T(c, l, rk, Some(rv), r.remove(rk))
               case None => throw new Error("non smallest on non-empty RB?")
             }
           }
@@ -337,14 +337,14 @@ class T[@specialized(Int) V](private[this]val c : Boolean,
 
   override def biggestPosition:Option[RedBlackTreeMapExplorer[V]] = {
     biggestLowerOrEqual(Int.MaxValue) match{
-      case Some((k,_)) => positionOf(k)
+      case Some((rk,_)) => positionOf(rk)
       case None => None
     }
   }
 
   override def smallestPosition:Option[RedBlackTreeMapExplorer[V]] = {
     smallestBiggerOrEqual(Int.MinValue) match{
-      case Some((k,_)) => positionOf(k)
+      case Some((rk,_)) => positionOf(rk)
       case None => None
     }
   }
@@ -455,7 +455,7 @@ object RedBlackTreeMap {
   }
 
   def makeFromSortedContinuousArray[@specialized V](args:Array[V]):RedBlackTreeMap[V] = {
-    if(args.size == 0) RedBlackTreeMap.empty [V]
+    if(args.length == 0) RedBlackTreeMap.empty [V]
     else myMakeFromContinuousSorted(args, 0, args.length - 1, false)
   }
 

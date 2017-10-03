@@ -27,7 +27,7 @@ object RoutingMatrixGenerator {
 
     //we generate te cost distance matrix
     def randomXY: Int = (random.nextFloat() * side).toInt
-    val pointPosition: Array[(Int, Int)] = Array.tabulate(N)(w => (randomXY, randomXY))
+    val pointPosition: Array[(Int, Int)] = Array.tabulate(N)( _ => (randomXY, randomXY))
 
     def distance(from: (Int, Int), to: (Int, Int)) =
       math.sqrt(math.pow(from._1 - to._1, 2) + math.pow(from._2 - to._2, 2)).toInt
@@ -43,7 +43,7 @@ object RoutingMatrixGenerator {
 
     var toGenerate = nbRestrictions
     while(toGenerate !=0){
-      val vehicle = (random.nextFloat()*(v)).toInt
+      val vehicle = (random.nextFloat()*v).toInt
       val node = ((random.nextFloat()*(n-v))+v).toInt
       toReturn = (node,vehicle) :: toReturn
       toGenerate -= 1
@@ -71,7 +71,7 @@ object RoutingMatrixGenerator {
     val maxNodes = n-v
     val maxCouples = maxNodes/2
     val random = new Random(0)
-    val timeWindows = Array.tabulate(n-v)(tw => (0,0,0,0))
+    val timeWindows = Array.tabulate(n-v)( _ => (0,0,0,0))
     var tWCoupleGenerated = 0
     var currentTimeUnit = 0
 
@@ -103,5 +103,3 @@ object RoutingMatrixGenerator {
     ttf
   }
 }
-
-

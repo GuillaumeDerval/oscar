@@ -22,7 +22,7 @@ class MagicIntArrayStacked(maxLevel:Int, initVal:(Int => Int), size:Int) extends
   private[this] val levelToIsValueChangedAtNextLevel:Array[IterableMagicBoolArray] = Array.tabulate(maxLevel)(level => new IterableMagicBoolArray(size,false))
   private[this] var currentLevel:Int = 0
 
-  def level = currentLevel - 1
+  def level:Int = currentLevel - 1
 
   def update(indice:Int,value:Int){
     levelToArray(currentLevel)(indice) = value

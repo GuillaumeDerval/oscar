@@ -67,12 +67,12 @@ object ConflictSearch {
         val initwithitem = inject(init,item)
         var toreturn = item :: items
         
-        if (!ListB.isEmpty){
+        if (ListB.nonEmpty){
           val initwithItemAndA:S = ListA.foldLeft(initwithitem)(inject)
           toreturn = search(initwithItemAndA, toreturn, ListB, inject, isConflict)
         }
 
-        if (!ListA.isEmpty){
+        if (ListA.nonEmpty){
           val initwithItemAndB:S = ListB.foldLeft(initwithitem)(inject)
           toreturn = search(initwithItemAndB, toreturn, ListA, inject, isConflict)
         }
@@ -103,7 +103,7 @@ object ConflictSearch {
     var accumulatorState = init
     var remaining = toInject
     while(!isConflict(accumulatorState)){
-      if(remaining.isEmpty) throw new Exception("no conflict")
+      if(remaining.isEmpty) throw new Exception("No conflict")
       val item = remaining.head
       accumulatorState = inject(accumulatorState,item)
       remaining = remaining.tail
