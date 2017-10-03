@@ -25,21 +25,20 @@ import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
 import scala.collection.mutable.ArrayBuffer
 
 object TableCTBs {
-  def apply(X: Array[CPIntVar], table: Array[Array[Int]]) = {
-    val tableBs = Array.fill(table.length)(new Array[BasicSmartElement](X.length))
-    for (i <- 0 until table.length;j <- 0 until X.length){
-      tableBs(i)(j) = Equal(table(i)(j))
-    }
-    new TableCTBs(X,tableBs)
+  def apply(X: Array[CPIntVar], table: Array[Array[Int]], star:Int = - 1) = {
+    new TableCTBs(X,TableUtil.mapToBasicSmartTable(X,table,star))
   }
 }
 /**
  * Implementation of the Compact Table algorithm (CT) for the table constraint
- * including tuples with *, !=v, >v, >=v, <v and <=v values
+ * including tuples with *, !=v, >v, >=v, <v, <=v values, \in S, \not\in S
  * @param X the variables restricted by the constraint.
  * @param table the list of tuples composing the table.
  * @author Pierre Schaus pschaus@gmail.com
  * @author Helene Verhaeghe helene.verhaeghe27@gmail.com
+ *
+ * Reference(s) :
+ *  - Extending Compact-Table to Basic Smart Tables, Helene Verhaeghe, Christophe Lecoutre, Yves Deville, Pierre Schaus, CP17
  */
 class TableCTBs(X: Array[CPIntVar], table: Array[Array[BasicSmartElement]]) extends Constraint(X(0).store, "TableCTStarDiffComp") {
 

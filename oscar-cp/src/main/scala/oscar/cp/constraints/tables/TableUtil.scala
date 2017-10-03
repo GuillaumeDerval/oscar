@@ -1,3 +1,17 @@
+/** *****************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  * *****************************************************************************/
 package oscar.cp.constraints.tables
 
 import oscar.cp.core.variables.CPIntVar
@@ -5,92 +19,92 @@ import oscar.cp.core.variables.CPIntVar
 import scala.collection.mutable.ArrayBuffer
 
 /**
- * Created by helene on 2/10/17.
+ * Class containing utility methods for tables
+ * @author Pierre Schaus pschaus@gmail.com
+ * @author Helene Verhaeghe helene.verhaeghe27@gmail.com
  */
 object TableUtil {
 
-  def toGroundTable(x:Array[CPIntVar],table:Array[Array[Int]],star:Int) = {
+  /**
+   * Method taking a short table and return the equivalent table with no more star in it
+   * @param x array of variables
+   * @param table tuples forming the table
+   * @param star integer value for the star
+   * @return equivalent table containing only ground tuples
+   */
+  // TODO this method does not remove redundant tuples
+  def decompressToGroundTable(x: Array[CPIntVar], table: Array[Array[Int]], star: Int = -1): Array[Array[Int]] = {
     val buff = new ArrayBuffer[Array[Int]]()
     val size = x.length
-    def addToBuff(tuple:Array[Int],index:Int) : Unit = {
-      if (index < size){
-        if (tuple(index) == star){
-          for (v <- x(index).iterator){
+    def addToBuff(tuple: Array[Int], index: Int): Unit = {
+      if (index < size) {
+        if (tuple(index) == star) {
+          for (v <- x(index).iterator) {
             val newTuple = tuple.clone()
             newTuple(index) = v
             addToBuff(newTuple, index + 1)
           }
         } else {
-          addToBuff(tuple, index+1)
+          addToBuff(tuple, index + 1)
         }
       } else {
         buff += tuple
       }
     }
     var i = table.length
-    while (i > 0){
+    while (i > 0) {
       i -= 1
-      addToBuff(table(i),0)
+      addToBuff(table(i), 0)
     }
     buff.toArray
   }
 
-  def toGroundTable(x:Array[CPIntVar],table:Array[Array[BasicSmartElement]],star:Int = -1) = {
+  /**
+   * Method taking a basic smart table and return the equivalent table with no more basic smart element in it
+   * @param x array of variables
+   * @param table tuples forming the table
+   * @return equivalent table containing only ground tuples
+   */
+  // TODO this method does not remove redundant tuples
+  def decompressToGroundTable(x: Array[CPIntVar], table: Array[Array[BasicSmartElement]]) = {
     val buff = new ArrayBuffer[Array[Int]]()
     val size = x.length
-    def addToBuff(tupleBS:Array[BasicSmartElement],tuple:Array[Int],index:Int) : Unit = {
-      if (index < size){
-        tupleBS(index) match {
-          case Equal(vl) =>
-            tuple(index) = vl
-            addToBuff(tupleBS,tuple,index + 1)
-          case Star() =>
-            for (v <- x(index).iterator){
-              val newTuple = tuple.clone()
-              newTuple(index) = v
-              addToBuff(tupleBS,newTuple, index + 1)
-            }
-          case NotEqual(vl) =>
-            for (v <- x(index).iterator;if vl != v){
-              val newTuple = tuple.clone()
-              newTuple(index) = v
-              addToBuff(tupleBS,newTuple, index + 1)
-            }
-          case LessEq(vl) =>
-            for (v <- x(index).iterator;if v <= vl){
-              val newTuple = tuple.clone()
-              newTuple(index) = v
-              addToBuff(tupleBS,newTuple, index + 1)
-            }
-          case GreatEq(vl) =>
-            for (v <- x(index).iterator;if v >= vl){
-              val newTuple = tuple.clone()
-              newTuple(index) = v
-              addToBuff(tupleBS,newTuple, index + 1)
-            }
-          case InSet(vl) =>
-            for (v <- x(index).iterator;if vl.contains(v)){
-              val newTuple = tuple.clone()
-              newTuple(index) = v
-              addToBuff(tupleBS,newTuple, index + 1)
-            }
-          case NotInSet(vl) =>
-            for (v <- x(index).iterator;if !vl.contains(v)){
-              val newTuple = tuple.clone()
-              newTuple(index) = v
-              addToBuff(tupleBS,newTuple, index + 1)
-            }
-        }
+    def addToBuff(tupleBS: Array[BasicSmartElement], tuple: Array[Int], index: Int): Unit = {
+      if (index < size) {
+        tupleBS(index).foreach(x(index), v => {
+          val newTuple = tuple.clone()
+          newTuple(index) = v
+          addToBuff(tupleBS, newTuple, index + 1)
+        })
       } else {
         buff += tuple
       }
     }
     var i = table.length
-    while (i > 0){
+    while (i > 0) {
       i -= 1
-      addToBuff(table(i),Array.fill(size)(0),0)
+      addToBuff(table(i), Array.fill(size)(0), 0)
     }
     buff.toArray
+  }
+
+  /**
+   * Method taking a short table and return the equivalent table with basic smart element instead
+   * No compression nor decompression is applied
+   * @param x array of variables
+   * @param table tuples forming the table
+   * @param star integer value for the star
+   * @return equivalent table as an Array[Array[BasicSmartElement] ]
+   */
+  def mapToBasicSmartTable(x: Array[CPIntVar], table: Array[Array[Int]], star: Int = -1): Array[Array[BasicSmartElement]] = {
+    val tableBs = Array.fill(table.length)(new Array[BasicSmartElement](x.length))
+    for (i <- table.indices; j <- x.indices) {
+      if (table(i)(j) == star)
+        tableBs(i)(j) = Star()
+      else
+        tableBs(i)(j) = Equal(table(i)(j))
+    }
+    tableBs
   }
 
 }

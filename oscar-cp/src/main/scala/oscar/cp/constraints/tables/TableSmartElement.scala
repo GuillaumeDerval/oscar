@@ -80,6 +80,11 @@ trait SmartElement {
    * @return a smart element either this, either Star()
    */
   def refactorStar(vr: CPIntVar) = this
+
+  /**
+   * Apply the function fun to all the values of the smart element valid regarding to the variable
+   */
+  def foreach(vr: CPIntVar, fun: Int => Unit): Unit
 }
 
 /**
@@ -108,6 +113,11 @@ case class Equal(value: Int) extends BasicSmartElement {
 
   override def getValue: Int = {
     value
+  }
+
+  def foreach(vr: CPIntVar, fun: Int => Unit): Unit = {
+    if (isValid(vr))
+      fun(value)
   }
 
   override def toString: String = {
@@ -142,6 +152,11 @@ case class NotEqual(value: Int) extends BasicSmartElement {
     vr.size - (if (this.isValid(vr)) 1 else 0)
   }
 
+  def foreach(vr: CPIntVar, fun: Int => Unit): Unit = {
+    for (v <- vr.iterator; if value != v)
+      fun(v)
+  }
+
   override def toString: String = {
     "!=" + value
   }
@@ -170,6 +185,11 @@ case class InSet(values: Set[Int]) extends BasicSmartElement {
 
   override def groundCount(vr: CPIntVar): Int = {
     values.count(v => vr.hasValue(v))
+  }
+
+  def foreach(vr: CPIntVar, fun: Int => Unit): Unit = {
+    for (v <- vr.iterator; if values.contains(v))
+      fun(v)
   }
 
   override def toString: String = {
@@ -202,6 +222,11 @@ case class NotInSet(values: Set[Int]) extends BasicSmartElement {
     vr.size - values.count(v => vr.hasValue(v))
   }
 
+  def foreach(vr: CPIntVar, fun: Int => Unit): Unit = {
+    for (v <- vr.iterator; if !values.contains(v))
+      fun(v)
+  }
+
   override def toString: String =
     "!in" + values.mkString("{", ",", "}")
 }
@@ -226,6 +251,11 @@ case class Star() extends BasicSmartElement {
 
   override def groundCount(vr: CPIntVar): Int = {
     vr.size
+  }
+
+  def foreach(vr: CPIntVar, fun: Int => Unit): Unit = {
+    for (v <- vr.iterator)
+      fun(v)
   }
 
   override def toString: String = {
@@ -265,6 +295,11 @@ case class LessEq(value: Int) extends BasicSmartElement {
       Star()
     else
       this
+  }
+
+  def foreach(vr: CPIntVar, fun: Int => Unit): Unit = {
+    for (v <- vr.iterator; if v <= value)
+      fun(v)
   }
 
   override def toString: String = {
@@ -315,6 +350,11 @@ case class GreatEq(value: Int) extends BasicSmartElement {
       Star()
     else
       this
+  }
+
+  def foreach(vr: CPIntVar, fun: Int => Unit): Unit = {
+    for (v <- vr.iterator; if v >= value)
+      fun(v)
   }
 
   override def toString: String = {

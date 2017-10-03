@@ -14,8 +14,9 @@
   * *****************************************************************************/
 package oscar.cp.test
 
-import oscar.cp._
 import oscar.cp.constraints.tables._
+import oscar.cp._
+import oscar.cp.constraints.tables.basicSmartTable
 import oscar.cp.testUtils._
 
 /**
@@ -104,9 +105,9 @@ class TestBasicSmartTable extends TestSuite {
     val subX2 = Array(x(0), x(2), x(4))
 
     val statRef = solver.startSubjectTo() {
-      val ground0 = TableUtil.toGroundTable(subX0, tables(0))
-      val ground1 = TableUtil.toGroundTable(subX1, tables(1))
-      val ground2 = TableUtil.toGroundTable(subX2, tables(2))
+      val ground0 = TableUtil.decompressToGroundTable(subX0, tables(0))
+      val ground1 = TableUtil.decompressToGroundTable(subX1, tables(1))
+      val ground2 = TableUtil.decompressToGroundTable(subX2, tables(2))
       val cons = Seq(
         new TableDecomp(subX0, ground0),
         new TableDecomp(subX1, ground1),
