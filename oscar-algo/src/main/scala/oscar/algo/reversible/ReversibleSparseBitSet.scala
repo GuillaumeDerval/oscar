@@ -255,10 +255,19 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
   }
 
   /**
-   * Return true if this is empty
+   * Check if reversible sparse bit set is empty
+   * @return true if this is empty, false otherwise
    */
   def isEmpty(): Boolean = {
     nNonZero == 0
+  }
+
+  /**
+   * Check if there is at most two non-empty words
+   * @return true if this has <=2 non-empty words, false otherwise
+   */
+  def isDuo() : Boolean = {
+    nNonZero <= 2
   }
 
   /**
@@ -273,10 +282,10 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
   }
 
   /**
-   * Compute intersection between set of already
+   * Compute union between set of already
    * collected elements and bs
-   * Intersection is stored internally
-   * @param bs bitset to intersect
+   * Union is stored internally
+   * @param bs bitset to add
    */
   def collect(bs: BitSet): Unit = {
     var i: Int = nNonZero
@@ -284,6 +293,21 @@ class ReversibleSparseBitSet(val context: ReversibleContext, val n: Int, val ini
       i -= 1
       val offset = nonZeroIdx(i)
       tempMask(offset) |= bs.words(offset)
+    }
+  }
+
+  /**
+   * Compute intersection between set of already
+   * collected elements and bs
+   * Intersection is stored internally
+   * @param bs bitset to intersect
+   */
+  def collectByIntersection(bs: BitSet): Unit = {
+    var i: Int = nNonZero
+    while (i > 0) {
+      i -= 1
+      val offset = nonZeroIdx(i)
+      tempMask(offset) &= bs.words(offset)
     }
   }
 

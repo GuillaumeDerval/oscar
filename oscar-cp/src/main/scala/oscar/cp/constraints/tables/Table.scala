@@ -28,6 +28,7 @@ object TableAlgo extends Enumeration {
   val CompactTableGAC6 = Value("CompactTable GAC6 (Régin,Perrez,Schaus)")
   val CompactTableRefactored = Value("CompactTable Refactored")
   val CompactTableStar = Value("CompactTable for positive * table")
+  val CompactTableBS = Value("CompactTable for basic smart table")
   val STRbit = Value("STRbit (Wang, Xia, Yap and Li)")
   val GAC4 = Value("GAC4 (Regin)")
   val GAC4R = Value("GAC4R (Perez and Regin")
@@ -50,6 +51,7 @@ object table {
       case CompactTable => compactTable(X, table)
       case CompactTableGAC6 => compactTableGAC6(X, table)
       case CompactTableStar => compactTableStar(X, table)
+      case CompactTableBS => compactTableBS(X, table)
       case STRbit       => strBit(X, table)
       case GAC4         => gac4(X, table)
       case GAC4R        => gac4r(X, table)
@@ -77,7 +79,9 @@ object table {
 
   def compactTableGAC6(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableCTAC6(X, table)
 
-  def compactTableStar(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableCTStar(X, table)
+  def compactTableStar(X: Array[CPIntVar], table: Array[Array[Int]],star:Int = -1): Constraint = new TableCTStar(X, table,star)
+
+  def compactTableBS(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = TableCTBs(X, table)
 
   def strBit(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableSTRbit(X, table)
 
@@ -93,7 +97,7 @@ object table {
 
   def decomp(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableDecomp(X, table)
 
-  def shortSTR2(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableShortSTR2(X, table)
+  def shortSTR2(X: Array[CPIntVar], table: Array[Array[Int]], star:Int = -1): Constraint = new TableShortSTR2(X, table, star)
 
   def ac5tcRecomp(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = {
     val data = new TableData(X.size)
@@ -102,6 +106,48 @@ object table {
   }
 }
 
+object ShortTableAlgo extends Enumeration {
+  type ShortTableAlgo = Value
+  val CompactTableStar = Value("CompactTable for positive * table")
+  val CompactTableBS = Value("CompactTable for basic smart table")
+  val ShortSTR2 = Value("ShortSTR2")
+}
+
+object shortTable {
+  def apply(X: Array[CPIntVar], table: Array[Array[Int]], algo: ShortTableAlgo.Value = ShortTableAlgo.CompactTableStar, star: Int = -1): Constraint = {
+    import oscar.cp.constraints.tables.ShortTableAlgo._
+    algo match {
+      case CompactTableStar => compactTableStar(X, table, star)
+      case ShortSTR2 => shortSTR2(X, table, star)
+      case _ => compactTableStar(X, table, star)
+    }
+  }
+
+  def compactTableStar(X: Array[CPIntVar], table: Array[Array[Int]],star:Int = -1): Constraint = new TableCTStar(X, table,star)
+
+  def compactTableBS(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = TableCTBs(X, table)
+
+  def shortSTR2(X: Array[CPIntVar], table: Array[Array[Int]], star:Int = -1): Constraint = new TableShortSTR2(X, table, star)
+
+}
+
+object BasicSmartTableAlgo extends Enumeration {
+  type BasicSmartTableAlgo = Value
+  val CompactTableBS = Value("CompactTable for basic smart table")
+}
+
+object basicSmartTable {
+  def apply(X: Array[CPIntVar], table: Array[Array[BasicSmartElement]], algo: BasicSmartTableAlgo.Value = BasicSmartTableAlgo.CompactTableBS): Constraint = {
+    import oscar.cp.constraints.tables.BasicSmartTableAlgo._
+    algo match {
+      case CompactTableBS => compactTableBS(X, table)
+      case _ => compactTableBS(X, table)
+    }
+  }
+
+  def compactTableBS(X: Array[CPIntVar], table: Array[Array[BasicSmartElement]]): Constraint = new TableCTBs(X, table)
+
+}
 
 object NegativeTableAlgo extends Enumeration {
   type NegativeTableAlgo = Value
