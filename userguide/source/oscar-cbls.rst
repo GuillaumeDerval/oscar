@@ -12,13 +12,13 @@ Learning Outcomes
 
   - can create a simple model, with a simple search based on one neighborhood
   - knows how modeling is organized (variables, invariants, constraints)
-  - knows where to find invariants and constraints
+  - knows where to find invariants and constraints in the modeling API
 
 * Level 2: Advanced CBLS Modeler
 
   - can create a search involving several neighborhoods and a global meta-heuristic
   - has a good intuition of how propagation works
-  - knows about partial propagation
+  - knows about partial propagation and how to activate and control it
 
 * Level 3: Expert CBLS Modeler
 
@@ -35,18 +35,17 @@ Lots of tutorial in this field start with the same example that is the NQueen.
   :language: scala
   :linenos:
 
-This model mixes with the trait  ``CBLSModel``. This trait creates some structures and offers a set of methods to easiy create your own solver.
+This model mixes with the trait  ``CBLSModel``.
+This trait creates some structures and offers a set of methods to easily create your own solver.
+
 More precisely, it offers the following features:
 
-* it defines an implicit Store (named ``s``) and ConstraintSystem (named ``c``) behind the scene. A store is what contains all the modeling of the optimization problem: varaibles, invariants, constraints. Constraints are furthermore grouped into a constraint system that notably maintains the conjunction of the constraints.
-* it supports an API to create variables and invariants. They are implicitly added to the store ``s``
-* it also offers lots of methods to create every constraints or invariant of the problem you want to solve
-* it includes some linear selectors that you can use for defining our search procedure (see the ``selectMin`` method)
-* it also includes high-level methods to create complex search procedures
-
-Writing local search procedure is a tedious and time-consuming task because you might want to try different search procedures, tune it, and benchmark it.
-    Search procedure often include the same basic bricks such as neighborhoods, solution management, meta-heuristics, etc.
-    For this reason, OscaR.cbls includes a library of standard neighborhoods that can be assembled together to easily constitute complex search procedures.
+- it defines an implicit Store (named ``s``) and ConstraintSystem (named ``c``) behind the scene. A store is what contains all the modeling of the optimization problem: variables, invariants, constraints. It coordinates the updates to the values of variables. Constraints are furthermore grouped into a constraint system that notably maintains the conjunction of the constraints.
+- it supports an API to create the three variable types supported by OScar.cbls, namely: Int,Set (of Int) and Sequences (of Int).
+- it also offers lots of methods to create every constraints or invariant of the problem you want to solve
+- it includes some linear selectors that you can use for defining our search procedure (see the ``selectMin`` method)
+- it proposes a set of standard neighborhoods
+- it also includes high-level methods to create complex search procedures by means of combinators.
 
 We show here below a more elaborate solver for the NQueen. Besides using a more elaborate search strategy,
 it also relies on a standard neighborhood for implementing the search procedure.
@@ -63,11 +62,12 @@ OscaR.cbls is an implementation of constraint-based local search.
 It also features a high-level module to help you define your search procedure.
 
 OscaR.cbls has the following features:
-* high-level modeling primitives with variables of types integer, set of integer, and sequence of integers
-* Partial propagation for fast neighborhood exploration. Propagation is triggered when the value of a variable is queried by the search script. Deciding whether the propagation will be total or partial is done depending on the variable: if the variable is registered for partial propagation, the propagation will be partial. It will be total otherwise. Violation degrees are automatically registered for fast propagation.
-* Propagation graph can be cyclic. Two propagation graphs are handled: a static graph that over-approximates the dependencies between variables and invariants, and a dynamic graph that represents the real dependencies given the data actually stored in the model. The static graph can include cycles. This makes it possible e.g. to implement JobShop scheduler from standard invariants.
-* Constraints assign violation degree to their input variables, to identify the variable that cause a violation of each constraint. The violation degree propagates upwards through the model, it enables one to find the variable contributing the more to the overall violation even if it is not directly subject to the constraint.
-* Libraries of standard invariants and constraints are proposed on integer and set of integer domains: Invariant library includes logic, numeric, min/max, and set invariants. Constraint library includes few global constraints: Alldiff, AtLeast, AtMost and equalities over integers.
+- high-level modeling primitives with variables of types integer, set of integer, and sequence of integers
+- Partial propagation for fast neighborhood exploration. Propagation is triggered when the value of a variable is queried by the search script. Deciding whether the propagation will be total or partial is done depending on the variable: if the variable is registered for partial propagation, the propagation will be partial. It will be total otherwise. Violation degrees are automatically registered for fast propagation.
+- Propagation graph can be cyclic. Two propagation graphs are handled: a static graph that over-approximates the dependencies between variables and invariants, and a dynamic graph that represents the real dependencies given the data actually stored in the model. The static graph can include cycles. This makes it possible e.g. to implement JobShop scheduler from standard invariants.
+- Constraints assign violation degree to their input variables, to identify the variable that cause a violation of each constraint. The violation degree propagates upwards through the model, it enables one to find the variable contributing the more to the overall violation even if it is not directly subject to the constraint.
+- Libraries of standard invariants and constraints
+- A library of neighborhood for integer variables
 
 Modeling with OscaR.cbls (L1)
 ===================================================
