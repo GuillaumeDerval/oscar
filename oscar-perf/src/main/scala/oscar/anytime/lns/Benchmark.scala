@@ -43,6 +43,7 @@ trait Benchmark {
     else {
       val result =
         if (argMap.getOrElse('NOLNS, false).asInstanceOf[Boolean]) performBasicSearch(argMap, maximizeObjective)
+        else if (argMap.getOrElse('MLNS, false).asInstanceOf[Boolean]) performMLNS(argMap, maximizeObjective)
         else performALNS(argMap)
 
       XmlWriter.writeToXml(
@@ -120,7 +121,77 @@ trait Benchmark {
     alns.search()
   }
 
-  def performBasicSearch(argMap: ArgMap, maximizeObjective: Boolean): ALNSSearchResults = {
+  def performMLNS(argMap: ArgMap, maximizeObjective: Boolean): ALNSSearchResults = {
+
+    val builder = new ALNSBuilder(
+      solver,
+      decisionVariables,
+
+      argMap.getOrElse(
+        'relax,
+        Array(ALNSBuilder.RandomRelax, ALNSBuilder.KSuccessiveRelax, ALNSBuilder.PropGuidedRelax, ALNSBuilder.RevPropGuidedRelax, ALNSBuilder.FullRelax) //(Reversed) propagation guided may cause out of memory on big instances
+      ).asInstanceOf[Array[String]],
+
+      argMap.getOrElse(
+        'search,
+        Array(ALNSBuilder.ConfOrderSearch, ALNSBuilder.FirstFailSearch, ALNSBuilder.LastConfSearch, ALNSBuilder.ExtOrientedSearch, ALNSBuilder.WeightDegSearch)
+      ).asInstanceOf[Array[String]],
+
+      argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
+      argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String],
+      argMap.getOrElse('selection, ALNSBuilder.RWheel).asInstanceOf[String],
+      argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String],
+
+      argMap.getOrElse('relaxSize, ALNSBuilder.DefRelaxParam).asInstanceOf[Array[Double]],
+      argMap.getOrElse('nFailures, ALNSBuilder.DefNFailures).asInstanceOf[Array[Int]],
+
+      argMap.getOrElse('valLearn, false).asInstanceOf[Boolean],
+      false
+    )
+
+    lazy val operators = builder.instantiateCoupledOperators
+
+    val metaParams: Map[Symbol, Any] = Map(
+      'coupled -> true,
+      'learning -> false,
+      'opDeactivation -> false
+    )
+
+    val startResults = performBasicSearch(argMap, maximizeObjective, 1)
+    if(startResults.solutions.nonEmpty){
+      val startSol = performBasicSearch(argMap, maximizeObjective, 1).solutions.head
+
+      val results = mutable.ArrayBuffer[ALNSSearchResults]()
+      operators.foreach(op =>{
+        lazy val relaxStore = new RandomStore[ALNSOperator](Array(new ALNSNoParamOperator("dummy", 0, () => (_ => Unit, None, None))))
+        lazy val searchStore = new RandomStore[ALNSOperator](Array(op))
+
+        val config = new ALNSConfig(
+          relaxStore,
+          searchStore,
+          argMap.getOrElse('timeout, 0L).asInstanceOf[Long] * 1000000000L,
+          bestKnownObjective,
+          1000,
+          "default",
+          metaParams
+        )
+        val alns = ALNSSearch(solver, decisionVariables, config)
+
+        results += alns.searchFrom(startSol)
+      })
+
+      val bestResult = if(maximizeObjective) results.filter(_.solutions.nonEmpty).maxBy(_.solutions.last.objective)
+      else results.filter(_.solutions.nonEmpty).minBy(_.solutions.last.objective)
+      if(!solver.silent){
+        println("\nBest result:")
+        println(bestResult)
+      }
+      bestResult
+    }
+    else startResults
+  }
+
+  def performBasicSearch(argMap: ArgMap, maximizeObjective: Boolean, nSols: Int = 0): ALNSSearchResults = {
     val startTime: Long = System.nanoTime()
     val endTime: Long = startTime + (argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L)
 
@@ -133,7 +204,14 @@ trait Benchmark {
       solsFound += new CPIntSol(decisionVariables.map(_.value), solver.objective.objs.head.best, time)
     }
 
-    val stopCondition: (DFSearch) => Boolean = (_: DFSearch) => System.nanoTime() >= endTime
+    val stopCondition: (DFSearch) => Boolean = (s: DFSearch) =>{
+      var stop = false
+      stop |= System.nanoTime() >= endTime
+      stop |= (nSols > 0 && s.nSolutions >= nSols)
+      stop |= (bestKnownObjective.isDefined && maximizeObjective && solver.objective.objs.head.best >= bestKnownObjective.get)
+      stop |= (bestKnownObjective.isDefined && !maximizeObjective && solver.objective.objs.head.best <= bestKnownObjective.get)
+      stop
+    }
 
     if(!solver.silent) println("Starting search...")
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
@@ -172,6 +250,9 @@ trait Benchmark {
 
       case "--NOLNS" :: tail =>
         parseArgs(map ++ Map('NOLNS -> true), tail)
+
+      case "--MLNS" :: tail =>
+        parseArgs(map ++ Map('MLNS -> true), tail)
 
       case "--XP" :: tail =>
         parseArgs(map ++ Map('XP -> true), tail)

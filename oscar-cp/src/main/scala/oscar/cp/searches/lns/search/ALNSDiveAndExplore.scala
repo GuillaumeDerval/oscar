@@ -45,7 +45,8 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
       lnsIter(relax, search)
       checkEfficiency(relax)
       checkEfficiency(search)
-      if(relax.lastExecStats.improvement == 0){
+      val execStats = relax.lastExecStats
+      if(execStats.isEmpty || execStats.get.improvement == 0){
         if(relax.name != "dummy") relaxPriority.deactivate(relax)
         searchPriority.deactivate(search)
       }

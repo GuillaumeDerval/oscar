@@ -59,8 +59,9 @@ class VBALNSS(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) exten
 
         lnsIter(relax, search)
 
-        val time = relax.lastExecStats.time
-        val improvement = relax.lastExecStats.improvement
+        val execStats = relax.lastExecStats
+        val time = if(execStats.isDefined) execStats.get.time else 0L
+        val improvement = if(execStats.isDefined) execStats.get.improvement else 0
         val perf = improvement / (time + 1L)
         if(perf < bestPerf || (perf == bestPerf && time < tUsed)){
           bestPerf = perf

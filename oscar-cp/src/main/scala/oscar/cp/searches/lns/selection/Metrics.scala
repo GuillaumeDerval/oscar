@@ -22,11 +22,15 @@ object Metrics {
   }
 
   def lastImprovement(element: ALNSElement): Double = {
-    element.lastExecStats.improvement.toDouble
+    val execStats = element.lastExecStats
+    if(execStats.isDefined) execStats.get.improvement.toDouble
+    else 0
   }
 
   def lastImprovementRatio(element: ALNSElement): Double = {
-    element.lastExecStats.improvement.toDouble / (element.lastExecStats.time + 1)
+    val execStats = element.lastExecStats
+    if(execStats.isDefined) execStats.get.improvement.toDouble / (execStats.get.time + 1)
+    else 0.0
   }
 
   def averageImprovement(element: ALNSElement): Double = {

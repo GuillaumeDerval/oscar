@@ -1,14 +1,3 @@
 --timeout 300 --name DiveAndExplore --coupled true --strategy diveAndExplore --relax RandomRelax CircuitSeqRelax CircuitKoptRelax --search ConfOrderSearch --n-failures 1000 2000 --relax-size 0.1 0.25
 --timeout 300 --name Laborie --coupled false --selection RWheel --metric LastImprov --strategy default --relax RandomRelax CircuitSeqRelax CircuitKoptRelax --search ConfOrderSearch --n-failures 1000 2000 --relax-size 0.1 0.25
---timeout 300 --name RandomRelax_1000_0.1 --coupled --relax RandomRelax --search ConfOrderSearch --n-failures 1000 --relax-size 0.1
---timeout 300 --name RandomRelax_1000_0.25 --coupled --relax RandomRelax --search ConfOrderSearch --n-failures 1000 --relax-size 0.25
---timeout 300 --name RandomRelax_2000_0.1 --coupled --relax RandomRelax --search ConfOrderSearch --n-failures 2000 --relax-size 0.1
---timeout 300 --name RandomRelax_2000_0.25 --coupled --relax RandomRelax --search ConfOrderSearch --n-failures 2000 --relax-size 0.25
---timeout 300 --name CircuitSeqRelax_1000_0.1 --coupled --relax CircuitSeqRelax --search ConfOrderSearch --n-failures 1000 --relax-size 0.1
---timeout 300 --name CircuitSeqRelax_1000_0.25 --coupled --relax CircuitSeqRelax --search ConfOrderSearch --n-failures 1000 --relax-size 0.25
---timeout 300 --name CircuitSeqRelax_2000_0.1 --coupled --relax CircuitSeqRelax --search ConfOrderSearch --n-failures 2000 --relax-size 0.1
---timeout 300 --name CircuitSeqRelax_2000_0.25 --coupled --relax CircuitSeqRelax --search ConfOrderSearch --n-failures 2000 --relax-size 0.25
---timeout 300 --name CircuitKoptRelax_1000_0.1 --coupled --relax CircuitKoptRelax --search ConfOrderSearch --n-failures 1000 --relax-size 0.1
---timeout 300 --name CircuitKoptRelax_1000_0.25 --coupled --relax CircuitKoptRelax --search ConfOrderSearch --n-failures 1000 --relax-size 0.25
---timeout 300 --name CircuitKoptRelax_2000_0.1 --coupled --relax CircuitKoptRelax --search ConfOrderSearch --n-failures 2000 --relax-size 0.1
---timeout 300 --name CircuitKoptRelax_2000_0.25 --coupled --relax CircuitKoptRelax --search ConfOrderSearch --n-failures 2000 --relax-size 0.25
+--timeout 300 --name BestOperator --MLNS --relax RandomRelax CircuitSeqRelax CircuitKoptRelax --search ConfOrderSearch --n-failures 1000 2000 --relax-size 0.1 0.25

@@ -14,7 +14,7 @@ import scala.util.Random
   * Adaptive lage neighbourhood search implementation.
   */
 class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearch(solver, vars, config){
-  val startTime: Long = System.nanoTime()
+  var startTime: Long = System.nanoTime()
   var iter: Long = 1L
 
   //Stop conditions:
@@ -102,6 +102,7 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
   }
 
   override def searchFrom(sol: CPIntSol): ALNSSearchResults = {
+    startTime = sol.time
     if(maximizeObjective.isDefined) {
       solver.objective.objs.head.relax()
       solver.objective.objs.head.best = sol.objective
@@ -250,8 +251,10 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
         lnsIter(relax, search)
       }
 
-      val time = relax.lastExecStats.time
-      val improvement = relax.lastExecStats.improvement
+      val execStats = relax.lastExecStats
+
+      val time = if(execStats.isDefined) execStats.get.time else 0L
+      val improvement = if(execStats.isDefined) execStats.get.improvement else 0
 
       if(!relaxPerf.contains(relax.name)) relaxPerf += relax.name -> (relax, mutable.ArrayBuffer[(Long, Int)]())
       relaxPerf(relax.name)._2 += ((time, improvement))

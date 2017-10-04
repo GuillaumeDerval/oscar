@@ -70,7 +70,7 @@ abstract class ALNSElement(val failThreshold: Int = 0){
     }
   }
 
-  def lastExecStats: ExecStats = stats.last
+  def lastExecStats: Option[ExecStats] = if(stats.nonEmpty) Some(stats.last) else None
 
   def execs: Int = stats.length
 
