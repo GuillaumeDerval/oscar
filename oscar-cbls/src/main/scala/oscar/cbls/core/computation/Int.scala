@@ -315,8 +315,6 @@ abstract class IntInvariant(initialValue:Int = 0, initialDomain:Domain = FullRan
     performInvariantPropagation()
     performIntPropagation()
   }
-
-  override def getDotNode:String = throw new Error("not implemented")
 }
 
 object IdentityInt{

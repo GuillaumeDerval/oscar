@@ -412,8 +412,6 @@ trait Invariant extends PropagationElement{
     */
   override def checkInternals(c:Checker){c.check(false, Some("DEFAULT EMPTY CHECK " + this.toString() + ".checkInternals"))}
 
-  def getDotNode = "[label = \"" + this.getClass.getSimpleName + "\" shape = box]"
-
   /** this is the propagation method that should be overridden by propagation elements.
     * notice that it is only called in a propagation wave if:
     * 1: it has been registered for propagation since the last time it was propagated
