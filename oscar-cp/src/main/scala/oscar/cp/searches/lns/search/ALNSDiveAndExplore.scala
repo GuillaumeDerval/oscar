@@ -10,13 +10,14 @@ import scala.util.Random
   * TODO
   */
 class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearchImpl(solver, vars, config){
-  val minEfficiencyThreshold = 0.001
-  val efficiencyEvalTime = 10000000000L
+  lazy val efficiencyEvalTime: Long = 5000000000L //(config.timeout/nOpCombinations.toDouble).ceil.toLong
+  lazy val minEfficiencyThreshold: Double = 0.1 //Math.abs(bestSol.get.objective - previousBest.get.objective) / (efficiencyEvalTime.toDouble * 10)
 
   override def alnsLoop(): Unit = {
     if (!solver.silent){
       println("\nStarting adaptive LNS...")
       println("n operators: " + nOpCombinations)
+      println("Efficiency Threshold: " + minEfficiencyThreshold)
     }
     if(!solver.silent) println("\nStarting dive...")
     dive()
@@ -76,9 +77,13 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
   }
 
   private def checkEfficiency(op: ALNSOperator): Unit = {
-    if(op.name != "dummy" && op.time >= efficiencyEvalTime && op.efficiency(efficiencyEvalTime) >= minEfficiencyThreshold){
-      op.setActive(false)
-      if(!solver.silent) println("\nOperator " + op.name + " deactivated due to low efficiency!")
+    if(op.name != "dummy" && op.time >= efficiencyEvalTime) {
+      val efficiency = op.efficiency(efficiencyEvalTime)
+      if(!solver.silent) println("Operator " + op.name + " efficiency is " + efficiency)
+      if (efficiency < minEfficiencyThreshold) {
+        op.setActive(false)
+        if (!solver.silent) println("Operator " + op.name + " deactivated due to low efficiency!")
+      }
     }
   }
 }
