@@ -71,9 +71,9 @@ class TestShortTable extends TestSuite {
 
     val stat = solver.startSubjectTo() {
       val cons = Seq(
-        shortTable(subX0, tables(0), algo,star),
-        shortTable(subX1, tables(1), algo,star),
-        shortTable(subX2, tables(2), algo,star)
+        shortTable(subX0, tables(0),star, algo),
+        shortTable(subX1, tables(1),star, algo),
+        shortTable(subX2, tables(2),star, algo)
       )
       solver.add(cons)
     }
@@ -97,7 +97,7 @@ class TestShortTable extends TestSuite {
 
       val tuples = Array(Array(star, 1, 1), Array(1, star, 1))
 
-      cp.post(shortTable(Array(x(0), x(1), x(2)), tuples, algo,star))
+      cp.post(shortTable(Array(x(0), x(1), x(2)), tuples,star, algo))
 
       x(2).isBound should be(true)
       x(2).value should be(1)
@@ -121,7 +121,7 @@ class TestShortTable extends TestSuite {
       var x = Array.fill(3)(CPIntVar(1 to 7)(cp))
       val tuples = Array(Array(1, 1, star), Array(1, star, 3), Array(star, 2, 7), Array(star, 1, 4))
       var nbSol = 0
-      cp.add(shortTable(x, tuples, algo))
+      cp.add(shortTable(x, tuples,star, algo))
       cp.search {
         binaryStatic(x)
       } onSolution {
@@ -136,7 +136,7 @@ class TestShortTable extends TestSuite {
 
       val tuples = Array(Array(1, 2,star), Array(2, 1,star))
 
-      postAndCheckFailure(cp, shortTable(x, tuples, algo))
+      postAndCheckFailure(cp, shortTable(x, tuples,star, algo))
       cp.isFailed should be(true)
     }
 

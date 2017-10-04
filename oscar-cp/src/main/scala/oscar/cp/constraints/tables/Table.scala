@@ -114,7 +114,7 @@ object ShortTableAlgo extends Enumeration {
 }
 
 object shortTable {
-  def apply(X: Array[CPIntVar], table: Array[Array[Int]], algo: ShortTableAlgo.Value = ShortTableAlgo.CompactTableStar, star: Int = -1): Constraint = {
+  def apply(X: Array[CPIntVar], table: Array[Array[Int]], star: Int = -1, algo: ShortTableAlgo.Value = ShortTableAlgo.CompactTableStar): Constraint = {
     import oscar.cp.constraints.tables.ShortTableAlgo._
     algo match {
       case CompactTableStar => compactTableStar(X, table, star)
@@ -159,7 +159,7 @@ object NegativeTableAlgo extends Enumeration {
 
 object negativeTable {
 
-  def apply(X: Array[CPIntVar], invalidTuples: Array[Array[Int]], algo: NegativeTableAlgo.Value = NegativeTableAlgo.STRNE): Constraint = {
+  def apply(X: Array[CPIntVar], invalidTuples: Array[Array[Int]], algo: NegativeTableAlgo.Value = NegativeTableAlgo.CompactTableNegative): Constraint = {
     import oscar.cp.constraints.tables.NegativeTableAlgo._
 
     algo match {
@@ -170,7 +170,6 @@ object negativeTable {
     }
   }
 
-
   def str2ne(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableSTRNe(X, table)
 
   def compactTableNegative(X: Array[CPIntVar], table: Array[Array[Int]]): Constraint = new TableCTNeg(X, table)
@@ -179,3 +178,22 @@ object negativeTable {
 
 }
 
+object NegativeShortTableAlgo extends Enumeration {
+  type NegativeShortTableAlgo = Value
+  val CompactTableNegativeStar = Value("CompactTable for negative * table")
+}
+
+object negativeShortTable {
+
+  def apply(X: Array[CPIntVar], invalidTuples: Array[Array[Int]], star:Int = -1, algo: NegativeShortTableAlgo.Value = NegativeShortTableAlgo.CompactTableNegativeStar): Constraint = {
+    import oscar.cp.constraints.tables.NegativeShortTableAlgo._
+
+    algo match {
+      case CompactTableNegativeStar => compactTableNegativeStar(X, invalidTuples, star)
+      case _ => compactTableNegativeStar(X, invalidTuples, star)
+    }
+  }
+
+  def compactTableNegativeStar(X: Array[CPIntVar], table: Array[Array[Int]], star :Int = -1): Constraint = new TableCTNegStar(X, table, star)
+
+}

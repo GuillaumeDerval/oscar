@@ -313,7 +313,7 @@ object Less {
    * Smart Element representing '< v'
    * @param value associated value
    */
-  def apply(value: Int): SmartElement = {
+  def apply(value: Int): BasicSmartElement = {
     LessEq(value - 1)
   }
 }
@@ -367,7 +367,7 @@ object Great {
    * Smart Element representing '> v'
    * @param value associated value
    */
-  def apply(value: Int): SmartElement = {
+  def apply(value: Int): BasicSmartElement = {
     GreatEq(value + 1)
   }
 }
