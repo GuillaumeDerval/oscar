@@ -18,7 +18,7 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
   var iter: Long = 1L
 
   //Stop conditions:
-  val endTime: Long = if(config.timeout > 0) startTime + config.timeout else Long.MaxValue //Maximal allocated time
+  val endTime: Long = if(config.timeout > 0) System.nanoTime() + config.timeout else Long.MaxValue //Maximal allocated time
   var iterTimeout: Long = if(config.timeout > 0) config.timeout / 300 else Long.MaxValue //The iteration allocated time
   var endIter: Long = Long.MaxValue //Maximal allocated time for the current iteration
   var optimumFound = false //True if the whole search space has been explored (csp and cop) or the optimum has been found (cop)
@@ -102,7 +102,7 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
   }
 
   override def searchFrom(sol: CPIntSol): ALNSSearchResults = {
-    startTime = sol.time
+    startTime = System.nanoTime() + sol.time
     if(maximizeObjective.isDefined) {
       solver.objective.objs.head.relax()
       solver.objective.objs.head.best = sol.objective
@@ -114,6 +114,7 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
   }
 
   override def search(): ALNSSearchResults = {
+    startTime = System.nanoTime()
 
     //Searching first solution if needed
     if(currentSol.isEmpty) searchFirstSol()
