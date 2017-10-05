@@ -1,12 +1,12 @@
 .. _oscar-cbls:
 
-******************************
+**********
 OscaR-CBLS
-******************************
+**********
 
 
 Learning Outcomes
-=======================================
+=================
 
 * Level 1: Beginning CBLS Modeler
 
@@ -26,7 +26,7 @@ Learning Outcomes
   - is able to extend the library of neighborhoods
 
 Hello Queens (L1)
-===================================================
+=================
 
 Lots of tutorial in this field start with the same example that is the NQueen.
     This one will not make an exception. A simple NQueen is shown here:
@@ -56,7 +56,7 @@ It uses a standard ``swap`` neighborhood with problem-specific parameters that s
    :linenos:
 
 Features of OscaR.cbls, for the impatient nerds (L3)
-==================================================
+====================================================
 
 OscaR.cbls is an implementation of constraint-based local search.
 It also features a high-level module to help you define your search procedure.
@@ -70,27 +70,39 @@ OscaR.cbls has the following features:
 - A library of neighborhood for integer variables
 
 Modeling with OscaR.cbls (L1)
-===================================================
+=============================
 
 OscaR.cbls has two main modeling concepts: variables, and invariants.
 
 OscaR.cbls natively supports three types of variables: integers, sets of integers and sequences of integers.
-These variables rely on dedicated data structures to ensure an efficient representation of their value.
-These data structures are non-mutable, so that the value of a variable can be saved by simply copying a reference to its value.
+Sequence variables rely on dedicated data structures to ensure an efficient representation of their value.
+All data structure representing values of variable are non-mutable,
+so that the value of a variable can be saved by simply copying a reference to its value.
 
-Invariants are mathematical operators that maintain an output according to a set of inputs.
+Invariants are mathematical operators that maintain the value of one or more variable
+according to a set of inputs.
+Invariants are directed, that is an instance of invariant has designated input and output variables.
 There is a library of roughly eighty invariants available in OscaR.cbls.
 
 To easily find them, some factory traits have been created that include method to instantiate invariants and constraints
 of the oscar.cbls library, with proper scaladoc.
 They can be explored easily using the auto-completion, or through the scaladoc.
 
-The traits are:
-* cbls.modeling.Invariants for the invariants
-* cbls.modeling.Constraints for the constraints
+Architecture of OscaR.cbls (L2)
+===============================
+
+This section presents the architecture of OScaR.cbls.
+The purpose of this section is to understand the nature of the concepts manipulated when using OscaR.cbls.
+
+.. image:: cbls_images/architecture.svg
+     :scale: 50
+    :width: 700
+    :align: center
+    :alt: Architecture of OscaR.cbls
+
 
 Model and propagation in OscaR.cbls (L2)
-===================================================
+========================================
 
 The engine of OscaR.cbls is structured into two main architectural layers: the propagation layer, and the computation layer.
 The *propagation layer* implements generic mechanisms for driving the propagation, that is: prioritizing the parts of the model that need to be updated following a change on the decision variables, and according to the part of the model that is queried.
@@ -126,15 +138,8 @@ In CBLS, invariants distinguish their input and output variables. They are trigg
 A variable can only the output of a single invariants. Due to the distinction between input and output, propagation in CBLS is a single wave that crosses the propagation DAG,
 while in CP, it requires iterating until a fixpoint is reached.
 
-More details on propagation in OscaR.cbls (L3)
-===================================================
-
-Variables all have two values, actually: the old value and the new value. The new value is the one that they are assigned
-by the invariant or search procedure controlling them. The old value is the one that the invariant listening to them are seeing.
-When the variable is propagated, its oldValue is aligned to the newValue, just after it has performed all notifications.
-
 Searching with OscaR.cbls using standard neighborhoods and combinators (L1)
-===================================================
+===========================================================================
 
 When developing a local search solution, one must specify a *search procedure*.
 A search procedure specifies how the search will find a proper solution to the problem.
@@ -177,7 +182,7 @@ Besides combinators, our framework includes a set of neighborhoods that can be u
 Domain-independent neighborhoods are most interesting because they are quite flexible to be used in very different domains. They also include several features including symmetry elimination, mechanisms to perform intensification or tabu search, the possibility to specify whether the best or the first move is required, and hot restarting. A \emph{hot restart} is the possibility to start the neighborhood exploration from the last explored point in the previous query instead of starting from the initial position at each query. Other neighborhood offer similar features.
 
 Constraints (L1)
-===================================================
+================
 
 Is OscaR.cbls, constraints are specific objects that have two main features:
 * compute their violation degree; thay are thus lagrangian relaxations

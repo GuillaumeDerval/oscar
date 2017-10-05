@@ -359,7 +359,6 @@ object SeqUpdateDefineCheckpoint{
 }
 
 /**
-  *
   * @param mprev
   * @param activeCheckpoint
   * @param maxPivotPerValuePercent
@@ -685,7 +684,9 @@ et cette stack doit être mise à jour au moment de la notification.
   protected def insertAtPosition(value:Int,pos:Int){
     assert(pos <= toNotify.newValue.size)
     assert(pos >= 0)
-    recordPerformedIncrementalUpdate((prev,newSeq) => if(newSeq == null) SeqUpdateInsert(value,pos,prev) else SeqUpdateInsert(value,pos,prev,newSeq))
+    recordPerformedIncrementalUpdate((prev,newSeq) =>
+      if(newSeq == null) SeqUpdateInsert(value,pos,prev)
+      else SeqUpdateInsert(value,pos,prev,newSeq))
     notifyChanged()
   }
 
@@ -700,7 +701,9 @@ et cette stack doit être mise à jour au moment de la notification.
   protected def remove(position:Int){
     require(toNotify.newValue.size > position && position >=0,
       "removing at position " + position + " size is " + newValue.size)
-    recordPerformedIncrementalUpdate((prev,newSeq) => if(newSeq == null) SeqUpdateRemove(position, prev) else SeqUpdateRemove(position, prev,newSeq))
+    recordPerformedIncrementalUpdate((prev,newSeq) =>
+      if(newSeq == null) SeqUpdateRemove(position, prev)
+      else SeqUpdateRemove(position, prev,newSeq))
     //println(" notify remove " + toNotify)
     notifyChanged()
   }
@@ -732,6 +735,7 @@ et cette stack doit être mise à jour au moment de la notification.
     recordPerformedIncrementalUpdate((prev,newSeq) =>
       if(newSeq == null) SeqUpdateMove(fromIncludedPosition,toIncludedPosition,afterPosition,flip,prev)
       else SeqUpdateMove(fromIncludedPosition,toIncludedPosition,afterPosition,flip,prev,newSeq))
+
     //println("notified move " + toNotify)
     notifyChanged()
   }
@@ -747,7 +751,9 @@ et cette stack doit être mise à jour au moment de la notification.
     require(-1<=afterPosition)
     require(fromIncludedPosition <= toIncludedPosition)
 
-    recordPerformedIncrementalUpdate((prev,_) => SeqUpdateMove(fromIncludedPosition,toIncludedPosition,afterPosition,flip,prev,seqAfter))
+    recordPerformedIncrementalUpdate((prev,_) =>
+      SeqUpdateMove(fromIncludedPosition,toIncludedPosition,afterPosition,flip,prev,seqAfter))
+
     //println("notified move " + toNotify)
     notifyChanged()
   }
@@ -781,23 +787,219 @@ et cette stack doit être mise à jour au moment de la notification.
   }
 
   @inline
-  private def recordPerformedIncrementalUpdate(updatefct:(SeqUpdate,IntSequence) => SeqUpdate) {
+  private final def recordPerformedIncrementalUpdate(updatefct:(SeqUpdate,IntSequence) => SeqUpdate) {
     //for notification recording
     toNotify = updatefct(toNotify,null)
-    val tmp = toNotify.newValue
-    //for checkpoint recording
-    if (performedSinceTopCheckpoint != null) {
-      performedSinceTopCheckpoint = updatefct(performedSinceTopCheckpoint,tmp)
-      if (performedSinceTopCheckpoint.depth < -maxHistorySize || performedSinceTopCheckpoint.depth > maxHistorySize) {
-        performedSinceTopCheckpoint = null //we do not record anymore, an assign will be generated in case of rollBack.
-      }
+
+    if(performedSinceTopCheckpoint != null) {
+      performedSinceTopCheckpoint = updatefct(performedSinceTopCheckpoint, toNotify.newValue)
+    }else{
+      //if it is null, it means that no checkpoint was declared.
+      require(currentCheckpointLevel == -1)
     }
   }
 
   protected [computation] def setValue(seq:IntSequence){
-    require(!toNotify.anyCheckpointDefinition,"Sequences cannot be assigned when a checkpoint has been defined")
-    recordPerformedIncrementalUpdate((_,_) => SeqUpdateAssign(seq))
+    require(
+      performedSinceTopCheckpoint == null &&
+        !toNotify.anyCheckpointDefinition &&
+        levelOfTopCheckpoint == -1,
+      "Sequences cannot be assigned when a checkpoint has been defined")
+
+    toNotify = SeqUpdateAssign(seq)
+
     notifyChanged()
+  }
+
+  // checkpoint management values
+
+
+  //This section of code is for maintaining the checkpoint stack.
+  //stack does not include top checkpoint
+  //triplet is as follows:
+  //  checkpointValue,
+  //  the update that led to this value from the previous checkpoint
+  //  true if star mode, false if circle mode
+
+  //this is about the performed stuff, on the neighborhood side and also covers the notified side
+  private[this] var levelOfTopCheckpoint:Int = -1
+  def currentCheckpointLevel = levelOfTopCheckpoint
+
+  //can be null if no checkpoint
+  private[this] var topCheckpoint : IntSequence = null
+  private[this] var topCheckpointIsStarMode : Boolean = false
+  private[this] var checkpointStackNotTop : List[(IntSequence, SeqUpdate, Boolean)] = List.empty
+
+  //what has been performed on the newValue after the current checkpoint (not maintained if checkpoint is circle mode, or if the number of updates gets too large)
+  private[this] var performedSinceTopCheckpoint : SeqUpdate = null
+
+  def getTopCheckpoint : IntSequence = topCheckpoint
+  def getTopCheckpointIsStarMode : Boolean = topCheckpointIsStarMode
+
+  /**
+    * to define the current value as a checkpoint
+    * the checkpoint can be used in a star mode or circle mode exploration.
+    *
+    * for star mode,
+    *    the rollBack will lead to O(1) roll back instructions, and stacked updates will be used in between
+    * for circle mode,
+    *    the roll back will lead to computing the reversed list of instructions to bring the value backto the checkpoint.
+    *    if this list is bigger than maxHistorySize, it will be replaced with an assign
+    *    Furthermore, the moves will not use the stacked updates; only concrete updates
+    * @param starModeExploration true for a star mode exploration, false for a circle mode exploration
+    * @return
+    */
+  protected def defineCurrentValueAsCheckpoint(starModeExploration : Boolean) : IntSequence = {
+    //println("notify define checkpoint " + this.toNotify.newValue)
+
+    //previous checkpoints might be in the toNotify list.
+    //we must search and destroy them for all checkpoint declaration whose level is >= level of the defined checkpoint
+    //notice that we do not need to search passed a checkpoint whose level is < level of the defined checkpoint
+
+    //we do not use the record function because it also records stuff for the checkpoint stack
+    toNotify =
+        SeqUpdateDefineCheckpoint(
+          toNotify,
+          starModeExploration,
+          maxPivotPerValuePercent,
+          doRegularize = levelOfTopCheckpoint == -1,
+          levelOfTopCheckpoint+1)
+
+    if(topCheckpoint != null){
+      checkpointStackNotTop = (topCheckpoint,performedSinceTopCheckpoint,topCheckpointIsStarMode) :: checkpointStackNotTop
+    }
+    topCheckpointIsStarMode = starModeExploration
+    topCheckpoint = toNotify.newValue //this one was regularized if needed, btw
+    levelOfTopCheckpoint += 1
+    if(starModeExploration) {
+      performedSinceTopCheckpoint = SeqUpdateLastNotified(topCheckpoint)
+    }else{
+      performedSinceTopCheckpoint = null
+    }
+
+    notifyChanged()
+    toNotify.newValue
+  }
+
+  protected def rollbackToTopCheckpoint(checkpoint : IntSequence){
+
+    // println("ChangingSeqValue got rollback to top checkpoint my level:" + levelOfTopCheckpoint)
+    require(checkpoint quickEquals topCheckpoint,
+      "given checkpoint not quickequal to my top checkpoint; equal=" +
+        (checkpoint equals topCheckpoint) + " checkpoint:" + checkpoint + " my topCheckpoint:" + topCheckpoint)
+
+    popToNotifyUntilCheckpointDeclaration(toNotify,topCheckpoint,removeDeclaration = false) match{
+      case CheckpointDeclarationReachedAndRemoved(newToNotify:SeqUpdate) =>
+        //error, we asked removeDeclaration = false
+        throw new Error("unexpected result")
+      case SeqUpdatesCleanedUntilQuickEqualValueReachedCheckpointDeclarationNotRemoved(newToNotify:SeqUpdate) =>
+        //checkpoint value could be found in toNotify, and updatsd after it were removed so we don't have to do anything
+        require(newToNotify.newValue quickEquals checkpoint,newToNotify.newValue + "not quickEquals " + checkpoint)
+
+        //we are at the checkpoint declaration, and it has not been communicated yet,
+        // so we know that this is already scheduled for propagation unless it has never been scheduled because there was nothing to communicate
+        require(this.isScheduled || toNotify.isInstanceOf[SeqUpdateLastNotified])
+        performedSinceTopCheckpoint = SeqUpdateLastNotified(topCheckpoint)
+
+        toNotify = newToNotify
+
+      case NoSimplificationPerformed =>
+        //in this case, the checkpoint was already notified, and possibly some moves were performed from it.
+        assert(!toNotify.anyCheckpointDefinition)
+        //checkpoint value could not be found in sequence, we have to add rollBack instructions
+        //It also means that the checkpoint was communicated to the listening side
+        if(topCheckpointIsStarMode){
+          //we are in star mode, so we can do a rollBack
+          //we must do it incrementally, or through rollBack update
+
+          assert(performedSinceTopCheckpoint.reverse(topCheckpoint,toNotify).newValue equals checkpoint)
+
+          //the purpose of transferring performedSinceTopCheckpoint to a tmp value if to ensure that the function created
+          // herebelow is not affected by a change in the variable, as it is modified later on
+          val tmp = performedSinceTopCheckpoint
+          val tmpToNotify = toNotify
+          //println("performedSinceTopCheckpoint:" + performedSinceTopCheckpoint)
+          //we specify a roll back and give the instructions that must be undone, just in case.
+          toNotify = SeqUpdateRollBackToCheckpoint(
+            checkpoint,
+            () => {tmp.reverse(checkpoint,tmpToNotify)},              //TODO check that we do not create an infinite roll back loop here
+            level = levelOfTopCheckpoint)
+
+        }else{
+          // what if there is a checkpoint that has not been communicated in the toNotify?
+          // this is not possible because we roll back to the topmost checkpoint, and if we reach this point,
+          // the declaration of this topmost checkpoint is not in toNotify,
+          // so it has already been ommunicated, and therefore, the other checkpoint also have.
+          // top checkpoint is circle mode. roll back is performed through assign.
+          toNotify = SeqUpdateAssign(checkpoint)
+        }
+
+        notifyChanged()
+    }
+
+    //in all case, we are at the checkpoint, so set it to LastNotified if active
+    if(performedSinceTopCheckpoint != null)
+      performedSinceTopCheckpoint = SeqUpdateLastNotified(topCheckpoint)
+
+    require(toNotify.newValue quickEquals checkpoint,toNotify.newValue + "not quickEquals " + checkpoint)
+    //println("notified of rollBack toNotify after:" + toNotify + " currentCheckpoint:" + topCheckpoint + " performedSinceTopCheckpoint:" + performedSinceTopCheckpoint)
+  }
+
+  /**
+    * releases the top checkpoint
+    * @note You do not need to be at the top checkpoint value to call this, you can do it later no worries.
+    */
+  protected def releaseTopCheckpoint() {
+    require(topCheckpoint != null)
+    require(levelOfTopCheckpoint >= 0)
+
+    //  println("changing seq got release top checkpoint current level is: " + levelOfTopCheckpoint)
+
+    //the checkpoint might not have been communicated yet, so we look for newValue, since we are at the checkpoint.
+    val checkPointWipedOut =
+      removeCheckpointDeclarationIfPresent(toNotify,topCheckpoint) match{
+        case CheckpointDeclarationReachedAndRemoved(newToNotify:SeqUpdate) =>
+          //we wipe out this checkpoint from history
+          toNotify = newToNotify
+          true //checkpointWipedout
+        case SeqUpdatesCleanedUntilQuickEqualValueReachedCheckpointDeclarationNotRemoved(newToNotify:SeqUpdate) =>
+          throw new Error("unexpected internal result")
+          false //checkpointWipedout
+        case NoSimplificationPerformed =>
+          //there is nothing to do here because the checkpoint has been communicated anyway,
+          // and we are in the latest checkpoint fashion where checkpoints are implicitly released when a new one is communicated
+          false //checkpoint not WipedOut
+      }
+
+    //in all cases, we must pop the checkpoint from the checkpoint stack since it is working on the NewValues
+    checkpointStackNotTop match{
+      case top :: tail =>
+        require(levelOfTopCheckpoint > 0)
+        checkpointStackNotTop = tail
+        topCheckpoint = top._1
+        topCheckpointIsStarMode = top._3
+        performedSinceTopCheckpoint = if(performedSinceTopCheckpoint != null && top._2!= null) performedSinceTopCheckpoint.prepend(top._2) else null
+        levelOfTopCheckpoint -= 1
+      case Nil =>
+        //there is no upper checkpoint
+        require(levelOfTopCheckpoint == 0)
+        levelOfTopCheckpoint = -1
+        topCheckpoint = null
+        performedSinceTopCheckpoint = null
+        topCheckpointIsStarMode = false
+    }
+  }
+
+  protected def releaseTopCheckpointsToLevel(level:Int,included:Boolean){
+    if(included) {
+      while (levelOfTopCheckpoint >= level) {
+        releaseTopCheckpoint()
+      }
+    }else{
+      while (levelOfTopCheckpoint > level) {
+        releaseTopCheckpoint()
+      }
+    }
   }
 
   @inline
@@ -845,27 +1047,10 @@ et cette stack doit être mise à jour au moment de la notification.
 
   // CHECKPOINT STUFF
 
-  //This section of code is for maintaining the checkpoint stack.
-  //stack does not include top checkpoint
-  //triplet is as follows:
-  //  checkpointValue,
-  //  the update that led to this value from the previous checkpoint
-  //  true if star mode, false if circle mode
-  private[this] var checkpointStackNotTop : List[(IntSequence, SeqUpdate, Boolean)] = List.empty
-
-  //can be null if no checkpoint
-  private[this] var topCheckpoint : IntSequence = null
-  private[this] var topCheckpointIsStarMode : Boolean = false
-  private[this] var levelOfTopCheckpoint:Int = -1
-
-  def currentCheckpointLevel = levelOfTopCheckpoint
-  def getTopCheckpoint : IntSequence = topCheckpoint
-  def getTopCheckpointIsStarMode : Boolean = topCheckpointIsStarMode
-  def getLevelOfTopCheckpoint:Int = levelOfTopCheckpoint
 
 
-  //what has been performed on the newValue after the current checkpoint (not maintained if checkpoint is circle mode, or if the number of updates gets too large)
-  private[this] var performedSinceTopCheckpoint : SeqUpdate = null
+
+
 
   private def removeAllCheckpointDefinitionAboveOrEqualLevel(updates:SeqUpdate, level:Int):SeqUpdate = {
     updates match {
@@ -911,167 +1096,7 @@ et cette stack doit être mise à jour au moment de la notification.
 
 
 
-  /**
-    * to define the current value as a checkpoint
-    * the checkpoint can be used in a star mode or circle mode exporation.
-    *
-    * for star mode,
-    *    the rollBack will lead to O(1) roll back instructions, and stacked updates will be used in between
-    * for circle mode,
-    *    the roll back will lead to computing the reversed list of instructions to bring the value backto the checkpoint.
-    *    if this list is bigger than maxHistorySize, it will be replaced with an assign
-    *    Furthermore, the moves will not use the stacked updates; only concrete updates
-    * @param starModeExploration true for a star mode exploration, false for a circle mode exploration
-    * @return
-    */
-  protected def defineCurrentValueAsCheckpoint(starModeExploration : Boolean) : IntSequence = {
-    //println("notify define checkpoint " + this.toNotify.newValue)
 
-    //previous checkpoints might be in the toNotify list.
-    //we must search and destroy them for all checkpoint declaration whose level is >= level of the defined checkpoint
-    //notice that we do not need to search passed a checkpoint whose level is < level of the defined checkpoint
-
-    toNotify = SeqUpdateDefineCheckpoint(
-      removeAllCheckpointDefinitionAboveOrEqualLevel(toNotify, levelOfTopCheckpoint+1),
-      starModeExploration,maxPivotPerValuePercent,doRegularize = levelOfTopCheckpoint == -1,levelOfTopCheckpoint+1)
-
-    //pushing top checkpoint
-    ERROR:since we removed a checkpoint from toNotify, it should also be removed from here!
-    if(topCheckpoint != null){
-      //this might not be synchronized!!!
-      checkpointStackNotTop = (topCheckpoint,performedSinceTopCheckpoint,topCheckpointIsStarMode) :: checkpointStackNotTop
-    }
-    topCheckpointIsStarMode = starModeExploration
-    topCheckpoint = toNotify.newValue //this one was regularized if needed, btw
-    levelOfTopCheckpoint += 1
-    if(starModeExploration) {
-      performedSinceTopCheckpoint = SeqUpdateLastNotified(topCheckpoint)
-    }else{
-      performedSinceTopCheckpoint = null
-    }
-
-    notifyChanged()
-    toNotify.newValue
-  }
-
-  protected def rollbackToTopCheckpoint(checkpoint : IntSequence){
-
-    // println("ChangingSeqValue got rollback to top checkpoint my level:" + levelOfTopCheckpoint)
-    require(checkpoint quickEquals topCheckpoint,
-      "given checkpoint not quickequal to my top checkpoint; equal=" +
-        (checkpoint equals topCheckpoint) + " checkpoint:" + checkpoint + " my topCheckpoint:" + topCheckpoint)
-
-    popToNotifyUntilCheckpointDeclaration(toNotify,topCheckpoint,removeDeclaration = false) match{
-      case CheckpointDeclarationReachedAndRemoved(newToNotify:SeqUpdate) =>
-        //we could wipe out this checkpoint from history, but this was required not to happen: removeDeclaration = false
-        throw new Error("unexpected result")
-      case SeqUpdatesCleanedUntilQuickEqualValueReachedCheckpointDeclarationNotRemoved(newToNotify:SeqUpdate) =>
-        //checkpoint value could be found in toNotify, so we don't have to do anything
-        require(newToNotify.newValue quickEquals checkpoint,newToNotify.newValue + "not quickEquals " + checkpoint)
-
-        //we are at the checkpoint declaration, and it has not been communicated yet,
-        // so we know that this is already scheduled for propagation unless it has never been scheduled because there was nothing to communicate
-        require(this.isScheduled || toNotify.isInstanceOf[SeqUpdateLastNotified])
-
-        toNotify = newToNotify
-
-      case NoSimplificationPerformed =>
-        assert(!toNotify.anyCheckpointDefinition)
-        //checkpoint value could not be found in sequence, we have to add rollBack instructions
-        //It also means that the checkpoint was communicated to the listening side
-        if(topCheckpointIsStarMode){
-          //we are in star mode, so we can do a rollBack (althoug hit might have an assign in the undo in case there is no recordedInstructions
-          //we must do it incrementally, or through rollBack update
-
-          assert(performedSinceTopCheckpoint.reverse(topCheckpoint,toNotify).newValue equals checkpoint)
-
-          //the purpose of transferring performedSinceTopCheckpoint to a tmp value if to ensure that the function created
-          // herebelow is not affected by a change in the variable, as it is modified later on
-          val tmp = performedSinceTopCheckpoint
-          val tmpToNotify = toNotify
-          //println("performedSinceTopCheckpoint:" + performedSinceTopCheckpoint)
-          //we specify a roll back and give the instructions that must be undone, just in case.
-          toNotify = SeqUpdateRollBackToCheckpoint(
-            checkpoint,
-            () => {tmp.reverse(checkpoint,tmpToNotify)},              //TODO check that we do not create an infinite roll back loop here
-            level = levelOfTopCheckpoint)
-
-        }else{
-          // what if there is a checkpoint that has not been communicated in the toNotify?
-          // this is not possible because we roll back to the topmost checkpoint, and if we reach this point,
-          // the declaration of this topmost checkpoint is not in toNotify,
-          // so it has already been ommunicated, and therefore, the other checkpoint also have.
-          // top checkpoint is circle mode. roll back is performed through assign.
-          toNotify = SeqUpdateAssign(checkpoint)
-        }
-
-        notifyChanged()
-    }
-
-    //in all case, we are at the checkpoint, so set it to LastNotified if active
-    if(performedSinceTopCheckpoint != null)
-      performedSinceTopCheckpoint = SeqUpdateLastNotified(topCheckpoint)
-
-    require(toNotify.newValue quickEquals checkpoint,toNotify.newValue + "not quickEquals " + checkpoint)
-    //println("notified of rollBack toNotify after:" + toNotify + " currentCheckpoint:" + topCheckpoint + " performedSinceTopCheckpoint:" + performedSinceTopCheckpoint)
-  }
-
-  protected def releaseTopCheckpointsToLevel(level:Int,included:Boolean){
-    if(included) {
-      while (levelOfTopCheckpoint >= level) {
-        releaseTopCheckpoint()
-      }
-    }else{
-      while (levelOfTopCheckpoint > level) {
-        releaseTopCheckpoint()
-      }
-    }
-  }
-
-  /**
-    * releases the top checkpoint
-    * @note You do not need to be at the top checkpoint value to call this, you can do it later no worries.
-    */
-  protected def releaseTopCheckpoint() {
-    require(topCheckpoint != null)
-    require(levelOfTopCheckpoint >= 0)
-
-    //  println("changing seq got release top checkpoint current level is: " + levelOfTopCheckpoint)
-
-    //the checkpoint might not have been communicated yet, so we look for newValue, since we are at the checkpoint.
-    val checkPointWipedOut =
-      removeCheckpointDeclarationIfPresent(toNotify,topCheckpoint) match{
-        case CheckpointDeclarationReachedAndRemoved(newToNotify:SeqUpdate) =>
-          //we wipe out this checkpoint from history
-          toNotify = newToNotify
-          true //checkpointWipedout
-        case SeqUpdatesCleanedUntilQuickEqualValueReachedCheckpointDeclarationNotRemoved(newToNotify:SeqUpdate) =>
-          throw new Error("unexpected internal result")
-          false //checkpointWipedout
-        case NoSimplificationPerformed =>
-          //there is nothing to do here because the checkpoint has been communicated anyway,
-          // and we are in the latest checkpoint fashion where checkpoints are implicitly released when a new one is communicated
-          false //checkpoint not WipedOut
-      }
-
-    //in all cases, we must pop the checkpoint from the checkpoint stack since it is working on the NewValues
-    checkpointStackNotTop match{
-      case top :: tail =>
-        require(levelOfTopCheckpoint > 0)
-        checkpointStackNotTop = tail
-        topCheckpoint = top._1
-        topCheckpointIsStarMode = top._3
-        performedSinceTopCheckpoint = if(performedSinceTopCheckpoint != null && top._2!= null) performedSinceTopCheckpoint.prepend(top._2) else null
-        levelOfTopCheckpoint -= 1
-      case Nil =>
-        //there is no upper checkpoint
-        require(levelOfTopCheckpoint == 0)
-        levelOfTopCheckpoint = -1
-        topCheckpoint = null
-        performedSinceTopCheckpoint = null
-        topCheckpointIsStarMode = false
-    }
-  }
 
   abstract class CleaningResult
 
