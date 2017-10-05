@@ -48,6 +48,8 @@ object TimeWindowHelper{
           predecessor != node => predecessor
     }: _*)).toMap
   }
+
+
   /**
     * This method is meant to precompute the relevant successors of all node.
     *

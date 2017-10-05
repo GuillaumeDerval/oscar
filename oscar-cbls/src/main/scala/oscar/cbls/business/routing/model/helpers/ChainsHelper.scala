@@ -3,16 +3,16 @@ package oscar.cbls.business.routing.model.helpers
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.business.routing.model.extensions.Chains
 
-import scala.collection.immutable.List
+import scala.collection.immutable.{HashSet, List}
 
 /**
   * Created by fg on 12/09/17.
   */
 object ChainsHelper {
 
-  def relevantNeighborsForLastNodeAfterHead(vrp: VRP, chainsExtension: Chains, potentialRelevantPredecessorOfLastNode: Option[List[Int]] = None)(lastNode: Int): Iterable[Int] = {
+  def relevantNeighborsForLastNodeAfterHead(vrp: VRP, chainsExtension: Chains, potentialRelevantPredecessorOfLastNode: Option[HashSet[Int]] = None)(lastNode: Int): Iterable[Int] = {
     require(chainsExtension.isLast(lastNode), "The referenced node has to be the last node of a chain.")
-    val potentialRelevantPredecessorOfLastNodeNow = potentialRelevantPredecessorOfLastNode.getOrElse(vrp.routed.value.toList)
+    val potentialRelevantPredecessorOfLastNodeNow = potentialRelevantPredecessorOfLastNode.getOrElse(HashSet(vrp.routed.value.toList: _*))
     var nextOfHeadExplorer = vrp.routes.value.explorerAtAnyOccurrence(chainsExtension.chainOfNode(lastNode).head)
     var relevantNeighborsOfLastNode: List[Int] = List.empty
     while (nextOfHeadExplorer match{
