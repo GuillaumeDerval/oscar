@@ -131,9 +131,10 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   }
   def get_array_int_element_inv(b: IntegerVariable, as: Array[IntegerVariable], r: IntegerVariable, defId: String, ann: List[Annotation]) = {
    val idx = Sum2(b,-1)
+
     val k = Max2(0,Min2(idx,as.length-1))
     add_constraint(EQ(k,idx))
-    
+
     if(as.forall(_.isBound)) IntElementNoVar(k, as.map(_.value))
     else IntElement(k, as.map(getCBLSVar(_)))
 
@@ -480,7 +481,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
       case bool_xor(a, b, r, ann)                     => BoolEQ(r,XOR(a,b))
 
       case int_abs(x, y, ann)                         => EQ(y,get_int_abs_inv(x, y, y.id,ann))
-      case int_div(x, y, z, ann)                      => EQ(x,get_int_times_inv(y,z,x,x.id,ann))//EQ(z,get_int_div_inv(x, y, z,z.id, ann))
+      case int_div(x, y, z, ann)                      => EQ(x,get_int_div_inv(x,y,z,x.id,ann))//EQ(z,get_int_div_inv(x, y, z,z.id, ann))
       case int_eq(x, y, ann)                          => EQ(x,y)
       case int_le(x, y, ann)                          => LE(x, y)
       case int_lin_eq(params, vars, sum, ann)         => get_int_lin_eq(params, vars, sum, ann)

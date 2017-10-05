@@ -125,7 +125,7 @@ object EnsureDomain{
 //          Console.err.println("added "+i)
         }
 //        Console.err.println("addedX "+i)
-        c.add(BelongsToConst(i,vals.toSet) /*.nameConstraint("EnsureDomain constraint of " + c)*/)//no weight
+        c.add(BelongsToConst(i,vals) /*.nameConstraint("EnsureDomain constraint of " + c)*/)//no weight
       }
     }
   }

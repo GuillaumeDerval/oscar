@@ -200,6 +200,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
       case _ => ()
     }
 
+
     log("Violation after: " + c.violation.value)
     log("Objective bound updated")
 
@@ -207,19 +208,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
     if(objective.getObjectiveValue() < bestKnownObjective) {
       println("% time from start: "+getWatch())
       bestKnownObjective = objective.getObjectiveValue()
-      fzModel.solution.handleSolution(
-        (s: String) => cblsIntMap.get(s) match {
-          case Some(intVar) =>
-            intVar.value + ""
-          case r => if (s == "true" || s == "false") s
-          else try {
-            s.toInt.toString()
-          } catch {
-            case e: NumberFormatException => {
-              throw new Exception("Unhappy: " + r + " " + s)
-            }
-          }
-        });
+      printCurrentAssignment
     }
     if(useCP && fzModel.search.obj != Objective.SATISFY){
       log("Calling the CP solver")
@@ -232,6 +221,26 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
 
     }
   }
+
+  def printCurrentAssignment: Unit = {
+    fzModel.solution.handleSolution(
+      (s: String) => cblsIntMap.get(s) match {
+        case Some(intVar) =>
+          intVar.value + ""
+        case r => if (s == "true" || s == "false") {
+          s
+        } else {
+          try {
+            s.toInt.toString()
+          } catch {
+            case e: NumberFormatException => {
+              throw new Exception("Unhappy: " + r + " " + s)
+            }
+          }
+        }
+      });
+  }
+
   var cpmodel = null.asInstanceOf[FZCPModel]
   var useCP = false
   def useCPsolver(cpm: FZCPModel){

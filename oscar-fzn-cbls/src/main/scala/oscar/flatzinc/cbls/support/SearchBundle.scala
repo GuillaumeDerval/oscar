@@ -97,41 +97,47 @@ class SimpleLocalSearch(val m:FZCBLSModel,val sc: SearchControl) extends SearchP
   val violation: Array[IntValue] = m.vars.map(m.c.violation(_)).toArray;
   val log = m.log
   def run(){
-    var improving = 3;
-    var i = RandomGenerator.nextInt(violation.length);
-    var lastImproved = i;
     var it = 0;
-    log("Starting Simple Local Search")
-    log("Starting Violation: "+m.objective.violation.value)
-    if(m.vars.length>0){
-      sc.handlePossibleSolution();
-      while(improving > 0 && !sc.stopOnTime()){
-        val currentVar = m.vars(i);
-        if(violation(i).value > 0){
-          //val k = selectMin(currentVar.getDomain())(k=> m.objective.objective.assignVal(currentVar,k))
-          val currentObj = m.objective.objective.value
-          val k = if(currentVar.getDomain().size > 1000000){
-            selectFirst(RandomGenerator.shuffle(currentVar.getDomain()), ( (k:Int) => m.objective.objective.assignVal(currentVar,k) < currentObj))
-          }else{
-            selectMin(currentVar.getDomain())(k=> m.objective.objective.assignVal(currentVar,k))
-          }
-          if(k!=currentVar.value){
-            val obj = m.objective.objective.value
-            currentVar := k;
-            sc.handlePossibleSolution();
-            it+=1;
-            if(m.objective.objective.value < obj){
-              lastImproved = i;
-              improving = 3
+    if(m.vars.length>0) {
+      var improving = 3;
+      var i = RandomGenerator.nextInt(violation.length);
+      var lastImproved = i;
+      var bestObj = Int.MaxValue
+
+      log("Starting Simple Local Search")
+      log("Starting Violation: " + m.objective.violation.value)
+      if (m.vars.length > 0) {
+        sc.handlePossibleSolution();
+        while (improving > 0 && !sc.stopOnTime()) {
+          val currentVar = m.vars(i);
+          if (violation(i).value > 0) {
+            //val k = selectMin(currentVar.getDomain())(k=> m.objective.objective.assignVal(currentVar,k))
+            val currentObj = m.objective.objective.value
+            val k = if (currentVar.getDomain().size > 50000) {
+              selectMin(RandomGenerator.shuffle(currentVar.getDomain()).take(50000))((k: Int) => m.objective.objective.assignVal(currentVar, k))
+            } else {
+              selectMin(currentVar.getDomain())(k => m.objective.objective.assignVal(currentVar, k))
+            }
+            if (k != currentVar.value) {
+              val obj = m.objective.objective.value
+              currentVar := k;
+              sc.handlePossibleSolution();
+              it += 1;
+              if (m.objective.objective.value < bestObj) {
+                lastImproved = i;
+                improving = 3
+                bestObj = m.objective.objective.value
+              }
             }
           }
+          i += 1;
+          if (i == m.vars.length) {
+            i = 0;
+            //log(2,"turned around "+m.objective.objective.value)
+          }
+          if (i == lastImproved)
+            improving -= 1;
         }
-        i+=1;
-        if(i==m.vars.length){
-          i=0;
-          //log(2,"turned around "+m.objective.objective.value)
-        }
-        if(i==lastImproved)improving -= 1;
       }
     }
     log("Done Simple Local Search at "+m.getWatch())
@@ -169,6 +175,9 @@ class SearchControl(val m: FZCBLSModel, val objLB:Int, val MaxTimeMilli: Int,val
 
 
   def handlePossibleSolution(){
+    if(m.objective().value < weightedBest){
+      bestPair = (m.objective.violation.value,m.objective.getObjectiveValue())
+    }
     if(m.objective.violation.value==0 && m.objective.getObjectiveValue() < bestKnownObjective){
       //bestKnownViolation = 0
       bestKnownObjective = m.objective.getObjectiveValue();
@@ -181,10 +190,6 @@ class SearchControl(val m: FZCBLSModel, val objLB:Int, val MaxTimeMilli: Int,val
       }
     }else if(bestKnownObjective == Int.MaxValue){
       m.log("Best Violation: "+m.objective.violation.value+ "\tat "+m.getWatch()+ " ms")
-    }
-
-    if(m.objective().value < weightedBest){
-      bestPair = (m.objective.violation.value,m.objective.getObjectiveValue())
     }
   }
   def weightedBest = bestPair._1 * m.objective.violationWeight.value + bestPair._2 * m.objective.objectiveWeight.value
@@ -257,6 +262,8 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
     currentNeighbour = (currentNeighbour + 1) % neighbourhoods.size
     */
 
+    //val foo  = m.c.getPostedConstraints.map(_._1).filter(_.violation.value>0)
+    //m.printCurrentAssignment
 
     val bestNeighbour = selectMin(neighbourhoods.map((n: Neighbourhood) =>
       if (extendedSearch) {
@@ -266,9 +273,6 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
       }))(_.value)
 
 
-
-
-    val foo  = m.c.getPostedConstraints.map(_._1).filter(_.violation.value>0)
 
     if(bestNeighbour!=null){
       //TODO: Aspiration sometimes accepts moves that do not improve but seem to improve because of changing weights. 
@@ -434,7 +438,7 @@ class NeighbourhoodSearchSAT(m:FZCBLSModel, sc: SearchControl) extends Neighbour
           extendedSearch = false;
         }
       }
-      if (m.c.violation.value > bestViolation * 10) {
+      if (m.c.violation.value > bestViolation * 2) {
         extendedSearch = true;
       }
 

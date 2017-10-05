@@ -49,14 +49,10 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
     { case (n: String, l: List[Constraint]) => l.length + "\t" + n }.toList.sorted.foreach(log(_))
 
     log("Parsed. Parsing took " + getWatch + " ms")
-    val cpmodel = new FZCPModel(fzModel, oscar.cp.Strong)
+    val cpmodel = new FZCPModel(fzModel, oscar.cp.core.CPPropagStrength.Automatic)
     //println(fzModel.variables.toList.map(v => v.domainSize))
 
 
-    val foo = fzModel.constraints
-              .filter(_.isInstanceOf[int_lin_eq])
-              .map(_.asInstanceOf[int_lin_eq])
-              .filter(_.vars.exists(_.id == "X_INTRODUCED_117_"))
     simplifyFlatZincModel(opts, log, useCP, fzModel, cpmodel)
 
 
@@ -88,6 +84,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
 
     val (maybeDirConstraint, maybeSoftConstraint) = allConstraints.partition(_.definedVar.isDefined)
     log("Possibly " + maybeDirConstraint.length + " invariants.")
+
     val (invariants, nowMaybeSoft) = FZModelTransfo.getSortedInvariants(maybeDirConstraint)(log)
     log("Sorted " + invariants.length + " Invariants")
 
@@ -102,14 +99,17 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
                                                                            maybeSoftConstraint ++ nowMaybeSoft, opts,
                                                                            log)
 
+
     val poster: FZCBLSConstraintPoster = new FZCBLSConstraintPoster(cblsmodel.c, cblsmodel.getCBLSVar)
 
     postInvariants(cblsmodel, poster, invariants, log)
 
     postConstraints(poster, softConstraints, log)
 
+
+
     //Do not want to search on fixed variables!
-    cblsmodel.removeVariablesFromNeighbourhood(v => v.domainSize == 1 || v.isControlledVariable)
+    cblsmodel.removeControlledVariables(v => v.domainSize == 1 || v.isControlledVariable)
 
     //Remove variables that are in defined neighbourhoods
     removeNeighbourhoodVariables(fzModel, cblsmodel)
@@ -131,6 +131,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
     }
 
     cblsmodel.addDefaultNeighbourhoods()
+
 
 
     //Create variable violation before closing the constraint system!
@@ -163,9 +164,10 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
     log("Timeout is set to " + timeout + " milliseconds");
 
     val timeLimit = (timeout*0.04).toInt
-    //val (sc: SearchControl, search: Chain) = createSearchProcedure(timeout, log, fzModel, opts, cblsmodel)
+    //// val (sc: SearchControl, search: Chain) = createSearchProcedure(timeout, log, fzModel, opts, cblsmodel)
 
     //val bets = Array.tabulate(10)(i => createSearchProcedure(timeLimit+i*timeLimit, false, log, fzModel, opts, cblsmodel))
+
     val finalRun = createSearchProcedure(timeout, true, log, fzModel, opts, cblsmodel)
 
     cblsmodel.close()
@@ -180,13 +182,15 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
       if (cblsmodel.c.violatedConstraints.length == 0 && fzModel.search.obj == Objective.SATISFY) {
         cblsmodel.handleSolution()
       } else {
+        /*
         //Bet and run precedure:
-        /*val res = bets.map( (s:(SearchControl,SearchProcedure)) => {
+        val res = bets.map( (s:(SearchControl,SearchProcedure)) => {
           cblsmodel.neighbourhoods.foreach(_.reset())
           val c = s._1
           val sr = s._2
           System.err.println("% Starting new bet in bet-and-run scheme")
           sr.run()
+          System.err.println("% Found objective: " + c.bestKnownObjective)
           if (c.bestKnownObjective < bestKnownObjective){
             System.err.println("% Found new best known objective: " + c.bestKnownObjective)
             bestKnownObjective = c.bestKnownObjective
@@ -195,10 +199,11 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
           c.bestKnownObjective
         }
         )
-        System.err.println("% Result of bets: " + res.mkString(", "))*/
+        System.err.println("% Result of bets: " + res.mkString(", "))
+        */
       }
-      System.err.println("% Best result after bets = " + bestKnownObjective)
-      System.err.println("% Starting long run ")
+      //System.err.println("% Best result after bets = " + bestKnownObjective)
+      //System.err.println("% Starting long run ")
       sc.restoreBestSolution()
       finalRun._2.run()
       finalRun._1.bestKnownObjective = sc.bestKnownObjective
@@ -227,31 +232,37 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
       case Objective.MINIMIZE => new SearchControl(cblsmodel, fzModel.search.variable.get.min, timeout, false);
     }
 
-    val objDom = cblsmodel.objective.objectiveVar.domain
-    log("Objective dom is: " + objDom)
-    //TODO: The search should print the solution if, by chance, the initial assingnment is a solution!
+    val objDom = fzModel.search.obj match {
+      case Objective.SATISFY => None
+      case Objective.MAXIMIZE => Some(cblsmodel.objective.objectiveVar.domain)
+      case Objective.MINIMIZE => Some(cblsmodel.objective.objectiveVar.domain)
+    }
+    log("Objective dom is: " + objDom.getOrElse(null))
+
     val search = new Chain(
       new ActionSearch(() => {
         if(opts.is("usecp")){
           cblsmodel.useCP = useCP
         }
-        log("Objective dom is: " + objDom)
-        cblsmodel.objective.objectiveVar.asInstanceOf[ChangingIntValue].expandDomain(objDom)
-        cblsmodel.objective.bound.get := (fzModel.search.obj match {
-          case Objective.MAXIMIZE => cblsmodel.objective.objectiveVar.min
-          case Objective.MINIMIZE => cblsmodel.objective.objectiveVar.max
-         })
+        if(objDom.isDefined) {
+          log("Objective dom is: " + objDom)
+          cblsmodel.objective.violationWeight := 1
+          cblsmodel.objective.objectiveWeight := 1
+          cblsmodel.objective.objectiveVar.asInstanceOf[ChangingIntValue].expandDomain(objDom.get)
+          cblsmodel.objective.bound.get := (fzModel.search.obj match {
+            case Objective.MAXIMIZE => cblsmodel.objective.objectiveVar.min
+            case Objective.MINIMIZE => cblsmodel.objective.objectiveVar.max
+          })
+        }
       }),
       new ActionSearch(() => {
         val searchVariables = cblsmodel.neighbourhoods.foldLeft(Set.empty[CBLSIntVarDom])((acc: Set[CBLSIntVarDom], x: Neighbourhood) => acc ++ x.getVariables().filterNot(_.isInstanceOf[CBLSIntConstDom])).toArray
-        System.err.println("%Variable values: " + searchVariables.map(_.value).mkString(", "))
         sc.cancelObjective()
       }),
       if (!opts.is("no-sls")) new SimpleLocalSearch(cblsmodel, sc) else new ActionSearch(() => {}),
       new NeighbourhoodSearchSAT(cblsmodel, sc),
       new ActionSearch(() => {
         val searchVariables = cblsmodel.neighbourhoods.foldLeft(Set.empty[CBLSIntVarDom])((acc: Set[CBLSIntVarDom], x: Neighbourhood) => acc ++ x.getVariables().filterNot(_.isInstanceOf[CBLSIntConstDom])).toArray
-        System.err.println("%After greedy climb: " + searchVariables.map(_.value).mkString(", "))
         sc.restoreObjective()
       }),
       fzModel.search.obj match {
@@ -269,7 +280,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
                                            cblsmodel: FZCBLSModel) = {
     for (definedNeighbourhood <- fzModel.neighbourhoods) {
       val toRemove = definedNeighbourhood.getControlledVariables
-      cblsmodel.removeVariablesFromNeighbourhood(v => toRemove.exists(p => p.id == v.name))
+      cblsmodel.removeControlledVariables(v => toRemove.exists(p => p.id == v.name))
     }
   }
 

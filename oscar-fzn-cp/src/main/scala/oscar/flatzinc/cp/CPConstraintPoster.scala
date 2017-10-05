@@ -31,7 +31,7 @@ class CPConstraintPoster(val pstrength: oscar.cp.core.CPPropagStrength){
     c match{
       //TODO: We create variables in cumulative but we might want to memoize those as well!
       //TODO: Actually to avoid creating new variables, we could rewrite the cumulative in the minizinc definition to create those variables while flattening, and CSE will take care of it.
-      //case cumulative(s,d,r,capa,_) => oscar.cp.maxCumulativeResource(s.map(getVar), d.map(getVar), s.zip(d).map(vv => getVar(vv._1)+getVar(vv._2)), r.map(getVar), getVar(capa))
+      case cumulative(s,d,r,capa,_) => oscar.cp.maxCumulativeResource(s.map(getVar), d.map(getVar), s.zip(d).map(vv => getVar(vv._1)+getVar(vv._2)), r.map(getVar), getVar(capa))
       case maximum_int(x,y,_) => 
         c2ca(oscar.cp.maximum(y.map(getVar), getVar(x))) ++ ca2cs(y.map(v => getVar(v) <= getVar(x)))
       case minimum_int(x,y,_) => 
@@ -75,7 +75,7 @@ class CPConstraintPoster(val pstrength: oscar.cp.core.CPPropagStrength){
       case bool_xor(a, b, r, ann)                     => getBoolVar(r) === (getVar(a) ?!== getVar(b))
 
       case int_abs(x, y, ann)                         => new oscar.cp.constraints.Abs(getVar(x), getVar(y))
-      //case int_div(x, y, z, ann)                      => oscar.cp.mul(getVar(y), getVar(z)) === getVar(x) // TODO: this does not work as intended
+      case int_div(x, y, z, ann) if y.max == y.min    => (getVar(x)-(getVar(x) mod y.max)) === getVar(z)*y.max
       case int_eq(x, y, ann)                          => getVar(x) === getVar(y)
       case int_le(x, y, ann)                          => getVar(x) <= getVar(y)
       case int_lt(x, y, ann)                          => getVar(x) < getVar(y)

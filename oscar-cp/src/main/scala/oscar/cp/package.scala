@@ -330,6 +330,8 @@ package object cp extends Constraints with Branchings with ElementBuilder with C
 
 
     def %(y: Int) = ModuloLHS(x, y)
+
+    def mod(y: Int) = modulo(x, y)
     
     // New experimental function names for reification 
     

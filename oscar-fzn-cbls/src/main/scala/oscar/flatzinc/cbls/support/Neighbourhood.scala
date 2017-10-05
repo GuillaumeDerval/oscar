@@ -462,14 +462,16 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
 
   def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
 
-    var bMv = null.asInstanceOf[Move]
+    var bMv = List.empty[Move]
     var bObj = Int.MaxValue
     var cVar = start
     var looped = false
     val oObj = objective.value
     while (!(looped && cVar == start)) {
       val v = searchVariables(cVar)
-      if (acceptVar(v) && v.domainSize < 10000000) {
+      if (acceptVar(v)
+        && (variableViolation(cVar).value > 0 || RandomGenerator.nextInt(100) < 50)
+        && v.domainSize < 10000000) {
         //TODO: Do something about this!
         val variableValue = v.value
         for (cVal <- v.getDomain()) {
@@ -480,14 +482,16 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
               val cObj = mv.value
               if (cObj < bObj) {
                 bObj = cObj
-                bMv = mv
+                bMv = List(mv)
+              }else if(cObj == bObj){
+                bMv +:= mv
               }
             }
           }
         }
         if (bObj < oObj) {
           start = cVar
-          return bMv
+          return bMv.head
         }
       }
       cVar += 1
@@ -496,10 +500,10 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
         cVar = 0
       }
     }
-    if (bMv == null) {
+    if (bMv.isEmpty) {
       return new NoMove()
     } else {
-      return bMv
+      return bMv(RandomGenerator.nextInt(bMv.length))
     }
   }
 
@@ -711,11 +715,11 @@ class Inverse(xs: Array[CBLSIntVarDom], invXs: Array[CBLSIntVarDom], objective: 
       return false
     }
 
-    val possibleValues = (-offset to xs.length - offset).toList
-    RandomGenerator.shuffle(possibleValues)
+    val possibleValues = RandomGenerator.shuffle((-offset to xs.length - offset).toList)
     if (!recursiveFind(possibleValues, 0)) {
       throw new Exception("Unable to initialize inverse neighbourhood")
     }
+
 
     for (i <- xs.indices) {
       xs(i) := tmpXs(i)
@@ -776,12 +780,14 @@ class Inverse(xs: Array[CBLSIntVarDom], invXs: Array[CBLSIntVarDom], objective: 
     //TODO: Iterate over every variable in index range and for each variable swap with variable form domain...
     val bestSwap = selectMin2(rng1, rng2, (idx1: Int, idx2: Int) => getSwapMove(idx1, idx2, accept).value,
                               (idx1: Int, idx2: Int) =>
-                                idx1 != idx2 &&
+                                idx1 != idx2 && //Why != and not <?
+                                  ((xsViolation(idx1).value > 0 && xsViolation(idx2).value > 0) || RandomGenerator.nextInt(100) < 10) &&
                                   xs(idx1).dom.contains(xs(idx2).value) && xs(idx2).dom.contains(xs(idx1).value))
-    bestSwap match {
+    val b = bestSwap match {
       case (i1, i2) => getSwapMove(i1, i2, accept)
       case _ => new NoMove(Int.MaxValue)
     }
+    b
   }
 
   def violation() = {
