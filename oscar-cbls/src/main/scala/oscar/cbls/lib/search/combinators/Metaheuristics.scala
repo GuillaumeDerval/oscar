@@ -54,7 +54,7 @@ class Metropolis(a: Neighborhood, temperature: Int => Float = _ => 100, base: Fl
     val gain = oldObj - newObj
     if (gain > 0) return true
     // metropolis criterion
-    return math.random < math.pow(base, -gain / temperatureValue)
+    math.random < math.pow(base, -gain / temperatureValue)
   }
 
   def notifyMoveTaken() {

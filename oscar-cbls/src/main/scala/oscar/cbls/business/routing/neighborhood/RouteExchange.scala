@@ -159,6 +159,7 @@ case class RouteExchangeMove(firstVehicle:Int,
                              override val neighborhoodName: String = "RouteExchangeMove")
   extends VRPSMove(objAfter, neighborhood, neighborhoodName, neighborhood.vrp){
 
+  //TODO: Implement this
   override def impactedPoints: Iterable[Int] = ???
 
   override def commit() {

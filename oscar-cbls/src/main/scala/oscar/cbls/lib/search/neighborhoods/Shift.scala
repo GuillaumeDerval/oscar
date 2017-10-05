@@ -15,7 +15,6 @@
 
 package oscar.cbls.lib.search.neighborhoods
 
-import oscar.cbls._
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.core.computation.CBLSIntVar
 import oscar.cbls.core.search.{Move, EasyNeighborhood}
@@ -81,7 +80,7 @@ case class ShiftNeighborhood(vars:Array[CBLSIntVar],
         var modifHasOccured = false
         if(i != 0) {
           currentShiftOffset = i
-          for(secondIndice: Int <- firstIndice to currentSearchZone.size-1){
+          for(secondIndice: Int <- firstIndice until currentSearchZone.size){
             if(secondIndice - firstIndice <= Math.min(maxShiftSize-1,vars.length-1-currentShiftOffset-firstIndice)){
               currentShiftSize = secondIndice - currentStart + 1
               val newObj = doSmartShiftNeighborhood()
@@ -93,18 +92,18 @@ case class ShiftNeighborhood(vars:Array[CBLSIntVar],
               }
             }
           }
-          if(modifHasOccured) undoSmartShiftNeighborhood
+          if(modifHasOccured) undoSmartShiftNeighborhood()
         }
       }
     }
 
     def undoSmartShiftNeighborhood(): Unit ={
       if(currentShiftOffset > 0) {
-        for (i <- currentStart to currentStart + currentShiftOffset + currentShiftSize - 1) {
+        for (i <- currentStart until currentStart + currentShiftOffset + currentShiftSize) {
           vars(i) := initialValues(i)
         }
       }else{
-        for (i <- currentStart + currentShiftOffset to currentStart + currentShiftSize -1){
+        for (i <- currentStart + currentShiftOffset until currentStart + currentShiftSize){
           vars(i) := initialValues(i)
         }
       }
@@ -122,8 +121,6 @@ case class ShiftNeighborhood(vars:Array[CBLSIntVar],
           }
         }
         vars(currentStart + currentShiftOffset - 1) := tempVal
-        val newVal = obj.value
-        return newVal
       }
       //If the block is moved on the left
       else{
@@ -138,9 +135,9 @@ case class ShiftNeighborhood(vars:Array[CBLSIntVar],
           }
           vars(currentStart + currentShiftOffset + currentShiftSize - 1) := tempVal
         }
-        val newVal = obj.value
-        return newVal
       }
+      // Return the (possibly changed) obj.value
+      obj.value
     }
   }
 
@@ -176,7 +173,7 @@ case class ShiftMove(startIndice:Int,length:Int,offset:Int,variables:Array[CBLSI
     //If the block is moved on the right
     if(offset > 0){
       //The values are changed
-      for(i <- startIndice to startIndice + offset + length - 1){
+      for(i <- startIndice until startIndice + offset + length){
         if(i < startIndice + offset){
           variables(i) := initialValues(i + length)
         }
@@ -188,7 +185,7 @@ case class ShiftMove(startIndice:Int,length:Int,offset:Int,variables:Array[CBLSI
     //If the block is moved on the left
     else{
       //The values are changed (and don't forget, here offset is negative
-      for(i <- startIndice + offset to startIndice + length - 1){
+      for(i <- startIndice + offset until startIndice + length){
         if(i < startIndice + offset + length){
           variables(i) := initialValues(i - offset)
         }

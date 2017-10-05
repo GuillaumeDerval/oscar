@@ -128,7 +128,7 @@ class Planning(val model: Store, val maxDuration: Int) {
   override def toString: String = toAsciiArt
 
   def toAsciiArt: String = {
-    def nStrings(N: Int, C: String): String = (if (N <= 0) "" else "" + C + nStrings(N - 1, C))
+    def nStrings(N: Int, C: String): String = if (N <= 0) "" else "" + C + nStrings(N - 1, C)
     def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
     val activityList =
       activities.filter(_ != sentinelActivity).sortWith((a, b) =>
@@ -296,7 +296,7 @@ abstract class PrecedenceCleaner(val canBeKilled: Boolean) {
 }
 case class HardPrecedence() extends PrecedenceCleaner(false)
 
-case class PrecedencesCanBeKilled(val d: List[(Activity, Activity)]) extends PrecedenceCleaner(true) {
+case class PrecedencesCanBeKilled(d: List[(Activity, Activity)]) extends PrecedenceCleaner(true) {
   override def killDependencies(Verbose: Boolean = false) {
     for ((a, b) <- d) {
       b.removeDynamicPredecessor(a, Verbose)

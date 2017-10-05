@@ -61,7 +61,7 @@ case class Sequence(variables: Array[_ <: IntValue], length:Int, Max:Int, predic
   /**the violation of a variable is the sum of the violation of each sequence it is involved in*/
   var Violations = SortedMap.empty[IntValue, IntValue]
 
-  for(i <- 0 to variables.length - 1){
+  for(i <- variables.indices){
     val (lb,ub) = sequencesInvolving(i)
     val summedViolationOfSequencesVarIIsInvolvedIn = Sum((lb to ub).map(violated(_)))
     val violationOfVariableI = if(predicateIsToBeConsideredInVarViolation){
@@ -150,15 +150,15 @@ case class Sequence(variables: Array[_ <: IntValue], length:Int, Max:Int, predic
     * It requires that the Model is instantiated with the variable debug set to true.
     */
   override def checkInternals(c: Checker) {
-    val countCheck:Array[Int] = Array.tabulate(sequences.size)(i => 0)
+    val countCheck:Array[Int] = Array.tabulate(sequences.size)(_ => 0)
     /**the violation of the sequence starting here*/
-    val violatedCheck = Array.tabulate(sequences.size)(i => 0)
+    val violatedCheck = Array.tabulate(sequences.size)(_ => 0)
     var violationCheck = 0
 
     for(i <- variables.indices){
       if(predicate(variables(i).value)){
         val (lb,ub) = sequencesInvolving(i)
-        for(j <- (lb to ub)){
+        for(j <- lb to ub){
           countCheck(j) += 1
           if(countCheck(j) > Max){
             violatedCheck(j) +=1

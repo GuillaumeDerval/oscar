@@ -61,7 +61,7 @@ object ForwardCumulativeInteger4DimensionOnVehicle {
     val content3AtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent), contentName + "3 at end of route " + vehicle))
     val content4AtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent), contentName + "4 at end of route " + vehicle))
 
-    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, 0 to n-1, "last point of vehicle" + vehicle))
+    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, 0 until n, "last point of vehicle" + vehicle))
 
     new ForwardCumulativeInteger4DimensionOnVehicle(routes,n,v,op,
       content1AtStart,content2AtStart,content3AtStart,content4AtStart,
@@ -252,4 +252,3 @@ class ForwardCumulativeInteger4DimensionOnVehicle(routes:ChangingSeqValue,
     }
   }
 }
-

@@ -33,13 +33,13 @@ import scala.collection.immutable.SortedSet
  * @param hotRestart
  * @param tryFlip if false, will not flip any segment (maybe you do not want flipping if using time windows?)
  */
-
 case class SegmentExchange(val vrp: VRP,
                            relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
                            vehicles:() => Iterable[Int],
                            segmentsToExchangeGroupedByVehicles: Option[Map[Int,List[(Int,Int)]]] = None,
                            neighborhoodName:String = "SegmentExchange",
                            hotRestart:Boolean = true,
+
                            selectFirstVehicleBehavior:LoopBehavior = First(),
                            selectFirstNodeOfFirstSegmentBehavior:LoopBehavior = First(),
                            selectSecondNodeOfFirstSegmentBehavior:LoopBehavior = First(),
@@ -104,7 +104,7 @@ case class SegmentExchange(val vrp: VRP,
       val routeWithRelevantNeighborsTheirVehicleAndPositionGroupedByVehicles:List[(Int,Int,Map[Int,Iterable[(Int,Int,Int)]])] = routeOfVehicle1.map(node =>
         (node, seqValue.positionOfAnyOccurrence(node).head, relevantNeighborsNow(node)
           .map(node => (node,if(node >=v && nodeToRoute(node)!=n) nodeToRoute(node) else -1))
-          .filter({case (node,routeNr) => node >= v && allVehiclesToIterateOn.contains(routeNr)})
+          .filter({case (nodeNr,routeNr) => nodeNr >= v && allVehiclesToIterateOn.contains(routeNr)})
           .map(nodeAndRoute => (nodeAndRoute._1,nodeAndRoute._2,seqValue.positionOfAnyOccurrence(nodeAndRoute._1).head))
           .groupBy(nodeAndRoute => nodeAndRoute._2))
       )

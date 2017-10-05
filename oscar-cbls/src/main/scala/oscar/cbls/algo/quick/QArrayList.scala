@@ -51,7 +51,7 @@ class QArrayList[@specialized T](initialLength:Int)(implicit val X:Manifest[T]) 
     }
   }
 
-  def isEmpty = size == 0
+  def isEmpty:Boolean = size == 0
 
   def setEmpty(){
     size = 0

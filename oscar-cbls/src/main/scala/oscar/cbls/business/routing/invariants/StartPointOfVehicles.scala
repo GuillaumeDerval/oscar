@@ -25,7 +25,7 @@ class StartPointOfVehicles(routes:ChangingSeqValue,
 
   def vehicleReachingNode(node: Int) : Option[Int] = {
     routes.value.positionOfAnyOccurrence(node) match{
-      case Some(position) => Some(vehicleReachingPosition(position))
+      case Some(nodePosition) => Some(vehicleReachingPosition(nodePosition))
       case None => None
     }
   }
@@ -73,4 +73,3 @@ class StartPointOfVehicles(routes:ChangingSeqValue,
     currentVehicleLocation.checkOnSequence(routes.value)
   }
 }
-

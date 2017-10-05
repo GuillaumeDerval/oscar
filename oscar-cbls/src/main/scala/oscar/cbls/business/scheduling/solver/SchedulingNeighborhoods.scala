@@ -115,7 +115,7 @@ case class FlattenWorseFirst(p: Planning,
 
     val dependencyKillers: Array[Array[PrecedenceCleaner]] =
       Array.tabulate(baseForEjection.size)(
-        t1 => Array.tabulate(conflictActivityArray.size)(
+        t1 => Array.tabulate(conflictActivityArray.length)(
           t2 => p.getDependencyToKillToAvoidCycle(baseForEjectionArray(t1), conflictActivityArray(t2))))
 
     selectMin2(baseForEjectionArray.indices, conflictActivityArray.indices,
@@ -282,7 +282,7 @@ object SchedulingStrategies {
 
     val searchStep = (relax untilImprovement (p.makeSpan, nbRelax, maxIterationsForFlatten)) exhaust (flatten maxMoves 1)
 
-    (flatten sequence (Atomic(searchStep)) maxMoves stable withoutImprovementOver objective
+    (flatten sequence Atomic(searchStep) maxMoves stable withoutImprovementOver objective
       saveBest objective whenEmpty p.worseOvershotResource)
   }
 

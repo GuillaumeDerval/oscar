@@ -64,19 +64,17 @@ object TSProutePoints extends App {
     }
     println
 
-    for (n <- 1000 to 3000 by 1000) {
-      for (v <- List(100)) {
-        for (maxPivotPerValuePercent <- List(0, 1, 2, 3, 4, 5, 20)) {
-          print(n + "\t" + v + "\t" + maxPivotPerValuePercent + "\t")
-          for (t <- 1 to nbTrials) {
-            val symmetricDistanceMatrix = RoutingMatrixGenerator(n)._1
-            new TSPRoutePointsS(n, v, maxPivotPerValuePercent, 0, symmetricDistanceMatrix)
-            print("\t")
-            System.gc()
-          }
-          println
-        }
+    for { n <- 1000 to 3000 by 1000
+          v <- List(100)
+          maxPivotPerValuePercent <- List(0, 1, 2, 3, 4, 5, 20) } {
+      print(n + "\t" + v + "\t" + maxPivotPerValuePercent + "\t")
+      for (t <- 1 to nbTrials) {
+        val symmetricDistanceMatrix = RoutingMatrixGenerator(n)._1
+        new TSPRoutePointsS(n, v, maxPivotPerValuePercent, 0, symmetricDistanceMatrix)
+        print("\t")
+        System.gc()
       }
+      println
     }
   }
 
@@ -180,7 +178,7 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
 
   startWatch()
   //  println("restrictions:" + restrictions)
-  val model = new Store()//checker = Some(new ErrorChecker))
+  val model = new Store() //checker = Some(new ErrorChecker()))
 
   val myVRP = new VRP(model,n,v)
 

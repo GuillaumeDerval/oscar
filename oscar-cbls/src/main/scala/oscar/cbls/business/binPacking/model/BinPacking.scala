@@ -134,14 +134,14 @@ object BinPackingProblem{
     */
   def apply(itemSizeArray:Array[Int], binSizesArray:Array[Int], s:Store, c:ConstraintSystem, initialBin:Int):BinPackingProblem = {
 
-    val binArray: Array[Bin] = Array.tabulate(binSizesArray.size)(
+    val binArray: Array[Bin] = Array.tabulate(binSizesArray.length)(
       binNumber => Bin(binNumber,
         binSizesArray(binNumber)))
 
-    val itemArray = Array.tabulate(itemSizeArray.size)(
+    val itemArray = Array.tabulate(itemSizeArray.length)(
       itemNumber => Item(itemNumber,
         itemSizeArray(itemNumber),
-        CBLSIntVar(s, initialBin, 0 to (binArray.size-1), "bin of item " + itemNumber)))
+        CBLSIntVar(s, initialBin, binArray.indices, "bin of item " + itemNumber)))
 
     val mkp = MultiKnapsack(itemArray.map(_.bin),
       itemSizeArray.map(itemSize => CBLSIntConst(itemSize)),

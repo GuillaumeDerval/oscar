@@ -56,7 +56,7 @@ object carSequencerBench  extends CBLSModel with App {
   val dieselCarTypes = makeBoolArray(0,1,2)
   val espCarTypes = makeBoolArray(3,4,5)
 
-  def prependItems(acc:List[Int],n:Int,item:Int):List[Int] = (if(n == 0) acc else prependItems(item :: acc,n-1,item))
+  def prependItems(acc:List[Int],n:Int,item:Int):List[Int] = if(n == 0) acc else prependItems(item :: acc,n-1,item)
   val orderedCarTypes:List[Int] = orderedCarsByType.foldLeft(List.empty[Int])({case (accList,(carType,nbItems)) => prependItems(accList,nbItems,carType)})
   val nbCars = orderedCarTypes.size
 
@@ -84,14 +84,14 @@ object carSequencerBench  extends CBLSModel with App {
 
   println("closing model")
 
-  c.close
+  c.close()
 
   val obj:Objective = c.violation
 
   s.close()
 
   val search =
-    (Profile(swapsNeighborhood(carSequence,"mostViolatedSwap", searchZone2 = ((_,_) => mostViolatedCars.value), symmetryCanBeBrokenOnIndices = false))
+    (Profile(swapsNeighborhood(carSequence,"mostViolatedSwap", searchZone2 = (_,_) => mostViolatedCars.value, symmetryCanBeBrokenOnIndices = false))
       exhaust Profile(WideningFlipNeighborhood(carSequence)) //it seems useless to try swaps once flip is exhausted, so simple exhaust is used here
       onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")) guard(() => mostViolatedCars.value.size > 2), 2, obj)
       onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => 5 max (violatedCars.value.size/2))), 2, obj)
@@ -106,5 +106,5 @@ object carSequencerBench  extends CBLSModel with App {
 
   println("car sequence:" + carSequence.map(_.value).mkString(","))
 
-  println(if(c.violation.value == 0) "problem solved" else ("PROBLEM COULD NOT BE SOLVED: " + c.violation))
+  println(if(c.violation.value == 0) "problem solved" else "PROBLEM COULD NOT BE SOLVED: " + c.violation)
 }

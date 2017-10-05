@@ -69,4 +69,3 @@ abstract class Resource(planning: Planning, n: String) {
 
   def toAsciiArt(headerLength: Int): String
 }
-

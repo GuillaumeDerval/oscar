@@ -67,7 +67,7 @@ object TarjanWithBigNodes1{
           Stack = Stack.tail
           node.OnStack = false
           SCC = node::SCC
-          finished = (node == v)
+          finished = node == v
         }
         Components = SCC :: Components
       }

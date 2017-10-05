@@ -183,8 +183,8 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
     //TODO: put a while(true) here, and say that this is Gustav's suggestion in the comit
     while(explorerAtCurrentNode match{
       case None => return restrictionsForPrev(vehicle); false
-      case Some(position) =>
-        val node = position.value
+      case Some(nodePosition) =>
+        val node = nodePosition.value
         if(node < v){
           //we are at a vehicle
           return restrictionsForPrev(vehicle)
@@ -199,7 +199,7 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
             restrictionsForCurrent(forbiddenVehicle) += 1
           }
           restrictionsForPrev = restrictionsForCurrent
-          explorerAtCurrentNode = position.next
+          explorerAtCurrentNode = nodePosition.next
           true
         }
     }){}
@@ -426,4 +426,3 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
     }
   }
 }
-

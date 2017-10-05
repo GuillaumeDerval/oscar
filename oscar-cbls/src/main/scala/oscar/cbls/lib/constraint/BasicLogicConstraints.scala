@@ -43,7 +43,7 @@ protected class LEA(val left: IntValue, val right: IntValue) extends Constraint 
    * the violation is Max(0,right-left)
    */
   override val violation =
-    MinusOffsetPos(left,right,0).setName(this.getClass().getSimpleName() + ".violation")
+    MinusOffsetPos(left,right,0).setName(this.getClass.getSimpleName + ".violation")
     //Max2(0, left - right).setName(this.getClass().getSimpleName() + ".violation")
 
   /**
@@ -83,7 +83,7 @@ protected class LA(val left: IntValue, val right: IntValue) extends Constraint {
    * the violation is Max(0,left - right + 1)
    */
   override val violation =
-    MinusOffsetPos(left,right,1).setName(this.getClass().getSimpleName() + ".violation")
+    MinusOffsetPos(left,right,1).setName(this.getClass.getSimpleName + ".violation")
     //TODO: If the constraint is always satisfied, given the domains, should set to a constant invariant. 
     //Max2(0, left - right + 1)
 

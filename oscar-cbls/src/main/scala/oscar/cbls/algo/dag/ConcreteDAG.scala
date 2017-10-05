@@ -42,7 +42,7 @@ class ConcreteDAGNode(val _UniqueID:Int) extends DAGNode{
 
   def setAsPrecedingNodeKnownNotYetPreceding(b:ConcreteDAGNode){
     PrecedingNodes = b :: PrecedingNodes
-    b.SucceedingNodes = this ::b.SucceedingNodes
+    b.SucceedingNodes = this :: b.SucceedingNodes
   }
 
   def setAsSucceedingNodeKnownNotYetSucceeding(b:ConcreteDAGNode){

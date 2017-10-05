@@ -1,5 +1,20 @@
 package oscar.cbls.business.routing.model
 
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.algo.seq.IntSequence
@@ -10,22 +25,32 @@ import oscar.cbls.lib.invariant.set.Diff
 import scala.collection.immutable.{List, SortedSet}
 
 /**
-  * Created by fg on 12/09/17.
-  */
-class VRP(val m: Store, val n: Int, val v: Int,
-          val maxPivotPerValuePercent: Int = 4){
-
+ * The class constructor models a VRP problem with N points (deposits and customers)
+ * and V vehicles.
+ *
+ * Vehicles are supposed to leave from their depot, and come back to it.
+ * they all have a different depot (but yo ucan put them at the same place if you want)
+ *
+ * Info: after instantiation, each customer point is unrouted, and each vehicle loop on his deposit.
+  *
+  * @param n the number of points (deposits and customers) in the problem.
+ * @param v the number of vehicles.
+ * @param m the model.
+ * @author renaud.delandtsheer@cetic.be
+ * @author Florent Ghilain (UMONS)
+ */
+class VRP(val n: Int, val v: Int, val m: Store, maxPivotPerValuePercent:Int = 4) {
 
   val routes = new CBLSSeqVar(m, IntSequence(0 until v), n-1, "routes", maxPivotPerValuePercent=maxPivotPerValuePercent)
 
   /**
-    * the range of nodes (customers and deposits including) of the problem.
-    */
+   * the range of nodes (customers and deposits including) of the problem.
+   */
   val nodes = 0 until n
 
   /**
-    * the range vehicle of the problem.
-    */
+   * the range vehicle of the problem.
+   */
   val vehicles = 0 until v
 
   val vehicleOfNode = vehicleOfNodes(routes,v)
@@ -35,7 +60,13 @@ class VRP(val m: Store, val n: Int, val v: Int,
 
   m.registerForPartialPropagation(unrouted)
 
-  def isADepot(node: Int) = node < v
+  /**
+   * Returns if a given point is a depot.
+    *
+    * @param n the point queried.
+   * @return true if the point is a depot, else false.
+   */
+  def isADepot(n: Int): Boolean = { n < v }
 
   def kFirst(k: Int, values:(Int) => Iterable[Int], filter: Int => Int => Boolean = _ => _ => true)(node: Int): Iterable[Int] = {
     if (k >= n - 1) return values(node).filter(filter(node))
@@ -44,18 +75,26 @@ class VRP(val m: Store, val n: Int, val v: Int,
   }
 
   /**
+   * Returns if a given point is still routed.
+    *
+    * @param n the point queried.
+   * @return true if the point is still routed, else false.
+   */
+  def isRouted(n: Int): Boolean = {routes.value.contains(n)}
+
+  /**
     * Returns if a given point is still routed.
     *
     * @param n the point queried.
-    * @return true if the point is still routed, else false.
+    * @return true if the point is not routed, else false.
     */
-  def isRouted(n: Int): Boolean = {routed.value.contains(n)}
+  def isUnrouted(n: Int): Boolean = {!routes.value.contains(n)}
 
   /**
-    * This function is intended to be used for testing only.
-    * setCircuit(List(1,2,3,4)) produces the following route :
-    * 1 -> 2 -> 3 -> 4 (-> 1)
-    */
+   * This function is intended to be used for testing only.
+   * setCircuit(List(1,2,3,4)) produces the following route :
+   * 1 -> 2 -> 3 -> 4 (-> 1)
+   */
   def setCircuit(nodes: Iterable[Int]): Unit = {
     routes := IntSequence(nodes)
     for(v <- 0 until v) require(routes.value.contains(v))
@@ -143,8 +182,8 @@ class VRP(val m: Store, val n: Int, val v: Int,
       }
     }
     "Vehicle routing n:" + n + " v:" + v + "\n" +
-      "unrouted nodes:{" + unroutedNodes.toList.mkString(",") + "}\n" +
-      "not used vehicles:{" + notMoving.reverse.mkString(",") + "}\n" +
+    "unrouted nodes:{" + unroutedNodes.toList.mkString(",") + "}\n" +
+    "not used vehicles:{" + notMoving.reverse.mkString(",") + "}\n" +
       toReturn
   }
 }

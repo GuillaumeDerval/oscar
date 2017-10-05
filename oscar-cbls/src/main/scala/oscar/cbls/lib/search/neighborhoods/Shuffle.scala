@@ -44,8 +44,8 @@ case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
     if(printPerformedSearches) println("applying " + name)
 
     val (realIndicesToConsider:List[Int],numberOfIndicesToConsider:Int) =
-      (if(indicesToConsider == null) (vars.indices.toList,vars.length)
-      else { val tmp = indicesToConsider(); (tmp.toList,tmp.size)})
+      if(indicesToConsider == null) (vars.indices.toList,vars.length)
+      else { val tmp = indicesToConsider(); (tmp.toList,tmp.size) }
 
     if(checkNoMoveFound) {
       val (minValue, maxValue) = InvariantHelper.getMinMaxBoundsInt(realIndicesToConsider.map(vars(_).value))
@@ -71,4 +71,3 @@ case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
     CompositeMove(moves, Int.MaxValue, name)
   }
 }
-

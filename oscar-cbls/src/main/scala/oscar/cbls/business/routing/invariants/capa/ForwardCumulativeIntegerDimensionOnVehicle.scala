@@ -48,7 +48,7 @@ object ForwardCumulativeIntegerDimensionOnVehicle {
             contentName:String = "content",fullDebug:Boolean = false):(Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar],ForwardCumulativeIntegerDimensionOnVehicle) ={
     val contentAtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent).union(defaultForUnroutedNodes), contentName + " at node "+node))
     val contentAtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent), contentName + " at end of route " + vehicle))
-    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, 0 to n-1, "last point of vehicle" + vehicle))
+    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, 0 until n, "last point of vehicle" + vehicle))
 
     val invariant = new ForwardCumulativeIntegerDimensionOnVehicle(routes,n,v,op,contentAtStart,contentAtNode,contentAtEnd,lastPointOfVehicle,defaultForUnroutedNodes,contentName,fullDebug)
     (contentAtNode,contentAtEnd,lastPointOfVehicle,invariant)
@@ -194,4 +194,3 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
     }
   }
 }
-

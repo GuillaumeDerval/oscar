@@ -58,7 +58,7 @@ trait InsertPointAPI{
                              selectInsertedNodeBehavior:LoopBehavior = First(),
                              hotRestart: Boolean = true,
                              insertedPointsSymetryClass:Option[Int => Int] = None) =
-    new InsertPointRoutedFirst(insertionPoints,
+    InsertPointRoutedFirst(insertionPoints,
       relevantSuccessorsToInsert,
       vrp,
       neighborhoodName,
@@ -320,14 +320,3 @@ trait TwoOptAPI{
       hotRestart)
 
 }
-
-
-
-
-
-
-
-
-
-
-
