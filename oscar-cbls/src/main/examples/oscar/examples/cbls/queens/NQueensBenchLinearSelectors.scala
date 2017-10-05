@@ -54,7 +54,7 @@ object NQueensBenchLinearSelectors extends LinearSelectorClass(true) with StopWa
   def main(args: Array[String]) {
 
     if (args.length<1) {
-      println("Benchmarking NQueen - this takes time")
+      println("Benchmarking NQueens - this takes time")
       println("advise: put -Xms1000M -Xmx1000M")
       println(padToLength("N", 15) + padToLength("tClose[ms]", 15) + padToLength("tTotal[ms]", 15) + "it")
 
@@ -69,7 +69,7 @@ object NQueensBenchLinearSelectors extends LinearSelectorClass(true) with StopWa
 
     } else {
       val N:Int=args(0).toInt
-      println("Runing NQueen - this takes time depending on N")
+      println("Running NQueens - this takes time depending on N")
       println(padToLength("N", 15) + padToLength("tClose[ms]", 15) + padToLength("tTotal[ms]", 15) + "it")
       SolveNQueen(1000)
       for(i <- 1 to 5)

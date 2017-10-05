@@ -85,7 +85,7 @@ object SendMoreMoney extends LinearSelectorClass with StopWatch {
     c.post((r(Carry.c3.id) + d(Letter.S.id) + d(Letter.M.id)) === (d(Letter.O.id) + (10 * d(Letter.M.id))))
     c.post((r(Carry.c2.id) + d(Letter.E.id) + d(Letter.O.id)) === (d(Letter.N.id) + (10 * r(Carry.c3.id))))
     c.post((r(Carry.c1.id) + d(Letter.N.id) + d(Letter.R.id)) === (d(Letter.E.id) + (10 * r(Carry.c2.id))))
-    c.post(                    (d(Letter.D.id) + d(Letter.E.id)) === (d(Letter.Y.id) + (10 * r(Carry.c1.id))))
+    c.post(                 (d(Letter.D.id) + d(Letter.E.id)) === (d(Letter.Y.id) + (10 * r(Carry.c1.id))))
 
     r(Carry.c1.id) <== ((d(Letter.D.id) + d(Letter.E.id)) / 10)
     r(Carry.c2.id) <== ((d(Letter.N.id) + d(Letter.R.id) + r(Carry.c1.id)) / 10)
@@ -97,7 +97,7 @@ object SendMoreMoney extends LinearSelectorClass with StopWatch {
     val Tabu = (for (i <- Letter.list) yield CBLSIntVar(m, 0, 0 to Int.MaxValue, "Tabu_" + i)).toArray
     val It = CBLSIntVar(m,0, 0 to Int.MaxValue,"it")
     val NonTabuLetter = SelectLESetQueue(Tabu, It)
-    val NonTabuMaxViolLetter = new ArgMax(ViolationArray, NonTabuLetter)
+    val NonTabuMaxViolLetter = ArgMax(ViolationArray, NonTabuLetter)
     
     // closing model
     m.close()
@@ -123,7 +123,7 @@ object SendMoreMoney extends LinearSelectorClass with StopWatch {
       It.++ // try without the dot (strange line behavior)
       println(It.toString + " " + c.violation+" switching "+d(l1).name+" "+d(l2).name)
     }	
-      
+
     println("Solution: "+m.solution(true))
     println("run time: "+ getWatchString)
   }

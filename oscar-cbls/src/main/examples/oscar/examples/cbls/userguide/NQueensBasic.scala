@@ -20,16 +20,16 @@ import oscar.cbls.modeling.CBLSModel
 
 import scala.util.Random
 
-object NQueenBasic extends CBLSModel with App{
+object NQueensBasic extends CBLSModel with App{
 
   val nQueens = 100
-  println("NQueenBasic(" + nQueens + ")")
+  println("NQueensBasic(" + nQueens + ")")
 
   val queensRange:Range = Range(0,nQueens)
   val init = Random.shuffle(queensRange.toList).iterator
 
   //declaring the variables of the problem, that is an array of CBLSIntVar
-  val queens = queensRange.map(q => CBLSIntVar(init.next(), 0 to nQueens-1,"queen" + q)).toArray
+  val queens = queensRange.map(q => CBLSIntVar(init.next(), 0 until nQueens, "queen" + q)).toArray
 
   //posting the constraints of the problem.
   //They are added to the default constraint system, which is used as a weak constraint (as a lagrangian relaxation, so to say)

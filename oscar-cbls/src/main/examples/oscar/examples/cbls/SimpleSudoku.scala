@@ -43,7 +43,7 @@ object SimpleSudoku extends LinearSelectorClass with StopWatch {
     val C:Int=3
     val N:Int=C*C
     val M:Int=N*N
-    val SubIndexes:Range=Range(0,C)
+    //val SubIndexes:Range=Range(0,C)
     val Indexes:Range=Range(0,N)
     val LinearIndexes:Range=Range(0,M)
     val Values:Range=Range(1,N+1)
@@ -71,8 +71,8 @@ object SimpleSudoku extends LinearSelectorClass with StopWatch {
     // TODO implement some consistency checks !
     
     // open cells
-    val openCells=(for(i <- LinearIndexes; if (problem(i))==0) yield i).toArray // keep track of non fixed cells  
-    for(i <- Range(0,openCells.length)) print(openCells(i)+" ")
+    val openCells=(for(i <- LinearIndexes if problem(i)==0) yield i).toArray // keep track of non fixed cells
+    for(i <- openCells.indices) print(openCells(i)+" ")
     println()
 
     // internal squares
@@ -89,20 +89,20 @@ object SimpleSudoku extends LinearSelectorClass with StopWatch {
     }
                 
     // model
-    val m: Store = new Store(false,None,true)
+    val m: Store = Store(false,None,true)
         
     // grid definition and initialisation
     val grid = Array.ofDim[CBLSIntVar](M)
         
     for(ns <- Indexes) {
-      var squareSet:Set[Int]=Set() ++ (for(ps <- Indexes; if (problem(square(ns)(ps))!=0)) yield problem(square(ns)(ps))).toArray
+      var squareSet:Set[Int]=Set() ++ (for(ps <- Indexes if problem(square(ns)(ps))!=0) yield problem(square(ns)(ps))).toArray
       for(ps <- Indexes) {
         val i=square(ns)(ps)
-    	var vinit=problem(i)
-        for (k <- Values; if ((vinit==0) && (!squareSet.contains(k)))) {
+        var vinit=problem(i)
+        for (k <- Values if vinit==0 && !squareSet.contains(k)) {
         	vinit=k
     	    squareSet += k
-    	}  
+        }
         grid(i)=CBLSIntVar(m, vinit, 1 to N, "v_"+i)
       }
     }
@@ -150,7 +150,7 @@ object SimpleSudoku extends LinearSelectorClass with StopWatch {
   }
 
   def showGrid(tab:Array[CBLSIntVar],N:Int) {
-    for (i <- Range(0,tab.length)) {
+    for (i <- tab.indices) {
       if ((i%N)==0) println()
       print(tab(i).value+" ")
     }

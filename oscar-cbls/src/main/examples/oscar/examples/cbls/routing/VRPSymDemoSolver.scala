@@ -66,15 +66,19 @@ class VRPModelWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[Int]]
 
 object VRPDemo extends App {
 
-  println("usage: VRPDemo n v")
-  val n:Int=args(0).toInt
-  val v = args(1).toInt
+  if (args.length < 2) {
+    println("usage: VRPDemo n v")
+  }
+  else {
+    val n:Int=args(0).toInt
+    val v = args(1).toInt
 
-  val displayDelay = if (n >= 1000) 1500 else 500 //ms
-  val verbose = 1
-  val maxPivotPerValuePercent = 4
+    val displayDelay = if (n >= 1000) 1500 else 500 //ms
+    val verbose = 1
+    val maxPivotPerValuePercent = 4
 
-  new VRPSymDemoSolver(n,v,maxPivotPerValuePercent,verbose,displayDelay)
+    new VRPSymDemoSolver(n,v,maxPivotPerValuePercent,verbose,displayDelay)
+  }
 }
 
 class VRPSymDemoSolver(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay:Int) extends StopWatch{

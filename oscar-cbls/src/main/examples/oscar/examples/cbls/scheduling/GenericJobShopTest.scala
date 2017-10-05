@@ -51,7 +51,7 @@ import scala.io.Source
  */
 object GenericJobShopTest extends StopWatch with App {
 
-  if (args.size == 0) {
+  if (args.length == 0) {
     println("usage: GenericJobShopTest fileName maxit stable")
     sys.exit()
   }
