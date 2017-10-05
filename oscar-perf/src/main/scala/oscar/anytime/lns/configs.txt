@@ -1,3 +1,1 @@
---timeout 300 --name DiveAndExplore --coupled true --strategy diveAndExplore --relax RandomRelax CircuitSeqRelax CircuitKoptRelax --search ConfOrderSearch --n-failures 1000 2000 --relax-size 0.1 0.25
---timeout 300 --name Laborie --coupled false --selection RWheel --metric LastImprov --strategy default --relax RandomRelax CircuitSeqRelax CircuitKoptRelax --search ConfOrderSearch --n-failures 1000 2000 --relax-size 0.1 0.25
---timeout 300 --name BestOperator --MLNS --relax RandomRelax CircuitSeqRelax CircuitKoptRelax --search ConfOrderSearch --n-failures 1000 2000 --relax-size 0.1 0.25
+--timeout 240 --name Baseline --MLNS --relax RandomRelax CircuitKoptRelax PropGuidedRelax RandomValGroupsRelax MinMaxValRelax --search ConfOrderSearch FirstFailSearch --n-failures 50 500 5000 --relax-size 0.1 0.2 0.4

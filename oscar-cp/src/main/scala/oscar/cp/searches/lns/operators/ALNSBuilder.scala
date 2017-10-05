@@ -1,9 +1,7 @@
 package oscar.cp.searches.lns.operators
 
-import oscar.algo.search.{Branching, SearchStatistics}
 import oscar.cp.{CPIntVar, CPSolver}
 import oscar.cp.searches.lns.CPIntSol
-import oscar.cp.searches.lns.search.ALNSConfig
 import oscar.cp.searches.lns.selection._
 
 import scala.collection.mutable.ArrayBuffer
@@ -41,8 +39,8 @@ object ALNSBuilder{
 
   // Scheduling relaxation
   val ValWindowRelax = "ValWindowRelax"
-  val DefValWindowParam1 = Array(0.5, 0.75, 1.0)
-  val DefValWindowParam2 = Array(0.1, 0.25, 0.5)
+  val DefValWindowParam1 = Array(0.5, 1.0)
+  val DefValWindowParam2 = Array(0.1, 0.5)
 
   // Full relaxation:
   val FullRelax = "FullRelax"
@@ -60,13 +58,13 @@ object ALNSBuilder{
   val ConfOrderSearch = "ConfOrderSearch"
 
   // First fail search:
-  val FirstFailSearch = "FirstFail"
+  val FirstFailSearch = "FirstFailSearch"
 
   // Last conflict search:
-  val LastConfSearch = "LastConf"
+  val LastConfSearch = "LastConfSearch"
 
   // Binary split search:
-  val BinSplitSearch = "BinSplit"
+  val BinSplitSearch = "BinSplitSearch"
 
   //Extentionnal Oriented search:
   val ExtOrientedSearch = "ExtOrientedSearch"

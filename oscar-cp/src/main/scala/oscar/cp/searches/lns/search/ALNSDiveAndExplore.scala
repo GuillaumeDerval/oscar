@@ -10,8 +10,8 @@ import scala.util.Random
   * TODO
   */
 class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearchImpl(solver, vars, config){
-  lazy val efficiencyEvalTime: Long = 5000000000L //(config.timeout/nOpCombinations.toDouble).ceil.toLong
-  lazy val minEfficiencyThreshold: Double = 0.1 //Math.abs(bestSol.get.objective - previousBest.get.objective) / (efficiencyEvalTime.toDouble * 10)
+  lazy val efficiencyEvalTime: Long = 2000000000L //(config.timeout/nOpCombinations.toDouble).ceil.toLong
+  lazy val minEfficiencyThreshold: Double = 0.5 //Math.abs(bestSol.get.objective - previousBest.get.objective) / (efficiencyEvalTime.toDouble * 10)
 
   override def alnsLoop(): Unit = {
     if (!solver.silent){

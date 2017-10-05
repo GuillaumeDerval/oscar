@@ -40,11 +40,70 @@ trait Benchmark {
     val maximizeObjective: Boolean = solver.objective.objs.head.isMax
 
     if(argMap.getOrElse('XP, false).asInstanceOf[Boolean]) performXP(argMap)
-    else {
-      val result =
-        if (argMap.getOrElse('NOLNS, false).asInstanceOf[Boolean]) performBasicSearch(argMap, maximizeObjective)
-        else if (argMap.getOrElse('MLNS, false).asInstanceOf[Boolean]) performMLNS(argMap, maximizeObjective)
-        else performALNS(argMap)
+
+    else if(argMap.getOrElse('NOLNS, false).asInstanceOf[Boolean]){
+      val result = performBasicSearch(argMap, maximizeObjective)
+      XmlWriter.writeToXml(
+        argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
+        argMap.getOrElse('name, "default").asInstanceOf[String],
+        seed,
+        argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
+        IOUtils.getFileName(instance, keepExtension = false),
+        problem,
+        bestKnownObjective.getOrElse(if (maximizeObjective) Int.MinValue else Int.MaxValue),
+        maximizeObjective,
+        result.solutions,
+        if (result.relaxOperators.isEmpty) Map("Coupled" -> result.searchOperators) else Map("Relax" -> result.relaxOperators, "Search" -> result.searchOperators)
+      )
+    }
+
+    else if (argMap.getOrElse('MLNS, false).asInstanceOf[Boolean]) {
+      val results = performMLNS(argMap, maximizeObjective)
+
+      val highestResult = results.filter(_.solutions.nonEmpty).maxBy(_.solutions.last.objective)
+      val lowestResult = results.filter(_.solutions.nonEmpty).minBy(_.solutions.last.objective)
+
+      val bestResult = if(maximizeObjective) highestResult else lowestResult
+      val worstResult = if(maximizeObjective) lowestResult else highestResult
+
+      if(!solver.silent){
+        println("\nBest result:")
+        println(bestResult)
+      }
+      if(!solver.silent){
+        println("\nWorst result:")
+        println(worstResult)
+      }
+
+      XmlWriter.writeToXml(
+        argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
+        argMap.getOrElse('name, "Baseline").asInstanceOf[String] + "_best",
+        seed,
+        argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
+        IOUtils.getFileName(instance, keepExtension = false),
+        problem,
+        bestKnownObjective.getOrElse(if (maximizeObjective) Int.MinValue else Int.MaxValue),
+        maximizeObjective,
+        bestResult.solutions,
+        if (bestResult.relaxOperators.isEmpty) Map("Coupled" -> bestResult.searchOperators) else Map("Relax" -> bestResult.relaxOperators, "Search" -> bestResult.searchOperators)
+      )
+
+      XmlWriter.writeToXml(
+        argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
+        argMap.getOrElse('name, "Baseline").asInstanceOf[String] + "_worst",
+        seed,
+        argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
+        IOUtils.getFileName(instance, keepExtension = false),
+        problem,
+        bestKnownObjective.getOrElse(if (maximizeObjective) Int.MinValue else Int.MaxValue),
+        maximizeObjective,
+        worstResult.solutions,
+        if (worstResult.relaxOperators.isEmpty) Map("Coupled" -> worstResult.searchOperators) else Map("Relax" -> worstResult.relaxOperators, "Search" -> worstResult.searchOperators)
+      )
+    }
+
+    else{
+      val result = performALNS(argMap)
 
       XmlWriter.writeToXml(
         argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
@@ -121,7 +180,7 @@ trait Benchmark {
     alns.search()
   }
 
-  def performMLNS(argMap: ArgMap, maximizeObjective: Boolean): ALNSSearchResults = {
+  def performMLNS(argMap: ArgMap, maximizeObjective: Boolean): Array[ALNSSearchResults] = {
 
     val builder = new ALNSBuilder(
       solver,
@@ -180,15 +239,9 @@ trait Benchmark {
         results += alns.searchFrom(startSol)
       })
 
-      val bestResult = if(maximizeObjective) results.filter(_.solutions.nonEmpty).maxBy(_.solutions.last.objective)
-      else results.filter(_.solutions.nonEmpty).minBy(_.solutions.last.objective)
-      if(!solver.silent){
-        println("\nBest result:")
-        println(bestResult)
-      }
-      bestResult
+      results.toArray
     }
-    else startResults
+    else Array(startResults)
   }
 
   def performBasicSearch(argMap: ArgMap, maximizeObjective: Boolean, nSols: Int = 0): ALNSSearchResults = {

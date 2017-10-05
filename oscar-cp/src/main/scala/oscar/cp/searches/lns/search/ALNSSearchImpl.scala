@@ -88,7 +88,7 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
     if(!solver.silent) println("Starting first solution search...")
 
     val defaultNSols = nSols
-    nSols = 2
+    nSols = 1
 
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
       solver.search(SearchFunctions.conflictOrdering(vars, if(maximizeObjective.isDefined) if(maximizeObjective.get) "Min" else "Max"  else "Max", valLearn = false))
@@ -99,6 +99,8 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
     if(!solver.silent) println("Time elapsed: " + (System.nanoTime() - startTime)/1000000000.0 + "s")
     iterTimeout = stats.time * 1000000 * 2
     optimumFound |= stats.completed
+
+    if(solsFound.nonEmpty) solsFound(0)  = new CPIntSol(solsFound.head.values, solsFound.head.objective, 0L)
   }
 
   override def searchFrom(sol: CPIntSol): ALNSSearchResults = {
@@ -117,7 +119,10 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
     startTime = System.nanoTime()
 
     //Searching first solution if needed
-    if(currentSol.isEmpty) searchFirstSol()
+    if(currentSol.isEmpty){
+      searchFirstSol()
+      startTime = System.nanoTime()
+    }
 
     while(System.nanoTime() < endTime && !optimumFound && !stopSearch){
 
