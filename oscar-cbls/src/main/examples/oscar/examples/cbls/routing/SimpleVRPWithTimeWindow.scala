@@ -106,7 +106,7 @@ object SimpleVRPWithTimeWindow extends App{
       ChainsHelper.relevantNeighborsForLastNodeAfterHead(
         myVRP,
         chainsExtension,
-        Some(relevantPredecessorsOfNodes(lastNode).toList)),
+        Some(relevantPredecessorsOfNodes(lastNode))),
       postFilter),
     myVRP,
     neighborhoodName = "MoveLastOfChain")
@@ -159,7 +159,7 @@ object SimpleVRPWithTimeWindow extends App{
       ChainsHelper.relevantNeighborsForLastNodeAfterHead(
         myVRP,
         chainsExtension,
-        Some(relevantPredecessorsOfNodes(lastNode).toList)),
+        Some(relevantPredecessorsOfNodes(lastNode))),
       postFilter),
     myVRP,
     neighborhoodName = "InsertUF")
@@ -195,4 +195,3 @@ object SimpleVRPWithTimeWindow extends App{
 
   search.profilingStatistics
 }
-// TODO : Il faut vérifier le filtrage. En k = v*2, on arrive à tous insérer mais pas en v*2 => pas assez de filtrage
