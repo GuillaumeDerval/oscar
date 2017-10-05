@@ -224,14 +224,14 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
     }
   }
 
-  def gainPerCall:String = if(nbCalls ==0) "NA" else ("" + (totalGain / nbCalls).toInt)
-  def callDuration:String = if(nbCalls == 0 ) "NA" else ("" + (totalTimeSpent / nbCalls).toInt)
+  def gainPerCall:String = if(nbCalls ==0) "NA" else "" + (totalGain / nbCalls).toInt
+  def callDuration:String = if(nbCalls == 0 ) "NA" else "" + (totalTimeSpent / nbCalls).toInt
   //gain in obj/s
-  def slope:String = if(totalTimeSpent == 0) "NA" else ("" + (1000 * totalGain.toDouble / totalTimeSpent.toDouble).toInt)
+  def slope:String = if(totalTimeSpent == 0) "NA" else "" + (1000 * totalGain.toDouble / totalTimeSpent.toDouble).toInt
 
-  def avgTimeSpendNoMove = if(nbCalls - nbFound == 0) "NA" else ("" + (totalTimeSpentNoMoveFound / (nbCalls - nbFound)))
-  def avgTimeSpendMove = if(nbFound == 0) "NA" else ("" + (totalTimeSpentMoveFound / nbFound))
-  def waistedTime = if(nbCalls - nbFound == 0) "NA" else ("" + (totalTimeSpentNoMoveFound / (nbCalls - nbFound)))
+  def avgTimeSpendNoMove:String = if(nbCalls - nbFound == 0) "NA" else "" + (totalTimeSpentNoMoveFound / (nbCalls - nbFound))
+  def avgTimeSpendMove:String = if(nbFound == 0) "NA" else "" + (totalTimeSpentMoveFound / nbFound)
+  def waistedTime:String = if(nbCalls - nbFound == 0) "NA" else "" + (totalTimeSpentNoMoveFound / (nbCalls - nbFound))
 
   override def collectProfilingStatistics: List[String] =
     collectThisProfileStatistics :: super.collectProfilingStatistics
@@ -271,7 +271,7 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
 object Profile{
   private def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
   private def nStrings(n: Int, s: String): String = if (n <= 0) "" else s + nStrings(n - 1, s)
-  def statisticsHeader = padToLength("Neighborhood",30) + "  calls  found  sumGain  sumTime(ms)  avgGain  avgTime(ms)  slope(-/s)  avgTimeNoMove avgTimeMove  wastedTime"
+  def statisticsHeader: String = padToLength("Neighborhood",30) + "  calls  found  sumGain  sumTime(ms)  avgGain  avgTime(ms)  slope(-/s)  avgTimeNoMove avgTimeMove  wastedTime"
   def selectedStatisticInfo(i:Iterable[Profile]) = {
     (statisticsHeader :: i.toList.map(_.collectThisProfileStatistics)).mkString("\n")
   }

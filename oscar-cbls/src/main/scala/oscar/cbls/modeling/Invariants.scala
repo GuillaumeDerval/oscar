@@ -148,7 +148,7 @@ trait SetInvariants{
     * @param on is the set of integers to add
     * @param fun is an optional function Int -> Int to apply before summing elements. It is expected not to rely on any variable of the model.
     * */
-  def setSum(on:SetValue, fun:(Int => Int) = ((a:Int) => a)) = SetSum(on, fun)
+  def setSum(on:SetValue, fun:(Int => Int) = (a:Int) => a) = SetSum(on, fun)
 
   /** PRod(i in on)(fun(i))
     * @param on is the set of integers to multiply
@@ -335,7 +335,7 @@ trait SeqInvariants {
    * @param v is a SeqValue, the values appearing in the sequence
    * @author renaud.delandtsheer@cetic.be
    */
-  def content(v : SeqValue) = new Content(v)
+  def content(v : SeqValue) = Content(v)
 
   /**
    * maintains this as the flipped value of v
@@ -344,7 +344,7 @@ trait SeqInvariants {
    * @param maxHistorySize
    */
   def flipSequence(v : SeqValue, maxPivotPerValuePercent : Int = 10, maxHistorySize : Int = 10) =
-    new Flip(v : SeqValue, maxPivotPerValuePercent, maxHistorySize)
+    Flip(v : SeqValue, maxPivotPerValuePercent, maxHistorySize)
 
   /**
    * #(v) (cardinality, or length (since a SeqValue can only contain at most one instance of any int value)
@@ -646,7 +646,7 @@ trait MinMaxInvariants{
     * @param default is the default value if v is empty
     * update is O(log(n))
     * */
-  def maxSet(v: SetValue, default: Int = Int.MinValue) = new MaxSet(v, default)
+  def maxSet(v: SetValue, default: Int = Int.MinValue) = MaxSet(v, default)
 
 
   /**

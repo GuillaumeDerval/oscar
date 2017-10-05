@@ -74,7 +74,7 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
     val firstIterationSchemeZone =
       if (searchZone1 == null) {
         if (hotRestart) {
-          if (indiceOfFirstVariable >= vars.size) indiceOfFirstVariable = 0
+          if (indiceOfFirstVariable >= vars.length) indiceOfFirstVariable = 0
           vars.indices startBy indiceOfFirstVariable
         } else vars.indices
       } else if (hotRestart) HotRestart(searchZone1(), indiceOfFirstVariable) else searchZone1()
@@ -158,4 +158,3 @@ case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Int, idJ:Int, override val ob
 
   override def touchedVariables: List[Variable] = List(i,j)
 }
-

@@ -49,11 +49,9 @@ case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
   val varSize = vars.length
   val lastPosition = varSize - 1
 
-  val allAllowed = (if (allowedPositions == null) {
+  val allAllowed = if (allowedPositions == null) {
     Array.fill(varSize)(true)
-  } else {
-    null
-  })
+  } else null
 
   var currentFromPosition = 0
   var currentToPosition = 0
@@ -140,7 +138,7 @@ case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
       currentPosition += 1
     }
 
-    //compte alowed centtres for odd (impair) flips
+    //compute allowed centres for odd (impair) flips
     currentPosition = 0
     val thresholdForNeareseFlipOdd = 1 max ((minFlipSize - 1) / 2)
 
@@ -214,10 +212,10 @@ case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
         //flip back
         FlipMove.doFlip(fromPosition,toPosition,vars)
         return true
-      }else{
-        return explore(fromPosition-1,toPosition+1,isAllowed)
+      } else {
+        explore(fromPosition-1,toPosition+1,isAllowed)
       }
-    }else{
+    } else {
       //exploration is over, no interrupting move found
       FlipMove.doFlip(fromPosition+1,toPosition-1,vars)
       return false
@@ -236,6 +234,7 @@ object FlipMove{
     }
   }
 }
+
 case class FlipMove(fromPosition:Int,toPosition:Int,variables:Array[CBLSIntVar], override val objAfter:Int, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName) {
 
@@ -248,5 +247,4 @@ case class FlipMove(fromPosition:Int,toPosition:Int,variables:Array[CBLSIntVar],
   override def toString: String = {
     neighborhoodNameToString + "FlipMove(fromPosition:" + fromPosition + " toPosition:" + toPosition + " size:" + (toPosition - fromPosition) +  objToString + ")"
   }
-
 }

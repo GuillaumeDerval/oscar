@@ -249,7 +249,7 @@ trait StandardNeighborhoods {
                                exploreLargerOpportunitiesFirst:Boolean = true,
                                best:Boolean = false,
                                hotRestart:Boolean = true) =
-    new WideningFlipNeighborhood(vars,
+    WideningFlipNeighborhood(vars,
       name,
       allowedPositions,
       maxFlipSize,
@@ -258,4 +258,3 @@ trait StandardNeighborhoods {
       best,
       hotRestart)
 }
-

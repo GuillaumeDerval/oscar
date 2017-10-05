@@ -77,7 +77,7 @@ trait BasicCombinators{
    *
    * @author renaud.delandtsheer@cetic.be
    */
-  def guard(cond: () => Boolean, b: Neighborhood) = new Guard(cond, b)
+  def guard(cond: () => Boolean, b: Neighborhood) = Guard(cond, b)
 
   /**
    * this combinator is stateful.
@@ -108,7 +108,7 @@ trait BasicCombinators{
    * @param cond a stop criterion
    * @author renaud.delandtsheer@cetic.be
    */
-  def stopWhen(a: Neighborhood, cond: () => Boolean)  = new StopWhen(a: Neighborhood, cond: () => Boolean)
+  def stopWhen(a: Neighborhood, cond: () => Boolean)  = StopWhen(a: Neighborhood, cond: () => Boolean)
 
   /**
    * calls the neighborhood until an improvement over obj is achieved
@@ -220,10 +220,10 @@ trait CompositionCombinators{
    *
    * @param a
    */
-  def atomic(a: Neighborhood, bound: Int = Int.MaxValue) = new Atomic(a, bound)
+  def atomic(a: Neighborhood, bound: Int = Int.MaxValue) = Atomic(a, bound)
 
   //TODO: a variant with a slightly different behavior, to test validate and use
-  def atomic2(a: Neighborhood, shouldStop:Int => Boolean) = new Atomic2(a, shouldStop)
+  def atomic2(a: Neighborhood, shouldStop:Int => Boolean) = Atomic2(a, shouldStop)
 
 }
 
@@ -236,7 +236,7 @@ trait InstrumentNeighborhoodsCombinator{
    * @param a a neighborhood
    * @param proc the procedure to execute before the neighborhood is queried
    */
-  def doOnQuery(a: Neighborhood, proc: () => Unit) = new DoOnQuery(a, proc)
+  def doOnQuery(a: Neighborhood, proc: () => Unit) = DoOnQuery(a, proc)
 
   /**
    * this combinator attaches a custom code to a given neighborhood.
@@ -261,12 +261,12 @@ trait InstrumentNeighborhoodsCombinator{
   def doOnMove(a: Neighborhood,
                procBeforeMove: Move => Unit = null,
                procAfterMove: Move => Unit = null) =
-    new DoOnMove(a: Neighborhood,
+    DoOnMove(a: Neighborhood,
       procBeforeMove,
       procAfterMove)
 
   def doOnExhaust(a:Neighborhood, proc:(()=>Unit),onlyFirst:Boolean) =
-    new DoOnExhaust(a, proc,onlyFirst)
+    DoOnExhaust(a, proc,onlyFirst)
 }
 
 
@@ -483,7 +483,7 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @param cond a stop criterion
    */
-  def stopWhen(cond: () => Boolean) = new StopWhen(n, cond)
+  def stopWhen(cond: () => Boolean) = StopWhen(n, cond)
 
   /**
    * if it is false,it returns NoMovesFound without exploring the neighborhood at all.
@@ -524,7 +524,7 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @param proc the procedure to execute before the neighborhood is queried
    */
-  def onQuery(proc: => Unit) = new DoOnQuery(n, () => proc)
+  def onQuery(proc: => Unit) = DoOnQuery(n, () => proc)
 
   /**
    * this combinator attaches a custom code to a given neighborhood.
@@ -533,7 +533,7 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @param proc the procedure to execute when the move is taken
    */
-  def beforeMove(proc: => Unit) = new DoOnMove(n, procBeforeMove = (_) => proc)
+  def beforeMove(proc: => Unit) = DoOnMove(n, procBeforeMove = (_) => proc)
 
   /**
    * this combinator attaches a custom code to a given neighborhood.
@@ -544,7 +544,7 @@ class NeighborhoodOps(n:Neighborhood){
    * @param procOnMove a procedure that inputs the move that is applied;
    *                   use this to update a Tabu for instance
    */
-  def beforeMove(procOnMove: Move => Unit) = new DoOnMove(n, procBeforeMove = procOnMove)
+  def beforeMove(procOnMove: Move => Unit) = DoOnMove(n, procBeforeMove = procOnMove)
 
   /**
    * this combinator attaches a custom code to a given neighborhood.
@@ -553,7 +553,7 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @param proc the procedure to execute when the move is taken
    */
-  def afterMove(proc: => Unit) = new DoOnMove(n, procAfterMove = (_) => proc)
+  def afterMove(proc: => Unit) = DoOnMove(n, procAfterMove = (_) => proc)
 
   /**
    * this combinator attaches a custom code to a given neighborhood.
@@ -564,7 +564,7 @@ class NeighborhoodOps(n:Neighborhood){
    * @param procOnMove a procedure that inputs the move that is applied;
    *                   use this to update a Tabu for instance
    */
-  def afterMoveOnMove(procOnMove: Move => Unit) = new DoOnMove(n, procAfterMove = procOnMove)
+  def afterMoveOnMove(procOnMove: Move => Unit) = DoOnMove(n, procAfterMove = procOnMove)
 
   /**
    * This combinator create a frame that draw the evolution curve of the objective function.
@@ -582,7 +582,7 @@ class NeighborhoodOps(n:Neighborhood){
                             stopWatch: StopWatch = new StopWatch {startWatch()},
                             withZoom:Boolean = false,
                             neighborhoodColors: String => Color = (name:String)=>{ColorGenerator.generateColorFromHash(name.hashCode)}
-                             ) = new ShowObjectiveFunction(n,obj,stopWatch,withZoom,neighborhoodColors)
+                           ) = new ShowObjectiveFunction(n,obj,stopWatch,withZoom,neighborhoodColors)
 
   /**
    * this combinator attaches a custom code to a given neighborhood.
@@ -595,7 +595,7 @@ class NeighborhoodOps(n:Neighborhood){
 
   def saveBest(o: Objective) = new SaveBest(n, o)
 
-  def saveBestAndRestoreOnExhaust(obj: Objective) = (new SaveBest(n, obj)) restoreBestOnExhaust
+  def saveBestAndRestoreOnExhaust(obj: Objective) = new SaveBest(n, obj) restoreBestOnExhaust
 
   /**
    * retries the move before concluding to noMove can be found
@@ -610,7 +610,7 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @return
    */
-  def noReset: Neighborhood = new NoReset(n)
+  def noReset: Neighborhood = NoReset(n)
 
   /**
    * defines a name wor this (composite) neighborhood
