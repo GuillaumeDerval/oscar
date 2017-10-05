@@ -39,7 +39,7 @@ class TestTable extends TestSuite {
     val tuples3 = randomTuples(3, 100, 1, 6)
 
     for (algo <- TableAlgo.values) {
-      test("Test random tables " + i + " (" + algo.toString + ")") {
+      test("table : Test random tables " + i + " (" + algo.toString + ")") {
         testTable(Array(tuples1, tuples2, tuples3), algo)
       }
     }
@@ -84,7 +84,7 @@ class TestTable extends TestSuite {
 
   for (algo <- TableAlgo.values) {
 
-    test("test 1 " + algo) {
+    test("table : test 1 " + algo) {
       val cp = CPSolver()
       var x = Array.fill(3)(CPIntVar(1 to 3)(cp))
 
@@ -103,7 +103,7 @@ class TestTable extends TestSuite {
       x(2).value should be(1)
     }
 
-    test("test 2 " + algo) {
+    test("table : test 2 " + algo) {
       val cp = CPSolver()
 
       var x = CPIntVar(0 to 4)(cp)
@@ -120,7 +120,7 @@ class TestTable extends TestSuite {
     }
 
 
-    test("test 3 " + algo) {
+    test("table : test 3 " + algo) {
       val cp = CPSolver()
       var x = Array.fill(3)(CPIntVar(1 to 7)(cp))
       val tuples = Array(Array(1, 1, 1), Array(1, 2, 3), Array(1, 2, 7), Array(2, 1, 4))
@@ -134,7 +134,7 @@ class TestTable extends TestSuite {
       nbSol should be(4)
     }
 
-    test("test 4 " + algo) {
+    test("table : test 4 " + algo) {
       val cp = CPSolver()
       var x = Array.fill(2)(CPIntVar(1 to 1)(cp))
 
@@ -145,7 +145,7 @@ class TestTable extends TestSuite {
     }
 
 
-    test("test5 " + algo) {
+    test("table : test5 " + algo) {
 
       def nbSol(newcons: Boolean) = {
         val cp = CPSolver()
@@ -175,7 +175,7 @@ class TestTable extends TestSuite {
     }
 
 
-    test("test 6 " + algo) {
+    test("table : test 6 " + algo) {
       implicit val cp = CPSolver()
       var x = Array.fill(6)(CPIntVar(2 to 3)(cp))
       var nbSol = 0
@@ -197,7 +197,7 @@ class TestTable extends TestSuite {
 
     }
 
-    test("test 7 " + algo) {
+    test("table : test 7 " + algo) {
       implicit val cp = CPSolver()
       var x = Array.fill(6)(CPIntVar(0 to 5)(cp))
       var nbSol = 0
@@ -218,7 +218,7 @@ class TestTable extends TestSuite {
       nbSol should be(3)
     }
 
-    test("test 8 " + algo) {
+    test("table : test 8 " + algo) {
       implicit val cp = CPSolver()
       var x = Array.fill(7)(CPIntVar(0 to 3)(cp))
       var nbSol = 0
@@ -239,7 +239,7 @@ class TestTable extends TestSuite {
       nbSol should be(3)
     }
 
-    test("test 9 (empty table) " + algo) {
+    test("table : test 9 (empty table) " + algo) {
       implicit val cp = CPSolver()
       val x = Array.fill(3)(CPIntVar(0 to 3)(cp))
       val tuples: Array[Array[Int]] = Array()
@@ -249,7 +249,7 @@ class TestTable extends TestSuite {
           }
     }
 
-    test("test 10 (becoming empty table) " + algo) {
+    test("table : test 10 (becoming empty table) " + algo) {
       implicit val cp = CPSolver()
       val x = Array.fill(3)(CPIntVar(0 to 3)(cp))
       val tuples: Array[Array[Int]] = Array(Array(0, 1, 2))

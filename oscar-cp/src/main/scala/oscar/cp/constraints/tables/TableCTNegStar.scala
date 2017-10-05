@@ -279,14 +279,18 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
   override def setup(l: CPPropagStrength): Unit = {
 
     /* Success if table is empty initially or after initial filtering */
-    if (nbTuples == 0)
+    if (nbTuples == 0) {
+      deactivate()
       return
+    }
 
     /* Retrieve the current valid tuples */
     val (dangerous, dangerousByHash) = collectDangerousTuples()
 
-    if (dangerous.isEmpty)
+    if (dangerous.isEmpty){
+      deactivate()
       return
+    }
 
     /* Remove non dangerous tuples */
     dangerousTuples.collect(new dangerousTuples.BitSet(dangerous))

@@ -66,13 +66,16 @@ final class TableCTNeg(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
   override def setup(l: CPPropagStrength): Unit = {
 
     /* Success if table is empty initially or after initial filtering */
-    if (nbTuples == 0)
+    if (nbTuples == 0) {
+      deactivate()
       return
+    }
 
     /* Retrieve the current dangerous tuples */
     val dangerous = collectDangerousTuples()
 
     if (dangerous.isEmpty) {
+      deactivate()
       return
     }
 

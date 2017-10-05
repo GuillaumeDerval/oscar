@@ -25,6 +25,7 @@ object ExampleTable extends CPModel with App {
   )
 
   // A negative table represented as an array containing the tuple, each tuple being an array of int
+  // negative table can't contain duplicates
   val tableNeg: Array[Array[Int]] = Array(
     Array(1, 2, 3),
     Array(5, 5, 2),

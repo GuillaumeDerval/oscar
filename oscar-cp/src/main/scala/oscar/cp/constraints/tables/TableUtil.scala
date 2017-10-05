@@ -25,6 +25,34 @@ import scala.collection.mutable.ArrayBuffer
  */
 object TableUtil {
 
+  val lexicoArrayOrdering = new Ordering[Array[Int]] {
+    def compare(x: Array[Int], y: Array[Int]): Int = {
+      var i = 0
+      while (i < x.length) {
+        val a = x(i)
+        val b = y(i)
+        if (a > b)
+          return 1
+        if (a < b)
+          return -1
+        i += 1
+      }
+      0
+    }
+
+    def isEquals(x: Array[Int], y: Array[Int]): Boolean = {
+      var i = 0
+      while (i < x.length) {
+        val a = x(i)
+        val b = y(i)
+        if (a != b)
+          return false
+        i += 1
+      }
+      true
+    }
+  }
+
   /**
    * Method taking a short table and return the equivalent table with no more star in it
    * @param x array of variables
@@ -107,4 +135,37 @@ object TableUtil {
     tableBs
   }
 
+  def removeDuplicate(table: Array[Array[Int]]): Array[Array[Int]] = {
+    if (table.length <= 1) table
+    else {
+      val sortedTable = sortTable(table)
+      val buff = new ArrayBuffer[Array[Int]]()
+      var prev = sortedTable(0)
+      buff += prev
+      for (i <- 1 until table.length) {
+        if (!lexicoArrayOrdering.isEquals(sortedTable(i), prev)) {
+          prev = sortedTable(i)
+          buff += prev
+        }
+      }
+      buff.toArray
+    }
+  }
+
+  def sortTable(array: Array[Array[Int]]) = {
+    scala.util.Sorting.quickSort(array)(lexicoArrayOrdering)
+    array
+  }
+
+
 }
+
+object testtttttt extends App {
+
+  val z = Array(Array(1, 2), Array(1, 2))
+  val t = z.distinct
+  println(t.map(_.mkString(",")).mkString("\n"))
+
+
+}
+
