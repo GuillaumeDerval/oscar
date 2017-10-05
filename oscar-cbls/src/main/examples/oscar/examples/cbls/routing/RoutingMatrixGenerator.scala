@@ -249,13 +249,13 @@ object RoutingMatrixGenerator {
       var currentPrecedenceContent = 0
       for (node <- precedence){
         if(node == precedence.head) {
-          contentFlow(node) = randomContent(maxVehicleSize)
+          contentFlow(node) = randomContent(maxVehicleSize)+1
           currentPrecedenceContent += contentFlow(node)
         } else if(node == precedence.last) {
           contentFlow(node) = -currentPrecedenceContent
         } else {
           contentFlow(node) =
-            if(isPickupStep) randomContent(maxVehicleSize-currentPrecedenceContent)
+            if(isPickupStep) randomContent(maxVehicleSize-currentPrecedenceContent)+1
             else -randomContent(currentPrecedenceContent)
           currentPrecedenceContent += contentFlow(node)
         }
@@ -272,8 +272,8 @@ object RoutingMatrixGenerator {
     * @param maxVehicleSize the maximum vehicle size
     * @return an array of vehicle size
     */
-  def generateVehiclesSize(v: Int, maxVehicleSize: Int): Array[Int] ={
-    Array.fill(v)(random.nextInt(maxVehicleSize))
+  def generateVehiclesSize(v: Int, maxVehicleSize: Int, minVehicleSize: Int = 1): Array[Int] ={
+    Array.fill(v)(Math.max(random.nextInt(maxVehicleSize)+1,minVehicleSize))
   }
 }
 
