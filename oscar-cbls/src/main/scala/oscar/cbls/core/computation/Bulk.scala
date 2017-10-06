@@ -81,7 +81,6 @@ class Bulk(m: Store, val bulkedVars: Array[Value], val bulkedComputationResult: 
 
   for (dd <- bulkedVars) registerStaticallyListenedElement(dd)
   finishInitialization(m)
-  override def getDotNode: String = "[label=\"Bulk\" shape=diamond]"
 
   override def checkInternals(c: Checker) = c.check(true)
 }

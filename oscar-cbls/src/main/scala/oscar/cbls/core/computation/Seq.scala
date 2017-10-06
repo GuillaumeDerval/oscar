@@ -922,7 +922,7 @@ et cette stack doit être mise à jour au moment de la notification.
           //we specify a roll back and give the instructions that must be undone, just in case.
           toNotify = SeqUpdateRollBackToCheckpoint(
             checkpoint,
-            () => {tmp.reverse(checkpoint,tmpToNotify)},              //TODO check that we do not create an infinite roll back loop here
+            () => {tmp.reverse(checkpoint,tmpToNotify)},
             level = levelOfTopCheckpoint)
 
         }else{
@@ -1026,12 +1026,8 @@ et cette stack doit être mise à jour au moment de la notification.
       currentElement = currentElement.next
     }
 
-    val theNewValue = toNotify.newValue
-    val start = SeqUpdateLastNotified(theNewValue)
-    mOldValue = theNewValue
-    toNotify = start
-
-    theNewValue
+    mOldValue = toNotify.newValue
+    toNotify = SeqUpdateLastNotified(mOldValue)
   }
 
   protected def :=(seq:IntSequence){

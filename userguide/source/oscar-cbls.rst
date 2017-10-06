@@ -39,13 +39,12 @@ This model mixes with the trait  ``CBLSModel``.
 This trait creates some structures and offers a set of methods to easily create your own solver.
 
 More precisely, it offers the following features:
-
-- it defines an implicit Store (named ``s``) and ConstraintSystem (named ``c``) behind the scene. A store is what contains all the modeling of the optimization problem: variables, invariants, constraints. It coordinates the updates to the values of variables. Constraints are furthermore grouped into a constraint system that notably maintains the conjunction of the constraints.
-- it supports an API to create the three variable types supported by OScar.cbls, namely: Int,Set (of Int) and Sequences (of Int).
-- it also offers lots of methods to create every constraints or invariant of the problem you want to solve
-- it includes some linear selectors that you can use for defining our search procedure (see the ``selectMin`` method)
-- it proposes a set of standard neighborhoods
-- it also includes high-level methods to create complex search procedures by means of combinators.
+ - it defines an implicit Store (named ``s``) and ConstraintSystem (named ``c``) behind the scene. A store is what contains all the modeling of the optimization problem: variables, invariants, constraints. It coordinates the updates to the values of variables. Constraints are furthermore grouped into a constraint system that notably maintains the conjunction of the constraints.
+ - it supports an API to create the three variable types supported by OScar.cbls, namely: Int,Set (of Int) and Sequences (of Int).
+ - it also offers lots of methods to create every constraints or invariant of the problem you want to solve
+ - it includes some linear selectors that you can use for defining our search procedure (see the ``selectMin`` method)
+ - it proposes a set of standard neighborhoods
+ - it also includes high-level methods to create complex search procedures by means of combinators.
 
 We show here below a more elaborate solver for the NQueen. Besides using a more elaborate search strategy,
 it also relies on a standard neighborhood for implementing the search procedure.
@@ -62,12 +61,12 @@ OscaR.cbls is an implementation of constraint-based local search.
 It also features a high-level module to help you define your search procedure.
 
 OscaR.cbls has the following features:
-- high-level modeling primitives with variables of types integer, set of integer, and sequence of integers
-- Partial propagation for fast neighborhood exploration. Propagation is triggered when the value of a variable is queried by the search script. Deciding whether the propagation will be total or partial is done depending on the variable: if the variable is registered for partial propagation, the propagation will be partial. It will be total otherwise. Violation degrees are automatically registered for fast propagation.
-- Propagation graph can be cyclic. Two propagation graphs are handled: a static graph that over-approximates the dependencies between variables and invariants, and a dynamic graph that represents the real dependencies given the data actually stored in the model. The static graph can include cycles. This makes it possible e.g. to implement JobShop scheduler from standard invariants.
-- Constraints assign violation degree to their input variables, to identify the variable that cause a violation of each constraint. The violation degree propagates upwards through the model, it enables one to find the variable contributing the more to the overall violation even if it is not directly subject to the constraint.
-- Libraries of standard invariants and constraints
-- A library of neighborhood for integer variables
+ - high-level modeling primitives with variables of types integer, set of integer, and sequence of integers
+ - Partial propagation for fast neighborhood exploration. Propagation is triggered when the value of a variable is queried by the search script. Deciding whether the propagation will be total or partial is done depending on the variable: if the variable is registered for partial propagation, the propagation will be partial. It will be total otherwise. Violation degrees are automatically registered for fast propagation.
+ - Propagation graph can be cyclic. Two propagation graphs are handled: a static graph that over-approximates the dependencies between variables and invariants, and a dynamic graph that represents the real dependencies given the data actually stored in the model. The static graph can include cycles. This makes it possible e.g. to implement JobShop scheduler from standard invariants.
+ - Constraints assign violation degree to their input variables, to identify the variable that cause a violation of each constraint. The violation degree propagates upwards through the model, it enables one to find the variable contributing the more to the overall violation even if it is not directly subject to the constraint.
+ - Libraries of standard invariants and constraints
+ - A library of neighborhood for integer variables
 
 Modeling with OscaR.cbls (L1)
 =============================
@@ -80,18 +79,28 @@ All data structure representing values of variable are non-mutable,
 so that the value of a variable can be saved by simply copying a reference to its value.
 
 Invariants are mathematical operators that maintain the value of one or more variable
-according to a set of inputs.
+according to a set of inputs and acording to their specefication.
+For instance, there is an invariant ``Sum2`` that has two input variables that are CBLSIntVar,
+and maintain an output CBLSIntar to be the sum of the two input ones.
 Invariants are directed, that is an instance of invariant has designated input and output variables.
 There is a library of roughly eighty invariants available in OscaR.cbls.
 
-To easily find them, some factory traits have been created that include method to instantiate invariants and constraints
-of the oscar.cbls library, with proper scaladoc.
-They can be explored easily using the auto-completion, or through the scaladoc.
+There are a set of rather simple invariants, ad some more complex ones, mainly on sequences that are so-called "global invariants".
+Global invariants are called this way because tehy implement rather complex formulas, and make use of dedicated algorithm to implement them.
+An example of such global invariant is the ConstantRoutingDistance invariant over vehicle routes.
+Let be a variable of type CBLSSeqVar, representing the route of v vehicles. the invariant ConstantRoutingDistance inputs this CBLSSeqVar and a distance matrix, and maintins an array of v CBLSIntVar to be the length of the route of each vehicle.
+
+OscaR.cbls also supports constraints. They are specific objects that have two main features:
+ 1. they define a violation degree that is related to their specification it is moreless a distance between the current value of their input variable and an assignemnt for these variable that satisfies the constraints. Constraints are actually invariants with this violation as output variable.
+ 2. identify the input variable that contribute to their violation by attributing an individual violation degree to each of their input variables.
+
+Constraint systems propose the same mechanism, except that they do not compute the violation for each and every variable that appears in the constraints that are posted into them. Instead, any variable can be registered into them for a violation degree. These include not only the variables that intervene in some constraint posted into them, but any variable of the model.
+In a constraint system, the local violation degree of a variable is the sum of the violation degree attributed to it, for each constraint posted in the constraint system, weighted by the weighting factor of the constraint. Only variables that directly intervene in a constraint have a nonzero local violation degree. The \emph{global violation degree} of a variable is the sum of the local violation degrees of all variable that have one in the constraint system, and that contribute directly or indirectly to the variable, according to the static dependency graph. Global violation degrees are therefore built by constraint systems following a reachability query to the static propagation graph. This query is performed when the constraint system is closed, so that if the graph is enriched afterwards, these changes are not taken into account in the global violation degrees.
 
 Architecture of OscaR.cbls (L2)
 ===============================
 
-This section presents the architecture of OScaR.cbls.
+This section presents the architecture of OscaR.cbls.
 The purpose of this section is to understand the nature of the concepts manipulated when using OscaR.cbls.
 
 .. image:: cbls_images/architecture.svg
@@ -100,16 +109,11 @@ The purpose of this section is to understand the nature of the concepts manipula
     :align: center
     :alt: Architecture of OscaR.cbls
 
-
-Model and propagation in OscaR.cbls (L2)
-========================================
-
-The engine of OscaR.cbls is structured into two main architectural layers: the propagation layer, and the computation layer.
-The *propagation layer* implements generic mechanisms for driving the propagation, that is: prioritizing the parts of the model that need to be updated following a change on the decision variables, and according to the part of the model that is queried.
-The *computation layer* defines concepts such as variables, and invariants, and incorporates the algorithms and API of the variables themselves
+Propagation in OscaR.cbls (L1)
+==============================
 
 Propagation is the core mechanism in a CBLS engine. It is about updating the model according to changes made on the decision variables.
-For instance, when exploring a neighborhood, decision variables are changed by the search procedure, and the objective function is then queried;
+When exploring a neighborhood, decision variables are changed by the search procedure, and the objective function is then queried;
 it is the propagation mechanism that ensures that the value of the objective function object is correct with respect to the value of the decision variable at that point.
 
 The CBLS engine sees the model as a propagation graph. Roughly, it is a directed acyclic graph, whose nodes are variables, and invariants, and whose edges represent data flows.
@@ -117,26 +121,29 @@ there is an edge from a variable to an invariant if the variable is one of the i
 and there is an edge from an invariant to a variable if the variable is controlled by the invariant; its value is set by the invariant).
 In this graph, the nodes are called propagation elements technically, variables and invariant inherit from the "propagation element" class.
 
-Propagation must be fast. It therefore has the following properties:
+Propagation is fast thanks to the following properties:
 * **Single wave**: when updates are propagated in the propagation graph, each node is reached at most once by the wave.
 * **Selective**: a propagation element is reached by the propagation wave only if it requires performing some update. Portions of the propagation graph where no change was performed on the input will therefore not be reached by the propagation wave.
 * **Locally incremental**:  invariants are designed to perform incremental update of the variable(s) they control. This is achieved by proposing as additional mechanism on top of the propagation process so that invariants are notified about specific change of their input variable(s).
 * **Lazy**: propagation is triggered when a variable is queried, and if it is not an input variable. Querying an objective function will query the variable that defines the objective function
 * **Partial**: when the propagation is triggered through han objective function, only the portion of the model that contributes to the objectif function is updated
 
-On top of propagation, there is another mechanism, belonging to the computation layer. It is the notification mechanism.
-When a variable is propagated, it updates its value, and notifies the new value to its listening invariants by calling a method called "notify"
-in its listening invariants to notify about the change. Thanks to this mechanism, only the invariants that might need to react to some change are notified about a change.
-There are specific methods for each type of variable, with specific parameters, but they mostly include the variable, its old value, and its new value, and a description of the delta.
-
-Propagation is carried out by sorting the element in the propagation DAG with lower indices closer to the decision variables,
-and higher indices closer to the objective function.
-This sort is performed once the model is complete, when the model is closed through the *store.close* method.
-
 Tip for the CP guys: In a CP engine, propagation is omnidirectional: the algorithms of constraints are triggered on change of any of their variable, and can update all of their variables.
 In CBLS, invariants distinguish their input and output variables. They are triggered on change of their input variable, and can only update their output variables.
 A variable can only the output of a single invariants. Due to the distinction between input and output, propagation in CBLS is a single wave that crosses the propagation DAG,
 while in CP, it requires iterating until a fixpoint is reached.
+
+Propagation is carried out by sorting the element in the propagation DAG with lower indices closer to the decision variables,
+and higher indices closer to the objective function.
+This sort is time consuming. It is performed when the model is closed through the *store.close* method.
+
+Notification in Oscar.cbls (L2)
+===============================
+
+On top of propagation, there is another mechanism, belonging to the computation layer. It is the notification mechanism.
+When a variable is propagated, it updates its value, and notifies the new value to its listening invariants by calling a method called "notify"
+in its listening invariants to notify about the change. Thanks to this mechanism, only the invariants that might need to react to some change are notified about a change.
+There are specific methods for each type of variable, with specific parameters, but they mostly include the variable, its old value, and its new value, and a description of the delta.
 
 Searching with OscaR.cbls using standard neighborhoods and combinators (L1)
 ===========================================================================

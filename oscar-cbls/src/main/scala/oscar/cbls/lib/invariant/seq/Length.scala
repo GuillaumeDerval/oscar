@@ -28,7 +28,7 @@ case class Length(v: SeqValue,maxSequenceLength:Int = Int.MaxValue)
   extends IntInvariant(v.value.size, 0 to maxSequenceLength)
   with SeqNotificationTarget{
 
-  setName("Size(" + v.name + ")")
+  setName("Length(" + v.name + ")")
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
