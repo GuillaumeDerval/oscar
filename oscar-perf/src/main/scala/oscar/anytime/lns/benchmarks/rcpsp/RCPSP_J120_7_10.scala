@@ -1,4 +1,4 @@
-package oscar.anytime.lns.disabled_benchs.rcpsp
+package oscar.anytime.lns.benchmarks.rcpsp
 
 import oscar.anytime.lns.models._
 

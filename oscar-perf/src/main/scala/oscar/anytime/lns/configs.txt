@@ -1,1 +1,1 @@
---timeout 240 --name Baseline --MLNS --relax RandomRelax CircuitKoptRelax PropGuidedRelax RandomValGroupsRelax MinMaxValRelax --search ConfOrderSearch FirstFailSearch --n-failures 50 500 5000 --relax-size 0.1 0.2 0.4
+--timeout 240 --name Baseline --MLNS --relax-size 0.1 0.3 0.7 --relax RandomRelax CircuitKoptRelax PropGuidedRelax RandomValGroupsRelax MinMaxValRelax --search ConfOrderSearch FirstFailSearch --n-failures 50 500 5000

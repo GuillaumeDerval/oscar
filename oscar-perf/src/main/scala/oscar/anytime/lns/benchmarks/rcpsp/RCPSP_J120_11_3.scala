@@ -8,6 +8,6 @@ import oscar.anytime.lns.models._
 object RCPSP_J120_11_3 extends App {
 
 
-  new RCPSP("data/rcpsp/j120/j120_11_3.rcp",188).main(args)
+  new RCPSP("data/rcpsp/j120/j120_11_3.rcp", 188).main(args)
 
 }

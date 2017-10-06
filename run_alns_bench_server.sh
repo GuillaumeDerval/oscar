@@ -33,7 +33,7 @@ run_search () {
 #    echo "Output: $2"
     echo "Instance: $3"
     echo "Config: $4"
-    scala -J-Xmx1g -cp $1 $3 $4 --out $2
+    scala -J-Xmx2g -cp $1 $3 $4 --out $2
     echo -e "\n\n\n"
 }
 
@@ -65,7 +65,7 @@ echo -e "\n\n\n"
 
 for ((i=1; i<=$N; i++)); do
     echo "Run $i:";
-    $BIN/parallel --gnu --jobs 80% run_search ${CP} ${Out} :::: ${InstancesToRun} :::: ${ConfigsFile};
+    $BIN/parallel --gnu --jobs 90% run_search ${CP} ${Out} :::: ${InstancesToRun} :::: ${ConfigsFile};
 done
 
 rm ${InstancesToRun}
