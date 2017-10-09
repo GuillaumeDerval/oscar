@@ -111,7 +111,7 @@ object BigSudokuGen extends SimpleSwingApplication with LinearSelectors with Sto
     startWatch()
         
     // model
-    val m: Store = new Store(false,None,true)
+    val m: Store = Store(false,None,true)
         
     // grid definition and initialisation
     val grid=Array.ofDim[CBLSIntVar](M)
@@ -156,7 +156,7 @@ object BigSudokuGen extends SimpleSwingApplication with LinearSelectors with Sto
       // UI update
       tab(v1/N)(v1%N).text=grid(v1).value+""
       tab(v2/N)(v2%N).text=grid(v2).value+""
-      for(v <- 0 to LinearIndexes.length-1) {
+      for(v <- LinearIndexes.indices) {
         if (c.violation(grid(v)).value>0)
           tab(v/N)(v%N).foreground=Color.RED
         else
@@ -186,7 +186,7 @@ object BigSudokuGen extends SimpleSwingApplication with LinearSelectors with Sto
   }
   
   def showGrid(tab:Array[CBLSIntVar],N:Int) {
-    for (i <- Range(0,tab.length)) {
+    for (i <- tab.indices) {
       if ((i%N)==0) println()
       print(tab(i).value+" ")
     }

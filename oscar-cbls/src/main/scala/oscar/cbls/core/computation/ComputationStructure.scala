@@ -525,6 +525,10 @@ trait Variable extends AbstractVariable{
 
 abstract class AbstractVariableSnapShot(val a:AbstractVariable){
 
+  // Added by GO for pretty printing of some benchmarks:
+  // to change if this affects the printing of other benchmarks
+  override def toString: String = s"Variable[name:${a.name}, value:${a.valueString}]"
+
   final def restore() {
     a match {
       case v : Variable if v.isDecisionVariable => doRestore()

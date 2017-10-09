@@ -55,7 +55,7 @@ object MagicSquare extends LinearSelectorClass with StopWatch {
     val TABU_LENGTH = N/2+1
 
     // model
-    val m: Store = new Store(false,None,true)
+    val m: Store = Store(false,None,true)
         
     // Square
     val magic = Array.ofDim[CBLSIntVar](N,N)
@@ -121,8 +121,8 @@ object MagicSquare extends LinearSelectorClass with StopWatch {
 
   def showSquare(tab:Array[Array[CBLSIntVar]]) {
     println()
-    for (i <- Range(0,tab.length)) {
-      for (j <-Range(0,tab(i).length)) {
+    for (i <- tab.indices) {
+      for (j <- tab(i).indices) {
         print(tab(i)(j).value+" ")
       }
       println()

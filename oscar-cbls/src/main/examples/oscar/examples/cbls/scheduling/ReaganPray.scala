@@ -37,7 +37,6 @@ object ReaganPray extends App {
   val model = new Store(verbose=false, checker = None, noCycle=false, topologicalSort = false)
 
   val planning = new Planning(model, 50)
-  val solver = new IFlatIRelax(planning)
 
   val Reagan = CumulativeResource(planning, 3, "Reagan")
 
@@ -71,9 +70,9 @@ object ReaganPray extends App {
 
   model.close(false)
 
+  val solver = new IFlatIRelax(planning)
 
-  solver.solve(maxIt = 100,
-            stable = 50)
+  solver.solve(maxIt = 100, stable = 50)
 
   println(planning.toAsciiArt)
   println(planning.resourceUsage)
@@ -95,4 +94,3 @@ object ReaganPray extends App {
                        |1        | +++++++++++++++++++++++++
   */
 }
-

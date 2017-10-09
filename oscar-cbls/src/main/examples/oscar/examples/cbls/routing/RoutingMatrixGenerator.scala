@@ -20,6 +20,9 @@ import oscar.cbls.business.routing.model.{TTFConst, TTFMatrix}
 
 import scala.util.Random
 
+/**
+ * Created by rdl on 23/03/2015.
+ */
 object RoutingMatrixGenerator {
   val random = new Random(0)
 
@@ -276,5 +279,3 @@ object RoutingMatrixGenerator {
     Array.fill(v)(Math.max(random.nextInt(maxVehicleSize)+1,minVehicleSize))
   }
 }
-
-

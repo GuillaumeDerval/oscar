@@ -43,7 +43,7 @@ object MagicSeries extends CBLSModel with App with StopWatch{
   c.post(Exactly(magicSeries, bounds))
 
   //redundant constraint, to make the search procedure faster
-  c.post(EQ(Sum(for(i <- range) yield (i * magicSeries(i))), size))
+  c.post(EQ(Sum( for(i <- range) yield i * magicSeries(i) ), size))
 
   var it: CBLSIntVar = CBLSIntVar(0, fullRange, "it")
 

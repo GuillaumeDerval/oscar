@@ -41,17 +41,16 @@ object flowShopManyAndRestart  extends CBLSModel with App {
   val machineToRoundToStartingTimes:Array[Array[IntValue]] = Array.fill(nbMachines,nbJobs)(null)
   val machineToRoundToEndingTimes:Array[Array[IntValue]] = Array.fill(nbMachines,nbJobs)(null)
 
-  for(m <- machines){
-    for(round <- jobs){
-      val start:IntValue = (m,round) match{
-        case (0,0) => CBLSIntConst(0)
-        case (0,_) => machineToRoundToEndingTimes(0)(round-1)
-        case (_,0) => machineToRoundToEndingTimes(m-1)(0)
-        case (_,_) => max2(machineToRoundToEndingTimes(m)(round-1), machineToRoundToEndingTimes(m-1)(round))
-      }
-      machineToRoundToStartingTimes(m)(round) = start
-      machineToRoundToEndingTimes(m)(round) = start + machineToJobToDuration(m).element(jobSequence(round))
+  for { m <- machines
+        round <- jobs } {
+    val start:IntValue = (m,round) match{
+      case (0,0) => CBLSIntConst(0)
+      case (0,_) => machineToRoundToEndingTimes(0)(round-1)
+      case (_,0) => machineToRoundToEndingTimes(m-1)(0)
+      case (_,_) => max2(machineToRoundToEndingTimes(m)(round-1), machineToRoundToEndingTimes(m-1)(round))
     }
+    machineToRoundToStartingTimes(m)(round) = start
+    machineToRoundToEndingTimes(m)(round) = start + machineToJobToDuration(m).element(jobSequence(round))
   }
 
   val obj:Objective = machineToRoundToEndingTimes(nbMachines-1)(nbJobs-1)
