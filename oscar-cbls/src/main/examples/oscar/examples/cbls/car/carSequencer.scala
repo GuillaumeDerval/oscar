@@ -53,7 +53,7 @@ object carSequencer  extends CBLSModel with App {
   val dieselCarTypes = makeBoolArray(0,1,2)
   val espCarTypes = makeBoolArray(3,4,5)
 
-  def prependItems(acc:List[Int],n:Int,item:Int):List[Int] = (if(n == 0) acc else prependItems(item :: acc,n-1,item))
+  def prependItems(acc:List[Int],n:Int,item:Int):List[Int] = if(n == 0) acc else prependItems(item :: acc,n-1,item)
   val orderedCarTypes:List[Int] = orderedCarsByType.foldLeft(List.empty[Int])({case (accList,(carType,nbItems)) => prependItems(accList,nbItems,carType)})
   val nbCars = orderedCarTypes.size
 
@@ -104,5 +104,5 @@ object carSequencer  extends CBLSModel with App {
 
   println("car sequence:" + carSequence.map(_.value).mkString(","))
 
-  println(if(c.violation.value == 0) "problem solved" else ("PROBLEM COULD NOT BE SOLVED: " + c.violation))
+  println(if(c.violation.value == 0) "Problem solved" else s"PROBLEM COULD NOT BE SOLVED: ${c.violation}")
 }

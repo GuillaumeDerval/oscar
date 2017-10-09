@@ -76,10 +76,9 @@ object SimpleVRPWithTimeWindow extends App{
   val nextMoveGenerator = {
     (exploredMoves:List[OnePointMoveMove], t:Option[List[Int]]) => {
       val chainTail: List[Int] = t match {
-        case None => {
+        case None =>
           val movedNode = exploredMoves.head.movedPoint
           chainsExtension.nextNodesInChain(movedNode)
-        }
         case Some(tail: List[Int]) => tail
       }
 
@@ -128,10 +127,9 @@ object SimpleVRPWithTimeWindow extends App{
   val nextInsertGenerator = {
     (exploredMoves:List[InsertPointMove], t:Option[List[Int]]) => {
       val chainTail: List[Int] = t match {
-        case None => {
+        case None =>
           val insertedNode = exploredMoves.head.insertedPoint
           chainsExtension.nextNodesInChain(insertedNode)
-        }
         case Some(tail: List[Int]) => tail
       }
 

@@ -101,10 +101,9 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
   val nextMoveGenerator = {
     (exploredMoves:List[OnePointMoveMove], t:Option[List[Int]]) => {
       val chainTail: List[Int] = t match {
-        case None => {
+        case None =>
           val movedNode = exploredMoves.head.movedPoint
           chainsExtension.nextNodesInChain(movedNode)
-        }
         case Some(tail: List[Int]) => tail
       }
 
@@ -133,21 +132,20 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
           Int.MaxValue,
           false)
       }
-    ) name("One Chain Move")
+    ) name "One Chain Move"
 
   }
 
-  def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance,postFilter), myVRP)) name("One Point Move")
+  def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance,postFilter), myVRP)) name "One Point Move"
 
   // INSERTING
 
   val nextInsertGenerator = {
     (exploredMoves:List[InsertPointMove], t:Option[List[Int]]) => {
       val chainTail: List[Int] = t match {
-        case None => {
+        case None =>
           val insertedNode = exploredMoves.head.insertedPoint
           chainsExtension.nextNodesInChain(insertedNode)
-        }
         case Some(tail: List[Int]) => tail
       }
 
@@ -175,7 +173,7 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
           None,
           Int.MaxValue,
           false)
-      }) name("One Chain Insert")
+      }) name "One Chain Insert"
 
   }
 
