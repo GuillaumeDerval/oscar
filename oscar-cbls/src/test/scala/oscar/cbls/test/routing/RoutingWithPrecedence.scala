@@ -15,42 +15,38 @@ package oscar.cbls.test.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.core.computation.Store
-import oscar.cbls.core.propagation.ErrorChecker
-import oscar.cbls.core.search.Best
+import oscar.cbls._
 import oscar.cbls.lib.invariant.seq.Precedence
-import oscar.cbls.core.objective.{Objective, CascadingObjective, IntVarObjective}
-import oscar.cbls.business.routing.model._
-import oscar.cbls.business.routing.neighborhood.{OnePointMoveMove, OnePointMove, ThreeOpt, TwoOpt}
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
+import oscar.cbls.business.routing._
+import oscar.cbls.business.routing.model.helpers.DistanceHelper
+import oscar.cbls.core.search.Best
+import oscar.examples.cbls.routing.RoutingMatrixGenerator
 
 import scala.collection.immutable.SortedSet
-/*
 
 class MySimpleRoutingP(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int, precedences:List[(Int,Int)])
-  extends VRP(n,v,m,maxPivot)
-  with TotalConstantDistance with ClosestNeighbors with NextAndPrev{
-
-  override protected def getDistance(from : Int, to : Int) : Int = symmetricDistance(from)(to)
+  extends VRP(m,n,v,maxPivot){
 
   //initializes to something simple; vehicle v-1 does all nodes (but other vehicles)
+  // Fabian : Don't really understand the utility of the setCircuit.
+  // Obviously, when set like this, the routes violate strong constraints => the objectif value is MaxInt => no way to optimize)
   setCircuit(nodes)
 
-  setSymmetricDistanceMatrix(symmetricDistance)
+  val routingDistance = constantRoutingDistance(routes,n,v,false,symmetricDistance,true,false,false)
 
   val precedenceInvar = Precedence(routes,precedences)
 
   val nodesStartingAPrecedence:SortedSet[Int] = precedenceInvar.nodesStartingAPrecedence
   val nodesEndingAPrecedenceStartedAt:(Int => Iterable[Int]) = precedenceInvar.nodesEndingAPrecedenceStartedAt
 
-  val obj = new CascadingObjective(new IntVarObjective(precedenceInvar), totalDistance)
+  val obj = new CascadingObjective(new IntVarObjective(precedenceInvar), routingDistance(0))
   //val obj = Objective(totalDistance)
 
   override def toString : String = super.toString +
     "precedences: " + precedences + "\n" +
     "objective: " + obj  + "\n"
 
-  val nearestForward:Array[Iterable[Int]] = computeClosestNeighborsForward()
+  val nearestForward:Array[Iterable[Int]] = Array.tabulate(n)(DistanceHelper.computeClosestPathFromNeighbor(symmetricDistance, (_) => nodes))
 }
 
 object RoutingWithPrecedence extends App{
@@ -77,19 +73,19 @@ object RoutingWithPrecedence extends App{
 
   println(myVRP)
 
-  def onePtMove = Profile(OnePointMove(() => nodes, ()=>myVRP.kFirst(10,myVRP.nearestForward), myVRP))
+  def onePtMove = profile(onePointMove(() => nodes, ()=>myVRP.kFirst(10,myVRP.nearestForward), myVRP))
 
-  val twoPointMove = (OnePointMove(() => nodes, ()=>myVRP.kFirst(40,myVRP.nearestForward), myVRP,"firstPointMove") andThen OnePointMove(() => nodes, ()=>myVRP.kFirst(40,myVRP.nearestForward), myVRP,"secondPointMove")) name("TwoPointMove")
-  val twoPointMoveSmart = Profile(
-    (OnePointMove(
+  val twoPointMove = (onePointMove(() => nodes, ()=>myVRP.kFirst(40,myVRP.nearestForward), myVRP,"firstPointMove") andThen onePointMove(() => nodes, ()=>myVRP.kFirst(40,myVRP.nearestForward), myVRP,"secondPointMove")) name("TwoPointMove")
+  val twoPointMoveSmart = profile(
+    (onePointMove(
       () => myVRP.nodesStartingAPrecedence,
       ()=>myVRP.kFirst(40,myVRP.nearestForward),
       myVRP,
       "firstPointMove",
       selectPointToMoveBehavior= Best(),
-      selectDestinationBehavior=Best())
+      selectDestinationBehavior= Best())
       dynAndThen ((o:OnePointMoveMove) => {
-      OnePointMove(
+      onePointMove(
         () => myVRP.nodesEndingAPrecedenceStartedAt(o.movedPoint),
         ()=>myVRP.kFirst(40,myVRP.nearestForward),
         myVRP,
@@ -97,18 +93,20 @@ object RoutingWithPrecedence extends App{
         selectPointToMoveBehavior= Best(),
         selectDestinationBehavior=Best())})) name("SmartTwoPtMove"))
 
-  val twoOpt = Profile(new TwoOpt(() => nodes, ()=>myVRP.kFirst(40,myVRP.nearestForward), myVRP))
+  val customTwoOpt = profile(twoOpt(() => nodes, ()=>myVRP.kFirst(40,myVRP.nearestForward), myVRP))
 
-  def threeOpt(k:Int, breakSym:Boolean) = Profile(new ThreeOpt(() => nodes, ()=>myVRP.kFirst(k,myVRP.nearestForward), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
+  def customThreeOpt(k:Int, breakSym:Boolean) = profile(threeOpt(() => nodes, ()=>myVRP.kFirst(k,myVRP.nearestForward), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
   //,,(onePtMove andThen onePtMove) name ("twoPointMove")
   val search = (
-    new BestSlopeFirst(List(threeOpt(10,true),onePtMove,twoOpt,twoPointMoveSmart),refresh = 10)
-      exhaust new BestSlopeFirst(List(threeOpt(20,true))))
+    bestSlopeFirst(List(customThreeOpt(10,true),onePtMove,customTwoOpt,twoPointMoveSmart),refresh = 10)
+      exhaust bestSlopeFirst(List(customThreeOpt(20,true))))
 
   //val search = threeOpt(20,true)
   //search.verboseWithExtraInfo(2, ()=> "" + myVRP)
   search.verbose = 1
+
+  println("obj : " + myVRP.obj.value)
 
   search.doAllMoves(obj=myVRP.obj)
 
@@ -124,4 +122,3 @@ object RoutingWithPrecedence extends App{
   println
   println(search.profilingStatistics)
 }
-*/

@@ -16,34 +16,28 @@ package oscar.cbls.test.routing
   ******************************************************************************/
 
 import oscar.cbls._
-import oscar.cbls.business.routing.invariants.RouteSuccessorAndPredecessors
+import oscar.cbls.business.routing._
+import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.core.propagation.ErrorChecker
-import oscar.cbls.lib.invariant.seq.Length
-import oscar.cbls.business.routing.model._
-import oscar.cbls.business.routing.neighborhood._
-import oscar.cbls.lib.search.combinators.{Mu, BestSlopeFirst, Profile}
-/*
+import oscar.cbls.lib.search.combinators.Mu
+import oscar.examples.cbls.routing.RoutingMatrixGenerator
+
 class MySimpleRoutingWithUnroutedPointsAndNext(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int, pointsList:Array[(Int,Int)] = null)
-  extends VRP(n,v,m,maxPivot)
-  with TotalConstantDistance with ClosestNeighbors with RoutedAndUnrouted
-  //with RoutingMapDisplay
+  extends VRP(m,n,v,maxPivot)
 {
-
-  setSymmetricDistanceMatrix(symmetricDistance)
-
-  override protected def getDistance(from : Int, to : Int) : Int = symmetricDistance(from)(to)
+  val routingDistance = constantRoutingDistance(routes,n,v,false,symmetricDistance,true,false,false)
 
   val penaltyForUnrouted  = 10000
 
-  val obj = Objective(totalDistance + (penaltyForUnrouted*(n - Length(routes))))
+  val obj = Objective(routingDistance(0) + (penaltyForUnrouted*(n - length(routes))))
 
 
-  val closestNeighboursForward = computeClosestNeighborsForward()
+  val closestNeighboursForward = Array.tabulate(n)(DistanceHelper.computeClosestPathFromNeighbor(symmetricDistance, (_) => nodes))
 
   def size = routes.value.size
 
   //TODO: how about using NextAndPRev trait? or use a clone of route?
-  val (next,prev) = RouteSuccessorAndPredecessors(routes,v,n)
+  val (next,prev) = routeSuccessorAndPredecessors(routes,v,n)()
 
   override def toString : String = super.toString +
     "objective: " + obj.value + "\n" +
@@ -61,36 +55,33 @@ object TestNext extends App{
   println("VRP(n:" + n + " v:" + v + ")")
 
   val (symmetricDistanceMatrix,pointsList) = RoutingMatrixGenerator(n)
-  //  println("restrictions:" + restrictions)
+
   val model = new Store(checker = Some(new ErrorChecker()))
 
   val myVRP = new MySimpleRoutingWithUnroutedPointsAndNext(n,v,symmetricDistanceMatrix,model,maxPivotPerValuePercent,pointsList)
 
   model.close()
 
-  def routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,neighborhoodName = "InsertUF"))
+  def routeUnroutedPoint =  profile(insertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,(_) => myVRP.isRouted), myVRP,neighborhoodName = "InsertUF"))
 
   //TODO: using post-filters on k-nearest is probably crap
-  val routeUnroutedPoint2 =  Profile(new InsertPointRoutedFirst(myVRP.routed,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,x => !myVRP.isRouted(x)),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.size < n/2))
+  val routeUnroutedPoint2 =  profile(insertPointRoutedFirst(myVRP.routed,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,(_) => x => !myVRP.isRouted(x)),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.size < n/2))
 
-  def onePtMove(k:Int) = Profile(new OnePointMove(myVRP.routed, () => myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP))
+  def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,myVRP.closestNeighboursForward,(_) => myVRP.isRouted), myVRP))
 
-  val twoOpt = Profile(new TwoOpt(myVRP.routed, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP))
+  val customTwoOpt = profile(twoOpt(myVRP.routed, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward,(_) => myVRP.isRouted), myVRP))
 
-  def threeOpt(k:Int, breakSym:Boolean) = Profile(new ThreeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
+  def customThreeOpt(k:Int, breakSym:Boolean) = profile(threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,(_) => myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
-  val vlsn1pt = Profile(Mu[OnePointMoveMove](
-    OnePointMove(myVRP.routed, () => myVRP.kFirst(5,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP),
-    l => Some(OnePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(3,myVRP.closestNeighboursForward,myVRP.isRouted),myVRP, hotRestart = false)),
+  val vlsn1pt = profile(Mu[OnePointMoveMove](
+    onePointMove(myVRP.routed, () => myVRP.kFirst(5,myVRP.closestNeighboursForward,(_) => myVRP.isRouted),myVRP),
+    l => Some(onePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(3,myVRP.closestNeighboursForward,(_) => myVRP.isRouted),myVRP, hotRestart = false)),
     intermediaryStops = true,
     maxDepth = 6))
 
-  val search = (BestSlopeFirst(List(routeUnroutedPoint2, routeUnroutedPoint, onePtMove(10),twoOpt, threeOpt(10,true),vlsn1pt, new InsertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,neighborhoodName = "InsertUF") andThen routeUnroutedPoint)) exhaust threeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
-
-  // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10) guard (() => myVRP.unrouted.value.size != 0)),10)) exhaust BestSlopeFirst(List(onePtMove(20),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
+  val search = (bestSlopeFirst(List(routeUnroutedPoint2, routeUnroutedPoint, onePtMove(10),customTwoOpt, customThreeOpt(10,true),vlsn1pt, insertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,(_) => myVRP.isRouted), myVRP,neighborhoodName = "InsertUF") andThen routeUnroutedPoint)) exhaust customThreeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
 
   search.verbose = 1
-  //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
 
   print("Doing all moves ...")
 
@@ -98,4 +89,4 @@ object TestNext extends App{
   search.doAllMoves(obj = myVRP.obj)
   model.propagate()
   println(search.profilingStatistics)
-}*/
+}
