@@ -1,4 +1,4 @@
-package oscar.cbls.visual.MatrixMap
+package oscar.cbls.business.routing.visual.routingMap
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -24,11 +24,11 @@ import scala.List
 /**
   * Created by fabian on 23-02-16.
   */
-
+/*
 trait RouteToDisplay extends RoutingMap{
-  var container:RoutingMatrixContainer = _
+  var container:RoutingMapContainer = _
 
-  def initRouteToDisplay(container:RoutingMatrixContainer) {
+  def initRouteToDisplay(container:RoutingMapContainer) {
     this.container = container
 
     val routesToDisplay:Array[Boolean] = Array.tabulate(vrp.v)(v =>false)
@@ -62,3 +62,4 @@ trait RouteToDisplay extends RoutingMap{
     super.setRouteToDisplay(rtd)
   }
 }
+*/

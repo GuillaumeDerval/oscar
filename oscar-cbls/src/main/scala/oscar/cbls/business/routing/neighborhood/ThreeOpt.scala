@@ -79,7 +79,7 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
 
     val relevantNeighborsNow = relevantNeighbors()
 
-    val nodeToVehicle = vrp.getVehicleOfAllNodes
+    val nodeToVehicle = vrp.vehicleOfNode.map(_.value)
 
     var insertionPoint = -1
     for (insertionPointTmp <- iterationSchemeOnZone){
@@ -107,7 +107,7 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
 
             for (((segmentStart,segmentStartPosition), (segmentEnd,segmentEndPosition)) <- relevantPairsToExplore) {
 
-              if (nodeToVehicle(segmentStart) != vehicleForInsertion || insertionPosition < segmentStartPosition || segmentEndPosition < insertionPosition) {
+              if (insertionPosition < segmentStartPosition || segmentEndPosition < insertionPosition) {
 
                 segmentStartPositionForInstantiation = segmentStartPosition
                 segmentEndPositionForInstantiation = segmentEndPosition

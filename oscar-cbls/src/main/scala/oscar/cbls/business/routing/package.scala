@@ -29,8 +29,9 @@ import oscar.cbls.business.routing.modeling._
  * Tt defines a type that is a VRP. it only packs a sequence variable and , which is set at the beginning of all optimization
  */
 package object routing
-  extends RoutingInvriants
+  extends RoutingInvariants
   with CapacityInvariants
+  with RoutingExtensions
   with InsertPointAPI
   with OnePointMovsAPI
   with RemovePointAPI
@@ -40,6 +41,11 @@ package object routing
   with TwoOptAPI {
 
   type VRP = oscar.cbls.business.routing.model.VRP
+
+  val CapacityHelper = oscar.cbls.business.routing.model.helpers.CapacityHelper
+  val ChainsHelper = oscar.cbls.business.routing.model.helpers.ChainsHelper
+  val DistanceHelper = oscar.cbls.business.routing.model.helpers.DistanceHelper
+  val TimeWindowHelper = oscar.cbls.business.routing.model.helpers.TimeWindowHelper
 
 }
 

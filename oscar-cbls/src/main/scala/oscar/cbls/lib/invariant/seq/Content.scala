@@ -15,7 +15,7 @@ package oscar.cbls.lib.invariant.seq
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls._
+import oscar.cbls.{core, _}
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core._
 

@@ -81,7 +81,7 @@ object ConstantRoutingDistance {
     true
   }
 
-  def isDistanceSymmetric(distanceMatrix : Int => Int => Int, n:Int):Boolean = {
+  def isDistanceSymmetric(distanceMatrix : Array[Array[Int]], n:Int):Boolean = {
     var i = 0
     while(i < n){
       var j = 0
@@ -503,7 +503,7 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
   }
 
   def check(c : Checker,s:IntSequence) {
-    c.check(!distanceIsSymmetric || ConstantRoutingDistance.isDistanceSymmetric(distanceMatrixOnNode, n), Some("distance matrix should be symmetric if invariant told so"))
+    c.check(!distanceIsSymmetric || ConstantRoutingDistance.isDistanceSymmetric(distanceMatrix, n), Some("distance matrix should be symmetric if invariant told so"))
 
     if (perVehicle) {
       val values = computeValueFromScratch(s)

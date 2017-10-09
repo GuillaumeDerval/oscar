@@ -15,15 +15,14 @@ package oscar.cbls.test.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.core.computation.{IntValue, CBLSIntConst, CBLSSeqVar, Store}
-import oscar.cbls.core.propagation.ErrorChecker
-import oscar.cbls.business.routing.invariants.capa.ForwardCumulativeIntegerDimensionOnVehicle
+import oscar.cbls.business.routing._
 
 /**
  * Created by rdl on 03-01-17.
  */
-object TestCumulative extends App{
+object TestToUpdates extends App{
 
   val m = new Store(checker = Some(new ErrorChecker()))
 

@@ -15,6 +15,16 @@ package oscar.cbls.business.routing.model
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+abstract class TravelTimeFunction {
+  def getTravelDuration(from: Int, leaveTime: Int, to: Int): Int
+  def getBackwardTravelDuration(from: Int, arrivalTime: Int, to: Int): Int
+
+  def getMinMaxTravelDuration(from: Int, to: Int): (Int, Int) =
+    (getMinTravelDuration(from, to), getMaxTravelDuration(from, to))
+
+  def getMinTravelDuration(from: Int, to: Int): Int
+  def getMaxTravelDuration(from: Int, to: Int): Int
+}
 
 /**
   * Stores a square matrix of primitive TTF

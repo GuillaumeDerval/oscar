@@ -1,4 +1,4 @@
-package oscar.cbls.visual.MatrixMap
+package oscar.cbls.business.routing.visual.routingMap
 
 /**
   * *****************************************************************************
@@ -20,44 +20,29 @@ package oscar.cbls.visual.MatrixMap
 import java.awt.{BorderLayout, Color, Dimension}
 import javax.swing.{JFrame, JPanel}
 
-import oscar.cbls.business.routing.model.{PDP, VRP}
+import oscar.cbls.business.routing.model.VRP
 
 
 /**
   * @author fabian.germeau@student.vinci.be
   */
-class RoutingMatrixContainer(title:String = "Routing map",
-                             myVRP:VRP = null,
-                             geolocalisationMap: Boolean = false,
-                             pickupAndDeliveryPoints: Boolean = false,
-                             routeToDisplay:Boolean = false
+class RoutingMapContainer(title:String = "Routing map",
+                          vrp:VRP,
+                          routingMap: JPanel with RoutingMapDisplay,
+                          geolocalisationMap: Boolean = false,
+                          routeToDisplay:Boolean = false,
+                          refreshRate: Int = 100
                             ) extends JFrame with Runnable{
   setLayout(new BorderLayout())
 
-  var routingMap:JPanel with RoutingMap = _
-
-  routingMap = (geolocalisationMap,routeToDisplay) match {
-    case(true,true) => new GeoRoutingMap with RouteToDisplay
-    case(true,false) => new GeoRoutingMap
-    case(false,true) => new BasicRoutingMap(if (pickupAndDeliveryPoints) Some(myVRP.asInstanceOf[PDP]) else None, Some(myVRP)) with RouteToDisplay
-    case(false,false) => new BasicRoutingMap(if (pickupAndDeliveryPoints) Some(myVRP.asInstanceOf[PDP]) else None, Some(myVRP))
-  }
-
-  if(routeToDisplay)
-    routingMap.asInstanceOf[RoutingMap with RouteToDisplay].initRouteToDisplay(this)
-
-  var mustRefresh = false
-
-  var allRoutes:Array[List[Int]] = _
-
-  var routes:List[List[Int]] = Nil
+  @volatile private var mustRefresh = false
 
   def run(): Unit ={
     while (true) {
       try {
-        Thread.sleep(100)
+        Thread.sleep(refreshRate)
         if(setMustRefresh(false))
-          routingMap.setRouteToDisplay(allRoutes)
+          routingMap.drawRoutes()
       }catch{
         case ie:InterruptedException => return
         case e:Exception => e.printStackTrace()
@@ -76,22 +61,6 @@ class RoutingMatrixContainer(title:String = "Routing map",
       }
       res
     }
-  }
-
-  def drawPoints(): Unit ={
-    routingMap.drawPoints()
-  }
-
-  def setColorValues(colorValues:Array[Color] = null): Unit ={
-    routingMap.setColorValues(colorValues)
-  }
-
-  def setPointsList(pointsList:List[(Double,Double)]): Unit ={
-    routingMap.setPointsList(pointsList)
-  }
-
-  def setMapSize(mapSize:Int): Unit ={
-    routingMap.setMapSize(mapSize)
   }
 
   setPreferredSize(new Dimension(960,960))

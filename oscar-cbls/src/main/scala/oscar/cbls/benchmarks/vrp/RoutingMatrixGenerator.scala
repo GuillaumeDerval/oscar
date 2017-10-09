@@ -66,33 +66,67 @@ object RoutingMatrixGenerator {
     toReturn
   }
 
-  def generateTimeWindows(n:Int, v:Int, pickups:Array[Int], deliveries:Array[Int], timeUnitDelta:Int = 50): Array[(Int,Int,Int,Int)] ={
-
-    val maxNodes = n-v
-    val maxCouples = maxNodes/2
-    val random = new Random(0)
-    val timeWindows = Array.tabulate(n-v)( _ => (0,0,0,0))
-    var tWCoupleGenerated = 0
-    var currentTimeUnit = 0
-
-
-    while(tWCoupleGenerated < maxCouples){
-      val nbOfCouplesToAdd = Math.min(maxCouples - tWCoupleGenerated,random.nextInt(v))
-      //println(nbOfCouplesToAdd)
-      for(inc <- 0 until nbOfCouplesToAdd){
-        val incDelivery = random.nextInt(50)
-        timeWindows(pickups(tWCoupleGenerated+inc)-v) = (timeUnitDelta*(currentTimeUnit+1),Int.MaxValue,timeUnitDelta,0)
-        timeWindows(deliveries(tWCoupleGenerated+inc)-v) = (-1,timeUnitDelta*(currentTimeUnit+1+incDelivery),timeUnitDelta,0)
-      }
-      tWCoupleGenerated += nbOfCouplesToAdd
-      currentTimeUnit += random.nextInt(10*1000/timeUnitDelta)
-    }
-    timeWindows
+  def addLonelyNodesToPrecedences(n: Int, precedences: List[List[Int]]): List[List[Int]]={
+    val lonelyNodes = Range(0,n).toList.diff(precedences.flatten)
+    var precedencesWithLonelyNodes = precedences
+    for(lonelyNode <- lonelyNodes)
+      lonelyNode :: precedencesWithLonelyNodes
+    precedencesWithLonelyNodes
   }
 
-  def generatePickupDeliveryCouples(n:Int, v:Int): (Array[Int],Array[Int]) ={
-    require((n-v)%2 == 0,"You must have a pair number of nodes")
-    (Array.tabulate((n-v)/2)(p => p+v), Array.tabulate((n-v)/2)(d => d+v+((n-v)/2)))
+  def generateFeasibleTimeWindows(n:Int, v:Int,
+                                  timeMatrix: TTFMatrix,
+                                  precedences: List[List[Int]] = List.empty,
+                                  maxIdlingTimeInSec: Int = 1800,
+                                  maxExtraTravelTimeInSec: Int = 900,
+                                  maxTaskDurationInSec: Int = 300): (Array[Int],Array[Int],Array[Int],Array[Int]) ={
+
+    def randomVehicleSelection = random.nextInt(v)
+    def randomIdleTime = random.nextInt(maxIdlingTimeInSec)
+    def randomExtraTravelTime = random.nextInt(maxExtraTravelTimeInSec)
+    def randomTaskDuration = random.nextInt(maxTaskDurationInSec)
+
+    val precedencesWithLonelyNodes = addLonelyNodesToPrecedences(n, precedences)
+    val endOfLastActionOfVehicles = Array.fill(v)(0)
+    val lastNodeVisitedOfVehicles = Array.tabulate(v)(x => x)
+    val extraTravelTimeOfNodes = Array.tabulate(n)(node => if(node < v)0 else randomExtraTravelTime)
+    val earlyLines = Array.fill(n)(0)
+    val deadLines = Array.fill(n)(Int.MaxValue)
+    val taskDurations = Array.tabulate(n)(node => if(node < v) 0 else randomTaskDuration)
+    val maxWaitingDuration = Array.fill(n)(Int.MaxValue)
+
+    /**
+      * This method generate a time window for a given node on a given vehicle
+      * It's divided in several step :
+      *   1°  We add the travel time from the previous node to the current node to the endOfLastActionOfVehicles
+      *   2°  We set the earlyline of the node
+      *   3°  We add the taskDuration of the node to the endOfLastActionOfVehicles
+      *   4°  We set the deadline of the node by adding a random extraTravelTime and
+      *       the random extraTravelTime from the previous node to the endOfLastActionOfVehicles
+      *   5°  We update the last node visited by the vehicle
+      * @param node
+      * @param onVehicle
+      */
+    def generateTimeWindowForNode(node: Int, onVehicle: Int): Unit ={
+      val previousNode = lastNodeVisitedOfVehicles(onVehicle)
+      val travelFromPreviousNode = timeMatrix.getTravelDuration(previousNode,endOfLastActionOfVehicles(onVehicle),node)
+      endOfLastActionOfVehicles(onVehicle) += travelFromPreviousNode
+
+      earlyLines(node) = endOfLastActionOfVehicles(onVehicle)
+      endOfLastActionOfVehicles(onVehicle) += taskDurations(node)
+      deadLines(node) = endOfLastActionOfVehicles(onVehicle) + extraTravelTimeOfNodes(node) + extraTravelTimeOfNodes(previousNode)
+      lastNodeVisitedOfVehicles(onVehicle) = node
+    }
+
+    for(precedence <- precedencesWithLonelyNodes){
+      val vehicle = randomVehicleSelection
+      //Add some idle time
+      endOfLastActionOfVehicles(vehicle) += randomIdleTime
+      for(node <- precedence){
+        generateTimeWindowForNode(node,vehicle)
+      }
+    }
+    (earlyLines,deadLines,taskDurations,maxWaitingDuration)
   }
 
   def generateLinearTravelTimeFunction(n:Int,distanceMatrix: Array[Array[Int]]): TTFMatrix = {

@@ -13,7 +13,7 @@ import scala.collection.immutable.SortedSet
  * @param v the number of vehicle
  */
 case class MovingVehicles(routes:ChangingSeqValue, v:Int)
-  extends SetInvariant() with SeqNotificationTarget{
+  extends SetInvariant(initialDomain = 0 until v) with SeqNotificationTarget{
 
   setName("MovingVehicles in route" + routes.name)
 

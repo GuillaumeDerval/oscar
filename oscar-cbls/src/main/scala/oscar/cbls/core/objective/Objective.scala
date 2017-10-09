@@ -81,7 +81,7 @@ class IntVarObjective(val objective: ChangingIntValue) extends Objective {
  *   this is computed partially both for objective and mustBeZeroObjective
  * @param mustBeZeroObjective
  */
-class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objective,cascadeSize:Int = Int.MaxValue/10) extends Objective {
+class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objective,cascadeSize:Int = Int.MaxValue) extends Objective {
 
   override def detailedString(short: Boolean, indent:Int = 0): String =
     (if(short) {
@@ -109,7 +109,7 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
    */
   override def value = {
     val firstObjectiveValue = mustBeZeroObjective.value
-    if (firstObjectiveValue!=0) cascadeSize + firstObjectiveValue
+    if (firstObjectiveValue!=0) cascadeSize
     else secondObjective.value
   }
 

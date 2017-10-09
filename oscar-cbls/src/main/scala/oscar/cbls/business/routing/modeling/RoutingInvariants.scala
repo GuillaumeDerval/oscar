@@ -7,7 +7,7 @@ import oscar.cbls.business.routing.invariants._
 /**
  * Created by rdl on 11-09-17.
  */
-trait RoutingInvriants {
+trait RoutingInvariants {
 
   /**
    * The distance computed by this invariant considers the values o the diagonal as part of the cost (node cost are added to the distance)
@@ -97,14 +97,21 @@ trait RoutingInvriants {
    */
   def routeSuccessorAndPredecessors(routes:ChangingSeqValue,
                                     v:Int,
-                                    successorValues:Array[CBLSIntVar],
-                                    predecessorValues:Array[CBLSIntVar],
-                                    defaultWhenNotInSequence:Int) =
+                                    defaultWhenNotInSequence:Int)(
+    successorValues:Array[CBLSIntVar] =
+    Array.tabulate(routes.maxValue + 1)(node =>
+      CBLSIntVar(routes.model,defaultWhenNotInSequence,name="successor of node" + node)),
+    predecessorValues:Array[CBLSIntVar] =
+    Array.tabulate(routes.maxValue + 1)(node =>
+      CBLSIntVar(routes.model,defaultWhenNotInSequence,name="predecessor of node" + node))
+  ) = {
     new RouteSuccessorAndPredecessors(routes,
       v,
       successorValues,
       predecessorValues,
       defaultWhenNotInSequence)
+    (successorValues,predecessorValues)
+  }
 
   /**
    * this invariant ensures that nodesOfVehicle(p) is maintained to the nodes reached vy vehicle p according to the sequence routes.

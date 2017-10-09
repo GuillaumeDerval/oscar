@@ -19,6 +19,7 @@ import org.scalacheck.Gen
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 import oscar.cbls._
+import oscar.cbls.benchmarks.vrp.RoutingMatrixGenerator
 import oscar.cbls.business.routing.invariants._
 import oscar.cbls.lib.constraint._
 import oscar.cbls.lib.invariant.logic.{SetElement, _}
@@ -28,7 +29,6 @@ import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintO
 import oscar.cbls.lib.invariant.seq._
 import oscar.cbls.lib.invariant.set._
 import oscar.cbls.test.invariants.bench._
-import oscar.cbls.test.routing.RoutingMatrixGenerator
 
 import scala.collection.immutable.SortedMap
 

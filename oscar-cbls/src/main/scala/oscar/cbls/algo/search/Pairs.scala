@@ -43,18 +43,22 @@ object Pairs {
    * @return a list of all pairs of elements made from two elements in l, preserving the order
    *         in which those elements are in l
    */
-  def makeAllSortedPairs[T](l:List[T]):List[(T,T)] = {
+  def makeAllSortedPairs[T](l:List[T], filter: (T,T) => Boolean = (head:T,other:T) => true):List[(T,T)] = {
     def makeAllSortedPairsWithHead(head:T,
                                    tail:List[T],
                                    toAppend:List[(T,T)]):List[(T,T)] = {
       tail match{
         case Nil => toAppend
-        case other::newTail => (head,other) :: makeAllSortedPairsWithHead(head,newTail,toAppend)
+        case other::newTail =>
+          if(filter(head,other))
+            (head,other) :: makeAllSortedPairsWithHead(head,newTail,toAppend)
+          else
+            makeAllSortedPairsWithHead(head,newTail,toAppend)
       }
     }
     l match{
       case Nil => Nil
-      case h::t => makeAllSortedPairsWithHead(h,t,makeAllSortedPairs(t))
+      case h::t => makeAllSortedPairsWithHead(h,t,makeAllSortedPairs(t, filter))
     }
   }
 
