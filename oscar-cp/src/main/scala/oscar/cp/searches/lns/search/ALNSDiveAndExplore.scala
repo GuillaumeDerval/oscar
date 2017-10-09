@@ -76,9 +76,15 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
       val search = searchRWheel.select()
       lnsIter(relax, search)
       checkEfficiency(relax)
-      if(!relax.isActive) relaxRWheel.deactivate(relax)
+      if(!relax.isActive){
+        relaxRWheel.deactivate(relax)
+        manageIterTimeout()
+      }
       checkEfficiency(search)
-      if(!search.isActive) searchRWheel.deactivate(search)
+      if(!search.isActive){
+        searchRWheel.deactivate(search)
+        manageIterTimeout()
+      }
     }
   }
 
@@ -111,7 +117,7 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
         tStart = nextSol.time
         objStart = nextSol.objective
       }
-      objStart.toDouble / tStart.toDouble
+      Math.abs(objStart - currentObj).toDouble / (Math.abs(currentTime - tStart) / 1000000000.0)
     }
   }
 

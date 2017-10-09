@@ -57,50 +57,7 @@ trait Benchmark {
       )
     }
 
-    else if (argMap.getOrElse('MLNS, false).asInstanceOf[Boolean]) {
-      val results = performMLNS(argMap, maximizeObjective)
-
-      val highestResult = results.filter(_.solutions.nonEmpty).maxBy(_.solutions.last.objective)
-      val lowestResult = results.filter(_.solutions.nonEmpty).minBy(_.solutions.last.objective)
-
-      val bestResult = if(maximizeObjective) highestResult else lowestResult
-      val worstResult = if(maximizeObjective) lowestResult else highestResult
-
-      if(!solver.silent){
-        println("\nBest result:")
-        println(bestResult)
-      }
-      if(!solver.silent){
-        println("\nWorst result:")
-        println(worstResult)
-      }
-
-      XmlWriter.writeToXml(
-        argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
-        argMap.getOrElse('name, "Baseline").asInstanceOf[String] + "_best",
-        seed,
-        argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
-        IOUtils.getFileName(instance, keepExtension = false),
-        problem,
-        bestKnownObjective.getOrElse(if (maximizeObjective) Int.MinValue else Int.MaxValue),
-        maximizeObjective,
-        bestResult.solutions,
-        if (bestResult.relaxOperators.isEmpty) Map("Coupled" -> bestResult.searchOperators) else Map("Relax" -> bestResult.relaxOperators, "Search" -> bestResult.searchOperators)
-      )
-
-      XmlWriter.writeToXml(
-        argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
-        argMap.getOrElse('name, "Baseline").asInstanceOf[String] + "_worst",
-        seed,
-        argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
-        IOUtils.getFileName(instance, keepExtension = false),
-        problem,
-        bestKnownObjective.getOrElse(if (maximizeObjective) Int.MinValue else Int.MaxValue),
-        maximizeObjective,
-        worstResult.solutions,
-        if (worstResult.relaxOperators.isEmpty) Map("Coupled" -> worstResult.searchOperators) else Map("Relax" -> worstResult.relaxOperators, "Search" -> worstResult.searchOperators)
-      )
-    }
+    else if (argMap.getOrElse('MLNS, false).asInstanceOf[Boolean]) performMLNS(argMap, maximizeObjective, seed, argMap.getOrElse('strategy, "default").asInstanceOf[String] == "boundsOnly")
 
     else{
       val result = performALNS(argMap)
@@ -180,7 +137,7 @@ trait Benchmark {
     alns.search()
   }
 
-  def performMLNS(argMap: ArgMap, maximizeObjective: Boolean): Array[ALNSSearchResults] = {
+  def performMLNS(argMap: ArgMap, maximizeObjective: Boolean, seed: Int, boundsOnly: Boolean = false): Unit = {
 
     val builder = new ALNSBuilder(
       solver,
@@ -218,9 +175,10 @@ trait Benchmark {
 
     val startResults = performBasicSearch(argMap, maximizeObjective, 1)
     if(startResults.solutions.nonEmpty){
-      val startSol = performBasicSearch(argMap, maximizeObjective, 1).solutions.head
+      val startSol = startResults.solutions.head
 
-      val results = mutable.ArrayBuffer[ALNSSearchResults]()
+      var highestResult: Option[ALNSSearchResults] = None
+      var lowestResult: Option[ALNSSearchResults] = None
       operators.foreach(op =>{
         lazy val relaxStore = new RandomStore[ALNSOperator](Array(new ALNSNoParamOperator("dummy", 0, () => (_ => Unit, None, None))))
         lazy val searchStore = new RandomStore[ALNSOperator](Array(op))
@@ -236,12 +194,72 @@ trait Benchmark {
         )
         val alns = ALNSSearch(solver, decisionVariables, config)
 
-        results += alns.searchFrom(startSol)
+        val result = alns.searchFrom(startSol)
+
+        if(!boundsOnly){
+          XmlWriter.writeToXml(
+            argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
+            argMap.getOrElse('name, "default").asInstanceOf[String],
+            seed,
+            argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
+            IOUtils.getFileName(instance, keepExtension = false),
+            problem,
+            bestKnownObjective.getOrElse(if (maximizeObjective) Int.MinValue else Int.MaxValue),
+            maximizeObjective,
+            result.solutions,
+            if (result.relaxOperators.isEmpty) Map("Coupled" -> result.searchOperators) else Map("Relax" -> result.relaxOperators, "Search" -> result.searchOperators)
+          )
+        }
+        else if(result.solutions.nonEmpty){
+          if(highestResult.isEmpty || result.solutions.last.objective > highestResult.get.solutions.last.objective)
+            highestResult = Some(result)
+          if(lowestResult.isEmpty || result.solutions.last.objective < lowestResult.get.solutions.last.objective)
+            lowestResult = Some(result)
+        }
       })
 
-      results.toArray
+      if(highestResult.isDefined && lowestResult.isDefined){
+        val bestResult = if(maximizeObjective) highestResult.get else lowestResult.get
+        val worstResult = if(maximizeObjective) lowestResult.get else highestResult.get
+
+        if(!solver.silent){
+          println("\nBest result:")
+          println(bestResult)
+        }
+        if(!solver.silent){
+          println("\nWorst result:")
+          println(worstResult)
+        }
+
+        XmlWriter.writeToXml(
+          argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
+          argMap.getOrElse('name, "Baseline").asInstanceOf[String] + "_best",
+          seed,
+          argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
+          IOUtils.getFileName(instance, keepExtension = false),
+          problem,
+          bestKnownObjective.getOrElse(if (maximizeObjective) Int.MinValue else Int.MaxValue),
+          maximizeObjective,
+          bestResult.solutions,
+          if (bestResult.relaxOperators.isEmpty) Map("Coupled" -> bestResult.searchOperators) else Map("Relax" -> bestResult.relaxOperators, "Search" -> bestResult.searchOperators)
+        )
+
+        XmlWriter.writeToXml(
+          argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
+          argMap.getOrElse('name, "Baseline").asInstanceOf[String] + "_worst",
+          seed,
+          argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
+          IOUtils.getFileName(instance, keepExtension = false),
+          problem,
+          bestKnownObjective.getOrElse(if (maximizeObjective) Int.MinValue else Int.MaxValue),
+          maximizeObjective,
+          worstResult.solutions,
+          if (worstResult.relaxOperators.isEmpty) Map("Coupled" -> worstResult.searchOperators) else Map("Relax" -> worstResult.relaxOperators, "Search" -> worstResult.searchOperators)
+        )
+      }
     }
     else Array(startResults)
+
   }
 
   def performBasicSearch(argMap: ArgMap, maximizeObjective: Boolean, nSols: Int = 0): ALNSSearchResults = {
