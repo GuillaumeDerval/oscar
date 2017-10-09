@@ -18,9 +18,6 @@ package oscar.cbls.test.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.NodeVehicleRestrictions
-import oscar.cbls.business.routing.model.helpers.DistanceHelper
-import oscar.cbls.core.propagation.ErrorChecker
-import oscar.cbls.lib.invariant.seq.PositionsOf
 import oscar.examples.cbls.routing.RoutingMatrixGenerator
 
 class VRPWithNodeVehicleRestriction(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int, nodeVehicleRestriction:Iterable[(Int,Int)])
@@ -30,7 +27,7 @@ class VRPWithNodeVehicleRestriction(n:Int,v:Int,symmetricDistance:Array[Array[In
   val routingDistance = constantRoutingDistance(routes,n,v,false,symmetricDistance,true,false,false)
 
   //this is useless, but it makes some fun.
-  val positionOf48 = PositionsOf(cloneOfRoute, 48)
+  val positionOf48 = positionsOf(cloneOfRoute, 48)
 
   val size = length(cloneOfRoute)
 

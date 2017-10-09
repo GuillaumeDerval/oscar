@@ -16,9 +16,7 @@ package oscar.cbls.test.routing
   ******************************************************************************/
 
 import oscar.cbls._
-import oscar.cbls.lib.invariant.seq.Precedence
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.core.search.Best
 import oscar.examples.cbls.routing.RoutingMatrixGenerator
 
@@ -34,7 +32,7 @@ class MySimpleRoutingP(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, 
 
   val routingDistance = constantRoutingDistance(routes,n,v,false,symmetricDistance,true,false,false)
 
-  val precedenceInvar = Precedence(routes,precedences)
+  val precedenceInvar = precedence(routes,precedences)
 
   val nodesStartingAPrecedence:SortedSet[Int] = precedenceInvar.nodesStartingAPrecedence
   val nodesEndingAPrecedenceStartedAt:(Int => Iterable[Int]) = precedenceInvar.nodesEndingAPrecedenceStartedAt

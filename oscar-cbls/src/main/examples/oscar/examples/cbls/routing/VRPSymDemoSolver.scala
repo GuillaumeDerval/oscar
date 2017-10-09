@@ -15,12 +15,9 @@ package oscar.examples.cbls.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.business.routing.model.extensions.Display
-import oscar.cbls.business.routing._
 import oscar.cbls._
-import oscar.cbls.business.routing.model.helpers.DistanceHelper
+import oscar.cbls.business.routing._
 import oscar.cbls.core.search.{Best, First}
-import oscar.cbls.lib.search.combinators.Profile
 import oscar.cbls.util.StopWatch
 
 
@@ -48,7 +45,7 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay
 
   val myVRP = new VRP(model,n,v)
   val routingDistance = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistanceMatrix,true,true,false)
-  val graphicExtension = new Display(myVRP,nodesPositions.map(np => (np._1.toDouble,np._2.toDouble)).toList,sizeOfMap = Some(mapSide), refreshRate = displayDelay)
+  val graphicExtension = display(myVRP,nodesPositions.map(np => (np._1.toDouble,np._2.toDouble)).toList,sizeOfMap = Some(mapSide), refreshRate = displayDelay)
   val penaltyForUnrouted  = 10000
 
   val obj = Objective(DistanceHelper.totalDistance(routingDistance) + (penaltyForUnrouted*(n - length(myVRP.routes))))
@@ -61,7 +58,7 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay
   val routedPostFilter = (node:Int) => (neighbor:Int) => myVRP.isRouted(neighbor)
   val unRoutedPostFilter = (node:Int) => (neighbor:Int) => !myVRP.isRouted(neighbor)
 
-  val routeUnroutedPoint =  Profile(insertPointUnroutedFirst(myVRP.unrouted,
+  val routeUnroutedPoint =  profile(insertPointUnroutedFirst(myVRP.unrouted,
     ()=>myVRP.kFirst(10,closestRelevantNeighborsByDistance,routedPostFilter),
     myVRP,
     neighborhoodName = "InsertUF",
@@ -69,7 +66,7 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay
     selectNodeBehavior = First(),
     selectInsertionPointBehavior = Best()))
 
-  val routeUnroutedPointBad =  Profile(insertPointUnroutedFirst(myVRP.unrouted,
+  val routeUnroutedPointBad =  profile(insertPointUnroutedFirst(myVRP.unrouted,
     ()=> myVRP.kFirst(20,closestRelevantNeighborsByDistance,routedPostFilter),
     myVRP,
     neighborhoodName = "InsertUF",
@@ -78,23 +75,23 @@ class TSPDemo(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, displayDelay
 
   //using post-filters on k-nearest is probably a bit slower than possible for large problems.
   //that's why we prefer to block this neighborhood when many nodes are already routed (so few are unrouted, so the filter filters many nodes away)
-  val routeUnroutedPoint2 =  Profile(insertPointRoutedFirst(
+  val routeUnroutedPoint2 =  profile(insertPointRoutedFirst(
     myVRP.routed,
     ()=>myVRP.kFirst(10,closestRelevantNeighborsByDistance,unRoutedPostFilter),  //should be the backward ones but this is a symmetric distance so we do not care
     myVRP,
     neighborhoodName = "InsertRF")
     guard(() => myVRP.routed.value.size < n/2))
 
-  def onePtMove(k:Int) = Profile(onePointMove(
+  def onePtMove(k:Int) = profile(onePointMove(
     myVRP.routed,
     () => myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter),
     myVRP,
     selectDestinationBehavior = Best()))
 
-  val customTwoOpt = Profile(twoOpt(myVRP.routed, ()=>myVRP.kFirst(20,closestRelevantNeighborsByDistance,routedPostFilter), myVRP))
+  val customTwoOpt = profile(twoOpt(myVRP.routed, ()=>myVRP.kFirst(20,closestRelevantNeighborsByDistance,routedPostFilter), myVRP))
 
   def customThreeOpt(k:Int, breakSym:Boolean) =
-    Profile(threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
+    profile(threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
   val vlsn1pt = mu[OnePointMoveMove](
     onePointMove(myVRP.routed, () => myVRP.kFirst(5,closestRelevantNeighborsByDistance,routedPostFilter),myVRP),

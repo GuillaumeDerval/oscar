@@ -16,12 +16,8 @@ package oscar.cbls.test.routing
   ******************************************************************************/
 
 import oscar.cbls._
-import oscar.cbls.business.routing._
-import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.core.search.Best
-import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
-import oscar.cbls.business.routing.model.helpers.DistanceHelper
-import oscar.cbls.lib.search.combinators.Mu
+import oscar.cbls.business.routing._
 import oscar.examples.cbls.routing.RoutingMatrixGenerator
 
 
@@ -37,7 +33,7 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
   val violation = new CBLSIntVar(routes.model, 0, 0 to Int.MaxValue, "violation of capacity test")
   val violation2 = new CBLSIntVar(routes.model, 0, 0 to Int.MaxValue, "violation of capacity2 test")
 
-  val contentConstraint = new ForwardCumulativeConstraintOnVehicle(
+  val contentConstraint = forwardCumulativeConstraintOnVehicle(
     routes,
     n,
     v,
@@ -48,7 +44,7 @@ class MySimpleRoutingWithCumulatives(n:Int,v:Int,symmetricDistance:Array[Array[I
     6)
 
 
-  val contentConstraint2 = new ForwardCumulativeConstraintOnVehicle(
+  val contentConstraint2 = forwardCumulativeConstraintOnVehicle(
     routes,
     n,
     v,
@@ -118,14 +114,14 @@ object TestCumulatives extends App{
 
   def customThreeOpt(k:Int, breakSym:Boolean) = profile(threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward, (_) => myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
-  val vlsn1pt = profile(Mu[OnePointMoveMove](
+  val vlsn1pt = profile(mu[OnePointMoveMove](
     onePointMove(myVRP.routed, () => myVRP.kFirst(10,myVRP.closestNeighboursForward, (_) => myVRP.isRouted),myVRP),
     l => Some(onePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(10,myVRP.closestNeighboursForward, (_) => myVRP.isRouted),myVRP, hotRestart = false)),
     intermediaryStops = true,
     maxDepth = 3))
 
 
-  val vlsnInsert = Mu[InsertPointMove](
+  val vlsnInsert = mu[InsertPointMove](
   routeUnroutedPoint(3),
   l => if (myVRP.unroutedNodes.isEmpty) None else Some(routeUnroutedPoint(5)),
   intermediaryStops = false,

@@ -17,8 +17,6 @@ package oscar.cbls.test.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.model.helpers.DistanceHelper
-import oscar.cbls.lib.search.combinators.Mu
 import oscar.examples.cbls.routing.RoutingMatrixGenerator
 
 class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int)
@@ -71,7 +69,7 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int){
 
   def customThreeOpt(k:Int, breakSym:Boolean) = profile(threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,(_) => myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
-  val vlsn1pt = Mu[OnePointMoveMove](
+  val vlsn1pt = mu[OnePointMoveMove](
   onePointMove(myVRP.routed, () => myVRP.kFirst(5,myVRP.closestNeighboursForward,(_) => myVRP.isRouted),myVRP),
   l => Some(onePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(3,myVRP.closestNeighboursForward,(_) => myVRP.isRouted),myVRP)),
   intermediaryStops = true,

@@ -89,6 +89,7 @@ trait CapacityInvariants {
     lastPointOfVehicle,
     defaultVehicleContentForUnroutedNodes,
     contentName)
+  val ForwardCumulativeIntegerDimensionOnVehicle = oscar.cbls.business.routing.invariants.capa.ForwardCumulativeIntegerDimensionOnVehicle
 
   /**
     * ia generic invariant for representing a dimension on a vehicle, that is an integer value that travels with the vehicle and changes at each poit according to a function "op"

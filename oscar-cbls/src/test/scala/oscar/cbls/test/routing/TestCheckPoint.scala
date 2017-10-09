@@ -18,9 +18,6 @@ package oscar.cbls.test.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.model._
-import oscar.cbls.business.routing.model.helpers.DistanceHelper
-import oscar.cbls.core.propagation.ErrorChecker
 import oscar.examples.cbls.routing.RoutingMatrixGenerator
 
 /**

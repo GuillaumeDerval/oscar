@@ -1,11 +1,8 @@
 package oscar.examples.cbls.routing
 
-import oscar.cbls.business.routing.model.extensions._
-import oscar.cbls.business.routing._
 import oscar.cbls._
+import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.PDPConstraints
-import oscar.cbls.business.routing.invariants.capa.ForwardCumulativeConstraintOnVehicle
-import oscar.cbls.business.routing.model.helpers.{CapacityHelper, ChainsHelper, DistanceHelper, TimeWindowHelper}
 import oscar.cbls.lib.invariant.seq.Precedence
 
 /**
@@ -31,7 +28,7 @@ object SimpleVRPWithVehicleContent extends App{
 
   // Vehicle content
   val violationOfContentAtNode = new CBLSIntVar(myVRP.routes.model, 0, 0 to Int.MaxValue, "violation of capacity " + "Content at node")
-  val vehicleContentInvariant = new ForwardCumulativeConstraintOnVehicle(myVRP.routes,n,v,
+  val vehicleContentInvariant = forwardCumulativeConstraintOnVehicle(myVRP.routes,n,v,
     (from,to,fromContent) => fromContent + contentsFlow(to),
     maxVehicleCapacity,
     vehiclesCapacity.map(maxVehicleCapacity-_),
@@ -41,7 +38,7 @@ object SimpleVRPWithVehicleContent extends App{
 
   //Chains
   val precedenceInvariant = new Precedence(myVRP.routes,precedences.map(p => (p.head,p.last)))
-  val chainsExtension = new Chains(myVRP,precedences)
+  val chainsExtension = chains(myVRP,precedences)
 
   //Constraints & objective
   val (fastConstrains,slowConstraints) = PDPConstraints(myVRP,

@@ -1,11 +1,9 @@
 package oscar.examples.cbls.routing
 
-import oscar.cbls.business.routing.model.extensions._
-import oscar.cbls.business.routing._
 import oscar.cbls._
-import oscar.cbls.business.routing.invariants.PDPConstraints
-import oscar.cbls.business.routing.model.helpers.{ChainsHelper, DistanceHelper, TimeWindowHelper}
+import oscar.cbls.business.routing._
 import oscar.cbls.lib.invariant.seq.Precedence
+import oscar.cbls.business.routing.invariants.PDPConstraints
 
 /**
   * Created by fg on 12/05/17.
@@ -42,11 +40,11 @@ object SimpleVRPWithTimeWindow extends App{
     0,
     contentName = "Time at node"
   )
-  val timeWindowExtension = new TimeWindow(earlylines,deadlines,taskDurations,maxWaitingDurations)
+  val timeWindowExtension = timeWindow(earlylines,deadlines,taskDurations,maxWaitingDurations)
 
   //Chains
   val precedenceInvariant = new Precedence(myVRP.routes,precedences.map(p => (p.head,p.last)))
-  val chainsExtension = new Chains(myVRP,precedences)
+  val chainsExtension = chains(myVRP,precedences)
 
   //Constraints & objective
   val (fastConstrains,slowConstraints) = PDPConstraints(myVRP,

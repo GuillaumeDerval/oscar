@@ -17,7 +17,6 @@ package oscar.cbls.test.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.examples.cbls.routing.RoutingMatrixGenerator
 
 class MySimpleRouting(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int)

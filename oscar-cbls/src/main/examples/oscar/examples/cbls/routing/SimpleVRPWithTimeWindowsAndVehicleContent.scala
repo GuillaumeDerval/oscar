@@ -2,10 +2,7 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.model.extensions._
 import oscar.cbls.business.routing.invariants.PDPConstraints
-import oscar.cbls.business.routing.invariants.capa.ForwardCumulativeConstraintOnVehicle
-import oscar.cbls.business.routing.model.helpers.{CapacityHelper, ChainsHelper, DistanceHelper, TimeWindowHelper}
 
 /**
   * Created by fg on 12/05/17.
@@ -48,11 +45,11 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
     0,
     contentName = "Time at node"
   )
-  val timeWindowExtension = new TimeWindow(earlylines,deadlines,taskDurations,maxWaitingDurations)
+  val timeWindowExtension = timeWindow(earlylines,deadlines,taskDurations,maxWaitingDurations)
 
   // Vehicle content
   val violationOfContentAtNode = new CBLSIntVar(myVRP.routes.model, 0, 0 to Int.MaxValue, "violation of capacity " + "Content at node")
-  val capacityInvariant = new ForwardCumulativeConstraintOnVehicle(myVRP.routes,n,v,
+  val capacityInvariant = forwardCumulativeConstraintOnVehicle(myVRP.routes,n,v,
     (from,to,fromContent) => fromContent + contentsFlow(to),
     maxVehicleContent,
     vehiclesSize.map(maxVehicleContent-_),
@@ -62,7 +59,7 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
 
   //Chains
   val precedenceInvariant = precedence(myVRP.routes,precedences.map(p => (p.head,p.last)))
-  val chainsExtension = new Chains(myVRP,precedences)
+  val chainsExtension = chains(myVRP,precedences)
 
   //Constraints & objective
   val (fastConstrains,slowConstraints) = PDPConstraints(myVRP,
