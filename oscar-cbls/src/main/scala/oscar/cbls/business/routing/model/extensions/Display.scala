@@ -17,7 +17,7 @@ class Display(vrp: VRP,
 
   val routingMap = RoutingMap(vrp,nodePositions, ColorGenerator.generateRandomColors(vrp.v),displayOnRealMap = displayOnRealMap, size = sizeOfMap)
 
-  val RoutingMapContainer = new RoutingMapContainer(title="Routing Map", vrp, routingMap, refreshRate = refreshRate)
+  val RoutingMapContainer = new RoutingMapContainer(vrp, routingMap, title="Routing Map", refreshRate = refreshRate)
   new Thread(RoutingMapContainer, "Routing display").start()
 
   def drawRoutes(): Unit ={
