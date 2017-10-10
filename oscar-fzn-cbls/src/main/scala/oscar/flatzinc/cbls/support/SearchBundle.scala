@@ -293,8 +293,8 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
       //tabu(index) := it.value + tenure;
       tabu(index) := it.value + Math.min(MaxTenure, tenure + RandomGenerator.nextInt(tenureIncrement));
     }
-/*
-    val hc = searchVariables.toList.map(_.value).hashCode
+
+    /*val hc = searchVariables.toList.map(_.value).hashCode
     if(visitedStates.contains(hc)){
       log("hash code: " + hc + " has been visited before - "+"Storing " + visitedStates.size + " violation: " +m.c.violation.value)
       //log(searchVariables.map(_.value).mkString(", "))

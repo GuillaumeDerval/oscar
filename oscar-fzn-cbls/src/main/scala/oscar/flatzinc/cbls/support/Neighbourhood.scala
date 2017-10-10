@@ -438,8 +438,9 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
   }
 
   def getMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
-    //TODO: Only takes into account the violation!
-    val bestIndex = selectMax(indexRange, (i: Int) => variableViolation(i).value);
+    val bestIndex = selectMax(indexRange,
+                              (i: Int) => variableViolation(i).value,
+                              (i:Int) => acceptVar(searchVariables(i)));
     val bestValue = if (searchVariables(bestIndex).getDomain().size < 1000000) {
       selectMin(searchVariables(bestIndex).getDomain())((i: Int) =>
                                                           acceptOr(new AssignMove(searchVariables(bestIndex), i,
@@ -535,12 +536,13 @@ class MaxViolatingSwap(searchVariables: Array[CBLSIntVarDom], objective: CBLSObj
   def getMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
 
     //TODO: Only takes into account the violation for the first
-    val bestIndex1 = selectMax(indexRange, (i: Int) => variableViolation(i).value)
-    val bestIndex2 = selectMin(indexRange)((i: Int) => acceptOr(
-      new SwapMove(searchVariables(bestIndex1), searchVariables(i),
-                   objective.swapVal(searchVariables(bestIndex1), searchVariables(i))), accept).value,
-                                           (i: Int) => searchVariables(i).value != searchVariables(
-                                             bestIndex1).value && i != bestIndex1);
+    val bestIndex1 = selectMax(indexRange, (i: Int) => variableViolation(i).value,
+                               (i:Int) => acceptVar(searchVariables(i)));
+    val bestIndex2 = selectMin(indexRange)(
+      (i: Int) => acceptOr(
+                      new SwapMove(searchVariables(bestIndex1), searchVariables(i),
+                            objective.swapVal(searchVariables(bestIndex1), searchVariables(i))), accept).value,
+      (i: Int) => searchVariables(i).value != searchVariables(bestIndex1).value && i != bestIndex1);
     return acceptOr(new SwapMove(searchVariables(bestIndex1), searchVariables(bestIndex2),
                                  objective.swapVal(searchVariables(bestIndex1), searchVariables(bestIndex2))), accept)
   }

@@ -104,9 +104,9 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
       //val varsToSwap = vars.groupBy(v => v.dom)
       addNeighbourhood((o,c) => new MaxViolating(vars.toArray, o, c),Array.empty[CBLSIntVarDom])
 
-      val boolVars = vars.filter((v: CBLSIntVar) => v.min == 0 && v.max == 1)
-      if (boolVars.length > 1)
-        addNeighbourhood((o,c) => new MaxViolatingSwap(boolVars.toArray, o, c),Array.empty[CBLSIntVarDom])
+      //val boolVars = vars.filter((v: CBLSIntVar) => v.min == 0 && v.max == 1)
+      //if (boolVars.length > 1)
+      //  addNeighbourhood((o,c) => new MaxViolatingSwap(boolVars.toArray, o, c),Array.empty[CBLSIntVarDom])
     }
   }
 

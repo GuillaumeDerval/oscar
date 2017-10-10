@@ -92,7 +92,7 @@ case class Or(vars: Array[IntValue]) extends MiaxArray(vars, null, vars.foldLeft
 
 case class Or(vars: Array[IntValue])
   extends IntInvariant(
-    vars.foldLeft(0)((a: Int, b: IntValue) => a + b.value)/vars.length,
+    if(vars.exists(_.value == 0)) { 0 } else { vars.foldLeft(0)((a: Int, b: IntValue) => a + b.value)/vars.length },
     0 to vars.foldLeft(0)((acc, intvar) => DomainHelper.safeAddMax(acc, intvar.max)))
     with IntNotificationTarget{
 
@@ -169,7 +169,7 @@ case class BoolLEInv(a: IntValue, b:IntValue)
         }else{
           0
         }
-      })
+      }) / 2
   }
 }
 
@@ -192,30 +192,18 @@ case class BoolLTInv(a: IntValue, b:IntValue)
   finishInitialization()
 
   override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
-    /* this :+=
-      (if(v == a){
-        NewVal-OldVal
-      }else{
-        if(NewVal == 0){
-          if(OldVal == 0) 0 else -1
-        }else{
-          if(OldVal == 0) 1 else 0
-        }
-      })
-*/
-
     this :=
       (if(v == a){
         if(NewVal == 0 && b.value>0)
           0
         else
-          (NewVal + b.value + 1) / 2
+          (NewVal + b.value + 1)
       }else{
         if(NewVal >0 && a.value == 0)
           0
         else
-         (NewVal + a.value + 1) / 2
-      })
+         (NewVal + a.value + 1)
+      }) / 2
 
   }
 }

@@ -96,7 +96,7 @@ object CBLSIntVarDom {
 }
 
 object EnsureDomain{
-  val weight = CBLSIntConst(10);
+  val weight = CBLSIntConst(5);
   def apply(i:IntValue,d: Domain,c: ConstraintSystem) = {
     //System.err.println("% Using variables for in domain weights")
     //val weight = CBLSIntVar(c.model,10,1 to 1000000, "in domain weight")

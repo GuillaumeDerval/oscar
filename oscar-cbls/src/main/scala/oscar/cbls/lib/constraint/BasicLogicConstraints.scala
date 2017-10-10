@@ -204,7 +204,7 @@ case class BoolEQInv(a: IntValue, b:IntValue)
     if((NewVal>0 && other.value >0) || (NewVal==0 && other.value ==0)){
       this := 0
     }else{
-      this := (NewVal + other.value + 1)
+      this := (NewVal + other.value + 1) / 2
     }
   }
 }

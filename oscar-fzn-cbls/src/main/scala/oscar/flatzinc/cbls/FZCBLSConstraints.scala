@@ -178,7 +178,13 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   }
 
   def get_bool_clause(as: Array[BooleanVariable], bs: Array[BooleanVariable], ann: List[Annotation]) = {
-    BoolLE(Or(as.map(getCBLSVar(_))),And(bs.map(getCBLSVar(_))))
+
+    if(as.exists(_.isTrue) || bs.exists(_.isFalse)){
+      System.err.println("% Redundant variable in bool_clause")
+    }
+
+    BoolLE(if(as.length == 1) as.head else Or(as.map(getCBLSVar(_))),
+           if(bs.length == 1) bs.head else And(bs.map(getCBLSVar(_))))
   }
 
   def get_bool_not_inv(a: BooleanVariable, b: BooleanVariable, defId: String, ann: List[Annotation]) = {
@@ -358,20 +364,24 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     xs.zipWithIndex.map{case (xi,i) => EQ(i,Sum2(IntElement(Sum2(xi,-1),ys.map(getCBLSVar(_))),-1))}.toList
   }
   
-  def get_count_eq_inv(xs:Array[IntegerVariable], y: IntegerVariable, cnt:IntegerVariable, defined: String, ann: List[Annotation]) = {
-    //TODO: DenseCount might be quite expensive...
+  def get_count_eq_inv(xs:Array[IntegerVariable], y: IntegerVariable, C:IntegerVariable, defined: String, ann: List[Annotation]) = {
 
-    //xs domain goes from i to j but cnts will be from 0 to i-j
-    val dc = DenseCount.makeDenseCount(xs.map(getCBLSVar(_)));
-    val cnts = dc.counts.map(_.asInstanceOf[IntValue])
+    if(y.min == y.max){
+      ConstCount(xs.map(getCBLSVar(_)),y.min)
+    }else {
+      //TODO: DenseCount might be quite expensive...
+      //xs domain goes from i to j but cnts will be from 0 to i-j
+      val dc = DenseCount.makeDenseCount(xs.map(getCBLSVar(_)));
+      val cnts = dc.counts.map(_.asInstanceOf[IntValue])
 
-    val newY = Sum2(y,dc.offset)
+      val newY = Sum2(y, dc.offset)
 
-    val k = Max2(0,Min2(newY,cnts.length-1))
-    add_constraint(EQ(k,newY))
+      val k = Max2(0, Min2(newY, cnts.length - 1))
+      add_constraint(EQ(k, newY))
 
-    IntElement(k,cnts)
-    //IntElement(newY,cnts);
+      IntElement(k, cnts)
+      //IntElement(newY,cnts);
+    }
   }
   
   def get_nvalue_inv(xs:Array[IntegerVariable], ann: List[Annotation]) = {
