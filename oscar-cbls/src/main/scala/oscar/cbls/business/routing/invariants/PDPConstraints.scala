@@ -81,7 +81,7 @@ class PDPConstraints(vrp: VRP, fastConstraints: ConstraintSystem, slowConstraint
     val leaveTimes = timeWindowInvariant.content2AtNode
 
     for(maxDetour <- maxTravelDurations){
-      slowConstraints.post(LE(arrivalTimes(maxDetour._1.head) - leaveTimes(maxDetour._1.last),maxDetour._2))
+      slowConstraints.post(LE(arrivalTimes(maxDetour._1.last) - leaveTimes(maxDetour._1.head),maxDetour._2))
     }
   }
 
