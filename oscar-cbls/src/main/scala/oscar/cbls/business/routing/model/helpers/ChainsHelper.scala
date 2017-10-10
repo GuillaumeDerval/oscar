@@ -30,7 +30,7 @@ object ChainsHelper {
   def computeRelevantNeighborsForInternalNodes(vrp: VRP, chainsExtension: Chains)(node: Int): Iterable[Int] ={
     val firstNode = chainsExtension.prevNodeInChain(node)
     val lastNode = chainsExtension.chainOfNode(node).last
-    require(firstNode.isDefined && lastNode != chainsExtension.chainOfNode(node).last,
+    require(firstNode.isDefined && lastNode == chainsExtension.chainOfNode(node).last && lastNode != node,
       "This method is designed to insert or move nodes between the start and the end of a chain")
     require(vrp.isRouted(firstNode.get) && vrp.isRouted(lastNode),
       "The beginning node and last node of the chain must be routed")

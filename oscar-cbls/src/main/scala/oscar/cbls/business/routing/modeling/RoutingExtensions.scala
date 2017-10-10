@@ -21,6 +21,7 @@ trait RoutingExtensions {
     */
   def chains(vrp: VRP, chains: List[List[Int]]) =
     new Chains(vrp, chains)
+  type Chains = oscar.cbls.business.routing.model.extensions.Chains
 
   /**
     * This class is used to display your routing problem on a map.
@@ -45,7 +46,7 @@ trait RoutingExtensions {
               refreshRate: Int = 100
              ) =
     new Display(vrp,nodePositions,displayOnRealMap,selectRouteToDisplay,sizeOfMap,refreshRate)
-
+  type Display = oscar.cbls.business.routing.model.extensions.Display
 
   /**
     * This class is only used to simplify the constraints creation.
@@ -65,5 +66,6 @@ trait RoutingExtensions {
                  taskDurations: Array[Int],
                  maxWaitingDurations: Array[Int]) =
     new TimeWindow(earlylines,deadlines,taskDurations,maxWaitingDurations)
+  type TimeWindow = oscar.cbls.business.routing.model.extensions.TimeWindow
 
 }

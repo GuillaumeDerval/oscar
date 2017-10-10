@@ -14,6 +14,7 @@
   ******************************************************************************/
 package oscar.cbls.business
 
+import oscar.cbls._
 import oscar.cbls.business.routing.modeling._
 
 
@@ -41,6 +42,26 @@ package object routing
   with TwoOptAPI {
 
   type VRP = oscar.cbls.business.routing.model.VRP
+  def vrp(m: Store, n: Int, v: Int, maxPivotPerValuePercent: Int = 4): VRP =
+    new VRP(m, n, v, maxPivotPerValuePercent)
+
+  type TTFMatrix = oscar.cbls.business.routing.model.TTFMatrix
+  def ttfMatrix(nodeCount: Int, defaultTTF: PrimitiveTravelTimeFunction): TTFMatrix =
+    new TTFMatrix(nodeCount, defaultTTF)
+
+  type TTFConst = oscar.cbls.business.routing.model.TTFConst
+  def ttfConst(travelDuration: Int): TTFConst =
+    new TTFConst(travelDuration)
+
+  type TTFHistogram = oscar.cbls.business.routing.model.TTFHistogram
+  def ttfHistogram(nbSlots: Int, overallDuration: Int): TTFHistogram =
+    new TTFHistogram(nbSlots, overallDuration)
+
+  type TTFSegments = oscar.cbls.business.routing.model.TTFSegments
+  def ttfSegments(nbPoints: Int, overallDuration: Int): TTFSegments =
+    new TTFSegments(nbPoints, overallDuration)
+
+  type PrimitiveTravelTimeFunction = oscar.cbls.business.routing.model.PrimitiveTravelTimeFunction
 
   val CapacityHelper = oscar.cbls.business.routing.model.helpers.CapacityHelper
   val ChainsHelper = oscar.cbls.business.routing.model.helpers.ChainsHelper
