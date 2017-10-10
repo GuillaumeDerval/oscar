@@ -30,10 +30,6 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
   }
 
   def timeLearning(): Unit = {
-  }
-
-  protected def dive(): Unit = {
-    //Running each op combination to evaluate TTI:
     learning = true
     iterTimeout = config.timeout
     for {
@@ -46,6 +42,11 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
 
     manageIterTimeout()
     println("learning done, iterTimeout: " + iterTimeout)
+  }
+
+  protected def dive(): Unit = {
+    //Running each op combination to evaluate TTI:
+    timeLearning()
 
     //Diving:
     val relaxPriority = new PriorityStore[ALNSOperator](relaxOps, relaxOps.map(Metrics.timeToImprovement), 1.0, true, Metrics.timeToImprovement)
@@ -89,35 +90,18 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
   }
 
   protected def multiArmedBandit(elem: ALNSElement): Double = {
-    elem.efficiency(iterTimeout) + Math.sqrt((2 * Math.log(iter))/elem.execs)
+    Metrics.efficiencyFor(elem, iterTimeout) + Math.sqrt((2 * Math.log(iter))/elem.execs)
   }
 
   protected def checkEfficiency(op: ALNSOperator): Unit = {
     if(op.name != "dummy" && op.time >= iterTimeout) {
-      val efficiency = op.efficiency(iterTimeout * efficiencyEvalIters)
+      val efficiency = Metrics.efficiencyFor(op, iterTimeout * efficiencyEvalIters)
       if(!solver.silent) println("Operator " + op.name + " efficiency is " + efficiency)
-      if (efficiency < searchEfficiency(iterTimeout * efficiencyEvalIters) * tolerance) {
+      if (efficiency < Metrics.searchEfficiencyFor(solsFound, iterTimeout * efficiencyEvalIters, System.nanoTime() - startTime) * tolerance) {
         op.setActive(false)
         if (!solver.silent) println("Operator " + op.name + " deactivated due to low efficiency!")
         manageIterTimeout()
       }
-    }
-  }
-
-  protected def searchEfficiency(t: Long): Double = {
-    if(solsFound.isEmpty) 0.0
-    else {
-      val currentTime = System.nanoTime()
-      val currentObj = solsFound.last.objective
-      var tStart = currentTime
-      var objStart = currentObj
-      val sols = solsFound.reverseIterator
-      while (sols.hasNext && currentTime - tStart < t) {
-        val nextSol = sols.next()
-        tStart = nextSol.time
-        objStart = nextSol.objective
-      }
-      Math.abs(objStart - currentObj).toDouble / (Math.abs(currentTime - tStart) / 1000000000.0)
     }
   }
 

@@ -7,6 +7,7 @@ object ALNSSearch{
   def apply(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig): ALNSSearch = config.strategy match{
     case "vbs" => new VBALNSS(solver, vars, config)
     case "diveAndExplore" => new ALNSDiveAndExplore(solver, vars, config)
+    case "efficiencyBasedLaborie" => new EfficiencyBasedLaborie(solver, vars, config)
     case _ => new ALNSSearchImpl(solver, vars, config)
   }
 }

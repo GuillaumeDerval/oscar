@@ -16,7 +16,7 @@ class PriorityStore[T <: ALNSElement](
                                        val weights: Array[Double],
                                        var decay: Double,
                                        val min: Boolean,
-                                       val perfMetric: (ALNSElement) => Double
+                                       var perfMetric: (T) => Double
                       ) extends AdaptiveStore[T]{
 
   private val ordering: Ordering[Int] =
@@ -30,7 +30,7 @@ class PriorityStore[T <: ALNSElement](
   private val lastSelected = new mutable.HashMap[T, Int]()
   private val deactivated = new mutable.HashSet[Int]()
 
-  def this(elems: Array[T], decay: Double, min: Boolean, perfMetric: (ALNSElement) => Double){
+  def this(elems: Array[T], decay: Double, min: Boolean, perfMetric: (T) => Double){
     this(elems, if(min) Array.fill(elems.length){0.0} else Array.fill(elems.length){Double.MaxValue}, decay, min, perfMetric)
   }
 
@@ -62,7 +62,8 @@ class PriorityStore[T <: ALNSElement](
     else priority.remove(index)
     weights(index) = if(elem.execs > 1) (1.0 - decay) * weights(index) + decay * perfMetric(elem)
     else perfMetric(elem)
-    priority.add(index)
+    if(elem.isActive) priority.add(index)
+    else deactivated.add(index)
 //    println("elem " + elem + " has now weight: " + weights(index))
   }
 

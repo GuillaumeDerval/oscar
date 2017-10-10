@@ -13,13 +13,13 @@ class RouletteWheel[T <: ALNSElement](
                                        val weights: Array[Double],
                                        var decay: Double,
                                        val reversed: Boolean,
-                                       val perfMetric: (ALNSElement) => Double
+                                       var perfMetric: (T) => Double
                       ) extends AdaptiveStore[T]{
 
   private val lastSelected = mutable.HashMap[T, Int]() //caching for quick access to last selected elem(s)
   private val active = mutable.HashSet[Int](elems.indices: _*)
 
-  def this(elems: Array[T], rFactor: Double, reversed:Boolean, perfMetric: (ALNSElement) => Double){
+  def this(elems: Array[T], rFactor: Double, reversed:Boolean, perfMetric: (T) => Double){
     this(elems, Array.fill(elems.length){(Double.MaxValue - 1) / elems.length}, rFactor, reversed, perfMetric)
   }
 
@@ -65,6 +65,7 @@ class RouletteWheel[T <: ALNSElement](
     weights(index) = if(elem.execs > 1) (1.0 - decay) * weights(index) + decay * (perfMetric(elem) / elems.length) //received val divided by the number of elems to avoid overflow when processing max values
     else perfMetric(elem)
     if(isCached(index)) lastSelected.remove(elem)
+    if(!elem.isActive) deactivate(index)
 //    println("elem " + elem + " has now weight: " + weights(index))
   }
 
@@ -80,12 +81,13 @@ class RouletteWheel[T <: ALNSElement](
 
   override def nonActiveEmpty: Boolean = !isActiveEmpty
 
-  override def deactivate(elem: T): Unit = {
-    val index = getIndex(elem)
-    if(index == -1) throw new Exception("Element " + elem + " is not in store.")
+  def deactivate(index: Int): Unit = {
+    if(index == -1) throw new Exception("Element " + elems(index) + " is not in store.")
     active.remove(index)
-    if(isCached(index)) lastSelected.remove(elem)
+    if(isCached(index)) lastSelected.remove(elems(index))
   }
+
+  override def deactivate(elem: T): Unit = deactivate(getIndex(elem))
 
   override def reset(): Unit = {
     weights.indices.foreach(i => weights(i) = perfMetric(elems(i)))

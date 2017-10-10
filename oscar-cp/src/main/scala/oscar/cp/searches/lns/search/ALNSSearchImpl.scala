@@ -52,7 +52,7 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
 
   //Stagnation:
   var stagnation = 0
-  val stagnationThreshold = 50
+  val stagnationThreshold = 0
 
   //Instantiating relax operators:
   lazy val relaxStore: AdaptiveStore[ALNSOperator] = config.relaxStore
@@ -64,8 +64,10 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
 
   lazy val nOpCombinations: Int = relaxOps.filter(_.isActive).map(_.nParamVals).sum * searchOps.filter(_.isActive).map(_.nParamVals).sum
 
+  def timeInSearch: Long = System.nanoTime() - startTime
+
   protected def onSolution(): Unit = {
-    val time = System.nanoTime() - startTime
+    val time = timeInSearch
 
     if(maximizeObjective.isDefined) {
       currentSol = Some(new CPIntSol(vars.map(_.value), solver.objective.objs.head.best, time))
@@ -104,7 +106,6 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
   }
 
   override def searchFrom(sol: CPIntSol): ALNSSearchResults = {
-    startTime = System.nanoTime() + sol.time
     if(maximizeObjective.isDefined) {
       solver.objective.objs.head.relax()
       solver.objective.objs.head.best = sol.objective
@@ -121,7 +122,6 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
     //Searching first solution if needed
     if(currentSol.isEmpty){
       searchFirstSol()
-      startTime = System.nanoTime()
     }
 
     while(System.nanoTime() < endTime && !optimumFound && !stopSearch){
@@ -182,7 +182,7 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
 
     var relaxDone = true
     val oldObjective = currentSol.get.objective
-    val iterStart = System.nanoTime()
+    val iterStart = timeInSearch
 
     val stats = solver.startSubjectTo(stopCondition, searchDiscrepancy.getOrElse(Int.MaxValue), null) {
       try {
@@ -194,13 +194,12 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
       }
     }
 
-    val iterEnd = System.nanoTime()
+    val iterEnd = timeInSearch
     val newObjective = currentSol.get.objective
 
     if(searchFailures.isDefined) nFailures = 0 //Resetting failures number to 0
 
     val improvement = math.abs(currentSol.get.objective - oldObjective)
-    val time = iterEnd - iterStart
 
     if(improvement > 0) stagnation = 0
     else stagnation += 1
