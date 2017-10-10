@@ -18,7 +18,7 @@ object PDPConstraints {
              capacityInvariant: Option[ForwardCumulativeConstraintOnVehicle] = None,
              timeWindow: Option[TimeWindow] = None,
              timeWindowInvariant: Option[ForwardCumulativeIntegerIntegerDimensionOnVehicle] = None,
-             maxTravelDurations: Option[Map[(Int,Int),Int]] = None,
+             maxTravelDurations: Option[Map[List[Int],Int]] = None,
              precedences: Option[Precedence] = None,
              carExclusivitiesSubsets: Option[IncludedSubsets] = None,
              nodeVehicleObligations: Option[Array[CBLSIntVar]] = None
@@ -76,12 +76,12 @@ class PDPConstraints(vrp: VRP, fastConstraints: ConstraintSystem, slowConstraint
     * @param timeWindowInvariant The timeWindowInvariant to which the maxTravelDurations are attached
     * @param maxTravelDurations A map : ((from,to) => maxTravelDuration)
     */
-  private def addMaxTravelDurationConstraint(timeWindowInvariant: ForwardCumulativeIntegerIntegerDimensionOnVehicle, maxTravelDurations: Map[(Int,Int),Int]) = {
+  private def addMaxTravelDurationConstraint(timeWindowInvariant: ForwardCumulativeIntegerIntegerDimensionOnVehicle, maxTravelDurations: Map[List[Int],Int]) = {
     val arrivalTimes = timeWindowInvariant.content1AtNode
     val leaveTimes = timeWindowInvariant.content2AtNode
 
     for(maxDetour <- maxTravelDurations){
-      slowConstraints.post(LE(arrivalTimes(maxDetour._1._2) - leaveTimes(maxDetour._1._1),maxDetour._2))
+      slowConstraints.post(LE(arrivalTimes(maxDetour._1.head) - leaveTimes(maxDetour._1.last),maxDetour._2))
     }
   }
 

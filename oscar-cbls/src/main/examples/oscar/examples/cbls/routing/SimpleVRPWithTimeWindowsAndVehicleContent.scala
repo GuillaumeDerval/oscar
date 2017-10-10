@@ -26,6 +26,7 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
   val vehiclesSize = RoutingMatrixGenerator.generateVehiclesSize(v,maxVehicleContent,minVehicleContent)
 
   val myVRP =  new VRP(m,n,v)
+  TimeWindowHelper.reduceTimeWindows(myVRP,travelDurationMatrix,maxTravelDurations,earlylines,deadlines,taskDurations)
 
   // Distance
   val routingDistance = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistance,true,true,false)

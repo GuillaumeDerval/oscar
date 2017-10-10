@@ -17,8 +17,8 @@ object SimpleVRPWithMaxDetours extends App{
   val (listOfChains,precedences )= RoutingMatrixGenerator.generateChainsPrecedence(n,v,(n-v)/2)
   val (earlylines, deadlines, taskDurations, maxWaitingDurations) = RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,travelDurationMatrix,listOfChains)
   val maxTravelDurations = RoutingMatrixGenerator.generateMaxTravelDurations(listOfChains,earlylines,travelDurationMatrix)
-
   val myVRP =  new VRP(m,n,v)
+  TimeWindowHelper.reduceTimeWindows(myVRP,travelDurationMatrix,maxTravelDurations,earlylines,deadlines,taskDurations)
 
   // Distance
   val routingDistance = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistance,true,true,false)

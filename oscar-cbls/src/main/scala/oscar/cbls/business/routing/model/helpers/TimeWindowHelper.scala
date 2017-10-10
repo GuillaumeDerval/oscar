@@ -107,13 +107,14 @@ object TimeWindowHelper{
     * @param taskDurations The task duration of all nodes
     */
   def reduceTimeWindows(vrp: VRP,
-                        maxTravelDurations: Map[(Int,Int),Int],
+                        travelTimeFunction: TTFMatrix,
+                        maxTravelDurations: Map[List[Int],Int],
                         earlylines: Array[Int],
                         deadlines: Array[Int],
                         taskDurations: Array[Int]): Unit ={
     if(maxTravelDurations.nonEmpty){
       val keys = maxTravelDurations.keys.toList
-      val fromToValue = maxTravelDurations.map(md => md._1._1 -> (md._1._2, md._2))
+      val fromToValue = maxTravelDurations.map(md => md._1.head -> (md._1.tail, md._2))
 
       /**
         * We compute the starting node of each sequence of maxTravelDurations.
@@ -122,8 +123,8 @@ object TimeWindowHelper{
         * @return A list of starting nodes
         */
       def startingNodes(): List[Int] = {
-        val origins = keys.map(_._1).distinct
-        val destinations = keys.map(_._2).distinct
+        val origins = keys.map(_.head).distinct
+        val destinations = keys.map(_.last).distinct
 
         val startingNodes = vrp.nodes.collect {
           case node if origins.contains(node) && !destinations.contains(node) => node
@@ -139,8 +140,8 @@ object TimeWindowHelper{
         * @return A list of ending nodes
         */
       def endingNodes(): List[Int] = {
-        val origins = keys.map(_._1).distinct
-        val destinations = keys.map(_._2).distinct
+        val origins = keys.map(_.head).distinct
+        val destinations = keys.map(_.last).distinct
 
         val endingNodes = vrp.nodes.collect {
           case node if !origins.contains(node) && destinations.contains(node) => node
@@ -152,10 +153,31 @@ object TimeWindowHelper{
       for (startNode <- startingNodes()) {
         var from = startNode
         while (fromToValue.get(from).isDefined) {
-          val to = fromToValue(from)._1
+          val to = fromToValue(from)._1.last
           val value = fromToValue(from)._2
           deadlines(to) = Math.min(deadlines(to), deadlines(from) + value + taskDurations(to))
           earlylines(to) = Math.max(earlylines(to), earlylines(from) + taskDurations(from) + value)
+
+          val chainForward = fromToValue(from)._1.toArray
+          val chainBackward = fromToValue(from)._1.toArray.reverse
+          for(i <- 0 until (chainForward.length - 1)) {
+            val fromNode = chainForward(i-1)
+            val toNode = chainForward(i)
+            earlylines(toNode) =
+              earlylines(fromNode) +
+                taskDurations(fromNode) +
+                travelTimeFunction.getTravelDuration(fromNode, earlylines(fromNode), toNode)
+          }
+          for(i <- 1 until chainBackward.length) {
+            val toNode = chainBackward(i-1)
+            val fromNode = chainBackward(i)
+            deadlines(fromNode) =
+              deadlines(toNode) -
+                taskDurations(toNode) -
+                travelTimeFunction.getTravelDuration(fromNode, earlylines(toNode), toNode)
+          }
+
+          //TODO find a better way to compute travel time backward
           from = to
         }
       }
