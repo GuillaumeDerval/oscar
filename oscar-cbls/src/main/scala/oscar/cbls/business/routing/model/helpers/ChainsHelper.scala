@@ -45,4 +45,53 @@ object ChainsHelper {
     }){}
     relevantNeighbors
   }
+
+  /**
+    * This method search all the complete segments contained in a specified route.
+    * A segment is considered as complete when you can move it to another place
+    * without breaking the precedence constraint.
+    * It runs through the specified route and try to create the smallest complete segments possible
+    * After that it try to combine adjacent segment
+    *
+    * @param routeNumber the number of the route
+    * @return the list of all the complete segment present in the route
+    */
+  def computeCompleteSegments(vrp: VRP, routeNumber: Int, chainsExtension: Chains): List[(Int,Int)] ={
+    val route = vrp.getRouteOfVehicle(routeNumber).drop(1)
+    /**
+      * Each value of segmentsArray represent a possible complete segment.
+      * The List[Int] value represents the segment
+      */
+    var pickupInc = 0
+    val segmentsArray:Array[List[Int]] = Array.tabulate(chainsExtension.heads.length)(_ => List.empty)
+    var completeSegments: List[(Int, Int)] = List.empty
+
+    for(node <- route) {
+      if(chainsExtension.isHead(node)) pickupInc += 1
+      for (j <- 0 until pickupInc if segmentsArray(j) != null){
+        if (chainsExtension.isHead(node)) {
+          //If the node is a pickup one, we add the node to all the active segment and the one at position route(i)
+          segmentsArray(j) = segmentsArray(j) :+ node
+        }
+        else if (chainsExtension.isLast(node)) {
+          /**
+            * If the segment doesn't contain the related pickup node it means that the related pickup node is before
+            * the beginning of the segment and thus this is not possible to create a complete segment beginning
+            * at this position.
+            */
+          if (!segmentsArray(j).contains(chainsExtension.firstNodeInChainOfNode(node)))
+            segmentsArray(j) = null
+          /**
+            * Else we decrement the number of single pickup
+            */
+          else {
+            segmentsArray(j) = segmentsArray(j) :+ node
+            if (segmentsArray(j).length == 2*(pickupInc-j))
+              completeSegments = List((segmentsArray(j).head, segmentsArray(j).last)) ++ completeSegments
+          }
+        }
+      }
+    }
+    completeSegments
+  }
 }

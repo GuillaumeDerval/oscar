@@ -114,7 +114,6 @@ object TimeWindowHelper{
     if(maxTravelDurations.nonEmpty){
       val keys = maxTravelDurations.keys.toList
       val fromToValue = maxTravelDurations.map(md => md._1._1 -> (md._1._2, md._2))
-      val toFromValue = maxTravelDurations.map(md => md._1._2 -> (md._1._1, md._2))
 
       /**
         * We compute the starting node of each sequence of maxTravelDurations.
@@ -151,22 +150,13 @@ object TimeWindowHelper{
       }
 
       for (startNode <- startingNodes()) {
-        var currentNode = startNode
-        while (fromToValue.get(currentNode).isDefined) {
-          val to = fromToValue(currentNode)._1
-          val value = fromToValue(currentNode)._2
-          deadlines(to) = Math.min(deadlines(to), deadlines(currentNode) + value + taskDurations(to))
-          currentNode = to
-        }
-      }
-
-      for (endNode <- endingNodes()) {
-        var currentNode = endNode
-        while (toFromValue.get(currentNode).isDefined) {
-          val from = toFromValue(currentNode)._1
-          val value = toFromValue(currentNode)._2
-          earlylines(from) = Math.max(earlylines(from), earlylines(currentNode) + value + taskDurations(from))
-          currentNode = from
+        var from = startNode
+        while (fromToValue.get(from).isDefined) {
+          val to = fromToValue(from)._1
+          val value = fromToValue(from)._2
+          deadlines(to) = Math.min(deadlines(to), deadlines(from) + value + taskDurations(to))
+          earlylines(to) = Math.max(earlylines(to), earlylines(from) + taskDurations(from) + value)
+          from = to
         }
       }
     }

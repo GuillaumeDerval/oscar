@@ -111,7 +111,7 @@ object SimpleVRPWithTimeWindow extends App{
     neighborhoodName = "MoveLastOfChain")
 
   val oneChainMove = {
-    dynAndThen(firstNodeOfChainMove,
+    profile(dynAndThen(firstNodeOfChainMove,
       (moveMove: OnePointMoveMove) => {
         mu[OnePointMoveMove, Option[List[Int]]](
           lastNodeOfChainMove(chainsExtension.lastNodeInChainOfNode(moveMove.movedPoint)),
@@ -119,7 +119,7 @@ object SimpleVRPWithTimeWindow extends App{
           None,
           Int.MaxValue,
           false)
-      })name "OneChainMove"
+      })name "OneChainMove")
   }
 
   def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantPredecessorsByDistance,postFilter), myVRP))
@@ -163,7 +163,7 @@ object SimpleVRPWithTimeWindow extends App{
     neighborhoodName = "InsertUF")
 
   val oneChainInsert = {
-    dynAndThen(firstNodeOfChainInsertion,
+    profile(dynAndThen(firstNodeOfChainInsertion,
       (insertMove: InsertPointMove) => {
         mu[InsertPointMove,Option[List[Int]]](
           lastNodeOfChainInsertion(chainsExtension.lastNodeInChainOfNode(insertMove.insertedPoint)),
@@ -171,7 +171,7 @@ object SimpleVRPWithTimeWindow extends App{
           None,
           Int.MaxValue,
           false)
-      })name "OneChainInsert"
+      })name "OneChainInsert")
 
   }
 
@@ -191,5 +191,5 @@ object SimpleVRPWithTimeWindow extends App{
 
   println(myVRP)
 
-  search.profilingStatistics
+  println(search.profilingStatistics)
 }
