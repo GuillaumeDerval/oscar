@@ -59,7 +59,7 @@ object RoutingWithPrecedence extends App{
 
   val symmetricDistanceMatrix = RoutingMatrixGenerator(n)._1
 
-  val precedences = RoutingMatrixGenerator.generatePrecedence(n,v,nbPRecedences)
+  val precedences = RoutingMatrixGenerator.generateChainsPrecedence(n,v,nbPRecedences)._2
 
   //  println("restrictions:" + restrictions)
   val model = new Store(checker = Some(new ErrorChecker())) //)) //checker = Some() //new ErrorChecker()))

@@ -34,7 +34,7 @@ object ChainsHelper {
       "This method is designed to insert or move nodes between the start and the end of a chain")
     require(vrp.isRouted(firstNode.get) && vrp.isRouted(lastNode),
       "The beginning node and last node of the chain must be routed")
-    var nextOfHeadExplorer = vrp.routes.value.explorerAtAnyOccurrence(firstNode.get).head.next
+    var nextOfHeadExplorer = vrp.routes.value.explorerAtAnyOccurrence(firstNode.get)
     var relevantNeighbors: List[Int] = List.empty
     while (nextOfHeadExplorer match{
       case Some(x) if x.value != lastNode =>

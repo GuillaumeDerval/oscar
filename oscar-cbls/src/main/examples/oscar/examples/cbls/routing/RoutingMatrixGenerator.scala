@@ -71,36 +71,63 @@ object RoutingMatrixGenerator {
   }
 
   /**
-    * Generate random precedences of size 2
+    * Generate random precedences of size Max(2,random.nextInt(MaxSize))
+    *
+    * ex :  if length == 2 => (5,6)
+    *       if length == 3 => (5,6,7) => (5,6) && (6,7)
+    *       if length == 4 => (5,6,7,8) => (5,6) && (6,7) && (7,8)
+    *
     * @param n The number of nodes (considering depots)
     * @param v The number of vehicles/depots
     * @param nbPRecedences The number wanted precedences
+    * @param maxSize The max length of precedence you want to generate
     * @return A list of tuple (precedences)
     */
-  def generatePrecedence(n:Int,v:Int,nbPRecedences:Int):List[(Int,Int)] = {
+  def generateChainsPrecedence(n:Int, v:Int, nbPRecedences:Int, maxSize: Int = 2): (List[List[Int]], List[(Int,Int)]) = {
     val allNodes = v until n
-
     val randomizedNodes = random.shuffle(allNodes.toList).toIterator
+
+    var currentMaxSize = maxSize
     var precedencesToGenerate = nbPRecedences
-    var toReturn:List[(Int,Int)] = List.empty
+
+    var chains: List[List[Int]] = List.empty
+    var tuples: List[(Int,Int)] = List.empty
+    var usedNodes = 0
+
+    def reduceCurrentSizeBy = Math.max(currentMaxSize - maxSize, (currentMaxSize-2)/2 - (usedNodes/precedencesToGenerate))
+    def randomSize = Math.max(2,1 + random.nextInt(currentMaxSize))
 
     while(precedencesToGenerate > 0){
+      currentMaxSize = currentMaxSize - reduceCurrentSizeBy
       precedencesToGenerate -= 1
-      toReturn = (randomizedNodes.next(),randomizedNodes.next()) :: toReturn
+
+      val chain: List[Int] = List.tabulate(randomSize)(_ => {
+        usedNodes += 1
+        randomizedNodes.next()
+      })
+
+      def toTuple(chain: List[Int], tuples: List[(Int,Int)]): List[(Int,Int)] ={
+        chain match {
+          case head :: Nil => tuples
+          case head :: tail => toTuple(tail, (head, tail.head) :: tuples)
+        }
+      }
+      chains = chain :: chains
+      tuples = toTuple(chain, List.empty) ::: tuples
     }
 
-    toReturn
+    (chains,tuples)
   }
 
   /**
-    * This method creates a List(node) for each node that doesn't belong to any precedence.
+    * This method creates a List(node) for each node that doesn't belong to any chain.
     * @param n The number of node (considering depot)
-    * @param precedences The precedences of the problem
-    * @return An updated precedences list (with lonely nodes)
+    * @param chains The chains of the problem
+    * @return An updated chains list (with lonely nodes)
     */
-  private def addLonelyNodesToPrecedences(n: Int, precedences: List[List[Int]]): List[List[Int]]={
-    val lonelyNodes = Range(0,n).toList.diff(precedences.flatten)
-    var precedencesWithLonelyNodes = precedences
+  private def addLonelyNodesToChains(n: Int, chains: List[List[Int]]): List[List[Int]]={
+    val lonelyNodes = Range(0,n).toList.diff(chains.flatten)
+    var precedencesWithLonelyNodes = chains
     for(lonelyNode <- lonelyNodes)
       lonelyNode :: precedencesWithLonelyNodes
     precedencesWithLonelyNodes
@@ -136,7 +163,7 @@ object RoutingMatrixGenerator {
     def randomExtraTravelTime = random.nextInt(maxExtraTravelTimeInSec)
     def randomTaskDuration = random.nextInt(maxTaskDurationInSec)
 
-    val precedencesWithLonelyNodes = addLonelyNodesToPrecedences(n, precedences)
+    val precedencesWithLonelyNodes = addLonelyNodesToChains(n, precedences)
     val endOfLastActionOfVehicles = Array.fill(v)(0)
     val lastNodeVisitedOfVehicles = Array.tabulate(v)(x => x)
     val extraTravelTimeOfNodes = Array.tabulate(n)(node => if(node < v)0 else randomExtraTravelTime)

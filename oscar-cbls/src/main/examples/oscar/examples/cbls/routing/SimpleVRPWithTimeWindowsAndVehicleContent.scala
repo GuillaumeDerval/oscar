@@ -18,10 +18,10 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
 
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
   val travelDurationMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistance)
-  val precedences = RoutingMatrixGenerator.generatePrecedence(n,v,(n-v)/2).map(p => List(p._1,p._2))
-  val (earlylines, deadlines, taskDurations, maxWaitingDurations) = RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,travelDurationMatrix,precedences)
-  val maxTravelDurations = RoutingMatrixGenerator.generateMaxTravelDurations(precedences,earlylines,travelDurationMatrix)
-  val contentsFlow = RoutingMatrixGenerator.generateContentFlow(n,precedences,maxVehicleContent)
+  val (listOfChains,precedences) = RoutingMatrixGenerator.generateChainsPrecedence(n,v,(n-v)/2)
+  val (earlylines, deadlines, taskDurations, maxWaitingDurations) = RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,travelDurationMatrix,listOfChains)
+  val maxTravelDurations = RoutingMatrixGenerator.generateMaxTravelDurations(listOfChains,earlylines,travelDurationMatrix)
+  val contentsFlow = RoutingMatrixGenerator.generateContentFlow(n,listOfChains,maxVehicleContent)
   val vehiclesSize = RoutingMatrixGenerator.generateVehiclesSize(v,maxVehicleContent,minVehicleContent)
 
   val myVRP =  new VRP(m,n,v)
@@ -58,8 +58,8 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
     "Content at node")
 
   //Chains
-  val precedenceInvariant = precedence(myVRP.routes,precedences.map(p => (p.head,p.last)))
-  val chainsExtension = chains(myVRP,precedences)
+  val precedenceInvariant = precedence(myVRP.routes,precedences)
+  val chainsExtension = chains(myVRP,listOfChains)
 
   //Constraints & objective
   val (fastConstrains,slowConstraints) = PDPConstraints(myVRP,

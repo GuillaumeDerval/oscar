@@ -33,6 +33,7 @@ class Chains(vrp: VRP, chains: List[List[Int]]){
     }
 
     for(chain <- chains) proceedChain(chain,List.empty,chain)
+    for(node <- vrp.nodes if chainOfNode(node).isEmpty) proceedChain(List(node), List.empty, List(node))
     (chainOfNode,nextNodeInChain,prevNodeInChain,nextNodesInChain,prevNodesInChain)
   }
 

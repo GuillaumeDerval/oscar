@@ -17,8 +17,8 @@ object SimpleVRPWithVehicleContent extends App{
   val maxVehicleCapacity = 8
   val minVehicleCapacity = 4
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
-  val precedences = RoutingMatrixGenerator.generatePrecedence(n,v,(n-v)/2).map(p => List(p._1,p._2))
-  val contentsFlow = RoutingMatrixGenerator.generateContentFlow(n,precedences,maxVehicleCapacity)
+  val (listOfChains,precedences) = RoutingMatrixGenerator.generateChainsPrecedence(n,v,(n-v)/2)
+  val contentsFlow = RoutingMatrixGenerator.generateContentFlow(n,listOfChains,maxVehicleCapacity)
   val vehiclesCapacity = RoutingMatrixGenerator.generateVehiclesSize(v,maxVehicleCapacity,minVehicleCapacity)
 
   val myVRP =  new VRP(m,n,v)
@@ -37,8 +37,8 @@ object SimpleVRPWithVehicleContent extends App{
     "Content at node")
 
   //Chains
-  val precedenceInvariant = new Precedence(myVRP.routes,precedences.map(p => (p.head,p.last)))
-  val chainsExtension = chains(myVRP,precedences)
+  val precedenceInvariant = new Precedence(myVRP.routes,precedences)
+  val chainsExtension = chains(myVRP,listOfChains)
 
   //Constraints & objective
   val (fastConstrains,slowConstraints) = PDPConstraints(myVRP,
