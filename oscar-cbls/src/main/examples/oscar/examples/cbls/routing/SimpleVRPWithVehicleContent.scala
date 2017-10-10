@@ -69,7 +69,7 @@ object SimpleVRPWithVehicleContent extends App{
       val chainTail: List[Int] = t match {
         case None =>
           val movedNode = exploredMoves.head.movedPoint
-          chainsExtension.nextNodesInChain(movedNode)
+          chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(movedNode))
         case Some(tail: List[Int]) => tail
       }
 
@@ -120,7 +120,7 @@ object SimpleVRPWithVehicleContent extends App{
       val chainTail: List[Int] = t match {
         case None =>
           val insertedNode = exploredMoves.head.insertedPoint
-          chainsExtension.nextNodesInChain(insertedNode)
+          chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(insertedNode))
         case Some(tail: List[Int]) => tail
       }
 

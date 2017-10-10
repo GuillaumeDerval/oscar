@@ -3,6 +3,7 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.PDPConstraints
+import oscar.examples.cbls.routing.SimpleVRPWithTimeWindow.chainsExtension
 
 /**
   * Created by fg on 12/05/17.
@@ -103,7 +104,7 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
       val chainTail: List[Int] = t match {
         case None =>
           val movedNode = exploredMoves.head.movedPoint
-          chainsExtension.nextNodesInChain(movedNode)
+          chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(movedNode))
         case Some(tail: List[Int]) => tail
       }
 
@@ -145,7 +146,7 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
       val chainTail: List[Int] = t match {
         case None =>
           val insertedNode = exploredMoves.head.insertedPoint
-          chainsExtension.nextNodesInChain(insertedNode)
+          chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(insertedNode))
         case Some(tail: List[Int]) => tail
       }
 

@@ -165,7 +165,7 @@ object TimeWindowHelper{
         while (toFromValue.get(currentNode).isDefined) {
           val from = toFromValue(currentNode)._1
           val value = toFromValue(currentNode)._2
-          earlylines(from) = Math.min(earlylines(from), earlylines(currentNode) + value + taskDurations(from))
+          earlylines(from) = Math.max(earlylines(from), earlylines(currentNode) + value + taskDurations(from))
           currentNode = from
         }
       }
