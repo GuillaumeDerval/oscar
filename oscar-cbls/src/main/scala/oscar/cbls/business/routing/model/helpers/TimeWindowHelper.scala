@@ -161,7 +161,7 @@ object TimeWindowHelper{
           val chainForward = fromToValue(from)._1.toArray
           val chainBackward = fromToValue(from)._1.toArray.reverse
           for(i <- 0 until (chainForward.length - 1)) {
-            val fromNode = chainForward(i-1)
+            val fromNode = if(i == 0) from else chainForward(i-1)
             val toNode = chainForward(i)
             earlylines(toNode) =
               earlylines(fromNode) +
