@@ -1,6 +1,7 @@
 package oscar.cp.searches.lns.search
 
 import oscar.algo.Inconsistency
+import oscar.cp.searches.lns.CPIntSol
 import oscar.cp.{CPIntVar, CPSolver}
 import oscar.cp.searches.lns.operators.{ALNSElement, ALNSOperator, ALNSReifiedOperator}
 import oscar.cp.searches.lns.selection.{Metrics, PriorityStore, RouletteWheel}
@@ -114,7 +115,7 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
     iterTimeout = maxTime
   }
 
-  override protected def lnsIter(relax: ALNSOperator, search: ALNSOperator): Unit = {
+  override protected def lnsIter(relax: ALNSOperator, search: ALNSOperator, sol: CPIntSol = currentSol.get): Unit = {
     if(!learning) endIter = Math.min(System.nanoTime() + iterTimeout, endTime)
 
     if(!solver.silent){
@@ -127,9 +128,17 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
     val (searchFunction, searchFailures, searchDiscrepancy) = search.getFunction
     if(searchFailures.isDefined) nFailures = searchFailures.get
 
+    val searchObjective = currentSol.get.objective
+    if(sol.objective != searchObjective){
+      solver.objective.objs.head.relax()
+      solver.objective.objs.head.best = sol.objective
+      currentSol = Some(sol)
+    }
+
     do {
       var relaxDone = true
-      val oldObjective = currentSol.get.objective
+      val startObjective = currentSol.get.objective
+
       val iterStart = System.nanoTime()
 
       val stats = solver.startSubjectTo(stopCondition, searchDiscrepancy.getOrElse(Int.MaxValue), null) {
@@ -147,10 +156,10 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
 
       if(searchFailures.isDefined) nFailures = 0 //Resetting failures number to 0
 
-      val improvement = math.abs(currentSol.get.objective - oldObjective)
+      val improvement = math.abs(newObjective - startObjective)
       val time = iterEnd - iterStart
 
-      if(improvement > 0) stagnation = 0
+      if(math.abs(newObjective - searchObjective) > 0) stagnation = 0
       else stagnation += 1
 
       if (!solver.silent){
@@ -160,7 +169,7 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
       }
 
       //Updating probability distributions:
-      relax.update(iterStart, iterEnd, oldObjective, newObjective, stats, fail = !relaxDone && !learning, iter)
+      relax.update(iterStart, iterEnd, startObjective, newObjective, stats, fail = !relaxDone && !learning, iter)
       if(!relax.isInstanceOf[ALNSReifiedOperator]){
         if (relax.isActive) relaxStore.adapt(relax)
         else {
@@ -170,7 +179,7 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
       }
 
       if(relaxDone || relax.name == "dummy"){
-        search.update(iterStart, iterEnd, oldObjective, newObjective, stats, fail = false, iter)
+        search.update(iterStart, iterEnd, startObjective, newObjective, stats, fail = false, iter)
         if(!search.isInstanceOf[ALNSReifiedOperator]){
           if (search.isActive) searchStore.adapt(search)
           else {
@@ -181,6 +190,11 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
       }
     }while(System.nanoTime() < endIter && !learning)
 
+    if(currentSol.get.objective != bestSol.get.objective){
+      solver.objective.objs.head.relax()
+      solver.objective.objs.head.best = bestSol.get.objective
+      currentSol = bestSol
+    }
     iter += 1
   }
 }

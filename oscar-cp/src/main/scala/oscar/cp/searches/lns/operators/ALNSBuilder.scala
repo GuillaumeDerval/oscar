@@ -74,7 +74,7 @@ object ALNSBuilder{
   val DefWeigDegreeParam2 = 0.99
 
   // Available value Heuristic functions:
-  val DefValHeuris = Array(/*"Min", */"Max"/*, "Median", "Random"*/)
+  val DefValHeuris = Array("Min", "Max", /*"Median", */"Random")
 
   //Default Backtracking:
   val DefNFailures = Array(10, 100, 1000, 10000, 0)
@@ -174,6 +174,36 @@ class ALNSBuilder(
         Some(maxDiscrepancy)
       )
     )
+  }
+
+  def instantiateFixedRelaxOperators: Array[ALNSOperator] = {
+    relaxOperatorKeys.flatMap(relaxKey => {
+      instantiateRelaxFunctions(relaxKey).map{
+        case (relaxName, relaxFunction) => new ALNSNoParamOperator(
+          relaxName,
+          if (opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0,
+          () => ((sol: CPIntSol) => relaxFunction(sol), None, None)
+        )
+      }
+    })
+  }
+
+  def instantiateFixedSearchOperators: Array[ALNSOperator] = {
+    searchOperatorKeys.flatMap(searchKey => {
+      for {
+        (searchName, searchFunction) <- instantiateSearchFunctions(searchKey)
+        nFailures <- nFailures
+        maxDiscrepancy <- ALNSBuilder.DefMaxDiscrepancy
+      } yield new ALNSNoParamOperator(
+        searchName + "(" + (if (nFailures == 0) "NoFailLimit" else nFailures) + "," + (if (maxDiscrepancy == Int.MaxValue) "NoMaxDiscrepancy" else maxDiscrepancy) + ")",
+        if (opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0,
+        () => (
+          (sol: CPIntSol) => searchFunction(sol),
+          Some(nFailures),
+          Some(maxDiscrepancy)
+        )
+      )
+    })
   }
 
   /**

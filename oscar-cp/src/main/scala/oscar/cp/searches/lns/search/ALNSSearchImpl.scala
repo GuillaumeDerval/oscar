@@ -52,7 +52,7 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
 
   //Stagnation:
   var stagnation = 0
-  val stagnationThreshold = 0
+  val stagnationThreshold: Int = config.metaParameters.getOrElse('stagnationThreshold, 0).asInstanceOf[Int]
 
   //Instantiating relax operators:
   lazy val relaxStore: AdaptiveStore[ALNSOperator] = config.relaxStore
@@ -113,6 +113,8 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
     currentSol = Some(sol)
     bestSol = Some(sol)
 
+    solsFound += new CPIntSol(sol.values, sol.objective, 0L)
+
     search()
   }
 
@@ -138,8 +140,8 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
 
       alnsLoop()
 
-      if(!solver.silent) println("ALNS Search done, resetting operators...")
-      resetStore()
+//      if(!solver.silent) println("ALNS Search done, resetting operators...")
+//      resetStore()
     }
 
     if(optimumFound && !solver.silent) println("Optimal solution Found!")
@@ -163,11 +165,15 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
       System.nanoTime() < endTime &&
       relaxStore.nonActiveEmpty &&
       searchStore.nonActiveEmpty &&
-      !optimumFound
-    ) lnsIter(relaxStore.select(), searchStore.select())
+      !optimumFound &&
+      !stopSearch
+    ){
+      lnsIter(relaxStore.select(), searchStore.select())
+      if(stagnationThreshold > 0 && stagnation >= stagnationThreshold) stopSearch = true
+    }
   }
 
-  protected def lnsIter(relax: ALNSOperator, search: ALNSOperator): Unit = {
+  protected def lnsIter(relax: ALNSOperator, search: ALNSOperator, sol: CPIntSol = currentSol.get): Unit = {
     if(!learning) endIter = Math.min(System.nanoTime() + iterTimeout, endTime)
 
     if(!solver.silent){
@@ -181,13 +187,19 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
     if(searchFailures.isDefined) nFailures = searchFailures.get
 
     var relaxDone = true
-    val oldObjective = currentSol.get.objective
+    val searchObjective = currentSol.get.objective
+    val startObjective = sol.objective
+    if(startObjective != searchObjective){
+      solver.objective.objs.head.relax()
+      solver.objective.objs.head.best = startObjective
+      currentSol = Some(sol)
+    }
     val iterStart = timeInSearch
 
     val stats = solver.startSubjectTo(stopCondition, searchDiscrepancy.getOrElse(Int.MaxValue), null) {
       try {
-        relaxFunction(currentSol.get)
-        searchFunction(currentSol.get)
+        relaxFunction(sol)
+        searchFunction(sol)
       }
       catch {
         case _: Inconsistency => relaxDone = false
@@ -199,9 +211,9 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
 
     if(searchFailures.isDefined) nFailures = 0 //Resetting failures number to 0
 
-    val improvement = math.abs(currentSol.get.objective - oldObjective)
+    val improvement = math.abs(newObjective - startObjective)
 
-    if(improvement > 0) stagnation = 0
+    if(math.abs(newObjective - searchObjective) > 0) stagnation = 0
     else stagnation += 1
 
     if (!solver.silent){
@@ -211,7 +223,7 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
     }
 
     //Updating probability distributions:
-    relax.update(iterStart, iterEnd, oldObjective, newObjective, stats, fail = !relaxDone && !learning, iter)
+    relax.update(iterStart, iterEnd, startObjective, newObjective, stats, fail = !relaxDone && !learning, iter)
     if(!relax.isInstanceOf[ALNSReifiedOperator]){
       if (relax.isActive) relaxStore.adapt(relax)
       else {
@@ -221,7 +233,7 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
     }
 
     if(relaxDone || relax.name == "dummy"){
-      search.update(iterStart, iterEnd, oldObjective, newObjective, stats, fail = false, iter)
+      search.update(iterStart, iterEnd, startObjective, newObjective, stats, fail = false, iter)
       if(!search.isInstanceOf[ALNSReifiedOperator]){
         if (search.isActive) searchStore.adapt(search)
         else {
@@ -231,6 +243,11 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
       }
     }
 
+    if(currentSol.get.objective != bestSol.get.objective){
+      solver.objective.objs.head.relax()
+      solver.objective.objs.head.best = bestSol.get.objective
+      currentSol = bestSol
+    }
     iter += 1
   }
 

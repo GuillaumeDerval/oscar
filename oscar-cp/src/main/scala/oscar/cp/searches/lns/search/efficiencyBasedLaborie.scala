@@ -10,8 +10,9 @@ import scala.util.Random
   * TODO
   */
 class EfficiencyBasedLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearchImpl(solver, vars, config) {
-  lazy val tolerance = 0.5
+  val tolerance: Double = config.metaParameters.getOrElse('tolerance, 0.25).asInstanceOf[Double]
   def evalWindow: Long = iterTimeout * 5
+  override val stagnationThreshold = 10
 
   override lazy val relaxOps: Array[ALNSOperator] = config.relaxStore.getElements.toArray
   override lazy val searchOps: Array[ALNSOperator] = config.searchStore.getElements.toArray
@@ -44,19 +45,27 @@ class EfficiencyBasedLaborie(solver: CPSolver, vars: Array[CPIntVar], config: AL
     ) {
       val relax = relaxStore.select()
       val search = searchStore.select()
-      lnsIter(relax, search)
+      if(stagnation >= stagnationThreshold && previousBest.isDefined) {
+        lnsIter(relax, search, previousBest.get)
+        if(search.lastExecStats.get.improvement > 0) lnsIter(relax, search)
+      }
+      else lnsIter(relax, search)
     }
   }
 
-  def timeLearning(): Unit = {
+  protected def timeLearning(): Unit = {
     learning = true
     iterTimeout = config.timeout
-    for {
-      relax <- Random.shuffle(relaxStore.getElements)
-      search <- Random.shuffle(searchStore.getElements)
-    } {
+    Random.shuffle(relaxOps.toSeq).foreach(relax => {
+      val search = searchOps(Random.nextInt(searchOps.length))
       lnsIter(relax, search)
-    }
+    })
+    Random.shuffle(searchOps.toSeq).foreach(search => {
+      while(search.execs < 1) {
+        val relax = relaxStore.select()
+        lnsIter(relax, search)
+      }
+    })
     learning = false
 
     manageIterTimeout()
@@ -75,7 +84,7 @@ class EfficiencyBasedLaborie(solver: CPSolver, vars: Array[CPIntVar], config: AL
         println("Operator " + op.name + " efficiency is " + opEfficiency)
       }
 
-      if (opEfficiency < searchEfficiency * tolerance && op.time >= iterTimeout) {
+      if (op.time >= iterTimeout && (opEfficiency < searchEfficiency * tolerance || op.sols == 0)){
         op.setActive(false)
         if (!solver.silent) println("Operator " + op.name + " deactivated due to low efficiency!")
         manageIterTimeout()
@@ -89,11 +98,11 @@ class EfficiencyBasedLaborie(solver: CPSolver, vars: Array[CPIntVar], config: AL
   protected def manageIterTimeout(): Unit = {
     var maxTime = 0L
     searchOps.filter(op => {
-      op.isActive && op.execs > 0
+      op.isActive && op.execs > 0 && op.sols > 0
     }).foreach(op => {
       val avgTime = Metrics.avgTime(op)
       if (avgTime > maxTime) maxTime = avgTime.ceil.toLong
     })
-    iterTimeout = maxTime
+    iterTimeout = if(maxTime > 0L) maxTime * 2 else config.timeout
   }
 }
