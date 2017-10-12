@@ -63,7 +63,7 @@ object ChainsHelper {
       * The List[Int] value represents the segment
       */
     var pickupInc = 0
-    val segmentsArray:Array[List[Int]] = Array.tabulate(chainsExtension.heads.length)(_ => List.empty)
+    val segmentsArray:Array[(Int,List[Int])] = Array.tabulate(chainsExtension.heads.length)(_ => (0,List.empty))
     var completeSegments: List[(Int, Int)] = List.empty
 
     for(node <- route) {
@@ -71,7 +71,7 @@ object ChainsHelper {
       for (j <- 0 until pickupInc if segmentsArray(j) != null){
         if (chainsExtension.isHead(node)) {
           //If the node is a pickup one, we add the node to all the active segment and the one at position route(i)
-          segmentsArray(j) = segmentsArray(j) :+ node
+          segmentsArray(j) = (segmentsArray(j)._1+1, node :: segmentsArray(j)._2)
         }
         else if (chainsExtension.isLast(node)) {
           /**
@@ -79,15 +79,15 @@ object ChainsHelper {
             * the beginning of the segment and thus this is not possible to create a complete segment beginning
             * at this position.
             */
-          if (!segmentsArray(j).contains(chainsExtension.firstNodeInChainOfNode(node)))
+          if (!segmentsArray(j)._2.contains(chainsExtension.firstNodeInChainOfNode(node)))
             segmentsArray(j) = null
           /**
             * Else we decrement the number of single pickup
             */
           else {
-            segmentsArray(j) = segmentsArray(j) :+ node
-            if (segmentsArray(j).length == 2*(pickupInc-j))
-              completeSegments = List((segmentsArray(j).head, segmentsArray(j).last)) ++ completeSegments
+            segmentsArray(j) = (segmentsArray(j)._1-1, node :: segmentsArray(j)._2)
+            if (segmentsArray(j)._1 == 0)
+              completeSegments = (segmentsArray(j)._2.last, segmentsArray(j)._2.head) :: completeSegments
           }
         }
       }

@@ -257,7 +257,7 @@ trait SegmentExchangeAPI{
     * @param tryFlip if false, will not flip any segment (maybe you do not want flipping if using time windows?)
     */
   def segmentExchangeOnSegments(vrp: VRP,
-                                segmentsToExchangeGroupedByVehicles: Map[Int,(List[(Int,Int)])],
+                                segmentsToExchangeGroupedByVehicles: () => Map[Int,(List[(Int,Int)])],
                                 relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
                                 vehicles:() => Iterable[Int],
                                 neighborhoodName:String = "SegmentExchange",

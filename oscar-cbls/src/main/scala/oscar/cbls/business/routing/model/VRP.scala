@@ -165,6 +165,17 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4)
     buildRoutePositionOfAllNode(it,0,List.empty)
   }
 
+  def getGlobalRoutePositionOfAllNode:Array[Int] = {
+    val it = routes.value.iterator
+    val globalRoutePosition = Array.fill(n)(n)
+    var inc = 0
+    while(it.hasNext) {
+      globalRoutePosition(it.next()) == inc
+      inc += 1
+    }
+    globalRoutePosition
+  }
+
   /**
     * Redefine the toString method.
     * @return the VRP problem as a String.

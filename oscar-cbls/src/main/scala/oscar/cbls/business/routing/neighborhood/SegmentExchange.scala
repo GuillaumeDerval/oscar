@@ -214,7 +214,7 @@ case class SegmentExchange(val vrp: VRP,
   * @param hotRestart true if you doesn't wan't to test all the route each time the neighborhood is called
   */
 case class SegmentExchangeOnSegments(vrp: VRP,
-                                     segmentsToExchangeGroupedByVehicles: Map[Int,List[(Int,Int)]],
+                                     segmentsToExchangeGroupedByVehicles: () => Map[Int,List[(Int,Int)]],
                                      relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
                                      vehicles: () => Iterable[Int],
                                      neighborhoodName:String = "PickupDeliverySegmentExchange",
@@ -229,9 +229,9 @@ case class SegmentExchangeOnSegments(vrp: VRP,
                                     )
   extends EasyNeighborhoodMultiLevel[SegmentExchangeOnSegmentsMove](neighborhoodName){
 
-  require(segmentsToExchangeGroupedByVehicles.size == vehicles().size,
+  require(segmentsToExchangeGroupedByVehicles().size == vehicles().size,
     "SegmentsToExchangeGroupedByVehicles must content segments for all vehicle you want to iterate on." +
-      "\nSegmentsToExchangeGroupedByVehicles's size = " + segmentsToExchangeGroupedByVehicles.size + " should be : " +
+      "\nSegmentsToExchangeGroupedByVehicles's size = " + segmentsToExchangeGroupedByVehicles().size + " should be : " +
       vehicles().size)
 
   var firstSegmentStartPosition:Int = -1
@@ -249,7 +249,7 @@ case class SegmentExchangeOnSegments(vrp: VRP,
 
   override def exploreNeighborhood(): Unit = {
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
-    val routePositionOfNodes = vrp.getRoutePositionOfAllNode
+    val routePositionOfNodes = vrp.getGlobalRoutePositionOfAllNode
     val relevantNeighborsNow = relevantNeighbors()
 
     def evalObjAndRollBack() : Int = {
@@ -264,23 +264,24 @@ case class SegmentExchangeOnSegments(vrp: VRP,
       val positionOfRelevantNeighborsOfFSSN = relevantNeighborsNow(firstSegment._1).map(routePositionOfNodes)
       val positionOfRelevantNeighborsOfSSSN = relevantNeighborsNow(secondSegment._1).map(routePositionOfNodes)
 
-      val nextOfFSEN = vrp.nextNodeOf(firstSegment._2)
-      val nextOfSSEN = vrp.nextNodeOf(secondSegment._2)
-      val positionOfRelevantNeighborsOfNextOfFSEN = if(nextOfFSEN.isDefined)Some(relevantNeighborsNow(nextOfFSEN.get).map(routePositionOfNodes)) else None
-      val positionOfRelevantNeighborsOfNextOfSSEN = if(nextOfSSEN.isDefined)Some(relevantNeighborsNow(nextOfSSEN.get).map(routePositionOfNodes)) else None
+      //val nextOfFSEN = vrp.nextNodeOf(firstSegment._2)
+      //val nextOfSSEN = vrp.nextNodeOf(secondSegment._2)
+      //val positionOfRelevantNeighborsOfNextOfFSEN = if(nextOfFSEN.isDefined)Some(relevantNeighborsNow(nextOfFSEN.get).map(routePositionOfNodes)) else None
+      //val positionOfRelevantNeighborsOfNextOfSSEN = if(nextOfSSEN.isDefined)Some(relevantNeighborsNow(nextOfSSEN.get).map(routePositionOfNodes)) else None
 
       positionOfRelevantNeighborsOfFSSN.exists(_ == routePositionOfNodes(secondSegment._1)-1) &&
-      positionOfRelevantNeighborsOfSSSN.exists(_ == routePositionOfNodes(firstSegment._1)-1) &&
-      positionOfRelevantNeighborsOfNextOfFSEN.isEmpty || positionOfRelevantNeighborsOfNextOfFSEN.get.exists(_ == routePositionOfNodes(secondSegment._2)) &&
-      positionOfRelevantNeighborsOfNextOfSSEN.isEmpty || positionOfRelevantNeighborsOfNextOfSSEN.get.exists(_ == routePositionOfNodes(firstSegment._2))
+        positionOfRelevantNeighborsOfSSSN.exists(_ == routePositionOfNodes(firstSegment._1)-1) //&&
+        //(positionOfRelevantNeighborsOfNextOfFSEN.isEmpty || positionOfRelevantNeighborsOfNextOfFSEN.get.exists(_ == routePositionOfNodes(secondSegment._2))) &&
+        //(positionOfRelevantNeighborsOfNextOfSSEN.isEmpty || positionOfRelevantNeighborsOfNextOfSSEN.get.exists(_ == routePositionOfNodes(firstSegment._2)))
     }
 
     if(!hotRestart)startVehicle = 0
 
     val (listOfFirstVehiclesToIterateOnIterable,notifyFound1) = selectFirstVehicleBehavior.toIterable(vehicles())
     for(firstVehicle <- listOfFirstVehiclesToIterateOnIterable){
+      println(segmentsToExchangeGroupedByVehicles()(firstVehicle).toList)
       val (listOfFirstSegmentsToIterateOnIterable, notifyFound2) =
-        selectFirstSegmentBehavior.toIterable(segmentsToExchangeGroupedByVehicles(firstVehicle))
+        selectFirstSegmentBehavior.toIterable(segmentsToExchangeGroupedByVehicles()(firstVehicle))
       for(firstSegment <- listOfFirstSegmentsToIterateOnIterable){
         firstSegmentStartPosition = routePositionOfNodes(firstSegment._1)
         firstSegmentEndPosition = routePositionOfNodes(firstSegment._2)
@@ -289,7 +290,7 @@ case class SegmentExchangeOnSegments(vrp: VRP,
           selectSecondVehicleBehavior.toIterable(listOfFirstVehiclesToIterateOnIterable)
         for(secondVehicle <- listOfSecondVehiclesToIterateOnIterable){
           val (listOfSecondSegmentsToIterateOnIterable, notifyFound4) =
-            selectFirstSegmentBehavior.toIterable(segmentsToExchangeGroupedByVehicles(secondVehicle))
+            selectFirstSegmentBehavior.toIterable(segmentsToExchangeGroupedByVehicles()(secondVehicle))
           for(secondSegment <- listOfSecondSegmentsToIterateOnIterable){
             secondSegmentStartPosition = routePositionOfNodes(secondSegment._1)
             secondSegmentEndPosition = routePositionOfNodes(secondSegment._2)
