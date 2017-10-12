@@ -9,8 +9,8 @@ import scala.util.Random
 /**
   * TODO
   */
-class EfficiencyBasedLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearchImpl(solver, vars, config) {
-  val tolerance: Double = config.metaParameters.getOrElse('tolerance, 0.25).asInstanceOf[Double]
+class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearchImpl(solver, vars, config) {
+//  val tolerance: Double = config.metaParameters.getOrElse('tolerance, 0.5).asInstanceOf[Double]
   def evalWindow: Long = iterTimeout * 5
   override val stagnationThreshold = 10
 
@@ -45,11 +45,11 @@ class EfficiencyBasedLaborie(solver: CPSolver, vars: Array[CPIntVar], config: AL
     ) {
       val relax = relaxStore.select()
       val search = searchStore.select()
-      if(stagnation >= stagnationThreshold && previousBest.isDefined) {
+      /*if(stagnation >= stagnationThreshold && previousBest.isDefined) {
         lnsIter(relax, search, previousBest.get)
         if(search.lastExecStats.get.improvement > 0) lnsIter(relax, search)
       }
-      else lnsIter(relax, search)
+      else*/ lnsIter(relax, search)
     }
   }
 
@@ -69,7 +69,7 @@ class EfficiencyBasedLaborie(solver: CPSolver, vars: Array[CPIntVar], config: AL
     learning = false
 
     manageIterTimeout()
-    println("learning done, iterTimeout: " + iterTimeout)
+    if(!solver.silent) println("learning done, iterTimeout: " + iterTimeout)
   }
 
   protected def checkEfficiency(op: ALNSOperator): Double = {
@@ -84,15 +84,15 @@ class EfficiencyBasedLaborie(solver: CPSolver, vars: Array[CPIntVar], config: AL
         println("Operator " + op.name + " efficiency is " + opEfficiency)
       }
 
-      if (op.time >= iterTimeout && (opEfficiency < searchEfficiency * tolerance || op.sols == 0)){
+      if (op.time >= iterTimeout * 2 && /*(opEfficiency < searchEfficiency * tolerance ||*/ op.sols == 0/*)*/){
         op.setActive(false)
         if (!solver.silent) println("Operator " + op.name + " deactivated due to low efficiency!")
-        manageIterTimeout()
+//        manageIterTimeout()
       }
 
       opEfficiency
     }
-    else 0.0
+    else 1.0
   }
 
   protected def manageIterTimeout(): Unit = {
@@ -103,6 +103,6 @@ class EfficiencyBasedLaborie(solver: CPSolver, vars: Array[CPIntVar], config: AL
       val avgTime = Metrics.avgTime(op)
       if (avgTime > maxTime) maxTime = avgTime.ceil.toLong
     })
-    iterTimeout = if(maxTime > 0L) maxTime * 2 else config.timeout
+    iterTimeout = if(maxTime == 0L || learning) config.timeout else maxTime
   }
 }

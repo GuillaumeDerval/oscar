@@ -62,7 +62,7 @@ class RouletteWheel[T <: ALNSElement](
   override def adapt(elem: T): Unit = {
     val index = getIndex(elem)
     if(index == -1) throw  new Exception("Element " + elem + " is not in store.")
-    weights(index) = if(elem.execs > 1) (1.0 - decay) * weights(index) + decay * (perfMetric(elem) / elems.length) //received val divided by the number of elems to avoid overflow when processing max values
+    weights(index) = if(elem.execs > 1) (1.0 - decay) * weights(index) + decay * (perfMetric(elem) / elems.length.toDouble) //received val divided by the number of elems to avoid overflow when processing max values
     else perfMetric(elem)
     if(isCached(index)) lastSelected.remove(elem)
     if(!elem.isActive) deactivate(index)
