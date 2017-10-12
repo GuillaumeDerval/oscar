@@ -216,10 +216,12 @@ case class SegmentExchange(val vrp: VRP,
 case class SegmentExchangeOnSegments(vrp: VRP,
                                      segmentsToExchangeGroupedByVehicles: Map[Int,List[(Int,Int)]],
                                      relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
+                                     vehicles: () => Iterable[Int],
                                      neighborhoodName:String = "PickupDeliverySegmentExchange",
                                      hotRestart:Boolean = true,
 
                                      selectFirstVehicleBehavior:LoopBehavior = First(),
+                                     selectSecondVehicleBehavior:LoopBehavior = First(),
                                      selectFirstSegmentBehavior:LoopBehavior = First(),
                                      selectSecondSegmentBehavior:LoopBehavior = First()
 
@@ -227,8 +229,10 @@ case class SegmentExchangeOnSegments(vrp: VRP,
                                     )
   extends EasyNeighborhoodMultiLevel[SegmentExchangeOnSegmentsMove](neighborhoodName){
 
-  require(segmentsToExchangeGroupedByVehicles.size == vrp.v,
-    "SegmentsToExchangeGroupedByVehicles must content segments for all vehicle therefore it must have a size of " + vrp.v)
+  require(segmentsToExchangeGroupedByVehicles.size == vehicles().size,
+    "SegmentsToExchangeGroupedByVehicles must content segments for all vehicle you want to iterate on." +
+      "\nSegmentsToExchangeGroupedByVehicles's size = " + segmentsToExchangeGroupedByVehicles.size + " should be : " +
+      vehicles().size)
 
   var firstSegmentStartPosition:Int = -1
   var firstSegmentEndPosition:Int = -1
@@ -273,16 +277,18 @@ case class SegmentExchangeOnSegments(vrp: VRP,
 
     if(!hotRestart)startVehicle = 0
 
-    val (listOfVehiclesToIterateOnIterable,notifyFound1) = selectFirstVehicleBehavior.toIterable(0 until v-1)
-    for(firstVehicle <- listOfVehiclesToIterateOnIterable){
+    val (listOfFirstVehiclesToIterateOnIterable,notifyFound1) = selectFirstVehicleBehavior.toIterable(vehicles())
+    for(firstVehicle <- listOfFirstVehiclesToIterateOnIterable){
       val (listOfFirstSegmentsToIterateOnIterable, notifyFound2) =
         selectFirstSegmentBehavior.toIterable(segmentsToExchangeGroupedByVehicles(firstVehicle))
       for(firstSegment <- listOfFirstSegmentsToIterateOnIterable){
         firstSegmentStartPosition = routePositionOfNodes(firstSegment._1)
         firstSegmentEndPosition = routePositionOfNodes(firstSegment._2)
 
-        for(secondVehicle <- firstVehicle+1 until vrp.v){
-          val (listOfSecondSegmentsToIterateOnIterable, notifyFound3) =
+        val (listOfSecondVehiclesToIterateOnIterable,notifyFound3) =
+          selectSecondVehicleBehavior.toIterable(listOfFirstVehiclesToIterateOnIterable)
+        for(secondVehicle <- listOfSecondVehiclesToIterateOnIterable){
+          val (listOfSecondSegmentsToIterateOnIterable, notifyFound4) =
             selectFirstSegmentBehavior.toIterable(segmentsToExchangeGroupedByVehicles(secondVehicle))
           for(secondSegment <- listOfSecondSegmentsToIterateOnIterable){
             secondSegmentStartPosition = routePositionOfNodes(secondSegment._1)
@@ -305,6 +311,7 @@ case class SegmentExchangeOnSegments(vrp: VRP,
                 notifyFound1()
                 notifyFound2()
                 notifyFound3()
+                notifyFound4()
               }
             }
           }

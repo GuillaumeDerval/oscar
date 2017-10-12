@@ -122,6 +122,13 @@ object SimpleVRPWithTimeWindow extends App{
 
   def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantPredecessorsByDistance,postFilter), myVRP))
 
+  def segExchangeOnSegments(k: Int) = profile(
+    segmentExchangeOnSegments(myVRP,
+      Array.tabulate(v)(vehicle => vehicle -> ChainsHelper.computeCompleteSegments(myVRP,vehicle,chainsExtension)).toMap,
+      ()=> myVRP.kFirst(v*2,closestRelevantPredecessorsByDistance,postFilter),
+      () => 0 until v
+    ))
+
   // INSERTING
 
   val nextInsertGenerator = {
@@ -176,7 +183,7 @@ object SimpleVRPWithTimeWindow extends App{
   //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
 
 
-  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,onePtMove(20)))
+  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,segExchangeOnSegments(20),onePtMove(20)))
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
