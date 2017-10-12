@@ -210,6 +210,7 @@ trait RouteExchangeAPI{
 trait SegmentExchangeAPI{
 
   type SegmentExchangeMove = oscar.cbls.business.routing.neighborhood.SegmentExchangeMove
+  type SegmentExchangeOnSegmentsMove = oscar.cbls.business.routing.neighborhood.SegmentExchangeOnSegments
 
   /**
    * exchanges segments of different vehicles (not on the same vehicle!)
@@ -224,7 +225,6 @@ trait SegmentExchangeAPI{
   def segmentExchange(vrp: VRP,
                       relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
                       vehicles:() => Iterable[Int],
-                      segmentsToExchangeGroupedByVehicles: Option[Map[Int,List[(Int,Int)]]] = None,
                       neighborhoodName:String = "SegmentExchange",
                       hotRestart:Boolean = true,
                       selectFirstVehicleBehavior:LoopBehavior = First(),
@@ -237,7 +237,6 @@ trait SegmentExchangeAPI{
     vrp,
     relevantNeighbors,
     vehicles,
-    segmentsToExchangeGroupedByVehicles,
     neighborhoodName,
     hotRestart,
     selectFirstVehicleBehavior,
@@ -246,6 +245,35 @@ trait SegmentExchangeAPI{
     selectFirstNodeOfSecondSegmentBehavior,
     selectSecondNodeOfSecondSegmentBehavior,
     tryFlip)
+
+  /**
+    * exchanges segments of different vehicles (not on the same vehicle!)
+    *
+    * @param vrp the routing problem
+    * @param segmentsToExchangeGroupedByVehicles the map of segments you want to exchange grouped by vehicles
+    * @param relevantNeighbors given the start and end of the first segment, which are the relevant neighbors for the other segment? (will be filtered for vehicle by the neighborhood)
+    * @param neighborhoodName the name of the neighborhood, used for verbosities
+    * @param hotRestart
+    * @param tryFlip if false, will not flip any segment (maybe you do not want flipping if using time windows?)
+    */
+  def segmentExchangeOnSegments(vrp: VRP,
+                                segmentsToExchangeGroupedByVehicles: Map[Int,(List[(Int,Int)])],
+                                relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
+                                neighborhoodName:String = "SegmentExchange",
+                                hotRestart:Boolean = true,
+                                selectFirstVehicleBehavior:LoopBehavior = First(),
+                                selectFirstSegmentBehavior:LoopBehavior = First(),
+                                selectSecondSegmentBehavior:LoopBehavior = First(),
+                                tryFlip:Boolean = true)
+  = SegmentExchangeOnSegments(
+    vrp,
+    segmentsToExchangeGroupedByVehicles,
+    relevantNeighbors,
+    neighborhoodName,
+    hotRestart,
+    selectFirstVehicleBehavior,
+    selectFirstSegmentBehavior,
+    selectSecondSegmentBehavior)
 }
 
 
