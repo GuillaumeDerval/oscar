@@ -34,7 +34,7 @@
 
 package oscar.flatzinc.parser.intermediatemodel.ASTLiterals;
 
-import oscar.flatzinc.model.DomainRange;
+import oscar.flatzinc.model.FzDomainRange;
 
 /**
  * @author Gustav Bjordal
@@ -74,6 +74,6 @@ public class ASTRange extends ASTDomain {
 
     @Override
     public Object getOldDomainObj() {
-        return new DomainRange(lb.getValue(), ub.getValue());
+        return new FzDomainRange(lb.getValue(), ub.getValue());
     }
 }

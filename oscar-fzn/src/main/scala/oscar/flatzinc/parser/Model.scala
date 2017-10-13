@@ -91,17 +91,17 @@ class OldModel(val log: Log, val acceptAnyCstr: Boolean) {
     }
   }
 
-  def createDomain(e: Domain,t: Integer): Domain  = {
+  def createDomain(e: FzDomain, t: Integer): FzDomain  = {
     if(e==null){
-      if(t==Type.BOOL) new DomainRange(0,1)
-      else new DomainRange(Helper.FznMinInt, Helper.FznMaxInt)//TODO: This is dangerous!
+      if(t==Type.BOOL) new FzDomainRange(0, 1)
+      else new FzDomainRange(Helper.FznMinInt, Helper.FznMaxInt)//TODO: This is dangerous!
     }else e;
   }
-  def copy(d: Domain): Domain = {
+  def copy(d: FzDomain): FzDomain = {
     d match {
-      case DomainSet(v) => new DomainSet(v)
-      case DomainRange(mi, ma) => new DomainRange(mi, ma)
-      case _ => null.asInstanceOf[Domain]
+      case FzDomainSet(v) => new FzDomainSet(v)
+      case FzDomainRange(mi, ma) => new FzDomainRange(mi, ma)
+      case _ => null.asInstanceOf[FzDomain]
     }
   }
 
@@ -109,7 +109,7 @@ class OldModel(val log: Log, val acceptAnyCstr: Boolean) {
     if(!(t.typ == Type.INT||t.typ == Type.BOOL))
       throw new ParsingException("Only Supporting Int and Bool variables.");
     val anns = anns0.asScala;
-    val d = createDomain(if(de!=null)de.value.asInstanceOf[Domain]else null,t.typ)
+    val d = createDomain(if(de!=null)de.value.asInstanceOf[FzDomain]else null, t.typ)
     if(t.isArray) {
         val a = new ArrayOfElement();
         //if(d!=null)a.domain = d;
@@ -142,7 +142,7 @@ class OldModel(val log: Log, val acceptAnyCstr: Boolean) {
   }
   def addAliasVariable(t: Type, de: Element, name: String, e:Element, anns: java.util.List[Annotation])={
     //TODO: When can de be null?
-    val d = if(de!=null)de.value.asInstanceOf[Domain]else null
+    val d = if(de!=null)de.value.asInstanceOf[FzDomain]else null
     //if(!name.equals(e.name)) System.out.println("% Not the same name: "+e.name+" vs "+name);
     if(!t.equals(e.typ)){
       if(e.typ.typ==Type.NULL){
@@ -155,7 +155,7 @@ class OldModel(val log: Log, val acceptAnyCstr: Boolean) {
     /*if(d!=null && !d.equals(e.domain)){
       //System.out.println("% Not the same domain: "+e.domain+" vs "+d);
       if(e.domain==null)e.domain = d
-      else e.domain.inter(d)
+      else e.domain.intersect(d)
     }*/
     //if(!anns.equals(e.annotations)) System.out.println("% Not the same annotations: "+e.annotations+" vs "+anns);
     addId(name,e);
@@ -184,11 +184,11 @@ class OldModel(val log: Log, val acceptAnyCstr: Boolean) {
           if(e.typ.typ==Type.INT){
             problem.solution.addOutputArrayVarInt(name,
                                                   a.elements.asScala.toArray.map(e => e.value match{case vr: Variable => vr.id; case other => if(e.name==null)other.toString() else e.name}),
-                                                  anns.find((p:Annotation) => p.name == "output_array").get.args(0).asInstanceOf[Array[Domain]].map(e=>e.asInstanceOf[DomainRange].toRange).toList)
+                                                  anns.find((p:Annotation) => p.name == "output_array").get.args(0).asInstanceOf[Array[FzDomain]].map(e=> e.asInstanceOf[FzDomainRange].toRange).toList)
           }
           if(e.typ.typ==Type.BOOL){
             problem.solution.addOutputArrayVarBool(name,a.elements.asScala.toArray.map(e => e.value match{case vr: Variable => vr.id; case other => if(e.name==null)other.toString() else e.name}),
-                           anns.find((p:Annotation) => p.name == "output_array").get.args(0).asInstanceOf[Array[Domain]].map(e=>e.asInstanceOf[DomainRange].toRange).toList)
+                           anns.find((p:Annotation) => p.name == "output_array").get.args(0).asInstanceOf[Array[FzDomain]].map(e=> e.asInstanceOf[FzDomainRange].toRange).toList)
                            
           }
         }
@@ -285,10 +285,10 @@ class OldModel(val log: Log, val acceptAnyCstr: Boolean) {
     }
   }
   
-  def getIntSet(e: Element): Domain = {
-    e.value.asInstanceOf[Domain]
+  def getIntSet(e: Element): FzDomain = {
+    e.value.asInstanceOf[FzDomain]
   }
-  def getIntSetArray(e: Element): Array[Domain] = {
+  def getIntSetArray(e: Element): Array[FzDomain] = {
     if(e.isInstanceOf[ArrayOfElement]){
       val a = e.asInstanceOf[ArrayOfElement]
       a.elements.asScala.toArray.map(v => getIntSet(v))
@@ -414,7 +414,7 @@ class OldModel(val log: Log, val acceptAnyCstr: Boolean) {
                 else if (p(i).equals(classOf[IntegerVariable])) getIntVar(args(i))//TODO: differentiate par vs var
                 else if (p(i).equals(classOf[Array[BooleanVariable]])) getBoolVarArray(args(i))
                 else if (p(i).equals(classOf[BooleanVariable])) getBoolVar(args(i))//TODO: differentiate par vs var
-                else if(p(i).equals(classOf[Domain])) getIntSet(args(i))
+                else if(p(i).equals(classOf[FzDomain])) getIntSet(args(i))
                 else throw new Exception("Case not handled: "+p(i));
     }/**/
     arg(p.length-1) = ann;
@@ -430,8 +430,8 @@ class OldModel(val log: Log, val acceptAnyCstr: Boolean) {
     //.tupled(arg)
   }
   
-  def createDomainSet(s:java.util.Set[Integer]): DomainSet = {
-    new DomainSet(s.asScala.map(i=>Int.unbox(i)).toSet)
+  def createDomainSet(s:java.util.Set[Integer]): FzDomainSet = {
+    new FzDomainSet(s.asScala.map(i=> Int.unbox(i)).toSet)
   }
 }
 

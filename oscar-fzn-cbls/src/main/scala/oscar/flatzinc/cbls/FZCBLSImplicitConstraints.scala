@@ -73,12 +73,12 @@ class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
          val vars = xs.map{ v =>
           val avar = if(v.isBound){
             uid+=1
-            val vv = CBLSIntVarDom(cblsmodel.m, v.value, DomainRange(1,xs.size),  "EXTRA_VAR_"+uid);
+            val vv = CBLSIntVar(cblsmodel.m, v.value, 1 to xs.size , "EXTRA_VAR_" + uid);
             EnsureDomain(vv,v.domain,cblsmodel.c)
             vv
           }else{
             val vv = cblsmodel.getCBLSVarDom(v)
-            EnsureDomain(vv,vv.dom,cblsmodel.c)
+            EnsureDomain(vv,v.domain,cblsmodel.c)
             vv
           }
           avar
@@ -96,7 +96,7 @@ class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
         val vars = xs.map{ v =>
           val avar = if(v.isBound){
             uid+=1
-            val vv = CBLSIntVarDom(cblsmodel.m, v.value, DomainRange(1,xs.size),  "EXTRA_VAR_"+uid);
+            val vv = CBLSIntVarDom(cblsmodel.m, v.value, FzDomainRange(1, xs.size), "EXTRA_VAR_" + uid);
             EnsureDomain(vv,v.domain,cblsmodel.c)
             vv
           }else{

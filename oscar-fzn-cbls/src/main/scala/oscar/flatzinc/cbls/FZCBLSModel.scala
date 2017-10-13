@@ -122,13 +122,13 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
         case IntegerVariable(id, dom,ann) =>
           //TODO: Put this in a method! or make it deterministic as the neighbourhoods should take care of the assignments!
           val initialValue = dom match {
-            case oscar.flatzinc.model.DomainRange(min, max) =>
+            case oscar.flatzinc.model.FzDomainRange(min, max) =>
               if(max.toLong - min.toLong > Int.MaxValue) Random.nextInt()
               else{
                 val range = (min to max);
                 range(Random.nextInt(range.length))
               }
-            case DomainSet(values) =>
+            case FzDomainSet(values) =>
               val v = values.toArray;
               v(Random.nextInt(v.length))
           }
@@ -136,7 +136,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
           	case c:subcircuit => c.variables.length;
           	case c:circuit => c.variables.length;
           	case _ => 0}.fold(0)((acc, v) => Math.min(acc,v)) //Min here, right?
-          val thedom = if(sc > 0){oscar.flatzinc.model.DomainRange(1, sc)}else{dom}
+          val thedom = if(sc > 0){oscar.flatzinc.model.FzDomainRange(1, sc)}else{dom}
           val cblsVariable = CBLSIntVarDom(m, initialValue, thedom,  id);
           //TODO: handle constant variables here.
           cblsIntMap += id -> cblsVariable;
@@ -144,7 +144,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
 
        case bv:BooleanVariable =>
          //WARNING: Changed the representation of true and false so that false is 1 and true is 0
-         val dom = oscar.flatzinc.model.DomainRange(if(bv.isTrue) 0 else if(bv.isFalse) 1 else 0, if(bv.isFalse) 1 else if(bv.isTrue) 0 else 1)
+         val dom = oscar.flatzinc.model.FzDomainRange(if(bv.isTrue) 0 else if(bv.isFalse) 1 else 0, if(bv.isFalse) 1 else if(bv.isTrue) 0 else 1)
           //TODO: Put this in a method! or make it deterministic as the neighbourhoods should take care of the assignments!
           val initialValue = {
                 val range = (dom.min to dom.max);
@@ -214,8 +214,8 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
       log("Calling the CP solver")
       cpmodel.updateBestObjectiveValue(getCBLSVar(fzModel.search.variable.get).value)
     //TODO: ignore variables whose domain should not be reduced (e.g. variables in the Circuit constraint)
-      cpmodel.updateModelDomains()
-      updateVarDomains()
+      cpmodel.updateIntermediateModelDomains()
+      restrictVarDomains()
       log("Variable domains updated")
 
 
@@ -248,15 +248,53 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
     cpmodel = cpm
     useCP = true
   }
-  def updateVarDomains(){
-    //TODO: Make sure this is necessary,as it is not clear from which domain the moves are drawn from.
-    //Might want to get rid of CBLSIntVarDom
-    for(vm<-fzModel.variables if !vm.isDefined && !vm.cstrs.exists{
+  def restrictVarDomains(){
+    //Might want to get rid of CBLSIntVarDom <---- yes!
+    for(v<-fzModel.variables if !v.isDefined && !v.cstrs.exists{
         case c:subcircuit => true;
         case c:circuit => true;
         case _ => false}){
-      val vls = getCBLSVarDom(vm)
-      vls.restrictDomain(vls.dom.min to vls.dom.max)
+      val cblsVar = getCBLSVarDom(v)
+      v match {
+        case iv:IntegerVariable =>
+          iv.domain match {
+            case FzDomainRange(min,max) =>
+              cblsVar.restrictDomain(min to max)
+            case FzDomainSet(s) =>
+              cblsVar.restrictDomain(s)
+          }
+        case bv:BooleanVariable =>
+          if(bv.isTrue){
+            cblsVar.restrictDomain(0 to 0)
+          }else if(bv.isFalse){
+            cblsVar.restrictDomain(1 to cblsVar.domain.max)
+          }
+      }
+    }
+  }
+  def relaxVarDomains(){
+    for(v<-fzModel.variables if !v.isDefined && !v.cstrs.exists{
+      case c:subcircuit => true;
+      case c:circuit => true;
+      case _ => false}){
+      val cblsVar = getCBLSVarDom(v)
+      v match {
+        case iv:IntegerVariable =>
+          iv.domain match {
+            case FzDomainRange(min,max) =>
+              cblsVar.relaxDomain(min to max)
+            case FzDomainSet(s) =>
+              cblsVar.relaxDomain(s)
+          }
+        case bv:BooleanVariable =>
+          if(bv.isTrue){
+            cblsVar.restrictDomain(0 to 0)
+          }else if(bv.isFalse){
+            cblsVar.restrictDomain(1 to cblsVar.domain.max)
+          }else{
+            cblsVar.relaxDomain(0 to 1)
+          }
+      }
     }
   }
  }

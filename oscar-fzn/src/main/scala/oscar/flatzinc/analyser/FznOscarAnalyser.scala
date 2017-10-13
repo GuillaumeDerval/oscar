@@ -57,7 +57,7 @@ object FznOscarAnalyser extends FznOscarMain{
     Helper.getConsDegreeDistribution(model.problem.constraints).toList.sortBy(_._1).foreach{case(d,c) => log(f"> $d%3s $c%5s")}
     log("Effective Constraint Degrees:")
     Helper.getRealConsDegreeDistribution(model.problem.constraints).toList.sortBy(_._1).foreach{case(d,c) => log(f"> $d%3s $c%5s")}
-    log("Variable Domain Sizes:")
+    log("Variable FzDomain Sizes:")
     Helper.getVarDomainDistribution(model.problem.variables).toList.sortBy(_._1).foreach{case(d,c) => log(f"> $d%3s $c%5s")}
     if(!model.problem.variables.filter(v => v.cstrs.isEmpty).isEmpty){
       log("Unconstrained variables:")

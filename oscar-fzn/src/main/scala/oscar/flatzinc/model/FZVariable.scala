@@ -47,14 +47,15 @@ abstract class Variable(val id: String, val anns: Iterable[oscar.flatzinc.model.
 case class BooleanVariable(i: String,
                            private var _value: Option[Boolean] = None,
                            a: Iterable[oscar.flatzinc.model.Annotation] = List.empty) extends Variable(i,a) {
-  def this(s:String, dom: Domain) = this(s, {if (dom.min==dom.max) Some(dom.min==1) else None})
-  def this(s:String, dom: Domain, anns: Iterable[oscar.flatzinc.model.Annotation]) =
+  def this(s:String, dom: FzDomain) = this(s, {if (dom.min == dom.max) Some(dom.min ==1) else None})
+  def this(s:String, dom: FzDomain, anns: Iterable[oscar.flatzinc.model.Annotation]) =
     this(s, {if (dom.min==dom.max) Some(dom.min==1) else None},anns)
   def isTrue: Boolean = _value.getOrElse(false)
   def isFalse: Boolean = !_value.getOrElse(true)
   override def isBound: Boolean = _value.isDefined
   override def domainSize: Int = if(isBound) 1 else 2
-  def bind(v: Boolean) = if(isBound && v!=_value.get) throw new UnsatException("Empty Domain"); else _value = Some(v)
+  def bind(v: Boolean) = if(isBound && v!=_value.get) throw new UnsatException("Empty FzDomain"); else _value = Some(v)
+  def unbind() = _value = None
   def boolValue: Boolean = _value.get
   def intValue: Int = if(_value.get) 1 else 0
   def violValue: Int = if(_value.get) 0 else 1 // true (0), false (1)
@@ -62,28 +63,37 @@ case class BooleanVariable(i: String,
 }
 
 case class IntegerVariable(i: String,
-                           private var dom: Domain,
+                           private var dom: FzDomain,
                            a: Iterable[oscar.flatzinc.model.Annotation] = List.empty) extends Variable(i,a) {
-  def this(i: String, v: Int) = this(i,DomainRange(v,v));
+  def this(i: String, v: Int) = this(i, FzDomainRange(v, v));
   def domain = dom
   override def domainSize = dom.size
   def min = dom.min
   def max = dom.max
   def geq(v:Int) = dom.geq(v)
   def leq(v:Int) = dom.leq(v)
-  def inter(d:Domain) = (dom,d) match {
-    case (DomainRange(_,_),DomainRange(_,_)) => dom.inter(d)
-    case (DomainSet(_),DomainRange(_,_)) => dom.inter(d)
-    case (DomainSet(_),DomainSet(_)) => dom.inter(d)
-    case (DomainRange(l,u),DomainSet(values)) => dom = DomainSet(values.filter(v => v>=l && v <= u)); dom.checkEmpty();
+  def intersect(d:FzDomain) = (dom, d) match {
+    case (FzDomainRange(_, _),FzDomainRange(_, _)) => dom.intersect(d)
+    case (FzDomainSet(_),FzDomainRange(_, _)) => dom.intersect(d)
+    case (FzDomainSet(_),FzDomainSet(_)) => dom.intersect(d)
+    case (FzDomainRange(l, u),FzDomainSet(values)) =>
+      dom = FzDomainSet(values.filter(v => v >= l && v <= u)); dom.checkEmpty();
+  }
+  def relax(s:Set[Int]) = {
+    if(s.size == s.max - s.min +1){
+      dom = FzDomainRange(s.min, s.max)
+    }else{
+      dom = FzDomainSet(s)
+    }
+
   }
   def neq(v:Int) = {
     if(v==min) geq(v+1)
     else if(v==max) leq(v-1)
     else if(v >min && v < max){
       dom match {
-        case DomainSet(values) => dom = DomainSet(values - v); dom.checkEmpty();
-        case DomainRange(l,u) => dom = DomainSet((l to u).toSet - v); dom.checkEmpty();
+        case FzDomainSet(values) => dom = FzDomainSet(values - v); dom.checkEmpty();
+        case FzDomainRange(l, u) => dom = FzDomainSet((l to u).toSet - v); dom.checkEmpty();
       }
     }
   }

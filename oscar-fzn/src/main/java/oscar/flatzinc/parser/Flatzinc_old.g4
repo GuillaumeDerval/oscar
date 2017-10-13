@@ -34,9 +34,9 @@ grammar Flatzinc;
 //package oscar.flatzinc.parser;
 import oscar.flatzinc.parser.intermediatemodel.*;
 import oscar.flatzinc.model.Annotation;
-import oscar.flatzinc.model.Domain;
-import oscar.flatzinc.model.DomainSet;
-import oscar.flatzinc.model.DomainRange;
+import oscar.flatzinc.model.FzDomain;
+import oscar.flatzinc.model.FzDomainSet;
+import oscar.flatzinc.model.FzDomainRange;
 import oscar.flatzinc.ParsingException;
 import java.util.Set;
 import java.util.HashSet;
@@ -190,7 +190,7 @@ intorsetconst returns [Element e] locals [Set<Integer> s]
 // TODO: Check this: Annotation and string expressions are only permitted in annotation arguments.
 
 
-//TODO: Why is it called "Domain"?
+//TODO: Why is it called "FzDomain"?
 setconst returns [Element e] locals [Set<Integer> s]
 	: lb=intconst '..' ub=intconst {$e = new Element(); ($e).value = new DomainRange($lb.i,$ub.i); }
 	| '{' {$s = new HashSet<Integer>();} (f=intconst { $s.add($f.i); } (',' n=intconst { $s.add($n.i);})*)? '}'  {$e = new Element(); ($e).value =m.createDomainSet($s);}

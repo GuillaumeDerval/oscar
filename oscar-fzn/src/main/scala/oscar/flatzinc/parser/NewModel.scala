@@ -316,13 +316,13 @@ class Model(val log: Log, val acceptAnyCstr: Boolean) {
     }
   }
 
-  def getIntSet(lit: ASTLit): Domain = {
+  def getIntSet(lit: ASTLit): FzDomain = {
     if (lit.isInstanceOf[ASTSet]) {
       val s = lit.asInstanceOf[ASTSet];
-      new DomainSet(s.getSet.toSet.map((i: ASTInt) => Int.unbox(i.getValue)))
+      new FzDomainSet(s.getSet.toSet.map((i: ASTInt) => Int.unbox(i.getValue)))
     } else if (lit.isInstanceOf[ASTRange]){
       val r = lit.asInstanceOf[ASTRange];
-      new DomainRange(r.getLb.getValue, r.getUb.getValue)
+      new FzDomainRange(r.getLb.getValue, r.getUb.getValue)
     } else {
       throw new ParsingException("Expected a constant set but got: " + lit)
     }
@@ -537,14 +537,14 @@ class Model(val log: Log, val acceptAnyCstr: Boolean) {
             getRangeDomain(d)
           case d: ASTSet =>
             getSetDomain(d)
-          case noDomain => new DomainRange(Helper.FznMinInt, Helper.FznMaxInt) //TODO: This is dangerous!
+          case noDomain => new FzDomainRange(Helper.FznMinInt, Helper.FznMaxInt) //TODO: This is dangerous!
         }
         val tmp = new IntegerVariable(v.getName, dom, getAnnotations(v.getAnns.toList))
         varDict(v.getName) = tmp;
         tmp
 
       case ASTConstants.BOOL =>
-        val tmp = new BooleanVariable(v.getName, DomainRange(0, 1), getAnnotations(v.getAnns.toList))
+        val tmp = new BooleanVariable(v.getName, FzDomainRange(0, 1), getAnnotations(v.getAnns.toList))
         varDict(v.getName) = tmp;
         tmp
     }
@@ -556,13 +556,13 @@ class Model(val log: Log, val acceptAnyCstr: Boolean) {
     Range(d.getLb.getValue, d.getUb.getValue+1)
   }
 
-  private def getRangeDomain(d: ASTRange): DomainRange = {
-    DomainRange(d.getLb.getValue, d.getUb.getValue)
+  private def getRangeDomain(d: ASTRange): FzDomainRange = {
+    FzDomainRange(d.getLb.getValue, d.getUb.getValue)
   }
 
-  private def getSetDomain(d: ASTSet): DomainSet = {
+  private def getSetDomain(d: ASTSet): FzDomainSet = {
     val s = d.getSet.toSet.map((i: ASTInt) => Int.unbox(i.getValue))
-    DomainSet(s)
+    FzDomainSet(s)
   }
 
   private def getAnnotations(anns: List[ASTLit]): List[oscar.flatzinc.model.Annotation] = {

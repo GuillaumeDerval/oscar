@@ -149,6 +149,8 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
       log(0, "No neighbourhood has been created. Aborting!")
       return
     }
+
+
     log("Using " + cblsmodel.vars.length + " Search Variables in default assign neighbourhood")
     log("Using " + cblsmodel.vars.filter(
       v => v.min == 0 && v.max == 1).length + " Search Variables in default flip neighbourhood")
@@ -163,10 +165,11 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
     }) * 1000
     log("Timeout is set to " + timeout + " milliseconds");
 
-    val timeLimit = (timeout*0.04).toInt
+    //val timeLimit = (timeout*0.04).toInt
+    val timeLimit = (timeout*0.02).toInt
     //// val (sc: SearchControl, search: Chain) = createSearchProcedure(timeout, log, fzModel, opts, cblsmodel)
 
-    //val bets = Array.tabulate(10)(i => createSearchProcedure(timeLimit+i*timeLimit, false, log, fzModel, opts, cblsmodel))
+    val bets = Array.tabulate(10)(i => createSearchProcedure(timeLimit+i*timeLimit, true, log, fzModel, opts, cblsmodel))
 
     val finalRun = createSearchProcedure(timeout, true, log, fzModel, opts, cblsmodel)
 
@@ -182,7 +185,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
       if (cblsmodel.c.violatedConstraints.length == 0 && fzModel.search.obj == Objective.SATISFY) {
         cblsmodel.handleSolution()
       } else {
-        /*
+
         //Bet and run precedure:
         val res = bets.map( (s:(SearchControl,SearchProcedure)) => {
           cblsmodel.neighbourhoods.foreach(_.reset())
@@ -200,7 +203,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
         }
         )
         System.err.println("% Result of bets: " + res.mkString(", "))
-        */
+
       }
       //System.err.println("% Best result after bets = " + bestKnownObjective)
       //System.err.println("% Starting long run ")
@@ -248,7 +251,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
           log("Objective dom is: " + objDom)
           cblsmodel.objective.violationWeight := 1
           cblsmodel.objective.objectiveWeight := 1
-          cblsmodel.objective.objectiveVar.asInstanceOf[ChangingIntValue].expandDomain(objDom.get)
+          cblsmodel.objective.objectiveVar.asInstanceOf[ChangingIntValue].relaxDomain(objDom.get)
           cblsmodel.objective.bound.get := (fzModel.search.obj match {
             case Objective.MAXIMIZE => cblsmodel.objective.objectiveVar.min
             case Objective.MINIMIZE => cblsmodel.objective.objectiveVar.max
@@ -391,7 +394,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
       //println(fzModel.variables.toList.map(v => v.domainSize))
       cpmodel.createVariables()
       cpmodel.createConstraints()
-      cpmodel.updateModelDomains()
+      cpmodel.updateIntermediateModelDomains()
       log("Reduced Domains with CP")
       //println(fzModel.variables.toList.map(v => v.domainSize))
     }

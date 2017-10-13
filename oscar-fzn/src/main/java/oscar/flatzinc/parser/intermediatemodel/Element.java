@@ -24,7 +24,7 @@ public class Element {
 	public String name;
 	//int id;
 	public Object value;
-	//public Domain domain;
+	//public FzDomain domain;
 	public Type typ;
 	//public List<Annotation> annotations;
 	public Element(){

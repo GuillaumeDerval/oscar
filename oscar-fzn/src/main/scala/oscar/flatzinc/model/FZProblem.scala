@@ -19,12 +19,7 @@
  */
 package oscar.flatzinc.model
 
-import scala.Array.canBuildFrom
-import scala.collection.mutable.{Map => MMap}
 import scala.collection.mutable.{Set => MSet}
-import scala.collection.immutable.Range
-import oscar.flatzinc.UnsatException
-import scala.collection.immutable.SortedSet
 
 class FZProblem {
   val variables: MSet[Variable] = MSet.empty[Variable]
@@ -47,16 +42,16 @@ class FZProblem {
   }
 
 
-  def addVariable(id: String, dom: Domain, bool: Boolean): Variable = {
+  def addVariable(id: String, dom: FzDomain, bool: Boolean): Variable = {
     if(bool) addBooleanVariable(id,dom)
     else addIntegerVariable(id,dom)
   }
-  def addIntegerVariable(id: String, dom: Domain): Variable = {
+  def addIntegerVariable(id: String, dom: FzDomain): Variable = {
     val variable: Variable = new IntegerVariable(id, dom)
     variables += variable
     variable
   }
-  def addBooleanVariable(id: String, dom: Domain): Variable = {
+  def addBooleanVariable(id: String, dom: FzDomain): Variable = {
     val variable: Variable = new BooleanVariable(id, dom)
     variables += variable
     variable

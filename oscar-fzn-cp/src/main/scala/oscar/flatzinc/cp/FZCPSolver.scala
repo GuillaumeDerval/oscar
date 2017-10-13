@@ -60,8 +60,8 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
       dictVars(v.id) = v match{
         case bv:BooleanVariable => CPBoolVar()
         case iv:IntegerVariable => iv.domain match{
-          case DomainRange(min, max) => CPIntVar(min, max)
-          case DomainSet(v) => CPIntVar(v)
+          case FzDomainRange(min, max) => CPIntVar(min, max)
+          case FzDomainSet(v) => CPIntVar(v)
           case _ => throw new RuntimeException("unknown domain")
         }
       }
@@ -138,17 +138,16 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
     solver.search(oscar.cp.binaryLastConflict((model.variables/*-model.search.variable.get*/).map(getIntVar).toArray[CPIntVar]))
   }
   
-  def updateModelDomains(): Boolean ={
+  def updateIntermediateModelDomains(): Boolean ={
     try{
       for(v <- model.variables){
         val domSizeBefore = v.domainSize
         val oldDomain = v match {
           case bv:BooleanVariable =>
-            DomainRange(0,1)
+            FzDomainRange(0, 1)
           case iv:IntegerVariable =>
-            DomainRange(iv.min,iv.max)
+            FzDomainRange(iv.min, iv.max)
         }
-
         v match{
           case bv:BooleanVariable =>
             if(getMinFor(bv)>=1)bv.bind(true)
@@ -158,7 +157,7 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
               iv.geq(getMinFor(iv))
               iv.leq(getMaxFor(iv))
             }else{
-              iv.inter(DomainSet(getIntVar(iv).iterator.toSet))
+              iv.intersect(FzDomainSet(getIntVar(iv).iterator.toSet))
             }
         }
         //

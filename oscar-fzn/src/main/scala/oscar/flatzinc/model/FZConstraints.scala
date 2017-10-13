@@ -119,7 +119,7 @@ object GC{
     args.flatMap(_ match{
       case v:Variable => List(v) 
       case vs:Array[Variable] => vs
-      case d:Domain => List.empty[Variable]
+      case d:FzDomain => List.empty[Variable]
     }).toArray
   }
 }
@@ -240,7 +240,7 @@ case class int_times(x: IntegerVariable, y: IntegerVariable, z: IntegerVariable,
 case class int_pow(a: IntegerVariable, b: IntegerVariable, c: IntegerVariable, ann: List[Annotation] = List.empty[Annotation])
   extends SimpleDefiningConstraint(Array(a,b,c),c,ann)
 
-case class set_in(x: IntegerVariable, s: Domain, ann: List[Annotation] = List.empty[Annotation]) 
+case class set_in(x: IntegerVariable, s: FzDomain, ann: List[Annotation] = List.empty[Annotation])
   extends Constraint(Array(x),ann)
 
 
@@ -256,7 +256,7 @@ case class at_most_int(n:IntegerVariable,x:Array[IntegerVariable],v:IntegerVaria
   extends Constraint(x++Array.empty[Variable],ann)
 case class exactly_int(n:IntegerVariable,x:Array[IntegerVariable],v:IntegerVariable, ann: List[Annotation] = List.empty[Annotation]) 
   extends Constraint(x++Array.empty[Variable],ann)
-case class among(n:IntegerVariable,x:Array[IntegerVariable],v:Domain, ann: List[Annotation] = List.empty[Annotation]) 
+case class among(n:IntegerVariable, x:Array[IntegerVariable], v:FzDomain, ann: List[Annotation] = List.empty[Annotation])
   extends SimpleDefiningConstraint(x++Array(n),n,ann)
 case class count_eq(xs:Array[IntegerVariable], y:IntegerVariable, cnt:IntegerVariable, ann: List[Annotation] = List.empty[Annotation])
   extends SimpleDefiningConstraint(xs++Array(y,cnt),cnt,ann)

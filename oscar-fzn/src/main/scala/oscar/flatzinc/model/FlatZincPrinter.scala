@@ -81,11 +81,11 @@ object FlatZincPrinter {
     }
   }
 
-  def toFZN(d: Domain): String = {
+  def toFZN(d: FzDomain): String = {
     d match {
-      case DomainRange(min,
-                       max) => if (min == Integer.MIN_VALUE && max == Integer.MAX_VALUE) "int" else min + ".." + max
-      case DomainSet(set) => set.mkString("{", ", ", "}")
+      case FzDomainRange(min,
+                         max) => if (min == Integer.MIN_VALUE && max == Integer.MAX_VALUE) "int" else min + ".." + max
+      case FzDomainSet(set) => set.mkString("{", ", ", "}")
     }
   }
 
@@ -111,7 +111,7 @@ object FlatZincPrinter {
 
   def toFZN(a: Any): String = {
     a match {
-      case d: Domain => toFZN(d)
+      case d: FzDomain => toFZN(d)
       case ann: Annotation => toFZN(ann)
       case anns: Iterable[Annotation] => toFZN(anns)
       case s: String => s

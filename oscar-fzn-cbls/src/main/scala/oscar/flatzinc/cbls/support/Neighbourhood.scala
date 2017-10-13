@@ -163,7 +163,7 @@ class GCCNeighborhood(val variables: Array[CBLSIntVarDom], val vals: Array[Int],
   val lows = vals.toList.zip(low).foldLeft(Map.empty[Int, Int])((map, vl) => map + (vl._1 -> vl._2))
   val ups = vals.toList.zip(up).foldLeft(Map.empty[Int, Int])((map, vl) => map + (vl._1 -> vl._2))
   val alldoms = variables.foldLeft((Int.MaxValue, Int.MinValue))(
-    (set, v) => (math.min(set._1, v.dom.min), math.max(set._2, v.dom.max)))
+    (set, v) => (math.min(set._1, v.domain.min), math.max(set._2, v.domain.max)))
   reset();
 
   //TODO: reset() should only be called after the fzModel is closed, in case it makes use of invariants!
@@ -258,7 +258,7 @@ class GCCNeighborhood(val variables: Array[CBLSIntVarDom], val vals: Array[Int],
 
   def getBest(rng1: Iterable[Int], rng2: Iterable[Int], accept: Move => Boolean): Move = {
     val bestSwap = selectMin2(rng1, rng2, (idx: Int, next: Int) => getSwapMove(idx, next, accept).value,
-                              (idx: Int, v: Int) => variables(idx).dom.contains(variables(v).value) && variables(
+                              (idx: Int, v: Int) => variables(idx).domain.contains(variables(v).value) && variables(
                                 v).dom.contains(variables(idx).value))
     val swap = bestSwap match {
       case (i1, i2) => getSwapMove(i1, i2, accept)
@@ -441,6 +441,7 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
     val bestIndex = selectMax(indexRange,
                               (i: Int) => variableViolation(i).value,
                               (i:Int) => acceptVar(searchVariables(i)));
+
     val bestValue = if (searchVariables(bestIndex).getDomain().size < 1000000) {
       selectMin(searchVariables(bestIndex).getDomain())((i: Int) =>
                                                           acceptOr(new AssignMove(searchVariables(bestIndex), i,
@@ -811,7 +812,7 @@ class GenericSubNeighbourhood(val fzNeighbourhood: FZSubNeighbourhood,
 
   //TODO: Move to CBLSBuilder
   val itVariables: Array[CBLSIntVarDom] = fzNeighbourhood.itVariables.map(v => cblsModel.getCBLSVarDom(v))
-  var itIterators: Array[Iterator[Int]] = itVariables.map(_.domain.iterator)
+  var itIterators: Array[Iterator[Int]] = itVariables.map(_.getDomain.iterator)
   for (i <- itVariables.indices) {
     itVariables(i) := itIterators(i).next()
   }
@@ -845,7 +846,7 @@ class GenericSubNeighbourhood(val fzNeighbourhood: FZSubNeighbourhood,
       itVariables(currentIterator) := itIterators(currentIterator).next()
       true
     } else {
-      itIterators(currentIterator) = itVariables(currentIterator).domain.iterator
+      itIterators(currentIterator) = itVariables(currentIterator).getDomain.iterator
       itVariables(currentIterator) := itIterators(currentIterator).next()
       currentIterator += 1
       val result = if (currentIterator >= numIterators) {

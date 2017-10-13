@@ -60,7 +60,7 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
   /**this must be protected because invariants might rework this after isntanciation
     * for CBLSVars, no problems*/
   protected def restrictDomain(d:Domain): Unit ={
-    privatedomain = privatedomain.restrict(d)
+    privatedomain = privatedomain.intersect(d)
     domainSizeDiv10 = privatedomain.size/10
   }
 
@@ -168,11 +168,11 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
           currentElement = currentElement.next
           val inv : SetNotificationTarget = e._1.asInstanceOf[SetNotificationTarget]
           assert({
-            this.model.NotifiedInvariant = inv.asInstanceOf[Invariant]; true
+            this.model.notifiedInvariant = inv.asInstanceOf[Invariant]; true
           })
           inv.notifySetChanges(this, e._2, addedValues, deletedValues, OldValue, m_NewValue)
           assert({
-            this.model.NotifiedInvariant = null; true
+            this.model.notifiedInvariant = null; true
           })
         }
       }

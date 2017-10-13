@@ -25,7 +25,7 @@ import oscar.flatzinc.UnsatException
 import scala.collection.immutable.SortedSet
 
 
-sealed abstract class Domain {
+sealed abstract class FzDomain {
   def min: Int
   def max: Int
   def contains(v:Int): Boolean
@@ -33,24 +33,24 @@ sealed abstract class Domain {
   def boundTo(v: Int) = min == v && max == v
   def geq(v:Int);
   def leq(v:Int);
-  def inter(d:Domain):Unit = {
-    if(d.isInstanceOf[DomainRange])inter(d.asInstanceOf[DomainRange])
-    else inter(d.asInstanceOf[DomainSet])
+  def intersect(d:FzDomain):Unit = {
+    if(d.isInstanceOf[FzDomainRange]) intersect(d.asInstanceOf[FzDomainRange])
+    else intersect(d.asInstanceOf[FzDomainSet])
   }
-  def inter(d:DomainRange):Unit = {
+  def intersect(d:FzDomainRange):Unit = {
     geq(d.min);
     leq(d.max);
   }
-  def inter(d:DomainSet):Unit = {
+  def intersect(d:FzDomainSet):Unit = {
     throw new UnsupportedOperationException("Inter of a Set")
   }
   def checkEmpty() = {
-    if (min > max) throw new UnsatException("Empty Domain");
+    if (min > max) throw new UnsatException("Empty FzDomain");
   }
   def toSortedSet: SortedSet[Int]
 }
 
-case class DomainRange(var mi: Int, var ma: Int) extends Domain {
+case class FzDomainRange(var mi: Int, var ma: Int) extends FzDomain {
   //
   def min = mi
   def max = ma
@@ -62,9 +62,9 @@ case class DomainRange(var mi: Int, var ma: Int) extends Domain {
   def toSortedSet: SortedSet[Int] = SortedSet[Int]() ++ (mi to ma)
 }
 
-case class DomainSet(var values: Set[Int]) extends Domain {
+case class FzDomainSet(var values: Set[Int]) extends FzDomain {
   override def checkEmpty() = {
-    if (values.isEmpty) throw new UnsatException("Empty Domain");
+    if (values.isEmpty) throw new UnsatException("Empty FzDomain");
   }
   def min = values.min
   def max = values.max
@@ -72,6 +72,6 @@ case class DomainSet(var values: Set[Int]) extends Domain {
   def contains(v:Int): Boolean = values.contains(v)
   def geq(v:Int) = {values = values.filter(x => x>=v); checkEmpty() }
   def leq(v:Int) = {values = values.filter(x => x<=v); checkEmpty() }
-  override def inter(d:DomainSet) = {values = values.intersect(d.values); checkEmpty() }
+  override def intersect(d:FzDomainSet) = {values = values.intersect(d.values); checkEmpty() }
   def toSortedSet: SortedSet[Int] = SortedSet[Int]() ++ values
 }

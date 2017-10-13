@@ -262,7 +262,7 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
     currentNeighbour = (currentNeighbour + 1) % neighbourhoods.size
     */
 
-    //val foo  = m.c.getPostedConstraints.map(_._1).filter(_.violation.value>0)
+    val foo  = m.c.getPostedConstraints.map(_._1).filter(_.violation.value>0)
     //m.printCurrentAssignment
 
     val bestNeighbour = selectMin(neighbourhoods.map((n: Neighbourhood) =>
@@ -629,6 +629,7 @@ class GLSSAT(m:FZCBLSModel,sc: SearchControl) extends NeighbourhoodSearch(m,sc) 
         if (w.isInstanceOf[CBLSIntVar]) {
           w.asInstanceOf[CBLSIntVar] :+= c.violation.value
         }*/
+
         //log("violation before weights increased: " + m.objective.violation.value)
         for ((c, w) <- m.c.getPostedConstraints) {
           if (c.violation.value > 0) {

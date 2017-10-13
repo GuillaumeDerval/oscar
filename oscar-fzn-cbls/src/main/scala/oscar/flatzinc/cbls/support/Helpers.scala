@@ -21,20 +21,20 @@ package oscar.flatzinc.cbls.support
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.constraint.{Constraint, ConstraintSystem}
 import oscar.cbls.lib.constraint._
-import oscar.flatzinc.model.Domain
-import oscar.flatzinc.model.DomainRange
-import oscar.flatzinc.model.DomainSet
+import oscar.flatzinc.model.FzDomain
+import oscar.flatzinc.model.FzDomainRange
+import oscar.flatzinc.model.FzDomainSet
 import oscar.cbls.core.computation.CBLSIntVar
 
 import scala.util.Random
-import oscar.flatzinc.model.DomainRange
+import oscar.flatzinc.model.FzDomainRange
 import oscar.cbls.core.computation.IntValue
 import oscar.cbls.core.computation.CBLSIntConst
 
 import scala.collection.immutable.SortedSet
 import oscar.cbls.core.computation.CBLSSetConst
 import oscar.cbls.lib.invariant.numeric.Prod2
-import oscar.flatzinc.model.DomainRange
+import oscar.flatzinc.model.FzDomainRange
 
 /*trait IntValueDom extends IntValue{
   def inDomain(v:Int): Boolean
@@ -44,40 +44,25 @@ import oscar.flatzinc.model.DomainRange
 }*/
 
 /**
- * CBLSIntVarDom extends the normal CBLSIntVar with more precise Domain information.
+ * CBLSIntVarDom extends the normal CBLSIntVar with more precise FzDomain information.
+  * Not any more, this is completely redundant!
  */
-class CBLSIntVarDom(model: Store,Value: Int,  val dom: Domain, n: String = null)
+class CBLSIntVarDom(model: Store, Value: Int, val dom: FzDomain, n: String = null)
   extends CBLSIntVar(model, Value, dom.min to dom.max,  n) //with IntValueDom
 {
-  def inDomain(v:Int): Boolean = {
-    dom match {
-      case DomainRange(min, max) => v >= min && v <= max
-      case DomainSet(values) => values.contains(v)
-    } 
-  }
-  def getDomain():Iterable[Int] = {
-    dom match {
-      case DomainRange(min, max) => min to max
-      case DomainSet(values) => values
-    }
-  }
-  def getRandValue():Int = {
-    dom match {
-      case DomainRange(min, max) => (min to max)(Random.nextInt(max-min+1))
-      case DomainSet(values) => values.toIndexedSeq(Random.nextInt(values.size))
-    }
-  }
-  def domainSize = dom match {
-    case DomainRange(min, max) => math.max(max-min+1,0)
-    case DomainSet(values) => values.size
-  }
+
+  def getDomain():Iterable[Int] = domain
+  def inDomain(v:Int):Boolean = domain.contains(v)
+  def domainSize():Int = domain.size
+  def getRandValue():Int = domain.randomValue
+
 }
 
 
 
 //TODO: Should not extend it anymore!
 //Need the store while it extends CBLSIntVar, as sometimes it is requested (e.g., to find the Model in some invariants)
-class CBLSIntConstDom(model:Store,_value:Int) extends CBLSIntVarDom(model,_value,DomainRange(_value,_value),_value.toString()){
+class CBLSIntConstDom(model:Store,_value:Int) extends CBLSIntVarDom(model,_value, FzDomainRange(_value, _value), _value.toString()){
   override def value:Int = _value //pour pas avoir de propagation
   override def toString:String = "IntConst("+ _value + ")"
 }
@@ -90,18 +75,18 @@ class CBLSIntConstDom(model:Store,_value:Int) extends CBLSIntVarDom(model,_value
 
 
 object CBLSIntVarDom {
-  def apply(model: Store,value: Int, domain: Domain,  name: String) = {
+  def apply(model: Store, value: Int, domain: FzDomain, name: String) = {
     new CBLSIntVarDom(model, value, domain, name)
   }
 }
 
 object EnsureDomain{
-  val weight = CBLSIntConst(5);
-  def apply(i:IntValue,d: Domain,c: ConstraintSystem) = {
+  val weight = CBLSIntConst(20);
+  def apply(i:IntValue, d: FzDomain, c: ConstraintSystem) = {
     //System.err.println("% Using variables for in domain weights")
     //val weight = CBLSIntVar(c.model,10,1 to 1000000, "in domain weight")
     d match{
-      case DomainRange(min, max) =>{
+      case FzDomainRange(min, max) =>{
         if(min == max){
           c.add(EQ(i,min),weight)
         }else{
@@ -115,7 +100,7 @@ object EnsureDomain{
           }
         }
       } 
-      case DomainSet(vals) => {
+      case FzDomainSet(vals) => {
         if(i.min < d.min){
           c.add(GE(i, d.min),weight)
 //          Console.err.println("added "+i)
@@ -134,7 +119,7 @@ object EnsureDomain{
 /*
   object RelaxAndEnsureDomain{
     def apply(v: CBLSIntVarDom,newMin:Int,newMax:Int,c: ConstraintSystem) = {
-      v.relaxDomain(oscar.cbls.invariants.core.computation.DomainRange(newMin,newMax))
+      v.relaxDomain(oscar.cbls.invariants.core.computation.FzDomainRange(newMin,newMax))
       EnsureDomain(v,v.dom,c)
     }
   }*/

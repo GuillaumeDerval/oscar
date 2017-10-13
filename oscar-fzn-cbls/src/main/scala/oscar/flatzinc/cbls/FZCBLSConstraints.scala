@@ -231,7 +231,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
       Bool2Int(x)
     } else {
       //Ensure domain before restricting it in case something has been posted on the old domain.
-      EnsureDomain(getCBLSVar(y),DomainRange(0,1),c)
+      EnsureDomain(getCBLSVar(y), FzDomainRange(0, 1), c)
       getCBLSVar(y).restrictDomain(0 to 1)
       Minus(1,getCBLSVar(y))
     }
@@ -347,7 +347,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     Prod2(x, y)
   }
   
-  def get_set_in(x: IntegerVariable, s: Domain, ann: List[Annotation]) = {
+  def get_set_in(x: IntegerVariable, s: FzDomain, ann: List[Annotation]) = {
     BelongsToConst(x, s.toSortedSet)
   }
   
@@ -589,7 +589,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
         val inv = constructCBLSIntInvariant(constraint,v.id)
         val dom = v match{
           case IntegerVariable(i,d,ann) => EnsureDomain(inv,d,c)
-          case bv: BooleanVariable => DomainRange(if(bv.isTrue) 1 else 0, if(bv.isFalse) 0 else 1)
+          case bv: BooleanVariable => FzDomainRange(if(bv.isTrue) 1 else 0, if(bv.isFalse) 0 else 1)
         }
         //WARNING: removing ensuredom from booleanvariables...
         //EnsureDomain(inv,dom,c)

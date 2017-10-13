@@ -221,7 +221,7 @@ object FZSimplify{
           true
           //This is incorrect due to rounding...
         //case int_div(a,b,c,_) if b.isBound => {
-        //  a.inter(DomainSet(c.domain.toSortedSet.map(_*b.value)))
+        //  a.intersect(FzDomainSet(c.domain.toSortedSet.map(_*b.value)))
        // }; true
         case bool_le(x, y, _) if x.isBound => if(x.boolValue) y.bind(true); true
         case bool_le(x, y, _) if y.isBound => if(!y.boolValue) x.bind(false); true
@@ -247,7 +247,7 @@ object FZSimplify{
           true
         case int_ne(x,y,_) if y.isBound => x.neq(y.value); true
         case int_ne(x,y,_) if x.isBound => y.neq(x.value); true
-        case set_in(x,d,_) => x.inter(d); true
+        case set_in(x,d,_) => x.intersect(d); true
         case int_max(a,b,c,_) if a.isBound && b.isBound => c.bind(a.value.max(b.value)); true
         case int_max(a,b,c,_) if a.isBound && c.isBound => 
           	if(a.value==c.value) b.leq(c.value) 
@@ -325,11 +325,11 @@ object FZSimplify{
           else throw new UnsatException(c.toString()) //TOMOVE
           true
         //added this line for ill-defined variables in Circuit. Thanks to Emil Kajgaard
-        case circuit(x,_) => x.foreach(_.inter(DomainRange(1,x.length))); true
+        case circuit(x,_) => x.foreach(_.intersect(FzDomainRange(1, x.length))); true
         case int_abs(a,b,_) if a.isBound => b.bind(math.abs(a.value)); true
-        case int_abs(a,b,_) if b.isBound => a.inter(DomainSet(Set(b.value,-b.value))); true
+        case int_abs(a,b,_) if b.isBound => a.intersect(FzDomainSet(Set(b.value, -b.value))); true
         case array_int_element(x,y,z,_) if x.isBound => z.bind(y(x.value-1).value); true
-        case array_int_element(x,y,z,_) if z.isBound => x.inter(DomainSet(y.zipWithIndex.filter{case (v,i) => v.value == z.value}.map{case(v,i) => i+1}.toSet)); true
+        case array_int_element(x,y,z,_) if z.isBound => x.intersect(FzDomainSet(y.zipWithIndex.filter {case (v,i) => v.value == z.value}.map {case(v,i) => i +1}.toSet)); true
         case bool_lt(x, y, _) => x.bind(false); y.bind(true); true
         //The cstrs below might need to be iterated until fixpoint... They should be removed if we use CP.
         case int_le(x, y, _ ) => y.geq(x.min); x.leq(y.max); true
@@ -384,7 +384,7 @@ object FZSimplify{
           false
         case int_ne(x,y,_) if y.isBound => x.neq(y.value); false
         case int_ne(x,y,_) if x.isBound => y.neq(x.value); false
-        case set_in(x,d,_) => x.inter(d); false
+        case set_in(x,d,_) => x.intersect(d); false
         case int_max(a,b,c,_) if a.isBound && b.isBound => c.bind(a.value.max(b.value)); false
         case int_max(a,b,c,_) if a.isBound && c.isBound => 
           	if(a.value==c.value) b.leq(c.value) 
@@ -462,11 +462,11 @@ object FZSimplify{
           else throw new UnsatException(c.toString())
           false
         //added this line for ill-defined variables in Circuit. Thanks to Emil Kajgaard
-        case circuit(x,_) => x.foreach(_.inter(DomainRange(1,x.length))); true
+        case circuit(x,_) => x.foreach(_.intersect(FzDomainRange(1, x.length))); true
         case int_abs(a,b,_) if a.isBound => b.bind(math.abs(a.value)); false
-        case int_abs(a,b,_) if b.isBound => a.inter(DomainSet(Set(b.value,-b.value))); false
+        case int_abs(a,b,_) if b.isBound => a.intersect(FzDomainSet(Set(b.value, -b.value))); false
         case array_int_element(x,y,z,_) if x.isBound => z.bind(y(x.value-1).value); false
-        case array_int_element(x,y,z,_) if z.isBound => x.inter(DomainSet(y.zipWithIndex.filter{case (v,i) => v.value == z.value}.map{case(v,i) => i+1}.toSet)); false
+        case array_int_element(x,y,z,_) if z.isBound => x.intersect(FzDomainSet(y.zipWithIndex.filter {case (v,i) => v.value == z.value}.map {case(v,i) => i +1}.toSet)); false
         case bool_lt(x, y, _) => x.bind(false); y.bind(true); false
         //The cstrs below might need to be iterated until fixpoint... They should be removed if we use CP.
         case int_le(x, y, _ ) => y.geq(x.min); x.leq(y.max); true
