@@ -16,8 +16,9 @@ trait AdaptiveStore[T <: ALNSElement]{
   /**
     * Adapts the selection for a given element
     * @param elem The element for which the selection must be adapted
+    * returns the score of the elem adapted if applicable
     */
-  def adapt(elem: T): Unit
+  def adapt(elem: T): Double
 
   /**
     * Returns all the elements contained in the store.
@@ -49,4 +50,6 @@ trait AdaptiveStore[T <: ALNSElement]{
     * Resets all elements of the store.
     */
   def reset(): Unit
+
+  def getScore(elem: T): Double
 }

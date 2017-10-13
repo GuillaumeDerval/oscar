@@ -68,7 +68,7 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
     })
     learning = false
 
-    manageIterTimeout()
+    maxOpIterTimeout()
     if(!solver.silent) println("learning done, iterTimeout: " + iterTimeout)
   }
 
@@ -93,7 +93,7 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
     else 1.0
   }
 
-  protected def manageIterTimeout(): Unit = {
+  protected def maxOpIterTimeout(): Unit = {
     var maxTime = 0L
     searchOps.filter(op => {
       op.isActive && op.execs > 0 && op.sols > 0
@@ -167,19 +167,23 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
     }while(System.nanoTime() < endIter && !learning)
 
     if(!relax.isInstanceOf[ALNSReifiedOperator]){
-      if (relax.isActive) relaxStore.adapt(relax)
+      val relaxScore = if (relax.isActive) relaxStore.adapt(relax)
       else {
         if (!solver.silent) println("Operator " + relax.name + " deactivated")
         if (!learning) relaxStore.deactivate(relax)
+        -1.0
       }
+      history += ((timeInSearch, relax.name, relaxScore))
     }
 
     if(!search.isInstanceOf[ALNSReifiedOperator]){
-      if (search.isActive) searchStore.adapt(search)
+      val searchScore = if (search.isActive) searchStore.adapt(search)
       else {
         if (!solver.silent) println("Operator " + search.name + " deactivated")
         if (!learning) searchStore.deactivate(search)
+        -1.0
       }
+      history += ((timeInSearch, search.name, searchScore))
     }
 
     if(currentSol.get.objective != bestSol.get.objective){

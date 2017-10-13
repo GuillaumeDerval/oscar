@@ -8,7 +8,8 @@ class ALNSSearchResults(
                          val relaxOperators: Array[ALNSOperator],
                          val searchOperators: Array[ALNSOperator],
                          val optimumFound: Boolean,
-                         val unsat: Boolean
+                         val unsat: Boolean,
+                         val scoreHistory: Array[(Long, String, Double)] = Array()
                        ) {
 
   def this(solutions:Array[CPIntSol], operators: Array[ALNSOperator], optimumFound: Boolean, unsat: Boolean){

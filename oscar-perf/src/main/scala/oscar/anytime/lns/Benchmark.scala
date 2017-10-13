@@ -72,7 +72,8 @@ trait Benchmark {
         bestKnownObjective.getOrElse(if (maximizeObjective) Int.MinValue else Int.MaxValue),
         maximizeObjective,
         result.solutions,
-        if (result.relaxOperators.isEmpty) Map("Coupled" -> result.searchOperators) else Map("Relax" -> result.relaxOperators, "Search" -> result.searchOperators)
+        if (result.relaxOperators.isEmpty) Map("Coupled" -> result.searchOperators) else Map("Relax" -> result.relaxOperators, "Search" -> result.searchOperators),
+        result.scoreHistory
       )
     }
   }

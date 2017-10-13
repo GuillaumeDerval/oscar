@@ -17,7 +17,8 @@ object XmlWriter{
                             bestKnown: Int,
                             maxObjective: Boolean,
                             solutions: Iterable[CPIntSol],
-                            operators: Map[String, Array[ALNSOperator]]
+                            operators: Map[String, Array[ALNSOperator]],
+                            scoresHistory: Array[(Long, String, Double)]
                           ): Elem = {
 
     val xml = new NodeBuffer()
@@ -35,6 +36,15 @@ object XmlWriter{
     xml += (<operators>{operators.flatMap{
       case (category, operators) => operators.map(_.asXml(category))
     }}</operators>)
+
+    xml += (<score_history>{scoresHistory.map(entry =>{
+      val (time: Long, name: String, score: Double) = entry
+      <score_update>
+        <time>{time}</time>
+        <operator>{name}</operator>
+        <score>{score}</score>
+      </score_update>
+    })}</score_history>)
 
     <results>{xml}</results>
   }
@@ -59,9 +69,11 @@ object XmlWriter{
                   bestKnown: Int = Int.MaxValue,
                   maxObjective: Boolean,
                   solutions: Iterable[CPIntSol],
-                  operators: Map[String, Array[ALNSOperator]]
+                  operators: Map[String, Array[ALNSOperator]],
+                  scoresHistory: Array[(Long, String, Double)] = Array()
+
                 ): Unit = {
-    val xml = resultsToXml(config, seed, timeout, instance, problem, bestKnown, maxObjective, solutions, operators)
+    val xml = resultsToXml(config, seed, timeout, instance, problem, bestKnown, maxObjective, solutions, operators, scoresHistory)
     var output = directory + "/" + problem + "/" + config + "_" + instance + ".xml"
     if(IOUtils.fileExists(output)){
       var i = 0

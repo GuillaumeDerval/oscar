@@ -70,7 +70,7 @@ abstract class ALNSElement(val failThreshold: Int = 0){
     }
   }
 
-  def lastExecStats: Option[ExecStats] = if(stats.nonEmpty) Some(stats.last) else None
+  def lastExecStats: Option[ExecStats] = stats.lastOption
 
   def execs: Int = stats.length
 
@@ -90,7 +90,6 @@ abstract class ALNSElement(val failThreshold: Int = 0){
     <fails>{nFails}</fails>
   }
 
-  //TODO: Print each exec stats
   override def toString: String = {
     var s = "\texecs: " + execs
     s += "\n\tsols: " + sols

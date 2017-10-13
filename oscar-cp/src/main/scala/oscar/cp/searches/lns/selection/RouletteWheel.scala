@@ -59,14 +59,18 @@ class RouletteWheel[T <: ALNSElement](
   }
 
   //TODO: Use listeners
-  override def adapt(elem: T): Unit = {
+  override def adapt(elem: T): Double = {
     val index = getIndex(elem)
     if(index == -1) throw  new Exception("Element " + elem + " is not in store.")
     weights(index) = if(elem.execs > 1) (1.0 - decay) * weights(index) + decay * (perfMetric(elem) / elems.length.toDouble) //received val divided by the number of elems to avoid overflow when processing max values
     else perfMetric(elem)
+    //    println("elem " + elem + " has now weight: " + weights(index))
     if(isCached(index)) lastSelected.remove(elem)
-    if(!elem.isActive) deactivate(index)
-//    println("elem " + elem + " has now weight: " + weights(index))
+    if(!elem.isActive){
+      deactivate(index)
+      -1.0
+    }
+    else weights(index)
   }
 
   override def getElements: Seq[T] = elems
@@ -95,4 +99,6 @@ class RouletteWheel[T <: ALNSElement](
     active.clear()
     active ++= elems.indices.filter(elems(_).isActive)
   }
+
+  override def getScore(elem: T): Double = weights(getIndex(elem))
 }

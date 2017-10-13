@@ -17,7 +17,7 @@ class RandomStore[T <: ALNSElement](val elems: Array[T]) extends AdaptiveStore[T
 
   override def select(): T = elems(active.toSeq(Random.nextInt(active.size)))
 
-  override def adapt(elem: T): Unit = Unit
+  override def adapt(elem: T): Double = 1.0 / nElements
 
   override def getElements: Seq[T] = elems
 
@@ -41,4 +41,6 @@ class RandomStore[T <: ALNSElement](val elems: Array[T]) extends AdaptiveStore[T
     active.clear()
     active ++= elems.indices
   }
+
+  override def getScore(elem: T): Double = 1.0 / nElements
 }

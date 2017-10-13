@@ -171,21 +171,25 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
       //Updating probability distributions:
       relax.update(iterStart, iterEnd, startObjective, newObjective, stats, fail = !relaxDone && !learning, iter)
       if(!relax.isInstanceOf[ALNSReifiedOperator]){
-        if (relax.isActive) relaxStore.adapt(relax)
+        val relaxScore = if (relax.isActive) relaxStore.adapt(relax)
         else {
           if (!solver.silent) println("Operator " + relax.name + " deactivated")
           if (!learning) relaxStore.deactivate(relax)
+          -1.0
         }
+        history += ((timeInSearch, relax.name, relaxScore))
       }
 
       if(relaxDone || relax.name == "dummy"){
         search.update(iterStart, iterEnd, startObjective, newObjective, stats, fail = false, iter)
         if(!search.isInstanceOf[ALNSReifiedOperator]){
-          if (search.isActive) searchStore.adapt(search)
+          val searchScore = if (search.isActive) searchStore.adapt(search)
           else {
             if (!solver.silent) println("Operator " + search.name + " deactivated")
             if (!learning) searchStore.deactivate(search)
+            -1.0
           }
+          history += ((timeInSearch, search.name, searchScore))
         }
       }
     }while(System.nanoTime() < endIter && !learning)

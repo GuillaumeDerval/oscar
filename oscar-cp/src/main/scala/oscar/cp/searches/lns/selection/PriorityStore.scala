@@ -55,15 +55,21 @@ class PriorityStore[T <: ALNSElement](
     elems(index)
   }
 
-  override def adapt(elem: T): Unit = {
+  override def adapt(elem: T): Double = {
     val index = getIndex(elem)
     if(index == -1) throw new Exception("Element " + elem + " is not in store.")
     if(isCached(index)) lastSelected.remove(elem)
     else priority.remove(index)
     weights(index) = if(elem.execs > 1) (1.0 - decay) * weights(index) + decay * perfMetric(elem)
     else perfMetric(elem)
-    if(elem.isActive) priority.add(index)
-    else deactivated.add(index)
+    if(elem.isActive){
+      priority.add(index)
+      weights(index)
+    }
+    else{
+      deactivated.add(index)
+      -1.0
+    }
 //    println("elem " + elem + " has now weight: " + weights(index))
   }
 
@@ -94,4 +100,6 @@ class PriorityStore[T <: ALNSElement](
     deactivated.clear()
     elems.indices.filter(elems(_).isActive).foreach(priority.add)
   }
+
+  override def getScore(elem: T): Double = weights(getIndex(elem))
 }

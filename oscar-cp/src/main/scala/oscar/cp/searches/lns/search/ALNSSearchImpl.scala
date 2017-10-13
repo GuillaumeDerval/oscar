@@ -16,6 +16,7 @@ import scala.util.Random
 class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearch(solver, vars, config){
   var startTime: Long = System.nanoTime()
   var iter: Long = 1L
+  val history: mutable.ArrayBuffer[(Long, String, Double)] = mutable.ArrayBuffer()
 
   //Stop conditions:
   val endTime: Long = if(config.timeout > 0) System.nanoTime() + config.timeout else Long.MaxValue //Maximal allocated time
@@ -152,7 +153,8 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
       relaxOps.filter(_.name != "dummy"),
       searchOps,
       maximizeObjective.isDefined & optimumFound,
-      solsFound.isEmpty & optimumFound
+      solsFound.isEmpty & optimumFound,
+      history.toArray
     )
     if(!solver.silent) println(results)
     results
@@ -225,21 +227,25 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
     //Updating probability distributions:
     relax.update(iterStart, iterEnd, startObjective, newObjective, stats, fail = !relaxDone && !learning, iter)
     if(!relax.isInstanceOf[ALNSReifiedOperator]){
-      if (relax.isActive) relaxStore.adapt(relax)
+      val relaxScore = if (relax.isActive) relaxStore.adapt(relax)
       else {
         if (!solver.silent) println("Operator " + relax.name + " deactivated")
         if (!learning) relaxStore.deactivate(relax)
+        -1.0
       }
+      history += ((iterEnd, relax.name, relaxScore))
     }
 
     if(relaxDone || relax.name == "dummy"){
       search.update(iterStart, iterEnd, startObjective, newObjective, stats, fail = false, iter)
       if(!search.isInstanceOf[ALNSReifiedOperator]){
-        if (search.isActive) searchStore.adapt(search)
+        val searchScore = if (search.isActive) searchStore.adapt(search)
         else {
           if (!solver.silent) println("Operator " + search.name + " deactivated")
           if (!learning) searchStore.deactivate(search)
+          -1.0
         }
+        history += ((iterEnd, search.name, searchScore))
       }
     }
 
