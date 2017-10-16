@@ -11,16 +11,21 @@ import scala.collection.immutable.HashSet
 object CapacityHelper{
 
   /**
+    * This method generate a method that can be used to determine whether or not their is enough space to insert a node after a neighor.
+    * It first generate an array of Int representing the freeSpace at each node of the problem.
+    * If the node isn't routed there is no space.
     *
-    * @param node
-    * @param contentsFlow
-    * @param capacityInvariant
-    * @return
+    * NB: You should call this method after each movement to update the freeSpace value.
+    *     And avoid calling it each time you want to filter a move.
+    *
+    * @param n The amount of node in the problem
+    * @param capacityInvariant A ForwardCumulativeConstraintOnVehicle representing the content invariant
+    * @return a method (Int,Int,Array[Int]) => Boolean
     */
-  def enoughSpaceAfterNeighbor(node: Int,
-                               contentsFlow: Array[Int],
-                               capacityInvariant: ForwardCumulativeConstraintOnVehicle): (Int) => Boolean =
-    (neighbor: Int) => capacityInvariant.freeSpaceAtNode(neighbor) >= contentsFlow(node)
+  def enoughSpaceAfterNeighbor(n: Int, capacityInvariant: ForwardCumulativeConstraintOnVehicle): (Int,Int,Array[Int]) => Boolean ={
+    val freeSpaceAtNodeNow = capacityInvariant.freeSpaceAtNodes
+    (node: Int, neighbor: Int, contentsFlow: Array[Int]) => freeSpaceAtNodeNow(neighbor) >= contentsFlow(node)
+  }
 
   /**
     *
