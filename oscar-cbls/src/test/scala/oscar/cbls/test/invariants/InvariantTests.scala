@@ -50,57 +50,57 @@ class InvariantTests extends FunSuite with Checkers {
   test("BelongsTo maintains the violation of a membership.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
-    new oscar.cbls.lib.invariant.set.BelongsTo(bench.genIntVar(0 to 10), bench.genIntSetVar(5, 0 to 10))
-    bench.run
+    oscar.cbls.lib.invariant.set.BelongsTo(bench.genIntVar(0 to 10), bench.genIntSetVar(5, 0 to 10))
+    bench.run()
   }
 
   test("LE maintains the violation of a lesser or equal test.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
-    new LE(bench.genIntVar(-10 to 10), bench.genIntVar(-10 to 10))
-    bench.run
+    LE(bench.genIntVar(-10 to 10), bench.genIntVar(-10 to 10))
+    bench.run()
   }
 
   test("GE maintains the violation of a greater or equal test.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
-    new GE(bench.genIntVar(-10 to 10), bench.genIntVar(-10 to 10))
-    bench.run
+    GE(bench.genIntVar(-10 to 10), bench.genIntVar(-10 to 10))
+    bench.run()
   }
 
   test("L maintains the violation of a strict lesser test.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
-    new L(bench.genIntVar(-10 to 10), bench.genIntVar(-10 to 10))
-    bench.run
+    L(bench.genIntVar(-10 to 10), bench.genIntVar(-10 to 10))
+    bench.run()
   }
 
   test("G maintains the violation of a strict greater test.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
-    new G(bench.genIntVar(-10 to 10), bench.genIntVar(-10 to 10))
-    bench.run
+    G(bench.genIntVar(-10 to 10), bench.genIntVar(-10 to 10))
+    bench.run()
   }
 
   test("NE maintains the violation of a inequality test.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
-    new NE(bench.genIntVar(-10 to 10), bench.genIntVar(-10 to 10))
-    bench.run
+    NE(bench.genIntVar(-10 to 10), bench.genIntVar(-10 to 10))
+    bench.run()
   }
 
   test("EQ maintains the violation of an equality test.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
-    new EQ(bench.genIntVar(-10 to 10), bench.genIntVar(-10 to 10))
-    bench.run
+    EQ(bench.genIntVar(-10 to 10), bench.genIntVar(-10 to 10))
+    bench.run()
   }
 
   test("AllDiff maintains output = all int vars have different values") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
-    new AllDiff(bench.genIntVarsArray(10, -10 to 10))
-    bench.run
+    AllDiff(bench.genIntVarsArray(10, -10 to 10))
+    bench.run()
   }
 
   test("AtLeast") {
@@ -110,8 +110,8 @@ class InvariantTests extends FunSuite with Checkers {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
     val constantMap = InvGen.randomIntSortedMap(10, 0 to 30, 0 to 30)
-    new AtLeast(bench.genIntVars(10), myMapValues(constantMap, (_:Int) => bench.genIntVar(0 to 30)))
-    bench.run
+    AtLeast(bench.genIntVars(10), myMapValues(constantMap, (_:Int) => bench.genIntVar(0 to 30)))
+    bench.run()
   }
 
   test("AtMost") {
@@ -122,85 +122,85 @@ class InvariantTests extends FunSuite with Checkers {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
     val constantMap = InvGen.randomIntSortedMap(10, 0 to 30, 0 to 30)
-    val atmost = new AtMost(bench.genIntVars(10, range = 0 to 30),myMapValues(constantMap, (_:Int) => bench.genIntVar(0 to 30)))
+    AtMost(bench.genIntVars(10, range = 0 to 30),myMapValues(constantMap, (_:Int) => bench.genIntVar(0 to 30)))
 
-    bench.run
+    bench.run()
   }
 
   test("MultiKnapsack") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
-    new MultiKnapsack(
+    MultiKnapsack(
       bench.genIntVarsArray(10, 0 to 5),
       bench.genIntVarsArray(10, 2 to 7),
       bench.genIntVarsArray(6, 1 to 10))
-    bench.run
+    bench.run()
   }
 
   test("Sequence") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
-    new Sequence(
+    Sequence(
       bench.genIntVarsArray(),
       Gen.choose(10, 20).sample.get,
       Gen.choose(2, 9).sample.get,
-      Array.tabulate(101)(n => (n%3 == 0)))
-    bench.run
+      Array.tabulate(101)(n => n%3 == 0))
+    bench.run()
   }
 
   test("Access to ITE maintains output = if ifVar > 0 then thenVar else elseVar") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
-    new IntITE(
+    IntITE(
       bench.genIntVar(-2 to 3),
       bench.genIntVar(1 to 2),
       bench.genIntVar(10 to 11))
-    bench.run
+    bench.run()
   }
 
   test("Access to int element maintains output = array(index)") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
-    new IntElement(
+    IntElement(
       bench.genIntVar(0 to 19),
       bench.genIntVarsArray(20, 0 to 100))
-    bench.run
+    bench.run()
   }
 
   test("Access to int vars...") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Elements(
+    Elements(
       bench.genIntSetVar(3, 0 to 4),
       bench.genIntVarsArray(5, 0 to 10))
-    bench.run
+    bench.run()
   }
 
   test("Access to int set element maintains output = array(index)") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new SetElement(
+    SetElement(
       bench.genIntVar(0 to 19),
       bench.genIntSetVars(20, 10, 0 to 100))
-    bench.run
+    bench.run()
   }
 
   test("Sparse Cluster maintains a cluster of the indexes of an array.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     Cluster.makeSparse(bench.genIntVarsArray(50),
-      (Gen.containerOfN[List, Int](100, Gen.choose(0, 100))).sample.get)
-    bench.run
+      Gen.containerOfN[List, Int](100, Gen.choose(0, 100)).sample.get)
+    bench.run()
   }
 
   test("Dense Cluster maintains a cluster of all the indexes of an array.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     Cluster.makeDense(bench.genIntVarsArray(50))
-    bench.run
+    bench.run()
   }
 
   test("Dense Cluster maintains a cluster of all the indexes of an array"
     + " (assuming min and max).") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     Cluster.makeDenseAssumingMinMax(bench.genIntVarsArray(50), 0, 100)
-    bench.run
+    bench.run()
   }
 
   test("Dense Count maintains count(j) = #{i in index of values | values[i] == j}") {
@@ -208,7 +208,7 @@ class InvariantTests extends FunSuite with Checkers {
 
     makeDenseCount(bench.genIntVarsArray(10, 0 to 19))
     
-    bench.run
+    bench.run()
   }
 
   //ignore("Cross references...")(pending) it was tested extensively in the routing cases
@@ -217,18 +217,18 @@ class InvariantTests extends FunSuite with Checkers {
 
   test("Filter...") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Filter(
+    Filter(
       bench.genIntVarsArray(4, 0 to 5),
       (i: Int) => (i % 2) == 0)
-    bench.run
+    bench.run()
   }
 
   test("SelectLEHeapHeap") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new SelectLEHeapHeap(
+    SelectLEHeapHeap(
       bench.genIntVarsArray(4, 0 to 5),
       bench.genIntVar(3 to 10))
-    bench.run
+    bench.run()
   }
 
   //ignore("SelectLESetQueue") {
@@ -249,164 +249,164 @@ class InvariantTests extends FunSuite with Checkers {
   test("Sort") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     Sort.MakeSort(bench.genIntVarsArray(4, 0 to 30))
-    bench.run
+    bench.run()
   }
 
   // TODO test also with the other parameters of ArgMinArray
   test("ArgMinArray maintains the set of min variables of the array") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new ArgMin(bench.genIntVarsArray(20, 0 to 30))
-    bench.run
+    ArgMin(bench.genIntVarsArray(20, 0 to 30))
+    bench.run()
   }
 
   // TODO test also with the other parameters of ArgMaxArray
   test("ArgMaxArray maintains the set of max variables of the array") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new ArgMax(bench.genIntVarsArray(20, 0 to 30))
-    bench.run
+    ArgMax(bench.genIntVarsArray(20, 0 to 30))
+    bench.run()
   }
 
   test("MaxLin") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new MaxLin(bench.genSortedIntVars(6, -10 to 10))
-    bench.run
+    MaxLin(bench.genSortedIntVars(6, -10 to 10))
+    bench.run()
   }
 
   test("MinLin") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new MinLin(bench.genSortedIntVars(6, 0 to 10))
-    bench.run
+    MinLin(bench.genSortedIntVars(6, 0 to 10))
+    bench.run()
   }
 /*
   test("Min") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     new Min(bench.genSortedIntVars(5, -10 to 10))
-    bench.run
+    bench.run()
   }
   
   test("Max") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     new Max(bench.genSortedIntVars(5, -10 to 10))
-    bench.run
+    bench.run()
   }
 */
   test("Min2") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Min2(bench.genIntVar(-10 to 10), bench.genIntVar(-10 to 10))
-    bench.run
+    Min2(bench.genIntVar(-10 to 10), bench.genIntVar(-10 to 10))
+    bench.run()
   }
 
   test("Max2") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Max2(bench.genIntVar(-10 to 10), bench.genIntVar(-10 to 10))
-    bench.run
+    Max2(bench.genIntVar(-10 to 10), bench.genIntVar(-10 to 10))
+    bench.run()
   }
 
   test("MinArray maintains the minimum from an array of variables.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new MinArray(bench.genIntVarsArray(4, 0 to 100))
-    bench.run
+    MinArray(bench.genIntVarsArray(4, 0 to 100))
+    bench.run()
   }
 
   test("MaxArray maintains the maximum from an array of variables.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new MaxArray(bench.genIntVarsArray(2, 0 to 50))
-    bench.run
+    MaxArray(bench.genIntVarsArray(2, 0 to 50))
+    bench.run()
   }
 
   test("MinSet maintains the minimum of a set.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new MinSet(bench.genIntSetVar(),Default=100)
-    bench.run
+    MinSet(bench.genIntSetVar(),Default=100)
+    bench.run()
   }
 
   test("MaxSet maintains the maximum of a set") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new MaxSet(bench.genIntSetVar(),Default=0)
-    bench.run
+    MaxSet(bench.genIntSetVar(),Default=0)
+    bench.run()
   }
 
   test("SumElements maintains the sum of variables of which indices are in the given set.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new SumElements(
+    SumElements(
       bench.genIntVarsArray(10, 0 to 100),
       bench.genIntSetVar(5, 0 to 9))
-    bench.run
+    bench.run()
   }
 
   test("ProdElements maintains the product of variables of which indices are in the given set.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new ProdElements(
+    ProdElements(
       bench.genIntVarsArray(10, 0 to 10),
       bench.genIntSetVar(2, 0 to 9))
-    bench.run
+    bench.run()
   }
 
   test("Sum maintains the sum of input variables.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Sum(bench.genIntVarsArray(10, 0 to 100))
-    bench.run
+    Sum(bench.genIntVarsArray(10, 0 to 100))
+    bench.run()
   }
 
   test("Prod maintains the product of input variables.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Prod(bench.genIntVarsArray(3, 0 to 100))
-    bench.run
+    Prod(bench.genIntVarsArray(3, 0 to 100))
+    bench.run()
   }
 
   test("Minus maintains the difference between two variables.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Minus(bench.genIntVar(0 to 100), bench.genIntVar(0 to 100))
-    bench.run
+    Minus(bench.genIntVar(0 to 100), bench.genIntVar(0 to 100))
+    bench.run()
   }
 
   test("Sum2 maintains the sum of two variables.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Sum2(bench.genIntVar(0 to 100), bench.genIntVar(0 to 100))
-    bench.run
+    Sum2(bench.genIntVar(0 to 100), bench.genIntVar(0 to 100))
+    bench.run()
   }
 
   test("Prod2 maintains the product of two variables") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Prod2(bench.genIntVar(0 to 100), bench.genIntVar(0 to 100))
-    bench.run
+    Prod2(bench.genIntVar(0 to 100), bench.genIntVar(0 to 100))
+    bench.run()
   }
 
   test("Div maintains the division of two variables.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Div(bench.genIntVar(0 to 100),
+    Div(bench.genIntVar(0 to 100),
       bench.genIntVar(1 to 100, true, (v: Int) => v != 0))
-    bench.run
+    bench.run()
   }
 
   test("Mod maintains the modulo of two variables.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Mod(bench.genIntVar(0 to 100),
+    Mod(bench.genIntVar(0 to 100),
       bench.genIntVar(1 to 100, true, (v: Int) => v != 0))
-    bench.run
+    bench.run()
   }
 
   test("Abs maintains the absolute value of a variable.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Abs(bench.genIntVar(-100 to 100))
-    bench.run
+    Abs(bench.genIntVar(-100 to 100))
+    bench.run()
   }
 
   test("Step maintains a step function of the input var.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Step(bench.genIntVar(-100 to 100))
-    bench.run
+    Step(bench.genIntVar(-100 to 100))
+    bench.run()
   }
 
   test("RoundUpModulo") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new RoundUpModulo(
+    RoundUpModulo(
       bench.genIntVar(0 to 10),
       bench.genIntVar(0 to 5),
       Gen.choose(10, 20).sample.get,
       Gen.choose(1, 5).sample.get,
       Gen.choose(0, 10).sample.get)
-    bench.run
+    bench.run()
   }
 
  /* test("RoundUpCustom") {
@@ -415,75 +415,75 @@ class InvariantTests extends FunSuite with Checkers {
       bench.genIntVar(0 to 10),
       bench.genIntVar(1 to 10),
       InvGen.randomTuples(10, 0 to 10).map(ab => (ab._1,ab._1 + ab._2)))
-    bench.run
+    bench.run()
   }*/
 
   test("Union maintains the union of two sets.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Union(bench.genIntSetVar(), bench.genIntSetVar())
-    bench.run
+    Union(bench.genIntSetVar(), bench.genIntSetVar())
+    bench.run()
   }
   
   test("UnionAll maintains the union of a set of sets.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new UnionAll(bench.genIntSetVars())
-    bench.run
+    UnionAll(bench.genIntSetVars())
+    bench.run()
   }
 
   test("Inter maintains the intersection of two sets.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Inter(bench.genIntSetVar(), bench.genIntSetVar())
-    bench.run
+    Inter(bench.genIntSetVar(), bench.genIntSetVar())
+    bench.run()
   }
 
   test("Diff maintains the difference between two sets.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Diff(bench.genIntSetVar(), bench.genIntSetVar())
-    bench.run
+    Diff(bench.genIntSetVar(), bench.genIntSetVar())
+    bench.run()
   }
 
   test("Cardinality maintains the cardinality of a set.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Cardinality(bench.genIntSetVar())
-    bench.run
+    Cardinality(bench.genIntSetVar())
+    bench.run()
   }
 
   test("IncludedSubsets counts the number of included subsets from a specified list") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new IncludedSubsets(bench.genIntSetVar(), List((List(0,1,2,3,4,5),2,2),(List(0,1,4,5),1,3),(List(0,1,24,5),2,2),(List(0,1,2,3,4,5),2,2)))
-    bench.run
+    IncludedSubsets(bench.genIntSetVar(), List((List(0,1,2,3,4,5),2,2),(List(0,1,4,5),1,3),(List(0,1,24,5),2,2),(List(0,1,2,3,4,5),2,2)))
+    bench.run()
   }
 
   test("ValuesInViolatedClauses includes all values in violated clauses") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     ValuesInViolatedClauses(bench.genIntSetVar(), List((List(0,1,2,3,4,5),2),(List(0,1,4,5),1),(List(0,1,24,5),2),(List(0,1,2,3,4,5),2)))
-    bench.run
+    bench.run()
   }
 
   test("MakeSet maintains an IntSetVar given a set of IntVar.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new MakeSet(bench.genSortedIntVars(10, 0 to 10))
-    bench.run
+    MakeSet(bench.genSortedIntVars(10, 0 to 10))
+    bench.run()
   }
 
   test("Interval maintains the set in the interval.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new Interval(
+    Interval(
       bench.genIntVar(-100 to 100),
       bench.genIntVar(-100 to 100))
-    bench.run
+    bench.run()
   }
 
   test("TakeAny maintains a value taken from the set.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new TakeAny(bench.genIntSetVar(), 0)
-    bench.run
+    TakeAny(bench.genIntSetVar(), 0)
+    bench.run()
   }
 
   test("SetSum maintains the sum of variables (after optionnaly appliying a function).") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new SetSum(bench.genIntSetVar())
-    bench.run
+    SetSum(bench.genIntSetVar())
+    bench.run()
   }
 
   /**
@@ -491,15 +491,15 @@ class InvariantTests extends FunSuite with Checkers {
    */
   test("SetProd maintains the product of variables") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new SetProd(bench.genIntSetVar(10, -3 to 3))
-    bench.run
+    SetProd(bench.genIntSetVar(10, -3 to 3))
+    bench.run()
   }
 
 
 /*  test("IdentityInt maintains the identity of an integer).") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     new IdentityInt(bench.genIntVar(-100 to 100))
-    bench.run
+    bench.run()
   }
 */
 
@@ -507,7 +507,7 @@ class InvariantTests extends FunSuite with Checkers {
   test("IdentityIntSet maintains the identity of a set of integers).") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     new IdentitySet(bench.genIntSetVar())
-    bench.run
+    bench.run()
   }
   */
 
@@ -518,7 +518,7 @@ class InvariantTests extends FunSuite with Checkers {
     val seqVar1 = bench.genIntSeqVar()
     val seqVar2 = bench.genIntSeqVar()
     Length(new Concatenate(seqVar1,seqVar2,4,20))
-    bench.run
+    bench.run()
   }
 
 
@@ -527,7 +527,7 @@ class InvariantTests extends FunSuite with Checkers {
     //val seqVars = bench.genIntSeqVars(2)
     val seqVar2 = bench.genIntSeqVar()
     Length(new ConcatenateFirstConstant(List(1,6,8,30),seqVar2,4,20))
-    bench.run
+    bench.run()
   }
 
   test ("PositionsOf maintains the positions of a value"){
@@ -535,14 +535,14 @@ class InvariantTests extends FunSuite with Checkers {
     val seqVar = bench.genIntSeqVar()
     val value = seqVar.value.valueAtPosition(0).get
     PositionsOf(seqVar,value)
-    bench.run
+    bench.run()
   }
 
   test ("Map "){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     val seqVar = bench.genIntSeqVar(range = 0 to 100)
     oscar.cbls.lib.invariant.seq.Map(seqVar, Array.tabulate(101)(n => 2*n))
-    bench.run
+    bench.run()
   }
 
   test ("Precedence"){
@@ -563,14 +563,14 @@ class InvariantTests extends FunSuite with Checkers {
   test ("Size maintains the size of the sequence"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     val seqVar = bench.genIntSeqVar(25)
-    new Length(seqVar)
+    Length(seqVar)
     bench.run()
   }
 
   test ("OccurenceOf maintains the occurence of a certain value"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     val seqVar = bench.genIntSeqVar()
-    new OccurrencesOf(seqVar,Gen.choose(0, 100).sample.get)
+    OccurrencesOf(seqVar,Gen.choose(0, 100).sample.get)
     bench.run()
   }
 
@@ -644,7 +644,7 @@ class InvariantTests extends FunSuite with Checkers {
     val n = 100
     val v = 5
     val route = bench.genRouteOfNodes(n,v)
-    val nodeVehicleRestrictions = RoutingMatrixGenerator.generateRestrictions(n,v,(n/v).toInt)
+    val nodeVehicleRestrictions = RoutingMatrixGenerator.generateRestrictions(n,v,n/v)
     NodeVehicleRestrictions(route,v,nodeVehicleRestrictions)
     bench.run()
   }

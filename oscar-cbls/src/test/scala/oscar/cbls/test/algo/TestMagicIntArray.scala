@@ -19,7 +19,7 @@ import oscar.cbls.algo.magicArray.MagicIntArrayStacked
 
 object TestMagicIntArray extends App{
 
-  val a = new MagicIntArrayStacked(maxLevel = 3, initVal = (w => w), size = 10)
+  val a = new MagicIntArrayStacked(maxLevel = 3, initVal = w => w, size = 10)
 
   println(a)
   a(0) = 4

@@ -127,10 +127,11 @@ object TestCapacity extends App{
   val remove = removePoint(() => myVRP.routed.value.filter(_>=v), myVRP,selectNodeBehavior = Best())
   def segExchange(k:Int) = segmentExchange(myVRP,()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,(_) => myVRP.isRouted),() => myVRP.vehicles)
 
-  val swapInOut = profile((remove andThen routeUnroutedPoint(10)) name ("SWAPInsert"))
-  val doubleInsert = profile((routeUnroutedPoint(10) andThen routeUnroutedPoint(10)) name ("doubleInsert"))
-  val doubleRemove = profile(( removePoint(() => myVRP.routed.value.filter(_>=v), myVRP,selectNodeBehavior = First())) andThen
-    removePoint(() => myVRP.routed.value.filter(_>=v), myVRP,selectNodeBehavior = Best()) name ("doubleRemove"))
+  val swapInOut = profile((remove andThen routeUnroutedPoint(10)) name "SWAPInsert")
+  val doubleInsert = profile((routeUnroutedPoint(10) andThen routeUnroutedPoint(10)) name "doubleInsert")
+  val doubleRemove = profile( removePoint(() => myVRP.routed.value.filter(_>=v), myVRP,selectNodeBehavior = First()) andThen
+    removePoint(() => myVRP.routed.value.filter(_>=v), myVRP,selectNodeBehavior = Best()) name "doubleRemove"
+  )
 
   val search = roundRobin(List(onePtMove(100),
     doubleInsert,

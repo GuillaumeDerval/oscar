@@ -75,7 +75,7 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int){
   intermediaryStops = true,
   maxDepth = 7)
 
-  val search = (bestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt, onePtMove(10),customTwoOpt, customThreeOpt(10,true))) exhaust customThreeOpt(20,true) exhaust vlsn1pt)
+  val search = bestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt, onePtMove(10),customTwoOpt, customThreeOpt(10,true))) exhaust customThreeOpt(20,true) exhaust vlsn1pt
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 

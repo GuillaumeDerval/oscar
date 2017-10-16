@@ -76,7 +76,19 @@ object TestNext extends App{
     intermediaryStops = true,
     maxDepth = 6))
 
-  val search = (bestSlopeFirst(List(routeUnroutedPoint2, routeUnroutedPoint, onePtMove(10),customTwoOpt, customThreeOpt(10,true),vlsn1pt, insertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,(_) => myVRP.isRouted), myVRP,neighborhoodName = "InsertUF") andThen routeUnroutedPoint)) exhaust customThreeOpt(20,true))// afterMove(/*myVRP.drawRoutes()*/)
+  val search = bestSlopeFirst(List(routeUnroutedPoint2,
+                                   routeUnroutedPoint,
+                                   onePtMove(10),
+                                   customTwoOpt,
+                                   customThreeOpt(10,true),
+                                   vlsn1pt,
+                                   insertPointUnroutedFirst(myVRP.unrouted,
+                                                            ()=>myVRP.kFirst(10,
+                                                                             myVRP.closestNeighboursForward,
+                                                                             (_) => myVRP.isRouted),
+                                                                             myVRP,neighborhoodName = "InsertUF") andThen
+                                   routeUnroutedPoint)) exhaust customThreeOpt(20,true)
+  // afterMove(/*myVRP.drawRoutes()*/)
 
   search.verbose = 1
 

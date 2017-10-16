@@ -89,7 +89,7 @@ object RoutingWithPrecedence extends App{
         myVRP,
         "secondPointMove",
         selectPointToMoveBehavior= Best(),
-        selectDestinationBehavior=Best())})) name("SmartTwoPtMove"))
+        selectDestinationBehavior=Best())})) name "SmartTwoPtMove" )
 
   val customTwoOpt = profile(twoOpt(() => nodes, ()=>myVRP.kFirst(40,myVRP.nearestForward), myVRP))
 
