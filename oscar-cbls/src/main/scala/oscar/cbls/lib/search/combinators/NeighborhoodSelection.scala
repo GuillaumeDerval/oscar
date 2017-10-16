@@ -21,7 +21,7 @@ case class BestSlopeFirst(l:List[Neighborhood],
                           tabuLength:Int = 10,
                           overrideTabuOnFullExhaust:Int = 9, refresh:Int = 100)
   extends BestNeighborhoodFirst(l, tabuLength, overrideTabuOnFullExhaust, refresh){
-  override protected def bestKey(p:Profile):Int = -(p.slopeForCombinators())
+  override protected def bestKey(p:Profile):Int = -p.slopeForCombinators()
 }
 
 /**
@@ -39,7 +39,7 @@ case class FastestFirst(l:List[Neighborhood],
                         tabuLength:Int = 10,
                         overrideTabuOnFullExhaust:Int = 9,  refresh:Int = 100)
   extends BestNeighborhoodFirst(l, tabuLength, overrideTabuOnFullExhaust, refresh){
-  override protected def bestKey(p:Profile):Int = -(p.slopeForCombinators())
+  override protected def bestKey(p:Profile):Int = -p.slopeForCombinators()
 }
 
 abstract class BestNeighborhoodFirst(l:List[Neighborhood],
@@ -56,7 +56,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
   protected var tabuNeighborhoods = new BinomialHeap[Int](tabu(_),tabu.length)
 
   protected val neighborhoodHeap = new BinomialHeapWithMove[Int]((neighborhoodID:Int) => bestKey(neighborhoodArray(neighborhoodID)), neighborhoodArray.length)
-  neighborhoodArray.indices.foreach(neighborhoodHeap.insert(_))
+  neighborhoodArray.indices.foreach(neighborhoodHeap.insert)
 
   private def getBestNeighborhooID:Int = neighborhoodHeap.getFirst
   private def updateNeighborhodPerformances(neighborhooID:Int){
@@ -91,7 +91,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
 
       if(printPerformedSearches){
         println("refreshing knowledge on neighborhood; statistics since last refresh: ")
-        printStatus
+        printStatus()
       }
       for(p <- neighborhoodArray.indices){
         neighborhoodArray(p).resetThisStatistics()
@@ -147,7 +147,7 @@ abstract class BestNeighborhoodFirstSlidingWindow(l:List[Neighborhood], windowsS
   protected var tabuNeighborhoods = new BinomialHeap[Int](tabu(_),tabu.length)
 
   protected val neighborhoodHeap = new BinomialHeapWithMove[Int]((neighborhoodID:Int) => bestKey(neighborhoodArray(neighborhoodID)), neighborhoodArray.length)
-  neighborhoodArray.indices.foreach(neighborhoodHeap.insert(_))
+  neighborhoodArray.indices.foreach(neighborhoodHeap.insert)
 
   private def getBestNeighborhooID:Int = neighborhoodHeap.getFirst
   private def updateNeighborhodPerformances(neighborhooID:Int){
@@ -182,7 +182,7 @@ abstract class BestNeighborhoodFirstSlidingWindow(l:List[Neighborhood], windowsS
 
       if(printPerformedSearches){
         println("refreshing knowledge on neighborhood; statistics since last refresh: ")
-        printStatus
+        printStatus()
       }
       for(p <- neighborhoodArray.indices){
         neighborhoodArray(p).resetThisStatistics()
@@ -329,14 +329,14 @@ class BiasedRandom(a: (Neighborhood,Double)*)(noRetryOnExhaust:Boolean = false) 
 
   abstract sealed class Node(val weight:Double)
   case class MiddleNode(l:Node,r:Node) extends Node(l.weight + r.weight)
-  case class TerminalNode(override val weight:Double, val n:Neighborhood) extends Node(weight)
+  case class TerminalNode(override val weight:Double, n:Neighborhood) extends Node(weight)
 
   private val r = new scala.util.Random()
 
   def reduce(l:List[Node]):List[Node] = {
     l match{
       case h1 :: h2 :: t => MiddleNode(h1,h2) :: reduce(t)
-      case List(h) => l
+      case List(_) => l
       case nil => nil
     }
   }
@@ -350,19 +350,19 @@ class BiasedRandom(a: (Neighborhood,Double)*)(noRetryOnExhaust:Boolean = false) 
   }
 
   val initialNeighborhoodTree:Node =  fixPoint(
-    a.toList.map(nw => new TerminalNode(nw._2,nw._1)),
+    a.toList.map(nw => TerminalNode(nw._2,nw._1)),
     reduce,
     (_:List[Node]) match{case List(_) => true; case _ => false}
   ).head
 
   def findAndRemove(n:Node,p:Double):(Option[Node],Neighborhood) = {
     n match{
-      case TerminalNode(w,n) => (None,n)
-      case MiddleNode(l,r) =>
-        val ((newNode,found),other) = if (p <= l.weight) (findAndRemove(l,p),r) else (findAndRemove(r,p-l.weight),l)
+      case TerminalNode(_,nt) => (None,nt)
+      case MiddleNode(l,rm) =>
+        val ((newNode,found),other) = if (p <= l.weight) (findAndRemove(l,p),rm) else (findAndRemove(rm,p-l.weight),l)
         newNode match{
           case None => (Some(other),found)
-          case Some(p) => (Some(MiddleNode(p,other)),found)
+          case Some(pn) => (Some(MiddleNode(pn,other)),found)
         }
     }
   }
@@ -396,10 +396,13 @@ class BiasedRandom(a: (Neighborhood,Double)*)(noRetryOnExhaust:Boolean = false) 
 @deprecated("use the bestSlopeFirst instead","")
 class LearningRandom(l:List[Neighborhood],
                      weightUpdate:(Profile,Double) => Double =
-                     (stat,oldWeight) => {if (stat.nbCalls == 0) -1 else {
-                       val toReturn =  (stat.slopeOrZero + oldWeight)/2
-                       stat.resetStatistics
-                       toReturn}},
+                     (stat,oldWeight) => { if (stat.nbCalls == 0) -1
+                       else {
+                         val toReturn =  (stat.slopeOrZero + oldWeight)/2
+                         stat.resetStatistics()
+                         toReturn
+                       }
+                     },
                      updateEveryXCalls:Int = 10)
   extends NeighborhoodCombinator(l:_*){
 
@@ -410,10 +413,10 @@ class LearningRandom(l:List[Neighborhood],
 
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
     if(stepsBeforeUpdate <= 0){
-      val newlyWeightedNeighborhoods = weightedInstrumentedNeighborhoods.map((sd => (sd._1,weightUpdate(sd._1,sd._2))))
-      val (totalWeightNonNegative,nonNegativeCount) = newlyWeightedNeighborhoods.foldLeft((0.0,0))((a:(Double,Int),b:(Profile,Double)) => (if(b._2 < 0) a else (a._1 + b._2,a._2+1)))
+      val newlyWeightedNeighborhoods = weightedInstrumentedNeighborhoods.map(sd => (sd._1,weightUpdate(sd._1,sd._2)))
+      val (totalWeightNonNegative,nonNegativeCount) = newlyWeightedNeighborhoods.foldLeft((0.0,0))((a:(Double,Int),b:(Profile,Double)) => if(b._2 < 0) a else (a._1 + b._2,a._2+1))
       val defaultWeight = totalWeightNonNegative / nonNegativeCount
-      weightedInstrumentedNeighborhoods = newlyWeightedNeighborhoods.map(sw => (sw._1,(if (sw._2 < 0) defaultWeight else sw._2)))
+      weightedInstrumentedNeighborhoods = newlyWeightedNeighborhoods.map(sw => (sw._1,if (sw._2 < 0) defaultWeight else sw._2))
       currentRandom = new BiasedRandom(weightedInstrumentedNeighborhoods :_*)()
       stepsBeforeUpdate = updateEveryXCalls
       if(printPerformedSearches) println("LearningRandom: weights updated: " + weightedInstrumentedNeighborhoods )
@@ -461,4 +464,3 @@ class ExhaustAndContinueIfMovesFound(a: Neighborhood, b: Neighborhood) extends N
     super.reset()
   }
 }
-

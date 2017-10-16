@@ -49,7 +49,7 @@ class BinomialHeap[@specialized T](initialGetKey:T => Int,val maxsize:Int)(impli
       val content:List[T] = this.toList
       dropAll()
       GetKey = KeyGetter
-      content map insert
+      content foreach insert
     }else{
       GetKey = KeyGetter
     }
@@ -58,7 +58,7 @@ class BinomialHeap[@specialized T](initialGetKey:T => Int,val maxsize:Int)(impli
   def keyGetter:(T => Int) = GetKey
 
   override def size = msize
-  override def isEmpty:Boolean = (msize == 0)
+  override def isEmpty:Boolean = msize == 0
 
   override def toString():String = {
     HeapArray.toList.toString()
@@ -198,7 +198,7 @@ class BinomialHeapWithMove[T](getKey:T => Int,val maxsize:Int)(implicit val A:Or
   var size:Int=0
   var position:SortedMap[T,Int]=SortedMap.empty
 
-  def isEmpty = (size==0)
+  def isEmpty:Boolean = size == 0
 
   def contains(value:T):Boolean = position.contains(value)
 
@@ -413,7 +413,7 @@ class BinomialHeapWithMoveExtMem[T](GetKey:T => Int,val maxsize:Int, position:sc
     }
   }
 
-  def isEmpty:Boolean = (size == 0)
+  def isEmpty:Boolean = size == 0
 
   override def toString:String = {
     HeapArray.toList.toString()
@@ -553,10 +553,7 @@ class BinomialHeapWithMoveExtMem[T](GetKey:T => Int,val maxsize:Int, position:sc
  * @author renaud.delandtsheer@cetic.be
  * @param getKey
  * @param maxsize
- * @param position
- * @param A
- * @param X
- * @tparam T
+ * @param maxKey
  */
 class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int){
   private[this] val heapArray:Array[Int] = new Array[Int](maxsize)
@@ -578,7 +575,7 @@ class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int)
     }
   }
 
-  def isEmpty:Boolean = (size == 0)
+  def isEmpty:Boolean = size == 0
 
   override def toString:String = {
     heapArray.toList.toString()

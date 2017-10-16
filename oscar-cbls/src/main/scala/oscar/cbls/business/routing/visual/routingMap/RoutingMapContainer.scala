@@ -1,4 +1,4 @@
-package oscar.cbls.visual.MatrixMap
+package oscar.cbls.business.routing.visual.routingMap
 
 /**
   * *****************************************************************************
@@ -26,9 +26,9 @@ import oscar.cbls.business.routing.model.VRP
 /**
   * @author fabian.germeau@student.vinci.be
   */
-class RoutingMapContainer(title:String = "Routing map",
-                          vrp:VRP,
+class RoutingMapContainer(vrp:VRP,
                           routingMap: JPanel with RoutingMapDisplay,
+                          title:String = "Routing map",
                           geolocalisationMap: Boolean = false,
                           routeToDisplay:Boolean = false,
                           refreshRate: Int = 100

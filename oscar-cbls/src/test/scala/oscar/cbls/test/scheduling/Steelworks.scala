@@ -39,7 +39,7 @@ import oscar.cbls.business.scheduling.solver.IFlatIRelax
  * Roughing rolling and then product rolling, must be achieved in the same day.
  */
 object Steelworks extends App {
-  val model = new Store(noCycle=false)
+  val model = Store(noCycle=false)
 
   val planning = new Planning(model, 24) with VariableResources
   
@@ -81,4 +81,3 @@ object Steelworks extends App {
   println(planning.dependencies)
 
 }
-

@@ -82,8 +82,8 @@ object NQueensBench extends LinearSelectorClass(true) with StopWatch{
       val N:Int=args(0).toInt
       val nRun = args(1).toInt
       val pseudoRandom = args(2).toInt == 0
-      val r:Random = (if(args(2).toInt == 0) new Random(0) else new Random(System.currentTimeMillis()))
-      val dryRun = (args(3).toInt !=0)
+      val r:Random = if(args(2).toInt == 0) new Random(0) else new Random(System.currentTimeMillis())
+      val dryRun = args(3).toInt != 0
       println("nQueen:" + N + " nRun:" + nRun + (if (dryRun) " withDryRun" else " noDryRun") + (if(pseudoRandom) " deterministicRandom" else " realRandom"))
       println(padToLength("N", 15) + padToLength("tClose[ms]", 15) + padToLength("tTotal[ms]", 15) + "it")
       if(dryRun) SolveNQueen(1000,r)
@@ -101,7 +101,7 @@ object NQueensBench extends LinearSelectorClass(true) with StopWatch{
 
     val m = Store()
     val init = Random.shuffle(queensRange.toList).iterator
-    val queens:Array[CBLSIntVar] = queensRange.map(q => CBLSIntVar(m, init.next(), 0 to N-1,"queen" + q)).toArray
+    val queens:Array[CBLSIntVar] = queensRange.map(q => CBLSIntVar(m, init.next(), 0 until N,"queen" + q)).toArray
 
     val c = ConstraintSystem(m)
 

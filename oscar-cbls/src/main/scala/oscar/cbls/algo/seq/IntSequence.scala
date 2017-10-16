@@ -187,14 +187,14 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
   def positionOfFirstOccurrence(value : Int) : Option[Int] = {
     positionsOfValue(value) match {
       case null => None
-      case x => Some(x.toIterable.min)
+      case x => Some(x.min)
     }
   }
 
   def positionOfLastOccurrence(value : Int) : Option[Int] = {
     positionsOfValue(value) match {
       case null => None
-      case x => Some(x.toIterable.max)
+      case x => Some(x.max)
     }
   }
 

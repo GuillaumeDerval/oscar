@@ -31,8 +31,8 @@ package oscar.cbls.business
  *
  * In this package, Tasks are grouped into [[oscar.cbls.business.scheduling.model.Planning]] that keeps references to all tasks and resources.
  * This package features the [[oscar.cbls.business.scheduling.solver.IFlatIRelax]] search heuristics with various tunings
-  * @author renaud.delandtsheer@cetic.be
+ * @author renaud.delandtsheer@cetic.be
  * */
-package object scheduling{
-}
+package object scheduling {
 
+}

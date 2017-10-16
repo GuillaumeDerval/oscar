@@ -14,7 +14,7 @@
  ******************************************************************************/
 package oscar.cbls.modeling
 
-import oscar.cbls.core.computation.{CBLSIntVar, IntValue, SetValue}
+import oscar.cbls.core.computation.{IntValue, SetValue}
 import oscar.cbls.lib.constraint._
 
 import scala.collection.immutable.SortedMap

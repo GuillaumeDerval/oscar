@@ -35,9 +35,9 @@ case class DisjunctiveConstDuration(start: Array[IntValue],
   registerConstrainedVariables(start)
   finishInitialization()
 
-  private val sumdur = duration.foldLeft(0)((acc,v) => acc + v);
+  private val sumdur = duration.sum
 
-  private val Violation: CBLSIntVar = new CBLSIntVar(model, 0, (0 to sumdur*start.length), "ViolationOfDisjunctive")
+  private val Violation: CBLSIntVar = new CBLSIntVar(model, 0, 0 to sumdur*start.length, "ViolationOfDisjunctive")
   Violation.setDefiningInvariant(this)
 
 
@@ -45,11 +45,11 @@ case class DisjunctiveConstDuration(start: Array[IntValue],
   private val Violations: SortedMap[IntValue, CBLSIntVar] = start.foldLeft(
     SortedMap.empty[IntValue, CBLSIntVar])(
     (acc, intvar) => {
-      val newvar = new CBLSIntVar(model, 0, (0 to sumdur), "Violation_Disjunctive_" + intvar.name)
+      val newvar = new CBLSIntVar(model, 0, 0 to sumdur, "Violation_Disjunctive_" + intvar.name)
       acc + ((intvar, newvar))
     })
 
-  for(i <- 0 until start.length){
+  for(i <- start.indices){
     val curstart = start(i).value
     val curduration = duration(i)
     val curend = curstart+curduration
@@ -73,7 +73,7 @@ case class DisjunctiveConstDuration(start: Array[IntValue],
     val dur = duration(index)
     val oldend = oldstart + dur
     val newend = newstart + dur
-    for(j <- 0 until start.length){
+    for(j <- start.indices){
       if(j!=index){
         val js = oldstarts(j)
         val jd = duration(j)
@@ -121,9 +121,9 @@ case class Disjunctive(start: Array[IntValue],
   registerConstrainedVariables(start)
   finishInitialization()
 
-  private val sumMaxDur = duration.foldLeft(0)((acc,v) => acc + v.max);
+  private val sumMaxDur = duration.foldLeft(0)((acc,v) => acc + v.max)
 
-  private val violationVar: CBLSIntVar = new CBLSIntVar(model, 0, (0 to sumMaxDur*start.length), "ViolationOfDisjunctive")
+  private val violationVar: CBLSIntVar = new CBLSIntVar(model, 0, 0 to sumMaxDur*start.length, "ViolationOfDisjunctive")
   violationVar.setDefiningInvariant(this)
 
   //the degree of violation of a task is the sum of the sizes of its overlap with other tasks.
@@ -131,7 +131,7 @@ case class Disjunctive(start: Array[IntValue],
   private val violationsVars: SortedMap[IntValue, CBLSIntVar] = start.foldLeft(
     SortedMap.empty[IntValue, CBLSIntVar])(
     (acc, intvar) => {
-      val newvar = new CBLSIntVar(model, 0, (0 to sumMaxDur), "Violation_Disjunctive_" + intvar.name)
+      val newvar = new CBLSIntVar(model, 0, 0 to sumMaxDur, "Violation_Disjunctive_" + intvar.name)
       acc + ((intvar, newvar))
     })
 

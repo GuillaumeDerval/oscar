@@ -24,7 +24,7 @@ import oscar.cbls._
 import oscar.cbls.lib.invariant.logic.SelectLESetQueue
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.constraint.{EQ, Exactly}
-import oscar.cbls.modeling.{CBLSModel}
+import oscar.cbls.modeling.CBLSModel
 import oscar.cbls.util.StopWatch
 
 import scala.collection.immutable.SortedMap
@@ -43,7 +43,7 @@ object MagicSeries extends CBLSModel with App with StopWatch{
   c.post(Exactly(magicSeries, bounds))
 
   //redundant constraint, to make the search procedure faster
-  c.post(EQ(Sum(for(i <- range) yield (i * magicSeries(i))), size))
+  c.post(EQ(Sum( for(i <- range) yield i * magicSeries(i) ), size))
 
   var it: CBLSIntVar = CBLSIntVar(0, fullRange, "it")
 
@@ -66,7 +66,7 @@ object MagicSeries extends CBLSModel with App with StopWatch{
   //Search Procedure
   while(violation.value > 0)
   {
-    var index = maxVal.value.firstKey
+    val index = maxVal.value.firstKey
 
     var bestOccurrences = selectMin(range)(r => assignVal(magicSeries(index), r), r => magicSeries(index).value != r)
 

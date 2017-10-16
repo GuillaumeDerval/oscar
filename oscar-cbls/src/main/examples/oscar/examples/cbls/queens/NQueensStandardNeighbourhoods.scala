@@ -34,15 +34,15 @@ object NQueensStandardNeighbourhoods extends CBLSModel with App with StopWatch{
   startWatch()
   val N = 1000
 
-  println("NQueenEasy(" + N + ")")
+  println("NQueensEasy(" + N + ")")
   val range:Range = Range(0,N)
 
   val init = Random.shuffle(range.toList).iterator
-  val queens = Array.tabulate(N)((q:Int) => CBLSIntVar(init.next(),0 to N-1, "queen" + q))
+  val queens = Array.tabulate(N)((q:Int) => CBLSIntVar(init.next(), 0 until N, "queen" + q))
 
   //c.post(AllDiff(Queens)) //enforced because we swap queens and they are always allDiff
-  post(allDiff(for (q <- range) yield (queens(q) + q)))
-  post(allDiff(for (q <- range) yield (q - queens(q))))
+  post(allDiff( for (q <- range) yield queens(q) + q) )
+  post(allDiff( for (q <- range) yield q - queens(q)) )
 
   val maxViolQueens = argMax(violations(queens)).setName("most violated queens")
 

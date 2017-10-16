@@ -104,9 +104,9 @@ class ObjFunctionGraphicContainer(title:String = "Evolution of the objective fun
     graphic.drawGlobalCurve()
     var labelText = "<html>"
     for(k <- xColorMap.keys){
-      val r = xColorMap.get(k).get.getRed
-      val g = xColorMap.get(k).get.getGreen
-      val b = xColorMap.get(k).get.getBlue
+      val r = xColorMap(k).getRed
+      val g = xColorMap(k).getGreen
+      val b = xColorMap(k).getBlue
       labelText = labelText + "<font color=rgb("+r+","+g+","+b+")>" + k + "    " + "</font>"
     }
     labelText = labelText + "</html>"
@@ -114,7 +114,7 @@ class ObjFunctionGraphicContainer(title:String = "Evolution of the objective fun
   }
 
   def notifyNewObjectiveValue(objValue:Int, objTime:Long, neighBorhood:String, color: Color): Unit ={
-    if(xColorMap.get(neighBorhood) == None)
+    if(xColorMap.get(neighBorhood).isEmpty)
       xColorMap = xColorMap + (neighBorhood -> color)
     graphic.notifyNewObjectiveValue(objValue,objTime,color)
   }

@@ -236,7 +236,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
         }
 
       case SeqUpdateAssign(value : IntSequence) =>
-        (None, potentiallyRemovedPoints ::: (previousSequence.unorderedContentNoDuplicate.filter(_>=v)))
+        (None, potentiallyRemovedPoints ::: previousSequence.unorderedContentNoDuplicate.filter(_>=v) )
 
       case SeqUpdateLastNotified(value : IntSequence) =>
         (toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints)
@@ -259,7 +259,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                 zonesAfterPrev,
                 fastVehicleLocationAfterPrev)
               contentAtNode.pushLevel()
-              require(contentAtNode.level == checkpointLevel, "contentAtNode.level:" + contentAtNode.level  + " checkpointLevel:" + (checkpointLevel))
+              require(contentAtNode.level == checkpointLevel, "contentAtNode.level:" + contentAtNode.level  + " checkpointLevel:" + checkpointLevel)
 
               violationAndVehicleStartStack.defineCheckpoint(prev.newValue, checkpointLevel, (violation.newValue, fastVehicleLocationAfterPrev))
               currentVehicleLocation = fastVehicleLocationAfterPrev
@@ -357,4 +357,3 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
     vehicleStartPos.checkOnSequence(routes.value)
   }
 }
-

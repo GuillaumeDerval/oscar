@@ -16,7 +16,6 @@
 
 package oscar.cbls.lib.search.neighborhoods
 
-import oscar.cbls._
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.core.computation.{InvariantHelper, CBLSIntVar}
 import oscar.cbls.core.search.{Move, EasyNeighborhood}
@@ -99,8 +98,8 @@ case class RollNeighborhood(vars:Array[CBLSIntVar],
 
         val shouldExplore = if (checkForDifferentValues){
           val (minBound,maxBound) = InvariantHelper.getMinMaxBoundsInt(initValue)
-          (minBound != maxBound)
-        }else true
+          minBound != maxBound
+        } else true
 
         if(shouldExplore) {
           //performing rolls
@@ -150,7 +149,7 @@ case class RollNeighborhood(vars:Array[CBLSIntVar],
       case (hVar :: t1, hVal :: t2) =>
         hVar := hVal
         assignAll(t1,t2)
-      case (Nil,Nil) => return
+      case (Nil,Nil) => // Do nothing
       case _ => throw new Error("bug in assignAll")
     }
   }

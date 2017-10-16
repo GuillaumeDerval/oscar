@@ -80,8 +80,8 @@ object TestRedBlackTree extends App{
         println("step " + it + " inserting " + key)
       } else if (reference.size > 2) {
         //remove something
-        val key : Int = (reference.keys.toList.apply((random.nextDouble() * reference.size).toInt))
-        reference = reference - (key)
+        val key : Int = reference.keys.toList.apply((random.nextDouble() * reference.size).toInt)
+        reference = reference - key
         sut = sut.remove(key)
         println("step " + it + " removing " + key)
       }

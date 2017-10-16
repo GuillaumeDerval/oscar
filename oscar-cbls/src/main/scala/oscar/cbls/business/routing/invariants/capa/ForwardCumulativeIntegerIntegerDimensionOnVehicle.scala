@@ -53,7 +53,7 @@ object ForwardCumulativeIntegerIntegerDimensionOnVehicle {
     val content1AtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent), contentName + "1 at end of route " + vehicle))
     val content2AtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent), contentName + "2 at end of route " + vehicle))
 
-    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, 0 to n-1, "last point of vehicle" + vehicle))
+    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, 0 until n, "last point of vehicle" + vehicle))
 
     new ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes,n,v,op,
       content1AtStart,content2AtStart,
@@ -78,7 +78,7 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
                                                         val lastPointOfVehicle:Array[CBLSIntVar],
                                                         defaultVehicleContent1ForUnroutedNodes:Int,
                                                         defaultVehicleContent2ForUnroutedNodes:Int,
-                                                         contentName:String = "content")
+                                                        contentName:String = "content")
 
   extends AbstractForwardCumulativeDimensionOnVehicle(routes,n,v) with IntNotificationTarget{
 
@@ -225,4 +225,3 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
     }
   }
 }
-

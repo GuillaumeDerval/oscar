@@ -85,7 +85,7 @@ object NQueensBench1 extends LinearSelectorClass(true) with StopWatch{
 
     val m = Store()
     val init = Random.shuffle(range.toList).iterator
-    val queens:Array[CBLSIntVar] = Array.tabulate(N)((q:Int) => CBLSIntVar(m, init.next(), 0 to N-1,"queen" + q))
+    val queens:Array[CBLSIntVar] = Array.tabulate(N)((q:Int) => CBLSIntVar(m, init.next(), 0 until N,"Queen" + q))
 
     val c = ConstraintSystem(m)
 

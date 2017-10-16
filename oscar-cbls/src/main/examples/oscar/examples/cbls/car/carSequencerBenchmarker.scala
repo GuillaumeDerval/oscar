@@ -17,7 +17,7 @@ package oscar.examples.cbls.car
 
 import oscar.cbls._
 import oscar.cbls.modeling._
-import oscar.cbls.lib.search.combinators.{DynAndThen, Profile}
+import oscar.cbls.lib.search.combinators.Profile
 import oscar.cbls.lib.search.neighborhoods.{RollNeighborhood, SwapMove}
 
 import oscar.cbls.util.Benchmark
@@ -59,7 +59,7 @@ object carSequencerBenchmarker  extends CBLSModel with App {
   val maxType = orderedCarsByType.keys.max
   val minType = orderedCarsByType.keys.min
   val typeRange = minType to maxType
-  def prependItems(acc:List[Int],n:Int,item:Int):List[Int] = (if(n == 0) acc else prependItems(item :: acc,n-1,item))
+  def prependItems(acc:List[Int],n:Int,item:Int):List[Int] = if(n == 0) acc else prependItems(item :: acc,n-1,item)
   val orderedCarTypes:List[Int] = orderedCarsByType.foldLeft(List.empty[Int])({case (accList,(carType,nbItems)) => prependItems(accList,nbItems,carType)})
   val nbCars = orderedCarTypes.size
 
@@ -67,7 +67,7 @@ object carSequencerBenchmarker  extends CBLSModel with App {
 
   //initializes the car sequence in a random way
   val orderedCarTypesIterator = Random.shuffle(orderedCarTypes).toIterator
-  val carSequence:Array[CBLSIntVar] = Array.tabulate(nbCars)(p => CBLSIntVar(orderedCarTypesIterator.next(),typeRange,"carClassAtPosition" + p)).toArray
+  val carSequence:Array[CBLSIntVar] = Array.tabulate(nbCars)(p => CBLSIntVar(orderedCarTypesIterator.next(),typeRange,"carClassAtPosition" + p))
 
   //airConditionner: max 2 out of 3
   c.post(sequence(carSequence,3,2,airCoCarTypes))
@@ -89,7 +89,7 @@ object carSequencerBenchmarker  extends CBLSModel with App {
 
   println("closing model")
 
-  c.close
+  c.close()
   val obj:Objective = c.violation
 
   s.close()
@@ -104,27 +104,27 @@ object carSequencerBenchmarker  extends CBLSModel with App {
 
   val linkedDoubleSwaps = dynAndThen(
     swapsNeighborhood(carSequence,"swapCars1"),
-    ((swapMove:SwapMove) => {
+    (swapMove:SwapMove) => {
       val indices = List(swapMove.idI, swapMove.idJ)
       swapsNeighborhood(carSequence, "swapCars2", searchZone1 = () => indices, symmetryCanBeBrokenOnIndices = false, symmetryCanBeBrokenOnValue = true)
-    })) name "linkedDoubleSwaps"
+    }) name "linkedDoubleSwaps"
 
   val doubleSwaps = (swapsNeighborhood(carSequence,"swapCars1") andThen swapsNeighborhood(carSequence,"swapCars2")) name "doubleSwaps"
 
   val looselyLinkedDoubleSwaps = dynAndThen(
     swapsNeighborhood(carSequence,"swapCars1", symmetryCanBeBrokenOnIndices = false),
-    ((swapMove:SwapMove) => {
-      val firstSwappedCar = 0.max(swapMove.idI - impactZone) until (nbCars).min(swapMove.idI + impactZone)
+    (swapMove:SwapMove) => {
+      val firstSwappedCar = 0.max(swapMove.idI - impactZone) until nbCars.min(swapMove.idI + impactZone)
       val otherSwappedCar = (nbCars-1).min(swapMove.idJ+1) until nbCars
       swapsNeighborhood(carSequence, "swapCars2", searchZone1 = () => firstSwappedCar, searchZone2 = (_,_) => otherSwappedCar, symmetryCanBeBrokenOnIndices = false)
-    })) name "looselyLinkedDoubleSwaps"
+    }) name "looselyLinkedDoubleSwaps"
 
 
   val search1 = (
     random(mostViolatedSwap,swap)
-      orElse (shiftNeighbor)
-      orElse (shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")  maxMoves (10))
-      orElse (shuffleNeighborhood(carSequence, violatedCars, name = "shuffleAllViolatedCars") maxMoves (10))
+      orElse shiftNeighbor
+      orElse (shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")  maxMoves 10)
+      orElse (shuffleNeighborhood(carSequence, violatedCars, name = "shuffleAllViolatedCars") maxMoves 10)
       orElse (shuffleNeighborhood(carSequence, name = "globalShuffle") maxMoves 5)
       maxMoves nbCars *2 withoutImprovementOver obj
       guard (() => c.violation.value > 0)

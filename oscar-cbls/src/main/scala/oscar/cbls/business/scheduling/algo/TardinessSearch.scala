@@ -77,7 +77,7 @@ class TardinessSearch(planning: Planning with Deadlines with TotalResourcesOvers
           // a list of (predecessor, activity) with an additional tight dependence
           val criticalActivities = nonSolidCriticalPath(planning)(activity)
           // if (exploreNeighborhood(criticalActivities, maxLocalIterations))
-          if (!criticalActivities.isEmpty
+          if (criticalActivities.nonEmpty
             && criticalActivities != precCriticalActivities) {
             if (exploreNeighborhood(criticalActivities,
               maxLocalIterations, onlyImprovingMoves)) {

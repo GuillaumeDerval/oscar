@@ -73,12 +73,10 @@ object Reagan extends App {
 
   val solver = new IFlatIRelax(planning)
 
-  solver.solve(maxIt = 20,
-            stable = 10)
+  solver.solve(maxIt = 20, stable = 10)
 
   println(planning.toAsciiArt)
   println(planning.resourceUsage)
   println(planning.dependencies)
 
 }
-

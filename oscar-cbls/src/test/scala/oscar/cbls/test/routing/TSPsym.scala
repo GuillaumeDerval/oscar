@@ -16,29 +16,23 @@ package oscar.cbls.test.routing
   ******************************************************************************/
 
 import oscar.cbls._
-import oscar.cbls.business.routing.model._
-import oscar.cbls.business.routing.invariants.ConstantRoutingDistance
-import oscar.cbls.business.routing.neighborhood.{OnePointMove, ThreeOpt, TwoOpt}
-import oscar.cbls.lib.search.combinators.Profile
+import oscar.cbls.business.routing._
+import oscar.examples.cbls.routing.RoutingMatrixGenerator
 
-/*
 class MySimpleRouting(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int)
-  extends VRP(n,v,m,maxPivot) with ClosestNeighbors {
+  extends VRP(m,n,v,maxPivot) {
 
   //initializes to something simple; vehicle v-1 does all nodes (but other vehicles)
-  //initialization must be done ASAP, to encure that invariants will initialize straight based on this value
+  //initialization must be done ASAP, to ensure that invariants will initialize straight based on this value
   setCircuit(nodes)
 
-  val totalDistance = ConstantRoutingDistance(routes, n, v ,false, symmetricDistance, true)(0)
-
-  override protected def getDistance(from : Int, to : Int) : Int = symmetricDistance(from)(to)
-
-  //val obj = new CascadingObjective(totalViolationOnRestriction, totalDistance)
+  val totalDistance = constantRoutingDistance(routes, n, v ,false, symmetricDistance, true)(0)
+  
   val obj = Objective(totalDistance)
 
   override def toString : String = super.toString + "objective: " + obj.value + "\n"
 
-  val closestNeighboursForward = computeClosestNeighborsForward()
+  val closestNeighboursForward = Array.tabulate(n)(DistanceHelper.computeClosestPathFromNeighbor(symmetricDistance, (_) => nodes))
 }
 
 object TSPsym extends App{
@@ -62,13 +56,13 @@ object TSPsym extends App{
 
   println(myVRP)
 
-  val onePtMove = Profile(new OnePointMove(() => nodes, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward), myVRP))
+  val onePtMove = profile(onePointMove(() => nodes, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward), myVRP))
 
-  val twoOpt = Profile(new TwoOpt(() => nodes, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward), myVRP))
+  val customTwoOpt = profile(twoOpt(() => nodes, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward), myVRP))
 
-  def threeOpt(k:Int, breakSym:Boolean) = Profile(new ThreeOpt(() => nodes, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
+  def customThreeOpt(k:Int, breakSym:Boolean) = profile(threeOpt(() => nodes, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
-  val search = bestSlopeFirst(List(onePtMove,twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
+  val search = bestSlopeFirst(List(onePtMove,customTwoOpt, customThreeOpt(10,true))) exhaust customThreeOpt(20,true)
 
   search.verbose = 1
 
@@ -81,4 +75,3 @@ object TSPsym extends App{
   println
   println(search.profilingStatistics)
 }
-*/

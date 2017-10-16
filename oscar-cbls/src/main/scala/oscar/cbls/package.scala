@@ -39,6 +39,8 @@ package object cbls extends ModelingAPI{
 
   type CascadingObjective = oscar.cbls.core.objective.CascadingObjective
 
+  type IntVarObjective = oscar.cbls.core.objective.IntVarObjective
+
   implicit def instrumentNeighborhood(n:Neighborhood):NeighborhoodOps = new NeighborhoodOps(n)
 
   type LoopBehavior = oscar.cbls.core.search.LoopBehavior

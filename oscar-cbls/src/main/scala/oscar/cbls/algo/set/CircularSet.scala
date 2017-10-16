@@ -104,13 +104,13 @@ class CircularIntSet(val maxsize:Int) extends scala.collection.mutable.SortedSet
           next(sortedValues(i)) = sortedValues(i + 1)
           prev(sortedValues(i)) = sortedValues(i - 1)
         }
-        prev(sortedValues(0)) = sortedValues(sortedValues.size - 1)
-        next(sortedValues(0)) = sortedValues(1)
-        prev(sortedValues(sortedValues.size - 1)) = sortedValues(sortedValues.size - 2)
-        next(sortedValues(sortedValues.size - 1)) = sortedValues(0)
-        handle = sortedValues(0)
+        prev(sortedValues.head) = sortedValues.last
+        next(sortedValues.head) = sortedValues(1)
+        prev(sortedValues.last) = sortedValues(sortedValues.size - 2)
+        next(sortedValues.last) = sortedValues.head
+        handle = sortedValues.head
 
-      case _ if size > 0 => handle = sortedValues(0)
+      case _ if size > 0 => handle = sortedValues.head
     }
     inserted = false
   }

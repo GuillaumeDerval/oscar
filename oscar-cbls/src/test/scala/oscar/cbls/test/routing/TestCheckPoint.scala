@@ -17,29 +17,21 @@ package oscar.cbls.test.routing
 
 
 import oscar.cbls._
-import oscar.cbls.business.routing.invariants.RouteSuccessorAndPredecessors
-import oscar.cbls.core.propagation.ErrorChecker
-import oscar.cbls.lib.invariant.seq.Length
-import oscar.cbls.core.objective.Objective
-import oscar.cbls.business.routing.model._
-import oscar.cbls.business.routing.neighborhood._
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, DynAndThen, Profile}
-/*
+import oscar.cbls.business.routing._
+import oscar.examples.cbls.routing.RoutingMatrixGenerator
+
 /**
   * Created by f.germeau on 07/09/2016.
   */
-class MyVRP(n:Int,v:Int,model:Store,symmetricDistanceMatrix:Array[Array[Int]]) extends VRP(n,v,model)
-  with TotalConstantDistance with ClosestNeighbors with RoutedAndUnrouted with NextAndPrev{
+class MyVRP(n:Int,v:Int,model:Store,symmetricDistanceMatrix:Array[Array[Int]]) extends VRP(model,n,v){
 
-  setSymmetricDistanceMatrix(symmetricDistanceMatrix)
-
-  override protected def getDistance(from: Int, to: Int): Int = symmetricDistanceMatrix(from)(to)
+  val routingDistance = constantRoutingDistance(routes,n,v,false,symmetricDistanceMatrix,true,false,false)
 
   val penaltyForUnrouted = 10000
 
-  val obj = Objective(totalDistance + (penaltyForUnrouted*(n - Length(routes))))
+  val obj = Objective(routingDistance(0) + (penaltyForUnrouted*(n - length(routes))))
 
-  val closestNeighborsForward = computeClosestNeighborsForward()
+  val closestNeighborsForward = Array.tabulate(n)(DistanceHelper.computeClosestPathFromNeighbor(symmetricDistanceMatrix, (_) => nodes))
 }
 
 object TestCheckPoint extends App{
@@ -58,39 +50,39 @@ object TestCheckPoint extends App{
 
   model.close()
 
-  val insertPoint = Profile(InsertPointUnroutedFirst(
+  val insertPoint = profile(insertPointUnroutedFirst(
     unroutedNodesToInsert = () => myVRP.unroutedNodes,
-    relevantPredecessor = () => myVRP.kFirst(n/10,myVRP.closestNeighborsForward,myVRP.isRouted),
+    relevantPredecessor = () => myVRP.kFirst(n/10,myVRP.closestNeighborsForward,(_) => myVRP.isRouted),
     vrp = myVRP
   ))
 
-  val onePointMove = Profile(OnePointMove(
+  val customOnePointMove = profile(onePointMove(
     nodesToMove = myVRP.routed,
-    relevantNewPredecessors = () => myVRP.kFirst(n/10, myVRP.closestNeighborsForward,myVRP.isRouted),
+    relevantNewPredecessors = () => myVRP.kFirst(n/10, myVRP.closestNeighborsForward,(_) => myVRP.isRouted),
     vrp = myVRP
   ))
 
-  val twoOpt = Profile(TwoOpt(
+  val customTwoOpt = profile(twoOpt(
     segmentStartValues = myVRP.routed,
-    relevantNewSuccessors = () => myVRP.kFirst(n/10, myVRP.closestNeighborsForward,myVRP.isRouted),
+    relevantNewSuccessors = () => myVRP.kFirst(n/10, myVRP.closestNeighborsForward,(_) => myVRP.isRouted),
     vrp = myVRP
   ))
 
-  val threeOpt = Profile(ThreeOpt(
+  val customThreeOpt = profile(threeOpt(
     potentialInsertionPoints = myVRP.routed,
-    relevantNeighbors = () => myVRP.kFirst(20, myVRP.closestNeighborsForward,myVRP.isRouted),
+    relevantNeighbors = () => myVRP.kFirst(20, myVRP.closestNeighborsForward,(_) => myVRP.isRouted),
     vrp = myVRP
   ))
 
-  val doubleInsert = Profile(dynAndThen(
-    InsertPointUnroutedFirst(
+  val doubleInsert = profile(dynAndThen(
+    insertPointUnroutedFirst(
       unroutedNodesToInsert = () => myVRP.unroutedNodes,
-      relevantPredecessor = () => myVRP.kFirst(n/10,myVRP.closestNeighborsForward,myVRP.isRouted),
+      relevantPredecessor = () => myVRP.kFirst(n/10,myVRP.closestNeighborsForward,(_) => myVRP.isRouted),
       vrp= myVRP
     ), (moveResult:InsertPointMove)=>
-      InsertPointUnroutedFirst(
+      insertPointUnroutedFirst(
         unroutedNodesToInsert = () => myVRP.unroutedNodes,
-        relevantPredecessor = () => myVRP.kFirst(n/10,myVRP.closestNeighborsForward,myVRP.isRouted),
+        relevantPredecessor = () => myVRP.kFirst(n/10,myVRP.closestNeighborsForward,(_) => myVRP.isRouted),
         vrp= myVRP
       )
   ))
@@ -100,7 +92,7 @@ object TestCheckPoint extends App{
   var movesBeforeRollBack = 1
   var moves = 0
 
-  val search = Profile(BestSlopeFirst(List(insertPoint,onePointMove,twoOpt,threeOpt,doubleInsert))).afterMove({
+  val search = profile(bestSlopeFirst(List(insertPoint,customOnePointMove,customTwoOpt,customThreeOpt,doubleInsert))).afterMove({
     if(moves == movesBeforeRollBack && movesBeforeRollBack < maxMovesBeforeRollBack) {
       myVRP.routes.rollbackToTopCheckpoint(checkPoint)
       movesBeforeRollBack += 1
@@ -109,7 +101,8 @@ object TestCheckPoint extends App{
     moves += 1
   })
 
-  search.verbose = 1
+  //TODO : Understand why it crashes when setting verbose to 1
+  search.verbose = 2
   //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
 
   print("Doing all moves ...")
@@ -119,4 +112,3 @@ object TestCheckPoint extends App{
   model.propagate()
   println(search.profilingStatistics)
 }
-*/

@@ -67,7 +67,7 @@ object TarjanWithExternalStorage{
           Stack = Stack.tail
           storageForNode.OnStack = false
           SCC = QList(node,SCC)
-          finished = (node == v)
+          finished = node == v
         }
         Components = SCC :: Components
       }
