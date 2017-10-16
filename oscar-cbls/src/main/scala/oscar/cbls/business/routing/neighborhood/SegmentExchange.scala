@@ -246,6 +246,7 @@ case class SegmentExchangeOnSegments(vrp: VRP,
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
     val routePositionOfNodes = vrp.getGlobalRoutePositionOfAllNode
     val relevantNeighborsNow = relevantNeighbors()
+    //val prevNodeOfAllNodes =
     val segmentsToExchangeGroupedByVehiclesNow = segmentsToExchangeGroupedByVehicles()
     require(segmentsToExchangeGroupedByVehiclesNow.size == vehicles().size,
       "SegmentsToExchangeGroupedByVehicles must content segments for all vehicle you want to iterate on." +
@@ -279,16 +280,15 @@ case class SegmentExchangeOnSegments(vrp: VRP,
 
     val (listOfFirstVehiclesToIterateOnIterable,notifyFound1) = selectFirstVehicleBehavior.toIterable(vehicles())
     for(firstVehicle <- listOfFirstVehiclesToIterateOnIterable){
-      println(segmentsToExchangeGroupedByVehiclesNow(firstVehicle).toList)
       val (listOfFirstSegmentsToIterateOnIterable, notifyFound2) =
-        selectFirstSegmentBehavior.toIterable(segmentsToExchangeGroupedByVehiclesNow(firstVehicle))
+      selectFirstSegmentBehavior.toIterable(segmentsToExchangeGroupedByVehiclesNow(firstVehicle))
       for(firstSegment <- listOfFirstSegmentsToIterateOnIterable){
         firstSegmentStartPosition = routePositionOfNodes(firstSegment._1)
         firstSegmentEndPosition = routePositionOfNodes(firstSegment._2)
 
         val (listOfSecondVehiclesToIterateOnIterable,notifyFound3) =
-          selectSecondVehicleBehavior.toIterable(listOfFirstVehiclesToIterateOnIterable)
-        for(secondVehicle <- listOfSecondVehiclesToIterateOnIterable){
+        selectSecondVehicleBehavior.toIterable(listOfFirstVehiclesToIterateOnIterable)
+        for(secondVehicle <- listOfSecondVehiclesToIterateOnIterable.dropWhile(_ != firstVehicle).drop(1)){
           val (listOfSecondSegmentsToIterateOnIterable, notifyFound4) =
             selectFirstSegmentBehavior.toIterable(segmentsToExchangeGroupedByVehiclesNow(secondVehicle))
           for(secondSegment <- listOfSecondSegmentsToIterateOnIterable){

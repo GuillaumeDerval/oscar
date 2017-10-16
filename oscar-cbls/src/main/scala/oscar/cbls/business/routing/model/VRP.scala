@@ -147,6 +147,16 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4)
       case _ => false}) {}
     acc.reverse
   }
+  /*
+  def getPrevNodeOfAllNodes: Array[Int] = {
+    val it = routes.value.iterator
+    val prevNodeOfNodes = Array.fill(n)(n)
+    var prev = n
+    while(it.hasNext){
+      val node = it.next()
+      if(prevNodeOfNodes
+    }
+  }*/
 
   def getRoutePositionOfAllNode:Array[Int] = {
     def buildRoutePositionOfAllNode(it: Iterator[Int],currentPosition: Int, nodeToPosition: List[Int]): Array[Int] = {
@@ -170,7 +180,7 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4)
     val globalRoutePosition = Array.fill(n)(n)
     var inc = 0
     while(it.hasNext) {
-      globalRoutePosition(it.next()) == inc
+      globalRoutePosition(it.next()) = inc
       inc += 1
     }
     globalRoutePosition
