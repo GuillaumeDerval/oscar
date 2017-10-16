@@ -602,7 +602,7 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
     if (model == null) return mOldValue
     val propagating = model.propagating
     if (definingInvariant == null && !propagating) return toNotify.newValue
-    model.propagate(this)
+    if(!propagating) model.propagate(this)
     mOldValue
   }
 
