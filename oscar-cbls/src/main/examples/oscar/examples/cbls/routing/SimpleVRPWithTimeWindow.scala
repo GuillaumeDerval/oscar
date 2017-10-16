@@ -22,7 +22,7 @@ object SimpleVRPWithTimeWindow extends App{
   val myVRP =  new VRP(m,n,v)
 
   // Distance
-  val routingDistance = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistance,true,true,false)
+  val totalRouteLength = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
 
   //TimeWindow
   val tiweWindowInvariant = forwardCumulativeIntegerIntegerDimensionOnVehicle(
@@ -53,7 +53,7 @@ object SimpleVRPWithTimeWindow extends App{
     precedences = Some(precedenceInvariant))
   val obj = new CascadingObjective(fastConstrains,
     new CascadingObjective(slowConstraints,
-      DistanceHelper.totalDistance(routingDistance) + (penaltyForUnrouted*(n - length(myVRP.routes)))))
+      totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes)))))
 
   m.close()
 

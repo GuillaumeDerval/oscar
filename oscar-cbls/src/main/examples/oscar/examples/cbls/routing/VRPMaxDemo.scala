@@ -21,10 +21,9 @@ import oscar.cbls.core.search.{Best, First}
 import oscar.cbls.util.StopWatch
 
 
+object VRPMaxDemo extends App {
 
-object VRPDemo extends App {
-
-  println("usage: VRPDemo n v")
+  println("usage: VRPMaxDemo n v")
   val n:Int=args(0).toInt
   val v = args(1).toInt
 
@@ -33,22 +32,44 @@ object VRPDemo extends App {
   val maxPivotPerValuePercent = 4
   val mapSide = 1000
 
-  new VRPDemo(n,v,maxPivotPerValuePercent,verbose,displayDelay, mapSide)
+  new VRPMaxDemo(n,v,maxPivotPerValuePercent,verbose,displayDelay, mapSide)
 }
 
-class VRPDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, displayDelay:Int, mapSide:Int) extends StopWatch{
+class VRPMaxDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, displayDelay:Int, mapSide:Int) extends StopWatch{
 
   val (symmetricDistanceMatrix,nodesPositions) = RoutingMatrixGenerator(n,side=mapSide)
+  //val maxWorkloadPerVehicle = 2500
+  //val serviceTimePerNode = 100
+
+  val maxWorkloadPerVehicle = 3000
+  val serviceTimePerNode = 100
 
   startWatch()
   val model = new Store()
 
   val myVRP = new VRP(model,n,v)
-  val routingDistance = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistanceMatrix,true,true,false)(0)
+  val routeLengthPerVehicle = constantRoutingDistance(myVRP.routes,n,v,perVehicle = true,symmetricDistanceMatrix,true,true,false)
+  val totalRouteLength = sum(routeLengthPerVehicle)
+  val nodesPerVehicle = nodesOfVehicle(myVRP.routes,v)
+
+  val totalServiceTimePerVehicle = nodesPerVehicle.map(cardinality(_)*serviceTimePerNode)
+
+  val c = new ConstraintSystem(model)
+
+  for(vehicle <- 0 until v){
+    val workLoadOfVehicle = totalServiceTimePerVehicle(vehicle) + routeLengthPerVehicle(vehicle)
+    c.add(workLoadOfVehicle le maxWorkloadPerVehicle)
+  }
+
+  c.close()
+
   val graphicExtension = display(myVRP,nodesPositions.map(np => (np._1.toDouble,np._2.toDouble)).toList,sizeOfMap = Some(mapSide), refreshRate = displayDelay)
   val penaltyForUnrouted  = 10000
 
-  val obj = Objective(routingDistance + (penaltyForUnrouted*(n - length(myVRP.routes))))
+  val obj = new CascadingObjective(
+    c,
+    Objective(totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes))))
+  )
 
   model.close()
 
@@ -101,7 +122,19 @@ class VRPDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, displayDel
 
   def segExchange(k:Int) = segmentExchange(myVRP,()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), () => myVRP.vehicles)
 
-  val search = (bestSlopeFirst(List(routeUnroutedPoint, routeUnroutedPoint2, vlsn1pt, onePtMove(10),customTwoOpt, customThreeOpt(10,true),segExchange(10))) exhaust bestSlopeFirst(List(customThreeOpt(30,true),vlsn1pt))).afterMove(
+  val search = (bestSlopeFirst(List(
+    routeUnroutedPoint,
+    routeUnroutedPoint2,
+    vlsn1pt,
+    onePtMove(10),
+    customTwoOpt,
+    customThreeOpt(10,true),
+    segExchange(10)))
+    exhaust bestSlopeFirst(List(
+    customThreeOpt(30,true),
+    segExchange(20),
+    routeUnroutedPoint2,
+    vlsn1pt))).afterMove(
     graphicExtension.drawRoutes()
     ) //showObjectiveFunction(myVRP.obj)
 

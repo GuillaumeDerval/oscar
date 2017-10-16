@@ -11,9 +11,6 @@ import scala.collection.immutable.HashSet
   */
 object DistanceHelper{
 
-  def totalDistance(constantRoutingDistance: Array[CBLSIntVar])= Sum(constantRoutingDistance)
-  def distancePerVehicle(constantRoutingDistance: Array[CBLSIntVar]): Array[Int] = constantRoutingDistance.map(_.value)
-
   /**
     * FROM NODE TO NEIGHBORS
     *
