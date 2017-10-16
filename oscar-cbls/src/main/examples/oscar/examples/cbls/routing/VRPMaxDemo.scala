@@ -132,15 +132,25 @@ class VRPMaxDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, display
     segExchange(10)))
     exhaust bestSlopeFirst(List(
     customThreeOpt(30,true),
-    segExchange(20),
+    segExchange(30),
     routeUnroutedPoint2,
+    customTwoOpt,
+    (insertPointUnroutedFirst(
+      myVRP.unrouted,
+      ()=>myVRP.kFirst(20,closestRelevantNeighborsByDistance,routedPostFilter),
+      myVRP,
+      neighborhoodName = "InsertUF",
+      hotRestart = false,
+      selectNodeBehavior = First(),
+      selectInsertionPointBehavior = Best())
+      andThen onePtMove(10)) name "RouteAndMove",
     vlsn1pt))).afterMove(
     graphicExtension.drawRoutes()
-    ) //showObjectiveFunction(myVRP.obj)
+  ) //showObjectiveFunction(myVRP.obj)
 
   search.verbose = verbose
   //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
-//  routeUnroutdPoint.verbose= 4
+  //  routeUnroutdPoint.verbose= 4
   search.doAllMoves(obj = obj)
 
   graphicExtension.drawRoutes()
