@@ -29,7 +29,7 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
   TimeWindowHelper.reduceTimeWindows(myVRP,travelDurationMatrix,maxTravelDurations,earlylines,deadlines,taskDurations)
 
   // Distance
-  val routingDistance = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistance,true,true,false)
+  val totalRouteLength = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
 
   //TimeWindow
   val tiweWindowInvariant = forwardCumulativeIntegerIntegerDimensionOnVehicle(
@@ -72,7 +72,7 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
     maxTravelDurations = Some(maxTravelDurations))
   val obj = new CascadingObjective(fastConstrains,
     new CascadingObjective(slowConstraints,
-      DistanceHelper.totalDistance(routingDistance) + (penaltyForUnrouted*(n - length(myVRP.routes)))))
+      totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes)))))
 
   m.close()
 

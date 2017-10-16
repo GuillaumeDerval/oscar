@@ -24,7 +24,7 @@ object SimpleVRPWithVehicleContent extends App{
   val myVRP =  new VRP(m,n,v)
 
   // Distance
-  val routingDistance = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistance,true,true,false)
+  val totalRouteLength = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
 
   // Vehicle content
   val violationOfContentAtNode = new CBLSIntVar(myVRP.routes.model, 0, 0 to Int.MaxValue, "violation of capacity " + "Content at node")
@@ -46,7 +46,7 @@ object SimpleVRPWithVehicleContent extends App{
     precedences = Some(precedenceInvariant))
   val obj = new CascadingObjective(fastConstrains,
     new CascadingObjective(slowConstraints,
-      DistanceHelper.totalDistance(routingDistance) + (penaltyForUnrouted*(n - length(myVRP.routes)))))
+      totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes)))))
 
   m.close()
 

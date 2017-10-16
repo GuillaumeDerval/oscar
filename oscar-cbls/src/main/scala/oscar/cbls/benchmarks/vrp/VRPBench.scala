@@ -180,11 +180,11 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
 
   val myVRP = new VRP(model,n,v)
 
-  val routingDistance = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistanceMatrix,true,true,false)
+  val totalRouteLength = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistanceMatrix,true,true,false)(0)
 
   val penaltyForUnrouted  = 10000
 
-  val obj = Objective(DistanceHelper.totalDistance(routingDistance) + (penaltyForUnrouted*(n - length(myVRP.routes))))
+  val obj = Objective(totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes))))
 
   override def toString : String = super.toString +  "objective: " + obj.value + "\n"
 
