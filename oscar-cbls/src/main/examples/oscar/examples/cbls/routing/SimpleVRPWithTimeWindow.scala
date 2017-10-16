@@ -183,7 +183,7 @@ object SimpleVRPWithTimeWindow extends App{
   //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
 
 
-  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,segExchangeOnSegments(20),onePtMove(20)))
+  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,segExchangeOnSegments(5),onePtMove(20)))
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
