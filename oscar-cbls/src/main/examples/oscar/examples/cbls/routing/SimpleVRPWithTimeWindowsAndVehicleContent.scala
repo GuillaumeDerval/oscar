@@ -86,13 +86,16 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
   def relevantPredecessorsForLastNode(lastNode: Int) = ChainsHelper.relevantNeighborsForLastNodeAfterHead(myVRP,chainsExtension,Some(relevantPredecessorsOfNodes(lastNode)))(lastNode)
   val relevantPredecessorsForInternalNodes = ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP, chainsExtension)_
 
+  var enoughSpaceAfterNeighborNow: (Int,Int,Array[Int]) => Boolean =
+    CapacityHelper.enoughSpaceAfterNeighbor(n,capacityInvariant)
+
   def postFilter(node:Int): (Int) => Boolean = {
     val routedNode = myVRP.routed.value
     (neighbor: Int) => {
       val successor = myVRP.nextNodeOf(neighbor)
       routedNode.contains(neighbor) &&
       (successor.isEmpty || relevantSuccessorsOfNodes(node).contains(successor.get)) &&
-      CapacityHelper.enoughSpaceAfterNeighbor(node,contentsFlow,capacityInvariant)(neighbor)
+        enoughSpaceAfterNeighborNow(node,neighbor,contentsFlow)
     }
   }
 
@@ -182,7 +185,8 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
   //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
 
 
-  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,onePtMove(20)))
+  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,onePtMove(20)))afterMove(
+    enoughSpaceAfterNeighborNow = CapacityHelper.enoughSpaceAfterNeighbor(n,capacityInvariant))
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
