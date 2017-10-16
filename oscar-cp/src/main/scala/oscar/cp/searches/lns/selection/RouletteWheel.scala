@@ -20,7 +20,7 @@ class RouletteWheel[T <: ALNSElement](
   private val active = mutable.HashSet[Int](elems.indices: _*)
 
   def this(elems: Array[T], rFactor: Double, reversed:Boolean, perfMetric: (T) => Double){
-    this(elems, Array.fill(elems.length){(Double.MaxValue - 1) / elems.length}, rFactor, reversed, perfMetric)
+    this(elems, Array.fill(elems.length){(Double.MaxValue - 1) / elems.length.toDouble}, rFactor, reversed, perfMetric)
   }
 
   private def getIndex(elem: T): Int = lastSelected.getOrElse(elem, elems.indexOf(elem))
@@ -62,15 +62,16 @@ class RouletteWheel[T <: ALNSElement](
   override def adapt(elem: T): Double = {
     val index = getIndex(elem)
     if(index == -1) throw  new Exception("Element " + elem + " is not in store.")
-    weights(index) = if(elem.execs > 1) (1.0 - decay) * weights(index) + decay * (perfMetric(elem) / elems.length.toDouble) //received val divided by the number of elems to avoid overflow when processing max values
-    else perfMetric(elem)
+    //Warning: received val is divided by the number of elems to avoid overflow when processing max values!
+    weights(index) = if(elem.execs > 1) (1.0 - decay) * weights(index) + decay * (perfMetric(elem) / elems.length.toDouble)
+    else perfMetric(elem) / elems.length.toDouble
     //    println("elem " + elem + " has now weight: " + weights(index))
     if(isCached(index)) lastSelected.remove(elem)
     if(!elem.isActive){
       deactivate(index)
       -1.0
     }
-    else weights(index)
+    else weights(index) * elems.length
   }
 
   override def getElements: Seq[T] = elems

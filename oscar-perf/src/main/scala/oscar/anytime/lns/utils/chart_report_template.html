@@ -52,6 +52,10 @@
                     break;
                 case 'line':
                     drawHighChart(id, src, options);
+                    break;
+                case 'logline':
+                    drawHighChart(id, src, options);
+                    break;
             }
         }
 
@@ -67,6 +71,10 @@
 
                 xAxis: {
                     min: 0
+                },
+
+                yAxis: {
+                    type: options.chartType
                 },
 
                 data: {

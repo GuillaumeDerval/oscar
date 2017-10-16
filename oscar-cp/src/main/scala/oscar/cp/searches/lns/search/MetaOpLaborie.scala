@@ -12,7 +12,7 @@ import scala.util.Random
   * TODO
   */
 class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearchImpl(solver, vars, config) {
-//  val tolerance: Double = config.metaParameters.getOrElse('tolerance, 0.25).asInstanceOf[Double]
+  val tolerance: Double = config.metaParameters.getOrElse('tolerance, 0.5).asInstanceOf[Double]
   override val stagnationThreshold = 10
 
   override lazy val relaxOps: Array[ALNSOperator] = config.relaxStore.getElements.toArray
@@ -82,7 +82,7 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
         println("Operator " + op.name + " efficiency is " + opEfficiency)
       }
 
-      if (op.time >= iterTimeout * 2 && /*(opEfficiency < searchEfficiency * tolerance ||*/ op.sols == 0/*)*/){
+      if (op.time >= iterTimeout * 2 && (opEfficiency < searchEfficiency * tolerance || op.sols == 0)){
         op.setActive(false)
         if (!solver.silent) println("Operator " + op.name + " deactivated due to low efficiency!")
 //        manageIterTimeout()

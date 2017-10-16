@@ -64,7 +64,8 @@ class HtmlWriter(templatePath: String, outputPath: String){
     */
   def addElement(elemType: String, title:String, src:String, id:String = getNextDefaultId): Unit = {
     val options = elemType match{
-      case "line" => "{\ntitle: '" + title + "',\ninterpolateNulls:true,\nhAxis: {minValue: 0}\n}"
+      case "line" => "{\ntitle: '" + title + "',\nchartType:'linear',\nhAxis: {minValue: 0}\n}"
+      case "logline" => "{\ntitle: '" + title + "',\nchartType:'logarithmic',\nhAxis: {minValue: 0}\n}"
       case "stacked bar" => "{\ntitle: '" + title + "',\nisStacked:'percent',\n}"
       case _ => "{\ntitle: '" + title + "'\n}"
     }
