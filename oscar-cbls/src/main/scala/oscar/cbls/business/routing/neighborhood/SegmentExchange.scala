@@ -15,9 +15,10 @@ package oscar.cbls.business.routing.neighborhood
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.algo.search.{Pairs, HotRestart}
+import oscar.cbls.algo.clique.Clique
+import oscar.cbls.algo.search.{HotRestart, Pairs}
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.core.search.{First, LoopBehavior, EasyNeighborhoodMultiLevel, EasyNeighborhood}
+import oscar.cbls.core.search.{EasyNeighborhood, EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
 import scala.collection.immutable.SortedSet
 
@@ -244,15 +245,20 @@ case class SegmentExchangeOnSegments(vrp: VRP,
 
   override def exploreNeighborhood(): Unit = {
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
-    val routePositionOfNodes = vrp.getGlobalRoutePositionOfAllNode
-    val relevantNeighborsNow = relevantNeighbors()
-    val prevNodeOfAllNodes = vrp.getPrevNodeOfAllNodes
-    val nextNodeOfAllNodes = vrp.getNextNodeOfAllNodes
+    val relevantNeighborsNow = Array.tabulate(n)(relevantNeighbors()(_).toList)
     val segmentsToExchangeGroupedByVehiclesNow = segmentsToExchangeGroupedByVehicles()
-    require(segmentsToExchangeGroupedByVehiclesNow.size == vehicles().size,
+    val vehiclesNow = vehicles().toArray
+
+    val routePositionOfNodes = vrp.getGlobalRoutePositionOfAllNode
+    val prevNodeOfAllNodes = vrp.getGlobalPrevNodeOfAllNodes
+    val nextNodeOfAllNodes = vrp.getGlobalNextNodeOfAllNodes
+    require(segmentsToExchangeGroupedByVehiclesNow.size == vehiclesNow.size,
       "SegmentsToExchangeGroupedByVehicles must content segments for all vehicle you want to iterate on." +
         "\nSegmentsToExchangeGroupedByVehicles's size = " + segmentsToExchangeGroupedByVehiclesNow.size + " should be : " +
-        vehicles().size)
+        vehiclesNow.length)
+
+    val startingNodeToSegmentByVehicle: Map[Int,Map[Int,Iterable[(Int,Int)]]] = segmentsToExchangeGroupedByVehiclesNow.map(x => x._1 -> x._2.groupBy(_._1))
+    val endingNodeToSegmentByVehicle: Map[Int,Map[Int,Iterable[(Int,Int)]]] = segmentsToExchangeGroupedByVehiclesNow.map(x => x._1 -> x._2.groupBy(_._2))
 
     def evalObjAndRollBack() : Int = {
       val a = obj.value
@@ -260,14 +266,13 @@ case class SegmentExchangeOnSegments(vrp: VRP,
       a
     }
 
-    def preFilteredSecondSegments(firsSegment:(Int,Int), potentialSecondSegmentStart: List[Int], potentialSecondSegmentEnd: List[Int], segments: List[(Int,Int)]): Iterable[(Int,Int)] ={
-
+    def preFilteredSecondSegments(firstSegment:(Int,Int), potentialSecondSegmentStart: List[Int], potentialSecondSegmentEnd: List[Int], segments: List[(Int,Int)]): Iterable[(Int,Int)] ={
 
       val filteredPotentialSecondSegmentStart = potentialSecondSegmentStart.collect{
-        case sss if sss < vrp.n && relevantNeighborsNow(sss).exists(_ == prevNodeOfAllNodes(firsSegment._1)) => sss
+        case sss if sss < n && sss >= v && relevantNeighborsNow(sss).contains(prevNodeOfAllNodes(firstSegment._1)) => sss
       }
       val filteredPotentialSecondSegmentEnd = potentialSecondSegmentEnd.collect{
-        case sse if sse < vrp.n && (nextNodeOfAllNodes(sse) == vrp.n || relevantNeighborsNow(nextNodeOfAllNodes(sse)).exists(_ == firsSegment._2)) => sse
+        case sse if sse < n && sse >= v && (nextNodeOfAllNodes(sse) < v || (nextNodeOfAllNodes(sse) < n && relevantNeighborsNow(nextNodeOfAllNodes(sse)).contains(firstSegment._2))) => sse
       }
 
       segments.collect{
@@ -287,14 +292,22 @@ case class SegmentExchangeOnSegments(vrp: VRP,
       for(firstSegment <- listOfFirstSegmentsToIterateOnIterable){
         firstSegmentStartPosition = routePositionOfNodes(firstSegment._1)
         firstSegmentEndPosition = routePositionOfNodes(firstSegment._2)
-        val potentialSecondSegmentStartGivenFirstSegmentStart = relevantNeighborsNow(firstSegment._1).map(nextNodeOfAllNodes).toList
-        val potentialSecondSegmentEndGivenFirstSegmentEnd = if(nextNodeOfAllNodes(firstSegment._2) < vrp.n) relevantNeighborsNow(nextNodeOfAllNodes(firstSegment._2)).toList else (0 until n).toList
 
         val (listOfSecondVehiclesToIterateOnIterable,notifyFound3) =
         selectSecondVehicleBehavior.toIterable(listOfFirstVehiclesToIterateOnIterable)
         for(secondVehicle <- listOfSecondVehiclesToIterateOnIterable.dropWhile(_ != firstVehicle).drop(1)){
+          val potentialSecondSegmentStartGivenFirstSegmentStartAndVehicle =
+            relevantNeighborsNow(firstSegment._1).intersect(startingNodeToSegmentByVehicle(secondVehicle).keys.map(prevNodeOfAllNodes).toList).map(nextNodeOfAllNodes)filter(_ >= v)
+          val potentialSecondSegmentEndGivenFirstSegmentEndAndVehicle =
+            (if(nextNodeOfAllNodes(firstSegment._2) >= v) relevantNeighborsNow(nextNodeOfAllNodes(firstSegment._2))
+            else (v until n).toList).
+              intersect(endingNodeToSegmentByVehicle(secondVehicle).keys.toList)filter(_ >= v)
+          val potentialSecondSegments =
+            potentialSecondSegmentStartGivenFirstSegmentStartAndVehicle.flatMap(startingNodeToSegmentByVehicle(secondVehicle)).
+              intersect(potentialSecondSegmentEndGivenFirstSegmentEndAndVehicle.flatMap(endingNodeToSegmentByVehicle(secondVehicle)))
+
           val (listOfSecondSegmentsToIterateOnIterable, notifyFound4) =
-            selectFirstSegmentBehavior.toIterable(preFilteredSecondSegments(firstSegment,potentialSecondSegmentStartGivenFirstSegmentStart,potentialSecondSegmentEndGivenFirstSegmentEnd,segmentsToExchangeGroupedByVehiclesNow(secondVehicle)))
+            selectFirstSegmentBehavior.toIterable(preFilteredSecondSegments(firstSegment,potentialSecondSegmentStartGivenFirstSegmentStartAndVehicle,potentialSecondSegmentEndGivenFirstSegmentEndAndVehicle,potentialSecondSegments))
           for(secondSegment <- listOfSecondSegmentsToIterateOnIterable){
             secondSegmentStartPosition = routePositionOfNodes(secondSegment._1)
             secondSegmentEndPosition = routePositionOfNodes(secondSegment._2)
