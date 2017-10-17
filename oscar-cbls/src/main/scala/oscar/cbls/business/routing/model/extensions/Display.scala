@@ -2,7 +2,7 @@ package oscar.cbls.business.routing.model.extensions
 
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.business.routing.visual.routingMap.{RoutingMap, RoutingMapContainer}
-import oscar.examples.cbls.routing.visual.ColorGenerator
+import oscar.cbls.visual.ColorGenerator
 
 /**
   * Created by fg on 18/09/17.
