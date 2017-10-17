@@ -125,7 +125,7 @@ object SimpleVRPWithTimeWindow extends App{
   def segExchangeOnSegments(k: Int) = profile(
     segmentExchangeOnSegments(myVRP,
       () => Array.tabulate(v)(vehicle => vehicle -> ChainsHelper.computeCompleteSegments(myVRP,vehicle,chainsExtension)).toMap,
-      ()=> myVRP.kFirst(v*2,closestRelevantPredecessorsByDistance),
+      ()=> closestRelevantPredecessorsByDistance,
       () => 0 until v
     ))
 

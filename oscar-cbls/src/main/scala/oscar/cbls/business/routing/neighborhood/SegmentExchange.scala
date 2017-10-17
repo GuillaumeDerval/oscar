@@ -246,7 +246,8 @@ case class SegmentExchangeOnSegments(vrp: VRP,
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
     val routePositionOfNodes = vrp.getGlobalRoutePositionOfAllNode
     val relevantNeighborsNow = relevantNeighbors()
-    //val prevNodeOfAllNodes =
+    val prevNodeOfAllNodes = vrp.getPrevNodeOfAllNodes
+    val nextNodeOfAllNodes = vrp.getNextNodeOfAllNodes
     val segmentsToExchangeGroupedByVehiclesNow = segmentsToExchangeGroupedByVehicles()
     require(segmentsToExchangeGroupedByVehiclesNow.size == vehicles().size,
       "SegmentsToExchangeGroupedByVehicles must content segments for all vehicle you want to iterate on." +
@@ -259,21 +260,21 @@ case class SegmentExchangeOnSegments(vrp: VRP,
       a
     }
 
-    def preCheckRelevanceOfMove(firstSegment: (Int,Int), secondSegment: (Int,Int),
-                                fssp: Int, fsep: Int, sssp: Int, ssep: Int): Boolean ={
+    def preFilteredSecondSegments(firsSegment:(Int,Int), potentialSecondSegmentStart: List[Int], potentialSecondSegmentEnd: List[Int], segments: List[(Int,Int)]): Iterable[(Int,Int)] ={
 
-      val positionOfRelevantNeighborsOfFSSN = relevantNeighborsNow(firstSegment._1).map(routePositionOfNodes)
-      val positionOfRelevantNeighborsOfSSSN = relevantNeighborsNow(secondSegment._1).map(routePositionOfNodes)
 
-      //val nextOfFSEN = vrp.nextNodeOf(firstSegment._2)
-      //val nextOfSSEN = vrp.nextNodeOf(secondSegment._2)
-      //val positionOfRelevantNeighborsOfNextOfFSEN = if(nextOfFSEN.isDefined)Some(relevantNeighborsNow(nextOfFSEN.get).map(routePositionOfNodes)) else None
-      //val positionOfRelevantNeighborsOfNextOfSSEN = if(nextOfSSEN.isDefined)Some(relevantNeighborsNow(nextOfSSEN.get).map(routePositionOfNodes)) else None
+      val filteredPotentialSecondSegmentStart = potentialSecondSegmentStart.collect{
+        case sss if sss < vrp.n && relevantNeighborsNow(sss).exists(_ == prevNodeOfAllNodes(firsSegment._1)) => sss
+      }
+      val filteredPotentialSecondSegmentEnd = potentialSecondSegmentEnd.collect{
+        case sse if sse < vrp.n && (nextNodeOfAllNodes(sse) == vrp.n || relevantNeighborsNow(nextNodeOfAllNodes(sse)).exists(_ == firsSegment._2)) => sse
+      }
 
-      positionOfRelevantNeighborsOfFSSN.exists(_ == routePositionOfNodes(secondSegment._1)-1) &&
-        positionOfRelevantNeighborsOfSSSN.exists(_ == routePositionOfNodes(firstSegment._1)-1) //&&
-        //(positionOfRelevantNeighborsOfNextOfFSEN.isEmpty || positionOfRelevantNeighborsOfNextOfFSEN.get.exists(_ == routePositionOfNodes(secondSegment._2))) &&
-        //(positionOfRelevantNeighborsOfNextOfSSEN.isEmpty || positionOfRelevantNeighborsOfNextOfSSEN.get.exists(_ == routePositionOfNodes(firstSegment._2)))
+      segments.collect{
+        case (start:Int, end:Int)
+          if filteredPotentialSecondSegmentStart.contains(start) && filteredPotentialSecondSegmentEnd.contains(end)
+             =>
+          (start,end)}
     }
 
     if(!hotRestart)startVehicle = 0
@@ -282,18 +283,22 @@ case class SegmentExchangeOnSegments(vrp: VRP,
     for(firstVehicle <- listOfFirstVehiclesToIterateOnIterable){
       val (listOfFirstSegmentsToIterateOnIterable, notifyFound2) =
       selectFirstSegmentBehavior.toIterable(segmentsToExchangeGroupedByVehiclesNow(firstVehicle))
+
       for(firstSegment <- listOfFirstSegmentsToIterateOnIterable){
         firstSegmentStartPosition = routePositionOfNodes(firstSegment._1)
         firstSegmentEndPosition = routePositionOfNodes(firstSegment._2)
+        val potentialSecondSegmentStartGivenFirstSegmentStart = relevantNeighborsNow(firstSegment._1).map(nextNodeOfAllNodes).toList
+        val potentialSecondSegmentEndGivenFirstSegmentEnd = if(nextNodeOfAllNodes(firstSegment._2) < vrp.n) relevantNeighborsNow(nextNodeOfAllNodes(firstSegment._2)).toList else (0 until n).toList
 
         val (listOfSecondVehiclesToIterateOnIterable,notifyFound3) =
         selectSecondVehicleBehavior.toIterable(listOfFirstVehiclesToIterateOnIterable)
         for(secondVehicle <- listOfSecondVehiclesToIterateOnIterable.dropWhile(_ != firstVehicle).drop(1)){
           val (listOfSecondSegmentsToIterateOnIterable, notifyFound4) =
-            selectFirstSegmentBehavior.toIterable(segmentsToExchangeGroupedByVehiclesNow(secondVehicle))
+            selectFirstSegmentBehavior.toIterable(preFilteredSecondSegments(firstSegment,potentialSecondSegmentStartGivenFirstSegmentStart,potentialSecondSegmentEndGivenFirstSegmentEnd,segmentsToExchangeGroupedByVehiclesNow(secondVehicle)))
           for(secondSegment <- listOfSecondSegmentsToIterateOnIterable){
             secondSegmentStartPosition = routePositionOfNodes(secondSegment._1)
             secondSegmentEndPosition = routePositionOfNodes(secondSegment._2)
+
             /*val listOfPositions =
               if(tryFlip)
                 List((firstSegmentStartPosition,firstSegmentEndPosition,secondSegmentStartPosition,secondSegmentEndPosition),
@@ -303,17 +308,13 @@ case class SegmentExchangeOnSegments(vrp: VRP,
               else
                 List((firstSegmentStartPosition,firstSegmentEndPosition,secondSegmentStartPosition,secondSegmentEndPosition))*/
 
-            if(preCheckRelevanceOfMove(firstSegment, secondSegment,
-              firstSegmentStartPosition,firstSegmentEndPosition,
-              secondSegmentStartPosition,secondSegmentEndPosition)) {
 
-              doMove(firstSegmentStartPosition, firstSegmentEndPosition, false, secondSegmentStartPosition, secondSegmentEndPosition, false)
-              if (evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
-                notifyFound1()
-                notifyFound2()
-                notifyFound3()
-                notifyFound4()
-              }
+            doMove(firstSegmentStartPosition, firstSegmentEndPosition, false, secondSegmentStartPosition, secondSegmentEndPosition, false)
+            if (evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
+              notifyFound1()
+              notifyFound2()
+              notifyFound3()
+              notifyFound4()
             }
           }
         }
