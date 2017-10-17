@@ -15,11 +15,12 @@ package oscar.cbls.business.routing.neighborhood
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.algo.search.{Pairs, HotRestart}
+import oscar.cbls.algo.clique.Clique
+import oscar.cbls.algo.search.{HotRestart, Pairs}
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.core.search.{First, LoopBehavior, EasyNeighborhoodMultiLevel, EasyNeighborhood}
+import oscar.cbls.core.search.{EasyNeighborhood, EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
-import scala.collection.immutable.SortedSet
+import scala.collection.immutable.{HashSet, SortedSet}
 
 /**
  * exchanges segments of different vehicles (not on the same vehicle!)
@@ -208,13 +209,13 @@ case class SegmentExchange(val vrp: VRP,
   * (by using the method computeCompleteSegments() presents in ChainsHelper object)
   *
   * @param vrp The PDP object specific for pickup & delivery problems
-  * @param segmentsToExchangeGroupedByVehicles The lists of segments grouped by routes
+  * @param segmentsToExchangeGroupedByVehicle The lists of segments grouped by routes
   * @param neighborhoodName the name of the neighborhood, used for verbosities
   * //@param tryFlip True if you want to try flipping the segments
   * @param hotRestart true if you doesn't wan't to test all the route each time the neighborhood is called
   */
 case class SegmentExchangeOnSegments(vrp: VRP,
-                                     segmentsToExchangeGroupedByVehicles: () => Map[Int,List[(Int,Int)]],
+                                     segmentsToExchangeGroupedByVehicle: () => Map[Int, List[(Int,Int)]],
                                      relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
                                      vehicles: () => Iterable[Int],
                                      neighborhoodName:String = "PickupDeliverySegmentExchange",
@@ -244,15 +245,16 @@ case class SegmentExchangeOnSegments(vrp: VRP,
 
   override def exploreNeighborhood(): Unit = {
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
+    val relevantNeighborsNow = Array.tabulate(n)(x => HashSet(relevantNeighbors()(x).toList:_*))
+    val segmentsToExchangeGroupedByVehiclesNow = segmentsToExchangeGroupedByVehicle()
+    val vehiclesNow = vehicles().toList.sorted
+
     val routePositionOfNodes = vrp.getGlobalRoutePositionOfAllNode
-    val relevantNeighborsNow = relevantNeighbors()
-    val prevNodeOfAllNodes = vrp.getPrevNodeOfAllNodes
-    val nextNodeOfAllNodes = vrp.getNextNodeOfAllNodes
-    val segmentsToExchangeGroupedByVehiclesNow = segmentsToExchangeGroupedByVehicles()
-    require(segmentsToExchangeGroupedByVehiclesNow.size == vehicles().size,
-      "SegmentsToExchangeGroupedByVehicles must content segments for all vehicle you want to iterate on." +
-        "\nSegmentsToExchangeGroupedByVehicles's size = " + segmentsToExchangeGroupedByVehiclesNow.size + " should be : " +
-        vehicles().size)
+    val prevNodeOfAllNodes = vrp.getGlobalPrevNodeOfAllNodes
+    val nextNodeOfAllNodes = vrp.getGlobalNextNodeOfAllNodes
+
+    val startingNodeToSegment: Map[Int,Map[Int,HashSet[(Int,Int)]]] = segmentsToExchangeGroupedByVehiclesNow.map(x => x._1 -> x._2.groupBy(_._1).map(y => y._1 -> HashSet(y._2:_*)))
+    val endingNodeToSegment: Map[Int,Map[Int,HashSet[(Int,Int)]]] = segmentsToExchangeGroupedByVehiclesNow.map(x => x._1 -> x._2.groupBy(_._2).map(y => y._1 -> HashSet(y._2:_*)))
 
     def evalObjAndRollBack() : Int = {
       val a = obj.value
@@ -260,66 +262,86 @@ case class SegmentExchangeOnSegments(vrp: VRP,
       a
     }
 
-    def preFilteredSecondSegments(firsSegment:(Int,Int), potentialSecondSegmentStart: List[Int], potentialSecondSegmentEnd: List[Int], segments: List[(Int,Int)]): Iterable[(Int,Int)] ={
+    def computeAllPotentialSegmentToExchangeWith(segment:(Int,Int),otherVehicle: Int): HashSet[(Int,Int)] ={
 
+      val (start,end) = segment
 
-      val filteredPotentialSecondSegmentStart = potentialSecondSegmentStart.collect{
-        case sss if sss < vrp.n && relevantNeighborsNow(sss).exists(_ == prevNodeOfAllNodes(firsSegment._1)) => sss
-      }
-      val filteredPotentialSecondSegmentEnd = potentialSecondSegmentEnd.collect{
-        case sse if sse < vrp.n && (nextNodeOfAllNodes(sse) == vrp.n || relevantNeighborsNow(nextNodeOfAllNodes(sse)).exists(_ == firsSegment._2)) => sse
-      }
+      // Getting the potential starting nodes whose the previous node is in the relevantNeighbors of the given segment's start
+      // We first get the previous node of all segment's start of the other vehicle
+      // Then we intersect it with the relevantNeighbor of the segment we want to move
+      // Finally we get the next node of the intersection
+      val previousOfSegmentStartsOfOtherVehicle = startingNodeToSegment(otherVehicle).keys.map(prevNodeOfAllNodes).toList
+      val potentialSecondSegmentStartGivenFirstSegmentStartAndVehicle =
+        relevantNeighborsNow(start).toList.intersect(previousOfSegmentStartsOfOtherVehicle).map(nextNodeOfAllNodes)filter(_ >= v)
 
-      segments.collect{
-        case (start:Int, end:Int)
-          if filteredPotentialSecondSegmentStart.contains(start) && filteredPotentialSecondSegmentEnd.contains(end)
-             =>
-          (start,end)}
+      // Getting the potential ending nodes that are in the relevantNeighbors of the nextNode of the given segment's end
+      // We first get the relevantNeighbors of the node following the end of the segment we want to move
+      //    or all node if the segment's end is the last node of the route
+      // Then we intersect it with all the segment's end of the other vehicle
+      // We have the potential ending node of the second segment
+      val potentialSecondSegmentEndGivenFirstSegmentEndAndVehicle =
+        (if(nextNodeOfAllNodes(end) >= v) relevantNeighborsNow(nextNodeOfAllNodes(end)).toList
+        else (v until n).toList).
+          intersect(endingNodeToSegment(otherVehicle).keys.toList)filter(_ >= v)
+
+      // Getting all the segments of the secondVehicle that fit the potentialSecondSegment's start and end
+      val potentialSecondSegments =
+        potentialSecondSegmentStartGivenFirstSegmentStartAndVehicle.flatMap(startingNodeToSegment(otherVehicle)).
+          intersect(potentialSecondSegmentEndGivenFirstSegmentEndAndVehicle.flatMap(endingNodeToSegment(otherVehicle)))
+
+      HashSet(potentialSecondSegments:_*)
     }
 
     if(!hotRestart)startVehicle = 0
 
-    val (listOfFirstVehiclesToIterateOnIterable,notifyFound1) = selectFirstVehicleBehavior.toIterable(vehicles())
-    for(firstVehicle <- listOfFirstVehiclesToIterateOnIterable){
-      val (listOfFirstSegmentsToIterateOnIterable, notifyFound2) =
-      selectFirstSegmentBehavior.toIterable(segmentsToExchangeGroupedByVehiclesNow(firstVehicle))
+    val (listOfVehicleForFirstVehicle,notifyFound1) = selectFirstVehicleBehavior.toIterable(vehiclesNow)
+    for(firstVehicle <- listOfVehicleForFirstVehicle){
+      val (listOfVehicleForSecondVehicle,notifyFound2) = selectSecondVehicleBehavior.toIterable(vehiclesNow.dropWhile(_ <= firstVehicle))
+      for(secondVehicle <- listOfVehicleForSecondVehicle){
+        val potentialSegmentsToExchangeWithForSegmentsOfFirstVehicle = segmentsToExchangeGroupedByVehiclesNow(firstVehicle).map(segment => segment -> computeAllPotentialSegmentToExchangeWith(segment,secondVehicle)).toMap
+        val potentialSegmentsToExchangeWithForSegmentsOfSecondVehicle = segmentsToExchangeGroupedByVehiclesNow(secondVehicle).map(segment => segment -> computeAllPotentialSegmentToExchangeWith(segment,firstVehicle)).toMap
+/*
+        println("firstVehicle : ")
+        for(seg <- potentialSegmentsToExchangeWithForSegmentsOfFirstVehicle) {
+          println("Key : " + seg._1 + "         Value : " + seg._2)
+        }
 
-      for(firstSegment <- listOfFirstSegmentsToIterateOnIterable){
-        firstSegmentStartPosition = routePositionOfNodes(firstSegment._1)
-        firstSegmentEndPosition = routePositionOfNodes(firstSegment._2)
-        val potentialSecondSegmentStartGivenFirstSegmentStart = relevantNeighborsNow(firstSegment._1).map(nextNodeOfAllNodes).toList
-        val potentialSecondSegmentEndGivenFirstSegmentEnd = if(nextNodeOfAllNodes(firstSegment._2) < vrp.n) relevantNeighborsNow(nextNodeOfAllNodes(firstSegment._2)).toList else (0 until n).toList
+        println("secondVehicle : ")
+        for(seg <- potentialSegmentsToExchangeWithForSegmentsOfSecondVehicle) {
+          println("Key : " + seg._1 + "            Value : " + seg._2)
+        }*/
 
-        val (listOfSecondVehiclesToIterateOnIterable,notifyFound3) =
-        selectSecondVehicleBehavior.toIterable(listOfFirstVehiclesToIterateOnIterable)
-        for(secondVehicle <- listOfSecondVehiclesToIterateOnIterable.dropWhile(_ != firstVehicle).drop(1)){
-          val (listOfSecondSegmentsToIterateOnIterable, notifyFound4) =
-            selectFirstSegmentBehavior.toIterable(preFilteredSecondSegments(firstSegment,potentialSecondSegmentStartGivenFirstSegmentStart,potentialSecondSegmentEndGivenFirstSegmentEnd,segmentsToExchangeGroupedByVehiclesNow(secondVehicle)))
-          for(secondSegment <- listOfSecondSegmentsToIterateOnIterable){
-            secondSegmentStartPosition = routePositionOfNodes(secondSegment._1)
-            secondSegmentEndPosition = routePositionOfNodes(secondSegment._2)
+        val relevantSegmentsCouplesToSwitch =
+          if(potentialSegmentsToExchangeWithForSegmentsOfFirstVehicle.isEmpty ||
+            potentialSegmentsToExchangeWithForSegmentsOfSecondVehicle.isEmpty)
+            List.empty
+          else
+            Pairs.zipIntoAllPossiblePairs(
+            potentialSegmentsToExchangeWithForSegmentsOfFirstVehicle.keys.toList,
+            potentialSegmentsToExchangeWithForSegmentsOfSecondVehicle.keys.toList,
+            (s1:(Int,Int),s2:(Int,Int)) => {
+              //println("s1 : " + s1 + "    s2 : " + s2 + "    segments1 : " + potentialSegmentsToExchangeWithForSegmentsOfFirstVehicle(s1) + "    segments2 : " + potentialSegmentsToExchangeWithForSegmentsOfSecondVehicle(s2))
+              potentialSegmentsToExchangeWithForSegmentsOfFirstVehicle(s1).contains(s2) &&
+                potentialSegmentsToExchangeWithForSegmentsOfSecondVehicle(s2).contains(s1)
+            })
 
-            /*val listOfPositions =
-              if(tryFlip)
-                List((firstSegmentStartPosition,firstSegmentEndPosition,secondSegmentStartPosition,secondSegmentEndPosition),
-                  (firstSegmentEndPosition,firstSegmentStartPosition,secondSegmentStartPosition,secondSegmentEndPosition),
-                  (firstSegmentStartPosition,firstSegmentEndPosition,secondSegmentEndPosition,secondSegmentStartPosition),
-                  (firstSegmentEndPosition,firstSegmentStartPosition,secondSegmentEndPosition,secondSegmentStartPosition))
-              else
-                List((firstSegmentStartPosition,firstSegmentEndPosition,secondSegmentStartPosition,secondSegmentEndPosition))*/
+        val (listOfSegmentsCouplesToSwitch,notifyFound3) = selectFirstSegmentBehavior.toIterable(relevantSegmentsCouplesToSwitch)
+        for((firstSegment, secondSegment) <- listOfSegmentsCouplesToSwitch){
+          firstSegmentStartPosition = routePositionOfNodes(firstSegment._1)
+          firstSegmentEndPosition = routePositionOfNodes(firstSegment._2)
+          secondSegmentStartPosition = routePositionOfNodes(secondSegment._1)
+          secondSegmentEndPosition = routePositionOfNodes(secondSegment._2)
 
-
-            doMove(firstSegmentStartPosition, firstSegmentEndPosition, false, secondSegmentStartPosition, secondSegmentEndPosition, false)
-            if (evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
-              notifyFound1()
-              notifyFound2()
-              notifyFound3()
-              notifyFound4()
-            }
+          doMove(firstSegmentStartPosition, firstSegmentEndPosition, false, secondSegmentStartPosition, secondSegmentEndPosition, false)
+          if (evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
+            notifyFound1()
+            notifyFound2()
+            notifyFound3()
           }
         }
       }
     }
+
     seq.releaseTopCheckpoint()
   }
 
