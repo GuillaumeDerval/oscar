@@ -53,6 +53,7 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4)
    */
   val vehicles = 0 until v
 
+  //TODO: renaud: enlever çà!
   val vehicleOfNode = vehicleOfNodes(routes,v)
 
   val routed = Content(routes.createClone(50)).setName("routed nodes")
@@ -147,6 +148,16 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4)
       case _ => false}) {}
     acc.reverse
   }
+  /*
+  def getPrevNodeOfAllNodes: Array[Int] = {
+    val it = routes.value.iterator
+    val prevNodeOfNodes = Array.fill(n)(n)
+    var prev = n
+    while(it.hasNext){
+      val node = it.next()
+      if(prevNodeOfNodes
+    }
+  }*/
 
   /**
     * Compute the previous node of all nodes in the routes.

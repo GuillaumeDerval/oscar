@@ -477,8 +477,6 @@ abstract class SetInvariant(initialValue:SortedSet[Int] = SortedSet.empty,
     performInvariantPropagation()
     performSetPropagation()
   }
-
-  override def getDotNode:String = throw new Error("not implemented")
 }
 
 object IdentitySet{
