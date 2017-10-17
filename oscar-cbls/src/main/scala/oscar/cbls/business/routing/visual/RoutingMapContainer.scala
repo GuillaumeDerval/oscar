@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.visual.routingMap
+package oscar.cbls.business.routing.visual
 
 /**
   * *****************************************************************************

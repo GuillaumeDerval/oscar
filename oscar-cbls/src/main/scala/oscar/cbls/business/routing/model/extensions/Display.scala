@@ -1,7 +1,7 @@
 package oscar.cbls.business.routing.model.extensions
 
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.business.routing.visual.routingMap.{RoutingMap, RoutingMapContainer}
+import oscar.cbls.business.routing.visual.{RoutingMap, RoutingMapContainer}
 import oscar.cbls.visual.ColorGenerator
 
 /**
