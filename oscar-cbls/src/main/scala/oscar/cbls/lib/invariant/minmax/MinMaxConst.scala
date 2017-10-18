@@ -153,6 +153,11 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
   override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
+    if (h.isEmpty) {
+      this := default
+    } else {
+      this := vars(h.getFirst)
+    }
   }
 
   @inline
@@ -161,7 +166,6 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
 
     //mettre a jour le heap
     h.insert(value)
-    this := vars(h.getFirst)
   }
 
   @inline
@@ -170,11 +174,6 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
 
     //mettre a jour le heap
     h.delete(value)
-    if (h.isEmpty) {
-      this := default
-    } else {
-      this := vars(h.getFirst)
-    }
   }
 
   override def checkInternals(c: Checker): Unit = {
