@@ -4,6 +4,7 @@ import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.lib.invariant.seq.Precedence
 import oscar.cbls.business.routing.invariants.PDPConstraints
+import oscar.cbls.core.search.Best
 
 /**
   * Created by fg on 12/05/17.
@@ -126,7 +127,11 @@ object SimpleVRPWithTimeWindow extends App{
     segmentExchangeOnSegments(myVRP,
       () => Array.tabulate(v)(vehicle => vehicle -> ChainsHelper.computeCompleteSegments(myVRP,vehicle,chainsExtension)).toMap,
       ()=> closestRelevantPredecessorsByDistance,
-      () => 0 until v
+      () => 0 until v,
+      selectFirstSegmentBehavior = Best(),
+      selectSecondSegmentBehavior = Best(),
+      selectFirstVehicleBehavior = Best(),
+      selectSecondVehicleBehavior = Best()
     ))
 
   // INSERTING
