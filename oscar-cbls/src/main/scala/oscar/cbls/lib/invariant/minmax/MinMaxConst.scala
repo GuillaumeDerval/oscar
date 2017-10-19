@@ -178,7 +178,7 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
 
   override def checkInternals(c: Checker): Unit = {
     if(cond.value.isEmpty) c.check(value == default)
-    else  c.check(value == cond.value.maxBy(vars(_)))
+    else c.check(value == cond.value.maxBy(vars(_)))
   }
 }
 

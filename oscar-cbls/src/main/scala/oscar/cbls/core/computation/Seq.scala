@@ -1315,6 +1315,10 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
         digestChanges(prev)
         toValue.remove(position,changes.newValue)
       case SeqUpdateAssign(s) =>
+        while(levelTopCheckpoint >=0){
+          toValue.releaseTopCheckpoint()
+          popTopCheckpoint()
+        }
         toValue.setValue(s)
       case SeqUpdateLastNotified(value:IntSequence) =>
         //nothing to do here
