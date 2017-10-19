@@ -48,6 +48,8 @@ sealed abstract class FzDomain {
     if (min > max) throw new UnsatException("Empty FzDomain");
   }
   def toSortedSet: SortedSet[Int]
+
+
 }
 
 case class FzDomainRange(var mi: Int, var ma: Int) extends FzDomain {
@@ -60,6 +62,7 @@ case class FzDomainRange(var mi: Int, var ma: Int) extends FzDomain {
   def leq(v:Int) = { ma = math.min(v,ma); checkEmpty() }
   def toRange = mi to ma
   def toSortedSet: SortedSet[Int] = SortedSet[Int]() ++ (mi to ma)
+
 }
 
 case class FzDomainSet(var values: Set[Int]) extends FzDomain {
@@ -74,4 +77,5 @@ case class FzDomainSet(var values: Set[Int]) extends FzDomain {
   def leq(v:Int) = {values = values.filter(x => x<=v); checkEmpty() }
   override def intersect(d:FzDomainSet) = {values = values.intersect(d.values); checkEmpty() }
   def toSortedSet: SortedSet[Int] = SortedSet[Int]() ++ values
+
 }

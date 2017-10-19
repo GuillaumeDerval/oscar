@@ -66,19 +66,19 @@ class GreedySearch(val level: Int = 1, val m: FZCBLSModel,val sc: SearchControl)
     var it = 0;
     log("Starting Greedy Search level "+level)
     log("Starting Violation: "+m.objective.violation.value)
-    //val varval = for (x <- m.vars; v <- x.getDomain()) yield (x,v)
+    //val varval = for (x <- m.vars; v <- x.domain) yield (x,v)
     if(m.vars.length>0){
       sc.handlePossibleSolution();
       var cont = true;
       while(cont && !sc.stop()){
-        val varval = for (x <- m.vars.filter(m.c.violation(_).value>0); v <- x.getDomain()) yield (x,v)
+        val varval = for (x <- m.vars.filter(m.c.violation(_).value>0); v <- x.domain) yield (x,v)
         val cur = m.objective.objective.value
         val move = level match {
-          case 1 => selectFirst(varval.map(List(_)),(vv:List[(CBLSIntVarDom,Int)]) => cur > m.objective.objective.assignVal(vv))
-          case 2 => val x:Iterator[List[(CBLSIntVarDom,Int)]] = varval.iterator.flatMap(v => varval.iterator.map(v2 => List(v,v2)))
-            selectFirst(x.toIterable,(vv:List[(CBLSIntVarDom,Int)]) => cur > m.objective.objective.assignVal(vv))
-          case 3 => val x:Iterator[List[(CBLSIntVarDom,Int)]] = varval.iterator.flatMap(v1 => varval.iterator.flatMap(v => varval.iterator.map(v2 => List(v1,v,v2))))
-            selectFirst(x.toIterable,(vv:List[(CBLSIntVarDom,Int)]) => cur > m.objective.objective.assignVal(vv))
+          case 1 => selectFirst(varval.map(List(_)),(vv:List[(CBLSIntVar,Int)]) => cur > m.objective.objective.assignVal(vv))
+          case 2 => val x:Iterator[List[(CBLSIntVar,Int)]] = varval.iterator.flatMap(v => varval.iterator.map(v2 => List(v,v2)))
+            selectFirst(x.toIterable,(vv:List[(CBLSIntVar,Int)]) => cur > m.objective.objective.assignVal(vv))
+          case 3 => val x:Iterator[List[(CBLSIntVar,Int)]] = varval.iterator.flatMap(v1 => varval.iterator.flatMap(v => varval.iterator.map(v2 => List(v1,v,v2))))
+            selectFirst(x.toIterable,(vv:List[(CBLSIntVar,Int)]) => cur > m.objective.objective.assignVal(vv))
         }
         if(move != null && m.objective.objective.assignVal(move)<cur){
           move.foreach{ case (x,v) => x := v}
@@ -111,12 +111,12 @@ class SimpleLocalSearch(val m:FZCBLSModel,val sc: SearchControl) extends SearchP
         while (improving > 0 && !sc.stopOnTime()) {
           val currentVar = m.vars(i);
           if (violation(i).value > 0) {
-            //val k = selectMin(currentVar.getDomain())(k=> m.objective.objective.assignVal(currentVar,k))
+            //val k = selectMin(currentVar.domain)(k=> m.objective.objective.assignVal(currentVar,k))
             val currentObj = m.objective.objective.value
-            val k = if (currentVar.getDomain().size > 50000) {
-              selectMin(RandomGenerator.shuffle(currentVar.getDomain()).take(50000))((k: Int) => m.objective.objective.assignVal(currentVar, k))
+            val k = if (currentVar.domain.size > 50000) {
+              selectMin(RandomGenerator.shuffle(currentVar.domain).take(50000))((k: Int) => m.objective.objective.assignVal(currentVar, k))
             } else {
-              selectMin(currentVar.getDomain())(k => m.objective.objective.assignVal(currentVar, k))
+              selectMin(currentVar.domain)(k => m.objective.objective.assignVal(currentVar, k))
             }
             if (k != currentVar.value) {
               val obj = m.objective.objective.value
@@ -149,7 +149,7 @@ class SimpleLocalSearch(val m:FZCBLSModel,val sc: SearchControl) extends SearchP
 class SearchControl(val m: FZCBLSModel, val objLB:Int, val MaxTimeMilli: Int,val stopOnSat:Boolean){
 
   //TODO: Set the timeout to be runtime based rather than deadline based.
-  val searchVariables = m.neighbourhoods.foldLeft(Set.empty[CBLSIntVarDom])((acc: Set[CBLSIntVarDom], x: Neighbourhood) => acc ++ x.getVariables().filterNot(_.isInstanceOf[CBLSIntConstDom])).toArray
+  val searchVariables = m.neighbourhoods.foldLeft(Set.empty[CBLSIntVar])((acc: Set[CBLSIntVar], x: Neighbourhood) => acc ++ x.getVariables().filterNot(_.isInstanceOf[StoredCBLSIntConst])).toArray
 
   var bestSolution = Array.empty[Int]
 
@@ -216,7 +216,7 @@ class SearchControl(val m: FZCBLSModel, val objLB:Int, val MaxTimeMilli: Int,val
 abstract class NeighbourhoodSearch(val m: FZCBLSModel,val sc: SearchControl) extends SearchProcedure {
   val log = m.log
   val neighbourhoods: List[Neighbourhood] = m.neighbourhoods 
-  val searchVariables = neighbourhoods.foldLeft(Set.empty[CBLSIntVarDom])((acc: Set[CBLSIntVarDom], x: Neighbourhood) => acc ++ x.getVariables().filterNot(_.isInstanceOf[CBLSIntConstDom])).toArray
+  val searchVariables = neighbourhoods.foldLeft(Set.empty[CBLSIntVar])((acc: Set[CBLSIntVar], x: Neighbourhood) => acc ++ x.getVariables().filterNot(_.isInstanceOf[StoredCBLSIntConst])).toArray
 }
 
 
@@ -655,5 +655,111 @@ class GLSSAT(m:FZCBLSModel,sc: SearchControl) extends NeighbourhoodSearch(m,sc) 
     log("Done GLSSAT at "+m.getWatch())
     log("Ending Violation: "+m.objective.violation.value)
     log("Nb Moves: "+it)
+  }
+}
+
+class RestrictedNeighbourhoodSearch(m:FZCBLSModel, sc: SearchControl) extends NeighbourhoodTabuSearch(m,sc) {
+  override def run()= {
+    log("Starting Restricted Neighbourhood Search")
+    var extendedSearch = false;
+    var roundsWithoutSat = 0;
+    val maxRounds = 5;
+
+    var timeOfBest = m.getWatch();
+    var itSinceBest = 0;
+    var bestViolation = Int.MaxValue
+
+
+    var wait = 0;
+    val waitDec = 1;
+
+    sc.cancelObjective()
+
+    while (!(m.getWatch() >= sc.MaxTimeMilli || (m.objective.violation.value==0 && m.objective.getObjectiveValue() == sc.objLB))) {
+      makeMove(extendedSearch)
+
+      if (wait > 0) {
+        wait -= waitDec;
+      } else {
+        itSinceBest += 1;
+      }
+      if (m.c.violation.value < bestViolation) {
+        bestViolation = m.c.violation.value
+        itSinceBest = 0;
+        timeOfBest = m.getWatch()
+        tenure = Math.max(MinTenure, tenure - 1)
+        if (tenure == MinTenure) {
+          extendedSearch = false;
+        }
+        if(m.c.violation.value == 0){
+          bestViolation = Int.MaxValue
+          /*  m.objective.objectiveBound := (m.fzModel.search.obj match{
+              case FZObjective.MINIMIZE => m.objective.objectiveVar.value-1
+              case FZObjective.MAXIMIZE => m.objective.objectiveVar.value+1
+            })
+            println("Objective bound is now: " +m.objective.objectiveBound.value)*/
+        }
+      }
+      if (m.c.violation.value > bestViolation * 10) {
+        extendedSearch = true;
+      }
+      if (itSinceBest > tenure + baseSearchSize + searchFactor * (tenure / tenureIncrement)) {
+        extendedSearch = true;
+        itSinceBest = 0;
+        tenure = Math.min(MaxTenure, tenure + tenureIncrement);
+        if (tenure == MaxTenure) {
+          //Wait will be long enough to clear the tabu list.
+          wait = tenure + baseSearchSize;
+          bestViolation = Int.MaxValue
+          tenure = MinTenure;
+          roundsWithoutSat += 1;
+          if (roundsWithoutSat >= maxRounds) {
+            log("Reset neighourhoods")
+            for (n <- neighbourhoods)
+              n.reset();
+            roundsWithoutSat = 0;
+            bestViolation = m.c.violation.value
+          }
+        }
+      }
+      if(m.getWatch() > timeOfBest + 300000){
+        timeOfBest = m.getWatch()
+        log("Reset neighourhoods 5 minutes")
+        for (n <- neighbourhoods)
+          n.reset();
+      }
+    }
+  }
+
+  override def makeMove(extendedSearch: Boolean){
+    val nonTabuSet = nonTabuVariables.value.map(searchVariables(_).asInstanceOf[CBLSIntVar]);
+    val bestValue = sc.weightedBest
+    if(extendedSearch) ecnt+=1 else bcnt+=1
+    val bestNeighbour = selectMin(neighbourhoods.map((n: Neighbourhood) =>
+                                                       if (extendedSearch) {
+                                                         n.getExtendedMinObjective(it.value, acceptMove(bestValue,nonTabuSet))
+                                                       } else {
+                                                         n.getMinObjective(it.value, acceptMove(bestValue,nonTabuSet))
+                                                       }))(_.value)
+    if(bestNeighbour!=null){
+      //TODO: Aspiration sometimes accepts moves that do not improve but seem to improve because of changing weights.
+      if(log.level > 0 && bestNeighbour.getModified.forall(!nonTabuSet.contains(_))){
+        log(2,"Aspiration");
+        log(3,bestNeighbour.value.toString +" < "+bestValue.toString +" ; "+m.objective().value)
+      }
+      log(3,bestNeighbour.toString)
+      log(4,tabu.filter(t => t.value > it.value).toList.toString())
+      bestNeighbour.commit()
+      sc.handlePossibleSolution()
+    }else
+      log("No move exists!")
+    val modifiedVars = if(bestNeighbour!=null) bestNeighbour.getModified else Set.empty[CBLSIntVar]
+    for (v <- modifiedVars) {
+      val index = variableMap(v);
+      //This could be it.value + tenure + random(tenureIncrement) to introduce more randomness
+      //tabu(index) := it.value + tenure;
+      tabu(index) := it.value + Math.min(MaxTenure, tenure + RandomGenerator.nextInt(tenureIncrement));
+    }
+    it++
   }
 }

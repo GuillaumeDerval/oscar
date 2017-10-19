@@ -19,11 +19,8 @@
   ******************************************************************************/
 package oscar.cbls.core.computation
 
-import oscar.util.RandomGenerator
-
 import scala.language.implicitConversions
 import scala.util.Random
-
 
 //TODO: remplacer çà par Option(Int,Int)
 
@@ -59,7 +56,7 @@ sealed abstract class Domain extends Iterable[Int]{
   def contains(v:Int): Boolean
   //  def intersect(d:Domain):Domain
   def values:Iterable[Int]
-  def randomValue:Int
+  def randomValue():Int
   def intersect(d:Domain):Domain
 
   def union(d:Domain):Domain
@@ -73,7 +70,7 @@ case class DomainRange(override val min: Int, override val max: Int) extends Dom
   def contains(v:Int): Boolean = min <= v && max >= v
   override def size = if(max==Int.MaxValue && min==Int.MinValue) Int.MaxValue else math.max(max-min+1,0)
   override def values: Iterable[Int] = min to max
-  override def randomValue: Int = (min to max)(Random.nextInt(max-min+1))
+  override def randomValue(): Int = (min to max)(Random.nextInt(max-min+1))
   override def intersect(d: Domain): Domain = {
     val newDomain:Domain = d match{
       case r:DomainRange => math.max(r.min,min) to math.min(r.max,max)
@@ -123,7 +120,7 @@ case class DomainSet(val s:Set[Int]) extends Domain {
 
   def contains(v:Int): Boolean = s.contains(v)
   override def values: Iterable[Int] = s
-  override def randomValue: Int = s.toList.apply(RandomGenerator.nextInt(size))
+  override def randomValue(): Int = s.toList.apply(Random.nextInt(size))
   override def intersect(d: Domain): Domain = {
     val newDomain:Domain = d match{
       case r:DomainRange =>
@@ -151,14 +148,14 @@ case class DomainSet(val s:Set[Int]) extends Domain {
     newDomain
   }
 
-  override def toString(): String = "DomainRange(min:" + min + ", max:" +  max + ")"
+  override def toString(): String = "DomainSet(" + s.mkString(", ") + ")"
 }
 
 case object FullRange extends Domain{
   override def min: Int = Int.MinValue
   override def max: Int = Int.MaxValue
   override def size: Int = Int.MaxValue
-  override def randomValue: Int = Random.nextInt()
+  override def randomValue(): Int = Random.nextInt()
   override def contains(v: Int): Boolean = true
   override def values: Iterable[Int] =  min to max
   override def intersect(d: Domain): Domain = d
@@ -175,7 +172,7 @@ case class SingleValueDomain(value:Int) extends Domain{
   override def size: Int = 1
   override def contains(v: Int): Boolean = v == value
 
-  override def randomValue: Int = value
+  override def randomValue(): Int = value
 
   override def intersect(d: Domain): Domain =
     if (d.contains(value)) this else throw new EmptyDomainException

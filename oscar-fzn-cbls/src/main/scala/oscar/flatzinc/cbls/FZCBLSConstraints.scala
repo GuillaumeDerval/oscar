@@ -55,7 +55,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   
   /*def get_count_eq(xs:Array[Variable], y: Variable, cnt:Variable, ann: List[Annotation])(implicit c: ConstraintSystem, cblsIntMap: MMap[String, CBLSIntVarDom]) = {
     //xs domain goes from i to j but cnts will be from 0 to i-j, so need to use the offset (built by DenseCount)
-    val dc = DenseCount.makeDenseCount(xs.map(getCBLSVar(_)));
+    val dc = DenseCount.makeDenseCount(xs.map(getIntValue(_)));
     val cnts = dc.counts
     EQ(cnt,IntElement(y,cnts,dc.offset))
   }*/
@@ -116,7 +116,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
       val cumul = CumulativeNoSet(ns,d.map(getCBLSVar(_)),r.map(getCBLSVar(_)),p);
       GE(b,MaxArray(p.asInstanceOf[Array[IntValue]]))//TODO: What we should actually do is to create the array in CumulativeNoSet
       //TODO: The following class may have some bugs
-      //CumulativePrototype(ns,d.map(getCBLSVar(_)),r.map(getCBLSVar(_)),getCBLSVar(b));
+      //CumulativePrototype(ns,d.map(getIntValue(_)),r.map(getIntValue(_)),getIntValue(b));
     }
   }
   
@@ -139,7 +139,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     else IntElement(k, as.map(getCBLSVar(_)))
 
     //if(as.forall(_.isBound)) IntElementNoVar(Sum2(b,-1), as.map(_.value))
-    //else IntElement(Sum2(b,-1), as.map(getCBLSVar(_)))
+    //else IntElement(Sum2(b,-1), as.map(getIntValue(_)))
     //TODO: Integrate the offset in the invariant?
   }
   def get_array_bool_element_inv(b: IntegerVariable, as: Array[BooleanVariable], r: BooleanVariable, defId: String, ann: List[Annotation]) = {
@@ -151,7 +151,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     else IntElement(k, as.map(getCBLSVar(_)))
 
     //if(as.forall(_.isBound)) IntElementNoVar(Sum2(b,-1), as.map(_.intValue))
-    //else IntElement(Sum2(b,-1), as.map(getCBLSVar(_)))
+    //else IntElement(Sum2(b,-1), as.map(getIntValue(_)))
     //TODO: Integrate the offset in the invariant?
   }
 
@@ -164,7 +164,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   }
 
   def get_array_bool_xor(as: Array[BooleanVariable], ann: List[Annotation]) = {
-    EQ(0,XOR(as.map(getCBLSVar(_)))) //EQ(Mod(Sum(as.map(getCBLSVar(_))), 2), 1)
+    EQ(0,XOR(as.map(getCBLSVar(_)))) //EQ(Mod(Sum(as.map(getIntValue(_))), 2), 1)
   }
 
   def get_array_bool_xor_inv(as: Array[BooleanVariable], defId: String, ann: List[Annotation]) = {
@@ -270,11 +270,11 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
   }
   
   def get_int_lin_le(params: Array[IntegerVariable], vars: Array[IntegerVariable], sum: IntegerVariable, ann: List[Annotation]) = {
-    //LE(new Sum(vars.zip(params).map{ case (v,p) => Prod2(getCBLSVar(v),p.value)}), sum)
+    //LE(new Sum(vars.zip(params).map{ case (v,p) => Prod2(getIntValue(v),p.value)}), sum)
     LE(new Linear(vars.map(getCBLSVar(_)),params.map(_.value)), sum)
   }
   def get_bool_lin_le(params: Array[IntegerVariable], vars: Array[BooleanVariable], sum: IntegerVariable, ann: List[Annotation]) = {
-    //LE(new Sum(vars.zip(params).map{ case (v,p) => Prod2(getCBLSVar(v),p.value)}), sum)
+    //LE(new Sum(vars.zip(params).map{ case (v,p) => Prod2(getIntValue(v),p.value)}), sum)
     LE(new Linear(vars.map(Bool2Int(_)),params.map(_.value)), sum)
   }
   def get_int_lin_ne(params: Array[IntegerVariable], vars: Array[IntegerVariable], sum: IntegerVariable, ann: List[Annotation]) = {
@@ -394,23 +394,23 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     val cnt = new CBLSIntVar(m,0,0 to xs.length,"Count("+v.value+")")
     val sc = SparseCount(xs.map(getCBLSVar(_)),Map((v.value,cnt)))
     LE(n.value,cnt)
-    //AtLeast(xs.map(getCBLSVar(_)),SortedMap((v.min,n)));
+    //AtLeast(xs.map(getIntValue(_)),SortedMap((v.min,n)));
   }
   def get_at_most_int(n:IntegerVariable,xs: Array[IntegerVariable], v:IntegerVariable, ann: List[Annotation]) = {
     val cnt = new CBLSIntVar(m,0,0 to xs.length,"Count("+v.value+")")
     val sc = SparseCount(xs.map(getCBLSVar(_)),Map((v.value,cnt)))
     GE(n.value,cnt)
-    //AtMost(xs.map(getCBLSVar(_)),SortedMap((v.min,n.min)));
+    //AtMost(xs.map(getIntValue(_)),SortedMap((v.min,n.min)));
   }
   def get_exactly_int(n:IntegerVariable,xs: Array[IntegerVariable], v:IntegerVariable, ann: List[Annotation]) = {
     //TODO: Implement lightweight version of this and the two above ones.
-    //List(AtMost(xs.map(getCBLSVar(_)),SortedMap((v.min,n.min))),AtLeast(xs.map(getCBLSVar(_)),SortedMap((v.min,n))));
+    //List(AtMost(xs.map(getIntValue(_)),SortedMap((v.min,n.min))),AtLeast(xs.map(getIntValue(_)),SortedMap((v.min,n))));
     val cnt = new CBLSIntVar(m,0,0 to xs.length,"Count("+v.value+")")
     val sc = SparseCount(xs.map(getCBLSVar(_)),Map((v.value,cnt)))
     EQ(n.value,cnt)
   }
   /*def get_among_inv(n:Variable,xs: Array[Variable], v:Variable, ann: List[Annotation])(implicit c: ConstraintSystem, cblsIntMap: MMap[String, CBLSIntVarDom]) = {
-    List(AtMost(xs.map(getCBLSVar(_)),SortedMap((v.min,n.min))),AtLeast(xs.map(getCBLSVar(_)),SortedMap((v.min,n))));
+    List(AtMost(xs.map(getIntValue(_)),SortedMap((v.min,n.min))),AtLeast(xs.map(getIntValue(_)),SortedMap((v.min,n))));
   }*/
   //constrains all variables in xs to take their value in dom
   def domains(xs: Array[IntegerVariable], dom: Array[Int]) = {

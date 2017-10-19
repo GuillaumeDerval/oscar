@@ -82,6 +82,7 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
   private[this] var mNewValue: Int = initialValue
   private[this] var mOldValue = mNewValue
 
+
   def domain:Domain = privatedomain
 
   def restrictDomain(d:Domain): Unit = {
@@ -93,9 +94,13 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
       }
   }
 
+  //Unions the domain with d
   def relaxDomain(d:Domain): Unit = {
     privatedomain = privatedomain.union(d)
   }
+
+  def inDomain(v:Int): Boolean = privatedomain.contains(v)
+  def domainSize:Int = privatedomain.size
 
   override def toString = {
     if(model != null && model.propagateOnToString) s"$name:=$value" else s"$name:=$mNewValue"

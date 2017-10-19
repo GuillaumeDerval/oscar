@@ -42,6 +42,8 @@ abstract class Variable(val id: String, val anns: Iterable[oscar.flatzinc.model.
   }
   def domainSize: Int;
   def isBound: Boolean;
+  def setDomain(range:Range);
+  def setDomain(s:Set[Int]);
 }
 
 case class BooleanVariable(i: String,
@@ -60,6 +62,22 @@ case class BooleanVariable(i: String,
   def intValue: Int = if(_value.get) 1 else 0
   def violValue: Int = if(_value.get) 0 else 1 // true (0), false (1)
   override def toString = {this.id + (if(isBound) "="+_value.get else "") /*+ (if(!anns.isEmpty) " :: " + anns.mkString(" :: ") else "" )*/}
+
+
+  override def setDomain(range: Range): Unit = {
+    if(range.size == 2){
+      this.unbind()
+    }else{
+      if(range.min == 0)
+        this.bind(true)
+      else
+        this.bind(false)
+    }
+  }
+
+  override def setDomain(s: Set[Int]): Unit = {
+    this.setDomain(s.min to s.max)
+  }
 }
 
 case class IntegerVariable(i: String,
@@ -79,13 +97,16 @@ case class IntegerVariable(i: String,
     case (FzDomainRange(l, u),FzDomainSet(values)) =>
       dom = FzDomainSet(values.filter(v => v >= l && v <= u)); dom.checkEmpty();
   }
-  def relax(s:Set[Int]) = {
+  override def setDomain(range: Range): Unit = {
+    dom = FzDomainRange(range.start, range.last)
+  }
+
+  def setDomain(s:Set[Int]) = {
     if(s.size == s.max - s.min +1){
       dom = FzDomainRange(s.min, s.max)
     }else{
       dom = FzDomainSet(s)
     }
-
   }
   def neq(v:Int) = {
     if(v==min) geq(v+1)
@@ -104,4 +125,7 @@ case class IntegerVariable(i: String,
   def bind(v: Int) = {geq(v); leq(v);}
   def value:Int = {if(isBound) min else throw new Exception("Asking for the value of an unbound variable")}
   override def toString = {this.id + (if(isBound) "="+value else "") /*+ (if(!anns.isEmpty) " :: " +  anns.mkString(" :: ") else "" )*/}
+
+
+
 }

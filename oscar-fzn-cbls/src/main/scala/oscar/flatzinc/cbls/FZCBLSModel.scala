@@ -18,7 +18,7 @@
   */
 package oscar.flatzinc.cbls
 
-import oscar.cbls.core.computation.{CBLSIntVar, IntValue, Store}
+import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.{Objective => CBLSObjective}
 import oscar.cbls.lib.constraint.GE
@@ -42,9 +42,9 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
 
   val cblsIntMap: MMap[String, IntValue] = MMap.empty[String, IntValue]
   //Create variables from FlatZinc model.
-  var vars: List[CBLSIntVarDom] = createVariables()
+  var vars: List[CBLSIntVar] = createVariables()
 
-  var neighbourhoodVars: List[CBLSIntVarDom] = List.empty
+  var neighbourhoodVars: List[CBLSIntVar] = List.empty
 
   var objective = null.asInstanceOf[FZCBLSObjective]
   var neighbourhoods: List[Neighbourhood] = List.empty[Neighbourhood]
@@ -63,7 +63,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
     neighbourhoodVars.foreach(c.violation(_))
   }
 
-  def removeControlledVariables(condition:(CBLSIntVarDom => Boolean)) = {
+  def removeControlledVariables(condition:(CBLSIntVar => Boolean)) = {
     vars = vars.filterNot(condition)
   }
 
@@ -73,7 +73,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
 
   def initObjectiveAndCloseConstraintSystem():Unit = {
 
-    val objectiveVar = fzModel.search.variable.map(getCBLSVar(_)).getOrElse(null)
+    val objectiveVar = fzModel.search.variable.map(getIntValue(_)).getOrElse(null)
     val bound = fzModel.search.obj match {
       case Objective.SATISFY => None
       case Objective.MAXIMIZE => Some(CBLSIntVar(c.model, objectiveVar.min, objectiveVar.domain, "Objective bound"))
@@ -93,7 +93,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
   }
 
 
-  def addNeighbourhood(n: (CBLSObjective,ConstraintSystem) => Neighbourhood,controlledVars: Array[CBLSIntVarDom]){
+  def addNeighbourhood(n: (CBLSObjective,ConstraintSystem) => Neighbourhood,controlledVars: Array[CBLSIntVar]){
     neighbourhoodGenerator = n :: neighbourhoodGenerator
     //neighbourhoods = n :: neighbourhoods
     vars = vars.filterNot(controlledVars.contains(_))
@@ -102,11 +102,11 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
   def addDefaultNeighbourhoods(){
     if (vars.length > 0) {
       //val varsToSwap = vars.groupBy(v => v.dom)
-      addNeighbourhood((o,c) => new MaxViolating(vars.toArray, o, c),Array.empty[CBLSIntVarDom])
+      addNeighbourhood((o,c) => new MaxViolating(vars.toArray, o, c),Array.empty[CBLSIntVar])
 
       //val boolVars = vars.filter((v: CBLSIntVar) => v.min == 0 && v.max == 1)
       //if (boolVars.length > 1)
-      //  addNeighbourhood((o,c) => new MaxViolatingSwap(boolVars.toArray, o, c),Array.empty[CBLSIntVarDom])
+      //  addNeighbourhood((o,c) => new MaxViolatingSwap(boolVars.toArray, o, c),Array.empty[CBLSIntVar])
     }
   }
 
@@ -115,7 +115,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
     neighbourhoods.foreach(n => log(2,"Created Neighbourhood "+ n+ " over "+n.searchVariables.length+" variables"))
   }
   def createVariables() = {
-    var variables: List[CBLSIntVarDom] = List.empty[CBLSIntVarDom];
+    var variables: List[CBLSIntVar] = List.empty[CBLSIntVar];
      //Only create variables that are not fixed by an invariant.
     for (parsedVariable <- fzModel.variables if !parsedVariable.isDefined) {
       parsedVariable match {
@@ -137,20 +137,20 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
           	case c:circuit => c.variables.length;
           	case _ => 0}.fold(0)((acc, v) => Math.min(acc,v)) //Min here, right?
           val thedom = if(sc > 0){oscar.flatzinc.model.FzDomainRange(1, sc)}else{dom}
-          val cblsVariable = CBLSIntVarDom(m, initialValue, thedom,  id);
+          val cblsVariable = CBLSIntVar(m, initialValue, thedom,  id);
           //TODO: handle constant variables here.
           cblsIntMap += id -> cblsVariable;
           variables = cblsVariable :: variables;
 
        case bv:BooleanVariable =>
          //WARNING: Changed the representation of true and false so that false is 1 and true is 0
-         val dom = oscar.flatzinc.model.FzDomainRange(if(bv.isTrue) 0 else if(bv.isFalse) 1 else 0, if(bv.isFalse) 1 else if(bv.isTrue) 0 else 1)
+         val dom = DomainRange(if(bv.isTrue) 0 else if(bv.isFalse) 1 else 0, if(bv.isFalse) 1 else if(bv.isTrue) 0 else 1)
           //TODO: Put this in a method! or make it deterministic as the neighbourhoods should take care of the assignments!
           val initialValue = {
                 val range = (dom.min to dom.max);
                 range(Random.nextInt(range.length))
               }
-          val cblsVariable = CBLSIntVarDom(m, initialValue, dom,  bv.id);
+          val cblsVariable = CBLSIntVar(m, initialValue, dom,  bv.id);
           //TODO: handle constant variables here.
           cblsIntMap += bv.id -> cblsVariable;
           variables = cblsVariable :: variables;
@@ -161,16 +161,23 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
     variables;
   }
 
-  def getCBLSVarDom(v: Variable) = {
-    getCBLSVar(v).asInstanceOf[CBLSIntVarDom]
+  implicit def fzDomainToDomain(fzD:FzDomain):Domain = {
+    fzD match {
+      case FzDomainRange(min,max) => DomainRange(min,max)
+      case FzDomainSet(s) => DomainSet(s)
+    }
   }
 
-  implicit def getCBLSVar(v: Variable) = {
+  def getCBLSVar(v: Variable) = {
+    getIntValue(v).asInstanceOf[CBLSIntVar]
+  }
+
+  implicit def getIntValue(v: Variable):IntValue = {
     v match {
       case v:IntegerVariable =>
         cblsIntMap.get(v.id) match {
           case None if v.isBound =>
-            val c = new CBLSIntConstDom(m,v.value);
+            val c = new StoredCBLSIntConst(m,v.value);
             cblsIntMap += v.id -> c;
             c;
           case Some(c) => c;
@@ -178,7 +185,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
       case v:BooleanVariable =>
         cblsIntMap.get(v.id) match {
           case None if v.isBound =>
-            val c = new CBLSIntConstDom(m,v.violValue);
+            val c = new StoredCBLSIntConst(m,v.violValue);
             cblsIntMap += v.id -> c;
             c;
           case Some(c) => c;
@@ -212,7 +219,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
     }
     if(useCP && fzModel.search.obj != Objective.SATISFY){
       log("Calling the CP solver")
-      cpmodel.updateBestObjectiveValue(getCBLSVar(fzModel.search.variable.get).value)
+      cpmodel.updateBestObjectiveValue(getIntValue(fzModel.search.variable.get).value)
     //TODO: ignore variables whose domain should not be reduced (e.g. variables in the Circuit constraint)
       cpmodel.updateIntermediateModelDomains()
       restrictVarDomains()
@@ -254,7 +261,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
         case c:subcircuit => true;
         case c:circuit => true;
         case _ => false}){
-      val cblsVar = getCBLSVarDom(v)
+      val cblsVar = getCBLSVar(v)
       v match {
         case iv:IntegerVariable =>
           iv.domain match {
@@ -272,12 +279,14 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
       }
     }
   }
+
+  //Takes the current domain of every cbls variables and unions it with the current domain the corresponding fznVariable.
   def relaxVarDomains(){
     for(v<-fzModel.variables if !v.isDefined && !v.cstrs.exists{
       case c:subcircuit => true;
       case c:circuit => true;
       case _ => false}){
-      val cblsVar = getCBLSVarDom(v)
+      val cblsVar = getCBLSVar(v)
       v match {
         case iv:IntegerVariable =>
           iv.domain match {

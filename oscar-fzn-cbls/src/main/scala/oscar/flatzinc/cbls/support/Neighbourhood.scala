@@ -32,9 +32,9 @@ import scala.collection.mutable.{Map => MMap}
 
 
 //Extends SearchEngine to access the selectors
-abstract class Neighbourhood(val searchVariables: Array[CBLSIntVarDom]) extends LinearSelector {
+abstract class Neighbourhood(val searchVariables: Array[CBLSIntVar]) extends LinearSelector {
   //var minObjective: Int = Int.MaxValue;
-  def getVariables(): Array[CBLSIntVarDom] = searchVariables
+  def getVariables(): Array[CBLSIntVar] = searchVariables
 
   def getMinObjective(it: Int, accept: Move => Boolean,
                       acceptVar: CBLSIntVar => Boolean = { (x: CBLSIntVar) => true }): Move;
@@ -69,7 +69,7 @@ abstract class Neighbourhood(val searchVariables: Array[CBLSIntVarDom]) extends 
 }
 
 //assumes that all variables have a range domain!
-class SumNeighborhood(val variables: Array[CBLSIntVarDom], val coeffs: Array[Int], val sum: Int,
+class SumNeighborhood(val variables: Array[CBLSIntVar], val coeffs: Array[Int], val sum: Int,
                       objective: CBLSObjective, cs: ConstraintSystem) extends Neighbourhood(variables) {
   val variableViolation: Array[IntValue] = variables.map(cs.violation(_)).toArray
 
@@ -152,7 +152,7 @@ class SumNeighborhood(val variables: Array[CBLSIntVarDom], val coeffs: Array[Int
 }
 
 
-class GCCNeighborhood(val variables: Array[CBLSIntVarDom], val vals: Array[Int], val low: Array[Int],
+class GCCNeighborhood(val variables: Array[CBLSIntVar], val vals: Array[Int], val low: Array[Int],
                       val up: Array[Int], val closed: Boolean, objective: CBLSObjective,
                       cs: ConstraintSystem) extends Neighbourhood(variables) {
   val variableViolation: Array[IntValue] = variables.map(cs.violation(_)).toArray
@@ -198,7 +198,7 @@ class GCCNeighborhood(val variables: Array[CBLSIntVarDom], val vals: Array[Int],
         if (cands.isEmpty) throw new Exception("GCC cannot be satisfied")
         val curvar = cands.head
         cands = cands.tail
-        val candval = variables(curvar).getDomain().find(
+        val candval = variables(curvar).domain.find(
           k => if (ups.contains(k)) cnts.getOrElse(k, 0) < ups(k) else !closed)
         if (candval.isDefined) {
           val k = candval.get
@@ -259,17 +259,17 @@ class GCCNeighborhood(val variables: Array[CBLSIntVarDom], val vals: Array[Int],
   def getBest(rng1: Iterable[Int], rng2: Iterable[Int], accept: Move => Boolean): Move = {
     val bestSwap = selectMin2(rng1, rng2, (idx: Int, next: Int) => getSwapMove(idx, next, accept).value,
                               (idx: Int, v: Int) => variables(idx).domain.contains(variables(v).value) && variables(
-                                v).dom.contains(variables(idx).value))
+                                v).inDomain(variables(idx).value))
     val swap = bestSwap match {
       case (i1, i2) => getSwapMove(i1, i2, accept)
       case _ => new NoMove(Int.MaxValue)
     }
     val bestMove = if (!closed) {
       selectMin2(rng1, alldoms._1 to alldoms._2, (idx: Int, v: Int) => getAssignMove(idx, v, accept).value,
-                 (idx: Int, v: Int) => variables(idx).dom.contains(v))
+                 (idx: Int, v: Int) => variables(idx).inDomain(v))
     } else {
       selectMin2(rng1, vals, (idx: Int, v: Int) => getAssignMove(idx, v, accept).value,
-                 (idx: Int, v: Int) => variables(idx).dom.contains(v))
+                 (idx: Int, v: Int) => variables(idx).inDomain(v))
     }
     val move = bestMove match {
       case (i1, i2) => getAssignMove(i1, i2, accept)
@@ -284,7 +284,7 @@ class GCCNeighborhood(val variables: Array[CBLSIntVarDom], val vals: Array[Int],
 }
 
 //TODO: Take into account fixed variables!
-class ThreeOpt(variables: Array[CBLSIntVarDom], objective: CBLSObjective, cs: ConstraintSystem,
+class ThreeOpt(variables: Array[CBLSIntVar], objective: CBLSObjective, cs: ConstraintSystem,
                val offset: Int) extends Neighbourhood(variables) {
 
   val variableViolation: Array[IntValue] = variables.map(cs.violation(_)).toArray
@@ -300,7 +300,7 @@ class ThreeOpt(variables: Array[CBLSIntVarDom], objective: CBLSObjective, cs: Co
     //println(variables.map(v => v.value).mkString(","))
   }
 
-  def vars(idx: Int): CBLSIntVarDom = {
+  def vars(idx: Int): CBLSIntVar = {
     variables(idx - offset)
   }
 
@@ -356,7 +356,7 @@ class ThreeOpt(variables: Array[CBLSIntVarDom], objective: CBLSObjective, cs: Co
   };
 }
 
-class ThreeOptSub(variables: Array[CBLSIntVarDom], objective: CBLSObjective, cs: ConstraintSystem,
+class ThreeOptSub(variables: Array[CBLSIntVar], objective: CBLSObjective, cs: ConstraintSystem,
                   offset: Int) extends ThreeOpt(variables, objective, cs, offset) {
   //needed to add the allloop variable to be able to reinsert into the chain when the chain is only 1 element long.
   var allloop = false;
@@ -418,7 +418,7 @@ class ThreeOptSub(variables: Array[CBLSIntVarDom], objective: CBLSObjective, cs:
 }
 
 
-class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjective,
+class MaxViolating(searchVariables: Array[CBLSIntVar], objective: CBLSObjective,
                    constraintSystem: ConstraintSystem) extends Neighbourhood(searchVariables) {
 
   val indexRange = 0 until searchVariables.length;
@@ -426,13 +426,13 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
   var start = 0;
 
   def reset() = {
-    for (v: CBLSIntVarDom <- searchVariables)
-      v.setValue(v.getRandValue())
+    for (v: CBLSIntVar <- searchVariables)
+      v.setValue(v.domain.randomValue())
   }
 
   def randomMove(it: Int): Move = {
     val bestIndex = indexRange(RandomGenerator.nextInt(indexRange.length))
-    val bestValue = searchVariables(bestIndex).getRandValue()
+    val bestValue = searchVariables(bestIndex).domain.randomValue()
     val minObjective = objective.assignVal(searchVariables(bestIndex), bestValue);
     return new AssignMove(searchVariables(bestIndex), bestValue, minObjective)
   }
@@ -442,8 +442,8 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
                               (i: Int) => variableViolation(i).value,
                               (i:Int) => acceptVar(searchVariables(i)));
 
-    val bestValue = if (searchVariables(bestIndex).getDomain().size < 1000000) {
-      selectMin(searchVariables(bestIndex).getDomain())((i: Int) =>
+    val bestValue = if (searchVariables(bestIndex).domain.size < 1000000) {
+      selectMin(searchVariables(bestIndex).domain)((i: Int) =>
                                                           acceptOr(new AssignMove(searchVariables(bestIndex), i,
                                                                                   objective.assignVal(
                                                                                     searchVariables(bestIndex), i)),
@@ -451,7 +451,7 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
                                                         _ != searchVariables(bestIndex).value)
     } else {
       val objVal = objective.value
-      selectFirst(RandomGenerator.shuffle(searchVariables(bestIndex).getDomain()), (i: Int) =>
+      selectFirst(RandomGenerator.shuffle(searchVariables(bestIndex).domain), (i: Int) =>
         acceptOr(new AssignMove(searchVariables(bestIndex), i, objective.assignVal(searchVariables(bestIndex), i)),
                  accept).value < objVal
           && i != searchVariables(bestIndex).value
@@ -473,10 +473,10 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
       val v = searchVariables(cVar)
       if (acceptVar(v)
         && (variableViolation(cVar).value > 0 || RandomGenerator.nextInt(100) < 50)
-        && v.domainSize < 10000000) {
+        && v.domain.size < 10000000) {
         //TODO: Do something about this!
         val variableValue = v.value
-        for (cVal <- v.getDomain()) {
+        for (cVal <- v.domain) {
           if (variableValue != cVal) {
             val mv = new AssignMove(v, cVal, objective.assignVal(v, cVal))
 
@@ -516,7 +516,7 @@ class MaxViolating(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
 
 
 //This neighborhood assumes that all variables have the same domain
-class MaxViolatingSwap(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjective,
+class MaxViolatingSwap(searchVariables: Array[CBLSIntVar], objective: CBLSObjective,
                        constraintSystem: ConstraintSystem) extends Neighbourhood(searchVariables) {
   val indexRange = 0 until searchVariables.length;
   val variableViolation: Array[IntValue] = searchVariables.map(constraintSystem.violation(_))
@@ -567,7 +567,7 @@ class MaxViolatingSwap(searchVariables: Array[CBLSIntVarDom], objective: CBLSObj
 
 
 //This neighborhood is not totally "holes in the domain"-proof!
-class AllDifferent(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjective,
+class AllDifferent(searchVariables: Array[CBLSIntVar], objective: CBLSObjective,
                    constraintSystem: ConstraintSystem) extends Neighbourhood(searchVariables) {
   /**/
 
@@ -597,7 +597,7 @@ class AllDifferent(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
     }
 
     for (i <- indexRange) {
-      cur(i) = variables(i).getRandValue()
+      cur(i) = variables(i).domain.randomValue()
       cnt(cur(i)) = cnt.getOrElse(cur(i), 0) + 1
       if (cnt(cur(i)) > 1) nbprob += 1
     }
@@ -608,7 +608,7 @@ class AllDifferent(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
       if (cnt(cur(i)) > 1) {
         cnt(cur(i)) -= 1
         nbprob -= 1
-        cur(i) = variables(i).getRandValue()
+        cur(i) = variables(i).domain.randomValue()
         cnt(cur(i)) = cnt.getOrElse(cur(i), 0) + 1
         if (cnt(cur(i)) > 1) nbprob += 1
       }
@@ -626,7 +626,7 @@ class AllDifferent(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
   def getSwapMove(idx1: Int, idx2: Int, accept: Move => Boolean) = {
     val v1 = searchVariables(idx1).value
     val v2 = searchVariables(idx2).value
-    if (searchVariables(idx1).dom.contains(v2) && searchVariables(idx2).dom.contains(v1)) {
+    if (searchVariables(idx1).inDomain(v2) && searchVariables(idx2).inDomain(v1)) {
       acceptOr(new SwapMove(searchVariables(idx1), searchVariables(idx2),
                             objective.swapVal(searchVariables(idx1), searchVariables(idx2))), accept)
     };
@@ -636,7 +636,7 @@ class AllDifferent(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
   }
 
   def getAssignMove(idx: Int, v: Int, accept: Move => Boolean) = {
-    if (searchVariables(idx).dom.contains(v) && freeValues.contains(v)) {
+    if (searchVariables(idx).inDomain(v) && freeValues.contains(v)) {
       acceptOr(new BeforeMove(new AssignMove(searchVariables(idx), v, objective.assignVal(searchVariables(idx), v)),
                               () => {
                                 freeValues += variables(idx).value;
@@ -655,7 +655,7 @@ class AllDifferent(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
       getSwapMove(selectedIndex1, selectedIndex2, _ => true)
     } else {
       val selectedIndex = indexRange(RandomGenerator.nextInt(indexRange.length))
-      val selectedValue = variables(selectedIndex).getRandValue()
+      val selectedValue = variables(selectedIndex).domain.randomValue()
       getAssignMove(selectedIndex, selectedValue, _ => true)
     }
   }
@@ -673,14 +673,14 @@ class AllDifferent(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
 
   def getBest(rng1: Iterable[Int], rng2: Iterable[Int], accept: Move => Boolean): Move = {
     val bestSwap = selectMin2(rng1, rng2, (idx: Int, next: Int) => getSwapMove(idx, next, accept).value,
-                              (idx: Int, v: Int) => idx != v && variables(idx).dom.contains(
-                                variables(v).value) && variables(v).dom.contains(variables(idx).value))
+                              (idx: Int, v: Int) => idx != v && variables(idx).inDomain(
+                                variables(v).value) && variables(v).inDomain(variables(idx).value))
     val swap = bestSwap match {
       case (i1, i2) => getSwapMove(i1, i2, accept)
       case _ => new NoMove(Int.MaxValue)
     }
     val bestMove = selectMin2(rng1, freeValues, (idx: Int, v: Int) => getAssignMove(idx, v, accept).value,
-                              (idx: Int, v: Int) => variables(idx).dom.contains(v))
+                              (idx: Int, v: Int) => variables(idx).inDomain(v))
     val move = bestMove match {
       case (i1, i2) => getAssignMove(i1, i2, accept)
       case _ => new NoMove(Int.MaxValue)
@@ -693,7 +693,7 @@ class AllDifferent(searchVariables: Array[CBLSIntVarDom], objective: CBLSObjecti
   };
 }
 
-class Inverse(xs: Array[CBLSIntVarDom], invXs: Array[CBLSIntVarDom], objective: CBLSObjective,
+class Inverse(xs: Array[CBLSIntVar], invXs: Array[CBLSIntVar], objective: CBLSObjective,
               constraintSystem: ConstraintSystem, offset: Int = 0) extends Neighbourhood(xs ++ invXs) {
   /**/
 
@@ -709,7 +709,7 @@ class Inverse(xs: Array[CBLSIntVarDom], invXs: Array[CBLSIntVarDom], objective: 
 
     def recursiveFind(possibleValue: List[Int], index: Int): Boolean = {
       if (index == xs.length) return true
-      for (v <- possibleValue if xs(index).dom.contains(v) && invXs(v + offset).dom.contains(index - offset)) {
+      for (v <- possibleValue if xs(index).inDomain(v) && invXs(v + offset).inDomain(index - offset)) {
         tmpXs(index) = v
         if (recursiveFind(possibleValue.filterNot(_ == v), index + 1)) {
           return true
@@ -733,10 +733,10 @@ class Inverse(xs: Array[CBLSIntVarDom], invXs: Array[CBLSIntVarDom], objective: 
   def getSwapMove(idx1: Int, idx2: Int, accept: Move => Boolean) = {
     val v1 = xs(idx1).value
     val v2 = xs(idx2).value
-    if (xs(idx1).dom.contains(v2) && xs(idx2).dom.contains(v1)) {
+    if (xs(idx1).inDomain(v2) && xs(idx2).inDomain(v1)) {
       val invV1 = invXs(v1 + offset).value
       val invV2 = invXs(v2 + offset).value
-      if (invXs(v1 + offset).dom.contains(invV2) && invXs(v2 + offset).dom.contains(invV1)) {
+      if (invXs(v1 + offset).inDomain(invV2) && invXs(v2 + offset).inDomain(invV1)) {
         assert(invV1 + offset == idx1 && invV2 + offset == idx2)
         if(!(invV1 + offset == idx1 && invV2 + offset == idx2)){
           throw new RuntimeException("Invers neighbourhood is not satisfied...")
@@ -785,7 +785,7 @@ class Inverse(xs: Array[CBLSIntVarDom], invXs: Array[CBLSIntVarDom], objective: 
                               (idx1: Int, idx2: Int) =>
                                 idx1 != idx2 && //Why != and not <?
                                   ((xsViolation(idx1).value > 0 && xsViolation(idx2).value > 0) || RandomGenerator.nextInt(100) < 10) &&
-                                  xs(idx1).dom.contains(xs(idx2).value) && xs(idx2).dom.contains(xs(idx1).value))
+                                  xs(idx1).inDomain(xs(idx2).value) && xs(idx2).inDomain(xs(idx1).value))
     val b = bestSwap match {
       case (i1, i2) => getSwapMove(i1, i2, accept)
       case _ => new NoMove(Int.MaxValue)
@@ -802,17 +802,17 @@ class Inverse(xs: Array[CBLSIntVarDom], invXs: Array[CBLSIntVarDom], objective: 
 class GenericSubNeighbourhood(val fzNeighbourhood: FZSubNeighbourhood,
                               whereConstraintSystem: ConstraintSystem,
                               ensureConstraintSystem: ConstraintSystem,
-                              searchVariables: Array[CBLSIntVarDom],
+                              searchVariables: Array[CBLSIntVar],
                               objective: CBLSObjective,
                               val cblsModel: FZCBLSModel)
-  extends Neighbourhood(fzNeighbourhood.getSearchVariables.map(v => cblsModel.getCBLSVarDom(v))) {
+  extends Neighbourhood(fzNeighbourhood.getSearchVariables.map(v => cblsModel.getCBLSVar(v))) {
 
   val variableViolation: Array[IntValue] = searchVariables.map(cblsModel.c.violation(_))
 
 
   //TODO: Move to CBLSBuilder
-  val itVariables: Array[CBLSIntVarDom] = fzNeighbourhood.itVariables.map(v => cblsModel.getCBLSVarDom(v))
-  var itIterators: Array[Iterator[Int]] = itVariables.map(_.getDomain.iterator)
+  val itVariables: Array[CBLSIntVar] = fzNeighbourhood.itVariables.map(v => cblsModel.getCBLSVar(v))
+  var itIterators: Array[Iterator[Int]] = itVariables.map(_.domain.iterator)
   for (i <- itVariables.indices) {
     itVariables(i) := itIterators(i).next()
   }
@@ -824,20 +824,20 @@ class GenericSubNeighbourhood(val fzNeighbourhood: FZSubNeighbourhood,
   val moveActions = fzNeighbourhood.moves.map((m: oscar.flatzinc.model.FZMove) =>
                                                 m match {
                                                   case FZAssignMove(lhs, rhs) =>
-                                                    AssignAction(cblsModel.getCBLSVarDom(lhs),
-                                                                 cblsModel.getCBLSVar(rhs))
+                                                    AssignAction(cblsModel.getCBLSVar(lhs),
+                                                                 cblsModel.getIntValue(rhs))
                                                   case FZAssignArrayMove(lhs, index, rhs) =>
-                                                    AssignArrayAction(lhs.map(cblsModel.getCBLSVarDom(_)),
-                                                                      cblsModel.getCBLSVar(index),
-                                                                      cblsModel.getCBLSVar(rhs))
+                                                    AssignArrayAction(lhs.map(cblsModel.getCBLSVar(_)),
+                                                                      cblsModel.getIntValue(index),
+                                                                      cblsModel.getIntValue(rhs))
                                                   case FZSwapMove(lhs, rhs) =>
-                                                    SwapAction(cblsModel.getCBLSVarDom(lhs),
-                                                               cblsModel.getCBLSVarDom(rhs))
+                                                    SwapAction(cblsModel.getCBLSVar(lhs),
+                                                               cblsModel.getCBLSVar(rhs))
                                                   case FZSwapArrayMove(lhs, leftIndex, rhs, rightIndex) =>
-                                                    SwapArrayAction(lhs.map(cblsModel.getCBLSVarDom(_)),
-                                                                    cblsModel.getCBLSVar(leftIndex),
-                                                                    rhs.map(cblsModel.getCBLSVarDom(_)),
-                                                                    cblsModel.getCBLSVar(rightIndex))
+                                                    SwapArrayAction(lhs.map(cblsModel.getCBLSVar(_)),
+                                                                    cblsModel.getIntValue(leftIndex),
+                                                                    rhs.map(cblsModel.getCBLSVar(_)),
+                                                                    cblsModel.getIntValue(rightIndex))
                                                 }
   ).toArray
 
@@ -846,7 +846,7 @@ class GenericSubNeighbourhood(val fzNeighbourhood: FZSubNeighbourhood,
       itVariables(currentIterator) := itIterators(currentIterator).next()
       true
     } else {
-      itIterators(currentIterator) = itVariables(currentIterator).getDomain.iterator
+      itIterators(currentIterator) = itVariables(currentIterator).domain.iterator
       itVariables(currentIterator) := itIterators(currentIterator).next()
       currentIterator += 1
       val result = if (currentIterator >= numIterators) {

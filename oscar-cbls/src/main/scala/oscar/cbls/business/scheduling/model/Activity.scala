@@ -55,7 +55,7 @@ class Activity(var duration: IntValue, val planning: Planning, val name: String 
   val ID: Int = planning.addActivity(this)
 
 
-  duration.domain.restrict(PositiveOrNullRange)
+  duration.restrictDomain(PositiveOrNullRange)
   val isTakenInSentinel = true
 
   override def equals(obj: Any): Boolean = {

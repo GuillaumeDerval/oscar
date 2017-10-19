@@ -18,21 +18,17 @@
  */
 package oscar.flatzinc.cbls.support
 
-import oscar.cbls.core.computation.Store
+import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.{Constraint, ConstraintSystem}
 import oscar.cbls.lib.constraint._
 import oscar.flatzinc.model.FzDomain
 import oscar.flatzinc.model.FzDomainRange
 import oscar.flatzinc.model.FzDomainSet
-import oscar.cbls.core.computation.CBLSIntVar
 
 import scala.util.Random
 import oscar.flatzinc.model.FzDomainRange
-import oscar.cbls.core.computation.IntValue
-import oscar.cbls.core.computation.CBLSIntConst
 
 import scala.collection.immutable.SortedSet
-import oscar.cbls.core.computation.CBLSSetConst
 import oscar.cbls.lib.invariant.numeric.Prod2
 import oscar.flatzinc.model.FzDomainRange
 
@@ -43,6 +39,7 @@ import oscar.flatzinc.model.FzDomainRange
   def domainSize: Int
 }*/
 
+/*
 /**
  * CBLSIntVarDom extends the normal CBLSIntVar with more precise FzDomain information.
   * Not any more, this is completely redundant!
@@ -52,33 +49,27 @@ class CBLSIntVarDom(model: Store, Value: Int, val dom: FzDomain, n: String = nul
 {
 
   def getDomain():Iterable[Int] = domain
-  def inDomain(v:Int):Boolean = domain.contains(v)
-  def domainSize():Int = domain.size
   def getRandValue():Int = domain.randomValue
 
 }
 
-
+*/
 
 //TODO: Should not extend it anymore!
 //Need the store while it extends CBLSIntVar, as sometimes it is requested (e.g., to find the Model in some invariants)
-class CBLSIntConstDom(model:Store,_value:Int) extends CBLSIntVarDom(model,_value, FzDomainRange(_value, _value), _value.toString()){
+class StoredCBLSIntConst(model:Store,_value:Int) extends CBLSIntVar(model,_value, DomainRange(_value, _value), _value.toString()){
   override def value:Int = _value //pour pas avoir de propagation
   override def toString:String = "IntConst("+ _value + ")"
 }
-/*  extends CBLSIntConst(value) with IntValueDom{
-  override def inDomain(v:Int): Boolean = v==value 
-  override def getDomain():Iterable[Int] = List(value)
-  override def getRandValue():Int = value
-  override def domainSize: Int = 1
-}*/
 
 
+/*
 object CBLSIntVarDom {
   def apply(model: Store, value: Int, domain: FzDomain, name: String) = {
     new CBLSIntVarDom(model, value, domain, name)
   }
 }
+*/
 
 object EnsureDomain{
   val weight = CBLSIntConst(20);

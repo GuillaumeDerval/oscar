@@ -36,7 +36,7 @@ abstract class NeighbourhoodAction {
   def onlyModifies(allowedVars: CBLSIntVar => Boolean):Boolean
 }
 
-case class AssignAction(target: CBLSIntVarDom, value: IntValue) extends NeighbourhoodAction {
+case class AssignAction(target: CBLSIntVar, value: IntValue) extends NeighbourhoodAction {
   var computedValue: Int = 0
   var oldValue: Int = 0
   var savedValue: Int = 0
@@ -68,7 +68,7 @@ case class AssignAction(target: CBLSIntVarDom, value: IntValue) extends Neighbou
   }
 }
 
-case class AssignArrayAction(targets: Array[CBLSIntVarDom], index: IntValue,
+case class AssignArrayAction(targets: Array[CBLSIntVar], index: IntValue,
                              value: IntValue) extends NeighbourhoodAction {
   var computedValue: Int = 0
   var computedIndex: Int = 0
@@ -106,7 +106,7 @@ case class AssignArrayAction(targets: Array[CBLSIntVarDom], index: IntValue,
   }
 }
 
-case class SwapAction(target1: CBLSIntVarDom, target2: CBLSIntVarDom) extends NeighbourhoodAction {
+case class SwapAction(target1: CBLSIntVar, target2: CBLSIntVar) extends NeighbourhoodAction {
   override def computeAssignment(): Unit = {}
 
 
@@ -128,9 +128,9 @@ case class SwapAction(target1: CBLSIntVarDom, target2: CBLSIntVarDom) extends Ne
   }
 }
 
-case class SwapArrayAction(targets1: Array[CBLSIntVarDom],
+case class SwapArrayAction(targets1: Array[CBLSIntVar],
                            index1: IntValue,
-                           targets2: Array[CBLSIntVarDom],
+                           targets2: Array[CBLSIntVar],
                            index2: IntValue) extends NeighbourhoodAction {
   var computedIndex1: Int = 0
   var computedIndex2: Int = 0

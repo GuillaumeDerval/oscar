@@ -23,6 +23,7 @@ import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.{Objective => CBLSObjective}
 import oscar.cbls.lib.search.LinearSelector
 import oscar.cbls.util.StopWatch
+import oscar.cp.core.{Inconsistency, NoSolutionException}
 import oscar.flatzinc.{Log, NoSuchConstraintException, Options}
 import oscar.flatzinc.cbls.support._
 import oscar.flatzinc.cp.FZCPModel
@@ -100,7 +101,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
                                                                            log)
 
 
-    val poster: FZCBLSConstraintPoster = new FZCBLSConstraintPoster(cblsmodel.c, cblsmodel.getCBLSVar)
+    val poster: FZCBLSConstraintPoster = new FZCBLSConstraintPoster(cblsmodel.c, cblsmodel.getIntValue)
 
     postInvariants(cblsmodel, poster, invariants, log)
 
@@ -117,7 +118,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
       for (sub <- neighbourhood.subNeighbourhoods) {
         val whereCS = createLocalConstraintSystem(sub.whereConstraints, cblsmodel)
         val ensureCS = createLocalConstraintSystem(sub.ensureConstraints, cblsmodel)
-        val controlledVariables = sub.getSearchVariables.map(cblsmodel.getCBLSVarDom(_))
+        val controlledVariables = sub.getSearchVariables.map(cblsmodel.getCBLSVar(_))
         cblsmodel.addNeighbourhood(
           (o, c) => new GenericSubNeighbourhood(sub,
                                                 whereCS,
@@ -175,6 +176,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
 
     cblsmodel.close()
     log("Model closed");
+    
 
     var sc:SearchControl = finalRun._1
     var bestKnownObjective = Int.MaxValue
@@ -259,13 +261,13 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
         }
       }),
       new ActionSearch(() => {
-        val searchVariables = cblsmodel.neighbourhoods.foldLeft(Set.empty[CBLSIntVarDom])((acc: Set[CBLSIntVarDom], x: Neighbourhood) => acc ++ x.getVariables().filterNot(_.isInstanceOf[CBLSIntConstDom])).toArray
+        val searchVariables = cblsmodel.neighbourhoods.foldLeft(Set.empty[CBLSIntVar])((acc: Set[CBLSIntVar], x: Neighbourhood) => acc ++ x.getVariables().filterNot(_.isInstanceOf[StoredCBLSIntConst])).toArray
         sc.cancelObjective()
       }),
       if (!opts.is("no-sls")) new SimpleLocalSearch(cblsmodel, sc) else new ActionSearch(() => {}),
       new NeighbourhoodSearchSAT(cblsmodel, sc),
       new ActionSearch(() => {
-        val searchVariables = cblsmodel.neighbourhoods.foldLeft(Set.empty[CBLSIntVarDom])((acc: Set[CBLSIntVarDom], x: Neighbourhood) => acc ++ x.getVariables().filterNot(_.isInstanceOf[CBLSIntConstDom])).toArray
+        val searchVariables = cblsmodel.neighbourhoods.foldLeft(Set.empty[CBLSIntVar])((acc: Set[CBLSIntVar], x: Neighbourhood) => acc ++ x.getVariables().filterNot(_.isInstanceOf[StoredCBLSIntConst])).toArray
         sc.restoreObjective()
       }),
       fzModel.search.obj match {
@@ -328,7 +330,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
       { case (n: String, l: List[Constraint]) => l.length + "\t" + n }.toList.sorted.foreach(s => log(" " + s))
 
       val hardCS = ConstraintSystem(cblsmodel.m)
-      val hardPoster: FZCBLSConstraintPoster = new FZCBLSConstraintPoster(hardCS, cblsmodel.getCBLSVar);
+      val hardPoster: FZCBLSConstraintPoster = new FZCBLSConstraintPoster(hardCS, cblsmodel.getIntValue);
       for (c <- implicitConstraints) {
         try {
           hardPoster.construct_and_add_constraint(c)
@@ -341,19 +343,19 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
       Event(hardCS.violation, Unit => {
         if (hardCS.violation.value > 0) {
           if(hardConstraintError){
-            log(0, "ERROR: Some implicit Constraint is not satisfied during search, neighbourhood restart did not help.")
+            log("ERROR: Some implicit Constraint is not satisfied during search, neighbourhood restart did not help.")
             throw new Exception()
           }
           hardConstraintError = true
-          log(0, "WARNING: Some implicit Constraint is not satisfied during search.")
+          log("WARNING: Some implicit Constraint is not satisfied during search.")
           cblsmodel.neighbourhoods.foreach(
             n => log(0, n.getClass().toString() + " " + n.getVariables().mkString("[", ",", "]")))
-          log(0, "Trying soft restart of neighbourhoods...")
+          log("Trying soft restart of neighbourhoods...")
           cblsmodel.neighbourhoods.foreach( _.reset())
 
         }else{
           hardConstraintError = false
-          log(0, "Soft restart resolved the issue, for now.")
+          log("Soft restart resolved the issue, for now.")
         }
       });
       //Event(cs.violation, Unit => {log(cs.violation.toString);})
@@ -419,7 +421,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
 
   def createLocalConstraintSystem(constraints: List[Constraint], cblsmodel: FZCBLSModel): ConstraintSystem = {
     val whereConstraintSystem = ConstraintSystem(cblsmodel.m)
-    val whereConstraintPoster = new FZCBLSConstraintPoster(whereConstraintSystem, cblsmodel.getCBLSVar)
+    val whereConstraintPoster = new FZCBLSConstraintPoster(whereConstraintSystem, cblsmodel.getIntValue)
     val (invariants, softConstraints) =
       constraints.partition(c => c.definedVar.isDefined)
 
