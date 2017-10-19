@@ -277,7 +277,7 @@ case class SegmentExchangeOnSegments(vrp: VRP,
 
     if(!hotRestart)startVehicle = 0
 
-    val (listOfVehicleForFirstVehicle,notifyFound1) = selectFirstVehicleBehavior.toIterable(vehiclesNow)
+    val (listOfVehicleForFirstVehicle,notifyFound1) = selectFirstVehicleBehavior.toIterable(vehiclesNow.drop(startVehicle))
     for(firstVehicle <- listOfVehicleForFirstVehicle){
       val (listOfVehicleForSecondVehicle,notifyFound2) = selectSecondVehicleBehavior.toIterable(vehiclesNow.dropWhile(_ <= firstVehicle))
       for(secondVehicle <- listOfVehicleForSecondVehicle){
@@ -299,7 +299,7 @@ case class SegmentExchangeOnSegments(vrp: VRP,
         }
       }
     }
-
+    startVehicle += 1
     seq.releaseTopCheckpoint()
   }
 
