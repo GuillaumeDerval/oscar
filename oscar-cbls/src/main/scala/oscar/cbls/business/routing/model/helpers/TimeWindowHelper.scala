@@ -155,17 +155,17 @@ object TimeWindowHelper{
             val fromNode = chainForward(i-1)
             val toNode = chainForward(i)
             earlylines(toNode) =
-              earlylines(fromNode) +
+              Math.max(earlylines(toNode), earlylines(fromNode) +
                 taskDurations(fromNode) +
-                travelTimeFunction.getTravelDuration(fromNode, earlylines(fromNode), toNode)
+                travelTimeFunction.getTravelDuration(fromNode, earlylines(fromNode), toNode))
           }
-          for(i <- 1 until chainBackward.length) {
+          for(i <- 1 until chainBackward.length-1) {
             val toNode = chainBackward(i-1)
             val fromNode = chainBackward(i)
             deadlines(fromNode) =
-              deadlines(toNode) -
+              Math.min(deadlines(fromNode), deadlines(toNode) -
                 taskDurations(toNode) -
-                travelTimeFunction.getTravelDuration(fromNode, earlylines(toNode), toNode)
+                travelTimeFunction.getTravelDuration(fromNode, earlylines(fromNode), toNode))
           }
 
           //TODO find a better way to compute travel time backward
