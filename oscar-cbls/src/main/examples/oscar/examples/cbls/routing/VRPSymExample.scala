@@ -34,7 +34,7 @@ class SimpleVRPSymModelWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Ar
   override def toString : String = super.toString +
     "objective: " + obj.value + "\n"
 
-  val closestNeighboursForward = Array.tabulate(n)(DistanceHelper.computeClosestPathFromNeighbor(symmetricDistance,(_) => nodes))
+  val closestNeighboursForward = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance, (_) => nodes))
 
   def size = routes.value.size
   def nbRouted = size

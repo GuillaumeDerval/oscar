@@ -69,7 +69,7 @@ object SimpleVRPWithTimeWindow extends App{
     }
   }
 
-  val closestRelevantPredecessorsByDistance = Array.tabulate(n)(DistanceHelper.computeClosestPathFromNeighbor(symmetricDistance,relevantPredecessorsOfNodes))
+  val closestRelevantPredecessorsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance,relevantPredecessorsOfNodes))
 
   // MOVING
 
