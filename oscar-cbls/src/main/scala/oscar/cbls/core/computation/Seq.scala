@@ -922,7 +922,7 @@ et cette stack doit être mise à jour au moment de la notification.
           //we specify a roll back and give the instructions that must be undone, just in case.
           toNotify = SeqUpdateRollBackToCheckpoint(
             checkpoint,
-            () => {tmp.reverse(checkpoint,SeqUpdateLastNotified(this.mOldValue))},
+            () => {tmp.reverse(checkpoint,tmpToNotify)},
             level = levelOfTopCheckpoint)
 
         }else{
