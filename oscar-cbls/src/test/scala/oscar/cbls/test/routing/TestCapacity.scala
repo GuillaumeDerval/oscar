@@ -63,7 +63,7 @@ class RoutingWithCapacityMax(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:S
     contentConstraint.violation,
     sum(routingDistance) + (penaltyForUnrouted*(n - length(routes))))
 
-  val closestNeighboursForward = Array.tabulate(n)(DistanceHelper.computeClosestPathFromNeighbor(symmetricDistance, (_) => nodes))
+  val closestNeighboursForward = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance, (_) => nodes))
 
   def size = routes.value.size
 

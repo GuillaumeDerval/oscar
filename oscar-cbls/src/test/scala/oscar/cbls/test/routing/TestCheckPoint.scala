@@ -31,7 +31,7 @@ class MyVRP(n:Int,v:Int,model:Store,symmetricDistanceMatrix:Array[Array[Int]]) e
 
   val obj = Objective(routingDistance(0) + (penaltyForUnrouted*(n - length(routes))))
 
-  val closestNeighborsForward = Array.tabulate(n)(DistanceHelper.computeClosestPathFromNeighbor(symmetricDistanceMatrix, (_) => nodes))
+  val closestNeighborsForward = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix, (_) => nodes))
 }
 
 object TestCheckPoint extends App{

@@ -922,7 +922,7 @@ et cette stack doit être mise à jour au moment de la notification.
           //we specify a roll back and give the instructions that must be undone, just in case.
           toNotify = SeqUpdateRollBackToCheckpoint(
             checkpoint,
-            () => {tmp.reverse(checkpoint,tmpToNotify)},
+            () => {tmp.reverse(checkpoint,SeqUpdateLastNotified(this.mOldValue))},
             level = levelOfTopCheckpoint)
 
         }else{
@@ -1319,7 +1319,7 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
           toValue.releaseTopCheckpoint()
           popTopCheckpoint()
         }
-        toValue.setValue(s)
+        toValue := s
       case SeqUpdateLastNotified(value:IntSequence) =>
         //nothing to do here
         assert(value equals toValue.newValue)

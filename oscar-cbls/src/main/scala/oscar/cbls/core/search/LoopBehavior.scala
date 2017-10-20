@@ -66,6 +66,7 @@ case class First(maxNeighbors:() => Int = () => Int.MaxValue) extends LoopBehavi
   }
 }
 
+//TODO: this is not maxAcceptedNeighbors!!
 case class Best(maxNeighbors:() => Int = () => Int.MaxValue) extends LoopBehavior(){
   override def toIterable[T](baseIterable : Iterable[T]) : (BoundedIterable[T],()=>Unit) = {
     val iterable = new BoundedIterable[T]{
