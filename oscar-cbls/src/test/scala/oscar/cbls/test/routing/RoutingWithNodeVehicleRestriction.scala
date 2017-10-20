@@ -50,7 +50,7 @@ class VRPWithNodeVehicleRestriction(n:Int,v:Int,symmetricDistance:Array[Array[In
 
   val nodesThatShouldBeMovedToOtherVehicle =  NodeVehicleRestrictions.violatedNodes(vehicleOfNode,v,nodeVehicleRestriction)
 
-  val closestNeighboursForward = Array.tabulate(n)(DistanceHelper.computeClosestPathFromNeighbor(symmetricDistance, (_) => nodes))
+  val closestNeighboursForward = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance, (_) => nodes))
 }
 
 object RoutingWithNodeVehicleRestriction extends App{

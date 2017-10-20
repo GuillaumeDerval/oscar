@@ -43,7 +43,7 @@ object Pairs {
    * @return a list of all pairs of elements made from two elements in l, preserving the order
    *         in which those elements are in l
    */
-  def makeAllSortedPairs[T](l:List[T], filter: (T,T) => Boolean = (head:T,other:T) => true):List[(T,T)] = {
+  def makeAllSortedPairs[T](l:List[T], filter: (T,T) => Boolean = (head:T,other:T) => true, toReturn: List[(T,T)] = List.empty):List[(T,T)] = {
     def makeAllSortedPairsWithHead(head:T,
                                    tail:List[T],
                                    toAppend:List[(T,T)]):List[(T,T)] = {
@@ -57,8 +57,8 @@ object Pairs {
       }
     }
     l match{
-      case Nil => Nil
-      case h::t => makeAllSortedPairsWithHead(h,t,makeAllSortedPairs(t, filter))
+      case Nil => toReturn
+      case h::t => makeAllSortedPairs(t, filter, makeAllSortedPairsWithHead(h,t,List.empty) ::: toReturn)
     }
   }
 
@@ -77,19 +77,24 @@ object Pairs {
   /**
     * @param l a list
     * @param t a list
+    * @param filter an optional filter
     * @return a list containing all the possible pairs (a, b) where a is in l and b is in t
     */
-  def zipIntoAllPossiblePairs[L,T](l:List[L],t:List[T]):List[(L,T)] = {
+  def zipIntoAllPossiblePairs[L,T](l:List[L],
+                                   t:List[T],
+                                   filter: (L,T) => Boolean = (_:L,_:T) => true,
+                                   toReturn: List[(L,T)] = List.empty):List[(L,T)] = {
     l match{
-      case Nil => Nil
+      case Nil => toReturn
       case hl::tl =>
-        def myAggregate(lh:L,t:List[T]):List[(L,T)] = {
-          t match {
-            case ht :: tt => (lh, ht) :: myAggregate(lh, tt)
-            case Nil => zipIntoAllPossiblePairs(tl,t)
+        def myAggregate(lh:L,rt:List[T], toReturn: List[(L,T)]):List[(L,T)] = {
+          rt match {
+            case ht :: tt if filter(lh,ht) => myAggregate(lh, tt, (lh,ht) :: toReturn)
+            case ht :: tt => myAggregate(lh, tt,toReturn)
+            case Nil => toReturn
           }
         }
-        myAggregate(hl,t)
+        zipIntoAllPossiblePairs(tl,t,filter,myAggregate(hl,t,List.empty) ::: toReturn)
     }
   }
 }

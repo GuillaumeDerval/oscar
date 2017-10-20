@@ -4,6 +4,7 @@ import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.lib.invariant.seq.Precedence
 import oscar.cbls.business.routing.invariants.PDPConstraints
+import oscar.cbls.core.search.Best
 
 /**
   * Created by fg on 12/05/17.
@@ -68,7 +69,7 @@ object SimpleVRPWithTimeWindow extends App{
     }
   }
 
-  val closestRelevantPredecessorsByDistance = Array.tabulate(n)(DistanceHelper.computeClosestPathFromNeighbor(symmetricDistance,relevantPredecessorsOfNodes))
+  val closestRelevantPredecessorsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance,relevantPredecessorsOfNodes))
 
   // MOVING
 
@@ -125,8 +126,12 @@ object SimpleVRPWithTimeWindow extends App{
   def segExchangeOnSegments(k: Int) = profile(
     segmentExchangeOnSegments(myVRP,
       () => Array.tabulate(v)(vehicle => vehicle -> ChainsHelper.computeCompleteSegments(myVRP,vehicle,chainsExtension)).toMap,
-      ()=> myVRP.kFirst(v*2,closestRelevantPredecessorsByDistance),
-      () => 0 until v
+      ()=> closestRelevantPredecessorsByDistance,
+      () => 0 until v,
+      selectFirstSegmentBehavior = Best(),
+      selectSecondSegmentBehavior = Best(),
+      selectFirstVehicleBehavior = Best(),
+      selectSecondVehicleBehavior = Best()
     ))
 
   // INSERTING

@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.visual.routingMap
+package oscar.cbls.business.routing.visual
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify

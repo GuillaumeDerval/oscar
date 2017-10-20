@@ -115,6 +115,9 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4)
     * Return the next node of the given node
     *   or n if the node isn't routed
     *   or None if the node is last of his route
+    *
+    * NOTE: if you'll use this method very often,
+    *       you should maybe use the getNextNodeOfAllNodes method instead
     * @param node The node we want to get the next
     * @return the next node of the given node or None
     */
@@ -158,6 +161,46 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4)
       if(prevNodeOfNodes
     }
   }*/
+
+  /**
+    * Compute the previous node of all nodes in the routes.
+    * If the node isn't routed or is a depot, his previous is n.
+    * @return
+    */
+  def getGlobalPrevNodeOfAllNodes: Array[Int] = {
+    val it = routes.value.iterator
+    val prevNodeOfNodes = Array.fill(n)(n)
+    var prev = n
+    while(it.hasNext){
+      val node = it.next()
+      if(node >= v)
+        prevNodeOfNodes(node) = prev
+      prev = node
+    }
+    prevNodeOfNodes
+  }
+
+  /**
+    * Compute the next node of all nodes in the routes.
+    * If the node isn't routed his next is n.
+    * If the node is the last of his route, his next node is the vehicle of his route
+    * @return
+    */
+  def getGlobalNextNodeOfAllNodes: Array[Int] = {
+    val it = routes.value.iterator
+    val nextNodeOfNodes = Array.fill(n)(n)
+    var prev = it.next()
+    while(it.hasNext){
+      val node = it.next()
+      if(node < v)
+        nextNodeOfNodes(prev) = node-1
+      else
+        nextNodeOfNodes(prev) = node
+      prev = node
+    }
+    nextNodeOfNodes(prev) = v-1
+    nextNodeOfNodes
+  }
 
   def getRoutePositionOfAllNode:Array[Int] = {
     def buildRoutePositionOfAllNode(it: Iterator[Int],currentPosition: Int, nodeToPosition: List[Int]): Array[Int] = {

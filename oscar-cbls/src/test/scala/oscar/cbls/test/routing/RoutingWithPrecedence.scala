@@ -44,7 +44,7 @@ class MySimpleRoutingP(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, 
     "precedences: " + precedences + "\n" +
     "objective: " + obj  + "\n"
 
-  val nearestForward:Array[Iterable[Int]] = Array.tabulate(n)(DistanceHelper.computeClosestPathFromNeighbor(symmetricDistance, (_) => nodes))
+  val nearestForward:Array[Iterable[Int]] = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance, (_) => nodes))
 }
 
 object RoutingWithPrecedence extends App{
