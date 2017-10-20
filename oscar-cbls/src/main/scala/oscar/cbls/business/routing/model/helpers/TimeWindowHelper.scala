@@ -139,13 +139,12 @@ object TimeWindowHelper{
         while (fromToValue.get(from).isDefined) {
           val to = fromToValue(from)._1.last
           val value = fromToValue(from)._2
-          val minTravelTimeFromFromToTo =
-            Pairs.makeAllSortedPairs(fromToValue(from)._1).
-              foldLeft(0)((a,b) =>
-                if(a == 0)
-                  a + travelTimeFunction.getTravelDuration(b._1,earlylines(b._1),b._2)
-                else
-                  a + taskDurations(b._1) + travelTimeFunction.getTravelDuration(b._1,earlylines(b._1),b._2))
+          val impactedNodes = fromToValue(from)._1.toArray
+          val minTravelTimeFromFromToTo: Int =
+            (for(i <- 1 until impactedNodes.length)
+              yield taskDurations(impactedNodes(i-1)) +
+                travelTimeFunction.getTravelDuration(impactedNodes(i-1),earlylines(impactedNodes(i-1)),impactedNodes(i))
+              ).sum - taskDurations(impactedNodes(0))
 
           deadlines(to) = Math.min(deadlines(to), deadlines(from) + value + taskDurations(to))
           earlylines(to) = Math.max(earlylines(to), earlylines(from) + taskDurations(from) + minTravelTimeFromFromToTo)
