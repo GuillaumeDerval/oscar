@@ -29,7 +29,7 @@ case class DoOnQuery(a: Neighborhood, proc: () => Unit) extends NeighborhoodComb
  * @param a a neighborhood
  * @param proc the procedure to call on one first move that is performed from this neighborhood
  */
-class DoOnFirstMove(a: Neighborhood, proc: () => Unit) extends NeighborhoodCombinator(a) {
+case class DoOnFirstMove(a: Neighborhood, proc: () => Unit) extends NeighborhoodCombinator(a) {
   var isFirstMove = true
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
     if (isFirstMove) {

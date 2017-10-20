@@ -88,7 +88,7 @@ class PDPConstraints(vrp: VRP, fastConstraints: ConstraintSystem, slowConstraint
 
 
   private def addCapacityConstraint(capacityInvariant: ForwardCumulativeConstraintOnVehicle): Unit ={
-    fastConstraints.post(EQ(capacityInvariant.violation,0))
+    slowConstraints.post(EQ(capacityInvariant.violation,0))
   }
 
   /**

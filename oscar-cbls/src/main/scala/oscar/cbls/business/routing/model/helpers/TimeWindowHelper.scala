@@ -1,5 +1,6 @@
 package oscar.cbls.business.routing.model.helpers
 
+import oscar.cbls.algo.search.Pairs
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.model.TTFMatrix
 import oscar.cbls.business.routing.model.extensions.TimeWindow
@@ -133,30 +134,21 @@ object TimeWindowHelper{
         startingNodes.toList
       }
 
-      /**
-        * We compute the starting node of each sequence of maxTravelDurations.
-        *
-        * e.g.: Map((0,1) -> 20, (1,2) -> 40, (1,3) -> 30)     => the ending nodes are 2 and 3
-        * @return A list of ending nodes
-        */
-      def endingNodes(): List[Int] = {
-        val origins = keys.map(_.head).distinct
-        val destinations = keys.map(_.last).distinct
-
-        val endingNodes = vrp.nodes.collect {
-          case node if !origins.contains(node) && destinations.contains(node) => node
-        }
-        require(endingNodes.nonEmpty, "No ending nodes in your maxDetours couples. You may have introduce some cycle.")
-        endingNodes.toList
-      }
-
       for (startNode <- startingNodes()) {
         var from = startNode
         while (fromToValue.get(from).isDefined) {
           val to = fromToValue(from)._1.last
           val value = fromToValue(from)._2
+          val minTravelTimeFromFromToTo =
+            Pairs.makeAllSortedPairs(fromToValue(from)._1).
+              foldLeft(0)((a,b) =>
+                if(a == 0)
+                  a + travelTimeFunction.getTravelDuration(b._1,earlylines(b._1),b._2)
+                else
+                  a + taskDurations(b._1) + travelTimeFunction.getTravelDuration(b._1,earlylines(b._1),b._2))
+
           deadlines(to) = Math.min(deadlines(to), deadlines(from) + value + taskDurations(to))
-          earlylines(to) = Math.max(earlylines(to), earlylines(from) + taskDurations(from) + value)
+          earlylines(to) = Math.max(earlylines(to), earlylines(from) + taskDurations(from) + minTravelTimeFromFromToTo)
 
           val chainForward = fromToValue(from)._1.toArray
           val chainBackward = fromToValue(from)._1.toArray.reverse
