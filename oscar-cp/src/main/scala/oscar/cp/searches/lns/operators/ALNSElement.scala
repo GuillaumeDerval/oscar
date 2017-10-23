@@ -74,7 +74,7 @@ abstract class ALNSElement(val failThreshold: Int = 0){
 
   def execs: Int = stats.length
 
-  def efficiency: Double = improvement / (time / 1000000000.0)
+  def efficiency: Double = if(execs > 0) improvement / (time / 1000000000.0) else 0.0
 
   def asXml(cat: String): Elem
 

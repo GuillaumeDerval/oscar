@@ -66,11 +66,12 @@ object HtmlReporter extends App{
       )
 
       opScores.foreach{case (config, operators, opWeights) =>
-        htmlWriter.addElement(
-          "logline",
-          "Operator weights evolution for " + config,
-          HtmlWriter.tableToHtmlString(renderOpScoresByTime(opWeights, operators, stepped = true))
-        )
+        if(config != "Baseline_best" && config != "Baseline_worst")
+          htmlWriter.addElement(
+            "logline",
+            "Operator weights evolution for " + config,
+            HtmlWriter.tableToHtmlString(renderOpScoresByTime(opWeights, operators, stepped = true))
+          )
       }
 
 //      htmlWriter.addElement(
@@ -199,7 +200,10 @@ object HtmlReporter extends App{
 
     scores.sortBy(_._1).foreach{case (time, operator, score) =>
       currentScores(mapping(operator)) = Some(score)
-      if(scoresByTime.nonEmpty && scoresByTime.last._1 == time) scoresByTime.last._2(mapping(operator)) = Some(score)
+      if(scoresByTime.nonEmpty) {
+        if(scoresByTime.last._1 == time) scoresByTime.last._2(mapping(operator)) = Some(score)
+        else if(scoresByTime.last._2(mapping(operator)).isEmpty || scoresByTime.last._2(mapping(operator)).get != score) scoresByTime += ((time, currentScores.clone()))
+      }
       else scoresByTime += ((time, currentScores.clone()))
     }
 

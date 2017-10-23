@@ -32,6 +32,9 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
     checkEfficiency
   )
 
+  val relaxWeights: Array[Double] = Array.fill[Double](relaxOps.length)(Double.MaxValue)
+  val searchWeights: Array[Double] = Array.fill[Double](searchOps.length)(Double.MaxValue)
+
   override def alnsLoop(): Unit = {
     if (!solver.silent) println("\nStarting adaptive LNS...")
     stagnation = 0
@@ -73,23 +76,7 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
   }
 
   protected def checkEfficiency(op: ALNSOperator): Double = {
-    if(op.name != "dummy"){
-      val opEfficiency = Metrics.efficiencyFor(op, iterTimeout)
-      val searchEfficiency = Metrics.searchEfficiencySince(solsFound, Math.min(timeInSearch - iterTimeout * 5, if (solsFound.nonEmpty) solsFound.last.time else 0L), timeInSearch)
-
-      if (!solver.silent) {
-        println("Search efficiency is " + searchEfficiency)
-        println("Operator " + op.name + " efficiency is " + opEfficiency)
-      }
-
-      if (op.time >= iterTimeout * 2 && (opEfficiency < searchEfficiency * tolerance || op.sols == 0)){
-        op.setActive(false)
-        if (!solver.silent) println("Operator " + op.name + " deactivated due to low efficiency!")
-//        manageIterTimeout()
-      }
-
-      opEfficiency
-    }
+    if(op.name != "dummy") Metrics.efficiencyFor(op, iterTimeout)
     else 1.0
   }
 
@@ -167,23 +154,39 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
     }while(System.nanoTime() < endIter && !learning)
 
     if(!relax.isInstanceOf[ALNSReifiedOperator]){
-      val relaxScore = if (relax.isActive) relaxStore.adapt(relax)
-      else {
-        if (!solver.silent) println("Operator " + relax.name + " deactivated")
+      var relaxScore = relaxStore.adapt(relax)
+      val searchEfficiency = computeCurrentAverageScore(relaxWeights)
+      if (relax.time >= iterTimeout * 2 && (relaxScore < searchEfficiency * tolerance || relax.sols == 0)){
+        relax.setActive(false)
+        relaxScore = -1.0
         if (!learning) relaxStore.deactivate(relax)
-        -1.0
+        if (!solver.silent)println("Operator " + relax.name + " deactivated due to low efficiency!")
+//        manageIterTimeout()
+      }
+      if (!solver.silent) {
+        println("Search efficiency is " + searchEfficiency)
+        println("Operator " + relax.name + " efficiency is " + relaxScore)
       }
       history += ((timeInSearch, relax.name, relaxScore))
+      relaxWeights(relaxOps.indexOf(relax)) = relaxScore
     }
 
     if(!search.isInstanceOf[ALNSReifiedOperator]){
-      val searchScore = if (search.isActive) searchStore.adapt(search)
-      else {
-        if (!solver.silent) println("Operator " + search.name + " deactivated")
+      var searchScore = searchStore.adapt(search)
+      val searchEfficiency = computeCurrentAverageScore(searchWeights)
+      if (search.time >= iterTimeout * 2 && (searchScore < searchEfficiency * tolerance || search.sols == 0)){
+        search.setActive(false)
+        searchScore = -1.0
         if (!learning) searchStore.deactivate(search)
-        -1.0
+        if (!solver.silent)println("Operator " + search.name + " deactivated due to low efficiency!")
+//        manageIterTimeout()
+      }
+      if (!solver.silent) {
+        println("Search efficiency is " + searchEfficiency)
+        println("Operator " + search.name + " efficiency is " + searchScore)
       }
       history += ((timeInSearch, search.name, searchScore))
+      searchWeights(searchOps.indexOf(search)) = searchScore
     }
 
     if(currentSol.get.objective != bestSol.get.objective){
@@ -192,5 +195,11 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
       currentSol = bestSol
     }
     iter += 1
+  }
+
+  protected def computeCurrentAverageScore(scores: Array[Double]): Double ={
+    val activeScores = scores.filter(_ > 0)
+    val nActives = activeScores.length.toDouble
+    (activeScores.map(_ / nActives).sum / nActives) * nActives
   }
 }

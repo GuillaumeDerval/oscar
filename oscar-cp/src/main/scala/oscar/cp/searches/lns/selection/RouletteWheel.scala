@@ -63,8 +63,8 @@ class RouletteWheel[T <: ALNSElement](
     val index = getIndex(elem)
     if(index == -1) throw  new Exception("Element " + elem + " is not in store.")
     //Warning: received val is divided by the number of elems to avoid overflow when processing max values!
-    weights(index) = if(elem.execs > 1) (1.0 - decay) * weights(index) + decay * (perfMetric(elem) / elems.length.toDouble)
-    else perfMetric(elem) / elems.length.toDouble
+    weights(index) = /*if(elem.execs > 1) */(1.0 - decay) * weights(index) + decay * (perfMetric(elem) / elems.length.toDouble)
+    /*else perfMetric(elem) / elems.length.toDouble*/
     //    println("elem " + elem + " has now weight: " + weights(index))
     if(isCached(index)) lastSelected.remove(elem)
     if(!elem.isActive){

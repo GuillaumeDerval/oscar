@@ -10,7 +10,7 @@ import scala.util.Random
   * TODO
   */
 class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearchImpl(solver, vars, config) {
-//  val tolerance: Double = config.metaParameters.getOrElse('tolerance, 0.5).asInstanceOf[Double]
+  val tolerance: Double = config.metaParameters.getOrElse('tolerance, 0.5).asInstanceOf[Double]
   def evalWindow: Long = iterTimeout * 5
   override val stagnationThreshold = 10
 
@@ -84,7 +84,7 @@ class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
         println("Operator " + op.name + " efficiency is " + opEfficiency)
       }
 
-      if (op.time >= iterTimeout * 2 && /*(opEfficiency < searchEfficiency * tolerance ||*/ op.sols == 0/*)*/){
+      if (op.time >= iterTimeout * 2 && (opEfficiency < searchEfficiency * tolerance || op.sols == 0)){
         op.setActive(false)
         if (!solver.silent) println("Operator " + op.name + " deactivated due to low efficiency!")
 //        manageIterTimeout()
