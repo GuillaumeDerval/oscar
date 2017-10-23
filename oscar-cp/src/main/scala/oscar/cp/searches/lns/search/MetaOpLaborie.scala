@@ -12,6 +12,7 @@ import scala.util.Random
   * TODO
   */
 class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearchImpl(solver, vars, config) {
+
   val tolerance: Double = config.metaParameters.getOrElse('tolerance, 0.5).asInstanceOf[Double]
   override val stagnationThreshold = 10
 
@@ -20,20 +21,19 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
 
   override lazy val relaxStore: AdaptiveStore[ALNSOperator] = new RouletteWheel[ALNSOperator](
     relaxOps,
-    0.05,
+    relaxWeights.clone(),
+    0.2,
     false,
     checkEfficiency
   )
 
   override lazy val searchStore: AdaptiveStore[ALNSOperator] = new RouletteWheel[ALNSOperator](
     searchOps,
-    0.05,
+    searchWeights.clone(),
+    0.2,
     false,
     checkEfficiency
   )
-
-  val relaxWeights: Array[Double] = Array.fill[Double](relaxOps.length)(Double.MaxValue)
-  val searchWeights: Array[Double] = Array.fill[Double](searchOps.length)(Double.MaxValue)
 
   override def alnsLoop(): Unit = {
     if (!solver.silent) println("\nStarting adaptive LNS...")
@@ -167,8 +167,11 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
         println("Search efficiency is " + searchEfficiency)
         println("Operator " + relax.name + " efficiency is " + relaxScore)
       }
-      history += ((timeInSearch, relax.name, relaxScore))
-      relaxWeights(relaxOps.indexOf(relax)) = relaxScore
+      val index = relaxOps.indexOf(relax)
+      if(relaxWeights(index) !=  relaxScore) {
+        history += ((timeInSearch, relax.name, relaxScore))
+        relaxWeights(index) = relaxScore
+      }
     }
 
     if(!search.isInstanceOf[ALNSReifiedOperator]){
@@ -185,8 +188,11 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
         println("Search efficiency is " + searchEfficiency)
         println("Operator " + search.name + " efficiency is " + searchScore)
       }
-      history += ((timeInSearch, search.name, searchScore))
-      searchWeights(searchOps.indexOf(search)) = searchScore
+      val index = searchOps.indexOf(search)
+      if(searchWeights(index) != searchScore) {
+        history += ((timeInSearch, search.name, searchScore))
+        searchWeights(searchOps.indexOf(search)) = searchScore
+      }
     }
 
     if(currentSol.get.objective != bestSol.get.objective){

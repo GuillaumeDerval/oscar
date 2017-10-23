@@ -63,6 +63,9 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
   lazy val searchStore: AdaptiveStore[ALNSOperator] = config.searchStore
   lazy val searchOps: Array[ALNSOperator] = searchStore.getElements.toArray
 
+  lazy val relaxWeights: Array[Double] = Array.fill[Double](relaxOps.length)(currentSol.get.objective.toDouble)
+  lazy val searchWeights: Array[Double] = Array.fill[Double](searchOps.length)(currentSol.get.objective.toDouble)
+
   lazy val nOpCombinations: Int = relaxOps.filter(_.isActive).map(_.nParamVals).sum * searchOps.filter(_.isActive).map(_.nParamVals).sum
 
   def timeInSearch: Long = System.nanoTime() - startTime
@@ -233,7 +236,8 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
         if (!learning) relaxStore.deactivate(relax)
         -1.0
       }
-      history += ((iterEnd, relax.name, relaxScore))
+      val index = relaxOps.indexOf(relax)
+      if(relaxWeights(index) !=  relaxScore) history += ((iterEnd, relax.name, relaxScore))
     }
 
     if(relaxDone || relax.name == "dummy"){
@@ -245,7 +249,8 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
           if (!learning) searchStore.deactivate(search)
           -1.0
         }
-        history += ((iterEnd, search.name, searchScore))
+        val index = searchOps.indexOf(search)
+        if(searchWeights(index) != searchScore) history += ((iterEnd, search.name, searchScore))
       }
     }
 
