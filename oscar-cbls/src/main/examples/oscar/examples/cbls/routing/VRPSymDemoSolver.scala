@@ -28,7 +28,7 @@ object VRPDemo extends App {
   val n:Int=args(0).toInt
   val v = args(1).toInt
 
-  val displayDelay = if (n >= 1000) 1500 else 500 //ms
+  val displayDelay = if (n >= 1000) 3500 else 500 //ms
   val verbose = 1
   val maxPivotPerValuePercent = 4
   val mapSide = 1000
@@ -67,7 +67,7 @@ class VRPDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, displayDel
     neighborhoodName = "InsertUF",
     hotRestart = false,
     selectNodeBehavior = First(),
-    selectInsertionPointBehavior = Best()))
+    selectInsertionPointBehavior = Best(maxNeighbors = () => 10)))
 
   val routeUnroutedPointBad =  profile(insertPointUnroutedFirst(myVRP.unrouted,
     ()=> myVRP.kFirst(20,closestRelevantPredecessors,routedPostFilter),
@@ -82,7 +82,7 @@ class VRPDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, displayDel
     myVRP.routed,
     ()=>myVRP.kFirst(10,closestRelevantSuccessors,unRoutedPostFilter),
     myVRP,
-    selectInsertionPointBehavior = Best(maxNeighbors = ()=>5),
+    selectInsertionPointBehavior = Best(maxNeighbors = ()=>10),
     selectInsertedNodeBehavior = First(),
     neighborhoodName = "InsertRF")
     guard(() => myVRP.routed.value.size < n/5))

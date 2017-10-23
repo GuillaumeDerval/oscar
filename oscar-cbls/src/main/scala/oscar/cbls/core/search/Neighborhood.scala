@@ -515,13 +515,13 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
       toReturnMove = instantiateCurrentMove(newObj)
       if (myPrintExploredNeighbors) {
         println("Explored " + toReturnMove + ", new best accepted)")
-        //println(obj.asInstanceOf[LoggingObjective].getAndCleanEvaluationLog.mkString("\n"))
+        println(obj.asInstanceOf[LoggingObjective].getAndCleanEvaluationLog.mkString("\n"))
       }
       true
     } else {
       if (myPrintExploredNeighbors) {
         println("Explored " + instantiateCurrentMove(newObj) + ", not the new best or not accepted, not saved")
-        //println(obj.asInstanceOf[LoggingObjective].getAndCleanEvaluationLog.mkString("\n"))
+        println(obj.asInstanceOf[LoggingObjective].getAndCleanEvaluationLog.mkString("\n"))
       }
       false
     }
