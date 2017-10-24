@@ -55,16 +55,14 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
   var stagnation = 0
   val stagnationThreshold: Int = config.metaParameters.getOrElse('stagnationThreshold, 0).asInstanceOf[Int]
 
-  //Instantiating relax operators:
-  lazy val relaxStore: AdaptiveStore[ALNSOperator] = config.relaxStore
-  lazy val relaxOps: Array[ALNSOperator] = relaxStore.getElements.toArray
-
-  //Instantiating search operators:
-  lazy val searchStore: AdaptiveStore[ALNSOperator] = config.searchStore
-  lazy val searchOps: Array[ALNSOperator] = searchStore.getElements.toArray
+  lazy val relaxOps: Array[ALNSOperator] = config.relaxStore.getElements.toArray
+  lazy val searchOps: Array[ALNSOperator] = config.searchStore.getElements.toArray
 
   lazy val relaxWeights: Array[Double] = Array.fill[Double](relaxOps.length)(currentSol.get.objective.toDouble)
   lazy val searchWeights: Array[Double] = Array.fill[Double](searchOps.length)(currentSol.get.objective.toDouble)
+
+  lazy val relaxStore: AdaptiveStore[ALNSOperator] = config.relaxStore
+  lazy val searchStore: AdaptiveStore[ALNSOperator] = config.searchStore
 
   lazy val nOpCombinations: Int = relaxOps.filter(_.isActive).map(_.nParamVals).sum * searchOps.filter(_.isActive).map(_.nParamVals).sum
 
@@ -165,6 +163,17 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
 
   protected def alnsLoop(): Unit = {
     if (!solver.silent) println("\nStarting adaptive LNS...")
+
+    val t = timeInSearch
+
+    relaxWeights.zipWithIndex.foreach{case(score, index) =>
+      history += ((t, relaxOps(index).name, score))
+    }
+
+    searchWeights.zipWithIndex.foreach{case(score, index) =>
+      history += ((t, searchOps(index).name, score))
+    }
+
     stagnation = 0
     while(
       System.nanoTime() < endTime &&

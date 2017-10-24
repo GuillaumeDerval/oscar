@@ -14,11 +14,9 @@ class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
   def evalWindow: Long = iterTimeout * 5
   override val stagnationThreshold = 10
 
-  override lazy val relaxOps: Array[ALNSOperator] = config.relaxStore.getElements.toArray
-  override lazy val searchOps: Array[ALNSOperator] = config.searchStore.getElements.toArray
-
   override lazy val relaxStore: AdaptiveStore[ALNSOperator] = new RouletteWheel[ALNSOperator](
     relaxOps,
+    relaxWeights.clone(),
     1.0,
     false,
     checkEfficiency
@@ -26,6 +24,7 @@ class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
 
   override lazy val searchStore: AdaptiveStore[ALNSOperator] = new RouletteWheel[ALNSOperator](
     searchOps,
+    searchWeights.clone(),
     1.0,
     false,
     checkEfficiency
@@ -77,18 +76,18 @@ class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
       val now = timeInSearch
       val tWindowStart = Math.min(now - evalWindow, if (solsFound.nonEmpty) solsFound.last.time else 0L)
       val opEfficiency = Metrics.efficiencySince(op, tWindowStart)
-      val searchEfficiency = Metrics.searchEfficiencySince(solsFound, tWindowStart, now)
+//      val searchEfficiency = Metrics.searchEfficiencySince(solsFound, tWindowStart, now)
 
       if (!solver.silent) {
-        println("Search efficiency is " + searchEfficiency)
+//        println("Search efficiency is " + searchEfficiency)
         println("Operator " + op.name + " efficiency is " + opEfficiency)
       }
 
-      if (op.time >= iterTimeout * 2 && (opEfficiency < searchEfficiency * tolerance || op.sols == 0)){
-        op.setActive(false)
-        if (!solver.silent) println("Operator " + op.name + " deactivated due to low efficiency!")
-//        manageIterTimeout()
-      }
+//      if (op.time >= iterTimeout * 2 && (opEfficiency < searchEfficiency * tolerance || op.sols == 0)){
+//        op.setActive(false)
+//        if (!solver.silent) println("Operator " + op.name + " deactivated due to low efficiency!")
+////        manageIterTimeout()
+//      }
 
       opEfficiency
     }

@@ -68,7 +68,7 @@ object HtmlReporter extends App{
       opScores.foreach{case (config, operators, opWeights) =>
         if(config != "Baseline_best" && config != "Baseline_worst")
           htmlWriter.addElement(
-            "logline",
+            "line",
             "Operator weights evolution for " + config,
             HtmlWriter.tableToHtmlString(renderOpScoresByTime(opWeights, operators, stepped = true))
           )

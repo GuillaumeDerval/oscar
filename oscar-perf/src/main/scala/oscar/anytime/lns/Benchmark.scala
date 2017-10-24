@@ -117,12 +117,13 @@ trait Benchmark {
       lazy val searchStore = builder.instantiateOperatorStore(
         if(coupled) builder.instantiateCoupledOperators
         else if(fixed) builder.instantiateFixedSearchOperators
-        else builder.instantiateSearchOperators
+        else builder.instantiateSearchOperators,
+        startSol.objective
       )
 
       lazy val relaxStore = if (coupled) new RandomStore[ALNSOperator](Array(new ALNSNoParamOperator("dummy", 0, () => (_ => Unit, None, None))))
-      else if(fixed) builder.instantiateOperatorStore(builder.instantiateFixedRelaxOperators)
-      else builder.instantiateOperatorStore(builder.instantiateRelaxOperators)
+      else if(fixed) builder.instantiateOperatorStore(builder.instantiateFixedRelaxOperators, startSol.objective)
+      else builder.instantiateOperatorStore(builder.instantiateRelaxOperators, startSol.objective)
 
       val metaParams: Map[Symbol, Any] = Map(
         'coupled -> coupled,

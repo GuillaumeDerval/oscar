@@ -16,9 +16,6 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
   val tolerance: Double = config.metaParameters.getOrElse('tolerance, 0.5).asInstanceOf[Double]
   override val stagnationThreshold = 10
 
-  override lazy val relaxOps: Array[ALNSOperator] = config.relaxStore.getElements.toArray
-  override lazy val searchOps: Array[ALNSOperator] = config.searchStore.getElements.toArray
-
   override lazy val relaxStore: AdaptiveStore[ALNSOperator] = new RouletteWheel[ALNSOperator](
     relaxOps,
     relaxWeights.clone(),
@@ -176,16 +173,16 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
 
     if(!search.isInstanceOf[ALNSReifiedOperator]){
       var searchScore = searchStore.adapt(search)
-      val searchEfficiency = computeCurrentAverageScore(searchWeights)
-      if (search.time >= iterTimeout * 2 && (searchScore < searchEfficiency * tolerance || search.sols == 0)){
-        search.setActive(false)
-        searchScore = -1.0
-        if (!learning) searchStore.deactivate(search)
-        if (!solver.silent)println("Operator " + search.name + " deactivated due to low efficiency!")
-//        manageIterTimeout()
-      }
+//      val searchEfficiency = computeCurrentAverageScore(searchWeights)
+//      if (search.time >= iterTimeout * 2 && (searchScore < searchEfficiency * tolerance || search.sols == 0)){
+//        search.setActive(false)
+//        searchScore = -1.0
+//        if (!learning) searchStore.deactivate(search)
+//        if (!solver.silent)println("Operator " + search.name + " deactivated due to low efficiency!")
+////        manageIterTimeout()
+//      }
       if (!solver.silent) {
-        println("Search efficiency is " + searchEfficiency)
+//        println("Search efficiency is " + searchEfficiency)
         println("Operator " + search.name + " efficiency is " + searchScore)
       }
       val index = searchOps.indexOf(search)

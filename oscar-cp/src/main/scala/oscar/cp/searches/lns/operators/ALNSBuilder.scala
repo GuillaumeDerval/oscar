@@ -145,8 +145,8 @@ class ALNSBuilder(
 
   def instantiateSearchOperators: Array[ALNSOperator] = searchOperatorKeys.flatMap(instantiateSearchOperators(_))
 
-  def instantiateOperatorStore(operators: Array[ALNSOperator]): AdaptiveStore[ALNSOperator] =
-    instantiateAdaptiveStore[ALNSOperator](opSelectionKey, operators, opMetricKey)
+  def instantiateOperatorStore(operators: Array[ALNSOperator], initWeight: Double): AdaptiveStore[ALNSOperator] =
+    instantiateAdaptiveStore[ALNSOperator](opSelectionKey, operators, opMetricKey, initWeight)
 
   def instantiateMetric(): (ALNSElement) => Double = instantiateMetric(opMetricKey)
 
@@ -567,22 +567,43 @@ class ALNSBuilder(
   private def instantiateAdaptiveStore[T <: ALNSElement](
                                     selectionKey: String,
                                     elems: Array[T],
-                                    metricKey: String
+                                    metricKey: String,
+                                    initWeight: Double = -1.0
                                   ): AdaptiveStore[T] = selectionKey match{
 
-    case ALNSBuilder.RWheel => new RouletteWheel[T](
-      elems,
-      computeRFactor(metricKey),
-      computeStoreDirection(metricKey),
-      instantiateMetric(metricKey)
-    )
+    case ALNSBuilder.RWheel =>
+      if(initWeight > 0)
+        new RouletteWheel[T](
+          elems,
+          Array.fill(elems.length)(initWeight),
+          computeRFactor(metricKey),
+          computeStoreDirection(metricKey),
+          instantiateMetric(metricKey)
+        )
+      else
+        new RouletteWheel[T](
+          elems,
+          computeRFactor(metricKey),
+          computeStoreDirection(metricKey),
+          instantiateMetric(metricKey)
+        )
 
-    case ALNSBuilder.Priority => new PriorityStore[T](
-      elems,
-      computeRFactor(metricKey),
-      computeStoreDirection(metricKey),
-      instantiateMetric(metricKey)
-    )
+    case ALNSBuilder.Priority =>
+      if(initWeight > 0)
+        new PriorityStore[T](
+          elems,
+          computeRFactor(metricKey),
+          computeStoreDirection(metricKey),
+          instantiateMetric(metricKey)
+        )
+      else
+        new PriorityStore[T](
+          elems,
+          Array.fill(elems.length)(initWeight),
+          computeRFactor(metricKey),
+          computeStoreDirection(metricKey),
+          instantiateMetric(metricKey)
+        )
 
     case ALNSBuilder.Random => new RandomStore[T](elems)
   }

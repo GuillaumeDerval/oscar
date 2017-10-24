@@ -4,7 +4,7 @@ import oscar.algo.Inconsistency
 import oscar.cp.searches.lns.CPIntSol
 import oscar.cp.{CPIntVar, CPSolver}
 import oscar.cp.searches.lns.operators.{ALNSElement, ALNSOperator, ALNSReifiedOperator}
-import oscar.cp.searches.lns.selection.{Metrics, PriorityStore, RouletteWheel}
+import oscar.cp.searches.lns.selection.{AdaptiveStore, Metrics, PriorityStore, RouletteWheel}
 
 import scala.util.Random
 
@@ -16,6 +16,11 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
 //  lazy val minEfficiencyThreshold: Double = 0.5 //Math.abs(bestSol.get.objective - previousBest.get.objective) / (efficiencyEvalTime.toDouble * 10)
   lazy val tolerance = 0.5
   lazy val efficiencyEvalIters = 5
+
+  var currentRelaxStore: AdaptiveStore[ALNSOperator] = relaxStore
+  var currentSearchStore: AdaptiveStore[ALNSOperator] = searchStore
+
+  protected def computeOpEfficiency(element: ALNSElement): Double = Metrics.efficiencyFor(element, efficiencyEvalIters)
 
   override def alnsLoop(): Unit = {
     if (!solver.silent){
@@ -49,9 +54,25 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
     //Running each op combination to evaluate TTI:
     timeLearning()
 
+    relaxWeights.indices.foreach(i => relaxWeights(i) = relaxOps(i).efficiency)
+    searchWeights.indices.foreach(i => searchWeights(i) = searchOps(i).efficiency)
+
+    val relaxPriority = new PriorityStore[ALNSOperator](relaxOps, relaxWeights.clone(), 1.0, true, computeOpEfficiency)
+    val searchPriority = new PriorityStore[ALNSOperator](searchOps, searchWeights.clone(), 1.0, true, computeOpEfficiency)
+    currentRelaxStore = relaxPriority
+    currentSearchStore = searchPriority
+
+    val t = timeInSearch
+
+    relaxWeights.zipWithIndex.foreach{case(score, index) =>
+      history += ((t, relaxOps(index).name, score))
+    }
+    searchWeights.zipWithIndex.foreach{case(score, index) =>
+      history += ((t, searchOps(index).name, score))
+    }
+
     //Diving:
-    val relaxPriority = new PriorityStore[ALNSOperator](relaxOps, relaxOps.map(Metrics.timeToImprovement), 1.0, true, Metrics.timeToImprovement)
-    val searchPriority = new PriorityStore[ALNSOperator](searchOps, searchOps.map(Metrics.timeToImprovement), 1.0, true, Metrics.timeToImprovement)
+
     while(System.nanoTime() < endTime && relaxPriority.nonActiveEmpty && searchPriority.nonActiveEmpty && !optimumFound){
       val relax = relaxPriority.select()
       val search = searchPriority.select()
@@ -71,8 +92,24 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
   }
 
   protected def explore(): Unit = {
+
     val relaxRWheel = new RouletteWheel[ALNSOperator](relaxOps.filter(_.isActive), relaxOps.filter(_.isActive).map(multiArmedBandit), 1.0, false, multiArmedBandit)
     val searchRWheel = new RouletteWheel[ALNSOperator](searchOps.filter(_.isActive), searchOps.filter(_.isActive).map(multiArmedBandit), 1.0, false, multiArmedBandit)
+    currentRelaxStore = relaxRWheel
+    currentSearchStore = searchRWheel
+
+    relaxWeights.indices.foreach(i => if(relaxOps(i).isActive) relaxWeights(i) = multiArmedBandit(relaxOps(i)))
+    searchWeights.indices.foreach(i => if(searchOps(i).isActive) searchWeights(i) = multiArmedBandit(searchOps(i)))
+
+    val t = timeInSearch
+
+    relaxWeights.zipWithIndex.foreach{case(score, index) =>
+      history += ((t, relaxOps(index).name, score))
+    }
+    searchWeights.zipWithIndex.foreach{case(score, index) =>
+      history += ((t, searchOps(index).name, score))
+    }
+
     while(System.nanoTime() < endTime && relaxRWheel.nonActiveEmpty && searchRWheel.nonActiveEmpty && !optimumFound){
       val relax = relaxRWheel.select()
       val search = searchRWheel.select()
@@ -91,7 +128,7 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
   }
 
   protected def multiArmedBandit(elem: ALNSElement): Double = {
-    Metrics.efficiencyFor(elem, iterTimeout) + Math.sqrt((2 * Math.log(iter))/elem.execs)
+    computeOpEfficiency(elem) + Math.sqrt((2 * Math.log(iter))/elem.execs)
   }
 
   protected def checkEfficiency(op: ALNSOperator): Unit = {
@@ -171,25 +208,33 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
       //Updating probability distributions:
       relax.update(iterStart, iterEnd, startObjective, newObjective, stats, fail = !relaxDone && !learning, iter)
       if(!relax.isInstanceOf[ALNSReifiedOperator]){
-        val relaxScore = if (relax.isActive) relaxStore.adapt(relax)
+        val relaxScore = if (relax.isActive) currentRelaxStore.adapt(relax)
         else {
           if (!solver.silent) println("Operator " + relax.name + " deactivated")
-          if (!learning) relaxStore.deactivate(relax)
+          if (!learning) currentRelaxStore.deactivate(relax)
           -1.0
         }
-        history += ((timeInSearch, relax.name, relaxScore))
+        val index = relaxOps.indexOf(relax)
+        if(relaxWeights(index) !=  relaxScore) {
+          history += ((timeInSearch, relax.name, relaxScore))
+          relaxWeights(index) = relaxScore
+        }
       }
 
       if(relaxDone || relax.name == "dummy"){
         search.update(iterStart, iterEnd, startObjective, newObjective, stats, fail = false, iter)
         if(!search.isInstanceOf[ALNSReifiedOperator]){
-          val searchScore = if (search.isActive) searchStore.adapt(search)
+          val searchScore = if (search.isActive) currentSearchStore.adapt(search)
           else {
             if (!solver.silent) println("Operator " + search.name + " deactivated")
-            if (!learning) searchStore.deactivate(search)
+            if (!learning) currentSearchStore.deactivate(search)
             -1.0
           }
-          history += ((timeInSearch, search.name, searchScore))
+          val index = searchOps.indexOf(search)
+          if(searchWeights(index) != searchScore) {
+            history += ((timeInSearch, search.name, searchScore))
+            searchWeights(searchOps.indexOf(search)) = searchScore
+          }
         }
       }
     }while(System.nanoTime() < endIter && !learning)
