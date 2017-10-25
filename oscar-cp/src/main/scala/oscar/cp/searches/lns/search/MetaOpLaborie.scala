@@ -36,6 +36,16 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
     if (!solver.silent) println("\nStarting adaptive LNS...")
     stagnation = 0
 
+    val t = timeInSearch
+
+    relaxWeights.zipWithIndex.foreach{case(score, index) =>
+      history += ((t, relaxOps(index).name, score))
+    }
+
+    searchWeights.zipWithIndex.foreach{case(score, index) =>
+      history += ((t, searchOps(index).name, score))
+    }
+
     timeLearning()
 
     while (
@@ -153,7 +163,7 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
     if(!relax.isInstanceOf[ALNSReifiedOperator]){
       var relaxScore = relaxStore.adapt(relax)
       val searchEfficiency = computeCurrentAverageScore(relaxWeights)
-      if (relax.time >= iterTimeout * 2 && (relaxScore < searchEfficiency * tolerance || relax.sols == 0)){
+      if (opDeactivation && relax.time >= iterTimeout * 2 && (relaxScore < searchEfficiency * tolerance || relax.sols == 0)){
         relax.setActive(false)
         relaxScore = -1.0
         if (!learning) relaxStore.deactivate(relax)
@@ -173,16 +183,16 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
 
     if(!search.isInstanceOf[ALNSReifiedOperator]){
       var searchScore = searchStore.adapt(search)
-//      val searchEfficiency = computeCurrentAverageScore(searchWeights)
-//      if (search.time >= iterTimeout * 2 && (searchScore < searchEfficiency * tolerance || search.sols == 0)){
-//        search.setActive(false)
-//        searchScore = -1.0
-//        if (!learning) searchStore.deactivate(search)
-//        if (!solver.silent)println("Operator " + search.name + " deactivated due to low efficiency!")
-////        manageIterTimeout()
-//      }
+      val searchEfficiency = computeCurrentAverageScore(searchWeights)
+      if (opDeactivation && search.time >= iterTimeout * 2 && (searchScore < searchEfficiency * tolerance || search.sols == 0)){
+        search.setActive(false)
+        searchScore = -1.0
+        if (!learning) searchStore.deactivate(search)
+        if (!solver.silent)println("Operator " + search.name + " deactivated due to low efficiency!")
+//        manageIterTimeout()
+      }
       if (!solver.silent) {
-//        println("Search efficiency is " + searchEfficiency)
+        println("Search efficiency is " + searchEfficiency)
         println("Operator " + search.name + " efficiency is " + searchScore)
       }
       val index = searchOps.indexOf(search)

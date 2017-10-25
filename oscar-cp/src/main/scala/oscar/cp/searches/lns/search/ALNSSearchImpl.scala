@@ -26,6 +26,7 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
   var nSols = 0
   var nFailures = 0
   var stopSearch = false
+  val opDeactivation: Boolean = config.metaParameters.getOrElse('opDeactivation, false).asInstanceOf[Boolean]
 
   val stopCondition: (DFSearch) => Boolean = (s: DFSearch) => {
     var stop = optimumFound

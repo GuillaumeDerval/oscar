@@ -161,11 +161,11 @@ object HtmlReporter extends App{
     ))
 
     val opData = (content \\ "operators").head
-    val operators = (opData \\ "operator").map(opNode => (opNode \ "name").head.text)
+    val operators = (opData \\ "operator").map(opNode => (opNode \ "name").head.text.trim)
 
     val opWeights = (content \\ "score_update").map(scoreNode =>(
       (scoreNode \ "time").head.text.toLong,
-      (scoreNode \ "operator").head.text,
+      (scoreNode \ "operator").head.text.trim,
       (scoreNode \ "score").head.text.toDouble
     ))
 
@@ -198,7 +198,7 @@ object HtmlReporter extends App{
     val currentScores: Array[Option[Double]] = Array.fill(operators.length)(None)
     val scoresByTime = mutable.ArrayBuffer[(Long, Array[Option[Double]])]()
 
-    scores.sortBy(_._1).foreach{case (time, operator, score) =>
+    scores.filter(_._2 != "dummy").sortBy(_._1).foreach{case (time, operator, score) =>
       currentScores(mapping(operator)) = Some(score)
       if(scoresByTime.nonEmpty && scoresByTime.last._1 == time) scoresByTime.last._2(mapping(operator)) = Some(score)
       else scoresByTime += ((time, currentScores.clone()))
