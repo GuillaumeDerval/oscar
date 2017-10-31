@@ -56,7 +56,7 @@ case class BooleanVariable(i: String,
   def isFalse: Boolean = !_value.getOrElse(true)
   override def isBound: Boolean = _value.isDefined
   override def domainSize: Int = if(isBound) 1 else 2
-  def bind(v: Boolean) = if(isBound && v!=_value.get) throw new UnsatException("Empty FzDomain"); else _value = Some(v)
+  def bind(v: Boolean) = if(isBound && v!=_value.get) throw new UnsatException("Empty FzDomain for " + this); else _value = Some(v)
   def unbind() = _value = None
   def boolValue: Boolean = _value.get
   def intValue: Int = if(_value.get) 1 else 0
@@ -68,7 +68,7 @@ case class BooleanVariable(i: String,
     if(range.size == 2){
       this.unbind()
     }else{
-      if(range.min == 0)
+      if(range.min == 1)
         this.bind(true)
       else
         this.bind(false)

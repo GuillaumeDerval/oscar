@@ -28,8 +28,9 @@ import scala.collection.mutable.{Map => MMap}
 import oscar.flatzinc.model._
 import oscar.flatzinc.UnsatException
 import oscar.flatzinc.transfo.FZModelTransfo
-
 import oscar.cp.modeling.Branchings
+
+import scala.util.Random
 class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.cp.core.CPPropagStrength = oscar.cp.Medium, val ignoreUnkownConstraints: Boolean = false) {
 
 
@@ -112,21 +113,23 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
     }
   }
 
-  def fix(vars: Array[(String,Int)]):Boolean = {
+  def fix(vars: Iterable[(String,Int)]):(Boolean,List[String]) = {
+    var fixedVariables = List.empty[String]
     solver.pushState()
     try {
-      for ((name, v) <- vars) {
-        println("Fixing " + name + " to " + v)
+      for ((name, v) <- Random.shuffle(vars)) {
+        fixedVariables = name :: fixedVariables
+        //println("Fixing " + name + " to " + v)
         solver.add(dictVars(name) === v)
         //dictVars(name).assign(v)
       }
     }catch{
       case e:RuntimeException =>
-        println(e)
+        //println(e)
         solver.pop()
-        return false
+        return (false, fixedVariables)
     }
-    return true
+    return (true,fixedVariables)
   }
 
   def updateBestObjectiveValue(value: Int): Boolean = {
@@ -169,10 +172,13 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
     //TODO: Take into account the search annotations
     solver.search(oscar.cp.binaryLastConflict((model.variables/*-model.search.variable.get*/).map(getIntVar).toArray[CPIntVar]))
   }
-  
+
+  //Not clear if there is any advantage to keep this over setIntermediate..
   def updateIntermediateModelDomains(): Boolean ={
+    var tmpV:Variable = null;
     try{
       for(v <- model.variables){
+        tmpV =v
         v match{
           case bv:BooleanVariable =>
             if(getMinFor(bv)>=1)bv.bind(true)
@@ -188,14 +194,20 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
       }
     }catch{
       case e:UnsatException =>
+        println(e)
+        println(getMinFor(tmpV.asInstanceOf[IntegerVariable]))
+        println(getMaxFor(tmpV.asInstanceOf[IntegerVariable]))
         println("Failed to update intermediate model domains")
         false
     }
     true
   }
+
   def setIntermediateModelDomains(): Boolean ={
+    var tmpV:Variable = null;
     try{
       for(v <- model.variables){
+        tmpV =v
         v match{
           case bv:BooleanVariable =>
             bv.setDomain(getBoolVar(bv).iterator.toSet)
@@ -210,6 +222,9 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
     }catch{
       case e:UnsatException =>
         println("Failed to set intermediate model domains")
+        println(getMinFor(tmpV.asInstanceOf[BooleanVariable]))
+        println(getMaxFor(tmpV.asInstanceOf[BooleanVariable]))
+        println(getBoolVar(tmpV.asInstanceOf[BooleanVariable]).iterator.toSet)
         false
     }
     true

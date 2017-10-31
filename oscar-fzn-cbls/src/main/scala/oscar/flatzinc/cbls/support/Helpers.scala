@@ -58,8 +58,8 @@ class CBLSIntVarDom(model: Store, Value: Int, val dom: FzDomain, n: String = nul
 //TODO: Should not extend it anymore!
 //Need the store while it extends CBLSIntVar, as sometimes it is requested (e.g., to find the Model in some invariants)
 class StoredCBLSIntConst(model:Store,_value:Int) extends CBLSIntVar(model,_value, DomainRange(_value, _value), _value.toString()){
-  override def value:Int = _value //pour pas avoir de propagation
-  override def toString:String = "IntConst("+ _value + ")"
+  override def value:Int = _value
+  override def toString:String = "IntConst("+ _value + ") := " + value
 }
 
 
