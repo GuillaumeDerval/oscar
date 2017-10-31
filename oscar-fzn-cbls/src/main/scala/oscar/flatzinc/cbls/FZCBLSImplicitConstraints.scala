@@ -72,7 +72,7 @@ class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
         //TODO: remove some of the defined if it is better to use the Circuit implicit constraint
         //TODO: We assume that the offset is 1. Is it always the case?
          val vars = xs.map{ v =>
-          val avar = if(v.isBound){
+          val avar = if(false && v.isBound){
             uid+=1
             val vv = CBLSIntVar(cblsmodel.m, v.value, 1 to xs.size , "EXTRA_VAR_" + uid);
             EnsureDomain(vv,v.domain,cblsmodel.c)
@@ -95,7 +95,7 @@ class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
         //TODO: We assume that the offset is 1. Is it always the case?
         //TODO: remove some of the defined if it is better to use the SubCircuit implicit constraint
         val vars = xs.map{ v =>
-          val avar = if(v.isBound){
+          val avar = if(v.isBound && false){
             uid+=1
             val vv = CBLSIntVar(cblsmodel.m, v.value, DomainRange(1, xs.size), "EXTRA_VAR_" + uid);
             EnsureDomain(vv,v.domain,cblsmodel.c)

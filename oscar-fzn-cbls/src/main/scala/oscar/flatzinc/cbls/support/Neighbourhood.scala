@@ -31,6 +31,8 @@ import oscar.flatzinc.model._
 import scala.collection.mutable.{Map => MMap}
 
 
+trait GenericNeighbourhood
+
 //Extends SearchEngine to access the selectors
 abstract class Neighbourhood(val searchVariables: Array[CBLSIntVar]) extends LinearSelector {
   //var minObjective: Int = Int.MaxValue;
@@ -67,6 +69,7 @@ abstract class Neighbourhood(val searchVariables: Array[CBLSIntVar]) extends Lin
                                             , (rands: (R, S)) => st(rands._1, rands._2))
   }
 }
+
 
 //assumes that all variables have a range domain!
 class SumNeighborhood(val variables: Array[CBLSIntVar], val coeffs: Array[Int], val sum: Int,
@@ -217,6 +220,11 @@ class GCCNeighborhood(val variables: Array[CBLSIntVar], val vals: Array[Int], va
 
   def getSwapMove(idx1: Int, idx2: Int, accept: Move => Boolean): Move = {
     //Swap will always respect the constraint is it was already satisfied
+    if( variables(idx1).value == variables(idx2).value)
+      return new NoMove()
+    if(variableViolation(idx1).value == 0 && variableViolation(idx2).value == 0 && RandomGenerator.nextInt(100) >25){
+      return new NoMove
+    }
     acceptOr(new SwapMove(variables(idx1), variables(idx2), objective.swapVal(variables(idx1), variables(idx2))),
              accept)
 
@@ -224,6 +232,11 @@ class GCCNeighborhood(val variables: Array[CBLSIntVar], val vals: Array[Int], va
 
   def getAssignMove(idx1: Int, v: Int, accept: Move => Boolean): Move = {
     val cur = variables(idx1).value
+    if (cur == v)
+      return new NoMove()
+    if(variableViolation(idx1).value == 0  && RandomGenerator.nextInt(100) >25){
+      return new NoMove
+    }
     val cnt = counts.get(cur) match {
       case None => 1
       case Some(x) => x.value
@@ -289,15 +302,48 @@ class ThreeOpt(variables: Array[CBLSIntVar], objective: CBLSObjective, cs: Const
 
   val variableViolation: Array[IntValue] = variables.map(cs.violation(_)).toArray
   val rng = offset until (offset + variables.length)
+
   reset();
 
   def reset() {
-    //TODO: Add some randomization
-    //TODO: Ensure that the domains are respected!
-    for (i <- rng) {
-      vars(i) := (i) % variables.length + offset
+    val tmpVars:Array[Int] = variables.map(_.value - offset)
+    val start = Array.tabulate(tmpVars.length)(i => i)
+    val end = Array.tabulate(tmpVars.length)(i => i)
+    val length = Array.tabulate(tmpVars.length)( _ => 0)
+    val isFixed:Array[Boolean] = Array.tabulate(tmpVars.length)(i => variables(i).isInstanceOf[StoredCBLSIntConst])
+    val isUsed:Array[Boolean] = Array.tabulate(tmpVars.length)(i =>
+                                                                 isFixed.indices.exists( j => isFixed(j) && tmpVars(j)  == i)
+    )
+    var numUsed:Int = isUsed.count((b:Boolean) => b)
+
+    for(i <- isFixed.indices if isFixed(i)){
+      end(i) = end(tmpVars(i))
+      start(end(i)) = i
+      length(i) = length(tmpVars(i)) + 1
     }
-    //println(variables.map(v => v.value).mkString(","))
+
+    while(!isFixed.forall(_ == true)){
+      val unfixedIdx = isFixed.indices.filterNot(isFixed(_))
+      val idx = unfixedIdx(RandomGenerator.nextInt(unfixedIdx.length))
+      val possibleSucc = RandomGenerator.shuffle(isUsed.indices.filterNot(isUsed(_))).iterator
+      var succ = possibleSucc.next
+      while(numUsed < tmpVars.length - 1  && end(succ) == idx){
+        if(!possibleSucc.hasNext){
+          throw new RuntimeException("Unable to initialize ThreeOpt neighbourhood");
+        }
+        succ = possibleSucc.next
+      }
+      tmpVars(idx) = succ
+      isFixed(idx) = true
+      isUsed(succ) = true
+      start(end(succ)) = start(idx)
+      end(start(idx)) = end(succ)
+      length(end(succ)) += 1+length(idx)
+      numUsed += 1
+    }
+
+    for(i <- tmpVars.indices)
+      variables(i) := tmpVars(i)+offset
   }
 
   def vars(idx: Int): CBLSIntVar = {
@@ -310,15 +356,15 @@ class ThreeOpt(variables: Array[CBLSIntVar], objective: CBLSObjective, cs: Const
     getMove(idx, next, _ => true)
   }
 
-  def getMove(idx: Int, nextnext: Int, accept: Move => Boolean): Move = {
-    if (idx == nextnext) return new NoMove()
+  def getMove(idx: Int, newNext: Int, accept: Move => Boolean): Move = {
+    if (idx == newNext) return new NoMove()
     //would break the chain
     val next = vars(idx).value
-    if (next == nextnext) return new NoMove()
+    if (next == newNext) return new NoMove()
     //would break the chain
     val k = vars(next).value
-    val last = vars(nextnext).value
-    val list = List((vars(idx), k), (vars(next), last), (vars(nextnext), next))
+    val last = vars(newNext).value
+    val list = List((vars(idx), k), (vars(next), last), (vars(newNext), next))
     val obj = objective.assignVal(list)
     acceptOr(new AssignsMove(list, obj), accept)
   }
@@ -326,28 +372,18 @@ class ThreeOpt(variables: Array[CBLSIntVar], objective: CBLSObjective, cs: Const
   def getMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     val idx = selectMax(rng, (i: Int) => variableViolation(i - offset).value);
     val next = selectMin(rng)(next => getMove(idx, next, accept).value)
-    // println(idx +  " "+ getMove(idx,vars(idx).value))
 
-/*    cs.getPostedConstraints.foreach({
-    case (c,w) => if(c.violation.value > 0){
-      searchVariables.foreach( v =>
-                                 println("Violation of " +v +" for c " + c+ " : " + c.violation(v)))}
-  })
-  */
     getMove(idx, next, accept)
   }
 
   def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
 
-    //println(variables.map(v => v.value).mkString(","))
     //this one removes a node and reinsert it somewhere else
-    //if(nonTabu.isEmpty)println("%EMPTY NON TABU")
     val rng2 = rng;
     val res = selectMin2(rng2, rng2, (idx: Int, next: Int) => getMove(idx, next, accept).value)
-    //println(res +  " "+ (getMove _).tupled(res))//)._1,res._2))
     res match {
       case (idx, next) => getMove(idx, next, accept)
-      case _ => new NoMove(Int.MaxValue) //res is null when the NON TABU list is empty //Should not happen anymore now
+      case _ => new NoMove() //res is null when the NON TABU list is empty //Should not happen anymore now
     }
   }
 
@@ -365,34 +401,68 @@ class ThreeOptSub(variables: Array[CBLSIntVar], objective: CBLSObjective, cs: Co
     super.reset();
     allloop = false;
   }
+  def isConst(i:Int):Boolean = {
+    vars(i).isInstanceOf[StoredCBLSIntConst]
+  }
+  override def getMove(idx:Int, newNext:Int, accept: Move => Boolean): Move = {
+    if(allloop){ // If everything is a selfloop
+      if(vars(idx).isInstanceOf[StoredCBLSIntConst] || vars(idx).isInstanceOf[StoredCBLSIntConst]){
+        //Cannot change a constant
+        new NoMove()
+      }else{
+        //The two nodes now become the main loop
+        val list = List((vars(idx),newNext),(vars(newNext),idx))
+        acceptOr(new BeforeMove(new AssignsMove(list, objective.assignVal(list)),
+                                       () => allloop = false), accept);
+      }
+    }else{
+      if(idx == vars(idx).value){ // idx cannot be a self-loop
+        new NoMove()
+      }else if(newNext == vars(newNext).value && !isConst(idx) && !isConst(newNext)) {
+        //newNext is a self-loop that we want to put into the circuit
 
-  override def getMove(idx: Int, nextnext: Int, accept: Move => Boolean): Move = {
+        val list = List((vars(idx),newNext),(vars(newNext), vars(idx).value))
+        acceptOr(new AssignsMove(list, objective.assignVal(list)), accept);
+      }else if(idx == newNext && !isConst(idx) && !isConst(newNext)){
+        // Make newNext self-loop (a bit strange but we don't know prev of idx)
+
+        val k = vars(newNext).value
+        val list = List((vars(idx),k),(vars(newNext),newNext))
+        acceptOr(new BeforeMove(new AssignsMove(list, objective.assignVal(list)),
+                                () => allloop = (idx == k)), accept);
+      }else if(!isConst(idx) && ! isConst(newNext) && !isConst(vars(idx).value)){
+        super.getMove(idx,newNext,accept)
+      }else
+        new NoMove()
+    }
+  }
+ def getMoveOld(idx: Int, newNext: Int, accept: Move => Boolean): Move = {
     val next = vars(idx).value
     val k = vars(next).value
-    val last = vars(nextnext).value
+    val last = vars(newNext).value
 
-    if (idx == next && last == nextnext && !allloop) {
+    if (idx == next && last == newNext && !allloop) {
       //println("oops")
       return new NoMove() //cannot join two selfloops unless there are only selfloops
     }
-    if (idx == nextnext && idx == next) {
+    if (idx == newNext && idx == next) {
       return new NoMove() //cannot insert a selfloop into itself
     }
     //println("yep")
-    if (idx == next && idx != nextnext) {
-      //idx is not in the chain, this should be an inclusion of idx after nextnext
+    if (idx == next && idx != newNext) {
+      //idx is not in the chain, this should be an inclusion of idx after newNext
 
-      val list = List((vars(idx), last), (vars(nextnext), idx))
+      val list = List((vars(idx), last), (vars(newNext), idx))
       return acceptOr(new BeforeMove(new AssignsMove(list, objective.assignVal(list)),
                                      () => allloop = false), accept);
     }
-    if (last == nextnext && idx != nextnext) {
-      //nextnext is not in the chain, this should be an inclusion of nextnext after idx
-      val list = List((vars(idx), nextnext), (vars(nextnext), next))
+    if (last == newNext && idx != newNext) {
+      //newNext is not in the chain, this should be an inclusion of newNext after idx
+      val list = List((vars(idx), newNext), (vars(newNext), next))
       return acceptOr(new BeforeMove(new AssignsMove(list, objective.assignVal(list)),
                                      () => allloop = false), accept);
     }
-    if (idx == nextnext && idx != next) {
+    if (idx == newNext && idx != next) {
       //assumes this is a removal of next
       val list = List((vars(idx), k), (vars(next), next))
       return acceptOr(new BeforeMove(new AssignsMove(list, objective.assignVal(list)),
@@ -402,7 +472,7 @@ class ThreeOptSub(variables: Array[CBLSIntVar], objective: CBLSObjective, cs: Co
                                        //println(variables.map(v => v.value).mkString(","))
                                      }), accept);
     }
-    if (next == nextnext && idx != next) {
+    if (next == newNext && idx != next) {
       //assumes this is a removal of next
       val list = List((vars(idx), k), (vars(next), next))
       return acceptOr(new BeforeMove(new AssignsMove(list, objective.assignVal(list)),
@@ -412,7 +482,7 @@ class ThreeOptSub(variables: Array[CBLSIntVar], objective: CBLSObjective, cs: Co
                                        //println(variables.map(v => v.value).mkString(","))
                                      }), accept);
     }
-    val list = List((vars(idx), k), (vars(next), last), (vars(nextnext), next))
+    val list = List((vars(idx), k), (vars(next), last), (vars(newNext), next))
     return acceptOr(new AssignsMove(list, objective.assignVal(list)), accept);
   }
 }
@@ -472,7 +542,7 @@ class MaxViolating(searchVariables: Array[CBLSIntVar], objective: CBLSObjective,
     while (!(looped && cVar == start)) {
       val v = searchVariables(cVar)
       if (acceptVar(v)
-        && (variableViolation(cVar).value > 0 || RandomGenerator.nextInt(100) < 50)
+        && (variableViolation(cVar).value > 0 || RandomGenerator.nextInt(100) < 25)
         && v.domain.size < 10000000) {
         //TODO: Do something about this!
         val variableValue = v.value
@@ -771,15 +841,15 @@ class Inverse(xs: Array[CBLSIntVar], invXs: Array[CBLSIntVar], objective: CBLSOb
   def getMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     val rng2 = (0 until xs.length);
     val idx = selectMax(rng2, (i: Int) => xsViolation(i).value);
-    getBest(List(idx), rng2, accept)
+    getBest(List(idx), rng2, accept,acceptVar)
   }
 
   def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     val rng2 = (0 until xs.length);
-    getBest(rng2, rng2, accept)
+    getBest(rng2, rng2, accept, acceptVar)
   }
 
-  def getBest(rng1: Iterable[Int], rng2: Iterable[Int], accept: Move => Boolean): Move = {
+  def getBest(rng1: Iterable[Int], rng2: Iterable[Int], accept: Move => Boolean,acceptVar: CBLSIntVar => Boolean = (v) => true): Move = {
     //TODO: Iterate over every variable in index range and for each variable swap with variable form domain...
     val bestSwap = selectMin2(rng1, rng2, (idx1: Int, idx2: Int) => getSwapMove(idx1, idx2, accept).value,
                               (idx1: Int, idx2: Int) =>
