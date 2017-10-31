@@ -17,6 +17,7 @@ package oscar.cbls.lib.constraint
  * ****************************************************************************
  */
 
+import java.lang.IndexOutOfBoundsException
 import java.util
 
 import oscar.cbls.core.computation._
@@ -107,6 +108,7 @@ case class BelongsToConstPreComputing(v: IntValue, set: Set[Int])
   }
 
   val dists = Array.tabulate(v.max-v.min+1)(i => dist(i+v.min,set))
+  val maxDist = dists.max
   registerConstrainedVariables(v)
   registerStaticAndDynamicDependenciesNoID(v)
   finishInitialization()
@@ -119,7 +121,12 @@ case class BelongsToConstPreComputing(v: IntValue, set: Set[Int])
 
   @inline
   override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
-    violation := dists(NewVal-v.min)
+      try{
+        violation := dists(NewVal-v.min)
+      }catch{
+        case e:IndexOutOfBoundsException =>
+          violation := maxDist
+      }
   }
 
   /** the violation is 1 v is not is set, 0 otherwise*/
