@@ -34,6 +34,16 @@ class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
     if (!solver.silent) println("\nStarting adaptive LNS...")
     stagnation = 0
 
+    val t = timeInSearch
+
+    relaxWeights.zipWithIndex.foreach{case(score, index) =>
+      history += ((t, relaxOps(index).name, score))
+    }
+
+    searchWeights.zipWithIndex.foreach{case(score, index) =>
+      history += ((t, searchOps(index).name, score))
+    }
+
     timeLearning()
 
     while (
@@ -76,18 +86,18 @@ class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
       val now = timeInSearch
       val tWindowStart = Math.min(now - evalWindow, if (solsFound.nonEmpty) solsFound.last.time else 0L)
       val opEfficiency = Metrics.efficiencySince(op, tWindowStart)
-//      val searchEfficiency = Metrics.searchEfficiencySince(solsFound, tWindowStart, now)
+      val searchEfficiency = Metrics.searchEfficiencySince(solsFound, tWindowStart, now)
 
       if (!solver.silent) {
-//        println("Search efficiency is " + searchEfficiency)
+        println("Search efficiency is " + searchEfficiency)
         println("Operator " + op.name + " efficiency is " + opEfficiency)
       }
 
-//      if (op.time >= iterTimeout * 2 && (opEfficiency < searchEfficiency * tolerance || op.sols == 0)){
-//        op.setActive(false)
-//        if (!solver.silent) println("Operator " + op.name + " deactivated due to low efficiency!")
-////        manageIterTimeout()
-//      }
+      if (opDeactivation && op.time >= iterTimeout * 2 && (opEfficiency < searchEfficiency * tolerance || op.sols == 0)){
+        op.setActive(false)
+        if (!solver.silent) println("Operator " + op.name + " deactivated due to low efficiency!")
+//        manageIterTimeout()
+      }
 
       opEfficiency
     }
