@@ -80,8 +80,8 @@ case class MinConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = 
   override def Ord(v: Int): Int = v
 
   override def checkInternals(c: Checker): Unit = {
-    if(ccond.value.isEmpty) c.check(value == default)
-    else  c.check(value == ccond.value.minBy(varss(_)))
+    if(ccond.value.isEmpty) c.check(value == default,Some("default"))
+    else  c.check(value == varss(ccond.value.minBy(varss(_))),Some("expected " + varss(ccond.value.minBy(varss(_))) + " got " + value))
   }
 
   @inline
@@ -103,21 +103,20 @@ case class MinConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = 
  * update is O(log(n)), faster (O(1) if you do updates and backtracks
  * @author renaud.delandtsheer@cetic.be
  * */
-case class MaxConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = Int.MaxValue, maxBackLogSize:Int = 10)
+case class MaxConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = Int.MinValue, maxBackLogSize:Int = 10)
   extends MiaxConstArrayLazy(varss, ccond, default, maxBackLogSize) {
 
   @inline
   override def Ord(v: Int): Int = -v
 
   override def checkInternals(c: Checker): Unit = {
-    if(ccond.value.isEmpty) c.check(value == default)
-    else  c.check(value == ccond.value.maxBy(varss(_)))
+    if(ccond.value.isEmpty) c.check(value == default,Some("default"))
+    else  c.check(value == varss(ccond.value.maxBy(varss(_))),Some("expected " + varss(ccond.value.maxBy(varss(_))) + " got " + value))
   }
 
   @inline
   override def equalOrNotImpactingMiax(potentialMiax: Int): Boolean = this.newValue >= potentialMiax
 }
-
 
 /**
  * Maintains Miax(Var(i) | i in cond)

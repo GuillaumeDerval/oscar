@@ -23,8 +23,8 @@ import oscar.cbls.benchmarks.vrp.RoutingMatrixGenerator
 import oscar.cbls.business.routing.invariants._
 import oscar.cbls.lib.constraint._
 import oscar.cbls.lib.invariant.logic.{SetElement, _}
-import oscar.cbls.lib.invariant.minmax.{ArgMax, ArgMin, Max2, MaxArray, MaxLin, MaxSet, Min2, MinArray, MinLin, MinSet}
-import oscar.cbls.lib.invariant.numeric.{Abs, Div, Minus, Mod, Prod, Prod2, ProdElements, RoundUpModulo, Step, Sum, Sum2, SumElements}
+import oscar.cbls.lib.invariant.minmax._
+import oscar.cbls.lib.invariant.numeric._
 import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
 import oscar.cbls.lib.invariant.seq._
 import oscar.cbls.lib.invariant.set._
@@ -311,6 +311,32 @@ class InvariantTests extends FunSuite with Checkers {
   test("MaxArray maintains the maximum from an array of variables.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     MaxArray(bench.genIntVarsArray(2, 0 to 50))
+    bench.run()
+  }
+
+  def randomArray(size:Int,values:Range):Array[Int] = {
+    def randomValue(r:Range):Int = {
+      r.start + (r.length * scala.math.random).toInt
+    }
+    Array.tabulate(size)(_ => randomValue(values))
+  }
+
+
+  test("MinArrayLazy maintains the minimum from an array of variables.") {
+    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
+    new MinConstArrayLazy(randomArray(30,0 to 100),bench.genIntSetVar(range = 0 until 30))
+    bench.run()
+  }
+
+  test("MaxArrayLazy maintains the maximum from an array of variables.") {
+    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
+    new MaxConstArrayLazy(randomArray(30,0 to 100),bench.genIntSetVar(range = 0 until 30))
+    bench.run()
+  }
+
+  test("MinArrayValueWise maintains the minimum from an array of variables.") {
+    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
+    new MinConstArrayValueWise(randomArray(30,0 to 100),bench.genIntSetVar(range = 0 until 30),Int.MinValue)
     bench.run()
   }
 
