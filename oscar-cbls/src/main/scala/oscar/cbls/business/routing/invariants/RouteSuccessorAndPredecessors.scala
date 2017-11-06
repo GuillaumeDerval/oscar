@@ -18,7 +18,7 @@ package oscar.cbls.business.routing.invariants
 import oscar.cbls._
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core._
-import oscar.cbls.business.routing.invariants.convention.RoutingConventionMethods
+import oscar.cbls.business.routing.invariants.base.RoutingConventionMethods
 
 import scala.collection.immutable.SortedSet
 

@@ -21,7 +21,7 @@ import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core._
-import oscar.cbls.business.routing.invariants.convention.VehicleLocation
+import oscar.cbls.business.routing.invariants.base.VehicleLocation
 
 
 object ForwardCumulativeConstraintOnVehicle {

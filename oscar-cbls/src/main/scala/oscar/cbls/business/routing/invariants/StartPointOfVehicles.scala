@@ -2,7 +2,7 @@ package oscar.cbls.business.routing.invariants
 
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core._
-import oscar.cbls.business.routing.invariants.convention.VehicleLocation
+import oscar.cbls.business.routing.invariants.base.VehicleLocation
 
 /**
  * This invariant has no output, only a method to get the vehicle reaching a given position, and a method to get the stat point of a vehicle

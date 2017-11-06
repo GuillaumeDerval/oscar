@@ -19,7 +19,7 @@ import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core._
-import oscar.cbls.business.routing.invariants.convention.RoutingConventionMethods
+import oscar.cbls.business.routing.invariants.base.RoutingConventionMethods
 
 object ConstantRoutingDistance {
 
