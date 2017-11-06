@@ -66,11 +66,22 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
   protected def timeLearning(): Unit = {
     learning = true
     iterTimeout = config.timeout
-    Random.shuffle(relaxOps.toSeq).foreach(relax => {
+    val orderedBaseline = config.metaParameters.getOrElse('opOrder, None).asInstanceOf[Option[Seq[String]]]
+    val orderedRelax = if(orderedBaseline.isDefined) {
+      val mapping = orderedBaseline.get.map(_.split("_")(0)).zipWithIndex.reverse.toMap
+      relaxOps.toSeq.sortBy(op => mapping.getOrElse(op.name, mapping.size))
+    }
+    else Random.shuffle(relaxOps.toSeq)
+    val orderedSearch = if(orderedBaseline.isDefined) {
+      val mapping = orderedBaseline.get.map(_.split("_")(1)).zipWithIndex.reverse.toMap
+      searchOps.toSeq.sortBy(op => mapping.getOrElse(op.name, mapping.size))
+    }
+    else Random.shuffle(searchOps.toSeq)
+    orderedRelax.foreach(relax => {
       val search = searchOps(Random.nextInt(searchOps.length))
       lnsIter(relax, search)
     })
-    Random.shuffle(searchOps.toSeq).foreach(search => {
+    orderedSearch.foreach(search => {
       while(search.execs < 1) {
         val relax = relaxStore.select()
         lnsIter(relax, search)

@@ -11,6 +11,7 @@ import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch, ALNSSearchResults}
 import oscar.cp.searches.lns.selection.RandomStore
 
 import scala.collection.mutable
+import scala.io.Source
 import scala.util.Random
 
 trait Benchmark {
@@ -88,6 +89,16 @@ trait Benchmark {
       val fixed = argMap.getOrElse('fixed, false).asInstanceOf[Boolean]
       val opDeactivation = argMap.getOrElse('opDeactivation, false).asInstanceOf[Boolean]
 
+      val useSorted = argMap.getOrElse('useSorted, false).asInstanceOf[Boolean]
+      val opOrder = if(useSorted){
+        val opOrderFile = "oscar-perf/src/main/scala/oscar/anytime/lns/baseline_order/" + problem + "/" + IOUtils.getFileName(instance, keepExtension = false) + ".txt"
+        if(IOUtils.fileExists(opOrderFile)){
+          Some(Source.fromFile(opOrderFile).getLines().map(_.split(" ")(0)).toSeq)
+        }
+        else None
+      }
+      else None
+
       val builder = new ALNSBuilder(
         solver,
         decisionVariables,
@@ -128,7 +139,8 @@ trait Benchmark {
       val metaParams: Map[Symbol, Any] = Map(
         'coupled -> coupled,
         'learning -> argMap.getOrElse('learning, false).asInstanceOf[Boolean],
-        'opDeactivation -> opDeactivation
+        'opDeactivation -> opDeactivation,
+        'opOrder -> opOrder
       )
 
       val config = new ALNSConfig(
@@ -211,7 +223,7 @@ trait Benchmark {
         if(!boundsOnly){
           XmlWriter.writeToXml(
             argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
-            argMap.getOrElse('name, "default").asInstanceOf[String],
+            result.searchOperators.head.name,
             seed,
             argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
             IOUtils.getFileName(instance, keepExtension = false),
@@ -245,7 +257,7 @@ trait Benchmark {
 
         XmlWriter.writeToXml(
           argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
-          argMap.getOrElse('name, "Baseline").asInstanceOf[String] + "_best",
+          "Baseline_best",
           seed,
           argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
           IOUtils.getFileName(instance, keepExtension = false),
@@ -258,7 +270,7 @@ trait Benchmark {
 
         XmlWriter.writeToXml(
           argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
-          argMap.getOrElse('name, "Baseline").asInstanceOf[String] + "_worst",
+          "Baseline_worst",
           seed,
           argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
           IOUtils.getFileName(instance, keepExtension = false),
@@ -419,6 +431,13 @@ trait Benchmark {
 
       case "--strategy" :: value :: tail =>
         parseArgs(map ++ Map('strategy -> value), tail)
+
+      case "--use-sorted" :: tail => tail match{
+        case value :: remTail =>
+          if(isSwitch(value)) parseArgs(map ++ Map('useSorted -> true), tail)
+          else parseArgs(map ++ Map('useSorted -> value.toBoolean), remTail)
+        case Nil => map ++ Map('useSorted -> true)
+      }
 
       case option :: tail =>
         if(isSwitch(option) && tail.isEmpty) println("Option " + option + " has no value")

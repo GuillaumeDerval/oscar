@@ -24,7 +24,7 @@ object XmlWriter{
     val xml = new NodeBuffer()
 
     xml += <config>{config}</config>
-    xml += <config>{seed}</config>
+    xml += <seed>{seed}</seed>
     xml += <timeout>{timeout}</timeout>
     xml += <instance>{instance}</instance>
     xml += <problem>{problem}</problem>
