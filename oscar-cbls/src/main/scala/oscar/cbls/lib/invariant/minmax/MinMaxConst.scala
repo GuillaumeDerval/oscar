@@ -74,6 +74,7 @@ case class MaxConstArray(varss: Array[Int], ccond: SetValue, default: Int = Int.
  * update is O(log(n)), faster (O(1) if you do updates and backtracks
  * @author renaud.delandtsheer@cetic.be
  * */
+@deprecated("use the valueWise min instead","now")
 case class MinConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = Int.MaxValue, maxBackLogSize:Int = Int.MaxValue)
   extends MiaxConstArrayLazy(varss, ccond, default, maxBackLogSize) {
 
@@ -103,6 +104,7 @@ case class MinConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = 
  * update is O(log(n)), faster (O(1) if you do updates and backtracks
  * @author renaud.delandtsheer@cetic.be
  * */
+@deprecated("use the valueWise min instead","now")
 case class MaxConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = Int.MinValue, maxBackLogSize:Int = 10)
   extends MiaxConstArrayLazy(varss, ccond, default, maxBackLogSize) {
 
