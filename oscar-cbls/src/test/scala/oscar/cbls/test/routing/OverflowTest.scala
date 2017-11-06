@@ -17,7 +17,7 @@ object OverflowTest extends App{
   val routeContent = content(route).setName("routeContent")
   m.registerForPartialPropagation(routeContent)
 
-  val routeContent2 = content(route.createClone(1).createClone(1)).setName("routeContent2")
+  val routeContent2 = content(route.createClone(10)).setName("routeContent2")
 
   m.close()
 
@@ -51,11 +51,13 @@ object OverflowTest extends App{
     explore1(2,List(() =>
       explore1(3,List(checkTotal))))
   }))
-
   route.move(1,1,9,false)
-  route.move(2,2,9,false)
-  route.move(3,3,9,false)
-
+  explore1(1,List(() => {
+    explore1(4,List(() =>
+      explore1(3,List(checkPartial))))
+    explore1(2,List(() =>
+      explore1(3,List(checkTotal))))
+  }))
 
   explore1(3,List(
     () => explore1(2,List(checkPartial)),
