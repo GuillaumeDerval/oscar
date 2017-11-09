@@ -113,7 +113,6 @@ class VehicleCapacity(routes: ChangingSeqValue,
     computeIntegralInBoundsOptFromOptTo(fromFunction.biggestPosition, toFunction.biggestPosition, Int.MaxValue, 0, 0)
   }
 
-
   /**
     * compute the area between maxValueIncluded + 1 and (toFunction(x) - fromFunction(x)) for x in [minValueIncluded, maxValueIncluded]
     *
@@ -184,7 +183,6 @@ class VehicleCapacity(routes: ChangingSeqValue,
     computeIntegralInBoundsOptFromOptTo(fromFunction.smallestPosition, toFunction.smallestPosition, Int.MinValue, 0, 0)
   }
 
-
   /**
     *
     * @param seq
@@ -234,7 +232,7 @@ class VehicleCapacity(routes: ChangingSeqValue,
     * @param reverse is the segment flipped or not
     * @return an instance of DeltaOfPreCompute
     */
-  override def minus(x: PreComputeClass, y: PreComputeClass, reverse: Boolean = false): PreComputeClass = {
+  override def minus(x: PreComputeClass, y: PreComputeClass, reverse: Boolean): PreComputeClass = {
 
     val a =
       if (isNeutralElement(x))
@@ -283,12 +281,23 @@ class VehicleCapacity(routes: ChangingSeqValue,
       case DeltaOfPreComputeForSegment(fromRB, toRB, deltaOfContent, contentAtPrevNode) =>
         val diffOfContentOnSegmentSinceCheckpoint = a.totalContent - contentAtPrevNode
         val violationOnSegment =
-          computeIntegralInBoundsAbove(fromRB, toRB, maxCapacity - diffOfContentOnSegmentSinceCheckpoint + 1, toRB.biggestPosition.get.key)
+          computeIntegralInBoundsAbove(
+            fromRB,
+            toRB,
+            maxCapacity - diffOfContentOnSegmentSinceCheckpoint + 1,
+            toRB.biggestPosition.get.key)
+
         SumOfPreCompute(a.totalViolation + violationOnSegment, a.totalContent + deltaOfContent)
 
       case DeltaOfPreComputeForFlippedSegment(fromRB, toRB, deltaOfContent, contentAtPrevNode) =>
+
         val violationOnSegment =
-          computeIntegralInBoundsUnder(fromRB, toRB, toRB.smallestPosition.get.key, a.totalContent + contentAtPrevNode - maxCapacity - 1)
+          computeIntegralInBoundsUnder(
+            fromRB,
+            toRB,
+            toRB.smallestPosition.get.key,
+            a.totalContent + contentAtPrevNode - maxCapacity - 1)
+
         SumOfPreCompute(a.totalViolation + violationOnSegment, a.totalContent + deltaOfContent)
 
       case DeltaFromScratch(fromNode, toNode) =>
@@ -429,7 +438,10 @@ abstract class PreComputeClass
   * @param contentAtNodeAtCheckpoint
   * @param rb RedBlackTreeMap used to compute the integral
   */
-case class PreComputeContainer(node: Option[Int], prevNodeAtCheckpoint0: Option[Int], contentAtNodeAtCheckpoint: Int,rb: RedBlackTreeMap[Int] = RedBlackTreeMap.empty[Int]) extends PreComputeClass
+case class PreComputeContainer(node: Option[Int],
+                               prevNodeAtCheckpoint0: Option[Int],
+                               contentAtNodeAtCheckpoint: Int,
+                               rb: RedBlackTreeMap[Int] = RedBlackTreeMap.empty[Int]) extends PreComputeClass
 
 /**
   * This class is used to not define a minus operator between two red-black tree.
@@ -437,11 +449,18 @@ case class PreComputeContainer(node: Option[Int], prevNodeAtCheckpoint0: Option[
   */
 abstract class DeltaOfPreCompute extends PreComputeClass
 
-case class DeltaOfPreComputeForSegment(fromRB: RedBlackTreeMap[Int], toRB: RedBlackTreeMap[Int], deltaOfContent: Int, contentAtPrevNode: Int) extends DeltaOfPreCompute
+case class DeltaOfPreComputeForSegment(fromRB: RedBlackTreeMap[Int],
+                                       toRB: RedBlackTreeMap[Int],
+                                       deltaOfContent: Int,
+                                       contentAtPrevNode: Int) extends DeltaOfPreCompute
 
-case class DeltaOfPreComputeForFlippedSegment(fromRB: RedBlackTreeMap[Int], toRB: RedBlackTreeMap[Int], deltaOfContent: Int, contentAtToNode: Int) extends DeltaOfPreCompute
+case class DeltaOfPreComputeForFlippedSegment(fromRB: RedBlackTreeMap[Int],
+                                              toRB: RedBlackTreeMap[Int],
+                                              deltaOfContent: Int,
+                                              contentAtToNode: Int) extends DeltaOfPreCompute
 
-case class DeltaFromScratch(fromNode: Int, toNode: Int) extends DeltaOfPreCompute
+case class DeltaFromScratch(fromNode: Int,
+                            toNode: Int) extends DeltaOfPreCompute
 
 /**
   * Like for minus, we don't define a plus between red-black tree.
@@ -452,4 +471,5 @@ case class DeltaFromScratch(fromNode: Int, toNode: Int) extends DeltaOfPreComput
 case class SumOfPreCompute(totalViolation: Int, totalContent: Int) extends PreComputeClass
 
 
-case class SavedValuesAtCheckpoint(violationAtCheckpoint: Array[Int], contentAtEndOfVehicleRouteAtCheckpoint: Array[Int])
+case class SavedValuesAtCheckpoint(violationAtCheckpoint: Array[Int],
+                                   contentAtEndOfVehicleRouteAtCheckpoint: Array[Int])
