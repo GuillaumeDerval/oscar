@@ -96,9 +96,9 @@ object OscarBuild extends Build {
       publishTo := {
         val artifactory = "http://maven.oscar.ext.cetic.be:8081/artifactory/"
         if (isSnapshot.value)
-          Some("Artifactory Realm" at artifactory + "sbt-dev-local;build.timestamp=" + new java.util.Date().getTime)
+          Some("Artifactory Realm" at artifactory + "libs-snapshot;build.timestamp=" + new java.util.Date().getTime)
         else
-          Some("Artifactory Realm" at artifactory + "sbt-release-local")
+          Some("Artifactory Realm" at artifactory + "libs-release")
       },
       packageOptions += Package.ManifestAttributes(
         ("REVISION_ID", System.getProperty("REVISION_ID")),
