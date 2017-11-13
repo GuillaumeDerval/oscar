@@ -128,11 +128,11 @@ case class Disjunctive(start: Array[IntValue],
 
   //the degree of violation of a task is the sum of the sizes of its overlap with other tasks.
   //opnly tasks with nonZero durations are taken into account (obviously)
-  private val violationsVars: SortedMap[IntValue, CBLSIntVar] = start.foldLeft(
+  private val violationsVars: SortedMap[IntValue, CBLSIntVar] = start.indices.foldLeft(
     SortedMap.empty[IntValue, CBLSIntVar])(
-    (acc, intvar) => {
-      val newvar = new CBLSIntVar(model, 0, 0 to sumMaxDur, "Violation_Disjunctive_" + intvar.name)
-      acc + ((intvar, newvar))
+    (acc, i) => {
+      val newvar = new CBLSIntVar(model, 0, 0 to sumMaxDur, "Violation_Disjunctive_" + start(i).name + "_and_" + duration(i).name)
+      acc + ((start(i), newvar)) + ((duration(i),newvar))
     })
 
   private var nonZeroTasks:SortedSet[Int] = SortedSet.empty[Int] ++ taskIndices.filter(i => duration(i).value != 0)
