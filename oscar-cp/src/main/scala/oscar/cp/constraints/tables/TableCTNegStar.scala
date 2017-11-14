@@ -13,6 +13,9 @@ import scala.collection.mutable.ArrayBuffer
  * @param table the list of tuples composing the table.
  * @author Pierre Schaus pschaus@gmail.com
  * @author Helene Verhaeghe helene.verhaeghe27@gmail.com
+ *
+ * Reference(s) :
+ *  - Extending Compact-Table to Negative and Short Tables, Helene Verhaeghe, Christophe Lecoutre, Pierre Schaus, AAAI17
  */
 final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: Int = -1, needPreprocess: Boolean = true) extends Constraint(X(0).store, "TableCTNegStar") {
 
@@ -276,14 +279,18 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
   override def setup(l: CPPropagStrength): Unit = {
 
     /* Success if table is empty initially or after initial filtering */
-    if (nbTuples == 0)
+    if (nbTuples == 0) {
+      deactivate()
       return
+    }
 
     /* Retrieve the current valid tuples */
     val (dangerous, dangerousByHash) = collectDangerousTuples()
 
-    if (dangerous.isEmpty)
+    if (dangerous.isEmpty){
+      deactivate()
       return
+    }
 
     /* Remove non dangerous tuples */
     dangerousTuples.collect(new dangerousTuples.BitSet(dangerous))
@@ -523,145 +530,5 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
     }
   }
 }
-
-
-object sandbox extends App {
-
-  val arity = 3
-  val domain = Array(3, 3, 3)
-
-  /* Maximum number of combination of star positions */
-  private[this] val maxNbGroup = Math.pow(2, arity).toInt
-
-
-  val multhash = Array.fill(arity, maxNbGroup)(0)
-
-  var n = 1
-  var j = arity
-  while (j > 0) {
-    j -= 1
-    var k = maxNbGroup
-    while (k > 0) {
-      k -= 1
-      if ((n & k) == 0)
-        multhash(j)(k) = k
-      else
-        multhash(j)(k) = k - n
-
-    }
-
-    n *= 2
-  }
-  val mult = Array.fill(arity, maxNbGroup)(0)
-
-
-  val multiplicator = Array.fill(maxNbGroup)(0)
-  val multiplicatorFormula = Array.fill(maxNbGroup)(() => 1)
-
-  def updateMult() = {
-    // has to be updated in this order!!
-    var i = 0
-    while (i < maxNbGroup) {
-      // replace by max possible
-      multiplicator(i) = multiplicatorFormula(i)()
-      i += 1
-    }
-
-    i = arity
-    while (i > 0) {
-      i -= 1
-      var j = maxNbGroup
-      while (j > 0) {
-        j -= 1
-        val id = j
-        mult(i)(id) = multiplicator(multhash(i)(id))
-      }
-    }
-
-
-  }
-
-  def computeformula() = {
-
-    var i = arity
-    var n = 1
-    val initarray = Array.fill(arity)(Array(0))
-    while (i > 0) {
-      i -= 1
-      initarray(i)(0) = n
-      val k = i
-      multiplicatorFormula(n) = () => domain(k)
-      n *= 2
-    }
-
-
-
-    def compute(setofset: Array[Array[Int]]): Unit = {
-      val newarray = new Array[Array[Int]]((setofset.length + 1) / 2)
-      if (setofset.length % 2 != 0)
-        newarray(newarray.length - 1) = setofset(setofset.length - 1)
-      var j = setofset.length / 2
-      while (j > 0) {
-        j -= 1
-        val a1 = setofset(j * 2)
-        val a2 = setofset(j * 2 + 1)
-        var pos = a1.length
-        val pos2 = a2.length
-        val ares = new Array[Int](pos2 + pos * (pos2 + 1))
-        System.arraycopy(a1, 0, ares, 0, pos)
-        System.arraycopy(a2, 0, ares, pos, pos2)
-        var a = pos
-        pos += pos2
-        while (a > 0) {
-          a -= 1
-          var b = pos2
-          while (b > 0) {
-            b -= 1
-            val k1 = a1(a)
-            val k2 = a2(b)
-            val id = k1 + k2
-            ares(pos) = id
-            multiplicatorFormula(id) = () => multiplicator(k1) * multiplicator(k2)
-            pos += 1
-          }
-
-
-        }
-        newarray(j) = ares
-
-      }
-
-      if (newarray.length > 1)
-        compute(newarray.toArray)
-    }
-    compute(initarray)
-  }
-
-  println("NbGroup : " + maxNbGroup)
-
-  println("----")
-  println("multiplicators init :")
-  println(multiplicator.mkString(","))
-
-  updateMult()
-  println("----")
-  println("multiplicators 1 :")
-  println(multiplicator.mkString(","))
-
-  computeformula()
-  updateMult()
-  println("----")
-  println("multiplicators :")
-  println(multiplicator.mkString(","))
-  println("----")
-  println("mult hash")
-  println(multhash.map(_.mkString(",")).mkString("\n"))
-  println("----")
-  println("mult")
-  println(mult.map(_.mkString(",")).mkString("\n"))
-
-
-}
-
 
 

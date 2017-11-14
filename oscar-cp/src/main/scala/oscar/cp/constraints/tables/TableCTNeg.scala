@@ -29,6 +29,9 @@ import scala.collection.mutable.ArrayBuffer
  * @param table the list of tuples composing the table.
  * @author Pierre Schaus pschaus@gmail.com
  * @author Helene Verhaeghe helene.verhaeghe27@gmail.com
+ *
+ * Reference(s) :
+ *  - Extending Compact-Table to Negative and Short Tables, Helene Verhaeghe, Christophe Lecoutre, Pierre Schaus, AAAI17
  */
 final class TableCTNeg(X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableCTNeg") {
 
@@ -63,13 +66,16 @@ final class TableCTNeg(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
   override def setup(l: CPPropagStrength): Unit = {
 
     /* Success if table is empty initially or after initial filtering */
-    if (nbTuples == 0)
+    if (nbTuples == 0) {
+      deactivate()
       return
+    }
 
     /* Retrieve the current dangerous tuples */
     val dangerous = collectDangerousTuples()
 
     if (dangerous.isEmpty) {
+      deactivate()
       return
     }
 

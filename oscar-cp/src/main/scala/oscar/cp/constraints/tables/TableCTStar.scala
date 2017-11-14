@@ -31,6 +31,9 @@ import scala.collection.mutable.ArrayBuffer
  * @param table the list of tuples composing the table.
  * @author Pierre Schaus pschaus@gmail.com
  * @author Helene Verhaeghe helene.verhaeghe27@gmail.com
+ *
+ * Reference(s) :
+ *  - Extending Compact-Table to Negative and Short Tables, Helene Verhaeghe, Christophe Lecoutre, Pierre Schaus, AAAI17
  */
 final class TableCTStar(X: Array[CPIntVar], table: Array[Array[Int]], star: Int = -1) extends Constraint(X(0).store, "TableCTStar") {
   assert(X.forall(x => !x.hasValue(star)), "star value used (" + star + ") is part of the domain of at least one of the variables")
