@@ -137,8 +137,8 @@ case class Disjunctive(start: Array[IntValue],
   private val violationsVarsMap: SortedMap[IntValue, CBLSIntVar] = start.indices.foldLeft(
     SortedMap.empty[IntValue, CBLSIntVar])(
     (acc, i) => {
-      val newvar = violationVarsArray(i)
-      acc + ((start(i), newvar)) + ((duration(i),newvar))
+      val newVar = violationVarsArray(i)
+      acc + ((start(i),newVar)) + ((duration(i),newVar))
     })
 
   private var nonZeroTasks:SortedSet[Int] = SortedSet.empty[Int] ++ taskIndices.filter(i => duration(i).value != 0)
@@ -173,7 +173,7 @@ case class Disjunctive(start: Array[IntValue],
     }
   }
 
-  def notifyStartChanged(taskID:Int,oldStart:Int,newStart:Int) {
+  private def notifyStartChanged(taskID:Int,oldStart:Int,newStart:Int) {
     val dur = duration(taskID).value
     if (dur == 0) return
 
@@ -183,7 +183,7 @@ case class Disjunctive(start: Array[IntValue],
     updateTask(taskID,oldStart,newStart,oldEnd,newEnd)
   }
 
-  def notifyDurChanged(taskID:Int,oldDur:Int,newDur:Int){
+  private def notifyDurChanged(taskID:Int,oldDur:Int,newDur:Int){
     if(oldDur == 0 && newDur !=0){
       nonZeroTasks = nonZeroTasks + taskID
     }else if (oldDur !=0 && newDur == 0){
