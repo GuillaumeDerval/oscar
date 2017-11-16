@@ -15,6 +15,7 @@
 
 package oscar.cp.constraints.tables
 
+import oscar.algo.Inconsistency
 import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
 import oscar.cp.constraints.tables.mdd.{MDDTableVar, ReversibleMDD}
@@ -33,6 +34,8 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
   priorityL2 = CPStore.MaxPriorityL2 - 1
   
   private[this] val arity = X.length
+  if (table.length == 0)
+    throw Inconsistency
   private[this] val mdd = new ReversibleMDD(X(0).store, table)
   
   /* Temporary arrays used during propagation */
@@ -47,7 +50,7 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
   private[this] val vars = X.zipWithIndex.map { case (x, indexVar) => 
     new MDDTableVar(x.store, x, indexVar, mdd.nbOfValues(indexVar), mdd, mdd.nbOfEdgesByValue(indexVar), sharedEdges) 
   }
-  
+
   /**
    * Set up the constraint :
    * 1) We ask to call propagate() whenever a variable domain has changed

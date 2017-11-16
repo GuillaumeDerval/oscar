@@ -24,10 +24,10 @@ import oscar.modeling.misc._
 import org.jfree.chart.axis.{AxisLocation, NumberAxis}
 import org.jfree.chart.plot.PlotOrientation
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer
+import org.jfree.chart.util.ShapeUtils
 import org.jfree.chart.{ChartFactory, ChartPanel}
 import org.jfree.data.xy
 import org.jfree.data.xy.XYSeries
-import org.jfree.util.ShapeUtilities
 import oscar.modeling.solvers.cp.distributed.{SubProblem, SubProblemCartesianProductLog, SubProblemDiscrepancy}
 
 import scala.List
@@ -134,7 +134,7 @@ class SubproblemGraphicalProgressBar[T](nbSubproblems: Int, nbThreads: Int) exte
     subproblemCPUTimeHistogram.getRealDataset, PlotOrientation.VERTICAL, true, true, false)
 
 
-  problemDescriptionChart.getXYPlot.getRenderer.setSeriesShape(0, ShapeUtilities.createDiamond(0.5f))
+  problemDescriptionChart.getXYPlot.getRenderer.setSeriesShape(0, ShapeUtils.createDiamond(0.5f))
   val renderer2 = new XYLineAndShapeRenderer(false, true)
   val axis2 = new NumberAxis("Log of Cart. Prod. Cardinality")
   axis2.setAutoRangeIncludesZero(false)
@@ -143,7 +143,7 @@ class SubproblemGraphicalProgressBar[T](nbSubproblems: Int, nbThreads: Int) exte
   problemDescriptionChart.getXYPlot.setDataset(1, collectionProblemCC)
   problemDescriptionChart.getXYPlot.setRenderer(1, renderer2)
   problemDescriptionChart.getXYPlot.mapDatasetToRangeAxis(1, 1)
-  renderer2.setSeriesShape(0, ShapeUtilities.createDownTriangle(0.5f))
+  renderer2.setSeriesShape(0, ShapeUtils.createDownTriangle(0.5f))
   val renderer3 = new XYLineAndShapeRenderer(false, true)
   val axis3 = new NumberAxis("Min/Max Bound subproblem value")
   axis3.setAutoRangeIncludesZero(false)
@@ -152,7 +152,7 @@ class SubproblemGraphicalProgressBar[T](nbSubproblems: Int, nbThreads: Int) exte
   problemDescriptionChart.getXYPlot.setDataset(2, collectionProblemMMB)
   problemDescriptionChart.getXYPlot.setRenderer(2, renderer3)
   problemDescriptionChart.getXYPlot.mapDatasetToRangeAxis(2, 2)
-  renderer3.setSeriesShape(0, ShapeUtilities.createUpTriangle(0.5f))
+  renderer3.setSeriesShape(0, ShapeUtils.createUpTriangle(0.5f))
 
   totalTimeChart.setBackgroundPaint(new Color(255, 255, 255, 0))
   totalTimeChart.setBackgroundImageAlpha(0.0f)

@@ -3,12 +3,12 @@
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 2.1 of the License, or
  * (at your option) any later version.
- *   
+ *
  * OscaR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License  for more details.
- *   
+ *
  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
@@ -17,17 +17,19 @@ package oscar.cp.modeling
 
 import java.security.InvalidParameterException
 
+import oscar.cp._
 import oscar.cp.constraints._
-import oscar.cp.core.variables.CPIntVarViewOffset
-import oscar.cp.core.variables.CPIntVarViewTimes
-import oscar.cp.core.variables.CPIntVarViewMinus
+import oscar.cp.constraints.tables.BasicSmartTableAlgo._
+import oscar.cp.constraints.tables.NegativeShortTableAlgo.NegativeShortTableAlgo
+import oscar.cp.constraints.tables.NegativeTableAlgo._
+import oscar.cp.constraints.tables.ShortTableAlgo._
+import oscar.cp.constraints.tables.TableAlgo._
+import oscar.cp.constraints.tables.{BasicSmartElement, BasicSmartTableAlgo, NegativeShortTableAlgo, ShortTableAlgo}
+import oscar.cp.core.variables.{CPIntVarViewMinus, CPIntVarViewOffset, CPIntVarViewTimes}
 import oscar.cp.core.{CPPropagStrength, Constraint}
-import oscar.cp.{sum, _}
 import oscar.cp.scheduling.constraints.{DisjunctiveWithTransitionTimes, UnaryResource, _}
 
 import scala.collection.mutable.ArrayBuffer
-import oscar.cp.constraints.tables.TableAlgo._
-import oscar.cp.constraints.tables.NegativeTableAlgo._
 
 trait Constraints {
 
@@ -444,7 +446,7 @@ trait Constraints {
     store.add(inverse(prev, next))
     next
   }
-  
+
   /**
    * Sum Constraint
     *
@@ -675,15 +677,29 @@ trait Constraints {
 
 
   /**
-    * Negative Table Constraints  (constraint given in extension by enumerating invalid valid assignments)
-    *
-    * @param x non empty array of variables on which the negative table constraint apply
-    * @param impossibleTuples a collection of impossible tuples for variables in x
-    * @param algo the negative table filtering algorithm to be used
-    * @return a constraint enforcing that x is not one of the tuples given in tuples
-    */
-  def negativeTable(x: Array[CPIntVar], impossibleTuples: Array[Array[Int]], algo: NegativeTableAlgo = STRNE): Constraint = {
-    oscar.cp.constraints.tables.negativeTable(x,impossibleTuples,algo)
+   * Negative Table Constraints  (constraint given in extension by enumerating invalid valid assignments)
+   *
+   * @param x non empty array of variables on which the negative table constraint apply
+   * @param impossibleTuples a collection of impossible tuples for variables in x
+   * @param algo the negative table filtering algorithm to be used
+   * @return a constraint enforcing that x is not one of the tuples given in tuples
+   */
+  def negativeTable(x: Array[CPIntVar], impossibleTuples: Array[Array[Int]], algo: NegativeTableAlgo = CompactTableNegative): Constraint = {
+    oscar.cp.constraints.tables.negativeTable(x, impossibleTuples, algo)
+  }
+
+  /**
+   * Negative Short Table Constraints  (constraint given in extension by enumerating invalid valid assignments)
+   *
+   * Remark : Tuple should not overlap to work!
+   *
+   * @param x non empty array of variables on which the negative table constraint apply
+   * @param impossibleTuples a collection of impossible tuples for variables in x
+   * @param algo the negative table filtering algorithm to be used
+   * @return a constraint enforcing that x is not one of the tuples given in tuples
+   */
+  def negativeShortTable(x: Array[CPIntVar], impossibleTuples: Array[Array[Int]], star: Int = -1, algo: NegativeShortTableAlgo = NegativeShortTableAlgo.CompactTableNegativeStar): Constraint = {
+    oscar.cp.constraints.tables.negativeShortTable(x, impossibleTuples, star, algo)
   }
 
   /**
@@ -750,6 +766,31 @@ trait Constraints {
    */
   def table(x1: CPIntVar, x2: CPIntVar, x3: CPIntVar, x4: CPIntVar, x5: CPIntVar, tuples: Iterable[(Int, Int, Int, Int, Int)]): Constraint = {
     table(Array(x1, x2, x3, x4, x5), tuples.map(t => Array(t._1, t._2, t._3, t._4, t._5)).toArray)
+  }
+
+  /**
+   * Short Table Constraints (constraint given in extension by enumerating valid assignments)
+   *
+   * @param x non empty array of variables on which the table constraint apply
+   * @param possibleTuples a collection of possible tuples for variables in x
+   * @param algo the table filtering algorithm used
+   * @param star the value (out of each domains) of the number representing the star
+   * @return a constraint enforcing that x is one of the tuples given in tuples
+   */
+  def shortTable(x: Array[CPIntVar], possibleTuples: Array[Array[Int]], star: Int = -1, algo: ShortTableAlgo = ShortTableAlgo.CompactTableStar): Constraint = {
+    oscar.cp.constraints.tables.shortTable(x, possibleTuples, star, algo)
+  }
+
+  /**
+   * Basic Smart Table Constraints (constraint given in extension by enumerating valid assignments)
+   *
+   * @param x non empty array of variables on which the table constraint apply
+   * @param possibleTuples a collection of possible tuples for variables in x
+   * @param algo the table filtering algorithm used
+   * @return a constraint enforcing that x is one of the tuples given in tuples
+   */
+  def basicSmartTable(x: Array[CPIntVar], possibleTuples: Array[Array[BasicSmartElement]], algo: BasicSmartTableAlgo = BasicSmartTableAlgo.CompactTableBs): Constraint = {
+    oscar.cp.constraints.tables.basicSmartTable(x, possibleTuples, algo)
   }
 
   /**
