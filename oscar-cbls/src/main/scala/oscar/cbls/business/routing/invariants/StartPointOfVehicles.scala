@@ -6,6 +6,7 @@ import oscar.cbls.business.routing.invariants.convention.VehicleLocation
 
 /**
  * This invariant has no output, only a method to get the vehicle reaching a given position, and a method to get the stat point of a vehicle
+  * it is intended to make neighborhoods simpler to implement
  * EXPERIMENTAL
  */
 class StartPointOfVehicles(routes:ChangingSeqValue,
