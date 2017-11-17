@@ -6,7 +6,7 @@ import oscar.cp.searches.lns.operators.ALNSElement
 
 import scala.collection.mutable
 import scala.util.Random
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters
 
 /**
  * Adaptive store backed by a priority queue.
@@ -77,7 +77,8 @@ class PriorityStore[T <: ALNSElement](
 
   override def nElements: Int = elems.length
 
-  override def getActive: Iterable[T] = (lastSelected.values ++ priority.toSeq).map(elems(_))
+  // TODO: @charles, please fix this for 2.12
+  override def getActive: Iterable[T] = Seq[T]()//(lastSelected.values ++ priority.toArray()).map(elems(_))
 
   override def nActive: Int = elems.length - deactivated.size
 

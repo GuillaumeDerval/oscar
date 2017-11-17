@@ -44,7 +44,8 @@ class SolverActor[RetVal](parameters: ActorParameters[RetVal]) extends Actor wit
   var forceImmediateSend: Boolean = false
   val forceClose = new SynchronizedForceClose
 
-  DoSubproblemSerializer.add(modelDeclaration)
+  //TODO reintroduce distribution
+  //DoSubproblemSerializer.add(modelDeclaration)
 
   import context.dispatcher
 
@@ -129,7 +130,8 @@ class SolverActor[RetVal](parameters: ActorParameters[RetVal]) extends Actor wit
       master ! SolutionRecapMessage(solutionCount, foundSolutions.toList)
     case AllDoneMessage(completed) =>
       forceClose.close()
-      DoSubproblemSerializer.remove(modelDeclaration) //allow to run GC on the modelDeclaration
+      //TODO reintroduce distribution
+      //DoSubproblemSerializer.remove(modelDeclaration) //allow to run GC on the modelDeclaration
       context.stop(self)
     case _ => log.info("received unknown message")
   }

@@ -14,7 +14,7 @@ object OscarBuild extends Build {
   object BuildSettings {
     val buildOrganization = "oscar"
     val buildVersion = "4.0.0-SNAPSHOT"
-    val buildScalaVersion = "2.11.0"
+    val buildScalaVersion = "2.12.4"
     val buildSbtVersion= "0.13.12"
 
 
@@ -75,19 +75,17 @@ object OscarBuild extends Build {
     val scallop = "org.rogach" % "scallop_2.11" % "1.0.0"
 
     // Akka
-    val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.4.3"
-    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.4.3"
-    val chill = "com.twitter" % "chill-akka_2.11" % "0.8.0"
-    val spores = "org.scala-lang.modules" %% "spores-core" % "0.2.1"
+    val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.5.6"
+    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.5.6"
 
     // Test libraries
     val junit = "junit" % "junit" % "latest.milestone" % Test
-    val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.11.+" % Test
-    val scalaTest = "org.scalatest" %% "scalatest" % "2.2.+" % Test
+    val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.13.+" % Test
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
 
     val junit2 = "junit" % "junit" % "latest.milestone" % PerfTest
-    val scalaCheck2 = "org.scalacheck" %% "scalacheck" % "1.11.+" % PerfTest
-    val scalaTest2 = "org.scalatest" %% "scalatest" % "2.2.+" % PerfTest
+    val scalaCheck2 = "org.scalacheck" %% "scalacheck" % "1.13.+" % PerfTest
+    val scalaTest2 = "org.scalatest" %% "scalatest" % "3.0.4" % PerfTest
 
     val testDeps = Seq(junit, scalaCheck, scalaTest)
   }
@@ -157,7 +155,7 @@ object OscarBuild extends Build {
           scalacOptions in Compile ++= Seq("-language:reflectiveCalls"),
           resolvers ++= Seq(xypron),
           libraryDependencies ++= testDeps :+ graphStreamCore :+ graphStreamAlgo :+ graphStreamUI :+ scallop
-                               :+ akkaActor :+ akkaRemote :+ chill :+ spores :+ scalaSwing),
+                               :+ akkaActor :+ scalaSwing :+ jfreechart :+ jcommon),
     dependencies = Seq(oscarCp)
   )
 

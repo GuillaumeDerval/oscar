@@ -9,6 +9,7 @@ class UnaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: A
 
   override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ resources
 
+
   override def setup(l: CPPropagStrength): Unit = {
 
     val unitDemand = CPIntVar(1)(s)

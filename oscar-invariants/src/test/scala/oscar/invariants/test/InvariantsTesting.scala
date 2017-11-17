@@ -59,11 +59,7 @@ class InvariantsTesting extends FunSuite with ShouldMatchers  {
 	  	y := 5
 	  	nb should equal(1)  	
   }
-  
-  
-	
- 
-  
+
 
 }
 

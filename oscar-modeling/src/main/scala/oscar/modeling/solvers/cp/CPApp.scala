@@ -19,7 +19,7 @@ import oscar.modeling.misc.SearchStatistics
 import oscar.modeling.misc.scallop.HostnameParser
 import oscar.modeling.models.{ModelDeclaration, UninstantiatedModel}
 import org.rogach.scallop._
-import oscar.modeling.solvers.cp.distributed.{DecomposedCPSolve, SimpleRemoteSolverSystem}
+import oscar.modeling.solvers.cp.distributed.{DecomposedCPSolve/*, SimpleRemoteSolverSystem*/}
 
 import scala.language.reflectiveCalls
 
@@ -98,8 +98,10 @@ abstract class CPApp[RetVal](modeld: ModelDeclaration with DecomposedCPSolve[Ret
         this.registerWatcher(SubproblemGraphicalProgressBar.getRegisterer._1, SubproblemGraphicalProgressBar.getRegisterer._2)
       //Nothing more to do here, the execution should continue in the subclass
     case Some(completeConfig.client) =>
+      throw new Exception("Distribution is not supported in this release")
       //Start client
-      new SimpleRemoteSolverSystem(completeConfig.client.hostname(), completeConfig.client.port(), completeConfig.client.registerDir.get)
+      //TODO reintroduce distribution
+      //new SimpleRemoteSolverSystem(completeConfig.client.hostname(), completeConfig.client.port(), completeConfig.client.registerDir.get)
       //Close app, since the client has done its work
       System.exit(0)
     case _ =>
@@ -113,12 +115,14 @@ abstract class CPApp[RetVal](modeld: ModelDeclaration with DecomposedCPSolve[Ret
   def solve(model: UninstantiatedModel): (SearchStatistics, List[RetVal])  = solve(model, config.nSols.get.get, config.timeout.get.get)
   def solve(model: UninstantiatedModel, nSols: Int, maxTime: Int): (SearchStatistics, List[RetVal]) = {
     if(completeConfig.master.remoteList.isDefined || completeConfig.master.remoteFile.isDefined) {
-      super.solveDistributed(model,
+      //TODO reintroduce distribution
+      throw new Exception("Distribution is not supported in this release")
+      /*super.solveDistributed(model,
         completeConfig.master.remoteList.get.getOrElse(completeConfig.master.remoteFile()),
         completeConfig.master.host(),
         completeConfig.master.subproblemsPerWorker(),
         nSols, maxTime
-      )
+      )*/
     }
     else if(completeConfig.master.threads.isDefined && completeConfig.master.threads() > 1) {
       super.solveParallel(model,

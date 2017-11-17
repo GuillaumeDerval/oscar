@@ -14,16 +14,15 @@
   ******************************************************************************/
 package oscar.cp.test
 
-import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
 import oscar.cp.constraints._
 import oscar.cp._
 import oscar.cp.core.NoSolutionException
+import oscar.cp.testUtils._
 
 import scala.collection.mutable.ArrayBuffer
 
 
-class TestBinPackingCard extends FunSuite with ShouldMatchers  {
+class TestBinPackingCard extends TestSuite {
 
 
   test("BP 1") {

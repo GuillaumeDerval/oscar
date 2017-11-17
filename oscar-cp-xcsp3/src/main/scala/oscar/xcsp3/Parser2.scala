@@ -882,10 +882,13 @@ object XCSP3Parser2 {
 }
 
 object Parser2 extends CPApp[String] with App {
-  override lazy val config = new CPAppConfig {
+
+
+  class Parser2Config extends CPAppConfig {
     val instance = trailArg[String](descr = "Path to the file to parse")
     val check = opt[Boolean]("c", descr = "Check results with the XCSP3 checker")
   }
+  override lazy val config: Parser2Config = new Parser2Config
 
   println("<--")
   val (vars, solutionGenerator) = XCSP3Parser2.parse(this.md, config.instance.get.get)

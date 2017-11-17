@@ -15,6 +15,7 @@
 
 package oscar.modeling.solvers.cp
 
+/* TODO reintroduce distribution
 import org.rogach.scallop._
 import oscar.modeling.misc.scallop.HostnameParser
 import oscar.modeling.models.ModelDeclaration
@@ -24,6 +25,7 @@ import oscar.modeling.solvers.cp.distributed.SimpleRemoteSolverSystem
 import oscar.modeling.solvers.{SolveHolder, SolverApp, SolverAppModulable, SolverAppModule}
 
 import scala.spores.NullarySpore
+
 
 /**
   * A trait for SolverApp that indicates that the model is solvable using a distributed CP solver
@@ -95,3 +97,4 @@ class DistributedCPAppModule(app: SolverApp[_]) extends SolverAppModule {
     result._2
   }
 }
+*/

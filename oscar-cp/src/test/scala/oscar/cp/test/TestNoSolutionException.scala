@@ -14,10 +14,7 @@
  ******************************************************************************/
 package oscar.cp.test
 
-import scala.reflect.Manifest
-import org.scalatest.FunSuite
-import org.scalatest.events.Formatter
-import org.scalatest.ShouldMatchers
+
 import oscar.algo.Inconsistency
 import oscar.cp._
 import oscar.cp.testUtils.TestSuite

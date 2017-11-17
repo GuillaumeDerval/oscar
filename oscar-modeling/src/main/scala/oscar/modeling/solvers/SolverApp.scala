@@ -23,8 +23,6 @@ import oscar.modeling.solvers.cp._
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.modeling.vars.IntVar
 
-import scala.spores._
-
 
 /**
   * The base app of OscaR-Modeling. Can be linked to any type of solvers with modules, mixed-in using traits.

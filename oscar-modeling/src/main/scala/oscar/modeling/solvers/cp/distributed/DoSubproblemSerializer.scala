@@ -15,6 +15,7 @@
 
 package oscar.modeling.solvers.cp.distributed
 
+/* TODO reintroduce distribution
 import akka.actor.ExtendedActorSystem
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
@@ -105,7 +106,4 @@ object DoSubproblemSerializer {
   }
 
   private def get(m: java.util.UUID): ModelDeclaration = clientModels.getOrElse(m, throw new Exception("Model "+ m +"not registered!"))
-}
-
-
-
+}*/

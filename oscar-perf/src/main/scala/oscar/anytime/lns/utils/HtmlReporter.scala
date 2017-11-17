@@ -110,6 +110,8 @@ object HtmlReporter extends App{
     val files = IOUtils.getFiles(directory, ".xml")
     var maxTimeout = 0L
 
+    // TODO Fixme @charles
+    /*
     files.foreach(file => {
 
 //      println("reading: " + file.getPath)
@@ -134,7 +136,7 @@ object HtmlReporter extends App{
         opScoresMap += config -> opWeights
         data += instance -> (isMax, bestKnown, sols.to[ArrayBuffer], opMap, opScoresMap)
       }
-    })
+    })*/
 
     (maxTimeout, instances.toSeq.sorted, configs.toSeq.sorted, instanceTypes, bks, data)
   }

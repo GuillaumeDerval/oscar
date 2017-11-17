@@ -23,7 +23,6 @@ import oscar.modeling.vars.IntVar
 import oscar.util._
 
 import scala.io.Source
-import scala.spores._
 
 /**
   * Example of ATSP, copied from the original one from OscaR-lib.
@@ -51,31 +50,21 @@ object ATSP extends CPApp[Int] {
 
   add(MinCircuit(succ, distMatrixSucc,obj))
 
-  val branching = Branchings.fromAlternatives(spore {
-    val _succ = succ
-    val _n = n
-    val _distMatrixSucc = distMatrixSucc
-    (cp: CPModel) => {
+  val branching = Branchings.fromAlternatives((cp: CPModel) => {
       // Select the not yet bound city with the smallest number of possible successors
-      selectMin(_succ.zipWithIndex)(x => !x._1.isBound)(x => x._1.size) match {
+      selectMin(succ.zipWithIndex)(x => !x._1.isBound)(x => x._1.size) match {
         case None => Branchings.noAlternative
         case Some(x) => {
           // Select the closest successors of the city x
-          val v = selectMin(0 until n)(x._1.hasValue)(y => _distMatrixSucc(x._2)(y)).get
+          val v = selectMin(0 until n)(x._1.hasValue)(y => distMatrixSucc(x._2)(y)).get
           Branchings.branch(cp.post(x._1 === v))(cp.post(x._1 !== v))
         }
       }
-    }
   })
 
   setSearch(branching)
   setDecompositionStrategy(new AnotherModelDecomposition(modelWithWeakMinCircuit, new CartProdRefinement(succ, branching)))
-  onSolutionF(spore {
-    val x_ = obj
-    () => {
-      x_.max
-    }
-  })
+  onSolution(obj.max)
 
   val stat = solve()
   println(stat)
