@@ -21,7 +21,7 @@ import oscar.modeling.models.{ModelDeclaration, ModelDeclarationProxy}
 import Branchings._
 
 import scala.collection.mutable.ListBuffer
-import scala.spores.NullarySpore
+//import scala.spores.NullarySpore
 
 /**
   * A trait for object that would want to watch solving
@@ -194,5 +194,5 @@ class CPModelProxy[CPModelType <: CPSolve[Retval], Retval](modelDeclaration: Mod
 
   def onSolution = modelDeclaration.onSolution
   def onSolution(s: => Retval): Unit = modelDeclaration.onSolution(s)
-  def onSolution(s: NullarySpore[Retval]): Unit = modelDeclaration.onSolution(s())
+  //def onSolution(s: NullarySpore[Retval]): Unit = modelDeclaration.onSolution(s())
 }

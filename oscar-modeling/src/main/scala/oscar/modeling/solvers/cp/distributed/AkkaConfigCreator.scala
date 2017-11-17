@@ -21,7 +21,8 @@ import com.typesafe.config.{Config, ConfigFactory}
   * Stores the default Akka config
   */
 object AkkaConfigCreator {
-  def remote(hostname: String, port: Int): Config = {
+  //TODO reintroduce distribution
+  /*def remote(hostname: String, port: Int): Config = {
     ConfigFactory.parseString(s"""
        akka {
          stdout-loglevel = "OFF"
@@ -63,7 +64,7 @@ object AkkaConfigCreator {
          }
        }
      """)
-  }
+  }*/
 
   def local(): Config = {
     ConfigFactory.parseString(s"""

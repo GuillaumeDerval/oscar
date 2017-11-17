@@ -18,13 +18,11 @@ package oscar.examples.modeling
 import oscar.modeling.algebra.integer.IntExpression
 import oscar.modeling.constraints.AllDifferent
 import oscar.modeling.solvers.SolverApp
-import oscar.modeling.solvers.cp.{Branchings, CPSolving, DistributedCPSolving}
+import oscar.modeling.solvers.cp.{Branchings, CPSolving}
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.modeling.vars.IntVar
 
-import scala.spores._
-
-object GolombRuler extends SolverApp[String] with CPSolving with DistributedCPSolving {
+object GolombRuler extends SolverApp[String] with CPSolving {
   override lazy val config = new AppConfig {
     val size = trailArg[Int](descr = "Size of the golomb ruler", name="size")
   }
@@ -71,13 +69,10 @@ object GolombRuler extends SolverApp[String] with CPSolving with DistributedCPSo
   setCPSearch {Branchings.binaryStatic(m)}
 
   // The use of a spore allow to use the distributed module
-  onSolutionF(spore {
-    val m_ = m
-    () => {
-      val v = m_.map(_.max).mkString(",")
-      println(v)
-      v
-    }
+  onSolution({
+    val v = m.map(_.max).mkString(",")
+    println(v)
+    v
   })
 
   // Set the decomposition strategy, to be used in parallel CP

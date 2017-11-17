@@ -22,7 +22,6 @@ import oscar.modeling.vars.IntVar
 import oscar.util._
 
 import scala.io.Source
-import scala.spores._
 
 /**
   * Balanced Academic Curriculum Problem
@@ -80,23 +79,16 @@ object BACP extends CPApp[Int] with App {
   // Search
   minimize(vari)
 
-  val search = Branchings.binaryFirstFail(x, spore {
-    val l_ = l.toIndexedSeq
-    val periods_ = periods
-    (z: IntVar) => {
-      val ll = l_
-      selectMinDeterministic(periods_.filter(z.hasValue))(a => ll.apply(a).min)
-    }
+  var ll = l.toIndexedSeq
+  val search = Branchings.binaryFirstFail(x, (z: IntVar) => {
+      selectMinDeterministic(periods.filter(z.hasValue))(a => ll.apply(a).min)
   })
 
   setSearch(search)
   setDecompositionStrategy(new CartProdRefinement(x, search))
   //setDecompositionStrategy(new DecompositionAddCartProdInfo(new DepthIterativeDeepening(Branching.naryStatic(x)), x))
 
-  onSolutionF(spore {
-    val v = vari
-    () => vari.max
-  })
+  onSolution(vari.max)
 
   // Execution
   println(solve())

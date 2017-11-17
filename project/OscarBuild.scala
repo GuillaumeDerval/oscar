@@ -76,9 +76,9 @@ object OscarBuild extends Build {
 
     // Akka
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.4.3"
-    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.4.3"
-    val chill = "com.twitter" % "chill-akka_2.11" % "0.8.0"
-    val spores = "org.scala-lang.modules" %% "spores-core" % "0.2.1"
+    //val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.4.3"
+    //val chill = "com.twitter" % "chill-akka_2.11" % "0.8.0"
+    //val spores = "org.scala-lang.modules" %% "spores-core" % "0.2.1"
 
     // Test libraries
     val junit = "junit" % "junit" % "latest.milestone" % Test
@@ -157,7 +157,7 @@ object OscarBuild extends Build {
           scalacOptions in Compile ++= Seq("-language:reflectiveCalls"),
           resolvers ++= Seq(xypron),
           libraryDependencies ++= testDeps :+ graphStreamCore :+ graphStreamAlgo :+ graphStreamUI :+ scallop
-                               :+ akkaActor :+ akkaRemote :+ chill :+ spores :+ scalaSwing),
+                               :+ akkaActor :+ /*akkaRemote :+ chill :+ spores :+*/ scalaSwing :+ jfreechart :+ jcommon),
     dependencies = Seq(oscarCp)
   )
 

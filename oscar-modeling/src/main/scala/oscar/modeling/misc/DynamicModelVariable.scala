@@ -15,6 +15,26 @@
 
 package oscar.modeling.misc
 
+import oscar.modeling.models.Model
+import scala.util.DynamicVariable
+
+class DynamicModelVariable() {
+  private var v = new DynamicVariable[Model](null)
+
+  def value: Model = v.value
+
+  def withValue[S](newval: Model)(thunk: => S): S = {
+    v.withValue(newval)(thunk)
+  }
+
+  def value_=(newval: Model) = {
+    v.value = newval
+  }
+
+  override def toString: String = "DynamicModelVariable(" + value + ")"
+}
+
+/* TODO: reintroduce distribution
 import java.io.{IOException, ObjectInputStream, ObjectOutputStream}
 
 import com.esotericsoftware.kryo.io.{Input, Output}
@@ -57,4 +77,4 @@ class DynamicModelVariable() extends Serializable with KryoSerializable {
   override def read(kryo: Kryo, input: Input): Unit = {
     v = new DynamicVariable[Model](kryo.readClassAndObject(input).asInstanceOf[Model])
   }
-}
+}*/

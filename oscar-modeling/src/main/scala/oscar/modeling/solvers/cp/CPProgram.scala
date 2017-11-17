@@ -19,7 +19,7 @@ import java.util.concurrent.LinkedBlockingQueue
 
 import akka.actor._
 import akka.pattern.ask
-import akka.remote.RemoteScope
+// import akka.remote.RemoteScope //TODO: reintroduce distributed
 import akka.util.Timeout
 import com.typesafe.config.Config
 import oscar.algo.search.{Branching, DFSearch}
@@ -101,6 +101,7 @@ class CPProgram[RetVal](modelDeclaration: ModelDeclaration = new ModelDeclaratio
     )
   }
 
+  /* TODO: reintroduce distribution
   /**
     * Starts the CPProgram in a distributed fashion
     *
@@ -134,7 +135,7 @@ class CPProgram[RetVal](modelDeclaration: ModelDeclaration = new ModelDeclaratio
       },
       nSols, maxTime
     )
-  }
+  }*/
 
   /**
     * Starts the CPProgram locally, on a single thread
