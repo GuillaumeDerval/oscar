@@ -174,10 +174,10 @@ object RelaxationFunctions {
 
     //Identifying groups of variables
     val varGroups = mutable.HashMap[Int, mutable.HashSet[Int]]()
-    val varSeq = vars.toSeq
-    varSeq.indices.foreach(i =>{
+    val varSeq: Seq[CPIntVar] = vars.toSeq
+    varSeq.indices.foreach(i => {
       val value = currentSol.values(i)
-      if(varGroups.contains(value)) varGroups(value) += i
+      if (varGroups.contains(value)) varGroups(value) += i
       else varGroups += value -> mutable.HashSet[Int](i)
     })
 

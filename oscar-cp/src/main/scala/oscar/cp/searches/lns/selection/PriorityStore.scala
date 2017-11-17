@@ -4,7 +4,7 @@ import java.util.PriorityQueue
 
 import scala.collection.mutable
 import scala.util.Random
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters.
 
 /**
  * Adaptive store backed by a priority queue.
@@ -14,7 +14,7 @@ class PriorityStore[T](
                         val weights: Array[Double],
                         var rFactor: Double,
                         val min: Boolean
-                      ) extends AdaptiveStore[T]{
+                      ) extends AdaptiveStore[T] {
 
   private val ordering: Ordering[Int] =
     if(min) Ordering.by(x => (weights(x), Random.nextInt()))
@@ -65,7 +65,7 @@ class PriorityStore[T](
 
   override def nElements: Int = elems.length
 
-  override def getActive: Iterable[T] = (lastSelected.values ++ priority.toSeq).map(elems(_))
+  override def getActive: Iterable[T] = (lastSelected.values ++ priority.toArray()).map(elems(_))
 
   override def nActive: Int = elems.length - deactivated.size
 
