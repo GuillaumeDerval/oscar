@@ -27,9 +27,11 @@ import oscar.modeling.vars.IntVar
 import scala.language.reflectiveCalls
 
 object CartProdExperienceGolombRuler extends CPApp[String] with App {
-  override lazy val config = new CPAppConfig {
-    val size = trailArg[Int](descr = "Size of the golomb ruler")
+
+  class GolombConfig extends CPAppConfig {
+    val size = trailArg[Int](descr = "Size of the golomb ruler", name="size")
   }
+  override lazy val config: GolombConfig = new GolombConfig
 
   def increasing(y: Array[IntVar]) = {
     for (i <- 1 until y.length) {

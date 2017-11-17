@@ -99,8 +99,10 @@ object HtmlReporter extends App{
         val bests = mutable.HashSet[String]()
         var bestTime = Long.MaxValue
         val objType = objTypes(i)
-        if(objType == "none"){
+        if (objType == "none") {
           val status = statusByCommit.getOrElse(commit, mutable.Map[String, mutable.Map[String, (String, Long)]]())
+          // TODO: @charles @fix-this please, not working for scala 2.12
+          /*
           if (status.contains(i)) status(i).foreach { case (config, confStatus) =>
             val (configStatus, configTime) = confStatus
             if(configStatus == "SATISFIABLE" || configStatus == "UNSATISFIABLE") {
@@ -111,6 +113,7 @@ object HtmlReporter extends App{
               if(configTime == bestTime) bests += config
             }
           }
+          */
         }
         else if(objType != "unknown") {
           var bestVal = objType match {

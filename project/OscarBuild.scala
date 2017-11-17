@@ -155,7 +155,7 @@ object OscarBuild extends Build {
           scalacOptions in Compile ++= Seq("-language:reflectiveCalls"),
           resolvers ++= Seq(xypron),
           libraryDependencies ++= testDeps :+ graphStreamCore :+ graphStreamAlgo :+ graphStreamUI :+ scallop
-                               :+ akkaActor :+ akkaRemote :+ chill /*:+ spores*/ :+ scalaSwing),
+                               :+ akkaActor :+ scalaSwing :+ jfreechart :+ jcommon),
     dependencies = Seq(oscarCp)
   )
 

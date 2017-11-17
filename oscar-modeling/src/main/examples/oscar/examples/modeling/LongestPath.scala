@@ -23,7 +23,6 @@ import oscar.modeling.solvers.cp.{Branchings, CPApp}
 import oscar.modeling.vars.IntVar
 
 import scala.io.Source
-import scala.spores._
 
 /**
   * Example of LonguestPath, copied from the original one from OscaR-lib.
@@ -82,12 +81,7 @@ object LongestPath extends CPApp[Int] with App {
   setSearch(Branchings.binaryFirstFail(path))
   setDecompositionStrategy(new CartProdRefinement(path, Branchings.binaryFirstFail(path)))
 
-  onSolutionF(spore {
-    val x_ = weight
-    () => {
-      x_.max
-    }
-  })
+  onSolution(weight.max)
 
   val stats = solve()
   println(stats)

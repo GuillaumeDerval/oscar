@@ -148,7 +148,6 @@ abstract class TestUnary(name: String, nTests: Int) extends TestSuite {
 
   test("Testing " + name + " for all solutions ") {
     for (t <- 0 until nTests) {
-      println(t)
       val problem = makeRandomInstance(6)
       implicit val S = problem.store
       val dfs = new DFSearch(S)

@@ -24,7 +24,6 @@ import oscar.modeling.vars.IntVar
 import oscar.util._
 
 import scala.io.Source
-import scala.spores._
 
 /**
   * Example of QAP, copied from the original one from OscaR-lib.
@@ -34,7 +33,7 @@ import scala.spores._
 object QuadraticAssignment extends CPApp[Int] with App {
 
   // Read the data
-  var lines = Source.fromFile("qap.txt").getLines.toList.filter(_ != "")
+  var lines = Source.fromFile("data/qap.txt").getLines.toList.filter(_ != "")
   val n = lines.head.toInt
   val N = 0 until n
   lines = lines.drop(1)
@@ -58,29 +57,20 @@ object QuadraticAssignment extends CPApp[Int] with App {
 
   val obj = Sum(N, N)((i, j) => d(x(i))(x(j)) * w(i)(j)).reify()
 
-  onSolutionF(spore {
-    val x_ = obj
-    () => {
-      x_.max
-    }
-  })
+  onSolution(obj.max)
 
   minimize(obj)
 
-  val search = Branchings.fromAlternatives(spore{
-        val _x = x
-        (cp: CPModel) => {
-          val z = _x.filter(y => !y.isBound)
-          if(z.isEmpty)
-            Branchings.noAlternative
-          else {
-            val vari = selectMinDeterministic(z)(y => y.size)
-            val valu = vari.min
-            Branchings.branch(cp.post(vari === valu))(cp.post(vari !== valu))
-          }
-        }
+  val search = Branchings.fromAlternatives((cp: CPModel) => {
+    val z = x.filter(y => !y.isBound)
+    if(z.isEmpty)
+      Branchings.noAlternative
+    else {
+      val vari = selectMinDeterministic(z)(y => y.size)
+      val valu = vari.min
+      Branchings.branch(cp.post(vari === valu))(cp.post(vari !== valu))
     }
-  )
+  })
 
   setSearch(search)
   setDecompositionStrategy(new CartProdRefinement(x,search))

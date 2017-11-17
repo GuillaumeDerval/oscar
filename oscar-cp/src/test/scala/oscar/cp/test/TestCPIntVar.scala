@@ -16,14 +16,14 @@
  */
 package oscar.cp.test
 
-import org.scalatest.FunSuite
-import org.scalatest.Matchers
+
 import oscar.algo.Inconsistency
 import oscar.cp.core.CPPropagStrength
 import oscar.cp._
 import oscar.cp.core.variables.CPVar
+import oscar.cp.testUtils._
 
-class TestCPIntVar extends FunSuite with Matchers {
+class TestCPIntVar extends TestSuite {
 
   test("Test1 : Median") {
 
@@ -96,9 +96,9 @@ class TestCPIntVar extends FunSuite with Matchers {
     val a = CPIntVar(Array(10, 20, 30))(cp)
     a.isBound should be(false)
 
-    evaluating {
+    assertThrows[NoSolutionException] {
       cp.add(a < 10)
-    } should produce[NoSolutionException]
+    }
   }
 
   test("min max size methods test") {
