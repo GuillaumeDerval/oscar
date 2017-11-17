@@ -3,6 +3,7 @@ package oscar.cp.constraints.mdd
 
 import java.util
 
+import oscar.algo.Inconsistency
 import oscar.algo.reversible.ReversibleContext
 import oscar.cp.constraints.Automaton
 
@@ -159,6 +160,8 @@ object StaticMdd {
     * @return
     */
   def buildMddFromTableRegin(table: Array[Array[Int]], arity: Int): StaticMddImpl = {
+    if (table.length == 0)
+      throw Inconsistency
     val mdd = new StaticMddImpl(table(0).length)
     var mini = table(0)(0)
     var maxi = table(0)(0)

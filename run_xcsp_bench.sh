@@ -178,16 +178,16 @@ then
     mkdir "${Out}/${VNum}"
 fi
 
-$BIN/parallel --gnu --jobs 75% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${Solvers}
+#$BIN/parallel --gnu --jobs 75% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${Solvers}
 #$BIN/parallel --gnu --jobs 20% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${ParallelSolvers}
 
-#$BIN/parallel --gnu --jobs 75% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${Jars}
+$BIN/parallel --gnu --jobs 75% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${Jars}
 $BIN/parallel --gnu --jobs 20% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${ParallelJars}
 
-$BIN/parallel --gnu --jobs 75% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${Solvers}
+#$BIN/parallel --gnu --jobs 75% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${Solvers}
 #$BIN/parallel --gnu --jobs 20% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${ParallelSolvers}
 
-#$BIN/parallel --gnu --jobs 75% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${Jars}
+$BIN/parallel --gnu --jobs 75% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${Jars}
 $BIN/parallel --gnu --jobs 20% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${ParallelJars}
 
 rm ${CopInstances}
