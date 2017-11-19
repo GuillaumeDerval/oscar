@@ -16,14 +16,14 @@ package oscar.algo.test
 
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import oscar.algo.search._
 import oscar.algo.reversible._
 import oscar.algo.DisjointSets
 import oscar.algo.RangeMinQuery
 
 
-class DisjointSetsTest extends FunSuite with ShouldMatchers  {
+class DisjointSetsTest extends FunSuite with Matchers  {
 
   test("test ds1") {
     val sets = new DisjointSets(1,4)

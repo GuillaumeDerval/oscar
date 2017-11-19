@@ -1,10 +1,10 @@
 package oscar.algo.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import oscar.algo.RangeMinQuery
 
-class TestRangeMinQuery extends FunSuite with ShouldMatchers {
+class TestRangeMinQuery extends FunSuite with Matchers {
 
   test("test 1") {
     

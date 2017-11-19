@@ -15,7 +15,7 @@
 package oscar.dfo.multiobjective.mogen.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import oscar.dfo.multiobjective.mogen.MOGEN
 import oscar.dfo.utils._
 import oscar.dfo.multiobjective.mogen.algos.NelderMead
@@ -28,7 +28,7 @@ import oscar.dfo.multiobjective.mogen.algos.DirectionalDirectSearch
 /**
  * @author Cyrille Dejemeppe cyrille.dejemeppe@gmail.com
  */
-class TestMOGEN extends FunSuite with ShouldMatchers {
+class TestMOGEN extends FunSuite with Matchers {
   /*
   test("Test MOGEN dummy 2D - Only Nelder-Mead") {
     val nbCoords = 2

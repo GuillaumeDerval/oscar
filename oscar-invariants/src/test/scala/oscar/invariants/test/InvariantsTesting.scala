@@ -15,7 +15,7 @@
 package oscar.invariants.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import scala.collection.immutable._
 import oscar.invariants._
 
@@ -23,7 +23,7 @@ import oscar.invariants._
  * Test functionality of Invariants
  * @author Sebatien Mouthuy & Pierre Schaus
  */
-class InvariantsTesting extends FunSuite with ShouldMatchers  {
+class InvariantsTesting extends FunSuite with Matchers  {
 
   
   test("test whener on VarInt") {
