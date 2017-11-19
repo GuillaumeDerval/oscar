@@ -10,10 +10,12 @@ import oscar.cp.searches.lns.CPIntSol
 class ALNSNoParamOperator(
                            name: String,
                            failThreshold: Int,
-                           val function: (CPIntSol) => Unit
+                           val function: () => (CPIntSol => Unit, Option[Int], Option[Int])
                          ) extends ALNSOperator(name, failThreshold){
 
-  override def apply(sol: CPIntSol): Unit = function(sol)
+  override def getFunction: (CPIntSol => Unit, Option[Int], Option[Int]) = function()
+
+  override def tuneParameters(): ALNSNoParamOperator = this
 
   override def nParamVals = 1
 }

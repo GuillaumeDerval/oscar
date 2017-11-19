@@ -8,6 +8,6 @@ import oscar.anytime.lns.models._
 object RCPSP_J120_7_10 extends App {
 
   // http://people.eng.unimelb.edu.au/pstuckey/rcpsp/
-  new RCPSP("data/rcpsp/j120/j120_7_10.rcp",111).main(args)
+  new RCPSP("data/rcpsp/j120/j120_7_10.rcp", 111).main(args)
 
 }

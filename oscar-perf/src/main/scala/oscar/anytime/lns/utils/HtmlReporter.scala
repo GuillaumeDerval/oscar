@@ -56,7 +56,7 @@ object HtmlReporter extends App{
 
     htmlWriter.addHeading("Instances statistics")
 
-    instanceStats.sortBy(_._1).foreach{case(name, sols, scores, gaps) =>
+    instanceStats.sortBy(_._1).foreach{case(name, sols, scores, gaps, opScores) =>
       htmlWriter.addHeading(name, 2)
 
       htmlWriter.addElement(
@@ -65,11 +65,20 @@ object HtmlReporter extends App{
         HtmlWriter.tableToHtmlString(renderSolsByTime(sols, configs, timeout, stepped = true))
       )
 
-      htmlWriter.addElement(
-        "line",
-        "Score evolution",
-        HtmlWriter.tableToHtmlString(renderScoresByTime(scores, configs, timeout, stepped = true))
-      )
+      opScores.foreach{case (config, operators, opWeights) =>
+        if(config != "Baseline_best" && config != "Baseline_worst")
+          htmlWriter.addElement(
+            "line",
+            "Operator weights evolution for " + config,
+            HtmlWriter.tableToHtmlString(renderOpScoresByTime(opWeights, operators, stepped = true))
+          )
+      }
+
+//      htmlWriter.addElement(
+//        "line",
+//        "Score evolution",
+//        HtmlWriter.tableToHtmlString(renderScoresByTime(scores, configs, timeout, stepped = true))
+//      )
 
 //      if(gaps.isDefined)
 //        htmlWriter.addElement(
@@ -90,10 +99,10 @@ object HtmlReporter extends App{
     Seq[String],
     mutable.Map[String, String],
     mutable.Map[String, Option[Int]],
-    mutable.Map[String, (Boolean, Option[Int], ArrayBuffer[(Long, String, Int)])]
+    mutable.Map[String, (Boolean, Option[Int], ArrayBuffer[(Long, String, Int)], mutable.Map[String, Seq[String]], mutable.Map[String, Seq[(Long, String, Double)]])]
   ) = {
 
-    val data = mutable.Map[String, (Boolean, Option[Int], ArrayBuffer[(Long, String, Int)])]()
+    val data = mutable.Map[String, (Boolean, Option[Int], ArrayBuffer[(Long, String, Int)], mutable.Map[String, Seq[String]], mutable.Map[String, Seq[(Long, String, Double)]])]()
     val instances = mutable.HashSet[String]()
     val instanceTypes = mutable.Map[String, String]()
     val bks = mutable.Map[String, Option[Int]]()
@@ -101,12 +110,10 @@ object HtmlReporter extends App{
     val files = IOUtils.getFiles(directory, ".xml")
     var maxTimeout = 0L
 
-    // TODO Fixme @charles
-    /*
-    files.foreach(file => {
+    for(file <- files){
 
 //      println("reading: " + file.getPath)
-      val(config, timeout, instance, problem, isMax, bestKnown, sols) = readXml(XML.loadFile(file))
+      val(config, timeout, instance, problem, isMax, bestKnown, sols, operators, opWeights) = readXml(XML.loadFile(file))
 
       if(timeout > maxTimeout) maxTimeout = timeout
 
@@ -115,15 +122,26 @@ object HtmlReporter extends App{
       if(!bks.contains(instance)) bks += instance -> bestKnown
       configs.add(config)
 
-      if(data.contains(instance)) data(instance)._3 ++= sols
-      else data += instance -> (isMax, bestKnown, sols.to[ArrayBuffer])
-    })*/
+      if(data.contains(instance)){
+        data(instance)._3 ++= sols
+        data(instance)._4 += config -> operators
+        data(instance)._5 += config -> opWeights
+      }
+      else{
+        val opMap = mutable.Map[String, Seq[String]]()
+        opMap += config -> operators
+        val opScoresMap = mutable.Map[String, Seq[(Long, String, Double)]]()
+        opScoresMap += config -> opWeights
+        data += instance -> (isMax, bestKnown, sols.to[ArrayBuffer], opMap, opScoresMap)
+      }
+      Unit //Workaround for strange bug in 2.12
+    }
 
     (maxTimeout, instances.toSeq.sorted, configs.toSeq.sorted, instanceTypes, bks, data)
   }
 
   //Reads an xml config_instance file
-  def readXml(content: Node): (String, Long, String, String, Boolean, Option[Int], Seq[(Long, String, Int)]) = {
+  def readXml(content: Node): (String, Long, String, String, Boolean, Option[Int], Seq[(Long, String, Int)], Seq[String], Seq[(Long, String, Double)]) = {
     val config = (content \ "config").head.text
     val timeout = (content \ "timeout").head.text.toLong
     val instance = (content \ "instance").head.text
@@ -143,7 +161,16 @@ object HtmlReporter extends App{
       (solNode \ "objective").head.text.toInt
     ))
 
-    (config, timeout, instance, problem, isMax, bestKnown, sols)
+    val opData = (content \\ "operators").head
+    val operators = (opData \\ "operator").map(opNode => (opNode \ "name").head.text.trim)
+
+    val opWeights = (content \\ "score_update").map(scoreNode =>(
+      (scoreNode \ "time").head.text.toLong,
+      (scoreNode \ "operator").head.text.trim,
+      (scoreNode \ "score").head.text.toDouble
+    ))
+
+    (config, timeout, instance, problem, isMax, bestKnown, sols, operators, opWeights)
   }
 
 
@@ -163,6 +190,22 @@ object HtmlReporter extends App{
     }
 
     solsByTime
+  }
+
+  //Aggregates operator scores by time
+  def opScoresByTime(operators: Seq[String], scores: Seq[(Long, String, Double)]): Seq[(Long, Array[Option[Double]])] = {
+    val mapping = operators.zipWithIndex.toMap
+
+    val currentScores: Array[Option[Double]] = Array.fill(operators.length)(None)
+    val scoresByTime = mutable.ArrayBuffer[(Long, Array[Option[Double]])]()
+
+    scores.filter(_._2 != "dummy").sortBy(_._1).foreach{case (time, operator, score) =>
+      currentScores(mapping(operator)) = Some(score)
+      if(scoresByTime.nonEmpty && scoresByTime.last._1 == time) scoresByTime.last._2(mapping(operator)) = Some(score)
+      else scoresByTime += ((time, currentScores.clone()))
+    }
+
+    scoresByTime
   }
 
   //Aggreagates gaps by time
@@ -216,13 +259,13 @@ object HtmlReporter extends App{
   def processStats(
                     instances: Seq[String],
                     configs: Seq[String],
-                    data: mutable.Map[String, (Boolean, Option[Int], ArrayBuffer[(Long, String, Int)])],
+                    data: mutable.Map[String, (Boolean, Option[Int], ArrayBuffer[(Long, String, Int)], mutable.Map[String, Seq[String]], mutable.Map[String, Seq[(Long, String, Double)]])],
                     nBks: Int
                   ): (
     Array[Array[Option[Int]]],
     ArrayBuffer[(Long, Array[Int])],
     ArrayBuffer[(Long, Array[Option[Double]])],
-    ArrayBuffer[(String, Seq[(Long, Array[Option[Int]])], Seq[(Long, Array[Int])], Option[Seq[(Long, Array[Option[Double]])]])]
+    ArrayBuffer[(String, Seq[(Long, Array[Option[Int]])], Seq[(Long, Array[Int])], Option[Seq[(Long, Array[Option[Double]])]], Array[(String, Seq[String], Seq[(Long, Array[Option[Double]])])])]
   ) = {
 
     val nBests = 3 //Number of best configs to reward (the reward is proportional to the place in the ranking)
@@ -234,18 +277,19 @@ object HtmlReporter extends App{
     val gaps = mutable.ArrayBuffer[(Long, String, Array[Option[Double]])]()
     val bestSols = Array.fill[Option[Int]](instances.length, configs.length)(None)
 
-    // Instance stats: (name, sols, gaps, scores)
+    // Instance stats: (name, sols, gaps, scores, opScores)
     val instanceStats = mutable.ArrayBuffer[(
       String,
       Seq[(Long, Array[Option[Int]])],
       Seq[(Long, Array[Int])],
-      Option[Seq[(Long, Array[Option[Double]])]]
+      Option[Seq[(Long, Array[Option[Double]])]],
+      Array[(String, Seq[String], Seq[(Long, Array[Option[Double]])])]
     )]()
 
     //Scanning each instance data:
     data.foreach(instanceData => {
       val (name, content) = instanceData
-      val (isMax, bestKnown, solsFound) = content
+      val (isMax, bestKnown, solsFound, operators, opScores) = content
       val sortedSols = solsByTime(configs, solsFound)
 
       //Computing best sols:
@@ -302,7 +346,13 @@ object HtmlReporter extends App{
         scores += ((time, name, score))
       }
 
-      instanceStats += ((name, sortedSols, instanceScores, instanceGaps))
+      //Computing operator scores:
+      val opScoresByConfig = mutable.ArrayBuffer[(String, Seq[String], Seq[(Long, Array[Option[Double]])])]()
+      operators.foreach{case (config, ops) =>
+        if(opScores.contains(config)) opScoresByConfig += ((config, ops, opScoresByTime(ops, opScores(config))))
+      }
+
+      instanceStats += ((name, sortedSols, instanceScores, instanceGaps, opScoresByConfig.toArray))
     })
 
     //Computing any time gaps:
@@ -331,7 +381,7 @@ object HtmlReporter extends App{
                       bestKnownSolutions: Map[String, Option[Int]]
                     ): Array[Array[String]] = {
     val array = ArrayBuffer[Array[String]]()
-    array += Array("'Instance'", "'Set'", "'Best known solution'") ++ configs.map("{label: '" + _ + "', type: 'number'}")
+    array += Array("'Instance'", "'Set'", "'Best known solution'") ++ configs.map("'" + _ + "'")
     bestSols.indices.foreach(i => {
       array += Array("'" + instances(i) + "'", "'" + instanceTypes(instances(i)) + "'", bestKnownSolutions(instances(i)) match{
         case None => "null"
@@ -347,7 +397,7 @@ object HtmlReporter extends App{
   def renderScoresByTime(scores: Seq[(Long, Array[Int])], configs: Seq[String], timeout: Long, stepped: Boolean = false): Array[Array[String]] = {
     val array = ArrayBuffer[Array[String]]()
     var previous = Array[String]()
-    array += Array("'Time'") ++ configs.map("{label: '" + _ + "', type: 'number'}")
+    array += Array("'Time'") ++ configs.map("'" + _ + "'")
     scores.foreach{case (time, scoreValues) => {
       val t = Array((time/1000000000.0).toString)
       if(stepped && previous.nonEmpty) array += t ++ previous
@@ -361,7 +411,7 @@ object HtmlReporter extends App{
   def renderGapsByTime(gaps: Seq[(Long, Array[Option[Double]])], configs: Seq[String], timeout: Long, stepped: Boolean = false): Array[Array[String]] = {
     val array = ArrayBuffer[Array[String]]()
     var previous = Array[String]()
-    array += Array("'Time'") ++ configs.map("{label: '" + _ + "', type: 'number'}")
+    array += Array("'Time'") ++ configs.map("'" + _ + "'")
     gaps.foreach{case (time, gapValues) => {
       val t = Array((time/1000000000.0).toString)
       if(stepped && previous.nonEmpty) array += t ++ previous
@@ -378,7 +428,7 @@ object HtmlReporter extends App{
   def renderSolsByTime(sols: Seq[(Long, Array[Option[Int]])], configs: Seq[String], timeout: Long, stepped: Boolean = false): Array[Array[String]] ={
     val array = ArrayBuffer[Array[String]]()
     var previous = Array[String]()
-    array += Array("'Time'") ++ configs.map("{label: '" + _ + "', type: 'number'}")
+    array += Array("'Time'") ++ configs.map("'" + _ + "'")
     sols.foreach{case (time, solValues) => {
       val t = Array((time/1000000000.0).toString)
       if(stepped && previous.nonEmpty) array += t ++ previous
@@ -389,6 +439,22 @@ object HtmlReporter extends App{
       array += t ++ previous
     }}
     array += Array((timeout/1000000000.0).toString) ++ previous
+    array.toArray
+  }
+
+  def renderOpScoresByTime(opScores: Seq[(Long, Array[Option[Double]])], operators: Seq[String], stepped: Boolean = false): Array[Array[String]] ={
+    val array = ArrayBuffer[Array[String]]()
+    var previous = Array[String]()
+    array += Array("'Time'") ++ operators.map("'" + _ + "'")
+    opScores.foreach{case (time, scoreValues) => {
+      val t = Array((time/1000000000.0).toString)
+      if(stepped && previous.nonEmpty) array += t ++ previous
+      previous = scoreValues.map{
+        case None => "null"
+        case Some(score: Double) => score.toString
+      }
+      array += t ++ previous
+    }}
     array.toArray
   }
 

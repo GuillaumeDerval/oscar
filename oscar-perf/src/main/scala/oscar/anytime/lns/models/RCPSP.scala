@@ -3,7 +3,7 @@ package oscar.anytime.lns.models
 import oscar.cp._
 import oscar.anytime.lns.Benchmark
 
-class RCPSP(val instance: String, val bestObj: Int = Int.MaxValue) extends Benchmark {
+class RCPSP(val instance: String, val bestObj: Int = 0) extends Benchmark {
 
   val resourceid = 1
   val (nTasks, nRes, resourcesCapacities, taskDescriptions) = RCPReader.readInstance(instance)
@@ -52,7 +52,7 @@ class RCPSP(val instance: String, val bestObj: Int = Int.MaxValue) extends Bench
 
   override def decisionVariables: Array[CPIntVar] = starts
 
-  override def bestKnownObjective: Int = bestObj
+  override def bestKnownObjective: Option[Int] = Some(bestObj)
 
   override def problem: String = "RCPSP"
 }

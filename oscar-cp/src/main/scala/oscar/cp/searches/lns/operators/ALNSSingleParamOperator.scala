@@ -2,24 +2,21 @@ package oscar.cp.searches.lns.operators
 
 import oscar.algo.search.SearchStatistics
 import oscar.cp.searches.lns.CPIntSol
-import oscar.cp.searches.lns.search.ALNSStatistics
 import oscar.cp.searches.lns.selection.AdaptiveStore
 
-import scala.collection.mutable
+import scala.xml.Elem
 
 /**
   * Adaptive large neighbourhood search operator with a single parameter of type T.
   *
   * @param function the function that the operator applies.
   * @param paramStore: an AdaptiveStore containing the possible values for the parameter.
-  * @param metric the metric function used when adapting the operator parameter values.
   */
 class ALNSSingleParamOperator[T](
                                   name: String,
                                   failThreshold: Int,
-                                  val function: (CPIntSol, T) => Unit,
-                                  val paramStore: AdaptiveStore[ALNSParameter[T]],
-                                  val metric: (ALNSElement, Int, SearchStatistics) => Double
+                                  val function: (T) => (CPIntSol => Unit, Option[Int], Option[Int]),
+                                  val paramStore: AdaptiveStore[ALNSParameter[T]]
                                 ) extends ALNSOperator(name, failThreshold){
 
   private var selected: Option[ALNSParameter[T]] = None
@@ -32,8 +29,9 @@ class ALNSSingleParamOperator[T](
     new ALNSReifiedOperator(
       name + "(" + param.value + ")",
       param.failThreshold,
-      function(_:CPIntSol, param.value),
-      (improvement, stats, fail) => updateParam(param, improvement, stats, fail),
+      () => function(param.value),
+      (tStart, tEnd, objStart, objEnd, iterStats, fail, iter) =>
+        updateParam(param, tStart, tEnd, objStart, objEnd, iterStats, fail, iter),
       (state) => {
         param.setActive(state)
         if(!param.isActive) {
@@ -46,28 +44,42 @@ class ALNSSingleParamOperator[T](
 
   def getReifiedParameters: Iterable[ALNSReifiedOperator] = paramStore.getElements.map(getReified)
 
-  override def apply(sol: CPIntSol): Unit = {
-    if(selected.isEmpty) {
-      selected = Some(paramStore.select())
-      function(sol, selected.get.value)
-    }
-    else throw new Exception("This operator has already been used but not updated!")
+  //Warning: risk if used concurrently!
+  override def getFunction: (CPIntSol => Unit, Option[Int], Option[Int]) = {
+    selected = Some(paramStore.select())
+    function(selected.get.value)
   }
 
-  override def update(costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit = {
+  override def update(
+                       tStart: Long,
+                       tEnd: Long,
+                       objStart: Int,
+                       objEnd: Int,
+                       iterStats: SearchStatistics,
+                       fail: Boolean,
+                       iter: Long
+                     ): Unit = {
     if(selected.isDefined){
-      updateParam(selected.get, improvement, stats, fail)
+      updateParam(selected.get, tStart, tEnd, objStart, objEnd, iterStats, fail, iter)
       selected = None
+      super.update(tStart, tEnd, objStart, objEnd, iterStats, fail, iter)
     }
     else throw new Exception("This operator has not been used!")
   }
 
-  private def updateParam(param: ALNSParameter[T], costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit ={
-    super.update(costImprovement, stats, fail)
-    param.update(costImprovement, stats, fail)
-    if(param.isActive)
-      paramStore.adapt(param, metric(param, costImprovement, stats))
-    else{
+  private def updateParam(
+                           param: ALNSParameter[T],
+                           tStart: Long,
+                           tEnd: Long,
+                           objStart: Int,
+                           objEnd: Int,
+                           iterStats: SearchStatistics,
+                           fail: Boolean,
+                           iter: Long
+                         ): Unit ={
+    param.update(tStart, tEnd, objStart, objEnd, iterStats, fail, iter)
+    paramStore.adapt(param)
+    if(!param.isActive){
       paramStore.deactivate(param)
       if(paramStore.isActiveEmpty){
         println("Operator " + name + " deactivated")
@@ -76,20 +88,7 @@ class ALNSSingleParamOperator[T](
     }
   }
 
-  override def getStats: ALNSStatistics = new ALNSStatistics(
-    execs,
-    sols,
-    successfulRuns,
-    time,
-    avgTime,
-    improvement,
-    avgImprovement,
-    successRate,
-    timeToImprovement,
-    isActive,
-    nFails,
-    Array(paramStore.getElements.map(x => (x.value.toString, x.getStats)).toArray)
-  )
+  override def tuneParameters(): ALNSNoParamOperator = ???
 
   override def nParamVals: Int = paramStore.nActive
 
@@ -100,8 +99,24 @@ class ALNSSingleParamOperator[T](
     }
     super.setActive(state)
   }
+
   override def resetFails(): Unit = {
     paramStore.getElements.foreach(_.resetFails())
     super.resetFails()
+  }
+
+  override def asXml(cat: String): Elem = {
+    <operator>
+      <name>{name}</name>
+      <type>{cat}</type>
+      {super.wrapStatsToXml()}
+      <parameters>{paramStore.getElements.map(_.asXml("parameter"))}</parameters>
+    </operator>
+  }
+
+  override def toString: String = {
+    var s = super.toString
+    s += "\n\tParameters:\n\t" + paramStore.getElements.mkString("\n\t")
+    s
   }
 }

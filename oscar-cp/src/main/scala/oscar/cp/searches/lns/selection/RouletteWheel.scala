@@ -1,23 +1,27 @@
 package oscar.cp.searches.lns.selection
 
+import oscar.cp.searches.lns.operators.ALNSElement
+
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 /**
  * The purpose of the Roulette wheel is to select randomly an element based on adaptive probabilities.
  */
-class RouletteWheel[T](
-                        val elems: Array[T],
-                        val weights: Array[Double],
-                        var rFactor: Double,
-                        val reversed: Boolean
+class RouletteWheel[T <: ALNSElement](
+                                       val elems: Array[T],
+                                       val weights: Array[Double],
+                                       var decay: Double,
+                                       val reversed: Boolean,
+                                       var perfMetric: (T) => Double
                       ) extends AdaptiveStore[T]{
 
   private val lastSelected = mutable.HashMap[T, Int]() //caching for quick access to last selected elem(s)
   private val active = mutable.HashSet[Int](elems.indices: _*)
 
-  def this(elems: Array[T], rFactor: Double, reversed:Boolean){this(elems, Array.fill(elems.length){1.0}, rFactor, reversed)}
+  def this(elems: Array[T], rFactor: Double, reversed:Boolean, perfMetric: (T) => Double){
+    this(elems, Array.fill(elems.length){(Double.MaxValue - 1) / elems.length.toDouble}, rFactor, reversed, perfMetric)
+  }
 
   private def getIndex(elem: T): Int = lastSelected.getOrElse(elem, elems.indexOf(elem))
 
@@ -27,7 +31,8 @@ class RouletteWheel[T](
 
   private def processProbas(activeSeq: Seq[Int]): Seq[Double] = {
     val activeWeights = activeSeq.map(weights(_))
-    val wSum = activeWeights.sum
+    var wSum = activeWeights.sum
+    if(wSum.isInfinity) wSum = Double.MaxValue - 1
 
     //If all weights are at 0, giving equiprobability to all elems:
     if(wSum == 0.0) Seq.fill(activeSeq.length)(1.0/activeSeq.length)
@@ -53,11 +58,20 @@ class RouletteWheel[T](
     elems(selected)
   }
 
-  override def adapt(elem: T, sFactor: Double, rFactor: Double): Unit = {
+  //TODO: Use listeners
+  override def adapt(elem: T): Double = {
     val index = getIndex(elem)
     if(index == -1) throw  new Exception("Element " + elem + " is not in store.")
-    weights(index) = (1.0 - rFactor) * weights(index) + rFactor * sFactor
+    //Warning: received val is divided by the number of elems to avoid overflow when processing max values!
+    weights(index) = /*if(elem.execs > 1) */(1.0 - decay) * weights(index) + decay * (perfMetric(elem) / elems.length.toDouble)
+    /*else perfMetric(elem) / elems.length.toDouble*/
+    //    println("elem " + elem + " has now weight: " + weights(index))
     if(isCached(index)) lastSelected.remove(elem)
+    if(!elem.isActive){
+      deactivate(index)
+      -1.0
+    }
+    else weights(index) * elems.length
   }
 
   override def getElements: Seq[T] = elems
@@ -72,21 +86,20 @@ class RouletteWheel[T](
 
   override def nonActiveEmpty: Boolean = !isActiveEmpty
 
-  override def deactivate(elem: T): Unit = {
-    val index = getIndex(elem)
-    if(index == -1) throw new Exception("Element " + elem + " is not in store.")
+  def deactivate(index: Int): Unit = {
+    if(index == -1) throw new Exception("Element " + elems(index) + " is not in store.")
     active.remove(index)
-    if(isCached(index)) lastSelected.remove(elem)
+    if(isCached(index)) lastSelected.remove(elems(index))
   }
 
-  override def reset(sFactor: Double): Unit = {
-    weights.indices.foreach(weights(_) = sFactor)
-    reset()
-  }
+  override def deactivate(elem: T): Unit = deactivate(getIndex(elem))
 
   override def reset(): Unit = {
+    weights.indices.foreach(i => weights(i) = perfMetric(elems(i)))
     lastSelected.clear()
     active.clear()
-    active ++= elems.indices
+    active ++= elems.indices.filter(elems(_).isActive)
   }
+
+  override def getScore(elem: T): Double = weights(getIndex(elem))
 }

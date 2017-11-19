@@ -1,6 +1,7 @@
 package oscar.anytime.lns.utils
 
 import java.io.{File, FileWriter}
+import java.nio.file.{Files, Paths}
 
 object IOUtils {
   def getFolderContent(dir: String):List[File] = {
@@ -47,4 +48,6 @@ object IOUtils {
 
     writer.close()
   }
+
+  def fileExists(filePath: String): Boolean = Files.exists(Paths.get(filePath))
 }

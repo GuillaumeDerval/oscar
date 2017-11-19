@@ -2,6 +2,9 @@
 <head>
     <!--Load the AJAX API-->
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <!--Load the HIGHCHARTS API-->
+    <script type="text/javascript" src="http://code.highcharts.com/highcharts.js"></script>
+    <script type="text/javascript" src="https://code.highcharts.com/modules/data.js"></script>
     <script type="text/javascript">
 
         // Load the Visualization API and the chart packages.
@@ -33,31 +36,51 @@
          */
         function drawElement(id, type, src, options) {
 
-            // Creating the data table:
-            var data = google.visualization.arrayToDataTable(src, false);
-
             // Instantiating and drawing the correct element type:
             switch(type){
                 case 'table':
                     var table = new google.visualization.Table(document.getElementById(id));
-                    table.draw(data, options);
+                    table.draw(google.visualization.arrayToDataTable(src, false), options);
                     break;
                 case 'pie':
                     var pchart = new google.visualization.PieChart(document.getElementById(id));
-                    pchart.draw(data, options);
-                    break;
-                case 'bar':
-                    var bchart = new google.visualization.BarChart(document.getElementById(id));
-                    bchart.draw(data, options);
+                    pchart.draw(google.visualization.arrayToDataTable(src, false), options);
                     break;
                 case 'stacked bar':
                     var schart = new google.visualization.BarChart(document.getElementById(id));
-                    schart.draw(data, options);
+                    schart.draw(google.visualization.arrayToDataTable(src, false), options);
                     break;
                 case 'line':
-                    var lchart = new google.visualization.LineChart(document.getElementById(id));
-                    lchart.draw(data, options);
+                    drawHighChart(id, src, options);
+                    break;
+                case 'logline':
+                    drawHighChart(id, src, options);
+                    break;
             }
+        }
+
+        function drawHighChart(id, data, options) {
+            Highcharts.chart(id, {
+                chart: {
+                    zoomType: 'x'
+                },
+
+                title: {
+                    text: options.title
+                },
+
+                xAxis: {
+                    min: 0
+                },
+
+                yAxis: {
+                    type: options.chartType
+                },
+
+                data: {
+                    rows: data
+                }
+            });
         }
 
         function display(id) {

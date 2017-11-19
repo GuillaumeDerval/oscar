@@ -1,5 +1,7 @@
 package oscar.cp.searches.lns.operators
 
+import scala.xml.Elem
+
 /**
   * This class defines an Adaptive large neighbourhood search parameter.
   *
@@ -14,4 +16,19 @@ class ALNSParameter[T](val value: T, failThreshold: Int) extends ALNSElement(fai
   }
 
   override def hashCode(): Int = value.hashCode()
+
+  override def asXml(cat: String): Elem = {
+    <parameter>
+      <value>{value}</value>
+      <type>{cat}</type>
+      {super.wrapStatsToXml()}
+    </parameter>
+  }
+
+  override def toString: String = {
+    var s = "Parameter:"
+    s += "\n\tvalue: " + value
+    s += "\n" + super.toString
+    s
+  }
 }

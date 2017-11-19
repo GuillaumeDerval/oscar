@@ -14,15 +14,24 @@ import oscar.cp.searches.lns.CPIntSol
   * @param updateFunction updates the original operator.
   * @param activationFunction activates/deactivates the original operator.
   */
+//TODO set up stats redirect
 class ALNSReifiedOperator(
                            name:String,
                            failThreshold: Int,
-                           function: CPIntSol => Unit,
-                           val updateFunction: (Int, SearchStatistics, Boolean) => Unit,
+                           function: () => (CPIntSol => Unit, Option[Int], Option[Int]),
+                           val updateFunction: (Long, Long, Int, Int, SearchStatistics, Boolean, Long) => Unit,
                            val activationFunction: (Boolean) => Unit
                      ) extends ALNSNoParamOperator(name, failThreshold, function){
 
-  override def update(costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit = updateFunction(costImprovement, stats, fail)
+  override def update(
+                       tStart: Long,
+                       tEnd: Long,
+                       objStart: Int,
+                       objEnd: Int,
+                       iterStats: SearchStatistics,
+                       fail: Boolean,
+                       iter: Long
+                     ): Unit = updateFunction(tStart, tEnd, objStart, objEnd, iterStats, fail, iter)
 
   override def setActive(state: Boolean): Unit = activationFunction(state)
 

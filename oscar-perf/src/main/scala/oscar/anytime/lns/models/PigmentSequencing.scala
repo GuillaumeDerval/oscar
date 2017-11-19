@@ -27,7 +27,7 @@ import scala.io.Source
   * @author Pierre Schaus pschaus@gmail.com
   * @author Ratheil Houdji
   */
-class PigmentSequencing(val instance: String, val bestObj: Int = Int.MaxValue) extends Benchmark {
+class PigmentSequencing(val instance: String, val bestObj: Int = 0) extends Benchmark {
 
   implicit val cp = CPSolver()
   //cp.silent = true
@@ -107,7 +107,7 @@ class PigmentSequencing(val instance: String, val bestObj: Int = Int.MaxValue) e
 
   def decisionVariables: Array[CPIntVar] = date
 
-  override def bestKnownObjective: Int = bestObj
+  override def bestKnownObjective: Option[Int] = Some(bestObj)
 
   override def solver: CPSolver = cp
 

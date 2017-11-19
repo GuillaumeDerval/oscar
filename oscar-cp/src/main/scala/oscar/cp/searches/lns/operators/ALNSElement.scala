@@ -1,61 +1,68 @@
 package oscar.cp.searches.lns.operators
 
 import oscar.algo.search.SearchStatistics
-import oscar.cp.searches.lns.search.ALNSStatistics
 
-/**
-  * Companion object. Holds the worstTTI current value which is shared among all elements.
-  */
-object ALNSElement{
-  private var worstTTI = 1.0
-
-  def resetWorstTTI(): Unit = { worstTTI = 1.0 }
-
-  private def updateWorstTTI(newTTI: Double) = if(newTTI > worstTTI) worstTTI = newTTI
-}
+import scala.collection.mutable
+import scala.xml.{Elem, NodeBuffer}
 
 /**
   * This abstract class defines an Adaptive large neighbourhood search element.
   *
   * @param failThreshold The number of failures after which the element should be deactivated.
   */
-abstract class ALNSElement(val failThreshold: Int){
+abstract class ALNSElement(val failThreshold: Int = 0){
 
+  protected class ExecStats(
+                             val tStart: Long,
+                             val tEnd: Long,
+                             val objStart: Int,
+                             val objEnd: Int,
+                             val nSols: Int,
+                             val searchCompleted: Boolean,
+                             val nFails: Int,
+                             val iter: Long
+                         ){
+    def time: Long = tEnd - tStart
+
+    def improvement: Int = Math.abs(objEnd - objStart)
+
+    def isSuccessful: Boolean = nSols > 0
+  }
+
+  val stats: mutable.ArrayBuffer[ExecStats] = new mutable.ArrayBuffer[ExecStats]()
   var successfulRuns: Int = 0
-  var execs: Int = 0
   var sols: Int = 0
-  var time: Long = 0
-  var improvement: Int = 0
-
+  var time: Long = 0 //time in nanoseconds
+  var improvement: Long = 0
+  var lastSuccessIter: Long = 0L
 
   protected var nFails = 0 //Number of failures of the element
   private var active: Boolean = true
 
-  def avgTime: Double = if(execs != 0) time.toDouble / execs.toDouble else 0.0
-
-  def avgImprovement: Double = if(execs != 0) improvement.toDouble / execs.toDouble else 0.0
-
-  def successRate: Double = if (execs != 0) successfulRuns.toDouble / execs else 0.0
-
-  def timeToImprovement: Double = {
-    if(execs == 0) 0.0
-    else if(successRate == 0.0) ALNSElement.worstTTI
-    else{
-      val tti = (avgTime + 1.0) / successRate
-      ALNSElement.updateWorstTTI(tti)
-      tti
-    }
-  }
-
   /**
     * Updates the element stats and eventual parameters based on the improvement and search statistics given.
     */
-  def update(costImprovement: Int, stats: SearchStatistics, fail: Boolean): Unit = {
-    execs += 1
-    successfulRuns += Math.min(stats.nSols, 1)
-    sols += stats.nSols
-    time += stats.time * 1000000
-    improvement += costImprovement
+  def update(
+              tStart: Long,
+              tEnd: Long,
+              objStart: Int,
+              objEnd: Int,
+              iterStats: SearchStatistics,
+              fail: Boolean,
+              iter: Long
+            ): Unit = {
+
+    val execStats = new ExecStats(tStart, tEnd, objStart, objEnd, iterStats.nSols, iterStats.completed, iterStats.nFails, iter)
+    stats += execStats
+
+    if(execStats.isSuccessful){
+      successfulRuns += 1
+      lastSuccessIter = iter
+    }
+
+    sols += execStats.nSols
+    time += execStats.time
+    improvement += execStats.improvement
 
     if(fail){
       nFails +=1
@@ -63,23 +70,37 @@ abstract class ALNSElement(val failThreshold: Int){
     }
   }
 
-  /**
-    * Returns the statistics of the element as an ALNSStatistics object.
-    */
-  def getStats: ALNSStatistics = new ALNSStatistics(
-    execs,
-    sols,
-    successfulRuns,
-    time,
-    avgTime,
-    improvement,
-    avgImprovement,
-    successRate,
-    timeToImprovement,
-    isActive,
-    nFails,
-    Array[Array[(String, ALNSStatistics)]]()
-  )
+  def lastExecStats: Option[ExecStats] = stats.lastOption
+
+  def execs: Int = stats.length
+
+  def efficiency: Double = if(execs > 0) improvement / (time / 1000000000.0) else 0.0
+
+  def asXml(cat: String): Elem
+
+  //TODO: Print each exec stats
+  protected def wrapStatsToXml(): NodeBuffer = {
+    <execs>{execs}</execs>
+    <sols>{sols}</sols>
+    <successful_runs>{successfulRuns}</successful_runs>
+    <time>{time}</time>
+    <improvement>{improvement}</improvement>
+    <efficiency>{efficiency}</efficiency>
+    <state>{if(active) "active" else "inactive"}</state>
+    <fails>{nFails}</fails>
+  }
+
+  override def toString: String = {
+    var s = "\texecs: " + execs
+    s += "\n\tsols: " + sols
+    s += "\n\tsuccessful runs: " + successfulRuns
+    s += "\n\ttime(s): " + time / 1000000000.0
+    s += "\n\timprovement: " + improvement
+    s += "\n\tefficiency: " + efficiency
+    s += "\n\tstatus: " + (if(active) "active" else "inactive")
+    s += "\n\tfails: " + nFails
+    s
+  }
 
   /**
     * Activates or deactivates the element
