@@ -84,13 +84,13 @@ object RelaxationFunctions {
     //Identifying groups of variables
     val varGroups = mutable.HashMap[Int, mutable.HashSet[Int]]()
     val varSeq: Seq[CPIntVar] = vars.toSeq
-    // TODO: @charles, please fix this for 2.12
-    /*
-    varSeq.indices.foreach(i => {
+    var i = 0
+    while(i < varSeq.length){
       val value = currentSol.values(i)
       if (varGroups.contains(value)) varGroups(value) += i
       else varGroups += value -> mutable.HashSet[Int](i)
-    })*/
+      i += 1
+    }
 
     val varList: Seq[Int] = scheme match{
 
@@ -119,12 +119,12 @@ object RelaxationFunctions {
         sortedVars
     }
 
-    var i = 0
-    while(i < varSeq.length && vars.count(!_.isBound) > k){
-      val x = varList(i)
+    var j = 0
+    while(j < varSeq.length && vars.count(!_.isBound) > k){
+      val x = varList(j)
       solver.add(varSeq(x) === currentSol.values(x))
       if(! varSeq(x).isBound) throw Inconsistency
-      i += 1
+      j += 1
     }
   }
 

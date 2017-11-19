@@ -29,13 +29,14 @@ object HtmlUtils extends App{
     val results = mutable.HashMap[String, mutable.ArrayBuffer[(String, Option[Int])]]()
     val files = IOUtils.getFiles(directory, ".xml")
 
-    files.foreach(file => {
+    for(file <- files){
 
 //      println("reading: " + file.getPath)
       val content = readXml(XML.loadFile(file))
       if(results.contains(content._1)) results(content._1) += ((content._2, content._3))
       else results += content._1 -> mutable.ArrayBuffer[(String, Option[Int])]((content._2, content._3))
-    })
+      Unit //Workaround for strange bug in 2.12
+    }
 
     results.map{case (instance, opSols) => (instance, opSols.toSeq)}.toSeq
   }
