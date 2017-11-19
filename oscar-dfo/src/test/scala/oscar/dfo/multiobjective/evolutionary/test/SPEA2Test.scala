@@ -15,7 +15,7 @@
 package oscar.dfo.multiobjective.evolutionary.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import oscar.dfo.multiobjective.evolutionary.EvolutionaryElement
 import oscar.dfo.utils.MOOPoint
 import oscar.dfo.utils.MOEvaluator
@@ -25,7 +25,7 @@ import oscar.dfo.multiobjective.evolutionary.SPEA2
 /**
  * @author Cyrille Dejemeppe cyrille.dejemeppe@gmail.com
  */
-class SPEA2Test extends FunSuite with ShouldMatchers {
+class SPEA2Test extends FunSuite with Matchers {
   def identity(values: Array[Double]) = Array.tabulate(values.length)(i => values(i))
   
   val evaluator = MOEvaluator(identity, Array.fill(2)(Double.MaxValue))

@@ -16,7 +16,7 @@ package oscar.algo.reversible.test
 
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import oscar.algo.search._
 import oscar.algo.reversible._
 import scala.collection.JavaConversions._

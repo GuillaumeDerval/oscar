@@ -15,15 +15,15 @@
 package oscar.algo.paretofront.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import oscar.algo.paretofront.QTMin
 import oscar.algo.paretofront.QTNode
 import oscar.algo.paretofront.QTMinDouble
 
 
 /**
- * @author: Cyrille Dejemeppe cyrille.dejemeppe@gmail.com
- * @author: Renaud Hartert ren.hartert@gmail.com
+ * @author : Cyrille Dejemeppe cyrille.dejemeppe@gmail.com
+ * @author : Renaud Hartert ren.hartert@gmail.com
  */
 class DummyQTNode(evals: Array[Double]) extends QTNode[Double] {
   override def objectives = evals
@@ -34,7 +34,7 @@ object DummyQTNode {
   def apply(evals: Array[Double]) = new DummyQTNode(evals)
 }
 
-class QuadTreeTest extends FunSuite with ShouldMatchers {
+class QuadTreeTest extends FunSuite with Matchers {
   
   val randGen = new util.Random
   
