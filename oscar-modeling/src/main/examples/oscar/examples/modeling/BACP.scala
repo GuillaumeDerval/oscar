@@ -44,9 +44,13 @@ import scala.io.Source
   * @author Guillaume Derval guillaume.derval@student.uclouvain.be
   */
 object BACP extends CPApp[Int] with App {
-  override lazy val config = new CPAppConfig {
+
+
+  class BACPConfig extends CPAppConfig {
     val file = trailArg[String](descr = "Path to the instance")
   }
+  override lazy val config: BACPConfig = new BACPConfig()
+
 
   val lines = Source.fromFile(config.file()).getLines.reduceLeft(_ + " " + _)
   val vals = lines.split("[ ,\t]").toList.filterNot(_ == "").map(_.toInt)
