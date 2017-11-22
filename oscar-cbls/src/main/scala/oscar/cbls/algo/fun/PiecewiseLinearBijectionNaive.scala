@@ -85,6 +85,9 @@ class PiecewiseLinearBijectionNaive(val forward:PiecewiseLinearFun, givenBackwar
 
   def apply(value:Int) = forward(value)
   def unApply(value:Int) = backward(value)
+
+   def flipInInterval(startZoneIncluded : Int, endZoneIncluded :Int):PiecewiseLinearBijectionNaive =
+     new PiecewiseLinearBijectionNaive(forward.flipFunctionInInterval(startZoneIncluded, endZoneIncluded))
 }
 
 class PivotWithTo(fromValue:Int,f:LinearTransform, val toValue:Int) extends Pivot(fromValue,f) {

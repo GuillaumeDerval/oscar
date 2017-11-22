@@ -446,9 +446,14 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
       //not moving
       if (flip) {
         //just flipping
-        val newExternalToInternalPosition = externalToInternalPosition.updateBefore(
-          (startPositionIncluded, endPositionIncluded, LinearTransform(endPositionIncluded + startPositionIncluded, true)))
+        val newExternalToInternalPosition = externalToInternalPosition.flipInInterval(startPositionIncluded,endPositionIncluded)
 
+        //val newExternalToInternalPositionSlow = externalToInternalPosition.updateBefore(
+        //  (startPositionIncluded, endPositionIncluded, LinearTransform(endPositionIncluded + startPositionIncluded, true)))
+
+        //require(newExternalToInternalPosition.forward.equals(newExternalToInternalPositionSlow.forward),
+        //  "newExternalToInternalPosition.forward:" + newExternalToInternalPosition.forward + " newExternalToInternalPositionSlow.forward:" + newExternalToInternalPositionSlow.forward)
+        
         new ConcreteIntSequence(
           internalPositionToValue,
           valueToInternalPositions,
