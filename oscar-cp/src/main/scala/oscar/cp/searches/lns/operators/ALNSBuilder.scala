@@ -41,6 +41,7 @@ object ALNSBuilder{
   val ValWindowRelax = "ValWindowRelax"
   val DefValWindowParam1 = Array(0.5, 1.0)
   val DefValWindowParam2 = Array(0.1, 0.5)
+  val PrecedencyRelax = "PrecedencyRelax"
 
   // Full relaxation:
   val FullRelax = "FullRelax"
@@ -389,6 +390,19 @@ class ALNSBuilder(
       )
     )
 
+    case ALNSBuilder.PrecedencyRelax => new ALNSSingleParamOperator[Int](
+      ALNSBuilder.PrecedencyRelax,
+      ALNSBuilder.DefWithParamFailThreshold,
+      (param: Int) => ((sol:CPIntSol) => RelaxationFunctions.precedencyRelax(solver, vars, sol: CPIntSol, param: Int), None, None),
+      instantiateAdaptiveStore(
+        paramSelectKey,
+        relaxSize
+          .map(x => Math.ceil(N * x).toInt)
+          .map(x => instantiateParameter(x, if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0)),
+        paramMetricKey
+      )
+    )
+
     case ALNSBuilder.FullRelax => new ALNSNoParamOperator(
       ALNSBuilder.FullRelax,
       if(opDeactivation) ALNSBuilder.DefNoParamFailThreshold else 0,
@@ -531,6 +545,14 @@ class ALNSBuilder(
         opKey + "(" + lr.toString + "," + ur.toString + ")",
         (sol: CPIntSol) => RelaxationFunctions.valWindowRelax(solver, vars, sol, lr, ur)
       )
+
+    case ALNSBuilder.PrecedencyRelax =>
+      relaxSize
+        .map(x => Math.ceil(N * x).toInt)
+        .map(x => (
+          opKey + "(" + x.toString + ")",
+          (sol: CPIntSol) => RelaxationFunctions.precedencyRelax(solver, vars, sol, x))
+        )
 
     case ALNSBuilder.FullRelax => Array((opKey, _ => Unit))
   }
