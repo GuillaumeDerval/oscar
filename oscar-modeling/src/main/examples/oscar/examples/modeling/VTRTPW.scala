@@ -30,9 +30,13 @@ import scala.io.Source
   * GNU GPL, OscaR Authors
   */
 object VTRTPW extends CPApp[Int] {
-  override lazy val config = new CPAppConfig {
+
+  class VRPTWConfig extends CPAppConfig {
     val file = trailArg[String](descr = "Path to the VRTPW instance")
   }
+
+  override lazy val config = new VRPTWConfig()
+
   val instanceFile = config.file()
   val instance = VRPTWParser.parse(instanceFile)
 

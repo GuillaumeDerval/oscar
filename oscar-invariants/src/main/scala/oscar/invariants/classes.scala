@@ -73,7 +73,7 @@ object Var {
 
 class VarInt(v: Int) extends Var[Int](v) {
   val incChanges = new Event[(Int, Int)]
-  @inline override final def :=(v: Int) {
+  override final def :=(v: Int) {
     val old = this()
     super.:=(v)
     incChanges emit (old, v)

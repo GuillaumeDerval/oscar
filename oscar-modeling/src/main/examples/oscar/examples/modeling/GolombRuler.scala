@@ -23,9 +23,12 @@ import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.modeling.vars.IntVar
 
 object GolombRuler extends SolverApp[String] with CPSolving {
-  override lazy val config = new AppConfig {
+
+  class GolombConfig extends AppConfig {
     val size = trailArg[Int](descr = "Size of the golomb ruler", name="size")
   }
+  override lazy val config: GolombConfig = new GolombConfig
+
 
   def increasing(y: Array[IntVar]) = {
     for (i <- 1 until y.length) {
@@ -33,7 +36,9 @@ object GolombRuler extends SolverApp[String] with CPSolving {
     }
   }
 
-  var n = config.size()
+  // TODO @gderval fix this
+  var n: Int = config.size()
+
 
   val m = Array.fill(n)(IntVar(0,(1 << (n - 1))-1))
 

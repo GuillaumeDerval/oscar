@@ -25,9 +25,13 @@ import oscar.modeling.vars.IntVar
   * GNU GPL, OscaR Authors
   */
 class NQueens extends CPApp[Unit] {
-  override lazy val config = new CPAppConfig {
+
+  class QueensConfig extends CPAppConfig {
     val size = trailArg[Int](descr = "Size of the golomb ruler")
   }
+
+  override lazy val config = new QueensConfig()
+
   val nQueens = config.size()
   val Queens = 0 until nQueens
 

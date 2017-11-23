@@ -23,42 +23,42 @@ import oscar.invariants._
  * Test functionality of Invariants
  * @author Sebatien Mouthuy & Pierre Schaus
  */
-class InvariantsTesting extends FunSuite with Matchers  {
+class InvariantsTesting extends FunSuite with Matchers {
 
-  
-  test("test whener on VarInt") {
-	  	val y = new VarInt(1)
-	  	
-	  	var nb = 0
-	  	
-	  	whenever ( y.filter(_ == 5) ){
-	  	 	nb += 1
-	  	}
-	  	
-	  	y := 5
-	  	nb should equal(1)
-	  	y := 6
-	  	nb should equal(1)
-	  	y := 5
-	  	nb should equal(2)  	
-  }
-  
-  test("test once on VarInt") {
-	  	val y = new VarInt(1)
-	  	
-	  	var nb = 0
-	  	
-	  	once ( y.filter(_ == 5) ){
-	  	 	nb += 1
-	  	}
-	  	
-	  	y := 5
-	  	nb should equal(1)
-	  	y := 6
-	  	nb should equal(1)
-	  	y := 5
-	  	nb should equal(1)  	
-  }
+
+	test("test whener on VarInt") {
+		val y = new VarInt(1)
+
+		var nb = 0
+
+		whenever(y.filter(_ == 5)) {
+			nb += 1
+		}
+
+		y := 5;
+		nb should equal(1)
+		y := 6;
+		nb should equal(1)
+		y := 5;
+		nb should equal(2)
+	}
+
+	test("test once on VarInt") {
+		val y = new VarInt(1)
+
+		var nb = 0
+
+		once(y.filter(_ == 5)) {
+			nb += 1
+		}
+
+		y := 5;
+		nb should equal(1)
+		y := 6;
+		nb should equal(1)
+		y := 5;
+		nb should equal(1)
+	}
 
 
 }
