@@ -254,9 +254,7 @@ object RelaxationFunctions {
       .map(i => (currentSol.values(i), i)) //Zipping with val
       .groupBy(_._1)//Grouping by values
       .toArray.sortBy(_._1) //Sorting by values
-      .map(_._2.map(_._2).toSet) //Formating into array of sets
-
-    println(precedencies.mkString(","))
+      .map(_._2.map(_._2).toSet) //Formatting into array of sets
 
     //Adding constraints:
     var i = 0
@@ -264,23 +262,22 @@ object RelaxationFunctions {
     while(j < precedencies.length){
       for(prev <- precedencies(i); next <- precedencies(j)){
         solver.add(varSeq(prev) <= varSeq(next))
-        println("-> %d <= %d".format(currentSol.values(prev), currentSol.values(next)))
       }
       i += 1
       j += 1
     }
   }
 
-  /**
-    * TODO
-    */
-  def valWindowRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, lr: Double, ur: Double): Unit = {
-    vars.zipWithIndex.foreach{case(x, i) =>{
-      val sTime = currentSol.values(i)
-      val lb = sTime - (lr * (sTime - x.min)).floor.toInt
-      val ub = sTime + (ur * (x.max - sTime)).ceil.toInt
-      solver.add(x >= lb)
-      solver.add(x <= ub)
-    }}
-  }
+//  /**
+//    * TODO
+//    */
+//  def valWindowRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, lr: Double, ur: Double): Unit = {
+//    vars.zipWithIndex.foreach{case(x, i) =>{
+//      val sTime = currentSol.values(i)
+//      val lb = sTime - (lr * (sTime - x.min)).floor.toInt
+//      val ub = sTime + (ur * (x.max - sTime)).ceil.toInt
+//      solver.add(x >= lb)
+//      solver.add(x <= ub)
+//    }}
+//  }
 }
