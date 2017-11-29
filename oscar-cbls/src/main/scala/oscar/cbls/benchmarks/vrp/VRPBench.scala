@@ -19,6 +19,7 @@ import java.io.{File, PrintWriter}
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
+import oscar.cbls.core.search.First
 import oscar.cbls.util.StopWatch
 
 import scala.io.Source
@@ -42,7 +43,7 @@ object TSProutePoints extends App {
   }
 
   def warmUp(n:Int = 10000){
-    val verbose = 0
+    val verbose = 1
     val maxPivotPerValuePercent = 4
     val v = 100
     val symmetricDistanceMatrix = RoutingMatrixGenerator(n)._1
@@ -51,10 +52,13 @@ object TSProutePoints extends App {
   }
 
   def performRandomBenchmark() {
+
+    println("performing warm up")
     warmUp()
+    println("done. ")
+    val nbTrials = 3
 
-    val nbTrials = 10
-
+   // throw new Error("finished")
     println()
     print("n\tv\tpercent")
     for (t <- 1 to nbTrials) {
@@ -62,7 +66,7 @@ object TSProutePoints extends App {
     }
     println
 
-    for { n <- 1000 to 3000 by 1000
+    for { n <- 1000 to 11000 by 2000
           v <- List(100)
           maxPivotPerValuePercent <- List(0, 1, 2, 3, 4, 5, 20) } {
       print(n + "\t" + v + "\t" + maxPivotPerValuePercent + "\t")
@@ -174,11 +178,11 @@ object TSProutePoints extends App {
 
 class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symmetricDistanceMatrix:Array[Array[Int]],printobj:Boolean = false) extends StopWatch{
 
-  startWatch()
+
   //  println("restrictions:" + restrictions)
   val model = new Store() //checker = Some(new ErrorChecker()))
 
-  val myVRP = new VRP(model,n,v)
+  val myVRP = new VRP(model,n,v,maxPivotPerValuePercent = maxPivotPerValuePercent)
 
   val totalRouteLength = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistanceMatrix,true,true,false)(0)
 
@@ -190,11 +194,12 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
 
   model.close()
 
+
   val relevantPredecessorsOfNodes = (node:Int) => myVRP.nodes
   val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix,relevantPredecessorsOfNodes))
 
-  val routedPostFilter = (node:Int) => (neighbor:Int) => myVRP.isRouted(neighbor)
-  val unRoutedPostFilter = (node:Int) => (neighbor:Int) => !myVRP.isRouted(neighbor)
+  def routedPostFilter = (node:Int) => (neighbor:Int) => myVRP.isRouted(neighbor)
+  def unRoutedPostFilter = (node:Int) => (neighbor:Int) => !myVRP.isRouted(neighbor)
 
   val routeUnroutdPoint =  profile(insertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,closestRelevantNeighborsByDistance,routedPostFilter), myVRP,neighborhoodName = "InsertUF"))
 
@@ -205,14 +210,16 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
 
   val customTwoOpt = profile(twoOpt(myVRP.routed, ()=> myVRP.kFirst(20,closestRelevantNeighborsByDistance,routedPostFilter), myVRP))
 
-  def customThreeOpt(k:Int, breakSym:Boolean) = profile(threeOpt(myVRP.routed, ()=> myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
+  def customThreeOpt(k:Int, breakSym:Boolean) = profile(threeOpt(myVRP.routed, ()=> myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), myVRP,selectFlipBehavior = First(),breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
   val search = bestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, onePtMove(10),customTwoOpt, customThreeOpt(10,true))) exhaust customThreeOpt(20,true)
 
   // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10) guard (() => myVRP.unrouted.value.size != 0)),10)) exhaust BestSlopeFirst(List(onePtMove(20),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
 
-  search.verbose = 1
+  search.verbose = verbose
   //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
+
+  startWatch()
 
   search.doAllMoves(obj=obj)
 

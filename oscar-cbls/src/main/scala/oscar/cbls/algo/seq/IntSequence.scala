@@ -451,9 +451,11 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
         //val newExternalToInternalPositionSlow = externalToInternalPosition.updateBefore(
         //  (startPositionIncluded, endPositionIncluded, LinearTransform(endPositionIncluded + startPositionIncluded, true)))
 
-        //require(newExternalToInternalPosition.forward.equals(newExternalToInternalPositionSlow.forward),
+        //equire(newExternalToInternalPosition.forward.equals(newExternalToInternalPositionSlow.forward),
         //  "newExternalToInternalPosition.forward:" + newExternalToInternalPosition.forward + " newExternalToInternalPositionSlow.forward:" + newExternalToInternalPositionSlow.forward)
-        
+
+        //println("passed")
+
         new ConcreteIntSequence(
           internalPositionToValue,
           valueToInternalPositions,

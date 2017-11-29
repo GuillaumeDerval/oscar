@@ -189,6 +189,7 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
 
     //collecting the relevant pivots and their end into a stack
     val collectedPivotsForwardOrder:List[Pivot] = pivotsBetween(startZoneIncluded,endZoneIncluded,transformReadyForFlip)
+    //TODO: use QLists here.
 
     //flip the collected pivots
     val flippedPivots = flipSubfunction(collectedPivotsForwardOrder,endZoneIncluded,endZoneIncluded)
@@ -208,12 +209,7 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
   private def mirrorPivot(p:Pivot,width:Int,newEnd:Int):Pivot = {
     val newFromValue = newEnd - width + 1
     val newMinus = !p.f.minus
-
-    val oldValueAtStart = p.f(p.fromValue)
-
-    val newOffset =
-      if(newMinus) oldValueAtStart + newEnd
-      else oldValueAtStart - newEnd
+    val newOffset = p.f(p.fromValue + newEnd)
 
     val newPivot = new Pivot(newFromValue,new LinearTransform(newOffset,newMinus))
 
