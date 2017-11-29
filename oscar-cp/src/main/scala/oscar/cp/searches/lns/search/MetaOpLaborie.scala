@@ -38,13 +38,13 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
 
     val t = timeInSearch
 
-    relaxWeights.zipWithIndex.foreach{case(score, index) =>
-      history += ((t, relaxOps(index).name, score))
-    }
-
-    searchWeights.zipWithIndex.foreach{case(score, index) =>
-      history += ((t, searchOps(index).name, score))
-    }
+//    relaxWeights.zipWithIndex.foreach{case(score, index) =>
+//      history += ((t, relaxOps(index).name, score))
+//    }
+//
+//    searchWeights.zipWithIndex.foreach{case(score, index) =>
+//      history += ((t, searchOps(index).name, score))
+//    }
 
     timeLearning()
 

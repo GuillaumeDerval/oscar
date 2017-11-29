@@ -88,6 +88,8 @@ trait Benchmark {
       val coupled = argMap.getOrElse('coupled, false).asInstanceOf[Boolean]
       val fixed = argMap.getOrElse('fixed, false).asInstanceOf[Boolean]
       val opDeactivation = argMap.getOrElse('opDeactivation, false).asInstanceOf[Boolean]
+      val quickStart = argMap.getOrElse('quickStart, false).asInstanceOf[Boolean]
+      val altScore = argMap.getOrElse('altScore, false).asInstanceOf[Boolean]
 
       val useSorted = argMap.getOrElse('useSorted, false).asInstanceOf[Boolean]
       val opOrder = if(useSorted){
@@ -140,7 +142,9 @@ trait Benchmark {
         'coupled -> coupled,
         'learning -> argMap.getOrElse('learning, false).asInstanceOf[Boolean],
         'opDeactivation -> opDeactivation,
-        'opOrder -> opOrder
+        'opOrder -> opOrder,
+        'quickStart -> quickStart,
+        'altScore -> altScore
       )
 
       val config = new ALNSConfig(
@@ -421,6 +425,20 @@ trait Benchmark {
           if(isSwitch(value)) parseArgs(map ++ Map('opDeactivation -> true), tail)
           else parseArgs(map ++ Map('opDeactivation -> value.toBoolean), remTail)
         case Nil => map ++ Map('opDeactivation -> true)
+      }
+
+      case "--quick-start" :: tail => tail match{
+        case value :: remTail =>
+          if(isSwitch(value)) parseArgs(map ++ Map('quickStart -> true), tail)
+          else parseArgs(map ++ Map('quickStart -> value.toBoolean), remTail)
+        case Nil => map ++ Map('quickStart -> true)
+      }
+
+      case "--alt-score" :: tail => tail match{
+        case value :: remTail =>
+          if(isSwitch(value)) parseArgs(map ++ Map('altScore -> true), tail)
+          else parseArgs(map ++ Map('altScore -> value.toBoolean), remTail)
+        case Nil => map ++ Map('altScore -> true)
       }
 
       case "--selection" :: value :: tail =>

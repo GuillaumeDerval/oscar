@@ -1,7 +1,7 @@
 package oscar.cp.searches.lns.search
 
 import oscar.cp.searches.lns.operators.ALNSOperator
-import oscar.cp.searches.lns.selection.{AdaptiveStore, Metrics, RouletteWheel}
+import oscar.cp.searches.lns.selection.{AdaptiveStore, Metrics, RouletteWheel, RouletteWheelAlt}
 import oscar.cp.{CPIntVar, CPSolver}
 
 import scala.util.Random
@@ -12,7 +12,7 @@ import scala.util.Random
 class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearchImpl(solver, vars, config) {
   val tolerance: Double = config.metaParameters.getOrElse('tolerance, 0.5).asInstanceOf[Double]
   val balance: Double = config.metaParameters.getOrElse('balance, 0.05).asInstanceOf[Double]
-  def evalWindow: Long = iterTimeout * 5
+  def evalWindow: Long = 10 * iterTimeout
   override val stagnationThreshold = 10
   val altScore: Boolean = config.metaParameters.getOrElse('altScore, false).asInstanceOf[Boolean]
   val quickStart: Boolean = config.metaParameters.getOrElse('quickStart, false).asInstanceOf[Boolean]
@@ -21,21 +21,37 @@ class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
 
   def totalEfficiency: Double = Math.abs(startObjective - bestSol.get.objective) / (timeInSearch / 1000000000.0)
 
-  override lazy val relaxStore: AdaptiveStore[ALNSOperator] = new RouletteWheel[ALNSOperator](
-    relaxOps,
-    relaxWeights.clone(),
-    1.0,
-    false,
-    if(altScore) computeScoreAlt else computeScore
-  )
+  override lazy val relaxStore: AdaptiveStore[ALNSOperator] =
+    if(quickStart) new RouletteWheelAlt[ALNSOperator](
+      relaxOps,
+      relaxWeights.clone(),
+      1.0,
+      false,
+      if(altScore) computeScoreAlt else computeScore
+    )
+    else new RouletteWheel[ALNSOperator](
+      relaxOps,
+      relaxWeights.clone(),
+      1.0,
+      false,
+      if(altScore) computeScoreAlt else computeScore
+    )
 
-  override lazy val searchStore: AdaptiveStore[ALNSOperator] = new RouletteWheel[ALNSOperator](
-    searchOps,
-    searchWeights.clone(),
-    1.0,
-    false,
-    if(altScore) computeScoreAlt else computeScore
-  )
+  override lazy val searchStore: AdaptiveStore[ALNSOperator] =
+    if(quickStart) new RouletteWheelAlt[ALNSOperator](
+      searchOps,
+      searchWeights.clone(),
+      1.0,
+      false,
+      if(altScore) computeScoreAlt else computeScore
+    )
+    else new RouletteWheel[ALNSOperator](
+      searchOps,
+      searchWeights.clone(),
+      1.0,
+      false,
+      if(altScore) computeScoreAlt else computeScore
+    )
 
   override def alnsLoop(): Unit = {
     startObjective = currentSol.get.objective
@@ -45,13 +61,13 @@ class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
 
     val t = timeInSearch
 
-    relaxWeights.zipWithIndex.foreach{case(score, index) =>
-      history += ((t, relaxOps(index).name, score))
-    }
-
-    searchWeights.zipWithIndex.foreach{case(score, index) =>
-      history += ((t, searchOps(index).name, score))
-    }
+//    relaxWeights.zipWithIndex.foreach{case(score, index) =>
+//      history += ((t, relaxOps(index).name, score))
+//    }
+//
+//    searchWeights.zipWithIndex.foreach{case(score, index) =>
+//      history += ((t, searchOps(index).name, score))
+//    }
 
     if(!quickStart) timeLearning()
 
@@ -72,6 +88,7 @@ class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
   }
 
   protected def timeLearning(): Unit = {
+    println("learning")
     learning = true
     iterTimeout = config.timeout
     val orderedBaseline = config.metaParameters.getOrElse('opOrder, None).asInstanceOf[Option[Seq[String]]]
@@ -109,9 +126,7 @@ class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
       val searchEfficiency = Metrics.searchEfficiencySince(solsFound, tWindowStart, now)
 
       //Computing score:
-      val opScore = (1 - balance) * opLocalEfficiency
-      + balance * (searchEfficiency / totalEfficiency) * op.efficiency
-      + Math.sqrt((2 * Math.log(now))/op.time)
+      val opScore = (1 - balance) * opLocalEfficiency + balance * (searchEfficiency / totalEfficiency) * op.efficiency
 
       if (!solver.silent) {
         println("Search efficiency is " + searchEfficiency)
