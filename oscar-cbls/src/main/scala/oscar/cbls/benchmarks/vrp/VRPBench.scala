@@ -56,7 +56,7 @@ object TSProutePoints extends App {
     println("performing warm up")
     warmUp()
     println("done. ")
-    val nbTrials = 3
+    val nbTrials = 100
 
    // throw new Error("finished")
     println()
