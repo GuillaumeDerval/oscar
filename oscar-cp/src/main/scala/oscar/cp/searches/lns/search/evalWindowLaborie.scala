@@ -126,7 +126,8 @@ class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
       val searchEfficiency = Metrics.searchEfficiencySince(solsFound, tWindowStart, now)
 
       //Computing score:
-      val opScore = (1 - balance) * opLocalEfficiency + balance * (searchEfficiency / totalEfficiency) * op.efficiency
+      val totEfficiency = totalEfficiency
+      val opScore = if(totEfficiency <= 0) 0.0 else (1 - balance) * opLocalEfficiency + balance * (searchEfficiency / totEfficiency) * op.efficiency
 
       if (!solver.silent) {
         println("Search efficiency is " + searchEfficiency)
