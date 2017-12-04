@@ -88,7 +88,6 @@ class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
   }
 
   protected def timeLearning(): Unit = {
-    println("learning")
     learning = true
     iterTimeout = config.timeout
     val orderedBaseline = config.metaParameters.getOrElse('opOrder, None).asInstanceOf[Option[Seq[String]]]

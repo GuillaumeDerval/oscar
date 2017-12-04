@@ -678,8 +678,8 @@ class ALNSBuilder(
   )
 
   private def computeRFactor(metricKey: String): Double = metricKey match{
-    case ALNSBuilder.LastImprov => 0.05
-    case ALNSBuilder.LastImprovRatio => 0.05
+    case ALNSBuilder.LastImprov => 0.9
+    case ALNSBuilder.LastImprovRatio => 0.9
     case ALNSBuilder.AvgImprov => 1.0
     case ALNSBuilder.AvgImprovRatio => 1.0
     case ALNSBuilder.TTI => 1.0
