@@ -20,7 +20,7 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
 
   //Stop conditions:
   val endTime: Long = if(config.timeout > 0) System.nanoTime() + config.timeout else Long.MaxValue //Maximal allocated time
-  var iterTimeout: Long = if(config.timeout > 0) config.timeout / 300 else Long.MaxValue //The iteration allocated time
+  var iterTimeout: Long = if(config.timeout > 0) config.timeout / 120 else Long.MaxValue //The iteration allocated time
   var endIter: Long = Long.MaxValue //Maximal allocated time for the current iteration
   var optimumFound = false //True if the whole search space has been explored (csp and cop) or the optimum has been found (cop)
   var nSols = 0
