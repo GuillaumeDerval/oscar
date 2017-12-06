@@ -46,13 +46,13 @@ object HtmlReporter extends App{
       HtmlWriter.tableToHtmlString(renderScoresByTime(anyTimeScores, configs, timeout, stepped = true))
     )
 
-//    val anyTimeGapsArray = renderGapsByTime(anyTimeGaps, configs, timeout, stepped = true)
-//    if(anyTimeGapsArray.length > 1)
-//      htmlWriter.addElement(
-//        "line",
-//        "Gap per method over time",
-//        HtmlWriter.tableToHtmlString(anyTimeGapsArray)
-//      )
+    val anyTimeGapsArray = renderGapsByTime(anyTimeGaps, configs, timeout, stepped = true)
+    if(anyTimeGapsArray.length > 1)
+      htmlWriter.addElement(
+        "logline",
+        "Gap per method over time",
+        HtmlWriter.tableToHtmlString(anyTimeGapsArray)
+      )
 
     htmlWriter.addHeading("Instances statistics")
 
@@ -305,9 +305,8 @@ object HtmlReporter extends App{
           (time, sols.map {
             case None => None
             case objective: Option[Int] => {
-              val diff = objective.get - bestKnown.get //TODO take into account objective type
-              if(bestKnown.get == 0) Some(diff.toDouble)
-              else Some(diff.toDouble / bestKnown.get.toDouble)
+              if(bestKnown.get == 0) Some(objective.get.toDouble)
+              else Some(objective.get.toDouble / bestKnown.get.toDouble)
             }
           })
         })
