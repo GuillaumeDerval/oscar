@@ -1,4 +1,4 @@
-package oscar.anytime.lns.benchmarks.xcsp.binpack
+package oscar.anytime.lns.disabled_benchs.xcsp.binpack
 
 import oscar.anytime.lns.models.XCSP
 
