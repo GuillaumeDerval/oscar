@@ -1,4 +1,4 @@
-package oscar.anytime.lns.disabled_benchs.xcsp.warehouse
+package oscar.anytime.lns.benchmarks.xcsp.warehouse
 
 import oscar.anytime.lns.models.XCSP
 
