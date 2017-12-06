@@ -4,6 +4,7 @@ import oscar.cp.searches.lns.operators.ALNSOperator
 import oscar.cp.searches.lns.selection.{AdaptiveStore, Metrics, RouletteWheel, RouletteWheelAlt}
 import oscar.cp.{CPIntVar, CPSolver}
 
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 /**
@@ -16,6 +17,8 @@ class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
   override val stagnationThreshold = 10
   val altScore: Boolean = config.metaParameters.getOrElse('altScore, false).asInstanceOf[Boolean]
   val quickStart: Boolean = config.metaParameters.getOrElse('quickStart, false).asInstanceOf[Boolean]
+
+  val iterStartState: ArrayBuffer[(Long, Int)] = ArrayBuffer[(Long, Int)]()
 
   var startObjective = 0
 
@@ -77,6 +80,7 @@ class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
         searchStore.nonActiveEmpty &&
         !optimumFound
     ) {
+      iterStartState += ((timeInSearch, currentSol.get.objective))
       val relax = relaxStore.select()
       val search = searchStore.select()
       /*if(stagnation >= stagnationThreshold && previousBest.isDefined) {
@@ -122,7 +126,7 @@ class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
       val now = timeInSearch
       val tWindowStart = if (solsFound.nonEmpty) solsFound.last.time - evalWindow else 0L
       val opLocalEfficiency = Metrics.efficiencySince(op, tWindowStart)
-      val searchEfficiency = Metrics.searchEfficiencySince(solsFound, tWindowStart, now)
+      val searchEfficiency = Metrics.searchEfficiencySince(iterStartState, tWindowStart, now, currentSol.get.objective)
 
       //Computing score:
       val totEfficiency = totalEfficiency
@@ -150,7 +154,7 @@ class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
       val now = timeInSearch
       val tWindowStart = if (solsFound.nonEmpty) solsFound.last.time - evalWindow else 0L
       val opEfficiency = Metrics.efficiencySince(op, tWindowStart)
-      val searchEfficiency = Metrics.searchEfficiencySince(solsFound, tWindowStart, now)
+      val searchEfficiency = Metrics.searchEfficiencySince(iterStartState, tWindowStart, now, currentSol.get.objective)
 
       if (!solver.silent) {
         println("Search efficiency is " + searchEfficiency)
