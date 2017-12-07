@@ -141,7 +141,7 @@ object TSProutePoints extends App {
   }
 
   def runAllBenchmarks(){
-    new TSPRoutePointsS(1000, 1, 3, 0, RoutingMatrixGenerator(1000)._1)
+    warmUp(5000)
     println()
     print("n\ttime\tobj")
     println
@@ -169,11 +169,13 @@ object TSProutePoints extends App {
   }
 
   val benchmarkSizes = 500 to 5000 by 500
-  val fileName = "C:\\Users\\rdl\\Documents\\Oscar\\BitBucket3\\oscar-cbls\\src\\main\\examples\\oscar\\examples\\cbls\\routing\\data\\bench"
+  var fileName = "C:\\Users\\rdl\\Documents\\Oscar\\BitBucket3\\oscar-cbls\\src\\main\\examples\\oscar\\examples\\cbls\\routing\\data\\bench"
+  fileName = args(0)
+  println("benchmark path: " + fileName)
   //runBenchmark(fileName,1000)
  // generateAllBenchmarks()
-  //runAllBenchmarks()
-  performRandomBenchmark()
+  runAllBenchmarks()
+
 }
 
 class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symmetricDistanceMatrix:Array[Array[Int]],printobj:Boolean = false) extends StopWatch{
