@@ -222,7 +222,7 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
 
   def segExchange(k:Int) = segmentExchange(myVRP,()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), () => myVRP.vehicles)
 
-  val search = bestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, onePtMove(20),customTwoOpt(20), customThreeOpt(20,true),segExchange(10))) // exhaust customThreeOpt(20,true)
+  val search = bestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, onePtMove(20),customTwoOpt(20), customThreeOpt(20,false))) // exhaust customThreeOpt(20,true)
 
   // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10) guard (() => myVRP.unrouted.value.size != 0)),10)) exhaust BestSlopeFirst(List(onePtMove(20),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
 
