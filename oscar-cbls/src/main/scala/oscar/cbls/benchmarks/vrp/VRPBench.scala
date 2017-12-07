@@ -143,11 +143,11 @@ object TSProutePoints extends App {
   def runAllBenchmarks(){
     warmUp(5000)
     println()
-    print("n\ttime\tobj")
+    print("balise\tn\ttime\tobj")
     println
 
     for(n <- benchmarkSizes){
-      print(n + "\t")
+      print("runResult " + n + "\t")
       val matrix = loadMatrixFromFile(fileName + n + ".bench")
       new TSPRoutePointsS(n, 1, 3, 0, matrix,true)
       print("\n")
