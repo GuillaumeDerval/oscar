@@ -163,7 +163,7 @@ object TSProutePoints extends App {
     println
       print(n + "\t")
       val matrix = loadMatrixFromFile(fileName + n + ".bench")
-      new TSPRoutePointsS(n, 1, 4, 0, matrix,true)
+      new TSPRoutePointsS(n, 1, 3, 0, matrix,true)
       print("\n")
       System.gc()
   }
@@ -222,7 +222,7 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
 
   def segExchange(k:Int) = segmentExchange(myVRP,()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), () => myVRP.vehicles)
 
-  val search = bestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, onePtMove(20),customTwoOpt(20), customThreeOpt(20,false))) // exhaust customThreeOpt(20,true)
+  val search = bestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, onePtMove(15),customTwoOpt(20), customThreeOpt(10,false))) exhaust customThreeOpt(25,false)
 
   // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10) guard (() => myVRP.unrouted.value.size != 0)),10)) exhaust BestSlopeFirst(List(onePtMove(20),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
 
