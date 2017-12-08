@@ -170,12 +170,12 @@ object TSProutePoints extends App {
 
   val benchmarkSizes = 500 to 5000 by 500
   var fileName = "C:\\Users\\rdl\\Documents\\Oscar\\BitBucket3\\oscar-cbls\\src\\main\\examples\\oscar\\examples\\cbls\\routing\\data\\bench"
-  fileName = args(0)
+  //fileName = args(0)
   println("benchmark path: " + fileName)
   //runBenchmark(fileName,1000)
  // generateAllBenchmarks()
-  runAllBenchmarks()
-
+//  runAllBenchmarks()
+  performRandomBenchmark()
 }
 
 class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symmetricDistanceMatrix:Array[Array[Int]],printobj:Boolean = false) extends StopWatch{
