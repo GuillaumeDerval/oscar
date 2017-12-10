@@ -19,7 +19,7 @@ object HtmlReporter extends App{
   def generateHtml(directory: String): Unit = {
     val (timeout, instances, configs, instanceTypes, bestknownSolutions, data) = scanInstances(directory)
     val nBks = bestknownSolutions.values.count(_.isDefined)
-    val (bestSols, anyTimeScores, anyTimeGaps, instanceStats) = processStats(instances, configs, data, nBks)
+    val (bestSols, anyTimeScores, anyTimeGaps, anyTimeQuality, instanceStats) = processStats(instances, configs, data, nBks)
 
     val htmlWriter = new HtmlWriter("oscar-perf/src/main/scala/oscar/anytime/lns/utils/chart_report_template.html", directory + "/" + IOUtils.getFileName(directory) + "_htmlReport.html")
     htmlWriter.addHeading("Benchmark configuration")
@@ -40,19 +40,28 @@ object HtmlReporter extends App{
       HtmlWriter.tableToHtmlString(renderBestSols(bestSols, configs, instances, instanceTypes.toMap, bestknownSolutions.toMap))
     )
 
+    htmlWriter.addHeading("Score", 3)
     htmlWriter.addElement(
       "line",
-      "Score per method over time",
+      "Anytime score",
       HtmlWriter.tableToHtmlString(renderScoresByTime(anyTimeScores, configs, timeout, stepped = true))
     )
 
     val anyTimeGapsArray = renderGapsByTime(anyTimeGaps, configs, timeout, stepped = true)
     if(anyTimeGapsArray.length > 1)
+      htmlWriter.addHeading("Distance to BKS", 3)
       htmlWriter.addElement(
-        "logline",
-        "Gap per method over time",
+        "line",
+        "Anytime relative distance to BKS",
         HtmlWriter.tableToHtmlString(anyTimeGapsArray)
       )
+
+    htmlWriter.addHeading("Quality", 3)
+    htmlWriter.addElement(
+      "line",
+      "Anytime quality",
+      HtmlWriter.tableToHtmlString(renderQualityByTime(anyTimeQuality, configs, timeout, stepped = true))
+    )
 
     htmlWriter.addHeading("Instances statistics")
 
@@ -66,7 +75,8 @@ object HtmlReporter extends App{
       )
 
       opScores.foreach{case (config, operators, opWeights) =>
-        if(config != "Baseline_best" && config != "Baseline_worst")
+        if(config != "Baseline-best" && config != "Baseline-worst" && config != "Baseline")
+          htmlWriter.addHeading("Anytime " + config + "'s operators scores", 3)
           htmlWriter.addElement(
             "line",
             "Operator weights evolution for " + config,
@@ -181,13 +191,15 @@ object HtmlReporter extends App{
     val currentSols: Array[Option[Int]] = Array.fill(configs.length)(None)
     val solsByTime = mutable.ArrayBuffer[(Long, Array[Option[Int]])]()
 
-    sols.sortBy(_._1).foreach{case (time, config, objective) =>
-      if(currentSols(mapping(config)).isEmpty || objective < currentSols(mapping(config)).get) {
-        currentSols(mapping(config)) = Some(objective)
-        if(solsByTime.nonEmpty && solsByTime.last._1 == time) solsByTime.last._2(mapping(config)) = Some(objective)
-        else solsByTime += ((time, currentSols.clone()))
+    sols.sortBy(_._1)
+      .map{case (time, config, objective) => ((time/100000000.0).ceil.toLong, config, objective)}
+      .foreach{case (time, config, objective) =>
+        if(currentSols(mapping(config)).isEmpty || objective < currentSols(mapping(config)).get) {
+          currentSols(mapping(config)) = Some(objective)
+          if(solsByTime.nonEmpty && solsByTime.last._1 == time) solsByTime.last._2(mapping(config)) = Some(objective)
+          else solsByTime += ((time, currentSols.clone()))
+        }
       }
-    }
 
     solsByTime
   }
@@ -199,11 +211,13 @@ object HtmlReporter extends App{
     val currentScores: Array[Option[Double]] = Array.fill(operators.length)(None)
     val scoresByTime = mutable.ArrayBuffer[(Long, Array[Option[Double]])]()
 
-    scores.filter(_._2 != "dummy").sortBy(_._1).foreach{case (time, operator, score) =>
-      currentScores(mapping(operator)) = Some(score)
-      if(scoresByTime.nonEmpty && scoresByTime.last._1 == time) scoresByTime.last._2(mapping(operator)) = Some(score)
-      else scoresByTime += ((time, currentScores.clone()))
-    }
+    scores.filter(_._2 != "dummy").sortBy(_._1)
+      .map{case (time, operator, score) => ((time/100000000.0).ceil.toLong, operator, score)}
+      .foreach{case (time, operator, score) =>
+        currentScores(mapping(operator)) = Some(score)
+        if(scoresByTime.nonEmpty && scoresByTime.last._1 == time) scoresByTime.last._2(mapping(operator)) = Some(score)
+        else scoresByTime += ((time, currentScores.clone()))
+      }
 
     scoresByTime
   }
@@ -255,6 +269,28 @@ object HtmlReporter extends App{
     scoresByTime
   }
 
+  def qualityByTime(
+                     instances: Seq[String],
+                     configs: Seq[String],
+                     quality: ArrayBuffer[(Long, String, Array[Option[Double]])]
+                   ): ArrayBuffer[(Long, Array[Array[Option[Double]]])] = {
+    val instMapping = instances.zipWithIndex.toMap
+
+    val currentQuality: Array[Array[Option[Double]]] = Array.fill(instances.length, configs.length)(None)
+    val qualityByTime = mutable.ArrayBuffer[(Long, Array[Array[Option[Double]]])]()
+
+    quality.sortBy(_._1).foreach{case (time, instance, qualityValues) =>
+      val instanceIndex = instMapping(instance)
+      qualityValues.indices.foreach(configIndex =>{
+        currentQuality(instanceIndex)(configIndex) = qualityValues(configIndex)
+      })
+      if(qualityByTime.nonEmpty && qualityByTime.last._1 == time) qualityByTime.last._2(instanceIndex) = currentQuality(instanceIndex).clone
+      else qualityByTime += ((time, arrayCopy(currentQuality)))
+    }
+
+    qualityByTime
+  }
+
   //Process statistics
   def processStats(
                     instances: Seq[String],
@@ -265,6 +301,7 @@ object HtmlReporter extends App{
     Array[Array[Option[Int]]],
     ArrayBuffer[(Long, Array[Int])],
     ArrayBuffer[(Long, Array[Option[Double]])],
+    ArrayBuffer[(Long, Array[Double])],
     ArrayBuffer[(String, Seq[(Long, Array[Option[Int]])], Seq[(Long, Array[Int])], Option[Seq[(Long, Array[Option[Double]])]], Array[(String, Seq[String], Seq[(Long, Array[Option[Double]])])])]
   ) = {
 
@@ -275,6 +312,7 @@ object HtmlReporter extends App{
 
     val scores = mutable.ArrayBuffer[(Long, String, Array[Int])]()
     val gaps = mutable.ArrayBuffer[(Long, String, Array[Option[Double]])]()
+    val quality = mutable.ArrayBuffer[(Long, String, Array[Option[Double]])]()
     val bestSols = Array.fill[Option[Int]](instances.length, configs.length)(None)
 
     // Instance stats: (name, sols, gaps, scores, opScores)
@@ -291,6 +329,7 @@ object HtmlReporter extends App{
       val (name, content) = instanceData
       val (isMax, bestKnown, solsFound, operators, opScores) = content
       val sortedSols = solsByTime(configs, solsFound)
+      val startSol: Int = if(sortedSols.isEmpty) Int.MaxValue else sortedSols.head._2.map(_.getOrElse(Int.MaxValue)).min
 
       //Computing best sols:
       if(sortedSols.nonEmpty){
@@ -305,8 +344,8 @@ object HtmlReporter extends App{
           (time, sols.map {
             case None => None
             case objective: Option[Int] => {
-              if(bestKnown.get == 0) Some(objective.get.toDouble)
-              else Some(objective.get.toDouble / bestKnown.get.toDouble)
+              val diff = objective.get - bestKnown.get //TODO take into account objective type
+              Some(diff.toDouble / (startSol - bestKnown.get))
             }
           })
         })
@@ -315,9 +354,10 @@ object HtmlReporter extends App{
       //Adding gaps:
       if(instanceGaps.isDefined) instanceGaps.get.foreach{case (time, gapValues) => gaps += ((time, name, gapValues))}
 
-      //Computing scores:
+
       val instanceScores = ListBuffer[(Long, Array[Int])]()
       sortedSols.foreach{case (time, sols) =>
+        //Computing scores:
         val objectives = mutable.Map[Int, mutable.Set[String]]()
 
         //associating each config to its objective rank:
@@ -343,6 +383,16 @@ object HtmlReporter extends App{
 
         instanceScores += ((time, score))
         scores += ((time, name, score))
+
+        //Computing quality:
+        val bestSol: Option[Int] = sols.min
+        if(bestSol.isDefined){
+          val solQuality = sols.map(sol => {
+            if(sol.isDefined) Some(1 - (sol.get - bestSol.get).toDouble/(startSol - bestSol.get))
+            else None
+          })
+          quality += ((time, name, solQuality))
+        }
       }
 
       //Computing operator scores:
@@ -358,18 +408,26 @@ object HtmlReporter extends App{
     val anyTimeGap = gapsByTime(instances, configs, gaps).sortBy(_._1).map{case (time, gapOptions) =>
       (time, configs.indices.map(i =>{
         val gapValues = gapOptions.map(_(i)).filter(_.isDefined).map(_.get)
-        if(gapValues.length == nBks)
-          Some(Math.pow(gapValues.map(value => if(value <= 0.0) 0.000001 else value).foldLeft(1.0) { _ * _ }, 1.0/gapValues.length))
-        else None
+//        if(gapValues.length == nBks)
+          Some(gapValues.sum/gapValues.length).asInstanceOf[Option[Double]]
+//        else None
       }).toArray)
     }
 
     //Computing any time scores:
     val anyTimeScore = scoresByTime(instances, configs, scores).sortBy(_._1).map{case (time, scoreValues) =>
-      (time, configs.indices.map(i =>{scoreValues.map(_(i)).sum}).toArray)
+      (time, configs.indices.map(i => {scoreValues.map(_(i)).sum}).toArray)
     }
 
-    (bestSols, anyTimeScore, anyTimeGap, instanceStats)
+    //Computing any time quality:
+    val anyTimeQuality = qualityByTime(instances, configs, quality).map{case (time, qualityValues) =>
+      (time, configs.indices.map(i => {
+        val configQuality = qualityValues.map(_(i)).filter(_.isDefined).map(_.get)
+        configQuality.sum/configQuality.length
+      }).toArray)
+    }
+
+    (bestSols, anyTimeScore, anyTimeGap, anyTimeQuality, instanceStats)
   }
 
   def renderBestSols(
@@ -398,7 +456,7 @@ object HtmlReporter extends App{
     var previous = Array[String]()
     array += Array("'Time'") ++ configs.map("'" + _ + "'")
     scores.foreach{case (time, scoreValues) => {
-      val t = Array((time/1000000000.0).toString)
+      val t = Array((time/10.0).toString)
       if(stepped && previous.nonEmpty) array += t ++ previous
       previous = scoreValues.map(_.toString)
       array += t ++ previous
@@ -412,7 +470,7 @@ object HtmlReporter extends App{
     var previous = Array[String]()
     array += Array("'Time'") ++ configs.map("'" + _ + "'")
     gaps.foreach{case (time, gapValues) => {
-      val t = Array((time/1000000000.0).toString)
+      val t = Array((time/10.0).toString)
       if(stepped && previous.nonEmpty) array += t ++ previous
       previous = gapValues.map{
         case None => "null"
@@ -429,7 +487,7 @@ object HtmlReporter extends App{
     var previous = Array[String]()
     array += Array("'Time'") ++ configs.map("'" + _ + "'")
     sols.foreach{case (time, solValues) => {
-      val t = Array((time/1000000000.0).toString)
+      val t = Array((time/10.0).toString)
       if(stepped && previous.nonEmpty) array += t ++ previous
       previous = solValues.map{
         case None => "null"
@@ -441,12 +499,26 @@ object HtmlReporter extends App{
     array.toArray
   }
 
+  def renderQualityByTime(quality: Seq[(Long, Array[Double])], configs: Seq[String], timeout: Long, stepped: Boolean = false): Array[Array[String]] = {
+    val array = ArrayBuffer[Array[String]]()
+    var previous = Array[String]()
+    array += Array("'Time'") ++ configs.map("'" + _ + "'")
+    quality.foreach{case (time, qualityValues) => {
+      val t = Array((time/10.0).toString)
+      if(stepped && previous.nonEmpty) array += t ++ previous
+      previous = qualityValues.map(_.toString)
+      array += t ++ previous
+    }}
+    array += Array((timeout/1000000000.0).toString) ++ previous
+    array.toArray
+  }
+
   def renderOpScoresByTime(opScores: Seq[(Long, Array[Option[Double]])], operators: Seq[String], stepped: Boolean = false): Array[Array[String]] ={
     val array = ArrayBuffer[Array[String]]()
     var previous = Array[String]()
     array += Array("'Time'") ++ operators.map("'" + _ + "'")
     opScores.foreach{case (time, scoreValues) => {
-      val t = Array((time/1000000000.0).toString)
+      val t = Array((time/10.0).toString)
       if(stepped && previous.nonEmpty) array += t ++ previous
       previous = scoreValues.map{
         case None => "null"

@@ -80,7 +80,7 @@ object ALNSBuilder{
   val DefWeigDegreeParam2 = 0.99
 
   // Available value Heuristic functions:
-  val DefValHeuris = Array("Min", "Max", /*"Median", */"Random")
+  val DefValHeuris = Array("Min", "Max", /*"Median",*/ "Random")
 
   //Default Backtracking:
   val DefNFailures = Array(10, 100, 1000, 10000, 0)
@@ -589,8 +589,8 @@ class ALNSBuilder(
   private def instantiateSearchFunctions(opKey: String): Array[(String, CPIntSol => Unit)] = {
     val functions = ArrayBuffer[(String, CPIntSol => Unit)]()
     ALNSBuilder.DefValHeuris.foreach(heuristic =>{
-      functions += instantiateSearchFunction(opKey, heuristic, valLearn = false)
       if(valLearn && opKey != ALNSBuilder.WeightDegSearch) functions += instantiateSearchFunction(opKey, heuristic, valLearn = true)
+      else functions += instantiateSearchFunction(opKey, heuristic, valLearn = false)
     })
     functions.toArray
   }

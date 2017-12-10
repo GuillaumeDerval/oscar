@@ -72,6 +72,6 @@ rm ${InstancesToRun}
 
 cp -r --parents "${Out}" "/etinfo/users2/cthomas/Workspace/"
 
-scala -J-Xmx4g -cp ${CP} ${BenchRoot}.utils.HtmlReporter ${Out}
+#scala -J-Xmx4g -cp ${CP} ${BenchRoot}.utils.HtmlReporter ${Out}
 
 cat "${Out}/${Date}-${VNum}_htmlReport.html" > "/etinfo/users2/cthomas/Workspace/${Out}/htmlReport.html"
