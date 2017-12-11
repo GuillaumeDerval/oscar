@@ -119,6 +119,7 @@ case class Disjunctive(start: Array[IntValue],
   registerStaticAndDynamicDependencyArrayIndex(duration,-nbTask)
 
   registerConstrainedVariables(start)
+  registerConstrainedVariables(duration)
   finishInitialization()
 
   private val sumMaxDur = duration.foldLeft(0)((acc,v) => acc + v.max)

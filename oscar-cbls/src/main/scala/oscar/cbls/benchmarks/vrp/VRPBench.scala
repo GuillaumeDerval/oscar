@@ -19,6 +19,7 @@ import java.io.{File, PrintWriter}
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
+import oscar.cbls.core.computation.ChangingIntValue
 import oscar.cbls.core.search.First
 import oscar.cbls.util.StopWatch
 
@@ -141,7 +142,7 @@ object TSProutePoints extends App {
   }
 
   def runAllBenchmarks(){
-    warmUp(5000)
+    warmUp(200)
     println()
     print("balise\tn\ttime\tobj")
     println
@@ -174,8 +175,8 @@ object TSProutePoints extends App {
   println("benchmark path: " + fileName)
   //runBenchmark(fileName,1000)
  // generateAllBenchmarks()
-//  runAllBenchmarks()
-  performRandomBenchmark()
+  runAllBenchmarks()
+  //performRandomBenchmark()
 }
 
 class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symmetricDistanceMatrix:Array[Array[Int]],printobj:Boolean = false) extends StopWatch{
@@ -186,11 +187,19 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
 
   val myVRP = new VRP(model,n,v,maxPivotPerValuePercent = maxPivotPerValuePercent)
 
-  val totalRouteLength = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistanceMatrix,true,true,false)(0)
+  //val totalRouteLength = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistanceMatrix,true,true,false)(0)
+
+  val (next,prev) = routeSuccessorAndPredecessors(myVRP.routes,v,n)()
+
+  val distanceOut = Array.tabulate(n)((node:Int) => {
+    val maxDistance = symmetricDistanceMatrix(node).max
+    int2Int(next(node), nextNode => if(nextNode == n) 0 else symmetricDistanceMatrix(node)(nextNode),0 to maxDistance,false)})
+
+  val totalRouteLengthSlow = sum(distanceOut)
 
   val penaltyForUnrouted  = 10000
 
-  val obj = Objective(totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes))))
+  val obj = Objective(totalRouteLengthSlow + (penaltyForUnrouted*(n - length(myVRP.routes))))
 
   override def toString : String = super.toString +  "objective: " + obj.value + "\n"
 
@@ -231,7 +240,7 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
 
   startWatch()
 
-  search.doAllMoves(obj=obj)
+  search.doAllMoves(obj=obj,shouldStop = _ => getWatch >= 200)
 
   print(getWatch)
   if(printobj){
