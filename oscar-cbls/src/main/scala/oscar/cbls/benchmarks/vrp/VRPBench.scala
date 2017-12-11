@@ -240,7 +240,7 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
 
   startWatch()
 
-  search.doAllMoves(obj=obj,shouldStop = _ => getWatch >= 200)
+  search.doAllMoves(obj=obj,shouldStop = _ => getWatch >= 200*1000)
 
   print(getWatch)
   if(printobj){
