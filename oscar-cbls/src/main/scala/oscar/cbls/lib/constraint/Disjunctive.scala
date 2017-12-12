@@ -200,14 +200,13 @@ case class Disjunctive(start: Array[IntValue],
 
   def updateTask(taskID:Int,oldStart:Int,newStart:Int,oldEnd:Int,newEnd:Int){
     //TODO: This is not completely incremental (but still linear instead of quadratic)!
-    val oldDuration = oldEnd - oldStart
-    val newDuration = newEnd - newStart
+    //We cannot break symmetries here because they are already broken since this method is called with one task set
     for(otherTaskID <- nonZeroTasks if taskID != otherTaskID){
       val otherStart = start(otherTaskID).value
       val otherDuration = duration(otherTaskID).value
       val otherEnd = otherStart + otherDuration
-      val oldOverlap = math.max(0,math.min(math.min(otherEnd-oldStart,oldEnd-otherStart),math.min(oldDuration,otherDuration)))
-      val newOverlap = math.max(0,math.min(math.min(otherEnd-newStart,newEnd-otherStart),math.min(newDuration,otherDuration)))
+      val oldOverlap = math.max(0,math.min(otherEnd,oldEnd)-math.max(otherStart, oldStart))
+      val newOverlap = math.max(0,math.min(otherEnd,newEnd)-math.max(otherStart, newStart))
       val deltaViolation = newOverlap - oldOverlap
       if(deltaViolation !=0) {
         violationVarsArray(taskID) :+= deltaViolation
