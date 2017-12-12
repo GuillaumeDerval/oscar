@@ -120,25 +120,24 @@ class BasicRoutingMap(vrp: VRP,
 
 class GeoRoutingMap(vrp: VRP, geoCoords:List[(scala.Double, scala.Double)], vehicleToColor: Array[Color]) extends JXMapKit with RoutingMapDisplay {
   var pixelPositionsOfNodes: List[(Int,Int)] = geoCoordsToPixels()
-  geoCoordsToPixels()
 
   setDefaultProvider(JXMapKit.DefaultProviders.OpenStreetMaps)
   setZoomButtonsVisible(false)
   setZoomSliderVisible(false)
-  setMiniMapVisible(false)
+  setMiniMapVisible(true)
   setZoom(7)
   setAddressLocation(
     new GeoPosition(pixelPositionsOfNodes.map(_._1).sum/vrp.n,
       pixelPositionsOfNodes.map(_._2).sum/vrp.n))
 
   def geoCoordsToPixels(): List[(Int,Int)] ={
-    var pixelPositionsOfNodes: QList[(Int,Int)] = null
+    var pixelPositionsOfNodes: List[(Int,Int)] = List.empty
     for(nodeCoord <- geoCoords.reverse){
       val geoPosition = new GeoPosition(nodeCoord._1, nodeCoord._2)
       val pixelPosition = getMainMap.getTileFactory.geoToPixel(geoPosition, getMainMap.getZoom)
-      pixelPositionsOfNodes = QList((pixelPosition.getX.toInt, pixelPosition.getY.toInt),pixelPositionsOfNodes)
+      pixelPositionsOfNodes = (pixelPosition.getX.toInt, pixelPosition.getY.toInt) :: pixelPositionsOfNodes
     }
-    pixelPositionsOfNodes.toList
+    pixelPositionsOfNodes
   }
 
   def drawPoints(): Unit = {
@@ -161,6 +160,8 @@ class GeoRoutingMap(vrp: VRP, geoCoords:List[(scala.Double, scala.Double)], vehi
 
     val painter = new Painter[JXMapViewer]{
       override def paint(g: Graphics2D, t: JXMapViewer, i: Int, i1: Int): Unit = {
+        pixelPositionsOfNodes = geoCoordsToPixels()
+
         val rect:Rectangle = getMainMap.getViewportBounds
         g.translate(-rect.x, -rect.y)
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
@@ -188,13 +189,15 @@ class GeoRoutingMap(vrp: VRP, geoCoords:List[(scala.Double, scala.Double)], vehi
 
           g.drawLine(x2, y2, x3, y3)
           g.drawLine(x2, y2, x4, y4)
-
-
         }
 
+        //start of actual drawing...
         g.setColor(Color.black)
-        for(p <- pixelPositionsOfNodes)
-          g.draw(new Ellipse2D.Double(p._1, p._2, 2, 2))
+
+        for(p <- pixelPositionsOfNodes) {
+          val elipse = new Ellipse2D.Double(p._1, p._2, 2000000000, 2000000000)
+          g.draw(elipse)
+        }
 
         var from = 0
         for(vehicle <- 0 until vrp.v) {
@@ -202,7 +205,7 @@ class GeoRoutingMap(vrp: VRP, geoCoords:List[(scala.Double, scala.Double)], vehi
           if (route.length > 1) {
             g.setColor(vehicleToColor(vehicle))
             for (node <- route) {
-              if (node > 0 && pixelPositionsOfNodes(from) != pixelPositionsOfNodes(node))
+              if (node >= vrp.v && pixelPositionsOfNodes(from) != pixelPositionsOfNodes(node))
                 drawArrow(pixelPositionsOfNodes(from)._1, pixelPositionsOfNodes(from)._2, pixelPositionsOfNodes(node)._1, pixelPositionsOfNodes(node)._2)
               from = node
             }
