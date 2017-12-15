@@ -36,7 +36,7 @@ object HtmlUtils extends App{
 
     for(file <- files){
 
-//      println("reading: " + file.getPath)
+      println("reading: " + file.getPath)
       val content = readXml(XML.loadFile(file))
       if(results.contains(content._1)) results(content._1) += ((content._2, content._3, file.getPath))
       else results += content._1 -> mutable.ArrayBuffer[(String, Option[Int], String)]((content._2, content._3, file.getPath))
