@@ -188,6 +188,67 @@ Besides combinators, our framework includes a set of neighborhoods that can be u
 
 Domain-independent neighborhoods are most interesting because they are quite flexible to be used in very different domains. They also include several features including symmetry elimination, mechanisms to perform intensification or tabu search, the possibility to specify whether the best or the first move is required, and hot restarting. A \emph{hot restart} is the possibility to start the neighborhood exploration from the last explored point in the previous query instead of starting from the initial position at each query. Other neighborhood offer similar features.
 
+
+Building Complex Neighborhoods with Cross-Product of Neighborhoods (L2)
+=======================================================================
+
+Let's consider $C$ the cross-product of neighbourhoods $A$ and $B$. It is built in source code as follows:
+
+\begin{lstlisting}
+                  val C = A andThen B
+\end{lstlisting}
+
+The moves of $C$ are all the chaining between moves of $A$ and $B$. Practically, $A$ and $B$ are not aware of each other, so that their implementation does not need to be adapted to this setting. When neighbourhood $C$ is explored, it explores neighbourhood $A$ and gives it an instrumented objective function that triggers an exploration of $B$ every time it is evaluated by neighbourhood $A$. This gives rise to search trees like the one illustrated in \reffig{fig:basicTree} where $x$ is the current state where $C$ is explored, the edges labelled $a_1$ and $a_2$ represent moves of $A$, $x[a_1]$ represent the state $x$ after applying the move $a_1$, and $x[a_1,b_1]$ represent the state $x[a_1]$ after applying the move $b_1$.
+
+\begin{figure}[hb]
+\centering
+\begin{tikzpicture}
+\node[draw,rounded corners=3pt] (x) at (-0.375,0) {x};
+\node[draw,rounded corners=3pt] (x1) at (-2.5,-0.5) {$x[a_1]$};
+\draw[->,>=latex] (x) -- (x1) node[midway,fill=white]{$a_1$};
+\node[draw,rounded corners=3pt] (x11) at (-4,-2) {$x[a_1,b_1]$};
+\node[draw,rounded corners=3pt] (x12) at (-2.5,-2) {$x[a_1,b_2]$};
+\node[draw,rounded corners=3pt] (x13) at (-1,-2) {$x[a_1,b_3]$};
+\draw[->,>=latex] (x1) -- (x11) node[midway,fill=white]{$b_1$};
+\draw[->,>=latex] (x1) -- (x12) node[midway,fill=white]{$b_2$};
+\draw[->,>=latex] (x1) -- (x13) node[midway,fill=white]{$b_3$};
+\node[draw,rounded corners=3pt] (x2) at (1.75,-0.5) {$x[a_2]$};
+\draw[->,>=latex] (x) -- (x2) node[midway,fill=white]{$a_2$};
+\node[draw,rounded corners=3pt] (x21) at (1,-2) {$x[a_2,b_1]$};
+\node[draw,rounded corners=3pt] (x22) at (2.5,-2) {$x[a_2,b_2]$};
+\draw[->,>=latex] (x2) -- (x21) node[midway,fill=white]{$b_1$};
+\draw[->,>=latex] (x2) -- (x22) node[midway,fill=white]{$b_2$};
+\end{tikzpicture}
+\caption{Exploration tree of neighbourhood $C$}
+\label{fig:basicTree}
+\end{figure}
+
+An additional combinator was introduced to prune such search trees. Typically, when taking the cross-product of two neighbourhoods, the moves to be considered by the second one can be restricted according to the move currently explored by the first neighbourhood. Let's consider a pick-up \& delivery problem (PDP), and $A$ and $B$ are neighbourhoods that insert pick-up points and delivery points, respectively. We may typically wish to restrict the points to insert by $B$ to the delivery point that is related to the pick-up point that $A$ is trying to insert, and consider only position that occur after the position where $A$ is trying to insert. To this end, a \emph{dynAndThen} combinator was introduced. It is instantiated in source code as follows, where $a$ is the type of move explored by $A$:
+
+\begin{lstlisting}
+                  val D = A dynAndThen(a => B)
+\end{lstlisting}
+
+On the right-hand side of this combinator, the user specifies a function that inputs a move from $A$ and returns a neighbourhood $B$ to be explored once. This function is called by the combinator to generate a neighbourhood $B$ that is specific to each move of $A$. This function is the opportunity for the operational research developer to specify two things: First, the neighbourhood $B$ can be focused on relevant neighbours, as suggested above for the PDP. This can be specified to $B$ through parameters passed when instantiating it. Second, some pruning can be performed at this stage, such as checking the violation of some strong constraint. Consider a PDP with time window constraint (so a \emph{PDPTW}), we can check in this function that inserting the pick-up point does not violate any time window. If the time window constraint is violated at this stage, the search tree does not need to be explored further, so that the function can return null and the current move of $A$ is discarded. An example of insert neighbourhood for PDPTW built using the \verb+dynAndThen+ combinator and featuring some pruning is given below.
+
+\begin{lstlisting}
+val InsertPDP =
+  insertPoint(nonRoutedPickupPoints, ...)
+  dynAndThen((currentMove:InsertPointMove) =>
+    if(timeWindowConstraint.violation == 0){
+      insertPoint(relatedDelivery(currentMove.insertedPoint),
+                  nodesAfter(currentMove.positionOfInsert),
+                  ...)
+    }else null)
+\end{lstlisting}
+
+Another very powerful combinator is the \emph{Mu} that roughly is the repetitive cross-product of a neighbourhood with itself with a maximal number of cross products:
+\begin{lstlisting}
+Mu(A,d) = A andThen A andThen A andThen ...       //"d" times
+\end{lstlisting}
+More elaborated version of this combinator are available and make it possible to share information between explorations of $A$ like the \verb+dynAndThen+. The Lin-Kernighan neighbourhood for instance can be built as a \verb+Mu(TwoOpt)+ with some additional pruning.
+
+
 Constraints (L1)
 ================
 
