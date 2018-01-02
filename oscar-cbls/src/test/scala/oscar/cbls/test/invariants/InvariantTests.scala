@@ -47,6 +47,14 @@ class InvariantTests extends FunSuite with Checkers {
 
   val verbose = 0
 
+  test("Disjunctive maintains the overlap between tasks on unary resoruce.") {
+    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
+      Random(), RandomDiff()))
+    Disjunctive(bench.genIntVarsArray(),bench.genIntVarsArray())
+    bench.run()
+  }
+
+
   test("BelongsTo maintains the violation of a membership.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))

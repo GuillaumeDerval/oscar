@@ -54,12 +54,10 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4)
   val vehicles = 0 until v
 
   //TODO: renaud: enlever çà!
-  val vehicleOfNode = vehicleOfNodes(routes,v)
+  val vehicleOfNode = vehicleOfNodes(routes.createClone(),v)
 
   val routed = Content(routes.createClone(50)).setName("routed nodes")
   val unrouted = Diff(CBLSSetConst(SortedSet(nodes:_*)),routed).setName("unrouted nodes")
-
-  m.registerForPartialPropagation(unrouted)
 
   /**
    * Returns if a given point is a depot.

@@ -27,7 +27,7 @@ object OscarBuild extends Build {
     lazy val commonSettings = Defaults.defaultSettings ++  jacoco.settings ++ Seq(
       organization := buildOrganization,
       version := buildVersion,
-      scalacOptions in Compile ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature", "-unchecked", "-Xdisable-assertions"),
+      scalacOptions in Compile ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature", "-unchecked", "-Xdisable-assertions","-optimise"),
       scalacOptions in Test := Seq("-optimise"),
       testOptions in Test <+= (target in Test) map {
         t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
@@ -96,9 +96,9 @@ object OscarBuild extends Build {
       publishTo := {
         val artifactory = "http://maven.oscar.ext.cetic.be:8081/artifactory/"
         if (isSnapshot.value)
-          Some("Artifactory Realm" at artifactory + "sbt-dev;build.timestamp=" + new java.util.Date().getTime)
+          Some("Artifactory Realm" at artifactory + "libs-snapshot;build.timestamp=" + new java.util.Date().getTime)
         else
-          Some("Artifactory Realm" at artifactory + "sbt-release")
+          Some("Artifactory Realm" at artifactory + "libs-release")
       },
       packageOptions += Package.ManifestAttributes(
         ("REVISION_ID", System.getProperty("REVISION_ID")),

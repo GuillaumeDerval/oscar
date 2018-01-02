@@ -4,7 +4,6 @@
 OscaR-CBLS
 **********
 
-
 Learning Outcomes
 =================
 
@@ -34,6 +33,7 @@ Lots of tutorial in this field start with the same example that is the NQueen.
 .. literalinclude:: ../../oscar-cbls/src/main/examples/oscar/examples/cbls/userguide/NQueenBasic.scala
   :language: scala
   :linenos:
+  :lines: 25-53
 
 This model mixes with the trait  ``CBLSModel``.
 This trait creates some structures and offers a set of methods to easily create your own solver.
@@ -43,16 +43,19 @@ More precisely, it offers the following features:
  - it supports an API to create the three variable types supported by OScar.cbls, namely: Int,Set (of Int) and Sequences (of Int).
  - it also offers lots of methods to create every constraints or invariant of the problem you want to solve
  - it includes some linear selectors that you can use for defining our search procedure (see the ``selectMin`` method)
- - it proposes a set of standard neighborhoods
- - it also includes high-level methods to create complex search procedures by means of combinators.
+ - it proposes a set of standard neighborhoods, illustrated here below
+ - it also includes high-level methods to create complex search procedures by means of combinators, illustrated in further sections
 
 We show here below a more elaborate solver for the NQueen. Besides using a more elaborate search strategy,
-it also relies on a standard neighborhood for implementing the search procedure.
+that swaps queens where one of the swapped queen is among the one that cause teh most violation of the posted constraints.
+It also relies on a standard neighborhood for implementing the search procedure.
 It uses a standard ``swap`` neighborhood with problem-specific parameters that specifies what queen must be swapped with what other queen.
 
 .. literalinclude:: ../../oscar-cbls/src/main/examples/oscar/examples/cbls/userguide/NQueenEasy.scala
    :language: scala
    :linenos:
+   :lines: 33-55
+
 
 Features of OscaR.cbls, for the impatient nerds (L3)
 ====================================================
@@ -62,11 +65,12 @@ It also features a high-level module to help you define your search procedure.
 
 OscaR.cbls has the following features:
  - high-level modeling primitives with variables of types integer, set of integer, and sequence of integers
- - Partial propagation for fast neighborhood exploration. Propagation is triggered when the value of a variable is queried by the search script. Deciding whether the propagation will be total or partial is done depending on the variable: if the variable is registered for partial propagation, the propagation will be partial. It will be total otherwise. Violation degrees are automatically registered for fast propagation.
+ - Partial propagation for fast neighborhood exploration. Propagation is triggered when the value of a variable is queried, typically the variable  is the objective function, and it is queried by the search procedure. Deciding whether the propagation will be total or partial is done depending on the variable: if the variable is registered for partial propagation, the propagation will be partial. It will be total otherwise. Violation degrees are automatically registered for fast propagation.
  - Propagation graph can be cyclic. Two propagation graphs are handled: a static graph that over-approximates the dependencies between variables and invariants, and a dynamic graph that represents the real dependencies given the data actually stored in the model. The static graph can include cycles. This makes it possible e.g. to implement JobShop scheduler from standard invariants.
  - Constraints assign violation degree to their input variables, to identify the variable that cause a violation of each constraint. The violation degree propagates upwards through the model, it enables one to find the variable contributing the more to the overall violation even if it is not directly subject to the constraint.
  - Libraries of standard invariants and constraints
- - A library of neighborhood for integer variables
+ - A library of neighborhood for integer and sequence variables
+ - A domain specific language for declaring search procedures by combining neighborhoods together. It also supports the cross-product of neighborhoods.
 
 Modeling with OscaR.cbls (L1)
 =============================
@@ -74,21 +78,21 @@ Modeling with OscaR.cbls (L1)
 OscaR.cbls has two main modeling concepts: variables, and invariants.
 
 OscaR.cbls natively supports three types of variables: integers, sets of integers and sequences of integers.
-Sequence variables rely on dedicated data structures to ensure an efficient representation of their value.
 All data structure representing values of variable are non-mutable,
-so that the value of a variable can be saved by simply copying a reference to its value.
+so that the value of a variable can be saved by simply copying a reference to its value (or the value itself in the case of an integer variable).
 
 Invariants are mathematical operators that maintain the value of one or more variable
-according to a set of inputs and acording to their specefication.
+according to a set of inputs and according to their specification.
 For instance, there is an invariant ``Sum2`` that has two input variables that are CBLSIntVar,
 and maintain an output CBLSIntar to be the sum of the two input ones.
 Invariants are directed, that is an instance of invariant has designated input and output variables.
 There is a library of roughly eighty invariants available in OscaR.cbls.
 
-There are a set of rather simple invariants, ad some more complex ones, mainly on sequences that are so-called "global invariants".
+There are a set of rather simple invariants, and some more complex ones, mainly on sequences that are so-called "global invariants".
 Global invariants are called this way because tehy implement rather complex formulas, and make use of dedicated algorithm to implement them.
 An example of such global invariant is the ConstantRoutingDistance invariant over vehicle routes.
-Let be a variable of type CBLSSeqVar, representing the route of v vehicles. the invariant ConstantRoutingDistance inputs this CBLSSeqVar and a distance matrix, and maintins an array of v CBLSIntVar to be the length of the route of each vehicle.
+Let be a variable of type CBLSSeqVar, representing the route of v vehicles.
+The invariant ConstantRoutingDistance inputs this CBLSSeqVar and a distance matrix, and maintins an array of v CBLSIntVar to be the length of the route of each vehicle.
 
 OscaR.cbls also supports constraints. They are specific objects that have two main features:
  1. they define a violation degree that is related to their specification it is moreless a distance between the current value of their input variable and an assignemnt for these variable that satisfies the constraints. Constraints are actually invariants with this violation as output variable.
@@ -97,7 +101,7 @@ OscaR.cbls also supports constraints. They are specific objects that have two ma
 Constraint systems propose the same mechanism, except that they do not compute the violation for each and every variable that appears in the constraints that are posted into them. Instead, any variable can be registered into them for a violation degree. These include not only the variables that intervene in some constraint posted into them, but any variable of the model.
 In a constraint system, the local violation degree of a variable is the sum of the violation degree attributed to it, for each constraint posted in the constraint system, weighted by the weighting factor of the constraint. Only variables that directly intervene in a constraint have a nonzero local violation degree. The \emph{global violation degree} of a variable is the sum of the local violation degrees of all variable that have one in the constraint system, and that contribute directly or indirectly to the variable, according to the static dependency graph. Global violation degrees are therefore built by constraint systems following a reachability query to the static propagation graph. This query is performed when the constraint system is closed, so that if the graph is enriched afterwards, these changes are not taken into account in the global violation degrees.
 
-Architecture of OscaR.cbls (L2)
+Architecture of OscaR.cbls (L3)
 ===============================
 
 This section presents the architecture of OscaR.cbls.
@@ -108,6 +112,14 @@ The purpose of this section is to understand the nature of the concepts manipula
     :width: 700
     :align: center
     :alt: Architecture of OscaR.cbls
+
+* **Propagation Layer** defines propagation graphs. Propagation is the very basic mechanism of OScaR: when the value of a decision variable changes, this change must be propagated to the model in some coordinated way. This layer takes care of the coordination.
+* **Computation Layer** defines concepts such as variables and invariants and the three supported variable types (Int,Set, and Seq), and some additional mechanism called notification: Upon propagation, a variable notifies its listening invariants about its change.
+* **Objective layer** defines the notion of objective function. An objective function is basically an integer variable that is automatically registered to the propagation layer for partial propagation.
+* **Search Layer** defines an API for neighborhoods, moves and combinators
+* **Constraint Layer** defines an API for constraint and constraint systems
+* **Libraries** proposes libraries of constraints, invariants, search neighborhoods and combinators.
+* **Business packages**: includes routing and scheduling extensions (scheduling is deprecated in spring 2018). These are special extensions that introduce additional structure on top of the proposed variables. Such libraries may include additional invariants, constraints, visualsation and neighborhoods
 
 Propagation in OscaR.cbls (L1)
 ==============================
@@ -137,7 +149,7 @@ Propagation is carried out by sorting the element in the propagation DAG with lo
 and higher indices closer to the objective function.
 This sort is time consuming. It is performed when the model is closed through the *store.close* method.
 
-Notification in Oscar.cbls (L2)
+Notification in Oscar.cbls (L3)
 ===============================
 
 On top of propagation, there is another mechanism, belonging to the computation layer. It is the notification mechanism.
@@ -168,25 +180,104 @@ The global search loop repeatedly queries moves and commits them until some stop
 The result of combining neighborhoods are still neighborhoods, offering this same API. The most intuitive combination of neighborhoods is \emph{``Best''}.
 Let $a$ and $b$ be neighborhoods, the following statement is also a neighborhood (statements and code fragments are written in Scala \cite{scala}):
 
-\begin{lstlisting}
-new Best(a,b)
-\end{lstlisting}
+.. code-block:: scala
+   :linenos:
+    new Best(a,b)
 
 When the combined neighborhood above is queried for a move, it queries both $a$ and $b$ for a move. It then returns the move having the lowest value for the objective function, according to the values carried by the returned moves. If a neighborhood cannot find a move, the overall result is given by the other neighborhood. If no neighborhood could find a move, the combined neighborhood does not find a move. Combinators are implemented in our framework as a DSL, enabling the use of a lighter infix notation. The above example can be rewritten as follows:
 
+.. code-block:: scala
+   :linenos:
+    a best b
+
+
+Warehouse Location Example (L1)
+===============================
+
+A classical example in optimization is the warehouse location problem (WLP). The problem is as follows:
+
+* **Given**
+** S: set of stores that must be stocked by the warehouses
+** W: set of potential warehouses
+** Each warehouse has a fixed cost fw
+** transportation cost from warehouse w to store s is cws
+* **Find**
+** O: subset of warehouses to open, Minimizing the sum of the fixed and the transportation cost.
+** A store is assigned to its nearest open warehouse
+
+The problem is solved in the following script:
+
+.. literalinclude:: ../../oscar-cbls/src/main/examples/oscar/examples/cbls/userguide/WarehouseLocation.scala
+:language: scala
+       :linenos:
+       :lines: 28-78
+
+Building Complex Neighborhoods with Cross-Product of Neighborhoods (L2)
+=======================================================================
+
+Let's consider $C$ the cross-product of neighbourhoods $A$ and $B$. It is built in source code as follows:
+
+.. code-block:: scala
+   :linenos:
+    val C = A andThen B
+
+The moves of $C$ are all the chaining between moves of $A$ and $B$.
+Practically, $A$ and $B$ are not aware of each other, so that their implementation
+does not need to be adapted to this setting. When neighbourhood $C$ is explored,
+it explores neighbourhood $A$ and gives it an instrumented objective function
+that triggers an exploration of $B$ every time it is evaluated by neighbourhood $A$.
+This gives rise to search trees like the one illustrated in \reffig{fig:basicTree}
+where $x$ is the current state where $C$ is explored, the edges labelled $a_1$ and $a_2$
+represent moves of $A$, $x[a_1]$ represent the state $x$ after applying the move $a_1$,
+and $x[a_1,b_1]$ represent the state $x[a_1]$ after applying the move $b_1$.
+
+\begin{figure}[hb]
+\centering
+\begin{tikzpicture}
+\node[draw,rounded corners=3pt] (x) at (-0.375,0) {x};
+\node[draw,rounded corners=3pt] (x1) at (-2.5,-0.5) {$x[a_1]$};
+\draw[->,>=latex] (x) -- (x1) node[midway,fill=white]{$a_1$};
+\node[draw,rounded corners=3pt] (x11) at (-4,-2) {$x[a_1,b_1]$};
+\node[draw,rounded corners=3pt] (x12) at (-2.5,-2) {$x[a_1,b_2]$};
+\node[draw,rounded corners=3pt] (x13) at (-1,-2) {$x[a_1,b_3]$};
+\draw[->,>=latex] (x1) -- (x11) node[midway,fill=white]{$b_1$};
+\draw[->,>=latex] (x1) -- (x12) node[midway,fill=white]{$b_2$};
+\draw[->,>=latex] (x1) -- (x13) node[midway,fill=white]{$b_3$};
+\node[draw,rounded corners=3pt] (x2) at (1.75,-0.5) {$x[a_2]$};
+\draw[->,>=latex] (x) -- (x2) node[midway,fill=white]{$a_2$};
+\node[draw,rounded corners=3pt] (x21) at (1,-2) {$x[a_2,b_1]$};
+\node[draw,rounded corners=3pt] (x22) at (2.5,-2) {$x[a_2,b_2]$};
+\draw[->,>=latex] (x2) -- (x21) node[midway,fill=white]{$b_1$};
+\draw[->,>=latex] (x2) -- (x22) node[midway,fill=white]{$b_2$};
+\end{tikzpicture}
+\caption{Exploration tree of neighbourhood $C$}
+\label{fig:basicTree}
+\end{figure}
+
+An additional combinator was introduced to prune such search trees. Typically, when taking the cross-product of two neighbourhoods, the moves to be considered by the second one can be restricted according to the move currently explored by the first neighbourhood. Let's consider a pick-up \& delivery problem (PDP), and $A$ and $B$ are neighbourhoods that insert pick-up points and delivery points, respectively. We may typically wish to restrict the points to insert by $B$ to the delivery point that is related to the pick-up point that $A$ is trying to insert, and consider only position that occur after the position where $A$ is trying to insert. To this end, a \emph{dynAndThen} combinator was introduced. It is instantiated in source code as follows, where $a$ is the type of move explored by $A$:
+
 \begin{lstlisting}
-a best b
+                  val D = A dynAndThen(a => B)
 \end{lstlisting}
 
-Besides combinators, our framework includes a set of neighborhoods that can be used to develop custom search procedures. These include:
+On the right-hand side of this combinator, the user specifies a function that inputs a move from $A$ and returns a neighbourhood $B$ to be explored once. This function is called by the combinator to generate a neighbourhood $B$ that is specific to each move of $A$. This function is the opportunity for the operational research developer to specify two things: First, the neighbourhood $B$ can be focused on relevant neighbours, as suggested above for the PDP. This can be specified to $B$ through parameters passed when instantiating it. Second, some pruning can be performed at this stage, such as checking the violation of some strong constraint. Consider a PDP with time window constraint (so a \emph{PDPTW}), we can check in this function that inserting the pick-up point does not violate any time window. If the time window constraint is violated at this stage, the search tree does not need to be explored further, so that the function can return null and the current move of $A$ is discarded. An example of insert neighbourhood for PDPTW built using the \verb+dynAndThen+ combinator and featuring some pruning is given below.
 
-\begin{itemize}
-\item Standard domain-independent neighborhoods on arrays of integer variables such as \emph{assignNeighborhood} that changes the value of a single decision variable in an array, \emph{swapsNeighborhood} that swaps the value of two decision variables in an array, and \emph{RandomizeNeighborhood} that randomizes the value of a fraction of integer variables in an array, etc.
-\item Scheduling neighborhoods such as relaxing and flattening the critical path \cite{michel2004iterative}.
-\item Routing neighborhoods such as \emph{one-point-move}, \emph{two-opt}, etc. \cite{routingNeighborhoods}.
-\end{itemize}
+\begin{lstlisting}
+val InsertPDP =
+  insertPoint(nonRoutedPickupPoints, ...)
+  dynAndThen((currentMove:InsertPointMove) =>
+    if(timeWindowConstraint.violation == 0){
+      insertPoint(relatedDelivery(currentMove.insertedPoint),
+                  nodesAfter(currentMove.positionOfInsert),
+                  ...)
+    }else null)
+\end{lstlisting}
 
-Domain-independent neighborhoods are most interesting because they are quite flexible to be used in very different domains. They also include several features including symmetry elimination, mechanisms to perform intensification or tabu search, the possibility to specify whether the best or the first move is required, and hot restarting. A \emph{hot restart} is the possibility to start the neighborhood exploration from the last explored point in the previous query instead of starting from the initial position at each query. Other neighborhood offer similar features.
+Another very powerful combinator is the \emph{Mu} that roughly is the repetitive cross-product of a neighbourhood with itself with a maximal number of cross products:
+\begin{lstlisting}
+Mu(A,d) = A andThen A andThen A andThen ...       //"d" times
+\end{lstlisting}
+More elaborated version of this combinator are available and make it possible to share information between explorations of $A$ like the \verb+dynAndThen+.
 
 Constraints (L1)
 ================

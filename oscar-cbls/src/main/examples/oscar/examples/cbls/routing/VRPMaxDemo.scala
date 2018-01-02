@@ -20,12 +20,18 @@ import oscar.cbls.business.routing._
 import oscar.cbls.core.search.{Best, First}
 import oscar.cbls.util.StopWatch
 
+//50.404631, 4.452595
+//50.415162, 4.440849
+
 
 object VRPMaxDemo extends App {
 
   println("usage: VRPMaxDemo n v")
   val n:Int=args(0).toInt
   val v = args(1).toInt
+
+  //50.404631, 4.452595
+  //50.415162, 4.440849
 
   val displayDelay = if (n >= 1000) 1500 else 500 //ms
   val verbose = 1
@@ -37,7 +43,20 @@ object VRPMaxDemo extends App {
 
 class VRPMaxDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, displayDelay:Int, mapSide:Int) extends StopWatch{
 
-  val (symmetricDistanceMatrix,nodesPositions) = RoutingMatrixGenerator(n,side=mapSide)
+
+  val minLat = 50.404631
+  val maxLat = 50.415162
+  val minLong = 4.440849
+  val maxLong = 4.452595
+
+  val (symmetricDistanceMatrix1,nodesPositions) = RoutingMatrixGenerator.geographicRandom(n, minLong,maxLong,minLat,maxLat)
+
+  val symmetricDistanceMatrix = Array.tabulate(n)({a =>
+    Array.tabulate(n)({b =>
+      symmetricDistanceMatrix1(a min b)(a max b).toInt
+    })})
+
+
   val maxWorkloadPerVehicle = 2500
   val serviceTimePerNode = 100
 
@@ -63,7 +82,7 @@ class VRPMaxDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, display
 
   c.close()
 
-  val graphicExtension = display(myVRP,nodesPositions.map(np => (np._1.toDouble,np._2.toDouble)).toList,sizeOfMap = Some(mapSide), refreshRate = displayDelay)
+  val graphicExtension = display(myVRP,nodesPositions.map(np => (np._2.toDouble,np._1.toDouble)).toList,sizeOfMap = None, refreshRate = displayDelay,displayOnRealMap = true)
   val penaltyForUnrouted  = 10000
 
   val obj = new CascadingObjective(

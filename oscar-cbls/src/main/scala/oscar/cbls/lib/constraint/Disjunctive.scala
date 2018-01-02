@@ -119,6 +119,7 @@ case class Disjunctive(start: Array[IntValue],
   registerStaticAndDynamicDependencyArrayIndex(duration,-nbTask)
 
   registerConstrainedVariables(start)
+  registerConstrainedVariables(duration)
   finishInitialization()
 
   private val sumMaxDur = duration.foldLeft(0)((acc,v) => acc + v.max)
@@ -126,13 +127,19 @@ case class Disjunctive(start: Array[IntValue],
   private val violationVar: CBLSIntVar = new CBLSIntVar(model, 0, 0 to sumMaxDur*start.length, "ViolationOfDisjunctive")
   violationVar.setDefiningInvariant(this)
 
+  private val violationVarsArray = Array.tabulate(start.length)(i => {
+    val newVar = new CBLSIntVar(model, 0, 0 to sumMaxDur, "Violation_Disjunctive_" + start(i).name + "_and_" + duration(i).name)
+    newVar.setDefiningInvariant(this)
+    newVar}
+  )
+
   //the degree of violation of a task is the sum of the sizes of its overlap with other tasks.
   //opnly tasks with nonZero durations are taken into account (obviously)
-  private val violationsVars: SortedMap[IntValue, CBLSIntVar] = start.foldLeft(
+  private val violationsVarsMap: SortedMap[IntValue, CBLSIntVar] = start.indices.foldLeft(
     SortedMap.empty[IntValue, CBLSIntVar])(
-    (acc, intvar) => {
-      val newvar = new CBLSIntVar(model, 0, 0 to sumMaxDur, "Violation_Disjunctive_" + intvar.name)
-      acc + ((intvar, newvar))
+    (acc, i) => {
+      val newVar = violationVarsArray(i)
+      acc + ((start(i),newVar)) + ((duration(i),newVar))
     })
 
   private var nonZeroTasks:SortedSet[Int] = SortedSet.empty[Int] ++ taskIndices.filter(i => duration(i).value != 0)
@@ -150,8 +157,8 @@ case class Disjunctive(start: Array[IntValue],
         math.min(
           math.min(otherEnd-curStart,curEnd-otherStart),
           math.min(curDuration,otherDuration)))
-      violationsVars(start(taskID)) :+= overlap
-      violationsVars(start(otherTaskID)) :+= overlap
+      violationVarsArray(taskID) :+= overlap
+      violationVarsArray(otherTaskID) :+= overlap
       violationVar :+= overlap
     }
   }
@@ -167,7 +174,7 @@ case class Disjunctive(start: Array[IntValue],
     }
   }
 
-  def notifyStartChanged(taskID:Int,oldStart:Int,newStart:Int) {
+  private def notifyStartChanged(taskID:Int,oldStart:Int,newStart:Int) {
     val dur = duration(taskID).value
     if (dur == 0) return
 
@@ -177,7 +184,7 @@ case class Disjunctive(start: Array[IntValue],
     updateTask(taskID,oldStart,newStart,oldEnd,newEnd)
   }
 
-  def notifyDurChanged(taskID:Int,oldDur:Int,newDur:Int){
+  private def notifyDurChanged(taskID:Int,oldDur:Int,newDur:Int){
     if(oldDur == 0 && newDur !=0){
       nonZeroTasks = nonZeroTasks + taskID
     }else if (oldDur !=0 && newDur == 0){
@@ -193,20 +200,17 @@ case class Disjunctive(start: Array[IntValue],
 
   def updateTask(taskID:Int,oldStart:Int,newStart:Int,oldEnd:Int,newEnd:Int){
     //TODO: This is not completely incremental (but still linear instead of quadratic)!
-    val oldDuration = oldEnd - oldStart
-    val newDuration = newEnd - newStart
+    //We cannot break symmetries here because they are already broken since this method is called with one task set
     for(otherTaskID <- nonZeroTasks if taskID != otherTaskID){
       val otherStart = start(otherTaskID).value
       val otherDuration = duration(otherTaskID).value
       val otherEnd = otherStart + otherDuration
-      val oldOverlap = math.max(0,math.min(math.min(otherEnd-oldStart,oldEnd-otherStart),math.min(oldDuration,otherDuration)))
-      val newOverlap = math.max(0,math.min(math.min(otherEnd-newStart,newEnd-otherStart),math.min(newDuration,otherDuration)))
+      val oldOverlap = math.max(0,math.min(otherEnd,oldEnd)-math.max(otherStart, oldStart))
+      val newOverlap = math.max(0,math.min(otherEnd,newEnd)-math.max(otherStart, newStart))
       val deltaViolation = newOverlap - oldOverlap
       if(deltaViolation !=0) {
-        violationsVars(duration(taskID)) :+= deltaViolation
-        violationsVars(duration(taskID)) :+= deltaViolation
-        violationsVars(start(otherTaskID)) :+= deltaViolation
-        violationsVars(start(otherTaskID)) :+= deltaViolation
+        violationVarsArray(taskID) :+= deltaViolation
+        violationVarsArray(otherTaskID) :+= deltaViolation
         violationVar :+= deltaViolation
       }
     }
@@ -215,7 +219,7 @@ case class Disjunctive(start: Array[IntValue],
   override def violation = violationVar
 
   override def violation(v: Value): IntValue = {
-    violationsVars(v.asInstanceOf[IntValue])
+    violationsVarsMap(v.asInstanceOf[IntValue])
   }
 
   override def checkInternals(c: Checker) {
@@ -250,7 +254,5 @@ case class Disjunctive(start: Array[IntValue],
 
     val nonZeroTasksFromScratch = SortedSet.empty[Int] ++ taskIndices.filter(i => duration(i).value != 0)
     c.check(nonZeroTasksFromScratch equals nonZeroTasks)
-
   }
-
 }

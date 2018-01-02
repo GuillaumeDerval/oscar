@@ -34,12 +34,14 @@ import oscar.cbls.core._
   * @param cached set to true to have a cache of size 1, zero to have no cache. cache can provide speedup if fun is time-consuming
   * @author renaud.delandtsheer@cetic.be
   * */
-class Int2Int(a:IntValue, fun:Int => Int, domain:Domain = fullRange,cached:Boolean = false) extends IntInvariant(fun(a.value),domain) with IntNotificationTarget{
+class Int2Int(a:IntValue, fun:Int => Int, domain:Domain = fullRange,cached:Boolean = false)
+  extends IntInvariant(fun(a.value),domain)
+    with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(a)
   finishInitialization()
-  this := fun(a.value)
 
+  this := fun(a.value)
   var cachedIn:Int = a.value
   var cachedOut:Int = this.newValue
 

@@ -48,6 +48,48 @@ object RoutingMatrixGenerator {
         n2 => distance(pointPosition(n1), pointPosition(n2)))),pointPosition)
   }
 
+
+  /**
+    * This method generate a random distance matrix based on numbers of node and map side.
+    * It also generate an array of node positions. (Usefull when you want to display it on a map)
+    * @param n The number of nodes (considering depots)
+    * @return The distance matrix (Array[Array[Float] ] in meters and the position of each node (Array[(Double,Double)])
+    */
+  def geographicRandom(n: Int,minLong:Double,maxLong:Double,minLat:Double,maxLat:Double): (Array[Array[Double]],Array[(Double,Double)]) = {
+
+    //we generate te cost distance matrix
+    val deltaLong = maxLong - minLong
+    val deltaLat = maxLat - minLat
+
+    def randomLong: Double = (random.nextDouble() * deltaLong) + minLong
+    def randomLat: Double = (random.nextDouble() * deltaLat) + minLat
+
+    def distance(coord1:(Double,Double),coord2:(Double,Double)):Double = {
+      val (lon1:Double,lat1:Double) = coord1
+      val (lon2:Double,lat2:Double) = coord2
+
+      val R = 6371e3 // metres
+
+      val φ1 = lat1.toRadians
+      val φ2 = lat2.toRadians
+      val Δφ = (lat2 - lat1).toRadians
+      val Δλ = (lon2 - lon1).toRadians
+
+      val a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+      val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+
+      (R * c).toDouble //meters
+    }
+
+    val pointPosition: Array[(Double,Double)] = Array.tabulate(n)(w => (randomLong, randomLat))
+
+    //for each delivery point, the distance to each warehouse
+    (Array.tabulate(n)(
+      n1 => Array.tabulate(n)(
+        n2 => distance(pointPosition(n1), pointPosition(n2)))),pointPosition)
+  }
+
+
   /**
     * This method generate random restrictions for the problem.
     * A restriction is a tuple of a vehicle and a node.
