@@ -180,42 +180,56 @@ The global search loop repeatedly queries moves and commits them until some stop
 The result of combining neighborhoods are still neighborhoods, offering this same API. The most intuitive combination of neighborhoods is \emph{``Best''}.
 Let $a$ and $b$ be neighborhoods, the following statement is also a neighborhood (statements and code fragments are written in Scala \cite{scala}):
 
-\begin{lstlisting}
-new Best(a,b)
-\end{lstlisting}
+.. code-block:: scala
+   :linenos:
+    new Best(a,b)
 
 When the combined neighborhood above is queried for a move, it queries both $a$ and $b$ for a move. It then returns the move having the lowest value for the objective function, according to the values carried by the returned moves. If a neighborhood cannot find a move, the overall result is given by the other neighborhood. If no neighborhood could find a move, the combined neighborhood does not find a move. Combinators are implemented in our framework as a DSL, enabling the use of a lighter infix notation. The above example can be rewritten as follows:
 
-\begin{lstlisting}
-a best b
-\end{lstlisting}
-
-Besides combinators, our framework includes a set of neighborhoods that can be used to develop custom search procedures. These include:
-
-\begin{itemize}
-\item Standard domain-independent neighborhoods on arrays of integer variables such as \emph{assignNeighborhood} that changes the value of a single decision variable in an array, \emph{swapsNeighborhood} that swaps the value of two decision variables in an array, and \emph{RandomizeNeighborhood} that randomizes the value of a fraction of integer variables in an array, etc.
-\item Scheduling neighborhoods such as relaxing and flattening the critical path \cite{michel2004iterative}.
-\item Routing neighborhoods such as \emph{one-point-move}, \emph{two-opt}, etc. \cite{routingNeighborhoods}.
-\end{itemize}
-
-Domain-independent neighborhoods are most interesting because they are quite flexible to be used in very different domains. They also include several features including symmetry elimination, mechanisms to perform intensification or tabu search, the possibility to specify whether the best or the first move is required, and hot restarting. A \emph{hot restart} is the possibility to start the neighborhood exploration from the last explored point in the previous query instead of starting from the initial position at each query. Other neighborhood offer similar features.
+.. code-block:: scala
+   :linenos:
+    a best b
 
 
 Warehouse Location Example (L1)
 ===============================
 
+A classical example in optimization is the warehouse location problem (WLP). The problem is as follows:
 
+* **Given**
+** S: set of stores that must be stocked by the warehouses
+** W: set of potential warehouses
+** Each warehouse has a fixed cost fw
+** transportation cost from warehouse w to store s is cws
+* **Find**
+** O: subset of warehouses to open, Minimizing the sum of the fixed and the transportation cost.
+** A store is assigned to its nearest open warehouse
+
+The problem is solved in the following script:
+
+.. literalinclude:: ../../oscar-cbls/src/main/examples/oscar/examples/cbls/userguide/WarehouseLocation.scala
+:language: scala
+       :linenos:
+       :lines: 28-78
 
 Building Complex Neighborhoods with Cross-Product of Neighborhoods (L2)
 =======================================================================
 
 Let's consider $C$ the cross-product of neighbourhoods $A$ and $B$. It is built in source code as follows:
 
-\begin{lstlisting}
-                  val C = A andThen B
-\end{lstlisting}
+.. code-block:: scala
+   :linenos:
+    val C = A andThen B
 
-The moves of $C$ are all the chaining between moves of $A$ and $B$. Practically, $A$ and $B$ are not aware of each other, so that their implementation does not need to be adapted to this setting. When neighbourhood $C$ is explored, it explores neighbourhood $A$ and gives it an instrumented objective function that triggers an exploration of $B$ every time it is evaluated by neighbourhood $A$. This gives rise to search trees like the one illustrated in \reffig{fig:basicTree} where $x$ is the current state where $C$ is explored, the edges labelled $a_1$ and $a_2$ represent moves of $A$, $x[a_1]$ represent the state $x$ after applying the move $a_1$, and $x[a_1,b_1]$ represent the state $x[a_1]$ after applying the move $b_1$.
+The moves of $C$ are all the chaining between moves of $A$ and $B$.
+Practically, $A$ and $B$ are not aware of each other, so that their implementation
+does not need to be adapted to this setting. When neighbourhood $C$ is explored,
+it explores neighbourhood $A$ and gives it an instrumented objective function
+that triggers an exploration of $B$ every time it is evaluated by neighbourhood $A$.
+This gives rise to search trees like the one illustrated in \reffig{fig:basicTree}
+where $x$ is the current state where $C$ is explored, the edges labelled $a_1$ and $a_2$
+represent moves of $A$, $x[a_1]$ represent the state $x$ after applying the move $a_1$,
+and $x[a_1,b_1]$ represent the state $x[a_1]$ after applying the move $b_1$.
 
 \begin{figure}[hb]
 \centering
@@ -263,8 +277,7 @@ Another very powerful combinator is the \emph{Mu} that roughly is the repetitive
 \begin{lstlisting}
 Mu(A,d) = A andThen A andThen A andThen ...       //"d" times
 \end{lstlisting}
-More elaborated version of this combinator are available and make it possible to share information between explorations of $A$ like the \verb+dynAndThen+. The Lin-Kernighan neighbourhood for instance can be built as a \verb+Mu(TwoOpt)+ with some additional pruning.
-
+More elaborated version of this combinator are available and make it possible to share information between explorations of $A$ like the \verb+dynAndThen+.
 
 Constraints (L1)
 ================
