@@ -1,6 +1,7 @@
 package oscar.cbls.business.routing.invariants.cumul.test
 
-import oscar.cbls.business.routing.invariants.base.{FetchFromPreCompute, FetchFromPreComputeReverseWithOperator, FromScratch, FunctionForPreCompute}
+import oscar.cbls.business.routing.invariants.base.{FetchFromPreCompute, FetchFromPreComputeReverseWithOperator, FromScratch}
+import oscar.cbls.business.routing.invariants.group.{FetchFromPreCompute, FetchFromPreComputeReverseWithOperator, FromScratch, FunctionForPreCompute}
 
 
 /**

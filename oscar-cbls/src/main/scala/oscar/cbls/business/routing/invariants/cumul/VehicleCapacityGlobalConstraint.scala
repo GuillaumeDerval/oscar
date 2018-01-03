@@ -2,7 +2,7 @@ package oscar.cbls.lib.invariant.routing.capa.stagequentinmeurisse
 
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.routing.invariants.base.PreComputeInvariant
+import oscar.cbls.business.routing.invariants.group.PreComputeInvariant
 import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue}
 import oscar.cbls.core.propagation.Checker
 
@@ -10,22 +10,22 @@ import oscar.cbls.core.propagation.Checker
 /**
   * @author Quentin Meurisse
   */
-object VehicleCapacity {
+object VehicleCapacityGlobalConstraint {
   def apply(routes: ChangingSeqValue,
             v: Int,
             deltaAtNode: Array[Int],
             maxCapacity: Int,
             violation: Array[CBLSIntVar],
-            contentAtEndOfVehicleRoute: Array[CBLSIntVar]): VehicleCapacity =
-    new VehicleCapacity(routes, v, deltaAtNode, maxCapacity, violation, contentAtEndOfVehicleRoute)
+            contentAtEndOfVehicleRoute: Array[CBLSIntVar]): VehicleCapacityGlobalConstraint =
+    new VehicleCapacityGlobalConstraint(routes, v, deltaAtNode, maxCapacity, violation, contentAtEndOfVehicleRoute)
 }
 
-class VehicleCapacity(routes: ChangingSeqValue,
-                      v: Int,
-                      deltaAtNode: Array[Int],
-                      maxCapacity: Int,
-                      violation: Array[CBLSIntVar],
-                      contentAtEndOfVehicleRoute: Array[CBLSIntVar])
+class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
+                                      v: Int,
+                                      deltaAtNode: Array[Int],
+                                      maxCapacity: Int,
+                                      violation: Array[CBLSIntVar],
+                                      contentAtEndOfVehicleRoute: Array[CBLSIntVar])
   extends PreComputeInvariant[PreComputeClass, SavedValuesAtCheckpoint](routes, v) {
 
   registerStaticAndDynamicDependency(routes)
@@ -353,12 +353,11 @@ class VehicleCapacity(routes: ChangingSeqValue,
     SavedValuesAtCheckpoint(currentViolation, currentContentAtEnd)
   }
 
-  override def doPreComputeAtCheckpoint0(vehicle: Int) = {
-    val explorerAtVehicleStart = routes.newValue.explorerAtAnyOccurrence(vehicle).head
+  override def doPreComputeAtCheckpoint0(vehicle: Int,checkpointValue:IntSequence) = {
+    val explorerAtVehicleStart = checkpointValue.explorerAtAnyOccurrence(vehicle).head
     val contentAtStart = deltaAtNode(vehicle)
     val preComputeAtStart = PreComputeContainer(Some(vehicle),None, contentAtStart,RedBlackTreeMap(List((contentAtStart, 1))))
     preComputes(vehicle) = preComputeAtStart
-
 
     var explorerOpt = explorerAtVehicleStart.next
     var prevNode = vehicle
