@@ -36,7 +36,6 @@ abstract class PreComputeInvariant[T: Manifest, U](routes: ChangingSeqValue, v: 
   computeAndAffectOutputFromScratch(routes.value) // initialize the output of the invariant
 
   /**
-    *
     * @return an element t of type T such as for all x of type T, x + t = x and x-t = x
     */
   def neutralElement: T
@@ -111,14 +110,12 @@ abstract class PreComputeInvariant[T: Manifest, U](routes: ChangingSeqValue, v: 
             if (checkpointAtLevel0.valueAtPosition(fromValue).get < v) neutralElement
             else preComputes(checkpointAtLevel0.valueAtPosition(fromValue - 1).get)
           val y = preComputes(checkpointAtLevel0.valueAtPosition(bijection(to)).get)
-          val diffOnSegment = minus(x, y)
-          newValue = plus(newValue, diffOnSegment)
+          newValue = plus(newValue, minus(x, y))
         case FetchFromPreCompute(from, to, true) =>
           val fromValue = bijection(from)
           val x = preComputes(checkpointAtLevel0.valueAtPosition(fromValue).get)
           val y = preComputes(checkpointAtLevel0.valueAtPosition(bijection(to) - 1).get) // a vehicle can't change its start point. So for a flipped segment fromValue >= v
-          val diffOnSegment = minus(y, x, reverse = true)
-          newValue = plus(newValue, diffOnSegment)
+          newValue = plus(newValue, minus(y, x, reverse = true))
         case fs@FromScratch(fromPos, toPos, topOfStack) =>
           val (fromNode, toNode) = fromScratchToNode(fs)
           newValue = plus(newValue, nodesToPreCompute(fromNode, toNode))
@@ -135,20 +132,20 @@ abstract class PreComputeInvariant[T: Manifest, U](routes: ChangingSeqValue, v: 
   def fromScratchToNode (fs: FromScratch): (Int, Int) = {
     if (!stackDone){
       // no stack donen so we can use the current route to know the nodes
-      val fromNode = routes.newValue.valueAtPosition(fs.fromPosAtCheckpoint0).get
-      val toNode = routes.newValue.valueAtPosition(fs.toPosAtCheckpoint0).get
+      val fromNode = routes.newValue.valueAtPosition(fs.fromPosAtCheckpointZero).get
+      val toNode = routes.newValue.valueAtPosition(fs.toPosAtCheckpointZero).get
       (fromNode, toNode)
     }
     else{
       // current bijection is stacked. If fs is not the last inserted node, we need to look at the previous value of the routes
       if (fs.topOfStack){
-        require(fs.fromPosAtCheckpoint0 == fs.toPosAtCheckpoint0)
-        val node = routes.newValue.valueAtPosition(fs.fromPosAtCheckpoint0).get
+        require(fs.fromPosAtCheckpointZero == fs.toPosAtCheckpointZero)
+        val node = routes.newValue.valueAtPosition(fs.fromPosAtCheckpointZero).get
         (node, node)
       }
       else{
-        val fromNode = prevRoutes.valueAtPosition(fs.fromPosAtCheckpoint0).get
-        val toNode = prevRoutes.valueAtPosition(fs.toPosAtCheckpoint0).get
+        val fromNode = prevRoutes.valueAtPosition(fs.fromPosAtCheckpointZero).get
+        val toNode = prevRoutes.valueAtPosition(fs.toPosAtCheckpointZero).get
         (fromNode, toNode)
       }
     }
@@ -186,7 +183,7 @@ abstract class PreComputeInvariant[T: Manifest, U](routes: ChangingSeqValue, v: 
 
         val bijAtCheckpoint = prevUpdates match {
           case None => ConcreteFunctionForPreCompute(s.newValue)
-          case Some(u) if u.checkpoint0Defined && checkpointLevel != 0 => u.updatedBij.commitStackedUpdatesToConcrete()
+          case Some(u) if u.checkpoint0Defined && checkpointLevel != 0 => u.updatedBij.concreteFunction
           case Some(u) => ConcreteFunctionForPreCompute(s.newValue)
         }
 
