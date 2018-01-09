@@ -27,14 +27,14 @@ class FZNeighbourhood(val name: String,
                       val initConstraints: List[Constraint]) {
 
   private val controlledVariables = subNeighbourhoods.foldLeft(Array.empty[Variable])(
-    (acc, n) => acc ++ n.getControlledVariables)
+    (acc, n) => acc ++ n.getControlledVariables).toSet.toArray
 
   def getControlledVariables: Array[Variable] = {
     controlledVariables
   }
 
   private val searchVariables = subNeighbourhoods.foldLeft(Array.empty[Variable])(
-    (acc, n) => acc ++ n.getSearchVariables)
+    (acc, n) => acc ++ n.getSearchVariables).toSet.toArray
 
   def getSearchVariables: Array[Variable] = {
     searchVariables
@@ -49,21 +49,21 @@ class FZSubNeighbourhood(val name: String,
                          val ensureVariables: Array[Variable],
                          val ensureConstraints: List[Constraint]) {
 
-  private val controlledVariables = moves.foldLeft(Array.empty[Variable])(
-    (acc, m) => acc ++ m.getControlledVariables) ++ itVariables ++ whereVariables ++ ensureVariables
+  private val controlledVariables = (moves.foldLeft(Array.empty[Variable])(
+    (acc, m) => acc ++ m.getControlledVariables) ++ itVariables ++ whereVariables ++ ensureVariables).toSet.toArray
 
   def getControlledVariables: Array[Variable] = {
     controlledVariables
   }
 
   private val searchVariables = moves.foldLeft(Array.empty[Variable])(
-    (acc, m) => acc ++ m.getControlledVariables)
+    (acc, m) => acc ++ m.getControlledVariables).toSet.toArray
 
   def getSearchVariables: Array[Variable] = {
     searchVariables
   }
   def debugPrint = {
-    println("------ Constructed neighbourhood for " + name + " ------")
+    println("------ Neighbourhood for " + name + " ------")
     println("Iterator variables: ")
     for (it <- itVariables) {
       println("\t" + it)

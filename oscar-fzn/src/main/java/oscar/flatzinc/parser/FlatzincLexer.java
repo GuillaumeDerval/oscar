@@ -16,12 +16,24 @@ package oscar.flatzinc.parser;
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 //package oscar.flatzinc.parser;
+import oscar.flatzinc.parser.intermediatemodel.*;
+import oscar.flatzinc.parser.intermediatemodel.ASTLiterals.*;
+import oscar.flatzinc.parser.intermediatemodel.ASTDecls.*;
+import oscar.flatzinc.parser.intermediatemodel.ASTTypes.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+
+import org.antlr.v4.runtime.Lexer;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.atn.ATN;
-import org.antlr.v4.runtime.atn.ATNDeserializer;
-import org.antlr.v4.runtime.atn.LexerATNSimulator;
-import org.antlr.v4.runtime.atn.PredictionContextCache;
+import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
+import org.antlr.v4.runtime.misc.*;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
 public class FlatzincLexer extends Lexer {
@@ -112,7 +124,7 @@ public class FlatzincLexer extends Lexer {
 	@Override
 	public String getSerializedATN() { return _serializedATN; }
 
-	//@Override
+	@Override
 	public String[] getChannelNames() { return channelNames; }
 
 	@Override

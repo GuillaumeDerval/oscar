@@ -887,6 +887,8 @@ class GenericSubNeighbourhood(val fzNeighbourhood: FZSubNeighbourhood,
     itVariables(i) := itIterators(i).next()
   }
 
+  fzNeighbourhood.debugPrint
+
   var currentIterator = 0;
   val numIterators = itVariables.length
 
