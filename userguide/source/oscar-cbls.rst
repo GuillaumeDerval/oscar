@@ -56,9 +56,32 @@ It uses a standard ``swap`` neighborhood with problem-specific parameters that s
    :linenos:
    :lines: 33-55
 
+Warehouse Location Example (L1)
+===============================
 
-Features of OscaR.cbls, for the impatient nerds (L3)
-====================================================
+A classical example in optimization is the warehouse location problem (WLP). The problem is as follows:
+
+* **Given**
+** S: set of stores that must be stocked by the warehouses
+** W: set of potential warehouses
+** Each warehouse has a fixed cost fw
+** transportation cost from warehouse w to store s is cws
+* **Find**
+** O: subset of warehouses to open, Minimizing the sum of the fixed and the transportation cost.
+** A store is assigned to its nearest open warehouse
+
+The problem is solved in the following script:
+
+.. literalinclude:: ../../oscar-cbls/src/main/examples/oscar/examples/cbls/userguide/WarehouseLocation.scala
+:language: scala
+       :linenos:
+           :lines: 28-78
+
+Gutts of OscaR.cbls (L3)
+========================
+
+Features of OscaR.cbls, for the impatient nerds
+-----------------------------------------------
 
 OscaR.cbls is an implementation of constraint-based local search.
 It also features a high-level module to help you define your search procedure.
@@ -71,6 +94,26 @@ OscaR.cbls has the following features:
  - Libraries of standard invariants and constraints
  - A library of neighborhood for integer and sequence variables
  - A domain specific language for declaring search procedures by combining neighborhoods together. It also supports the cross-product of neighborhoods.
+
+Architecture of OscaR.cbls
+--------------------------
+
+This section presents the architecture of OscaR.cbls.
+The purpose of this section is to understand the nature of the concepts manipulated when using OscaR.cbls.
+
+.. image:: cbls_images/architecture.svg
+:scale: 50
+    :width: 700
+        :align: center
+        :alt: Architecture of OscaR.cbls
+
+    * **Propagation Layer** defines propagation graphs. Propagation is the very basic mechanism of OScaR: when the value of a decision variable changes, this change must be propagated to the model in some coordinated way. This layer takes care of the coordination.
+* **Computation Layer** defines concepts such as variables and invariants and the three supported variable types (Int,Set, and Seq), and some additional mechanism called notification: Upon propagation, a variable notifies its listening invariants about its change.
+* **Objective layer** defines the notion of objective function. An objective function is basically an integer variable that is automatically registered to the propagation layer for partial propagation.
+* **Search Layer** defines an API for neighborhoods, moves and combinators
+* **Constraint Layer** defines an API for constraint and constraint systems
+* **Libraries** proposes libraries of constraints, invariants, search neighborhoods and combinators.
+* **Business packages**: includes routing and scheduling extensions (scheduling is deprecated in spring 2018). These are special extensions that introduce additional structure on top of the proposed variables. Such libraries may include additional invariants, constraints, visualsation and neighborhoods
 
 Modeling with OscaR.cbls (L1)
 =============================
@@ -101,28 +144,8 @@ OscaR.cbls also supports constraints. They are specific objects that have two ma
 Constraint systems propose the same mechanism, except that they do not compute the violation for each and every variable that appears in the constraints that are posted into them. Instead, any variable can be registered into them for a violation degree. These include not only the variables that intervene in some constraint posted into them, but any variable of the model.
 In a constraint system, the local violation degree of a variable is the sum of the violation degree attributed to it, for each constraint posted in the constraint system, weighted by the weighting factor of the constraint. Only variables that directly intervene in a constraint have a nonzero local violation degree. The \emph{global violation degree} of a variable is the sum of the local violation degrees of all variable that have one in the constraint system, and that contribute directly or indirectly to the variable, according to the static dependency graph. Global violation degrees are therefore built by constraint systems following a reachability query to the static propagation graph. This query is performed when the constraint system is closed, so that if the graph is enriched afterwards, these changes are not taken into account in the global violation degrees.
 
-Architecture of OscaR.cbls (L3)
-===============================
-
-This section presents the architecture of OscaR.cbls.
-The purpose of this section is to understand the nature of the concepts manipulated when using OscaR.cbls.
-
-.. image:: cbls_images/architecture.svg
-     :scale: 50
-    :width: 700
-    :align: center
-    :alt: Architecture of OscaR.cbls
-
-* **Propagation Layer** defines propagation graphs. Propagation is the very basic mechanism of OScaR: when the value of a decision variable changes, this change must be propagated to the model in some coordinated way. This layer takes care of the coordination.
-* **Computation Layer** defines concepts such as variables and invariants and the three supported variable types (Int,Set, and Seq), and some additional mechanism called notification: Upon propagation, a variable notifies its listening invariants about its change.
-* **Objective layer** defines the notion of objective function. An objective function is basically an integer variable that is automatically registered to the propagation layer for partial propagation.
-* **Search Layer** defines an API for neighborhoods, moves and combinators
-* **Constraint Layer** defines an API for constraint and constraint systems
-* **Libraries** proposes libraries of constraints, invariants, search neighborhoods and combinators.
-* **Business packages**: includes routing and scheduling extensions (scheduling is deprecated in spring 2018). These are special extensions that introduce additional structure on top of the proposed variables. Such libraries may include additional invariants, constraints, visualsation and neighborhoods
-
 Propagation in OscaR.cbls (L1)
-==============================
+------------------------------
 
 Propagation is the core mechanism in a CBLS engine. It is about updating the model according to changes made on the decision variables.
 When exploring a neighborhood, decision variables are changed by the search procedure, and the objective function is then queried;
@@ -150,15 +173,31 @@ and higher indices closer to the objective function.
 This sort is time consuming. It is performed when the model is closed through the *store.close* method.
 
 Notification in Oscar.cbls (L3)
-===============================
+-------------------------------
 
 On top of propagation, there is another mechanism, belonging to the computation layer. It is the notification mechanism.
 When a variable is propagated, it updates its value, and notifies the new value to its listening invariants by calling a method called "notify"
 in its listening invariants to notify about the change. Thanks to this mechanism, only the invariants that might need to react to some change are notified about a change.
 There are specific methods for each type of variable, with specific parameters, but they mostly include the variable, its old value, and its new value, and a description of the delta.
 
+
+Constraints (L1)
+----------------
+
+Is OscaR.cbls, constraints are specific objects that have two main features:
+* compute their violation degree; thay are thus lagrangian relaxations
+* identify the variable that contribute to their violation by attributing an individual violation degree to each of their input variables.
+
+
+A constraint declares a set of constrained variables. These are the ones that intervene in the constraint. For each of them, the constraint must be able to provide a violation degree. This is an IntVar that computes to which extend the variable contributes to the violation of the constraint.
+Constraint systems propose the same mechanism, except that they do not compute the violation for each and every variable that appears in the constraints that are posted into them. Instead, any variable can be registered into them for a violation degree. These include not only the variables that intervene in some constraint posted into them, but any variable of the model.
+In a constraint system, the \emph{local violation degree} of a variable is the sum of the violation degree attributed to it, for each constraint posted in the constraint system, weighted by the weighting factor of the constraint. Only variables that directly intervene in a constraint have a nonzero local violation degree. The \emph{global violation degree} of a variable is the sum of the local violation degrees of all variable that have one in the constraint system, and that contribute directly or indirectly to the variable, according to the static dependency graph. Global violation degrees are therefore built by constraint systems following a reachability query to the static propagation graph. This query is performed when the constraint system is closed, so that if the graph is enriched afterwards, these changes are not taken into account in the global violation degrees.
+
+Searching with OscaR.cbls
+=========================
+
 Searching with OscaR.cbls using standard neighborhoods and combinators (L1)
-===========================================================================
+---------------------------------------------------------------------------
 
 When developing a local search solution, one must specify a *search procedure*.
 A search procedure specifies how the search will find a proper solution to the problem.
@@ -190,30 +229,8 @@ When the combined neighborhood above is queried for a move, it queries both $a$ 
    :linenos:
     a best b
 
-
-Warehouse Location Example (L1)
-===============================
-
-A classical example in optimization is the warehouse location problem (WLP). The problem is as follows:
-
-* **Given**
-** S: set of stores that must be stocked by the warehouses
-** W: set of potential warehouses
-** Each warehouse has a fixed cost fw
-** transportation cost from warehouse w to store s is cws
-* **Find**
-** O: subset of warehouses to open, Minimizing the sum of the fixed and the transportation cost.
-** A store is assigned to its nearest open warehouse
-
-The problem is solved in the following script:
-
-.. literalinclude:: ../../oscar-cbls/src/main/examples/oscar/examples/cbls/userguide/WarehouseLocation.scala
-:language: scala
-       :linenos:
-       :lines: 28-78
-
 Building Complex Neighborhoods with Cross-Product of Neighborhoods (L2)
-=======================================================================
+-----------------------------------------------------------------------
 
 Let's consider $C$ the cross-product of neighbourhoods $A$ and $B$. It is built in source code as follows:
 
@@ -278,16 +295,3 @@ Another very powerful combinator is the \emph{Mu} that roughly is the repetitive
 Mu(A,d) = A andThen A andThen A andThen ...       //"d" times
 \end{lstlisting}
 More elaborated version of this combinator are available and make it possible to share information between explorations of $A$ like the \verb+dynAndThen+.
-
-Constraints (L1)
-================
-
-Is OscaR.cbls, constraints are specific objects that have two main features:
-* compute their violation degree; thay are thus lagrangian relaxations
-* identify the variable that contribute to their violation by attributing an individual violation degree to each of their input variables.
-
-
-A constraint declares a set of constrained variables. These are the ones that intervene in the constraint. For each of them, the constraint must be able to provide a violation degree. This is an IntVar that computes to which extend the variable contributes to the violation of the constraint.
-Constraint systems propose the same mechanism, except that they do not compute the violation for each and every variable that appears in the constraints that are posted into them. Instead, any variable can be registered into them for a violation degree. These include not only the variables that intervene in some constraint posted into them, but any variable of the model.
-In a constraint system, the \emph{local violation degree} of a variable is the sum of the violation degree attributed to it, for each constraint posted in the constraint system, weighted by the weighting factor of the constraint. Only variables that directly intervene in a constraint have a nonzero local violation degree. The \emph{global violation degree} of a variable is the sum of the local violation degrees of all variable that have one in the constraint system, and that contribute directly or indirectly to the variable, according to the static dependency graph. Global violation degrees are therefore built by constraint systems following a reachability query to the static propagation graph. This query is performed when the constraint system is closed, so that if the graph is enriched afterwards, these changes are not taken into account in the global violation degrees.
-
