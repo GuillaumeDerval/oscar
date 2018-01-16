@@ -76,8 +76,7 @@ class ConcreteFunctionForPreCompute(val fun: PiecewiseLinearFun,
 
     if (pivotOfFromIncluded.fromValue == pivotOfToIncluded.fromValue) {
       kindOfComputationOnSegment(pivotOfFromIncluded, fromPosIncluded, toPosIncluded)
-    }
-    else {
+    } else {
       var computationSteps:List[ComputationStep] = List.empty
       var prevPivot = pivotOfFromIncluded
       var pivotExplorer = fun.pivotWithPositionAfter(fromPosIncluded).get

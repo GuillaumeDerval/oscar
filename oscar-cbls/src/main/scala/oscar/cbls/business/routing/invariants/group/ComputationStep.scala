@@ -3,14 +3,19 @@ package oscar.cbls.business.routing.invariants.group
 /**
   * For the segment of the function, those class say if we can use pre-computes on this segment,
   * if the segment is a flipped segment or if we need from scratch method
-  * @param fromPosAtCheckpointZero
-  * @param toPosAtCheckpointZero
   * @author Quentin Meurisse
   */
 abstract sealed class ComputationStep(){
   def reverse() : ComputationStep
 }
 
+/**
+  *
+  * @param fromPosAtCheckpointZero
+  * @param toPosAtCheckpointZero
+  * @param flipPrecomputation
+  * @author Quentin Meurisse
+  * */
 case class FetchFromPreCompute(fromPosAtCheckpointZero:Int,
                                toPosAtCheckpointZero: Int,
                                flipPrecomputation:Boolean)
@@ -21,8 +26,10 @@ case class FetchFromPreCompute(fromPosAtCheckpointZero:Int,
 
 /**
   *
-  * @param fromPosAtCheckpointZero
-  * @param toPosAtCheckpointZero
+  * @param fromPos if topOfStack: the position in the new bijection
+  *                else: the position in the concrete
+  * @param toPos if topOfStack: the position in the new bijection
+  *                else: the position in the concrete
   * @param topOfStack if the node is the inserted node for a InsertStackFunction
   * @author Quentin Meurisse
   * */
