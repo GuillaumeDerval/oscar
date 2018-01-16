@@ -107,7 +107,7 @@ The purpose of this section is to understand the nature of the concepts manipula
         :align: center
         :alt: Architecture of OscaR.cbls
 
-    * **Propagation Layer** defines propagation graphs. Propagation is the very basic mechanism of OScaR: when the value of a decision variable changes, this change must be propagated to the model in some coordinated way. This layer takes care of the coordination.
+* **Propagation Layer** defines propagation graphs. Propagation is the very basic mechanism of OScaR: when the value of a decision variable changes, this change must be propagated to the model in some coordinated way. This layer takes care of the coordination.
 * **Computation Layer** defines concepts such as variables and invariants and the three supported variable types (Int,Set, and Seq), and some additional mechanism called notification: Upon propagation, a variable notifies its listening invariants about its change.
 * **Objective layer** defines the notion of objective function. An objective function is basically an integer variable that is automatically registered to the propagation layer for partial propagation.
 * **Search Layer** defines an API for neighborhoods, moves and combinators
