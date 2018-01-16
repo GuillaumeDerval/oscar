@@ -7,15 +7,14 @@ package oscar.cbls.business.routing.invariants.group
   * @param toPosAtCheckpointZero
   * @author Quentin Meurisse
   */
-abstract sealed class ComputationStep(val fromPosAtCheckpointZero: Int,
-                                      val toPosAtCheckpointZero: Int){
+abstract sealed class ComputationStep(){
   def reverse() : ComputationStep
 }
 
-case class FetchFromPreCompute(override val fromPosAtCheckpointZero:Int,
-                               override val toPosAtCheckpointZero: Int,
+case class FetchFromPreCompute(fromPosAtCheckpointZero:Int,
+                               toPosAtCheckpointZero: Int,
                                flipPrecomputation:Boolean)
-  extends ComputationStep(fromPosAtCheckpointZero, toPosAtCheckpointZero){
+  extends ComputationStep(){
 
   override def reverse() = FetchFromPreCompute(toPosAtCheckpointZero, fromPosAtCheckpointZero, !flipPrecomputation)
 }
@@ -27,10 +26,10 @@ case class FetchFromPreCompute(override val fromPosAtCheckpointZero:Int,
   * @param topOfStack if the node is the inserted node for a InsertStackFunction
   * @author Quentin Meurisse
   * */
-case class FromScratch(override val fromPosAtCheckpointZero: Int,
-                       override val toPosAtCheckpointZero: Int,
+case class FromScratch(fromPos: Int,
+                       toPos: Int,
                        topOfStack:Boolean = false)
-  extends ComputationStep(fromPosAtCheckpointZero, toPosAtCheckpointZero){
+  extends ComputationStep(){
 
-  override def reverse(): ComputationStep = FromScratch(toPosAtCheckpointZero, fromPosAtCheckpointZero, topOfStack)
+  override def reverse(): ComputationStep = FromScratch(toPos, fromPos, topOfStack)
 }

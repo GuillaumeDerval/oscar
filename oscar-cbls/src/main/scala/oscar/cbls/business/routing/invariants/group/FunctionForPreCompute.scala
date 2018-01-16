@@ -12,15 +12,7 @@ abstract class FunctionForPreCompute {
   val fun: PiecewiseLinearFun
   val externalPositionOfLastRoutedNode: Int
 
-  var cachedConcreteFunction:ConcreteFunctionForPreCompute = null
-  final def concreteFunction: ConcreteFunctionForPreCompute = {
-    if(cachedConcreteFunction == null){
-      cachedConcreteFunction = computeConcreteFunction
-    }
-    cachedConcreteFunction
-  }
-
-  def computeConcreteFunction:ConcreteFunctionForPreCompute
+  def concreteFunction:ConcreteFunctionForPreCompute
 
   def kindOfComputation(fromPosIncluded: Int, toPosIncluded: Int): List[ComputationStep]
 
@@ -68,7 +60,7 @@ class ConcreteFunctionForPreCompute(val fun: PiecewiseLinearFun,
                                     val maxValueWithPreCompute: Int)
   extends FunctionForPreCompute{
 
-  val computeConcreteFunction: ConcreteFunctionForPreCompute = this
+  val concreteFunction: ConcreteFunctionForPreCompute = this
 
   override def kindOfComputation(fromPosIncluded: Int, toPosIncluded: Int): List[ComputationStep] = {
 
@@ -161,7 +153,7 @@ class InsertStackedFunction(base: ConcreteFunctionForPreCompute, value: Int, pos
   val fun: PiecewiseLinearFun = base.fun
   val externalPositionOfLastRoutedNode : Int = base.externalPositionOfLastRoutedNode + 1
 
-  override def computeConcreteFunction: ConcreteFunctionForPreCompute = {
+  lazy val concreteFunction: ConcreteFunctionForPreCompute = {
     val funForPreCompute = base.concreteFunction
     val fun = funForPreCompute.fun
     val maxValueWithPreCompute = funForPreCompute.maxValueWithPreCompute
@@ -215,7 +207,7 @@ class DeleteStackedFunction(base: ConcreteFunctionForPreCompute, pos: Int) exten
   val fun: PiecewiseLinearFun = base.fun
   val externalPositionOfLastRoutedNode: Int = base.externalPositionOfLastRoutedNode -1
 
-  override def computeConcreteFunction: ConcreteFunctionForPreCompute = {
+  lazy val concreteFunction: ConcreteFunctionForPreCompute = {
     val funForPreCompute = base.concreteFunction
     val fun = funForPreCompute.fun
     val externalPositionOfLastRoutedNode = funForPreCompute.externalPositionOfLastRoutedNode
@@ -225,7 +217,6 @@ class DeleteStackedFunction(base: ConcreteFunctionForPreCompute, pos: Int) exten
     val removedValue = fun(pos)
 
     val updatedBij = fun.swapAdjacentZonesShiftFirst(pos, pos, externalPosOfLastRemovedNode, false)
-
 
     val newExternalPosOfLastRemovedNode =
       if (removedValue <= maxValueWithPreCompute) externalPosOfLastRemovedNode
@@ -272,7 +263,7 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
   val fun: PiecewiseLinearFun = base.fun
   val externalPositionOfLastRoutedNode: Int = base.externalPositionOfLastRoutedNode
 
-  override def computeConcreteFunction: ConcreteFunctionForPreCompute = {
+  lazy val concreteFunction: ConcreteFunctionForPreCompute = {
     val functionForPreCompute = base.concreteFunction
     val fun = functionForPreCompute.fun
     val externalPositionOfLastRoutedNode = functionForPreCompute.externalPositionOfLastRoutedNode

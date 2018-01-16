@@ -1,8 +1,8 @@
 package oscar.cbls.business.routing.invariants.cumul.test
 
-import oscar.cbls.business.routing.invariants.base.{FetchFromPreCompute, FetchFromPreComputeReverseWithOperator, FromScratch}
-import oscar.cbls.business.routing.invariants.group.{FetchFromPreCompute, FetchFromPreComputeReverseWithOperator, FromScratch, FunctionForPreCompute}
-
+import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.business.routing.invariants.base._
+import oscar.cbls.business.routing.invariants.group._
 
 /**
   * @author Quentin Meurisse
@@ -10,8 +10,8 @@ import oscar.cbls.business.routing.invariants.group.{FetchFromPreCompute, FetchF
 class TestFunctionForPreCompute extends FunSuite with Matchers{
 
   test("insert node with no pre-compute"){
-    val f = FunctionForPreCompute(IntSequence(0 to 7))
-    val g = FunctionForPreCompute.updateFunctionForInsert(f, 10, 5)
+    val f:ConcreteFunctionForPreCompute = ConcreteFunctionForPreCompute(IntSequence(0 to 7))
+    val g = f.stackInsert(10, 5)
 
     for(i <- 0 to 4){g.fun(i) should be(i)}
 
@@ -23,8 +23,8 @@ class TestFunctionForPreCompute extends FunSuite with Matchers{
 
 
   test("delete node with pre-compute"){
-    val f = FunctionForPreCompute(IntSequence(0 to 7))
-    val g = FunctionForPreCompute.updateFunctionForDelete(f, 5)
+    val f = ConcreteFunctionForPreCompute(IntSequence(0 to 7))
+    val g = f.stackDelete(5)
 
     for(x <- 0 to 4){g.fun(x) should be(x)}
 
@@ -34,8 +34,8 @@ class TestFunctionForPreCompute extends FunSuite with Matchers{
   }
 
   test("delete last node"){
-    val f = FunctionForPreCompute(IntSequence(0 to 7))
-    val g = FunctionForPreCompute.updateFunctionForDelete(f, 7)
+    val f = ConcreteFunctionForPreCompute(IntSequence(0 to 7))
+    val g = f.stackDelete(7)
 
     f.externalPositionOfLastRoutedNode should be(7)
     g.externalPositionOfLastRoutedNode should be(6)
@@ -43,8 +43,8 @@ class TestFunctionForPreCompute extends FunSuite with Matchers{
 
 
   test("move segment and flip it"){
-    val f = FunctionForPreCompute(IntSequence(0 to 10))
-    val g = FunctionForPreCompute.updateFunctionForMove(f, 2, 4, 7, flip = true)
+    val f = ConcreteFunctionForPreCompute(IntSequence(0 to 10))
+    val g = f.stackMove(2, 4, 7, flip = true)
 
     g.fun(0) should be(0)
     g.fun(1) should be(1)
@@ -57,12 +57,12 @@ class TestFunctionForPreCompute extends FunSuite with Matchers{
   }
 
   test("kindOfPrecompute test"){
-    val a = FunctionForPreCompute(IntSequence(0 to 42))
-    val b = FunctionForPreCompute.updateFunctionForInsert(a, 43, 43)
-    val c = FunctionForPreCompute.updateFunctionForInsert(b, 44, 44)
-    val d = FunctionForPreCompute.updateFunctionForInsert(c, 50, 27)
-    val e = FunctionForPreCompute.updateFunctionForInsert(d, 51, 28)
-    val f = FunctionForPreCompute.updateFunctionForMove(e, 10, 20, 9, true)
+    val a = ConcreteFunctionForPreCompute(IntSequence(0 to 42))
+    val b = a.stackInsert(43, 43)
+    val c = b.stackInsert(44, 44)
+    val d = c.stackInsert(50, 27)
+    val e = d.stackInsert(51, 28)
+    val f = e.stackMove(10, 20, 9, true)
 
     val x = f.kindOfComputation(0, 46)
 

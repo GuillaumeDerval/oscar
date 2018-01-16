@@ -245,8 +245,7 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
 
       val deltaOfContent = b.contentAtNodeAtCheckpoint - a.contentAtNodeAtCheckpoint
       DeltaOfPreComputeForSegment(a.rb, b.rb, deltaOfContent, a.contentAtNodeAtCheckpoint)
-    }
-    else {
+    } else {
       val deltaOfContent = b.contentAtNodeAtCheckpoint - a.contentAtNodeAtCheckpoint
 
       val fromNode = a.prevNodeAtCheckpoint0
@@ -321,7 +320,6 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
   }
 
   override def nodesToPreCompute(fromNode: Int, toNode: Int): PreComputeClass = DeltaFromScratch(fromNode, toNode)
-
 
   override def computeAndAffectOutputFromScratch(seq: IntSequence) = {
     for (vehicle <- vehicles) {

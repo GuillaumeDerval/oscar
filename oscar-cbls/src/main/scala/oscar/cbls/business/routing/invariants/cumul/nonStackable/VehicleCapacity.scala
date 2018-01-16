@@ -2,6 +2,8 @@ package oscar.cbls.business.routing.invariants.cumul.nonStackable
 
 import oscar.cbls.algo.magicArray.IterableMagicBoolArray
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
+import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.business.routing.invariants.base.RoutingConventionMethods
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.Checker
 
