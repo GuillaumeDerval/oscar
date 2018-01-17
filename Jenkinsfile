@@ -23,9 +23,9 @@ node {
         def MERCURIAL_REVISION = sh script: 'hg id -i', returnStdout: true
 
         env.PARAMS = "-Dcetic -DBRANCH_NAME='${env.BRANCH_NAME}' -DREVISION_ID='${MERCURIAL_REVISION}' -DBUILD_ID='${env.BUILD_ID}'"
-        env.SBT_CMD = "${env.SBT_HOME}/bin/sbt -Dsbt.log.noformat=true ${env.PARAMS} 'project oscar-cbls'"
+        env.SBT_CMD = "${env.SBT_HOME}/bin/sbt -Dsbt.log.noformat=true ${env.PARAMS}"
 
-        
+
         stage('Build') {
             sh "${env.SBT_CMD} compile"
         }
