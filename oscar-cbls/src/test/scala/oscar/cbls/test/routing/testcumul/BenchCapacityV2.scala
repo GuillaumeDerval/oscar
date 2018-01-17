@@ -1,11 +1,11 @@
-package oscar.cbls.business.routing.invariants.cumul.test
+package oscar.cbls.test.routing.testcumul
 
+import oscar.cbls.business.routing.invariants.capa.VehicleCapacityGlobalConstraint
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.business.routing.neighborhood._
 import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.lib.constraint.LE
-import oscar.cbls.lib.invariant.routing.capa.stagequentinmeurisse.VehicleCapacityGlobalConstraint
 import oscar.cbls.lib.search.combinators.{Mu, Profile, RoundRobin}
 
 /**

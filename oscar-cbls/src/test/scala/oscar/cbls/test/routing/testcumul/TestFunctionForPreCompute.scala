@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.invariants.cumul.test
+package oscar.cbls.test.routing.testcumul
 
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.base._

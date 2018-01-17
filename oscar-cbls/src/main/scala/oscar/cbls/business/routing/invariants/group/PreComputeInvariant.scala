@@ -1,5 +1,20 @@
 package oscar.cbls.business.routing.invariants.group
 
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
 import oscar.cbls.algo.magicArray.IterableMagicBoolArray
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.base._
@@ -104,15 +119,13 @@ abstract class PreComputeInvariant[T: Manifest, U](routes: ChangingSeqValue, v: 
     for (step <- computationSteps){
       step match {
         case FetchFromPreCompute(from, to, false) =>
-          val fromValue = bijection(from)
           val x =
-            if (checkpointAtLevel0.valueAtPosition(fromValue).get < v) neutralElement //by convention, the startpoint of a vehicle has the neutral element associated to it.
-            else preComputes(checkpointAtLevel0.valueAtPosition(fromValue - 1).get)
+            if (checkpointAtLevel0.valueAtPosition(bijection(from)).get < v) neutralElement //by convention, the startpoint of a vehicle has the neutral element associated to it.
+            else preComputes(checkpointAtLevel0.valueAtPosition(bijection(from) - 1).get)
           val y = preComputes(checkpointAtLevel0.valueAtPosition(bijection(to)).get)
           newValue = plus(newValue, minus(x, y))
         case FetchFromPreCompute(from, to, true) =>
-          val fromValue = bijection(from)
-          val x = preComputes(checkpointAtLevel0.valueAtPosition(fromValue).get)
+          val x = preComputes(checkpointAtLevel0.valueAtPosition(bijection(from)).get)
           val y = preComputes(checkpointAtLevel0.valueAtPosition(bijection(to) - 1).get) // a vehicle can't change its start point. So for a flipped segment fromValue >= v
           newValue = plus(newValue, minus(y, x, reverse = true))
         case fs@FromScratch(fromPos, toPos, topOfStack) =>
@@ -124,7 +137,6 @@ abstract class PreComputeInvariant[T: Manifest, U](routes: ChangingSeqValue, v: 
   }
 
   /**
-    *
     * @param fs a segment which need from scratch computation
     * @return the nodes at the extremities of segment
     */
@@ -150,16 +162,13 @@ abstract class PreComputeInvariant[T: Manifest, U](routes: ChangingSeqValue, v: 
     }
   }
 
-
   def recordTouchedVehicleSinceCheckpoint0(vehicle:Int){
     changedVehiclesSinceCheckpoint0(vehicle) = true
   }
 
-
   def bijection(x: Int): Int = {
     bijForPreCompute.fun(x)
   }
-
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) = {
     val updates = digestUpdates(changes)

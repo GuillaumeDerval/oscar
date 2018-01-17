@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.invariants.cumul.test
+package oscar.cbls.test.routing.testcumul
 
 import oscar.cbls.business.routing.invariants.cumul.nonStackable.VehicleCapacity
 import oscar.cbls.core.computation.{CBLSIntVar, CBLSSeqVar, Store}
