@@ -25,18 +25,17 @@ node {
         env.PARAMS = "-Dcetic -DBRANCH_NAME='${env.BRANCH_NAME}' -DREVISION_ID='${MERCURIAL_REVISION}' -DBUILD_ID='${env.BUILD_ID}'"
         env.SBT_CMD = "${env.SBT_HOME}/bin/sbt -Dsbt.log.noformat=true ${env.PARAMS} 'project oscar-cbls'"
 
-        
         stage('Build') {
             sh "${env.SBT_CMD} compile"
         }
         stage('Test') {
             sh "${env.SBT_CMD} test"
         }
+        stage('ScalaDoc') {
+            sh "${env.SBT_CMD} doc"
+        }
         stage('Package') {
             sh "${env.SBT_CMD} package -Xdisable-assertions"
-        }
-        stage('Publish') {
-            sh "${env.SBT_CMD} publish -Xdisable-assertions"
         }
 
     }
