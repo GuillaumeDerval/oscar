@@ -1,6 +1,7 @@
 package oscar.cbls.test.routing.testcumul
 
-import oscar.cbls.business.routing.invariants.cumul.nonStackable.VehicleCapacity
+import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.business.routing.invariants.capa.VehicleCapacityGlobalConstraint
 import oscar.cbls.core.computation.{CBLSIntVar, CBLSSeqVar, Store}
 import oscar.cbls.core.propagation.ErrorChecker
 
@@ -19,7 +20,7 @@ object TestVehicleCapacity extends App {
   val maxCapacity = 4
   val routes = new CBLSSeqVar(m, initialValue = IntSequence(0 until v), maxVal = n - 1, n = "Routes")
 
-  val inv = VehicleCapacity(routes, v, deltaAtNode, maxCapacity, violation, contentAtEndOfVehicleRoute)
+  val inv = VehicleCapacityGlobalConstraint(routes, v, deltaAtNode, maxCapacity, violation, contentAtEndOfVehicleRoute)
 
   m.close()
 
@@ -39,21 +40,21 @@ object TestVehicleCapacity extends App {
   m.propagate()
   println("\tok\n")
 
-  routes.rollbackToTopCheckpoint(inv.checkpoint)
+  routes.rollbackToTopCheckpoint(inv.checkpointAtLevel0)
 
   print("Insert node with delta > 0 with pre-compute")
   routes.insertAtPosition(15, 4)
   m.propagate()
   println("\tok\n")
 
-  routes.rollbackToTopCheckpoint(inv.checkpoint)
+  routes.rollbackToTopCheckpoint(inv.checkpointAtLevel0)
 
   print("Insert node with delta < 0 with pre-compute")
   routes.insertAtPosition(16, 2)
   m.propagate()
   println("\tok\n")
 
-  routes.rollbackToTopCheckpoint(inv.checkpoint)
+  routes.rollbackToTopCheckpoint(inv.checkpointAtLevel0)
 
   print("Remove node with delta > 0 with pre-compute")
   routes.remove(9)
@@ -75,7 +76,7 @@ object TestVehicleCapacity extends App {
   m.propagate()
   println("\tok\n")
 
-  routes.rollbackToTopCheckpoint(inv.checkpoint)
+  routes.rollbackToTopCheckpoint(inv.checkpointAtLevel0)
 
   print("Flip a segment with pre-compute" )
   routes.flip(2, 5)
@@ -93,7 +94,7 @@ object TestVehicleCapacity extends App {
   m.propagate()
   println("\tok\n")
 
-  routes.rollbackToTopCheckpoint(inv.checkpoint)
+  routes.rollbackToTopCheckpoint(inv.checkpointAtLevel0)
 
   print("Move a segment with sumDelta > 0 upwards without flip with pre-compute")
   routes.move(1, 2, 5, flip = false)
@@ -105,7 +106,7 @@ object TestVehicleCapacity extends App {
   m.propagate()
   println("\tok\n")
 
-  routes.rollbackToTopCheckpoint(inv.checkpoint)
+  routes.rollbackToTopCheckpoint(inv.checkpointAtLevel0)
 
   print("Move a segment with sumDelta < 0 upwards without flip with pre-compute")
   routes.move(2, 4, 6, flip = false)
@@ -127,7 +128,7 @@ object TestVehicleCapacity extends App {
   m.propagate()
   println("\tok\n")
 
-  routes.rollbackToTopCheckpoint(inv.checkpoint)
+  routes.rollbackToTopCheckpoint(inv.checkpointAtLevel0)
 
   print("Move a segment upwards with flip with pre-compute")
   routes.move(2, 4, 6, flip = true)
@@ -149,14 +150,14 @@ object TestVehicleCapacity extends App {
   m.propagate()
   println("\tok\n")
 
-  routes.rollbackToTopCheckpoint(inv.checkpoint)
+  routes.rollbackToTopCheckpoint(inv.checkpointAtLevel0)
 
   print("Move a segment with sumDelta < 0 from vehicle 1 to vehicle 0 without flip with pre-compute")
   routes.move(10, 11, 4, flip = false)
   m.propagate()
   println("\tok\n")
 
-  routes.rollbackToTopCheckpoint(inv.checkpoint)
+  routes.rollbackToTopCheckpoint(inv.checkpointAtLevel0)
 
   print("Move a segment with sumDelta > 0 from vehicle 1 to vehicle 0 without flip with pre-compute")
   routes.move(10, 12, 4, flip = false)
@@ -168,7 +169,7 @@ object TestVehicleCapacity extends App {
   m.propagate()
   println("\tok\n")
 
-  routes.rollbackToTopCheckpoint(inv.checkpoint)
+  routes.rollbackToTopCheckpoint(inv.checkpointAtLevel0)
 
   print("Move a segment from vehicle 0 to vehicle 1 without flip with pre-compute for remove the segment form vehicle 0 and fom scratch form insert")
   routes.insertAtPosition(16, 15)
@@ -177,7 +178,7 @@ object TestVehicleCapacity extends App {
   m.propagate()
   println("\tok\n")
 
-  routes.rollbackToTopCheckpoint(inv.checkpoint)
+  routes.rollbackToTopCheckpoint(inv.checkpointAtLevel0)
 
   print("Move a segment from vehicle 1 to vehicle 0 with flip with pre-compute")
   routes.move(10, 12, 4, flip = true)

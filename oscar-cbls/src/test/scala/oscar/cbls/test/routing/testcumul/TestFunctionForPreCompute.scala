@@ -1,5 +1,6 @@
 package oscar.cbls.test.routing.testcumul
 
+import org.scalatest.{FunSuite, Matchers}
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.base._
 import oscar.cbls.business.routing.invariants.group._
@@ -11,7 +12,7 @@ class TestFunctionForPreCompute extends FunSuite with Matchers{
 
   test("insert node with no pre-compute"){
     val f:ConcreteFunctionForPreCompute = ConcreteFunctionForPreCompute(IntSequence(0 to 7))
-    val g = f.stackInsert(10, 5)
+    val g = f.stackInsert(10, 5).concreteFunction
 
     for(i <- 0 to 4){g.fun(i) should be(i)}
 
@@ -67,16 +68,19 @@ class TestFunctionForPreCompute extends FunSuite with Matchers{
     val x = f.kindOfComputation(0, 46)
 
     x(0) should be(an [FetchFromPreCompute])
-    x(0).fromPos should be(0)
-    x(0).toPos should be(9)
+    x(0).asInstanceOf[FetchFromPreCompute].flipPrecomputation should be(false)
+    x(0).asInstanceOf[FetchFromPreCompute].fromPosAtCheckpointZero should be(0)
+    x(0).asInstanceOf[FetchFromPreCompute].toPosAtCheckpointZero should be(9)
 
-    x(1) should be(an [FetchFromPreComputeReverseWithOperator])
-    x(1).fromPos should be(10)
-    x(1).toPos should be(20)
+    x(1) should be(an [FetchFromPreCompute])
+    x(1).asInstanceOf[FetchFromPreCompute].flipPrecomputation should be(true)
+    x(1).asInstanceOf[FetchFromPreCompute].fromPosAtCheckpointZero should be(10)
+    x(1).asInstanceOf[FetchFromPreCompute].toPosAtCheckpointZero should be(20)
 
     x(2) should be(an [FetchFromPreCompute])
-    x(2).fromPos should be(21)
-    x(2).toPos should be(26)
+    x(2).asInstanceOf[FetchFromPreCompute].flipPrecomputation should be(false)
+    x(2).asInstanceOf[FetchFromPreCompute].fromPosAtCheckpointZero should be(21)
+    x(2).asInstanceOf[FetchFromPreCompute].toPosAtCheckpointZero should be(26)
 
     x(3) should be(an [FromScratch])
     x(3).fromPos should be(27)
@@ -87,8 +91,8 @@ class TestFunctionForPreCompute extends FunSuite with Matchers{
 
 
     x(4) should be(an [FetchFromPreCompute])
-    x(4).fromPos should be(29)
-    x(4).toPos should be(44)
+    x(4).asInstanceOf[FetchFromPreCompute].fromPosAtCheckpointZero should be(29)
+    x(4).asInstanceOf[FetchFromPreCompute].toPosAtCheckpointZero should be(44)
 
     x(5) should be(an [FromScratch])
     x(5).fromPos should be(45)
@@ -104,12 +108,12 @@ class TestFunctionForPreCompute extends FunSuite with Matchers{
     val x = g.kindOfComputation(15, 25)
 
     x(0) should be(an [FetchFromPreCompute])
-    x(0).asInstanceOf[FetchFromPreCompute].fromPos should be(15)
-    x(0).asInstanceOf[FetchFromPreCompute].toPos should be(19)
+    x(0).asInstanceOf[FetchFromPreCompute].fromPosAtCheckpointZero should be(15)
+    x(0).asInstanceOf[FetchFromPreCompute].toPosAtCheckpointZero should be(19)
 
     x(1) should be(an [FetchFromPreCompute])
-    x(1).asInstanceOf[FetchFromPreCompute].fromPos should be(20)
-    x(1).asInstanceOf[FetchFromPreCompute].toPos should be(25)
+    x(1).asInstanceOf[FetchFromPreCompute].fromPosAtCheckpointZero should be(20)
+    x(1).asInstanceOf[FetchFromPreCompute].toPosAtCheckpointZeros should be(25)
   }
 
   test("test obtains kind of computation step with invalid bounds"){

@@ -1,5 +1,6 @@
 package oscar.cbls.test.routing.testcumul
 
+import oscar.cbls.business.routing.invariants.{MovingVehicles, RouteSuccessorAndPredecessors}
 import oscar.cbls.business.routing.invariants.capa.VehicleCapacityGlobalConstraint
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.business.routing.neighborhood._
