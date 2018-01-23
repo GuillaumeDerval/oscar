@@ -19,6 +19,7 @@ package oscar.flatzinc.cp
 
 import java.lang.RuntimeException
 
+import oscar.algo.Inconsistency
 import oscar.cp._
 import oscar.cp.core.NoSolutionException
 import oscar.flatzinc.Options
@@ -133,13 +134,17 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
   }
 
   def updateBestObjectiveValue(value: Int): Boolean = {
-    model.search.obj match{
-     case Objective.SATISFY => 
-     case Objective.MAXIMIZE => getIntVar(model.search.variable.get).updateMin(value+1)
-     case Objective.MINIMIZE => getIntVar(model.search.variable.get).updateMax(value-1)
+    try{
+      model.search.obj match{
+       case Objective.SATISFY =>
+       case Objective.MAXIMIZE => getIntVar(model.search.variable.get).updateMin(value+1)
+       case Objective.MINIMIZE => getIntVar(model.search.variable.get).updateMax(value-1)
+      }
+        solver.propagate()
+        true
+    }catch{
+      case Inconsistency => false
     }
-    if(solver.propagate()==oscar.cp.core.CPOutcome.Failure) false
-    else true
   }
   def getMinFor(v:IntegerVariable): Int = {
     getIntVar(v).getMin

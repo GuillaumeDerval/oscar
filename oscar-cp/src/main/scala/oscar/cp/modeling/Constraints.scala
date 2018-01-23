@@ -825,7 +825,6 @@ trait Constraints {
   def modulo(x: CPIntVar, v: Int): CPIntVar = {
     val y = CPIntVar(0, v-1)(x.store)
     val ok = x.store.post(new oscar.cp.constraints.Modulo(x, v, y))
-    assert(ok != CPOutcome.Failure)
     y
   }
 

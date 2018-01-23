@@ -29,7 +29,6 @@ import scala.math.round
 import scala.math.sqrt
 
 import org.scalatest.{Matchers, FunSuite}
-import org.scalatest.matchers.ShouldMatchers
 
 import oscar.cbls.core.computation.Store
 import oscar.cbls.business.routing.legacy.model.HopDistanceAsObjectiveTerm

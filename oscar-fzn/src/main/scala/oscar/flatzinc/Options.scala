@@ -112,5 +112,5 @@ class Options(name: String, cbls: Boolean, args: Array[String]) {
     System.exit(0);
   }
   if(cbls && (all || nSols != 1))
-      println("% The CBLS Backend does not support the options to get all solutions or more than one solution.");
+      System.err.println("% The CBLS Backend does not support the options to get all solutions or more than one solution.");
 }

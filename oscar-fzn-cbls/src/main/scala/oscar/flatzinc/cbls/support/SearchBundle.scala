@@ -170,7 +170,8 @@ class SearchControl(val m: FZCBLSModel, val objLB:Int, val MaxTimeMilli: Int,val
     val satProblem = (newSolution && stopOnSat) //sat problem
     val ignoreObj = (newSolution && m.objective.objectiveWeight.value==0)
     val lowestValue = (m.objective.violation.value == 0 && m.objective.getObjectiveValue() == objLB) //reached the lower bound
-    return outOfTime || satProblem || ignoreObj || lowestValue
+    val alreadyFoundOpt = bestKnownObjective == objLB
+    return outOfTime || satProblem || ignoreObj || lowestValue || alreadyFoundOpt
   }
 
 

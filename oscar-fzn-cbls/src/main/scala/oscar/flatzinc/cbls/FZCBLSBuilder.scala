@@ -20,10 +20,8 @@ package oscar.flatzinc.cbls
 
 import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.ConstraintSystem
-import oscar.cbls.core.objective.{Objective => CBLSObjective}
 import oscar.cbls.lib.search.LinearSelector
 import oscar.cbls.util.StopWatch
-import oscar.cp.core.{Inconsistency, NoSolutionException}
 import oscar.flatzinc.{Log, NoSuchConstraintException, Options}
 import oscar.flatzinc.cbls.support._
 import oscar.flatzinc.cp.FZCPModel
@@ -31,7 +29,6 @@ import oscar.flatzinc.model.{Constraint, Variable, _}
 import oscar.flatzinc.parser.FZParser
 import oscar.flatzinc.transfo.FZModelTransfo
 
-import scala.collection.mutable.{SortedSet, Map => MMap}
 
 
 class FZCBLSBuilder extends LinearSelector with StopWatch {
@@ -170,7 +167,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
     val timeLimit = (timeout*0.02).toInt
     //// val (sc: SearchControl, search: Chain) = createSearchProcedure(timeout, log, fzModel, opts, cblsmodel)
 
-    val bets = Array.tabulate(10)(i => createSearchProcedure(timeLimit+i*timeLimit, true, log, fzModel, opts, cblsmodel))
+    //val bets = Array.tabulate(10)(i => createSearchProcedure(timeLimit+i*timeLimit, true, log, fzModel, opts, cblsmodel))
 
     val finalRun = createSearchProcedure(timeout, true, log, fzModel, opts, cblsmodel)
 
@@ -187,7 +184,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
       if (cblsmodel.c.violatedConstraints.length == 0 && fzModel.search.obj == Objective.SATISFY) {
         cblsmodel.handleSolution()
       } else {
-
+/*
         //Bet and run precedure:
         val res = bets.map( (s:(SearchControl,SearchProcedure)) => {
           cblsmodel.neighbourhoods.foreach(_.reset())
@@ -205,7 +202,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
         }
         )
         System.err.println("% Result of bets: " + res.mkString(", "))
-
+*/
       }
       //System.err.println("% Best result after bets = " + bestKnownObjective)
       //System.err.println("% Starting long run ")
