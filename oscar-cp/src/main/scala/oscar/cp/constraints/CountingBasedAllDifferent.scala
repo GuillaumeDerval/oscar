@@ -15,11 +15,11 @@
 
 package oscar.cp.constraints
 
+import oscar.algo.Inconsistency
 import oscar.algo.SortUtils._
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{CPStore, CPOutcome, CPPropagStrength, Constraint}
+import oscar.cp.core.variables.{CPIntVar, CPVar}
+import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
 
 /**
  *
@@ -30,6 +30,8 @@ import oscar.cp.core.{CPStore, CPOutcome, CPPropagStrength, Constraint}
 class CountingBasedAllDifferent(constrainedVariables: Array[CPIntVar]) extends Constraint(constrainedVariables(0).store){
 
   //TODO : incremental mapping of bits using a sparse set (no need of the second table maintaining the positions of the values)
+
+  override def associatedVars(): Iterable[CPVar] = constrainedVariables
 
   //general variables
   private[this] val nVariables = constrainedVariables.length
@@ -67,21 +69,18 @@ class CountingBasedAllDifferent(constrainedVariables: Array[CPIntVar]) extends C
      because their value is already removed from the other domains */
   private[this] val nBoundAndProcessedVariables = new ReversibleInt(constrainedVariables(0).store, 0) 
   
-  final override def setup(l: CPPropagStrength): CPOutcome = {
+  final override def setup(l: CPPropagStrength): Unit = {
     priorityL2 = CPStore.MaxPriorityL2 - 2
 
-    if (propagate() == Failure) Failure
-    else {
-      var i = nVariables
-      while (i > 0) {
-        i -= 1
-        constrainedVariables(i).callPropagateWhenDomainChanges(this)
-      }
-      Suspend
+    propagate()
+    var i = nVariables
+    while (i > 0) {
+      i -= 1
+      constrainedVariables(i).callPropagateWhenDomainChanges(this)
     }
   }
 
-  final override def propagate(): CPOutcome = {
+  final override def propagate(): Unit = {
 
     val nBoundAndProcessedVars = nBoundAndProcessedVariables.value
     var newnBoundAndProcessedVariables = 0
@@ -116,7 +115,7 @@ class CountingBasedAllDifferent(constrainedVariables: Array[CPIntVar]) extends C
       removeHallSetFromdomainAndUpdateDomainUnion()
 
       if (domainEmpty || currUnionDomainCardinality < nDomainsContributingToUnion)
-        return CPOutcome.Failure
+        throw Inconsistency
 
       if (currUnionDomainCardinality == nDomainsContributingToUnion) {
         updateHallSetAndClearDomainUnion()
@@ -130,8 +129,6 @@ class CountingBasedAllDifferent(constrainedVariables: Array[CPIntVar]) extends C
 
     //update number of bound and processed variables
     nBoundAndProcessedVariables.setValue(newnBoundAndProcessedVariables)
-
-    CPOutcome.Suspend
   }
 
   /* Bits operations */

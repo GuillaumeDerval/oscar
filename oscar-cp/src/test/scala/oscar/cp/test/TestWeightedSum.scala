@@ -1,11 +1,11 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 
 import oscar.cp._
 
-class TestWeightedSum extends FunSuite with ShouldMatchers {
+class TestWeightedSum extends TestSuite {
 
   test("Weighted Sum 1") {
     val cp = CPSolver()

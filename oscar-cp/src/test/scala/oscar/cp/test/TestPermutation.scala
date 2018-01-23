@@ -15,11 +15,11 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 import oscar.cp._
 import oscar.cp.constraints.Permutation
 
-class TestPermutation extends FunSuite with ShouldMatchers {
+class TestPermutation extends TestSuite {
 
 	test("Test Permutation 1") {
 		val cp = CPSolver()

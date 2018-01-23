@@ -1,7 +1,9 @@
 package oscar.cp.core.variables
 
+
+import oscar.cp.Constraint
+
 import scala.util.Random
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
 import oscar.cp.core.watcher.Watcher
@@ -15,7 +17,8 @@ import oscar.cp.core.delta.DeltaIntVar
 class CPBoolVarNot(final override val not: CPBoolVar) extends CPBoolVar {
   
   final override val store: CPStore = not.store
-  
+  final override val context = store
+
   final override val name: String = s"!${not.name}"
 
   final override def transform(value: Int) = not.transform(1 - value)
@@ -48,15 +51,15 @@ class CPBoolVarNot(final override val not: CPBoolVar) extends CPBoolVar {
 
   final override def randomValue(rand: Random): Int = 1 - not.randomValue(rand)
 
-  final override def updateMin(value: Int): CPOutcome = not.updateMax(1 - value)
+  final override def updateMin(value: Int): Unit = not.updateMax(1 - value)
 
-  final override def updateMax(value: Int): CPOutcome = not.updateMin(1 - value)
+  final override def updateMax(value: Int): Unit = not.updateMin(1 - value)
   
-  final override def assignTrue(): CPOutcome = not.assignFalse()
+  final override def assignTrue(): Unit = not.assignFalse()
 
-  final override def assignFalse(): CPOutcome = not.assignTrue()
+  final override def assignFalse(): Unit = not.assignTrue()
     
-  final override def assign(value: Int): CPOutcome = not.assign(1 - value)
+  final override def assign(value: Int): Unit = not.assign(1 - value)
 
   final override def removeValue(value: Int) = not.removeValue(1 - value)
 

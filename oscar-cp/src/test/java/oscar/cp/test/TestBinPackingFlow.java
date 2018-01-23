@@ -14,6 +14,7 @@
  ******************************************************************************/
 package oscar.cp.test;
 import junit.framework.TestCase;
+import oscar.algo.Inconsistency;
 import oscar.cp.constraints.BinPackingFlow;
 import oscar.cp.constraints.EqCons;
 import oscar.cp.core.variables.CPIntVar;
@@ -55,7 +56,7 @@ public class TestBinPackingFlow extends TestCase {
     									CPIntVar.apply(cp, 0,8)};
     	
     	cp.post(new BinPackingFlow(x, w, l));
-    	assertTrue(cp.isFailed());
+    	assertTrue(cp.isFailed);
     }
     
     public void test2() { 	
@@ -69,7 +70,7 @@ public class TestBinPackingFlow extends TestCase {
     	
     	cp.post(new BinPackingFlow(x, w, l));
     	
-    	assertTrue(!cp.isFailed());	
+    	assertTrue(!cp.isFailed);
     }
  */   
     public void test3() { 	
@@ -83,11 +84,14 @@ public class TestBinPackingFlow extends TestCase {
     	
     	CPIntVar c [] = new CPIntVar[]{ CPIntVar.apply(cp, 0,3),
 				CPIntVar.apply(cp, 0,3)};
-    	
-    	cp.post(new BinPackingFlow(x, w, l,c));
-    	cp.post(new EqCons(x[0], 0));
-    	
-    	assertTrue(cp.isFailed());	
+
+		try {
+			cp.post(new BinPackingFlow(x, w, l, c));
+			cp.post(new EqCons(x[0], 0));
+		}
+		catch(Inconsistency i) {}
+
+    	assertTrue(cp.isFailed());
     }     
    /* 
     public void test4() { 
@@ -103,7 +107,7 @@ public class TestBinPackingFlow extends TestCase {
     	
     	cp.post(new BinPackingFlow(x, w, l));
     	
-    	assertTrue(!cp.isFailed());
+    	assertTrue(!cp.isFailed);
     	
     }
     */

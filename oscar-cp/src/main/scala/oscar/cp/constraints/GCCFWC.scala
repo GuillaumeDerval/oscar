@@ -14,11 +14,11 @@
   ******************************************************************************/
 package oscar.cp.constraints
 
+import oscar.algo.Inconsistency
 import oscar.algo.reversible._
 import oscar.cp.core._
 import oscar.cp.core.delta._
 import oscar.cp.core.variables._
-import oscar.cp.core.CPOutcome._
 
 /**
  * Global Cardinality Constraint
@@ -35,6 +35,8 @@ import oscar.cp.core.CPOutcome._
  */
 class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[Int])
   extends Constraint(X(0).store, "GCCFWC") {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   idempotent = false
 
@@ -57,7 +59,7 @@ class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[In
   // Change buffer to load the deltas
   private[this] var changeBuffer: Array[Int] = null
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
 
     // Temporary variables to avoid using reversible variables too much
     val nMandatory = new Array[Int](nValues)
@@ -103,7 +105,7 @@ class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[In
       // Register before the first check loop so that we receive information on what we changed there
       x.callOnChangesIdx(i, delta => {
         val nBoundsOk = nBoundsOkRev.value
-        if (nBoundsOk == nBounds) Success
+        if (nBoundsOk == nBounds) true
         else whenDomainChanges(delta, x, nBoundsOk)
       })
     }
@@ -123,21 +125,22 @@ class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[In
       if (possible <= thisUpper) {
         nBoundsOk += 1
       }
+
       // Too few variables have the value
-      if (possible < thisLower ||
-        (possible == thisLower && whenMinPossible(vi, v, unbound) == Failure)) {
-        return Failure
-      }
+      if (possible < thisLower) throw Inconsistency
+      if (possible == thisLower)
+        whenMinPossible(vi, v, unbound)
 
       // Enough variables are bound to the value
       if (mandatory >= thisLower) {
         nBoundsOk += 1
       }
+
       // Too many variables are bound to the value
-      if (mandatory > thisUpper ||
-        (mandatory == thisUpper && whenMaxMandatory(vi, v, unbound) == Failure)) {
-        return Failure
-      }
+      if (mandatory > thisUpper)
+        throw Inconsistency
+      if (mandatory == thisUpper)
+        whenMaxMandatory(vi, v, unbound)
     }
 
     // This one has to be initialized in any case
@@ -155,13 +158,14 @@ class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[In
     }
 
     // Everything is up to the closures now
-    Success
+    deactivate()
   }
 
   /**
    * Update the structure when values are removed from a variable.
+   * @return true if the (sub-)constraint has finished its work and should be deactivated
    */
-  @inline private def whenDomainChanges(delta: DeltaIntVar, x: CPIntVar, nBoundsOk: Int): CPOutcome = {
+  @inline private def whenDomainChanges(delta: DeltaIntVar, x: CPIntVar, nBoundsOk: Int): Boolean = {
     val i = delta.id
     var nBoundsOkVar = nBoundsOk
 
@@ -186,13 +190,12 @@ class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[In
           nBoundsOkVar += 1
           if (nBoundsOkVar == nBounds) {
             nBoundsOkRev.setValue(nBounds)
-            return Success
+            return true
           }
         }
         // If the number of variables that have the value decreases to the lower bound, assign the unbound
-        if (nPossible == lower(vi) && whenMinPossible(vi, v, nUnbound) == Failure) {
-          return Failure
-        }
+        if (nPossible == lower(vi))
+          whenMinPossible(vi, v, nUnbound)
       }
     }
 
@@ -213,20 +216,19 @@ class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[In
           nBoundsOkVar += 1
           if (nBoundsOkVar == nBounds) {
             nBoundsOkRev.setValue(nBounds)
-            return Success
+            return true
           }
         }
         // If the number of variables that are bound to the value increases to the upper bound, remove the unbound
-        if (nMandatory == upper(vi) && whenMaxMandatory(vi, v, nUnbound) == Failure) {
-          return Failure
-        }
+        if (nMandatory == upper(vi))
+          whenMaxMandatory(vi, v, nUnbound)
       }
     }
 
     if (nBoundsOkVar != nBoundsOk) {
       nBoundsOkRev.setValue(nBoundsOkVar)
     }
-    Suspend
+    false
   }
 
   /**
@@ -236,7 +238,6 @@ class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[In
     * last = current size of the sparse-set
     */
   @inline private def removeUnbound(i: Int, vi: Int, last: Int): Unit = {
-
     val thisUnboundSet = unboundSet(vi)
     val thisUnboundIndex = unboundIndex(vi)
     val atLast = thisUnboundSet(last)
@@ -251,36 +252,28 @@ class GCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[In
   /**
    * When the number of possible variables drops to the lower bound, bind the unbound.
    */
-  @inline private def whenMinPossible(vi: Int, v: Int, nUnbound: Int): CPOutcome = {
+  @inline private def whenMinPossible(vi: Int, v: Int, nUnbound: Int): Unit = {
     val thisUnboundSet = unboundSet(vi)
 
     // Bind all the unbound variables that have this value
     var i = nUnbound
     while (i > 0) {
       i -= 1
-      if (X(thisUnboundSet(i)).assign(v) == Failure) {
-        return Failure
-      }
+      X(thisUnboundSet(i)).assign(v)
     }
-
-    Suspend
   }
 
   /**
    * When the number of mandatory variables reaches the upper bound, drop the unbound.
    */
-  @inline private def whenMaxMandatory(vi: Int, v: Int, nUnbound: Int): CPOutcome = {
+  @inline private def whenMaxMandatory(vi: Int, v: Int, nUnbound: Int): Unit = {
     val thisUnboundSet = unboundSet(vi)
 
     // Remove the value from the unbound variables that have this value
     var i = nUnbound
     while (i > 0) {
       i -= 1
-      if (X(thisUnboundSet(i)).removeValue(v) == Failure) {
-        return Failure
-      }
+      X(thisUnboundSet(i)).removeValue(v)
     }
-
-    Suspend
   }
 }

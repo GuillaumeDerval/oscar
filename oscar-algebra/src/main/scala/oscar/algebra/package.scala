@@ -14,7 +14,6 @@
  ******************************************************************************/
 package oscar
 
-
 package object algebra {
 
   /* ------------   Implicits ----------------------- */
@@ -23,9 +22,8 @@ package object algebra {
   implicit def int2const(d : Int) : NormalizedExpression[Constant,Double] = Const(d.toDouble).normalized
 
   class ModelDecorator[O  >: Constant <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](val model: Model[O,C,V]){
-    def solve(implicit solver: SolverInterface[O,C,V]): ModelStatus[O, C, V] = {
-      solver.solve(model)
-    }
+    def run(implicit solver: SolverInterface[O,C,V]): SolverRun[O,C,V] = solver.run(model)
+    def solve(implicit solver: SolverInterface[O,C,V]): SolveResult[O, C, V] = solver.solve(model)
   }
 
   implicit def model2decorator[O  >: Constant <: ExpressionDegree, C <: ExpressionDegree, V: Numeric](model: Model[O,C,V]): ModelDecorator[O, C, V] = new ModelDecorator(model)
@@ -98,10 +96,4 @@ package object algebra {
   def sum[A,B,C,D,T <: ExpressionDegree,V:Numeric](indexes1 : Iterable[A], indexes2 : Iterable[B], indexes3 : Iterable[C], indexes4 : Iterable[D])(f : (A,B,C,D) => NormalizedExpression[T,V]) : NormalizedExpression[T,V] = {
     sumOf(for(i <- indexes1; j <- indexes2; k<- indexes3; l <- indexes4) yield f(i,j,k,l))
   }
-
-  // TODO implement these functions
-  def abs(expr: NormalizedExpression[_,Double])(implicit model: Model[Linear,Linear,Double]): NormalizedExpression[Linear,Double] = ???
-
-  def sign(expr: NormalizedExpression[_,Double])(implicit model: Model[Linear,Linear,Double]): NormalizedExpression[Linear,Double] = ???
-
 }

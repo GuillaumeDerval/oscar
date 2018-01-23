@@ -156,7 +156,7 @@ class TestElementVar extends FunSuite with Matchers {
     cp.add(x(3) === 2)
     cp.add(x(5) === 3)
     cp.add(x(2) === 0)
-    cp.isFailed() should be(false)
+    cp.isFailed should be(false)
 
   }
   

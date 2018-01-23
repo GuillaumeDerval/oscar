@@ -16,13 +16,13 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 
 import oscar.cp.constraints._
 
 import oscar.cp._
 
-class TestObjective extends FunSuite with ShouldMatchers {
+class TestObjective extends TestSuite {
 
   test("Obj1") {
     val cp = CPSolver()
@@ -38,10 +38,15 @@ class TestObjective extends FunSuite with ShouldMatchers {
 
 
     val obj = new CPObjective(cp, obj1, obj2)
-    cp.optimize(obj) 
+    val x = Array(x1, x2)
+    cp.optimize(obj)
+    cp.onSolution {
+      println("solution"+x1+" "+x2)
+    }
     cp.search {
-      binary(Array(x1, x2), minVar, _.max)
-    } 
+      binaryStaticIdx(x, i => x(i).max)
+    }
+    println("before search:"+x.mkString(","))
     cp.start().nSols should be(3)
   }
 
@@ -58,11 +63,10 @@ class TestObjective extends FunSuite with ShouldMatchers {
 
 
     val obj = new CPObjective(cp, obj1, obj2)
-    cp.optimize(obj) 
+    cp.optimize(obj)
+    val x = Array(x1, x2)
     cp.search {
-      binaryStatic(Array(x1, x2), _.max)
-    } onSolution {
-      //println("=>"+x1+" "+x2)
+      binaryStaticIdx(Array(x1, x2), i => x(i).max)
     }
     cp.start().nSols should be(4)
   }
@@ -83,7 +87,7 @@ class TestObjective extends FunSuite with ShouldMatchers {
        
     cp.optimize(obj) 
     cp.search {
-      binary(Array(x1, x2), minVar, _.max)
+      binary(Array(x1, x2), i => 1, _.max)
     } onSolution {
        // solutions are (3,3) (2,3)
       Set((3, 3), (2, 3)).contains((x1.value, x2.value)) should be(true)
@@ -106,7 +110,7 @@ class TestObjective extends FunSuite with ShouldMatchers {
     val obj = new CPObjective(cp, obj1, obj2)
     cp.optimize(obj) 
     cp.search {
-      binary(Array(x1, x2), minVar, _.max)
+      binary(Array(x1, x2), i => 1, _.max)
     } onSolution {
       // solutions are (3,3) (2,2)
       Set((3, 3), (2, 2)).contains((x1.value, x2.value)) should be(true)
@@ -131,7 +135,7 @@ class TestObjective extends FunSuite with ShouldMatchers {
     val obj = new CPObjective(cp, obj1, obj2, obj3)    
     cp.optimize(obj) 
     cp.search {
-      binary(Seq(x1), minVar, _.max) ++ binary(Seq(x2), minVar, _.max)
+      binary(Seq(x1), i => 1, _.max) ++ binary(Seq(x2), i => 1, _.max)
     }
     cp.start().nSols should be(7)    
     
@@ -155,7 +159,7 @@ class TestObjective extends FunSuite with ShouldMatchers {
     val obj = new CPObjective(cp, obj1, obj2, obj3)    
     cp.optimize(obj) 
     cp.search {
-      binary(Seq(x1), minVar, _.max) ++ binary(Seq(x2), minVar, _.max)
+      binary(Seq(x1), i => 1, _.max) ++ binary(Seq(x2), i => 1, _.max)
     }
     cp.start().nSols should be(5) 
   }
@@ -178,7 +182,7 @@ class TestObjective extends FunSuite with ShouldMatchers {
     val obj = new CPObjective(cp, obj1, obj2, obj3)
     cp.optimize(obj) 
     cp.search {
-      binary(Seq(x1), minVar, _.max) ++ binary(Seq(x2), minVar, _.max)
+      binary(Seq(x1), i => 1, _.max) ++ binary(Seq(x2), i => 1, _.max)
     }
     cp.start().nSols should be(3) 
   }

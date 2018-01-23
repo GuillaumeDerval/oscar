@@ -16,9 +16,9 @@
 
 package oscar.cp.constraints
 
+import oscar.algo.Inconsistency
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.variables.CPGraphVar
+import oscar.cp.core.variables.{CPGraphVar, CPVar}
 
 /**
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
@@ -26,14 +26,16 @@ import oscar.cp.core.variables.CPGraphVar
  */
 
 class GraphUndirectedConnected(val g : CPGraphVar) extends Constraint(g.s, "Undirected Connected") {
-  
-	override def setup(l: CPPropagStrength): CPOutcome = {
+
+  override def associatedVars(): Iterable[CPVar] = Array(g)
+
+	override def setup(l: CPPropagStrength): Unit = {
 	  // add filter when domain changes
 	  g.callPropagateWhenDomainChanges(this)
 	  propagate()
 	}
 	
-	override def propagate(): CPOutcome = {
+	override def propagate(): Unit = {
 	  // #1 If required D(G) != empty and possible D(G) contains more than one connected component, 
 	  //	   remove all but the connected component containing required D(G). 
 	  // #2 Then all cutnodes and bridges on a path between two nodes of required D(G) are included in required D(G)
@@ -49,11 +51,11 @@ class GraphUndirectedConnected(val g : CPGraphVar) extends Constraint(g.s, "Undi
 	      // check whether if two required nodes belongs to two different components -> Failure
 	      val componentNumber : Int = connectedComponents.indexWhere(l => l.contains(reqNodes.head))
 	      for ( n <- reqNodes.tail)
-	        if (! connectedComponents(componentNumber).contains(n)) return Failure
+	        if (! connectedComponents(componentNumber).contains(n)) throw Inconsistency
 	      // remove all but the connected component containing required D(G)
 	      for (n <- possNodes)
 	        if (! connectedComponents(componentNumber).contains(n))
-	          if (g.removeNodeFromGraph(n) == Failure) return Failure
+	          g.removeNodeFromGraph(n)
 	    }
 	    
 	    // #2
@@ -67,7 +69,7 @@ class GraphUndirectedConnected(val g : CPGraphVar) extends Constraint(g.s, "Undi
 	  	  for (n <- nodesToCheck; if ! existPath(n1, n2, n)){
 	  	    // n is a cutnode
 	  	    cutnodes = n :: cutnodes
-	  	    if (g.addNodeToGraph(n) == Failure) return Failure
+	  	    g.addNodeToGraph(n)
 	  	  }
 	  	}
 	    // check for bridge : if an edge removal would disconnect two required nodes, its a bridge
@@ -75,13 +77,11 @@ class GraphUndirectedConnected(val g : CPGraphVar) extends Constraint(g.s, "Undi
 	    val newReqNodes : List[Int] = g.requiredNodes
 	    for (n1 <- newReqNodes; n2 <- newReqNodes; if n1!=n2){
 	      for (e <- possEdges; if !existPath(n1, n2, e)){
-	        if (g.addEdgeToGraph(e._1,e._2) == Failure) return Failure
-	        if (g.addEdgeToGraph(e._2,e._1) == Failure) return Failure
+	        g.addEdgeToGraph(e._1,e._2)
+	        g.addEdgeToGraph(e._2,e._1)
 	      }      
 	    }
 	  }
-	  
-	  Suspend
 	}
 	
 	/* ---------------------------------- 

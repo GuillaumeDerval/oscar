@@ -16,7 +16,7 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 import oscar.cp.core.CPStore
 import oscar.cp._
 import oscar.cp.constraints.WeightedSum
@@ -27,7 +27,7 @@ import oscar.cp.constraints.Gr
 import oscar.cp.constraints.MulVar
 import oscar.cp.constraints.DiffVal
 
-class TestMul extends FunSuite with ShouldMatchers {
+class TestMul extends TestSuite {
 
   test("test Mul 1") {
     implicit val s = new CPStore()
@@ -41,9 +41,8 @@ class TestMul extends FunSuite with ShouldMatchers {
     implicit val s = new CPStore()
     val x = CPIntVar(2, 5)
     val y = CPIntVar(10, 10)
-    s.post(new MulCte(x, 3, y))
-
-    assert(s.isFailed())
+    postAndCheckFailure(s,new MulCte(x, 3, y))
+    assert(s.isFailed)
   }
 
   test("test Mul 3") {
@@ -51,7 +50,7 @@ class TestMul extends FunSuite with ShouldMatchers {
     val x = CPIntVar(2, 5)
     val z = CPIntVar(10, 12)
     s.post(new MulCte(x, 3, z))
-    assert(!s.isFailed())
+    assert(!s.isFailed)
     assert(x.isBound && x.value == 4)
   }
 
@@ -61,7 +60,7 @@ class TestMul extends FunSuite with ShouldMatchers {
     val z = CPIntVar(9, 12)
     s.post(new MulCte(x, 3, z))
     s.post(new LeEq(z, 11))
-    assert(!s.isFailed())
+    assert(!s.isFailed)
     assert(x.isBound && x.value == 3)
   }
 
@@ -70,8 +69,8 @@ class TestMul extends FunSuite with ShouldMatchers {
     val x = CPIntVar(2, 5)
     val y = CPIntVar(10, 10)
     //s.post(new MulCte(x,3,y))
-    s.post(new WeightedSum(Array(3), Array(x), y))
-    assert(s.isFailed())
+    postAndCheckFailure(s, new WeightedSum(Array(3), Array(x), y))
+    assert(s.isFailed)
 
     assert(true)
   }
@@ -85,7 +84,7 @@ class TestMul extends FunSuite with ShouldMatchers {
     cp.post(new MulVar(x, y, z))
     cp.post(new DiffVal(y, 0))
 
-    assert(!cp.isFailed())
+    assert(!cp.isFailed)
     assert(x.isBound && x.value == 0)
   }
 
@@ -98,7 +97,7 @@ class TestMul extends FunSuite with ShouldMatchers {
     cp.post(new MulVar(x, y, z))
     cp.post(new DiffVal(z, 0))
 
-    assert(!cp.isFailed())
+    assert(!cp.isFailed)
     assert(!x.hasValue(0))
     assert(!y.hasValue(0))
     assert(x.min >= -1 && x.max <= 1)
@@ -239,7 +238,7 @@ class TestMul extends FunSuite with ShouldMatchers {
     val x = CPIntVar(-5, 5)
     val y = CPIntVar(-5, 16)
     s.post(new Eq(mul(x,x), y)) // should detect it is a square constraint
-    assert(!s.isFailed())
+    assert(!s.isFailed)
     assert(x.min == -4)
     assert(x.max == 4)
     assert(y.max == 16)
@@ -253,7 +252,7 @@ class TestMul extends FunSuite with ShouldMatchers {
     var z = CPIntVar(711, 711)
     z = mul(x,y)
     s.post(new Eq(z, CPIntVar(711))) // should detect it is a square constraint
-    assert(!s.isFailed())
+    assert(!s.isFailed)
 
   }
 }

@@ -17,10 +17,9 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome
+
 import scala.collection.JavaConversions._
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPBoolVar
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPVar}
 
 
 /**
@@ -32,6 +31,8 @@ import oscar.cp.core.variables.CPBoolVar
  * @author Pierre Schaus pschaus@gmail.com
  */
 class Knapsack(val X: Array[CPBoolVar], val profit: Array[Int], val weight: Array[Int], val P: CPIntVar, val W: CPIntVar, val filter: Boolean = true ) extends Constraint(X(0).store, "Table2") {
+
+  override def associatedVars(): Iterable[CPVar] = X ++ Array(P, W)
 
   def pre(): Boolean = weight.forall(_ > 0) && profit.forall(_ >= 0)
   
@@ -50,41 +51,36 @@ class Knapsack(val X: Array[CPBoolVar], val profit: Array[Int], val weight: Arra
   
   
   
-  override def setup(l: CPPropagStrength): CPOutcome = {    
-    if (s.post(new BinaryKnapsack(X, profit, P)) == CPOutcome.Failure) {
-      return CPOutcome.Failure;
-    }
-    if (s.post(new BinaryKnapsack(X,weight,W)) == CPOutcome.Failure) {
-    		return CPOutcome.Failure;
-    }
+  override def setup(l: CPPropagStrength): Unit = {
+    s.post(new BinaryKnapsack(X, profit, P))
+    s.post(new BinaryKnapsack(X,weight,W))
     if (!pre) {
      println("Knapasack Constraint Not Posted, weights must be > 0 and profit >= 0")
-     return CPOutcome.Success 
+     return
     }
-
     
     if (filter) {
     	x.filter(!_.isBound).foreach(_.callPropagateWhenDomainChanges(this))
     	for ((y,i) <- x.zipWithIndex) {
-    		val ok = if (y.isBound) valBindIdx(y,i) else y.callValBindIdxWhenBind(this,i)
-    		if (ok == CPOutcome.Failure) return CPOutcome.Failure
+    		if (y.isBound)
+          valBindIdx(y,i)
+        else
+          y.callValBindIdxWhenBind(this,i)
     	}
-    	if (propagate() == CPOutcome.Failure) return CPOutcome.Failure
+    	propagate()
     	P.callPropagateWhenBoundsChange(this)
     	W.callPropagateWhenBoundsChange(this)
     }
-    CPOutcome.Suspend
   }
 
   
-  override def valBindIdx(y: CPIntVar, i: Int) : CPOutcome = {
-    unbound.removeValue(i);
+  override def valBindIdx(y: CPIntVar, i: Int) : Unit = {
+    unbound.removeValue(i)
     if (y.min == 1) {
     	// add this to the capacity and to the reward
         packedProfit.value = packedProfit.value + p(i).toInt 
         packedWeight.value = packedWeight.value + w(i)  
     }
-    return CPOutcome.Suspend
   }
   
   /**
@@ -122,20 +118,20 @@ class Knapsack(val X: Array[CPBoolVar], val profit: Array[Int], val weight: Arra
   }
   
  
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
     // try to find the maximum profit under the weight/capa constraint using the linear relaxation
     val (profit: Int,weight: Int,s: Int) = getCriticalItem()
     
     if (s == -1) { // enough capa to take all items
-      if (P.updateMax(profit) == CPOutcome.Failure) return CPOutcome.Failure
-      else return CPOutcome.Suspend
+      P.updateMax(profit)
     } else {
       val weightSlack = W.max - weight
       // fraction of item s taken in the relaxed sol
       val fraq_s = weightSlack.toDouble / w(s) 
       
       val maxProfit = profit + fraq_s * p(s)
-      if (P.updateMax(Math.floor(maxProfit).toInt) == CPOutcome.Failure) return CPOutcome.Failure
+      P.updateMax(Math.floor(maxProfit).toInt)
+
       // we store the initial weight and profit of the critical item to restore it at the end
       val w_s_init = w(s)
       val p_s_init = p(s)
@@ -168,8 +164,7 @@ class Knapsack(val X: Array[CPBoolVar], val profit: Array[Int], val weight: Arra
                   j = unbound.getNext(j)
         	    } else { // found the exact weight that fills the gap
                   if (w_acc + w_ + tol < w(i)) { // item i is mandatory
-                    val ok = x(i).assign(1) // should not fail
-                    assert(ok != CPOutcome.Failure)
+                    x(i).assign(1) // should not fail
                   }
                   found = true
         	    }
@@ -201,8 +196,7 @@ class Knapsack(val X: Array[CPBoolVar], val profit: Array[Int], val weight: Arra
                   j = unbound.getPrev(j)
         	  } else { // found the exact weight that fills the gap
                   if (w_acc + w_ + tol < w(i)) { // item i is forbidden because we could force it's complete insertion
-                    val ok = x(i).removeValue(1) // should not fail
-                    assert(ok != CPOutcome.Failure)
+                    x(i).removeValue(1) // should not fail
                   }
                   found = true
         	  }
@@ -211,7 +205,6 @@ class Knapsack(val X: Array[CPBoolVar], val profit: Array[Int], val weight: Arra
          }
       } 
       restore_s() // restore w(s) and p(s)
-      return CPOutcome.Suspend
     }
   }
 

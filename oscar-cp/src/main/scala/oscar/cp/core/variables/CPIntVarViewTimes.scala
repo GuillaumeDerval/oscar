@@ -16,8 +16,10 @@
  */
 package oscar.cp.core.variables
 
+
+import oscar.algo.Inconsistency
+
 import scala.util.Random
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
 import oscar.cp.core.watcher.Watcher
@@ -34,7 +36,8 @@ final class CPIntVarViewTimes(v: CPIntVar, a: Int) extends CPIntVar {
   require(a != 0, "a should be different than 0")
   
   final override val store: CPStore = v.store
-  
+  final override val context = store
+
   final override val name: String = s"${v.name} * $a"
 
   final override def transform(v: Int) = a * this.v.transform(v)
@@ -89,9 +92,9 @@ final class CPIntVarViewTimes(v: CPIntVar, a: Int) extends CPIntVar {
 
   override final def updateMax(value: Int) = v.updateMax(floor_div(value, a))
 
-  override final def assign(value: Int) = if (value % a == 0) v.assign(value / a) else CPOutcome.Failure
+  override final def assign(value: Int) = if (value % a == 0) v.assign(value / a) else throw Inconsistency
 
-  override final def removeValue(value: Int) = if (value % a == 0) v.removeValue(value / a) else CPOutcome.Suspend
+  override final def removeValue(value: Int) = if (value % a == 0) v.removeValue(value / a)
 
   override final def min = a * v.min
 

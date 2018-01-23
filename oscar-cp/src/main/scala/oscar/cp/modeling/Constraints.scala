@@ -3,30 +3,33 @@
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 2.1 of the License, or
  * (at your option) any later version.
- *   
+ *
  * OscaR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License  for more details.
- *   
+ *
  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
 
 package oscar.cp.modeling
 
-import oscar.cp.constraints._
-import oscar.cp.core.variables.CPIntVarViewOffset
-import oscar.cp.core.variables.CPIntVarViewTimes
-import oscar.cp.core.variables.CPIntVarViewMinus
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPPropagStrength
+import java.security.InvalidParameterException
+
 import oscar.cp._
+import oscar.cp.constraints._
+import oscar.cp.constraints.tables.BasicSmartTableAlgo._
+import oscar.cp.constraints.tables.NegativeShortTableAlgo.NegativeShortTableAlgo
+import oscar.cp.constraints.tables.NegativeTableAlgo._
+import oscar.cp.constraints.tables.ShortTableAlgo._
+import oscar.cp.constraints.tables.TableAlgo._
+import oscar.cp.constraints.tables.{BasicSmartElement, BasicSmartTableAlgo, NegativeShortTableAlgo, ShortTableAlgo}
+import oscar.cp.core.variables.{CPIntVarViewMinus, CPIntVarViewOffset, CPIntVarViewTimes}
+import oscar.cp.core.{CPPropagStrength, Constraint}
 import oscar.cp.scheduling.constraints.{DisjunctiveWithTransitionTimes, UnaryResource, _}
 
 import scala.collection.mutable.ArrayBuffer
-import oscar.cp.constraints.tables.TableAlgo._
-import oscar.cp.constraints.tables.NegativeTableAlgo._
 
 trait Constraints {
 
@@ -78,8 +81,7 @@ trait Constraints {
     if (y.isBound) plus(x, y.value)
     else {
       val c = CPIntVar(x.min + y.min, x.max + y.max)(x.store)
-      val ok = x.store.post(new oscar.cp.constraints.BinarySum(x, y, c))
-      assert(ok != CPOutcome.Failure)
+      x.store.post(new oscar.cp.constraints.BinarySum(x, y, c))
       c
     }
   }
@@ -109,8 +111,7 @@ trait Constraints {
     import oscar.cp.util.NumberUtils
     val t = Array(NumberUtils.safeMul(a, c), NumberUtils.safeMul(a, d), NumberUtils.safeMul(b, c), NumberUtils.safeMul(b, d))
     val z = CPIntVar(t.min, t.max)(x.store)
-    val ok = x.store.post(new oscar.cp.constraints.MulVar(x, y, z))
-    assert(ok != CPOutcome.Failure)
+    x.store.post(new oscar.cp.constraints.MulVar(x, y, z))
     z
   }
 
@@ -122,8 +123,7 @@ trait Constraints {
    */
   def absolute(x: CPIntVar): CPIntVar = {
     val c = CPIntVar(0, Math.max(Math.abs(x.min), Math.abs(x.max)))(x.store)
-    val ok = x.store.post(new oscar.cp.constraints.Abs(x, c))
-    assert(ok != CPOutcome.Failure)
+    x.store.post(new oscar.cp.constraints.Abs(x, c))
     c
   }
 
@@ -227,7 +227,7 @@ trait Constraints {
   /**
    * allDifferent Constraint (Available Filtering: Weak, Medium, Strong)
     *
-    * @param variables an non empty array of variables
+    * @param variables a non empty array of variables
    * @return a constraint ensure that no value occurs more than once in variables
    */
   def allDifferent(variables: Array[CPIntVar]): Constraint = {
@@ -243,6 +243,15 @@ trait Constraints {
    */
   def softAllDifferent(variables: Array[CPIntVar], violations: CPIntVar): Constraint = {
     new SoftAllDifferent(variables, violations)
+  }
+
+  /**
+    * notAllEqual Constraint
+    * @param variables a non empty array of variables
+    * @return a constraint that ensures there is a least two values in 'variables' that are not equal (they are not all equal)
+    */
+  def notAllEqual(variables: Array[CPIntVar]): Constraint = {
+    new NotAllEqual(variables)
   }
 
   /**
@@ -362,8 +371,7 @@ trait Constraints {
    */
   def element(matrix: Array[Array[Int]], i: CPIntVar, j: CPIntVar): CPIntVar = {
     val z = CPIntVar(matrix.flatten.min to matrix.flatten.max)(i.store)
-    val ok = i.store.post(new ElementCst2D(matrix, i, j, z))
-    assert(ok != CPOutcome.Failure, { println("element on matrix, should not fail") })
+    i.store.post(new ElementCst2D(matrix, i, j, z))
     z
   }
 
@@ -438,7 +446,7 @@ trait Constraints {
     store.add(inverse(prev, next))
     next
   }
-  
+
   /**
    * Sum Constraint
     *
@@ -669,15 +677,29 @@ trait Constraints {
 
 
   /**
-    * Negative Table Constraints  (constraint given in extension by enumerating invalid valid assignments)
-    *
-    * @param x non empty array of variables on which the negative table constraint apply
-    * @param impossibleTuples a collection of impossible tuples for variables in x
-    * @param algo the negative table filtering algorithm to be used
-    * @return a constraint enforcing that x is not one of the tuples given in tuples
-    */
-  def negativeTable(x: Array[CPIntVar], impossibleTuples: Array[Array[Int]], algo: NegativeTableAlgo = STRNE): Constraint = {
-    oscar.cp.constraints.tables.negativeTable(x,impossibleTuples,algo)
+   * Negative Table Constraints  (constraint given in extension by enumerating invalid valid assignments)
+   *
+   * @param x non empty array of variables on which the negative table constraint apply
+   * @param impossibleTuples a collection of impossible tuples for variables in x
+   * @param algo the negative table filtering algorithm to be used
+   * @return a constraint enforcing that x is not one of the tuples given in tuples
+   */
+  def negativeTable(x: Array[CPIntVar], impossibleTuples: Array[Array[Int]], algo: NegativeTableAlgo = CompactTableNegative): Constraint = {
+    oscar.cp.constraints.tables.negativeTable(x, impossibleTuples, algo)
+  }
+
+  /**
+   * Negative Short Table Constraints  (constraint given in extension by enumerating invalid valid assignments)
+   *
+   * Remark : Tuple should not overlap to work!
+   *
+   * @param x non empty array of variables on which the negative table constraint apply
+   * @param impossibleTuples a collection of impossible tuples for variables in x
+   * @param algo the negative table filtering algorithm to be used
+   * @return a constraint enforcing that x is not one of the tuples given in tuples
+   */
+  def negativeShortTable(x: Array[CPIntVar], impossibleTuples: Array[Array[Int]], star: Int = -1, algo: NegativeShortTableAlgo = NegativeShortTableAlgo.CompactTableNegativeStar): Constraint = {
+    oscar.cp.constraints.tables.negativeShortTable(x, impossibleTuples, star, algo)
   }
 
   /**
@@ -744,6 +766,31 @@ trait Constraints {
    */
   def table(x1: CPIntVar, x2: CPIntVar, x3: CPIntVar, x4: CPIntVar, x5: CPIntVar, tuples: Iterable[(Int, Int, Int, Int, Int)]): Constraint = {
     table(Array(x1, x2, x3, x4, x5), tuples.map(t => Array(t._1, t._2, t._3, t._4, t._5)).toArray)
+  }
+
+  /**
+   * Short Table Constraints (constraint given in extension by enumerating valid assignments)
+   *
+   * @param x non empty array of variables on which the table constraint apply
+   * @param possibleTuples a collection of possible tuples for variables in x
+   * @param algo the table filtering algorithm used
+   * @param star the value (out of each domains) of the number representing the star
+   * @return a constraint enforcing that x is one of the tuples given in tuples
+   */
+  def shortTable(x: Array[CPIntVar], possibleTuples: Array[Array[Int]], star: Int = -1, algo: ShortTableAlgo = ShortTableAlgo.CompactTableStar): Constraint = {
+    oscar.cp.constraints.tables.shortTable(x, possibleTuples, star, algo)
+  }
+
+  /**
+   * Basic Smart Table Constraints (constraint given in extension by enumerating valid assignments)
+   *
+   * @param x non empty array of variables on which the table constraint apply
+   * @param possibleTuples a collection of possible tuples for variables in x
+   * @param algo the table filtering algorithm used
+   * @return a constraint enforcing that x is one of the tuples given in tuples
+   */
+  def basicSmartTable(x: Array[CPIntVar], possibleTuples: Array[Array[BasicSmartElement]], algo: BasicSmartTableAlgo = BasicSmartTableAlgo.CompactTableBs): Constraint = {
+    oscar.cp.constraints.tables.basicSmartTable(x, possibleTuples, algo)
   }
 
   /**
@@ -875,8 +922,7 @@ trait Constraints {
    */
   def countGeq(n: CPIntVar, x: IndexedSeq[CPIntVar], y: CPIntVar) = {
     val c = CPIntVar(0 to x.size)(n.store)
-    val ok = n.store.post(n >= c)
-    assert(ok != CPOutcome.Failure)
+    n.store.post(n >= c)
     new Count(c, x, y)
   }
 
@@ -890,8 +936,7 @@ trait Constraints {
    */
   def countGt(n: CPIntVar, x: IndexedSeq[CPIntVar], y: CPIntVar) = {
     val c = CPIntVar(0 to x.size)(n.store)
-    val ok = n.store.post(n > c)
-    assert(ok != CPOutcome.Failure)
+    n.store.post(n > c)
     new Count(c, x, y)
   }
 
@@ -905,8 +950,7 @@ trait Constraints {
    */
   def countLeq(n: CPIntVar, x: IndexedSeq[CPIntVar], y: CPIntVar) = {
     val c = CPIntVar(0 to x.size)(n.store)
-    val ok = n.store.post(n <= c)
-    assert(ok != CPOutcome.Failure)
+    n.store.post(n <= c)
     new Count(c, x, y)
   }
 
@@ -920,8 +964,7 @@ trait Constraints {
    */
   def countLt(n: CPIntVar, x: IndexedSeq[CPIntVar], y: CPIntVar) = {
     val c = CPIntVar(0 to x.size)(n.store)
-    val ok = n.store.post(n < c)
-    assert(ok != CPOutcome.Failure)
+    n.store.post(n < c)
     new Count(c, x, y)
   }
 
@@ -935,9 +978,24 @@ trait Constraints {
    */
   def countNeq(n: CPIntVar, x: IndexedSeq[CPIntVar], y: CPIntVar) = {
     val c = CPIntVar(0 to x.size)(n.store)
-    val ok = n.store.post(n.diff(c))
-    assert(ok != CPOutcome.Failure)
+    n.store.post(n.diff(c))
     new Count(c, x, y)
+  }
+
+
+  /**
+    * Global Cardinality Constraint: every value occurs at least min and at most max
+    *
+    * @param x an non empty array of variables
+    * @param valueMin is the minimum value that is constrained
+    * @param cardMin is the minimum number of occurrences
+    * @param cardMax such that cardMax.size == cardMin.size is the maximum number of occurrences
+    * @return a constraint such that each value v in the range  [valueMin..valueMin+cardMin.size-1]
+    *         occurs at least cardMin[v-minValue] and at most cardMax[v-minValue] times.
+    */
+  def gcc(x: Array[CPIntVar], valueMin: Int, cardMin: Array[Int], cardMax: Array[Int]): Constraint = {
+    if (cardMin.size != cardMax.size) throw new InvalidParameterException("cardMin.size != cardMax.size")
+    new GCC(x, valueMin, cardMin, cardMax)
   }
 
   /**
@@ -1215,15 +1273,15 @@ trait Constraints {
   }
 
   /**
-   * Constraints enforcing that variables in s are variables from x sorted in increasing order (i.e. s_i <= s_{i+1})
-   * where values in p represent the position/index in x at which values of s are (i.e. x(p_i) = s_i)
+    * Constraints enforcing that variables in s are variables from x sorted in increasing order (i.e. s_i <= s_{i+1})
+    * where values in p represent the position/index in x at which values of s are (i.e. x(p_i) = s_i)
     *
-    * @param x a non empty collection of variable
-   * @param s a non empty collection of variable of same size as x
-   * @param p a non empty collection of variable of same size as x
-   * @param strictly boolean set to true if the order must be strict
-   * @return a constraint enforcing that s is the sorted version of variables in x where x(p_i) = s_i
-   */
+    * @param x        a non empty collection of variable
+    * @param s        a non empty collection of variable of same size as x
+    * @param p        a non empty collection of variable of same size as x
+    * @param strictly boolean set to true if the order must be strict
+    * @return a constraint enforcing that s is the sorted version of variables in x where x(p_i) = s_i
+    */
   def sortedness(x: IndexedSeq[CPIntVar], s: IndexedSeq[CPIntVar], p: IndexedSeq[CPIntVar], strictly: Boolean = false): Array[Constraint] = {
     val cp = x.head.store
     val n = x.size
@@ -1294,8 +1352,30 @@ trait Constraints {
    *         all values in X are different and H represents an upper bound of the sum of the differences between
    *         deadlines and variables (sum_i(d_i - X_i) <= H)
    */
-  def stockingCost(X: Array[CPIntVar], d: Array[Int], H: CPIntVar): Constraint = {
+  def stockingCost(X: Array[CPIntVar], d: Array[Int], H: CPIntVar) = {
     new StockingCost(X, d, H, 1)
+  }
+
+
+  /**
+    * The IDStockingCost constraint holds when each item is produced before
+    * its due date ($X_i <= d_i$), the capacity of the machine is respected
+    * (i.e. no more than $c$ variables $X_i$ have the same value), and $H$
+    * is an upper bound on the total stocking cost ($sum_i((d_i - X_i)*h_i) <= H$).
+    *
+    * This constraint is the generalization of StockingCost constraint to
+    * item dependent stocking cost and useful for modeling
+    * Production Planning Problem such as Lot Sizing Problems
+    *
+    * @param X        , the variable $X_i$ is the date of production of item $i$ on the machine
+    * @param deadline , the integer $deadline_i$ is the due-date for item $i$
+    * @param h        , the integer $h_i$ is the stocking cost for item $i$
+    * @param H        , the variable $H$ is an upper bound on the total number of slots all the items are need in stock.
+    * @param cap      , the integer $cap_t$ is the maximum number of items the machine can produce during one time slot $t$ (capacity),
+    *                 if an item is produced before its due date, then it must be stocked.
+    */
+  def stockingCost(X: Array[CPIntVar],deadline: Array[Int], h: Array[Int],H: CPIntVar,cap: Array[Int]) = {
+    new IDStockingCost(X,deadline,h,H,cap)
   }
 
   /**

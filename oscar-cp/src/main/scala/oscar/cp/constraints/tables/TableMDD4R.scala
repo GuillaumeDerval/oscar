@@ -15,10 +15,9 @@
 
 package oscar.cp.constraints.tables
 
-
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{CPStore, Constraint, CPOutcome, CPPropagStrength}
-import oscar.cp.core.CPOutcome._
+import oscar.algo.Inconsistency
+import oscar.cp.core.variables.{CPIntVar, CPVar}
+import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
 import oscar.cp.constraints.tables.mdd.{MDDTableVar, ReversibleMDD}
 
 /**
@@ -29,10 +28,14 @@ import oscar.cp.constraints.tables.mdd.{MDDTableVar, ReversibleMDD}
  */
 class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Constraint(X(0).store, "TableMDD4R") {
 
+  override def associatedVars(): Iterable[CPVar] = X
+
   idempotent = true
   priorityL2 = CPStore.MaxPriorityL2 - 1
   
   private[this] val arity = X.length
+  if (table.length == 0)
+    throw Inconsistency
   private[this] val mdd = new ReversibleMDD(X(0).store, table)
   
   /* Temporary arrays used during propagation */
@@ -47,7 +50,7 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
   private[this] val vars = X.zipWithIndex.map { case (x, indexVar) => 
     new MDDTableVar(x.store, x, indexVar, mdd.nbOfValues(indexVar), mdd, mdd.nbOfEdgesByValue(indexVar), sharedEdges) 
   }
-  
+
   /**
    * Set up the constraint :
    * 1) We ask to call propagate() whenever a variable domain has changed
@@ -55,7 +58,7 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
    * 3) We remove the value that do not appear in the table/MDD
    * 4) We do a first propagation
    */
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
 
 
     /* Put edges in valid set */
@@ -64,7 +67,7 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
     }
     
     /* Remove values that do not belong to the MDD at all */
-    vars.foreach(x => if(x.deleteValuesNotInMDD(setupArray) == Failure) return Failure)
+    vars.foreach(x => x.deleteValuesNotInMDD(setupArray) )
     
     /* Call propagate and track Delta */
     X.zipWithIndex.foreach { case (x, i) => 
@@ -75,23 +78,20 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
     propagate()
   }
   
-  @inline override final def propagate(): CPOutcome = {
+  @inline override final def propagate(): Unit = {
     /* We check for each variable if one of them has changed since last propagate */
     var i = 0
     while (i < arity) {
       val tableVar = vars(i)
       if (tableVar.hasChanged) {
         deltaSize = tableVar.fillDeltaArray(deltaArray)
-        if (update(tableVar, i) == Failure) {
-          return Failure
-        }
+        update(tableVar, i)
       }
       i += 1
     }
-    Suspend
   }
   
-  /*@inline final def propagateDelta(tableVar: MDDTableVar, indexVar: Int, deltaVar: DeltaIntVar): CPOutcome = {
+  /*@inline final def propagateDelta(tableVar: MDDTableVar, indexVar: Int, deltaVar: DeltaIntVar): Unit = {
     if (!tableVar.hasChanged) {
       return Suspend
     }
@@ -114,7 +114,7 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
    * also delete edges (and remove values from the domain if necessary) that
    * became invalid during the process.
    */
-  @inline final def update(tableVar: MDDTableVar, indexVar: Int): CPOutcome = {
+  @inline final def update(tableVar: MDDTableVar, indexVar: Int): Unit = {
     
     var cptUp = 0
     var cptDown = 0
@@ -197,8 +197,7 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
           val edge = edgesArray(i)
           cptUp += mdd.resetDeleteEdgeUp(edge)
           /* We remove the edge in the support for the corresponding value */
-          if (vars(lvlUp).removeEdgeForValue(edge, mdd.valueOfEdge(edge)) == Failure) 
-            return Failure
+          vars(lvlUp).removeEdgeForValue(edge, mdd.valueOfEdge(edge))
           i += 1
         }
       }
@@ -218,8 +217,7 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
           i += 1
         }
         
-        if (vars(lvlUp).removeUnsupportedValues == Failure) 
-          return Failure
+        vars(lvlUp).removeUnsupportedValues
       }
     }
     
@@ -248,8 +246,7 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
           val edge = edgesArray(i)
           cptDown += mdd.resetDeleteEdgeDown(edge)
           
-          if (vars(lvlDown).removeEdgeForValue(edge, mdd.valueOfEdge(edge)) == Failure) 
-            return Failure
+          vars(lvlDown).removeEdgeForValue(edge, mdd.valueOfEdge(edge))
           i += 1
         }
       }
@@ -269,13 +266,10 @@ class TableMDD4R (val X: Array[CPIntVar], table: Array[Array[Int]]) extends Cons
           i += 1
         }
         
-        if (vars(lvlDown).removeUnsupportedValues == Failure) 
-          return Failure
+        vars(lvlDown).removeUnsupportedValues
       }
       lvlDown += 1
     }
-    
-    Suspend
   }
   
 }

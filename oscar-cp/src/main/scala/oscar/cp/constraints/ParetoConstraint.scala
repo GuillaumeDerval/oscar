@@ -14,19 +14,19 @@
  ******************************************************************************/
 package oscar.cp.constraints
 
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.multiobjective.Pareto
 
 class ParetoConstraint[Sol](pareto: Pareto[Sol], isMax: Array[Boolean], objVars: Array[CPIntVar]) extends Constraint(objVars.head.store, "Gavanelli02 Dominance") {
 
+  override def associatedVars(): Iterable[CPVar] = objVars
+
   // Simplifies code understanding
   type Point = IndexedSeq[Int]
   
-  override def propagate(): CPOutcome = {    
+  override def propagate(): Unit = {
     //println("propagate gananelli")
     // List of all solutions
     val allSols = pareto.objectiveSols
@@ -41,15 +41,13 @@ class ParetoConstraint[Sol](pareto: Pareto[Sol], isMax: Array[Boolean], objVars:
       
       // objective has to be maximized
       if (isMax(o)) { 
-        if (objVars(o).updateMin(bound + 1) == Failure) return Failure
+        objVars(o).updateMin(bound + 1)
       }
       // objective has to be minimized
       else { 
-        if (objVars(o).updateMax(bound - 1) == Failure) return Failure
+        objVars(o).updateMax(bound - 1)
       }
     }
-    
-    Suspend
   }  
   
   // Returns the array of solutions such that for each objective i, bestDominant(i) is the solution 
@@ -84,15 +82,16 @@ class ParetoConstraint[Sol](pareto: Pareto[Sol], isMax: Array[Boolean], objVars:
     }
   }
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     idempotent = true
-    if (propagate() == Failure) Failure
-    else {
+    propagate()
+    if(isActive) {
       for(o <- pareto.Objs if !objVars(o).isBound) {
-    	if (isMax(o)) objVars(o).callPropagateWhenBoundsChange(this)
-    	else objVars(o).callPropagateWhenBoundsChange(this)
+    	  if (isMax(o))
+          objVars(o).callPropagateWhenBoundsChange(this)
+    	  else
+          objVars(o).callPropagateWhenBoundsChange(this)
       }
-      Suspend
     }
   }
 }

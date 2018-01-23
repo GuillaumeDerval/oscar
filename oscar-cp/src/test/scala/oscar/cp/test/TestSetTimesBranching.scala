@@ -14,9 +14,11 @@
  ******************************************************************************/
 package oscar.cp.test
 
+import oscar.algo.Inconsistency
 import oscar.cp._
 import oscar.cp.testUtils._
 import oscar.util.RandomGenerator
+
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -186,7 +188,7 @@ class TestSetTimesBranching extends TestSuite {
 
       search {
         if (withSetTimes) setTimes(starts, durations, ends)
-        else binaryStatic(starts,_.min)
+        else binaryStaticIdx(starts,i => starts(i).min)
 
       }
 
@@ -244,7 +246,7 @@ class TestSetTimesBranching extends TestSuite {
         }
 
       } catch {
-        case e: NoSolutionException => return 0
+        case e: Inconsistency => return 0
       }
 
       minimize(makespan)
@@ -257,7 +259,7 @@ class TestSetTimesBranching extends TestSuite {
 
       search {
         if (withSetTimes) setTimes(starts, durations, ends)
-        else binaryStatic(starts,_.min)
+        else binaryStaticIdx(starts,i => starts(i).min)
 
       }
 

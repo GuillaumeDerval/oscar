@@ -15,8 +15,7 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
-import oscar.cp.core.CPOutcome._
+import oscar.cp.testUtils.TestSuite
 import oscar.cp._
 import oscar.cp.constraints.SubGraph
 
@@ -24,7 +23,7 @@ import oscar.cp.constraints.SubGraph
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
  */
 
-class TestSubGraph extends FunSuite with ShouldMatchers  {
+class TestSubGraph extends TestSuite  {
 
   test("Test 1 : All possible") {
     val cp = CPSolver()
@@ -35,7 +34,7 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     val edges2 = List((0,1),(1,2))
     val g2 = CPGraphVar(cp, nnodes2, edges2)
     
-    cp.post(new SubGraph(g1,g2)) should be (Suspend)
+    postAndCheckSuspend(cp,new SubGraph(g1,g2))
     
     // all should be possible for g1
     for (n <- 0 to (nnodes1-1)){
@@ -98,15 +97,15 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     val g2 = CPGraphVar(cp, nnodes2, edges2)
     
     // #1 add before posting constraint
-    cp.post(g1.addNode(0)) should be (Suspend) 
-    cp.post(new SubGraph(g1,g2)) should be (Suspend)
+    postAndCheckSuspend(cp,g1.addNode(0))
+    postAndCheckSuspend(cp,new SubGraph(g1,g2))
     // if node 0 is required in g1 and subgraph(g1,g2)
     //    => node 0 should be required in g2
     g1.requiredNodes should be (List(0))
     g2.requiredNodes should be (List(0))
     
     // #2 add after posting constraint (check propagator working properly)
-    cp.post(g1.addNode(1)) should be (Suspend)
+    postAndCheckSuspend(cp,g1.addNode(1))
     // if node 1 is required in g1 and subgraph(g1,g2)
     //    => node 1 should be required in g2
     g1.requiredNodes should be (List(0,1))
@@ -123,15 +122,15 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     val g2 = CPGraphVar(cp, nnodes2, edges2)
     
     // #1 add before posting constraint
-    cp.post(g2.addNode(0)) should be (Suspend)
-    cp.post(new SubGraph(g1,g2)) should be (Suspend)
+    postAndCheckSuspend(cp,g2.addNode(0))
+    postAndCheckSuspend(cp,new SubGraph(g1,g2))
     
     // should change nothing in g1
     g1.requiredNodes should be (List())
     g2.requiredNodes should be (List(0))
     
     // #2 add after posting constraint
-    cp.post(g2.addNode(1)) should be (Suspend)
+    postAndCheckSuspend(cp,g2.addNode(1))
     // should change nothing in g1
     g1.requiredNodes should be (List())
     g2.requiredNodes should be (List(0,1))
@@ -147,20 +146,20 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     val g2 = CPGraphVar(cp, nnodes2, edges2)
     
     // #1 add before posting constraint
-    cp.post(g1.addEdge(0, 1)) should be (Suspend)
+    postAndCheckSuspend(cp,g1.addEdge(0, 1))
     g1.requiredInEdges(1) should be (List(0))
     g1.requiredOutEdges(0) should be (List(0))
     g2.requiredInEdges(1) should be (List())
     g2.requiredOutEdges(0) should be (List())
     val c : Constraint = new SubGraph(g1,g2)
-    cp.post(c) should be (Suspend)
+    cp.post(c)
     // after posting constraint, the edge (0,1) should be required in g2
     g1.requiredInEdges(1) should be (List(0))
     g1.requiredOutEdges(0) should be (List(0))
     g2.requiredInEdges(1) should be (List(0))
     g2.requiredOutEdges(0) should be (List(0))
     // also, as (0,1) is required in g2, the constraint is entailed and c no longer active
-    assert(c.isActive == false)  
+    assert(!c.isActive)
     }
     
     test("Test 5 : add required edge in g1 after post constraint") {
@@ -173,9 +172,9 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     val g2 = CPGraphVar(cp, nnodes2, edges2)
     
     val c : Constraint = new SubGraph(g1,g2)
-    cp.post(c) should be (Suspend)
+    postAndCheckSuspend(cp,c)
     // #2 add after posting constraint
-    cp.post(g1.addEdge(0, 1)) should be (Suspend)
+    postAndCheckSuspend(cp,g1.addEdge(0, 1))
     // constraint propagator should be called and set edge 0:=(0,1) required in g2
     g1.requiredInEdges(1) should be (List(0))
     g1.requiredOutEdges(0) should be (List(0))
@@ -195,7 +194,7 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     val g2 = CPGraphVar(cp, nnodes2, edges2)
     
     // #1 add before posting constraint
-    cp.post(g2.addEdge(0, 1)) should be (Suspend)
+    postAndCheckSuspend(cp,g2.addEdge(0, 1))
     g1.requiredInEdges(0)  should be (List())
     g1.requiredOutEdges(0) should be (List())
     g1.requiredInEdges(1)  should be (List())
@@ -207,8 +206,7 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     g2.requiredNodes.sorted	should be (List(0,1))
     // the constraint is entailed, we can check it directly by noticing that is is no longer active 
     val c : Constraint =  new SubGraph(g1,g2)
-    cp.post(c) should be (Suspend)
-    assert(c.isActive == false)
+    postAndCheckSuccess(cp,c)
     }
     
     test("Test 7 : add required edge in g2 st entailment (2)") {
@@ -221,9 +219,9 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     val g2 = CPGraphVar(cp, nnodes2, edges2)
 
     val c : Constraint = new SubGraph(g1,g2) 
-    cp.post(c) should be (Suspend)
+    postAndCheckSuspend(cp,c)
     // #2 add after posting constraint
-    cp.post(g2.addEdge(0, 1)) should be (Suspend)
+    postAndCheckSuspend(cp,g2.addEdge(0, 1))
     // propagator should get entailement of constraint
     // check entailment -> constraint no longer active
     assert(c.isActive == false)
@@ -238,9 +236,9 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     val edges2 = List((0,1),(1,2))
     val g2 = CPGraphVar(cp, nnodes2, edges2)
     
-    cp.post(g1.removeEdge(0,1)) should be (Suspend)
+    postAndCheckSuspend(cp,g1.removeEdge(0,1))
     val c : Constraint = new SubGraph(g1,g2) 
-    cp.post(c) should be (Suspend)
+    postAndCheckSuspend(cp,c)
     g1.possibleEdges(0).sorted    should be (List())
     g1.possibleEdges(1).sorted    should be (List())
     g2.possibleEdges(0).sorted    should be (List(0))
@@ -258,14 +256,14 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     val g2 = CPGraphVar(cp, nnodes2, edges2)
     
     val c : Constraint = new SubGraph(g1,g2) 
-    cp.post(c) should be (Suspend)
+    postAndCheckSuspend(cp,c)
     g1.possibleEdges(0).sorted    should be (List(0))
     g1.possibleEdges(1).sorted    should be (List(0))
     g2.possibleEdges(0).sorted    should be (List(0))
     g2.possibleEdges(1).sorted    should be (List(0,1))
     g2.possibleEdges(2).sorted    should be (List(1))
     
-    cp.post(g1.removeEdge(0,1)) should be (Suspend)
+    postAndCheckSuspend(cp,g1.removeEdge(0,1))
     g1.possibleEdges(0).sorted    should be (List())
     g1.possibleEdges(1).sorted    should be (List())
     g2.possibleEdges(0).sorted    should be (List(0))
@@ -282,7 +280,7 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     val edges2 = List((0,1),(1,2))
     val g2 = CPGraphVar(cp, nnodes2, edges2)
     
-    cp.post(g2.removeEdge(1,2)) should be (Suspend)
+    postAndCheckSuspend(cp,g2.removeEdge(1,2))
     g1.possibleEdges(0).sorted    should be (List(0))
     g1.possibleEdges(1).sorted    should be (List(0))
     g2.possibleEdges(0).sorted    should be (List(0))
@@ -290,7 +288,7 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     g2.possibleEdges(2).sorted    should be (List())
     
     val c : Constraint = new SubGraph(g1,g2) 
-    cp.post(c) should be (Suspend)
+    postAndCheckSuspend(cp,c)
     // posting constraint should change nothing
     g1.possibleEdges(0).sorted    should be (List(0))
     g1.possibleEdges(1).sorted    should be (List(0))
@@ -309,14 +307,14 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     val g2 = CPGraphVar(cp, nnodes2, edges2)
     
     val c : Constraint = new SubGraph(g1,g2) 
-    cp.post(c) should be (Suspend)
+    postAndCheckSuspend(cp,c)
     g1.possibleEdges(0).sorted    should be (List(0))
     g1.possibleEdges(1).sorted    should be (List(0))
     g2.possibleEdges(0).sorted    should be (List(0))
     g2.possibleEdges(1).sorted    should be (List(0,1))
     g2.possibleEdges(2).sorted    should be (List(1))
     
-    cp.post(g2.removeEdge(1,2)) should be (Suspend)
+    postAndCheckSuspend(cp,g2.removeEdge(1,2))
     g1.possibleEdges(0).sorted    should be (List(0))
     g1.possibleEdges(1).sorted    should be (List(0))
     g2.possibleEdges(0).sorted    should be (List(0))
@@ -333,7 +331,7 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     val edges2 = List((0,1),(1,2))
     val g2 = CPGraphVar(cp, nnodes2, edges2)
     
-    cp.post(g1.addEdge(0,1)) should be (Suspend)
+    postAndCheckSuspend(cp,g1.addEdge(0,1))
     g1.requiredEdges(0).sorted    should be (List(0))
     g1.requiredEdges(1).sorted    should be (List(0))
     g1.possibleEdges(0).sorted    should be (List(0))
@@ -342,7 +340,7 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     g2.possibleEdges(1).sorted    should be (List(0,1))
     g2.possibleEdges(2).sorted    should be (List(1))
     
-    cp.post(g2.removeEdge(0,1)) should be (Suspend)
+    postAndCheckSuspend(cp,g2.removeEdge(0,1))
     g1.requiredEdges(0).sorted    should be (List(0))
     g1.requiredEdges(1).sorted    should be (List(0))
     g1.possibleEdges(0).sorted    should be (List(0))
@@ -352,7 +350,7 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     g2.possibleEdges(2).sorted    should be (List(1))
     
     val c : Constraint = new SubGraph(g1,g2) 
-    cp.post(c) should be (Failure)
+    postAndCheckFailure(cp, c)
     }
     
     test("Test 13 : Remove possible edge in g2 after c leading to entailment") {
@@ -364,7 +362,7 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     val edges2 = List((0,1),(1,2))
     val g2 = CPGraphVar(cp, nnodes2, edges2)
     
-    cp.post(g1.addEdge(0,1)) should be (Suspend)
+    postAndCheckSuspend(cp,g1.addEdge(0,1))
     g1.requiredEdges(0).sorted    should be (List(0))
     g1.requiredEdges(1).sorted    should be (List(0))
     g1.possibleEdges(0).sorted    should be (List(0))
@@ -377,7 +375,7 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     g2.requiredEdges(2).sorted 	  should be (List())
     
     val c : Constraint = new SubGraph(g1,g2) 
-    cp.post(c) should be (Suspend)
+    postAndCheckSuspend(cp,c)
     // adding constraint set edge (0,1) in g2 required because (0,1) was required in g1
     g2.requiredEdges(0).sorted 	  should be (List(0))
     g2.requiredEdges(1).sorted 	  should be (List(0))
@@ -385,7 +383,7 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     cp.isFailed should be (false)
     
     // failure because we want to remove a node that was mandatory
-    cp.post(g2.removeEdge(0,1)) should be (Failure)
+    postAndCheckFailure(cp, g2.removeEdge(0,1))
     cp.isFailed should be (true)
     }
     
@@ -398,10 +396,10 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     val edges2 = List((0,1),(1,2))
     val g2 = CPGraphVar(cp, nnodes2, edges2)
     
-    cp.post(g1.addEdge(1, 3)) should be (Suspend)
+    postAndCheckSuspend(cp,g1.addEdge(1, 3))
     // g1 has a required edge (1,3) which is not part of g2 graph
     // posting constraint subgrah(g1,g2) should fail
-    cp.post(new SubGraph(g1,g2)) should be (Failure)
+    postAndCheckFailure(cp, new SubGraph(g1,g2))
     cp.isFailed should be (true)
     }
 
@@ -429,7 +427,7 @@ class TestSubGraph extends FunSuite with ShouldMatchers  {
     // posting constraint subgrah(g1,g2) should remove it
     // g1 has a possible node 4 which is not part of g2 graph
     // posting constraint subgrah(g1,g2) should also remove it
-    cp.post(new SubGraph(g1,g2)) should be (Suspend)
+    postAndCheckSuspend(cp,new SubGraph(g1,g2))
     g1.possibleEdges(0).sorted    should be (List())
     g1.possibleEdges(1).sorted    should be (List())
     g1.possibleEdges(2).sorted    should be (List())

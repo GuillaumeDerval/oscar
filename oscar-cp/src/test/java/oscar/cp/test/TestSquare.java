@@ -16,6 +16,7 @@ package oscar.cp.test;
 
 
 import junit.framework.TestCase;
+import oscar.algo.Inconsistency;
 import oscar.cp.constraints.Square;
 import oscar.cp.core.CPStore;
 import oscar.cp.core.variables.CPIntVar;
@@ -46,7 +47,7 @@ public class TestSquare extends TestCase {
     
 
     
-    public void testSquare1() {  
+    public void testSquare1()  throws Inconsistency {
     	CPStore s = new CPStore();
     	CPIntVar x = CPIntVar.apply(s,-5,5);
     	CPIntVar y = CPIntVar.apply(s,-5,16);

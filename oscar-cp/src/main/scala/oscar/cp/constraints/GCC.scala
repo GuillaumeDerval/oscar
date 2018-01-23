@@ -16,12 +16,12 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
 import oscar.cp.constraints._
 import oscar.cp.modeling._
 import oscar.algo.DisjointSets
+
 import scala.collection.mutable.ArrayBuffer
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
  * Global Cardinality Constraint
@@ -29,10 +29,11 @@ import oscar.cp.core.variables.CPIntVar
  * @author Pierre Schaus pschaus@gmail.com
  */
 class GCC(x: Array[CPIntVar], minval: Int, low: Array[Int], up: Array[Int]) extends Constraint(x(0).store) {
-  
-  override def setup(l: CPPropagStrength): CPOutcome = {
-    
-    val ok = l match {
+
+  override def associatedVars(): Iterable[CPVar] = x
+
+  override def setup(l: CPPropagStrength): Unit = {
+    l match {
       case CPPropagStrength.Weak => {
         s.post(new GCCFWC(x, minval, low, up)) 
       }
@@ -45,9 +46,6 @@ class GCC(x: Array[CPIntVar], minval: Int, low: Array[Int], up: Array[Int]) exte
       }
       
     }
-    if (ok == CPOutcome.Failure) return CPOutcome.Failure;
-    else return CPOutcome.Success;
-
   }
   
 

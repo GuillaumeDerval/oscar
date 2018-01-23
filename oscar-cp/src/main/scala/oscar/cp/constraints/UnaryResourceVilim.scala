@@ -1,10 +1,10 @@
 package oscar.cp.constraints
 
+import oscar.algo.Inconsistency
 import oscar.algo.SortUtils._
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{CPOutcome, CPPropagStrength, Constraint}
+import oscar.cp.core.variables.{CPIntVar, CPVar}
+import oscar.cp.core.{CPPropagStrength, Constraint}
 import oscar.cp.scheduling.util.ThetaLambdaTree
 import oscar.cp._
 
@@ -16,6 +16,8 @@ import oscar.cp._
  */
 class UnaryResourceVilim(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar]) extends Constraint(starts(0).store) {
   idempotent = true
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends
 
   private[this] val nTasks = starts.length
   private[this] val thetaLambdaTree = new ThetaLambdaTree(nTasks)
@@ -59,7 +61,7 @@ class UnaryResourceVilim(starts: Array[CPIntVar], durations: Array[CPIntVar], en
   private[this] val mergeSortAux = Array.ofDim[Int](nTasks)
 
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     for (i <- 0 until nTasks) {
       starts(i).callPropagateWhenBoundsChange(this)
       ends(i).callPropagateWhenBoundsChange(this)
@@ -67,7 +69,7 @@ class UnaryResourceVilim(starts: Array[CPIntVar], durations: Array[CPIntVar], en
     propagate()
   }
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
     failure = false
     changed = true
 
@@ -98,7 +100,7 @@ class UnaryResourceVilim(starts: Array[CPIntVar], durations: Array[CPIntVar], en
     }
 
     if(failure)
-      Failure
+      throw Inconsistency
     else {
       i = 0
       while(i < nTasks) {
@@ -106,7 +108,6 @@ class UnaryResourceVilim(starts: Array[CPIntVar], durations: Array[CPIntVar], en
         formerMaxStarts(i).setValue(currentMaxStarts(i))
         i += 1
       }
-      Suspend
     }
 
   }
@@ -274,7 +275,7 @@ class UnaryResourceVilim(starts: Array[CPIntVar], durations: Array[CPIntVar], en
     var i = 0
     while (i < nTasks) {
       if (updatedMinStarts(i) > startMins(i)) {
-        if (startVars(i).updateMin(updatedMinStarts(i)) == Failure || endVars(i).updateMin(updatedMinStarts(i) + currentMinDurations(i)) == Failure) {
+        if (isInconsistent({startVars(i).updateMin(updatedMinStarts(i));endVars(i).updateMin(updatedMinStarts(i) + currentMinDurations(i))})) {
           failure = true
           return true
         }
@@ -302,7 +303,7 @@ class UnaryResourceVilim(starts: Array[CPIntVar], durations: Array[CPIntVar], en
     var i = 0
     while (i < nTasks) {
       if (updatedMaxEnds(i) < endMaxs(i)) {
-        if (endVars(i).updateMax(updatedMaxEnds(i)) == Failure || startVars(i).updateMax(updatedMaxEnds(i) - currentMinDurations(i)) == Failure) {
+        if (isInconsistent({endVars(i).updateMax(updatedMaxEnds(i)); startVars(i).updateMax(updatedMaxEnds(i) - currentMinDurations(i))})) {
           failure = true
           return true
         }

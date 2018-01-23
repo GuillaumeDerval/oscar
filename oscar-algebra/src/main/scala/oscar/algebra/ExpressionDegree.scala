@@ -36,7 +36,27 @@ protected object ProdExpression {
   def apply[T <: ExpressionDegree, V: Numeric](a: NormalizedExpression[T, V], b: NormalizedExpression[T, V]): ProdExpression[T, V] = {
     val num = implicitly[Numeric[V]]
     new ProdExpression[T, V](
-      for (va <- a.terms; vb <- b.terms) yield Product(num.times(va.coef.d, vb.coef.d), va.terms ++ vb.terms)
+      for (va <- a.terms; vb <- b.terms) yield Product(num.times(va.coef.d, vb.coef.d), va.vars ++ vb.vars)
+    )
+  }
+}
+
+/**
+ * Represents the division of several [[Product]]s. Used only for DSL for division and compile-time check of degree
+ * of [[Expression]]s.
+ *
+ * @param products products to be divided
+ * @param name name of the division
+ * @tparam T the degree of the [[Expression]]
+ * @tparam V the type of values stored by the variables of the [[Expression]]. For now, mainly Double is used.
+ */
+protected class DivExpression[+T <: ExpressionDegree, +V: Fractional](products: Iterable[Product[T, V]], name: String = "ND") extends NormalizedExpression[T, V](products, name)
+
+protected object DivExpression {
+  def apply[V: Fractional](a: NormalizedExpression[Constant, V], b: NormalizedExpression[Constant, V]): DivExpression[Constant, V] = {
+    val num = implicitly[Fractional[V]]
+    new DivExpression[Constant, V](
+      for (va <- a.terms; vb <- b.terms) yield Product(Const(num.div(va.coef.d, vb.coef.d)))
     )
   }
 }
@@ -47,7 +67,6 @@ object ExpressionDegree {
   implicit def times[V](implicit numeric: Numeric[V]): (NormalizedExpression[ExpressionDegree, V], NormalizedExpression[ExpressionDegree, V]) => ProdExpression[ExpressionDegree, V] = {
     ProdExpression(_, _)
   }
-
 }
 
 object Quadratic {
@@ -84,4 +103,7 @@ object Constant {
     ProdExpression[Constant, V](_, _)
   }
 
+  implicit def div00[V](implicit numeric: Fractional[V]): (NormalizedExpression[Constant, V], NormalizedExpression[Constant, V]) => DivExpression[Constant, V] = {
+    DivExpression(_, _)
+  }
 }

@@ -14,12 +14,19 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.CPStore;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Reified Greater or Equal Constraint
@@ -43,49 +50,45 @@ public class GrEqVarReif extends Constraint {
 		this.y = y;
 		this.b = b;
 	}
-	
+
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
-		
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x, y, b));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
+	@Override
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		if (x.isBound()) {
-			if (s().post(new LeEqCteReif(y, x.min(), b)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			return CPOutcome.Success;
+			s().post(new LeEqCteReif(y, x.min(), b));
+			deactivate();
+			return;
 		} else if (y.isBound()) {
-			if (s().post(new GrEqCteReif(x, y.min(), b)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			return CPOutcome.Success;
+			s().post(new GrEqCteReif(x, y.min(), b));
+			deactivate();
+			return;
 		}
 		
-		CPOutcome oc = propagate();
-		if (oc == CPOutcome.Suspend){
+		propagate();
+		if (isActive()){
 			if (!b.isBound()) b.callValBindWhenBind(this);
 			if (!x.isBound()) x.callPropagateWhenBoundsChange(this);
 			if (!y.isBound()) y.callPropagateWhenBoundsChange(this);
 			if (b.isBound()) {
-				oc = valBind(b);
+				valBind(b);
 			}
 		}
-		return oc;
 	}
 	
 	@Override
-	public CPOutcome propagate() {
+	public void propagate() {
 		if (x.getMin() >= y.getMax()) {
-			if (b.assign(1) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			return CPOutcome.Success;
-		} else if (x.getMax() < y.getMin()) {
-			if (b.assign(0) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			return CPOutcome.Success;
+			b.assign(1);
+			deactivate();
 		}
-		else {
-			return CPOutcome.Suspend;
+		else if (x.getMax() < y.getMin()) {
+			b.assign(0);
+			deactivate();
 		}
 	}
 	
@@ -95,19 +98,15 @@ public class GrEqVarReif extends Constraint {
 	}
 		
 	@Override
-	public CPOutcome valBind(CPIntVar var) {
+	public void valBind(CPIntVar var) throws Inconsistency {
 		if (b.min() == 0) {
 			//x < y
-			if (s().post(new Le(x,y)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
+			s().post(new Le(x,y));
 		} else {
 			//x >= v
-			if (s().post(new GrEq(x,y)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}				
+			s().post(new GrEq(x,y));
 		}
-		return CPOutcome.Success;
+		deactivate();
 	}
 
 }

@@ -1,9 +1,8 @@
 package oscar.cp.constraints.tables
 
 import oscar.algo.reversible.ReversibleSparseBitSet
-import oscar.cp.core.CPOutcome._
 import oscar.cp.core.delta.DeltaIntVar
-import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset}
+import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset, CPVar}
 import oscar.cp.core.{CPStore, Constraint, _}
 
 import scala.collection.mutable.ArrayBuffer
@@ -14,8 +13,13 @@ import scala.collection.mutable.ArrayBuffer
  * @param table the list of tuples composing the table.
  * @author Pierre Schaus pschaus@gmail.com
  * @author Helene Verhaeghe helene.verhaeghe27@gmail.com
+ *
+ * Reference(s) :
+ *  - Extending Compact-Table to Negative and Short Tables, Helene Verhaeghe, Christophe Lecoutre, Pierre Schaus, AAAI17
  */
 final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: Int = -1, needPreprocess: Boolean = true) extends Constraint(X(0).store, "TableCTNegStar") {
+
+  override def associatedVars(): Iterable[CPVar] = X
 
   /* Set default star value */
   private[this] val _star = -1
@@ -272,17 +276,21 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
     array
   }
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
 
     /* Success if table is empty initially or after initial filtering */
-    if (nbTuples == 0)
-      return Success
+    if (nbTuples == 0) {
+      deactivate()
+      return
+    }
 
     /* Retrieve the current valid tuples */
     val (dangerous, dangerousByHash) = collectDangerousTuples()
 
-    if (dangerous.isEmpty)
-      return Success
+    if (dangerous.isEmpty){
+      deactivate()
+      return
+    }
 
     /* Remove non dangerous tuples */
     dangerousTuples.collect(new dangerousTuples.BitSet(dangerous))
@@ -317,7 +325,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
    * @param delta the set of values removed since the last call.
    * @return the outcome i.e. Failure or Success.
    */
-  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): CPOutcome = {
+  @inline private def updateDelta(varIndex: Int, delta: DeltaIntVar): Boolean = {
 
     val intVar = x(varIndex)
     val varSize = intVar.size
@@ -363,10 +371,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
     }
 
     /* Success if there are no more dangerous tuples */
-    if (dangerousTuples.isEmpty())
-      return Success
-
-    Suspend
+    dangerousTuples.isEmpty()
   }
 
   /**
@@ -375,20 +380,19 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
    * Unsupported values are removed.
    * @return the outcome i.e. Failure or Success.
    */
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
 
     var varIndex = arity
     while (varIndex > 0) {
       varIndex -= 1
       if (deltas(varIndex).size > 0) {
-        if (updateDelta(varIndex, deltas(varIndex)) == Success) {
-          return Success
+        if (updateDelta(varIndex, deltas(varIndex))) {
+          this.deactivate()
+          return
         }
       }
     }
-
     basicPropagate()
-
   }
 
   /**
@@ -397,7 +401,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
    * Remove the pair if the number of tuple as reach the threshold
    * @return the outcome i.e. Failure or Suspend
    */
-  @inline def basicPropagate(): CPOutcome = {
+  @inline def basicPropagate(): Unit = {
 
     var varIndex = arity
     while (varIndex > 0) {
@@ -428,25 +432,21 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
         value = domainArray(i)
         val count = dangerousTuples.intersectCount(variableValueAntiSupports(varIndex)(value), hashMult, mult(varIndex))
         if (count == cardinalSize) {
-          if (x(varIndex).removeValue(value) == Failure) {
-            return Failure
-          } else {
-            dangerousTuples.clearCollected()
-            dangerousTuples.collect(variableValueAntiSupportsRM(varIndex)(value))
-            dangerousTuples.removeCollected()
-            if (dangerousTuples.isEmpty()) {
-              return Success
-            }
-            cardinalSizeInit /= sizeTemp(varIndex)
-            sizeTemp(varIndex) -= 1
-            cardinalSizeInit *= sizeTemp(varIndex)
+          x(varIndex).removeValue(value)
+          dangerousTuples.clearCollected()
+          dangerousTuples.collect(variableValueAntiSupportsRM(varIndex)(value))
+          dangerousTuples.removeCollected()
+          if (dangerousTuples.isEmpty()) {
+            this.deactivate()
+            return
           }
+          cardinalSizeInit /= sizeTemp(varIndex)
+          sizeTemp(varIndex) -= 1
+          cardinalSizeInit *= sizeTemp(varIndex)
           updateMultiplicator(varIndex)
         }
       }
     }
-
-    Suspend
   }
 
   /* ----- Functions used during the setup of the constraint ----- */
@@ -530,145 +530,5 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
     }
   }
 }
-
-
-object sandbox extends App {
-
-  val arity = 3
-  val domain = Array(3, 3, 3)
-
-  /* Maximum number of combination of star positions */
-  private[this] val maxNbGroup = Math.pow(2, arity).toInt
-
-
-  val multhash = Array.fill(arity, maxNbGroup)(0)
-
-  var n = 1
-  var j = arity
-  while (j > 0) {
-    j -= 1
-    var k = maxNbGroup
-    while (k > 0) {
-      k -= 1
-      if ((n & k) == 0)
-        multhash(j)(k) = k
-      else
-        multhash(j)(k) = k - n
-
-    }
-
-    n *= 2
-  }
-  val mult = Array.fill(arity, maxNbGroup)(0)
-
-
-  val multiplicator = Array.fill(maxNbGroup)(0)
-  val multiplicatorFormula = Array.fill(maxNbGroup)(() => 1)
-
-  def updateMult() = {
-    // has to be updated in this order!!
-    var i = 0
-    while (i < maxNbGroup) {
-      // replace by max possible
-      multiplicator(i) = multiplicatorFormula(i)()
-      i += 1
-    }
-
-    i = arity
-    while (i > 0) {
-      i -= 1
-      var j = maxNbGroup
-      while (j > 0) {
-        j -= 1
-        val id = j
-        mult(i)(id) = multiplicator(multhash(i)(id))
-      }
-    }
-
-
-  }
-
-  def computeformula() = {
-
-    var i = arity
-    var n = 1
-    val initarray = Array.fill(arity)(Array(0))
-    while (i > 0) {
-      i -= 1
-      initarray(i)(0) = n
-      val k = i
-      multiplicatorFormula(n) = () => domain(k)
-      n *= 2
-    }
-
-
-
-    def compute(setofset: Array[Array[Int]]): Unit = {
-      val newarray = new Array[Array[Int]]((setofset.length + 1) / 2)
-      if (setofset.length % 2 != 0)
-        newarray(newarray.length - 1) = setofset(setofset.length - 1)
-      var j = setofset.length / 2
-      while (j > 0) {
-        j -= 1
-        val a1 = setofset(j * 2)
-        val a2 = setofset(j * 2 + 1)
-        var pos = a1.length
-        val pos2 = a2.length
-        val ares = new Array[Int](pos2 + pos * (pos2 + 1))
-        System.arraycopy(a1, 0, ares, 0, pos)
-        System.arraycopy(a2, 0, ares, pos, pos2)
-        var a = pos
-        pos += pos2
-        while (a > 0) {
-          a -= 1
-          var b = pos2
-          while (b > 0) {
-            b -= 1
-            val k1 = a1(a)
-            val k2 = a2(b)
-            val id = k1 + k2
-            ares(pos) = id
-            multiplicatorFormula(id) = () => multiplicator(k1) * multiplicator(k2)
-            pos += 1
-          }
-
-
-        }
-        newarray(j) = ares
-
-      }
-
-      if (newarray.length > 1)
-        compute(newarray.toArray)
-    }
-    compute(initarray)
-  }
-
-  println("NbGroup : " + maxNbGroup)
-
-  println("----")
-  println("multiplicators init :")
-  println(multiplicator.mkString(","))
-
-  updateMult()
-  println("----")
-  println("multiplicators 1 :")
-  println(multiplicator.mkString(","))
-
-  computeformula()
-  updateMult()
-  println("----")
-  println("multiplicators :")
-  println(multiplicator.mkString(","))
-  println("----")
-  println("mult hash")
-  println(multhash.map(_.mkString(",")).mkString("\n"))
-  println("----")
-  println("mult")
-  println(mult.map(_.mkString(",")).mkString("\n"))
-
-
-}
-
 
 

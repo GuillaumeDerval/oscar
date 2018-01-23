@@ -15,12 +15,12 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 
 import oscar.cp._
 import collection.immutable.SortedSet
 
-class TestDomino extends FunSuite with ShouldMatchers {
+class TestDomino extends TestSuite {
 
   test("Domino") {
 

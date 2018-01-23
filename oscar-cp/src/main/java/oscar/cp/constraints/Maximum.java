@@ -14,11 +14,18 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
+import oscar.algo.Inconsistency;
 import oscar.algo.reversible.ReversibleInt;
-import oscar.cp.core.CPOutcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
@@ -48,7 +55,14 @@ public class Maximum extends Constraint {
 		minval = new ReversibleInt(s(), 0);
 		minvalsupport = new ReversibleInt(s(), 0);
 	}
-	
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+		l.add(y);
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
 	private void updateSupport() {
 		int min = Integer.MIN_VALUE;
 		int max = Integer.MIN_VALUE;
@@ -70,20 +84,14 @@ public class Maximum extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		
 		for (int i=0; i < x.length; i++) {			
-			if (x[i].updateMax(y.getMax()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
+			x[i].updateMax(y.getMax());
 		}
 		updateSupport();
-		if (y.updateMin(minval.getValue()) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		}
-		if (y.updateMax(maxval.getValue()) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		}
+		y.updateMin(minval.getValue());
+		y.updateMax(maxval.getValue());
 		
 		for (int i = 0; i < x.length; i++) {
 			if (!x[i].isBound() && (x[i].getMax() > y.getMin())) {
@@ -92,40 +100,28 @@ public class Maximum extends Constraint {
 		}
 		if (!y.isBound()) {
 			y.callUpdateBoundsWhenBoundsChange(this);
-		}	
-		return CPOutcome.Suspend;
+		}
 	}
 	
 	@Override
-	public CPOutcome updateBoundsIdx(CPIntVar x, int idx) {
+	public void updateBoundsIdx(CPIntVar x, int idx) {
 		if (idx == minvalsupport.getValue() || idx == maxvalsupport.getValue()) {
 			updateSupport();
-			if (y.updateMin(minval.getValue()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			if (y.updateMax(maxval.getValue()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
+			y.updateMin(minval.getValue());
+			y.updateMax(maxval.getValue());
 		}
 		if (x.isBound() && x.min() == maxval.getValue()) {
-			if (y.assign(maxval.getValue()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
-			return CPOutcome.Success;
+			y.assign(maxval.getValue());
+			deactivate();
 		}
-		
-		return CPOutcome.Suspend;
 	}
 	
 	
 	@Override
-	public CPOutcome updateBounds(CPIntVar y) {
+	public void updateBounds(CPIntVar y) {
 		for (int i=0; i < x.length; i++) {			
-			if (x[i].updateMax(y.getMax()) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
+			x[i].updateMax(y.getMax());
 		}
-		return CPOutcome.Suspend;
 	}
 
 }

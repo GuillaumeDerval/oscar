@@ -2,11 +2,11 @@
 package oscar.algebra
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
 import scala.math.Numeric.IntIsIntegral
 
-class TermTests extends FunSuite with ShouldMatchers{
+class TermTests extends FunSuite with Matchers{
 
   test("Const"){
 

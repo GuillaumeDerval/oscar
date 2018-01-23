@@ -15,7 +15,6 @@
 package oscar.cp.constraints
 
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
 import oscar.cp.core._
 import oscar.cp.core.delta._
 import oscar.cp.core.variables._
@@ -35,6 +34,8 @@ import oscar.cp.core.variables._
  */
 class SoftGCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Array[Int], viol: CPIntVar)
   extends Constraint(X(0).store, "SoftGCCFWC") {
+
+  override def associatedVars(): Iterable[CPVar] = X ++ Array(viol)
 
   idempotent = false
 
@@ -68,7 +69,7 @@ class SoftGCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Arra
   // Change buffer to load the deltas
   private[this] var changeBuffer: Array[Int] = null
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
 
     // Temporary variables to avoid using reversible variables too much
     val nMandatory = new Array[Int](nValues)
@@ -144,8 +145,7 @@ class SoftGCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Arra
     }
 
     // First violation check
-    if (viol.updateMin(minViol) == Failure)
-      return Failure
+    viol.updateMin(minViol)
 
     // Initialize the memorization structure
     implicit val context = s
@@ -158,17 +158,16 @@ class SoftGCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Arra
     
     // If we have reached the maximal violation
     if (minViol == viol.max) {
-      if (whenMaxViolReached() == Failure) {
-        return Failure
-      }
+      whenMaxViolReached()
     }
 
     // Detect when the maximal violation is externally reduced
     viol.filterWhenBind(idempot = true) {
       if (!atMaxViolRev.value && minViolRev.value == viol.max) {
         whenMaxViolReached()
+        false
       } else {
-        Success
+        true
       }
     }
 
@@ -176,16 +175,15 @@ class SoftGCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Arra
     changeBuffer = new Array(bufferSize)
 
     // Everything is up to the closures now
-    Success
+    this.deactivate()
   }
 
   /**
    * Propagates when the domain of a variable in [[X]] changes.
    * @param delta The domain changes
    * @param x The variable that changed
-   * @return [[Failure]] on failure, [[Suspend]] otherwise
    */
-  @inline private def whenDomainChanges(delta: DeltaIntVar, x: CPIntVar): CPOutcome = {
+  @inline private def whenDomainChanges(delta: DeltaIntVar, x: CPIntVar): Boolean = {
     val i = delta.id
 
     // Treat the value removals
@@ -207,18 +205,15 @@ class SoftGCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Arra
           // If we cannot violate anymore
           if (atMaxViolRev.value) {
             // Assign the unbound
-            if (eliminateUnbound(vi, nUnbound, _.assign(v)) == Failure) {
-              return Failure
-            }
+            eliminateUnbound(vi, nUnbound, _.assign(v))
           } else {
             // If we only reach the limit, remember this value
             if (nPossible == lower(vi)) {
               inLack(nValuesInLackRev.incr() - 1) = vi
             }
             // If we go past the limit, increase the minimal violation
-            else if (increaseMinViol() == Failure) {
-              return Failure
-            }
+            else
+              increaseMinViol()
           }
         }
       }
@@ -241,47 +236,40 @@ class SoftGCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Arra
           // If we cannot violate anymore
           if (atMaxViolRev.value) {
             // Remove the value from the unbound
-            if (eliminateUnbound(vi, nUnbound, _.removeValue(v)) == Failure) {
-              return Failure
-            }
-          } else {
+            eliminateUnbound(vi, nUnbound, _.removeValue(v))
+          }
+          else {
             // If we only reach the limit, remember this value
             if (nMandatory == upper(vi)) {
               inExcess(nValuesInExcessRev.incr() - 1) = vi
             }
             // If we go past the limit, increase the minimal violation
-            else if (increaseMinViol() == Failure) {
-              return Failure
-            }
+            else
+              increaseMinViol()
           }
         }
       }
     }
-
-    Suspend
+    false
   }
 
   /**
    * Increases the minimal violation locally and in [[viol]], prunes if it reaches the maximum
-   * @return [[Failure]] on failure, [[Suspend]] otherwise
    */
-  @inline def increaseMinViol(): CPOutcome = {
+  @inline def increaseMinViol(): Unit = {
     val minViol = minViolRev.incr()
     if (minViol == viol.max) {
-      if (whenMaxViolReached() == Failure) {
-        return Failure
-      }
+      whenMaxViolReached()
       viol.assign(minViol)
-    } else if (viol.updateMin(minViol) == Failure)
-      return Failure
-    Suspend
+    }
+    else
+      viol.updateMin(minViol)
   }
 
   /**
    * Prunes everything that waited until the maximum violation was reached
-   * @return [[Failure]] on failure, [[Suspend]] otherwise
    */
-  @inline def whenMaxViolReached(): CPOutcome = {
+  @inline def whenMaxViolReached(): Unit = {
     atMaxViolRev.setTrue()
 
     var c = nValuesInLackRev.value
@@ -289,21 +277,15 @@ class SoftGCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Arra
       c -= 1
       val vi = inLack(c)
       val v = vi + minVal
-      if (eliminateUnbound(vi, nPossibleRev(vi).value - nMandatoryRev(vi).value, _.assign(v)) == Failure) {
-        return Failure
-      }
+      eliminateUnbound(vi, nPossibleRev(vi).value - nMandatoryRev(vi).value, _.assign(v))
     }
     c = nValuesInExcessRev.value
     while (c > 0) {
       c -= 1
       val vi = inExcess(c)
       val v = vi + minVal
-      if (eliminateUnbound(vi, nPossibleRev(vi).value - nMandatoryRev(vi).value, _.removeValue(v)) == Failure) {
-        return Failure
-      }
+      eliminateUnbound(vi, nPossibleRev(vi).value - nMandatoryRev(vi).value, _.removeValue(v))
     }
-
-    Suspend
   }
 
   /**
@@ -329,17 +311,13 @@ class SoftGCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Arra
    * @param vi The index of the value
    * @param nUnbound The size of the unbound sparse set
    * @param action The action to be performed
-   * @return [[Failure]] on failure, [[Suspend]] otherwise
    */
-  @inline private def eliminateUnbound(vi: Int, nUnbound: Int, action: CPIntVar => CPOutcome): CPOutcome = {
+  @inline private def eliminateUnbound(vi: Int, nUnbound: Int, action: CPIntVar => Unit): Unit = {
     val thisUnboundSet = unboundSet(vi)
     var i = nUnbound
     while (i > 0) {
       i -= 1
-      if (action(X(thisUnboundSet(i))) == Failure) {
-        return Failure
-      }
+      action(X(thisUnboundSet(i)))
     }
-    Suspend
   }
 }

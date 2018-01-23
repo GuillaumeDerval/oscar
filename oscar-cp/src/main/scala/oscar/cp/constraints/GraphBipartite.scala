@@ -16,9 +16,9 @@
 
 package oscar.cp.constraints
 
+import oscar.algo.Inconsistency
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.variables.CPGraphVar
+import oscar.cp.core.variables.{CPGraphVar, CPVar}
 
 /**
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
@@ -27,14 +27,16 @@ import oscar.cp.core.variables.CPGraphVar
  */
 
 class GraphBipartite(val g : CPGraphVar) extends Constraint(g.s, "Bipartite") {
-  
-	override def setup(l: CPPropagStrength): CPOutcome = {
+
+	override def associatedVars(): Iterable[CPVar] = Array(g)
+
+	override def setup(l: CPPropagStrength): Unit = {
 	  // add filter when domain changes
 	  g.callPropagateWhenDomainChanges(this)
 	  propagate()
 	}
 	
-	override def propagate(): CPOutcome = {
+	override def propagate(): Unit = {
 	  // #1 If required domain of G is not bipartite, the constraint fails
 	  // #2 If possible domain of G is bipartite, the constraint is entailed
 	  // #3 Pruning : remove possible element of the domain of G
@@ -80,7 +82,7 @@ class GraphBipartite(val g : CPGraphVar) extends Constraint(g.s, "Bipartite") {
 	  color2 = color2.map(_.distinct)
 	    
 	  // if there is one node in both colors, failure
-	  for (i <- 0 to color1.length-1; if ( color1(i).exists(color2(i).contains(_)) ) ) return Failure
+	  for (i <- 0 to color1.length-1; if ( color1(i).exists(color2(i).contains(_)) ) ) throw Inconsistency
 	  
 	  // #2 If possible domain of G is bipartite, the constraint is entailed
 	  // we will add all nodes having possible edges into two sets 
@@ -109,7 +111,10 @@ class GraphBipartite(val g : CPGraphVar) extends Constraint(g.s, "Bipartite") {
 	  possibleColor1 = possibleColor1.distinct
 	  possibleCcolor2 = possibleCcolor2.distinct
 	  // if there is one node in both colors, failure
-	  if ( !possibleColor1.exists(possibleCcolor2.contains(_)) ) return Success
+	  if ( !possibleColor1.exists(possibleCcolor2.contains(_)) ) {
+			deactivate()
+			return
+		}
 	  
 	  
 	  // #3 Pruning : for each component, 
@@ -123,16 +128,14 @@ class GraphBipartite(val g : CPGraphVar) extends Constraint(g.s, "Bipartite") {
 	      if (  (color1(compIdx1).contains(src) && color1(compIdx1).contains(dest))
 	         || (color2(compIdx1).contains(src) && color2(compIdx1).contains(dest)) ) {
 	        // edge has same color at both endPoints -> remove it
-	        if (g.removeEdgeFromGraph(src, dest) == Failure) return Failure
+	        g.removeEdgeFromGraph(src, dest)
 	      }
 	    }
 	  }
-	  
-	  Suspend
 	}
     
     /**
-     * @param : Nodes to check
+     * @param reqNodes Nodes to check
      * @return a list of list of integer, each inner list contains one required connected component
      */
     private def requiredConnectedComponents(reqNodes : List[Int]) : List[List[Int]] = {

@@ -14,12 +14,18 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
 
 
 /**
@@ -35,6 +41,13 @@ public class Regular extends Constraint {
 	
 	private CPIntVar [] x;
 	private CPIntVar [] q;
+
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+		l.addAll(Arrays.asList(q));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
 
     /**
      * Constraint x to be a valid sequence accepted by the automaton
@@ -58,25 +71,17 @@ public class Regular extends Constraint {
 
 	
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {		
-		if (s().post(ElementCst2D.apply(T,CPIntVar.apply(s(),initialState,initialState),x[0],q[0])) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		}
+	public void setup(CPPropagStrength l) throws Inconsistency {
+		s().post(ElementCst2D.apply(T,CPIntVar.apply(s(),initialState,initialState),x[0],q[0]));
 		
 		for (int v = 0; v < nbStates; v++) {
 			if (!acceptingStates.contains(v)) {
-				if (q[x.length-1].removeValue(v) == CPOutcome.Failure) {
-					return CPOutcome.Failure;
-				}
+				q[x.length-1].removeValue(v);
 			}
 		}
 		for (int i = 1; i < x.length; i++) {
-			if (s().post(ElementCst2D.apply(T,q[i-1],x[i],q[i])) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
+			s().post(ElementCst2D.apply(T,q[i-1],x[i],q[i]));
 		}
-		
-		return CPOutcome.Success;
 	}
 
 }

@@ -17,8 +17,7 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.variables.CPGraphVar
+import oscar.cp.core.variables.{CPGraphVar, CPVar}
 
 /**
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
@@ -27,15 +26,17 @@ import oscar.cp.core.variables.CPGraphVar
  */
 
 class GraphComplement(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constraint(g1.s, "Complement") {
-  
-	override def setup(l: CPPropagStrength): CPOutcome = {
+
+	override def associatedVars(): Iterable[CPVar] = Array(g1, g2)
+
+	override def setup(l: CPPropagStrength): Unit = {
 	  // add filter when domain changes
 	  g1.callPropagateWhenDomainChanges(this)
 	  g2.callPropagateWhenDomainChanges(this)
 	  propagate()
 	}
 	
-	override def propagate(): CPOutcome = {
+	override def propagate(): Unit = {
 	  // We can do all the propagation symmetrically pruning on the two graphs
 	  
 	  val g1PossNodes : List[Int] = g1.possibleNodes
@@ -45,17 +46,17 @@ class GraphComplement(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constrain
 	  // should have equal node set :
 	  // 	nodes set upper bound should be the intersection
 	  for (n <- g1PossNodes; if !g2PossNodes.contains(n)){
-	      if (g1.removeNodeFromGraph(n) == Failure) return Failure
+	      g1.removeNodeFromGraph(n)
 	  }
 	  for (n <- g2PossNodes; if !g1PossNodes.contains(n)){
-	      if (g2.removeNodeFromGraph(n) == Failure) return Failure
+	      g2.removeNodeFromGraph(n)
 	  }
 	  // 	nodes set lower bound should be the union
 	  for (n <- g1ReqNodes; if !g2ReqNodes.contains(n)){
-	      if (g2.addNodeToGraph(n) == Failure) return Failure
+	      g2.addNodeToGraph(n)
 	  }
 	  for (n <- g2ReqNodes; if !g1ReqNodes.contains(n)){
-	      if (g1.addNodeToGraph(n) == Failure) return Failure
+	      g1.addNodeToGraph(n)
 	  }
 	  
 	  val newG1PossNodes : List[Int] = g1.possibleNodes
@@ -67,13 +68,13 @@ class GraphComplement(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constrain
 	  for (n <- newG1ReqNodes){
 		  for (e <- g1.requiredEdges(n); if g2.possibleEdges(n).contains(e)){
 		    val (src,dest) = g2.edge(e)
-		    if (g2.removeEdgeFromGraph(src,dest) == Failure) return Failure
+		    g2.removeEdgeFromGraph(src,dest)
 		  }
 	  }
 	  for (n <- newG2ReqNodes){
 		  for (e <- g2.requiredEdges(n); if g1.possibleEdges(n).contains(e)){
 		    val (src,dest) = g1.edge(e)
-		    if (g1.removeEdgeFromGraph(src,dest) == Failure) return Failure
+		    g1.removeEdgeFromGraph(src,dest)
 		  }
 	  }
 	  
@@ -83,18 +84,16 @@ class GraphComplement(val g1 : CPGraphVar, val g2: CPGraphVar) extends Constrain
 		  for (e <- g1.possibleEdges(n); if !g2.possibleEdges(n).contains(e)){
 		      val (src,dest) = g1.edge(e)
 		      if (newG1ReqNodes.contains(src) && newG1ReqNodes.contains(dest))
-		        if (g1.addEdgeToGraph(src,dest) == Failure) return Failure
+		        g1.addEdgeToGraph(src,dest)
 		  }
 	  }
 	  for (n <- newG2PossNodes){
 		  for (e <- g2.possibleEdges(n); if !g1.possibleEdges(n).contains(e)){
 		      val (src,dest) = g2.edge(e)
 		      if (newG2ReqNodes.contains(src) && newG2ReqNodes.contains(dest))
-		        if (g2.addEdgeToGraph(src,dest) == Failure) return Failure
+		        g2.addEdgeToGraph(src,dest)
 		  }
 	  }
-	  
-	  Suspend
 	}
 	
 }

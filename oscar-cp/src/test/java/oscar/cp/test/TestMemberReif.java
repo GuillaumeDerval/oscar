@@ -16,6 +16,7 @@ package oscar.cp.test;
 
 
 import junit.framework.TestCase;
+import oscar.algo.Inconsistency;
 import oscar.algo.reversible.SparseSet;
 import oscar.cp.constraints.GrEq;
 import oscar.cp.constraints.LeEq;
@@ -53,7 +54,7 @@ public class TestMemberReif extends TestCase {
         s = null;
     }
 
-    public void test0(){
+    public void test0() throws Inconsistency {
         SparseSet set = new SparseSet(0,10,true);
         set.insert(1);
         set.insert(2);
@@ -70,7 +71,7 @@ public class TestMemberReif extends TestCase {
         assertTrue(!x.hasValue(1) && !x.hasValue(2) && !x.hasValue(4));
     }
 
-    public void test1(){
+    public void test1() throws Inconsistency{
         SparseSet set = new SparseSet(0,10,true);
         set.insert(1);
         set.insert(2);
@@ -87,7 +88,7 @@ public class TestMemberReif extends TestCase {
         assertTrue(!x.hasValue(1) && !x.hasValue(2) && !x.hasValue(4));
     }
 
-    public void test2(){
+    public void test2() throws Inconsistency{
         SparseSet set = new SparseSet(0,10,true);
         set.insert(1);
         set.insert(2);
@@ -104,7 +105,7 @@ public class TestMemberReif extends TestCase {
         assertTrue(x.hasValue(1) && x.hasValue(2) && x.hasValue(4) && x.getSize()==3);
     }
 
-    public void test3(){
+    public void test3() throws Inconsistency{
         SparseSet set = new SparseSet(0,10,true);
         set.insert(1);
         set.insert(2);
@@ -121,7 +122,7 @@ public class TestMemberReif extends TestCase {
         assertTrue(x.hasValue(1) && x.hasValue(2) && x.hasValue(4) && x.getSize()==3);
     }
 
-    public void test4(){
+    public void test4() throws Inconsistency{
         SparseSet set = new SparseSet(0,10,true);
         set.insert(1);
         set.insert(2);
@@ -137,7 +138,7 @@ public class TestMemberReif extends TestCase {
         assertTrue(b.isTrue());
     }
 
-    public void test5(){
+    public void test5() throws Inconsistency{
         SparseSet set = new SparseSet(0,10,true);
         set.insert(1);
         set.insert(2);
@@ -153,7 +154,7 @@ public class TestMemberReif extends TestCase {
         assertTrue(b.isTrue());
     }
 
-    public void test6(){
+    public void test6() throws Inconsistency{
         SparseSet set = new SparseSet(0,10,true);
         set.insert(1);
         set.insert(2);
@@ -169,7 +170,7 @@ public class TestMemberReif extends TestCase {
         assertTrue(b.isFalse());
     }
 
-    public void test7(){
+    public void test7() throws Inconsistency{
         SparseSet set = new SparseSet(0,10,true);
         set.insert(1);
         set.insert(2);

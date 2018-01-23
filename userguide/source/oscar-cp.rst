@@ -299,13 +299,12 @@ You can add a constraint (an object of type ``oscar.cp.core.Constraint``) to the
    :linenos:
    
    import oscar.cp._
-   import oscar.cp.core.CPOutcome._
 
    object MyModel extends CPModel with App {
 
      add(someConstraint) // NoSolutionException may be thrown
      
-     val failed = post(someConstraint) == Failure // you can also check the consistency with solver.isFailed()
+     val failed = post(someConstraint) == Failure // you can also check the consistency with solver.isFailed
    }
 
 Every call to ``add`` or ``post`` methods triggers the fix point algorithm. It allows you to observe immediately the propagation effect. Don't hesitate to print the domains of your model after each ``add`` to debug it.

@@ -16,8 +16,7 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
  * Implementation of Sum Constraint:
@@ -25,13 +24,15 @@ import oscar.cp.core.variables.CPIntVar
  */
 class WeightedSum(val W: Array[Int], val X: Array[CPIntVar], val y: CPIntVar) extends Constraint(y.store, "WeightedSum2") {
 
+  override def associatedVars(): Iterable[CPVar] = X ++ Array(y)
+
   val x: Array[CPIntVar] = X.map(i => i.asInstanceOf[CPIntVar])
   val w = W.map(i => i)
   val sumBounds = new ReversibleInt(s,0)
   val nBounds = new ReversibleInt(s,0)
   
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     //priorityL2 = CPStore.MAXPRIORL2-1
     X.foreach(_.callPropagateWhenBoundsChange(this))
     y.callPropagateWhenBoundsChange(this)
@@ -50,7 +51,7 @@ class WeightedSum(val W: Array[Int], val X: Array[CPIntVar], val y: CPIntVar) ex
     nBounds.incr()
   }
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
 
     var ymin: Int = sumBounds.value
     var ymax: Int = sumBounds.value
@@ -64,15 +65,11 @@ class WeightedSum(val W: Array[Int], val X: Array[CPIntVar], val y: CPIntVar) ex
       i += 1
     }
     
-    if (y.updateMax(ymax) == Failure) {
-      return Failure
-    }
-    if (y.updateMin(ymin) == Failure) {
-      return Failure
-    }
+    y.updateMax(ymax)
+    y.updateMin(ymin)
     
     if (y.max == ymax && y.min == ymin) {
-      return Suspend
+      return
     }
 
     // w1 x1 + w2 x2 = y
@@ -88,34 +85,25 @@ class WeightedSum(val W: Array[Int], val X: Array[CPIntVar], val y: CPIntVar) ex
             val num1 = y.max - minsumxi
             val maxi = (num1.toDouble / w(i)).floor.toInt
             //val maxi = if (num1 % w(i) == 0) num1 / w(i) else (num1.toDouble/w(i)).floor.toInt
-            val oc1 = x(i).updateMax(maxi)
-            if (oc1 == Failure) return Failure
+            x(i).updateMax(maxi)
             val num2 = y.min - maxsumxi
             val mini = (num2.toDouble / w(i)).ceil.toInt
             //val mini = if (num2 % w(i) == 0) num2/w(i) else (num2.toDouble/w(i)).ceil.toInt
-            val oc2 = x(i).updateMin(mini)
-            if (oc1 == Failure) return Failure
-
+            x(i).updateMin(mini)
           } else {
             val num1 = y.min - maxsumxi
             val maxi = (num1.toDouble / w(i)).floor.toInt
             //val maxi = if (num1 % w(i) == 0) num1 / w(i) else (num1.toDouble/w(i)).floor.toInt 
-            val oc1 = x(i).updateMax(maxi)
-            if (oc1 == Failure) return Failure
+            x(i).updateMax(maxi)
             val num2 = y.max - minsumxi
             val mini = (num2.toDouble / w(i)).ceil.toInt
             //val mini = if (num2 % w(i) == 0) num2/w(i) else (num2.toDouble/w(i)).ceil.toInt
-            val oc2 = x(i).updateMin(mini)
-            if (oc2 == Failure) return Failure
-
+            x(i).updateMin(mini)
           }
         }
       } else setBound(i)
       i += 1
     }
-		
-	
-    Suspend
   }
   
 }

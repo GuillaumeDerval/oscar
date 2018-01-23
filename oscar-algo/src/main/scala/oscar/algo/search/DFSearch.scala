@@ -15,6 +15,7 @@
 
 package oscar.algo.search
 
+import oscar.algo.Inconsistency
 import oscar.algo.array.ArrayStack
 
 class SearchStatistics(
@@ -144,9 +145,14 @@ class DFSearch(node: DFSearchNode) {
 
       if(searchListener_ != null)
         searchListener_.onBranch(alternative)
-      alternative() // apply the alternative
 
-      if (!node.isFailed()) {
+      try {
+        alternative() // apply the alternative
+      } catch {
+        case _: Inconsistency => node.fail()
+      }
+
+      if (!node.isFailed) {
         val isExpandable = expand(branching)
         if (!isExpandable) {
           node.solFound()
@@ -157,7 +163,8 @@ class DFSearch(node: DFSearchNode) {
             searchListener_.onPop(node)
           node.pop()
         }
-      } else {
+      }
+      else {
         failureActions.foreach(_())
         nbBkts += 1
         if(searchListener != null)

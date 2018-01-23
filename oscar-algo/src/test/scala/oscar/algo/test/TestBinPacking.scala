@@ -1,13 +1,13 @@
 package oscar.algo.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import oscar.algo.RangeMinQuery
 import oscar.algo.HeightProfile
 import scala.collection.mutable.ArrayBuffer
 import oscar.algo.BinPacking
 
-class TestBinPacking extends FunSuite with ShouldMatchers {
+class TestBinPacking extends FunSuite with Matchers {
   
   
   def generateInstance1(c: Int, n: Int) = {

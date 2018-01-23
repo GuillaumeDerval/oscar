@@ -15,11 +15,11 @@
 package oscar.dfo.singleobjective.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import oscar.dfo.singleobjective.algos._
 import oscar.util.Interval
 
-class SingleObjectiveDFO extends FunSuite with ShouldMatchers {
+class SingleObjectiveDFO extends FunSuite with Matchers {
   
   //Get a String representation of an array of double
   def pointToStr(point: Array[Double]) : String = {
@@ -251,7 +251,7 @@ class SingleObjectiveDFO extends FunSuite with ShouldMatchers {
 /**
  * Unit test on DDS (Direct Directional Search)
  */
-class DDSTest extends FunSuite with ShouldMatchers {
+class DDSTest extends FunSuite with Matchers {
   def f1(x: Array[Double]): Array[Double] = {
     var eval = 0.0;
     x.foreach(element=> eval += element*element)
@@ -305,7 +305,7 @@ class DDSTest extends FunSuite with ShouldMatchers {
 /**
  * Unit test on MDS (Multi Directional Search)
  */
-class MDSTest extends FunSuite with ShouldMatchers {
+class MDSTest extends FunSuite with Matchers {
   def f1(x: Array[Double]): Array[Double] = {
     var eval = 0.0
     x.foreach(element=> eval += element*element)
@@ -360,7 +360,7 @@ class MDSTest extends FunSuite with ShouldMatchers {
 /**
  * Unit test on Nelder Mead
  */
-class NelderMeadTest extends FunSuite with ShouldMatchers {
+class NelderMeadTest extends FunSuite with Matchers {
   def f1(x: Array[Double]): Array[Double] = {
     var eval = 0.0;
     x.foreach(element=> eval += element*element)

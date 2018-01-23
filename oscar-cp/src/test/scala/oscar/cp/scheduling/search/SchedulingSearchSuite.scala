@@ -15,13 +15,14 @@
 
 package oscar.cp.scheduling.search
 
+import oscar.algo.branchings.{LCSearchSimplePhaseAssign, SplitLastConflict}
 import oscar.cp.testUtils._
 import oscar.cp._
+
 import scala.util.Random
 import oscar.algo.search.Branching
-import oscar.cp.searches.SplitLastConflict
-import oscar.cp.searches.LCSearchSimplePhaseAssign
 import oscar.util.RandomGenerator
+
 import scala.collection.mutable.ArrayBuffer
 /**
  *  @author Cyrille Dejemeppe cyrille.dejemeppe@gmail.com

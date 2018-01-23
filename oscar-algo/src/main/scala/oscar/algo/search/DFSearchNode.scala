@@ -1,15 +1,17 @@
 package oscar.algo.search
 
 
+import oscar.algo.Inconsistency
+
 import scala.util.Random
-import oscar.algo.reversible.ReversibleContext
+import oscar.algo.reversible.ReversibleContextImpl
 import oscar.algo.reversible.ReversibleBoolean
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
  * @author Renaud Hartert ren.hartert@gmail.com
  */
-class DFSearchNode extends ReversibleContext {
+class DFSearchNode extends ReversibleContextImpl with ConstrainableContext {
 
   var silent = false
 
@@ -18,7 +20,7 @@ class DFSearchNode extends ReversibleContext {
   /**
     * @return The Random generator of this node potentially used in other algorithms
     */
-  def getRandom(): Random = random
+  def getRandom: Random = random
 
 
   protected val failed = new ReversibleBoolean(this, false)
@@ -34,9 +36,12 @@ class DFSearchNode extends ReversibleContext {
     //statusBehaviourDelegate.onSolution(action); this
   }
 
+  final def onFailure(action: => Unit): DFSearchNode = {
+    searchStrategy.onFailure(action); this
+  }
 
   /** @return  true if this node can surely not lead to any solution */
-  def isFailed(): Boolean = failed.value
+  def isFailed: Boolean = failed.value
 
   /** Set the node in a failed state */
   def fail(): Unit = failed.setTrue()
@@ -88,7 +93,12 @@ class DFSearchNode extends ReversibleContext {
   def startSubjectTo(stopCondition: DFSearch => Boolean, maxDiscrepancy: Int, listener: DFSearchListener)(block: => Unit): SearchStatistics = {
     val t0 = System.currentTimeMillis()
     pushState() // Store the current state
-    block // Apply the before search action
+    try {
+      block // Apply the before search action
+    }
+    catch {
+      case _: Inconsistency => fail()
+    }
     searchStrategy.searchListener = listener // Set the listener
     searchStrategy.start(heuristic.maxDiscrepancy(maxDiscrepancy), stopCondition)
     pop() // Restore the current state

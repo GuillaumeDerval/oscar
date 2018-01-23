@@ -16,30 +16,31 @@ package oscar.algo.reversible.test
 
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
 import oscar.algo.search._
 import oscar.algo.reversible._
+
 import scala.collection.JavaConversions._
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
+import org.scalatest.Matchers
 
 
 @RunWith(classOf[JUnitRunner])
-class OrderedSetTest extends FunSuite with ShouldMatchers {
+class OrderedSetTest extends FunSuite with Matchers {
 
    
  
     test("test 1") {
     			
     	val myset = new OrderedSet(3,10)
-    	myset.toSet() should equal((3 to 10).toSet())
+    	myset.toSet should equal((3 to 10).toSet)
     	
     	myset.removeValue(3)
-    	myset.toSet() should equal((4 to 10).toSet())
+    	myset.toSet should equal((4 to 10).toSet)
     	myset.hasValue(3) should equal(false)
     	
     	myset.removeValue(10)
-    	myset.toSet() should equal((4 to 9).toSet())
+    	myset.toSet should equal((4 to 9).toSet)
     	myset.hasValue(10) should equal(false)
     	myset.hasValue(9) should equal(true)
     	

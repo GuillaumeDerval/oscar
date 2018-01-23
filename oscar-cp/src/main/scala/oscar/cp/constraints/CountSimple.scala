@@ -16,8 +16,7 @@ package oscar.cp.constraints
 
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 
 /**
@@ -32,8 +31,9 @@ class CountSimple(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) exte
   val nEqY = new ReversibleInt(s, 0)
   val diffY = X.map(i => i)
   val nDiffY = new ReversibleInt(s, 0)
-  
-  
+
+  override def associatedVars(): Iterable[CPVar] = Array(N, Y) ++ X
+
   private def setEq(i: Int) {
     val tmp = eqY(nEqY.value)
     eqY(nEqY.value) = eqY(i)
@@ -49,14 +49,13 @@ class CountSimple(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) exte
   }  
   
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     X.foreach(_.callPropagateWhenDomainChanges(this))
     Y.callPropagateWhenBind(this)
     N.callPropagateWhenBoundsChange(this)
-    CPOutcome.Suspend
   }
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
     var i = 0
     if (Y.isBound) {
       val v = Y.min
@@ -82,31 +81,31 @@ class CountSimple(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) exte
     val minCount = nEqY.value
     val maxCount = n-nDiffY.value
     
-    if (N.updateMin(minCount) == CPOutcome.Failure) return CPOutcome.Failure
-    if (N.updateMax(maxCount) == CPOutcome.Failure) return CPOutcome.Failure
-    
+    N.updateMin(minCount)
+    N.updateMax(maxCount)
     
     // we reached the maximum number values
     if (minCount == N.max && Y.isBound) {
       val v = Y.min
       i = nEqY.value
       while (i < n) {
-        if (eqY(i).removeValue(v) == CPOutcome.Failure) return CPOutcome.Failure
+        eqY(i).removeValue(v)
         i += 1
       }
-      return CPOutcome.Success
+      deactivate()
+      return
     }
     // every value not surely equal to Y must be equal to Y
     if (maxCount == N.min && Y.isBound) {
       val v = Y.min
       i = nDiffY.value
       while (i < n) {
-        if (diffY(i).assign(v) == CPOutcome.Failure) return CPOutcome.Failure
+        diffY(i).assign(v)
         i += 1
       }
-      return CPOutcome.Success
+      deactivate()
+      return
     }
-    return CPOutcome.Suspend 
   }
   
 

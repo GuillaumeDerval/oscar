@@ -9,30 +9,27 @@ import sbtunidoc.Plugin._
 
 object OscarBuild extends Build {
 
+  lazy val PerfTest = config("perf") extend(Test)
+
   object BuildSettings {
     val buildOrganization = "oscar"
     val buildVersion = "4.0.0-SNAPSHOT"
-    val buildScalaVersion = "2.11.0"
+    val buildScalaVersion = "2.12.4"
     val buildSbtVersion= "0.13.12"
 
-    val osNativeLibDir = (sys.props("os.name"), sys.props("os.arch")) match {
-      case (os, arch) if os.contains("Mac") && arch.endsWith("64") => "macos64"
-      case (os, arch) if os.contains("Linux") && arch.endsWith("64") => "linux64"
-      case (os, arch) if os.contains("Windows") && arch.endsWith("32") => "windows32"
-      case (os, arch) if os.contains("Windows") && arch.endsWith("64") => "windows64"
-      case (os, arch) => sys.error("Unsupported OS [${os}] Architecture [${arch}] combo, OscaR currently supports macos64, linux64, windows32, windows64")
-    }
 
     lazy val commonSettings = Defaults.defaultSettings ++  jacoco.settings ++ Seq(
       organization := buildOrganization,
       version := buildVersion,
-      scalacOptions in Compile ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature", "-unchecked", "-Xdisable-assertions"),
+      scalacOptions in Compile ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature",
+                                       "-unchecked", "-Xdisable-assertions", "-language:implicitConversions",
+                                       "-language:postfixOps"),
       scalacOptions in Test := Seq("-optimise"),
       testOptions in Test <+= (target in Test) map {
         t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
       parallelExecution in Test := false,
       fork in Test := true,
-      javaOptions in Test += "-Djava.library.path=../lib:../lib/" + osNativeLibDir,
+      javaOptions in Test += "-Djava.library.path=../lib:../lib/",
       javacOptions ++= Seq("-encoding", "UTF-8"),
       scalaVersion := buildScalaVersion,
       unmanagedSourceDirectories in Test += baseDirectory.value / "src" / "main" / "examples",
@@ -44,7 +41,11 @@ object OscarBuild extends Build {
         else
           Some(artifactoryName at artifactoryUrl + "libs-release-local")
       },
-      credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
+      credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
+      testOptions in PerfTest <+= (target in PerfTest) map {
+        t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
+      fork in PerfTest := true,
+      parallelExecution in PerfTest := false
     )
   }
 
@@ -53,33 +54,38 @@ object OscarBuild extends Build {
     val leadoperations = "AWS S3 Release Repository" at "http://maven.leadoperations.co/release"
     val cogcomp = "Cognitive Computation Group" at "http://cogcomp.cs.illinois.edu/m2repo/"
     val ingi = "INGI Snapshots" at "http://artifactory.info.ucl.ac.be/artifactory/libs-snapshot-local/"
-    val mvnrepository = "Maven Repository" at "https://mvnrepository.com/artifact/"
   }
 
   object Dependencies {
-
     // Regular libraries
     val antlr4Runtime = "org.antlr" % "antlr4-runtime" % "latest.milestone"
-    val glpk = "org.gnu.glpk" % "glpk-java" % "1.0.16"
-    val gurobi = "gurobi" % "gurobi" % "5.0.1"
-    val lpsolve = "lpsolve" % "lpsolve" % "5.5.2"
     val jcommon = "org.jfree" % "jcommon" % "latest.milestone"
     val jfreechart = "org.jfree" % "jfreechart" % "latest.milestone"
     val jsci = "net.sf.jsci" % "jsci" % "latest.milestone"
     val scalaParserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "latest.milestone"
     val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "latest.milestone"
     val scalaSwing = "org.scala-lang.modules" %% "scala-swing" % "latest.milestone"
-    //val swingx = "org.swinglabs" % "swingx" % "latest.milestone"
-    // val swingxWs = "org.swinglabs" % "swingx-ws" % "latest.milestone"
     val swingx = "org.swinglabs" % "swingx" % "1.0"
     val swingxWs = "org.swinglabs" % "swingx-ws" % "1.0"
     val xmlApisExt = "xml-apis" % "xml-apis-ext" % "latest.milestone"
-    val xcsp3 = "xcsp3"  % "xcsp3_2.11" % "1.0.0-SNAPSHOT"
-    val jxmapviewer2 = "org.jxmapviewer" % "jxmapviewer2" % "2.2"
+    val xcsp3 = "xcsp3"  % "xcsp3" % "1.0.0-SNAPSHOT"
+    val graphStreamCore = "org.graphstream" % "gs-core" % "1.3"
+    val graphStreamAlgo = "org.graphstream" % "gs-algo" % "1.3"
+    val graphStreamUI = "org.graphstream" % "gs-ui" % "1.3"
+    val scallop = "org.rogach" % "scallop_2.11" % "1.0.0"
+
+    // Akka
+    val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.5.6"
+    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.5.6"
+
     // Test libraries
     val junit = "junit" % "junit" % "latest.milestone" % Test
-    val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.11.+" % Test
-    val scalaTest = "org.scalatest" %% "scalatest" % "2.2.+" % Test
+    val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.13.+" % Test
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
+
+    val junit2 = "junit" % "junit" % "latest.milestone" % PerfTest
+    val scalaCheck2 = "org.scalacheck" %% "scalacheck" % "1.13.+" % PerfTest
+    val scalaTest2 = "org.scalatest" %% "scalatest" % "3.0.4" % PerfTest
 
     val testDeps = Seq(junit, scalaCheck, scalaTest)
   }
@@ -94,12 +100,11 @@ object OscarBuild extends Build {
     base = file("."),
     settings =
       commonSettings ++
-      packSettings ++
-      unidocSettings ++
-      Seq(libraryDependencies ++= testDeps) :+
-        (unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(oscarFzn, oscarFznCbls, oscarFznCp)),
-    aggregate = Seq(oscarAlgebra, oscarAlgo, oscarCbls, oscarCp,  oscarCPXcsp3, oscarDfo, oscarLinprog, oscarUtil, oscarVisual, oscarFzn, oscarFznCbls, oscarFznCp, oscarDes,oscarInvariants)
-    
+        packSettings ++
+        unidocSettings ++
+        Seq(libraryDependencies ++= testDeps) :+
+        (unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(oscarFzn, oscarFznCbls, oscarFznCp, oscarPerf)),
+    aggregate = Seq(oscarAlgebra, oscarAlgo, oscarCbls, oscarCp, oscarCPXcsp3, oscarPerf, oscarModeling, oscarDfo, oscarUtil, oscarVisual, oscarFzn, oscarFznCbls, oscarFznCp, oscarDes, oscarInvariants)
   )
 
   lazy val oscarAlgebra = Project(
@@ -126,8 +131,7 @@ object OscarBuild extends Build {
       commonSettings ++
         packAutoSettings ++
         Seq(
-          resolvers ++= Seq(mvnrepository),
-          libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2,
+          libraryDependencies ++= testDeps :+ scalaSwing,
           packGenerateWindowsBatFile := false
         ),
     dependencies = Seq(oscarVisual)
@@ -142,6 +146,19 @@ object OscarBuild extends Build {
     dependencies = Seq(oscarAlgo, oscarVisual)
   )
 
+  lazy val oscarModeling = Project(
+    id = "oscar-modeling",
+    base = file("oscar-modeling"),
+    settings =
+      commonSettings ++
+        Seq(
+          scalacOptions in Compile ++= Seq("-language:reflectiveCalls"),
+          resolvers ++= Seq(xypron),
+          libraryDependencies ++= testDeps :+ graphStreamCore :+ graphStreamAlgo :+ graphStreamUI :+ scallop
+                               :+ akkaActor :+ scalaSwing :+ jfreechart :+ jcommon),
+    dependencies = Seq(oscarCp)
+  )
+
   lazy val oscarCPXcsp3 = Project(
     id = "oscar-cp-xcsp3",
     base = file("oscar-cp-xcsp3"),
@@ -150,8 +167,23 @@ object OscarBuild extends Build {
         Seq(
           resolvers ++= Seq(ingi),
           libraryDependencies ++= testDeps :+ xcsp3),
-    dependencies = Seq(oscarCp)
+    dependencies = Seq(oscarCp, oscarModeling)
   )
+
+  lazy val oscarPerf = Project(
+    id = "oscar-perf",
+    base = file("oscar-perf"),
+    settings = commonSettings ++ Seq(resolvers ++= Seq(ingi), libraryDependencies ++= testDeps :+ xcsp3),
+    dependencies = Seq(oscarCp, oscarCPXcsp3, oscarModeling)
+  ).configs( PerfTest )
+    .settings(libraryDependencies ++= testDeps)
+    .settings(inConfig(PerfTest)(Defaults.testTasks ++ Seq()): _*)
+    .settings(inConfig(PerfTest)(baseDirectory in PerfTest := file(".")))
+    .settings(
+      testOptions in Test := Seq(Tests.Filter(x => !(x endsWith "PerfTest"))),
+      testOptions in PerfTest := Seq(Tests.Filter(_ endsWith "PerfTest"))
+    )
+
 
   // Not included in the root build
   lazy val oscarDes = Project(
@@ -207,18 +239,6 @@ object OscarBuild extends Build {
     settings =
       commonSettings ++
         Seq(libraryDependencies ++= testDeps)
-  )
-
-  lazy val oscarLinprog = Project(
-    id = "oscar-linprog",
-    base = file("oscar-linprog"),
-    settings =
-      commonSettings ++
-        Seq(
-          resolvers ++= Seq(xypron, leadoperations, cogcomp),
-          libraryDependencies ++= testDeps :+ glpk :+ gurobi :+ lpsolve :+ scalaXml
-        ),
-    dependencies = Seq(oscarAlgebra, oscarVisual)
   )
 
   lazy val oscarUtil = Project(

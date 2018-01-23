@@ -53,7 +53,7 @@ class MDD(table: Array[Array[Int]]) {
     nbNodes += 1
 
     /* Root of the MDD */
-    val root = new Node(0, nbNodes, nbChildren(0), 0)
+    val root = new Node(0, nbNodes, nbChildren(0), 0) // TODO array out of bound if table length == 0
     nbNodes += 1
 
     /* Construction of the tree */

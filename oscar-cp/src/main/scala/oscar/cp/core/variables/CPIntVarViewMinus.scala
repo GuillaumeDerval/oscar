@@ -25,9 +25,10 @@ import oscar.cp.core.delta.DeltaIntVar
  * @author Pierre Schaus pschaus@gmail.com
  */
 final class CPIntVarViewMinus(v: CPIntVar) extends CPIntVar {
-    
+
   final override val store: CPStore = v.store
-  
+	final override val context = store
+
   final override val name: String = s"-${v.name}"
     
   def transform(v: Int) = -this.v.transform(v)    
@@ -40,7 +41,7 @@ final class CPIntVarViewMinus(v: CPIntVar) extends CPIntVar {
 	
 	def constraintDegree = v.constraintDegree
 	
-	def isBoundTo(value: Int): Boolean = v.isBoundTo(-value)
+	override def isBoundTo(value: Int): Boolean = v.isBoundTo(-value)
 	
 	def hasValue(value: Int): Boolean = v.hasValue(-value)
 	

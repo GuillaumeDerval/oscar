@@ -16,6 +16,7 @@ package oscar.cp.test;
 
 
 import junit.framework.TestCase;
+import oscar.algo.Inconsistency;
 import oscar.cp.constraints.Deviation;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.CPStore;
@@ -49,7 +50,7 @@ public class TestDeviation extends TestCase {
 
 
 
-    public void testDeviation1(){
+    public void testDeviation1() throws Inconsistency {
         CPStore cp = new CPStore();
     	CPIntVar [] x = new CPIntVar[4];
     	for (int i = 0; i < x.length; i++) {
@@ -63,7 +64,7 @@ public class TestDeviation extends TestCase {
         }
     }
 
-    public void testDeviation2(){
+    public void testDeviation2() throws Inconsistency{
         CPStore cp = new CPStore();
     	CPIntVar [] x = new CPIntVar[4];
     	for (int i = 0; i < x.length; i++) {
@@ -77,7 +78,7 @@ public class TestDeviation extends TestCase {
 
 
 
-    public void testDeviation3(){
+    public void testDeviation3() throws Inconsistency{
 
         CPStore cp = new CPStore();
     	CPIntVar [] x = new CPIntVar[4];
@@ -93,7 +94,7 @@ public class TestDeviation extends TestCase {
 
     }
 
-    public void testDeviation4(){
+    public void testDeviation4() throws Inconsistency{
 
         CPStore cp = new CPStore();
     	CPIntVar [] x = new CPIntVar[4];
@@ -109,7 +110,7 @@ public class TestDeviation extends TestCase {
 
     }
 
-    public void testDeviation5() {
+    public void testDeviation5()  throws Inconsistency{
 
         CPStore cp = new CPStore();
     	CPIntVar [] x = new CPIntVar[4];
@@ -126,7 +127,7 @@ public class TestDeviation extends TestCase {
 
     }
 
-    public void testDeviation6() {
+    public void testDeviation6() throws Inconsistency {
 
         CPStore cp = new CPStore();
     	CPIntVar [] x = new CPIntVar[4];
@@ -143,7 +144,7 @@ public class TestDeviation extends TestCase {
 
     }
 
-    public void testDeviation7() {
+    public void testDeviation7() throws Inconsistency {
 
         CPStore cp = new CPStore();
     	CPIntVar [] x = new CPIntVar[4];
@@ -160,7 +161,7 @@ public class TestDeviation extends TestCase {
 
     }
 
-    public void testDeviation8() {
+    public void testDeviation8() throws Inconsistency {
 
         CPStore cp = new CPStore();
     	CPIntVar [] x = new CPIntVar[4];
@@ -178,7 +179,7 @@ public class TestDeviation extends TestCase {
 
     }
 
-    public void testDeviation9() {
+    public void testDeviation9() throws Inconsistency {
 
         CPStore cp = new CPStore();
     	CPIntVar [] x = new CPIntVar[6];
@@ -200,7 +201,7 @@ public class TestDeviation extends TestCase {
 
   
     
-    public void testDeviation11(){
+    public void testDeviation11() throws Inconsistency{
         CPStore cp = new CPStore();
     	CPIntVar [] x = new CPIntVar[8];
 
@@ -221,7 +222,7 @@ public class TestDeviation extends TestCase {
 
     }
     
-  public void testDeviation12(){
+  public void testDeviation12() throws Inconsistency{
 	CPStore cp = new CPStore();
 	CPIntVar [] x = new CPIntVar[6];
 
@@ -241,7 +242,7 @@ public class TestDeviation extends TestCase {
 
  }
     
-  public void testDeviation13(){
+  public void testDeviation13() throws Inconsistency{
 	CPStore cp = new CPStore();
 	CPIntVar [] x = new CPIntVar[6];
 	
