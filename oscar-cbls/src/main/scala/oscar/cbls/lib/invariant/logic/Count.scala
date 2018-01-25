@@ -110,12 +110,10 @@ case class DenseCount(values: Array[IntValue], counts: Array[CBLSIntVar], offset
   * */
 
 case class ConstCount(values: Array[IntValue], c: Int)
-  extends IntInvariant
+  extends IntInvariant(values.count(v => v.value == c), DomainRange(0,values.length))
     with IntNotificationTarget{
 
   registerStaticAndDynamicDependencyArrayIndex(values)
-
-  this := values.count(v => v.value == c)
 
   finishInitialization()
 

@@ -35,7 +35,7 @@ import scala.collection.immutable.SortedSet
  * @author renaud.delandtsheer@cetic.be
  * */
 case class MaxArray(varss: Array[IntValue], cond: SetValue = null, default: Int = Int.MinValue)
-  extends MiaxArray(varss, cond, default) {
+  extends MiaxArray(varss, cond, varss.map(_.min).min) {
 
   override def Ord(v: IntValue): Int = -v.value
 
@@ -64,7 +64,7 @@ case class MaxArray(varss: Array[IntValue], cond: SetValue = null, default: Int 
  * @author renaud.delandtsheer@cetic.be
  * */
 case class MinArray(varss: Array[IntValue], cond: SetValue = null, default: Int = Int.MaxValue)
-  extends MiaxArray(varss, cond, default) {
+  extends MiaxArray(varss, cond, varss.map(_.max).max) {
 
   override def Ord(v: IntValue): Int = v.value
 
