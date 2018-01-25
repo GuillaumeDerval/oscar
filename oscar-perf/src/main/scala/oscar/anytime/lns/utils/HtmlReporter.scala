@@ -271,7 +271,8 @@ object HtmlReporter extends App{
       }
       val solsVals = currentSols.filter(_.isDefined).map(_.get)
       val mean = if(solsVals.isEmpty) None else Some(solsVals.sum.toDouble/solsVals.length)
-      val std = if(solsVals.isEmpty) None else Some(Math.sqrt(solsVals.map(v => Math.abs(v - mean.get)).sum/solsVals.length))
+//      val std = if(solsVals.isEmpty) None else Some(Math.sqrt(solsVals.map(v => scala.math.pow(v - mean.get, 2)).sum/solsVals.length))
+      val std = if(solsVals.isEmpty) None else Some((Math.sqrt(solsVals.map(v => scala.math.pow(v - mean.get, 2)).sum/solsVals.length)/mean.get)*100.0) //relative
       solsByTime += ((time, config, mean, std))
     }
 
