@@ -54,6 +54,14 @@ sealed abstract class FzDomain {
 
 case class FzDomainRange(var mi: Int, var ma: Int) extends FzDomain {
   //
+  if(ma == Int.MaxValue) {
+    ma = Int.MaxValue / 2
+    System.out.println("% Warning: integer domain too large!")
+  }
+  if(mi == Int.MinValue) {
+    mi = Int.MinValue / 2
+    System.out.println("% Warning: integer domain too large")
+  }
   def min = mi
   def max = ma
   def contains(v:Int): Boolean = mi <= v && ma >= v

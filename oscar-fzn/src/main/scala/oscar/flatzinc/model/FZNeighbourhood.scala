@@ -22,11 +22,11 @@ package oscar.flatzinc.model
   */
 
 class FZNeighbourhood(val name: String,
-                      val subNeighbourhoods: List[FZSubNeighbourhood],
+                      val subNeighbourhoods: Array[FZSubNeighbourhood],
                       val initVariables: Array[Variable],
                       val initConstraints: List[Constraint]) {
 
-  private val controlledVariables = subNeighbourhoods.foldLeft(Array.empty[Variable])(
+  private val controlledVariables = subNeighbourhoods.foldLeft(initVariables)(
     (acc, n) => acc ++ n.getControlledVariables).toSet.toArray
 
   def getControlledVariables: Array[Variable] = {

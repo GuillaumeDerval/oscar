@@ -20,6 +20,7 @@ package oscar.flatzinc.cbls
 
 import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.core.objective.{Objective => CBLSObjective}
 import oscar.cbls.lib.search.LinearSelector
 import oscar.cbls.util.StopWatch
 import oscar.flatzinc.{Log, NoSuchConstraintException, Options}
@@ -92,6 +93,56 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
     if (useCP) cblsmodel.useCPsolver(cpmodel)
     log("Created Model (Variables and Objective)")
 
+    //Remove variables that are in defined neighbourhoods
+    removeNeighbourhoodVariables(fzModel, cblsmodel)
+
+    /*
+    for (neighbourhood <- fzModel.neighbourhoods) {
+      for (sub <- neighbourhood.subNeighbourhoods) {
+        val whereCS = createLocalConstraintSystem(sub.whereConstraints, cblsmodel)
+        val ensureCS = createLocalConstraintSystem(sub.ensureConstraints, cblsmodel)
+        val controlledVariables = sub.getSearchVariables.map(cblsmodel.getCBLSVar(_))
+        cblsmodel.addNeighbourhood(
+          (o, c) => new FlatSubNeighbourhood(sub,
+                                             whereCS,
+                                             ensureCS,
+                                             controlledVariables,
+                                             o,
+                                             cblsmodel),
+          controlledVariables)
+      }
+    }*/
+
+    for (neighbourhood <- fzModel.neighbourhoods) {
+      cblsmodel.addNeighbourhood(
+        (o,c) => {
+          val initCS = createLocalConstraintSystem(neighbourhood.initConstraints,cblsmodel)
+          val subNeighbourhoods = neighbourhood.subNeighbourhoods.map(sub =>
+                                                                      {
+                                                                        val whereCS = createLocalConstraintSystem(sub.whereConstraints, cblsmodel)
+                        val ensureCS = createLocalConstraintSystem(sub.ensureConstraints, cblsmodel)
+                        val controlledVariables = sub.getSearchVariables.map(cblsmodel.getCBLSVar(_))
+                        (o:CBLSObjective, c:ConstraintSystem) => new FlatSubNeighbourhood(sub,
+                                                                                          whereCS,
+                                                                                          ensureCS,
+                                                                                          controlledVariables,
+                                                                                          o,
+                                                                                          cblsmodel)
+                      }
+          )
+          new FlatNeighbourhood(neighbourhood,
+                                initCS,
+                                subNeighbourhoods,
+                                o,
+                                cblsmodel
+
+          )
+        }
+        ,neighbourhood.getControlledVariables.map(cblsmodel.getCBLSVar(_))
+      )
+
+    }
+
     //Gets the soft constraints by posting the implicit constraints (neighbourhoods)
     val softConstraints: List[Constraint] = findAndPostImplicitConstraints(cblsmodel,
                                                                            maybeSoftConstraint ++ nowMaybeSoft, opts,
@@ -108,25 +159,6 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
 
     //Do not want to search on fixed variables!
     cblsmodel.removeControlledVariables(v => v.domainSize == 1 || v.isControlledVariable)
-
-    //Remove variables that are in defined neighbourhoods
-    removeNeighbourhoodVariables(fzModel, cblsmodel)
-    for (neighbourhood <- fzModel.neighbourhoods) {
-      for (sub <- neighbourhood.subNeighbourhoods) {
-        val whereCS = createLocalConstraintSystem(sub.whereConstraints, cblsmodel)
-        val ensureCS = createLocalConstraintSystem(sub.ensureConstraints, cblsmodel)
-        val controlledVariables = sub.getSearchVariables.map(cblsmodel.getCBLSVar(_))
-        cblsmodel.addNeighbourhood(
-          (o, c) => new GenericSubNeighbourhood(sub,
-                                                whereCS,
-                                                ensureCS,
-                                                controlledVariables,
-                                                o,
-                                                cblsmodel),
-          controlledVariables)
-
-      }
-    }
 
     cblsmodel.addDefaultNeighbourhoods()
 
@@ -145,6 +177,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
 
     if (cblsmodel.neighbourhoods.length == 0) {
       log(0, "No neighbourhood has been created. Aborting!")
+      cblsmodel.handleSolution()
       return
     }
 
@@ -362,10 +395,11 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
   }
 
   def findInvariants(model: FZProblem, opts: Options, log: Log): Unit = {
+    val searchVars = model.neighbourhoods.flatMap(_.getSearchVariables)
     if (opts.is("no-find-inv")) {
       log("Did not search for new invariants")
     } else {
-      FZModelTransfo.findInvariants(model, log, List.empty[Variable]);
+      FZModelTransfo.findInvariants(model, log, searchVars);
       log("Found Invariants")
     }
     //If a variable has a domiain of size 1, then do not define it with an invariant.

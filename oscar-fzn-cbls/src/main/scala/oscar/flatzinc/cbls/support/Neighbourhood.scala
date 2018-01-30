@@ -869,12 +869,51 @@ class Inverse(xs: Array[CBLSIntVar], invXs: Array[CBLSIntVar], objective: CBLSOb
 }
 
 
-class GenericSubNeighbourhood(val fzNeighbourhood: FZSubNeighbourhood,
-                              whereConstraintSystem: ConstraintSystem,
-                              ensureConstraintSystem: ConstraintSystem,
-                              searchVariables: Array[CBLSIntVar],
-                              objective: CBLSObjective,
-                              val cblsModel: FZCBLSModel)
+
+
+class FlatNeighbourhood(val fzNeighbourhood: FZNeighbourhood,
+                            initConstraintSystem: ConstraintSystem,
+                            subNeighbourhoodConstructors:Array[(CBLSObjective,ConstraintSystem) => FlatSubNeighbourhood],
+                            objective: CBLSObjective,
+                            val cblsModel: FZCBLSModel)
+  extends Neighbourhood(fzNeighbourhood.getSearchVariables.map(v => cblsModel.getCBLSVar(v))) {
+
+  val variableViolation: Array[IntValue] = searchVariables.map(cblsModel.c.violation(_))
+
+  val subNeighbourhoods = subNeighbourhoodConstructors.map(_(objective,cblsModel.c))
+
+
+  reset();
+
+  def reset() = {
+
+  }
+
+  def randomMove(it: Int): Move = {
+    getExtendedMinObjective(it, _ => true, _ => true)
+  }
+
+  def getMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
+    getExtendedMinObjective(it, accept, acceptVar)
+  }
+
+  def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
+    val bestMoves = subNeighbourhoods.map(_.getExtendedMinObjective(it,accept,acceptVar))
+    val bestIdx = selectMin(bestMoves.indices)(i => bestMoves(i).value)
+    bestMoves(bestIdx)
+  }
+
+  def violation() = {
+    variableViolation.foldLeft(0)((acc, x) => acc + x.value)
+  };
+}
+
+class FlatSubNeighbourhood(val fzNeighbourhood: FZSubNeighbourhood,
+                           whereConstraintSystem: ConstraintSystem,
+                           ensureConstraintSystem: ConstraintSystem,
+                           searchVariables: Array[CBLSIntVar],
+                           objective: CBLSObjective,
+                           val cblsModel: FZCBLSModel)
   extends Neighbourhood(fzNeighbourhood.getSearchVariables.map(v => cblsModel.getCBLSVar(v))) {
 
   val variableViolation: Array[IntValue] = searchVariables.map(cblsModel.c.violation(_))

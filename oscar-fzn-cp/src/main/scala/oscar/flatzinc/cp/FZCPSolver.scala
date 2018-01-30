@@ -94,6 +94,8 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
             add(cons)
           }catch{
             case e: scala.MatchError if ignoreUnkownConstraints => Console.err.println("% ignoring in CP: "+c)
+            case foo =>
+              println(foo)
           }
         }
     //}catch{
