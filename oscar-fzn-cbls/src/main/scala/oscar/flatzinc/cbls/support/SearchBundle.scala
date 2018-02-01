@@ -273,8 +273,6 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
         n.getMinObjective(it.value, acceptMove(bestValue,nonTabuSet),acceptVar(nonTabuSet))
       }))(_.value)
 
-
-
     if(bestNeighbour!=null){
       //TODO: Aspiration sometimes accepts moves that do not improve but seem to improve because of changing weights. 
       if(log.level > 0 && bestNeighbour.getModified.forall(!nonTabuSet.contains(_))){
@@ -283,8 +281,10 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
       }
       log(3,bestNeighbour.toString)
       log(4,tabu.filter(t => t.value > it.value).toList.toString())
+
       bestNeighbour.commit()
       sc.handlePossibleSolution()
+
     }else
       log("No move exists!")
     val modifiedVars = if(bestNeighbour!=null) bestNeighbour.getModified else Set.empty[CBLSIntVar]

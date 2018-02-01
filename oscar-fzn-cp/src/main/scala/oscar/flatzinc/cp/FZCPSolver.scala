@@ -17,11 +17,11 @@
  */
 package oscar.flatzinc.cp
 
-import java.lang.RuntimeException
+
 
 import oscar.algo.Inconsistency
 import oscar.cp._
-import oscar.cp.core.NoSolutionException
+
 import oscar.flatzinc.Options
 import oscar.flatzinc.parser.FZParser
 
@@ -29,7 +29,7 @@ import scala.collection.mutable.{Map => MMap}
 import oscar.flatzinc.model._
 import oscar.flatzinc.UnsatException
 import oscar.flatzinc.transfo.FZModelTransfo
-import oscar.cp.modeling.Branchings
+
 
 import scala.util.Random
 class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.cp.core.CPPropagStrength = oscar.cp.Medium, val ignoreUnkownConstraints: Boolean = false) {

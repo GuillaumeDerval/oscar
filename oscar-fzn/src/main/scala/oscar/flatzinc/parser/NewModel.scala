@@ -434,7 +434,7 @@ class Model(val log: Log, val acceptAnyCstr: Boolean) {
     val decl = neighbourhoodFunction.getBody.getReturnValue.asInstanceOf[ASTAnnotation]
 
     //TODO:Support initalization!!!
-    val (initVars, initCons) = if (false && decl.getArgs.size() == 2) {
+    val (initVars, initCons) = if ( decl.getArgs.size() == 2) {
       val initCall = decl.getArgs.get(1).asInstanceOf[ASTAnnotation].getArgs.get(0).asInstanceOf[ASTAnnotation]
       getVarsAndConstraintsInFunction(initCall)
     } else {

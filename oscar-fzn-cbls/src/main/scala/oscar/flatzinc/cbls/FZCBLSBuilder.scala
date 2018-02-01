@@ -206,7 +206,8 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
 
     cblsmodel.close()
     log("Model closed");
-    
+
+    cblsmodel.neighbourhoods.foreach(_.reset())
 
     var sc:SearchControl = finalRun._1
     var bestKnownObjective = Int.MaxValue

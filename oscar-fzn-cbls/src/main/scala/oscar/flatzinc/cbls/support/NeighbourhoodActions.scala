@@ -27,11 +27,13 @@ abstract class NeighbourhoodAction {
 
   def performAssignment()
 
-  def unroll()
+  def undo()
 
   def saveBest()
 
-  def getOldMove(obj: Int): Move
+  def getCurrentMove(obj: Int): Move
+
+  def getSavedMove(obj: Int): Move
 
   def onlyModifies(allowedVars: CBLSIntVar => Boolean):Boolean
 }
@@ -55,11 +57,15 @@ case class AssignAction(target: CBLSIntVar, value: IntValue) extends Neighbourho
     target := computedValue
   }
 
-  override def unroll(): Unit = {
+  override def undo(): Unit = {
     target := oldValue
   }
 
-  override def getOldMove(obj: Int): Move = {
+  override def getCurrentMove(obj: Int): Move = {
+    AssignMove(target, computedValue, obj)
+  }
+
+  override def getSavedMove(obj: Int): Move = {
     AssignMove(target, savedValue, obj)
   }
 
@@ -93,11 +99,15 @@ case class AssignArrayAction(targets: Array[CBLSIntVar], index: IntValue,
     targets(computedIndex) := computedValue
   }
 
-  override def unroll(): Unit = {
+  override def undo(): Unit = {
     targets(computedIndex) := oldValue
   }
 
-  override def getOldMove(obj: Int): Move = {
+  override def getCurrentMove(obj: Int): Move = {
+    AssignMove(targets(computedIndex), computedValue, obj)
+  }
+
+  override def getSavedMove(obj: Int): Move = {
     AssignMove(targets(savedIndex), savedValue, obj)
   }
 
@@ -116,13 +126,18 @@ case class SwapAction(target1: CBLSIntVar, target2: CBLSIntVar) extends Neighbou
     target1 :=: target2
   }
 
-  override def unroll(): Unit = {
+  override def undo(): Unit = {
     target1 :=: target2
   }
 
-  override def getOldMove(obj: Int): Move = {
+  override def getCurrentMove(obj: Int): Move = {
     SwapMove(target1, target2, obj)
   }
+
+  override def getSavedMove(obj: Int): Move = {
+    SwapMove(target1, target2, obj)
+  }
+
   override def onlyModifies(allowedVars: (CBLSIntVar) => Boolean): Boolean = {
     allowedVars(target1) && allowedVars(target2)
   }
@@ -152,14 +167,19 @@ case class SwapArrayAction(targets1: Array[CBLSIntVar],
     targets1(computedIndex1) :=: targets1(computedIndex2)
   }
 
-  override def unroll(): Unit = {
+  override def undo(): Unit = {
 
     targets1(computedIndex1) :=: targets1(computedIndex2)
   }
 
-  override def getOldMove(obj: Int): Move = {
+  override def getCurrentMove(obj: Int): Move = {
+    SwapMove(targets1(computedIndex1), targets2(computedIndex2), obj)
+  }
+
+  override def getSavedMove(obj: Int): Move = {
     SwapMove(targets1(savedIndex1), targets2(savedIndex2), obj)
   }
+
   override def onlyModifies(allowedVars: (CBLSIntVar) => Boolean): Boolean = {
     allowedVars(targets1(computedIndex1)) && allowedVars(targets2(computedIndex2))
   }

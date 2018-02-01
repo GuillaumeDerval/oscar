@@ -883,10 +883,66 @@ class FlatNeighbourhood(val fzNeighbourhood: FZNeighbourhood,
   val subNeighbourhoods = subNeighbourhoodConstructors.map(_(objective,cblsModel.c))
 
 
-  reset();
 
+
+  val initVariables = searchVariables ++ fzNeighbourhood.initVariables.map(cblsModel.getCBLSVar(_))
+  println(initVariables)
+  var initIterators: Array[Iterator[Int]] = initVariables.map(_.domain.iterator)
+  for (i <- initVariables.indices) {
+    initVariables(i) := initIterators(i).next()
+  }
+
+  var currentIterator = 0;
+  val numIterators = initVariables.length
+
+  private def increment(): Boolean = {
+    if (initIterators(currentIterator).hasNext) {
+      initVariables(currentIterator) := initIterators(currentIterator).next()
+      true
+    } else {
+      initIterators(currentIterator) = RandomGenerator.shuffle(initVariables(currentIterator).domain.toList).iterator
+      initVariables(currentIterator) := initIterators(currentIterator).next()
+      currentIterator += 1
+      val result = if (currentIterator >= numIterators) {
+        false
+      } else {
+        increment()
+      }
+      currentIterator -= 1
+      result
+    }
+  }
+
+  //reset();
   def reset() = {
+    initIterators = initVariables.map(v => RandomGenerator.shuffle(v.domain.toList).iterator)
+    for (i <- initVariables.indices) {
+      initVariables(i) := initIterators(i).next()
+    }
+    while(initConstraintSystem.violation.value != 0 && increment()){
+      //println("bruteforcing initial assignment");
+    }
 
+    if(initConstraintSystem.violation.value != 0){
+      println("Failed to initialize neighbourhood. There is no solution.")
+    }else{
+      println("Done initializing")
+      debugPrintValues()
+    }
+
+    println("reset done")
+  }
+
+  def debugPrintVariables() = {
+    System.out.println("% Current assignment in " + fzNeighbourhood.name + ": " + searchVariables.mkString("[",", ","]"))
+  }
+
+  def debugPrintValues() = {
+    System.out.println("% Current values in " + fzNeighbourhood.name + ": " + searchVariables.map(_.value).mkString("[",", ","]"))
+  }
+
+  def debugPrintMove(m:Move) = {
+    System.out.println("% Move in " + fzNeighbourhood.name + ": " +  m.toString)
   }
 
   def randomMove(it: Int): Move = {
@@ -898,8 +954,10 @@ class FlatNeighbourhood(val fzNeighbourhood: FZNeighbourhood,
   }
 
   def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
+    debugPrintValues()
     val bestMoves = subNeighbourhoods.map(_.getExtendedMinObjective(it,accept,acceptVar))
     val bestIdx = selectMin(bestMoves.indices)(i => bestMoves(i).value)
+    debugPrintMove(bestMoves(bestIdx))
     bestMoves(bestIdx)
   }
 
@@ -982,19 +1040,26 @@ class FlatSubNeighbourhood(val fzNeighbourhood: FZSubNeighbourhood,
     getExtendedMinObjective(it, accept, acceptVar)
   }
 
+  def debugPrintValues() = {
+    System.out.println("% Current values in " + fzNeighbourhood.name + ": " + searchVariables.map(_.value).mkString("[",", ","]"))
+  }
+
   def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     var bestObj = Int.MaxValue
     var bestMove: Move = NoMove()
     while (increment()) {
       if (whereConstraintSystem.violation.value == 0) {
+        // Compute the current values of all variables
         for (m <- moveActions) {
           m.computeAssignment()
         }
+        // Perform the assignment (depends on all values being already computed)
         for (m <- moveActions) {
           m.performAssignment()
         }
         if (objective.value < bestObj && ensureConstraintSystem.violation.value == 0) {
-          val tmp = ChainMoves(moveActions.map(_.getOldMove(bestObj)), objective.value)
+          // generates a move of the type that other neighbourhoods use
+          val tmp = ChainMoves(moveActions.map(_.getCurrentMove(bestObj)), objective.value)
           if (accept(tmp)) {
             for (m <- moveActions) {
               m.saveBest()
@@ -1003,8 +1068,9 @@ class FlatSubNeighbourhood(val fzNeighbourhood: FZSubNeighbourhood,
             bestMove = tmp
           }
         }
+        // Undo the assignment so that we do not commit to it.
         for (m <- moveActions) {
-          m.unroll()
+          m.undo()
         }
       }
 
