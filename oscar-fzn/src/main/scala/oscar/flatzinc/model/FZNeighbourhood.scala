@@ -22,22 +22,26 @@ package oscar.flatzinc.model
   */
 
 class FZNeighbourhood(val name: String,
-                      val subNeighbourhoods: Array[FZSubNeighbourhood],
-                      val initVariables: Array[Variable],
-                      val initConstraints: List[Constraint]) {
+                      val subNeighbourhoods: Seq[FZSubNeighbourhood],
+                      val initVariables: Seq[Variable],
+                      val initConstraints: Seq[Constraint]) {
 
   private val controlledVariables = subNeighbourhoods.foldLeft(initVariables)(
-    (acc, n) => acc ++ n.getControlledVariables).toSet.toArray
+    (acc, n) => acc ++ n.getControlledVariables).distinct
 
   def getControlledVariables: Array[Variable] = {
-    controlledVariables
+    controlledVariables.toArray
   }
 
   private val searchVariables = subNeighbourhoods.foldLeft(Array.empty[Variable])(
-    (acc, n) => acc ++ n.getSearchVariables).toSet.toArray
+    (acc, n) => acc ++ n.getSearchVariables).distinct
 
   def getSearchVariables: Array[Variable] = {
-    searchVariables
+    searchVariables.toArray
+  }
+
+  def getInitVariables(): Seq[Variable] = {
+    (initConstraints.flatMap(_.variables) ++ initVariables).distinct
   }
 }
 
@@ -50,14 +54,14 @@ class FZSubNeighbourhood(val name: String,
                          val ensureConstraints: List[Constraint]) {
 
   private val controlledVariables = (moves.foldLeft(Array.empty[Variable])(
-    (acc, m) => acc ++ m.getControlledVariables) ++ itVariables ++ whereVariables ++ ensureVariables).toSet.toArray
+    (acc, m) => acc ++ m.getControlledVariables) ++ itVariables ++ whereVariables ++ ensureVariables).distinct
 
   def getControlledVariables: Array[Variable] = {
     controlledVariables
   }
 
   private val searchVariables = moves.foldLeft(Array.empty[Variable])(
-    (acc, m) => acc ++ m.getControlledVariables).toSet.toArray
+    (acc, m) => acc ++ m.getControlledVariables).distinct
 
   def getSearchVariables: Array[Variable] = {
     searchVariables

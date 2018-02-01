@@ -445,7 +445,7 @@ class Model(val log: Log, val acceptAnyCstr: Boolean) {
 
     problem.addNeighbourhood(
       new FZNeighbourhood(lit.toString,
-                          fromNeighourhoods.map((ann: ASTAnnotation) => constructFromNeighbourhood(ann.getId)).toArray,
+                          fromNeighourhoods.map((ann: ASTAnnotation) => constructFromNeighbourhood(ann.getId)),
                           initVars,
                           initCons))
   }

@@ -26,6 +26,7 @@ import oscar.cbls.lib.invariant.set.Cardinality
 import oscar.cbls.lib.search.LinearSelector
 import oscar.cbls.modeling.CBLSModel
 import oscar.flatzinc.cbls.{FZCBLSConstraintPoster, FZCBLSImplicitConstraints, FZCBLSModel}
+import oscar.flatzinc.cp.FZCPBasicModel
 import oscar.flatzinc.model._
 
 import scala.collection.mutable.{Map => MMap}
@@ -882,53 +883,17 @@ class FlatNeighbourhood(val fzNeighbourhood: FZNeighbourhood,
 
   val subNeighbourhoods = subNeighbourhoodConstructors.map(_(objective,cblsModel.c))
 
+  val initCPModel = new FZCPBasicModel()
+  initCPModel.createVariables(fzNeighbourhood.getInitVariables())
+  initCPModel.createConstraints(fzNeighbourhood.initConstraints)
 
 
 
-  val initVariables = searchVariables ++ fzNeighbourhood.initVariables.map(cblsModel.getCBLSVar(_))
-  println(initVariables)
-  var initIterators: Array[Iterator[Int]] = initVariables.map(_.domain.iterator)
-  for (i <- initVariables.indices) {
-    initVariables(i) := initIterators(i).next()
-  }
-
-  var currentIterator = 0;
-  val numIterators = initVariables.length
-
-  private def increment(): Boolean = {
-    if (initIterators(currentIterator).hasNext) {
-      initVariables(currentIterator) := initIterators(currentIterator).next()
-      true
-    } else {
-      initIterators(currentIterator) = RandomGenerator.shuffle(initVariables(currentIterator).domain.toList).iterator
-      initVariables(currentIterator) := initIterators(currentIterator).next()
-      currentIterator += 1
-      val result = if (currentIterator >= numIterators) {
-        false
-      } else {
-        increment()
-      }
-      currentIterator -= 1
-      result
-    }
-  }
-
-  //reset();
+  reset();
   def reset() = {
-    initIterators = initVariables.map(v => RandomGenerator.shuffle(v.domain.toList).iterator)
-    for (i <- initVariables.indices) {
-      initVariables(i) := initIterators(i).next()
-    }
-    while(initConstraintSystem.violation.value != 0 && increment()){
-      //println("bruteforcing initial assignment");
-    }
-
-    if(initConstraintSystem.violation.value != 0){
-      println("Failed to initialize neighbourhood. There is no solution.")
-    }else{
-      println("Done initializing")
-      debugPrintValues()
-    }
+    initCPModel.push()
+    initCPModel.createDefaultSearch()
+    val foundSolution = initCPModel.startSearch()
 
     println("reset done")
   }

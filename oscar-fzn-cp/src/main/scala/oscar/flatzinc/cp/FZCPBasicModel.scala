@@ -64,7 +64,7 @@ class FZCPBasicModel(val pstrength: oscar.cp.core.CPPropagStrength = oscar.cp.Me
       case Some(c) => c.asInstanceOf[CPBoolVar];
     }
   }
-  def createVariables(variables: Array[Variable]){
+  def createVariables(variables: Iterable[Variable]){
     for(v <- variables){
       dictVars(v.id) = v match{
         case bv:BooleanVariable => CPBoolVar()
@@ -76,7 +76,7 @@ class FZCPBasicModel(val pstrength: oscar.cp.core.CPPropagStrength = oscar.cp.Me
       }
     }
   }
-  def createConstraints(constraints:Array[Constraint]){
+  def createConstraints(constraints:Iterable[Constraint]){
     //TODO: Put all the added cstrs in a ArrayBuffer and then post them all at once.
     for(c <- constraints){
       //TODO: Take consistency annotation to post constraints.
@@ -85,8 +85,6 @@ class FZCPBasicModel(val pstrength: oscar.cp.core.CPPropagStrength = oscar.cp.Me
         add(cons)
       }catch{
         case e: scala.MatchError if ignoreUnkownConstraints => Console.err.println("% ignoring in CP: "+c)
-        case foo =>
-          println(foo)
       }
     }
 
@@ -124,4 +122,11 @@ class FZCPBasicModel(val pstrength: oscar.cp.core.CPPropagStrength = oscar.cp.Me
     solver.search(oscar.cp.binaryLastConflict(dictVars.values.toArray))
   }
 
+  def startSearch():Boolean = {
+
+    false
+  }
+
+  def push() = solver.pushState()
+  def pop() = solver.pop()
 }

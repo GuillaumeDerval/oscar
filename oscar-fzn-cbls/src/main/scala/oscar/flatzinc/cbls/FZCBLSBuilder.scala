@@ -129,7 +129,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
                                                                                           o,
                                                                                           cblsmodel)
                       }
-          )
+          ).toArray
           new FlatNeighbourhood(neighbourhood,
                                 initCS,
                                 subNeighbourhoods,
@@ -451,7 +451,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
     { case reif(c, b) => if (b.isBound) log("Fixed reified constraint: " + b.boolValue); case _ => {} }
   }
 
-  def createLocalConstraintSystem(constraints: List[Constraint], cblsmodel: FZCBLSModel): ConstraintSystem = {
+  def createLocalConstraintSystem(constraints: Seq[Constraint], cblsmodel: FZCBLSModel): ConstraintSystem = {
     val whereConstraintSystem = ConstraintSystem(cblsmodel.m)
     val whereConstraintPoster = new FZCBLSConstraintPoster(whereConstraintSystem, cblsmodel.getIntValue)
     val (invariants, softConstraints) =
