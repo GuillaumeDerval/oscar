@@ -365,9 +365,13 @@ class ThreeOpt(variables: Array[CBLSIntVar], objective: CBLSObjective, cs: Const
     //would break the chain
     val k = vars(next).value
     val last = vars(newNext).value
-    val list = List((vars(idx), k), (vars(next), last), (vars(newNext), next))
-    val obj = objective.assignVal(list)
-    acceptOr(new AssignsMove(list, obj), accept)
+    if(vars(idx).isInstanceOf[StoredCBLSIntConst] || vars(next).isInstanceOf[StoredCBLSIntConst]|| vars(newNext).isInstanceOf[StoredCBLSIntConst]) {
+      new NoMove()
+    }else {
+      val list = List((vars(idx), k), (vars(next), last), (vars(newNext), next))
+      val obj = objective.assignVal(list)
+      acceptOr(new AssignsMove(list, obj), accept)
+    }
   }
 
   def getMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
@@ -889,12 +893,21 @@ class FlatNeighbourhood(val fzNeighbourhood: FZNeighbourhood,
 
 
 
-  reset();
+  //reset();
   def reset() = {
     initCPModel.push()
-    initCPModel.createDefaultSearch()
-    val foundSolution = initCPModel.startSearch()
-
+    initCPModel.createObjective(Objective.SATISFY)
+    initCPModel.createRandomSearch()
+    val (foundSolution, solutionMap) = initCPModel.startSearch()
+    initCPModel.pop()
+    if (foundSolution){
+      for ((k,v) <- solutionMap) {
+        cblsModel.getCBLSVar(k) := v
+      }
+    }else{
+      println("% Neighbourhood initalization is UNSATISFIABLE. Aborting")
+      System.exit(-1)
+    }
     println("reset done")
   }
 
@@ -1011,7 +1024,7 @@ class FlatSubNeighbourhood(val fzNeighbourhood: FZSubNeighbourhood,
 
   def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     var bestObj = Int.MaxValue
-    var bestMove: Move = NoMove()
+    var bestMove: List[Move] = List(NoMove())
     while (increment()) {
       if (whereConstraintSystem.violation.value == 0) {
         // Compute the current values of all variables
@@ -1022,15 +1035,19 @@ class FlatSubNeighbourhood(val fzNeighbourhood: FZSubNeighbourhood,
         for (m <- moveActions) {
           m.performAssignment()
         }
-        if (objective.value < bestObj && ensureConstraintSystem.violation.value == 0) {
+        if (objective.value <= bestObj && ensureConstraintSystem.violation.value == 0) {
           // generates a move of the type that other neighbourhoods use
-          val tmp = ChainMoves(moveActions.map(_.getCurrentMove(bestObj)), objective.value)
+          val tmp = ChainMoves(moveActions.map(_.getCurrentMove(objective.value)), objective.value)
           if (accept(tmp)) {
             for (m <- moveActions) {
               m.saveBest()
             }
+            if(objective.value < bestObj){
+              bestMove = List(tmp)
+            }else{
+              bestMove :+= tmp
+            }
             bestObj = objective.value
-            bestMove = tmp
           }
         }
         // Undo the assignment so that we do not commit to it.
@@ -1038,9 +1055,11 @@ class FlatSubNeighbourhood(val fzNeighbourhood: FZSubNeighbourhood,
           m.undo()
         }
       }
-
     }
-    bestMove
+    if(bestMove.length > 1){
+      println("multiple best moves")
+    }
+    bestMove(RandomGenerator.nextInt(bestMove.length))
   }
 
   def violation() = {

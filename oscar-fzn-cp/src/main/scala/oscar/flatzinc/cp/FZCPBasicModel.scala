@@ -38,35 +38,38 @@ class FZCPBasicModel(val pstrength: oscar.cp.core.CPPropagStrength = oscar.cp.Me
   implicit val solver: CPSolver = CPSolver(pstrength)
   solver.silent = true
   val poster = new CPConstraintPoster(pstrength);
-  val dictVars = MMap.empty[String,CPIntVar]
+  // TODO: Is there a danger in mapping Variable to CPIntVar as oppose to String
+  // What happens when something goes wrong?
+  val dictVars = MMap.empty[Variable,CPIntVar]
+  val solutionMap = MMap.empty[Variable,Int]
 
   def getIntVar(v:Variable):CPIntVar = {
-    dictVars.get(v.id) match {
+    dictVars.get(v) match {
       case None if v.isBound =>
         val c = v match{
           case v:IntegerVariable => CPIntVar(v.value);
           case v:BooleanVariable => CPBoolVar(v.boolValue);
         }
-        dictVars += v.id -> c;
+        dictVars += v -> c;
         c
       case Some(c) => c;
 
     }
   }
   def getBoolVar(v:Variable):CPBoolVar = {
-    dictVars.get(v.id) match {
+    dictVars.get(v) match {
       case None if v.isBound =>
         val c = v match{
           case v:BooleanVariable => CPBoolVar(v.boolValue);
         }
-        dictVars += v.id -> c;
+        dictVars += v -> c;
         c
       case Some(c) => c.asInstanceOf[CPBoolVar];
     }
   }
   def createVariables(variables: Iterable[Variable]){
     for(v <- variables){
-      dictVars(v.id) = v match{
+      dictVars(v) = v match{
         case bv:BooleanVariable => CPBoolVar()
         case iv:IntegerVariable => iv.domain match{
           case FzDomainRange(min, max) => CPIntVar(min, max)
@@ -96,7 +99,7 @@ class FZCPBasicModel(val pstrength: oscar.cp.core.CPPropagStrength = oscar.cp.Me
     }
   }
 
-  def createObjective(obj:oscar.flatzinc.model.Objective.Value, objVar:Option[Variable]){
+  def createObjective(obj:oscar.flatzinc.model.Objective.Value, objVar:Option[Variable] = None){
     obj match{
       case Objective.SATISFY =>
       case Objective.MAXIMIZE => maximize(getIntVar(objVar.get))
@@ -122,9 +125,30 @@ class FZCPBasicModel(val pstrength: oscar.cp.core.CPPropagStrength = oscar.cp.Me
     solver.search(oscar.cp.binaryLastConflict(dictVars.values.toArray))
   }
 
-  def startSearch():Boolean = {
+  def createRandomSearch() = {
+    //TODO: Take into account the search annotations
+    solver.search(oscar.cp.binary(dictVars.values.toSeq, _.size, _.randomValue))
+  }
 
-    false
+  def startSearch():(Boolean,MMap[Variable,Int]) = {
+    onSolution {
+                 for((k,v) <- dictVars){
+                   v match {
+                     case b:CPBoolVar =>
+                       solutionMap(k) = 1-b.min //0 is true and >0 is false in CBLS solver.
+                     case i:CPIntVar =>
+                       solutionMap(k) = i.min
+                   }
+                 }
+               }
+
+    val stats = solver.start(nSols = 1)
+
+    if(stats.nSols == 0){
+        println("% No solution found")
+      return (false, MMap.empty)
+    }
+    return (true, solutionMap)
   }
 
   def push() = solver.pushState()

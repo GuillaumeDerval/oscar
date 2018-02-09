@@ -138,7 +138,7 @@ class FZCBLSBuilder extends LinearSelector with StopWatch {
 
           )
         }
-        ,neighbourhood.getControlledVariables.map(cblsmodel.getCBLSVar(_))
+        ,neighbourhood.getSearchVariables.map(cblsmodel.getCBLSVar(_))
       )
 
     }
