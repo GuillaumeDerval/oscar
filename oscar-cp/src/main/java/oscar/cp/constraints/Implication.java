@@ -14,13 +14,19 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
-import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.CPStore;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Reified Equality Constraint
@@ -32,6 +38,11 @@ public class Implication extends Constraint {
 	CPIntVar B;
 	CPIntVar V;
 
+	@Override
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(A, B, V));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
 
     /**
      * Logical Implication: A => B <=> V
@@ -47,23 +58,18 @@ public class Implication extends Constraint {
 	}
 	
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
-		if (A.isBound()) {
-			if (valBind(A) == CPOutcome.Failure) return CPOutcome.Failure;
-		}
+	public void setup(CPPropagStrength l) throws Inconsistency {
+		if (A.isBound())
+			valBind(A);
 		else A.callValBindWhenBind(this);
 		
-		if (B.isBound()) {
-			if (valBind(B) == CPOutcome.Failure) return CPOutcome.Failure;
-		}
+		if (B.isBound())
+			valBind(B);
 		else B.callValBindWhenBind(this);
 		
-		if (V.isBound()) {
-			if (valBind(V) == CPOutcome.Failure) return CPOutcome.Failure;
-		}
+		if (V.isBound())
+			valBind(V);
 		else V.callValBindWhenBind(this);
-		
-		return CPOutcome.Suspend;
 	}
 
 	
@@ -74,56 +80,61 @@ public class Implication extends Constraint {
 
 
 	@Override
-	public CPOutcome valBind(CPIntVar var) {
+	public void valBind(CPIntVar var) {
 		if (A.isBound()) {
 			if (A.isBoundTo(0)) {
 				// F => X is always true
-				if (V.assign(1) == CPOutcome.Failure) return CPOutcome.Failure;
-				return CPOutcome.Success;
+				V.assign(1);
+				this.deactivate();
+				return;
 			} else {
 				// T => B <-> V
 				if (B.isBoundTo(0)) { // T => F it means V must be F
-					if (V.assign(0) == CPOutcome.Failure) return CPOutcome.Failure;
-					return CPOutcome.Success;
+					V.assign(0);
+					this.deactivate();
+					return;
 				}
 				if (B.isBoundTo(1)) { // T => T it means V must be T
-					if (V.assign(1) == CPOutcome.Failure) return CPOutcome.Failure;
-					return CPOutcome.Success;
+					V.assign(1);
+					this.deactivate();
+					return;
 				}
 				// the case of whether V is bound is treated below
 			}
 		} 
 		if (B.isBound()) {
 			if (B.isBoundTo(1)) { // V is always true in this case
-				if (V.assign(1) == CPOutcome.Failure) return CPOutcome.Failure;
-				return CPOutcome.Success;
+				V.assign(1);
+				this.deactivate();
+				return;
 			} else {
 				// A => F <-> V
 				// case A is bound is treated above and V is bound is treated below
 			}
-		}	
+		}
 		if (V.isBound()) {
 			if (V.min() == 0) {
 				// only way to get A => B <-> F is to have T => F
-				if (A.assign(1) == CPOutcome.Failure) return CPOutcome.Failure;
-				if (B.assign(0) == CPOutcome.Failure) return CPOutcome.Failure;
-				return CPOutcome.Success;
+				A.assign(1);
+				B.assign(0);
+				this.deactivate();
+				return;
 			} else {
 				// V is True
 				if (B.isBoundTo(0)) {  // A => F <-> T it means A must be F
-					if (A.assign(0) == CPOutcome.Failure) return CPOutcome.Failure;
-					return CPOutcome.Success;
+					A.assign(0);
+					this.deactivate();
+					return;
 				}
 				if (B.isBoundTo(1)) { // A => T <-> T it means A can be true of false, doesn't matter
-					return CPOutcome.Success;
+					this.deactivate();
+					return;
 				}
 				if (A.isBoundTo(1)) {
-					if (B.assign(1) == CPOutcome.Failure) return CPOutcome.Failure;
+					B.assign(1);
 				}
 			}
 		}
-		return CPOutcome.Suspend;
 	}
-
 }
 

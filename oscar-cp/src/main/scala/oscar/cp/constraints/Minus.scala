@@ -1,8 +1,7 @@
 package oscar.cp.constraints
 
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{CPStore, Constraint, CPPropagStrength, CPOutcome}
-import oscar.cp.core.CPOutcome._
+import oscar.cp.core.variables.{CPIntVar, CPVar}
+import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
 
 /**
  * Minus Constraint
@@ -11,40 +10,38 @@ import oscar.cp.core.CPOutcome._
  */
 class Minus(x: CPIntVar, y: CPIntVar, z: CPIntVar) extends Constraint(x.store, "Minus") {
 
-  final override def setup(l: CPPropagStrength): CPOutcome = {
+  override def associatedVars(): Iterable[CPVar] = Array(x, y, z)
+
+  final override def setup(l: CPPropagStrength): Unit = {
 
     priorityL2 = CPStore.MaxPriorityL2
 
 
-    if (propagate() == Failure) Failure
-    else {
+    propagate()
+    if(isActive) {
       x.callPropagateWhenBoundsChange(this)
       y.callPropagateWhenBoundsChange(this)
       z.callPropagateWhenBoundsChange(this)
-      Suspend
     }
   }
 
-  final override def propagate(): CPOutcome = {   
+  final override def propagate(): Unit = {
     // Cache
     val xMin = x.min
     val xMax = x.max
     val yMin = y.min
     val yMax = y.max   
     // Prune z = x - y
-    if (z.updateMax(xMax - yMin) == Failure) Failure
-    else if (z.updateMin(xMin - yMax) == Failure) Failure
-    else {
-      // Cache
-      val zMin = z.min
-      val zMax = z.max
-      // Prune y = x - z
-      if (y.updateMax(xMax - zMin) == Failure) Failure
-      else if (y.updateMin(xMin - zMax) == Failure) Failure
-      // Prune x = z + y
-      else if (x.updateMax(zMax + yMax) == Failure) Failure
-      else if (x.updateMin(zMin + yMin) == Failure) Failure
-      else Suspend
-    }
+    z.updateMax(xMax - yMin)
+    z.updateMin(xMin - yMax)
+    // Cache
+    val zMin = z.min
+    val zMax = z.max
+    // Prune y = x - z
+    y.updateMax(xMax - zMin)
+    y.updateMin(xMin - zMax)
+    // Prune x = z + y
+    x.updateMax(zMax + yMax)
+    x.updateMin(zMin + yMin)
   }
 }

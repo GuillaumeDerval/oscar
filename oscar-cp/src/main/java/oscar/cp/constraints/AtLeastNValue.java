@@ -14,10 +14,17 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * AtLeastNValue Constraint
@@ -44,19 +51,19 @@ public class AtLeastNValue extends Constraint {
 	}
 
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
-		
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+		l.add(nval);
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
+	@Override
+	public void setup(CPPropagStrength l) throws Inconsistency {
 		if(l == CPPropagStrength.Weak) {
-			if (s().post(new AtLeastNValueFWC(x,nval)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
+			s().post(new AtLeastNValueFWC(x,nval));
 		} else {
-			if (s().post(new AtLeastNValueAC(x,nval)) == CPOutcome.Failure) {
-				return CPOutcome.Failure;
-			}
+			s().post(new AtLeastNValueAC(x,nval));
 		}
-		
-		return CPOutcome.Success;
 	}
 
 }

@@ -1,9 +1,25 @@
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
+
 import scala.collection.mutable.PriorityQueue
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
+import oscar.cp.sum
 
 /**
   * The StockingCost constraint holds when each item is produced before
@@ -14,14 +30,16 @@ import oscar.cp.core.variables.CPIntVar
   * This constraint is useful for modeling
   * Production Planning Problem such as Lot Sizing Problems
   * 
-  * @param X, the variable $X_i$ is the date of production of item $i$ on the machine
-  * @param d, the integer $d_i$ is the due-date for item $i$
+  * @param Y, the variable $X_i$ is the date of production of item $i$ on the machine
+  * @param deadline, the integer $d_i$ is the due-date for item $i$
   * @param H, the variable $H$ is an upper bound on the total number of slots all the items are need in stock.
   * @param c is the maximum number of items the machine can produce during one time slot (capacity), 
   *        if an item is produced before its due date, then it must be stocked.
   * @author Ratheil Houndji and Pierre Schaus pschaus@gmail.com
   */
 class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIntVar, val c: Int) extends Constraint(Y(0).store, "StockingCost") {
+
+  override def associatedVars(): Iterable[CPVar] = Y ++ Array(H)
 
   val allDiffBC = new AllDiffBC(Y)
   //priorityL2 = 0
@@ -41,7 +59,10 @@ class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIn
   val d = Array.fill(n)(0)
   val vopt = Array.fill(n)(0)
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
+
+    X(0).store.add(H === -sum(0 until X.size)(i => (X(i) - deadline(i))))
+
     X.foreach(_.callPropagateWhenBoundsChange(this))
     H.callPropagateWhenBoundsChange(this)
     propagate()
@@ -105,8 +126,8 @@ class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIn
     
   }  
 
-  override def propagate(): CPOutcome = {
-    if (allDiffBC.propagate() == Failure) return Failure
+  override def propagate(): Unit = {
+    allDiffBC.propagate()
     sortIncremental()
     var t = Xmax(0)
     var i = 0
@@ -152,7 +173,7 @@ class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIn
         t -= 1
       }
     }
-    if (H.updateMin(Hopt) == Failure) return Failure
+    H.updateMin(Hopt)
     val slack = H.max - H.min
     i = 0
     while (i < n) {
@@ -163,9 +184,7 @@ class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIn
       }
       X(i).updateMin(newmin)
       i += 1
-    }    
-    Suspend
-
+    }
   }
 
 }

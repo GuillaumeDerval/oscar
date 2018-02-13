@@ -15,7 +15,7 @@
 package oscar.algo.paretofront.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import oscar.algo.paretofront.QTMin
 import oscar.algo.paretofront.ParetoElement
 import oscar.algo.paretofront.LinearList
@@ -23,8 +23,8 @@ import oscar.algo.paretofront.LinearListDouble
 
 
 /**
- * @author: Cyrille Dejemeppe cyrille.dejemeppe@gmail.com
- * @author: Renaud Hartert ren.hartert@gmail.com
+ * @author : Cyrille Dejemeppe cyrille.dejemeppe@gmail.com
+ * @author : Renaud Hartert ren.hartert@gmail.com
  */
 class DummyElement(evals: Array[Double]) extends ParetoElement[Double] {
   override def objectives = evals
@@ -34,7 +34,7 @@ object DummyElement {
   def apply(evals: Array[Double]) = new DummyElement(evals)
 }
 
-class LinearListTest extends FunSuite with ShouldMatchers {
+class LinearListTest extends FunSuite with Matchers {
   
   val randGen = new util.Random
   

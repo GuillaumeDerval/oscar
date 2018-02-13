@@ -35,8 +35,7 @@ class InverseSuite extends TestSuite {
     val solver = CPSolver()
     val prev = Array.fill(5)(CPIntVar(0 to 4)(solver))
     val next = Array.fill(5)(CPIntVar(0 to 3)(solver))
-    solver.post(new Inverse(prev, next))
-    assert(solver.isFailed)
+    postAndCheckFailure(solver,new Inverse(prev, next))
   } 
   
   test("Inverse should fail if i is not in prev(j) and next(i) == j") {
@@ -45,8 +44,7 @@ class InverseSuite extends TestSuite {
     val next = Array.fill(5)(CPIntVar(0 to 4)(solver))
     solver.post(prev(3) !== 0)
     solver.post(next(0) === 3)
-    solver.post(new Inverse(prev, next))
-    assert(solver.isFailed)
+    postAndCheckFailure(solver, new Inverse(prev, next))
   }
   
   test("Inverse should fail if i is not in next(j) and prev(i) == j") {
@@ -55,8 +53,7 @@ class InverseSuite extends TestSuite {
     val next = Array.fill(5)(CPIntVar(0 to 4)(solver))
     solver.post(next(3) !== 0)
     solver.post(prev(0) === 3)
-    solver.post(new Inverse(prev, next))
-    assert(solver.isFailed)
+    postAndCheckFailure(solver, new Inverse(prev, next))
   }
   
   test("Inverse should assign prev(i) == j when next(j) == i") {

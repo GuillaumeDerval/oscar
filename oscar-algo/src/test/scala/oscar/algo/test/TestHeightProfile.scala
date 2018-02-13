@@ -1,12 +1,12 @@
 package oscar.algo.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import oscar.algo.RangeMinQuery
 import oscar.algo.HeightProfile
 import scala.collection.mutable.ArrayBuffer
 
-class TestHeightProfile extends FunSuite with ShouldMatchers {
+class TestHeightProfile extends FunSuite with Matchers {
 
 
   

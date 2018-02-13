@@ -17,22 +17,21 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 import oscar.cp.constraints._
 import oscar.cp._
 import oscar.algo.search.SearchStatistics
 import oscar.algo.DisjointSets
 import oscar.algo.RangeMinQuery
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
 
-class TestHeldKarp extends FunSuite with ShouldMatchers {
+class TestHeldKarp extends TestSuite {
 
   class MinCircuit(succ: Array[CPIntVar], distMatrix: Array[Array[Int]], cost: CPIntVar) extends ChannelTSP(succ, distMatrix) {
 
-    override def setup(l: CPPropagStrength): CPOutcome = {
-      //if (s.post(circuit(succ),l) == Failure) return Failure
-      if (s.post(new HeldKarp(edgeVar, edges, cost)) == CPOutcome.Failure) return CPOutcome.Failure
+    override def setup(l: CPPropagStrength): Unit = {
+      //s.post(circuit(succ),l)
+      s.post(new HeldKarp(edgeVar, edges, cost))
       super.setup(l)
     }
 
@@ -83,7 +82,7 @@ class TestHeldKarp extends FunSuite with ShouldMatchers {
       //add(new MinCircuit(pred,distMatrixPred,obj),Strong)     
     }
 
-    cp.search(binaryStatic(succ, _.min))
+    cp.search(binaryStaticIdx(succ,i => succ(i).min))
     val stat = cp.start()
     stat
   }

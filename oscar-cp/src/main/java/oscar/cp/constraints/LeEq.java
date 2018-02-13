@@ -14,10 +14,17 @@
  ******************************************************************************/
 package oscar.cp.constraints;
 
-import oscar.cp.core.CPOutcome;
+import oscar.algo.Inconsistency;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Less or Equal Constraint ( x <= y )
@@ -41,13 +48,16 @@ public class LeEq extends Constraint {
 	public LeEq(CPIntVar x, int v) {
 		this(x, CPIntVar.apply(v, v, x.store()));
 	}
-	
+
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
-		if(s().post(new GrEq(y,x)) == CPOutcome.Failure) {
-			return CPOutcome.Failure;
-		}
-		return CPOutcome.Success;
+	public Iterable<CPVar> associatedVars() {
+		List<CPVar> l = new LinkedList<>(Arrays.asList(x, y));
+		return JavaConversions.iterableAsScalaIterable(l);
+	}
+
+	@Override
+	public void setup(CPPropagStrength l) throws Inconsistency {
+		s().post(new GrEq(y,x));
 	}	
 
 }

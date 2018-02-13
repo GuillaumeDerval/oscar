@@ -17,7 +17,6 @@ package oscar.cp.constraints.tables.mdd
 
 
 import scala.collection.mutable.ArrayBuffer
-
 import oscar.algo.reversible.{ReversibleContext, ReversibleInt, ReversibleSharedSparseSet}
 
 /**

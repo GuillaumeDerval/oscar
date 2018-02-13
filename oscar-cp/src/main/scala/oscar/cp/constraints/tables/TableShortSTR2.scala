@@ -15,9 +15,9 @@
 
 package oscar.cp.constraints.tables
 
+import oscar.algo.Inconsistency
 import oscar.algo.reversible.{ReversibleInt, ReversibleSparseSet}
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset}
+import oscar.cp.core.variables.{CPIntVar, CPIntVarViewOffset, CPVar}
 import oscar.cp.core.{CPStore, Constraint, _}
 
 
@@ -30,6 +30,8 @@ import oscar.cp.core.{CPStore, Constraint, _}
  *
  */
 final class TableShortSTR2(private[this] val variables: Array[CPIntVar], private[this] val table: Array[Array[Int]], private[this] val star: Int = -1) extends Constraint(variables(0).store, "TableSTR2") {
+
+  override def associatedVars(): Iterable[CPVar] = variables
 
   idempotent = true
   priorityL2 = CPStore.MaxPriorityL2 - 1
@@ -105,15 +107,14 @@ final class TableShortSTR2(private[this] val variables: Array[CPIntVar], private
   // Last size of the domain
   private[this] val lastSize = Array.fill(arity)(new ReversibleInt(s, -1))
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
-    if (propagate() == Failure) Failure
-    else {
+  override def setup(l: CPPropagStrength): Unit = {
+    propagate()
+    if(isActive) {
       var i = arity
       while (i > 0) {
         i -= 1
         if (!x(i).isBound) x(i).callPropagateWhenDomainChanges(this)
       }
-      Suspend
     }
   }
 
@@ -164,7 +165,7 @@ final class TableShortSTR2(private[this] val variables: Array[CPIntVar], private
   }
 
 
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
     // Increasing the timeStamp implicitely removes all dom and gac values
     timeStamp += 1
 
@@ -213,7 +214,7 @@ final class TableShortSTR2(private[this] val variables: Array[CPIntVar], private
       j -= 1
     }
     if (nActiveTuples == 0) {
-      return Failure
+      throw Inconsistency
     }
     if (j >= 0) {
       val tau = shortTable(activeTuples(j))
@@ -231,7 +232,7 @@ final class TableShortSTR2(private[this] val variables: Array[CPIntVar], private
 
     // Not in STR2: no more tuples, so domains will be completely empty anyway
     if (nActiveTuples == 0) {
-      return Failure
+      throw Inconsistency
     }
 
     // Step3: ----- Filter the domains -------
@@ -244,7 +245,8 @@ final class TableShortSTR2(private[this] val variables: Array[CPIntVar], private
       if (nChanged > 1 || changedIdx != varId) {
         val variable = x(varId)
         val nGac = nGacValues(varId)
-        if (nGac == 0) return Failure
+        if (nGac == 0)
+          throw Inconsistency
         else if (nGac == 1) {
           variable.assign(lastGacValue(varId))
           unBoundVars.removeValue(varId)
@@ -265,8 +267,6 @@ final class TableShortSTR2(private[this] val variables: Array[CPIntVar], private
 
     // Trail only if no Failure
     nActiveTuplesRev.value = nActiveTuples
-
-    Suspend
   }
 
 

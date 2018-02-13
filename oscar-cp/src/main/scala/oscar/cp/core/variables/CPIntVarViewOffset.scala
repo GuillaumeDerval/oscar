@@ -27,7 +27,8 @@ import oscar.cp.core.delta.DeltaIntVar
 class CPIntVarViewOffset(v: CPIntVar, offset: Int) extends CPIntVar {
     
   override val store: CPStore = v.store
-  
+  final override val context = store
+
   override val name: String = s"${v.name} + $offset"
     
   final override def transform(v: Int) = offset + this.v.transform(v)    

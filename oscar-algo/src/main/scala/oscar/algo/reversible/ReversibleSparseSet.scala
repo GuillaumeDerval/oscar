@@ -20,8 +20,8 @@ import scala.collection.Iterable
 /**
  * Initializes a set with all values min..max in it
  * @param s
- * @param min
- * @param max >= min
+ * @param minValue
+ * @param maxValue >= minValue
  * @author Pierre Schaus
  */
 class ReversibleSparseSet(s: ReversibleContext, val minValue: Int, val maxValue: Int) extends Iterable[Int] {
@@ -152,11 +152,11 @@ class ReversibleSparseSet(s: ReversibleContext, val minValue: Int, val maxValue:
     if (!hasValue(v)) return false; //the value has already been removed
     exchangePositions(v, values(size - 1) + offset)
     _size.decr()
-    return true;
+    true
   }
 
   /**
-   * @param value
+   * @param v
    * @return smallest value in the domain >= value, value-1 is returned if no such value
    */
   def nextValue(v: Int): Int = {
@@ -173,7 +173,7 @@ class ReversibleSparseSet(s: ReversibleContext, val minValue: Int, val maxValue:
   }
 
   /**
-   * @param value
+   * @param v
    * @return largest value in the domain <= value, value+1 is returned if no such value
    */
   def prevValue(v: Int): Int = {
@@ -274,11 +274,37 @@ class ReversibleSparseSet(s: ReversibleContext, val minValue: Int, val maxValue:
       var i = 0
       while (i < size) {
         dest(i) += offset
+        i += 1
       }
     }
     size
-  }  
-  
+  }
+
+  /**
+   * @return an array representation of values present that have been removed from the set
+   */
+  def removedToArray: Array[Int] = {
+    val res = Array.ofDim[Int](values.length-size)
+    removedFillArray(res)
+    res
+  }
+
+  /**
+   * @return set the first values of dest to the ones removed
+   *         from the set and return the size of the set
+   */
+  def removedFillArray(dest: Array[Int]): Int = {
+    System.arraycopy(values, size, dest, 0, values.length-size)
+    if (offset != 0) {
+      var i = 0
+      while (i < values.length-size) {
+        dest(i) += offset
+        i += 1
+      }
+    }
+    values.length-size
+  }
+
   /**
    * get the i_th value in the sparse-set
    */

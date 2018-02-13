@@ -15,10 +15,8 @@
 package oscar.cp.constraints
 
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
 import oscar.cp.core.Constraint
 
 /**
@@ -35,34 +33,33 @@ import oscar.cp.core.Constraint
 final class Circuit(succs: Array[CPIntVar], symmetric: Boolean) extends Constraint(succs(0).store, "Circuit") {
   
   require(succs.length > 0, "no variable.")
-  
+
+  override def associatedVars(): Iterable[CPVar] = succs
+
   private[this] val nSuccs = succs.length
   private[this] val dests = Array.tabulate(nSuccs)(i => new ReversibleInt(s, i))
   private[this] val origs = Array.tabulate(nSuccs)(i => new ReversibleInt(s, i))
   private[this] val lengthToDest = Array.fill(nSuccs)(new ReversibleInt(s,0))
   
-  final override def setup(l: CPPropagStrength): CPOutcome = {    
-    if (s.post(new AllDifferent(succs:_*), l) == Failure) Failure // FIXME post two allDifferent in case of symmetry
-    else {
-      var i = nSuccs
-      while (i > 0) { i -= 1
-        val succ = succs(i)
-        if (succ.removeValue(i) == Failure) return Failure
-        else if (succ.isBound && valBindIdx(succ, i) == Failure) return Failure
-        else succ.callValBindIdxWhenBind(this, i)
-      }
-      
-      if (!symmetric) Suspend
-      else {
-        val preds = Array.fill(nSuccs)(CPIntVar(0, nSuccs)(s))
-        if (s.post(new Inverse(preds, succs)) == Failure) Failure
-        else if (s.post(new Circuit(preds, false)) == Failure) Failure
-        else Suspend
-      }
+  final override def setup(l: CPPropagStrength): Unit = {
+    s.post(new AllDifferent(succs:_*), l) // FIXME post two allDifferent in case of symmetry
+    var i = nSuccs
+    while (i > 0) { i -= 1
+      val succ = succs(i)
+      succ.removeValue(i)
+      if (succ.isBound)
+        valBindIdx(succ, i)
+      succ.callValBindIdxWhenBind(this, i)
+    }
+
+    if (symmetric) {
+      val preds = Array.fill(nSuccs)(CPIntVar(0, nSuccs)(s))
+      s.post(new Inverse(preds, succs))
+      s.post(new Circuit(preds, false))
     }
   }
   
-  final override def valBindIdx(x: CPIntVar, i: Int): CPOutcome = {
+  final override def valBindIdx(x: CPIntVar, i: Int): Unit = {
     val j = x.min
     // o *-> i -> j *-> d
     val d = dests(j).value
@@ -72,6 +69,5 @@ final class Circuit(succs: Array[CPIntVar], symmetric: Boolean) extends Constrai
     origs(d).value = o
     val length = lengthToDest(o) += (lengthToDest(j).value + 1)
     if (length < nSuccs - 1) succs(d).removeValue(o) // avoid inner loops
-    else Suspend
   }  
 }

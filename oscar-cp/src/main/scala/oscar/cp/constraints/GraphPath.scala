@@ -17,12 +17,11 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
+
 import scala.collection.mutable.PriorityQueue
 import oscar.algo.reversible.ReversibleBoolean
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPGraphVar
+import oscar.cp.core.variables.{CPGraphVar, CPIntVar, CPVar}
 
 /**
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
@@ -36,7 +35,9 @@ import oscar.cp.core.variables.CPGraphVar
  */
 
 class GraphPath(val g : CPGraphVar, src : Int, dest : Int, w : (Int,Int) => Int, I : CPIntVar) extends Constraint(g.s, "Path") {
-    val pNodes : List[Int] = g.possibleNodes
+  override def associatedVars(): Iterable[CPVar] = Array(g, I)
+
+  val pNodes : List[Int] = g.possibleNodes
     val n : Int = pNodes.length
     // build transitive closure of the possible values of the graph
     //   tc is composed of ReversibleBool to allow backtrack in search and still update tc
@@ -45,13 +46,15 @@ class GraphPath(val g : CPGraphVar, src : Int, dest : Int, w : (Int,Int) => Int,
     var nbEdges : ReversibleInt = new ReversibleInt(g.s, g.nbPossibleEdges)
     var nbNodes : ReversibleInt = new ReversibleInt(g.s, n)
   
-    override def setup(l: CPPropagStrength): CPOutcome = {
+    override def setup(l: CPPropagStrength): Unit = {
       // add src and dest mandatory
-      if (g.addNodeToGraph(src) == Failure) return Failure
-      if (g.addNodeToGraph(dest) == Failure) return Failure
+      g.addNodeToGraph(src)
+      g.addNodeToGraph(dest)
       // remove all edges incoming to the source and all outgoing edges from the destination (they must not be used to make a path from src to dest)
-      for (e <- g.possibleInEdges(src)) if (g.removeEdgeFromGraph(e) == Failure) return Failure
-      for (e <- g.possibleOutEdges(dest)) if (g.removeEdgeFromGraph(e) == Failure) return Failure
+      for (e <- g.possibleInEdges(src))
+        g.removeEdgeFromGraph(e)
+      for (e <- g.possibleOutEdges(dest))
+        g.removeEdgeFromGraph(e)
       
 	  // add filter when domain changes
 	  g.callPropagateWhenDomainChanges(this)
@@ -60,13 +63,14 @@ class GraphPath(val g : CPGraphVar, src : Int, dest : Int, w : (Int,Int) => Int,
 	  propagate()
 	}
     
-    override def propagate(): CPOutcome = {
+    override def propagate(): Unit = {
       val possNodes : List[Int] = g.possibleNodes
       val reqNodes  : List[Int] = g.requiredNodes
        
       // check if the constraint is entailed (there is a required path)
-      val c : CPOutcome = isEntailed(possNodes,reqNodes)
-      if (c != Suspend) return c
+      isEntailed(possNodes,reqNodes)
+      if(!isActive)
+        return
       
       // check if we need to rebuild tc before pruning
       val newNbEdges : Int = g.nbPossibleEdges
@@ -90,16 +94,16 @@ class GraphPath(val g : CPGraphVar, src : Int, dest : Int, w : (Int,Int) => Int,
         val (u,v) = g.edge(e)
 	    if (tc(src)(u).getValue == false){
 	      // remove e because no path from src to u in tc
-	      if(g.removeEdgeFromGraph(e) == Failure) return Failure
+	      g.removeEdgeFromGraph(e)
 	    } else if (tc(v)(dest).getValue == false) {
 	      // remove e because no path from v to dest in tc
-	      if (g.removeEdgeFromGraph(e) == Failure) return Failure
+	      g.removeEdgeFromGraph(e)
 	    } else {
 	      var b : Boolean = true
 	      for (n <- reqNodes; if b){
 	        if (tc(n)(u).getValue == false && tc(v)(n).getValue == false){
 	          // remove e because no path from src to dest passing by required node n using e
-	          if (g.removeEdgeFromGraph(e) == Failure) return Failure
+	          g.removeEdgeFromGraph(e)
 	          b = false // edge is removed, no need to look for it again
 	        }
 	      }
@@ -112,10 +116,11 @@ class GraphPath(val g : CPGraphVar, src : Int, dest : Int, w : (Int,Int) => Int,
       for (req <- requiredEdges){
         val (u,v) = g.edge(req)
         // counterpart edge
-        if(posNotReqEdgesTuple.contains((v,u))) if (g.removeEdgeFromGraph(v,u) == Failure) return Failure
+        if(posNotReqEdgesTuple.contains((v,u)))
+          g.removeEdgeFromGraph(v,u)
         // all edges starting from same source or with same destination
         val toBeRemovedEdges : List[(Int,Int)] = posNotReqEdgesTuple.filter(e => (e._1 == u) || (e._2 == v))
-        for (e <- toBeRemovedEdges) if (g.removeEdgeFromGraph(e._1,e._2) == Failure) return Failure
+        for (e <- toBeRemovedEdges) g.removeEdgeFromGraph(e._1,e._2)
       }
       
       // 2) prune according to I : forbidden edges
@@ -126,7 +131,7 @@ class GraphPath(val g : CPGraphVar, src : Int, dest : Int, w : (Int,Int) => Int,
       for (e <- newPossibleEdges) {
         val (u,v) = g.edge(e)
         if (mind1(u) + w(u,v) + mind2(v) > I.max)
-          if (g.removeEdgeFromGraph(e) == Failure) return Failure
+          g.removeEdgeFromGraph(e)
       }
       
       // 3) prune lower bound : mandatory edges
@@ -134,7 +139,7 @@ class GraphPath(val g : CPGraphVar, src : Int, dest : Int, w : (Int,Int) => Int,
         if (g.possibleOutEdges(n1).length == 1){
           // there is a bridge (n1,n2) as n1 is mandatory and has only one outgoing edge
           val n2 : Int = g.edge(g.possibleOutEdges(n1).head)._2
-          if (g.addEdgeToGraph(n1,n2) == Failure) return Failure
+          g.addEdgeToGraph(n1,n2)
         }
       }
       
@@ -142,8 +147,7 @@ class GraphPath(val g : CPGraphVar, src : Int, dest : Int, w : (Int,Int) => Int,
       // isolated nodes are forbidden : if a node is not the destination (target) and does not have outgoing edges, it should be removed
       for (node <- possNodes; if node != dest) {
         if (g.possibleOutEdges(node).isEmpty)
-          if (g.removeNodeFromGraph(node) == Failure) return Failure
-          
+          g.removeNodeFromGraph(node)
       }
       
       // 5) prune lower bound : mandatory nodes
@@ -153,18 +157,19 @@ class GraphPath(val g : CPGraphVar, src : Int, dest : Int, w : (Int,Int) => Int,
       //   and dest can be reachable from all mandatory nodes
       for (n <- possibleNotMandatoryNodes){
         if (checkMandatoryNodes(src, dest, n))
-          if (g.addNodeToGraph(n) == Failure) return Failure
+          g.addNodeToGraph(n)
       }
       
       // update bounds
       val (minDist, maxDist) : (Int,Int) = computeBounds
       if (minDist==maxDist){
-        val outcome = isEntailed(g.possibleNodes, g.requiredNodes)
-        outcome
-      } else {
-        if (minDist > I.min) if (I.updateMin(minDist) == Failure) return Failure
-    	if (maxDist < I.max) if (I.updateMax(maxDist) == Failure) return Failure
-        Suspend
+        isEntailed(g.possibleNodes, g.requiredNodes)
+      }
+      else {
+        if (minDist > I.min)
+          I.updateMin(minDist)
+    	  if (maxDist < I.max)
+          I.updateMax(maxDist)
       }
     }
 	
@@ -176,22 +181,21 @@ class GraphPath(val g : CPGraphVar, src : Int, dest : Int, w : (Int,Int) => Int,
     
     // check if there exists a required path ( = path composed of only required edges from source to destination)
     // 	if it is true, the maximal weight path CPIntVar is also entailed
-    private def isEntailed(possNodes : List[Int], reqNodes : List[Int]) : CPOutcome = {
+    private def isEntailed(possNodes : List[Int], reqNodes : List[Int]) : Unit = {
       if (existRequiredPath(src, dest, reqNodes)){
         val requiredEdges : List[Int] = reqNodes.flatMap(g.requiredOutEdges(_))
         val possibleNotRequiredEdges : List[Int] = possNodes.flatMap(g.possibleOutEdges(_)).filter(!requiredEdges.contains(_))
         
         // remove all other possible edges
         for (e <- possibleNotRequiredEdges)
-          if (g.removeEdgeFromGraph(e) == Failure) return Failure
+          g.removeEdgeFromGraph(e)
         
         // assign bound
         val nodesInPath = reqNodes.filter(_ != dest)
         val pathLen : Int = nodesInPath.map(i => g.requiredOutEdges(i).map(j => w(g.edge(j)._1,g.edge(j)._2)).head).sum
-        if (I.assign(pathLen) == Failure) return Failure
-        return Success
+        I.assign(pathLen)
+        deactivate()
       }
-      Suspend
     }    
         
     private def requiredNeighborsList(nodeId : Int) : List[Int] = g.requiredOutEdges(nodeId).map(g.edge(_)._2)

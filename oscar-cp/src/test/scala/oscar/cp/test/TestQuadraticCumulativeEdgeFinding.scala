@@ -15,7 +15,7 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 
 import oscar.cp.constraints._
 import oscar.cp.core._
@@ -25,7 +25,7 @@ import oscar.cp.scheduling._
 
 
 
-/*class TestQuadraticCumulativeEdgeFinding extends FunSuite with ShouldMatchers {
+/*class TestQuadraticCumulativeEdgeFinding extends TestSuite {
 	
 	test("Test 1: Example") {
 

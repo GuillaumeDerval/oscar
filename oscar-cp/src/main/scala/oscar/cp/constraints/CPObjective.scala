@@ -15,16 +15,18 @@
 
 package oscar.cp.constraints
 
-import oscar.algo.search._
 import oscar.algo.search.Objective
 import oscar.cp._
 import oscar.cp.core._
+import oscar.cp.core.variables.CPVar
 
 /**
  * @author Pierre Schaus  pschaus@gmail.com
  * @author Renaud Hartert ren.hartert@gmail.com
  */
 class CPObjective(val st: CPStore, val objs: CPObjectiveUnit*) extends Constraint(st, "objective constraint") with Objective {
+
+  override def associatedVars(): Iterable[CPVar] = objs.map(_.objVar)
 
   /** Returns the map of each objective variable to its corresponding objective object */
   def map = objs.map(o => o.objVar -> o).toMap
@@ -39,7 +41,7 @@ class CPObjective(val st: CPStore, val objs: CPObjectiveUnit*) extends Constrain
   def isOptimum(): Boolean = objs.forall(_.isOptimum())
 
   /** Returns true if the current state of the objective variables is consistent with the model */
-  def isOK(): Boolean = propagate != CPOutcome.Failure
+  def isOK(): Boolean = !isInconsistent(propagate())
 
   /** Returns the corresponding objective object */
   def apply(objVar: CPIntVar) = map(objVar)
@@ -70,15 +72,11 @@ class CPObjective(val st: CPStore, val objs: CPObjectiveUnit*) extends Constrain
 
   /** Ensures that the domain of each objective objects only contains better values (according to 
    *  its tighten mode) than its best so far value. */
-  override def propagate(): CPOutcome = {
-    // println("coucou")
-    if (objs.forall(_.ensureBest() != CPOutcome.Failure)) CPOutcome.Suspend
-    else {
-      CPOutcome.Failure
-    }
+  override def propagate(): Unit = {
+    objs.foreach(_.ensureBest())
   }
   
-  override def setup(l: CPPropagStrength): CPOutcome = propagate()
+  override def setup(l: CPPropagStrength): Unit = propagate()
 
   override def toString = objs.mkString(" , ")
 }

@@ -16,9 +16,8 @@ package oscar.cp.constraints
 
 
 import oscar.algo.reversible.{ReversibleInt, ReversibleSet, ReversibleSparseSet, ReversibleSparseSetJava}
-import oscar.cp.core.CPOutcome._
-import oscar.cp.core.{CPOutcome, CPPropagStrength, Constraint}
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.{CPPropagStrength, Constraint}
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
   * Arborescence Constraint:
@@ -31,7 +30,9 @@ import oscar.cp.core.variables.CPIntVar
   * @author Ratheil Houndji  ratheilsesse@gmail.com
   */
 final class Arborescence(preds: Array[CPIntVar], root: Int) extends Constraint(preds(0).store, "Circuit") {
-  
+
+  override def associatedVars(): Iterable[CPVar] = preds
+
   require(preds.length > 0, "no variable.")
 
   private[this] val n = preds.size
@@ -39,26 +40,24 @@ final class Arborescence(preds: Array[CPIntVar], root: Int) extends Constraint(p
   private[this] val leafNodes = Array.tabulate(n)(i => new ReversibleSparseSetJava(s,0,n-1,true))
 
 
-  final override def setup(l: CPPropagStrength): CPOutcome = {
+  final override def setup(l: CPPropagStrength): Unit = {
     for (i <- 0 until n; if i != root) {
       leafNodes(i).insert(i)
     }
     // Create the self loop on the root
-    if (preds(root).assign(root) == Failure) return Failure
+    preds(root).assign(root)
     // Attach callback on bind events
     for (i <- 0 until n; if i != root) {
-      if (preds(i).removeValue(i) == Failure) return Failure
-      else if (preds(i).isBound && valBindIdx(preds(i), i) == Failure) return Failure
-      else preds(i).filterWhenBind() {
-        bind(i)
-      }
+      preds(i).removeValue(i)
+      if (preds(i).isBound)
+        valBindIdx(preds(i), i)
+      preds(i).filterWhenBind() { bind(i) }
     }
-    Suspend
   }
 
   private[this] val values = Array.ofDim[Int](n)
   
-  private def bind(i: Int): CPOutcome = {
+  private def bind(i: Int): Boolean = {
 
     val j = preds(i).min
 
@@ -72,9 +71,8 @@ final class Arborescence(preds: Array[CPIntVar], root: Int) extends Constraint(p
       val l = values(s)
       localRoot(l).value = newLocalRoot
       leafNodes(newLocalRoot).insert(l)
-      if (preds(newLocalRoot).removeValue(l) == Failure) return Failure
+      preds(newLocalRoot).removeValue(l)
     }
-    return Suspend
-
+    false
   }  
 }

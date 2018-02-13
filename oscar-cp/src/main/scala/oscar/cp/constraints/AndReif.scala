@@ -15,11 +15,8 @@
 package oscar.cp.constraints
 
 import oscar.cp.core._
-import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome._
 import oscar.algo.reversible.ReversibleSparseSet
-import oscar.cp.core.variables.CPBoolVar
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPVar}
 
 /**
  * and_i x_i <--> bi 
@@ -27,61 +24,57 @@ import oscar.cp.core.variables.CPIntVar
  */
 class And(val X: Array[CPBoolVar], val b: CPBoolVar) extends Constraint(b.store, "AndReif") {
 
+  override def associatedVars(): Iterable[CPVar] = X ++ Array(b)
+
   var unbound: ReversibleSparseSet = null
   priorityBindL1 = CPStore.MaxPriorityL1-1
   
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     if (X.size == 2) {
-      if (s.post(new BinaryAnd(X(0),X(1),b)) == Failure) return Failure
-      else return Success
+      s.post(new BinaryAnd(X(0),X(1),b))
+      this.deactivate()
+      return
     }
     unbound = new ReversibleSparseSet(s,0,X.size-1)
     X.foreach(_.callPropagateWhenBind(this))
     for ((x,i) <- X.zipWithIndex) {
       if (x.isBound) {
-        val oc = valBindIdx(x,i)
-        if (oc == Failure || oc == Success) return oc
+        valBindIdx(x,i)
+        if(!this.isActive)
+          return
       }
-      else x.callValBindIdxWhenBind(this,i)
+      else
+        x.callValBindIdxWhenBind(this,i)
     }
     b.callPropagateWhenBind(this)
     propagate()
   }
   
-  override def valBindIdx(x: CPIntVar, idx: Int): CPOutcome = {
+  override def valBindIdx(x: CPIntVar, idx: Int): Unit = {
     if (x.isBoundTo(0)) {
-      if (b.assign(0) == Failure) Failure
-      else Success
+      b.assign(0)
+      this.deactivate()
     } else {
     	unbound.removeValue(idx)
     	if (unbound.isEmpty) {
-    	  if (b.assign(1) == Failure) Failure
-    	  else Success
-    	}
-    	else {
-    	  Suspend
+    	  b.assign(1)
+        this.deactivate()
     	}
     }
   }
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
     if (b.isBoundTo(1)) {
-      for (i <- unbound) {
-        if (X(i).assign(1) == Failure) return Failure
-      }
-      Success
+      for (i <- unbound)
+        X(i).assign(1)
+      this.deactivate()
     }
-    else if (b.isBoundTo(0)) {
+    else if (b.isBoundTo(0) && unbound.size == 1) {
       // at least one must be = 0
-      if (unbound.size == 1) {
-        X(unbound.min).assign(0)
-        Success
-      }
-      else Suspend
+      X(unbound.min).assign(0)
+      this.deactivate()
     }
-    else Suspend
-
   }
 }
 

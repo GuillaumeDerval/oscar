@@ -17,9 +17,8 @@
 package oscar.cp.scheduling.constraints
 
 import oscar.cp.constraints.UnaryResourceWithTransitionTimes
-import oscar.cp.core.CPOutcome.{Failure, Success}
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.{CPOutcome, CPPropagStrength, Constraint}
+import oscar.cp.core.variables.{CPIntVar, CPVar}
+import oscar.cp.core.{CPPropagStrength, Constraint}
 
 /**
  * @author Cyrille Dejemeppe (cyrille.dejemeppe@gmail.com)
@@ -28,29 +27,23 @@ import oscar.cp.core.{CPOutcome, CPPropagStrength, Constraint}
  */
 class DisjunctiveWithTransitionTimes(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], transitions: Array[Array[Int]]) extends Constraint(starts(0).store) {
 
-  import  oscar.cp.core.CPPropagStrength._  
+  import  oscar.cp.core.CPPropagStrength._
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends
+
+  override def setup(l: CPPropagStrength): Unit = {
     if (starts.nonEmpty) {
       val cp = starts(0).store
       val n = starts.length
 
       // always add the binary decomposition by default
       for (i <- 0 until n; j <- 0 until n; if i != j) {
-
-        if (cp.post(new BinaryDisjunctiveWithTransitionTimes(starts(i), ends(i), starts(j), ends(j), transitions(i)(j), transitions(j)(i))) == Failure) {
-          return Failure
-        }
-
+        cp.post(new BinaryDisjunctiveWithTransitionTimes(starts(i), ends(i), starts(j), ends(j), transitions(i)(j), transitions(j)(i)))
       }
       if (l == Medium || l == Strong) {
-        if (cp.post(new UnaryResourceWithTransitionTimes(starts, durations, ends, transitions)) == Failure) {
-          return Failure
-        }
+        cp.post(new UnaryResourceWithTransitionTimes(starts, durations, ends, transitions))
       }
-
     }
-    Success
   }
 
  

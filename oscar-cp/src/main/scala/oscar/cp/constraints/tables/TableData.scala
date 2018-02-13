@@ -16,6 +16,8 @@
  */
 package oscar.cp.constraints.tables
 
+import oscar.algo.Inconsistency
+
 import scala.collection.mutable.ArrayBuffer
 
 class TableData(val arity: Int) {
@@ -56,6 +58,8 @@ class TableData(val arity: Int) {
   }
 
   def setup() = {
+    if (arity <= 0 || data(0).size <= 0)
+      throw Inconsistency
     for (i <- 0 until arity) {
       minVal(i) = data(i).min
       maxVal(i) = data(i).max

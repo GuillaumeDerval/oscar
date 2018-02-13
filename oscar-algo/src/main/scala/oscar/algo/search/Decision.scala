@@ -16,6 +16,7 @@
 package oscar.algo.search
 
 import oscar.algo.reversible.ReversibleContext
+import oscar.algo.vars.IntVarLike
 
 /**
   * @author Sascha Van Cauwelaert
@@ -37,4 +38,42 @@ final class Pop(val context: ReversibleContext) extends TrailDecision {
 
 class AlternativeDecision(alternative: Alternative) extends Decision {
   def apply() = alternative.apply()
+}
+
+abstract class DomainDecision extends Decision {
+  def opposite: DomainDecision
+}
+
+final class Remove(val variable: IntVarLike, val value: Int) extends DomainDecision {
+  override def apply(): Unit = variable.context.remove(variable, value)
+  override def toString: String = s"Remove(${variable.name}, $value)"
+  override def opposite: DomainDecision = new Assign(variable, value)
+}
+
+final class Assign(val variable: IntVarLike, val value: Int) extends DomainDecision {
+  override def apply(): Unit = variable.context.assign(variable, value)
+  override def toString: String = s"Assign(${variable.name}, $value)"
+  override def opposite: DomainDecision = new Remove(variable, value)
+}
+
+final class LowerEq(val variable: IntVarLike, val value: Int) extends DomainDecision {
+  override def apply(): Unit = variable.context.smallerEq(variable, value)
+  override def toString: String = s"LowerEq(${variable.name}, $value)"
+  override def opposite: DomainDecision = new GreaterEq(variable, value + 1)
+}
+
+final class GreaterEq(val variable: IntVarLike, val value: Int) extends DomainDecision {
+  override def apply(): Unit = variable.context.largerEq(variable, value)
+  override def toString: String = s"GreaterEq(${variable.name}, $value)"
+  override def opposite: DomainDecision = new LowerEq(variable, value - 1)
+}
+
+object Decision {
+  @inline final def remove(variable: IntVarLike, value: Int): Decision = new Remove(variable, value)
+  @inline final def assign(variable: IntVarLike, value: Int): Decision = new Assign(variable, value)
+  @inline final def lowerEq(variable: IntVarLike, value: Int): Decision = new LowerEq(variable, value)
+  @inline final def greaterEq(variable: IntVarLike, value: Int): Decision = new GreaterEq(variable, value)
+  @inline final def push(context: ReversibleContext): Decision = new Push(context)
+  @inline final def pop(context: ReversibleContext): Decision = new Pop(context)
+  def apply(decision: => Unit): Alternative = () => decision
 }

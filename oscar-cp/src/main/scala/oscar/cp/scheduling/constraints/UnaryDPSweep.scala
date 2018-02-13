@@ -1,10 +1,11 @@
 package oscar.cp.scheduling.constraints
 
+import oscar.algo.Inconsistency
 import oscar.cp.core._
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.CPOutcome._
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.algo.SortUtils._
-import scala.math.{min, max}
+
+import scala.math.{max, min}
 import scala.annotation.tailrec
 import oscar.cp.scheduling.util.OpenSparseSet
 import oscar.algo.array.ArrayHeapInt
@@ -21,17 +22,11 @@ class UnaryDPSweep(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Ar
 extends Constraint(store, "UnaryDetectablePrecedences2") {
   val lr = new UnaryDPSweepLR(starts, durations, ends, resources, id) 
   val rl = new UnaryDPSweepLR(ends map(-_), durations, starts map(-_), resources, id)
-  
+
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ resources
+
   override def setup(strength: CPPropagStrength) = {
-    try {
-      if (store.add(Array(lr, rl)) == Failure) Failure
-//      if (store.add(Array(lr)) == Failure) Failure
-      else Suspend
-    }
-    catch {
-      case e: NoSolutionException => Failure
-      case e: Inconsistency => Failure
-    }
+    store.add(Array(lr, rl))
   }
 }
 
@@ -41,6 +36,8 @@ extends Constraint(store, "UnaryDetectablePrecedences2") {
 class UnaryDPSweepLR(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], resources: Array[CPIntVar], id: Int)(implicit store: CPStore)
 extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryDetectablePrecedencesLR")(store)
 {
+  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ resources
+
   private[this] val nTasks = starts.length
   
   priorityL2 = 3
@@ -74,7 +71,7 @@ extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryDetectablePr
   private [this] val heapByEMin = new ArrayHeapInt(nTasks)
   
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
     updateCache()
         
     // Step 1: Initialization
@@ -155,7 +152,7 @@ extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryDetectablePr
       // treat pruning event
       if (!required(i)) {
         if (envelope(1) > smax(i)) { // optional activity would be pushed too far
-          if (resources(i).removeValue(id) == Failure) throw Inconsistency
+          resources(i).removeValue(id)
           toConsider.exclude(i)
           removeFromLambda(i)
         }
@@ -174,7 +171,7 @@ extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryDetectablePr
         if (mustRemoveI) removeFromTheta(i)
       
         if (envelope(1) > smin(i)) {
-          if (starts(i).updateMin(envelope(1)) == Failure) throw Inconsistency
+          starts(i).updateMin(envelope(1))
           val newEMin = envelope(1) + dmin(i)
           if (newEMin > emin(i)) { // push event back
             // smin(i) = envelope(1) // not possible since theta lambda tree is fixed
@@ -189,7 +186,7 @@ extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryDetectablePr
           val b = toConsiderBySMin(opt-nodes)  // get activity of that leaf
           
           // remove b from resource
-          if (resources(b).removeValue(id) == Failure) throw Inconsistency
+          resources(b).removeValue(id)
           toConsider.exclude(b)
           removeFromTheta(b)
         }
@@ -198,7 +195,6 @@ extends UnaryTemplate(starts, durations, ends, resources, id, "UnaryDetectablePr
       }
     }
     removeExtremal()
-    Suspend
   }
   
   @inline final def addToTheta(act: Int) = {

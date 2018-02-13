@@ -1,10 +1,7 @@
 package oscar.cp.constraints.tables
 
 import oscar.cp.core.Constraint
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPBoolVar
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPVar}
 import oscar.cp.core.CPPropagStrength
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.core.CPStore
@@ -16,6 +13,8 @@ import oscar.cp.core.CPStore
  * 
  */
 class TableSTR2Reif(val variables: Array[CPIntVar], table: Array[Array[Int]], val b: CPBoolVar) extends Constraint(variables(0).store, "TableSTR2Reif") {
+  override def associatedVars(): Iterable[CPVar] = variables
+
   private[this] val arity = variables.length
   
   // Sparse set for current table
@@ -29,27 +28,25 @@ class TableSTR2Reif(val variables: Array[CPIntVar], table: Array[Array[Int]], va
   private[this] var posConstraint: Constraint = new TableSTR2(variables, table)
   private[this] var neConstraint: Constraint = new TableSTRNe(variables, table)
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     val outcome = propagate()
-    if (outcome == Failure) return Failure
-    else if (outcome == Success) return Success
-    
-    variables.filter(!_.isBound).foreach(_.callPropagateWhenDomainChanges(this))
-    if (!b.isBound) b.callPropagateWhenDomainChanges(this)
-    Suspend
+    if(isActive) {
+      variables.filter(!_.isBound).foreach(_.callPropagateWhenDomainChanges(this))
+      if (!b.isBound)
+        b.callPropagateWhenDomainChanges(this)
+    }
   }
   
-  override def propagate(): CPOutcome = {
+  override def propagate(): Unit = {
     // check if b is bound
     if (b.isBound) {
       if (b.min == 1) {
-        if (s.post(posConstraint) == Failure)
-          return Failure
+        s.post(posConstraint)
       } else if (b.min == 0) {
-        if (s.post(neConstraint) == Failure)
-          return Failure
+        s.post(neConstraint)
       }
-      return Success
+      deactivate()
+      return
     }
     
     var limit = revLimit.getValue // save limit
@@ -85,8 +82,9 @@ class TableSTR2Reif(val variables: Array[CPIntVar], table: Array[Array[Int]], va
     //------------------------ check entailed -----------------------------------/
     // Check disentailed
     if (revLimit.value == -1) {
-      if (b.assign(0) == Failure) return Failure
-      return Success
+      b.assign(0)
+      deactivate()
+      return
     }
     
     // Compute number of valid tuples
@@ -100,11 +98,10 @@ class TableSTR2Reif(val variables: Array[CPIntVar], table: Array[Array[Int]], va
     
     // Check entailed
     if (nbValidTuples == revLimit.getValue + 1) {
-      if (b.assign(1) == Failure) return Failure
-      return Success
+      b.assign(1)
+      deactivate()
+      return
     }
-    
-    Suspend
   }
   
   /*****************************************************************************/

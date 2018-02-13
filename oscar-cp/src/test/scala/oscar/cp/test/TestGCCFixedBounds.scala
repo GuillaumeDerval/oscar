@@ -15,14 +15,14 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 import oscar.cp.constraints._
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.NoSolutionException
 
 
-class TestGCCFixedBounds extends FunSuite with ShouldMatchers {
+class TestGCCFixedBounds extends TestSuite {
 
   def nbSol(domX: Array[Set[Int]], values: Range, min: Array[Int], max: Array[Int], s: CPPropagStrength): (Int, Int, Int) = {
     var nbSol = 0
@@ -35,7 +35,7 @@ class TestGCCFixedBounds extends FunSuite with ShouldMatchers {
       cp.add(gcc(X, values, min, max), s)
 
     } catch {
-      case e: oscar.cp.core.NoSolutionException => {
+      case e: NoSolutionException => {
           return (0, 0, 0) 
       }
     }

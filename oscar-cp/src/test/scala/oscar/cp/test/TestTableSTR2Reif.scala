@@ -15,7 +15,7 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 import oscar.cp.constraints._
 import oscar.cp.constraints.tables.TableSTR2Reif
 import oscar.cp._
@@ -23,7 +23,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
-class TestTableSTR2Reif extends FunSuite with ShouldMatchers  {
+class TestTableSTR2Reif extends TestSuite  {
   test("Table Test 1") {
     /*
      * x0 = x1 = x2 = {1}

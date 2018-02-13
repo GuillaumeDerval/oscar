@@ -40,7 +40,7 @@ class Const[+V: Numeric](val d: V) extends Term[Constant,V] {
   override def toString: String = d.toString
 
   def normalized[VP >: V](implicit numeric: Numeric[VP]): NormalizedExpression[Constant,VP] =
-    new NormalizedExpression[Constant,VP](Stream(new Product[Constant,VP](this,Seq())))
+    new NormalizedExpression[Constant,VP](Stream(Product(this)))
 
   override def hashCode(): Int = d.hashCode
   override def equals(any: Any): Boolean = any match{

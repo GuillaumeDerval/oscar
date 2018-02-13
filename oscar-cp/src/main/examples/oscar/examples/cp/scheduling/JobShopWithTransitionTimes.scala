@@ -15,10 +15,10 @@
 
 package oscar.examples.cp.scheduling
 
+import oscar.algo.branchings.ConflictOrderingSearch
 import oscar.cp._
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.searches.ConflictOrderingSearch
 
 import scala.io.Source
 

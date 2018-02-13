@@ -15,13 +15,13 @@
 package oscar.dfo.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import oscar.dfo.multiobjective.mogen.algos._
 import oscar.util.Interval
 import oscar.dfo.multiobjective.MODFOptimizer
 import oscar.dfo.multiobjective.MODMS
 
-class MultiObjectiveDFO extends FunSuite with ShouldMatchers {
+class MultiObjectiveDFO extends FunSuite with Matchers {
   
   val domain2D = Array.tabulate(2)(i => Interval(-100.0, 100.0))
   

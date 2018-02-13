@@ -10,6 +10,7 @@ import oscar.cp._
 class TestXCSP extends TestSuite {
 
   test("test format") {
+
     val solver = new XCSPSolver with DefaultConstraints
     val str: String = """<?xml version="1.0" encoding="UTF-8"?> 
 	    <instance> 

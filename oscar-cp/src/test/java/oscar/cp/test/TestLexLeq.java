@@ -16,6 +16,7 @@ package oscar.cp.test;
 
 
 import junit.framework.TestCase;
+import oscar.algo.Inconsistency;
 import oscar.cp.constraints.EqCons;
 import oscar.cp.constraints.LexLeq;
 import oscar.cp.core.CPStore;
@@ -49,7 +50,7 @@ public class TestLexLeq extends TestCase {
         s = null;
     }
     
-    public void testLexLeq(){ 
+    public void testLexLeq() throws Inconsistency {
     	CPIntVar [] x = new CPIntVar[5];
     	for (int i = 0; i < x.length; i++) {
 			x[i] = CPIntVar.apply(s,0,1);

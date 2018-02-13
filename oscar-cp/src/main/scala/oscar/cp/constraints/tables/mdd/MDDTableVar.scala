@@ -16,12 +16,11 @@
 package oscar.cp.constraints.tables.mdd
 
 import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
 import oscar.algo.reversible.{ReversibleContext, ReversibleSharedSparseSet}
 
 /**
  * Represent a variable of a MDD (i.e. a layer). This class makes the link between ReversibleMDD and CPIntVar.
+ *
  * @param context the context of the variable.
  * @param linkedVar the associated integer variable.
  * @param indexVar the index of the variable in the tuples of the table.
@@ -73,21 +72,17 @@ class MDDTableVar(context: ReversibleContext, linkedVar: CPIntVar, indexVar: Int
    * @param dom a temporary big enough to store D(x).
    * @return the outcome i.e. Failure or Success.
    */
-  @inline final def deleteValuesNotInMDD(dom: Array[Int]): CPOutcome = {
+  @inline final def deleteValuesNotInMDD(dom: Array[Int]): Unit = {
     val size = linkedVar.fillArray(dom)
     var i = 0
     var value = 0
     while (i < size) {
       value = dom(i)
       if (!mdd.containsValue(indexVar, value)) {
-        if (linkedVar.removeValue(value) == Failure) {
-          return Failure
-        }
+        linkedVar.removeValue(value)
       }
       i += 1
     }
-
-    Suspend
   }
 
   /**
@@ -174,17 +169,12 @@ class MDDTableVar(context: ReversibleContext, linkedVar: CPIntVar, indexVar: Int
    * @param value the associated value
    * @return the outcome i.e. Failure or Success.
    */
-  @inline final def removeEdgeForValue(edge: Int, value: Int): CPOutcome = {
+  @inline final def removeEdgeForValue(edge: Int, value: Int): Unit = {
     if (edgesPerValue(value).size == 1) {
       activeValues.remove(value)
-      if (linkedVar.removeValue(mdd.valueForIndex(indexVar, value)) == Failure) {
-        return Failure
-      }
-      Suspend
+      linkedVar.removeValue(mdd.valueForIndex(indexVar, value))
     }
     edgesPerValue(value).remove(edge)
-
-    Suspend
   }
 
   /**
@@ -210,19 +200,15 @@ class MDDTableVar(context: ReversibleContext, linkedVar: CPIntVar, indexVar: Int
    * Remove values not supported by any edge.
    * @return the outcome i.e. Failure or Success.
    */
-  @inline final def removeUnsupportedValues(): CPOutcome = {
+  @inline final def removeUnsupportedValues(): Unit = {
     var i = activeValues.size - 1
     while (i >= 0) {
       val value = activeValues(i)
       if (edgesPerValue(value).size == 0) {
         activeValues.remove(value)
-        if (linkedVar.removeValue(mdd.valueForIndex(indexVar, value)) == Failure) {
-          return Failure
-        }
+        linkedVar.removeValue(mdd.valueForIndex(indexVar, value))
       }
       i -= 1
     }
-
-    Suspend
   }
 }

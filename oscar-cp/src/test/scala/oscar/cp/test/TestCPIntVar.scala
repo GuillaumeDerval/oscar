@@ -16,14 +16,14 @@
  */
 package oscar.cp.test
 
-import org.scalatest.FunSuite
-import org.scalatest.Matchers
 
-import oscar.cp.core.CPOutcome
+import oscar.algo.Inconsistency
 import oscar.cp.core.CPPropagStrength
 import oscar.cp._
+import oscar.cp.core.variables.CPVar
+import oscar.cp.testUtils._
 
-class TestCPIntVar extends FunSuite with Matchers {
+class TestCPIntVar extends TestSuite {
 
   test("Test1 : Median") {
 
@@ -96,9 +96,9 @@ class TestCPIntVar extends FunSuite with Matchers {
     val a = CPIntVar(Array(10, 20, 30))(cp)
     a.isBound should be(false)
 
-    evaluating {
+    assertThrows[NoSolutionException] {
       cp.add(a < 10)
-    } should produce[NoSolutionException]
+    }
   }
 
   test("min max size methods test") {
@@ -141,9 +141,9 @@ class TestCPIntVar extends FunSuite with Matchers {
     var x = CPIntVar(Set(1, 3, 5))(cp)
 
     val d = x.iterator
-    assert(x.removeValue(d.next) == CPOutcome.Suspend)
-    assert(x.removeValue(d.next) == CPOutcome.Suspend)
-    assert(x.removeValue(d.next) == CPOutcome.Failure)
+    x.removeValue(d.next)
+    x.removeValue(d.next)
+    assert(isInconsistent(x.removeValue(d.next) ))
     d.hasNext should be(false)
   }
 
@@ -154,7 +154,7 @@ class TestCPIntVar extends FunSuite with Matchers {
     val d = x.iterator
     val removed = (for (i <- 1 to x.size - 1) yield {
       val v = d.next
-      assert(x.removeValue(v) == CPOutcome.Suspend)
+      x.removeValue(v)
       v
     }).toSet
 
@@ -183,23 +183,22 @@ class TestCPIntVar extends FunSuite with Matchers {
     var i = 0
     class MyCons(val X: CPIntVar) extends Constraint(X.store, "TestDelta") {
 
-      override def setup(l: CPPropagStrength): CPOutcome = {
+      override def setup(l: CPPropagStrength): Unit = {
         X.callPropagateWhenBind(this)
         X.callValBindWhenBind(this)
-        CPOutcome.Suspend
       }
 
-      override def propagate(): CPOutcome = {
+      override def propagate(): Unit = {
         i += 1
         propagCalled = i
-        CPOutcome.Suspend
       }
 
-      override def valBind(x: CPIntVar): CPOutcome = {
+      override def valBind(x: CPIntVar): Unit = {
         i += 1
         valBindCalled = i
-        CPOutcome.Suspend
       }
+
+      override def associatedVars(): Iterable[CPVar] = ???
     }
 
     val cp = CPSolver()

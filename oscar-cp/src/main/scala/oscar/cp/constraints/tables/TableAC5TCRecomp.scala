@@ -16,12 +16,12 @@
  */
 package oscar.cp.constraints.tables
 
-import oscar.cp.core.CPOutcome._
+import oscar.algo.Inconsistency
 import oscar.cp.core._
 import oscar.algo.reversible._
-import oscar.cp.core.CPOutcome
 import oscar.cp._
 import oscar.cp.core.delta.DeltaIntVar
+import oscar.cp.core.variables.CPVar
 
 /**
  * Implementation of the table algorithm described in :
@@ -32,6 +32,8 @@ import oscar.cp.core.delta.DeltaIntVar
  * @author Pierre Schaus (pschaus@gmail.com)
  */
 class TableAC5TCRecomp(val data: TableData, val x: CPIntVar*) extends Constraint(x(0).store, "TableAC5TCRecomp") {
+
+  override def associatedVars(): Iterable[CPVar] = x
 
   def this(x1: CPIntVar, x2: CPIntVar, tuples: Iterable[(Int, Int)]) = {
     this(new TableData(2), x1, x2)
@@ -64,47 +66,41 @@ class TableAC5TCRecomp(val data: TableData, val x: CPIntVar*) extends Constraint
   /**
    * Initialization, input checks and registration to events
    */
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     idempotent = true
     data.setup()
 
     for ((y, i) <- x.zipWithIndex) {
-      if (!filterAndInitSupport(i)) return CPOutcome.Failure
+      filterAndInitSupport(i)
       if (!y.isBound) {
-        //y.callValRemoveIdxWhenValueIsRemoved(this, i)
-        y.callOnChangesIdx(i, delta => valuesRemoved(delta),idempotent = true)
-
+        y.callOnChangesIdx(i, delta => valuesRemoved(delta), idempotent = true)
       }
     }
-    CPOutcome.Suspend
   }
 
-  def filterAndInitSupport(i: Int): Boolean = {
-    if (x(i).updateMax(data.max(i)) == CPOutcome.Failure || x(i).updateMin(data.min(i)) == CPOutcome.Failure) {
-      return false
-    }
+  def filterAndInitSupport(i: Int): Unit = {
+    x(i).updateMax(data.max(i))
+    x(i).updateMin(data.min(i))
     support(i) = Array.fill(data.max(i) - data.min(i) + 1)(new ReversibleInt(s, -1))
-    for (v <- x(i).min to x(i).max; if (x(i).hasValue(v))) {
+    for (v <- x(i).min to x(i).max; if x(i).hasValue(v)) {
       if (data.hasFirstSupport(i, v)) {
-        if (!updateAndSeekNextSupport(i, data.firstSupport(i, v), v)) { return false }
+        updateAndSeekNextSupport(i, data.firstSupport(i, v), v)
       } else {
-        if (x(i).removeValue(v) == CPOutcome.Failure) { return false }
+        x(i).removeValue(v)
       }
     }
-    true
   }
 
-  def updateAndSeekNextSupport(i: Int, startTuple: Int, v: Int): Boolean = {
+  def updateAndSeekNextSupport(i: Int, startTuple: Int, v: Int): Unit = {
     var t = startTuple
     while (data.hasNextSupport(i, t) && !tupleOk(t)) {
       t = data.nextSupport(i, t)
     }
     if (!tupleOk(t)) {
-      if (x(i).removeValue(v) == CPOutcome.Failure) { return false }
+      x(i).removeValue(v)
     } else {
       sup(i)(v).value = t
     }
-    true
   }
 
   def tupleOk(t: Int): Boolean = {
@@ -121,7 +117,7 @@ class TableAC5TCRecomp(val data: TableData, val x: CPIntVar*) extends Constraint
    * x(i) has lost the value tuple(i) so this tuple cannot be a support any more.
    * It means that any pair var-val using tuple as support must find a new support
    */
-  def updateSupports(i: Int, t: Int): Boolean = {
+  def updateSupports(i: Int, t: Int): Unit = {
     var k = 0
     while (k < x.length) {
       //for (k <- 0 until x.size; if (k != i)) {
@@ -129,37 +125,32 @@ class TableAC5TCRecomp(val data: TableData, val x: CPIntVar*) extends Constraint
         val valk = data(t, k) // k_th value in the new invalid tuple t
         if (sup(k)(valk).value == t) { // bad luck, the new invalid tuple was used as support for variable x(k) for value valk
           // so we must find a new one ... or prune the value if none can be found
-          if (!updateAndSeekNextSupport(k, t, valk)) { return false }
+          updateAndSeekNextSupport(k, t, valk)
         }
       }
       k += 1
     }
-    true
   }
 
-  private final def valuesRemoved(delta: DeltaIntVar): CPOutcome = {
+  private final def valuesRemoved(delta: DeltaIntVar): Boolean = {
     val idx = delta.id
     var i = delta.fillArray(domainsFillArray)
     while (i > 0) {
       i -= 1
       val value = domainsFillArray(i)
-      if (valueRemoved(x(idx),idx,value) == Failure) {
-        return Failure
-      }
+      valueRemoved(x(idx),idx,value)
     }
-    Suspend
+    false
   }
 
-  private final def valueRemoved(y: CPIntVar, i: Int, v: Int): CPOutcome = {
+  private final def valueRemoved(y: CPIntVar, i: Int, v: Int): Unit = {
     // all the supports using a tuple with v at index i are not support any more
     // we iterate on these and try to find new support in case they were used as support
     var t = sup(i)(v).value
     do {
-      if (!updateSupports(i, t)) { return CPOutcome.Failure }
+      updateSupports(i, t)
       t = data.nextSupport(i, t) // get the next tuple with a value v at index i
-    } while (t >= 0);
-    CPOutcome.Suspend
+    } while (t >= 0)
   }
-
 }
 

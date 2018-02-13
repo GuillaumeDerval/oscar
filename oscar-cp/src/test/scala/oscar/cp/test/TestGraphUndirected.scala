@@ -15,8 +15,7 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
-import oscar.cp.core.CPOutcome._
+import oscar.cp.testUtils.TestSuite
 import oscar.cp._
 import oscar.cp.constraints.GraphUndirected
 
@@ -24,7 +23,7 @@ import oscar.cp.constraints.GraphUndirected
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
  */
 
-class TestGraphUndirected extends FunSuite with ShouldMatchers  {
+class TestGraphUndirected extends TestSuite  {
   
   test("Test 1 : Test constraint initial propagation") {
     val cp = CPSolver()
@@ -55,7 +54,7 @@ class TestGraphUndirected extends FunSuite with ShouldMatchers  {
     
     
     // add constraint
-    cp.post(new GraphUndirected(g1,g2)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphUndirected(g1,g2))
     
     // check that all changes are correct acc. to definition
     // 	 -> no changes to g1
@@ -87,11 +86,11 @@ class TestGraphUndirected extends FunSuite with ShouldMatchers  {
     val nnodes2 : Int = nnodes
     val g2 = CPGraphVar(cp, nnodes)
     // g2.edges are (0,1),(0,2),(1,0),(1,2),(2,0),(2,1)
-    cp.post(new GraphUndirected(g1,g2)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphUndirected(g1,g2))
     // g2.edges are (0,1),(1,0),(1,2),(2,1)
     
     // we add a required edge in g1 -> should also be required in g2
-    cp.post(g1.addEdge(0,1)) should be (Suspend)
+    postAndCheckSuspend(cp,g1.addEdge(0,1))
     // check all edges : (0,1) required in g1
     // 	and (0,1),(1,0) required in g2
     g1.requiredEdges(0).sorted 	should be (List(0))
@@ -118,11 +117,11 @@ class TestGraphUndirected extends FunSuite with ShouldMatchers  {
     val nnodes2 : Int = nnodes
     val g2 = CPGraphVar(cp, nnodes)
     // g2.edges are (0,1),(0,2),(1,0),(1,2),(2,0),(2,1)
-    cp.post(new GraphUndirected(g1,g2)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphUndirected(g1,g2))
     // g2.edges are (0,1),(1,0),(1,2),(2,1)
     
     // we add a required edge in g1 -> should also be required in g2
-    cp.post(g1.removeEdge(0,1)) should be (Suspend)
+    postAndCheckSuspend(cp,g1.removeEdge(0,1))
     // check all edges : (0,1) removed in g1
     // 	and (0,1),(1,0) removed in g2
     g1.possibleEdges(0).sorted 	should be (List())
@@ -143,11 +142,11 @@ class TestGraphUndirected extends FunSuite with ShouldMatchers  {
     val nnodes2 : Int = nnodes
     val g2 = CPGraphVar(cp, nnodes)
     // g2.edges are (0,1),(0,2),(1,0),(1,2),(2,0),(2,1)
-    cp.post(new GraphUndirected(g1,g2)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphUndirected(g1,g2))
     // g2.edges are (0,1),(1,0),(1,2),(2,1)
     
     // we add a required node in g1 -> should also be required in g2
-    cp.post(g1.addNode(1)) should be (Suspend)
+    postAndCheckSuspend(cp,g1.addNode(1))
     
     g1.possibleNodes.sorted should be (List(0,1,2))
     g2.possibleNodes.sorted should be (List(0,1,2))
@@ -176,11 +175,11 @@ class TestGraphUndirected extends FunSuite with ShouldMatchers  {
     val nnodes2 : Int = nnodes
     val g2 = CPGraphVar(cp, nnodes)
     // g2.edges are (0,1),(0,2),(1,0),(1,2),(2,0),(2,1)
-    cp.post(new GraphUndirected(g1,g2)) should be (Suspend)
+    postAndCheckSuspend(cp,new GraphUndirected(g1,g2))
     // g2.edges are (0,1),(1,0),(1,2),(2,1)
     
     // we remove a node in g1 -> should also be removed in g2
-    cp.post(g1.removeNode(2)) should be (Suspend)
+    postAndCheckSuspend(cp,g1.removeNode(2))
     
     g1.possibleNodes.sorted should be (List(0,1))
     g2.possibleNodes.sorted should be (List(0,1))

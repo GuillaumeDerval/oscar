@@ -2,13 +2,17 @@ package oscar.cp.constraints;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
 
 import oscar.algo.reversible.ReversibleInt;
-import oscar.cp.core.CPOutcome;
 import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
+import oscar.cp.core.variables.CPVar;
+import scala.collection.Iterable;
+import scala.collection.JavaConversions;
 
 public class BinaryKnapsackWithCardinality extends Constraint {
 
@@ -47,8 +51,15 @@ public class BinaryKnapsackWithCardinality extends Constraint {
 		}
 	}
 
+    @Override
+    public Iterable<CPVar> associatedVars() {
+        List<CPVar> l = new LinkedList<>(Arrays.asList(x));
+        l.add(c);
+        return JavaConversions.iterableAsScalaIterable(l);
+    }
+
 	@Override
-	public CPOutcome setup(CPPropagStrength l) {
+	public void setup(CPPropagStrength l) {
 
         packed = new ReversibleInt(s(),0);
         nPacked = new ReversibleInt(s(),0);
@@ -62,24 +73,19 @@ public class BinaryKnapsackWithCardinality extends Constraint {
             }
 
         }
-
-		return CPOutcome.Suspend;
 	}
 
 	@Override
-	public CPOutcome valBindIdx(CPIntVar var, int idx) {
+	public void valBindIdx(CPIntVar var, int idx) {
         if (var.getMin() == 1) {
             nPacked.incr();
             packed.setValue(packed.getValue() + w[idx]);
         }
-
-         return CPOutcome.Suspend;
 	}
 
 
 	@Override
-	public CPOutcome propagate() {
-
+	public void propagate() {
         int curn = nPacked.getValue();
         int curw = packed.getValue();
         for (int i = 0; i < x.length && curn < n; i++) {
@@ -88,9 +94,7 @@ public class BinaryKnapsackWithCardinality extends Constraint {
                 curn++;
             }
         }
-        if (c.updateMax(curw) == CPOutcome.Failure) {
-            return CPOutcome.Failure;
-        }
+        c.updateMax(curw);
 
         curn = nPacked.getValue();
         curw = packed.getValue();
@@ -101,10 +105,6 @@ public class BinaryKnapsackWithCardinality extends Constraint {
             }
         }
 
-        if (c.updateMin(curw) == CPOutcome.Failure) {
-            return CPOutcome.Failure;
-        }
-
-		return CPOutcome.Suspend;
+        c.updateMin(curw);
 	}
 }

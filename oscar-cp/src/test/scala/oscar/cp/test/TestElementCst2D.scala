@@ -1,7 +1,7 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 import oscar.cp._
 import oscar.cp.constraints.ElementCst2D
 
@@ -9,7 +9,7 @@ import oscar.cp.constraints.ElementCst2D
  * Test on Element Constraint on a 2D array
  * @author Pierre Schaus pschaus@gmail.com
  */
-class TestElementCst2D extends FunSuite with ShouldMatchers {
+class TestElementCst2D extends TestSuite {
 
   test("Test Element 1") {
     val cp = CPSolver()
@@ -73,9 +73,8 @@ class TestElementCst2D extends FunSuite with ShouldMatchers {
     val y = CPIntVar(-4 to 14)(cp)
     val z = CPIntVar(9 to 10)(cp)
 
-    cp.post(new ElementCst2D(T, x, y, z))
-
-    cp.isFailed() should be(true)
+    postAndCheckFailure(cp, new ElementCst2D(T, x, y, z))
+    cp.isFailed should be(true)
   }
 
   test("Test Element 5") {

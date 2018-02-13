@@ -15,7 +15,7 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 
 import oscar.cp.constraints._
 
@@ -24,7 +24,7 @@ import oscar.cp._
 /**
  * @author Leonard Debroux leonard.debroux@gmail.com
  */
-class TestSetEq extends FunSuite with ShouldMatchers  {
+class TestSetEq extends TestSuite  {
 
   test("Test SetEq1") {
     var nbSol = 0

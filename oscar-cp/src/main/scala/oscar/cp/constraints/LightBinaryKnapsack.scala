@@ -1,12 +1,9 @@
 package oscar.cp.constraints
 
-import oscar.cp.core.variables.CPIntVar
-import oscar.cp.core.variables.CPBoolVar
+import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPVar}
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.core.Constraint
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
 import oscar.algo.reversible.ReversibleBoolean
 import oscar.cp.core.watcher.Watcher
 import oscar.algo.SortUtils
@@ -26,6 +23,8 @@ final class WatcherKnapsack(knapsack: Constraint, boolVar: CPBoolVar, weight: In
 
 final class LightBinaryKnapsack(items: Array[CPBoolVar], weights: Array[Int], load: CPIntVar) extends Constraint(load.store, "LightBinaryKnapsack") {
 
+  override def associatedVars(): Iterable[CPVar] = items ++ Array(load)
+
   idempotent = true
 
   private[this] val nItems = items.length
@@ -38,9 +37,9 @@ final class LightBinaryKnapsack(items: Array[CPBoolVar], weights: Array[Int], lo
   private[this] var requiredLoad = 0
   private[this] var possibleLoad = 0
 
-  final override def setup(l: CPPropagStrength): CPOutcome = {
-    if (init() == Failure) Failure
-    else {
+  final override def setup(l: CPPropagStrength): Unit = {
+    init()
+    if(isActive) {
       var i = nItems
       while (i > 0) {
         i -= 1
@@ -48,11 +47,10 @@ final class LightBinaryKnapsack(items: Array[CPBoolVar], weights: Array[Int], lo
         items(i).awakeOnChanges(watcher)
       }
       load.callPropagateWhenDomainChanges(this)
-      Suspend
     }
   }
 
-  @inline private def init(): CPOutcome = {
+  @inline private def init(): Unit = {
     // Reset structures
     requiredLoad = 0
     possibleLoad = 0
@@ -74,70 +72,56 @@ final class LightBinaryKnapsack(items: Array[CPBoolVar], weights: Array[Int], lo
     largestItem = nItems - 1
     while (largestItem >= 0 && items(sortedItems(largestItem)).isBound) largestItem -= 1
     // Initial filtering
-    if (filterItems == Failure) Failure
-    else {
-      largestItemRev.value = largestItem
-      requiredLoadRev.value = requiredLoad
-      possibleLoadRev.value = possibleLoad
-      Suspend
-    }
+    filterItems()
+    largestItemRev.value = largestItem
+    requiredLoadRev.value = requiredLoad
+    possibleLoadRev.value = possibleLoad
   }
 
-  final override def propagate(): CPOutcome = {
+  final override def propagate(): Unit = {
     // Cache
     largestItem = largestItemRev.value
     requiredLoad = requiredLoadRev.value
     possibleLoad = possibleLoadRev.value
     // Filtering
-    if (filterItems() == Failure) Failure
-    else {
-      // Trail
-      largestItemRev.value = largestItem
-      requiredLoadRev.value = requiredLoad
-      possibleLoadRev.value = possibleLoad
-      Suspend
-    }
+    filterItems()
+    // Trail
+    largestItemRev.value = largestItem
+    requiredLoadRev.value = requiredLoad
+    possibleLoadRev.value = possibleLoad
   }
 
-  @inline private def filterItems(): CPOutcome = {
-    if (load.updateMax(possibleLoad) == Failure) return Failure
-    else if (load.updateMin(requiredLoad) == Failure) return Failure
-    else {
-      var maxWeight = load.max - requiredLoad
-      var minWeight = possibleLoad - load.min
-      var continue = largestItem >= 0
-      while (continue && largestItem >= 0) {
-        val itemId = sortedItems(largestItem)
-        val item = items(itemId)
-        if (item.isBound) largestItem -= 1
-        else {
-          val weight = weights(itemId)
-          if (weight > maxWeight) {
-            if (item.assignFalse() == Failure) return Failure
-            else {
-              possibleLoad -= weight
-              if (load.updateMax(possibleLoad) == Failure) return Failure
-              else {
-                largestItem -= 1
-                minWeight -= weight
-                maxWeight = load.max - requiredLoad
-              }
-            }
-          } else if (minWeight < weight) {
-            if (item.assignTrue() == Failure) return Failure
-            else {
-              requiredLoad += weight
-              if (load.updateMin(requiredLoad) == Failure) return Failure
-              else {
-                largestItem -= 1
-                minWeight = possibleLoad - load.min
-                maxWeight -= weight
-              }
-            }
-          } else continue = false
+  @inline private def filterItems(): Unit = {
+    load.updateMax(possibleLoad)
+    load.updateMin(requiredLoad)
+    var maxWeight = load.max - requiredLoad
+    var minWeight = possibleLoad - load.min
+    var continue = largestItem >= 0
+    while (continue && largestItem >= 0) {
+      val itemId = sortedItems(largestItem)
+      val item = items(itemId)
+      if (item.isBound) largestItem -= 1
+      else {
+        val weight = weights(itemId)
+        if (weight > maxWeight) {
+          item.assignFalse()
+          possibleLoad -= weight
+          load.updateMax(possibleLoad)
+          largestItem -= 1
+          minWeight -= weight
+          maxWeight = load.max - requiredLoad
         }
+        else if (minWeight < weight) {
+          item.assignTrue()
+          requiredLoad += weight
+          load.updateMin(requiredLoad)
+          largestItem -= 1
+          minWeight = possibleLoad - load.min
+          maxWeight -= weight
+        }
+        else
+          continue = false
       }
     }
-    Suspend
   }
 }

@@ -90,8 +90,7 @@ class IntDivisionACSuite extends TestSuite {
     implicit val solver = CPSolver()
     val a = CPIntVar(Set(1, 4, 5, 9))
     val b = CPIntVar(Set(2, 6, 7, 11, 18))
-    solver.post(new IntDivisionAC(a, b, 3)) 
-    assert(solver.isFailed)
+    postAndCheckFailure(solver, new IntDivisionAC(a, b, 3))
   }
   
   test("values in [v*c; v*c+c[ should be removed from b when v is removed from a") {

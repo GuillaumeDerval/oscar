@@ -16,9 +16,8 @@ package oscar.cp.constraints
 
 import oscar.algo.reversible.ReversibleSparseSet
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.CPOutcome
-import oscar.cp.core.CPOutcome._
 import oscar.cp._
+import oscar.cp.core.variables.CPVar
 
 /**
  * Ensures that succ represents a valid circuit. <br>
@@ -34,36 +33,32 @@ import oscar.cp._
  */
 class MinCircuit(val succ: Array[CPIntVar], val distMatrix: Array[Array[Int]], obj: CPIntVar, addPredModel: Boolean = true) extends Constraint(obj.store, "MinCircuit") {
 
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def associatedVars(): Iterable[CPVar] = succ ++ Array(obj)
+
+  override def setup(l: CPPropagStrength): Unit = {
     val n = succ.size
     val distMatrixSucc = Array.tabulate(n, n)((i, j) => distMatrix(i)(j))
 
     val pred = Array.fill(n)(CPIntVar(0 until n)(s))
 
-    if (s.post(new Circuit(succ, false), Strong) == Failure) return Failure
+    s.post(new Circuit(succ, false), Strong)
 
-    if (s.post(new Sum((0 until n).map(i => distMatrixSucc(i)(succ(i))), obj)) == Failure) return Failure
+    s.post(new Sum((0 until n).map(i => distMatrixSucc(i)(succ(i))), obj))
 
     if (l == CPPropagStrength.Medium || l == CPPropagStrength.Strong) {
-      if (s.post(new MinAssignment(succ, distMatrixSucc, obj)) == Failure) {
-        return Failure
-      }
+      s.post(new MinAssignment(succ, distMatrixSucc, obj))
     }
 
     if (l == CPPropagStrength.Strong) {
-      if (s.post(new AsymetricHeldKarp(succ, distMatrixSucc, obj)) == Failure) {
-        return Failure
-      }
+      s.post(new AsymetricHeldKarp(succ, distMatrixSucc, obj))
     }
 
     if (addPredModel) {
       val distMatrixPred = Array.tabulate(n, n)((i, j) => distMatrixSucc(j)(i))
       val pred = Array.fill(n)(CPIntVar(0 until n)(s))
-      if (s.post(new Inverse(pred, succ), l) == Failure) return Failure
-      if (s.post(new MinCircuit(pred, distMatrixPred, obj, false), l) == Failure) return Failure
+      s.post(new Inverse(pred, succ), l)
+      s.post(new MinCircuit(pred, distMatrixPred, obj, false), l)
     }
-
-    return CPOutcome.Success
   }
 
 }

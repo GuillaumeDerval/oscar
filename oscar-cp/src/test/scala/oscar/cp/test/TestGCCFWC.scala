@@ -14,6 +14,7 @@
  ******************************************************************************/
 package oscar.cp.test
 
+import oscar.algo.Inconsistency
 import oscar.cp._
 import oscar.cp.testUtils._
 import oscar.cp.constraints.GCCFWC

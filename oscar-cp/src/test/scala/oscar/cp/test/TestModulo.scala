@@ -1,12 +1,12 @@
 package oscar.cp.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import oscar.cp.testUtils.TestSuite
 import oscar.cp.constraints.DiffVal
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.core.CPStore
 
-class TestModulo extends FunSuite with ShouldMatchers {
+class TestModulo extends TestSuite {
 
   test("test modulo 1") {
     implicit val cp = new CPStore()

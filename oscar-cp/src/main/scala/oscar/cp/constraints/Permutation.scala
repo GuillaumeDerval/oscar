@@ -16,60 +16,62 @@
 package oscar.cp.constraints;
 
 import oscar.cp._
-import oscar.cp.core.CPOutcome
 import oscar.cp.core.CPPropagStrength
-import oscar.cp.core.variables.CPIntVar
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.Constraint
 import oscar.cp.util.ArrayUtils
 import oscar.algo.reversible.ReversibleInt
+
 import scala.math.min
 import scala.math.max
 import oscar.cp.core._
-import oscar.cp.core.CPOutcome._
 import oscar.cp.core.CPSolver
 import oscar.algo.reversible.ReversibleInt
 import java.security.InvalidParameterException
+
 
 
 /**
  * n = x.size-1 = y.size-1
  * x is a permutation of {0 ... n-1} and y also
  * x and y are such that x(y(i)) = i i.e. y(i) is the position of number i in x
+ *
  * @author Pierre Schaus - pschaus@gmail.com
  */
 class Permutation(x: Array[CPIntVar], y: Array[CPIntVar]) extends Constraint(y(0).store, "Permutation") {
-    
+
+  override def associatedVars(): Iterable[CPVar] = x ++ y
+
   val n = x.size-1
   if (x.size != y.size) throw new InvalidParameterException("x and y must have the same size")
   
-  override def setup(l: CPPropagStrength): CPOutcome = {
+  override def setup(l: CPPropagStrength): Unit = {
     
     for (i <- 0 to n) {
-      if (x(i).updateMin(0) == Failure) return Failure
-      if (y(i).updateMin(0) == Failure) return Failure
-      if (x(i).updateMax(n) == Failure) return Failure
-      if (y(i).updateMax(n) == Failure) return Failure
+      x(i).updateMin(0)
+      y(i).updateMin(0)
+      x(i).updateMax(n)
+      y(i).updateMax(n)
     }
-    if (s.post(new AllDifferent(x:_*),l) == Failure) return Failure
-    if (s.post(new AllDifferent(y:_*),l) == Failure) return Failure
+    s.post(new AllDifferent(x:_*),l)
+    s.post(new AllDifferent(y:_*),l)
     
     for(i <- 0 to n; v <- 0 to n) {
       if (!x(i).hasValue(v)) {
-        if (y(v).removeValue(i) == Failure) return Failure
+        y(v).removeValue(i)
       }
       if (!y(i).hasValue(v)) {
-        if (x(v).removeValue(i) == Failure) return Failure
+        x(v).removeValue(i)
       }
     }
     for(i <- 0 to n) {
       x(i).callValRemoveIdxWhenValueIsRemoved(this, i)
       y(i).callValRemoveIdxWhenValueIsRemoved(this, n+1+i)
     }
-    Suspend
   }
 
 
-  override def valRemoveIdx(cpvar: CPIntVar, i: Int, v: Int): CPOutcome = {
+  override def valRemoveIdx(cpvar: CPIntVar, i: Int, v: Int): Unit = {
     if (i <= n) {
       // x(i) lost the value v
       y(v).removeValue(i)
