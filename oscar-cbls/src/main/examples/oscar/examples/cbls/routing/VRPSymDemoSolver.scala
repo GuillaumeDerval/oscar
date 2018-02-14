@@ -28,7 +28,7 @@ object VRPDemo extends App {
   val n:Int=args(0).toInt
   val v = args(1).toInt
 
-  val displayDelay = if (n >= 1000) 3500 else 500 //ms
+  val displayDelay = if (n >= 1000) 1000 else 100 //ms
   val verbose = 1
   val maxPivotPerValuePercent = 4
   val mapSide = 1000

@@ -61,7 +61,7 @@ abstract class JumpNeighborhood extends Neighborhood {
   def shortDescription(): String
 
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
-    if (canDoIt) CallBackMove(() => doIt, valueAfter, this.getClass.getSimpleName, shortDescription)
+    if (canDoIt) CallBackMove(doIt _, valueAfter, this.getClass.getSimpleName, shortDescription)
     else NoMoveFound
   }
 

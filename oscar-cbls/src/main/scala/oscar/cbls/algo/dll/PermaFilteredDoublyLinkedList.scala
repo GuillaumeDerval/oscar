@@ -60,7 +60,7 @@ class DelayedPermaFilter[T, F <: AnyRef](mFilter:(T,()=>Unit, ()=> Boolean) => U
 
     def injector():Unit = {inserted.filtered = filtered.addElem(mMap(inserted.elem))}
     def isStillValid():Boolean = {inserted.prev != null}
-    mFilter(inserted.elem, injector, isStillValid)
+    mFilter(inserted.elem, injector _, isStillValid _)
 
   }
 

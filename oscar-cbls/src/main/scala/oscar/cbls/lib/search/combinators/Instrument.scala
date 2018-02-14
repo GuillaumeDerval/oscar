@@ -34,7 +34,7 @@ case class DoOnFirstMove(a: Neighborhood, proc: () => Unit) extends Neighborhood
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
     if (isFirstMove) {
       a.getMove(obj, initialObj, acceptanceCriteria) match {
-        case m: MoveFound => InstrumentedMove(m.m, notifyMoveTaken)
+        case m: MoveFound => InstrumentedMove(m.m, notifyMoveTaken _)
         case x => x
       }
     } else {

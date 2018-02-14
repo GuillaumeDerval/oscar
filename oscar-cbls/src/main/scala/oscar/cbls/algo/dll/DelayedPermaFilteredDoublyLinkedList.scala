@@ -53,7 +53,7 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
         inserted.filtered = QList(filtered.addElem(map(inserted.elem)),inserted.filtered)
       }
       def isStillValid():Boolean = {inserted.prev != null}
-      filter(inserted.elem, injector, isStillValid)
+      filter(inserted.elem, injector _, isStillValid _)
     }
   }
 
