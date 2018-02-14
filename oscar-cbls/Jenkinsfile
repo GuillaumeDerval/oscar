@@ -35,7 +35,11 @@ node {
             sh "${env.SBT_CMD} doc"
         }
         stage('Package') {
-            sh "${env.SBT_CMD} package -Xdisable-assertions"
+            sh "${env.SBT_CMD} package package-doc -Xdisable-assertions"
+        }
+        
+        stage('Publish') {
+            sh "${env.SBT_CMD} publish"
         }
 
     }
