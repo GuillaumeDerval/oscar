@@ -46,7 +46,7 @@ object OscarBuild extends Build {
           Some(artifactoryName at artifactoryUrl + "libs-release-local")
       },
       credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
-    )
+    ) ++ ceticSpecificSettings
   }
 
   object Resolvers {
@@ -146,7 +146,6 @@ object OscarBuild extends Build {
     settings =
       commonSettings ++
         packAutoSettings ++
-        ceticSpecificSettings ++
         Seq(
           resolvers ++= Seq(mvnrepository),
           libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2,
