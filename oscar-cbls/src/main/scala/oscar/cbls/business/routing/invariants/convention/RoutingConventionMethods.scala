@@ -30,7 +30,7 @@ object RoutingConventionMethods {
 
     getVehicleReachingPosition
   }
-  @deprecated("use the VehicleLocation method instead","we use stacked checkpoints")
+
   def batchVehicleReachingPosition(seq:IntSequence,v:Int):(Int=>Int) = {
     val vehiclePositionArray:Array[(Int,Int)] =
       Array.tabulate(v)(vehicle => (seq.positionOfAnyOccurrence(vehicle).get, vehicle))

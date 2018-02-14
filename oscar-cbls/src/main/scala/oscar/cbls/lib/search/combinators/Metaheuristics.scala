@@ -47,7 +47,7 @@ class Metropolis(a: Neighborhood, temperature: Int => Float = _ => 100, base: Fl
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult =
     a.getMove(obj, initialObj:Int, acceptation) match {
       case NoMoveFound => NoMoveFound
-      case MoveFound(m) => InstrumentedMove(m, notifyMoveTaken)
+      case MoveFound(m) => InstrumentedMove(m, notifyMoveTaken _)
     }
 
   def acceptation(oldObj: Int, newObj: Int): Boolean = {

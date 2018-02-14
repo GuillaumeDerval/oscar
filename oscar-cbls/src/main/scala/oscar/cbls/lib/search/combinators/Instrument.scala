@@ -71,7 +71,7 @@ case class DoOnMove(a: Neighborhood,
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
     a.getMove(obj, initialObj, acceptanceCriteria) match {
       case m: MoveFound =>
-        InstrumentedMove(m.m, callBackBeforeMove(m.m), callBackAfterMove(m.m))
+        InstrumentedMove(m.m, callBackBeforeMove(m.m)_, callBackAfterMove(m.m)_)
       case x => x
     }
   }
