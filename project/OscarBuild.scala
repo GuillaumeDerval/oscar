@@ -43,10 +43,16 @@ object OscarBuild extends Build {
           Some(artifactoryName at artifactoryUrl + "libs-release-local")
       },
       credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
+      
       testOptions in PerfTest <+= (target in PerfTest) map {
-        t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
+      t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
       fork in PerfTest := true,
       parallelExecution in PerfTest := false
+
+    ) ++ ceticSpecificSettings
+
+
+   
     )
   }
 
@@ -151,7 +157,6 @@ object OscarBuild extends Build {
     settings =
       commonSettings ++
         packAutoSettings ++
-        ceticSpecificSettings ++
         Seq(
           resolvers ++= Seq(mvnrepository),
           libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2,
