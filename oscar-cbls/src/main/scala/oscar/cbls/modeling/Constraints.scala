@@ -35,11 +35,6 @@ trait Constraints {
    */
   def allDifferent(variables:Iterable[IntValue]) = AllDiff(variables)
 
-  /**Implement the AllDiff constraint on IntVars: all variables must have a different value.
-    * @param variables the variable whose values should all be different.
-    */
-  def allDiff(variables:Iterable[IntValue]) = AllDiff(variables)
-
   /**Implement the AtLeast constraint on IntVars.
    * There is a set of minbounds, defined in the parameter bound as pair (value,minbound).
    * The variables should be such that there is at least ''minbound'' of them which have the value ''value''.

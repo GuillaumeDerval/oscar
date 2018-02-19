@@ -23,8 +23,8 @@ object OscarBuild extends Build {
       organization := buildOrganization,
       version := buildVersion,
       scalacOptions in Compile ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature",
-                                       "-unchecked", "-Xdisable-assertions", "-language:implicitConversions",
-                                       "-language:postfixOps"),
+        "-unchecked", "-Xdisable-assertions", "-language:implicitConversions",
+        "-language:postfixOps"),
       scalacOptions in Test := Seq("-optimise"),
       testOptions in Test <+= (target in Test) map {
         t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
@@ -43,17 +43,14 @@ object OscarBuild extends Build {
           Some(artifactoryName at artifactoryUrl + "libs-release-local")
       },
       credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
-      
+
       testOptions in PerfTest <+= (target in PerfTest) map {
-      t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
+        t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
       fork in PerfTest := true,
       parallelExecution in PerfTest := false
 
     ) ++ ceticSpecificSettings
-
-
-   
-    )
+    
   }
 
   object Resolvers {
@@ -183,7 +180,7 @@ object OscarBuild extends Build {
           scalacOptions in Compile ++= Seq("-language:reflectiveCalls"),
           resolvers ++= Seq(xypron),
           libraryDependencies ++= testDeps :+ graphStreamCore :+ graphStreamAlgo :+ graphStreamUI :+ scallop
-                               :+ akkaActor :+ scalaSwing :+ jfreechart :+ jcommon),
+            :+ akkaActor :+ scalaSwing :+ jfreechart :+ jcommon),
     dependencies = Seq(oscarCp)
   )
 
