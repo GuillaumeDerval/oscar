@@ -43,8 +43,8 @@ object NQueensEasy1 extends CBLSModel with App{
   val queens = Array.tabulate(N)(q => CBLSIntVar(init(q), range, "queen" + q))
 
   //alldiff on rows in enforced because we swap queens initially different
-  c.add(allDifferent(Array.tabulate(N)(q => queens(q) + q)))
-  c.add(allDifferent(Array.tabulate(N)(q => q - queens(q))))
+  c.add(allDiff(Array.tabulate(N)(q => queens(q) + q)))
+  c.add(allDiff(Array.tabulate(N)(q => q - queens(q))))
 
   close()
 
