@@ -50,7 +50,7 @@ object OscarBuild extends Build {
       parallelExecution in PerfTest := false
 
     ) ++ ceticSpecificSettings
-    
+
   }
 
   object Resolvers {
