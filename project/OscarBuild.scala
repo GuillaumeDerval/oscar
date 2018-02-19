@@ -58,6 +58,7 @@ object OscarBuild extends Build {
     val leadoperations = "AWS S3 Release Repository" at "http://maven.leadoperations.co/release"
     val cogcomp = "Cognitive Computation Group" at "http://cogcomp.cs.illinois.edu/m2repo/"
     val ingi = "INGI Snapshots" at "http://artifactory.info.ucl.ac.be/artifactory/libs-snapshot-local/"
+    val mvnrepository = "Maven Repository" at "https://mvnrepository.com/artifact/"
   }
 
   object Dependencies {
@@ -77,6 +78,7 @@ object OscarBuild extends Build {
     val graphStreamAlgo = "org.graphstream" % "gs-algo" % "1.3"
     val graphStreamUI = "org.graphstream" % "gs-ui" % "1.3"
     val scallop = "org.rogach" % "scallop_2.11" % "1.0.0"
+    val jxmapviewer2 = "org.jxmapviewer" % "jxmapviewer2" % "2.2"
 
     // Akka
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.5.6"
