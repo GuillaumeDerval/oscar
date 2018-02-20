@@ -29,7 +29,8 @@ import oscar.cbls.lib.invariant.numeric.Sum
 import scala.collection.immutable.SortedMap
 import scala.language.existentials
 
-/**implments the sequence constraint:
+/**implements the sequence constraint:
+  * in the array "variables", within each subsequence of length "length" there must be at most "Max" of the position i such that Predicate(variables(i))
   *
   * @param variables the "history variables"
   * @param length the length of the sequence

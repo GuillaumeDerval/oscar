@@ -222,10 +222,6 @@ trait CompositionCombinators{
    * @param a
    */
   def atomic(a: Neighborhood, bound: Int = Int.MaxValue) = Atomic(a, bound)
-
-  //TODO: a variant with a slightly different behavior, to test validate and use
-  def atomic2(a: Neighborhood, shouldStop:Int => Boolean) = Atomic2(a, shouldStop)
-
 }
 
 
@@ -594,8 +590,23 @@ class NeighborhoodOps(n:Neighborhood){
    */
   def onFirstMove(proc: => Unit) = new DoOnFirstMove(n, () => proc)
 
+  /**
+    * saves the model for the best (smallest) value of obj
+    * and restores it when the neighborhood is exhausted.
+    * It does not restore it.
+    * You can do so either by manually calling a restoreBest on the returned object,
+    * or by adding the keyword "restoreBestOnExhaust" after this one.
+    * You might also consider saveBestAndRestoreOnExhaust
+    * @param o the objective function
+    */
   def saveBest(o: Objective) = new SaveBest(n, o)
 
+  /**
+    * saves the model for the best (smallest) value of obj
+    * and restores it when the neighborhood is exhausted.
+    * to restore it, it will return a move that loads the best solution.
+    * @param obj
+    */
   def saveBestAndRestoreOnExhaust(obj: Objective) = new SaveBest(n, obj) restoreBestOnExhaust
 
   /**

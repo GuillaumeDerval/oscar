@@ -26,9 +26,6 @@ import oscar.cbls.lib.invariant.set._
 
 import scala.collection.immutable.{SortedSet, SortedMap}
 
-
-//TODO: routing seq invariants
-
 /**
  * modeling interface presenting the element invariants
  * @author renaud.delandtsheer@cetic.be
@@ -460,10 +457,6 @@ trait SeqInvariants {
  * @author renaud.delandtsheer@cetic.be
  */
 trait NumericInvariants{
-  /** sum(vars)
-    * @param vars is an iterable of IntVars
-    * */
-//  def sum(vars:Iterable[IntValue]) = Sum(vars:Iterable[IntValue])
 
   /** sum(i in cond) vars(i)
     * @param vars is an array of IntVars
@@ -703,6 +696,9 @@ trait MinMaxInvariants{
   = MinConstArrayLazy(varss, ccond, default, maxBackLogSize)
 
   /**
+    * Maintains Min(constArray(i) | i in condSet), default if condSet is empty
+    * This invariant is value-wise, so it will tell the setVar to notify it only about a subset of the variable, and the setVar uses a smart pre-filter mechanism.
+    * So this invariant is very efficient when you have a LOT of them, all listening to the same setVar, with different arrays in parameters.
    * @param constArray
    * @param condSet
    * @param default
