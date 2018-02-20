@@ -33,7 +33,9 @@ import oscar.util.selectMin
   * The `cp` package provides useful functionalities to model problem using
   * the OscaR Constraint Programming Library.
   *
-  * By doing {{{import oscar.cp_}}} you also import
+  * By doing
+  * {{{import oscar.cp_}}}
+  * you also import
   *
   *   - [[oscar.cp.core.CPSolver `CPSolver`]] the core object used to create models
   *   - [[oscar.cp.modeling.Constraints `Constraints`]] the set of constraints available in OscaR to create your models
