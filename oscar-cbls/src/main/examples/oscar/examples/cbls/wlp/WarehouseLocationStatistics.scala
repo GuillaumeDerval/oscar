@@ -42,18 +42,21 @@ object WarehouseLocationStatistics extends App{
   val m = Store()
 
   val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
-  val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
+  val openWarehouses = filter(warehouseOpenArray).setName("openWarehouses")
 
-  val distanceToNearestOpenWarehouse = Array.tabulate(D)(d =>
-    MinConstArrayLazy(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse).setName("distance_for_delivery_" + d))
+  val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
+    minConstArrayLazy(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse))
 
-  val obj = Objective(Sum(distanceToNearestOpenWarehouse) + Sum(costForOpeningWarehouse, openWarehouses))
+  val obj = Objective(sum(distanceToNearestOpenWarehouseLazy) + sum(costForOpeningWarehouse, openWarehouses))
 
   m.close()
 
-  val neighborhood = (Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),true)
-    exhaustBack Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses"))
-    orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
+  val neighborhood =(
+    bestSlopeFirst(
+      List(
+        Profile(assignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
+        Profile(swapsNeighborhood(warehouseOpenArray, "SwapWarehouses"))),refresh = W/10)
+      onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/10), 2, obj))
 
   neighborhood.verbose = 1
 
