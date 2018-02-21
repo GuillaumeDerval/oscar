@@ -45,7 +45,7 @@ class VRPDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, displayDel
 
   val myVRP = new VRP(model,n,v)
   val routingDistance = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistanceMatrix,true,true,false)(0)
-  val graphicExtension = display(myVRP,nodesPositions.map(np => (np._1.toDouble,np._2.toDouble)).toList,sizeOfMap = Some(mapSide), refreshRate = displayDelay)
+  val graphicExtension = display(myVRP,nodesPositions.map(np => (np._1.toDouble,np._2.toDouble)).toList,sizeOfMap = Some(mapSide), refreshRate = displayDelay, title = "symmetric TSP (n=" + n + " v=" + v + ")")
   val penaltyForUnrouted  = 10000
 
   val obj = Objective(routingDistance + (penaltyForUnrouted*(n - length(myVRP.routes))))
@@ -113,11 +113,16 @@ class VRPDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, displayDel
     intermediaryStops = true,
     maxDepth = 6)
 
-  def segExchange(k:Int) = segmentExchange(myVRP,()=>myVRP.kFirst(k,closestRelevantPredecessors,routedPostFilter), () => myVRP.vehicles)
+  def segExchange(k:Int) = segmentExchange(myVRP,()=>myVRP.kFirst(k,closestRelevantPredecessors,routedPostFilter), () => myVRP.vehicles) guard(() => {v > 1})
 
-  val search = (bestSlopeFirst(List(routeUnroutedPoint, routeUnroutedPoint2,  routeUnroutedPoint3, vlsn1pt, onePtMove(10),customTwoOpt, customThreeOpt(10,true),segExchange(10))) exhaust bestSlopeFirst(List(customThreeOpt(30,true),vlsn1pt))).afterMove(
-    graphicExtension.drawRoutes()
-    ) //showObjectiveFunction(myVRP.obj)
+
+  graphicExtension.drawRoutes()
+  Thread.sleep(10000)
+  println("start")
+  Thread.sleep(1000)
+  //le problème du hérisson apparaît lorsuqe routeUnroutedPoint3 & routeUnroutedPoint3 sont actifs
+  val search = (bestSlopeFirst(List(routeUnroutedPoint,  routeUnroutedPoint2,  /*routeUnroutedPoint3, */ vlsn1pt, onePtMove(10),customTwoOpt, customThreeOpt(10,true),segExchange(10)))
+    exhaust bestSlopeFirst(List(customThreeOpt(30,true),vlsn1pt))).afterMove(graphicExtension.drawRoutes()) showObjectiveFunction(obj)
 
   search.verbose = verbose
   //search.verboseWithExtraInfo(1, ()=> "" + myVRP)

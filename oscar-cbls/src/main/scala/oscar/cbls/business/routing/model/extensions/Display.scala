@@ -12,12 +12,13 @@ class Display(vrp: VRP,
               displayOnRealMap: Boolean = false,
               selectRouteToDisplay: Boolean = false,
               sizeOfMap: Option[Int] = None,
-              refreshRate: Int = 100
+              refreshRate: Int = 100,
+              title:String = "VRP with OscaR.cbls"
              ) {
 
   val routingMap = RoutingMap(vrp,nodePositions, ColorGenerator.generateRandomColors(vrp.v),displayOnRealMap = displayOnRealMap, size = sizeOfMap)
 
-  val RoutingMapContainer = new RoutingMapContainer(vrp, routingMap, title="Routing Map", refreshRate = refreshRate)
+  val RoutingMapContainer = new RoutingMapContainer(vrp, routingMap, title=title, refreshRate = refreshRate)
 
   def drawRoutes(): Unit ={
     RoutingMapContainer.refresh

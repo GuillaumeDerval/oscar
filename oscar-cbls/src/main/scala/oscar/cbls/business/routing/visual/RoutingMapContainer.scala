@@ -52,4 +52,5 @@ class RoutingMapContainer(vrp:VRP,
   pack()
   revalidate()
   setVisible(true)
+  setTitle(title)
 }

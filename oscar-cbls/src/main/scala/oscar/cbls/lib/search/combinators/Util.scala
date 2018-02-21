@@ -32,11 +32,9 @@ trait UtilityCombinators{
  * @param obj the objective function
  * @param stopWatch the StopWatch attached to the Test
  * @param withZoom if true the Zoom thread will be used in stead of the AdjustMaxValues trait
- * @param neighborhoodColors a function used to defined the color of each neighborhood encountered during the search
- *                           the default function use the generateColorFromHash method of the ColorGenerator object.
  * @author fabian.germeau@student.vinci.be
  */
-class ShowObjectiveFunction(a: Neighborhood, obj: Objective, stopWatch: StopWatch, withZoom:Boolean, neighborhoodColors: String => Color) extends NeighborhoodCombinator(a){
+class ShowObjectiveFunction(a: Neighborhood, obj: Objective, stopWatch: StopWatch, withZoom:Boolean) extends NeighborhoodCombinator(a){
   //objGraphic is an internal frame that contains the curve itself and visualFrame is a basic frame that contains objGraphic
   val objGraphic = if(withZoom) new ObjFunctionGraphicContainer(dimension = new Dimension(940,500)) with Zoom
   else new ObjFunctionGraphicContainer(dimension = new Dimension(960,540)) with AdjustMaxValue
@@ -63,7 +61,7 @@ class ShowObjectiveFunction(a: Neighborhood, obj: Objective, stopWatch: StopWatc
    */
   def notifyNewObjValue(m:Move): Unit ={
     objGraphic.objCurveDatas.synchronized{
-      objGraphic.objCurveDatas = (obj.value,stopWatch.getWatch,m.neighborhoodName,neighborhoodColors(m.neighborhoodName)) :: objGraphic.objCurveDatas
+      objGraphic.objCurveDatas = (obj.value,stopWatch.getWatch,m.neighborhoodName) :: objGraphic.objCurveDatas
     }
   }
 }

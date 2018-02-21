@@ -43,9 +43,10 @@ trait RoutingExtensions {
               displayOnRealMap: Boolean = false,
               selectRouteToDisplay: Boolean = false,
               sizeOfMap: Option[Int] = None,
-              refreshRate: Int = 100
+              refreshRate: Int = 100,
+              title:String = "VRP with OscaR.cbls"
              ) =
-    new Display(vrp,nodePositions,displayOnRealMap,selectRouteToDisplay,sizeOfMap,refreshRate)
+    new Display(vrp,nodePositions,displayOnRealMap,selectRouteToDisplay,sizeOfMap,refreshRate, title)
   type Display = oscar.cbls.business.routing.model.extensions.Display
 
   /**

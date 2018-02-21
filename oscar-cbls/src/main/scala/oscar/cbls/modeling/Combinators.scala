@@ -571,15 +571,12 @@ class NeighborhoodOps(n:Neighborhood){
    * @param obj the objective function
    * @param stopWatch the StopWatch attached to the Test
    * @param withZoom if true the Zoom thread will be used in stead of the AdjustMaxValues trait
-   * @param neighborhoodColors a function used to defined the color of each neighborhood encountered during the search
-   *                           the default function use the generateColorFromHash method of the ColorGenerator object.
    * @author fabian.germeau@student.vinci.be
    */
   def showObjectiveFunction(obj: Objective,
                             stopWatch: StopWatch = new StopWatch {startWatch()},
                             withZoom:Boolean = false,
-                            neighborhoodColors: String => Color = (name:String)=>{ColorGenerator.generateColorFromHash(name.hashCode)}
-                           ) = new ShowObjectiveFunction(n,obj,stopWatch,withZoom,neighborhoodColors)
+                           ) = new ShowObjectiveFunction(n,obj,stopWatch,withZoom)
 
   /**
    * this combinator attaches a custom code to a given neighborhood.

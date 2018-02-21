@@ -109,7 +109,7 @@ abstract class FunctionGraphic() extends VisualDrawing(false,false) with StopWat
   removeMouseListener(getMouseListeners.head)
   removeMouseMotionListener(getMouseMotionListeners.head)
 
-  def notifyNewObjectiveValue(objValue:Int, objTime:Long, color:Color)
+  def notifyNewObjectiveValue(objValue:Int, objTime:Long)
 
   def clear(): Unit ={
     super.clear()
@@ -184,11 +184,10 @@ class ObjFunctionGraphic() extends FunctionGraphic(){
     * Save the objective value, the best value encountered so far, the time value of the current state
     * and the color of the neighborhood encountered (also in the xColorMap if it is not already registered)
     */
-  def notifyNewObjectiveValue(objValue:Int, time:Long, color:Color): Unit ={
+  def notifyNewObjectiveValue(objValue:Int, time:Long): Unit ={
     xValues.append(time)
     yValues.append(objValue)
     bestValues.append(Math.min(best(),objValue))
-    xColorValues.append(color)
     maxXValueDisplayed = time
     minYValueDisplayed = best()
     maxYValueDisplayed = yValues.max

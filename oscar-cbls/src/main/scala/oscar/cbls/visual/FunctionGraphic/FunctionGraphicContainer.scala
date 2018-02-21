@@ -17,10 +17,8 @@ package oscar.cbls.visual.FunctionGraphic
   * ****************************************************************************
   */
 
-import java.awt.{BorderLayout, Color, Dimension}
+import java.awt.{BorderLayout, Dimension}
 import javax.swing._
-
-import scala.collection.immutable.HashMap
 
 /**
   * This abstract class represent the JInternalFrame that will contain
@@ -62,18 +60,10 @@ class ObjFunctionGraphicContainer(title:String = "Evolution of the objective fun
   graphic = new ObjFunctionGraphic
   add(graphic, BorderLayout.CENTER)
 
-  val neighborhoodColorLabel = new JLabel(" ")
-  neighborhoodColorLabel.setHorizontalAlignment(SwingConstants.CENTER)
-  add(neighborhoodColorLabel, BorderLayout.NORTH)
-
-  //A map that contains the color of all neighborhood encountered during the search
-  //(useful for the functionGraphicContainer)
-  var xColorMap:Map[String,Color] = new HashMap[String,Color]
-
-  var objCurveDatas:List[(Int,Long,String,Color)] = Nil
+  var objCurveDatas:List[(Int,Long,String)] = Nil
 
   def run(): Unit ={
-    var temp:List[(Int,Long,String,Color)] = Nil
+    var temp:List[(Int,Long,String)] = Nil
 
     while(true){
       try {
@@ -85,7 +75,7 @@ class ObjFunctionGraphicContainer(title:String = "Evolution of the objective fun
         if (temp.nonEmpty) {
           for(i <- temp.indices){
             val j = temp.size - 1 - i
-            notifyNewObjectiveValue(temp(j)._1,temp(j)._2,temp(j)._3,temp(j)._4)
+            notifyNewObjectiveValue(temp(j)._1,temp(j)._2,temp(j)._3)
           }
           drawGlobalCurve()
           temp = Nil
@@ -102,21 +92,10 @@ class ObjFunctionGraphicContainer(title:String = "Evolution of the objective fun
     */
   def drawGlobalCurve(): Unit ={
     graphic.drawGlobalCurve()
-    var labelText = "<html>"
-    for(k <- xColorMap.keys){
-      val r = xColorMap(k).getRed
-      val g = xColorMap(k).getGreen
-      val b = xColorMap(k).getBlue
-      labelText = labelText + "<font color=rgb("+r+","+g+","+b+")>" + k + "    " + "</font>"
-    }
-    labelText = labelText + "</html>"
-    neighborhoodColorLabel.setText(labelText)
   }
 
-  def notifyNewObjectiveValue(objValue:Int, objTime:Long, neighBorhood:String, color: Color): Unit ={
-    if(xColorMap.get(neighBorhood).isEmpty)
-      xColorMap = xColorMap + (neighBorhood -> color)
-    graphic.notifyNewObjectiveValue(objValue,objTime,color)
+  def notifyNewObjectiveValue(objValue:Int, objTime:Long, neighBorhood:String): Unit ={
+    graphic.notifyNewObjectiveValue(objValue,objTime)
   }
 
   override def clear(): Unit ={
