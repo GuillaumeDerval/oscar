@@ -19,12 +19,9 @@ import scala.language.implicitConversions
   * {{{import oscar.cbls_}}}
   * you also import
   *
-  *   - [[oscar.cp.core.CPSolver `CPSolver`]] the core object used to create models
-  *   - [[oscar.cp.modeling.Constraints `Constraints`]] the set of constraints available in OscaR to create your models
-  *   - [[oscar.cp.modeling.Branchings `Branchings`]] the set of search strategies
-  *   - [[oscar.cp.core.variables.CPIntVar `CPIntVar`]] the integer domain variables
-  *   - [[oscar.cp.core.variables.CPBoolVar `CPBoolVar`]] the boolean domain variables
-  *
+  *   - [[oscar.cbls `cbls`]] a package object that is a factory for all types of variable supported by OscaR.cbls:  [[oscar.cbls.CBLSIntVar `CBLSIntVar`]], [[oscar.cbls.CBLSSetVar `CBLSSetVar`]] and [[oscar.cbls.CBLSSeqVar `CBLSSeqVar`]]
+  *   - [[oscar.cbls.modeling.ModelingAPI `ModelingAPI`]] a factory to instantiate all constraints, neighborhoods etc. of OscaR.cbls
+  *   - [[oscar.cbls.modeling.CBLSModel `CBLSModel`]] an object you can extend and that instantiates some basic structure of a model, namely a store and adds some implicits
   *
   * === N-Queens Example ===
   *
@@ -74,13 +71,6 @@ import scala.language.implicitConversions
   * Implicit conversion also provide
   * simple and natural modeling functionalities for sum constraint
   * or infix notation for our library of combinators
-  *
-  * === CPModel ===
-  *
-  * The [[oscar.cp.CPModel `CPModel`]] trait is also defined in this package and provides users with an
-  * implicit [[oscar.cp.core.CPSolver `CPSolver`]] named ''solver''.
-  * The use of [[oscar.cp.CPModel `CPModel`]] allows users to create even less verbose models
-  * by not considering the underlying solver.
   *
   * @author Renaud De Landtsheer renaud.delandtsheer@cetic.be
   */
