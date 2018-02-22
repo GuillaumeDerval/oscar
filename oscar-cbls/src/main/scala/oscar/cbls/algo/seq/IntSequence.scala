@@ -248,6 +248,8 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
                           private[seq] val startFreeRangeForInternalPosition:Int,
                           token:Token = Token()) extends IntSequence(token) {
 
+  //TODO: replace internalPositionToValue by an immutable Array, or an immutable array + a small RBTree + size
+
   def bij = externalToInternalPosition
   override def descriptorString : String = "[" + this.iterator.toList.mkString(",") + "]_impl:concrete"
 
