@@ -12,10 +12,82 @@ import oscar.cbls.modeling.{NeighborhoodOps, ModelingAPI}
 import scala.language.implicitConversions
 
 /**
- * Created by rdl on 08-09-17.
- */
+  * The `cbls` package provides useful functionalities to model problem using
+  * the OscaR Constraint Based Local Search Library.
+  *
+  * By doing
+  * {{{import oscar.cbls_}}}
+  * you also import
+  *
+  *   - [[oscar.cp.core.CPSolver `CPSolver`]] the core object used to create models
+  *   - [[oscar.cp.modeling.Constraints `Constraints`]] the set of constraints available in OscaR to create your models
+  *   - [[oscar.cp.modeling.Branchings `Branchings`]] the set of search strategies
+  *   - [[oscar.cp.core.variables.CPIntVar `CPIntVar`]] the integer domain variables
+  *   - [[oscar.cp.core.variables.CPBoolVar `CPBoolVar`]] the boolean domain variables
+  *
+  *
+  * === N-Queens Example ===
+  *
+  * {{{
+  *import oscar.cbls._
+  *import scala.util.Random
+  *
+  * /** Local Search for NQueens
+  *  *  Moves are operated by swapping variables, using a standard neighborhood
+  * */
+  *object NQueensEasy extends CBLSModel with App{
+  *
+  *  val N = 1000
+  *  println("NQueensEasy(" + N + ")")
+  *  val range:Range = Range(0,N)
+  *  val init = Random.shuffle(range.toList).iterator
+  *
+  *  //creating variables, one queen par column,
+  *  //initialized on a permutation of the diagolal (all on different rows)
+  *  val queens = Array.tabulate(N)((q:Int) => CBLSIntVar(init.next(),0 until N, "queen" + q))
+  *
+  *  c.post(allDiff( for (q <- range) yield queens(q) + q) )
+  *  c.post(allDiff( for (q <- range) yield q - queens(q)) )
+  *
+  *  //the queens that are the most threatened
+  *  val maxViolQueens = argMax(c.violations(queens)).setName("most violated queens")
+  *
+  *  val neighborhood =
+  *    swapsNeighborhood(queens, "SwapQueens",
+  *      searchZone2 = maxViolQueens,
+  *      symmetryCanBeBrokenOnIndices = false)
+  *
+  *  close()
+  *
+  *  val it = neighborhood.doAllMoves(_ >= N || c.violation.value == 0, c.violation)
+  *
+  *  println("finished: " + getWatchString)
+  *}
+  * }}}
+  *
+  *
+  * === Implicit Conversions ===
+  *
+  * A number of commonly applied implicit conversions are also defined here.
+  * Implicit conversions provide additional higher-order functions to core classes
+  * such as [[oscar.cbls.core.computation.CBLSIntVar `CBLSIntVar`]], or [[oscar.cbls.core.search.Neighborhood `Neighborhood`]].
+  * Implicit conversion also provide
+  * simple and natural modeling functionalities for sum constraint
+  * or infix notation for our library of combinators
+  *
+  * === CPModel ===
+  *
+  * The [[oscar.cp.CPModel `CPModel`]] trait is also defined in this package and provides users with an
+  * implicit [[oscar.cp.core.CPSolver `CPSolver`]] named ''solver''.
+  * The use of [[oscar.cp.CPModel `CPModel`]] allows users to create even less verbose models
+  * by not considering the underlying solver.
+  *
+  * @author Renaud De Landtsheer renaud.delandtsheer@cetic.be
+  */
 package object cbls extends ModelingAPI{
   // Alias to useful classes and companion objects
+
+  type CBLSModel = oscar.cbls.modeling.CBLSModel
 
   type Store = oscar.cbls.core.computation.Store
   final val Store = oscar.cbls.core.computation.Store

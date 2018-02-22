@@ -16,7 +16,6 @@ package oscar.examples.cbls.userguide
   ******************************************************************************/
 
 import oscar.cbls._
-import oscar.cbls.modeling.CBLSModel
 
 import scala.util.Random
 
