@@ -13,7 +13,8 @@ import scala.collection.immutable.SortedSet
 class WareHouseLocationWindow(deliveryCoordinates:Array[(Int,Int)],
                               wareHouseCoordinates:Array[(Int,Int)],
                               distanceCostD2W:Array[Array[Int]],
-                              warehouseCosts:Array[Int]){
+                              warehouseCosts:Array[Int],
+                              title:String = "Uncapacitated Warehouse Location Problem"){
 
   val visual = new WareHouseLocationMap(deliveryCoordinates,wareHouseCoordinates,distanceCostD2W,warehouseCosts)
 
@@ -21,7 +22,7 @@ class WareHouseLocationWindow(deliveryCoordinates:Array[(Int,Int)],
     visual.redraw(openWarehouses,boldChanges)
   }
   val frame = new JFrame()
-  frame.setTitle("Uncapacitated Warehouse Location Problem")
+  frame.setTitle(title)
   frame.setLayout(new BorderLayout())
   frame.setPreferredSize(new Dimension(960,960))
   frame.add(visual, BorderLayout.CENTER)

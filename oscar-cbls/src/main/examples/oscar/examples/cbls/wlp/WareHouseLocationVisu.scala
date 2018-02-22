@@ -32,14 +32,15 @@ import scala.language.postfixOps
 object WareHouseLocationVisu extends App with StopWatch{
 
   //the number of warehouses
-  val W:Int = 300
+  val W:Int = 1000
 
   //the number of delivery points
   val D:Int = 1000
 
   val displayDelay = 100
 
-  println("WarehouseLocation(W:" + W + ", D:" + D + ")")
+  val title = "WarehouseLocation(W:" + W + ", D:" + D + ")"
+  println(title)
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
@@ -63,7 +64,7 @@ object WareHouseLocationVisu extends App with StopWatch{
 
   m.close()
 
-  val visual = new WareHouseLocationWindow(deliveryPositions,warehousePositions,distanceCost,costForOpeningWarehouse)
+  val visual = new WareHouseLocationWindow(deliveryPositions,warehousePositions,distanceCost,costForOpeningWarehouse,title)
 
   var bestObj = Int.MaxValue
 
@@ -131,7 +132,13 @@ object WareHouseLocationVisu extends App with StopWatch{
         lastDisplay = this.getWatch}
     })
 
+
   neighborhood.verbose = 2
+  visual.redraw(openWarehouses.value,true)
+
+    Thread.sleep(10000)
+    println("start")
+    Thread.sleep(1000)
 
   neighborhood.doAllMoves(obj=obj)
 
