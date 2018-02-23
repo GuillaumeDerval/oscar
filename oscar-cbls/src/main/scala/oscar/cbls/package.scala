@@ -66,11 +66,9 @@ import scala.language.implicitConversions
   * === Implicit Conversions ===
   *
   * A number of commonly applied implicit conversions are also defined here.
-  * Implicit conversions provide additional higher-order functions to core classes
-  * such as [[oscar.cbls.core.computation.CBLSIntVar `CBLSIntVar`]], or [[oscar.cbls.core.search.Neighborhood `Neighborhood`]].
-  * Implicit conversion also provide
-  * simple and natural modeling functionalities for sum constraint
-  * or infix notation for our library of combinators
+  * Implicit conversions provide additional functions to core classes
+  * such as infix `+` and `-` for [[oscar.cbls.core.computation.CBLSIntVar `CBLSIntVar`]],
+  * or the combinator as infix notation for [[oscar.cbls.core.search.Neighborhood `Neighborhood`]].
   *
   * @author Renaud De Landtsheer renaud.delandtsheer@cetic.be
   */
