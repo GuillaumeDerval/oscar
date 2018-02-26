@@ -20,17 +20,16 @@
 
 package oscar.examples.cbls
 
-import oscar.cbls.constraints.lib.basic.EQ
-import oscar.cbls.constraints.lib.global.Exactly
-import oscar.cbls.invariants.core.computation.{CBLSIntVar, FullRange}
-import oscar.cbls.invariants.lib.logic.SelectLESetQueue
-import oscar.cbls.invariants.lib.numeric.Sum
-import oscar.cbls.modeling.{AlgebraTrait, CBLSModel}
-import oscar.cbls.search.StopWatch
+import oscar.cbls._
+import oscar.cbls.lib.invariant.logic.SelectLESetQueue
+import oscar.cbls.lib.invariant.numeric.Sum
+import oscar.cbls.lib.constraint.{EQ, Exactly}
+import oscar.cbls.modeling.CBLSModel
+import oscar.cbls.util.StopWatch
 
 import scala.collection.immutable.SortedMap
 
-object MagicSeries extends CBLSModel with App with AlgebraTrait with StopWatch{
+object MagicSeries extends CBLSModel with App with StopWatch{
 
   //The size of the serie
   val size:Int = 20
@@ -44,11 +43,11 @@ object MagicSeries extends CBLSModel with App with AlgebraTrait with StopWatch{
   c.post(Exactly(magicSeries, bounds))
 
   //redundant constraint, to make the search procedure faster
-  c.post(EQ(Sum(for(i <- range) yield (i * magicSeries(i))), size))
+  c.post(EQ(Sum( for(i <- range) yield i * magicSeries(i) ), size))
 
-  var it: CBLSIntVar = CBLSIntVar(0, FullRange, "it")
+  var it: CBLSIntVar = CBLSIntVar(0, fullRange, "it")
 
-  val tabuArray: Array[CBLSIntVar] = Array.tabulate(size)(w => CBLSIntVar(-1, FullRange, "tabu_of_" + w + " "))
+  val tabuArray: Array[CBLSIntVar] = Array.tabulate(size)(w => CBLSIntVar(-1, fullRange, "tabu_of_" + w + " "))
 
   val nonTabuPositions = SelectLESetQueue(tabuArray, it).setName("non tabu positions")
 
@@ -67,7 +66,7 @@ object MagicSeries extends CBLSModel with App with AlgebraTrait with StopWatch{
   //Search Procedure
   while(violation.value > 0)
   {
-    var index = maxVal.value.firstKey
+    val index = maxVal.value.firstKey
 
     var bestOccurrences = selectMin(range)(r => assignVal(magicSeries(index), r), r => magicSeries(index).value != r)
 

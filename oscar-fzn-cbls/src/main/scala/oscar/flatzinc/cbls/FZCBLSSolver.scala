@@ -18,29 +18,32 @@
  */
 package oscar.flatzinc.cbls
 
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.util.StopWatch
+
 import scala.util.Random
 import scala.collection.mutable.{ Map => MMap}
 import oscar.cbls.search._
-import oscar.cbls.objective.{ Objective => CBLSObjective }
+import oscar.cbls.core.objective.{ Objective => CBLSObjective }
 import oscar.cbls.constraints.core._
 import oscar.cbls.constraints.lib.basic._
 import oscar.cbls.constraints.lib.global._
-import oscar.cbls.invariants.lib.logic._
-import oscar.cbls.invariants.lib.minmax._
-import oscar.cbls.invariants.core.computation._
-import oscar.cbls.invariants.lib.numeric._
+import oscar.cbls.lib.invariant.logic._
+import oscar.cbls.lib.invariant.minmax._
+import oscar.cbls.core.computation._
+import oscar.cbls.lib.invariant.numeric._
 import oscar.flatzinc.Options
 import oscar.flatzinc.model._
 import oscar.flatzinc.model.Constraint
 import oscar.flatzinc.model.Variable
 import oscar.flatzinc.cbls.support._
-import oscar.cbls.invariants.lib.numeric.Sum2
+import oscar.cbls.lib.invariant.numeric.Sum2
 import oscar.flatzinc.transfo.FZModelTransfo
 import java.io.PrintWriter
 import oscar.flatzinc.parser.FZParser
 import oscar.util.RandomGenerator
 import oscar.flatzinc.NoSuchConstraintException
-import oscar.cbls.objective.IntVarObjective
+import oscar.cbls.core.objective.IntVarObjective
 import oscar.flatzinc.Log
 
 

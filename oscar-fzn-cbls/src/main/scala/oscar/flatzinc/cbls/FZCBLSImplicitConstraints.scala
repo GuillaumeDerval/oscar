@@ -17,7 +17,7 @@
  */
 package oscar.flatzinc.cbls
 
-import oscar.cbls.invariants.core.computation.CBLSIntVar
+import oscar.cbls.core.computation.CBLSIntVar
 import oscar.flatzinc.cbls.support._
 import oscar.flatzinc.model._
 import scala.collection.mutable.ArrayOps
