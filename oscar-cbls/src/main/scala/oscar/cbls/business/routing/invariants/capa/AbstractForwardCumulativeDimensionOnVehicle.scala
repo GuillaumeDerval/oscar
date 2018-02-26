@@ -2,9 +2,8 @@ package oscar.cbls.business.routing.invariants.capa
 
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.IntSequence
-
+import oscar.cbls.business.routing.model.VehicleLocation
 import oscar.cbls.core._
-import oscar.cbls.business.routing.invariants.convention.VehicleLocation
 
 import scala.collection.immutable.SortedSet
 

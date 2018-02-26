@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.invariants.convention
+package oscar.cbls.business.routing.model
 
 import oscar.cbls.algo.seq.IntSequence
 

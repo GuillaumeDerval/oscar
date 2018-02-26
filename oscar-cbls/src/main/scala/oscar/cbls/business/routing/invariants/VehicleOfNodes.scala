@@ -18,8 +18,8 @@ package oscar.cbls.business.routing.invariants
 import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.business.routing.model.RoutingConventionMethods
 import oscar.cbls.core._
-import oscar.cbls.business.routing.invariants.convention.RoutingConventionMethods
 
 object VehicleOfNodes{
 

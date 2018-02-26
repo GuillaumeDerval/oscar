@@ -35,6 +35,7 @@ import oscar.cbls.lib.invariant.numeric.Sum
  * @param maxDuration is the full duration considered here. The engine will crash if it needs to put an activity after this date
  * @author renaud.delandtsheer@cetic.be
  */
+@deprecated("the whole scheduling package is deprecated and will be fully reworked","4.0")
 class Planning(val model: Store, val maxDuration: Int) {
 
   var isClosed = false
