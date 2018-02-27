@@ -16,7 +16,7 @@
  */
 
 package oscar.examples.cbls.wlp
-
+ 
 import oscar.cbls.invariants.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.invariants.lib.logic.Filter
 import oscar.cbls.invariants.lib.minmax.MinConstArrayLazy
