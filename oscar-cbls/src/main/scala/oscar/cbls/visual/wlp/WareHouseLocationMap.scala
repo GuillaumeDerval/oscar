@@ -17,8 +17,8 @@ class WareHouseLocationWindow(deliveryCoordinates:Array[(Int,Int)],
 
   val visual = new WareHouseLocationMap(deliveryCoordinates,wareHouseCoordinates,distanceCostD2W,warehouseCosts)
 
-  def redraw(openWarehouses:SortedSet[Int],boldChanges:Boolean=true){
-    visual.redraw(openWarehouses,boldChanges)
+  def redraw(openWarehouses:SortedSet[Int],boldChanges:Boolean=true,hideClosedWarehouses:Boolean = false){
+    visual.redraw(openWarehouses,boldChanges,hideClosedWarehouses)
   }
   val frame = new JFrame()
   frame.setTitle("Uncapacitated Warehouse Location Problem")
@@ -48,9 +48,9 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
 
   var prevOpenWarehouse:SortedSet[Int] = SortedSet.empty
   var prevNearestOpenWarehouse = Array.fill(d)(-1)
-  def redraw(openWarehouses:SortedSet[Int],boldChanges:Boolean=true){
+  def redraw(openWarehouses:SortedSet[Int],boldChanges:Boolean=true,hideClosedWarehouses:Boolean = false){
     val closestWarehouses:Array[Int] = Array.tabulate(d)(nearestOpenWareHouse(openWarehouses,_))
-    drawMap(closestWarehouses,openWarehouses,prevOpenWarehouse,prevNearestOpenWarehouse,boldChanges)
+    drawMap(closestWarehouses,openWarehouses,prevOpenWarehouse,prevNearestOpenWarehouse,boldChanges,hideClosedWarehouses)
     prevOpenWarehouse = openWarehouses
     prevNearestOpenWarehouse = closestWarehouses
   }
@@ -72,7 +72,13 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
     closestW
   }
 
-  private def drawMap(closestWarehouses:Array[Int],openWarehouses:SortedSet[Int],prevOpenWarehouse:SortedSet[Int],prevClosestWarehouse:Array[Int],boldChanges:Boolean) ={
+  private def drawMap(closestWarehouses:Array[Int],
+                      openWarehouses:SortedSet[Int],
+                      prevOpenWarehouse:SortedSet[Int],
+                      prevClosestWarehouse:Array[Int],
+                      boldChanges:Boolean,
+                      hideClosedWarehouses:Boolean) ={
+
     val xMultiplier = this.getWidth.toDouble / maxX.toDouble
     val yMultiplier = this.getHeight.toDouble / maxY.toDouble
 
@@ -107,9 +113,12 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
     }
 
     //drawing warehouses
-    for(warehouse <- 0 until w if !(openWarehouses contains warehouse)) {
-      drawWarehouse(warehouse, Color.PINK, boldChanges && (prevOpenWarehouse contains warehouse))
+    if(!hideClosedWarehouses) {
+      for (warehouse <- 0 until w if !(openWarehouses contains warehouse)) {
+        drawWarehouse(warehouse, Color.PINK, boldChanges && (prevOpenWarehouse contains warehouse))
+      }
     }
+
     for(warehouse <- 0 until w if openWarehouses contains warehouse) {
       drawWarehouse(warehouse, Color.green, boldChanges && !(prevOpenWarehouse contains warehouse))
     }
