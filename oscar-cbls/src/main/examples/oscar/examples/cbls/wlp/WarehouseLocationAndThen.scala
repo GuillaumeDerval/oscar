@@ -15,17 +15,16 @@ package oscar.examples.cbls.wlp
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.invariants.core.computation.{CBLSIntVar, Store}
-import oscar.cbls.invariants.lib.logic.Filter
-import oscar.cbls.invariants.lib.minmax.MinConstArray
-import oscar.cbls.invariants.lib.numeric.Sum
-import oscar.cbls.modeling.AlgebraTrait
-import oscar.cbls.objective.Objective
-import oscar.cbls.search.{AssignNeighborhood, RandomizeNeighborhood}
+import oscar.cbls._
+import oscar.cbls.lib.invariant.logic.Filter
+import oscar.cbls.lib.invariant.minmax.MinConstArray
+import oscar.cbls.lib.invariant.numeric.Sum
+import oscar.cbls.lib.search.neighborhoods.{AssignNeighborhood, RandomizeNeighborhood}
+
 
 import scala.language.postfixOps
 
-object WarehouseLocationAndThen extends App with AlgebraTrait{
+object WarehouseLocationAndThen extends App{
 
   //the number of warehouses
   val W:Int = 15
@@ -53,7 +52,7 @@ object WarehouseLocationAndThen extends App with AlgebraTrait{
 
   val neighborhood = (AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
                       exhaustBack (AssignNeighborhood(warehouseOpenArray,"1") andThen AssignNeighborhood(warehouseOpenArray,"2"))
-                      orElse (RandomizeNeighborhood(warehouseOpenArray, W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
+                      orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
   neighborhood.verbose = 1
   neighborhood.doAllMoves(_ >= W+D, obj)
