@@ -17,13 +17,13 @@
 package oscar.cbls.business.scheduling.algo
 
 import oscar.cbls.business.scheduling.model.{Activity, Planning}
-import oscar.cbls.lib.search.LinearSelector
+import oscar.cbls.lib.search.LinearSelectorClass
 
 /**
  * finds a critical path for the given planning
  * @author renaud.delandtsheer@cetic.be
  */
-object CriticalPathFinder extends LinearSelector {
+object CriticalPathFinder extends LinearSelectorClass {
 
   /**
    * returns a critical path in the planning

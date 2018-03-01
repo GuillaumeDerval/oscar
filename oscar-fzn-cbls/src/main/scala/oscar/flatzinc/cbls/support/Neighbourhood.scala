@@ -23,7 +23,7 @@ import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.{Objective => CBLSObjective}
 import oscar.cbls.lib.invariant.logic.Cluster
 import oscar.cbls.lib.invariant.set.Cardinality
-import oscar.cbls.lib.search.LinearSelector
+import oscar.cbls.lib.search.LinearSelectors
 import oscar.cbls.modeling.CBLSModel
 import oscar.flatzinc.cbls.{FZCBLSConstraintPoster, FZCBLSImplicitConstraints, FZCBLSModel}
 import oscar.flatzinc.cp.FZCPBasicModel
@@ -35,7 +35,7 @@ import scala.collection.mutable.{Map => MMap}
 trait GenericNeighbourhood
 
 //Extends SearchEngine to access the selectors
-abstract class Neighbourhood(val searchVariables: Array[CBLSIntVar]) extends LinearSelector {
+abstract class Neighbourhood(val searchVariables: Array[CBLSIntVar]) extends LinearSelectors {
   //var minObjective: Int = Int.MaxValue;
   def getVariables(): Array[CBLSIntVar] = searchVariables
 
@@ -161,7 +161,7 @@ class GCCNeighborhood(val variables: Array[CBLSIntVar], val vals: Array[Int], va
                       cs: ConstraintSystem) extends Neighbourhood(variables) {
   val variableViolation: Array[IntValue] = variables.map(cs.violation(_)).toArray
 
-  val clusters = Cluster.MakeSparse(variables.map(c => c), vals).Clusters
+  val clusters = Cluster.makeSparse(variables.map(c => c), vals).Clusters
   val counts = clusters.foldLeft(Map.empty[Int, IntValue])((map, ic) => map + (ic._1 -> Cardinality(ic._2)))
   //foldLeft(Map.empty[Int,CBLSIntVar])((map,ic) => map + (ic._1 -> Cardinality(ic._2).output))
   val lows = vals.toList.zip(low).foldLeft(Map.empty[Int, Int])((map, vl) => map + (vl._1 -> vl._2))

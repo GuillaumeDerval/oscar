@@ -21,7 +21,7 @@ package oscar.flatzinc.cbls
 import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.{Objective => CBLSObjective}
-import oscar.cbls.lib.search.LinearSelector
+import oscar.cbls.lib.search.LinearSelectors
 import oscar.cbls.util.StopWatch
 import oscar.flatzinc.{Log, NoSuchConstraintException, Options}
 import oscar.flatzinc.cbls.support._
@@ -32,7 +32,7 @@ import oscar.flatzinc.transfo.FZModelTransfo
 
 
 
-class FZCBLSBuilder extends LinearSelector with StopWatch {
+class FZCBLSBuilder extends LinearSelectors with StopWatch {
 
 
   def solve(opts: Options) {

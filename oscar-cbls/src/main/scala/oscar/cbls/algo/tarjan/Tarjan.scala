@@ -22,14 +22,14 @@ package oscar.cbls.algo.tarjan
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 
-/** The Tarjan algorithm for detecting SCC is graphs
+/** The Tarjan algorithm for detecting SCC (strongly connected components) in graphs
  * @author renaud.delandtsheer@cetic.be
  * @param A
  * @tparam T
  */
 class Tarjan[T]( implicit A:Ordering[T]){ // <: Ordered[T]]{
 
-  def getStronlyConnexComponents(Nodes:Iterable[T], GetSucceedingNodes:(T => Iterable[T])):List[SortedSet[T]] = {
+  def getStronglyConnexComponents(Nodes:Iterable[T], GetSucceedingNodes:(T => Iterable[T])):List[SortedSet[T]] = {
     var Index: SortedMap[T,Int] = SortedMap.empty
     var LowLink: SortedMap[T,Int] = SortedMap.empty
     var index:Int=0

@@ -24,8 +24,9 @@
 
 package oscar.cbls.lib.invariant.set
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls.algo.quick.QList
+import oscar.cbls._
+import oscar.cbls.core._
 
 import scala.collection.immutable.{SortedMap, SortedSet};
 
@@ -37,7 +38,7 @@ import scala.collection.immutable.{SortedMap, SortedSet};
  */
 case class Union(left: SetValue, right: SetValue)
   extends SetInvariant(left.value.union(right.value), left.min.min(right.min) to left.max.max(right.max))
-with SetNotificationTarget{
+  with SetNotificationTarget{
   require(left != right, "left and right canot be the same instance for Union!")
 
   registerStaticAndDynamicDependency(left)
@@ -103,15 +104,15 @@ case class UnionAll(sets: Iterable[SetValue])
 
   override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
-    for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
+    for (deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
   @inline
   def notifyInsertOn(v: ChangingSetValue, value: Int) {
     assert(sets.exists(_ == v))
-    
+
     val i = value + offset
-    
+
     if (count(i) == 0) {
       this.insertValue(value)
     }
@@ -121,10 +122,10 @@ case class UnionAll(sets: Iterable[SetValue])
   @inline
   def notifyDeleteOn(v: ChangingSetValue, value: Int) {
     assert(sets.exists(_ == v))
-    
+
     val i = value + offset
     assert(count(i) >= 1)
-    
+
     if (count(i) == 1) this.deleteValue(value)
     count(i) = count(i) - 1
   }
@@ -147,7 +148,7 @@ case class UnionAll(sets: Iterable[SetValue])
 case class Inter(left: SetValue, right: SetValue)
   extends SetInvariant(left.value.intersect(right.value),
     left.min.max(right.min) to left.max.min(right.max))
-with SetNotificationTarget{
+  with SetNotificationTarget{
   require(left != right,"left and right cannot hte the same instance for Inter")
   registerStaticAndDynamicDependency(left)
   registerStaticAndDynamicDependency(right)
@@ -156,7 +157,7 @@ with SetNotificationTarget{
   //TODO: handle left == right!
   override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
-    for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
+    for (deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
   @inline
@@ -187,9 +188,9 @@ with SetNotificationTarget{
 }
 
 case class SetMap(a: SetValue, fun: Int => Int,
-                  initialDomain: Domain = FullRange)
+                  initialDomain: Domain = fullRange)
   extends SetInvariant(SortedSet.empty, initialDomain)
-with SetNotificationTarget{
+  with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(a)
   finishInitialization()
@@ -207,7 +208,7 @@ with SetNotificationTarget{
 
   override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
-    for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
+    for (deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
   @inline
@@ -228,7 +229,6 @@ with SetNotificationTarget{
       this :-= mappedV
     }
     outputCount += ((mappedV, oldCount - 1))
-
   }
 
   override def checkInternals(c: Checker) {
@@ -246,34 +246,44 @@ case class Diff(left: SetValue, right: SetValue)
   extends SetInvariant(left.value.diff(right.value), left.min to left.max)
   with SetNotificationTarget{
 
-  require(left != right,"left and right cannot he the same ionstance for Diff")
+  //TODO: handle left == right
+  require(left != right,"left and right cannot be the same instance for Diff")
+
   registerStaticAndDynamicDependency(left)
   registerStaticAndDynamicDependency(right)
   finishInitialization()
 
-  //TODO: handle left == right
   override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
-    for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
-    for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
-  }
+    assert(((oldValue ++ addedValues) -- removedValues).toList equals newValue.toList,"oldValue:" + oldValue + " addedValues:" + addedValues + " removedValues:" + removedValues + " newValue:" + newValue)
 
-  @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Int) {
-    if (v == left) {
-      if (!right.value.contains(value)) {
-        this.insertValue(value)
-      }
-    } else if (v == right) {
-      if (left.value.contains(value)) {
-        this.deleteValue(value)
-      }
-    } else {
-      assert(false)
+    val addedIt = addedValues.iterator
+    while(addedIt.hasNext){
+      notifyInsertOn(v, addedIt.next())
+    }
+
+    val deletedIt = removedValues.iterator
+    while(deletedIt.hasNext){
+      notifyDeleteOn(v, deletedIt.next())
     }
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
+  private def notifyInsertOn(v: ChangingSetValue, value: Int) {
+    if (v == left) {
+      if (!right.value.contains(value)) {
+        this.insertValue(value)
+      }
+    } else if (v == right) {
+      if (left.value.contains(value)) {
+        this.deleteValue(value)
+      }
+    } else {
+      require(false)
+    }
+  }
+
+  @inline
+  private def notifyDeleteOn(v: ChangingSetValue, value: Int) {
     if (v == left) {
       if (!right.value.contains(value)) {
         this.deleteValue(value)
@@ -283,13 +293,13 @@ case class Diff(left: SetValue, right: SetValue)
         this.insertValue(value)
       }
     } else {
-      assert(false)
+      require(false)
     }
   }
 
   override def checkInternals(c: Checker) {
-    c.check(this.value.intersect(left.value.diff(right.value)).size == this.value.size,
-      Some("this.value.intersect(left.value.diff(right.value)).size == this.value.size"))
+    c.check(this.value equals (left.value diff (right.value)),
+      Some("Diff error! out:" + this.value.toList + " left:" + left.value.toList + " right:" + right.value.toList + " computed diff:" + (left.value diff(right.value))))
   }
 }
 
@@ -306,7 +316,7 @@ case class Cardinality(v: SetValue)
   finishInitialization()
 
   override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
-   this := newValue.size
+    this := newValue.size
   }
 
   override def checkInternals(c: Checker) {
@@ -435,7 +445,7 @@ case class Interval(lb: IntValue, ub: IntValue)
  */
 case class TakeAny(from: SetValue, default: Int)
   extends IntInvariant(default, from.min to from.max)
-with SetNotificationTarget{
+  with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(from)
   finishInitialization()
@@ -585,3 +595,4 @@ case class BelongsTo(v: IntValue, set: SetValue)
     c.check(this.value == (if (set.value.contains(v.value)) 1 else 0))
   }
 }
+

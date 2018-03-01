@@ -3,7 +3,7 @@ package oscar.cbls.business.scheduling.algo
 import oscar.cbls.business.scheduling.algo.CriticalPathFinder.nonSolidCriticalPath
 import oscar.cbls.business.scheduling.model.{Activity, Deadlines, Planning, TotalResourcesOvershootEvaluation, VariableResources}
 import oscar.cbls.core.computation.{Solution, Store, Variable}
-import oscar.cbls.lib.search.LinearSelectorTrait
+import oscar.cbls.lib.search.LinearSelectors
 
 /**
  * *****************************************************************************
@@ -39,7 +39,7 @@ import oscar.cbls.lib.search.LinearSelectorTrait
  */
 class TardinessSearch(planning: Planning with Deadlines with TotalResourcesOvershootEvaluation with VariableResources,
                       temperature: Float = 100,
-                      verbose: Boolean = false) extends LinearSelectorTrait {
+                      verbose: Boolean = false) extends LinearSelectors {
   val model: Store = planning.model
 
   require(model.isClosed, "model should be closed before TardinessSearch algo can be instantiated")
@@ -77,7 +77,7 @@ class TardinessSearch(planning: Planning with Deadlines with TotalResourcesOvers
           // a list of (predecessor, activity) with an additional tight dependence
           val criticalActivities = nonSolidCriticalPath(planning)(activity)
           // if (exploreNeighborhood(criticalActivities, maxLocalIterations))
-          if (!criticalActivities.isEmpty
+          if (criticalActivities.nonEmpty
             && criticalActivities != precCriticalActivities) {
             if (exploreNeighborhood(criticalActivities,
               maxLocalIterations, onlyImprovingMoves)) {

@@ -1,6 +1,6 @@
 package oscar.cbls.test.invariants
 
-import oscar.cbls.algo.seq.functional.IntSequence
+import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core.computation.{CBLSSeqVar, Store}
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.invariant.seq._

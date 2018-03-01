@@ -15,12 +15,11 @@ package oscar.examples.cbls.car
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.core.computation.CBLSIntVar
-import oscar.cbls.core.search.{SwapMove, Neighborhood}
-import oscar.cbls.lib.search.neighborhoods.RollNeighborhood
-import oscar.cbls.modeling.CBLSModel
-import oscar.cbls.core.objective.Objective
-import oscar.cbls.lib.search.combinators.{DynAndThen, Profile}
+import oscar.cbls._
+import oscar.cbls.modeling._
+import oscar.cbls.lib.search.combinators.Profile
+import oscar.cbls.lib.search.neighborhoods.{RollNeighborhood, SwapMove}
+
 import oscar.cbls.util.Benchmark
 
 import scala.collection.immutable.SortedMap
@@ -60,7 +59,7 @@ object carSequencerBenchmarker  extends CBLSModel with App {
   val maxType = orderedCarsByType.keys.max
   val minType = orderedCarsByType.keys.min
   val typeRange = minType to maxType
-  def prependItems(acc:List[Int],n:Int,item:Int):List[Int] = (if(n == 0) acc else prependItems(item :: acc,n-1,item))
+  def prependItems(acc:List[Int],n:Int,item:Int):List[Int] = if(n == 0) acc else prependItems(item :: acc,n-1,item)
   val orderedCarTypes:List[Int] = orderedCarsByType.foldLeft(List.empty[Int])({case (accList,(carType,nbItems)) => prependItems(accList,nbItems,carType)})
   val nbCars = orderedCarTypes.size
 
@@ -68,7 +67,7 @@ object carSequencerBenchmarker  extends CBLSModel with App {
 
   //initializes the car sequence in a random way
   val orderedCarTypesIterator = Random.shuffle(orderedCarTypes).toIterator
-  val carSequence:Array[CBLSIntVar] = Array.tabulate(nbCars)(p => CBLSIntVar(orderedCarTypesIterator.next(),typeRange,"carClassAtPosition" + p)).toArray
+  val carSequence:Array[CBLSIntVar] = Array.tabulate(nbCars)(p => CBLSIntVar(orderedCarTypesIterator.next(),typeRange,"carClassAtPosition" + p))
 
   //airConditionner: max 2 out of 3
   c.post(sequence(carSequence,3,2,airCoCarTypes))
@@ -90,41 +89,42 @@ object carSequencerBenchmarker  extends CBLSModel with App {
 
   println("closing model")
 
-  c.close
+  c.close()
   val obj:Objective = c.violation
 
   s.close()
+  println("model closed")
 
   val swap = swapsNeighborhood(carSequence,"swapCars")
   val rollViolated = RollNeighborhood(carSequence, name = "RollViolatedCars", maxShiftSize = _ => 20, searchZone = violatedCars)
   val roll = RollNeighborhood(carSequence, name = "RollAllCars", maxShiftSize = _ => 10)
-  val mostViolatedSwap = swapsNeighborhood(carSequence,"mostViolatedSwap", searchZone2 = mostViolatedCars, symmetryCanBeBrokenOnIndices = false)
+  val mostViolatedSwap = swapsNeighborhood(carSequence,"mostViolatedSwap", searchZone2 = (_,_) => mostViolatedCars.value, symmetryCanBeBrokenOnIndices = false)
   val shiftNeighbor = shiftNeighborhood(carSequence, searchZone1 =() => violatedCars.value.toList, maxShiftSize = carSequence.length/2/*, maxOffsetSize = carSequence.length/2*/, hotRestart = true)
   val rollNeighbor = rollNeighborhood(carSequence)
 
-  val linkedDoubleSwaps = DynAndThen(
+  val linkedDoubleSwaps = dynAndThen(
     swapsNeighborhood(carSequence,"swapCars1"),
-    ((swapMove:SwapMove) => {
+    (swapMove:SwapMove) => {
       val indices = List(swapMove.idI, swapMove.idJ)
       swapsNeighborhood(carSequence, "swapCars2", searchZone1 = () => indices, symmetryCanBeBrokenOnIndices = false, symmetryCanBeBrokenOnValue = true)
-    })) name "linkedDoubleSwaps"
+    }) name "linkedDoubleSwaps"
 
   val doubleSwaps = (swapsNeighborhood(carSequence,"swapCars1") andThen swapsNeighborhood(carSequence,"swapCars2")) name "doubleSwaps"
 
-  val looselyLinkedDoubleSwaps = DynAndThen(
+  val looselyLinkedDoubleSwaps = dynAndThen(
     swapsNeighborhood(carSequence,"swapCars1", symmetryCanBeBrokenOnIndices = false),
-    ((swapMove:SwapMove) => {
-      val firstSwappedCar = 0.max(swapMove.idI - impactZone) until (nbCars).min(swapMove.idI + impactZone)
+    (swapMove:SwapMove) => {
+      val firstSwappedCar = 0.max(swapMove.idI - impactZone) until nbCars.min(swapMove.idI + impactZone)
       val otherSwappedCar = (nbCars-1).min(swapMove.idJ+1) until nbCars
-      swapsNeighborhood(carSequence, "swapCars2", searchZone1 = () => firstSwappedCar, searchZone2 = () => otherSwappedCar, symmetryCanBeBrokenOnIndices = false)
-    })) name "looselyLinkedDoubleSwaps"
+      swapsNeighborhood(carSequence, "swapCars2", searchZone1 = () => firstSwappedCar, searchZone2 = (_,_) => otherSwappedCar, symmetryCanBeBrokenOnIndices = false)
+    }) name "looselyLinkedDoubleSwaps"
 
 
   val search1 = (
-    (mostViolatedSwap random swap)
-      orElse (shiftNeighbor)
-      orElse (shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")  maxMoves (10))
-      orElse (shuffleNeighborhood(carSequence, violatedCars, name = "shuffleAllViolatedCars") maxMoves (10))
+    random(mostViolatedSwap,swap)
+      orElse shiftNeighbor
+      orElse (shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")  maxMoves 10)
+      orElse (shuffleNeighborhood(carSequence, violatedCars, name = "shuffleAllViolatedCars") maxMoves 10)
       orElse (shuffleNeighborhood(carSequence, name = "globalShuffle") maxMoves 5)
       maxMoves nbCars *2 withoutImprovementOver obj
       guard (() => c.violation.value > 0)
@@ -140,7 +140,8 @@ object carSequencerBenchmarker  extends CBLSModel with App {
       saveBestAndRestoreOnExhaust obj)
 
   val search3 = (
-    ((mostViolatedSwap random swap) orElse rollViolated
+    (random(mostViolatedSwap,swap)
+      orElse rollViolated
       onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")) guard(() => mostViolatedCars.value.size > 2), 5, obj)
       exhaustBack shiftNeighbor)
       onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => violatedCars.value.size/2)), 2, obj)
@@ -149,7 +150,8 @@ object carSequencerBenchmarker  extends CBLSModel with App {
       saveBestAndRestoreOnExhaust obj)
 
   val search4 = (
-    ((mostViolatedSwap random swap) orElse rollViolated
+    (random(mostViolatedSwap,swap)
+      orElse rollViolated
       onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")) guard(() => mostViolatedCars.value.size > 2), 5, obj)
       exhaustBack shiftNeighbor)
       onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => violatedCars.value.size/2)), 2, obj)
@@ -158,7 +160,7 @@ object carSequencerBenchmarker  extends CBLSModel with App {
       saveBestAndRestoreOnExhaust obj)
 
   val search5 = (
-    mostViolatedSwap random roll
+    random(mostViolatedSwap,roll)
       onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")) guard(() => mostViolatedCars.value.size > 2), 5, obj)
       orElse shiftNeighbor
       onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => violatedCars.value.size/2)), 2, obj)
@@ -167,7 +169,7 @@ object carSequencerBenchmarker  extends CBLSModel with App {
       saveBestAndRestoreOnExhaust obj)
 
   val search6 = (
-    mostViolatedSwap random roll
+    random(mostViolatedSwap,roll)
       onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")) guard(() => mostViolatedCars.value.size > 2), 4, obj)
       orElse shiftNeighbor
       onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => violatedCars.value.size/2)), 1, obj)
@@ -175,6 +177,6 @@ object carSequencerBenchmarker  extends CBLSModel with App {
       guard (() => c.violation.value > 0)
       saveBestAndRestoreOnExhaust obj)
 
-  println(Benchmark.benchToStringSimple(obj, 50, List(search1,search2,search3, search4,search5,search6),verbose = 0))
+  println(Benchmark.benchToStringSimple(obj, 5, List(search1,search2,search3, search4,search5,search6),verbose = 3))
 
 }

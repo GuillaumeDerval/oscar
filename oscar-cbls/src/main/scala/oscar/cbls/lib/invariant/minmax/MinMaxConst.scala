@@ -15,10 +15,10 @@ package oscar.cbls.lib.invariant.minmax
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.algo.heap.{ArrayMap, BinomialHeapWithMoveExtMem}
+import oscar.cbls.algo.heap.BinomialHeapWithMoveInt
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.core.computation.{ChangingSetValue, IntInvariant, SetNotificationTarget, SetValue}
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
 
 import scala.collection.immutable.SortedSet
 
@@ -80,8 +80,8 @@ case class MinConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = 
   override def Ord(v: Int): Int = v
 
   override def checkInternals(c: Checker): Unit = {
-    if(ccond.value.isEmpty) c.check(value == default)
-    else  c.check(value == ccond.value.minBy(varss(_)))
+    if(ccond.value.isEmpty) c.check(value == default,Some("default"))
+    else  c.check(value == varss(ccond.value.minBy(varss(_))),Some("expected " + varss(ccond.value.minBy(varss(_))) + " got " + value))
   }
 
   @inline
@@ -103,21 +103,20 @@ case class MinConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = 
  * update is O(log(n)), faster (O(1) if you do updates and backtracks
  * @author renaud.delandtsheer@cetic.be
  * */
-case class MaxConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = Int.MaxValue, maxBackLogSize:Int = 10)
+case class MaxConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = Int.MinValue, maxBackLogSize:Int = 10)
   extends MiaxConstArrayLazy(varss, ccond, default, maxBackLogSize) {
 
   @inline
   override def Ord(v: Int): Int = -v
 
   override def checkInternals(c: Checker): Unit = {
-    if(ccond.value.isEmpty) c.check(value == default)
-    else  c.check(value == ccond.value.maxBy(varss(_)))
+    if(ccond.value.isEmpty) c.check(value == default,Some("default"))
+    else  c.check(value == varss(ccond.value.maxBy(varss(_))),Some("expected " + varss(ccond.value.maxBy(varss(_))) + " got " + value))
   }
 
   @inline
   override def equalOrNotImpactingMiax(potentialMiax: Int): Boolean = this.newValue >= potentialMiax
 }
-
 
 /**
  * Maintains Miax(Var(i) | i in cond)
@@ -131,7 +130,7 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
   extends IntInvariant
   with SetNotificationTarget{
 
-  var h: BinomialHeapWithMoveExtMem[Int] = new BinomialHeapWithMoveExtMem[Int](i => Ord(vars(i)), vars.length, new ArrayMap(vars.length))
+  var h: BinomialHeapWithMoveInt = new BinomialHeapWithMoveInt(i => Ord(vars(i)), vars.length, vars.length)
 
   registerStaticAndDynamicDependency(cond)
   finishInitialization()
@@ -153,6 +152,11 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
   override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
+    if (h.isEmpty) {
+      this := default
+    } else {
+      this := vars(h.getFirst)
+    }
   }
 
   @inline
@@ -161,7 +165,6 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
 
     //mettre a jour le heap
     h.insert(value)
-    this := vars(h.getFirst)
   }
 
   @inline
@@ -170,16 +173,11 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
 
     //mettre a jour le heap
     h.delete(value)
-    if (h.isEmpty) {
-      this := default
-    } else {
-      this := vars(h.getFirst)
-    }
   }
 
   override def checkInternals(c: Checker): Unit = {
     if(cond.value.isEmpty) c.check(value == default)
-    else  c.check(value == cond.value.maxBy(vars(_)))
+    else c.check(value == cond.value.maxBy(vars(_)))
   }
 }
 
@@ -199,7 +197,7 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
   //  var nbDoIt = 0
 
   val n = vars.length
-  var h: BinomialHeapWithMoveExtMem[Int] = new BinomialHeapWithMoveExtMem[Int](i => Ord(vars(i)), vars.length, new ArrayMap(vars.length))
+  var h: BinomialHeapWithMoveInt = new BinomialHeapWithMoveInt(i => Ord(vars(i)), vars.length, vars.length)
 
   var backLog:QList[Int] = null
   var backlogSize:Int = 0
@@ -280,11 +278,11 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
   @inline
   private[this] def processThisRealBackLog(condValue:Int): Unit ={
     if(consideredValue(condValue)){ //should be removed
-      assert(!cond.value.contains(condValue))
+      assert(cond.value.contains(condValue))
       h.delete(condValue)
       consideredValue(condValue) = false
     }else{ //should be added
-      assert(cond.value.contains(condValue))
+      assert(!cond.value.contains(condValue))
       h.insert(condValue)
       consideredValue(condValue) = true
     }
@@ -352,6 +350,4 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
       putIntoBackLog(value)
     }
   }
-
-
 }

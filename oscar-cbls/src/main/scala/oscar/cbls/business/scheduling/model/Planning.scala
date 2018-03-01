@@ -25,7 +25,7 @@ package oscar.cbls.business.scheduling.model
  * ****************************************************************************
  */
 
-import oscar.cbls.core.computation._
+import oscar.cbls._
 import oscar.cbls.lib.invariant.logic.{DenseRef, Filter}
 import oscar.cbls.lib.invariant.minmax.ArgMax
 import oscar.cbls.lib.invariant.numeric.Sum
@@ -35,6 +35,7 @@ import oscar.cbls.lib.invariant.numeric.Sum
  * @param maxDuration is the full duration considered here. The engine will crash if it needs to put an activity after this date
  * @author renaud.delandtsheer@cetic.be
  */
+@deprecated("the whole scheduling package is deprecated and will be fully reworked","4.0")
 class Planning(val model: Store, val maxDuration: Int) {
 
   var isClosed = false
@@ -128,7 +129,7 @@ class Planning(val model: Store, val maxDuration: Int) {
   override def toString: String = toAsciiArt
 
   def toAsciiArt: String = {
-    def nStrings(N: Int, C: String): String = (if (N <= 0) "" else "" + C + nStrings(N - 1, C))
+    def nStrings(N: Int, C: String): String = if (N <= 0) "" else "" + C + nStrings(N - 1, C)
     def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
     val activityList =
       activities.filter(_ != sentinelActivity).sortWith((a, b) =>
@@ -296,7 +297,7 @@ abstract class PrecedenceCleaner(val canBeKilled: Boolean) {
 }
 case class HardPrecedence() extends PrecedenceCleaner(false)
 
-case class PrecedencesCanBeKilled(val d: List[(Activity, Activity)]) extends PrecedenceCleaner(true) {
+case class PrecedencesCanBeKilled(d: List[(Activity, Activity)]) extends PrecedenceCleaner(true) {
   override def killDependencies(Verbose: Boolean = false) {
     for ((a, b) <- d) {
       b.removeDynamicPredecessor(a, Verbose)

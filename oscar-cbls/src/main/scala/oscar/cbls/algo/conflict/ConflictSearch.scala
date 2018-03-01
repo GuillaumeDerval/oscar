@@ -30,8 +30,8 @@ object ConflictSearch {
   /**Computes a minimal conflict over a list of thinks.
    *Implements the famous quickXplain algorithm in a generic way
    *[Ulrich Junker and F Valbonne, QuickXPlain: Conflict Detection for Arbitrary Constraint Propagation Algorithms, 2001]
-   * and proposes a faster implementation in case additional operation can be performed on the state
-    *
+   * and proposes a faster implementation in case that additional operations can be performed on the state
+   *
    * @param init the initial S, typically empty
    * @param toInject a list of C among which the minimal conflict must be searched
    * @param inject the procedure to inject a C into the S, going towards conflict
@@ -67,12 +67,12 @@ object ConflictSearch {
         val initwithitem = inject(init,item)
         var toreturn = item :: items
         
-        if (!ListB.isEmpty){
+        if (ListB.nonEmpty){
           val initwithItemAndA:S = ListA.foldLeft(initwithitem)(inject)
           toreturn = search(initwithItemAndA, toreturn, ListB, inject, isConflict)
         }
 
-        if (!ListA.isEmpty){
+        if (ListA.nonEmpty){
           val initwithItemAndB:S = ListB.foldLeft(initwithitem)(inject)
           toreturn = search(initwithItemAndB, toreturn, ListA, inject, isConflict)
         }
@@ -103,7 +103,7 @@ object ConflictSearch {
     var accumulatorState = init
     var remaining = toInject
     while(!isConflict(accumulatorState)){
-      if(remaining.isEmpty) throw new Exception("no conflict")
+      if(remaining.isEmpty) throw new Exception("No conflict")
       val item = remaining.head
       accumulatorState = inject(accumulatorState,item)
       remaining = remaining.tail

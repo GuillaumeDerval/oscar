@@ -18,10 +18,10 @@
  *         by Renaud De Landtsheer
  ******************************************************************************/
 
-package oscar.cbls
+package oscar.cbls.business
 
 /**
- *
+ * DEPECATED: the whole scheduling package is deprecated since OScaR 4.0 and will be fully reworked
  *  This package is a scheduling library.
  * it supports
  - [[oscar.cbls.business.scheduling.model.CumulativeResource]]
@@ -31,8 +31,8 @@ package oscar.cbls
  *
  * In this package, Tasks are grouped into [[oscar.cbls.business.scheduling.model.Planning]] that keeps references to all tasks and resources.
  * This package features the [[oscar.cbls.business.scheduling.solver.IFlatIRelax]] search heuristics with various tunings
-  * @author renaud.delandtsheer@cetic.be
+ * @author renaud.delandtsheer@cetic.be
  * */
-package object scheduling{
-}
+package object scheduling {
 
+}

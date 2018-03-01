@@ -20,6 +20,7 @@
 
 package oscar.cbls.core.computation
 
+import oscar.cbls._
 import oscar.cbls.core.propagation.Checker
 
 import scala.collection.mutable.{Map => MMap}
@@ -43,7 +44,6 @@ sealed trait IntValue extends Value{
 }
 
 object IntValue {
-  implicit def int2IntValue(a: Int): IntValue = CBLSIntConst(a)
 
   implicit def intArray2IntValueArray(a: Array[Int]): Array[CBLSIntConst] = a.map(CBLSIntConst(_))
 
@@ -177,6 +177,12 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
     */
   protected def ++ {
     setValue(1 + mNewValue)
+  }
+
+  def createClone:CBLSIntVar = {
+    val clone = new CBLSIntVar(model, this.value, this.domain, "clone of " + this.name)
+    clone <== this
+    clone
   }
 
   def compare(that: ChangingIntValue): Int = {
@@ -321,8 +327,6 @@ abstract class IntInvariant(initialValue:Int = 0, initialDomain:Domain = FullRan
     performInvariantPropagation()
     performIntPropagation()
   }
-
-  override def getDotNode:String = throw new Error("not implemented")
 }
 
 object IdentityInt{

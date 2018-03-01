@@ -15,10 +15,10 @@ package oscar.cbls.test.invariants
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.algo.seq.functional.{IntSequence, UniqueIntSequence}
-import oscar.cbls.core.computation.{IntValue, SeqValue, Store, CBLSSeqVar}
+import oscar.cbls._
+import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core.propagation.ErrorChecker
-import oscar.cbls.lib.invariant.seq.{PositionsOf, Content, Size}
+import oscar.cbls.lib.invariant.seq.{Content, Length, PositionsOf}
 
 import scala.collection.immutable.SortedSet
 
@@ -30,8 +30,8 @@ object TestSeqVar extends App{
   val m = new Store(verbose = true,propagateOnToString = true, checker = Some(new ErrorChecker()))
   val a = new CBLSSeqVar(m,IntSequence(List(1,2,3,5)), n = "toto")
 
-  val size1 = Size(a.createClone())
-  val size2 = Size(a)
+  val size1 = Length(a.createClone())
+  val size2 = Length(a)
   val pos2 = PositionsOf(a, 2)
   val content = Content(a)
   m.registerForPartialPropagation(size2)

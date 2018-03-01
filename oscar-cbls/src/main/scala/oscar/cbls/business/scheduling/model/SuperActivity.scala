@@ -25,8 +25,7 @@
 
 package oscar.cbls.business.scheduling.model
 
-import oscar.cbls.core.computation.{CBLSIntVar, CBLSSetVar}
-import oscar.cbls.modeling.Algebra._
+import oscar.cbls._
 
 import scala.collection.immutable.SortedSet
 
@@ -65,7 +64,7 @@ class SuperActivity(start: Activity, end: Activity,  override val name: String =
 
     potentiallyKilledPredecessors = start.potentiallyKilledPredecessors
 
-    allSucceedingActivities = new CBLSSetVar(planning.model, SortedSet.empty, 0 to planning.activityCount - 1, "succeeding_jobs")
+    allSucceedingActivities = new CBLSSetVar(planning.model, SortedSet.empty, 0 until planning.activityCount, "succeeding_jobs")
 
     latestEndDate <== end.latestEndDate
 

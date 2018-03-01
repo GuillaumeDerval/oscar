@@ -34,13 +34,13 @@ import scala.collection.Iterator
  */
 class AggregatedBinomialHeapQList[@specialized T](GetKey:T => Int,val maxPosition:Int) extends AbstractHeap[T] {
 
-  private[this] val b= new BinomialHeap[Int](a => a, maxPosition)
+  private[this] val b = new BinomialHeap[Int](a => a, maxPosition)
 
   private[this] val a:Array[QList[T]] = Array.tabulate (maxPosition)(_ => null)
 
   private[this] var empty:Boolean = true
 
-  /**makes the datastruct empty*/
+  /**makes the datastruct empty**/
   override def dropAll(){
     for (i <- b) a(i) = null
     empty = true
@@ -105,7 +105,7 @@ class AggregatedBinomialHeapQList[@specialized T](GetKey:T => Int,val maxPositio
   */
 class AggregatedBinomialHeapArrayList[@specialized T](GetKey:T => Int,val maxPosition:Int, initialSizeForArrayList:Int = 10)(implicit val X:Manifest[T]) extends AbstractHeap[T] {
 
-  private[this] val b= new BinomialHeap[Int](a => a, maxPosition)
+  private[this] val b = new BinomialHeap[Int](a => a, maxPosition)
 
   private[this] val a:Array[QArrayList[T]] = Array.tabulate (maxPosition)(_ => new QArrayList[T](initialSizeForArrayList))
 

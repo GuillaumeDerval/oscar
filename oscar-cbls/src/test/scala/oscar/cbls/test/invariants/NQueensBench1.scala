@@ -20,13 +20,12 @@
 
 package oscar.cbls.test.invariants
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls._
 import oscar.cbls.lib.constraint.AllDiff
 import oscar.cbls.lib.invariant.logic.SelectLESetQueue
 import oscar.cbls.lib.invariant.minmax._
-import oscar.cbls.lib.search.{LinearSelector, LinearSelectorTrait}
-import oscar.cbls.modeling.Algebra._
+import oscar.cbls.lib.search.{LinearSelectorClass, LinearSelectors}
+
 import oscar.cbls.util.StopWatch
 
 import scala.language.postfixOps
@@ -47,7 +46,7 @@ import scala.util.Random
  * The program accepts an argument which is the problem size
  * Otherwise it performs a benchmarking over a range of sizes (this takes time)
  */
-object NQueensBench1 extends LinearSelector(true) with StopWatch{
+object NQueensBench1 extends LinearSelectorClass(true) with StopWatch{
 
   def nStrings(N: Int, C: String): String = if (N <= 0) "" else "" + C + nStrings(N - 1, C)
   def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
@@ -86,7 +85,7 @@ object NQueensBench1 extends LinearSelector(true) with StopWatch{
 
     val m = Store()
     val init = Random.shuffle(range.toList).iterator
-    val queens:Array[CBLSIntVar] = Array.tabulate(N)((q:Int) => CBLSIntVar(m, init.next(), 0 to N-1,"queen" + q))
+    val queens:Array[CBLSIntVar] = Array.tabulate(N)((q:Int) => CBLSIntVar(m, init.next(), 0 until N,"Queen" + q))
 
     val c = ConstraintSystem(m)
 

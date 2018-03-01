@@ -18,7 +18,7 @@
  *         by Renaud De Landtsheer
  ******************************************************************************/
 
-package oscar.cbls
+package oscar.cbls.core
 
 /** This package proposes the mechanics to model objective functions.
  * It basically offers some neighborhood evaluation methods that use the partial propagation

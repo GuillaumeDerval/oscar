@@ -172,4 +172,3 @@ class ShiftedSet(s:SortedSet[Int], pivot:Int) extends Iterable[Int] {
     }
   }
 }
-

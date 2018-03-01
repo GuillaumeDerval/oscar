@@ -23,14 +23,14 @@ import oscar.cbls.core.constraint.{ConstraintSystem}
 import oscar.cbls.lib.invariant.logic._
 import oscar.flatzinc.cbls.FZCBLSModel
 import oscar.cbls.core.computation.IntValue
-import oscar.cbls.lib.search.LinearSelector
+import oscar.cbls.lib.search.LinearSelectors
 
 import scala.collection.mutable
 
 
 
 
-abstract class SearchProcedure extends LinearSelector{
+abstract class SearchProcedure extends LinearSelectors{
   
   def run(): Unit
   def selectMinImb[R,S](r: Iterable[R] , s: R => Iterable[S],f: (R,S) => Int, st: ((R,S) => Boolean) = ((r:R, s:S) => true)): (R,S) = {

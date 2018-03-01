@@ -21,16 +21,16 @@
 
 package oscar.cbls.lib.constraint
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.constraint.Constraint
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
 import oscar.cbls.lib.invariant.logic.LazyIntInt2Int
 import oscar.cbls.lib.invariant.numeric.Sum
 
 import scala.collection.immutable.SortedMap
-;
+import scala.language.existentials
 
-/**implments the sequence constraint:
+/**implements the sequence constraint:
+  * in the array "variables", within each subsequence of length "length" there must be at most "Max" of the position i such that Predicate(variables(i))
   *
   * @param variables the "history variables"
   * @param length the length of the sequence
@@ -41,7 +41,7 @@ import scala.collection.immutable.SortedMap
   *                                                it is the other definition, if it does not, it is zero
   * @author renaud.delandtsheer@cetic.be
   */
-case class Sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:Array[Boolean], predicateIsToBeConsideredInVarViolation:Boolean = false)
+case class Sequence(variables: Array[_ <: IntValue], length:Int, Max:Int, predicate:Array[Boolean], predicateIsToBeConsideredInVarViolation:Boolean = false)
   extends Invariant with Constraint with IntNotificationTarget{
 
   assert(Max <= length, "the specified maximum is bigger than the ength of the sequences to consider")
@@ -62,7 +62,7 @@ case class Sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:A
   /**the violation of a variable is the sum of the violation of each sequence it is involved in*/
   var Violations = SortedMap.empty[IntValue, IntValue]
 
-  for(i <- 0 to variables.length - 1){
+  for(i <- variables.indices){
     val (lb,ub) = sequencesInvolving(i)
     val summedViolationOfSequencesVarIIsInvolvedIn = Sum((lb to ub).map(violated(_)))
     val violationOfVariableI = if(predicateIsToBeConsideredInVarViolation){
@@ -151,15 +151,15 @@ case class Sequence(variables: Array[IntValue], length:Int, Max:Int, predicate:A
     * It requires that the Model is instantiated with the variable debug set to true.
     */
   override def checkInternals(c: Checker) {
-    val countCheck:Array[Int] = Array.tabulate(sequences.size)(i => 0)
+    val countCheck:Array[Int] = Array.tabulate(sequences.size)(_ => 0)
     /**the violation of the sequence starting here*/
-    val violatedCheck = Array.tabulate(sequences.size)(i => 0)
+    val violatedCheck = Array.tabulate(sequences.size)(_ => 0)
     var violationCheck = 0
 
     for(i <- variables.indices){
       if(predicate(variables(i).value)){
         val (lb,ub) = sequencesInvolving(i)
-        for(j <- (lb to ub)){
+        for(j <- lb to ub){
           countCheck(j) += 1
           if(countCheck(j) > Max){
             violatedCheck(j) +=1

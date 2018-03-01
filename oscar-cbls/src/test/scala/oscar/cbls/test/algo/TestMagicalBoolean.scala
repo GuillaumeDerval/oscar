@@ -15,7 +15,7 @@ package oscar.cbls.test.algo
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.algo.magicArray.{MagicBoolArray}
+import oscar.cbls.algo.magicArray.MagicBoolArray
 import scala.util.Random
 
 /**
@@ -25,7 +25,7 @@ object TestMagicalBoolean extends App{
 
   def checkEqual(a:Array[Boolean],b:MagicBoolArray) {
     require(a.length == b.length)
-    for (id <- 0 until a.length - 1) {
+    for (id <- a.indices) {
       require(a(id) == b(id))
     }
   }
@@ -38,7 +38,7 @@ object TestMagicalBoolean extends App{
     reference(it)=value
     sut(it) = value
   }
-  var iter= sut.indicesAtTrue
+  var iter = sut.indicesAtTrue
   var iterString :String ="["
   var iter2List = iter.toList
   iter= sut.indicesAtTrue
@@ -53,7 +53,7 @@ object TestMagicalBoolean extends App{
   require(sut.toString.equals(iterString))
 
   //check if there are elements  "true" which is not in the iterator
-  for(n<- 0 until sut.length-1){
+  for(n <- sut.indices){
     if(!iter2List.contains(n)) require(!sut(n))
   }
 
@@ -61,20 +61,20 @@ object TestMagicalBoolean extends App{
   var reference2: Array[Boolean] =  Array[Boolean](false,false,false,false,false,false,false,false,false,false)
   var reference3: Array[Boolean] =  Array[Boolean](true,true,true,true,true,true,true,true,true,true)
   sut  = MagicBoolArray(10)
+  //val numIters = Int.MaxValue-2
+  val numIters = 1000000
   var tim:Long = System.currentTimeMillis()
- /* for(it <-0 to Int.MaxValue-2){
+  for(it <- 1 to numIters){
     val value = random.nextBoolean()
-   // if(verbose) println("set element at id :"+0+" to value :"+value)
-    sut.set(0,value)
-    //if(verbose) println("clearAll()")
-    sut.clearAll()//==> false
+    //println("set element at id :"+0+" to value :"+value)
+    sut.update(0,value)
+    //println("clearAll()")
+    sut all_= false//==> false
     checkEqual(reference2,sut)
-    //if(verbose)  println("setAll()")
-    sut.setAll() //==> true
+    //println("setAll()")
+    sut all_= true //==> true
     checkEqual(reference3,sut)
   }
-  require(sut.global== -1)
-  println((Int.MaxValue-2)+" iterations ==>  "+(System.currentTimeMillis()-tim)+"ms")*/
-
-
+  //require(sut.  .global== -1)
+  println(s"$numIters iterations ==>  ${System.currentTimeMillis()-tim}ms")
 }

@@ -20,8 +20,7 @@
 
 package oscar.examples.cbls.userguide
 
-import oscar.cbls.modeling._
-import oscar.cbls.util.StopWatch
+import oscar.cbls._
 
 import scala.util.Random
 
@@ -32,20 +31,20 @@ object NQueensEasy extends CBLSModel with App{
 
   val N = 1000
 
-  println("NQueenEasy(" + N + ") more efficient, uses standard neighborhoods")
+  println("NQueensEasy(" + N + ")")
   val range:Range = Range(0,N)
 
   val init = Random.shuffle(range.toList).iterator
-  val queens = Array.tabulate(N)((q:Int) => CBLSIntVar(init.next(),0 to N-1, "queen" + q))
+  val queens = Array.tabulate(N)((q:Int) => CBLSIntVar(init.next(),0 until N, "queen" + q))
 
-  post(allDiff(for (q <- range) yield (queens(q) + q)))
-  post(allDiff(for (q <- range) yield (q - queens(q))))
+  post(allDiff( for (q <- range) yield queens(q) + q) )
+  post(allDiff( for (q <- range) yield q - queens(q)) )
 
   val maxViolQueens = argMax(violations(queens)).setName("most violated queens")
 
   val neighborhood =
     swapsNeighborhood(queens, "SwapQueens",
-      searchZone2 = maxViolQueens,
+      searchZone2 = (_,_) => maxViolQueens.value,
       symmetryCanBeBrokenOnIndices = false)
 
   close()

@@ -20,9 +20,8 @@ package oscar.cbls.lib.constraint
 import java.lang.IndexOutOfBoundsException
 import java.util
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.constraint.Constraint
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
 
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
@@ -46,13 +45,8 @@ case class BelongsTo(v: IntValue, set: SetValue)
 
   violation.setDefiningInvariant(this)
 
-  /*def dist(value:Int, s:Set[Int]):Int ={
-    s.map(x => Math.abs(value - x)).min
-  }*/
-
   @inline
   override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
-    //violation := dist(NewVal,set.value)
     violation := (if (set.value.contains(v.value)) 0 else 1)
   }
 
@@ -62,7 +56,8 @@ case class BelongsTo(v: IntValue, set: SetValue)
   }
 
   /** the violation is 1 v is not is set, 0 otherwise*/
-  override def violation(v: Value): IntValue = { if (this.v == v || this.set == v) violation else 0 }
+  val constZero:IntValue = 0
+  override def violation(v: Value): IntValue = { if (this.v == v || this.set == v) violation else constZero}
 
   /**
    * To override whenever possible to spot errors in invariants.

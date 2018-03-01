@@ -18,6 +18,7 @@
 package oscar.cbls.algo.search
 
 import oscar.cbls.algo.heap.BinomialHeap
+import oscar.cbls.algo.quick.QList
 import oscar.cbls.util.StopWatch
 
 /**
@@ -45,6 +46,25 @@ object KSmallest {
   def doSortGetLater(a:Array[Int],key:Int => Int):KSmallest = new KSmallest(a,key)
 
   def lazySort(a:Array[Int], key:Int=>Int):Iterable[Int] = new LazyQuicksort(a,key)
+
+
+  def kFirst(k: Int, values:Iterable[Int], filter: (Int => Boolean) = _ => true): Iterable[Int] = {
+
+    def kFirstAccumulator(sortedNeighbors: Iterator[Int], k: Int): QList[Int] = {
+      require(k >= 0)
+      if(k == 0 || !sortedNeighbors.hasNext){
+        null
+      }else{
+        val neighbor = sortedNeighbors.next()
+        if (filter(neighbor))
+          QList(neighbor,kFirstAccumulator(sortedNeighbors, k - 1))
+        else
+          kFirstAccumulator(sortedNeighbors, k)
+      }
+    }
+
+    QList.toIterable(kFirstAccumulator(values.iterator, k))
+  }
 }
 
 class KSmallest(a:Array[Int],key:Int => Int = a => a){
@@ -91,9 +111,9 @@ object testQuickSort extends App with StopWatch{
 }
 
 /**
- * this implemetnation will perform a lazy sort.
+ * this implementation will perform a lazy sort.
  * it will sort on demand, as required by the iterator, or by an explicit call to sortUntil
- * @param array
+ * @param array an array containing the values to sort. the array will be modified by this procedure, to clone it if you need it somewhere else!
  */
 class LazyQuicksort(val array:Array[Int], key:Int => Int = a => a) extends Iterable[Int] {
 

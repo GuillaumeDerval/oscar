@@ -15,9 +15,9 @@ package oscar.cbls.lib.invariant.seq
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.algo.seq.functional.IntSequence
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.core._
 
 import scala.collection.immutable.SortedSet
 
@@ -132,7 +132,7 @@ class Successors(sequence:ChangingSeqValue, successorValues:Array[CBLSSetVar])
 
   def computeForValues(seq:IntSequence, values:SortedSet[Int]){
     for(value <- values){
-      successorValues(value) := seq.positionsOfValue(value).flatMap(position => seq.successorPos2Val(position))
+      successorValues(value) := SortedSet.empty[Int] ++ seq.positionsOfValue(value).flatMap(position => seq.successorPos2Val(position))
     }
   }
 
@@ -175,7 +175,6 @@ class Successors(sequence:ChangingSeqValue, successorValues:Array[CBLSSetVar])
 
   override def checkInternals(c : Checker){
     val fromScratch = computeAllFromScratchNoAffect(sequence.value)
-    println(successorValues.map(_.value).toList)
     for(node <- 0 to sequence.maxValue){  //TODO: sequence .value.size, and we can have redundant values in the equence!!!
       c.check(
         successorValues(node).value

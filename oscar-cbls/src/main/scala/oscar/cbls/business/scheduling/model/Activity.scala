@@ -25,11 +25,9 @@
 
 package oscar.cbls.business.scheduling.model
 
-import oscar.cbls.core.computation.CBLSIntVar._
-import oscar.cbls.core.computation._
+import oscar.cbls._
 import oscar.cbls.lib.invariant.minmax.{ArgMax, Max, MinArray}
 import oscar.cbls.lib.invariant.set.{Inter, Union}
-import oscar.cbls.modeling.Algebra._
 
 import scala.collection.immutable.SortedSet
 
@@ -55,7 +53,7 @@ class Activity(var duration: IntValue, val planning: Planning, val name: String 
   val ID: Int = planning.addActivity(this)
 
 
-  duration.restrictDomain(PositiveOrNullRange)
+  duration.domain.restrict(positiveOrNullRange)
   val isTakenInSentinel = true
 
   override def equals(obj: Any): Boolean = {
@@ -178,7 +176,7 @@ class Activity(var duration: IntValue, val planning: Planning, val name: String 
 
       potentiallyKilledPredecessors = Inter(definingPredecessors, additionalPredecessors)
 
-      allSucceedingActivities = new CBLSSetVar(planning.model, SortedSet.empty, 0 to planning.activityCount - 1,
+      allSucceedingActivities = new CBLSSetVar(planning.model, SortedSet.empty, 0 until planning.activityCount,
         "succeeding_activities_of_" + name)
 
       latestEndDate <== MinArray(planning.latestStartDates, allSucceedingActivities,

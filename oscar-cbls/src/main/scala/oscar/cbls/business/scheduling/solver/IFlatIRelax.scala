@@ -3,7 +3,7 @@ package oscar.cbls.business.scheduling.solver
 import oscar.cbls.business.scheduling.algo.CriticalPathFinder
 import oscar.cbls.business.scheduling.model._
 import oscar.cbls.core.computation.{Solution, Store}
-import oscar.cbls.lib.search.LinearSelectorTrait
+import oscar.cbls.lib.search.LinearSelectors
 
 /**
  * *****************************************************************************
@@ -39,7 +39,7 @@ import oscar.cbls.lib.search.LinearSelectorTrait
 class IFlatIRelax(p: Planning,
                   verbose: Boolean = true,
                   nbRelax: Int = 4,
-                  pkillPerRelax: Int = 50) extends LinearSelectorTrait {
+                  pkillPerRelax: Int = 50) extends LinearSelectors {
   val model: Store = p.model
 
   require(model.isClosed, "model should be closed before iFlatRelax algo can be instantiated")
@@ -197,7 +197,7 @@ class IFlatIRelax(p: Planning,
   /**implements the standard flatten procedure*/
   def flattenWorseFirst() {
     var iterations = 0
-    while (!p.worseOvershotResource.value.isEmpty) {
+    while (p.worseOvershotResource.value.nonEmpty) {
       if (iterations > maxIterations)
         throw new IllegalStateException("FlattenWorseFirst() will not terminate. Check there is no conflict between non moveable activities.")
       iterations += 1
@@ -226,21 +226,19 @@ class IFlatIRelax(p: Planning,
 
           val dependencyKillers: Array[Array[PrecedenceCleaner]] =
             Array.tabulate(baseForEjection.size)(
-              t1 => Array.tabulate(conflictActivityArray.size)(
+              t1 => Array.tabulate(conflictActivityArray.length)(
                 t2 => p.getDependencyToKillToAvoidCycle(baseForEjectionArray(t1), conflictActivityArray(t2))))
 
           selectMin2(baseForEjectionArray.indices, conflictActivityArray.indices,
             (a: Int, b: Int) => estimateMakespanExpansionForNewDependency(baseForEjectionArray(a), conflictActivityArray(b)),
             (a: Int, b: Int) => dependencyKillers(a)(b).canBeKilled) match {
-            case (a, b) => {
+            case (a, b) =>
               if (verbose) println("need to kill dependencies to complete flattening")
               dependencyKillers(a)(b).killDependencies(verbose)
-
               conflictActivityArray(b).addDynamicPredecessor(baseForEjectionArray(a), verbose)
-            }
-            case null => throw new Error("cannot flatten at time " + t + " activities: " + conflictActivities)
+            case null =>
+              throw new Error("cannot flatten at time " + t + " activities: " + conflictActivities)
           }
-
       }
     }
   }

@@ -12,20 +12,16 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-/*******************************************************************************
-  * Contributors:
-  *     This code has been initially developed by CETIC www.cetic.be
-  *         by Renaud De Landtsheer
-  *            Yoann Guyot
-  * ****************************************************************************
-  */
 
 package oscar.cbls.lib.invariant.logic
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.{Checker, KeyForElementRemoval}
+import oscar.cbls._
+import oscar.cbls.core._
+import oscar.cbls.core.computation.DomainRange
 
 import scala.collection.immutable.SortedSet
+
+
 
 /**
  * if (ifVar > pivot) then thenVar else elveVar
@@ -76,6 +72,12 @@ case class IntITE(ifVar: IntValue, thenVar: IntValue, elseVar: IntValue, pivot: 
   }
 }
 
+/**
+ * inputarray[index]
+ * @param inputArray is an array of int
+ * @param index is the index accessing the array
+ * @author renaud.delandtsheer@cetic.be
+ * */
 case class ConstantIntElement(index: IntValue, inputArray: Array[Int])
   extends Int2Int(index, inputArray(_), InvariantHelper.getMinMaxRangeInt(inputArray))
 
@@ -280,9 +282,9 @@ case class Elements[T <:IntValue](index: SetValue, inputarray: Array[T])
  * @param index is the index of the array access
  * @author renaud.delandtsheer@cetic.be
  * */
-case class SetElement(index: IntValue, inputarray: Array[SetValue])
+case class SetElement[X<:SetValue](index: IntValue, inputarray: Array[X])
   extends SetInvariant(inputarray.apply(index.value).value)
-  with Bulked[SetValue, Domain]
+  with Bulked[X, Domain]
   with VaryingDependencies
   with IntNotificationTarget
   with SetNotificationTarget{
@@ -298,7 +300,7 @@ case class SetElement(index: IntValue, inputarray: Array[SetValue])
 
   finishInitialization()
 
-  override def performBulkComputation(bulkedVar: Array[SetValue]): Domain =
+  override def performBulkComputation(bulkedVar: Array[X]): Domain =
     InvariantHelper.getMinMaxBoundsSet(bulkedVar)
 
   @inline

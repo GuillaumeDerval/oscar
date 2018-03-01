@@ -21,8 +21,10 @@
 
 package oscar.cbls.core.computation
 
+import oscar.cbls.algo.dll._
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls.algo.rb.RedBlackTreeMap
+import oscar.cbls.core.propagation._
 
 import scala.collection.immutable.SortedSet
 import scala.language.implicitConversions
@@ -45,7 +47,7 @@ class ChangingSetValueSnapShot(val variable:ChangingSetValue,val savedValue:Sort
   override protected def doRestore() : Unit = {variable.asInstanceOf[CBLSSetVar] := savedValue}
 }
 
-
+class ValueWisePropagationWaveIdentifier()
 abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domain)
   extends AbstractVariable with SetValue{
   private var privatedomain:Domain = initialDomain
@@ -67,12 +69,24 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
   override def toString:String = name + ":={" + (if(model.propagateOnToString) value else m_NewValue).mkString(",") + "}"
 
   /** this method is a toString that does not trigger a propagation.
-    * use this when debugguing your software.
+    * use this when debugging your software.
     * you should specify to your IDE to render variable objects using this method isntead of the toString method
     * @return a string similar to the toString method
     */
   def toStringNoPropagate: String = name + ":={" + m_NewValue.foldLeft("")(
     (acc,intval) => if(acc.equalsIgnoreCase("")) ""+intval else acc+","+intval) + "}"
+
+  //mechanism that manage key with value changes
+  private val listeningElementsNonValueWise:DoublyLinkedList[(PropagationElement,Int)] = getDynamicallyListeningElements.permaFilter({case (pe,id) => id != Int.MinValue})
+
+  override protected[core] def registerDynamicallyListeningElementNoKey(listening : PropagationElement, i : Int) : Unit = {
+    super.registerDynamicallyListeningElementNoKey(listening, i)
+  }
+
+  def instrumentKeyToValueWiseKey(key:KeyForElementRemoval):ValueWiseKey = {
+    createValueWiseMechanicsIfNeeded()
+    new ValueWiseKey(key,this,null)
+  }
 
   /**The values that have bee impacted since last propagation was performed.
     * null if set was assigned
@@ -130,6 +144,22 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
     notifyChanged()
   }
 
+  private def createValueWiseMechanicsIfNeeded(){
+    if(valueToValueWiseKeys == null){
+      valueToValueWiseKeys = Array.tabulate(this.domain.max - this.domain.min + 1)(_ => new DoublyLinkedList[ValueWiseKey]())
+    }
+  }
+  private[this] var valueToValueWiseKeys:Array[DoublyLinkedList[ValueWiseKey]] = null
+  private[this] val offsetForValueWiseKey = domain.min
+
+  @inline
+  def addToValueWiseKeys(key:ValueWiseKey,value:Int):DLLStorageElement[ValueWiseKey] = {
+    valueToValueWiseKeys(value - offsetForValueWiseKey).addElem(key)
+  }
+
+  @inline
+  private def valueWiseKeysAtValue(value:Int):DoublyLinkedList[ValueWiseKey] = valueToValueWiseKeys(value - offsetForValueWiseKey)
+
   override def performPropagation(){performSetPropagation()}
 
   @inline
@@ -141,7 +171,11 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
       val (addedValues,deletedValues):(Iterable[Int],Iterable[Int]) = if (nbTouched == -1) {
         //need to call every listening one, so gradual approach required
         if(m_NewValue == OldValue) (List.empty,List.empty) else (m_NewValue.diff(OldValue),OldValue.diff(m_NewValue))
+
       }else {
+        //TODO: this is slow, and it delives TreeSet. TreeSet are slow fo valueWise notifications
+        //we have the set of values that have been touched (added or deleted)
+        //but we need to check for each opf them if they have been both added and deleted
         var addedUnique = SortedSet.empty[Int] ++ this.addedValues
         var removedUnique = SortedSet.empty[Int] ++ this.removedValues
         for(inter <- addedUnique.intersect(removedUnique)){
@@ -160,12 +194,12 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
       assert((OldValue ++ addedValues -- deletedValues).equals(m_NewValue))
 
       if(addedValues.nonEmpty || deletedValues.nonEmpty) {
-        val dynListElements = getDynamicallyListeningElements
-        val headPhantom = dynListElements.headPhantom
+        //notifying the PE that listen to the whole set
+        val dynListElements = listeningElementsNonValueWise
+        val headPhantom = dynListElements.phantom
         var currentElement = headPhantom.next
         while (currentElement != headPhantom) {
           val e = currentElement.elem
-          currentElement = currentElement.next
           val inv : SetNotificationTarget = e._1.asInstanceOf[SetNotificationTarget]
           assert({
             this.model.notifiedInvariant = inv.asInstanceOf[Invariant]; true
@@ -174,7 +208,18 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
           assert({
             this.model.notifiedInvariant = null; true
           })
+          //we go to the next to be robust against invariant that change their dependencies when notified
+          //this might cause crash because dynamicallyListenedInvariants is a mutable data structure
+          currentElement = currentElement.next
         }
+
+        if(valueToValueWiseKeys != null) {
+          val currentValueWisePropagationWaveIdentifier = new ValueWisePropagationWaveIdentifier()
+
+          notifyForValues(addedValues, addedValues, deletedValues, currentValueWisePropagationWaveIdentifier)
+          notifyForValues(deletedValues, addedValues, deletedValues, currentValueWisePropagationWaveIdentifier)
+        }
+
       }
       //puis, on fait une affectation en plus, pour garbage collecter l'ancienne structure de donnees.
       OldValue=m_NewValue
@@ -183,6 +228,39 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
     this.removedValues = null
     nbTouched = 0
   }
+
+  @inline  //This method is awfully slow, ad we do not know why
+  private def notifyForValues(values : Iterable[Int],addedValues:Iterable[Int], deletedValues:Iterable[Int], currentValueWisePropagationWaveIdentifier:ValueWisePropagationWaveIdentifier) {
+    val valuesIt = values.iterator
+    while(valuesIt.hasNext){
+      val value = valuesIt.next()
+      val valueWiseKeys = valueWiseKeysAtValue(value)
+      val headPhantom = valueWiseKeys.phantom
+      var currentElement : DLLStorageElement[ValueWiseKey] = headPhantom.next
+      while (currentElement != headPhantom) {
+        val e : ValueWiseKey = currentElement.elem
+        if(e.currentValueWisePropagationWaveIdentifier != currentValueWisePropagationWaveIdentifier) {
+          e.currentValueWisePropagationWaveIdentifier = currentValueWisePropagationWaveIdentifier
+          val target = e.target
+          assert({
+            this.model.notifiedInvariant = target.asInstanceOf[Invariant]
+            true
+          })
+          target.notifySetChanges(this, Int.MinValue, addedValues, deletedValues, OldValue, m_NewValue)
+          assert({
+            this.model.notifiedInvariant = null
+            true
+          })
+        }
+        //we go to the next to be robust against invariant that change their dependencies when notified
+        //this might cause crash because dynamicallyListenedInvariants is a mutable data structure
+        currentElement = currentElement.next
+      }
+    }
+  }
+
+
+
 
   def value:SortedSet[Int] = getValue(false)
 
@@ -210,23 +288,82 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
   protected def :+=(i:Int) {this.insertValue(i)}
   protected def :-=(i:Int) {this.deleteValue(i)}
 
+  def createClone:CBLSSetVar = {
+    val clone = new CBLSSetVar(model, this.value, this.domain, "clone of " + this.name)
+    clone <== this
+    clone
+  }
+
   override def checkInternals(c:Checker){
     assert(this.definingInvariant == null || OldValue.intersect(m_NewValue).size == m_NewValue.size,
       "internal error: " + "Value: " + m_NewValue + " OldValue: " + OldValue)
   }
 }
-trait SetNotificationTarget {
+trait SetNotificationTarget extends PropagationElement{
   /**
    * this method will be called just before the variable "v" is actually updated.
    * @param v
-   * @param d
+   * @param d d is always MinValue when notified for a valueWiseKey
    * @param addedValues
    * @param removedValues
    * @param oldValue
    * @param newValue
    */
   def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int])
+
+  def registerDynamicValueWiseDependency(s:SetValue):ValueWiseKey = {
+    s match{
+      case c:ChangingSetValue =>
+        val key = registerDynamicallyListenedElement(c,Int.MinValue)
+        val valueWiseKey = c.instrumentKeyToValueWiseKey(key)
+        valueWiseKey.target = this
+        valueWiseKey
+      case _ =>
+        DoNothingValueWiseKey
+    }
+  }
 }
+
+class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,var target:SetNotificationTarget){
+
+  val sizeOfSet = setValue.max - setValue.min +1
+  val offset = setValue.min
+  var currentValueWisePropagationWaveIdentifier:ValueWisePropagationWaveIdentifier = null
+
+  def performRemove(){
+    //remove all values in the focus of this key
+    for(i <- valueToKeyArray){
+      if(i != null) i.delete()
+    }
+    originalKey.performRemove()
+  }
+
+  val minValue = setValue.min
+  val maxValue = setValue.max
+
+  //var valueToKey:RedBlackTreeMap[DLLStorageElement[ValueWiseKey]] = RedBlackTreeMap.empty
+
+  val valueToKeyArray = Array.fill[DLLStorageElement[ValueWiseKey]](sizeOfSet)(null)
+
+  def addToKey(value:Int) {
+    //TODO: change to assert
+    require(valueToKeyArray(value) == null)
+    valueToKeyArray(value) = setValue.addToValueWiseKeys(this,value)
+  }
+
+  def removeFromKey(value:Int){
+    val k = valueToKeyArray(value)
+    k.delete()
+    valueToKeyArray(value) = null
+  }
+}
+
+case object DoNothingValueWiseKey extends ValueWiseKey(DummyKeyForElementRemoval,null,null){
+  override def addToKey(value : Int){}
+
+  override def removeFromKey(value : Int){}
+}
+
 
 object ChangingSetValue{
   implicit val ord:Ordering[ChangingSetValue] = new Ordering[ChangingSetValue]{
@@ -293,13 +430,17 @@ object CBLSSetVar{
   }
 }
 
+object CBLSSetConst {
+  def apply(value : SortedSet[Int]) = new CBLSSetConst(value)
+}
+
 /**
  * An IntSetConst is an IntSetVar that has a constant value, defined by a set of integer.
  * It has no associated model, as there is no need to incorporate it into any propagation process.
  * @param value: the value of the constant
  * @author renaud.delandtsheer@cetic.be
  * */
-case class CBLSSetConst(override val value:SortedSet[Int])
+class CBLSSetConst(override val value:SortedSet[Int])
   extends SetValue{
   override def toString:String = "Set{" + value.mkString(",") + "}"
   override def domain:Domain = DomainRange(value.min,value.max)
@@ -336,8 +477,6 @@ abstract class SetInvariant(initialValue:SortedSet[Int] = SortedSet.empty,
     performInvariantPropagation()
     performSetPropagation()
   }
-
-  override def getDotNode:String = throw new Error("not implemented")
 }
 
 object IdentitySet{

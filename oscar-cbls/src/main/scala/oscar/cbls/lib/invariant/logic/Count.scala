@@ -24,8 +24,9 @@
 
 package oscar.cbls.lib.invariant.logic
 
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
+import oscar.cbls.core.computation.{CBLSIntVar, DomainRange, IntValue}
 
 /**
  * Author: Jean-Noël Monette

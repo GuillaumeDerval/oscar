@@ -23,14 +23,14 @@ class TarjanNodeData{
   var OnStack:Boolean = false
 }
 
-/** The Tarjan algorithm for detecting SCC is graphs
+/** The Tarjan algorithm for detecting SCC (strongly connected components) in graphs
   * This version is faster because it does not use dictionaries.
   * all data are stored in the nodes.
   * @author renaud.delandtsheer@cetic.be
   */
 object TarjanWithExternalStorage{
 
-  def getStronlyConnexComponents[T](Nodes:Iterable[T], GetSucceedingNodes:T => Iterable[T], getNodeStorage:T=>TarjanNodeData):List[QList[T]] = {
+  def getStronglyConnexComponents[T](Nodes:Iterable[T], GetSucceedingNodes:T => Iterable[T], getNodeStorage:T=>TarjanNodeData):List[QList[T]] = {
     var index:Int=0
     var Stack:QList[T]=null
     var Components:List[QList[T]]= List.empty
@@ -67,7 +67,7 @@ object TarjanWithExternalStorage{
           Stack = Stack.tail
           storageForNode.OnStack = false
           SCC = QList(node,SCC)
-          finished = (node == v)
+          finished = node == v
         }
         Components = SCC :: Components
       }

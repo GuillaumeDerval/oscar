@@ -25,12 +25,11 @@ package oscar.cbls.business.scheduling.model
  * ****************************************************************************
  */
 
+import oscar.cbls._
 import oscar.cbls.algo.conflict.ConflictSearch
-import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
 import oscar.cbls.lib.invariant.logic.Cumulative
 import oscar.cbls.lib.invariant.minmax.{ArgMax, Max}
-import oscar.cbls.lib.search.LinearSelectorTrait
-import oscar.cbls.modeling.Algebra._
+import oscar.cbls.lib.search.LinearSelectors
 
 import scala.collection.SortedMap
 
@@ -44,7 +43,7 @@ import scala.collection.SortedMap
  * @author renaud.delandtsheer@cetic.be
  */
 class CumulativeResource(planning: Planning, val maxAmount: Int = 1, name: String = null)
-  extends Resource(planning: Planning, name) with LinearSelectorTrait {
+  extends Resource(planning: Planning, name) with LinearSelectors {
   require(maxAmount >= 0) // The IntVar that store the useAmount would break if their domain of lb > ub.
 
   val useAmount = Array.tabulate(maxDuration + 1)(t => CBLSIntVar(model, 0, 0 to Int.MaxValue, s"use_amount_${name}_at_time_$t"))
@@ -103,7 +102,7 @@ class CumulativeResource(planning: Planning, val maxAmount: Int = 1, name: Strin
   }
 
   def toAsciiArt(headerLength: Int): String = {
-    def nStrings(N: Int, C: String): String = (if (N <= 0) "" else "" + C + nStrings(N - 1, C))
+    def nStrings(N: Int, C: String): String = if (N <= 0) "" else "" + C + nStrings(N - 1, C)
     def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
 
     var lines: List[String] = List.empty
@@ -151,9 +150,9 @@ case class VariableResource(planning: Planning with VariableResources,
   val restrictionProfile = mergePeriods(availabilities.map(maxAmount - _))
 
   for (time <- 0 to maxDuration) {
-    val timeModulo = time % availabilities.size
+    val timeModulo = time % availabilities.length
     val profile = restrictionProfile(timeModulo)
-    if (!profile.isEmpty) {
+    if (profile.nonEmpty) {
       profile.foreach(applyRestrictionAt(time, _))
     }
   }
@@ -175,7 +174,7 @@ case class VariableResource(planning: Planning with VariableResources,
    * @author yoann.guyot@cetic.be
    */
   private def mergePeriods(availabilities: Array[Int]): Array[List[(Int, Int)]] = {
-    val modulo = availabilities.size
+    val modulo = availabilities.length
     var merged: Array[List[(Int, Int)]] = Array.fill(modulo)(List())
     var merging = new Array[(Int, Int)](modulo)
 
@@ -206,7 +205,7 @@ case class VariableResource(planning: Planning with VariableResources,
      * For each time, we evaluate the variation of availability between
      * the current time and the previous one.
      */
-    for (time <- 0 to modulo - 1) {
+    for (time <- 0 until modulo) {
       val availability = availabilities(time)
 
       /**
@@ -220,7 +219,7 @@ case class VariableResource(planning: Planning with VariableResources,
          * merging(time) = (duration + 1, amount)
          */
         if (previousAvailability > 0) {
-          for (i <- 0 to time - 1) {
+          for (i <- 0 until time) {
             if (merging(i) != null)
               extendPeriod(i)
           }
@@ -244,7 +243,7 @@ case class VariableResource(planning: Planning with VariableResources,
          * (moved from merging to merged)
          */
         if (availability == 0) {
-          for (i <- 0 to modulo - 1)
+          for (i <- 0 until modulo)
             if (merging(i) != null)
               merged(i) = merging(i) :: merged(i)
           merging = new Array[(Int, Int)](modulo)
@@ -300,7 +299,7 @@ case class VariableResource(planning: Planning with VariableResources,
     /**
      * Closes last merging periods
      */
-    for (i <- 0 to modulo - 1)
+    for (i <- 0 until modulo)
       if (merging(i) != null)
         closePeriod(i)
 
@@ -331,7 +330,7 @@ case class VariableResource(planning: Planning with VariableResources,
          * If no task already exists to tackle this restriction
          * (same start, same duration), then a new ad-hoc task is added.
          */
-        case None => {
+        case None =>
           val restrictionEnd = time + duration - 1
           val restrictionTask = new NonMoveableActivity(
             time, duration, planning, "ResRestriction" + time + "to" + restrictionEnd)
@@ -339,8 +338,7 @@ case class VariableResource(planning: Planning with VariableResources,
             restrictionTask :: planning.resourceRestrictionTasks(time)
           //          println("ResReduc" + time + "->" + reducEnd + " added.")
           restrictionTask
-        }
-        case Some(restrictionTask) => restrictionTask
+        case Some(restrictTask) => restrictTask
       }
 
     restrictionTask.usesCumulativeResource(this, occupation)

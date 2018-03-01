@@ -36,8 +36,11 @@ import scala.language.implicitConversions
   ******************************************************************************/
 
 object PiecewiseLinearFun{
+
   def identity = new PiecewiseLinearFun()
+
   implicit def toIterable(f:PiecewiseLinearFun):Iterable[Pivot] = f.transformation.values
+
   def createFromPivots(pivots:Iterable[Pivot]):PiecewiseLinearFun = {
     var acc = RedBlackTreeMap.empty[Pivot]
     val pivotIt = pivots.toIterator
@@ -155,7 +158,7 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
     val f3 = LinearTransform(widthZone2,false)
 
     val transformWithZone1Shifted =
-      transformReadyForShiftOfZone1.update(
+      transformReadyForShiftOfZone1.updateDelta(
         startZone1Included,
         endZone1Included,
         widthZone2,
@@ -170,6 +173,94 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
       deleteUnnecessaryPivotStartingJustAfter(startZone1Included-1,
       deleteUnnecessaryPivotStartingJustAfter(startZone1Included + widthZone2 - 1,
         deleteUnnecessaryPivotStartingJustAfter(endZone2Included,transformationWithUpdate2Done))))
+  }
+
+  /**
+   * flips the function between the given bounds. does not add closing pivots before
+   * @param startZoneIncluded
+   * @param endZoneIncluded
+   * @return
+   */
+  def flipFunctionInInterval(startZoneIncluded:Int,endZoneIncluded:Int):PiecewiseLinearFun = {
+    //a pivot must be added after the end of update1 if 2 is the first zone
+    val transformReadyForFlipOnLeft = addRedundantPivotAt(startZoneIncluded,this.transformation)
+    val transformReadyForFlip = addRedundantPivotAt(endZoneIncluded+1,transformReadyForFlipOnLeft)
+    //at this point, there is a pivot at startZoneIncluded, and a pivot at endZoneIncluded+1
+
+    //collecting the relevant pivots and their end into a stack
+    val collectedPivotsForwardOrder:List[Pivot] = pivotsBetween(startZoneIncluded,endZoneIncluded,transformReadyForFlip)
+    //TODO: use QLists here.
+
+    //flip the collected pivots
+    val flippedPivots = flipSubfunction(collectedPivotsForwardOrder,endZoneIncluded,endZoneIncluded)
+
+    val flippedPivotsIterator = flippedPivots.iterator
+    //update the pivots to the flipped pivot
+
+    val updatedForwardFct = transformReadyForFlip.update(startZoneIncluded,transformReadyForFlip.biggestLowerOrEqual(endZoneIncluded).get._1,(_,_) => {
+      val newPivot = flippedPivotsIterator.next
+      (newPivot.fromValue,newPivot)
+    } )
+
+    new PiecewiseLinearFun(updatedForwardFct)
+  }
+
+
+  private def mirrorPivot(p:Pivot,width:Int,newEnd:Int):Pivot = {
+    val newFromValue = newEnd - width + 1
+    val newMinus = !p.f.minus
+    val newOffset = p.f(p.fromValue + newEnd)
+
+    val newPivot = new Pivot(newFromValue,new LinearTransform(newOffset,newMinus))
+
+    assert(p.f(p.fromValue) == newPivot.f(newEnd))
+    assert(p.f(p.fromValue + width - 1) == newPivot.f(newPivot.fromValue))
+
+    newPivot
+  }
+
+
+  private def flipSubfunction(pivotList:List[Pivot], endOfLastPivotMoving:Int, endOfLastPivotUntouched:Int, acc:List[Pivot] = List.empty):List[Pivot] = {
+    pivotList match {
+      case p1 :: p2 :: tail =>
+        val width = p2.fromValue - p1.fromValue
+        flipSubfunction(p2 :: tail,endOfLastPivotMoving - width, endOfLastPivotUntouched, mirrorPivot(p1,width:Int,endOfLastPivotMoving) :: acc)
+      case List(p1) =>
+        //the updated pivot starts at endOfLastPIvot
+        //its slope is the reverse of p1
+        //the offset is such that
+        //require(p1.f(p1.fromValue) == newPivot.f(endOfLastPivotMoving))
+        //require(p1.f(endOfLastPivotUntouched) == newPivot.f(newPivot.fromValue))
+
+        val width = endOfLastPivotUntouched - p1.fromValue + 1
+        mirrorPivot(p1,width,endOfLastPivotMoving) :: acc
+      case Nil => acc
+    }
+  }
+
+  def shiftPivots(pivotList:List[Pivot],delta:Int):List[Pivot] = {
+    pivotList.map(_.shiftOnX(delta))
+  }
+
+  def pivotsBetween(startPositionIncluded:Int,endPositionIncluded:Int,transform:RedBlackTreeMap[Pivot]):List[Pivot] = {
+    transform.biggestLowerOrEqual(endPositionIncluded) match {
+      case None => List.empty
+      case Some((pivotStart, pivot)) =>
+        var explorer = transform.positionOf(pivotStart).get
+        var acc : List[Pivot] = List(explorer.value)
+        while (explorer.prev match {
+          case None => false
+          case Some(prevExplorer) =>
+            if (startPositionIncluded <= prevExplorer.key) {
+              acc = prevExplorer.value :: acc
+              explorer = prevExplorer
+              true
+            } else {
+              false
+            }
+        }) {}
+        return acc
+    }
   }
 
   def swapAdjacentZonesShiftSecond(startZone1Included:Int, endZone1Included:Int, endZone2Included:Int, flipZone1:Boolean):PiecewiseLinearFun = {
@@ -187,7 +278,7 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
     val f3 = LinearTransform(-widthZone1,false)
 
     val transformWithZone2Shifted =
-      transformReadyForShiftOfZone2.update(
+      transformReadyForShiftOfZone2.updateDelta(
         endZone1Included +1,
         endZone2Included,
         -widthZone1,
@@ -202,7 +293,6 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
       deleteUnnecessaryPivotStartingJustAfter(startZone1Included-1,
         deleteUnnecessaryPivotStartingJustAfter(startZone1Included + widthZone2 - 1,
           deleteUnnecessaryPivotStartingJustAfter(endZone2Included,transformationWithUpdate1Done))))
-
   }
 
   def updateForCompositionBefore(fromIncluded:Int, toIncluded: Int, additionalFAppliedBefore: LinearTransform):PiecewiseLinearFun = {
@@ -229,7 +319,6 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
         }
     }
   }
-
 
   private def myUpdateForCompositionBefore(fromIncluded:Int, toIncluded: Int, additionalFAppliedBefore: LinearTransform,cleanedTransformation:RedBlackTreeMap[Pivot]):RedBlackTreeMap[Pivot] = {
     val isAdditionaFNegativeSlope = additionalFAppliedBefore.minus
@@ -300,12 +389,18 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
   }
 
 
+  /**
+   *
+   * @param addedPivot
+   * @param transform
+   * @return  transform. there will always be a pivot at the addedPivot position.
+   */
   private def addRedundantPivotAt(addedPivot:Int,transform:RedBlackTreeMap[Pivot]):RedBlackTreeMap[Pivot] = {
     transform.biggestLowerOrEqual(addedPivot) match {
       case Some((key, pivot)) =>
-        if (key == addedPivot) transform
+        if (key == addedPivot) transform //we do not add a redundant pivot because there is already a pivot here
         else transform.insert(addedPivot, new Pivot(addedPivot, pivot.f))
-      case _ => transform.insert(addedPivot, new Pivot(addedPivot, LinearTransform.identity))
+      case _ => transform.insert(addedPivot, new Pivot(addedPivot, LinearTransform.identity)) //implicitly, it was the identity function here, so add the pivot
     }
   }
 
@@ -375,4 +470,15 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
 
 class Pivot(val fromValue:Int, val f: LinearTransform){
   override def toString = "Pivot(from:" + fromValue + " " + f + " f(from)=" + f(fromValue) +")"
+
+  def shiftOnX(delta:Int):Pivot =
+    new Pivot(fromValue+delta,f.shiftOnX(delta))
+
+  def flip(endX:Int):Pivot = {
+    if(f.minus){
+      new Pivot(fromValue,LinearTransform(f(endX) - fromValue,false))
+    }else{
+      new Pivot(fromValue,LinearTransform(fromValue + f(endX),true))
+    }
+  }
 }

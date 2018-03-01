@@ -29,6 +29,10 @@ class LinearTransform(val offset:Int,val minus:Boolean){
   def apply(value:Int) = if(minus) offset - value else offset + value
   def unApply(value:Int) = if(minus) offset - value else value - offset
 
+  def shiftOnX(deltaOnFunction:Int):LinearTransform = {
+    LinearTransform(if(minus){offset + deltaOnFunction}else{offset - deltaOnFunction},minus)
+  }
+
   /**
    * delivers a new linear transform that is equal to this(that(value))
    * @param that
@@ -44,12 +48,13 @@ class LinearTransform(val offset:Int,val minus:Boolean){
 
   def isIdentity:Boolean = offset == 0 && !minus
 
-  override def toString: String = (
+  override def toString: String =
     if(offset == 0) {
       if (minus) "(x=>-x)" else "(x=>x)"
-    }else "(x=>" + offset + (if (minus) "-" else "+") + "x)")
+    }
+    else "(x=>" + offset + (if (minus) "-" else "+") + "x)"
 
   //this: if minus y = offset - x else y = offset + x
   //that : if minus x = offset - y else x = - offset + y
-  def invert:LinearTransform = new LinearTransform(if(minus) offset else (-offset),minus)
+  def invert:LinearTransform = new LinearTransform(if (minus) offset else -offset, minus)
 }

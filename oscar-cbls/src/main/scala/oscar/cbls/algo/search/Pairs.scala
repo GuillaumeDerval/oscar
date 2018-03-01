@@ -22,7 +22,7 @@ object Pairs {
 
   /**
    * @param l a list
-   * @return a list of all pairs of element made from two elements in l
+   * @return a list of all pairs of elements made from two elements in l
    */
   def makeAllUnsortedPairs[T](l:List[T]):List[(T,T)] = {
     def makeAllUnsortedPairsWithHead(head:T, tail:List[T], toAppend:List[(T,T)]):List[(T,T)] = {
@@ -38,21 +38,35 @@ object Pairs {
     }
   }
 
-  def makeAllSortedPairs[T](l:List[T]):List[(T,T)] = {
+  /**
+   * @param l a list
+   * @return a list of all pairs of elements made from two elements in l, preserving the order
+   *         in which those elements are in l
+   */
+  def makeAllSortedPairs[T](l:List[T], filter: (T,T) => Boolean = (head:T,other:T) => true, toReturn: List[(T,T)] = List.empty):List[(T,T)] = {
     def makeAllSortedPairsWithHead(head:T,
                                    tail:List[T],
                                    toAppend:List[(T,T)]):List[(T,T)] = {
       tail match{
         case Nil => toAppend
-        case other::newTail => (head,other) :: makeAllSortedPairsWithHead(head,newTail,toAppend)
+        case other::newTail =>
+          if(filter(head,other))
+            (head,other) :: makeAllSortedPairsWithHead(head,newTail,toAppend)
+          else
+            makeAllSortedPairsWithHead(head,newTail,toAppend)
       }
     }
     l match{
-      case Nil => Nil
-      case h::t => makeAllSortedPairsWithHead(h,t,makeAllSortedPairs(t))
+      case Nil => toReturn
+      case h::t => makeAllSortedPairs(t, filter, makeAllSortedPairsWithHead(h,t,List.empty) ::: toReturn)
     }
   }
 
+  /**
+   * @param l a list
+   * @return a list of pairs (x, xs) where x is in l and xs is the list
+   *         of elements following x in l
+   */
   def makeAllHeadAndTails[T](l:List[T]):List[(T,List[T])] = {
     l match{
       case Nil => Nil
@@ -60,17 +74,27 @@ object Pairs {
     }
   }
 
-  def zipIntoAllPossiblePairs[L,T](l:List[L],t:List[T]):List[(L,T)] = {
+  /**
+    * @param l a list
+    * @param t a list
+    * @param filter an optional filter
+    * @return a list containing all the possible pairs (a, b) where a is in l and b is in t
+    */
+  def zipIntoAllPossiblePairs[L,T](l:List[L],
+                                   t:List[T],
+                                   filter: (L,T) => Boolean = (_:L,_:T) => true,
+                                   toReturn: List[(L,T)] = List.empty):List[(L,T)] = {
     l match{
-      case Nil => Nil
-      case hl::lt =>
-        def myAggregate(lh:L,t:List[T]):List[(L,T)] = {
-          t match {
-            case ht :: tt => (lh, ht) :: myAggregate(lh, tt)
-            case Nil => zipIntoAllPossiblePairs(lt,t)
+      case Nil => toReturn
+      case hl::tl =>
+        def myAggregate(lh:L,rt:List[T], toReturn: List[(L,T)]):List[(L,T)] = {
+          rt match {
+            case ht :: tt if filter(lh,ht) => myAggregate(lh, tt, (lh,ht) :: toReturn)
+            case ht :: tt => myAggregate(lh, tt,toReturn)
+            case Nil => toReturn
           }
         }
-        myAggregate(hl,t)
+        zipIntoAllPossiblePairs(tl,t,filter,myAggregate(hl,t,List.empty) ::: toReturn)
     }
   }
 }

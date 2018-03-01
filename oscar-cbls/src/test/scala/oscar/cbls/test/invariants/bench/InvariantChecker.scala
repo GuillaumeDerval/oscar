@@ -24,9 +24,9 @@ import oscar.cbls.core.propagation.Checker
  */
 class InvariantChecker(verbose: Int = 0) extends Checker {
   var firstCheck = true
-  var invariantChecked = false
+  var invariantChecked = true
 
-  def check(verity: Boolean, traceOption: Option[String]) = {
+  def check(verity: Boolean, traceOption: => Option[String]) = {
     if (traceOption.isDefined) {
       val trace = traceOption.get
       if (!verity)

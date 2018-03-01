@@ -22,10 +22,9 @@
 
 package oscar.cbls.lib.invariant.minmax
 
-import oscar.cbls.algo.heap.{ArrayMap, BinomialHeapWithMoveExtMem}
-import oscar.cbls.core.computation.Invariant._
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.{Checker, KeyForElementRemoval}
+import oscar.cbls.algo.heap.BinomialHeapWithMoveInt
+import oscar.cbls._
+import oscar.cbls.core._
 
 import scala.collection.immutable.SortedSet
 
@@ -40,7 +39,7 @@ import scala.collection.immutable.SortedSet
 case class ArgMax(vars: Array[IntValue], cond: SetValue = null, default: Int = Int.MinValue)
   extends ArgMiax(vars, cond, default) {
 
-  override def Ord(v: IntValue): Int = -v.value
+  override def ord(v: Int): Int = -v
 }
 
 /**
@@ -51,10 +50,10 @@ case class ArgMax(vars: Array[IntValue], cond: SetValue = null, default: Int = I
  * update is O(log(n))
  * @author renaud.delandtsheer@cetic.be
  * */
-case class ArgMin(vars: Array[IntValue], cond: SetValue = null, default: Int = Int.MaxValue)
+case class ArgMin[X <: IntValue](vars: Array[X], cond: SetValue = null, default: Int = Int.MaxValue)
   extends ArgMiax(vars, cond, default) {
 
-  override def Ord(v: IntValue): Int = v.value
+  override def ord(v: Int): Int = v
 }
 
 /**
@@ -65,9 +64,9 @@ case class ArgMin(vars: Array[IntValue], cond: SetValue = null, default: Int = I
  * update is O(log(n))
  * @author renaud.delandtsheer@cetic.be
  * */
-abstract class ArgMiax(vars: Array[IntValue], cond: SetValue, default: Int)
+abstract class ArgMiax[X <: IntValue](vars: Array[X], cond: SetValue, default: Int)
   extends SetInvariant(initialDomain = vars.indices.start to vars.indices.last)
-  with Bulked[IntValue, Unit]
+  with Bulked[X, Unit]
   with VaryingDependencies
   with IntNotificationTarget
   with SetNotificationTarget{
@@ -77,7 +76,7 @@ abstract class ArgMiax(vars: Array[IntValue], cond: SetValue, default: Int)
   }
 
   var keyForRemoval: Array[KeyForElementRemoval] = new Array(vars.length)
-  var h: BinomialHeapWithMoveExtMem[Int] = new BinomialHeapWithMoveExtMem[Int](i => Ord(vars(i)), vars.length, new ArrayMap(vars.length))
+  var h: BinomialHeapWithMoveInt = new BinomialHeapWithMoveInt(i => ord(vars(i).value), vars.length, vars.length)
 
   if (cond != null) {
     registerStaticDependency(cond)
@@ -100,21 +99,21 @@ abstract class ArgMiax(vars: Array[IntValue], cond: SetValue, default: Int)
     }
   }
 
-  def Ord(v: IntValue): Int
+  def ord(v: Int): Int
 
   val firsts = h.getFirsts
   this := firsts.foldLeft(SortedSet.empty[Int])((acc, index) => acc + index)
-  var Miax = if (firsts.isEmpty) default else vars(h.getFirst).value
+  var miax = if (firsts.isEmpty) default else vars(h.getFirst).value
 
   @inline
   override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
     //mettre a jour le heap
     h.notifyChange(index)
 
-    if (vars(h.getFirst).value != Miax) {
-      Miax = vars(h.getFirst).value
+    if (vars(h.getFirst).value != miax) {
+      miax = vars(h.getFirst).value
       this := h.getFirsts.foldLeft(SortedSet.empty[Int])((acc, index) => acc + index)
-    } else if (OldVal == Miax) {
+    } else if (OldVal == miax) {
       this.deleteValue(index)
       if (this.newValue.isEmpty) {
 
@@ -123,12 +122,12 @@ abstract class ArgMiax(vars: Array[IntValue], cond: SetValue, default: Int)
         }
 
         if (this.newValue.isEmpty) {
-          Miax = default
+          miax = default
         } else {
-          Miax = vars(h.getFirst).value
+          miax = vars(h.getFirst).value
         }
       }
-    } else if (NewVal == Miax) {
+    } else if (NewVal == miax) {
       this.insertValue(index)
     }
   }
@@ -146,12 +145,12 @@ abstract class ArgMiax(vars: Array[IntValue], cond: SetValue, default: Int)
     //mettre a jour le heap
     h.insert(value)
 
-    if (vars(h.getFirst).value != Miax) {
-      Miax = vars(h.getFirst).value
+    if (vars(h.getFirst).value != miax) {
+      miax = vars(h.getFirst).value
       this := h.getFirsts.foldLeft(SortedSet.empty[Int])((acc, index) => acc + index)
-    } else if (vars(value).value == Miax) {
+    } else if (vars(value).value == miax) {
       this.insertValue(value)
-      Miax = vars(h.getFirst).value
+      miax = vars(h.getFirst).value
     }
   }
 
@@ -166,19 +165,19 @@ abstract class ArgMiax(vars: Array[IntValue], cond: SetValue, default: Int)
     h.delete(value)
 
     if (h.isEmpty) {
-      Miax = default
+      miax = default
       this := SortedSet.empty[Int]
-    } else if (vars(h.getFirst).value != Miax) {
-      Miax = vars(h.getFirst).value
+    } else if (vars(h.getFirst).value != miax) {
+      miax = vars(h.getFirst).value
       this := h.getFirsts.foldLeft(SortedSet.empty[Int])((acc, index) => acc + index)
-    } else if (vars(value).value == Miax) {
+    } else if (vars(value).value == miax) {
       this.deleteValue(value)
       if (this.newValue.isEmpty) {
         for(first <- h.getFirsts){
           this :+= first
         }
 
-        Miax = vars(h.getFirst).value
+        miax = vars(h.getFirst).value
       }
     }
   }
@@ -187,13 +186,13 @@ abstract class ArgMiax(vars: Array[IntValue], cond: SetValue, default: Int)
     var count: Int = 0
     for (i <- vars.indices) {
       if (cond == null || (cond != null && cond.value.contains(i))) {
-        if (vars(i).value == Miax) {
+        if (vars(i).value == miax) {
           c.check(this.value.contains(i),
             Some("this.value.contains(" + i + ")"))
           count += 1
         } else {
-          c.check(Ord(Miax) < Ord(vars(i).value),
-            Some("Ord(" + Miax + ") < Ord(vars(" + i + ").value ("
+          c.check(ord(miax) < ord(vars(i).value),
+            Some("Ord(" + miax + ") < Ord(vars(" + i + ").value ("
               + vars(i).value + "))"))
         }
       }

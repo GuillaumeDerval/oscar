@@ -54,8 +54,8 @@ case class Store(override val verbose:Boolean = false,
   extends PropagationStructure(verbose,checker,noCycle,topologicalSort, sortScc)
   with Bulker with StorageUtilityManager{
 
-
-  assert({println("You are using a CBLS store with asserts activated. It makes the engine slower. Recompile it with -Xdisable-assertions"); true})
+  assert({System.err.println("You are using a CBLS store with asserts activated. It makes the engine slower. Recompile it with -Xdisable-assertions"); true})
+  if(checker.nonEmpty) System.err.println("OscaR.cbls is running in debug mode. It makes the engine slower.")
 
   private[this] var variables:QList[AbstractVariable] = null
   private var propagationElements:QList[PropagationElement] = null
@@ -251,7 +251,7 @@ case class Solution(saves:Iterable[AbstractVariableSnapShot],model:Store){
  * @param model
  */
 class Snapshot(toRecord:Iterable[AbstractVariable], val model:Store) {
-  val varDico:SortedMap[AbstractVariable, AbstractVariableSnapShot] = SortedMap.empty[AbstractVariable, AbstractVariableSnapShot] ++ toRecord.map(v => ((v,v.snapshot)))
+  lazy val varDico:SortedMap[AbstractVariable, AbstractVariableSnapShot] = SortedMap.empty[AbstractVariable, AbstractVariableSnapShot] ++ toRecord.map(v => ((v,v.snapshot)))
 
   def restoreDecisionVariables() {
     for(snapshot <- varDico.values) snapshot.restoreIfDecisionVariable()
@@ -417,8 +417,6 @@ trait Invariant extends PropagationElement{
     */
   override def checkInternals(c:Checker){c.check(false, Some("DEFAULT EMPTY CHECK " + this.toString() + ".checkInternals"))}
 
-  def getDotNode = "[label = \"" + this.getClass.getSimpleName + "\" shape = box]"
-
   /** this is the propagation method that should be overridden by propagation elements.
     * notice that it is only called in a propagation wave if:
     * 1: it has been registered for propagation since the last time it was propagated
@@ -530,6 +528,10 @@ trait Variable extends AbstractVariable{
 
 abstract class AbstractVariableSnapShot(val a:AbstractVariable){
 
+  // Added by GO for pretty printing of some benchmarks:
+  // to change if this affects the printing of other benchmarks
+  override def toString: String = s"Variable[name:${a.name}, value:${a.valueString}]"
+
   final def restore() {
     a match {
       case v : Variable if v.isDecisionVariable => doRestore()
@@ -582,7 +584,9 @@ trait AbstractVariable
 
   /**this method s to be called by any method that internally modifies the value of the variable
     * it schedules the variable for propagation, and performs a basic check of the identify of the executing invariant*/
-  def notifyChanged(){
+  @inline
+  final def notifyChanged(){
+    if(isScheduled) return
     //modifier le test.
     if (this.model == null ||(!this.model.isClosed && this.getDynamicallyListeningElements.isEmpty)){
       performPropagation()

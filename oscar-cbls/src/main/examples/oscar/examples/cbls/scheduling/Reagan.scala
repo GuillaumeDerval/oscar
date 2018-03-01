@@ -23,10 +23,9 @@
 
 package oscar.examples.cbls.scheduling
 
-import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls._
 import oscar.cbls.business.scheduling._
 import oscar.cbls.business.scheduling.model._
-import oscar.cbls.core.propagation.Checker
 import oscar.cbls.business.scheduling.model.CumulativeResource
 import oscar.cbls.business.scheduling.solver.IFlatIRelax
 
@@ -74,12 +73,10 @@ object Reagan extends App {
 
   val solver = new IFlatIRelax(planning)
 
-  solver.solve(maxIt = 20,
-            stable = 10)
+  solver.solve(maxIt = 20, stable = 10)
 
   println(planning.toAsciiArt)
   println(planning.resourceUsage)
   println(planning.dependencies)
 
 }
-

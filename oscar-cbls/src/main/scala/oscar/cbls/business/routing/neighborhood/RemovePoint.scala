@@ -39,10 +39,9 @@ package oscar.cbls.business.routing.neighborhood
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.core.search.EasyNeighborhood
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, EasyNeighborhood}
 
 /**
  * Removes a point of route.
@@ -50,7 +49,7 @@ import oscar.cbls.core.search.EasyNeighborhood
  * @param relevantPointsToRemove: the predecessors ofthe points that we will try to remove
  * @param vrp the routing problem
  * @param neighborhoodName the name of the neighborhood, for verbosities
- * @param best true for the best move, false for the first move
+ * @param selectNodeBehavior how to select node to remove
  * @param hotRestart true if hotRestart is needed, false otherwise
  * @author renaud.delandtsheer@cetic.be
  * @author yoann.guyot@cetic.be
@@ -59,19 +58,18 @@ import oscar.cbls.core.search.EasyNeighborhood
 case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
                        vrp: VRP,
                        neighborhoodName:String = "RemovePoint",
-                       best:Boolean = false,
+                       selectNodeBehavior:LoopBehavior = First(),
                        hotRestart:Boolean = true)
-  extends EasyNeighborhood[RemovePointMove](best,neighborhoodName){
+  extends EasyNeighborhoodMultiLevel[RemovePointMove](neighborhoodName){
 
   //the indice to start with for the exploration
   var startIndice: Int = 0
 
-  var pointToRemove:Int = 0;
-  var positionOfPointToRemove:Int = 0;
+  var pointToRemove:Int = -1
+  var positionOfPointToRemove:Int = -1
 
   val v = vrp.v
   val seq = vrp.routes
-
 
   override def exploreNeighborhood(): Unit = {
 
@@ -84,10 +82,10 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
     }
 
     val iterationSchemeOnZone =
-      if (hotRestart && !best) HotRestart(relevantPointsToRemove(), startIndice)
+      if (hotRestart) HotRestart(relevantPointsToRemove(), startIndice)
       else relevantPointsToRemove()
 
-    val it = iterationSchemeOnZone.iterator
+    val (it,notifyFound) = selectNodeBehavior.toIterator(iterationSchemeOnZone)
     while (it.hasNext) {
       pointToRemove = it.next()
 
@@ -96,14 +94,13 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
         case Some(p) =>
           positionOfPointToRemove = p
           doMove(positionOfPointToRemove)
-          if (evaluateCurrentMoveObjTrueIfStopRequired(evalObjAndRollBack())) {
-            seq.releaseTopCheckpoint()
-            startIndice = pointToRemove + 1
-            return
+          if (evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
+            notifyFound()
           }
       }
     }
     seq.releaseTopCheckpoint()
+    startIndice = pointToRemove + 1
   }
 
   override def instantiateCurrentMove(newObj: Int) =

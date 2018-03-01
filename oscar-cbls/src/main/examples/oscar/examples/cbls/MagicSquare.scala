@@ -25,14 +25,14 @@ import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.lib.constraint.EQ
 import oscar.cbls.lib.invariant.numeric._
-import oscar.cbls.lib.search.LinearSelector
+import oscar.cbls.lib.search.LinearSelectorClass
 import oscar.cbls.util.StopWatch
 
 /**
  * Example showing how to use Asteroid on the magic square problem  
  * @author christophe.ponsard@cetic.be
  * */
-object MagicSquare extends LinearSelector with StopWatch {
+object MagicSquare extends LinearSelectorClass with StopWatch {
   
   def main(args: Array[String]) {
     
@@ -55,7 +55,7 @@ object MagicSquare extends LinearSelector with StopWatch {
     val TABU_LENGTH = N/2+1
 
     // model
-    val m: Store = new Store(false,None,true)
+    val m: Store = Store(false,None,true)
         
     // Square
     val magic = Array.ofDim[CBLSIntVar](N,N)
@@ -121,8 +121,8 @@ object MagicSquare extends LinearSelector with StopWatch {
 
   def showSquare(tab:Array[Array[CBLSIntVar]]) {
     println()
-    for (i <- Range(0,tab.length)) {
-      for (j <-Range(0,tab(i).length)) {
+    for (i <- tab.indices) {
+      for (j <- tab(i).indices) {
         print(tab(i)(j).value+" ")
       }
       println()

@@ -25,9 +25,9 @@
 
 package oscar.cbls.lib.invariant.numeric
 
-import oscar.cbls.core.computation.Domain.rangeToDomain
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core._
+import oscar.cbls.core.computation.DomainRange
 import oscar.cbls.lib.invariant.logic.{Int2Int, IntInt2Int}
 
 object Sum {
@@ -44,8 +44,7 @@ object Prod {
 
 /**
  * sum(vars)
-  *
-  * @param vars is an iterable of IntVars
+ * @param vars is an iterable of IntVars
  * @author renaud.delandtsheer@cetic.be
  */
 class Sum(vars: Iterable[IntValue])
@@ -69,8 +68,7 @@ class Sum(vars: Iterable[IntValue])
 
 /**
  * linear(vars, coeffs)
-  *
-  * @param vars is an iterable of IntVars
+ * @param vars is an iterable of IntVars
  * @param coeffs is an Indexed Sequence of Int
  * @author renaud.delandtsheer@cetic.be
  * @author jean-noel.monette@it.uu.se
@@ -107,26 +105,26 @@ class Linear(vars: Iterable[IntValue], coeffs: IndexedSeq[Int])
  * */
 class Nvalue(x: Iterable[IntValue]) extends
   IntInvariant(1,DomainRange(1,x.map(_.max).max - x.map(_.min).min + 1)) with IntNotificationTarget{
-  
+
   registerStaticAndDynamicDependencyAllNoID(x)
   finishInitialization()
-  
+
   private val (minValueOfX,maxValueOfX) = InvariantHelper.getMinMaxBounds(x)
 
   private val offset: Int = -minValueOfX
 
   private val N = maxValueOfX + offset
   private val range = 0 to N
-  
+
   private val ValueCount: Array[Int] = (for (i <- 0 to N) yield 0).toArray
-  
+
   this := 0
-  
+
   for (element <- x){
     ValueCount(element.value + offset) += 1
     if (ValueCount(element.value + offset) == 1) {this :+= 1}
   }
-  
+
   @inline
   override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
     ValueCount(OldVal + offset) -= 1
@@ -135,7 +133,7 @@ class Nvalue(x: Iterable[IntValue]) extends
     if (ValueCount(OldVal + offset) == 0) {this :-= 1}
     if (ValueCount(NewVal + offset) == 1) {this :+= 1}
   }
-  
+
   override def checkInternals(c: Checker) {
     var MyValueCount: Array[Int] = (for (i <- 0 to N) yield 0).toArray
     var Distinct: Int = 0
@@ -156,8 +154,7 @@ class Nvalue(x: Iterable[IntValue]) extends
 
 /**
  * sum(vars) where vars is vars that have been added to the sum through addTerm
-  *
-  * @param model the store
+ * @param model the store
  * @author renaud.delandtsheer@cetic.be
  */
 class ExtendableSum(model: Store, domain: Domain)
@@ -190,9 +187,8 @@ class ExtendableSum(model: Store, domain: Domain)
 }
 
 /**
-  * prod(vars)
-  *
-  * @param vars is a set of IntVars
+ * prod(vars)
+ * @param vars is a set of IntVars
  * @author renaud.delandtsheer@cetic.be
  */
 class Prod(vars: Iterable[IntValue])
@@ -261,8 +257,7 @@ case class Pow(a: IntValue, b: IntValue)
 /**
  * left - right
  * where left, right, and output are IntVar
-  *
-  * @author renaud.delandtsheer@cetic.be
+ * @author renaud.delandtsheer@cetic.be
  */
 case class Minus(left: IntValue, right: IntValue)
   extends IntInt2Int(left, right, (if(DomainHelper2.isSafeSub(left,right))
@@ -274,8 +269,7 @@ case class Minus(left: IntValue, right: IntValue)
 
 /** max(0,left-right+offset)
  *  Used in LA and LEA constraints.
-  *
-  *  @author jean-noel.monette@it.uu.se
+ *  @author jean-noel.monette@it.uu.se
  */
 case class MinusOffsetPos(left:IntValue, right:IntValue, offset: Int)
   extends IntInt2Int(left,right, (if(DomainHelper2.isSafeSub(left,right))
@@ -287,8 +281,7 @@ case class MinusOffsetPos(left:IntValue, right:IntValue, offset: Int)
 /**
  * abs(left - right)
  * where left, right, and output are IntVar
-  *
-  * @author renaud.delandtsheer@cetic.be
+ * @author renaud.delandtsheer@cetic.be
  * @author jean-noel.monette@it.uu.se
  * */
 case class Dist(left: IntValue, right: IntValue)
@@ -304,8 +297,7 @@ case class Dist(left: IntValue, right: IntValue)
 /**
  * Invariant to maintain the violation of a reified constraint.
  * Assumes b takes values 0 to 1
-  *
-  * @author jean-noel.monette@it.uu.se
+ * @author jean-noel.monette@it.uu.se
  * */
 case class ReifViol(b: IntValue, v:IntValue) extends IntInt2Int(b,v, (b,v) => {if(v!=0) b else 1-b},0 to 1){
   assert(b.min>=0 && b.max<=1)
@@ -314,8 +306,7 @@ case class ReifViol(b: IntValue, v:IntValue) extends IntInt2Int(b,v, (b,v) => {i
 /**
  * left + right
  * where left, right, and output are IntVar
-  *
-  * @author renaud.delandtsheer@cetic.be
+ * @author renaud.delandtsheer@cetic.be
  */
 case class Sum2(left: IntValue, right: IntValue)
   extends IntInt2Int(left, right, (if(DomainHelper2.isSafeAdd(left,right))
@@ -327,8 +318,7 @@ case class Sum2(left: IntValue, right: IntValue)
 /**
  * left * right
  * where left, right, and output are IntVar
-  *
-  * @author renaud.delandtsheer@cetic.be
+ * @author renaud.delandtsheer@cetic.be
  */
 case class Prod2(left: IntValue, right: IntValue)
   extends IntInt2Int(left, right, (if(DomainHelper2.isSafeMult(left,right))
@@ -342,8 +332,7 @@ case class Prod2(left: IntValue, right: IntValue)
  * left / right
  * where left, right, and output are IntVar
  * do not set right to zero, as usual...
-  *
-  * @author renaud.delandtsheer@cetic.be
+ * @author renaud.delandtsheer@cetic.be
  */
 case class Div(left: IntValue, right: IntValue)
   extends IntInt2Int(left, right, (l: Int, r: Int) => l / r,
@@ -352,8 +341,7 @@ case class Div(left: IntValue, right: IntValue)
  * left / right
  * where left, right, and output are IntVar
  * do not set right to zero, as usual...
-  *
-  * @author renaud.delandtsheer@cetic.be
+ * @author renaud.delandtsheer@cetic.be
  */
 case class Mod(left: IntValue, right: IntValue)
   extends IntInt2Int(left, right,
@@ -363,8 +351,7 @@ case class Mod(left: IntValue, right: IntValue)
 /**
  * abs(v) (absolute value)
  * where output and v are IntVar
-  *
-  * @author renaud.delandtsheer@cetic.be
+ * @author renaud.delandtsheer@cetic.be
  */
 case class Abs(v: IntValue)
   extends Int2Int(v, ((x: Int) => x.abs),
@@ -373,9 +360,9 @@ case class Abs(v: IntValue)
 /**
  * This invariant implements a step function. Values higher than pivot are mapped to ifval
  * values lower or equal to pivot are mapped to elseval
-  *
-  * @author renaud.delandtsheer@cetic.be, suggested by Jean-Noël Monette
-  * @param x the IntVar parameter of the invariant
+ * @author renaud.delandtsheer@cetic.be, suggested by Jean-Noël Monette
+ *
+ * @param x the IntVar parameter of the invariant
  * @param pivot the pivot value
  * @param thenval the value returned when x > pivot
  * @param elseval the value returned when x <= pivot
@@ -388,8 +375,7 @@ case class Step(x: IntValue, pivot: Int = 0, thenval: Int = 1, elseval: Int = 0)
  * This invariant implements the identity function within the min-max range.
  * values lower tham min result to min
  * values higher tham max result to max
-  *
-  * @author renaud.delandtsheer@cetic.be
+ * @author renaud.delandtsheer@cetic.be
  * @param x
  * @param minBound
  * @param maxBound

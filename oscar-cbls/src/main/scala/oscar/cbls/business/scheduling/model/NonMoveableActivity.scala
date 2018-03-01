@@ -58,7 +58,7 @@ class NonMoveableActivity(startDate: Int, duration: IntValue, planning: Planning
     definingPredecessors = SortedSet.empty[Int]
     potentiallyKilledPredecessors = SortedSet.empty[Int]
 
-    allSucceedingActivities = new CBLSSetVar(planning.model, SortedSet.empty, 0 to planning.activityCount - 1,
+    allSucceedingActivities = new CBLSSetVar(planning.model, SortedSet.empty, 0 until planning.activityCount,
       "succeeding_activities_of_" + name)
 
     //This is not correct. but since no task can be put before this one, this is not an issue.

@@ -24,11 +24,11 @@
 
 package oscar.cbls.lib.constraint
 
-import oscar.cbls.core.computation._
+import oscar.cbls._
+import oscar.cbls.core._
 import oscar.cbls.core.constraint.Constraint
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.logic.{BoolLEInv, BoolLTInv}
-import oscar.cbls.lib.invariant.minmax.Max2
 import oscar.cbls.lib.invariant.numeric.{Dist, Minus, MinusOffsetPos, ReifViol}
 
 import scala.math.abs
@@ -39,14 +39,13 @@ import scala.math.abs
  */
 protected class LEA(val left: IntValue, val right: IntValue) extends Constraint {
   val model = InvariantHelper.findModel(left, right)
-
   registerConstrainedVariables(left, right)
 
   /**
    * the violation is Max(0,right-left)
    */
   override val violation =
-    MinusOffsetPos(left,right,0).setName(this.getClass().getSimpleName() + ".violation")
+    MinusOffsetPos(left,right,0).setName(this.getClass.getSimpleName + ".violation")
     //Max2(0, left - right).setName(this.getClass().getSimpleName() + ".violation")
 
   /**
@@ -86,7 +85,7 @@ protected class LA(val left: IntValue, val right: IntValue) extends Constraint {
    * the violation is Max(0,left - right + 1)
    */
   override val violation =
-    MinusOffsetPos(left,right,1).setName(this.getClass().getSimpleName() + ".violation")
+    MinusOffsetPos(left,right,1).setName(this.getClass.getSimpleName + ".violation")
     //TODO: If the constraint is always satisfied, given the domains, should set to a constant invariant. 
     //Max2(0, left - right + 1)
 

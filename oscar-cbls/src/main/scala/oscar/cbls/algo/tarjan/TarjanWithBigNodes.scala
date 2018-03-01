@@ -26,14 +26,14 @@ trait TarjanNode{
   var OnStack:Boolean = false
 }
 
-/** The Tarjan algorithm for detecting SCC is graphs
+/** The Tarjan algorithm for detecting SCC (strongly connected components) in graphs
   * This version is faster because it does not use dictionaries.
   * all data are stored in the nodes.
   * @author renaud.delandtsheer@cetic.be
   */
 object TarjanWithBigNodes1{
 
-  def getStronlyConnexComponents[T <: TarjanNode](Nodes:Iterable[T], GetSucceedingNodes:(T => Iterable[T])):List[List[T]] = {
+  def getStronglyConnexComponents[T <: TarjanNode](Nodes:Iterable[T], GetSucceedingNodes:(T => Iterable[T])):List[List[T]] = {
     var index:Int=0
     var Stack:List[T]=List.empty
     var Components:List[List[T]]= List.empty
@@ -67,7 +67,7 @@ object TarjanWithBigNodes1{
           Stack = Stack.tail
           node.OnStack = false
           SCC = node::SCC
-          finished = (node == v)
+          finished = node == v
         }
         Components = SCC :: Components
       }

@@ -1,4 +1,4 @@
-package oscar.examples.cbls.routing.visual
+package oscar.cbls.visual
 
 /**
   * *****************************************************************************

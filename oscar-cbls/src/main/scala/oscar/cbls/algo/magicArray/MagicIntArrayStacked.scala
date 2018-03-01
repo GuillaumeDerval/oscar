@@ -22,7 +22,7 @@ class MagicIntArrayStacked(maxLevel:Int, initVal:(Int => Int), size:Int) extends
   private[this] val levelToIsValueChangedAtNextLevel:Array[IterableMagicBoolArray] = Array.tabulate(maxLevel)(level => new IterableMagicBoolArray(size,false))
   private[this] var currentLevel:Int = 0
 
-  def level = currentLevel - 1
+  def level:Int = currentLevel - 1
 
   def update(indice:Int,value:Int){
     levelToArray(currentLevel)(indice) = value
@@ -53,10 +53,11 @@ class MagicIntArrayStacked(maxLevel:Int, initVal:(Int => Int), size:Int) extends
     if(dropChanges){
       currentLevel -= 1
     }else{
+      //save changes to lower level!
       val newLevel = currentLevel - 1
-      for(changedID <- levelToIsValueChangedAtNextLevel(currentLevel).indicesAtTrue){
+      for(changedID <- levelToIsValueChangedAtNextLevel(currentLevel-1).indicesAtTrue){
         levelToArray(newLevel)(changedID) = levelToArray(currentLevel)(changedID)
-        levelToIsValueChangedAtNextLevel(newLevel)(changedID) = true
+        levelToIsValueChangedAtNextLevel(newLevel)(changedID) = false
       }
       currentLevel = newLevel
     }
@@ -70,5 +71,5 @@ class MagicIntArrayStacked(maxLevel:Int, initVal:(Int => Int), size:Int) extends
     cloneTopArray.iterator
   }
 
-  override def toString : String = "MagicIntArrayStacked(size:" + size + " level:" + currentLevel + " " + cloneTopArray.mkString(",") + ")"
+  override def toString : String = "MagicIntArrayStacked(size:" + size + " level:" + currentLevel + " [" + cloneTopArray.mkString(",") + "])"
 }

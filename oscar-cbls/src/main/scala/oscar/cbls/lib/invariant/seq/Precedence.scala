@@ -17,10 +17,10 @@ package oscar.cbls.lib.invariant.seq
 
 import oscar.cbls.algo.magicArray.MagicBoolArray
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.algo.seq.functional.IntSequence
-import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
-import oscar.cbls.lib.invariant.routing.convention.CachedPositionOf
+import oscar.cbls._
+import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.business.routing.model.CachedPositionOf
+import oscar.cbls.core._
 
 import scala.collection.immutable.SortedSet
 
@@ -107,6 +107,7 @@ class Precedence(seq:ChangingSeqValue,
   }
 
   def reloadViolationsAtCheckpoint(){
+    //TODO: pas moyen de faire du O(1) ici, avec un tableau magique par exemple?
     for(precedence <- changedPrecedenceViolationsSinceCheckpoint){
       isViolationChangedSinceCheckpoint(precedence) = false
       isPrecedenceViolated(precedence) = savedViolationAtCheckpoint(precedence)
@@ -286,11 +287,13 @@ class Precedence(seq:ChangingSeqValue,
           //that'w why there is only the loop on precedences considering the precedences started at the flipped values,
           // not the ones ended at the flipped values
 
-          var movedValues = x.movedValuesQList
+          val movedValues = x.movedValuesQList
+
+          var digestedMovedValues = movedValues
           tmpArrayForDigestUpdate.all = false
-          while(movedValues != null) {
-            tmpArrayForDigestUpdate(movedValues.head)
-            movedValues = movedValues.tail
+          while(digestedMovedValues != null) {
+            tmpArrayForDigestUpdate.update(digestedMovedValues.head,true)
+            digestedMovedValues = digestedMovedValues.tail
           }
 
           for(value <- movedValues){
@@ -344,7 +347,7 @@ class Precedence(seq:ChangingSeqValue,
 
                 val endValueOfPrecedence = precedencesArray(precedenceStartedAtValue)._2
 
-                val positionOfEndValue = cachedPositionFinderAtCheckpoint.positionOfAnyOccurrence(prev.newValue,endValueOfPrecedence).head
+                val positionOfEndValue = cachedPositionFinderAtCheckpoint.positionOfAnyOccurrence(prev.newValue, endValueOfPrecedence).get
                 if (moveDownwards && positionOfEndValue > after && positionOfEndValue < fromIncluded) {
                   saveViolationForCheckpoint(precedenceStartedAtValue)
                   isPrecedenceViolated(precedenceStartedAtValue) = false
@@ -361,17 +364,20 @@ class Precedence(seq:ChangingSeqValue,
                 //it was not violated, thus is can only get violated is the segment moved upwards
                 // of if the other value is also in the segment and there is a flip
                 val endValueOfPrecedence = precedencesArray(precedenceStartedAtValue)._2
-                val positionOfEndValue = cachedPositionFinderAtCheckpoint.positionOfAnyOccurrence(prev.newValue,endValueOfPrecedence).head
-                if (moveUpwards && positionOfEndValue <= after && positionOfEndValue > toIncluded) {
-                  saveViolationForCheckpoint(precedenceStartedAtValue)
-                  isPrecedenceViolated(precedenceStartedAtValue) = true
-                  this :+= 1
-                } else if (flip && fromIncluded <= positionOfEndValue && positionOfEndValue <= toIncluded) {
-                  //the violation of this precedence is inverted (only do this for one half of the precedence)
-                  //was not violated, now it is violated
-                  saveViolationForCheckpoint(precedenceStartedAtValue)
-                  isPrecedenceViolated(precedenceStartedAtValue) = true
-                  this :+= 1
+                cachedPositionFinderAtCheckpoint.positionOfAnyOccurrence(prev.newValue, endValueOfPrecedence) match {
+                  case None => //nothing to do, other node is not in the sequence, it was not violated for this reason
+                  case Some(positionOfEndValue) =>
+                    if (moveUpwards && positionOfEndValue <= after && positionOfEndValue > toIncluded) {
+                      saveViolationForCheckpoint(precedenceStartedAtValue)
+                      isPrecedenceViolated(precedenceStartedAtValue) = true
+                      this :+= 1
+                    } else if (flip && fromIncluded <= positionOfEndValue && positionOfEndValue <= toIncluded) {
+                      //the violation of this precedence is inverted (only do this for one half of the precedence)
+                      //was not violated, now it is violated
+                      saveViolationForCheckpoint(precedenceStartedAtValue)
+                      isPrecedenceViolated(precedenceStartedAtValue) = true
+                      this :+= 1
+                    }
                 }
               }
             }
@@ -384,7 +390,7 @@ class Precedence(seq:ChangingSeqValue,
 
                 if (moveUpwards) {
                   val startValueOfPrecedence = precedencesArray(precedenceEndingAtValue)._1
-                  val positionOfStartValue = cachedPositionFinderAtCheckpoint.positionOfAnyOccurrence(prev.newValue,startValueOfPrecedence).head
+                  val positionOfStartValue = cachedPositionFinderAtCheckpoint.positionOfAnyOccurrence(prev.newValue,startValueOfPrecedence).get
                   if (positionOfStartValue <= after && positionOfStartValue > toIncluded) {
                     saveViolationForCheckpoint(precedenceEndingAtValue)
                     isPrecedenceViolated(precedenceEndingAtValue) = false
@@ -398,11 +404,14 @@ class Precedence(seq:ChangingSeqValue,
 
                 if (moveDownwards) {
                   val startValueOfPrecedence = precedencesArray(precedenceEndingAtValue)._1
-                  val positionOfStartValue = cachedPositionFinderAtCheckpoint.positionOfAnyOccurrence(prev.newValue,startValueOfPrecedence).head
-                  if (after < positionOfStartValue && positionOfStartValue < fromIncluded) {
-                    saveViolationForCheckpoint(precedenceEndingAtValue)
-                    isPrecedenceViolated(precedenceEndingAtValue) = true
-                    this :+= 1
+                  cachedPositionFinderAtCheckpoint.positionOfAnyOccurrence(prev.newValue,startValueOfPrecedence) match {
+                    case None =>
+                    case Some(positionOfStartValue) =>
+                      if (after < positionOfStartValue && positionOfStartValue < fromIncluded) {
+                        saveViolationForCheckpoint(precedenceEndingAtValue)
+                        isPrecedenceViolated(precedenceEndingAtValue) = true
+                        this :+= 1
+                      }
                   }
                 }
               }
