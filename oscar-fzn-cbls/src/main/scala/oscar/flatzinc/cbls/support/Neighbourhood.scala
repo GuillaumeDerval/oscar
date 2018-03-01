@@ -172,6 +172,7 @@ class GCCNeighborhood(val variables: Array[CBLSIntVar], val vals: Array[Int], va
 
   //TODO: reset() should only be called after the fzModel is closed, in case it makes use of invariants!
   def reset():Unit = {
+    //TODO: Use the CP solver to initialize.
     //TODO: This reset does not respect the domains of the variables! is it?
     var cur = variables.map(_.value)
     var cnts = cur.foldLeft(MMap.empty[Int, Int])((map, v) => map + (v -> (map.getOrElse(v, 0) + 1)))
@@ -298,7 +299,7 @@ class GCCNeighborhood(val variables: Array[CBLSIntVar], val vals: Array[Int], va
 }
 
 //TODO: Take into account fixed variables!
-class ThreeOpt(variables: Array[CBLSIntVar], objective: CBLSObjective, cs: ConstraintSystem,
+class ThreeOpt(variables: Array[CBLSIntVar], objective:CBLSObjective, cs: ConstraintSystem,
                val offset: Int) extends Neighbourhood(variables) {
 
   val variableViolation: Array[IntValue] = variables.map(cs.violation(_)).toArray
@@ -347,6 +348,44 @@ class ThreeOpt(variables: Array[CBLSIntVar], objective: CBLSObjective, cs: Const
       variables(i) := tmpVars(i)+offset
   }
 
+  def isSatisfied(doPrint:Boolean):Boolean = {
+    var nVisited = 0;
+    var current = 1;
+    do{
+      if(doPrint)
+        print(current + " -> ")
+      current = vars(current).value
+      nVisited += 1;
+    }while(current != 1 && nVisited <= variables.length+10); // +10 so that we stop after valid length
+    if(doPrint)
+      println(current)
+    nVisited == variables.length && current == 1
+  }
+
+  def localObjAssignVal(a: Iterable[(CBLSIntVar, Int)], objective: CBLSObjective): Int = {
+    //memorize
+    val oldvals: Iterable[(CBLSIntVar, Int)] = a.foldLeft(List.empty[(CBLSIntVar, Int)])(
+      (acc, IntVarAndInt) => ((IntVarAndInt._1, IntVarAndInt._1.value)) :: acc)
+    //excurse
+    for (assign <- a)
+      assign._1 := assign._2
+    val newObj = objective.value
+
+    /* Use this for extensive debugging
+    Note that subcircuit also calls this method and will then report an error!
+    val isSat = isSatisfied(false)
+    if(!isSat){
+      isSatisfied(true)
+      println("Something is wrong")
+    }
+
+    */
+    //undo
+    for (assign <- oldvals)
+      assign._1 := assign._2
+    newObj
+  }
+
   def vars(idx: Int): CBLSIntVar = {
     variables(idx - offset)
   }
@@ -364,32 +403,34 @@ class ThreeOpt(variables: Array[CBLSIntVar], objective: CBLSObjective, cs: Const
     if (next == newNext) return new NoMove()
     //would break the chain
     val k = vars(next).value
+    if(vars(idx).isInstanceOf[StoredCBLSIntConst] ||
+      vars(next).isInstanceOf[StoredCBLSIntConst] ||
+      vars(newNext).isInstanceOf[StoredCBLSIntConst])
+      return new NoMove()
     val last = vars(newNext).value
-    if(vars(idx).isInstanceOf[StoredCBLSIntConst] || vars(next).isInstanceOf[StoredCBLSIntConst]|| vars(newNext).isInstanceOf[StoredCBLSIntConst]) {
-      new NoMove()
-    }else {
-      val list = List((vars(idx), k), (vars(next), last), (vars(newNext), next))
-      val obj = objective.assignVal(list)
-      acceptOr(new AssignsMove(list, obj), accept)
-    }
+    val list = List((vars(idx), k), (vars(next), last), (vars(newNext), next))
+    val obj = localObjAssignVal(list, objective) //objectiveFun.assignVal(list)
+    acceptOr(new AssignsMove(list, obj), accept)
   }
 
-  def getMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
+  def getMinObjective( it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     val idx = selectMax(rng, (i: Int) => variableViolation(i - offset).value);
     val next = selectMin(rng)(next => getMove(idx, next, accept).value)
 
-    getMove(idx, next, accept)
+    val aMove = getMove(idx, next, accept)
+    aMove
   }
 
-  def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
+  def getExtendedMinObjective( it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
 
     //this one removes a node and reinsert it somewhere else
     val rng2 = rng;
     val res = selectMin2(rng2, rng2, (idx: Int, next: Int) => getMove(idx, next, accept).value)
-    res match {
+    val best = res match {
       case (idx, next) => getMove(idx, next, accept)
       case _ => new NoMove() //res is null when the NON TABU list is empty //Should not happen anymore now
     }
+    best
   }
 
   def violation() = {
@@ -397,7 +438,7 @@ class ThreeOpt(variables: Array[CBLSIntVar], objective: CBLSObjective, cs: Const
   };
 }
 
-class ThreeOptSub(variables: Array[CBLSIntVar], objective: CBLSObjective, cs: ConstraintSystem,
+class ThreeOptSub(variables: Array[CBLSIntVar], objective:CBLSObjective, cs: ConstraintSystem,
                   offset: Int) extends ThreeOpt(variables, objective, cs, offset) {
   //needed to add the allloop variable to be able to reinsert into the chain when the chain is only 1 element long.
   var allloop = false;
@@ -418,7 +459,7 @@ class ThreeOptSub(variables: Array[CBLSIntVar], objective: CBLSObjective, cs: Co
         //The two nodes now become the main loop
         val list = List((vars(idx),newNext),(vars(newNext),idx))
         acceptOr(new BeforeMove(new AssignsMove(list, objective.assignVal(list)),
-                                       () => allloop = false), accept);
+                                () => allloop = false), accept);
       }
     }else{
       if(idx == vars(idx).value){ // idx cannot be a self-loop
@@ -427,21 +468,23 @@ class ThreeOptSub(variables: Array[CBLSIntVar], objective: CBLSObjective, cs: Co
         //newNext is a self-loop that we want to put into the circuit
 
         val list = List((vars(idx),newNext),(vars(newNext), vars(idx).value))
-        acceptOr(new AssignsMove(list, objective.assignVal(list)), accept);
-      }else if(idx == newNext && !isConst(idx) && !isConst(newNext)){
-        // Make newNext self-loop (a bit strange but we don't know prev of idx)
-
-        val k = vars(newNext).value
-        val list = List((vars(idx),k),(vars(newNext),newNext))
         acceptOr(new BeforeMove(new AssignsMove(list, objective.assignVal(list)),
-                                () => allloop = (idx == k)), accept);
+                                () => allloop = false), accept);
+      }else if(idx == newNext && !isConst(idx) && !isConst(vars(idx).value)){
+        // Make vars(idx).value self-loop (a bit strange but we don't know prev of idx)
+
+        val next = vars(idx).value
+        val nextnext = vars(next).value
+        val list = List((vars(idx),nextnext),(vars(next),next))
+        acceptOr(new BeforeMove(new AssignsMove(list, objective.assignVal(list)),
+                                () => allloop = (idx == nextnext)), accept);
       }else if(!isConst(idx) && ! isConst(newNext) && !isConst(vars(idx).value)){
         super.getMove(idx,newNext,accept)
       }else
         new NoMove()
     }
   }
- def getMoveOld(idx: Int, newNext: Int, accept: Move => Boolean): Move = {
+  def getMoveOld(idx: Int, newNext: Int, accept: Move => Boolean): Move = {
     val next = vars(idx).value
     val k = vars(next).value
     val last = vars(newNext).value
@@ -902,7 +945,24 @@ class FlatNeighbourhood(val fzNeighbourhood: FZNeighbourhood,
     initCPModel.pop()
     if (foundSolution){
       for ((k,v) <- solutionMap) {
-        cblsModel.getCBLSVar(k) := v
+        if(!k.isDefined)
+          cblsModel.getCBLSVar(k) := v
+      }
+      for ((k,v) <- solutionMap) {
+        if(k.isDefined)
+          if(k.isInstanceOf[BooleanVariable]){
+            if ((cblsModel.getIntValue(k).value == 0 && v != 0) || (cblsModel.getIntValue(k).value != 0 && v == 0)) {
+              println("% Neighbourhood initalization failed, boolean invariant does not have the right value. Aborting")
+              println("% " + k + " assigned to " + v + " but is " + cblsModel.getIntValue(k))
+              System.exit(-1)
+            }
+          }else {
+            if (!(cblsModel.getIntValue(k).value == v)) {
+              println("% Neighbourhood initalization failed, invariant does not have the right value. Aborting")
+              println("% " + k + " assigned to " + v + " but is " + cblsModel.getIntValue(k))
+              System.exit(-1)
+            }
+          }
       }
     }else{
       println("% Neighbourhood initalization is UNSATISFIABLE. Aborting")
@@ -932,8 +992,11 @@ class FlatNeighbourhood(val fzNeighbourhood: FZNeighbourhood,
   }
 
   def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
-    debugPrintValues()
-    val bestMoves = subNeighbourhoods.map(_.getExtendedMinObjective(it,accept,acceptVar))
+    //debugPrintValues()
+    def acceptFun(v:CBLSIntVar):Boolean = {
+      acceptVar(v) && (cblsModel.c.violation(v).value > 0 || RandomGenerator.nextInt(1000)< 5)
+    }
+    val bestMoves = subNeighbourhoods.map(_.getExtendedMinObjective(it,accept,acceptFun))
     val bestIdx = selectMin(bestMoves.indices)(i => bestMoves(i).value)
     debugPrintMove(bestMoves(bestIdx))
     bestMoves(bestIdx)
@@ -1025,39 +1088,43 @@ class FlatSubNeighbourhood(val fzNeighbourhood: FZSubNeighbourhood,
   def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
     var bestObj = Int.MaxValue
     var bestMove: List[Move] = List(NoMove())
+
+    //println(fzNeighbourhood.getSearchVariables.map(cblsModel.getCBLSVar(_)).mkString("\n"))
     while (increment()) {
       if (whereConstraintSystem.violation.value == 0) {
         // Compute the current values of all variables
         for (m <- moveActions) {
           m.computeAssignment()
         }
-        // Perform the assignment (depends on all values being already computed)
-        for (m <- moveActions) {
-          m.performAssignment()
-        }
-        if (objective.value <= bestObj && ensureConstraintSystem.violation.value == 0) {
-          // generates a move of the type that other neighbourhoods use
-          val tmp = ChainMoves(moveActions.map(_.getCurrentMove(objective.value)), objective.value)
-          if (accept(tmp)) {
-            for (m <- moveActions) {
-              m.saveBest()
+        //Ignore No-Op moves
+        if(moveActions.exists(_.modifies()) && moveActions.forall(_.isValid(acceptVar))) {
+          // Perform the assignment (depends on all values being already computed)
+          for (m <- moveActions) {
+            m.performAssignment()
+          }
+          val newObj = objective.value
+          if (newObj <= bestObj && ensureConstraintSystem.violation.value == 0) {
+            // generates a move of the type that other neighbourhoods use
+            val tmp = ChainMoves(moveActions.map(_.getCurrentMove(newObj)), newObj)
+            if (accept(tmp)) {
+              //for (m <- moveActions) {
+              //  m.saveBest()
+              //}
+              if (newObj < bestObj) {
+                bestMove = List(tmp)
+              } else {
+                bestMove :+= tmp
+              }
+              bestObj = newObj
             }
-            if(objective.value < bestObj){
-              bestMove = List(tmp)
-            }else{
-              bestMove :+= tmp
-            }
-            bestObj = objective.value
+          }
+
+          // Undo the assignment so that we do not commit to it.
+          for (m <- moveActions) {
+            m.undo()
           }
         }
-        // Undo the assignment so that we do not commit to it.
-        for (m <- moveActions) {
-          m.undo()
-        }
       }
-    }
-    if(bestMove.length > 1){
-      println("multiple best moves")
     }
     bestMove(RandomGenerator.nextInt(bestMove.length))
   }

@@ -241,6 +241,7 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
 
   val visitedStates = mutable.TreeSet.empty[Int]
 
+  var lastTime = System.currentTimeMillis()
   def acceptMove(best: Int,nonTabuSet: Set[CBLSIntVar])(m:Move): Boolean = {
     //changed forall to exists after a suggestion of Gustav.
     m.getModified.exists(nonTabuSet.contains(_)) || m.value < best 
@@ -251,21 +252,16 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
   }
   
   def makeMove(extendedSearch: Boolean){
-    val nonTabuSet = nonTabuVariables.value.map(searchVariables(_).asInstanceOf[CBLSIntVar]);
+    val nonTabuSet = nonTabuVariables.value.map(searchVariables(_));
     val bestValue = sc.weightedBest
     if(extendedSearch) ecnt+=1 else bcnt+=1
-    /*
-    val bestNeighbour = if(extendedSearch){
-      neighbourhoods(currentNeighbour).getExtendedMinObjective(it.value, acceptMove(bestValue,nonTabuSet),acceptVar(nonTabuSet))
-    }else{
-      neighbourhoods(currentNeighbour).getMinObjective(it.value, acceptMove(bestValue,nonTabuSet),acceptVar(nonTabuSet))
-    }
-    currentNeighbour = (currentNeighbour + 1) % neighbourhoods.size
-    */
+
 
     val foo  = m.c.getPostedConstraints.map(_._1).filter(_.violation.value>0)
     //m.printCurrentAssignment
 
+    //log("IT time: " + (System.currentTimeMillis() - lastTime))
+    lastTime = System.currentTimeMillis()
     val bestNeighbour = selectMin(neighbourhoods.map((n: Neighbourhood) =>
       if (extendedSearch) {
         n.getExtendedMinObjective(it.value, acceptMove(bestValue,nonTabuSet),acceptVar(nonTabuSet))

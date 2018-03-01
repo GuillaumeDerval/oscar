@@ -29,22 +29,22 @@ abstract class Move(val value:Int){
 case class AssignMove(x: CBLSIntVar,k:Int,override val value:Int) extends Move(value){
   def commit(){x := k}
   def getModified=Set(x)
-  override def toString() = x + " assigned to " +k + " doms: "+x.domain + " resulting violation: " + value
+  override def toString() = x + " assigned to " +k + " doms: "+x.domain + " resulting objective: " + value
 }
 case class AssignsMove(xk: List[(CBLSIntVar,Int)],override val  value:Int) extends Move(value){
   def commit(){xk.foreach(x => x._1 := x._2)}
   def getModified = xk.map(_._1).toSet
-  override def toString() = xk.foldLeft("")((acc,x) => acc+x._1+ " assigned to " +x._2 +"; ")
+  override def toString() = xk.foldLeft("")((acc,x) => acc+x._1+ " assigned to " +x._2 +"; ") + " resulting objective: " + value
 }
 case class SwapMove(x: CBLSIntVar,y:CBLSIntVar,override val value:Int) extends Move(value){
   def commit(){x :=: y}
   def getModified=Set(x,y)
-  override def toString() = x + " swapped with " +y
+  override def toString() = x + " swapped with " +y + " resulting objective: " + value
 }
 case class ChainMoves(ms:Array[Move],override val value:Int) extends Move(value){
   def commit(){ms.foreach(_.commit())}
   def getModified=ms.foldLeft(Set.empty[CBLSIntVar])((acc,m) => acc ++ m.getModified)
-  override def toString() = "Chain of: " + ms.mkString(" and ") + "."
+  override def toString() = "Chain of: " + ms.mkString("\t","\n\t","") + "."
 }
 case class NoMove(override val value:Int = Int.MaxValue) extends Move(value){
   def commit(){}

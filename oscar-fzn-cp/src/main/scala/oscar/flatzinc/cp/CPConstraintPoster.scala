@@ -47,7 +47,7 @@ class CPConstraintPoster(val pstrength: oscar.cp.core.CPPropagStrength){
       case bin_packing_load(load,bin,w,ann)           => new oscar.cp.constraints.BinPacking(bin.map(getVar(_)-1),w.map(_.value),load.map(getVar))
       case circuit(xs, ann)                           => new oscar.cp.constraints.Circuit(xs.map(v => getVar(v)-1),false)
       case subcircuit(xs, ann)                        => oscar.cp.constraints.SubCircuit(xs.map(getVar),1)
-
+      //case nvalue_int(y, xs, ann)                     =>  :(
 
       //case reif(count_eq(x,v,c,_),b) => getBoolVar(b) ?== oscar.cp.countEq(getVar(c), x.map(getVar), getVar(v))
       

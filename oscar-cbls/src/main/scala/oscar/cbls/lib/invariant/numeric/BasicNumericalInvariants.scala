@@ -105,7 +105,8 @@ class Linear(vars: Iterable[IntValue], coeffs: IndexedSeq[Int])
   * @param x is an iterable of IntVars
  * @author juropolach@gmail.com
  * */
-class Nvalue(x: Iterable[IntValue]) extends IntInvariant with IntNotificationTarget{
+class Nvalue(x: Iterable[IntValue]) extends
+  IntInvariant(1,DomainRange(1,x.map(_.max).max - x.map(_.min).min + 1)) with IntNotificationTarget{
   
   registerStaticAndDynamicDependencyAllNoID(x)
   finishInitialization()
