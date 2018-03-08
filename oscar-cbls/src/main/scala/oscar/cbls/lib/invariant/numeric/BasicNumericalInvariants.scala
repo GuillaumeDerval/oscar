@@ -27,6 +27,7 @@ package oscar.cbls.lib.invariant.numeric
 
 import oscar.cbls._
 import oscar.cbls.core._
+import oscar.cbls.core.computation.DomainRange
 import oscar.cbls.lib.invariant.logic.{Int2Int, IntInt2Int}
 
 object Sum {
@@ -97,6 +98,61 @@ class Linear(vars: Iterable[IntValue], coeffs: IndexedSeq[Int])
 }
 
 /**
+ * nvalue(x)
+  *
+  * @param x is an iterable of IntVars
+ * @author juropolach@gmail.com
+ * */
+class Nvalue(x: Iterable[IntValue]) extends
+  IntInvariant(1,DomainRange(1,x.map(_.max).max - x.map(_.min).min + 1)) with IntNotificationTarget{
+
+  registerStaticAndDynamicDependencyAllNoID(x)
+  finishInitialization()
+
+  private val (minValueOfX,maxValueOfX) = InvariantHelper.getMinMaxBounds(x)
+
+  private val offset: Int = -minValueOfX
+
+  private val N = maxValueOfX + offset
+  private val range = 0 to N
+
+  private val ValueCount: Array[Int] = (for (i <- 0 to N) yield 0).toArray
+
+  this := 0
+
+  for (element <- x){
+    ValueCount(element.value + offset) += 1
+    if (ValueCount(element.value + offset) == 1) {this :+= 1}
+  }
+
+  @inline
+  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
+    ValueCount(OldVal + offset) -= 1
+    ValueCount(NewVal + offset) += 1
+
+    if (ValueCount(OldVal + offset) == 0) {this :-= 1}
+    if (ValueCount(NewVal + offset) == 1) {this :+= 1}
+  }
+
+  override def checkInternals(c: Checker) {
+    var MyValueCount: Array[Int] = (for (i <- 0 to N) yield 0).toArray
+    var Distinct: Int = 0
+    for (element <- x){
+      MyValueCount(element.value + offset) += 1
+      if (MyValueCount(element.value + offset) == 1) {this :+= 1}
+    }
+    for (v <- range) {
+      c.check(ValueCount(v) == MyValueCount(v),
+        Some("ValueCount(" + v + ") (" + ValueCount(v)
+          + ") == MyValueCount(" + v + ") (" + MyValueCount(v)))
+    }
+    c.check(Distinct == this.value,
+        Some("Count of distinct values in " + x + " (" + Distinct
+          + ") == output.value (" + this.value))
+  }
+}
+
+/**
  * sum(vars) where vars is vars that have been added to the sum through addTerm
  * @param model the store
  * @author renaud.delandtsheer@cetic.be
@@ -123,8 +179,10 @@ class ExtendableSum(model: Store, domain: Domain)
   }
 
   override def checkInternals(c: Checker) {
-    c.check(this.value == this.getDynamicallyListenedElements.foldLeft(0)((acc, intvar) => acc + intvar.asInstanceOf[IntValue].value),
-      Some("output.value == vars.foldLeft(0)((acc,intvar) => acc+intvar.value)"))
+    if(this.getDynamicallyListenedElements != null) {
+      c.check(this.value == this.getDynamicallyListenedElements.foldLeft(0)((acc, intvar) => acc + intvar.asInstanceOf[IntValue].value),
+        Some("output.value == vars.foldLeft(0)((acc,intvar) => acc+intvar.value)"))
+    }
   }
 }
 
@@ -183,6 +241,18 @@ with IntNotificationTarget{
       Some("output.value (" + this.value + ") == prod (" + prod + ")"))
   }
 }
+
+/**
+  * a^b
+  * where a, b are IntValue
+  *
+  * @author gustav.bjordal@it.uu.se
+  */
+case class Pow(a: IntValue, b: IntValue)
+  extends IntInt2Int(a, b, (if(DomainHelper2.isSafePow(a,b))
+    (l,r) => Math.pow(l,r).toInt
+  else ((l: Int, r: Int) => DomainHelper2.safePow(l,r))),
+                     DomainHelper2.safePow(a.min, b.min) to DomainHelper2.safePow(a.max, b.max))
 
 /**
  * left - right
@@ -364,6 +434,9 @@ object DomainHelper2 {
     val m4 = x.min.toLong * y.min.toLong
     math.max(math.max(m1,m2), math.max(m3,m4)) <= Int.MaxValue && math.min(math.min(m1,m2), math.min(m3,m4)) >= Int.MinValue
   }
+  def isSafePow(x: IntValue, y:IntValue): Boolean = {
+    Math.pow(x.max, y.max) <= Int.MaxValue/10
+  }
     //Safe addition
   def safeAdd(x: Int, y: Int): Int = {
     if (x.toLong + y.toLong > Int.MaxValue) {
@@ -392,6 +465,14 @@ object DomainHelper2 {
       Int.MinValue
     } else {
       x * y
+    }
+  }
+  //Safe multiplication
+  def safePow(x: Int, y: Int): Int = {
+    if (Math.pow(x,y) > Int.MaxValue/10 || Math.pow(x,y).isInfinity) {
+      Int.MaxValue/10
+    } else {
+      Math.pow(x,y).toInt
     }
   }
   //Division of integers is always safe.

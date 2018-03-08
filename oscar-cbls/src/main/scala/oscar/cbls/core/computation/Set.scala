@@ -62,7 +62,7 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
   /**this must be protected because invariants might rework this after isntanciation
     * for CBLSVars, no problems*/
   protected def restrictDomain(d:Domain): Unit ={
-    privatedomain = privatedomain.restrict(d)
+    privatedomain = privatedomain.intersect(d)
     domainSizeDiv10 = privatedomain.size/10
   }
 

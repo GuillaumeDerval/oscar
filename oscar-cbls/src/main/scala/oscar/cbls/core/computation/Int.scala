@@ -25,6 +25,7 @@ import oscar.cbls.core.propagation.Checker
 
 import scala.collection.mutable.{Map => MMap}
 import scala.language.implicitConversions
+import scala.util.Random
 
 /** this is something that has an integer value.
   * this value can be queried, and invariants can be posted on it,
@@ -81,14 +82,25 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
   private[this] var mNewValue: Int = initialValue
   private[this] var mOldValue = mNewValue
 
+
   def domain:Domain = privatedomain
 
   def restrictDomain(d:Domain): Unit = {
-    privatedomain = privatedomain.restrict(d)
+    privatedomain = privatedomain.intersect(d)
     if(!privatedomain.contains(mNewValue)){
-        this := privatedomain.min
+        val rndIdx = Random.nextInt(privatedomain.size)
+        val valArray = privatedomain.toArray
+        this := valArray(rndIdx)
       }
   }
+
+  //Unions the domain with d
+  def relaxDomain(d:Domain): Unit = {
+    privatedomain = privatedomain.union(d)
+  }
+
+  def inDomain(v:Int): Boolean = privatedomain.contains(v)
+  def domainSize:Int = privatedomain.size
 
   override def toString = {
     if(model != null && model.propagateOnToString) s"$name:=$value" else s"$name:=$mNewValue"
@@ -164,7 +176,7 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
   /** increments the variable by one
     */
   protected def ++ {
-    setValue(1 + newValue)
+    setValue(1 + mNewValue)
   }
 
   def createClone:CBLSIntVar = {

@@ -17,6 +17,7 @@ package oscar.cbls.lib.invariant.logic
 
 import oscar.cbls._
 import oscar.cbls.core._
+import oscar.cbls.core.computation.DomainRange
 
 import scala.collection.immutable.SortedSet
 
@@ -130,6 +131,45 @@ case class IntElement(index: IntValue, inputarray: Array[IntValue])
       "Array(" +inputs.take(4).map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
     }else{
       "Array(" +inputs.map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
+    }
+  }
+}
+
+/**
+ * inputarray[index]
+ * @param inputarray is an array of Int
+ * @param index is the index accessing the array (its value must be always inside the array range)
+ * @author renaud.delandtsheer@cetic.be
+ * @author jean-noel.monette@it.uu.se
+ * */
+case class IntElementNoVar(index: IntValue, inputarray: Array[Int])
+  extends IntInvariant(initialValue = inputarray(index.value),DomainRange(inputarray.min,inputarray.max))
+  with IntNotificationTarget{
+
+  registerStaticAndDynamicDependency(index)
+  finishInitialization()
+
+  @inline
+  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
+   // println(OldVal + " "+ NewVal)
+    if(NewVal >= inputarray.length){
+      println("something is wrong")
+    }
+    this := inputarray(NewVal)
+  }
+
+  override def checkInternals(c: Checker) {
+    c.check(this.value == inputarray(index.value),
+      Some("output.value (" + this.value + ") == inputarray(index.value ("
+        + index.value + ")) (" + inputarray(index.value) + ")"))
+  }
+
+  override def toString: String = {
+    val inputs = inputarray.toList
+    if(inputs.length > 4){
+      "Array(" +inputs.take(4).map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "] = " + this.value
+    }else{
+      "Array(" +inputs.map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "] = " + this.value
     }
   }
 }

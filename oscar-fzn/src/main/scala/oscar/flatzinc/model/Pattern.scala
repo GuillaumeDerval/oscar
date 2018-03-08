@@ -60,7 +60,7 @@ case class BoolValPattern(val v: Boolean) extends Pattern
 //case class SomeBoolValPattern(val id: String) extends Pattern
 case class AnyBoolValPattern(val id: String) extends Pattern
 
-case class SetValPattern(val v: Domain) extends Pattern
+case class SetValPattern(val v: FzDomain) extends Pattern
 //case class SomeSetValPattern(val id: String) extends Pattern
 case class AnySetValPattern(val id: String) extends Pattern
 

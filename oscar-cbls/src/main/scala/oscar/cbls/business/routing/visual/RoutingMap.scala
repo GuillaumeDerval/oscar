@@ -23,9 +23,11 @@ import java.awt.geom.Line2D.Double
 import java.awt.{BasicStroke, Color, Graphics2D, Point, Rectangle, RenderingHints}
 import javax.swing.JPanel
 
-import org.jxmapviewer.painter.Painter
-import org.jxmapviewer.viewer.GeoPosition
-import org.jxmapviewer.{JXMapKit, JXMapViewer}
+//This keeps breaking compilation for me, can someone please fix this depencency?
+import org.jdesktop.swingx.{JXMapKit, JXMapViewer}
+import org.jdesktop.swingx.mapviewer.GeoPosition
+import org.jdesktop.swingx.painter.Painter
+
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.business.routing.model.VRP
 import oscar.visual.VisualDrawing

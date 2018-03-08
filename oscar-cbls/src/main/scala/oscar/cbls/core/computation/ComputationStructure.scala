@@ -163,7 +163,7 @@ case class Store(override val verbose:Boolean = false,
       if (notifiedInvariant != null && notifiedInvariant != i){
         return false
       }
-      if (notifiedInvariant == null && getPropagatingElement != null &&  getPropagatingElement != i){
+      if (notifiedInvariant == null && getPropagatingElement != null && getPropagatingElement != i){
         return false
       }
     }else{
@@ -184,6 +184,7 @@ case class Store(override val verbose:Boolean = false,
   def sourceVariables(v:AbstractVariable):SortedSet[Variable] = {
     var ToExplore: QList[PropagationElement] = QList(v)
     var SourceVariables:SortedSet[Variable] = SortedSet.empty
+    var _exploredinvariants:SortedSet[Invariant] = SortedSet.empty
     while(ToExplore != null) {
       val head = ToExplore.head
       ToExplore = ToExplore.tail
@@ -196,11 +197,15 @@ case class Store(override val verbose:Boolean = false,
           }
         //TODO: keep a set of the explored invariants, to speed up this thing?
         case i : Invariant =>
-          for (listened <- i.getStaticallyListenedElements) {
-            if (listened.propagationStructure != null && (!listened.isInstanceOf[Variable] || !SourceVariables.contains(listened.asInstanceOf[Variable]))) {
-              ToExplore = QList(listened, ToExplore)
+          if(!_exploredinvariants.contains(i)) {
+            for (listened <- i.getStaticallyListenedElements) {
+              if (listened.propagationStructure != null && (!listened.isInstanceOf[Variable] || !SourceVariables.contains(
+                listened.asInstanceOf[Variable]))) {
+                ToExplore = QList(listened, ToExplore)
+              }
             }
           }
+          _exploredinvariants += i
         case _ =>
           require(false, "propagation element that is not a variable, and not an invariant??")
       }

@@ -26,7 +26,7 @@ package oscar.cbls.lib.invariant.logic
 
 import oscar.cbls._
 import oscar.cbls.core._
-import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
+import oscar.cbls.core.computation.{CBLSIntVar, DomainRange, IntValue}
 
 /**
  * Author: Jean-Noël Monette
@@ -103,6 +103,34 @@ case class DenseCount(values: Array[IntValue], counts: Array[CBLSIntVar], offset
     }
   }
 }
+
+/**
+  * Maintains the number of occurances of c \in values
+  *
+  * @author gustav.bjordal@it.uu.se
+  * */
+
+case class ConstCount(values: Array[IntValue], c: Int)
+  extends IntInvariant(values.count(v => v.value == c), DomainRange(0,values.length))
+    with IntNotificationTarget{
+
+  registerStaticAndDynamicDependencyArrayIndex(values)
+
+  finishInitialization()
+
+  @inline
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
+    if(NewVal == c){
+      this :+= 1
+    }else if(OldVal == c){
+      this :-= 1
+    }
+  }
+
+  override def checkInternals(c: Checker) {
+  }
+}
+
 
 object DenseCount{
   def makeDenseCount(vars: Array[IntValue]):DenseCount = {

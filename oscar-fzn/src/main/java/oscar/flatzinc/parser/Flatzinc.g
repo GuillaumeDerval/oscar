@@ -174,7 +174,7 @@ idorannot returns [Element e] locals [Annotation ann]
     ({$e = m.findId($varparid.text); } //empty alternative
     |'[' intconst ']' {$e = ((ArrayOfElement)m.findId($varparid.text)).elements.get($intconst.i-1); }
     | {$ann = new Annotation($varparid.text); $e = new Element(); ($e).value = $ann; ($e).typ = new Type(Type.ANNOTATION);} 
-       '(' expr {($ann).add($expr.e);} (',' expr {($ann).add($expr.e);} )* ')' 
+       '(' expr {m.addAnnArg($ann,$expr.e);} (',' expr {m.addAnnArg($ann,$expr.e);} )* ')' 
     ) 
   ;
   //TODO: annotations without parenthesis are not treated the same way as annotations with parenthesis
@@ -206,7 +206,7 @@ annotations returns [ArrayList<Annotation> anns]
 	: {$anns = new ArrayList<Annotation>();} ( '::' annotation {$anns.add($annotation.ann);} )* ;
 
 annotation returns [Annotation ann] 
-	: predannid {$ann = new Annotation($predannid.text);} ( '(' expr {($ann).add($expr.e);} (',' expr {($ann).add($expr.e);} )* ')' )?
+	: predannid {$ann = new Annotation($predannid.text);} ( '(' expr {m.addAnnArg($ann,$expr.e);} (',' expr {m.addAnnArg($ann,$expr.e);} )* ')' )?
 	;
 // Whether an identifier is an annotation or a variable name can be identified from its type.
 // FlatZinc does not permit overloading of names

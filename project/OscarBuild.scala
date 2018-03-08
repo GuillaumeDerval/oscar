@@ -129,8 +129,8 @@ object OscarBuild extends Build {
         packSettings ++
         unidocSettings ++
         Seq(libraryDependencies ++= testDeps) :+
-        (unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(oscarFzn, oscarFznCbls, oscarPerf)),
-    aggregate = Seq(oscarAlgebra, oscarAlgo, oscarCbls, oscarCp, oscarCPXcsp3, oscarPerf, oscarModeling, oscarDfo, oscarUtil, oscarVisual, oscarFzn, oscarFznCbls, oscarDes, oscarInvariants)
+        (unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(oscarFzn, oscarFznCbls, oscarFznCp, oscarPerf)),
+    aggregate = Seq(oscarAlgebra, oscarAlgo, oscarCbls, oscarCp, oscarCPXcsp3, oscarPerf, oscarModeling, oscarDfo, oscarUtil, oscarVisual, oscarFzn, oscarFznCbls, oscarFznCp, oscarDes, oscarInvariants)
   )
 
   lazy val oscarAlgebra = Project(
@@ -245,9 +245,19 @@ object OscarBuild extends Build {
     base = file("oscar-fzn-cbls"),
     settings =
       commonSettings ++
-        Seq(libraryDependencies ++= testDeps),
-    dependencies = Seq(oscarCbls,oscarFzn)
+      Seq(libraryDependencies ++= testDeps),
+    dependencies = Seq(oscarCbls,oscarFzn,oscarFznCp)
   )
+
+  lazy val oscarFznCp = Project(
+    id = "oscar-fzn-cp",
+    base = file("oscar-fzn-cp"),
+    settings =
+      commonSettings ++
+      Seq(libraryDependencies ++= testDeps),
+    dependencies = Seq(oscarCp,oscarFzn)
+  )
+
 
   // Not included in the build
   lazy val oscarInvariants = Project(
