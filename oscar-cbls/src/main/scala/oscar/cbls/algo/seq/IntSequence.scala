@@ -242,7 +242,8 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
 }
 
 
-class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeMap[Int],
+class ConcreteIntSequence(private[seq] val internalPositionToValue:Array[Int],
+                          private[seq] val internalPositionToValueOverrides:RedBlackTreeMap[Int],
                           private[seq] val valueToInternalPositions:RedBlackTreeMap[RedBlackTreeMap[Int]],
                           private[seq] val externalToInternalPosition:PiecewiseLinearBijectionNaive,
                           private[seq] val startFreeRangeForInternalPosition:Int,
