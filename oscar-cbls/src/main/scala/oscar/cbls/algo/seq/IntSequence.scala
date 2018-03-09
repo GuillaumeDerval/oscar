@@ -242,7 +242,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
 }
 
 
-class ConcreteIntSequence(private[seq] val internalPositionToValue:Array[Int],
+class ConcreteIntSequence(private[seq] val internalPositionToValueArray:Array[Int],
                           private[seq] val internalPositionToValueOverrides:RedBlackTreeMap[Int],
                           private[seq] val valueToInternalPositions:RedBlackTreeMap[RedBlackTreeMap[Int]],
                           private[seq] val externalToInternalPosition:PiecewiseLinearBijectionNaive,
@@ -265,9 +265,9 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:Array[Int],
     )
   }
 
-  def size : Int = internalPositionToValue.size
+  def size : Int = startFreeRangeForInternalPosition
 
-  override def isEmpty : Boolean = internalPositionToValue.isEmpty
+  override def isEmpty : Boolean = startFreeRangeForInternalPosition == 0
 
   override def nbOccurrence(value : Int) : Int = valueToInternalPositions.get(value) match {
     case None => 0
@@ -287,9 +287,16 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:Array[Int],
   def contains(value : Int) : Boolean = valueToInternalPositions.contains(value)
 
   def valueAtPosition(position : Int) : Option[Int] = {
-    val internalPosition : Int = externalToInternalPosition.forward(position)
-    internalPositionToValue.get(internalPosition)
+    valueAtInternalPosition(externalToInternalPosition.forward(position))
   }
+
+  private def valueAtInternalPosition(internalPosition : Int) : Option[Int] = {
+    if(internalPosition >= startFreeRangeForInternalPosition) None
+    else internalPositionToValueOverrides.get(internalPosition) match{
+        case None => Some(internalPositionToValueArray(internalPosition))
+        case a => a
+      }
+    }
 
   override def positionsOfValueQ(value : Int) : QList[Int] = {
     valueToInternalPositions.get(value) match {
@@ -314,9 +321,13 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:Array[Int],
         case Some(p) => (p.next, p.value.f(position))
       }
 
-      Some(new ConcreteIntSequenceExplorer(this,
+      val currentInternalPosition = externalToInternalPosition.forward(position)
+
+      Some(new ConcreteIntSequenceExplorer(
+        this,
         position,
-        internalPositionToValue.positionOf(internalPosition).get,
+        currentInternalPosition,
+        valueAtInternalPosition(currentInternalPosition).get,
         currentPivotPosition,
         pivotAbovePosition)()
       )
@@ -613,7 +624,8 @@ abstract class IntSequenceExplorer{
 
 class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
                                   override val position:Int,
-                                  positionInRB:RedBlackTreeMapExplorer[Int],
+                                  val internalPosition:Int,
+                                  override val value:Int,
                                   currentPivotPosition:Option[RedBlackTreeMapExplorer[Pivot]],
                                   pivotAbovePosition:Option[RedBlackTreeMapExplorer[Pivot]])(
                                    limitAboveForCurrentPivot:Int = pivotAbovePosition match{
@@ -628,10 +640,6 @@ class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
                                    ) extends IntSequenceExplorer{
 
   override def toString : String = "ConcreteIntSequenceExplorer(position:" + position + " value:" + value + " currentPivotPosition:" + currentPivotPosition + " pivotAbovePosition:" + pivotAbovePosition + " positionInRB:" + positionInRB + ")"
-
-  override val value : Int = positionInRB.value
-
-  private[seq] def internalPos = positionInRB.key
 
   override def next : Option[IntSequenceExplorer] = {
     if(position == sequence.size-1) return None
