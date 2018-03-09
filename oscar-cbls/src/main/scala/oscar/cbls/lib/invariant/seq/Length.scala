@@ -37,8 +37,8 @@ case class Length(v: SeqValue,maxSequenceLength:Int = Int.MaxValue)
     this := changes.newValue.size
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value == v.value.size, Some("this.value == v.value.size"))
+  override def checkInternals(){
+    require(this.value == v.value.size, Some("this.value == v.value.size"))
   }
 }
 

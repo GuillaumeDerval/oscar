@@ -415,7 +415,7 @@ trait Invariant extends PropagationElement{
     * this will be called for each invariant after propagation is performed.
     * It requires that the Model is instantiated with the variable debug set to true.
     */
-  override def checkInternals(c:Checker){c.check(false, Some("DEFAULT EMPTY CHECK " + this.toString() + ".checkInternals"))}
+  override def checkInternals(){require(false, Some("DEFAULT EMPTY CHECK " + this.toString() + ".checkInternals"))}
 
   /** this is the propagation method that should be overridden by propagation elements.
     * notice that it is only called in a propagation wave if:

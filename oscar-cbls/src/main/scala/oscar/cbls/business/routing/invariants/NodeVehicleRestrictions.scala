@@ -402,17 +402,17 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
     }
   }
 
-  override def checkInternals(c : Checker) : Unit = {
+  override def checkInternals(): Unit = {
 
     val seq = routes.value
     for(vehicle <- vehicles){
-      c.check(violationPerVehicle(vehicle).value == violationOnVehicle(vehicle,seq),
+      require(violationPerVehicle(vehicle).value == violationOnVehicle(vehicle,seq),
         Some("violationPerVehicle(vehicle).value=" + violationPerVehicle(vehicle).value
           + " should == violationOnVehicle(vehicle,seq)="+  violationOnVehicle(vehicle,seq) + " vehicle:" + vehicle + " route:" + seq))
 
       val oldUpToDate = vehicleChangedSinceCheckpoint(vehicle)
       vehicleChangedSinceCheckpoint(vehicle) = true
-      c.check(violationPerVehicle(vehicle).value == violationOnVehicle(vehicle,seq))
+      require(violationPerVehicle(vehicle).value == violationOnVehicle(vehicle,seq))
       vehicleChangedSinceCheckpoint(vehicle) = oldUpToDate
     }
 
@@ -420,7 +420,7 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
       for(vehicle <- vehicles){
         val oldUpToDate = vehicleChangedSinceCheckpoint(vehicle)
         vehicleChangedSinceCheckpoint(vehicle) = true
-        c.check(violationAtCheckpoint(vehicle) == violationOnVehicle(vehicle,checkpoint))
+        require(violationAtCheckpoint(vehicle) == violationOnVehicle(vehicle,checkpoint))
         vehicleChangedSinceCheckpoint(vehicle) = oldUpToDate
       }
     }

@@ -114,17 +114,17 @@ case class AllDiff(variables: Iterable[IntValue])
     tmp
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(){
     val myValueCount: Array[Int] = (for (i <- 0 to N) yield 0).toArray
     for (v <- variables) myValueCount(v.value + offset) += 1
     for (v <- range) {
-      c.check(valueMinusOffsetToNbOccurrence(v).newValue == myValueCount(v),
+      require(valueMinusOffsetToNbOccurrence(v).newValue == myValueCount(v),
         Some("valueMinusOffsetToNbOccurrence(" + v + ").newValue (" + valueMinusOffsetToNbOccurrence(v).newValue
           + ") == myValueCount(" + v + ") (" + myValueCount(v)))
     }
 
     for (v <- variables) {
-      c.check(violation(v).value == myValueCount(v.value + offset) - 1,
+      require(violation(v).value == myValueCount(v.value + offset) - 1,
         Some("violation(" + v.name + ").value (" + violation(v).value
           + ") != myValueCount(" + v.name + ".value + offset) - 1 ("
           + (myValueCount(v.value + offset) - 1) + ")"))
@@ -132,7 +132,7 @@ case class AllDiff(variables: Iterable[IntValue])
 
     var MyViol: Int = 0
     for (v <- range) MyViol += (0.max(myValueCount(v) - 1))
-    c.check(MyViol == violationVariable.value, Some("MyViol (" + MyViol
+    require(MyViol == violationVariable.value, Some("MyViol (" + MyViol
         + ") == violationVariable.value (" + violationVariable.value + ")"))
   }
 }

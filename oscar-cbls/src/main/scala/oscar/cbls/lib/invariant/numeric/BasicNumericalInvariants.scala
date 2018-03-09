@@ -60,8 +60,8 @@ class Sum(vars: Iterable[IntValue])
     this :+= NewVal - OldVal
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value == vars.foldLeft(0)((acc, intvar) => acc + intvar.value),
+  override def checkInternals(){
+    require(this.value == vars.foldLeft(0)((acc, intvar) => acc + intvar.value),
       Some("output.value == vars.foldLeft(0)((acc,intvar) => acc+intvar.value)"))
   }
 }
@@ -91,8 +91,8 @@ class Linear(vars: Iterable[IntValue], coeffs: IndexedSeq[Int])
     this :+= (NewVal - OldVal) * coeffs(idx)
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value == vars.zip(coeffs).foldLeft(0)((acc, intvar) => acc + intvar._1.value*intvar._2),
+  override def checkInternals(){
+    require(this.value == vars.zip(coeffs).foldLeft(0)((acc, intvar) => acc + intvar._1.value*intvar._2),
       Some("output.value == vars.zip(coeff).foldLeft(0)((acc, intvar) => acc + intvar._1.value*intvar._2)"))
   }
 }
@@ -134,7 +134,7 @@ class Nvalue(x: Iterable[IntValue]) extends
     if (ValueCount(NewVal + offset) == 1) {this :+= 1}
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(){
     var MyValueCount: Array[Int] = (for (i <- 0 to N) yield 0).toArray
     var Distinct: Int = 0
     for (element <- x){
@@ -142,11 +142,11 @@ class Nvalue(x: Iterable[IntValue]) extends
       if (MyValueCount(element.value + offset) == 1) {this :+= 1}
     }
     for (v <- range) {
-      c.check(ValueCount(v) == MyValueCount(v),
+      require(ValueCount(v) == MyValueCount(v),
         Some("ValueCount(" + v + ") (" + ValueCount(v)
           + ") == MyValueCount(" + v + ") (" + MyValueCount(v)))
     }
-    c.check(Distinct == this.value,
+    require(Distinct == this.value,
         Some("Count of distinct values in " + x + " (" + Distinct
           + ") == output.value (" + this.value))
   }
@@ -178,9 +178,9 @@ class ExtendableSum(model: Store, domain: Domain)
     this :+= NewVal - OldVal
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(){
     if(this.getDynamicallyListenedElements != null) {
-      c.check(this.value == this.getDynamicallyListenedElements.foldLeft(0)((acc, intvar) => acc + intvar.asInstanceOf[IntValue].value),
+      require(this.value == this.getDynamicallyListenedElements.foldLeft(0)((acc, intvar) => acc + intvar.asInstanceOf[IntValue].value),
         Some("output.value == vars.foldLeft(0)((acc,intvar) => acc+intvar.value)"))
     }
   }
@@ -234,10 +234,10 @@ with IntNotificationTarget{
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(){
     var prod = 1
     for (v <- vars) prod *= v.value
-    c.check(this.value == prod,
+    require(this.value == prod,
       Some("output.value (" + this.value + ") == prod (" + prod + ")"))
   }
 }

@@ -90,7 +90,7 @@ case class MultiKnapsack(items: Array[IntValue], itemsizes: Array[IntValue], bin
     * It requires that the Model is instantiated with the variable debug set to true.
     */
   override def checkInternals(c: Checker) {
-    c.check(true,Some("nothing to check, invariant is discharged"))
+    require(true,Some("nothing to check, invariant is discharged"))
   }
 }
 
@@ -158,6 +158,6 @@ case class MultiKnapsackLoad(items: Array[IntValue], itemsizes: Array[IntValue],
     * It requires that the Model is instantiated with the variable debug set to true.
     */
   override def checkInternals(c: Checker) {
-    c.check(true,Some("nothing to check, invariant is discharged"))
+    require(true,Some("nothing to check, invariant is discharged"))
   }
 }

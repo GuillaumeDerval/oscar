@@ -82,7 +82,7 @@ class Bulk(m: Store, val bulkedVars: Array[Value], val bulkedComputationResult: 
   for (dd <- bulkedVars) registerStaticallyListenedElement(dd)
   finishInitialization(m)
 
-  override def checkInternals(c: Checker) = c.check(true)
+  override def checkInternals(): Unit = require(true)
 }
 
 /**This is the dictionaries where bulks are stored, and can be searched for

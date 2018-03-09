@@ -49,8 +49,8 @@ case class And(vars: Iterable[IntValue])
     this :+= NewVal - OldVal
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value == vars.foldLeft(0)((acc, intvar) => acc + intvar.value),
+  override def checkInternals(){
+    require(this.value == vars.foldLeft(0)((acc, intvar) => acc + intvar.value),
             Some("output.value == vars.foldLeft(0)((acc,intvar) => acc+intvar.value)"))
   }
 }
@@ -83,7 +83,7 @@ case class Or(vars: Array[IntValue]) extends MiaxArray(vars, null, vars.foldLeft
 
   override def checkInternals(c: Checker) {
     for (v <- this.vars) {
-      c.check(this.value <= v.value,
+      require(this.value <= v.value,
               Some("this.value (" + this.value + ") <= " + v.name + ".value (" + v.value + ")"))
     }
   }
@@ -107,8 +107,8 @@ case class Or(vars: Array[IntValue])
     }
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value == vars.foldLeft(0)((acc, intvar) => acc + intvar.value),
+  override def checkInternals(){
+    require(this.value == vars.foldLeft(0)((acc, intvar) => acc + intvar.value),
             Some("output.value == vars.foldLeft(0)((acc,intvar) => acc+intvar.value)"))
   }
 }

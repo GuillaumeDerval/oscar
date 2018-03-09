@@ -138,7 +138,7 @@ case class CumulativePrototype(start: Array[IntValue], duration: Array[IntValue]
     //println(violation)
   }
 
-  override def checkInternals(c: Checker) {c.check(false, Some("TODO: Implement checkinternal for CumulativeSparse"))}
+  override def checkInternals(){require(false, Some("TODO: Implement checkinternal for CumulativeSparse"))}
 }
 
 class CumulativeProfile(m:Store, val nTasks:Int, val horizon:Int, val maxHeight:Int, var limit:IntValue){

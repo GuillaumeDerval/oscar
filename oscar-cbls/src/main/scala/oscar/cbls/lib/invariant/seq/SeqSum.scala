@@ -98,9 +98,9 @@ case class SeqSum(v: SeqValue, f:(Int => Int) = (a:Int) => a)
     }
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.newValue == v.value.toList.sum)
-    c.check(this.newValue == computeSumFromScratch(v.value),Some("this.newValue(="+ this.newValue+") == Sum(v.value(="+ computeSumFromScratch(v.value)+ ")"))
+  override def checkInternals(){
+    require(this.newValue == v.value.toList.sum)
+    require(this.newValue == computeSumFromScratch(v.value),Some("this.newValue(="+ this.newValue+") == Sum(v.value(="+ computeSumFromScratch(v.value)+ ")"))
   }
 }
 

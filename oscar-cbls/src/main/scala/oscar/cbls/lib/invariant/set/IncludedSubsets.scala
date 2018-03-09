@@ -79,9 +79,9 @@ case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(It
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(){
     val violation = subsetToMonitorAndMaxValues.map({case (values,maxValue,weight) => if(values.count(v => s.value.contains(v)) > maxValue) weight else 0}).sum
-    c.check(this.value == violation,Some("included subset Error value=" + this.value  + " should be:" + violation))
+    require(this.value == violation,Some("included subset Error value=" + this.value  + " should be:" + violation))
   }
 }
 
@@ -179,8 +179,8 @@ case class ValuesInViolatedClauses(s: SetValue, clauseAndMaxOccList:Iterable[(It
     SortedSet.empty[Int] ++ violatedClauses.flatMap({case (clause,maxOcc) => clause})
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value equals computeFromScratch(s.value) ,Some("included subset Error value=" + this.value  + " should be:" + computeFromScratch(s.value)))
+  override def checkInternals(){
+    require(this.value equals computeFromScratch(s.value) ,Some("included subset Error value=" + this.value  + " should be:" + computeFromScratch(s.value)))
   }
 }
 

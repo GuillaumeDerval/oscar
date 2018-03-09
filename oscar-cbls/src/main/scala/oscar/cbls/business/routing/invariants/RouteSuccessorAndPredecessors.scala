@@ -195,18 +195,18 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
     successorValues
   }
 
-  override def checkInternals(c : Checker){
+  override def checkInternals(){
     require(routes.value quickEquals routes.newValue)
     val fromScratch = computeSuccessorsFromScratchNoAffect(routes.newValue)
     for(node <- 0 until n){
-      c.check(successorValues(node).newValue == fromScratch(node),
+      require(successorValues(node).newValue == fromScratch(node),
         Some("error on next for node " + node + ": " + successorValues(node).newValue + " should== " + fromScratch(node)))
 
       if(fromScratch(node)== defaultWhenNotInSequence){
-        c.check(predecessorValues(node).newValue == defaultWhenNotInSequence,
+        require(predecessorValues(node).newValue == defaultWhenNotInSequence,
           Some("error on predecessor for node " + node + " it is not routed, but got " + predecessorValues(node).newValue))
       }else {
-        c.check(predecessorValues(fromScratch(node)).newValue == node,
+        require(predecessorValues(fromScratch(node)).newValue == node,
           Some("error on predecessor for node " + node + " successor from scratch:" + fromScratch(node) + " predecessor of this is: " + predecessorValues(fromScratch(node)).newValue + "seq:" + routes.value))
       }
     }

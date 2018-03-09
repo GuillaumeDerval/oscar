@@ -59,7 +59,7 @@ case class CumulativeSparse(start: Array[IntValue], duration: Array[IntValue], a
     //println(violation)
   }
   
-  override def checkInternals(c: Checker) {c.check(false, Some("TODO: Implement checkinternal for CumulativeSparse"))}
+  override def checkInternals(){require(false, Some("TODO: Implement checkinternal for CumulativeSparse"))}
 }
 
 class Profile(n: Int,maxh: Int,model:Store){

@@ -94,7 +94,7 @@ case class DisjunctiveConstDuration(start: Array[IntValue],
     Violations(v.asInstanceOf[IntValue])
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(){
     //TODO
   }
 }
@@ -222,7 +222,7 @@ case class Disjunctive(start: Array[IntValue],
     violationsVarsMap(v.asInstanceOf[IntValue])
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(){
 
     var violationFromScratch = 0
     val violationArrayFromScratch = Array.fill(nbTask)(0)
@@ -246,13 +246,13 @@ case class Disjunctive(start: Array[IntValue],
       }
     }
 
-    c.check(violation.value == violationFromScratch)
+    require(violation.value == violationFromScratch)
     for(t <- taskIndices){
-      c.check(violation(start(t)).value == violationArrayFromScratch(t))
-      c.check(violation(duration(t)).value == violationArrayFromScratch(t))
+      require(violation(start(t)).value == violationArrayFromScratch(t))
+      require(violation(duration(t)).value == violationArrayFromScratch(t))
     }
 
     val nonZeroTasksFromScratch = SortedSet.empty[Int] ++ taskIndices.filter(i => duration(i).value != 0)
-    c.check(nonZeroTasksFromScratch equals nonZeroTasks)
+    require(nonZeroTasksFromScratch equals nonZeroTasks)
   }
 }

@@ -198,22 +198,22 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
 
   private def sortSequenceBy(i:IntSequence,by:Int => Int):IntSequence = IntSequence(i.toList.sortBy(i => (by(i),i)))
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(){
     check(c, v.value,this.value)
   }
   def check(c:Checker,in:IntSequence,out:IntSequence){
     require(out quickEquals this.value)
-    c.check(out.toList equals sortSequenceBy(in,sortValue).toList, Some("this.out=" + out.toList + " should be " +sortSequenceBy(in,sortValue).toList))
+    require(out.toList equals sortSequenceBy(in,sortValue).toList, Some("this.out=" + out.toList + " should be " +sortSequenceBy(in,sortValue).toList))
     /*
     for (value <-  if(in.nonEmpty) {in.min to in.max} else List(0,1,10)) {
       val optPositionOfSMallestGE = positionOfSmallestGreaterOrEqual(value)()
       optPositionOfSMallestGE match {
         case None =>
-          c.check(in.isEmpty || out.forall((otherValue => otherValue != value && isSmaller(otherValue, value)())),
+          require(in.isEmpty || out.forall((otherValue => otherValue != value && isSmaller(otherValue, value)())),
             Some("None on search " + value + " on " + out + " but there are: " + out.toList.filter(otherValue => otherValue == value || isSmaller(value,otherValue)())))
 
         case Some(positionOfSMallestGE) =>
-          c.check(isSmaller(value, positionOfSMallestGE.value)() || positionOfSMallestGE.value == value, Some("returned value " + positionOfSMallestGE.value + " on search " + value + " on " + out))
+          require(isSmaller(value, positionOfSMallestGE.value)() || positionOfSMallestGE.value == value, Some("returned value " + positionOfSMallestGE.value + " on search " + value + " on " + out))
       }
     }
     */

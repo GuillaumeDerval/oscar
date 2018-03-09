@@ -123,10 +123,10 @@ class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default:
     }
   }
 
-  override def checkInternals(c : Checker) {
-    if (condSet.value.isEmpty) c.check(value == default)
-    else c.check(value == constArray(condSet.value.minBy(constArray(_))))
-    c.check(nbListenedVals >= heapOfConsideredPositions.size)
+  override def checkInternals(){
+    if (condSet.value.isEmpty) require(value == default)
+    else require(value == constArray(condSet.value.minBy(constArray(_))))
+    require(nbListenedVals >= heapOfConsideredPositions.size)
   }
 }
 

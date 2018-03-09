@@ -70,7 +70,7 @@ class StartPointOfVehicles(routes:ChangingSeqValue,
     }
   }
 
-  override def checkInternals(c : Checker){
+  override def checkInternals(){
     currentVehicleLocation.checkOnSequence(routes.value)
   }
 }

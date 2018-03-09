@@ -294,7 +294,7 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
     clone
   }
 
-  override def checkInternals(c:Checker){
+  override def checkInternals(){
     assert(this.definingInvariant == null || OldValue.intersect(m_NewValue).size == m_NewValue.size,
       "internal error: " + "Value: " + m_NewValue + " OldValue: " + OldValue)
   }
@@ -507,7 +507,7 @@ class IdentitySet(toValue:CBLSSetVar, fromValue:ChangingSetValue)
     for(deleted <- removedValues) toValue.deleteValuePreviouslyIn(deleted)
   }
 
-  override def checkInternals(c:Checker){
-    c.check(toValue.value equals fromValue.value)
+  override def checkInternals(){
+    require(toValue.value equals fromValue.value)
   }
 }

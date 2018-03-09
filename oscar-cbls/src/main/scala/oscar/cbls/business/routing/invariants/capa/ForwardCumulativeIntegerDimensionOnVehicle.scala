@@ -170,7 +170,7 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
         header+acc}).mkString("")
   }
 
-  override def checkInternals(c : Checker) : Unit = {
+  override def checkInternals(): Unit = {
     check(c,routes.value)
   }
   def check(c : Checker,s:IntSequence){
@@ -179,18 +179,18 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
     val currentVehicleLocation = this.toUpdateZonesAndVehicleStartAfter.get._2
 
     for(vehicle <- 0 until v){
-      c.check(vehicleLocation.startPosOfVehicle(vehicle) == s.positionOfAnyOccurrence(vehicle).get,
+      require(vehicleLocation.startPosOfVehicle(vehicle) == s.positionOfAnyOccurrence(vehicle).get,
         Some("Found start of vehicle(" + vehicle + "):=" + vehicleLocation.startPosOfVehicle(vehicle) + " should be :=" + s.positionOfAnyOccurrence(vehicle) +" seq :"+ s.mkString(",")))
-      c.check(currentVehicleLocation.startPosOfVehicle(vehicle) == vehicleLocation.startPosOfVehicle(vehicle),Some("x"))
+      require(currentVehicleLocation.startPosOfVehicle(vehicle) == vehicleLocation.startPosOfVehicle(vehicle),Some("x"))
     }
 
     for(node <- 0 until n){
-      c.check(nodeToContent(node) == contentAtNode(node).newValue,
+      require(nodeToContent(node) == contentAtNode(node).newValue,
         Some("Vehicle content at node(" + node + ") at pos : "+ s.positionsOfValue(node)+ " := " + contentAtNode(node).newValue + " should be :=" + nodeToContent(node)+ " routes:" + s.mkString(",")  + " contentAtStart:" + contentAtStart.mkString(",")))
     }
 
     for(vehicle <- 0 until v){
-      c.check(contentAtEnd(vehicle).newValue == vehicleToContentAtEnd(vehicle), Some("Error on vehicle content at end vehicle:" + vehicle + " contentAtEnd(vehicle).newValue:" + contentAtEnd(vehicle).newValue + " should be:" +  vehicleToContentAtEnd(vehicle)))
+      require(contentAtEnd(vehicle).newValue == vehicleToContentAtEnd(vehicle), Some("Error on vehicle content at end vehicle:" + vehicle + " contentAtEnd(vehicle).newValue:" + contentAtEnd(vehicle).newValue + " should be:" +  vehicleToContentAtEnd(vehicle)))
     }
   }
 }

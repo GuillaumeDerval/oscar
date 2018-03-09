@@ -85,11 +85,11 @@ case class Table(variables: Array[IntValue], table:Array[Array[Int]]) extends In
     */
   override def violation: IntValue = minViolation
 
-  override def checkInternals(c: Checker) {
-    c.check(minViolation.value == rowViolation.map(_.value).min, Some("Min violation is not min"))
-    c.check(rowViolation(aMinViolatingRow.value).value == minViolation.value,Some("Min row is wrong"))
+  override def checkInternals(){
+    require(minViolation.value == rowViolation.map(_.value).min, Some("Min violation is not min"))
+    require(rowViolation(aMinViolatingRow.value).value == minViolation.value,Some("Min row is wrong"))
     for(i <- variables.indices){
-      c.check(variableViolation(i).value == ( if(variables(i).value == table(aMinViolatingRow.value)(i)) 0 else 1), Some("Violation is not correct"))
+      require(variableViolation(i).value == ( if(variables(i).value == table(aMinViolatingRow.value)(i)) 0 else 1), Some("Violation is not correct"))
     }
   }
 

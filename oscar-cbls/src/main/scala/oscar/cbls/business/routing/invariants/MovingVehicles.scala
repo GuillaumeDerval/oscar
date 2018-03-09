@@ -145,9 +145,9 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
     toReturn
   }
 
-  override def checkInternals(c : Checker) : Unit = {
+  override def checkInternals(): Unit = {
     val valuesFromScratch = computeValueFromScratch(routes.value)
-    c.check(valuesFromScratch equals this.newValue,
+    require(valuesFromScratch equals this.newValue,
       Some("error on moving vehicle, got " + this.newValue.toList + " should be " + valuesFromScratch.toList + " routes: " + routes.value))
   }
 }

@@ -499,31 +499,31 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
     else Array.fill(1)(toReturn.sum)
   }
 
-  override def checkInternals(c : Checker) : Unit = {
+  override def checkInternals(): Unit = {
     check(c, routes.value)
   }
 
   def check(c : Checker,s:IntSequence) {
-    c.check(!distanceIsSymmetric || ConstantRoutingDistance.isDistanceSymmetric(distanceMatrix, n), Some("distance matrix should be symmetric if invariant told so"))
+    require(!distanceIsSymmetric || ConstantRoutingDistance.isDistanceSymmetric(distanceMatrix, n), Some("distance matrix should be symmetric if invariant told so"))
 
     if (perVehicle) {
       val values = computeValueFromScratch(s)
       for (vehicle <- 0 until v) {
-        c.check(distance(vehicle).newValue == values(vehicle), Some("distance(" + vehicle + ").value=" + distance(vehicle).newValue + " should == computeValueFromScratch(routes.value)(0)" + values(vehicle)))
+        require(distance(vehicle).newValue == values(vehicle), Some("distance(" + vehicle + ").value=" + distance(vehicle).newValue + " should == computeValueFromScratch(routes.value)(0)" + values(vehicle)))
       }
 
       if (checkpoint != null) {
         val values = computeValueFromScratch(checkpoint)
         for (vehicle <- 0 until v) {
           if (isVehicleChangedSinceCheckpoint(vehicle))
-            c.check(savedValues(vehicle) == values(vehicle))
+            require(savedValues(vehicle) == values(vehicle))
         }
       }
 
     } else {
-      c.check(distance(0).newValue == computeValueFromScratch(s)(0), Some("distance(0).value=" + distance(0).newValue + " should== computeValueFromScratch(routes.value)(0)" + computeValueFromScratch(routes.value)(0)))
+      require(distance(0).newValue == computeValueFromScratch(s)(0), Some("distance(0).value=" + distance(0).newValue + " should== computeValueFromScratch(routes.value)(0)" + computeValueFromScratch(routes.value)(0)))
       if (checkpoint != null) {
-        c.check(savedValues(0) == computeValueFromScratch(checkpoint)(0))
+        require(savedValues(0) == computeValueFromScratch(checkpoint)(0))
       }
     }
   }

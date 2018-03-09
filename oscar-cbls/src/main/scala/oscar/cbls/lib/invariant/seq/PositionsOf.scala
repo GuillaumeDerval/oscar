@@ -67,8 +67,8 @@ class PositionsOf(v: SeqValue, a:IntValue)
     this := v.value.positionsOfValueSet(a.value)
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value equals v.value.positionsOfValue(a.value))
+  override def checkInternals(){
+    require(this.value equals v.value.positionsOfValue(a.value))
   }
 }
 
@@ -94,8 +94,8 @@ class PositionsOfConst(v: SeqValue, a:Int)
     this := v.value.positionsOfValueSet(a)
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value equals v.value.positionsOfValueSet(a))
+  override def checkInternals(){
+    require(this.value equals v.value.positionsOfValueSet(a))
   }
 }
 

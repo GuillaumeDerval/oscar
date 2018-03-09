@@ -97,9 +97,9 @@ case class SelectLEHeapHeap(values: Array[IntValue], boundary: IntValue)
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(){
     for (v <- this.value) {
-      c.check(values(v).value <= boundary.value,
+      require(values(v).value <= boundary.value,
         Some("values(" + v + ").value (" + values(v).value
           + ") <= boundary.value (" + boundary.value + ")"))
     }
@@ -108,9 +108,9 @@ case class SelectLEHeapHeap(values: Array[IntValue], boundary: IntValue)
       if (v.value <= boundary.value)
         count += 1
     }
-    c.check(count == this.value.size, Some("count (" + count
+    require(count == this.value.size, Some("count (" + count
       + ") == output.value.size (" + this.value.size + ")"))
-    c.check(HeapAbove.size + HeapBelowOrEqual.size == values.size,
+    require(HeapAbove.size + HeapBelowOrEqual.size == values.size,
       Some("HeapAbove.size + HeapBelowOrEqual.size ("
         + HeapAbove.size + "+" + HeapBelowOrEqual.size
         + ") == values.size (" + values.size + ")"))
@@ -168,15 +168,15 @@ case class SelectLESetQueue[X<:IntValue](values: Array[X], boundary: IntValue)
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(){
     var count: Int = 0
     for (i <- values.indices) {
       if (values(i).value <= boundary.value) {
-        c.check(this.value.contains(i), Some("this.value.contains(" + i + ")"))
+        require(this.value.contains(i), Some("this.value.contains(" + i + ")"))
         count += 1
       }
     }
-    c.check(this.value.size == count,
+    require(this.value.size == count,
       Some("this.value.size (" + this.value.size
         + ") == count (" + count + ")"))
   }
