@@ -61,7 +61,7 @@ class TardinessSearch(planning: Planning with Deadlines with TotalResourcesOvers
     var hasImproved = false
     if (planning.totalTardiness.value > 0) {
       if (saveCurrentSolution) {
-        bestSolution = model.solution(true)
+        bestSolution = model.solution()
         minOvershootValue = planning.totalOvershoot.value
       }
       var nbTrials: Int = 0
