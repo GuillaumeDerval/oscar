@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.neighborhood
+package oscar.cbls.business.routing.neighborhoods
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify

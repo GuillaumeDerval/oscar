@@ -26,7 +26,7 @@
  */
 
 
-package oscar.cbls.business.routing.neighborhood
+package oscar.cbls.business.routing.neighborhoods
 
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.{HotRestart, Pairs}

@@ -13,10 +13,10 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-package oscar.cbls.business.routing.modeling
+package oscar.cbls.business.routing.api
 
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.business.routing.neighborhood._
+import oscar.cbls.business.routing.neighborhoods._
 import oscar.cbls.core.search.{Best, First, LoopBehavior}
 
 /**
@@ -32,8 +32,8 @@ trait RoutingNeighborhoods
   with TwoOptAPI
 
 trait InsertPointAPI{
-  type InsertPointMove = oscar.cbls.business.routing.neighborhood.InsertPointMove
-  val InsertPointMove = oscar.cbls.business.routing.neighborhood.InsertPointMove
+  type InsertPointMove = oscar.cbls.business.routing.neighborhoods.InsertPointMove
+  val InsertPointMove = oscar.cbls.business.routing.neighborhoods.InsertPointMove
 
   /**
    * OnePoint insert neighborhood that primarily iterates over insertion point,s and then over poitns that can be iserted.
@@ -113,8 +113,8 @@ trait InsertPointAPI{
 
 trait OnePointMovsAPI{
 
-  type OnePointMoveMove = oscar.cbls.business.routing.neighborhood.OnePointMoveMove
-  val OnePointMoveMove = oscar.cbls.business.routing.neighborhood.OnePointMoveMove
+  type OnePointMoveMove = oscar.cbls.business.routing.neighborhoods.OnePointMoveMove
+  val OnePointMoveMove = oscar.cbls.business.routing.neighborhoods.OnePointMoveMove
 
   /**
    * Moves a point of a route to another place in the same or in an other route.
@@ -147,7 +147,7 @@ trait OnePointMovsAPI{
 
 trait RemovePointAPI{
 
-  type RemovePointMove = oscar.cbls.business.routing.neighborhood.RemovePointMove
+  type RemovePointMove = oscar.cbls.business.routing.neighborhoods.RemovePointMove
 
   /**
    * Removes a point of route.
@@ -177,7 +177,7 @@ trait RemovePointAPI{
 
 
 trait RouteExchangeAPI{
-  type RouteExchangeMove= oscar.cbls.business.routing.neighborhood.RouteExchangeMove
+  type RouteExchangeMove= oscar.cbls.business.routing.neighborhoods.RouteExchangeMove
 
   /**
    * a neighborhood that exchanges the route of two vehicles.
@@ -209,8 +209,8 @@ trait RouteExchangeAPI{
 
 trait SegmentExchangeAPI{
 
-  type SegmentExchangeMove = oscar.cbls.business.routing.neighborhood.SegmentExchangeMove
-  type SegmentExchangeOnSegmentsMove = oscar.cbls.business.routing.neighborhood.SegmentExchangeOnSegments
+  type SegmentExchangeMove = oscar.cbls.business.routing.neighborhoods.SegmentExchangeMove
+  type SegmentExchangeOnSegmentsMove = oscar.cbls.business.routing.neighborhoods.SegmentExchangeOnSegments
 
   /**
    * exchanges segments of different vehicles (not on the same vehicle!)
@@ -284,7 +284,7 @@ trait SegmentExchangeAPI{
 
 trait ThreeOptAPI{
 
-  type ThreeOptMove = oscar.cbls.business.routing.neighborhood.ThreeOptMove
+  type ThreeOptMove = oscar.cbls.business.routing.neighborhoods.ThreeOptMove
 
   /**
    * Removes three edges of routes, and rebuilds routes from the segments.
@@ -325,7 +325,7 @@ trait ThreeOptAPI{
 
 trait TwoOptAPI{
 
-  type TwoOptMove = oscar.cbls.business.routing.neighborhood.TwoOptMove
+  type TwoOptMove = oscar.cbls.business.routing.neighborhoods.TwoOptMove
 
 
   /**

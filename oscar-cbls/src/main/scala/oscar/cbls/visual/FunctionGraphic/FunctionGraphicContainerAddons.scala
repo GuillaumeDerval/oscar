@@ -1,4 +1,4 @@
-package oscar.cbls.visual.FunctionGraphic
+package oscar.cbls.visual.functionGraphic
 
 /**
   * *****************************************************************************

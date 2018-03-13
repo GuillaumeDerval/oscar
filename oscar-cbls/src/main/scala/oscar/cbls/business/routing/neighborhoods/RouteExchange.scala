@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.neighborhood
+package oscar.cbls.business.routing.neighborhoods
 
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP

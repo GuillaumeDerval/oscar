@@ -15,7 +15,7 @@
 package oscar.cbls.business
 
 import oscar.cbls._
-import oscar.cbls.business.routing.modeling._
+import oscar.cbls.business.routing.api._
 
 
 /**

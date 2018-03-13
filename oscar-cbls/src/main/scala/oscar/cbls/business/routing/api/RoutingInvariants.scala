@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.modeling
+package oscar.cbls.business.routing.api
 
 import oscar.cbls._
 import oscar.cbls.core._
