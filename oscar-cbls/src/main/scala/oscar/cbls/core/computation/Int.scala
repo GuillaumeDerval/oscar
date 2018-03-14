@@ -87,13 +87,12 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
 
   def restrictDomain(d:Domain): Unit = {
     privatedomain = privatedomain.intersect(d)
-    if(!privatedomain.contains(mNewValue)){
-        this := privatedomain.head
-      }
+    require(privatedomain.contains(mNewValue),"you are restricting a domain and the value is not in this domain")
   }
 
   //Unions the domain with d
   def relaxDomain(d:Domain): Unit = {
+    require(this.getStaticallyListeningElements.isEmpty,"you cannot relax the domain when someone is already listening to you")
     privatedomain = privatedomain.union(d)
   }
 
