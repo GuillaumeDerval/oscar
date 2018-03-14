@@ -88,9 +88,7 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
   def restrictDomain(d:Domain): Unit = {
     privatedomain = privatedomain.intersect(d)
     if(!privatedomain.contains(mNewValue)){
-        val rndIdx = Random.nextInt(privatedomain.size)
-        val valArray = privatedomain.toArray
-        this := valArray(rndIdx)
+        this := privatedomain.head
       }
   }
 
