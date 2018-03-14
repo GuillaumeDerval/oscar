@@ -66,7 +66,7 @@ sealed abstract class Domain extends Iterable[Int]{
 
   override def iterator: Iterator[Int] = values.iterator
 
-  override def isEmpty: Boolean = size != 0
+  override def isEmpty: Boolean = size == 0
 }
 
 
