@@ -2,13 +2,38 @@ node {
     env.JAVA_HOME="${tool 'jdk-1.8.121'}"
     env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
     env.SBT_HOME = "${tool 'sbt-1.0.0-M4'}"
-
+    
+    def MERCURIAL_REVISION = sh script: 'hg id -i', returnStdout: true
+    
     email_to = "oscar.cbls-cetic@lists.cetic.be"
+    projects=['oscar-cbls','oscar-cp','oscar-algebra','oscar-algo']
+    
+    
+    def process_build(project){
+       env.SBT_CMD = "${env.SBT_HOME}/bin/sbt -Dsbt.log.noformat=true ${env.PARAMS} 'project '"+project
+       stage('Build') {
+            sh "${env.SBT_CMD} compile"
+       }
+       stage('Test') {
+            sh "${env.SBT_CMD} test"
+       }
+       stage('Package') {
+            sh "${env.SBT_CMD} package package-doc -Xdisable-assertions"
+       }
+    }
+    
+    def process_postbuild(project){
+       env.SBT_CMD = "${env.SBT_HOME}/bin/sbt -Dsbt.log.noformat=true ${env.PARAMS} 'project '"+project
+       stage('ScalaDoc') {
+            sh "${env.SBT_CMD} doc"
+       }
+        
+       stage('Publish') {
+            sh "${env.SBT_CMD} publish"
+       }
+    }
 
     try{
-    stage('print') {
-        sh 'printenv'
-    }
         stage('scm') {
             checkout_result = checkout scm: [
                 $class: 'MercurialSCM',
@@ -19,37 +44,25 @@ node {
             ],
             poll: false
         }
-
-        def MERCURIAL_REVISION = sh script: 'hg id -i', returnStdout: true
-
+        
         env.PARAMS = "-Dcetic -DBRANCH_NAME='${env.BRANCH_NAME}' -DREVISION_ID='${MERCURIAL_REVISION}' -DBUILD_ID='${env.BUILD_ID}'"
-        env.SBT_CMD = "${env.SBT_HOME}/bin/sbt -Dsbt.log.noformat=true ${env.PARAMS} 'project ${env.PROJECT_ID}'"
+        
+        projects.each { project ->
+            process_build(project)
+        }
 
-        stage('Build') {
-            sh "${env.SBT_CMD} compile"
-        }
-        stage('Test') {
-            sh "${env.SBT_CMD} test"
-        }
-        stage('ScalaDoc') {
-            sh "${env.SBT_CMD} doc"
-        }
-        stage('Package') {
-            sh "${env.SBT_CMD} package package-doc -Xdisable-assertions"
+        projects.each { project ->
+            process_postbuild(project)
         }
         
-        stage('Publish') {
-            sh "${env.SBT_CMD} publish"
-        }
-
     }
     catch (err) {
         currentBuild.result = "FAILURE"
 
-        step([$class: 'Mailer',
-           notifyEveryUnstableBuild: true,
-           recipients: "${email_to}",
-           sendToIndividuals: true])
+        //step([$class: 'Mailer',
+        //   notifyEveryUnstableBuild: true,
+        //   recipients: "${email_to}",
+        //   sendToIndividuals: true])
 
         throw err
     }
