@@ -79,10 +79,7 @@ package object cbls extends ModelingAPI{
 
   type Store = oscar.cbls.core.computation.Store
   final val Store = oscar.cbls.core.computation.Store
-
-  type ErrorChecker = oscar.cbls.core.propagation.ErrorChecker
-  final val ErrorChecker = oscar.cbls.core.propagation.ErrorChecker
-
+  
   type Domain = oscar.cbls.core.computation.Domain
   final val Domain = oscar.cbls.core.computation.Domain
 
