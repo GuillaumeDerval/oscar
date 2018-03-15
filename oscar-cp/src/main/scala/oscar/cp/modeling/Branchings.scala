@@ -514,6 +514,23 @@ trait Branchings extends BranchingUtils {
   }
 
   /**
+    * Represents a dependency in the search between a boolean decision variable and other optional variables.
+    * The optional variables have to be bound only if the decision variable is set to true.
+    */
+  type CPOptionalDecision = oscar.algo.search.OptionalDecision[CPBoolVar, CPIntVar]
+  final val CPOptionalDecision = oscar.algo.search.OptionalDecision
+
+  /**
+    * Branching on optional decisions:
+    * When branching on a decision variable, it creates two child nodes, left=true, right=false.
+    * On the true (left) branch, all the optional variables must be assigned before attempting a next decision.
+    * On the false (right) branch, the optional variables are not branched on at all.
+    */
+  def optionalVarsDecision(vars: Seq[CPOptionalDecision], decisionBranching: Branching): Branching = {
+    new OptionalDecisionSearch(vars, decisionBranching)
+  }
+
+  /**
     * Set times heuristic (for discrete resources)
     * This heursitic was described in
     *
