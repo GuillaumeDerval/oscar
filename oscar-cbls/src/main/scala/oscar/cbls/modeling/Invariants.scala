@@ -1,160 +1,68 @@
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *   
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *   
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
+
 
 package oscar.cbls.modeling
 
-import oscar.cbls._
-import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.core._
-import oscar.cbls.lib.invariant.logic._
-import oscar.cbls.lib.invariant.minmax._
-import oscar.cbls.lib.invariant.numeric._
-import oscar.cbls.lib.invariant.seq._
-import oscar.cbls.lib.invariant.set._
+import oscar.cbls.invariants.core.computation._
+import oscar.cbls.invariants.lib.logic._
+import oscar.cbls.invariants.lib.minmax._
+import oscar.cbls.invariants.lib.numeric._
+import oscar.cbls.invariants.lib.set._
 
-import scala.collection.immutable.{SortedSet, SortedMap}
+import scala.collection.immutable.{SortedMap, SortedSet}
+
+trait Invariants
+  extends ClusterInvariants
+with ComplexLogicInvariants
+with ElementInvariants
+with MinMaxInvariants
+with NumericInvariants
+with SetInvariants
+
 
 /**
- * modeling interface presenting the element invariants
+ * modeling interface presenting the cluster invariants
  * @author renaud.delandtsheer@cetic.be
- */
-trait ElementInvariants{
-  /** if (ifVar >0) then thenVar else elveVar
-    * @param ifVar the condition (IntVar)
-    * @param thenVar the returned value if ifVar > 0
-    * @param elseVar the returned value if ifVar <= 0
-    * */
-  def intITE(ifVar:IntValue, thenVar:IntValue, elseVar:IntValue, pivot: Int = 0) = IntITE(ifVar, thenVar, elseVar, pivot)
+*/
+trait ClusterInvariants{
 
-  /** inputarray[index]
-    * @param inputarray is an array of IntVar
-    * @param index is the index accessing the array*/
-  def intElement(index:IntValue, inputarray:Array[IntValue]) = IntElement(index:IntValue, inputarray:Array[IntValue])
+  def makeSparseCluster[T<:IntValue](values:Array[T], clusters: Iterable[Int]) = Cluster.MakeSparse(values, clusters)
 
-  /**Union(i in index) (array[i])
-    * @param index is an IntSetVar denoting the set of positions in the array to consider
-    * @param inputarray is the array of intvar that can be selected by the index
-    */
-  def intElements(index:SetValue, inputarray:Array[IntValue]) = Elements(index, inputarray)
+  def makeDenseCluster[T<:IntValue](values:Array[T]) = Cluster.MakeDense(values)
 
-  /** inputarray[index] on an array of IntSetVar
-    * @param inputarray is the array of intsetvar
-    * @param index is the index of the array access
-    **/
-  def intSetElement(index:IntValue, inputarray:Array[SetValue]) = SetElement(index, inputarray)
+  def makeDenseClusterAssumingMinMax[T<:IntValue](values:Array[T],themin:Int,themax:Int) = Cluster.MakeDenseAssumingMinMax(values,themin,themax)
 
-  /**
-   * inputarray[index]
-   * @param inputArray is an array of int
-   * @param index is the index accessing the array
-   * @author renaud.delandtsheer@cetic.be
+  /**maintains a cluster of the indexes of array:  cluster(j) = {i in index of values | values[i] == j}
+   * This is considered as a sparse cluster because Cluster is a map and must not cover all possibles values of the values in the array ''values''
    * */
-  def constantIntElement(index: IntValue, inputArray: Array[Int]) = ConstantIntElement(index, inputArray)
-}
+  def sparseCluster[T<:IntValue](values:Array[T], Clusters:SortedMap[Int,CBLSSetVar]) = SparseCluster(values, Clusters)
 
-trait ClusterInvariants {
+  /**Maintains a cluster of the indexes of array: cluster(j) = {i in index of values | values[i] == j}
+   * This is considered as a dense cluster because Cluster is an array and must cover all the possibles values of the values in the array ''values''
+   * */
+  def denseCluster[T<:IntValue](values:Array[T], clusters:Array[CBLSSetVar]) = DenseCluster(values, clusters)
 
-  def makeSparseCluster(values : Array[IntValue], clusters : Iterable[Int]) = Cluster.makeSparse(values, clusters)
+  /**Maintains a count of the indexes of array: count(j) = #{i in index of values | values[i] == j}
+   * This is considered as a dense count because counts is an array and must cover all the possibles values of the values in the array ''values''
+   * */
+  def denseCount(values:Array[IntValue], counts:Array[CBLSIntVar]) = DenseCount(values, counts)
 
-  def makeDenseCluster(values : Array[IntValue]) = Cluster.makeDense(values)
-
-  def makeDenseClusterAssumingMinMax(values : Array[IntValue], themin : Int, themax : Int) = Cluster.makeDenseAssumingMinMax(values, themin, themax)
-
-  /** maintains a cluster of the indexes of array:  cluster(j) = {i in index of values | values[i] == j}
-    * This is considered as a sparse cluster because Cluster is a map and must not cover all possibles values of the values in the array ''values''
-    * */
-  def sparseCluster(values : Array[IntValue], Clusters : SortedMap[Int, CBLSSetVar]) = SparseCluster(values, Clusters)
-
-  /** Maintains a cluster of the indexes of array: cluster(j) = {i in index of values | values[i] == j}
-    * This is considered as a dense cluster because Cluster is an array and must cover all the possibles values of the values in the array ''values''
-    * */
-  def denseCluster(values : Array[IntValue], clusters : Array[CBLSSetVar]) = DenseCluster(values, clusters)
-
-}
-
-
-trait RefInvariants{
-  /**
-   * Maintains the reverse references. Referencing(i) = {j | Reference(j) includes i}
+  /**maintains the reverse references. Referencing(i) = {j | Reference(j) includes i}
    * */
   def denseRef(references:Array[SetValue], referencing:Array[CBLSSetVar]) = DenseRef(references, referencing)
-
-  def makeDenseRef(references:Array[SetValue]) = DenseRef.makeDenseRef(references)
-}
-
-
-/**
- * modeling interface presenting the set invariants
- * @author renaud.delandtsheer@cetic.be
- */
-trait SetInvariants{
-  /** left UNION right
-    * @param left is an intvarset
-    * @param right is an intvarset
-    * */
-  def union(left:SetValue, right:SetValue) = Union(left:SetValue, right:SetValue)
-
-  /** left INTER right
-    * @param left is an intvarset
-    * @param right is an intvarset
-    * */
-  def inter(left:SetValue, right:SetValue) = Inter(left:SetValue, right:SetValue)
-
-  /** left MINUS right, the set diff operator
-    * @param left is the base set
-    * @param right is the set that is removed from left
-    * */
-  def diff(left:SetValue, right:SetValue) = Diff(left:SetValue, right:SetValue)
-
-  /** #(v) (cardinality)
-    * @param v is an IntSetVar, the set of integers to count
-    */
-  def cardinality(v:SetValue) = Cardinality(v:SetValue)
-
-  /** makes an IntSetVar out of a set of IntVar. If several variables have the same value, the value is present only once in the resulting set
-    * @param on is a set of IntVar
-    * */
-  def makeSet(on:SortedSet[IntValue]) = MakeSet(on:SortedSet[IntValue])
-
-  /** makes a set out of an interval specified by a lower bound and an upper bound. if lb > ub, the set is empty.
-    * @param lb is the lower bound of the interval
-    * @param ub is the upper bound of the interval
-    * */
-  def interval(lb:IntValue,ub:IntValue) = Interval(lb:IntValue,ub:IntValue)
-
-  /**maintains the output as any value taken from the intset var parameter.
-    * if this set is empty, puts the default value ni output.
-    * @param from
-    * @param default
-    */
-  def takeAny(from:SetValue,  default:Int) = TakeAny(from:SetValue,  default:Int)
-
-  /** Sum(i in on)(fun(i))
-    * @param on is the set of integers to add
-    * @param fun is an optional function Int -> Int to apply before summing elements. It is expected not to rely on any variable of the model.
-    * */
-  def setSum(on:SetValue, fun:(Int => Int) = (a:Int) => a) = SetSum(on, fun)
-
-  /** PRod(i in on)(fun(i))
-    * @param on is the set of integers to multiply
-    * */
-  def setProd(on:SetValue) = SetProd(on)
-}
-
-
-trait CumulativeInvariants{
 
   /**
    * Maintains a resource usage profile.
@@ -168,334 +76,200 @@ trait CumulativeInvariants{
   def cumulative(indices:Array[Int], start:Array[IntValue], duration:Array[IntValue], amount:Array[IntValue], profile:Array[CBLSIntVar], active:Array[CBLSSetVar])  =
     Cumulative(indices:Array[Int], start, duration, amount, profile, active)
 
-  /**
-   * Maintains a resource usage profile.
-   * @param start the start time of tasks
-   * @param duration the duration of tasks
-   * @param amount the amount that tasks use of this resource
-   * @param profile the usage profile of the resource maintained to profile(time) <== sum(task.amount | task.start <= time <= t.start+t.duration)
-   * @author renaud.delandtsheer@cetic.be
-   * @author Jean-Noel Monette
-   */
-  def cumulativeNoSet(start: Array[IntValue],
-                      duration: Array[IntValue],
-                      amount: Array[IntValue],
-                      profile: Array[CBLSIntVar])
-  = CumulativeNoSet(start, duration, amount, profile)
-}
 
-
-trait FilterInvariants{
   /** { i in index(values) | cond(values[i] }
-    * @param values is an array of IntVar
-    * @param cond is a function that selects values to be includes in the output set.
-    * This ''cond'' function cannot depend on any IntVar, as updates to these IntVars will not trigger propagation of this invariant.
-    */
+   * @param values is an array of IntVar
+   * @param cond is a function that selects values to be includes in the output set.
+   * This ''cond'' function cannot depend on any IntVar, as updates to these IntVars will not trigger propagation of this invariant.
+   */
   def filter(values:Array[IntValue], cond:(Int=>Boolean) = _ != 0) = Filter(values:Array[IntValue], cond:(Int=>Boolean))
-}
 
-
-trait HelperInvariants{
-  /** This is a helper to define an invariant from an Int -> Int function.
-    * Ths invariant is not incremental, so it should only be used for very simple functions.
-    * it maintains output = fun(a)
-    * @param a the parameter of the function
-    * @param fun the function to maintain, it is supposed not to listen to any variable in the model
-    * @param domain the expected domain of the output
-    * @param cached set to true to have a cache of size 1, zero to have no cache. cache can provide speedup if fun is time-consuming
-    * @author renaud.delandtsheer@cetic.be
-    * */
-  def int2Int(a:IntValue, fun:Int => Int, domain:Domain = fullRange,cached:Boolean = false)
-  = new Int2Int(a, fun, domain,cached)
-
-  /** This is a helper to define an invariant from an Int x Int -> Int function.
-    * Ths invariant is not incremental, so this should only be used for very simple functions.
-    * it maintains output = fun(a,b)
-    * @param a the first parameter of the function
-    * @param b the second parameter of the function
-    * @param fun the function to maintain, it is supposed not to listen to any variable in the model
-    * @param domain the expected domain of the output
-    * @author renaud.delandtsheer@cetic.be
-    * */
-  def intInt2Int(a:IntValue, b:IntValue, fun:((Int, Int) => Int), domain:Domain = fullRange) =
-    new IntInt2Int(a, b, fun, domain)
-
-  /** This is a helper to define an invariant from an Int x Int -> Int function.
-    * Ths invariant is not incremental, so this should only be used for very simple functions.
-    * it maintains output = fun(a,b) The difference with [[oscar.cbls.lib.invariant.logic.IntInt2Int]] is that this one performs the computation only after both variables have been updated.
-    * @param a the first parameter of the function
-    * @param b the second parameter of the function
-    * @param fun the function to maintain, it is supposed not to listen to any variable in the model
-    * @param domain the expected domain of the output
-    * @author renaud.delandtsheer@cetic.be
-    * */
-  def lazyIntInt2Int(a:IntValue, b:IntValue, fun:((Int, Int) => Int), domain:Domain = fullRange)
-  = new LazyIntInt2Int(a, b, fun, domain)
-}
-
-
-trait PivotInvariants{
   /** {i in index of values | values[i] <= boundary}
-    * It is based on two heap data structure, hence updates are log(n) and all updates are allowed
-    * @param values an array of intvar
-    * @param boundary the boundary for comparison
-    */
+   * It is based on two heap data structure, hence updates are log(n) and all updates are allowed
+   * @param values an array of intvar
+   * @param boundary the boundary for comparison
+   */
   def selectLEHeapHeap(values:Array[IntValue], boundary: IntValue) = SelectLEHeapHeap(values:Array[IntValue], boundary: IntValue)
 
 
   /**{i \in index of values | values[i] <= boundary}
-    * It is based on a queue for the values above the boundary, hence all updates must be accepted by this scheme:
-     - SelectLESetQueue does not allow boundary to decrease
-     - SelectLESetQueue does not allow elements above boundary to change
-     - SelectLESetQueue requires latest variables passing above boundary to be the biggest one
-    * @param values: an array of intvar
-    * @param boundary: the boundary for comparison
-    */
+   * It is based on a queue for the values above the boundary, hence all updates must be accepted by this scheme:
+ - SelectLESetQueue does not allow boundary to decrease
+ - SelectLESetQueue does not allow elements above boundary to change
+ - SelectLESetQueue requires latest variables passing above boundary to be the biggest one
+   * @param values: an array of intvar
+   * @param boundary: the boundary for comparison
+   */
   def selectLESetQueue(values:Array[IntValue], boundary: IntValue) = SelectLESetQueue(values, boundary)
-}
 
+}
 
 /**
  * modeling interface presenting the complex logic invariants
  * @author renaud.delandtsheer@cetic.be
  */
-trait SortInvariants{
+trait ComplexLogicInvariants{
+
+  /**this invariants maintains data structures representing vrp of vehicles.
+   * for use in TSP, VRP, etc.
+   * arrays start at one until N
+   * position 0 is to denote an unrouted node.
+   * The nodes from 1 to V are the starting points of vehicles.
+   *
+   * @param V the number of vrp to consider V>=1 and V<=N
+   */
+  def routes(V: Int, Next:Array[IntValue]) = Routes.buildRoutes(Next, V)
 
   /**maintains a sorting of the ''values'' array:
-    * @param ReversePerm   i < j => values(ReversePerm(i)) < values(ReversePerm(j))
-    * see method GetForwardPerm() for the forward permutation: ReversePerm(ForwardPerm(i)) == i
-    * */
+   * @param ReversePerm   i < j => values(ReversePerm(i)) < values(ReversePerm(j))
+   * see method GetForwardPerm() for the forward permutation: ReversePerm(ForwardPerm(i)) == i
+   * */
   def sort(values:Array[IntValue], ReversePerm:Array[CBLSIntVar]) = new Sort(values, ReversePerm)
 
   /**returns the ForwardPerm for a given array
-    * It instantiates an array of the appropriate size and populates it with IntVar.
-    */
+   * It instantiates an array of the appropriate size and populates it with IntVar.
+   */
   def makeSort(values:Array[IntValue]) = Sort.MakeSort(values)
 }
 
+
 /**
- * modeling interface presenting the logic invariants
+ * modeling interface presenting the element invariants
  * @author renaud.delandtsheer@cetic.be
  */
-trait LogicInvariants extends
-ElementInvariants
-with ClusterInvariants
-with CountInvariants
-with RefInvariants
-with CumulativeInvariants
-with FilterInvariants
-with HelperInvariants
-with PivotInvariants
-with SortInvariants
+trait ElementInvariants{
+  /** if (ifVar >0) then thenVar else elveVar
+   * @param ifVar the condition (IntVar)
+   * @param thenVar the returned value if ifVar > 0
+   * @param elseVar the returned value if ifVar <= 0
+   * */
+  def intITE(ifVar:IntValue, thenVar:IntValue, elseVar:IntValue, pivot: Int = 0) = IntITE(ifVar, thenVar, elseVar, pivot)
 
-trait CountInvariants {
-  /**
-   * Maintains a count of the indexes of array: count(j) = #{i in index of values | values[i] == j}
-   * This is considered as a dense count because counts is an array and must cover all the possibles values of the values in the array ''values''
+  /** inputarray[index]
+   * @param inputarray is an array of IntVar
+   * @param index is the index accessing the array*/
+  def intElement(index:IntValue, inputarray:Array[IntValue]) = IntElement(index:IntValue, inputarray:Array[IntValue])
+
+  /**Union(i in index) (array[i])
+   * @param index is an IntSetVar denoting the set of positions in the array to consider
+   * @param inputarray is the array of intvar that can be selected by the index
+   */
+  def intElements(index:SetValue, inputarray:Array[IntValue]) = Elements(index, inputarray)
+
+  /** inputarray[index] on an array of IntSetVar
+   * @param inputarray is the array of intsetvar
+   * @param index is the index of the array access
    **/
-  def denseCount(values : Array[IntValue], counts : Array[CBLSIntVar]) = DenseCount(values, counts)
-
-  def makeDenseCount(vars: Array[IntValue]):DenseCount = DenseCount.makeDenseCount(vars)
-
-  /**
-   * Author: Jean-Noël Monette
-   */
-  def sparseCount(values: Array[IntValue], counts: Map[Int,CBLSIntVar]) = SparseCount(values, counts)
+  def intSetElement(index:IntValue, inputarray:Array[SetValue]) = SetElement(index, inputarray)
 }
 
-trait SeqInvariants {
-  /**
-   * builds a changing seq value that is maintained as the concatenation of a and b.
-   * if either of them is a constant, the instantiated class is adapted
-   *
-   * @param a the first sequence
-   * @param b the second sequence
-   * @param maxPivotPerValuePercent the maxPErcentage for the created variable
-   * @param maxHistorySize the max history size for the create variable
-   * @return a changing seq value that is maintained as teh concatenation of a and b
-   */
-  def concatenate(a : SeqValue, b : SeqValue, maxPivotPerValuePercent : Int = 4, maxHistorySize : Int = 20) : SeqValue = {
-    (a, b) match {
-      case (ac : CBLSSeqConst, bc : CBLSSeqConst) =>
-        CBLSSeqConst(IntSequence(ac.value ++ bc.value))
-      case (ac : CBLSSeqConst, bv : ChangingSeqValue) =>
-        new ConcatenateFirstConstant(ac.value.toList, bv, maxPivotPerValuePercent, maxHistorySize)
-      case (av : ChangingSeqValue, bc : CBLSSeqConst) =>
-        new ConcatenateSecondConstant(av, bc.value.toList, maxPivotPerValuePercent, maxHistorySize)
-      case (av : ChangingSeqValue, bv : ChangingSeqValue) =>
-        new Concatenate(av, bv, maxPivotPerValuePercent, maxHistorySize)
-    }
-  }
+/**
+ * modeling interface presenting the min-max invariants
+ * @author renaud.delandtsheer@cetic.be
+ */
+trait MinMaxInvariants{
 
-  /**
-   * content of v
-   * @param v is a SeqValue, the values appearing in the sequence
-   * @author renaud.delandtsheer@cetic.be
-   */
-  def content(v : SeqValue) = Content(v)
-
-  /**
-   * maintains this as the flipped value of v
-   * @param v
-   * @param maxPivotPerValuePercent
-   * @param maxHistorySize
-   */
-  def flipSequence(v : SeqValue, maxPivotPerValuePercent : Int = 10, maxHistorySize : Int = 10) =
-    Flip(v : SeqValue, maxPivotPerValuePercent, maxHistorySize)
-
-  /**
-   * #(v) (cardinality, or length (since a SeqValue can only contain at most one instance of any int value)
-   * @param v is a SeqValue, containing a number of values, to count
-   * @author renaud.delandtsheer@cetic.be
-   */
-  def length(v : SeqValue) = Length(v)
-
-  /**
-   * @param seq a sequence of integers
-   * @param mapArray an array that is taken as a function (it cannot be modified after this call)
-   * @return a sequence where the value at any position p is equal to mapArray(seq(p))
-   */
-  def map(seq : ChangingSeqValue, mapArray : Array[Int]) : MapConstantFun = {
-    new MapConstantFun(seq, mapArray, InvariantHelper.getMinMaxBoundsInt(mapArray)._2)
-  }
-
-  /**
-   * @param seq a sequence of integers
-   * @param transform a function to apply to each value occuring in the sequence (it cannot be modified after this call)
-   * @return a sequence where the value at any position p is equal to transform(seq(p))
-   */
-  def map(seq : ChangingSeqValue, transform : Int => Int, maxTransform : Int) =
-    new MapConstantFun(seq : ChangingSeqValue, transform : Int => Int, maxTransform : Int)
-
-  /**
-   * @param seq a sequence of integers
-   * @param mapArray an array that is taken as a function The value in this array an be variable that change value (althoug hthe content of the array cannot change after this call)
-   * @return a sequence where the value at any position p is equal to mapArray(seq(p)).value
-   */
-  def map(seq : ChangingSeqValue, mapArray : Array[IntValue]) =
-    new MapThroughArray(seq : ChangingSeqValue, mapArray)
-
-  /**
-   * the position of value a in sequence v; default if not in the sequence
-   * @param v is a SeqValue
-   * @param a is the value that is to locate in the sequence
-   */
-  def occurrencesOf(v : SeqValue, a : IntValue) = OccurrencesOf(v : SeqValue, a : IntValue)
-
-  /**
-   * Maintains the position of value of variable a in the sequence v.
-   * @param v a sequence
-   * @param a an intValue, which can be a CBLSIntVar for instance
-   * @return a ChangingSetValue that is maintained as the set of position in v where the value is the one of a
-   */
-  def positionsOf(v : SeqValue, a : IntValue) = new PositionsOf(v, a)
-
-  /**
-   * Maintains the position of value of variable a in the sequence v.
-   * @param v a sequence
-   * @param a an integer
-   * @return a ChangingSetValue that is maintained as the set of position in v where the value is a
-   */
-  def positionsOf(v : SeqValue, a : Int) = new PositionsOfConst(v, a)
-
-  /**
-   * precedence assumes that number can occur only once in the sequence
-   * so that the constraint is to be enforced from any occurrence to any occurrence,
-   * "any" being chosen arbitrarily by tne invariant, and the choice an of course change at any time.
-   * also if one of the two value of a precedence is not present in the sequence,
-   * it is considered that the precedence is enforced.
-   *
-   * maintains the number of violated precedences.
-   *
-   * @param seq
-   * @param beforeAfter
-   * @author renaud.delandtsheer@cetic.be
-   */
-  def precedence(seq : ChangingSeqValue, beforeAfter : List[(Int, Int)]) =
-    Precedence(seq, beforeAfter)
+  /** Maintains {i in indices of (vars Inter cond) | vars[i] == max(vars(i in indices of (vars Inter cond))}
+   * @param vars is an array of IntVar, which can be bulked
+   * @param cond is the condition, supposed fully acceptant if not specified
+   * @param default is the value returned when cond is empty
+   * update is O(log(n))
+   * */
+  def argMax(vars: Array[IntValue], cond: SetValue = null,default:Int = Int.MinValue) = ArgMax(vars, cond,default)
 
 
-  /**
-   * sum(f(v))
-   * the sum of all element in v after passing through f;
-   * if a value has multiple occurrences, their f-transformed occurrences are summed
-   * @param v is a SeqValue, containing a number of values, to sum
-   * @param f is a function that is applied to every value in f prior to the sum
-   * @author renaud.delandtsheer@cetic.be
-   */
-  def seqSum(v : SeqValue, f : (Int => Int) = (a : Int) => a) = SeqSum(v, f)
+  /** Maintains {i in indices of (varss Inter cond) | varss[i] == min(varss(i in indices of (varss Inter cond))}
+   * @param varss is an array of IntVar, which can be bulked
+   * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
+   * @param default is the value returned when cond is empty
+   * update is O(log(n))
+   * */
+  def argMin(varss: Array[IntValue], ccond: SetValue = null, default:Int = Int.MaxValue) = ArgMin(varss, ccond, default)
 
-  /**
-   * maintains a sorted sequence out of a non-sorted one.
-   * they have the same length
-   * the sort is based on the sortValue,smaller first
-   *
-   * @param v the input sequence
-   * @param sortValue a constant function that maps each value in v to a value that is used for the sort.
-   *                  This value is not the one being put into the output sequence
-   * @param orderName a name for the order
-   */
-  def sortSequence(v : SeqValue, sortValue : Int => Int, orderName : String = "order")
-  = SortSequence(v, sortValue, orderName)
+  /** maintains output = Max(a,b)
+   * where output, a, and b are an IntVar
+   * use this if you only have two variables to max, otherwise, refer to log iplementations
+   * */
+  def max2(a: IntValue, b: IntValue) = Max2(a, b)
 
+  /** maintains output = Min(a,b)
+   * where output, a, and b are an IntVar
+   * use this if you only have two variables to max, otherwise, refer to log iplementations
+   * */
+  def min2(a: IntValue, b: IntValue) = Min2(a: IntValue, b: IntValue)
 
-  /**
-   * Maintains and array telling, for each value (indice of the array) the set of value that can succeed it in the sequence.
-   * There are multiple successors although we only consider the next value
-   * because a value can appear several time in the sequence, it can therefore have several successors.
-   *
-   * @param seq
-   * @return the array of SetVar that mention the set of successor for each possible value.
-   * @author renaud.delandtsheer@cetic.be
-   */
-  def successors(seq : ChangingSeqValue) : Array[CBLSSetVar] = Successors(seq : ChangingSeqValue)
+  /** Maintains Max(Var(i) | i in cond)
+   * @param varss is an array of IntVar, which can be bulked
+   * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
+   * update is O(log(n))
+   * */
+  def maxArray(varss: Array[IntValue], ccond: SetValue = null, default: Int = Int.MinValue) = MaxArray(varss, ccond, default)
+
+  /** Maintains Min(Var(i) | i in cond)
+   * @param varss is an array of IntVar, which can be bulked
+   * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
+   * update is O(log(n))
+   * */
+  def minArray(varss: Array[IntValue], ccond: SetValue = null, default: Int = Int.MaxValue) = MinArray(varss, ccond, default)
+
+  /** maintains output = Min(v)
+   * where
+   * * output is an IntVar
+   * * v is an IntSetVar
+   * @param default is the default value if v is empty
+   * update is O(log(n))
+   * */
+  def minSet(v: SetValue, default: Int = Int.MaxValue) = MinSet(v, default)
+
+  /** maintains output = Max(v)
+   * where
+   * * output is an IntVar
+   * * v is an IntSetVar
+   * @param default is the default value if v is empty
+   * update is O(log(n))
+   * */
+  def maxSet(v: SetValue, default: Int = Int.MinValue) = new MaxSet(v, default)
 }
-
 
 /**
  * modeling interface presenting the numeric invariants
  * @author renaud.delandtsheer@cetic.be
  */
 trait NumericInvariants{
-
-  /** sum(i in cond) vars(i)
-    * @param vars is an array of IntVars
-    * @param cond is the condition for selecting variables in the array of summed ones, cannot be null
-    * @author renaud.delandtsheer@cetic.be
-    * */
-  //def sumConstants(vars: Array[Int], cond: SetValue) = SumConstants(vars, cond)
-
-  val sum = oscar.cbls.lib.invariant.numeric.Sum
+  /** sum(vars)
+   * @param vars is an iterable of IntVars
+   * */
+  def sum(vars:Iterable[IntValue]) = Sum(vars:Iterable[IntValue])
 
   /** prod(vars)
-    * @param vars is a set of IntVars
-    * */
+   * @param vars is a set of IntVars
+   * */
   def prod(vars:Iterable[IntValue]) = Prod(vars:Iterable[IntValue])
 
   /** left - right
-    * where left, right, and output are IntVar*/
+   * where left, right, and output are IntVar*/
   def minus(left:IntValue, right:IntValue) = Minus(left:IntValue, right:IntValue)
 
   /** left + right
-    * where left, right, and output are IntVar*/
+   * where left, right, and output are IntVar*/
   def sum2(left:IntValue, right:IntValue) = Sum2(left:IntValue, right:IntValue)
 
   /** left * right
-    * where left, right, and output are IntVar*/
+   * where left, right, and output are IntVar*/
   def prod2(left:IntValue, right:IntValue) = Prod2(left:IntValue, right:IntValue)
 
   /**left / right
-    * where left, right, and output are IntVar
-    * do not set right to zero, as usual... */
+   * where left, right, and output are IntVar
+   * do not set right to zero, as usual... */
   def div(left:IntValue, right:IntValue) = Div(left:IntValue, right:IntValue)
 
   /**left / right
-    * where left, right, and output are IntVar
-    * do not set right to zero, as usual... */
+   * where left, right, and output are IntVar
+   * do not set right to zero, as usual... */
   def mod(left:IntValue, right:IntValue) = Mod(left:IntValue, right:IntValue)
 
   /**abs(v) (absolute value)
-    * where output and v are IntVar*/
+   * where output and v are IntVar*/
   def abs(v:IntValue) = Abs(v:IntValue)
 
 
@@ -533,7 +307,7 @@ trait NumericInvariants{
     * @param shift the first period starts later than zero. it starts at shift. the duration before its start is allowed.
     */
 
-  def roundUpModulo(from: IntValue, duration: IntValue, period: Int, zone: Int, shift: Int) = RoundUpModulo(from: IntValue, duration: IntValue, period: Int, zone: Int, shift: Int)
+    def roundUpModulo(from: IntValue, duration: IntValue, period: Int, zone: Int, shift: Int) = RoundUpModulo(from: IntValue, duration: IntValue, period: Int, zone: Int, shift: Int)
 
   /**Maintains output to the smallest value such that
     * output >= from
@@ -558,153 +332,75 @@ trait NumericInvariants{
   def step(x:IntValue,pivot:Int = 0,thenval:Int = 1,elseval:Int = 0) = Step(x:IntValue,pivot:Int,thenval:Int ,elseval:Int)
 
   /** sum(i in cond) vars(i)
-    * This invariant might modify vars array by cloning some variables to ensure that each variable only appears once.
-    * @param vars is a set of IntVars
-    * @param cond is the condition for selecting variables in the set of summed ones, cannot be null
-    */
+   * This invariant might modify vars array by cloning some variables to ensure that each variable only appears once.
+   * @param vars is a set of IntVars
+   * @param cond is the condition for selecting variables in the set of summed ones, cannot be null
+   */
   def sumElements(vars: Array[IntValue], cond: SetValue) = SumElements(vars: Array[IntValue], cond: SetValue)
 
   /** prod(i in cond) vars(i)
-    * This invariant might modify vars array by cloning some variables to ensure that each variable only appears once.
-    * @param vars is a set of IntVars
-    * @param cond is the condition for selecting variables in the set of summed ones.
-    */
+   * This invariant might modify vars array by cloning some variables to ensure that each variable only appears once.
+   * @param vars is a set of IntVars
+   * @param cond is the condition for selecting variables in the set of summed ones.
+   */
   def prodElements(vars: Array[IntValue], cond: SetValue) = ProdElements(vars: Array[IntValue], cond: SetValue)
 
 }
 
-
 /**
- * modeling interface presenting the min-max invariants
+ * modeling interface presenting the set invariants
  * @author renaud.delandtsheer@cetic.be
  */
-trait MinMaxInvariants{
-
-  /** Maintains {i in indices of (vars Inter cond) | vars[i] == max(vars(i in indices of (vars Inter cond))}
-    * @param vars is an array of IntVar, which can be bulked
-    * @param cond is the condition, supposed fully acceptant if not specified
-    * @param default is the value returned when cond is empty
-    * update is O(log(n))
-    * */
-  def argMax(vars: Array[IntValue], cond: SetValue = null,default:Int = Int.MinValue) = ArgMax(vars, cond,default)
-
-
-  /** Maintains {i in indices of (varss Inter cond) | varss[i] == min(varss(i in indices of (varss Inter cond))}
-    * @param varss is an array of IntVar, which can be bulked
-    * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
-    * @param default is the value returned when cond is empty
-    * update is O(log(n))
-    * */
-  def argMin(varss: Array[IntValue], ccond: SetValue = null, default:Int = Int.MaxValue) = ArgMin(varss, ccond, default)
-
-  /** maintains output = Max(a,b)
-    * where output, a, and b are an IntVar
-    * use this if you only have two variables to max, otherwise, refer to log iplementations
-    * */
-  def max2(a: IntValue, b: IntValue) = Max2(a, b)
-
-  /** maintains output = Min(a,b)
-    * where output, a, and b are an IntVar
-    * use this if you only have two variables to max, otherwise, refer to log iplementations
-    * */
-  def min2(a: IntValue, b: IntValue) = Min2(a: IntValue, b: IntValue)
-
-  /** Maintains Max(Var(i) | i in cond)
-    * @param varss is an array of IntVar, which can be bulked
-    * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
-    * update is O(log(n))
-    * */
-  def maxNaive(varss: Array[IntValue], ccond: SetValue = null, default: Int = Int.MinValue) = MaxArray(varss, ccond, default)
-
-  /** Maintains Min(Var(i) | i in cond)
-    * @param varss is an array of IntVar, which can be bulked
-    * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
-    * update is O(log(n))
-    * */
-  def minNaive(varss: Array[IntValue], ccond: SetValue = null, default: Int = Int.MaxValue) = MinArray(varss, ccond, default)
-
-  /** maintains output = Min(v)
-    * where
-    * * output is an IntVar
-    * * v is an IntSetVar
-    * @param default is the default value if v is empty
-    * update is O(log(n))
-    * */
-  def minSet(v: SetValue, default: Int = Int.MaxValue) = MinSet(v, default)
-
-  /** maintains output = Max(v)
-    * where
-    * * output is an IntVar
-    * * v is an IntSetVar
-    * @param default is the default value if v is empty
-    * update is O(log(n))
-    * */
-  def maxSet(v: SetValue, default: Int = Int.MinValue) = MaxSet(v, default)
-
-
-  /**
-   * Maintains Max(Var(i) | i in cond)
-   * @param varss is an array of IntVar, which can be bulked
-   * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
-   * update is O(log(n))
-   * @author renaud.delandtsheer@cetic.be
+trait SetInvariants{
+  /** left UNION right
+   * @param left is an intvarset
+   * @param right is an intvarset
    * */
-  def maxConstArray(varss: Array[Int], ccond: SetValue, default: Int = Int.MinValue) = MaxConstArray(varss, ccond, default)
+  def union(left:SetValue, right:SetValue) = Union(left:SetValue, right:SetValue)
 
-  /**
-   * Maintains Min(Var(i) | i in cond)
-   * @param varss is an array of Int
-   * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
-   * update is O(log(n))
-   * @author renaud.delandtsheer@cetic.be
+  /** left INTER right
+   * @param left is an intvarset
+   * @param right is an intvarset
    * */
-  def minConstArray(varss: Array[Int], ccond: SetValue, default: Int = Int.MaxValue) = MinConstArray(varss, ccond, default)
+  def inter(left:SetValue, right:SetValue) = Inter(left:SetValue, right:SetValue)
 
-  /**
-   * Maintains Max(Var(i) | i in cond)
-   * this is a variant that is lazy, and maintains a TODO-list of postponed updates.
-   * postponed updates are ones that do not impact on the outout of the invariant.
-   * when there is an update, it is first checked against the TODO-list, for cancellation.
-   * if the update does not impact the output, it is postponed
-   * if it affects the output, it is performed
-   * @param varss is an array of IntVar, which can be bulked
-   * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
-   * @param default the value if ccond is empty
-   * @param maxBackLogSize is the maximal number of postponed updates (TODOlist is handled as a FIFO)
-   * update is O(log(n)), faster (O(1) if you do updates and backtracks
-   * @author renaud.delandtsheer@cetic.be
+  /** left MINUS right, the set diff operator
+   * @param left is the base set
+   * @param right is the set that is removed from left
    * */
-  def maxConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = Int.MaxValue, maxBackLogSize:Int = 10) =
-    MaxConstArrayLazy(varss, ccond, default, maxBackLogSize)
+  def diff(left:SetValue, right:SetValue) = Diff(left:SetValue, right:SetValue)
 
-
-  /**
-   * Maintains Min(Var(i) | i in cond)
-   * this is a variant that is lazy, and maintains a TODO-list of postponed updates.
-   * postponed updates are ones that do not impact on the outout of the invariant.
-   * when there is an update, it is first checked against the TODO-list, for cancellation.
-   * if the update does not impact the output, it is postponed
-   * if it affects the output, it is performed
-   * @param varss is an array of Int
-   * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
-   * @param default the value if ccond is empty
-   * @param maxBackLogSize is the maximal number of postponed updates (TODOlist is handled as a FIFO)
-   * update is O(log(n)), faster (O(1) if you do updates and backtracks
-   * @author renaud.delandtsheer@cetic.be
-   * */
-  def minConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = Int.MaxValue, maxBackLogSize:Int = Int.MaxValue)
-  = MinConstArrayLazy(varss, ccond, default, maxBackLogSize)
-
-  /**
-    * Maintains Min(constArray(i) | i in condSet), default if condSet is empty
-    * This invariant is value-wise, so it will tell the setVar to notify it only about a subset of the variable, and the setVar uses a smart pre-filter mechanism.
-    * So this invariant is very efficient when you have a LOT of them, all listening to the same setVar, with different arrays in parameters.
-   * @param constArray
-   * @param condSet
-   * @param default
-   * @param maxDiameter is the maximal number of values in condSet that are monitored in the set, must be >=1.
-   *                    the actual diameter is kept between 1 and tis value, lazily
+  /** #(v) (cardinality)
+   * @param v is an IntSetVar, the set of integers to count
    */
-  def minConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default: Int, maxDiameter:Int = 2) =
-    new MinConstArrayValueWise(constArray, condSet, default, maxDiameter)
+  def cardinality(v:SetValue) = Cardinality(v:SetValue)
+
+  /** makes an IntSetVar out of a set of IntVar. If several variables have the same value, the value is present only once in the resulting set
+   * @param on is a set of IntVar
+   * */
+  def makeSet(on:SortedSet[IntValue]) = MakeSet(on:SortedSet[IntValue])
+
+  /** makes a set out of an interval specified by a lower bound and an upper bound. if lb > ub, the set is empty.
+   * @param lb is the lower bound of the interval
+   * @param ub is the upper bound of the interval
+   * */
+  def interval(lb:IntValue,ub:IntValue) = Interval(lb:IntValue,ub:IntValue)
+
+  /**maintains the output as any value taken from the intset var parameter.
+   * if this set is empty, puts the default value ni output.
+   * @param from
+   * @param default
+   */
+  def takeAny(from:SetValue,  default:Int) = TakeAny(from:SetValue,  default:Int)
+
+  /** Sum(i in on)(fun(i))
+   * @param on is the set of integers to add
+   * @param fun is an optional function Int -> Int to apply before summing elements. It is expected not to rely on any variable of the model.
+   * */
+  def setSum(on:SetValue, fun:(Int => Int) = ((a:Int) => a)) = SetSum(on, fun)
+
+  /** PRod(i in on)(fun(i))
+   * @param on is the set of integers to multiply
+   * */
+  def setProd(on:SetValue) = SetProd(on)
 }

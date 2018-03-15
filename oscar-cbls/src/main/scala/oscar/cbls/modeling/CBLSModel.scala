@@ -14,11 +14,11 @@ package oscar.cbls.modeling
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls._
-import oscar.cbls.core.computation.Variable
-import oscar.cbls.core.propagation.Checker
-import oscar.cbls.lib.search.LinearSelectors
-import oscar.cbls.util.StopWatch
+import oscar.cbls.constraints.core.{Constraint, ConstraintSystem}
+import oscar.cbls.invariants.core.computation._
+import oscar.cbls.invariants.core.propagation.Checker
+import oscar.cbls.objective.Objective
+import oscar.cbls.search.{SearchEngineTrait, StopWatch}
 
 
 /** this is a helper object that you can extend to implement your solver with the minimal syntactic overhead.
@@ -36,16 +36,17 @@ class CBLSModel(val verbose:Boolean = false,
                  val noCycle:Boolean = true,
                  val topologicalSort:Boolean = false,
                  val propagateOnToString:Boolean = true)
-  extends LinearSelectors
+  extends SearchEngineTrait
+  with AlgebraTrait
   with Constraints
-  with LogicInvariants
+  with ClusterInvariants
+  with ComplexLogicInvariants
+  with ElementInvariants
   with MinMaxInvariants
   with NumericInvariants
   with SetInvariants
-  with SeqInvariants
   with StopWatch
-  with CombinatorsAPI
-  with StandardNeighborhoods{
+  with Search{
 
   implicit val s = new Store(verbose, checker, noCycle, topologicalSort,propagateOnToString)
   implicit val c = new ConstraintSystem(s)
@@ -63,5 +64,5 @@ class CBLSModel(val verbose:Boolean = false,
   def swapVal(a:CBLSIntVar, b:CBLSIntVar)(implicit o:Objective) = o.swapVal(a,b)
   def assignVal(a: CBLSIntVar, v: Int)(implicit o:Objective) = o.assignVal(a, v)
 
-  def CBLSIntVar(value:Int = 0, d:Domain = fullRange, name:String = null)(implicit s:Store) = new CBLSIntVar(s,value, d,name)
+  def CBLSIntVar(value:Int = 0, d:Domain = FullRange, name:String = null)(implicit s:Store) = new CBLSIntVar(s,value, d,name)
 }

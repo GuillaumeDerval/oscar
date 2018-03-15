@@ -5,7 +5,6 @@ import sbt.Keys._
 import de.johoop.jacoco4sbt.JacocoPlugin._
 import xerial.sbt.Pack._
 import sbtunidoc.Plugin._
-import java.util.Date
 
 
 object OscarBuild extends Build {
@@ -23,8 +22,8 @@ object OscarBuild extends Build {
       organization := buildOrganization,
       version := buildVersion,
       scalacOptions in Compile ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature",
-        "-unchecked", "-Xdisable-assertions", "-language:implicitConversions",
-        "-language:postfixOps"),
+                                       "-unchecked", "-Xdisable-assertions", "-language:implicitConversions",
+                                       "-language:postfixOps"),
       scalacOptions in Test := Seq("-optimise"),
       testOptions in Test <+= (target in Test) map {
         t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
@@ -43,14 +42,11 @@ object OscarBuild extends Build {
           Some(artifactoryName at artifactoryUrl + "libs-release-local")
       },
       credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
-
       testOptions in PerfTest <+= (target in PerfTest) map {
         t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
       fork in PerfTest := true,
       parallelExecution in PerfTest := false
-
-    ) ++ ceticSpecificSettings
-
+    )
   }
 
   object Resolvers {
@@ -58,7 +54,6 @@ object OscarBuild extends Build {
     val leadoperations = "AWS S3 Release Repository" at "http://maven.leadoperations.co/release"
     val cogcomp = "Cognitive Computation Group" at "http://cogcomp.cs.illinois.edu/m2repo/"
     val ingi = "INGI Snapshots" at "http://artifactory.info.ucl.ac.be/artifactory/libs-snapshot-local/"
-    val mvnrepository = "Maven Repository" at "https://mvnrepository.com/artifact/"
   }
 
   object Dependencies {
@@ -78,7 +73,6 @@ object OscarBuild extends Build {
     val graphStreamAlgo = "org.graphstream" % "gs-algo" % "1.3"
     val graphStreamUI = "org.graphstream" % "gs-ui" % "1.3"
     val scallop = "org.rogach" % "scallop_2.11" % "1.0.0"
-    val jxmapviewer2 = "org.jxmapviewer" % "jxmapviewer2" % "2.2"
 
     // Akka
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.5.6"
@@ -100,26 +94,6 @@ object OscarBuild extends Build {
   import Dependencies._
   import Resolvers._
   import UnidocKeys._
-
-
-  def ceticSpecificSettings = {
-    if(Option(System.getProperty("cetic")).isDefined) Seq(
-      publishTo := {
-        val artifactory = "http://maven.oscar.ext.cetic.be:8081/artifactory/"
-        if (isSnapshot.value)
-          Some("Artifactory Realm" at artifactory + "libs-snapshot;build.timestamp=" + new java.util.Date().getTime)
-        else
-          Some("Artifactory Realm" at artifactory + "libs-release")
-      },
-      packageOptions += Package.ManifestAttributes(
-        ("REVISION_ID", System.getProperty("REVISION_ID")),
-        ("REVISION_URL", ("https://bitbucket.org/oscarlib/oscar/commits/"+System.getProperty("REVISION_ID")) ),
-        ("JENKINS_BUILD_ID", System.getProperty("BUILD_ID")),
-        ("BUILD_DATE", new Date().toString())
-      )
-    )
-    else Seq()
-  }
 
   lazy val oscar = Project(
     id = "oscar",
@@ -157,8 +131,7 @@ object OscarBuild extends Build {
       commonSettings ++
         packAutoSettings ++
         Seq(
-          resolvers ++= Seq(mvnrepository),
-          libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2,
+          libraryDependencies ++= testDeps :+ scalaSwing,
           packGenerateWindowsBatFile := false
         ),
     dependencies = Seq(oscarVisual)
@@ -182,7 +155,7 @@ object OscarBuild extends Build {
           scalacOptions in Compile ++= Seq("-language:reflectiveCalls"),
           resolvers ++= Seq(xypron),
           libraryDependencies ++= testDeps :+ graphStreamCore :+ graphStreamAlgo :+ graphStreamUI :+ scallop
-            :+ akkaActor :+ scalaSwing :+ jfreechart :+ jcommon),
+                               :+ akkaActor :+ scalaSwing :+ jfreechart :+ jcommon),
     dependencies = Seq(oscarCp)
   )
 

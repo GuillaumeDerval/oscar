@@ -36,7 +36,7 @@ object AlternativeUnary extends CPModel with App {
 
   minimize(makespan) search {
 //    splitLastConflict(resources ++ starts)
-    splitLastConflict(starts ++ resources)
+    splitLastConflict(starts ++ resources, i => i)
   }
 
   // Visualization  

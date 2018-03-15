@@ -1,5 +1,4 @@
 package oscar.examples.cbls.wlp
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -15,12 +14,14 @@ package oscar.examples.cbls.wlp
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls._
-import oscar.cbls.core.search.{Best, Move}
-import oscar.cbls.lib.invariant.logic.{Filter, SelectLESetQueue}
-import oscar.cbls.lib.invariant.minmax.MinConstArray
-import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.search.neighborhoods.AssignNeighborhood
+import oscar.cbls.invariants.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.invariants.lib.logic.{Filter, SelectLESetQueue}
+import oscar.cbls.invariants.lib.minmax.MinConstArray
+import oscar.cbls.invariants.lib.numeric.Sum
+import oscar.cbls.modeling.AlgebraTrait
+import oscar.cbls.objective.Objective
+import oscar.cbls.search.AssignNeighborhood
+import oscar.cbls.search.move.Move
 
 import scala.language.postfixOps
 
@@ -30,7 +31,7 @@ import scala.language.postfixOps
  * additional behaviors. Here, we restrict a neighborhood to a specific set of variables that not tabu
  * this set of variables is maintained through invariants
  */
-object WarehouseLocationTabu extends App{
+object WarehouseLocationTabu extends App with AlgebraTrait{
 
   //the number of warehouses
   val W:Int = 15
@@ -76,7 +77,7 @@ object WarehouseLocationTabu extends App{
   // *the protection of the objectiveFunction
   val tabuTenure = 3
   val switchWithTabuNeighborhood = (AssignNeighborhood(warehouseOpenArray, "SwitchWarehouseTabu",
-    searchZone = nonTabuWarehouses,selectIndiceBehavior = Best(),selectValueBehavior = Best())
+    searchZone = nonTabuWarehouses, best = true)
     beforeMove((mo:Move) => {
     for (v <- mo.touchedVariables) {
       TabuArray(v.getStorageAt[Int](warehouseKey)) := It.value + tabuTenure
