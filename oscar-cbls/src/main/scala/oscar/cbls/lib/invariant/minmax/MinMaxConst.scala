@@ -217,7 +217,6 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
     (myMin,myMax)
   }
 
-  restrictDomain(computeMinMax())
 
   for (i <- cond.value) {
     h.insert(i)
@@ -241,6 +240,7 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
   }
 
   updateFromHeap()
+  restrictDomain(computeMinMax())
 
   @inline
   def equalOrNotImpactingMiax(potentialMiax:Int):Boolean

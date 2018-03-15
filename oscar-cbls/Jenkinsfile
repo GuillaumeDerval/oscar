@@ -2,13 +2,13 @@ node {
     env.JAVA_HOME="${tool 'jdk-1.8.121'}"
     env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
     env.SBT_HOME = "${tool 'sbt-1.0.0-M4'}"
-
+    
+    def MERCURIAL_REVISION = sh script: 'hg id -i', returnStdout: true
+    
     email_to = "oscar.cbls-cetic@lists.cetic.be"
-
+    projects=['oscar-cbls']
+    
     try{
-    stage('print') {
-        sh 'printenv'
-    }
         stage('scm') {
             checkout_result = checkout scm: [
                 $class: 'MercurialSCM',
@@ -19,38 +19,63 @@ node {
             ],
             poll: false
         }
-
-        def MERCURIAL_REVISION = sh script: 'hg id -i', returnStdout: true
-
-        env.PARAMS = "-Dcetic -DBRANCH_NAME='${env.BRANCH_NAME}' -DREVISION_ID='${MERCURIAL_REVISION}' -DBUILD_ID='${env.BUILD_ID}'"
-        env.SBT_CMD = "${env.SBT_HOME}/bin/sbt -Dsbt.log.noformat=true ${env.PARAMS} 'project ${env.PROJECT_ID}'"
-
-        stage('Build') {
-            sh "${env.SBT_CMD} compile"
-        }
-        stage('Test') {
-            sh "${env.SBT_CMD} test"
-        }
-        stage('ScalaDoc') {
-            sh "${env.SBT_CMD} doc"
-        }
-        stage('Package') {
-            sh "${env.SBT_CMD} package package-doc -Xdisable-assertions"
-        }
-        
-        stage('Publish') {
-            sh "${env.SBT_CMD} publish"
-        }
-
     }
     catch (err) {
         currentBuild.result = "FAILURE"
-
-        step([$class: 'Mailer',
-           notifyEveryUnstableBuild: true,
-           recipients: "${email_to}",
-           sendToIndividuals: true])
-
+        send_mail(email_to)
         throw err
     }
+     
+    try{
+        env.PARAMS = "-Dcetic -DBRANCH_NAME='${env.BRANCH_NAME}' -DREVISION_ID='${MERCURIAL_REVISION}' -DBUILD_ID='${env.BUILD_ID}'"
+        env.SBT_CMD = "${env.SBT_HOME}/bin/sbt -Dsbt.log.noformat=true ${env.PARAMS}"
+        
+        stage('Build') {
+            projects.each { project -> 
+                sh "${env.SBT_CMD} project "+project+" compile"
+            }
+        }
+        stage('Test') {
+            projects.each { project -> 
+                sh "${env.SBT_CMD} project "+project+" test"
+            }
+        }
+        
+    }
+    catch (err) {
+        currentBuild.result = "FAILURE"
+        send_mail(email_to)
+        throw err
+    }
+    
+    try{
+        stage('Package') {
+            projects.each { project -> 
+                sh "${env.SBT_CMD} project "+project+" clean package package-doc -Xdisable-assertions"
+            }
+        }
+        stage('ScalaDoc') {
+            projects.each { project -> 
+                sh "${env.SBT_CMD} project "+project+" doc"
+            }
+        }
+        
+        stage('Publish') {
+            projects.each { project -> 
+                sh "${env.SBT_CMD} project "+project+" publish"
+            }
+        }
+    }
+    catch (err) {
+        currentBuild.result = "FAILURE"
+        send_mail(email_to)
+        throw err
+    }
+}
+
+def send_mail(recipients) {
+    //step([$class: 'Mailer',
+    //   notifyEveryUnstableBuild: true,
+    //   recipients: "${recipients}",
+    //   sendToIndividuals: true])
 }
