@@ -838,6 +838,7 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
           if (verbose > 0) println(randomVar.toString() + "\n")
           model.propagate()
           if (verbose > 0) println
+          true
       }
     } catch {
       case e: Exception =>
