@@ -13,7 +13,7 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 /**
- * @author Jean-Noël Monette
+ * @author Jean-Noel Monette
  */
 package oscar.flatzinc.parser.intermediatemodel;
 
@@ -24,7 +24,7 @@ public class Element {
 	public String name;
 	//int id;
 	public Object value;
-	//public Domain domain;
+	//public FzDomain domain;
 	public Type typ;
 	//public List<Annotation> annotations;
 	public Element(){

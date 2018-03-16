@@ -24,10 +24,11 @@ package oscar.examples.cbls
 import java.awt.Color
 import javax.swing.border.LineBorder
 
-import oscar.cbls.constraints.core._
-import oscar.cbls.constraints.lib.global.AllDiff
-import oscar.cbls.invariants.core.computation._
-import oscar.cbls.search._
+import oscar.cbls.core.computation._
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.lib.constraint.AllDiff
+import oscar.cbls.lib.search.LinearSelectors
+import oscar.cbls.util.StopWatch
 
 import scala.swing.{GridPanel, Label, MainFrame, SimpleSwingApplication}
 
@@ -40,7 +41,7 @@ import scala.swing.{GridPanel, Label, MainFrame, SimpleSwingApplication}
  * - best delta is used and switch cells are added to tabu
  * @author christophe.ponsard@cetic.be
  * */
-object BigSudokuGen extends SimpleSwingApplication with SearchEngineTrait with StopWatch {
+object BigSudokuGen extends SimpleSwingApplication with LinearSelectors with StopWatch {
 
   val C:Int=4
   val N:Int=C*C
@@ -110,7 +111,7 @@ object BigSudokuGen extends SimpleSwingApplication with SearchEngineTrait with S
     startWatch()
         
     // model
-    val m: Store = new Store(false,None,true)
+    val m: Store = Store(false,None,true)
         
     // grid definition and initialisation
     val grid=Array.ofDim[CBLSIntVar](M)
@@ -155,7 +156,7 @@ object BigSudokuGen extends SimpleSwingApplication with SearchEngineTrait with S
       // UI update
       tab(v1/N)(v1%N).text=grid(v1).value+""
       tab(v2/N)(v2%N).text=grid(v2).value+""
-      for(v <- 0 to LinearIndexes.length-1) {
+      for(v <- LinearIndexes.indices) {
         if (c.violation(grid(v)).value>0)
           tab(v/N)(v%N).foreground=Color.RED
         else
@@ -185,7 +186,7 @@ object BigSudokuGen extends SimpleSwingApplication with SearchEngineTrait with S
   }
   
   def showGrid(tab:Array[CBLSIntVar],N:Int) {
-    for (i <- Range(0,tab.length)) {
+    for (i <- tab.indices) {
       if ((i%N)==0) println()
       print(tab(i).value+" ")
     }

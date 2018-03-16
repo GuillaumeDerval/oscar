@@ -30,60 +30,27 @@ import oscar.cp.modeling.LNSRelaxations
 import oscar.util.selectMin
 
 /**
-  * The `cp` package provides useful functionalities to model problem using
-  * the OscaR Constraint Programming Library.
-  *
-  * By doing
-  * {{{import oscar.cp_}}}
-  * you also import
-  *
-  *   - [[oscar.cp.core.CPSolver `CPSolver`]] the core object used to create models
-  *   - [[oscar.cp.modeling.Constraints `Constraints`]] the set of constraints available in OscaR to create your models
-  *   - [[oscar.cp.modeling.Branchings `Branchings`]] the set of search strategies
-  *   - [[oscar.cp.core.variables.CPIntVar `CPIntVar`]] the integer domain variables
-  *   - [[oscar.cp.core.variables.CPBoolVar `CPBoolVar`]] the boolean domain variables
-  *
-  *
-  * === N-Queens Example ===
-  *
-  * {{{
-  * import oscar.cp._
-  * object Queens extends CPModel with App {
-  *  val nQueens = 10 // Number of queens
-  *  val Queens = 0 until nQueens
-  *  // Variables
-  *  val queens = Array.fill(nQueens)(CPIntVar.sparse(0, nQueens - 1))
-  *  // Constraints
-  *  add(allDifferent(queens))
-  *  add(allDifferent(Queens.map(i => queens(i) + i)))
-  *  add(allDifferent(Queens.map(i => queens(i) - i)))
-  *  // Search heuristic
-  *  search(binaryFirstFail(queens))
-  *  // Execution
-  *  val stats = start()
-  *  println(stats)
-  * }
-  * }}}
-  *
-  *
-  * === Implicit Conversions ===
-  *
-  * A number of commonly applied implicit conversions are also defined here.
-  * Implicit conversions provide additional higher-order functions to core classes
-  * such as [[oscar.cp.core.variables.CPIntVar `CPIntVar`]], or [[oscar.cp.core.CPSolver `CPSolver`]].
-  * Implicit conversion also provide
-  * simple and natural modeling functionalities for sum and element constraints.
-  *
-  * === CPModel ===
-  *
-  * The [[oscar.cp.CPModel `CPModel`]] trait is also defined in this package and provides users with an
-  * implicit [[oscar.cp.core.CPSolver `CPSolver`]] named ''solver''.
-  * The use of [[oscar.cp.CPModel `CPModel`]] allows users to create even less verbose models
-  * by not considering the underlying solver.
-  *
-  * @author Pierre Schaus pschaus@gmail.com
-  * @author Renaud Hartert ren.hartert@gmail.com
-  */
+ * The `cp` package provides useful functionalities to model problem using
+ * the OscaR Constraint Programming Library.
+ *
+ * === Commonly Used Types ===
+ * This package provides type aliases for types which are commonly used,
+ * such as `CPSolver`, `CPIntVar`, or `CPIntervalVar`.
+ *
+ * === Implicit Conversions ===
+ * A number of commonly applied implicit conversions are also defined here.
+ * Implicit conversions provide additional higher-order functions to core classes
+ * such as `CPIntVar`, `CPIntervalVar`, or `CPSolver`. Implicit conversion also provide
+ * simple and natural modeling functionalities for sum and element constraints.
+ *
+ * === CPModel ===
+ * The `CPModel` trait is also defined in this package and provides users with an
+ * implicit `CPSolver` named solver. The use of `CPModel` allows users to model
+ * problems without considering the underlying solver.
+ *
+ * @author Pierre Schaus pschaus@gmail.com
+ * @author Renaud Hartert ren.hartert@gmail.com
+ */
 package object cp extends Constraints with Branchings with ElementBuilder with CPSolverUtils with LNSRelaxations {
   // Alias to useful classes and companion objects
   type CPIntVar = oscar.cp.core.variables.CPIntVar
@@ -360,6 +327,8 @@ package object cp extends Constraints with Branchings with ElementBuilder with C
 
 
     def %(y: Int) = ModuloLHS(x, y)
+
+    def mod(y: Int) = modulo(x, y)
     
     // New experimental function names for reification 
     

@@ -17,21 +17,23 @@
  */
 package oscar.flatzinc.cbls
 
-import oscar.cbls.invariants.core.computation.CBLSIntVar
+import oscar.cbls.core.computation.{CBLSIntVar, DomainRange}
 import oscar.flatzinc.cbls.support._
 import oscar.flatzinc.model._
+
 import scala.collection.mutable.ArrayOps
 
 
-    
+
 class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
   var uid = 0;
-  
+
   def findAndPostImplicit(constraints: List[Constraint]) = {
       //TODO: DO not like the filtering here.
     //TODO: Added a second criterion of sort to get the circuit before the all_different. Stupid, hey?
       constraints.sortBy(c => (- c.variables.length,Helper.getCName(c).length())).partition((constraint: Constraint) =>
         constraint match {
+          case inverse(xs,invXs,ann) => tryInverse(xs, invXs)
           case all_different_int(xs, ann) => tryAllDiff(xs)
           case circuit(xs, ann) => tryCircuit(xs)
           case subcircuit(xs, ann) => trySubCircuit(xs)
@@ -44,15 +46,24 @@ class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
           case bool_lin_eq(coeffs,vars,sum,ann) => trySum(vars,coeffs,sum)
           case _ => false;
         })
-  
-  }
-  
 
-    
-  def tryAllDiff(xs: Array[IntegerVariable]):Boolean = {
+  }
+
+
+
+    def tryAllDiff(xs: Array[IntegerVariable]):Boolean = {
       if(allOK(xs)){
-        val vars = xs.map(cblsmodel.getCBLSVarDom(_))
+        val vars = xs.map(cblsmodel.getCBLSVar(_))
         cblsmodel.addNeighbourhood((o,c) => new AllDifferent(vars, o,c),vars)
+        true
+      }else false
+    }
+    def tryInverse(xs: Array[IntegerVariable],invXs: Array[IntegerVariable]):Boolean = {
+      val intersection = xs.intersect(invXs)
+      if(allOK(xs,true) && allOK(invXs,true) && intersection.length == 0){
+        val xsVars = xs.map(cblsmodel.getCBLSVar(_))
+        val invVars = invXs.map(cblsmodel.getCBLSVar(_))
+        cblsmodel.addNeighbourhood((o,c) => new Inverse(xsVars, invVars, o,c,-1),xsVars++invVars)
         true
       }else false
     }
@@ -61,13 +72,16 @@ class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
         //TODO: remove some of the defined if it is better to use the Circuit implicit constraint
         //TODO: We assume that the offset is 1. Is it always the case?
          val vars = xs.map{ v =>
-          val avar = if(v.isBound){
+          val avar = if(false && v.isBound){
             uid+=1
-            CBLSIntVarDom(cblsmodel.m, v.value, v.domain,  "EXTRA_VAR_"+uid);
+            val vv = CBLSIntVar(cblsmodel.m, v.value, 1 to xs.size , "EXTRA_VAR_" + uid);
+            EnsureDomain(vv,v.domain,cblsmodel.c)
+            vv
           }else{
-            cblsmodel.getCBLSVarDom(v)
+            val vv = cblsmodel.getCBLSVar(v)
+            EnsureDomain(vv,v.domain,cblsmodel.c)
+            vv
           }
-          RelaxAndEnsureDomain(avar,1,xs.length,cblsmodel.c)
           avar
         }
         cblsmodel.addNeighbourhood((o,c) => new ThreeOpt(vars,o,c,1),vars)
@@ -81,28 +95,31 @@ class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
         //TODO: We assume that the offset is 1. Is it always the case?
         //TODO: remove some of the defined if it is better to use the SubCircuit implicit constraint
         val vars = xs.map{ v =>
-          val avar = if(v.isBound){
+          val avar = if(v.isBound && false){
             uid+=1
-            CBLSIntVarDom(cblsmodel.m, v.value, v.domain,  "EXTRA_VAR_"+uid);
+            val vv = CBLSIntVar(cblsmodel.m, v.value, DomainRange(1, xs.size), "EXTRA_VAR_" + uid);
+            EnsureDomain(vv,v.domain,cblsmodel.c)
+            vv
           }else{
-            cblsmodel.getCBLSVarDom(v)
+            val vv = cblsmodel.getCBLSVar(v)
+            EnsureDomain(vv,v.domain,cblsmodel.c)
+            vv
           }
-          RelaxAndEnsureDomain(avar,1,xs.length,cblsmodel.c)
           avar
         }
         cblsmodel.addNeighbourhood((o,c) => new ThreeOptSub(vars,o,c,1),vars)
         true
       }else{
         println("BOF")
-        xs.foreach(x => println(x+ " " +cblsmodel.vars.contains(cblsmodel.getCBLSVar(x))))
+        xs.foreach(x => println(x+ " " +cblsmodel.vars.contains(cblsmodel.getIntValue(x))))
         println(cblsmodel.vars)
         false
       }
     }
-    
+
     def tryGCC(xs: Array[IntegerVariable],vals: Array[IntegerVariable], cnts: Array[IntegerVariable],closed: Boolean):Boolean ={
       if (allOK(xs) && cnts.forall(c => c.isBound)){//Only for fixed count variables for now
-        val vars = xs.map(cblsmodel.getCBLSVarDom(_))
+        val vars = xs.map(cblsmodel.getCBLSVar(_))
         cblsmodel.addNeighbourhood((o,c) => new GCCNeighborhood(vars,vals.map(_.min),cnts.map(_.min),cnts.map(_.max),closed,o,c),vars)
         true
       }else{
@@ -110,8 +127,8 @@ class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
       }
     }
     def tryGCClu(xs: Array[IntegerVariable],vals: Array[IntegerVariable], low: Array[IntegerVariable],up: Array[IntegerVariable],closed: Boolean):Boolean ={
-      if (allOK(xs)){
-        val vars = xs.map(cblsmodel.getCBLSVarDom(_))
+      if (allOK(xs)){ //TODO: Something is not working here
+        val vars = xs.map(cblsmodel.getCBLSVar(_))
         cblsmodel.addNeighbourhood((o,c) => new GCCNeighborhood(vars,vals.map(_.min),low.map(_.min),up.map(_.max),closed,o,c),vars)
         true
       }else{
@@ -120,7 +137,7 @@ class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
     }
   def trySum(xs: Array[IntegerVariable], coeffs: Array[IntegerVariable],sum:IntegerVariable): Boolean = {
       if (allOK(xs) && coeffs.forall(x => x.min == 1 || x.min == -1)) {
-        val vars = xs.map(cblsmodel.getCBLSVarDom(_))
+        val vars = xs.map(cblsmodel.getCBLSVar(_))
         cblsmodel.addNeighbourhood((o,c) => new SumNeighborhood(vars,coeffs.map(_.min),sum.min,o,c),vars)
         true
       }else{
@@ -129,19 +146,19 @@ class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
     }
   def trySum(xs: Array[BooleanVariable], coeffs: Array[IntegerVariable],sum:IntegerVariable): Boolean = {
    if (allOK(xs) && coeffs.forall(x => x.min == 1 || x.min == -1)) {
-        val vars = xs.map(cblsmodel.getCBLSVarDom(_))
+        val vars = xs.map(cblsmodel.getCBLSVar(_))
         cblsmodel.addNeighbourhood((o,c) => new SumNeighborhood(vars,coeffs.map(_.min),sum.min,o,c),vars)
         true
       }else{
         false
       }
     }
-  
+
   //TODO: I only added the bound acceptance criterion for subcircuit to avoid disrupting other neighbourhoods.
   def allOK(xs: Array[IntegerVariable],acceptBound: Boolean = false):Boolean = {
-    xs.forall(x => ! x.isDefined && (cblsmodel.vars.contains(cblsmodel.getCBLSVar(x)) || (acceptBound && x.isBound)))
+    xs.forall(x => ! x.isDefined && (cblsmodel.vars.contains(cblsmodel.getIntValue(x)) || (acceptBound && x.isBound)))
   }
   def allOK(xs: Array[BooleanVariable]):Boolean = {
-    xs.forall(x => ! x.isDefined && cblsmodel.vars.contains(cblsmodel.getCBLSVar(x)))
+    xs.forall(x => ! x.isDefined && cblsmodel.vars.contains(cblsmodel.getIntValue(x)))
   }
 }

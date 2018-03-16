@@ -818,6 +818,17 @@ trait Constraints {
   }
 
   /**
+    * @param x a variable in the same store as y
+    * @param v a value in the same store as x
+    * @return a variable in the same store representing: x % v
+    */
+  def modulo(x: CPIntVar, v: Int): CPIntVar = {
+    val y = CPIntVar(0, v-1)(x.store)
+    val ok = x.store.post(new oscar.cp.constraints.Modulo(x, v, y))
+    y
+  }
+
+  /**
    * Among Constraint: n is the number of variables from x in set s.
     *
     * @param n counter variable
