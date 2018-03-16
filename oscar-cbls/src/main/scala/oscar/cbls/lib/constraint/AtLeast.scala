@@ -50,8 +50,10 @@ case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Int, IntValu
 
   private val noViolation:IntValue = 0
 
+  // The domain can be samller than the number of bounds, which would cause an index out of bounds exception if we did not filter away these bounds.
+  val ((minMin,maxMax)) = InvariantHelper.getMinMaxBounds(variables)
   private val Violation =
-    Sum(bounds.toList.map((value_bound) => Max2(noViolation,value_bound._2 - valueCount(value_bound._1+offset))))
+    Sum(bounds.toList.filter(i => (i._1 >= minMin && i._1 <= maxMax)).map((value_bound) => Max2(noViolation,value_bound._2 - valueCount(value_bound._1+offset))))
     .setName("ViolationsOfAtLeast")
 
   private val violationByVal:Array[IntValue]=Array.tabulate(valueCount.length)(value => {
@@ -71,7 +73,7 @@ case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Int, IntValu
     val violationForArray = variables.foldLeft(SortedMap.empty[IntValue,IntValue])(
       (acc, intvar) => accumulate(acc, intvar, violationByVal.element(intvar + offset).setName("Violation_AtLeast_" + intvar.name)))
 
-    bounds.foldLeft(violationForArray)(
+    bounds.filter(i => (i._1 >= minMin && i._1 <= maxMax)).foldLeft(violationForArray)(
       (acc,boundAndVariable) => {
         val viol = Max2(noViolation,boundAndVariable._2 - valueCount(boundAndVariable._1+offset)).setName("Violation_AtLeast_" + boundAndVariable._2.name)
         accumulate(acc, boundAndVariable._2, viol)

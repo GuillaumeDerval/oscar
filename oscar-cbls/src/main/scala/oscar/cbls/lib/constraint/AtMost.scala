@@ -51,7 +51,9 @@ case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue])
   private val noViolation:IntValue = 0
   private val violationByVal:Array[IntValue] = Array.tabulate(valueCount.length)(_ => noViolation)
 
-  for((value,bound) <- bounds){
+  // The domain can be samller than the number of bounds, which would cause an index out of bounds exception if we did not filter away these bounds.
+  val ((minMin,maxMax)) = InvariantHelper.getMinMaxBounds(variables)
+  for((value,bound) <- bounds.filter(i => (i._1 >= minMin && i._1 <= maxMax))){
     violationByVal(value+offset) = Max2(noViolation,valueCount(value+offset) - bound)
   }
 
@@ -65,7 +67,7 @@ case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue])
     val violationForArray = variables.foldLeft(SortedMap.empty[IntValue,IntValue])(
       (acc,intvar) => accumulate(acc,intvar, violationByVal.element(intvar + offset))
     )
-    bounds.foldLeft(violationForArray)(
+    bounds.filter(i => (i._1 >= minMin && i._1 <= maxMax)).foldLeft(violationForArray)(
       (acc,boundAndVariable) => {
         val viol = violationByVal(boundAndVariable._1 +offset)
         accumulate(acc,boundAndVariable._2, viol)
@@ -76,7 +78,7 @@ case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue])
     * the number of variable in excess is the max between zero and
     * (the number of variable that have the value of the bound minus the bound).
     */
-  val violation = Sum(bounds.keys.map(bound => violationByVal(bound+offset))).setName("ViolationsOfAtMost")
+  val violation = Sum(bounds.filter(i => (i._1 >= minMin && i._1 <= maxMax)).keys.map(bound => violationByVal(bound+offset))).setName("ViolationsOfAtMost")
 
   /**The violation of a variable is zero if its value is not the one of a bound.
     * If the variable has the value of a bound, its violation is the number of variable in excess for that bound.
