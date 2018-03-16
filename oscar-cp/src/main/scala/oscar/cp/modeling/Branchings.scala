@@ -514,20 +514,23 @@ trait Branchings extends BranchingUtils {
   }
 
   /**
-    * Represents a dependency in the search between a boolean decision variable and other optional variables.
-    * The optional variables have to be bound only if the decision variable is set to true.
+    * Represents a dependency in the search between a boolean selection variable and other optional variables.
+    * The optional variables have to be bound only if the selection variable is set to true.
     */
-  type CPOptionalDecision = oscar.algo.search.OptionalDecision[CPBoolVar, CPIntVar]
-  final val CPOptionalDecision = oscar.algo.search.OptionalDecision
+  type CPOptionalSelection = oscar.algo.search.OptionalSelection[CPBoolVar, CPIntVar]
+  final val CPOptionalSelection = oscar.algo.search.OptionalSelection
 
   /**
-    * Branching on optional decisions:
-    * When branching on a decision variable, it creates two child nodes, left=true, right=false.
-    * On the true (left) branch, all the optional variables must be assigned before attempting a next decision.
+    * Branching that maximizes optional selections:
+    * When branching on a selection variable, it creates two child nodes, left=true, right=false.
+    * On the true (left) branch, all the optional variables must be assigned before attempting a next selection.
     * On the false (right) branch, the optional variables are not branched on at all.
+    *
+    * @param vars The OptionalSelection objects linking the boolean selection variables with their optional variables
+    * @param selectionBranching The branching to be used on the selection variables
     */
-  def optionalVarsDecision(vars: Seq[CPOptionalDecision], decisionBranching: Branching): Branching = {
-    new OptionalDecisionSearch(vars, decisionBranching)
+  def maxSelection(vars: Seq[CPOptionalSelection], selectionBranching: Branching): Branching = {
+    new MaxSelectionBranching(vars, selectionBranching)
   }
 
   /**
