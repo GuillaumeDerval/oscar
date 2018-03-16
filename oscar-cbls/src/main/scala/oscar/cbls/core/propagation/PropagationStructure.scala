@@ -82,10 +82,9 @@ trait SchedulingHandler {
   *
   * @param verbose requires that the propagation structure prints a trace of what it is doing.
   * @param noCycle is to be set to true only if the static dependency graph is acyclic.
-  * @param sortScc true if SCC should be sorted, false otherwise. Set to true, unless you know what your are doing. Setting to false might provide a speedup, but propagation will not be single pass on SCC anymore
   * @author renaud.delandtsheer@cetic.be
   */
-abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = false, val noCycle: Boolean, val sortScc: Boolean = true)
+abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = false, val noCycle: Boolean)
   extends SchedulingHandler {
 
   protected var closed: Boolean = false
@@ -157,8 +156,8 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
         } else {
           acyclic = false
 
-          val c: StronglyConnectedComponent = if (sortScc) new StronglyConnectedComponentTopologicalSort(a, this, nextID())
-          else new StronglyConnectedComponentNoSort(a, this, nextID())
+          val c: StronglyConnectedComponent = new StronglyConnectedComponent(a, this, nextID())
+
           stronglyConnectedComponentsList = c :: stronglyConnectedComponentsList
           c
         })
@@ -516,7 +515,6 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
     "PropagationStructure(" + "\n" +
       "  declaredAcyclic: " + noCycle + "\n" +
       " layerCount:" + executionQueue.maxPosition + "\n" +
-      "  sortScc:" + sortScc + "\n" +
       "  actuallyAcyclic:" + acyclic + "\n" +
       "  TotalPropagationElementCount:" + getPropagationElements.size + "\n" +
       "  StronglyConnectedComponentsCount:" + stronglyConnectedComponentsList.size + "\n" +
@@ -551,8 +549,10 @@ class NodeDictionary[T](val MaxNodeID: Int)(implicit val X: Manifest[T]) {
   def initialize(value: () => T) { for (i <- storage.indices) storage(i) = value() }
 }
 
-abstract class StronglyConnectedComponent(val propagationElements: Iterable[PropagationElement],
-                                          val core: PropagationStructure, val _UniqueID: Int) extends PropagationElement with SchedulingHandler {
+class StronglyConnectedComponent(val propagationElements: Iterable[PropagationElement],
+                                          val core: PropagationStructure, val _UniqueID: Int)
+  extends PropagationElement with SchedulingHandler with DAG {
+
   schedulingHandler = core
   uniqueID = _UniqueID
 
@@ -563,56 +563,6 @@ abstract class StronglyConnectedComponent(val propagationElements: Iterable[Prop
   override def propagationStructure: PropagationStructure = core
 
   var scheduledElements: QList[PropagationElement] = null
-
-  def scheduleForPropagation(element: PropagationElement) {
-    scheduledElements = QList(element, scheduledElements)
-    super.scheduleForPropagation()
-  }
-
-  override def decrementSucceedingAndAccumulateFront(acc: List[PropagationElement]): List[PropagationElement] = {
-    var toreturn = acc
-    for (element <- propagationElements) {
-      toreturn = element.decrementSucceedingAndAccumulateFront(toreturn)
-    }
-    toreturn
-  }
-
-  override def setCounterToPrecedingCount(): Boolean = {
-    position = propagationElements.count(p => p.setCounterToPrecedingCount())
-    position != 0
-  }
-
-  override private[core] def rescheduleIfScheduled() {}
-  //we do nothing, since it is the propagation elements that trigger the registration if needed of SCC
-
-  override def checkInternals(){
-    for (e <- propagationElements) { e.checkInternals() }
-  }
-
-  def stats:String = {
-    "{" + "\n    " + propagationElements.map(_.getClass.getSimpleName).groupBy((name: String) => name).map(a => a._1 + ":" + a._2.size).mkString("\n    ") + "\n  }"
-  }
-}
-
-class StronglyConnectedComponentNoSort(Elements: Iterable[PropagationElement],
-                                       core: PropagationStructure, _UniqueID: Int) extends StronglyConnectedComponent(Elements, core, _UniqueID) {
-
-  override def performPropagation() {
-    while (scheduledElements != null) {
-      val x = scheduledElements.head
-      scheduledElements = scheduledElements.tail
-      x.propagate()
-    }
-  }
-
-  override def stats: String = "  StronglyConnectedComponentNoSort" + super.stats
-}
-
-class StronglyConnectedComponentTopologicalSort(
-                                                 override val propagationElements: Iterable[PropagationElement],
-                                                 override val core: PropagationStructure,
-                                                 _UniqueID: Int)
-  extends StronglyConnectedComponent(propagationElements, core, _UniqueID) with DAG {
 
   for (e <- propagationElements) {
     e.setInSortingSCC()
@@ -731,7 +681,35 @@ class StronglyConnectedComponentTopologicalSort(
     }
   }
 
-  override def stats: String = "  StronglyConnectedComponentTopologicalSort" + super.stats
+
+  def scheduleForPropagation(element: PropagationElement) {
+    scheduledElements = QList(element, scheduledElements)
+    super.scheduleForPropagation()
+  }
+
+  override def decrementSucceedingAndAccumulateFront(acc: List[PropagationElement]): List[PropagationElement] = {
+    var toreturn = acc
+    for (element <- propagationElements) {
+      toreturn = element.decrementSucceedingAndAccumulateFront(toreturn)
+    }
+    toreturn
+  }
+
+  override def setCounterToPrecedingCount(): Boolean = {
+    position = propagationElements.count(p => p.setCounterToPrecedingCount())
+    position != 0
+  }
+
+  override private[core] def rescheduleIfScheduled() {}
+  //we do nothing, since it is the propagation elements that trigger the registration if needed of SCC
+
+  override def checkInternals(){
+    for (e <- propagationElements) { e.checkInternals() }
+  }
+
+  def stats:String = {
+    "{" + "\n    " + propagationElements.map(_.getClass.getSimpleName).groupBy((name: String) => name).map(a => a._1 + ":" + a._2.size).mkString("\n    ") + "\n  }"
+  }
 }
 
 object PropagationElement {
@@ -784,7 +762,7 @@ trait BasicPropagationElement {
     */
   protected[propagation] def registerDynamicallyListeningElement(listening: PropagationElement,
                                                                  i: Int,
-                                                                 sccOfListening: StronglyConnectedComponentTopologicalSort,
+                                                                 sccOfListening: StronglyConnectedComponent,
                                                                  dynamicallyListenedElementDLLOfListening:DelayedPermaFilteredDoublyLinkedList[PropagationElement]): KeyForElementRemoval = DummyKeyForElementRemoval
 
   def schedulingHandler: SchedulingHandler = null
@@ -809,25 +787,25 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
   //dynamicallyListeningElementsFromSameComponent
   final def getDAGSucceedingNodes: Iterable[DAGNode] = dynamicallyListeningElementsFromSameComponent
 
-  def initiateDynamicGraphFromSameComponent(stronglyConnectedComponentTopologicalSort: StronglyConnectedComponentTopologicalSort) {
-    initiateDynamicGraphFromSameComponentListening(stronglyConnectedComponentTopologicalSort)
-    initiateDynamicGraphFromSameComponentListened(stronglyConnectedComponentTopologicalSort)
+  def initiateDynamicGraphFromSameComponent(stronglyConnectedComponent: StronglyConnectedComponent) {
+    initiateDynamicGraphFromSameComponentListening(stronglyConnectedComponent)
+    initiateDynamicGraphFromSameComponentListened(stronglyConnectedComponent)
   }
 
-  protected def initiateDynamicGraphFromSameComponentListening(stronglyConnectedComponentTopologicalSort: StronglyConnectedComponentTopologicalSort) {
+  protected def initiateDynamicGraphFromSameComponentListening(stronglyConnectedComponent: StronglyConnectedComponent) {
     def filterForListening(listeningAndPayload: (PropagationElement, Any), injector: (() => Unit), isStillValid: (() => Boolean)) {
-      if (stronglyConnectedComponentTopologicalSort == listeningAndPayload._1.schedulingHandler)
-        stronglyConnectedComponentTopologicalSort.registerListeningWaitingDependency(injector)
+      if (stronglyConnectedComponent == listeningAndPayload._1.schedulingHandler)
+        stronglyConnectedComponent.registerListeningWaitingDependency(injector)
     }
 
     dynamicallyListeningElementsFromSameComponent = dynamicallyListeningElements.delayedPermaFilter(filterForListening, (e) => e._1)
   }
 
-  protected def initiateDynamicGraphFromSameComponentListened(stronglyConnectedComponentTopologicalSort: StronglyConnectedComponentTopologicalSort) {
-    assert(stronglyConnectedComponentTopologicalSort == mySchedulingHandler)
+  protected def initiateDynamicGraphFromSameComponentListened(stronglyConnectedComponent: StronglyConnectedComponent) {
+    assert(stronglyConnectedComponent == mySchedulingHandler)
     //filters the list of staticallyListenedElements
 
-    dynamicallyListenedElementsFromSameComponent = staticallyListenedElements.filter(_.schedulingHandler == stronglyConnectedComponentTopologicalSort)
+    dynamicallyListenedElementsFromSameComponent = staticallyListenedElements.filter(_.schedulingHandler == stronglyConnectedComponent)
   }
 
   /**
@@ -907,7 +885,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
     * @return a key for dependency removal
     */
   override protected[propagation] def registerDynamicallyListeningElement(listening: PropagationElement, i: Int,
-                                                                          sccOfListening: StronglyConnectedComponentTopologicalSort,
+                                                                          sccOfListening: StronglyConnectedComponent,
                                                                           dynamicallyListenedElementDLLOfListening: DelayedPermaFilteredDoublyLinkedList[PropagationElement]): KeyForElementRemoval = {
     if (sccOfListening != null && sccOfListening == this.mySchedulingHandler) {
       //this is only called once the component is established, so no worries.
@@ -1033,7 +1011,7 @@ trait VaryingDependenciesPE extends PropagationElement {
     * @return the value of IsBoundary
     */
   override def setInSortingSCC() {
-    assert(schedulingHandler.isInstanceOf[StronglyConnectedComponentTopologicalSort])
+    assert(schedulingHandler.isInstanceOf[StronglyConnectedComponent])
     require(determiningElement != null)
     require(determiningElement.schedulingHandler == null || determiningElement.schedulingHandler != this.schedulingHandler)
     inSortingSCC = true
@@ -1070,14 +1048,14 @@ trait VaryingDependenciesPE extends PropagationElement {
     b.registerDynamicallyListeningElement(
       this,
       i,
-      if (inSortingSCC) schedulingHandler.asInstanceOf[StronglyConnectedComponentTopologicalSort] else null,
+      if (inSortingSCC) schedulingHandler.asInstanceOf[StronglyConnectedComponent] else null,
       dynamicallyListenedElements)
 
-  override protected def initiateDynamicGraphFromSameComponentListened(stronglyConnectedComponentTopologicalSort: StronglyConnectedComponentTopologicalSort) {
-    assert(stronglyConnectedComponentTopologicalSort == schedulingHandler)
+  override protected def initiateDynamicGraphFromSameComponentListened(stronglyConnectedComponent: StronglyConnectedComponent) {
+    assert(stronglyConnectedComponent == schedulingHandler)
     def filterForListened(listened: PropagationElement, injector: (() => Unit), isStillValid: (() => Boolean)): Unit = {
-      if (stronglyConnectedComponentTopologicalSort == listened.schedulingHandler)
-        stronglyConnectedComponentTopologicalSort.registerListenedWaitingDependency(injector, isStillValid)
+      if (stronglyConnectedComponent == listened.schedulingHandler)
+        stronglyConnectedComponent.registerListenedWaitingDependency(injector, isStillValid)
     }
     dynamicallyListenedElementsFromSameComponent = dynamicallyListenedElements.delayedPermaFilter(filterForListened)
   }
@@ -1093,8 +1071,8 @@ trait VaryingDependenciesPE extends PropagationElement {
   * @author renaud.delandtsheer@cetic.be
   */
 trait BulkPropagator extends PropagationElement {
-  override protected def initiateDynamicGraphFromSameComponentListened(stronglyConnectedComponentTopologicalSort: StronglyConnectedComponentTopologicalSort) {
-    assert(stronglyConnectedComponentTopologicalSort == schedulingHandler)
+  override protected def initiateDynamicGraphFromSameComponentListened(stronglyConnectedComponent: StronglyConnectedComponent) {
+    assert(stronglyConnectedComponent == schedulingHandler)
     //filters the list of staticallyListenedElements
 
     dynamicallyListenedElementsFromSameComponent = List.empty

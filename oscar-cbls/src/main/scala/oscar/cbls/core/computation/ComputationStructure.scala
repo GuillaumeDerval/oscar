@@ -48,9 +48,8 @@ import scala.language.implicitConversions
 case class Store(override val verbose:Boolean = false,
                  debugMode:Boolean = false,
                  override val noCycle:Boolean = true,
-                 val propagateOnToString:Boolean = true,
-                 override val sortScc:Boolean = true)
-  extends PropagationStructure(verbose,debugMode,noCycle,sortScc)
+                 val propagateOnToString:Boolean = true)
+  extends PropagationStructure(verbose,debugMode,noCycle)
   with Bulker with StorageUtilityManager{
 
   assert({System.err.println("You are using a CBLS store with asserts activated. It makes the engine slower. Recompile it with -Xdisable-assertions"); true})

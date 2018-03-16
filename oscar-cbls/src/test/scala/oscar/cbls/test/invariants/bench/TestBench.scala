@@ -632,7 +632,7 @@ case class RouteOfNodesForCheckPoint(intSeqVar: CBLSSeqVar, v:Int) extends Rando
  */
 class InvBench(verbose: Int = 0, moves:List[Move]) {
   var property: Prop = false
-  val model = new Store(false, debugMode = true, true, false, false)
+  val model = new Store(false, debugMode = true, true, false)
 
   val move = Gen.oneOf(moves)
 
