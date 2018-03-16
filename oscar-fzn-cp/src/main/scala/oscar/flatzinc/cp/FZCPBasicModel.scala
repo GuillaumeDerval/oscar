@@ -127,7 +127,8 @@ class FZCPBasicModel(val pstrength: oscar.cp.core.CPPropagStrength = oscar.cp.Me
 
   def createRandomSearch() = {
     //TODO: Take into account the search annotations
-    solver.search(oscar.cp.binary(dictVars.values.toSeq, _.size, _.randomValue))
+    val searchVars = dictVars.values.toArray
+    solver.search(oscar.cp.conflictOrderingSearch(searchVars, searchVars(_).size, searchVars(_).randomValue))
   }
 
   def startSearch():(Boolean,MMap[Variable,Int]) = {

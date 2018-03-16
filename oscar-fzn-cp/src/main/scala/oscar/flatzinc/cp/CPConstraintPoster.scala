@@ -18,8 +18,10 @@
 package oscar.flatzinc.cp
 
 import oscar.flatzinc.model._
-import scala.language.implicitConversions 
+
+import scala.language.implicitConversions
 import oscar.cp._
+import oscar.cp.constraints.SumLeEq
 
 class CPConstraintPoster(val pstrength: oscar.cp.core.CPPropagStrength){ 
   implicit def c2ca(c: oscar.cp.Constraint): Array[(oscar.cp.Constraint,oscar.cp.core.CPPropagStrength)] = Array[(oscar.cp.Constraint,oscar.cp.core.CPPropagStrength)]((c,pstrength))
@@ -47,6 +49,44 @@ class CPConstraintPoster(val pstrength: oscar.cp.core.CPPropagStrength){
       case bin_packing_load(load,bin,w,ann)           => new oscar.cp.constraints.BinPacking(bin.map(getVar(_)-1),w.map(_.value),load.map(getVar))
       case circuit(xs, ann)                           => new oscar.cp.constraints.Circuit(xs.map(v => getVar(v)-1),false)
       case subcircuit(xs, ann)                        => oscar.cp.constraints.SubCircuit(xs.map(getVar),1)
+
+      case global_cardinality(xs, cover, count, ann)
+        if count.forall(_.isBound)
+        && cover.map(_.value).max-cover.map(_.value).min+1 == cover.length =>
+      {
+        val coverMin = cover.map(_.value).min
+        val coverMax = cover.map(_.value).max
+        val fullCount = Array.tabulate(coverMax - coverMin+1)( i => {
+          val idx = cover.map(_.value).indexOf(i+coverMin)
+          if (idx < 0) 0 else count(idx).value
+        })
+       new oscar.cp.constraints.GCC(xs.map(getVar), coverMin, Array.tabulate(fullCount.length)(i => 0), fullCount)
+      }
+
+      case global_cardinality(xs, cover, count, ann) => {
+        val store = getVar(xs(0)).store
+        val coverMin = cover.map(_.value).min
+        val coverMax = cover.map(_.value).max
+        val fullCount = Array.tabulate(coverMax - coverMin+1)( i => {
+          val idx = cover.map(_.value).indexOf(i+coverMin)
+          if (idx < 0) CPIntVar(0,xs.length)(store) else getVar(count(idx))
+        })
+        new oscar.cp.constraints.GCCVar(xs.map(getVar), coverMin, fullCount)
+      }
+      case global_cardinality_low_up(xs, cover, lbound, ubound, ann) => {
+        val store = getVar(xs(0)).store
+        val coverMin = cover.map(_.value).min
+        val coverMax = cover.map(_.value).max
+        val fullLBound = Array.tabulate(coverMax - coverMin+1)( i => {
+          val idx = cover.map(_.value).indexOf(i+coverMin)
+          if (idx < 0) 0 else lbound(idx).value
+        })
+        val fullUBound = Array.tabulate(coverMax - coverMin+1)( i => {
+          val idx = cover.map(_.value).indexOf(i+coverMin)
+          if (idx < 0) xs.length else ubound(idx).value
+        })
+        new oscar.cp.constraints.GCCFWC(xs.map(getVar), coverMin, fullLBound, fullUBound)
+      }
       //case nvalue_int(y, xs, ann)                     =>  :(
 
       //case reif(count_eq(x,v,c,_),b) => getBoolVar(b) ?== oscar.cp.countEq(getVar(c), x.map(getVar), getVar(v))
@@ -83,10 +123,20 @@ class CPConstraintPoster(val pstrength: oscar.cp.core.CPPropagStrength){
       case reif(int_le(x,y,ann),b)                    => getBoolVar(b) === (getVar(x) ?<= getVar(y))
       case reif(int_lt(x,y,ann),b)                    => getBoolVar(b) === (getVar(x) ?< getVar(y))
       case reif(int_ne(x,y,ann),b)                    => getBoolVar(b) === (getVar(x) ?!== getVar(y))
-      //TODO: Handle binary and ternary cases, as well as all unit weights
-      case int_lin_eq(params, vars, sum, ann)         => oscar.cp.weightedSum(params.map(_.value), vars.map(getVar), getVar(sum))
-      case int_lin_le(params, vars, sum, ann)         => oscar.cp.weightedSum(params.map(_.value), vars.map(getVar)) <= getVar(sum) //TODO: make it native
+
+      // TODO: Handle binary and ternary cases, as well as all unit weights
+      case int_lin_eq(params, vars, sum, ann)         => {
+        val weightedVars = params.map(_.value).zip(vars.map(getVar)).map( v => if (v._1 == 1) v._2 else oscar.cp.mul(v._2,v._1))
+        oscar.cp.sum(weightedVars, getVar(sum))
+        //oscar.cp.weightedSum(params.map(_.value), vars.map(getVar), getVar(sum))
+      }
+      case int_lin_le(params, vars, sum, ann)         => {
+        val weightedVars = params.map(_.value).zip(vars.map(getVar)).map( v => if (v._1 == 1) v._2 else oscar.cp.mul(v._2,v._1))
+        new SumLeEq(weightedVars, getVar(sum))
+        //oscar.cp.weightedSum(params.map(_.value), vars.map(getVar)) <= getVar(sum) //TODO: make it native
+      }
       case int_lin_ne(params, vars, sum, ann)         => oscar.cp.weightedSum(params.map(_.value), vars.map(getVar)) !== getVar(sum) //TODO: make it native
+
       case reif(int_lin_eq(params, vars, sum, ann),b) => getBoolVar(b) === (oscar.cp.weightedSum(params.map(_.value), vars.map(getVar)) ?=== getVar(sum)) //TODO: make it native
       case reif(int_lin_le(params, vars, sum, ann),b) => getBoolVar(b) === (oscar.cp.weightedSum(params.map(_.value), vars.map(getVar)) ?<= getVar(sum)) //TODO: make it native
       case reif(int_lin_ne(params, vars, sum, ann),b) => getBoolVar(b) === (oscar.cp.weightedSum(params.map(_.value), vars.map(getVar)) ?!== getVar(sum)) //TODO: make it native
@@ -99,7 +149,7 @@ class CPConstraintPoster(val pstrength: oscar.cp.core.CPPropagStrength){
       case set_in(x, s, ann)                          => new oscar.cp.constraints.InSet(getVar(x),s.toSortedSet)
       case reif(set_in(x, s, ann),b)                  => new oscar.cp.constraints.InSetReif(getVar(x),s.toSortedSet,getBoolVar(b))
       case table_int(xs,ts,ann)                       => oscar.cp.table(xs.map(getVar(_)), Array.tabulate(ts.size/xs.size)(row => Array.tabulate(xs.size)(i => ts(row*xs.size + i).value)))
-      case default => Console.err.println("% Could not perform initial domain reduction with " + default)
+      case default => Console.err.println("% Could not perform initial domain reduction using " + default)
         Array.empty
     } 
   }
