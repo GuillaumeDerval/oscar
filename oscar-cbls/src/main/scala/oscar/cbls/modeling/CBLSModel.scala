@@ -16,7 +16,7 @@ package oscar.cbls.modeling
 
 import oscar.cbls._
 import oscar.cbls.core.computation.Variable
-import oscar.cbls.core.propagation.Checker
+
 import oscar.cbls.lib.search.LinearSelectors
 import oscar.cbls.util.StopWatch
 
@@ -32,9 +32,8 @@ import oscar.cbls.util.StopWatch
   * @author renaud.delandtsheer@cetic.be
   **/
 class CBLSModel(val verbose:Boolean = false,
-                 val checker:Option[Checker] = None,
+                debugMode:Boolean = false,
                  val noCycle:Boolean = true,
-                 val topologicalSort:Boolean = false,
                  val propagateOnToString:Boolean = true)
   extends LinearSelectors
   with Constraints
@@ -47,7 +46,7 @@ class CBLSModel(val verbose:Boolean = false,
   with CombinatorsAPI
   with StandardNeighborhoods{
 
-  implicit val s = new Store(verbose, checker, noCycle, topologicalSort,propagateOnToString)
+  implicit val s = new Store(verbose, debugMode, noCycle, propagateOnToString)
   implicit val c = new ConstraintSystem(s)
 
   def close()(implicit s:Store) {s.close()}

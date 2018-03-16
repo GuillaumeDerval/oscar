@@ -77,7 +77,7 @@ object GenericJobShopTest extends StopWatch with App {
   println("Machines: " + MachineCount)
   println("Tasks: " + JobCount * MachineCount + "\n")
 
-  val model = new Store(false, None, false)
+  val model = new Store()
   val planning = new Planning(model, maxDuration)
 
   val MachineArray: Array[CumulativeResource] = Array.tabulate(MachineCount)(MachineID

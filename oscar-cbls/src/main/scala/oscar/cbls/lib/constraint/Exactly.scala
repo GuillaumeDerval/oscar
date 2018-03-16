@@ -54,7 +54,7 @@ case class Exactly(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue]
   /** returns the degree of violation of the constraint */
   override val violation: IntValue =  Sum2(least.violation, most.violation)
 
-  override def checkInternals(c: Checker) { least.checkInternals(c); most.checkInternals(c)}
+  override def checkInternals() { least.checkInternals(); most.checkInternals()}
 }
 
 

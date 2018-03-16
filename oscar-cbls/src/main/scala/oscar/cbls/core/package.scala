@@ -10,8 +10,6 @@ package object core {
 
   val DomainHelper = oscar.cbls.core.computation.DomainHelper
 
-  type Checker = oscar.cbls.core.propagation.Checker
-
   type VaryingDependencies = oscar.cbls.core.computation.VaryingDependencies
   type KeyForElementRemoval = oscar.cbls.core.propagation.KeyForElementRemoval
 

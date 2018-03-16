@@ -67,7 +67,7 @@ object RoutingWithNodeVehicleRestriction extends App{
   val restrictions = RoutingMatrixGenerator.generateRestrictions(n,v,nbRestrictions)
 
   //  println("restrictions:" + restrictions)
-  val model = new Store(checker = Some(new ErrorChecker())) //
+  val model = new Store(debugMode = true)
 
   val myVRP = new VRPWithNodeVehicleRestriction(n,v,symmetricDistanceMatrix,model,maxPivotPerValuePercent,restrictions)
   val nodes = myVRP.nodes

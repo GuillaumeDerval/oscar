@@ -21,7 +21,7 @@
 package oscar.cbls.core.computation
 
 import oscar.cbls._
-import oscar.cbls.core.propagation.Checker
+
 
 import scala.collection.mutable.{Map => MMap}
 import scala.language.implicitConversions

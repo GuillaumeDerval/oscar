@@ -213,9 +213,9 @@ class ForwardCumulativeInteger4DimensionOnVehicle(routes:ChangingSeqValue,
   }
 
   override def checkInternals(): Unit = {
-    check(c,routes.value)
+    check(routes.value)
   }
-  def check(c : Checker,s:IntSequence){
+  def check(s:IntSequence){
 
     //(fromNode,toNode,content1AtFromNode,content2AtFromNode)=> (content1AtToNode,content2AtToNode)
     def op4(fromNode:Int,toNode:Int,content:(Int,Int,Int,Int)) = op(fromNode,toNode,content._1,content._2,content._3,content._4)

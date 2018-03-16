@@ -171,9 +171,9 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
   }
 
   override def checkInternals(): Unit = {
-    check(c,routes.value)
+    check(routes.value)
   }
-  def check(c : Checker,s:IntSequence){
+  def check(s:IntSequence){
     val (nodeToContent,vehicleToContentAtEnd,vehicleLocation) =
       AbstractVehicleCapacity.computeNodeToContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch(n,v,op,v => contentAtStart(v).value,s,defaultVehicleContentForUnroutedNodes)
     val currentVehicleLocation = this.toUpdateZonesAndVehicleStartAfter.get._2

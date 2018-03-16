@@ -24,7 +24,7 @@ import oscar.cbls.business.routing._
  */
 object TestToUpdates extends App{
 
-  val m = new Store(checker = Some(new ErrorChecker()))
+  val m = new Store(debugMode = true)
 
   val n = 15
   val v = 2

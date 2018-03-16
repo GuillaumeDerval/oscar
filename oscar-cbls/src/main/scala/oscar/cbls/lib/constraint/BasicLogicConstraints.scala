@@ -27,7 +27,7 @@ package oscar.cbls.lib.constraint
 import oscar.cbls._
 import oscar.cbls.core._
 import oscar.cbls.core.constraint.Constraint
-import oscar.cbls.core.propagation.Checker
+
 import oscar.cbls.lib.invariant.logic.{BoolLEInv, BoolLTInv}
 import oscar.cbls.lib.invariant.numeric.{Dist, Minus, MinusOffsetPos, ReifViol}
 
@@ -53,7 +53,7 @@ protected class LEA(val left: IntValue, val right: IntValue) extends Constraint 
    */
   override def violation(v: Value): IntValue = { if (left == v || right == v) violation else 0 }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     val diff = left.value - right.value
     require(violation.value == (if (diff <= 0) 0 else diff),
       Some("Violation.value (" + violation.value
@@ -94,7 +94,7 @@ protected class LA(val left: IntValue, val right: IntValue) extends Constraint {
    */
   override def violation(v: Value): IntValue = { if (left == v || right == v) violation else 0 }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     val diff = left.value - right.value
     require(violation.value == (if (diff < 0) 0 else diff + 1),
       Some("Violation.value (" + violation.value
@@ -158,7 +158,7 @@ case class EQ(left: IntValue, right: IntValue) extends Constraint {
 
   override def violation(v: Value) = { if (left == v || right == v) violation else 0 }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     val myViolation = abs(left.value - right.value)
     require(violation.value == (if (left.value == right.value) 0 else myViolation),
       Some("Violation.value (" + violation.value

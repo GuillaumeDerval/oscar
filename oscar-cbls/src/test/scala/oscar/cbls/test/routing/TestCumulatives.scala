@@ -92,7 +92,7 @@ object TestCumulatives extends App{
 
   val (symmetricDistanceMatrix,pointsList) = RoutingMatrixGenerator(n)
   //  println("restrictions:" + restrictions)
-  val model = new Store(checker = Some(new ErrorChecker()))
+  val model = new Store(debugMode = true)
 
   val myVRP = new RoutingWithCapacityMax(n,v,symmetricDistanceMatrix,model,maxPivotPerValuePercent,delta,maxcapa)
 

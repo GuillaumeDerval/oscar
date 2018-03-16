@@ -111,7 +111,7 @@ object BigSudokuGen extends SimpleSwingApplication with LinearSelectors with Sto
     startWatch()
         
     // model
-    val m: Store = Store(false,None,true)
+    val m: Store = Store()
         
     // grid definition and initialisation
     val grid=Array.ofDim[CBLSIntVar](M)

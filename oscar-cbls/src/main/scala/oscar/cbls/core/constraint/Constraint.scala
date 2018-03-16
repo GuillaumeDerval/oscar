@@ -41,7 +41,9 @@ case class NamedConstraint(name:String, baseConstraint:Constraint) extends Const
 
   override def constrainedVariables = baseConstraint.constrainedVariables
 
-  override def checkInternals(c: Checker): Unit = baseConstraint.checkInternals(c)
+
+  override def checkInternals(){
+    baseConstraint.checkInternals()}
 
   override def toString: String = name + ":" + baseConstraint
 }
@@ -113,5 +115,5 @@ trait Constraint{
     for (vv <- v){registerConstrainedVariable(vv)}
   }
 
-  def checkInternals(c: Checker) {}
+  def checkInternals() {}
 }

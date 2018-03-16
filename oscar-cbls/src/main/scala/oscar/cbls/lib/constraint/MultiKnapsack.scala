@@ -89,7 +89,7 @@ case class MultiKnapsack(items: Array[IntValue], itemsizes: Array[IntValue], bin
     * this will be called for each invariant after propagation is performed.
     * It requires that the Model is instantiated with the variable debug set to true.
     */
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     require(true,Some("nothing to check, invariant is discharged"))
   }
 }
@@ -157,7 +157,7 @@ case class MultiKnapsackLoad(items: Array[IntValue], itemsizes: Array[IntValue],
     * this will be called for each invariant after propagation is performed.
     * It requires that the Model is instantiated with the variable debug set to true.
     */
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     require(true,Some("nothing to check, invariant is discharged"))
   }
 }

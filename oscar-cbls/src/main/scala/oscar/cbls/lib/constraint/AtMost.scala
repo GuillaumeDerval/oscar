@@ -85,7 +85,7 @@ case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue])
     Violations(v.asInstanceOf[IntValue])
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     var checkBounds:SortedMap[Int, Int] = SortedMap.empty
     for(i <- bounds.keys) checkBounds += ((i,0))
     for (v <- variables) if (checkBounds.isDefinedAt(v.value)) checkBounds += ((v.value,checkBounds(v.value) +1))

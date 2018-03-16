@@ -20,7 +20,7 @@
 
 package oscar.cbls.algo.heap
 
-import oscar.cbls.core.propagation.Checker
+
 
 import scala.collection.Iterator
 import scala.collection.immutable.SortedMap
@@ -202,7 +202,7 @@ class BinomialHeapWithMove[T](getKey:T => Int,val maxsize:Int)(implicit val A:Or
 
   def contains(value:T):Boolean = position.contains(value)
 
-  def checkInternals(c:Checker){
+  def checkInternals(){
     for(i <- heapArray.indices if i < size-1){
       if (leftChild(i) < size){
         require(getKey(heapArray(i)) <= getKey(heapArray(leftChild(i))),"heap error " + this + i)
@@ -400,7 +400,7 @@ class BinomialHeapWithMoveExtMem[T](GetKey:T => Int,val maxsize:Int, position:sc
   private[this] val HeapArray:Array[T] = new Array[T](maxsize)
   var size:Int=0
 
-  def checkInternals(c:Checker){
+  def checkInternals(){
     for(i <- HeapArray.indices if i < size-1){
       if (leftChild(i) < size){
         require(GetKey(HeapArray(i)) <= GetKey(HeapArray(leftChild(i))),"heap error " + this + i)
@@ -562,7 +562,7 @@ class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int)
 
   var size:Int=0
 
-  def checkInternals(c:Checker){
+  def checkInternals(){
     for(i <- heapArray.indices if i < size-1){
       if (leftChild(i) < size){
         require(getKey(heapArray(i)) <= getKey(heapArray(leftChild(i))),"heap error " + this + i)

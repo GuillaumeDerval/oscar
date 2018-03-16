@@ -2,7 +2,7 @@ package oscar.cbls.constraints.lib.global
 
 import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.Constraint
-import oscar.cbls.core.propagation.Checker
+
 import oscar.cbls.lib.invariant.minmax.MaxArray
 import oscar.cbls.lib.invariant.numeric.MinusOffsetPos
 

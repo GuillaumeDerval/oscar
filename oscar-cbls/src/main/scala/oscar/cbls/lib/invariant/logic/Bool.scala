@@ -18,7 +18,7 @@
 package oscar.cbls.lib.invariant.logic
 
 import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+
 import oscar.cbls.lib.invariant.minmax.{Miax, MiaxArray}
 
 import scala.collection.immutable.SortedSet
@@ -81,7 +81,7 @@ case class Or(vars: Array[IntValue]) extends MiaxArray(vars, null, vars.foldLeft
       (bulkedVar.foldLeft(Int.MaxValue)((acc, intvar) => Math.min(intvar.min, acc)),
         bulkedVar.foldLeft(Int.MaxValue)((acc, intvar) =>Math.min(intvar.max, acc)))
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     for (v <- this.vars) {
       require(this.value <= v.value,
               Some("this.value (" + this.value + ") <= " + v.name + ".value (" + v.value + ")"))

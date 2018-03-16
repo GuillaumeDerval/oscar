@@ -55,7 +55,7 @@ object MagicSquare extends LinearSelectorClass with StopWatch {
     val TABU_LENGTH = N/2+1
 
     // model
-    val m: Store = Store(false,None,true)
+    val m: Store = Store()
         
     // Square
     val magic = Array.ofDim[CBLSIntVar](N,N)

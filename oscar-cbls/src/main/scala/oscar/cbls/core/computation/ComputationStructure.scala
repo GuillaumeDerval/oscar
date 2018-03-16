@@ -46,16 +46,15 @@ import scala.language.implicitConversions
   *                but propagation will not be single pass on SCC anymore
   */
 case class Store(override val verbose:Boolean = false,
-                 override val checker:Option[Checker] = None,
+                 debugMode:Boolean = false,
                  override val noCycle:Boolean = true,
-                 override val topologicalSort:Boolean = false,
                  val propagateOnToString:Boolean = true,
                  override val sortScc:Boolean = true)
-  extends PropagationStructure(verbose,checker,noCycle,topologicalSort, sortScc)
+  extends PropagationStructure(verbose,debugMode,noCycle,sortScc)
   with Bulker with StorageUtilityManager{
 
   assert({System.err.println("You are using a CBLS store with asserts activated. It makes the engine slower. Recompile it with -Xdisable-assertions"); true})
-  if(checker.nonEmpty) System.err.println("OscaR.cbls is running in debug mode. It makes the engine slower.")
+  if(debugMode) System.err.println("OscaR.cbls is running in debug mode. It makes the engine slower.")
 
   private[this] var variables:QList[AbstractVariable] = null
   private var propagationElements:QList[PropagationElement] = null
@@ -114,7 +113,7 @@ case class Store(override val verbose:Boolean = false,
     // vu que les variables n'ont pas encore recu leur unique ID.
     variables = QList(v,variables)
     propagationElements =  QList(v,propagationElements)
-    GetNextID()
+    nextID()
   }
 
   /**Called by each invariants to register themselves to the model
@@ -124,7 +123,7 @@ case class Store(override val verbose:Boolean = false,
   def registerInvariant(i:Invariant):Int = {
     require(!closed,"model is closed, cannot add invariant")
     propagationElements = QList(i,propagationElements)
-    GetNextID()
+    nextID()
   }
 
   override def getPropagationElements:QList[PropagationElement] = {
@@ -415,7 +414,7 @@ trait Invariant extends PropagationElement{
     * this will be called for each invariant after propagation is performed.
     * It requires that the Model is instantiated with the variable debug set to true.
     */
-  override def checkInternals(){require(false, Some("DEFAULT EMPTY CHECK " + this.toString() + ".checkInternals"))}
+  override def checkInternals():Unit = ???
 
   /** this is the propagation method that should be overridden by propagation elements.
     * notice that it is only called in a propagation wave if:

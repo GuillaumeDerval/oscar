@@ -40,7 +40,6 @@ package oscar.cbls.test.scheduling
 import oscar.cbls.core.computation.Store
 import oscar.cbls.business.scheduling._
 import model.{Planning, SuperActivity, Activity, CumulativeResource}
-import oscar.cbls.core.propagation.Checker
 import oscar.cbls.business.scheduling.solver.IFlatIRelax
 
 /**a simple model of Reagan president of USA
@@ -49,7 +48,7 @@ import oscar.cbls.business.scheduling.solver.IFlatIRelax
  * he cannot sleep before having eaten
  */
 object Reagan extends App {
-  val model = Store(verbose=false, checker = None, noCycle=false, topologicalSort = false)
+  val model = Store(verbose=false, noCycle=false)
 
   val planning = new Planning(model, 40)
 

@@ -21,7 +21,7 @@ package oscar.cbls.lib.constraint
 
 import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.Constraint
-import oscar.cbls.core.propagation.Checker
+
 import oscar.cbls.lib.invariant.numeric.{MinusOffsetPos, Prod2, Sum}
 
 /*import oscar.cbls.invariants.core.computation._

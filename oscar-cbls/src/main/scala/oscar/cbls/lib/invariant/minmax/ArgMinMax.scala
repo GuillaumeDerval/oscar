@@ -198,7 +198,7 @@ abstract class ArgMiax[X <: IntValue](vars: Array[X], cond: SetValue, default: I
       }
     }
     require(this.value.size == count, Some("this.value.size == count"))
-    h.checkInternals(c: Checker)
+    h.checkInternals()
     require(h.getFirsts.length == this.value.size, Some("h.getFirsts.length == this.value.size"))
     if (cond != null)
       require(this.value.subsetOf(cond.value), Some("this.newValue.subsetOf(cond.newValue)"))

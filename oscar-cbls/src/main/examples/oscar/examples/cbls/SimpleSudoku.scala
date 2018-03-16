@@ -89,7 +89,7 @@ object SimpleSudoku extends LinearSelectorClass with StopWatch {
     }
                 
     // model
-    val m: Store = Store(false,None,true)
+    val m: Store = Store()
         
     // grid definition and initialisation
     val grid = Array.ofDim[CBLSIntVar](M)

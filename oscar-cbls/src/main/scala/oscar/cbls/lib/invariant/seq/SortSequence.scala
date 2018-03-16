@@ -199,9 +199,9 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
   private def sortSequenceBy(i:IntSequence,by:Int => Int):IntSequence = IntSequence(i.toList.sortBy(i => (by(i),i)))
 
   override def checkInternals(){
-    check(c, v.value,this.value)
+    check(v.value,this.value)
   }
-  def check(c:Checker,in:IntSequence,out:IntSequence){
+  def check(in:IntSequence,out:IntSequence){
     require(out quickEquals this.value)
     require(out.toList equals sortSequenceBy(in,sortValue).toList, Some("this.out=" + out.toList + " should be " +sortSequenceBy(in,sortValue).toList))
     /*

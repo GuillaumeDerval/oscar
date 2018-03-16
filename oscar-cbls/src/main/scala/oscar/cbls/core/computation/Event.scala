@@ -20,7 +20,7 @@
 
 package oscar.cbls.core.computation
 
-import oscar.cbls.core.propagation.Checker
+
 
 import scala.collection.immutable.SortedSet
 

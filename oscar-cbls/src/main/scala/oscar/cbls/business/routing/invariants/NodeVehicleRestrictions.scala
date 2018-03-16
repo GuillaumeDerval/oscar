@@ -20,7 +20,7 @@ import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.RoutingConventionMethods
 import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.set.BelongsTo
 

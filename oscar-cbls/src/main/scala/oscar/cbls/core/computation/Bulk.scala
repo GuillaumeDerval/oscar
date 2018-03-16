@@ -21,7 +21,7 @@
 
 package oscar.cbls.core.computation
 
-import oscar.cbls.core.propagation.{BulkPropagator, Checker}
+import oscar.cbls.core.propagation.BulkPropagator
 
 import scala.collection.immutable.SortedMap
 

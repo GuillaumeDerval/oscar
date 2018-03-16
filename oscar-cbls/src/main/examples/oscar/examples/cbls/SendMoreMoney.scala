@@ -67,7 +67,7 @@ object SendMoreMoney extends LinearSelectorClass with StopWatch {
     val TABU_LENGTH = 4
 
     // model
-    val m: Store = new Store(false,None,true)
+    val m: Store = new Store()
         
     // letter and carriage values
     // d initialised with 0..10, r with 0

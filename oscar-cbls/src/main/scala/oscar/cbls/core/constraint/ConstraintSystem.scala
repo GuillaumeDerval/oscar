@@ -22,7 +22,7 @@ package oscar.cbls.core.constraint
 
 import oscar.cbls.core.computation._
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.propagation.Checker
+
 import oscar.cbls.lib.invariant.numeric.{ExtendableSum, Prod, Prod2, Sum}
 
 /** A constraint system is a composition of constraints.
@@ -208,7 +208,7 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
     * this will be called for each invariant after propagation is performed.
     * It requires that the Model is instantiated with the variable debug set to true.
     */
-  override def checkInternals(c: Checker): Unit = {}
+  override def checkInternals(): Unit = {}
 
   /**
    * This method returns the actual objective value.

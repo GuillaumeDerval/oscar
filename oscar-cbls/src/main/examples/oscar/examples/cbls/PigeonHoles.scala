@@ -53,7 +53,7 @@ object PigeonHoles extends LinearSelectorClass with StopWatch {
     println("PigeonHoles(" + N + "," + M + ")")
 
     // model
-    val m: Store = new Store(false,None,true)
+    val m: Store = new Store()
        
     // holes
     val holes:Array[CBLSIntVar] = (for(i <- range) yield CBLSIntVar(m, 0, 0 to N, "h" + (i+1))).toArray

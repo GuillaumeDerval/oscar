@@ -183,10 +183,10 @@ object InvGen {
   /**
     * Method to generate an empty routeOfNodes used to test checkPoints.
     */
-  def routeOfNodesForCheckPoint(upToSize: Int, v: Int, model: Store, checker:InvariantChecker) = for {
+  def routeOfNodesForCheckPoint(upToSize: Int, v: Int, model: Store) = for {
     c <- Gen.alphaChar
   } yield RouteOfNodesForCheckPoint(new CBLSSeqVar(model, IntSequence(0 until v),
-      upToSize, c.toString.toUpperCase),v,checker)
+      upToSize, c.toString.toUpperCase),v)
 }
 
 /**
@@ -509,7 +509,7 @@ case class RouteOfNodes(intSeqVar: CBLSSeqVar, v:Int) extends RandomVar{
   * A RouteOfNodesForCheckPoint is a Var containing an IntSeqVar build for routing problems.
   * The aim of this case class is to test the checkPoint  mechanism.
   */
-case class RouteOfNodesForCheckPoint(intSeqVar: CBLSSeqVar, v:Int, checker:InvariantChecker) extends RandomVar{
+case class RouteOfNodesForCheckPoint(intSeqVar: CBLSSeqVar, v:Int) extends RandomVar{
   override def randomVar: CBLSSeqVar = intSeqVar
 
   /**
@@ -537,7 +537,7 @@ case class RouteOfNodesForCheckPoint(intSeqVar: CBLSSeqVar, v:Int, checker:Invar
             randomVar.insertAtPosition(Gen.oneOf(notInSeq).sample.get, Gen.choose(1, inSeq.size).sample.get)
           }
           randomVar.rollbackToTopCheckpoint(checkPoint)
-          checker.check(randomVar.value == checkPoint, Some("Error : " + randomVar.value.toString + ", or : " + randomVar.newValue.toString + " != " + checkPoint.toString))
+          require(randomVar.value == checkPoint, Some("Error : " + randomVar.value.toString + ", or : " + randomVar.newValue.toString + " != " + checkPoint.toString))
         }
         inSeq = randomVar.newValue.toList
         notInSeq = List.tabulate(randomVar.max)(n => n).filterNot(inSeq.contains(_))
@@ -551,9 +551,9 @@ case class RouteOfNodesForCheckPoint(intSeqVar: CBLSSeqVar, v:Int, checker:Invar
             randomVar.remove(inSeq.indexOf(Gen.oneOf(inSeq.filterNot(_ < v)).sample.get))
           }
           randomVar.rollbackToTopCheckpoint(checkPoint)
-          checker.check(randomVar.value == checkPoint, Some("Error : " + randomVar.value.toString + ", or : " + randomVar.newValue.toString + " != " + checkPoint.toString))
+          require(randomVar.value == checkPoint, Some("Error : " + randomVar.value.toString + ", or : " + randomVar.newValue.toString + " != " + checkPoint.toString))
         }
-        checker.check(randomVar.value == checkPoint, Some("Error : " + randomVar.value.toString + ", or : " + randomVar.newValue.toString + " != " + checkPoint.toString))
+        require(randomVar.value == checkPoint, Some("Error : " + randomVar.value.toString + ", or : " + randomVar.newValue.toString + " != " + checkPoint.toString))
         inSeq = randomVar.newValue.toList
         if(inSeq.size > v)
           randomVar.remove(inSeq.indexOf(Gen.oneOf(inSeq.filterNot(_ < v)).sample.get))
@@ -569,7 +569,7 @@ case class RouteOfNodesForCheckPoint(intSeqVar: CBLSSeqVar, v:Int, checker:Invar
               randomVar.move(p1, p2, newPos, false)
           }
           randomVar.rollbackToTopCheckpoint(checkPoint)
-          checker.check(randomVar.value == checkPoint, Some("Error : " + randomVar.value.toString + ", or : " + randomVar.newValue.toString + " != " + checkPoint.toString))
+          require(randomVar.value == checkPoint, Some("Error : " + randomVar.value.toString + ", or : " + randomVar.newValue.toString + " != " + checkPoint.toString))
         }
         for(i <- 0 until inSeq.size - v){
           inSeq = randomVar.newValue.toList
@@ -605,7 +605,7 @@ case class RouteOfNodesForCheckPoint(intSeqVar: CBLSSeqVar, v:Int, checker:Invar
             }
           }
           randomVar.rollbackToTopCheckpoint(checkPoint)
-          checker.check(randomVar.value == checkPoint, Some("Error : " + randomVar.value.toString + ", or : " + randomVar.newValue.toString + " != " + checkPoint.toString))
+          require(randomVar.value == checkPoint, Some("Error : " + randomVar.value.toString + ", or : " + randomVar.newValue.toString + " != " + checkPoint.toString))
         }
     }
   }
@@ -632,8 +632,7 @@ case class RouteOfNodesForCheckPoint(intSeqVar: CBLSSeqVar, v:Int, checker:Invar
  */
 class InvBench(verbose: Int = 0, moves:List[Move]) {
   var property: Prop = false
-  val checker = new InvariantChecker(verbose)
-  val model = new Store(false, Some(checker), true, false, false)
+  val model = new Store(false, debugMode = true, true, false, false)
 
   val move = Gen.oneOf(moves)
 
@@ -800,7 +799,7 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
                        upToSize: Int = 20,
                        v: Int = 5,
                        isInput: Boolean = true) = {
-    val risVar = InvGen.routeOfNodesForCheckPoint(upToSize,v,model,checker).sample.get
+    val risVar = InvGen.routeOfNodesForCheckPoint(upToSize,v,model).sample.get
     addVar(isInput,risVar)
     risVar.randomVar
   }
@@ -839,7 +838,6 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
           if (verbose > 0) println(randomVar.toString() + "\n")
           model.propagate()
           if (verbose > 0) println
-          checker.isChecked()
       }
     } catch {
       case e: Exception =>

@@ -17,7 +17,6 @@ package oscar.cbls.test.invariants
 
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.invariant.seq.{Content, Length, PositionsOf}
 
 import scala.collection.immutable.SortedSet
@@ -27,7 +26,7 @@ import scala.collection.immutable.SortedSet
  */
 object TestSeqVar extends App{
 
-  val m = new Store(verbose = true,propagateOnToString = true, checker = Some(new ErrorChecker()))
+  val m = new Store(verbose = true,propagateOnToString = true, debugMode = true)
   val a = new CBLSSeqVar(m,IntSequence(List(1,2,3,5)), n = "toto")
 
   val size1 = Length(a.createClone())

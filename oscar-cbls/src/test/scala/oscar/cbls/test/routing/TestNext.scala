@@ -53,7 +53,7 @@ object TestNext extends App{
 
   val (symmetricDistanceMatrix,pointsList) = RoutingMatrixGenerator(n)
 
-  val model = new Store(checker = Some(new ErrorChecker()))
+  val model = new Store(debugMode = true)
 
   val myVRP = new MySimpleRoutingWithUnroutedPointsAndNext(n,v,symmetricDistanceMatrix,model,maxPivotPerValuePercent,pointsList)
 

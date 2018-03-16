@@ -44,7 +44,7 @@ object TestCheckPoint extends App{
 
   val (symmetricDistanceMatrix,pointsList) = RoutingMatrixGenerator(n)
 
-  val model = Store(noCycle = false, checker = Some(new ErrorChecker))
+  val model = Store(noCycle = false, debugMode = true)
 
   val myVRP = new MyVRP(n,v,model,symmetricDistanceMatrix)
 

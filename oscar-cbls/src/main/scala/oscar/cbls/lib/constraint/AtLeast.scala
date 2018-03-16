@@ -88,7 +88,7 @@ case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Int, IntValu
    */
   override def violation(v: Value) = Violations(v.asInstanceOf[IntValue])
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals() {
     val (minMin,maxMax) = InvariantHelper.getMinMaxBounds(variables)
     var MyValueCount: SortedMap[Int,Int] = SortedMap.empty
     for(v <- variables){

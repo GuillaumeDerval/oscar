@@ -1,7 +1,7 @@
 package oscar.cbls.invariants.lib.logic
 
 import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
+
 
 /**
   * Created by gustavbjordal on 27/05/16.

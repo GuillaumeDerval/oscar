@@ -17,7 +17,6 @@ package oscar.cbls.core.computation
 
 import oscar.cbls.algo.fun.PiecewiseLinearBijectionNaive
 import oscar.cbls.algo.seq.{ConcreteIntSequence, IntSequence, MovedIntSequence, RemovedIntSequence}
-import oscar.cbls.core.propagation.{Checker, ErrorChecker}
 
 import scala.language.implicitConversions
 
@@ -29,9 +28,6 @@ import scala.language.implicitConversions
  * checkpoint releases are not included in the notifications,
  * but they can easily be inferred from the roll back and the defines.
  */
-
-
-
 sealed trait SeqValue extends Value{
   def value:IntSequence
   def domain:Domain

@@ -2,7 +2,6 @@ package oscar.cbls.test.invariants
 
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core.computation.{CBLSSeqVar, Store}
-import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.invariant.seq._
 
 /**
@@ -10,7 +9,7 @@ import oscar.cbls.lib.invariant.seq._
  */
 object testConcat extends App {
 
-  val m = new Store(verbose = true,propagateOnToString = true, checker = Some(new ErrorChecker()))
+  val m = new Store(verbose = true,propagateOnToString = true, debugMode = true)
   val a = new CBLSSeqVar(m,IntSequence(List(1,2,3,5)), n = "toto")
 
   val concat = new ConcatenateFirstConstant(List(1,6,8,30),a,4,20)

@@ -29,7 +29,7 @@ import oscar.cbls.algo.dll._
 import oscar.cbls.algo.heap.{AbstractHeap, AggregatedBinomialHeapQList, BinomialHeap}
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.rb.RedBlackTreeMap
-import oscar.cbls.algo.tarjan._;
+import oscar.cbls.algo.tarjan._
 
 /**
   * a schedulingHandler handles the scheduling for a set of PE.
@@ -81,13 +81,11 @@ trait SchedulingHandler {
   *  the engine will discover it by itself. See also method isAcyclic to query a propagation structure.
   *
   * @param verbose requires that the propagation structure prints a trace of what it is doing.
-  * @param checker set a Some[Checker] top check all internal properties of invariants after propagation, set to None for regular execution
   * @param noCycle is to be set to true only if the static dependency graph is acyclic.
-  * @param topologicalSort if true, use topological sort, false, use distance to input, and associated faster heap data structure
   * @param sortScc true if SCC should be sorted, false otherwise. Set to true, unless you know what your are doing. Setting to false might provide a speedup, but propagation will not be single pass on SCC anymore
   * @author renaud.delandtsheer@cetic.be
   */
-abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = false, val noCycle: Boolean, val topologicalSort: Boolean, val sortScc: Boolean = true)
+abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = false, val noCycle: Boolean, val sortScc: Boolean = true)
   extends SchedulingHandler {
 
   protected var closed: Boolean = false
@@ -113,16 +111,16 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
     * of the propagation elements
     * The method is expected to return consistent result once the setupPropagationStructure method is called
     */
-  private var MaxID: Int = -1
+  private[this] var maxUsedIDInternal: Int = -1
 
-  def getMaxID = MaxID
+  def maxUsedID = maxUsedIDInternal
 
-  def GetNextID(): Int = {
-    MaxID += 1
-    MaxID
+  def nextID(): Int = {
+    maxUsedIDInternal += 1
+    maxUsedIDInternal
   }
 
-  private var acyclic: Boolean = false
+  private[this] var acyclic: Boolean = false
 
   /**
     * @return true if the propagation structure consider that his graph is acyclic, false otherwise.
@@ -159,8 +157,8 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
         } else {
           acyclic = false
 
-          val c: StronglyConnectedComponent = if (sortScc) new StronglyConnectedComponentTopologicalSort(a, this, GetNextID())
-          else new StronglyConnectedComponentNoSort(a, this, GetNextID())
+          val c: StronglyConnectedComponent = if (sortScc) new StronglyConnectedComponentTopologicalSort(a, this, nextID())
+          else new StronglyConnectedComponentNoSort(a, this, nextID())
           stronglyConnectedComponentsList = c :: stronglyConnectedComponentsList
           c
         })
@@ -170,14 +168,8 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
 
     //this performs the sort on Propagation Elements that do not belong to a strongly connected component,
     // plus the strongly connected components, considered as a single node. */
-    var LayerCount = 0
-    if (topologicalSort) {
-      computePositionsThroughTopologicalSort(ClusteredPropagationComponents)
-      executionQueue = new BinomialHeap[PropagationElement](p => p.position, ClusteredPropagationComponents.size)
-    } else {
-      LayerCount = computePositionsThroughDistanceToInput(ClusteredPropagationComponents) + 1
-      executionQueue = new AggregatedBinomialHeapQList[PropagationElement](p => p.position, LayerCount)
-    }
+    val layerCount = computePositionsThroughDistanceToInput(ClusteredPropagationComponents) + 1
+    executionQueue = new AggregatedBinomialHeapQList[PropagationElement](p => p.position, layerCount)
 
     propagating = false
     previousPropagationTrack = null
@@ -190,11 +182,11 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
 
     val it = getPropagationElements.toIterator
     while (it.hasNext) {
-      it.next().rescheduleIfNeeded()
+      it.next().rescheduleIfScheduled()
     }
 
     for (scc <- stronglyConnectedComponentsList) {
-      scc.rescheduleIfNeeded()
+      scc.rescheduleIfScheduled()
     }
     //propagate() we do not propagate anymore here since the first query might require a partial propagation only
   }
@@ -268,7 +260,7 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
   }
 
   private[this] var scheduledElements: QList[PropagationElement] = null
-  private[this] var executionQueue: AbstractHeap[PropagationElement] = null
+  private[this] var executionQueue: AggregatedBinomialHeapQList[PropagationElement] = null
 
   //I'v been thinking about using a BitArray here, but although this would slightly decrease memory
   // (think, relative to all the rest of the stored data), it would increase runtime
@@ -347,7 +339,7 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
     * @return an array of boolean: UniqueID => should the element with UniqueID be propagated for this target?
     */
   private def BuildFastPropagationTrack(target: QList[PropagationElement]): Array[Boolean] = {
-    val Track: Array[Boolean] = Array.fill(getMaxID + 1)(false)
+    val Track: Array[Boolean] = Array.fill(maxUsedID + 1)(false)
 
     var ToExplore: QList[PropagationElement] = target
 
@@ -513,7 +505,7 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
     * @tparam T the type stored in the data structure
     * @return a dictionary over the PE that are registered in the propagation structure.
     */
-  def getNodeStorage[T](implicit X: Manifest[T]): NodeDictionary[T] = new NodeDictionary[T](this.MaxID)
+  def getNodeStorage[T](implicit X: Manifest[T]): NodeDictionary[T] = new NodeDictionary[T](this.maxUsedIDInternal)
 
   /**
     * returns some info on the PropagationStructure
@@ -523,7 +515,7 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
   def stats: String = {
     "PropagationStructure(" + "\n" +
       "  declaredAcyclic: " + noCycle + "\n" +
-      "  topologicalSort:" + topologicalSort + (if (!topologicalSort) " (layerCount:" + (executionQueue.asInstanceOf[AggregatedBinomialHeapQList[PropagationElement]].maxPosition) + ")" else "") + "\n" +
+      " layerCount:" + executionQueue.maxPosition + "\n" +
       "  sortScc:" + sortScc + "\n" +
       "  actuallyAcyclic:" + acyclic + "\n" +
       "  TotalPropagationElementCount:" + getPropagationElements.size + "\n" +
@@ -590,7 +582,7 @@ abstract class StronglyConnectedComponent(val propagationElements: Iterable[Prop
     position != 0
   }
 
-  override private[core] def rescheduleIfNeeded() {}
+  override private[core] def rescheduleIfScheduled() {}
   //we do nothing, since it is the propagation elements that trigger the registration if needed of SCC
 
   override def checkInternals(){
@@ -990,7 +982,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
     }
   }
 
-  private[core] def rescheduleIfNeeded() {
+  private[core] def rescheduleIfScheduled() {
     if (internalIsScheduled) {
       mySchedulingHandler.scheduleForPropagation(this)
     }
@@ -1023,11 +1015,10 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
     * that the incremental computation they perform through the performPropagation method is correct
     * overriding this method is optional, so an empty body is provided by default
     */
-  def checkInternals(){}
+  def checkInternals():Unit = ???
 }
 
 trait VaryingDependenciesPE extends PropagationElement {
-  //for cycle managing
   /**
     * set to true if the PropagationElement is one that can break
     * or make dependency cycles in the dynamic dependency graph
@@ -1100,7 +1091,6 @@ trait VaryingDependenciesPE extends PropagationElement {
 /**
   * This is the node type to be used for bulking
   * @author renaud.delandtsheer@cetic.be
-  * *
   */
 trait BulkPropagator extends PropagationElement {
   override protected def initiateDynamicGraphFromSameComponentListened(stronglyConnectedComponentTopologicalSort: StronglyConnectedComponentTopologicalSort) {
@@ -1110,3 +1100,4 @@ trait BulkPropagator extends PropagationElement {
     dynamicallyListenedElementsFromSameComponent = List.empty
   }
 }
+

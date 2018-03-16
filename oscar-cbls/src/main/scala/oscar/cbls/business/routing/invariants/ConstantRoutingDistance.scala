@@ -500,10 +500,10 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
   }
 
   override def checkInternals(): Unit = {
-    check(c, routes.value)
+    check(routes.value)
   }
 
-  def check(c : Checker,s:IntSequence) {
+  def check(s:IntSequence) {
     require(!distanceIsSymmetric || ConstantRoutingDistance.isDistanceSymmetric(distanceMatrix, n), Some("distance matrix should be symmetric if invariant told so"))
 
     if (perVehicle) {

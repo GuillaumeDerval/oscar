@@ -47,7 +47,7 @@ object TSPsym extends App{
   val symmetricDistanceMatrix = RoutingMatrixGenerator(n)._1
 
   //  println("restrictions:" + restrictions)
-  val model = new Store(checker = Some(new ErrorChecker()))
+  val model = new Store(debugMode = true)
 
   val myVRP = new MySimpleRouting(n,v,symmetricDistanceMatrix,model,maxPivotPerValuePercent)
   val nodes = myVRP.nodes
