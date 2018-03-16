@@ -44,26 +44,32 @@ abstract class SearchProcedure extends LinearSelectors{
       println(cc + " "+cc.violation.value)
     }
   }
+  def getNumIterations(): Int
 }
 
 class Chain(val a: SearchProcedure*) extends SearchProcedure {
   def run() = {
     a.foreach(_.run())
   }
+
+  override def getNumIterations(): Int = a.map(_.getNumIterations()).sum
 }
 
 class ActionSearch(action:() => Unit) extends SearchProcedure {
   def run() = action()
+  override def getNumIterations(): Int = 0
 }
 class FakeSearch extends SearchProcedure {
   def run() = {}
+  override def getNumIterations(): Int = 0
 }
 
 class GreedySearch(val level: Int = 1, val m: FZCBLSModel,val sc: SearchControl) extends SearchProcedure {
   assert(level > 0 && level < 4)
   val log = m.log
+  var it = 0
   def run(){
-    var it = 0;
+    it = 0
     log("Starting Greedy Search level "+level)
     log("Starting Violation: "+m.objective.violation.value)
     //val varval = for (x <- m.vars; v <- x.domain) yield (x,v)
@@ -91,13 +97,16 @@ class GreedySearch(val level: Int = 1, val m: FZCBLSModel,val sc: SearchControl)
     log("Ending Violation: "+m.objective.violation.value)
     log("Nb Moves: "+it)
   }
+
+  override def getNumIterations(): Int = it
 }
 
 class SimpleLocalSearch(val m:FZCBLSModel,val sc: SearchControl) extends SearchProcedure {
   val violation: Array[IntValue] = m.vars.map(m.c.violation(_)).toArray;
   val log = m.log
+  var it = 0
   def run(){
-    var it = 0;
+    it = 0
     if(m.vars.length>0) {
       var improving = 3;
       var i = RandomGenerator.nextInt(violation.length);
@@ -144,6 +153,8 @@ class SimpleLocalSearch(val m:FZCBLSModel,val sc: SearchControl) extends SearchP
     log("Ending Violation: "+m.objective.violation.value)
     log("Nb Moves: "+it)
   }
+
+  override def getNumIterations(): Int = it
 }
 
 class SearchControl(val m: FZCBLSModel, val objLB:Int, val MaxTimeMilli: Int,val stopOnSat:Boolean){
@@ -278,6 +289,7 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
       log(3,bestNeighbour.toString)
       log(4,tabu.filter(t => t.value > it.value).toList.toString())
 
+      //log("Current violation: " + m.c.violation.value)
       bestNeighbour.commit()
       sc.handlePossibleSolution()
 
@@ -302,6 +314,8 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
 
     it++
   }
+
+  override def getNumIterations(): Int = it.value
 }
 
 class NeighbourhoodSearchOPT(m:FZCBLSModel, sc: SearchControl) extends NeighbourhoodTabuSearch(m,sc) {
@@ -328,7 +342,7 @@ class NeighbourhoodSearchOPT(m:FZCBLSModel, sc: SearchControl) extends Neighbour
     //m.objective.objectiveWeight := 0;//TODO: What is this??? Remove it?
     while (!sc.stop()) {
       makeMove(true)
-
+      val tenureBefore = tenure
       //log("Violation " + m.c.violation.value)
 
       if (wait > 0) {
@@ -338,7 +352,7 @@ class NeighbourhoodSearchOPT(m:FZCBLSModel, sc: SearchControl) extends Neighbour
       }
 
       // Minimize the problem
-      // There are two special cases to look out for here.
+      // There are two special cases to look out for here.L
       // 1) The violation is within such a small range (compared with the objective) that the violation is ignored by the search.
       //	- This shows when the violation is above 0 for a long time (possibly forever) and the objective is at a "good" low value
       // 2) The violation can grow so quickly that it overshadows the objective (ie the opposite of 1).
@@ -347,11 +361,11 @@ class NeighbourhoodSearchOPT(m:FZCBLSModel, sc: SearchControl) extends Neighbour
       // There is of course also the problem of the dynamic tenure behaving badly but that is waaaaay harder to detect and do something about.
       minViolationSinceBest = Math.min(minViolationSinceBest, m.c.violation.value)
       minObjectiveSinceBest = Math.min(minObjectiveSinceBest, m.objective.getObjectiveValue())
-      if (m.objective.getObjectiveValue() < bestNow || (m.c.violation.value == 0 && m.objective.getObjectiveValue() < best)) {
+      if (m.objective.getObjectiveValue() < bestNow || sc.bestKnownObjective < best) {
         bestNow = m.objective.getObjectiveValue()
         tenure = Math.max(MinTenure, tenure - 1)
-        if (m.c.violation.value == 0 && bestNow < best) {
-          best = bestNow;
+        if (sc.bestKnownObjective < best) {
+          best = sc.bestKnownObjective;
           timeOfBest = m.getWatch();
           itOfBalance = it.value
           minViolationSinceBest = Int.MaxValue
@@ -391,15 +405,20 @@ class NeighbourhoodSearchOPT(m:FZCBLSModel, sc: SearchControl) extends Neighbour
           bestNow = m.objective.getObjectiveValue()
         }
       }
+      if(tenure != tenureBefore)
+        log("Updated tenure: " + tenure)
       if(m.getWatch() > timeOfBest + 300000){
         timeOfBest = m.getWatch()
         log("Reset neighourhoods 5 minutes")
         for (n <- neighbourhoods)
           n.reset();
+        tenure = MinTenure
       }
     }
     log("Completed Optimization Search at "+m.getWatch())
-    log("nb moves "+ecnt+"\t"+bcnt)
+    log("nb moves " + it.value)
+    log("\tnb extended moves: " + ecnt)
+    log("\tnb basic moves:" + bcnt)
   }
 }
 
@@ -653,6 +672,8 @@ class GLSSAT(m:FZCBLSModel,sc: SearchControl) extends NeighbourhoodSearch(m,sc) 
     log("Ending Violation: "+m.objective.violation.value)
     log("Nb Moves: "+it)
   }
+
+  override def getNumIterations(): Int = it.value
 }
 
 class RestrictedNeighbourhoodSearch(m:FZCBLSModel, sc: SearchControl) extends NeighbourhoodTabuSearch(m,sc) {

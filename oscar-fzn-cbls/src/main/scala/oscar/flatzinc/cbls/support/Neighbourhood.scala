@@ -945,7 +945,7 @@ class FlatNeighbourhood(val fzNeighbourhood: FZNeighbourhood,
     initCPModel.pop()
     if (foundSolution){
       for ((k,v) <- solutionMap) {
-        if(!k.isDefined)
+        if(!k.isBound && !k.isDefined)
           cblsModel.getCBLSVar(k) := v
       }
       for ((k,v) <- solutionMap) {
@@ -968,7 +968,6 @@ class FlatNeighbourhood(val fzNeighbourhood: FZNeighbourhood,
       println("% Neighbourhood initalization is UNSATISFIABLE. Aborting")
       System.exit(-1)
     }
-    println("reset done")
   }
 
   def debugPrintVariables() = {
@@ -988,7 +987,14 @@ class FlatNeighbourhood(val fzNeighbourhood: FZNeighbourhood,
   }
 
   def getMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
-    getExtendedMinObjective(it, accept, acceptVar)
+    //getExtendedMinObjective(it,accept,acceptVar)
+    def acceptFun(v:CBLSIntVar):Boolean = {
+      acceptVar(v) && (cblsModel.c.violation(v).value > 0)
+    }
+    val bestMoves = subNeighbourhoods.map(_.getMinObjective(it,accept,acceptFun))
+    val bestIdx = selectMin(bestMoves.indices)(i => bestMoves(i).value)
+    //debugPrintMove(bestMoves(bestIdx))
+    bestMoves(bestIdx)
   }
 
   def getExtendedMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
@@ -998,7 +1004,7 @@ class FlatNeighbourhood(val fzNeighbourhood: FZNeighbourhood,
     }
     val bestMoves = subNeighbourhoods.map(_.getExtendedMinObjective(it,accept,acceptFun))
     val bestIdx = selectMin(bestMoves.indices)(i => bestMoves(i).value)
-    debugPrintMove(bestMoves(bestIdx))
+    //debugPrintMove(bestMoves(bestIdx))
     bestMoves(bestIdx)
   }
 
@@ -1078,7 +1084,55 @@ class FlatSubNeighbourhood(val fzNeighbourhood: FZSubNeighbourhood,
   }
 
   def getMinObjective(it: Int, accept: Move => Boolean, acceptVar: CBLSIntVar => Boolean): Move = {
-    getExtendedMinObjective(it, accept, acceptVar)
+    //getExtendedMinObjective(it, accept, acceptVar)
+    val currentObj = objective.value
+    var bestObj = Int.MaxValue
+    var bestMove: List[Move] = List(NoMove())
+
+    //println(fzNeighbourhood.getSearchVariables.map(cblsModel.getCBLSVar(_)).mkString("\n"))
+    while (increment()) {
+      if (whereConstraintSystem.violation.value == 0) {
+        // Compute the current values of all variables
+        for (m <- moveActions) {
+          m.computeAssignment()
+        }
+        //Ignore No-Op moves
+        if(moveActions.exists(_.modifies()) && moveActions.forall(_.isValid(acceptVar))) {
+          // Perform the assignment (depends on all values being already computed)
+          for (m <- moveActions) {
+            m.performAssignment()
+          }
+          val newObj = objective.value
+          if (newObj <= bestObj && ensureConstraintSystem.violation.value == 0) {
+            if(newObj < currentObj) {
+              val returnMove = ChainMoves(moveActions.map(_.getCurrentMove(newObj)), newObj)
+              for (m <- moveActions)
+                m.undo()
+              return returnMove
+            }
+            // generates a move of the type that other neighbourhoods use
+            val tmp = ChainMoves(moveActions.map(_.getCurrentMove(newObj)), newObj)
+            if (accept(tmp)) {
+              //for (m <- moveActions) {
+              //  m.saveBest()
+              //}
+              if (newObj < bestObj) {
+                bestMove = List(tmp)
+              } else {
+                bestMove :+= tmp
+              }
+              bestObj = newObj
+            }
+          }
+
+          // Undo the assignment so that we do not commit to it.
+          for (m <- moveActions) {
+            m.undo()
+          }
+        }
+      }
+    }
+    bestMove(RandomGenerator.nextInt(bestMove.length))
   }
 
   def debugPrintValues() = {

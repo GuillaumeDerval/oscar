@@ -78,6 +78,10 @@ class FZCBLSBuilder extends LinearSelectors with StopWatch {
       v.definingConstraint.get.unsetDefinedVar(v)
     })
 
+    for(n <- fzModel.neighbourhoods){
+      n.getSearchVariables.foreach(v => if (v.isDefined) {v.definingConstraint.get.unsetDefinedVar(v)})
+    }
+
 
     val allConstraints: List[Constraint] = fzModel.constraints.toList
 
@@ -183,8 +187,7 @@ class FZCBLSBuilder extends LinearSelectors with StopWatch {
 
 
     log("Using " + cblsmodel.vars.length + " Search Variables in default assign neighbourhood")
-    log("Using " + cblsmodel.vars.filter(
-      v => v.min == 0 && v.max == 1).length + " Search Variables in default flip neighbourhood")
+    log("Using " + cblsmodel.vars.count(v => v.min == 0 && v.max == 1) + " Search Variables in default flip neighbourhood")
     cblsmodel.vars.foreach(v => log(2, "Search with " + v + " dom: " + v.min + ".." + v.max))
     log("Created all Neighborhoods")
 
@@ -254,6 +257,11 @@ class FZCBLSBuilder extends LinearSelectors with StopWatch {
       } else {
         log(
           "Best Overall Solution: " + sc.bestKnownObjective * (if (fzModel.search.obj == Objective.MAXIMIZE) -1 else 1))
+      }
+      log("Total number of iterations: " + finalRun._2.getNumIterations())
+      if(opts.statistics){
+        val bestSolution = if(sc.bestKnownObjective == Int.MaxValue && cblsmodel.c.violatedConstraints.length > 0){ "nosolution"}else{sc.bestKnownObjective * (if (fzModel.search.obj == Objective.MAXIMIZE) -1 else 1)}
+        println("% {" + "\"time\": " + getWatch + ",\"nbMoves\": " + finalRun._2.getNumIterations() + ", \"obj\": " + bestSolution + "}")
       }
     }
     System.exit(0)

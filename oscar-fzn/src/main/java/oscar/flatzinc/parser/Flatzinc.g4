@@ -130,6 +130,7 @@ basic_var_type returns [ASTVarType t]
 	| 'float' {$t = new ASTVarType(ASTConstants.FLOAT);}
 	| const_float_range {$t = new ASTVarType(ASTConstants.FLOAT,$const_float_range.r);}
  	| 'int' {$t = new ASTVarType(ASTConstants.INT);}
+ 	    | '-infinity..infinity' {$t = new ASTVarType(ASTConstants.INT);}
  	| const_range {$t = new ASTVarType(ASTConstants.INT, $const_range.r);}
  	| const_set {$t = new ASTVarType(ASTConstants.INT, $const_set.r);}
  	| 'set' 'of' const_range {$t = new ASTVarType(ASTConstants.SET, $const_range.r);}
@@ -198,9 +199,9 @@ const_set returns [ASTSet r] locals [Set<ASTInt> s] :
 const_range returns [ASTRange r]
 	: lb=int_const '..' ub=int_const {$r = new ASTRange($lb.i,$ub.i);};
 
-
 const_float_range returns [ASTFloatRange r]
 	: lb=float_const '..' ub=float_const {$r = new ASTFloatRange($lb.f,$ub.f);};
+
 
 
 array_expr returns [ASTArray a] locals [ArrayList<ASTLit> elems]:

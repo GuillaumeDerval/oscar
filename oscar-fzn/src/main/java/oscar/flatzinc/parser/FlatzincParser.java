@@ -46,8 +46,9 @@ public class FlatzincParser extends Parser {
 		T__0=1, T__1=2, T__2=3, T__3=4, T__4=5, T__5=6, T__6=7, T__7=8, T__8=9, 
 		T__9=10, T__10=11, T__11=12, T__12=13, T__13=14, T__14=15, T__15=16, T__16=17, 
 		T__17=18, T__18=19, T__19=20, T__20=21, T__21=22, T__22=23, T__23=24, 
-		T__24=25, T__25=26, T__26=27, T__27=28, T__28=29, T__29=30, Boolconst=31, 
-		PREDANNID=32, VARPARID=33, Floatconst=34, INT=35, STRING=36, WS=37;
+		T__24=25, T__25=26, T__26=27, T__27=28, T__28=29, T__29=30, T__30=31, 
+		Boolconst=32, PREDANNID=33, VARPARID=34, Floatconst=35, INT=36, STRING=37, 
+		WS=38;
 	public static final int
 		RULE_flatzinc_model = 0, RULE_pred_decl = 1, RULE_pred_param = 2, RULE_param_decl = 3, 
 		RULE_func_decl = 4, RULE_let_expr = 5, RULE_let_body = 6, RULE_var_decl = 7, 
@@ -72,13 +73,14 @@ public class FlatzincParser extends Parser {
 		null, "';'", "'predicate'", "'('", "','", "')'", "':'", "'='", "'function'", 
 		"'ann'", "'let'", "'{'", "'}'", "'in'", "'constraint'", "'solve'", "'satisfy'", 
 		"'minimize'", "'maximize'", "'bool'", "'float'", "'int'", "'set'", "'of'", 
-		"'var'", "'array'", "'['", "']'", "'..'", "'::'", "'()'"
+		"'var'", "'-infinity..infinity'", "'array'", "'['", "']'", "'..'", "'::'", 
+		"'()'"
 	};
 	private static final String[] _SYMBOLIC_NAMES = {
 		null, null, null, null, null, null, null, null, null, null, null, null, 
 		null, null, null, null, null, null, null, null, null, null, null, null, 
-		null, null, null, null, null, null, null, "Boolconst", "PREDANNID", "VARPARID", 
-		"Floatconst", "INT", "STRING", "WS"
+		null, null, null, null, null, null, null, null, "Boolconst", "PREDANNID", 
+		"VARPARID", "Floatconst", "INT", "STRING", "WS"
 	};
 	public static final Vocabulary VOCABULARY = new VocabularyImpl(_LITERAL_NAMES, _SYMBOLIC_NAMES);
 
@@ -206,7 +208,7 @@ public class FlatzincParser extends Parser {
 			setState(89);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__1) | (1L << T__7) | (1L << T__13) | (1L << T__14) | (1L << T__18) | (1L << T__19) | (1L << T__20) | (1L << T__21) | (1L << T__23) | (1L << T__24))) != 0)) {
+			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__1) | (1L << T__7) | (1L << T__13) | (1L << T__14) | (1L << T__18) | (1L << T__19) | (1L << T__20) | (1L << T__21) | (1L << T__23) | (1L << T__25))) != 0)) {
 				{
 				setState(87);
 				_errHandler.sync(this);
@@ -513,7 +515,7 @@ public class FlatzincParser extends Parser {
 				setState(135);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-				if (_la==T__23 || _la==T__24) {
+				if (_la==T__23 || _la==T__25) {
 					{
 					setState(124);
 					((Func_declContext)_localctx).var_decl = var_decl();
@@ -605,7 +607,7 @@ public class FlatzincParser extends Parser {
 			setState(158);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__13) | (1L << T__18) | (1L << T__19) | (1L << T__20) | (1L << T__21) | (1L << T__23) | (1L << T__24))) != 0)) {
+			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__13) | (1L << T__18) | (1L << T__19) | (1L << T__20) | (1L << T__21) | (1L << T__23) | (1L << T__25))) != 0)) {
 				{
 				setState(147);
 				((Let_exprContext)_localctx).let_body = let_body();
@@ -1088,7 +1090,7 @@ public class FlatzincParser extends Parser {
 			{
 			setState(239);
 			match(T__23);
-			setState(265);
+			setState(267);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,14,_ctx) ) {
 			case 1:
@@ -1122,35 +1124,42 @@ public class FlatzincParser extends Parser {
 			case 5:
 				{
 				setState(249);
-				((Basic_var_typeContext)_localctx).const_range = const_range();
-				((Basic_var_typeContext)_localctx).t =  new ASTVarType(ASTConstants.INT, ((Basic_var_typeContext)_localctx).const_range.r);
+				match(T__24);
+				((Basic_var_typeContext)_localctx).t =  new ASTVarType(ASTConstants.INT);
 				}
 				break;
 			case 6:
 				{
-				setState(252);
-				((Basic_var_typeContext)_localctx).const_set = const_set();
-				((Basic_var_typeContext)_localctx).t =  new ASTVarType(ASTConstants.INT, ((Basic_var_typeContext)_localctx).const_set.r);
+				setState(251);
+				((Basic_var_typeContext)_localctx).const_range = const_range();
+				((Basic_var_typeContext)_localctx).t =  new ASTVarType(ASTConstants.INT, ((Basic_var_typeContext)_localctx).const_range.r);
 				}
 				break;
 			case 7:
 				{
-				setState(255);
-				match(T__21);
-				setState(256);
-				match(T__22);
-				setState(257);
-				((Basic_var_typeContext)_localctx).const_range = const_range();
-				((Basic_var_typeContext)_localctx).t =  new ASTVarType(ASTConstants.SET, ((Basic_var_typeContext)_localctx).const_range.r);
+				setState(254);
+				((Basic_var_typeContext)_localctx).const_set = const_set();
+				((Basic_var_typeContext)_localctx).t =  new ASTVarType(ASTConstants.INT, ((Basic_var_typeContext)_localctx).const_set.r);
 				}
 				break;
 			case 8:
 				{
-				setState(260);
+				setState(257);
 				match(T__21);
-				setState(261);
+				setState(258);
 				match(T__22);
+				setState(259);
+				((Basic_var_typeContext)_localctx).const_range = const_range();
+				((Basic_var_typeContext)_localctx).t =  new ASTVarType(ASTConstants.SET, ((Basic_var_typeContext)_localctx).const_range.r);
+				}
+				break;
+			case 9:
+				{
 				setState(262);
+				match(T__21);
+				setState(263);
+				match(T__22);
+				setState(264);
 				((Basic_var_typeContext)_localctx).const_set = const_set();
 				((Basic_var_typeContext)_localctx).t =  new ASTVarType(ASTConstants.SET, ((Basic_var_typeContext)_localctx).const_set.r);
 				}
@@ -1197,7 +1206,7 @@ public class FlatzincParser extends Parser {
 		Par_typeContext _localctx = new Par_typeContext(_ctx, getState());
 		enterRule(_localctx, 24, RULE_par_type);
 		try {
-			setState(273);
+			setState(275);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case T__18:
@@ -1206,15 +1215,15 @@ public class FlatzincParser extends Parser {
 			case T__21:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(267);
+				setState(269);
 				((Par_typeContext)_localctx).basic_par_type = basic_par_type();
 				((Par_typeContext)_localctx).t =  ((Par_typeContext)_localctx).basic_par_type.t;
 				}
 				break;
-			case T__24:
+			case T__25:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(270);
+				setState(272);
 				((Par_typeContext)_localctx).par_array_type = par_array_type();
 				((Par_typeContext)_localctx).t =  ((Par_typeContext)_localctx).par_array_type.t;
 				}
@@ -1262,21 +1271,21 @@ public class FlatzincParser extends Parser {
 		Var_typeContext _localctx = new Var_typeContext(_ctx, getState());
 		enterRule(_localctx, 26, RULE_var_type);
 		try {
-			setState(281);
+			setState(283);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case T__23:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(275);
+				setState(277);
 				((Var_typeContext)_localctx).basic_var_type = basic_var_type();
 				((Var_typeContext)_localctx).t =  ((Var_typeContext)_localctx).basic_var_type.t;
 				}
 				break;
-			case T__24:
+			case T__25:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(278);
+				setState(280);
 				((Var_typeContext)_localctx).array_type = array_type();
 				((Var_typeContext)_localctx).t =  ((Var_typeContext)_localctx).array_type.t;
 				}
@@ -1326,17 +1335,17 @@ public class FlatzincParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(283);
-			match(T__24);
-			setState(284);
-			match(T__25);
 			setState(285);
-			((Array_typeContext)_localctx).const_range = const_range();
+			match(T__25);
 			setState(286);
 			match(T__26);
 			setState(287);
-			match(T__22);
+			((Array_typeContext)_localctx).const_range = const_range();
 			setState(288);
+			match(T__27);
+			setState(289);
+			match(T__22);
+			setState(290);
 			((Array_typeContext)_localctx).basic_var_type = basic_var_type();
 			((Array_typeContext)_localctx).t =  new ASTArrayType(((Array_typeContext)_localctx).const_range.r, ((Array_typeContext)_localctx).basic_var_type.t);
 			}
@@ -1382,17 +1391,17 @@ public class FlatzincParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(291);
-			match(T__24);
-			setState(292);
-			match(T__25);
 			setState(293);
-			((Par_array_typeContext)_localctx).const_range = const_range();
+			match(T__25);
 			setState(294);
 			match(T__26);
 			setState(295);
-			match(T__22);
+			((Par_array_typeContext)_localctx).const_range = const_range();
 			setState(296);
+			match(T__27);
+			setState(297);
+			match(T__22);
+			setState(298);
 			((Par_array_typeContext)_localctx).basic_par_type = basic_par_type();
 			((Par_array_typeContext)_localctx).t =  new ASTArrayType(((Par_array_typeContext)_localctx).const_range.r, ((Par_array_typeContext)_localctx).basic_par_type.t);
 			}
@@ -1433,7 +1442,7 @@ public class FlatzincParser extends Parser {
 		Pred_param_typeContext _localctx = new Pred_param_typeContext(_ctx, getState());
 		enterRule(_localctx, 32, RULE_pred_param_type);
 		try {
-			setState(301);
+			setState(303);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case T__10:
@@ -1446,14 +1455,14 @@ public class FlatzincParser extends Parser {
 			case INT:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(299);
+				setState(301);
 				basic_pred_param_type();
 				}
 				break;
-			case T__24:
+			case T__25:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(300);
+				setState(302);
 				pred_array_type();
 				}
 				break;
@@ -1509,80 +1518,80 @@ public class FlatzincParser extends Parser {
 		Basic_pred_param_typeContext _localctx = new Basic_pred_param_typeContext(_ctx, getState());
 		enterRule(_localctx, 34, RULE_basic_pred_param_type);
 		try {
-			setState(321);
+			setState(323);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,18,_ctx) ) {
 			case 1:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(303);
+				setState(305);
 				basic_var_type();
 				}
 				break;
 			case 2:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(304);
+				setState(306);
 				basic_par_type();
 				}
 				break;
 			case 3:
 				enterOuterAlt(_localctx, 3);
 				{
-				setState(305);
-				float_const();
-				setState(306);
-				match(T__27);
 				setState(307);
+				float_const();
+				setState(308);
+				match(T__28);
+				setState(309);
 				float_const();
 				}
 				break;
 			case 4:
 				enterOuterAlt(_localctx, 4);
 				{
-				setState(309);
+				setState(311);
 				const_set();
 				}
 				break;
 			case 5:
 				enterOuterAlt(_localctx, 5);
 				{
-				setState(310);
+				setState(312);
 				const_range();
 				}
 				break;
 			case 6:
 				enterOuterAlt(_localctx, 6);
 				{
-				setState(311);
-				match(T__21);
-				setState(312);
-				match(T__22);
 				setState(313);
+				match(T__21);
+				setState(314);
+				match(T__22);
+				setState(315);
 				const_range();
 				}
 				break;
 			case 7:
 				enterOuterAlt(_localctx, 7);
 				{
-				setState(314);
-				match(T__21);
-				setState(315);
-				match(T__22);
 				setState(316);
+				match(T__21);
+				setState(317);
+				match(T__22);
+				setState(318);
 				const_set();
 				}
 				break;
 			case 8:
 				enterOuterAlt(_localctx, 8);
 				{
-				setState(317);
-				match(T__23);
-				setState(318);
-				match(T__21);
 				setState(319);
-				match(T__22);
+				match(T__23);
 				setState(320);
+				match(T__21);
+				setState(321);
+				match(T__22);
+				setState(322);
 				match(T__20);
 				}
 				break;
@@ -1626,43 +1635,43 @@ public class FlatzincParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(323);
-			match(T__24);
-			setState(324);
+			setState(325);
 			match(T__25);
-			setState(330);
+			setState(326);
+			match(T__26);
+			setState(332);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,19,_ctx) ) {
 			case 1:
 				{
-				setState(325);
+				setState(327);
 				const_range();
 				}
 				break;
 			case 2:
 				{
-				setState(326);
+				setState(328);
 				match(T__20);
 				}
 				break;
 			case 3:
 				{
-				setState(327);
+				setState(329);
 				match(T__20);
 				{
-				setState(328);
+				setState(330);
 				match(T__3);
-				setState(329);
+				setState(331);
 				match(T__20);
 				}
 				}
 				break;
 			}
-			setState(332);
-			match(T__26);
-			setState(333);
-			match(T__22);
 			setState(334);
+			match(T__27);
+			setState(335);
+			match(T__22);
+			setState(336);
 			basic_pred_param_type();
 			}
 		}
@@ -1703,7 +1712,7 @@ public class FlatzincParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(336);
+			setState(338);
 			((ExprContext)_localctx).lit_expr = lit_expr();
 			((ExprContext)_localctx).e =  ((ExprContext)_localctx).lit_expr.e;
 			}
@@ -1771,13 +1780,13 @@ public class FlatzincParser extends Parser {
 		Lit_exprContext _localctx = new Lit_exprContext(_ctx, getState());
 		enterRule(_localctx, 40, RULE_lit_expr);
 		try {
-			setState(363);
+			setState(365);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,20,_ctx) ) {
 			case 1:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(339);
+				setState(341);
 				((Lit_exprContext)_localctx).bool_const = bool_const();
 				((Lit_exprContext)_localctx).e =  ((Lit_exprContext)_localctx).bool_const.b;
 				}
@@ -1785,7 +1794,7 @@ public class FlatzincParser extends Parser {
 			case 2:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(342);
+				setState(344);
 				((Lit_exprContext)_localctx).float_const = float_const();
 				((Lit_exprContext)_localctx).e =  ((Lit_exprContext)_localctx).float_const.f;
 				}
@@ -1793,7 +1802,7 @@ public class FlatzincParser extends Parser {
 			case 3:
 				enterOuterAlt(_localctx, 3);
 				{
-				setState(345);
+				setState(347);
 				((Lit_exprContext)_localctx).int_const = int_const();
 				((Lit_exprContext)_localctx).e =  ((Lit_exprContext)_localctx).int_const.i;
 				}
@@ -1801,7 +1810,7 @@ public class FlatzincParser extends Parser {
 			case 4:
 				enterOuterAlt(_localctx, 4);
 				{
-				setState(348);
+				setState(350);
 				((Lit_exprContext)_localctx).const_range = const_range();
 				((Lit_exprContext)_localctx).e =  ((Lit_exprContext)_localctx).const_range.r;
 				}
@@ -1809,7 +1818,7 @@ public class FlatzincParser extends Parser {
 			case 5:
 				enterOuterAlt(_localctx, 5);
 				{
-				setState(351);
+				setState(353);
 				((Lit_exprContext)_localctx).const_set = const_set();
 				((Lit_exprContext)_localctx).e =  ((Lit_exprContext)_localctx).const_set.r;
 				}
@@ -1817,7 +1826,7 @@ public class FlatzincParser extends Parser {
 			case 6:
 				enterOuterAlt(_localctx, 6);
 				{
-				setState(354);
+				setState(356);
 				((Lit_exprContext)_localctx).annotation = annotation();
 				((Lit_exprContext)_localctx).e =  ((Lit_exprContext)_localctx).annotation.ann;
 				}
@@ -1825,7 +1834,7 @@ public class FlatzincParser extends Parser {
 			case 7:
 				enterOuterAlt(_localctx, 7);
 				{
-				setState(357);
+				setState(359);
 				((Lit_exprContext)_localctx).array_expr = array_expr();
 				((Lit_exprContext)_localctx).e =  ((Lit_exprContext)_localctx).array_expr.a;
 				}
@@ -1833,7 +1842,7 @@ public class FlatzincParser extends Parser {
 			case 8:
 				enterOuterAlt(_localctx, 8);
 				{
-				setState(360);
+				setState(362);
 				((Lit_exprContext)_localctx).string_constant = string_constant();
 				((Lit_exprContext)_localctx).e =  ((Lit_exprContext)_localctx).string_constant.str;
 				}
@@ -1883,38 +1892,38 @@ public class FlatzincParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(365);
+			setState(367);
 			match(T__10);
 			((Const_setContext)_localctx).s =  new HashSet<ASTInt>();
-			setState(378);
+			setState(380);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==INT) {
 				{
-				setState(367);
+				setState(369);
 				((Const_setContext)_localctx).f = int_const();
 				 _localctx.s.add(((Const_setContext)_localctx).f.i); 
-				setState(375);
+				setState(377);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 				while (_la==T__3) {
 					{
 					{
-					setState(369);
+					setState(371);
 					match(T__3);
-					setState(370);
+					setState(372);
 					((Const_setContext)_localctx).n = int_const();
 					 _localctx.s.add(((Const_setContext)_localctx).n.i);
 					}
 					}
-					setState(377);
+					setState(379);
 					_errHandler.sync(this);
 					_la = _input.LA(1);
 				}
 				}
 			}
 
-			setState(380);
+			setState(382);
 			match(T__11);
 			((Const_setContext)_localctx).r =  new ASTSet(_localctx.s);
 			}
@@ -1960,11 +1969,11 @@ public class FlatzincParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(383);
-			((Const_rangeContext)_localctx).lb = int_const();
-			setState(384);
-			match(T__27);
 			setState(385);
+			((Const_rangeContext)_localctx).lb = int_const();
+			setState(386);
+			match(T__28);
+			setState(387);
 			((Const_rangeContext)_localctx).ub = int_const();
 			((Const_rangeContext)_localctx).r =  new ASTRange(((Const_rangeContext)_localctx).lb.i,((Const_rangeContext)_localctx).ub.i);
 			}
@@ -2010,11 +2019,11 @@ public class FlatzincParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(388);
-			((Const_float_rangeContext)_localctx).lb = float_const();
-			setState(389);
-			match(T__27);
 			setState(390);
+			((Const_float_rangeContext)_localctx).lb = float_const();
+			setState(391);
+			match(T__28);
+			setState(392);
 			((Const_float_rangeContext)_localctx).ub = float_const();
 			((Const_float_rangeContext)_localctx).r =  new ASTFloatRange(((Const_float_rangeContext)_localctx).lb.f,((Const_float_rangeContext)_localctx).ub.f);
 			}
@@ -2061,39 +2070,39 @@ public class FlatzincParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(393);
-			match(T__25);
+			setState(395);
+			match(T__26);
 			((Array_exprContext)_localctx).elems =  new ArrayList<ASTLit>();
-			setState(406);
+			setState(408);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__10) | (1L << T__25) | (1L << Boolconst) | (1L << PREDANNID) | (1L << Floatconst) | (1L << INT) | (1L << STRING))) != 0)) {
+			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__10) | (1L << T__26) | (1L << Boolconst) | (1L << PREDANNID) | (1L << Floatconst) | (1L << INT) | (1L << STRING))) != 0)) {
 				{
-				setState(395);
+				setState(397);
 				((Array_exprContext)_localctx).e = lit_expr();
 				_localctx.elems.add(((Array_exprContext)_localctx).e.e);
-				setState(403);
+				setState(405);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 				while (_la==T__3) {
 					{
 					{
-					setState(397);
+					setState(399);
 					match(T__3);
-					setState(398);
+					setState(400);
 					((Array_exprContext)_localctx).e = lit_expr();
 					_localctx.elems.add(((Array_exprContext)_localctx).e.e);
 					}
 					}
-					setState(405);
+					setState(407);
 					_errHandler.sync(this);
 					_la = _input.LA(1);
 				}
 				}
 			}
 
-			setState(408);
-			match(T__26);
+			setState(410);
+			match(T__27);
 			((Array_exprContext)_localctx).a =  new ASTArray(_localctx.elems);
 			}
 		}
@@ -2139,20 +2148,20 @@ public class FlatzincParser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 			((AnnotationsContext)_localctx).anns =  new ArrayList<ASTLit>();
-			setState(418);
+			setState(420);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			while (_la==T__28) {
+			while (_la==T__29) {
 				{
 				{
-				setState(412);
-				match(T__28);
-				setState(413);
+				setState(414);
+				match(T__29);
+				setState(415);
 				((AnnotationsContext)_localctx).annotation = annotation();
 				_localctx.anns.add(((AnnotationsContext)_localctx).annotation.ann);
 				}
 				}
-				setState(420);
+				setState(422);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			}
@@ -2202,13 +2211,13 @@ public class FlatzincParser extends Parser {
 		enterRule(_localctx, 52, RULE_annotation);
 		int _la;
 		try {
-			setState(445);
+			setState(447);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,28,_ctx) ) {
 			case 1:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(421);
+				setState(423);
 				((AnnotationContext)_localctx).pred_ann_id = pred_ann_id();
 				((AnnotationContext)_localctx).ann =  ((AnnotationContext)_localctx).pred_ann_id.text;
 				}
@@ -2216,46 +2225,46 @@ public class FlatzincParser extends Parser {
 			case 2:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(424);
+				setState(426);
 				((AnnotationContext)_localctx).pred_ann_id = pred_ann_id();
 				((AnnotationContext)_localctx).args =  new ArrayList<ASTLit>();
-				setState(441);
+				setState(443);
 				_errHandler.sync(this);
 				switch (_input.LA(1)) {
-				case T__29:
+				case T__30:
 					{
 					{
-					setState(426);
-					match(T__29);
+					setState(428);
+					match(T__30);
 					}
 					}
 					break;
 				case T__2:
 					{
 					{
-					setState(427);
+					setState(429);
 					match(T__2);
-					setState(428);
+					setState(430);
 					((AnnotationContext)_localctx).expr = expr();
 					_localctx.args.add(((AnnotationContext)_localctx).expr.e);
-					setState(436);
+					setState(438);
 					_errHandler.sync(this);
 					_la = _input.LA(1);
 					while (_la==T__3) {
 						{
 						{
-						setState(430);
+						setState(432);
 						match(T__3);
-						setState(431);
+						setState(433);
 						((AnnotationContext)_localctx).expr = expr();
 						_localctx.args.add(((AnnotationContext)_localctx).expr.e);
 						}
 						}
-						setState(438);
+						setState(440);
 						_errHandler.sync(this);
 						_la = _input.LA(1);
 					}
-					setState(439);
+					setState(441);
 					match(T__4);
 					}
 					}
@@ -2303,7 +2312,7 @@ public class FlatzincParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(447);
+			setState(449);
 			((Pred_ann_idContext)_localctx).PREDANNID = match(PREDANNID);
 			((Pred_ann_idContext)_localctx).text =  idC.getId(((Pred_ann_idContext)_localctx).PREDANNID.getText());
 			}
@@ -2343,7 +2352,7 @@ public class FlatzincParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(450);
+			setState(452);
 			((Bool_constContext)_localctx).Boolconst = match(Boolconst);
 			((Bool_constContext)_localctx).b =  idC.getBool(((Bool_constContext)_localctx).Boolconst.getText().equals("true"));
 			}
@@ -2383,7 +2392,7 @@ public class FlatzincParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(453);
+			setState(455);
 			((Float_constContext)_localctx).Floatconst = match(Floatconst);
 			((Float_constContext)_localctx).f =  idC.getFloat(Float.parseFloat(((Float_constContext)_localctx).Floatconst.getText()));
 			}
@@ -2423,7 +2432,7 @@ public class FlatzincParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(456);
+			setState(458);
 			((Int_constContext)_localctx).INT = match(INT);
 			((Int_constContext)_localctx).i =  idC.getInt(Integer.parseInt(((Int_constContext)_localctx).INT.getText()));
 			}
@@ -2463,7 +2472,7 @@ public class FlatzincParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(459);
+			setState(461);
 			((String_constantContext)_localctx).STRING = match(STRING);
 			((String_constantContext)_localctx).str =  idC.getString(((String_constantContext)_localctx).STRING.getText().substring(1,((String_constantContext)_localctx).STRING.getText().length()-1));
 			}
@@ -2505,7 +2514,7 @@ public class FlatzincParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(462);
+			setState(464);
 			((Var_par_idContext)_localctx).pred_ann_id = pred_ann_id();
 			((Var_par_idContext)_localctx).text =  ((Var_par_idContext)_localctx).pred_ann_id.text;
 			}
@@ -2522,7 +2531,7 @@ public class FlatzincParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\'\u01d4\4\2\t\2\4"+
+		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3(\u01d6\4\2\t\2\4"+
 		"\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t"+
 		"\13\4\f\t\f\4\r\t\r\4\16\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22"+
 		"\4\23\t\23\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31\t\31"+
@@ -2540,50 +2549,50 @@ public class FlatzincParser extends Parser {
 		"\3\13\3\13\3\13\3\13\3\13\3\13\3\13\5\13\u00e2\n\13\3\13\3\13\3\f\3\f"+
 		"\3\f\3\f\3\f\3\f\3\f\3\f\3\f\3\f\5\f\u00f0\n\f\3\r\3\r\3\r\3\r\3\r\3\r"+
 		"\3\r\3\r\3\r\3\r\3\r\3\r\3\r\3\r\3\r\3\r\3\r\3\r\3\r\3\r\3\r\3\r\3\r\3"+
-		"\r\3\r\3\r\5\r\u010c\n\r\3\16\3\16\3\16\3\16\3\16\3\16\5\16\u0114\n\16"+
-		"\3\17\3\17\3\17\3\17\3\17\3\17\5\17\u011c\n\17\3\20\3\20\3\20\3\20\3\20"+
-		"\3\20\3\20\3\20\3\21\3\21\3\21\3\21\3\21\3\21\3\21\3\21\3\22\3\22\5\22"+
-		"\u0130\n\22\3\23\3\23\3\23\3\23\3\23\3\23\3\23\3\23\3\23\3\23\3\23\3\23"+
-		"\3\23\3\23\3\23\3\23\3\23\3\23\5\23\u0144\n\23\3\24\3\24\3\24\3\24\3\24"+
-		"\3\24\3\24\5\24\u014d\n\24\3\24\3\24\3\24\3\24\3\25\3\25\3\25\3\26\3\26"+
+		"\r\3\r\3\r\3\r\3\r\5\r\u010e\n\r\3\16\3\16\3\16\3\16\3\16\3\16\5\16\u0116"+
+		"\n\16\3\17\3\17\3\17\3\17\3\17\3\17\5\17\u011e\n\17\3\20\3\20\3\20\3\20"+
+		"\3\20\3\20\3\20\3\20\3\21\3\21\3\21\3\21\3\21\3\21\3\21\3\21\3\22\3\22"+
+		"\5\22\u0132\n\22\3\23\3\23\3\23\3\23\3\23\3\23\3\23\3\23\3\23\3\23\3\23"+
+		"\3\23\3\23\3\23\3\23\3\23\3\23\3\23\5\23\u0146\n\23\3\24\3\24\3\24\3\24"+
+		"\3\24\3\24\3\24\5\24\u014f\n\24\3\24\3\24\3\24\3\24\3\25\3\25\3\25\3\26"+
 		"\3\26\3\26\3\26\3\26\3\26\3\26\3\26\3\26\3\26\3\26\3\26\3\26\3\26\3\26"+
-		"\3\26\3\26\3\26\3\26\3\26\3\26\3\26\3\26\5\26\u016e\n\26\3\27\3\27\3\27"+
-		"\3\27\3\27\3\27\3\27\3\27\7\27\u0178\n\27\f\27\16\27\u017b\13\27\5\27"+
-		"\u017d\n\27\3\27\3\27\3\27\3\30\3\30\3\30\3\30\3\30\3\31\3\31\3\31\3\31"+
-		"\3\31\3\32\3\32\3\32\3\32\3\32\3\32\3\32\3\32\7\32\u0194\n\32\f\32\16"+
-		"\32\u0197\13\32\5\32\u0199\n\32\3\32\3\32\3\32\3\33\3\33\3\33\3\33\3\33"+
-		"\7\33\u01a3\n\33\f\33\16\33\u01a6\13\33\3\34\3\34\3\34\3\34\3\34\3\34"+
-		"\3\34\3\34\3\34\3\34\3\34\3\34\3\34\7\34\u01b5\n\34\f\34\16\34\u01b8\13"+
-		"\34\3\34\3\34\5\34\u01bc\n\34\3\34\3\34\5\34\u01c0\n\34\3\35\3\35\3\35"+
-		"\3\36\3\36\3\36\3\37\3\37\3\37\3 \3 \3 \3!\3!\3!\3\"\3\"\3\"\3\"\2\2#"+
-		"\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64\668:<>@B\2\2"+
-		"\2\u01ea\2[\3\2\2\2\4`\3\2\2\2\6n\3\2\2\2\br\3\2\2\2\ny\3\2\2\2\f\u0092"+
-		"\3\2\2\2\16\u00b5\3\2\2\2\20\u00b7\3\2\2\2\22\u00c3\3\2\2\2\24\u00d5\3"+
-		"\2\2\2\26\u00ef\3\2\2\2\30\u00f1\3\2\2\2\32\u0113\3\2\2\2\34\u011b\3\2"+
-		"\2\2\36\u011d\3\2\2\2 \u0125\3\2\2\2\"\u012f\3\2\2\2$\u0143\3\2\2\2&\u0145"+
-		"\3\2\2\2(\u0152\3\2\2\2*\u016d\3\2\2\2,\u016f\3\2\2\2.\u0181\3\2\2\2\60"+
-		"\u0186\3\2\2\2\62\u018b\3\2\2\2\64\u019d\3\2\2\2\66\u01bf\3\2\2\28\u01c1"+
-		"\3\2\2\2:\u01c4\3\2\2\2<\u01c7\3\2\2\2>\u01ca\3\2\2\2@\u01cd\3\2\2\2B"+
-		"\u01d0\3\2\2\2DZ\5\4\3\2EF\5\b\5\2FG\7\3\2\2GH\b\2\1\2HZ\3\2\2\2IJ\5\20"+
-		"\t\2JK\7\3\2\2KL\b\2\1\2LZ\3\2\2\2MN\5\22\n\2NO\7\3\2\2OP\b\2\1\2PZ\3"+
-		"\2\2\2QR\5\24\13\2RS\7\3\2\2ST\b\2\1\2TZ\3\2\2\2UV\5\n\6\2VW\7\3\2\2W"+
-		"X\b\2\1\2XZ\3\2\2\2YD\3\2\2\2YE\3\2\2\2YI\3\2\2\2YM\3\2\2\2YQ\3\2\2\2"+
-		"YU\3\2\2\2Z]\3\2\2\2[Y\3\2\2\2[\\\3\2\2\2\\^\3\2\2\2][\3\2\2\2^_\b\2\1"+
-		"\2_\3\3\2\2\2`a\7\4\2\2ab\7\"\2\2bc\7\5\2\2ch\5\6\4\2de\7\6\2\2eg\5\6"+
-		"\4\2fd\3\2\2\2gj\3\2\2\2hf\3\2\2\2hi\3\2\2\2ik\3\2\2\2jh\3\2\2\2kl\7\7"+
-		"\2\2lm\7\3\2\2m\5\3\2\2\2no\5\"\22\2op\7\b\2\2pq\58\35\2q\7\3\2\2\2rs"+
-		"\5\32\16\2st\7\b\2\2tu\5B\"\2uv\7\t\2\2vw\5(\25\2wx\b\5\1\2x\t\3\2\2\2"+
-		"yz\7\n\2\2z{\7\13\2\2{|\7\b\2\2|\u008c\58\35\2}\u0089\7\5\2\2~\177\5\20"+
-		"\t\2\177\u0086\b\6\1\2\u0080\u0081\7\6\2\2\u0081\u0082\5\20\t\2\u0082"+
-		"\u0083\b\6\1\2\u0083\u0085\3\2\2\2\u0084\u0080\3\2\2\2\u0085\u0088\3\2"+
-		"\2\2\u0086\u0084\3\2\2\2\u0086\u0087\3\2\2\2\u0087\u008a\3\2\2\2\u0088"+
-		"\u0086\3\2\2\2\u0089~\3\2\2\2\u0089\u008a\3\2\2\2\u008a\u008b\3\2\2\2"+
-		"\u008b\u008d\7\7\2\2\u008c}\3\2\2\2\u008c\u008d\3\2\2\2\u008d\u008e\3"+
-		"\2\2\2\u008e\u008f\7\t\2\2\u008f\u0090\5\f\7\2\u0090\u0091\b\6\1\2\u0091"+
-		"\13\3\2\2\2\u0092\u0093\7\f\2\2\u0093\u0094\7\r\2\2\u0094\u00a0\b\7\1"+
-		"\2\u0095\u0096\5\16\b\2\u0096\u009d\b\7\1\2\u0097\u0098\7\6\2\2\u0098"+
-		"\u0099\5\16\b\2\u0099\u009a\b\7\1\2\u009a\u009c\3\2\2\2\u009b\u0097\3"+
-		"\2\2\2\u009c\u009f\3\2\2\2\u009d\u009b\3\2\2\2\u009d\u009e\3\2\2\2\u009e"+
+		"\3\26\3\26\3\26\3\26\3\26\3\26\3\26\3\26\3\26\5\26\u0170\n\26\3\27\3\27"+
+		"\3\27\3\27\3\27\3\27\3\27\3\27\7\27\u017a\n\27\f\27\16\27\u017d\13\27"+
+		"\5\27\u017f\n\27\3\27\3\27\3\27\3\30\3\30\3\30\3\30\3\30\3\31\3\31\3\31"+
+		"\3\31\3\31\3\32\3\32\3\32\3\32\3\32\3\32\3\32\3\32\7\32\u0196\n\32\f\32"+
+		"\16\32\u0199\13\32\5\32\u019b\n\32\3\32\3\32\3\32\3\33\3\33\3\33\3\33"+
+		"\3\33\7\33\u01a5\n\33\f\33\16\33\u01a8\13\33\3\34\3\34\3\34\3\34\3\34"+
+		"\3\34\3\34\3\34\3\34\3\34\3\34\3\34\3\34\7\34\u01b7\n\34\f\34\16\34\u01ba"+
+		"\13\34\3\34\3\34\5\34\u01be\n\34\3\34\3\34\5\34\u01c2\n\34\3\35\3\35\3"+
+		"\35\3\36\3\36\3\36\3\37\3\37\3\37\3 \3 \3 \3!\3!\3!\3\"\3\"\3\"\3\"\2"+
+		"\2#\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64\668:<>@B"+
+		"\2\2\2\u01ed\2[\3\2\2\2\4`\3\2\2\2\6n\3\2\2\2\br\3\2\2\2\ny\3\2\2\2\f"+
+		"\u0092\3\2\2\2\16\u00b5\3\2\2\2\20\u00b7\3\2\2\2\22\u00c3\3\2\2\2\24\u00d5"+
+		"\3\2\2\2\26\u00ef\3\2\2\2\30\u00f1\3\2\2\2\32\u0115\3\2\2\2\34\u011d\3"+
+		"\2\2\2\36\u011f\3\2\2\2 \u0127\3\2\2\2\"\u0131\3\2\2\2$\u0145\3\2\2\2"+
+		"&\u0147\3\2\2\2(\u0154\3\2\2\2*\u016f\3\2\2\2,\u0171\3\2\2\2.\u0183\3"+
+		"\2\2\2\60\u0188\3\2\2\2\62\u018d\3\2\2\2\64\u019f\3\2\2\2\66\u01c1\3\2"+
+		"\2\28\u01c3\3\2\2\2:\u01c6\3\2\2\2<\u01c9\3\2\2\2>\u01cc\3\2\2\2@\u01cf"+
+		"\3\2\2\2B\u01d2\3\2\2\2DZ\5\4\3\2EF\5\b\5\2FG\7\3\2\2GH\b\2\1\2HZ\3\2"+
+		"\2\2IJ\5\20\t\2JK\7\3\2\2KL\b\2\1\2LZ\3\2\2\2MN\5\22\n\2NO\7\3\2\2OP\b"+
+		"\2\1\2PZ\3\2\2\2QR\5\24\13\2RS\7\3\2\2ST\b\2\1\2TZ\3\2\2\2UV\5\n\6\2V"+
+		"W\7\3\2\2WX\b\2\1\2XZ\3\2\2\2YD\3\2\2\2YE\3\2\2\2YI\3\2\2\2YM\3\2\2\2"+
+		"YQ\3\2\2\2YU\3\2\2\2Z]\3\2\2\2[Y\3\2\2\2[\\\3\2\2\2\\^\3\2\2\2][\3\2\2"+
+		"\2^_\b\2\1\2_\3\3\2\2\2`a\7\4\2\2ab\7#\2\2bc\7\5\2\2ch\5\6\4\2de\7\6\2"+
+		"\2eg\5\6\4\2fd\3\2\2\2gj\3\2\2\2hf\3\2\2\2hi\3\2\2\2ik\3\2\2\2jh\3\2\2"+
+		"\2kl\7\7\2\2lm\7\3\2\2m\5\3\2\2\2no\5\"\22\2op\7\b\2\2pq\58\35\2q\7\3"+
+		"\2\2\2rs\5\32\16\2st\7\b\2\2tu\5B\"\2uv\7\t\2\2vw\5(\25\2wx\b\5\1\2x\t"+
+		"\3\2\2\2yz\7\n\2\2z{\7\13\2\2{|\7\b\2\2|\u008c\58\35\2}\u0089\7\5\2\2"+
+		"~\177\5\20\t\2\177\u0086\b\6\1\2\u0080\u0081\7\6\2\2\u0081\u0082\5\20"+
+		"\t\2\u0082\u0083\b\6\1\2\u0083\u0085\3\2\2\2\u0084\u0080\3\2\2\2\u0085"+
+		"\u0088\3\2\2\2\u0086\u0084\3\2\2\2\u0086\u0087\3\2\2\2\u0087\u008a\3\2"+
+		"\2\2\u0088\u0086\3\2\2\2\u0089~\3\2\2\2\u0089\u008a\3\2\2\2\u008a\u008b"+
+		"\3\2\2\2\u008b\u008d\7\7\2\2\u008c}\3\2\2\2\u008c\u008d\3\2\2\2\u008d"+
+		"\u008e\3\2\2\2\u008e\u008f\7\t\2\2\u008f\u0090\5\f\7\2\u0090\u0091\b\6"+
+		"\1\2\u0091\13\3\2\2\2\u0092\u0093\7\f\2\2\u0093\u0094\7\r\2\2\u0094\u00a0"+
+		"\b\7\1\2\u0095\u0096\5\16\b\2\u0096\u009d\b\7\1\2\u0097\u0098\7\6\2\2"+
+		"\u0098\u0099\5\16\b\2\u0099\u009a\b\7\1\2\u009a\u009c\3\2\2\2\u009b\u0097"+
+		"\3\2\2\2\u009c\u009f\3\2\2\2\u009d\u009b\3\2\2\2\u009d\u009e\3\2\2\2\u009e"+
 		"\u00a1\3\2\2\2\u009f\u009d\3\2\2\2\u00a0\u0095\3\2\2\2\u00a0\u00a1\3\2"+
 		"\2\2\u00a1\u00a3\3\2\2\2\u00a2\u00a4\7\6\2\2\u00a3\u00a2\3\2\2\2\u00a3"+
 		"\u00a4\3\2\2\2\u00a4\u00a5\3\2\2\2\u00a5\u00a6\7\16\2\2\u00a6\u00a7\7"+
@@ -2610,83 +2619,83 @@ public class FlatzincParser extends Parser {
 		"\7\26\2\2\u00e8\u00f0\b\f\1\2\u00e9\u00ea\7\27\2\2\u00ea\u00f0\b\f\1\2"+
 		"\u00eb\u00ec\7\30\2\2\u00ec\u00ed\7\31\2\2\u00ed\u00ee\7\27\2\2\u00ee"+
 		"\u00f0\b\f\1\2\u00ef\u00e5\3\2\2\2\u00ef\u00e7\3\2\2\2\u00ef\u00e9\3\2"+
-		"\2\2\u00ef\u00eb\3\2\2\2\u00f0\27\3\2\2\2\u00f1\u010b\7\32\2\2\u00f2\u00f3"+
-		"\7\25\2\2\u00f3\u010c\b\r\1\2\u00f4\u00f5\7\26\2\2\u00f5\u010c\b\r\1\2"+
-		"\u00f6\u00f7\5\60\31\2\u00f7\u00f8\b\r\1\2\u00f8\u010c\3\2\2\2\u00f9\u00fa"+
-		"\7\27\2\2\u00fa\u010c\b\r\1\2\u00fb\u00fc\5.\30\2\u00fc\u00fd\b\r\1\2"+
-		"\u00fd\u010c\3\2\2\2\u00fe\u00ff\5,\27\2\u00ff\u0100\b\r\1\2\u0100\u010c"+
-		"\3\2\2\2\u0101\u0102\7\30\2\2\u0102\u0103\7\31\2\2\u0103\u0104\5.\30\2"+
-		"\u0104\u0105\b\r\1\2\u0105\u010c\3\2\2\2\u0106\u0107\7\30\2\2\u0107\u0108"+
-		"\7\31\2\2\u0108\u0109\5,\27\2\u0109\u010a\b\r\1\2\u010a\u010c\3\2\2\2"+
-		"\u010b\u00f2\3\2\2\2\u010b\u00f4\3\2\2\2\u010b\u00f6\3\2\2\2\u010b\u00f9"+
-		"\3\2\2\2\u010b\u00fb\3\2\2\2\u010b\u00fe\3\2\2\2\u010b\u0101\3\2\2\2\u010b"+
-		"\u0106\3\2\2\2\u010c\31\3\2\2\2\u010d\u010e\5\26\f\2\u010e\u010f\b\16"+
-		"\1\2\u010f\u0114\3\2\2\2\u0110\u0111\5 \21\2\u0111\u0112\b\16\1\2\u0112"+
-		"\u0114\3\2\2\2\u0113\u010d\3\2\2\2\u0113\u0110\3\2\2\2\u0114\33\3\2\2"+
-		"\2\u0115\u0116\5\30\r\2\u0116\u0117\b\17\1\2\u0117\u011c\3\2\2\2\u0118"+
-		"\u0119\5\36\20\2\u0119\u011a\b\17\1\2\u011a\u011c\3\2\2\2\u011b\u0115"+
-		"\3\2\2\2\u011b\u0118\3\2\2\2\u011c\35\3\2\2\2\u011d\u011e\7\33\2\2\u011e"+
-		"\u011f\7\34\2\2\u011f\u0120\5.\30\2\u0120\u0121\7\35\2\2\u0121\u0122\7"+
-		"\31\2\2\u0122\u0123\5\30\r\2\u0123\u0124\b\20\1\2\u0124\37\3\2\2\2\u0125"+
-		"\u0126\7\33\2\2\u0126\u0127\7\34\2\2\u0127\u0128\5.\30\2\u0128\u0129\7"+
-		"\35\2\2\u0129\u012a\7\31\2\2\u012a\u012b\5\26\f\2\u012b\u012c\b\21\1\2"+
-		"\u012c!\3\2\2\2\u012d\u0130\5$\23\2\u012e\u0130\5&\24\2\u012f\u012d\3"+
-		"\2\2\2\u012f\u012e\3\2\2\2\u0130#\3\2\2\2\u0131\u0144\5\30\r\2\u0132\u0144"+
-		"\5\26\f\2\u0133\u0134\5<\37\2\u0134\u0135\7\36\2\2\u0135\u0136\5<\37\2"+
-		"\u0136\u0144\3\2\2\2\u0137\u0144\5,\27\2\u0138\u0144\5.\30\2\u0139\u013a"+
-		"\7\30\2\2\u013a\u013b\7\31\2\2\u013b\u0144\5.\30\2\u013c\u013d\7\30\2"+
-		"\2\u013d\u013e\7\31\2\2\u013e\u0144\5,\27\2\u013f\u0140\7\32\2\2\u0140"+
-		"\u0141\7\30\2\2\u0141\u0142\7\31\2\2\u0142\u0144\7\27\2\2\u0143\u0131"+
-		"\3\2\2\2\u0143\u0132\3\2\2\2\u0143\u0133\3\2\2\2\u0143\u0137\3\2\2\2\u0143"+
-		"\u0138\3\2\2\2\u0143\u0139\3\2\2\2\u0143\u013c\3\2\2\2\u0143\u013f\3\2"+
-		"\2\2\u0144%\3\2\2\2\u0145\u0146\7\33\2\2\u0146\u014c\7\34\2\2\u0147\u014d"+
-		"\5.\30\2\u0148\u014d\7\27\2\2\u0149\u014a\7\27\2\2\u014a\u014b\7\6\2\2"+
-		"\u014b\u014d\7\27\2\2\u014c\u0147\3\2\2\2\u014c\u0148\3\2\2\2\u014c\u0149"+
-		"\3\2\2\2\u014d\u014e\3\2\2\2\u014e\u014f\7\35\2\2\u014f\u0150\7\31\2\2"+
-		"\u0150\u0151\5$\23\2\u0151\'\3\2\2\2\u0152\u0153\5*\26\2\u0153\u0154\b"+
-		"\25\1\2\u0154)\3\2\2\2\u0155\u0156\5:\36\2\u0156\u0157\b\26\1\2\u0157"+
-		"\u016e\3\2\2\2\u0158\u0159\5<\37\2\u0159\u015a\b\26\1\2\u015a\u016e\3"+
-		"\2\2\2\u015b\u015c\5> \2\u015c\u015d\b\26\1\2\u015d\u016e\3\2\2\2\u015e"+
-		"\u015f\5.\30\2\u015f\u0160\b\26\1\2\u0160\u016e\3\2\2\2\u0161\u0162\5"+
-		",\27\2\u0162\u0163\b\26\1\2\u0163\u016e\3\2\2\2\u0164\u0165\5\66\34\2"+
-		"\u0165\u0166\b\26\1\2\u0166\u016e\3\2\2\2\u0167\u0168\5\62\32\2\u0168"+
-		"\u0169\b\26\1\2\u0169\u016e\3\2\2\2\u016a\u016b\5@!\2\u016b\u016c\b\26"+
-		"\1\2\u016c\u016e\3\2\2\2\u016d\u0155\3\2\2\2\u016d\u0158\3\2\2\2\u016d"+
-		"\u015b\3\2\2\2\u016d\u015e\3\2\2\2\u016d\u0161\3\2\2\2\u016d\u0164\3\2"+
-		"\2\2\u016d\u0167\3\2\2\2\u016d\u016a\3\2\2\2\u016e+\3\2\2\2\u016f\u0170"+
-		"\7\r\2\2\u0170\u017c\b\27\1\2\u0171\u0172\5> \2\u0172\u0179\b\27\1\2\u0173"+
-		"\u0174\7\6\2\2\u0174\u0175\5> \2\u0175\u0176\b\27\1\2\u0176\u0178\3\2"+
-		"\2\2\u0177\u0173\3\2\2\2\u0178\u017b\3\2\2\2\u0179\u0177\3\2\2\2\u0179"+
-		"\u017a\3\2\2\2\u017a\u017d\3\2\2\2\u017b\u0179\3\2\2\2\u017c\u0171\3\2"+
-		"\2\2\u017c\u017d\3\2\2\2\u017d\u017e\3\2\2\2\u017e\u017f\7\16\2\2\u017f"+
-		"\u0180\b\27\1\2\u0180-\3\2\2\2\u0181\u0182\5> \2\u0182\u0183\7\36\2\2"+
-		"\u0183\u0184\5> \2\u0184\u0185\b\30\1\2\u0185/\3\2\2\2\u0186\u0187\5<"+
-		"\37\2\u0187\u0188\7\36\2\2\u0188\u0189\5<\37\2\u0189\u018a\b\31\1\2\u018a"+
-		"\61\3\2\2\2\u018b\u018c\7\34\2\2\u018c\u0198\b\32\1\2\u018d\u018e\5*\26"+
-		"\2\u018e\u0195\b\32\1\2\u018f\u0190\7\6\2\2\u0190\u0191\5*\26\2\u0191"+
-		"\u0192\b\32\1\2\u0192\u0194\3\2\2\2\u0193\u018f\3\2\2\2\u0194\u0197\3"+
-		"\2\2\2\u0195\u0193\3\2\2\2\u0195\u0196\3\2\2\2\u0196\u0199\3\2\2\2\u0197"+
-		"\u0195\3\2\2\2\u0198\u018d\3\2\2\2\u0198\u0199\3\2\2\2\u0199\u019a\3\2"+
-		"\2\2\u019a\u019b\7\35\2\2\u019b\u019c\b\32\1\2\u019c\63\3\2\2\2\u019d"+
-		"\u01a4\b\33\1\2\u019e\u019f\7\37\2\2\u019f\u01a0\5\66\34\2\u01a0\u01a1"+
-		"\b\33\1\2\u01a1\u01a3\3\2\2\2\u01a2\u019e\3\2\2\2\u01a3\u01a6\3\2\2\2"+
-		"\u01a4\u01a2\3\2\2\2\u01a4\u01a5\3\2\2\2\u01a5\65\3\2\2\2\u01a6\u01a4"+
-		"\3\2\2\2\u01a7\u01a8\58\35\2\u01a8\u01a9\b\34\1\2\u01a9\u01c0\3\2\2\2"+
-		"\u01aa\u01ab\58\35\2\u01ab\u01bb\b\34\1\2\u01ac\u01bc\7 \2\2\u01ad\u01ae"+
-		"\7\5\2\2\u01ae\u01af\5(\25\2\u01af\u01b6\b\34\1\2\u01b0\u01b1\7\6\2\2"+
-		"\u01b1\u01b2\5(\25\2\u01b2\u01b3\b\34\1\2\u01b3\u01b5\3\2\2\2\u01b4\u01b0"+
-		"\3\2\2\2\u01b5\u01b8\3\2\2\2\u01b6\u01b4\3\2\2\2\u01b6\u01b7\3\2\2\2\u01b7"+
-		"\u01b9\3\2\2\2\u01b8\u01b6\3\2\2\2\u01b9\u01ba\7\7\2\2\u01ba\u01bc\3\2"+
-		"\2\2\u01bb\u01ac\3\2\2\2\u01bb\u01ad\3\2\2\2\u01bc\u01bd\3\2\2\2\u01bd"+
-		"\u01be\b\34\1\2\u01be\u01c0\3\2\2\2\u01bf\u01a7\3\2\2\2\u01bf\u01aa\3"+
-		"\2\2\2\u01c0\67\3\2\2\2\u01c1\u01c2\7\"\2\2\u01c2\u01c3\b\35\1\2\u01c3"+
-		"9\3\2\2\2\u01c4\u01c5\7!\2\2\u01c5\u01c6\b\36\1\2\u01c6;\3\2\2\2\u01c7"+
-		"\u01c8\7$\2\2\u01c8\u01c9\b\37\1\2\u01c9=\3\2\2\2\u01ca\u01cb\7%\2\2\u01cb"+
-		"\u01cc\b \1\2\u01cc?\3\2\2\2\u01cd\u01ce\7&\2\2\u01ce\u01cf\b!\1\2\u01cf"+
-		"A\3\2\2\2\u01d0\u01d1\58\35\2\u01d1\u01d2\b\"\1\2\u01d2C\3\2\2\2\37Y["+
-		"h\u0086\u0089\u008c\u009d\u00a0\u00a3\u00b5\u00bf\u00ce\u00e1\u00ef\u010b"+
-		"\u0113\u011b\u012f\u0143\u014c\u016d\u0179\u017c\u0195\u0198\u01a4\u01b6"+
-		"\u01bb\u01bf";
+		"\2\2\u00ef\u00eb\3\2\2\2\u00f0\27\3\2\2\2\u00f1\u010d\7\32\2\2\u00f2\u00f3"+
+		"\7\25\2\2\u00f3\u010e\b\r\1\2\u00f4\u00f5\7\26\2\2\u00f5\u010e\b\r\1\2"+
+		"\u00f6\u00f7\5\60\31\2\u00f7\u00f8\b\r\1\2\u00f8\u010e\3\2\2\2\u00f9\u00fa"+
+		"\7\27\2\2\u00fa\u010e\b\r\1\2\u00fb\u00fc\7\33\2\2\u00fc\u010e\b\r\1\2"+
+		"\u00fd\u00fe\5.\30\2\u00fe\u00ff\b\r\1\2\u00ff\u010e\3\2\2\2\u0100\u0101"+
+		"\5,\27\2\u0101\u0102\b\r\1\2\u0102\u010e\3\2\2\2\u0103\u0104\7\30\2\2"+
+		"\u0104\u0105\7\31\2\2\u0105\u0106\5.\30\2\u0106\u0107\b\r\1\2\u0107\u010e"+
+		"\3\2\2\2\u0108\u0109\7\30\2\2\u0109\u010a\7\31\2\2\u010a\u010b\5,\27\2"+
+		"\u010b\u010c\b\r\1\2\u010c\u010e\3\2\2\2\u010d\u00f2\3\2\2\2\u010d\u00f4"+
+		"\3\2\2\2\u010d\u00f6\3\2\2\2\u010d\u00f9\3\2\2\2\u010d\u00fb\3\2\2\2\u010d"+
+		"\u00fd\3\2\2\2\u010d\u0100\3\2\2\2\u010d\u0103\3\2\2\2\u010d\u0108\3\2"+
+		"\2\2\u010e\31\3\2\2\2\u010f\u0110\5\26\f\2\u0110\u0111\b\16\1\2\u0111"+
+		"\u0116\3\2\2\2\u0112\u0113\5 \21\2\u0113\u0114\b\16\1\2\u0114\u0116\3"+
+		"\2\2\2\u0115\u010f\3\2\2\2\u0115\u0112\3\2\2\2\u0116\33\3\2\2\2\u0117"+
+		"\u0118\5\30\r\2\u0118\u0119\b\17\1\2\u0119\u011e\3\2\2\2\u011a\u011b\5"+
+		"\36\20\2\u011b\u011c\b\17\1\2\u011c\u011e\3\2\2\2\u011d\u0117\3\2\2\2"+
+		"\u011d\u011a\3\2\2\2\u011e\35\3\2\2\2\u011f\u0120\7\34\2\2\u0120\u0121"+
+		"\7\35\2\2\u0121\u0122\5.\30\2\u0122\u0123\7\36\2\2\u0123\u0124\7\31\2"+
+		"\2\u0124\u0125\5\30\r\2\u0125\u0126\b\20\1\2\u0126\37\3\2\2\2\u0127\u0128"+
+		"\7\34\2\2\u0128\u0129\7\35\2\2\u0129\u012a\5.\30\2\u012a\u012b\7\36\2"+
+		"\2\u012b\u012c\7\31\2\2\u012c\u012d\5\26\f\2\u012d\u012e\b\21\1\2\u012e"+
+		"!\3\2\2\2\u012f\u0132\5$\23\2\u0130\u0132\5&\24\2\u0131\u012f\3\2\2\2"+
+		"\u0131\u0130\3\2\2\2\u0132#\3\2\2\2\u0133\u0146\5\30\r\2\u0134\u0146\5"+
+		"\26\f\2\u0135\u0136\5<\37\2\u0136\u0137\7\37\2\2\u0137\u0138\5<\37\2\u0138"+
+		"\u0146\3\2\2\2\u0139\u0146\5,\27\2\u013a\u0146\5.\30\2\u013b\u013c\7\30"+
+		"\2\2\u013c\u013d\7\31\2\2\u013d\u0146\5.\30\2\u013e\u013f\7\30\2\2\u013f"+
+		"\u0140\7\31\2\2\u0140\u0146\5,\27\2\u0141\u0142\7\32\2\2\u0142\u0143\7"+
+		"\30\2\2\u0143\u0144\7\31\2\2\u0144\u0146\7\27\2\2\u0145\u0133\3\2\2\2"+
+		"\u0145\u0134\3\2\2\2\u0145\u0135\3\2\2\2\u0145\u0139\3\2\2\2\u0145\u013a"+
+		"\3\2\2\2\u0145\u013b\3\2\2\2\u0145\u013e\3\2\2\2\u0145\u0141\3\2\2\2\u0146"+
+		"%\3\2\2\2\u0147\u0148\7\34\2\2\u0148\u014e\7\35\2\2\u0149\u014f\5.\30"+
+		"\2\u014a\u014f\7\27\2\2\u014b\u014c\7\27\2\2\u014c\u014d\7\6\2\2\u014d"+
+		"\u014f\7\27\2\2\u014e\u0149\3\2\2\2\u014e\u014a\3\2\2\2\u014e\u014b\3"+
+		"\2\2\2\u014f\u0150\3\2\2\2\u0150\u0151\7\36\2\2\u0151\u0152\7\31\2\2\u0152"+
+		"\u0153\5$\23\2\u0153\'\3\2\2\2\u0154\u0155\5*\26\2\u0155\u0156\b\25\1"+
+		"\2\u0156)\3\2\2\2\u0157\u0158\5:\36\2\u0158\u0159\b\26\1\2\u0159\u0170"+
+		"\3\2\2\2\u015a\u015b\5<\37\2\u015b\u015c\b\26\1\2\u015c\u0170\3\2\2\2"+
+		"\u015d\u015e\5> \2\u015e\u015f\b\26\1\2\u015f\u0170\3\2\2\2\u0160\u0161"+
+		"\5.\30\2\u0161\u0162\b\26\1\2\u0162\u0170\3\2\2\2\u0163\u0164\5,\27\2"+
+		"\u0164\u0165\b\26\1\2\u0165\u0170\3\2\2\2\u0166\u0167\5\66\34\2\u0167"+
+		"\u0168\b\26\1\2\u0168\u0170\3\2\2\2\u0169\u016a\5\62\32\2\u016a\u016b"+
+		"\b\26\1\2\u016b\u0170\3\2\2\2\u016c\u016d\5@!\2\u016d\u016e\b\26\1\2\u016e"+
+		"\u0170\3\2\2\2\u016f\u0157\3\2\2\2\u016f\u015a\3\2\2\2\u016f\u015d\3\2"+
+		"\2\2\u016f\u0160\3\2\2\2\u016f\u0163\3\2\2\2\u016f\u0166\3\2\2\2\u016f"+
+		"\u0169\3\2\2\2\u016f\u016c\3\2\2\2\u0170+\3\2\2\2\u0171\u0172\7\r\2\2"+
+		"\u0172\u017e\b\27\1\2\u0173\u0174\5> \2\u0174\u017b\b\27\1\2\u0175\u0176"+
+		"\7\6\2\2\u0176\u0177\5> \2\u0177\u0178\b\27\1\2\u0178\u017a\3\2\2\2\u0179"+
+		"\u0175\3\2\2\2\u017a\u017d\3\2\2\2\u017b\u0179\3\2\2\2\u017b\u017c\3\2"+
+		"\2\2\u017c\u017f\3\2\2\2\u017d\u017b\3\2\2\2\u017e\u0173\3\2\2\2\u017e"+
+		"\u017f\3\2\2\2\u017f\u0180\3\2\2\2\u0180\u0181\7\16\2\2\u0181\u0182\b"+
+		"\27\1\2\u0182-\3\2\2\2\u0183\u0184\5> \2\u0184\u0185\7\37\2\2\u0185\u0186"+
+		"\5> \2\u0186\u0187\b\30\1\2\u0187/\3\2\2\2\u0188\u0189\5<\37\2\u0189\u018a"+
+		"\7\37\2\2\u018a\u018b\5<\37\2\u018b\u018c\b\31\1\2\u018c\61\3\2\2\2\u018d"+
+		"\u018e\7\35\2\2\u018e\u019a\b\32\1\2\u018f\u0190\5*\26\2\u0190\u0197\b"+
+		"\32\1\2\u0191\u0192\7\6\2\2\u0192\u0193\5*\26\2\u0193\u0194\b\32\1\2\u0194"+
+		"\u0196\3\2\2\2\u0195\u0191\3\2\2\2\u0196\u0199\3\2\2\2\u0197\u0195\3\2"+
+		"\2\2\u0197\u0198\3\2\2\2\u0198\u019b\3\2\2\2\u0199\u0197\3\2\2\2\u019a"+
+		"\u018f\3\2\2\2\u019a\u019b\3\2\2\2\u019b\u019c\3\2\2\2\u019c\u019d\7\36"+
+		"\2\2\u019d\u019e\b\32\1\2\u019e\63\3\2\2\2\u019f\u01a6\b\33\1\2\u01a0"+
+		"\u01a1\7 \2\2\u01a1\u01a2\5\66\34\2\u01a2\u01a3\b\33\1\2\u01a3\u01a5\3"+
+		"\2\2\2\u01a4\u01a0\3\2\2\2\u01a5\u01a8\3\2\2\2\u01a6\u01a4\3\2\2\2\u01a6"+
+		"\u01a7\3\2\2\2\u01a7\65\3\2\2\2\u01a8\u01a6\3\2\2\2\u01a9\u01aa\58\35"+
+		"\2\u01aa\u01ab\b\34\1\2\u01ab\u01c2\3\2\2\2\u01ac\u01ad\58\35\2\u01ad"+
+		"\u01bd\b\34\1\2\u01ae\u01be\7!\2\2\u01af\u01b0\7\5\2\2\u01b0\u01b1\5("+
+		"\25\2\u01b1\u01b8\b\34\1\2\u01b2\u01b3\7\6\2\2\u01b3\u01b4\5(\25\2\u01b4"+
+		"\u01b5\b\34\1\2\u01b5\u01b7\3\2\2\2\u01b6\u01b2\3\2\2\2\u01b7\u01ba\3"+
+		"\2\2\2\u01b8\u01b6\3\2\2\2\u01b8\u01b9\3\2\2\2\u01b9\u01bb\3\2\2\2\u01ba"+
+		"\u01b8\3\2\2\2\u01bb\u01bc\7\7\2\2\u01bc\u01be\3\2\2\2\u01bd\u01ae\3\2"+
+		"\2\2\u01bd\u01af\3\2\2\2\u01be\u01bf\3\2\2\2\u01bf\u01c0\b\34\1\2\u01c0"+
+		"\u01c2\3\2\2\2\u01c1\u01a9\3\2\2\2\u01c1\u01ac\3\2\2\2\u01c2\67\3\2\2"+
+		"\2\u01c3\u01c4\7#\2\2\u01c4\u01c5\b\35\1\2\u01c59\3\2\2\2\u01c6\u01c7"+
+		"\7\"\2\2\u01c7\u01c8\b\36\1\2\u01c8;\3\2\2\2\u01c9\u01ca\7%\2\2\u01ca"+
+		"\u01cb\b\37\1\2\u01cb=\3\2\2\2\u01cc\u01cd\7&\2\2\u01cd\u01ce\b \1\2\u01ce"+
+		"?\3\2\2\2\u01cf\u01d0\7\'\2\2\u01d0\u01d1\b!\1\2\u01d1A\3\2\2\2\u01d2"+
+		"\u01d3\58\35\2\u01d3\u01d4\b\"\1\2\u01d4C\3\2\2\2\37Y[h\u0086\u0089\u008c"+
+		"\u009d\u00a0\u00a3\u00b5\u00bf\u00ce\u00e1\u00ef\u010d\u0115\u011d\u0131"+
+		"\u0145\u014e\u016f\u017b\u017e\u0197\u019a\u01a6\u01b8\u01bd\u01c1";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

@@ -456,12 +456,13 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
 
 
   implicit def cstrListToCstr(cstrs: List[CBLSConstraint]): CBLSConstraint = {
-    val cs = new ConstraintSystem(m)
+    /*val cs = new ConstraintSystem(m)
     for(cstr <- cstrs){
       cs.add(cstr)
     }
     cs.close()
-    cs
+    cs*/
+    (Sum(cstrs.map(_.violation)) === 0).nameConstraint("JoinedConstraints")
   }
 
 

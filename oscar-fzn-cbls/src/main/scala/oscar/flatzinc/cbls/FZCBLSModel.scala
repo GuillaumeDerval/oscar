@@ -181,6 +181,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
             cblsIntMap += v.id -> c;
             c;
           case Some(c) => c;
+          case _ => throw new RuntimeException("could not find variable "+ v.id)
         }
       case v:BooleanVariable =>
         cblsIntMap.get(v.id) match {
@@ -256,7 +257,6 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
     useCP = true
   }
   def restrictVarDomains(){
-    //Might want to get rid of CBLSIntVarDom <---- yes!
     for(v<-fzModel.variables if !v.isDefined && !v.cstrs.exists{
         case c:subcircuit => true;
         case c:circuit => true;
