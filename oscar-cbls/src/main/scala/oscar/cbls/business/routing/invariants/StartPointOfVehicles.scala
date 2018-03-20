@@ -1,7 +1,7 @@
 package oscar.cbls.business.routing.invariants
 
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.routing.model.VehicleLocation
+import oscar.cbls.business.routing.models.VehicleLocation
 import oscar.cbls.core._
 
 /**

@@ -20,7 +20,7 @@ import oscar.cbls.algo.magicArray.MagicIntArrayStacked
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.routing.model.VehicleLocation
+import oscar.cbls.business.routing.models.VehicleLocation
 import oscar.cbls.core._
 
 

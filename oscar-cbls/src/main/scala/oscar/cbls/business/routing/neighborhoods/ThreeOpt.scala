@@ -30,7 +30,7 @@ package oscar.cbls.business.routing.neighborhoods
 
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.{HotRestart, Pairs}
-import oscar.cbls.business.routing.model.VRP
+import oscar.cbls.business.routing.models.VRP
 import oscar.cbls.core.search._
 
 

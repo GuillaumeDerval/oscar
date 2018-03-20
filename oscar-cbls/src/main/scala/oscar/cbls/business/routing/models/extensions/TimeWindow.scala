@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.model.extensions
+package oscar.cbls.business.routing.models.extensions
 
 /**
   * This class is only used to simplify the constraints creation.

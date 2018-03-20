@@ -15,7 +15,7 @@ package oscar.cbls.business.routing.neighborhoods
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.business.routing.model.VRP
+import oscar.cbls.business.routing.models.VRP
 import oscar.cbls.core.computation.Variable
 import oscar.cbls.core.search.{Move, Neighborhood}
 

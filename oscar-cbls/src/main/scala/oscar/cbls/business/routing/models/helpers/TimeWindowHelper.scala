@@ -1,9 +1,9 @@
-package oscar.cbls.business.routing.model.helpers
+package oscar.cbls.business.routing.models.helpers
 
 import oscar.cbls.algo.search.Pairs
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.model.TTFMatrix
-import oscar.cbls.business.routing.model.extensions.TimeWindow
+import oscar.cbls.business.routing.models.TTFMatrix
+import oscar.cbls.business.routing.models.extensions.TimeWindow
 
 import scala.collection.immutable.HashSet
 

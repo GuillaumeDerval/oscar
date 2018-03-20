@@ -28,7 +28,7 @@ import scala.util.Random
 /**
  * Created by rdl on 29-01-16.
  */
-object carSequencerBench  extends CBLSModel with App {
+object CarSequencerBench  extends CBLSModel with App {
 
   val orderedCarsByType:SortedMap[Int,Int] = SortedMap(0 -> 110, 1 -> 60, 2 -> 110 , 3 -> 120, 4 -> 40, 5 -> 30)
   val carTypes = 0 to 5

@@ -13,9 +13,9 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-package oscar.cbls.business.routing.api
+package oscar.cbls.business.routing.modeling
 
-import oscar.cbls.business.routing.model.VRP
+import oscar.cbls.business.routing.models.VRP
 import oscar.cbls.business.routing.neighborhoods._
 import oscar.cbls.core.search.{Best, First, LoopBehavior}
 

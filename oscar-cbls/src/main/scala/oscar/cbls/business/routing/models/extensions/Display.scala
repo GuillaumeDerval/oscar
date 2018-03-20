@@ -1,6 +1,6 @@
-package oscar.cbls.business.routing.model.extensions
+package oscar.cbls.business.routing.models.extensions
 
-import oscar.cbls.business.routing.model.VRP
+import oscar.cbls.business.routing.models.VRP
 import oscar.cbls.business.routing.visual.{RoutingMap, RoutingMapContainer}
 import oscar.cbls.visual.ColorGenerator
 

@@ -13,7 +13,7 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-package oscar.cbls.business.routing.api
+package oscar.cbls.business.routing.modeling
 
 import oscar.cbls._
 import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle, ForwardCumulativeIntegerIntegerDimensionOnVehicle}

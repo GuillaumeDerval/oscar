@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.model.helpers
+package oscar.cbls.business.routing.models.helpers
 
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest

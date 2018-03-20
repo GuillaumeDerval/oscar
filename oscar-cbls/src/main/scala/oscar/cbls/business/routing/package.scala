@@ -15,7 +15,7 @@
 package oscar.cbls.business
 
 import oscar.cbls._
-import oscar.cbls.business.routing.api._
+import oscar.cbls.business.routing.modeling._
 
 
 /**
@@ -41,32 +41,32 @@ package object routing
   with ThreeOptAPI
   with TwoOptAPI {
 
-  type VRP = oscar.cbls.business.routing.model.VRP
+  type VRP = oscar.cbls.business.routing.models.VRP
   def vrp(m: Store, n: Int, v: Int, maxPivotPerValuePercent: Int = 4): VRP =
     new VRP(m, n, v, maxPivotPerValuePercent)
 
-  type TTFMatrix = oscar.cbls.business.routing.model.TTFMatrix
+  type TTFMatrix = oscar.cbls.business.routing.models.TTFMatrix
   def ttfMatrix(nodeCount: Int, defaultTTF: PrimitiveTravelTimeFunction): TTFMatrix =
     new TTFMatrix(nodeCount, defaultTTF)
 
-  type TTFConst = oscar.cbls.business.routing.model.TTFConst
+  type TTFConst = oscar.cbls.business.routing.models.TTFConst
   def ttfConst(travelDuration: Int): TTFConst =
     new TTFConst(travelDuration)
 
-  type TTFHistogram = oscar.cbls.business.routing.model.TTFHistogram
+  type TTFHistogram = oscar.cbls.business.routing.models.TTFHistogram
   def ttfHistogram(nbSlots: Int, overallDuration: Int): TTFHistogram =
     new TTFHistogram(nbSlots, overallDuration)
 
-  type TTFSegments = oscar.cbls.business.routing.model.TTFSegments
+  type TTFSegments = oscar.cbls.business.routing.models.TTFSegments
   def ttfSegments(nbPoints: Int, overallDuration: Int): TTFSegments =
     new TTFSegments(nbPoints, overallDuration)
 
-  type PrimitiveTravelTimeFunction = oscar.cbls.business.routing.model.PrimitiveTravelTimeFunction
+  type PrimitiveTravelTimeFunction = oscar.cbls.business.routing.models.PrimitiveTravelTimeFunction
 
-  val CapacityHelper = oscar.cbls.business.routing.model.helpers.CapacityHelper
-  val ChainsHelper = oscar.cbls.business.routing.model.helpers.ChainsHelper
-  val DistanceHelper = oscar.cbls.business.routing.model.helpers.DistanceHelper
-  val TimeWindowHelper = oscar.cbls.business.routing.model.helpers.TimeWindowHelper
+  val CapacityHelper = oscar.cbls.business.routing.models.helpers.CapacityHelper
+  val ChainsHelper = oscar.cbls.business.routing.models.helpers.ChainsHelper
+  val DistanceHelper = oscar.cbls.business.routing.models.helpers.DistanceHelper
+  val TimeWindowHelper = oscar.cbls.business.routing.models.helpers.TimeWindowHelper
 
 }
 

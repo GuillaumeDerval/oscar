@@ -1,6 +1,6 @@
-package oscar.cbls.business.routing.model.extensions
+package oscar.cbls.business.routing.models.extensions
 
-import oscar.cbls.business.routing.model.VRP
+import oscar.cbls.business.routing.models.VRP
 
 import scala.collection.immutable.{HashSet, List}
 import scala.collection.mutable

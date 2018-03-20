@@ -29,7 +29,7 @@ import org.jdesktop.swingx.mapviewer.GeoPosition
 import org.jdesktop.swingx.painter.Painter
 
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.business.routing.model.VRP
+import oscar.cbls.business.routing.models.VRP
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualArrow, VisualCircle, VisualLine, VisualShape}
 

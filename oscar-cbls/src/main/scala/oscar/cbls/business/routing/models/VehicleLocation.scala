@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.model
+package oscar.cbls.business.routing.models
 
 import oscar.cbls.algo.seq.IntSequence
 
