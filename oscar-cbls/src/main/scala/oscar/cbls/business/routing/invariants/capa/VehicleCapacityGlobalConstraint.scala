@@ -17,7 +17,7 @@ package oscar.cbls.business.routing.invariants.capa
 
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.routing.invariants.group.PreComputeInvariant
+import oscar.cbls.business.routing.invariants.group.GenericRoutingGlobalConstraintForward
 import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue}
 import oscar.cbls.core.propagation.Checker
 
@@ -41,7 +41,7 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
                                       maxCapacity: Int,
                                       violation: Array[CBLSIntVar],
                                       contentAtEndOfVehicleRoute: Array[CBLSIntVar])
-  extends PreComputeInvariant[PreComputeClass, SavedValuesAtCheckpoint](routes, v) {
+  extends GenericRoutingGlobalConstraintForward[PreComputeClass, SavedValuesAtCheckpoint](routes, v) {
 
   registerStaticAndDynamicDependency(routes)
   this.finishInitialization()
