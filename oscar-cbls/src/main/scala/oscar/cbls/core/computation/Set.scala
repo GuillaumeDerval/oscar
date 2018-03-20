@@ -261,7 +261,7 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
 
 
 
-
+//TODO: use the same code as in Int and Seq!!!
   def value:SortedSet[Int] = getValue(false)
 
   protected def newValue:SortedSet[Int] = getValue(true)

@@ -50,6 +50,10 @@ trait SchedulingHandler {
   def propagationStructure: PropagationStructure
 }
 
+class PropagationRunner extends SchedulingHandler{
+
+}
+
 /**
   * This class manages propagation among propagation elements.
   *
@@ -324,7 +328,7 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
     for (propagationGroup <- partialPropagationTargets) {
       val propagationGroupWithoutTrack = QList.buildFromIterable(propagationGroup.filter(p => !fastPropagationTracks.contains(p.uniqueID)))
       if (propagationGroupWithoutTrack != null) {
-        val track = BuildFastPropagationTrack(propagationGroupWithoutTrack)
+        val track = buildFastPropagationTrack(propagationGroupWithoutTrack)
         for (singleTarget <- propagationGroupWithoutTrack) {
           fastPropagationTracks = fastPropagationTracks.insert(singleTarget.uniqueID, track)
         }
@@ -337,7 +341,7 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
     * @param target the propagation element for which we build the partial propagation track
     * @return an array of boolean: UniqueID => should the element with UniqueID be propagated for this target?
     */
-  private def BuildFastPropagationTrack(target: QList[PropagationElement]): Array[Boolean] = {
+  private def buildFastPropagationTrack(target: QList[PropagationElement]): Array[Boolean] = {
     val Track: Array[Boolean] = Array.fill(maxUsedID + 1)(false)
 
     var ToExplore: QList[PropagationElement] = target
@@ -375,7 +379,7 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
 
   /**
     * performs a propagation on a propagation track
-    * if propagation track is omitte, total propagation is performed
+    * if propagation track is omitted, total propagation is performed
     * @param Track the propagation track, an array indices_of_propagation_element -> should it be propagated now
     * @param SameAsBefore the previous propagation was on the same track, so that the postponed element are still postponed
     */
