@@ -20,7 +20,7 @@ object TestVehicleCapacity extends App {
   val maxCapacity = 4
   val routes = new CBLSSeqVar(m, initialValue = IntSequence(0 until v), maxVal = n - 1, n = "Routes")
 
-  val inv = VehicleCapacityGlobalConstraint(routes, v, deltaAtNode, maxCapacity, violation, contentAtEndOfVehicleRoute)
+  val inv = VehicleCapacityGlobalConstraint(routes, n, v, deltaAtNode, maxCapacity, violation, contentAtEndOfVehicleRoute)
 
   m.close()
 

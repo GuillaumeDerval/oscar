@@ -27,21 +27,23 @@ import oscar.cbls.core.propagation.Checker
   */
 object VehicleCapacityGlobalConstraint {
   def apply(routes: ChangingSeqValue,
+            n: Int,
             v: Int,
             deltaAtNode: Array[Int],
             maxCapacity: Int,
             violation: Array[CBLSIntVar],
             contentAtEndOfVehicleRoute: Array[CBLSIntVar]): VehicleCapacityGlobalConstraint =
-    new VehicleCapacityGlobalConstraint(routes, v, deltaAtNode, maxCapacity, violation, contentAtEndOfVehicleRoute)
+    new VehicleCapacityGlobalConstraint(routes, n, v, deltaAtNode, maxCapacity, violation, contentAtEndOfVehicleRoute)
 }
 
 class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
+                                      n:Int,
                                       v: Int,
                                       deltaAtNode: Array[Int],
                                       maxCapacity: Int,
                                       violation: Array[CBLSIntVar],
                                       contentAtEndOfVehicleRoute: Array[CBLSIntVar])
-  extends GenericRoutingGlobalConstraintForward[PreComputeClass, SavedValuesAtCheckpoint](routes, v) {
+  extends GenericRoutingGlobalConstraintForward[PreComputeClass, SavedValuesAtCheckpoint](routes, n, v) {
 
   registerStaticAndDynamicDependency(routes)
   this.finishInitialization()
@@ -334,7 +336,7 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
     toReturn
   }
 
-  override def nodesToPreCompute(fromNode: Int, toNode: Int): PreComputeClass = DeltaFromScratch(fromNode, toNode)
+  override def computeDeltaBetweenNodesFromScatch(fromNode: Int, toNode: Int): PreComputeClass = DeltaFromScratch(fromNode, toNode)
 
   override def computeAndAffectOutputFromScratch(seq: IntSequence) = {
     for (vehicle <- vehicles) {

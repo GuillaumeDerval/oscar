@@ -28,10 +28,9 @@ import oscar.cbls.core._
   * @tparam T type of pre-computes used by the invariant
   * @tparam U type of the output of the invariant
   */
-abstract class GenericRoutingGlobalConstraintForward[T: Manifest, U](routes: ChangingSeqValue, v: Int)
+abstract class GenericRoutingGlobalConstraintForward[T: Manifest, U](routes: ChangingSeqValue, n:Int, v: Int)
   extends Invariant with SeqNotificationTarget{
 
-  val n = routes.maxValue+1
   val vehicles = 0 until v
 
   val preComputes: Array[T] = new Array[T](n)
@@ -41,17 +40,21 @@ abstract class GenericRoutingGlobalConstraintForward[T: Manifest, U](routes: Cha
 
   val checkpointStack = new SeqCheckpointedValueStack[(FunctionForPreCompute, VehicleLocation, U)]
 
-  private var bijForPreCompute: FunctionForPreCompute = _
-  private var stackDone = false // is the current bijection a stacked bijection or not
-  private var prevRoutes = routes.newValue /* the route before teh last change. We use it
-  in fromScratchToNode if the bijection is a stacked bijection*/
+  private var bijForPreCompute: FunctionForPreCompute = null
+
+  //is the current bijection a stacked bijection or not
+  private var stackDone = false
+
+  //the route before teh last change. We use it
+  //in fromScratchToNode if the bijection is a stacked bijection
+  private var prevRoutes = routes.newValue
 
   protected var vehicleSearcher: VehicleLocation = VehicleLocation((0 until v).toArray)
 
   computeAndAffectOutputFromScratch(routes.value) // initialize the output of the invariant
 
   /**
-    * we consider that startpoint of all vehicles have the neutral element associated to them.
+    * we consider that start point of all vehicles have the neutral element associated to them.
     * @return an element t of type T such as for all x of type T, x + t = x and x-t = x
     */
   def neutralElement: T
@@ -74,12 +77,12 @@ abstract class GenericRoutingGlobalConstraintForward[T: Manifest, U](routes: Cha
   def plus(x: T, y: T): T
 
   /**
-    *
+    * this method is expected to return Sum(fromNode ... toNode) from scratch
     * @param fromNode
     * @param toNode
     * @return the difference of pre-computes on segment fromNode -> ... -> toNode but here the difference is computed from scratch
     */
-  def nodesToPreCompute(fromNode: Int, toNode:Int): T
+  def computeDeltaBetweenNodesFromScatch(fromNode: Int, toNode:Int): T
 
   def computeAndAffectOutputFromScratch(seq: IntSequence)
 
@@ -130,7 +133,7 @@ abstract class GenericRoutingGlobalConstraintForward[T: Manifest, U](routes: Cha
           newValue = plus(newValue, minus(y, x, reverse = true))
         case fs@FromScratch(fromPos, toPos, topOfStack) =>
           val (fromNode, toNode) = fromScratchToNode(fs)
-          newValue = plus(newValue, nodesToPreCompute(fromNode, toNode))
+          newValue = plus(newValue, computeDeltaBetweenNodesFromScatch(fromNode, toNode))
       }
     }
     newValue
@@ -146,8 +149,7 @@ abstract class GenericRoutingGlobalConstraintForward[T: Manifest, U](routes: Cha
       val fromNode = routes.newValue.valueAtPosition(fs.fromPos).get
       val toNode = routes.newValue.valueAtPosition(fs.toPos).get
       (fromNode, toNode)
-    }
-    else{
+    } else{
       // current bijection is stacked. If fs is not the last inserted node, we need to look at the previous value of the routes
       if (fs.topOfStack){
         require(fs.fromPos == fs.toPos)

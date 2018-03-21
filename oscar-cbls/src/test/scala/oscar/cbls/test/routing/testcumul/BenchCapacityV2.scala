@@ -27,7 +27,7 @@ class MySimpleRoutingWithVehicleCapacity(n: Int, v: Int, symmetricDistance:Array
   val violation = Array.tabulate(v)(vehicle => CBLSIntVar(routes.model, name = "violation of vehicle" + vehicle))
   val contentAtEndOfVehicleRoute = Array.tabulate(v)(vehicle => CBLSIntVar(routes.model, value = deltaAtNode(vehicle), name = "content at end of vehicle" + vehicle))
 
-  val contentConstraint = VehicleCapacityGlobalConstraint(routes, v, deltaAtNode, maxCapa, violation, contentAtEndOfVehicleRoute)
+  val contentConstraint = VehicleCapacityGlobalConstraint(routes, n, v, deltaAtNode, maxCapa, violation, contentAtEndOfVehicleRoute)
   val obj = new CascadingObjective(violation(0) + violation(1) + violation(2) + violation(3) + violation(4),
     new CascadingObjective(maxNodes,
       Objective(totalDistance + (penaltyForUnrouted*(n - Size(routes))))))
