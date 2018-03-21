@@ -17,7 +17,7 @@ package oscar.cbls.business.routing.invariants.group
 
 import oscar.cbls.algo.magicArray.IterableMagicBoolArray
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.routing.invariants.base._
+import oscar.cbls.business.routing.model.VehicleLocation
 import oscar.cbls.core._
 
 /**
@@ -28,6 +28,7 @@ import oscar.cbls.core._
   * @tparam T type of pre-computes used by the invariant
   * @tparam U type of the output of the invariant
   */
+@deprecated("not enough validation yet, use at your own risk","")
 abstract class GenericRoutingGlobalConstraintForward[T: Manifest, U](routes: ChangingSeqValue, n:Int, v: Int)
   extends Invariant with SeqNotificationTarget{
 

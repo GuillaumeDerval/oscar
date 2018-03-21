@@ -25,6 +25,7 @@ import oscar.cbls.core.propagation.Checker
 /**
   * @author Quentin Meurisse
   */
+@deprecated("not enough validation yet, use at your own risk","")
 object VehicleCapacityGlobalConstraint {
   def apply(routes: ChangingSeqValue,
             n: Int,
@@ -35,7 +36,7 @@ object VehicleCapacityGlobalConstraint {
             contentAtEndOfVehicleRoute: Array[CBLSIntVar]): VehicleCapacityGlobalConstraint =
     new VehicleCapacityGlobalConstraint(routes, n, v, deltaAtNode, maxCapacity, violation, contentAtEndOfVehicleRoute)
 }
-
+@deprecated("not enough validation yet, use at your own risk","")
 class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
                                       n:Int,
                                       v: Int,
