@@ -50,9 +50,7 @@ trait SchedulingHandler {
   def propagationStructure: PropagationStructure
 }
 
-class PropagationRunner extends SchedulingHandler{
 
-}
 
 /**
   * This class manages propagation among propagation elements.

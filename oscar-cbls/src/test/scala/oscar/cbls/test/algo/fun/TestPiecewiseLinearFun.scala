@@ -1,4 +1,4 @@
-package oscar.cbls.test.algo
+package oscar.cbls.test.algo.fun
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -15,7 +15,7 @@ package oscar.cbls.test.algo
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.algo.fun.{PiecewiseLinearFunNaive, IdentityNaive, PiecewiseLinearFun, LinearTransform}
+import oscar.cbls.algo.fun.{IdentityNaive, LinearTransform, PiecewiseLinearFun, PiecewiseLinearFunNaive}
 
 
 
@@ -25,15 +25,14 @@ le bon index linéaire est celui après transformation
  */
 
 
-object TestUpdateableFunction extends App{
+object TestPiecewiseLinearFun extends App{
   val maxVal = 100
   var fnFun = new PiecewiseLinearFun()
   var fnNaive:PiecewiseLinearFunNaive = IdentityNaive
 
   def compare(): Unit ={
     for(i <- 0 to maxVal){
-      //println("checking " + i + ": " + fn(i))
-      if(fnFun(i) != fnNaive(i)) throw new Error("mismatch " + i +  " fn(i)" + fnNaive(i) + " naiveFn(i):" + fnFun(i))
+      require(fnFun(i) == fnNaive(i), "mismatch " + i +  " fn(i)" + fnNaive(i) + " naiveFn(i):" + fnFun(i))
     }
   }
 
@@ -58,39 +57,39 @@ object TestUpdateableFunction extends App{
 
   update(6, 20, new LinearTransform(26,true))
   println(fnNaive)
-  println("f(10) = " +fnNaive(10))
+  println("1f(10) = " +fnNaive(10))
   println
 
   update(7, 14, new LinearTransform(31,true))
   println(fnNaive)
-  println("f(10) = " +fnNaive(10))
+  println("2f(10) = " +fnNaive(10))
   println
   update(6, 20, new LinearTransform(-3,true))
   println(fnNaive)
-  println("f(10) = " +fnNaive(10))
+  println("3f(10) = " +fnNaive(10))
   println
 
 
 
   update(16, 19, new LinearTransform(5,true))
   println(fnNaive)
-  println("f(10) = " +fnNaive(10))
+  println("4f(10) = " +fnNaive(10))
   println
 
   update(6, 16, new LinearTransform(7,true))
   println(fnNaive)
-  println("f(10) = " +fnNaive(10))
+  println("5f(10) = " +fnNaive(10))
   println
 
 
   update(7, 14, new LinearTransform(-3,false))
   println(fnNaive)
-  println("f(10) = " +fnNaive(10))
+  println("6f(10) = " +fnNaive(10))
   println
 
   update(6, 20, new LinearTransform(-3,true))
   println(fnNaive)
-  println("f(10) = " +fnNaive(10))
+  println("7f(10) = " +fnNaive(10))
   println
 
   update(2, 80, new LinearTransform(-30,true))
@@ -99,28 +98,28 @@ object TestUpdateableFunction extends App{
 
   update(6, 19, new LinearTransform(-13,true))
   println(fnNaive)
-  println("f(10) = " +fnNaive(10))
+  println("8f(10) = " +fnNaive(10))
   println
 
   update(7, 19, new LinearTransform(2,false))
   println(fnNaive)
-  println("f(10) = " +fnNaive(10))
+  println("9f(10) = " +fnNaive(10))
   println
 
 
   update(7, 16, new LinearTransform(4,false))
   println(fnNaive)
-  println("f(10) = " +fnNaive(10))
+  println("10f(10) = " +fnNaive(10))
   println
 
 
   update(15, 16, new LinearTransform(-6,false))
   println(fnNaive)
-  println("f(10) = " +fnNaive(10))
+  println("11f(10) = " +fnNaive(10))
   println
 
   update(16, 16, new LinearTransform(-11,true))
   println(fnNaive)
-  println("f(10) = " +fnNaive(10))
+  println("12f(10) = " +fnNaive(10))
   println
 }

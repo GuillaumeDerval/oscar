@@ -1,4 +1,4 @@
-package oscar.cbls.test.algo
+package oscar.cbls.test.algo.magicArrray
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -16,6 +16,7 @@ package oscar.cbls.test.algo
   ******************************************************************************/
 
 import oscar.cbls.algo.magicArray.MagicBoolArray
+
 import scala.util.Random
 
 /**

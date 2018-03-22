@@ -1,4 +1,4 @@
-package oscar.cbls.test.algo
+package oscar.cbls.test.algo.rb
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
