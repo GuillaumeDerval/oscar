@@ -32,12 +32,12 @@ node {
         
         stage('Build') {
             projects.each { project -> 
-                sh "${env.SBT_CMD} project "+project+" compile"
+                sh "${env.SBT_CMD} \'project "+project+"\' compile"
             }
         }
         stage('Test') {
             projects.each { project -> 
-                sh "${env.SBT_CMD} project "+project+" test"
+                sh "${env.SBT_CMD} \'project "+project+"\' test"
             }
         }
         
@@ -51,18 +51,18 @@ node {
     try{
         stage('Package') {
             projects.each { project -> 
-                sh "${env.SBT_CMD} project "+project+" clean package package-doc -Xdisable-assertions"
+                sh "${env.SBT_CMD} \'project "+project+"\' clean package package-doc -Xdisable-assertions"
             }
         }
         stage('ScalaDoc') {
             projects.each { project -> 
-                sh "${env.SBT_CMD} project "+project+" doc"
+                sh "${env.SBT_CMD} \'project "+project+"\' doc"
             }
         }
         
         stage('Publish') {
             projects.each { project -> 
-                sh "${env.SBT_CMD} project "+project+" publish"
+                sh "${env.SBT_CMD} \'project "+project+"\' publish"
             }
         }
     }
