@@ -25,8 +25,7 @@ import sys, os
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.todo', 'sphinx.ext.mathjax', 'sphinx.ext.viewcode']
-
+extensions = ['sphinx.ext.todo', 'sphinx.ext.imgmath', 'sphinx.ext.viewcode']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -42,7 +41,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'OscaR User-Guide'
-copyright = u'2018, Pierre Schaus, Renaud De Landtsheer'
+copyright = u'2016, Pierre Schaus, Renaud De Landtsheer'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -93,13 +92,13 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #html_theme = 'sphinxdoc'
-#html_theme = "classic"
+html_theme = "classic"
 
-import sphinx_rtd_theme
+#import sphinx_rtd_theme
 
-html_theme = "sphinx_rtd_theme"
+#html_theme = "sphinx_rtd_theme"
 
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+#html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 
 
