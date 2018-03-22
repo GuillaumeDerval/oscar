@@ -49,7 +49,7 @@ object AlternativeUnary extends CPModel with App {
   add(maxCumulativeResource(starts, durations, ends, demands, CPIntVar(2)), Medium)
 
   minimize(makespan) search {
-    splitLastConflict(starts ++ resources)
+    splitLastConflict(starts ++ resources, i => i)
   }
 
   start()

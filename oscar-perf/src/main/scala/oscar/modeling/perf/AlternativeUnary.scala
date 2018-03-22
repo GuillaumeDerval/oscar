@@ -55,7 +55,7 @@ object AlternativeUnary extends CPApp[Unit] with App {
   minimize(makespan)
 
   setSearch {
-    Branchings.splitLastConflict(starts ++ resources)
+    Branchings.splitLastConflict(starts ++ resources,i => i)
   }
 
   onSolution {}
