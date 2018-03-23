@@ -51,12 +51,12 @@ class ImmutableArrayIterator[T](on:ImmutableArray[T])extends Iterator[T]{
 object TestImmutableArray extends App{
 
   val n = 100
-  val referenceArray = Array.tabulate(n)(id => Random.nextInt(id))
+  val referenceArray = Array.tabulate(n)(id => Random.nextInt(id+1))
   var immutableArray = ImmutableArray.createAndImportBaseValues(referenceArray)
 
   for(i <- 1 to 1000){
     val modifiedId = Random.nextInt(n)
-    val newValue = Random.nextInt(n * modifiedId)
+    val newValue = Random.nextInt(n * (modifiedId+1))
 
     referenceArray(modifiedId) = newValue
     immutableArray = immutableArray.update(modifiedId,newValue,Random.nextBoolean())
