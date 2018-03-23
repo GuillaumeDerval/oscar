@@ -1,8 +1,5 @@
 package oscar.cbls.algo.accList
 
-
-package oscar.cbls.algo.accList
-
 object AccList{
   def base[T](l:T*):AccList[T] = new LeafAccList[T](l.toList)
   def acc[T](l:AccList[T]*):AccList[T] = new AccNode[T](l.toList)

@@ -120,7 +120,7 @@ abstract class GenericRoutingGlobalConstraintForward[T: Manifest, U](routes: Cha
     val vehiclePos = routes.newValue.positionOfAnyOccurrence(vehicle).get
     val computationSteps = bijForPreCompute.kindOfComputation(vehiclePos, pos)
     var newValue: T = neutralElement // we need to define a neutral element for initialize the cumulative sum
-    for (step <- computationSteps){
+    for (step <- computationSteps.toList){
       step match {
         case FetchFromPreCompute(from, to, false) =>
           val x =
