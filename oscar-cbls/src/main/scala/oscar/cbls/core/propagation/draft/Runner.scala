@@ -12,19 +12,20 @@ object Runner {
       case None => Runtime.getRuntime.availableProcessors()
       case Some(x) => x
     }
-    if (nbThread == 1) new SimpleRunner(nbLayer)
-    else  new MultiThreadedRunner(nbThread, nbLayer)
+    if (nbThread == 1) new MonoThreadRunner(nbLayer)
+    else  new MultiThreadRunner(nbThread, nbLayer)
   }
 }
 
 abstract class Runner(nbLayers:Int) {
   def enqueue(pes: QList[PropagationElement])
-  def performPropagation(upTo:PropagationElement)
+
+ def performPropagation(upTo:PropagationElement)
 }
 
-class MultiThreadedRunner(nbThread:Int, nbLayers:Int) extends Runner(nbLayers:Int){
+class MultiThreadRunner(nbThread:Int, nbLayers:Int) extends Runner(nbLayers:Int){
 
-  def enqueue(pes: QList[PropagationElement]) {
+  override def enqueue(pes: QList[PropagationElement]) {
     nonEmptyLayers.synchronized {
       var remainingPes = pes
       while(remainingPes != null){
@@ -48,9 +49,9 @@ class MultiThreadedRunner(nbThread:Int, nbLayers:Int) extends Runner(nbLayers:In
   private[this] val threadPool = Executors.newFixedThreadPool(nbThread)
   private[this] val threadIds = 0 until nbThread
 
-  def performPropagation(upTo:PropagationElement) {
-    upTo.schedulingHandler.enqueueForRun()
+  override def performPropagation(upTo:PropagationElement) {
 
+    upTo.schedulingHandler.enqueueForRun()
     val toPropagateArray:Array[QList[PropagationElement]] = Array.fill(nbThread)(null)
 
     while(nonEmptyLayers.nonEmpty) {
@@ -89,10 +90,9 @@ class MultiThreadedRunner(nbThread:Int, nbLayers:Int) extends Runner(nbLayers:In
   }
 }
 
+class MonoThreadRunner(nbLayers:Int) extends Runner(nbLayers:Int){
 
-class SimpleRunner(nbLayers:Int) extends Runner(nbLayers:Int){
-
-  def enqueue(pes: QList[PropagationElement]) {
+ override def enqueue(pes: QList[PropagationElement]) {
     nonEmptyLayers.synchronized {
       for (pe <- pes) {
         val layer = pe.layer
@@ -107,7 +107,7 @@ class SimpleRunner(nbLayers:Int) extends Runner(nbLayers:Int){
   private[this] val layersToPEs: Array[QList[PropagationElement]] = Array.fill(nbLayers)(null)
   private[this] val nonEmptyLayers: BinomialHeap[Int] = new BinomialHeap[Int]((item: Int) => item, nbLayers)
 
-  def performPropagation(upTo:PropagationElement) {
+  override def performPropagation(upTo:PropagationElement) {
     upTo.schedulingHandler.enqueueForRun()
 
     while(nonEmptyLayers.nonEmpty) {
@@ -123,5 +123,3 @@ class SimpleRunner(nbLayers:Int) extends Runner(nbLayers:Int){
     }
   }
 }
-
-
