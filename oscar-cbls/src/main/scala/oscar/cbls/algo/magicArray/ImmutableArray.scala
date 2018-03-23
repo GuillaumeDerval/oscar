@@ -31,25 +31,40 @@ object ImmutableArray{
     val it = baseValues.iterator
     createFromBaseArrayNeverModified(Array.tabulate[T](size)(id => it.next()))
   }
+
+  def empty[T:ClassTag]() = createFromBaseArrayNeverModified(Array.fill[T](0)(null.asInstanceOf[T]))
 }
 
 class ImmutableArray[T:ClassTag](baseValueNeverModified:Array[T],
-                        override val size:Int,
-                        updates:RedBlackTreeMap[T]) extends Iterable[T]{
+                                 override val size:Int,
+                                 updates:RedBlackTreeMap[T]) extends Iterable[T]{
   def apply(id: Int): T =
     if(id >= size) throw new ArrayIndexOutOfBoundsException
     else updates.getOrElse(id,baseValueNeverModified(id))
 
-  def update(id: Int, value: T, fast: Boolean): ImmutableArray[T] = {
+  def update(id: Int, value: T, fast: Boolean=true): ImmutableArray[T] = {
     val tmp = if(id == size) new ImmutableArray[T](baseValueNeverModified,size+1,updates.insert(id,value))
     else if (id < size) new ImmutableArray[T](baseValueNeverModified,size,updates.insert(id,value))
     else throw new ArrayIndexOutOfBoundsException
-    if(fast) tmp else tmp.flatten()
+    if(fast) tmp.flattenIfTooManyUpdates() else tmp.flatten()
   }
 
   def flatten():ImmutableArray[T] = new ImmutableArray(Array.tabulate[T](size)(id => this.apply(id)), size, RedBlackTreeMap.empty[T])
 
+  def flattenIfTooManyUpdates() = {
+    if(updates.size > size/10) flatten()
+    else this
+  }
+
   override def iterator: Iterator[T] = new ImmutableArrayIterator[T](this)
+
+  def content:List[(Int,T)] = this.zipWithIndex.toList.map({case (a,b) => (b,a)})
+
+  def trimByOne():ImmutableArray[T] = {
+    new ImmutableArray(baseValueNeverModified,
+      size-1,
+      updates)
+  }
 }
 
 class ImmutableArrayIterator[T](on:ImmutableArray[T])extends Iterator[T]{

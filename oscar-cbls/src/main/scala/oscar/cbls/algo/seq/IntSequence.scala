@@ -26,11 +26,11 @@ import scala.language.implicitConversions
 object IntSequence{
   def apply(values:Iterable[Int]):IntSequence = {
     val valuesArray = values.toArray
-    val forwardRedBlack = RedBlackTreeMap.makeFromSortedContinuousArray(values.toArray)
+    val internalPositionToVaue = ImmutableArray.createAndImportBaseValues(values)
     val backwardRedBlack:RedBlackTreeMap[RedBlackTreeMap[Int]] = aggregatePosOnValToInternalPosFrom(valuesArray)
 
     new ConcreteIntSequence(
-      forwardRedBlack,
+      internalPositionToVaue,
       backwardRedBlack,
       PiecewiseLinearBijectionNaive.identity,
       valuesArray.length
@@ -48,7 +48,7 @@ object IntSequence{
   }
 
   def empty():IntSequence = new ConcreteIntSequence(
-    RedBlackTreeMap.empty[Int],
+    ImmutableArray.empty[Int],
     RedBlackTreeMap.empty[RedBlackTreeMap[Int]],
     PiecewiseLinearBijectionNaive.identity,
     0
@@ -292,11 +292,8 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:ImmutableArra
 
   private def valueAtInternalPosition(internalPosition : Int) : Option[Int] = {
     if(internalPosition >= startFreeRangeForInternalPosition) None
-    else internalPositionToValueOverrides.get(internalPosition) match{
-        case None => Some(internalPositionToValueArray(internalPosition))
-        case a => a
-      }
-    }
+    else Some(internalPositionToValue(internalPosition))
+  }
 
   override def positionsOfValueQ(value : Int) : QList[Int] = {
     valueToInternalPositions.get(value) match {
@@ -362,7 +359,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:ImmutableArra
     if (fast) return new InsertedIntSequence(this, value, pos)
 
     //insert into red blacks
-    val newInternalPositionToValue = internalPositionToValue.insert(startFreeRangeForInternalPosition, value)
+    val newInternalPositionToValue = internalPositionToValue.update(startFreeRangeForInternalPosition, value)
     val newValueToInternalPosition = internalInsertToValueToInternalPositions(value, startFreeRangeForInternalPosition, valueToInternalPositions)
 
     //move sequence after position, one upward
@@ -400,19 +397,17 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:ImmutableArra
     if (fast) return new RemovedIntSequence(this, pos)
 
     val internalPosition = externalToInternalPosition(pos)
-    val value = internalPositionToValue(internalPosition).head
+    val value = internalPositionToValue(internalPosition)
     val largestInternalPosition = startFreeRangeForInternalPosition - 1
 
-    val valueAtLargestInternalPosition : Int = internalPositionToValue.get(largestInternalPosition).head
+    val valueAtLargestInternalPosition : Int = internalPositionToValue(largestInternalPosition)
 
     val deleteIsAtLargestInternalPosition = internalPosition == largestInternalPosition
 
     val newInternalPositionToValue = if(deleteIsAtLargestInternalPosition) {
-      internalPositionToValue.remove(largestInternalPosition)
+      internalPositionToValue.trimByOne()
     } else{
-      internalPositionToValue.
-        insert(internalPosition, valueAtLargestInternalPosition).
-        remove(largestInternalPosition)
+      internalPositionToValue.update(internalPosition, valueAtLargestInternalPosition).trimByOne()
     }
 
     val newValueToInternalPositions = if(deleteIsAtLargestInternalPosition) {
