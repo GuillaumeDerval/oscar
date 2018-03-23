@@ -736,7 +736,7 @@ class InvariantTests extends FunSuite with Checkers {
     def op(n1:Int,n2:Int,c:Int): Int= {
       oper(n1)(n2) match {
         case 0 => c + matrix(n1)(n2)
-        case 1 => c - matrix(n1)(n2)
+        case 1 => 0 max c - matrix(n1)(n2)
         case 2 => c * matrix(n1)(n2)
         case 3 => c % matrix(n1)(n2)
       }
@@ -749,9 +749,9 @@ class InvariantTests extends FunSuite with Checkers {
       v=v,
       op=op,
       contentAtStart = s,
-      defaultForUnroutedNodes = -1,
-      minContent = Int.MinValue,
-      maxContent = Int.MaxValue
+      defaultForUnroutedNodes = 0,
+      minContent = 0,
+      maxContent = Int.MaxValue - 2
     )
 
       bench.run()
@@ -791,7 +791,7 @@ class InvariantTests extends FunSuite with Checkers {
     def op(n1:Int,n2:Int,c:Int): Int= {
       oper(n1)(n2) match {
         case 0 => c + matrix(n1)(n2)
-        case 1 => c - matrix(n1)(n2)
+        case 1 => 0 max c - matrix(n1)(n2)
         case 2 => c * matrix(n1)(n2)
         case 3 => c % matrix(n1)(n2)
       }
@@ -841,7 +841,7 @@ class InvariantTests extends FunSuite with Checkers {
     def op(n1:Int,n2:Int,c:Int): Int= {
       oper(n1)(n2) match {
         case 0 => c + matrix(n1)(n2)
-        case 1 => c - matrix(n1)(n2)
+        case 1 => 0 max c - matrix(n1)(n2)
         case 2 => c * matrix(n1)(n2)
         case 3 => c % matrix(n1)(n2)
       }

@@ -1,23 +1,39 @@
 package oscar.cbls.algo.magicArray
 
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
 import oscar.cbls.algo.rb.RedBlackTreeMap
 
+import scala.reflect.ClassTag
 import scala.util.Random
 
 object ImmutableArray{
-  def createFromBaseArrayNeverModified[T](baseValueNeverModified:Array[T]):ImmutableArray[T] = {
+  def createFromBaseArrayNeverModified[T:ClassTag](baseValueNeverModified:Array[T]):ImmutableArray[T] = {
     new ImmutableArray[T](baseValueNeverModified,
       baseValueNeverModified.length,
-    RedBlackTreeMap.empty[T])
+      RedBlackTreeMap.empty[T])
   }
-  def createAndImportBaseValues[T](baseValues:Iterable[T]):ImmutableArray[T] = {
+  def createAndImportBaseValues[T:ClassTag](baseValues:Iterable[T]):ImmutableArray[T] = {
     val size = baseValues.size
     val it = baseValues.iterator
-    this(Array.tabulate[T](size)(id => it.next()))
+    createFromBaseArrayNeverModified(Array.tabulate[T](size)(id => it.next()))
   }
 }
 
-class ImmutableArray[T](baseValueNeverModified:Array[T],
+class ImmutableArray[T:ClassTag](baseValueNeverModified:Array[T],
                         override val size:Int,
                         updates:RedBlackTreeMap[T]) extends Iterable[T]{
   def apply(id: Int): T =
@@ -48,15 +64,15 @@ class ImmutableArrayIterator[T](on:ImmutableArray[T])extends Iterator[T]{
   }
 }
 
-object TestImmutabeArray extends App{
+object TestImmutableArray extends App{
 
   val n = 100
-  val referenceArray = Array.tabulate(n)(id => Random.nextInt(id))
+  val referenceArray = Array.tabulate(n)(id => Random.nextInt(id+1))
   var immutableArray = ImmutableArray.createAndImportBaseValues(referenceArray)
 
   for(i <- 1 to 1000){
     val modifiedId = Random.nextInt(n)
-    val newValue = Random.nextInt(n * modifiedId)
+    val newValue = Random.nextInt(n * (modifiedId+1))
 
     referenceArray(modifiedId) = newValue
     immutableArray = immutableArray.update(modifiedId,newValue,Random.nextBoolean())
@@ -65,5 +81,4 @@ object TestImmutabeArray extends App{
       require(referenceArray(id) == immutableArray(id))
     }
   }
-
 }
