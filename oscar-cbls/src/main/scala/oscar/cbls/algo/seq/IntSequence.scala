@@ -16,6 +16,7 @@ package oscar.cbls.algo.seq
   ******************************************************************************/
 
 import oscar.cbls.algo.fun.{LinearTransform, PiecewiseLinearBijectionNaive, PiecewiseLinearFun, Pivot}
+import oscar.cbls.algo.magicArray.ImmutableArray
 import oscar.cbls.algo.quick.{IterableQList, QList}
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 
@@ -242,8 +243,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
 }
 
 
-class ConcreteIntSequence(private[seq] val internalPositionToValueArray:Array[Int],
-                          private[seq] val internalPositionToValueOverrides:RedBlackTreeMap[Int],
+class ConcreteIntSequence(private[seq] val internalPositionToValue:ImmutableArray[Int],
                           private[seq] val valueToInternalPositions:RedBlackTreeMap[RedBlackTreeMap[Int]],
                           private[seq] val externalToInternalPosition:PiecewiseLinearBijectionNaive,
                           private[seq] val startFreeRangeForInternalPosition:Int,
@@ -400,7 +400,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValueArray:Array[In
     if (fast) return new RemovedIntSequence(this, pos)
 
     val internalPosition = externalToInternalPosition(pos)
-    val value = internalPositionToValue.get(internalPosition).head
+    val value = internalPositionToValue(internalPosition).head
     val largestInternalPosition = startFreeRangeForInternalPosition - 1
 
     val valueAtLargestInternalPosition : Int = internalPositionToValue.get(largestInternalPosition).head

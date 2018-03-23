@@ -16,8 +16,8 @@ object ImmutableArray{
 }
 
 class ImmutableArray[T](baseValueNeverModified:Array[T],
-                        val size:Int,
-                        updates:RedBlackTreeMap[T]){
+                        override val size:Int,
+                        updates:RedBlackTreeMap[T]) extends Iterable[T]{
   def apply(id: Int): T =
     if(id >= size) throw new ArrayIndexOutOfBoundsException
     else updates.getOrElse(id,baseValueNeverModified(id))
@@ -29,5 +29,19 @@ class ImmutableArray[T](baseValueNeverModified:Array[T],
   }
 
   def flatten():ImmutableArray[T] = new ImmutableArray(Array.tabulate[T](size)(id => this.apply(id)), size, RedBlackTreeMap.empty[T])
+
+  override def iterator: Iterator[T] = new ImmutableArrayIterator[T](this)
+}
+
+class ImmutableArrayIterator[T](on:ImmutableArray[T])extends Iterator[T]{
+  var nextPos = 0
+
+  override def hasNext: Boolean = nextPos < on.size
+
+  override def next(): T = {
+    val toReturn = on(nextPos)
+    nextPos+=1
+    toReturn
+  }
 }
 
