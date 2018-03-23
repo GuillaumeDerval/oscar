@@ -2,6 +2,8 @@ package oscar.cbls.algo.magicArray
 
 import oscar.cbls.algo.rb.RedBlackTreeMap
 
+import scala.util.Random
+
 object ImmutableArray{
   def createFromBaseArrayNeverModified[T](baseValueNeverModified:Array[T]):ImmutableArray[T] = {
     new ImmutableArray[T](baseValueNeverModified,
@@ -23,9 +25,10 @@ class ImmutableArray[T](baseValueNeverModified:Array[T],
     else updates.getOrElse(id,baseValueNeverModified(id))
 
   def update(id: Int, value: T, fast: Boolean): ImmutableArray[T] = {
-    if(id == size) new ImmutableArray[T](baseValueNeverModified,size+1,updates.insert(id,value))
+    val tmp = if(id == size) new ImmutableArray[T](baseValueNeverModified,size+1,updates.insert(id,value))
     else if (id < size) new ImmutableArray[T](baseValueNeverModified,size,updates.insert(id,value))
     else throw new ArrayIndexOutOfBoundsException
+    if(fast) tmp else tmp.flatten()
   }
 
   def flatten():ImmutableArray[T] = new ImmutableArray(Array.tabulate[T](size)(id => this.apply(id)), size, RedBlackTreeMap.empty[T])
@@ -45,3 +48,22 @@ class ImmutableArrayIterator[T](on:ImmutableArray[T])extends Iterator[T]{
   }
 }
 
+object TestImmutabeArray extends App{
+
+  val n = 100
+  val referenceArray = Array.tabulate(n)(id => Random.nextInt(id))
+  var immutableArray = ImmutableArray.createAndImportBaseValues(referenceArray)
+
+  for(i <- 1 to 1000){
+    val modifiedId = Random.nextInt(n)
+    val newValue = Random.nextInt(n * modifiedId)
+
+    referenceArray(modifiedId) = newValue
+    immutableArray = immutableArray.update(modifiedId,newValue,Random.nextBoolean())
+
+    for(id <- 0 until n){
+      require(referenceArray(id) == immutableArray(id))
+    }
+  }
+
+}
