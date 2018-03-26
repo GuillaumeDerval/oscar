@@ -2,7 +2,6 @@ package oscar.examples.cbls.graphPatrition
 
 import oscar.cbls._
 import oscar.cbls.modeling._
-import oscar.examples.cbls.graphPatrition.GraphPartition.swapsNeighborhood
 
 import scala.util.Random
 
@@ -59,6 +58,16 @@ object GraphPartition extends CBLSModel with App {
         profile(swapsNeighborhood(nodeToPartition,
           symmetryCanBeBrokenOnIndices = false,
           searchZone1 = () => violatedNodes.value, name = "swap1Viol")),
+        profile(swapsNeighborhood(nodeToPartition,
+          symmetryCanBeBrokenOnIndices = false,
+          searchZone1 = () => violatedNodes.value,
+          searchZone2 = (_,_) => violatedNodes.value,
+          name = "swap2Viol")),
+        profile(swapsNeighborhood(nodeToPartition,
+          symmetryCanBeBrokenOnIndices = false,
+          searchZone1 = () => mostViolatedNodes.value,
+          searchZone2 = (_,_) => violatedNodes.value,
+          name = "swap1Viol1Most")),
         profile(swapsNeighborhood(nodeToPartition,
           searchZone1 = () => mostViolatedNodes.value,
           searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).value != itsPartition),
