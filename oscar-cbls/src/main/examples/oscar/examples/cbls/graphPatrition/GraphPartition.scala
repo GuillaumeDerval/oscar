@@ -35,7 +35,8 @@ object GraphPartition extends CBLSModel with App {
   val nbNodesInCluster0 = cardinality(nodeInCluster0)
   val nbNodesInCluster1 = cardinality(nodesInCluster1)
 
-  post(nbNodesInCluster0 === nbNodesInCluster1, nbNodes) //we put some large weight on this constraint
+  val sameSizeConstraint = nbNodesInCluster0 === nbNodesInCluster1
+  post(sameSizeConstraint, nbNodes) //we put some large weight on this constraint
 
   val mostViolatedNodes = argMax(c.violations(nodeToPartition))
 
@@ -45,21 +46,24 @@ object GraphPartition extends CBLSModel with App {
 
 
   close()
-  
+
   val neighborhood =(
     bestSlopeFirst(
       List(
         profile(assignNeighborhood(nodeToPartition, "moveAll")),
         profile(swapsNeighborhood(nodeToPartition, "swapAll")),
         profile(swapsNeighborhood(nodeToPartition,
+          symmetryCanBeBrokenOnIndices = false,
           searchZone1 = () => mostViolatedNodes.value, name = "swap1MostViol")),
         profile(swapsNeighborhood(nodeToPartition,
           searchZone1 = () => mostViolatedNodes.value,
-          searchZone2 = ((otherNode, otherNodePartition) => adjacencyLists(otherNode).filter(n => nodeToPartition(n).value != otherNodePartition)),
+          searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).value != itsPartition),
           hotRestart = false,
+          symmetryCanBeBrokenOnIndices = false,
           name = "swap1MostVAdj")),
         profile(swapsNeighborhood(nodeToPartition,
-          searchZone2 = ((otherNode, otherNodePartition) => adjacencyLists(otherNode).filter(n => nodeToPartition(n).value != otherNodePartition)),
+          symmetryCanBeBrokenOnIndices = false,
+          searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).value != itsPartition),
           name = "swapAdjacent"))
       ),refresh = nbNodes/10)
       onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/10), 2, obj))
@@ -69,5 +73,7 @@ object GraphPartition extends CBLSModel with App {
   neighborhood.doAllMoves(_ >= nbNodes + nbEdges, obj)
 
   println(neighborhood.profilingStatistics)
+
+  println("violation on sameSize(partitions): " + sameSizeConstraint.violation.value)
 }
 
