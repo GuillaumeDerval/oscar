@@ -2,19 +2,28 @@ package oscar.examples.cbls.graphPatrition
 
 import oscar.cbls._
 import oscar.cbls.modeling._
+import oscar.examples.cbls.graphPatrition.GraphPartition.swapsNeighborhood
 
 import scala.util.Random
 
 object GraphPartition extends CBLSModel with App {
 
   val nbNodes:Int = 1000
-  val nbEdges:Int = nbNodes * nbNodes / 10
+  val nbEdges:Int = nbNodes * nbNodes / 100
 
-  def generateRandomEdges(nbNodes:Int,nbEdges:Int):List[(Int,Int)] = {
-    List.tabulate(nbEdges)(_ => (Random.nextInt(nbNodes),Random.nextInt(nbNodes)))
+  def generateRandomEdges(nbNodes:Int,nbEdges:Int):(List[(Int,Int)],Array[List[Int]]) = {
+    val adjacencyLists:Array[List[Int]] = Array.fill(nbNodes)(List.empty)
+    val allEdges = List.tabulate(nbEdges)(_ => {
+      val nodeA = Random.nextInt(nbNodes)
+      val nodeB = Random.nextInt(nbNodes)
+      adjacencyLists(nodeA) = nodeB :: adjacencyLists(nodeA)
+      adjacencyLists(nodeB) = nodeA :: adjacencyLists(nodeB)
+      (nodeA,nodeB)
+    })
+    (allEdges,adjacencyLists)
   }
 
-  val edges = generateRandomEdges(nbNodes,nbEdges)
+  val (edges,adjacencyLists) = generateRandomEdges(nbNodes,nbEdges)
 
   val nodeToPartition = Array.tabulate(nbNodes)((nodeID:Int) => CBLSIntVar(if(Random.nextBoolean()) 1 else 0, 0 to 1, "partitionOfNode_" + nodeID))
 
@@ -22,26 +31,43 @@ object GraphPartition extends CBLSModel with App {
     post(nodeToPartition(nodeA) === nodeToPartition(nodeB))
   }
 
-  val Array(nodeInCluster0:CBLSIntVar,nodesInCluster1:CBLSIntVar) = makeDenseCluster(nodeToPartition).clusters
+  val Array(nodeInCluster0,nodesInCluster1) = makeDenseCluster(nodeToPartition).clusters
   val nbNodesInCluster0 = cardinality(nodeInCluster0)
   val nbNodesInCluster1 = cardinality(nodesInCluster1)
 
   post(nbNodesInCluster0 === nbNodesInCluster1, nbNodes) //we put some large weight on this constraint
 
-  close()
+  val mostViolatedNodes = argMax(c.violations(nodeToPartition))
 
+  c.close()
+
+  val obj = Objective(c.violation)
+
+
+  close()
+  
   val neighborhood =(
     bestSlopeFirst(
       List(
-        assignNeighborhood(nodeToPartition, "moveNodeToOtherPartition"),
-        swapsNeighborhood(nodeToPartition, "swapNodes")
-
+        profile(assignNeighborhood(nodeToPartition, "moveAll")),
+        profile(swapsNeighborhood(nodeToPartition, "swapAll")),
+        profile(swapsNeighborhood(nodeToPartition,
+          searchZone1 = () => mostViolatedNodes.value, name = "swap1MostViol")),
+        profile(swapsNeighborhood(nodeToPartition,
+          searchZone1 = () => mostViolatedNodes.value,
+          searchZone2 = ((otherNode, otherNodePartition) => adjacencyLists(otherNode).filter(n => nodeToPartition(n).value != otherNodePartition)),
+          hotRestart = false,
+          name = "swap1MostVAdj")),
+        profile(swapsNeighborhood(nodeToPartition,
+          searchZone2 = ((otherNode, otherNodePartition) => adjacencyLists(otherNode).filter(n => nodeToPartition(n).value != otherNodePartition)),
+          name = "swapAdjacent"))
       ),refresh = nbNodes/10)
-      onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/10), 2, c.violation))
+      onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/10), 2, obj))
 
 
-  neighborhood.doAllMoves(_ >= nbNodes + nbEdges, c.violation)
+  neighborhood.verbose = 1
+  neighborhood.doAllMoves(_ >= nbNodes + nbEdges, obj)
 
-
+  println(neighborhood.profilingStatistics)
 }
 
