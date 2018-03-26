@@ -38,12 +38,13 @@ object GraphPartition extends CBLSModel with App {
   val sameSizeConstraint = nbNodesInCluster0 === nbNodesInCluster1
   post(sameSizeConstraint, nbNodes) //we put some large weight on this constraint
 
-  val mostViolatedNodes = argMax(c.violations(nodeToPartition))
+  val nodeToViolation = c.violations(nodeToPartition)
+  val mostViolatedNodes = argMax(nodeToViolation)
+  val violatedNodes = filter(nodeToViolation)
 
   c.close()
 
   val obj = Objective(c.violation)
-
 
   close()
 
@@ -51,10 +52,13 @@ object GraphPartition extends CBLSModel with App {
     bestSlopeFirst(
       List(
         profile(assignNeighborhood(nodeToPartition, "moveAll")),
-        profile(swapsNeighborhood(nodeToPartition, "swapAll")),
+        //profile(swapsNeighborhood(nodeToPartition, "swapAll")), this one seems to be not larger than swap1Viol so I disabled it
         profile(swapsNeighborhood(nodeToPartition,
           symmetryCanBeBrokenOnIndices = false,
           searchZone1 = () => mostViolatedNodes.value, name = "swap1MostViol")),
+        profile(swapsNeighborhood(nodeToPartition,
+          symmetryCanBeBrokenOnIndices = false,
+          searchZone1 = () => violatedNodes.value, name = "swap1Viol")),
         profile(swapsNeighborhood(nodeToPartition,
           searchZone1 = () => mostViolatedNodes.value,
           searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).value != itsPartition),
@@ -62,12 +66,17 @@ object GraphPartition extends CBLSModel with App {
           symmetryCanBeBrokenOnIndices = false,
           name = "swap1MostVAdj")),
         profile(swapsNeighborhood(nodeToPartition,
+          searchZone1 = () => violatedNodes.value,
+          searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).value != itsPartition),
+          hotRestart = false,
+          symmetryCanBeBrokenOnIndices = false,
+          name = "swap1ViolAdj")),
+        profile(swapsNeighborhood(nodeToPartition,
           symmetryCanBeBrokenOnIndices = false,
           searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).value != itsPartition),
           name = "swapAdjacent"))
       ),refresh = nbNodes/10)
       onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/10), 2, obj))
-
 
   neighborhood.verbose = 1
   neighborhood.doAllMoves(_ >= nbNodes + nbEdges, obj)
