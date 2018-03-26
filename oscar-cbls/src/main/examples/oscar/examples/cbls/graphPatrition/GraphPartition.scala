@@ -2,7 +2,6 @@ package oscar.examples.cbls.graphPatrition
 
 import oscar.cbls._
 import oscar.cbls.modeling._
-import oscar.examples.cbls.graphPatrition.GraphPartition.swapsNeighborhood
 
 import scala.util.Random
 
