@@ -22,7 +22,7 @@ abstract class SchedulingHandler {
       var listeningSchedulingHandlersAcc = listeningSchedulingHandlers
       while(listeningSchedulingHandlersAcc != null){
         listeningSchedulingHandlersAcc.head.scheduleSHForPropagation(this)
-          listeningSchedulingHandlersAcc = listeningSchedulingHandlersAcc.tail
+        listeningSchedulingHandlersAcc = listeningSchedulingHandlersAcc.tail
       }
     }
   }
@@ -169,7 +169,7 @@ class PropagationStructure(nbThreadOPtDefaultMax:Option[Int]) extends Scheduling
       sh.runner = runner
     }
     if(runner.nbThread!=1) {
-     partitionGraphIntoThreads()
+      partitionGraphIntoThreads()
     }
   }
 
@@ -206,42 +206,121 @@ class PropagationStructure(nbThreadOPtDefaultMax:Option[Int]) extends Scheduling
     for(layer <- 0 until nbLayer){
 
       var currentPEID = 0
-      val pePositionInQListToDecoration:Array[Int] = Array.fill(layerToNbPropagationElements(layer))(0)
+      var nbPEInCurrentLayer = layerToNbPropagationElements(layer)
+      val pePositionInQListToDecoration:Array[Int] = Array.fill(nbPEInCurrentLayer)(0)
+      val pePositionInQListToInterferingDecorations:Array[QList[Int]] = Array.fill(nbPEInCurrentLayer)(null)
       val maximalTreadIMarkingOfCurrentLayer = currentTheadIDForNodeMarking
+
+      def markImpactZoneAndReportConflictingThreadIDMarkings(pe:PropagationElement,
+                                                             currentTheadIDForNodeMarking:Int,
+                                                             maximalTreadIDForReportingConflict:Int,
+                                                             markPropagate:Boolean,
+                                                             markNotify:Boolean,
+                                                             acc0:QList[Int] = null): QList[Int] = {
+
+        require(markNotify || markPropagate)
+
+        pe.notificationBehavior match {
+          case BulkElement =>
+            var myAcc = acc0
+            for (otherPE: PropagationElement <- pe.staticallyListeningElements) {
+              myAcc = markImpactZoneAndReportConflictingThreadIDMarkings(otherPE,
+                currentTheadIDForNodeMarking,
+                maximalTreadIDForReportingConflict,
+                markPropagate = false,
+                markNotify = true,
+                myAcc)
+            }
+            myAcc
+          case _ =>
+            val acc1 = if (pe.threadID > maximalTreadIMarkingOfCurrentLayer) {
+              //the node has not been marked yet while exploring this layer
+              //we mark it, nothing else to do
+              pe.threadID = currentTheadIDForNodeMarking
+              acc0
+            } else {
+              //this node was already marked as interfering with something in this layer, so it is recorded as interfering :(
+              QList(pe.threadID, acc0)
+            }
+
+            pe.notificationBehavior match {
+
+              case NotificationOnPropagate =>
+                if (markPropagate) {
+                  var myAcc = acc1
+                  for (otherPE: PropagationElement <- pe.staticallyListeningElements) {
+                    myAcc = markImpactZoneAndReportConflictingThreadIDMarkings(otherPE,
+                      currentTheadIDForNodeMarking,
+                      maximalTreadIDForReportingConflict,
+                      markPropagate = false,
+                      markNotify = true,
+                      myAcc)
+                  }
+                  myAcc
+                } else {
+                  acc1 //and we do not care about notify
+                }
+              case NotificationOnNotify =>
+                if (markNotify) {
+                  var myAcc = acc1
+                  for (otherPE: PropagationElement <- pe.staticallyListeningElements) {
+                    myAcc = markImpactZoneAndReportConflictingThreadIDMarkings(otherPE,
+                      currentTheadIDForNodeMarking,
+                      maximalTreadIDForReportingConflict,
+                      markPropagate = false,
+                      markNotify = true,
+                      myAcc)
+                  }
+                  myAcc
+                } else {
+                  acc1 //nothing to do, and we do not care about propagation on this node
+                }
+              case NotificationOnNotifyAndPropagate =>
+                //we know that markNotify||markProapgate
+                var myAcc = acc1
+                for (otherPE: PropagationElement <- pe.staticallyListeningElements) {
+                  myAcc = markImpactZoneAndReportConflictingThreadIDMarkings(otherPE,
+                    currentTheadIDForNodeMarking,
+                    maximalTreadIDForReportingConflict,
+                    markPropagate = false,
+                    markNotify = true,
+                    myAcc)
+                }
+                myAcc
+            }
+        }
+      }
+
+
+
+      var interferenceList : QList[(Int,QList[Int])] = null
 
       for(pe <- layerToPropagationElements(layer)){
         currentPEID += 1
         currentTheadIDForNodeMarking = currentTheadIDForNodeMarking -1
 
-        if(pe.threadID > maximalTreadIMarkingOfCurrentLayer ) {
+        val IdForMarkingOnCurrentPE = if(pe.threadID > maximalTreadIMarkingOfCurrentLayer ) {
           //the node has not been marked yet while exploring this layer
-          pePositionInQListToDecoration(currentPEID) = currentTheadIDForNodeMarking
           pe.threadID = currentTheadIDForNodeMarking
-          val interferingIDs:QList[Int] = markPropagationImpactZoneAndReportConflictingThreadIDMarkings(pe,currentTheadIDForNodeMarking, maximalTreadIMarkingOfCurrentLayer)
-          if(interferingIDs != null){
-            val interferenceList = QList(currentTheadIDForNodeMarking,interferingIDs)
-            val largestID = interferenceList.max
-          }
+          currentTheadIDForNodeMarking
         }else{
           //this node was already marked as interfering with something in this layer
-          //we do perform the marking, with the ID already used for this node
-          pePositionInQListToDecoration(currentPEID) = pe.threadID
-          val interferingIDs:QList[Int] = markPropagationImpactZoneAndReportConflictingThreadIDMarkings(pe,currentTheadIDForNodeMarking, maximalTreadIMarkingOfCurrentLayer)
+          //we do perform the marking, with the ID already used for this node, becausse the impact zone is not transitive
+          pe.threadID
         }
+
+        pePositionInQListToDecoration(currentPEID) = IdForMarkingOnCurrentPE
+
+        pePositionInQListToInterferingDecorations(currentPEID) =
+          markImpactZoneAndReportConflictingThreadIDMarkings(pe,IdForMarkingOnCurrentPE, maximalTreadIMarkingOfCurrentLayer,
+            markPropagate = true,
+            markNotify = false
+          )
+
       }
 
 
-      def markPropagationImpactZoneAndReportConflictingThreadIDMarkings(pe:PropagationElement,
-                                                                        currentTheadIDForNodeMarking:Int,
-                                                                        maximalTreadIDForReportingConflict:Int): QList[Int] ={
 
-        pe.notificationBehavior match{
-          case NotificationOnPropagate =>
-          case NotificationOnNotify =>
-          case NotificationOnNotifyAndPropagate =>
-          case BulkElement =>
-        }
-      }
       //next, we find out proper thread IDs for each node
       val threadIDs = Array.fill(nbPE)(-1)
 
