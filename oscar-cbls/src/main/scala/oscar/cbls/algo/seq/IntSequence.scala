@@ -565,19 +565,19 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:ImmutableArra
 
   def regularize(targetToken : Token = this.token) : ConcreteIntSequence = {
     var explorerOpt = this.explorerAtPosition(0)
-    val newInternalPositionToValues:Array[(Int,Int)] = Array.ofDim[(Int,Int)](this.size)
+    val newInternalPositionToValues:Array[Int] = Array.ofDim[Int](this.size)
     val oldInternalPosToNewInternalPos:Array[Int] = Array.ofDim[Int](this.size)
 
     while (explorerOpt match {
       case None => false
       case Some(explorer) =>
-        newInternalPositionToValues(explorer.position) = (explorer.position,explorer.value)
+        newInternalPositionToValues(explorer.position) = explorer.value
         oldInternalPosToNewInternalPos(explorer.asInstanceOf[ConcreteIntSequenceExplorer].internalPos) = explorer.position
         explorerOpt = explorer.next
         true
     }) {}
 
-    new ConcreteIntSequence(RedBlackTreeMap.makeFromSortedArray(newInternalPositionToValues),
+    new ConcreteIntSequence(ImmutableArray.createFromBaseArrayNeverModified(newInternalPositionToValues),
       valueToInternalPositions.updateAll(0,
         oldInternalPositions => {
           val newPositions = oldInternalPositions.keys.map(oldInt => {
@@ -632,7 +632,7 @@ class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
                                    slopeIsPositive:Boolean = currentPivotPosition match{
                                      case None => true
                                      case Some(p) => !p.value.f.minus}
-                                   ) extends IntSequenceExplorer{
+                                 ) extends IntSequenceExplorer{
 
   override def toString : String = "ConcreteIntSequenceExplorer(position:" + position + " value:" + value + " currentPivotPosition:" + currentPivotPosition + " pivotAbovePosition:" + pivotAbovePosition + " positionInRB:" + positionInRB + ")"
 
@@ -642,20 +642,20 @@ class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
       //change pivot, we are also sure that there is a next, so use .head
       val newPivotAbovePosition = pivotAbovePosition.head.next
       val newPosition = position + 1
-      val newPositionInRBOpt = sequence.internalPositionToValue.positionOf(pivotAbovePosition.head.value.f(newPosition))
-      newPositionInRBOpt match{
-        case None => None
-        case Some(newPositionInRB) =>
-          Some(new ConcreteIntSequenceExplorer(sequence,
-            newPosition,
-            newPositionInRB,
-            pivotAbovePosition,
-            newPivotAbovePosition)(limitBelowForCurrentPivot = newPosition))
-      }
+      val newInternalPosition:Int = pivotAbovePosition.get.value.f(newPosition)
+      if(newInternalPosition > sequence.size-1) None
+      else Some(new ConcreteIntSequenceExplorer(
+        sequence,
+        newPosition,
+        newInternalPosition,
+        sequence.internalPositionToValue(newInternalPosition),
+        pivotAbovePosition,
+        newPivotAbovePosition)(limitBelowForCurrentPivot = newPosition))
     }else{
       //do not change pivot
-
-      (if(slopeIsPositive) positionInRB.next else positionInRB.prev) match{
+val newPosition = if(slopeIsPositive) position + 1 else position - 1
+      val newInternalPosition = if(slopeIsPositive) internalPosition + 1 else internalPosition - 1
+      if(ne(if(slopeIsPositive) positionInRB.next else positionInRB.prev) match{
         case None => None
         case Some(newPositionInRB) =>
           Some(new ConcreteIntSequenceExplorer(sequence,
@@ -892,7 +892,7 @@ class MovedIntSequenceExplorer(sequence:MovedIntSequence,
                                 slopeIsPositive:Boolean = currentPivotPosition match{
                                   case None => true
                                   case Some(p) => !p.value.f.minus}
-                                ) extends IntSequenceExplorer{
+                              ) extends IntSequenceExplorer{
 
   override val value : Int = positionInBasicSequence.value
 
