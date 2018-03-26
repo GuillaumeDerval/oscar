@@ -26,8 +26,6 @@ object Queens extends CPModel with App {
   // Search heuristic
   search(binaryFirstFail(queens))
 
-  search(binaryIdx(queens,minDom(queens),minVal(queens)))
-
 
   // Execution
   val stats = start()

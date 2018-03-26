@@ -92,7 +92,7 @@ class TransitionLowerBounds(transitionTimeMatrix: Array[Array[Int]]) {
       solver.add(allDifferent(nodeVars))
 
       solver.search {
-        binaryLastConflict(nodeVars)
+        splitLastConflict(nodeVars)
       }
 
       solver.onSolution{
