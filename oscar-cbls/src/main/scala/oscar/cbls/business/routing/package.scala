@@ -34,7 +34,7 @@ package object routing
   with CapacityInvariants
   with RoutingExtensions
   with InsertPointAPI
-  with OnePointMovsAPI
+  with OnePointMoveAPI
   with RemovePointAPI
   with RouteExchangeAPI
   with SegmentExchangeAPI

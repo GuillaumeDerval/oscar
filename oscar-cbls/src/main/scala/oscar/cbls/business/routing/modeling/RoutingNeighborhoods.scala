@@ -24,7 +24,7 @@ import oscar.cbls.core.search.{Best, First, LoopBehavior}
  */
 trait RoutingNeighborhoods
   extends InsertPointAPI
-  with OnePointMovsAPI
+  with OnePointMoveAPI
   with RemovePointAPI
   with RouteExchangeAPI
   with SegmentExchangeAPI
@@ -36,7 +36,7 @@ trait InsertPointAPI{
   val InsertPointMove = oscar.cbls.business.routing.neighborhoods.InsertPointMove
 
   /**
-   * OnePoint insert neighborhood that primarily iterates over insertion point,s and then over poitns that can be iserted.
+   * OnePoint insert neighborhood that primarily iterates over insertion points, and then over points that can be inserted.
    * @param insertionPoints the positions where we can insert points, can be unrouted, in this case it is ignored (but time is wasted)
    * @param relevantSuccessorsToInsert the points to insert, given an insertion point
    * @param vrp the routing problem
@@ -69,7 +69,7 @@ trait InsertPointAPI{
 
   /**
    * Inserts an unrouted point in a route. The size of the neighborhood is O(u*n).
-   * where u is the numberof unrouted points, and n is the number of routed points
+   * where u is the number of unrouted points, and n is the number of routed points
    * it can be cut down to u*k by using the relevant neighbors, and specifying k neighbors for each unrouted point
    * @param unroutedNodesToInsert the nodes that this neighborhood will try to insert SHOULD BE NOT ROUTED
    * @param relevantPredecessor a function that, for each unrouted node gives a list of routed node
@@ -78,7 +78,7 @@ trait InsertPointAPI{
    * @param neighborhoodName the name of this neighborhood
    * @param selectNodeBehavior how should it iterate on nodes to insert?
    * @param selectInsertionPointBehavior how should it iterate on position for insertion?
-   * @param hotRestart set to true fo a hot restart fearture on the node to insert
+   * @param hotRestart set to true fo a hot restart feature on the node to insert
    * @param nodeSymmetryClass a function that input the ID of an unrouted node and returns a symmetry class;
    *                      ony one of the unrouted node in each class will be considered for insert
    *                      Int.MinValue is considered different to itself
@@ -111,7 +111,7 @@ trait InsertPointAPI{
 }
 
 
-trait OnePointMovsAPI{
+trait OnePointMoveAPI{
 
   type OnePointMoveMove = oscar.cbls.business.routing.neighborhoods.OnePointMoveMove
   val OnePointMoveMove = oscar.cbls.business.routing.neighborhoods.OnePointMoveMove

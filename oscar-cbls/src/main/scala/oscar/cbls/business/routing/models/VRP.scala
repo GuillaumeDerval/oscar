@@ -32,8 +32,8 @@ import scala.collection.immutable.{List, SortedSet}
  * they all have a different depot (but yo ucan put them at the same place if you want)
  *
  * Info: after instantiation, each customer point is unrouted, and each vehicle loop on his deposit.
-  *
-  * @param n the number of points (deposits and customers) in the problem.
+ *
+ * @param n the number of points (deposits and customers) in the problem.
  * @param v the number of vehicles.
  * @param m the model.
  * @author renaud.delandtsheer@cetic.be
@@ -61,8 +61,8 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4)
 
   /**
    * Returns if a given point is a depot.
-    *
-    * @param n the point queried.
+   *
+   * @param n the point queried.
    * @return true if the point is a depot, else false.
    */
   def isADepot(n: Int): Boolean = { n < v }
@@ -75,8 +75,8 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4)
 
   /**
    * Returns if a given point is still routed.
-    *
-    * @param n the point queried.
+   *
+   * @param n the point queried.
    * @return true if the point is still routed, else false.
    */
   def isRouted(n: Int): Boolean = {routes.value.contains(n)}
