@@ -653,20 +653,18 @@ class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
         newPivotAbovePosition)(limitBelowForCurrentPivot = newPosition))
     }else{
       //do not change pivot
-val newPosition = if(slopeIsPositive) position + 1 else position - 1
       val newInternalPosition = if(slopeIsPositive) internalPosition + 1 else internalPosition - 1
-      if(ne(if(slopeIsPositive) positionInRB.next else positionInRB.prev) match{
-        case None => None
-        case Some(newPositionInRB) =>
-          Some(new ConcreteIntSequenceExplorer(sequence,
-            position + 1,
-            newPositionInRB,
-            currentPivotPosition,
-            pivotAbovePosition)(
-            limitAboveForCurrentPivot,
-            limitBelowForCurrentPivot,
-            slopeIsPositive))
-      }
+
+      Some(new ConcreteIntSequenceExplorer(
+        sequence,
+        position + 1,
+        newInternalPosition,
+        sequence.internalPositionToValue(newInternalPosition),
+        currentPivotPosition,
+        pivotAbovePosition)(
+        limitAboveForCurrentPivot,
+        limitBelowForCurrentPivot,
+        slopeIsPositive))
     }
   }
 
