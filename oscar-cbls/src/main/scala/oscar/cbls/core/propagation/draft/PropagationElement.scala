@@ -13,20 +13,26 @@ trait DynamicDependency extends PropagationElement{
 
 abstract class PropagationElement(val notificationBehavior:PropagationImpactCharacteristics){
 
-  val couldBePropagated:Boolean = {
-    notificationBehavior match {
-      case NotificationOnPropagateNoNotificationReceived | NotificationOnNotifyAndPropagate | NotificationOnPropagateReceivesNotification => true
-      case NotificationOnNotifyNoPropagate | BulkElement | NoPropagationNotificationReceivedNoNotificationEmitted => false
-    }
-  }
-
-  var layer:Int
-  var threadID:Int
   var isScheduled:Boolean = false
   var schedulingHandler:SchedulingHandler
   var model:PropagationStructure = null
+  var scc:StronglyConnectedComponent = null
+
+  var layer:Int
+  var threadID:Int
+
 
   var staticallyListeningElements:QList[PropagationElement] = null
+  var staticallyListenedElement:QList[PropagationElement] = null
+
+  val couldBePropagated:Boolean = {
+    notificationBehavior match {
+      case NotificationOnPropagateNoNotificationReceived | NotificationOnNotifyAndPropagate | NotificationOnPropagateReceivesNotification => true
+      case NotificationOnNotifyNoPropagate | BulkElementNotificationBehavior | NoPropagationNotificationReceivedNoNotificationEmitted => false
+      case SCC => ???
+    }
+  }
+
 
   def finishInitialization(): Unit ={
     schedulingHandler = model

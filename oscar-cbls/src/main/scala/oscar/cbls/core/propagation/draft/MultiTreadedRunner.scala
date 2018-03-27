@@ -92,7 +92,8 @@ class MultiTreadingPartitioningAlgo(layerToPropagationElements: Array[QList[Prop
 
       val shouldExplorePropagationImpactZone = pe.notificationBehavior match {
         case NotificationOnPropagateNoNotificationReceived | NotificationOnNotifyAndPropagate | NotificationOnPropagateReceivesNotification => true
-        case NotificationOnNotifyNoPropagate | BulkElement | NoPropagationNotificationReceivedNoNotificationEmitted => false
+        case NotificationOnNotifyNoPropagate | BulkElementNotificationBehavior | NoPropagationNotificationReceivedNoNotificationEmitted => false
+        case SCCNotificationBehavior => ???
       }
 
       //the node has not been marked yet while exploring this layer

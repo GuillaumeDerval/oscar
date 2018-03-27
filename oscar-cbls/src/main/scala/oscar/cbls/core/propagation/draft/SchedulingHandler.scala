@@ -1,7 +1,6 @@
 package oscar.cbls.core.propagation.draft
 
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.core.propagation.draft.PropagationImpactCharacteristics.PropagationImpactCharacteristics
 
 abstract class SchedulingHandler {
 
@@ -72,7 +71,8 @@ object PropagationImpactCharacteristics extends Enumeration{
   type PropagationImpactCharacteristics = Value
   val NoPropagationNotificationReceivedNoNotificationEmitted,
   NotificationOnPropagateNoNotificationReceived,
-  BulkElement,
+  BulkElementNotificationBehavior,
+  SCCNotificationBehavior,
   NotificationOnNotifyNoPropagate,
   NotificationOnNotifyAndPropagate,
   NotificationOnPropagateReceivesNotification
