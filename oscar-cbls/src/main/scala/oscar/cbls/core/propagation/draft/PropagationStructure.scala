@@ -1,10 +1,8 @@
 package oscar.cbls.core.propagation.draft
 
-
-import PropagationImpactCharacteristics._
 import oscar.cbls.algo.quick.QList
 
-class PropagationStructure(nbSystemThread:Int) extends SchedulingHandler {
+class PropagationStructure(nbSystemThread:Int,noCycle:Boolean) extends SchedulingHandler {
 
   var allSchedulingHandlers: QList[SchedulingHandler] = null
 
@@ -12,9 +10,33 @@ class PropagationStructure(nbSystemThread:Int) extends SchedulingHandler {
     allSchedulingHandlers = QList(s, allSchedulingHandlers)
   }
 
+  private[this] var nextUniqueID = 0
+  def registerPropagationElement(pe:PropagationElement): Unit ={
+    require(pe.uniqueID == -1)
+    pe.uniqueID = nextUniqueID
+    nextUniqueID += 1
+    allPropagationElements = QList(pe,allPropagationElements)
+  }
   var allPropagationElements: QList[PropagationElement]
+  var clusteredPropagationElements:QList[PropagationElement]
+  var nbCLusteredPEs:Int
+
   var layerToPropagationElements: Array[QList[PropagationElement]] = null
   var layerToNbPropagationElements: Array[Int] = null
+
+
+
+  /**
+    * Builds a dictionary to store data related to the PE.
+    * the dictionary is O(1), based on an array.
+    * It only works on PE that are registered to this structure.
+    * The storage is not initialized, call the initialize to set it to some conventional value.
+    * @tparam T the type stored in the data structure
+    * @return a dictionary over the PE that are registered in the propagation structure.
+    */
+  def buildNodeStorage[T](implicit X: Manifest[T]): NodeDictionary[T] = new NodeDictionary[T](nextUniqueID)
+
+
 
   //can only be called when all SH are created
   override def runner_=(runner: Runner) {
@@ -34,16 +56,16 @@ class PropagationStructure(nbSystemThread:Int) extends SchedulingHandler {
 
 
   def close(): Unit = {
-    identifySCC()
+    (clusteredPropagationElements,nbCLusteredPEs) = new SCCIdentifierAlgo(allPropagationElements,this).identifySCC()
+
     instantiateVSH()
 
-    (layerToPropagationElements,layerToNbPropagationElements)= new LayerSorterAlgo(allPropagationElements).sortNodesByLayer()
+    (layerToNbPropagationElements,layerToPropagationElements)= new LayerSorterAlgo(clusteredPropagationElements,nbCLusteredPEs,noCycle).sortNodesByLayer()
 
 
-    //perform the multi-threaded analysis
     partitionGraphIntoSchedulingHandlers()
 
-    //create runner and multtreaded parttion (if multi-treading)
+    //create runner and multiTreaded partition (if multi-treading)
     runner = if (nbSystemThread == 1) {
       new MonoThreadRunner(nbLayer)
     } else {
@@ -51,16 +73,6 @@ class PropagationStructure(nbSystemThread:Int) extends SchedulingHandler {
     }
     for (sh <- allSchedulingHandlers) {
       sh.runner = runner
-    }
-  }
-
-
-
-
-  def partitionGraphIntoSchedulingHandlers(): Unit = {
-
-    for (pe <- propagationElements) {
-      allPropagationElements
     }
   }
 
@@ -78,3 +90,26 @@ class PropagationStructure(nbSystemThread:Int) extends SchedulingHandler {
 }
 
 
+/**
+  * This is a O(1) dictionary for propagation elements.
+  * It is based on an array, and the keys it support is only the PE that have been reistered
+  * to the propagation structure by the time this is instantiated.
+  * WARNING: this is not efficient if you do not actually use many of the keys
+  * because the instantiated array will be very large compared to your benefits.
+  * This might kill cache and RAM for nothing
+  *
+  * @param MaxNodeID the maximal ID of a node to be stored in the dictionary (since it is O(1) it is an array, and we allocate the full necessary size
+  * @tparam T the type stored in this structure
+  * @author renaud.delandtsheer@cetic.be
+  */
+class NodeDictionary[T](val MaxNodeID: Int)(implicit val X: Manifest[T]) {
+  private val storage: Array[T] = new Array[T](MaxNodeID + 1)
+
+  def update(elem: PropagationElement, value: T) {
+    storage(elem.uniqueID) = value
+  }
+
+  def get(elem: PropagationElement): T = storage(elem.uniqueID)
+
+  def initialize(value: () => T) { for (i <- storage.indices) storage(i) = value() }
+}

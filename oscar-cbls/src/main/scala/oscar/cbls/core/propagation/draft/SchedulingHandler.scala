@@ -9,10 +9,16 @@ abstract class SchedulingHandler {
   var isScheduled:Boolean = false
   var listeningSchedulingHandlers:QList[SchedulingHandler] = null
   private[this] var myRunner:Runner = null
+  var isRunning:Boolean = false
 
   def scheduleSHForPropagation(sh:SchedulingHandler){
-    scheduledSHChildren = QList(sh,scheduledSHChildren)
-    scheduleMyselfForPropagation()
+    scheduledSHChildren = QList(sh, scheduledSHChildren)
+    if(isRunning){
+      //We are actually propagating
+      sh.enqueueForRun()
+    }else {
+      scheduleMyselfForPropagation()
+    }
   }
 
   def scheduleMyselfForPropagation(): Unit ={
@@ -27,8 +33,13 @@ abstract class SchedulingHandler {
   }
 
   def schedulePEForPropagation(pe:PropagationElement): Unit ={
-    scheduledElements = QList(pe,scheduledElements)
-    scheduleMyselfForPropagation()
+    if(isRunning){
+      //we are actually propagating
+      runner.enqueuePE(pe)
+    }else {
+      scheduledElements = QList(pe, scheduledElements)
+      scheduleMyselfForPropagation()
+    }
   }
 
   def runner_=(runner:Runner){
@@ -38,15 +49,28 @@ abstract class SchedulingHandler {
 
   def enqueueForRun() {
     //We need to synchronize because some enqueue might be called following a propagation, which is performed multi-threaded
+    require(this.isScheduled)
     this.synchronized {
-      if (isScheduled) {
-        isScheduled = false
-        myRunner.enqueue(scheduledElements)
-        scheduledElements = null
-        while(scheduledSHChildren != null){
-          scheduledSHChildren.head.enqueueForRun()
-          scheduledSHChildren = scheduledSHChildren.tail
-        }
+      isRunning = true
+      myRunner.enqueue(scheduledElements)
+      scheduledElements = null
+      var toScheduleSHChildren = scheduledSHChildren
+      while(toScheduleSHChildren != null){
+        toScheduleSHChildren.head.enqueueForRun()
+        toScheduleSHChildren = toScheduleSHChildren.tail
+      }
+    }
+  }
+
+  def notifyEndRun(){
+    if(isScheduled) {
+      require(isRunning)
+      require(scheduledElements == null)
+      isScheduled = false
+      isRunning = false
+      while (scheduledSHChildren != null) {
+        scheduledSHChildren.head.notifyEndRun()
+        scheduledSHChildren = scheduledSHChildren.tail
       }
     }
   }

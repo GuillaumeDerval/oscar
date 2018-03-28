@@ -13,6 +13,7 @@ trait DynamicDependency extends PropagationElement{
 
 abstract class PropagationElement(val notificationBehavior:PropagationImpactCharacteristics){
 
+  var uniqueID = -1
   var isScheduled:Boolean = false
   var schedulingHandler:SchedulingHandler
   var model:PropagationStructure = null

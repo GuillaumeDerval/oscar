@@ -198,7 +198,7 @@ class MultiThreadRunner(nbSystemThread:Int,layerToNbThreads:Array[Int]) extends 
   private[this] val threadIds = 0 until nbSystemThread
 
   override def performPropagation(upTo:PropagationElement) {
-
+    require(upTo.schedulingHandler.runner == this)
     upTo.schedulingHandler.enqueueForRun()
 
     while(nonEmptyLayers.nonEmpty) {
@@ -247,6 +247,8 @@ class MultiThreadRunner(nbSystemThread:Int,layerToNbThreads:Array[Int]) extends 
       }
       //multi-treading ends here
     }
+
+    upTo.schedulingHandler.notifyEndRun()
   }
 }
 
