@@ -78,8 +78,6 @@ abstract class SchedulingHandler {
 
 class RegularSchedulingHandler(root:PropagationElement, s:PropagationStructure) extends SchedulingHandler{
   s.registerSchedulingHandler(this)
-
-
 }
 
 //the one for dynamic dependencies

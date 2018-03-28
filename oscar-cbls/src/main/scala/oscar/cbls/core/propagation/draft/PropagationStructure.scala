@@ -83,7 +83,7 @@ class PropagationStructure(nbSystemThread:Int,noCycle:Boolean) extends Schedulin
   def triggerPropagation(upTo: PropagationElement): Unit = {
     if (!propagating) {
       propagating = true
-      runner.performPropagation(upTo)
+      runner.run(upTo)
       propagating = false
     }
   }

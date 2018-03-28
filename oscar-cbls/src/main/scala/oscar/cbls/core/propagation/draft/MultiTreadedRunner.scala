@@ -164,40 +164,29 @@ class MultiTreadingPartitioningAlgo(layerToPropagationElements: Array[QList[Prop
 class MultiThreadRunner(nbSystemThread:Int,layerToNbThreads:Array[Int]) extends Runner(){
   val nbLayer = layerToNbThreads.length
 
-
   private[this] val layerToThreadToPEs: Array[Array[QList[PropagationElement]]] = layerToNbThreads.map(nbThread => Array.fill[QList[PropagationElement]](nbThread)(null))
   private[this] val layerToThreadWithSomething:Array[QList[Int]] = Array.fill[QList[Int]](nbLayer)(null)
-
   private[this] val nonEmptyLayers: BinomialHeap[Int] = new BinomialHeap[Int]((item: Int) => item, nbLayer)
 
+  override protected def enqueuePENS(pe:PropagationElement) {
+    val threadID = pe.threadID
+    val layer = pe.layer
 
-  override def enqueue(pes: QList[PropagationElement]) {
-    nonEmptyLayers.synchronized {
-      var remainingPes = pes
-      while(remainingPes != null){
-        val pe = remainingPes.head
-        remainingPes = remainingPes.tail
+    val finalArray = layerToThreadToPEs(layer)
+    val previousPEList = finalArray(threadID)
+    finalArray(threadID) = QList(pe, previousPEList)
 
-        val threadID = pe.threadID
-        val layer = pe.layer
-
-        val finalArray = layerToThreadToPEs(layer)
-        val previousPEList = finalArray(threadID)
-        finalArray(threadID) = QList(pe, previousPEList)
-
-        if(previousPEList == null){
-          val previousThreadsOfLayer = layerToThreadWithSomething(layer)
-          layerToThreadWithSomething(layer) = QList(threadID,previousThreadsOfLayer)
-          if(previousThreadsOfLayer == null) nonEmptyLayers.insert(layer)
-        }
-      }
+    if(previousPEList == null){
+      val previousThreadsOfLayer = layerToThreadWithSomething(layer)
+      layerToThreadWithSomething(layer) = QList(threadID,previousThreadsOfLayer)
+      if(previousThreadsOfLayer == null) nonEmptyLayers.insert(layer)
     }
   }
 
   private[this] val threadPool = Executors.newFixedThreadPool(nbSystemThread)
   private[this] val threadIds = 0 until nbSystemThread
 
-  override def performPropagation(upTo:PropagationElement) {
+  override def run(upTo:PropagationElement) {
     require(upTo.schedulingHandler.runner == this)
     upTo.schedulingHandler.enqueueForRun()
 

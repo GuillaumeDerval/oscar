@@ -45,7 +45,7 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
 
   override def propagate(): Unit ={
     injectAllWaitingDependencies()
-    myCustomRunner.performPropagation(null)
+    myCustomRunner.run(null)
   }
 }
 
