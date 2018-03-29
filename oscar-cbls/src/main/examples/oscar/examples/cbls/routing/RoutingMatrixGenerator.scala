@@ -16,7 +16,7 @@ package oscar.examples.cbls.routing
   ******************************************************************************/
 
 
-import oscar.cbls.business.routing.models.{TTFConst, TTFMatrix}
+import oscar.cbls.business.routing.model.{TTFConst, TTFMatrix}
 
 import scala.util.Random
 

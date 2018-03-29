@@ -1,6 +1,5 @@
 package oscar.cbls.business.scheduling.algo
 
-
 /**
  * *****************************************************************************
  * OscaR is free software: you can redistribute it and/or modify

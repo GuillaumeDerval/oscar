@@ -21,7 +21,7 @@
 package oscar.cbls.business
 
 /**
- * DEPECATED: the whole scheduling package is deprecated since OScaR 4.0 and will be fully reworked
+ * DEPRECATED: the whole scheduling package is deprecated since OScaR 4.0 and will be fully reworked
  *  This package is a scheduling library.
  * it supports
  - [[oscar.cbls.business.scheduling.model.CumulativeResource]]

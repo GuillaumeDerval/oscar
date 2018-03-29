@@ -19,7 +19,7 @@ import oscar.cbls.algo.magicArray.MagicBoolArray
 import oscar.cbls.algo.quick.QList
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.routing.models.CachedPositionOf
+import oscar.cbls.business.routing.model.CachedPositionOf
 import oscar.cbls.core._
 
 import scala.collection.immutable.SortedSet

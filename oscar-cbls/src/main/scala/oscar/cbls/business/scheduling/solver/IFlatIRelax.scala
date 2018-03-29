@@ -74,8 +74,7 @@ class IFlatIRelax(p: Planning,
 
         jumpAndFlatten()
 
-      } else {
-        if (relaxAndFlatten()) {
+      } else if (relaxAndFlatten()) {
           if (verbose) println("STOP criterion: no relaxation could be achieved.")
 
           model.restoreSolution(bestSolution)
@@ -84,7 +83,6 @@ class IFlatIRelax(p: Planning,
 
           if (verbose) println("restored best solution")
           return
-        }
       }
 
       if (verbose) {

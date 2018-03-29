@@ -32,7 +32,6 @@ import oscar.cbls.lib.search.LinearSelectors
 
 /**
  * @param planning
- * @param maxLocalIterations
  * @param temperature Metropolis parameter
  * @param verbose
  * @author yoann.guyot@cetic.be
@@ -52,6 +51,9 @@ class TardinessSearch(planning: Planning with Deadlines with TotalResourcesOvers
    * movements in a set of critical activities.
    * @param maxTrials the max number of iterations of the search
    * @param stable the max number of successive iterations with no improvement
+   * @param maxLocalIterations the maximum number of iterations in local search
+   * @param onlyImprovingMoves indicates whether search looks only for improving moves
+   * @param saveCurrentSolution indicates whether the current solution should be saved
    */
   def solve(maxTrials: Int,
             stable: Int,

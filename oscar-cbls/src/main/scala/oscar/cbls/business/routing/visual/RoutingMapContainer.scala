@@ -20,7 +20,7 @@ package oscar.cbls.business.routing.visual
 import java.awt.{BorderLayout, Color, Dimension}
 import javax.swing.{JFrame, JPanel}
 
-import oscar.cbls.business.routing.models.VRP
+import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.util.StopWatch
 
 

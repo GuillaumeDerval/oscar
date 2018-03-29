@@ -1,7 +1,7 @@
 package oscar.cbls.business.routing.modeling
 
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.models.extensions._
+import oscar.cbls.business.routing.model.extensions._
 
 import scala.collection.immutable.List
 
@@ -21,7 +21,7 @@ trait RoutingExtensions {
     */
   def chains(vrp: VRP, chains: List[List[Int]]) =
     new Chains(vrp, chains)
-  type Chains = oscar.cbls.business.routing.models.extensions.Chains
+  type Chains = oscar.cbls.business.routing.model.extensions.Chains
 
   /**
     * This class is used to display your routing problem on a map.
@@ -47,7 +47,7 @@ trait RoutingExtensions {
               title:String = "VRP with OscaR.cbls"
              ) =
     new Display(vrp,nodePositions,displayOnRealMap,selectRouteToDisplay,sizeOfMap,refreshRate, title)
-  type Display = oscar.cbls.business.routing.models.extensions.Display
+  type Display = oscar.cbls.business.routing.model.extensions.Display
 
   /**
     * This class is only used to simplify the constraints creation.
@@ -67,6 +67,6 @@ trait RoutingExtensions {
                  taskDurations: Array[Int],
                  maxWaitingDurations: Array[Int]) =
     new TimeWindow(earlylines,deadlines,taskDurations,maxWaitingDurations)
-  type TimeWindow = oscar.cbls.business.routing.models.extensions.TimeWindow
+  type TimeWindow = oscar.cbls.business.routing.model.extensions.TimeWindow
 
 }

@@ -3,7 +3,7 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.lib.invariant.seq.Precedence
-import oscar.cbls.business.routing.invariants.PDPConstraints
+import oscar.cbls.business.routing.invariant.PDPConstraints
 import oscar.cbls.core.search.Best
 
 /**
