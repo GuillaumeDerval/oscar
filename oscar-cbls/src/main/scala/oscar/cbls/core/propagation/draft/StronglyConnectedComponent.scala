@@ -26,7 +26,7 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
     scheduleMyselfForPropagation()
   }
 
-  override def propagate(): Unit ={
+  override def performPropagation(): Unit ={
     injectAllWaitingDependencies()
     myRunner.runSH(mySchedulingHandler)
   }
@@ -35,6 +35,7 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
   // managing the dynamic dependency graph and the incremental topological sort
 
   private val dAGStructure = new ConcreteDAG(propagationElements.asInstanceOf[QList[DAGNode]])
+  dAGStructure.autoSort = true //we go on autoSort
 
   private var waitingDependenciesToInjectBeforePropagation: QList[WaitingDependency] = null
 
@@ -42,7 +43,7 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
                           val to: PropagationElement,
                           val isStillValid:() => Boolean,
                           val injector1:() => Unit,
-                               var injector2:() => Unit)
+                          var injector2:() => Unit)
 
   private var nextWaitingDependency:WaitingDependency = null
 
@@ -55,9 +56,9 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
   }
 
   def registerOrCompleteWaitingDependency(from:PropagationElement,
-                                         to:PropagationElement,
-                                         injector:() => Unit,
-                                         isStillValid:() => Boolean): Unit ={
+                                          to:PropagationElement,
+                                          injector:() => Unit,
+                                          isStillValid:() => Boolean): Unit ={
     if (nextWaitingDependency == null) {
       nextWaitingDependency = new WaitingDependency(from,
         to,

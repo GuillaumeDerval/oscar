@@ -343,7 +343,7 @@ class PESRunner(pEsToPropagate:QList[PropagationElement]) extends Runnable{
   override def run(): Unit ={
     var myPEs = pEsToPropagate
     while (myPEs != null) {
-      myPEs.head.performPropagation()
+      myPEs.head.propagate()
       myPEs = myPEs.tail
     }
   }

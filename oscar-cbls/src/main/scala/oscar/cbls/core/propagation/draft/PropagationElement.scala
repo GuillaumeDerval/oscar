@@ -127,20 +127,14 @@ abstract class PropagationElement(val notificationBehavior:PropagationImpactChar
   }
 
 
-
-
-
-
-
-  def finishInitialization(): Unit ={
-    schedulingHandler = model
-  }
+  // ////////////////////////////////////////////////////////////////////////
+  // api about scheduling and propagation
 
   def scheduleMyselfForPropagation(): Unit ={
     assert(!couldBePropagated)
     if(!isScheduled){
-      schedulingHandler.schedulePEForPropagation(this)
       isScheduled = true
+      schedulingHandler.schedulePEForPropagation(this)
     }
   }
 
@@ -154,15 +148,24 @@ abstract class PropagationElement(val notificationBehavior:PropagationImpactChar
     model.triggerPropagation(this)
   }
 
-  final def performPropagation(){
+  final def propagate(){
     require(!couldBePropagated)
     if(isScheduled) {
       isScheduled = false
-      propagate()
+      performPropagation()
     }
   }
 
-  protected def propagate() = ???
+  protected def performPropagation() = ???
+
+
+
+
+
+  def finishInitialization(): Unit ={
+    schedulingHandler = model
+  }
+
 
 
 

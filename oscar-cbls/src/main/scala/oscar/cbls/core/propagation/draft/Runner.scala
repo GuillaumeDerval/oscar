@@ -49,7 +49,7 @@ class NaiveMonoThreadRunner(nbPe:Int) extends Runner{
 
     while (!h.isEmpty) {
       val x:PropagationElement = h.popFirst()
-      x.performPropagation() //through the schedulingHandler, other PE are enqueued.
+      x.propagate() //through the schedulingHandler, other PE are enqueued.
     }
     upTo.notifyEndRun()
   }
@@ -80,7 +80,7 @@ class MonoThreadRunner(nbLayers:Int) extends Runner(){
       layersToPEs(currentLayer) = null
 
       while (toPropagate != null) {
-        toPropagate.head.performPropagation()
+        toPropagate.head.propagate()
         toPropagate = toPropagate.tail
       }
     }
