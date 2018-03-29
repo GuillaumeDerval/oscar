@@ -43,7 +43,7 @@ trait DAGNode extends Ordered[DAGNode]{
     * if the Propagation Element is not mentioned in the propagation structure, such as for constants
     * yet is mentioned in the dependencies of registered propagation elements
     */
-  var uniqueID:Int = -1
+  var uniqueID:Int
 
   protected[dag] def getDAGPrecedingNodes: Iterable[DAGNode]
 

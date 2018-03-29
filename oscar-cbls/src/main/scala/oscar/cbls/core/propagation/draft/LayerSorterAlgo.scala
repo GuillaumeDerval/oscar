@@ -82,7 +82,7 @@ class LayerSorterAlgo(clusteredPEs:QList[PropagationElement],nbCLusteredPEs:Int,
     * for scc, set it to the number of element that are referenced from other components or from the global SCC
     * @return true if there is at least one predecessor, false otherwise
     */
-  def setLayerToPrecedingCount(pe:PropagationElement): Boolean = {
+  private def setLayerToPrecedingCount(pe:PropagationElement): Boolean = {
     pe match{
       case scc:StronglyConnectedComponent =>
         scc.layer = scc.propagationElements.count(p => setLayerToPrecedingCount(p))
@@ -90,16 +90,16 @@ class LayerSorterAlgo(clusteredPEs:QList[PropagationElement],nbCLusteredPEs:Int,
         //le compteur est mis au nombre de noeud precedent qui ne sont pas dans la meme composante connexe ou qui sont dans aucune composante connexe
         val scc = pe.scc
         if(scc == null){
-          pe.layer = pe.staticallyListenedElement.size
+          pe.layer = pe.staticallyListenedElements.size
         }else{
           //this is in a SCC, called through the recursive call here above
-          pe.staticallyListenedElement.count(p => p.scc != scc)
+          pe.staticallyListenedElements.count(p => p.scc != scc)
         }
     }
     pe.layer != 0
   }
 
-  def decrementSuccessorsAndAccumulateFrontIfReachesZero(pe:PropagationElement,acc:QList[PropagationElement]):QList[PropagationElement] = {
+  private def decrementSuccessorsAndAccumulateFrontIfReachesZero(pe:PropagationElement,acc:QList[PropagationElement]):QList[PropagationElement] = {
     pe match{
       case scc:StronglyConnectedComponent =>
         var toReturn = acc
@@ -121,7 +121,7 @@ class LayerSorterAlgo(clusteredPEs:QList[PropagationElement],nbCLusteredPEs:Int,
     }
   }
 
-  final def decrementLayerAndAccumulateIfReachesZero(pe:PropagationElement,acc: QList[PropagationElement]): QList[PropagationElement] = {
+  private def decrementLayerAndAccumulateIfReachesZero(pe:PropagationElement,acc: QList[PropagationElement]): QList[PropagationElement] = {
     require(!pe.isInstanceOf[StronglyConnectedComponent])
     pe.layer -= 1
     if (pe.layer == 0) {

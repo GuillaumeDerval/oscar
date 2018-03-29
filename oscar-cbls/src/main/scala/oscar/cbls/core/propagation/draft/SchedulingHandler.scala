@@ -2,7 +2,12 @@ package oscar.cbls.core.propagation.draft
 
 import oscar.cbls.algo.quick.QList
 
-class SchedulingHandler {
+trait AbstractSchedulingHandler{
+  def scheduleSHForPropagation(sh:SchedulingHandler)
+}
+
+
+class SchedulingHandler extends AbstractSchedulingHandler {
   //We use private[this] for faster field access by internal methods.
   private[this] var listeningSchedulingHandlers:QList[SchedulingHandler] = null
   private[this] var myRunner:Runner = null
@@ -89,26 +94,6 @@ class SchedulingHandler {
 class VaryingSchedulingHandler() extends SchedulingHandler{
   s.registerSchedulingHandler(this)
 
-}
-
-
-
-object PropagationImpactCharacteristics extends Enumeration{
-  type PropagationImpactCharacteristics = Value
-  val NoPropagationNotificationReceivedNoNotificationEmitted,
-  NotificationOnPropagateNoNotificationReceived,
-  BulkElementNotificationBehavior,
-  SCCNotificationBehavior,
-  NotificationOnNotifyNoPropagate,
-  NotificationOnNotifyAndPropagate,
-  NotificationOnPropagateReceivesNotification
-  = Value
-
-  //Variables: NotificationOnPropagate
-  //invariants classiques NotificationOnNotifyAndPropagate, si pas de propagate, alors NotificationOnNotify
-  //IntInvariants NotificationOnPropagate (comme les variables en  fait) mais NotificationOnNotifyAndPropagate si ils ont plus de sorties
-  //events NotificationOnNotifyAndPropagate
-  //bulk BulkElement
 }
 
 

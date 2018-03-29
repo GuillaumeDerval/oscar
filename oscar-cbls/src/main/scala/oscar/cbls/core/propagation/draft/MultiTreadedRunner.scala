@@ -4,17 +4,13 @@ import java.util.concurrent.{Executors, Future}
 
 import oscar.cbls.algo.heap.BinomialHeap
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.core.propagation.draft.PropagationImpactCharacteristics.{SCCNotificationBehavior, _}
+import oscar.cbls.core.propagation.draft.PropagationImpactCharacteristics._
 
 class MultiTreadingPartitioningAlgo(layerToPropagationElements: Array[QList[PropagationElement]],
                                     layerToNbPropagationElements: Array[Int]){
-  val nbLayer:Int = layerToNbPropagationElements.length
-
-
-  //multi-treading partitioning algorithms
-
+  private val nbLayer:Int = layerToNbPropagationElements.length
   /**
-    * partitions the graph into treads, alocate threadsIDs to PEs.
+    * partitions the graph into treads, allocate threadsIDs to PEs.
     * PEs must already be partitioned into layers
     * their threadID must be -1 the default initial value
     * @return an array layer to nbThreads allocated
@@ -39,7 +35,7 @@ class MultiTreadingPartitioningAlgo(layerToPropagationElements: Array[QList[Prop
     * @param offsetForNodeMarking
     * @return the number of threads of this layer
     */
-  def allocateThreadIDForLayer(arrayOfMarkedNodesAndInterferingThreadIDs:Array[(PropagationElement,QList[Int])],offsetForNodeMarking:Int): Int = {
+  private def allocateThreadIDForLayer(arrayOfMarkedNodesAndInterferingThreadIDs:Array[(PropagationElement,QList[Int])],offsetForNodeMarking:Int): Int = {
     //we compute the threadIDs and store them into finalTreadID
     val finalTreadID = Array.fill[Int](arrayOfMarkedNodesAndInterferingThreadIDs.length)(-1)
     var finalTreadIDCounter: Int = -1
@@ -78,7 +74,7 @@ class MultiTreadingPartitioningAlgo(layerToPropagationElements: Array[QList[Prop
     finalTreadIDCounter+1
   }
 
-  def markImpactZoneOfLayer(layer:Int,biggestTreadIdUsedSoFar:Int):(Array[(PropagationElement,QList[Int])],Int) = {
+  private def markImpactZoneOfLayer(layer:Int,biggestTreadIdUsedSoFar:Int):(Array[(PropagationElement,QList[Int])],Int) = {
 
     var currentPEIDInCurrentLayer = 0
     val nbPEInCurrentLayer = layerToNbPropagationElements(layer)
@@ -105,7 +101,7 @@ class MultiTreadingPartitioningAlgo(layerToPropagationElements: Array[QList[Prop
     (arrayOfPEAndInterferingThreadIDs,currentPEIDInCurrentLayer)
   }
 
-  def markPEAndReportConflict(pe:PropagationElement,
+  private def markPEAndReportConflict(pe:PropagationElement,
                               currentThreadIDForNodeMarking:Int,
                               maximalThreadIdMarkingOfCurrentLayer:Int,
                               acc:QList[Int]):(QList[Int],Boolean) = {
@@ -121,11 +117,6 @@ class MultiTreadingPartitioningAlgo(layerToPropagationElements: Array[QList[Prop
     }
   }
 
-
-  //TODO: what if pe is a SCC? that is possible since we mark all nodes that can be propagated
-  //TODO: what if pe is in a SCC? that is possible, through the recursive call (not the initial loop because such nodes are embedded into SCC's)
-  //TODO: what if some node in the impact zone are in a SCC? (cfr. above)
-
   /**
     * marks impact zone when propagatedPE is propagated
     * @param propagatedPE
@@ -134,7 +125,7 @@ class MultiTreadingPartitioningAlgo(layerToPropagationElements: Array[QList[Prop
     * @param acc0
     * @return
     */
-  def markImpactZoneOfPropagationAndReportConflictingThreadIDMarkings(propagatedPE:PropagationElement,
+  private def markImpactZoneOfPropagationAndReportConflictingThreadIDMarkings(propagatedPE:PropagationElement,
                                                                       currentThreadIDForNodeMarking:Int,
                                                                       maximalThreadIdMarkingOfCurrentLayer:Int,
                                                                       acc0:QList[Int] = null): QList[Int] = {
@@ -180,7 +171,7 @@ class MultiTreadingPartitioningAlgo(layerToPropagationElements: Array[QList[Prop
     }
   }
 
-  def markImpactZoneOfNotifyingAndReportConflictingThreadIDMarkings(notifyingPE:PropagationElement,
+  private def markImpactZoneOfNotifyingAndReportConflictingThreadIDMarkings(notifyingPE:PropagationElement,
                                                                     currentThreadIDForNodeMarking:Int,
                                                                     maximalThreadIdMarkingOfCurrentLayer:Int,
                                                                     acc0:QList[Int] = null): QList[Int] = {
@@ -212,7 +203,7 @@ class MultiTreadingPartitioningAlgo(layerToPropagationElements: Array[QList[Prop
     }
   }
 
-  def markEnclosingSCCIfSomeAndReportConflict(pe:PropagationElement,
+  private def markEnclosingSCCIfSomeAndReportConflict(pe:PropagationElement,
                                               currentThreadIDForNodeMarking:Int,
                                               maximalThreadIdMarkingOfCurrentLayer:Int,
                                               acc:QList[Int]):(QList[Int],Boolean) = {
@@ -223,7 +214,7 @@ class MultiTreadingPartitioningAlgo(layerToPropagationElements: Array[QList[Prop
       acc)
   }
 
-  def markImpactZoneOfNotifiedAndReportConflictingThreadIDMarkings(staticallyListeningPE:PropagationElement,
+  private def markImpactZoneOfNotifiedAndReportConflictingThreadIDMarkings(staticallyListeningPE:PropagationElement,
                                                                    currentThreadIDForNodeMarking:Int,
                                                                    maximalThreadIdMarkingOfCurrentLayer:Int,
                                                                    acc0:QList[Int] = null): QList[Int] = {
@@ -302,9 +293,9 @@ class MultiThreadRunner(nbSystemThread:Int,layerToNbThreads:Array[Int]) extends 
 
   private[this] val threadPool = Executors.newFixedThreadPool(nbSystemThread)
 
-  override def run(upTo:PropagationElement) {
-    require(upTo.schedulingHandler.runner == this)
-    upTo.schedulingHandler.enqueueForRun()
+  override def runSH(upTo:SchedulingHandler) {
+    require(upTo.runner == this)
+    upTo.enqueueForRun()
 
     while(nonEmptyLayers.nonEmpty) {
       //we fetch the stuff to propagate at this layer in a non-parallelized way
@@ -344,7 +335,7 @@ class MultiThreadRunner(nbSystemThread:Int,layerToNbThreads:Array[Int]) extends 
       //multi-treading ends here
     }
 
-    upTo.schedulingHandler.notifyEndRun()
+    upTo.notifyEndRun()
   }
 }
 

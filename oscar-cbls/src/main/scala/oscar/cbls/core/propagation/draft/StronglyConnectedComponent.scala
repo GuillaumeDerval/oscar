@@ -1,56 +1,91 @@
 package oscar.cbls.core.propagation.draft
 
-import oscar.cbls.algo.dag.{ConcreteDAG, DAG, DAGNode}
-import oscar.cbls.algo.heap.BinomialHeap
+import oscar.cbls.algo.dag.{ConcreteDAG, DAGNode}
 import oscar.cbls.algo.quick.QList
 
 class StronglyConnectedComponent(val propagationElements:QList[PropagationElement],
                                  nbPE:Int,
                                  override val model:PropagationStructure)
-  extends PropagationElement(PropagationImpactCharacteristics.SCCNotificationBehavior){
+  extends PropagationElement(PropagationImpactCharacteristics.SCCNotificationBehavior,false)
+    with AbstractSchedulingHandler{
 
-  val myCustomRunner = new NaiveMonoThreadRunner(nbPE,this)
-  val myCustomSchedulingHandler = new RegularSchedulingHandler()
+  val myRunner = new NaiveMonoThreadRunner(nbPE)
+  val mySchedulingHandler = new SchedulingHandler()
+  mySchedulingHandler.runner = myRunner
 
   model.registerPropagationElement(this)
-  for (e <- propagationElements) e.scc = this
-
-  val dAGStructure = new ConcreteDAG(propagationElements.asInstanceOf[QList[DAGNode]])
-
-  var waitingDependenciesToInjectBeforePropagation: QList[WaitingDependency] = null
-
-  case class WaitingDependency(from: PropagationElement,to: PropagationElement)
-
-  //call this just after any dependency is added between PE of the SCC
-  def dependencyAdded(from: PropagationElement, to: PropagationElement) {
-    require(from.scc == this)
-    require(to.scc == this)
-    require(from != to)
-
-    if(from.layer >= to.layer){
-      //the DAG does not obey thid precedence, so we store it for later injection
-      waitingDependenciesToInjectBeforePropagation = QList(WaitingDependency(from, to),waitingDependenciesToInjectBeforePropagation)
-    }
+  for (e <- propagationElements){
+    e.scc = this
+    e.schedulingHandler = mySchedulingHandler
   }
 
-  def injectAllWaitingDependencies(){
-    while(waitingDependenciesToInjectBeforePropagation!=null){
-      val waiting = waitingDependenciesToInjectBeforePropagation.head
-      waitingDependenciesToInjectBeforePropagation = waitingDependenciesToInjectBeforePropagation.tail
-      if (waiting.from.layer >= waiting.to.layer) {
-        //does not obey thid dependency, so we inject it.
-        dAGStructure.notifyAddEdge(waiting.from, waiting.to)
-      }
-    }
+  // ////////////////////////////////////////////////////////////////////////
+  // managing runnner, scheduling handler and propagation
+  override def scheduleSHForPropagation(sh: SchedulingHandler): Unit ={
+    require(sh == mySchedulingHandler)
+    scheduleMyselfForPropagation()
   }
 
   override def propagate(): Unit ={
     injectAllWaitingDependencies()
-    myCustomRunner.run(null)
+    myRunner.runSH(mySchedulingHandler)
+  }
+
+  // ////////////////////////////////////////////////////////////////////////
+  // managing the dynamic dependency graph and the incremental topological sort
+
+  private val dAGStructure = new ConcreteDAG(propagationElements.asInstanceOf[QList[DAGNode]])
+
+  private var waitingDependenciesToInjectBeforePropagation: QList[WaitingDependency] = null
+
+  class WaitingDependency(val from: PropagationElement,
+                          val to: PropagationElement,
+                          val isStillValid:() => Boolean,
+                          val injector1:() => Unit,
+                               var injector2:() => Unit)
+
+  private var nextWaitingDependency:WaitingDependency = null
+
+  private def injectWaitingDependencyIfStillValid(w:WaitingDependency): Unit ={
+    if(w.isStillValid()){
+      w.injector1()
+      w.injector2()
+      dAGStructure.notifyAddEdge(w.from, w.to)
+    }
+  }
+
+  def registerOrCompleteWaitingDependency(from:PropagationElement,
+                                         to:PropagationElement,
+                                         injector:() => Unit,
+                                         isStillValid:() => Boolean): Unit ={
+    if (nextWaitingDependency == null) {
+      nextWaitingDependency = new WaitingDependency(from,
+        to,
+        isStillValid,
+        injector,
+        null)
+    }else{
+      require(nextWaitingDependency.from == from)
+      require(nextWaitingDependency.to == to)
+      nextWaitingDependency.injector2 = injector
+
+      if(from.layer >= to.layer){
+        //the DAG does not obey this precedence, so we store it for later injection
+        //since injecting dependencies might cause DAG to be cyclic, temporarily
+        //as invariants generlly add and remove their dependencies in a non-ordered fashion
+        waitingDependenciesToInjectBeforePropagation = QList(nextWaitingDependency(from, to),waitingDependenciesToInjectBeforePropagation)
+      }else{
+        //the DAG obeys the precedence, so we inject and notify to the DAG data structure
+        injectWaitingDependencyIfStillValid(nextWaitingDependency)
+      }
+      nextWaitingDependency = null
+    }
+  }
+
+  private def injectAllWaitingDependencies(){
+    while(waitingDependenciesToInjectBeforePropagation!=null){
+      injectWaitingDependencyIfStillValid(waitingDependenciesToInjectBeforePropagation.head)
+      waitingDependenciesToInjectBeforePropagation = waitingDependenciesToInjectBeforePropagation.tail
+    }
   }
 }
-
-
-
-
-

@@ -26,7 +26,11 @@ abstract class Runner() {
   @inline
   protected def enqueuePENS(pe:PropagationElement)
 
-  def run(upTo:PropagationElement)
+  final def run(upTo:PropagationElement): Unit ={
+    runSH(upTo.schedulingHandler)
+  }
+
+  def runSH(upTo:SchedulingHandler)
 }
 
 class NaiveMonoThreadRunner(nbPe:Int) extends Runner{
@@ -38,16 +42,16 @@ class NaiveMonoThreadRunner(nbPe:Int) extends Runner{
     h.insert(pe)
   }
 
-  def run(upTo:PropagationElement): Unit ={
+  override def runSH(upTo:SchedulingHandler): Unit ={
     //this runner does not care about upTo, it propagates everything.
-    require(upTo.schedulingHandler.runner == this)
-    upTo.schedulingHandler.enqueueForRun()
+    require(upTo.runner == this)
+    upTo.enqueueForRun()
 
     while (!h.isEmpty) {
       val x:PropagationElement = h.popFirst()
       x.performPropagation() //through the schedulingHandler, other PE are enqueued.
     }
-    upTo.schedulingHandler.notifyEndRun()
+    upTo.notifyEndRun()
   }
 }
 
@@ -65,9 +69,9 @@ class MonoThreadRunner(nbLayers:Int) extends Runner(){
   private[this] val layersToPEs: Array[QList[PropagationElement]] = Array.fill(nbLayers)(null)
   private[this] val nonEmptyLayers: BinomialHeap[Int] = new BinomialHeap[Int]((item: Int) => item, nbLayers)
 
-  override def run(upTo:PropagationElement) {
-    require(upTo.schedulingHandler.runner == this)
-    upTo.schedulingHandler.enqueueForRun()
+  override def runSH(upTo:SchedulingHandler) {
+    require(upTo.runner == this)
+    upTo.enqueueForRun()
 
     while(nonEmptyLayers.nonEmpty) {
       val currentLayer = nonEmptyLayers.popFirst()
@@ -81,7 +85,7 @@ class MonoThreadRunner(nbLayers:Int) extends Runner(){
       }
     }
 
-    upTo.schedulingHandler.notifyEndRun()
+    upTo.notifyEndRun()
   }
 }
 
