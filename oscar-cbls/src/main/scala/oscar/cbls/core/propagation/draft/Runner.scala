@@ -23,6 +23,7 @@ abstract class Runner() {
     }
   }
 
+  @inline
   protected def enqueuePENS(pe:PropagationElement)
 
   def run(upTo:PropagationElement)
@@ -32,6 +33,7 @@ class NaiveMonoThreadRunner(nbPe:Int) extends Runner{
 
   private [this] val h: BinomialHeap[PropagationElement] = new BinomialHeap[PropagationElement](p => p.layer, nbPe)
 
+  @inline
   override protected def enqueuePENS(pe: PropagationElement){
     h.insert(pe)
   }
@@ -51,6 +53,7 @@ class NaiveMonoThreadRunner(nbPe:Int) extends Runner{
 
 class MonoThreadRunner(nbLayers:Int) extends Runner(){
 
+  @inline
   override protected def enqueuePENS(pe: PropagationElement){
     val layer = pe.layer
     if(layersToPEs(layer) == null){

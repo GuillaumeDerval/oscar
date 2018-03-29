@@ -22,18 +22,14 @@ abstract class PropagationElement(val notificationBehavior:PropagationImpactChar
   var layer:Int
   var threadID:Int
 
-
   var staticallyListeningElements:QList[PropagationElement] = null
   var staticallyListenedElement:QList[PropagationElement] = null
 
-  val couldBePropagated:Boolean = {
-    notificationBehavior match {
-      case NotificationOnPropagateNoNotificationReceived | NotificationOnNotifyAndPropagate | NotificationOnPropagateReceivesNotification => true
-      case NotificationOnNotifyNoPropagate | BulkElementNotificationBehavior | NoPropagationNotificationReceivedNoNotificationEmitted => false
-      case SCC => ???
-    }
+  def couldBePropagated:Boolean = notificationBehavior match {
+    case NotificationOnPropagateNoNotificationReceived | NotificationOnNotifyAndPropagate | NotificationOnPropagateReceivesNotification => true
+    case BulkElementNotificationBehavior | NotificationOnNotifyNoPropagate | NoPropagationNotificationReceivedNoNotificationEmitted => false
+    case SCCNotificationBehavior => true
   }
-
 
   def finishInitialization(): Unit ={
     schedulingHandler = model

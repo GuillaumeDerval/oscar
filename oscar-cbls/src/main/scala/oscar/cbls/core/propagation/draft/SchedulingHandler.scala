@@ -2,34 +2,24 @@ package oscar.cbls.core.propagation.draft
 
 import oscar.cbls.algo.quick.QList
 
-abstract class SchedulingHandler {
-
-  var scheduledElements:QList[PropagationElement] = null
-  var scheduledSHChildren:QList[SchedulingHandler] = null
-  var isScheduled:Boolean = false
-  var listeningSchedulingHandlers:QList[SchedulingHandler] = null
+class SchedulingHandler {
+  //We use private[this] for faster field access by internal methods.
+  private[this] var listeningSchedulingHandlers:QList[SchedulingHandler] = null
   private[this] var myRunner:Runner = null
-  var isRunning:Boolean = false
 
-  def scheduleSHForPropagation(sh:SchedulingHandler){
-    scheduledSHChildren = QList(sh, scheduledSHChildren)
-    if(isRunning){
-      //We are actually propagating
-      sh.enqueueForRun()
-    }else {
-      scheduleMyselfForPropagation()
-    }
+  private[this] var isScheduled:Boolean = false
+  private[this] var isRunning:Boolean = false
+
+  private[this] var scheduledElements:QList[PropagationElement] = null
+  private[this] var scheduledSHChildren:QList[SchedulingHandler] = null
+
+  def runner_=(runner:Runner){
+    myRunner = runner
   }
+  def runner:Runner = myRunner
 
-  def scheduleMyselfForPropagation(): Unit ={
-    if(!isScheduled){
-      isScheduled = true
-      var listeningSchedulingHandlersAcc = listeningSchedulingHandlers
-      while(listeningSchedulingHandlersAcc != null){
-        listeningSchedulingHandlersAcc.head.scheduleSHForPropagation(this)
-        listeningSchedulingHandlersAcc = listeningSchedulingHandlersAcc.tail
-      }
-    }
+  def addListeningSchedulingHandler(sh:SchedulingHandler){
+    listeningSchedulingHandlers = QList(sh,listeningSchedulingHandlers)
   }
 
   def schedulePEForPropagation(pe:PropagationElement): Unit ={
@@ -42,14 +32,33 @@ abstract class SchedulingHandler {
     }
   }
 
-  def runner_=(runner:Runner){
-    myRunner = runner
+  def scheduleSHForPropagation(sh:SchedulingHandler){
+    this.synchronized {
+      scheduledSHChildren = QList(sh, scheduledSHChildren)
+      if (isRunning) {
+        //We are actually propagating
+        sh.enqueueForRun()
+      } else {
+        scheduleMyselfForPropagation()
+      }
+    }
   }
-  def runner:Runner = myRunner
+
+  private def scheduleMyselfForPropagation(): Unit ={
+    if(!isScheduled){
+      isScheduled = true
+      var listeningSchedulingHandlersAcc = listeningSchedulingHandlers
+      while(listeningSchedulingHandlersAcc != null){
+        listeningSchedulingHandlersAcc.head.scheduleSHForPropagation(this)
+        listeningSchedulingHandlersAcc = listeningSchedulingHandlersAcc.tail
+      }
+    }
+  }
 
   def enqueueForRun() {
     //We need to synchronize because some enqueue might be called following a propagation, which is performed multi-threaded
     require(this.isScheduled)
+    require(!isRunning)
     this.synchronized {
       isRunning = true
       myRunner.enqueue(scheduledElements)
@@ -76,14 +85,9 @@ abstract class SchedulingHandler {
   }
 }
 
-class RegularSchedulingHandler(root:PropagationElement, s:PropagationStructure) extends SchedulingHandler{
-  s.registerSchedulingHandler(this)
-}
-
 //the one for dynamic dependencies
-class VaryingSchedulingHandler(s:PropagationStructure) extends SchedulingHandler{
+class VaryingSchedulingHandler() extends SchedulingHandler{
   s.registerSchedulingHandler(this)
-
 
 }
 

@@ -4,10 +4,10 @@ import oscar.cbls.algo.quick.QList
 
 class PropagationStructure(nbSystemThread:Int,noCycle:Boolean) extends SchedulingHandler {
 
-  var allSchedulingHandlers: QList[SchedulingHandler] = null
+  var allSchedulingHandlersNotSCC: QList[SchedulingHandler] = null
 
   def registerSchedulingHandler(s: SchedulingHandler): Unit = {
-    allSchedulingHandlers = QList(s, allSchedulingHandlers)
+    allSchedulingHandlersNotSCC = QList(s, allSchedulingHandlersNotSCC)
   }
 
   private[this] var nextUniqueID = 0
@@ -41,7 +41,7 @@ class PropagationStructure(nbSystemThread:Int,noCycle:Boolean) extends Schedulin
   //can only be called when all SH are created
   override def runner_=(runner: Runner) {
     super.runner_=(runner)
-    for (s <- allSchedulingHandlers) {
+    for (s <- allSchedulingHandlersNotSCC) {
       s.runner = runner
     }
   }
@@ -71,7 +71,7 @@ class PropagationStructure(nbSystemThread:Int,noCycle:Boolean) extends Schedulin
     } else {
       new MultiThreadRunner(nbSystemThread, new MultiTreadingPartitioningAlgo(layerToPropagationElements, layerToNbPropagationElements).partitionGraphIntoThreads())
     }
-    for (sh <- allSchedulingHandlers) {
+    for (sh <- allSchedulingHandlersNotSCC) {
       sh.runner = runner
     }
   }

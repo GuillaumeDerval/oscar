@@ -4,7 +4,7 @@ import java.util.concurrent.{Executors, Future}
 
 import oscar.cbls.algo.heap.BinomialHeap
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.core.propagation.draft.PropagationImpactCharacteristics._
+import oscar.cbls.core.propagation.draft.PropagationImpactCharacteristics.{SCCNotificationBehavior, _}
 
 class MultiTreadingPartitioningAlgo(layerToPropagationElements: Array[QList[PropagationElement]],
                                     layerToNbPropagationElements: Array[Int]){
@@ -90,76 +90,192 @@ class MultiTreadingPartitioningAlgo(layerToPropagationElements: Array[QList[Prop
 
       currentThreadIDForNodeMarking = currentThreadIDForNodeMarking - 1
 
-      val shouldExplorePropagationImpactZone = pe.notificationBehavior match {
-        case NotificationOnPropagateNoNotificationReceived | NotificationOnNotifyAndPropagate | NotificationOnPropagateReceivesNotification => true
-        case NotificationOnNotifyNoPropagate | BulkElementNotificationBehavior | NoPropagationNotificationReceivedNoNotificationEmitted => false
-        case SCCNotificationBehavior => ???
-      }
-
       //the node has not been marked yet while exploring this layer
       require(pe.threadID > biggestTreadIdUsedSoFar, "error: node was already marked while exploring the same layer?!")
       require(currentPEIDInCurrentLayer == biggestTreadIdUsedSoFar - currentThreadIDForNodeMarking)
 
-      pe.threadID = currentThreadIDForNodeMarking
 
-      if(shouldExplorePropagationImpactZone) {
-        arrayOfPEAndInterferingThreadIDs(currentPEIDInCurrentLayer) = (pe, markImpactZoneOfNotificationAndReportConflictingThreadIDMarkings(pe,
-          currentThreadIDForNodeMarking,
-          biggestTreadIdUsedSoFar))
-      }else{
-        arrayOfPEAndInterferingThreadIDs(currentPEIDInCurrentLayer) = (pe, null)
-      }
+      pe.threadID = currentThreadIDForNodeMarking
+      arrayOfPEAndInterferingThreadIDs(currentPEIDInCurrentLayer) = (pe, markImpactZoneOfPropagationAndReportConflictingThreadIDMarkings(pe,
+        currentThreadIDForNodeMarking,
+        biggestTreadIdUsedSoFar))
+
       currentPEIDInCurrentLayer += 1
     }
     (arrayOfPEAndInterferingThreadIDs,currentPEIDInCurrentLayer)
   }
 
-
-  def markImpactZoneOfNotificationAndReportConflictingThreadIDMarkings(pe:PropagationElement,
-                                                                       currentThreadIDForNodeMarking:Int,
-                                                                       maximalThreadIdMarkingOfCurrentLayer:Int,
-                                                                       acc0:QList[Int] = null): QList[Int] = {
-
-    def markCurrentPE(acc:QList[Int]):(QList[Int],Boolean) = {
-      if (pe.threadID > maximalThreadIdMarkingOfCurrentLayer) {
-        //the node has not been marked yet while exploring this layer
-        //we mark it, nothing else to do
-        pe.threadID = currentThreadIDForNodeMarking
-        (acc0,false)
-      } else {
-        //this node was already marked as interfering with something in this layer, so it is recorded as interfering :(
-        (QList(pe.threadID, acc0),true)
-      }
+  def markPEAndReportConflict(pe:PropagationElement,
+                              currentThreadIDForNodeMarking:Int,
+                              maximalThreadIdMarkingOfCurrentLayer:Int,
+                              acc:QList[Int]):(QList[Int],Boolean) = {
+    if (pe.threadID > maximalThreadIdMarkingOfCurrentLayer) {
+      //the node has not been marked yet while exploring this layer
+      //we mark it, nothing else to do
+      pe.threadID = currentThreadIDForNodeMarking
+      (acc,false)
+    } else {
+      require(pe.threadID != currentThreadIDForNodeMarking)
+      //this node was already marked as interfering with something in this layer, so it is recorded as interfering :(
+      (QList(pe.threadID, acc),true)
     }
+  }
 
-    def markStaticallyListenings(accIn:QList[Int]): QList[Int] ={
-      var myAcc = accIn
-      for (otherPE: PropagationElement <- pe.staticallyListeningElements) {
-        myAcc = markImpactZoneOfNotificationAndReportConflictingThreadIDMarkings(
-          otherPE,
+
+  //TODO: what if pe is a SCC? that is possible since we mark all nodes that can be propagated
+  //TODO: what if pe is in a SCC? that is possible, through the recursive call (not the initial loop because such nodes are embedded into SCC's)
+  //TODO: what if some node in the impact zone are in a SCC? (cfr. above)
+
+  /**
+    * marks impact zone when propagatedPE is propagated
+    * @param propagatedPE
+    * @param currentThreadIDForNodeMarking
+    * @param maximalThreadIdMarkingOfCurrentLayer
+    * @param acc0
+    * @return
+    */
+  def markImpactZoneOfPropagationAndReportConflictingThreadIDMarkings(propagatedPE:PropagationElement,
+                                                                      currentThreadIDForNodeMarking:Int,
+                                                                      maximalThreadIdMarkingOfCurrentLayer:Int,
+                                                                      acc0:QList[Int] = null): QList[Int] = {
+
+    require(propagatedPE.scc == null)
+    //pe is not in a SCC
+    val (acc1, alreadyMarked) = markPEAndReportConflict(
+      propagatedPE,
+      currentThreadIDForNodeMarking,
+      maximalThreadIdMarkingOfCurrentLayer,
+      acc0)
+
+    if (alreadyMarked) acc1
+    else propagatedPE.notificationBehavior match {
+      case NoPropagationNotificationReceivedNoNotificationEmitted =>
+        acc1 //no impact zone
+      case NotificationOnPropagateNoNotificationReceived
+           | NotificationOnNotifyAndPropagate
+           | NotificationOnPropagateReceivesNotification=>
+        markImpactZoneOfNotifyingAndReportConflictingThreadIDMarkings(
+          propagatedPE,
           currentThreadIDForNodeMarking,
           maximalThreadIdMarkingOfCurrentLayer,
-          myAcc)
-      }
-      myAcc
-    }
-
-    pe.notificationBehavior match {
-      case NoPropagationNotificationReceivedNoNotificationEmitted | NotificationOnPropagateNoNotificationReceived =>
-        acc0
-
-      case BulkElement | NotificationOnNotifyNoPropagate | NotificationOnNotifyAndPropagate =>
-        val (acc1,alreadyMarked) = markCurrentPE(acc0)
-        if(alreadyMarked) acc1
-        else markStaticallyListenings(acc1)
-
-      case NotificationOnPropagateReceivesNotification =>
-        val (acc1,alreadyMarked) = markCurrentPE(acc0)
+          acc1)
+      case BulkElementNotificationBehavior =>
+        //this is a bulk element, will not propagate, actually
+        acc1 //no impact zone
+      case SCCNotificationBehavior =>
+        //This is a SCC; upon propagation, it will perform a propagation of all its included PE
+        require(propagatedPE.scc == null,"SCC cannot be nested into one another")
+        var toReturn = acc1
+        val theSCC = propagatedPE.asInstanceOf[StronglyConnectedComponent]
+        for(peInSCC <- theSCC.propagationElements){
+          toReturn = markImpactZoneOfPropagationAndReportConflictingThreadIDMarkings(
+            peInSCC,
+            currentThreadIDForNodeMarking,
+            maximalThreadIdMarkingOfCurrentLayer,
+            toReturn)
+        }
+        toReturn
+      case NotificationOnNotifyNoPropagate =>
         acc1
     }
   }
-}
 
+  def markImpactZoneOfNotifyingAndReportConflictingThreadIDMarkings(notifyingPE:PropagationElement,
+                                                                    currentThreadIDForNodeMarking:Int,
+                                                                    maximalThreadIdMarkingOfCurrentLayer:Int,
+                                                                    acc0:QList[Int] = null): QList[Int] = {
+    val (acc1, alreadyMarked) = markPEAndReportConflict(
+      notifyingPE,
+      currentThreadIDForNodeMarking,
+      maximalThreadIdMarkingOfCurrentLayer,
+      acc0)
+
+    if (alreadyMarked) acc1
+    else notifyingPE.notificationBehavior match {
+      case NoPropagationNotificationReceivedNoNotificationEmitted
+           | BulkElementNotificationBehavior
+           | SCCNotificationBehavior =>
+        throw new Error("no notifying PE explored for impact zone on notification")
+      case NotificationOnNotifyNoPropagate
+           | NotificationOnNotifyAndPropagate
+           | NotificationOnPropagateReceivesNotification
+           | NotificationOnPropagateNoNotificationReceived=>
+        //this PE performs notification, follow its impact zone
+        var toReturn = acc1
+        for(notifiedPE <- notifyingPE.staticallyListeningElements){
+          toReturn = markImpactZoneOfNotifiedAndReportConflictingThreadIDMarkings(notifiedPE,
+            currentThreadIDForNodeMarking,
+            maximalThreadIdMarkingOfCurrentLayer,
+            toReturn)
+        }
+        toReturn
+    }
+  }
+
+  def markEnclosingSCCIfSomeAndReportConflict(pe:PropagationElement,
+                                              currentThreadIDForNodeMarking:Int,
+                                              maximalThreadIdMarkingOfCurrentLayer:Int,
+                                              acc:QList[Int]):(QList[Int],Boolean) = {
+    if(pe.scc == null) (null,false)
+    else markPEAndReportConflict(pe.scc,
+      currentThreadIDForNodeMarking,
+      maximalThreadIdMarkingOfCurrentLayer,
+      acc)
+  }
+
+  def markImpactZoneOfNotifiedAndReportConflictingThreadIDMarkings(staticallyListeningPE:PropagationElement,
+                                                                   currentThreadIDForNodeMarking:Int,
+                                                                   maximalThreadIdMarkingOfCurrentLayer:Int,
+                                                                   acc0:QList[Int] = null): QList[Int] = {
+    //notifiedPE is possibly notified (unless it receives no notification, of course)
+    //a PE in a SCC will notify its SCC
+    staticallyListeningPE.notificationBehavior match {
+      case NoPropagationNotificationReceivedNoNotificationEmitted | NotificationOnPropagateReceivesNotification=>
+        val (acc1,sccMarked) = markEnclosingSCCIfSomeAndReportConflict(staticallyListeningPE,
+          currentThreadIDForNodeMarking,
+          maximalThreadIdMarkingOfCurrentLayer,
+          acc0)
+        if(sccMarked) acc1
+        else markPEAndReportConflict(
+          staticallyListeningPE,
+          currentThreadIDForNodeMarking,
+          maximalThreadIdMarkingOfCurrentLayer,
+          acc0)._1
+      case BulkElementNotificationBehavior | NotificationOnNotifyNoPropagate | NotificationOnNotifyAndPropagate=>
+        val (acc1,sccMarked) = markEnclosingSCCIfSomeAndReportConflict(staticallyListeningPE,
+          currentThreadIDForNodeMarking,
+          maximalThreadIdMarkingOfCurrentLayer,
+          acc0)
+        if(sccMarked) acc1
+        else {
+          //we first mark this one,
+          // and if not marked, forward the notification to the listening PEs
+          val (acc1, alreadyMarked) = markPEAndReportConflict(
+            staticallyListeningPE,
+            currentThreadIDForNodeMarking,
+            maximalThreadIdMarkingOfCurrentLayer,
+            acc0)
+          if (alreadyMarked) acc1
+          else {
+            var toReturn = acc1
+            for (staticallyListeningPE2 <- staticallyListeningPE.staticallyListeningElements) {
+              toReturn = markImpactZoneOfNotifiedAndReportConflictingThreadIDMarkings(
+                staticallyListeningPE2,
+                currentThreadIDForNodeMarking,
+                maximalThreadIdMarkingOfCurrentLayer,
+                toReturn)
+            }
+            toReturn
+          }
+        }
+      case SCCNotificationBehavior =>
+        throw new Error("SCC is not statically listening to anything")
+      case NotificationOnPropagateNoNotificationReceived =>
+        //it will not receive any notification, so we actually can ignore it
+        acc0
+    }
+  }
+}
 
 class MultiThreadRunner(nbSystemThread:Int,layerToNbThreads:Array[Int]) extends Runner(){
   val nbLayer = layerToNbThreads.length
@@ -168,6 +284,7 @@ class MultiThreadRunner(nbSystemThread:Int,layerToNbThreads:Array[Int]) extends 
   private[this] val layerToThreadWithSomething:Array[QList[Int]] = Array.fill[QList[Int]](nbLayer)(null)
   private[this] val nonEmptyLayers: BinomialHeap[Int] = new BinomialHeap[Int]((item: Int) => item, nbLayer)
 
+  @inline
   override protected def enqueuePENS(pe:PropagationElement) {
     val threadID = pe.threadID
     val layer = pe.layer
@@ -184,7 +301,6 @@ class MultiThreadRunner(nbSystemThread:Int,layerToNbThreads:Array[Int]) extends 
   }
 
   private[this] val threadPool = Executors.newFixedThreadPool(nbSystemThread)
-  private[this] val threadIds = 0 until nbSystemThread
 
   override def run(upTo:PropagationElement) {
     require(upTo.schedulingHandler.runner == this)
@@ -214,24 +330,15 @@ class MultiThreadRunner(nbSystemThread:Int,layerToNbThreads:Array[Int]) extends 
       //multi-treading starts here
       //Start the propagation for each thread
       while(toPropagateQLists!=null){
-        val pEsToPropagate:QList[PropagationElement] = toPropagateQLists.head
+        futuresForSynchro = QList(
+          threadPool.submit(new PESRunner(toPropagateQLists.head)),
+          futuresForSynchro)
         toPropagateQLists = toPropagateQLists.tail
-
-        val future:Future[_] = threadPool.submit(new Runnable {
-          var myPEs = pEsToPropagate
-          override def run(): Unit = {
-            while (myPEs != null) {
-              myPEs.head.performPropagation()
-              myPEs = myPEs.tail
-            }
-          }
-        })
-        futuresForSynchro = QList(future,futuresForSynchro)
       }
 
       //wait for each task to complete
       while(futuresForSynchro!=null){
-        futuresForSynchro.head.get()
+        futuresForSynchro.head.get() //this blocks until the associated computation completes
         futuresForSynchro = futuresForSynchro.tail
       }
       //multi-treading ends here
@@ -241,3 +348,12 @@ class MultiThreadRunner(nbSystemThread:Int,layerToNbThreads:Array[Int]) extends 
   }
 }
 
+class PESRunner(pEsToPropagate:QList[PropagationElement]) extends Runnable{
+  override def run(): Unit ={
+    var myPEs = pEsToPropagate
+    while (myPEs != null) {
+      myPEs.head.performPropagation()
+      myPEs = myPEs.tail
+    }
+  }
+}
