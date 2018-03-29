@@ -2,13 +2,26 @@ package oscar.cbls.core.propagation.draft
 
 import oscar.cbls.algo.quick.QList
 
+import scala.collection.immutable.SortedSet
+
 trait AbstractSchedulingHandler{
   def scheduleSHForPropagation(sh:SchedulingHandler)
 }
 
 
-class SchedulingHandler extends AbstractSchedulingHandler {
+class SchedulingHandler() extends AbstractSchedulingHandler {
   //We use private[this] for faster field access by internal methods.
+
+  private[this] var myUniqueID:Int = -1
+
+  def uniqueID_=(i:Int){
+    require(myUniqueID == -1)
+    require(i != -1)
+    myUniqueID = i
+  }
+
+  def uniqueID:Int = myUniqueID
+
   private[this] var listeningSchedulingHandlers:QList[SchedulingHandler] = null
   private[this] var myRunner:Runner = null
 
@@ -97,3 +110,85 @@ class VaryingSchedulingHandler() extends SchedulingHandler{
 }
 
 
+
+class PropagationStructurePartitioner(p:PropagationStructure){
+
+  //TODO how about dynamic dependencies?
+  //TODO how about SCC?
+  //TODO how about statically listening that are in a SCC?
+
+  //graph must already be sorted by layers
+  def partitionIntoSchedulingHandlers(){
+    var currentLayerID = p.layerToClusteredPropagationElements.length
+    while(currentLayerID >0){
+      currentLayerID = currentLayerID -1
+
+      //from outputs to inputs decorate layer by layer
+      //the SH of a node is the SH of its successors
+      //except if the node already has a sh or if its successors have different sh's
+
+      for(pe <- p.layerToClusteredPropagationElements(currentLayerID)){
+
+        if (pe.schedulingHandler == p) {
+          //it needs to be decorated
+
+          var staticallyListeningElements = pe.staticallyListeningElements
+
+          if (staticallyListeningElements == null) {
+            //it has no succesor, so it gets a new scheduling handler and job is done.
+
+            val newSchedulingHandler = new SchedulingHandler()
+            p.registerSchedulingHandler(newSchedulingHandler)
+            pe.schedulingHandler = newSchedulingHandler
+
+          } else {
+            val referenceListeningSchedulingHandler = staticallyListeningElements.head.schedulingHandler
+            staticallyListeningElements = staticallyListeningElements.tail
+            while (staticallyListeningElements != null) {
+              if (staticallyListeningElements.head.schedulingHandler != referenceListeningSchedulingHandler) {
+                //there are more than one listening scheduling handler, so we create a scheduling handler on pe
+                val newSchedulingHandler = new SchedulingHandler()
+                p.registerSchedulingHandler(newSchedulingHandler)
+                pe.schedulingHandler = newSchedulingHandler
+
+                newSchedulingHandler.addListeningSchedulingHandler(referenceListeningSchedulingHandler)
+                newSchedulingHandler.addListeningSchedulingHandler(staticallyListeningElements.head.schedulingHandler)
+
+                var knownIDs: SortedSet[Int] = SortedSet(referenceListeningSchedulingHandler.uniqueID,
+                  staticallyListeningElements.head.schedulingHandler.uniqueID)
+
+                while (staticallyListeningElements != null) {
+                  val sh = staticallyListeningElements.head.schedulingHandler
+                  staticallyListeningElements = staticallyListeningElements.tail
+
+                  if (!(knownIDs contains sh.uniqueID)) {
+                    knownIDs = knownIDs + sh.uniqueID
+                    newSchedulingHandler.addListeningSchedulingHandler(sh)
+                  }
+                }
+              } else {
+                staticallyListeningElements = staticallyListeningElements.tail
+              }
+            }
+
+          }
+        }else{
+          //it has already a scheduling handler, so we add all listening scheduling handler to this one
+          var staticallyListeningElements = pe.staticallyListeningElements
+          var knownIDs: SortedSet[Int] = SortedSet.empty
+
+          while (staticallyListeningElements != null) {
+            val sh = staticallyListeningElements.head.schedulingHandler
+            staticallyListeningElements = staticallyListeningElements.tail
+
+            if (!(knownIDs contains sh.uniqueID)) {
+              knownIDs = knownIDs + sh.uniqueID
+              pe.schedulingHandler.addListeningSchedulingHandler(sh)
+            }
+          }
+        }
+      }
+
+    }
+  }
+}

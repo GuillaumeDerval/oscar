@@ -2,27 +2,34 @@ package oscar.cbls.core.propagation.draft
 
 import oscar.cbls.algo.quick.QList
 
-class PropagationStructure(nbSystemThread:Int,noCycle:Boolean) extends SchedulingHandler {
+class PropagationStructure(nbSystemThread:Int,noCycle:Boolean) extends SchedulingHandler() {
+
+  //the id as a scheduling handler
+  uniqueID = 0
 
   var allSchedulingHandlersNotSCC: QList[SchedulingHandler] = null
 
+  private[this]var nextUniqueIDForSchedulingHandler = 1
   def registerSchedulingHandler(s: SchedulingHandler): Unit = {
     allSchedulingHandlersNotSCC = QList(s, allSchedulingHandlersNotSCC)
+    s.uniqueID = nextUniqueIDForSchedulingHandler
+    nextUniqueIDForSchedulingHandler = nextUniqueIDForSchedulingHandler + 1
   }
 
-  private[this] var nextUniqueID = 0
+
+  private[this] var nextUniqueIDForPropagationElement = 0
   def registerPropagationElement(pe:PropagationElement): Unit ={
     require(pe.uniqueID == -1)
-    pe.uniqueID = nextUniqueID
-    nextUniqueID += 1
+    pe.uniqueID = nextUniqueIDForPropagationElement
+    nextUniqueIDForPropagationElement += 1
     allPropagationElements = QList(pe,allPropagationElements)
   }
   var allPropagationElements: QList[PropagationElement]
   var clusteredPropagationElements:QList[PropagationElement]
   var nbCLusteredPEs:Int
 
-  var layerToPropagationElements: Array[QList[PropagationElement]] = null
-  var layerToNbPropagationElements: Array[Int] = null
+  var layerToClusteredPropagationElements: Array[QList[PropagationElement]] = null
+  var layerToNbClusteredPropagationElements: Array[Int] = null
 
 
 
@@ -34,9 +41,7 @@ class PropagationStructure(nbSystemThread:Int,noCycle:Boolean) extends Schedulin
     * @tparam T the type stored in the data structure
     * @return a dictionary over the PE that are registered in the propagation structure.
     */
-  def buildNodeStorage[T](implicit X: Manifest[T]): NodeDictionary[T] = new NodeDictionary[T](nextUniqueID)
-
-
+  def buildNodeStorage[T](implicit X: Manifest[T]): NodeDictionary[T] = new NodeDictionary[T](nextUniqueIDForPropagationElement)
 
   //can only be called when all SH are created
   override def runner_=(runner: Runner) {
@@ -60,7 +65,7 @@ class PropagationStructure(nbSystemThread:Int,noCycle:Boolean) extends Schedulin
 
     instantiateVSH()
 
-    (layerToNbPropagationElements,layerToPropagationElements)= new LayerSorterAlgo(clusteredPropagationElements,nbCLusteredPEs,noCycle).sortNodesByLayer()
+    (layerToNbClusteredPropagationElements,layerToClusteredPropagationElements)= new LayerSorterAlgo(clusteredPropagationElements,nbCLusteredPEs,noCycle).sortNodesByLayer()
 
 
     partitionGraphIntoSchedulingHandlers()
@@ -69,7 +74,7 @@ class PropagationStructure(nbSystemThread:Int,noCycle:Boolean) extends Schedulin
     runner = if (nbSystemThread == 1) {
       new MonoThreadRunner(nbLayer)
     } else {
-      new MultiThreadRunner(nbSystemThread, new MultiTreadingPartitioningAlgo(layerToPropagationElements, layerToNbPropagationElements).partitionGraphIntoThreads())
+      new MultiThreadRunner(nbSystemThread, new MultiTreadingPartitioningAlgo(layerToClusteredPropagationElements, layerToNbClusteredPropagationElements).partitionGraphIntoThreads())
     }
     for (sh <- allSchedulingHandlersNotSCC) {
       sh.runner = runner

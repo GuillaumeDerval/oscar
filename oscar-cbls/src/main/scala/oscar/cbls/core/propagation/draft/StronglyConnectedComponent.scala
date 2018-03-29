@@ -21,6 +21,8 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
 
   // ////////////////////////////////////////////////////////////////////////
   // managing runnner, scheduling handler and propagation
+
+  //This method is to be called by my custom scheduling handler, so that I can schedule myself for propagation
   override def scheduleSHForPropagation(sh: SchedulingHandler): Unit ={
     require(sh == mySchedulingHandler)
     scheduleMyselfForPropagation()

@@ -157,19 +157,6 @@ abstract class PropagationElement(val notificationBehavior:PropagationImpactChar
   }
 
   protected def performPropagation() = ???
-
-
-
-
-
-  def finishInitialization(): Unit ={
-    schedulingHandler = model
-  }
-
-
-
-
-
 }
 
 
