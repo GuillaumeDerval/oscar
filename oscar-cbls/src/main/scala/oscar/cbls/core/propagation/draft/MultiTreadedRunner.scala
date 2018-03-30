@@ -316,23 +316,36 @@ class MultiThreadRunner(nbSystemThread:Int,layerToNbThreads:Array[Int]) extends 
         threadIDsToPEs(currentThreadID) = null
       }
 
-      var futuresForSynchro:QList[Future[_]] = null
+      require(toPropagateQLists != null, "error: layer to propagate with no PE in it")
+      if(toPropagateQLists.tail == null){
+        //only one thread, so we do not spawn propagation, just do it with current thread
+        var myPEs = toPropagateQLists.head
+        while (myPEs != null) {
+          myPEs.head.propagate()
+          myPEs = myPEs.tail
+        }
+        toPropagateQLists = null
+      }else{
+        //more than one thread needed here, wso we spawn the work on the available worker threads
 
-      //multi-treading starts here
-      //Start the propagation for each thread
-      while(toPropagateQLists!=null){
-        futuresForSynchro = QList(
-          threadPool.submit(new PESRunner(toPropagateQLists.head)),
-          futuresForSynchro)
-        toPropagateQLists = toPropagateQLists.tail
-      }
+        var futuresForSynchro:QList[Future[_]] = null
 
-      //wait for each task to complete
-      while(futuresForSynchro!=null){
-        futuresForSynchro.head.get() //this blocks until the associated computation completes
-        futuresForSynchro = futuresForSynchro.tail
+        //multi-treading starts here
+        //Start the propagation for each thread
+        while(toPropagateQLists!=null){
+          futuresForSynchro = QList(
+            threadPool.submit(new PESRunner(toPropagateQLists.head)),
+            futuresForSynchro)
+          toPropagateQLists = toPropagateQLists.tail
+        }
+
+        //wait for each task to complete
+        while(futuresForSynchro!=null){
+          futuresForSynchro.head.get() //this blocks until the associated computation completes
+          futuresForSynchro = futuresForSynchro.tail
+        }
+        //multi-treading ends here
       }
-      //multi-treading ends here
     }
 
     upTo.notifyEndRun()

@@ -12,15 +12,15 @@ trait AbstractSchedulingHandler{
 class SchedulingHandler() extends AbstractSchedulingHandler {
   //We use private[this] for faster field access by internal methods.
 
-  private[this] var myUniqueID:Int = -1
+  private[this] var myUniqueIDSH:Int = -1
 
-  def uniqueID_=(i:Int){
-    require(myUniqueID == -1)
+  def uniqueIDSH_=(i:Int){
+    require(myUniqueIDSH == -1)
     require(i != -1)
-    myUniqueID = i
+    myUniqueIDSH = i
   }
 
-  def uniqueID:Int = myUniqueID
+  def uniqueIDSH:Int = myUniqueIDSH
 
   private[this] var listeningSchedulingHandlers:QList[SchedulingHandler] = null
   private[this] var myRunner:Runner = null
@@ -113,6 +113,10 @@ class VaryingSchedulingHandler() extends SchedulingHandler{
 
 class PropagationStructurePartitioner(p:PropagationStructure){
 
+  def instantiateVariableSchedulingHandlers(): Unit ={
+
+  }
+
   //TODO how about dynamic dependencies?
   //TODO how about SCC?
   //TODO how about statically listening that are in a SCC?
@@ -154,15 +158,15 @@ class PropagationStructurePartitioner(p:PropagationStructure){
                 newSchedulingHandler.addListeningSchedulingHandler(referenceListeningSchedulingHandler)
                 newSchedulingHandler.addListeningSchedulingHandler(staticallyListeningElements.head.schedulingHandler)
 
-                var knownIDs: SortedSet[Int] = SortedSet(referenceListeningSchedulingHandler.uniqueID,
-                  staticallyListeningElements.head.schedulingHandler.uniqueID)
+                var knownIDs: SortedSet[Int] = SortedSet(referenceListeningSchedulingHandler.uniqueIDSH,
+                  staticallyListeningElements.head.schedulingHandler.uniqueIDSH)
 
                 while (staticallyListeningElements != null) {
                   val sh = staticallyListeningElements.head.schedulingHandler
                   staticallyListeningElements = staticallyListeningElements.tail
 
-                  if (!(knownIDs contains sh.uniqueID)) {
-                    knownIDs = knownIDs + sh.uniqueID
+                  if (!(knownIDs contains sh.uniqueIDSH)) {
+                    knownIDs = knownIDs + sh.uniqueIDSH
                     newSchedulingHandler.addListeningSchedulingHandler(sh)
                   }
                 }
@@ -181,8 +185,8 @@ class PropagationStructurePartitioner(p:PropagationStructure){
             val sh = staticallyListeningElements.head.schedulingHandler
             staticallyListeningElements = staticallyListeningElements.tail
 
-            if (!(knownIDs contains sh.uniqueID)) {
-              knownIDs = knownIDs + sh.uniqueID
+            if (!(knownIDs contains sh.uniqueIDSH)) {
+              knownIDs = knownIDs + sh.uniqueIDSH
               pe.schedulingHandler.addListeningSchedulingHandler(sh)
             }
           }

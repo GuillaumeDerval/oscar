@@ -164,22 +164,22 @@ trait DAG {
     //on marque visite quand on poppe de la DFS ou quand on est retombe sur le debut du cycle
     var ExploredStack:List[DAGNode] = List.empty //upside down
 
-    var visited2:SortedSet[Int] = SortedSet.empty
+    var visited2:SortedSet[DAGNode] = SortedSet.empty
 
     def DFS(n:DAGNode):Boolean = { //return true si on a trouve un cycle
       if(n.visited) return false
-      if(visited2.contains(n.uniqueID)){  //found a cycle
+      if(visited2.contains(n)){  //found a cycle
         ExploredStack = (n :: ExploredStack).reverse
         n.visited=true
         while(!ExploredStack.head.visited){ExploredStack = ExploredStack.tail}
-        nodes.foreach(p => {p.visited = false; visited2 -= p.uniqueID})
+        nodes.foreach(p => {p.visited = false; visited2 -= p})
         true
       }else{ //not yet
-        visited2 += n.uniqueID
+        visited2 += n
         ExploredStack = n :: ExploredStack
         n.getDAGSucceedingNodes.foreach(p => {if(DFS(p)){return true}})
         n.visited=true
-        visited2 -= n.uniqueID
+        visited2 -= n
         ExploredStack = ExploredStack.tail
         false
       }
@@ -226,25 +226,6 @@ trait DAG {
     }
   }
 
-  /*
-  private def findForwardRegion(n: DAGNode, ub: Int): List[DAGNode] = {
-    def dfsF(n: DAGNode, acc: List[DAGNode]): List[DAGNode] = {
-      n.visited = true
-      var newlist = n :: acc
-      n.getDAGSucceedingNodes.foreach(p => {
-        if (p.position == ub) {
-          nodes.foreach(q => q.visited = false)
-          throw new CycleException(p)
-        }
-        if (!p.visited && p.position < ub) {
-          newlist = dfsF(p, newlist)
-        }
-      })
-      newlist
-    }
-    dfsF(n, List.empty)
-  }
-*/
   val HeapForRegionDiscovery:BinomialHeap[DAGNode] = new BinomialHeap((n:DAGNode) => n.position,nodes.size)
 
   /**@return forward region, sorted by increasing position*/
@@ -277,21 +258,6 @@ trait DAG {
     toreturn.reverse
   }
 
-  /*
-  private def findBackwardsRegion(n: DAGNode, lb: Int): List[DAGNode] = {
-    def dfsB(n: DAGNode, acc: List[DAGNode]): List[DAGNode] = {
-      n.visited = true
-      var newlist = n :: acc
-      n.getDAGPrecedingNodes.foreach(p => {
-        if (!p.visited && p.position > lb) {
-          newlist = dfsB(p, newlist)
-        }
-      })
-      newlist
-    }
-    dfsB(n, List.empty)
-  }
-*/
   /**@return forward region, sorted by increasing position*/
   private def findSortedBackwardRegion(n: DAGNode, lb: Int): QList[DAGNode] = {
 
@@ -317,7 +283,6 @@ trait DAG {
     }
     toreturn
   }
-
 
   //merge deux listes de noeuds triee par position, donne la position triee de ces noeuds
   private def mergeNodeLists(a: QList[DAGNode], b: QList[DAGNode]): QList[Int] = {

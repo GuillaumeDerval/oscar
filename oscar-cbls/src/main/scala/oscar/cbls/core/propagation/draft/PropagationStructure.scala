@@ -2,20 +2,23 @@ package oscar.cbls.core.propagation.draft
 
 import oscar.cbls.algo.quick.QList
 
-class PropagationStructure(nbSystemThread:Int,noCycle:Boolean) extends SchedulingHandler() {
+class PropagationStructure(nbSystemThread:Int,guaranteedAcyclic:Boolean) extends SchedulingHandler() {
 
   //the id as a scheduling handler
-  uniqueID = 0
+  uniqueIDSH = 0
+
+  var myIsClosed:Boolean = false
+
+  def isClosed:Boolean = myIsClosed
 
   var allSchedulingHandlersNotSCC: QList[SchedulingHandler] = null
 
   private[this]var nextUniqueIDForSchedulingHandler = 1
   def registerSchedulingHandler(s: SchedulingHandler): Unit = {
     allSchedulingHandlersNotSCC = QList(s, allSchedulingHandlersNotSCC)
-    s.uniqueID = nextUniqueIDForSchedulingHandler
+    s.uniqueIDSH = nextUniqueIDForSchedulingHandler
     nextUniqueIDForSchedulingHandler = nextUniqueIDForSchedulingHandler + 1
   }
-
 
   private[this] var nextUniqueIDForPropagationElement = 0
   def registerPropagationElement(pe:PropagationElement): Unit ={
@@ -24,14 +27,12 @@ class PropagationStructure(nbSystemThread:Int,noCycle:Boolean) extends Schedulin
     nextUniqueIDForPropagationElement += 1
     allPropagationElements = QList(pe,allPropagationElements)
   }
-  var allPropagationElements: QList[PropagationElement]
-  var clusteredPropagationElements:QList[PropagationElement]
-  var nbCLusteredPEs:Int
+  var allPropagationElements: QList[PropagationElement] = null
+  var clusteredPropagationElements:QList[PropagationElement] = null
+  var nbClusteredPEs:Int = -1
 
   var layerToClusteredPropagationElements: Array[QList[PropagationElement]] = null
   var layerToNbClusteredPropagationElements: Array[Int] = null
-
-
 
   /**
     * Builds a dictionary to store data related to the PE.
@@ -41,7 +42,8 @@ class PropagationStructure(nbSystemThread:Int,noCycle:Boolean) extends Schedulin
     * @tparam T the type stored in the data structure
     * @return a dictionary over the PE that are registered in the propagation structure.
     */
-  def buildNodeStorage[T](implicit X: Manifest[T]): NodeDictionary[T] = new NodeDictionary[T](nextUniqueIDForPropagationElement)
+  def buildNodeStorage[T](implicit X: Manifest[T]): NodeDictionary[T]
+  = new NodeDictionary[T](nextUniqueIDForPropagationElement)
 
   //can only be called when all SH are created
   override def runner_=(runner: Runner) {
@@ -61,20 +63,30 @@ class PropagationStructure(nbSystemThread:Int,noCycle:Boolean) extends Schedulin
 
 
   def close(): Unit = {
-    (clusteredPropagationElements,nbCLusteredPEs) = new SCCIdentifierAlgo(allPropagationElements,this).identifySCC()
+    require(!myIsClosed,"Propagation structure already closed")
+    myIsClosed = true
 
-    instantiateVSH()
+    (clusteredPropagationElements,nbClusteredPEs)
+      = new SCCIdentifierAlgo(allPropagationElements,this).identifySCC()
 
-    (layerToNbClusteredPropagationElements,layerToClusteredPropagationElements)= new LayerSorterAlgo(clusteredPropagationElements,nbCLusteredPEs,noCycle).sortNodesByLayer()
+    new PropagationStructurePartitioner(this).instantiateVariableSchedulingHandlers()
 
+    (layerToNbClusteredPropagationElements,layerToClusteredPropagationElements)
+      = new LayerSorterAlgo(
+      clusteredPropagationElements,
+      nbClusteredPEs,
+      guaranteedAcyclic).sortNodesByLayer()
 
-    partitionGraphIntoSchedulingHandlers()
+    new PropagationStructurePartitioner(this).partitionIntoSchedulingHandlers()
 
-    //create runner and multiTreaded partition (if multi-treading)
+    //create runner and multiThreaded partition (if multi-treading)
     runner = if (nbSystemThread == 1) {
       new MonoThreadRunner(nbLayer)
     } else {
-      new MultiThreadRunner(nbSystemThread, new MultiTreadingPartitioningAlgo(layerToClusteredPropagationElements, layerToNbClusteredPropagationElements).partitionGraphIntoThreads())
+      new MultiThreadRunner(nbSystemThread,
+        new MultiTreadingPartitioningAlgo(
+          layerToClusteredPropagationElements,
+          layerToNbClusteredPropagationElements).partitionGraphIntoThreads())
     }
     for (sh <- allSchedulingHandlersNotSCC) {
       sh.runner = runner
@@ -103,7 +115,8 @@ class PropagationStructure(nbSystemThread:Int,noCycle:Boolean) extends Schedulin
   * because the instantiated array will be very large compared to your benefits.
   * This might kill cache and RAM for nothing
   *
-  * @param MaxNodeID the maximal ID of a node to be stored in the dictionary (since it is O(1) it is an array, and we allocate the full necessary size
+  * @param MaxNodeID the maximal ID of a node to be stored in the dictionary
+  *                  (since it is O(1) it is an array, and we allocate the full necessary size
   * @tparam T the type stored in this structure
   * @author renaud.delandtsheer@cetic.be
   */

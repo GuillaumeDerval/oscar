@@ -25,7 +25,7 @@ class SCCIdentifierAlgo(pEs:QList[PropagationElement],ps:PropagationStructure) {
       } else {
         //a new SCC must be instantiated here
         acyclic = false
-        val scc = new StronglyConnectedComponent(pEOfSCC, ps)
+        val scc = new StronglyConnectedComponent(pEOfSCC, pEOfSCC.size, ps)
         stronglyConnectedComponentsStructures = QList(scc, stronglyConnectedComponentsStructures)
         clusteredPropagationElements = QList(scc, clusteredPropagationElements)
       }

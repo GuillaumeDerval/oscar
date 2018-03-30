@@ -4,7 +4,6 @@ package oscar.cbls.core.propagation.draft
 import oscar.cbls.algo.dag.DAGNode
 import oscar.cbls.algo.dll.{DPFDLLStorageElement, DelayedPermaFilteredDoublyLinkedList}
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.core.propagation.{BasicPropagationElement, KeyForElementRemoval, PropagationElement, StronglyConnectedComponent}
 
 
 object PropagationImpactCharacteristics extends Enumeration{
@@ -25,7 +24,7 @@ object PropagationImpactCharacteristics extends Enumeration{
   //bulk BulkElement
 }
 
-import PropagationImpactCharacteristics._
+import oscar.cbls.core.propagation.draft.PropagationImpactCharacteristics._
 
 
 abstract class PropagationElement(val notificationBehavior:PropagationImpactCharacteristics,
@@ -73,13 +72,33 @@ abstract class PropagationElement(val notificationBehavior:PropagationImpactChar
   val dynamicallyListeningElements: DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)]
   = new DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)]
 
-  //Hi, I listen to you!
-  def registerDynamicallyListeningElement(listeningElement:PropagationElement,
-                                          id:Int): KeyForDynamicDependencyRemoval = {
+  var determiningElement:PropagationElement = null
 
-    new KeyForDynamicDependencyRemoval(
+  /**
+    * a PE that listens to another PE should call this method on the PE it listens
+    * @param listeningElement the one that listens
+    * @param id
+    * @param determiningPermanentDependency
+    * @return
+    */
+  def registerDynamicallyListeningElement(listeningElement:PropagationElement,
+                                          id:Int,
+                                          determiningPermanentDependency:Boolean): KeyForDynamicDependencyRemoval = {
+
+    val toReturn = new KeyForDynamicDependencyRemoval(
       this.dynamicallyListeningElements.addElem((listeningElement,id)),
       listeningElement.dynamicallyListenedElements.addElem(this))
+
+    if(determiningPermanentDependency){
+      require(listeningElement.varyingDependencies, "cannot register with determining dependency if no varying dependencies")
+      require(listeningElement.determiningElement == null)
+      listeningElement.determiningElement = this
+      null
+    }else if (listeningElement.varyingDependencies){
+      toReturn
+    }else{
+      null //we do not return the key when listener has no varying dependency
+    }
   }
 
   // //////////////////////////////////////////////////////////////////////
@@ -123,9 +142,7 @@ abstract class PropagationElement(val notificationBehavior:PropagationImpactChar
     }else{
       staticallyListenedElements.filter(_.scc == scc)
     }
-
   }
-
 
   // ////////////////////////////////////////////////////////////////////////
   // api about scheduling and propagation

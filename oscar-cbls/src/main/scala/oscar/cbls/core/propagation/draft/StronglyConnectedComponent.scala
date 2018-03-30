@@ -9,8 +9,8 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
   extends PropagationElement(PropagationImpactCharacteristics.SCCNotificationBehavior,false)
     with AbstractSchedulingHandler{
 
-  val myRunner = new NaiveMonoThreadRunner(nbPE)
-  val mySchedulingHandler = new SchedulingHandler()
+  private[this] val myRunner = new NaiveMonoThreadRunner(nbPE)
+  private[this] val mySchedulingHandler = new SchedulingHandler()
   mySchedulingHandler.runner = myRunner
 
   model.registerPropagationElement(this)
@@ -86,6 +86,7 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
   }
 
   private def injectAllWaitingDependencies(){
+    require(nextWaitingDependency == null)
     while(waitingDependenciesToInjectBeforePropagation!=null){
       injectWaitingDependencyIfStillValid(waitingDependenciesToInjectBeforePropagation.head)
       waitingDependenciesToInjectBeforePropagation = waitingDependenciesToInjectBeforePropagation.tail
