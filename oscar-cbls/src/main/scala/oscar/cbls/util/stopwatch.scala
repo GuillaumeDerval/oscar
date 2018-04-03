@@ -20,24 +20,24 @@
 
 package oscar.cbls.util
 
-/**This trait implements simple stopwatch functionality used for benchmarking search scripts
+/** This trait implements a simple stopwatch functionality used for benchmarking search scripts
   * @author renaud.delandtsheer@cetic.be
   * */
 trait StopWatch {
 
   private var starttime:Long = 0
 
-  /**starts or resets the stopwatch*/
+  /** Starts or resets the stopwatch*/
   def startWatch(){
     starttime = System.nanoTime()
   }
 
-  /**returns the time elapsed since the last call to startWatch.
+  /** Returns the time elapsed since the last call to startWatch.
    * time is wall clock time in milliseconds
    */
   def getWatch:Long = (System.nanoTime() - starttime) / 1000000
 
-  /**returns a string describing the time elapsed since last startWatch
+  /** Returns a string describing the time elapsed since last startWatch
    * formatted for humans: hh:mm:ss:ms
    */
   def getWatchString:String = {
