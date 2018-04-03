@@ -28,7 +28,7 @@ import oscar.cbls.core._
   * @tparam T type of pre-computes used by the invariant
   * @tparam U type of the output of the invariant
   */
-@deprecated("not enough validation yet, use at your own risk","")
+@deprecated("not enough validation yet, use this at your own risk","")
 abstract class GenericRoutingGlobalConstraintForward[T: Manifest, U](routes: ChangingSeqValue, n:Int, v: Int)
   extends Invariant with SeqNotificationTarget{
 

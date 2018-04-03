@@ -16,8 +16,8 @@ package oscar.cbls.business.routing.invariant.group
   ******************************************************************************/
 
 /**
-  * For the segment of the function, those class say if we can use pre-computes on this segment,
-  * if the segment is a flipped segment or if we need from scratch method
+  * For the segment of the function, those classes say if we can use pre-computes on this segment,
+  * if the segment is a flipped segment or if we need it from scratch method
   * @author Quentin Meurisse
   */
 abstract sealed class ComputationStep(){

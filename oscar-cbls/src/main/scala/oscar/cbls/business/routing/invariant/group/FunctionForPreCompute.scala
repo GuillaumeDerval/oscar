@@ -20,8 +20,8 @@ import oscar.cbls.algo.fun._
 import oscar.cbls.algo.seq.IntSequence
 
 /**
-  * All the function implemented here are bijection
-  * they map position in new sequence to position in old sequence
+  * All the functions implemented here are bijections
+  * they map positions in new sequence to positions in old sequence
   */
 abstract class FunctionForPreCompute {
 
