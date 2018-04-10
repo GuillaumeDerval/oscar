@@ -105,6 +105,9 @@ trait RedBlackTreeMap[@specialized(Int) V]{
   def keys:List[Int]
   protected [rb] def keysAcc(keysAfter:List[Int]):List[Int]
 
+  def qKeys:QList[Int]
+  protected [rb] def qKeysAcc(keysAfter:QList[Int]):QList[Int]
+
   def positionOf(k: Int):Option[RedBlackTreeMapExplorer[V]]
   protected[rb] def positionOfAcc(k:Int,positionAcc:QList[(T[V],Boolean)]):Option[RedBlackTreeMapExplorer[V]]
 
@@ -178,6 +181,7 @@ case class L[@specialized(Int) V]() extends RedBlackTreeMap[V]  {
   protected [rb] def valuesAcc(valuesAfter:List[V]):List[V] = valuesAfter
   protected [rb] def contentAcc(valuesAfter:List[(Int,V)]):List[(Int,V)] = valuesAfter
   protected [rb] def keysAcc(keysAfter:List[Int]):List[Int] = keysAfter
+  override protected[rb] def qKeysAcc(keysAfter: QList[Int]): QList[Int] = keysAfter
 
   protected[rb] override def positionOfAcc(k : Int, positionAcc : QList[(T[V],Boolean)]) : Option[RedBlackTreeMapExplorer[V]] = None
 
@@ -188,6 +192,8 @@ case class L[@specialized(Int) V]() extends RedBlackTreeMap[V]  {
   def content:List[(Int,V)] = List.empty
 
   override def keys : List[Int] = List.empty
+
+  override def qKeys: QList[Int] = null
 
   override def positionOf(k: Int):Option[RedBlackTreeMapExplorer[V]] = None
 
@@ -309,9 +315,11 @@ class T[@specialized(Int) V](private[this]val c : Boolean,
 
   override protected[rb] def valuesAcc(valuesAfter : List[V]) : List[V] = l.valuesAcc(v.get :: r.valuesAcc(valuesAfter))
 
-  protected [rb] def contentAcc(valuesAfter:List[(Int,V)]):List[(Int,V)] = l.contentAcc((k,v.get) :: r.contentAcc(valuesAfter))
+  override protected [rb] def contentAcc(valuesAfter:List[(Int,V)]):List[(Int,V)] = l.contentAcc((k,v.get) :: r.contentAcc(valuesAfter))
 
-  protected [rb] def keysAcc(keysAfter:List[Int]):List[Int] = l.keysAcc(k :: r.keysAcc(keysAfter))
+  override protected [rb] def keysAcc(keysAfter:List[Int]):List[Int] = l.keysAcc(k :: r.keysAcc(keysAfter))
+
+  override protected[rb] def qKeysAcc(keysAfter: QList[Int]): QList[Int] = l.qKeysAcc(QList(k,r.qKeysAcc(keysAfter)))
 
   protected[rb] override def positionOfAcc(k : Int, positionAcc : QList[(T[V],Boolean)]) : Option[RedBlackTreeMapExplorer[V]] = {
     if (k < this.k) l.positionOfAcc(k, QList((this,false),positionAcc))
@@ -328,6 +336,8 @@ class T[@specialized(Int) V](private[this]val c : Boolean,
   override def content : List[(Int, V)] = contentAcc(List.empty)
 
   override def keys : List[Int] = keysAcc(List.empty)
+
+  override def qKeys:QList[Int] = qKeysAcc(null)
 
   override def positionOf(k: Int):Option[RedBlackTreeMapExplorer[V]] = positionOfAcc(k:Int,null)
 
