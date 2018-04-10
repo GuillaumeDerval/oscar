@@ -1,6 +1,7 @@
 package oscar.examples.cbls.graphPatrition
 
 import oscar.cbls._
+import oscar.cbls.lib.invariant.logic.DenseCount
 import oscar.cbls.modeling._
 
 import scala.util.Random
@@ -32,9 +33,7 @@ object GraphPartition extends CBLSModel with App {
     post(nodeToPartition(nodeA) === nodeToPartition(nodeB))
   }
 
-  val Array(nodesInCluster0,nodesInCluster1) = makeDenseCluster(nodeToPartition).clusters
-  val nbNodesInCluster0 = cardinality(nodesInCluster0)
-  val nbNodesInCluster1 = cardinality(nodesInCluster1)
+  val Array(nbNodesInCluster0,nbNodesInCluster1) = DenseCount.makeDenseCount(nodeToPartition).counts
 
   val sameSizeConstraint = nbNodesInCluster0 === nbNodesInCluster1
   post(sameSizeConstraint, nbNodes) //we put some large weight on this constraint
@@ -62,11 +61,6 @@ object GraphPartition extends CBLSModel with App {
         profile(swapsNeighborhood(nodeToPartition,
           symmetryCanBeBrokenOnIndices = false,
           searchZone1 = () => violatedNodes.value, name = "swap1Viol")),
-        //profile(swapsNeighborhood(nodeToPartition,
-        //  symmetryCanBeBrokenOnIndices = false,
-        //  searchZone1 = () => violatedNodes.value,
-        //  searchZone2 = (firstNode,itsPartition) => (if(itsPartition == 0) nodesInCluster1.value else nodesInCluster0.value),
-        //  name = "swap1ViolSmart")),
         //profile(swapsNeighborhood(nodeToPartition,
         //  symmetryCanBeBrokenOnIndices = false,
         //  searchZone1 = () => violatedNodes.value,
