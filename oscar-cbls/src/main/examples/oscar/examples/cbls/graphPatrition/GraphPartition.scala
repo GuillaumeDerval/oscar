@@ -55,9 +55,9 @@ object GraphPartition extends CBLSModel with App {
       List(
         profile(assignNeighborhood(nodeToPartition, "moveAll")),
         //profile(swapsNeighborhood(nodeToPartition, "swapAll")),
-        //profile(swapsNeighborhood(nodeToPartition,
-        //  symmetryCanBeBrokenOnIndices = false,
-        //  searchZone1 = () => mostViolatedNodes.value, name = "swap1MostViol")),
+        profile(swapsNeighborhood(nodeToPartition,
+          symmetryCanBeBrokenOnIndices = false,
+          searchZone1 = () => mostViolatedNodes.value, name = "swap1MostViol")),
         //profile(swapsNeighborhood(nodeToPartition, //this one is the most complete of swaps, but highly inefficient compared tpo the others,and I think that it does not bring in more connexity than others (althrough I am not so suer...)
         //  symmetryCanBeBrokenOnIndices = false,
         //  searchZone1 = () => violatedNodes.value, name = "swap1Viol")),
