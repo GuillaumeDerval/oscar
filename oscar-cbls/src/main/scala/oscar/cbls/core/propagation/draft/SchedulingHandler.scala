@@ -25,7 +25,7 @@ class SchedulingHandler() extends AbstractSchedulingHandler {
   private[this] var listeningSchedulingHandlers:QList[SchedulingHandler] = null
   private[this] var myRunner:Runner = null
 
-  private[this] var isScheduled:Boolean = false
+  var isScheduled:Boolean = false
   private[this] var isRunning:Boolean = false
 
   private[this] var scheduledElements:QList[PropagationElement] = null
@@ -104,14 +104,49 @@ class SchedulingHandler() extends AbstractSchedulingHandler {
 }
 
 //the one for dynamic dependencies
-class VaryingSchedulingHandler() extends SchedulingHandler{
+class VaryingSchedulingHandler(val p:PropagationElement, s:PropagationStructure) extends SchedulingHandler{
   s.registerSchedulingHandler(this)
 
+  var isDeterminingElementScheduled:Boolean
+
+
+  //when this one is registered for run, it schedules the trigger for propagation
+  //when it is enqueed for run, it enqueues the SHof the determining element
+  //when the trigger is propagated, it calls this class to
+
+  def runNeededDynamicDependencies(): Unit ={
+    for(dynamicallyListenedPE <- p.dynamicallyListenedElements if dynamicallyListenedPE != p.determiningElement){
+      if(dynamicallyListenedPE.schedulingHandler.isScheduled){
+        dynamicallyListenedPE.schedulingHandler.enqueueForRun()
+      }
+    }
+  }
+
+  def runDeterminingElementIfNeeded():Boolean={
+    if(p.determiningElement == null){
+      false
+    }else{
+
+    }
+
+  }
+}
+
+class VaryingSchedulingHandlerTrigger(vsh:VaryingSchedulingHandler) extends PropagationElement(){
+
+  //We register this to be between the listened elements and the varying dependency PE
+  for(listenedStaticElement <- vsh.p.staticallyListenedElements){
+    listenedStaticElement.registerStaticallyListeningElement(this)
+  }
+  this.registerStaticallyListeningElement(vsh.p)
+
+  override protected def performPropagation(): Unit ={
+    vsh.runNeededDynamicDependencies()
+  }
 }
 
 
-
-class PropagationStructurePartitioner(p:PropagationStructure){
+class PropagationStructurePartitionner(p:PropagationStructure){
 
   def instantiateVariableSchedulingHandlers(): Unit ={
 

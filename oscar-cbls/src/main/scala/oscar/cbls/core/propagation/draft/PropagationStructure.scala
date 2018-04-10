@@ -69,7 +69,7 @@ class PropagationStructure(nbSystemThread:Int,guaranteedAcyclic:Boolean) extends
     (clusteredPropagationElements,nbClusteredPEs)
       = new SCCIdentifierAlgo(allPropagationElements,this).identifySCC()
 
-    new PropagationStructurePartitioner(this).instantiateVariableSchedulingHandlers()
+    new PropagationStructurePartitionner(this).instantiateVariableSchedulingHandlers()
 
     (layerToNbClusteredPropagationElements,layerToClusteredPropagationElements)
       = new LayerSorterAlgo(
@@ -77,7 +77,7 @@ class PropagationStructure(nbSystemThread:Int,guaranteedAcyclic:Boolean) extends
       nbClusteredPEs,
       guaranteedAcyclic).sortNodesByLayer()
 
-    new PropagationStructurePartitioner(this).partitionIntoSchedulingHandlers()
+    new PropagationStructurePartitionner(this).partitionIntoSchedulingHandlers()
 
     //create runner and multiThreaded partition (if multi-treading)
     runner = if (nbSystemThread == 1) {
