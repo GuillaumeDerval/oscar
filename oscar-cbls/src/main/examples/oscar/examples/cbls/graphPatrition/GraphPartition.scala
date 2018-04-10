@@ -41,6 +41,7 @@ object GraphPartition extends CBLSModel with App {
   val nodeToViolation = c.violations(nodeToPartition)
   val mostViolatedNodes = argMax(nodeToViolation)
   val violatedNodes = filter(nodeToViolation)
+  val nonViolatedNodes = filter(nodeToViolation,_==0)
 
   c.close()
 
@@ -88,10 +89,11 @@ object GraphPartition extends CBLSModel with App {
         //  searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).value != itsPartition),
         //  name = "swapAdjacent"))
       ),refresh = nbNodes/10)
-      onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = "randomize" + nbNodes/100), 2, obj)
+      onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = "randomize" + nbNodes/100), 3, obj)
     exhaust profile(swapsNeighborhood(nodeToPartition, //this one is the most complete of swaps, but highly inefficient compared tpo the others,and I think that it does not bring in more connexity than others (althrough I am not so suer...)
-      symmetryCanBeBrokenOnIndices = false,
-      searchZone1 = violatedNodes, name = "swap1Viol")))
+      symmetryCanBeBrokenOnIndices = true,
+      searchZone1 = () => if (violatedNodes.value.size == nbNodes) null else violatedNodes.value,
+      name = "swap1Viol"))) showObjectiveFunction(obj)
 
   neighborhood.verbose = 1
   neighborhood.doAllMoves(_ >= nbNodes + nbEdges, obj)
@@ -99,5 +101,7 @@ object GraphPartition extends CBLSModel with App {
   println(neighborhood.profilingStatistics)
 
   println("violation on sameSize(partitions): " + sameSizeConstraint.violation.value)
+  println("global violation: " + obj.value + "/" + nbEdges)
+
 }
 
