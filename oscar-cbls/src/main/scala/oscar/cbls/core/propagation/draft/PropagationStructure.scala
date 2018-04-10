@@ -81,7 +81,7 @@ class PropagationStructure(nbSystemThread:Int,guaranteedAcyclic:Boolean) extends
 
     //create runner and multiThreaded partition (if multi-treading)
     runner = if (nbSystemThread == 1) {
-      new MonoThreadRunner(nbLayer)
+      new MonoThreadRunner(nbLayer,false)
     } else {
       new MultiThreadRunner(nbSystemThread,
         new MultiTreadingPartitioningAlgo(

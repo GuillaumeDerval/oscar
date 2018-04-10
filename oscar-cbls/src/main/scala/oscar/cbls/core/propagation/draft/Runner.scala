@@ -3,22 +3,34 @@ package oscar.cbls.core.propagation.draft
 import oscar.cbls.algo.heap.BinomialHeap
 import oscar.cbls.algo.quick.QList
 
-abstract class Runner() {
+abstract class Runner(threadSafe:Boolean) {
 
   final def enqueue(pes: QList[PropagationElement]) {
-    this.synchronized {
-      var remainingPes = pes
-      while(remainingPes != null){
-        val pe = remainingPes.head
-        remainingPes = remainingPes.tail
-
-        enqueuePENS(pe)
+    if(threadSafe) {
+      this.synchronized {
+        myEnqueue(pes)
       }
+    }else{
+      myEnqueue(pes)
+    }
+  }
+
+  private def myEnqueue(pes: QList[PropagationElement]) {
+    var remainingPes = pes
+    while (remainingPes != null) {
+      val pe = remainingPes.head
+      remainingPes = remainingPes.tail
+
+      enqueuePENS(pe)
     }
   }
 
   final def enqueuePE(pe:PropagationElement) {
-    this.synchronized {
+    if(threadSafe) {
+      this.synchronized {
+        enqueuePENS(pe)
+      }
+    }else{
       enqueuePENS(pe)
     }
   }
@@ -33,7 +45,7 @@ abstract class Runner() {
   def runSH(upTo:SchedulingHandler)
 }
 
-class NaiveMonoThreadRunner(nbPe:Int) extends Runner{
+class NaiveMonoThreadRunner(nbPe:Int,threadSafe:Boolean) extends Runner(threadSafe){
 
   private [this] val h: BinomialHeap[PropagationElement] = new BinomialHeap[PropagationElement](p => p.layer, nbPe)
 
@@ -55,7 +67,7 @@ class NaiveMonoThreadRunner(nbPe:Int) extends Runner{
   }
 }
 
-class MonoThreadRunner(nbLayers:Int) extends Runner(){
+class MonoThreadRunner(nbLayers:Int,threadSafe:Boolean) extends Runner(threadSafe){
 
   @inline
   override protected def enqueuePENS(pe: PropagationElement){
