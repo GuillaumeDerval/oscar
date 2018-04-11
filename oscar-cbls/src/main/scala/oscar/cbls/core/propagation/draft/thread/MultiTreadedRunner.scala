@@ -1,10 +1,11 @@
-package oscar.cbls.core.propagation.draft
+package oscar.cbls.core.propagation.draft.thread
 
 import java.util.concurrent.{Executors, Future}
 
 import oscar.cbls.algo.heap.BinomialHeap
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.propagation.draft.PropagationImpactCharacteristics._
+import oscar.cbls.core.propagation.draft._
 
 class MultiTreadingPartitioningAlgo(layerToPropagationElements: Array[QList[PropagationElement]],
                                     layerToNbPropagationElements: Array[Int]){
@@ -293,7 +294,7 @@ class MultiThreadRunner(nbSystemThread:Int,layerToNbThreads:Array[Int]) extends 
 
   private[this] val threadPool = Executors.newFixedThreadPool(nbSystemThread)
 
-  override def runSH(upTo:SchedulingHandler) {
+  override def runSH(upTo:SimpleSchedulingHandler) {
     require(upTo.runner == this)
     upTo.enqueueForRun()
 

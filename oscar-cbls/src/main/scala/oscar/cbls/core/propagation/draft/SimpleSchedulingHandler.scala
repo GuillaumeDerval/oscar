@@ -5,11 +5,10 @@ import oscar.cbls.algo.quick.QList
 import scala.collection.immutable.SortedSet
 
 trait AbstractSchedulingHandler{
-  def scheduleSHForPropagation(sh:SchedulingHandler)
+  def scheduleSHForPropagation(sh:SimpleSchedulingHandler,isStillValid:()=>Boolean)
 }
 
-
-class SchedulingHandler() extends AbstractSchedulingHandler {
+class SimpleSchedulingHandler() extends AbstractSchedulingHandler {
   //We use private[this] for faster field access by internal methods.
 
   private[this] var myUniqueIDSH:Int = -1
@@ -22,21 +21,22 @@ class SchedulingHandler() extends AbstractSchedulingHandler {
 
   def uniqueIDSH:Int = myUniqueIDSH
 
-  private[this] var listeningSchedulingHandlers:QList[SchedulingHandler] = null
-  private[this] var myRunner:Runner = null
+  private[this] var listeningSchedulingHandlers:QList[SimpleSchedulingHandler] = null
+  protected [this] var myRunner:Runner = null
 
   var isScheduled:Boolean = false
-  private[this] var isRunning:Boolean = false
+  protected[this] var isRunning:Boolean = false
 
-  private[this] var scheduledElements:QList[PropagationElement] = null
-  private[this] var scheduledSHChildren:QList[SchedulingHandler] = null
+  protected [this] var scheduledElements:QList[PropagationElement] = null
+  class ScheduledSHAndValidityTest(val sh:SimpleSchedulingHandler,val isStillValid:()=>Boolean)
+  private[this] var scheduledSHChildren:QList[ScheduledSHAndValidityTest] = null
 
   def runner_=(runner:Runner){
     myRunner = runner
   }
   def runner:Runner = myRunner
 
-  def addListeningSchedulingHandler(sh:SchedulingHandler){
+  def addListeningSchedulingHandler(sh:SimpleSchedulingHandler){
     listeningSchedulingHandlers = QList(sh,listeningSchedulingHandlers)
   }
 
@@ -50,9 +50,9 @@ class SchedulingHandler() extends AbstractSchedulingHandler {
     }
   }
 
-  def scheduleSHForPropagation(sh:SchedulingHandler){
+  def scheduleSHForPropagation(sh:SimpleSchedulingHandler,isStillValid:()=>Boolean){
     this.synchronized {
-      scheduledSHChildren = QList(sh, scheduledSHChildren)
+      scheduledSHChildren = QList(new ScheduledSHAndValidityTest(sh,isStillValid), scheduledSHChildren)
       if (isRunning) {
         //We are actually propagating
         sh.enqueueForRun()
@@ -62,28 +62,33 @@ class SchedulingHandler() extends AbstractSchedulingHandler {
     }
   }
 
-  private def scheduleMyselfForPropagation(): Unit ={
+  protected def scheduleMyselfForPropagation(): Unit ={
     if(!isScheduled){
       isScheduled = true
       var listeningSchedulingHandlersAcc = listeningSchedulingHandlers
       while(listeningSchedulingHandlersAcc != null){
-        listeningSchedulingHandlersAcc.head.scheduleSHForPropagation(this)
+        listeningSchedulingHandlersAcc.head.scheduleSHForPropagation(this,null)
         listeningSchedulingHandlersAcc = listeningSchedulingHandlersAcc.tail
       }
     }
   }
 
   def enqueueForRun() {
-    //We need to synchronize because some enqueue might be called following a propagation, which is performed multi-threaded
-    require(this.isScheduled)
-    require(!isRunning)
-    this.synchronized {
+    if (isScheduled && !isRunning) {
+      //could be not scheduled anymore since SH might be listened by several SH
+      //could already be running, for the same reason.
+
       isRunning = true
       myRunner.enqueue(scheduledElements)
       scheduledElements = null
       var toScheduleSHChildren = scheduledSHChildren
-      while(toScheduleSHChildren != null){
-        toScheduleSHChildren.head.enqueueForRun()
+      scheduledSHChildren = null
+      while (toScheduleSHChildren != null) {
+        val enqueue = toScheduleSHChildren.head
+        if(enqueue.isStillValid == null || enqueue.isStillValid()){
+          enqueue.sh.enqueueForRun()
+          scheduledSHChildren = QList(enqueue,scheduledSHChildren)
+        }
         toScheduleSHChildren = toScheduleSHChildren.tail
       }
     }
@@ -96,23 +101,79 @@ class SchedulingHandler() extends AbstractSchedulingHandler {
       isScheduled = false
       isRunning = false
       while (scheduledSHChildren != null) {
-        scheduledSHChildren.head.notifyEndRun()
+        scheduledSHChildren.head.sh.notifyEndRun()
         scheduledSHChildren = scheduledSHChildren.tail
       }
     }
   }
 }
 
-//the one for dynamic dependencies
-class VaryingSchedulingHandler(val p:PropagationElement, s:PropagationStructure) extends SchedulingHandler{
-  s.registerSchedulingHandler(this)
+class RootedSchedulingHandler(root:PropagationElement) extends SimpleSchedulingHandler(){
+  //among all scheduled element with this scheduling handler,
+  //only the root can be listened by some PE not in the SH
 
-  var isDeterminingElementScheduled:Boolean
+  root.dynamicallyListeningElements.notifyInserts(notifyRootListenedByNewPE)
+
+  class ListeningSHAndValidityTest(val sh:SimpleSchedulingHandler,val isStillValid:()=>Boolean)
+  var dynamicallyListeningSHAndValidityTest:QList[ListeningSHAndValidityTest] = null
+
+  def notifyRootListenedByNewPE(newListeningPE:(PropagationElement,Int),isStillValid:()=> Boolean) {
+    if (isStillValid == null || isStillValid()) {
+      dynamicallyListeningSHAndValidityTest = QList(new ListeningSHAndValidityTest(newListeningPE._1.schedulingHandler, isStillValid), dynamicallyListeningSHAndValidityTest)
+      if (isScheduled) {
+        newListeningPE._1.schedulingHandler.scheduleSHForPropagation(this, isStillValid)
+      }
+    }
+  }
+
+  override protected def scheduleMyselfForPropagation(){
+    if(!isScheduled){
+      isScheduled = true
+      var listeningSchedulingHandlersAcc = dynamicallyListeningSHAndValidityTest
+      dynamicallyListeningSHAndValidityTest = null
+      while(listeningSchedulingHandlersAcc != null){
+        val prop = listeningSchedulingHandlersAcc.head
+        val isSTillValidFn = prop.isStillValid
+        if(isSTillValidFn()) {
+          prop.sh.scheduleSHForPropagation(this, prop.isStillValid)
+          dynamicallyListeningSHAndValidityTest = QList(prop,dynamicallyListeningSHAndValidityTest)
+        }
+        listeningSchedulingHandlersAcc = listeningSchedulingHandlersAcc.tail
+      }
+    }
+  }
+}
+
+//the one for dynamic dependencies
+//basically, the PE has a set of dynamic dependencies, and a varying dependency.
+//this scheduling handler is the SH of: the varying PE, the determining element.
+//all other dependencies are considered dynamic, and have one scheduling handler each. As such, the
+class VaryingSchedulingHandler(val p:PropagationElement, s:PropagationStructure) extends SimpleSchedulingHandler{
+  s.registerSchedulingHandler(this)
+  require(p.varyingDependencies, "expecting a PE with varying dependencies")
+
+  var isDeterminingElementScheduled:Boolean = false
+
+
+  override def scheduleSHForPropagation(sh:SimpleSchedulingHandler,isStillValid:()=>Boolean): Unit ={
+
+  }
+
 
 
   //when this one is registered for run, it schedules the trigger for propagation
-  //when it is enqueed for run, it enqueues the SHof the determining element
+  //when it is enqueued for run, it enqueues the SHof the determining element
   //when the trigger is propagated, it calls this class to
+
+  override def schedulePEForPropagation(pe:PropagationElement): Unit ={
+    if(isRunning){
+      //we are actually propagating
+      runner.enqueuePE(pe)
+    }else {
+      scheduledElements = QList(pe, scheduledElements)
+      scheduleMyselfForPropagation()
+    }
+  }
 
   def runNeededDynamicDependencies(): Unit ={
     for(dynamicallyListenedPE <- p.dynamicallyListenedElements if dynamicallyListenedPE != p.determiningElement){
@@ -128,7 +189,6 @@ class VaryingSchedulingHandler(val p:PropagationElement, s:PropagationStructure)
     }else{
 
     }
-
   }
 }
 
@@ -176,7 +236,7 @@ class PropagationStructurePartitionner(p:PropagationStructure){
           if (staticallyListeningElements == null) {
             //it has no succesor, so it gets a new scheduling handler and job is done.
 
-            val newSchedulingHandler = new SchedulingHandler()
+            val newSchedulingHandler = new SimpleSchedulingHandler()
             p.registerSchedulingHandler(newSchedulingHandler)
             pe.schedulingHandler = newSchedulingHandler
 
@@ -186,7 +246,7 @@ class PropagationStructurePartitionner(p:PropagationStructure){
             while (staticallyListeningElements != null) {
               if (staticallyListeningElements.head.schedulingHandler != referenceListeningSchedulingHandler) {
                 //there are more than one listening scheduling handler, so we create a scheduling handler on pe
-                val newSchedulingHandler = new SchedulingHandler()
+                val newSchedulingHandler = new SimpleSchedulingHandler()
                 p.registerSchedulingHandler(newSchedulingHandler)
                 pe.schedulingHandler = newSchedulingHandler
 

@@ -40,6 +40,11 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
   private[this] val phantom:DPFDLLStorageElement[T] = new DPFDLLStorageElement[T](null.asInstanceOf[T])
   phantom.setNext(phantom)
 
+
+  abstract class NotifyOnInsert(){
+    def notifyInsert(inserted: DPFDLLStorageElement[T]): Unit
+  }
+
   /** this function is called on insert. It takes
     * -the inserted element,
     * -an insert function that performs the insert,
@@ -47,8 +52,8 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
     */
   class Filtered[F](val filter:(T,()=>Unit, ()=> Boolean) => Unit,
                  val map:T => F,
-                 val filtered:DoublyLinkedList[F]){
-    def notifyInsert(inserted: DPFDLLStorageElement[T]): Unit = {
+                 val filtered:DoublyLinkedList[F]) extends NotifyOnInsert{
+    override def notifyInsert(inserted: DPFDLLStorageElement[T]): Unit = {
       def injector():Unit = {
         inserted.filtered = QList(filtered.addElem(map(inserted.elem)),inserted.filtered)
       }
@@ -57,7 +62,15 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
     }
   }
 
-  private[this] var filtered:QList[Filtered[_]] = null
+  class CallBack(val callBackFunction:(T,()=> Boolean) => Unit) extends NotifyOnInsert{
+    override def notifyInsert(inserted: DPFDLLStorageElement[T]): Unit = {
+
+      def isStillValid():Boolean = {inserted.prev != null}
+      callBackFunction(inserted.elem, isStillValid _)
+    }
+  }
+
+  private[this] var filtered:QList[NotifyOnInsert] = null
 
   def headPhantom = phantom
 
@@ -100,6 +113,14 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
 
   override def iterator = new DPFDLLIterator[T](phantom,phantom)
 
+  private def addNotificationTarget(newNotify:NotifyOnInsert): Unit ={
+    var currentStorageElement:DPFDLLStorageElement[T] = phantom.next
+    while(currentStorageElement != phantom){
+      newNotify.notifyInsert(currentStorageElement)
+      currentStorageElement = currentStorageElement.next
+    }
+  }
+
   def delayedPermaFilter[F](filter:(T,()=>Unit, ()=> Boolean) => Unit,
                          map:T => F = (t:T) => t.asInstanceOf[F]):DoublyLinkedList[F] = {
 
@@ -107,11 +128,7 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
     val newFiltered = new Filtered(filter,map,new DoublyLinkedList[F])
     filtered = QList(newFiltered,filtered)
 
-    var currentStorageElement:DPFDLLStorageElement[T] = phantom.next
-    while(currentStorageElement != phantom){
-      newFiltered.notifyInsert(currentStorageElement)
-      currentStorageElement = currentStorageElement.next
-    }
+    addNotificationTarget(newFiltered)
 
     newFiltered.filtered
   }
@@ -125,8 +142,9 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
     delayedPermaFilter(calledWhenAddInFirst,map)
   }
 
-
-
+  def notifyInserts(callBackFunction:(T,()=> Boolean) => Unit): Unit = {
+    addNotificationTarget(new CallBack(callBackFunction))
+  }
   /**
    * @param fn the function to execute on each items included in this list
    * @tparam U the output type of the function

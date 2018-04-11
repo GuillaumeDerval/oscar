@@ -1,8 +1,9 @@
 package oscar.cbls.core.propagation.draft
 
 import oscar.cbls.algo.quick.QList
+import oscar.cbls.core.propagation.draft.thread.{MultiThreadRunner, MultiTreadingPartitioningAlgo}
 
-class PropagationStructure(nbSystemThread:Int,guaranteedAcyclic:Boolean) extends SchedulingHandler() {
+class PropagationStructure(val nbSystemThread:Int,val guaranteedAcyclic:Boolean) extends SimpleSchedulingHandler() {
 
   //the id as a scheduling handler
   uniqueIDSH = 0
@@ -11,10 +12,10 @@ class PropagationStructure(nbSystemThread:Int,guaranteedAcyclic:Boolean) extends
 
   def isClosed:Boolean = myIsClosed
 
-  var allSchedulingHandlersNotSCC: QList[SchedulingHandler] = null
+  var allSchedulingHandlersNotSCC: QList[SimpleSchedulingHandler] = null
 
   private[this]var nextUniqueIDForSchedulingHandler = 1
-  def registerSchedulingHandler(s: SchedulingHandler): Unit = {
+  def registerSchedulingHandler(s: SimpleSchedulingHandler): Unit = {
     allSchedulingHandlersNotSCC = QList(s, allSchedulingHandlersNotSCC)
     s.uniqueIDSH = nextUniqueIDForSchedulingHandler
     nextUniqueIDForSchedulingHandler = nextUniqueIDForSchedulingHandler + 1
@@ -105,7 +106,6 @@ class PropagationStructure(nbSystemThread:Int,guaranteedAcyclic:Boolean) extends
     }
   }
 }
-
 
 /**
   * This is a O(1) dictionary for propagation elements.

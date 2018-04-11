@@ -10,7 +10,7 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
     with AbstractSchedulingHandler{
 
   private[this] val myRunner = new NaiveMonoThreadRunner(nbPE,threadSafe)
-  private[this] val mySchedulingHandler = new SchedulingHandler()
+  private[this] val mySchedulingHandler = new SimpleSchedulingHandler()
   mySchedulingHandler.runner = myRunner
 
   model.registerPropagationElement(this)
@@ -23,7 +23,7 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
   // managing runnner, scheduling handler and propagation
 
   //This method is to be called by my custom scheduling handler, so that I can schedule myself for propagation
-  override def scheduleSHForPropagation(sh: SchedulingHandler): Unit ={
+  override def scheduleSHForPropagation(sh: SimpleSchedulingHandler): Unit ={
     require(sh == mySchedulingHandler)
     scheduleMyselfForPropagation()
   }

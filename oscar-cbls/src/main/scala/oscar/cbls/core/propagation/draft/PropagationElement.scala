@@ -32,7 +32,7 @@ abstract class PropagationElement(val notificationBehavior:PropagationImpactChar
 
   var uniqueID = -1 //DAG node already have this kind of stuff
   var isScheduled:Boolean = false
-  var schedulingHandler:SchedulingHandler = null
+  var schedulingHandler:SimpleSchedulingHandler = null
   var model:PropagationStructure = null
 
   private[this] var myScc:StronglyConnectedComponent = null

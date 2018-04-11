@@ -42,7 +42,7 @@ abstract class Runner(threadSafe:Boolean) {
     runSH(upTo.schedulingHandler)
   }
 
-  def runSH(upTo:SchedulingHandler)
+  def runSH(upTo:SimpleSchedulingHandler)
 }
 
 class NaiveMonoThreadRunner(nbPe:Int,threadSafe:Boolean) extends Runner(threadSafe){
@@ -54,7 +54,7 @@ class NaiveMonoThreadRunner(nbPe:Int,threadSafe:Boolean) extends Runner(threadSa
     h.insert(pe)
   }
 
-  override def runSH(upTo:SchedulingHandler): Unit ={
+  override def runSH(upTo:SimpleSchedulingHandler): Unit ={
     //this runner does not care about upTo, it propagates everything.
     require(upTo.runner == this)
     upTo.enqueueForRun()
@@ -81,7 +81,7 @@ class MonoThreadRunner(nbLayers:Int,threadSafe:Boolean) extends Runner(threadSaf
   private[this] val layersToPEs: Array[QList[PropagationElement]] = Array.fill(nbLayers)(null)
   private[this] val nonEmptyLayers: BinomialHeap[Int] = new BinomialHeap[Int]((item: Int) => item, nbLayers)
 
-  override def runSH(upTo:SchedulingHandler) {
+  override def runSH(upTo:SimpleSchedulingHandler) {
     require(upTo.runner == this)
     upTo.enqueueForRun()
 
