@@ -34,3 +34,4 @@ class SCCIdentifierAlgo(pEs:QList[PropagationElement],ps:PropagationStructure) {
     (clusteredPropagationElements, stronglyConnectedComponentsStructures)
   }
 }
+

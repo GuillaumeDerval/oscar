@@ -108,7 +108,7 @@ class SimpleSchedulingHandler() extends AbstractSchedulingHandler {
   }
 }
 
-class RootedSchedulingHandler(root:PropagationElement) extends SimpleSchedulingHandler(){
+class RootedSchedulingHandlerDynListening(root:PropagationElement) extends SimpleSchedulingHandler(){
   //among all scheduled element with this scheduling handler,
   //only the root can be listened by some PE not in the SH
 
@@ -148,7 +148,7 @@ class RootedSchedulingHandler(root:PropagationElement) extends SimpleSchedulingH
 //basically, the PE has a set of dynamic dependencies, and a varying dependency.
 //this scheduling handler is the SH of: the varying PE, the determining element.
 //all other dependencies are considered dynamic, and have one scheduling handler each. As such, the
-class VaryingSchedulingHandler(val p:PropagationElement, s:PropagationStructure) extends SimpleSchedulingHandler{
+class DynListenedSchedulingHandler(val p:PropagationElement, s:PropagationStructure) extends SimpleSchedulingHandler{
   s.registerSchedulingHandler(this)
   require(p.varyingDependencies, "expecting a PE with varying dependencies")
 
@@ -170,6 +170,7 @@ class VaryingSchedulingHandler(val p:PropagationElement, s:PropagationStructure)
       //we are actually propagating
       runner.enqueuePE(pe)
     }else {
+      if(pe == p.determiningElement) isDeterminingElementScheduled = true
       scheduledElements = QList(pe, scheduledElements)
       scheduleMyselfForPropagation()
     }
@@ -192,7 +193,8 @@ class VaryingSchedulingHandler(val p:PropagationElement, s:PropagationStructure)
   }
 }
 
-class VaryingSchedulingHandlerTrigger(vsh:VaryingSchedulingHandler) extends PropagationElement(){
+class VaryingSchedulingHandlerTrigger(vsh:DynListenedSchedulingHandler)
+  extends PropagationElement(PropagationImpactCharacteristics.NotificationOnPropagateNoNotificationReceived,false){
 
   //We register this to be between the listened elements and the varying dependency PE
   for(listenedStaticElement <- vsh.p.staticallyListenedElements){
