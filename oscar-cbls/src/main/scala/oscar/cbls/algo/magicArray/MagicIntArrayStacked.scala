@@ -19,7 +19,7 @@ package oscar.cbls.algo.magicArray
 class MagicIntArrayStacked(maxLevel:Int, initVal:(Int => Int), size:Int) extends Iterable[Int]{
 
   private[this] val levelToArray:Array[Array[Int]] = Array.tabulate(maxLevel+1)(level => if(level == 0) Array.tabulate(size)(initVal) else Array.fill(size)(0))
-  private[this] val levelToIsValueChangedAtNextLevel:Array[IterableMagicBoolArray] = Array.tabulate(maxLevel)(level => new IterableMagicBoolArray(size,false))
+  private[this] val levelToIsValueChangedAtNextLevel:Array[IterableMagicBoolArray] = Array.tabulate(maxLevel)(_ => new IterableMagicBoolArray(size,false))
   private[this] var currentLevel:Int = 0
 
   def level:Int = currentLevel - 1
@@ -31,6 +31,7 @@ class MagicIntArrayStacked(maxLevel:Int, initVal:(Int => Int), size:Int) extends
 
   def apply(indice:Int):Int = {
     var attemptLevel = currentLevel
+    //TODO: this is too slow, could it be made O(1)?
     while(attemptLevel>0){
       val levelBelow = attemptLevel - 1
       if(levelToIsValueChangedAtNextLevel(levelBelow)(indice)){
