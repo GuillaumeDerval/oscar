@@ -30,17 +30,15 @@ class MaxSelectionBranching[B <: BoolVarLike, I <: IntVarLike](selections: Seq[O
   private def findNextI: Int = {
     var next = -1
     val unboundVars = unbound.toArray
-    var j = unboundVars.length-1
-
-    while(next < 0 && j >= 0){
+    var j = unboundVars.length - 1
+    while (next < 0 && j >= 0) {
       val selection = selections(unboundVars(j)).selectionVar
-      if(selection.isBound){
-        if(selection.isTrue) next = unboundVars(j)
+      if (selection.isBound) {
+        if (selection.isTrue) next = unboundVars(j)
         else unbound.removeValue(unboundVars(j))
       }
-      j-=1
+      j -= 1
     }
-
     next
   }
 
@@ -49,19 +47,19 @@ class MaxSelectionBranching[B <: BoolVarLike, I <: IntVarLike](selections: Seq[O
     var selectNextSelection = false //Indicates if we need to make a selection decision
 
     //While we need to branch on optional vars:
-    while(!selectNextSelection){
+    while (!selectNextSelection) {
 
       //If selection var already selected:
-      if(currentSelection.value  >= 0){
+      if (currentSelection.value >= 0) {
         val toBranchOn = selections(currentSelection.value).optVarsHeuristic() //Getting branching in sub-tree
-        if(toBranchOn.nonEmpty) return toBranchOn //If branching still possible: returning it
+        if (toBranchOn.nonEmpty) return toBranchOn //If branching still possible: returning it
         else currentSelection.setValue(-1) //Else: indicating that we need to find the next var that has been bound
       }
 
       //If no selection var selected:
-      else{
+      else {
         val next = findNextI //Finding next var bound to true
-        if(next >= 0){
+        if (next >= 0) {
           unbound.removeValue(next)
           currentSelection.setValue(next)
         }
@@ -73,7 +71,7 @@ class MaxSelectionBranching[B <: BoolVarLike, I <: IntVarLike](selections: Seq[O
   }
 }
 
-object MaxSelectionBranching{
+object MaxSelectionBranching {
   def apply[B <: BoolVarLike, I <: IntVarLike](selections: Seq[OptionalSelection[B, I]], selectionHeuristic: Branching) =
     new MaxSelectionBranching(selections, selectionHeuristic)
 }
