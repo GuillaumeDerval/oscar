@@ -582,18 +582,22 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     add_constraint(constructCBLSConstraint(constraint))
   }
 
-  def construct_and_add_invariant(constraint: Constraint):IntValue = {
+  def construct_and_add_invariant(constraint: Constraint, ensureDomain:Boolean = true):IntValue = {
     constraint.definedVar match {
       case None =>
         throw new Exception("Constraint "+constraint+" is not supposed to be an invariant.")
       case Some(v) =>
         val inv = constructCBLSIntInvariant(constraint,v.id)
-        val dom = v match{
-          case IntegerVariable(i,d,ann) => EnsureDomain(inv,d,c)
-          case bv: BooleanVariable => FzDomainRange(if(bv.isTrue) 1 else 0, if(bv.isFalse) 0 else 1)
+        if(ensureDomain) {
+          val dom = v match {
+            case IntegerVariable(i, d, ann) => EnsureDomain(inv, d, c)
+            case bv: BooleanVariable =>
+              FzDomainRange(if (bv.isTrue) 1 else 0, if (bv.isFalse) 0 else 1)
+              //WARNING: removing ensuredom from booleanvariables...
+              //EnsureDomain(inv,dom,c)
+          }
         }
-        //WARNING: removing ensuredom from booleanvariables...
-        //EnsureDomain(inv,dom,c)
+
         inv
     }
   }

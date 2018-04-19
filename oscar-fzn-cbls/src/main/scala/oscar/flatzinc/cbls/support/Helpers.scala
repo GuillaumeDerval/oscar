@@ -32,28 +32,39 @@ import scala.collection.immutable.SortedSet
 import oscar.cbls.lib.invariant.numeric.Prod2
 import oscar.flatzinc.model.FzDomainRange
 
-/*trait IntValueDom extends IntValue{
-  def inDomain(v:Int): Boolean
-  def getDomain():Iterable[Int]
-  def getRandValue():Int
-  def domainSize: Int
-}*/
+object Helpers {
+  implicit class FznChangingIntValue(c:ChangingIntValue){
 
-/*
-/**
- * CBLSIntVarDom extends the normal CBLSIntVar with more precise FzDomain information.
-  * Not any more, this is completely redundant!
- */
-class CBLSIntVarDom(model: Store, Value: Int, val dom: FzDomain, n: String = null)
-  extends CBLSIntVar(model, Value, dom.min to dom.max,  n) //with IntValueDom
-{
+    /**
+      * Intersect the domain of a ChangingIntValue with d.
+      * If the current value of the ChangingIntValue is outside the resulting domain,
+      * then it is reassigned to a random value in the domain.
+      * @param d Domain to intersect with
+      */
 
-  def getDomain():Iterable[Int] = domain
-  def getRandValue():Int = domain.randomValue
+    def intersectDomain(d:Domain) = {
+      c.restrictDomain(d)
+      if(c.isControlledVariable && !c.inDomain(c.newValue)){
+        System.err.println("% Warning: reduced domain of controlled variable resulted in current value outside domain.")
+      }else if(!c.inDomain(c.newValue)){
+        val rndIdx = Random.nextInt(d.size)
+        c.setValue(d.iterator.drop(rndIdx).next)
+      }
+    }
 
+    /**
+      * Relax the domain of a ChangingIntValue by including the values in d.
+      * Note that this is only intended to be used to restore values there were
+      * removed from the domain using intersectDomain.
+      * If the domain is relaxed to a include values that were not in the
+      * domain when the model was closed, then things can explode.
+      * @param d
+      */
+    def relaxDomain(d:Domain) = {
+      c.overrideDomain(c.domain.union(d))
+    }
+  }
 }
-
-*/
 
 //TODO: Should not extend it anymore!
 //Need the store while it extends CBLSIntVar, as sometimes it is requested (e.g., to find the Model in some invariants)

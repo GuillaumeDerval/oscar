@@ -224,7 +224,7 @@ class GCCNeighborhood(val variables: Array[CBLSIntVar], val vals: Array[Int], va
     //Swap will always respect the constraint is it was already satisfied
     if( variables(idx1).value == variables(idx2).value)
       return new NoMove()
-    if(variableViolation(idx1).value == 0 && variableViolation(idx2).value == 0 && RandomGenerator.nextInt(100) >25){
+    if(variableViolation(idx1).value == 0 && variableViolation(idx2).value == 0 && RandomGenerator.nextInt(100) > 15){
       return new NoMove
     }
     acceptOr(new SwapMove(variables(idx1), variables(idx2), objective.swapVal(variables(idx1), variables(idx2))),
@@ -273,7 +273,7 @@ class GCCNeighborhood(val variables: Array[CBLSIntVar], val vals: Array[Int], va
 
   def getBest(rng1: Iterable[Int], rng2: Iterable[Int], accept: Move => Boolean): Move = {
     val bestSwap = selectMin2(rng1, rng2, (idx: Int, next: Int) => getSwapMove(idx, next, accept).value,
-                              (idx: Int, v: Int) => variables(idx).domain.contains(variables(v).value) && variables(
+                              (idx: Int, v: Int) => idx < v && variables(idx).domain.contains(variables(v).value) && variables(
                                 v).inDomain(variables(idx).value))
     val swap = bestSwap match {
       case (i1, i2) => getSwapMove(i1, i2, accept)
@@ -920,7 +920,6 @@ class Inverse(xs: Array[CBLSIntVar], invXs: Array[CBLSIntVar], objective: CBLSOb
 
 
 class FlatNeighbourhood(val fzNeighbourhood: FZNeighbourhood,
-                            initConstraintSystem: ConstraintSystem,
                             subNeighbourhoodConstructors:Array[(CBLSObjective,ConstraintSystem) => FlatSubNeighbourhood],
                             objective: CBLSObjective,
                             val cblsModel: FZCBLSModel)

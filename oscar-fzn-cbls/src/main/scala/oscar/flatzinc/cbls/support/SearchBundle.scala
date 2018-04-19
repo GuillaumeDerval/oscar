@@ -166,6 +166,7 @@ class SearchControl(val m: FZCBLSModel, val objLB:Int, val MaxTimeMilli: Int,val
 
   var lastBestKnownObjective = Int.MaxValue
   var bestKnownObjective = Int.MaxValue
+  var timeOfBestObjective = -1l
   //var bestKnownViolation = Int.MaxValue
   var bestPair = (Int.MaxValue,Int.MaxValue)
 
@@ -193,6 +194,7 @@ class SearchControl(val m: FZCBLSModel, val objLB:Int, val MaxTimeMilli: Int,val
     if(m.objective.violation.value==0 && m.objective.getObjectiveValue() < bestKnownObjective){
       //bestKnownViolation = 0
       bestKnownObjective = m.objective.getObjectiveValue();
+      timeOfBestObjective = m.getWatch()
       saveBestSolution()
       m.handleSolution();
       if(bestKnownObjective==objLB && !stopOnSat)println("==========")//added !stopOnSat to not print it on Satisfaction problems.

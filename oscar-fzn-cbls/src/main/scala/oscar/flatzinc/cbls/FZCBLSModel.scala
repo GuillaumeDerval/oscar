@@ -26,6 +26,7 @@ import oscar.flatzinc.Log
 import oscar.flatzinc.cbls.support._
 import oscar.flatzinc.cp.FZCPModel
 import oscar.flatzinc.model.{BooleanVariable, Objective, Variable, _}
+import oscar.flatzinc.cbls.support.Helpers._
 
 import scala.collection.mutable.{Map => MMap}
 import scala.util.Random
@@ -266,15 +267,15 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
         case iv:IntegerVariable =>
           iv.domain match {
             case FzDomainRange(min,max) =>
-              cblsVar.restrictDomain(min to max)
+              cblsVar.intersectDomain(min to max)
             case FzDomainSet(s) =>
-              cblsVar.restrictDomain(s)
+              cblsVar.intersectDomain(s)
           }
         case bv:BooleanVariable =>
           if(bv.isTrue){
-            cblsVar.restrictDomain(0 to 0)
+            cblsVar.intersectDomain(0 to 0)
           }else if(bv.isFalse){
-            cblsVar.restrictDomain(1 to cblsVar.domain.max)
+            cblsVar.intersectDomain(1 to cblsVar.domain.max)
           }
       }
     }
@@ -297,9 +298,9 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
           }
         case bv:BooleanVariable =>
           if(bv.isTrue){
-            cblsVar.restrictDomain(0 to 0)
+            cblsVar.intersectDomain(0 to 0)
           }else if(bv.isFalse){
-            cblsVar.restrictDomain(1 to cblsVar.domain.max)
+            cblsVar.intersectDomain(1 to cblsVar.domain.max)
           }else{
             cblsVar.relaxDomain(0 to 1)
           }

@@ -87,16 +87,15 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
 
   def restrictDomain(d:Domain): Unit = {
     privatedomain = privatedomain.intersect(d)
-    if(definingInvariant == null && !privatedomain.contains(mNewValue)){
-        val rndIdx = Random.nextInt(privatedomain.size)
-        val valArray = privatedomain.toArray
-        this := valArray(rndIdx)
-      }
   }
 
-  //Unions the domain with d
-  def relaxDomain(d:Domain): Unit = {
-    privatedomain = privatedomain.union(d)
+  /**
+    * Overrides the current domain.
+    * Warning: if used incorrectly this will break everything.
+    * @param d
+    */
+  def overrideDomain(d:Domain) = {
+    privatedomain = d
   }
 
   def inDomain(v:Int): Boolean = privatedomain.contains(v)
