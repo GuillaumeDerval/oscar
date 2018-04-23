@@ -91,7 +91,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
 
   def unorderedContentNoDuplicate : List[Int]
 
-  def unorderedContentNoDuplicateWithNBOccurences : List[(Int,Int)]
+  def unorderedContentNoDuplicateWithNBOccurrences : List[(Int,Int)]
 
   def valueAtPosition(position : Int) : Option[Int]
 
@@ -585,7 +585,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
 
   override def unorderedContentNoDuplicate : List[Int] = valueToInternalPositions.keys
 
-  override def unorderedContentNoDuplicateWithNBOccurences : List[(Int,Int)] = valueToInternalPositions.content.map({case ((value,positions)) => ((value,positions.size))})
+  override def unorderedContentNoDuplicateWithNBOccurrences : List[(Int,Int)] = valueToInternalPositions.content.map({case ((value,positions)) => (value,positions.size)})
 }
 
 class IntSequenceIterator(var crawler:Option[IntSequenceExplorer]) extends Iterator[Int] {
@@ -823,7 +823,7 @@ class MovedIntSequence(val seq:IntSequence,
 
   override def unorderedContentNoDuplicate : List[Int] = seq.unorderedContentNoDuplicate
 
-  override def unorderedContentNoDuplicateWithNBOccurences : List[(Int, Int)] = seq.unorderedContentNoDuplicateWithNBOccurences
+  override def unorderedContentNoDuplicateWithNBOccurrences : List[(Int, Int)] = seq.unorderedContentNoDuplicateWithNBOccurrences
 
   override def descriptorString : String = seq.descriptorString + ".moved(startPos:" + startPositionIncluded + " endPos:" + endPositionIncluded + " targetPos:" + moveAfterPosition + " flip:" + flip + ")"
 
@@ -965,7 +965,7 @@ class InsertedIntSequence(seq:IntSequence,
 
   override def nbOccurrence(value : Int) : Int = if(value == this.insertedValue) seq.nbOccurrence(value) + 1 else seq.nbOccurrence(value)
 
-  override def unorderedContentNoDuplicateWithNBOccurences : List[(Int, Int)] =
+  override def unorderedContentNoDuplicateWithNBOccurrences : List[(Int, Int)] =
     unorderedContentNoDuplicate.map(value => (value,if(value == insertedValue) seq.nbOccurrence(value) +1 else seq.nbOccurrence(value)))
 
   override def descriptorString : String = seq.descriptorString + ".inserted(val:" + insertedValue + " pos:" + pos + ")"
@@ -1105,7 +1105,7 @@ class RemovedIntSequence(val seq:IntSequence,
     if(seq.nbOccurrence(removedValue) > 1) seq.unorderedContentNoDuplicate
     else seq.unorderedContentNoDuplicate.filter(_ != removedValue)
 
-  override def unorderedContentNoDuplicateWithNBOccurences : List[(Int, Int)] =
+  override def unorderedContentNoDuplicateWithNBOccurrences : List[(Int, Int)] =
     unorderedContentNoDuplicate.flatMap(value => if(value == removedValue) {
       val occurencesBefore = seq.nbOccurrence(value)
       if (occurencesBefore == 1) None

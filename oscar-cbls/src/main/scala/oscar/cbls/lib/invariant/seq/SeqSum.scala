@@ -48,7 +48,7 @@ case class SeqSum(v: SeqValue, f:(Int => Int) = (a:Int) => a)
   }
 
   private def computeSumFromScratch(v:IntSequence):Int = {
-    var contentWithOccurences = v.unorderedContentNoDuplicateWithNBOccurences
+    var contentWithOccurences = v.unorderedContentNoDuplicateWithNBOccurrences
     var sum = 0
     while(contentWithOccurences match{
       case Nil => return sum

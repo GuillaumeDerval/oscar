@@ -108,9 +108,13 @@ class SimpleSchedulingHandler() extends AbstractSchedulingHandler {
   }
 }
 
-class RootedSchedulingHandlerDynListening(root:PropagationElement) extends SimpleSchedulingHandler(){
+class RootedSchedulingHandlerDynListened(val root:PropagationElement) extends RootedSchedulingHandlerDynListenedTrait {
   //among all scheduled element with this scheduling handler,
   //only the root can be listened by some PE not in the SH
+}
+
+trait RootedSchedulingHandlerDynListenedTrait extends SimpleSchedulingHandler {
+  val root:PropagationElement
 
   root.dynamicallyListeningElements.notifyInserts(notifyRootListenedByNewPE)
 
@@ -148,7 +152,7 @@ class RootedSchedulingHandlerDynListening(root:PropagationElement) extends Simpl
 //basically, the PE has a set of dynamic dependencies, and a varying dependency.
 //this scheduling handler is the SH of: the varying PE, the determining element.
 //all other dependencies are considered dynamic, and have one scheduling handler each. As such, the
-class DynListenedSchedulingHandler(val p:PropagationElement, s:PropagationStructure) extends SimpleSchedulingHandler{
+class DynListeningSchedulingHandler(val p:PropagationElement, s:PropagationStructure) extends SimpleSchedulingHandler{
   s.registerSchedulingHandler(this)
   require(p.varyingDependencies, "expecting a PE with varying dependencies")
 
@@ -193,17 +197,24 @@ class DynListenedSchedulingHandler(val p:PropagationElement, s:PropagationStruct
   }
 }
 
-class VaryingSchedulingHandlerTrigger(vsh:DynListenedSchedulingHandler)
-  extends PropagationElement(PropagationImpactCharacteristics.NotificationOnPropagateNoNotificationReceived,false){
+
+class CalBackPropagationElement(callBackTarget:()=> Unit,
+                                staticallyListeningElements:Iterable[PropagationElement],
+                                staticallyListenedElements:Iterable[PropagationElement])
+  extends PropagationElement(false){
 
   //We register this to be between the listened elements and the varying dependency PE
-  for(listenedStaticElement <- vsh.p.staticallyListenedElements){
-    listenedStaticElement.registerStaticallyListeningElement(this)
+  //there is no dynamic dependency however because we do not want any notification
+  // and because this PE will be scheduled by some external mechanism
+  for(staticallyListened <- staticallyListenedElements){
+    staticallyListened.registerStaticallyListeningElement(this)
   }
-  this.registerStaticallyListeningElement(vsh.p)
+  for(staticallyListening <- staticallyListeningElements){
+    this.registerStaticallyListeningElement(staticallyListening)
+  }
 
   override protected def performPropagation(): Unit ={
-    vsh.runNeededDynamicDependencies()
+    callBackTarget()
   }
 }
 

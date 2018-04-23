@@ -27,8 +27,7 @@ object PropagationImpactCharacteristics extends Enumeration{
 import oscar.cbls.core.propagation.draft.PropagationImpactCharacteristics._
 
 
-abstract class PropagationElement(val notificationBehavior:PropagationImpactCharacteristics,
-                                  val varyingDependencies:Boolean) extends DAGNode {
+abstract class PropagationElement(val varyingDependencies:Boolean) extends DAGNode {
 
   var uniqueID = -1 //DAG node already have this kind of stuff
   var isScheduled:Boolean = false
@@ -38,12 +37,6 @@ abstract class PropagationElement(val notificationBehavior:PropagationImpactChar
   private[this] var myScc:StronglyConnectedComponent = null
  //We have a getter because a specific setter is define herebelow
   def scc:StronglyConnectedComponent = myScc
-
-  def couldBePropagated:Boolean = notificationBehavior match {
-    case NotificationOnPropagateNoNotificationReceived | NotificationOnNotifyAndPropagate | NotificationOnPropagateReceivesNotification => true
-    case BulkElementNotificationBehavior | NotificationOnNotifyNoPropagate | NoPropagationNotificationReceivedNoNotificationEmitted => false
-    case SCCNotificationBehavior => true
-  }
 
   var layer:Int = -1
   var threadID:Int = -1
@@ -148,7 +141,6 @@ abstract class PropagationElement(val notificationBehavior:PropagationImpactChar
   // api about scheduling and propagation
 
   def scheduleMyselfForPropagation(): Unit ={
-    assert(!couldBePropagated)
     if(!isScheduled){
       isScheduled = true
       schedulingHandler.schedulePEForPropagation(this)
@@ -166,7 +158,6 @@ abstract class PropagationElement(val notificationBehavior:PropagationImpactChar
   }
 
   final def propagate(){
-    require(!couldBePropagated)
     if(isScheduled) {
       isScheduled = false
       performPropagation()
