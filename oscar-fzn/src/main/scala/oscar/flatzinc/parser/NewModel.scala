@@ -73,7 +73,7 @@ class Model(val log: Log, val acceptAnyCstr: Boolean) {
 
     m.getSolve.getAnns.foreach((lit: ASTLit) =>
                                  lit match {
-                                   case ann: ASTAnnotation if ann.getId.getValue == "neighbourhood_and" =>
+                                   case ann: ASTAnnotation if ann.getId.getValue == "use_neighborhood" =>
                                      val argArray = ann.getArgs.get(0).asInstanceOf[ASTArray]
                                      for (a <- argArray.getElems) {
                                        addNeighbourhood(a)
@@ -458,7 +458,7 @@ class Model(val log: Log, val acceptAnyCstr: Boolean) {
     val (iteratorVariables, whereExpr) = from.getBody.partition((p: ASTNode) =>
                                                                   p.isInstanceOf[ASTVarDecl] &&
                                                                     p.asInstanceOf[ASTVarDecl].hasAnnotation(
-                                                                      "ls_defines_generator"))
+                                                                      "defines_generator"))
 
     val itVars = iteratorVariables.toList.asInstanceOf[List[ASTDecl]].map((i: ASTDecl) => addDecl(i))
     val (whereConstr, whereVars) = whereExpr.partition((p: ASTNode) => p.isInstanceOf[ASTConstraint])
@@ -470,7 +470,7 @@ class Model(val log: Log, val acceptAnyCstr: Boolean) {
 
     val in = from.getReturnValue.asInstanceOf[ASTAnnotation].getArgs.get(0).asInstanceOf[ASTArray].getElems.toList
     val (ensureAnn, moveAnnotations) = in.partition(
-      p => p.isInstanceOf[ASTAnnotation] && p.asInstanceOf[ASTAnnotation].getId.getValue.equals("ensure"))
+      p => p.isInstanceOf[ASTAnnotation] && p.asInstanceOf[ASTAnnotation].getId.getValue.equals("ensuring"))
 
     val moves = moveAnnotations.map(
       m => getMove(m.asInstanceOf[ASTAnnotation])) //getAnnotations(moveAnnotations.asInstanceOf[List[ASTAnnotation]])

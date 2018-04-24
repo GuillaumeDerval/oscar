@@ -86,7 +86,7 @@ func_decl returns [ASTFuncDecl f] locals [ArrayList<ASTVarDecl> params = new Arr
 
 let_expr returns [ASTLet l] locals [ArrayList<ASTNode> body]
     : 'let' '{' {$body = new ArrayList<ASTNode>();}
-     (let_body {$body.add($let_body.n);} (',' let_body {$body.add($let_body.n);})*)? (',')?
+     (let_body {$body.add($let_body.n);} ((','|';') let_body {$body.add($let_body.n);})*)? (','|';')?
      '}' 'in' '(' annotation ')' { $l = new ASTLet($body, $annotation.ann);};
 
 let_body returns [ASTNode n]
