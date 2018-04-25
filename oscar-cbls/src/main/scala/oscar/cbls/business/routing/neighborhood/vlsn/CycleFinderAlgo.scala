@@ -1,16 +1,21 @@
 package oscar.cbls.business.routing.neighborhood.vlsn
 
-class CycleFinderAlgo(graph:VLSNGraph){
+class CycleFinderAlgoFloyd(graph:VLSNGraph){
   private val nodes:Array[Node] = graph.nodes
   private val edges:Array[Edge] = graph.edges
   private val nbNodes = nodes.length
   private val nodeRange = 0 until nbNodes
 
-  def findCycle():List[Edge] = {
+  def findCycle():Option[List[Edge]] = {
     //we use the floyd warshall algo
     val (adjacencyMatrix,selectedEdges) = buildFloydMatrices()
-    runFloydWarshall(adjacencyMatrix,selectedEdges)
-    findCycleInFloydResult(adjacencyMatrix,selectedEdges)
+    runFloydWarshallReturnNegCycleIfAny(adjacencyMatrix,selectedEdges)
+  }
+
+  def printDistanceMatrix(m:Array[Array[Int]]): Unit ={
+    for(l <- m){
+      println(l.mkString("\t"))
+    }
   }
 
   private def buildFloydMatrices(): (Array[Array[Int]],Array[Array[Edge]]) = {
@@ -22,39 +27,39 @@ class CycleFinderAlgo(graph:VLSNGraph){
     }
 
     for(edge <- edges){
-      val oldDistance = adjacencyMatrix(edge.from.nodeID)(edge.to.nodeID)
-      val newDistance = edge.deltaObj
-      if(newDistance < oldDistance) {
-        adjacencyMatrix(edge.from.nodeID)(edge.to.nodeID) = newDistance
-        selectedEdges(edge.from.nodeID)(edge.to.nodeID) = edge
-      }
+      require(adjacencyMatrix(edge.from.nodeID)(edge.to.nodeID) == Int.MaxValue)
+      adjacencyMatrix(edge.from.nodeID)(edge.to.nodeID) = edge.deltaObj
+      selectedEdges(edge.from.nodeID)(edge.to.nodeID) = edge
     }
 
     (adjacencyMatrix,selectedEdges)
   }
 
-  private def runFloydWarshall(adjacencyMatrix : Array[Array[Int]],selectedEdges:Array[Array[Edge]]){
+  private def runFloydWarshallReturnNegCycleIfAny(adjacencyMatrix : Array[Array[Int]],selectedEdges:Array[Array[Edge]]):Option[List[Edge]] = {
     for (k <- nodeRange) {
       for (i <- nodeRange) {
         for (j <- nodeRange) {
           val oldValue = adjacencyMatrix (i)(j)
-          val newValue = adjacencyMatrix (i)(k) +  adjacencyMatrix(k)(j)
+          val newValue =
+            if (adjacencyMatrix (i)(k) == Int.MaxValue || adjacencyMatrix(k)(j) == Int.MaxValue) Int.MaxValue
+            else adjacencyMatrix (i)(k) +  adjacencyMatrix(k)(j)
+
           if (newValue < oldValue){
             adjacencyMatrix(i)(j) = newValue
             selectedEdges(i)(j) = selectedEdges(i)(k)
           }
+
+          if(i == j && newValue < 0) {
+            //we have a negative cycle on node i (==j)
+            return Some(findCycleInFloydResult(adjacencyMatrix: Array[Array[Int]], selectedEdges: Array[Array[Edge]], j))
+          }
         }
       }
     }
+    None
   }
 
-  private def findCycleInFloydResult(distanceMatrix:Array[Array[Int]],selectedEdges:Array[Array[Edge]]):List[Edge] = {
-    val nodeswithCycle = nodeRange.filter(node => distanceMatrix(node)(node) < 0)
-    if(nodeswithCycle.isEmpty) return List.empty
-
-    //select the node with hte most negative cycle
-    val rootNode = nodeswithCycle.minBy(nodeID => distanceMatrix(nodeID)(nodeID))
-
+  private def findCycleInFloydResult(distanceMatrix:Array[Array[Int]],selectedEdges:Array[Array[Edge]], rootNode:Int):List[Edge] = {
     var currentEdge = selectedEdges(rootNode)(rootNode)
     var toReturn:List[Edge] = List(currentEdge)
     while(currentEdge.to.nodeID != rootNode){
@@ -63,4 +68,14 @@ class CycleFinderAlgo(graph:VLSNGraph){
     }
     toReturn.reverse
   }
+}
+
+object CycleFinderAlgoTest extends App{
+  val graph = VLSNGraphTest.buildGraph()
+  println(graph)
+
+  val cycle = new CycleFinderAlgoFloyd(graph).findCycle()
+
+  println(cycle)
+
 }
