@@ -2,7 +2,24 @@ package oscar.cbls.business.routing.neighborhood.vlsn
 
 import oscar.cbls.core.search.{DoNothingMove, Move}
 
-class VLSNGraphBuilder(nodes:Array[Node]){
+class VLSNNodeBuilder() {
+
+  var nodes: List[Node] = List.empty
+  var nextNodeID: Int = 0
+
+  def addNode(representedNode:Int, vehicle:Int):Node = {
+    val n = new Node(nextNodeID, representedNode:Int, vehicle:Int)
+    nextNodeID += 1
+    nodes = n :: nodes
+    n
+  }
+
+  def finish():Array[Node] = {
+    nodes.reverse.toArray
+  }
+}
+
+class VLSNEdgeBuilder(nodes:Array[Node]){
   val nbNodes = nodes.length
   val edges:Array[Array[Edge]] = Array.tabulate(nbNodes)(_ => Array.fill(nbNodes)(null))
   var fromToWithEdge:List[(Int,Int)] = List.empty
@@ -38,15 +55,15 @@ class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge]){
   val nbEdges = edges.length
 
   override def toString: String = "VLSNGraph(nbNodes:" + nbNodes + ",nbEdges:" + nbEdges +
-  "\n\tnodes{\n\t\t"+ nodes.mkString("\n\t\t") + "\n\t}" +
-  "\n\tedges{\n\t\t" + edges.mkString("\n\t\t") + "\n\t}" + "\n}"
+    "\n\tnodes{\n\t\t"+ nodes.mkString("\n\t\t") + "\n\t}" +
+    "\n\tedges{\n\t\t" + edges.mkString("\n\t\t") + "\n\t}" + "\n}"
 }
 
-class Node(val nodeID:Int, val representedNode:Int){
+class Node(val nodeID:Int, val representedNode:Int, vehicle:Int){
   var incoming:List[Edge] = List.empty
   var outgoing:List[Edge] = List.empty
 
-  override def toString: String = "Node(nodeID:" + nodeID + ",representedNode:" + representedNode + ")"
+  override def toString: String = "Node(nodeID:" + nodeID + ",routingNode:" + representedNode + "vehicle:" + vehicle + ")"
 }
 class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Int, val edgeID:Int){
 
@@ -55,7 +72,7 @@ class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Int, val edge
     to.incoming = this :: to.incoming
   }
 
-  override def toString: String = "Edge(from:" + from.nodeID + ",to:"+to.nodeID + ",delta:" + deltaObj + ")"
+  override def toString: String = "Edge(from:" + from.nodeID + ",to:"+to.nodeID + ",deltaObj:" + deltaObj + ")"
 }
 
 
@@ -63,8 +80,8 @@ object VLSNGraphTest extends App{
 
   def buildGraph():VLSNGraph = {
     val nbNodes = 6
-    val nodes = Array.tabulate(nbNodes)(nodeID => new Node(nodeID, nodeID))
-    val builder = new VLSNGraphBuilder(nodes: Array[Node])
+    val nodes = Array.tabulate(nbNodes)(nodeID => new Node(nodeID, nodeID,0))
+    val builder = new VLSNEdgeBuilder(nodes: Array[Node])
 
     def edge(from: Int, to: Int, gain: Int): Unit = {
       builder.addEdge(nodes(from), nodes(to), gain)
@@ -79,7 +96,7 @@ object VLSNGraphTest extends App{
     edge(2, 4, 1)
     edge(2, 5, 1)
     edge(5, 0, 1)
-
+    edge(4, 2, -1)
     builder.finish()
   }
   println(buildGraph())
