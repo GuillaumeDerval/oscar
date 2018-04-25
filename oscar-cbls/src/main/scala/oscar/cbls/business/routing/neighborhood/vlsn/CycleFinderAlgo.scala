@@ -1,5 +1,7 @@
 package oscar.cbls.business.routing.neighborhood.vlsn
 
+import scala.collection.immutable.SortedSet
+
 class CycleFinderAlgoFloyd(graph:VLSNGraph){
   private val nodes:Array[Node] = graph.nodes
   private val edges:Array[Edge] = graph.edges
@@ -78,4 +80,5 @@ object CycleFinderAlgoTest extends App{
 
   println(cycle)
 
+  println(graph.toDOT(SortedSet.empty[Int] ++ cycle.get.map(_.edgeID)))
 }

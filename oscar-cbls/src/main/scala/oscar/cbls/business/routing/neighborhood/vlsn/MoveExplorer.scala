@@ -1,6 +1,5 @@
 package oscar.cbls.business.routing.neighborhood.vlsn
 
-import oscar.cbls.Objective
 import oscar.cbls.core.search.{DoNothingMove, Move}
 
 import scala.collection.immutable.{SortedMap, SortedSet}
@@ -13,8 +12,7 @@ class MoveExplorerAlgo(v:Int,
                        moveNodeToVehicleToMoveAndGain:(Int,Int) => Option[(Move,Int)],
                        removeNodeToMoveAndGain:(Int => Option[(Move,Int)]),
                        removeAndReInsert:Int => () => Unit,
-                       nodeToRelevantVehicles:SortedMap[Int,Iterable[Int]],
-                       obj:Objective) {
+                       nodeToRelevantVehicles:SortedMap[Int,Iterable[Int]]) {
 
   var nodes:Array[Node] = null
   var nodeIDToNode:SortedMap[Int,Node] = null
@@ -22,6 +20,7 @@ class MoveExplorerAlgo(v:Int,
   var edgeBuilder:VLSNEdgeBuilder = null
   var vehicleWithSomeIncomingEdges:SortedSet[Int] = SortedSet.empty
   var nonRoutedNodesWithOneInsertion:List[Int] = List.empty
+  var trashNode:Node = null
 
   def buildGraph():VLSNGraph = {
 
@@ -36,15 +35,16 @@ class MoveExplorerAlgo(v:Int,
     // if the from is not routed and the to is routed: routing the from on the vehicle of the to, assuming the to has been removed from its vehicle
 
     //et il faut aussi de edges pour représenter l'insertion/move sans déplacement d'autre noeuds.
-    //donc on ajoute des noeud qui reprsentent les véhicules pour insertion, et un edge qui pointe vers un tel noeud représente un moveinsertion vers ce v"hcule sans déplacement de noeud de ce véhicule.
+    //donc on ajoute des noeud qui représentent les véhicules pour insertion, et un edge qui pointe vers un tel noeud représente un moveinsertion vers ce v"hcule sans déplacement de noeud de ce véhicule.
     //pour tenir comte de çà dans la détection de cycles, on ajouter de sedges à cût zéo et sans mouvement de tous es véhicules vers tous les edges.
 
+    //et pour les delete sans insertion?
 
     buildNodes()
     edgeBuilder = new VLSNEdgeBuilder(nodes)
     exploreInsertions()
     exploreNodeMove()
-    exploreDeletions()
+    exploreDeletions() //should be called after insertions
     addNoMoveEdgesForVehicles() //should be the last one called
 
     edgeBuilder.finish()
@@ -53,6 +53,9 @@ class MoveExplorerAlgo(v:Int,
   def buildNodes(){
     val builder = new VLSNNodeBuilder()
     nodeIDToNode = SortedMap.empty
+
+    //noeud cible pour l'unroutage
+    trashNode = builder.addNode(-1,-1)
 
     //noeuds symboliques pour les véhicules
     relevantVehicles = SortedSet.empty ++ nodeToRelevantVehicles.flatMap(_._2)
@@ -187,3 +190,4 @@ class MoveExplorerAlgo(v:Int,
     }
   }
 }
+
