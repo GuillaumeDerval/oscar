@@ -8,8 +8,10 @@ import scala.util.Random
 
 object GraphPartition extends CBLSModel with App {
 
-  val nbNodes:Int = 1000
-  val nbEdges:Int = nbNodes * nbNodes / 100
+  val nbNodes:Int = 5000
+  val nbEdges:Int = nbNodes * 3 // 500000 //nbNodes * nbNodes / 1000
+
+  //try with nbNodes = 50000 nbEdges = nbNodes*3
 
   require(nbNodes % 2 == 0, "nbnodes must be even")
 
@@ -56,11 +58,12 @@ object GraphPartition extends CBLSModel with App {
   val neighborhood =(
     bestSlopeFirst(
       List(
-        profile(assignNeighborhood(nodeToPartition, "moveAll")),
+        profile(assignNeighborhood(nodeToPartition, "moveAll") guard (() => sameSizeConstraint.violation != 0)),
         //profile(swapsNeighborhood(nodeToPartition, "swapAll")),
         profile(swapsNeighborhood(nodeToPartition,
           symmetryCanBeBrokenOnIndices = false,
-          searchZone1 = () => mostViolatedNodes.value, name = "swap1MostViol")),
+          searchZone1 = () => mostViolatedNodes.value,
+          name = "swap1MostViol")),
         //profile(swapsNeighborhood(nodeToPartition, //this one is the most complete of swaps, but highly inefficient compared tpo the others,and I think that it does not bring in more connexity than others (althrough I am not so suer...)
         //  symmetryCanBeBrokenOnIndices = false,
         //  searchZone1 = () => violatedNodes.value, name = "swap1Viol")),
@@ -72,18 +75,18 @@ object GraphPartition extends CBLSModel with App {
         profile(swapsNeighborhood(nodeToPartition,
           symmetryCanBeBrokenOnIndices = false,
           searchZone1 = mostViolatedNodes,
-          searchZone2 = (_,_) => violatedNodes.value,
+          searchZone2 = (_,_) => violatedNodes.value,  //TODO: the .value is killing it because it triggers a propagation on every first iteration. s
           name = "swap1Viol1Most")),
         profile(swapsNeighborhood(nodeToPartition,
           searchZone1 = mostViolatedNodes,
-          searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).value != itsPartition),
+          searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).newValue != itsPartition),
           hotRestart = false,
           symmetryCanBeBrokenOnIndices = false,
           name = "swap1MostVAdj")),
         profile(swapsNeighborhood(nodeToPartition,
           searchZone1 = violatedNodes,
           searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).value != itsPartition),
-          hotRestart = false,
+          hotRestart = true,
           symmetryCanBeBrokenOnIndices = false,
           name = "swap1ViolAdj")),
         //profile(swapsNeighborhood(nodeToPartition,
@@ -95,7 +98,7 @@ object GraphPartition extends CBLSModel with App {
     exhaust profile(swapsNeighborhood(nodeToPartition, //this one is the most complete of swaps, but highly inefficient compared tpo the others,and I think that it does not bring in more connexity than others (althrough I am not so suer...)
       symmetryCanBeBrokenOnIndices = true,
       searchZone1 = violatedNodes,
-      name = "swap1Viol"))) showObjectiveFunction(obj)
+      name = "swap1Viol"))) //showObjectiveFunction(obj)
 
   neighborhood.verbose = 1
   neighborhood.doAllMoves(_ >= nbNodes + nbEdges, obj)
