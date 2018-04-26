@@ -178,17 +178,17 @@ then
     mkdir "${Out}/${VNum}"
 fi
 
-#$BIN/parallel --gnu --jobs 75% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${Solvers}
-#$BIN/parallel --gnu --jobs 20% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${ParallelSolvers}
+$BIN/parallel --gnu --jobs 75% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${Solvers}
+$BIN/parallel --gnu --jobs 20% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${ParallelSolvers}
 
-$BIN/parallel --gnu --jobs 75% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${Jars}
-$BIN/parallel --gnu --jobs 20% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${ParallelJars}
+#$BIN/parallel --gnu --jobs 75% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${Jars}
+#$BIN/parallel --gnu --jobs 20% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CopInstances} :::: ${ParallelJars}
 
-#$BIN/parallel --gnu --jobs 75% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${Solvers}
-#$BIN/parallel --gnu --jobs 20% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${ParallelSolvers}
+$BIN/parallel --gnu --jobs 75% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${Solvers}
+$BIN/parallel --gnu --jobs 20% run_search ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${ParallelSolvers}
 
-$BIN/parallel --gnu --jobs 75% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${Jars}
-$BIN/parallel --gnu --jobs 20% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${ParallelJars}
+#$BIN/parallel --gnu --jobs 75% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${Jars}
+#$BIN/parallel --gnu --jobs 20% run_jar ${CP} ${Out} ${VNum} ${Timeout} ${Memory} :::: ${CspInstances} :::: ${ParallelJars}
 
 rm ${CopInstances}
 rm ${CspInstances}
@@ -199,6 +199,6 @@ rm ${ParallelJars}
 
 cp -r --parents "${Out}/${VNum}" "/etinfo/users2/cthomas/Workspace/"
 
-scala -J-Xmx1g -cp ${CP} oscar.xcsp3.competition.html.HtmlReporter ${Out}
+scala -J-Xmx2g -cp ${CP} oscar.xcsp3.competition.html.HtmlReporter ${Out}
 
 cat "${Out}/htmlReport.html" > "/etinfo/users2/cthomas/Workspace/${Out}/htmlReport.html"

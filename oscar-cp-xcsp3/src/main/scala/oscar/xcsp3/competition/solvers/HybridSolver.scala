@@ -6,7 +6,7 @@ import oscar.cp.core.variables.CPIntVar
 import oscar.cp.searches.lns.CPIntSol
 import oscar.cp.searches.lns.operators.ALNSBuilder
 import oscar.cp.searches.lns.operators.SearchFunctions._
-import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch}
+import oscar.cp.searches.lns.search.{ALNSConfig, ALNSSearch, ALNSSearchResults}
 import oscar.cp.{CPSolver, NoSolutionException, conflictOrderingSearch, learnValueHeuristic}
 import oscar.modeling.models.cp.CPModel
 import oscar.modeling.models.operators.CPInstantiate
@@ -111,74 +111,86 @@ object HybridSolver extends CompetitionApp with App {
       if(!optimumFound && !stats.completed) {
         printComment("First complete search done, starting ALNS search...")
 
-//        val config = new ALNSConfig(
-//          (timeout * 0.7).toLong,
-//          None,
-//          conf.memlimit(),
-//          coupled = true,
-//          learning = true,
-//          Array(ALNSBuilder.Random, ALNSBuilder.KSuccessiveRelax, ALNSBuilder.PropGuidedRelax, ALNSBuilder.RevPropGuidedRelax, ALNSBuilder.FullRelax),
-//          Array(ALNSBuilder.ConfOrderSearch, ALNSBuilder.FirstFailSearch, ALNSBuilder.LastConfSearch, ALNSBuilder.ExtOrientedSearch, ALNSBuilder.WeightDegSearch),
-//          valLearn = true,
-//          opDeactivation = false,
-//          ALNSBuilder.Priority,
-//          ALNSBuilder.Priority,
-//          ALNSBuilder.AvgImprov,
-//          ALNSBuilder.AvgImprov
-//        )
-//
-//        val alns = ALNSSearch(solver, vars, config)
-//        val result = if(sols.isEmpty) alns.search() else alns.searchFrom(sols.last._1)
-//        optimumFound = result.optimumFound
-//
-//        printComment("ALNS done, starting second complete search")
-//
-//        //Selecting search function based on operator that induced the most improvement:
-//        val search: Branching = {
-//          val (bestOperator, opStats) = result.searchStats.maxBy(_._2.improvement)
-//          if (opStats.improvement > 0) {
-//            printComment("Best operator: " + bestOperator + " with improvement of: " + opStats.improvement)
-//
-//            val valLearn = bestOperator.contains("valLearn")
-//            val iStart = if(valLearn) bestOperator.lastIndexOf("valLearn") + 8 else bestOperator.lastIndexOf('(') + 1
-//            val iEnd = bestOperator.lastIndexOf(')')
-//            val valHeuris = bestOperator.substring(iStart, iEnd)
-//
-//            if (bestOperator.contains(ALNSBuilder.BinSplitSearch)) binarySplit(vars, valHeuris, valLearn)
-//            else if (bestOperator.contains(ALNSBuilder.FirstFailSearch)) firstFail(vars, valHeuris, valLearn)
-//            else if (bestOperator.contains(ALNSBuilder.LastConfSearch)) lastConflict(vars, valHeuris, valLearn)
-//            else if (bestOperator.contains(ALNSBuilder.ExtOrientedSearch)) extensionalOriented(vars, valHeuris, valLearn)
-//            else if (bestOperator.contains(ALNSBuilder.WeightDegSearch)) weightedDegree(vars, valHeuris, 0.99)
-//            else conflictOrdering(vars, valHeuris, valLearn)
-//          }
-//          else //Default search: Conflict ordering with min val heuristic and no learning:
-//            conflictOrdering(vars, "Min", valLearn = false)
-//        }
-//
-//        /**
-//          * Stop condition of the second complete search.
-//          * It's goal is to prove an eventual optimum for the last solution found by the alns search.
-//          */
-//        stopCondition = (_: DFSearch) => {
-//          val now = System.nanoTime()
-//          var stop = false
-//          //We stop if:
-//          stop |= now >= endTime //Total time used
-//          stop |= optimumFound //An optimum has been found
-//          stop
-//        }
-//
-//        stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
-//          solver.search(search)
-//        }
-//      }
-//
-//      if (sols.nonEmpty){
-//        if(maximizeObjective.isDefined && (optimumFound || stats.completed)) status = "OPTIMUM FOUND"
-//      }
-//      else if (stats.completed) status = "UNSATISFIABLE"
-//      else printDiagnostic("NO_SOL_FOUND")
-//      printStatus()
+        val builder = new ALNSBuilder(
+          solver,
+          vars,
+          Array(ALNSBuilder.RandomRelax, ALNSBuilder.KSuccessiveRelax, ALNSBuilder.CircuitKoptRelax, ALNSBuilder.PropGuidedRelax, ALNSBuilder.RevPropGuidedRelax, ALNSBuilder.RandomValGroupsRelax, ALNSBuilder.MaxValRelax, ALNSBuilder.PrecedencyRelax, ALNSBuilder.CostImpactRelax, ALNSBuilder.FullRelax),
+          Array(ALNSBuilder.ConfOrderSearch, ALNSBuilder.FirstFailSearch, ALNSBuilder.LastConfSearch, ALNSBuilder.ExtOrientedSearch, ALNSBuilder.WeightDegSearch),
+          ALNSBuilder.RWheel,
+          ALNSBuilder.LastImprovRatio,
+          ALNSBuilder.RWheel,
+          ALNSBuilder.LastImprovRatio,
+          Array(0.1, 0.3, 0.7),
+          Array(50, 500, 5000),
+          true,
+          false
+        )
+
+        lazy val searchStore = builder.instantiateOperatorStore(builder.instantiateFixedSearchOperators, 1.0)
+        lazy val relaxStore = builder.instantiateOperatorStore(builder.instantiateFixedRelaxOperators, 1.0)
+
+        val config = new ALNSConfig(
+          relaxStore,
+          searchStore,
+          timeout,
+          None,
+          conf.memlimit(),
+          "evalWindowLaborie",
+          Map('quickStart -> true)
+        )
+
+        val alns = ALNSSearch(solver, vars, config)
+        val result: ALNSSearchResults = if(sols.isEmpty) alns.search() else alns.searchFrom(sols.last._1)
+        optimumFound = result.optimumFound
+
+        printComment("ALNS done, starting second complete search")
+
+        //Selecting search function based on operator that induced the most improvement:
+        val search: Branching = {
+          val bestOperator = result.searchOperators.maxBy(_.improvement)
+          if (bestOperator.improvement > 0) {
+            printComment("Best operator: " + bestOperator.name + " with improvement of: " + bestOperator.improvement)
+
+            val valLearn = bestOperator.name.contains("valLearn")
+            val iStart = if(valLearn) bestOperator.name.lastIndexOf("valLearn") + 8 else bestOperator.name.lastIndexOf('(') + 1
+            val iEnd = bestOperator.name.lastIndexOf(')')
+            val valHeuris = bestOperator.name.substring(iStart, iEnd)
+
+            if (bestOperator.name.contains(ALNSBuilder.BinSplitSearch)) binarySplit(vars, valHeuris, valLearn)
+            else if (bestOperator.name.contains(ALNSBuilder.FirstFailSearch)) firstFail(vars, valHeuris, valLearn)
+            else if (bestOperator.name.contains(ALNSBuilder.LastConfSearch)) lastConflict(vars, valHeuris, valLearn)
+            else if (bestOperator.name.contains(ALNSBuilder.ExtOrientedSearch)) extensionalOriented(vars, valHeuris, valLearn)
+            else if (bestOperator.name.contains(ALNSBuilder.WeightDegSearch)) weightedDegree(vars, valHeuris, 0.99)
+            else conflictOrdering(vars, valHeuris, valLearn)
+          }
+          else //Default search: Conflict ordering with min val heuristic and no learning:
+            conflictOrdering(vars, "Min", valLearn = false)
+        }
+
+        /**
+          * Stop condition of the second complete search.
+          * It's goal is to prove an eventual optimum for the last solution found by the alns search.
+          */
+        stopCondition = (_: DFSearch) => {
+          val now = System.nanoTime()
+          var stop = false
+          //We stop if:
+          stop |= now >= endTime //Total time used
+          stop |= optimumFound //An optimum has been found
+          stop
+        }
+
+        stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
+          solver.search(search)
+        }
+      }
+
+      if (sols.nonEmpty){
+        if(maximizeObjective.isDefined && (optimumFound || stats.completed)) status = "OPTIMUM FOUND"
+      }
+      else if (stats.completed) status = "UNSATISFIABLE"
+      else printDiagnostic("NO_SOL_FOUND")
+      printStatus()
     }
   }
 }

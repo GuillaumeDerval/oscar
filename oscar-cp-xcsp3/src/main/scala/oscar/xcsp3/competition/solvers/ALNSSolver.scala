@@ -69,34 +69,46 @@ object ALNSSolver extends CompetitionApp with App {
         }
       }
 
-//      val config = new ALNSConfig(
-//        timeout,
-//        None,
-//        conf.memlimit(),
-//        coupled = true,
-//        learning = true,
-//        Array(ALNSBuilder.Random, ALNSBuilder.KSuccessiveRelax, ALNSBuilder.PropGuidedRelax, ALNSBuilder.RevPropGuidedRelax, ALNSBuilder.FullRelax),
-//        Array(ALNSBuilder.ConfOrderSearch, ALNSBuilder.FirstFailSearch, ALNSBuilder.LastConfSearch, ALNSBuilder.ExtOrientedSearch, ALNSBuilder.WeightDegSearch),
-//        valLearn = true,
-//        opDeactivation = false,
-//        ALNSBuilder.Priority,
-//        ALNSBuilder.Priority,
-//        ALNSBuilder.AvgImprov,
-//        ALNSBuilder.AvgImprov
-//      )
-//
-//      val alns = ALNSSearch(solver, vars, config)
-//
-//      printComment("Parsing done, starting search...")
-//
-//      val result = alns.search()
-//
-//      if (sols.nonEmpty){
-//        if(solver.objective.objs.nonEmpty && result.optimumFound) status = "OPTIMUM FOUND"
-//      }
-//      else if(result.unsat) status = "UNSATISFIABLE"
-//      else printDiagnostic("NO_SOL_FOUND")
-//      printStatus()
+      val builder = new ALNSBuilder(
+        solver,
+        vars,
+        Array(ALNSBuilder.RandomRelax, ALNSBuilder.KSuccessiveRelax, ALNSBuilder.CircuitKoptRelax, ALNSBuilder.PropGuidedRelax, ALNSBuilder.RevPropGuidedRelax, ALNSBuilder.RandomValGroupsRelax, ALNSBuilder.MaxValRelax, ALNSBuilder.PrecedencyRelax, ALNSBuilder.CostImpactRelax, ALNSBuilder.FullRelax),
+        Array(ALNSBuilder.ConfOrderSearch, ALNSBuilder.FirstFailSearch, ALNSBuilder.LastConfSearch, ALNSBuilder.ExtOrientedSearch, ALNSBuilder.WeightDegSearch),
+        ALNSBuilder.RWheel,
+        ALNSBuilder.LastImprovRatio,
+        ALNSBuilder.RWheel,
+        ALNSBuilder.LastImprovRatio,
+        Array(0.1, 0.3, 0.7),
+        Array(50, 500, 5000),
+        true,
+        false
+      )
+
+      lazy val searchStore = builder.instantiateOperatorStore(builder.instantiateFixedSearchOperators, 1.0)
+      lazy val relaxStore = builder.instantiateOperatorStore(builder.instantiateFixedRelaxOperators, 1.0)
+
+      val config = new ALNSConfig(
+        relaxStore,
+        searchStore,
+        timeout,
+        None,
+        conf.memlimit(),
+        "evalWindowLaborie",
+        Map('quickStart -> true)
+      )
+
+      val alns = ALNSSearch(solver, vars, config)
+
+      printComment("Parsing done, starting search...")
+
+      val result = alns.search()
+
+      if (sols.nonEmpty){
+        if(solver.objective.objs.nonEmpty && result.optimumFound) status = "OPTIMUM FOUND"
+      }
+      else if(result.unsat) status = "UNSATISFIABLE"
+      else printDiagnostic("NO_SOL_FOUND")
+      printStatus()
     }
   }
 }
