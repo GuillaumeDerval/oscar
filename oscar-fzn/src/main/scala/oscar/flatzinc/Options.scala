@@ -111,6 +111,6 @@ class Options(name: String, cbls: Boolean, args: Array[String]) {
         "        <opt> and <val> - add advanced options to the back-end\n")
     System.exit(0);
   }
-  if(cbls && (all || nSols != 1))
-      println("% The CBLS Backend does not support the options to get all solutions or more than one solution.");
+  if(cbls && (all || nSols != 1) && verbose > 0)
+      System.err.println("% The CBLS Backend does not support the options to get all solutions or more than one solution.");
 }

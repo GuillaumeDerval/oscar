@@ -18,7 +18,8 @@
  */
 package oscar.flatzinc.model
 
-class Annotation (
+class
+Annotation (
     val name: String,
     var args: List[Any]
 	){
@@ -26,5 +27,5 @@ class Annotation (
     def add(e: Any){
       args = args ++ List(e);
     }
-	override def toString() = name + " " + args
+	override def toString() = name + "(" + args.mkString(", ") + ")"
 }

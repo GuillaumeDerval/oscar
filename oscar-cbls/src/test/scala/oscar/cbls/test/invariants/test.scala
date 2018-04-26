@@ -20,17 +20,18 @@
 
 package oscar.cbls.test.invariants
 
-import oscar.cbls.invariants.core.computation._
-import oscar.cbls.invariants.lib.minmax._
-import oscar.cbls.invariants.lib.numeric._
-import oscar.cbls.invariants.lib.set._
-import oscar.cbls.modeling.Algebra._
-import oscar.cbls.search._
+import oscar.cbls._
+import oscar.cbls.core.computation.Event
+import oscar.cbls.lib.invariant.minmax._
+import oscar.cbls.lib.invariant.numeric._
+import oscar.cbls.lib.invariant.set._
+import oscar.cbls.lib.search.LinearSelectors
+
 
 import scala.collection.immutable.SortedSet
 
 
-object test extends SearchEngine {
+object test extends LinearSelectors {
 
   def main(args: Array[String]) {
 

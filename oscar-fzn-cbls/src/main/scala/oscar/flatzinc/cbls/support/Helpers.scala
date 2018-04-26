@@ -18,25 +18,19 @@
  */
 package oscar.flatzinc.cbls.support
 
-import oscar.cbls.invariants.core.computation.Store
-import oscar.flatzinc.model.Domain
-import oscar.flatzinc.model.DomainRange
-import oscar.flatzinc.model.DomainSet
-import oscar.cbls.invariants.core.computation.CBLSIntVar
+import oscar.cbls.core.computation._
+import oscar.cbls.core.constraint.{Constraint, ConstraintSystem}
+import oscar.cbls.lib.constraint._
+import oscar.flatzinc.model.FzDomain
+import oscar.flatzinc.model.FzDomainRange
+import oscar.flatzinc.model.FzDomainSet
+
 import scala.util.Random
-import oscar.flatzinc.model.DomainRange
-import oscar.cbls.invariants.core.computation.IntValue
-import oscar.cbls.invariants.core.computation.CBLSIntConst
-import oscar.cbls.constraints.core.ConstraintSystem
+import oscar.flatzinc.model.FzDomainRange
+
 import scala.collection.immutable.SortedSet
-import oscar.cbls.constraints.core.{Constraint => CBLSConstraint}
-import oscar.cbls.invariants.core.computation.CBLSSetConst
-import oscar.cbls.constraints.lib.basic.BelongsTo
-import oscar.cbls.constraints.lib.basic.EQ
-import oscar.cbls.invariants.lib.numeric.Prod2
-import oscar.cbls.constraints.lib.basic.LE
-import oscar.cbls.constraints.lib.basic.GE
-import oscar.flatzinc.model.DomainRange
+import oscar.cbls.lib.invariant.numeric.Prod2
+import oscar.flatzinc.model.FzDomainRange
 
 /*trait IntValueDom extends IntValue{
   def inDomain(v:Int): Boolean
@@ -45,73 +39,59 @@ import oscar.flatzinc.model.DomainRange
   def domainSize: Int
 }*/
 
+/*
 /**
- * CBLSIntVarDom extends the normal CBLSIntVar with more precise Domain information.
+ * CBLSIntVarDom extends the normal CBLSIntVar with more precise FzDomain information.
+  * Not any more, this is completely redundant!
  */
-class CBLSIntVarDom(model: Store,Value: Int,  val dom: Domain, n: String = null)
+class CBLSIntVarDom(model: Store, Value: Int, val dom: FzDomain, n: String = null)
   extends CBLSIntVar(model, Value, dom.min to dom.max,  n) //with IntValueDom
 {
-  def inDomain(v:Int): Boolean = {
-    dom match {
-      case DomainRange(min, max) => v >= min && v <= max
-      case DomainSet(values) => values.contains(v)
-    } 
-  }
-  def getDomain():Iterable[Int] = {
-    dom match {
-      case DomainRange(min, max) => min to max
-      case DomainSet(values) => values
-    }
-  }
-  def getRandValue():Int = {
-    dom match {
-      case DomainRange(min, max) => (min to max)(Random.nextInt(max-min+1))
-      case DomainSet(values) => values.toIndexedSeq(Random.nextInt(values.size))
-    }
-  }
-  def domainSize = dom match {
-    case DomainRange(min, max) => math.max(max-min+1,0)
-    case DomainSet(values) => values.size
-  }
+
+  def getDomain():Iterable[Int] = domain
+  def getRandValue():Int = domain.randomValue
+
 }
 
-
+*/
 
 //TODO: Should not extend it anymore!
 //Need the store while it extends CBLSIntVar, as sometimes it is requested (e.g., to find the Model in some invariants)
-class CBLSIntConstDom(model:Store,_value:Int) extends CBLSIntVarDom(model,_value,DomainRange(_value,_value),_value.toString()){
-  override def value:Int = _value //pour pas avoir de propagation
-  override def toString:String = "IntConst("+ _value + ")"
+class StoredCBLSIntConst(model:Store,_value:Int) extends CBLSIntVar(model,_value, DomainRange(_value, _value), _value.toString()){
+  override def value:Int = _value
+  override def toString:String = "IntConst("+ _value + ") := " + value
 }
-/*  extends CBLSIntConst(value) with IntValueDom{
-  override def inDomain(v:Int): Boolean = v==value 
-  override def getDomain():Iterable[Int] = List(value)
-  override def getRandValue():Int = value
-  override def domainSize: Int = 1
-}*/
 
 
+/*
 object CBLSIntVarDom {
-  def apply(model: Store,value: Int, domain: Domain,  name: String) = {
+  def apply(model: Store, value: Int, domain: FzDomain, name: String) = {
     new CBLSIntVarDom(model, value, domain, name)
   }
 }
+*/
 
 object EnsureDomain{
-  val weight = CBLSIntConst(10);
-  def apply(i:IntValue,d: Domain,c: ConstraintSystem) = {
+  val weight = CBLSIntConst(20);
+  def apply(i:IntValue, d: FzDomain, c: ConstraintSystem) = {
+    //System.err.println("% Using variables for in domain weights")
+    //val weight = CBLSIntVar(c.model,10,1 to 1000000, "in domain weight")
     d match{
-      case DomainRange(min, max) =>{
-        if(i.min < min){
-//          Console.err.println("added "+i)
-          c.add(GE(i, min),weight)
+      case FzDomainRange(min, max) =>{
+        if(min == max){
+          c.add(EQ(i,min),weight)
+        }else{
+          if(i.min < min){
+  //          Console.err.println("added "+i)
+            c.add(GE(i, min),weight)
+          }
+          if(i.max > max){
+  //          Console.err.println("added "+i)
+            c.add(LE(i, max),weight)
+          }
         }
-        if(i.max > max){
-//          Console.err.println("added "+i)
-          c.add(LE(i, max),weight)
-        } 
       } 
-      case DomainSet(vals) => {
+      case FzDomainSet(vals) => {
         if(i.min < d.min){
           c.add(GE(i, d.min),weight)
 //          Console.err.println("added "+i)
@@ -121,19 +101,19 @@ object EnsureDomain{
 //          Console.err.println("added "+i)
         }
 //        Console.err.println("addedX "+i)
-        c.add(BelongsTo(i,CBLSSetConst(SortedSet[Int]()++vals)))//no weight
+        c.add(BelongsToConst(i,vals) /*.nameConstraint("EnsureDomain constraint of " + c)*/)//no weight
       }
     }
   }
 }
 
-
+/*
   object RelaxAndEnsureDomain{
     def apply(v: CBLSIntVarDom,newMin:Int,newMax:Int,c: ConstraintSystem) = {
-      v.relaxDomain(oscar.cbls.invariants.core.computation.DomainRange(newMin,newMax))
+      v.relaxDomain(oscar.cbls.invariants.core.computation.FzDomainRange(newMin,newMax))
       EnsureDomain(v,v.dom,c)
     }
-  }
+  }*/
 
 
   //TODO: Not really tested
@@ -141,7 +121,7 @@ object EnsureDomain{
  * returns a constraint that has the same semantics but with scaled violation weight
  */
   object Weight{
-    def apply(c: CBLSConstraint,w:Int):CBLSConstraint = {
+    def apply(c: Constraint,w:Int):Constraint = {
         EQ(0,Prod2(c.violation,CBLSIntConst(w)))
     }
   }

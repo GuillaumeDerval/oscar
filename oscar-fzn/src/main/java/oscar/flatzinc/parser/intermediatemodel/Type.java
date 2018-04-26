@@ -13,7 +13,7 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 /**
- * @author Jean-Noël Monette
+ * @author Jean-Noel Monette
  */
 package oscar.flatzinc.parser.intermediatemodel;
 
@@ -24,7 +24,7 @@ public class Type {
 	public boolean isVar = false;
 	public int typ;
 	
-	public static final String[] typeName = {"null","bool","int","set of int","float", "string","annotation"};
+	public static final String[] typeName = {"null","bool","int","set of int","float", "string","annotation","function","let","constraint"};
 	public static final int NULL = 0;
 	public static final int BOOL = 1;
 	public static final int INT = 2;

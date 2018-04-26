@@ -15,7 +15,7 @@ package oscar.cbls.test.search
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.search.algo.InstrumentedRange
+import oscar.cbls.algo.search.InstrumentedRange
 
 import scala.collection.immutable.SortedSet
 
@@ -32,6 +32,6 @@ object HotRestart extends App{
   while(it.hasNext) println("next:" + it.next())
 
 
-  println(oscar.cbls.search.algo.HotRestart(s,0))
+  println(oscar.cbls.algo.search.HotRestart(s,0))
 
 }

@@ -23,9 +23,13 @@ import java.io.PrintStream
 //TODO: Replace with a real solution (e.g., log4j)
 class Log(val level: Int, val out:PrintStream = Console.err, val pre: String= "%"){
   def apply(s:String) = {
-    if (level > 0) out.println(pre+" "+s)
+    if (level > 0){
+      out.println(pre+" "+s)
+    }
   }
   def apply(i:Int, s:String) = {
-    if(i <= level) out.println((pre*math.max(1,i))+" "+s)
+    if(i <= level){
+      out.println((pre*math.max(1,i))+" "+s)
+    }
   }
 }

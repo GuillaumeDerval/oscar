@@ -13,18 +13,17 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 /**
- * @author Jean-Noël Monette
+ * @author Jean-Noel Monette
  */
 package oscar.flatzinc.parser;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-
-import oscar.flatzinc.ParsingException;
-import oscar.flatzinc.Log;
-
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.atn.PredictionMode;
+import oscar.flatzinc.Log;
+import oscar.flatzinc.ParsingException;
+
+import java.io.FileInputStream;
+import java.io.IOException;
 
 
 public class FZParser {

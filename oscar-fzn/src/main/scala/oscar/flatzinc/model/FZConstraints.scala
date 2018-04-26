@@ -46,12 +46,12 @@ abstract class Constraint(val variables: Array[Variable],val annotations: List[A
   //The variable the constraint functionally defines
   //TODO: generalize to arrays of defined variables (e.g. in sort/bin-packing)
   def setDefinedVar(v: Variable) = {
-    definedVars match {
+      definedVars match {
       case None => v.definingConstraint match {
         case None =>
           //Make sure that this can indeed be defined. It might be that some annotations from fzn are wrong. We simply ignore those.
           if(getCandidateDefVars().contains(v)){
-            v.definingConstraint= Some(this);
+            v.definingConstraint = Some(this);
             definedVars = Some(v);
           }
           /*else{
@@ -85,6 +85,11 @@ abstract class Constraint(val variables: Array[Variable],val annotations: List[A
       v.removeConstraint(this)
     }
   }
+  def insert(){
+    for(v <- variables){
+       v.addConstraint(this);
+    }
+  }
 }
 
 abstract class SimpleDefiningConstraint(variables: Array[Variable], val maybeDefinedVar: Variable, ann:List[Annotation])
@@ -114,7 +119,7 @@ object GC{
     args.flatMap(_ match{
       case v:Variable => List(v) 
       case vs:Array[Variable] => vs
-      case d:Domain => List.empty[Variable]
+      case d:FzDomain => List.empty[Variable]
     }).toArray
   }
 }
@@ -137,9 +142,9 @@ case class array_int_element(b: IntegerVariable, as: Array[IntegerVariable], c: 
 case class array_var_bool_element(b: IntegerVariable, as: Array[BooleanVariable], c: BooleanVariable, ann: List[Annotation] = List.empty[Annotation])
   extends SimpleDefiningConstraint(as++Array(b,c),c,ann);
 
-case class array_var_int_element(b: IntegerVariable, as: Array[IntegerVariable], c: IntegerVariable, ann: List[Annotation] = List.empty[Annotation]) 
+case class array_var_int_element(b: IntegerVariable, as: Array[IntegerVariable], c: IntegerVariable, ann: List[Annotation] = List.empty[Annotation])
   extends SimpleDefiningConstraint(as++Array(b,c),c,ann){
-  override def toString() ={"array_var_int_element("+b+","+as.mkString("[", ",", "]")+","+c+","+ann+")"}
+  override def toString() ={"array_var_int_element("+b+","+as.mkString("[", ", ", "]")+","+c+","+ann+")"}
 }
 
 case class array_bool_xor(as: Array[BooleanVariable], ann: List[Annotation] = List.empty[Annotation]) 
@@ -152,7 +157,9 @@ case class bool_and(a: BooleanVariable, b: BooleanVariable, r: BooleanVariable, 
   extends SimpleDefiningConstraint(Array(a,b,r),r,ann);
   
 case class bool_clause(a: Array[BooleanVariable], b: Array[BooleanVariable], ann: List[Annotation] = List.empty[Annotation]) 
-  extends Constraint(a++b,ann)
+  extends Constraint(a++b,ann){
+  override def toString() ={"bool_clause("+a.mkString("[", ", ", "]")+","+b.mkString("[", ", ", "]")+","+ann+")"}
+}
 
 case class bool_eq(x: BooleanVariable, y: BooleanVariable, ann: List[Annotation] = List.empty[Annotation]) 
   extends AllDefiningConstraint(Array(x,y),ann)
@@ -161,10 +168,11 @@ case class bool_le(a: BooleanVariable, b: BooleanVariable, ann: List[Annotation]
   extends Constraint(Array(a,b),ann)
 
 case class bool_lin_eq(params:Array[IntegerVariable],vars:Array[BooleanVariable], sum:IntegerVariable, ann: List[Annotation] = List.empty[Annotation]) 
-  extends Constraint(vars++Array.empty[Variable],ann)
-  //TODO: This should only define variables that have a unit coeff, and with a small domain. 
-  //Removed this because that is often wrong.
-  //extends AllDefiningConstraint(vars,ann)
+  extends Constraint(vars++Array.empty[Variable],ann){
+  override def canDefineVar = true
+  override def getMaybeCandidateDefVars():Array[Variable] = Array(sum)
+  override def toString() ={"bool_lin_eq("+params.mkString("[", ", ", "]")+","+vars.mkString("[", ", ", "]")+","+sum+","+ann+")"}
+}
 
 case class bool_lin_le(params:Array[IntegerVariable],vars:Array[BooleanVariable], sum:IntegerVariable, ann: List[Annotation] = List.empty[Annotation]) 
   extends Constraint(vars++Array.empty[Variable],ann)
@@ -194,12 +202,12 @@ case class int_le(a: IntegerVariable, b: IntegerVariable, ann: List[Annotation] 
   extends Constraint(Array(a,b),ann)
 
 case class int_lin_eq(params:Array[IntegerVariable],vars:Array[IntegerVariable], sum:IntegerVariable, ann: List[Annotation] = List.empty[Annotation]) 
-  extends Constraint(vars++Array.empty[Variable],ann){
+  extends Constraint(vars++Array(sum),ann){
   override def canDefineVar = true
   override def getMaybeCandidateDefVars():Array[Variable]  = {
-    return vars.zip(params).filter((t) => Math.abs(t._2.min) == 1 && t._1.domainSize > 2).map(_._1)
+    return vars.zip(params).filter((t) => Math.abs(t._2.min) == 1 && t._1.domainSize >= 1).map(_._1)
   }
-  override def toString() ={"int_lin_eq("+params.mkString("[", ",", "]")+","+vars.mkString("[", ",", "]")+","+sum+","+ann+")"}
+  override def toString() ={"int_lin_eq("+params.mkString("[", ", ", "]")+","+vars.mkString("[", ", ", "]")+","+sum+","+ann+")"}
 }
 
 case class int_lin_le(params:Array[IntegerVariable],vars:Array[IntegerVariable], sum:IntegerVariable, ann: List[Annotation] = List.empty[Annotation]) 
@@ -227,14 +235,19 @@ case class int_plus(x: IntegerVariable, y: IntegerVariable, z: IntegerVariable, 
   extends AllDefiningConstraint(Array(x,y,z),ann)
 
 case class int_times(x: IntegerVariable, y: IntegerVariable, z: IntegerVariable, ann: List[Annotation] = List.empty[Annotation])
-  extends SimpleDefiningConstraint(Array(x,y,z),z,ann) 
+  extends SimpleDefiningConstraint(Array(x,y,z),z,ann)
 
-case class set_in(x: IntegerVariable, s: Domain, ann: List[Annotation] = List.empty[Annotation]) 
+case class int_pow(a: IntegerVariable, b: IntegerVariable, c: IntegerVariable, ann: List[Annotation] = List.empty[Annotation])
+  extends SimpleDefiningConstraint(Array(a,b,c),c,ann)
+
+case class set_in(x: IntegerVariable, s: FzDomain, ann: List[Annotation] = List.empty[Annotation])
   extends Constraint(Array(x),ann)
 
 
 case class all_different_int(xs: Array[IntegerVariable], ann: List[Annotation] = List.empty[Annotation]) 
-  extends Constraint(xs++Array.empty[Variable],ann)
+  extends Constraint(xs++Array.empty[Variable],ann){
+  override def toString() = {"all_different_int(" +xs.mkString("[",", ","]") + ") :: " + ann.mkString(" :: ")}
+}
 
 
 case class at_least_int(n:IntegerVariable,x:Array[IntegerVariable],v:IntegerVariable, ann: List[Annotation] = List.empty[Annotation]) 
@@ -243,7 +256,7 @@ case class at_most_int(n:IntegerVariable,x:Array[IntegerVariable],v:IntegerVaria
   extends Constraint(x++Array.empty[Variable],ann)
 case class exactly_int(n:IntegerVariable,x:Array[IntegerVariable],v:IntegerVariable, ann: List[Annotation] = List.empty[Annotation]) 
   extends Constraint(x++Array.empty[Variable],ann)
-case class among(n:IntegerVariable,x:Array[IntegerVariable],v:Domain, ann: List[Annotation] = List.empty[Annotation]) 
+case class among(n:IntegerVariable, x:Array[IntegerVariable], v:FzDomain, ann: List[Annotation] = List.empty[Annotation])
   extends SimpleDefiningConstraint(x++Array(n),n,ann)
 case class count_eq(xs:Array[IntegerVariable], y:IntegerVariable, cnt:IntegerVariable, ann: List[Annotation] = List.empty[Annotation])
   extends SimpleDefiningConstraint(xs++Array(y,cnt),cnt,ann)
@@ -261,8 +274,14 @@ case class bin_packing_capa(c:Array[IntegerVariable],bin:Array[IntegerVariable],
 case class bin_packing(c:IntegerVariable,bin:Array[IntegerVariable],w:Array[IntegerVariable], ann: List[Annotation] = List.empty[Annotation]) 
   extends Constraint(bin++Array.empty[Variable],ann)
 //TODO: defines the loads
-case class bin_packing_load(load:Array[IntegerVariable],bin:Array[IntegerVariable],w:Array[IntegerVariable], ann: List[Annotation] = List.empty[Annotation]) 
+case class bin_packing_load(load:Array[IntegerVariable],bin:Array[IntegerVariable],w:Array[IntegerVariable], ann: List[Annotation] = List.empty[Annotation])
   extends Constraint(load++bin,ann)
+
+case class table_int(xs:Array[IntegerVariable],ts:Array[IntegerVariable], ann: List[Annotation] = List.empty[Annotation])
+  extends Constraint(xs++Array.empty[Variable],ann)
+
+case class table_bool(xs:Array[BooleanVariable],ts:Array[BooleanVariable], ann: List[Annotation] = List.empty[Annotation])
+  extends Constraint(xs++Array.empty[Variable],ann)
 
 case class cumulative(s:Array[IntegerVariable], d:Array[IntegerVariable],r:Array[IntegerVariable],b:IntegerVariable,ann: List[Annotation] = List.empty[Annotation]) 
   extends Constraint(s++d++r++Array(b),ann)
@@ -294,6 +313,9 @@ case class minimum_int(m:IntegerVariable, x:Array[IntegerVariable],ann: List[Ann
   extends SimpleDefiningConstraint(Array(m)++x,m,ann)
 case class member_int(x:Array[IntegerVariable],y:IntegerVariable, ann: List[Annotation] = List.empty[Annotation]) 
   extends Constraint(Array(y)++x,ann)
+case class nvalue_int(y:IntegerVariable, x:Array[IntegerVariable], ann: List[Annotation] = List.empty[Annotation])
+  extends SimpleDefiningConstraint(Array(y)++x,y,ann)
+
 
 case class sort(x:Array[IntegerVariable], y:Array[IntegerVariable],ann: List[Annotation] = List.empty[Annotation]) 
   extends Constraint(x++y,ann)

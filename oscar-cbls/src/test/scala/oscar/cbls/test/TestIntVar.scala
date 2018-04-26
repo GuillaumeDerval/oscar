@@ -15,7 +15,7 @@
 package oscar.cbls.test
 
 import org.scalatest.{FunSuite, Matchers}
-import oscar.cbls.invariants.core.computation.{CBLSIntVar, Domain, Store}
+import oscar.cbls.core.computation.{CBLSIntVar, Domain, Store}
 
 import scala.language.postfixOps
 
@@ -24,8 +24,8 @@ class TestIntVar extends FunSuite with Matchers {
   test("test create IntVar 1..10"){
     val solver = new Store
     val x = CBLSIntVar(solver, 1, 1 to 10, "x")
-    val y = CBLSIntVar(solver, 1, (1 to 10), "y")
-    val z = CBLSIntVar(solver, 1, (1 until 10), "z")
+    val y = CBLSIntVar(solver, 1, 1 to 10, "y")
+    val z = CBLSIntVar(solver, 1, 1 until 10, "z")
   //  solver.close()
     
     x.min should be(1)
@@ -42,18 +42,18 @@ class TestIntVar extends FunSuite with Matchers {
 	  val solver = new Store
 
     an [NoSuchElementException] should be thrownBy {
-      val x = CBLSIntVar(solver, 1, (0 to -1), "x")
+      val x = CBLSIntVar(solver, 1, 0 to -1, "x")
     }
 
     an [NoSuchElementException] should be thrownBy {
-      val x = CBLSIntVar(solver, 0, (0 until 0), "x") // until makes an empty range
+      val x = CBLSIntVar(solver, 0, 0 until 0, "x") // until makes an empty range
     }
 
   }
   
   test("test inDomain of IntVar 1..10"){
     val solver = new Store
-    val x = CBLSIntVar(solver, 1, (1 to 10), "x")
+    val x = CBLSIntVar(solver, 1, 1 to 10, "x")
    // solver.close()
     (1 to 10).foreach(x.domain.contains(_) should be(true))
     x.domain.contains(0) should be(false)
@@ -64,7 +64,7 @@ class TestIntVar extends FunSuite with Matchers {
   
   test("test domain of IntVar"){
     val solver = new Store
-    val domain:Domain = (1 to 10)
+    val domain:Domain = 1 to 10
     val x = CBLSIntVar(solver, 1, domain, "x")
     val y = CBLSIntVar(solver, 1, 1 to 10, "y")
     
@@ -75,7 +75,7 @@ class TestIntVar extends FunSuite with Matchers {
   test("test setValue via :="){
     val solver = new Store
     
-    val x = CBLSIntVar(solver, 1, (1 to 10), "x")
+    val x = CBLSIntVar(solver, 1, 1 to 10, "x")
     solver.close()
     
     x.value should be(1)
@@ -85,8 +85,8 @@ class TestIntVar extends FunSuite with Matchers {
   
   test("test :=:"){
     val solver = new Store
-    val x = CBLSIntVar(solver, 1, (1 to 10), "x")
-    val y = CBLSIntVar(solver, 10, (1 to 10), "y")
+    val x = CBLSIntVar(solver, 1, 1 to 10, "x")
+    val y = CBLSIntVar(solver, 10, 1 to 10, "y")
     solver.close()
     
     x.value should be(1)
@@ -100,7 +100,7 @@ class TestIntVar extends FunSuite with Matchers {
   
   test("test :+=") {
     val solver = new Store
-    val x = CBLSIntVar(solver, 50, (1 to 100), "x")
+    val x = CBLSIntVar(solver, 50, 1 to 100, "x")
     
     x.value should be(50)
     x :+= 10
@@ -111,7 +111,7 @@ class TestIntVar extends FunSuite with Matchers {
   
   test("test :*=") {
     val solver = new Store
-    val x = CBLSIntVar(solver, 10, (1 to 30), "x")
+    val x = CBLSIntVar(solver, 10, 1 to 30, "x")
     
     x.value should be(10)
     x :*= 2
@@ -122,7 +122,7 @@ class TestIntVar extends FunSuite with Matchers {
   
   test("test :-=") {
     val solver = new Store
-    val x = CBLSIntVar(solver, 5, (1 to 10), "x")
+    val x = CBLSIntVar(solver, 5, 1 to 10, "x")
     x.value should be(5)
     x :-= 3
     x.value should be(2)
@@ -134,7 +134,7 @@ class TestIntVar extends FunSuite with Matchers {
   
   test("test ++()") {
     val solver = new Store
-    val x = CBLSIntVar(solver, 1, (1 to 10), "x")
+    val x = CBLSIntVar(solver, 1, 1 to 10, "x")
     x.value should be(1)
 
     x ++
