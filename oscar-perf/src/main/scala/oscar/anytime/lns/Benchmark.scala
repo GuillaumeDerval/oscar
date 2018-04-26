@@ -1,5 +1,7 @@
 package oscar.anytime.lns
 
+import java.io.FileWriter
+
 import oscar.algo.Inconsistency
 import oscar.algo.search.{Branching, DFSearch}
 import oscar.anytime.lns.utils.{IOUtils, XmlWriter}
@@ -88,6 +90,8 @@ trait Benchmark {
       val coupled = argMap.getOrElse('coupled, false).asInstanceOf[Boolean]
       val fixed = argMap.getOrElse('fixed, false).asInstanceOf[Boolean]
       val opDeactivation = argMap.getOrElse('opDeactivation, false).asInstanceOf[Boolean]
+      val quickStart = argMap.getOrElse('quickStart, false).asInstanceOf[Boolean]
+      val altScore = argMap.getOrElse('altScore, false).asInstanceOf[Boolean]
 
       val useSorted = argMap.getOrElse('useSorted, false).asInstanceOf[Boolean]
       val opOrder = if(useSorted){
@@ -140,7 +144,9 @@ trait Benchmark {
         'coupled -> coupled,
         'learning -> argMap.getOrElse('learning, false).asInstanceOf[Boolean],
         'opDeactivation -> opDeactivation,
-        'opOrder -> opOrder
+        'opOrder -> opOrder,
+        'quickStart -> quickStart,
+        'altScore -> altScore
       )
 
       val config = new ALNSConfig(
@@ -198,47 +204,57 @@ trait Benchmark {
         'coupled -> true,
         'learning -> false,
         'opDeactivation -> false,
-        'stagnationThreshold -> 2000
+        'stagnationThreshold -> 5000
       )
 
       var highestResult: Option[ALNSSearchResults] = None
       var lowestResult: Option[ALNSSearchResults] = None
-      operators.foreach(op =>{
-        lazy val relaxStore = new RandomStore[ALNSOperator](Array(new ALNSNoParamOperator("dummy", 0, () => (_ => Unit, None, None))))
-        lazy val searchStore = new RandomStore[ALNSOperator](Array(op))
+      Random.shuffle(operators.toSeq).foreach(op =>{
+        try {
+          lazy val relaxStore = new RandomStore[ALNSOperator](Array(new ALNSNoParamOperator("dummy", 0, () => (_ => Unit, None, None))))
+          lazy val searchStore = new RandomStore[ALNSOperator](Array(op))
 
-        val config = new ALNSConfig(
-          relaxStore,
-          searchStore,
-          argMap.getOrElse('timeout, 0L).asInstanceOf[Long] * 1000000000L,
-          bestKnownObjective,
-          1000,
-          "default",
-          metaParams
-        )
-        val alns = ALNSSearch(solver, decisionVariables, config)
-
-        val result = alns.searchFrom(startSol)
-
-        if(!boundsOnly){
-          XmlWriter.writeToXml(
-            argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
-            result.searchOperators.head.name,
-            seed,
-            argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
-            IOUtils.getFileName(instance, keepExtension = false),
-            problem,
-            bestKnownObjective.getOrElse(if (maximizeObjective) Int.MinValue else Int.MaxValue),
-            maximizeObjective,
-            result.solutions,
-            if (result.relaxOperators.isEmpty) Map("Coupled" -> result.searchOperators) else Map("Relax" -> result.relaxOperators, "Search" -> result.searchOperators)
+          val config = new ALNSConfig(
+            relaxStore,
+            searchStore,
+            argMap.getOrElse('timeout, 0L).asInstanceOf[Long] * 1000000000L,
+            bestKnownObjective,
+            1000,
+            "default",
+            metaParams
           )
-        }
-        else if(result.solutions.nonEmpty){
-          if(highestResult.isEmpty || result.solutions.last.objective > highestResult.get.solutions.last.objective)
-            highestResult = Some(result)
-          if(lowestResult.isEmpty || result.solutions.last.objective < lowestResult.get.solutions.last.objective)
-            lowestResult = Some(result)
+          val alns = ALNSSearch(solver, decisionVariables, config)
+
+          val result = alns.searchFrom(startSol)
+
+          if (!boundsOnly) {
+            XmlWriter.writeToXml(
+              argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String],
+              result.searchOperators.head.name,
+              seed,
+              argMap.getOrElse('timeout, 300L).asInstanceOf[Long] * 1000000000L,
+              IOUtils.getFileName(instance, keepExtension = false),
+              problem,
+              bestKnownObjective.getOrElse(if (maximizeObjective) Int.MinValue else Int.MaxValue),
+              maximizeObjective,
+              result.solutions,
+              if (result.relaxOperators.isEmpty) Map("Coupled" -> result.searchOperators) else Map("Relax" -> result.relaxOperators, "Search" -> result.searchOperators)
+            )
+          }
+          else if (result.solutions.nonEmpty) {
+            if (highestResult.isEmpty || result.solutions.last.objective > highestResult.get.solutions.last.objective)
+              highestResult = Some(result)
+            if (lowestResult.isEmpty || result.solutions.last.objective < lowestResult.get.solutions.last.objective)
+              lowestResult = Some(result)
+          }
+        }catch {
+          case e: Exception =>
+            val fw = new FileWriter(argMap.getOrElse('out, "ALNS-bench-results/Tests/").asInstanceOf[String] + "errors.txt", true)
+            try {
+              fw.write("error with operator " + op.name + " on instance " + IOUtils.getFileName(instance, keepExtension = false))
+              fw.write(e.toString)
+            }
+            finally fw.close()
         }
       })
 
@@ -421,6 +437,20 @@ trait Benchmark {
           if(isSwitch(value)) parseArgs(map ++ Map('opDeactivation -> true), tail)
           else parseArgs(map ++ Map('opDeactivation -> value.toBoolean), remTail)
         case Nil => map ++ Map('opDeactivation -> true)
+      }
+
+      case "--quick-start" :: tail => tail match{
+        case value :: remTail =>
+          if(isSwitch(value)) parseArgs(map ++ Map('quickStart -> true), tail)
+          else parseArgs(map ++ Map('quickStart -> value.toBoolean), remTail)
+        case Nil => map ++ Map('quickStart -> true)
+      }
+
+      case "--alt-score" :: tail => tail match{
+        case value :: remTail =>
+          if(isSwitch(value)) parseArgs(map ++ Map('altScore -> true), tail)
+          else parseArgs(map ++ Map('altScore -> value.toBoolean), remTail)
+        case Nil => map ++ Map('altScore -> true)
       }
 
       case "--selection" :: value :: tail =>
