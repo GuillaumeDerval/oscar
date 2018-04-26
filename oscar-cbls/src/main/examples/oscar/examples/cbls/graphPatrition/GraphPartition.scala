@@ -13,6 +13,8 @@ object GraphPartition extends CBLSModel with App {
 
   require(nbNodes % 2 == 0, "nbnodes must be even")
 
+  println("nbNodes:" + nbNodes + " nbEdges:" + nbEdges)
+
   def generateRandomEdges(nbNodes:Int,nbEdges:Int):(List[(Int,Int)],Array[List[Int]]) = {
     val adjacencyLists:Array[List[Int]] = Array.fill(nbNodes)(List.empty)
     val allEdges = List.tabulate(nbEdges)(_ => {
@@ -92,7 +94,7 @@ object GraphPartition extends CBLSModel with App {
       onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = "randomize" + nbNodes/100), 3, obj)
     exhaust profile(swapsNeighborhood(nodeToPartition, //this one is the most complete of swaps, but highly inefficient compared tpo the others,and I think that it does not bring in more connexity than others (althrough I am not so suer...)
       symmetryCanBeBrokenOnIndices = true,
-      searchZone1 = () => if (violatedNodes.value.size == nbNodes) null else violatedNodes.value,
+      searchZone1 = violatedNodes,
       name = "swap1Viol"))) showObjectiveFunction(obj)
 
   neighborhood.verbose = 1
