@@ -40,10 +40,11 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
   impl.currParameters.put(XCallbacksParameters.RECOGNIZE_UNARY_PRIMITIVES, new Object)
   impl.currParameters.put(XCallbacksParameters.RECOGNIZE_BINARY_PRIMITIVES, new Object)
   impl.currParameters.put(XCallbacksParameters.RECOGNIZE_TERNARY_PRIMITIVES, new Object)
-  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_NVALUES_CASES, new Object)
-  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, 1000: java.lang.Integer) // included
-  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000: java.lang.Integer)
-  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, java.lang.Boolean.FALSE)
+//  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_NVALUES_CASES, new Object)
+  impl.currParameters.put(XCallbacksParameters.RECOGNIZING_BEFORE_CONVERTING, java.lang.Boolean.TRUE)
+  impl.currParameters.put(XCallbacksParameters.CONVERT_INTENSION_TO_EXTENSION_ARITY_LIMIT, java.lang.Integer.MAX_VALUE: java.lang.Integer) // included
+  impl.currParameters.put(XCallbacksParameters.CONVERT_INTENSION_TO_EXTENSION_SPACE_LIMIT, java.lang.Long.MAX_VALUE: java.lang.Long) // included
+//  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, java.lang.Boolean.FALSE)
 
 
   override def implem(): XCallbacks.Implem = {

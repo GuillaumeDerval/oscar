@@ -10,7 +10,7 @@ import org.xcsp.common.predicates.{XNode, XNodeLeaf, XNodeParent}
 import org.xcsp.parser.XCallbacks
 import org.xcsp.parser.XCallbacks.{Implem, XCallbacksParameters}
 import org.xcsp.parser.entries.XVariables.XVarInteger
-import oscar.cp.constraints.Automaton
+import oscar.cp.constraints.{Automaton, PartialInverse}
 import oscar.modeling.algebra.bool._
 import oscar.modeling.algebra.integer._
 import oscar.modeling.constraints._
@@ -51,12 +51,13 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   INTENSION_TO_EXTENSION_PRIORITY;
 */
   impl.currParameters.put(XCallbacksParameters.RECOGNIZE_UNARY_PRIMITIVES, new Object)
-  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_BINARY_PRIMITIVES,  new Object)
-  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_TERNARY_PRIMITIVES,  new Object)
-  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_NVALUES_CASES,  new Object)
-  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, 1000:java.lang.Integer) // included
-  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000:java.lang.Integer)
-  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, java.lang.Boolean.FALSE)
+  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_BINARY_PRIMITIVES, new Object)
+  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_TERNARY_PRIMITIVES, new Object)
+  //  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_NVALUES_CASES, new Object)
+  impl.currParameters.put(XCallbacksParameters.RECOGNIZING_BEFORE_CONVERTING, java.lang.Boolean.TRUE)
+  impl.currParameters.put(XCallbacksParameters.CONVERT_INTENSION_TO_EXTENSION_ARITY_LIMIT, java.lang.Integer.MAX_VALUE: java.lang.Integer) // included
+  impl.currParameters.put(XCallbacksParameters.CONVERT_INTENSION_TO_EXTENSION_SPACE_LIMIT, java.lang.Long.MAX_VALUE: java.lang.Long) // included
+  //  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, java.lang.Boolean.FALSE)
 
 
   loadInstance(filename)
@@ -653,8 +654,21 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   override def buildCtrChannel(id: String, list1: Array[XVarInteger], startIndex1: Int, list2: Array[XVarInteger], startIndex2: Int): Unit = {
-    modelDeclaration.post(Inverse(list1.map(e => varHashMap(e.id())).map(e => if(startIndex1 == 0) e else e-startIndex1),
-      list2.map(e => varHashMap(e.id())).map(e => if(startIndex2 == 0) e else e-startIndex2)))
+//    if(list1.length < list2.length)
+//      modelDeclaration.post(PartialInverse(
+//        list1.map(e => varHashMap(e.id())).map(e => if(startIndex1 == 0) e else e-startIndex1),
+//        list2.map(e => varHashMap(e.id())).map(e => if(startIndex2 == 0) e else e-startIndex2))
+//      )
+//    else if(list1.length > list2.length)
+//      modelDeclaration.post(PartialInverse(
+//        list2.map(e => varHashMap(e.id())).map(e => if(startIndex2 == 0) e else e-startIndex2),
+//        list1.map(e => varHashMap(e.id())).map(e => if(startIndex1 == 0) e else e-startIndex1))
+//      )
+//    else
+      modelDeclaration.post(Inverse(
+        list1.map(e => varHashMap(e.id())).map(e => if(startIndex1 == 0) e else e-startIndex1),
+        list2.map(e => varHashMap(e.id())).map(e => if(startIndex2 == 0) e else e-startIndex2))
+      )
   }
 
   override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int): Unit = {
