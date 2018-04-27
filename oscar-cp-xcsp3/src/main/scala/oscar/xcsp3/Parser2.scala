@@ -55,9 +55,8 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   impl.currParameters.put(XCallbacksParameters.RECOGNIZE_TERNARY_PRIMITIVES, new Object)
   //  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_NVALUES_CASES, new Object)
   impl.currParameters.put(XCallbacksParameters.RECOGNIZING_BEFORE_CONVERTING, java.lang.Boolean.TRUE)
-  impl.currParameters.put(XCallbacksParameters.CONVERT_INTENSION_TO_EXTENSION_ARITY_LIMIT, java.lang.Integer.MAX_VALUE: java.lang.Integer) // included
-  impl.currParameters.put(XCallbacksParameters.CONVERT_INTENSION_TO_EXTENSION_SPACE_LIMIT, java.lang.Long.MAX_VALUE: java.lang.Long) // included
-  //  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, java.lang.Boolean.FALSE)
+  impl.currParameters.put(XCallbacksParameters.CONVERT_INTENSION_TO_EXTENSION_ARITY_LIMIT, 0: java.lang.Integer) // included
+  impl.currParameters.put(XCallbacksParameters.CONVERT_INTENSION_TO_EXTENSION_SPACE_LIMIT, 0L: java.lang.Long) // included
 
 
   loadInstance(filename)
