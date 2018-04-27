@@ -13,14 +13,19 @@ class VLSN(v:Int,
            nodeVehicleToInsertNeighborhood:(Int,Int) => Neighborhood,
            nodeTargetVehicleToMoveNeighborhood:(Int,Int) => Neighborhood,
            nodeToRemoveNeighborhood:Int => Neighborhood,
-           removeAndReInsert:Int => () => Unit,
-           obj:Objective,
+           removeNodeAndReInsert:Int => () => Unit,
+
            name:String = "VLSN") extends Neighborhood {
 
-  override def getMove(obj: Objective, initialObj: Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Int,
+                       acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
 
-    def explore(n:Neighborhood):Option[(Move,Int)] = {
-      val initialObjective = obj.value
+    def explore(n:Neighborhood,objBeforeMove:Option[Int]=None):Option[(Move,Int)] = {
+      val initialObjective = objBeforeMove match{
+        case None => obj.value
+        case Some(x) => x
+      }
       //we accept all moves, since degrading moves are allowed in negative cycles
       n.getMove(obj,initialObjective,acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match{
         case NoMoveFound => None
@@ -33,11 +38,12 @@ class VLSN(v:Int,
       v:Int,
       vehicleToRoutedNodesToMove(),
       unroutedNodesToInsert(),
-      (node,vehicle) => explore(nodeVehicleToInsertNeighborhood(node,vehicle)),
+      (node,vehicle,objBeforeInsert:Option[Int]) => explore(nodeVehicleToInsertNeighborhood(node,vehicle),objBeforeInsert),
       (node,vehicle) => explore(nodeTargetVehicleToMoveNeighborhood(node,vehicle)),
       (node) => explore(nodeToRemoveNeighborhood(node)),
-      removeAndReInsert,
-      nodeToRelevantVehicles()).buildGraph()
+      removeNodeAndReInsert,
+      nodeToRelevantVehicles(),
+      initialObj).buildGraph()
 
     //then, find proper negative cycle in graph
     new CycleFinderAlgoFloyd(vlsnGraph).findCycle() match{

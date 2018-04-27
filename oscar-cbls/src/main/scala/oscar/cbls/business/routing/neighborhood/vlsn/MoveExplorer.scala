@@ -8,11 +8,12 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 class MoveExplorerAlgo(v:Int,
                        vehicleToRoutedNodes:SortedMap[Int,Iterable[Int]],
                        unroutedNodesToInsert:Iterable[Int],
-                       insertNodeOnVehicleToMoveAndGain:(Int,Int) => Option[(Move,Int)],
+                       insertNodeOnVehicleToMoveAndGain:(Int,Int,Option[Int]) => Option[(Move,Int)],
                        moveNodeToVehicleToMoveAndGain:(Int,Int) => Option[(Move,Int)],
                        removeNodeToMoveAndGain:(Int => Option[(Move,Int)]),
                        removeAndReInsert:Int => () => Unit,
-                       nodeToRelevantVehicles:Int => Iterable[Int]) {
+                       nodeToRelevantVehicles:Int => Iterable[Int],
+                       initialObj:Int) {
 
   var nodes:Array[Node] = null
   var nodeIDToNode:SortedMap[Int,Node] = null
@@ -48,7 +49,7 @@ class MoveExplorerAlgo(v:Int,
 
     buildNodes()
     edgeBuilder = new VLSNEdgeBuilder(nodes)
-    exploreInsertions()
+    exploreInsertions(initialObj)
     exploreNodeMove()
     exploreDeletions() //should be called after insertions
     addNoMoveEdgesForVehicles() //should be the last one called
@@ -80,7 +81,7 @@ class MoveExplorerAlgo(v:Int,
     }
   }
 
-  def exploreInsertions(){
+  def exploreInsertions(initialObj:Int){
 
     for(routingNodeToInsert <- unroutedNodesToInsert){
       var anyPossibleInsert = false
@@ -88,7 +89,7 @@ class MoveExplorerAlgo(v:Int,
       for(targetVehicleForInsertion <- nodeToRelevantVehicles(routingNodeToInsert)){
 
         //insertion without remove
-        insertNodeOnVehicleToMoveAndGain(routingNodeToInsert,targetVehicleForInsertion) match{
+        insertNodeOnVehicleToMoveAndGain(routingNodeToInsert,targetVehicleForInsertion,Some(initialObj)) match{
           case None =>
           case Some((move,gain)) =>
             val symbolicNodeOfVehicle = nodeIDToNode(targetVehicleForInsertion)
