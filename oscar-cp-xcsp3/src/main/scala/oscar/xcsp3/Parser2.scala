@@ -654,17 +654,17 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   override def buildCtrChannel(id: String, list1: Array[XVarInteger], startIndex1: Int, list2: Array[XVarInteger], startIndex2: Int): Unit = {
-//    if(list1.length < list2.length)
-//      modelDeclaration.post(PartialInverse(
-//        list1.map(e => varHashMap(e.id())).map(e => if(startIndex1 == 0) e else e-startIndex1),
-//        list2.map(e => varHashMap(e.id())).map(e => if(startIndex2 == 0) e else e-startIndex2))
-//      )
-//    else if(list1.length > list2.length)
-//      modelDeclaration.post(PartialInverse(
-//        list2.map(e => varHashMap(e.id())).map(e => if(startIndex2 == 0) e else e-startIndex2),
-//        list1.map(e => varHashMap(e.id())).map(e => if(startIndex1 == 0) e else e-startIndex1))
-//      )
-//    else
+    if(list1.length < list2.length)
+      modelDeclaration.post(PartialInverse(
+        list1.map(e => varHashMap(e.id())).map(e => if(startIndex1 == 0) e else e-startIndex1),
+        list2.map(e => varHashMap(e.id())).map(e => if(startIndex2 == 0) e else e-startIndex2))
+      )
+    else if(list1.length > list2.length)
+      modelDeclaration.post(PartialInverse(
+        list2.map(e => varHashMap(e.id())).map(e => if(startIndex2 == 0) e else e-startIndex2),
+        list1.map(e => varHashMap(e.id())).map(e => if(startIndex1 == 0) e else e-startIndex1))
+      )
+    else
       modelDeclaration.post(Inverse(
         list1.map(e => varHashMap(e.id())).map(e => if(startIndex1 == 0) e else e-startIndex1),
         list2.map(e => varHashMap(e.id())).map(e => if(startIndex2 == 0) e else e-startIndex2))
