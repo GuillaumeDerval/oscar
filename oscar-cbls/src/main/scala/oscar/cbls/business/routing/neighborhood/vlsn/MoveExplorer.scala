@@ -8,11 +8,11 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 class MoveExplorerAlgo(v:Int,
                        vehicleToRoutedNodes:SortedMap[Int,Iterable[Int]],
                        unroutedNodesToInsert:Iterable[Int],
-                       insertNoveOnVehicleToMoveAndGain:(Int,Int) => Option[(Move,Int)],
+                       insertNodeOnVehicleToMoveAndGain:(Int,Int) => Option[(Move,Int)],
                        moveNodeToVehicleToMoveAndGain:(Int,Int) => Option[(Move,Int)],
                        removeNodeToMoveAndGain:(Int => Option[(Move,Int)]),
                        removeAndReInsert:Int => () => Unit,
-                       nodeToRelevantVehicles:SortedMap[Int,Iterable[Int]]) {
+                       nodeToRelevantVehicles:Int => Iterable[Int]) {
 
   var nodes:Array[Node] = null
   var nodeIDToNode:SortedMap[Int,Node] = null
@@ -29,10 +29,16 @@ class MoveExplorerAlgo(v:Int,
     //nodes of the moveGraph are:
     // if the point is routed: removing a node from the vehicle where it is
     // if the point is not routed: routing it if not in the sequence
+    //there is a trashNode representing non-routed nodes. only for symbolic purpose.
     //edges are:
     // if from and to are routed: the move that moves the from point to the vehicle of the to point, assuming the to point has been removed from its vehicle
     // if from is routed, and to is not routed: removing the from, assuming the to has been inserted (these one are generated automatically, by just removing points one after the other and evaluating the penalty for unrouting)
     // if the from is not routed and the to is routed: routing the from on the vehicle of the to, assuming the to has been removed from its vehicle
+
+    //there is an edge from trashNode to all node (routed or unrouted), with NoMove and delta 0 ??
+
+    //it allows simple insertion without delete, in teh case of non-routed nodes,
+
 
     //et il faut aussi de edges pour représenter l'insertion/move sans déplacement d'autre noeuds.
     //donc on ajoute des noeud qui représentent les véhicules pour insertion, et un edge qui pointe vers un tel noeud représente un moveinsertion vers ce v"hcule sans déplacement de noeud de ce véhicule.
@@ -82,7 +88,7 @@ class MoveExplorerAlgo(v:Int,
       for(targetVehicleForInsertion <- nodeToRelevantVehicles(routingNodeToInsert)){
 
         //insertion without remove
-        insertNoveOnVehicleToMoveAndGain(routingNodeToInsert,targetVehicleForInsertion) match{
+        insertNodeOnVehicleToMoveAndGain(routingNodeToInsert,targetVehicleForInsertion) match{
           case None =>
           case Some((move,gain)) =>
             val symbolicNodeOfVehicle = nodeIDToNode(targetVehicleForInsertion)
@@ -99,7 +105,7 @@ class MoveExplorerAlgo(v:Int,
           val reInsert = removeAndReInsert(routingNodeToRemove)
 
           //Evaluating the delta
-          insertNoveOnVehicleToMoveAndGain(routingNodeToInsert,targetVehicleForInsertion) match{
+          insertNodeOnVehicleToMoveAndGain(routingNodeToInsert,targetVehicleForInsertion) match{
             case None =>
             case Some((move,gain)) =>
               edgeBuilder.addEdge(symbolicNodeToInsert,symbolicNodeToRemove,gain,move)
@@ -157,6 +163,9 @@ class MoveExplorerAlgo(v:Int,
     }
   }
 
+  /**
+    * deletions are from deleted node to trashNode
+    */
   def exploreDeletions(): Unit = {
     if (nonRoutedNodesWithOneInsertion.isEmpty) return
 
@@ -170,9 +179,7 @@ class MoveExplorerAlgo(v:Int,
           case None => ;
           case Some((move,gain)) =>
             val symbolicNodeOfNodeToRemove = nodeIDToNode(routingNodeToRemove)
-            for(symbolicNodeOfNonRoutedNodeWithPossibleInsert <- symbolicNodesOfNonRoutedNodesWithPossibleInsert) {
-              edgeBuilder.addEdge(symbolicNodeOfNodeToRemove, symbolicNodeOfNonRoutedNodeWithPossibleInsert, gain, move)
-            }
+            edgeBuilder.addEdge(symbolicNodeOfNodeToRemove, trashNode, gain, move)
         }
       }
     }

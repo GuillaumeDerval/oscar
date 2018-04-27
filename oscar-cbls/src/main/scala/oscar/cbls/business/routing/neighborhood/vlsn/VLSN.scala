@@ -1,28 +1,54 @@
-/*package oscar.cbls.business.routing.neighborhood.vlsn
+package oscar.cbls.business.routing.neighborhood.vlsn
 
 import oscar.cbls.Objective
-import oscar.cbls.core.search.Move
+import oscar.cbls.core.search._
 
+import scala.collection.immutable.SortedMap
 
-/**
-  *
-  * @param insert (node * vehicle) => Neighborhood
-  * @param move (node * vehicle) => Neighborhood
-  * @param remove(node)
-  */
 class VLSN(v:Int,
-           vehicleToNodes:Int => Iterable[Int],
-           insert:(Int,Int) => Iterable[Move],
-           move:(Int,Int) => Iterable[Move],
-           obj:Objective) {
+           vehicleToRoutedNodesToMove:() => SortedMap[Int,Iterable[Int]],
+           unroutedNodesToInsert:() => Iterable[Int],
+           nodeToRelevantVehicles:() => (Int => Iterable[Int]),
 
+           nodeVehicleToInsertNeighborhood:(Int,Int) => Neighborhood,
+           nodeTargetVehicleToMoveNeighborhood:(Int,Int) => Neighborhood,
+           nodeToRemoveNeighborhood:Int => Neighborhood,
+           removeAndReInsert:Int => () => Unit,
+           obj:Objective,
+           name:String = "VLSN") extends Neighborhood {
 
-  //graph noeuds =
-  //noeuds déplaçables
-  //noeud déplaçable => noeud déplaçable = mouvement possible où on place noe noeud from dans le véhicule du noeud to en 'enlevant du noeud to (labellisé par le move et le gain sur la fct objectif)
+  override def getMove(obj: Objective, initialObj: Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
 
+    def explore(n:Neighborhood):Option[(Move,Int)] = {
+      val initialObjective = obj.value
+      //we accept all moves, since degrading moves are allowed in negative cycles
+      n.getMove(obj,initialObjective,acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match{
+        case NoMoveFound => None
+        case MoveFound(m) => Some((m,initialObjective - m.objAfter))
+      }
+    }
 
+    //first, explore the atomic moves, and build VLSN graph
+    val vlsnGraph = new MoveExplorerAlgo(
+      v:Int,
+      vehicleToRoutedNodesToMove(),
+      unroutedNodesToInsert(),
+      (node,vehicle) => explore(nodeVehicleToInsertNeighborhood(node,vehicle)),
+      (node,vehicle) => explore(nodeTargetVehicleToMoveNeighborhood(node,vehicle)),
+      (node) => explore(nodeToRemoveNeighborhood(node)),
+      removeAndReInsert,
+      nodeToRelevantVehicles()).buildGraph()
 
+    //then, find proper negative cycle in graph
+    new CycleFinderAlgoFloyd(vlsnGraph).findCycle() match{
+      case None => NoMoveFound
+      case Some(listOfEdge) =>
+        //TODO:further explore the graph, to find all independent neg cycles, and improve added value.
+        //finally, extract the moves from the graph and return the composite moves
+      val moves = listOfEdge.map(edge => edge.move)
+        val delta = listOfEdge.map(edge => edge.deltaObj).sum
+        NoMoveFound(CompositeMove(moves,initialObj + delta,name))
+    }
+  }
 }
 
-*/
