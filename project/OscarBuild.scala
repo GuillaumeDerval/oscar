@@ -166,7 +166,7 @@ object OscarBuild extends Build {
     settings =
       commonSettings ++
         Seq(
-          resolvers ++= Seq(ingi),
+//          resolvers ++= Seq(ingi),
           libraryDependencies ++= testDeps :+ xcsp3),
     dependencies = Seq(oscarCp, oscarModeling)
   )
