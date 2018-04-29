@@ -9,8 +9,8 @@ class VLSNNodeBuilder() {
   var nodes: List[Node] = List.empty
   var nextNodeID: Int = 0
 
-  def addNode(representedNode:Int, vehicle:Int):Node = {
-    val n = new Node(nextNodeID, representedNode:Int, vehicle:Int)
+  def addNode(representedNode:Int, vehicle:Int, impactZoneID:Option[Int]):Node = {
+    val n = new Node(nextNodeID, representedNode:Int, vehicle:Int, impactZoneID)
     nextNodeID += 1
     nodes = n :: nodes
     n
@@ -27,16 +27,19 @@ class VLSNEdgeBuilder(nodes:Array[Node]){
   var fromToWithEdge:List[(Int,Int)] = List.empty
   var nextEdgeID:Int = 0
 
-  def addEdge(from:Node,to:Node,gain:Int,move:Move = new DoNothingMove(Int.MaxValue)){
+  def addEdge(from:Node,to:Node,gain:Int,move:Move,impactZoneID:Option[Int]){
     val existingEdge = edges(from.nodeID)(to.nodeID)
     if(existingEdge == null){
-      edges(from.nodeID)(to.nodeID) = new Edge(from:Node,to:Node, move:Move,gain:Int, nextEdgeID)
+      edges(from.nodeID)(to.nodeID) = new Edge(from:Node,to:Node, move:Move,gain:Int, nextEdgeID, impactZoneID)
       nextEdgeID += 1
       fromToWithEdge = (from.nodeID,to.nodeID) :: fromToWithEdge
-    }else if (existingEdge.deltaObj < gain){
-      //override
-      System.err.println("overriding edge in VLSN?")
-      edges(from.nodeID)(to.nodeID) = new Edge(from:Node,to:Node, move:Move,gain:Int, existingEdge.edgeID)
+    }else {
+      require(impactZoneID == existingEdge.impactZoneID)
+      if (existingEdge.deltaObj < gain) {
+        //override
+        System.err.println("overriding edge in VLSN?")
+        edges(from.nodeID)(to.nodeID) = new Edge(from: Node, to: Node, move: Move, gain: Int, existingEdge.edgeID, impactZoneID)
+      }
     }
   }
 
@@ -52,7 +55,6 @@ class VLSNEdgeBuilder(nodes:Array[Node]){
     new VLSNGraph(nodes,edgeArray)
   }
 }
-
 
 class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge]){
   val nbNodes = nodes.length
@@ -74,7 +76,7 @@ class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge]){
       "}"
 }
 
-class Node(val nodeID:Int, val representedNode:Int, vehicle:Int){
+class Node(val nodeID:Int, val representedNode:Int, vehicle:Int, val impactZoneID:Option[Int]){
   var incoming:List[Edge] = List.empty
   var outgoing:List[Edge] = List.empty
 
@@ -83,7 +85,7 @@ class Node(val nodeID:Int, val representedNode:Int, vehicle:Int){
   def toDOT(edgesToBold:SortedSet[Int]):String = "\"" + nodeID + "\" [shape=circle,style=filled,fillcolor=white, label = \"node:" + representedNode + "\\nvehicle:" + vehicle + "\"] ; "
 }
 
-class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Int, val edgeID:Int){
+class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Int, val edgeID:Int, val impactZoneID:Option[Int]){
   def registerToNodes(): Unit ={
     from.outgoing = this :: from.outgoing
     to.incoming = this :: to.incoming
@@ -102,11 +104,11 @@ object VLSNGraphTest extends App{
 
   def buildGraph():VLSNGraph = {
     val nbNodes = 6
-    val nodes = Array.tabulate(nbNodes)(nodeID => new Node(nodeID, nbNodes + nodeID,nodeID))
+    val nodes = Array.tabulate(nbNodes)(nodeID => new Node(nodeID, nbNodes + nodeID,nodeID,None))
     val builder = new VLSNEdgeBuilder(nodes: Array[Node])
 
     def edge(from: Int, to: Int, gain: Int): Unit = {
-      builder.addEdge(nodes(from), nodes(to), gain)
+      builder.addEdge(nodes(from), nodes(to), gain,  new DoNothingMove(Int.MaxValue),None)
     }
 
     edge(0, 1, 10)

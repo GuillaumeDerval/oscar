@@ -38,20 +38,22 @@ class VLSN(v:Int,
       v:Int,
       vehicleToRoutedNodesToMove(),
       unroutedNodesToInsert(),
+      nodeToRelevantVehicles(),
+
       (node,vehicle,objBeforeInsert:Option[Int]) => explore(nodeVehicleToInsertNeighborhood(node,vehicle),objBeforeInsert),
       (node,vehicle) => explore(nodeTargetVehicleToMoveNeighborhood(node,vehicle)),
       (node) => explore(nodeToRemoveNeighborhood(node)),
       removeNodeAndReInsert,
-      nodeToRelevantVehicles(),
+
       initialObj).buildGraph()
 
     //then, find proper negative cycle in graph
-    new CycleFinderAlgoFloyd(vlsnGraph).findCycle() match{
+    new CycleFinderAlgoFloydNoLabel(vlsnGraph).findCycle() match{
       case None => NoMoveFound
       case Some(listOfEdge) =>
         //TODO:further explore the graph, to find all independent neg cycles, and improve added value.
         //finally, extract the moves from the graph and return the composite moves
-      val moves = listOfEdge.map(edge => edge.move)
+        val moves = listOfEdge.map(edge => edge.move)
         val delta = listOfEdge.map(edge => edge.deltaObj).sum
         NoMoveFound(CompositeMove(moves,initialObj + delta,name))
     }
