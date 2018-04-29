@@ -29,15 +29,16 @@ object HybridSolver extends CompetitionApp with App {
     //Parsing the instance
     printComment("Parsing instance...")
     val parsingResult = try {
-      val (vars, solutionGenerator) = XCSP3Parser2.parse(md, conf.benchname())
+      val (decisionVars, auxiliaryVars, solutionGenerator) = XCSP3Parser2.parse2(md, conf.benchname())
 
       val model: CPModel = CPInstantiate(md.getCurrentModel.asInstanceOf[UninstantiatedModel])
       md.setCurrentModel(model)
 
-      val cpVars: Array[CPIntVar] = vars.map(model.getRepresentative(_).realCPVar)
+      val cpDecisionVars: Array[CPIntVar] = decisionVars.map(model.getRepresentative(_).realCPVar)
+      val cpAuxiliaryVars: Array[CPIntVar] = auxiliaryVars.map(model.getRepresentative(_).realCPVar)
       val solver: CPSolver = model.cpSolver
 
-      Some(cpVars, solver, solutionGenerator)
+      Some(cpDecisionVars, cpAuxiliaryVars, solver, solutionGenerator)
     } catch {
       case _: NotImplementedError =>
         status = "UNSUPPORTED"
@@ -56,7 +57,8 @@ object HybridSolver extends CompetitionApp with App {
     }
 
     if (parsingResult.isDefined) {
-      val (vars, solver, solutionGenerator) = parsingResult.get
+      val (decisionVars, auxiliaryVars, solver, solutionGenerator) = parsingResult.get
+      val vars = decisionVars ++ auxiliaryVars
       solver.silent = true
 
       val maximizeObjective: Option[Boolean] = if(solver.objective.objs.nonEmpty) Some(solver.objective.objs.head.isMax) else None
@@ -100,10 +102,19 @@ object HybridSolver extends CompetitionApp with App {
 
       var stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null) {
         solver.search(
-          conflictOrderingSearch(
-            vars,
-            i => vars(i).size,
-            learnValueHeuristic(vars, if(maximizeObjective.isDefined) if(maximizeObjective.get) vars(_).min else vars(_).max else vars(_).max)
+          if(auxiliaryVars.isEmpty) conflictOrderingSearch(
+            decisionVars,
+            i => decisionVars(i).size,
+            learnValueHeuristic(decisionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) decisionVars(_).min else decisionVars(_).max else decisionVars(_).max)
+          )
+          else conflictOrderingSearch(
+            decisionVars,
+            i => decisionVars(i).size,
+            learnValueHeuristic(decisionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) decisionVars(_).min else decisionVars(_).max else decisionVars(_).max)
+          ) ++ conflictOrderingSearch(
+            auxiliaryVars,
+            i => auxiliaryVars(i).size,
+            learnValueHeuristic(auxiliaryVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) auxiliaryVars(_).min else auxiliaryVars(_).max else auxiliaryVars(_).max)
           )
         )
       }
@@ -113,7 +124,8 @@ object HybridSolver extends CompetitionApp with App {
 
         val builder = new ALNSBuilder(
           solver,
-          vars,
+          decisionVars,
+          auxiliaryVars,
           Array(ALNSBuilder.RandomRelax, ALNSBuilder.KSuccessiveRelax, ALNSBuilder.CircuitKoptRelax, ALNSBuilder.PropGuidedRelax, ALNSBuilder.RevPropGuidedRelax, ALNSBuilder.RandomValGroupsRelax, ALNSBuilder.MaxValRelax, ALNSBuilder.PrecedencyRelax, ALNSBuilder.CostImpactRelax, ALNSBuilder.FullRelax),
           Array(ALNSBuilder.ConfOrderSearch, ALNSBuilder.FirstFailSearch, ALNSBuilder.LastConfSearch, ALNSBuilder.ExtOrientedSearch, ALNSBuilder.WeightDegSearch),
           ALNSBuilder.RWheel,
@@ -139,7 +151,7 @@ object HybridSolver extends CompetitionApp with App {
           Map('quickStart -> true)
         )
 
-        val alns = ALNSSearch(solver, vars, config)
+        val alns = ALNSSearch(solver, decisionVars, auxiliaryVars, config)
         val result: ALNSSearchResults = if(sols.isEmpty) alns.search() else alns.searchFrom(sols.last._1)
         optimumFound = result.optimumFound
 
@@ -156,15 +168,27 @@ object HybridSolver extends CompetitionApp with App {
             val iEnd = bestOperator.name.lastIndexOf(')')
             val valHeuris = bestOperator.name.substring(iStart, iEnd)
 
-            if (bestOperator.name.contains(ALNSBuilder.BinSplitSearch)) binarySplit(vars, valHeuris, valLearn)
-            else if (bestOperator.name.contains(ALNSBuilder.FirstFailSearch)) firstFail(vars, valHeuris, valLearn)
-            else if (bestOperator.name.contains(ALNSBuilder.LastConfSearch)) lastConflict(vars, valHeuris, valLearn)
-            else if (bestOperator.name.contains(ALNSBuilder.ExtOrientedSearch)) extensionalOriented(vars, valHeuris, valLearn)
-            else if (bestOperator.name.contains(ALNSBuilder.WeightDegSearch)) weightedDegree(vars, valHeuris, 0.99)
-            else conflictOrdering(vars, valHeuris, valLearn)
+            if(auxiliaryVars.isEmpty){
+              if (bestOperator.name.contains(ALNSBuilder.BinSplitSearch)) binarySplit(decisionVars, valHeuris, valLearn)
+              else if (bestOperator.name.contains(ALNSBuilder.FirstFailSearch)) firstFail(decisionVars, valHeuris, valLearn)
+              else if (bestOperator.name.contains(ALNSBuilder.LastConfSearch)) lastConflict(decisionVars, valHeuris, valLearn)
+              else if (bestOperator.name.contains(ALNSBuilder.ExtOrientedSearch)) extensionalOriented(decisionVars, valHeuris, valLearn)
+              else if (bestOperator.name.contains(ALNSBuilder.WeightDegSearch)) weightedDegree(decisionVars, valHeuris, 0.99)
+              else conflictOrdering(decisionVars, valHeuris, valLearn)
+            }
+            else{
+              if (bestOperator.name.contains(ALNSBuilder.BinSplitSearch)) binarySplit(decisionVars, valHeuris, valLearn) ++ binarySplit(auxiliaryVars, valHeuris, valLearn)
+              else if (bestOperator.name.contains(ALNSBuilder.FirstFailSearch)) firstFail(decisionVars, valHeuris, valLearn) ++ firstFail(auxiliaryVars, valHeuris, valLearn)
+              else if (bestOperator.name.contains(ALNSBuilder.LastConfSearch)) lastConflict(decisionVars, valHeuris, valLearn) ++ lastConflict(auxiliaryVars, valHeuris, valLearn)
+              else if (bestOperator.name.contains(ALNSBuilder.ExtOrientedSearch)) extensionalOriented(decisionVars, valHeuris, valLearn) ++ extensionalOriented(auxiliaryVars, valHeuris, valLearn)
+              else if (bestOperator.name.contains(ALNSBuilder.WeightDegSearch)) weightedDegree(decisionVars, valHeuris, 0.99) ++ weightedDegree(auxiliaryVars, valHeuris, 0.99)
+              else conflictOrdering(decisionVars, valHeuris, valLearn) ++ conflictOrdering(auxiliaryVars, valHeuris, valLearn)
+            }
           }
-          else //Default search: Conflict ordering with min val heuristic and no learning:
-            conflictOrdering(vars, "Min", valLearn = false)
+          else { //Default search: Conflict ordering with min val heuristic and no learning:
+            if (auxiliaryVars.isEmpty) conflictOrdering(decisionVars, "Min", valLearn = false)
+            else conflictOrdering(decisionVars, "Min", valLearn = false) ++ conflictOrdering(auxiliaryVars, "Min", valLearn = false)
+          }
         }
 
         /**

@@ -23,15 +23,16 @@ abstract class COSSolver extends CompetitionApp with App{
     //Parsing the instance
     printComment("Parsing instance...")
     val parsingResult = try {
-      val (vars, solutionGenerator) = XCSP3Parser2.parse(md, conf.benchname())
+      val (decisionVars, auxiliaryVars, solutionGenerator) = XCSP3Parser2.parse2(md, conf.benchname())
 
       val model: CPModel = CPInstantiate(md.getCurrentModel.asInstanceOf[UninstantiatedModel])
       md.setCurrentModel(model)
 
-      val cpVars: Array[CPIntVar] = vars.map(model.getRepresentative(_).realCPVar)
+      val cpDecisionVars: Array[CPIntVar] = decisionVars.map(model.getRepresentative(_).realCPVar)
+      val cpAuxiliaryVars: Array[CPIntVar] = auxiliaryVars.map(model.getRepresentative(_).realCPVar)
       val solver: CPSolver = model.cpSolver
 
-      Some(cpVars, solver, solutionGenerator)
+      Some(cpDecisionVars, cpAuxiliaryVars, solver, solutionGenerator)
     }catch {
       case _: NotImplementedError =>
         status = "UNSUPPORTED"
@@ -50,7 +51,8 @@ abstract class COSSolver extends CompetitionApp with App{
     }
 
     if (parsingResult.isDefined){
-      val (vars, solver, solutionGenerator) = parsingResult.get
+      val (decisionVars, auxiliaryVars, solver, solutionGenerator) = parsingResult.get
+      val vars = decisionVars ++ auxiliaryVars
       solver.silent = true
 
       val timeout = ((conf.timelimit() -5).toLong * 1000000000L) - (System.nanoTime() - tstart)
@@ -73,7 +75,7 @@ abstract class COSSolver extends CompetitionApp with App{
 
       printComment("Parsing done, starting search...")
 
-      val stats = startSearch(solver, stopCondition, vars, maximizeObjective)
+      val stats = startSearch(solver, stopCondition, decisionVars, auxiliaryVars, maximizeObjective)
 
       if (sols.nonEmpty){
         if(maximizeObjective.isDefined && (optimumFound || stats.completed)) status = "OPTIMUM FOUND"
@@ -84,13 +86,22 @@ abstract class COSSolver extends CompetitionApp with App{
     }
   }
 
-  def startSearch(solver: CPSolver, stopCondition : DFSearch => Boolean, vars: Array[CPIntVar], maximizeObjective: Option[Boolean]) = {
+  def startSearch(solver: CPSolver, stopCondition : DFSearch => Boolean, decisionVars: Array[CPIntVar], auxiliaryVars: Array[CPIntVar], maximizeObjective: Option[Boolean]) = {
     solver.startSubjectTo(stopCondition, Int.MaxValue, null){
       solver.search(
-        conflictOrderingSearch(
-          vars,
-          i => vars(i).size,
-          learnValueHeuristic(vars, if(maximizeObjective.isDefined) if(maximizeObjective.get) vars(_).min else vars(_).max else vars(_).max)
+        if(auxiliaryVars.isEmpty) conflictOrderingSearch(
+          decisionVars,
+          i => decisionVars(i).size,
+          learnValueHeuristic(decisionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) decisionVars(_).min else decisionVars(_).max else decisionVars(_).max)
+        )
+        else conflictOrderingSearch(
+          decisionVars,
+          i => decisionVars(i).size,
+          learnValueHeuristic(decisionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) decisionVars(_).min else decisionVars(_).max else decisionVars(_).max)
+        ) ++ conflictOrderingSearch(
+          auxiliaryVars,
+          i => auxiliaryVars(i).size,
+          learnValueHeuristic(auxiliaryVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) auxiliaryVars(_).min else auxiliaryVars(_).max else auxiliaryVars(_).max)
         )
       )
     }

@@ -13,10 +13,16 @@ import scala.util.Random
 /**
   * Adaptive lage neighbourhood search implementation.
   */
-class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearch(solver, vars, config){
+class ALNSSearchImpl(solver: CPSolver, decisionVars: Array[CPIntVar], auxiliaryVars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearch(solver, decisionVars, config){
   var startTime: Long = System.nanoTime()
   var iter: Long = 1L
   val history: mutable.ArrayBuffer[(Long, String, Double)] = mutable.ArrayBuffer()
+
+  def this(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
+    this(solver, vars, Array[CPIntVar](), config)
+  }
+
+  val vars: Array[CPIntVar] = decisionVars ++ auxiliaryVars
 
   //Stop conditions:
   val endTime: Long = if(config.timeout > 0) System.nanoTime() + config.timeout else Long.MaxValue //Maximal allocated time
@@ -96,7 +102,9 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
     nSols = 1
 
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
-      solver.search(SearchFunctions.conflictOrdering(vars, if(maximizeObjective.isDefined) if(maximizeObjective.get) "Min" else "Max"  else "Max", valLearn = false))
+      if(auxiliaryVars.nonEmpty) solver.search(SearchFunctions.conflictOrdering(decisionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) "Min" else "Max"  else "Max", valLearn = false) ++
+        SearchFunctions.conflictOrdering(auxiliaryVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) "Min" else "Max"  else "Max", valLearn = false))
+      else solver.search(SearchFunctions.conflictOrdering(decisionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) "Min" else "Max"  else "Max", valLearn = false))
     }
 
     nSols = defaultNSols
@@ -230,6 +238,8 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
 
     if(math.abs(newObjective - searchObjective) > 0) stagnation = 0
     else stagnation += 1
+
+    if(stats.completed && relax.name == ALNSBuilder.FullRelax) optimumFound = true
 
     if (!solver.silent){
       if(!relaxDone) println("Search space empty, search not applied, improvement: " + improvement)

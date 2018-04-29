@@ -6,7 +6,7 @@ import oscar.xcsp3.competition.solvers.resources.COSSolver
 
 object ConfOrderSolverWithRestarts extends COSSolver {
 
-  override def startSearch(solver: CPSolver, stopCondition: DFSearch => Boolean, vars: Array[CPIntVar], maximizeObjective: Option[Boolean]): SearchStatistics = {
+  override def startSearch(solver: CPSolver, stopCondition: DFSearch => Boolean, decsionVars: Array[CPIntVar], auxiliaryVars: Array[CPIntVar], maximizeObjective: Option[Boolean]): SearchStatistics = {
 
     val initialTimeLimit : Long = 1000000000L
     var restartTimeLimit : Long = initialTimeLimit
@@ -28,11 +28,22 @@ object ConfOrderSolverWithRestarts extends COSSolver {
     val rand = new scala.util.Random(42)
 
     solver.search(
-      conflictOrderingSearch(
-        vars,
-        i => vars(i).size,
-//        learnValueHeuristic(vars, if(maximizeObjective.isDefined) if(maximizeObjective.get) vars(_).max else vars(_).min else vars(_).max)
-        learnValueHeuristic(vars, if(maximizeObjective.isDefined) if(maximizeObjective.get) vars(_).randomValue(rand) else vars(_).randomValue(rand) else vars(_).randomValue(rand))
+      if(auxiliaryVars.isEmpty) conflictOrderingSearch(
+        decsionVars,
+        i => decsionVars(i).size,
+//        learnValueHeuristic(decsionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) decsionVars(_).max else decsionVars(_).min else decsionVars(_).max)
+        learnValueHeuristic(decsionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) decsionVars(_).randomValue(rand) else decsionVars(_).randomValue(rand) else decsionVars(_).randomValue(rand))
+      )
+      else conflictOrderingSearch(
+        decsionVars,
+        i => decsionVars(i).size,
+//        learnValueHeuristic(decsionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) decsionVars(_).max else decsionVars(_).min else decsionVars(_).max)
+        learnValueHeuristic(decsionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) decsionVars(_).randomValue(rand) else decsionVars(_).randomValue(rand) else decsionVars(_).randomValue(rand))
+      ) ++ conflictOrderingSearch(
+        auxiliaryVars,
+        i => auxiliaryVars(i).size,
+//        learnValueHeuristic(auxiliaryVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) auxiliaryVars(_).max else auxiliaryVars(_).min else auxiliaryVars(_).max)
+        learnValueHeuristic(auxiliaryVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) auxiliaryVars(_).randomValue(rand) else auxiliaryVars(_).randomValue(rand) else auxiliaryVars(_).randomValue(rand))
       )
     )
 
