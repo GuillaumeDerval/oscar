@@ -381,16 +381,19 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[Int], occurs: Array[Int]): Unit = {
+    for(elem <- list) decisionVars.add(elem.id())
     val cst = GCC(list.map(i => varHashMap(i.id())), values, occurs, occurs)
     modelDeclaration.add(cst)
   }
 
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[Int], occursMin: Array[Int], occursMax: Array[Int]): Unit = {
+    for(elem <- list) decisionVars.add(elem.id())
     val cst = GCC(list.map(i => varHashMap(i.id())), values, occursMin, occursMax)
     modelDeclaration.add(cst)
   }
 
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[Int], occurs: Array[XVarInteger]): Unit = {
+    for(elem <- list) decisionVars.add(elem.id())
     val cst = GCC(list.map(i => varHashMap(i.id())), values, occurs.map(i => varHashMap(i.id())))
     modelDeclaration.add(cst)
   }
