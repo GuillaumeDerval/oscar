@@ -1,7 +1,6 @@
 package oscar.cbls.core.propagation.draft
 
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.core.propagation.draft.thread.{MultiThreadRunner, MultiTreadingPartitioningAlgo}
 
 class PropagationStructure(val nbSystemThread:Int,val guaranteedAcyclic:Boolean) extends SimpleSchedulingHandler() {
 
@@ -81,14 +80,8 @@ class PropagationStructure(val nbSystemThread:Int,val guaranteedAcyclic:Boolean)
     new PropagationStructurePartitionner(this).partitionIntoSchedulingHandlers()
 
     //create runner and multiThreaded partition (if multi-treading)
-    runner = if (nbSystemThread == 1) {
-      new MonoThreadRunner(nbLayer,false)
-    } else {
-      new MultiThreadRunner(nbSystemThread,
-        new MultiTreadingPartitioningAlgo(
-          layerToClusteredPropagationElements,
-          layerToNbClusteredPropagationElements).partitionGraphIntoThreads())
-    }
+    runner = new LayerSortRunner(nbLayer,false)
+
     for (sh <- allSchedulingHandlersNotSCC) {
       sh.runner = runner
     }

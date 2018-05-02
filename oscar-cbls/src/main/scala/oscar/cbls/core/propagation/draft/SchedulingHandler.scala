@@ -51,7 +51,6 @@ class SimpleSchedulingHandler() extends AbstractSchedulingHandler {
   }
 
   def scheduleSHForPropagation(sh:SimpleSchedulingHandler,isStillValid:()=>Boolean){
-    this.synchronized {
       scheduledSHChildren = QList(new ScheduledSHAndValidityTest(sh,isStillValid), scheduledSHChildren)
       if (isRunning) {
         //We are actually propagating
@@ -60,7 +59,6 @@ class SimpleSchedulingHandler() extends AbstractSchedulingHandler {
         scheduleMyselfForPropagation()
       }
     }
-  }
 
   protected def scheduleMyselfForPropagation(): Unit ={
     if(!isScheduled){

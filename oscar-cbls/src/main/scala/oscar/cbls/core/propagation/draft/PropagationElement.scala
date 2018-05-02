@@ -5,28 +5,6 @@ import oscar.cbls.algo.dag.DAGNode
 import oscar.cbls.algo.dll.{DPFDLLStorageElement, DelayedPermaFilteredDoublyLinkedList}
 import oscar.cbls.algo.quick.QList
 
-
-object PropagationImpactCharacteristics extends Enumeration{
-  type PropagationImpactCharacteristics = Value
-  val NoPropagationNotificationReceivedNoNotificationEmitted,
-  NotificationOnPropagateNoNotificationReceived,
-  BulkElementNotificationBehavior,
-  SCCNotificationBehavior,
-  NotificationOnNotifyNoPropagate,
-  NotificationOnNotifyAndPropagate,
-  NotificationOnPropagateReceivesNotification
-  = Value
-
-  //Variables: NotificationOnPropagate
-  //invariants classiques NotificationOnNotifyAndPropagate, si pas de propagate, alors NotificationOnNotify
-  //IntInvariants NotificationOnPropagate (comme les variables en  fait) mais NotificationOnNotifyAndPropagate si ils ont plus de sorties
-  //events NotificationOnNotifyAndPropagate
-  //bulk BulkElement
-}
-
-import oscar.cbls.core.propagation.draft.PropagationImpactCharacteristics._
-
-
 abstract class PropagationElement(val varyingDependencies:Boolean) extends DAGNode {
 
   var uniqueID = -1 //DAG node already have this kind of stuff

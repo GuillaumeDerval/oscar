@@ -45,7 +45,7 @@ abstract class Runner(threadSafe:Boolean) {
   def runSH(upTo:SimpleSchedulingHandler)
 }
 
-class NaiveMonoThreadRunner(nbPe:Int,threadSafe:Boolean) extends Runner(threadSafe){
+class TotalOrderRunner(nbPe:Int, threadSafe:Boolean) extends Runner(threadSafe){
 
   private [this] val h: BinomialHeap[PropagationElement] = new BinomialHeap[PropagationElement](p => p.layer, nbPe)
 
@@ -67,7 +67,7 @@ class NaiveMonoThreadRunner(nbPe:Int,threadSafe:Boolean) extends Runner(threadSa
   }
 }
 
-class MonoThreadRunner(nbLayers:Int,threadSafe:Boolean) extends Runner(threadSafe){
+class LayerSortRunner(nbLayers:Int, threadSafe:Boolean) extends Runner(threadSafe){
 
   @inline
   override protected def enqueuePENS(pe: PropagationElement){
