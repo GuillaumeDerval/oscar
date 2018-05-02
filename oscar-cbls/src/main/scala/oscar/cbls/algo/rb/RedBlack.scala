@@ -42,6 +42,8 @@ private object RedBlackTreeMapLib{
   }
 }
 
+class IntVCouple[@specialized V](val k:Int,val value:V)
+
 import oscar.cbls.algo.rb.RedBlackTreeMapLib._
 
 //must use trait here because of specialization, a trait is needed here.
@@ -72,7 +74,7 @@ trait RedBlackTreeMap[@specialized(Int) V]{
 
   def biggestLowerOrEqual(k:Int):Option[(Int,V)]
 
-  protected[rb] def getBiggestLowerAcc(k:Int, bestKSoFar:Int,bestVSoFar:V):(Int,V)
+  protected[rb] def getBiggestLowerAcc(k:Int, bestKSoFar:Int,bestVSoFar:V):IntVCouple[V]
 
   def smallestBiggerOrEqual(k:Int):Option[(Int,V)]
 
@@ -84,7 +86,7 @@ trait RedBlackTreeMap[@specialized(Int) V]{
 
   def smallestPosition:Option[RedBlackTreeMapExplorer[V]]
 
-  protected[rb] def getSmallestBiggerAcc(k:Int, bestSoFar:(Int,V)):Option[(Int,V)]
+  protected[rb] def getSmallestBiggerAcc(k:Int, bestKSoFar:Int, bestVSoFar:V):IntVCouple[V]
 
   // insert: Insert a value at a key.
   def insert (k : Int, v : V) : RedBlackTreeMap[V]
@@ -102,6 +104,9 @@ trait RedBlackTreeMap[@specialized(Int) V]{
 
   def keys:List[Int]
   protected [rb] def keysAcc(keysAfter:List[Int]):List[Int]
+
+  def qKeys:QList[Int]
+  protected [rb] def qKeysAcc(keysAfter:QList[Int]):QList[Int]
 
   def positionOf(k: Int):Option[RedBlackTreeMapExplorer[V]]
   protected[rb] def positionOfAcc(k:Int,positionAcc:QList[(T[V],Boolean)]):Option[RedBlackTreeMapExplorer[V]]
@@ -164,11 +169,11 @@ case class L[@specialized(Int) V]() extends RedBlackTreeMap[V]  {
 
   def biggestLowerOrEqual(k:Int):Option[(Int,V)] = None
 
-  override protected[rb] def getBiggestLowerAcc(k:Int, bestKSoFar:Int,bestVSoFar:V) = (bestKSoFar,bestVSoFar)
+  override protected[rb] def getBiggestLowerAcc(k:Int, bestKSoFar:Int,bestVSoFar:V):IntVCouple[V] = new IntVCouple[V](bestKSoFar,bestVSoFar)
 
   override def smallestBiggerOrEqual(k: Int):Option[(Int,V)] = None
 
-  override protected[rb] def getSmallestBiggerAcc(k: Int, bestSoFar: (Int, V)) = Some(bestSoFar)
+  override protected[rb] def getSmallestBiggerAcc(k:Int, bestKSoFar:Int, bestVSoFar:V) = new IntVCouple(bestKSoFar,bestVSoFar)
 
   override def size: Int = 0
   override def isEmpty = true
@@ -176,6 +181,7 @@ case class L[@specialized(Int) V]() extends RedBlackTreeMap[V]  {
   protected [rb] def valuesAcc(valuesAfter:List[V]):List[V] = valuesAfter
   protected [rb] def contentAcc(valuesAfter:List[(Int,V)]):List[(Int,V)] = valuesAfter
   protected [rb] def keysAcc(keysAfter:List[Int]):List[Int] = keysAfter
+  override protected[rb] def qKeysAcc(keysAfter: QList[Int]): QList[Int] = keysAfter
 
   protected[rb] override def positionOfAcc(k : Int, positionAcc : QList[(T[V],Boolean)]) : Option[RedBlackTreeMapExplorer[V]] = None
 
@@ -186,6 +192,8 @@ case class L[@specialized(Int) V]() extends RedBlackTreeMap[V]  {
   def content:List[(Int,V)] = List.empty
 
   override def keys : List[Int] = List.empty
+
+  override def qKeys: QList[Int] = null
 
   override def positionOf(k: Int):Option[RedBlackTreeMapExplorer[V]] = None
 
@@ -259,26 +267,30 @@ class T[@specialized(Int) V](private[this]val c : Boolean,
 
   def biggestLowerOrEqual(k:Int):Option[(Int,V)] = {
     if (k < this.k) l.biggestLowerOrEqual(k)
-    else if (this.k < k) Some(r.getBiggestLowerAcc(k,this.k,v.get))
-    else Some(k,v.get)
+    else if (this.k < k){
+      val result = r.getBiggestLowerAcc(k,this.k,v.get)
+      Some((result.k,result.value))
+    }else Some(k,v.get)
   }
 
-  override protected[rb] def getBiggestLowerAcc(k:Int, bestKSoFar:Int, bestVSoFar:V):(Int,V) = {
+  override protected[rb] def getBiggestLowerAcc(k:Int, bestKSoFar:Int, bestVSoFar:V):IntVCouple[V] = {
     if (k < this.k) l.getBiggestLowerAcc(k, bestKSoFar, bestVSoFar)
     else if (this.k < k) r.getBiggestLowerAcc(k, this.k, v.get)
-    else (k,v.get)
+    else new IntVCouple(k,v.get)
   }
 
   override def smallestBiggerOrEqual(k: Int):Option[(Int,V)] = {
-    if (k < this.k) l.getSmallestBiggerAcc(k, (this.k, v.get))
-    else if (this.k < k) r.smallestBiggerOrEqual(k)
+    if (k < this.k) {
+      val result = l.getSmallestBiggerAcc(k, this.k, v.get)
+      Some((result.k,result.value))
+    } else if (this.k < k) r.smallestBiggerOrEqual(k)
     else Some(k,v.get)
   }
 
-  override protected[rb] def getSmallestBiggerAcc(k: Int, bestSoFar: (Int,V)):Option[(Int,V)] = {
-    if (k < this.k) l.getSmallestBiggerAcc(k, (this.k, v.get))
-    else if (this.k < k) r.getSmallestBiggerAcc(k, bestSoFar)
-    else Some(k,v.get)
+  override protected[rb] def getSmallestBiggerAcc(k:Int, bestKSoFar:Int, bestVSoFar:V):IntVCouple[V] = {
+    if (k < this.k) l.getSmallestBiggerAcc(k, this.k, v.get)
+    else if (this.k < k) r.getSmallestBiggerAcc(k, bestKSoFar:Int, bestVSoFar:V)
+    else new IntVCouple(k,v.get)
   }
 
   override protected[rb] def modWith (k : Int, f : (Int, Option[V]) => Option[V]) : RedBlackTreeMap[V] = {
@@ -303,9 +315,11 @@ class T[@specialized(Int) V](private[this]val c : Boolean,
 
   override protected[rb] def valuesAcc(valuesAfter : List[V]) : List[V] = l.valuesAcc(v.get :: r.valuesAcc(valuesAfter))
 
-  protected [rb] def contentAcc(valuesAfter:List[(Int,V)]):List[(Int,V)] = l.contentAcc((k,v.get) :: r.contentAcc(valuesAfter))
+  override protected [rb] def contentAcc(valuesAfter:List[(Int,V)]):List[(Int,V)] = l.contentAcc((k,v.get) :: r.contentAcc(valuesAfter))
 
-  protected [rb] def keysAcc(keysAfter:List[Int]):List[Int] = l.keysAcc(k :: r.keysAcc(keysAfter))
+  override protected [rb] def keysAcc(keysAfter:List[Int]):List[Int] = l.keysAcc(k :: r.keysAcc(keysAfter))
+
+  override protected[rb] def qKeysAcc(keysAfter: QList[Int]): QList[Int] = l.qKeysAcc(QList(k,r.qKeysAcc(keysAfter)))
 
   protected[rb] override def positionOfAcc(k : Int, positionAcc : QList[(T[V],Boolean)]) : Option[RedBlackTreeMapExplorer[V]] = {
     if (k < this.k) l.positionOfAcc(k, QList((this,false),positionAcc))
@@ -322,6 +336,8 @@ class T[@specialized(Int) V](private[this]val c : Boolean,
   override def content : List[(Int, V)] = contentAcc(List.empty)
 
   override def keys : List[Int] = keysAcc(List.empty)
+
+  override def qKeys:QList[Int] = qKeysAcc(null)
 
   override def positionOf(k: Int):Option[RedBlackTreeMapExplorer[V]] = positionOfAcc(k:Int,null)
 

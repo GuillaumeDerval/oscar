@@ -250,8 +250,7 @@ object SeqUpdateRemove {
   def apply(position : Int, prev : SeqUpdate, seq:IntSequence):SeqUpdate = {
     prev match {
       case SeqUpdateInsert(insertedValue:Int,insertPos:Int,insertPrev:SeqUpdate)
-        if insertPos == position
-        //NB: must check first for pos to avoid error on .head
+        if insertPrev.newValue quickEquals seq //comparison must be on quickequals since this is the stuff used for checkpoint cleaning
       => insertPrev
       case _ => new SeqUpdateRemove(position,prev,seq)
     }
@@ -946,7 +945,7 @@ et cette stack doit être mise à jour au moment de la notification.
     * @note You do not need to be at the top checkpoint value to call this, you can do it later no worries.
     */
   protected def releaseTopCheckpoint() {
-    require(topCheckpoint != null)
+    require(topCheckpoint != null, "No checkpoint defined to release")
     require(levelOfTopCheckpoint >= 0)
 
     //  println("changing seq got release top checkpoint current level is: " + levelOfTopCheckpoint)
@@ -1280,7 +1279,7 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
 
   private def popTopCheckpoint(){
     checkPointStackNotTop match{
-      case (cp) :: tail =>
+      case cp :: tail =>
         topCheckpoint = cp
         checkPointStackNotTop = tail
         assert(levelTopCheckpoint +1 == checkPointStackNotTop.size)

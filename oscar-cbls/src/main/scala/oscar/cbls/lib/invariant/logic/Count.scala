@@ -14,13 +14,6 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  * ****************************************************************************
  */
-/**
- * *****************************************************************************
- * Contributors:
- *     This code has been initially developed by CETIC www.cetic.be
- *         by Renaud De Landtsheer
- * ****************************************************************************
- */
 
 package oscar.cbls.lib.invariant.logic
 
