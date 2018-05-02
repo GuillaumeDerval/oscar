@@ -298,7 +298,6 @@ class PropagationStructurePartitionner(p:PropagationStructure){
           }
         }
       }
-
     }
   }
 }

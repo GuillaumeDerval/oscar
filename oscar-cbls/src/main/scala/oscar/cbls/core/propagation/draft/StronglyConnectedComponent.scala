@@ -5,11 +5,11 @@ import oscar.cbls.algo.quick.QList
 
 class StronglyConnectedComponent(val propagationElements:QList[PropagationElement],
                                  nbPE:Int,
-                                 override val model:PropagationStructure, threadSafe:Boolean)
+                                 override val model:PropagationStructure)
   extends PropagationElement(false)
     with AbstractSchedulingHandler{
 
-  private[this] val myRunner = new TotalOrderRunner(nbPE,threadSafe)
+  private[this] val myRunner = new TotalOrderRunner(nbPE)
   private[this] val mySchedulingHandler = new SimpleSchedulingHandler()
   mySchedulingHandler.runner = myRunner
 

@@ -17,7 +17,6 @@ abstract class PropagationElement(val varyingDependencies:Boolean) extends DAGNo
   def scc:StronglyConnectedComponent = myScc
 
   var layer:Int = -1
-  var threadID:Int = -1
 
   // //////////////////////////////////////////////////////////////////////
   //static propagation graph
