@@ -5,6 +5,27 @@ import oscar.cbls.algo.dag.DAGNode
 import oscar.cbls.algo.dll.{DPFDLLStorageElement, DelayedPermaFilteredDoublyLinkedList}
 import oscar.cbls.algo.quick.QList
 
+
+trait PseudoPropagationElement {
+  def registerStaticallyListeningElement(listeningElement: PropagationElement)
+  def registerDynamicallyListeningElement(listeningElement:PropagationElement,
+                                          id:Int,
+                                          determiningPermanentDependency:Boolean): KeyForDynamicDependencyRemoval
+}
+
+trait InactivePropagationElement extends PseudoPropagationElement{
+  override def registerStaticallyListeningElement(listeningElement: PropagationElement): Unit = {}
+
+  override def registerDynamicallyListeningElement(listeningElement: PropagationElement,
+                                                   id: Int,
+                                                   determiningPermanentDependency: Boolean): KeyForDynamicDependencyRemoval = ???
+}
+
+
+trait VaryingDependency extends PropagationElement{
+
+}
+
 abstract class PropagationElement(val varyingDependencies:Boolean) extends DAGNode {
 
   var uniqueID = -1 //DAG node already have this kind of stuff
@@ -13,7 +34,7 @@ abstract class PropagationElement(val varyingDependencies:Boolean) extends DAGNo
   var model:PropagationStructure = null
 
   private[this] var myScc:StronglyConnectedComponent = null
- //We have a getter because a specific setter is define herebelow
+  //We have a getter because a specific setter is define herebelow
   def scc:StronglyConnectedComponent = myScc
 
   var layer:Int = -1
@@ -28,7 +49,7 @@ abstract class PropagationElement(val varyingDependencies:Boolean) extends DAGNo
     * they might register with dynamic dependency to the invocation target
     * @param listeningElement
     */
-  protected def registerStaticallyListeningElement(listeningElement: PropagationElement) {
+  def registerStaticallyListeningElement(listeningElement: PropagationElement) {
     staticallyListeningElements = QList(listeningElement,staticallyListeningElements)
     listeningElement.staticallyListenedElements = QList(this,listeningElement.staticallyListenedElements)
   }
@@ -42,33 +63,25 @@ abstract class PropagationElement(val varyingDependencies:Boolean) extends DAGNo
   val dynamicallyListeningElements: DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)]
   = new DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)]
 
-  var determiningElement:PropagationElement = null
-
   /**
     * a PE that listens to another PE should call this method on the PE it listens
-    * @param listeningElement the one that listens
-    * @param id
-    * @param determiningPermanentDependency
-    * @return
     */
-  def registerDynamicallyListeningElement(listeningElement:PropagationElement,
-                                          id:Int,
-                                          determiningPermanentDependency:Boolean): KeyForDynamicDependencyRemoval = {
+  def registerTemporaryDynamicDependency(listeningElement:PropagationElement,
+                                         id:Int): KeyForDynamicDependencyRemoval = {
 
-    val toReturn = new KeyForDynamicDependencyRemoval(
-      this.dynamicallyListeningElements.addElem((listeningElement,id)),
-      listeningElement.dynamicallyListenedElements.addElem(this))
+    require(listeningElement.varyingDependencies, "cannot register with temporary dependency if no varying dependencies")
+    new KeyForDynamicDependencyRemoval(
+      this.dynamicallyListeningElements.addElem((listeningElement,id)), {
+        val targetList = listeningElement.dynamicallyListenedElements
+        if (targetList != null) targetList.addElem(this) else null
+      })
+  }
 
-    if(determiningPermanentDependency){
-      require(listeningElement.varyingDependencies, "cannot register with determining dependency if no varying dependencies")
-      require(listeningElement.determiningElement == null)
-      listeningElement.determiningElement = this
-      null
-    }else if (listeningElement.varyingDependencies){
-      toReturn
-    }else{
-      null //we do not return the key when listener has no varying dependency
-    }
+  def registerPermanentDynamicDependency(listeningElement:PropagationElement,
+                                         id:Int){
+    this.dynamicallyListeningElements.addElem((listeningElement,id))
+    val targetList = listeningElement.dynamicallyListenedElements
+    if (targetList != null) targetList.addElem(this)
   }
 
   // //////////////////////////////////////////////////////////////////////
@@ -115,6 +128,13 @@ abstract class PropagationElement(val varyingDependencies:Boolean) extends DAGNo
   }
 
   // ////////////////////////////////////////////////////////////////////////
+  // to spare on memory (since we have somewhat memory consuming PE
+  def dropUselessGraphAfterClose(): Unit ={
+    staticallyListenedElements = null
+    staticallyListeningElements = null
+  }
+
+  // ////////////////////////////////////////////////////////////////////////
   // api about scheduling and propagation
 
   def scheduleMyselfForPropagation(): Unit ={
@@ -141,7 +161,7 @@ abstract class PropagationElement(val varyingDependencies:Boolean) extends DAGNo
     }
   }
 
-  protected def performPropagation() = ???
+  protected def performPropagation():Unit = ???
 }
 
 

@@ -393,8 +393,6 @@ trait Invariant extends PropagationElement{
     }
   }
 
-  //TODO: les méthodes d'enregistrement doivent être recopiées dans les varyingDependenciesInvariants
-
   /**Call this from within the invariant to notify that you will listen to this variable.
     * The variable must be registered in the static propagation graph.
     * You CANNOT register a variable twice. It is undetected, but will lead to unexpected behavior.
