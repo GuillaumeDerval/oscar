@@ -254,8 +254,7 @@ object SeqUpdateRemove {
   def apply(position : Int, prev : SeqUpdate, seq:IntSequence):SeqUpdate = {
     prev match {
       case SeqUpdateInsert(insertedValue:Int,insertPos:Int,insertPrev:SeqUpdate)
-        if insertPos == position
-        //NB: must check first for pos to avoid error on .head
+        if insertPrev.newValue quickEquals seq //comparison must be on quickequals since this is the stuff used for checkpoint cleaning
       => insertPrev
       case _ => new SeqUpdateRemove(position,prev,seq)
     }
