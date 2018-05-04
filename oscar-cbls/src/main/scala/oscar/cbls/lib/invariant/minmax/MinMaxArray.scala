@@ -24,6 +24,7 @@ package oscar.cbls.lib.invariant.minmax
 import oscar.cbls.algo.heap.BinomialHeapWithMoveInt
 import oscar.cbls._
 import oscar.cbls.core._
+import oscar.cbls.core.computation.DomainRange
 
 import scala.collection.immutable.SortedSet
 
@@ -43,10 +44,7 @@ case class MaxArray(varss: Array[IntValue], cond: SetValue = null, default: Int 
 
   //More precise bounds
   override def performBulkComputation(bulkedVar: Array[IntValue]) =
-    if (cond == null){
-      (bulkedVar.foldLeft(Int.MinValue)((acc, intvar) => if (intvar.min > acc) intvar.min else acc),
-        bulkedVar.foldLeft(Int.MinValue)((acc, intvar) => if (intvar.max > acc) intvar.max else acc))
-    }else super.performBulkComputation(bulkedVar)
+    super.performBulkComputation(bulkedVar)
 
   override def checkInternals(c: Checker) {
     for (v <- this.varss) {
@@ -72,10 +70,7 @@ case class MinArray(varss: Array[IntValue], cond: SetValue = null, default: Int 
 
   //More precise bounds
   override def performBulkComputation(bulkedVar: Array[IntValue]) =
-    if (cond == null){
-      (bulkedVar.foldLeft(Int.MaxValue)((acc, intvar) => if (intvar.min < acc) intvar.min else acc),
-        bulkedVar.foldLeft(Int.MaxValue)((acc, intvar) => if (intvar.max < acc) intvar.max else acc))
-    }else super.performBulkComputation(bulkedVar)
+    super.performBulkComputation(bulkedVar)
 
   override def checkInternals(c: Checker) {
     for (v <- this.varss) {
@@ -94,10 +89,10 @@ case class MinArray(varss: Array[IntValue], cond: SetValue = null, default: Int 
  * @author renaud.delandtsheer@cetic.be
  * */
 abstract class MiaxArray(vars: Array[IntValue], cond: SetValue, default: Int)
-  extends IntInvariant with Bulked[IntValue, Domain]
+  extends IntInvariant(default) with Bulked[IntValue, Domain]
   with VaryingDependencies
   with IntNotificationTarget
-with SetNotificationTarget{
+with SetNotificationTarget {
 
   var keyForRemoval: Array[KeyForElementRemoval] = new Array(vars.length)
   var h: BinomialHeapWithMoveInt = new BinomialHeapWithMoveInt(i => Ord(vars(i)), vars.length, vars.length)
@@ -108,10 +103,10 @@ with SetNotificationTarget{
   }
 
   /**
-   * since the value of the bulkcomputationResult depends on the presence or absence of cond,
-   * we register two bcr, so that you can join the correct bulk whataver happens.
-   */
-  restrictDomain(bulkRegister(vars,if (cond == null) 0 else 1).union(default))
+    * since the value of the bulkcomputationResult depends on the presence or absence of cond,
+    * we register two bcr, so that you can join the correct bulk whataver happens.
+    */
+  restrictDomain(bulkRegister(vars, if (cond == null) 0 else 1).union(default))
 
   if (cond != null) {
     for (i <- cond.value) {
@@ -127,8 +122,10 @@ with SetNotificationTarget{
 
   finishInitialization()
 
-  override def performBulkComputation(bulkedVar: Array[IntValue]) =
-    InvariantHelper.getMinMaxBounds(bulkedVar)
+  override def performBulkComputation(bulkedVar: Array[IntValue]) = {
+    val (min,max) = InvariantHelper.getMinMaxBounds(bulkedVar)
+    DomainRange(min,max)
+  }
 
   def ExtremumName: String
   def Ord(v: IntValue): Int

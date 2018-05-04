@@ -295,7 +295,7 @@ class FZCBLSBuilder extends LinearSelectors with StopWatch {
           log("Objective dom is: " + objDom)
           cblsmodel.objective.violationWeight := 1
           cblsmodel.objective.objectiveWeight := 1
-          cblsmodel.objective.objectiveVar.asInstanceOf[ChangingIntValue].relaxDomain(objDom.get)
+          cblsmodel.objective.objectiveVar.asInstanceOf[ChangingIntValue].overrideDomain(objDom.get)
           cblsmodel.objective.bound.get := (fzModel.search.obj match {
             case Objective.MAXIMIZE => cblsmodel.objective.objectiveVar.min
             case Objective.MINIMIZE => cblsmodel.objective.objectiveVar.max
