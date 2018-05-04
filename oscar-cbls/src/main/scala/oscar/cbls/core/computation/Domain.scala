@@ -65,6 +65,8 @@ sealed abstract class Domain extends Iterable[Int]{
   def union(d:Domain):Domain
 
   override def iterator: Iterator[Int] = values.iterator
+
+  override def isEmpty: Boolean = size == 0
 }
 
 

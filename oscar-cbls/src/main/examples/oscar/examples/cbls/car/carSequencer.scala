@@ -88,7 +88,7 @@ object carSequencer  extends CBLSModel with App {
   println("starting search")
 
   val search =
-    (Profile(swapsNeighborhood(carSequence,"mostViolatedSwap", searchZone2 = (_,_) => mostViolatedCars.value, symmetryCanBeBrokenOnIndices = false))
+    (Profile(swapsNeighborhood(carSequence,"mostViolatedSwap", searchZone2 = () => {val v = mostViolatedCars.value; (_,_) => v}, symmetryCanBeBrokenOnIndices = false))
       exhaust Profile(WideningFlipNeighborhood(carSequence)) //it seems useless to try swaps once flip is exhausted, so simple exhaust is used here
       onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")) guard(() => mostViolatedCars.value.size > 2), 2, obj)
       onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => 5 max (violatedCars.value.size/2))), 2, obj)

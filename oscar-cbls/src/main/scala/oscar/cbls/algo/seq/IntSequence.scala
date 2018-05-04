@@ -295,8 +295,8 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
       case None => null
       case Some(internalPositions) =>
         var toReturn:QList[Int] = null
-        var toDigest:List[Int] = internalPositions.keys
-        while(toDigest.nonEmpty){
+        var toDigest:QList[Int] = internalPositions.qKeys
+        while(toDigest != null){
           toReturn = QList(externalToInternalPosition.backward(toDigest.head),toReturn)
           toDigest = toDigest.tail
         }

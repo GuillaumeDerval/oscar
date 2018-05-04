@@ -107,7 +107,7 @@ object WareHouseLocationVisu extends App with StopWatch{
 
   def swapsK(k:Int,openWarehoueseTocConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
     searchZone1 = openWarehoueseTocConsider,
-    searchZone2 = (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
+    searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
     name = "Swap" + k + "Nearest",
     symmetryCanBeBrokenOnIndices = false)
 

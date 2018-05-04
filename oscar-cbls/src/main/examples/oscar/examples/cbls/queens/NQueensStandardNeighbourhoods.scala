@@ -51,7 +51,7 @@ object NQueensStandardNeighbourhoods extends CBLSModel with App with StopWatch{
   println("close: " + this.getWatch + " [ms]")
   val neighborhood =
     swapsNeighborhood(queens, "SwapQueens",
-      searchZone2 = (_,_) => maxViolQueens.value, //much faster than using searchZone1, since hotRestart is on Zone1, and not on zone2, and would be log(n)
+      searchZone2 = () => {val v = maxViolQueens.value; (_,_) => v}, //much faster than using searchZone1, since hotRestart is on Zone1, and not on zone2, and would be log(n)
       symmetryCanBeBrokenOnIndices = false) //since one search zone has been specified, and the other is the full range
 
   val it = neighborhood.doAllMoves(_ >= N || c.violation.value == 0, c)

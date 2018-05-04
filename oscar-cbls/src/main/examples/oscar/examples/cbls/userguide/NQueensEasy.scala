@@ -44,7 +44,7 @@ object NQueensEasy extends CBLSModel with App{
 
   val neighborhood =
     swapsNeighborhood(queens, "SwapQueens",
-      searchZone2 = (_,_) => maxViolQueens.value,
+      searchZone2 = () => {val v = maxViolQueens.value; (_,_) => v},
       symmetryCanBeBrokenOnIndices = false)
 
   close()

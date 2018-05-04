@@ -136,7 +136,7 @@ trait StandardNeighborhoods {
   def swapsNeighborhood(vars:Array[CBLSIntVar],
                         name:String = "SwapsNeighborhood",
                         searchZone1:()=>Iterable[Int] = null,
-                        searchZone2:(Int,Int)=>Iterable[Int] = null,
+                        searchZone2:() => (Int,Int)=>Iterable[Int] = null,
                         symmetryCanBeBrokenOnIndices:Boolean = true,
                         symmetryCanBeBrokenOnValue:Boolean = false,
                         selectFirstVariableBehavior:LoopBehavior = First(),
