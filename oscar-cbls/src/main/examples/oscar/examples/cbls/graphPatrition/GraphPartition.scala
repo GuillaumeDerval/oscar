@@ -1,7 +1,7 @@
 package oscar.examples.cbls.graphPatrition
 
 import oscar.cbls._
-import oscar.cbls.lib.invariant.logic.DenseCount
+import oscar.cbls.lib.invariant.logic.{DenseCount, Int2Int}
 import oscar.cbls.modeling._
 
 import scala.util.Random
@@ -13,7 +13,7 @@ object GraphPartition extends CBLSModel with App {
 
   //try with nbNodes = 50000 nbEdges = nbNodes*3
 
-  require(nbNodes % 2 == 0, "nbnodes must be even")
+  require(nbNodes % 2 == 0, "nbNodes must be even")
 
   println("nbNodes:" + nbNodes + " nbEdges:" + nbEdges)
 
@@ -31,6 +31,8 @@ object GraphPartition extends CBLSModel with App {
 
   val (edges,adjacencyLists) = generateRandomEdges(nbNodes,nbEdges)
 
+  val degree = adjacencyLists.map(_.length)
+
   val nodeToPartition = Array.tabulate(nbNodes)((nodeID:Int) => CBLSIntVar(if(Random.nextBoolean()) 1 else 0, 0 to 1, "partitionOfNode_" + nodeID))
 
   for((nodeA,nodeB) <- edges){
@@ -47,6 +49,9 @@ object GraphPartition extends CBLSModel with App {
   val violatedNodes = filter(nodeToViolation)
   val nonViolatedNodes = filter(nodeToViolation,_==0)
 
+  //val nodeToViolationMinusDegree = Array.tabulate[IntValue](nbNodes)(node => new Int2Int(nodeToViolation(node),v => v - degree(node)))
+  //val swappableNodes = filter(nodeToViolationMinusDegree, _ > 0)
+
   c.close()
 
   val obj = Objective(c.violation)
@@ -58,12 +63,16 @@ object GraphPartition extends CBLSModel with App {
   val neighborhood =(
     bestSlopeFirst(
       List(
-        profile(assignNeighborhood(nodeToPartition, "moveAll") guard (() => sameSizeConstraint.violation != 0)),
+        profile(assignNeighborhood(nodeToPartition, "moveAll") guard (() => sameSizeConstraint.violation.value != 0)),
         //profile(swapsNeighborhood(nodeToPartition, "swapAll")),
         profile(swapsNeighborhood(nodeToPartition,
           symmetryCanBeBrokenOnIndices = false,
           searchZone1 = () => mostViolatedNodes.value,
-          name = "swap1MostViol")),
+          name = "swap1Most")),
+        profile(swapsNeighborhood(nodeToPartition,
+          symmetryCanBeBrokenOnIndices = false,
+          searchZone2 = () => { val v = mostViolatedNodes.value; (_,_) => v},
+          name = "swapAny1Most")),
         //profile(swapsNeighborhood(nodeToPartition, //this one is the most complete of swaps, but highly inefficient compared tpo the others,and I think that it does not bring in more connexity than others (althrough I am not so suer...)
         //  symmetryCanBeBrokenOnIndices = false,
         //  searchZone1 = () => violatedNodes.value, name = "swap1Viol")),
@@ -75,30 +84,44 @@ object GraphPartition extends CBLSModel with App {
         profile(swapsNeighborhood(nodeToPartition,
           symmetryCanBeBrokenOnIndices = false,
           searchZone1 = mostViolatedNodes,
-          searchZone2 = (_,_) => violatedNodes.value,  //TODO: the .value is killing it because it triggers a propagation on every first iteration. s
-          name = "swap1Viol1Most")),
+          searchZone2 = () => {val v = violatedNodes.value; (_,_) => v},
+          name = "swap1Most1Viol")),
+        profile(swapsNeighborhood(nodeToPartition,
+          symmetryCanBeBrokenOnIndices = false,
+          searchZone1 = mostViolatedNodes,
+          searchZone2 = () => {val v = mostViolatedNodes.value; (_,_) => v},
+          name = "swap1Most1Most")),
         profile(swapsNeighborhood(nodeToPartition,
           searchZone1 = mostViolatedNodes,
-          searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).newValue != itsPartition),
+          searchZone2 = () => (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).newValue != itsPartition),
           hotRestart = false,
           symmetryCanBeBrokenOnIndices = false,
           name = "swap1MostVAdj")),
         profile(swapsNeighborhood(nodeToPartition,
           searchZone1 = violatedNodes,
-          searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).value != itsPartition),
+          searchZone2 = () => (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).newValue != itsPartition),
           hotRestart = true,
           symmetryCanBeBrokenOnIndices = false,
           name = "swap1ViolAdj")),
+
+        //profile(swapsNeighborhood(nodeToPartition,
+        //  searchZone1 = swappableNodes,
+        //  searchZone2 = () => {val v = swappableNodes.value; (_,_) => v},
+        //  hotRestart = true,
+        //  symmetryCanBeBrokenOnIndices = false,
+        //  name = "swapSwappableNodes")),
+
+
         //profile(swapsNeighborhood(nodeToPartition,
         //  symmetryCanBeBrokenOnIndices = false,
         //  searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).value != itsPartition),
         //  name = "swapAdjacent"))
       ),refresh = nbNodes/10)
-      onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = "randomize" + nbNodes/100), 3, obj)
-    exhaust profile(swapsNeighborhood(nodeToPartition, //this one is the most complete of swaps, but highly inefficient compared tpo the others,and I think that it does not bring in more connexity than others (althrough I am not so suer...)
-      symmetryCanBeBrokenOnIndices = true,
-      searchZone1 = violatedNodes,
-      name = "swap1Viol"))) //showObjectiveFunction(obj)
+      onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = "randomize" + nbNodes/100), 3, obj))
+  //exhaust profile(swapsNeighborhood(nodeToPartition, //this one is the most complete of swaps, but highly inefficient compared tpo the others,and I think that it does not bring in more connexity than others (althrough I am not so suer...)
+  //  symmetryCanBeBrokenOnIndices = true,
+  //  searchZone2 = () => {val v = violatedNodes.value; (_,_) => v}, //we should filter on nodes with a violation higher than the gain on swapping the violation of the first node
+  //  name = "swapAny1Viol"))) //showObjectiveFunction(obj)
 
   neighborhood.verbose = 1
   neighborhood.doAllMoves(_ >= nbNodes + nbEdges, obj)

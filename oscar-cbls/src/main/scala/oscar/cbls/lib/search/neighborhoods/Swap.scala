@@ -58,7 +58,7 @@ import oscar.cbls.core.search.{Move, EasyNeighborhoodMultiLevel, First, LoopBeha
 case class SwapsNeighborhood(vars:Array[CBLSIntVar],
                              name:String = "SwapsNeighborhood",
                              searchZone1:()=>Iterable[Int] = null,
-                             searchZone2:(Int,Int)=>Iterable[Int] = null,
+                             searchZone2:() => (Int,Int)=>Iterable[Int] = null,
                              symmetryCanBeBrokenOnIndices:Boolean = true,
                              symmetryCanBeBrokenOnValue:Boolean = false,
                              selectFirstVariableBehavior:LoopBehavior = First(),
@@ -84,6 +84,8 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
       case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(firstIterationSchemeZone, s)
     }
 
+    val searchZone2ForThisSearch = if (searchZone2 == null) null else searchZone2()
+
     val (iIterator,notifyFound1) = selectFirstVariableBehavior.toIterator(firstIterationScheme)
     while (iIterator.hasNext) {
       indiceOfFirstVariable = iIterator.next()
@@ -91,7 +93,7 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
       val firstVar = vars(indiceOfFirstVariable)
       val oldValOfFirstVar = firstVar.newValue
 
-      val secondIterationSchemeZone = if (searchZone2 == null) vars.indices else searchZone2(indiceOfFirstVariable,oldValOfFirstVar)
+      val secondIterationSchemeZone = if (searchZone2ForThisSearch == null) vars.indices else searchZone2ForThisSearch(indiceOfFirstVariable,oldValOfFirstVar)
 
       val secondIterationScheme = symmetryClassOfVariables2 match {
         case None => secondIterationSchemeZone
