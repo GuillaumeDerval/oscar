@@ -23,8 +23,8 @@ class MoveExplorerAlgo(v:Int,
   var nodeIDToNode:SortedMap[Int,Node] = null
   var relevantVehicles:SortedSet[Int] = null
   var edgeBuilder:VLSNEdgeBuilder = null
-  var vehicleWithSomeIncomingEdges:SortedSet[Int] = SortedSet.empty
   var trashNode:Node = null
+  val vehicleToNode:Array[Node] = Array.fill(v)(null)
 
   def buildGraph():VLSNGraph = {
 
@@ -52,7 +52,9 @@ class MoveExplorerAlgo(v:Int,
     exploreInsertions(initialObj)
     exploreNodeMove()
     exploreDeletions() //should be called after insertions
-    addNoMoveEdgesForVehicles() //should be the last one called
+    addNoMoveEdgesVehiclesToTrashNode()
+    addTrashNodeToUnroutedNodes()
+    addTrashNodeToRoutedNodes()
 
     edgeBuilder.finish()
   }
@@ -81,7 +83,9 @@ class MoveExplorerAlgo(v:Int,
     relevantVehicles = SortedSet.empty ++ nodeToRelevantVehicles.flatMap(_._2)
 
     for(vehicle <- relevantVehicles){
-      nodeIDToNode += ((vehicle,builder.addNode(vehicle,vehicle,vehicle)))
+      val node = builder.addNode(vehicle,vehicle,vehicle)
+      vehicleToNode(vehicle) = node
+      nodeIDToNode += ((vehicle,node))
     }
   }
 
@@ -101,7 +105,6 @@ class MoveExplorerAlgo(v:Int,
           case None =>
           case Some((move, gain)) =>
             edgeBuilder.addEdge(symbolicNodeToInsert, nodeIDToNode(targetVehicleForInsertion), gain, move)
-            vehicleWithSomeIncomingEdges += targetVehicleForInsertion
         }
       }
 
@@ -148,7 +151,6 @@ class MoveExplorerAlgo(v:Int,
           case Some((move, gain)) =>
             val symbolicNodeOfVehicle = nodeIDToNode(targetVehicleID)
             edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeOfVehicle, gain, move)
-            vehicleWithSomeIncomingEdges += targetVehicleID
         }
       }
 
@@ -167,7 +169,6 @@ class MoveExplorerAlgo(v:Int,
             case None =>
             case Some((move, gain)) =>
               edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeToEject, gain, move)
-              vehicleWithSomeIncomingEdges += targetVehicleID
           }
         }
         //re-inserting
@@ -180,10 +181,6 @@ class MoveExplorerAlgo(v:Int,
     * deletions are from deleted node to trashNode
     */
   def exploreDeletions(): Unit = {
-    if (nonRoutedNodesWithOneInsertion.isEmpty) return
-
-    val symbolicNodesOfNonRoutedNodesWithPossibleInsert =
-      nonRoutedNodesWithOneInsertion.map(nodeIDToNode)
 
     for ((vehicleID, routingNodesToRemove) <- vehicleToRoutedNodes) {
       for (routingNodeToRemove <- routingNodesToRemove) {
@@ -199,14 +196,21 @@ class MoveExplorerAlgo(v:Int,
   }
 
   //should be called after all edges going to vehicle are generated
-  def addNoMoveEdgesForVehicles(): Unit ={
-    for(vehicleID <- vehicleWithSomeIncomingEdges){
-      val symbolicNodeOFVehicle = nodeIDToNode(vehicleID)
-      for(symbolicNode <- nodes){
-        if(symbolicNode.representedNode < v){
-          edgeBuilder.addEdge(symbolicNode,symbolicNodeOFVehicle,0,new DoNothingMove(0))
-        }
-      }
+  def addNoMoveEdgesVehiclesToTrashNode(): Unit ={
+    for(vehicleNode <- vehicleToNode if vehicleNode != null){
+      edgeBuilder.addEdge(vehicleNode,trashNode,0,new DoNothingMove(0))
+    }
+  }
+
+  def addTrashNodeToUnroutedNodes(): Unit ={
+    for(unroutedNode <- unroutedNodesToInsert){
+      edgeBuilder.addEdge(trashNode,nodeIDToNode(unroutedNode),0,new DoNothingMove(0))
+    }
+  }
+
+  def addTrashNodeToRoutedNodes(): Unit = {
+    for(nodeToMove <- nodesToMove){
+      edgeBuilder.addEdge(trashNode,nodeIDToNode(nodeToMove),0,new DoNothingMove(0))
     }
   }
 }
