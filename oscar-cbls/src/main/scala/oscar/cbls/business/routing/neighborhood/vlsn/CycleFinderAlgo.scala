@@ -3,15 +3,95 @@ package oscar.cbls.business.routing.neighborhood.vlsn
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 
+class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean){
+  private val nodes:Array[Node] = graph.nodes
+  private val nbNodes = nodes.length
+  private val nbLabels = graph.nbLabels
 
+  def findCycle():Option[List[Edge]] = {
 
-/**
-  * finds negative cycle.
-  * cares about labels, but do not put too many of them: O(n^^3 * v)
-  * complete
-  * @param graph
-  */
-class CycleFinderAlgo(graph:VLSNGraph){
+    val reachabilityMatrix = if(pruneOnReachability){
+      new ReacheabilityFloydWarshall(graph:VLSNGraph).buildRechabilityMatrix()
+    }else null
+
+    //MatrixTools.printBoolMatrix(reachabilityMatrix)
+
+    val isNodeReached = Array.fill(nbNodes)(false)
+    val isLabelReached = Array.fill(nbLabels)(false)
+    var rootNode:Node = null
+    var rooNodeID:Int = -1
+
+    def dfsExplore(node:Node,summedDelta:Int):Option[List[Edge]] ={
+      var outgoingEdges = node.outgoing
+
+      while(outgoingEdges != Nil){
+        val currentEdge = outgoingEdges.head
+        outgoingEdges = outgoingEdges.tail
+
+        val currentEdgeDelta = currentEdge.deltaObj
+        val newSummedDelta = currentEdgeDelta + summedDelta
+
+        val targetNode = currentEdge.to
+        val targetNodeID = targetNode.nodeID
+
+        if(targetNode == rootNode){
+          if (newSummedDelta <0) {
+            //we just found a negative cycle
+            println("found negative cycle with summed delta: " + newSummedDelta)
+            return Some(List(currentEdge))
+          }else {
+            //we found a cycle, but it is not negative
+            //carry on the while
+          }
+        }else if (!pruneOnReachability || reachabilityMatrix(targetNodeID)(rooNodeID)){
+
+          val targetLabel = targetNode.label
+
+          if(isNodeReached(targetNodeID)) {
+            //we are back on a node that we are exploring; we do nothing more
+            //TODO: check for a negative cycle here
+            //carry on the while
+
+          }else {
+            isNodeReached(targetNodeID) = true
+            if (targetLabel == -1) {
+              //this is a new node without any particular label
+              //recurse
+              dfsExplore(targetNode, newSummedDelta) match {
+                case None => ;
+                case Some(l) => return Some(currentEdge :: l)
+              }
+            } else if (!isLabelReached(targetLabel)) {
+              //this is a new node, it has a label that has not been reached yet
+              //mark and recurse
+              isLabelReached(targetLabel) = true
+              dfsExplore(targetNode, newSummedDelta) match {
+                case None => ;
+                case Some(l) => return Some(currentEdge :: l)
+              }
+              isLabelReached(targetLabel) = false
+            }
+            isNodeReached(targetNodeID) = false
+          }
+        }
+      }
+      None
+    }
+
+    for(n <- nodes){
+      rootNode = n
+      rooNodeID = n.nodeID
+      dfsExplore(rootNode,0) match{
+        case None => ;
+        case a => return a
+      }
+    }
+    None
+  }
+}
+
+/*
+class CycleFinderAlgoMouthy(graph:VLSNGraph){
   private val nodes:Array[Node] = graph.nodes
   private val edges:Array[Edge] = graph.edges
   private val nbNodes = nodes.length
@@ -51,7 +131,7 @@ class CycleFinderAlgo(graph:VLSNGraph){
   }
 
 }
-
+*/
 
 /**
   * finds negative cycle.
@@ -131,12 +211,60 @@ class CycleFinderAlgoFloydNoLabel(graph:VLSNGraph){
   }
 }
 
+
+object MatrixTools{
+  def printBoolMatrix(m:Array[Array[Boolean]]): Unit ={
+    for(l <- m){
+      println(l.mkString("\t"))
+    }
+  }
+}
+
+class ReacheabilityFloydWarshall(graph:VLSNGraph){
+  private val nodes:Array[Node] = graph.nodes
+  private val edges:Array[Edge] = graph.edges
+  private val nbNodes = nodes.length
+  private val nodeRange = 0 until nbNodes
+
+
+  def buildRechabilityMatrix():Array[Array[Boolean]] = {
+    val adjacencyMatrix = buildFloydMatrices()
+    saturateAdjacencyMatrixToReacheabilityMatrix(adjacencyMatrix)
+    adjacencyMatrix
+  }
+
+  private def buildFloydMatrices(): Array[Array[Boolean]] = {
+    val adjacencyMatrix:Array[Array[Boolean]] = Array.tabulate(nbNodes)(_ => Array.fill(nbNodes)(false))
+
+    for(node <- nodes.indices){
+      adjacencyMatrix(node)(node) = true
+    }
+
+    for(edge <- edges){
+      adjacencyMatrix(edge.from.nodeID)(edge.to.nodeID) = true
+    }
+
+    adjacencyMatrix
+  }
+
+  private def saturateAdjacencyMatrixToReacheabilityMatrix(adjacencyMatrix : Array[Array[Boolean]]):Unit = {
+    for (k <- nodeRange) {
+      for (i <- nodeRange) {
+        for (j <- nodeRange) {
+          adjacencyMatrix(i)(j) = adjacencyMatrix (i)(j) || adjacencyMatrix (i)(k) ||  adjacencyMatrix(k)(j)
+        }
+      }
+    }
+  }
+}
+
 object CycleFinderAlgoTest extends App{
   val graph = VLSNGraphTest.buildGraph()
   println(graph)
 
-  val cycle = new CycleFinderAlgoFloydNoLabel(graph).findCycle()
-
+println("starting DFS")
+  val cycle = new CycleFinderAlgoDFS(graph,false).findCycle()
+  println("done DFS")
   println(cycle)
 
   println(graph.toDOT(SortedSet.empty[Int] ++ cycle.get.map(_.edgeID)))

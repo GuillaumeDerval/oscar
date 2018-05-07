@@ -1,4 +1,6 @@
+
 package oscar.cbls.business.routing.neighborhood.vlsn
+
 
 import oscar.cbls.core.search.{DoNothingMove, Move}
 
@@ -200,4 +202,3 @@ class MoveExplorerAlgo(v:Int,
     }
   }
 }
-

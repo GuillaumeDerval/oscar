@@ -1,10 +1,19 @@
-package oscar.cbls.business.routing.neighborhood.vlsn
+/*package oscar.cbls.business.routing.neighborhood.vlsn
 
 import oscar.cbls.Objective
 import oscar.cbls.core.search._
 
 import scala.collection.immutable.SortedMap
 
+
+trait MoveThatCanBeMadePositionIndependent extends Move{
+  def makePositionIndependent:Move
+}
+
+/*
+all neighborhood must return moves that are position-independent.
+by default this is not the case. A trait has been added here to ensure that moves are indeed position-independent
+ */
 class VLSN(v:Int,
            vehicleToRoutedNodesToMove:() => SortedMap[Int,Iterable[Int]],
            unroutedNodesToInsert:() => Iterable[Int],
@@ -60,3 +69,4 @@ class VLSN(v:Int,
   }
 }
 
+*/
