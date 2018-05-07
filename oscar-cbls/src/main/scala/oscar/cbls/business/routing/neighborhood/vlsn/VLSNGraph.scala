@@ -110,7 +110,7 @@ object VLSNGraphTest extends App{
 
   def buildGraph():VLSNGraph = {
     val nbNodes = 6
-    val nodes = Array.tabulate(nbNodes)(nodeID => new Node(nodeID, nbNodes + nodeID,nodeID,-1))
+    val nodes = Array.tabulate(nbNodes)(nodeID => new Node(nodeID, nbNodes + nodeID,nodeID,nodeID%2))
     val builder = new VLSNEdgeBuilder(nodes: Array[Node], nbNodes) //nbLAbel is set here to nbNodes
 
     def edge(from: Int, to: Int, gain: Int): Unit = {
