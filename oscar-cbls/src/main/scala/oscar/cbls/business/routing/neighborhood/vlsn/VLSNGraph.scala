@@ -10,6 +10,7 @@ class VLSNNodeBuilder(nbLabels:Int) {
   var nextNodeID: Int = 0
 
   def addNode(representedNode:Int, vehicle:Int, label:Int):Node = {
+    require(label >=0 && label < nbLabels)
     val n = new Node(nextNodeID, representedNode:Int, vehicle:Int, label)
     nextNodeID += 1
     nodes = n :: nodes
@@ -59,7 +60,7 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int){
   *
   * @param nodes
   * @param edges
-  * @param nbLabels labels range from 0 to nbLAbels-1 there is a -1 value tolerated for nodes that do not have labels
+  * @param nbLabels labels range from 0 to nbLabels-1
   */
 class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge],val nbLabels:Int){
   val nbNodes = nodes.length

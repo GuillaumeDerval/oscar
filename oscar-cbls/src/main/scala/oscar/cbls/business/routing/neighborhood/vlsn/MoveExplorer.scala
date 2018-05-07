@@ -52,7 +52,7 @@ class MoveExplorerAlgo(v:Int,
     //et pour les delete sans insertion?
 
     buildNodes()
-    edgeBuilder = new VLSNEdgeBuilder(nodes)
+    edgeBuilder = new VLSNEdgeBuilder(nodes,v) //the labels are the vehicles
     exploreInsertions(initialObj)
     exploreNodeMove()
     exploreDeletions() //should be called after insertions
@@ -202,3 +202,4 @@ class MoveExplorerAlgo(v:Int,
     }
   }
 }
+

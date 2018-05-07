@@ -1,5 +1,7 @@
 package oscar.cbls.business.routing.neighborhood.vlsn
 
+import oscar.cbls.algo.magicArray.MagicBoolArray
+
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 
@@ -39,38 +41,21 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean){
             //we just found a negative cycle
             println("found negative cycle with summed delta: " + newSummedDelta)
             return Some(List(currentEdge))
-          }else {
-            //we found a cycle, but it is not negative
-            //carry on the while
-          }
+          } //else e found a cycle, but it is not negative
         }else if (!pruneOnReachability || reachabilityMatrix(targetNodeID)(rooNodeID)){
 
           val targetLabel = targetNode.label
 
-          if(isNodeReached(targetNodeID)) {
-            //we are back on a node that we are exploring; we do nothing more
-            //TODO: check for a negative cycle here
-            //carry on the while
-
-          }else {
+          if (! isNodeReached(targetNodeID) && !isLabelReached(targetLabel)) {
+            //this is a new node, it has a label that has not been reached yet
+            //mark and recurse
+            isLabelReached(targetLabel) = true
             isNodeReached(targetNodeID) = true
-            if (targetLabel == -1) {
-              //this is a new node without any particular label
-              //recurse
-              dfsExplore(targetNode, newSummedDelta) match {
-                case None => ;
-                case Some(l) => return Some(currentEdge :: l)
-              }
-            } else if (!isLabelReached(targetLabel)) {
-              //this is a new node, it has a label that has not been reached yet
-              //mark and recurse
-              isLabelReached(targetLabel) = true
-              dfsExplore(targetNode, newSummedDelta) match {
-                case None => ;
-                case Some(l) => return Some(currentEdge :: l)
-              }
-              isLabelReached(targetLabel) = false
+            dfsExplore(targetNode, newSummedDelta) match {
+              case None => ;
+              case Some(l) => return Some(currentEdge :: l)
             }
+            isLabelReached(targetLabel) = false
             isNodeReached(targetNodeID) = false
           }
         }
@@ -90,13 +75,16 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean){
   }
 }
 
-/*
 class CycleFinderAlgoMouthy(graph:VLSNGraph){
   private val nodes:Array[Node] = graph.nodes
   private val edges:Array[Edge] = graph.edges
   private val nbNodes = nodes.length
   private val nodeRange = 0 until nbNodes
 
+  private val isLabelOnPath = MagicBoolArray(graph.nbLabels,false)
+  private val isNodeOnPath = MagicBoolArray(nbNodes,false)
+
+  private val selectedIncomingEdges:Array[Edge] = Array.fill(nbNodes)(nul)
 
   def findCycle():Option[List[Edge]] = {
     for(n <- nodeRange){
@@ -108,6 +96,45 @@ class CycleFinderAlgoMouthy(graph:VLSNGraph){
     return None
   }
 
+  abstract sealed class MarkingResult
+  case class CycleFound(cycle:List[Edge]) extends MarkingResult
+  case class PartialCycleFound(cycle:List[Edge],rootNode:Node) extends MarkingResult
+  case class MarkingDone(duplicateLabels:Boolean) extends MarkingResult
+
+
+  def markPathTo(node:Node,labelDuplicates:Boolean):MarkingResult = {
+
+    val nodeID = node.nodeID
+    if(isNodeOnPath(nodeID)){
+      return new CycleFound(List.empty)
+    }
+
+    val label = node.label
+    val newLabelDuplicates = labelDuplicates || isLabelOnPath(label)
+    isLabelOnPath(label) = true
+
+    val incomingEdge = selectedIncomingEdges(nodeID)
+    val previousNode = incomingEdge.from
+
+    markPathTo(previousNode,newLabelDuplicates) match{
+      case f:CycleFound => f
+      case d:MarkingDone => d
+      case PartialCycleFound(l,root) =>
+        if(root == node) CycleFound(incomingEdge :: l)
+        else PartialCycleFound(incomingEdge :: l, root)
+    }
+  }
+
+  def unMarkPath(): Unit ={
+    isLabelOnPath.all = false
+    isNodeOnPath.all = false
+  }
+
+  def correctLabel(node:Node): Unit ={
+    markPathTo(node:Node,false)
+
+  }
+
   def findRootedCycle(rootNode:Node):Option[List[Edge]] = {
     val distanceFromS:Array[Int] = Array.tabulate(nbNodes)(_ => Int.MaxValue)
     distanceFromS(rootNode.nodeID) = 0
@@ -115,9 +142,6 @@ class CycleFinderAlgoMouthy(graph:VLSNGraph){
 
     val listOfNodesToDevelop:mutable.Queue[Node] = mutable.Queue(rootNode)
 
-    def markPathTo(node:Node,mark:Boolean){
-
-    }
 
 
 
@@ -131,7 +155,7 @@ class CycleFinderAlgoMouthy(graph:VLSNGraph){
   }
 
 }
-*/
+
 
 /**
   * finds negative cycle.
@@ -262,7 +286,7 @@ object CycleFinderAlgoTest extends App{
   val graph = VLSNGraphTest.buildGraph()
   println(graph)
 
-println("starting DFS")
+  println("starting DFS")
   val cycle = new CycleFinderAlgoDFS(graph,false).findCycle()
   println("done DFS")
   println(cycle)
