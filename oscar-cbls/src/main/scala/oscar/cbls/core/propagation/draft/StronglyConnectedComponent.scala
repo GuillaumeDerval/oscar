@@ -61,6 +61,9 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
                                           to:PropagationElement,
                                           injector:() => Unit,
                                           isStillValid:() => Boolean): Unit ={
+
+    //we know that there will be two calls to this one: one for the listening one and one for the listened one.
+
     if (nextWaitingDependency == null) {
       nextWaitingDependency = new WaitingDependency(from,
         to,

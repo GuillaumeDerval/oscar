@@ -584,6 +584,7 @@ trait AbstractVariable
   final def notifyChanged(){
     if(isScheduled) return
     //modifier le test.
+    //TODO: this is not good, should be much more straightforward code here; just scheduleForPropagation() (which should be inline btw)
     if (this.model == null ||(!this.model.isClosed && this.getDynamicallyListeningElements.isEmpty)){
       performPropagation()
     }else{
