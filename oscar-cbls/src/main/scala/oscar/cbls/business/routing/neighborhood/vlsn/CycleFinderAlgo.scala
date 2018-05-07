@@ -84,23 +84,21 @@ class CycleFinderAlgoMouthy(graph:VLSNGraph){
   private val isLabelOnPath = MagicBoolArray(graph.nbLabels,false)
   private val isNodeOnPath = MagicBoolArray(nbNodes,false)
 
-  private val selectedIncomingEdges:Array[Edge] = Array.fill(nbNodes)(nul)
+  private val selectedIncomingEdges:Array[Edge] = Array.fill(nbNodes)(null)
+  private val distanceToNode:Array[Int]= Array.fill(nbNodes)(Int.MaxValue)
 
-  def findCycle():Option[List[Edge]] = {
-    for(n <- nodeRange){
-      findRootedCycle(n) match{
-        case None => ;
-        case a => return a
-      }
-    }
-    return None
+  val isInQueue:Array[Boolean]= Array.fill(nbNodes)(false)
+  val queue = new mutable.Queue[Int]()
+  def enqueue(nodeID:Int): Unit ={
+    if(!isInQueue(nodeID)) queue.enqueue(nodeID)
   }
+
+  def dequeue():Option[Int] = queue.headOption
 
   abstract sealed class MarkingResult
   case class CycleFound(cycle:List[Edge]) extends MarkingResult
   case class PartialCycleFound(cycle:List[Edge],rootNode:Node) extends MarkingResult
   case class MarkingDone(duplicateLabels:Boolean) extends MarkingResult
-
 
   def markPathTo(node:Node,labelDuplicates:Boolean):MarkingResult = {
 
@@ -125,33 +123,86 @@ class CycleFinderAlgoMouthy(graph:VLSNGraph){
     }
   }
 
-  def unMarkPath(): Unit ={
+  def extractCycle(rootNode:Node):CycleFound = {
+    var currentNode = rootNode
+    var toReturn:List[Edge] = List.empty
+    while(true){
+      val incomingEdge = selectedIncomingEdges(currentNode.nodeID)
+      toReturn = incomingEdge :: toReturn
+      currentNode = incomingEdge.from
+
+      if(currentNode == rootNode){
+        return CycleFound(toReturn)
+      }
+    }
+    throw new Error("no cycle found in extract cycle method")
+  }
+
+  def correctLabel(node:Node): MarkingResult = {
+    val nodeID = node.nodeID
+
     isLabelOnPath.all = false
     isNodeOnPath.all = false
+
+    markPathTo(node:Node,false) match{
+      case f:CycleFound => return f
+      case MarkingDone(duplicateLabels) if !duplicateLabels =>
+        var outgoingEdges = node.outgoing
+        while(outgoingEdges.nonEmpty){
+
+          val currentEdge = outgoingEdges.head
+          outgoingEdges = outgoingEdges.tail
+
+          val toNode = currentEdge.to
+          val toNodeID = toNode.nodeID
+          if(isNodeOnPath(toNodeID)) {
+            //we found a negative cycle
+            selectedIncomingEdges(toNodeID) = currentEdge
+            return extractCycle(toNode)
+          }
+
+          distanceToNode(toNodeID) = distanceToNode(nodeID) + currentEdge.deltaObj
+          selectedIncomingEdges(toNodeID) = currentEdge
+          enqueue(toNodeID)
+
+        }
+
+        MarkingDone(true)
+      case _ => MarkingDone(true)
+    }
   }
 
-  def correctLabel(node:Node): Unit ={
-    markPathTo(node:Node,false)
 
-  }
+  def searchRootedCycle(rootNode:Node):Option[CycleFound] = {
 
-  def findRootedCycle(rootNode:Node):Option[List[Edge]] = {
-    val distanceFromS:Array[Int] = Array.tabulate(nbNodes)(_ => Int.MaxValue)
-    distanceFromS(rootNode.nodeID) = 0
-    val selectedIncomingEdges:Array[Edge] = Array.fill(nbNodes)(null)
-
-    val listOfNodesToDevelop:mutable.Queue[Node] = mutable.Queue(rootNode)
-
-
-
-
-    while(listOfNodesToDevelop.nonEmpty){
-      val i = listOfNodesToDevelop.dequeue()
-
-
-
+    for(nodeID <- nodeRange) {
+      selectedIncomingEdges(nodeID) = null
+      distanceToNode(nodeID) = Int.MaxValue
     }
 
+    enqueue(rootNode.nodeID)
+    while(true){
+      dequeue() match{
+        case None => return None
+        case Some(nodeID) =>
+          correctLabel(nodes(nodeID)) match{
+            case f:CycleFound => return Some(f)
+          }
+      }
+    }
+
+    None
+  }
+
+
+  def findCycle():Option[List[Edge]] = {
+    for(rootNode <- nodes){
+      searchRootedCycle(rootNode) match{
+        case None => ;
+        case CycleFound(l) => return Some(l)
+      }
+    }
+    return None
   }
 
 }
