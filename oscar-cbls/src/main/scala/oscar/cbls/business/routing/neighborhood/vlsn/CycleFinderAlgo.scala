@@ -66,10 +66,16 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean){
     for(n <- nodes){
       rootNode = n
       rooNodeID = n.nodeID
+      isLabelReached(rootNode.label) = true
+      isNodeReached(rooNodeID) = true
+
       dfsExplore(rootNode,0) match{
         case None => ;
         case a => return a
       }
+      isLabelReached(rootNode.label) = false
+      isNodeReached(rooNodeID) = false
+
     }
     None
   }
