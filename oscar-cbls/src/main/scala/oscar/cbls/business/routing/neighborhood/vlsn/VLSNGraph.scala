@@ -86,7 +86,7 @@ class Node(val nodeID:Int, val representedNode:Int, vehicle:Int, val label:Int){
   var incoming:List[Edge] = List.empty
   var outgoing:List[Edge] = List.empty
 
-  override def toString: String = "Node(nodeID:" + nodeID + ",routingNode:" + representedNode + "vehicle:" + vehicle + ")"
+  override def toString: String = "Node(nodeID:" + nodeID + ",routingNode:" + representedNode + "vehicle:" + vehicle + " label:" + label + ")"
 
   def toDOT(edgesToBold:SortedSet[Int]):String = "\"" + nodeID + "\" [shape=circle,style=filled,fillcolor=white, label = \"node:" + representedNode + "\\nvehicle:" + vehicle + "\"] ; "
 }
@@ -110,7 +110,7 @@ object VLSNGraphTest extends App{
 
   def buildGraph():VLSNGraph = {
     val nbNodes = 6
-    val nodes = Array.tabulate(nbNodes)(nodeID => new Node(nodeID, nbNodes + nodeID,nodeID,nodeID%2))
+    val nodes = Array.tabulate(nbNodes)(nodeID => new Node(nodeID, nbNodes + nodeID,nodeID,nodeID))
     val builder = new VLSNEdgeBuilder(nodes: Array[Node], nbNodes) //nbLAbel is set here to nbNodes
 
     def edge(from: Int, to: Int, gain: Int): Unit = {

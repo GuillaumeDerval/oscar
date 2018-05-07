@@ -39,7 +39,6 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean){
         if(targetNode == rootNode){
           if (newSummedDelta <0) {
             //we just found a negative cycle
-            println("found negative cycle with summed delta: " + newSummedDelta)
             return Some(List(currentEdge))
           } //else e found a cycle, but it is not negative
         }else if (!pruneOnReachability || reachabilityMatrix(targetNodeID)(rooNodeID)){
@@ -116,8 +115,9 @@ class CycleFinderAlgoMouthy(graph:VLSNGraph){
 
     val nodeID = node.nodeID
     if(isNodeOnPath(nodeID)){
-      return new CycleFound(List.empty)
+      return new PartialCycleFound(List.empty,node)
     }
+    isNodeOnPath(nodeID) = true
 
     val label = node.label
     val newLabelDuplicates = labelDuplicates || isLabelOnPath(label)
@@ -158,6 +158,10 @@ class CycleFinderAlgoMouthy(graph:VLSNGraph){
     isLabelOnPath.all = false
     isNodeOnPath.all = false
 
+
+    require(isLabelOnPath.indicesAtTrue.isEmpty)
+    require(isNodeOnPath.indicesAtTrue.isEmpty)
+
     markPathTo(node:Node,false) match{
       case f:CycleFound => return f
       case MarkingDone(duplicateLabels) if !duplicateLabels =>
@@ -177,17 +181,22 @@ class CycleFinderAlgoMouthy(graph:VLSNGraph){
 
           //TODO: not sure about the condition...
           if(!isLabelOnPath(toNode.label)) {
-            distanceToNode(toNodeID) = distanceToNode(nodeID) + currentEdge.deltaObj
-            selectedIncomingEdges(toNodeID) = currentEdge
-            enqueue(toNodeID)
+            val oldDistance = distanceToNode(toNodeID)
+            val newDistance = distanceToNode(nodeID) + currentEdge.deltaObj
+            if(newDistance < oldDistance && newDistance < 0){
+              distanceToNode(toNodeID) = newDistance
+              selectedIncomingEdges(toNodeID) = currentEdge
+              enqueue(toNodeID)
+            }
           }
         }
 
         MarkingDone(true)
-      case _ => MarkingDone(true)
+      case x => {
+        MarkingDone(true)
+      }
     }
   }
-
 
   def searchRootedCycle(rootNode:Node):Option[CycleFound] = {
 
@@ -196,13 +205,19 @@ class CycleFinderAlgoMouthy(graph:VLSNGraph){
       distanceToNode(nodeID) = Int.MaxValue
     }
 
-    enqueue(rootNode.nodeID)
+    val rootNodeID = rootNode.nodeID
+    enqueue(rootNodeID)
+    distanceToNode(rootNodeID) = 0
+
     while(true){
       dequeue() match{
-        case None => return None
+        case None =>
+          return None
         case Some(nodeID) =>
           correctLabel(nodes(nodeID)) match{
-            case f:CycleFound => return Some(f)
+            case f:CycleFound => {
+              return Some(f)
+            }
             case _ => ;
           }
       }
@@ -210,7 +225,6 @@ class CycleFinderAlgoMouthy(graph:VLSNGraph){
 
     None
   }
-
 
   def findCycle():Option[List[Edge]] = {
     for(rootNode <- nodes){
@@ -221,7 +235,6 @@ class CycleFinderAlgoMouthy(graph:VLSNGraph){
     }
     return None
   }
-
 }
 
 
@@ -365,5 +378,5 @@ object CycleFinderAlgoTest extends App{
   println("done Moutuy")
   println("cycle found: " + cycle2)
 
-  println(graph.toDOT(SortedSet.empty[Int] ++ cycle.get.map(_.edgeID)))
+//  println(graph.toDOT(SortedSet.empty[Int] ++ cycle.get.map(_.edgeID)))
 }
