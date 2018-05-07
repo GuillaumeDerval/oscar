@@ -5,14 +5,15 @@ import oscar.cbls.core.search.{DoNothingMove, Move}
 import scala.collection.immutable.{SortedMap, SortedSet}
 
 
+
 class MoveExplorerAlgo(v:Int,
                        vehicleToRoutedNodes:SortedMap[Int,Iterable[Int]],
                        unroutedNodesToInsert:Iterable[Int],
                        nodeToRelevantVehicles:Map[Int,Iterable[Int]],
 
-                       insertNodeOnVehicleToMoveAndGain:(Int,Int,Option[Int]) => Option[(Move,Int)],
-                       moveNodeToVehicleToMoveAndGain:(Int,Int) => Option[(Move,Int)],
-                       removeNodeToMoveAndGain:(Int => Option[(Move,Int)]),
+                       insertNodeOnVehicleToMoveAndGain:(Int,Int,Option[Int]) => Option[(ComposableMove,Int)],
+                       moveNodeToVehicleToMoveAndGain:(Int,Int) => Option[(ComposableMove,Int)],
+                       removeNodeToMoveAndGain:(Int => Option[(ComposableMove,Int)]),
                        removeAndReInsert:Int => () => Unit,
 
                        initialObj:Int) {

@@ -1,4 +1,4 @@
-/*package oscar.cbls.business.routing.neighborhood.vlsn
+package oscar.cbls.business.routing.neighborhood.vlsn
 
 import oscar.cbls.Objective
 import oscar.cbls.core.search._
@@ -6,8 +6,11 @@ import oscar.cbls.core.search._
 import scala.collection.immutable.SortedMap
 
 
-trait MoveThatCanBeMadePositionIndependent extends Move{
-  def makePositionIndependent:Move
+trait ComposableMove extends PotentiallyComposableMove{
+  def makeComposable:ComposableMove = this
+}
+trait PotentiallyComposableMove extends Move {
+  def makeComposable:ComposableMove
 }
 
 /*
@@ -17,11 +20,11 @@ by default this is not the case. A trait has been added here to ensure that move
 class VLSN(v:Int,
            vehicleToRoutedNodesToMove:() => SortedMap[Int,Iterable[Int]],
            unroutedNodesToInsert:() => Iterable[Int],
-           nodeToRelevantVehicles:() => (Int => Iterable[Int]),
+           nodeToRelevantVehicles:() => Map[Int,Iterable[Int]],
 
-           nodeVehicleToInsertNeighborhood:(Int,Int) => Neighborhood,
-           nodeTargetVehicleToMoveNeighborhood:(Int,Int) => Neighborhood,
-           nodeToRemoveNeighborhood:Int => Neighborhood,
+           nodeVehicleToInsertNeighborhood:(Int,Int) => Neighborhood with SupportForAndThenChaining[PotentiallyComposableMove],
+           nodeTargetVehicleToMoveNeighborhood:(Int,Int) => Neighborhood with SupportForAndThenChaining[PotentiallyComposableMove],
+           nodeToRemoveNeighborhood:Int => Neighborhood with SupportForAndThenChaining[PotentiallyComposableMove],
            removeNodeAndReInsert:Int => () => Unit,
 
            name:String = "VLSN") extends Neighborhood {
@@ -30,7 +33,7 @@ class VLSN(v:Int,
                        initialObj: Int,
                        acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
 
-    def explore(n:Neighborhood,objBeforeMove:Option[Int]=None):Option[(Move,Int)] = {
+    def explore(n:Neighborhood,objBeforeMove:Option[Int]=None):Option[(ComposableMove,Int)] = {
       val initialObjective = objBeforeMove match{
         case None => obj.value
         case Some(x) => x
@@ -38,7 +41,7 @@ class VLSN(v:Int,
       //we accept all moves, since degrading moves are allowed in negative cycles
       n.getMove(obj,initialObjective,acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match{
         case NoMoveFound => None
-        case MoveFound(m) => Some((m,initialObjective - m.objAfter))
+        case MoveFound(m) => Some((m.asInstanceOf[PotentiallyComposableMove].makeComposable,initialObjective - m.objAfter))
       }
     }
 
@@ -57,7 +60,7 @@ class VLSN(v:Int,
       initialObj).buildGraph()
 
     //then, find proper negative cycle in graph
-    new CycleFinderAlgoFloydNoLabel(vlsnGraph).findCycle() match{
+    new CycleFinderAlgoMouthy(vlsnGraph).findCycle() match{
       case None => NoMoveFound
       case Some(listOfEdge) =>
         //TODO:further explore the graph, to find all independent neg cycles, and improve added value.
@@ -69,4 +72,3 @@ class VLSN(v:Int,
   }
 }
 
-*/
