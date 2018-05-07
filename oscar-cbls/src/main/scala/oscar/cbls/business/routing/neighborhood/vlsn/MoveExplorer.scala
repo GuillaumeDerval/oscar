@@ -1,6 +1,6 @@
 package oscar.cbls.business.routing.neighborhood.vlsn
 
-import oscar.cbls.core.search.{DoNothingMove, Move}
+import oscar.cbls.core.search.DoNothingMove
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 

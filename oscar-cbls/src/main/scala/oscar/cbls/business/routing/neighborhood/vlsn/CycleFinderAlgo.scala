@@ -1,10 +1,5 @@
 package oscar.cbls.business.routing.neighborhood.vlsn
 
-import oscar.cbls.algo.magicArray.MagicBoolArray
-
-import scala.collection.immutable.SortedSet
-import scala.collection.mutable
-
 
 
 object MatrixTools{
