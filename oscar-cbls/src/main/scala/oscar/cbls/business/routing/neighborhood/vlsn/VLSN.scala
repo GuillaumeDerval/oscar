@@ -67,7 +67,7 @@ class VLSN(v:Int,
         //finally, extract the moves from the graph and return the composite moves
         val moves = listOfEdge.map(edge => edge.move)
         val delta = listOfEdge.map(edge => edge.deltaObj).sum
-        NoMoveFound(CompositeMove(moves,initialObj + delta,name))
+        MoveFound(CompositeMove(moves,initialObj + delta,name))
     }
   }
 }
