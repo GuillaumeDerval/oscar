@@ -130,31 +130,27 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
 
   val search = (bestSlopeFirst(List(
-  routeUnroutedPoint,
+    routeUnroutedPoint,
+    onePtMove(10),
+    customTwoOpt(20),
+    customThreeOpt(10,true)))
+    exhaust new VLSN(v,
 
-  onePtMove(10)
+    vehicleToRoutedNodesToMove:() => SortedMap[Int,Iterable[Int]],
+    unroutedNodesToInsert:() => Iterable[Int],
+    nodeToRelevantVehicles:() => Map[Int,Iterable[Int]],
 
-  customTwoOpt(20)
-
-  customThreeOpt(10,true)
-
-))exhaust new VLSN(v,
-
-     vehicleToRoutedNodesToMove:() => SortedMap[Int,Iterable[Int]],
-             unroutedNodesToInsert:() => Iterable[Int],
-             nodeToRelevantVehicles:() => Map[Int,Iterable[Int]],
-
-             nodeVehicleToInsertNeighborhood:(Int,Int) => Neighborhood with SupportForAndThenChaining[PotentiallyComposableMove],
-             nodeTargetVehicleToMoveNeighborhood:(Int,Int) => Neighborhood with SupportForAndThenChaining[PotentiallyComposableMove],
-             nodeToRemoveNeighborhood:Int => Neighborhood with SupportForAndThenChaining[PotentiallyComposableMove],
-             removeNodeAndReInsert:Int => () => Unit,
+    nodeVehicleToInsertNeighborhood:(Int,Int) => Neighborhood with SupportForAndThenChaining[PotentiallyComposableMove],
+    nodeTargetVehicleToMoveNeighborhood:(Int,Int) => Neighborhood with SupportForAndThenChaining[PotentiallyComposableMove],
+    nodeToRemoveNeighborhood:Int => Neighborhood with SupportForAndThenChaining[PotentiallyComposableMove],
+    removeNodeAndReInsert:Int => () => Unit,
 
 
-             search.verbose = verbose
-  //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
-  //  routeUnroutdPoint.verbose= 4
-  search.doAllMoves(obj = obj)
+    search.verbose = verbose
+      //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
+      //  routeUnroutdPoint.verbose= 4
+      search.doAllMoves(obj = obj)
 
-  graphicExtension.drawRoutes()
+    graphicExtension.drawRoutes()
   print(myVRP)
 }

@@ -21,7 +21,7 @@ object CycleFinderAlgoTest extends App{
 
 
   println("starting Moutuy")
-  val cycle2 = new CycleFinderAlgoMouthy(graph:VLSNGraph).findCycle()
+  val cycle2 = new CycleFinderAlgoMouthuy(graph:VLSNGraph).findCycle()
   println("done Moutuy")
   println("cycle found: " + cycle2)
 

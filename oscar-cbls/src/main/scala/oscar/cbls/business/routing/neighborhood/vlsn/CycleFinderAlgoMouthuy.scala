@@ -5,7 +5,7 @@ import oscar.cbls.algo.magicArray.MagicBoolArray
 import scala.collection.mutable
 
 
-class CycleFinderAlgoMouthy(graph:VLSNGraph){
+class CycleFinderAlgoMouthuy(graph:VLSNGraph){
   private val nodes:Array[Node] = graph.nodes
   private val edges:Array[Edge] = graph.edges
   private val nbNodes = nodes.length

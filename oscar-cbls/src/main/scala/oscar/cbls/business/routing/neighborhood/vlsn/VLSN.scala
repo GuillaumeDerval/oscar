@@ -60,7 +60,7 @@ class VLSN(v:Int,
       initialObj).buildGraph()
 
     //then, find proper negative cycle in graph
-    new CycleFinderAlgoMouthy(vlsnGraph).findCycle() match{
+    new CycleFinderAlgoMouthuy(vlsnGraph).findCycle() match{
       case None => NoMoveFound
       case Some(listOfEdge) =>
         //TODO:further explore the graph, to find all independent neg cycles, and improve added value.
