@@ -87,7 +87,7 @@ abstract class ChangingIntValue(initialValue:Int, initialDomain:Domain)
 
   def restrictDomain(d:Domain): Unit = {
     privatedomain = privatedomain.intersect(d)
-    require(privatedomain.contains(mNewValue),"you are restricting a domain and the value is not in this domain")
+    require(privatedomain.contains(mNewValue),"you are restricting a domain and the value is not in this domain; value:" + mNewValue + " newDomain:" + d)
   }
 
   //Unions the domain with d
