@@ -27,19 +27,19 @@ class VLSN(v:Int,
            nodeToRemoveNeighborhood:Int => Neighborhood with SupportForAndThenChaining[PotentiallyComposableMove],
            removeNodeAndReInsert:Int => () => Unit,
 
+           vehicleToObjective:Array[Objective],
+           unroutedPenalty:Objective,
            name:String = "VLSN") extends Neighborhood {
 
   override def getMove(obj: Objective,
                        initialObj: Int,
                        acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
 
-    def explore(n:Neighborhood,objBeforeMove:Option[Int]=None):Option[(ComposableMove,Int)] = {
-      val initialObjective = objBeforeMove match{
-        case None => obj.value
-        case Some(x) => x
-      }
+    def explore(n:Neighborhood,localObj:Objective):Option[(ComposableMove,Int)] = {
+      val initialObjective = localObj.value
+
       //we accept all moves, since degrading moves are allowed in negative cycles
-      n.getMove(obj,initialObjective,acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match{
+      n.getMove(localObj,initialObjective,acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match{
         case NoMoveFound => None
         case MoveFound(m) => Some((m.asInstanceOf[PotentiallyComposableMove].makeComposable,initialObjective - m.objAfter))
       }
