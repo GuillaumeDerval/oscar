@@ -18,6 +18,8 @@ class MoveExplorerAlgo(v:Int,
 
                        initialObj:Int) {
 
+  //TODO: find best loop nesting WRT. checkpoint calculation.
+  //maybe we should unroute all nodes before doing move exploration since we do not want to waste time on evaluation obj on non targeted vehicle?
   val nodesToMove:Iterable[Int] = vehicleToRoutedNodes.flatMap(_._2)
 
   var nodes:Array[Node] = null

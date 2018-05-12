@@ -33,9 +33,6 @@ object VRPMaxDemoVLSN  extends App {
   val n:Int=args(0).toInt
   val v = args(1).toInt
 
-  //50.404631, 4.452595
-  //50.415162, 4.440849
-
   val displayDelay = if (n >= 1000) 1500 else 500 //ms
   val verbose = 1
   val maxPivotPerValuePercent = 4
@@ -46,7 +43,7 @@ object VRPMaxDemoVLSN  extends App {
 
 class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, displayDelay:Int, mapSide:Int) extends StopWatch{
 
-  val (symmetricDistanceMatrix1,nodesPositions) = RoutingMatrixGenerator.geographicRandom(n, minLong,maxLong,minLat,maxLat)
+  val (symmetricDistanceMatrix1,nodesPositions) = RoutingMatrixGenerator.apply(n,1000)
 
   val symmetricDistanceMatrix = Array.tabulate(n)({a =>
     Array.tabulate(n)({b =>
@@ -72,18 +69,34 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
   val c = new ConstraintSystem(model)
 
-  for(vehicle <- vehicles){
-    val workLoadOfVehicle = totalServiceTimePerVehicle(vehicle) + routeLengthPerVehicle(vehicle)
-    c.add(workLoadOfVehicle le maxWorkloadPerVehicle)
-  }
+  val vehicletoWorkload = Array.tabulate(v)(
+    vehicle => totalServiceTimePerVehicle(vehicle) + routeLengthPerVehicle(vehicle)
+  )
+
+  val vehicleToWorkloadConsraint = Array.tabulate(v)(
+    vehicle => {
+      val constr = vehicletoWorkload(vehicle) le maxWorkloadPerVehicle
+      c.add(constr)
+      constr
+    }
+  )
 
   c.close()
 
   val penaltyForUnrouted  = 10000
 
+
+  val objPerVehicle = Array.tabulate(v)(vehicle =>
+    new CascadingObjective(
+      Objective(vehicleToWorkloadConsraint(vehicle).violation),
+      Objective(vehicletoWorkload(vehicle)))
+  )
+
+  val unroutedPenaltyObj = Objective(penaltyForUnrouted*(n - length(myVRP.routes)))
+
   val obj = new CascadingObjective(
     c,
-    Objective(totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes))))
+    Objective(totalRouteLength + unroutedPenaltyObj.objective)
   )
 
   model.close()
@@ -154,6 +167,8 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     removePointVLSN,//:Int => Neighborhood with SupportForAndThenChaining[PotentiallyComposableMove],
     removeNodeAndReInsert = removeAndReInsertVLSN,//:Int => () => Unit,
 
+    objPerVehicle,
+    unroutedPenaltyObj
   )
 
 
