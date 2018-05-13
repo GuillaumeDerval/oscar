@@ -98,7 +98,8 @@ trait InsertPointAPI{
                                selectNodeBehavior:LoopBehavior = First(),
                                selectInsertionPointBehavior:LoopBehavior = First(),
                                nodeSymmetryClass:Option[Int => Int] = None,
-                               hotRestartOnNextSymmetryClass:Boolean = false) =
+                               hotRestartOnNextSymmetryClass:Boolean = false,
+                               positionIndependentMoves:Boolean = false) =
     InsertPointUnroutedFirst(unroutedNodesToInsert,
       relevantPredecessor,
       vrp,
@@ -107,7 +108,8 @@ trait InsertPointAPI{
       selectNodeBehavior,
       selectInsertionPointBehavior,
       nodeSymmetryClass,
-      hotRestartOnNextSymmetryClass)
+      hotRestartOnNextSymmetryClass,
+      positionIndependentMoves)
 }
 
 
@@ -131,7 +133,8 @@ trait OnePointMovsAPI{
                    selectDestinationBehavior:LoopBehavior = First(),
                    hotRestart: Boolean = true,
                    allPointsToMoveAreRouted:Boolean = true,
-                   allRelevantNeighborsAreRouted:Boolean = true) =
+                   allRelevantNeighborsAreRouted:Boolean = true,
+                   positionIndependentMoves:Boolean = false) =
     OnePointMove(nodesToMove,
       relevantNewPredecessors,
       vrp,
@@ -140,7 +143,8 @@ trait OnePointMovsAPI{
       selectDestinationBehavior,
       hotRestart,
       allPointsToMoveAreRouted,
-      allRelevantNeighborsAreRouted)
+      allRelevantNeighborsAreRouted,
+      positionIndependentMoves)
 
 }
 

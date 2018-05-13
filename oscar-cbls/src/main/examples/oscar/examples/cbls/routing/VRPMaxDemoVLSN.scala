@@ -86,7 +86,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
   val penaltyForUnrouted  = 10000
 
 
-  val objPerVehicle = Array.tabulate(v)(vehicle =>
+  val objPerVehicle = Array.tabulate[Objective](v)(vehicle =>
     new CascadingObjective(
       Objective(vehicleToWorkloadConsraint(vehicle).violation),
       Objective(vehicletoWorkload(vehicle)))
