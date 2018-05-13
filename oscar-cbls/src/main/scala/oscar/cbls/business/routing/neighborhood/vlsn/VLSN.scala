@@ -6,13 +6,6 @@ import oscar.cbls.core.search._
 import scala.collection.immutable.SortedMap
 
 
-trait ComposableMove extends PotentiallyComposableMove{
-  def makeComposable:ComposableMove = this
-}
-trait PotentiallyComposableMove extends Move {
-  def makeComposable:ComposableMove
-}
-
 /*
 all neighborhood must return moves that are position-independent.
 by default this is not the case. A trait has been added here to ensure that moves are indeed position-independent
@@ -22,9 +15,9 @@ class VLSN(v:Int,
            unroutedNodesToInsert:() => Iterable[Int],
            nodeToRelevantVehicles:() => Map[Int,Iterable[Int]],
 
-           nodeVehicleToInsertNeighborhood:(Int,Int) => Neighborhood with SupportForAndThenChaining[PotentiallyComposableMove],
-           nodeTargetVehicleToMoveNeighborhood:(Int,Int) => Neighborhood with SupportForAndThenChaining[PotentiallyComposableMove],
-           nodeToRemoveNeighborhood:Int => Neighborhood with SupportForAndThenChaining[PotentiallyComposableMove],
+           nodeVehicleToInsertNeighborhood:(Int,Int) => Neighborhood,
+           nodeTargetVehicleToMoveNeighborhood:(Int,Int) => Neighborhood,
+           nodeToRemoveNeighborhood:Int => Neighborhood,
            removeNodeAndReInsert:Int => () => Unit,
 
            vehicleToObjective:Array[Objective],
@@ -35,13 +28,13 @@ class VLSN(v:Int,
                        initialObj: Int,
                        acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
 
-    def explore(n:Neighborhood,localObj:Objective):Option[(ComposableMove,Int)] = {
+    def explore(n:Neighborhood,localObj:Objective):Option[(Move,Int)] = {
       val initialObjective = localObj.value
 
       //we accept all moves, since degrading moves are allowed in negative cycles
       n.getMove(localObj,initialObjective,acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match{
         case NoMoveFound => None
-        case MoveFound(m) => Some((m.asInstanceOf[PotentiallyComposableMove].makeComposable,initialObjective - m.objAfter))
+        case MoveFound(m) => Some((m.asInstanceOf[Move],initialObjective - m.objAfter))
       }
     }
 
@@ -52,9 +45,10 @@ class VLSN(v:Int,
       unroutedNodesToInsert(),
       nodeToRelevantVehicles(),
 
-      (node,vehicle,objBeforeInsert:Option[Int]) => explore(nodeVehicleToInsertNeighborhood(node,vehicle),objBeforeInsert),
-      (node,vehicle) => explore(nodeTargetVehicleToMoveNeighborhood(node,vehicle)),
-      (node) => explore(nodeToRemoveNeighborhood(node)),
+      (node,vehicle) => explore(nodeVehicleToInsertNeighborhood(node,vehicle),vehicleToObjective(vehicle)),
+      (node,vehicle) => explore(nodeTargetVehicleToMoveNeighborhood(node,vehicle),vehicleToObjective(vehicle)),
+      (node) => explore(nodeToRemoveNeighborhood(node),unroutedPenalty),
+
       removeNodeAndReInsert,
 
       initialObj).buildGraph()
