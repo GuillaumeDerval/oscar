@@ -24,7 +24,7 @@ import oscar.cbls.core.search.{Best, First, LoopBehavior}
  */
 trait RoutingNeighborhoods
   extends InsertPointAPI
-  with OnePointMovsAPI
+  with OnePointMoveAPI
   with RemovePointAPI
   with RouteExchangeAPI
   with SegmentExchangeAPI
@@ -113,7 +113,7 @@ trait InsertPointAPI{
 }
 
 
-trait OnePointMovsAPI{
+trait OnePointMoveAPI{
 
   type OnePointMoveMove = oscar.cbls.business.routing.neighborhood.OnePointMoveMove
   val OnePointMoveMove = oscar.cbls.business.routing.neighborhood.OnePointMoveMove
@@ -133,8 +133,7 @@ trait OnePointMovsAPI{
                    selectDestinationBehavior:LoopBehavior = First(),
                    hotRestart: Boolean = true,
                    allPointsToMoveAreRouted:Boolean = true,
-                   allRelevantNeighborsAreRouted:Boolean = true,
-                   positionIndependentMoves:Boolean = false) =
+                   allRelevantNeighborsAreRouted:Boolean = true) =
     OnePointMove(nodesToMove,
       relevantNewPredecessors,
       vrp,
@@ -143,8 +142,7 @@ trait OnePointMovsAPI{
       selectDestinationBehavior,
       hotRestart,
       allPointsToMoveAreRouted,
-      allRelevantNeighborsAreRouted,
-      positionIndependentMoves)
+      allRelevantNeighborsAreRouted)
 
 }
 
@@ -156,7 +154,7 @@ trait RemovePointAPI{
   /**
    * Removes a point of route.
    * The search complexity is O(n).
-   * @param relevantPointsToRemove: the predecessors ofthe points that we will try to remove
+   * @param relevantPointsToRemove: the predecessors of the points that we will try to remove
    * @param vrp the routing problem
    * @param neighborhoodName the name of the neighborhood, for verbosities
    * @param selectNodeBehavior how to select node to remove

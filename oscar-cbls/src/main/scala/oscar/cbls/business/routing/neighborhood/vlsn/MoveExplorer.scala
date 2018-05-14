@@ -104,7 +104,7 @@ class MoveExplorerAlgo(v:Int,
       for(unroutedNodeToInsert <- unroutedNodesToInsert) {
         //insertion without remove
         val symbolicNodeToInsert = nodeIDToNode(unroutedNodeToInsert)
-        insertNodeOnVehicleToMoveAndGain(unroutedNodeToInsert, targetVehicleForInsertion, Some(initialObj)) match {
+        insertNodeOnVehicleToMoveAndGain(unroutedNodeToInsert, targetVehicleForInsertion) match {
           case None =>
           case Some((move, gain)) =>
             edgeBuilder.addEdge(symbolicNodeToInsert, nodeIDToNode(targetVehicleForInsertion), gain, move)
@@ -124,7 +124,7 @@ class MoveExplorerAlgo(v:Int,
           val symbolicNodeToInsert = nodeIDToNode(unroutedNodeToInsert)
 
           //Evaluating the delta
-          insertNodeOnVehicleToMoveAndGain(unroutedNodeToInsert, targetVehicleForInsertion,None) match {
+          insertNodeOnVehicleToMoveAndGain(unroutedNodeToInsert, targetVehicleForInsertion) match {
             case None =>
             case Some((move, gain)) =>
               edgeBuilder.addEdge(symbolicNodeToInsert, symbolicNodeToRemove, gain, move)

@@ -118,7 +118,8 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       () => _ => nodesOfTargetVehicle,
       myVRP,
       hotRestart = false,
-      selectInsertionPointBehavior = Best()
+      selectInsertionPointBehavior = Best(),
+      positionIndependentMoves = true //combulsory because e are in VLSN mode!!!
     )
   }
 
@@ -162,10 +163,10 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     unroutedNodesToInsert = () => myVRP.unroutedNodes,
     nodeToRelevantVehicles = () => nodeToAllVehicles,
 
-    nodeVehicleToInsertNeighborhood = routeUnroutedPointVLSN ,//:(Int,Int) => Neighborhood with SupportForAndThenChaining[PotentiallyComposableMove],
-    nodeTargetVehicleToMoveNeighborhood = movePointVLSN,//:(Int,Int) => Neighborhood with SupportForAndThenChaining[PotentiallyComposableMove],
-    removePointVLSN,//:Int => Neighborhood with SupportForAndThenChaining[PotentiallyComposableMove],
-    removeNodeAndReInsert = removeAndReInsertVLSN,//:Int => () => Unit,
+    nodeVehicleToInsertNeighborhood = routeUnroutedPointVLSN,
+    nodeTargetVehicleToMoveNeighborhood = movePointVLSN,
+    removePointVLSN,
+    removeNodeAndReInsert = removeAndReInsertVLSN,
 
     objPerVehicle,
     unroutedPenaltyObj
