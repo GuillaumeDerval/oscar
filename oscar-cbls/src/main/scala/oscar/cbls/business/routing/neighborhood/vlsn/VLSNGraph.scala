@@ -4,17 +4,23 @@ import oscar.cbls.core.search.{DoNothingMove, Move}
 
 import scala.collection.immutable.SortedSet
 
-class VLSNNodeBuilder(nbLabels:Int) {
+class VLSNNodeBuilder(var nbLabels:Int) {
 
   var nodes: List[Node] = List.empty
   var nextNodeID: Int = 0
 
-  def addNode(representedNode:Int, vehicle:Int, label:Int):Node = {
+  def addNode(representedNode:Int, vehicle:Int, label:Int,isRouted:Boolean):Node = {
     require(label >=0 && label < nbLabels)
-    val n = new Node(nextNodeID, representedNode:Int, vehicle:Int, label)
+    val n = new Node(nextNodeID, representedNode:Int, isRouted, vehicle:Int, label)
     nextNodeID += 1
     nodes = n :: nodes
     n
+  }
+
+  def newFreshLabel():Int = {
+    val toReturn = nbLabels
+    nbLabels = nbLabels +1
+    toReturn
   }
 
   def finish():(Array[Node],Int) = {
@@ -28,17 +34,17 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int){
   var fromToWithEdge:List[(Int,Int)] = List.empty
   var nextEdgeID:Int = 0
 
-  def addEdge(from:Node,to:Node,gain:Int,move:Move){
+  def addEdge(from:Node, to:Node, deltaObj:Int, move:Move){
     val existingEdge = edges(from.nodeID)(to.nodeID)
     if(existingEdge == null){
-      edges(from.nodeID)(to.nodeID) = new Edge(from:Node,to:Node, move:Move,gain:Int, nextEdgeID)
+      edges(from.nodeID)(to.nodeID) = new Edge(from:Node,to:Node, move:Move,deltaObj:Int, nextEdgeID)
       nextEdgeID += 1
       fromToWithEdge = (from.nodeID,to.nodeID) :: fromToWithEdge
     }else {
-      if (existingEdge.deltaObj < gain) {
+      if (existingEdge.deltaObj < deltaObj) {
         //override
         System.err.println("overriding edge in VLSN?")
-        edges(from.nodeID)(to.nodeID) = new Edge(from: Node, to: Node, move: Move, gain: Int, existingEdge.edgeID)
+        edges(from.nodeID)(to.nodeID) = new Edge(from: Node, to: Node, move: Move, deltaObj: Int, existingEdge.edgeID)
       }
     }
   }
@@ -54,6 +60,8 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int){
 
     new VLSNGraph(nodes,edgeArray,nbLabels)
   }
+
+  override def toString: String = "EdgeBuilder( nbNodes:" + nbNodes + " nbEdges:" + nextEdgeID + ")"
 }
 
 /**
@@ -68,27 +76,36 @@ class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge],val nbLabels:Int){
 
   override def toString: String = "VLSNGraph(nbNodes:" + nbNodes + ",nbEdges:" + nbEdges +
     "\n\tnodes{\n\t\t"+ nodes.mkString("\n\t\t") + "\n\t}" +
-    "\n\tedges{\n\t\t" + edges.mkString("\n\t\t") + "\n\t}" + "\n}" + "\n\n\n\n" + toDOT(SortedSet(1,2,4))
+    "\n\tedges{\n\t\t" + edges.mkString("\n\t\t") + "\n\t}" + "\n}" + "\n\n\n\n" + toDOT(List(1,2,4).map(edges(_)))
 
   //"C:\Program Files (x86)\Graphviz2.38\bin\neato" -Tpng  vlsnGraph.dot > a.png
-  def toDOT(edgesToBold:SortedSet[Int] = SortedSet.empty):String =
+  def toDOT(edgesToBold:List[Edge] = List.empty):String = {
+    val setOfEdgesToBold = SortedSet.empty[Int] ++ edgesToBold.map(_.edgeID)
+    val setOfNodesToBold = SortedSet.empty[Int] ++ edgesToBold.map(_.from.nodeID)
     "##Command to produce the output: \"neato -Tpng thisfile > thisfile.png\"\n" +
       "digraph VLSNGraph {\n" +
-      nodes.map(_.toDOT(edgesToBold)).mkString("\t","\n\t","\n") +
-      edges.map(edge => edge.toDOT(edgesToBold.contains(edge.edgeID))).mkString("\t","\n\t","\n") +
-      "\toverlap=false\n"+
+      nodes.map(node => node.toDOT(setOfNodesToBold.contains(node.nodeID))).mkString("\t", "\n\t", "\n") +
+      edges.map(edge => edge.toDOT(setOfEdgesToBold.contains(edge.edgeID))).mkString("\t", "\n\t", "\n") +
+      "\toverlap=false\n" +
       "\tlabel=\"VLSN graph\";\n" +
       "\tfontsize=12;\n" +
       "}"
+  }
 }
 
-class Node(val nodeID:Int, val representedNode:Int, vehicle:Int, val label:Int){
+class Node(val nodeID:Int, val representedNode:Int, isRouted:Boolean, vehicle:Int, val label:Int){
   var incoming:List[Edge] = List.empty
   var outgoing:List[Edge] = List.empty
 
-  override def toString: String = "Node(nodeID:" + nodeID + ",routingNode:" + representedNode + "vehicle:" + vehicle + " label:" + label + ")"
+  override def toString: String = "Node(vlsnNode:" + nodeID + " routingNode:" + representedNode + " v:" + vehicle + " label:" + label + ")"
 
-  def toDOT(edgesToBold:SortedSet[Int]):String = "\"" + nodeID + "\" [shape=circle,style=filled,fillcolor=white, label = \"node:" + representedNode + "\\nvehicle:" + vehicle + "\"] ; "
+  def toDOT(bold:Boolean):String = {
+
+    val fillColor = (if (isRouted) "white" else "crimson")
+    val lineColor = (if (bold) " blue" else "black")
+    "\"" + nodeID + "\" [shape=circle,style=filled,fillcolor=" + fillColor + ",color=" + lineColor + ", label = \"node:" + representedNode + "\\nvehicle:" + vehicle + "\"] ; "
+
+  }
 }
 
 class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Int, val edgeID:Int){
@@ -110,7 +127,7 @@ object VLSNGraphTest extends App{
 
   def buildGraph():VLSNGraph = {
     val nbNodes = 6
-    val nodes = Array.tabulate(nbNodes)(nodeID => new Node(nodeID, nbNodes + nodeID,nodeID,nodeID))
+    val nodes = Array.tabulate(nbNodes)(nodeID => new Node(nodeID, nbNodes + nodeID,true,nodeID,nodeID))
     val builder = new VLSNEdgeBuilder(nodes: Array[Node], nbNodes) //nbLAbel is set here to nbNodes
 
     def edge(from: Int, to: Int, gain: Int): Unit = {

@@ -70,7 +70,7 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
    * @note complexity is O(1)
    */
   def apply(id:Int): Boolean ={
-    assert(0<=id && id<length)
+    require(0<=id && id<length, "got id:" + id + "length:" + length)
     internalArray(id)>=global
   }
 

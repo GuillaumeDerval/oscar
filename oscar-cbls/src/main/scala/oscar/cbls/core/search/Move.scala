@@ -175,7 +175,7 @@ case class DoNothingNeighborhood() extends Neighborhood with SupportForAndThenCh
   override def instantiateCurrentMove(newObj : Int) : DoNothingMove = DoNothingMove(newObj)
 }
 
-case class DoNothingMove(override val objAfter:Int) extends Move(objAfter){
+case class DoNothingMove(override val objAfter:Int,override val neighborhoodName:String = null) extends Move(objAfter,neighborhoodName){
   override def commit() : Unit = {}
 }
 

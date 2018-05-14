@@ -133,7 +133,8 @@ trait OnePointMoveAPI{
                    selectDestinationBehavior:LoopBehavior = First(),
                    hotRestart: Boolean = true,
                    allPointsToMoveAreRouted:Boolean = true,
-                   allRelevantNeighborsAreRouted:Boolean = true) =
+                   allRelevantNeighborsAreRouted:Boolean = true,
+                   positionIndependentMoves:Boolean = false) =
     OnePointMove(nodesToMove,
       relevantNewPredecessors,
       vrp,
@@ -142,7 +143,8 @@ trait OnePointMoveAPI{
       selectDestinationBehavior,
       hotRestart,
       allPointsToMoveAreRouted,
-      allRelevantNeighborsAreRouted)
+      allRelevantNeighborsAreRouted,
+      positionIndependentMoves)
 
 }
 

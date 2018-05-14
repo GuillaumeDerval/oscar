@@ -32,13 +32,15 @@ object VRPMaxDemoVLSN  extends App {
   println("usage: VRPMaxDemo n v")
   val n:Int=args(0).toInt
   val v = args(1).toInt
+  println(s"VRPMaxDemoVLSN(n:$n, v:$v)")
 
+  require(v < n)
   val displayDelay = if (n >= 1000) 1500 else 500 //ms
   val verbose = 1
   val maxPivotPerValuePercent = 4
   val mapSide = 1000
 
-  new VRPMaxDemo(n,v,maxPivotPerValuePercent,verbose,displayDelay, mapSide)
+  new VRPMaxDemoVLSN(n,v,maxPivotPerValuePercent,verbose,displayDelay, mapSide)
 }
 
 class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, displayDelay:Int, mapSide:Int) extends StopWatch{
@@ -130,7 +132,8 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       () => _ => nodesOfTargetVehicle,
       myVRP,
       selectDestinationBehavior = Best(),
-      hotRestart = false)
+      hotRestart = false,
+      positionIndependentMoves = true)
   }
 
   def removePointVLSN(node:Int) =
@@ -141,7 +144,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
   def removeAndReInsertVLSN(pointToRemove:Int):(() => Unit) = {
     val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
-    require(pointToRemove > v, "cannot remove vehicle point: " + v)
+    require(pointToRemove >= v, "cannot remove vehicle point: " + v)
 
     myVRP.routes.value.positionOfAnyOccurrence(pointToRemove) match {
       case None => throw new Error("cannot remove non routed point:" + pointToRemove)
@@ -149,7 +152,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
         myVRP.routes.remove(positionOfPointToRemove)
     }
 
-    def restoreAndRelease():Unit = {
+    def restoreAndRelease: (() => Unit) = () => {
       myVRP.routes.rollbackToTopCheckpoint(checkpointBeforeRemove)
       myVRP.routes.releaseTopCheckpoint()
     }
@@ -158,7 +161,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
   def vlsn = new VLSN(
     v,
-    vehicleToRoutedNodesToMove = () => SortedMap.empty[Int,List[Int]] ++ vehicles.map((v:Int) => (v,myVRP.getRouteOfVehicle(v))),
+    vehicleToRoutedNodesToMove = () => {SortedMap.empty[Int,List[Int]] ++ vehicles.map((vehicle:Int) => (vehicle,myVRP.getRouteOfVehicle(vehicle).filter(_ >= v)))},
 
     unroutedNodesToInsert = () => myVRP.unroutedNodes,
     nodeToRelevantVehicles = () => nodeToAllVehicles,
@@ -169,10 +172,9 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     removeNodeAndReInsert = removeAndReInsertVLSN,
 
     objPerVehicle,
-    unroutedPenaltyObj
+    unroutedPenaltyObj,
+    obj
   )
-
-
 
 
   val routeUnroutedPoint =  profile(insertPointUnroutedFirst(myVRP.unrouted,
@@ -197,17 +199,21 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
 
 
-  val search = (bestSlopeFirst(List(
+  val search = bestSlopeFirst(List(
     routeUnroutedPoint,
     onePtMove(10),
     customTwoOpt(20),
-    customThreeOpt(10,true)))
-    exhaust vlsn)
-
-  search.verbose = verbose
+    customThreeOpt(10,true)
+  ))
+    search.verbose = verbose
   //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
   //  routeUnroutdPoint.verbose= 4
   search.doAllMoves(obj = obj)
+
+  println("before starting VLSN")
+  println(myVRP)
+
+  vlsn.doAllMoves(obj=obj)
 
 
   print(myVRP)
