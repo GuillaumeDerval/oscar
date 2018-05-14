@@ -115,11 +115,11 @@ class VRPDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, displayDel
 
   def segExchange(k:Int) = segmentExchange(myVRP,()=>myVRP.kFirst(k,closestRelevantPredecessors,routedPostFilter), () => myVRP.vehicles) guard(() => {v > 1})
 
-
   graphicExtension.drawRoutes()
-  Thread.sleep(10000)
-  println("start")
-  Thread.sleep(1000)
+  //Thread.sleep(10000)
+  //println("start")
+  //Thread.sleep(1000)
+
   //le problème du hérisson apparaît lorsuqe routeUnroutedPoint3 & routeUnroutedPoint3 sont actifs
   val search = (bestSlopeFirst(List(routeUnroutedPoint,  routeUnroutedPoint2,  /*routeUnroutedPoint3, */ vlsn1pt, onePtMove(10),customTwoOpt, customThreeOpt(10,true),segExchange(10)))
     exhaust bestSlopeFirst(List(customThreeOpt(30,true),vlsn1pt))).afterMove(graphicExtension.drawRoutes()) showObjectiveFunction(obj)
