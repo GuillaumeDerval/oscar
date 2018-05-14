@@ -3,7 +3,7 @@ package oscar.cbls.business.routing.neighborhood.vlsn
 import oscar.cbls.Objective
 import oscar.cbls.core.search._
 
-import scala.collection.immutable.{SortedMap, SortedSet}
+import scala.collection.immutable.SortedMap
 
 
 /*
@@ -29,6 +29,8 @@ class VLSN(v:Int,
                        initialObj: Int,
                        acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
 
+    require(initialObj == globalObjective.value)
+
     //first, explore the atomic moves, and build VLSN graph
     val vlsnGraph = new MoveExplorerAlgo(
       v:Int,
@@ -45,22 +47,25 @@ class VLSN(v:Int,
       unroutedPenalty,
       globalObjective).buildGraph()
 
-    println(vlsnGraph.toDOT())
+    //println(vlsnGraph.toDOT())
 
     //then, find proper negative cycle in graph
-    new CycleFinderAlgoMouthuy(vlsnGraph).findCycle() match{
-      case None => NoMoveFound
+    new CycleFinderAlgoDFS(vlsnGraph,false).findCycle() match{
+      case None =>
+        NoMoveFound
       case Some(listOfEdge) =>
-        println("found VLSN move: " + listOfEdge.map(e => e.toString + "\t" + e.move).mkString("\n\t","\n\t",""))
+        require(listOfEdge.nonEmpty, "list of edge should not be empty")
         //TODO:further explore the graph, to find all independent neg cycles, and improve added value.
         //finally, extract the moves from the graph and return the composite moves
 
-        println(vlsnGraph.toDOT(listOfEdge))
+        //println(vlsnGraph.toDOT(listOfEdge))
 
-        throw new Error("fini")
-        val moves = listOfEdge.map(edge => edge.move)
+        val moves = listOfEdge.map(edge => edge.move).filter(move => !move.isInstanceOf[DoNothingMove])
         val delta = listOfEdge.map(edge => edge.deltaObj).sum
-        MoveFound(CompositeMove(moves,initialObj + delta,name))
+        require(delta <0, "delta should be negative, got " + delta)
+        val computedNewObj = initialObj + delta
+        require(computedNewObj < initialObj, "no gain in VLSN?")
+        MoveFound(CompositeMove(moves,computedNewObj,name))
     }
   }
 }

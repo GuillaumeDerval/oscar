@@ -18,7 +18,7 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.neighborhood.vlsn.VLSN
-import oscar.cbls.core.search.{Best, First}
+import oscar.cbls.core.search.{Best, First, Move, MoveFound}
 import oscar.cbls.util.StopWatch
 
 import scala.collection.immutable.SortedMap
@@ -140,6 +140,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     removePoint(
       () => List(node),
       myVRP,
+      positionIndependentMoves = true,
       hotRestart = false)
 
   def removeAndReInsertVLSN(pointToRemove:Int):(() => Unit) = {
@@ -204,16 +205,12 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     onePtMove(10),
     customTwoOpt(20),
     customThreeOpt(10,true)
-  ))
-    search.verbose = verbose
+  )) exhaust vlsn
+
+  search.verbose = 2
   //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
   //  routeUnroutdPoint.verbose= 4
   search.doAllMoves(obj = obj)
-
-  println("before starting VLSN")
-  println(myVRP)
-
-  vlsn.doAllMoves(obj=obj)
 
 
   print(myVRP)

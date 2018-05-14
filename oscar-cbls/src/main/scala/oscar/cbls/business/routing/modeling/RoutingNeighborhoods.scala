@@ -169,13 +169,15 @@ trait RemovePointAPI{
                   vrp: VRP,
                   neighborhoodName:String = "RemovePoint",
                   selectNodeBehavior:LoopBehavior = First(),
-                  hotRestart:Boolean = true) =
+                  hotRestart:Boolean = true,
+                  positionIndependentMoves:Boolean = false) =
     RemovePoint(
       relevantPointsToRemove,
       vrp,
       neighborhoodName,
       selectNodeBehavior,
-      hotRestart)
+      hotRestart,
+      positionIndependentMoves)
 
 }
 

@@ -62,16 +62,13 @@ class MoveExplorerAlgo(v:Int,
     // a different label for the trashNode
 
     buildNodes()
-    edgeBuilder = new VLSNEdgeBuilder(nodes,nbLabels) //the labels are the vehicles
+    edgeBuilder = new VLSNEdgeBuilder(nodes,nbLabels,v) //the labels are the vehicles
     exploreInsertions()
-    println("after insertions:" + edgeBuilder)
     exploreNodeMove()
-    println("after moves:" + edgeBuilder)
     exploreDeletions() //should be called after insertions
-    println("after deletions:" + edgeBuilder)
-    addNoMoveEdgesVehiclesToTrashNode()
+ //   addNoMoveEdgesVehiclesToTrashNode()
     addTrashNodeToUnroutedNodes()
-    addTrashNodeToRoutedNodes()
+//    addTrashNodeToRoutedNodes()
 
     edgeBuilder.finish()
   }
@@ -90,27 +87,27 @@ class MoveExplorerAlgo(v:Int,
     relevantVehicles = SortedSet.empty ++ nodeToRelevantVehicles.flatMap(_._2)
 
     for(vehicle <- relevantVehicles){
-      val node = builder.addNode(vehicle,vehicle,vehicle,true)
+      val node = builder.addNode(vehicle,vehicle,vehicle,VLSNSNodeType.VehicleNode)
       vehicleToNode(vehicle) = node
       nodeIDToNode += ((vehicle,node))
     }
 
     //noeud cible pour l'unroutage, label is v
-    trashNode = builder.addNode(-1,-1,builder.newFreshLabel(),false)
+    trashNode = builder.addNode(-1,-1,builder.newFreshLabel(),VLSNSNodeType.FictiveNode)
 
     //noeuds pour les noeud à déplacer
     for((vehicle,routedNodesOnVehicle) <- vehicleToRoutedNodes){
       require(vehicle < v)
       for(nodeID <- routedNodesOnVehicle){
         require(nodeID >= v, "cannot put vehicle to move :" + nodeID)
-        nodeIDToNode += ((nodeID,builder.addNode(nodeID,vehicle,vehicle,true)))
+        nodeIDToNode += ((nodeID,builder.addNode(nodeID,vehicle,vehicle,VLSNSNodeType.RegularNode)))
       }
     }
 
     //noeuds non routés
     for(unroutedNode <- unroutedNodesToInsert){
       //TODO: check that label and vehicles are fine...
-      nodeIDToNode += ((unroutedNode,builder.addNode(unroutedNode,v,builder.newFreshLabel(),false)))
+      nodeIDToNode += ((unroutedNode,builder.addNode(unroutedNode,v,builder.newFreshLabel(),VLSNSNodeType.UnroutedNode)))
     }
 
     val x = builder.finish()
@@ -131,7 +128,6 @@ class MoveExplorerAlgo(v:Int,
 
 
   def exploreInsertions(){
-    println("exploring insertion")
     val vehicleAndUnroutedNodes:Iterable[(Int,Int)] =
       unroutedNodesToInsert.flatMap(unroutedNode => nodeToRelevantVehicles(unroutedNode).map(vehicle => (vehicle,unroutedNode)))
 
@@ -181,7 +177,6 @@ class MoveExplorerAlgo(v:Int,
   }
 
   def exploreNodeMove(): Unit = {
-    println("exploring moves")
     val vehicleAndNodeToMove:Iterable[(Int,Int)] =
       nodesToMove.flatMap(nodeToMove => nodeToRelevantVehicles(nodeToMove).map(vehicle => (vehicle,nodeToMove)))
 
