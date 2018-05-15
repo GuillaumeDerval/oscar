@@ -59,7 +59,8 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
                        vrp: VRP,
                        neighborhoodName:String = "RemovePoint",
                        selectNodeBehavior:LoopBehavior = First(),
-                       hotRestart:Boolean = true)
+                       hotRestart:Boolean = true,
+                       positionIndependentMoves:Boolean = false)
   extends EasyNeighborhoodMultiLevel[RemovePointMove](neighborhoodName){
 
   //the indice to start with for the exploration
@@ -104,10 +105,15 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
   }
 
   override def instantiateCurrentMove(newObj: Int) =
-    RemovePointMove(positionOfPointToRemove, pointToRemove, vrp, newObj, this, neighborhoodNameToString)
+    RemovePointMove(positionOfPointToRemove, pointToRemove, positionIndependentMoves,vrp, newObj, this, neighborhoodNameToString)
 
   def doMove(positionOfPointToRemove: Int) {
     seq.remove(positionOfPointToRemove)
+  }
+
+  def doMovePositionIndependent(valueToRemove: Int) {
+    val s = seq.newValue
+    seq.remove(s.positionOfAnyOccurrence(valueToRemove).get)
   }
 
   //this resets the internal state of the Neighborhood
@@ -125,6 +131,7 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
  */
 case class RemovePointMove(positionOfPointToRemove: Int,
                            pointToRemove:Int,
+                           positionIndependentMoves:Boolean,
                            vrp:VRP,
                            override val objAfter:Int,
                            override val neighborhood:RemovePoint,
@@ -134,7 +141,12 @@ case class RemovePointMove(positionOfPointToRemove: Int,
   override def impactedPoints: List[Int] = List(pointToRemove)
 
   override def commit() {
-    neighborhood.doMove(positionOfPointToRemove)
+    if(positionIndependentMoves){
+      neighborhood.doMovePositionIndependent(pointToRemove)
+    }else{
+      neighborhood.doMove(positionOfPointToRemove)
+    }
   }
+
   override def toString: String = "RemovePoint(point:" + pointToRemove + objToString + ")"
 }

@@ -138,7 +138,7 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4)
     * @return
     */
   def getRouteOfVehicle(vehicle:Int):List[Int] = {
-    require(vehicle < v)
+    require(vehicle < v, "asking route of vehicle:" + vehicle + " with v:" + v)
     var currentVExplorer = routes.value.explorerAtAnyOccurrence(vehicle).head.next
     var acc:List[Int] = List(vehicle)
     while (currentVExplorer match{

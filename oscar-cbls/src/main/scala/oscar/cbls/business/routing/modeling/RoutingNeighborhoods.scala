@@ -24,7 +24,7 @@ import oscar.cbls.core.search.{Best, First, LoopBehavior}
  */
 trait RoutingNeighborhoods
   extends InsertPointAPI
-  with OnePointMovsAPI
+  with OnePointMoveAPI
   with RemovePointAPI
   with RouteExchangeAPI
   with SegmentExchangeAPI
@@ -98,7 +98,8 @@ trait InsertPointAPI{
                                selectNodeBehavior:LoopBehavior = First(),
                                selectInsertionPointBehavior:LoopBehavior = First(),
                                nodeSymmetryClass:Option[Int => Int] = None,
-                               hotRestartOnNextSymmetryClass:Boolean = false) =
+                               hotRestartOnNextSymmetryClass:Boolean = false,
+                               positionIndependentMoves:Boolean = false) =
     InsertPointUnroutedFirst(unroutedNodesToInsert,
       relevantPredecessor,
       vrp,
@@ -107,11 +108,12 @@ trait InsertPointAPI{
       selectNodeBehavior,
       selectInsertionPointBehavior,
       nodeSymmetryClass,
-      hotRestartOnNextSymmetryClass)
+      hotRestartOnNextSymmetryClass,
+      positionIndependentMoves)
 }
 
 
-trait OnePointMovsAPI{
+trait OnePointMoveAPI{
 
   type OnePointMoveMove = oscar.cbls.business.routing.neighborhood.OnePointMoveMove
   val OnePointMoveMove = oscar.cbls.business.routing.neighborhood.OnePointMoveMove
@@ -131,7 +133,8 @@ trait OnePointMovsAPI{
                    selectDestinationBehavior:LoopBehavior = First(),
                    hotRestart: Boolean = true,
                    allPointsToMoveAreRouted:Boolean = true,
-                   allRelevantNeighborsAreRouted:Boolean = true) =
+                   allRelevantNeighborsAreRouted:Boolean = true,
+                   positionIndependentMoves:Boolean = false) =
     OnePointMove(nodesToMove,
       relevantNewPredecessors,
       vrp,
@@ -140,7 +143,8 @@ trait OnePointMovsAPI{
       selectDestinationBehavior,
       hotRestart,
       allPointsToMoveAreRouted,
-      allRelevantNeighborsAreRouted)
+      allRelevantNeighborsAreRouted,
+      positionIndependentMoves)
 
 }
 
@@ -152,7 +156,7 @@ trait RemovePointAPI{
   /**
    * Removes a point of route.
    * The search complexity is O(n).
-   * @param relevantPointsToRemove: the predecessors ofthe points that we will try to remove
+   * @param relevantPointsToRemove: the predecessors of the points that we will try to remove
    * @param vrp the routing problem
    * @param neighborhoodName the name of the neighborhood, for verbosities
    * @param selectNodeBehavior how to select node to remove
@@ -165,13 +169,15 @@ trait RemovePointAPI{
                   vrp: VRP,
                   neighborhoodName:String = "RemovePoint",
                   selectNodeBehavior:LoopBehavior = First(),
-                  hotRestart:Boolean = true) =
+                  hotRestart:Boolean = true,
+                  positionIndependentMoves:Boolean = false) =
     RemovePoint(
       relevantPointsToRemove,
       vrp,
       neighborhoodName,
       selectNodeBehavior,
-      hotRestart)
+      hotRestart,
+      positionIndependentMoves)
 
 }
 
