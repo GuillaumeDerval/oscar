@@ -24,7 +24,7 @@ class VLSN(v:Int,
            vehicleToObjective:Array[Objective],
            unroutedPenalty:Objective,
            globalObjective:Objective,
-           cycleFinderAlgoSeletion:CycleFinderAlgoType = CycleFinderAlgoType.MouthuyAndThenDFS,
+           cycleFinderAlgoSeletion:CycleFinderAlgoType = CycleFinderAlgoType.Mouthuy,
            exhaustVLSN:Boolean =  true,
            name:String = "VLSN",
           ) extends Neighborhood {
