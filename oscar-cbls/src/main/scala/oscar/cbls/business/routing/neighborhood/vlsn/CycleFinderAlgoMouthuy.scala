@@ -5,7 +5,7 @@ import oscar.cbls.algo.magicArray.MagicBoolArray
 import scala.collection.mutable
 
 
-class CycleFinderAlgoMouthuy(graph:VLSNGraph){
+class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
   private val nodes:Array[Node] = graph.nodes
   private val edges:Array[Edge] = graph.edges
   private val nbNodes = nodes.length
@@ -76,6 +76,8 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph){
       currentNode = incomingEdge.from
 
       if(currentNode == rootNode){
+        val sum = toReturn.map(_.deltaObj).sum
+        require(sum < 0)
         return CycleFound(toReturn)
       }
     }
@@ -93,7 +95,8 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph){
     require(isNodeOnPath.indicesAtTrue.isEmpty)
 
     markPathTo(node:Node,false) match{
-      case f:CycleFound => return f
+      case f:CycleFound =>
+        return f
       case MarkingDone(duplicateLabels) if !duplicateLabels =>
         var outgoingEdges = node.outgoing
         while(outgoingEdges.nonEmpty){
@@ -103,7 +106,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph){
 
           val toNode = currentEdge.to
           val toNodeID = toNode.nodeID
-          if(isNodeOnPath(toNodeID)) {
+          if(isNodeOnPath(toNodeID) && distanceToNode(nodeID) - distanceToNode(toNodeID) + currentEdge.deltaObj < 0) {
             //we found a negative cycle
             selectedIncomingEdges(toNodeID) = currentEdge
             return extractCycle(toNode)
@@ -156,7 +159,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph){
     None
   }
 
-  def findCycle():Option[List[Edge]] = {
+  override def findCycle():Option[List[Edge]] = {
     for(rootNode <- nodes){
       searchRootedCycle(rootNode) match{
         case None => ;

@@ -1,12 +1,12 @@
 package oscar.cbls.business.routing.neighborhood.vlsn
 
 
-class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean){
+class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends CycleFinderAlgo{
   private val nodes:Array[Node] = graph.nodes
   private val nbNodes = nodes.length
   private val nbLabels = graph.nbLabels
 
-  def findCycle():Option[List[Edge]] = {
+  override def findCycle():Option[List[Edge]] = {
 
     val reachabilityMatrix = if(pruneOnReachability){
       new ReacheabilityFloydWarshall(graph:VLSNGraph).buildRechabilityMatrix()

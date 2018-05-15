@@ -10,20 +10,40 @@ object MatrixTools{
   }
 }
 
-object CycleFinderAlgoTest extends App{
-  val graph = VLSNGraphTest.buildGraph()
-  println(graph)
+object CycleFinderAlgoType extends Enumeration{
+  type CycleFinderAlgoType = Value
+  val Mouthuy, DFS, DFSPruned, MouthuyAndThenDFS = Value
+}
 
-  println("starting DFS")
-  val cycle = new CycleFinderAlgoDFS(graph,false).findCycle()
-  println("done DFS")
-  println(cycle)
+import CycleFinderAlgoType._
 
+abstract class CycleFinderAlgo{
+  def findCycle:Option[List[Edge]]
+}
 
-  println("starting Moutuy")
-  val cycle2 = new CycleFinderAlgoMouthuy(graph:VLSNGraph).findCycle()
-  println("done Moutuy")
-  println("cycle found: " + cycle2)
+object CycleFinderAlgo {
 
-//  println(graph.toDOT(SortedSet.empty[Int] ++ cycle.get.map(_.edgeID)))
+  def apply(graph: VLSNGraph, algo: CycleFinderAlgoType): CycleFinderAlgo = {
+    algo match {
+      case Mouthuy =>
+        new CycleFinderAlgoMouthuy(graph)
+      case DFS =>
+        new CycleFinderAlgoDFS(graph, pruneOnReachability = false)
+      case DFSPruned =>
+        new CycleFinderAlgoDFS(graph, pruneOnReachability = true)
+      case MouthuyAndThenDFS =>
+        new CycleFinderAlgoMouthuyAndThenDFS(graph:VLSNGraph)
+    }
+  }
+
+}
+
+class CycleFinderAlgoMouthuyAndThenDFS(graph:VLSNGraph) extends CycleFinderAlgo{
+  override def findCycle: Option[List[Edge]] = {
+    new CycleFinderAlgoMouthuy(graph).findCycle() match{
+      case None =>
+        new CycleFinderAlgoDFS(graph, pruneOnReachability = true).findCycle()
+      case a => a
+    }
+  }
 }

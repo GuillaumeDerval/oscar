@@ -66,9 +66,8 @@ class MoveExplorerAlgo(v:Int,
     exploreInsertions()
     exploreNodeMove()
     exploreDeletions() //should be called after insertions
- //   addNoMoveEdgesVehiclesToTrashNode()
+    addNoMoveEdgesVehiclesToTrashNode()
     addTrashNodeToUnroutedNodes()
-//    addTrashNodeToRoutedNodes()
 
     edgeBuilder.finish()
   }
@@ -257,13 +256,6 @@ class MoveExplorerAlgo(v:Int,
     for(unroutedNode <- unroutedNodesToInsert){
       edgeBuilder.addEdge(trashNode,nodeIDToNode(unroutedNode),0,
         new DoNothingMove(0,"trashNodeToUnroutedNodes(unrouted:" + unroutedNode + ")"))
-    }
-  }
-
-  def addTrashNodeToRoutedNodes(): Unit = {
-    for(nodeToMove <- nodesToMove){
-      edgeBuilder.addEdge(trashNode,nodeIDToNode(nodeToMove),0,
-        new DoNothingMove(0,"trashNodeToRoutedNodes(node:" + nodeToMove + ")"))
     }
   }
 }

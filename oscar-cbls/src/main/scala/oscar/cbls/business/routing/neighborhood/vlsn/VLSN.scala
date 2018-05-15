@@ -1,6 +1,7 @@
 package oscar.cbls.business.routing.neighborhood.vlsn
 
 import oscar.cbls.Objective
+import oscar.cbls.business.routing.neighborhood.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
 import oscar.cbls.core.search._
 
 import scala.collection.immutable.SortedMap
@@ -23,7 +24,9 @@ class VLSN(v:Int,
            vehicleToObjective:Array[Objective],
            unroutedPenalty:Objective,
            globalObjective:Objective,
-           name:String = "VLSN") extends Neighborhood {
+           cycleFinderAlgoSeletion:CycleFinderAlgoType = CycleFinderAlgoType.MouthuyAndThenDFS,
+           name:String = "VLSN",
+           ) extends Neighborhood {
 
   override def getMove(obj: Objective,
                        initialObj: Int,
@@ -50,7 +53,7 @@ class VLSN(v:Int,
     //println(vlsnGraph.toDOT())
 
     //then, find proper negative cycle in graph
-    new CycleFinderAlgoDFS(vlsnGraph,false).findCycle() match{
+    CycleFinderAlgo(vlsnGraph,cycleFinderAlgoSeletion).findCycle match{
       case None =>
         NoMoveFound
       case Some(listOfEdge) =>
@@ -62,7 +65,7 @@ class VLSN(v:Int,
 
         val moves = listOfEdge.map(edge => edge.move).filter(move => !move.isInstanceOf[DoNothingMove])
         val delta = listOfEdge.map(edge => edge.deltaObj).sum
-        require(delta <0, "delta should be negative, got " + delta)
+        require(delta < 0, "delta should be negative, got " + delta)
         val computedNewObj = initialObj + delta
         require(computedNewObj < initialObj, "no gain in VLSN?")
         MoveFound(CompositeMove(moves,computedNewObj,name))
