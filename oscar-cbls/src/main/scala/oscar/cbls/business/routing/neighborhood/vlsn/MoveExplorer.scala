@@ -181,23 +181,23 @@ class MoveExplorerAlgo(v:Int,
 
     val vehicleToNodeToMoveThere = vehicleAndNodeToMove.groupBy(_._1).mapValues(_.map(_._2))
 
-    for((targetVehicleID,routedNodesToMoveThere) <- vehicleToNodeToMoveThere){
+    for((targetVehicleID,routedNodesToMoveThere) <- vehicleToNodeToMoveThere) {
       val symbolicNodeOfVehicle = nodeIDToNode(targetVehicleID)
 
       //moves without removes
-      for(routingNodeToMove <- routedNodesToMoveThere) {
+      for (routingNodeToMove <- routedNodesToMoveThere) {
         val symbolicNodeOfNodeToMove = nodeIDToNode(routingNodeToMove)
-
-        //move without remove
-        //     :(Int,Int) => Neighborhood,
-        nodeTargetVehicleToMoveNeighborhood(routingNodeToMove, targetVehicleID)
-          .getMove(vehicleToObjectives(targetVehicleID),initialVehicleToObjectives(targetVehicleID),acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match {
-          case NoMoveFound =>
-          case MoveFound(move) =>
-            edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeOfVehicle, move.objAfter - initialVehicleToObjectives(targetVehicleID), move)
+        if (symbolicNodeOfNodeToMove.vehicle != targetVehicleID){
+          //move without remove
+          //     :(Int,Int) => Neighborhood,
+          nodeTargetVehicleToMoveNeighborhood(routingNodeToMove, targetVehicleID)
+            .getMove(vehicleToObjectives(targetVehicleID), initialVehicleToObjectives(targetVehicleID), acceptanceCriterion = (_, newObj) => newObj != Int.MaxValue) match {
+            case NoMoveFound =>
+            case MoveFound(move) =>
+              edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeOfVehicle, move.objAfter - initialVehicleToObjectives(targetVehicleID), move)
+          }
         }
       }
-
       //moves with removes
       for(nodeIDToEject <- vehicleToRoutedNodes(targetVehicleID)){
         val symbolicNodeToEject = nodeIDToNode(nodeIDToEject)
@@ -211,12 +211,14 @@ class MoveExplorerAlgo(v:Int,
         for(routingNodeToMove <- routedNodesToMoveThere) {
           val symbolicNodeOfNodeToMove = nodeIDToNode(routingNodeToMove)
 
-          //Evaluating all moves on this remove
-          nodeTargetVehicleToMoveNeighborhood(routingNodeToMove, targetVehicleID)
-            .getMove(vehicleToObjectives(targetVehicleID),initialVehicleToObjectives(targetVehicleID),acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match {
-            case NoMoveFound =>
-            case MoveFound(move) =>
-              edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeToEject, move.objAfter - initialVehicleToObjectives(targetVehicleID), move)
+          if (symbolicNodeOfNodeToMove.vehicle != targetVehicleID) {
+            //Evaluating all moves on this remove
+            nodeTargetVehicleToMoveNeighborhood(routingNodeToMove, targetVehicleID)
+              .getMove(vehicleToObjectives(targetVehicleID), initialVehicleToObjectives(targetVehicleID), acceptanceCriterion = (_, newObj) => newObj != Int.MaxValue) match {
+              case NoMoveFound =>
+              case MoveFound(move) =>
+                edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeToEject, move.objAfter - initialVehicleToObjectives(targetVehicleID), move)
+            }
           }
         }
         //re-inserting

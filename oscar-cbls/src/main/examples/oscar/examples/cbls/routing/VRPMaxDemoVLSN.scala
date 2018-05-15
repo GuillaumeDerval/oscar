@@ -177,7 +177,8 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     unroutedPenaltyObj,
     obj,
 
-    cycleFinderAlgoSeletion = CycleFinderAlgoType.Mouthuy
+    cycleFinderAlgoSeletion = CycleFinderAlgoType.Mouthuy,
+    exhaustVLSN = true
   )
 
 
