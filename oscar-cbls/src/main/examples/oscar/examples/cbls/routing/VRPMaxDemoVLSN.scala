@@ -17,7 +17,8 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.neighborhood.vlsn.VLSN
+import oscar.cbls.business.routing.neighborhood.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
+import oscar.cbls.business.routing.neighborhood.vlsn.{CycleFinderAlgoType, VLSN}
 import oscar.cbls.core.search.{Best, First, Move, MoveFound}
 import oscar.cbls.util.StopWatch
 
@@ -174,7 +175,9 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
     objPerVehicle,
     unroutedPenaltyObj,
-    obj
+    obj,
+
+    cycleFinderAlgoSeletion = CycleFinderAlgoType.Mouthuy
   )
 
 

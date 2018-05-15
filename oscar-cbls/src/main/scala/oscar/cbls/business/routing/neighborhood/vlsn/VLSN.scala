@@ -4,7 +4,7 @@ import oscar.cbls.Objective
 import oscar.cbls.business.routing.neighborhood.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
 import oscar.cbls.core.search._
 
-import scala.collection.immutable.SortedMap
+import scala.collection.immutable.{SortedMap, SortedSet}
 
 
 /*
@@ -25,8 +25,9 @@ class VLSN(v:Int,
            unroutedPenalty:Objective,
            globalObjective:Objective,
            cycleFinderAlgoSeletion:CycleFinderAlgoType = CycleFinderAlgoType.MouthuyAndThenDFS,
+           exhaustVLSN:Boolean =  true,
            name:String = "VLSN",
-           ) extends Neighborhood {
+          ) extends Neighborhood {
 
   override def getMove(obj: Objective,
                        initialObj: Int,
@@ -52,23 +53,55 @@ class VLSN(v:Int,
 
     //println(vlsnGraph.toDOT())
 
-    //then, find proper negative cycle in graph
-    CycleFinderAlgo(vlsnGraph,cycleFinderAlgoSeletion).findCycle match{
-      case None =>
-        NoMoveFound
-      case Some(listOfEdge) =>
-        require(listOfEdge.nonEmpty, "list of edge should not be empty")
-        //TODO:further explore the graph, to find all independent neg cycles, and improve added value.
-        //finally, extract the moves from the graph and return the composite moves
+    val liveNodes = Array.fill(vlsnGraph.nbNodes)(true)
 
-        //println(vlsnGraph.toDOT(listOfEdge))
+    def killNodesImpactedByCycle(cycle:List[Edge]): Unit ={
+      val impactedVehicles = SortedSet.empty[Int] ++ cycle.flatMap(edge => {val vehicle = edge.from.vehicle; if (vehicle < v) Some(vehicle) else None})
+      val impactedRoutingNodes = SortedSet.empty[Int] ++ cycle.flatMap(edge => {val node = edge.from.representedNode ; if (node >= 0) Some(node) else None})
 
-        val moves = listOfEdge.map(edge => edge.move).filter(move => !move.isInstanceOf[DoNothingMove])
-        val delta = listOfEdge.map(edge => edge.deltaObj).sum
-        require(delta < 0, "delta should be negative, got " + delta)
-        val computedNewObj = initialObj + delta
-        require(computedNewObj < initialObj, "no gain in VLSN?")
-        MoveFound(CompositeMove(moves,computedNewObj,name))
+      for(vlsnNode <- vlsnGraph.nodes){
+        if((impactedRoutingNodes contains vlsnNode.representedNode) || (impactedVehicles contains vlsnNode.vehicle)){
+          liveNodes(vlsnNode.nodeID) = false
+        }
+      }
+    }
+
+    if(exhaustVLSN){
+      var acc:List[Move] = List.empty
+      var computedNewObj:Int = initialObj
+      while(true){
+        CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSeletion).findCycle(liveNodes) match {
+          case None =>
+            if(acc.isEmpty) return NoMoveFound
+            else return MoveFound(CompositeMove(acc, computedNewObj, name))
+          case Some(listOfEdge) =>
+            val delta = listOfEdge.map(edge => edge.deltaObj).sum
+            require(delta < 0, "delta should be negative, got " + delta)
+            computedNewObj += delta
+            acc = acc ::: listOfEdge.flatMap(edge => Option(edge.move))
+            killNodesImpactedByCycle(listOfEdge)
+        }
+      }
+      throw new Error("should not reach this")
+    }else {
+      //then, find proper negative cycle in graph
+      CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSeletion).findCycle(liveNodes) match {
+        case None =>
+          NoMoveFound
+        case Some(listOfEdge) =>
+          require(listOfEdge.nonEmpty, "list of edge should not be empty")
+          //TODO:further explore the graph, to find all independent neg cycles, and improve added value.
+          //finally, extract the moves from the graph and return the composite moves
+
+          //println(vlsnGraph.toDOT(listOfEdge))
+
+          val moves = listOfEdge.flatMap(edge => Option(edge.move))
+          val delta = listOfEdge.map(edge => edge.deltaObj).sum
+          require(delta < 0, "delta should be negative, got " + delta)
+          val computedNewObj = initialObj + delta
+          require(computedNewObj < initialObj, "no gain in VLSN?")
+          MoveFound(CompositeMove(moves, computedNewObj, name))
+      }
     }
   }
 }

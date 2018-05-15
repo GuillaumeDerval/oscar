@@ -6,7 +6,7 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
   private val nbNodes = nodes.length
   private val nbLabels = graph.nbLabels
 
-  override def findCycle():Option[List[Edge]] = {
+  override def findCycle(isLiveNode:Array[Boolean]):Option[List[Edge]] = {
 
     val reachabilityMatrix = if(pruneOnReachability){
       new ReacheabilityFloydWarshall(graph:VLSNGraph).buildRechabilityMatrix()
@@ -32,27 +32,29 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
         val targetNode = currentEdge.to
         val targetNodeID = targetNode.nodeID
 
-        if(targetNode == rootNode){
-          if (newSummedDelta <0) {
-            //we just found a negative cycle
-            return Some(List(currentEdge))
-          } //else e found a cycle, but it is not negative
-        }else if (!pruneOnReachability || reachabilityMatrix(targetNodeID)(rooNodeID)){
+        if(isLiveNode(targetNodeID)) {
+          if (targetNode == rootNode) {
+            if (newSummedDelta < 0) {
+              //we just found a negative cycle
+              return Some(List(currentEdge))
+            } //else e found a cycle, but it is not negative
+          } else if (!pruneOnReachability || reachabilityMatrix(targetNodeID)(rooNodeID)) {
 
-          val targetLabel = targetNode.label
+            val targetLabel = targetNode.label
 
-          if (! isNodeReached(targetNodeID)
-            && !isLabelReached(targetLabel)) {
-            //this is a new node, it has a label that has not been reached yet
-            //mark and recurse
-            isLabelReached(targetLabel) = true
-            isNodeReached(targetNodeID) = true
-            dfsExplore(targetNode, newSummedDelta) match {
-              case None => ;
-              case Some(l) => return Some(currentEdge :: l)
+            if (!isNodeReached(targetNodeID)
+              && !isLabelReached(targetLabel)) {
+              //this is a new node, it has a label that has not been reached yet
+              //mark and recurse
+              isLabelReached(targetLabel) = true
+              isNodeReached(targetNodeID) = true
+              dfsExplore(targetNode, newSummedDelta) match {
+                case None => ;
+                case Some(l) => return Some(currentEdge :: l)
+              }
+              isLabelReached(targetLabel) = false
+              isNodeReached(targetNodeID) = false
             }
-            isLabelReached(targetLabel) = false
-            isNodeReached(targetNodeID) = false
           }
         }
       }

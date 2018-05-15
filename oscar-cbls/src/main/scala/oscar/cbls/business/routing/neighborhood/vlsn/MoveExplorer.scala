@@ -247,15 +247,13 @@ class MoveExplorerAlgo(v:Int,
   //should be called after all edges going to vehicle are generated
   def addNoMoveEdgesVehiclesToTrashNode(): Unit ={
     for(vehicleNode <- vehicleToNode if vehicleNode != null){
-      edgeBuilder.addEdge(vehicleNode,trashNode,0,
-        new DoNothingMove(0,"vehiclesToTrashNode(vehicle:" + vehicleNode.representedNode + ")"))
+      edgeBuilder.addEdge(vehicleNode,trashNode,0,null)
     }
   }
 
   def addTrashNodeToUnroutedNodes(): Unit ={
     for(unroutedNode <- unroutedNodesToInsert){
-      edgeBuilder.addEdge(trashNode,nodeIDToNode(unroutedNode),0,
-        new DoNothingMove(0,"trashNodeToUnroutedNodes(unrouted:" + unroutedNode + ")"))
+      edgeBuilder.addEdge(trashNode,nodeIDToNode(unroutedNode),0,null)
     }
   }
 }

@@ -17,12 +17,16 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
   private val selectedIncomingEdges:Array[Edge] = Array.fill(nbNodes)(null)
   private val distanceToNode:Array[Int]= Array.fill(nbNodes)(Int.MaxValue)
 
+  var isLiveNode:Array[Boolean] = null
+
   val isInQueue:Array[Boolean]= Array.fill(nbNodes)(false)
   val queue = new mutable.Queue[Int]()
   def enqueue(nodeID:Int): Unit ={
-    if(!isInQueue(nodeID)) {
-      queue.enqueue(nodeID)
-      isInQueue(nodeID) = true
+    if(isLiveNode(nodeID)) {
+      if (!isInQueue(nodeID)) {
+        queue.enqueue(nodeID)
+        isInQueue(nodeID) = true
+      }
     }
   }
 
@@ -89,7 +93,6 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
 
     isLabelOnPath.all = false
     isNodeOnPath.all = false
-
 
     require(isLabelOnPath.indicesAtTrue.isEmpty)
     require(isNodeOnPath.indicesAtTrue.isEmpty)
@@ -159,8 +162,10 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
     None
   }
 
-  override def findCycle():Option[List[Edge]] = {
-    for(rootNode <- nodes){
+
+  override def findCycle(liveNodes:Array[Boolean]):Option[List[Edge]] = {
+    isLiveNode = liveNodes
+    for(rootNode <- nodes if liveNodes(rootNode.nodeID)){
       searchRootedCycle(rootNode) match{
         case None => ;
         case Some(c)  => return Some(c.cycle)

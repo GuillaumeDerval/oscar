@@ -18,7 +18,7 @@ object CycleFinderAlgoType extends Enumeration{
 import CycleFinderAlgoType._
 
 abstract class CycleFinderAlgo{
-  def findCycle:Option[List[Edge]]
+  def findCycle(liveNodes:Array[Boolean]):Option[List[Edge]]
 }
 
 object CycleFinderAlgo {
@@ -39,10 +39,11 @@ object CycleFinderAlgo {
 }
 
 class CycleFinderAlgoMouthuyAndThenDFS(graph:VLSNGraph) extends CycleFinderAlgo{
-  override def findCycle: Option[List[Edge]] = {
-    new CycleFinderAlgoMouthuy(graph).findCycle() match{
+  override def findCycle(liveNodes:Array[Boolean]): Option[List[Edge]] = {
+    new CycleFinderAlgoMouthuy(graph).findCycle(liveNodes:Array[Boolean]) match{
       case None =>
-        new CycleFinderAlgoDFS(graph, pruneOnReachability = true).findCycle()
+        println("Mouthy stalled, reverting to DFS")
+        new CycleFinderAlgoDFS(graph, pruneOnReachability = true).findCycle(liveNodes:Array[Boolean])
       case a => a
     }
   }
