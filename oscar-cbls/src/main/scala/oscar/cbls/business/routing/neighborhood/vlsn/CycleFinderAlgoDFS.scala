@@ -1,25 +1,25 @@
 package oscar.cbls.business.routing.neighborhood.vlsn
 
 
-class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends CycleFinderAlgo{
-  private val nodes:Array[Node] = graph.nodes
+class CycleFinderAlgoDFS(graph:VLSNGraph[Int],pruneOnReachability:Boolean) extends CycleFinderAlgo{
+  private val nodes:Array[Node[Int]] = graph.nodes
   private val nbNodes = nodes.length
   private val nbLabels = graph.nbLabels
 
-  override def findCycle(isLiveNode:Array[Boolean]):Option[List[Edge]] = {
+  override def findCycle(isLiveNode:Array[Boolean]):Option[List[Edge[Int]]] = {
 
     val reachabilityMatrix = if(pruneOnReachability){
-      new ReacheabilityFloydWarshall(graph:VLSNGraph).buildRechabilityMatrix()
+      new ReacheabilityFloydWarshall(graph:VLSNGraph[Int]).buildRechabilityMatrix()
     }else null
 
     //MatrixTools.printBoolMatrix(reachabilityMatrix)
 
     val isNodeReached = Array.fill(nbNodes)(false)
     val isLabelReached = Array.fill(nbLabels)(false)
-    var rootNode:Node = null
+    var rootNode:Node[Int] = null
     var rooNodeID:Int = -1
 
-    def dfsExplore(node:Node,summedDelta:Int):Option[List[Edge]] ={
+    def dfsExplore(node:Node[Int],summedDelta:Int):Option[List[Edge[Int]]] ={
       var outgoingEdges = node.outgoing
 
       while(outgoingEdges != Nil){
@@ -80,9 +80,9 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
 }
 
 
-class ReacheabilityFloydWarshall(graph:VLSNGraph){
-  private val nodes:Array[Node] = graph.nodes
-  private val edges:Array[Edge] = graph.edges
+class ReacheabilityFloydWarshall(graph:VLSNGraph[Int]){
+  private val nodes:Array[Node[Int]] = graph.nodes
+  private val edges:Array[Edge[Int]] = graph.edges
   private val nbNodes = nodes.length
   private val nodeRange = 0 until nbNodes
 

@@ -5,16 +5,16 @@ import oscar.cbls.algo.magicArray.MagicBoolArray
 import scala.collection.mutable
 
 
-class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
-  private val nodes:Array[Node] = graph.nodes
-  private val edges:Array[Edge] = graph.edges
+class CycleFinderAlgoMouthuy(graph:VLSNGraph[Int]) extends CycleFinderAlgo{
+  private val nodes:Array[Node[Int]] = graph.nodes
+  private val edges:Array[Edge[Int]] = graph.edges
   private val nbNodes = nodes.length
   private val nodeRange = 0 until nbNodes
 
   private val isLabelOnPath = MagicBoolArray(graph.nbLabels,false)
   private val isNodeOnPath = MagicBoolArray(nbNodes,false)
 
-  private val selectedIncomingEdges:Array[Edge] = Array.fill(nbNodes)(null)
+  private val selectedIncomingEdges:Array[Edge[Int]] = Array.fill(nbNodes)(null)
   private val distanceToNode:Array[Int]= Array.fill(nbNodes)(Int.MaxValue)
 
   var isLiveNode:Array[Boolean] = null
@@ -41,11 +41,11 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
   }
 
   abstract sealed class MarkingResult
-  case class CycleFound(cycle:List[Edge]) extends MarkingResult
-  case class PartialCycleFound(cycle:List[Edge],rootNode:Node) extends MarkingResult
+  case class CycleFound(cycle:List[Edge[Int]]) extends MarkingResult
+  case class PartialCycleFound(cycle:List[Edge[Int]],rootNode:Node[Int]) extends MarkingResult
   case class MarkingDone(duplicateLabels:Boolean) extends MarkingResult
 
-  def markPathTo(node:Node,labelDuplicates:Boolean):MarkingResult = {
+  def markPathTo(node:Node[Int],labelDuplicates:Boolean):MarkingResult = {
 
     val nodeID = node.nodeID
     if(isNodeOnPath(nodeID)){
@@ -71,9 +71,9 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
     }
   }
 
-  def extractCycle(rootNode:Node):CycleFound = {
+  def extractCycle(rootNode:Node[Int]):CycleFound = {
     var currentNode = rootNode
-    var toReturn:List[Edge] = List.empty
+    var toReturn:List[Edge[Int]] = List.empty
     while(true){
       val incomingEdge = selectedIncomingEdges(currentNode.nodeID)
       toReturn = incomingEdge :: toReturn
@@ -88,7 +88,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
     throw new Error("no cycle found in extract cycle method")
   }
 
-  def correctLabel(node:Node): MarkingResult = {
+  def correctLabel(node:Node[Int]): MarkingResult = {
     val nodeID = node.nodeID
 
     isLabelOnPath.all = false
@@ -97,7 +97,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
     require(isLabelOnPath.indicesAtTrue.isEmpty)
     require(isNodeOnPath.indicesAtTrue.isEmpty)
 
-    markPathTo(node:Node,false) match{
+    markPathTo(node:Node[Int],false) match{
       case f:CycleFound =>
         return f
       case MarkingDone(duplicateLabels) if !duplicateLabels =>
@@ -134,7 +134,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
     }
   }
 
-  def searchRootedCycle(rootNode:Node):Option[CycleFound] = {
+  def searchRootedCycle(rootNode:Node[Int]):Option[CycleFound] = {
 
     for(nodeID <- nodeRange) {
       selectedIncomingEdges(nodeID) = null
@@ -163,7 +163,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
   }
 
 
-  override def findCycle(liveNodes:Array[Boolean]):Option[List[Edge]] = {
+  override def findCycle(liveNodes:Array[Boolean]):Option[List[Edge[Int]]] = {
     isLiveNode = liveNodes
     for(rootNode <- nodes if liveNodes(rootNode.nodeID)){
       searchRootedCycle(rootNode) match{

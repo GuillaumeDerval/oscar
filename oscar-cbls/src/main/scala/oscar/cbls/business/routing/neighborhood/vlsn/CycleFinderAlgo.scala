@@ -18,12 +18,12 @@ object CycleFinderAlgoType extends Enumeration{
 import CycleFinderAlgoType._
 
 abstract class CycleFinderAlgo{
-  def findCycle(liveNodes:Array[Boolean]):Option[List[Edge]]
+  def findCycle(liveNodes:Array[Boolean]):Option[List[Edge[Int]]]
 }
 
 object CycleFinderAlgo {
 
-  def apply(graph: VLSNGraph, algo: CycleFinderAlgoType): CycleFinderAlgo = {
+  def apply(graph: VLSNGraph[Int], algo: CycleFinderAlgoType): CycleFinderAlgo = {
     algo match {
       case Mouthuy =>
         new CycleFinderAlgoMouthuy(graph)
@@ -32,14 +32,14 @@ object CycleFinderAlgo {
       case DFSPruned =>
         new CycleFinderAlgoDFS(graph, pruneOnReachability = true)
       case MouthuyAndThenDFS =>
-        new CycleFinderAlgoMouthuyAndThenDFS(graph:VLSNGraph)
+        new CycleFinderAlgoMouthuyAndThenDFS(graph:VLSNGraph[Int])
     }
   }
 
 }
 
-class CycleFinderAlgoMouthuyAndThenDFS(graph:VLSNGraph) extends CycleFinderAlgo{
-  override def findCycle(liveNodes:Array[Boolean]): Option[List[Edge]] = {
+class CycleFinderAlgoMouthuyAndThenDFS(graph:VLSNGraph[Int]) extends CycleFinderAlgo{
+  override def findCycle(liveNodes:Array[Boolean]): Option[List[Edge[Int]]] = {
     new CycleFinderAlgoMouthuy(graph).findCycle(liveNodes:Array[Boolean]) match{
       case None =>
         println("Mouthy stalled, reverting to DFS")

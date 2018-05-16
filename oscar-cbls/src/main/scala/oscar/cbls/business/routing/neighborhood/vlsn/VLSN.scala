@@ -55,19 +55,19 @@ class VLSN(v:Int,
 
     val liveNodes = Array.fill(vlsnGraph.nbNodes)(true)
 
-    def killNodesImpactedByCycle(cycle:List[Edge]): Unit ={
+    def killNodesImpactedByCycle(cycle:List[Edge[Int]]): Unit ={
       val impactedVehicles = SortedSet.empty[Int] ++ cycle.flatMap(edge => {val vehicle = edge.from.vehicle; if (vehicle < v && vehicle >=0) Some(vehicle) else None})
-      val impactedRoutingNodes = SortedSet.empty[Int] ++ cycle.flatMap(edge => {val node = edge.from.representedNode ; if (node >= 0) Some(node) else None})
+      val impactedRoutingNodes = SortedSet.empty[Int] ++ cycle.flatMap(edge => {val node = edge.from.representedT ; if (node >= 0) Some(node) else None})
 
       for(vlsnNode <- vlsnGraph.nodes){
-        if((impactedRoutingNodes contains vlsnNode.representedNode) || (impactedVehicles contains vlsnNode.vehicle)){
+        if((impactedRoutingNodes contains vlsnNode.representedT) || (impactedVehicles contains vlsnNode.vehicle)){
           liveNodes(vlsnNode.nodeID) = false
         }
       }
     }
 
     if(exhaustVLSN){
-      var acc:List[Edge] = List.empty
+      var acc:List[Edge[Int]] = List.empty
       var computedNewObj:Int = initialObj
       while(true){
         CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSeletion).findCycle(liveNodes) match {

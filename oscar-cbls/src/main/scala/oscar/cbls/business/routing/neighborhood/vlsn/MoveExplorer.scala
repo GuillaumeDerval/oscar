@@ -31,16 +31,16 @@ class MoveExplorerAlgo(v:Int,
   //maybe we should unroute all nodes before doing move exploration since we do not want to waste time on evaluation obj on non targeted vehicle?
   val nodesToMove:Iterable[Int] = vehicleToRoutedNodes.flatMap(_._2)
 
-  var nodes:Array[Node] = null
-  var nodeIDToNode:SortedMap[Int,Node] = null
+  var nodes:Array[Node[Int]] = null
+  var nodeIDToNode:SortedMap[Int,Node[Int]] = null
   var relevantVehicles:SortedSet[Int] = null
-  var edgeBuilder:VLSNEdgeBuilder = null
-  var trashNode:Node = null
-  val vehicleToNode:Array[Node] = Array.fill(v)(null)
+  var edgeBuilder:VLSNEdgeBuilder[Int] = null
+  var trashNode:Node[Int] = null
+  val vehicleToNode:Array[Node[Int]] = Array.fill(v)(null)
 
   var nbLabels:Int = -2
 
-  def buildGraph():VLSNGraph = {
+  def buildGraph():VLSNGraph[Int] = {
 
     //nodes are all the nodes to consider, ll the vehicles, and a trashNode
 
@@ -79,7 +79,7 @@ class MoveExplorerAlgo(v:Int,
     // a different label for the trashNode
 
     //as labels, we take the vehicles, plus one label per non-routed node
-    val builder = new VLSNNodeBuilder(nbLabels = v)
+    val builder = new VLSNNodeBuilder[Int](nbLabels = v)
     nodeIDToNode = SortedMap.empty
 
     //noeuds symboliques pour les véhicules
