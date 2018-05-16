@@ -34,7 +34,7 @@ class VLSNNodeBuilder(var nbLabels:Int) {
   def finish():(Array[Node],Int) = {
     (nodes.reverse.toArray,nbLabels)
   }
-} 
+}
 
 class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
   val nbNodes = nodes.length
@@ -97,8 +97,9 @@ class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge],val nbLabels:Int, v:
       edges.flatMap(edge => {val ofInterest = setOfEdgesToBold.contains(edge.edgeID)
         if(onlyCycles && !ofInterest) None
         else Some(edge.toDOT(ofInterest,light))}).mkString("\t", "\n\t", "\n") +
+      "\tlegend[shape=rectangle,style=filled,fillcolor=pink,color=black,label = \"" + this.statistics + "\"] ; \n" +
       "\toverlap=false\n" +
-      "\tlabel=\"VLSN graph\";\n" +
+      //      "\tlabel=\"" + this.statistics + "\";\n" +
       "\tfontsize=12;\n" +
       "}"
   }
@@ -122,9 +123,16 @@ class Node(val nodeID:Int, val representedNode:Int, nodeType:VLSNSNodeType, val 
       case FictiveNode => "gold"
     }
 
-    val lineColor = (if (bold) " blue" else "black")
+    val dotLabel = nodeType match {
+      case RegularNode => "\"node:" + representedNode + "\\nvehicle:" + vehicle + "\""
+      case VehicleNode => "\"vehicle:" + vehicle + "\""
+      case UnroutedNode => "\"node:" + representedNode + "\""
+      case FictiveNode => "trashNode"
+    }
+
+    val lineColor = (if (bold) "blue" else "black")
     "\"" + nodeID + "\" [shape=circle,style=filled,fillcolor=" + fillColor + ",color=" + lineColor +
-      ", label = \"node:" + representedNode + "\\nvehicle:" + vehicle + "\"] ; "
+      ", label = " + dotLabel + "] ; "
   }
 }
 
@@ -138,13 +146,12 @@ class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Int, val edge
 
   def toDOTHeavy(bold:Boolean = false):String =
     "\"Edge" + edgeID + "\" [shape=rectangle,style=filled,fillcolor=gray, label=\"deltaObj:" + deltaObj +
-      "\\n" + move + "\"" + (if(bold) " color=blue" else "") +"] ; " +
+      "\\n" + (if (move == null) "null" else move.shortString) + "\"" + (if(bold) " color=blue" else "") +"] ; " +
       from.nodeID + " -> " + "\"Edge" + edgeID + "\"" + (if(bold) "[color=blue]" else "") + ";" +
       "\"Edge" + edgeID + "\" -> " + to.nodeID + (if(bold) "[color=blue]" else "") + ";"
 
   def toDOTLight(bold:Boolean = false):String =
-     from.nodeID + " -> " + to.nodeID + (if(bold) "[color=blue]" else "") + ";"
-
+    from.nodeID + " -> " + to.nodeID + (if(bold) "[color=blue]" else "") + ";"
 
   def toDOT(bold:Boolean = false,light:Boolean):String =
     if(light){ toDOTLight(bold) }else toDOTHeavy(bold)

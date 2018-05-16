@@ -67,6 +67,8 @@ abstract class Move(val objAfter:Int = Int.MaxValue, val neighborhoodName:String
     model.restoreSolution(snapshot)
     toReturn
   }
+
+  def shortString:String = toString
 }
 
 object Move{
@@ -216,6 +218,8 @@ case class CompositeMove(ml:List[Move], override val objAfter:Int, override val 
     {case c:CompositeMove => c.simpleMLString
     case m:Move => m.toString}).mkString(",") + "]"
   }
+
+  override def shortString: String = "CompositeMove(" + ml.map(_.shortString).mkString(",")+ ")"
 }
 
 case class NamedMove(m:Move, override val neighborhoodName:String = null)
