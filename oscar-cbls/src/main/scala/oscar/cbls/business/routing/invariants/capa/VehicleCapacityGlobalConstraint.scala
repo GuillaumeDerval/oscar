@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.invariant.capa
+package oscar.cbls.business.routing.invariants.capa
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -17,7 +17,7 @@ package oscar.cbls.business.routing.invariant.capa
 
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.routing.invariant.group.GenericRoutingGlobalConstraintForward
+import oscar.cbls.business.routing.invariants.group.GenericRoutingGlobalConstraintForward
 import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue}
 import oscar.cbls.core.propagation.Checker
 

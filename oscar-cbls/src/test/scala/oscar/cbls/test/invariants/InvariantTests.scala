@@ -20,12 +20,12 @@ import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 import oscar.cbls._
 import oscar.cbls.benchmarks.vrp.RoutingMatrixGenerator
-import oscar.cbls.business.routing.invariant._
+import oscar.cbls.business.routing.invariants._
 import oscar.cbls.lib.constraint._
 import oscar.cbls.lib.invariant.logic.{SetElement, _}
 import oscar.cbls.lib.invariant.minmax._
 import oscar.cbls.lib.invariant.numeric._
-import oscar.cbls.business.routing.invariant.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
+import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
 import oscar.cbls.lib.invariant.seq._
 import oscar.cbls.lib.invariant.set._
 import oscar.cbls.test.invariants.bench._

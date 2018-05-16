@@ -17,7 +17,7 @@ package oscar.cbls.test.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.invariant.NodeVehicleRestrictions
+import oscar.cbls.business.routing.invariants.NodeVehicleRestrictions
 import oscar.examples.cbls.routing.RoutingMatrixGenerator
 
 class VRPWithNodeVehicleRestriction(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int, nodeVehicleRestriction:Iterable[(Int,Int)])

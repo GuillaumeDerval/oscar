@@ -2,7 +2,7 @@ package oscar.cbls.business.routing.modeling
 
 import oscar.cbls._
 import oscar.cbls.core._
-import oscar.cbls.business.routing.invariant._
+import oscar.cbls.business.routing.invariants._
 
 /**
  * Created by rdl on 11-09-17.

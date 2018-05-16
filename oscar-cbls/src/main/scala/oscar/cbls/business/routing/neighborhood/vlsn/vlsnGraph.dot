@@ -1,0 +1,22 @@
+##Command to produce the output: "neato -Tpng thisfile > thisfile.png"
+digraph VLSNGraph {
+	"0" [shape=circle,style=filled,fillcolor=white, label = "node:6\nvehicle:0"] ; 
+	"1" [shape=circle,style=filled,fillcolor=white, label = "node:7\nvehicle:1"] ; 
+	"2" [shape=circle,style=filled,fillcolor=white, label = "node:8\nvehicle:2"] ; 
+	"3" [shape=circle,style=filled,fillcolor=white, label = "node:9\nvehicle:3"] ; 
+	"4" [shape=circle,style=filled,fillcolor=white, label = "node:10\nvehicle:4"] ; 
+	"5" [shape=circle,style=filled,fillcolor=white, label = "node:11\nvehicle:5"] ; 
+	"Edge0" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:10\nDoNothingMove(2147483647)"] ; 0 -> "Edge0";"Edge0" -> 1;
+	"Edge1" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-1\nDoNothingMove(2147483647)"] ; 1 -> "Edge1";"Edge1" -> 2;
+	"Edge2" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-1\nDoNothingMove(2147483647)" color=blue] ; 2 -> "Edge2"[color=blue];"Edge2" -> 3[color=blue];
+	"Edge3" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:1\nDoNothingMove(2147483647)" color=blue] ; 3 -> "Edge3"[color=blue];"Edge3" -> 4[color=blue];
+	"Edge4" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:1\nDoNothingMove(2147483647)"] ; 4 -> "Edge4";"Edge4" -> 0;
+	"Edge5" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:1\nDoNothingMove(2147483647)"] ; 0 -> "Edge5";"Edge5" -> 3;
+	"Edge6" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:1\nDoNothingMove(2147483647)"] ; 2 -> "Edge6";"Edge6" -> 4;
+	"Edge7" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-1\nDoNothingMove(2147483647)"] ; 2 -> "Edge7";"Edge7" -> 5;
+	"Edge8" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:1\nDoNothingMove(2147483647)"] ; 5 -> "Edge8";"Edge8" -> 0;
+	"Edge9" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-1\nDoNothingMove(2147483647)" color=blue] ; 4 -> "Edge9"[color=blue];"Edge9" -> 2[color=blue];
+	overlap=false
+	label="VLSN graph";
+	fontsize=12;
+}

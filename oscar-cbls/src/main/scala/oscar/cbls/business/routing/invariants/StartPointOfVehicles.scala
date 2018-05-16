@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.invariant
+package oscar.cbls.business.routing.invariants
 
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.VehicleLocation

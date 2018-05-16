@@ -1,8 +1,8 @@
-package oscar.cbls.business.routing.invariant
+package oscar.cbls.business.routing.invariants
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.invariant.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerIntegerDimensionOnVehicle}
+import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerIntegerDimensionOnVehicle}
 import oscar.cbls.business.routing.model.extensions._
 import oscar.cbls.lib.constraint.{EQ, GE, LE}
 import oscar.cbls.lib.invariant.numeric.Sum

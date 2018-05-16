@@ -1,6 +1,6 @@
 package oscar.cbls.business.routing.model.helpers
 
-import oscar.cbls.business.routing.invariant.capa.ForwardCumulativeConstraintOnVehicle
+import oscar.cbls.business.routing.invariants.capa.ForwardCumulativeConstraintOnVehicle
 import oscar.cbls.business.routing.model.VRP
 
 import scala.collection.immutable.HashSet

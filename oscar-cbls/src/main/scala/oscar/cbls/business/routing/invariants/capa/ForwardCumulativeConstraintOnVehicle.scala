@@ -14,7 +14,7 @@
   ******************************************************************************/
 
 
-package oscar.cbls.business.routing.invariant.capa
+package oscar.cbls.business.routing.invariants.capa
 
 import oscar.cbls.algo.magicArray.MagicIntArrayStacked
 import oscar.cbls.algo.rb.RedBlackTreeMap

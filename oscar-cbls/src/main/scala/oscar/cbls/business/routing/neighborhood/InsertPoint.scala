@@ -27,7 +27,8 @@ import oscar.cbls.core.search.{First, EasyNeighborhoodMultiLevel, LoopBehavior}
  * @author renaud.delandtsheer@cetic.be
  */
 abstract class InsertPoint(vrp: VRP,
-                            neighborhoodName: String)
+                            neighborhoodName: String,
+                           positionIndependentMoves:Boolean)
   extends EasyNeighborhoodMultiLevel[InsertPointMove](neighborhoodName){
 
   val v = vrp.v
@@ -35,18 +36,27 @@ abstract class InsertPoint(vrp: VRP,
 
   var insertAtPositionForInstantiation:Int = -1
   var insertedPointForInstantiation:Int = -2
+  var pointWhereToInsertAfter:Int = -3
 
   override def instantiateCurrentMove(newObj: Int) =
-    InsertPointMove(insertedPointForInstantiation, insertAtPositionForInstantiation, newObj, this, vrp, neighborhoodNameToString)
+  InsertPointMove(insertedPointForInstantiation, insertAtPositionForInstantiation, pointWhereToInsertAfter, positionIndependentMoves, newObj, this, vrp, neighborhoodNameToString)
 
   def doMove(insertedPoint: Int, insertAtPosition:Int) {
     seq.insertAtPosition(insertedPoint, insertAtPosition)
+  }
+  def doMovePositionIndependent(insertedPoint:Int, insertAfterPointForInstantiation:Int): Unit ={
+    seq.newValue.positionOfAnyOccurrence(insertAfterPointForInstantiation) match{
+      case Some(p) => seq.insertAtPosition(insertedPoint, p+1)
+      case None => throw new Error("position independent move is value based, and value was not available at time of commit")
+    }
   }
 }
 
 case class InsertPointMove(insertedPoint: Int,
                             insertAtPosition: Int,
-                            override val objAfter: Int,
+                           insertAfterPointForInstantiation:Int,
+                           positionIndependentMoves:Boolean,
+                           override val objAfter: Int,
                             override val neighborhood: InsertPoint,
                             vrp:VRP,
                             override val neighborhoodName: String = "InsertPointMove")
@@ -56,7 +66,11 @@ case class InsertPointMove(insertedPoint: Int,
   override def impactedPoints: List[Int] = List(insertedPoint)
 
   override def commit() {
-    neighborhood.doMove(insertedPoint, insertAtPosition)
+    if(positionIndependentMoves){
+      neighborhood.doMovePositionIndependent(insertedPoint, insertAfterPointForInstantiation)
+    }else{
+      neighborhood.doMove(insertedPoint, insertAtPosition)
+    }
   }
 
   override def toString: String =
@@ -96,8 +110,9 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
                                      selectNodeBehavior:LoopBehavior = First(),
                                      selectInsertionPointBehavior:LoopBehavior = First(),
                                      nodeSymmetryClass:Option[Int => Int] = None,
-                                     hotRestartOnNextSymmetryClass:Boolean = false)
-  extends InsertPoint(vrp: VRP,neighborhoodName){
+                                     hotRestartOnNextSymmetryClass:Boolean = false,
+                                     positionIndependentMoves:Boolean = false)
+  extends InsertPoint(vrp: VRP,neighborhoodName,positionIndependentMoves){
 
   //the indice to start with for the exploration
   var startIndice: Int = 0
@@ -132,8 +147,8 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
       val (positionToInsertIterable,notifyFound2) =
         selectInsertionPointBehavior.toIterable(relevantNeighborsNow(insertedPointForInstantiation))
 
-      for(pointWhereToInsertAfter <- positionToInsertIterable){
-
+      for(a <- positionToInsertIterable){
+        pointWhereToInsertAfter = a
         seqValue.positionOfAnyOccurrence(pointWhereToInsertAfter) match{
           case None => //not routed?!
           case Some(position) =>
@@ -188,12 +203,12 @@ case class InsertPointRoutedFirst(insertionPoints:()=>Iterable[Int],
                                    selectInsertionPointBehavior:LoopBehavior = First(),
                                    selectInsertedNodeBehavior:LoopBehavior = First(),
                                    hotRestart: Boolean = true,
-                                   insertedPointsSymetryClass:Option[Int => Int] = None)
-  extends InsertPoint(vrp: VRP,neighborhoodName) {
+                                   insertedPointsSymetryClass:Option[Int => Int] = None,
+                                  positionIndependentMoves:Boolean = false)
+  extends InsertPoint(vrp: VRP,neighborhoodName,positionIndependentMoves) {
 
   //the indice to start with for the exploration
   var startIndice: Int = 0
-  var pointWhereToInsertAfter = 0
 
   override def exploreNeighborhood(): Unit = {
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)

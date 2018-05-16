@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.invariant.capa
+package oscar.cbls.business.routing.invariants.capa
 
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.IntSequence

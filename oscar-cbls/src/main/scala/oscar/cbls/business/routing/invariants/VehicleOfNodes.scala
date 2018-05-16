@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.invariant
+package oscar.cbls.business.routing.invariants
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -21,63 +21,54 @@ import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.RoutingConventionMethods
 import oscar.cbls.core._
 
-import scala.collection.immutable.SortedSet
+object VehicleOfNodes{
 
-object NodesOfVehicle{
   /**
-   * this invariant ensures that nodesOfVehicle(p) is maintained to the nodes reached vy vehicle p according to the sequence routes.
-   * @param routes a sequence value representing routes
-   * @param v the number of vehicles
-   * @return an array nodesOfVehicle maintained to the nodes reached y each vehicle
-   */
-  def apply(routes:ChangingSeqValue,v:Int):Array[CBLSSetVar] = {
+    * maintains an array mapping each node to the vehicle reaching it.
+    * if the node is unrouted, its corresponding vehicle is set to v
+    * @param routes a sequence representing all routed
+    * @param v the number of vehicles
+    * @return an array that mas each node in 0..route.maxValue to the vehicle reaching it
+    */
+  def apply(routes:ChangingSeqValue,v:Int):Array[CBLSIntVar] = {
     val model = routes.model
-    val emptySet = SortedSet.empty[Int]
     val domain = routes.domain
 
-    val nodesOfVehicle = Array.tabulate(v+1)((vehicle:Int) =>
-      CBLSSetVar(model,
-        emptySet,
+    val vehicleOrUnroutedOfNode = Array.tabulate(routes.maxValue+1)((node:Int) =>
+      CBLSIntVar(model,
+        v,
         domain,
-        if(vehicle== v) "unrouted nodes" else "nodes_o_vehicle_" + vehicle))
+        "vehicle_or_unrouted_of_node_" + node))
 
-    new NodesOfVehicle(routes, nodesOfVehicle)
+    new VehicleOfNodes(routes, v, vehicleOrUnroutedOfNode)
 
-    nodesOfVehicle
+    vehicleOrUnroutedOfNode
   }
 }
 
-/**
- * this invariant ensures that nodesOfVehicleOrUnrouted(p) is maintained to the nodes reached vy vehicle p according to the sequence routes.
- * the size of the array is supposed to equal to v
- * @param routes a sequence value representing routes
- * @param nodesOfVehicleOrUnrouted an array of v CBLSSetVar
- */
-class NodesOfVehicle(routes:ChangingSeqValue,
-                    nodesOfVehicleOrUnrouted:Array[CBLSSetVar])  //there is actually one more vehicle, for unrouted nodes.
+class VehicleOfNodes(routes:ChangingSeqValue,
+                     v:Int,
+                     vehicleOrUnroutedOfNode:Array[CBLSIntVar])
   extends Invariant() with SeqNotificationTarget{
 
-  val v = nodesOfVehicleOrUnrouted.length-1
-  val n = routes.maxValue+1
+  val n = routes.maxValue + 1
 
   registerStaticAndDynamicDependency(routes)
   finishInitialization()
-  nodesOfVehicleOrUnrouted.foreach(_.setDefiningInvariant(this))
+  vehicleOrUnroutedOfNode.foreach(_.setDefiningInvariant(this))
 
-  private val savedValues:Array[SortedSet[Int]] = null
   private var savedCheckpoint:IntSequence = null
   //TODO: use magic array here
   private val movedNodesSinceCheckpointArray:Array[Boolean] = Array.fill(n)(false)
   private var movedNodesSinceCheckpointList:QList[Int] = null
   private val vehicleOfNodeAtCheckpointForMovedPoints:Array[Int] = Array.fill(n)(0)
-  private val vehicleOfNodeAfterMoveForMovedPoints:Array[Int] = Array.fill(n)(0)
 
-  affect(computeValueFromScratch(routes.value))
+  computeAndAffectValueFromScratch(routes.value)
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes:SeqUpdate){
     if(!digestUpdates(changes)) {
       dropCheckpoint()
-      affect(computeValueFromScratch(changes.newValue))
+      computeAndAffectValueFromScratch(changes.newValue)
     }
   }
 
@@ -89,9 +80,8 @@ class NodesOfVehicle(routes:ChangingSeqValue,
         //on which vehicle did we insert?
         if(!digestUpdates(prev)) return false
         val insertedVehicle = RoutingConventionMethods.searchVehicleReachingPosition(pos,newValue,v)
-        nodesOfVehicleOrUnrouted(insertedVehicle) :+= value
-        nodesOfVehicleOrUnrouted(v) :-= value
-        recordMovedPoint(value, v, insertedVehicle)
+        vehicleOrUnroutedOfNode(value) := insertedVehicle
+        recordMovedPoint(value, v)
 
         true
       case x@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
@@ -104,13 +94,13 @@ class NodesOfVehicle(routes:ChangingSeqValue,
         }else {
           val oldValue = prev.newValue
           val vehicleOfMovedSegment = RoutingConventionMethods.searchVehicleReachingPosition(fromIncluded,oldValue,v)
+          assert(vehicleOfMovedSegment == RoutingConventionMethods.searchVehicleReachingPosition(toIncluded,oldValue,v))
           val targetVehicleOfMove = RoutingConventionMethods.searchVehicleReachingPosition(after,oldValue,v)
           if(vehicleOfMovedSegment != targetVehicleOfMove){
             //we moved all the points to another vehicle
             for(movedValue <- x.movedValuesQList) {
-              nodesOfVehicleOrUnrouted(vehicleOfMovedSegment) :-= movedValue
-              nodesOfVehicleOrUnrouted(targetVehicleOfMove) :+= movedValue
-              recordMovedPoint(movedValue, vehicleOfMovedSegment, targetVehicleOfMove)
+              vehicleOrUnroutedOfNode(movedValue) := targetVehicleOfMove
+              recordMovedPoint(movedValue, vehicleOfMovedSegment)
             }
           }
           true
@@ -123,9 +113,8 @@ class NodesOfVehicle(routes:ChangingSeqValue,
         val oldValue = prev.newValue
         val impactedVehicle = RoutingConventionMethods.searchVehicleReachingPosition(position,oldValue,v)
         val removedValue = x.removedValue
-        nodesOfVehicleOrUnrouted(impactedVehicle) :-= removedValue
-        nodesOfVehicleOrUnrouted(v) :+= removedValue
-        recordMovedPoint(removedValue, impactedVehicle, v)
+        vehicleOrUnroutedOfNode(removedValue) := v
+        recordMovedPoint(removedValue, impactedVehicle)
         true
       case SeqUpdateAssign(value : IntSequence) =>
         false //impossible to go incremental
@@ -134,16 +123,14 @@ class NodesOfVehicle(routes:ChangingSeqValue,
       case SeqUpdateDefineCheckpoint(prev,isStarMode,checkpointLevel) =>
         if(checkpointLevel == 0) {
           if (!digestUpdates(prev)) {
-            affect(computeValueFromScratch(changes.newValue))
+            computeAndAffectValueFromScratch(changes.newValue)
           }
           saveCurrentCheckpoint(prev.newValue)
           true
         }else{
-          //we do not handle other checkpoint, so ignore declaration
           digestUpdates(prev)
         }
       case r@SeqUpdateRollBackToCheckpoint(checkpoint,checkpointLevel) =>
-
         if(checkpoint == null) false //it has been dropped following a Set
         else {
           if(checkpointLevel == 0) {
@@ -160,7 +147,6 @@ class NodesOfVehicle(routes:ChangingSeqValue,
   private def dropCheckpoint(){
     saveCurrentCheckpoint(null)
   }
-
   private def saveCurrentCheckpoint(s:IntSequence){
     savedCheckpoint = s
     while (movedNodesSinceCheckpointList!= null) {
@@ -174,38 +160,27 @@ class NodesOfVehicle(routes:ChangingSeqValue,
       val node= movedNodesSinceCheckpointList.head
       movedNodesSinceCheckpointArray(movedNodesSinceCheckpointList.head) = false
       movedNodesSinceCheckpointList = movedNodesSinceCheckpointList.tail
-      nodesOfVehicleOrUnrouted(vehicleOfNodeAfterMoveForMovedPoints(node)) :-= node
-      nodesOfVehicleOrUnrouted(vehicleOfNodeAtCheckpointForMovedPoints(node)) :+= node
+      vehicleOrUnroutedOfNode(node) := vehicleOfNodeAtCheckpointForMovedPoints(node)
     }
   }
 
-  private def recordMovedPoint(node:Int, oldVehicle:Int, newVehicle:Int){
-    require(oldVehicle != newVehicle)
+  private def recordMovedPoint(node:Int, oldVehicle:Int){
     if(savedCheckpoint!= null) {
       if (!movedNodesSinceCheckpointArray(node)) {
         movedNodesSinceCheckpointList = QList(node, movedNodesSinceCheckpointList)
         movedNodesSinceCheckpointArray(node) = true
         vehicleOfNodeAtCheckpointForMovedPoints(node) = oldVehicle
       }
-      vehicleOfNodeAfterMoveForMovedPoints(node) = newVehicle
     }
   }
 
-  private def affect(value:Array[SortedSet[Int]]){
-    var currentV = 0
-    while(currentV <= v){
-      nodesOfVehicleOrUnrouted(currentV) := value(currentV)
-      currentV += 1
-    }
-  }
+  private def computeAndAffectValueFromScratch(s:IntSequence){
+    vehicleOrUnroutedOfNode.foreach(_:=v) //unrouted
 
-  private def computeValueFromScratch(s:IntSequence):Array[SortedSet[Int]] = {
-    val toReturn = Array.fill(v+1)(SortedSet.empty[Int])
-    toReturn(v) = toReturn(v) ++ (v to n-1)
     val it = s.iterator
     var currentVehicle:Int = it.next()
     require(currentVehicle == 0)
-    toReturn(0) = toReturn(0) + (0)
+    vehicleOrUnroutedOfNode(0) := 0
 
     while(it.hasNext){
       val node = it.next()
@@ -214,23 +189,45 @@ class NodesOfVehicle(routes:ChangingSeqValue,
         currentVehicle = node
       }
       //continuing on the same vehicle
-      toReturn(currentVehicle) = toReturn(currentVehicle) + node
-      toReturn(v) = toReturn(v) - node
+      vehicleOrUnroutedOfNode(node) := currentVehicle
     }
-    toReturn
+  }
+
+  private def computeValueFromScratch(s:IntSequence):Array[Int] = {
+    val tmpVehicleOrUnroutedOfNode = Array.fill(n)(v)
+
+    val it = s.iterator
+    var currentVehicle:Int = it.next()
+    require(currentVehicle == 0)
+    tmpVehicleOrUnroutedOfNode(0) = 0
+
+    while(it.hasNext){
+      val node = it.next()
+      if(node < v){
+        //reaching a new vehicle start
+        require(node == currentVehicle+1)
+        currentVehicle = node
+      }
+      //continuing on the same vehicle
+      tmpVehicleOrUnroutedOfNode(node) = currentVehicle
+    }
+    tmpVehicleOrUnroutedOfNode
   }
 
   override def checkInternals(c : Checker) : Unit = {
     val values = computeValueFromScratch(routes.value)
-    for (vehicle <- 0 to v){
-      c.check(nodesOfVehicleOrUnrouted(vehicle).value equals values(vehicle), Some("error on vehicle " + v + " output-correct:" + (nodesOfVehicleOrUnrouted(vehicle).value.diff(values(vehicle))) + " correct-output:" + (values(vehicle).diff(nodesOfVehicleOrUnrouted(vehicle).value))))
+    for (node <- 0 until n){
+      c.check(vehicleOrUnroutedOfNode(node).value == values(node), Some("vehicleOrUnroutedOfNode(node).value=" +vehicleOrUnroutedOfNode(node).value + " should== valuesFromScratch(node)=" + values(node) + " node:" + node))
     }
 
     if(savedCheckpoint != null) {
-      val nodesOfVehicleFromScratch = computeValueFromScratch(savedCheckpoint)
+      val vehicleOfNodeFromScratch = computeValueFromScratch(savedCheckpoint)
       for (node <- 0 until n) {
-        if(movedNodesSinceCheckpointArray(node))
-          c.check(nodesOfVehicleFromScratch(vehicleOfNodeAtCheckpointForMovedPoints(node)).contains(node))
+        if(movedNodesSinceCheckpointArray(node)) {
+          c.check(vehicleOfNodeFromScratch(node) == vehicleOfNodeAtCheckpointForMovedPoints(node),
+            Some("vehicleOfNodeAtCheckpointForMovedPoints(node)=" + vehicleOfNodeAtCheckpointForMovedPoints(node) +
+              " should== vehicleOfNodeFromScratch(node)=" + vehicleOfNodeFromScratch(node)))
+        }
       }
     }
   }
