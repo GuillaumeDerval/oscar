@@ -206,7 +206,6 @@ class MoveExplorerAlgo(v:Int,
         val reInsert = removeAndReInsert(nodeIDToEject)
 
         val unroutedObjAfterRemove = unroutedNodesPenalty.value
-        val correctedGlobalInit = initialGlobalObjective - initialUnroutedNodesPenalty + unroutedObjAfterRemove
 
         for(routingNodeToMove <- routedNodesToMoveThere) {
           val symbolicNodeOfNodeToMove = nodeIDToNode(routingNodeToMove)

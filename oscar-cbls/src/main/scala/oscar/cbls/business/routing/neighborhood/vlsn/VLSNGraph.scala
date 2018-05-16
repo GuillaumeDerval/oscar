@@ -87,18 +87,23 @@ class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge],val nbLabels:Int, v:
     "\n\tedges{\n\t\t" + edges.mkString("\n\t\t") + "\n\t}" + "\n}" + "\n\n\n\n" + toDOT(List(1,2,4).map(edges(_)))
 
   //"C:\Program Files (x86)\Graphviz2.38\bin\neato" -Tpng  vlsnGraph.dot > a.png
-  def toDOT(edgesToBold:List[Edge] = List.empty):String = {
+  def toDOT(edgesToBold:List[Edge] = List.empty,light:Boolean = false,onlyCycles:Boolean = false):String = {
     val setOfEdgesToBold = SortedSet.empty[Int] ++ edgesToBold.map(_.edgeID)
     val setOfNodesToBold = SortedSet.empty[Int] ++ edgesToBold.map(_.from.nodeID)
     "##Command to produce the output: \"neato -Tpng thisfile > thisfile.png\"\n" +
       "digraph VLSNGraph {\n" +
-      nodes.map(node => node.toDOT(setOfNodesToBold.contains(node.nodeID))).mkString("\t", "\n\t", "\n") +
-      edges.map(edge => edge.toDOT(setOfEdgesToBold.contains(edge.edgeID))).mkString("\t", "\n\t", "\n") +
+      nodes.flatMap(node => {val ofInterest = setOfNodesToBold.contains(node.nodeID)
+        if(onlyCycles && !ofInterest) None else Some(node.toDOT(ofInterest))}).mkString("\t", "\n\t", "\n") +
+      edges.flatMap(edge => {val ofInterest = setOfEdgesToBold.contains(edge.edgeID)
+        if(onlyCycles && !ofInterest) None
+        else Some(edge.toDOT(ofInterest,light))}).mkString("\t", "\n\t", "\n") +
       "\toverlap=false\n" +
       "\tlabel=\"VLSN graph\";\n" +
       "\tfontsize=12;\n" +
       "}"
   }
+
+  def statistics:String = "VLSNGraph(nbNodes:" + nodes.length + " nbEdges:" + edges.length + ")"
 }
 
 
@@ -131,11 +136,18 @@ class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Int, val edge
 
   override def toString: String = "Edge(from:" + from.nodeID + ",to:"+to.nodeID + ",deltaObj:" + deltaObj + ")"
 
-  def toDOT(bold:Boolean = false):String =
+  def toDOTHeavy(bold:Boolean = false):String =
     "\"Edge" + edgeID + "\" [shape=rectangle,style=filled,fillcolor=gray, label=\"deltaObj:" + deltaObj +
       "\\n" + move + "\"" + (if(bold) " color=blue" else "") +"] ; " +
       from.nodeID + " -> " + "\"Edge" + edgeID + "\"" + (if(bold) "[color=blue]" else "") + ";" +
       "\"Edge" + edgeID + "\" -> " + to.nodeID + (if(bold) "[color=blue]" else "") + ";"
+
+  def toDOTLight(bold:Boolean = false):String =
+     from.nodeID + " -> " + to.nodeID + (if(bold) "[color=blue]" else "") + ";"
+
+
+  def toDOT(bold:Boolean = false,light:Boolean):String =
+    if(light){ toDOTLight(bold) }else toDOTHeavy(bold)
 }
 
 

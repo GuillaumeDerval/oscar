@@ -22,7 +22,7 @@ import oscar.cbls.business.routing.neighborhood.vlsn.{CycleFinderAlgoType, VLSN}
 import oscar.cbls.core.search.{Best, First, Move, MoveFound}
 import oscar.cbls.util.StopWatch
 
-import scala.collection.immutable.SortedMap
+import scala.collection.immutable.{SortedMap, SortedSet}
 
 //50.404631, 4.452595
 //50.415162, 4.440849
@@ -88,11 +88,10 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
   val penaltyForUnrouted  = 10000
 
-
   val objPerVehicle = Array.tabulate[Objective](v)(vehicle =>
     new CascadingObjective(
       Objective(vehicleToWorkloadConsraint(vehicle).violation),
-      Objective(vehicletoWorkload(vehicle)))
+      Objective(routeLengthPerVehicle(vehicle)))
   )
 
   val unroutedPenaltyObj = Objective(penaltyForUnrouted*(n - length(myVRP.routes)))
@@ -111,111 +110,125 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
   val unRoutedPostFilter = (node:Int) => (neighbor:Int) => !myVRP.isRouted(neighbor)
 
 
-  //VLSN neighborhood
-  val nodeToAllVehicles = SortedMap.empty[Int,Iterable[Int]] ++ (v until n).map(node => (node,vehicles))
 
-  def routeUnroutedPointVLSN(unroutedNodeToInsert:Int,targetVehicle:Int) = {
-    val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
-    insertPointUnroutedFirst(
-      () => List(unroutedNodeToInsert),
-      () => _ => nodesOfTargetVehicle,
-      myVRP,
-      hotRestart = false,
-      selectInsertionPointBehavior = Best(),
-      positionIndependentMoves = true //combulsory because e are in VLSN mode!!!
+
+  def vlsn(l:Int = Int.MaxValue) = {
+
+    val lClosestNeighborsByDistance: Array[SortedSet[Int]] = Array.tabulate(n)(node =>
+      SortedSet.empty[Int] ++ myVRP.kFirst(l, closestRelevantNeighborsByDistance)(node))
+
+    //VLSN neighborhood
+    val nodeToAllVehicles = SortedMap.empty[Int, Iterable[Int]] ++ (v until n).map(node => (node, vehicles))
+
+    def routeUnroutedPointVLSN(unroutedNodeToInsert: Int, targetVehicle: Int) = {
+      val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
+      val lNearestNodesOfTargetVehicle = nodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(unroutedNodeToInsert) contains x)
+      insertPointUnroutedFirst(
+        () => List(unroutedNodeToInsert),
+        () => _ => lNearestNodesOfTargetVehicle,
+        myVRP,
+        hotRestart = false,
+        selectInsertionPointBehavior = Best(),
+        positionIndependentMoves = true //compulsory because we are in VLSN mode!!!
+      )
+    }
+
+    def movePointVLSN(node: Int, targetVehicle: Int) = {
+      val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
+      val lNearestNodesOfTargetVehicle = nodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(node) contains x)
+      onePointMove(
+        () => List(node),
+        () => _ => lNearestNodesOfTargetVehicle,
+        myVRP,
+        selectDestinationBehavior = Best(),
+        hotRestart = false,
+        positionIndependentMoves = true)
+    }
+
+    def removePointVLSN(node: Int) =
+      removePoint(
+        () => List(node),
+        myVRP,
+        positionIndependentMoves = true,
+        hotRestart = false)
+
+    def removeAndReInsertVLSN(pointToRemove: Int): (() => Unit) = {
+      val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
+      require(pointToRemove >= v, "cannot remove vehicle point: " + v)
+
+      myVRP.routes.value.positionOfAnyOccurrence(pointToRemove) match {
+        case None => throw new Error("cannot remove non routed point:" + pointToRemove)
+        case Some(positionOfPointToRemove) =>
+          myVRP.routes.remove(positionOfPointToRemove)
+      }
+
+      def restoreAndRelease: (() => Unit) = () => {
+        myVRP.routes.rollbackToTopCheckpoint(checkpointBeforeRemove)
+        myVRP.routes.releaseTopCheckpoint()
+      }
+
+      restoreAndRelease
+    }
+
+    new VLSN(
+      v,
+      vehicleToRoutedNodesToMove = () => {
+        SortedMap.empty[Int, List[Int]] ++ vehicles.map((vehicle: Int) => (vehicle, myVRP.getRouteOfVehicle(vehicle).filter(_ >= v)))
+      },
+
+      unroutedNodesToInsert = () => myVRP.unroutedNodes,
+      nodeToRelevantVehicles = () => nodeToAllVehicles,
+
+      nodeVehicleToInsertNeighborhood = routeUnroutedPointVLSN,
+      nodeTargetVehicleToMoveNeighborhood = movePointVLSN,
+      removePointVLSN,
+      removeNodeAndReInsert = removeAndReInsertVLSN,
+
+      objPerVehicle,
+      unroutedPenaltyObj,
+      obj,
+
+      cycleFinderAlgoSeletion = CycleFinderAlgoType.Mouthuy,
+      exhaustVLSN = true,
+      name="VLSN(" + l + ")"
     )
   }
 
-  def movePointVLSN(node:Int,targetVehicle:Int) = {
-    val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
-    onePointMove(
-      () => List(node),
-      () => _ => nodesOfTargetVehicle,
-      myVRP,
-      selectDestinationBehavior = Best(),
-      hotRestart = false,
-      positionIndependentMoves = true)
-  }
-
-  def removePointVLSN(node:Int) =
-    removePoint(
-      () => List(node),
-      myVRP,
-      positionIndependentMoves = true,
-      hotRestart = false)
-
-  def removeAndReInsertVLSN(pointToRemove:Int):(() => Unit) = {
-    val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
-    require(pointToRemove >= v, "cannot remove vehicle point: " + v)
-
-    myVRP.routes.value.positionOfAnyOccurrence(pointToRemove) match {
-      case None => throw new Error("cannot remove non routed point:" + pointToRemove)
-      case Some(positionOfPointToRemove) =>
-        myVRP.routes.remove(positionOfPointToRemove)
-    }
-
-    def restoreAndRelease: (() => Unit) = () => {
-      myVRP.routes.rollbackToTopCheckpoint(checkpointBeforeRemove)
-      myVRP.routes.releaseTopCheckpoint()
-    }
-    restoreAndRelease
-  }
-
-  def vlsn = new VLSN(
-    v,
-    vehicleToRoutedNodesToMove = () => {SortedMap.empty[Int,List[Int]] ++ vehicles.map((vehicle:Int) => (vehicle,myVRP.getRouteOfVehicle(vehicle).filter(_ >= v)))},
-
-    unroutedNodesToInsert = () => myVRP.unroutedNodes,
-    nodeToRelevantVehicles = () => nodeToAllVehicles,
-
-    nodeVehicleToInsertNeighborhood = routeUnroutedPointVLSN,
-    nodeTargetVehicleToMoveNeighborhood = movePointVLSN,
-    removePointVLSN,
-    removeNodeAndReInsert = removeAndReInsertVLSN,
-
-    objPerVehicle,
-    unroutedPenaltyObj,
-    obj,
-
-    cycleFinderAlgoSeletion = CycleFinderAlgoType.Mouthuy,
-    exhaustVLSN = true
-  )
-
-
-  val routeUnroutedPoint =  profile(insertPointUnroutedFirst(myVRP.unrouted,
+  val routeUnroutedPoint =  insertPointUnroutedFirst(myVRP.unrouted,
     ()=>myVRP.kFirst(10,closestRelevantNeighborsByDistance,routedPostFilter),
     myVRP,
     neighborhoodName = "InsertUF",
     hotRestart = false,
     selectNodeBehavior = First(),
-    selectInsertionPointBehavior = Best()))
+    selectInsertionPointBehavior = Best())
 
 
-  def onePtMove(k:Int) = profile(onePointMove(
+  def onePtMove(k:Int) = onePointMove(
     myVRP.routed,
     () => myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter),
     myVRP,
-    selectDestinationBehavior = Best()))
+    selectDestinationBehavior = Best())
 
-  def customTwoOpt(k:Int=10) = profile(twoOpt(myVRP.routed, ()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), myVRP))
+  def customTwoOpt(k:Int=10) = twoOpt(myVRP.routed, ()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), myVRP)
 
   def customThreeOpt(k:Int, breakSym:Boolean) =
-    profile(threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
+    threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")")
 
-
-
-  val search = bestSlopeFirst(List(
-    routeUnroutedPoint,
-    onePtMove(10),
-    customTwoOpt(20),
-    customThreeOpt(10,true)
-  )) exhaust vlsn
+  val search = profile((bestSlopeFirst(List(
+    profile(routeUnroutedPoint),
+    profile(onePtMove(10)),
+    profile(customTwoOpt(20)),
+    profile(customThreeOpt(10,true))
+  )) exhaust profile(vlsn(40))))
 
   search.verbose = 2
-  //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
+  //search.verboseWithExtraInfo(2, ()=> "" + myVRP + vehicles.map(vehicle => "obj("+vehicle + "):" + vehicletoWorkload(vehicle).value).mkString("\t","\n\t","\n") + "unroutedPenalty:" + unroutedPenaltyObj.value + "\nglobalObj:" + obj.value)
   //  routeUnroutdPoint.verbose= 4
   search.doAllMoves(obj = obj)
 
 
-  print(myVRP)
+  println(myVRP)
+
+  println(search.profilingStatistics)
+
 }

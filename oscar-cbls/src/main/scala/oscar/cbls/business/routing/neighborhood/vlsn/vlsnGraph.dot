@@ -1,21 +1,27 @@
 ##Command to produce the output: "neato -Tpng thisfile > thisfile.png"
 digraph VLSNGraph {
-	"0" [shape=circle,style=filled,fillcolor=white, label = "node:6\nvehicle:0"] ; 
-	"1" [shape=circle,style=filled,fillcolor=white, label = "node:7\nvehicle:1"] ; 
-	"2" [shape=circle,style=filled,fillcolor=white, label = "node:8\nvehicle:2"] ; 
-	"3" [shape=circle,style=filled,fillcolor=white, label = "node:9\nvehicle:3"] ; 
-	"4" [shape=circle,style=filled,fillcolor=white, label = "node:10\nvehicle:4"] ; 
-	"5" [shape=circle,style=filled,fillcolor=white, label = "node:11\nvehicle:5"] ; 
-	"Edge0" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:10\nDoNothingMove(2147483647)"] ; 0 -> "Edge0";"Edge0" -> 1;
-	"Edge1" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-1\nDoNothingMove(2147483647)"] ; 1 -> "Edge1";"Edge1" -> 2;
-	"Edge2" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-1\nDoNothingMove(2147483647)" color=blue] ; 2 -> "Edge2"[color=blue];"Edge2" -> 3[color=blue];
-	"Edge3" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:1\nDoNothingMove(2147483647)" color=blue] ; 3 -> "Edge3"[color=blue];"Edge3" -> 4[color=blue];
-	"Edge4" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:1\nDoNothingMove(2147483647)"] ; 4 -> "Edge4";"Edge4" -> 0;
-	"Edge5" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:1\nDoNothingMove(2147483647)"] ; 0 -> "Edge5";"Edge5" -> 3;
-	"Edge6" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:1\nDoNothingMove(2147483647)"] ; 2 -> "Edge6";"Edge6" -> 4;
-	"Edge7" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-1\nDoNothingMove(2147483647)"] ; 2 -> "Edge7";"Edge7" -> 5;
-	"Edge8" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:1\nDoNothingMove(2147483647)"] ; 5 -> "Edge8";"Edge8" -> 0;
-	"Edge9" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-1\nDoNothingMove(2147483647)" color=blue] ; 4 -> "Edge9"[color=blue];"Edge9" -> 2[color=blue];
+	"2" [shape=circle,style=filled,fillcolor=green,color= blue, label = "node:2\nvehicle:2"] ;
+	"9" [shape=circle,style=filled,fillcolor=green,color= blue, label = "node:9\nvehicle:9"] ;
+	"10" [shape=circle,style=filled,fillcolor=gold,color= blue, label = "node:-1\nvehicle:-1"] ;
+	"19" [shape=circle,style=filled,fillcolor=aquamarine,color= blue, label = "node:49\nvehicle:0"] ;
+	"57" [shape=circle,style=filled,fillcolor=aquamarine,color= blue, label = "node:77\nvehicle:4"] ;
+	"106" [shape=circle,style=filled,fillcolor=aquamarine,color= blue, label = "node:40\nvehicle:7"] ;
+	"117" [shape=circle,style=filled,fillcolor=aquamarine,color= blue, label = "node:45\nvehicle:8"] ;
+	"135" [shape=circle,style=filled,fillcolor=crimson,color= blue, label = "node:122\nvehicle:10"] ;
+	"136" [shape=circle,style=filled,fillcolor=crimson,color= blue, label = "node:127\nvehicle:10"] ;
+	"140" [shape=circle,style=filled,fillcolor=crimson,color= blue, label = "node:139\nvehicle:10"] ;
+	"Edge110" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-9991\nInsertPointUnroutedFirst:InsertPoint(insertedPoint:139 insertAtPosition:33; objAfter:110778)" color=blue] ; 140 -> "Edge110"[color=blue];"Edge110" -> 2[color=blue];
+	"Edge149" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-10018\nInsertPointUnroutedFirst:InsertPoint(insertedPoint:122 insertAtPosition:103; objAfter:120751)" color=blue] ; 135 -> "Edge149"[color=blue];"Edge149" -> 106[color=blue];
+	"Edge183" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-9849\nInsertPointUnroutedFirst:InsertPoint(insertedPoint:127 insertAtPosition:115; objAfter:120920)" color=blue] ; 136 -> "Edge183"[color=blue];"Edge183" -> 117[color=blue];
+	"Edge594" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:19\nOnePointMove:OnePointMove(Moved point 77 after 31; objAfter:1147)" color=blue] ; 57 -> "Edge594"[color=blue];"Edge594" -> 19[color=blue];
+	"Edge676" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:159\nOnePointMove:OnePointMove(Moved point 45 after 90; objAfter:1092)" color=blue] ; 117 -> "Edge676"[color=blue];"Edge676" -> 9[color=blue];
+	"Edge1157" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-33\nOnePointMove:OnePointMove(Moved point 49 after 106; objAfter:1048)" color=blue] ; 19 -> "Edge1157"[color=blue];"Edge1157" -> 57[color=blue];
+	"Edge1273" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:10000\nRemovePoint(point:40; objAfter:120000)" color=blue] ; 106 -> "Edge1273"[color=blue];"Edge1273" -> 10[color=blue];
+	"Edge1299" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:0\nnull" color=blue] ; 2 -> "Edge1299"[color=blue];"Edge1299" -> 10[color=blue];
+	"Edge1306" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:0\nnull" color=blue] ; 9 -> "Edge1306"[color=blue];"Edge1306" -> 10[color=blue];
+	"Edge1312" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:0\nnull" color=blue] ; 10 -> "Edge1312"[color=blue];"Edge1312" -> 135[color=blue];
+	"Edge1313" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:0\nnull" color=blue] ; 10 -> "Edge1313"[color=blue];"Edge1313" -> 136[color=blue];
+	"Edge1317" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:0\nnull" color=blue] ; 10 -> "Edge1317"[color=blue];"Edge1317" -> 140[color=blue];
 	overlap=false
 	label="VLSN graph";
 	fontsize=12;
