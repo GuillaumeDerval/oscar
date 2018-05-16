@@ -34,7 +34,7 @@ class VLSNNodeBuilder(var nbLabels:Int) {
   def finish():(Array[Node],Int) = {
     (nodes.reverse.toArray,nbLabels)
   }
-}
+} 
 
 class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
   val nbNodes = nodes.length
