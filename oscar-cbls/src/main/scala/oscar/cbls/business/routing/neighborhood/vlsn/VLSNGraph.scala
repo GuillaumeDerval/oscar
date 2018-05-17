@@ -4,6 +4,13 @@ import oscar.cbls.core.search.{DoNothingMove, Move}
 
 import scala.collection.immutable.SortedSet
 
+object VLSNMoveType extends Enumeration{
+  type VLSNMoveType = Value
+  val InsertNoEject, InsertWithEject, MoveNoEject, MoveWithEject, Remove, Symbolic = Value
+}
+
+import VLSNMoveType._
+
 object VLSNSNodeType extends Enumeration {
   type VLSNSNodeType = Value
   val RegularNode, VehicleNode, UnroutedNode, FictiveNode = Value
@@ -42,17 +49,17 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
   var fromToWithEdge:List[(Int,Int)] = List.empty
   var nextEdgeID:Int = 0
 
-  def addEdge(from:Node, to:Node, deltaObj:Int, move:Move){
+  def addEdge(from:Node, to:Node, deltaObj:Int, move:Move, vLSNMoveType: VLSNMoveType){
     val existingEdge = edges(from.nodeID)(to.nodeID)
     if(existingEdge == null){
-      edges(from.nodeID)(to.nodeID) = new Edge(from:Node,to:Node, move:Move,deltaObj:Int, nextEdgeID)
+      edges(from.nodeID)(to.nodeID) = new Edge(from:Node,to:Node, move:Move,deltaObj:Int, nextEdgeID, vLSNMoveType)
       nextEdgeID += 1
       fromToWithEdge = (from.nodeID,to.nodeID) :: fromToWithEdge
     }else {
       if (existingEdge.deltaObj < deltaObj) {
         //override
         System.err.println("overriding edge in VLSN?")
-        edges(from.nodeID)(to.nodeID) = new Edge(from: Node, to: Node, move: Move, deltaObj: Int, existingEdge.edgeID)
+        edges(from.nodeID)(to.nodeID) = new Edge(from: Node, to: Node, move: Move, deltaObj: Int, existingEdge.edgeID, vLSNMoveType)
       }
     }
   }
@@ -136,7 +143,7 @@ class Node(val nodeID:Int, val representedNode:Int, val nodeType:VLSNSNodeType, 
   }
 }
 
-class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Int, val edgeID:Int){
+class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Int, val edgeID:Int, val moveType:VLSNMoveType){
   def registerToNodes(): Unit ={
     from.outgoing = this :: from.outgoing
     to.incoming = this :: to.incoming
@@ -168,7 +175,7 @@ object VLSNGraphTest extends App{
     val builder = new VLSNEdgeBuilder(nodes: Array[Node], nbNodes,2) //nbLAbel is set here to nbNodes
 
     def edge(from: Int, to: Int, gain: Int): Unit = {
-      builder.addEdge(nodes(from), nodes(to), gain,  new DoNothingMove(Int.MaxValue))
+      builder.addEdge(nodes(from), nodes(to), gain,  new DoNothingMove(Int.MaxValue),VLSNMoveType.Symbolic)
     }
 
     edge(0, 1, 10)

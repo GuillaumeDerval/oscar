@@ -18,7 +18,7 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.neighborhood.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
-import oscar.cbls.business.routing.neighborhood.vlsn.{CycleFinderAlgoType, VLSN}
+import oscar.cbls.business.routing.neighborhood.vlsn.{CycleFinderAlgoType, IncrementalVLSN, VLSN}
 import oscar.cbls.core.search.{Best, First, Move, MoveFound}
 import oscar.cbls.util.StopWatch
 
@@ -38,7 +38,7 @@ object VRPMaxDemoVLSN  extends App {
   require(v < n)
   val displayDelay = if (n >= 1000) 1500 else 500 //ms
   val verbose = 1
-  val maxPivotPerValuePercent = 4
+  val maxPivotPerValuePercent = 5 //VLSN generates a lot of additional pivots
   val mapSide = 1000
 
   new VRPMaxDemoVLSN(n,v,maxPivotPerValuePercent,verbose,displayDelay, mapSide)
@@ -177,13 +177,13 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       restoreAndRelease
     }
 
-    new VLSN(
+    new IncrementalVLSN(
       v,
-      vehicleToRoutedNodesToMove = () => {
-        SortedMap.empty[Int, List[Int]] ++ vehicles.map((vehicle: Int) => (vehicle, myVRP.getRouteOfVehicle(vehicle).filter(_ >= v)))
+      () => {
+        SortedMap.empty[Int, SortedSet[Int]] ++ vehicles.map((vehicle: Int) => (vehicle, SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle).filter(_ >= v)))
       },
 
-      unroutedNodesToInsert = () => myVRP.unroutedNodes,
+      () => SortedSet.empty[Int] ++ myVRP.unroutedNodes,
       nodeToRelevantVehicles = () => nodeToAllVehicles,
 
       nodeVehicleToInsertNeighborhood = routeUnroutedPointVLSN,
@@ -196,7 +196,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       obj,
 
       cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
-      exhaustVLSN = true,
+
       name="VLSN(" + l + ")"
     )
   }
