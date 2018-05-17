@@ -226,7 +226,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     profile(onePtMove(10)),
     profile(customTwoOpt(20)),
     profile(customThreeOpt(10,true))
-  )) exhaust profile(vlsn(40)))
+  )) exhaust profile(vlsn(40) maxMoves 1))
 
   search.verbose = 2
   //search.verboseWithExtraInfo(2, () => result)

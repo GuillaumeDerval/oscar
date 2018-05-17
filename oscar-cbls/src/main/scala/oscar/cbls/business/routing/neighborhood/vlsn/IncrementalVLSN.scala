@@ -97,7 +97,13 @@ class IncrementalVLSN(v:Int,
             println("xxx  " + newMove.objAfter + "   " + newMove.toString)
 
             //now starts the incremental VLSN stuff
+            restartVLSNIncrementally(
+              vlsnGraph,
+              acc,
+              vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
+              unroutedNodesToInsert: SortedSet[Int])
 
+            return true
           }
         case Some(listOfEdge) =>
           val delta = listOfEdge.map(edge => edge.deltaObj).sum
@@ -114,9 +120,7 @@ class IncrementalVLSN(v:Int,
   def restartVLSNIncrementally(oldGraph: VLSNGraph,
                                performedMoves: List[Edge],
                                vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                               unroutedNodesToInsert: SortedSet[Int]): Boolean = {
-
-    println("restarting VLSN")
+                               unroutedNodesToInsert: SortedSet[Int]) {
 
     val (updatedVehicleToRoutedNodesToMove, updatedUnroutedNodesToInsert) =
       updateZones(performedMoves: List[Edge],
@@ -124,11 +128,11 @@ class IncrementalVLSN(v:Int,
         unroutedNodesToInsert: SortedSet[Int])
 
 
-    val cachedExplorations: CachedExplorations = CachedExplorations(oldGraph, performedMoves, v)
+    val cachedExplorations: Option[CachedExplorations] = CachedExplorations(oldGraph, performedMoves, v)
 
     doVLSNSearch(updatedVehicleToRoutedNodesToMove,
       updatedUnroutedNodesToInsert,
-      Some(cachedExplorations))
+      cachedExplorations)
   }
 
 

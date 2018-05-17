@@ -18,12 +18,12 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 
 
 object CachedExplorations{
-  def apply(oldGraph:VLSNGraph,performedMoves:List[Edge],v:Int):CachedExplorations = {
+  def apply(oldGraph:VLSNGraph,performedMoves:List[Edge],v:Int):Option[CachedExplorations] = {
 
     var dirtyNodes: SortedSet[Int] = SortedSet.empty
     val isDirtyVehicle = Array.fill[Boolean](v)(false)
 
-    for (edge: Edge <- oldGraph.edges) {
+    for (edge: Edge <- performedMoves) {
       val fromNode = edge.from
       val toNode = edge.to
 
@@ -40,17 +40,21 @@ object CachedExplorations{
         case MoveWithEject =>
           isDirtyVehicle(fromNode.vehicle) = true
           isDirtyVehicle(toNode.vehicle) = true
-        case Remove if !isDirtyVehicle(fromNode.vehicle) =>
+        case Remove =>
           isDirtyVehicle(fromNode.vehicle) = true
           dirtyNodes += fromNode.representedNode
         case Symbolic => ;
       }
     }
 
-    new CachedExplorations(oldGraph: VLSNGraph,
+    //println("isDirtyVehicle:" + isDirtyVehicle.mkString(","))
+    //println(oldGraph.statistics)
+
+    if(isDirtyVehicle.count(a => a) == v) None
+    else Some(new CachedExplorations(oldGraph: VLSNGraph,
       dirtyNodes: SortedSet[Int],
       isDirtyVehicle: Array[Boolean],
-      v: Int)
+      v: Int))
   }
 }
 
@@ -61,12 +65,14 @@ class CachedExplorations(oldGraph:VLSNGraph,
 
   def isDirtyNode(node: Int): Boolean = dirtyNodes.contains(node)
 
+  //TODO: this is by far too slow!!! use arrays for O(1) access!!!!!
   var cachedInsertNoEject: SortedMap[(Int, Int), CachedAtomicMove] = SortedMap.empty //unroute,targetVehicle
   var cachedInsertWithEject: SortedMap[(Int, Int), CachedAtomicMove] = SortedMap.empty //
   var cachedMoveNoEject: SortedMap[(Int, Int), CachedAtomicMove] = SortedMap.empty
   var cachedMoveWithEject: SortedMap[(Int, Int), CachedAtomicMove] = SortedMap.empty
   var cachedRemove: SortedMap[(Int), CachedAtomicMove] = SortedMap.empty
 
+  var size = 0
   for (edge: Edge <- oldGraph.edges) {
     val fromNode = edge.from
     val toNode = edge.to
@@ -74,17 +80,25 @@ class CachedExplorations(oldGraph:VLSNGraph,
     edge.moveType match {
       case InsertNoEject if !isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle) =>
         cachedInsertNoEject += (fromNode.representedNode, toNode.vehicle) -> CachedAtomicMove(edge)
+        size+=1
       case InsertWithEject if !isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle) =>
         cachedInsertWithEject += (fromNode.representedNode, toNode.representedNode) -> CachedAtomicMove(edge)
+        size+=1
       case MoveNoEject if !isDirtyVehicle(fromNode.vehicle) && !isDirtyVehicle(toNode.vehicle) =>
         cachedMoveNoEject += (fromNode.representedNode, toNode.vehicle) -> CachedAtomicMove(edge)
+        size+=1
       case MoveWithEject if !isDirtyVehicle(fromNode.vehicle) && !isDirtyVehicle(toNode.vehicle) =>
         cachedMoveWithEject += (fromNode.representedNode, toNode.representedNode) -> CachedAtomicMove(edge)
+        size+=1
       case Remove if !isDirtyVehicle(fromNode.vehicle) =>
         cachedRemove += fromNode.representedNode -> CachedAtomicMove(edge)
+        size+=1
       case Symbolic => ;
+      case _ => ; // non cachable
     }
   }
+
+  //println("cache size:" + size)
 
   def getInsertOnVehicleNoRemove(unroutedNodeToInsert: Int,
                                  targetVehicleForInsertion: Int): CachedExploration = {
