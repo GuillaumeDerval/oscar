@@ -22,7 +22,7 @@ object OscarBuild {
       "-language:postfixOps"),
     scalacOptions in Test := Seq("-optimise"),
     testOptions in Test += ((target in Test) map {
-      t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports"))
+      t => Tests.Argument(TestFrameworks.ScalaTest, "-u","<%s>" format (t / "streams/test"))
     }).value,
     parallelExecution in Test := false,
     fork in Test := true,
@@ -39,7 +39,7 @@ object OscarBuild {
     },
     credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
     testOptions in PerfTest += ((target in PerfTest) map {
-      t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports"))
+      t => Tests.Argument(TestFrameworks.ScalaTest, "-u","<%s>" format (t / "streams/test"))
     }).value,
     fork in PerfTest := true,
     parallelExecution in PerfTest := false
