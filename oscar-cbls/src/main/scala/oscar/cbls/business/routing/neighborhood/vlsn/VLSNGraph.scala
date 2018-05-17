@@ -108,7 +108,7 @@ class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge],val nbLabels:Int, v:
 }
 
 
-class Node(val nodeID:Int, val representedNode:Int, nodeType:VLSNSNodeType, val vehicle:Int, val label:Int){
+class Node(val nodeID:Int, val representedNode:Int, val nodeType:VLSNSNodeType, val vehicle:Int, val label:Int){
   var incoming:List[Edge] = List.empty
   var outgoing:List[Edge] = List.empty
 

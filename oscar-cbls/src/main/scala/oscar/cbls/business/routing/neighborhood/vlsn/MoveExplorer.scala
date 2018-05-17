@@ -72,7 +72,7 @@ class MoveExplorerAlgo(v:Int,
     edgeBuilder.finish()
   }
 
-  def buildNodes(){
+  private def buildNodes(){
     //label of nodes are:
     // for each routed node and vehicle node: the vehicle of the node
     // For each unrouted node: a diffeent label
@@ -115,7 +115,7 @@ class MoveExplorerAlgo(v:Int,
   }
 
 
-  def explore(n:Neighborhood,localObj:Objective):Option[(Move,Int)] = {
+  private def explore(n:Neighborhood,localObj:Objective):Option[(Move,Int)] = {
     val initialObjective = localObj.value
 
     //we accept all moves, since degrading moves are allowed in negative cycles
@@ -126,7 +126,7 @@ class MoveExplorerAlgo(v:Int,
   }
 
 
-  def exploreInsertions(){
+  private def exploreInsertions(){
     val vehicleAndUnroutedNodes:Iterable[(Int,Int)] =
       unroutedNodesToInsert.flatMap(unroutedNode => nodeToRelevantVehicles(unroutedNode).map(vehicle => (vehicle,unroutedNode)))
 
@@ -134,6 +134,7 @@ class MoveExplorerAlgo(v:Int,
 
     for((targetVehicleForInsertion,unroutedNodesToInsert) <- vehicleToUnroutedNodeToInsert){
 
+      var feasibleInsertForThisVehicle:Option[Move] = None
       //try inserts without removes
       for(unroutedNodeToInsert <- unroutedNodesToInsert) {
         //insertion without remove
@@ -142,7 +143,8 @@ class MoveExplorerAlgo(v:Int,
           getMove(globalObjective,initialGlobalObjective,acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match {
           case NoMoveFound =>
           case MoveFound(move) =>
-            edgeBuilder.addEdge(symbolicNodeToInsert, nodeIDToNode(targetVehicleForInsertion), move.objAfter - initialGlobalObjective, move)
+            val delta = move.objAfter - initialGlobalObjective
+            edgeBuilder.addEdge(symbolicNodeToInsert, nodeIDToNode(targetVehicleForInsertion), delta, move)
         }
       }
 
@@ -175,7 +177,7 @@ class MoveExplorerAlgo(v:Int,
     }
   }
 
-  def exploreNodeMove(): Unit = {
+  private def exploreNodeMove(): Unit = {
     val vehicleAndNodeToMove:Iterable[(Int,Int)] =
       nodesToMove.flatMap(nodeToMove => nodeToRelevantVehicles(nodeToMove).map(vehicle => (vehicle,nodeToMove)))
 
@@ -229,7 +231,7 @@ class MoveExplorerAlgo(v:Int,
   /**
     * deletions are from deleted node to trashNode
     */
-  def exploreDeletions(): Unit = {
+  private def exploreDeletions(): Unit = {
 
     for ((vehicleID, routingNodesToRemove) <- vehicleToRoutedNodes) {
       for (routingNodeToRemove <- routingNodesToRemove) {
@@ -246,13 +248,13 @@ class MoveExplorerAlgo(v:Int,
   }
 
   //should be called after all edges going to vehicle are generated
-  def addNoMoveEdgesVehiclesToTrashNode(): Unit ={
+  private def addNoMoveEdgesVehiclesToTrashNode(): Unit ={
     for(vehicleNode <- vehicleToNode if vehicleNode != null){
       edgeBuilder.addEdge(vehicleNode,trashNode,0,null)
     }
   }
 
-  def addTrashNodeToUnroutedNodes(): Unit ={
+  private def addTrashNodeToUnroutedNodes(): Unit ={
     for(unroutedNode <- unroutedNodesToInsert){
       edgeBuilder.addEdge(trashNode,nodeIDToNode(unroutedNode),0,null)
     }

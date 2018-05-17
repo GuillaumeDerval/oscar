@@ -165,10 +165,10 @@ case class OnePointMoveMove(movedPoint: Int,movedPointPosition:Int,
   }
 
   override def toString: String = (
-    neighborhoodNameToString + "OnePointMove(Moved point " + movedPoint
+    neighborhoodNameToString + "OnePointMove(" + movedPoint
       + " afterPoint " + newPredecessor + (if (positionIndependentMoves) " positionIndependent" else "") + objToString + ")")
 
   override def shortString:String =
-  "OnePointMove(moved " + movedPoint + " after " + newPredecessor + (if (positionIndependentMoves) " pi" else "") + ")"
+  "OnePointMove(" + movedPoint + " after " + newPredecessor + (if (positionIndependentMoves) " pi" else "") + ")"
 }
 

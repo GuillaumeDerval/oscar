@@ -103,6 +103,13 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
   model.close()
 
+
+  def result: String =
+    myVRP.toString +
+      vehicles.map(vehicle => "workload_vehicle_" + vehicle + ":" + vehicletoWorkload(vehicle).value).mkString("\n") + "\n" +
+      "maxWorkloadPerVehicle:" + maxWorkloadPerVehicle + "\n" + obj
+
+
   val relevantPredecessorsOfNodes = (node:Int) => myVRP.nodes
   val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix,relevantPredecessorsOfNodes))
 
@@ -188,7 +195,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       unroutedPenaltyObj,
       obj,
 
-      cycleFinderAlgoSeletion = CycleFinderAlgoType.Mouthuy,
+      cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
       exhaustVLSN = true,
       name="VLSN(" + l + ")"
     )
@@ -214,20 +221,19 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
   def customThreeOpt(k:Int, breakSym:Boolean) =
     threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")")
 
-  val search = profile((bestSlopeFirst(List(
+  val search = profile(bestSlopeFirst(List(
     profile(routeUnroutedPoint),
     profile(onePtMove(10)),
     profile(customTwoOpt(20)),
     profile(customThreeOpt(10,true))
-  )) exhaust profile(vlsn(40))))
+  )) exhaust profile(vlsn(40)))
 
   search.verbose = 2
-  //search.verboseWithExtraInfo(2, ()=> "" + myVRP + vehicles.map(vehicle => "obj("+vehicle + "):" + vehicletoWorkload(vehicle).value).mkString("\t","\n\t","\n") + "unroutedPenalty:" + unroutedPenaltyObj.value + "\nglobalObj:" + obj.value)
-  //  routeUnroutdPoint.verbose= 4
+  //search.verboseWithExtraInfo(2, () => result)
+
   search.doAllMoves(obj = obj)
 
-
-  println(myVRP)
+  println(result)
 
   println(search.profilingStatistics)
 

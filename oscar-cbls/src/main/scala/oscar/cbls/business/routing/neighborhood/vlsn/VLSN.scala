@@ -24,10 +24,12 @@ class VLSN(v:Int,
            vehicleToObjective:Array[Objective],
            unroutedPenalty:Objective,
            globalObjective:Objective,
-           cycleFinderAlgoSeletion:CycleFinderAlgoType = CycleFinderAlgoType.Mouthuy,
+           cycleFinderAlgoSelection:CycleFinderAlgoType = CycleFinderAlgoType.Mouthuy,
            exhaustVLSN:Boolean =  true,
            name:String = "VLSN",
           ) extends Neighborhood {
+
+
 
   override def getMove(obj: Objective,
                        initialObj: Int,
@@ -70,11 +72,11 @@ class VLSN(v:Int,
       var acc:List[Edge] = List.empty
       var computedNewObj:Int = initialObj
       while(true){
-        CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSeletion).findCycle(liveNodes) match {
+        CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSelection).findCycle(liveNodes) match {
           case None =>
             if(acc.isEmpty) return NoMoveFound
             else{
-             // println(vlsnGraph.toDOT(acc,false,true))
+              // println(vlsnGraph.toDOT(acc,false,true))
               return MoveFound(CompositeMove(acc.flatMap(edge => Option(edge.move)), computedNewObj, name))
             }
           case Some(listOfEdge) =>
@@ -88,15 +90,13 @@ class VLSN(v:Int,
       throw new Error("should not reach this")
     }else {
       //then, find proper negative cycle in graph
-      CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSeletion).findCycle(liveNodes) match {
+      CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSelection).findCycle(liveNodes) match {
         case None =>
           NoMoveFound
         case Some(listOfEdge) =>
-           require(listOfEdge.nonEmpty, "list of edge should not be empty")
+          require(listOfEdge.nonEmpty, "list of edge should not be empty")
           //TODO:further explore the graph, to find all independent neg cycles, and improve added value.
           //finally, extract the moves from the graph and return the composite moves
-
-
 
           val moves = listOfEdge.flatMap(edge => Option(edge.move))
           val delta = listOfEdge.map(edge => edge.deltaObj).sum

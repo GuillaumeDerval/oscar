@@ -79,7 +79,7 @@ case class InsertPointMove(insertedPoint: Int,
       else " atPosition:" + insertAtPosition) + objToString + ")"
 
   override def shortString:String =
-    "InsertPoint(point:" + insertedPoint +
+    "InsertPoint(" + insertedPoint +
       (if(positionIndependentMoves) " after " + insertAfterPointForInstantiation + " pi"
       else " atPos:" + insertAtPosition) + ")"
 }
