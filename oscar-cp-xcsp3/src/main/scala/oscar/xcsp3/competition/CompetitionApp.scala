@@ -52,7 +52,7 @@ class CompetitionConf(args: Seq[String]){
 
 abstract class CompetitionApp extends App{
   final val tstart = System.nanoTime()
-  final val version = "2017-08-22"
+  final val version = "2018-04-29"
 
   //Setting up shutdown hook:
   Runtime.getRuntime.addShutdownHook(new Thread{
@@ -117,7 +117,7 @@ abstract class CompetitionApp extends App{
 //        printDiagnostic("SOL_NOT_VALID")
 //        printComment(currentSol)
 //        println(tElapsed + " s " + "UNKNOWN")
-////        println("s " + "UNKNOWN")
+//        println("s " + "UNKNOWN")
 //      }
     }
   }

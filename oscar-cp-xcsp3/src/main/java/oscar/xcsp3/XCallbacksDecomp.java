@@ -195,8 +195,8 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
     protected XVariables.XVarInteger[] buildEndsFromStartAndLength(XVariables.XVarInteger[] starts, XVariables.XVarInteger[] lengths) {
         XVariables.XVarInteger[] output = new XVariables.XVarInteger[starts.length];
         for(int i = 0; i < starts.length; i++) {
-            int min = (int)(((XDomains.XDomInteger)starts[i].dom).getFirstValue() + ((XDomains.XDomInteger)lengths[i].dom).getFirstValue());
-            int max = (int)(((XDomains.XDomInteger)starts[i].dom).getLastValue() + ((XDomains.XDomInteger)lengths[i].dom).getLastValue());
+            int min = (int)(((XDomains.XDomInteger)starts[i].dom).firstValue() + ((XDomains.XDomInteger)lengths[i].dom).firstValue());
+            int max = (int)(((XDomains.XDomInteger)starts[i].dom).lastValue() + ((XDomains.XDomInteger)lengths[i].dom).lastValue());
             output[i] = (XVariables.XVarInteger)XVariables.XVar.build(generateReservedArrayIdx(), XVariables.TypeVar.integer, new XDomains.XDomInteger(min, max));
             buildVarInteger(output[i], min, max);
         }
@@ -209,8 +209,8 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
     protected XVariables.XVarInteger[] buildEndsFromStartAndLength(XVariables.XVarInteger[] starts, int[] lengths) {
         XVariables.XVarInteger[] output = new XVariables.XVarInteger[starts.length];
         for(int i = 0; i < starts.length; i++) {
-            int min = (int)(((XDomains.XDomInteger)starts[i].dom).getFirstValue())+lengths[i];
-            int max = (int)(((XDomains.XDomInteger)starts[i].dom).getLastValue())+lengths[i];
+            int min = (int)(((XDomains.XDomInteger)starts[i].dom).firstValue())+lengths[i];
+            int max = (int)(((XDomains.XDomInteger)starts[i].dom).lastValue())+lengths[i];
             output[i] = (XVariables.XVarInteger)XVariables.XVar.build(generateReservedArrayIdx(), XVariables.TypeVar.integer, new XDomains.XDomInteger(min, max));
             buildVarInteger(output[i], min, max);
         }
