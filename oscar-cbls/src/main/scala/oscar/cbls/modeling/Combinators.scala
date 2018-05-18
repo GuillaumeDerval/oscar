@@ -1,12 +1,9 @@
 package oscar.cbls.modeling
 
-import java.awt.Color
-
 import oscar.cbls._
-import oscar.cbls.core.search.{Move, Neighborhood, SupportForAndThenChaining}
+import oscar.cbls.core.search.{Move, Neighborhood, NoMoveNeighborhood, SupportForAndThenChaining}
 import oscar.cbls.lib.search.combinators._
 import oscar.cbls.util.StopWatch
-import oscar.cbls.visual.ColorGenerator
 
 import scala.language.postfixOps
 
@@ -143,6 +140,14 @@ trait BasicCombinators{
    */
   def retry(a: Neighborhood, cond: Int => Boolean = _ <= 1) = new Retry(a, cond)
 
+
+  /**
+    * instantiates a new neighborhood on each exploration.
+    * You can use it to perform some queries before instantiating the neighborhood.
+    * You can return [[NoMoveNeighborhood]] if tehre is no actul neighborhood to explore
+    * @param f a function that generated the neighborhood to explore
+    */
+  def dyn(f:() => Neighborhood) = new Dyn(f)
 }
 
 
