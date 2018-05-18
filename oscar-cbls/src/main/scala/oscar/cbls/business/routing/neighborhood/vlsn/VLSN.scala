@@ -6,14 +6,13 @@ import oscar.cbls.core.search._
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 
-
 /*
 all neighborhood must return moves that are position-independent.
 by default this is not the case. A trait has been added here to ensure that moves are indeed position-independent
  */
 class VLSN(v:Int,
-           vehicleToRoutedNodesToMove:() => SortedMap[Int,Iterable[Int]],
-           unroutedNodesToInsert:() => Iterable[Int],
+           vehicleToRoutedNodesToMove:() => SortedMap[Int,SortedSet[Int]],
+           unroutedNodesToInsert:() => SortedSet[Int],
            nodeToRelevantVehicles:() => Map[Int,Iterable[Int]],
 
            nodeVehicleToInsertNeighborhood:(Int,Int) => Neighborhood,
@@ -28,8 +27,6 @@ class VLSN(v:Int,
            exhaustVLSN:Boolean =  true,
            name:String = "VLSN",
           ) extends Neighborhood {
-
-
 
   override def getMove(obj: Objective,
                        initialObj: Int,

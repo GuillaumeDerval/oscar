@@ -18,7 +18,7 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.neighborhood.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
-import oscar.cbls.business.routing.neighborhood.vlsn.{CycleFinderAlgoType, VLSN}
+import oscar.cbls.business.routing.neighborhood.vlsn.{CycleFinderAlgoType, IncrementalVLSN, VLSN}
 import oscar.cbls.core.search.{Best, First, Move, MoveFound}
 import oscar.cbls.util.StopWatch
 
@@ -38,7 +38,7 @@ object VRPMaxDemoVLSN  extends App {
   require(v < n)
   val displayDelay = if (n >= 1000) 1500 else 500 //ms
   val verbose = 1
-  val maxPivotPerValuePercent = 4
+  val maxPivotPerValuePercent = 5 //VLSN generates a lot of additional pivots
   val mapSide = 1000
 
   new VRPMaxDemoVLSN(n,v,maxPivotPerValuePercent,verbose,displayDelay, mapSide)
@@ -159,6 +159,33 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
         positionIndependentMoves = true,
         hotRestart = false)
 
+    def onePointMoveOnVehicle(vehicle: Int) = {
+      val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
+      onePointMove(
+        () => nodesOfTargetVehicle.filter(_ >= v),
+        () => _ => nodesOfTargetVehicle,
+        myVRP,
+        selectDestinationBehavior = Best(),
+        hotRestart = true)
+    }
+
+    def twoOptOnVehicle(vehicle:Int) = {
+      val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
+      twoOpt(
+        () => nodesOfTargetVehicle.filter(_ >= v),
+        ()=>_ => nodesOfTargetVehicle
+        , myVRP)
+    }
+
+    def threeOptOnVehicle(vehicle:Int) = {
+      val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
+      val nodesOfTargetVehicleButVehicle = nodesOfTargetVehicle.filter(_ >= v)
+      threeOpt(() => nodesOfTargetVehicle,
+        () => _ => nodesOfTargetVehicle,
+        myVRP)
+    }
+
+
     def removeAndReInsertVLSN(pointToRemove: Int): (() => Unit) = {
       val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
       require(pointToRemove >= v, "cannot remove vehicle point: " + v)
@@ -177,13 +204,13 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       restoreAndRelease
     }
 
-    new VLSN(
+    new IncrementalVLSN(
       v,
-      vehicleToRoutedNodesToMove = () => {
-        SortedMap.empty[Int, List[Int]] ++ vehicles.map((vehicle: Int) => (vehicle, myVRP.getRouteOfVehicle(vehicle).filter(_ >= v)))
+      () => {
+        SortedMap.empty[Int, SortedSet[Int]] ++ vehicles.map((vehicle: Int) => (vehicle, SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle).filter(_ >= v)))
       },
 
-      unroutedNodesToInsert = () => myVRP.unroutedNodes,
+      () => SortedSet.empty[Int] ++ myVRP.unroutedNodes,
       nodeToRelevantVehicles = () => nodeToAllVehicles,
 
       nodeVehicleToInsertNeighborhood = routeUnroutedPointVLSN,
@@ -191,12 +218,13 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       removePointVLSN,
       removeNodeAndReInsert = removeAndReInsertVLSN,
 
+      reOptimizeVehicle = vehicle => Some(threeOptOnVehicle(vehicle)),
       objPerVehicle,
       unroutedPenaltyObj,
       obj,
 
       cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
-      exhaustVLSN = true,
+
       name="VLSN(" + l + ")"
     )
   }
@@ -226,7 +254,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     profile(onePtMove(10)),
     profile(customTwoOpt(20)),
     profile(customThreeOpt(10,true))
-  )) exhaust profile(vlsn(40)))
+  )) exhaust profile(vlsn(40) maxMoves 1))
 
   search.verbose = 2
   //search.verboseWithExtraInfo(2, () => result)
