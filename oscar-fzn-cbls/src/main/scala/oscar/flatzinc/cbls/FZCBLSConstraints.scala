@@ -75,6 +75,8 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     if(disjunctive && unitduration){
       AllDiff(s.map(getCBLSVar(_)))
     }else if(disjunctive && fixedduration){
+      DisjunctiveConstDuration(s.map(getCBLSVar(_)),d.map(_.value))
+    }else if (disjunctive){
       Disjunctive(s.map(getCBLSVar(_)),d.map(getCBLSVar(_)))
     }else if(useNewCumulative){
       val start = s.foldLeft(Int.MaxValue)((acc,v) => if (v.min < acc) v.min else acc)

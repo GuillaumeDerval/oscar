@@ -43,13 +43,13 @@ object Helpers {
       */
 
     def intersectDomain(d:Domain) = {
-      c.restrictDomain(d)
-      if(c.isControlledVariable && !c.inDomain(c.newValue)){
+      if(c.isControlledVariable && !d.contains(c.newValue)){
         System.err.println("% Warning: reduced domain of controlled variable resulted in current value outside domain.")
-      }else if(!c.inDomain(c.newValue)){
+      }else if(!d.contains(c.newValue)){
         val rndIdx = Random.nextInt(d.size)
         c.setValue(d.iterator.drop(rndIdx).next)
       }
+      c.restrictDomain(d)
     }
 
     /**
@@ -64,6 +64,17 @@ object Helpers {
       c.overrideDomain(c.domain.union(d))
     }
   }
+}
+
+class CBLSBoolVar(model: Store, initialValue: Int, initialDomain:Domain, n: String = null)
+  extends CBLSIntVar(model,initialValue, initialDomain, n){
+  override def toString:String = s"CBLSBoolVar($name) := " + value
+  def truthValue:Int = if (value > 0 ) 0 else 1
+  def assignTruthValue(v:Int): Unit =
+    if( v > 1 || v < 0)
+      throw new RuntimeException("Assigning a CBLSBoolVar a truth value that is not in {0, 1}")
+    else
+      this := 1-v
 }
 
 //TODO: Should not extend it anymore!

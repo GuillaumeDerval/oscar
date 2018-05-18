@@ -31,6 +31,9 @@ class CPConstraintPoster(val pstrength: oscar.cp.core.CPPropagStrength){
   def getConstraint(c: oscar.flatzinc.model.Constraint,getVar: Variable => CPIntVar,getBoolVar: Variable => CPBoolVar): Array[(oscar.cp.Constraint,oscar.cp.core.CPPropagStrength)] = {
     def getVarArray(x:Array[Variable]) = {x.map(getVar);}
     c match{
+
+      case cumulative(s,d,r,capa,_) if r.forall(v => 2*v.min > capa.max) =>
+        unaryResource(s.map(getVar), d.map(getVar), s.zip(d).map(vv => getVar(vv._1)+getVar(vv._2)))
       //TODO: We create variables in cumulative but we might want to memoize those as well!
       //TODO: Actually to avoid creating new variables, we could rewrite the cumulative in the minizinc definition to create those variables while flattening, and CSE will take care of it.
       case cumulative(s,d,r,capa,_) => oscar.cp.maxCumulativeResource(s.map(getVar), d.map(getVar), s.zip(d).map(vv => getVar(vv._1)+getVar(vv._2)), r.map(getVar), getVar(capa))
