@@ -812,39 +812,44 @@ class AllDifferent(searchVariables: Array[CBLSIntVar], objective: CBLSObjective,
 }
 
 class Inverse(xs: Array[CBLSIntVar], invXs: Array[CBLSIntVar], objective: CBLSObjective,
-              constraintSystem: ConstraintSystem, offset: Int = 0) extends Neighbourhood(xs ++ invXs) {
+              constraintSystem: ConstraintSystem, offset: Int = 0,
+              fznXs: Array[IntegerVariable],
+              fznInvXs: Array[IntegerVariable],
+              cblsModel:FZCBLSModel) extends Neighbourhood(xs ++ invXs) {
   /**/
 
   val xsViolation: Array[IntValue] = xs.map(constraintSystem.violation(_))
   val invXsViolation: Array[IntValue] = invXs.map(constraintSystem.violation(_))
   val variableViolation: Array[IntValue] = xsViolation ++ invXsViolation
 
+  val initCPModel = new FZCPBasicModel()
+  initCPModel.createVariables(fznXs++fznInvXs)
+  initCPModel.createConstraints(Array(inverse(fznXs,fznInvXs)))
+
   reset();
-
   def reset() = {
-    //Awful bruteforce method:
-    var tmpXs = Array.tabulate(xs.length)(i => 0)
-
-    def recursiveFind(possibleValue: List[Int], index: Int): Boolean = {
-      if (index == xs.length) return true
-      for (v <- possibleValue if xs(index).inDomain(v) && invXs(v + offset).inDomain(index - offset)) {
-        tmpXs(index) = v
-        if (recursiveFind(possibleValue.filterNot(_ == v), index + 1)) {
-          return true
+    initCPModel.push()
+    initCPModel.createObjective(Objective.SATISFY)
+    initCPModel.createRandomSearch()
+    val (foundSolution, solutionMap) = initCPModel.startSearch()
+    initCPModel.pop()
+    if (foundSolution){
+      for ((k,v) <- solutionMap) {
+        if(!k.isBound && !k.isDefined) {
+          val cblsVar = cblsModel.getCBLSVar(k)
+          cblsVar match {
+            case b:CBLSBoolVar =>
+              println("% Neighbourhood initalization of inverse cannot be over Boolean variables. Aborting")
+              System.exit(-1)
+            case i:CBLSIntVar => i := v
+          }
+        }else{
+          println("% Something is wrong")
         }
       }
-      return false
-    }
-
-    val possibleValues = RandomGenerator.shuffle((-offset to xs.length - offset).toList)
-    if (!recursiveFind(possibleValues, 0)) {
-      throw new Exception("Unable to initialize inverse neighbourhood")
-    }
-
-
-    for (i <- xs.indices) {
-      xs(i) := tmpXs(i)
-      invXs(tmpXs(i) + offset) := i - offset
+    }else{
+      println("% Neighbourhood initalization of inverse is UNSATISFIABLE. Aborting")
+      System.exit(-1)
     }
   }
 

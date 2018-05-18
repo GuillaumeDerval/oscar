@@ -63,7 +63,7 @@ class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
       if(allOK(xs,true) && allOK(invXs,true) && intersection.length == 0){
         val xsVars = xs.map(cblsmodel.getCBLSVar(_))
         val invVars = invXs.map(cblsmodel.getCBLSVar(_))
-        cblsmodel.addNeighbourhood((o,c) => new Inverse(xsVars, invVars, o,c,-1),xsVars++invVars)
+        cblsmodel.addNeighbourhood((o,c) => new Inverse(xsVars, invVars, o,c,-1,xs,invXs,cblsmodel),xsVars++invVars)
         true
       }else false
     }
