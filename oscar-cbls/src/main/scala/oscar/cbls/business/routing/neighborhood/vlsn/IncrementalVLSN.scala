@@ -94,8 +94,9 @@ class IncrementalVLSN(v:Int,
             val newMove = CompositeMove(acc.flatMap(edge => Option(edge.move)), computedNewObj, name)
             //we actually commit it now since we are in an incremental approach
             newMove.commit()
-            println("xxx  " + newMove.objAfter + "   " + newMove.toString)
-
+            if(printTakenMoves) {
+              println("   - ?  " + newMove.objAfter + "   " + newMove.toString)
+            }
             //now starts the incremental VLSN stuff
             restartVLSNIncrementally(
               vlsnGraph,
@@ -119,16 +120,20 @@ class IncrementalVLSN(v:Int,
 
   def restartVLSNIncrementally(oldGraph: VLSNGraph,
                                performedMoves: List[Edge],
-                               vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                               unroutedNodesToInsert: SortedSet[Int]) {
+                               oldVehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
+                               oldUnroutedNodesToInsert: SortedSet[Int]) {
 
     val (updatedVehicleToRoutedNodesToMove, updatedUnroutedNodesToInsert) =
       updateZones(performedMoves: List[Edge],
-        vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-        unroutedNodesToInsert: SortedSet[Int])
+        oldVehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
+        oldUnroutedNodesToInsert: SortedSet[Int])
 
-
-    val cachedExplorations: Option[CachedExplorations] = CachedExplorations(oldGraph, performedMoves, v)
+    val cachedExplorations: Option[CachedExplorations] =
+      CachedExplorations(
+        oldGraph,
+        performedMoves,
+        oldVehicleToRoutedNodesToMove:SortedMap[Int,SortedSet[Int]],
+        v)
 
     doVLSNSearch(updatedVehicleToRoutedNodesToMove,
       updatedUnroutedNodesToInsert,
@@ -176,9 +181,9 @@ class IncrementalVLSN(v:Int,
 
             updateZones(
               tail,
-              (vehicleToRoutedNodesToMove
+              vehicleToRoutedNodesToMove
                 + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty) + movedNode))
-                + (fromVehicle -> (vehicleToRoutedNodesToMove(fromVehicle) - movedNode))),
+                + (fromVehicle -> (vehicleToRoutedNodesToMove(fromVehicle) - movedNode)),
               unroutedNodesToInsert
             )
           case MoveWithEject =>
@@ -189,9 +194,9 @@ class IncrementalVLSN(v:Int,
 
             updateZones(
               tail,
-              (vehicleToRoutedNodesToMove
+              vehicleToRoutedNodesToMove
                 + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty) + movedNode - ejectedNode))
-                + (fromVehicle -> (vehicleToRoutedNodesToMove(fromVehicle) - movedNode))),
+                + (fromVehicle -> (vehicleToRoutedNodesToMove(fromVehicle) - movedNode)),
               unroutedNodesToInsert
             )
 
@@ -201,8 +206,8 @@ class IncrementalVLSN(v:Int,
 
             updateZones(
               tail,
-              (vehicleToRoutedNodesToMove
-                + (fromVehicle -> (vehicleToRoutedNodesToMove(fromVehicle) - removedNode))),
+              vehicleToRoutedNodesToMove
+                + (fromVehicle -> (vehicleToRoutedNodesToMove(fromVehicle) - removedNode)),
               unroutedNodesToInsert + removedNode
             )
 

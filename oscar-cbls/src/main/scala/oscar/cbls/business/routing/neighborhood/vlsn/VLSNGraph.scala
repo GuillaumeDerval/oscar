@@ -80,7 +80,6 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
 }
 
 /**
-  *
   * @param nodes
   * @param edges
   * @param nbLabels labels range from 0 to nbLabels-1
