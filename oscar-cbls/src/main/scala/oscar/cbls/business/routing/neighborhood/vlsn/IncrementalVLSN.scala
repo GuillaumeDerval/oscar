@@ -151,7 +151,6 @@ class IncrementalVLSN(v:Int,
       CachedExplorations(
         oldGraph,
         performedMoves,
-        oldVehicleToRoutedNodesToMove:SortedMap[Int,SortedSet[Int]],
         v)
 
     doVLSNSearch(updatedVehicleToRoutedNodesToMove,

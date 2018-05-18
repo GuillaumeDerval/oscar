@@ -20,7 +20,6 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 object CachedExplorations{
   def apply(oldGraph:VLSNGraph,
             performedMoves:List[Edge],
-            oldVehicleToRoutedNodesToMove:SortedMap[Int,SortedSet[Int]],
             v:Int):Option[CachedExplorations] = {
 
     var dirtyNodes: SortedSet[Int] = SortedSet.empty
@@ -57,7 +56,6 @@ object CachedExplorations{
     else Some(new CachedExplorations(oldGraph: VLSNGraph,
       dirtyNodes:SortedSet[Int],
         isDirtyVehicle: Array[Boolean],
-      oldVehicleToRoutedNodesToMove:SortedMap[Int,SortedSet[Int]],
       v: Int))
   }
 }
@@ -65,7 +63,6 @@ object CachedExplorations{
 class CachedExplorations(oldGraph:VLSNGraph,
                          dirtyNodes:SortedSet[Int], //only for unrouted nodes that were inserted of newly removed
                          isDirtyVehicle:Array[Boolean],
-                         oldVehicleToRoutedNodesToMove:SortedMap[Int,SortedSet[Int]],
                          v:Int) {
 
   def isDirtyNode(node: Int): Boolean = dirtyNodes.contains(node)
