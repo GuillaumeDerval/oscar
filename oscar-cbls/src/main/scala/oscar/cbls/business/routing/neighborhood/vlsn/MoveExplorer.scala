@@ -210,7 +210,14 @@ class MoveExplorerAlgo(v:Int,
     }
   }
 
-  def evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle:Int, targetVehicleID: Int):(Move,Int) = {
+  def evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle:Int, targetVehicleID: Int):(Move,Int) =
+    myEvaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle:Int, targetVehicleID: Int):(Move,Int)
+
+  def evaluateMoveToVehicleWithRemove(routingNodeToMove:Int, fromVehicle:Int, targetVehicleID:Int, removedNode:Int):(Move,Int) =
+    myEvaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle:Int, targetVehicleID: Int)
+
+  //we must put this in a separated function otherwise tehre is an issue with caching for the incremental VLSN
+  def myEvaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle:Int, targetVehicleID: Int):(Move,Int) = {
     nodeTargetVehicleToMoveNeighborhood(routingNodeToMove, targetVehicleID)
       .getMove(vehicleToObjectives(targetVehicleID), initialVehicleToObjectives(targetVehicleID), acceptanceCriterion = acceptAllButMaxInt) match {
       case NoMoveFound => null
@@ -219,10 +226,6 @@ class MoveExplorerAlgo(v:Int,
         (move,delta)
     }
   }
-
-  def evaluateMoveToVehicleWithRemove(routingNodeToMove:Int, fromVehicle:Int, targetVehicleID:Int, removedNode:Int):(Move,Int) =
-    evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle:Int, targetVehicleID: Int)
-
 
   private def exploreNodeMove(): Unit = {
     val vehicleAndNodeToMove:Iterable[(Int,Int)] =
