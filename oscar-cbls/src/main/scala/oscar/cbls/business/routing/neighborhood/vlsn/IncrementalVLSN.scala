@@ -22,6 +22,8 @@ class IncrementalVLSN(v:Int,
                       nodeToRemoveNeighborhood:Int => Neighborhood,
                       removeNodeAndReInsert:Int => () => Unit,
 
+                      reOptimizeVehicle:Int => Option[Neighborhood],
+
                       vehicleToObjective:Array[Objective],
                       unroutedPenalty:Objective,
                       globalObjective:Objective,
@@ -68,36 +70,53 @@ class IncrementalVLSN(v:Int,
     val liveNodes = Array.fill(vlsnGraph.nbNodes)(true)
 
     def killNodesImpactedByCycle(cycle: List[Edge]): Unit = {
-      val impactedVehicles = SortedSet.empty[Int] ++ cycle.flatMap(edge => {
-        val vehicle = edge.from.vehicle; if (vehicle < v && vehicle >= 0) Some(vehicle) else None
-      })
+      val theImpactedVehicles = impactedVehicles(cycle)
+
       val impactedRoutingNodes = SortedSet.empty[Int] ++ cycle.flatMap(edge => {
         val node = edge.from.representedNode; if (node >= 0) Some(node) else None
       })
 
       for (vlsnNode <- vlsnGraph.nodes) {
-        if ((impactedRoutingNodes contains vlsnNode.representedNode) || (impactedVehicles contains vlsnNode.vehicle)) {
+        if ((impactedRoutingNodes contains vlsnNode.representedNode) || (theImpactedVehicles contains vlsnNode.vehicle)) {
           liveNodes(vlsnNode.nodeID) = false
         }
       }
     }
 
+    def impactedVehicles(cycle: List[Edge]):SortedSet[Int] = SortedSet.empty[Int] ++ cycle.flatMap(edge => {
+      val vehicle = edge.from.vehicle; if (vehicle < v && vehicle >= 0) Some(vehicle) else None
+    })
+
     var acc: List[Edge] = List.empty
     var computedNewObj: Int = globalObjective.value
+
     while (true) {
       CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSelection).findCycle(liveNodes) match {
         case None =>
           if (acc.isEmpty) return false
           else {
-            // println(vlsnGraph.toDOT(acc,false,true))
-            //compose new move
+
+            //compose new move and commit it
             val newMove = CompositeMove(acc.flatMap(edge => Option(edge.move)), computedNewObj, name)
-            //we actually commit it now since we are in an incremental approach
             newMove.commit()
             if(printTakenMoves) {
               println("   - ?  " + newMove.objAfter + "   " + newMove.toString)
             }
-            //now starts the incremental VLSN stuff
+
+            //re-optimizing impacted vehicles (optionnal)
+            for(vehicle <- impactedVehicles(acc)){
+              reOptimizeVehicle(vehicle) match{
+                case None => ;
+                case Some(n) =>
+                  n.verbose = 0
+                  val nbPerformedMoves = n.doAllMoves(obj=globalObjective)
+                  if((printTakenMoves && nbPerformedMoves > 0) || (printExploredNeighbors && nbPerformedMoves == 0)){
+                    println(s"   - ?  " + globalObjective.value + s"   $name:ReOptimizeVehicle(vehicle:$vehicle, neighborhood:$n nbMoves:$nbPerformedMoves)")
+                  }
+              }
+            }
+
+            //now starts the incremental VLSN
             restartVLSNIncrementally(
               vlsnGraph,
               acc,

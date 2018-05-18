@@ -159,6 +159,33 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
         positionIndependentMoves = true,
         hotRestart = false)
 
+    def onePointMoveOnVehicle(vehicle: Int) = {
+      val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
+      onePointMove(
+        () => nodesOfTargetVehicle.filter(_ >= v),
+        () => _ => nodesOfTargetVehicle,
+        myVRP,
+        selectDestinationBehavior = Best(),
+        hotRestart = true)
+    }
+
+    def twoOptOnVehicle(vehicle:Int) = {
+      val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
+      twoOpt(
+        () => nodesOfTargetVehicle.filter(_ >= v),
+        ()=>_ => nodesOfTargetVehicle
+        , myVRP)
+    }
+
+    def threeOptOnVehicle(vehicle:Int) = {
+      val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
+      val nodesOfTargetVehicleButVehicle = nodesOfTargetVehicle.filter(_ >= v)
+      threeOpt(() => nodesOfTargetVehicle,
+        () => _ => nodesOfTargetVehicle,
+        myVRP)
+    }
+
+
     def removeAndReInsertVLSN(pointToRemove: Int): (() => Unit) = {
       val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
       require(pointToRemove >= v, "cannot remove vehicle point: " + v)
@@ -191,6 +218,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       removePointVLSN,
       removeNodeAndReInsert = removeAndReInsertVLSN,
 
+      reOptimizeVehicle = vehicle => Some(threeOptOnVehicle(vehicle)),
       objPerVehicle,
       unroutedPenaltyObj,
       obj,
