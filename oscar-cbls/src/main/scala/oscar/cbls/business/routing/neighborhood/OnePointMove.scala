@@ -44,7 +44,8 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
                         selectDestinationBehavior:LoopBehavior = First(),
                         hotRestart: Boolean = true,
                         allPointsToMoveAreRouted:Boolean = true,
-                        allRelevantNeighborsAreRouted:Boolean = true)
+                        allRelevantNeighborsAreRouted:Boolean = true,
+                        positionIndependentMoves:Boolean = false)
   extends EasyNeighborhoodMultiLevel[OnePointMoveMove](neighborhoodName) {
 
   val seq = vrp.routes
@@ -115,7 +116,10 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
   var positionOfNewPredecessorForInstantiation:Int = -1
 
   override def instantiateCurrentMove(newObj: Int) =
-    OnePointMoveMove(movedPointForInstantiation, positionOfMovedPointForInstantiation, newPredecessorForInstantiation, positionOfNewPredecessorForInstantiation, newObj, this, neighborhoodName)
+    OnePointMoveMove(movedPointForInstantiation, positionOfMovedPointForInstantiation,
+      newPredecessorForInstantiation, positionOfNewPredecessorForInstantiation,
+      positionIndependentMoves,
+      newObj, this, neighborhoodName)
 
   override def reset(): Unit = {
     startIndice = 0
@@ -123,6 +127,13 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
 
   def doMove(positionOfMovedPoint:Int, positionOfNewPredecessor:Int) {
     seq.move(positionOfMovedPoint,positionOfMovedPoint,positionOfNewPredecessor,false)
+  }
+
+  def doPositionIndependentMove(movedPoint:Int, newPredecessor:Int): Unit ={
+    val s = seq.newValue
+    val movedPos = s.positionOfAnyOccurrence(movedPoint).get
+    val positionOfPredecessor = s.positionOfAnyOccurrence(newPredecessor).get
+    seq.move(movedPos,movedPos,positionOfPredecessor,false)
   }
 }
 
@@ -137,6 +148,7 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
  */
 case class OnePointMoveMove(movedPoint: Int,movedPointPosition:Int,
                             newPredecessor: Int,newPredecessorPosition:Int,
+                            positionIndependentMoves:Boolean,
                             override val objAfter: Int,
                             override val neighborhood: OnePointMove,
                             override val neighborhoodName: String = "OnePointMoveMove")
@@ -145,11 +157,18 @@ case class OnePointMoveMove(movedPoint: Int,movedPointPosition:Int,
   override def impactedPoints: Iterable[Int] = List(movedPoint,newPredecessor)
 
   override def commit() {
-    neighborhood.doMove(movedPointPosition, newPredecessorPosition)
+    if(positionIndependentMoves){
+      neighborhood.doPositionIndependentMove(movedPoint, newPredecessor)
+    }else{
+      neighborhood.doMove(movedPointPosition, newPredecessorPosition)
+    }
   }
 
   override def toString: String = (
-    neighborhoodNameToString + "OnePointMove(Moved point " + movedPoint
-      + " after " + newPredecessor + objToString + ")")
+    neighborhoodNameToString + "OnePointMove(" + movedPoint
+      + " afterPoint " + newPredecessor + (if (positionIndependentMoves) " positionIndependent" else "") + objToString + ")")
+
+  override def shortString:String =
+  "OnePointMove(" + movedPoint + " after " + newPredecessor + (if (positionIndependentMoves) " pi" else "") + ")"
 }
 

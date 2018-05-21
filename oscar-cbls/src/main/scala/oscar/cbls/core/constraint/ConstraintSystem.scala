@@ -58,11 +58,10 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
     val displayedConstraints = (if(short) violatedConstraints
       else PostedConstraints.map(_._1)).sortBy(c => c.violation.value).map(c => c + " " + "viol:" + c.violation.value)
 
-    val displayedConstraintsString = displayedConstraints.mkString("\n" + nSpace(indent+4)) + (if (displayedConstraints.isEmpty) "" else ("\n" + nSpace(indent)))
-    val constraintExplanationString = if(short) "violated constraints" else "all constraints"
+    val displayedConstraintsString = if(displayedConstraints.isEmpty) "None" else ("\n" + nSpace(indent+4) + displayedConstraints.mkString("\n" + nSpace(indent+4)))
+    val constraintExplanationString = if(short) "violated_constraints" else "all_constraints"
 
-    "ConstraintSystem(" + this.Violation + " " + constraintExplanationString + ":\n" +
-      nSpace(indent+4) + displayedConstraintsString  + ")"
+    "ConstraintSystem(" + this.Violation + " " + constraintExplanationString + ":" + displayedConstraintsString  + ")"
   }
 
   /**
