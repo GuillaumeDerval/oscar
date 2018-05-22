@@ -158,11 +158,12 @@ class IncrementalMoveExplorerAlgo(v:Int,
                                   unroutedNodesToInsert:Iterable[Int],
                                   nodeToRelevantVehicles:Map[Int,Iterable[Int]],
 
-                                  nodeVehicleToInsertNeighborhood:(Int,Int) => Neighborhood,
-                                  nodeTargetVehicleToMoveNeighborhood:(Int,Int) => Neighborhood,
+                                  targetVehicleNodeToInsertNeighborhood:Int => Int => Neighborhood,
+                                  targetVehicleNodeToMoveNeighborhood:Int => Int => Neighborhood,
                                   nodeToRemoveNeighborhood:Int => Neighborhood,
 
                                   removeAndReInsert:Int => () => Unit,
+                                  useDirectInsert:Boolean,
 
                                   vehicleToObjectives:Array[Objective],
                                   unroutedNodesPenalty:Objective,
@@ -175,11 +176,12 @@ class IncrementalMoveExplorerAlgo(v:Int,
     unroutedNodesToInsert:Iterable[Int],
     nodeToRelevantVehicles:Map[Int,Iterable[Int]],
 
-    nodeVehicleToInsertNeighborhood:(Int,Int) => Neighborhood,
-    nodeTargetVehicleToMoveNeighborhood:(Int,Int) => Neighborhood,
+    targetVehicleNodeToInsertNeighborhood:Int => Int => Neighborhood,
+    targetVehicleNodeToMoveNeighborhood:Int => Int => Neighborhood,
     nodeToRemoveNeighborhood:Int => Neighborhood,
 
     removeAndReInsert:Int => () => Unit,
+    useDirectInsert,
 
     vehicleToObjectives:Array[Objective],
     unroutedNodesPenalty:Objective,
