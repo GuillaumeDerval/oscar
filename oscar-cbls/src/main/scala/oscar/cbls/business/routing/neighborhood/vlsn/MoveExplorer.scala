@@ -206,9 +206,8 @@ class MoveExplorerAlgo(v:Int,
 
       var currentVehicleHasDirectInsert:Boolean = false
 
-      var feasibleInsertForThisVehicle: Option[Move] = None
       //try inserts without removes
-      for (unroutedNodeToInsert <- unroutedNodesToInsert) {
+      for (unroutedNodeToInsert <- unroutedNodesToInsert if!nodeHasDirectInsert(unroutedNodeToInsert)) {
         //insertion without remove
 
         if (!currentVehicleHasDirectInsert) {
