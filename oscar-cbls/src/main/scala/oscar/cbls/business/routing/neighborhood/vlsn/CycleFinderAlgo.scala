@@ -43,7 +43,9 @@ class CycleFinderAlgoMouthuyAndThenDFS(graph:VLSNGraph) extends CycleFinderAlgo{
     new CycleFinderAlgoMouthuy(graph).findCycle(liveNodes:Array[Boolean]) match{
       case None =>
         println("Mouthy stalled, reverting to DFS")
-        new CycleFinderAlgoDFS(graph, pruneOnReachability = true).findCycle(liveNodes:Array[Boolean])
+        val moreCycle = new CycleFinderAlgoDFS(graph, pruneOnReachability = true).findCycle(liveNodes:Array[Boolean])
+        if(moreCycle.nonEmpty)println("DFS did improve")
+        moreCycle
       case a => a
     }
   }

@@ -124,10 +124,11 @@ class MoveExplorerAlgo(v:Int,
 
   @inline
   def evaluateInsertOnVehicleNoRemove(unroutedNodeToInsert: Int,
-                                      targetVehicleForInsertion: Int): (Move, Int) = {
+                                      targetVehicleForInsertion: Int,
+                                      cached:Boolean): (Move, Int) = {
 
     val nodeToInsertNeighborhood = cachedInsertNeighborhoodNoRemove match {
-      case Some((cachedTarget, cachedNeighborhood)) if cachedTarget == targetVehicleForInsertion =>
+      case Some((cachedTarget, cachedNeighborhood)) if cachedTarget == targetVehicleForInsertion && cached =>
         cachedNeighborhood
       case _ =>
         val n = targetVehicleNodeToInsertNeighborhood(targetVehicleForInsertion)
@@ -150,11 +151,12 @@ class MoveExplorerAlgo(v:Int,
   def evaluateInsertOnVehicleWithRemove(unroutedNodeToInsert: Int,
                                         targetVehicleForInsertion: Int,
                                         removedNode: Int,
-                                        correctedGlobalInit: Int): (Move, Int) = {
+                                        correctedGlobalInit: Int,
+                                        cached:Boolean): (Move, Int) = {
 
     val nodeToInsertToNeighborhood = cachedInsertNeighborhoodWithRemove match {
       case Some((cachedTarget, cachedRemoved, cachedNeighborhood))
-        if cachedTarget == targetVehicleForInsertion && cachedRemoved == removedNode =>
+        if cached && cachedTarget == targetVehicleForInsertion && cachedRemoved == removedNode =>
         cachedNeighborhood
       case _ =>
         val n = targetVehicleNodeToInsertNeighborhood(targetVehicleForInsertion)
@@ -202,7 +204,8 @@ class MoveExplorerAlgo(v:Int,
         if (!currentVehicleHasDirectInsert) {
           evaluateInsertOnVehicleNoRemove(
             unroutedNodeToInsert: Int,
-            targetVehicleForInsertion: Int) match {
+            targetVehicleForInsertion: Int,
+            true) match {
             case null => ;
             case (move, delta) =>
               val symbolicNodeToInsert = nodeIDToNode(unroutedNodeToInsert)
@@ -240,7 +243,8 @@ class MoveExplorerAlgo(v:Int,
             unroutedNodeToInsert: Int,
             targetVehicleForInsertion: Int,
             routingNodeToRemove: Int,
-            correctedGlobalInit: Int) match {
+            correctedGlobalInit: Int,
+            true) match {
             case null => ;
             case (move, delta) =>
               val symbolicNodeToInsert = nodeIDToNode(unroutedNodeToInsert)
@@ -267,10 +271,10 @@ class MoveExplorerAlgo(v:Int,
 
   private var cachedNodeMoveNeighborhoodNoRemove:Option[(Int,Int => Neighborhood)] = None //targetVehicle,node=>Neighborhood
 
-  def evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle: Int, targetVehicleForInsertion: Int): (Move, Int) = {
+  def evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle: Int, targetVehicleForInsertion: Int, cached:Boolean): (Move, Int) = {
 
     val nodeToMoveToNeighborhood = cachedNodeMoveNeighborhoodNoRemove match {
-      case Some((cachedTarget, cachedNeighborhood)) if cachedTarget == targetVehicleForInsertion =>
+      case Some((cachedTarget, cachedNeighborhood)) if cachedTarget == targetVehicleForInsertion && cached =>
         cachedNeighborhood
       case _ =>
         val n = targetVehicleNodeToMoveNeighborhood(targetVehicleForInsertion)
@@ -292,11 +296,11 @@ class MoveExplorerAlgo(v:Int,
 
   private var cachedNodeMoveNeighborhoodWithRemove:Option[(Int,Int,Int => Neighborhood)] = None //targetVehicle,removedNode,node=>Neighborhood
 
-  def evaluateMoveToVehicleWithRemove(routingNodeToMove:Int, fromVehicle:Int, targetVehicleForInsertion:Int, removedNode:Int):(Move,Int) = {
+  def evaluateMoveToVehicleWithRemove(routingNodeToMove:Int, fromVehicle:Int, targetVehicleForInsertion:Int, removedNode:Int, cached:Boolean):(Move,Int) = {
 
     val nodeToMoveToNeighborhood = cachedNodeMoveNeighborhoodWithRemove match {
       case Some((cachedTarget, cachedRemoved,cachedNeighborhood))
-        if cachedTarget == targetVehicleForInsertion && cachedRemoved == removedNode =>
+        if cached && cachedTarget == targetVehicleForInsertion && cachedRemoved == removedNode =>
         cachedNeighborhood
       case _ =>
         val n = targetVehicleNodeToMoveNeighborhood(targetVehicleForInsertion)
@@ -330,16 +334,12 @@ class MoveExplorerAlgo(v:Int,
 
           //move without remove
           //     :(Int,Int) => Neighborhood,
-          evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle, targetVehicleID: Int) match {
+          evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle, targetVehicleID: Int, true) match {
             case null => ;
             case (move, delta) =>
               edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeOfVehicle, delta, move, VLSNMoveType.MoveNoEject)
             //we cannot consider directMoves here moves because we should also take the impact on the first vehicle into account,
-            // and this is not captures into the objective function
-            //if (delta < 0) {
-            //  registerDirectMove(routingNodeToMove, fromVehicle, targetVehicleID, edge)
-            //  currentVehicleHasDirectMove = true
-            //}
+            // and this is not captured into the objective function
           }
         }
       }
@@ -365,7 +365,7 @@ class MoveExplorerAlgo(v:Int,
             && !vehicleHasDirectInsertOrMove(targetVehicleID)
           ) {
             //Evaluating all moves on this remove
-            evaluateMoveToVehicleWithRemove(routingNodeToMove, fromVehicle,targetVehicleID, nodeIDToEject) match{
+            evaluateMoveToVehicleWithRemove(routingNodeToMove, fromVehicle,targetVehicleID, nodeIDToEject, true) match{
               case null => ;
               case (move,delta) =>
                 edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeToEject, delta, move, VLSNMoveType.MoveWithEject)
@@ -435,7 +435,7 @@ class MoveExplorerAlgo(v:Int,
       case NoMoveFound => null
       case MoveFound(move) =>
         val delta = move.objAfter - initialVehicleToObjectives(fromVehicle)
-        (move,delta) //will very likely always be nagative because of triangular inequality
+        (move,delta) //will very likely always be negative because of triangular inequality
     }
   }
 
@@ -452,6 +452,5 @@ class MoveExplorerAlgo(v:Int,
         }
       }
     }
-
   }
 }

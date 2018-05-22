@@ -99,7 +99,12 @@ class VLSN(v:Int,
     }
 
     def impactedVehicles(cycle: List[Edge]):SortedSet[Int] = SortedSet.empty[Int] ++ cycle.flatMap(edge => {
-      val vehicle = edge.from.vehicle; if (vehicle < v && vehicle >= 0) Some(vehicle) else None
+      var l:List[Int] = List.empty
+      val vehicleFrom = edge.from.vehicle
+      if (vehicleFrom < v && vehicleFrom >= 0) l = vehicleFrom :: Nil
+      val vehicleTo = edge.to.vehicle
+      if (vehicleTo < v && vehicleTo >= 0) l = vehicleTo :: Nil
+      l
     })
 
     var acc: List[Edge] = List.empty
@@ -128,7 +133,10 @@ class VLSN(v:Int,
 
     while (true) {
       CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSelection).findCycle(liveNodes) match {
+        case Some(listOfEdge) =>
+          performEdgesAndKillCycles(listOfEdge)
         case None =>
+          //we did not find any move at all on the graph
           if (acc.isEmpty) return None
           else {
             //We have exhausted the graph, and VLSN can be restarted
@@ -146,6 +154,10 @@ class VLSN(v:Int,
               case Some(reOptimizeNeighborhoodGenerator) =>
                 //re-optimizing impacted vehicles (optionnal)
                 for(vehicle <- impactedVehicles(acc)){
+
+                  val oldObjVehicle = vehicleToObjective(vehicle).value
+                  val oldGlobalObjective = globalObjective.value
+
                   reOptimizeNeighborhoodGenerator(vehicle) match{
                     case None => ;
                     case Some(n) =>
@@ -154,6 +166,13 @@ class VLSN(v:Int,
                       if((printTakenMoves && nbPerformedMoves > 0) || (printExploredNeighbors && nbPerformedMoves == 0)){
                         println(s"   - ?  " + globalObjective.value + s"   $name:ReOptimizeVehicle(vehicle:$vehicle, neighborhood:$n nbMoves:$nbPerformedMoves)")
                       }
+
+                      val vehicleObjDelta =  vehicleToObjective(vehicle).value - oldObjVehicle
+                      val globalObjDelta = globalObjective.value - oldGlobalObjective
+
+                      require(vehicleObjDelta == globalObjDelta,
+                        "re-optimization of vehicle " + vehicle + " wih" + n + " did impact other vehicle")
+
                   }
                 }
             }
@@ -164,10 +183,7 @@ class VLSN(v:Int,
               acc,
               vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
               unroutedNodesToInsert: SortedSet[Int]))
-
           }
-        case Some(listOfEdge) =>
-          performEdgesAndKillCycles(listOfEdge)
       }
     }
     throw new Error("should not reach this")

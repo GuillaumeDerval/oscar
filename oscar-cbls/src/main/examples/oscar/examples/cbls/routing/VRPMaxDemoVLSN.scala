@@ -178,9 +178,33 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     //for re-optimization
     def threeOptOnVehicle(vehicle:Int) = {
       val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
-      threeOpt(() => nodesOfTargetVehicle,
+      //insertions points are position where we perform the insert,
+      // basically the segment will start in plae of the insertion point and the insertion point will be moved upward
+      val nodesOfTargetVehicleButVehicle = nodesOfTargetVehicle.filter(_ != vehicle)
+      val insertionPoints = if(vehicle != v-1) vehicle+1 :: nodesOfTargetVehicleButVehicle else nodesOfTargetVehicleButVehicle
+
+      threeOpt(() => insertionPoints,
+        () => _ => nodesOfTargetVehicleButVehicle,
+        myVRP,
+        breakSymmetry = false)
+    }
+
+    def onePointMoveOnVehicle(vehicle: Int) = {
+      val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
+      onePointMove(
+        () => nodesOfTargetVehicle.filter(_ >= v),
         () => _ => nodesOfTargetVehicle,
-        myVRP)
+        myVRP,
+        selectDestinationBehavior = Best(),
+        hotRestart = true)
+    }
+
+    def twoOptOnVehicle(vehicle:Int) = {
+      val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
+      twoOpt(
+        () => nodesOfTargetVehicle.filter(_ >= v),
+        ()=>_ => nodesOfTargetVehicle
+        , myVRP)
     }
 
     def removeAndReInsertVLSN(pointToRemove: Int): (() => Unit) = {

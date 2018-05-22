@@ -16,6 +16,7 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
 
     val isNodeReached = Array.fill(nbNodes)(false)
     val isLabelReached = Array.fill(nbLabels)(false)
+    val isNodeFullyExplored = Array.fill(nbNodes)(false)
     var rootNode:Node = null
     var rooNodeID:Int = -1
 
@@ -32,7 +33,7 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
         val targetNode = currentEdge.to
         val targetNodeID = targetNode.nodeID
 
-        if(isLiveNode(targetNodeID)) {
+        if(isLiveNode(targetNodeID) && !isNodeFullyExplored(targetNodeID)) {
           if (targetNode == rootNode) {
             if (newSummedDelta < 0) {
               //we just found a negative cycle
@@ -73,7 +74,7 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
       }
       isLabelReached(rootNode.label) = false
       isNodeReached(rooNodeID) = false
-
+      isNodeFullyExplored(rooNodeID) = true
     }
     None
   }
