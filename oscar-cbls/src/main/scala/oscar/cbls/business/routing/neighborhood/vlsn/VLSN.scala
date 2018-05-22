@@ -76,7 +76,7 @@ class VLSN(v:Int,
                            cachedExplorations: Option[CachedExplorations]): Option[DataForVLSNRestart] = {
 
     //first, explore the atomic moves, and build VLSN graph
-    val vlsnGraph = buildGraph(vehicleToRoutedNodesToMove,
+    val (vlsnGraph,directEdges) = buildGraph(vehicleToRoutedNodesToMove,
       unroutedNodesToInsert,
       cachedExplorations)
 
@@ -105,20 +105,39 @@ class VLSN(v:Int,
     var acc: List[Edge] = List.empty
     var computedNewObj: Int = globalObjective.value
 
+    def performEdgesAndKillCycles(edges:List[Edge]): Unit ={
+      acc = edges.filter(_.move!=null) ::: acc
+      val delta = edges.map(edge => edge.deltaObj).sum
+      require(delta < 0, "delta should be negative, got " + delta)
+      computedNewObj += delta
+
+      for(edge <- edges){
+        if(edge.move != null){
+          edge.move.commit()
+        }
+      }
+      killNodesImpactedByCycle(edges)
+
+      require(globalObjective.value == computedNewObj, "new global objective differs from computed newObj:" + globalObjective + "!=" + computedNewObj + "edges:" + edges )
+    }
+
+    //first, kill the direct edges
+    for(directEdge <- directEdges){
+      performEdgesAndKillCycles(List(directEdge))
+    }
+
     while (true) {
       CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSelection).findCycle(liveNodes) match {
         case None =>
           if (acc.isEmpty) return None
           else {
-
             //We have exhausted the graph, and VLSN can be restarted
-            //compose new move and commit it
-            val newMove = CompositeMove(acc.flatMap(edge => Option(edge.move)), computedNewObj, name)
-            newMove.commit()
             if(printTakenMoves) {
+              val newMove = CompositeMove(acc.flatMap(edge => Option(edge.move)), computedNewObj, name)
               println("   - ?  " + newMove.objAfter + "   " + newMove.toString)
             }
 
+            //do not perform it, it is already performed!
             //then return and tell that we can restart
 
             //re-optimize
@@ -148,11 +167,7 @@ class VLSN(v:Int,
 
           }
         case Some(listOfEdge) =>
-          val delta = listOfEdge.map(edge => edge.deltaObj).sum
-          require(delta < 0, "delta should be negative, got " + delta)
-          computedNewObj += delta
-          acc = acc ::: listOfEdge
-          killNodesImpactedByCycle(listOfEdge)
+          performEdgesAndKillCycles(listOfEdge)
       }
     }
     throw new Error("should not reach this")
@@ -184,7 +199,6 @@ class VLSN(v:Int,
       updatedUnroutedNodesToInsert,
       cachedExplorations)
   }
-
 
   private def updateZones(performedMoves: List[Edge],
                           vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
@@ -256,7 +270,7 @@ class VLSN(v:Int,
               unroutedNodesToInsert + removedNode
             )
 
-          case Symbolic => ;
+          case SymbolicTrashToInsert | SymbolicVehicleToTrash | SymbolicTrashToNodeForEject => ;
             updateZones(tail, vehicleToRoutedNodesToMove, unroutedNodesToInsert)
 
         }
@@ -265,7 +279,7 @@ class VLSN(v:Int,
 
   private def buildGraph(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
                          unroutedNodesToInsert: SortedSet[Int],
-                         cachedExplorations: Option[CachedExplorations]): VLSNGraph = {
+                         cachedExplorations: Option[CachedExplorations]): (VLSNGraph,List[Edge]) = {
 
     cachedExplorations match {
       case None =>

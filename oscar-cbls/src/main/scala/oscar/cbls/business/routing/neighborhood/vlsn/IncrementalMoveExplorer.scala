@@ -45,7 +45,7 @@ object CachedExplorations{
         case Remove =>
           isDirtyVehicle(fromNode.vehicle) = true
           dirtyNodes += fromNode.representedNode
-        case Symbolic => ;
+        case _ => ;
       }
     }
 
@@ -100,7 +100,6 @@ class CachedExplorations(oldGraph:VLSNGraph,
           case Remove if !isDirtyVehicle(fromNode.vehicle) =>
             cachedRemove += fromNode.representedNode -> CachedAtomicMove(edge)
             size+=1
-          case Symbolic => ;
           case _ => ; // non cachable
         }
       }

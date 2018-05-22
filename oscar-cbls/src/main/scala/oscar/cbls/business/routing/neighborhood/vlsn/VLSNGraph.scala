@@ -6,7 +6,7 @@ import scala.collection.immutable.SortedSet
 
 object VLSNMoveType extends Enumeration{
   type VLSNMoveType = Value
-  val InsertNoEject, InsertWithEject, MoveNoEject, MoveWithEject, Remove, Symbolic = Value
+  val InsertNoEject, InsertWithEject, MoveNoEject, MoveWithEject, Remove, SymbolicTrashToInsert,SymbolicVehicleToTrash,SymbolicTrashToNodeForEject = Value
 }
 
 import VLSNMoveType._
@@ -49,19 +49,13 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
   var fromToWithEdge:List[(Int,Int)] = List.empty
   var nextEdgeID:Int = 0
 
-  def addEdge(from:Node, to:Node, deltaObj:Int, move:Move, vLSNMoveType: VLSNMoveType){
-    val existingEdge = edges(from.nodeID)(to.nodeID)
-    if(existingEdge == null){
-      edges(from.nodeID)(to.nodeID) = new Edge(from:Node,to:Node, move:Move,deltaObj:Int, nextEdgeID, vLSNMoveType)
-      nextEdgeID += 1
-      fromToWithEdge = (from.nodeID,to.nodeID) :: fromToWithEdge
-    }else {
-      if (existingEdge.deltaObj < deltaObj) {
-        //override
-        System.err.println("overriding edge in VLSN?")
-        edges(from.nodeID)(to.nodeID) = new Edge(from: Node, to: Node, move: Move, deltaObj: Int, existingEdge.edgeID, vLSNMoveType)
-      }
-    }
+  def addEdge(from:Node, to:Node, deltaObj:Int, move:Move, vLSNMoveType: VLSNMoveType):Edge = {
+    require(edges(from.nodeID)(to.nodeID) == null)
+    val edge = new Edge(from:Node,to:Node, move:Move,deltaObj:Int, nextEdgeID, vLSNMoveType)
+    edges(from.nodeID)(to.nodeID) = edge
+    nextEdgeID += 1
+    fromToWithEdge = (from.nodeID,to.nodeID) :: fromToWithEdge
+    edge
   }
 
   def finish():VLSNGraph = {
@@ -148,7 +142,7 @@ class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Int, val edge
     to.incoming = this :: to.incoming
   }
 
-  override def toString: String = "Edge(from:" + from.nodeID + ",to:"+to.nodeID + ",deltaObj:" + deltaObj + ")"
+  override def toString: String = "Edge(from:" + from.nodeID + ",to:"+to.nodeID + ",deltaObj:" + deltaObj + ",type:" + moveType+ ")" + move
 
   def toDOTHeavy(bold:Boolean = false):String =
     "\"Edge" + edgeID + "\" [shape=rectangle,style=filled,fillcolor=gray, label=\"deltaObj:" + deltaObj +
@@ -174,7 +168,7 @@ object VLSNGraphTest extends App{
     val builder = new VLSNEdgeBuilder(nodes: Array[Node], nbNodes,2) //nbLAbel is set here to nbNodes
 
     def edge(from: Int, to: Int, gain: Int): Unit = {
-      builder.addEdge(nodes(from), nodes(to), gain,  new DoNothingMove(Int.MaxValue),VLSNMoveType.Symbolic)
+      builder.addEdge(nodes(from), nodes(to), gain,  new DoNothingMove(Int.MaxValue),VLSNMoveType.SymbolicTrashToInsert)
     }
 
     edge(0, 1, 10)
