@@ -7,20 +7,186 @@ import oscar.cbls.core.search._
 import scala.collection.immutable.{SortedMap, SortedSet}
 import oscar.cbls.business.routing.neighborhood.vlsn.VLSNMoveType._
 
-/*
-all neighborhood must return moves that are position-independent.
-by default this is not the case. A trait has been added here to ensure that moves are indeed position-independent
- */
+
+/**
+  * Very Large Scale Neighborhood
+  * it searches for a composition of atomic moves that, together improve the objective function, although separatedly, they are not feasible.
+  * check @Article{Mouthuy2012,
+  *     author="Mouthuy, S{\'e}bastien and Hentenryck, Pascal Van and Deville, Yves",
+  *     title="Constraint-based Very Large-Scale Neighborhood search",
+  *     journal="Constraints",
+  *     year="2012",
+  *     month="Apr",
+  *     volume="17",
+  *     number="2",
+  *     pages="87--122"}
+  * {{{
+  *def vlsn(l:Int = Int.MaxValue) = {
+  *
+  * val lClosestNeighborsByDistance: Array[SortedSet[Int]] = Array.tabulate(n)(node =>
+  *   SortedSet.empty[Int] ++ myVRP.kFirst(l, closestRelevantNeighborsByDistance)(node))
+  *
+  * val nodeToAllVehicles = SortedMap.empty[Int, Iterable[Int]] ++ (v until n).map(node => (node, vehicles))
+  *
+  * def routeUnroutedPointVLSN(targetVehicle: Int):(Int => Neighborhood) = {
+  *   if(vehicletoWorkload(targetVehicle).value + serviceTimePerNode > maxWorkloadPerVehicle){
+  *     (_ => NoMoveNeighborhood)
+  *   }else {
+  *     val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
+  *
+  *     unroutedNodeToInsert:Int => {
+  *       val lNearestNodesOfTargetVehicle = nodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(unroutedNodeToInsert) contains x)
+  *       insertPointUnroutedFirst(
+  *         () => List(unroutedNodeToInsert),
+  *         () => _ => lNearestNodesOfTargetVehicle,
+  *         myVRP,
+  *         hotRestart = false,
+  *         selectInsertionPointBehavior = Best(),
+  *         positionIndependentMoves = true //compulsory because we are in VLSN
+  *       )
+  *     }
+  *   }
+  * }
+  *
+  * def movePointVLSN(targetVehicle: Int):(Int => Neighborhood) = {
+  *   if(vehicletoWorkload(targetVehicle).value + serviceTimePerNode > maxWorkloadPerVehicle){
+  *     (_ => NoMoveNeighborhood)
+  *   }else {
+  *     val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
+  *
+  *     nodeToMove:Int => {
+  *       val lNearestNodesOfTargetVehicle = nodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(nodeToMove) contains x)
+  *       onePointMove(
+  *         () => List(nodeToMove),
+  *         () => _ => lNearestNodesOfTargetVehicle,
+  *         myVRP,
+  *         selectDestinationBehavior = Best(),
+  *         hotRestart = false,
+  *         positionIndependentMoves = true  //compulsory because we are in VLSN
+  *       )
+  *     }
+  *   }
+  * }
+  *
+  * def removePointVLSN(node: Int) =
+  *   removePoint(
+  *     () => List(node),
+  *     myVRP,
+  *     positionIndependentMoves = true,
+  *     hotRestart = false)
+  *
+  * def threeOptOnVehicle(vehicle:Int) = {
+  *   val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
+  *   //insertions points are position where we perform the insert,
+  *   // basically the segment will start in plae of the insertion point and the insertion point will be moved upward
+  *   val nodesOfTargetVehicleButVehicle = nodesOfTargetVehicle.filter(_ != vehicle)
+  *   val insertionPoints = if(vehicle != v-1) vehicle+1 :: nodesOfTargetVehicleButVehicle else nodesOfTargetVehicleButVehicle
+  *
+  *   threeOpt(() => insertionPoints,
+  *     () => _ => nodesOfTargetVehicleButVehicle,
+  *     myVRP,
+  *     breakSymmetry = false)
+  * }
+  *
+  * def removeAndReInsertVLSN(pointToRemove: Int): (() => Unit) = {
+  *   val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
+  *   require(pointToRemove >= v, "cannot remove vehicle point: " + v)
+  *
+  *   myVRP.routes.value.positionOfAnyOccurrence(pointToRemove) match {
+  *     case None => throw new Error("cannot remove non routed point:" + pointToRemove)
+  *     case Some(positionOfPointToRemove) =>
+  *       myVRP.routes.remove(positionOfPointToRemove)
+  *   }
+  *
+  *   def restoreAndRelease: (() => Unit) = () => {
+  *     myVRP.routes.rollbackToTopCheckpoint(checkpointBeforeRemove)
+  *     myVRP.routes.releaseTopCheckpoint()
+  *   }
+  *
+  *   restoreAndRelease
+  * }
+  *
+  * new VLSN(
+  *   v,
+  *   () => {
+  *     SortedMap.empty[Int, SortedSet[Int]] ++ vehicles.map((vehicle: Int) => (vehicle, SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle).filter(_ >= v)))
+  *   },
+  *
+  *   () => SortedSet.empty[Int] ++ myVRP.unroutedNodes,
+  *   nodeToRelevantVehicles = () => nodeToAllVehicles,
+  *
+  *   targetVehicleNodeToInsertNeighborhood = routeUnroutedPointVLSN,
+  *   targetVehicleNodeToMoveNeighborhood = movePointVLSN,
+  *   removePointVLSN,
+  *   removeNodeAndReInsert = removeAndReInsertVLSN,
+  *
+  *   reOptimizeVehicle = Some(vehicle => Some(threeOptOnVehicle(vehicle))),
+  *   useDirectInsert = true,
+  *
+  *   objPerVehicle,
+  *   unroutedPenaltyObj,
+  *   obj,
+  *
+  *   cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
+  *
+  *   name="VLSN(" + l + ")"
+  * )
+  *}}}
+  *
+  * @param v the number of vehicles
+  * @param initVehicleToRoutedNodesToMove a function that generates a map from vehicle to nodes that are to be moved
+  *                                       (or unrouted) by this neighborhood (other nodes present on the vehicles will not be moved)
+  * @param initUnroutedNodesToInsert a function generatinh the nodes that are not routed
+  *                                  an that the VLSN should try and route
+  * @param nodeToRelevantVehicles a map from node to the vehicles where the node can be routed.
+  *                               It must be defined for each node mentioned in initVehicleToRoutedNodesToMove
+  *                               and initUnroutedNodesToInsert
+  * @param targetVehicleNodeToInsertNeighborhood vehicle to node to a neighborhood that try and insert the node
+  *                                              on the vehicle.
+  *                                              VLSN guarantees that the node is not routed
+  *                                              (it was in initUnroutedNodesToInsert and not routed yet, or was unrouted)
+  *                                              You'd better use best for this neighborhood, and no hot restart
+  *                                              the moves returned by this neighborhood must be position-independent
+  *                                              (check API of your neighborhood for that)
+  * @param targetVehicleNodeToMoveNeighborhood vehicle to node to a neighborhood that try and move the node to the vehicle.
+  *                                            VLSN guarantees that the node is routed, and reached by another vehicle.
+  *                                             You'd better use best for this neighborhood, and no hot restart
+  *                                             the moves returned by this neighborhood must be position-independent
+  *                                             (check API of your neighborhood for that)
+  * @param nodeToRemoveNeighborhood node to a neighborhood that try and remove the node.
+  *                                  VLSN guarantees that the node is routed.
+  *                                  you do not need any hot restart here
+  *                                  the moves returned by this neighborhood must be position-independent (check API of your neighborhood for that)
+  * @param removeNodeAndReInsert this is a particular procedure that given a node, which VLSN guarantees to be routed,
+  *                              removes teh node from the route, and returns a procedure to re-insert it.
+  *                              VLSN guarantees that the remove procedure will be called on a route
+  *                              that is restored to its state when the node was removed.
+  * @param reOptimizeVehicle an optional procedure to re-optimize the route of a vehicle that VLSN just
+  *                          improved by performing some exchange with another vehicle or other atomic move of the VLSN
+  *                          given a vehicle,it is expected to return an (optional again) neighborhood that is then exhausted
+  *                          the returned neighborhood cannot modify the route of any other vehicle thn the one specified
+  * @param useDirectInsert an optional argument. The VLSN will use a shortcut to perform simple inserts
+  *                        and bypass the machinery that performs the graph analysis and (that's where time is spared)
+  *                        avoid contruct part of the VLSN graph.
+  *                        Set to true, wut please use a name for this arameter because it is going to disappear in future versions.
+  * @param vehicleToObjective an array of size v that gives the objective function per vehicle. it must incorporate the strong constraint as well.
+  * @param unroutedPenalty the penalty for unrouted nodes
+  * @param globalObjective the global objective, which must be a sum of the above objective functions
+  *                        (you can of course re-factor so that he strong constraints appear only once)
+  * @param cycleFinderAlgoSelection the cycle finder algo to use. Mouthy is the fastest. In some rara case, you might experiment with MouthuyAndThenDFS.
+  *                                 DFS is complete, but slower than Mouthuy
+  * @param name a name toat will be used in pretty printing.
+  */
 class VLSN(v:Int,
            initVehicleToRoutedNodesToMove:() => SortedMap[Int,SortedSet[Int]],
            initUnroutedNodesToInsert:() => SortedSet[Int],
            nodeToRelevantVehicles:() => Map[Int,Iterable[Int]],
 
-           //TODO refactoriser çà en vehicle => noe => neighborhood, comme çà on peut mutaliser des calculs faits sur un véhicule,
            // puisqu'on fait pleuiseurs inserts de nodes différents sur le même véhicule.
            targetVehicleNodeToInsertNeighborhood:Int => Int => Neighborhood,
            targetVehicleNodeToMoveNeighborhood:Int => Int => Neighborhood,
            nodeToRemoveNeighborhood:Int => Neighborhood,
+
            removeNodeAndReInsert:Int => () => Unit,
 
            reOptimizeVehicle:Option[Int => Option[Neighborhood]],
@@ -137,6 +303,7 @@ class VLSN(v:Int,
           performEdgesAndKillCycles(listOfEdge)
         case None =>
           //we did not find any move at all on the graph
+          //there is no possible incremental restart for VLSN
           if (acc.isEmpty) return None
           else {
             //We have exhausted the graph, and VLSN can be restarted
@@ -146,8 +313,6 @@ class VLSN(v:Int,
             }
 
             //println(vlsnGraph.toDOT(acc,false,true))
-            //do not perform it, it is already performed!
-            //then return and tell that we can restart
 
             //re-optimize
             reOptimizeVehicle match{
@@ -178,7 +343,7 @@ class VLSN(v:Int,
                 }
             }
 
-            //now starts the incremental VLSN
+            //now returns data for incremental restart of VLSN
             return Some(DataForVLSNRestart(
               vlsnGraph,
               acc,
@@ -287,7 +452,8 @@ class VLSN(v:Int,
               unroutedNodesToInsert + removedNode
             )
 
-          case SymbolicTrashToInsert | SymbolicVehicleToTrash | SymbolicTrashToNodeForEject => ;
+          case SymbolicTrashToInsert | SymbolicVehicleToTrash | SymbolicTrashToNodeForEject =>
+            //nothing to do here
             updateZones(tail, vehicleToRoutedNodesToMove, unroutedNodesToInsert)
 
         }

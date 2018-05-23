@@ -1,5 +1,6 @@
 ##Command to produce the output: "neato -Tpng thisfile > thisfile.png"
 digraph VLSNGraph {
+	"0" [shape=circle,style=filled,fillcolor=green,color=blue, label = "vehicle:0"] ;
 	"8" [shape=circle,style=filled,fillcolor=green,color=blue, label = "vehicle:8"] ;
 	"10" [shape=circle,style=filled,fillcolor=gold,color=blue, label = trashNode] ;
 	"31" [shape=circle,style=filled,fillcolor=aquamarine,color=blue, label = "node:91\nvehicle:1"] ;
@@ -11,7 +12,9 @@ digraph VLSNGraph {
 	"95" [shape=circle,style=filled,fillcolor=aquamarine,color=blue, label = "node:51\nvehicle:7"] ;
 	"115" [shape=circle,style=filled,fillcolor=aquamarine,color=blue, label = "node:63\nvehicle:9"] ;
 	"128" [shape=circle,style=filled,fillcolor=crimson,color=blue, label = "node:105"] ;
-	"Edge0" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-9969\nInsertNoEject\nInsertPoint(105 after 106 pi)" color=blue] ; 128 -> "Edge0"[color=blue];"Edge0" -> 0[color=blue];
+	"Edge0" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-9969\nInsertNoEject\nInsertPoint(105 after 106 pi)" color=blue] ;
+	128 -> "Edge0"[color=blue];
+	"Edge0" -> 0[color=blue];
 	"Edge165" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:0\nMoveNoEject\nOnePointMove(47 after 124 pi)" color=blue] ; 35 -> "Edge165"[color=blue];"Edge165" -> 8[color=blue];
 	"Edge183" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-187\nMoveWithEject\nOnePointMove(59 after 29 pi)" color=blue] ; 49 -> "Edge183"[color=blue];"Edge183" -> 70[color=blue];
 	"Edge277" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-212\nMoveWithEject\nOnePointMove(108 after 1 pi)" color=blue] ; 86 -> "Edge277"[color=blue];"Edge277" -> 31[color=blue];

@@ -126,9 +126,6 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
     def routeUnroutedPointVLSN(targetVehicle: Int):(Int => Neighborhood) = {
       if(vehicletoWorkload(targetVehicle).value + serviceTimePerNode > maxWorkloadPerVehicle){
-        //in practice this pruning will only work when no other node has been removed,
-        // there are much more cases explored when another node is removed,
-        // so the pruning does not provide a huge speedup
         (_ => NoMoveNeighborhood)
       }else {
         val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
