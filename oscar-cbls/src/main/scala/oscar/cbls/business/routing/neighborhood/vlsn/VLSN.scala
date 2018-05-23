@@ -111,7 +111,7 @@ class VLSN(v:Int,
     var computedNewObj: Int = globalObjective.value
 
     def performEdgesAndKillCycles(edges:List[Edge]): Unit ={
-      acc = edges.filter(_.move!=null) ::: acc
+      acc = edges ::: acc
       val delta = edges.map(edge => edge.deltaObj).sum
       require(delta < 0, "delta should be negative, got " + delta)
       computedNewObj += delta
@@ -145,6 +145,7 @@ class VLSN(v:Int,
               println("   - ?  " + newMove.objAfter + "   " + newMove.toString)
             }
 
+            //println(vlsnGraph.toDOT(acc,false,true))
             //do not perform it, it is already performed!
             //then return and tell that we can restart
 

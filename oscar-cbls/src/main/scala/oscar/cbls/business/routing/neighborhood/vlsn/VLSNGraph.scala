@@ -89,7 +89,7 @@ class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge],val nbLabels:Int, v:
   //"C:\Program Files (x86)\Graphviz2.38\bin\neato" -Tpng  vlsnGraph.dot > a.png
   def toDOT(edgesToBold:List[Edge] = List.empty,light:Boolean = false,onlyCycles:Boolean = false):String = {
     val setOfEdgesToBold = SortedSet.empty[Int] ++ edgesToBold.map(_.edgeID)
-    val setOfNodesToBold = SortedSet.empty[Int] ++ edgesToBold.map(_.from.nodeID)
+    val setOfNodesToBold = SortedSet.empty[Int] ++ edgesToBold.map(_.from.nodeID) ++ edgesToBold.map(_.to.nodeID)
     "##Command to produce the output: \"neato -Tpng thisfile > thisfile.png\"\n" +
       "digraph VLSNGraph {\n" +
       nodes.flatMap(node => {val ofInterest = setOfNodesToBold.contains(node.nodeID)
@@ -146,6 +146,7 @@ class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Int, val edge
 
   def toDOTHeavy(bold:Boolean = false):String =
     "\"Edge" + edgeID + "\" [shape=rectangle,style=filled,fillcolor=gray, label=\"deltaObj:" + deltaObj +
+      "\\n" + moveType +
       "\\n" + (if (move == null) "null" else move.shortString) + "\"" + (if(bold) " color=blue" else "") +"] ; " +
       from.nodeID + " -> " + "\"Edge" + edgeID + "\"" + (if(bold) "[color=blue]" else "") + ";" +
       "\"Edge" + edgeID + "\" -> " + to.nodeID + (if(bold) "[color=blue]" else "") + ";"
