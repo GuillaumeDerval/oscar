@@ -1,12 +1,28 @@
+/**
+  * *****************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  * ****************************************************************************
+  */
+
 package oscar.cbls.business.routing.neighborhood.vlsn
 
 import oscar.cbls.Objective
 import oscar.cbls.business.routing.neighborhood.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
+import oscar.cbls.business.routing.neighborhood.vlsn.VLSNMoveType._
 import oscar.cbls.core.search._
 
 import scala.collection.immutable.{SortedMap, SortedSet}
-import oscar.cbls.business.routing.neighborhood.vlsn.VLSNMoveType._
-
 
 /**
   * Very Large Scale Neighborhood
@@ -133,10 +149,14 @@ import oscar.cbls.business.routing.neighborhood.vlsn.VLSNMoveType._
   * )
   *}}}
   *
+  * VLSN is a saturating neighborhood, that is: it will run until no more moves can be found, and at this point,
+  * it wil return a single move that actually reloads the solution that was reached step-by-step by the VLSN.
+  * Typically, you may want to use VLSN MaxMoves 1 because it is useless to call it more than once.
+  *
   * @param v the number of vehicles
   * @param initVehicleToRoutedNodesToMove a function that generates a map from vehicle to nodes that are to be moved
   *                                       (or unrouted) by this neighborhood (other nodes present on the vehicles will not be moved)
-  * @param initUnroutedNodesToInsert a function generatinh the nodes that are not routed
+  * @param initUnroutedNodesToInsert a function generating the nodes that are not routed
   *                                  an that the VLSN should try and route
   * @param nodeToRelevantVehicles a map from node to the vehicles where the node can be routed.
   *                               It must be defined for each node mentioned in initVehicleToRoutedNodesToMove
@@ -167,8 +187,8 @@ import oscar.cbls.business.routing.neighborhood.vlsn.VLSNMoveType._
   *                          the returned neighborhood cannot modify the route of any other vehicle thn the one specified
   * @param useDirectInsert an optional argument. The VLSN will use a shortcut to perform simple inserts
   *                        and bypass the machinery that performs the graph analysis and (that's where time is spared)
-  *                        avoid contruct part of the VLSN graph.
-  *                        Set to true, wut please use a name for this arameter because it is going to disappear in future versions.
+  *                        avoid construct part of the VLSN graph.
+  *                        Set to true, wut please use a name for this parameter because it is going to disappear in future versions.
   * @param vehicleToObjective an array of size v that gives the objective function per vehicle. it must incorporate the strong constraint as well.
   * @param unroutedPenalty the penalty for unrouted nodes
   * @param globalObjective the global objective, which must be a sum of the above objective functions
@@ -176,6 +196,7 @@ import oscar.cbls.business.routing.neighborhood.vlsn.VLSNMoveType._
   * @param cycleFinderAlgoSelection the cycle finder algo to use. Mouthy is the fastest. In some rara case, you might experiment with MouthuyAndThenDFS.
   *                                 DFS is complete, but slower than Mouthuy
   * @param name a name toat will be used in pretty printing.
+  * @author renaud.delandtsheer@cetic.be
   */
 class VLSN(v:Int,
            initVehicleToRoutedNodesToMove:() => SortedMap[Int,SortedSet[Int]],
