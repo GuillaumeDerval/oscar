@@ -39,9 +39,9 @@ class RoutingMapContainer(vrp:VRP,
   startWatch()
   private var lastRefresh: Long = 0
 
-  def refresh = {
+  def refresh(force:Boolean = false) = {
     val currentTime = getWatch
-    if(currentTime - lastRefresh >= refreshRate){
+    if(force || currentTime - lastRefresh >= refreshRate){
       lastRefresh = currentTime
       routingMap.drawRoutes()
     }
