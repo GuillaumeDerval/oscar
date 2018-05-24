@@ -90,23 +90,13 @@ case class DomainRange(override val min: Int, override val max: Int) extends Dom
 
   override def union(d: Domain): Domain = {
     val newDomain:Domain = d match{
-      case r:DomainRange => if((r.max > max && r.min > max) || (max > r.max && min > r.max)){
-        (r.min to r.max toSet) union (min to max toSet)
-      }else{
-        math.min(r.min,min) to math.max(r.max,max)
-      }
+      case r:DomainRange =>
+          math.min(r.min,min) to math.max(r.max,max)
       case FullRange => FullRange
-      case SingleValueDomain(v) => if(contains(v)){
-        this
-      }else{
-        if(v+1 == min){
-          v to max
-        }else if(v-1 == max){
-          min to v
-        }else{
-          (min to max toSet) union Set(v)
-        }
-      }
+      case SingleValueDomain(v) =>
+        if(v < min) v to max
+        else if (max < v) min to v
+        else this
       case d:DomainSet =>  d.union(this)
     }
     if (newDomain.isEmpty) throw new EmptyDomainException
@@ -224,6 +214,4 @@ object DomainHelper{
     if(tmp < Int.MinValue) Int.MaxValue
     else tmp.toInt
   }
-
-
 }

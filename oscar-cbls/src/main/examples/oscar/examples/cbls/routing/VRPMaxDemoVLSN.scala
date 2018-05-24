@@ -183,25 +183,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       threeOpt(() => insertionPoints,
         () => _ => nodesOfTargetVehicleButVehicle,
         myVRP,
-        breakSymmetry = false) .afterMove(graphical.drawRoutes())
-    }
-
-    def onePointMoveOnVehicle(vehicle: Int) = {
-      val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
-      onePointMove(
-        () => nodesOfTargetVehicle.filter(_ >= v),
-        () => _ => nodesOfTargetVehicle,
-        myVRP,
-        selectDestinationBehavior = Best(),
-        hotRestart = true)
-    }
-
-    def twoOptOnVehicle(vehicle:Int) = {
-      val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
-      twoOpt(
-        () => nodesOfTargetVehicle.filter(_ >= v),
-        ()=>_ => nodesOfTargetVehicle
-        , myVRP)
+        breakSymmetry = false).afterMove(graphical.drawRoutes())
     }
 
     def removeAndReInsertVLSN(pointToRemove: Int): (() => Unit) = {
@@ -224,16 +206,16 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
     new VLSN(
       v,
-      () => {
-        SortedMap.empty[Int, SortedSet[Int]] ++ vehicles.map((vehicle: Int) => (vehicle, SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle).filter(_ >= v)))
-      },
-
+      () => SortedMap.empty[Int, SortedSet[Int]] ++
+        vehicles.map((vehicle: Int) =>
+          (vehicle, SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle).filter(_ >= v))),
       () => SortedSet.empty[Int] ++ myVRP.unroutedNodes,
       nodeToRelevantVehicles = () => nodeToAllVehicles,
 
       targetVehicleNodeToInsertNeighborhood = routeUnroutedPointVLSN,
       targetVehicleNodeToMoveNeighborhood = movePointVLSN,
       removePointVLSN,
+
       removeNodeAndReInsert = removeAndReInsertVLSN,
 
       reOptimizeVehicle = Some(vehicle => Some(threeOptOnVehicle(vehicle))),
@@ -268,20 +250,18 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
   def customThreeOpt(k:Int, breakSym:Boolean) =
     threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")")
 
-
   val graphical = display(myVRP,
     nodesPositions.map(np => (np._1.toDouble,np._2.toDouble)).toList,
     sizeOfMap = Some(mapSide),
     refreshRate = displayDelay,
     title = "VRPMaxDemoVLSN(n=" + n + " v=" + v + ")")
 
-
   val search = profile(bestSlopeFirst(List(
     profile(routeUnroutedPoint),
     profile(onePtMove(10)),
     profile(customTwoOpt(20)),
     profile(customThreeOpt(10,true))
-  )) exhaust profile(vlsn(40) maxMoves 1)) .afterMove(graphical.drawRoutes())
+  )) exhaust profile(vlsn(40) maxMoves 1)).afterMove(graphical.drawRoutes())
 
   search.verbose = 2
   //search.verboseWithExtraInfo(2, () => result)
