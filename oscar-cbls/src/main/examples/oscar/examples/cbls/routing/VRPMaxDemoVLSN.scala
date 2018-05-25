@@ -250,6 +250,8 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
   def customThreeOpt(k:Int, breakSym:Boolean) =
     threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")")
 
+  def segExchange(k:Int) = segmentExchange(myVRP,()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), () => myVRP.vehicles)
+
   val graphical = display(myVRP,
     nodesPositions.map(np => (np._1.toDouble,np._2.toDouble)).toList,
     sizeOfMap = Some(mapSide),
@@ -260,7 +262,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     profile(routeUnroutedPoint),
     profile(onePtMove(10)),
     profile(customTwoOpt(20)),
-    profile(customThreeOpt(10,true))
+    profile(customThreeOpt(20,true))
   )) exhaust profile(vlsn(40) maxMoves 1)).afterMove(graphical.drawRoutes())
 
   search.verbose = 2

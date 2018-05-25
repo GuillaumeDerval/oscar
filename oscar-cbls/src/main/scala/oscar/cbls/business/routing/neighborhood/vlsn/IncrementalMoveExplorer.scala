@@ -95,8 +95,12 @@ class CachedExplorations(oldGraph:VLSNGraph,
 
   for(fromNode <- oldGraph.nodes){
     val vehicleOfFromNode = fromNode.vehicle
+
     if((vehicleOfFromNode == v) || (vehicleOfFromNode >= 0 && !isDirtyVehicle(vehicleOfFromNode))){
 
+      //TODO: on peut en fait sauver beaucoup plus
+      //pour les moves avec eject: on peut sauver les moves si le target vehicle est clean et que le source node est clean (on doit pas regarder le vehicle source)
+      //idem pour les move no eject
       for (edge <- fromNode.outgoing){
        require(edge.from == fromNode)
         val toNode = edge.to

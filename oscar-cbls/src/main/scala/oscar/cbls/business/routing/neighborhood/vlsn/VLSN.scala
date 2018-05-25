@@ -339,7 +339,7 @@ class VLSN(v:Int,
             reOptimizeVehicle match{
               case None => ;
               case Some(reOptimizeNeighborhoodGenerator) =>
-                //re-optimizing impacted vehicles (optionnal)
+                //re-optimizing impacted vehicles (optional)
                 for(vehicle <- impactedVehicles(acc)){
 
                   val oldObjVehicle = vehicleToObjective(vehicle).value
@@ -350,7 +350,7 @@ class VLSN(v:Int,
                     case Some(n) =>
                       n.verbose = 0
                       val nbPerformedMoves = n.doAllMoves(obj=globalObjective)
-                      if((printTakenMoves && nbPerformedMoves > 0) || (printExploredNeighbors && nbPerformedMoves == 0)){
+                      if((printTakenMoves && nbPerformedMoves > 0) || (printExploredNeighborhoods && nbPerformedMoves == 0)){
                         println(s"   - ?  " + globalObjective.value + s"   $name:ReOptimizeVehicle(vehicle:$vehicle, neighborhood:$n nbMoves:$nbPerformedMoves)")
                       }
 

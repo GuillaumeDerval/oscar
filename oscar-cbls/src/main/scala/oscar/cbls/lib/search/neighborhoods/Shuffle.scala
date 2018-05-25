@@ -41,7 +41,7 @@ case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
   extends Neighborhood(name) with LinearSelectors{
 
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
-    if(printPerformedSearches) println("applying " + name)
+    if(printExploredNeighborhoods) println("applying " + name)
 
     val (realIndicesToConsider:List[Int],numberOfIndicesToConsider:Int) =
       if(indicesToConsider == null) (vars.indices.toList,vars.length)
@@ -67,7 +67,7 @@ case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
     val moves:List[AssignMove] = subsetOfIndicesToConsider.zip(newValues).
       map({case ((indice,newValue)) => AssignMove(vars(indice),newValue,indice,Int.MaxValue)})
 
-    if(printPerformedSearches) println(name + ": move found")
+    if(printExploredNeighborhoods) println(name + ": move found")
     CompositeMove(moves, Int.MaxValue, name)
   }
 }
