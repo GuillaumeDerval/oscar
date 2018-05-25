@@ -325,13 +325,19 @@ class MoveExplorerAlgo(v:Int,
         n
     }
 
-    nodeToMoveToNeighborhood(routingNodeToMove)
+    val tmp = nodeToMoveToNeighborhood(routingNodeToMove)
       .getMove(vehicleToObjectives(targetVehicleForInsertion), initialVehicleToObjectives(targetVehicleForInsertion), acceptanceCriterion = acceptAllButMaxInt) match {
       case NoMoveFound => null
       case MoveFound(move) =>
         val delta = move.objAfter - initialVehicleToObjectives(targetVehicleForInsertion)
         (move,delta)
     }
+
+    if(routingNodeToMove == 20 && targetVehicleForInsertion == 9 && removedNode == 50) {
+      println(s"ZZZ evaluateMoveToVehicleWithRemove(routingNodeToMove:$routingNodeToMove, fromVehicle:$fromVehicle, targetVehicleID:$targetVehicleForInsertion, removedNode:$removedNode)" + tmp)
+    }
+
+    tmp
   }
 
   private def exploreNodeMoveNoRemove(vehicleToNodeToMoveThere:Map[Int,Iterable[Int]]): Unit = {
