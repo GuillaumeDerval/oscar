@@ -1,3 +1,20 @@
+/**
+  * *****************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  * ****************************************************************************
+  */
+
 package oscar.cbls.business.routing.neighborhood.vlsn
 
 import oscar.cbls.core.search.{DoNothingMove, Move}
@@ -6,17 +23,17 @@ import scala.collection.immutable.SortedSet
 
 object VLSNMoveType extends Enumeration{
   type VLSNMoveType = Value
-  val InsertNoEject, InsertWithEject, MoveNoEject, MoveWithEject, Remove, Symbolic = Value
+  val InsertNoEject, InsertWithEject, MoveNoEject, MoveWithEject, Remove, SymbolicTrashToInsert,SymbolicVehicleToTrash,SymbolicTrashToNodeForEject = Value
 }
 
-import VLSNMoveType._
+import oscar.cbls.business.routing.neighborhood.vlsn.VLSNMoveType._
 
 object VLSNSNodeType extends Enumeration {
   type VLSNSNodeType = Value
   val RegularNode, VehicleNode, UnroutedNode, FictiveNode = Value
 }
 
-import VLSNSNodeType._
+import oscar.cbls.business.routing.neighborhood.vlsn.VLSNSNodeType._
 
 
 class VLSNNodeBuilder(var nbLabels:Int) {
@@ -49,19 +66,13 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
   var fromToWithEdge:List[(Int,Int)] = List.empty
   var nextEdgeID:Int = 0
 
-  def addEdge(from:Node, to:Node, deltaObj:Int, move:Move, vLSNMoveType: VLSNMoveType){
-    val existingEdge = edges(from.nodeID)(to.nodeID)
-    if(existingEdge == null){
-      edges(from.nodeID)(to.nodeID) = new Edge(from:Node,to:Node, move:Move,deltaObj:Int, nextEdgeID, vLSNMoveType)
-      nextEdgeID += 1
-      fromToWithEdge = (from.nodeID,to.nodeID) :: fromToWithEdge
-    }else {
-      if (existingEdge.deltaObj < deltaObj) {
-        //override
-        System.err.println("overriding edge in VLSN?")
-        edges(from.nodeID)(to.nodeID) = new Edge(from: Node, to: Node, move: Move, deltaObj: Int, existingEdge.edgeID, vLSNMoveType)
-      }
-    }
+  def addEdge(from:Node, to:Node, deltaObj:Int, move:Move, vLSNMoveType: VLSNMoveType):Edge = {
+    require(edges(from.nodeID)(to.nodeID) == null)
+    val edge = new Edge(from:Node,to:Node, move:Move,deltaObj:Int, nextEdgeID, vLSNMoveType)
+    edges(from.nodeID)(to.nodeID) = edge
+    nextEdgeID += 1
+    fromToWithEdge = (from.nodeID,to.nodeID) :: fromToWithEdge
+    edge
   }
 
   def finish():VLSNGraph = {
@@ -95,7 +106,7 @@ class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge],val nbLabels:Int, v:
   //"C:\Program Files (x86)\Graphviz2.38\bin\neato" -Tpng  vlsnGraph.dot > a.png
   def toDOT(edgesToBold:List[Edge] = List.empty,light:Boolean = false,onlyCycles:Boolean = false):String = {
     val setOfEdgesToBold = SortedSet.empty[Int] ++ edgesToBold.map(_.edgeID)
-    val setOfNodesToBold = SortedSet.empty[Int] ++ edgesToBold.map(_.from.nodeID)
+    val setOfNodesToBold = SortedSet.empty[Int] ++ edgesToBold.map(_.from.nodeID) ++ edgesToBold.map(_.to.nodeID)
     "##Command to produce the output: \"neato -Tpng thisfile > thisfile.png\"\n" +
       "digraph VLSNGraph {\n" +
       nodes.flatMap(node => {val ofInterest = setOfNodesToBold.contains(node.nodeID)
@@ -148,10 +159,11 @@ class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Int, val edge
     to.incoming = this :: to.incoming
   }
 
-  override def toString: String = "Edge(from:" + from.nodeID + ",to:"+to.nodeID + ",deltaObj:" + deltaObj + ")"
+  override def toString: String = "Edge(from:" + from.nodeID + ",to:"+to.nodeID + ",deltaObj:" + deltaObj + ",type:" + moveType+ ")" + move
 
   def toDOTHeavy(bold:Boolean = false):String =
     "\"Edge" + edgeID + "\" [shape=rectangle,style=filled,fillcolor=gray, label=\"deltaObj:" + deltaObj +
+      "\\n" + moveType +
       "\\n" + (if (move == null) "null" else move.shortString) + "\"" + (if(bold) " color=blue" else "") +"] ; " +
       from.nodeID + " -> " + "\"Edge" + edgeID + "\"" + (if(bold) "[color=blue]" else "") + ";" +
       "\"Edge" + edgeID + "\" -> " + to.nodeID + (if(bold) "[color=blue]" else "") + ";"
@@ -174,7 +186,7 @@ object VLSNGraphTest extends App{
     val builder = new VLSNEdgeBuilder(nodes: Array[Node], nbNodes,2) //nbLAbel is set here to nbNodes
 
     def edge(from: Int, to: Int, gain: Int): Unit = {
-      builder.addEdge(nodes(from), nodes(to), gain,  new DoNothingMove(Int.MaxValue),VLSNMoveType.Symbolic)
+      builder.addEdge(nodes(from), nodes(to), gain,  new DoNothingMove(Int.MaxValue),VLSNMoveType.SymbolicTrashToInsert)
     }
 
     edge(0, 1, 10)

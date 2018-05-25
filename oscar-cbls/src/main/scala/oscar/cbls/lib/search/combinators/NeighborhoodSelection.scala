@@ -89,7 +89,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
     if((it > 0) && ((it % refresh) == 0)){
 
-      if(printPerformedSearches){
+      if(printExploredNeighborhoods){
         println("refreshing knowledge on neighborhood; statistics since last refresh: ")
         printStatus()
       }
@@ -180,7 +180,7 @@ abstract class BestNeighborhoodFirstSlidingWindow(l:List[Neighborhood], windowsS
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
     if((it > 0) && ((it % refresh) == 0)){
 
-      if(printPerformedSearches){
+      if(printExploredNeighborhoods){
         println("refreshing knowledge on neighborhood; statistics since last refresh: ")
         printStatus()
       }
@@ -419,7 +419,7 @@ class LearningRandom(l:List[Neighborhood],
       weightedInstrumentedNeighborhoods = newlyWeightedNeighborhoods.map(sw => (sw._1,if (sw._2 < 0) defaultWeight else sw._2))
       currentRandom = new BiasedRandom(weightedInstrumentedNeighborhoods :_*)()
       stepsBeforeUpdate = updateEveryXCalls
-      if(printPerformedSearches) println("LearningRandom: weights updated: " + weightedInstrumentedNeighborhoods )
+      if(printExploredNeighborhoods) println("LearningRandom: weights updated: " + weightedInstrumentedNeighborhoods )
     }
     stepsBeforeUpdate -=1
     currentRandom.getMove(obj,initialObj,acceptanceCriterion)

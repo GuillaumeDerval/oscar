@@ -150,5 +150,5 @@ case class RemovePointMove(positionOfPointToRemove: Int,
 
   override def toString: String = "RemovePoint(point:" + pointToRemove + objToString + ")"
 
-  override def shortString: String = "RemovePoint(" + pointToRemove +")"
+  override def shortString: String = "RemovePoint(" + pointToRemove + (if (positionIndependentMoves) " pi" else "") + ")"
 }

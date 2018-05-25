@@ -154,7 +154,7 @@ abstract class Neighborhood(name:String = null) {
 
   protected def printMoveSythesis:Boolean = verbose == 1
   protected def printTakenMoves: Boolean = verbose >= 2
-  protected def printPerformedSearches: Boolean = verbose >= 3
+  protected def printExploredNeighborhoods: Boolean = verbose >= 3
   protected def printExploredNeighbors: Boolean = verbose >= 4
 
 
@@ -373,18 +373,18 @@ abstract class EasyNeighborhood[M<:Move](best:Boolean = false, neighborhoodName:
     toReturnMove = null
     bestNewObj = Int.MaxValue
     this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
-    if (printPerformedSearches)
+    if (printExploredNeighborhoods)
       println(neighborhoodNameToString + ": start exploration")
 
     exploreNeighborhood()
 
     if (toReturnMove == null || (best && !acceptanceCriterion(oldObj, bestNewObj))) {
-      if (printPerformedSearches) {
+      if (printExploredNeighborhoods) {
         println(neighborhoodNameToString + ": no move found")
       }
       NoMoveFound
     } else {
-      if (printPerformedSearches) {
+      if (printExploredNeighborhoods) {
         println(neighborhoodNameToString + ": move found: " + toReturnMove)
       }
       toReturnMove
@@ -474,7 +474,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
     toReturnMove = null
     bestNewObj = Int.MaxValue
     this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
-    if (printPerformedSearches)
+    if (printExploredNeighborhoods)
       println(neighborhoodNameToString + ": start exploration")
 
     exploreNeighborhood()
@@ -482,12 +482,12 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
     exploring = false
 
     if (toReturnMove == null) {
-      if (printPerformedSearches) {
+      if (printExploredNeighborhoods) {
         println(neighborhoodNameToString + ": no move found")
       }
       NoMoveFound
     } else {
-      if (printPerformedSearches) {
+      if (printExploredNeighborhoods) {
         println(neighborhoodNameToString + ": move found: " + toReturnMove)
       }
       toReturnMove
