@@ -217,8 +217,7 @@ class VLSN(v:Int,
            unroutedPenalty:Objective,
            globalObjective:Objective,
            cycleFinderAlgoSelection:CycleFinderAlgoType = CycleFinderAlgoType.Mouthuy,
-           name:String = "VLSN",
-          debugString:()=>String) extends Neighborhood {
+           name:String = "VLSN") extends Neighborhood {
 
   override def getMove(obj: Objective,
                        initialObj: Int,
@@ -365,7 +364,7 @@ class VLSN(v:Int,
                 }
             }
 
-            println(debugString())
+            //println(debugString())
 
             //now returns data for incremental restart of VLSN
             return Some(DataForVLSNRestart(
