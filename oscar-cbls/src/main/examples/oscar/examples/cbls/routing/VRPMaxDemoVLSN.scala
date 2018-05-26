@@ -183,7 +183,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       threeOpt(() => insertionPoints,
         () => _ => nodesOfTargetVehicleButVehicle,
         myVRP,
-        breakSymmetry = false).afterMove(graphical.drawRoutes())
+        breakSymmetry = false) //.afterMove(graphical.drawRoutes())
     }
 
     def removeAndReInsertVLSN(pointToRemove: Int): (() => Unit) = {
@@ -227,8 +227,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
       cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
 
-      name="VLSN(" + l + ")",
-      () => result
+      name="VLSN(" + l + ")"
     )
   }
 
