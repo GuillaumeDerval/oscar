@@ -364,6 +364,8 @@ class VLSN(v:Int,
                 }
             }
 
+            //println(debugString())
+
             //now returns data for incremental restart of VLSN
             return Some(DataForVLSNRestart(
               vlsnGraph,

@@ -239,7 +239,9 @@ class MoveExplorerAlgo(v:Int,
   }
 
   private def exploreInsertionsWithRemove(vehicleToUnroutedNodeToInsert: Map[Int, Iterable[Int]]): Unit = {
-    for ((targetVehicleForInsertion, unroutedNodesToInsert) <- vehicleToUnroutedNodeToInsert if !vehicleHasDirectInsertOrMove(targetVehicleForInsertion)) {
+
+    for ((targetVehicleForInsertion, unroutedNodesToInsert) <- vehicleToUnroutedNodeToInsert
+         if !vehicleHasDirectInsertOrMove(targetVehicleForInsertion)) {
 
       //insertion with remove, we remove, and then insert
       //insertion with remove
@@ -252,8 +254,8 @@ class MoveExplorerAlgo(v:Int,
         val unroutedObjAfterRemove = unroutedNodesPenalty.value
         val correctedGlobalInit = initialGlobalObjective - initialUnroutedNodesPenalty + unroutedObjAfterRemove
 
-        for (unroutedNodeToInsert <- unroutedNodesToInsert if !nodeHasDirectInsertOrMove(unroutedNodeToInsert)) {
-          //insertion without remove
+        for (unroutedNodeToInsert <- unroutedNodesToInsert
+             if !nodeHasDirectInsertOrMove(unroutedNodeToInsert)) {
 
           //Evaluating the delta
           evaluateInsertOnVehicleWithRemove(
@@ -325,29 +327,32 @@ class MoveExplorerAlgo(v:Int,
         n
     }
 
-    nodeToMoveToNeighborhood(routingNodeToMove)
+    val tmp = nodeToMoveToNeighborhood(routingNodeToMove)
       .getMove(vehicleToObjectives(targetVehicleForInsertion), initialVehicleToObjectives(targetVehicleForInsertion), acceptanceCriterion = acceptAllButMaxInt) match {
       case NoMoveFound => null
       case MoveFound(move) =>
         val delta = move.objAfter - initialVehicleToObjectives(targetVehicleForInsertion)
         (move,delta)
     }
+
+    if(routingNodeToMove == 20 && targetVehicleForInsertion == 9 && removedNode == 50) {
+      println(s"ZZZ evaluateMoveToVehicleWithRemove(routingNodeToMove:$routingNodeToMove, fromVehicle:$fromVehicle, targetVehicleID:$targetVehicleForInsertion, removedNode:$removedNode)" + tmp)
+    }
+
+    tmp
   }
 
   private def exploreNodeMoveNoRemove(vehicleToNodeToMoveThere:Map[Int,Iterable[Int]]): Unit = {
 
     for ((targetVehicleID, routedNodesToMoveThere) <- vehicleToNodeToMoveThere if !vehicleHasDirectInsertOrMove(targetVehicleID)) {
       val symbolicNodeOfVehicle = nodeIDToNode(targetVehicleID)
-      var currentVehicleHasDirectMove = false
 
       //moves without removes
       for (routingNodeToMove <- routedNodesToMoveThere) {
         val symbolicNodeOfNodeToMove = nodeIDToNode(routingNodeToMove)
         val fromVehicle = symbolicNodeOfNodeToMove.vehicle
 
-        if (symbolicNodeOfNodeToMove.vehicle != targetVehicleID
-          && !vehicleHasDirectInsertOrMove(fromVehicle)
-          && !currentVehicleHasDirectMove) {  //that's the target vehicle
+        if (fromVehicle != targetVehicleID) {  //that's the target vehicle
 
           //move without remove
           //     :(Int,Int) => Neighborhood,
@@ -367,7 +372,7 @@ class MoveExplorerAlgo(v:Int,
     for((targetVehicleID,routedNodesToMoveThere) <- vehicleToNodeToMoveThere if !vehicleHasDirectInsertOrMove(targetVehicleID)) {
 
       //moves with removes
-      for(nodeIDToEject <- vehicleToRoutedNodes(targetVehicleID) if!nodeHasDirectInsertOrMove(nodeIDToEject)){
+      for(nodeIDToEject <- vehicleToRoutedNodes(targetVehicleID)){
         val symbolicNodeToEject = nodeIDToNode(nodeIDToEject)
 
         //performing the remove
@@ -377,10 +382,7 @@ class MoveExplorerAlgo(v:Int,
           val symbolicNodeOfNodeToMove = nodeIDToNode(routingNodeToMove)
           val fromVehicle =  symbolicNodeOfNodeToMove.vehicle
 
-          if (symbolicNodeOfNodeToMove.vehicle != targetVehicleID
-            && !vehicleHasDirectInsertOrMove(fromVehicle)
-            && !vehicleHasDirectInsertOrMove(targetVehicleID)
-          ) {
+          if (symbolicNodeOfNodeToMove.vehicle != targetVehicleID) {
             //Evaluating all moves on this remove
             evaluateMoveToVehicleWithRemove(routingNodeToMove, fromVehicle,targetVehicleID, nodeIDToEject, true) match{
               case null => ;
