@@ -17,19 +17,22 @@ package oscar.cbls.business.routing.visual
   * ****************************************************************************
   */
 
+// AWT - Swing
 import java.awt.event.{MouseEvent, MouseListener}
 import java.awt.geom.Ellipse2D
 import java.awt.geom.Line2D.Double
 import java.awt.{BasicStroke, Color, Graphics2D, Point, Rectangle, RenderingHints}
 import javax.swing.JPanel
 
-//This keeps breaking compilation for me, can someone please fix this depencency?
+//This keeps breaking compilation for me, can someone please fix this dependency?
 import org.jdesktop.swingx.{JXMapKit, JXMapViewer}
 import org.jdesktop.swingx.mapviewer.GeoPosition
 import org.jdesktop.swingx.painter.Painter
 
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.business.routing.model.VRP
+
+// OscaR-Visual
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualArrow, VisualCircle, VisualLine, VisualShape}
 
