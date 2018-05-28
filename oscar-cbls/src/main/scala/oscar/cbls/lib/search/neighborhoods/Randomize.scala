@@ -43,7 +43,7 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
   extends Neighborhood(name) with LinearSelectors{
 
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
-    if(printPerformedSearches) println("applying " + name)
+    if(printExploredNeighborhoods) println("applying " + name)
 
     var toReturn:List[Move] = List.empty
 
@@ -64,7 +64,7 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
         toReturn = AssignMove(vars(i),selectFrom(valuesToConsider(vars(i),i),(_:Int) != oldVal),i,Int.MaxValue) :: toReturn
       }
     }
-    if(printPerformedSearches) println(name + ": move found")
+    if(printExploredNeighborhoods) println(name + ": move found")
     CompositeMove(toReturn, Int.MaxValue, name)
   }
 }
@@ -86,7 +86,7 @@ case class RandomSwapNeighborhood(vars:Array[CBLSIntVar],
   extends Neighborhood(name) with LinearSelectors{
 
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
-    if(printPerformedSearches) println("applying " + name)
+    if(printExploredNeighborhoods) println("applying " + name)
 
     var toReturn:List[Move] = List.empty
 
@@ -100,7 +100,7 @@ case class RandomSwapNeighborhood(vars:Array[CBLSIntVar],
       toReturn = SwapMove(vars(i), vars(j), i,j,Int.MaxValue) :: toReturn
     }
 
-    if(printPerformedSearches) println(name + ": move found")
+    if(printExploredNeighborhoods) println(name + ": move found")
     CompositeMove(toReturn, Int.MaxValue, name)
   }
 }

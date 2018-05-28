@@ -1,3 +1,20 @@
+/**
+  * *****************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  * ****************************************************************************
+  */
+
 package oscar.cbls.business.routing.neighborhood.vlsn
 
 import oscar.cbls.Objective
@@ -12,11 +29,12 @@ class MoveExplorerAlgo(v:Int,
                        unroutedNodesToInsert:Iterable[Int],
                        nodeToRelevantVehicles:Map[Int,Iterable[Int]],
 
-                       nodeVehicleToInsertNeighborhood:(Int,Int) => Neighborhood,
-                       nodeTargetVehicleToMoveNeighborhood:(Int,Int) => Neighborhood,
+                       targetVehicleNodeToInsertNeighborhood:Int => Int => Neighborhood,
+                       targetVehicleNodeToMoveNeighborhood:Int => Int => Neighborhood,
                        nodeToRemoveNeighborhood:Int => Neighborhood,
 
                        removeAndReInsert:Int => () => Unit,
+                       useDirectInsert:Boolean,
 
                        vehicleToObjectives:Array[Objective],
                        unroutedNodesPenalty:Objective,
@@ -29,18 +47,18 @@ class MoveExplorerAlgo(v:Int,
 
   //TODO: find best loop nesting WRT. checkpoint calculation.
   //maybe we should unroute all nodes before doing move exploration since we do not want to waste time on evaluation obj on non targeted vehicle?
-  val nodesToMove:Iterable[Int] = vehicleToRoutedNodes.flatMap(_._2)
+  val nodesToMove: Iterable[Int] = vehicleToRoutedNodes.flatMap(_._2)
 
-  var nodes:Array[Node] = null
-  var nodeIDToNode:SortedMap[Int,Node] = null
-  var relevantVehicles:SortedSet[Int] = null
-  var edgeBuilder:VLSNEdgeBuilder = null
-  var trashNode:Node = null
-  val vehicleToNode:Array[Node] = Array.fill(v)(null)
+  var nodes: Array[Node] = null
+  var nodeIDToNode: SortedMap[Int, Node] = null
+  var relevantVehicles: SortedSet[Int] = null
+  var edgeBuilder: VLSNEdgeBuilder = null
+  var trashNode: Node = null
+  val vehicleToNode: Array[Node] = Array.fill(v)(null)
 
-  var nbLabels:Int = -2
+  var nbLabels: Int = -2
 
-  def buildGraph():VLSNGraph = {
+  def buildGraph(): (VLSNGraph,List[Edge]) = {
 
     //nodes are all the nodes to consider, ll the vehicles, and a trashNode
 
@@ -62,17 +80,19 @@ class MoveExplorerAlgo(v:Int,
     // a different label for the trashNode
 
     buildNodes()
-    edgeBuilder = new VLSNEdgeBuilder(nodes,nbLabels,v) //the labels are the vehicles
+    edgeBuilder = new VLSNEdgeBuilder(nodes, nbLabels, v) //the labels are the vehicles
     exploreInsertions()
     exploreNodeMove()
     exploreDeletions() //should be called after insertions
     addNoMoveEdgesVehiclesToTrashNode()
     addTrashNodeToUnroutedNodes()
+    exploreEjections() // about moving one node away from a vehicle, without associated insert or move
 
-    edgeBuilder.finish()
+    //println("direct inserts:" + directInsertsNodeVehicle)
+    (edgeBuilder.finish(),directEdges)
   }
 
-  def buildNodes(){
+  private def buildNodes() {
     //label of nodes are:
     // for each routed node and vehicle node: the vehicle of the node
     // For each unrouted node: a diffeent label
@@ -85,28 +105,28 @@ class MoveExplorerAlgo(v:Int,
     //noeuds symboliques pour les véhicules
     relevantVehicles = SortedSet.empty ++ nodeToRelevantVehicles.flatMap(_._2)
 
-    for(vehicle <- relevantVehicles){
-      val node = builder.addNode(vehicle,vehicle,vehicle,VLSNSNodeType.VehicleNode)
+    for (vehicle <- relevantVehicles) {
+      val node = builder.addNode(vehicle, vehicle, vehicle, VLSNSNodeType.VehicleNode)
       vehicleToNode(vehicle) = node
-      nodeIDToNode += ((vehicle,node))
+      nodeIDToNode += ((vehicle, node))
     }
 
     //noeud cible pour l'unroutage, label is v
-    trashNode = builder.addNode(-1,-1,builder.newFreshLabel(),VLSNSNodeType.FictiveNode)
+    trashNode = builder.addNode(-1, -1, builder.newFreshLabel(), VLSNSNodeType.FictiveNode)
 
     //noeuds pour les noeud à déplacer
-    for((vehicle,routedNodesOnVehicle) <- vehicleToRoutedNodes){
+    for ((vehicle, routedNodesOnVehicle) <- vehicleToRoutedNodes) {
       require(vehicle < v)
-      for(nodeID <- routedNodesOnVehicle){
+      for (nodeID <- routedNodesOnVehicle) {
         require(nodeID >= v, "cannot put vehicle to move :" + nodeID)
-        nodeIDToNode += ((nodeID,builder.addNode(nodeID,vehicle,vehicle,VLSNSNodeType.RegularNode)))
+        nodeIDToNode += ((nodeID, builder.addNode(nodeID, vehicle, vehicle, VLSNSNodeType.RegularNode)))
       }
     }
 
     //noeuds non routés
-    for(unroutedNode <- unroutedNodesToInsert){
+    for (unroutedNode <- unroutedNodesToInsert) {
       //TODO: check that label and vehicles are fine...
-      nodeIDToNode += ((unroutedNode,builder.addNode(unroutedNode,v,builder.newFreshLabel(),VLSNSNodeType.UnroutedNode)))
+      nodeIDToNode += ((unroutedNode, builder.addNode(unroutedNode, v, builder.newFreshLabel(), VLSNSNodeType.UnroutedNode)))
     }
 
     val x = builder.finish()
@@ -114,41 +134,118 @@ class MoveExplorerAlgo(v:Int,
     nbLabels = x._2
   }
 
+  val maxInt = Int.MaxValue
+  val acceptAllButMaxInt: (Int, Int) => Boolean = (_, newObj: Int) => newObj != maxInt
 
-  def explore(n:Neighborhood,localObj:Objective):Option[(Move,Int)] = {
-    val initialObjective = localObj.value
+  private var cachedInsertNeighborhoodNoRemove: Option[(Int, Int => Neighborhood)] = None //targetVehicle, node => neighborhood
 
-    //we accept all moves, since degrading moves are allowed in negative cycles
-    n.getMove(localObj,initialObjective,acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match{
-      case NoMoveFound => None
-      case MoveFound(m) => Some((m.asInstanceOf[Move],m.objAfter - initialObjective))
+  @inline
+  def evaluateInsertOnVehicleNoRemove(unroutedNodeToInsert: Int,
+                                      targetVehicleForInsertion: Int,
+                                      cached:Boolean): (Move, Int) = {
+
+    val nodeToInsertNeighborhood = cachedInsertNeighborhoodNoRemove match {
+      case Some((cachedTarget, cachedNeighborhood)) if cachedTarget == targetVehicleForInsertion && cached =>
+        cachedNeighborhood
+      case _ =>
+        val n = targetVehicleNodeToInsertNeighborhood(targetVehicleForInsertion)
+        cachedInsertNeighborhoodNoRemove = Some((targetVehicleForInsertion, n))
+        n
+    }
+
+    nodeToInsertNeighborhood(unroutedNodeToInsert).
+      getMove(globalObjective, initialGlobalObjective, acceptanceCriterion = acceptAllButMaxInt) match {
+      case NoMoveFound => null
+      case MoveFound(move) =>
+        val delta = move.objAfter - initialGlobalObjective
+        (move, delta)
     }
   }
 
+  private var cachedInsertNeighborhoodWithRemove: Option[(Int, Int, Int => Neighborhood)] = None //target,removed,toInsert=>Neighborhood
 
-  def exploreInsertions(){
-    val vehicleAndUnroutedNodes:Iterable[(Int,Int)] =
-      unroutedNodesToInsert.flatMap(unroutedNode => nodeToRelevantVehicles(unroutedNode).map(vehicle => (vehicle,unroutedNode)))
+  @inline
+  def evaluateInsertOnVehicleWithRemove(unroutedNodeToInsert: Int,
+                                        targetVehicleForInsertion: Int,
+                                        removedNode: Int,
+                                        correctedGlobalInit: Int,
+                                        cached:Boolean): (Move, Int) = {
 
-    val vehicleToUnroutedNodeToInsert = vehicleAndUnroutedNodes.groupBy(_._1).mapValues(_.map(_._2))
+    val nodeToInsertToNeighborhood = cachedInsertNeighborhoodWithRemove match {
+      case Some((cachedTarget, cachedRemoved, cachedNeighborhood))
+        if cached && cachedTarget == targetVehicleForInsertion && cachedRemoved == removedNode =>
+        cachedNeighborhood
+      case _ =>
+        val n = targetVehicleNodeToInsertNeighborhood(targetVehicleForInsertion)
+        cachedInsertNeighborhoodWithRemove = Some((targetVehicleForInsertion, removedNode, n))
+        n
+    }
 
-    for((targetVehicleForInsertion,unroutedNodesToInsert) <- vehicleToUnroutedNodeToInsert){
+    nodeToInsertToNeighborhood(unroutedNodeToInsert).
+      getMove(globalObjective, correctedGlobalInit, acceptanceCriterion = acceptAllButMaxInt) match {
+      case NoMoveFound => null
+      case MoveFound(move) =>
+        val delta = move.objAfter - correctedGlobalInit
+        (move, delta)
+    }
+  }
+
+  private var nodesWithDirectInserts: SortedSet[Int] = SortedSet.empty
+  private var vehiclesWithDirectInsertsOrMoves: SortedSet[Int] = SortedSet.empty
+
+  private var directEdges:List[Edge] = List.empty
+
+  private def registerDirectInsert(node: Int, vehicle: Int, edge:Edge): Unit = {
+    if (useDirectInsert) {
+      nodesWithDirectInserts += node
+      vehiclesWithDirectInsertsOrMoves += vehicle
+      directEdges = edge :: directEdges
+      //println("found direct insert:" + edge + edge.move.shortString)
+    }
+  }
+
+  private def vehicleHasDirectInsertOrMove(vehicle: Int): Boolean = vehiclesWithDirectInsertsOrMoves contains vehicle
+
+  private def nodeHasDirectInsertOrMove(node: Int): Boolean = nodesWithDirectInserts contains node
+
+  private def exploreInsertionsNoRemove(vehicleToUnroutedNodeToInsert: Map[Int, Iterable[Int]]): Unit = {
+
+    for ((targetVehicleForInsertion, unroutedNodesToInsert) <- vehicleToUnroutedNodeToInsert) {
+
+      var currentVehicleHasDirectInsert: Boolean = false
 
       //try inserts without removes
-      for(unroutedNodeToInsert <- unroutedNodesToInsert) {
+      for (unroutedNodeToInsert <- unroutedNodesToInsert if !nodeHasDirectInsertOrMove(unroutedNodeToInsert)) {
         //insertion without remove
-        val symbolicNodeToInsert = nodeIDToNode(unroutedNodeToInsert)
-        nodeVehicleToInsertNeighborhood(unroutedNodeToInsert, targetVehicleForInsertion).
-          getMove(globalObjective,initialGlobalObjective,acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match {
-          case NoMoveFound =>
-          case MoveFound(move) =>
-            edgeBuilder.addEdge(symbolicNodeToInsert, nodeIDToNode(targetVehicleForInsertion), move.objAfter - initialGlobalObjective, move)
+
+        if (!currentVehicleHasDirectInsert) {
+          evaluateInsertOnVehicleNoRemove(
+            unroutedNodeToInsert: Int,
+            targetVehicleForInsertion: Int,
+            true) match {
+            case null => ;
+            case (move, delta) =>
+              val symbolicNodeToInsert = nodeIDToNode(unroutedNodeToInsert)
+              val edge = edgeBuilder.addEdge(symbolicNodeToInsert, nodeIDToNode(targetVehicleForInsertion), delta, move, VLSNMoveType.InsertNoEject)
+              if (delta < 0) {
+                //there is a direct insert
+                registerDirectInsert(unroutedNodeToInsert, targetVehicleForInsertion,edge)
+                currentVehicleHasDirectInsert = true
+              }
+          }
         }
       }
+    }
+  }
+
+  private def exploreInsertionsWithRemove(vehicleToUnroutedNodeToInsert: Map[Int, Iterable[Int]]): Unit = {
+
+    for ((targetVehicleForInsertion, unroutedNodesToInsert) <- vehicleToUnroutedNodeToInsert
+         if !vehicleHasDirectInsertOrMove(targetVehicleForInsertion)) {
 
       //insertion with remove, we remove, and then insert
       //insertion with remove
-      for(routingNodeToRemove <- vehicleToRoutedNodes(targetVehicleForInsertion)){
+      for (routingNodeToRemove <- vehicleToRoutedNodes(targetVehicleForInsertion)) {
         val symbolicNodeToRemove = nodeIDToNode(routingNodeToRemove)
 
         //performing the remove
@@ -157,16 +254,20 @@ class MoveExplorerAlgo(v:Int,
         val unroutedObjAfterRemove = unroutedNodesPenalty.value
         val correctedGlobalInit = initialGlobalObjective - initialUnroutedNodesPenalty + unroutedObjAfterRemove
 
-        for(unroutedNodeToInsert <- unroutedNodesToInsert) {
-          //insertion without remove
-          val symbolicNodeToInsert = nodeIDToNode(unroutedNodeToInsert)
+        for (unroutedNodeToInsert <- unroutedNodesToInsert
+             if !nodeHasDirectInsertOrMove(unroutedNodeToInsert)) {
 
           //Evaluating the delta
-          nodeVehicleToInsertNeighborhood(unroutedNodeToInsert, targetVehicleForInsertion).
-            getMove(globalObjective,correctedGlobalInit,acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match {
-            case NoMoveFound =>
-            case MoveFound(move) =>
-              edgeBuilder.addEdge(symbolicNodeToInsert, symbolicNodeToRemove, move.objAfter - correctedGlobalInit, move)
+          evaluateInsertOnVehicleWithRemove(
+            unroutedNodeToInsert: Int,
+            targetVehicleForInsertion: Int,
+            routingNodeToRemove: Int,
+            correctedGlobalInit: Int,
+            true) match {
+            case null => ;
+            case (move, delta) =>
+              val symbolicNodeToInsert = nodeIDToNode(unroutedNodeToInsert)
+              edgeBuilder.addEdge(symbolicNodeToInsert, symbolicNodeToRemove, delta, move, VLSNMoveType.InsertWithEject)
           }
         }
         //re-inserting
@@ -175,29 +276,101 @@ class MoveExplorerAlgo(v:Int,
     }
   }
 
-  def exploreNodeMove(): Unit = {
-    val vehicleAndNodeToMove:Iterable[(Int,Int)] =
-      nodesToMove.flatMap(nodeToMove => nodeToRelevantVehicles(nodeToMove).map(vehicle => (vehicle,nodeToMove)))
+  private def exploreInsertions(){
 
-    val vehicleToNodeToMoveThere = vehicleAndNodeToMove.groupBy(_._1).mapValues(_.map(_._2))
+    val vehicleAndUnroutedNodes: Iterable[(Int, Int)] =
+      unroutedNodesToInsert.flatMap(unroutedNode => nodeToRelevantVehicles(unroutedNode).map(vehicle => (vehicle, unroutedNode)))
 
-    for((targetVehicleID,routedNodesToMoveThere) <- vehicleToNodeToMoveThere) {
+    val vehicleToUnroutedNodeToInsert = vehicleAndUnroutedNodes.groupBy(_._1).mapValues(_.map(_._2))
+
+    exploreInsertionsNoRemove(vehicleToUnroutedNodeToInsert)
+    exploreInsertionsWithRemove(vehicleToUnroutedNodeToInsert)
+  }
+
+
+  private var cachedNodeMoveNeighborhoodNoRemove:Option[(Int,Int => Neighborhood)] = None //targetVehicle,node=>Neighborhood
+
+  def evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle: Int, targetVehicleForInsertion: Int, cached:Boolean): (Move, Int) = {
+
+    val nodeToMoveToNeighborhood = cachedNodeMoveNeighborhoodNoRemove match {
+      case Some((cachedTarget, cachedNeighborhood)) if cachedTarget == targetVehicleForInsertion && cached =>
+        cachedNeighborhood
+      case _ =>
+        val n = targetVehicleNodeToMoveNeighborhood(targetVehicleForInsertion)
+        cachedNodeMoveNeighborhoodNoRemove = Some((targetVehicleForInsertion, n))
+        n
+    }
+
+    nodeToMoveToNeighborhood(routingNodeToMove)
+      .getMove(
+        vehicleToObjectives(targetVehicleForInsertion),
+        initialVehicleToObjectives(targetVehicleForInsertion),
+        acceptanceCriterion = acceptAllButMaxInt) match {
+      case NoMoveFound => null
+      case MoveFound(move) =>
+        val delta = move.objAfter - initialVehicleToObjectives(targetVehicleForInsertion)
+        (move, delta)
+    }
+  }
+
+  private var cachedNodeMoveNeighborhoodWithRemove:Option[(Int,Int,Int => Neighborhood)] = None //targetVehicle,removedNode,node=>Neighborhood
+
+  def evaluateMoveToVehicleWithRemove(routingNodeToMove:Int, fromVehicle:Int, targetVehicleForInsertion:Int, removedNode:Int, cached:Boolean):(Move,Int) = {
+
+    val nodeToMoveToNeighborhood = cachedNodeMoveNeighborhoodWithRemove match {
+      case Some((cachedTarget, cachedRemoved,cachedNeighborhood))
+        if cached && cachedTarget == targetVehicleForInsertion && cachedRemoved == removedNode =>
+        cachedNeighborhood
+      case _ =>
+        val n = targetVehicleNodeToMoveNeighborhood(targetVehicleForInsertion)
+        cachedNodeMoveNeighborhoodWithRemove = Some((targetVehicleForInsertion, removedNode, n))
+        n
+    }
+
+    val tmp = nodeToMoveToNeighborhood(routingNodeToMove)
+      .getMove(vehicleToObjectives(targetVehicleForInsertion), initialVehicleToObjectives(targetVehicleForInsertion), acceptanceCriterion = acceptAllButMaxInt) match {
+      case NoMoveFound => null
+      case MoveFound(move) =>
+        val delta = move.objAfter - initialVehicleToObjectives(targetVehicleForInsertion)
+        (move,delta)
+    }
+
+    if(routingNodeToMove == 20 && targetVehicleForInsertion == 9 && removedNode == 50) {
+      println(s"ZZZ evaluateMoveToVehicleWithRemove(routingNodeToMove:$routingNodeToMove, fromVehicle:$fromVehicle, targetVehicleID:$targetVehicleForInsertion, removedNode:$removedNode)" + tmp)
+    }
+
+    tmp
+  }
+
+  private def exploreNodeMoveNoRemove(vehicleToNodeToMoveThere:Map[Int,Iterable[Int]]): Unit = {
+
+    for ((targetVehicleID, routedNodesToMoveThere) <- vehicleToNodeToMoveThere if !vehicleHasDirectInsertOrMove(targetVehicleID)) {
       val symbolicNodeOfVehicle = nodeIDToNode(targetVehicleID)
 
       //moves without removes
       for (routingNodeToMove <- routedNodesToMoveThere) {
         val symbolicNodeOfNodeToMove = nodeIDToNode(routingNodeToMove)
-        if (symbolicNodeOfNodeToMove.vehicle != targetVehicleID){
+        val fromVehicle = symbolicNodeOfNodeToMove.vehicle
+
+        if (fromVehicle != targetVehicleID) {  //that's the target vehicle
+
           //move without remove
           //     :(Int,Int) => Neighborhood,
-          nodeTargetVehicleToMoveNeighborhood(routingNodeToMove, targetVehicleID)
-            .getMove(vehicleToObjectives(targetVehicleID), initialVehicleToObjectives(targetVehicleID), acceptanceCriterion = (_, newObj) => newObj != Int.MaxValue) match {
-            case NoMoveFound =>
-            case MoveFound(move) =>
-              edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeOfVehicle, move.objAfter - initialVehicleToObjectives(targetVehicleID), move)
+          evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle, targetVehicleID: Int, true) match {
+            case null => ;
+            case (move, delta) =>
+              edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeOfVehicle, delta, move, VLSNMoveType.MoveNoEject)
+            //we cannot consider directMoves here moves because we should also take the impact on the first vehicle into account,
+            // and this is not captured into the objective function
           }
         }
       }
+    }
+  }
+
+  private def exploreNodeMoveWithRemove(vehicleToNodeToMoveThere:Map[Int,Iterable[Int]]): Unit = {
+    for((targetVehicleID,routedNodesToMoveThere) <- vehicleToNodeToMoveThere if !vehicleHasDirectInsertOrMove(targetVehicleID)) {
+
       //moves with removes
       for(nodeIDToEject <- vehicleToRoutedNodes(targetVehicleID)){
         val symbolicNodeToEject = nodeIDToNode(nodeIDToEject)
@@ -205,19 +378,16 @@ class MoveExplorerAlgo(v:Int,
         //performing the remove
         val reInsert = removeAndReInsert(nodeIDToEject)
 
-        val unroutedObjAfterRemove = unroutedNodesPenalty.value
-        val correctedGlobalInit = initialGlobalObjective - initialUnroutedNodesPenalty + unroutedObjAfterRemove
-
         for(routingNodeToMove <- routedNodesToMoveThere) {
           val symbolicNodeOfNodeToMove = nodeIDToNode(routingNodeToMove)
+          val fromVehicle =  symbolicNodeOfNodeToMove.vehicle
 
           if (symbolicNodeOfNodeToMove.vehicle != targetVehicleID) {
             //Evaluating all moves on this remove
-            nodeTargetVehicleToMoveNeighborhood(routingNodeToMove, targetVehicleID)
-              .getMove(vehicleToObjectives(targetVehicleID), initialVehicleToObjectives(targetVehicleID), acceptanceCriterion = (_, newObj) => newObj != Int.MaxValue) match {
-              case NoMoveFound =>
-              case MoveFound(move) =>
-                edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeToEject, move.objAfter - initialVehicleToObjectives(targetVehicleID), move)
+            evaluateMoveToVehicleWithRemove(routingNodeToMove, fromVehicle,targetVehicleID, nodeIDToEject, true) match{
+              case null => ;
+              case (move,delta) =>
+                edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeToEject, delta, move, VLSNMoveType.MoveWithEject)
             }
           }
         }
@@ -226,36 +396,80 @@ class MoveExplorerAlgo(v:Int,
       }
     }
   }
+  private def exploreNodeMove(): Unit = {
+    val vehicleAndNodeToMove:Iterable[(Int,Int)] =
+      nodesToMove.flatMap(nodeToMove => nodeToRelevantVehicles(nodeToMove).map(vehicle => (vehicle,nodeToMove)))
 
+    val vehicleToNodeToMoveThere = vehicleAndNodeToMove.groupBy(_._1).mapValues(_.map(_._2))
+
+    exploreNodeMoveNoRemove(vehicleToNodeToMoveThere)
+    exploreNodeMoveWithRemove(vehicleToNodeToMoveThere)
+
+  }
+
+
+  def evaluateRemove(routingNodeToRemove:Int,fromVehicle:Int):(Move,Int) = {
+    nodeToRemoveNeighborhood(routingNodeToRemove)
+      .getMove(unroutedNodesPenalty,initialUnroutedNodesPenalty,acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match{
+      case NoMoveFound => null
+      case MoveFound(move) =>
+        val delta = move.objAfter - initialUnroutedNodesPenalty
+        (move,delta)
+    }
+  }
   /**
     * deletions are from deleted node to trashNode
     */
-  def exploreDeletions(): Unit = {
-
-    for ((vehicleID, routingNodesToRemove) <- vehicleToRoutedNodes) {
+  private def exploreDeletions(): Unit = {
+    for ((vehicleID, routingNodesToRemove) <- vehicleToRoutedNodes if !vehicleHasDirectInsertOrMove(vehicleID)) {
       for (routingNodeToRemove <- routingNodesToRemove) {
-
-        nodeToRemoveNeighborhood(routingNodeToRemove)
-          .getMove(unroutedNodesPenalty,initialUnroutedNodesPenalty,acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match{
-          case NoMoveFound => None
-          case MoveFound(move) =>
+        evaluateRemove(routingNodeToRemove:Int,vehicleID) match{
+          case null => ;
+          case (move,delta) =>
             val symbolicNodeOfNodeToRemove = nodeIDToNode(routingNodeToRemove)
-            edgeBuilder.addEdge(symbolicNodeOfNodeToRemove, trashNode, move.objAfter - initialUnroutedNodesPenalty, move)
+            edgeBuilder.addEdge(symbolicNodeOfNodeToRemove, trashNode, delta, move, VLSNMoveType.Remove)
         }
       }
     }
   }
 
   //should be called after all edges going to vehicle are generated
-  def addNoMoveEdgesVehiclesToTrashNode(): Unit ={
+  private def addNoMoveEdgesVehiclesToTrashNode(): Unit ={
     for(vehicleNode <- vehicleToNode if vehicleNode != null){
-      edgeBuilder.addEdge(vehicleNode,trashNode,0,null)
+      edgeBuilder.addEdge(vehicleNode,trashNode,0,null,VLSNMoveType.SymbolicVehicleToTrash)
     }
   }
 
-  def addTrashNodeToUnroutedNodes(): Unit ={
+  private def addTrashNodeToUnroutedNodes(): Unit ={
     for(unroutedNode <- unroutedNodesToInsert){
-      edgeBuilder.addEdge(trashNode,nodeIDToNode(unroutedNode),0,null)
+      edgeBuilder.addEdge(trashNode,nodeIDToNode(unroutedNode),0,null,VLSNMoveType.SymbolicTrashToInsert)
+    }
+  }
+
+
+  def evaluateRemoveOnSourceVehicle(routingNodeToRemove:Int,fromVehicle:Int):(Move,Int) = {
+    nodeToRemoveNeighborhood(routingNodeToRemove)
+      .getMove(vehicleToObjectives(fromVehicle),initialVehicleToObjectives(fromVehicle),
+        acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match{
+      case NoMoveFound => null
+      case MoveFound(move) =>
+        val delta = move.objAfter - initialVehicleToObjectives(fromVehicle)
+        (move,delta) //will very likely always be negative because of triangular inequality
+    }
+  }
+
+  //no move edges from trashNode to each routed node wit no move,
+  // but with delta equal to impact of removing the node from the route.
+  private def exploreEjections(): Unit = {
+    for ((vehicleID, routingNodesToRemove) <- vehicleToRoutedNodes if !vehicleHasDirectInsertOrMove(vehicleID)) {
+      for (routingNodeToRemove <- routingNodesToRemove) {
+        evaluateRemoveOnSourceVehicle(routingNodeToRemove:Int,vehicleID) match{
+          case null => ;
+          case (move,delta) =>
+            val symbolicNodeOfNodeToRemove = nodeIDToNode(routingNodeToRemove)
+            edgeBuilder.addEdge(trashNode, symbolicNodeOfNodeToRemove, delta, null, VLSNMoveType.SymbolicTrashToNodeForEject)
+        }
+      }
     }
   }
 }

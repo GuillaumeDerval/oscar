@@ -1,3 +1,21 @@
+/**
+  * *****************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  * ****************************************************************************
+  */
+
+
 package oscar.cbls.business.routing.neighborhood.vlsn
 
 
@@ -16,6 +34,7 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
 
     val isNodeReached = Array.fill(nbNodes)(false)
     val isLabelReached = Array.fill(nbLabels)(false)
+    val isNodeFullyExplored = Array.fill(nbNodes)(false)
     var rootNode:Node = null
     var rooNodeID:Int = -1
 
@@ -32,7 +51,7 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
         val targetNode = currentEdge.to
         val targetNodeID = targetNode.nodeID
 
-        if(isLiveNode(targetNodeID)) {
+        if(isLiveNode(targetNodeID) && !isNodeFullyExplored(targetNodeID)) {
           if (targetNode == rootNode) {
             if (newSummedDelta < 0) {
               //we just found a negative cycle
@@ -73,7 +92,7 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
       }
       isLabelReached(rootNode.label) = false
       isNodeReached(rooNodeID) = false
-
+      isNodeFullyExplored(rooNodeID) = true
     }
     None
   }

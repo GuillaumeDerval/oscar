@@ -17,12 +17,11 @@ package oscar.cbls.business.routing.visual
   * ****************************************************************************
   */
 
-import java.awt.{BorderLayout, Color, Dimension}
+import java.awt.{BorderLayout, Dimension}
 import javax.swing.{JFrame, JPanel}
 
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.util.StopWatch
-
 
 /**
   * @author fabian.germeau@student.vinci.be
@@ -39,9 +38,9 @@ class RoutingMapContainer(vrp:VRP,
   startWatch()
   private var lastRefresh: Long = 0
 
-  def refresh = {
+  def refresh(force:Boolean = false): Unit = {
     val currentTime = getWatch
-    if(currentTime - lastRefresh >= refreshRate){
+    if(force || currentTime - lastRefresh >= refreshRate){
       lastRefresh = currentTime
       routingMap.drawRoutes()
     }

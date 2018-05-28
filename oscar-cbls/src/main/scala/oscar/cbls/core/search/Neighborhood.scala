@@ -154,7 +154,7 @@ abstract class Neighborhood(name:String = null) {
 
   protected def printMoveSynthesis:Boolean = verbose == 1
   protected def printTakenMoves: Boolean = verbose >= 2
-  protected def printPerformedSearches: Boolean = verbose >= 3
+  protected def printExploredNeighborhoods: Boolean = verbose >= 3
   protected def printExploredNeighbors: Boolean = verbose >= 4
 
 
@@ -258,13 +258,13 @@ abstract class Neighborhood(name:String = null) {
             m.commit()
             if (additionalStringGenerator != null) println("after move is committed: " + additionalStringGenerator())
             if (obj.value == Int.MaxValue) println("Warning : objective == MaxInt, maybe you have some strong constraint violated?")
-            assert(m.objAfter == Int.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
+            require(m.objAfter == Int.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
 
           }else{
             m.commit()
             if (additionalStringGenerator != null) println("after move is committed: " + additionalStringGenerator())
             if (obj.value == Int.MaxValue) println("Warning : objective == MaxInt, maybe you have some strong constraint violated?")
-            assert(m.objAfter == Int.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
+            require(m.objAfter == Int.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
           }
       }
       toReturn += 1
@@ -373,18 +373,18 @@ abstract class EasyNeighborhood[M<:Move](best:Boolean = false, neighborhoodName:
     toReturnMove = null
     bestNewObj = Int.MaxValue
     this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
-    if (printPerformedSearches)
+    if (printExploredNeighborhoods)
       println(neighborhoodNameToString + ": start exploration")
 
     exploreNeighborhood()
 
     if (toReturnMove == null || (best && !acceptanceCriterion(oldObj, bestNewObj))) {
-      if (printPerformedSearches) {
+      if (printExploredNeighborhoods) {
         println(neighborhoodNameToString + ": no move found")
       }
       NoMoveFound
     } else {
-      if (printPerformedSearches) {
+      if (printExploredNeighborhoods) {
         println(neighborhoodNameToString + ": move found: " + toReturnMove)
       }
       toReturnMove
@@ -474,7 +474,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
     toReturnMove = null
     bestNewObj = Int.MaxValue
     this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
-    if (printPerformedSearches)
+    if (printExploredNeighborhoods)
       println(neighborhoodNameToString + ": start exploration")
 
     exploreNeighborhood()
@@ -482,12 +482,12 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
     exploring = false
 
     if (toReturnMove == null) {
-      if (printPerformedSearches) {
+      if (printExploredNeighborhoods) {
         println(neighborhoodNameToString + ": no move found")
       }
       NoMoveFound
     } else {
-      if (printPerformedSearches) {
+      if (printExploredNeighborhoods) {
         println(neighborhoodNameToString + ": move found: " + toReturnMove)
       }
       toReturnMove

@@ -47,7 +47,7 @@ abstract class Move(val objAfter:Int = Int.MaxValue, val neighborhoodName:String
   /**
    * @return a readable string of the objective after wit ha space before, or an empty string
    */
-  def objToString:String = if(objAfter == Int.MaxValue) "" else "; objAfter:" +objAfter
+  def objToString:String = if(objAfter == Int.MaxValue) "" else " objAfter:" +objAfter
 
   protected def neighborhoodNameToString:String = if (neighborhoodName != null) neighborhoodName + ":" else ""
 
@@ -67,6 +67,8 @@ abstract class Move(val objAfter:Int = Int.MaxValue, val neighborhoodName:String
     model.restoreSolution(snapshot)
     toReturn
   }
+
+  def shortString:String = toString
 }
 
 object Move{
@@ -199,7 +201,7 @@ case class CompositeMove(ml:List[Move], override val objAfter:Int, override val 
   }
 
   override def toString: String  = {
-    neighborhoodNameToString + "CompositeMove(globalSize:" + globalSize + " " + simpleMLString + objToString + ")"
+    neighborhoodNameToString + "CompositeMove(size:" + globalSize + " " + simpleMLString + objToString + ")"
   }
 
   override def touchedVariables: List[Variable] = ml.flatMap(_.touchedVariables)
@@ -214,8 +216,10 @@ case class CompositeMove(ml:List[Move], override val objAfter:Int, override val 
   def simpleMLString:String = {
     "[" + ml.map(
     {case c:CompositeMove => c.simpleMLString
-    case m:Move => m.toString}).mkString(",") + "]"
+    case m:Move => m.shortString}).mkString(",") + "]"
   }
+
+  override def shortString: String = "CompositeMove(" + ml.map(_.shortString).mkString(",")+ ")"
 }
 
 case class NamedMove(m:Move, override val neighborhoodName:String = null)

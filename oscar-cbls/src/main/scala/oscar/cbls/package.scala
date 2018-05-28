@@ -159,7 +159,13 @@ package object cbls extends ModelingAPI{
     def *(v: IntValue): IntInvariant = Prod(List(x, v))
 
     def /(v: IntValue): IntInvariant = Div(x, v)
-    def /(i:Int):IntInvariant = new Int2Int(x,_/i)
+    def /(i:Int):IntInvariant = {
+      var extremeValues:List[Int] = List(x.domain.min/i,x.domain.max/i)
+      if(x.domain contains 0) extremeValues = 0 :: extremeValues
+      if(x.domain contains -1) extremeValues = (-1/i) :: extremeValues
+      if(x.domain contains 1) extremeValues = (1/i) :: extremeValues
+      new Int2Int(x,_/i,extremeValues.min to extremeValues.max)
+    }
 
     def %(v: IntValue): IntInvariant = Mod(x, v)
 
