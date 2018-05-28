@@ -61,14 +61,14 @@ class Precedences(numActivities: Int) {
     * Checks whether a list of activity indexes is consistent with the precedences
     *
     * @param seq a sequence of activity indices
-    * @return
+    * @return true iff all indices in seq respect the precedences relation
     */
   def consistentSeq(seq: List[Int]): Boolean = {
     // Auxiliary function
     def consistentSeq(postfix: List[Int], revPrefix: List[Int]): Boolean = postfix match {
       case Nil => true
       case act::acts =>
-        val notPrecPref = revPrefix.forall(!descendants(_).contains(act))
+        val notPrecPref = !revPrefix.exists(descendants(_).contains(act))
         if (notPrecPref)
           consistentSeq(acts, act::revPrefix)
         else
