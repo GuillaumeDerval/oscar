@@ -161,14 +161,14 @@ import scala.collection.immutable.{SortedMap, SortedSet}
   * @param nodeToRelevantVehicles a map from node to the vehicles where the node can be routed.
   *                               It must be defined for each node mentioned in initVehicleToRoutedNodesToMove
   *                               and initUnroutedNodesToInsert
-  * @param targetVehicleNodeToInsertNeighborhood vehicle to node to a neighborhood that try and insert the node
+  * @param targetVehicleToNodeToInsertNeighborhood vehicle to node to a neighborhood that try and insert the node
   *                                              on the vehicle.
   *                                              VLSN guarantees that the node is not routed
   *                                              (it was in initUnroutedNodesToInsert and not routed yet, or was unrouted)
   *                                              You'd better use best for this neighborhood, and no hot restart
   *                                              the moves returned by this neighborhood must be position-independent
   *                                              (check API of your neighborhood for that)
-  * @param targetVehicleNodeToMoveNeighborhood vehicle to node to a neighborhood that try and move the node to the vehicle.
+  * @param targetVehicleToNodeToMoveNeighborhood vehicle to node to a neighborhood that try and move the node to the vehicle.
   *                                            VLSN guarantees that the node is routed, and reached by another vehicle.
   *                                             You'd better use best for this neighborhood, and no hot restart
   *                                             the moves returned by this neighborhood must be position-independent
@@ -203,9 +203,8 @@ class VLSN(v:Int,
            initUnroutedNodesToInsert:() => SortedSet[Int],
            nodeToRelevantVehicles:() => Map[Int,Iterable[Int]],
 
-           // puisqu'on fait pleuiseurs inserts de nodes différents sur le même véhicule.
-           targetVehicleNodeToInsertNeighborhood:Int => Int => Neighborhood,
-           targetVehicleNodeToMoveNeighborhood:Int => Int => Neighborhood,
+           targetVehicleToNodeToInsertNeighborhood:Int => Int => Neighborhood,
+           targetVehicleToNodeToMoveNeighborhood:Int => Int => Neighborhood,
            nodeToRemoveNeighborhood:Int => Neighborhood,
 
            removeNodeAndReInsert:Int => () => Unit,
@@ -217,6 +216,10 @@ class VLSN(v:Int,
            unroutedPenalty:Objective,
            globalObjective:Objective,
            cycleFinderAlgoSelection:CycleFinderAlgoType = CycleFinderAlgoType.Mouthuy,
+
+           //TODO: add more labels for interfering vehicles: when two vehicles are interfering, they are not tested for vehicle moves.
+           //furthermore, when a vehicle is updated, it might update the interfering vehicles (not transitively)
+         //  additionalLabels:List[(Int,Int=>Int)], //nbLabel,vehicle=>label
            name:String = "VLSN") extends Neighborhood {
 
   override def getMove(obj: Objective,
@@ -495,8 +498,8 @@ class VLSN(v:Int,
           unroutedNodesToInsert,
           nodeToRelevantVehicles(),
 
-          targetVehicleNodeToInsertNeighborhood,
-          targetVehicleNodeToMoveNeighborhood,
+          targetVehicleToNodeToInsertNeighborhood,
+          targetVehicleToNodeToMoveNeighborhood,
           nodeToRemoveNeighborhood,
           removeNodeAndReInsert,
           useDirectInsert,
@@ -511,8 +514,8 @@ class VLSN(v:Int,
           unroutedNodesToInsert,
           nodeToRelevantVehicles(),
 
-          targetVehicleNodeToInsertNeighborhood,
-          targetVehicleNodeToMoveNeighborhood,
+          targetVehicleToNodeToInsertNeighborhood,
+          targetVehicleToNodeToMoveNeighborhood,
           nodeToRemoveNeighborhood,
           removeNodeAndReInsert,
           useDirectInsert,

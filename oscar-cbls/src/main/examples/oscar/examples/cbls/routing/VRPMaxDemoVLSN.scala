@@ -183,7 +183,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       threeOpt(() => insertionPoints,
         () => _ => nodesOfTargetVehicleButVehicle,
         myVRP,
-        breakSymmetry = false) //.afterMove(graphical.drawRoutes())
+        breakSymmetry = false).afterMove(graphical.drawRoutes())
     }
 
     def removeAndReInsertVLSN(pointToRemove: Int): (() => Unit) = {
@@ -212,8 +212,8 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       () => SortedSet.empty[Int] ++ myVRP.unroutedNodes,
       nodeToRelevantVehicles = () => nodeToAllVehicles,
 
-      targetVehicleNodeToInsertNeighborhood = routeUnroutedPointVLSN,
-      targetVehicleNodeToMoveNeighborhood = movePointVLSN,
+      targetVehicleToNodeToInsertNeighborhood = routeUnroutedPointVLSN,
+      targetVehicleToNodeToMoveNeighborhood = movePointVLSN,
       removePointVLSN,
 
       removeNodeAndReInsert = removeAndReInsertVLSN,
@@ -267,6 +267,10 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
   search.verbose = 2
   //search.verboseWithExtraInfo(2, () => result)
+
+  //Thread.sleep(10000)
+  //println("start")
+  //Thread.sleep(1000)
 
   search.doAllMoves(obj = obj)
 
