@@ -219,8 +219,10 @@ class VLSN(v:Int,
 
            //TODO: add more labels for interfering vehicles: when two vehicles are interfering, they are not tested for vehicle moves.
            //furthermore, when a vehicle is updated, it might update the interfering vehicles (not transitively)
-         //  additionalLabels:List[(Int,Int=>Int)], //nbLabel,vehicle=>label
+           additionalLabels:Option[LabelSystem] = None,
            name:String = "VLSN") extends Neighborhood {
+
+  require(additionalLabels.isEmpty, "additional labels not supported yet")
 
   override def getMove(obj: Objective,
                        initialObj: Int,
@@ -361,13 +363,11 @@ class VLSN(v:Int,
                       val globalObjDelta = globalObjective.value - oldGlobalObjective
 
                       require(vehicleObjDelta == globalObjDelta,
-                        "re-optimization of vehicle " + vehicle + " wih" + n + " did impact other vehicle")
+                        s"re-optimization of vehicle $vehicle wih $n did impact other vehicle (oldObjVehicle:$oldObjVehicle,oldGlobalObjective:$oldGlobalObjective,vehicleObjDelta:$vehicleObjDelta,globalObjDelta:$globalObjDelta")
 
                   }
                 }
             }
-
-            //println(debugString())
 
             //now returns data for incremental restart of VLSN
             return Some(DataForVLSNRestart(

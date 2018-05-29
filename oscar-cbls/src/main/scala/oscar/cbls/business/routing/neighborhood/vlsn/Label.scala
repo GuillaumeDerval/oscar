@@ -2,6 +2,8 @@ package oscar.cbls.business.routing.neighborhood.vlsn
 
 import oscar.cbls.algo.magicArray.MagicBoolArray
 
+
+//negative labels are ignored, so you can set -1 for non-labelled stuff
 case class LabelSystem(labelsToNbLabels:Array[Int], vehicleToLabels:Int => Array[Int], v:Int) {
 
   def areInterferingSlow(vehicle1:Int,vehicle2:Int):Boolean = {
@@ -11,7 +13,7 @@ case class LabelSystem(labelsToNbLabels:Array[Int], vehicleToLabels:Int => Array
     var l = labelsToNbLabels.length
     while(l != 0){
       l = l-1
-      if(ar1(l) == ar2(l)) return true
+      if(ar1(l) >= 0 && ar1(l) == ar2(l)) return true
     }
     false
   }
@@ -49,7 +51,10 @@ case class MagicBooleanLabelArray(ls:LabelSystem){
     var l = nbLabelDimensions
     while(l != 0){
       l = l-1
-      isOffsetLabelMarked(idToValue(l) + labelDimensionToOffset(l)) = true
+      val labelForDimension = idToValue(l)
+      if(labelForDimension >= 0) {
+        isOffsetLabelMarked(labelForDimension+labelDimensionToOffset(l)) = true
+      }
     }
   }
   def hasAnyMarkedLabel(vehicle:Int):Boolean = {
@@ -57,7 +62,10 @@ case class MagicBooleanLabelArray(ls:LabelSystem){
     var l = nbLabelDimensions
     while(l != 0){
       l = l-1
-      if(isOffsetLabelMarked(idToValue(l) + labelDimensionToOffset(l))) return true
+      val labelForDimension = idToValue(l)
+      if(labelForDimension >= 0) {
+        if (isOffsetLabelMarked(idToValue(l) + labelDimensionToOffset(l))) return true
+      }
     }
     false
   }

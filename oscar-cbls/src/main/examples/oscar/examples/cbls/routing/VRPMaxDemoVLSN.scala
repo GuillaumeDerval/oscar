@@ -175,12 +175,9 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     //for re-optimization
     def threeOptOnVehicle(vehicle:Int) = {
       val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
-      //insertions points are position where we perform the insert,
-      // basically the segment will start in plae of the insertion point and the insertion point will be moved upward
       val nodesOfTargetVehicleButVehicle = nodesOfTargetVehicle.filter(_ != vehicle)
-      val insertionPoints = if(vehicle != v-1) vehicle+1 :: nodesOfTargetVehicleButVehicle else nodesOfTargetVehicleButVehicle
 
-      threeOpt(() => insertionPoints,
+      threeOpt(() => nodesOfTargetVehicle,
         () => _ => nodesOfTargetVehicleButVehicle,
         myVRP,
         breakSymmetry = false).afterMove(graphical.drawRoutes())
@@ -226,7 +223,6 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       obj,
 
       cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
-
       name="VLSN(" + l + ")"
     )
   }
@@ -263,7 +259,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     profile(onePtMove(10)),
     profile(customTwoOpt(20)),
     profile(customThreeOpt(20,true))
-  )) exhaust profile(vlsn(40) maxMoves 1)).afterMove(graphical.drawRoutes())
+  )) exhaust profile(vlsn(70) maxMoves 1)).afterMove(graphical.drawRoutes())
 
   search.verbose = 2
   //search.verboseWithExtraInfo(2, () => result)

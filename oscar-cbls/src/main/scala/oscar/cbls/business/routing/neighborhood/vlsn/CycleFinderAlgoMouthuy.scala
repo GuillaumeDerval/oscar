@@ -180,7 +180,6 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
     None
   }
 
-
   override def findCycle(liveNodes:Array[Boolean]):Option[List[Edge]] = {
     isLiveNode = liveNodes
     for(rootNode <- nodes if liveNodes(rootNode.nodeID)){
