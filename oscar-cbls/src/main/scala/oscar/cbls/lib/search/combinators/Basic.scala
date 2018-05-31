@@ -371,3 +371,15 @@ class Retry(a: Neighborhood, cond: Int => Boolean = _ <= 1) extends Neighborhood
     consecutiveFails = 0
   }
 }
+
+
+/**
+  * instantiates a new neighborhood on each exploration.
+  * You can use it to perform some queries before instantiating the neighborhood.
+  * You can return [[NoMoveNeighborhood]] if tehre is no actul neighborhood to explore
+  * @param f a function that generated the neighborhood to explore
+  */
+class Dyn(f:() => Neighborhood) extends Neighborhood {
+  override def getMove(obj: Objective, initialObj: Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult =
+    f().getMove(obj, initialObj, acceptanceCriterion)
+}

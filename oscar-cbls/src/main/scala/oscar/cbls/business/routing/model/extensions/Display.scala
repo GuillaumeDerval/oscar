@@ -20,8 +20,8 @@ class Display(vrp: VRP,
 
   val RoutingMapContainer = new RoutingMapContainer(vrp, routingMap, title=title, refreshRate = refreshRate)
 
-  def drawRoutes(): Unit ={
-    RoutingMapContainer.refresh
+  def drawRoutes(force:Boolean = false): Unit ={
+    RoutingMapContainer.refresh(force)
   }
 
 }
