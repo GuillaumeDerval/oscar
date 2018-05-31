@@ -70,6 +70,8 @@ class FZCPBasicModel(val pstrength: oscar.cp.core.CPPropagStrength = oscar.cp.Me
   def createVariables(variables: Iterable[Variable]){
     for(v <- variables){
       dictVars(v) = v match{
+        case bv:BooleanVariable if bv.isTrue => CPBoolVar(true)
+        case bv:BooleanVariable if bv.isFalse => CPBoolVar(false)
         case bv:BooleanVariable => CPBoolVar()
         case iv:IntegerVariable => iv.domain match{
           case FzDomainRange(min, max) => CPIntVar(min, max)
