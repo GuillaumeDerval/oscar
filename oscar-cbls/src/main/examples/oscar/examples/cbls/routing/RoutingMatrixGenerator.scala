@@ -42,7 +42,6 @@ object RoutingMatrixGenerator {
     def distance(from: (Int, Int), to: (Int, Int)) =
       math.sqrt(math.pow(from._1 - to._1, 2) + math.pow(from._2 - to._2, 2)).toInt
 
-    //for each delivery point, the distance to each warehouse
     (Array.tabulate(N)(
       n1 => Array.tabulate(N)(
         n2 => distance(pointPosition(n1), pointPosition(n2)))),pointPosition)

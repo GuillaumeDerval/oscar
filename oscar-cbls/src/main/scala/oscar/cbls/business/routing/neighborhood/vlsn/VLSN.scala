@@ -211,6 +211,7 @@ class VLSN(v:Int,
 
            reOptimizeVehicle:Option[Int => Option[Neighborhood]],
            useDirectInsert:Boolean,
+           exhaustGraphBeforeReconstruction:Boolean,
 
            vehicleToObjective:Array[Objective],
            unroutedPenalty:Objective,
@@ -324,58 +325,62 @@ class VLSN(v:Int,
     }
 
     while (true) {
-      CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSelection).findCycle(liveNodes) match {
+      val shouldStop = CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSelection).findCycle(liveNodes) match {
         case Some(listOfEdge) =>
           performEdgesAndKillCycles(listOfEdge)
-        case None =>
-          //we did not find any move at all on the graph
-          //there is no possible incremental restart for VLSN
-          if (acc.isEmpty) return None
-          else {
-            //We have exhausted the graph, and VLSN can be restarted
-            if(printTakenMoves) {
-              val newMove = CompositeMove(acc.flatMap(edge => Option(edge.move)), computedNewObj, name)
-              println("   - ?  " + newMove.objAfter + "   " + newMove.toString)
-            }
+          false
+        case None => true
+      }
 
-            //println(vlsnGraph.toDOT(acc,false,true))
-
-            //re-optimize
-            reOptimizeVehicle match{
-              case None => ;
-              case Some(reOptimizeNeighborhoodGenerator) =>
-                //re-optimizing impacted vehicles (optional)
-                for(vehicle <- impactedVehicles(acc)){
-
-                  val oldObjVehicle = vehicleToObjective(vehicle).value
-                  val oldGlobalObjective = globalObjective.value
-
-                  reOptimizeNeighborhoodGenerator(vehicle) match{
-                    case None => ;
-                    case Some(n) =>
-                      n.verbose = 0
-                      val nbPerformedMoves = n.doAllMoves(obj=globalObjective)
-                      if((printTakenMoves && nbPerformedMoves > 0) || (printExploredNeighborhoods && nbPerformedMoves == 0)){
-                        println(s"   - ?  " + globalObjective.value + s"   $name:ReOptimizeVehicle(vehicle:$vehicle, neighborhood:$n nbMoves:$nbPerformedMoves)")
-                      }
-
-                      val vehicleObjDelta =  vehicleToObjective(vehicle).value - oldObjVehicle
-                      val globalObjDelta = globalObjective.value - oldGlobalObjective
-
-                      require(vehicleObjDelta == globalObjDelta,
-                        s"re-optimization of vehicle $vehicle wih $n did impact other vehicle (oldObjVehicle:$oldObjVehicle,oldGlobalObjective:$oldGlobalObjective,vehicleObjDelta:$vehicleObjDelta,globalObjDelta:$globalObjDelta")
-
-                  }
-                }
-            }
-
-            //now returns data for incremental restart of VLSN
-            return Some(DataForVLSNRestart(
-              vlsnGraph,
-              acc,
-              vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-              unroutedNodesToInsert: SortedSet[Int]))
+      if(shouldStop || !exhaustGraphBeforeReconstruction) {
+        //we did not find any move at all on the graph
+        //there is no possible incremental restart for VLSN
+        if (acc.isEmpty) return None
+        else {
+          //We have exhausted the graph, and VLSN can be restarted
+          if (printTakenMoves) {
+            val newMove = CompositeMove(acc.flatMap(edge => Option(edge.move)), computedNewObj, name)
+            println("   - ?  " + newMove.objAfter + "   " + newMove.toString)
           }
+
+          //println(vlsnGraph.toDOT(acc,false,true))
+
+          //re-optimize
+          reOptimizeVehicle match {
+            case None => ;
+            case Some(reOptimizeNeighborhoodGenerator) =>
+              //re-optimizing impacted vehicles (optional)
+              for (vehicle <- impactedVehicles(acc)) {
+
+                val oldObjVehicle = vehicleToObjective(vehicle).value
+                val oldGlobalObjective = globalObjective.value
+
+                reOptimizeNeighborhoodGenerator(vehicle) match {
+                  case None => ;
+                  case Some(n) =>
+                    n.verbose = 0
+                    val nbPerformedMoves = n.doAllMoves(obj = globalObjective)
+                    if ((printTakenMoves && nbPerformedMoves > 0) || (printExploredNeighborhoods && nbPerformedMoves == 0)) {
+                      println(s"   - ?  " + globalObjective.value + s"   $name:ReOptimizeVehicle(vehicle:$vehicle, neighborhood:$n nbMoves:$nbPerformedMoves)")
+                    }
+
+                    val vehicleObjDelta = vehicleToObjective(vehicle).value - oldObjVehicle
+                    val globalObjDelta = globalObjective.value - oldGlobalObjective
+
+                    require(vehicleObjDelta == globalObjDelta,
+                      s"re-optimization of vehicle $vehicle wih $n did impact other vehicle (oldObjVehicle:$oldObjVehicle,oldGlobalObjective:$oldGlobalObjective,vehicleObjDelta:$vehicleObjDelta,globalObjDelta:$globalObjDelta")
+
+                }
+              }
+          }
+
+          //now returns data for incremental restart of VLSN
+          return Some(DataForVLSNRestart(
+            vlsnGraph,
+            acc,
+            vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
+            unroutedNodesToInsert: SortedSet[Int]))
+        }
       }
     }
     throw new Error("should not reach this")

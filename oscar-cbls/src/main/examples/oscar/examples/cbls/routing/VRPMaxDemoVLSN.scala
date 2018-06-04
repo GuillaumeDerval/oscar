@@ -20,6 +20,7 @@ import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.neighborhood.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
 import oscar.cbls.business.routing.neighborhood.vlsn.{CycleFinderAlgoType, VLSN}
 import oscar.cbls.core.search._
+import oscar.cbls.lib.search.combinators.Atomic
 import oscar.cbls.util.StopWatch
 
 import scala.collection.immutable.{SortedMap, SortedSet}
@@ -38,7 +39,7 @@ object VRPMaxDemoVLSN  extends App {
   require(v < n)
   val displayDelay = if (n >= 1000) 1500 else 500 //ms
   val verbose = 1
-  val maxPivotPerValuePercent = 5 //VLSN generates a lot of additional pivots
+  val maxPivotPerValuePercent = 4 //VLSN generates a lot of additional pivots
   val mapSide = 1000
 
   new VRPMaxDemoVLSN(n,v,maxPivotPerValuePercent,verbose,displayDelay, mapSide)
@@ -55,11 +56,9 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
   val maxWorkloadPerVehicle = 2500
   val serviceTimePerNode = 100
+
+
   val vehicles = 0 until v
-
-  //val maxWorkloadPerVehicle = 4000
-  //val serviceTimePerNode = 100
-
   startWatch()
   val model = new Store() //checker = Some(new ErrorChecker()))
 
@@ -103,12 +102,10 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
   model.close()
 
-
   def result: String =
     myVRP.toString +
       vehicles.map(vehicle => "workload_vehicle_" + vehicle + ":" + vehicletoWorkload(vehicle).value).mkString("\n") + "\n" +
       "maxWorkloadPerVehicle:" + maxWorkloadPerVehicle + "\n" + "serviceTimePerNode:" + serviceTimePerNode + "\n" + obj
-
 
   val relevantPredecessorsOfNodes = (node:Int) => myVRP.nodes
   val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix,relevantPredecessorsOfNodes))
@@ -116,10 +113,12 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
   val routedPostFilter = (node:Int) => (neighbor:Int) => myVRP.isRouted(neighbor)
   val unRoutedPostFilter = (node:Int) => (neighbor:Int) => !myVRP.isRouted(neighbor)
 
-  def vlsn(l:Int = Int.MaxValue) = {
+  def vlsn(lm:Int = Int.MaxValue,li:Int = Int.MaxValue) = {
 
-    val lClosestNeighborsByDistance: Array[SortedSet[Int]] = Array.tabulate(n)(node =>
-      SortedSet.empty[Int] ++ myVRP.kFirst(l, closestRelevantNeighborsByDistance)(node))
+    val liClosestNeighborsByDistance: Array[SortedSet[Int]] = Array.tabulate(n)(node =>
+      SortedSet.empty[Int] ++ myVRP.kFirst(li, closestRelevantNeighborsByDistance)(node))
+    val lmClosestNeighborsByDistance: Array[SortedSet[Int]] = Array.tabulate(n)(node =>
+      SortedSet.empty[Int] ++ myVRP.kFirst(lm, closestRelevantNeighborsByDistance)(node))
 
     //VLSN neighborhood
     val nodeToAllVehicles = SortedMap.empty[Int, Iterable[Int]] ++ (v until n).map(node => (node, vehicles))
@@ -131,7 +130,10 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
         val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
 
         unroutedNodeToInsert:Int => {
-          val lNearestNodesOfTargetVehicle = nodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(unroutedNodeToInsert) contains x)
+          val lNearestNodesOfTargetVehicle =
+            if(li >= n) nodesOfTargetVehicle
+            else nodesOfTargetVehicle.filter(x => liClosestNeighborsByDistance(unroutedNodeToInsert) contains x)
+
           insertPointUnroutedFirst(
             () => List(unroutedNodeToInsert),
             () => _ => lNearestNodesOfTargetVehicle,
@@ -152,7 +154,10 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
         val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
 
         nodeToMove:Int => {
-          val lNearestNodesOfTargetVehicle = nodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(nodeToMove) contains x)
+          val lNearestNodesOfTargetVehicle =
+            if(lm >= n) nodesOfTargetVehicle
+            else nodesOfTargetVehicle.filter(x => lmClosestNeighborsByDistance(nodeToMove) contains x)
+
           onePointMove(
             () => List(nodeToMove),
             () => _ => lNearestNodesOfTargetVehicle,
@@ -216,14 +221,15 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       removeNodeAndReInsert = removeAndReInsertVLSN,
 
       reOptimizeVehicle = Some(vehicle => Some(threeOptOnVehicle(vehicle))),
-      useDirectInsert = true,
+      useDirectInsert = false,
+      exhaustGraphBeforeReconstruction = true,
 
       objPerVehicle,
       unroutedPenaltyObj,
       obj,
 
       cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
-      name="VLSN(" + l + ")"
+      name=s"VLSN(li:$li,lm=$lm)"
     )
   }
 
@@ -259,7 +265,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     profile(onePtMove(10)),
     profile(customTwoOpt(20)),
     profile(customThreeOpt(20,true))
-  )) exhaust profile(vlsn(70) maxMoves 1)).afterMove(graphical.drawRoutes())
+  )) exhaust (profile(vlsn(li=20,lm=100) maxMoves 1))).afterMove(graphical.drawRoutes())
 
   search.verbose = 2
   //search.verboseWithExtraInfo(2, () => result)
