@@ -93,7 +93,8 @@ class TestXCSP3Parser extends TestSuite {
     "Sat-flat200-00-clause.xml",
     "Nonogram-001-regular.xml",
     "Opd-07-007-003.xml",
-    "Ramsey-12.xml"
+    "Ramsey-12.xml",
+    "RoomMate-sr0050-int.xml"
   )
 
 
@@ -184,7 +185,6 @@ class TestXCSP3Parser extends TestSuite {
     "BusScheduling-cnt-t1.xml",
     "MagicSequence-008-co.xml",
     "Warehouse-opl.xml",
-    "RoomMate-sr0050-int.xml",
     /*"PrizeCollecting-15-3-5-0.xml",*/
     /*"Mario-easy-4.xml",*/
     /*"Tpp-3-3-20-1.xml",*/
