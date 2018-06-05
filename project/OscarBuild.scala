@@ -3,8 +3,6 @@ package oscar
 import sbt.Keys._
 import sbt._
 
-
-
 object OscarBuild {
 
   lazy val PerfTest = config("perf") extend (Test)
@@ -20,6 +18,7 @@ object OscarBuild {
     scalacOptions in Compile ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature",
       "-unchecked", "-Xdisable-assertions", "-language:implicitConversions",
       "-language:postfixOps"),
+    licenses += ("LGPL-3.0", url("https://www.gnu.org/licenses/lgpl-3.0.en.html")),
     scalacOptions in Test := Seq("-optimise"),
     testOptions in Test += ((target in Test) map {
       t => Tests.Argument(TestFrameworks.ScalaTest, "-u","<%s>" format (t / "streams/test"))
