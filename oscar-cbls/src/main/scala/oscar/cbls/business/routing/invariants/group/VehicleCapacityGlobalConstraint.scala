@@ -1,23 +1,8 @@
-package oscar.cbls.business.routing.invariants.capa
-
-/*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+package oscar.cbls.lib.invariant.routing.capa.stagequentinmeurisse
 
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.routing.invariants.group.GenericRoutingGlobalConstraintForward
+import oscar.cbls.business.routing.invariants.group.PreComputeInvariant
 import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue}
 import oscar.cbls.core.propagation.Checker
 
@@ -25,26 +10,23 @@ import oscar.cbls.core.propagation.Checker
 /**
   * @author Quentin Meurisse
   */
-@deprecated("not enough validation yet, use at your own risk","")
 object VehicleCapacityGlobalConstraint {
   def apply(routes: ChangingSeqValue,
-            n: Int,
             v: Int,
             deltaAtNode: Array[Int],
             maxCapacity: Int,
             violation: Array[CBLSIntVar],
             contentAtEndOfVehicleRoute: Array[CBLSIntVar]): VehicleCapacityGlobalConstraint =
-    new VehicleCapacityGlobalConstraint(routes, n, v, deltaAtNode, maxCapacity, violation, contentAtEndOfVehicleRoute)
+    new VehicleCapacityGlobalConstraint(routes, v, deltaAtNode, maxCapacity, violation, contentAtEndOfVehicleRoute)
 }
-@deprecated("not enough validation yet, use at your own risk","")
+
 class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
-                                      n:Int,
                                       v: Int,
                                       deltaAtNode: Array[Int],
                                       maxCapacity: Int,
                                       violation: Array[CBLSIntVar],
                                       contentAtEndOfVehicleRoute: Array[CBLSIntVar])
-  extends GenericRoutingGlobalConstraintForward[PreComputeClass, SavedValuesAtCheckpoint](routes, n, v) {
+  extends PreComputeInvariant[PreComputeClass, SavedValuesAtCheckpoint](routes, v) {
 
   registerStaticAndDynamicDependency(routes)
   this.finishInitialization()
@@ -263,7 +245,8 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
 
       val deltaOfContent = b.contentAtNodeAtCheckpoint - a.contentAtNodeAtCheckpoint
       DeltaOfPreComputeForSegment(a.rb, b.rb, deltaOfContent, a.contentAtNodeAtCheckpoint)
-    } else {
+    }
+    else {
       val deltaOfContent = b.contentAtNodeAtCheckpoint - a.contentAtNodeAtCheckpoint
 
       val fromNode = a.prevNodeAtCheckpoint0
@@ -337,7 +320,8 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
     toReturn
   }
 
-  override def computeDeltaBetweenNodesFromScatch(fromNode: Int, toNode: Int): PreComputeClass = DeltaFromScratch(fromNode, toNode)
+  override def nodesToPreCompute(fromNode: Int, toNode: Int): PreComputeClass = DeltaFromScratch(fromNode, toNode)
+
 
   override def computeAndAffectOutputFromScratch(seq: IntSequence) = {
     for (vehicle <- vehicles) {
