@@ -2,7 +2,6 @@ package oscar.cbls.business.routing.neighborhood.vlsn
 
 import oscar.cbls.algo.magicArray.MagicBoolArray
 
-
 //negative labels are ignored, so you can set -1 for non-labelled stuff
 case class LabelSystem(labelsToNbLabels:Array[Int], vehicleToLabels:Int => Array[Int], v:Int) {
 
@@ -40,11 +39,12 @@ case class LabelSystem(labelsToNbLabels:Array[Int], vehicleToLabels:Int => Array
 
 case class MagicBooleanLabelArray(ls:LabelSystem){
 
-  var nbLabelDimensions = ls.nbLabelDimensions
-  val labelDimensionToOffset = ls.labelDimensionToOffset
-  val totalLabels = ls.totalLabels
+  val nbLabelDimensions:Int = ls.nbLabelDimensions
+  private val labelDimensionToOffset:Array[Int] = ls.labelDimensionToOffset
+  val totalLabels:Int = ls.totalLabels
 
   private val isOffsetLabelMarked = MagicBoolArray(totalLabels,false)
+  private val vehicleHasAnyMarkedLabelCache = MagicBoolArray(ls.v,false)
 
   def setAllLabelsOf(vehicle:Int): Unit ={
     val idToValue = ls.vehicleToLabels(vehicle)
@@ -57,20 +57,28 @@ case class MagicBooleanLabelArray(ls:LabelSystem){
       }
     }
   }
+
   def hasAnyMarkedLabel(vehicle:Int):Boolean = {
+    if(vehicleHasAnyMarkedLabelCache(vehicle)) return true
     val idToValue = ls.vehicleToLabels(vehicle)
     var l = nbLabelDimensions
     while(l != 0){
       l = l-1
       val labelForDimension = idToValue(l)
       if(labelForDimension >= 0) {
-        if (isOffsetLabelMarked(idToValue(l) + labelDimensionToOffset(l))) return true
+        if (isOffsetLabelMarked(idToValue(l) + labelDimensionToOffset(l))){
+          vehicleHasAnyMarkedLabelCache(vehicle) = true
+          return true
+        }
       }
     }
     false
   }
 
   def clearAll(): Unit ={
+    vehicleHasAnyMarkedLabelCache.all = false
     isOffsetLabelMarked.all = false
   }
 }
+
+
