@@ -21,10 +21,9 @@
  *         by Renaud De Landtsheer
  ******************************************************************************/
 
-package oscar.examples.cbls.scheduling
+package oscar.examples.cbls.old.scheduling
 
 import oscar.cbls._
-import oscar.cbls.business.scheduling._
 import oscar.cbls.business.scheduling.model._
 import oscar.cbls.business.scheduling.model.CumulativeResource
 import oscar.cbls.business.scheduling.solver.IFlatIRelax
@@ -34,7 +33,7 @@ import oscar.cbls.business.scheduling.solver.IFlatIRelax
  * he needs to sleep 2H, eat 30', chew 45' and think 3H
  * he cannot sleep before having eaten
  */
-object Reagan extends App {
+object ReaganPray extends App {
   val model = new Store(verbose=false, checker = None, noCycle=false, topologicalSort = false)
 
   val planning = new Planning(model, 50)
@@ -59,10 +58,10 @@ object Reagan extends App {
   val Drink = Activity(3, planning, "drink")
   Drink uses 3 ofResource Reagan
 
-//  val Pray = NonMoveableActivity(5, 2, planning, "pray")
-//  Pray uses 2 ofResource Reagan
+  val Pray = NonMoveableActivity(5, 2, planning, "pray")
+  Pray uses 2 ofResource Reagan
 
-  val Digest:Activity = SuperActivity(Eat, Sleep, "digest")
+  val Digest = SuperActivity(Eat, Sleep, "digest")
   Digest uses 1 ofResource Reagan
 
   Think precedes Drink
@@ -73,10 +72,25 @@ object Reagan extends App {
 
   val solver = new IFlatIRelax(planning)
 
-  solver.solve(maxIt = 20, stable = 10)
+  solver.solve(maxIt = 100, stable = 50)
 
   println(planning.toAsciiArt)
   println(planning.resourceUsage)
   println(planning.dependencies)
 
+  /*
+  digest              :[0   ;15  ] #=============#
+  eat                 :[0   ;2   ] ##
+  chew                :[2   ;5   ]   #=#
+  pray                :[5   ;7   ]      ##
+  think               :[7   ;19  ]        #==========#
+  sleep               :[7   ;15  ]        #======#
+  speak               :[19  ;22  ]                    #=#
+  drink               :[22  ;25  ]                       #=#
+  MakeSpan:=25
+
+  Reagan               |3        | ++   ++++++++++    ++++++
+                       |2        | +++++++++++++++    ++++++
+                       |1        | +++++++++++++++++++++++++
+  */
 }

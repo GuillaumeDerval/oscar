@@ -18,12 +18,12 @@
   *         by Gaël Thouvenin
   ******************************************************************************/
 
-package oscar.examples.cbls
+package oscar.examples.cbls.old
 
 import oscar.cbls._
+import oscar.cbls.lib.constraint.{EQ, Exactly}
 import oscar.cbls.lib.invariant.logic.SelectLESetQueue
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.constraint.{EQ, Exactly}
 import oscar.cbls.modeling.CBLSModel
 import oscar.cbls.util.StopWatch
 
