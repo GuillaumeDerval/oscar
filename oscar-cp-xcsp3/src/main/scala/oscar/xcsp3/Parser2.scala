@@ -260,6 +260,10 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     _buildCrtWithCondition(id, Sum(list.zip(coeffs).map(i => varHashMap(i._1.id())*varHashMap(i._2.id()))), condition)
   }
 
+  override def buildCtrSum(id: String, trees: Array[XNodeParent[XVarInteger]], coeffs: Array[Int], condition: Condition): Unit = {
+    _buildCrtWithCondition(id, WeightedSum(trees.map(_recursiveIntentionBuilder), coeffs), condition)
+  }
+
   protected lazy val expr_cache: mutable.HashMap[String, IntExpression] = mutable.HashMap()
 
   def _recursiveIntentionBuilder[V <: IVar](node: XNode[V]): IntExpression = {

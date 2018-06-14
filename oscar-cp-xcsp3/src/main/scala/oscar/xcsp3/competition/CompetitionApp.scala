@@ -51,8 +51,8 @@ class CompetitionConf(args: Seq[String]){
 }
 
 abstract class CompetitionApp extends App{
-  final val tstart = System.nanoTime()
-  final val version = "2018-04-29"
+//  final val tstart = System.nanoTime()
+  final val version = "2018-06-14"
 
   //Setting up shutdown hook:
   Runtime.getRuntime.addShutdownHook(new Thread{
