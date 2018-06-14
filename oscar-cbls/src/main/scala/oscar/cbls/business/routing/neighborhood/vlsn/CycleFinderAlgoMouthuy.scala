@@ -67,7 +67,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
 
     val nodeID = node.nodeID
     if(isNodeOnPath(nodeID)){
-      return new PartialCycleFound(List.empty,node)
+      return PartialCycleFound(List.empty,node)
     }
     isNodeOnPath(nodeID) = true
 
@@ -117,7 +117,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
 
     markPathTo(node:Node,false) match{
       case f:CycleFound =>
-        return f
+        f
       case MarkingDone(duplicateLabels) if !duplicateLabels =>
         var outgoingEdges = node.outgoing
         while(outgoingEdges.nonEmpty){
@@ -146,9 +146,8 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
         }
 
         MarkingDone(true)
-      case x => {
+      case x =>
         MarkingDone(true)
-      }
     }
   }
 
@@ -169,9 +168,8 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
           return None
         case Some(nodeID) =>
           correctLabel(nodes(nodeID)) match{
-            case f:CycleFound => {
+            case f:CycleFound =>
               return Some(f)
-            }
             case _ => ;
           }
       }
@@ -188,7 +186,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
         case Some(c)  => return Some(c.cycle)
       }
     }
-    return None
+    None
   }
 }
 
