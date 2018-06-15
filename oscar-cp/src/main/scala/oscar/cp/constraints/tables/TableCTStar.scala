@@ -264,10 +264,11 @@ final class TableCTStar(X: Array[CPIntVar], table: Array[Array[Int]], star: Int 
    */
   @inline private def computeSupportsAndInitialFiltering(valids: ArrayBuffer[Int]): Unit = {
 
+
     var varIndex = variableValueSupports.length
     while (varIndex > 0) {
       varIndex -= 1
-      var valueIndex = variableValueSupports.length
+      var valueIndex = variableValueSupports(varIndex).length
       while (valueIndex > 0) {
         valueIndex -= 1
         variableValueSupports(varIndex)(valueIndex) = new validTuples.BitSet(List())
@@ -283,20 +284,29 @@ final class TableCTStar(X: Array[CPIntVar], table: Array[Array[Int]], star: Int 
       while (idx > 0){
         idx -= 1
         val value = T(tupleIndex)(idx)
-        if (value != _star)
+        if (value == _star) {
+          var valueIndex = variableValueSupports(idx).length
+          while (valueIndex > 0) {
+            valueIndex -= 1
+            variableValueSupports(idx)(valueIndex).set(validIndex)
+          }
+        } else {
           variableValueSupportsRM(idx)(value).set(validIndex)
-        variableValueSupports(idx)(value).set(validIndex)
+          variableValueSupports(idx)(value).set(validIndex)
+        }
       }
     }
 
     varIndex = variableValueSupports.length
     while (varIndex > 0) {
       varIndex -= 1
-      var valueIndex = variableValueSupports.length
+      var valueIndex = variableValueSupports(varIndex).length
       while (valueIndex > 0) {
         valueIndex -= 1
-        if (variableValueSupports(varIndex)(valueIndex).isEmpty)
+        if (variableValueSupports(varIndex)(valueIndex).isEmpty) {
           x(varIndex).removeValue(valueIndex)
+          variableValueSupports(varIndex)(valueIndex) = null
+        }
       }
     }
   }
