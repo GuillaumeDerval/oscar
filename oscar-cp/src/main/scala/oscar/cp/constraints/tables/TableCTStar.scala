@@ -264,36 +264,39 @@ final class TableCTStar(X: Array[CPIntVar], table: Array[Array[Int]], star: Int 
    */
   @inline private def computeSupportsAndInitialFiltering(valids: ArrayBuffer[Int]): Unit = {
 
-    val varValueSupports = Array.tabulate(x.length)(i => Array.tabulate(spans(i))(v => new ArrayBuffer[Int]()))
-    val varValueSupportsStar = Array.fill(x.length)(new ArrayBuffer[Int]())
-
-    /* Collect the supports */
-    var validIndex = 0
-    while (validIndex < valids.length) {
-      val tupleIndex = valids(validIndex)
-      var varIndex = 0
-      while (varIndex < arity) {
-        val value = T(tupleIndex)(varIndex)
-        if (value == _star)
-          varValueSupportsStar(varIndex) += tupleIndex
-        else
-          varValueSupports(varIndex)(value) += tupleIndex
-        varIndex += 1
+    var varIndex = variableValueSupports.length
+    while (varIndex > 0) {
+      varIndex -= 1
+      var valueIndex = variableValueSupports.length
+      while (valueIndex > 0) {
+        valueIndex -= 1
+        variableValueSupports(varIndex)(valueIndex) = new validTuples.BitSet(List())
+        variableValueSupportsRM(varIndex)(valueIndex) = new validTuples.BitSet(List())
       }
-      validIndex += 1
     }
 
-    /* Create the final support bitSets and remove any value that is not supported */
-    for {
-      varIndex <- variableValueSupports.indices
-      valueIndex <- variableValueSupports(varIndex).indices
-    } {
-      if (varValueSupports(varIndex)(valueIndex).size + varValueSupportsStar(varIndex).size > 0) {
-        variableValueSupports(varIndex)(valueIndex) = new validTuples.BitSet(varValueSupports(varIndex)(valueIndex) ++ varValueSupportsStar(varIndex))
-        variableValueSupportsRM(varIndex)(valueIndex) = new validTuples.BitSet(varValueSupports(varIndex)(valueIndex))
-      } else {
-        /* This variable-value does not have any support, it can be removed */
-        x(varIndex).removeValue(valueIndex)
+    var validIndex = valids.length
+    while (validIndex > 0){
+      validIndex -= 1
+      val tupleIndex = valids(validIndex)
+      var idx = arity
+      while (idx > 0){
+        idx -= 1
+        val value = T(tupleIndex)(idx)
+        if (value != _star)
+          variableValueSupportsRM(idx)(value).set(validIndex)
+        variableValueSupports(idx)(value).set(validIndex)
+      }
+    }
+
+    varIndex = variableValueSupports.length
+    while (varIndex > 0) {
+      varIndex -= 1
+      var valueIndex = variableValueSupports.length
+      while (valueIndex > 0) {
+        valueIndex -= 1
+        if (variableValueSupports(varIndex)(valueIndex).isEmpty)
+          x(varIndex).removeValue(valueIndex)
       }
     }
   }
