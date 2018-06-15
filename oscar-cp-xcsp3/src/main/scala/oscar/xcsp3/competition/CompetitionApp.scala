@@ -52,7 +52,7 @@ class CompetitionConf(args: Seq[String]){
 
 abstract class CompetitionApp extends App{
   final val tstart = System.nanoTime()
-  final val version = "2018-06-14"
+  final val version = "2018-06-15"
 
   //Setting up shutdown hook:
   Runtime.getRuntime.addShutdownHook(new Thread{
@@ -79,6 +79,7 @@ abstract class CompetitionApp extends App{
   }catch{
     case e: Exception =>
       printDiagnostic("EXCEPTION", e.getMessage)
+      printComment(e.getClass.getName)
       printComment(e.getStackTrace.mkString("\n"))
       if(!statusPrinted) printStatus()
       Console.flush()
