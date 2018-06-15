@@ -107,19 +107,21 @@ abstract class CompetitionApp extends App{
   //Sol should be a valid instantiation (see rules)
   def printSolution(): Unit = {
     if(currentSol.nonEmpty) {
-      val solutionChecker = new SolutionChecker(true, conf.benchname(), new ByteArrayInputStream(("s " + status + "\nv " + currentSol.split("\\r?\\n").mkString("\nv ")).getBytes))
-      if(solutionChecker.violatedCtrs.isEmpty && solutionChecker.invalidObjs.isEmpty){
+//      val solutionChecker = new SolutionChecker(true, conf.benchname(), new ByteArrayInputStream(("s " + status + "\nv " + currentSol.split("\\r?\\n").mkString("\nv ")).getBytes))
+//      if(solutionChecker.violatedCtrs.isEmpty && solutionChecker.invalidObjs.isEmpty){
 //        println(tElapsed + " s " + status)
         println("s " + status)
 //        println(tElapsed + " v " + currentSol.split("\\r?\\n").mkString("\n" + tElapsed + " v "))
         println("v " + currentSol.split("\\r?\\n").mkString("\nv "))
-      }
-      else{
-        printDiagnostic("SOL_NOT_VALID")
-        printComment(currentSol)
+//      }
+//      else{
+//        printDiagnostic("SOL_NOT_VALID")
+//        solutionChecker.violatedCtrs.stream().forEach(printComment)
+//        solutionChecker.invalidObjs.stream().forEach(printComment)
+//        printComment(currentSol)
 //        println(tElapsed + " s " + "UNKNOWN")
-        println("s " + "UNKNOWN")
-      }
+//        println("s " + "UNKNOWN")
+//      }
     }
   }
 
