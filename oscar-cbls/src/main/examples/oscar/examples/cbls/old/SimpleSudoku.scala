@@ -19,7 +19,7 @@
  ******************************************************************************/
 
 
-package oscar.examples.cbls
+package oscar.examples.cbls.old
 
 import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.ConstraintSystem
