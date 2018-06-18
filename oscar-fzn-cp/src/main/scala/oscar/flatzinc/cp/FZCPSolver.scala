@@ -74,6 +74,8 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
   def createVariables(){
     for(v <- model.variables){
       dictVars(v.id) = v match{
+        case bv:BooleanVariable if bv.isTrue => CPBoolVar(true)
+        case bv:BooleanVariable if bv.isFalse => CPBoolVar(false)
         case bv:BooleanVariable => CPBoolVar()
         case iv:IntegerVariable => iv.domain match{
           case FzDomainRange(min, max) => CPIntVar(min, max)
