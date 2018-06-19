@@ -32,30 +32,31 @@ object TimeWindowHelper{
     * @param vrp The vehicle routing problem
     * @param timeExtension The timeExtension model
     * @param timeMatrix The time matrix
-    * @param parallelTasks whether or not the task can be made in parallel.
-    *                      If it's the case and the nodes are at the same place and time,
-    *                      the max between the two tasks is taken
+    * @param parallelizeNodes whether or not the nodes are allowed to be made in parallel.
+    *                      If it's the case and the nodes are parallelisable (same place and with overlapping time windows),
+    *
     * @return true if the node is relevant
     */
   def relevantPredecessorsOfNodes(vrp: VRP,
                                   timeExtension: TimeWindow,
                                   timeMatrix: TTFMatrix,
-                                  parallelTasks: Boolean = true): Map[Int,HashSet[Int]] = {
+                                  parallelizeNodes: Boolean = true): Map[Int,HashSet[Int]] = {
     val earlylines = timeExtension.earlylines
     val deadlines = timeExtension.deadlines
     val taskDurations = timeExtension.taskDurations
 
-    def samePlaceAndTime(predecessor: Int, node: Int): Boolean = {
-      parallelTasks &&
-      earlylines(predecessor) == earlylines(node) &&
+    def areNodesParallelisable(predecessor: Int, node: Int): Boolean = {
+      parallelizeNodes &&
+      deadlines(predecessor) > earlylines(node) &&
       timeMatrix.getTravelDuration(predecessor, earlylines(predecessor) + taskDurations(predecessor), node) == 0
     }
 
     Array.tabulate(vrp.n)(node => node -> HashSet(vrp.nodes.collect {
-      case predecessor if samePlaceAndTime(predecessor,node) &&
-          (earlylines(predecessor) + Math.max(taskDurations(predecessor), taskDurations(node)) <= deadlines(node)) &&
+      case predecessor if areNodesParallelisable(predecessor,node) &&
+          (Math.max(earlylines(predecessor) + taskDurations(predecessor),
+            earlylines(node) + taskDurations(node)) <= deadlines(node)) &&
           predecessor != node => predecessor
-      case predecessor if !samePlaceAndTime(predecessor,node) &&
+      case predecessor if !areNodesParallelisable(predecessor,node) &&
         (earlylines(predecessor) +
           taskDurations(predecessor) +
           timeMatrix.getTravelDuration(predecessor, earlylines(predecessor) + taskDurations(predecessor), node) +
