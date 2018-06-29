@@ -324,6 +324,7 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
         math.min(
           math.min(otherEnd + otherMargin - curStart,curEnd + curMargin - otherStart),
           math.min(curDuration + curMargin,otherDuration + otherMargin)))
+
       violationVarsArray(taskID) :+= overlap
       violationVarsArray(otherTaskID) :+= overlap
       violationVar :+= overlap
@@ -376,9 +377,17 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
       val curMargin = marginMatrix(taskID)(otherTaskID)
       val otherMargin = marginMatrix(otherTaskID)(taskID)
 
-      val oldOverlap = math.max(0,math.min(otherEnd + otherMargin,oldEnd + curMargin)-math.max(otherStart, oldStart))
-      val newOverlap = math.max(0,math.min(otherEnd + otherMargin,newEnd + curMargin)-math.max(otherStart, newStart))
+      // We need to update the margin :
+      // If the route of taskID was empty before, the oldMargin is 0 ELSE curMargin
+      // If the route of taskID is empty now, the newMargin is 0 ELSE curMargin
+      // Otherwhise we compare with a route that only contain the margin, which make no sense
+      val oldCurMargin = if(oldEnd == oldStart) 0 else curMargin
+      val newCurMargin = if(newEnd == newStart) 0 else curMargin
+
+      val oldOverlap = math.max(0,math.min(otherEnd + otherMargin,oldEnd + oldCurMargin)-math.max(otherStart, oldStart))
+      val newOverlap = math.max(0,math.min(otherEnd + otherMargin,newEnd + newCurMargin)-math.max(otherStart, newStart))
       val deltaViolation = newOverlap - oldOverlap
+
       if(deltaViolation !=0) {
         violationVarsArray(taskID) :+= deltaViolation
         violationVarsArray(otherTaskID) :+= deltaViolation
@@ -398,12 +407,12 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
     var violationFromScratch = 0
     val violationArrayFromScratch = Array.fill(nbTask)(0)
 
-    for(taskID <- taskIndices){
+    for(taskID <- taskIndices if duration(taskID).value > 0){
       val curStart = start(taskID).value
       val curDuration = duration(taskID).value
       val curEnd = curStart + curDuration
 
-      for(otherTaskID <- taskIndices if taskID < otherTaskID){
+      for(otherTaskID <- taskIndices if taskID < otherTaskID && duration(otherTaskID).value > 0){
         val otherStart = start(otherTaskID).value
         val otherDuration = duration(otherTaskID).value
         val otherEnd = otherStart + otherDuration
@@ -421,10 +430,13 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
       }
     }
 
-    c.check(violation.value == violationFromScratch)
+    c.check(violation.value == violationFromScratch,
+      Some("Violation value should be " + violationFromScratch + ", instead of " + violation.value))
     for(t <- taskIndices){
-      c.check(violation(start(t)).value == violationArrayFromScratch(t))
-      c.check(violation(duration(t)).value == violationArrayFromScratch(t))
+      c.check(violation(start(t)).value == violationArrayFromScratch(t),
+        Some("Violation (start) for taskID " + t + " : "  + violation(start(t)) + " doesn't equal " + violationArrayFromScratch(t)))
+      c.check(violation(duration(t)).value == violationArrayFromScratch(t),
+        Some("Violation (duration) for taskID " + t + " : "  + violation(duration(t)) + " doesn't equal " + violationArrayFromScratch(t)))
     }
 
     val nonZeroTasksFromScratch = SortedSet.empty[Int] ++ taskIndices.filter(i => duration(i).value != 0)
