@@ -325,6 +325,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeExpr.MUL =>
         Prod(tree.sons.map(_recursiveIntentionBuilder))
       case TypeExpr.IFF =>
+        // push (a === b), (b === c), ...
         val csts = tree.sons.map(_recursiveIntentionBuilder).foldLeft((List[BoolExpression](), null: IntExpression))((cur, next) => {
           if(cur._2 == null) (List[BoolExpression](), next)
           else ((cur._2 === next) :: cur._1, next)
@@ -340,7 +341,22 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeExpr.SQR => ??? //1
       case TypeExpr.POW => ??? //2
       case TypeExpr.SET => ??? //0, Integer.MAX_VALUE
-      case TypeExpr.IF => ??? //3
+      case TypeExpr.IF => //Actually a ifThenElse!
+        //Parsing sons:
+        val cond = _recursiveIntentionBuilder(tree.sons(0))
+        val thenMember = _recursiveIntentionBuilder(tree.sons(1))
+        val elseMember = _recursiveIntentionBuilder(tree.sons(2))
+
+        //Building temp var:
+        val tempVar = IntVar(thenMember.values().toSet ++ elseMember.values().toSet, "")
+
+        //Linking expression:
+//        modelDeclaration.add(cond.asInstanceOf[BoolExpression] ==> (tempVar === thenMember))
+//        modelDeclaration.add((!cond).asInstanceOf[BoolExpression] ==> (tempVar === elseMember))
+        val array = Array(elseMember, thenMember)
+        modelDeclaration.add(array(cond) === tempVar)
+
+        tempVar
       case TypeExpr.CARD => ??? //1
       case TypeExpr.UNION => ??? //2, Integer.MAX_VALUE
       case TypeExpr.INTER => ??? //2, Integer.MAX_VALUE
