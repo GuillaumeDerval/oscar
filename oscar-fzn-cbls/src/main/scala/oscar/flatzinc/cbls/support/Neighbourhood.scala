@@ -843,8 +843,8 @@ class Inverse(xs: Array[CBLSIntVar], invXs: Array[CBLSIntVar], objective: CBLSOb
               System.exit(-1)
             case i:CBLSIntVar => i := v
           }
-        }else{
-          println("% Something is wrong")
+        }else if(k.isDefined){
+          println("% Something is wrong, " + k.id + " is defined: " + k.isDefined)
         }
       }
     }else{
