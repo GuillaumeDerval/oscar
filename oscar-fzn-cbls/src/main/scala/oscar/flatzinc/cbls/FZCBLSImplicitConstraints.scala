@@ -52,7 +52,7 @@ class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
 
 
     def tryAllDiff(xs: Array[IntegerVariable]):Boolean = {
-      if(allOK(xs)){
+      if(allOK(xs,true)){
         val vars = xs.map(cblsmodel.getCBLSVar(_))
         cblsmodel.addNeighbourhood((o,c) => new AllDifferent(vars, o,c),vars)
         true
