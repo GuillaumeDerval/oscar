@@ -80,6 +80,9 @@ object OscarBuild extends Build {
     val scallop = "org.rogach" % "scallop_2.11" % "1.0.0"
     val jxmapviewer2 = "org.jxmapviewer" % "jxmapviewer2" % "2.2"
 
+    // ScalaFX
+    val scalafx = "org.scalafx" %% "scalafx" % "8.0.144-R12"
+
     // Akka
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.5.6"
     val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.5.6"
@@ -130,7 +133,7 @@ object OscarBuild extends Build {
         unidocSettings ++
         Seq(libraryDependencies ++= testDeps) :+
         (unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(oscarFzn, oscarFznCbls, oscarFznCp, oscarPerf)),
-    aggregate = Seq(oscarAlgebra, oscarAlgo, oscarCbls, oscarCp, oscarCPXcsp3, oscarPerf, oscarModeling, oscarDfo, oscarUtil, oscarVisual, oscarFzn, oscarFznCbls, oscarFznCp, oscarDes, oscarInvariants)
+    aggregate = Seq(oscarAlgebra, oscarAlgo, oscarCbls, oscarCp, oscarCPXcsp3, oscarPerf, oscarModeling, oscarDfo, oscarUtil, oscarVisual, oscarVisualFX, oscarFzn, oscarFznCbls, oscarFznCp, oscarDes, oscarInvariants)
   )
 
   lazy val oscarAlgebra = Project(
@@ -283,5 +286,13 @@ object OscarBuild extends Build {
       commonSettings ++
         Seq(libraryDependencies ++= testDeps :+ jfreechart :+ swingx :+ swingxWs),
     dependencies = Seq(oscarUtil)
+  )
+
+  lazy val oscarVisualFX = Project(
+    id = "oscar-visualfx",
+    base = file("oscar-visualfx"),
+    settings =
+      commonSettings ++
+        Seq(libraryDependencies ++= testDeps :+ scalafx)
   )
 }
