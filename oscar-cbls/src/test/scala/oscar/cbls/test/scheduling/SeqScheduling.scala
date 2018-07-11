@@ -32,12 +32,12 @@ object SeqScheduling {
     schModel.numActivities
   )
   schModel.addResource(res1)
-  // Resource usages
 
   // Precedences
   schModel.addPrecedenceActivities(a, c)
   schModel.addPrecedenceActivities(c, e)
-  //schModel.addPrecedenceActivities(e, a)
+
+  // Resource usages
   schModel.addUsageResourceActivity(a, res0, 2, rm1)
   schModel.addUsageResourceActivity(b, res0, 1, rm1)
   schModel.addUsageResourceActivity(c, res0, 1, rm1)
