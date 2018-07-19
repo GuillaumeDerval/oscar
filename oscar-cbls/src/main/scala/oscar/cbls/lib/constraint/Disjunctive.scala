@@ -259,16 +259,19 @@ case class Disjunctive(start: Array[IntValue],
 
 
 /**
-  * Implement the Disjunctive constraint with margins when transitioning from one task to the other one
+  * Implement the Disjunctive constraint with margins when transitioning from one task to the other one.
+  * if tasks have a duration of zero, they can overlap in time
+  * we do not consider margins around tasks with zero duration
   * @param start: the start time of each task
   * @param duration: the duration of each task
   * @param marginMatrix: a matrix from task to other task to margin to have between the end of the first task and the start of the other task
   * @author Renaud De Landtsheer
+  *
   */
-@deprecated("this is experimental and must be tested","")
 case class DisjunctiveWithTransitions(start: Array[IntValue],
                                       duration: Array[IntValue],
-                                      marginMatrix:Array[Array[Int]]) extends Invariant with Constraint with IntNotificationTarget{
+                                      marginMatrix:Array[Array[Int]],
+                                      ignoreZeroDurationTasks:Boolean = true) extends Invariant with Constraint with IntNotificationTarget{
 
   require(start.length == duration.length,"start and duration array do not have the same size?!")
   require(start.length == marginMatrix.length,"start and margin array do not have the same size?!")
