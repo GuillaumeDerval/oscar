@@ -486,6 +486,20 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
     propagating = false
   }
 
+  /**
+    * this method performs a check on the whole model.
+    * it first ensures that there is nothing to propagate
+    * @param c
+    */
+  def performCheck(c:Checker): Unit ={
+    if(postponedElements != null || scheduledElements != null) {
+      propagateOnTrack(null, false)
+    }
+    for (p <- getPropagationElements) {
+      p.checkInternals(c)
+    }
+  }
+
   /**this method is used by propagationComponents to schedule themselves for propagation. */
   def scheduleForPropagation(p: PropagationElement) {
     scheduledElements = QList(p, scheduledElements)
