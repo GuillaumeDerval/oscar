@@ -1,4 +1,4 @@
-package oscar.visualfx
+package oscar.visualfx.util
 
 import java.io.File
 

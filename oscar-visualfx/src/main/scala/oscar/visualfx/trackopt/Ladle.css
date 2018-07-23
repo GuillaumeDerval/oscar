@@ -1,0 +1,20 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,400i,900');
+
+.root {
+    -fx-background-insets: 1;
+    -fx-background-color: linear-gradient(to bottom, #ff6600 0%, #cc3300 100%);
+    -fx-background-radius: 0 0 10 10;
+    -fx-border-color: transparent black black black;
+    -fx-border-insets: -4 0 0 0;
+    -fx-border-radius: 0 0 10 10;
+    -fx-border-width: 3;
+    -fx-effect: dropshadow( three-pass-box , black , 5 , 0 , 0 , 0 );
+}
+
+.tooltip {
+    -fx-font-family: 'Roboto', sans-serif;
+    -fx-font-size: 12px;
+    -fx-font-style: italic;
+    -fx-background-radius: 0 5 0 5;
+    -fx-background-color: #ffb566;
+}

@@ -2,6 +2,7 @@ package oscar.visualfx
 
 import javafx.scene.SnapshotParameters
 import javax.imageio.ImageIO
+import oscar.visualfx.util.FileManager
 import scalafx.Includes._
 import scalafx.application.JFXApp
 import scalafx.application.JFXApp._
@@ -14,16 +15,14 @@ import scalafx.scene.text._
 import scalafx.scene.{Node, Scene}
 import scalafx.stage.Screen
 
-
-
-class VisualFrameScalaFX(Title: String) extends PrimaryStage {
+class VisualFrameScalaFX(_title: String) extends PrimaryStage {
 
   val button = new Button("Save as PNG")
 
   val rectangle2D = Screen.primary.visualBounds
 
   val stage = new PrimaryStage {
-    title = Title
+    title = _title
     centerOnScreen()
   }
 
@@ -40,7 +39,9 @@ class VisualFrameScalaFX(Title: String) extends PrimaryStage {
   borderPane.getStyleClass.add("borderPane")
   stage.scene = new Scene(borderPane)
   stage.sizeToScene()
-  stage.getScene.getStylesheets.add(getClass.getResource("main.css").toExternalForm)
+  stage.getScene.getStylesheets.add(getClass.getResource("css/main.css").toExternalForm)
+  this.borderPane.minHeightProperty().bind(this.minHeightProperty())
+  this.borderPane.minWidthProperty().bind(this.minWidthProperty())
 
   stage.resizable = true
 
@@ -48,10 +49,6 @@ class VisualFrameScalaFX(Title: String) extends PrimaryStage {
     alignment = Pos.BottomRight
     children = Seq(button)
   }
-
-  stage.scene.getValue.getRoot.getStylesheets.clear()
-  stage.scene.getValue.getRoot.getStylesheets.add(getClass.getResource("plot/style.css").toExternalForm)
-  stage.scene.getValue.getRoot.getStyleClass.add("root")
 
   borderPane.bottom = bottomHBox
 
@@ -88,6 +85,7 @@ class VisualFrameScalaFX(Title: String) extends PrimaryStage {
 
   def showStage() {
     stage.show()
+    println(Thread.currentThread().getName + " " + Thread.currentThread().getId)
   }
 
   stage.getScene.content.onChange({
@@ -97,6 +95,6 @@ class VisualFrameScalaFX(Title: String) extends PrimaryStage {
 }
 
 object VisualFrameScalaFXExamples extends JFXApp {
-  val visualApp = new VisualFrameScalaFX("title")
+  val visualApp = new VisualFrameScalaFX("")
   visualApp.showStage()
 }

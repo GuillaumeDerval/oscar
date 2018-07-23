@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,400i,900');
+
+
+.root {
+    -fx-background-color: #001a33;
+    -fx-background-radius: 10;
+}
+
+.tooltip {
+    -fx-font-family: 'Roboto', sans-serif;
+    -fx-font-size: 12px;
+    -fx-font-style: italic;
+    -fx-background-radius: 0 5 0 5;
+    -fx-background-color: #001a33;
+}

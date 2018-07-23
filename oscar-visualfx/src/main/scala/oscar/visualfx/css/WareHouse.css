@@ -1,0 +1,20 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,400i,900');
+
+.openWarehouse {
+    -fx-background-color: #33cc33;
+    -fx-background-radius: 1;
+    -fx-effect: dropshadow( three-pass-box , black , 3 , 0 , 0 , 0 );
+}
+
+.closedWarehouse {
+    -fx-background-color: #ff3300;
+    -fx-background-radius: 1;
+}
+
+.tooltip {
+    -fx-font-family: 'Roboto', sans-serif;
+    -fx-font-size: 12px;
+    -fx-font-style: italic;
+    -fx-background-radius: 0 5 0 5;
+    -fx-background-color: #ffb566;
+}

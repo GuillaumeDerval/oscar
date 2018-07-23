@@ -12,7 +12,7 @@ object Geocoder {
   val KEY: String = "xyz"
 
   def getLocation(address: String): Location = {
-    val input = new BufferedReader(new InputStreamReader (new URL ("http://maps.google.com/maps/geo?q="+URLEncoder.encode(address, ENCODING)+"&output=csv&key="+KEY).openStream ()))
+    val input = new BufferedReader(new InputStreamReader (new URL ("http://maps.google.com/maps/?q="+URLEncoder.encode(address, ENCODING)+"&output=csv&key="+KEY).openStream ()))
     var location: Location = null
     var statusCode = -1
     var line = input.readLine()

@@ -293,6 +293,7 @@ object OscarBuild extends Build {
     base = file("oscar-visualfx"),
     settings =
       commonSettings ++
-        Seq(libraryDependencies ++= testDeps :+ scalafx)
+        Seq(libraryDependencies ++= testDeps :+ scalafx),
+    dependencies = Seq(oscarCbls)
   )
 }

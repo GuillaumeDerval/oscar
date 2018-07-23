@@ -1,0 +1,37 @@
+
+
+.borderPane {
+    -fx-background-color: #e6f7ff;
+}
+
+.chart {
+    -fx-horizontal-grid-lines-visible: false;
+    -fx-horizontal-zero-line-visible: false;
+    -fx-vertical-grid-lines-visible: false;
+    -fx-vertical-zero-line-visible: false;
+    -fx-alternative-column-fill-visible: false;
+    -fx-alternative-row-fill-visible: false;
+}
+
+.chart-plot-background {
+    -fx-background-color: transparent;
+}
+
+.chart-vertical-zero-line {
+    -fx-fill: transparent;
+}
+
+.axis {
+    -fx-tick-mark-visible: false;
+    -fx-tick-labels-visible: false;
+}
+
+.default-color0.chart-symbol {
+    -fx-background-color: #ff3300;
+    -fx-background-radius: 1;
+}
+
+.default-color1.chart-symbol {
+    -fx-background-color: #001a33;
+    -fx-background-radius: 10;
+}

@@ -1,0 +1,29 @@
+
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,400i,900');
+
+.root {
+    -fx-padding: 10 0 10 10;
+    -fx-background-color: transparent;
+    -fx-alignment: top-center;
+}
+
+.rightHBox {
+    -fx-alignment: center-left;
+
+}
+
+.rightLabel {
+    -fx-font-weight: 900;
+
+}
+
+.rightState {
+    -fx-font-weight: 400;
+
+}
+
+.labelTitle {
+    -fx-alignment: center;
+    -fx-text-alignment: center;
+    -fx-font-weight: 900;
+}

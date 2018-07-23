@@ -1,0 +1,37 @@
+
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,400i,900');
+
+.root {
+    -fx-background-color: white;
+    -fx-background-radius: 10 10 10 10;
+    -fx-background-insets: 10 0 10 0;
+    -fx-border-color: transparent #ffcc99 transparent #ffcc99;
+    -fx-border-style: none solid none solid;
+    -fx-border-radius: 10;
+    -fx-border-insets: 10 0 10 0;
+    -fx-border-width: 0 4 0 4;
+}
+
+.slider {
+    -fx-major-tick-unit: 10;
+    -fx-minor-tick-count: 0;
+    -fx-min-width: 500;
+}
+
+.hBox {
+    -fx-alignment: center-right;
+}
+
+.textLeft {
+    -fx-font-family: 'Roboto', sans-serif;
+    -fx-font-size: 14px;
+    -fx-font-weight: 900;
+}
+
+.textRight {
+    -fx-font-family: 'Roboto', sans-serif;
+    -fx-font-size: 14px;
+    -fx-font-weight: 900;
+    -fx-alignment: center-left;
+    -fx-min-width: 40;
+}
