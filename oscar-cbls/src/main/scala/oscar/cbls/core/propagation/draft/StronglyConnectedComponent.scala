@@ -75,7 +75,7 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
       require(nextWaitingDependency.to == to)
       nextWaitingDependency.injector2 = injector
 
-      if(from.layer >= to.layer){
+      if(from.positionInTopologicalSort >= to.positionInTopologicalSort){
         //the DAG does not obey this precedence, so we store it for later injection
         //since injecting dependencies might cause DAG to be cyclic, temporarily
         //as invariants generlly add and remove their dependencies in a non-ordered fashion

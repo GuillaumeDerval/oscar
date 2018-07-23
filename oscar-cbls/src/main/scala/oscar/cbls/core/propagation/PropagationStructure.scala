@@ -170,7 +170,7 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
     //this performs the sort on Propagation Elements that do not belong to a strongly connected component,
     // plus the strongly connected components, considered as a single node. */
     val layerCount = computePositionsThroughDistanceToInput(ClusteredPropagationComponents) + 1
-    executionQueue = new AggregatedBinomialHeapQList[PropagationElement](p => p.position, layerCount)
+    executionQueue = new AggregatedBinomialHeapQList[PropagationElement](p => p.positionInTopologicalSort, layerCount)
 
     propagating = false
     previousPropagationTrack = null
@@ -194,12 +194,12 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
 
   /**This computes the position of the clustered PE, that is: the SCC and the PE not belonging to an SCC*/
   private def computePositionsThroughTopologicalSort(ClusteredPropagationComponents: List[PropagationElement]) {
-    var front: List[PropagationElement] = ClusteredPropagationComponents.filter(n => { n.setCounterToPrecedingCount(); n.position == 0 })
+    var front: List[PropagationElement] = ClusteredPropagationComponents.filter(n => { n.setCounterToPrecedingCount(); n.positionInTopologicalSort == 0 })
     var position = 0 //la position du prochain noeud place.
     while (!front.isEmpty) {
       val n = front.head
       front = front.tail
-      n.position = position
+      n.positionInTopologicalSort = position
       position += 1
       front = n.decrementSucceedingAndAccumulateFront(front)
     }
@@ -221,7 +221,7 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
     val front: DoublyLinkedList[PropagationElement] = new DoublyLinkedList[PropagationElement]()
     for (pe <- ClusteredPropagationComponents) {
       pe.setCounterToPrecedingCount()
-      if (pe.position == 0) front.enqueue(pe)
+      if (pe.positionInTopologicalSort == 0) front.enqueue(pe)
     }
     front.enqueue(null) //null marker denotes when Position counter must be incremented
     var position = 0 //la position du prochain noeud place.
@@ -247,7 +247,7 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
           front.enqueue(null) //null marker denotes when Position counter must be incremented
         }
       } else {
-        n.position = position
+        n.positionInTopologicalSort = position
         count += 1
         countInLayer += 0
         for (pe <- n.decrementSucceedingAndAccumulateFront(List.empty)) front.enqueue(pe)
@@ -450,9 +450,9 @@ abstract class PropagationStructure(val verbose: Boolean, debugMode:Boolean = fa
     while (!executionQueue.isEmpty) {
       val first = executionQueue.popFirst()
       first.propagate()
-      assert(first.position >= previousLayer, "single wave not enforced")
+      assert(first.positionInTopologicalSort >= previousLayer, "single wave not enforced")
       assert({
-        previousLayer = first.position; true
+        previousLayer = first.positionInTopologicalSort; true
       })
       while (scheduledElements != null) {
         val e = scheduledElements.head
@@ -642,7 +642,7 @@ class StronglyConnectedComponent(val propagationElements: Iterable[PropagationEl
   def dependencyAdded() {
     if (autoSort) {
       val waiting = newDependenciesToInject.head
-      if (waiting.from.position < waiting.to.position) {
+      if (waiting.from.positionInTopologicalSort < waiting.to.positionInTopologicalSort) {
         waiting.inject()
         notifyAddEdge(waiting.from, waiting.to)
         newDependenciesToInject = newDependenciesToInject.tail
@@ -650,7 +650,7 @@ class StronglyConnectedComponent(val propagationElements: Iterable[PropagationEl
     }
   }
 
-  val h: BinomialHeap[PropagationElement] = new BinomialHeap[PropagationElement](p => p.position, size)
+  val h: BinomialHeap[PropagationElement] = new BinomialHeap[PropagationElement](p => p.positionInTopologicalSort, size)
 
   override def performPropagation() {
     //setting autosort to true will not perform any operation unless it was set to false. This happens in two cases:
@@ -671,8 +671,8 @@ class StronglyConnectedComponent(val propagationElements: Iterable[PropagationEl
     while (!h.isEmpty) {
       val x = h.popFirst()
       x.propagate()
-      assert(x.position >= maxposition, "non monotonic propagation detected in SCC")
-      assert({ maxposition = x.position; true })
+      assert(x.positionInTopologicalSort >= maxposition, "non monotonic propagation detected in SCC")
+      assert({ maxposition = x.positionInTopologicalSort; true })
 
       var currentPos = scheduledElements
       while (currentPos != null) {
@@ -698,8 +698,8 @@ class StronglyConnectedComponent(val propagationElements: Iterable[PropagationEl
   }
 
   override def setCounterToPrecedingCount(): Boolean = {
-    position = propagationElements.count(p => p.setCounterToPrecedingCount())
-    position != 0
+    positionInTopologicalSort = propagationElements.count(p => p.setCounterToPrecedingCount())
+    positionInTopologicalSort != 0
   }
 
   override private[core] def rescheduleIfScheduled() {}
@@ -924,8 +924,8 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
   }
 
   final def decrementAndAccumulateFront(acc: List[PropagationElement]): List[PropagationElement] = {
-    position -= 1
-    if (position == 0) {
+    positionInTopologicalSort -= 1
+    if (positionInTopologicalSort == 0) {
       //faut pusher qqchose
       mySchedulingHandler match {
         case scc: StronglyConnectedComponent =>
@@ -946,11 +946,11 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
     //le compteur est mis au nombre de noeud precedent qui ne sont pas dans la meme composante connexe
     mySchedulingHandler match {
       case scc: StronglyConnectedComponent =>
-        position = this.getStaticallyListenedElements.count(p => p.schedulingHandler != scc && p.schedulingHandler != null)
+        positionInTopologicalSort = this.getStaticallyListenedElements.count(p => p.schedulingHandler != scc && p.schedulingHandler != null)
       case ps: PropagationStructure =>
-        position = this.getStaticallyListenedElements.count(p => p.schedulingHandler != null)
+        positionInTopologicalSort = this.getStaticallyListenedElements.count(p => p.schedulingHandler != null)
     }
-    position != 0
+    positionInTopologicalSort != 0
   }
 
   /**to invoque to force inclusion of the propagation element in the current or next propagation wave. */

@@ -31,8 +31,9 @@ import scala.collection.immutable.SortedSet
   */
 trait DAGNode extends Ordered[DAGNode]{
 
-  /**the position in the topological sort*/
-  var position: Int = 0
+  /**the position in the topological sort; maintained by the topological sort algorithms*/
+  def positionInTopologicalSort: Int
+  def positionInTopologicalSort_=(newValue:Int):Unit
 
   /**supposed to be false between each pass of the algorithm*/
   var visited: Boolean = false
@@ -43,7 +44,7 @@ trait DAGNode extends Ordered[DAGNode]{
     * if the Propagation Element is not mentioned in the propagation structure, such as for constants
     * yet is mentioned in the dependencies of registered propagation elements
     */
-  var uniqueID:Int
+  def uniqueID:Int
 
   protected[dag] def getDAGPrecedingNodes: Iterable[DAGNode]
 
@@ -75,12 +76,12 @@ trait DAG {
   def checkSort(){
     for (to <- nodes){
       for(from <- to.getDAGPrecedingNodes){
-        assert(from.position < to.position,"topological sort is wrong at " + from + "->" + to)
+        assert(from.positionInTopologicalSort < to.positionInTopologicalSort,"topological sort is wrong at " + from + "->" + to)
       }
     }
     for (from <- nodes){
       for(to <- from.getDAGSucceedingNodes){
-        assert(from.position < to.position,"topological sort is wrong at " + from + "->" + to)
+        assert(from.positionInTopologicalSort < to.positionInTopologicalSort,"topological sort is wrong at " + from + "->" + to)
       }
     }
   }
@@ -137,12 +138,12 @@ trait DAG {
     */
   def notifyAddEdge(from: DAGNode, to: DAGNode) {
 
-    if (AutoSort && (from.position > to.position)) {
+    if (AutoSort && (from.positionInTopologicalSort > to.positionInTopologicalSort)) {
       //refaire le sort
       //discovery
 
-      val SortedForwardRegion = findSortedForwardRegion(to, from.position)
-      val SortedBackwardsRegion = findSortedBackwardRegion(from, to.position)
+      val SortedForwardRegion = findSortedForwardRegion(to, from.positionInTopologicalSort)
+      val SortedBackwardsRegion = findSortedBackwardRegion(from, to.positionInTopologicalSort)
 
       //reassignment
 
@@ -206,7 +207,7 @@ trait DAG {
     var front: QList[DAGNode] = null
     nodes.foreach(n => {
       val pos = - n.getDAGPrecedingNodes.size
-      n.position = pos
+      n.positionInTopologicalSort = pos
       if(pos == 0) front = QList(n,front)
     })
 
@@ -214,11 +215,11 @@ trait DAG {
     while (front != null) {
       val n = front.head
       front = front.tail
-      n.position = position
+      n.positionInTopologicalSort = position
       position += 1
       n.getDAGSucceedingNodes.foreach(p => {
-        p.position +=1
-        if (p.position == 0) front = QList(p,front) //une stack, en fait, mais c'est insensitif, puis c'est plus rapide.
+        p.positionInTopologicalSort +=1
+        if (p.positionInTopologicalSort == 0) front = QList(p,front) //une stack, en fait, mais c'est insensitif, puis c'est plus rapide.
       })
     }
     if (position != nodes.size) {
@@ -226,14 +227,14 @@ trait DAG {
     }
   }
 
-  val HeapForRegionDiscovery:BinomialHeap[DAGNode] = new BinomialHeap((n:DAGNode) => n.position,nodes.size)
+  val HeapForRegionDiscovery:BinomialHeap[DAGNode] = new BinomialHeap((n:DAGNode) => n.positionInTopologicalSort,nodes.size)
 
   /**@return forward region, sorted by increasing position*/
   private def findSortedForwardRegion(n: DAGNode, ub: Int): QList[DAGNode] = {
 
     val h:BinomialHeap[DAGNode] = HeapForRegionDiscovery
     h.dropAll()
-    h.keyGetter = (n:DAGNode) => n.position
+    h.keyGetter = (n:DAGNode) => n.positionInTopologicalSort
 
     var toreturn:QList[DAGNode] = null
 
@@ -244,12 +245,12 @@ trait DAG {
       val first:DAGNode = h.popFirst()
       toreturn = QList(first,toreturn)
       first.getDAGSucceedingNodes.foreach((p:DAGNode) => {
-        if (p.position == ub) {
+        if (p.positionInTopologicalSort == ub) {
           toreturn.foreach(q => q.visited = false)
           h.foreach(q => q.visited = false)
           throw new CycleException(p)
         }
-        if (!p.visited && p.position < ub) {
+        if (!p.visited && p.positionInTopologicalSort < ub) {
           h.insert(p)
           p.visited = true
         }
@@ -263,7 +264,7 @@ trait DAG {
 
     val h:BinomialHeap[DAGNode] = HeapForRegionDiscovery
     h.dropAll()
-    h.keyGetter = (n:DAGNode) => -n.position
+    h.keyGetter = (n:DAGNode) => -n.positionInTopologicalSort
 
     var toreturn: QList[DAGNode] = null
 
@@ -275,7 +276,7 @@ trait DAG {
       toreturn = QList(first,toreturn)
 
       first.getDAGPrecedingNodes.foreach(p => {
-        if (!p.visited && p.position > lb) {
+        if (!p.visited && p.positionInTopologicalSort > lb) {
           h.insert(p)
           p.visited = true
         }
@@ -289,20 +290,20 @@ trait DAG {
     if (a == null && b == null){
       null
     }else if (a == null) {
-      QList(b.head.position, mergeNodeLists(a, b.tail))
+      QList(b.head.positionInTopologicalSort, mergeNodeLists(a, b.tail))
     } else if (b == null) {
-      QList(a.head.position,mergeNodeLists(a.tail, b))
-    } else if (a.head.position < b.head.position) {
-      QList(a.head.position,mergeNodeLists(a.tail, b))
+      QList(a.head.positionInTopologicalSort,mergeNodeLists(a.tail, b))
+    } else if (a.head.positionInTopologicalSort < b.head.positionInTopologicalSort) {
+      QList(a.head.positionInTopologicalSort,mergeNodeLists(a.tail, b))
     } else {
-      QList(b.head.position,mergeNodeLists(a, b.tail))
+      QList(b.head.positionInTopologicalSort,mergeNodeLists(a, b.tail))
     }
   }
 
   private def realloc(OrderedNodeForReinsertion: QList[DAGNode], FreePositionsToDistribute: QList[Int]):QList[Int] = {
     if (OrderedNodeForReinsertion != null) {
       OrderedNodeForReinsertion.head.visited = false
-      OrderedNodeForReinsertion.head.position = FreePositionsToDistribute.head
+      OrderedNodeForReinsertion.head.positionInTopologicalSort = FreePositionsToDistribute.head
       realloc(OrderedNodeForReinsertion.tail, FreePositionsToDistribute.tail)
     }else{
       FreePositionsToDistribute

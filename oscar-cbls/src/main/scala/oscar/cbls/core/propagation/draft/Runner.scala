@@ -33,9 +33,10 @@ abstract class Runner() {
   protected def doRun():Unit
 }
 
+//runs based on the position: smallest first
 class TotalOrderRunner(nbPe:Int) extends Runner(){
 
-  private [this] val h: BinomialHeap[PropagationElement] = new BinomialHeap[PropagationElement](p => p.layer, nbPe)
+  private [this] val h: BinomialHeap[PropagationElement] = new BinomialHeap[PropagationElement](p => p.positionInTopologicalSort, nbPe)
 
   @inline
   override protected def enqueuePE(pe: PropagationElement){

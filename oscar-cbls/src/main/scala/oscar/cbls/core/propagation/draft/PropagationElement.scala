@@ -48,7 +48,7 @@ trait VaryingListenedPE extends PropagationElement{
 
 abstract class PropagationElement() extends DAGNode with PseudoPropagationElement{
 
-  var uniqueID = -1 //DAG node already have this kind of stuff
+  override var uniqueID = -1 //DAG node already have this kind of stuff
   var isScheduled:Boolean = false
   var schedulingHandler:SimpleSchedulingHandler = null
   var model:PropagationStructure = null
@@ -58,6 +58,14 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
   def scc:StronglyConnectedComponent = myScc
 
   var layer:Int = -1
+
+  // //////////////////////////////////////////////////////////////////////
+  //in case it is included in a SCC
+
+  override def positionInTopologicalSort: Int = layer
+  override def positionInTopologicalSort_=(newValue: Int): Unit = {layer = newValue}
+
+
 
   // //////////////////////////////////////////////////////////////////////
   //static propagation graph
@@ -174,6 +182,7 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
   }
 
   def triggerPropagation(){
+    //TODO: not good if you are in a SCC!!!
     model.triggerPropagation(this)
   }
 

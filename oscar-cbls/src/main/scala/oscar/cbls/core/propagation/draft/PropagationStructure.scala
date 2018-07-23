@@ -80,7 +80,7 @@ class PropagationStructure(val nbSystemThread:Int,val guaranteedAcyclic:Boolean)
     new PropagationStructurePartitionner(this).partitionIntoSchedulingHandlers()
 
     //create runner and multiThreaded partition (if multi-treading)
-    runner = new LayerSortRunner(nbLayer,false)
+    runner = new LayerSortRunner(nbLayer)
 
     for (sh <- allSchedulingHandlersNotSCC) {
       sh.runner = runner
