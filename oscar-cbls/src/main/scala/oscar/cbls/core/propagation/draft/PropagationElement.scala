@@ -50,7 +50,17 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
 
   override var uniqueID = -1 //DAG node already have this kind of stuff
   var isScheduled:Boolean = false
-  var schedulingHandler:SimpleSchedulingHandler = null
+
+  private var mySchedulingHandler:SchedulingHandler = null
+
+  def schedulingHandler_=(sh:SchedulingHandler): Unit ={
+    require(mySchedulingHandler == null || !mySchedulingHandler.isSCC)
+    mySchedulingHandler = sh
+  }
+
+  def schedulingHandler:SchedulingHandler = mySchedulingHandler
+
+
   var model:PropagationStructure = null
 
 
@@ -115,15 +125,17 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
   // //////////////////////////////////////////////////////////////////////
   //DAG stuff, for SCC sort
 
-  private[this] var myScc:StronglyConnectedComponent = null
   //We have a getter because a specific setter is define herebelow
-  def scc:StronglyConnectedComponent = myScc
+  def scc:Option[StronglyConnectedComponent] = schedulingHandler match {
+    case scc: StronglyConnectedComponent => Some(scc)
+    case _ => None
+  }
 
   def scc_=(scc:StronglyConnectedComponent): Unit = {
-    require(this.scc == null)
-    myScc = scc
-    initiateDAGSucceedingNodesAfterSccDefinition()
-    initiateDAGPrecedingNodesAfterSCCDefinition()
+    require(this.schedulingHandler == null)
+    schedulingHandler = scc
+    initiateDAGSucceedingNodesAfterSccDefinition(scc)
+    initiateDAGPrecedingNodesAfterSCCDefinition(scc)
   }
 
   override def positionInTopologicalSort: Int = propagationPosition
@@ -139,7 +151,7 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
   final var getDAGPrecedingNodes: Iterable[DAGNode] = null
   final var getDAGSucceedingNodes: Iterable[DAGNode] = null
 
-  protected def initiateDAGSucceedingNodesAfterSccDefinition() {
+  private def initiateDAGSucceedingNodesAfterSccDefinition(scc:StronglyConnectedComponent) {
     //we have to create the SCC injectors that will maintain the filtered Perma filter of nodes in the same SCC
     //for the listening side
     def filterForListening(listeningAndPayload: (PropagationElement, Int),
@@ -153,7 +165,7 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
     getDAGSucceedingNodes = dynamicallyListeningElements.delayedPermaFilter(filterForListening, (e) => e._1)
   }
 
-  protected def initiateDAGPrecedingNodesAfterSCCDefinition(){
+  private def initiateDAGPrecedingNodesAfterSCCDefinition(scc:StronglyConnectedComponent){
     getDAGPrecedingNodes = staticallyListenedElements.filter(_.scc == scc)
   }
 
@@ -206,6 +218,26 @@ trait BulkPropagationElement extends PropagationElement {
     //filters the list of staticallyListenedElements
 
     dynamicallyListenedElementsFromSameComponent = List.empty
+  }
+}
+
+class CalBackPropagationElement(callBackTarget:()=> Unit,
+                                staticallyListeningElements:Iterable[PropagationElement],
+                                staticallyListenedElements:Iterable[PropagationElement])
+  extends PropagationElement(){
+
+  //We register this to be between the listened elements and the varying dependency PE
+  //there is no dynamic dependency however because we do not want any notification
+  // and because this PE will be scheduled by some external mechanism
+  for(staticallyListened <- staticallyListenedElements){
+    staticallyListened.registerStaticallyListeningElement(this)
+  }
+  for(staticallyListening <- staticallyListeningElements){
+    this.registerStaticallyListeningElement(staticallyListening)
+  }
+
+  override protected def performPropagation(): Unit ={
+    callBackTarget()
   }
 }
 

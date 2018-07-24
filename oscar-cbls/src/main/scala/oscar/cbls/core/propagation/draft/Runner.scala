@@ -21,16 +21,11 @@ abstract class Runner() {
     runSH(upTo.schedulingHandler)
   }
 
-  final def runSH(upTo:SimpleSchedulingHandler) {
-    require(upTo.runner == this)
-    upTo.enqueueForRun()
+  final def runSH(upTo:SchedulingHandler) {
 
-    doRun()
-
-    upTo.notifyEndRun()
   }
 
-  protected def doRun():Unit
+  def doRun():Unit
 }
 
 //runs based on the position: smallest first

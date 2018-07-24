@@ -2,10 +2,7 @@ package oscar.cbls.core.propagation.draft
 
 import oscar.cbls.algo.quick.QList
 
-class PropagationStructure(val nbSystemThread:Int,val guaranteedAcyclic:Boolean) extends SimpleSchedulingHandler() {
-
-  //the id as a scheduling handler
-  uniqueIDSH = 0
+class PropagationStructure(val nbSystemThread:Int,val guaranteedAcyclic:Boolean) {
 
   var myIsClosed:Boolean = false
 
@@ -46,8 +43,7 @@ class PropagationStructure(val nbSystemThread:Int,val guaranteedAcyclic:Boolean)
   = new NodeDictionary[T](nextUniqueIDForPropagationElement)
 
   //can only be called when all SH are created
-  override def runner_=(runner: Runner) {
-    super.runner_=(runner)
+  def runner_=(runner: Runner) {
     for (s <- allSchedulingHandlersNotSCC) {
       s.runner = runner
     }
@@ -69,7 +65,7 @@ class PropagationStructure(val nbSystemThread:Int,val guaranteedAcyclic:Boolean)
     (clusteredPropagationElements,nbClusteredPEs)
       = new SCCIdentifierAlgo(allPropagationElements,this).identifySCC()
 
-    new PropagationStructurePartitionner(this).instantiateVariableSchedulingHandlers()
+    new SchedulingHandlerPartitioningAlgo(this).instantiateVariableSchedulingHandlers()
 
     (layerToNbClusteredPropagationElements,layerToClusteredPropagationElements)
       = new LayerSorterAlgo(
@@ -77,7 +73,7 @@ class PropagationStructure(val nbSystemThread:Int,val guaranteedAcyclic:Boolean)
       nbClusteredPEs,
       guaranteedAcyclic).sortNodesByLayer()
 
-    new PropagationStructurePartitionner(this).partitionIntoSchedulingHandlers()
+    new SchedulingHandlerPartitioningAlgo(this).partitionIntoSchedulingHandlers()
 
     //create runner and multiThreaded partition (if multi-treading)
     runner = new LayerSortRunner(nbLayer)
@@ -94,7 +90,9 @@ class PropagationStructure(val nbSystemThread:Int,val guaranteedAcyclic:Boolean)
   def triggerPropagation(upTo: PropagationElement): Unit = {
     if (!propagating) {
       propagating = true
-      runner.run(upTo)
+      upTo.schedulingHandler.loadScheduledElementsAndAllSourcesIntoRunner()
+      runner.doRun()
+      upTo.schedulingHandler.notifyEndRun()
       propagating = false
     }
   }
@@ -102,7 +100,7 @@ class PropagationStructure(val nbSystemThread:Int,val guaranteedAcyclic:Boolean)
 
 /**
   * This is a O(1) dictionary for propagation elements.
-  * It is based on an array, and the keys it support is only the PE that have been reistered
+  * It is based on an array, and the keys it support is only the PE that have been registered
   * to the propagation structure by the time this is instantiated.
   * WARNING: this is not efficient if you do not actually use many of the keys
   * because the instantiated array will be very large compared to your benefits.

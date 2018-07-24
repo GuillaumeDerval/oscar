@@ -7,31 +7,52 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
                                  nbPE:Int,
                                  override val model:PropagationStructure)
   extends PropagationElement()
-    with AbstractSchedulingHandler{
+    with SchedulingHandler{
 
-  private[this] val myRunner = new TotalOrderRunner(nbPE)
-  private[this] val mySchedulingHandler = new SimpleSchedulingHandler()
-  mySchedulingHandler.runner = myRunner
 
-  model.registerPropagationElement(this)
+  //what is the scheduling handler of an SCC?
+  //I propose that a SCC has no scheduling handler at all since it is a scheduling handler it itself
+
+
+  private[this] val runnerForMyPropagationElements = new TotalOrderRunner(nbPE)
+  private[this] val schedulingHandlerForMyPropagationElements = new SimpleSchedulingHandler()
+  schedulingHandlerForMyPropagationElements.runner = runnerForMyPropagationElements
+
+  model.registerPropagationElement(pe = this)
 
   for (e <- propagationElements){
-    e.scc = this
-    e.schedulingHandler = mySchedulingHandler
+    e.scc = this //SCC is also set as the scheduling handler through this method
   }
 
   // ////////////////////////////////////////////////////////////////////////
-  // managing runnner, scheduling handler and propagation
+  // behaving like a scheduling handler from the viewpoint of propagation elements
+  // by forwarding all API calls to "mySchedulingHandler"
 
-  //This method is to be called by my custom scheduling handler, so that I can schedule myself for propagation
-
-  override def scheduleSHForPropagation(sh: SimpleSchedulingHandler, isStillValid: () => Boolean): Unit = {
-    require(sh == mySchedulingHandler)
-    scheduleMyselfForPropagation()
+  override def schedulePEForPropagation(pe: PropagationElement): Unit = {
+    schedulingHandlerForMyPropagationElements.schedulePEForPropagation(pe)
   }
+
+  override def isSCC: Boolean = true
+
+
+
+  //Called when a source sh has some updates.
+  override def scheduleSHForPropagation(sh: SchedulingHandler, isStillValid: () => Boolean): Unit = {
+    schedulingHandlerForMyPropagationElements.scheduleSHForPropagation(sh,isStillValid)
+  }
+
+
+
+  override def loadScheduledElementsAndAllSourcesIntoRunner(): Unit = {
+
+  }
+
+  // ////////////////////////////////////////////////////////////////////////
+  // the part about propagation element that perform propagation
 
   override def performPropagation(): Unit ={
     injectAllWaitingDependencies()
+    mySchedulingHandler.
     myRunner.runSH(mySchedulingHandler)
   }
 
@@ -39,7 +60,7 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
   // managing the dynamic dependency graph and the incremental topological sort
 
   private val dAGStructure = new ConcreteDAG(propagationElements.asInstanceOf[QList[DAGNode]])
-  dAGStructure.autoSort = true //we go on autoSort
+  dAGStructure.autoSort = true //we activate the autoSort, of course
 
   private var waitingDependenciesToInjectBeforePropagation: QList[WaitingDependency] = null
 
@@ -64,14 +85,16 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
                                           injector:() => Unit,
                                           isStillValid:() => Boolean): Unit ={
 
+    scheduleMyselfForPropagation()
+
     //we know that there will be two calls to this one: one for the listening one and one for the listened one.
 
     if (nextWaitingDependency == null) {
       nextWaitingDependency = new WaitingDependency(from,
         to,
         isStillValid,
-        injector,
-        null)
+        injector1 = injector,
+        injector2 = null)
     }else{
       require(nextWaitingDependency.from == from)
       require(nextWaitingDependency.to == to)
