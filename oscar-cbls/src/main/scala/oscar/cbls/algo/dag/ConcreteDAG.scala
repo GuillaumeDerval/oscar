@@ -23,11 +23,12 @@ package oscar.cbls.algo.dag
 
 /** a concrete DAG  implementing all the abstract methods of DAG
   * @author renaud.delandtsheer@cetic.be
-  * @param _UniqueID: an ID to be used as comparison for storage in sorted data structures
+  * @param uniqueID: an ID to be used as comparison for storage in sorted data structures
   */
-class ConcreteDAGNode(val _UniqueID:Int) extends DAGNode{
+class ConcreteDAGNode(override val uniqueID:Int) extends DAGNode{
 
-  uniqueID = _UniqueID
+  /** the position in the topological sort; maintained by the topological sort algorithms */
+  override var positionInTopologicalSort: Int = 0
 
   var PrecedingNodes: List[DAGNode] = List.empty
   var SucceedingNodes:List[DAGNode] = List.empty

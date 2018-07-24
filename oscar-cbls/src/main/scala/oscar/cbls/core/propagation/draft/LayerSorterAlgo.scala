@@ -34,7 +34,7 @@ class LayerSorterAlgo(clusteredPEs:QList[PropagationElement],nbCLusteredPEs:Int,
         val pe = currentFront.head
         currentFront = currentFront.tail
 
-        pe.layer = currentLayer
+        pe.propagationPosition = currentLayer
 
         countInCurrentLayer = countInCurrentLayer + 1
         peInCurrentLayer = QList(pe, peInCurrentLayer)
@@ -85,18 +85,18 @@ class LayerSorterAlgo(clusteredPEs:QList[PropagationElement],nbCLusteredPEs:Int,
   private def setLayerToPrecedingCount(pe:PropagationElement): Boolean = {
     pe match{
       case scc:StronglyConnectedComponent =>
-        scc.layer = scc.propagationElements.count(p => setLayerToPrecedingCount(p))
+        scc.propagationPosition = scc.propagationElements.count(p => setLayerToPrecedingCount(p))
       case _ =>
         //le compteur est mis au nombre de noeud precedent qui ne sont pas dans la meme composante connexe ou qui sont dans aucune composante connexe
         val scc = pe.scc
         if(scc == null){
-          pe.layer = pe.staticallyListenedElements.size
+          pe.propagationPosition = pe.staticallyListenedElements.size
         }else{
           //this is in a SCC, called through the recursive call here above
           pe.staticallyListenedElements.count(p => p.scc != scc)
         }
     }
-    pe.layer != 0
+    pe.propagationPosition != 0
   }
 
   private def decrementSuccessorsAndAccumulateFrontIfReachesZero(pe:PropagationElement,acc:QList[PropagationElement]):QList[PropagationElement] = {
@@ -123,8 +123,8 @@ class LayerSorterAlgo(clusteredPEs:QList[PropagationElement],nbCLusteredPEs:Int,
 
   private def decrementLayerAndAccumulateIfReachesZero(pe:PropagationElement,acc: QList[PropagationElement]): QList[PropagationElement] = {
     require(!pe.isInstanceOf[StronglyConnectedComponent])
-    pe.layer -= 1
-    if (pe.layer == 0) {
+    pe.propagationPosition -= 1
+    if (pe.propagationPosition == 0) {
       //faut pusher qqchose
       if(pe.scc == null){
         //not in a SCC, so we push PE

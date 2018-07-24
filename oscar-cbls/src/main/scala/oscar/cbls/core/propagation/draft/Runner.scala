@@ -55,7 +55,7 @@ class LayerSortRunner(nbLayers:Int) extends Runner(){
 
   @inline
   override protected def enqueuePE(pe: PropagationElement){
-    val layer = pe.layer
+    val layer = pe.propagationPosition
     val pEOfLayer = layersToPEs(layer)
     if(pEOfLayer == null) {
       nonEmptyLayers.insert(layer)

@@ -6,6 +6,8 @@ import scala.collection.immutable.SortedSet
 
 trait AbstractSchedulingHandler{
   def scheduleSHForPropagation(sh:SimpleSchedulingHandler,isStillValid:()=>Boolean)
+  def schedulePEForPropagation(pe:PropagationElement): Unit
+  def isSCC:Boolean = false
 }
 
 class SimpleSchedulingHandler() extends AbstractSchedulingHandler {

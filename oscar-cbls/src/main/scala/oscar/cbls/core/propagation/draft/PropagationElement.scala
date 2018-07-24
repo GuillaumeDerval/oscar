@@ -53,19 +53,10 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
   var schedulingHandler:SimpleSchedulingHandler = null
   var model:PropagationStructure = null
 
-  private[this] var myScc:StronglyConnectedComponent = null
-  //We have a getter because a specific setter is define herebelow
-  def scc:StronglyConnectedComponent = myScc
 
-  var layer:Int = -1
-
-  // //////////////////////////////////////////////////////////////////////
-  //in case it is included in a SCC
-
-  override def positionInTopologicalSort: Int = layer
-  override def positionInTopologicalSort_=(newValue: Int): Unit = {layer = newValue}
-
-
+  //this is the position used for propagation, used both within SCC and out of SCC
+  //it is read by all runners
+  var propagationPosition:Int = -1
 
   // //////////////////////////////////////////////////////////////////////
   //static propagation graph
@@ -124,6 +115,20 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
   // //////////////////////////////////////////////////////////////////////
   //DAG stuff, for SCC sort
 
+  private[this] var myScc:StronglyConnectedComponent = null
+  //We have a getter because a specific setter is define herebelow
+  def scc:StronglyConnectedComponent = myScc
+
+  def scc_=(scc:StronglyConnectedComponent): Unit = {
+    require(this.scc == null)
+    myScc = scc
+    initiateDAGSucceedingNodesAfterSccDefinition()
+    initiateDAGPrecedingNodesAfterSCCDefinition()
+  }
+
+  override def positionInTopologicalSort: Int = propagationPosition
+  override def positionInTopologicalSort_=(newValue: Int): Unit = {propagationPosition = newValue}
+
   def compare(that: DAGNode): Int = {
     assert(this.model == that.asInstanceOf[PropagationElement].model)
     assert(this.uniqueID != -1, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
@@ -133,13 +138,6 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
 
   final var getDAGPrecedingNodes: Iterable[DAGNode] = null
   final var getDAGSucceedingNodes: Iterable[DAGNode] = null
-
-  def scc_=(scc:StronglyConnectedComponent): Unit = {
-    require(this.scc == null)
-    this.scc = scc
-    initiateDAGSucceedingNodesAfterSccDefinition()
-    initiateDAGPrecedingNodesAfterSCCDefinition()
-  }
 
   protected def initiateDAGSucceedingNodesAfterSccDefinition() {
     //we have to create the SCC injectors that will maintain the filtered Perma filter of nodes in the same SCC

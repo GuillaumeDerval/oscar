@@ -6,7 +6,7 @@ import oscar.cbls.algo.quick.QList
 class StronglyConnectedComponent(val propagationElements:QList[PropagationElement],
                                  nbPE:Int,
                                  override val model:PropagationStructure)
-  extends PropagationElement(false)
+  extends PropagationElement()
     with AbstractSchedulingHandler{
 
   private[this] val myRunner = new TotalOrderRunner(nbPE)
@@ -14,6 +14,7 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
   mySchedulingHandler.runner = myRunner
 
   model.registerPropagationElement(this)
+
   for (e <- propagationElements){
     e.scc = this
     e.schedulingHandler = mySchedulingHandler
@@ -23,7 +24,8 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
   // managing runnner, scheduling handler and propagation
 
   //This method is to be called by my custom scheduling handler, so that I can schedule myself for propagation
-  override def scheduleSHForPropagation(sh: SimpleSchedulingHandler): Unit ={
+
+  override def scheduleSHForPropagation(sh: SimpleSchedulingHandler, isStillValid: () => Boolean): Unit = {
     require(sh == mySchedulingHandler)
     scheduleMyselfForPropagation()
   }
