@@ -260,7 +260,7 @@ abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborho
     * prints the profile info for the neighborhoods, for verbosity purposes
     */
   def printStatus(){
-    println(Profile.selectedStatisticInfo(neighborhoodArray))
+    println(Profile.selectedStatisticInfo(neighborhoodArray.map(_._1)))
   }
 }
 
