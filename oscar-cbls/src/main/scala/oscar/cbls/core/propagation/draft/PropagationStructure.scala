@@ -10,11 +10,8 @@ class PropagationStructure(val nbSystemThread:Int,val guaranteedAcyclic:Boolean)
 
   var allSchedulingHandlersNotSCC: QList[SimpleSchedulingHandler] = null
 
-  private[this]var nextUniqueIDForSchedulingHandler = 1
   def registerSchedulingHandler(s: SimpleSchedulingHandler): Unit = {
     allSchedulingHandlersNotSCC = QList(s, allSchedulingHandlersNotSCC)
-    s.uniqueIDSH = nextUniqueIDForSchedulingHandler
-    nextUniqueIDForSchedulingHandler = nextUniqueIDForSchedulingHandler + 1
   }
 
   private[this] var nextUniqueIDForPropagationElement = 0
@@ -78,24 +75,12 @@ class PropagationStructure(val nbSystemThread:Int,val guaranteedAcyclic:Boolean)
     //create runner and multiThreaded partition (if multi-treading)
     runner = new LayerSortRunner(nbLayer)
 
-    for (sh <- allSchedulingHandlersNotSCC) {
-      sh.runner = runner
+    for (sh <- allSchedulingHandlers) {
+      sh.globalRunner = runner
     }
   }
 
-  private[this] var propagating = false
 
-  def isPropagating: Boolean = propagating
-
-  def triggerPropagation(upTo: PropagationElement): Unit = {
-    if (!propagating) {
-      propagating = true
-      upTo.schedulingHandler.loadScheduledElementsAndAllSourcesIntoRunner()
-      runner.doRun()
-      upTo.schedulingHandler.notifyEndRun()
-      propagating = false
-    }
-  }
 }
 
 /**

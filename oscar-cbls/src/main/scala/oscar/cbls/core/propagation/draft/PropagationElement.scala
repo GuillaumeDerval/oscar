@@ -12,40 +12,6 @@ trait PseudoPropagationElement {
                                           determiningPermanentDependency:Boolean): DPFDLLStorageElement[_] = null
 }
 
-trait VaryingListenedPE extends PropagationElement{
-
-  var permanentListenedPE:QList[PropagationElement] = null
-
-  override protected[propagation] def registerPermanentDynamicDependencyListeningSide(listenedElement:PropagationElement){
-    dynamicallyListenedElements.addElem(listenedElement)
-    permanentListenedPE = QList(listenedElement,permanentListenedPE)
-  }
-
-  protected[propagation] def registerTemporaryDynamicDependencyListeningSide(listenedElement:PropagationElement):DPFDLLStorageElement[_] = {
-    dynamicallyListenedElements.addElem(listenedElement)
-  }
-
-  val dynamicallyListenedElements: DelayedPermaFilteredDoublyLinkedList[PropagationElement]
-  = new DelayedPermaFilteredDoublyLinkedList[PropagationElement]
-
-  override protected def initiateDAGPrecedingNodesAfterSCCDefinition(){
-
-    def filterForListened(listened: PropagationElement,
-                          injector: (() => Unit),
-                          isStillValid: (() => Boolean)){
-      if (scc == listened.scc) {
-        scc.registerOrCompleteWaitingDependency(listened, this, injector, isStillValid)
-      }
-    }
-    getDAGPrecedingNodes = dynamicallyListenedElements.delayedPermaFilter(filterForListened)
-  }
-
-  override protected[propagation] def dropUselessGraphAfterClose(): Unit ={
-    staticallyListenedElements = null
-    staticallyListeningElements = null
-  }
-}
-
 abstract class PropagationElement() extends DAGNode with PseudoPropagationElement{
 
   override var uniqueID = -1 //DAG node already have this kind of stuff
@@ -60,9 +26,7 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
 
   def schedulingHandler:SchedulingHandler = mySchedulingHandler
 
-
   var model:PropagationStructure = null
-
 
   //this is the position used for propagation, used both within SCC and out of SCC
   //it is read by all runners
@@ -70,8 +34,8 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
 
   // //////////////////////////////////////////////////////////////////////
   //static propagation graph
-  protected[this] var staticallyListeningElements:QList[PropagationElement] = null
-  protected[this] var staticallyListenedElements:QList[PropagationElement] = null
+  var staticallyListeningElements:QList[PropagationElement] = null
+  var staticallyListenedElements:QList[PropagationElement] = null
 
   def addStaticallyListenedElement(listened:PropagationElement): Unit ={
     staticallyListenedElements = QList(listened,staticallyListenedElements)
@@ -93,9 +57,13 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
   private[this] val dynamicallyListeningElements: DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)]
   = new DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)]
 
-  protected[propagation] def registerTemporaryDynamicDependencyListenedSide(listeningElement:VaryingListenedPE,
+  protected[propagation] def registerTemporaryDynamicDependencyListenedSide(listeningElement:VaryingDependencies,
                                                                             id:Int):  DPFDLLStorageElement[_] = {
     this.dynamicallyListeningElements.addElem((listeningElement,id))
+  }
+
+  def registerNotificationTargetForNewListeningPE(notificationMethod:((PropagationElement,Int),()=> Boolean) => Unit): Unit ={
+    dynamicallyListeningElements.notifyInserts(notificationMethod)
   }
 
   protected[propagation] def registerPermanentDynamicDependencyListenedSide(listeningElement:PropagationElement ,
@@ -116,9 +84,9 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
     listeningElement.registerPermanentDynamicDependencyListeningSide(this)
   }
 
-  protected def registerTemporaryDynamicDependency(listeningElement:VaryingListenedPE,id:Int): KeyForDynamicDependencyRemoval ={
+  protected def registerTemporaryDynamicDependency(listeningElement:VaryingDependencies, id:Int): KeyForDynamicDependencyRemoval ={
     new KeyForDynamicDependencyRemoval(
-      registerTemporaryDynamicDependencyListenedSide(listeningElement:VaryingListenedPE,id:Int),
+      registerTemporaryDynamicDependencyListenedSide(listeningElement:VaryingDependencies,id:Int),
       listeningElement.registerTemporaryDynamicDependencyListeningSide(this))
   }
 
@@ -191,19 +159,54 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
     }
   }
 
-  def triggerPropagation(){
-    //TODO: not good if you are in a SCC!!!
-    model.triggerPropagation(this)
+  def ensureUpToDate(){
+    schedulingHandler.ensureUpToDate(this)
   }
 
   final def propagate(){
-    if(isScheduled) {
-      isScheduled = false
-      performPropagation()
-    }
+    require(isScheduled)
+    isScheduled = false
+    //perform propagation might reschedule the stuff, so we updateisScheduled before calling performPropagation
+    performPropagation()
   }
 
   protected def performPropagation():Unit = ???
+}
+
+
+
+trait VaryingDependencies extends PropagationElement{
+
+  var permanentListenedPE:QList[PropagationElement] = null
+
+  val dynamicallyListenedElements: DelayedPermaFilteredDoublyLinkedList[PropagationElement]
+  = new DelayedPermaFilteredDoublyLinkedList[PropagationElement]
+
+  override protected[propagation] def registerPermanentDynamicDependencyListeningSide(listenedElement:PropagationElement){
+    dynamicallyListenedElements.addElem(listenedElement)
+    permanentListenedPE = QList(listenedElement,permanentListenedPE)
+  }
+
+  protected[propagation] def registerTemporaryDynamicDependencyListeningSide(listenedElement:PropagationElement):DPFDLLStorageElement[_] = {
+    dynamicallyListenedElements.addElem(listenedElement)
+  }
+
+  override protected def initiateDAGPrecedingNodesAfterSCCDefinition(){
+
+    def filterForListened(listened: PropagationElement,
+                          injector: (() => Unit),
+                          isStillValid: (() => Boolean)){
+      if (scc == listened.scc) {
+        scc.registerOrCompleteWaitingDependency(listened, this, injector, isStillValid)
+      }
+    }
+    getDAGPrecedingNodes = dynamicallyListenedElements.delayedPermaFilter(filterForListened)
+  }
+
+  override protected[propagation] def dropUselessGraphAfterClose(): Unit ={
+    staticallyListenedElements = null
+    staticallyListeningElements = null
+  }
 }
 
 

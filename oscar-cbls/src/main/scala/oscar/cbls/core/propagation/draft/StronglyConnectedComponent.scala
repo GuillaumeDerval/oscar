@@ -5,20 +5,16 @@ import oscar.cbls.algo.quick.QList
 
 class StronglyConnectedComponent(val propagationElements:QList[PropagationElement],
                                  nbPE:Int,
-                                 override val model:PropagationStructure)
-  extends PropagationElement()
-    with SchedulingHandler{
-
+                                 val model:PropagationStructure)
+  extends SchedulingHandler{
 
   //what is the scheduling handler of an SCC?
   //I propose that a SCC has no scheduling handler at all since it is a scheduling handler it itself
-
 
   private[this] val runnerForMyPropagationElements = new TotalOrderRunner(nbPE)
   private[this] val schedulingHandlerForMyPropagationElements = new SimpleSchedulingHandler()
   schedulingHandlerForMyPropagationElements.runner = runnerForMyPropagationElements
 
-  model.registerPropagationElement(pe = this)
 
   for (e <- propagationElements){
     e.scc = this //SCC is also set as the scheduling handler through this method
@@ -34,14 +30,13 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
 
   override def isSCC: Boolean = true
 
-
-
   //Called when a source sh has some updates.
-  override def scheduleSHForPropagation(sh: SchedulingHandler, isStillValid: () => Boolean): Unit = {
-    schedulingHandlerForMyPropagationElements.scheduleSHForPropagation(sh,isStillValid)
+  override def scheduleListenedSHForPropagation(sh: SchedulingHandler, isStillValid: () => Boolean): Unit = {
+    schedulingHandlerForMyPropagationElements.scheduleListenedSHForPropagation(sh,isStillValid)
   }
 
 
+  override def addListeningSchedulingHandler(sh: SchedulingHandler): Unit = ???
 
   override def loadScheduledElementsAndAllSourcesIntoRunner(): Unit = {
 
