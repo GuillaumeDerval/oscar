@@ -160,7 +160,7 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
   }
 
   def ensureUpToDate(){
-    schedulingHandler.ensureUpToDate(this)
+    schedulingHandler.ensureUpToDateStartPropagationIfNeeded()
   }
 
   final def propagate(){
@@ -172,7 +172,6 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
 
   protected def performPropagation():Unit = ???
 }
-
 
 
 trait VaryingDependencies extends PropagationElement{
@@ -191,13 +190,15 @@ trait VaryingDependencies extends PropagationElement{
     dynamicallyListenedElements.addElem(listenedElement)
   }
 
-  override protected def initiateDAGPrecedingNodesAfterSCCDefinition(){
+  private def initiateDAGPrecedingNodesAfterSCCDefinition(scc:StronglyConnectedComponent){
 
     def filterForListened(listened: PropagationElement,
                           injector: (() => Unit),
                           isStillValid: (() => Boolean)){
-      if (scc == listened.scc) {
-        scc.registerOrCompleteWaitingDependency(listened, this, injector, isStillValid)
+      listened.scc match{
+        case Some(otherScc) if scc == otherScc =>
+          scc.registerOrCompleteWaitingDependency(listened, this, injector, isStillValid)
+        case _ => ;
       }
     }
     getDAGPrecedingNodes = dynamicallyListenedElements.delayedPermaFilter(filterForListened)
@@ -216,13 +217,8 @@ trait VaryingDependencies extends PropagationElement{
   */
 trait BulkPropagationElement extends PropagationElement {
 
-  override protected def initiateDynamicGraphFromSameComponentListened(stronglyConnectedComponent: StronglyConnectedComponent) {
-    assert(stronglyConnectedComponent == schedulingHandler)
-    //filters the list of staticallyListenedElements
-
-    dynamicallyListenedElementsFromSameComponent = List.empty
-  }
 }
+
 
 class CalBackPropagationElement(callBackTarget:()=> Unit,
                                 staticallyListeningElements:Iterable[PropagationElement],

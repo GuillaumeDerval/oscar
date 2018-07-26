@@ -1,8 +1,10 @@
 package oscar.cbls.core.propagation.draft
 
+import oscar.cbls.algo.dag.{ConcreteDAG, DAGNode}
 import oscar.cbls.algo.quick.QList
 
-abstract class SchedulingHandler(val isSCC:Boolean){
+abstract sealed class SchedulingHandler(val isSCC:Boolean, model:PropagationStructure){
+  model.registerSchedulingHandler(this)
 
   var globalRunner:Runner = null
 
@@ -28,11 +30,11 @@ abstract class SchedulingHandler(val isSCC:Boolean){
   def loadScheduledElementsAndAllSourcesIntoRunner()
   def notifyEndRun()
 
+  @inline
   def scheduledAndNotRunning:Boolean = isScheduled && ! isRunning
 
-  protected[this] var isScheduled:Boolean = false
-  protected[this] var isRunning:Boolean = false
-
+  var isScheduled:Boolean = false
+  var isRunning:Boolean = false
 
   private[this] var listeningSchedulingHandlers: QList[SchedulingHandler] = null
 
@@ -57,7 +59,8 @@ abstract class SchedulingHandler(val isSCC:Boolean){
 }
 
 
-class SimpleSchedulingHandler() extends SchedulingHandler(isSCC=false){
+class SimpleSchedulingHandler(model:PropagationStructure)
+  extends SchedulingHandler(isSCC=false,model){
 
   override def loadScheduledElementsAndAllSourcesIntoRunner(){
     if (isScheduled && !isRunning) {
@@ -65,8 +68,10 @@ class SimpleSchedulingHandler() extends SchedulingHandler(isSCC=false){
       //could already be running, for the same reason.
 
       isRunning = true
+
       globalRunner.enqueue(scheduledElements)
       scheduledElements = null
+
       var toScheduleSHChildren = scheduledSHChildren
       //We do not remove scheduled SHChildren
       //because they will be explored in the notifyEndRun method as well
@@ -135,7 +140,7 @@ class SimpleSchedulingHandler() extends SchedulingHandler(isSCC=false){
 //all other dependencies are considered dynamic, and have one scheduling handler each. As such, the
 class SchedulingHandlerForPEWithVaryingDependencies(val p:PropagationElement with VaryingDependencies,
                                                     structure:PropagationStructure)
-  extends SchedulingHandler(isSCC = false){
+  extends SchedulingHandler(isSCC = false,structure){
 
   val myCallBackPE = new CalBackPropagationElement(notificationThatAllRunLoadedDependenciesAreUpToDate,
     staticallyListeningElements = List(p),
@@ -265,3 +270,180 @@ class SchedulingHandlerForPEWithVaryingDependencies(val p:PropagationElement wit
   }
 }
 
+class StronglyConnectedComponent(val propagationElements:QList[PropagationElement],
+                                 nbPE:Int,
+                                 structure:PropagationStructure)
+  extends SchedulingHandler(isSCC=true,structure){
+
+  //what is the scheduling handler of an SCC?
+  //I propose that a SCC has no scheduling handler at all since it is a scheduling handler it itself
+
+  val myCallBackPE = {
+    var allStaticallyListenedElements:QList[PropagationElement] = null
+    var allStaticallyListeningElements:QList[PropagationElement] = null
+
+    for(pe <- propagationElements){
+      for(listened <- pe.staticallyListenedElements){
+        allStaticallyListenedElements = QList(listened,allStaticallyListenedElements)
+      }
+
+      for(listening <- pe.staticallyListeningElements){
+        allStaticallyListeningElements = QList(listening,allStaticallyListeningElements)
+      }
+    }
+
+    new CalBackPropagationElement(performSCCPropagation,
+      staticallyListeningElements = allStaticallyListeningElements,
+      staticallyListenedElements = allStaticallyListenedElements
+    )
+  }
+
+  structure.registerPropagationElement(myCallBackPE)
+
+  private[this] val runnerForMyPropagationElements = new TotalOrderRunner(nbPE)
+
+  for (e <- propagationElements){
+    e.scc = this //SCC is also set as the scheduling handler through this method
+  }
+
+  // ////////////////////////////////////////////////////////////////////////
+
+  protected [this] var scheduledElements:QList[PropagationElement] = null
+
+  override def schedulePEForPropagation(pe: PropagationElement): Unit = {
+    if(sCCPropagationRunning){
+      //we are actually propagating
+      globalRunner.enqueuePE(pe)
+    }else {
+      scheduledElements = QList(pe, scheduledElements)
+      scheduleMyselfForPropagation()
+    }
+  }
+
+  override def loadScheduledElementsAndAllSourcesIntoRunner(): Unit = {
+    //we only load the callBack
+    globalRunner.enqueuePE(myCallBackPE)
+
+    var toScheduleSHChildren = scheduledSHChildren
+    //We do not remove scheduled SHChildren
+    //because they will be explored in the notifyEndRun method as well
+    while (toScheduleSHChildren != null) {
+      val sh = toScheduleSHChildren.head
+      toScheduleSHChildren = toScheduleSHChildren.tail
+      sh.loadScheduledElementsAndAllSourcesIntoRunner()
+      scheduledSHChildren = QList(sh,scheduledSHChildren)
+    }
+  }
+
+  // ////////////////////////////////////////////////////////////////////////
+  // the part about propagation element that perform propagation
+
+  var sCCPropagationRunning:Boolean = false
+  def performSCCPropagation(): Unit = {
+    sCCPropagationRunning = true
+    injectAllWaitingDependencies()
+
+    runnerForMyPropagationElements.enqueue(scheduledElements)
+    scheduledElements = null
+
+    runnerForMyPropagationElements.doRun()
+    sCCPropagationRunning = false
+  }
+
+  override def notifyEndRun() {
+    //it could be the case that it is scheduled and not running
+    // if the dependency was not valid anymore when the run was done
+    if (isRunning) {
+      require(isScheduled)
+      require(scheduledElements == null)
+      isScheduled = false
+      isRunning = false
+
+      while (scheduledSHChildren != null) {
+        scheduledSHChildren.head.notifyEndRun()
+        scheduledSHChildren = scheduledSHChildren.tail
+      }
+    }
+  }
+
+  // /////////////////////////////////////////////////////////
+  // scheduling listened SH that notify about some change
+
+  private[this] var scheduledSHChildren:QList[SchedulingHandler] = null
+
+  def scheduleListenedSHForPropagation(listenedSH:SchedulingHandler){
+    scheduledSHChildren = QList(listenedSH,scheduledSHChildren)
+
+    if (isRunning) {
+      //We are actually running, so forward ASAP to the globalRunner
+      listenedSH.loadScheduledElementsAndAllSourcesIntoRunner()
+    } else {
+      scheduleMyselfForPropagation()
+    }
+  }
+
+  // ////////////////////////////////////////////////////////////////////////
+  // managing the dynamic dependency graph and the incremental topological sort
+
+  private val dAGStructure = new ConcreteDAG(propagationElements.asInstanceOf[QList[DAGNode]])
+  dAGStructure.autoSort = true //we activate the autoSort, of course
+
+  private var waitingDependenciesToInjectBeforePropagation: QList[WaitingDependency] = null
+
+  class WaitingDependency(val from: PropagationElement,
+                          val to: PropagationElement,
+                          val isStillValid:() => Boolean,
+                          val injector1:() => Unit,
+                          var injector2:() => Unit)
+
+  private var nextWaitingDependency:WaitingDependency = null
+
+  private def injectWaitingDependencyIfStillValid(w:WaitingDependency): Unit ={
+    if(w.isStillValid()){
+      w.injector1()
+      w.injector2()
+      dAGStructure.notifyAddEdge(w.from, w.to)
+    }
+  }
+
+  def registerOrCompleteWaitingDependency(from:PropagationElement,
+                                          to:PropagationElement,
+                                          injector:() => Unit,
+                                          isStillValid:() => Boolean): Unit ={
+
+    scheduleMyselfForPropagation()
+
+    //we know that there will be two calls to this one: one for the listening one and one for the listened one.
+
+    if (nextWaitingDependency == null) {
+      nextWaitingDependency = new WaitingDependency(from,
+        to,
+        isStillValid,
+        injector1 = injector,
+        injector2 = null)
+    }else{
+      require(nextWaitingDependency.from == from)
+      require(nextWaitingDependency.to == to)
+      nextWaitingDependency.injector2 = injector
+
+      if(from.positionInTopologicalSort >= to.positionInTopologicalSort){
+        //the DAG does not obey this precedence, so we store it for later injection
+        //since injecting dependencies might cause DAG to be cyclic, temporarily
+        //as invariants generlly add and remove their dependencies in a non-ordered fashion
+        waitingDependenciesToInjectBeforePropagation = QList(nextWaitingDependency(from, to),waitingDependenciesToInjectBeforePropagation)
+      }else{
+        //the DAG obeys the precedence, so we inject and notify to the DAG data structure
+        injectWaitingDependencyIfStillValid(nextWaitingDependency)
+      }
+      nextWaitingDependency = null
+    }
+  }
+
+  private def injectAllWaitingDependencies(){
+    require(nextWaitingDependency == null)
+    while(waitingDependenciesToInjectBeforePropagation!=null){
+      injectWaitingDependencyIfStillValid(waitingDependenciesToInjectBeforePropagation.head)
+      waitingDependenciesToInjectBeforePropagation = waitingDependenciesToInjectBeforePropagation.tail
+    }
+  }
+}

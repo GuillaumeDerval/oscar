@@ -2,16 +2,16 @@ package oscar.cbls.core.propagation.draft
 
 import oscar.cbls.algo.quick.QList
 
-class PropagationStructure(val nbSystemThread:Int,val guaranteedAcyclic:Boolean) {
+class PropagationStructure(val guaranteedAcyclic:Boolean) {
 
   var myIsClosed:Boolean = false
 
   def isClosed:Boolean = myIsClosed
 
-  var allSchedulingHandlersNotSCC: QList[SimpleSchedulingHandler] = null
+  var allSchedulingHandlers: QList[SchedulingHandler] = null
 
-  def registerSchedulingHandler(s: SimpleSchedulingHandler): Unit = {
-    allSchedulingHandlersNotSCC = QList(s, allSchedulingHandlersNotSCC)
+  def registerSchedulingHandler(s: SchedulingHandler): Unit = {
+    allSchedulingHandlers = QList(s, allSchedulingHandlers)
   }
 
   private[this] var nextUniqueIDForPropagationElement = 0
@@ -22,8 +22,6 @@ class PropagationStructure(val nbSystemThread:Int,val guaranteedAcyclic:Boolean)
     allPropagationElements = QList(pe,allPropagationElements)
   }
   var allPropagationElements: QList[PropagationElement] = null
-  var clusteredPropagationElements:QList[PropagationElement] = null
-  var nbClusteredPEs:Int = -1
 
   var layerToClusteredPropagationElements: Array[QList[PropagationElement]] = null
   var layerToNbClusteredPropagationElements: Array[Int] = null
@@ -59,21 +57,23 @@ class PropagationStructure(val nbSystemThread:Int,val guaranteedAcyclic:Boolean)
     require(!myIsClosed,"Propagation structure already closed")
     myIsClosed = true
 
-    (clusteredPropagationElements,nbClusteredPEs)
+    (propagationElementsNotInSCC,nbClusteredPEs)
       = new SCCIdentifierAlgo(allPropagationElements,this).identifySCC()
 
     new SchedulingHandlerPartitioningAlgo(this).instantiateVariableSchedulingHandlers()
 
     (layerToNbClusteredPropagationElements,layerToClusteredPropagationElements)
       = new LayerSorterAlgo(
-      clusteredPropagationElements,
+      propagationElementsNotInSCC,
       nbClusteredPEs,
       guaranteedAcyclic).sortNodesByLayer()
 
     new SchedulingHandlerPartitioningAlgo(this).partitionIntoSchedulingHandlers()
 
+
     //create runner and multiThreaded partition (if multi-treading)
     runner = new LayerSortRunner(nbLayer)
+
 
     for (sh <- allSchedulingHandlers) {
       sh.globalRunner = runner
@@ -107,3 +107,4 @@ class NodeDictionary[T](val MaxNodeID: Int)(implicit val X: Manifest[T]) {
 
   def initialize(value: () => T) { for (i <- storage.indices) storage(i) = value() }
 }
+

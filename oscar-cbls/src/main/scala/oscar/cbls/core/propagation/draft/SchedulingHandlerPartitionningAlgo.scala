@@ -1,88 +1,143 @@
 package oscar.cbls.core.propagation.draft
 
+import oscar.cbls.algo.quick.QList
+import oscar.cbls.algo.tarjan.{TarjanNodeData, TarjanWithExternalStorage}
+
 import scala.collection.immutable.SortedSet
 
-class SchedulingHandlerPartitioningAlgo(p:PropagationStructure){
+class SchedulingHandlerPartitioningAlgo(p:PropagationStructure) {
 
-  def instantiateVariableSchedulingHandlers(): Unit ={
 
+  //1: identifier les SCC
+  //cela rajoute des callBackPE et "supprime" des PE
+
+  //2: créer les variableDependencySH
+  //cela rajoute des callBackPE
+
+  //3: faire le tri par couche
+
+  //4: créer les autre SH en parcourant les couches
+
+  def instantiateVariableSchedulingHandlersForPENotInSCC(): Unit = {
+    for (pe <- p.allPropagationElements if pe.scc.isDefined) {
+      pe match {
+        case pev: PropagationElement with VaryingDependencies =>
+          val dsh = new SchedulingHandlerForPEWithVaryingDependencies(pev, p)
+      }
+    }
   }
 
-  //TODO how about dynamic dependencies?
-  //TODO how about SCC?
-  //TODO how about statically listening that are in a SCC?
+  def identifyAndInstantiateSCC(): (QList[PropagationElement], QList[StronglyConnectedComponent]) = {
+    val storageForTarjan = p.buildNodeStorage[TarjanNodeData]
+    storageForTarjan.initialize(() => new TarjanNodeData)
 
-  //graph must already be sorted by layers
-  def partitionIntoSchedulingHandlers(){
+    val stronglyConnectedComponents: List[QList[PropagationElement]] =
+      TarjanWithExternalStorage.getStronglyConnexComponents[PropagationElement](
+        p.allPropagationElements,
+        p => p.staticallyListeningElements,
+        storageForTarjan.get)
+
+    var acyclic = true
+    var stronglyConnectedComponentsStructures: QList[StronglyConnectedComponent] = null
+    var propagationElementsNotInSCC: QList[PropagationElement] = null
+
+    for (pEOfSCC <- stronglyConnectedComponents) {
+      if (pEOfSCC.tail == null) {
+        //only one PE, so not in a SCC
+        propagationElementsNotInSCC = QList(pEOfSCC.head, propagationElementsNotInSCC)
+      } else {
+        //a new SCC must be instantiated here
+        acyclic = false
+        val scc = new StronglyConnectedComponent(pEOfSCC, pEOfSCC.size, p)
+        stronglyConnectedComponentsStructures = QList(scc, stronglyConnectedComponentsStructures)
+
+        //we also add the call back PE of the SCC
+        propagationElementsNotInSCC = QList(scc.myCallBackPE, propagationElementsNotInSCC)
+      }
+    }
+
+    (propagationElementsNotInSCC, stronglyConnectedComponentsStructures)
+  }
+
+  //graph must already be sorted by layers, have SCC and vSH instantiated
+  def partitionGraphIntoSchedulingHandlers() {
     var currentLayerID = p.layerToClusteredPropagationElements.length
-    while(currentLayerID >0){
-      currentLayerID = currentLayerID -1
+    while (currentLayerID > 0) {
+      currentLayerID = currentLayerID - 1
 
       //from outputs to inputs decorate layer by layer
       //the SH of a node is the SH of its successors
-      //except if the node already has a sh or if its successors have different sh's
+      //except if the node already has a sh or if its successors have different sh's or if the SH of its successor is a VSH or if the node has no successor at all
+      //in this case, a new SH is instantiated
 
-      for(pe <- p.layerToClusteredPropagationElements(currentLayerID)){
+      for (pe <- p.layerToClusteredPropagationElements(currentLayerID) if pe.schedulingHandler == null) {
+        //we need to set a scheduling handler to this node
 
-        if (pe.schedulingHandler == p) {
-          //it needs to be decorated
+        var staticallyListeningElements = pe.staticallyListeningElements
 
-          var staticallyListeningElements = pe.staticallyListeningElements
+        if (staticallyListeningElements == null) {
+          //it has no successor, so it gets a new scheduling handler and job is done.
 
-          if (staticallyListeningElements == null) {
-            //it has no succesor, so it gets a new scheduling handler and job is done.
+          pe.schedulingHandler = new SimpleSchedulingHandler(p)
 
-            val newSchedulingHandler = new SimpleSchedulingHandler()
-            p.registerSchedulingHandler(newSchedulingHandler)
+        } else {
+          //it has some successor, so we need to check if they all have the same scheduling handler
+          //if
+          val referenceListeningSchedulingHandler = null
+          var newSHNeededSoFar = false
+          while (staticallyListeningElements != null && !newSHNeededSoFar) {
+
+            staticallyListeningElements.head.schedulingHandler match {
+              case scc: StronglyConnectedComponent =>
+                newSHNeededSoFar = true //we add a new SH
+              case simple: SimpleSchedulingHandler =>
+                if (referenceListeningSchedulingHandler == null) {
+                  referenceListeningSchedulingHandler == simple
+                  staticallyListeningElements = staticallyListeningElements.tail
+                } else if (referenceListeningSchedulingHandler != simple) {
+                  //it already has a SH, and it is another one, so we need a new SH
+                  newSHNeededSoFar = true //we add a new SH
+                } else {
+                  staticallyListeningElements = staticallyListeningElements.tail
+                }
+              case dyn: SchedulingHandlerForPEWithVaryingDependencies =>
+                newSHNeededSoFar = true //we add a new SH
+            }
+          }
+
+          if (newSHNeededSoFar) {
+            val newSchedulingHandler = new SimpleSchedulingHandler(p)
             pe.schedulingHandler = newSchedulingHandler
 
-          } else {
-            val referenceListeningSchedulingHandler = staticallyListeningElements.head.schedulingHandler
-            staticallyListeningElements = staticallyListeningElements.tail
-            while (staticallyListeningElements != null) {
-              if (staticallyListeningElements.head.schedulingHandler != referenceListeningSchedulingHandler) {
-                //there are more than one listening scheduling handler, so we create a scheduling handler on pe
-                val newSchedulingHandler = new SimpleSchedulingHandler()
-                p.registerSchedulingHandler(newSchedulingHandler)
-                pe.schedulingHandler = newSchedulingHandler
+            var allListeningSH: QList[SchedulingHandler] = null
 
-                newSchedulingHandler.addListeningSchedulingHandler(referenceListeningSchedulingHandler)
-                newSchedulingHandler.addListeningSchedulingHandler(staticallyListeningElements.head.schedulingHandler)
-
-                var knownIDs: SortedSet[Int] = SortedSet(referenceListeningSchedulingHandler.uniqueIDSH,
-                  staticallyListeningElements.head.schedulingHandler.uniqueIDSH)
-
-                while (staticallyListeningElements != null) {
-                  val sh = staticallyListeningElements.head.schedulingHandler
-                  staticallyListeningElements = staticallyListeningElements.tail
-
-                  if (!(knownIDs contains sh.uniqueIDSH)) {
-                    knownIDs = knownIDs + sh.uniqueIDSH
-                    newSchedulingHandler.addListeningSchedulingHandler(sh)
-                  }
-                }
-              } else {
-                staticallyListeningElements = staticallyListeningElements.tail
+            def addListeningSH(sh: SchedulingHandler) {
+              if (!sh.isRunning) {
+                sh.isRunning = true
+                allListeningSH = QList(sh, allListeningSH)
+                newSchedulingHandler.addListeningSchedulingHandler(sh)
               }
             }
 
-          }
-        }else{
-          //it has already a scheduling handler, so we add all listening scheduling handler to this one
-          var staticallyListeningElements = pe.staticallyListeningElements
-          var knownIDs: SortedSet[Int] = SortedSet.empty
+            addListeningSH(referenceListeningSchedulingHandler)
 
-          while (staticallyListeningElements != null) {
-            val sh = staticallyListeningElements.head.schedulingHandler
-            staticallyListeningElements = staticallyListeningElements.tail
-
-            if (!(knownIDs contains sh.uniqueIDSH)) {
-              knownIDs = knownIDs + sh.uniqueIDSH
-              pe.schedulingHandler.addListeningSchedulingHandler(sh)
+            while (staticallyListeningElements != null) {
+              addListeningSH(staticallyListeningElements.head.schedulingHandler)
+              staticallyListeningElements = staticallyListeningElements.tail
             }
+
+            while (allListeningSH != null) {
+              allListeningSH.head.isRunning = false
+              allListeningSH = allListeningSH.tail
+            }
+
+          } else {
+            pe.schedulingHandler = referenceListeningSchedulingHandler
           }
+
         }
       }
     }
   }
 }
+

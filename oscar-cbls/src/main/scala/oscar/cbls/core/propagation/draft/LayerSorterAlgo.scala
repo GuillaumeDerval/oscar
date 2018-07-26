@@ -3,19 +3,21 @@ package oscar.cbls.core.propagation.draft
 import oscar.cbls.algo.quick.QList
 
 /**
-  *
   * @param clusteredPEs are PE except the ones that are in a SCC, instead the SCC are in the PEs.
   * @param nbCLusteredPEs
   * @param noCycle
   */
-class LayerSorterAlgo(clusteredPEs:QList[PropagationElement],nbCLusteredPEs:Int,noCycle:Boolean) {
+class LayerSorterAlgo(propagationElementsNotInSCC:QList[PropagationElement]) {
 
   def sortNodesByLayer(): (Array[Int],Array[QList[PropagationElement]]) = {
 
-    var currentFront: QList[PropagationElement] = null
     var nextFront: QList[PropagationElement] = null
 
-    for (pe <- clusteredPEs) {
+    var currentFront: QList[PropagationElement] = null
+    var nbPENotInSCC = 0
+
+    for (pe <- propagationElementsNotInSCC) {
+      nbPENotInSCC += 1
       if (!setLayerToPrecedingCount(pe)) {
         currentFront = QList(pe, currentFront)
       }
@@ -30,6 +32,7 @@ class LayerSorterAlgo(clusteredPEs:QList[PropagationElement],nbCLusteredPEs:Int,
     var stackOfLayerAndPEs: QList[(Int, QList[PropagationElement])] = null
 
     while (currentFront != null) {
+
       while (currentFront != null) {
         val pe = currentFront.head
         currentFront = currentFront.tail
@@ -39,13 +42,14 @@ class LayerSorterAlgo(clusteredPEs:QList[PropagationElement],nbCLusteredPEs:Int,
         countInCurrentLayer = countInCurrentLayer + 1
         peInCurrentLayer = QList(pe, peInCurrentLayer)
 
-        nextFront = decrementSuccessorsAndAccumulateFrontIfReachesZero(pe, nextFront)
+        nextFront = decrementSuccessorsNotInSCCAndAccumulateToFrontIfReachesZero(pe, nextFront)
       }
 
       currentFront = nextFront
       nextFront = null
 
       count = count + countInCurrentLayer
+
       stackOfLayerAndPEs = QList((countInCurrentLayer, peInCurrentLayer), stackOfLayerAndPEs)
       countInCurrentLayer = 0
       peInCurrentLayer = null
@@ -53,13 +57,7 @@ class LayerSorterAlgo(clusteredPEs:QList[PropagationElement],nbCLusteredPEs:Int,
     }
 
     //finished iteration
-    if (count != nbCLusteredPEs) {
-      if (noCycle) {
-        throw new Exception("cycle detected in propagation graph although NoCycle was set to true")
-      } else {
-        throw new Exception("internal bug")
-      }
-    }
+    require(count == nbPENotInSCC,"internal bug")
 
     //composing arrays to return
     val layerToNbPes = Array.fill(currentLayer)(0)
@@ -77,64 +75,39 @@ class LayerSorterAlgo(clusteredPEs:QList[PropagationElement],nbCLusteredPEs:Int,
     (layerToNbPes, layerToPes)
   }
 
+  def peInSCC(pe:PropagationElement):Boolean = {
+    val s = pe.schedulingHandler
+    s != null && s.isSCC
+  }
+
+  def nbPENotInSCC(pes:Iterable[PropagationElement]):Int = pes.count(!peInSCC(_))
+
   /**
     * Sets the layer of the PE to the number of other PE that must be scheduled before this one.
     * for scc, set it to the number of element that are referenced from other components or from the global SCC
     * @return true if there is at least one predecessor, false otherwise
     */
   private def setLayerToPrecedingCount(pe:PropagationElement): Boolean = {
-    pe match{
-      case scc:StronglyConnectedComponent =>
-        scc.propagationPosition = scc.propagationElements.count(p => setLayerToPrecedingCount(p))
-      case _ =>
-        //le compteur est mis au nombre de noeud precedent qui ne sont pas dans la meme composante connexe ou qui sont dans aucune composante connexe
-        val scc = pe.scc
-        if(scc == null){
-          pe.propagationPosition = pe.staticallyListenedElements.size
-        }else{
-          //this is in a SCC, called through the recursive call here above
-          pe.staticallyListenedElements.count(p => p.scc != scc)
-        }
-    }
+    pe.propagationPosition = nbPENotInSCC(pe.staticallyListenedElements)
     pe.propagationPosition != 0
   }
 
-  private def decrementSuccessorsAndAccumulateFrontIfReachesZero(pe:PropagationElement,acc:QList[PropagationElement]):QList[PropagationElement] = {
-    pe match{
-      case scc:StronglyConnectedComponent =>
-        var toReturn = acc
-        for (pe2 <- scc.propagationElements) {
-          for(peSucc <- pe2.staticallyListeningElements){
-            if(peSucc != scc) {
-              toReturn = decrementLayerAndAccumulateIfReachesZero(peSucc, toReturn)
-            }
-          }
-        }
-        toReturn
-      case _ =>
-        var toReturn = acc
-        for (succeeding <- pe.staticallyListeningElements) {
-          //not in the same SCC as us
-          toReturn = decrementLayerAndAccumulateIfReachesZero(succeeding,toReturn)
-        }
-        toReturn
+  private def decrementSuccessorsNotInSCCAndAccumulateToFrontIfReachesZero(pe:PropagationElement,acc:QList[PropagationElement]):QList[PropagationElement] = {
+    var toReturn = acc
+    for (succeeding <- pe.staticallyListeningElements if !peInSCC(succeeding)) {
+      //not in the same SCC as us
+      toReturn = decrementLayerAndAccumulateIfReachesZero(succeeding,toReturn)
     }
+    toReturn
   }
 
   private def decrementLayerAndAccumulateIfReachesZero(pe:PropagationElement,acc: QList[PropagationElement]): QList[PropagationElement] = {
-    require(!pe.isInstanceOf[StronglyConnectedComponent])
     pe.propagationPosition -= 1
     if (pe.propagationPosition == 0) {
-      //faut pusher qqchose
-      if(pe.scc == null){
-        //not in a SCC, so we push PE
-        QList(pe,acc)
-      }else{
-        //in a SCC, so we decrease the layer of the SCC itself
-        decrementLayerAndAccumulateIfReachesZero(pe.scc,acc)
-      }
+      QList(pe,acc)
     } else {
       acc
     }
   }
 }
+

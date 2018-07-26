@@ -17,14 +17,6 @@ abstract class Runner() {
   @inline
   def enqueuePE(pe:PropagationElement)
 
-  final def run(upTo:PropagationElement): Unit ={
-    runSH(upTo.schedulingHandler)
-  }
-
-  final def runSH(upTo:SchedulingHandler) {
-
-  }
-
   def doRun():Unit
 }
 
@@ -34,11 +26,11 @@ class TotalOrderRunner(nbPe:Int) extends Runner(){
   private [this] val h: BinomialHeap[PropagationElement] = new BinomialHeap[PropagationElement](p => p.positionInTopologicalSort, nbPe)
 
   @inline
-  override protected def enqueuePE(pe: PropagationElement){
+  override def enqueuePE(pe: PropagationElement){
     h.insert(pe)
   }
 
-  override protected def doRun(): Unit ={
+  override def doRun(): Unit ={
     while (!h.isEmpty) {
       val x:PropagationElement = h.popFirst()
       x.propagate() //through the schedulingHandler, other PE are enqueued.
@@ -49,7 +41,7 @@ class TotalOrderRunner(nbPe:Int) extends Runner(){
 class LayerSortRunner(nbLayers:Int) extends Runner(){
 
   @inline
-  override protected def enqueuePE(pe: PropagationElement){
+  override def enqueuePE(pe: PropagationElement){
     val layer = pe.propagationPosition
     val pEOfLayer = layersToPEs(layer)
     if(pEOfLayer == null) {
