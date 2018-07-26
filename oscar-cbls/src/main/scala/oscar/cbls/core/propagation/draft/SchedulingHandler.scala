@@ -133,20 +133,18 @@ class SimpleSchedulingHandler() extends SchedulingHandler(isSCC=false){
 //basically, the PE has a set of dynamic dependencies, and a varying dependency.
 //this scheduling handler is the SH of: the varying PE, the determining element.
 //all other dependencies are considered dynamic, and have one scheduling handler each. As such, the
-class SchedulingHandlerForPEWithVaryingDependencies(val p:PropagationElement with VaryingDependencies)
+class SchedulingHandlerForPEWithVaryingDependencies(val p:PropagationElement with VaryingDependencies,
+                                                    structure:PropagationStructure)
   extends SchedulingHandler(isSCC = false){
 
-
-  val callBackPE = new CalBackPropagationElement(notificationThatAllRunLoadedDependenciesAreUpToDate,
-
+  val myCallBackPE = new CalBackPropagationElement(notificationThatAllRunLoadedDependenciesAreUpToDate,
+    staticallyListeningElements = List(p),
+    staticallyListenedElements = p.staticallyListenedElements
   )
 
-  // /////////////////////////////////////////////////////////
-  // running
-
+  structure.registerPropagationElement(myCallBackPE)
 
   //les determiningElement sont renommés en permanentListenedPE
-
   override def loadScheduledElementsAndAllSourcesIntoRunner() {
     if (isScheduled && !isRunning) {
       //someone tells us to do the run, so we start it
@@ -160,21 +158,19 @@ class SchedulingHandlerForPEWithVaryingDependencies(val p:PropagationElement wit
     loadScheduledDependenciesIntoRunner(loadDeterminingFirst=false)
   }
 
-
   private def loadScheduledDependenciesIntoRunner(loadDeterminingFirst:Boolean): Unit ={
     require(isRunning && isScheduled)
 
     if(loadDeterminingFirst){
       //we specifically load all scheduled and not ran SCC of determining elements
       if(loadScheduledDeterminingElementsIntoRunner()){
-        globalRunner.enqueuePE(callBackPE)
+        globalRunner.enqueuePE(myCallBackPE)
         return
       }
     }
 
     if(loadScheduledDynamicallyListenedElementsIntoRunner()){
-      globalRunner.enqueuePE(callBackPE)
-      return
+      globalRunner.enqueuePE(myCallBackPE)
     }
   }
 
@@ -245,6 +241,8 @@ class SchedulingHandlerForPEWithVaryingDependencies(val p:PropagationElement wit
 
   def schedulePEForPropagation(pe:PropagationElement): Unit ={
     require(pe == p)
+    require(!pERequiresPropagation)
+
     if(isRunning){
       //we are actually propagating
       globalRunner.enqueuePE(pe)
