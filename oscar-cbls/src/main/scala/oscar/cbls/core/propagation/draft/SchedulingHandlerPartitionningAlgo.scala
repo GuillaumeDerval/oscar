@@ -7,17 +7,6 @@ import scala.collection.immutable.SortedSet
 
 class SchedulingHandlerPartitioningAlgo(p:PropagationStructure) {
 
-
-  //1: identifier les SCC
-  //cela rajoute des callBackPE et "supprime" des PE
-
-  //2: créer les variableDependencySH
-  //cela rajoute des callBackPE
-
-  //3: faire le tri par couche
-
-  //4: créer les autre SH en parcourant les couches
-
   def instantiateVariableSchedulingHandlersForPENotInSCC(): Unit = {
     for (pe <- p.allPropagationElements if pe.scc.isDefined) {
       pe match {
