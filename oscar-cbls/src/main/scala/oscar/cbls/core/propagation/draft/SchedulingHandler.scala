@@ -3,10 +3,8 @@ package oscar.cbls.core.propagation.draft
 import oscar.cbls.algo.dag.{ConcreteDAG, DAGNode}
 import oscar.cbls.algo.quick.QList
 
-abstract sealed class SchedulingHandler(val isSCC:Boolean, model:PropagationStructure){
-  model.registerSchedulingHandler(this)
-
-  var globalRunner:Runner = null
+abstract sealed class SchedulingHandler(val isSCC:Boolean, structure:PropagationStructure){
+  structure.registerSchedulingHandler(this)
 
   /**this is teh call bach.
     * this did tell sh that this listens to sh, so now, sh is telling us that it has some updates
@@ -22,7 +20,7 @@ abstract sealed class SchedulingHandler(val isSCC:Boolean, model:PropagationStru
     if(scheduledAndNotRunning){
       //it is scheduled, so there is something changed either in this SH or in listened SH; so we trigger propagation
       loadScheduledElementsAndAllSourcesIntoRunner()
-      globalRunner.doRun()
+      structure.doRun()
       notifyEndRun()
     }
   }
@@ -69,7 +67,7 @@ class SimpleSchedulingHandler(model:PropagationStructure)
 
       isRunning = true
 
-      globalRunner.enqueue(scheduledElements)
+      model.enqueue(scheduledElements)
       scheduledElements = null
 
       var toScheduleSHChildren = scheduledSHChildren
@@ -108,7 +106,7 @@ class SimpleSchedulingHandler(model:PropagationStructure)
   def schedulePEForPropagation(pe:PropagationElement): Unit ={
     if(isRunning){
       //we are actually propagating
-      globalRunner.enqueuePE(pe)
+      model.enqueuePE(pe)
     }else {
       scheduledElements = QList(pe, scheduledElements)
       scheduleMyselfForPropagation()
@@ -169,18 +167,18 @@ class SchedulingHandlerForPEWithVaryingDependencies(val p:PropagationElement wit
     if(loadDeterminingFirst){
       //we specifically load all scheduled and not ran SCC of determining elements
       if(loadScheduledDeterminingElementsIntoRunner()){
-        globalRunner.enqueuePE(myCallBackPE)
+        structure.enqueuePE(myCallBackPE)
         return
       }
     }
 
     if(loadScheduledDynamicallyListenedElementsIntoRunner()){
-      globalRunner.enqueuePE(myCallBackPE)
+      structure.enqueuePE(myCallBackPE)
       return
     }
 
     if(p.isScheduled){
-      globalRunner.enqueuePE(p)
+      structure.enqueuePE(p)
     }
   }
 
@@ -313,7 +311,7 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
   override def schedulePEForPropagation(pe: PropagationElement): Unit = {
     if(sCCPropagationRunning){
       //we are actually propagating
-      globalRunner.enqueuePE(pe)
+      structure.enqueuePE(pe)
     }else {
       scheduledElements = QList(pe, scheduledElements)
       scheduleMyselfForPropagation()
@@ -322,7 +320,7 @@ class StronglyConnectedComponent(val propagationElements:QList[PropagationElemen
 
   override def loadScheduledElementsAndAllSourcesIntoRunner(): Unit = {
     //we only load the callBack
-    globalRunner.enqueuePE(myCallBackPE)
+    structure.enqueuePE(myCallBackPE)
 
     var toScheduleSHChildren = scheduledSHChildren
     //We do not remove scheduled SHChildren

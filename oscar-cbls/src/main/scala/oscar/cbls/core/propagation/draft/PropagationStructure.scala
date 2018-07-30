@@ -2,7 +2,8 @@ package oscar.cbls.core.propagation.draft
 
 import oscar.cbls.algo.quick.QList
 
-class PropagationStructure(val guaranteedAcyclic:Boolean) {
+class PropagationStructure(val guaranteedAcyclic:Boolean)
+  extends LayerSortRunner() {
 
   var myIsClosed:Boolean = false
 
@@ -57,18 +58,13 @@ class PropagationStructure(val guaranteedAcyclic:Boolean) {
 
     layerToPropagationElements = tmpLayerToPropagationElements
 
-    val nbLayer = layerToPropagationElements.length
+    nbLayer = layerToPropagationElements.length
+
     require(layerToNbClusteredPropagationElements.length == nbLayer)
 
     //4: créer les autre SH en parcourant les couches
     //Et faire les registration des listening SH
     myPartitioningAlgo.partitionGraphIntoSchedulingHandlers()
-
-    //finally, assign the globalRuner to all SH
-    globalRunner = new LayerSortRunner(nbLayer)
-    for (sh <- allSchedulingHandlers) {
-      sh.globalRunner = globalRunner
-    }
   }
 
   /**
@@ -81,6 +77,9 @@ class PropagationStructure(val guaranteedAcyclic:Boolean) {
     */
   def buildNodeStorage[T](implicit X: Manifest[T]): NodeDictionary[T]
   = new NodeDictionary[T](nextUniqueIDForPropagationElement)
+
+
+
 
 }
 

@@ -38,7 +38,22 @@ class TotalOrderRunner(nbPe:Int) extends Runner(){
   }
 }
 
-class LayerSortRunner(nbLayers:Int) extends Runner(){
+class LayerSortRunner()
+  extends Runner(){
+
+  private[this] var layersToPEs: Array[QList[PropagationElement]] = _
+  private[this] var nonEmptyLayers: BinomialHeap[Int] = _
+
+  private var myNbLayer:Int = 0
+
+  def nbLayer:Int = myNbLayer
+  def nbLayer_=(n:Int) = {
+    require(nonEmptyLayers.isEmpty)
+    myNbLayer = n
+
+    layersToPEs = Array.fill(myNbLayer)(null)
+    nonEmptyLayers = new BinomialHeap[Int]((item: Int) => item, myNbLayer)
+  }
 
   @inline
   override def enqueuePE(pe: PropagationElement){
@@ -50,10 +65,8 @@ class LayerSortRunner(nbLayers:Int) extends Runner(){
     layersToPEs(layer) = QList(pe, pEOfLayer)
   }
 
-  private[this] val layersToPEs: Array[QList[PropagationElement]] = Array.fill(nbLayers)(null)
-  private[this] val nonEmptyLayers: BinomialHeap[Int] = new BinomialHeap[Int]((item: Int) => item, nbLayers)
 
-  override protected def doRun(): Unit ={
+  override def doRun(): Unit ={
     while(nonEmptyLayers.nonEmpty) {
       val currentLayer = nonEmptyLayers.popFirst()
 
