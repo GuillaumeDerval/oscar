@@ -65,6 +65,12 @@ class PropagationStructure(val guaranteedAcyclic:Boolean)
     //4: créer les autre SH en parcourant les couches
     //Et faire les registration des listening SH
     myPartitioningAlgo.partitionGraphIntoSchedulingHandlers()
+
+    for(pe <- allPropagationElements){
+      pe.reScheduleIfScheduled()
+    }
+
+    assert(allPropagationElements.forall(_.schedulingHandler != null))
   }
 
   /**
@@ -77,9 +83,6 @@ class PropagationStructure(val guaranteedAcyclic:Boolean)
     */
   def buildNodeStorage[T](implicit X: Manifest[T]): NodeDictionary[T]
   = new NodeDictionary[T](nextUniqueIDForPropagationElement)
-
-
-
 
 }
 

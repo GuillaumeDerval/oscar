@@ -56,7 +56,6 @@ abstract sealed class SchedulingHandler(val isSCC:Boolean, structure:Propagation
   }
 }
 
-
 class SimpleSchedulingHandler(model:PropagationStructure)
   extends SchedulingHandler(isSCC=false,model){
 

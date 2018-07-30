@@ -149,7 +149,10 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
   def scheduleMyselfForPropagation(): Unit ={
     if(!isScheduled){
       isScheduled = true
-      schedulingHandler.schedulePEForPropagation(this)
+      if(schedulingHandler != null){
+//at startup, SH are null
+        schedulingHandler.schedulePEForPropagation(this)
+      }
     }
   }
 
@@ -160,7 +163,10 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
   }
 
   def ensureUpToDate(){
-    schedulingHandler.ensureUpToDateStartPropagationIfNeeded()
+    if(schedulingHandler != null){
+      //at startup, SH are null
+      schedulingHandler.ensureUpToDateStartPropagationIfNeeded()
+    }
   }
 
   final def propagate(){
@@ -172,7 +178,6 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
 
   protected def performPropagation():Unit = ???
 }
-
 
 trait VaryingDependencies extends PropagationElement{
 
