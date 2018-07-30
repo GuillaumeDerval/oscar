@@ -8,12 +8,14 @@ class PropagationStructure(val guaranteedAcyclic:Boolean) {
 
   def isClosed:Boolean = myIsClosed
 
+  // registering Scheduling handlers
   var allSchedulingHandlers: QList[SchedulingHandler] = null
 
   def registerSchedulingHandler(s: SchedulingHandler): Unit = {
     allSchedulingHandlers = QList(s, allSchedulingHandlers)
   }
 
+  // registering Propagation Elements
   private[this] var nextUniqueIDForPropagationElement = 0
   def registerPropagationElement(pe:PropagationElement): Unit ={
     require(pe.uniqueID == -1)
@@ -23,10 +25,51 @@ class PropagationStructure(val guaranteedAcyclic:Boolean) {
   }
   var allPropagationElements: QList[PropagationElement] = null
 
-  var layerToPropagationElements: Array[QList[PropagationElement]] = null
-  var layerToNbClusteredPropagationElements: Array[Int] = null
-
+  // registering propagation layers
   var stronglyConnectedComponents:QList[StronglyConnectedComponent] = null
+
+  private var globalRunner: Runner = null
+
+  var layerToPropagationElements:Array[QList[PropagationElement]] = null
+
+  def close(): Unit = {
+    require(!myIsClosed,"Propagation structure already closed")
+    myIsClosed = true
+
+    val myPartitioningAlgo = new SchedulingHandlerPartitioningAlgo(this)
+
+    //1: identifier les SCC
+    //cela rajoute des callBackPE et "supprime" des PE
+    val (propagationElementsNotInSCC, stronglyConnectedComponents)
+      = myPartitioningAlgo.identifyAndInstantiateSCC()
+
+    this.stronglyConnectedComponents = stronglyConnectedComponents
+
+    //2: créer les variableDependencySH
+    //cela rajoute des callBackPE
+
+    myPartitioningAlgo.instantiateVariableSchedulingHandlersForPENotInSCC()
+
+    //3: faire le tri par couche
+    val (layerToNbClusteredPropagationElements,tmpLayerToPropagationElements)
+      = new LayerSorterAlgo(
+      propagationElementsNotInSCC).sortNodesByLayer()
+
+    layerToPropagationElements = tmpLayerToPropagationElements
+
+    val nbLayer = layerToPropagationElements.length
+    require(layerToNbClusteredPropagationElements.length == nbLayer)
+
+    //4: créer les autre SH en parcourant les couches
+    //Et faire les registration des listening SH
+    myPartitioningAlgo.partitionGraphIntoSchedulingHandlers()
+
+    //finally, assign the globalRuner to all SH
+    globalRunner = new LayerSortRunner(nbLayer)
+    for (sh <- allSchedulingHandlers) {
+      sh.globalRunner = globalRunner
+    }
+  }
 
   /**
     * Builds a dictionary to store data related to the PE.
@@ -39,43 +82,6 @@ class PropagationStructure(val guaranteedAcyclic:Boolean) {
   def buildNodeStorage[T](implicit X: Manifest[T]): NodeDictionary[T]
   = new NodeDictionary[T](nextUniqueIDForPropagationElement)
 
-  private var nbLayer: Int = -1
-  private var globalRunner: Runner = null
-
-  def close(): Unit = {
-    require(!myIsClosed,"Propagation structure already closed")
-    myIsClosed = true
-
-    //1: identifier les SCC
-    //cela rajoute des callBackPE et "supprime" des PE
-
-
-    val (propagationElementsNotInSCC, stronglyConnectedComponents)
-      = new SchedulingHandlerPartitioningAlgo(this).identifyAndInstantiateSCC()
-
-    this.stronglyConnectedComponents = stronglyConnectedComponents
-
-    //2: créer les variableDependencySH
-    //cela rajoute des callBackPE
-      new SchedulingHandlerPartitioningAlgo(this).instantiateVariableSchedulingHandlersForPENotInSCC()
-
-    //3: faire le tri par couche
-    (layerToNbClusteredPropagationElements,layerToPropagationElements)
-      = new LayerSorterAlgo(
-      propagationElementsNotInSCC).sortNodesByLayer()
-
-    nbLayer = layerToPropagationElements.length
-    require(layerToNbClusteredPropagationElements.length == nbLayer)
-
-    //4: créer les autre SH en parcourant les couches
-    new SchedulingHandlerPartitioningAlgo(this).partitionGraphIntoSchedulingHandlers()
-
-    //finally, assign the globalRuner to all SH
-    globalRunner = new LayerSortRunner(nbLayer)
-    for (sh <- allSchedulingHandlers) {
-      sh.globalRunner = globalRunner
-    }
-  }
 }
 
 /**

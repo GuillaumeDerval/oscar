@@ -176,6 +176,11 @@ class SchedulingHandlerForPEWithVaryingDependencies(val p:PropagationElement wit
 
     if(loadScheduledDynamicallyListenedElementsIntoRunner()){
       globalRunner.enqueuePE(myCallBackPE)
+      return
+    }
+
+    if(p.isScheduled){
+      globalRunner.enqueuePE(p)
     }
   }
 
@@ -242,19 +247,14 @@ class SchedulingHandlerForPEWithVaryingDependencies(val p:PropagationElement wit
 
   // /////////////////////////////////////////////////////////
   //PE scheduling
-  var pERequiresPropagation = p.isScheduled
 
   def schedulePEForPropagation(pe:PropagationElement): Unit ={
     require(pe == p)
-    require(!pERequiresPropagation)
-
-    if(isRunning){
-      //we are actually propagating
-      globalRunner.enqueuePE(pe)
-    }else {
-      pERequiresPropagation = true
+    if (!isRunning) {
       scheduleMyselfForPropagation()
     }
+    //we do not save this info since proper scheduling
+    // will be performed during the run procedure
   }
 
   // /////////////////////////////////////////////////////////
