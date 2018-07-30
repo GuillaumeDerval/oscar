@@ -1,4 +1,4 @@
-package oscar.cbls.core.propagation.draft
+package oscar.cbls.core.draft.propagation
 
 import oscar.cbls.algo.quick.QList
 
@@ -18,15 +18,20 @@ class PropagationStructure(val debug:Boolean,
     allSchedulingHandlers = QList(s, allSchedulingHandlers)
   }
 
+  //registering propagation elements
+  private var myAllPropagationElements: QList[PropagationElement] = null
+
   // registering Propagation Elements
   private[this] var nextUniqueIDForPropagationElement = 0
-  def registerPropagationElement(pe:PropagationElement): Unit ={
+  protected def registerPropagationElement(pe:PropagationElement): Unit ={
     require(pe.uniqueID == -1)
     pe.uniqueID = nextUniqueIDForPropagationElement
     nextUniqueIDForPropagationElement += 1
-    allPropagationElements = QList(pe,allPropagationElements)
+    myAllPropagationElements = QList(pe,myAllPropagationElements)
   }
-  private var allPropagationElements: QList[PropagationElement] = null
+
+
+  def allPropagationElements:QList[PropagationElement] = myAllPropagationElements
 
   // registering propagation layers
   private var stronglyConnectedComponents:QList[StronglyConnectedComponent] = null
@@ -108,7 +113,7 @@ class PropagationStructure(val debug:Boolean,
     * @tparam T the type stored in the data structure
     * @return a dictionary over the PE that are registered in the propagation structure.
     */
-  def buildNodeStorage[T](implicit X: Manifest[T]): NodeDictionary[T]
+  def buildNodeStorage[@specialized(Boolean,Int) T:Manifest]: NodeDictionary[T]
   = new NodeDictionary[T](nextUniqueIDForPropagationElement)
 }
 
@@ -125,7 +130,7 @@ class PropagationStructure(val debug:Boolean,
   * @tparam T the type stored in this structure
   * @author renaud.delandtsheer@cetic.be
   */
-class NodeDictionary[T](val MaxNodeID: Int)(implicit val X: Manifest[T]) {
+class NodeDictionary[@specialized(Boolean,Int) T:Manifest](val MaxNodeID: Int) {
   private val storage: Array[T] = new Array[T](MaxNodeID + 1)
 
   def update(elem: PropagationElement, value: T) {

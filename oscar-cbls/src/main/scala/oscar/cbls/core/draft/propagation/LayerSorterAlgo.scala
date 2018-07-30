@@ -1,4 +1,4 @@
-package oscar.cbls.core.propagation.draft
+package oscar.cbls.core.draft.propagation
 
 import oscar.cbls.algo.quick.QList
 

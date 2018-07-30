@@ -48,12 +48,6 @@ object WarehouseLocationTabu extends App{
 
   val warehouseOpenArray = Array.tabulate(W)(w => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + w + "_open"))
 
-  //We store in each warehouse variable its warehouse ID, using the
-  // [[oscar.cbls.invariants.core.computation.DistributedStorageUtility]] mechanism
-  //so we first ask a storageKey to the model
-  val warehouseKey = m.newStorageKey()
-  m.storeIndexesAt(warehouseOpenArray, warehouseKey)
-
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
   val distanceToNearestOpenWarehouse = Array.tabulate(D)(d =>
@@ -79,7 +73,7 @@ object WarehouseLocationTabu extends App{
     searchZone = nonTabuWarehouses,selectIndiceBehavior = Best(),selectValueBehavior = Best())
     beforeMove((mo:Move) => {
     for (v <- mo.touchedVariables) {
-      TabuArray(v.getStorageAt[Int](warehouseKey)) := It.value + tabuTenure
+      TabuArray(v.id) := It.value + tabuTenure
     }
     It :+= 1 }) acceptAll() maxMoves W withoutImprovementOver obj saveBest obj restoreBestOnExhaust)
 

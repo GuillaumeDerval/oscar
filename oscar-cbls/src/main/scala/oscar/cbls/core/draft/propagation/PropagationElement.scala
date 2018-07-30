@@ -1,5 +1,4 @@
-package oscar.cbls.core.propagation.draft
-
+package oscar.cbls.core.draft.propagation
 
 import oscar.cbls.algo.dag.DAGNode
 import oscar.cbls.algo.dll.{DPFDLLStorageElement, DelayedPermaFilteredDoublyLinkedList}
@@ -20,8 +19,6 @@ abstract class PropagationElement() extends DAGNode{
   }
 
   def schedulingHandler:SchedulingHandler = mySchedulingHandler
-
-  var model:PropagationStructure = null
 
   //this is the position used for propagation, used both within SCC and out of SCC
   //it is read by all runners
@@ -103,7 +100,6 @@ abstract class PropagationElement() extends DAGNode{
   override def positionInTopologicalSort_=(newValue: Int): Unit = {propagationPosition = newValue}
 
   def compare(that: DAGNode): Int = {
-    assert(this.model == that.asInstanceOf[PropagationElement].model)
     assert(this.uniqueID != -1, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
     assert(that.uniqueID != -1, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
     this.uniqueID - that.uniqueID

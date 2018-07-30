@@ -23,13 +23,12 @@ package oscar.cbls.algo.dag
 import oscar.cbls.algo.heap.BinomialHeap
 import oscar.cbls.algo.quick.QList
 
-import scala.collection.immutable.SortedSet
-
+import scala.collection.immutable.{SortedMap, SortedSet}
 
 /** a DAG node with some abstract methods
   * @author renaud.delandtsheer@cetic.be
   */
-trait DAGNode extends Ordered[DAGNode]{
+trait DAGNode{
 
   /**the position in the topological sort; maintained by the topological sort algorithms*/
   def positionInTopologicalSort: Int
@@ -162,32 +161,40 @@ trait DAG {
   //si pas de cycle, retourne null.
   def getCycle(Start:DAGNode=null):List[DAGNode] = {
 
+    var idToNode:SortedMap[Int,DAGNode]= SortedMap[Int,DAGNode]()
+
+    for(dagNode <- nodes){
+      idToNode += ((dagNode.uniqueID,dagNode))
+    }
+
     //on marque visite quand on poppe de la DFS ou quand on est retombe sur le debut du cycle
     var ExploredStack:List[DAGNode] = List.empty //upside down
 
-    var visited2:SortedSet[DAGNode] = SortedSet.empty
+    var visited2:SortedSet[Int] = SortedSet.empty
 
     def DFS(n:DAGNode):Boolean = { //return true si on a trouve un cycle
       if(n.visited) return false
-      if(visited2.contains(n)){  //found a cycle
+      if(visited2.contains(n.uniqueID)){  //found a cycle
         ExploredStack = (n :: ExploredStack).reverse
         n.visited=true
         while(!ExploredStack.head.visited){ExploredStack = ExploredStack.tail}
-        nodes.foreach(p => {p.visited = false; visited2 -= p})
+        nodes.foreach(p => {p.visited = false; visited2 -= p.uniqueID})
         true
       }else{ //not yet
-        visited2 += n
+        visited2 += n.uniqueID
         ExploredStack = n :: ExploredStack
         n.getDAGSucceedingNodes.foreach(p => {if(DFS(p)){return true}})
         n.visited=true
-        visited2 -= n
+        visited2 -= n.uniqueID
         ExploredStack = ExploredStack.tail
         false
       }
     }
 
     if(Start != null){
-      if(DFS(Start)){ return ExploredStack }
+      if(DFS(Start)){
+        return ExploredStack
+      }
       else return List(Start)
     }
     nodes.foreach(n => {
