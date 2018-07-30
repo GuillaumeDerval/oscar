@@ -2,15 +2,17 @@ package oscar.cbls.core.propagation.draft
 
 import oscar.cbls.algo.quick.QList
 
-class PropagationStructure(val guaranteedAcyclic:Boolean)
+class PropagationStructure(val debug:Boolean,
+                           val guaranteedAcyclic:Boolean,
+                           val dropStaticGraphAfterClose:Boolean)
   extends LayerSortRunner() {
 
-  var myIsClosed:Boolean = false
+  private var myIsClosed:Boolean = false
 
   def isClosed:Boolean = myIsClosed
 
   // registering Scheduling handlers
-  var allSchedulingHandlers: QList[SchedulingHandler] = null
+  private var allSchedulingHandlers: QList[SchedulingHandler] = null
 
   def registerSchedulingHandler(s: SchedulingHandler): Unit = {
     allSchedulingHandlers = QList(s, allSchedulingHandlers)
@@ -24,14 +26,14 @@ class PropagationStructure(val guaranteedAcyclic:Boolean)
     nextUniqueIDForPropagationElement += 1
     allPropagationElements = QList(pe,allPropagationElements)
   }
-  var allPropagationElements: QList[PropagationElement] = null
+  private var allPropagationElements: QList[PropagationElement] = null
 
   // registering propagation layers
-  var stronglyConnectedComponents:QList[StronglyConnectedComponent] = null
+  private var stronglyConnectedComponents:QList[StronglyConnectedComponent] = null
 
-  private var globalRunner: Runner = null
+  private var layerToPropagationElements:Array[QList[PropagationElement]] = null
 
-  var layerToPropagationElements:Array[QList[PropagationElement]] = null
+  private var finalSchedulingHandlers:Iterable[SchedulingHandler] = null
 
   def close(): Unit = {
     require(!myIsClosed,"Propagation structure already closed")
@@ -66,11 +68,35 @@ class PropagationStructure(val guaranteedAcyclic:Boolean)
     //Et faire les registration des listening SH
     myPartitioningAlgo.partitionGraphIntoSchedulingHandlers()
 
+    if(debug) {
+      finalSchedulingHandlers = allSchedulingHandlers.filter(_.noListeningSchedulingHandler)
+    }
+
     for(pe <- allPropagationElements){
       pe.reScheduleIfScheduled()
     }
 
+    if(dropStaticGraphAfterClose){
+      for(pe <- allPropagationElements){
+        pe.dropUselessGraphAfterClose()
+      }
+
+    }
     assert(allPropagationElements.forall(_.schedulingHandler != null))
+  }
+
+  override def doRun(): Unit = {
+    if(debug) {
+      for(sh <- finalSchedulingHandlers){
+        sh.loadScheduledElementsAndAllSourcesIntoRunner()
+      }
+      super.doRun()
+      for(pe <- allPropagationElements){
+        pe.checkInternals()
+      }
+    }else {
+      super.doRun()
+    }
   }
 
   /**
@@ -78,12 +104,12 @@ class PropagationStructure(val guaranteedAcyclic:Boolean)
     * the dictionary is O(1), based on an array.
     * It only works on PE that are registered to this structure.
     * The storage is not initialized, call the initialize to set it to some conventional value.
+ *
     * @tparam T the type stored in the data structure
     * @return a dictionary over the PE that are registered in the propagation structure.
     */
   def buildNodeStorage[T](implicit X: Manifest[T]): NodeDictionary[T]
   = new NodeDictionary[T](nextUniqueIDForPropagationElement)
-
 }
 
 /**

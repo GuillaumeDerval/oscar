@@ -36,6 +36,9 @@ abstract sealed class SchedulingHandler(val isSCC:Boolean, structure:Propagation
 
   private[this] var listeningSchedulingHandlers: QList[SchedulingHandler] = null
 
+  def noListeningSchedulingHandler:Boolean = listeningSchedulingHandlers == null
+
+
   /**a SH that is close ro obj registers here to this,
     * so it can be told that this SH
     * (or something that this SH listens to) has some updates
@@ -43,6 +46,7 @@ abstract sealed class SchedulingHandler(val isSCC:Boolean, structure:Propagation
   def addListeningSchedulingHandler(sh: SchedulingHandler) {
     listeningSchedulingHandlers = QList(sh, listeningSchedulingHandlers)
   }
+
 
   protected def scheduleMyselfForPropagation(): Unit = {
     if (!isScheduled) {

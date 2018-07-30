@@ -5,14 +5,7 @@ import oscar.cbls.algo.dag.DAGNode
 import oscar.cbls.algo.dll.{DPFDLLStorageElement, DelayedPermaFilteredDoublyLinkedList}
 import oscar.cbls.algo.quick.QList
 
-trait PseudoPropagationElement {
-  def registerStaticallyListeningElement(listeningElement: PropagationElement){}
-  def registerDynamicallyListeningElement(listeningElement:PropagationElement,
-                                          id:Int,
-                                          determiningPermanentDependency:Boolean): DPFDLLStorageElement[_] = null
-}
-
-abstract class PropagationElement() extends DAGNode with PseudoPropagationElement{
+abstract class PropagationElement() extends DAGNode{
 
   override var uniqueID = -1 //DAG node already have this kind of stuff
   var isScheduled:Boolean = false
@@ -20,7 +13,9 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
   private var mySchedulingHandler:SchedulingHandler = null
 
   def schedulingHandler_=(sh:SchedulingHandler): Unit ={
-    require(mySchedulingHandler == null || !mySchedulingHandler.isSCC)
+    require(mySchedulingHandler == null)
+    //it can only be assigned once;
+    //do or do not do; there is no trial
     mySchedulingHandler = sh
   }
 
@@ -37,33 +32,42 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
   var staticallyListeningElements:QList[PropagationElement] = null
   var staticallyListenedElements:QList[PropagationElement] = null
 
-  def addStaticallyListenedElement(listened:PropagationElement): Unit ={
-    staticallyListenedElements = QList(listened,staticallyListenedElements)
-  }
-
   /**
     * listeningElement call this method to express that
     * they might register with dynamic dependency to the invocation target
     * @param listeningElement
     */
-  override def registerStaticallyListeningElement(listeningElement: PropagationElement) {
+  def registerStaticallyListeningElement(listeningElement: PropagationElement) {
     staticallyListeningElements = QList(listeningElement,staticallyListeningElements)
-    listeningElement.addStaticallyListenedElement(this)
+    listeningElement.staticallyListenedElements = QList(this,listeningElement.staticallyListenedElements)
   }
 
   // //////////////////////////////////////////////////////////////////////
   //dynamic propagation graph
 
+  //the listening element call the listened element.
+  //the listened element takes care of all internal stuff
+
   private[this] val dynamicallyListeningElements: DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)]
   = new DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)]
+
+  //temporary dynamic listening
+  protected def registerTemporaryDynamicDependency(listeningElement:VaryingDependencies, id:Int): KeyForDynamicDependencyRemoval ={
+    new KeyForDynamicDependencyRemoval(
+      registerTemporaryDynamicDependencyListenedSide(listeningElement:VaryingDependencies,id:Int),
+      listeningElement.registerTemporaryDynamicDependencyListeningSide(this))
+  }
 
   protected[propagation] def registerTemporaryDynamicDependencyListenedSide(listeningElement:VaryingDependencies,
                                                                             id:Int):  DPFDLLStorageElement[_] = {
     this.dynamicallyListeningElements.addElem((listeningElement,id))
   }
 
-  def registerNotificationTargetForNewListeningPE(notificationMethod:((PropagationElement,Int),()=> Boolean) => Unit): Unit ={
-    dynamicallyListeningElements.notifyInserts(notificationMethod)
+
+  //permanent dynamic listening
+  protected def registerPermanentDynamicDependency(listeningElement:PropagationElement,id:Int): Unit ={
+    registerPermanentDynamicDependencyListenedSide(listeningElement,id)
+    listeningElement.registerPermanentDynamicDependencyListeningSide(this)
   }
 
   protected[propagation] def registerPermanentDynamicDependencyListenedSide(listeningElement:PropagationElement ,
@@ -77,17 +81,6 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
     //dynamic dependencies PE will need to do womthing here, actually and that's why there is this method
     //this call is not going to be performed many times because it is about permanent dependency,
     // so only called at startup and never during search
-  }
-
-  protected def registerPermanentDynamicDependency(listeningElement:PropagationElement,id:Int): Unit ={
-    registerPermanentDynamicDependencyListenedSide(listeningElement,id)
-    listeningElement.registerPermanentDynamicDependencyListeningSide(this)
-  }
-
-  protected def registerTemporaryDynamicDependency(listeningElement:VaryingDependencies, id:Int): KeyForDynamicDependencyRemoval ={
-    new KeyForDynamicDependencyRemoval(
-      registerTemporaryDynamicDependencyListenedSide(listeningElement:VaryingDependencies,id:Int),
-      listeningElement.registerTemporaryDynamicDependencyListeningSide(this))
   }
 
   // //////////////////////////////////////////////////////////////////////
@@ -150,7 +143,7 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
     if(!isScheduled){
       isScheduled = true
       if(schedulingHandler != null){
-//at startup, SH are null
+        //at startup, SH are null
         schedulingHandler.schedulePEForPropagation(this)
       }
     }
@@ -177,10 +170,13 @@ abstract class PropagationElement() extends DAGNode with PseudoPropagationElemen
   }
 
   protected def performPropagation():Unit = ???
+
+  def checkInternals():Unit = throw new Error("checkInternals not implemented")
 }
 
 trait VaryingDependencies extends PropagationElement{
 
+  //overrides on dynamic dependencies (permanent and temporary)
   var permanentListenedPE:QList[PropagationElement] = null
 
   val dynamicallyListenedElements: DelayedPermaFilteredDoublyLinkedList[PropagationElement]
@@ -195,6 +191,7 @@ trait VaryingDependencies extends PropagationElement{
     dynamicallyListenedElements.addElem(listenedElement)
   }
 
+  //added stuff for SCC management
   private def initiateDAGPrecedingNodesAfterSCCDefinition(scc:StronglyConnectedComponent){
 
     def filterForListened(listened: PropagationElement,
@@ -214,16 +211,6 @@ trait VaryingDependencies extends PropagationElement{
     staticallyListeningElements = null
   }
 }
-
-
-/**
-  * This is the node type to be used for bulking
-  * @author renaud.delandtsheer@cetic.be
-  */
-trait BulkPropagationElement extends PropagationElement {
-
-}
-
 
 class CalBackPropagationElement(callBackTarget:()=> Unit,
                                 staticallyListeningElements:Iterable[PropagationElement],

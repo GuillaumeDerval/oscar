@@ -3,24 +3,21 @@ package oscar.cbls.core.propagation.draft
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.tarjan.{TarjanNodeData, TarjanWithExternalStorage}
 
-class SchedulingHandlerPartitioningAlgo(p:PropagationStructure) {
+class SchedulingHandlerPartitioningAlgo(propagationStructure:PropagationStructure) {
 
-  def instantiateVariableSchedulingHandlersForPENotInSCC(): Unit = {
-    for (pe <- p.allPropagationElements if pe.scc.isDefined) {
-      pe match {
-        case pev: PropagationElement with VaryingDependencies =>
-          val dsh = new SchedulingHandlerForPEWithVaryingDependencies(pev, p)
-      }
-    }
-  }
-
+  /**
+    * identifies SCC in the propagation graph,
+    * creates SCC SH
+    * this might create additional PE
+    * @return the PE not in SCC (including the newly created PE) and the SCC
+    */
   def identifyAndInstantiateSCC(): (QList[PropagationElement], QList[StronglyConnectedComponent]) = {
-    val storageForTarjan = p.buildNodeStorage[TarjanNodeData]
+    val storageForTarjan = propagationStructure.buildNodeStorage[TarjanNodeData]
     storageForTarjan.initialize(() => new TarjanNodeData)
 
     val stronglyConnectedComponents: List[QList[PropagationElement]] =
       TarjanWithExternalStorage.getStronglyConnexComponents[PropagationElement](
-        p.allPropagationElements,
+        propagationStructure.allPropagationElements,
         p => p.staticallyListeningElements,
         storageForTarjan.get)
 
@@ -35,7 +32,7 @@ class SchedulingHandlerPartitioningAlgo(p:PropagationStructure) {
       } else {
         //a new SCC must be instantiated here
         acyclic = false
-        val scc = new StronglyConnectedComponent(pEOfSCC, pEOfSCC.size, p)
+        val scc = new StronglyConnectedComponent(pEOfSCC, pEOfSCC.size, propagationStructure)
         stronglyConnectedComponentsStructures = QList(scc, stronglyConnectedComponentsStructures)
 
         //we also add the call back PE of the SCC
@@ -46,9 +43,29 @@ class SchedulingHandlerPartitioningAlgo(p:PropagationStructure) {
     (propagationElementsNotInSCC, stronglyConnectedComponentsStructures)
   }
 
-  //graph must already be sorted by layers, have SCC and vSH instantiated
+  /**
+    * this method creates scheduling handlers
+    * for all propagation elements with dynamic dependencies
+    * SCC must already have been allocated
+    * this might create additional PE, added to the PS
+    */
+  def instantiateVariableSchedulingHandlersForPENotInSCC(): Unit = {
+    for (pe <- propagationStructure.allPropagationElements if pe.scc.isDefined) {
+      pe match {
+        case pev: PropagationElement with VaryingDependencies =>
+          val dsh = new SchedulingHandlerForPEWithVaryingDependencies(pev, propagationStructure)
+      }
+    }
+  }
+
+
+  /**
+    * partitions teh graph into SH, taking into account the already allocated SH
+    * (SCC and SH for PE with varying dependencies)
+    * this also performs global registration of all SH to their listening SH
+    */
   def partitionGraphIntoSchedulingHandlers() {
-    var currentLayerID = p.layerToPropagationElements.length
+    var currentLayerID = propagationStructure.layerToPropagationElements.length
     while (currentLayerID > 0) {
       currentLayerID = currentLayerID - 1
 
@@ -57,7 +74,7 @@ class SchedulingHandlerPartitioningAlgo(p:PropagationStructure) {
       //except if the node already has a sh or if its successors have different sh's or if the SH of its successor is a VSH or if the node has no successor at all
       //in this case, a new SH is instantiated
 
-      for (pe <- p.layerToPropagationElements(currentLayerID)) {
+      for (pe <- propagationStructure.layerToPropagationElements(currentLayerID)) {
 
         if (pe.schedulingHandler != null){
           //there is already a SH at this node, we need to register to the listening SH
@@ -94,7 +111,7 @@ class SchedulingHandlerPartitioningAlgo(p:PropagationStructure) {
             //it has no successor, so it gets a new scheduling handler and job is done.
             //no SH listen to this SH either
 
-            pe.schedulingHandler = new SimpleSchedulingHandler(p)
+            pe.schedulingHandler = new SimpleSchedulingHandler(propagationStructure)
 
           } else {
             //it has some successor, so we need to check if they all have the same scheduling handler
@@ -121,7 +138,7 @@ class SchedulingHandlerPartitioningAlgo(p:PropagationStructure) {
             }
 
             if (newSHNeededSoFar) {
-              val newSchedulingHandler = new SimpleSchedulingHandler(p)
+              val newSchedulingHandler = new SimpleSchedulingHandler(propagationStructure)
               pe.schedulingHandler = newSchedulingHandler
 
               var allListeningSH: QList[SchedulingHandler] = null
@@ -154,6 +171,57 @@ class SchedulingHandlerPartitioningAlgo(p:PropagationStructure) {
         }
       }
     }
+  }
+
+  def generatePropagationGraphDot(allSchedulingHandlers:QList[SchedulingHandler]):String = {
+    val acc:StringBuilder = new StringBuilder()
+
+    val sHArray:Array[SchedulingHandler] = allSchedulingHandlers.toArray
+    //Each SH is a subgraph
+
+    //PE are identified by their ID
+
+    //SH are identified by
+    //their order of appearance in the list of all scheduling handlers in the structure
+    //this is slow, but we do not care at all
+
+    def getSHID(sh:SchedulingHandler):Int = {
+      sHArray.indexOf(sh)
+    }
+
+    acc + "digraph G {\n"
+
+    for (shID <- sHArray.indices){
+      val sh = sHArray(shID)
+      acc + s"\tsubgraph sh_$shID {\n"
+
+      val pEs:Iterable[PropagationElement] = sh match{
+        case simple:SimpleSchedulingHandler =>
+          acc + s"\t\tlabel = \"sh_$shID (simple)\";\n"
+          propagationStructure.allPropagationElements.filter(_.schedulingHandler == simple)
+        case scc:StronglyConnectedComponent =>
+          acc + s"\t\tlabel = \"sh_$shID (SCC)\";\n"
+          scc.propagationElements
+        case dyn:SchedulingHandlerForPEWithVaryingDependencies =>
+          acc + s"\t\tlabel = \"sh_$shID (Dyn)\";\n"
+          QList(dyn.p)
+      }
+
+      for(pe <- pEs){
+        acc+ "\t\tpe_" + pe.uniqueID + " [label=\"" + pe.toString + "\" style=filled color=salmon2]; \n"
+      }
+      acc + s"\t}\n"
+    }
+
+    for(peFrom <- propagationStructure.allPropagationElements){
+      for (peTo <- peFrom.staticallyListeningElements){
+        acc + "\tpe_" + peFrom.uniqueID + " -> pe_" + peTo.uniqueID + ";\n"
+      }
+    }
+
+    acc + "}\n\n"
+
+    acc.mkString
   }
 }
 
