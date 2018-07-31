@@ -37,20 +37,28 @@ class Store(debug:Boolean = false,
   assert({System.err.println("You are using a CBLS store with asserts activated. It makes the engine slower. Recompile it with -Xdisable-assertions"); true})
   if(debug) System.err.println("OscaR.cbls is running in debug mode. It makes the engine slower.")
 
-
   // ////////////////////////////////////////////////////////////////////////////////////////////
   // registration procedures
 
-  private[this] var variables:QList[AbstractVariable] = null
+  private[this] var variables:QList[Variable] = null
+  private[this] var changingValuesNotVariables:QList[ChangingValue] = null
 
-  def registerVariable(v:AbstractVariable):Unit = {
+  def registerChangingValue(v:ChangingValue):Unit = {
     require(!isClosed,"model is closed, cannot add variables")
     //ici on utilise des listes parce-que on ne peut pas utiliser des dictionnaires
     // vu que les variables n'ont pas encore recu leur unique ID.
-    variables = QList(v,variables)
+    v match{
+      case v:Variable =>
+        variables = QList(v,variables)
+      case v:ChangingValue =>
+        changingValuesNotVariables = QList(v,changingValuesNotVariables)
+      case _ => throw new Error("unsupported type of ChangingValue")
+    }
+
     registerPropagationElement(v)
   }
 
+  //TODO: how to know that it is not a changingValue??
   def registerInvariant(i:Invariant):Unit = {
     require(!isClosed,"model is closed, cannot add invariant")
     registerPropagationElement(i)
@@ -59,20 +67,18 @@ class Store(debug:Boolean = false,
   // ////////////////////////////////////////////////////////////////////////////////////////////
   // solution management
 
-  private[this] var privateDecisionVariables:QList[Variable] = null;
-
-  def decisionVariables:QList[Variable] = {
-    if(privateDecisionVariables == null){
-      var currentVarPos = variables
-      while(currentVarPos != null){
-        val v:AbstractVariable = currentVarPos.head
-        currentVarPos = currentVarPos.tail
-        if (v.isDecisionVariable){
-          privateDecisionVariables = QList(v.asInstanceOf[Variable],privateDecisionVariables)
-        }
+  lazy val decisionVariables:QList[Variable] = {
+    require(isClosed, "decision variables cannot be computed before model close")
+    var currentVarPos:QList[Variable] = variables
+    var toReturn:QList[Variable] = null
+    while(currentVarPos != null){
+      val v:Variable = currentVarPos.head
+      currentVarPos = currentVarPos.tail
+      if (!v.hasDefiningInvariant){
+        toReturn= QList(v,toReturn)
       }
     }
-    privateDecisionVariables
+    toReturn
   }
 
   /**To save the current value of the variables registered in the model
@@ -114,7 +120,7 @@ class Store(debug:Boolean = false,
   * you cannot pass it over a network connection for instance.
   * see methods getSolution and restoreSolution in [[oscar.cbls.core.computation.Store]]
   */
-class Solution(saves:Iterable[AbstractVariableSnapShot],
+class Solution(saves:Iterable[ChangingValueSnapshot],
                model:Store){
 
   //TODO: serialize/deserialize
@@ -127,6 +133,6 @@ class Solution(saves:Iterable[AbstractVariableSnapShot],
     for(snapshot <- saves) snapshot.restoreIfDecisionVariable()
   }
 
-  def apply(a:AbstractVariable):AbstractVariableSnapShot = saves.find(_.variable == a).get
+  def apply(a:ChangingValue):ChangingValueSnapshot = saves.find(_.changingValue == a).get
 }
 

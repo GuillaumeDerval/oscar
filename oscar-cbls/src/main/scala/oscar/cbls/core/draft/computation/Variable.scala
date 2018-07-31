@@ -6,80 +6,62 @@ import oscar.cbls.core.draft.propagation.PropagationElement
   * Variables have an associated model, to which they register as soon as they are created. Variables also have a name,
   * which is used solely for printing models.
   */
-trait AbstractVariable extends PropagationElement{
+abstract class ChangingValue(store:Store) extends PropagationElement{
 
-  final def model_=(s:Store): Unit ={
-    s.registerVariable(this)
-  }
-  def model = propagationStructure.asInstanceOf[Store]
+  store.registerChangingValue(this)
 
-  def hasModel:Boolean = hasPropagationStructure
+  def snapshot:ChangingValueSnapshot
 
-  def snapshot:AbstractVariableSnapShot
+  def name:String = s"ChangingValue$uniqueID" //this is a default name, but it cvan of course be changed
 
-  def name:String
+  def valueString(blockPropagation:Boolean = false):String
 
-  def defaultName = s"Var_$uniqueID"
-
-  protected def definingInvariant:Invariant
-
-  def isControlledVariable:Boolean = definingInvariant != null
-  def isDecisionVariable:Boolean = definingInvariant == null
+  override def toString: String = name + ":" + valueString()
 
   /** this method is a toString that does not trigger a propagation.
     * use this to debug your software.
-    * you should specify to your IDE to render variable objects using this method isntead of the toString method
+    * you should specify to your IDE to render variable objects using this method instead of the toString method
     * @return a string similar to the toString method
     */
-  def toStringNoPropagate:String
+  final def toStringNoPropagate:String = name + ":" + valueString(true)
 }
 
-object AbstractVariable{
-  implicit val ord:Ordering[AbstractVariable] = new Ordering[AbstractVariable]{
-    def compare(o1: AbstractVariable, o2: AbstractVariable) = o1.compare(o2) //that the compare of propagation element, actually
+object ChangingValue{
+  implicit val ord:Ordering[ChangingValue] = new Ordering[ChangingValue]{
+    def compare(o1: ChangingValue, o2: ChangingValue) = o1.compare(o2)
   }
 }
 
+trait Variable extends ChangingValue{
 
+  override def name:String = s"Variable$uniqueID" //this is a default name; it can of course be changed
 
-//TODO: try to remove the double inclusion of AbstractVariable into CBLSIntVar and SetVar
-trait Variable extends AbstractVariable{
-  protected var definingInvariant:Invariant = null
-  def setDefiningInvariant(i:Invariant){
-    assert(i.model == model || i.model == null)
-    assert(! i.isInstanceOf[Variable])
-    require(definingInvariant == null)
-    definingInvariant = i
-    registerStaticallyListenedElement(i)
-    registerDynamicallyListenedElement(i,0)
-    }
+  final override def toString: String = super.toString
+
+  final def hasDefiningInvariant:Boolean = staticallyListenedElements != null
 }
-
-abstract class AbstractVariableSnapShot(val variable:AbstractVariable){
-
-  // Added by GO for pretty printing of some benchmarks:
-  // to change if this affects the printing of other benchmarks
-  override def toString: String = s"Variable[name:${variable.name}, value:${variable.valueString}]"
-
-  final def restore() {
-    variable match {
-      case v : Variable if v.isDecisionVariable => doRestore()
-      case _ => throw new Error("can only re-assign decision variable, not " + variable)
-    }
-  }
-
-  final def restoreIfDecisionVariable(){
-    variable match {
-      case v : Variable if v.isDecisionVariable => doRestore()
-      case _ => ;
-    }
-  }
-  protected def doRestore()
-}
-
 
 object Variable{
   implicit val ord:Ordering[Variable] = new Ordering[Variable]{
     def compare(o1: Variable, o2: Variable) = o1.compare(o2) //that the compare of propagation element, actually
   }
+}
+
+abstract class ChangingValueSnapshot(val changingValue:ChangingValue){
+
+  final def restore() {
+    changingValue match {
+      case v : Variable if !v.hasDefiningInvariant => doRestore()
+      case _ => throw new Error("can only re-assign decision variable, not " + changingValue)
+    }
+  }
+
+  final def restoreIfDecisionVariable(){
+    changingValue match {
+      case v : Variable if !v.hasDefiningInvariant => doRestore()
+      case _ => ;
+    }
+  }
+
+  protected def doRestore()
 }

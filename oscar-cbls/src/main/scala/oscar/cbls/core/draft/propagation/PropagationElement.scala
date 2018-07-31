@@ -34,7 +34,7 @@ abstract class PropagationElement() extends DAGNode{
     * they might register with dynamic dependency to the invocation target
     * @param listeningElement
     */
-  def registerStaticallyListeningElement(listeningElement: PropagationElement) {
+  protected def registerStaticallyListeningElement(listeningElement: PropagationElement) {
     staticallyListeningElements = QList(listeningElement,staticallyListeningElements)
     listeningElement.staticallyListenedElements = QList(this,listeningElement.staticallyListenedElements)
   }
@@ -45,7 +45,7 @@ abstract class PropagationElement() extends DAGNode{
   //the listening element call the listened element.
   //the listened element takes care of all internal stuff
 
-  private[this] val dynamicallyListeningElements: DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)]
+  protected[this] val dynamicallyListeningElements: DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)]
   = new DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)]
 
   //temporary dynamic listening
@@ -122,7 +122,7 @@ abstract class PropagationElement() extends DAGNode{
     getDAGSucceedingNodes = dynamicallyListeningElements.delayedPermaFilter(filterForListening, (e) => e._1)
   }
 
-  private def initiateDAGPrecedingNodesAfterSCCDefinition(scc:StronglyConnectedComponent){
+  protected def initiateDAGPrecedingNodesAfterSCCDefinition(scc:StronglyConnectedComponent){
     getDAGPrecedingNodes = staticallyListenedElements.filter(_.scc == scc)
   }
 
@@ -188,7 +188,7 @@ trait VaryingDependencies extends PropagationElement{
   }
 
   //added stuff for SCC management
-  private def initiateDAGPrecedingNodesAfterSCCDefinition(scc:StronglyConnectedComponent){
+  override protected def initiateDAGPrecedingNodesAfterSCCDefinition(scc:StronglyConnectedComponent){
 
     def filterForListened(listened: PropagationElement,
                           injector: (() => Unit),
