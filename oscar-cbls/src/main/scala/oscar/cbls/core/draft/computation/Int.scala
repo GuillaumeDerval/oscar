@@ -36,7 +36,9 @@ trait IntNotificationTarget{
   * @param initialDomain is the domain value of the variable. Some invariants exploit this value to declare fixed size arrays
   * @param initialValue is the value of the variable
   */
-abstract class ChangingIntValue(store:Store,initialValue:Int, initialDomain:Domain)
+abstract class ChangingIntValue(store:Store,
+                                initialValue:Int,
+                                initialDomain:Domain)
   extends ChangingValue(store) {
 
   require(initialDomain.contains(initialValue),
@@ -45,6 +47,9 @@ abstract class ChangingIntValue(store:Store,initialValue:Int, initialDomain:Doma
   // ////////////////////////////////////////////////////////////////////////////////////////////////
   // domain management
   private[this] var privateDomain:Domain = initialDomain
+
+
+  def domain:Domain = privateDomain
   def min = domain.min
   def max = domain.max
 
@@ -52,7 +57,6 @@ abstract class ChangingIntValue(store:Store,initialValue:Int, initialDomain:Doma
     privateDomain = privateDomain.intersect(d)
     require(privateDomain.contains(mNewValue),"you are restricting a domain and the new value is not in this domain")
   }
-  def domain:Domain = privateDomain
 
   // ////////////////////////////////////////////////////////////////////////////////////////////////
   //snapshot
@@ -60,22 +64,18 @@ abstract class ChangingIntValue(store:Store,initialValue:Int, initialDomain:Doma
     new ChangingIntValueSnapshot(this,this.value)
 
   // ////////////////////////////////////////////////////////////////////////////////////////////////
-  // value management
-  private[this] var mNewValue: Int = initialValue
-  private[this] var mOldValue = mNewValue
+  // toString
 
   override def valueString(blockPropagation: Boolean): String =
     "" + (if(blockPropagation) mOldValue else value)
 
+  // ////////////////////////////////////////////////////////////////////////////////////////////////
+  // value management
+  private[this] var mNewValue: Int = initialValue
+  private[this] var mOldValue = mNewValue
 
-  @inline
-  protected def setValue(v:Int){
-    if (v != mNewValue){
-      assert(domain.contains(v),v+ " is not in the domain of "+this+"("+min+".."+max+"). This might indicate an integer overflow.")
-      mNewValue = v
-      this.scheduleMyselfForPropagation()
-    }
-  }
+  // ////////////////////////////////////////////////////////////////////////////////////////////////
+  // getting value
 
   def value: Int = {
     ensureUpToDate()
@@ -83,6 +83,40 @@ abstract class ChangingIntValue(store:Store,initialValue:Int, initialDomain:Doma
   }
 
   protected def newValue:Int = mNewValue
+
+  // ////////////////////////////////////////////////////////////////////////////////////////////////
+  // setting value
+
+  @inline
+  protected def setValue(v:Int){
+    if (v != mNewValue){
+      require(domain.contains(v),v+ " is not in the domain of "+this+"("+min+".."+max+"). This might indicate an integer overflow.")
+      mNewValue = v
+      scheduleMyselfForPropagation()
+    }
+  }
+
+  // ////////////////////////////////////////////////////////////////////////////////////////////////
+  //registration
+
+  def registerStaticAndPermanentDynamicDependency(target:PropagationElement with IntNotificationTarget,
+                                                  id:Int = 0): Unit ={
+    super.registerStaticallyListeningElement(target)
+    super.registerPermanentDynamicDependency(target,id)
+  }
+
+  def registerStaticDependency(pe:PropagationElement with VaryingDependencies): Unit ={
+    super.registerStaticallyListeningElement(pe)
+  }
+
+  def registerTemporaryDynamicDependency(target:IntNotificationTarget with VaryingDependencies,
+                                         id:Int=0): KeyForDynamicDependencyRemoval = {
+    super.registerTemporaryDynamicDependency(target,id)
+  }
+
+  // ////////////////////////////////////////////////////////////////////////////////////////////////
+  // propagation
+
 
   override def performPropagation(){performIntPropagation()}
 
@@ -109,22 +143,6 @@ abstract class ChangingIntValue(store:Store,initialValue:Int, initialDomain:Doma
     require(mOldValue == mNewValue)
   }
 
-  // ////////////////////////////////////////////////////////////////////////////////////////////////
-  //registration methods
-
-
-  def registerStaticAndPermanentDynamicDependency(target:PropagationElement with IntNotificationTarget,id:Int = 0): Unit ={
-    super.registerStaticallyListeningElement(target)
-    super.registerPermanentDynamicDependency(target,id)
-  }
-
-  def registerStaticDependency(pe:PropagationElement with VaryingDependencies): Unit ={
-    super.registerStaticallyListeningElement(pe)
-  }
-
-  def registerTemporaryDynamicDependency(target:IntNotificationTarget with VaryingDependencies, id:Int=0): KeyForDynamicDependencyRemoval = {
-    super.registerTemporaryDynamicDependency(target,id)
-  }
 
   // ////////////////////////////////////////////////////////////////////////////////////////////////
   //clean methods
@@ -164,13 +182,20 @@ object ChangingIntValue{
 }
 
 class ChangingIntValueSnapshot(val variable:ChangingIntValue,
-                               val savedValue:Int) extends ChangingValueSnapshot(variable){
-  override protected def doRestore() : Unit = throw new Error("cannot reload changing int values, only CBLSIntVar")
+                               val savedValue:Int)
+  extends ChangingValueSnapshot(variable){
+
+  override protected def doRestore() : Unit =
+    throw new Error("cannot reload changing int values, only CBLSIntVar")
 }
 
 class IntVarSnapshot(variable:CBLSIntVar,
-                     savedValue:Int) extends ChangingIntValueSnapshot(variable,savedValue){
-  override protected def doRestore() : Unit = {variable.asInstanceOf[CBLSIntVar] := savedValue}
+                     savedValue:Int)
+  extends ChangingIntValueSnapshot(variable,savedValue){
+
+  override protected def doRestore() : Unit = {
+    variable := savedValue
+  }
 }
 
 
@@ -181,16 +206,20 @@ class IntVarSnapshot(variable:CBLSIntVar,
   * @param initialValue is the initial value of the variable
   * @param n is the name of the variable, used for pretty printing only. if not set, a default will be used, based on the variable number
   */
-class CBLSIntVar(store: Store, initialValue: Int, initialDomain:Domain, givenName: String = null)
-  extends ChangingIntValue(store, initialValue,initialDomain) with Variable{
+class CBLSIntVar(store: Store,
+                 initialValue: Int,
+                 initialDomain:Domain,
+                 givenName: String = null)
+  extends ChangingIntValue(store, initialValue, initialDomain) with Variable{
   
   require(store != null)
-
 
   override def snapshot : IntVarSnapshot =
     new IntVarSnapshot(this,this.value)
 
   override def name: String = if (givenName == null) super.name else givenName
+
+  override def restrictDomain(d: Domain): Unit = super.restrictDomain(d)
 
   override def :=(v: Int) {
     setValue(v)
@@ -244,16 +273,18 @@ object CBLSIntVar{
 */
 class CBLSIntConst(store:Store, override val value:Int)
   extends CBLSIntVar(store, value, value to value, "constant_" + value) {
-  override protected def setValue(v: Int): Unit = throw new Error("you cannot change the value of a constant")
+  override protected def setValue(v: Int): Unit =
+    throw new Error("you cannot change the value of a constant")
 }
 
 /** this is a special case of invariant that has a single output variable, that is an IntVar
   * @author renaud.delandtsheer@cetic.be
   */
-abstract class IntInvariant(store:Store,initialValue:Int = 0, initialDomain:Domain = FullRange)
+abstract class IntInvariant(store:Store,
+                            initialValue:Int = 0,
+                            initialDomain:Domain = FullRange)
   extends ChangingIntValue(store,initialValue, initialDomain)
   with InvariantTrait{
-
 
   override final def performPropagation(){
     performInvariantPropagation()
@@ -274,7 +305,8 @@ object IdentityInt{
   * @author renaud.delandtsheer@cetic.be
   */
 class IdentityInt(toValue:CBLSIntVar, fromValue:ChangingIntValue, store:Store)
-  extends Invariant(store) with IntNotificationTarget{
+  extends Invariant(store)
+    with IntNotificationTarget{
 
   fromValue.registerStaticAndPermanentDynamicDependency(this)
   defineOutputVariable(toValue)

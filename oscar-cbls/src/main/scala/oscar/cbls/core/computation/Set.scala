@@ -286,6 +286,7 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
   protected def :=(v:SortedSet[Int]) {setValue(v)}
 
   protected def :+=(i:Int) {this.insertValue(i)}
+
   protected def :-=(i:Int) {this.deleteValue(i)}
 
   def createClone:CBLSSetVar = {
@@ -309,7 +310,12 @@ trait SetNotificationTarget extends PropagationElement{
    * @param oldValue
    * @param newValue
    */
-  def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int])
+  def notifySetChanges(v: ChangingSetValue,
+                       id: Int,
+                       addedValues: Iterable[Int],
+                       removedValues: Iterable[Int],
+                       oldValue: SortedSet[Int],
+                       newValue: SortedSet[Int])
 
   def registerDynamicValueWiseDependency(s:SetValue):ValueWiseKey = {
     s match{
