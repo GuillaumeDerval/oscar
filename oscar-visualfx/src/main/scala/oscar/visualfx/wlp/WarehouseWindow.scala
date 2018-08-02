@@ -15,7 +15,7 @@ class WarehouseWindow(distanceCost: Array[Array[Int]], warehousePos: Array[(Int,
 
   val watch = new StopWatch
   var lastUpdate:Long = 1000
-  val TPE = new ThreadPoolExecutor(1, 1, 60, TimeUnit.SECONDS, new LinkedBlockingQueue[Runnable])
+  val TPE = new ThreadPoolExecutor(1, 10, 60, TimeUnit.SECONDS, new LinkedBlockingQueue[Runnable])
   val distance: Array[Array[Int]] = distanceCost
   val offset = 50
   val Xmax: Int = List(warehousePos.map(_._1).max, deliveryPos.map(_._1).max).max + offset
@@ -38,7 +38,7 @@ class WarehouseWindow(distanceCost: Array[Array[Int]], warehousePos: Array[(Int,
   scatterChart.setMinSize(900, 800)
   stackPane.children.addAll(scatterChart)
   this.setFrameNodes(node = stackPane)
-  this.sizeToScene()
+  this.stage.sizeToScene()
   this.showStage()
 
 
@@ -106,7 +106,6 @@ class WarehouseWindow(distanceCost: Array[Array[Int]], warehousePos: Array[(Int,
     }
   }
 
-
   def updateNearestWarehouse(openWarehouses: Set[Int], warehousesToOpen: Set[Int], warehousesToClose: Set[Int]): Unit = {
     val task = new Runnable {
       override def run(): Unit = {
@@ -143,24 +142,42 @@ class WarehouseWindow(distanceCost: Array[Array[Int]], warehousePos: Array[(Int,
   }
 
   def update(openWarehouses: Set[Int], forcedToTraceLines: Boolean = false): Unit = {
+    if (this.watch.getTime == 0) {this.watch.start()}
     val task = new Runnable {
       override def run(): Unit = {
         val currentTime = watch.getTime
+        val refreshTime = 200
         warehouse.foreach(w => {
           w.booleanProperty.value = false
-          if (currentTime - lastUpdate >= 1000 || forcedToTraceLines) {removeLines(w)}
+          if (currentTime - lastUpdate >= refreshTime || forcedToTraceLines) {removeLines(w)}
           w.nearestDeliveryStores = Seq()
         })
         openWarehouses.foreach(i => {
           val w = warehouse(i)
           w.booleanProperty.value = true
         })
-        if (currentTime - lastUpdate >= 1000 || forcedToTraceLines) {
+        if (currentTime - lastUpdate >= refreshTime || forcedToTraceLines) {
           deliveryStores.foreach(d => addDeliveryToWarehouse(d,getNearestOpenWarehouse(d,distance)))
           lastUpdate = currentTime
         }
       }
     }
     TPE.submit(task)
+  }
+
+  def startTimer: Unit = this.watch.start()
+
+  def stopTimer: Unit = this.watch.stop()
+
+  def reset: Unit = {
+    TPE.purge()
+    lastUpdate = 1000
+    stopTimer
+    watch.reset()
+    warehouse.foreach(w => {
+      w.booleanProperty.value = false
+      removeLines(w)
+      w.nearestDeliveryStores.foreach(d => addDeliveryToWarehouse(d, getNearestOpenWarehouse(d, distanceCost, init = true), false))
+    })
   }
 }

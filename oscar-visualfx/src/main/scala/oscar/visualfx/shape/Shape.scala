@@ -1,4 +1,4 @@
-package oscar.visualfx
+package oscar.visualfx.shape
 
 import scalafx.scene.layout.Region
 

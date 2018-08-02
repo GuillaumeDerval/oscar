@@ -2,20 +2,22 @@ package oscar.examples.visualfx
 
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
+import oscar.cbls.core.search.Move
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.MinConstArrayValueWise
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
 import oscar.cbls.lib.search.neighborhoods._
+import oscar.visualfx.plot.Plot
 import oscar.visualfx.wlp.WarehouseWindow
 
 class WLP {
 
-  val W:Int = 500
+  val W:Int = 50
 
-  val D:Int = 2000
+  val D:Int = 200
 
-  def optim(window: WarehouseWindow, distanceCost: Array[Array[Int]], costForOpeningWarehouse1: Array[Int], warehouseToWarehouseDistances:Array[Array[Int]]): Unit = {
+  def optim(window: WarehouseWindow, plot: Plot, distanceCost: Array[Array[Int]], costForOpeningWarehouse1: Array[Int], warehouseToWarehouseDistances:Array[Array[Int]]): Unit = {
 
     Thread.currentThread().setPriority(Thread.MAX_PRIORITY)
 
@@ -91,7 +93,7 @@ class WLP {
 
     def doubleSwap(k:Int) = (swapsK(k) dynAndThen((firstSwap:SwapMove) => swapsK(k,() => kNearestOpenWarehouses(firstSwap.idI,k)))) name "DoubleSwap"
 
-    val neighborhood =(
+    val neighborhood =((
       (BestSlopeFirst(
         List(
           Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
@@ -99,19 +101,22 @@ class WLP {
           Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
         ),refresh = W/10)
         onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 2, obj)
-      ) exhaust (Profile(muLine(3,3,15)) exhaustAndContinueIfMovesFound Profile(muLine(4,3,15)))) afterMove {
+      ) exhaust (Profile(muLine(3,3,15)) exhaustAndContinueIfMovesFound Profile(muLine(4,3,15))))
+    afterMoveOnMove  ((m:Move) => {
       window.update(openWarehouses.value)
-    }
+      plot.addPoint(obj.value,m.toString)
+    }))
 
     neighborhood.verbose = 2
 
     neighborhood.doAllMoves(obj=obj)
 
     window.update(openWarehouses.value,true)
-    window.TPE.shutdown()
-    //println(neighborhood.profilingStatistics)
+    plot.addPoint(obj.value)
 
+    //println(neighborhood.profilingStatistics)
     println(openWarehouses.value)
+    println(obj.value)
   }
 
 }

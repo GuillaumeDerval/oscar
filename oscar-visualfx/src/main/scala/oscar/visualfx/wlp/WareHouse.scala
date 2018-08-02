@@ -3,7 +3,7 @@ package oscar.visualfx.wlp
 import java.lang
 
 import javafx.beans.value.{ChangeListener, ObservableValue}
-import oscar.visualfx.Shape
+import oscar.visualfx.shape.Shape
 import scalafx.application.Platform
 import scalafx.beans.property.BooleanProperty
 import scalafx.scene.control.Tooltip
@@ -18,7 +18,7 @@ class WareHouse(window: WarehouseWindow, position: (Int,Int),id: Int, width: Dou
 
   this.setMinSize(width,height)
   this.setMaxSize(width,height)
-  this.setStyleSheet("css/WareHouse.css")
+  this.setStyleSheet("../css/WareHouse.css")
   this.getStyleClass.add("closedWarehouse")
   Tooltip.install(this, new Tooltip("warehouse : %d".format(id)))
 

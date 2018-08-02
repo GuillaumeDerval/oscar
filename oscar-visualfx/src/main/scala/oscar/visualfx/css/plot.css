@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,400i,900');
+
+.borderPane {
+    -fx-background-color: #e6f7ff;
+}
+
+.chart {
+    -fx-horizontal-grid-lines-visible: false;
+    -fx-horizontal-zero-line-visible: false;
+    -fx-vertical-grid-lines-visible: false;
+    -fx-vertical-zero-line-visible: false;
+    -fx-alternative-column-fill-visible: false;
+    -fx-alternative-row-fill-visible: false;
+}
+
+.chart-plot-background {
+    -fx-background-color: transparent;
+}
+
+.chart-vertical-zero-line {
+    -fx-fill: transparent;
+}
+
+.axis {
+    -fx-tick-mark-visible: true;
+    -fx-tick-labels-visible: true;
+}
+
+.default-color0.chart-series-line {
+    -fx-stroke: #0066ff;
+    -fx-stroke-dash-array: none;
+    -fx-stroke-width: 3;
+}
+
+.default-color0.chart-line-symbol {
+    -fx-background-color: #0066ff, white;
+}
+
+.chart-line-symbol {
+    -fx-background-color: transparent;
+}
+
+.chart-series-line {
+    -fx-stroke: black;
+    -fx-stroke-dash-array: 3;
+    -fx-stroke-width: 2;
+}
+
+.tooltip {
+    -fx-font-family: 'Roboto', sans-serif;
+    -fx-font-size: 12px;
+    -fx-font-style: italic;
+    -fx-background-radius: 0 5 0 5;
+    -fx-background-color: #ffb566;
+}

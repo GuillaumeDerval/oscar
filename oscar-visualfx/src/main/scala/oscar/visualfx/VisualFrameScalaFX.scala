@@ -5,7 +5,6 @@ import javax.imageio.ImageIO
 import oscar.visualfx.util.FileManager
 import scalafx.Includes._
 import scalafx.application.JFXApp
-import scalafx.application.JFXApp._
 import scalafx.embed.swing.SwingFXUtils._
 import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.Alert.AlertType
@@ -13,15 +12,15 @@ import scalafx.scene.control.{Alert, Button}
 import scalafx.scene.layout.{BorderPane, HBox}
 import scalafx.scene.text._
 import scalafx.scene.{Node, Scene}
-import scalafx.stage.Screen
+import scalafx.stage.{Screen, Stage}
 
-class VisualFrameScalaFX(_title: String) extends PrimaryStage {
+class VisualFrameScalaFX(_title: String) {
 
   val button = new Button("Save as PNG")
 
   val rectangle2D = Screen.primary.visualBounds
 
-  val stage = new PrimaryStage {
+  val stage = new Stage {
     title = _title
     centerOnScreen()
   }
@@ -39,9 +38,9 @@ class VisualFrameScalaFX(_title: String) extends PrimaryStage {
   borderPane.getStyleClass.add("borderPane")
   stage.scene = new Scene(borderPane)
   stage.sizeToScene()
-  stage.getScene.getStylesheets.add(getClass.getResource("css/main.css").toExternalForm)
-  this.borderPane.minHeightProperty().bind(this.minHeightProperty())
-  this.borderPane.minWidthProperty().bind(this.minWidthProperty())
+  stage.getScene.getStylesheets.add(getClass.getResource("../css/main.css").toExternalForm)
+  this.borderPane.minHeightProperty().bind(stage.minHeightProperty())
+  this.borderPane.minWidthProperty().bind(stage.minWidthProperty())
 
   stage.resizable = true
 
@@ -64,7 +63,8 @@ class VisualFrameScalaFX(_title: String) extends PrimaryStage {
 
   def getFrameNodes: Map[String, Node] = {
     val parent = this.borderPane
-    val nodes = Map("top" -> parent.top.asInstanceOf[scalafx.scene.Node],
+    val nodes = Map(
+      "top" -> parent.top.asInstanceOf[scalafx.scene.Node],
       "bottom" -> parent.bottom.asInstanceOf[scalafx.scene.Node],
       "right" -> parent.right.asInstanceOf[scalafx.scene.Node],
       "left" -> parent.left.asInstanceOf[scalafx.scene.Node],

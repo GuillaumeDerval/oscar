@@ -63,8 +63,8 @@ class VisualPlan(title: String) {
   this.rightBox.widthProperty().addListener(new ChangeListener[Number] {
     override def changed(observable: ObservableValue[_ <: Number], oldValue: Number, newValue: Number): Unit = {
       if (oldValue.doubleValue() < newValue.doubleValue()) {
-        VisualPlan.this.visualFrame.sizeToScene()
-        VisualPlan.this.visualFrame.centerOnScreen()
+        VisualPlan.this.visualFrame.stage.sizeToScene()
+        VisualPlan.this.visualFrame.stage.centerOnScreen()
       }
     }
   })
