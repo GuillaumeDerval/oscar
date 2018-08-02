@@ -31,22 +31,37 @@ object TimeWindowHelper{
     *
     * @param vrp The vehicle routing problem
     * @param timeExtension The timeExtension model
+    * @param timeMatrix The time matrix
+    * @param parallelizeNodes whether or not the nodes are allowed to be made in parallel.
+    *                      If it's the case and the nodes are parallelisable (same place and with overlapping time windows),
+    *
     * @return true if the node is relevant
     */
   def relevantPredecessorsOfNodes(vrp: VRP,
                                   timeExtension: TimeWindow,
-                                  timeMatrix: TTFMatrix): Map[Int,HashSet[Int]] = {
+                                  timeMatrix: TTFMatrix,
+                                  parallelizeNodes: Boolean = true): Map[Int,HashSet[Int]] = {
     val earlylines = timeExtension.earlylines
     val deadlines = timeExtension.deadlines
     val taskDurations = timeExtension.taskDurations
+
+    def areNodesParallelisable(predecessor: Int, node: Int): Boolean = {
+      parallelizeNodes &&
+      deadlines(predecessor) > earlylines(node) &&
+      timeMatrix.getTravelDuration(predecessor, earlylines(predecessor) + taskDurations(predecessor), node) == 0
+    }
+
     Array.tabulate(vrp.n)(node => node -> HashSet(vrp.nodes.collect {
-      case predecessor if
-        earlylines(predecessor) +
-          taskDurations(predecessor) +
-          timeMatrix.getTravelDuration(predecessor,earlylines(predecessor)+taskDurations(predecessor),node) +
-          taskDurations(node)
-          <= deadlines(node) &&
+      case predecessor if areNodesParallelisable(predecessor,node) &&
+          (Math.max(earlylines(predecessor) + taskDurations(predecessor),
+            earlylines(node) + taskDurations(node)) <= deadlines(node)) &&
           predecessor != node => predecessor
+      case predecessor if !areNodesParallelisable(predecessor,node) &&
+        (earlylines(predecessor) +
+          taskDurations(predecessor) +
+          timeMatrix.getTravelDuration(predecessor, earlylines(predecessor) + taskDurations(predecessor), node) +
+          taskDurations(node)) <= deadlines(node) &&
+        predecessor != node => predecessor
     }: _*)).toMap
   }
 
