@@ -196,13 +196,11 @@ abstract class ChangingSetValue(store:Store,
   // ////////////////////////////////////////////////////////////////////////////////////////////////
   //value-wise registration
 
-  //mechanism that manage non value-wise keys (since we do not want to iterate on them)
-  private val listeningElementsNonValueWise:DoublyLinkedList[(PropagationElement,Int)] =
-    dynamicallyListeningElements.permaFilter({case (pe,id) => id != Int.MinValue})
+
 
 
   def registerStaticAndPermanentDynamicDependencyValueWise(target:PropagationElement with SetNotificationTarget,
-                                                  id:Int = 0): Unit ={
+                                                           id:Int = 0): ValueWiseKey ={
     require(id != Int.MinValue, "MinValue is forbidden as an id for Set values")
 
     super.registerStaticallyListeningElement(target)
@@ -213,7 +211,7 @@ abstract class ChangingSetValue(store:Store,
   }
 
   def registerTemporaryDynamicDependencyValueWise(target:SetNotificationTarget with VaryingDependencies,
-                                         id:Int=0): TemporaryValueWiseKey = {
+                                                  id:Int=0): TemporaryValueWiseKey = {
     require(id != Int.MinValue, "MinValue is forbidden as an id for Set values")
 
     createValueWiseMechanicsIfNeeded()
@@ -223,10 +221,18 @@ abstract class ChangingSetValue(store:Store,
       super.registerTemporaryDynamicDependency(target,Int.MinValue))
   }
 
+  //mechanism that manage non value-wise keys (since we do not want to iterate on them)
+  private var listeningElementsNonValueWise:DoublyLinkedList[(PropagationElement,Int)] = null
+
+  private def usesValueWise:Boolean = valueToValueWiseKeys != null
 
   private def createValueWiseMechanicsIfNeeded(){
-    if(valueToValueWiseKeys == null){
-      valueToValueWiseKeys = Array.tabulate(this.domain.max - this.domain.min + 1)(_ => new DoublyLinkedList[ValueWiseKey]())
+    if(!usesValueWise){
+      valueToValueWiseKeys
+        = Array.tabulate(this.domain.max - this.domain.min + 1)(_ => new DoublyLinkedList[ValueWiseKey]())
+
+      listeningElementsNonValueWise
+        = dynamicallyListeningElements.permaFilter({case (pe,id) => id != Int.MinValue})
     }
   }
   private[this] var valueToValueWiseKeys:Array[DoublyLinkedList[ValueWiseKey]] = null
@@ -279,28 +285,23 @@ abstract class ChangingSetValue(store:Store,
       assert((mOldValue ++ addedValues -- deletedValues).equals(mNewValue))
 
       if(addedValues.nonEmpty || deletedValues.nonEmpty) {
+
         //notifying the PE that listen to the whole set
-        val dynListElements = listeningElementsNonValueWise
-        val headPhantom = dynListElements.phantom
-        var currentElement = headPhantom.next
-        while (currentElement != headPhantom) {
-          val e = currentElement.elem
-          val inv : SetNotificationTarget = e._1.asInstanceOf[SetNotificationTarget]
+        val dynListElementsForWholeSetNotification:Iterable[(PropagationElement,Int)] =
+          if(usesValueWise) listeningElementsNonValueWise else dynamicallyListeningElements
 
-          //todo: the adde dand deleted could be computed lazily (you never know...)
+        for((inv,id) <- dynListElementsForWholeSetNotification){
+          //TODO: the added and deleted could be computed lazily (you never know...)
           //TODO: the data struct can be improved.
-          inv.notifySetChanges(this, e._2, addedValues, deletedValues, mOldValue, mNewValue)
-
-          //we go to the next to be robust against invariant that change their dependencies when notified
-          //this might cause crash because dynamicallyListenedInvariants is a mutable data structure
-          currentElement = currentElement.next
+          inv.asInstanceOf[SetNotificationTarget].notifySetChanges(this, id, addedValues, deletedValues, mOldValue, mNewValue)
         }
 
-        if(valueToValueWiseKeys != null) {
+        //value wise notifications
+        if(usesValueWise) {
           val currentValueWisePropagationWaveIdentifier = new ValueWisePropagationWaveIdentifier()
 
-          notifyForValues(addedValues, addedValues, deletedValues, currentValueWisePropagationWaveIdentifier)
-          notifyForValues(deletedValues, addedValues, deletedValues, currentValueWisePropagationWaveIdentifier)
+          valueWiseNotify(addedValues, addedValues, deletedValues, mOldValue, mNewValue, currentValueWisePropagationWaveIdentifier)
+          valueWiseNotify(deletedValues, addedValues, deletedValues, mOldValue, mNewValue, currentValueWisePropagationWaveIdentifier)
         }
       }
       //puis, on fait une affectation en plus, pour garbage collecter l'ancienne structure de donnees.
@@ -312,8 +313,13 @@ abstract class ChangingSetValue(store:Store,
   }
 
   @inline  //This method is awfully slow, ad we do not know why
-  private def notifyForValues(values : Iterable[Int],addedValues:Iterable[Int], deletedValues:Iterable[Int], currentValueWisePropagationWaveIdentifier:ValueWisePropagationWaveIdentifier) {
-    val valuesIt = values.iterator
+  private def valueWiseNotify(valuesForValueWise : Iterable[Int],
+                              addedValues:Iterable[Int],
+                              deletedValues:Iterable[Int],
+                              oldValue: SortedSet[Int],
+                              newValue: SortedSet[Int],
+                              currentValueWisePropagationWaveIdentifier:ValueWisePropagationWaveIdentifier) {
+    val valuesIt = valuesForValueWise.iterator
     while(valuesIt.hasNext){
       val value = valuesIt.next()
       val valueWiseKeys = valueWiseKeysAtValue(value)
@@ -325,7 +331,7 @@ abstract class ChangingSetValue(store:Store,
           e.currentValueWisePropagationWaveIdentifier = currentValueWisePropagationWaveIdentifier
           val target = e.target
 
-          target.notifySetChanges(this, Int.MinValue, addedValues, deletedValues, mOldValue,mNewValue)
+          target.notifySetChanges(this, Int.MinValue, addedValues, deletedValues, oldValue, newValue)
 
         }
         //we go to the next to be robust against invariant that change their dependencies when notified
@@ -391,7 +397,7 @@ class TemporaryValueWiseKey(setValue:ChangingSetValue,
 
   def performRemove(){
     //remove all values in the focus of this key
-    //TODO: thisis too slow, but probably not called very often, so no need to trade memory for this?
+    //TODO: this is too slow, but probably not called very often, so no need to trade memory for this?
     for(i <- valueToKeyArray){
       if(i != null) i.delete()
     }
@@ -491,17 +497,17 @@ object CBLSSetVar{
   //implicit def toIntSet(v:IntSetVar):SortedSet[Int] = v.value
 
   implicit val ord:Ordering[CBLSSetVar] = new Ordering[CBLSSetVar]{
-    def compare(o1: CBLSSetVar, o2: CBLSSetVar) = o1.compare(o2)
+    override def compare(x: CBLSSetVar, y: CBLSSetVar): Int = x.compare(y)
   }
 }
 
 
 /**
- * An IntSetConst is an IntSetVar that has a constant value, defined by a set of integer.
- * It has no associated model, as there is no need to incorporate it into any propagation process.
- * @param value: the value of the constant
- * @author renaud.delandtsheer@cetic.be
- * */
+  * An IntSetConst is an IntSetVar that has a constant value, defined by a set of integer.
+  * It has no associated model, as there is no need to incorporate it into any propagation process.
+  * @param value: the value of the constant
+  * @author renaud.delandtsheer@cetic.be
+  * */
 class CBLSSetConst(store:Store, override val value:SortedSet[Int])
   extends CBLSSetVar(store,value,value,"set_constant{"+value.mkString(",")+"}"){
 
@@ -516,7 +522,7 @@ abstract class SetInvariant(store:Store,
                             initialValue:SortedSet[Int] = SortedSet.empty,
                             initialDomain:Domain = FullRange)
   extends ChangingSetValue(store, initialValue, initialDomain)
-  with InvariantTrait {
+    with InvariantTrait {
 
   override final def performPropagation(){
     performInvariantPropagation()
@@ -538,14 +544,19 @@ object IdentitySet{
   */
 class IdentitySet(toValue:CBLSSetVar, fromValue:ChangingSetValue, store:Store)
   extends Invariant(store)
-  with SetNotificationTarget{
+    with SetNotificationTarget{
 
   fromValue.registerStaticAndPermanentDynamicDependency(this)
   defineOutputVariable(toValue)
 
   toValue := fromValue.value
 
-  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue,
+                                d: Int,
+                                addedValues: Iterable[Int],
+                                removedValues: Iterable[Int],
+                                oldValue: SortedSet[Int],
+                                newValue: SortedSet[Int]) : Unit = {
     assert(v == this.fromValue)
     for(added <- addedValues)toValue.insertValueNotPreviouslyIn(added)
     for(deleted <- removedValues) toValue.deleteValuePreviouslyIn(deleted)

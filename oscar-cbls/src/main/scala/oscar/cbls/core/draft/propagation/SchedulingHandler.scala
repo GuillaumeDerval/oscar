@@ -47,7 +47,6 @@ abstract sealed class SchedulingHandler(val isSCC:Boolean, structure:Propagation
     listeningSchedulingHandlers = QList(sh, listeningSchedulingHandlers)
   }
 
-
   protected def scheduleMyselfForPropagation(): Unit = {
     if (!isScheduled) {
       isScheduled = true
