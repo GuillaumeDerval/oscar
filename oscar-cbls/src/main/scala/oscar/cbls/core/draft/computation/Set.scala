@@ -397,7 +397,10 @@ class TemporaryValueWiseKey(setValue:ChangingSetValue,
 
   def performRemove(){
     //remove all values in the focus of this key
-    //TODO: this is too slow, but probably not called very often, so no need to trade memory for this?
+
+    //TODO: this is too slow, a better solution can be propozed,
+    // but there is no no ivariant that has this kind of behavior so far, so this is postponed.
+
     for(i <- valueToKeyArray){
       if(i != null) i.delete()
     }
@@ -425,7 +428,7 @@ class ValueWiseKey(setValue:ChangingSetValue,
   def removeFromKey(value:Int){
     require(valueToKeyArray(value + offset) != null, "was not listening to this value")
     val k = valueToKeyArray(value + offset)
-    k.delete()
+    k.delete() //remove 'this' from the list of valueWiseKey that the variable will notify
     valueToKeyArray(value + offset) = null
   }
 }
