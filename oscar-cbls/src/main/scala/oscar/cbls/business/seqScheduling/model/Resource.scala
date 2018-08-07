@@ -1,5 +1,47 @@
 package oscar.cbls.business.seqScheduling.model
 
+import oscar.cbls.Store
+import oscar.cbls.core.computation.CBLSIntVar
+
+class Resource__A(val m: Store,
+                  val name: String,
+                  val valCapacity: Int,
+                  initialMode: RunningMode__A,
+                  schM: SchedulingModel__A) {
+  var index: Int = Constants.NO_INDEX
+  val capacityCBLS = new CBLSIntVar(m, valCapacity, 0 to Int.MaxValue, s"${name}__capacity")
+  val initialModeIndex: Int = initialMode.index
+  val runningModes: Array[Option[RunningMode__A]] = Array.tabulate(schM.maxResources)(i => {
+    if (i == initialModeIndex) Some(initialMode) else None
+  })
+  val setupTimeModes: Array[Array[Option[Int]]] = Array.tabulate(schM.maxModes)(i => {
+    Array.tabulate(schM.maxModes)(j => {
+      if ((i < schM.nbModes) && (j < schM.nbModes)) Some(schM.runningModes(j).defaultSetupTime)
+      else None
+    })
+  })
+
+
+  def capacity: Int = capacityCBLS.value
+
+  def addRunningMode(rm: RunningMode__A): Unit = {
+    runningModes(rm.index) = Some(rm)
+    // Update setupTimeModes
+    for {i <- 0 until schM.nbModes} {
+      setupTimeModes(i)(rm.index) = Some(rm.defaultSetupTime)
+    }
+  }
+
+  def getRunningModes: List[RunningMode__A] = runningModes.flatten.toList
+}
+
+
+
+//////////////////////////////////////
+/////////////////////////// DEPRECATED
+//////////////////////////////////////
+
+
 /**
   * This class represents a generic resource
   *

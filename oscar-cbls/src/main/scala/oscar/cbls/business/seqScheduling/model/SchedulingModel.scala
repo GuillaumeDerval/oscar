@@ -1,5 +1,55 @@
 package oscar.cbls.business.seqScheduling.model
 
+class SchedulingModel__A(val maxActivities: Int,
+                         val maxResources: Int,
+                         val maxModes: Int) {
+  // Activities
+  var nbActivities: Int = 0
+  val activities: Array[Activity__A] = new Array[Activity__A](maxActivities)
+  // Resources
+  var nbResources: Int = 0
+  val resources: Array[Resource__A] = new Array[Resource__A](maxResources)
+  // Running Modes
+  var nbModes: Int = 0
+  val runningModes: Array[RunningMode__A] = new Array[RunningMode__A](maxModes)
+  // Precedences
+  val precedences: Precedences = new Precedences(maxActivities)
+
+  def addActivity(act: Activity__A): Unit = {
+    require(nbActivities < maxActivities)
+    activities(nbActivities) = act
+    act.index = nbActivities
+    nbActivities += 1
+  }
+
+  def addResource(res: Resource__A): Unit = {
+    require(nbResources < maxResources)
+    resources(nbResources) = res
+    res.index = nbResources
+    nbResources += 1
+  }
+
+  def addRunningMode(rm: RunningMode__A): Unit = {
+    require(nbModes < maxModes)
+    runningModes(nbModes) = rm
+    rm.index = nbModes
+    nbModes += 1
+  }
+
+  def addPrecedence(act1: Activity__A, act2: Activity__A): Unit = {
+    precedences.addPrecedence(act1.index, act2.index)
+  }
+
+  def getPriorityList: List[Int] = precedences.getPriorityList
+}
+
+
+
+//////////////////////////////////////
+/////////////////////////// DEPRECATED
+//////////////////////////////////////
+
+
 /**
   * This class is a model of a scheduler based on priority lists
   *
@@ -15,7 +65,7 @@ class SchedulingModel(val numActivities: Int) {
   // Precedences
   val precedences: Precedences = new Precedences(numActivities)
   // Number of activities actually encoded
-  private var nbActivities = 0
+  var nbActivities = 0
 
   /**
     * Adds a running mode to the model

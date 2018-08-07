@@ -49,11 +49,11 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4)
   val nodes = 0 until n
 
   /**
-   * the range vehicle of the problem.
+   * the range of the vehicles of the problem.
    */
   val vehicles = 0 until v
 
-  //TODO: renaud: enlever çà!
+  //TODO: Renaud: enlever çà!
   val vehicleOfNode = vehicleOfNodes(routes.createClone(),v)
 
   val routed = Content(routes.createClone(50)).setName("routed nodes")
@@ -99,13 +99,25 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4)
     for(v <- 0 until v) require(routes.value.contains(v))
   }
 
+  /**
+    * Returns an iterable representing the set of unrouted nodes
+    *
+    * @return the unrouted nodes
+    */
   def unroutedNodes:Iterable[Int] = nodes.filterNot(isRouted)
 
+  /**
+    * Checks whether two nodes are in the same wehicle
+    *
+    * @param node1 the first node who must be in the route
+    * @param node2 the second node
+    * @return true iff node1 is in the route and has the same wehicle than node2
+    */
   def onSameVehicle()(node1:Int,node2:Int): Boolean = {
     vehicleOfNode(node1) == vehicleOfNode(node2) && isRouted(node1)
   }
 
-  def onVehicle(vehicle:Int)(node:Int): Boolean={
+  def onVehicle(vehicle:Int)(node:Int): Boolean = {
     vehicleOfNode(node).value == vehicle
   }
 
@@ -134,8 +146,8 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4)
   /**
     * the route of the vehicle, starting at the vehicle node, and not including the last vehicle node
     *
-    * @param vehicle
-    * @return
+    * @param vehicle the index of the vehicle node
+    * @return a list of vehicle's indices representing a route, starting with vehicle
     */
   def getRouteOfVehicle(vehicle:Int):List[Int] = {
     require(vehicle < v, "asking route of vehicle:" + vehicle + " with v:" + v)
@@ -149,16 +161,6 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4)
       case _ => false}) {}
     acc.reverse
   }
-  /*
-  def getPrevNodeOfAllNodes: Array[Int] = {
-    val it = routes.value.iterator
-    val prevNodeOfNodes = Array.fill(n)(n)
-    var prev = n
-    while(it.hasNext){
-      val node = it.next()
-      if(prevNodeOfNodes
-    }
-  }*/
 
   /**
     * Compute the previous node of all nodes in the routes.

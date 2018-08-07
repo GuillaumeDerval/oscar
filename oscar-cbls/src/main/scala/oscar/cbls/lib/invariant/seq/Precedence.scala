@@ -35,8 +35,8 @@ object Precedence{
    *
    * maintains the number of violated precedences.
    *
-   * @param seq
-   * @param beforeAfter
+   * @param seq The sequence of integers
+   * @param beforeAfter the list of precedences (Before, After)
    * @author renaud.delandtsheer@cetic.be
    */
   def apply(seq:ChangingSeqValue,
@@ -45,7 +45,7 @@ object Precedence{
 }
 
 /**
- * precedence assumes that number can occur only once in the sequence
+ * Precedence assumes that number can occur only once in the sequence
  * so that the constraint is to be enforced from any occurrence to any occurrence,
  * "any" being chosen arbitrarily by tne invariant, and the choice an of course change at any time.
  * also if one of the two value of a precedence is not present in the sequence,
@@ -53,8 +53,8 @@ object Precedence{
  *
  * maintains the number of violated precedences.
  *
- * @param seq
- * @param beforeAfter
+ * @param seq The sequence of integers
+ * @param beforeAfter the list of precedences (Before, After)
  * @author renaud.delandtsheer@cetic.be
  */
 class Precedence(seq:ChangingSeqValue,
@@ -69,8 +69,8 @@ class Precedence(seq:ChangingSeqValue,
 
   //saving precedences into arrays
   private val precedencesArray : Array[(Int, Int)] = beforeAfter.toArray
-  val nbPecedences = precedencesArray.length
-  val precedences = 0 until nbPecedences
+  val nbPrecedences = precedencesArray.length
+  val precedences = 0 until nbPrecedences
 
   private val beforesToPrecedences : Array[QList[Int]] = Array.fill(seq.maxValue + 1)(null)
   private val aftersToPrecedences : Array[QList[Int]] = Array.fill(seq.maxValue + 1)(null)
@@ -81,17 +81,17 @@ class Precedence(seq:ChangingSeqValue,
     aftersToPrecedences(toValue) = QList(precedenceID, aftersToPrecedences(toValue))
   }
 
-  private val isPrecedenceViolated : Array[Boolean] = Array.fill(nbPecedences)(false)
+  private val isPrecedenceViolated : Array[Boolean] = Array.fill(nbPrecedences)(false)
 
   //TODO: use magic array here
-  private val isViolationChangedSinceCheckpoint:Array[Boolean] = Array.fill(nbPecedences)(false)
+  private val isViolationChangedSinceCheckpoint:Array[Boolean] = Array.fill(nbPrecedences)(false)
   private var changedPrecedenceViolationsSinceCheckpoint:QList[Int] = null
-  private val savedViolationAtCheckpoint:Array[Boolean] = Array.fill(nbPecedences)(false)
+  private val savedViolationAtCheckpoint:Array[Boolean] = Array.fill(nbPrecedences)(false)
   private val cachedPositionFinderAtCheckpoint = new CachedPositionOf(seq.maxValue)
   private var checkpoint:IntSequence = null
   var violationAtCheckpoint:Int = -1
 
-  //we set a frist checkpoint since we are computing everything from scratch here.
+  //we set a first checkpoint since we are computing everything from scratch here.
   cachedPositionFinderAtCheckpoint.updateToCheckpoint(seq.value)
   computeAndAffectViolationsFromScratch(seq.value)
 

@@ -1,4 +1,4 @@
-package oscar.examples.cbls.graphPatrition
+package oscar.examples.cbls.graphPartition
 
 import oscar.cbls._
 import oscar.cbls.lib.invariant.logic.{DenseCount, Int2Int}

@@ -29,7 +29,6 @@ class Precedences(numActivities: Int) {
     succArray(indA) += indB
   }
 
-
   /**
     * Gets a priority list according to the precedences constraints
     *
@@ -76,6 +75,20 @@ class Precedences(numActivities: Int) {
     }
     /////
     consistentSeq(seq, Nil)
+  }
+
+  /**
+    * Get a s list from the precedence relation
+    *
+    * @return a list of pairs (a, b) where a->b according to the precedence relation
+    */
+  def toPairsList: List[(Int, Int)] = {
+    var pairsList: List[(Int, Int)] = Nil
+    for {i <- precArray.indices} {
+      val indPairs = precArray(i).map((i,_)).toList
+      pairsList :::= indPairs
+    }
+    pairsList
   }
 
   /**
