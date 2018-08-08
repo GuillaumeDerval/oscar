@@ -23,62 +23,50 @@ package oscar.cbls.core.draft.computation
 
 import scala.collection.immutable.SortedMap
 
-//TODO: we cannot have constants in bulked arrays, actually.
 /**Invariants over arrays can implement this trait to make it possible to bulk load their dependencies
   *
   * @author renaud.delandtsheer@cetic.be
   * */
-trait Bulked[VarType <: Value, BulkedComputationResult] extends Invariant {
+trait Bulked[VarType <: ChangingValue, BulkedComputationResult] extends Invariant {
 
   /**
-   * registers a static dependency to all variables mentioned in the bulkedVars.
-   * @param bulkedVars: an iterable of variables to bulk together
-   * @param id a reference name to identify to which bulk in the invariant this belongs to. Several bulks can be done with a single invariants
-   * @return the result of performBulkComputation(bulkedVars),  possibly computed by co-bulking invariants
-   */
-  final def bulkRegister(bulkedVars: Array[VarType], id: Int = 0): BulkedComputationResult = {
+    * registers a static dependency to all variables mentioned in the bulkedVars.
+    * @param bulkedVars: an iterable of variables to bulk together
+    * @param id a reference name to identify to which bulk in the invariant this belongs to. Several bulks can be done with a single invariants
+    * @return the result of performBulkComputation(bulkedVars),  possibly computed by co-bulking invariants
+    */
+  final def bulkRegister(bulkedVars: Array[VarType], id: Int = 0, store:Store): BulkedComputationResult = {
 
-    val m = this.preFinishInitialization()
-    if (m == null) {
-      //no bulking possible
-      this.registerStaticDependencies(bulkedVars:_*)
-      performBulkComputationID(bulkedVars, id)
-    } else {
-      //check for existing bulk
-      val identifyingString = this.getClass.getName + "/" + id
+    //check for existing bulk
+    val identifyingString = this.getClass.getName + "/" + id
 
-      val incredibleBulk = m.getBulk(identifyingString, bulkedVars.asInstanceOf[Array[Value]])
-
-      if (incredibleBulk == null) {
-        //create a new bulk
-        val bcr = performBulkComputation(bulkedVars)
-        val newBulk = new Bulk(m, bulkedVars.asInstanceOf[Array[Value]], bcr)
-        this.registerStaticallyListenedElement(newBulk)
-        m.registerBulk(identifyingString, newBulk)
-        bcr
-      } else {
-        //we got it
-        this.registerStaticallyListenedElement(incredibleBulk)
-
+    store.getBulk(identifyingString, bulkedVars.asInstanceOf[Array[ChangingValue]]) match{
+      case Some(incredibleBulk) =>
+        incredibleBulk.registerStaticallyListeningElement(this)
         incredibleBulk.bulkedComputationResult.asInstanceOf[BulkedComputationResult]
-      }
+
+      case None =>
+        //create a new bulk
+        val bcr = performBulkComputation(bulkedVars,id)
+        val newBulk = new Bulk(store, bulkedVars.asInstanceOf[Array[ChangingValue]], bcr)
+        newBulk.registerStaticallyListeningElement(this)
+        store.registerBulk(identifyingString, newBulk)
+        bcr
     }
   }
 
-  def performBulkComputationID(vars: Array[VarType], id: Int): BulkedComputationResult = performBulkComputation(vars)
-  def performBulkComputation(vars: Array[VarType]): BulkedComputationResult = null.asInstanceOf[BulkedComputationResult]
+  def performBulkComputation(vars: Array[VarType], id: Int): BulkedComputationResult = null.asInstanceOf[BulkedComputationResult]
 }
 
 /**
- * This is the node that is put in the propagation graph
- * used by BulkLoad only
- * @author renaud.delandtsheer@cetic.be
- */
-class Bulk(m: Store, val bulkedVars: Array[AbstractVariable], val bulkedComputationResult: Any)
-  extends Invariant{
+  * This is the node that is put in the propagation graph
+  * used by BulkLoad only
+  * @author renaud.delandtsheer@cetic.be
+  */
+class Bulk(store: Store, val bulkedVars: Array[ChangingValue], val bulkedComputationResult: Any)
+  extends Invariant(store:Store){
 
-  for (dd <- bulkedVars) registerStaticallyListenedElement(dd)
-  finishInitialization(m)
+  for (v <- bulkedVars) v.registerStaticallyListeningElement(this)
 
   override def checkInternals(): Unit = require(true)
 }
@@ -88,27 +76,27 @@ class Bulk(m: Store, val bulkedVars: Array[AbstractVariable], val bulkedComputat
   */
 trait Bulker {
 
-  private var Bulked: SortedMap[String, List[Bulk]] = SortedMap.empty
+  private var createdBulks: SortedMap[String, List[Bulk]] = SortedMap.empty
 
-  def getBulk(identifyingName: String, bulkedVars: Array[Value]): Bulk = {
-    val bulks = Bulked.getOrElse(identifyingName, null)
-
-    if (bulks == null) return null
-
-    for (b <- bulks) {
-      if (bulkedVars == b.bulkedVars) {
-        return b
-      }
+  def getBulk(identifyingName: String, bulkedVars: Array[ChangingValue]): Option[Bulk] = {
+    createdBulks.get(identifyingName) match {
+      case None => None
+      case Some(bulks) =>
+        for (b <- bulks) {
+          if (bulkedVars == b.bulkedVars) {  //we really want to compare references
+            return Some(b)
+          }
+        }
+        None
     }
-    null
   }
 
   def registerBulk(identifyingName: String, bulk: Bulk) {
-    val knownbulk = Bulked.getOrElse(identifyingName, List.empty)
-    Bulked += ((identifyingName, bulk :: knownbulk))
+    val knownbulk = createdBulks.getOrElse(identifyingName, List.empty)
+    createdBulks += ((identifyingName, bulk :: knownbulk))
   }
 
   protected def killBulker(): Unit ={
-    Bulked = null
+    createdBulks = null
   }
 }

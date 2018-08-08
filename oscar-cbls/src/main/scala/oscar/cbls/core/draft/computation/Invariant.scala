@@ -22,7 +22,7 @@ trait InvariantTrait extends PropagationElement{
   def performInvariantPropagation(){}
 }
 
-class Invariant(store:Store)
+class Invariant(val store:Store)
   extends InvariantTrait{
   store.registerInvariant(this)
 
