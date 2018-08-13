@@ -1,4 +1,4 @@
-package oscar.examples.visualfx
+package oscar.examples.visualfx.wlp
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify

@@ -5,6 +5,7 @@ import java.util.concurrent.{LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
 import org.apache.commons.lang.time.StopWatch
 import oscar.visualfx.VisualFrameScalaFX
 import scalafx.application.Platform
+import scalafx.geometry.Point2D
 import scalafx.scene.chart.XYChart.{Data, Series}
 import scalafx.scene.chart.{NumberAxis, ScatterChart}
 import scalafx.scene.layout.Pane
@@ -22,9 +23,11 @@ class WarehouseWindow(distanceCost: Array[Array[Int]], warehousePos: Array[(Int,
   val Xmin: Int = List(warehousePos.map(_._1).min, deliveryPos.map(_._1).min).min - offset
   val Ymax: Int = List(warehousePos.map(_._2).max, deliveryPos.map(_._2).max).max + offset
   val Ymin: Int = List(warehousePos.map(_._2).min, deliveryPos.map(_._2).min).min - offset
-  val scatterChart = new ScatterChart(new NumberAxis(Xmin, Xmax, 1), new NumberAxis(Ymin, Ymax, 1))
+  val xAxis = new NumberAxis(Xmin, Xmax, 1)
+  val yAxis = new NumberAxis(Ymin, Ymax, 1)
+  val scatterChart = new ScatterChart(xAxis, yAxis)
   val warehouse = Array.tabulate(warehousePos.length)(i => new WareHouse(this, warehousePos(i), i))
-  val deliveryStores = Array.tabulate(deliveryPos.length)(i => new DeliveryStore(deliveryPos(i), i))
+  val deliveryStores = Array.tabulate(deliveryPos.length)(i => new DeliveryStore(deliveryPos(i), i, 5))
   val warehouseSeries = new Series[Number, Number] {
     name = "Closed Warehouse"
   }
@@ -32,13 +35,17 @@ class WarehouseWindow(distanceCost: Array[Array[Int]], warehousePos: Array[(Int,
     name = "Delivery Stores"
   }
   val stackPane = new Pane()
+  stackPane.getStyleClass.add("pane")
 
   scatterChart.legendVisible = false
   scatterChart.animated = false
   scatterChart.setMinSize(900, 800)
   stackPane.children.addAll(scatterChart)
+  scatterChart.prefHeightProperty().bind(stackPane.heightProperty())
+  scatterChart.prefWidthProperty().bind(stackPane.widthProperty())
   this.setFrameNodes(node = stackPane)
   this.stage.sizeToScene()
+  stage.resizable = false
   this.showStage()
 
 
@@ -62,15 +69,17 @@ class WarehouseWindow(distanceCost: Array[Array[Int]], warehousePos: Array[(Int,
   deliveryStores.foreach(d => addDeliveryToWarehouse(d, getNearestOpenWarehouse(d, distanceCost, init = true), false))
 
   def addline(startNode: WareHouse, endNode: DeliveryStore): Unit = {
-    val startPoint = scatterChart.localToParent(startNode.localToParent(startNode.getBoundsInLocal))
-    val endPoint = scatterChart.localToParent(endNode.localToParent(endNode.getBoundsInLocal))
+    val startNodeBound = startNode.getBoundsInLocal
+    val endNodeBound = endNode.getBoundsInLocal
+    val startPoint = scatterChart.localToParent(startNode.localToParent(new Point2D(startNodeBound.getWidth/2,startNodeBound.getHeight/2)))
+    val endPoint = scatterChart.localToParent(endNode.localToParent(new Point2D(endNodeBound.getWidth/2,endNodeBound.getHeight/2)))
     val line = new Line {
       fill = Color.Black
       stroke = Color.Black
-      startX = startPoint.getMaxX + startPoint.getWidth
-      startY = startPoint.getMaxY + startPoint.getHeight
-      endX = endPoint.getMaxX + startPoint.getWidth
-      endY = endPoint.getMaxY + startPoint.getHeight
+      startX = startPoint.getX + scatterChart.getPadding.getLeft + borderPane.getPadding.getLeft + yAxis.getPadding.getLeft
+      startY = startPoint.getY + scatterChart.getPadding.getTop + borderPane.getPadding.getTop + xAxis.getPadding.getLeft
+      endX = endPoint.getX + scatterChart.getPadding.getLeft + borderPane.getPadding.getLeft + xAxis.getPadding.getLeft
+      endY = endPoint.getY + scatterChart.getPadding.getTop + borderPane.getPadding.getTop + xAxis.getPadding.getLeft
       smooth = true
     }
     line.getStrokeDashArray.addAll(2d)

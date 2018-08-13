@@ -2,8 +2,9 @@
 
 
 .root {
-    -fx-background-color: #001a33;
+    -fx-background-color: blue;
     -fx-background-radius: 10;
+    -fx-stroke: balck;
 }
 
 .tooltip {

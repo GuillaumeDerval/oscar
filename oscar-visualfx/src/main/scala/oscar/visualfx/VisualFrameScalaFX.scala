@@ -30,10 +30,6 @@ class VisualFrameScalaFX(_title: String) {
 
   val borderPane = new BorderPane {
     padding = Insets(10)
-    top = new Text("Top")
-    left = new Text("Left")
-    right = new Text("Right")
-    center = new Text("Center")
   }
   borderPane.getStyleClass.add("borderPane")
   stage.scene = new Scene(borderPane)
@@ -45,7 +41,7 @@ class VisualFrameScalaFX(_title: String) {
   stage.resizable = true
 
   val bottomHBox = new HBox(20) {
-    alignment = Pos.BottomRight
+    alignment = Pos.CenterRight
     children = Seq(button)
   }
 
@@ -58,6 +54,7 @@ class VisualFrameScalaFX(_title: String) {
     if (savedFile != null) ImageIO.write(fromFXImage(image, null), "png", savedFile)
     else new Alert(AlertType.Information) {
       contentText = "Not saved"
+      headerText = None
     }.showAndWait()
   }
 

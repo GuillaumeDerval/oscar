@@ -1,16 +1,15 @@
-package oscar.examples.visualfx
+package oscar.examples.visualfx.wlp
 
 import com.sun.javafx.stage.StageHelper
 import oscar.cbls.core.computation.Store
 import oscar.visualfx.plot.Plot
 import oscar.visualfx.wlp.WarehouseWindow
-import scalafx.application.{JFXApp, Platform}
+import scalafx.application.JFXApp
 import scalafx.concurrent.{Service, Task}
 import scalafx.scene.control.Button
 
 
 object WLPexample extends JFXApp {
-  var model: Store = null
   val startButton = new Button("Start")
   val stopButton = new Button("Stop")
   val restoreButton = new Button("Reset")

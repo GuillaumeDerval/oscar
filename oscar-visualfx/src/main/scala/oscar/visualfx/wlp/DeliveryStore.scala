@@ -7,6 +7,7 @@ class DeliveryStore(position:(Int,Int), id:Int, width:Double = 2) extends Shape[
 
   this.setMinSize(width,width)
   this.setMaxSize(width,width)
+  this.setPrefSize(width,width)
   this.setStyleSheet("../css/DeliveryStore.css")
   this.getStyleClass.add("root")
 

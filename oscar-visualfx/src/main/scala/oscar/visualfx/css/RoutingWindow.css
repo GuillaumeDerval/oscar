@@ -26,12 +26,3 @@
     -fx-tick-labels-visible: false;
 }
 
-.default-color0.chart-symbol {
-    -fx-background-color: #ff3300;
-    -fx-background-radius: 1;
-}
-
-.default-color1.chart-symbol {
-    -fx-background-color: #001a33;
-    -fx-background-radius: 10;
-}

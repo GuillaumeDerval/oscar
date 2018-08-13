@@ -53,3 +53,16 @@
     -fx-background-radius: 0 5 0 5;
     -fx-background-color: #ffb566;
 }
+
+.title {
+    -fx-font-family: 'Roboto', sans-serif;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.helpButton {
+    -fx-graphic: url("../img/round_help_outline_black_18dp.png");
+    -fx-background-radius: 18;
+    -fx-background-insets: 0;
+    -fx-padding: 1;
+}

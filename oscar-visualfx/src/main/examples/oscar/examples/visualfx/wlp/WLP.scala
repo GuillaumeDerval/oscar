@@ -1,4 +1,4 @@
-package oscar.examples.visualfx
+package oscar.examples.visualfx.wlp
 
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
@@ -13,9 +13,9 @@ import oscar.visualfx.wlp.WarehouseWindow
 
 class WLP {
 
-  val W:Int = 50
+  val W:Int = 200
 
-  val D:Int = 200
+  val D:Int = 1000
 
   def optim(window: WarehouseWindow, plot: Plot, distanceCost: Array[Array[Int]], costForOpeningWarehouse1: Array[Int], warehouseToWarehouseDistances:Array[Array[Int]]): Unit = {
 
@@ -101,7 +101,7 @@ class WLP {
           Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
         ),refresh = W/10)
         onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 2, obj)
-      ) exhaust (Profile(muLine(3,3,15)) exhaustAndContinueIfMovesFound Profile(muLine(4,3,15))))
+      ) /*onExhaust (() => {plot.addVLineMark("start VLSN")})*/ exhaust (Profile(muLine(3,3,15)) exhaustAndContinueIfMovesFound Profile(muLine(4,3,15))))
     afterMoveOnMove  ((m:Move) => {
       window.update(openWarehouses.value)
       plot.addPoint(obj.value,m.toString)

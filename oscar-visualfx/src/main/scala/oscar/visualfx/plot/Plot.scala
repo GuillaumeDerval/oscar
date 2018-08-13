@@ -3,18 +3,28 @@ package oscar.visualfx.plot
 import java.lang
 import java.util.concurrent.{LinkedBlockingDeque, ThreadPoolExecutor, TimeUnit}
 
+import com.sun.javafx.stage.StageHelper
 import javafx.beans.value.{ChangeListener, ObservableValue}
 import javafx.event.EventHandler
-import javafx.scene.input.{MouseEvent, ScrollEvent}
+import javafx.scene.image.Image
+import javafx.scene.input.{MouseButton, MouseDragEvent, MouseEvent, ScrollEvent}
+import javafx.stage.Stage
 import javafx.util.StringConverter
 import org.apache.commons.lang.time.StopWatch
 import oscar.visualfx.VisualFrameScalaFX
-import scalafx.application.Platform
+import scalafx.application.{JFXApp, Platform}
+import scalafx.beans.property.DoubleProperty
 import scalafx.concurrent.{Service, Task}
-import scalafx.geometry.Point2D
+import scalafx.geometry.{Insets, Point2D, Pos, Rectangle2D}
 import scalafx.scene.chart.{LineChart, NumberAxis}
 import scalafx.scene.chart.XYChart.{Data, Series}
-import scalafx.scene.control.{CheckBox, Tooltip}
+import scalafx.scene.control.Alert.AlertType
+import scalafx.scene.control.{Alert, Button, CheckBox, Tooltip}
+import scalafx.scene.layout.Pane
+import scalafx.scene.paint.Color
+import scalafx.scene.shape.{Line, Rectangle}
+import scalafx.scene.text.Text
+
 
 class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
 
@@ -31,6 +41,13 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
   val scale_delta = 1.1
   var mouseOrgX: Double = _
   var mouseOrgY: Double = _
+  var mouseEndX: Double = _
+  var mouseEndY: Double = _
+  var mouseSceneCoordinates: Point2D = _
+  val rectangleZoom = new Rectangle() {
+    fill = Color.Transparent
+    mouseTransparent = true
+  }
 
   val yAxis:NumberAxis = new NumberAxis(1,1,1) {autoRanging = true}
   val xAxis: NumberAxis = new NumberAxis(1,1,1) {autoRanging = true}
@@ -38,8 +55,11 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
   val serie = new Series[Number,Number]{name = "main series"}
   val minCheckbox = new CheckBox("Show min line")
   var minLineSeries: Seq[Series[Number,Number]] = Seq()
+  val pane = new Pane()
+  val topText = new Text("Objective function plot")
+  val helpButton = new Button()
+  val helpDialog = new Alert(AlertType.Information)
 
-  chart.title = "Objective Function"
   chart.getData.add(serie)
   chart.animated = false
   chart.legendVisible = false
@@ -66,14 +86,39 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
       }
     })
 
+  pane.autosize()
+  pane.getStyleClass.add("pane")
+  pane.children.addAll(chart,rectangleZoom)
+  rectangleZoom.toBack()
+  chart.prefHeightProperty().bind(pane.heightProperty())
+  chart.prefWidthProperty().bind(pane.widthProperty())
+  stage.setMinHeight(700)
+  stage.setMinWidth(800)
+  stage.resizable = false
+  stage.title = "Objective Function"
+  stage.getIcons.add(new Image(this.getClass.getResource("../img/app_icon.png").toString))
+  topText.getStyleClass.add("title")
+  topText.alignmentInParent = Pos.Center
+  helpButton.getStyleClass.add("helpButton")
+  Tooltip.install(helpButton,new Tooltip("Help"))
+  val helpStage: Stage = helpDialog.getDialogPane.getScene.getWindow.asInstanceOf[Stage]
+  helpStage.getIcons.add(new Image(getClass.getResource("../img/round_help_outline_black_18dp.png").toString))
+  helpDialog.headerText = None
+  helpDialog.title = "Help"
+  helpDialog.contentText = "Zoom : mouse scroll\nVertical zoom : ctrl + mouse scroll\nRectangle zoom : right click and drag\nReset zoom : double clicks\nMove the curve : left click and drag"
+
+  helpButton.onAction = helpEvent => {
+    helpDialog.showAndWait()
+  }
+
   xAxis.setTickLabelFormatter(new StringConverter[Number] {
-    override def toString(`object`: Number): String = if (xAxisIsTime) {"%dms".format(`object`.intValue())} else {`object`.toString}
+    override def toString(`object`: Number): String = if (xAxisIsTime) {"%dms".format(`object`.intValue())} else {"%.2f".format(`object`.doubleValue())}
 
     override def fromString(string: String): Number = 0
   })
 
   yAxis.setTickLabelFormatter(new StringConverter[Number] {
-    override def toString(`object`: Number): String = `object`.intValue().toString
+    override def toString(`object`: Number): String = "%.2f".format(`object`.doubleValue())
 
     override def fromString(string: String): Number = 0
   })
@@ -116,6 +161,11 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
   chart.setOnMousePressed(new EventHandler[MouseEvent] {
     override def handle(event: MouseEvent): Unit = {
       event.consume()
+      mouseSceneCoordinates = new Point2D(event.getSceneX, event.getSceneY)
+      val xInLocal = xAxis.sceneToLocal(mouseSceneCoordinates).getX
+      val yInLocal = yAxis.sceneToLocal(mouseSceneCoordinates).getY
+      mouseOrgX = xAxis.getValueForDisplay(xInLocal).doubleValue()
+      mouseOrgY = yAxis.getValueForDisplay(yInLocal).doubleValue()
       if (event.getClickCount == 2) {
         xAxis.autoRanging = true
         yAxis.autoRanging = true
@@ -124,32 +174,77 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
         xAxis.autoRanging = false
         yAxis.autoRanging = false
       }
-      val mouseSceneCoordinates = new Point2D(event.getSceneX, event.getSceneY)
-      val xInLocal = xAxis.sceneToLocal(mouseSceneCoordinates).getX
-      val yInLocal = yAxis.sceneToLocal(mouseSceneCoordinates).getY
-      mouseOrgX = xAxis.getValueForDisplay(xInLocal).doubleValue()
-      mouseOrgY = yAxis.getValueForDisplay(yInLocal).doubleValue()
+    }
+  })
+
+  chart.setOnDragDetected(new EventHandler[MouseEvent] {
+    override def handle(event: MouseEvent): Unit = {
+      chart.startFullDrag()
     }
   })
 
   chart.setOnMouseDragged(new EventHandler[MouseEvent] {
     override def handle(event: MouseEvent): Unit = {
       event.consume()
-      val mouseSceneCoordinates = new Point2D(event.getSceneX, event.getSceneY)
-      val xInLocal = xAxis.sceneToLocal(mouseSceneCoordinates).getX
-      val yInLocal = yAxis.sceneToLocal(mouseSceneCoordinates).getY
-      val mX = xAxis.getValueForDisplay(xInLocal).doubleValue()
-      val mY = yAxis.getValueForDisplay(yInLocal).doubleValue()
-
-      xAxis.setLowerBound(xAxis.getLowerBound - (mX - mouseOrgX))
-      xAxis.setUpperBound(xAxis.getUpperBound - (mX - mouseOrgX))
-      yAxis.setLowerBound(yAxis.getLowerBound - (mY - mouseOrgY))
-      yAxis.setUpperBound(yAxis.getUpperBound - (mY - mouseOrgY))
+      if (event.getButton == MouseButton.PRIMARY) {
+        val mouseSceneCoordinates = new Point2D(event.getSceneX, event.getSceneY)
+        val xInLocal = xAxis.sceneToLocal(mouseSceneCoordinates).getX
+        val yInLocal = yAxis.sceneToLocal(mouseSceneCoordinates).getY
+        val mX = xAxis.getValueForDisplay(xInLocal).doubleValue()
+        val mY = yAxis.getValueForDisplay(yInLocal).doubleValue()
+        xAxis.setLowerBound(xAxis.getLowerBound - (mX - mouseOrgX))
+        xAxis.setUpperBound(xAxis.getUpperBound - (mX - mouseOrgX))
+        yAxis.setLowerBound(yAxis.getLowerBound - (mY - mouseOrgY))
+        yAxis.setUpperBound(yAxis.getUpperBound - (mY - mouseOrgY))
+      }
+      else if (event.getButton == MouseButton.SECONDARY) {
+        val mouseCoordinates = new Point2D(event.getSceneX, event.getSceneY)
+        val mousePaneCoordinates = pane.sceneToLocal(mouseCoordinates)
+        val xInLocal = xAxis.sceneToLocal(mouseCoordinates).getX
+        val yInLocal = yAxis.sceneToLocal(mouseCoordinates).getY
+        val maxY = List(mousePaneCoordinates.getY,pane.sceneToLocal(mouseSceneCoordinates).getY).max
+        val minY = List(mousePaneCoordinates.getY,pane.sceneToLocal(mouseSceneCoordinates).getY).min
+        val maxX = List(mousePaneCoordinates.getX,pane.sceneToLocal(mouseSceneCoordinates).getX).max
+        val minX = List(mousePaneCoordinates.getX,pane.sceneToLocal(mouseSceneCoordinates).getX).min
+        Platform.runLater({
+          rectangleZoom.visible = true
+          rectangleZoom.stroke = Color.Black
+          rectangleZoom.toFront()
+          rectangleZoom.translateX = minX //+ chart.getPadding.getLeft
+          rectangleZoom.translateY = minY //+ chart.getPadding.getTop
+          rectangleZoom.setHeight(maxY-minY)
+          rectangleZoom.setWidth(maxX-minX)
+        })
+        mouseEndX = xAxis.getValueForDisplay(xInLocal).doubleValue()
+        mouseEndY = yAxis.getValueForDisplay(yInLocal).doubleValue()
+      }
     }
   })
 
-  this.setFrameNodes(node = chart)
-  this.bottomHBox.children.add(minCheckbox)
+  chart.setOnMouseDragReleased(new EventHandler[MouseDragEvent] {
+    override def handle(event: MouseDragEvent): Unit = {
+      event.consume()
+      if (event.getButton == MouseButton.SECONDARY) {
+        xAxis.setUpperBound(List(mouseOrgX,mouseEndX).max)
+        xAxis.setLowerBound(List(mouseOrgX,mouseEndX).min)
+        yAxis.setUpperBound(List(mouseOrgY,mouseEndY).max)
+        yAxis.setLowerBound(List(mouseOrgY,mouseEndY).min)
+        xAxis.tickUnit = (List(mouseOrgX,mouseEndX).max - List(mouseOrgX,mouseEndX).min) / 25
+        yAxis.tickUnit = (List(mouseOrgY,mouseEndY).max - List(mouseOrgY,mouseEndY).min) / 25
+        Platform.runLater({
+          rectangleZoom.stroke = Color.Transparent
+          rectangleZoom.toBack()
+          rectangleZoom.visible = false
+        })
+      }
+    }
+  })
+
+
+  this.setFrameNodes("top", topText)
+  this.setFrameNodes(node = pane)
+  minCheckbox.alignmentInParent = Pos.Center
+  this.bottomHBox.children.addAll(minCheckbox,helpButton)
   this.showStage()
 
   def addPoint(objValue: Int, s: String = ""): Unit = {
@@ -199,6 +294,50 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
   def startTimer: Unit = this.watch.start()
   def stopTimer: Unit = this.watch.stop()
 
+  def addVLineMark(s: String): Unit = {
+    val runnable = new Runnable {
+      override def run(): Unit = {
+        val x = if (xAxisIsTime) watch.getTime else iteration
+        val xProperty = new DoubleProperty()
+        val startYProperty = new DoubleProperty()
+        val endYProperty = new DoubleProperty()
+        Platform.runLater({
+          val line = new Line
+          xAxis.upperBound.addListener(new ChangeListener[Number] {
+          override def changed(observable: ObservableValue[_ <: Number], oldValue: Number, newValue: Number): Unit = {
+            val newXPos = xAxis.localToParent(new Point2D(xAxis.displayPosition(x),0)).getX + chart.getPadding.getLeft + pane.getPadding.getLeft + xAxis.getPadding.getLeft
+            xProperty.value = newXPos
+            if (x >= newValue.doubleValue()) {line.visible = false}
+            else if (x <= xAxis.getLowerBound) {line.visible = false}
+            else line.visible = true
+          }
+        })
+          yAxis.upperBound.addListener(new ChangeListener[Number] {
+          override def changed(observable: ObservableValue[_ <: Number], oldValue: Number, newValue: Number): Unit = {
+            startYProperty.value = yAxis.localToParent(new Point2D(0,yAxis.displayPosition(newValue))).getY + chart.getPadding.getTop + pane.getPadding.getTop + yAxis.getPadding.getTop
+          }
+        })
+          yAxis.lowerBound.addListener(new ChangeListener[Number] {
+          override def changed(observable: ObservableValue[_ <: Number], oldValue: Number, newValue: Number): Unit = {
+            endYProperty.value = yAxis.localToParent(new Point2D(0,yAxis.displayPosition(newValue))).getY + chart.getPadding.getTop + pane.getPadding.getTop + yAxis.getPadding.getTop
+          }
+        })
+          line.stroke = Color.Black
+          line.strokeWidth = 1
+          line.startX.bind(xProperty)
+          line.startY.bind(startYProperty)
+          line.endX.bind(xProperty)
+          line.endY.bind(endYProperty)
+          val tooltip = new Tooltip(s)
+          Tooltip.install(line,tooltip)
+          pane.children.add(line)
+          line.toFront()
+        })
+      }
+    }
+    TPE.submit(runnable)
+  }
+
   def resetPlot: Unit = {
     TPE.purge()
     xAxis.autoRanging = true
@@ -214,5 +353,18 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
     chart.getData.remove(1,chart.getData.size())
     chart.getData.get(0).getData.clear()
     println("reset")
+  }
+}
+
+object Examples extends JFXApp {
+
+  var plot: Plot = _
+
+  val task = Task {plot = new Plot()}
+
+  task.run()
+  task.onSucceeded = event => {
+    StageHelper.getStages.remove(1).hide()
+    plot.addVLineMark("toto")
   }
 }
