@@ -251,7 +251,12 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Objective F
     * adding all graphical components to the window and making it popup
     */
   this.stage.getScene.getStylesheets.clear()
+
+  /**
+    * setting the style of the window by a css file
+    */
   this.stage.getScene.getStylesheets.add(getClass.getResource("../css/plot.css").toExternalForm)
+
   this.setFrameNodes("top", topText)
   this.setFrameNodes(node = pane)
   minCheckbox.alignmentInParent = Pos.Center

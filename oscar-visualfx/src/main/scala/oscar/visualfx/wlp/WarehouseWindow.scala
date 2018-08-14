@@ -1,5 +1,9 @@
 package oscar.visualfx.wlp
 
+/**
+  * @author Rémi Barralis remi.barralis@yahoo.fr
+  */
+
 import java.util.concurrent.{LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
 
 import org.apache.commons.lang.time.StopWatch
@@ -12,6 +16,13 @@ import scalafx.scene.layout.Pane
 import scalafx.scene.paint.Color
 import scalafx.scene.shape.Line
 
+/**
+  * Create a window to use for representing a warehouse location problem
+  *
+  * @param distanceCost the matrix of the distance costs
+  * @param warehousePos the array of the warehouses' positions
+  * @param deliveryPos the array of the deliveries' positions
+  */
 class WarehouseWindow(distanceCost: Array[Array[Int]], warehousePos: Array[(Int,Int)], deliveryPos: Array[(Int,Int)]) extends VisualFrameScalaFX("WLP") {
 
   val watch = new StopWatch
@@ -49,14 +60,12 @@ class WarehouseWindow(distanceCost: Array[Array[Int]], warehousePos: Array[(Int,
   stage.resizable = false
   this.showStage()
 
-
   warehouse.foreach(w => {
     val data = Data[Number, Number](w.pos._1, w.pos._2)
     w.setVisible(true)
     data.setNode(w)
     warehouseSeries.getData.add(data)
   })
-
 
   deliveryStores.foreach(d => {
     val data = Data[Number, Number](d.pos._1, d.pos._2)
@@ -69,7 +78,13 @@ class WarehouseWindow(distanceCost: Array[Array[Int]], warehousePos: Array[(Int,
 
   deliveryStores.foreach(d => addDeliveryToWarehouse(d, getNearestOpenWarehouse(d, distanceCost, init = true), false))
 
-  def addline(startNode: WareHouse, endNode: DeliveryStore): Unit = {
+  /**
+    * Add a line between a delivery position and the nearest open warehouse
+    *
+    * @param startNode the node representing the warehouse
+    * @param endNode the node representing the delivery position
+    */
+  def addLine(startNode: WareHouse, endNode: DeliveryStore): Unit = {
     val startNodeBound = startNode.getBoundsInLocal
     val endNodeBound = endNode.getBoundsInLocal
     val startPoint = scatterChart.localToParent(startNode.localToParent(new Point2D(startNodeBound.getWidth/2,startNodeBound.getHeight/2)))
@@ -91,11 +106,24 @@ class WarehouseWindow(distanceCost: Array[Array[Int]], warehousePos: Array[(Int,
     startNode.connectorLines = startNode.connectorLines ++ Seq(line)
   }
 
+  /**
+    * Remove all the lines owned by a warehouse
+    *
+    * @param w the warehouse where the lines have to be removed
+    */
   def removeLines(w: WareHouse): Unit = {
     w.connectorLines.foreach(f => Platform.runLater(this.stackPane.children.removeAll(f)))
     w.connectorLines = Seq()
   }
 
+  /**
+    * Get the nearest open warehouse of a delivery position
+    *
+    * @param d the delivery position
+    * @param distanceCost the matrix of the distance costs
+    * @param init defines wether it's the initialisation or not
+    * @return the nearest open warehouse of the given delivery position
+    */
   def getNearestOpenWarehouse(d: DeliveryStore, distanceCost: Array[Array[Int]], init: Boolean = false): WareHouse = {
     var nearestWarehouse: WareHouse = null
     var distMin = Int.MaxValue
@@ -109,48 +137,26 @@ class WarehouseWindow(distanceCost: Array[Array[Int]], warehousePos: Array[(Int,
     nearestWarehouse
   }
 
+  /**
+    * Add a delivery position a warehouse
+    *
+    * @param d the delivery position
+    * @param w the warehouse
+    * @param traceLine defines wether it has to add a line between the delivery position and the warehouse or not
+    */
   def addDeliveryToWarehouse(d: DeliveryStore, w: WareHouse, traceLine: Boolean = true): Unit = {
     w.nearestDeliveryStores = w.nearestDeliveryStores ++ Seq(d)
     if (traceLine) {
-      addline(w, d)
+      addLine(w, d)
     }
   }
 
-  def updateNearestWarehouse(openWarehouses: Set[Int], warehousesToOpen: Set[Int], warehousesToClose: Set[Int]): Unit = {
-    val task = new Runnable {
-      override def run(): Unit = {
-        //println(Thread.currentThread().getName)
-        val warehousesCurrentlyOpen = openWarehouses
-        val warehousesCurrentlyClose = warehouse.map(w => w._id).toSet.diff(openWarehouses)
-        warehousesToClose.foreach(i => {
-          val w = warehouse(i)
-          w.booleanProperty.value = false
-        })
-        warehousesToOpen.foreach(i => {
-          val w = warehouse(i)
-          w.booleanProperty.value = true
-        })
-        warehousesCurrentlyOpen.foreach(i => {
-          val w = warehouse(i)
-          val deliveryStores = w.nearestDeliveryStores
-          removeLines(w)
-          w.nearestDeliveryStores = Seq()
-          deliveryStores.foreach(d => addDeliveryToWarehouse(d, getNearestOpenWarehouse(d, distance)))
-        })
-        warehousesCurrentlyClose.foreach(i => {
-          val w = warehouse(i)
-          val deliveryStores = w.nearestDeliveryStores
-          if (deliveryStores.nonEmpty) {
-            removeLines(w)
-            w.nearestDeliveryStores = Seq()
-            deliveryStores.foreach(d => addDeliveryToWarehouse(d, getNearestOpenWarehouse(d, distance)))
-          }
-        })
-      }
-    }
-    TPE.submit(task)
-  }
-
+  /**
+    * Update the window
+    *
+    * @param openWarehouses the new array representing the open warehouses
+    * @param forcedToTraceLines defines wether it has to add a line between the delivery position and the warehouse or not
+    */
   def update(openWarehouses: Set[Int], forcedToTraceLines: Boolean = false): Unit = {
     if (this.watch.getTime == 0) {this.watch.start()}
     val task = new Runnable {
@@ -175,10 +181,19 @@ class WarehouseWindow(distanceCost: Array[Array[Int]], warehousePos: Array[(Int,
     TPE.submit(task)
   }
 
+  /**
+    * Start the internal watch
+    */
   def startTimer: Unit = this.watch.start()
 
+  /**
+    * Stop the internal watch
+    */
   def stopTimer: Unit = this.watch.stop()
 
+  /**
+    * Reset the window
+    */
   def reset: Unit = {
     TPE.purge()
     lastUpdate = 1000
