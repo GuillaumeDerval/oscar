@@ -1,8 +1,10 @@
 package oscar.visualfx
 
 import javafx.scene.SnapshotParameters
+import javafx.scene.image.WritableImage
+import javafx.scene.transform.Transform
 import javax.imageio.ImageIO
-import oscar.visualfx.util.FileManager
+import oscar.visualfx.util.{FileManager, ImageWriter}
 import scalafx.Includes._
 import scalafx.application.JFXApp
 import scalafx.embed.swing.SwingFXUtils._
@@ -34,7 +36,6 @@ class VisualFrameScalaFX(_title: String) {
   borderPane.getStyleClass.add("borderPane")
   stage.scene = new Scene(borderPane)
   stage.sizeToScene()
-  stage.getScene.getStylesheets.add(getClass.getResource("../css/main.css").toExternalForm)
   this.borderPane.minHeightProperty().bind(stage.minHeightProperty())
   this.borderPane.minWidthProperty().bind(stage.minWidthProperty())
 
@@ -48,10 +49,13 @@ class VisualFrameScalaFX(_title: String) {
   borderPane.bottom = bottomHBox
 
   button.onAction = () => {
-    val image = this.borderPane.snapshot(new SnapshotParameters, null)
+    val scale = 3
+    val image = this.borderPane.getCenter.snapshot(new SnapshotParameters{setTransform(Transform.scale(scale,scale))}, new WritableImage(this.borderPane.getCenter.getBoundsInLocal.getWidth.toInt*scale,this.borderPane.getCenter.getBoundsInLocal.getHeight.toInt*scale))
     val fileManager = new FileManager
     val savedFile = fileManager.getFile(stage, false, "PNG")
-    if (savedFile != null) ImageIO.write(fromFXImage(image, null), "png", savedFile)
+    if (savedFile != null) {
+      ImageWriter.saveImage(savedFile,fromFXImage(image, null))
+    }
     else new Alert(AlertType.Information) {
       contentText = "Not saved"
       headerText = None

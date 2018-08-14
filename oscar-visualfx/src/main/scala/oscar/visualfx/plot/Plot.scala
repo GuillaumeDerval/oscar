@@ -1,8 +1,11 @@
 package oscar.visualfx.plot
 
+/**
+  * @author Rémi Barralis remi.barralis@yahoo.fr
+  *
+  **/
 import java.lang
 import java.util.concurrent.{LinkedBlockingDeque, ThreadPoolExecutor, TimeUnit}
-
 import com.sun.javafx.stage.StageHelper
 import javafx.beans.value.{ChangeListener, ObservableValue}
 import javafx.event.EventHandler
@@ -25,6 +28,12 @@ import scalafx.scene.paint.Color
 import scalafx.scene.shape.{Line, Rectangle}
 import scalafx.scene.text.Text
 
+/** This class is use to plot the objective function
+  *
+  * You have to pass an instance of Plot to your neighborhood declaration and add the "addPoint" method in your "afterMove" statement
+  *
+  * @param xAxisIsTime defines wether the x-axis is time or iterations (it's iterations by default)
+  */
 
 class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
 
@@ -32,7 +41,6 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
   this.stage.getScene.getStylesheets.add(getClass.getResource("../css/plot.css").toExternalForm)
 
   val TPE = new ThreadPoolExecutor(1,10,60,TimeUnit.SECONDS,new LinkedBlockingDeque[Runnable]())
-
   var iteration: Int = 0
   val watch = new StopWatch
   var minObjValue: Int = Int.MaxValue
@@ -48,7 +56,6 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
     fill = Color.Transparent
     mouseTransparent = true
   }
-
   val yAxis:NumberAxis = new NumberAxis(1,1,1) {autoRanging = true}
   val xAxis: NumberAxis = new NumberAxis(1,1,1) {autoRanging = true}
   val chart: LineChart[Number,Number] = new LineChart(xAxis,yAxis) {scaleShape = true}
@@ -105,7 +112,7 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
   helpStage.getIcons.add(new Image(getClass.getResource("../img/round_help_outline_black_18dp.png").toString))
   helpDialog.headerText = None
   helpDialog.title = "Help"
-  helpDialog.contentText = "Zoom : mouse scroll\nVertical zoom : ctrl + mouse scroll\nRectangle zoom : right click and drag\nReset zoom : double clicks\nMove the curve : left click and drag"
+  helpDialog.contentText = "Zoom : mouse wheel\nVertical zoom : Ctrl + mouse wheel\nRectangle zoom : right click and drag\nReset zoom : double click\nMove the curve : left click and drag"
 
   helpButton.onAction = helpEvent => {
     helpDialog.showAndWait()
@@ -166,7 +173,7 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
       val yInLocal = yAxis.sceneToLocal(mouseSceneCoordinates).getY
       mouseOrgX = xAxis.getValueForDisplay(xInLocal).doubleValue()
       mouseOrgY = yAxis.getValueForDisplay(yInLocal).doubleValue()
-      if (event.getClickCount == 2) {
+      if (event.getClickCount == 2 && event.getButton == MouseButton.PRIMARY) {
         xAxis.autoRanging = true
         yAxis.autoRanging = true
       }
@@ -247,8 +254,14 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
   this.bottomHBox.children.addAll(minCheckbox,helpButton)
   this.showStage()
 
+  /**
+    *
+    * @param objValue the objective function's value
+    * @param s a string representing the move done by the model
+    */
+
   def addPoint(objValue: Int, s: String = ""): Unit = {
-    val timerNotStrated: Boolean = if (this.watch.getTime == 0) {
+    val timerNotStarted: Boolean = if (this.watch.getTime == 0) {
       this.watch.start()
       true
     } else {false}
@@ -266,7 +279,7 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
     val task = new Runnable {
       override def run(): Unit = {
         val tooltipText = if (xAxisIsTime) {"value = %d, time = %dms\nmove : %s".format(value,currentTime,s)} else {"value = %d, it = %d\nmove : %s".format(value,it,s)}
-        val toolTip = if (timerNotStrated) {new Tooltip(tooltipText + "\n!Warning! : Timer was not started manually"){wrapText = true}} else {new Tooltip(tooltipText){wrapText = true}}
+        val toolTip = if (timerNotStarted) {new Tooltip(tooltipText + "\n!Warning! : Timer was not started manually"){wrapText = true}} else {new Tooltip(tooltipText){wrapText = true}}
         Platform.runLater({
           Plot.this.serie.getData.add(data)
           Tooltip.install(data.getNode,toolTip)

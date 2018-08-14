@@ -37,6 +37,7 @@ class WarehouseWindow(distanceCost: Array[Array[Int]], warehousePos: Array[(Int,
   val stackPane = new Pane()
   stackPane.getStyleClass.add("pane")
 
+  stage.getScene.getStylesheets.add(getClass.getResource("../css/main.css").toExternalForm)
   scatterChart.legendVisible = false
   scatterChart.animated = false
   scatterChart.setMinSize(900, 800)

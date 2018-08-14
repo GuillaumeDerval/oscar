@@ -1,11 +1,13 @@
 package oscar.visualfx.trackopt
 
+import com.sun.javafx.stage.StageHelper
 import javafx.beans.value.{ChangeListener, ObservableValue}
 import scalafx.application.JFXApp
 import scalafx.scene.control.{Button, Label, Slider}
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.layout._
 import oscar.visualfx.VisualFrameScalaFX
+import scalafx.util.Duration
 
 class VisualPlan(title: String) {
 
@@ -73,10 +75,11 @@ class VisualPlan(title: String) {
 
 object VisualPlanExamples extends JFXApp {
   val visualPlan = new VisualPlan("test")
-  visualPlan.visualFrame.showStage
-  /**val pos = new Pos(0,0,"start")
-  val ladle = new Ladle(pos,"ladle info",1,1000)
+  visualPlan.visualFrame.showStage()
+  val pos = new Pos(0,0,"start", new Duration(1000))
+  val ladle = new Ladle(pos,"ladle info",1,30,50)
   visualPlan.addLadleState(ladle)
   visualPlan.stackPane.children.add(ladle)
-  ladle.toFront()**/
+  ladle.toFront()
+  //StageHelper.getStages.remove(1).hide()
 }

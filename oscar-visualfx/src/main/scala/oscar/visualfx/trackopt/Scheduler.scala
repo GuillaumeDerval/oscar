@@ -30,7 +30,7 @@ class Scheduler(visualPlan: VisualPlan, nbLadle: Int = 1) {
   val processTransition: ParallelTransition = new ParallelTransition()
 
   Range(0,nbLadle,1).foreach(i => {
-    this.ladleArray(i) = new Ladle(this.startPos,"ladle " + (i + 1).toString + " info",i + 1,30) {setStyleSheet("Queen.css")}
+    this.ladleArray(i) = new Ladle(this.startPos,"ladle " + (i + 1).toString + " info",i + 1,30) {setStyleSheet("Ladle.css")}
     this.processTransition.children.add(this.process(this.ladleArray(i)))
     this.visualPlan.stackPane.children.add(this.ladleArray(i))
     this.visualPlan.addLadleState(this.ladleArray(i))
@@ -83,11 +83,11 @@ object SchedulerExamples extends JFXApp {
   val visualPlan = new VisualPlan("TracOpt")
   val scheduler = new Scheduler(visualPlan, 2)
   visualPlan.visualFrame.showStage()
-  /**val ladle = new Ladle(scheduler.startPos,"ladle info",1,2000)
+  val ladle = new Ladle(scheduler.startPos,"ladle info",3)
   visualPlan.addLadleState(ladle)
   visualPlan.stackPane.children.add(ladle)
   visualPlan.visualFrame.stage.sizeToScene()
   visualPlan.visualFrame.stage.centerOnScreen()
   ladle.toFront()
-  scheduler.process(ladle)**/
+  scheduler.process(ladle)
 }
