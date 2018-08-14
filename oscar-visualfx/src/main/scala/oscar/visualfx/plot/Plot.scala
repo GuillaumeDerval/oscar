@@ -53,7 +53,7 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
   var mouseEndX: Double = _
   var mouseEndY: Double = _
   var mouseSceneCoordinates: Point2D = _
-  val rectangleZoom = new Rectangle() {
+  val rectangleZoom: Rectangle = new Rectangle() {
     fill = Color.Transparent
     mouseTransparent = true
   }

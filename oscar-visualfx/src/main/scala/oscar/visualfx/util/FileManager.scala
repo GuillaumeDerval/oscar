@@ -1,13 +1,27 @@
 package oscar.visualfx.util
 
-import java.io.File
+/**
+  * @author Rémi Barralis remi.barralis@yahoo.fr
+  */
 
+import java.io.File
 import scalafx.stage.FileChooser.ExtensionFilter
 import scalafx.stage.{FileChooser, Stage}
 
-class FileManager {
+/**
+  * Simple singleton that open a dialog window to open or save a file
+  */
+object FileManager {
 
-  def getFile(parentStage: Stage, open: Boolean, extension: String) :File = {
+  /**
+    * Return the file the user opened or saved
+    *
+    * @param parentStage the window owning the dialog window
+    * @param extension the string representing the extension of the file
+    * @param open defines wether the dialog window is an open dialog or a save dialog
+    * @return the file the user opened or saved
+    */
+  def getFile(parentStage: Stage, extension: String, open: Boolean = false) :File = {
 
     val fileChooser = new FileChooser()
     fileChooser.initialFileName = "snapshot"

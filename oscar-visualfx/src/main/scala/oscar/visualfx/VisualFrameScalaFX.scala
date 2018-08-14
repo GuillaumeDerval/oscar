@@ -51,8 +51,8 @@ class VisualFrameScalaFX(_title: String) {
   button.onAction = () => {
     val scale = 3
     val image = this.borderPane.getCenter.snapshot(new SnapshotParameters{setTransform(Transform.scale(scale,scale))}, new WritableImage(this.borderPane.getCenter.getBoundsInLocal.getWidth.toInt*scale,this.borderPane.getCenter.getBoundsInLocal.getHeight.toInt*scale))
-    val fileManager = new FileManager
-    val savedFile = fileManager.getFile(stage, false, "PNG")
+    val fileManager = FileManager
+    val savedFile = fileManager.getFile(stage, "PNG")
     if (savedFile != null) {
       ImageWriter.saveImage(savedFile,fromFXImage(image, null))
     }
