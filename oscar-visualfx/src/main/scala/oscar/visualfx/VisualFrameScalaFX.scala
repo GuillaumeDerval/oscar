@@ -1,10 +1,14 @@
 package oscar.visualfx
 
+/**
+  * @author Rémi Barralis remi.barralis@yahoo.fr
+  */
+
 import javafx.scene.SnapshotParameters
 import javafx.scene.image.WritableImage
 import javafx.scene.transform.Transform
 import javax.imageio.ImageIO
-import oscar.visualfx.util.{FileManager, ImageWriter}
+import oscar.visualfx.util.FileManager
 import scalafx.Includes._
 import scalafx.application.JFXApp
 import scalafx.embed.swing.SwingFXUtils._
@@ -12,10 +16,14 @@ import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control.{Alert, Button}
 import scalafx.scene.layout.{BorderPane, HBox}
-import scalafx.scene.text._
 import scalafx.scene.{Node, Scene}
 import scalafx.stage.{Screen, Stage}
 
+/**
+  * Class that create a window with a border pane layout
+  *
+  * @param _title the title of the window
+  */
 class VisualFrameScalaFX(_title: String) {
 
   val button = new Button("Save as PNG")
@@ -54,7 +62,7 @@ class VisualFrameScalaFX(_title: String) {
     val fileManager = FileManager
     val savedFile = fileManager.getFile(stage, "PNG")
     if (savedFile != null) {
-      ImageWriter.saveImage(savedFile,fromFXImage(image, null))
+      ImageIO.write(fromFXImage(image,null),"png",savedFile)
     }
     else new Alert(AlertType.Information) {
       contentText = "Not saved"
@@ -62,6 +70,16 @@ class VisualFrameScalaFX(_title: String) {
     }.showAndWait()
   }
 
+  stage.getScene.content.onChange({
+    stage.sizeToScene()
+    stage.centerOnScreen()
+  })
+
+  /**
+    * Getter of the border pane layout's components
+    *
+    * @return a Map mapping the string representation of the positions of the layout's components to them
+    */
   def getFrameNodes: Map[String, Node] = {
     val parent = this.borderPane
     val nodes = Map(
@@ -73,6 +91,12 @@ class VisualFrameScalaFX(_title: String) {
     nodes
   }
 
+  /**
+    * Setter of the border pane layout's components
+    *
+    * @param position the string representing the position of the layout's component
+    * @param node the node of the graphical component to be set
+    */
   def setFrameNodes(position: String = "center", node: Node): Unit = {
     val parent = this.borderPane
     position match {
@@ -84,17 +108,18 @@ class VisualFrameScalaFX(_title: String) {
     }
   }
 
+  /**
+    * Make the window popup
+    */
   def showStage() {
     stage.show()
     println(Thread.currentThread().getName + " " + Thread.currentThread().getId)
   }
-
-  stage.getScene.content.onChange({
-    stage.sizeToScene()
-    stage.centerOnScreen()
-  })
 }
 
+/**
+  * Just an example
+  */
 object VisualFrameScalaFXExamples extends JFXApp {
   val visualApp = new VisualFrameScalaFX("")
   visualApp.showStage()

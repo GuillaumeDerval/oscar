@@ -2,7 +2,6 @@ package oscar.visualfx.plot
 
 /**
   * @author Rémi Barralis remi.barralis@yahoo.fr
-  *
   **/
 import java.lang
 import java.util.concurrent.{LinkedBlockingDeque, ThreadPoolExecutor, TimeUnit}
@@ -36,7 +35,7 @@ import scalafx.scene.text.Text
   * @param xAxisIsTime defines wether the x-axis is time or iterations (it's iterations by default)
   */
 
-class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
+class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Objective Function") {
   /**
     * create the an executor to execute all the view changes in background tasks
     */
@@ -103,7 +102,6 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
   stage.setMinHeight(700)
   stage.setMinWidth(800)
   stage.resizable = false
-  stage.title = "Objective Function"
   stage.getIcons.add(new Image(this.getClass.getResource("../img/app_icon.png").toString))
   topText.getStyleClass.add("title")
   topText.alignmentInParent = Pos.Center
