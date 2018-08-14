@@ -253,7 +253,7 @@ object CPModel {
   * Model associated with a CP Solver
   * @param p
   */
-class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preprocessCP(p)) with ForkableInstantiatedModel {
+class CPModel(p: UninstantiatedModel) extends InstantiatedModel(/*CPModel.preprocessCP(*/p/*)*/) with ForkableInstantiatedModel {
   implicit lazy val cpSolver = new cp.CPSolver()
   override type IntVarImplementation = ModelCPIntVar
   override type FloatVarImplementation = NoFloatDomainStorage

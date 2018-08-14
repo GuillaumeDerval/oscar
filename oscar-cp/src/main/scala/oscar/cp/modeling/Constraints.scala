@@ -28,6 +28,7 @@ import oscar.cp.constraints.tables.{BasicSmartElement, BasicSmartTableAlgo, Nega
 import oscar.cp.core.variables.{CPIntVarViewMinus, CPIntVarViewOffset, CPIntVarViewTimes}
 import oscar.cp.core.{CPPropagStrength, Constraint}
 import oscar.cp.scheduling.constraints.{DisjunctiveWithTransitionTimes, UnaryResource, _}
+import oscar.cp.utils.SafeIntOperations
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -478,15 +479,15 @@ trait Constraints {
     if (vars.length == 0) sys.error("no variables")
     if (vars.length == 1) vars(0)
     else {
-      var min = 0
-      var max = 0
+      var min = 0L
+      var max = 0L
       var i = vars.length
       while (i > 0) {
         i -= 1
-        min += vars(i).min
-        max += vars(i).max
+        min = SafeIntOperations.intRangeCheck(min + vars(i).min.toLong)
+        max = SafeIntOperations.intRangeCheck(max + vars(i).max.toLong)
       }
-      val s = CPIntVar(min, max)(vars(0).store)
+      val s = CPIntVar(min.toInt, max.toInt)(vars(0).store)
       vars(0).store.post(sum(vars, s))
       s
     }
@@ -588,8 +589,8 @@ trait Constraints {
     */
   def weightedSum(w: Array[Int], x: Array[CPIntVar]): CPIntVar = {
     val cp = x(0).store
-    val m = w.zip(x).map { case (wi, xi) => if (wi < 0) wi * xi.max else wi * xi.min }.sum
-    val M = w.zip(x).map { case (wi, xi) => if (wi < 0) wi * xi.min else wi * xi.max }.sum
+    val m = SafeIntOperations.safeSum(w.zip(x).map{ case (wi, xi) => if (wi < 0) wi * xi.max else wi * xi.min })
+    val M = SafeIntOperations.safeSum(w.zip(x).map { case (wi, xi) => if (wi < 0) wi * xi.min else wi * xi.max })
     val y = CPIntVar(m to M)(cp)
     cp.post(weightedSum(w, x, y))
     y
