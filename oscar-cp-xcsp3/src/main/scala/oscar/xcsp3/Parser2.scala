@@ -337,7 +337,11 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeExpr.IMP =>
         _recursiveIntentionBuilder(tree.sons(0)).asInstanceOf[BoolExpression] ==> _recursiveIntentionBuilder(tree.sons(1)).asInstanceOf[BoolExpression]
       case TypeExpr.XOR =>
-        _recursiveIntentionBuilder(tree.sons(0)).asInstanceOf[BoolExpression] ^ _recursiveIntentionBuilder(tree.sons(1)).asInstanceOf[BoolExpression]
+        if(tree.sons.length == 2) _recursiveIntentionBuilder(tree.sons(0)).asInstanceOf[BoolExpression] ^ _recursiveIntentionBuilder(tree.sons(1)).asInstanceOf[BoolExpression]
+        else{
+          val members = tree.sons.map(_recursiveIntentionBuilder(_).asInstanceOf[BoolExpression])
+          members.drop(1).foldLeft(members(0))(_ ^ _)
+        }
       case TypeExpr.SQR => ??? //1
       case TypeExpr.POW => ??? //2
       case TypeExpr.SET => ??? //0, Integer.MAX_VALUE
