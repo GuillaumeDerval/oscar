@@ -28,7 +28,8 @@ import scalafx.scene.paint.Color
 import scalafx.scene.shape.{Line, Rectangle}
 import scalafx.scene.text.Text
 
-/** This class is use to plot the objective function
+/**
+  * This class is use to plot the objective function
   *
   * You have to pass an instance of Plot to your neighborhood declaration and add the "addPoint" method in your "afterMove" statement
   *
@@ -36,11 +37,11 @@ import scalafx.scene.text.Text
   */
 
 class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
-
-  this.stage.getScene.getStylesheets.clear()
-  this.stage.getScene.getStylesheets.add(getClass.getResource("../css/plot.css").toExternalForm)
-
+  /**
+    * create the an executor to execute all the view changes in background tasks
+    */
   val TPE = new ThreadPoolExecutor(1,10,60,TimeUnit.SECONDS,new LinkedBlockingDeque[Runnable]())
+
   var iteration: Int = 0
   val watch = new StopWatch
   var minObjValue: Int = Int.MaxValue
@@ -56,7 +57,7 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
     fill = Color.Transparent
     mouseTransparent = true
   }
-  val yAxis:NumberAxis = new NumberAxis(1,1,1) {autoRanging = true}
+  val yAxis: NumberAxis = new NumberAxis(1,1,1) {autoRanging = true}
   val xAxis: NumberAxis = new NumberAxis(1,1,1) {autoRanging = true}
   val chart: LineChart[Number,Number] = new LineChart(xAxis,yAxis) {scaleShape = true}
   val serie = new Series[Number,Number]{name = "main series"}
@@ -66,6 +67,7 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
   val topText = new Text("Objective function plot")
   val helpButton = new Button()
   val helpDialog = new Alert(AlertType.Information)
+  val helpStage: Stage = helpDialog.getDialogPane.getScene.getWindow.asInstanceOf[Stage]
 
   chart.getData.add(serie)
   chart.animated = false
@@ -92,7 +94,6 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
         }
       }
     })
-
   pane.autosize()
   pane.getStyleClass.add("pane")
   pane.children.addAll(chart,rectangleZoom)
@@ -108,16 +109,17 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
   topText.alignmentInParent = Pos.Center
   helpButton.getStyleClass.add("helpButton")
   Tooltip.install(helpButton,new Tooltip("Help"))
-  val helpStage: Stage = helpDialog.getDialogPane.getScene.getWindow.asInstanceOf[Stage]
   helpStage.getIcons.add(new Image(getClass.getResource("../img/round_help_outline_black_18dp.png").toString))
   helpDialog.headerText = None
   helpDialog.title = "Help"
   helpDialog.contentText = "Zoom : mouse wheel\nVertical zoom : Ctrl + mouse wheel\nRectangle zoom : right click and drag\nReset zoom : double click\nMove the curve : left click and drag"
-
   helpButton.onAction = helpEvent => {
     helpDialog.showAndWait()
   }
 
+  /**
+    * creating and setting the event handlers to make the zoom possible
+    */
   xAxis.setTickLabelFormatter(new StringConverter[Number] {
     override def toString(`object`: Number): String = if (xAxisIsTime) {"%dms".format(`object`.intValue())} else {"%.2f".format(`object`.doubleValue())}
 
@@ -247,22 +249,28 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
     }
   })
 
-
+  /**
+    * adding all graphical components to the window and making it popup
+    */
+  this.stage.getScene.getStylesheets.clear()
+  this.stage.getScene.getStylesheets.add(getClass.getResource("../css/plot.css").toExternalForm)
   this.setFrameNodes("top", topText)
   this.setFrameNodes(node = pane)
   minCheckbox.alignmentInParent = Pos.Center
   this.bottomHBox.children.addAll(minCheckbox,helpButton)
   this.showStage()
 
+
   /**
+    * Add a point to the Plot's line chart
     *
     * @param objValue the objective function's value
-    * @param s a string representing the move done by the model
+    * @param s the string representing the move done by the model
     */
 
   def addPoint(objValue: Int, s: String = ""): Unit = {
     val timerNotStarted: Boolean = if (this.watch.getTime == 0) {
-      this.watch.start()
+      startTimer
       true
     } else {false}
 
@@ -304,9 +312,20 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
     iteration += 1
   }
 
+  /**
+    * Start the internal watch
+    */
   def startTimer: Unit = this.watch.start()
+
+  /**
+    * Stop the internal watch
+    */
   def stopTimer: Unit = this.watch.stop()
 
+  /**
+    * Add a vertical line at the current x position to emphasize a change in the search algorithm
+    * @param s the string representing the new algorithm started
+    */
   def addVLineMark(s: String): Unit = {
     val runnable = new Runnable {
       override def run(): Unit = {
@@ -351,6 +370,9 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
     TPE.submit(runnable)
   }
 
+  /**
+    * Reset the chart
+    */
   def resetPlot: Unit = {
     TPE.purge()
     xAxis.autoRanging = true
@@ -369,6 +391,9 @@ class Plot(xAxisIsTime: Boolean = false) extends VisualFrameScalaFX("Plot") {
   }
 }
 
+/**
+  * Just an example
+  */
 object Examples extends JFXApp {
 
   var plot: Plot = _
@@ -376,7 +401,7 @@ object Examples extends JFXApp {
   val task = Task {plot = new Plot()}
 
   task.run()
-  task.onSucceeded = event => {
+  task.onSucceeded = succeededEvent => {
     StageHelper.getStages.remove(1).hide()
     plot.addVLineMark("toto")
   }
