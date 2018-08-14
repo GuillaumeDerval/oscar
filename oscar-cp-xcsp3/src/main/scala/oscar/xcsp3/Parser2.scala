@@ -867,7 +867,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeObjective.PRODUCT => Prod(list.map(i => varHashMap(i.id())))
       case TypeObjective.EXPRESSION => throw new XCSP3ParseException("TypeObjective.EXPRESSION should not be called without a tree")
       case TypeObjective.LEX => ???
-      case TypeObjective.NVALUES => list.distinct.length
+      case TypeObjective.NVALUES => NValues(list.map(i => varHashMap(i.id())))
     }
   }
 
@@ -879,7 +879,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeObjective.EXPRESSION => throw new XCSP3ParseException("TypeObjective.EXPRESSION should not be called without a tree")
       case TypeObjective.PRODUCT => Prod(list.map(i => varHashMap(i.id()))) //ignore coefs...
       case TypeObjective.LEX => ???
-      case TypeObjective.NVALUES => list.zip(coefs).map(i => varHashMap(i._1.id())*i._2).distinct.length
+      case TypeObjective.NVALUES => NValues(list.zip(coefs).map(i => varHashMap(i._1.id())*i._2))
     }
   }
 
