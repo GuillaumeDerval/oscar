@@ -51,15 +51,16 @@ object ConfOrderSolverWithRestarts extends COSSolver {
     lastSearchStats = solver.start(timeLimit = 10, nSols = 1)
     if(lastSearchStats.completed) {
       completed = true
+      globalStop = true
     }
 
     //restarts
     while(!globalStop) {
-//      println(s"restartTimeLimit : $restartTimeLimit")
       initialTime = System.nanoTime()
       lastSearchStats = solver.startSubjectTo(stopRestartCondition, Int.MaxValue, null){}
       if(lastSearchStats.completed) {
         completed = true
+        globalStop = true
       }
       if(lastSearchStats.nSols > 0) {
         restartTimeLimit = initialTimeLimit
