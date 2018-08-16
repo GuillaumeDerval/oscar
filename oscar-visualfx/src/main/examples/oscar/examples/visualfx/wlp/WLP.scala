@@ -103,6 +103,7 @@ class WLP {
         onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 2, obj)
       ) /*onExhaust (() => {plot.addVLineMark("start VLSN")})*/ exhaust (Profile(muLine(3,3,15)) exhaustAndContinueIfMovesFound Profile(muLine(4,3,15))))
     afterMoveOnMove  ((m:Move) => {
+      // plug all the window to the optimisation movements
       window.update(openWarehouses.value)
       plot.addPoint(obj.value,m.toString)
     }))
