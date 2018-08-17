@@ -455,11 +455,13 @@ class ThreeOptSub(variables: Array[CBLSIntVar], objective:CBLSObjective, cs: Con
       if(vars(idx).isInstanceOf[StoredCBLSIntConst] || vars(idx).isInstanceOf[StoredCBLSIntConst]){
         //Cannot change a constant
         new NoMove()
-      }else{
+      }else if(idx != newNext){
         //The two nodes now become the main loop
         val list = List((vars(idx),newNext),(vars(newNext),idx))
         acceptOr(new BeforeMove(new AssignsMove(list, objective.assignVal(list)),
                                 () => allloop = false), accept);
+      }else{
+        NoMove()
       }
     }else{
       if(idx == vars(idx).value){ // idx cannot be a self-loop
