@@ -2,6 +2,13 @@ package oscar.cbls.core.draft.propagation
 
 import oscar.cbls.algo.quick.QList
 
+
+/**
+  *
+  * @param debug set to true, and all PE will be chacked after propagation. It also forces a total propagation every time a propagation is triggered, so everything will be slow
+  * @param guaranteedAcyclic
+  * @param dropStaticGraphAfterClose
+  */
 class PropagationStructure(val debug:Boolean,
                            val guaranteedAcyclic:Boolean,
                            val dropStaticGraphAfterClose:Boolean)
@@ -91,6 +98,7 @@ class PropagationStructure(val debug:Boolean,
   }
 
   override def doRun(): Unit = {
+    require(isClosed)
     if(debug) {
       for(sh <- finalSchedulingHandlers){
         sh.loadScheduledElementsAndAllSourcesIntoRunner()

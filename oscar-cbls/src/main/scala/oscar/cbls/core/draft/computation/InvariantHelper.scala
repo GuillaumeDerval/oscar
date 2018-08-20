@@ -3,8 +3,7 @@ package oscar.cbls.core.draft.computation
 
 object InvariantHelper{
 
-
-  def getMinMaxBounds(variables:Iterable[IntValue]):(Int,Int) = {
+  def getMinMaxBounds(variables:Iterable[ChangingIntValue]):(Int,Int) = {
     var MyMax = Int.MinValue
     var MyMin = Int.MaxValue
     for (v <- variables) {
@@ -14,7 +13,7 @@ object InvariantHelper{
     (MyMin, MyMax)
   }
 
-  def getMinMaxRange(variables:Iterable[IntValue]):Range = {
+  def getMinMaxRange(variables:Iterable[ChangingIntValue]):Range = {
     val (min,max) = getMinMaxBounds(variables)
     min to max
   }
@@ -34,7 +33,7 @@ object InvariantHelper{
     min to max
   }
 
-  def getMinMaxBoundsSet(variables:Iterable[SetValue]):(Int,Int) = {
+  def getMinMaxBoundsSet(variables:Iterable[ChangingSetValue]):(Int,Int) = {
     var MyMax = Int.MinValue
     var MyMin = Int.MaxValue
     for (v <- variables) {
@@ -44,7 +43,7 @@ object InvariantHelper{
     (MyMin, MyMax)
   }
 
-  def getMinMaxRangeSet(variables:Iterable[SetValue]):Range = {
+  def getMinMaxRangeSet(variables:Iterable[ChangingSetValue]):Range = {
     val (min,max) = getMinMaxBoundsSet(variables)
     min to max
   }

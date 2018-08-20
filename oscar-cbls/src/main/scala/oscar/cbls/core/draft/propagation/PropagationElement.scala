@@ -135,7 +135,7 @@ abstract class PropagationElement() extends DAGNode{
   // ////////////////////////////////////////////////////////////////////////
   // api about scheduling and propagation
 
-  def scheduleMyselfForPropagation(): Unit ={
+  protected def scheduleMyselfForPropagation(): Unit ={
     if(!isScheduled){
       isScheduled = true
       if(schedulingHandler != null){

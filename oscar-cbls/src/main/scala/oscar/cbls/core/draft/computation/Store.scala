@@ -25,7 +25,6 @@ import oscar.cbls.core.draft.propagation._
 
 import scala.language.implicitConversions
 
-
 class Store(debug:Boolean = false,
             guaranteedAcyclic:Boolean = true,
             dropStaticGraphAfterClose:Boolean = true)

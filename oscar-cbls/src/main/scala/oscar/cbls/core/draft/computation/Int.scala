@@ -1,3 +1,5 @@
+package oscar.cbls.core.draft.computation
+
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -12,13 +14,8 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-/*******************************************************************************
-  * Contributors:
-  *     This code has been initially developed by CETIC www.cetic.be
-  *         by Renaud De Landtsheer
-  ******************************************************************************/
 
-package oscar.cbls.core.draft.computation
+
 
 import oscar.cbls._
 import oscar.cbls.core.computation.FullRange
@@ -169,7 +166,12 @@ abstract class ChangingIntValue(store:Store,
   }
 
   def createClone:CBLSIntVar = {
-    val clone = new CBLSIntVar(store, this.value, this.domain, "clone of " + this.name)
+    val clone = new CBLSIntVar(
+      store,
+      this.value,
+      this.domain,
+      "clone of " + this.name)
+
     clone <== this
     clone
   }

@@ -398,8 +398,8 @@ class TemporaryValueWiseKey(setValue:ChangingSetValue,
   def performRemove(){
     //remove all values in the focus of this key
 
-    //TODO: this is too slow, a better solution can be propozed,
-    // but there is no no ivariant that has this kind of behavior so far, so this is postponed.
+    //TODO: this is too slow, a better solution can be proposed,
+    // but there is no no invariant that has this kind of behavior so far, so this is postponed.
 
     for(i <- valueToKeyArray){
       if(i != null) i.delete()

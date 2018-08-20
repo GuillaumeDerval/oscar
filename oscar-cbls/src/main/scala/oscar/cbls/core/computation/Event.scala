@@ -24,7 +24,6 @@ package oscar.cbls.core.computation
 
 import scala.collection.immutable.SortedSet
 
-//TODO: porter à la nouvelle architecture.
 
 object Event{
 
