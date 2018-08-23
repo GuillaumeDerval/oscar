@@ -49,7 +49,7 @@ trait RoutingInvariants {
 
   /**
    * maintains the set of vehicle that have at least one point to visit (beyond their start point)
-   * this invariant relies on the routing convension.
+   * this invariant relies on the routing convention.
    * @param routes the routes
    * @param v the number of vehicle
    */

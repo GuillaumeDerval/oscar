@@ -20,8 +20,6 @@ import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.{First, EasyNeighborhoodMultiLevel, LoopBehavior}
 
 
-
-
 /**
   * base class for point insertion moves
   * @author renaud.delandtsheer@cetic.be
@@ -44,6 +42,7 @@ abstract class InsertPoint(vrp: VRP,
   def doMove(insertedPoint: Int, insertAtPosition:Int) {
     seq.insertAtPosition(insertedPoint, insertAtPosition)
   }
+
   def doMovePositionIndependent(insertedPoint:Int, insertAfterPointForInstantiation:Int): Unit ={
     seq.newValue.positionOfAnyOccurrence(insertAfterPointForInstantiation) match{
       case Some(p) => seq.insertAtPosition(insertedPoint, p+1)
@@ -66,28 +65,28 @@ case class InsertPointMove(insertedPoint: Int,
   override def impactedPoints: List[Int] = List(insertedPoint)
 
   override def commit() {
-    if(positionIndependentMoves){
+    if (positionIndependentMoves) {
       neighborhood.doMovePositionIndependent(insertedPoint, insertAfterPointForInstantiation)
-    }else{
+    } else {
       neighborhood.doMove(insertedPoint, insertAtPosition)
     }
   }
 
   override def toString: String =
     neighborhoodName + ":InsertPoint(insertedPoint:" + insertedPoint +
-      (if(positionIndependentMoves) " afterPoint " + insertAfterPointForInstantiation + " positionIndependent"
+      (if (positionIndependentMoves) " afterPoint " + insertAfterPointForInstantiation + " positionIndependent"
       else " atPosition:" + insertAtPosition) + objToString + ")"
 
   override def shortString:String =
     "InsertPoint(" + insertedPoint +
-      (if(positionIndependentMoves) " after " + insertAfterPointForInstantiation + " pi"
+      (if (positionIndependentMoves) " after " + insertAfterPointForInstantiation + " pi"
       else " atPos:" + insertAtPosition) + ")"
 }
 
 
 /**
   * Inserts an unrouted point in a route. The size of the neighborhood is O(u*n).
-  * where u is the numberof unrouted points, and n is the number of routed points
+  * where u is the number of unrouted points, and n is the number of routed points
   * it can be cut down to u*k by using the relevant neighbors, and specifying k neighbors for each unrouted point
   * @param unroutedNodesToInsert the nodes that this neighborhood will try to insert SHOULD BE NOT ROUTED
   * @param relevantPredecessor a function that, for each unrouted node gives a list of routed node
@@ -96,7 +95,7 @@ case class InsertPointMove(insertedPoint: Int,
   * @param neighborhoodName the name of this neighborhood
   * @param selectNodeBehavior how should it iterate on nodes to insert?
   * @param selectInsertionPointBehavior how should it iterate on position for insertion?
-  * @param hotRestart set to true fo a hot restart fearture on the node to insert
+  * @param hotRestart set to true for a hot restart feature on the node to insert
   * @param nodeSymmetryClass a function that input the ID of an unrouted node and returns a symmetry class;
   *                      ony one of the unrouted node in each class will be considered for insert
   *                      Int.MinValue is considered different to itself
@@ -155,7 +154,7 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
 
       for(a <- positionToInsertIterable){
         pointWhereToInsertAfter = a
-        seqValue.positionOfAnyOccurrence(pointWhereToInsertAfter) match{
+        seqValue.positionOfAnyOccurrence(pointWhereToInsertAfter) match {
           case None => //not routed?!
           case Some(position) =>
             insertAtPositionForInstantiation = position + 1
@@ -188,7 +187,7 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
 }
 
 /**
-  * OnePoint insert neighborhood htat primarily iterates over insertion point,s and then over poitns that can be iserted.
+  * OnePoint inserts a neighborhood that primarily iterates over insertion points, and then over points that can be inserted.
   * @param insertionPoints the positions where we can insert points, can be unrouted, in this case it is ignored (but time is wasted)
   * @param relevantSuccessorsToInsert the points to insert, given an insertion point
   * @param vrp the routing problem

@@ -20,9 +20,10 @@ import oscar.cbls.core.computation.Variable
 import oscar.cbls.core.search.{Move, Neighborhood}
 
 abstract class VRPSMove(override val objAfter: Int,
-                       val neighborhood:Neighborhood,
-                       override val neighborhoodName:String = null, vrp:VRP)
-  extends Move(objAfter, neighborhoodName){
+                        val neighborhood:Neighborhood,
+                        override val neighborhoodName:String = null,
+                        vrp:VRP)
+  extends Move(objAfter, neighborhoodName) {
 
   override def touchedVariables: List[Variable] = List(vrp.routes)
 

@@ -19,6 +19,7 @@ import oscar.cbls.algo.search.{IdenticalAggregator, HotRestart}
 import oscar.cbls.core.computation.{Variable, CBLSIntVar}
 import oscar.cbls.core.search.{Move, EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
+
 /**
  * will find a variable in the array, and find a value from its range that improves the objective function
  *
