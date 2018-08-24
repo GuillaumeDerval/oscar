@@ -138,7 +138,7 @@ class NoOverlapLeftToRight(starts: Array[CPIntVar], durations: Array[CPIntVar], 
     while(i < nTasks) {
       val lctIndex = orderedMaxEndIds(i)
 
-      while(j < nTasks && currentMaxEnds(lctIndex) > currentMaxStarts(orderedMaxStartIds(j))) {
+      while(j < nTasks && (!runOnResource(orderedMaxStartIds(j)).hasValue(resourceId) || currentMaxEnds(lctIndex) > currentMaxStarts(orderedMaxStartIds(j)))) {
         if(runOnResource(orderedMaxStartIds(j)).isBoundTo(resourceId)) {
           // skips the optional activities
           val ect = tree.ect
@@ -168,10 +168,12 @@ class NoOverlapLeftToRight(starts: Array[CPIntVar], durations: Array[CPIntVar], 
     mergeSort(orderedMinStartIds, currentMinStarts, 0, nTasks, mergeSortRuns, mergeSortAux)
     tree.fillAndPlaceLeaves(orderedMinStartIds, currentMinStarts, currentMinDurations) // true as we use gray nodes
 
-    //TODO: for now we simply remove the activities that are not yet known to be running on the machine. We should modify fillAndPlaceLeaves to take that into account
     var a = 0
     while(a < nTasks) {
-      if(!runOnResource(a).isBoundTo(resourceId)) tree.remove(a)
+      if(!runOnResource(a).hasValue(resourceId))
+        tree.remove(a) //TODO: for now we simply remove the activities that are not yet known to be running on the machine. We should modify fillAndPlaceLeaves to take that into account
+      else if(!runOnResource(a).isBoundTo(resourceId))
+        tree.grayActivity(a)
       a += 1
     }
 
@@ -231,7 +233,7 @@ class NoOverlapLeftToRight(starts: Array[CPIntVar], durations: Array[CPIntVar], 
     }
   }
 
-  private def stillPossiblyAssignedToThisResource(activity: Int) = runOnResource(activity).hasValue(resourceId) && !runOnResource(activity).isBound
+  protected def stillPossiblyAssignedToThisResource(activity: Int) = runOnResource(activity).hasValue(resourceId) && !runOnResource(activity).isBound
 
   private def updateMins(): Boolean = {
     var domainModified = false
