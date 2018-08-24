@@ -4,7 +4,7 @@ import oscar.cp.constraints.nooverlap.util.{DynamicProgrammingTSP, TransitionTim
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp.scheduling.util.TransitionLowerBounds
 
-class NoOverlapTransitionTimesFamilies(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], familyMatrix: Array[Array[Int]], family: Array[Int], runOnResource: Array[CPIntVar], resourceId : Int, exactLB: Boolean=false) extends NoOverlapTransitionTimes(starts, durations, ends, TransitionTimesUtils.transitionMatrixFromFamilyMatrix(family, familyMatrix), runOnResource, resourceId) {
+class NoOverlapTransitionTimesFamilies(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], familyMatrix: Array[Array[Int]], family: Array[Int], runOnResource: Array[CPIntVar], resourceId : Int, exactLB: Boolean=false, postBinaryPrecedences: Boolean = true) extends NoOverlapTransitionTimes(starts, durations, ends, TransitionTimesUtils.transitionMatrixFromFamilyMatrix(family, familyMatrix), runOnResource, resourceId, postBinaryPrecedences) {
   private val familyTransitionLowerBounds = {
     if (exactLB) {
       DynamicProgrammingTSP.minTransitionTimesPerCardinality(familyMatrix)
