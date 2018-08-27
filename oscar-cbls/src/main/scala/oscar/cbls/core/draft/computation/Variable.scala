@@ -12,7 +12,7 @@ abstract class ChangingValue(store:Store) extends PropagationElement{
 
   def snapshot:ChangingValueSnapshot
 
-  def name:String = s"ChangingValue$uniqueID" //this is a default name, but it cvan of course be changed
+  def name:String = s"ChangingValue$uniqueID" //this is a default name, in case no other more precise one is given
 
   def valueString(blockPropagation:Boolean = false):String
 

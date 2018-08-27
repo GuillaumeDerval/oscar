@@ -23,10 +23,7 @@ package oscar.cbls.core.draft.computation
 
 import oscar.cbls.algo.dll._
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.algo.rb.RedBlackTreeMap
-import oscar.cbls.core.computation.{Domain, FullRange}
 import oscar.cbls.core.draft.propagation.{KeyForDynamicDependencyRemoval, PropagationElement, VaryingDependencies}
-import oscar.cbls.core.propagation._
 
 import scala.collection.immutable.SortedSet
 import scala.language.implicitConversions
@@ -287,11 +284,15 @@ abstract class ChangingSetValue(store:Store,
       if(addedValues.nonEmpty || deletedValues.nonEmpty) {
 
         //notifying the PE that listen to the whole set
+
+        //we use here some level of abstraction because there is virtually no other common type
+        // that we can use here to write dirty, but faster code
         val dynListElementsForWholeSetNotification:Iterable[(PropagationElement,Int)] =
           if(usesValueWise) listeningElementsNonValueWise else dynamicallyListeningElements
 
-        for((inv,id) <- dynListElementsForWholeSetNotification){
-          //TODO: the added and deleted could be computed lazily (you never know...)
+        val it = dynListElementsForWholeSetNotification.iterator
+        while(it.hasNext){
+          val (inv,id) = it.next()
           //TODO: the data struct can be improved.
           inv.asInstanceOf[SetNotificationTarget].notifySetChanges(this, id, addedValues, deletedValues, mOldValue, mNewValue)
         }
@@ -523,7 +524,7 @@ class CBLSSetConst(store:Store, override val value:SortedSet[Int])
  */
 abstract class SetInvariant(store:Store,
                             initialValue:SortedSet[Int] = SortedSet.empty,
-                            initialDomain:Domain = FullRange)
+                            initialDomain:Domain = Domain.fullRange)
   extends ChangingSetValue(store, initialValue, initialDomain)
     with InvariantTrait {
 

@@ -17,8 +17,7 @@ package oscar.cbls.core.draft.computation
 
 import oscar.cbls.algo.fun.PiecewiseLinearBijectionNaive
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.algo.seq.{ConcreteIntSequence, IntSequence, MovedIntSequence, RemovedIntSequence}
-import oscar.cbls.core.computation.Domain
+import oscar.cbls.algo.seq._
 import oscar.cbls.core.draft.propagation.{KeyForDynamicDependencyRemoval, PropagationElement, VaryingDependencies}
 
 import scala.collection.immutable.SortedSet

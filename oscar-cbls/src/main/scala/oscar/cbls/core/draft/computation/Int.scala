@@ -17,7 +17,6 @@ package oscar.cbls.core.draft.computation
 
 
 
-import oscar.cbls._
 import oscar.cbls.core.computation.FullRange
 import oscar.cbls.core.draft.propagation.{KeyForDynamicDependencyRemoval, PropagationElement, VaryingDependencies}
 
@@ -113,8 +112,6 @@ abstract class ChangingIntValue(store:Store,
 
   // ////////////////////////////////////////////////////////////////////////////////////////////////
   // propagation
-
-
   override def performPropagation(){performIntPropagation()}
 
   final protected def performIntPropagation(){
@@ -139,7 +136,6 @@ abstract class ChangingIntValue(store:Store,
   override def checkInternals(){
     require(mOldValue == mNewValue)
   }
-
 
   // ////////////////////////////////////////////////////////////////////////////////////////////////
   //clean methods
