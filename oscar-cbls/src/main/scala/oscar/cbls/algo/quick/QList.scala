@@ -38,6 +38,11 @@ class QList[@specialized T](val head:T, val tail:QList[T] = null){
   }
 
   def qMap[X](fun:T => X):QList[X] = new QList(fun(head),if(tail == null) null else tail.qMap(fun))
+
+  def append(tail:QList[T]):QList[T] = {
+    if(this.tail == null) QList(head,tail)
+    else QList(head, this.tail.append(tail))
+  }
 }
 
 object QList{
@@ -58,6 +63,11 @@ object QList{
   def qMap[T,X](q:QList[T],fun:T => X):QList[X] = {
     if(q == null) null
     else q.qMap(fun)
+  }
+
+  def append[T](a:QList[T],b:QList[T]):QList[T] = {
+    if(a == null) b
+    else a append b
   }
 }
 
@@ -81,5 +91,59 @@ class QListIterator[@specialized T](var currentPos:QList[T]) extends Iterator[T]
     val toReturn = currentPos.head
     currentPos = currentPos.tail
     toReturn
+  }
+}
+
+
+
+
+object QListBuilder{
+  def base[T](l:QList[T]):QListBuilder[T] = new QListBuilderLeaf[T](l)
+  def acc[T](l:QList[QListBuilder[T]]):QListBuilder[T] = new QListBuilderNode[T](l)
+
+  def apply[T](builders:QListBuilder[T]*) = {
+    var filtered:QList[QListBuilder[T]] = null
+    for(b <- builders){
+      if(b != null && !b.isEmpty)
+        filtered = new QList(b,filtered)
+    }
+    new QListBuilderNode(filtered)
+  }
+
+
+  def empty[T]():QListBuilder[T] = base[T](null)
+}
+
+abstract class QListBuilder[T]{
+  def flatten:QList[T] = toListAcc(null)
+  def toListAcc(tail:QList[T]):QList[T]
+  def isEmpty:Boolean
+}
+
+class QListBuilderLeaf[T](content:QList[T]) extends QListBuilder[T]{
+  override def toListAcc(tail: QList[T]): QList[T] = {
+    QList.append(content,tail)
+  }
+
+  override def isEmpty: Boolean = content != null
+}
+
+class QListBuilderNode[T](content:QList[QListBuilder[T]]) extends QListBuilder[T]{
+
+  def isEmpty: Boolean = {
+    var toCheck = content
+    while(toCheck != null){
+      if(!toCheck.head.isEmpty) return false
+      toCheck = toCheck.tail
+    }
+    true
+  }
+
+  override def toListAcc(tail: QList[T]): QList[T] = {
+    def myToListAcc(myList:QList[QListBuilder[T]]):QList[T] = {
+      if(myList == null) tail
+      else myList.head.toListAcc(myToListAcc(myList.tail))
+    }
+    myToListAcc(content)
   }
 }

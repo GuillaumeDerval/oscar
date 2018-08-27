@@ -32,7 +32,7 @@ trait IntNotificationTarget{
   * @param initialDomain is the domain value of the variable. Some invariants exploit this value to declare fixed size arrays
   * @param initialValue is the value of the variable
   */
-abstract class ChangingIntValue(store:Store,
+abstract class ChangingIntValue(val store:Store,
                                 initialValue:Int,
                                 initialDomain:Domain)
   extends ChangingValue(store) {

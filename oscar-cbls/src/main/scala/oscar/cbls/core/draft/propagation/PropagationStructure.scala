@@ -121,8 +121,8 @@ class PropagationStructure(val debug:Boolean,
     * @tparam T the type stored in the data structure
     * @return a dictionary over the PE that are registered in the propagation structure.
     */
-  def buildNodeStorage[@specialized(Boolean,Int) T:Manifest]: NodeDictionary[T]
-  = new NodeDictionary[T](nextUniqueIDForPropagationElement)
+  def buildNodeStorage[@specialized(Boolean,Int) T:Manifest](initValue:T): NodeDictionary[T]
+  = new NodeDictionary[T](nextUniqueIDForPropagationElement,initValue)
 }
 
 /**
@@ -138,8 +138,8 @@ class PropagationStructure(val debug:Boolean,
   * @tparam T the type stored in this structure
   * @author renaud.delandtsheer@cetic.be
   */
-class NodeDictionary[@specialized(Boolean,Int) T:Manifest](val MaxNodeID: Int) {
-  private val storage: Array[T] = new Array[T](MaxNodeID + 1)
+class NodeDictionary[@specialized(Boolean,Int) T:Manifest](val MaxNodeID: Int,initValue:T) {
+  private val storage: Array[T] = Array.fill[T](MaxNodeID + 1)(initValue)
 
   def update(elem: PropagationElement, value: T) {
     storage(elem.uniqueID) = value
