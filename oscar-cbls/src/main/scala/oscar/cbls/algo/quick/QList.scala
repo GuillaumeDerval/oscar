@@ -98,8 +98,8 @@ class QListIterator[@specialized T](var currentPos:QList[T]) extends Iterator[T]
 
 
 object QListBuilder{
-  def base[T](l:QList[T]):QListBuilder[T] = new QListBuilderLeaf[T](l)
-  def acc[T](l:QList[QListBuilder[T]]):QListBuilder[T] = new QListBuilderNode[T](l)
+  def apply[T](l:QList[T]):QListBuilder[T] = new QListBuilderLeaf[T](l)
+  def apply[T](l:QList[QListBuilder[T]]):QListBuilder[T] = new QListBuilderNode[T](l)
 
   def apply[T](builders:QListBuilder[T]*) = {
     var filtered:QList[QListBuilder[T]] = null
@@ -111,7 +111,7 @@ object QListBuilder{
   }
 
 
-  def empty[T]():QListBuilder[T] = base[T](null)
+  def empty[T]():QListBuilder[T] = apply[T](null)
 }
 
 abstract class QListBuilder[T]{

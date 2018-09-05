@@ -99,10 +99,10 @@ class Store(debug:Boolean = false,
   // ////////////////////////////////////////////////////////////////////////////////////////////
  //Closing procedure
 
-  private var toCallBeforeClose:List[(()=>Unit)] = List.empty
+  private var toCallBeforeClose:List[()=>Unit] = List.empty
 
-  def addToCallBeforeClose(toCallBeforeCloseProc : (()=>Unit)){
-    toCallBeforeClose = (toCallBeforeCloseProc) :: toCallBeforeClose
+  def addToCallBeforeClose(toCallBeforeCloseProc : ()=>Unit){
+    toCallBeforeClose = toCallBeforeCloseProc :: toCallBeforeClose
   }
 
   override def close(){
@@ -110,7 +110,7 @@ class Store(debug:Boolean = false,
     toCallBeforeClose = null
 
     super.close()
-    killBulker() //we won't create any new model artifacts, thus we can kill the bulker and free its memory
+    killBulker() //we won't create any new model artifacts, so we kill the bulker and reclaim its large memory
   }
 }
 
@@ -121,8 +121,6 @@ class Store(debug:Boolean = false,
   */
 class Solution(saves:Iterable[ChangingValueSnapshot],
                model:Store){
-
-  //TODO: serialize/deserialize
 
   override def toString:String = {
     "Solution(\n" + saves.mkString(",\n\t") + "\n)"

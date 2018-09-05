@@ -12,14 +12,13 @@ class SchedulingHandlerPartitioningAlgo(propagationStructure:PropagationStructur
     * @return the PE not in SCC (including the newly created PE) and the SCC
     */
   def identifyAndInstantiateSCC(): (QList[PropagationElement], QList[StronglyConnectedComponent]) = {
-    val storageForTarjan = propagationStructure.buildNodeStorage[TarjanNodeData]
-    storageForTarjan.initialize(() => new TarjanNodeData)
+    val storageForTarjan = propagationStructure.buildTabulatedNodeStorage[TarjanNodeData](_ => new TarjanNodeData)
 
     val stronglyConnectedComponents: List[QList[PropagationElement]] =
       TarjanWithExternalStorage.getStronglyConnexComponents[PropagationElement](
         propagationStructure.allPropagationElements,
         p => p.staticallyListeningElements,
-        storageForTarjan.get)
+        storageForTarjan(_))
 
     var acyclic = true
     var stronglyConnectedComponentsStructures: QList[StronglyConnectedComponent] = null
@@ -64,8 +63,8 @@ class SchedulingHandlerPartitioningAlgo(propagationStructure:PropagationStructur
     * (SCC and SH for PE with varying dependencies)
     * this also performs global registration of all SH to their listening SH
     */
-  def partitionGraphIntoSchedulingHandlers() {
-    var currentLayerID = propagationStructure.layerToPropagationElements.length
+  def partitionGraphIntoSchedulingHandlers(layerToPropagationElements:Array[QList[PropagationElement]]) {
+    var currentLayerID = layerToPropagationElements.length
     while (currentLayerID > 0) {
       currentLayerID = currentLayerID - 1
 
@@ -74,7 +73,7 @@ class SchedulingHandlerPartitioningAlgo(propagationStructure:PropagationStructur
       //except if the node already has a sh or if its successors have different sh's or if the SH of its successor is a VSH or if the node has no successor at all
       //in this case, a new SH is instantiated
 
-      for (pe <- propagationStructure.layerToPropagationElements(currentLayerID)) {
+      for (pe <- layerToPropagationElements(currentLayerID)) {
 
         if (pe.schedulingHandler != null){
           //there is already a SH at this node, we need to register to the listening SH

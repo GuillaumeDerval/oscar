@@ -82,7 +82,7 @@ class IntVarObjective(val objective: ChangingIntValue) extends Objective {
 class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objective,cascadeSize:Int = Int.MaxValue) extends Objective {
 
   override def detailedString(short: Boolean, indent:Int = 0): String =
-    (if(short) {
+    if(short) {
       if (mustBeZeroObjective.value == 0) {
         nSpace(indent) + "CascadingObjective(\n" +
           nSpace(indent + 2) + "mustBeZeroObjective :=0 \n" +
@@ -98,7 +98,7 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
         nSpace(indent + 2) + "mustBeZeroObjective:" + mustBeZeroObjective.detailedString(true, indent + 4) + "\n" +
         nSpace(indent + 2) + "secondObjective:" + secondObjective.detailedString(true, indent + 4) + "\n" +
         nSpace(indent) + ")"
-    })
+    }
 
   /**
    * This method returns the actual objective value.

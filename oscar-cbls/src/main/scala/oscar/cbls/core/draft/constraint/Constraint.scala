@@ -20,6 +20,7 @@
 
 package oscar.cbls.core.draft.constraint
 
+import oscar.cbls.core.draft.objective.Objective
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.draft.computation._
 
@@ -46,6 +47,10 @@ case class NamedConstraint(name:String, baseConstraint:Constraint) extends Const
   override protected def registerConstrainedVariable(v: ChangingValue): Unit = throw new Error("should do this at the base constraint")
 
   override def toString: String = name + ":" + baseConstraint
+
+  override def detailedString(short: Boolean, indent: Int): String = nSpace(indent) + name + "{\n" + baseConstraint.detailedString(short,indent+2) + "}"
+
+  override def store: Store = baseConstraint.store
 }
 
 
@@ -58,7 +63,9 @@ case class NamedConstraint(name:String, baseConstraint:Constraint) extends Const
  * and managed as invariants.
   * @author renaud.delandtsheer@cetic.be
  */
-trait Constraint{
+trait Constraint extends Objective{
+
+  def value:Int = violation.value
 
   //use this to name a constraint. it will return a named constraint that you should post in your constraint system instead of this one
   def nameConstraint(name:String):NamedConstraint = NamedConstraint(name,this)
@@ -72,7 +79,7 @@ trait Constraint{
 
   /**facility to check that the constraint is enforced
     * */
-  final def isTrue: Boolean = violation.value == 0
+  def isTrue: Boolean = value == 0
 
 
   /**the variables that are constrained by the constraint.
@@ -102,7 +109,6 @@ trait Constraint{
   protected def registerConstrainedVariables(v: ChangingValue*){
     for (vv <- v){registerConstrainedVariable(vv)}
   }
-
 
   /** returns the violation associated with variable v in this constraint
    * all variables that are declared as constraint should have an associated violation degree.

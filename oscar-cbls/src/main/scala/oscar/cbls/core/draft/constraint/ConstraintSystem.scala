@@ -30,15 +30,17 @@ import oscar.cbls.lib.invariant.numeric.{ExtendableSum, Prod, Prod2, Sum}
  * It is itself a constraint, offering the same features, namely, a global violation and a violation specific to each variable.
  * monitoring the violation of a variable requires that the ConstraintSystem has been notified that the variable should have an associated violation degree.
  * This is achieved by calling the method registerForViolation(v:Variable).
- * @param model is the model in which all the variables referenced by the constraints are declared.
+ * @param store is the model in which all the variables referenced by the constraints are declared.
  * @author renaud.delandtsheer@cetic.be
  */
-case class ConstraintSystem(model:Store) extends Constraint with Objective{
+case class ConstraintSystem(store:Store) extends Constraint with Objective{
   //ConstraintSystems do not act as invariant because everything is subcontracted
 
-  model.addToCallBeforeClose(() => this.close())
+  store.addToCallBeforeClose(() => this.close())
 
   private var constraints:List[(Constraint,ChangingIntValue)] = List.empty
+
+  override val violation = new ExtendableSum(store, 0 to Int.MaxValue)
 
   /**Method used to post a constraint in the constraint system. (synonym of add)
     * Cannot be called after the constraint system has been closed.
@@ -55,13 +57,15 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
 
   private def computeLocalViolationOnConstrainedVariable:(QList[ChangingValue],NodeDictionary[QList[ChangingIntValue]]) = {
 
-    val dicoForLocalViolation = store.buildNodeStorage[QList[ChangingIntValue]](initValue = null)
+    val dicoForLocalViolation = store.buildFilledNodeStorage[QList[ChangingIntValue]](initValue = null)
     var allConstrainedVariable:QList[ChangingValue] = null
 
     for((constraint,weight) <- constraints){
       val weightIsNull = weight == null
 
-      for((constrainedVar,varViolation) <- constraint.constrainedVariablesAndViolation) {
+      for(constrainedVar <- constraint.constrainedVariables) {
+        val varViolation = constraint.violation(constrainedVar)
+
         val alreadyKnown:QList[ChangingIntValue] = dicoForLocalViolation(constrainedVar)
 
         if(alreadyKnown == null) allConstrainedVariable = QList(constrainedVar,allConstrainedVariable)
@@ -74,27 +78,30 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
     (allConstrainedVariable,dicoForLocalViolation)
   }
 
-  private def propagateLocalToGlobalViolations(allConstrainedVariable:QList[ChangingValue],
+  private def propagateViolationToDecisionVariables(allConstrainedVariable:QList[ChangingValue],
                                                dicoForLocalViolation:NodeDictionary[QList[ChangingIntValue]]): Unit ={
 
-    val dicoForGlobalViolations = store.buildNodeStorage[QListBuilder[ChangingIntValue]](null)
+    val dicoForGlobalViolations = store.buildFilledNodeStorage[QListBuilder[ChangingIntValue]](null)
 
-    var sourceVariablesWithViolation:List[ChangingValue] =
+  //  var sourceVariablesWithViolation:List[ChangingValue] =
 
     val sourceFinder = new SourceFinderAlgo(store)
 
-    for(variable <- allConstrainedVariable){
+    for(variable:ChangingValue <- allConstrainedVariable){
 
       val sources = sourceFinder.getSources(variable)
 
       for(source <- sources){
         dicoForGlobalViolations(source) =
           QListBuilder(dicoForGlobalViolations(source),
-            QListBuilder(dicoForLocalViolation(variable)))
+            QListBuilder[ChangingIntValue](dicoForLocalViolation(variable)))
       }
     }
   }
 
+  def close(): Unit ={
+
+  }
 /*
   private def computeViolationOnDecisionVariables(){
 
@@ -160,7 +167,6 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
   val IndexForGlobalViolationINSU = model.newStorageKey()
 
 
-  val violation:ChangingIntValue = null
 
   private var PostedInvariants:List[ChangingIntValue] = List.empty
 
@@ -250,10 +256,6 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
 */
 
 
-  /**Returns the global violation of the constraint system, that is the weighted sum of the violation of the posted constraints
-   *close() should have been called prior to calling this method.
-   */
-  override def violation:ChangingIntValue = volation
 
   /** to get the violated constraints, for debugging purpose
     * @return the constraints that are violated, and whose ponderation factor is not zero
@@ -267,11 +269,5 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
     */
   override def checkInternals(): Unit = {}
 
-  /**
-   * This method returns the actual objective value.
-   * It is easy to override it, and perform a smarter propagation if needed.
-   * @return the actual objective value.
-   */
-  override def value: Int = Violation.value
 }
 

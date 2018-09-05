@@ -78,7 +78,7 @@ class PropagationStructure(val debug:Boolean,
 
     //4: créer les autre SH en parcourant les couches
     //Et faire les registration des listening SH
-    myPartitioningAlgo.partitionGraphIntoSchedulingHandlers()
+    myPartitioningAlgo.partitionGraphIntoSchedulingHandlers(layerToPropagationElements)
 
     if(debug) {
       finalSchedulingHandlers = allSchedulingHandlers.filter(_.noListeningSchedulingHandler)
@@ -117,12 +117,31 @@ class PropagationStructure(val debug:Boolean,
     * the dictionary is O(1), based on an array.
     * It only works on PE that are registered to this structure.
     * The storage is not initialized, call the initialize to set it to some conventional value.
- *
+    *
     * @tparam T the type stored in the data structure
+    * @param initValue the value stored for each propagation element
     * @return a dictionary over the PE that are registered in the propagation structure.
     */
-  def buildNodeStorage[@specialized(Boolean,Int) T:Manifest](initValue:T): NodeDictionary[T]
-  = new NodeDictionary[T](nextUniqueIDForPropagationElement,initValue)
+  def buildFilledNodeStorage[@specialized(Boolean,Int) T:Manifest](initValue:T): NodeDictionary[T] = {
+    new NodeDictionary[T](Array.fill[T](nextUniqueIDForPropagationElement)(initValue), allPropagationElements,this)
+  }
+
+
+  /**
+    * Builds a dictionary to store data related to the PE.
+    * the dictionary is O(1), based on an array.
+    * It only works on PE that are registered to this structure.
+    * The storage is not initialized, call the initialize to set it to some conventional value.
+    *
+    * @tparam T the type stored in the data structure
+    * @param init a function to specify the value stored for each propagation element
+    * @return a dictionary over the PE that are registered in the propagation structure.
+    */
+  def buildTabulatedNodeStorage[@specialized(Boolean,Int) T:Manifest](init:PropagationElement => T): NodeDictionary[T] = {
+    val a = buildFilledNodeStorage[T](null.asInstanceOf[T]) //TODO: find a one pass way to do this (not so important)
+    a.updateAll(init)
+    a
+  }
 }
 
 /**
@@ -138,15 +157,30 @@ class PropagationStructure(val debug:Boolean,
   * @tparam T the type stored in this structure
   * @author renaud.delandtsheer@cetic.be
   */
-class NodeDictionary[@specialized(Boolean,Int) T:Manifest](val MaxNodeID: Int,initValue:T) {
-  private val storage: Array[T] = Array.fill[T](MaxNodeID + 1)(initValue)
+class NodeDictionary[@specialized(Boolean,Int) T:Manifest](storage: Array[T],
+                                                           allConsideredPE: QList[PropagationElement],
+                                                           val ps:PropagationStructure) {
 
-  def update(elem: PropagationElement, value: T) {
+  def apply(elem: PropagationElement): T = storage(elem.uniqueID)
+
+  def update(elem: PropagationElement, value: T) : Unit ={
     storage(elem.uniqueID) = value
   }
 
-  def get(elem: PropagationElement): T = storage(elem.uniqueID)
+  def updateAll(value: PropagationElement => T) : Unit ={
+    var a = allConsideredPE
+    while(a != null){
+      val elem = a.head
+      storage(elem.uniqueID) = value(elem)
+      a = a.tail
+    }
+  }
 
-  def initialize(value: () => T) { for (i <- storage.indices) storage(i) = value() }
+  def setAll(value:T): Unit ={
+    var i = storage.length
+    while(i >0){
+      i = i-1
+      storage(i) = value
+    }
+  }
 }
-
