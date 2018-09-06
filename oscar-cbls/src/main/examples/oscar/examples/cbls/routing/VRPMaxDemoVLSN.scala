@@ -218,7 +218,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       removeNodeAndReInsert = removeAndReInsertVLSN,
 
       reOptimizeVehicle = Some(vehicle => Some(threeOptOnVehicle(vehicle))),
-      useDirectInsert = true,
+      useDirectInsert = false,
 
       objPerVehicle,
       unroutedPenaltyObj,

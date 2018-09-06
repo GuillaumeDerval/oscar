@@ -12,10 +12,15 @@ abstract class GlobalConstraintDefinition[T:Manifest,U:Manifest] {
     *               BEWARE,other vehicles are also present in this sequence; you must only work on the given vehicle
     * @param setNodeValue the method that you are expected to use when assigning a value to a node
     *                     BEWARE: you can only apply this method on nodes of the vehicle you are working on
+    * @param getNodeValue a method that you can use to get the value associated wit ha node
+    *                     BEWARE: you have zero info on when it can generated, so only query the value
+    *                     that you have just set through the method setNodeValue.
+    *                     also, you should only query the value of node in the route of vehicle "vehicle"
     */
   def performPreCompute(vehicle:Int,
                         routes:IntSequence,
-                        setNodeValue:(Int,T) => Unit)
+                        setNodeValue:(Int,T) => Unit,
+                        getNodeValue:Int => T)
 
   /**
     * this method is called by the framework when the value of a vehicle must be computed.
@@ -76,7 +81,6 @@ class FlippedPreComputedSubSequence[T](startNode:Int,
                             startNodeValue:T,
                             endNode:Int,
                             endNodeValue:T) extends Segment
-
 
 /**
   * This represent that a node that was not present in the initial sequence when pre-computation was performed.
