@@ -1,6 +1,7 @@
 package oscar.cbls.business.routing.invariants.group
 
 import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.core.computation.Variable
 
 abstract class GlobalConstraintDefinition[T:Manifest,U:Manifest] {
 
@@ -48,6 +49,15 @@ abstract class GlobalConstraintDefinition[T:Manifest,U:Manifest] {
     */
   def assignVehicleValue(vehicle:Int,value:U)
 
+  /**
+    * you must also implement this method
+    * because the engine needs to know which variable are your output variables
+    * so return here all the variables that you will set through the method "assignVehicleValue"
+    * typically, this is one variable per vehicle
+    * @return all the variables that might be directly modified by the method "assignVehicleValue"
+    */
+  def outputVariables:Iterable[Variable]
+  
   //TODO: a non-incremental method that checks the output
 }
 
