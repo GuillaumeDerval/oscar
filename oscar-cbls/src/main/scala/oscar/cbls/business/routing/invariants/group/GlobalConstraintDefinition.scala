@@ -21,7 +21,8 @@ abstract class GlobalConstraintDefinition[T:Manifest,U:Manifest] {
     * this method is called by the framework when the value of a vehicle must be computed.
     *
     * @param vehicle the vehicle that we are focusing on
-    * @param segments the segments that constitute the route you are working on
+    * @param segments the segments that constitute the route.
+    *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @param routes the sequence representing the route of all vehicle
     * @param nodeValue a function that you can use to get the pre-computed value associated with each node (if some has ben given)
     *                  BEWARE: normally, you should never use this function, you only need to iterate through segments
@@ -46,10 +47,40 @@ abstract class GlobalConstraintDefinition[T:Manifest,U:Manifest] {
 }
 
 sealed abstract class Segment()
-class PreComputedSegment[T](startNode:Int,
+
+/**
+  * This represents a subsequence starting at startNode and ending at endNode.
+  * This subsequence was present in the global sequence when the pre-computation was performed
+  * @param startNode the first node of the subsequence
+  * @param startNodeValue the T value that the pre-computation associated with the node "startNode"
+  * @param endNode the last node of the subsequence
+  * @param endNodeValue the T value that the pre-computation associated with the node "endNode"
+  * @tparam T the type of precomputation
+  */
+case class PreComputedSubSequence[T](startNode:Int,
                             startNodeValue:T,
                             endNode:Int,
-                            endNodeValue:T,
-                            isFLipped:Boolean) extends Segment
+                            endNodeValue:T) extends Segment
+
+/**
+  * This represents a subsequence starting at startNode and ending at endNode.
+  * This subsequence was not present in the global sequence when the pre-computation was performed, but
+  * the flippedd subsequence obtained by flippig it was present in the global sequence when the pre-computation was performed, but
+  * @param startNode the first node of the subsequence (it was after the endNode when pre-computation ws performed)
+  * @param startNodeValue the T value that the pre-computation associated with the node "startNode"
+  * @param endNode the last node of the subsequence (it was before the endNode when pre-computation ws performed)
+  * @param endNodeValue the T value that the pre-computation associated with the node "endNode"
+  * @tparam T the type of precomputation
+  */
+class FlippedPreComputedSubSequence[T](startNode:Int,
+                            startNodeValue:T,
+                            endNode:Int,
+                            endNodeValue:T) extends Segment
+
+
+/**
+  * This represent that a node that was not present in the initial sequence when pre-computation was performed.
+  * @param node
+  */
 class NewNode(node:Int) extends Segment
 
