@@ -11,7 +11,7 @@ import oscar.cbls.core.search.Best
   */
 
 object SimpleVRPWithTimeWindow extends App{
-  val m = new Store(noCycle = false)
+  val m = new Store(noCycle = false, checker = Some(new ErrorChecker))
   val v = 10
   val n = 1000
   val penaltyForUnrouted = 10000
@@ -171,7 +171,7 @@ object SimpleVRPWithTimeWindow extends App{
 
   val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,segExchangeOnSegments(5),onePtMove(20)))
 
-  search.verbose = 1
+  search.verboseWithExtraInfo(4, () => obj.toString)
 
   search.doAllMoves(obj=obj)
 
