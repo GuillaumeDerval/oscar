@@ -7,23 +7,18 @@ import oscar.cp.constraints.nooverlap.util.TransitionTimesUtils
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPVar
 
-class AlternativeResources(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], runOnResource: Array[CPIntVar]) extends Constraint(starts(0).store) {
+class AlternativeResources(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], runOnResource: Array[CPIntVar], realResourceIds: Set[Int]) extends Constraint(starts(0).store) {
   override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ runOnResource
 
-  protected[this] val resourceIds = runOnResource.map(_.toArray.toSet).foldLeft(Set[Int]())(_.union(_))
-
   override def setup(l: CPPropagStrength): Unit = {
-    for (r <- resourceIds){
+    for (r <- realResourceIds){
       s.post(new NoOverlap(starts, durations, ends, runOnResource, r))
     }
   }
 }
 
-class AlternativeResourcesTransitionTimes(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], runOnResource: Array[CPIntVar], transitionMatrix: Array[Array[Int]]) extends AlternativeResources(starts, durations, ends, runOnResource) {
-  override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ runOnResource
-
+class AlternativeResourcesTransitionTimes(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], runOnResource: Array[CPIntVar], realResourceIds: Set[Int], transitionMatrix: Array[Array[Int]]) extends AlternativeResources(starts, durations, ends, runOnResource, realResourceIds) {
   private[this] val nTasks = starts.length
-
   protected def postBinaryPrecedences() = {
     for(t1 <- 0 until nTasks; t2 <- 0 until t1 if(transitionMatrix(t1)(t2) > 0 || transitionMatrix(t2)(t1) > 0)){
       val runOnSameResource = (runOnResource(t1) ?=== (runOnResource(t2)))
@@ -32,16 +27,16 @@ class AlternativeResourcesTransitionTimes(starts: Array[CPIntVar], durations: Ar
     }
   }
   override def setup(l: CPPropagStrength): Unit = {
-    for (r <- resourceIds){
+    for (r <- realResourceIds){
       s.post(new NoOverlapTransitionTimes(starts, durations, ends, transitionMatrix, runOnResource, r, false))
     }
     postBinaryPrecedences()
   }
 }
 
-class AlternativeResourcesTransitionTimesFamilies(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], familyMatrix: Array[Array[Int]], family: Array[Int], runOnResource: Array[CPIntVar], resourceId : Int, exactLB: Boolean=false, postBinaryPrecedences: Boolean = true) extends AlternativeResourcesTransitionTimes(starts, durations, ends, runOnResource, TransitionTimesUtils.transitionMatrixFromFamilyMatrix(family, familyMatrix)) {
+class AlternativeResourcesTransitionTimesFamilies(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], familyMatrix: Array[Array[Int]], family: Array[Int], runOnResource: Array[CPIntVar], realResourceIds: Set[Int], exactLB: Boolean=false) extends AlternativeResourcesTransitionTimes(starts, durations, ends, runOnResource, realResourceIds, TransitionTimesUtils.transitionMatrixFromFamilyMatrix(family, familyMatrix)) {
   override def setup(l: CPPropagStrength): Unit = {
-    for (r <- resourceIds){
+    for (r <- realResourceIds){
       s.post(new NoOverlapTransitionTimesFamilies(starts, durations, ends, familyMatrix, family, runOnResource, r, exactLB, false))
     }
     postBinaryPrecedences()
