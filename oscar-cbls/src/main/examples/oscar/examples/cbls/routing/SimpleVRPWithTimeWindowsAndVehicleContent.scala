@@ -3,7 +3,6 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.PDPConstraints
-import oscar.examples.cbls.routing.SimpleVRPWithTimeWindow.chainsExtension
 
 /**
   * Created by fg on 12/05/17.
