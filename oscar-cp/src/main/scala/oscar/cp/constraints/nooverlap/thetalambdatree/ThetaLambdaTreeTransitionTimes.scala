@@ -59,6 +59,12 @@ class ThetaLambdaTreeTransitionTimes(nElements: Int, transitionSetLowerBounds: A
     ectBarIfLeftEctResponsible = ectsBar(leftSon) + sumDurations(rightSon) + transitionSetLowerBounds(nLeaves(rightSon))
   }
 
+  override def updateCurrentPosition(): Unit = {
+    super.updateCurrentPosition()
+    nLeaves(currentPos) = nLeaves(leftSon) + nLeaves(rightSon)
+    ects(currentPos) = math.max(ects(rightSon), ects(leftSon) + sumDurations(rightSon) + transitionSetLowerBounds(nLeaves(rightSon))) //TODO:here we erase ects(currentPos) that was computed in super.updateCurrentPosition(). Small overhead.
+  }
+
   override def updateCurrentPositionGray() = {
     super.updateCurrentPositionGray()
     nLeavesBar(currentPos) = if (sumDurationsBar(currentPos) == sumDurations(currentPos)) nLeaves(currentPos) else nLeaves(currentPos) + 1
@@ -67,6 +73,7 @@ class ThetaLambdaTreeTransitionTimes(nElements: Int, transitionSetLowerBounds: A
   override def getNodeString(positionIndex: Int): String = {
     val strBuilder = new StringBuilder()
     strBuilder.append("nL = ")
+    strBuilder.append("\n")
     strBuilder.append(nLeaves(positionIndex))
     strBuilder.append("\n")
     strBuilder.append("nLBar = ")

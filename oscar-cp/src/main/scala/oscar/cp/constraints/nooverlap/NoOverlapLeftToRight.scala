@@ -71,7 +71,7 @@ class NoOverlapLeftToRight(starts: Array[CPIntVar], durations: Array[CPIntVar], 
     i = 0
     while (i < nTasks) {
       val activityIndex = orderedMaxEndIds(i)
-      if(stillPossiblyAssignedToThisResource(i)) { //the activity is still optional
+      if(stillPossiblyAssignedToThisResource(activityIndex)) { //the activity is still optional
         tree.insert(activityIndex) //TODO: we should insert and gray in one pass
         tree.grayActivity(activityIndex)
       }
