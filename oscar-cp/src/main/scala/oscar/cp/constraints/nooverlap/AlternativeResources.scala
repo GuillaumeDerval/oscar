@@ -1,8 +1,7 @@
 package oscar.cp.constraints.nooverlap
 
-package unifiedunaryconstraint
-
 import oscar.cp._
+import oscar.cp.constraints.InSetReif
 import oscar.cp.constraints.nooverlap.util.TransitionTimesUtils
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPVar
@@ -19,11 +18,13 @@ class AlternativeResources(starts: Array[CPIntVar], durations: Array[CPIntVar], 
 
 class AlternativeResourcesTransitionTimes(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], runOnResource: Array[CPIntVar], realResourceIds: Set[Int], transitionMatrix: Array[Array[Int]]) extends AlternativeResources(starts, durations, ends, runOnResource, realResourceIds) {
   private[this] val nTasks = starts.length
-  protected def postBinaryPrecedences() = {
-    for(t1 <- 0 until nTasks; t2 <- 0 until t1 if(transitionMatrix(t1)(t2) > 0 || transitionMatrix(t2)(t1) > 0)){
-      val runOnSameResource = (runOnResource(t1) ?=== (runOnResource(t2)))
-      val binaryNoOverlap = ((ends(t1) + transitionMatrix(t1)(t2) ?<= starts(t2)) || (ends(t2) + transitionMatrix(t2)(t1) ?<= starts(t1)))
-      s.post(runOnSameResource ==> binaryNoOverlap)
+  protected def postBinaryPrecedences(): Unit = {
+    for(t1 <- 0 until nTasks; t2 <- 0 until t1) if(transitionMatrix(t1)(t2) > 0 || transitionMatrix(t2)(t1) > 0){
+      val runOnSameResource = runOnResource(t1) ?=== runOnResource(t2)
+      val runOnRealResource = CPBoolVar()
+      s.post(new InSetReif(runOnResource(t1), realResourceIds, runOnRealResource))
+      val binaryNoOverlap = (ends(t1) + transitionMatrix(t1)(t2) ?<= starts(t2)) || (ends(t2) + transitionMatrix(t2)(t1) ?<= starts(t1))
+      s.post(runOnSameResource && runOnRealResource ==> binaryNoOverlap)
     }
   }
   override def setup(l: CPPropagStrength): Unit = {
