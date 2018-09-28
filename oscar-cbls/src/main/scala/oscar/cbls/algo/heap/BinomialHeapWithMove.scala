@@ -582,7 +582,7 @@ class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int)
   }
 
   def insert(elem:Int){
-    //insert en derniere position, puis bubble up
+    //insert en dernière position, puis bubble up
     heapArray(size)=elem
     position(elem) = size
     size +=1

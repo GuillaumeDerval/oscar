@@ -65,6 +65,9 @@ case class NamedConstraint(name:String, baseConstraint:Constraint) extends Const
  */
 trait Constraint extends Objective{
 
+
+  //TODO: add a diagnostic string explaining why the constraint is violated??
+
   def value:Int = violation.value
 
   //use this to name a constraint. it will return a named constraint that you should post in your constraint system instead of this one
