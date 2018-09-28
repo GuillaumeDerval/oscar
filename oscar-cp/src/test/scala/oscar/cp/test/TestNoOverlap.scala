@@ -326,3 +326,34 @@ class SimpleNoOverlapTest extends FunSuite with Matchers with Assertions {
 
   }
 }
+
+class SmallNoOverlapTransitionTimeTest extends FunSuite with Matchers with Assertions {
+  test("Small test to remove optional") {
+    implicit val cp = CPSolver()
+    val distances: Array[Array[Int]] = Array.tabulate(3, 3)((i,j) => if(i == j) 0 else 30)
+
+    val starts: Array[CPIntVar] = Array.fill(3)(CPIntVar(0 until 50))
+    val durations: Array[CPIntVar] = Array.fill(3)(CPIntVar(1))
+    val ends: Array[CPIntVar] = Array.fill(3)(CPIntVar(1 to 50))
+    val resources: Array[CPIntVar] = Array.fill(3)(CPIntVar(0, 1))
+
+    for(a <- 0 until 3)
+      post(starts(a) + durations(a) === ends(a))
+
+    add(resources(0) === 1)
+    add(resources(1) === 1)
+
+    add(new NoOverlapTransitionTimes(starts, durations, ends, distances, resources, 1))
+
+    //    add(starts(0) === 0)
+    //    add(starts(1) === 31)
+    //  add(resources(2) === 1)
+
+
+    assert(!resources(2).hasValue(1))
+
+    println("starts:\n" + starts.mkString("\n"))
+    println("resources:\n" + resources.mkString("\n"))
+
+  }
+}
