@@ -3,6 +3,7 @@ package oscar.cp.test
 import org.scalatest.{Assertions, FunSuite, Matchers}
 import oscar.cp._
 import oscar.cp.constraints.nooverlap.{NoOverlap, NoOverlapTransitionTimes, NoOverlapTransitionTimesFamilies}
+import oscar.cp.constraints.nooverlap.AlternativeResourcesTransitionTimes
 import oscar.cp.scheduling.search.StaticBranchingWithOptionalActivities
 import oscar.util.instanceGenerators.RandomFamilyInstanceGenerator
 import oscar.util.instanceGenerators.utils.Utils
@@ -355,5 +356,35 @@ class SmallNoOverlapTransitionTimeTest extends FunSuite with Matchers with Asser
     println("starts:\n" + starts.mkString("\n"))
     println("resources:\n" + resources.mkString("\n"))
 
+  }
+}
+
+class SmallAlternativeResourcesTransitionTimeTest extends FunSuite with Matchers with Assertions {
+  test("Small test for alternative resources interface") {
+    implicit val cp = CPSolver()
+    val distances: Array[Array[Int]] = Array.tabulate(4, 4)((i,j) => if(i == j) 0 else 30)
+
+    val starts: Array[CPIntVar] = Array.fill(4)(CPIntVar(0 until 50))
+    val durations: Array[CPIntVar] = Array.fill(4)(CPIntVar(1))
+    val ends: Array[CPIntVar] = Array.fill(4)(CPIntVar(1 to 50))
+    val resources: Array[CPIntVar] = Array.fill(4)(CPIntVar(0, 1))
+
+    for(a <- 0 until 4)
+      post(starts(a) + durations(a) === ends(a))
+
+    add(resources(0) === 1)
+    add(resources(1) === 1)
+    add(starts(0) === 0)
+    add(starts(2) === 0)
+
+    add(new AlternativeResourcesTransitionTimes(starts, durations, ends, resources, Set(0, 1), distances))
+
+    assert(!resources(2).hasValue(1))
+    assert(!resources(3).hasValue(1))
+    assertResult(31)(starts(1).min)
+    assertResult(31)(starts(3).min)
+
+    println("starts:\n" + starts.mkString("\n"))
+    println("resources:\n" + resources.mkString("\n"))
   }
 }
