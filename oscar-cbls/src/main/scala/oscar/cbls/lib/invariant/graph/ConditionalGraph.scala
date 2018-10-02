@@ -16,6 +16,13 @@ case class ConditionalGraph(edges:Array[Edge],
                             nbConditions:Int){
   val nbNodes = nodes.length
   val nbEdges = edges.length
+  val conditionToConditionalEdges:Array[Edge] = Array.fill[Edge](nbConditions)(null)
+  for(edge <- edges){
+    edge.conditionID match{
+      case None => ;
+      case Some(c) => conditionToConditionalEdges(c) = edge
+    }
+  }
 }
 
 case class Edge(edgeId:Int,

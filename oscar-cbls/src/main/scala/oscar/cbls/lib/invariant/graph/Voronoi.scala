@@ -66,28 +66,28 @@ class VoronoiZones(graph:ConditionalGraph,
                    openConditions:ChangingSetValue,
                    centroids:ChangingSetValue,
                    trackedNodeToDistanceAndCentroidMap:SortedMap[Int,(CBLSIntVar,CBLSIntVar)])
-  extends Invariant with SetNotificationTarget{
+  extends Invariant with SetNotificationTarget {
 
   //TODO: this invariant would divide its runtime by two in case of global checkpointing
 
-  registerStaticAndDynamicDependency(openConditions,0)
-  registerStaticAndDynamicDependency(centroids,1)
+  registerStaticAndDynamicDependency(openConditions, 0)
+  registerStaticAndDynamicDependency(centroids, 1)
 
   finishInitialization()
 
-  val trackedNodeToDistanceAndCentroid:Array[OutputLabeling] =
+  val trackedNodeToDistanceAndCentroid: Array[OutputLabeling] =
     Array.tabulate(graph.nbNodes)(nodeID =>
-      trackedNodeToDistanceAndCentroidMap.get(nodeID) match{
+      trackedNodeToDistanceAndCentroidMap.get(nodeID) match {
         case None => null
-        case Some(couple@(a,b)) =>
+        case Some(couple@(a, b)) =>
           a.setDefiningInvariant(this)
           b.setDefiningInvariant(this)
-          OutputLabeling(a,b)
+          OutputLabeling(a, b)
       })
 
-  val isCentroid:Array[Boolean] = Array.fill(graph.nbNodes)(false)
+  val isCentroid: Array[Boolean] = Array.fill(graph.nbNodes)(false)
 
-  val isConditionalEdgeOpen:Array[Boolean] = Array.fill(graph.nbConditions)(false)
+  val isConditionalEdgeOpen: Array[Boolean] = Array.fill(graph.nbConditions)(false)
 
   def isEdgeOpen(edge: Edge): Boolean =
     edge.conditionID match {
@@ -95,89 +95,95 @@ class VoronoiZones(graph:ConditionalGraph,
       case Some(condition) => isConditionalEdgeOpen(condition)
     }
 
-  val nodeLabeling:Array[VoronoiZoneLabeling] = Array.fill(graph.nbNodes)(Unreachable)
+  val nodeLabeling: Array[VoronoiZoneLabeling] = Array.fill(graph.nbNodes)(Unreachable)
 
-  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit ={
+  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
 
-    if(v ==  centroids){
-      for(added <- addedValues){
-        addCentroid(added)
+    if (v == centroids) {
+      for (added <- addedValues) {
+        nodeLabeling(added) = VoronoiZone(added,0)
+        if(trackedNodeToDistanceAndCentroid(added) != null){
+          trackedNodeToDistanceAndCentroid(added).set(nodeLabeling(added))
+        }
+        loadOrCorrectNodeIDIntoHeap(added)
       }
-      for(removed <- removedValues){
-        removeCentroid(removed)
+      for (removed <- removedValues) {
+        loadExternalBoundaryIntoHeapMarkInnerZone(graph.nodes(removed))
       }
-    }else if (v == openConditions){
-      for(added <- addedValues){
-        openEdge(added)
+    } else if (v == openConditions) {
+      //opening or closing edges
+      for (added <- addedValues) {
+        loadEdgeExtremitiesIntoHeap(graph.conditionToConditionalEdges(added))
       }
-      for(removed <- removedValues){
-        closeEdge(removed)
+      for (removed <- removedValues) {
+        loadExternalBoundaryIntoHeapMarkImpactedZone(graph.conditionToConditionalEdges(removed))
       }
-    }else{
-      require(false,"got notification for not centroid and not openConditions")
+    } else {
+      require(false, "got notification for not centroid and not openConditions")
     }
+    scheduleForPropagation()
   }
 
-  def addCentroid(added:Int): Unit ={
-
-
+  override def performInvariantPropagation(): Unit = {
+    performLabelingFromCurrentHeap()
   }
-
-  def removeCentroid(removed:Int): Unit ={
-
-  }
-  def openEdge(added:Int): Unit ={
-
-  }
-  def closeEdge(removed:Int): Unit ={
-
-  }
-
-
-
-
 
   //we can only put node with an existing under-approximated distance to the target, this only needs to be checked on the source node, actually
   val nodeIDHeap = new oscar.cbls.algo.heap.BinomialHeapWithMoveInt(
     nodeID => nodeLabeling(nodeID).asInstanceOf[VoronoiZone].distance, graph.nbNodes, graph.nbNodes)
 
-  def performLabelingFromCurrentHeap(){
-    while(!nodeIDHeap.isEmpty){
+  def performLabelingFromCurrentHeap() {
+    while (!nodeIDHeap.isEmpty) {
       val currentNodeId: Int = nodeIDHeap.removeFirst()
       val currentNode = graph.nodes(currentNodeId)
       val currentNodeLabeling = nodeLabeling(currentNodeId).asInstanceOf[VoronoiZone]
 
-      for(edge <- currentNode.incidentEdges if isEdgeOpen(edge)){
+      for (edge <- currentNode.incidentEdges if isEdgeOpen(edge)) {
         val otherNode = edge.otherNode(currentNode)
         val otherNodeID = otherNode.nodeId
         val newLabelingForOtherNode = currentNodeLabeling + edge.length
 
-        if(newLabelingForOtherNode < nodeLabeling(otherNodeID)){
+        if (newLabelingForOtherNode < nodeLabeling(otherNodeID)) {
 
           nodeLabeling(otherNodeID) = newLabelingForOtherNode
 
-          if(trackedNodeToDistanceAndCentroid(otherNodeID) != null){
+          if (trackedNodeToDistanceAndCentroid(otherNodeID) != null) {
             trackedNodeToDistanceAndCentroid(otherNodeID).set(newLabelingForOtherNode)
           }
 
-          if(nodeIDHeap.contains(otherNodeID)){
-            nodeIDHeap.notifyChange(otherNodeID)
-          }else{
-            nodeIDHeap.insert(otherNodeID)
-          }
+          loadOrCorrectNodeIntoHeap(otherNode)
         }
       }
     }
   }
 
-  def loadAllCentroidsIntoHeap(centroids:Iterable[Int]): Unit ={
-    for(centroid <- centroids){
-      nodeIDHeap.insert(centroid)
+  def loadAllCentroidsIntoHeap(centroids: Iterable[Int]): Unit = {
+    for (centroid <- centroids) {
+      if (!nodeIDHeap.contains(centroid)) {
+        loadOrCorrectNodeIDIntoHeap(centroid)
+      }
     }
   }
 
+  private def loadOrCorrectNodeIDIntoHeap(nodeID: Int): Unit = {
+    if (nodeIDHeap.contains(nodeID)) {
+      nodeIDHeap.notifyChange(nodeID)
+    } else {
+      //not stored yet, we store it
+      nodeIDHeap.insert(nodeID)
+    }
+  }
+
+  private def loadOrCorrectNodeIntoHeap(node:Node): Unit ={
+    loadOrCorrectNodeIDIntoHeap(node.nodeId)
+  }
+
+  def loadEdgeExtremitiesIntoHeap(edge:Edge): Unit ={
+    loadOrCorrectNodeIntoHeap(edge.nodeA)
+    loadOrCorrectNodeIntoHeap(edge.nodeB)
+  }
+
   def loadExternalBoundaryIntoHeapMarkImpactedZone(closedEdge:Edge): Unit ={
-    require(nodeIDHeap.isEmpty)
     require(closedEdge.length > 0)
 
     val nodeA = closedEdge.nodeA
@@ -223,10 +229,8 @@ class VoronoiZones(graph:ConditionalGraph,
                   explore(otherNode)
                 } else if (centroid != centroidThrough) {
                   //we are at another centroid
-                  if (!nodeIDHeap.contains(otherNode.nodeId)) {
-                    //not stored yet, we store it
-                    nodeIDHeap.insert(otherNode.nodeId)
-                  }
+
+                  loadOrCorrectNodeIDIntoHeap(otherNodeID)
                 }
             }
           }
@@ -246,7 +250,6 @@ class VoronoiZones(graph:ConditionalGraph,
   }
 
   def loadExternalBoundaryIntoHeapMarkInnerZone(removedCentroid:Node){
-    require(nodeIDHeap.isEmpty)
     //performed as a DFS, non-redundant exploration, so not very costly
     def explore(node:Node){
       for(edge <- node.incidentEdges if isEdgeOpen(edge)){
@@ -265,16 +268,19 @@ class VoronoiZones(graph:ConditionalGraph,
               explore(otherNode)
             } else {
               //we are at anotherNOde
-              if(!nodeIDHeap.contains(otherNodeID)){
-                //not stored yet, we store it
-                nodeIDHeap.insert(otherNodeID)
-              }
+              loadOrCorrectNodeIDIntoHeap(otherNodeID)
             }
           case Unreachable => ;
           //we can reach an unreacable one in case two path from the removed centroid lead to the same node
         }
       }
     }
+
+    nodeLabeling(otherNodeID) = Unreachable
+    if(trackedNodeToDistanceAndCentroid(otherNodeID) != null){
+      trackedNodeToDistanceAndCentroid(otherNodeID).setUnreachable()
+    }
+
     explore(removedCentroid)
   }
 }
