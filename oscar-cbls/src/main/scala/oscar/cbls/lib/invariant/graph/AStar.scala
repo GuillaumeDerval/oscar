@@ -2,6 +2,72 @@ package oscar.cbls.lib.invariant.graph
 
 import scala.collection.immutable.SortedSet
 
+abstract sealed class ConditionalDistance(from:Node,
+                                          to:Node)
+
+case class Distance(from:Node,
+                    to:Node,
+                    distance:Int,
+                    requiredConditions:Set[Int],
+                    unlockingConditions:Set[Int]) extends ConditionalDistance(from,to)
+
+case class NeverConnected(from:Node,to:Node) extends ConditionalDistance(from,to)
+
+case class NotConnected(from:Node,
+                        to:Node,
+                        unlockingConditions:Set[Int]) extends ConditionalDistance(from,to)
+
+class FloydWarshall{
+
+  def buildAdjacencyMatrix(g:ConditionalGraph,
+                           isConditionalEdgeOpen:Int => Boolean):Array[Array[Option[Int]]] = {
+
+    def isEdgeOpen(edge: Edge): Boolean =
+      edge.conditionID match {
+        case None => true
+        case Some(condition) => isConditionalEdgeOpen(condition)
+      }
+
+    val n = g.nbNodes
+    val matrix:Array[Array[Option[Int]]] = Array.tabulate(n)(_ => Array.fill(n)(None))
+
+    for(node <- g.nodes.indices){
+      matrix(node)(node) = Some(0)
+    }
+
+    for(edge <- g.edges if isEdgeOpen(edge)){
+
+      val sl = matrix(edge.nodeA.nodeId)(edge.nodeB.nodeId) match{
+        case None => Some(edge.length)
+        case Some(d) => Some(edge.length min d)
+      }
+
+      matrix(edge.nodeA.nodeId)(edge.nodeB.nodeId) = sl
+      matrix(edge.nodeA.nodeId)(edge.nodeB.nodeId) = sl
+    }
+
+    matrix
+  }
+
+  def saturateAdjacencyMatrixToDistanceMatrix(w:Array[Array[Option[Int]]]){
+    val n = w.length
+
+    for (k <- 0 to n-1) {
+      for (i <- 0 to n-1) {
+        for (j <- i+1 to n-1) {
+
+          if(w(i)(k).isDefined && w(k)(j).isDefined) {
+            val newDistance = w(i)(k).get + w(k)(j).get
+            if (w(i)(j).isEmpty || newDistance <= w(i)(j).get) {
+              w(i)(j) = Some(newDistance)
+              w(j)(i) = w(i)(j)
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
 class AStar(g:ConditionalGraph,
             underApproximatingDistance:(Int,Int) => Option[Int]){
@@ -9,7 +75,7 @@ class AStar(g:ConditionalGraph,
   def search(from:Node,
              to:Node,
              isConditionalEdgeOpen:Int => Boolean
-            ):IncrementalDistanceResult = {
+            ):ConditionalDistance = {
 
     def isEdgeOpen(edge: Edge): Boolean =
       edge.conditionID match {
@@ -18,9 +84,10 @@ class AStar(g:ConditionalGraph,
       }
 
     if (underApproximatingDistance(from.nodeId, to.nodeId).isEmpty) {
-      return NeverConnected(from: Node)
+      return NeverConnected(from, to)
     }
 
+    //TODO: this array might be time-consuming to allocate; store it permanently in the class for faster query time?
     val nodeToDistance = Array.fill[Int](g.nodes.length)(Int.MaxValue)
     var reachedClosedEdges: SortedSet[Int] = SortedSet.empty
 
@@ -81,16 +148,18 @@ class AStar(g:ConditionalGraph,
                                               to:Node,
                                               isConditionalEdgeOpen:Option[Int] => Boolean,
                                               nodeToDistance:Array[Int],
-                                              reachedClosedEdges: SortedSet[Int]):IncrementalDistanceResult = {
+                                              reachedClosedEdges: SortedSet[Int]):ConditionalDistance = {
 
     if (nodeToDistance(to.nodeId) == Int.MaxValue) {
       // not reached
-      return NotConnected(from: Node,
+      NotConnected(
+        from: Node,
         to: Node,
         reachedClosedEdges)
     } else {
       //connected
-      return Distance(from: Node,
+      Distance(
+        from: Node,
         to: Node,
         distance = nodeToDistance(to.nodeId),
         requiredConditions =
