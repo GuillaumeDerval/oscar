@@ -202,3 +202,6 @@ class AStar(g:ConditionalGraph,
     toReturn
   }
 }
+
+
+

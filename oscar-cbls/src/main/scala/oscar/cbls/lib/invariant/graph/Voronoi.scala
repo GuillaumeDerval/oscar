@@ -2,12 +2,14 @@ package oscar.cbls.lib.invariant.graph
 
 import oscar.cbls.CBLSIntVar
 import oscar.cbls.core.computation._
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.{SortedMap, SortedSet}
+import scala.collection.mutable
 
 /**
   *
-  * @param graph a graph, this is a constant. it is a conditiona lgraph, so some edges have a Boolean proposition associated to them
+  * @param graph a graph, this is a constant. it is a conditional graph, so some edges have a Boolean proposition associated to them
   * @param openConditions the set of conditions such that the edge is considered open
   * @param centroids the centroids
   * @param trackedNodeToDistanceAndCentroidMap this is the output:
@@ -19,40 +21,10 @@ class VoronoiZonesInvariant(graph:ConditionalGraph,
                             trackedNodeToDistanceAndCentroidMap:SortedMap[Int,(CBLSIntVar,CBLSIntVar)])
   extends Invariant with SetNotificationTarget {
 
-
-  abstract sealed class VoronoiZoneLabeling{
-    def <(that:VoronoiZoneLabeling):Boolean
-    def equals(that:VoronoiZoneLabeling):Boolean
-  }
-
-  case class VoronoiZone(centroid:Node,distance:Int) extends VoronoiZoneLabeling{
-    override def <(that: VoronoiZoneLabeling): Boolean = that match{
-      case Unreachable => true
-      case that:VoronoiZone =>
-        this.distance < that.distance || (that.distance == this.distance && this.centroid.nodeId < that.centroid.nodeId)
-    }
-
-    override def equals(that: VoronoiZoneLabeling): Boolean = that match{
-      case Unreachable => false
-      case that:VoronoiZone => that.distance == this.distance && this.centroid == that.centroid
-    }
-
-    def + (length:Int):VoronoiZone = VoronoiZone(centroid,distance+length)
-  }
-
-  case object Unreachable extends VoronoiZoneLabeling{
-    override def <(that: VoronoiZoneLabeling): Boolean = false
-
-    override def equals(that: VoronoiZoneLabeling): Boolean = that match{
-      case Unreachable => true
-      case that:VoronoiZone => false
-    }
-  }
-
   case class OutputLabeling(distance:CBLSIntVar,
                             centroid:CBLSIntVar){
 
-    def set(l:VoronoiZoneLabeling): Unit ={
+    def set(l:ClosestCentroidLabeling): Unit ={
       l match{
         case Unreachable =>
           setUnreachable()
@@ -66,6 +38,18 @@ class VoronoiZonesInvariant(graph:ConditionalGraph,
     def setUnreachable(): Unit ={
       this.centroid := -1
       this.distance := 0
+    }
+
+    def checkEqual(l:ClosestCentroidLabeling): Unit ={
+      l match{
+        case Unreachable =>
+          require(this.centroid.value == -1)
+          require(this.distance.value == 0)
+
+        case VoronoiZone(centroid,distance) =>
+          require(this.centroid.value == centroid.nodeId)
+          require(this.distance.value == distance)
+      }
     }
   }
 
@@ -94,9 +78,9 @@ class VoronoiZonesInvariant(graph:ConditionalGraph,
       case Some(condition) => isConditionalEdgeOpen(condition)
     }
 
-  private val nodeLabeling: Array[VoronoiZoneLabeling] = Array.fill(graph.nbNodes)(Unreachable)
+  private val nodeLabeling: Array[ClosestCentroidLabeling] = Array.fill(graph.nbNodes)(Unreachable)
 
-  private def labelNode(nodeID:Int,label:VoronoiZoneLabeling): Unit ={
+  private def labelNode(nodeID:Int,label:ClosestCentroidLabeling): Unit ={
     nodeLabeling(nodeID) = label
 
     if(trackedNodeToDistanceAndCentroid(nodeID) != null){
@@ -223,6 +207,7 @@ class VoronoiZonesInvariant(graph:ConditionalGraph,
                   //still marking
 
                   labelNode(otherNodeID,Unreachable)
+                  nodeIDHeap.deleteIfPresent(otherNodeID)
 
                   explore(otherNode)
                 } else if (centroid != centroidThrough) {
@@ -235,6 +220,7 @@ class VoronoiZonesInvariant(graph:ConditionalGraph,
         }
 
         labelNode(orphanNodeID,Unreachable)
+        nodeIDHeap.deleteIfPresent(orphanNodeID)
         explore(orphanNode)
 
       case None => //no passing through centroid, nothing to do
@@ -254,6 +240,7 @@ class VoronoiZonesInvariant(graph:ConditionalGraph,
             if (centroid == removedCentroid){
 
               labelNode(otherNodeID,Unreachable)
+              nodeIDHeap.deleteIfPresent(otherNodeID)
 
               explore(otherNode)
             } else {
@@ -267,7 +254,45 @@ class VoronoiZonesInvariant(graph:ConditionalGraph,
     }
 
     labelNode(removedCentroid.nodeId,Unreachable)
+    nodeIDHeap.deleteIfPresent(removedCentroid.nodeId)
     explore(removedCentroid)
+  }
+
+
+
+
+  // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  override def checkInternals(c: Checker){
+
+    require(nodeIDHeap.isEmpty)
+
+    val centroids:Iterable[Node] = this.centroids.value.toList.map(nodeID => graph.nodes(nodeID))
+    val isConditionalEdgeOpen = (conditionID:Int) => this.openConditions.value contains conditionID
+
+    //checking for centroids
+    for(node <- graph.nodes){
+      require(nodeLabeling(node.nodeId) equals
+        new DijkstraMT(this.graph).search(
+          node,
+          centroids,
+          isConditionalEdgeOpen))
+    }
+
+    //this is a static check
+    for(node <- graph.nodes){
+      trackedNodeToDistanceAndCentroidMap.get(node.nodeId) match{
+        case None =>
+          require(trackedNodeToDistanceAndCentroid(node.nodeId) == null)
+
+        case Some((distanceVar,centroidVar)) =>
+          require(trackedNodeToDistanceAndCentroid(node.nodeId).centroid == centroidVar)
+          require(trackedNodeToDistanceAndCentroid(node.nodeId).distance == distanceVar)
+
+          //this is the non-static stuff
+          trackedNodeToDistanceAndCentroid(node.nodeId).checkEqual(nodeLabeling(node.nodeId))
+      }
+    }
   }
 }
 
