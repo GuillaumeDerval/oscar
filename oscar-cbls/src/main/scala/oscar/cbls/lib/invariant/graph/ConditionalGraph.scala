@@ -31,9 +31,11 @@ case class Edge(edgeId:Int,
                 length:Int,
                 conditionID:Option[Int]){
   require(length > 0)
+  require(nodeA != nodeB)
 
   nodeA.registerEdge(this)
   nodeB.registerEdge(this)
+
   def otherNode(node:Node):Node = if(node == nodeA) nodeB else nodeA
 }
 

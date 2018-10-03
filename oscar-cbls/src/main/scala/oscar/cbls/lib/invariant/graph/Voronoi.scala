@@ -275,7 +275,7 @@ class VoronoiZonesInvariant(graph:ConditionalGraph,
     val centroids:Iterable[Node] = this.centroids.value.toList.map(nodeID => graph.nodes(nodeID))
     val isConditionalEdgeOpen = (conditionID:Int) => this.openConditions.value contains conditionID
 
-    //checking for centroids
+    //checking for each node the centroid (this is very costly: nbNodes*Dijkstra)
     for(node <- graph.nodes){
       require(nodeLabeling(node.nodeId) equals
         new DijkstraMT(this.graph).search(
@@ -284,7 +284,7 @@ class VoronoiZonesInvariant(graph:ConditionalGraph,
           isConditionalEdgeOpen))
     }
 
-    //this is a static check
+    //this is mostly a static check
     for(node <- graph.nodes){
       trackedNodeToDistanceAndCentroidMap.get(node.nodeId) match{
         case None =>

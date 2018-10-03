@@ -1,6 +1,66 @@
 package oscar.cbls.lib.invariant.graph
 
+import oscar.cbls.core.computation.{IntNotificationTarget, SetNotificationTarget}
+import oscar.cbls.core.{ChangingIntValue, ChangingSetValue, IntInvariant, ValueWiseKey}
+
 import scala.collection.immutable.SortedSet
+
+
+class DistanceInConditionalGraph(graph:ConditionalGraph,
+                                 from:ChangingIntValue,
+                                 to:ChangingIntValue,
+                                 openConditions:ChangingSetValue)(
+                                  underApproximatingDistance:(Int,Int) => Option[Int] = {val m = FloydWarshall.buildDistanceMatrix(graph,_ => true); (a,b) => m(a)(b)})
+  extends IntInvariant() with SetNotificationTarget with IntNotificationTarget{
+
+  registerStaticAndDynamicDependency(from)
+  registerStaticAndDynamicDependency(to)
+  registerStaticDependency(openConditions)
+  private val key:ValueWiseKey = registerDynamicValueWiseDependency(openConditions)
+
+  val aStar = new AStar(graph, underApproximatingDistance)
+
+  def computeAffectAndAdjustValueWiseKey(){
+    aStar.search(
+      graph.nodes(from.value),
+      graph.nodes(to.value),
+      {val o = openConditions.value; condition => o contains condition})
+    match{
+      case Distance(from:Node, to:Node,distance:Int, requiredConditions:Set[Int], unlockingConditions:Set[Int]) =>
+        setListenedValueOnValueWiseKey(requiredConditions ++ unlockingConditions)
+      case NeverConnected(from:Node,to:Node) =>
+      //will only happen once at startup
+
+      case NotConnected(from:Node, to:Node, unlockingConditions:Set[Int]) =>
+        setListenedValueOnValueWiseKey(unlockingConditions)
+
+    }
+  }
+
+  override def notifySetChanges(v: ChangingSetValue,
+                                d: Int,
+                                addedValues: Iterable[Int],
+                                removedValues: Iterable[Int],
+                                oldValue: SortedSet[Int],
+                                newValue: SortedSet[Int]): Unit = {
+    scheduleForPropagation()
+  }
+
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
+    scheduleForPropagation()
+  }
+
+  override def performInvariantPropagation(): Unit = {
+
+  }
+
+  var listenedValues:List[Int] = List.empty
+  def setListenedValueOnValueWiseKey(listenedValues:Iterable[Int]): Unit ={
+
+  }
+}
+
+
 
 abstract sealed class ConditionalDistance(from:Node,
                                           to:Node)
@@ -17,57 +77,6 @@ case class NotConnected(from:Node,
                         to:Node,
                         unlockingConditions:Set[Int]) extends ConditionalDistance(from,to)
 
-class FloydWarshall{
-
-  def buildAdjacencyMatrix(g:ConditionalGraph,
-                           isConditionalEdgeOpen:Int => Boolean):Array[Array[Option[Int]]] = {
-
-    def isEdgeOpen(edge: Edge): Boolean =
-      edge.conditionID match {
-        case None => true
-        case Some(condition) => isConditionalEdgeOpen(condition)
-      }
-
-    val n = g.nbNodes
-    val matrix:Array[Array[Option[Int]]] = Array.tabulate(n)(_ => Array.fill(n)(None))
-
-    for(node <- g.nodes.indices){
-      matrix(node)(node) = Some(0)
-    }
-
-    for(edge <- g.edges if isEdgeOpen(edge)){
-
-      val sl = matrix(edge.nodeA.nodeId)(edge.nodeB.nodeId) match{
-        case None => Some(edge.length)
-        case Some(d) => Some(edge.length min d)
-      }
-
-      matrix(edge.nodeA.nodeId)(edge.nodeB.nodeId) = sl
-      matrix(edge.nodeA.nodeId)(edge.nodeB.nodeId) = sl
-    }
-
-    matrix
-  }
-
-  def saturateAdjacencyMatrixToDistanceMatrix(w:Array[Array[Option[Int]]]){
-    val n = w.length
-
-    for (k <- 0 to n-1) {
-      for (i <- 0 to n-1) {
-        for (j <- i+1 to n-1) {
-
-          if(w(i)(k).isDefined && w(k)(j).isDefined) {
-            val newDistance = w(i)(k).get + w(k)(j).get
-            if (w(i)(j).isEmpty || newDistance <= w(i)(j).get) {
-              w(i)(j) = Some(newDistance)
-              w(j)(i) = w(i)(j)
-            }
-          }
-        }
-      }
-    }
-  }
-}
 
 class AStar(g:ConditionalGraph,
             underApproximatingDistance:(Int,Int) => Option[Int]){
