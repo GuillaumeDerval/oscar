@@ -126,7 +126,7 @@ abstract class PreComputeInvariant[T: Manifest, U:Manifest](routes: ChangingSeqV
     */
   def convertComputationStepToSegment(computationSteps : List[ComputationStep],routes : IntSequence,prevRoutes : IntSequence): List[Segment[T]] ={
 
-    //println(computationSteps.mkString(","))
+    println(computationSteps.mkString(","))
     val toReturn =
       computationSteps.flatMap(step => {
         step match {
@@ -134,11 +134,12 @@ abstract class PreComputeInvariant[T: Manifest, U:Manifest](routes: ChangingSeqV
             val realStartNodePosition = bijection(startNodePosition)
             val realEndNodePosition = bijection(endNodePosition)
             val startNode = prevRoutes.valueAtPosition(realStartNodePosition).get
-            val endNode = prevRoutes.valueAtPosition(bijection (realEndNodePosition)).get
+            val endNode = prevRoutes.valueAtPosition(realEndNodePosition).get
+            println(startNodePosition + ";" + realStartNodePosition + ";" + startNode + "---" + endNodePosition + ";" + realEndNodePosition + ";" + endNode)
             if (!rev) {
               Some (PreComputedSubSequence(startNode, preComputedValues(startNode), endNode, preComputedValues(endNode)))
             } else {
-              Some (FlippedPreComputedSubSequence(endNode,preComputedValues(endNode),startNode,preComputedValues(startNode)))
+              Some (FlippedPreComputedSubSequence(startNode,preComputedValues(startNode),endNode,preComputedValues(endNode)))
             }
           case FromScratch(fromNode,toNode,topOfStack) =>
             var newNodeList:List[NewNode[T]] = Nil
@@ -153,7 +154,7 @@ abstract class PreComputeInvariant[T: Manifest, U:Manifest](routes: ChangingSeqV
             newNodeList.reverse
         }
       })
-    //println(toReturn.mkString(","))
+    println(toReturn.mkString(","))
     toReturn
   }
 
@@ -203,6 +204,10 @@ abstract class PreComputeInvariant[T: Manifest, U:Manifest](routes: ChangingSeqV
       }
       case Some(x) if !x.checkpoint0Defined =>
         for (vehicle <- vehicles){
+          assignVehicleValue(vehicle,computeVehicleValueFromScratch(vehicle,routes.value))
+        }
+      case Some(x) => applyUpdates(x,changes.newValue)
+    }
   }
 
   private def digestUpdates(changes: SeqUpdate): Option[UpdatedValues] = {
@@ -236,12 +241,11 @@ abstract class PreComputeInvariant[T: Manifest, U:Manifest](routes: ChangingSeqV
 
         if (!checkpoint0WasDefined){
           // we are creating the first checkpoint. We need to do pre-compute for all vehicle
-          for (vehicle <- 0 until v) performPreCompute(vehicle,routes.value,preComputedValues)
-        }
-        else{
+          for (vehicle <- 0 until v) performPreCompute(vehicle,newCheckpoint0,preComputedValues)
+        } else {
           if(checkpointLevel == 0){
             for (vehicle <- prevUpdates.get.changedVehicleSinceCheckpoint0.indicesAtTrue)
-              performPreCompute(vehicle,routes.value,preComputedValues)
+              performPreCompute(vehicle,newCheckpoint0,preComputedValues)
           }
         }
 

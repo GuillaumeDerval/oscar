@@ -7,6 +7,7 @@ import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.group._
 import oscar.cbls.business.routing.neighborhood.TwoOpt
 import oscar.cbls.core.computation.ChangingSeqValue
+import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.LE
 
 class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle : Array[CBLSIntVar]) extends GlobalConstraintDefinition[Int,Int](routes,v){
@@ -28,7 +29,7 @@ class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle :
     *                     also, you should only query the value of node in the route of vehicle "vehicle"
     */
   override def performPreCompute(vehicle: Int, routes: IntSequence, preComputedVals: Array[Int]): Unit = {
-    //print("PreCompute For Vehicle : " + vehicle + "\n")
+    println("PreCompute For Vehicle : " + vehicle + " : " + routes.toString)
     var nbNode = 0
     var continue = true
     var vExplorer = routes.explorerAtAnyOccurrence(vehicle)
@@ -60,19 +61,24 @@ class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle :
     * @return the value associated with the vehicle
     */
   override def computeVehicleValue(vehicle: Int, segments: List[Segment[Int]], routes: IntSequence, PreComputedVals: Array[Int]): Int = {
-    segments match{
-      case Nil => 0
-      case head::queue =>
-        head match {
-            case PreComputedSubSequence (fstNode, fstValue, lstNode, lstValue) =>
-              lstValue - fstValue + computeVehicleValue (vehicle,queue,routes,PreComputedVals) + 1
-            case FlippedPreComputedSubSequence(lstNode,lstValue,fstNode,fstValue) =>
-              lstValue - fstValue + computeVehicleValue(vehicle,queue,routes,PreComputedVals) + 1
-            case NewNode(_) =>
-              1 + computeVehicleValue(vehicle,queue,routes,PreComputedVals)
-        }
-    }
+    println("ComputeVehicleValues : " + segments.mkString(","))
+    val tmp = segments.map(
+      _ match {
+      case PreComputedSubSequence (fstNode, fstValue, lstNode, lstValue) =>
+        println(lstValue - fstValue + 1)
+        lstValue - fstValue + 1
+      case FlippedPreComputedSubSequence(lstNode,lstValue,fstNode,fstValue) =>
+        println(lstValue - fstValue + 1)
+        lstValue - fstValue + 1
+      case NewNode(_) =>
+        1
+    }).sum
+
+    println("Out = " + tmp)
+    tmp
   }
+
+
 
   /**
     * the framework calls this method to assign the value U to he output variable of your invariant.
@@ -88,10 +94,11 @@ class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle :
 
 
   def countVehicleNode(vehicle : Int,vExplorer : Option[IntSequenceExplorer]) : Int = {
+    println(vehicle + ",")
     vExplorer match {
       case None => 0
       case Some(elem) =>
-        if (elem.value == vehicle + 1) 0 else (1 + countVehicleNode(vehicle,elem.next))
+        if (elem.value < v) 0 else (1 + countVehicleNode(vehicle,elem.next))
     }
   }
 
@@ -102,7 +109,7 @@ class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle :
     * @return
     */
   override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Int = {
-    countVehicleNode(vehicle,routes.explorerAtAnyOccurrence(vehicle))
+    1 + countVehicleNode(vehicle,routes.explorerAtAnyOccurrence(vehicle).get.next)
   }
 
   override def outputVariables: Iterable[Variable] = {
@@ -113,10 +120,10 @@ class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle :
 object VRPTestingGlobalConstraint extends App {
 
 
-  val nbNode = 1000;
+  val nbNode = 100;
   val nbVehicle = 10;
-  //val model = new Store(checker = Some(new ErrorChecker))
-  val model = new Store()
+  val model = new Store(checker = Some(new ErrorChecker))
+  //val model = new Store()
 
   val problem = new VRP(model,nbNode,nbVehicle)
 
@@ -134,29 +141,30 @@ object VRPTestingGlobalConstraint extends App {
   val c = new ConstraintSystem(model)
 
   for(vehicle <- 0 until nbVehicle){
-    c.add(nbNodesPerVehicle(vehicle) le 100)
+    c.add(nbNodesPerVehicle(vehicle) le 10)
   }
 
   c.close()
 
-  val obj = new CascadingObjective(c,Objective(totalRouteLength + 10000 * (nbNode - length(problem.routes))))
-
-  model.close()
+   model.close()
 
   val closestRelevantNeighbors = Array.tabulate(nbNode)(DistanceHelper.lazyClosestPredecessorsOfNode(symetricDistanceMatrix,_ => problem.nodes))
 
-  /*
+
   val routeUnroutedPoint =
     profile(insertPointUnroutedFirst(problem.unrouted,
       () => problem.kFirst(10,closestRelevantNeighbors,_ => node => problem.isRouted(node)),
       problem,
-      neighborhoodName = "InsertUR 1"))*/
+      selectInsertionPointBehavior = Best(),
+      neighborhoodName = "InsertUR 1"))
 
-  val routeUnroutedPoint =
+
+  /*val routeUnroutedPoint =
     profile(insertPointUnroutedFirst(problem.unrouted,
       () => _ => problem.routes.value,
       problem,
-      neighborhoodName = "InsertUR"))
+      selectInsertionPointBehavior = Best(),
+      neighborhoodName = "InsertUR"))*/
 
   val onePtMove =
     profile(onePointMove(problem.routed,
@@ -173,10 +181,12 @@ object VRPTestingGlobalConstraint extends App {
       onePtMove,
       twoOpt))
 
-  search.verbose = 1
+  search.verbose = 3
 
   search.doAllMoves(obj = obj)
 
   println(problem)
+  println(totalRouteLength)
+  println(search.profilingStatistics)
 
 }
