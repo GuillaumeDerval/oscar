@@ -8,12 +8,15 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 
 /**
   *
-  * @param graph a graph, this is a constant. it is a conditional graph, so some edges have a Boolean proposition associated to them
+  * @param graph a graph, this is a constant. it is a conditional graph, so some edges have
+  *              a Boolean proposition associated to them
   * @param openConditions the set of conditions such that the edge is considered open
   * @param centroids the centroids
   * @param trackedNodeToDistanceAndCentroidMap this is the output:
   *                                            for the nodes that require it,
-  *                                            the distance to the closestCentroid and the distance to this centroid
+  *                                            the distance to the closest centroid
+  *                                            and the centroid
+  *
   */
 class VoronoiZonesInvariant(graph:ConditionalGraph,
                             openConditions:ChangingSetValue,
@@ -64,10 +67,10 @@ class VoronoiZonesInvariant(graph:ConditionalGraph,
     Array.tabulate(graph.nbNodes)(nodeID =>
       trackedNodeToDistanceAndCentroidMap.get(nodeID) match {
         case None => null
-        case Some(couple@(a, b)) =>
-          a.setDefiningInvariant(this)
-          b.setDefiningInvariant(this)
-          OutputLabeling(a, b)
+        case Some(couple@(distanceVar, centroidVar)) =>
+          distanceVar.setDefiningInvariant(this)
+          centroidVar.setDefiningInvariant(this)
+          OutputLabeling(distance=distanceVar,centroid = centroidVar)
       })
 
   private val isConditionalEdgeOpen: Array[Boolean] = Array.fill(graph.nbConditions)(false)
@@ -88,7 +91,12 @@ class VoronoiZonesInvariant(graph:ConditionalGraph,
     }
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue,
+                                d: Int,
+                                addedValues: Iterable[Int],
+                                removedValues: Iterable[Int],
+                                oldValue: SortedSet[Int],
+                                newValue: SortedSet[Int]): Unit = {
 
     if (v == centroids) {
       for (added <- addedValues) {
@@ -116,7 +124,8 @@ class VoronoiZonesInvariant(graph:ConditionalGraph,
     performLabelingFromCurrentHeap()
   }
 
-  //we can only put node with an existing under-approximated distance to the target, this only needs to be checked on the source node, actually
+  //we can only put node with an existing under-approximated distance to the target, this only needs
+  // to be checked on the source node, actually
   private val nodeIDHeap = new oscar.cbls.algo.heap.BinomialHeapWithMoveInt(
     nodeID => nodeLabeling(nodeID).asInstanceOf[VoronoiZone].distance, graph.nbNodes, graph.nbNodes)
 
