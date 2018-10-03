@@ -5,7 +5,6 @@ import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.{SortedMap, SortedSet}
-import scala.collection.mutable
 
 /**
   *
@@ -13,7 +12,8 @@ import scala.collection.mutable
   * @param openConditions the set of conditions such that the edge is considered open
   * @param centroids the centroids
   * @param trackedNodeToDistanceAndCentroidMap this is the output:
-  *                                            for the nodes that require it, the distance to the closestCentroid and the distance to this centroid
+  *                                            for the nodes that require it,
+  *                                            the distance to the closestCentroid and the distance to this centroid
   */
 class VoronoiZonesInvariant(graph:ConditionalGraph,
                             openConditions:ChangingSetValue,
@@ -258,11 +258,7 @@ class VoronoiZonesInvariant(graph:ConditionalGraph,
     explore(removedCentroid)
   }
 
-
-
-
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
   override def checkInternals(c: Checker){
 
     require(nodeIDHeap.isEmpty)
