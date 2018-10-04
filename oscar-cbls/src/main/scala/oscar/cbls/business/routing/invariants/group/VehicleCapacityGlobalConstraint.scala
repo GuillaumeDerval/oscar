@@ -9,7 +9,7 @@ import oscar.cbls.core.propagation.Checker
 
 /**
   * @author Quentin Meurisse
-  */
+
 object VehicleCapacityGlobalConstraint {
   def apply(routes: ChangingSeqValue,
             v: Int,
@@ -257,10 +257,10 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
           a.node match {
             case None => RedBlackTreeMap.empty[Int]
             case Some(n) if n < v => RedBlackTreeMap.empty[Int]
-            case Some(n) if n >= v => preComputes(n).asInstanceOf[PreComputeContainer].rb
+            case Some(n) if n >= v => preComputedValues(n).asInstanceOf[PreComputeContainer].rb
           }
       }
-      val integralTo = preComputes(toNode).asInstanceOf[PreComputeContainer].rb
+      val integralTo = preComputedValues(toNode).asInstanceOf[PreComputeContainer].rb
 
       DeltaOfPreComputeForFlippedSegment(integralFrom, integralTo, deltaOfContent, b.contentAtNodeAtCheckpoint)
     }
@@ -357,7 +357,7 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
     val explorerAtVehicleStart = checkpointValue.explorerAtAnyOccurrence(vehicle).head
     val contentAtStart = deltaAtNode(vehicle)
     val preComputeAtStart = PreComputeContainer(Some(vehicle),None, contentAtStart,RedBlackTreeMap(List((contentAtStart, 1))))
-    preComputes(vehicle) = preComputeAtStart
+    preComputedValues(vehicle) = preComputeAtStart
 
     var explorerOpt = explorerAtVehicleStart.next
     var prevNode = vehicle
@@ -368,7 +368,7 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
         val node = explorer.value
         if (node >= v) {
           //continuing the same vehicle
-          val preComputeAtPrev = preComputes(prevNode).asInstanceOf[PreComputeContainer]
+          val preComputeAtPrev = preComputedValues(prevNode).asInstanceOf[PreComputeContainer]
 
           val contentAtNode = preComputeAtPrev.contentAtNodeAtCheckpoint + deltaAtNode(node)
 
@@ -376,7 +376,7 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
 
           val preComputeAtNode = PreComputeContainer(Some(node), Some(prevNode), contentAtNode,rbAtNode)
 
-          preComputes(node) = preComputeAtNode
+          preComputedValues(node) = preComputeAtNode
 
           prevNode = node
           explorerOpt = explorer.next
@@ -471,4 +471,4 @@ case class SumOfPreCompute(totalViolation: Int, totalContent: Int) extends PreCo
 
 
 case class SavedValuesAtCheckpoint(violationAtCheckpoint: Array[Int],
-                                   contentAtEndOfVehicleRouteAtCheckpoint: Array[Int])
+                                   contentAtEndOfVehicleRouteAtCheckpoint: Array[Int])*/

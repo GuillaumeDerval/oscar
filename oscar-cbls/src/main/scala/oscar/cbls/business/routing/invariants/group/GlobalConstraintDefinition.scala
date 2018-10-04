@@ -1,9 +1,9 @@
 package oscar.cbls.business.routing.invariants.group
 
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.core.computation.Variable
+import oscar.cbls.core.computation.ChangingSeqValue
 
-abstract class GlobalConstraintDefinition[T:Manifest,U:Manifest] {
+abstract class GlobalConstraintDefinition[T:Manifest,U:Manifest](routes:ChangingSeqValue,v :Int) extends PreComputeInvariant[T,U](routes,v) {
 
   /**
    * tis method is called by the framework when a pre-computation must be performed.
@@ -20,8 +20,7 @@ abstract class GlobalConstraintDefinition[T:Manifest,U:Manifest] {
     */
   def performPreCompute(vehicle:Int,
                         routes:IntSequence,
-                        setNodeValue:(Int,T) => Unit,
-                        getNodeValue:Int => T)
+                        preComputedVals:Array[T])
 
   /**
     * this method is called by the framework when the value of a vehicle must be computed.
@@ -36,9 +35,9 @@ abstract class GlobalConstraintDefinition[T:Manifest,U:Manifest] {
     * @return the value associated with the vehicle
     */
   def computeVehicleValue(vehicle:Int,
-                          segments:List[Segment],
+                          segments:List[Segment[T]],
                           routes:IntSequence,
-                          nodeValue:Int=>Option[T]):U
+                          PreComputedVals:Array[T]):U
 
   /**
     * the framework calls this method to assign the value U to he output variable of your invariant.
@@ -47,21 +46,18 @@ abstract class GlobalConstraintDefinition[T:Manifest,U:Manifest] {
     * @param vehicle the vehicle number
     * @param value the value of the vehicle
     */
-  def assignVehicleValue(vehicle:Int,value:U)
+  def assignVehicleValue(vehicle:Int,value:U): Unit
 
   /**
-    * you must also implement this method
-    * because the engine needs to know which variable are your output variables
-    * so return here all the variables that you will set through the method "assignVehicleValue"
-    * typically, this is one variable per vehicle
-    * @return all the variables that might be directly modified by the method "assignVehicleValue"
+    *
+    * @param vehicle
+    * @param routes
+    * @return
     */
-  def outputVariables:Iterable[Variable]
-  
-  //TODO: a non-incremental method that checks the output
+  def computeVehicleValueFromScratch(vehicle : Int, routes : IntSequence):U
 }
 
-sealed abstract class Segment()
+sealed abstract class Segment[T]()
 
 /**
   * This represents a subsequence starting at startNode and ending at endNode.
@@ -75,7 +71,7 @@ sealed abstract class Segment()
 case class PreComputedSubSequence[T](startNode:Int,
                             startNodeValue:T,
                             endNode:Int,
-                            endNodeValue:T) extends Segment
+                            endNodeValue:T) extends Segment[T]
 
 /**
   * This represents a subsequence starting at startNode and ending at endNode.
@@ -87,14 +83,14 @@ case class PreComputedSubSequence[T](startNode:Int,
   * @param endNodeValue the T value that the pre-computation associated with the node "endNode"
   * @tparam T the type of precomputation
   */
-class FlippedPreComputedSubSequence[T](startNode:Int,
+case class FlippedPreComputedSubSequence[T](startNode:Int,
                             startNodeValue:T,
                             endNode:Int,
-                            endNodeValue:T) extends Segment
+                            endNodeValue:T) extends Segment[T]
 
 /**
   * This represent that a node that was not present in the initial sequence when pre-computation was performed.
   * @param node
   */
-class NewNode(node:Int) extends Segment
+case class NewNode[T](node:Int) extends Segment[T]
 

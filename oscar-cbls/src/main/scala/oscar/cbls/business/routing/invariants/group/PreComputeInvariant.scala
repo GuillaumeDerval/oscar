@@ -1,5 +1,6 @@
 package oscar.cbls.business.routing.invariants.group
 
+import oscar.cbls.Variable
 import oscar.cbls.algo.magicArray.IterableMagicBoolArray
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.VehicleLocation
@@ -13,18 +14,19 @@ import oscar.cbls.core._
   * @tparam T type of pre-computes used by the invariant
   * @tparam U type of the output of the invariant
   */
-abstract class PreComputeInvariant[T: Manifest, U](routes: ChangingSeqValue, v: Int)
+abstract class PreComputeInvariant[T: Manifest, U:Manifest](routes: ChangingSeqValue, v: Int)
   extends Invariant with SeqNotificationTarget{
 
   val n = routes.maxValue+1
   val vehicles = 0 until v
 
-  val preComputes: Array[T] = new Array[T](n)
+  val preComputedValues: Array[T] = new Array[T](n)
+  val vehicleValues : Array[U] = new Array[U](v)
   var checkpointAtLevel0: IntSequence = _
   var checkpoint0Defined = false
   var changedVehiclesSinceCheckpoint0 = new IterableMagicBoolArray(v, false)
 
-  val checkpointStack = new SeqCheckpointedValueStack[(FunctionForPreCompute, VehicleLocation, U)]
+  val checkpointStack = new SeqCheckpointedValueStack[(FunctionForPreCompute, VehicleLocation, Array[U])]
 
   private var bijForPreCompute: FunctionForPreCompute = _
   private var stackDone = false // is the current bijection a stacked bijection or not
@@ -33,98 +35,127 @@ abstract class PreComputeInvariant[T: Manifest, U](routes: ChangingSeqValue, v: 
 
   protected var vehicleSearcher: VehicleLocation = VehicleLocation((0 until v).toArray)
 
-  computeAndAffectOutputFromScratch(routes.value) // initialize the output of the invariant
+  //computeAndAffectOutputFromScratch(routes.value) // initialize the output of the invariant
+
+  registerStaticAndDynamicDependency(routes)
+
+
+  finishInitialization()
+
+  for (outputVariable <- outputVariables){outputVariable.setDefiningInvariant(this)}
+
+  for (vehicle <- vehicles){
+    val valueOfVehicle = computeVehicleValueFromScratch(vehicle,routes.value)
+    assignVehicleValue(vehicle,valueOfVehicle)
+    vehicleValues(vehicle) = valueOfVehicle
+  }
+
+
+  def outputVariables:Iterable[Variable]
+
+
+  /**
+    * tis method is called by the framework when a pre-computation must be performed.
+    * you are expected to assign a value of type T to each node of the vehicle "vehicle" through the method "setNodeValue"
+    * @param vehicle the vehicle where pre-computation must be performed
+    * @param routes the sequence representing the route of all vehicle
+    *               BEWARE,other vehicles are also present in this sequence; you must only work on the given vehicle
+    * @param setNodeValue the method that you are expected to use when assigning a value to a node
+    *                     BEWARE: you can only apply this method on nodes of the vehicle you are working on
+    * @param getNodeValue a method that you can use to get the value associated wit ha node
+    *                     BEWARE: you have zero info on when it can generated, so only query the value
+    *                     that you have just set through the method setNodeValue.
+    *                     also, you should only query the value of node in the route of vehicle "vehicle"
+    */
+  def performPreCompute(vehicle:Int,
+                        routes:IntSequence,
+                        preComputedVals:Array[T])
+
+  /**
+    * this method is called by the framework when the value of a vehicle must be computed.
+    *
+    * @param vehicle the vehicle that we are focusing on
+    * @param segments the segments that constitute the route.
+    *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
+    * @param routes the sequence representing the route of all vehicle
+    * @param nodeValue a function that you can use to get the pre-computed value associated with each node (if some has ben given)
+    *                  BEWARE: normally, you should never use this function, you only need to iterate through segments
+    *                  because it already contains the pre-computed values at the extremity of each segment
+    * @return the value associated with the vehicle
+    */
+  def computeVehicleValue(vehicle:Int,
+                          segments:List[Segment[T]],
+                          routes:IntSequence,
+                          preComputedVals:Array[T]):U
+
+  /**
+    * the framework calls this method to assign the value U to he output variable of your invariant.
+    * It has been dissociated from the method above because the framework memorizes the output value of the vehicle,
+    * and is able to restore old value without the need to re-compute them, so it only will call this assignVehicleValue method
+    * @param vehicle the vehicle number
+    * @param value the value of the vehicle
+    */
+  def assignVehicleValue(vehicle:Int,value:U)
 
   /**
     *
-    * @return an element t of type T such as for all x of type T, x + t = x and x-t = x
-    */
-  def neutralElement: T
-
-  /**
-    *
-    * @param x
-    * @param y
-    * @param reverse is the segment flipped or not
-    * @return y - x
-    */
-  def minus(x: T, y: T, reverse:Boolean = false): T
-
-  /**
-    *
-    * @param x
-    * @param y
-    * @return x + y
-    */
-  def plus(x: T, y: T): T
-
-
-  /**
-    *
-    * @param fromNode
-    * @param toNode
-    * @return the difference of pre-computes on segment fromNode -> ... -> toNode but here the difference is computed from scratch
-    */
-  def nodesToPreCompute(fromNode: Int, toNode:Int): T
-
-  def computeAndAffectOutputFromScratch(seq: IntSequence)
-
-  /**
-    * Compute the output with value and affect it
-    * @param value the result of computeNewValueOfPreComputeForNodeAtPos
-    *              where the node is the last node of the route of vehicle
     * @param vehicle
+    * @param routes
+    * @return
     */
-  def computeAndAffectOutputWithPreCompute(value: T, vehicle: Int)
 
+  def computeVehicleValueFromScratch(vehicle : Int, routes : IntSequence):U
 
-  def restoreValueAtCheckpoint(value: U, checkpointLevel: Int)
+  def valuesToSave() : Array[U] = {
+    Array.tabulate(v)(vehicleValues)
+  }
 
-  /**
-    * Do pre-compute for a vehicle. We do the pre-compute only at checkpoint of level 0.
-    * @param vehicle
-    */
-  def doPreComputeAtCheckpoint0(vehicle: Int,checkpoint:IntSequence)
-
-  /**
-    *
-    * @return the actual output of the invariant to save it at the current checkpoint
-    */
-  def valuesToSave(): U
-
-  /**
-    *
-    * @param pos
-    * @param vehicle
-    * @return thanks the bijection and the operators plus and minus, we can compute the value of a pre-compute for a node.
-    *         To do that, we do a cumulative sum of the difference of the pre-compute on the segment which compose the bijection
-    */
-  def computeNewValueOfPreComputeForNodeAtPos(pos: Int, vehicle: Int): T = {
-    val vehiclePos = routes.newValue.positionOfAnyOccurrence(vehicle).get
-    val computationSteps = bijForPreCompute.kindOfComputation(vehiclePos, pos)
-    var newValue: T = neutralElement // we need to define a neutral element for initialize the cumulative sum
-    for (step <- computationSteps){
-      step match {
-        case FetchFromPreCompute(from, to, false) =>
-          val fromValue = bijection(from)
-          val x =
-            if (checkpointAtLevel0.valueAtPosition(fromValue).get < v) neutralElement
-            else preComputes(checkpointAtLevel0.valueAtPosition(fromValue - 1).get)
-          val y = preComputes(checkpointAtLevel0.valueAtPosition(bijection(to)).get)
-          val diffOnSegment = minus(x, y)
-          newValue = plus(newValue, diffOnSegment)
-        case FetchFromPreCompute(from, to, true) =>
-          val fromValue = bijection(from)
-          val x = preComputes(checkpointAtLevel0.valueAtPosition(fromValue).get)
-          val y = preComputes(checkpointAtLevel0.valueAtPosition(bijection(to) - 1).get) // a vehicle can't change its start point. So for a flipped segment fromValue >= v
-          val diffOnSegment = minus(y, x, reverse = true)
-          newValue = plus(newValue, diffOnSegment)
-        case fs@FromScratch(fromPos, toPos, topOfStack) =>
-          val (fromNode, toNode) = fromScratchToNode(fs)
-          newValue = plus(newValue, nodesToPreCompute(fromNode, toNode))
+  def restoreValueAtCheckpoint(valueAtCheckpoint : Array[U],checkPointLevel:Int): Unit ={
+    for (vcl <- vehicles){
+      if (vehicleValues(vcl) != valueAtCheckpoint(vcl)) {
+        vehicleValues(vcl) = valueAtCheckpoint(vcl)
+        assignVehicleValue(vcl,valueAtCheckpoint(vcl))
       }
     }
-    newValue
+  }
+
+  /**
+    *
+    * @param computationStep
+    * @return
+    */
+  def convertComputationStepToSegment(computationSteps : List[ComputationStep],routes : IntSequence,prevRoutes : IntSequence): List[Segment[T]] ={
+
+    println(computationSteps.mkString(","))
+    val toReturn =
+      computationSteps.flatMap(step => {
+        step match {
+          case FetchFromPreCompute(startNodePosition, endNodePosition, rev) =>
+            val realStartNodePosition = bijection(startNodePosition)
+            val realEndNodePosition = bijection(endNodePosition)
+            val startNode = prevRoutes.valueAtPosition(realStartNodePosition).get
+            val endNode = prevRoutes.valueAtPosition(realEndNodePosition).get
+            println(startNodePosition + ";" + realStartNodePosition + ";" + startNode + "---" + endNodePosition + ";" + realEndNodePosition + ";" + endNode)
+            if (!rev) {
+              Some (PreComputedSubSequence(startNode, preComputedValues(startNode), endNode, preComputedValues(endNode)))
+            } else {
+              Some (FlippedPreComputedSubSequence(startNode,preComputedValues(startNode),endNode,preComputedValues(endNode)))
+            }
+          case FromScratch(fromNode,toNode,topOfStack) =>
+            var newNodeList:List[NewNode[T]] = Nil
+            for (nodePos <- fromNode to toNode) {
+              val node = (
+                if (topOfStack)
+                  routes.valueAtPosition(nodePos).get
+                else
+                  prevRoutes.valueAtPosition(nodePos).get)
+              newNodeList = NewNode[T](node)::newNodeList
+            }
+            newNodeList.reverse
+        }
+      })
+    println(toReturn.mkString(","))
+    toReturn
   }
 
   /**
@@ -168,9 +199,14 @@ abstract class PreComputeInvariant[T: Manifest, U](routes: ChangingSeqValue, v: 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) = {
     val updates = digestUpdates(changes)
     updates match{
-      case None => computeAndAffectOutputFromScratch(changes.newValue)
-      case Some(x) if !x.checkpoint0Defined => computeAndAffectOutputFromScratch(changes.newValue)
-      case Some(x) => applyUpdates(x)
+      case None => for (vehicle <- vehicles){
+        assignVehicleValue(vehicle,computeVehicleValueFromScratch(vehicle,routes.value))
+      }
+      case Some(x) if !x.checkpoint0Defined =>
+        for (vehicle <- vehicles){
+          assignVehicleValue(vehicle,computeVehicleValueFromScratch(vehicle,routes.value))
+        }
+      case Some(x) => applyUpdates(x,changes.newValue)
     }
   }
 
@@ -205,12 +241,11 @@ abstract class PreComputeInvariant[T: Manifest, U](routes: ChangingSeqValue, v: 
 
         if (!checkpoint0WasDefined){
           // we are creating the first checkpoint. We need to do pre-compute for all vehicle
-          for (vehicle <- 0 until v) doPreComputeAtCheckpoint0(vehicle,newCheckpoint0)
-        }
-        else{
+          for (vehicle <- 0 until v) performPreCompute(vehicle,newCheckpoint0,preComputedValues)
+        } else {
           if(checkpointLevel == 0){
             for (vehicle <- prevUpdates.get.changedVehicleSinceCheckpoint0.indicesAtTrue)
-              doPreComputeAtCheckpoint0(vehicle,newCheckpoint0)
+              performPreCompute(vehicle,newCheckpoint0,preComputedValues)
           }
         }
 
@@ -225,7 +260,7 @@ abstract class PreComputeInvariant[T: Manifest, U](routes: ChangingSeqValue, v: 
             new UpdatedValues(u.changedVehicle, bijAtCheckpoint, vehicleSearcherAtCheckpoint, true, false, s.newValue, newCheckpoint0, newCHangedVehicleSinceCheckpoint0)
 
         }
-        applyUpdates(updates) //we need to compute the output when we are defining a checkpoint for restore
+        applyUpdates(updates,changes.newValue) //we need to compute the output when we are defining a checkpoint for restore
 
         val toSave = valuesToSave()
         checkpointStack.defineCheckpoint(s.newValue, checkpointLevel, (bijAtCheckpoint, vehicleSearcherAtCheckpoint, toSave))
@@ -356,10 +391,10 @@ abstract class PreComputeInvariant[T: Manifest, U](routes: ChangingSeqValue, v: 
 
   /**
     * affect to global variables the values contained in updates. Then for all vehicles impacted by the last changes, compute
-    * and affect the new value of the output
+    * and affect the new value of the outputs’effondrer. C’est ce qui s’est passé en Australie, comme l’explique Joe
     * @param updates obtained from digestUpdates
     */
-  private def applyUpdates(updates: UpdatedValues): Unit = {
+  private def applyUpdates(updates: UpdatedValues,routes : IntSequence): Unit = {
     bijForPreCompute = updates.updatedBij
     checkpoint0Defined = updates.checkpoint0Defined
     stackDone = updates.stackDone
@@ -369,10 +404,33 @@ abstract class PreComputeInvariant[T: Manifest, U](routes: ChangingSeqValue, v: 
     changedVehiclesSinceCheckpoint0 = updates.changedVehicleSinceCheckpoint0
     for (vehicle <- updates.changedVehicle.indicesAtTrue){
       val posOfLastNode =
-        if(vehicle != this.v-1) routes.newValue.explorerAtAnyOccurrence(vehicle+1).get.position - 1
+        if(vehicle != this.v-1) routes.explorerAtAnyOccurrence(vehicle+1).get.position - 1
         else bijForPreCompute.externalPositionOfLastRoutedNode
-      val value = computeNewValueOfPreComputeForNodeAtPos(posOfLastNode, vehicle)
-      computeAndAffectOutputWithPreCompute(value, vehicle)
+      val posOfFirstNode = routes.explorerAtAnyOccurrence(vehicle).get.position
+      val value = computeVehicleValue(vehicle,convertComputationStepToSegment(bijForPreCompute.kindOfComputation(posOfFirstNode,posOfLastNode),routes,prevRoutes),routes,preComputedValues)
+      assignVehicleValue(vehicle,value)
+      vehicleValues(vehicle) = value
+    }
+  }
+
+  def preComputedToString():String = {
+    var res = "["
+    for (i <- 0 until preComputedValues.length - 2) {
+      if (preComputedValues(i) != 0){
+        res = res + "(" + i + " : " + preComputedValues(i).toString() + "), "
+      }
+    }
+    if (preComputedValues(preComputedValues.length -1) != 0){
+      res = res + "(" + (preComputedValues.length - 1).toString() + " : " + preComputedValues(preComputedValues.length - 1).toString() + ")"
+    }
+    res = res + "]"
+    res
+  }
+
+  override def checkInternals(c : Checker): Unit = {
+    for (v <- vehicles){
+      require(computeVehicleValueFromScratch(v,routes.value) == vehicleValues(v),
+        "For Vehicle " + v.toString() + " : " + computeVehicleValueFromScratch(v,routes.value).toString() + " " + vehicleValues(v).toString() + " " + routes.toString + "\n" + preComputedToString())
     }
   }
 }
