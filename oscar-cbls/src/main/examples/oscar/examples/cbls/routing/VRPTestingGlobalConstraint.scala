@@ -37,7 +37,7 @@ class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle :
       vExplorer match {
         case None => continue = false
         case Some(elem) =>
-          if (elem.value == vehicle + 1){
+          if (elem.value < v){
             continue = false
           } else {
             nbNode = nbNode + 1
@@ -146,7 +146,9 @@ object VRPTestingGlobalConstraint extends App {
 
   c.close()
 
-   model.close()
+  val obj = new CascadingObjective(c,Objective(totalRouteLength + 10000 * (nbNode - length(problem.routes))))
+
+  model.close()
 
   val closestRelevantNeighbors = Array.tabulate(nbNode)(DistanceHelper.lazyClosestPredecessorsOfNode(symetricDistanceMatrix,_ => problem.nodes))
 
