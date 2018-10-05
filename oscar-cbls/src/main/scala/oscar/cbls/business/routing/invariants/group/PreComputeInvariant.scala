@@ -53,19 +53,13 @@ abstract class PreComputeInvariant[T: Manifest, U:Manifest](routes: ChangingSeqV
 
   def outputVariables:Iterable[Variable]
 
-
   /**
     * tis method is called by the framework when a pre-computation must be performed.
     * you are expected to assign a value of type T to each node of the vehicle "vehicle" through the method "setNodeValue"
     * @param vehicle the vehicle where pre-computation must be performed
     * @param routes the sequence representing the route of all vehicle
     *               BEWARE,other vehicles are also present in this sequence; you must only work on the given vehicle
-    * @param setNodeValue the method that you are expected to use when assigning a value to a node
-    *                     BEWARE: you can only apply this method on nodes of the vehicle you are working on
-    * @param getNodeValue a method that you can use to get the value associated wit ha node
-    *                     BEWARE: you have zero info on when it can generated, so only query the value
-    *                     that you have just set through the method setNodeValue.
-    *                     also, you should only query the value of node in the route of vehicle "vehicle"
+    * @param preComputedVals The array of precomputed values
     */
   def performPreCompute(vehicle:Int,
                         routes:IntSequence,
@@ -78,9 +72,7 @@ abstract class PreComputeInvariant[T: Manifest, U:Manifest](routes: ChangingSeqV
     * @param segments the segments that constitute the route.
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @param routes the sequence representing the route of all vehicle
-    * @param nodeValue a function that you can use to get the pre-computed value associated with each node (if some has ben given)
-    *                  BEWARE: normally, you should never use this function, you only need to iterate through segments
-    *                  because it already contains the pre-computed values at the extremity of each segment
+    * @param preComputedVals The array of precomputed values
     * @return the value associated with the vehicle
     */
   def computeVehicleValue(vehicle:Int,
@@ -98,10 +90,11 @@ abstract class PreComputeInvariant[T: Manifest, U:Manifest](routes: ChangingSeqV
   def assignVehicleValue(vehicle:Int,value:U)
 
   /**
+    * this method is defined for verification purpose. It computes the value of the vehicle from scratch.
     *
-    * @param vehicle
-    * @param routes
-    * @return
+    * @param vehicle the vehicle on which the value is computed
+    * @param routes the sequence representing the route of all vehicle
+    * @return the value of the constraint for the given vehicle
     */
 
   def computeVehicleValueFromScratch(vehicle : Int, routes : IntSequence):U
@@ -125,17 +118,19 @@ abstract class PreComputeInvariant[T: Manifest, U:Manifest](routes: ChangingSeqV
     * @return
     */
   def convertComputationStepToSegment(computationSteps : List[ComputationStep],routes : IntSequence,prevRoutes : IntSequence): List[Segment[T]] ={
-
-    println(computationSteps.mkString(","))
+ //   println(computationSteps.mkString(","))
+ //   println("Actual route : " + routes)
+ //   println("Previous route : " + prevRoutes)
     val toReturn =
       computationSteps.flatMap(step => {
         step match {
           case FetchFromPreCompute(startNodePosition, endNodePosition, rev) =>
-            val realStartNodePosition = bijection(startNodePosition)
-            val realEndNodePosition = bijection(endNodePosition)
-            val startNode = prevRoutes.valueAtPosition(realStartNodePosition).get
-            val endNode = prevRoutes.valueAtPosition(realEndNodePosition).get
-            println(startNodePosition + ";" + realStartNodePosition + ";" + startNode + "---" + endNodePosition + ";" + realEndNodePosition + ";" + endNode)
+  //          val realStartNodePosition = bijection(startNodePosition)
+  //          val realEndNodePosition = bijection(endNodePosition)
+  //          println("Start Node position : " + startNodePosition + " - Node at startNodePosition : " + prevRoutes.valueAtPosition(startNodePosition).get + " -- RealStartNodePosition : " + realStartNodePosition + " - Node atRealStartNodePOsitiono : " + prevRoutes.valueAtPosition(realStartNodePosition).get)
+  //          println("End Node position : " + endNodePosition + " - Node at endNodePosition : " + prevRoutes.valueAtPosition(endNodePosition).get + " -- RealEndNodePosition : " + realEndNodePosition + " - Node atRealEndNodePOsitiono : " + prevRoutes.valueAtPosition(realEndNodePosition).get)
+            val startNode = prevRoutes.valueAtPosition(startNodePosition).get
+            val endNode = prevRoutes.valueAtPosition(endNodePosition).get
             if (!rev) {
               Some (PreComputedSubSequence(startNode, preComputedValues(startNode), endNode, preComputedValues(endNode)))
             } else {
@@ -154,7 +149,6 @@ abstract class PreComputeInvariant[T: Manifest, U:Manifest](routes: ChangingSeqV
             newNodeList.reverse
         }
       })
-    println(toReturn.mkString(","))
     toReturn
   }
 
@@ -183,11 +177,6 @@ abstract class PreComputeInvariant[T: Manifest, U:Manifest](routes: ChangingSeqV
         (fromNode, toNode)
       }
     }
-  }
-
-
-  def recordTouchedVehicleSinceCheckpoint0(vehicle:Int){
-    changedVehiclesSinceCheckpoint0(vehicle) = true
   }
 
 
