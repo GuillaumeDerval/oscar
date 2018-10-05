@@ -71,7 +71,11 @@ sealed abstract class Segment[T]()
 case class PreComputedSubSequence[T](startNode:Int,
                             startNodeValue:T,
                             endNode:Int,
-                            endNodeValue:T) extends Segment[T]
+                            endNodeValue:T) extends Segment[T]{
+  override def toString: String = {
+    "PreComputedSubSequece (StartNode : " + startNode + " - value : " + startNodeValue + " EndNode : " + endNode + " - value " + endNodeValue + ")"
+  }
+}
 
 /**
   * This represents a subsequence starting at startNode and ending at endNode.
@@ -86,11 +90,19 @@ case class PreComputedSubSequence[T](startNode:Int,
 case class FlippedPreComputedSubSequence[T](startNode:Int,
                             startNodeValue:T,
                             endNode:Int,
-                            endNodeValue:T) extends Segment[T]
+                            endNodeValue:T) extends Segment[T]{
+  override def toString: String = {
+    "FlippedPreComputedSubSequece (StartNode : " + startNode + " - value : " + startNodeValue + " EndNode : " + endNode + " - value " + endNodeValue + ")"
+  }
+}
 
 /**
   * This represent that a node that was not present in the initial sequence when pre-computation was performed.
   * @param node
   */
-case class NewNode[T](node:Int) extends Segment[T]
+case class NewNode[T](node:Int) extends Segment[T]{
+  override def toString: String = {
+    "NewNode - Node : " + node
+  }
+}
 

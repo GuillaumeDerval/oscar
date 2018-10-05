@@ -37,7 +37,7 @@ class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle :
       vExplorer match {
         case None => continue = false
         case Some(elem) =>
-          if (elem.value < v){
+          if (elem.value < v && elem.value != vehicle){
             continue = false
           } else {
             nbNode = nbNode + 1
@@ -160,6 +160,13 @@ object VRPTestingGlobalConstraint extends App {
       selectInsertionPointBehavior = Best(),
       neighborhoodName = "InsertUR 1"))
 
+  val routeUnroutedPointLarger =
+    profile(insertPointUnroutedFirst(problem.unrouted,
+      () => problem.kFirst(100,closestRelevantNeighbors,_ => node => problem.isRouted(node)),
+      problem,
+      selectInsertionPointBehavior = Best(),
+      neighborhoodName = "InsertURLarger 1"))
+
 
   /*val routeUnroutedPoint =
     profile(insertPointUnroutedFirst(problem.unrouted,
@@ -180,6 +187,7 @@ object VRPTestingGlobalConstraint extends App {
 
   val search =
     bestSlopeFirst(List(routeUnroutedPoint,
+      routeUnroutedPointLarger,
       onePtMove,
       twoOpt))
 
