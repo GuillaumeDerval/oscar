@@ -112,10 +112,13 @@ abstract class PreComputeInvariant[T: Manifest, U:Manifest](routes: ChangingSeqV
     }
   }
 
-  /**
+  /** This method convert the computation steps received from the sequence into the segemnt type
     *
-    * @param computationStep
-    * @return
+    * @param computationStep the list of computation steps
+    * @param routes the actual route
+    * @param prevRoutes the previous route before the steps
+    *
+    * @return the list of segment corresponding to the computation steps
     */
   def convertComputationStepToSegment(computationSteps : List[ComputationStep],routes : IntSequence,prevRoutes : IntSequence): List[Segment[T]] ={
  //   println(computationSteps.mkString(","))
@@ -418,7 +421,7 @@ abstract class PreComputeInvariant[T: Manifest, U:Manifest](routes: ChangingSeqV
 
   override def checkInternals(c : Checker): Unit = {
     for (v <- vehicles){
-      require(computeVehicleValueFromScratch(v,routes.value) == vehicleValues(v),
+      require(computeVehicleValueFromScratch(v,routes.value).equals(vehicleValues(v)),
         "For Vehicle " + v.toString() + " : " + computeVehicleValueFromScratch(v,routes.value).toString() + " " + vehicleValues(v).toString() + " " + routes.toString + "\n" + preComputedToString())
     }
   }
