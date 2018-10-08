@@ -3,13 +3,13 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.lib.invariant.seq.Precedence
-import oscar.cbls.business.routing.invariants.{PDPConstraints, TimeWindowConstraint}
+//import oscar.cbls.business.routing.invariants.{PDPConstraints, TimeWindowConstraint}
 import oscar.cbls.core.search.Best
 
 /**
   * Created by fg on 12/05/17.
   */
-
+/*
 object SimpleVRPWithTimeWindow extends App{
   val m = new Store(noCycle = false, checker = Some(new ErrorChecker))
   val v = 10
@@ -179,3 +179,4 @@ object SimpleVRPWithTimeWindow extends App{
 
   println(search.profilingStatistics)
 }
+*/
