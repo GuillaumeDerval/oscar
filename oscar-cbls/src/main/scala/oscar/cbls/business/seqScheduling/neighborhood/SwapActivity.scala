@@ -4,12 +4,12 @@ import oscar.cbls.business.seqScheduling.model.{Constants, SchedulingSolver}
 import oscar.cbls.core.computation.CBLSSeqVar
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
-class Reinsertion(scm: SchedulingSolver,
-                  neighborhoodName: String,
-                  selectIndiceBehavior:LoopBehavior = First(),
-                  selectSwapBehavior:LoopBehavior = First(),
-                  searchIndices: Option[() => Iterable[Int]] = None)
-  extends EasyNeighborhoodMultiLevel[ReinsertionMove](neighborhoodName){
+class SwapActivity(scm: SchedulingSolver,
+                   neighborhoodName: String,
+                   selectIndiceBehavior:LoopBehavior = First(),
+                   selectSwapBehavior:LoopBehavior = First(),
+                   searchIndices: Option[() => Iterable[Int]] = None)
+  extends EasyNeighborhoodMultiLevel[SwapActivityMove](neighborhoodName){
 
   var currentIndex: Int = Constants.NO_INDEX
   var swappingIndex: Int = Constants.NO_INDEX
@@ -23,6 +23,9 @@ class Reinsertion(scm: SchedulingSolver,
     // iteration zone on activities indices
     val iterationZone = searchIndices.getOrElse(() => 0 until scm.scModel.nbActivities)
 
+    // Define checkpoint on sequence (activities list)
+    val seqValueCheckPoint = scm.activitiesSequence.defineCurrentValueAsCheckpoint(true)
+
     // iterating over the indices in the activity list
     val (indicesIterator, notifyIndexFound) = selectIndiceBehavior.toIterator(iterationZone())
     while (indicesIterator.hasNext) {
@@ -32,23 +35,38 @@ class Reinsertion(scm: SchedulingSolver,
       val (insertableIterator, notifySwappingFound) = selectSwapBehavior.toIterator(insertableZone)
       while (insertableIterator.hasNext) {
         swappingIndex = insertableIterator.next()
+        // Perform move on sequence
+        val newObj = obj.value
+        performMove(currentIndex, swappingIndex)
+        scm.activitiesSequence.rollbackToTopCheckpoint(seqValueCheckPoint)
+
         // Notification of finding indices
-        notifyIndexFound()
-        notifySwappingFound()
+        if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
+          notifyIndexFound()
+          notifySwappingFound()
+        }
+
       }
     }
+
+    scm.activitiesSequence.releaseTopCheckpoint()
   }
 
-  override def instantiateCurrentMove(newObj: Int): ReinsertionMove =
-    ReinsertionMove(scm, currentIndex, swappingIndex, this, neighborhoodNameToString, newObj)
+  override def instantiateCurrentMove(newObj: Int): SwapActivityMove =
+    SwapActivityMove(scm, currentIndex, swappingIndex, this, neighborhoodNameToString, newObj)
+
+  def performMove(currentIndex: Int, swappingIndex: Int): Unit = {
+    // Swap 1-segments in sequence
+    scm.activitiesSequence.swapSegments(currentIndex, currentIndex, false, swappingIndex, swappingIndex, false)
+  }
 }
 
-case class ReinsertionMove(scm: SchedulingSolver,
-                           firstIndex: Int,
-                           secondIndex: Int,
-                           override val neighborhood: Reinsertion,
-                           override val neighborhoodName: String = "ReinsertionMove",
-                           override val objAfter: Int)
+case class SwapActivityMove(scm: SchedulingSolver,
+                            firstIndex: Int,
+                            secondIndex: Int,
+                            override val neighborhood: SwapActivity,
+                            override val neighborhoodName: String = "SwapActivityMove",
+                            override val objAfter: Int)
   extends SchedulingMove(scm, neighborhood, neighborhoodName, objAfter) {
   // The sequence variable
   val activitiesSeq: CBLSSeqVar = scm.activitiesSequence
@@ -62,17 +80,6 @@ case class ReinsertionMove(scm: SchedulingSolver,
     // activity index changes from secondIndex to firstIndex
     scm.scModel.activities(secondIndex).index = firstIndex
     // swap the values in indices
-    val seqVal = activitiesSeq.value
-    val indActFirstOpt = seqVal.valueAtPosition(firstIndex)
-    if (indActFirstOpt.isDefined) {
-      val indActSecondOpt = seqVal.valueAtPosition(secondIndex)
-      if (indActSecondOpt.isDefined) {
-        // we can perform the swapping
-        activitiesSeq.remove(firstIndex)
-        activitiesSeq.insertAtPosition(indActSecondOpt.get, firstIndex)
-        activitiesSeq.remove(secondIndex)
-        activitiesSeq.insertAtPosition(indActFirstOpt.get, secondIndex)
-      }
-    }
+    activitiesSeq.swapSegments(firstIndex, firstIndex, false, secondIndex, secondIndex, false)
   }
 }
