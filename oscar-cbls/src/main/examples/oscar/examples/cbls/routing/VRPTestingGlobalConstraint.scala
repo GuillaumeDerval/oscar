@@ -5,12 +5,12 @@ import oscar.cbls.IntVarOps
 import oscar.cbls.algo.seq._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.group._
-import oscar.cbls.business.routing.neighborhood.TwoOpt
+import oscar.cbls.business.routing.neighborhood.{ThreeOpt, ThreeOptMove, TwoOpt}
 import oscar.cbls.core.computation.ChangingSeqValue
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.LE
 
-class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle : Array[CBLSIntVar]) extends GlobalConstraintDefinition[Int,Int](routes,v){
+class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle : Array[CBLSIntVar]) extends GlobalConstraintDefinition[Option[Int],Int](routes,v){
 
 
 
@@ -28,8 +28,7 @@ class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle :
     *                     that you have just set through the method setNodeValue.
     *                     also, you should only query the value of node in the route of vehicle "vehicle"
     */
-  override def performPreCompute(vehicle: Int, routes: IntSequence, preComputedVals: Array[Int]): Unit = {
-    println("PreCompute For Vehicle : " + vehicle + " : " + routes.toString)
+  override def performPreCompute(vehicle: Int, routes: IntSequence, preComputedVals: Array[Option[Int]]): Unit = {
     var nbNode = 0
     var continue = true
     var vExplorer = routes.explorerAtAnyOccurrence(vehicle)
@@ -37,11 +36,11 @@ class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle :
       vExplorer match {
         case None => continue = false
         case Some(elem) =>
-          if (elem.value == vehicle + 1){
+          if (elem.value < v && elem.value != vehicle){
             continue = false
           } else {
             nbNode = nbNode + 1
-            preComputedVals(elem.value) = nbNode
+            preComputedVals(elem.value) = Some(nbNode)
           }
           vExplorer = elem.next
       }
@@ -60,21 +59,17 @@ class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle :
     *                  because it already contains the pre-computed values at the extremity of each segment
     * @return the value associated with the vehicle
     */
-  override def computeVehicleValue(vehicle: Int, segments: List[Segment[Int]], routes: IntSequence, PreComputedVals: Array[Int]): Int = {
-    println("ComputeVehicleValues : " + segments.mkString(","))
+  override def computeVehicleValue(vehicle: Int, segments: List[Segment[Option[Int]]], routes: IntSequence, PreComputedVals: Array[Option[Int]]): Int = {
     val tmp = segments.map(
       _ match {
       case PreComputedSubSequence (fstNode, fstValue, lstNode, lstValue) =>
-        println(lstValue - fstValue + 1)
-        lstValue - fstValue + 1
+        lstValue.get - fstValue.get + 1
       case FlippedPreComputedSubSequence(lstNode,lstValue,fstNode,fstValue) =>
-        println(lstValue - fstValue + 1)
-        lstValue - fstValue + 1
+        lstValue.get - fstValue.get + 1
       case NewNode(_) =>
         1
     }).sum
-
-    println("Out = " + tmp)
+    //println("Vehicle : " + vehicle + "--" + segments.mkString(","))
     tmp
   }
 
@@ -94,7 +89,6 @@ class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle :
 
 
   def countVehicleNode(vehicle : Int,vExplorer : Option[IntSequenceExplorer]) : Int = {
-    println(vehicle + ",")
     vExplorer match {
       case None => 0
       case Some(elem) =>
@@ -122,8 +116,8 @@ object VRPTestingGlobalConstraint extends App {
 
   val nbNode = 100;
   val nbVehicle = 10;
-  val model = new Store(checker = Some(new ErrorChecker))
-  //val model = new Store()
+  //val model = new Store(checker = Some(new ErrorChecker))
+  val model = new Store()
 
   val problem = new VRP(model,nbNode,nbVehicle)
 
@@ -146,17 +140,26 @@ object VRPTestingGlobalConstraint extends App {
 
   c.close()
 
-   model.close()
+  val obj = new CascadingObjective(c,Objective(totalRouteLength + 10000 * (nbNode - length(problem.routes))))
+
+  model.close()
 
   val closestRelevantNeighbors = Array.tabulate(nbNode)(DistanceHelper.lazyClosestPredecessorsOfNode(symetricDistanceMatrix,_ => problem.nodes))
 
 
-  val routeUnroutedPoint =
+  def routeUnroutedPoint =
     profile(insertPointUnroutedFirst(problem.unrouted,
       () => problem.kFirst(10,closestRelevantNeighbors,_ => node => problem.isRouted(node)),
       problem,
       selectInsertionPointBehavior = Best(),
       neighborhoodName = "InsertUR 1"))
+
+  val routeUnroutedPointLarger =
+    profile(insertPointUnroutedFirst(problem.unrouted,
+      () => problem.kFirst(100,closestRelevantNeighbors,_ => node => problem.isRouted(node)),
+      problem,
+      selectInsertionPointBehavior = Best(),
+      neighborhoodName = "InsertURLarger 1"))
 
 
   /*val routeUnroutedPoint =
@@ -166,20 +169,26 @@ object VRPTestingGlobalConstraint extends App {
       selectInsertionPointBehavior = Best(),
       neighborhoodName = "InsertUR"))*/
 
-  val onePtMove =
-    profile(onePointMove(problem.routed,
+  def onePtMove =
+    onePointMove(problem.routed,
       () => problem.kFirst(10,closestRelevantNeighbors,_ => node => problem.isRouted(node)),
-      problem))
+      problem)
 
   val twoOpt =
     profile(TwoOpt(problem.routed,
       () => problem.kFirst(10,closestRelevantNeighbors,_ => node => problem.isRouted(node)),
       problem))
 
+  def threeOpt =
+    ThreeOpt(problem.routed,
+      () => problem.kFirst(10,closestRelevantNeighbors,_ => node => problem.isRouted(node)),
+      problem)
+
   val search =
-    bestSlopeFirst(List(routeUnroutedPoint,
+    bestSlopeFirst(List(routeUnroutedPoint orElse routeUnroutedPointLarger,
       onePtMove,
-      twoOpt))
+      twoOpt,
+      threeOpt andThen threeOpt))
 
   search.verbose = 3
 
@@ -187,6 +196,7 @@ object VRPTestingGlobalConstraint extends App {
 
   println(problem)
   println(totalRouteLength)
+  println(obj)
   println(search.profilingStatistics)
 
 }
