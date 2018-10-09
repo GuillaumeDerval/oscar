@@ -30,7 +30,7 @@ abstract class GlobalConstraintDefinition[T:Manifest,U:Manifest](routes:Changing
   def computeVehicleValue(vehicle:Int,
                           segments:List[Segment[T]],
                           routes:IntSequence,
-                          PreComputedVals:Array[T]):U
+                          preComputedVals:Array[T]):U
 
   /**
     * the framework calls this method to assign the value U to he output variable of your invariant.
