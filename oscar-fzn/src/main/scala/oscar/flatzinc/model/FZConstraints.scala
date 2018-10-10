@@ -213,6 +213,9 @@ case class int_lin_eq(params:Array[IntegerVariable],vars:Array[IntegerVariable],
 case class int_lin_le(params:Array[IntegerVariable],vars:Array[IntegerVariable], sum:IntegerVariable, ann: List[Annotation] = List.empty[Annotation]) 
   extends Constraint(vars++Array.empty[Variable],ann)
 
+case class int_lin_gt(params:Array[IntegerVariable],vars:Array[IntegerVariable], sum:IntegerVariable, ann: List[Annotation] = List.empty[Annotation])
+  extends Constraint(vars++Array.empty[Variable],ann)
+
 case class int_lin_ne(params:Array[IntegerVariable],vars:Array[IntegerVariable], sum:IntegerVariable, ann: List[Annotation] = List.empty[Annotation]) 
   extends Constraint(vars++Array.empty[Variable],ann)
 

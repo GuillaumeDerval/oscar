@@ -275,6 +275,12 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     //LE(new Sum(vars.zip(params).map{ case (v,p) => Prod2(getIntValue(v),p.value)}), sum)
     LE(new Linear(vars.map(getCBLSVar(_)),params.map(_.value)), sum)
   }
+
+  def get_int_lin_gt(params: Array[IntegerVariable], vars: Array[IntegerVariable], sum: IntegerVariable, ann: List[Annotation]) = {
+    //LE(new Sum(vars.zip(params).map{ case (v,p) => Prod2(getIntValue(v),p.value)}), sum)
+    G(new Linear(vars.map(getCBLSVar(_)),params.map(_.value)), sum)
+  }
+
   def get_bool_lin_le(params: Array[IntegerVariable], vars: Array[BooleanVariable], sum: IntegerVariable, ann: List[Annotation]) = {
     //LE(new Sum(vars.zip(params).map{ case (v,p) => Prod2(getIntValue(v),p.value)}), sum)
     LE(new Linear(vars.map(Bool2Int(_)),params.map(_.value)), sum)
@@ -499,6 +505,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
       case int_le(x, y, ann)                          => LE(x, y)
       case int_lin_eq(params, vars, sum, ann)         => get_int_lin_eq(params, vars, sum, ann)
       case int_lin_le(params, vars, sum, ann)         => get_int_lin_le(params, vars, sum, ann)
+      case int_lin_gt(params, vars, sum, ann)         => get_int_lin_gt(params, vars, sum, ann)
       case int_lin_ne(params, vars, sum, ann)         => get_int_lin_ne(params, vars, sum, ann)
       case int_lt(x, y, ann)                          => L(x,y)
       case int_max(x, y, z, ann)                      => get_int_max(x, y, z, ann)

@@ -156,9 +156,11 @@ class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
 
   //TODO: I only added the bound acceptance criterion for subcircuit to avoid disrupting other neighbourhoods.
   def allOK(xs: Array[IntegerVariable],acceptBound: Boolean = false):Boolean = {
-    xs.forall(x => ! x.isDefined && (cblsmodel.vars.contains(cblsmodel.getIntValue(x)) || (acceptBound && x.isBound)))
+    xs.forall(x => ! x.isDefined && (cblsmodel.vars.contains(cblsmodel.getIntValue(x)) || (acceptBound && x.isBound))) &&
+    !xs.forall(_.isBound)
   }
   def allOK(xs: Array[BooleanVariable]):Boolean = {
-    xs.forall(x => ! x.isDefined && cblsmodel.vars.contains(cblsmodel.getIntValue(x)))
+    xs.forall(x => ! x.isDefined && cblsmodel.vars.contains(cblsmodel.getIntValue(x))) &&
+      !xs.forall(_.isBound)
   }
 }

@@ -34,8 +34,9 @@ class Options(name: String, cbls: Boolean, args: Array[String]) {
   var statistics = false
   var timeOut = 0
   var nSols = 1
-  var help = false;
-  var freeSearch = false;
+  var help = false
+  var freeSearch = false
+  var useCP = true
   
   private val opts = Map.empty[String,String]
   def is(s: String): Boolean = {
@@ -78,6 +79,9 @@ class Options(name: String, cbls: Boolean, args: Array[String]) {
         i += 1
       } else if (oneOf("-v", "--verbose")) {
         verbose = 1;
+      } else if (oneOf("--useCP")) {
+        useCP = args(i+1).toBoolean
+        i += 1
       } else if (oneOf("-f")) {
         freeSearch = true;
       }else if (oneOf("-vl", "--verbose-level")) {
@@ -107,6 +111,9 @@ class Options(name: String, cbls: Boolean, args: Array[String]) {
         "    -s, --statistics\n" +
         "    -n <value>, --num-solutions <value>\n" +
         "        <value> - limit on solution number.\n"+
+        "    --useCp <bool>\n" +
+        "        Use CP solver to improve variable bounds.\n" +
+        "        Default: true.\n" +
         "    -X<opt>=<val>, -X<opt>\n" +
         "        <opt> and <val> - add advanced options to the back-end\n")
     System.exit(0);

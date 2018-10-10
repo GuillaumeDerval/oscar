@@ -756,8 +756,8 @@ class AllDifferent(searchVariables: Array[CBLSIntVar], objective: CBLSObjective,
   }
 
   def getAssignMove(idx: Int, v: Int, accept: Move => Boolean) = {
-    if (searchVariables(idx).inDomain(v) && freeValues.contains(v)) {
-      acceptOr(new BeforeMove(new AssignMove(searchVariables(idx), v, objective.assignVal(searchVariables(idx), v)),
+    if (variables(idx).inDomain(v) && freeValues.contains(v)) {
+      acceptOr(new BeforeMove(new AssignMove(variables(idx), v, objective.assignVal(variables(idx), v)),
                               () => {
                                 freeValues += variables(idx).value;
                                 freeValues -= v;
@@ -805,7 +805,8 @@ class AllDifferent(searchVariables: Array[CBLSIntVar], objective: CBLSObjective,
       case (i1, i2) => getAssignMove(i1, i2, accept)
       case _ => new NoMove(Int.MaxValue)
     }
-    if (swap.value < move.value) swap else move
+    val returnedMoved = if (swap.value < move.value) swap else move
+    returnedMoved
   }
 
   def violation() = {

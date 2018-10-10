@@ -41,7 +41,7 @@ class FZCBLSBuilder extends LinearSelectors with StopWatch {
     val log = opts.log();
     log("start")
 
-    val useCP = opts.is("usecp")
+    val useCP = opts.useCP
 
     val fzModel = FZParser.readFlatZincModelFromFile(opts.fileName, log, false).problem;
 
@@ -288,7 +288,7 @@ class FZCBLSBuilder extends LinearSelectors with StopWatch {
 
     val search = new Chain(
       new ActionSearch(() => {
-        if(opts.is("usecp")){
+        if(opts.useCP){
           cblsmodel.useCP = useCP
         }
         if(objDom.isDefined) {
@@ -389,15 +389,15 @@ class FZCBLSBuilder extends LinearSelectors with StopWatch {
             throw new Exception()
           }
           hardConstraintError = true
-          log("WARNING: Some implicit Constraint is not satisfied during search.")
+          log(0,"WARNING: Some implicit Constraint is not satisfied during search.")
           cblsmodel.neighbourhoods.foreach(
             n => log(0, n.getClass().toString() + " " + n.getVariables().mkString("[", ",", "]")))
-          log("Trying soft restart of neighbourhoods...")
+          log(0,"Trying soft restart of neighbourhoods...")
           cblsmodel.neighbourhoods.foreach( _.reset())
 
         }else{
           hardConstraintError = false
-          log("Soft restart resolved the issue, for now.")
+          log(0,"Soft restart resolved the issue, for now.")
         }
       });
       //Event(cs.violation, Unit => {log(cs.violation.toString);})
@@ -459,7 +459,7 @@ class FZCBLSBuilder extends LinearSelectors with StopWatch {
       //log(2,c.getVariables().map(v => v.min+".."+v.max).mkString(" , "))
     })
     model.constraints.foreach
-    { case reif(c, b) => if (b.isBound) log("Fixed reified constraint: " + b.boolValue); case _ => {} }
+    { case reif(c, b) => if (b.isBound) log("Reified constraint could be fixed: " + c + " to " + b.boolValue); case _ => {} }
   }
 
   def createLocalConstraintSystem(constraints: Seq[Constraint], cblsmodel: FZCBLSModel, ensureInvariantDomain:Boolean = true): ConstraintSystem = {

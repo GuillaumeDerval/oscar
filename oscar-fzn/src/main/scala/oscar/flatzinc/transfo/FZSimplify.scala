@@ -123,14 +123,14 @@ object FZSimplify{
       case int_ne(x,y,_) => x.value !=y.value
       case int_lt(x,y,_) => x.value < y.value
       case int_le(x,y,_) => x.value <= y.value
-      case int_times(a,b,c,_) => a.value*b.value == c.value
+      case int_times(a,b,p,_) => a.value*b.value == p.value
       case int_pow(a,e,b,_) => Math.pow(a.value,e.value).toInt == b.value
       case bool_eq(x,y,_) => x.intValue ==y.intValue
       case bool_lt(x,y,_) => x.intValue < y.intValue
       case bool_le(x,y,_) => x.intValue <= y.intValue
-      case int_lin_eq(c,x,y,_) => c.zip(x).foldLeft(0)((acc,cur) => acc + cur._1.value*cur._2.value)==y.value
-      case int_lin_le(c,x,y,_) => c.zip(x).foldLeft(0)((acc,cur) => acc + cur._1.value*cur._2.value)<=y.value
-      case int_lin_ne(c,x,y,_) => c.zip(x).foldLeft(0)((acc,cur) => acc + cur._1.value*cur._2.value)!=y.value
+      case int_lin_eq(p,x,y,_) => p.zip(x).foldLeft(0)((acc,cur) => acc + cur._1.value*cur._2.value)==y.value
+      case int_lin_le(p,x,y,_) => p.zip(x).foldLeft(0)((acc,cur) => acc + cur._1.value*cur._2.value)<=y.value
+      case int_lin_ne(p,x,y,_) => p.zip(x).foldLeft(0)((acc,cur) => acc + cur._1.value*cur._2.value)!=y.value
       case bool_clause(x,y,_) => x.exists(_.isTrue) || y.exists(_.isFalse)
       case set_in(x,y,_) => y.contains(x.value)
       case array_bool_and(x,y,_) => (x.exists(_.isFalse) && y.isFalse) || (x.forall(_.isTrue) && y.isTrue)
@@ -176,9 +176,9 @@ object FZSimplify{
       case bool_eq(x,y,_) => x.intValue != y.intValue
       case bool_lt(x,y,_) => x.intValue >= y.intValue
       case bool_le(x,y,_) => x.intValue > y.intValue
-      case int_lin_eq(c,x,y,_) => c.zip(x).foldLeft(0)((acc,cur) => acc + cur._1.value*cur._2.value)!=y.value
-      case int_lin_le(c,x,y,_) => c.zip(x).foldLeft(0)((acc,cur) => acc + cur._1.value*cur._2.value)>y.value
-      case int_lin_ne(c,x,y,_) => c.zip(x).foldLeft(0)((acc,cur) => acc + cur._1.value*cur._2.value)==y.value
+      case int_lin_eq(p,x,y,_) => p.zip(x).foldLeft(0)((acc,cur) => acc + cur._1.value*cur._2.value)!=y.value
+      case int_lin_le(p,x,y,_) => p.zip(x).foldLeft(0)((acc,cur) => acc + cur._1.value*cur._2.value)>y.value
+      case int_lin_ne(p,x,y,_) => p.zip(x).foldLeft(0)((acc,cur) => acc + cur._1.value*cur._2.value)==y.value
       case bool_clause(x,y,_) => x.forall(_.isFalse) && y.forall(_.isTrue)
       case set_in(x,y,_) => !y.contains(x.value)
       case array_bool_and(x,y,_) => (x.exists(_.isFalse) && y.isTrue) || (x.forall(_.isTrue) && y.isFalse)
@@ -203,6 +203,7 @@ object FZSimplify{
       case int_ne(x,y,a) => int_eq(x,y,a)
       case int_lt(x,y,a) => int_le(y,x,a)
       case int_le(x,y,a) => int_lt(y,x,a)
+      case int_lin_le(p,v,s,a) => int_lin_gt(p,v,s,a)
       case _ => null
     }
   }
