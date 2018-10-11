@@ -28,7 +28,7 @@ import oscar.flatzinc.cbls.support._
 import oscar.flatzinc.cp.FZCPModel
 import oscar.flatzinc.model.{Constraint, Variable, _}
 import oscar.flatzinc.parser.FZParser
-import oscar.flatzinc.transfo.FZModelTransfo
+import oscar.flatzinc.transformation.FZModelTransformations
 import oscar.flatzinc.cbls.support.Helpers._
 
 
@@ -93,7 +93,7 @@ class FZCBLSBuilder extends LinearSelectors with StopWatch {
     val (maybeDirConstraint, maybeSoftConstraint) = allConstraints.partition(_.definedVar.isDefined)
     log("Possibly " + maybeDirConstraint.length + " invariants.")
 
-    val (invariants, nowMaybeSoft) = FZModelTransfo.getSortedInvariants(maybeDirConstraint)(log)
+    val (invariants, nowMaybeSoft) = FZModelTransformations.getSortedInvariants(maybeDirConstraint)(log)
     log("Sorted " + invariants.length + " Invariants")
 
 
@@ -411,11 +411,11 @@ class FZCBLSBuilder extends LinearSelectors with StopWatch {
     if (opts.is("no-find-inv")) {
       log("Did not search for new invariants")
     } else {
-      FZModelTransfo.findInvariants(model, log, searchVars);
+      FZModelTransformations.findInvariants(model, log, searchVars);
       log("Found Invariants")
     }
     //If a variable has a domiain of size 1, then do not define it with an invariant.
-    //This should be redundant as FZModelTransfo.findInvariants does not consider bound variables.
+    //This should be redundant as FZModelTransformations.findInvariants does not consider bound variables.
     for (c <- model.constraints) {
       if (c.definedVar.isDefined && c.definedVar.get.isBound) {
         c.unsetDefinedVar(c.definedVar.get)
@@ -434,7 +434,7 @@ class FZCBLSBuilder extends LinearSelectors with StopWatch {
   private def simplifyFlatZincModel(opts: Options, log: Log, useCP: Boolean, model: FZProblem,
                                     cpmodel: FZCPModel): Unit = {
     if (useCP) {
-      FZModelTransfo.propagate(model)(log);
+      FZModelTransformations.propagate(model)(log);
       log("Reduced Domains before CP")
       //println(fzModel.variables.toList.map(v => v.domainSize))
       cpmodel.createVariables()
@@ -447,9 +447,9 @@ class FZCBLSBuilder extends LinearSelectors with StopWatch {
       log("No domain reduction")
     } else {
       //TODO: check which part of the following is still necessary after using CP for bounds reduction.
-      FZModelTransfo.simplify(model)(log);
+      FZModelTransformations.simplify(model)(log);
       log("Reduced Domains")
-      FZModelTransfo.simplify(model)(log);
+      FZModelTransformations.simplify(model)(log);
       log("Reduced Domains")
     }
     model.constraints.foreach(c => if (c.getVariables().length <= 1) {

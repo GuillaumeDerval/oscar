@@ -16,7 +16,7 @@
  * @author Gustav Björdal
  * @author Jean-Noël Monette
  */
-package oscar.flatzinc.transfo
+package oscar.flatzinc.transformation
 
 import oscar.flatzinc.model._
 import oscar.flatzinc.Log

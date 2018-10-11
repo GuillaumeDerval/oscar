@@ -22,7 +22,7 @@ import oscar.flatzinc.parser.FZParser
 import oscar.flatzinc.model.Helper
 import oscar.flatzinc.model.BooleanVariable
 import oscar.flatzinc.parser.Model
-import oscar.flatzinc.transfo.FZModelTransfo
+import oscar.flatzinc.transformation.FZModelTransformations
 
 object FznOscarAnalyser extends FznOscarMain{
   checkAntlr()
@@ -35,7 +35,7 @@ object FznOscarAnalyser extends FznOscarMain{
     log("Parsed.")
     printInfo(model,log)
     
-    /*FZModelTransfo.propagateDomainBounds(model.problem)(log);
+    /*FZModelTransformations.propagateDomainBounds(model.problem)(log);
     log("reduction")
     printInfo(model,log)*/
     log("done")

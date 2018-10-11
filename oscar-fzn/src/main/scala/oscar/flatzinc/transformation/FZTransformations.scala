@@ -16,7 +16,7 @@
  * @author Gustav Björdal
  * @author Jean-Noël Monette
  */
-package oscar.flatzinc.transfo
+package oscar.flatzinc.transformation
 
 import oscar.flatzinc.model._
 import oscar.flatzinc.Log
@@ -24,7 +24,7 @@ import scala.collection.mutable.{ Map => MMap, Set => MSet }
 import scala.collection.mutable.Queue
 import oscar.flatzinc.UnsatException
 
-object FZModelTransfo {
+object FZModelTransformations {
  
   def findInvariants(model: FZProblem, log:Log, searchVars: Iterable[Variable]):Unit = FZFindDefined.findInvariants(model,log, searchVars)
   def getSortedInvariants(invariants: List[Constraint])(implicit log: Log): (List[Constraint],List[Constraint]) = FZFindDefined.getSortedInvariants(invariants)(log)

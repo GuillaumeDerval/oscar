@@ -28,7 +28,7 @@ import oscar.flatzinc.parser.FZParser
 import scala.collection.mutable.{Map => MMap}
 import oscar.flatzinc.model._
 import oscar.flatzinc.UnsatException
-import oscar.flatzinc.transfo.FZModelTransfo
+import oscar.flatzinc.transformation.FZModelTransformations
 
 
 import scala.util.Random
@@ -251,7 +251,8 @@ class FZCPSolver {
      
     
     log("Parsed.")
-    FZModelTransfo.propagate(model)(log)
+    FZModelTransformations.propagate(model)(log)
+    FZModelTransformations.simplify(model)(log)
     log("initial variable reduction (to avoid overflows)")
     
     //TODO: Find binary constraints that can be used for views.
