@@ -179,7 +179,8 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
    }
   def createSearch() = {
     //TODO: Take into account the search annotations
-    solver.search(oscar.cp.binaryLastConflict((model.variables/*-model.search.variable.get*/).map(getIntVar).toArray[CPIntVar]))
+    val searchVars = dictVars.values.toArray
+    solver.search(oscar.cp.conflictOrderingSearch(searchVars, searchVars(_).size, searchVars(_).min))
   }
 
   //Not clear if there is any advantage to keep this over setIntermediate..

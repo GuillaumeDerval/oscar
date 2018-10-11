@@ -22,6 +22,7 @@ import oscar.flatzinc.model._
 import scala.language.implicitConversions
 import oscar.cp._
 import oscar.cp.constraints.SumLeEq
+import oscar.cp.core.CPPropagStrength
 
 class CPConstraintPoster(val pstrength: oscar.cp.core.CPPropagStrength){ 
   implicit def c2ca(c: oscar.cp.Constraint): Array[(oscar.cp.Constraint,oscar.cp.core.CPPropagStrength)] = Array[(oscar.cp.Constraint,oscar.cp.core.CPPropagStrength)]((c,pstrength))
@@ -90,7 +91,7 @@ class CPConstraintPoster(val pstrength: oscar.cp.core.CPPropagStrength){
         })
         new oscar.cp.constraints.GCCFWC(xs.map(getVar), coverMin, fullLBound, fullUBound)
       }
-      //case nvalue_int(y, xs, ann)                     =>  :(
+      case nvalue_int(y, xs, ann)                     => (new oscar.cp.constraints.AtLeastNValue(xs.map(getVar), getVar(y)), CPPropagStrength.Weak) // There is currently a bug with non-weak propagation
 
       //case reif(count_eq(x,v,c,_),b) => getBoolVar(b) ?== oscar.cp.countEq(getVar(c), x.map(getVar), getVar(v))
       
