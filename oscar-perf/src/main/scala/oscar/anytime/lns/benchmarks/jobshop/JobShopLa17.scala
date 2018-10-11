@@ -1,4 +1,4 @@
-package oscar.anytime.lns.disabled_benchs.jobshop
+package oscar.anytime.lns.benchmarks.jobshop
 
 import oscar.anytime.lns.models.JobShop
 
