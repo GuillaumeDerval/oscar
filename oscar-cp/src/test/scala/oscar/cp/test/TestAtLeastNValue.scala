@@ -15,7 +15,7 @@
 package oscar.cp.test
 
 import oscar.cp._
-import oscar.cp.constraints.AtMostNValue
+import oscar.cp.constraints.{AtLeastNValueAC, AtMostNValue}
 import oscar.cp.testUtils._
 
 class TestAtLeastNValue extends TestSuite {
@@ -99,5 +99,30 @@ class TestAtLeastNValue extends TestSuite {
     assert(y.max == 3)
 
   }
+
+  test("atAtLeast4") {
+    val n = 4
+    implicit val cp = CPSolver()
+
+    val Xs = Array.fill(n)(CPIntVar.sparse(1, 4))
+    val y = CPIntVar.sparse(1,2) // Expanded domain here
+
+    add(Xs(0) === 1)
+    add(Xs(1) === 1)
+    add(Xs(2) === 2)
+    add(new AtLeastNValueAC(Xs,y),Weak)
+    println("y:"+y)
+    search(binaryFirstFail(Array(y) ++ Xs))
+    onSolution{
+      println("Xs: " + Xs.map(_.value).mkString("[",", ","]"))
+      println("y: " + y.min + ".." + y.max)
+      println("———")
+    }
+    val stats = start()
+    println(stats)
+
+  }
+
+
 
 }
