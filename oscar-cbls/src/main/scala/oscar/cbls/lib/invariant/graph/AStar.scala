@@ -5,20 +5,35 @@ import oscar.cbls.core.{ChangingIntValue, ChangingSetValue, IntInvariant, ValueW
 
 import scala.collection.immutable.SortedSet
 
-
 class DistanceInConditionalGraph(graph:ConditionalGraph,
                                  from:ChangingIntValue,
                                  to:ChangingIntValue,
-                                 openConditions:ChangingSetValue)(
-                                  underApproximatingDistance:(Int,Int) => Option[Int] = {val m = FloydWarshall.buildDistanceMatrix(graph,_ => true); (a,b) => m(a)(b)})
+                                 openConditions:ChangingSetValue,
+                                 distanceIfNotConnected:Int)
+                                (underApproximatingDistance:(Int,Int) => Option[Int]
+                                 = {val m = FloydWarshall.buildDistanceMatrix(graph,_ => true); (a,b) => m(a)(b)})
   extends IntInvariant() with SetNotificationTarget with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(from)
   registerStaticAndDynamicDependency(to)
   registerStaticDependency(openConditions)
-  private val key:ValueWiseKey = registerDynamicValueWiseDependency(openConditions)
+  private var key:ValueWiseKey = registerDynamicValueWiseDependency(openConditions)
 
   val aStar = new AStar(graph, underApproximatingDistance)
+
+  var listenedValues:SortedSet[Int] = SortedSet.empty
+  def setListenedValueOnValueWiseKey(newListenedValues:SortedSet[Int]): Unit ={
+    val toRemoveValues = newListenedValues -- listenedValues
+    toRemoveValues.foreach(key.removeFromKey)
+
+    val toAddValues = listenedValues -- newListenedValues
+    toAddValues.foreach(key.addToKey)
+
+    listenedValues = newListenedValues
+  }
+
+  //initialize the stuff
+  computeAffectAndAdjustValueWiseKey()
 
   def computeAffectAndAdjustValueWiseKey(){
     aStar.search(
@@ -26,14 +41,23 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
       graph.nodes(to.value),
       {val o = openConditions.value; condition => o contains condition})
     match{
-      case Distance(from:Node, to:Node,distance:Int, requiredConditions:Set[Int], unlockingConditions:Set[Int]) =>
+      case Distance(from:Node, to:Node,distance:Int, requiredConditions:SortedSet[Int], unlockingConditions:SortedSet[Int]) =>
         setListenedValueOnValueWiseKey(requiredConditions ++ unlockingConditions)
+
+        this := distance
+
       case NeverConnected(from:Node,to:Node) =>
       //will only happen once at startup
 
-      case NotConnected(from:Node, to:Node, unlockingConditions:Set[Int]) =>
+        key.performRemove()
+        key = null
+
+        this := distanceIfNotConnected
+
+      case NotConnected(from:Node, to:Node, unlockingConditions:SortedSet[Int]) =>
         setListenedValueOnValueWiseKey(unlockingConditions)
 
+        this := distanceIfNotConnected
     }
   }
 
@@ -51,16 +75,9 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
   }
 
   override def performInvariantPropagation(): Unit = {
-
-  }
-
-  var listenedValues:List[Int] = List.empty
-  def setListenedValueOnValueWiseKey(listenedValues:Iterable[Int]): Unit ={
-
+    computeAffectAndAdjustValueWiseKey()
   }
 }
-
-
 
 abstract sealed class ConditionalDistance(from:Node,
                                           to:Node)
@@ -76,7 +93,6 @@ case class NeverConnected(from:Node,to:Node) extends ConditionalDistance(from,to
 case class NotConnected(from:Node,
                         to:Node,
                         unlockingConditions:Set[Int]) extends ConditionalDistance(from,to)
-
 
 class AStar(g:ConditionalGraph,
             underApproximatingDistance:(Int,Int) => Option[Int]){
