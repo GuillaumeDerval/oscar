@@ -2,7 +2,7 @@ package oscar.cbls.business.routing.invariants
 
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.TTFMatrix
-import oscar.cbls.business.routing.invariants.group.{GlobalConstraintDefinition, Segment}
+import oscar.cbls.business.routing.invariants.group._
 import oscar.cbls.business.routing.model.extensions.TimeWindow
 import oscar.cbls.core.computation._
 
@@ -23,70 +23,37 @@ import oscar.cbls.core.computation._
 
 object TimeWindowConstraint {
   def apply(routes: ChangingSeqValue,
+            n: Int,
             v: Int,
             timeWindows: TimeWindow,
             travelTimeMatrix: TTFMatrix,
             violations: Array[CBLSIntVar]): TimeWindowConstraint =
-    new TimeWindowConstraint(routes: ChangingSeqValue, v, timeWindows, travelTimeMatrix, violations)
+    new TimeWindowConstraint(routes: ChangingSeqValue, n, v, timeWindows, travelTimeMatrix, violations)
 }
 
 class TimeWindowConstraint (routes: ChangingSeqValue,
+                              n: Int,
                               v: Int,
                               timeWindows: TimeWindow,
                               travelTimeMatrix: TTFMatrix,
                               violations: Array[CBLSIntVar]
-                             ) extends GlobalConstraintDefinition[(Int) => (Int), Int](routes, v) with SeqNotificationTarget {
-  /**
-    * tis method is called by the framework when a pre-computation must be performed.
-    * you are expected to assign a value of type T to each node of the vehicle "vehicle" through the method "setNodeValue"
-    *
-    * @param vehicle      the vehicle where pre-computation must be performed
-    * @param routes       the sequence representing the route of all vehicle
-    *                     BEWARE,other vehicles are also present in this sequence; you must only work on the given vehicle
-    * @param setNodeValue the method that you are expected to use when assigning a value to a node
-    *                     BEWARE: you can only apply this method on nodes of the vehicle you are working on
-    * @param getNodeValue a method that you can use to get the value associated wit ha node
-    *                     BEWARE: you have zero info on when it can generated, so only query the value
-    *                     that you have just set through the method setNodeValue.
-    *                     also, you should only query the value of node in the route of vehicle "vehicle"
-    */
-  override def performPreCompute(vehicle: Int, routes: IntSequence, preComputedVals: Array[Int => Int]): Unit = ???
+                             ) extends GlobalConstraintDefinition[Array[TransfertFunction], Int](routes, v) with SeqNotificationTarget {
+  private val earlylines = timeWindows.earlylines
+  private val taskDurations = timeWindows.taskDurations
+  private val deadlines = timeWindows.deadlines.zipWithIndex.map(x => x._1 - taskDurations(x._2))
 
-  /**
-    * this method is called by the framework when the value of a vehicle must be computed.
-    *
-    * @param vehicle   the vehicle that we are focusing on
-    * @param segments  the segments that constitute the route.
-    *                  The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
-    * @param routes    the sequence representing the route of all vehicle
-    * @param nodeValue a function that you can use to get the pre-computed value associated with each node (if some has ben given)
-    *                  BEWARE: normally, you should never use this function, you only need to iterate through segments
-    *                  because it already contains the pre-computed values at the extremity of each segment
-    * @return the value associated with the vehicle
-    */
-  override def computeVehicleValue(vehicle: Int, segments: List[Segment[Int => Int]], routes: IntSequence, PreComputedVals: Array[Int => Int]): Int = ???
-
-  /**
-    * the framework calls this method to assign the value U to he output variable of your invariant.
-    * It has been dissociated from the method above because the framework memorizes the output value of the vehicle,
-    * and is able to restore old value without the need to re-compute them, so it only will call this assignVehicleValue method
-    *
-    * @param vehicle the vehicle number
-    * @param value   the value of the vehicle
-    */
-  override def assignVehicleValue(vehicle: Int, value: Int): Unit = ???
-
-  /**
-    *
-    * @param vehicle
-    * @param routes
-    * @return
-    */
-  override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Int = ???
-
-  override def outputVariables: Iterable[Variable] = ???
+  private val transfertFunctionOfNode: Array[TransfertFunction] = Array.tabulate(n)(
+    node =>
+      DefinedTransfertFunction(
+        earlylines(node),
+        deadlines(node),
+        earlylines(node) + taskDurations(node)))
 
   private def composeFunction (f1: TransfertFunction, f2: TransfertFunction, m: Int): TransfertFunction ={
+    if(f1.isEmpty)
+      return f1
+    else if(f2.isEmpty)
+      return f2
 
     val earliestArrivalTimeAt2 = f1.l + m
     val latestArrivalTimeAt2 = f1.d + f1.l - f1.e + m
@@ -121,24 +88,182 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
       }
 
     if(e3 > d3)
-      new TransfertFunction(Int.MaxValue,Int.MaxValue,Int.MaxValue)
+      EmptyTransfertFunction
     else
-      new TransfertFunction(e3, d3, l3)
+      DefinedTransfertFunction(e3, d3, l3)
   }
 
-  private class TransfertFunction (val e: Int, val d: Int, val l: Int){
-    require(d >= e && l >= e)
-    def apply(t: Int): Option[Int] ={
-      if(t <= e)
-        Some(l)
-      else if(t <= d)
-        Some(t + l - e)
-      else
-        None
-    }
-
-    override def toString: String = {
-      "e : " + e + "\n d : " + d + "\n l : " + l
+  private def segmentsInfo(segment: Segment[Array[TransfertFunction]]): (Int, Int, TransfertFunction) ={
+    segment match{
+      case seg: PreComputedSubSequence[Array[TransfertFunction]] =>
+        (seg.startNode, seg.endNode, seg.startNodeValue(seg.endNode))
+      case seg: FlippedPreComputedSubSequence[Array[TransfertFunction]] => (seg.startNode, seg.endNode, seg.startNodeValue(seg.endNode))
+      case seg: NewNode[Array[TransfertFunction]] => (seg.node, seg.node, transfertFunctionOfNode(seg.node))
     }
   }
+
+  /**
+    * tis method is called by the framework when a pre-computation must be performed.
+    * you are expected to assign a value of type T to each node of the vehicle "vehicle" through the method "setNodeValue"
+    *
+    * @param vehicle         the vehicle where pre-computation must be performed
+    * @param routes          the sequence representing the route of all vehicle
+    *                        BEWARE,other vehicles are also present in this sequence; you must only work on the given vehicle
+    * @param preComputedVals The array of precomputed values
+    */
+  override def performPreCompute(vehicle: Int, routes: IntSequence, preComputedVals: Array[Array[TransfertFunction]]): Unit = {
+    def updatePrevNodes(newNode: Int, prevNodes: List[Int]): Unit ={
+      //prevNodes is reversed
+      val lastNode = prevNodes.head
+      for(node <- prevNodes){
+        val fromTF = preComputedVals(node)(lastNode)
+        preComputedVals(node)(newNode) = composeFunction(
+          fromTF,
+          transfertFunctionOfNode(newNode),
+          travelTimeMatrix.getTravelDuration(lastNode, fromTF.l, newNode))
+      }
+    }
+
+    var continue = true
+    var vExplorer = routes.explorerAtAnyOccurrence(vehicle)
+    var exploredNodes: List[Int] = List()
+    while(continue){
+      vExplorer match {
+        case None => continue = false
+        case Some(elem) =>
+          if (elem.value < v && elem.value != vehicle){
+            continue = false
+          } else {
+            if(exploredNodes.nonEmpty)
+              updatePrevNodes(elem.value, exploredNodes)
+            if(preComputedVals(elem.value) == null)preComputedVals(elem.value) = Array.fill(n)(EmptyTransfertFunction)
+            preComputedVals(elem.value)(elem.value) = transfertFunctionOfNode(elem.value)
+            exploredNodes = elem.value :: exploredNodes
+          }
+          vExplorer = elem.next
+      }
+    }
+  }
+
+  /**
+    * this method is called by the framework when the value of a vehicle must be computed.
+    *
+    * @param vehicle         the vehicle that we are focusing on
+    * @param segments        the segments that constitute the route.
+    *                        The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
+    * @param routes          the sequence representing the route of all vehicle
+    * @param preComputedVals The array of precomputed values
+    * @return the value associated with the vehicle
+    */
+  override def computeVehicleValue(vehicle: Int, segments: List[Segment[Array[TransfertFunction]]], routes: IntSequence, preComputedVals: Array[Array[TransfertFunction]]): Int = {
+    def concatSegments(segments: List[Segment[Array[TransfertFunction]]], concatenateFunction: TransfertFunction, prevSegment: Segment[Array[TransfertFunction]]): TransfertFunction ={
+      if(segments.isEmpty)
+        return concatenateFunction
+
+      val lastSegmentInfo = segmentsInfo(prevSegment)
+      val currentSegmentInfo = segmentsInfo(segments.head)
+      val travelDurationBetweenSegments = travelTimeMatrix.getTravelDuration(lastSegmentInfo._2, concatenateFunction.l, currentSegmentInfo._1)
+      val newComposedFunction = composeFunction(concatenateFunction, currentSegmentInfo._3, travelDurationBetweenSegments)
+
+      if(newComposedFunction.isEmpty)
+        return newComposedFunction
+
+      concatSegments(segments.tail, newComposedFunction, segments.head)
+    }
+
+    val firstSegmentInfo = segmentsInfo(segments.head)
+    val transfertFunctionOfConcatenatedSegments =
+      concatSegments(segments.tail :+ NewNode[Array[TransfertFunction]](vehicle), firstSegmentInfo._3, segments.head)
+
+    if(transfertFunctionOfConcatenatedSegments.isEmpty) 1 else 0
+  }
+
+  /**
+    * the framework calls this method to assign the value U to he output variable of your invariant.
+    * It has been dissociated from the method above because the framework memorizes the output value of the vehicle,
+    * and is able to restore old value without the need to re-compute them, so it only will call this assignVehicleValue method
+    *
+    * @param vehicle the vehicle number
+    * @param value   the value of the vehicle
+    */
+  override def assignVehicleValue(vehicle: Int, value: Int): Unit = {
+    violations(vehicle) := value
+  }
+
+  /**
+    * this method is defined for verification purpose. It computes the value of the vehicle from scratch.
+    *
+    * @param vehicle the vehicle on which the value is computed
+    * @param routes  the sequence representing the route of all vehicle
+    * @return the value of the constraint for the given vehicle
+    */
+  override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Int = {
+    var arrivalTimeAtFromNode = timeWindows.earlylines(vehicle)
+    var leaveTimeAtFromNode = timeWindows.earlylines(vehicle)
+    var fromNode = vehicle
+    val explorerAtVehicleStart = routes.explorerAtAnyOccurrence(vehicle).head
+    var explorerAtCurrentNode = explorerAtVehicleStart.next
+    var violationFound = false
+
+      while(explorerAtCurrentNode.isDefined && explorerAtCurrentNode.get.value >= v && !violationFound){
+        val toNode = explorerAtCurrentNode.get.value
+        val travelDuration = travelTimeMatrix.getTravelDuration(fromNode, leaveTimeAtFromNode, toNode)
+        val arrivalTimeAtToNode = leaveTimeAtFromNode + travelDuration
+        val leaveTimeAtToNode = Math.max(timeWindows.earlylines(toNode), arrivalTimeAtToNode) + timeWindows.taskDurations(toNode)
+
+        // Check violation
+        if(leaveTimeAtToNode > timeWindows.deadlines(toNode))
+            violationFound = true
+
+//        encounteredNodes = encounteredNodes :+ toNode
+//        travelPerformed = travelPerformed :+ travelDuration
+
+        // Update values
+        fromNode = toNode
+        explorerAtCurrentNode = explorerAtCurrentNode.get.next
+        arrivalTimeAtFromNode = arrivalTimeAtToNode
+        leaveTimeAtFromNode = leaveTimeAtToNode
+    }
+
+    // Check travel back to depot
+    val travelBackToDepot = travelTimeMatrix.getTravelDuration(fromNode, leaveTimeAtFromNode, vehicle)
+    val arrivalTimeAtDepot = leaveTimeAtFromNode + travelBackToDepot
+    if(violationFound || arrivalTimeAtDepot >= timeWindows.deadlines(vehicle)) 1 else 0
+  }
+
+  override def outputVariables: Iterable[Variable] = {
+    violations
+  }
+}
+
+
+abstract class TransfertFunction (val e: Int, val d: Int, val l: Int){
+
+  def apply(t: Int): Option[Int]
+
+  def isEmpty: Boolean
+
+  override def toString: String = {
+    "e : " + e + "\n d : " + d + "\n l : " + l
+  }
+}
+
+case class DefinedTransfertFunction (override val e: Int, override val d: Int, override val l: Int) extends TransfertFunction(e,d,l){
+  require(d >= e && l >= e, "e : " + e + ", d : " + d + ", l : " + l)
+  override def apply(t: Int): Option[Int] = {
+    if(t <= e)
+      Some(l)
+    else if(t <= d)
+      Some(t + l - e)
+    else
+      None
+  }
+
+  override def isEmpty: Boolean = false
+}
+
+case object EmptyTransfertFunction extends TransfertFunction(1,-1,-1){
+  override def apply(t: Int): Option[Int] = None
+
+  override def isEmpty: Boolean = true
 }

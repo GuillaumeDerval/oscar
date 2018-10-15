@@ -408,11 +408,11 @@ abstract class PreComputeInvariant[T: Manifest, U:Manifest](routes: ChangingSeqV
   def preComputedToString():String = {
     var res = "["
     for (i <- 0 until preComputedValues.length - 2) {
-      if (preComputedValues(i) != 0){
+      if (preComputedValues(i) != null){
         res = res + "(" + i + " : " + preComputedValues(i).toString() + "), "
       }
     }
-    if (preComputedValues(preComputedValues.length -1) != 0){
+    if (preComputedValues(preComputedValues.length -1) != null){
       res = res + "(" + (preComputedValues.length - 1).toString() + " : " + preComputedValues(preComputedValues.length - 1).toString() + ")"
     }
     res = res + "]"

@@ -43,9 +43,9 @@ object TestComposeFunction extends App{
   }
 
   private def permutationMethod(): Unit ={
+
     val permutationValues = List(0,1,2,4,8,16,32)
     var permutations: Set[Array[Int]] = Set()
-
     def permute(permValues: List[Int], currentPermutation:  Array[Int] = Array.fill(permutationValues.size)(0)): Unit ={
       if(permValues.isEmpty)
         permutations = permutations + currentPermutation.clone()
@@ -56,7 +56,6 @@ object TestComposeFunction extends App{
         }
     }
     permute(permutationValues)
-
     for(permutation <- permutations if permutation.toSet.size == permutation.length){
       val it = permutation.toIterator
       val e1 = it.next()
@@ -76,8 +75,8 @@ object TestComposeFunction extends App{
 
   private def easyMethodWithEqualities() {
     val n = 10
-    val timeMatrix = Array.tabulate(n)(x => Array.tabulate(n)(y => 10))
 
+    val timeMatrix = Array.tabulate(n)(x => Array.tabulate(n)(y => 10))
     val earlylines = Array.tabulate(n)(x => 100 + 20 * x)
     val deadlines = Array.tabulate(n)(x => 200 + 20 * x)
     val taskDurations = Array.tabulate(n)(x => 0)
@@ -88,6 +87,25 @@ object TestComposeFunction extends App{
       for (y <- 0 until n) {
         test(transfertFunctions(y), transfertFunctions(x), timeMatrix(y)(x), (0 until 100).toArray.map(_*5))
       }
+    }
+  }
+
+  private def customTest() {
+    val earlylines = Array(0, 40485, 69830, 70713, 78077, 100380, 60968, 41021, 64886, 39761, 78881, 100969, 41544, 61506, 65473, 70320, 71285)
+    val taskDurations = Array(0, 105, 84, 121, 263, 255, 101, 256, 82, 254, 65, 83, 234, 16, 266, 209, 117)
+    val deadlines = Array(282484, 41404, 70962, 71537, 79745, 101518, 61593, 42166, 65559, 40968, 79876, 102357, 41834, 61867, 66859, 71481, 72243).
+      zipWithIndex.map(x => x._1 - taskDurations(x._2))
+    val timeMatrix = Array(
+      Array.fill(16)(153), Array.fill(16)(470), Array.fill(16)(663), Array.fill(16)(267),
+      Array.fill(16)(264), Array.fill(16)(437), Array.fill(16)(199), Array.fill(16)(505),
+      Array.fill(16)(461), Array.fill(16)(189), Array.fill(16)(407), Array.fill(16)(631),
+      Array.fill(16)(227), Array.fill(16)(541), Array.fill(16)(211), Array.fill(16)(334), Array.fill(16)(178))
+
+    val n = earlylines.length
+    val transfertFunctions = Array.tabulate(n)(x => new TransfertFunction(earlylines(x),deadlines(x), earlylines(x) + taskDurations(x)))
+
+    for (x <- 0 until n-1) {
+      test(transfertFunctions(x), transfertFunctions(x+1), timeMatrix(x)(x+1), (0 until deadlines.max*2/100).toArray.map(_*100))
     }
   }
 
@@ -127,7 +145,7 @@ object TestComposeFunction extends App{
       "\ne3 : " + e3 + ", d3 : " + d3 +", l3 : " + l3 + ", m : " + travelDuration)
   }
 
-  easyMethodWithEqualities()
+  permutationMethod()
 }
 
 
