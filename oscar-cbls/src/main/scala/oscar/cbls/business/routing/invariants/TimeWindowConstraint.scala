@@ -117,8 +117,8 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
         latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2) match{
         case (true,true,true,true) =>
           (f1.d, f1.d, f2.l)                                    // e3 == d1 because latest arrival time at 2 is lower than earliest starting time at 2
-                                                                // so it doesn't matter when you arrive at 1 the resulting leaving time at 2 will be l2
-                                                                // => e3 == d1 (the formula says if (t <= e) => l
+        // so it doesn't matter when you arrive at 1 the resulting leaving time at 2 will be l2
+        // => e3 == d1 (the formula says if (t <= e) => l
         case (true,true,false,true) =>
           (f2.e - f1.l - m + f1.e, f1.d, f2.l)
         case (false,true,false,true) =>
@@ -205,26 +205,28 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     * @return the value associated with the vehicle
     */
   override def computeVehicleValue(vehicle: Int, segments: List[Segment[Array[TransfertFunction]]], routes: IntSequence, preComputedVals: Array[Array[TransfertFunction]]): Boolean = {
-    def concatSegments(segments: List[Segment[Array[TransfertFunction]]], concatenateFunction: TransfertFunction, prevSegment: Segment[Array[TransfertFunction]]): TransfertFunction ={
-      if(segments.isEmpty)
-        return concatenateFunction
 
-      val lastSegmentInfo = segmentsInfo(prevSegment)
-      val currentSegmentInfo = segmentsInfo(segments.head)
-      val travelDurationBetweenSegments = travelTimeMatrix(lastSegmentInfo._2)(currentSegmentInfo._1)
-      val newComposedFunction = composeFunction(concatenateFunction, currentSegmentInfo._3, travelDurationBetweenSegments)
-
-      if(newComposedFunction.isEmpty)
-        return newComposedFunction
-
-      concatSegments(segments.tail, newComposedFunction, segments.head)
+    /**
+      * @param segments The list of segment
+      * @param prevLeavingTime The leave time at previous segment (0 if first one)
+      * @return The leave time after going through all the segments
+      */
+    def arrivalAtDepot(segments: List[Segment[Array[TransfertFunction]]], previousSegmentEnd: Option[Int] = None, prevLeavingTime: Int = 0): Option[Int] ={
+      val segment = segments.head
+      val (segmentStart, segmentEnd, transfertFunction) = segmentsInfo(segment)
+      val arrivalTimeAtSegment = prevLeavingTime + travelTimeMatrix(previousSegmentEnd.getOrElse(vehicle))(segmentStart)
+      val leaveTimeAtSegment = transfertFunction(arrivalTimeAtSegment)
+      if(leaveTimeAtSegment.isDefined) {
+        if (segments.tail.nonEmpty)
+          arrivalAtDepot(segments.tail, Some(segmentEnd), leaveTimeAtSegment.get)
+        else
+          Some(leaveTimeAtSegment.get + travelTimeMatrix(segmentEnd)(vehicle))
+      }
+      else None
     }
 
-    val firstSegmentInfo = segmentsInfo(segments.head)
-    val transfertFunctionOfConcatenatedSegments =
-      concatSegments(segments.tail :+ NewNode[Array[TransfertFunction]](vehicle), firstSegmentInfo._3, segments.head)
-
-    transfertFunctionOfConcatenatedSegments.isEmpty
+    val arrivalTimeAtDepot = arrivalAtDepot(segments)
+    arrivalTimeAtDepot.isDefined && arrivalTimeAtDepot.get <= deadlines(vehicle)
   }
 
   /**
@@ -254,24 +256,24 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     var explorerAtCurrentNode = explorerAtVehicleStart.next
     var violationFound = false
 
-      while(explorerAtCurrentNode.isDefined && explorerAtCurrentNode.get.value >= v && !violationFound){
-        val toNode = explorerAtCurrentNode.get.value
-        val travelDuration = travelTimeMatrix(fromNode)(toNode)
-        val arrivalTimeAtToNode = leaveTimeAtFromNode + travelDuration
-        val leaveTimeAtToNode = Math.max(earlylines(toNode), arrivalTimeAtToNode) + earliestLeaveTime(toNode) - earlylines(toNode)
+    while(explorerAtCurrentNode.isDefined && explorerAtCurrentNode.get.value >= v && !violationFound){
+      val toNode = explorerAtCurrentNode.get.value
+      val travelDuration = travelTimeMatrix(fromNode)(toNode)
+      val arrivalTimeAtToNode = leaveTimeAtFromNode + travelDuration
+      val leaveTimeAtToNode = Math.max(earlylines(toNode), arrivalTimeAtToNode) + earliestLeaveTime(toNode) - earlylines(toNode)
 
-        // Check violation
-        if(leaveTimeAtToNode > latestLeaveTime(toNode))
-            violationFound = true
+      // Check violation
+      if(leaveTimeAtToNode > latestLeaveTime(toNode))
+        violationFound = true
 
-//        encounteredNodes = encounteredNodes :+ toNode
-//        travelPerformed = travelPerformed :+ travelDuration
+      //        encounteredNodes = encounteredNodes :+ toNode
+      //        travelPerformed = travelPerformed :+ travelDuration
 
-        // Update values
-        fromNode = toNode
-        explorerAtCurrentNode = explorerAtCurrentNode.get.next
-        arrivalTimeAtFromNode = arrivalTimeAtToNode
-        leaveTimeAtFromNode = leaveTimeAtToNode
+      // Update values
+      fromNode = toNode
+      explorerAtCurrentNode = explorerAtCurrentNode.get.next
+      arrivalTimeAtFromNode = arrivalTimeAtToNode
+      leaveTimeAtFromNode = leaveTimeAtToNode
     }
 
     // Check travel back to depot
