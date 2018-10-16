@@ -1,9 +1,7 @@
 package oscar.cbls.business.routing.invariants
 
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.routing.TTFMatrix
 import oscar.cbls.business.routing.invariants.group._
-import oscar.cbls.business.routing.model.extensions.TimeWindow
 import oscar.cbls.core.computation._
 
 /*******************************************************************************
@@ -22,32 +20,81 @@ import oscar.cbls.core.computation._
   ******************************************************************************/
 
 object TimeWindowConstraint {
+
+  /**
+    * This method instantiate a TimeWindow constraint given the following input
+    * @param routes The route of the problem (ChangingSeqValue created in the VRP class)
+    * @param n The number of nodes of the problem (including vehicle)
+    * @param v The number of vehicles of the problem
+    * @param earlylines An array representing the earliest leave time at a node (or vehicle's depot)
+    * @param deadlines An array representing the latest arrival time at a node (or vehicle's depot)
+    * @param travelTimeMatrix A matrix representing the different travel time between the nodes
+    * @param violations An array representing the eventual violation of the vehicle
+    * @return a time window constraint
+    */
   def apply(routes: ChangingSeqValue,
             n: Int,
             v: Int,
-            timeWindows: TimeWindow,
-            travelTimeMatrix: TTFMatrix,
-            violations: Array[CBLSIntVar]): TimeWindowConstraint =
-    new TimeWindowConstraint(routes: ChangingSeqValue, n, v, timeWindows, travelTimeMatrix, violations)
+            earlylines: Array[Int],
+            deadlines: Array[Int],
+            travelTimeMatrix: Array[Array[Int]],
+            violations: Array[CBLSIntVar]): TimeWindowConstraint ={
+
+    new TimeWindowConstraint(routes: ChangingSeqValue, n, v,
+      earlylines,
+      deadlines,
+      earlylines,
+      deadlines,
+      travelTimeMatrix, violations)
+  }
+
+  /**
+    * This method instantiate a TimeWindow constraint given the following input.
+    * @param routes The route of the problem (ChangingSeqValue created in the VRP class)
+    * @param n The number of nodes of the problem (including vehicle)
+    * @param v The number of vehicles of the problem
+    * @param earlylines An array (size n) representing the earliest leave time at a node (or vehicle's depot)
+    * @param deadlines An array (size n) representing the latest arrival time at a node (or vehicle's depot)
+    * @param taskDurations An array (size n) representing the task duration at a node (or vehicle's depot)
+    * @param travelTimeMatrix A matrix representing the different travel time between the nodes
+    * @param violations An array representing the eventual violation of the vehicle
+    * @return a time window constraint
+    */
+  def apply(routes: ChangingSeqValue,
+            n: Int,
+            v: Int,
+            earlylines: Array[Int],
+            deadlines: Array[Int],
+            taskDurations: Array[Int],
+            travelTimeMatrix: Array[Array[Int]],
+            violations: Array[CBLSIntVar]): TimeWindowConstraint ={
+
+    new TimeWindowConstraint(routes: ChangingSeqValue, n, v,
+      earlylines,
+      deadlines,
+      (earlylines, taskDurations).zipped.map(_ + _),
+      (deadlines, taskDurations).zipped.map(_ + _),
+      travelTimeMatrix, violations)
+  }
 }
 
 class TimeWindowConstraint (routes: ChangingSeqValue,
-                              n: Int,
-                              v: Int,
-                              timeWindows: TimeWindow,
-                              travelTimeMatrix: TTFMatrix,
-                              violations: Array[CBLSIntVar]
-                             ) extends GlobalConstraintDefinition[Array[TransfertFunction], Int](routes, v) with SeqNotificationTarget {
-  private val earlylines = timeWindows.earlylines
-  private val taskDurations = timeWindows.taskDurations
-  private val deadlines = timeWindows.deadlines.zipWithIndex.map(x => x._1 - taskDurations(x._2))
+                            n: Int,
+                            v: Int,
+                            earlylines: Array[Int],
+                            deadlines: Array[Int],
+                            earliestLeaveTime: Array[Int],
+                            latestLeaveTime: Array[Int],
+                            travelTimeMatrix: Array[Array[Int]],
+                            violations: Array[CBLSIntVar]
+                           ) extends GlobalConstraintDefinition[Array[TransfertFunction], Boolean](routes, v) with SeqNotificationTarget {
 
   private val transfertFunctionOfNode: Array[TransfertFunction] = Array.tabulate(n)(
     node =>
       DefinedTransfertFunction(
         earlylines(node),
         deadlines(node),
-        earlylines(node) + taskDurations(node)))
+        earliestLeaveTime(node)))
 
   private def composeFunction (f1: TransfertFunction, f2: TransfertFunction, m: Int): TransfertFunction ={
     if(f1.isEmpty)
@@ -69,7 +116,9 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
         latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
         latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2) match{
         case (true,true,true,true) =>
-          (f1.d, f1.d, f2.l)
+          (f1.d, f1.d, f2.l)                                    // e3 == d1 because latest arrival time at 2 is lower than earliest starting time at 2
+                                                                // so it doesn't matter when you arrive at 1 the resulting leaving time at 2 will be l2
+                                                                // => e3 == d1 (the formula says if (t <= e) => l
         case (true,true,false,true) =>
           (f2.e - f1.l - m + f1.e, f1.d, f2.l)
         case (false,true,false,true) =>
@@ -120,7 +169,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
         preComputedVals(node)(newNode) = composeFunction(
           fromTF,
           transfertFunctionOfNode(newNode),
-          travelTimeMatrix.getTravelDuration(lastNode, fromTF.l, newNode))
+          travelTimeMatrix(lastNode)(newNode))
       }
     }
 
@@ -155,14 +204,14 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     * @param preComputedVals The array of precomputed values
     * @return the value associated with the vehicle
     */
-  override def computeVehicleValue(vehicle: Int, segments: List[Segment[Array[TransfertFunction]]], routes: IntSequence, preComputedVals: Array[Array[TransfertFunction]]): Int = {
+  override def computeVehicleValue(vehicle: Int, segments: List[Segment[Array[TransfertFunction]]], routes: IntSequence, preComputedVals: Array[Array[TransfertFunction]]): Boolean = {
     def concatSegments(segments: List[Segment[Array[TransfertFunction]]], concatenateFunction: TransfertFunction, prevSegment: Segment[Array[TransfertFunction]]): TransfertFunction ={
       if(segments.isEmpty)
         return concatenateFunction
 
       val lastSegmentInfo = segmentsInfo(prevSegment)
       val currentSegmentInfo = segmentsInfo(segments.head)
-      val travelDurationBetweenSegments = travelTimeMatrix.getTravelDuration(lastSegmentInfo._2, concatenateFunction.l, currentSegmentInfo._1)
+      val travelDurationBetweenSegments = travelTimeMatrix(lastSegmentInfo._2)(currentSegmentInfo._1)
       val newComposedFunction = composeFunction(concatenateFunction, currentSegmentInfo._3, travelDurationBetweenSegments)
 
       if(newComposedFunction.isEmpty)
@@ -175,7 +224,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     val transfertFunctionOfConcatenatedSegments =
       concatSegments(segments.tail :+ NewNode[Array[TransfertFunction]](vehicle), firstSegmentInfo._3, segments.head)
 
-    if(transfertFunctionOfConcatenatedSegments.isEmpty) 1 else 0
+    transfertFunctionOfConcatenatedSegments.isEmpty
   }
 
   /**
@@ -186,8 +235,8 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     * @param vehicle the vehicle number
     * @param value   the value of the vehicle
     */
-  override def assignVehicleValue(vehicle: Int, value: Int): Unit = {
-    violations(vehicle) := value
+  override def assignVehicleValue(vehicle: Int, value: Boolean): Unit = {
+    if(value) violations(vehicle) := 1 else violations(vehicle) := 0
   }
 
   /**
@@ -197,9 +246,9 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     * @param routes  the sequence representing the route of all vehicle
     * @return the value of the constraint for the given vehicle
     */
-  override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Int = {
-    var arrivalTimeAtFromNode = timeWindows.earlylines(vehicle)
-    var leaveTimeAtFromNode = timeWindows.earlylines(vehicle)
+  override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Boolean = {
+    var arrivalTimeAtFromNode = earlylines(vehicle)
+    var leaveTimeAtFromNode = earliestLeaveTime(vehicle)
     var fromNode = vehicle
     val explorerAtVehicleStart = routes.explorerAtAnyOccurrence(vehicle).head
     var explorerAtCurrentNode = explorerAtVehicleStart.next
@@ -207,12 +256,12 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
 
       while(explorerAtCurrentNode.isDefined && explorerAtCurrentNode.get.value >= v && !violationFound){
         val toNode = explorerAtCurrentNode.get.value
-        val travelDuration = travelTimeMatrix.getTravelDuration(fromNode, leaveTimeAtFromNode, toNode)
+        val travelDuration = travelTimeMatrix(fromNode)(toNode)
         val arrivalTimeAtToNode = leaveTimeAtFromNode + travelDuration
-        val leaveTimeAtToNode = Math.max(timeWindows.earlylines(toNode), arrivalTimeAtToNode) + timeWindows.taskDurations(toNode)
+        val leaveTimeAtToNode = Math.max(earlylines(toNode), arrivalTimeAtToNode) + earliestLeaveTime(toNode) - earlylines(toNode)
 
         // Check violation
-        if(leaveTimeAtToNode > timeWindows.deadlines(toNode))
+        if(leaveTimeAtToNode > latestLeaveTime(toNode))
             violationFound = true
 
 //        encounteredNodes = encounteredNodes :+ toNode
@@ -226,9 +275,9 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     }
 
     // Check travel back to depot
-    val travelBackToDepot = travelTimeMatrix.getTravelDuration(fromNode, leaveTimeAtFromNode, vehicle)
+    val travelBackToDepot = travelTimeMatrix(fromNode)(vehicle)
     val arrivalTimeAtDepot = leaveTimeAtFromNode + travelBackToDepot
-    if(violationFound || arrivalTimeAtDepot >= timeWindows.deadlines(vehicle)) 1 else 0
+    violationFound || arrivalTimeAtDepot >= latestLeaveTime(vehicle)
   }
 
   override def outputVariables: Iterable[Variable] = {
