@@ -167,11 +167,11 @@ object RoutingMatrixGenerator {
     * @param chains The chains of the problem
     * @return An updated chains list (with lonely nodes)
     */
-  private def addLonelyNodesToChains(n: Int, chains: List[List[Int]]): List[List[Int]]={
-    val lonelyNodes = Range(0,n).toList.diff(chains.flatten)
+  private def addLonelyNodesToChains(n: Int, v:Int, chains: List[List[Int]]): List[List[Int]]={
+    val lonelyNodes = Range(v,n).toList.diff(chains.flatten)
     var precedencesWithLonelyNodes = chains
     for(lonelyNode <- lonelyNodes)
-      lonelyNode :: precedencesWithLonelyNodes
+      precedencesWithLonelyNodes = List(lonelyNode) :: precedencesWithLonelyNodes
     precedencesWithLonelyNodes
   }
 
@@ -205,7 +205,7 @@ object RoutingMatrixGenerator {
     def randomExtraTravelTime = random.nextInt(maxExtraTravelTimeInSec)
     def randomTaskDuration = random.nextInt(maxTaskDurationInSec)
 
-    val precedencesWithLonelyNodes = addLonelyNodesToChains(n, precedences)
+    val precedencesWithLonelyNodes = addLonelyNodesToChains(n, v, precedences)
     val endOfLastActionOfVehicles = Array.fill(v)(0)
     val lastNodeVisitedOfVehicles = Array.tabulate(v)(x => x)
     val extraTravelTimeOfNodes = Array.tabulate(n)(node => if(node < v)0 else randomExtraTravelTime)
