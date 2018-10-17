@@ -1,6 +1,6 @@
 package oscar.cbls.business.routing.invariants
 
-import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.business.routing.invariants.group._
 import oscar.cbls.core.computation._
 
@@ -87,16 +87,16 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
                             latestLeaveTime: Array[Int],
                             travelTimeMatrix: Array[Array[Int]],
                             violations: Array[CBLSIntVar]
-                           ) extends GlobalConstraintDefinition[Array[TransfertFunction], Boolean](routes, v) with SeqNotificationTarget {
+                           ) extends GlobalConstraintDefinition[Array[TransferFunction], Boolean](routes, v) with SeqNotificationTarget {
 
-  private val transfertFunctionOfNode: Array[TransfertFunction] = Array.tabulate(n)(
+  private val transferFunctionOfNode: Array[TransferFunction] = Array.tabulate(n)(
     node =>
-      DefinedTransfertFunction(
+      DefinedTransferFunction(
         earlylines(node),
         deadlines(node),
         earliestLeaveTime(node)))
 
-  private def composeFunction (f1: TransfertFunction, f2: TransfertFunction, m: Int): TransfertFunction ={
+  private def composeFunction (f1: TransferFunction, f2: TransferFunction, m: Int): TransferFunction ={
     if(f1.isEmpty)
       return f1
     else if(f2.isEmpty)
@@ -137,17 +137,17 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
       }
 
     if(e3 > d3)
-      EmptyTransfertFunction
+      EmptyTransferFunction$
     else
-      DefinedTransfertFunction(e3, d3, l3)
+      DefinedTransferFunction(e3, d3, l3)
   }
 
-  private def segmentsInfo(segment: Segment[Array[TransfertFunction]]): (Int, Int, TransfertFunction) ={
+  private def segmentsInfo(segment: Segment[Array[TransferFunction]]): (Int, Int, TransferFunction) ={
     segment match{
-      case seg: PreComputedSubSequence[Array[TransfertFunction]] =>
+      case seg: PreComputedSubSequence[Array[TransferFunction]] =>
         (seg.startNode, seg.endNode, seg.startNodeValue(seg.endNode))
-      case seg: FlippedPreComputedSubSequence[Array[TransfertFunction]] => (seg.startNode, seg.endNode, seg.startNodeValue(seg.endNode))
-      case seg: NewNode[Array[TransfertFunction]] => (seg.node, seg.node, transfertFunctionOfNode(seg.node))
+      case seg: FlippedPreComputedSubSequence[Array[TransferFunction]] => (seg.startNode, seg.endNode, seg.startNodeValue(seg.endNode))
+      case seg: NewNode[Array[TransferFunction]] => (seg.node, seg.node, transferFunctionOfNode(seg.node))
     }
   }
 
@@ -160,22 +160,32 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     *                        BEWARE,other vehicles are also present in this sequence; you must only work on the given vehicle
     * @param preComputedVals The array of precomputed values
     */
-  override def performPreCompute(vehicle: Int, routes: IntSequence, preComputedVals: Array[Array[TransfertFunction]]): Unit = {
-    def updatePrevNodes(newNode: Int, prevNodes: List[Int]): Unit ={
-      //prevNodes is reversed
-      val lastNode = prevNodes.head
-      for(node <- prevNodes){
-        val fromTF = preComputedVals(node)(lastNode)
-        preComputedVals(node)(newNode) = composeFunction(
-          fromTF,
-          transfertFunctionOfNode(newNode),
-          travelTimeMatrix(lastNode)(newNode))
+  override def performPreCompute(vehicle: Int, routes: IntSequence, preComputedVals: Array[Array[TransferFunction]]): Unit = {
+    def performPreComputeOnNode(node: Int, explorer: Option[IntSequenceExplorer]): Unit ={
+      var curExplorer = explorer
+      var lastTF = preComputedVals(node)(node)
+      var prevNode = node
+      while(curExplorer.nonEmpty && curExplorer.get.value >= v && !lastTF.isEmpty){
+        val curNode = curExplorer.get.value
+        val newTF = composeFunction(
+          lastTF,
+          transferFunctionOfNode(curNode),
+          travelTimeMatrix(prevNode)(curNode))
+        preComputedVals(node)(curNode) = newTF
+        prevNode = curNode
+        lastTF = newTF
+        curExplorer = curExplorer.get.next
+      }
+      //Either the explorer current value is < v or the explorer is empty or the transfer function is empty
+      // So this while statement will be executed only if the transfer function is empty
+      while(curExplorer.nonEmpty && curExplorer.get.value >= v){
+        preComputedVals(node)(curExplorer.get.value) = EmptyTransferFunction$
+        curExplorer = curExplorer.get.next
       }
     }
 
     var continue = true
     var vExplorer = routes.explorerAtAnyOccurrence(vehicle)
-    var exploredNodes: List[Int] = List()
     while(continue){
       vExplorer match {
         case None => continue = false
@@ -183,11 +193,9 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
           if (elem.value < v && elem.value != vehicle){
             continue = false
           } else {
-            if(exploredNodes.nonEmpty)
-              updatePrevNodes(elem.value, exploredNodes)
-            if(preComputedVals(elem.value) == null)preComputedVals(elem.value) = Array.fill(n)(EmptyTransfertFunction)
-            preComputedVals(elem.value)(elem.value) = transfertFunctionOfNode(elem.value)
-            exploredNodes = elem.value :: exploredNodes
+            if(preComputedVals(elem.value) == null)preComputedVals(elem.value) = Array.fill(n)(EmptyTransferFunction$)
+            preComputedVals(elem.value)(elem.value) = transferFunctionOfNode(elem.value)
+            performPreComputeOnNode(elem.value, elem.next)
           }
           vExplorer = elem.next
       }
@@ -204,18 +212,18 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     * @param preComputedVals The array of precomputed values
     * @return the value associated with the vehicle
     */
-  override def computeVehicleValue(vehicle: Int, segments: List[Segment[Array[TransfertFunction]]], routes: IntSequence, preComputedVals: Array[Array[TransfertFunction]]): Boolean = {
+  override def computeVehicleValue(vehicle: Int, segments: List[Segment[Array[TransferFunction]]], routes: IntSequence, preComputedVals: Array[Array[TransferFunction]]): Boolean = {
 
     /**
       * @param segments The list of segment
       * @param prevLeavingTime The leave time at previous segment (0 if first one)
       * @return The leave time after going through all the segments
       */
-    def arrivalAtDepot(segments: List[Segment[Array[TransfertFunction]]], previousSegmentEnd: Option[Int] = None, prevLeavingTime: Int = 0): Option[Int] ={
+    def arrivalAtDepot(segments: List[Segment[Array[TransferFunction]]], previousSegmentEnd: Option[Int] = None, prevLeavingTime: Int = 0): Option[Int] ={
       val segment = segments.head
-      val (segmentStart, segmentEnd, transfertFunction) = segmentsInfo(segment)
+      val (segmentStart, segmentEnd, transferFunction) = segmentsInfo(segment)
       val arrivalTimeAtSegment = prevLeavingTime + travelTimeMatrix(previousSegmentEnd.getOrElse(vehicle))(segmentStart)
-      val leaveTimeAtSegment = transfertFunction(arrivalTimeAtSegment)
+      val leaveTimeAtSegment = transferFunction(arrivalTimeAtSegment)
       if(leaveTimeAtSegment.isDefined) {
         if (segments.tail.nonEmpty)
           arrivalAtDepot(segments.tail, Some(segmentEnd), leaveTimeAtSegment.get)
@@ -226,7 +234,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     }
 
     val arrivalTimeAtDepot = arrivalAtDepot(segments)
-    arrivalTimeAtDepot.isDefined && arrivalTimeAtDepot.get <= deadlines(vehicle)
+    arrivalTimeAtDepot.isEmpty || arrivalTimeAtDepot.get > deadlines(vehicle)
   }
 
   /**
@@ -288,7 +296,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
 }
 
 
-abstract class TransfertFunction (val e: Int, val d: Int, val l: Int){
+abstract class TransferFunction(val e: Int, val d: Int, val l: Int){
 
   def apply(t: Int): Option[Int]
 
@@ -299,7 +307,7 @@ abstract class TransfertFunction (val e: Int, val d: Int, val l: Int){
   }
 }
 
-case class DefinedTransfertFunction (override val e: Int, override val d: Int, override val l: Int) extends TransfertFunction(e,d,l){
+case class DefinedTransferFunction(override val e: Int, override val d: Int, override val l: Int) extends TransferFunction(e,d,l){
   require(d >= e && l >= e, "e : " + e + ", d : " + d + ", l : " + l)
   override def apply(t: Int): Option[Int] = {
     if(t <= e)
@@ -313,7 +321,7 @@ case class DefinedTransfertFunction (override val e: Int, override val d: Int, o
   override def isEmpty: Boolean = false
 }
 
-case object EmptyTransfertFunction extends TransfertFunction(1,-1,-1){
+case object EmptyTransferFunction$ extends TransferFunction(1,-1,-1){
   override def apply(t: Int): Option[Int] = None
 
   override def isEmpty: Boolean = true
