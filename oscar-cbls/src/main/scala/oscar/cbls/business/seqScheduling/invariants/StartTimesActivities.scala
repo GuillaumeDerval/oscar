@@ -3,26 +3,28 @@ package oscar.cbls.business.seqScheduling.invariants
 import oscar.cbls._
 import oscar.cbls.core._
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.seqScheduling.model.SchedulingModel__A
+import oscar.cbls.business.seqScheduling.model._
 
 object StartTimesActivities {
   def apply(priorityActivitiesList: ChangingSeqValue,
-            schedulingModel: SchedulingModel__A): (Array[CBLSIntVar], SetupTimes) = {
+            schedulingModel: SchedulingModel): (CBLSIntVar, Array[CBLSIntVar], SetupTimes) = {
     val model = priorityActivitiesList.model
+    val makeSpan = CBLSIntVar(model, 0, name="Schedule Makespan")
     val startTimes: Array[CBLSIntVar] = Array.tabulate(schedulingModel.nbActivities)(node =>  CBLSIntVar(model, 0, name=s"Start Time of Activity $node"))
     val setupTimes = new SetupTimes
 
-    new StartTimesActivities(priorityActivitiesList, schedulingModel, startTimes, setupTimes)
+    new StartTimesActivities(priorityActivitiesList, schedulingModel, makeSpan, startTimes, setupTimes)
 
-    (startTimes, setupTimes)
+    (makeSpan, startTimes, setupTimes)
   }
 }
 
 class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
-                           schedulingModel: SchedulingModel__A,
+                           schedulingModel: SchedulingModel,
+                           makeSpan: CBLSIntVar,
                            startTimes: Array[CBLSIntVar],
                            setupTimes: SetupTimes
-                          ) extends Invariant with SeqNotificationTarget{
+                          ) extends Invariant with SeqNotificationTarget {
 
   // Invariant Initialization
   registerStaticAndDynamicDependency(priorityActivitiesList)
@@ -35,6 +37,7 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
 
   def computeAllFromScratch(priorityList: IntSequence): Unit = {
     // Initialization
+    makeSpan := 0
     startTimes.foreach { stVar => stVar := 0}
     setupTimes.reset()
     val resourceFlowStates: Array[ResourceFlowState] = Array.tabulate(schedulingModel.nbResources) { i =>
@@ -72,13 +75,18 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
                                              .setupTimeModes(lastModeRes)(newModeRes)
                                              .get
           maxStartTimeAvailableResActI = math.max(maxStartTimeAvailableResActI,
-            lastEndTime+setupTimeMode)
+            lastEndTime + setupTimeMode)
           // a new setup activity must be added
-          setupTimes.addSetupTime(lastModeRes, newModeRes, setupTimeMode)
+          setupTimes.addSetupTime(SetupTimeData(resInd, lastModeRes, newModeRes, lastEndTime, setupTimeMode))
         }
       }
-      // now we can update the start time for the activity
-      startTimes(indAct) := math.max(maxEndTimePrecsActI, maxStartTimeAvailableResActI)
+      // now we can update the start time for the activity and the
+      val startTimeAct = math.max(maxEndTimePrecsActI, maxStartTimeAvailableResActI)
+      startTimes(indAct) := startTimeAct
+      val endTimeAct = startTimeAct + schedulingModel.activities(indAct).duration
+      if (endTimeAct > makeSpan.value) {
+        makeSpan := endTimeAct
+      }
       // update map of resource flows for all resources. It requires another
       // loop on the resources
       for {resInd <- resIndexesActI} {
@@ -132,23 +140,29 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
 }
 
 /**
+  * This case class represents a setup time
+  */
+case class SetupTimeData(resourceIndex: Int, modeFromInd: Int, modeToInd: Int, startTime: Int, duration: Int)
+
+/**
   * This is a container class for setup times
   */
 class SetupTimes {
-  var setupTimesList: List[(Int, Int, Int)] = List()
+  var setupTimesList: List[SetupTimeData] = List()
 
   def reset(): Unit = {
     setupTimesList = List()
   }
 
-  def addSetupTime(m0: Int, m1: Int, time: Int): Unit = {
-    setupTimesList ::= (m0, m1, time)
+  def addSetupTime(st: SetupTimeData): Unit = {
+    setupTimesList :+= st
   }
 
   override def toString: String = {
     val stringBuilder = new StringBuilder
+    stringBuilder.append("SetupTimes: \n")
     for {st <- setupTimesList} {
-      stringBuilder.append(s"Setup Time: ${st._1} -> ${st._2} = ${st._3}")
+      stringBuilder.append(s"* $st \n")
     }
     stringBuilder.toString
   }

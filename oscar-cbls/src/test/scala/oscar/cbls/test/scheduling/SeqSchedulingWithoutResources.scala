@@ -3,6 +3,7 @@ package oscar.cbls.test.scheduling
 import oscar.cbls.business.seqScheduling.model._
 
 object SeqSchedulingWithoutResources {
+  /*
   // Scheduling model
   val schModel = new SchedulingModel(6)
   // Activities
@@ -39,4 +40,5 @@ object SeqSchedulingWithoutResources {
     println(s"Setup Times = $setupTimes")
     println("Done.")
   }
+  */
 }

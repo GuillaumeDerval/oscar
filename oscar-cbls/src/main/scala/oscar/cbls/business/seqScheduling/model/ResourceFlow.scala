@@ -1,6 +1,7 @@
 package oscar.cbls.business.seqScheduling.model
 
 import oscar.cbls.algo.accList.AccList
+import oscar.cbls.core.computation.IntValue
 
 /**
   * Abstract class representing the flow of a resource
@@ -27,19 +28,19 @@ case class SourceFlow(quantity: Int) extends ResourceFlow {
 /**
   * This class represents the flow of a resource through an activity
   *
-  * @param activity the activity from which the resource flows
-  * @param activityIndex the index of this activity in the model
-  * @param startTime the start time of the flow
-  * @param quantity the quantity of the resource
+  * @param activityIndex the index of the activity from which the resource flows
+  * @param startTime the start time of the activity in the flow
+  * @param duration the duration of the activity in the flow
+  * @param quantity the quantity of the resource in the flow
   */
-case class ActivityFlow(activity: Activity,
-                        activityIndex: Int,
+case class ActivityFlow(activityIndex: Int,
                         startTime: Int,
+                        duration: Int,
                         quantity: Int) extends ResourceFlow {
-  val endTime: Int = startTime + activity.duration
+  val endTime: Int = startTime + duration
 
   override def changedQuantity(newQty: Int): ResourceFlow =
-    ActivityFlow(activity, activityIndex, startTime, newQty)
+    ActivityFlow(activityIndex, startTime, duration, newQty)
 }
 
 /**
@@ -66,18 +67,18 @@ object ResourceFlow {
   /**
     * Adds the resource flow for an activity to the resource flow list
     *
-    * @param activity the activity to add in the flow list
-    * @param indexAct the index of the activity in the priority list
-    * @param qtyAct the quantity consumed by the activity
+    * @param indexAct the index of the activity to add in the flow list
+    * @param qtyAct the quantity of resource consumed by the activity
+    * @param durAct the duration of the activities
     * @param startActs the start times of all activities
     * @param resourceFlows the resource flow list
     * @return a new resource flow list where the pair (indAct, qtyAct) has been
     *         inserted. The list is sorted by (startTime+duration)
     */
-  def addResourceFlowToList(activity: Activity,
-                            indexAct: Int,
+  def addResourceFlowToList(indexAct: Int,
                             qtyAct: Int,
-                            startActs: Array[Int],
+                            durAct: Int,
+                            startActs: Array[IntValue],
                             resourceFlows: List[ResourceFlow]): List[ResourceFlow] = {
     // Auxiliary Function
     def addResourceFlowToList(resFlow: ResourceFlow,
@@ -94,7 +95,7 @@ object ResourceFlow {
       }
     }
     /////
-    val flowToInsert = ActivityFlow(activity, indexAct, startActs(indexAct), qtyAct)
+    val flowToInsert = ActivityFlow(indexAct, startActs(indexAct).value, durAct, qtyAct)
     addResourceFlowToList(flowToInsert, resourceFlows, AccList.empty()).toList
   }
 
@@ -122,7 +123,7 @@ object ResourceFlow {
   /**
     * Gets the latest end time for consuming a quantity in some resource flows
     *
-    * @param resQty the quantity of resource that must be cinsumed
+    * @param resQty the quantity of resource that must be consumed
     * @param resFlows the list of resource flows
     * @return the end time of the activity allowing to consume all the resQty
     *         of resource in resFlows

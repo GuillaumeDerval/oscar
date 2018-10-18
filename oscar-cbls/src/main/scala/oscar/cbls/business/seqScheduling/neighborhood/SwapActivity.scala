@@ -32,12 +32,24 @@ class SwapActivity(scm: SchedulingSolver,
       currentIndex = indicesIterator.next()
       // explore the insertable zone of the current indice
       val insertableZone = scm.insertableIndices(currentIndex)
+
+      print(s"Insertable zone for $currentIndex = [")
+      insertableZone.foreach(a => print(s"$a "))
+      println("]")
+
       val (insertableIterator, notifySwappingFound) = selectSwapBehavior.toIterator(insertableZone)
       while (insertableIterator.hasNext) {
         swappingIndex = insertableIterator.next()
         // Perform move on sequence
         val newObj = obj.value
+
+        println(s"New obj = $newObj")
+        println(s"Current Index = $currentIndex | Swapping Index = $swappingIndex")
+
         performMove(currentIndex, swappingIndex)
+
+        println(s"Sequence after = ${scm.activitiesSequence.value}")
+
         scm.activitiesSequence.rollbackToTopCheckpoint(seqValueCheckPoint)
 
         // Notification of finding indices
@@ -57,7 +69,8 @@ class SwapActivity(scm: SchedulingSolver,
 
   def performMove(currentIndex: Int, swappingIndex: Int): Unit = {
     // Swap 1-segments in sequence
-    scm.activitiesSequence.swapSegments(currentIndex, currentIndex, false, swappingIndex, swappingIndex, false)
+    scm.activitiesSequence.swapSegments(currentIndex, currentIndex, false,
+      swappingIndex, swappingIndex, false)
   }
 }
 

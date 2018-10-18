@@ -5,13 +5,15 @@ import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.seqScheduling.invariants.StartTimesActivities
 import oscar.cbls.lib.invariant.seq.Precedence
 
-class SchedulingSolver(val m: Store, val scModel: SchedulingModel__A) {
+class SchedulingSolver(val m: Store, val scModel: SchedulingModel) {
   // CBLS variable representing the Priority List of activities
   val activitiesSequence = new CBLSSeqVar(m, IntSequence(scModel.getPriorityList), scModel.nbActivities-1, "Scheduling Activities")
   // CBLS invariant, precedences
   val precedences = Precedence(activitiesSequence, scModel.precedences.toPairsList)
   // CBLS invariant, start times
-  val (startTimes, setupTimes) = StartTimesActivities(activitiesSequence, scModel)
+  val (makeSpan, startTimes, setupTimes) = StartTimesActivities(activitiesSequence, scModel)
+  // Objective function: Makespan
+  val mkspObj = Objective(makeSpan)
 
   def insertableIndices(indAct: Int): Iterable[Int] = {
     val actInd = scModel.activities(indAct)
