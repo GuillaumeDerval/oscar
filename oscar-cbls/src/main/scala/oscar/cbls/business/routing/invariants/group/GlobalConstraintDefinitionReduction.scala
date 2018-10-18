@@ -230,12 +230,12 @@ abstract class ReducedGlobalConstraintAlgo[T:Manifest,U:Manifest](routes:Changin
           case PreComputedSubSequence(startNode: Int, startNodeValue: VehicleAndPosition, endNode: Int, endNodeValue: VehicleAndPosition) =>
             PreComputedSubSequenceComposed[T](
               startNode:Int, endNode:Int,
-              chain = extractSequenceOfT(startNodeValue.vehicle,startNode,startNodeValue.position,endNode,endNodeValue.position,flipped=false))
+              steps = extractSequenceOfT(startNodeValue.vehicle,startNode,startNodeValue.position,endNode,endNodeValue.position,flipped=false))
 
           case FlippedPreComputedSubSequence(startNode:Int,startNodeValue:VehicleAndPosition, endNode:Int, endNodeValue:VehicleAndPosition) =>
             FlippedPreComputedSubSequenceComposed[T](
               startNode:Int, endNode:Int,
-              chain = extractSequenceOfT(startNodeValue.vehicle,startNode,startNodeValue.position,endNode,endNodeValue.position,flipped=true))
+              steps = extractSequenceOfT(startNodeValue.vehicle,startNode,startNodeValue.position,endNode,endNodeValue.position,flipped=true))
 
           case NewNode(node:Int) =>
             NewNodeComposed[T](node:Int)
@@ -323,17 +323,17 @@ sealed abstract class SegmentWithComposedFunction[T]()
 
 case class PreComputedSubSequenceComposed[T](startNode:Int,
                                              endNode:Int,
-                                             chain:List[T]) extends SegmentWithComposedFunction[T]{
+                                             steps:List[T]) extends SegmentWithComposedFunction[T]{
   override def toString: String = {
-    "PreComputedSubSequence(startNode:" + startNode + " endNode:" + endNode + " chain:" + chain.mkString(",") + ")"
+    "PreComputedSubSequence(startNode:" + startNode + " endNode:" + endNode + " steps:" + steps.mkString(",") + ")"
   }
 }
 
 case class FlippedPreComputedSubSequenceComposed[T](startNode:Int,
                                                     endNode:Int,
-                                                    chain:List[T]) extends SegmentWithComposedFunction[T]{
+                                                    steps:List[T]) extends SegmentWithComposedFunction[T]{
   override def toString: String = {
-    "PreComputedFLIPPEDSubSequence(startNode:" + startNode + " endNode:" + endNode + " chain:" + chain.mkString(",") + ")"
+    "PreComputedFLIPPEDSubSequence(startNode:" + startNode + " endNode:" + endNode + " chain:" + steps.mkString(",") + ")"
   }
 }
 
