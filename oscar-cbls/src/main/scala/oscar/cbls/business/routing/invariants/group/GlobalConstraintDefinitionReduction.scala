@@ -28,7 +28,7 @@ class NumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Array[CBLSIn
     *
     * @param firstStep  the type T associated with stepping over a sequence of nodes (which can be minial two)
     * @param secondStep the type T associated with stepping over a sequence of nodes (which can be minial two)
-    * @return the type T associated wit hthe first step followed by the second step
+    * @return the type T associated with the first step followed by the second step
     */
   override def composeSteps(firstStep: NodesOnSubsequence, secondStep: NodesOnSubsequence): NodesOnSubsequence =
     NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes)
@@ -133,7 +133,9 @@ abstract class ReducedGlobalConstraint[T:Manifest,U:Manifest](routes:ChangingSeq
 abstract class ReducedGlobalConstraintAlgo[T:Manifest,U:Manifest](routes:ChangingSeqValue,v :Int)
   extends GlobalConstraintDefinition[VehicleAndPosition,U](routes,v){
 
-  class NodeAndPreComputes(val node:Int,var precomputes:Array[T] = null)
+  class NodeAndPreComputes(val node:Int,
+                           var precomputes:Array[T] = null)
+
   val vehicleToPrecomputes:Array[Array[NodeAndPreComputes]] = Array.fill(v)(null)
 
   override protected final def performPreCompute(vehicle:Int,
@@ -225,7 +227,7 @@ abstract class ReducedGlobalConstraintAlgo[T:Manifest,U:Manifest](routes:Changin
                                                    preComputedVals:Array[VehicleAndPosition]):U = {
 
     computeVehicleValueComposed(vehicle,
-      composedSegments = segments.map(
+      segments = segments.map(
         _ match {
           case PreComputedSubSequence(startNode: Int, startNodeValue: VehicleAndPosition, endNode: Int, endNodeValue: VehicleAndPosition) =>
             PreComputedSubSequenceComposed[T](
@@ -251,32 +253,22 @@ abstract class ReducedGlobalConstraintAlgo[T:Manifest,U:Manifest](routes:Changin
                          flipped:Boolean):List[T] = {
 
     if(flipped){
-      extractSequenceOfTUnflipped(vehicle:Int,
-        endPositionInRoute:Int,
-        startPositionInRoute:Int).reverse
+
+      extractSequenceOfTUnflippedGoingUp(vehicleToPrecomputes(vehicle),
+        startPositionInRoute = endPositionInRoute,
+        endPositionInRoute = startPositionInRoute).reverse
     }else{
-      extractSequenceOfTUnflipped(vehicle:Int,
-        startPositionInRoute:Int,
-        endPositionInRoute:Int)
+      extractSequenceOfTUnflippedGoingUp(vehicleToPrecomputes(vehicle),
+        startPositionInRoute = startPositionInRoute,
+        endPositionInRoute = endPositionInRoute)
     }
-  }
-
-
-  private def extractSequenceOfTUnflipped(vehicle:Int,
-                                          startPositionInRoute:Int,
-                                          endPositionInRoute:Int):List[T] = {
-
-    extractSequenceOfTUnflippedGoingUp(vehicleToPrecomputes(vehicle),
-      startPositionInRoute:Int,
-      endPositionInRoute:Int)
   }
 
   private def extractSequenceOfTUnflippedGoingUp(vehiclePreComputes:Array[NodeAndPreComputes],
                                                  startPositionInRoute:Int,
                                                  endPositionInRoute:Int):List[T] = {
 
-
-    val maxLevel = vehiclePreComputes(startPositionInRoute).precomputes.length
+    val maxLevel = vehiclePreComputes(startPositionInRoute).precomputes.length - 1
     val levelStep = 1 << maxLevel
 
     if(startPositionInRoute + levelStep > endPositionInRoute){
@@ -314,7 +306,7 @@ abstract class ReducedGlobalConstraintAlgo[T:Manifest,U:Manifest](routes:Changin
   }
 
   def computeVehicleValueComposed(vehicle:Int,
-                                  composedSegments:List[SegmentWithComposedFunction[T]]):U
+                                  segments:List[SegmentWithComposedFunction[T]]):U
 
 
 }
@@ -325,7 +317,7 @@ case class PreComputedSubSequenceComposed[T](startNode:Int,
                                              endNode:Int,
                                              steps:List[T]) extends SegmentWithComposedFunction[T]{
   override def toString: String = {
-    "PreComputedSubSequence(startNode:" + startNode + " endNode:" + endNode + " steps:" + steps.mkString(",") + ")"
+    "PreComputedSubSequenceComposed(startNode:" + startNode + " endNode:" + endNode + " steps:" + steps.mkString(",") + ")"
   }
 }
 
@@ -333,7 +325,7 @@ case class FlippedPreComputedSubSequenceComposed[T](startNode:Int,
                                                     endNode:Int,
                                                     steps:List[T]) extends SegmentWithComposedFunction[T]{
   override def toString: String = {
-    "PreComputedFLIPPEDSubSequence(startNode:" + startNode + " endNode:" + endNode + " chain:" + steps.mkString(",") + ")"
+    "FlippedPreComputedSubSequenceComposed(startNode:" + startNode + " endNode:" + endNode + " steps:" + steps.mkString(",") + ")"
   }
 }
 
@@ -343,7 +335,7 @@ case class FlippedPreComputedSubSequenceComposed[T](startNode:Int,
   */
 case class NewNodeComposed[T](node:Int) extends SegmentWithComposedFunction[T]{
   override def toString: String = {
-    "NewNode - Node : " + node
+    "NewNodeComposed(node:" + node + ")"
   }
 }
 
