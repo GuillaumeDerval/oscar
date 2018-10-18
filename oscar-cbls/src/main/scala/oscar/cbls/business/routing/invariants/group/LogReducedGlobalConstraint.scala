@@ -7,10 +7,16 @@ import oscar.cbls.core.ChangingSeqValue
 class VehicleAndPosition(val vehicle:Int, val position:Int)
 
 
-case class NodesOnSubsequence(nbNodes:Int)
+case class NodesOnSubsequence(
+                               nbNodes:Int,
+                               level:Int,
+                               firstNode:Int,
+                               lastNode:Int){
+  require(nbNodes == (1 << level))
+}
 
 class NumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
-  extends ReducedGlobalConstraint[NodesOnSubsequence,Int](routes,v){
+  extends LogReducedGlobalConstraint[NodesOnSubsequence,Int](routes,v){
   /**
     * this method delivers the value of stepping from node "fromNode" to node "toNode.
     * you can consider that these two nodes are adjacent.
@@ -20,7 +26,7 @@ class NumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Array[CBLSIn
     * @return the type T associated with the step "fromNode -- toNode"
     */
   override def step(fromNode: Int, toNode: Int): NodesOnSubsequence = {
-    NodesOnSubsequence(2)
+    NodesOnSubsequence(2, level = 1,fromNode,toNode)
   }
 
   /**
@@ -30,8 +36,10 @@ class NumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Array[CBLSIn
     * @param secondStep the type T associated with stepping over a sequence of nodes (which can be minial two)
     * @return the type T associated with the first step followed by the second step
     */
-  override def composeSteps(firstStep: NodesOnSubsequence, secondStep: NodesOnSubsequence): NodesOnSubsequence =
-    NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes)
+  override def composeSteps(firstStep: NodesOnSubsequence, secondStep: NodesOnSubsequence): NodesOnSubsequence = {
+    require(firstStep.level == secondStep.level)
+    NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes, firstStep.level + 1,firstStep.firstNode,secondStep.lastNode)
+  }
 
   /**
     * this method is called by the framework when the value of a vehicle must be computed.
@@ -41,14 +49,18 @@ class NumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Array[CBLSIn
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @return the value associated with the vehicle. this value should only be computed based on the provided segments
     */
-  override def computeVehicleValueComposed(vehicle: Int, segments: List[SegmentWithComposedFunction[NodesOnSubsequence]]): Int = {
+  override def computeVehicleValueComposed(vehicle: Int, segments: List[LogReducedSegment[NodesOnSubsequence]]): Int = {
     segments.map({
-        case PreComputedSubSequenceComposed(startNode, endNode, chain)=>
-          chain.map(_.nbNodes).sum
-        case FlippedPreComputedSubSequenceComposed(startNode, endNode, chain) =>
-          chain.map(_.nbNodes).sum
-        case NewNodeComposed(node) => 1
-      }).sum
+      case LogReducedPreComputedSubSequence(startNode, endNode, steps)=>
+        require(steps.head.firstNode == startNode)
+        require(steps.last.lastNode == endNode)
+        steps.map(_.nbNodes).sum
+      case LogReducedFlippedPreComputedSubSequence(startNode, endNode, steps) =>
+        require(steps.head.firstNode == startNode)
+        require(steps.last.lastNode == endNode)
+        steps.map(_.nbNodes).sum
+      case LogReducedNewNode(node) => 1
+    }).sum
   }
 
   /**
@@ -76,8 +88,6 @@ class NumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Array[CBLSIn
 }
 
 
-
-
 /**
   * This API provides an easy to use framework for defining a custom global constraint for vehicle routing.
   * it is to be used when the pre-computation needs to be performed on every possible subsequence of route,
@@ -96,8 +106,9 @@ class NumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Array[CBLSIn
   * @tparam T the type of pre-computation, which is on subsequences (not on nodes)
   * @tparam U the output type of the algorithms, that you need to assign to the output variables
   */
-abstract class ReducedGlobalConstraint[T:Manifest,U:Manifest](routes:ChangingSeqValue,v :Int)
-  extends ReducedGlobalConstraintAlgo [T,U](routes:ChangingSeqValue,v :Int){
+abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:ChangingSeqValue,v :Int)
+  extends GlobalConstraintDefinition[VehicleAndPosition,U](routes,v){
+
 
   /**
     * this method delivers the value of stepping from node "fromNode" to node "toNode.
@@ -106,7 +117,7 @@ abstract class ReducedGlobalConstraint[T:Manifest,U:Manifest](routes:ChangingSeq
     * @param toNode
     * @return the type T associated with the step "fromNode -- toNode"
     */
-  override def step(fromNode: Int, toNode: Int): T
+  def step(fromNode: Int, toNode: Int): T
 
   /**
     * this method is for composing steps into bigger steps.
@@ -114,7 +125,7 @@ abstract class ReducedGlobalConstraint[T:Manifest,U:Manifest](routes:ChangingSeq
     * @param secondStep the type T associated with stepping over a sequence of nodes (which can be minial two)
     * @return the type T associated wit hthe first step followed by the second step
     */
-  override def composeSteps(firstStep: T, secondStep: T): T
+  def composeSteps(firstStep: T, secondStep: T): T
 
   /**
     * this method is called by the framework when the value of a vehicle must be computed.
@@ -122,21 +133,20 @@ abstract class ReducedGlobalConstraint[T:Manifest,U:Manifest](routes:ChangingSeq
     * @param vehicle the vehicle that we are focusing on
     * @param segments the segments that constitute the route.
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
-    * @return the value associated with the vehicle. this value should only be computed based on the provided segments
+    * @return the value associated with the vehicle. This value should only be computed based on the provided segments
     */
-  override def computeVehicleValueComposed(vehicle: Int,
-                                           segments: List[SegmentWithComposedFunction[T]]): U
-
-}
+  def computeVehicleValueComposed(vehicle: Int,
+                                  segments: List[LogReducedSegment[T]]): U
 
 
-abstract class ReducedGlobalConstraintAlgo[T:Manifest,U:Manifest](routes:ChangingSeqValue,v :Int)
-  extends GlobalConstraintDefinition[VehicleAndPosition,U](routes,v){
+
+
+
 
   class NodeAndPreComputes(val node:Int,
                            var precomputes:Array[T] = null)
 
-  val vehicleToPrecomputes:Array[Array[NodeAndPreComputes]] = Array.fill(v)(null)
+  private val vehicleToPrecomputes:Array[Array[NodeAndPreComputes]] = Array.fill(v)(null)
 
   override protected final def performPreCompute(vehicle:Int,
                                                  routes:IntSequence,
@@ -193,10 +203,6 @@ abstract class ReducedGlobalConstraintAlgo[T:Manifest,U:Manifest](routes:Changin
     toReturn
   }
 
-  def step(fromNode:Int,toNode:Int):T
-
-  def composeSteps(firstStep:T,secondStep:T):T
-
   private def decorateAndAllocate(vehicle:Int,positionInRoute:Int,level:Int,allocateFirst:Boolean){
     if(allocateFirst){
       vehicleToPrecomputes(vehicle)(positionInRoute).precomputes = Array.fill(level)(null.asInstanceOf[T])
@@ -227,21 +233,20 @@ abstract class ReducedGlobalConstraintAlgo[T:Manifest,U:Manifest](routes:Changin
                                                    preComputedVals:Array[VehicleAndPosition]):U = {
 
     computeVehicleValueComposed(vehicle,
-      segments = segments.map(
-        _ match {
-          case PreComputedSubSequence(startNode: Int, startNodeValue: VehicleAndPosition, endNode: Int, endNodeValue: VehicleAndPosition) =>
-            PreComputedSubSequenceComposed[T](
-              startNode:Int, endNode:Int,
-              steps = extractSequenceOfT(startNodeValue.vehicle,startNode,startNodeValue.position,endNode,endNodeValue.position,flipped=false))
+      segments = segments.map({
+        case PreComputedSubSequence(startNode: Int, startNodeValue: VehicleAndPosition, endNode: Int, endNodeValue: VehicleAndPosition) =>
+          LogReducedPreComputedSubSequence[T](
+            startNode:Int, endNode:Int,
+            steps = extractSequenceOfT(startNodeValue.vehicle,startNode,startNodeValue.position,endNode,endNodeValue.position,flipped=false))
 
-          case FlippedPreComputedSubSequence(startNode:Int,startNodeValue:VehicleAndPosition, endNode:Int, endNodeValue:VehicleAndPosition) =>
-            FlippedPreComputedSubSequenceComposed[T](
-              startNode:Int, endNode:Int,
-              steps = extractSequenceOfT(startNodeValue.vehicle,startNode,startNodeValue.position,endNode,endNodeValue.position,flipped=true))
+        case FlippedPreComputedSubSequence(startNode:Int,startNodeValue:VehicleAndPosition, endNode:Int, endNodeValue:VehicleAndPosition) =>
+          LogReducedFlippedPreComputedSubSequence[T](
+            startNode:Int, endNode:Int,
+            steps = extractSequenceOfT(startNodeValue.vehicle,startNode,startNodeValue.position,endNode,endNodeValue.position,flipped=true))
 
-          case NewNode(node:Int) =>
-            NewNodeComposed[T](node:Int)
-        }
+        case NewNode(node:Int) =>
+          LogReducedNewNode[T](node:Int)
+      }
       ))
   }
 
@@ -253,7 +258,6 @@ abstract class ReducedGlobalConstraintAlgo[T:Manifest,U:Manifest](routes:Changin
                          flipped:Boolean):List[T] = {
 
     if(flipped){
-
       extractSequenceOfTUnflippedGoingUp(vehicleToPrecomputes(vehicle),
         startPositionInRoute = endPositionInRoute,
         endPositionInRoute = startPositionInRoute).reverse
@@ -304,26 +308,21 @@ abstract class ReducedGlobalConstraintAlgo[T:Manifest,U:Manifest](routes:Changin
       List(vehiclePreComputes(startPositionInRoute).precomputes(maxLevel))
     }
   }
-
-  def computeVehicleValueComposed(vehicle:Int,
-                                  segments:List[SegmentWithComposedFunction[T]]):U
-
-
 }
 
-sealed abstract class SegmentWithComposedFunction[T]()
+sealed abstract class LogReducedSegment[T]()
 
-case class PreComputedSubSequenceComposed[T](startNode:Int,
-                                             endNode:Int,
-                                             steps:List[T]) extends SegmentWithComposedFunction[T]{
+case class LogReducedPreComputedSubSequence[T](startNode:Int,
+                                               endNode:Int,
+                                               steps:List[T]) extends LogReducedSegment[T]{
   override def toString: String = {
     "PreComputedSubSequenceComposed(startNode:" + startNode + " endNode:" + endNode + " steps:" + steps.mkString(",") + ")"
   }
 }
 
-case class FlippedPreComputedSubSequenceComposed[T](startNode:Int,
-                                                    endNode:Int,
-                                                    steps:List[T]) extends SegmentWithComposedFunction[T]{
+case class LogReducedFlippedPreComputedSubSequence[T](startNode:Int,
+                                                      endNode:Int,
+                                                      steps:List[T]) extends LogReducedSegment[T]{
   override def toString: String = {
     "FlippedPreComputedSubSequenceComposed(startNode:" + startNode + " endNode:" + endNode + " steps:" + steps.mkString(",") + ")"
   }
@@ -333,7 +332,7 @@ case class FlippedPreComputedSubSequenceComposed[T](startNode:Int,
   * This represent that a node that was not present in the initial sequence when pre-computation was performed.
   * @param node
   */
-case class NewNodeComposed[T](node:Int) extends SegmentWithComposedFunction[T]{
+case class LogReducedNewNode[T](node:Int) extends LogReducedSegment[T]{
   override def toString: String = {
     "NewNodeComposed(node:" + node + ")"
   }
