@@ -1,104 +1,94 @@
 package oscar.cbls.business.routing.invariants.group
 
-import oscar.cbls.{CBLSIntVar, Variable}
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
+
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.ChangingSeqValue
 
-class VehicleAndPosition(val vehicle:Int, val position:Int)
+
+sealed abstract class LogReducedSegment[T]()
 
 
-case class NodesOnSubsequence(
-                               nbNodes:Int,
-                               level:Int,
-                               firstNode:Int,
-                               lastNode:Int){
-  require(nbNodes == (1 << level))
+/**
+  * This represents a subsequence starting at startNode and ending at endNode.
+  * This subsequence was present in the global sequence when the pre-computation was performed
+  * @param startNode the first node of the subsequence
+  * @param endNode the last node of the subsequence
+  * @param steps: a list of values of type T such that
+  *             if they were concatenated using the compose function,
+  *             it would yield the value t between fromNode and toNode.
+  *             there are O(log(n)) of thee values in the list
+  * @tparam T the type of precomputation
+  */
+case class LogReducedPreComputedSubSequence[T](startNode:Int,
+                                               endNode:Int,
+                                               steps:List[T]) extends LogReducedSegment[T]{
+  override def toString: String = {
+    "LogReducedPreComputedSubSequence(startNode:" + startNode +
+      " endNode:" + endNode + " steps:" + steps.mkString(",") + ")"
+  }
 }
 
-class NumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
-  extends LogReducedGlobalConstraint[NodesOnSubsequence,Int](routes,v){
-  /**
-    * this method delivers the value of stepping from node "fromNode" to node "toNode.
-    * you can consider that these two nodes are adjacent.
-    *
-    * @param fromNode
-    * @param toNode
-    * @return the type T associated with the step "fromNode -- toNode"
-    */
-  override def step(fromNode: Int, toNode: Int): NodesOnSubsequence = {
-    NodesOnSubsequence(2, level = 1,fromNode,toNode)
+/**
+  * This represents a subsequence starting at startNode and ending at endNode.
+  * This subsequence was not present in the global sequence when the pre-computation was performed, but
+  * the flippedd subsequence obtained by flippig it was present in the global sequence when the pre-computation was performed, but
+  * @param startNode the first node of the subsequence
+  * @param endNode the last node of the subsequence
+  * @param steps: a list of values of type T such that
+  *             if they were concatenated using the compose function,
+  *             it would yield the value t between toNode and fromNode, as in the original sequence.
+  *             there are O(log(n)) of thee values in the list
+  * @tparam T the type of precomputation
+  */
+case class LogReducedFlippedPreComputedSubSequence[T](startNode:Int,
+                                                      endNode:Int,
+                                                      steps:List[T]) extends LogReducedSegment[T]{
+  override def toString: String = {
+    "LogReducedFlippedPreComputedSubSequence(startNode:" + startNode +
+      " endNode:" + endNode + " steps:" + steps.mkString(",") + ")"
   }
-
-  /**
-    * this method is for composing steps into bigger steps.
-    *
-    * @param firstStep  the type T associated with stepping over a sequence of nodes (which can be minial two)
-    * @param secondStep the type T associated with stepping over a sequence of nodes (which can be minial two)
-    * @return the type T associated with the first step followed by the second step
-    */
-  override def composeSteps(firstStep: NodesOnSubsequence, secondStep: NodesOnSubsequence): NodesOnSubsequence = {
-    require(firstStep.level == secondStep.level)
-    NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes, firstStep.level + 1,firstStep.firstNode,secondStep.lastNode)
-  }
-
-  /**
-    * this method is called by the framework when the value of a vehicle must be computed.
-    *
-    * @param vehicle  the vehicle that we are focusing on
-    * @param segments the segments that constitute the route.
-    *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
-    * @return the value associated with the vehicle. this value should only be computed based on the provided segments
-    */
-  override def computeVehicleValueComposed(vehicle: Int, segments: List[LogReducedSegment[NodesOnSubsequence]]): Int = {
-    segments.map({
-      case LogReducedPreComputedSubSequence(startNode, endNode, steps)=>
-        require(steps.head.firstNode == startNode)
-        require(steps.last.lastNode == endNode)
-        steps.map(_.nbNodes).sum
-      case LogReducedFlippedPreComputedSubSequence(startNode, endNode, steps) =>
-        require(steps.head.firstNode == startNode)
-        require(steps.last.lastNode == endNode)
-        steps.map(_.nbNodes).sum
-      case LogReducedNewNode(node) => 1
-    }).sum
-  }
-
-  /**
-    * the framework calls this method to assign the value U to he output variable of your invariant.
-    * It has been dissociated from the method above because the framework memorizes the output value of the vehicle,
-    * and is able to restore old value without the need to re-compute them, so it only will call this assignVehicleValue method
-    *
-    * @param vehicle the vehicle number
-    * @param value   the value of the vehicle
-    */
-  override def assignVehicleValue(vehicle: Int, value: Int): Unit = {
-    nbNodesPerRoute(vehicle) := value
-  }
-
-  /**
-    * this method is defined for verification purpose. It computes the value of the vehicle from scratch.
-    *
-    * @param vehicle the vehicle on which the value is computed
-    * @param routes  the sequence representing the route of all vehicle
-    * @return the value of the constraint for the given vehicle
-    */
-  override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Int = ???
-
-  override def outputVariables: Iterable[Variable] = nbNodesPerRoute
 }
+
+/**
+  * This represent that a node that was not present in the initial sequence
+  * when pre-computation was performed.
+  * @param node
+  */
+case class LogReducedNewNode[T](node:Int) extends LogReducedSegment[T]{
+  override def toString: String = {
+    "LogReducedNewNode(node:" + node + ")"
+  }
+}
+
+
 
 
 /**
   * This API provides an easy to use framework for defining a custom global constraint for vehicle routing.
-  * it is to be used when the pre-computation needs to be performed on every possible subsequence of route,
-  * thus pre-computationn is O(n²)-time to achieve O(1) query time per segment.
+  * it is to be used when the pre-computation needs to be performed on every possible sub-sequence of route,
+  * thus pre-computation is O(n²)-time to achieve O(1) query time per segment.
   *
   * This particular API provides a reduction of the pre-computation time to O(n)
-  * at the cot of performing the segment query in O(log(n))
+  * at the cost of performing the segment query in O(log(n))
   *
-  * The difference in implementation is that it not decorates evey possible segment with a value of type T.
-  * Instead it decorates a subset of these segments, and each queried segment has a sequence of values of type T associated with it.
-  * these values are queried from the pre-computation.
+  * The difference in implementation is that it does not decorates evey possible segment with a value of type T.
+  * Instead it decorates a subset of these segments, and each queried segment has a sequence of values of type T
+  * associated with it. These values are queried from the pre-computation.
   * The assembly includes O(log(n)) of these pre-computations.
   *
   * @param routes the route of vehicles
@@ -108,7 +98,6 @@ class NumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Array[CBLSIn
   */
 abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:ChangingSeqValue,v :Int)
   extends GlobalConstraintDefinition[VehicleAndPosition,U](routes,v){
-
 
   /**
     * this method delivers the value of stepping from node "fromNode" to node "toNode.
@@ -234,15 +223,25 @@ abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:Changing
 
     computeVehicleValueComposed(vehicle,
       segments = segments.map({
-        case PreComputedSubSequence(startNode: Int, startNodeValue: VehicleAndPosition, endNode: Int, endNodeValue: VehicleAndPosition) =>
+        case PreComputedSubSequence
+          (startNode: Int, startNodeValue: VehicleAndPosition,
+          endNode: Int, endNodeValue: VehicleAndPosition) =>
+
           LogReducedPreComputedSubSequence[T](
             startNode:Int, endNode:Int,
-            steps = extractSequenceOfT(startNodeValue.vehicle,startNode,startNodeValue.position,endNode,endNodeValue.position,flipped=false))
+            steps = extractSequenceOfT(
+              startNodeValue.vehicle,startNode,startNodeValue.position,
+              endNode,endNodeValue.position,flipped=false))
 
-        case FlippedPreComputedSubSequence(startNode:Int,startNodeValue:VehicleAndPosition, endNode:Int, endNodeValue:VehicleAndPosition) =>
+        case FlippedPreComputedSubSequence(
+        startNode:Int,startNodeValue:VehicleAndPosition,
+        endNode:Int, endNodeValue:VehicleAndPosition) =>
+
           LogReducedFlippedPreComputedSubSequence[T](
             startNode:Int, endNode:Int,
-            steps = extractSequenceOfT(startNodeValue.vehicle,startNode,startNodeValue.position,endNode,endNodeValue.position,flipped=true))
+            steps = extractSequenceOfT(
+              startNodeValue.vehicle,startNode,startNodeValue.position,
+              endNode,endNodeValue.position,flipped=true))
 
         case NewNode(node:Int) =>
           LogReducedNewNode[T](node:Int)
@@ -310,31 +309,7 @@ abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:Changing
   }
 }
 
-sealed abstract class LogReducedSegment[T]()
 
-case class LogReducedPreComputedSubSequence[T](startNode:Int,
-                                               endNode:Int,
-                                               steps:List[T]) extends LogReducedSegment[T]{
-  override def toString: String = {
-    "PreComputedSubSequenceComposed(startNode:" + startNode + " endNode:" + endNode + " steps:" + steps.mkString(",") + ")"
-  }
-}
+class VehicleAndPosition(val vehicle:Int, val position:Int)
 
-case class LogReducedFlippedPreComputedSubSequence[T](startNode:Int,
-                                                      endNode:Int,
-                                                      steps:List[T]) extends LogReducedSegment[T]{
-  override def toString: String = {
-    "FlippedPreComputedSubSequenceComposed(startNode:" + startNode + " endNode:" + endNode + " steps:" + steps.mkString(",") + ")"
-  }
-}
-
-/**
-  * This represent that a node that was not present in the initial sequence when pre-computation was performed.
-  * @param node
-  */
-case class LogReducedNewNode[T](node:Int) extends LogReducedSegment[T]{
-  override def toString: String = {
-    "NewNodeComposed(node:" + node + ")"
-  }
-}
 
