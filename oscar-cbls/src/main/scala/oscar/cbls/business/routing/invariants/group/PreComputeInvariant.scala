@@ -25,6 +25,7 @@ abstract class PreComputeInvariant[@specialized(Int) T : Manifest, U:Manifest](r
   var checkpointAtLevel0: IntSequence = _
   var checkpoint0Defined = false
   var changedVehiclesSinceCheckpoint0 = new IterableMagicBoolArray(v, false)
+  var changedVehiclesSinceLastNotified = new IterableMagicBoolArray(v,false)
 
   val checkpointStack = new SeqCheckpointedValueStack[(FunctionForPreCompute, VehicleLocation, Array[U])]
 
@@ -227,43 +228,33 @@ abstract class PreComputeInvariant[@specialized(Int) T : Manifest, U:Manifest](r
           if (checkpointLevel == 0) s.newValue
           else prevUpdates.get.checkpoint0
 
-        val newCHangedVehicleSinceCheckpoint0 =
-          if(checkpointLevel == 0) IterableMagicBoolArray(v)
-          else prevUpdates.get.changedVehicleSinceCheckpoint0
+        if (checkpoint0WasDefined == 0) changedVehiclesSinceCheckpoint0.all_=(false)
 
         if (!checkpoint0WasDefined){
           // we are creating the first checkpoint. We need to do pre-compute for all vehicle
           for (vehicle <- 0 until v) performPreCompute(vehicle,newCheckpoint0,preComputedValues)
         } else {
           if(checkpointLevel == 0){
-            for (vehicle <- prevUpdates.get.changedVehicleSinceCheckpoint0.indicesAtTrue)
+            for (vehicle <- changedVehiclesSinceCheckpoint0.indicesAtTrue)
               performPreCompute(vehicle,newCheckpoint0,preComputedValues)
           }
         }
 
-        val updates = prevUpdates match {
-          case None =>
-            new UpdatedValues(IterableMagicBoolArray(v, true), bijAtCheckpoint, vehicleSearcherAtCheckpoint, true, false, s.newValue, newCheckpoint0, newCHangedVehicleSinceCheckpoint0)
-          case Some(u) =>
-            /*
-            * Thanks to the initialization and the from scratch procedure, we can compute the output only on changed vehicle.
-            * Even if we are creating the first checkpoint
-            * */
-            new UpdatedValues(u.changedVehicle, bijAtCheckpoint, vehicleSearcherAtCheckpoint, true, false, s.newValue, newCheckpoint0, newCHangedVehicleSinceCheckpoint0)
+        val updates = new UpdatedValues(bijAtCheckpoint,vehicleSearcherAtCheckpoint,true, false,s.newValue, newCheckpoint0)
 
-        }
+        if (prevUpdates == None) changedVehiclesSinceLastNotified.all_=(true)
+
         applyUpdates(updates,changes.newValue) //we need to compute the output when we are defining a checkpoint for restore
 
         val toSave = valuesToSave()
         checkpointStack.defineCheckpoint(s.newValue, checkpointLevel, (bijAtCheckpoint, vehicleSearcherAtCheckpoint, toSave))
-        val toReturn = new UpdatedValues(IterableMagicBoolArray(v), bijAtCheckpoint, vehicleSearcherAtCheckpoint, true, false, s.newValue, newCheckpoint0, newCHangedVehicleSinceCheckpoint0)
-        Some(toReturn)
+        Some(new UpdatedValues(bijAtCheckpoint, vehicleSearcherAtCheckpoint, true, false, s.newValue, newCheckpoint0))
 
       case s@SeqUpdateRollBackToCheckpoint(checkpoint: IntSequence, checkpointLevel) =>
         val (bijAtCheckpoint, vehicleSearcherAtCheckpoint, valueAtCheckpoint) = checkpointStack.rollBackAndOutputValue(checkpoint, checkpointLevel)
         restoreValueAtCheckpoint(valueAtCheckpoint, checkpointLevel)
-        val changedVehicle = IterableMagicBoolArray(v)
-        val toReturn = new UpdatedValues(changedVehicle, bijAtCheckpoint, vehicleSearcherAtCheckpoint, true, false, s.newValue, checkpointAtLevel0, changedVehiclesSinceCheckpoint0)
+        changedVehiclesSinceLastNotified.all_=(false)
+        val toReturn = new UpdatedValues(bijAtCheckpoint, vehicleSearcherAtCheckpoint, true, false, s.newValue, checkpointAtLevel0)
         Some(toReturn)
 
       case s@SeqUpdateInsert(value: Int, pos: Int, prev: SeqUpdate) =>
@@ -273,16 +264,13 @@ abstract class PreComputeInvariant[@specialized(Int) T : Manifest, U:Manifest](r
           case Some(updates) =>
             val updateVehicleSearcher = updates.vehicleSearcher.push(s.oldPosToNewPos)
             val vehicle  = updateVehicleSearcher.vehicleReachingPosition(pos)
-            val updatedChangedVehicle = updates.changedVehicle
-            updatedChangedVehicle(vehicle) = true
-            val updatedChangedVehicleSinceCheckpoint0 = updates.changedVehicleSinceCheckpoint0
-            updatedChangedVehicleSinceCheckpoint0(vehicle) = true
+            changedVehiclesSinceLastNotified(vehicle) = true
+            changedVehiclesSinceCheckpoint0(vehicle) = true
             val stackedBij = if (updates.checkpoint0Defined)  // if a level 0 checkpoint was defined, the bijection exists. So we can update it
               updates.updatedBij.stackInsert(value, pos) // we stack an insert
             else // else, the bijection does not exist
               updates.updatedBij
-            val toReturn = new UpdatedValues(updatedChangedVehicle, stackedBij, updateVehicleSearcher, updates.checkpoint0Defined, true, prev.newValue, updates.checkpoint0, updatedChangedVehicleSinceCheckpoint0)
-            Some(toReturn)
+            Some(new UpdatedValues(stackedBij, updateVehicleSearcher, updates.checkpoint0Defined, true, prev.newValue, updates.checkpoint0))
         }
 
       case s@SeqUpdateRemove(pos: Int, prev: SeqUpdate) =>
@@ -292,18 +280,15 @@ abstract class PreComputeInvariant[@specialized(Int) T : Manifest, U:Manifest](r
           case Some(updates) =>
             // same as insert
             val vehicle = updates.vehicleSearcher.vehicleReachingPosition(pos)
-            val updatedChangedVehicle = updates.changedVehicle
-            updatedChangedVehicle(vehicle) = true
-            val updatedChangedVehicleSinceCheckpoint0 = updates.changedVehicleSinceCheckpoint0
-            updatedChangedVehicleSinceCheckpoint0(vehicle) = true
+            changedVehiclesSinceLastNotified(vehicle) = true
+            changedVehiclesSinceCheckpoint0(vehicle) = true
             val updatedVehicleSearcher = updates.vehicleSearcher.push(s.oldPosToNewPos)
             val stackedBij =
               if (updates.checkpoint0Defined)
                 updates.updatedBij.stackDelete(pos)
               else
                 updates.updatedBij
-            val toReturn = new UpdatedValues(updatedChangedVehicle, stackedBij, updatedVehicleSearcher, updates.checkpoint0Defined, true, prev.newValue, updates.checkpoint0, updatedChangedVehicleSinceCheckpoint0)
-            Some(toReturn)
+            Some(new UpdatedValues(stackedBij, updatedVehicleSearcher, updates.checkpoint0Defined, true, prev.newValue, updates.checkpoint0))
         }
 
       case s@SeqUpdateMove(fromPosIncluded: Int, toPosIncluded: Int, afterPos: Int, flip: Boolean, prev: SeqUpdate) =>
@@ -315,31 +300,28 @@ abstract class PreComputeInvariant[@specialized(Int) T : Manifest, U:Manifest](r
             val sourceVehicleOfMove = updates.vehicleSearcher.vehicleReachingPosition(fromPosIncluded)
             val targetVehicleOfMove = updates.vehicleSearcher.vehicleReachingPosition(afterPos)
             val updatedVehicleSearcher = updates.vehicleSearcher.push(s.oldPosToNewPos)
-            val updatedChangedVehicle = updates.changedVehicle
-            updatedChangedVehicle(sourceVehicleOfMove) = true
-            updatedChangedVehicle(targetVehicleOfMove) = true
-            val updatedChangedVehicleSinceCheckpoint0 = updates.changedVehicleSinceCheckpoint0
-            updatedChangedVehicleSinceCheckpoint0(sourceVehicleOfMove) = true
-            updatedChangedVehicleSinceCheckpoint0(targetVehicleOfMove) = true
+            changedVehiclesSinceLastNotified(sourceVehicleOfMove) = true
+            changedVehiclesSinceLastNotified(targetVehicleOfMove) = true
+            changedVehiclesSinceCheckpoint0(sourceVehicleOfMove) = true
+            changedVehiclesSinceCheckpoint0(targetVehicleOfMove) = true
             val stackedBij =
               if (updates.checkpoint0Defined)
                 updates.updatedBij.stackMove(fromPosIncluded, toPosIncluded, afterPos, flip)
               else
                 updates.updatedBij
             Some(new UpdatedValues(
-              updatedChangedVehicle,
               stackedBij,
               updatedVehicleSearcher,
               updates.checkpoint0Defined,
               true,
               prev.newValue,
-              updates.checkpoint0,
-              updatedChangedVehicleSinceCheckpoint0))
+              updates.checkpoint0))
         }
 
       case SeqUpdateLastNotified(value: IntSequence) =>
         require(value quickEquals routes.value)
-        val initValue = new UpdatedValues(IterableMagicBoolArray(v), bijForPreCompute, vehicleSearcher, checkpoint0Defined, stackDone, prevRoutes, checkpointAtLevel0, changedVehiclesSinceCheckpoint0)
+        changedVehiclesSinceLastNotified.all_=(false)
+        val initValue = new UpdatedValues( bijForPreCompute, vehicleSearcher, checkpoint0Defined, stackDone, prevRoutes, checkpointAtLevel0)
         // we start with current values associated at the route
         Some(initValue)
 
@@ -360,8 +342,7 @@ abstract class PreComputeInvariant[@specialized(Int) T : Manifest, U:Manifest](r
     vehicleSearcher = updates.vehicleSearcher
     prevRoutes = updates.prevRoutes
     checkpointAtLevel0 = updates.checkpoint0
-    changedVehiclesSinceCheckpoint0 = updates.changedVehicleSinceCheckpoint0
-    for (vehicle <- updates.changedVehicle.indicesAtTrue){
+    for (vehicle <- changedVehiclesSinceLastNotified.indicesAtTrue){
       val posOfLastNode =
         if(vehicle != this.v-1) routes.explorerAtAnyOccurrence(vehicle+1).get.position - 1
         else bijForPreCompute.externalPositionOfLastRoutedNode
@@ -369,7 +350,7 @@ abstract class PreComputeInvariant[@specialized(Int) T : Manifest, U:Manifest](r
       val value = computeVehicleValue(vehicle,convertComputationStepToSegment(bijForPreCompute.kindOfComputation(posOfFirstNode,posOfLastNode),routes,prevRoutes),routes,preComputedValues)
       assignVehicleValue(vehicle,value)
       vehicleValues(vehicle) = value
-      println(preComputedToString())
+      //println(preComputedToString())
     }
   }
 
@@ -394,11 +375,11 @@ abstract class PreComputeInvariant[@specialized(Int) T : Manifest, U:Manifest](r
   * @param stackDone if the current bijection is a stacked bijection
   * @param prevRoutes routes before the last change
   */
-class UpdatedValues(val changedVehicle: IterableMagicBoolArray,
+class UpdatedValues(//val changedVehicle: IterableMagicBoolArray,
                     val updatedBij: FunctionForPreCompute,
                     val vehicleSearcher: VehicleLocation,
                     val checkpoint0Defined: Boolean,
                     val stackDone: Boolean,
                     val prevRoutes: IntSequence,
-                    val checkpoint0: IntSequence,
-                    val changedVehicleSinceCheckpoint0: IterableMagicBoolArray)
+                    val checkpoint0: IntSequence)
+                    //val changedVehicleSinceCheckpoint0: IterableMagicBoolArray)
