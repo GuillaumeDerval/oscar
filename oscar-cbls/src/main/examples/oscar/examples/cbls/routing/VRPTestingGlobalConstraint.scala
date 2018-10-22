@@ -114,9 +114,9 @@ class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle :
 object VRPTestingGlobalConstraint extends App {
 
 
-  val nbNode = 100;
-  val nbVehicle = 10;
-  val model = new Store(checker = Some(new ErrorChecker))
+  val nbNode = 1000
+  val nbVehicle = 10
+  val model = new Store() //checker = Some(new ErrorChecker))
   //val model = new Store()
 
   val problem = new VRP(model,nbNode,nbVehicle)
@@ -125,17 +125,17 @@ object VRPTestingGlobalConstraint extends App {
 
   val nbNodesPerVehicle : Array[CBLSIntVar] = Array.tabulate(nbVehicle)({_ => CBLSIntVar(model,0)})
 
-  val routeLengthPerVehicle = constantRoutingDistance(problem.routes,nbNode,nbVehicle,perVehicle = true,symetricDistanceMatrix,true,true,false)
+  val routeLengthPerVehicle = constantRoutingDistance(problem.routes,nbNode,nbVehicle,perVehicle = true,symetricDistanceMatrix,false,false,false)
 
   val totalRouteLength = sum(routeLengthPerVehicle)
 
-  val nbNodeConstraint = new NbNodeGlobalConstraint(problem.routes,nbVehicle,nbNodesPerVehicle)
+  val nbNodeConstraint = new LogReducedNumberOfNodes(problem.routes,nbVehicle,nbNodesPerVehicle)
 
 
   val c = new ConstraintSystem(model)
 
   for(vehicle <- 0 until nbVehicle){
-    c.add(nbNodesPerVehicle(vehicle) le 10)
+    c.add(nbNodesPerVehicle(vehicle) le 100)
   }
 
   c.close()
@@ -190,7 +190,7 @@ object VRPTestingGlobalConstraint extends App {
       twoOpt,
       threeOpt andThen threeOpt))
 
-  search.verbose = 3
+  search.verbose = 1
 
   search.doAllMoves(obj = obj)
 

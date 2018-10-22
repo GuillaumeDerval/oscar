@@ -369,18 +369,18 @@ abstract class PreComputeInvariant[T: Manifest, U:Manifest](routes: ChangingSeqV
       val value = computeVehicleValue(vehicle,convertComputationStepToSegment(bijForPreCompute.kindOfComputation(posOfFirstNode,posOfLastNode),routes,prevRoutes),routes,preComputedValues)
       assignVehicleValue(vehicle,value)
       vehicleValues(vehicle) = value
-      println(preComputedToString())
     }
+    //println(preComputedToString())
   }
 
   def preComputedToString():String = {
-    "[" + preComputedValues.indices.map(i => "\n\t" + i + ":" + preComputedValues(i)).mkString("") + "\n]"
+    "preComputedValues[" + preComputedValues.indices.map(i => "\n\t" + i + ":" + preComputedValues(i)).mkString("") + "\n]"
   }
 
   override def checkInternals(c : Checker): Unit = {
     for (v <- vehicles){
       require(computeVehicleValueFromScratch(v,routes.value).equals(vehicleValues(v)),
-        "For Vehicle " + v + " : " + computeVehicleValueFromScratch(v,routes.value) + " " + vehicleValues(v) + " " + routes + "\n" + preComputedToString())
+        "vehicle:" + v + " fromScratch:" + computeVehicleValueFromScratch(v,routes.value) + " incremental:" + vehicleValues(v) + " routes:" + routes + "\n" + preComputedToString())
     }
   }
 }

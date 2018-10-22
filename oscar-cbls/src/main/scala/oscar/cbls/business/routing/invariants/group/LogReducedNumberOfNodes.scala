@@ -17,7 +17,7 @@ package oscar.cbls.business.routing.invariants.group
 
 
 import oscar.cbls.{CBLSIntVar, Variable}
-import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.ChangingSeqValue
 
 
@@ -25,7 +25,11 @@ case class NodesOnSubsequence(nbNodes:Int,
                               level:Int,
                               firstNode:Int,
                               lastNode:Int){
-  require(nbNodes == (1 << level))
+//  require(nbNodes == ((1 << (level-1))  -1))
+
+  override def toString: String = {
+    "NodesOnSubsequence(nbNodes:" + nbNodes + ",level:" + level + ",firstNode:" + firstNode + ",lastNode:" + lastNode + ")"
+  }
 }
 
 class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
@@ -51,7 +55,7 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
     */
   override def composeSteps(firstStep: NodesOnSubsequence, secondStep: NodesOnSubsequence): NodesOnSubsequence = {
     require(firstStep.level == secondStep.level)
-    NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes, firstStep.level + 1,firstStep.firstNode,secondStep.lastNode)
+    NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes - 1, firstStep.level + 1,firstStep.firstNode,secondStep.lastNode)
   }
 
   /**
@@ -63,16 +67,18 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
     * @return the value associated with the vehicle. this value should only be computed based on the provided segments
     */
   override def computeVehicleValueComposed(vehicle: Int, segments: List[LogReducedSegment[NodesOnSubsequence]]): Int = {
+    //println("computeVehicleValueComposed(vehicle:" + vehicle + " segments:" + segments)
     segments.map({
-      case LogReducedPreComputedSubSequence(startNode, endNode, steps)=>
-        require(steps.head.firstNode == startNode)
-        require(steps.last.lastNode == endNode)
-        steps.map(_.nbNodes).sum
-      case LogReducedFlippedPreComputedSubSequence(startNode, endNode, steps) =>
-        require(steps.head.firstNode == startNode)
-        require(steps.last.lastNode == endNode)
-        steps.map(_.nbNodes).sum
-      case LogReducedNewNode(node) => 1
+      case s@LogReducedPreComputedSubSequence(startNode, endNode, steps)=>
+        //require(steps.isEmpty || steps.head.firstNode == startNode)
+        //require(steps.isEmpty || steps.last.lastNode == endNode)
+        if(steps.isEmpty) 1 else steps.map(_.nbNodes-1).sum+1
+      case s@LogReducedFlippedPreComputedSubSequence(startNode, endNode, steps) =>
+        //require(steps.isEmpty || steps.last.lastNode == startNode, steps)
+        //require(steps.isEmpty || steps.head.firstNode == endNode)
+        if(steps.isEmpty) 1 else steps.map(_.nbNodes-1).sum+1
+      case s@LogReducedNewNode(node) =>
+        1
     }).sum
   }
 
@@ -89,13 +95,19 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
   }
 
   /**
-    * this method is defined for verification purpose. It computes the value of the vehicle from scratch.
     *
-    * @param vehicle the vehicle on which the value is computed
-    * @param routes  the sequence representing the route of all vehicle
-    * @return the value of the constraint for the given vehicle
+    * @param vehicle
+    * @param routes
+    * @return
     */
-  override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Int = ???
+  override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Int = {
+    if(vehicle == v-1){
+      routes.size - routes.positionOfAnyOccurrence(vehicle).get
+    }else{
+      routes.positionOfAnyOccurrence(vehicle+1).get - routes.positionOfAnyOccurrence(vehicle).get
+    }
+  }
 
   override def outputVariables: Iterable[Variable] = nbNodesPerRoute
 }
+
