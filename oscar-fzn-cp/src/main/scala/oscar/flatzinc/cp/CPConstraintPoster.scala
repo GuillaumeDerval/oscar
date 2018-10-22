@@ -91,7 +91,7 @@ class CPConstraintPoster(val pstrength: oscar.cp.core.CPPropagStrength){
         })
         new oscar.cp.constraints.GCCFWC(xs.map(getVar), coverMin, fullLBound, fullUBound)
       }
-      case nvalue_int(y, xs, ann)                     => (new oscar.cp.constraints.AtLeastNValue(xs.map(getVar), getVar(y)), CPPropagStrength.Weak) // There is currently a bug with non-weak propagation
+      case nvalue_int(y, xs, ann)                     => new oscar.cp.constraints.AtLeastNValue(xs.map(getVar), getVar(y))
 
       //case reif(count_eq(x,v,c,_),b) => getBoolVar(b) ?== oscar.cp.countEq(getVar(c), x.map(getVar), getVar(v))
       
