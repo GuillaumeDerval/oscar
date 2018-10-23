@@ -17,45 +17,49 @@ case class DeltaTransfer(vars:Array[CBLSIntVar],
                          selectDeltaBehavior:LoopBehavior = First(),
                          hotRestart:Boolean = true)extends EasyNeighborhoodMultiLevel[TransferMove](name){
   //the indice to start with for the exploration
-  var indiceOfFirstVariable:Int = 0
+  var firstVarIndice:Int = 0
+  var firstVar:CBLSIntVar = null
+
+  var secondVarIndice:Int = -1
+  var secondVar:CBLSIntVar = null
+
+  var delta:Int = 0
+
   override def exploreNeighborhood() {
 
     val firstIterationSchemeZone =
       if (searchZone1 == null) {
         if (hotRestart) {
-          if (indiceOfFirstVariable >= vars.length) indiceOfFirstVariable = 0
-          vars.indices startBy indiceOfFirstVariable
+          if (firstVarIndice >= vars.length) firstVarIndice = 0
+          vars.indices startBy firstVarIndice
         } else vars.indices
-      } else if (hotRestart) HotRestart(searchZone1(), indiceOfFirstVariable) else searchZone1()
+      } else if (hotRestart) HotRestart(searchZone1(), firstVarIndice) else searchZone1()
 
     val searchZone2ForThisSearch = if (searchZone2 == null) null else searchZone2()
     val searchZoneForDeltaL1 = if(searchZoneForDelta == null) null else searchZoneForDelta()
 
     val (iIterator,notifyFound1) = selectFirstVariableBehavior.toIterator(firstIterationSchemeZone)
     while (iIterator.hasNext) {
-      indiceOfFirstVariable = iIterator.next()
+      firstVarIndice = iIterator.next()
 
-      val firstVar = vars(indiceOfFirstVariable)
+      firstVar = vars(firstVarIndice)
       val oldValOfFirstVar = firstVar.newValue
 
-      val secondIterationSchemeZone = if (searchZone2ForThisSearch == null) vars.indices else searchZone2ForThisSearch(indiceOfFirstVariable,oldValOfFirstVar)
-      val searchZoneForDeltaL2 = if(searchZoneForDeltaL1 == null) null else searchZoneForDeltaL1(indiceOfFirstVariable,oldValOfFirstVar)
+      val secondIterationSchemeZone = if (searchZone2ForThisSearch == null) vars.indices else searchZone2ForThisSearch(firstVarIndice,oldValOfFirstVar)
+      val searchZoneForDeltaL2 = if(searchZoneForDeltaL1 == null) null else searchZoneForDeltaL1(firstVarIndice,oldValOfFirstVar)
 
       val (jIterator,notifyFound2) = selectSecondVariableBehavior.toIterator(secondIterationSchemeZone)
       while (jIterator.hasNext) {
-        val j = jIterator.next()
-        val secondVar = vars(j)
+        secondVarIndice = jIterator.next()
+        secondVar = vars(secondVarIndice)
         val oldValOfSecondVar = secondVar.newValue
 
-        if ((!symmetryCanBeBrokenOnIndices || indiceOfFirstVariable < j) //we break symmetry on variables
-          && indiceOfFirstVariable != j
+        if ((!symmetryCanBeBrokenOnIndices || firstVarIndice < secondVarIndice) //we break symmetry on variables
+          && firstVarIndice != secondVarIndice
           && secondVar.domain.contains(oldValOfFirstVar)
           && firstVar.domain.contains(oldValOfSecondVar)) {
 
-          this.firstVar = firstVar
           this.secondVar = secondVar
-          this.firstVarIndice = indiceOfFirstVariable
-          this.secondVarIndice = j
 
           val searchZoneForDeltaL3 = if(searchZoneForDeltaL2 == null) null else searchZoneForDeltaL2(secondVarIndice,oldValOfSecondVar)
 
@@ -77,21 +81,17 @@ case class DeltaTransfer(vars:Array[CBLSIntVar],
         }
       }
     }
-    indiceOfFirstVariable = indiceOfFirstVariable +1
+    firstVarIndice = firstVarIndice +1
+    secondVarIndice = -1
   }
 
-  var firstVar:CBLSIntVar = null
-  var secondVar:CBLSIntVar = null
-  var firstVarIndice:Int = 0
-  var secondVarIndice:Int = 0
-  var delta:Int = 0
 
   override def instantiateCurrentMove(newObj: Int) =
     TransferMove(firstVar, secondVar, delta:Int, firstVarIndice,secondVarIndice,newObj, name)
 
   //this resets the internal state of the Neighborhood
   override def reset(): Unit = {
-    indiceOfFirstVariable = 0
+    firstVarIndice = 0
   }
 }
 
