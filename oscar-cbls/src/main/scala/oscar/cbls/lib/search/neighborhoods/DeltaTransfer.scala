@@ -15,7 +15,9 @@ case class DeltaTransfer(vars:Array[CBLSIntVar],
                          selectFirstVariableBehavior:LoopBehavior = First(),
                          selectSecondVariableBehavior:LoopBehavior = First(),
                          selectDeltaBehavior:LoopBehavior = First(),
-                         hotRestart:Boolean = true)extends EasyNeighborhoodMultiLevel[TransferMove](name){
+                         hotRestart:Boolean = true)
+  extends EasyNeighborhoodMultiLevel[TransferMove](name){
+
   //the indice to start with for the exploration
   var firstVarIndice:Int = 0
   var firstVar:CBLSIntVar = null
