@@ -22,14 +22,14 @@ import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, 
 
 
 case class TransferNeighborhood(vars:Array[CBLSIntVar],
-                         name:String = "TransferNeighborhood",
-                         searchZone1:()=>Iterable[Int] = null,
-                         searchZone2:() => (Int,Int)=>Iterable[Int] = null,
-                         searchZoneForDelta:() => (Int,Int) => (Int,Int) => OptimizingLinearSelector, //donne des delta à essayer (TOTO: faire un enwton raphson ou regula falsi ou dichotomoe ici!!!
-                         symmetryCanBeBrokenOnIndices:Boolean = true,
-                         selectFirstVariableBehavior:LoopBehavior = First(),
-                         selectSecondVariableBehavior:LoopBehavior = First(),
-                         hotRestart:Boolean = true)
+                                name:String = "TransferNeighborhood",
+                                searchZone1:()=>Iterable[Int] = null,
+                                searchZone2:() => (Int,Int)=>Iterable[Int] = null,
+                                searchZoneForDelta:() => (Int,Int) => (Int,Int) => LinearSelector, //donne des delta à essayer (TOTO: faire un enwton raphson ou regula falsi ou dichotomoe ici!!!
+                                symmetryCanBeBrokenOnIndices:Boolean = true,
+                                selectFirstVariableBehavior:LoopBehavior = First(),
+                                selectSecondVariableBehavior:LoopBehavior = First(),
+                                hotRestart:Boolean = true)
   extends EasyNeighborhoodMultiLevel[TransferMove](name){
 
   //the indice to start with for the exploration
@@ -80,20 +80,19 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
           val iterationOnDelta = searchZoneForDeltaL2(secondVarIndice,oldValOfSecondVar)
 
           //TODO: il faut cadrer dans le domaine des variables!!
-          iterationOnDelta.recordValue(0,initialObj)
 
-          while (iterationOnDelta.hasNext) {
-            delta = iterationOnDelta.next()
-
+          def evaluate(delta:Int): Int ={
+            this.delta = delta
             val newObj = obj.swapVal(firstVar, secondVar)
-
-            iterationOnDelta.recordValue(delta,newObj)
-
             if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
               notifyFound1()
               notifyFound2()
             }
+            newObj
           }
+          val minValueForDelta = (secondVar.min - oldValOfSecondVar) min (oldValOfFirstVar - firstVar.max)
+          val maxValueForDelta = (secondVar.max - oldValOfSecondVar) max (oldValOfFirstVar - firstVar.min)
+          iterationOnDelta.search(evaluate,minValueForDelta,maxValueForDelta,initialObj,() => false)
         }
       }
     }
@@ -114,23 +113,23 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
 
 /** standard move that swaps the value of two CBLSIntVar
   *
-  * @param i the variable
-  * @param j the other variable
+  * @param firstVar the variable
+  * @param secondVar the other variable
   * @param objAfter the objective after this assignation will be performed
   * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
   * @author renaud.delandtsheer@cetic.be
   */
-case class TransferMove(i:CBLSIntVar,j:CBLSIntVar, delta:Int, idI:Int, idJ:Int, override val objAfter:Int, override val neighborhoodName:String = null)
+case class TransferMove(firstVar:CBLSIntVar, secondVar:CBLSIntVar, delta:Int, idI:Int, idJ:Int, override val objAfter:Int, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
   override def commit() {
-    i :+= delta
-    j:-= delta
+    firstVar :+= delta
+    secondVar :-= delta
   }
 
   override def toString: String  = {
-    neighborhoodNameToString + "Transfer(" + i + " :+= " + delta + " "  + j + ":-=" + delta + objToString + ")"
+    neighborhoodNameToString + "Transfer(" + firstVar + " :+= " + delta + " "  + secondVar + ":-=" + delta + objToString + ")"
   }
 
-  override def touchedVariables: List[Variable] = List(i,j)
+  override def touchedVariables: List[Variable] = List(firstVar,secondVar)
 }
