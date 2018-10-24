@@ -67,7 +67,7 @@ case class PreComputedSubSequence[@specialized(Int)T](startNode:Int,
                             endNode:Int,
                             endNodeValue:T) extends Segment[T]{
   override def toString: String = {
-    "PreComputedSubSequece (StartNode : " + startNode + " - value : " + startNodeValue + " EndNode : " + endNode + " - value " + endNodeValue + ")"
+    "PreComputedSubSequence (StartNode : " + startNode + " - value : " + startNodeValue + " EndNode : " + endNode + " - value " + endNodeValue + ")"
   }
 }
 
@@ -86,7 +86,7 @@ case class FlippedPreComputedSubSequence[@specialized(Int)T](startNode:Int,
                             endNode:Int,
                             endNodeValue:T) extends Segment[T]{
   override def toString: String = {
-    "FlippedPreComputedSubSequece (StartNode : " + startNode + " - value : " + startNodeValue + " EndNode : " + endNode + " - value " + endNodeValue + ")"
+    "FlippedPreComputedSubSequence (StartNode : " + startNode + " - value : " + startNodeValue + " EndNode : " + endNode + " - value " + endNodeValue + ")"
   }
 }
 
