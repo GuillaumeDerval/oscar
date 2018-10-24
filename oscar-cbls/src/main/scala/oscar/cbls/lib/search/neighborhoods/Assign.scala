@@ -63,7 +63,7 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
   var currentIndice:Int = 0
   var newVal:Int = 0
 
-  override def exploreNeighborhood() {
+  override def exploreNeighborhood(initialObj: Int){
 
     val iterationZone =
       if (searchZone == null) vars.indices

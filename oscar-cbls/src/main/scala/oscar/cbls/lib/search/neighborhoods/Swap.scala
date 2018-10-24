@@ -75,7 +75,7 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
   var secondVarIndice:Int = 0
   var secondVar:CBLSIntVar = null
 
-  override def exploreNeighborhood() {
+  override def exploreNeighborhood(initialObj: Int){
 
     val firstIterationSchemeZone =
       if (searchZone1 == null) {

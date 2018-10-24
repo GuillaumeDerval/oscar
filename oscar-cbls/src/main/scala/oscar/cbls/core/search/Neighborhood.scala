@@ -477,7 +477,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
     if (printExploredNeighborhoods)
       println(neighborhoodNameToString + ": start exploration")
 
-    exploreNeighborhood()
+    exploreNeighborhood(oldObj)
 
     exploring = false
 
@@ -499,7 +499,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
    * every time you explore a neighbor, you must perform the calls to notifyMoveExplored or moveRequested(newObj) && submitFoundMove(myMove)){
    * as explained in the documentation of this class
    */
-  def exploreNeighborhood()
+  def exploreNeighborhood(initialObj: Int): Unit
 
   def instantiateCurrentMove(newObj: Int): M
 

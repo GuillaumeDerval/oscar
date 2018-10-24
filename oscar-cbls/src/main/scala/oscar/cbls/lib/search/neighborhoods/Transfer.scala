@@ -1,20 +1,34 @@
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
 package oscar.cbls.lib.search.neighborhoods
 
 import oscar.cbls._
-import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
+import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.core.computation.{CBLSIntVar, Variable}
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, Move}
 
 
-case class DeltaTransfer(vars:Array[CBLSIntVar],
-                         name:String = "SwapsNeighborhood",
+case class TransferNeighborhood(vars:Array[CBLSIntVar],
+                         name:String = "TransferNeighborhood",
                          searchZone1:()=>Iterable[Int] = null,
                          searchZone2:() => (Int,Int)=>Iterable[Int] = null,
-                         searchZoneForDelta:() => (Int,Int) => (Int,Int) => Iterable[Int], //donne des delta à essayer (TOTO: faire un enwton raphson ou regula falsi ou dichotomoe ici!!!
+                         searchZoneForDelta:() => (Int,Int) => (Int,Int) => OptimizingLinearSelector, //donne des delta à essayer (TOTO: faire un enwton raphson ou regula falsi ou dichotomoe ici!!!
                          symmetryCanBeBrokenOnIndices:Boolean = true,
                          selectFirstVariableBehavior:LoopBehavior = First(),
                          selectSecondVariableBehavior:LoopBehavior = First(),
-                         selectDeltaBehavior:LoopBehavior = First(),
                          hotRestart:Boolean = true)
   extends EasyNeighborhoodMultiLevel[TransferMove](name){
 
@@ -27,7 +41,7 @@ case class DeltaTransfer(vars:Array[CBLSIntVar],
 
   var delta:Int = 0
 
-  override def exploreNeighborhood() {
+  override def exploreNeighborhood(initialObj: Int){
 
     val firstIterationSchemeZone =
       if (searchZone1 == null) {
@@ -38,7 +52,7 @@ case class DeltaTransfer(vars:Array[CBLSIntVar],
       } else if (hotRestart) HotRestart(searchZone1(), firstVarIndice) else searchZone1()
 
     val searchZone2ForThisSearch = if (searchZone2 == null) null else searchZone2()
-    val searchZoneForDeltaL1 = if(searchZoneForDelta == null) null else searchZoneForDelta()
+    val searchZoneForDeltaL1 = searchZoneForDelta()
 
     val (iIterator,notifyFound1) = selectFirstVariableBehavior.toIterator(firstIterationSchemeZone)
     while (iIterator.hasNext) {
@@ -48,7 +62,7 @@ case class DeltaTransfer(vars:Array[CBLSIntVar],
       val oldValOfFirstVar = firstVar.newValue
 
       val secondIterationSchemeZone = if (searchZone2ForThisSearch == null) vars.indices else searchZone2ForThisSearch(firstVarIndice,oldValOfFirstVar)
-      val searchZoneForDeltaL2 = if(searchZoneForDeltaL1 == null) null else searchZoneForDeltaL1(firstVarIndice,oldValOfFirstVar)
+      val searchZoneForDeltaL2 = searchZoneForDeltaL1(firstVarIndice,oldValOfFirstVar)
 
       val (jIterator,notifyFound2) = selectSecondVariableBehavior.toIterator(secondIterationSchemeZone)
       while (jIterator.hasNext) {
@@ -63,21 +77,21 @@ case class DeltaTransfer(vars:Array[CBLSIntVar],
 
           this.secondVar = secondVar
 
-          val searchZoneForDeltaL3 = if(searchZoneForDeltaL2 == null) null else searchZoneForDeltaL2(secondVarIndice,oldValOfSecondVar)
+          val iterationOnDelta = searchZoneForDeltaL2(secondVarIndice,oldValOfSecondVar)
 
-          val iterationOnDelta = if (searchZoneForDeltaL3 == null) ??? else searchZoneForDeltaL3
           //TODO: il faut cadrer dans le domaine des variables!!
+          iterationOnDelta.recordValue(0,initialObj)
 
-          val (deltaIterator,notifyFound3) = selectDeltaBehavior.toIterator(iterationOnDelta)
-          while (deltaIterator.hasNext) {
-            val delta = deltaIterator.next()
+          while (iterationOnDelta.hasNext) {
+            delta = iterationOnDelta.next()
 
-            this.delta = delta
+            val newObj = obj.swapVal(firstVar, secondVar)
 
-            if (evaluateCurrentMoveObjTrueIfSomethingFound(obj.swapVal(firstVar, secondVar))) {
+            iterationOnDelta.recordValue(delta,newObj)
+
+            if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
               notifyFound1()
               notifyFound2()
-              notifyFound3()
             }
           }
         }

@@ -69,7 +69,7 @@ case class TwoOpt(segmentStartValues:()=>Iterable[Int],
    * reconnecting it.
    * The search complexity is O(n²).
    */
-  override def exploreNeighborhood(): Unit = {
+  override def exploreNeighborhood(initialObj: Int): Unit = {
 
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
 
