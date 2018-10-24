@@ -11,8 +11,8 @@ import oscar.cbls.algo.quick.QList
   *                     Conditions are labeled from 0 to nbCondition-1 inclusive.
   *                     all conditions mut appear in one edge.
   */
-case class ConditionalGraph(edges:Array[Edge],
-                            nodes:Array[Node],
+case class ConditionalGraph(nodes:Array[Node],
+                            edges:Array[Edge],
                             nbConditions:Int){
   val nbNodes = nodes.length
   val nbEdges = edges.length
@@ -25,11 +25,21 @@ case class ConditionalGraph(edges:Array[Edge],
   }
 }
 
-case class Edge(edgeId:Int,
-                nodeA:Node,
-                nodeB:Node,
-                length:Int,
-                conditionID:Option[Int]){
+class ConditionalGraphWithIntegerNodeCoordinates(val nodeswithCoordinates:Array[NodeWithIntegerCoordinates],
+                                                 edges:Array[Edge],
+                                                 nbConditions:Int)
+  extends ConditionalGraph(
+    nodeswithCoordinates.asInstanceOf[Array[Node]],
+    edges:Array[Edge],
+    nbConditions:Int){
+
+}
+
+class Edge(val edgeId:Int,
+           val nodeA:Node,
+           val nodeB:Node,
+           val length:Int,
+           val conditionID:Option[Int]){
   require(length > 0)
   require(nodeA != nodeB)
 
@@ -39,7 +49,10 @@ case class Edge(edgeId:Int,
   def otherNode(node:Node):Node = if(node == nodeA) nodeB else nodeA
 }
 
-case class Node(nodeId:Int){
+
+class NodeWithIntegerCoordinates(nodeID:Int,val x:Int,val y:Int) extends Node(nodeID)
+
+class Node(val nodeId:Int){
   var incidentEdges:QList[Edge] = null
   def registerEdge(edge:Edge) {incidentEdges = QList(edge,incidentEdges)}
 }
