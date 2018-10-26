@@ -22,7 +22,8 @@ import java.awt.Color
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.computation.ChangingSetValue
-import oscar.cbls.lib.invariant.graph.{ConditionalGraph, ConditionalGraphAndVoronoiZonesMapWindow, ConditionalGraphWithIntegerNodeCoordinates, VoronoiZones}
+import oscar.cbls.lib.invariant.graph.FloydWarshall.{buildAdjacencyMatrix, saturateAdjacencyMatrixToDistanceMatrix}
+import oscar.cbls.lib.invariant.graph._
 import oscar.cbls.lib.invariant.graph.test.RandomGraphGenerator
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.MinConstArrayValueWise
@@ -58,10 +59,19 @@ object WareHouseLocationVisu extends App with StopWatch{
     nbNonConditionalEdges=(W+D)*8,
     mapSide= 1000)
 
+
+  val distanceMatrix = FloydWarshall.buildDistanceMatrix(graph, _ => true):Array[Array[Option[Int]]]
+
+
+
   //warehouses are numbered by nodeID from 0 to W-1
   //shops are numbered by ndeID from W to W+D-1
   val warehouseToNode =  Array.tabulate(W)(w => graph.nodes(w))
   val deliveryToNode = Array.tabulate(D)(d => graph.nodes(d + W))
+
+
+  val warehouseToWarehouseDistances = Array.tabulate(W)(w1 => Array.tabulate(W)(w2 => distanceMatrix(w1)(w2).getOrElse(1000)))
+
 
   val costForOpeningWarehouse =  Array.fill(W)(1000)
 
@@ -86,14 +96,10 @@ object WareHouseLocationVisu extends App with StopWatch{
 
   m.close()
 
-
   val centroidColors = ColorGenerator.generateRandomColors(W)
 
-  new ConditionalGraphAndVoronoiZonesMapWindow(graph:ConditionalGraphWithIntegerNodeCoordinates,
-    centroidColor = SortedMap.empty ++ warehouseToNode.toList.map(node => : Array[Color])
-
-
-  val visual = new WareHouseLocationWindow(deliveryPositions,warehousePositions,distanceCost,costForOpeningWarehouse)
+  val visual = new ConditionalGraphAndVoronoiZonesMapWindow(graph:ConditionalGraphWithIntegerNodeCoordinates,
+    centroidColor = SortedMap.empty ++ warehouseToNode.toList.map(node => (node.nodeId,centroidColors(node.nodeId))))
 
   var bestObj = Int.MaxValue
 
@@ -157,7 +163,8 @@ object WareHouseLocationVisu extends App with StopWatch{
     if(obj.value < bestObj){
       bestObj = obj.value
       if(this.getWatch > lastDisplay + displayDelay) {
-        visual.redraw(openWarehouses.value)
+        visual.redraw(SortedSet.empty,openWarehouses.value,
+          trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => (v2.value)}))
         lastDisplay = this.getWatch}
     })
 
@@ -165,7 +172,8 @@ object WareHouseLocationVisu extends App with StopWatch{
 
   neighborhood.doAllMoves(obj=obj)
 
-  visual.redraw(openWarehouses.value,false)
+  visual.redraw(SortedSet.empty,openWarehouses.value,
+    trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => (v2.value)}))
 
   println(neighborhood.profilingStatistics)
 
