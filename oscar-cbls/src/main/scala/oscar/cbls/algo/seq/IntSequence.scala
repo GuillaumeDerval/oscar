@@ -264,6 +264,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     )
   }
 
+  //TODO: this seems to be costly because of the lazy val approach in the underlying data structure. maybe lazy val is not hte right way of doing?
   def size : Int = internalPositionToValue.size
 
   override def isEmpty : Boolean = internalPositionToValue.isEmpty
