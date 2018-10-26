@@ -11,9 +11,7 @@ object VoronoiZones{
   def apply(graph:ConditionalGraph,
             openConditions:SetValue,
             centroids:SetValue,
-            trackedNodes:Iterable[Int]):SortedMap[Int,(CBLSIntVar,CBLSIntVar)] = {
-
-    val m = InvariantHelper.findModel(openConditions,centroids)
+            trackedNodes:Iterable[Int],m:Store,defaultDistanceForUnreachableNodes:Int):SortedMap[Int,(CBLSIntVar,CBLSIntVar)] = {
 
     val trackedNodeToDistanceAndCentroid = SortedMap.empty[Int,(CBLSIntVar,CBLSIntVar)] ++ trackedNodes.map(nodeID =>
       nodeID -> (CBLSIntVar(m, 0, 0 to 1, "distanceToClosestCentroid_Node" + nodeID),
@@ -23,7 +21,8 @@ object VoronoiZones{
     new VoronoiZones(graph,
       openConditions,
       centroids,
-      trackedNodeToDistanceAndCentroid)
+      trackedNodeToDistanceAndCentroid,
+      defaultDistanceForUnreachableNodes:Int)
 
     trackedNodeToDistanceAndCentroid
   }
@@ -44,7 +43,8 @@ object VoronoiZones{
 class VoronoiZones(graph:ConditionalGraph,
                    openConditions:SetValue,
                    centroids:SetValue,
-                   trackedNodeToDistanceAndCentroidMap:SortedMap[Int,(CBLSIntVar,CBLSIntVar)])
+                   trackedNodeToDistanceAndCentroidMap:SortedMap[Int,(CBLSIntVar,CBLSIntVar)],
+                   defaultDistanceForUnreachableNodes:Int)
   extends Invariant with SetNotificationTarget {
 
   case class OutputLabeling(distance:CBLSIntVar,
@@ -63,14 +63,14 @@ class VoronoiZones(graph:ConditionalGraph,
 
     def setUnreachable(): Unit ={
       this.centroid := -1
-      this.distance := 0
+      this.distance := defaultDistanceForUnreachableNodes
     }
 
     def checkEqual(l:ClosestCentroidLabeling): Unit ={
       l match{
         case Unreachable =>
           require(this.centroid.value == -1)
-          require(this.distance.value == 0)
+          require(this.distance.value == defaultDistanceForUnreachableNodes)
 
         case VoronoiZone(centroid,distance) =>
           require(this.centroid.value == centroid.nodeId)
@@ -90,13 +90,17 @@ class VoronoiZones(graph:ConditionalGraph,
     Array.tabulate(graph.nbNodes)(nodeID =>
       trackedNodeToDistanceAndCentroidMap.get(nodeID) match {
         case None => null
-        case Some(couple@(distanceVar, centroidVar)) =>
+        case Some((distanceVar, centroidVar)) =>
           distanceVar.setDefiningInvariant(this)
           centroidVar.setDefiningInvariant(this)
           OutputLabeling(distance=distanceVar,centroid = centroidVar)
       })
 
   private val isConditionalEdgeOpen: Array[Boolean] = Array.fill(graph.nbConditions)(false)
+
+  for(c <- openConditions.value){
+    isConditionalEdgeOpen(c) = true
+  }
 
   private def isEdgeOpen(edge: Edge): Boolean =
     edge.conditionID match {
@@ -173,7 +177,19 @@ class VoronoiZones(graph:ConditionalGraph,
     }
   }
 
-  private def loadAllCentroidsIntoHeap(centroids: Iterable[Int]): Unit = {
+  markAllNodesUnreachable()
+  loadCentroidsIntoHeap(this.centroids.value)
+  performLabelingFromCurrentHeap()
+
+  private def markAllNodesUnreachable(): Unit = {
+    for (node <- graph.nodes) {
+      labelNode(node.nodeId,Unreachable)
+      nodeIDHeap.deleteIfPresent(node.nodeId)
+    }
+  }
+
+
+  private def loadCentroidsIntoHeap(centroids: Iterable[Int]): Unit = {
     for (centroid <- centroids) {
       if (!nodeIDHeap.contains(centroid)) {
         loadOrCorrectNodeIDIntoHeap(centroid)

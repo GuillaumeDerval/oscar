@@ -16,9 +16,9 @@ import scala.swing.Color
 class ConditionalGraphAndVoronoiZonesMapWindow(graph:ConditionalGraphWithIntegerNodeCoordinates,
                                                centroidColor:SortedMap[Int,Color],
                                                colorForUnreachableNodes:Color = Color.black,
-                                               colorForPermanentEdges:Color = Color.red,
+                                               colorForPermanentEdges:Color =Color.black,
                                                colorForOpenEdges:Color = Color.green,
-                                               colorForClosedEdges:Color = Color.black){
+                                               colorForClosedEdges:Color = Color.red){
 
   val visual = new ConditionalGraphAndVoronoiZonesMap(
     graph:ConditionalGraphWithIntegerNodeCoordinates,
@@ -88,9 +88,17 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
         //this is not a centroid, check for a marked node
         nodeToCentroid.get(node.nodeId) match{
           case Some(centroidID) =>
-            drawNode(node:NodeWithIntegerCoordinates,centroidColor(centroidID),false)
+            //a folowed node
+            if(centroidID == -1){
+              //not reacheable
+              drawNode(node:NodeWithIntegerCoordinates,colorForUnreachableNodes,false)
+            }else{
+              //reachable by centroidID
+              drawNode(node:NodeWithIntegerCoordinates,centroidColor(centroidID),false)
+            }
           case None =>
-            drawNode(node:NodeWithIntegerCoordinates,colorForUnreachableNodes,false)
+            //not a marked node, set default black color, small dot
+            //drawNode(node:NodeWithIntegerCoordinates,colorForUnreachableNodes,false)
         }
       }
     }
@@ -144,10 +152,10 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
 
     style match{
       case 0 => //permanent edge
-        line.dashed = false
+        line.dashed = true
         line.outerCol = colorForPermanentEdges
       case 1 => //open edge
-        line.dashed = false
+        line.dashed = true
         line.outerCol = colorForOpenEdges
       case 2 => //closed edge
         line.dashed = true

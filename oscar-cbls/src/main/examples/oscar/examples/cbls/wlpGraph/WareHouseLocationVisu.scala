@@ -42,7 +42,7 @@ import scala.swing.Color
 object WareHouseLocationVisu extends App with StopWatch{
 
   //the number of warehouses
-  val W:Int = 300
+  val W:Int = 100
 
   //the number of delivery points
   val D:Int = 1000
@@ -53,16 +53,16 @@ object WareHouseLocationVisu extends App with StopWatch{
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
+  println("generate random graph")
   val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(
-    nbNodes=(W+D)*4,
+    nbNodes=(W+D),
     nbConditionalEdges=0,
-    nbNonConditionalEdges=(W+D)*8,
+    nbNonConditionalEdges=(W+D)*10,
     mapSide= 1000)
 
 
+  println("floyd")
   val distanceMatrix = FloydWarshall.buildDistanceMatrix(graph, _ => true):Array[Array[Option[Int]]]
-
-
 
   //warehouses are numbered by nodeID from 0 to W-1
   //shops are numbered by ndeID from W to W+D-1
@@ -76,18 +76,23 @@ object WareHouseLocationVisu extends App with StopWatch{
   val costForOpeningWarehouse =  Array.fill(W)(1000)
 
   val m = Store() //checker = Some(new ErrorChecker()))
+  println("model")
 
   val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
   val openConditions = CBLSSetConst(SortedSet.empty)
 
+  println("voronoi zones")
   val trackedNodeToDistanceAndCentroid: SortedMap[Int,(CBLSIntVar,CBLSIntVar)] =
     VoronoiZones(graph:ConditionalGraph,
       openConditions = openConditions,
       centroids = openWarehouses,
-      trackedNodes = deliveryToNode.map(_.nodeId))
+      trackedNodes = deliveryToNode.map(_.nodeId),
+      m,
+      defaultDistanceForUnreachableNodes = 10000)
 
+  println("done init voronoi zones")
 
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
     trackedNodeToDistanceAndCentroid(deliveryToNode(d).nodeId)._1)
@@ -162,10 +167,10 @@ object WareHouseLocationVisu extends App with StopWatch{
     ) exhaust (Profile(muLine(3,3,15)) exhaustAndContinueIfMovesFound Profile(muLine(4,3,15))) afterMove(
     if(obj.value < bestObj){
       bestObj = obj.value
-      if(this.getWatch > lastDisplay + displayDelay) {
+
         visual.redraw(SortedSet.empty,openWarehouses.value,
           trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => (v2.value)}))
-        lastDisplay = this.getWatch}
+        lastDisplay = this.getWatch
     })
 
   neighborhood.verbose = 2
