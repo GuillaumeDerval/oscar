@@ -74,13 +74,11 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
     drawEdges(openConditions:SortedSet[Int])
 
     drawNodes(centroids:SortedSet[Int],
-      nodeToCentroid:SortedMap[Int,Int],
-      nodeInfo:Int => String)
+      nodeToCentroid:SortedMap[Int,Int])
   }
 
   def drawNodes(centroids:SortedSet[Int],
-                nodeToCentroid:SortedMap[Int,Int],
-                nodeInfo:Int => String): Unit ={
+                nodeToCentroid:SortedMap[Int,Int]): Unit ={
 
     for(node <- graph.nodeswithCoordinates){
       if(centroids contains node.nodeId){

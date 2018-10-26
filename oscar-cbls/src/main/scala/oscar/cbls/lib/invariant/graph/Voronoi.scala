@@ -15,7 +15,7 @@ object VoronoiZones{
 
     val m = InvariantHelper.findModel(openConditions,centroids)
 
-    val trackedNodeToDistanceAndCentroid = SortedMap.empty ++ trackedNodes.map(nodeID =>
+    val trackedNodeToDistanceAndCentroid = SortedMap.empty[Int,(CBLSIntVar,CBLSIntVar)] ++ trackedNodes.map(nodeID =>
       nodeID -> (CBLSIntVar(m, 0, 0 to 1, "distanceToClosestCentroid_Node" + nodeID),
         CBLSIntVar(m, 0, 0 to 1, "closestCentroidToNode" + nodeID))
     )
