@@ -6,6 +6,29 @@ import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 
+
+object VoronoiZones{
+  def apply(graph:ConditionalGraph,
+            openConditions:SetValue,
+            centroids:SetValue,
+            trackedNodes:Iterable[Int]):SortedMap[Int,(CBLSIntVar,CBLSIntVar)] = {
+
+    val m = InvariantHelper.findModel(openConditions,centroids)
+
+    val trackedNodeToDistanceAndCentroid = SortedMap.empty ++ trackedNodes.map(nodeID =>
+      nodeID -> (CBLSIntVar(m, 0, 0 to 1, "distanceToClosestCentroid_Node" + nodeID),
+        CBLSIntVar(m, 0, 0 to 1, "closestCentroidToNode" + nodeID))
+    )
+
+    new VoronoiZones(graph,
+      openConditions,
+      centroids,
+      trackedNodeToDistanceAndCentroid)
+
+    trackedNodeToDistanceAndCentroid
+  }
+}
+
 /**
   *
   * @param graph a graph, this is a constant. it is a conditional graph, so some edges have
@@ -18,10 +41,10 @@ import scala.collection.immutable.{SortedMap, SortedSet}
   *                                            and the centroid
   *
   */
-class VoronoiZonesInvariant(graph:ConditionalGraph,
-                            openConditions:ChangingSetValue,
-                            centroids:ChangingSetValue,
-                            trackedNodeToDistanceAndCentroidMap:SortedMap[Int,(CBLSIntVar,CBLSIntVar)])
+class VoronoiZones(graph:ConditionalGraph,
+                   openConditions:SetValue,
+                   centroids:SetValue,
+                   trackedNodeToDistanceAndCentroidMap:SortedMap[Int,(CBLSIntVar,CBLSIntVar)])
   extends Invariant with SetNotificationTarget {
 
   case class OutputLabeling(distance:CBLSIntVar,
