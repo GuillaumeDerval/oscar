@@ -57,20 +57,28 @@ object WareHouseLocationVisu extends App with StopWatch{
   val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(
     nbNodes=(W+D),
     nbConditionalEdges=0,
-    nbNonConditionalEdges=(W+D)*10,
+    nbNonConditionalEdges=(W+D)*5,
     mapSide= 1000)
 
 
-  println("floyd")
-  val distanceMatrix = FloydWarshall.buildDistanceMatrix(graph, _ => true):Array[Array[Option[Int]]]
+  //println("floyd")
+  //val distanceMatrix = FloydWarshall.buildDistanceMatrix(graph, _ => true):Array[Array[Option[Int]]]
+
 
   //warehouses are numbered by nodeID from 0 to W-1
   //shops are numbered by ndeID from W to W+D-1
-  val warehouseToNode =  Array.tabulate(W)(w => graph.nodes(w))
-  val deliveryToNode = Array.tabulate(D)(d => graph.nodes(d + W))
+  val warehouseToNode =  Array.tabulate(W)(w => graph.nodeswithCoordinates(w))
+  val deliveryToNode = Array.tabulate(D)(d => graph.nodeswithCoordinates(d + W))
 
 
-  val warehouseToWarehouseDistances = Array.tabulate(W)(w1 => Array.tabulate(W)(w2 => distanceMatrix(w1)(w2).getOrElse(1000)))
+  def distance(node1:NodeWithIntegerCoordinates,node2:NodeWithIntegerCoordinates):Int = {
+    val dx = node1.x - node2.x
+    val dy = node1.y - node2.y
+    math.sqrt(dx*dx + dy*dy).floor.toInt
+  }
+
+  //val warehouseToWarehouseDistances = Array.tabulate(W)(w1 => Array.tabulate(W)(w2 => distanceMatrix(w1)(w2).getOrElse(1000)))
+  val warehouseToWarehouseDistances = Array.tabulate(W)(w1 => Array.tabulate(W)(w2 => distance(warehouseToNode(w1),warehouseToNode(w2))))
 
 
   val costForOpeningWarehouse =  Array.fill(W)(1000)

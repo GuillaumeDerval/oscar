@@ -118,8 +118,8 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
       //circle
       val radius = 3
       val tempPoint = new VisualCircle(this,
-        node.x * xMultiplier - radius,
-        node.y * yMultiplier - radius,
+        node.x * xMultiplier,
+        node.y * yMultiplier,
         radius)
       tempPoint.innerCol_$eq(color)
     }

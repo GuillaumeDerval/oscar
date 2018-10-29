@@ -263,6 +263,7 @@ class VoronoiZones(graph:ConditionalGraph,
 
                   loadOrCorrectNodeIDIntoHeap(otherNodeID)
                 }
+              case x => throw new Error("unexmected value:" + x)
             }
           }
         }
