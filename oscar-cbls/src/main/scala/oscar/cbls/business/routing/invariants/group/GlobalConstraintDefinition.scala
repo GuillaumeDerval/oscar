@@ -1,25 +1,9 @@
 package oscar.cbls.business.routing.invariants.group
 
-/*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
-
-
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core.computation.ChangingSeqValue
 
-abstract class GlobalConstraintDefinition[T:Manifest,U:Manifest](routes:ChangingSeqValue,v :Int) extends PreComputeInvariant[T,U](routes,v) {
+abstract class GlobalConstraintDefinition[@specialized(Int)T:Manifest,@specialized(Int)U:Manifest](routes:ChangingSeqValue,v :Int) extends PreComputeInvariant[T,U](routes,v) {
 
   /**
    * tis method is called by the framework when a pre-computation must be performed.
@@ -67,7 +51,7 @@ abstract class GlobalConstraintDefinition[T:Manifest,U:Manifest](routes:Changing
   def computeVehicleValueFromScratch(vehicle : Int, routes : IntSequence):U
 }
 
-sealed abstract class Segment[T]()
+sealed abstract class Segment[@specialized(Int)T]()
 
 /**
   * This represents a subsequence starting at startNode and ending at endNode.
@@ -78,12 +62,12 @@ sealed abstract class Segment[T]()
   * @param endNodeValue the T value that the pre-computation associated with the node "endNode"
   * @tparam T the type of precomputation
   */
-case class PreComputedSubSequence[T](startNode:Int,
+case class PreComputedSubSequence[@specialized(Int)T](startNode:Int,
                             startNodeValue:T,
                             endNode:Int,
                             endNodeValue:T) extends Segment[T]{
   override def toString: String = {
-    "PreComputedSubSequece (StartNode : " + startNode + " - value : " + startNodeValue + " EndNode : " + endNode + " - value " + endNodeValue + ")"
+    "PreComputedSubSequence (StartNode : " + startNode + " - value : " + startNodeValue + " EndNode : " + endNode + " - value " + endNodeValue + ")"
   }
 }
 
@@ -97,21 +81,20 @@ case class PreComputedSubSequence[T](startNode:Int,
   * @param endNodeValue the T value that the pre-computation associated with the node "endNode"
   * @tparam T the type of precomputation
   */
-case class FlippedPreComputedSubSequence[T](startNode:Int,
+case class FlippedPreComputedSubSequence[@specialized(Int)T](startNode:Int,
                             startNodeValue:T,
                             endNode:Int,
                             endNodeValue:T) extends Segment[T]{
   override def toString: String = {
-    "FlippedPreComputedSubSequece (StartNode : " + startNode + " - value : " + startNodeValue + " EndNode : " + endNode + " - value " + endNodeValue + ")"
+    "FlippedPreComputedSubSequence (StartNode : " + startNode + " - value : " + startNodeValue + " EndNode : " + endNode + " - value " + endNodeValue + ")"
   }
 }
 
 /**
-  * This represent that a node that was not present in the initial sequence
-  * when pre-computation was performed.
+  * This represent that a node that was not present in the initial sequence when pre-computation was performed.
   * @param node
   */
-case class NewNode[T](node:Int) extends Segment[T]{
+case class NewNode[@specialized(Int)T](node:Int) extends Segment[T]{
   override def toString: String = {
     "NewNode - Node : " + node
   }
