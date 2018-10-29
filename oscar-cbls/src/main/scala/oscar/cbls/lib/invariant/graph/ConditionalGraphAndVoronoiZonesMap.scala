@@ -155,10 +155,12 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
         line.dashed = true
         line.outerCol = colorForPermanentEdges
       case 1 => //open edge
-        line.dashed = true
+        line.dashed = false
+        line.borderWidth = 4
         line.outerCol = colorForOpenEdges
       case 2 => //closed edge
-        line.dashed = true
+        line.dashed = false
+        line.borderWidth = 4
         line.outerCol = colorForClosedEdges
     }
   }

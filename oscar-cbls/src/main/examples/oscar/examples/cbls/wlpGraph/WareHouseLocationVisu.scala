@@ -28,6 +28,7 @@ import oscar.cbls.lib.invariant.graph.test.RandomGraphGenerator
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.MinConstArrayValueWise
 import oscar.cbls.lib.invariant.numeric.Sum
+import oscar.cbls.lib.invariant.set.Cardinality
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.util.StopWatch
@@ -47,6 +48,8 @@ object WareHouseLocationVisu extends App with StopWatch{
   //the number of delivery points
   val D:Int = 1000
 
+  val c:Int = 40
+
   val displayDelay = 100
 
   println("WarehouseLocation(W:" + W + ", D:" + D + ")")
@@ -56,20 +59,18 @@ object WareHouseLocationVisu extends App with StopWatch{
   println("generate random graph")
   val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(
     nbNodes=(W+D),
-    nbConditionalEdges=0,
+    nbConditionalEdges=c,
     nbNonConditionalEdges=(W+D)*5,
-    mapSide= 1000)
+    mapSide = 1000)
 
 
   //println("floyd")
   //val distanceMatrix = FloydWarshall.buildDistanceMatrix(graph, _ => true):Array[Array[Option[Int]]]
 
-
   //warehouses are numbered by nodeID from 0 to W-1
   //shops are numbered by ndeID from W to W+D-1
   val warehouseToNode =  Array.tabulate(W)(w => graph.nodeswithCoordinates(w))
   val deliveryToNode = Array.tabulate(D)(d => graph.nodeswithCoordinates(d + W))
-
 
   def distance(node1:NodeWithIntegerCoordinates,node2:NodeWithIntegerCoordinates):Int = {
     val dx = node1.x - node2.x
@@ -89,9 +90,12 @@ object WareHouseLocationVisu extends App with StopWatch{
   val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
-  val openConditions = CBLSSetConst(SortedSet.empty)
 
-  println("voronoi zones")
+  val edgeConditionArray = Array.tabulate(c)(c => CBLSIntVar(m, 1, 0 to 1, "edgeCondition_" + c + "_open"))
+
+  val openConditions = Filter(edgeConditionArray).setName("openConditions")
+
+  println("creating Voronoi zones invariant")
   val trackedNodeToDistanceAndCentroid: SortedMap[Int,(CBLSIntVar,CBLSIntVar)] =
     VoronoiZones(graph:ConditionalGraph,
       openConditions = openConditions,
@@ -105,14 +109,16 @@ object WareHouseLocationVisu extends App with StopWatch{
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
     trackedNodeToDistanceAndCentroid(deliveryToNode(d).nodeId)._1)
 
-  val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses))
+  val costOfPassage = 1000
+
+  val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses) + Cardinality(openConditions)*costOfPassage)
 
   m.close()
 
   val centroidColors = ColorGenerator.generateRandomColors(W)
 
   val visual = new ConditionalGraphAndVoronoiZonesMapWindow(graph:ConditionalGraphWithIntegerNodeCoordinates,
-    centroidColor = SortedMap.empty ++ warehouseToNode.toList.map(node => (node.nodeId,centroidColors(node.nodeId))))
+    centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.nodeId,centroidColors(node.nodeId))))
 
   var bestObj = Int.MaxValue
 
@@ -168,6 +174,7 @@ object WareHouseLocationVisu extends App with StopWatch{
     BestSlopeFirst(
       List(
         Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
+        Profile(AssignNeighborhood(edgeConditionArray, "SwitchConditions")),
         Profile(swapsK(20) guard(() => openWarehouses.value.size >= 5)), //we set a minimal size because the KNearest is very expensive if the size is small
         Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
@@ -176,7 +183,7 @@ object WareHouseLocationVisu extends App with StopWatch{
     if(obj.value < bestObj){
       bestObj = obj.value
 
-        visual.redraw(SortedSet.empty,openWarehouses.value,
+        visual.redraw(openConditions.value,openWarehouses.value,
           trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => (v2.value)}))
         lastDisplay = this.getWatch
     })
@@ -185,11 +192,12 @@ object WareHouseLocationVisu extends App with StopWatch{
 
   neighborhood.doAllMoves(obj=obj)
 
-  visual.redraw(SortedSet.empty,openWarehouses.value,
+  visual.redraw(openConditions.value,openWarehouses.value,
     trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => (v2.value)}))
 
   println(neighborhood.profilingStatistics)
 
   println(openWarehouses)
+  println(openConditions)
 }
 

@@ -263,7 +263,7 @@ class VoronoiZones(graph:ConditionalGraph,
 
                   loadOrCorrectNodeIDIntoHeap(otherNodeID)
                 }
-              case x => throw new Error("unexmected value:" + x)
+              case x => ; //it can be unreachable, no worries
             }
           }
         }
