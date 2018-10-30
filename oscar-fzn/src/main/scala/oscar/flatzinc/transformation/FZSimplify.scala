@@ -50,33 +50,37 @@ object FZSimplify{
   }
   
   def simplify(model: FZProblem)(implicit log: Log):Unit = {
-    propagate(model)(log)
-    var newcstrs = Set.empty[Constraint]
-    var mod = false
-    for(c <- model.constraints){
-      val unsat = isUnsatisfiable(c)
-      if(unsat){
-        log(c+"")
-        throw new UnsatException(c.toString())
-      } 
-      val ent = isEntailed(c)
-      if(!ent){
-	    val rew = rewrite(c)
-	    newcstrs += rew
-	    if(rew!=c){
-	      log(2,c + " -> " + rew)
-	      mod = true
-	      c.retract()
-	      rew.insert()
-	    }
-      }else{
-        mod = true
-        c.retract()
+    var mod = true
+    while(mod) {
+      mod = false
+      propagate(model)(log)
+      var newcstrs = Set.empty[Constraint]
+
+      for (c <- model.constraints) {
+        val unsat = isUnsatisfiable(c)
+        if (unsat) {
+          log(c + "")
+          throw new UnsatException(c.toString())
+        }
+        val ent = isEntailed(c)
+        if (!ent) {
+          val rew = rewrite(c)
+          newcstrs += rew
+          if (rew != c) {
+            log(2, c + " -> " + rew)
+            mod = true
+            c.retract()
+            rew.insert()
+          }
+        } else {
+          mod = true
+          c.retract()
+        }
       }
-    }
-    if(mod){
-      model.constraints.clear()
-      model.constraints ++= newcstrs
+      if (mod) {
+        model.constraints.clear()
+        model.constraints ++= newcstrs
+      }
     }
   }
   
@@ -105,7 +109,8 @@ object FZSimplify{
         else if (z.isFalse) bool_eq(x,y,ann)
         else c
       case reif(c1,b) => 
-        if(b.isTrue) c1
+        if(b.isTrue)
+          c1
         else if(b.isFalse){
           val neg = negate(c1)
           if(neg!=null) neg else c
@@ -137,6 +142,7 @@ object FZSimplify{
       case array_bool_or(x,y,_) => (x.exists(_.isTrue) && y.isTrue) || (x.forall(_.isFalse) && y.isFalse)
       case int_max(x,y,z,_) => x.value.max(y.value) == z .value
       case int_min(x,y,z,_) => x.value.min(y.value) == z .value
+      case array_int_element(x,y,z,_) => z.value == y(x.value-1).value
       case _ => false
     }
   }else c match{
@@ -159,6 +165,9 @@ object FZSimplify{
       (a.value==c.value && b.min >= c.value) 
     case int_min(a,b,c,_) if b.isBound && c.isBound => 
       (b.value==c.value && a.min >= c.value)
+    case int_lin_le(ps, xs, s, _) if s.isBound =>
+      val r = ps.zip(xs).map(z => Math.max(z._1.value*z._2.min,z._1.value*z._2.max)).sum <= s.value
+      r
     case reif(c2,b) =>
       if(b.isTrue && isEntailed(c2)){true}
       else if(b.isFalse && isUnsatisfiable(c2)){true}
@@ -227,7 +236,8 @@ object FZSimplify{
         case bool_le(x, y, _) if x.isBound => if(x.boolValue) y.bind(true); true
         case bool_le(x, y, _) if y.isBound => if(!y.boolValue) x.bind(false); true
         case int_eq(x, y, _) if x.isBound => y.bind(x.value); true
-        case int_eq(x, y, _) if y.isBound => x.bind(y.value); true
+        case int_eq(x, y, _) if y.isBound =>
+          x.bind(y.value); true
         case bool_eq(x, y, _) if x.isBound => y.bind(x.boolValue); true
         case bool_eq(x, y, _) if y.isBound => x.bind(y.boolValue); true
         case bool_not(x, y, _) if x.isBound => y.bind(!x.boolValue); true
@@ -240,6 +250,24 @@ object FZSimplify{
           else false
         case array_bool_and(x,y,_) if x.forall(_.isBound) => y.bind(x.forall(v => v.boolValue)); true
         case array_bool_and(x,y,_) if x.exists(_.isFalse) => y.bind(false); true
+        case array_bool_and(x,y,_) if y.isBound && x.count(!_.isBound) == 1 => {
+          val (bounded, unbound) = x.partition(_.isBound)
+          if(y.isFalse){
+            if(bounded.forall(_.isTrue)){
+              unbound.head.bind(false)
+              true
+            }else{
+              false
+            }
+          }else{
+            if(bounded.forall(_.isTrue)){
+              unbound.head.bind(true)
+              true
+            }else{
+              false
+            }
+          }
+        }
         case array_bool_or(x,y,_) if x.forall(_.isBound) => y.bind(x.exists(v => v.boolValue)); true
         case array_bool_or(x,y,_) if x.exists(_.isTrue) => y.bind(true); true
         case bool_clause(x,y,_) if x.count(!_.isBound) + y.count(!_.isBound) == 1 =>
@@ -310,7 +338,7 @@ object FZSimplify{
             true
           }else if(one(0)._2.value== -1){
             val sumrest = rest.foldLeft(0)((acc,xc) => acc + xc._1.value*xc._2.value)
-            one(0)._1.geq((v.value - sumrest));
+            one(0)._1.geq(-(v.value - sumrest));
             true
           }else false
         }
