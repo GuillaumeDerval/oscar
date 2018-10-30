@@ -179,7 +179,8 @@ object WareHouseLocationVisu extends App with StopWatch{
         Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 2, obj)
-    ) exhaust (Profile(muLine(3,3,15)) exhaustAndContinueIfMovesFound Profile(muLine(4,3,15))) afterMove(
+      exhaust Profile(AssignNeighborhood(edgeConditionArray, "SwitchConditions2"))
+    ) afterMove(
     if(obj.value < bestObj){
       bestObj = obj.value
 

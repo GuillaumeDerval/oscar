@@ -126,6 +126,7 @@ class VoronoiZones(graph:ConditionalGraph,
                                 newValue: SortedSet[Int]): Unit = {
 
     if (v == centroids) {
+      println("change on centroids(addedValues:" + addedValues + " removedValues:" + removedValues)
       for (added <- addedValues) {
         labelNode(added,VoronoiZone(graph.nodes(added),0))
         loadOrCorrectNodeIDIntoHeap(added)
@@ -135,10 +136,14 @@ class VoronoiZones(graph:ConditionalGraph,
       }
     } else if (v == openConditions) {
       //opening or closing edges
+      println("changed open conditions(addedValues:" + addedValues + " removedValues:" + removedValues)
       for (added <- addedValues) {
-        loadEdgeExtremitiesIntoHeap(graph.conditionToConditionalEdges(added))
+        //if the edge is not reachable, no need to load it.
+        isConditionalEdgeOpen(added) = true
+        loadEdgeExtremitiesIntoHeapIfReachable(graph.conditionToConditionalEdges(added))
       }
       for (removed <- removedValues) {
+        isConditionalEdgeOpen(removed) = false
         loadExternalBoundaryIntoHeapMarkImpactedZone(graph.conditionToConditionalEdges(removed))
       }
     } else {
@@ -148,7 +153,9 @@ class VoronoiZones(graph:ConditionalGraph,
   }
 
   override def performInvariantPropagation(): Unit = {
+    println("START perform propagation")
     performLabelingFromCurrentHeap()
+    println("END perform propagation")
   }
 
   //we can only put node with an existing under-approximated distance to the target, this only needs
@@ -208,6 +215,18 @@ class VoronoiZones(graph:ConditionalGraph,
 
   private def loadOrCorrectNodeIntoHeap(node:Node): Unit ={
     loadOrCorrectNodeIDIntoHeap(node.nodeId)
+  }
+
+  private def loadEdgeExtremitiesIntoHeapIfReachable(edge:Edge): Unit ={
+    nodeLabeling(edge.nodeA.nodeId) match{
+      case _:VoronoiZone => loadOrCorrectNodeIntoHeap(edge.nodeA)
+      case _ => ;
+    }
+
+    nodeLabeling(edge.nodeB.nodeId) match{
+      case _:VoronoiZone => loadOrCorrectNodeIntoHeap(edge.nodeB)
+      case _ => ;
+    }
   }
 
   private def loadEdgeExtremitiesIntoHeap(edge:Edge): Unit ={
