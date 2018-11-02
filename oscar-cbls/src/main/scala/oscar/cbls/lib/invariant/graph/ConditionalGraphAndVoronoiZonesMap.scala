@@ -18,7 +18,8 @@ class ConditionalGraphAndVoronoiZonesMapWindow(graph:ConditionalGraphWithInteger
                                                colorForUnreachableNodes:Color = Color.black,
                                                colorForPermanentEdges:Color =Color.black,
                                                colorForOpenEdges:Color = Color.green,
-                                               colorForClosedEdges:Color = Color.red){
+                                               colorForClosedEdges:Color = Color.red,
+                                               colorForEmphasizedEdges:Color = Color.blue){
 
   val visual = new ConditionalGraphAndVoronoiZonesMap(
     graph:ConditionalGraphWithIntegerNodeCoordinates,
@@ -26,14 +27,15 @@ class ConditionalGraphAndVoronoiZonesMapWindow(graph:ConditionalGraphWithInteger
     colorForUnreachableNodes:Color,
     colorForPermanentEdges:Color,
     colorForOpenEdges:Color,
-    colorForClosedEdges:Color)
+    colorForClosedEdges:Color,
+    colorForEmphasizedEdges:Color)
 
   def redraw(openConditions:SortedSet[Int],
              centroids:SortedSet[Int],
-             nodeToCentroid:SortedMap[Int,Int]){
+             nodeToCentroid:SortedMap[Int,Int],hideClosedEdges:Boolean = false,hideRegularEdges:Boolean = false, hideOpenEdges:Boolean=false,emphasizeEdges:List[Edge] = List.empty){
     visual.redraw(openConditions:SortedSet[Int],
       centroids:SortedSet[Int],
-      nodeToCentroid:SortedMap[Int,Int])
+      nodeToCentroid:SortedMap[Int,Int],hideClosedEdges:Boolean,hideRegularEdges, hideOpenEdges,emphasizeEdges:List[Edge])
   }
   val frame = new JFrame()
   frame.setTitle("ConditionalGraphAndVoronoiZonesMap")
@@ -50,7 +52,8 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
                                          colorForUnreachableNodes:Color,
                                          colorForPermanentEdges:Color,
                                          colorForOpenEdges:Color,
-                                         colorForClosedEdges:Color)
+                                         colorForClosedEdges:Color,
+                                         colorForEmphasizedEdges:Color)
   extends VisualDrawing(false,false){
 
   val maxX = graph.nodeswithCoordinates.map(_.x).max
@@ -64,14 +67,19 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
   }
 
   def redraw(openConditions:SortedSet[Int],
-                  centroids:SortedSet[Int],
-                  nodeToCentroid:SortedMap[Int,Int]) {
+             centroids:SortedSet[Int],
+             nodeToCentroid:SortedMap[Int,Int],
+             hideClosedEdges:Boolean = false,
+             hideRegularEdges:Boolean = false,
+             hideOpenEdges:Boolean=false,
+             emphasizeEdges:List[Edge] = List.empty) {
+
     super.clear(false)
 
     xMultiplier = this.getWidth.toDouble / maxX.toDouble
     yMultiplier = this.getHeight.toDouble / maxY.toDouble
 
-    drawEdges(openConditions:SortedSet[Int])
+    drawEdges(openConditions:SortedSet[Int],hideClosedEdges,hideRegularEdges, hideOpenEdges,emphasizeEdges:List[Edge])
 
     drawNodes(centroids:SortedSet[Int],
       nodeToCentroid:SortedMap[Int,Int])
@@ -97,8 +105,8 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
               drawNode(node:NodeWithIntegerCoordinates,centroidColor(centroidID),false)
             }
           case None =>
-            //not a marked node, set default black color, small dot
-            //drawNode(node:NodeWithIntegerCoordinates,colorForUnreachableNodes,false)
+          //not a marked node, set default black color, small dot
+          //drawNode(node:NodeWithIntegerCoordinates,colorForUnreachableNodes,false)
         }
       }
     }
@@ -107,7 +115,7 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
   def drawNode(node:NodeWithIntegerCoordinates,color:Color,isCentroid:Boolean) = {
     if(isCentroid){
       //rectangle
-      val side = 8
+      val side = 12
       val tempPoint = new VisualRectangle(this, new Rectangle2D.Double(
         node.x * xMultiplier - side/2,
         node.y * yMultiplier - side/2,
@@ -125,18 +133,27 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
     }
   }
 
-  def drawEdges(openConditions:SortedSet[Int]): Unit = {
+  def drawEdges(openConditions:SortedSet[Int],
+                hideClosedEdges:Boolean,
+                hideRegularEdges:Boolean = false,
+                hideOpenEdges:Boolean=false,
+                emphasizeEdges:List[Edge]): Unit = {
     for (edge <- graph.edges){
       edge.conditionID match{
         case None => //permanent edge
-          drawEdge(edge:Edge,0)
+          if(!hideRegularEdges) drawEdge(edge:Edge,0)
         case Some(conditionID) =>
           if (openConditions contains conditionID){
-            drawEdge(edge:Edge,1)
+            //open edge
+            if(!hideOpenEdges) drawEdge(edge:Edge,1)
           }else{
-            drawEdge(edge:Edge,2)
+            //closed edge
+            if(!hideClosedEdges) drawEdge(edge:Edge,2)
           }
       }
+    }
+    for(edge <- emphasizeEdges){
+      drawEdge(edge:Edge,3)
     }
   }
 
@@ -156,12 +173,16 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
         line.outerCol = colorForPermanentEdges
       case 1 => //open edge
         line.dashed = false
-        line.borderWidth = 4
+        line.borderWidth = 6
         line.outerCol = colorForOpenEdges
       case 2 => //closed edge
         line.dashed = false
-        line.borderWidth = 4
+        line.borderWidth = 6
         line.outerCol = colorForClosedEdges
+      case 3 => //emphasized
+        line.dashed = false
+        line.borderWidth = 1
+        line.outerCol = colorForEmphasizedEdges
     }
   }
 }

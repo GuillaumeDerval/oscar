@@ -20,9 +20,12 @@ case class ConditionalGraph(nodes:Array[Node],
   for(edge <- edges){
     edge.conditionID match{
       case None => ;
-      case Some(c) => conditionToConditionalEdges(c) = edge
+      case Some(c) =>
+        require(conditionToConditionalEdges(c) == null)
+        conditionToConditionalEdges(c) = edge
     }
   }
+  require(conditionToConditionalEdges.forall(_ != null))
 }
 
 class ConditionalGraphWithIntegerNodeCoordinates(val nodeswithCoordinates:Array[NodeWithIntegerCoordinates],

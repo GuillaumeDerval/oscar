@@ -43,12 +43,12 @@ import scala.swing.Color
 object WareHouseLocationVisu extends App with StopWatch{
 
   //the number of warehouses
-  val W:Int = 100
+  val W:Int = 1000
 
   //the number of delivery points
   val D:Int = 1000
 
-  val c:Int = 40
+  val c:Int = 200
 
   val displayDelay = 100
 
@@ -72,6 +72,8 @@ object WareHouseLocationVisu extends App with StopWatch{
   val warehouseToNode =  Array.tabulate(W)(w => graph.nodeswithCoordinates(w))
   val deliveryToNode = Array.tabulate(D)(d => graph.nodeswithCoordinates(d + W))
 
+  val deliveryNodeList = deliveryToNode.toList
+
   def distance(node1:NodeWithIntegerCoordinates,node2:NodeWithIntegerCoordinates):Int = {
     val dx = node1.x - node2.x
     val dy = node1.y - node2.y
@@ -82,7 +84,7 @@ object WareHouseLocationVisu extends App with StopWatch{
   val warehouseToWarehouseDistances = Array.tabulate(W)(w1 => Array.tabulate(W)(w2 => distance(warehouseToNode(w1),warehouseToNode(w2))))
 
 
-  val costForOpeningWarehouse =  Array.fill(W)(1000)
+  val costForOpeningWarehouse =  Array.fill(W)(800)
 
   val m = Store() //checker = Some(new ErrorChecker()))
   println("model")
@@ -96,22 +98,26 @@ object WareHouseLocationVisu extends App with StopWatch{
   val openConditions = Filter(edgeConditionArray).setName("openConditions")
 
   println("creating Voronoi zones invariant")
-  val trackedNodeToDistanceAndCentroid: SortedMap[Int,(CBLSIntVar,CBLSIntVar)] =
-    VoronoiZones(graph:ConditionalGraph,
-      openConditions = openConditions,
-      centroids = openWarehouses,
-      trackedNodes = deliveryToNode.map(_.nodeId),
-      m,
-      defaultDistanceForUnreachableNodes = 10000)
+
+  val vor = VoronoiZones(graph:ConditionalGraph,
+    openConditions = openConditions,
+    centroids = openWarehouses,
+    trackedNodes = deliveryToNode.map(_.nodeId),
+    m,
+    defaultDistanceForUnreachableNodes = 10000)
+
+  val trackedNodeToDistanceAndCentroid: SortedMap[Int,(CBLSIntVar,CBLSIntVar)] = vor.trackedNodeToDistanceAndCentroidMap
+
 
   println("done init voronoi zones")
 
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
     trackedNodeToDistanceAndCentroid(deliveryToNode(d).nodeId)._1)
 
-  val costOfPassage = 1000
+  val costOfPassage = 10
 
-  val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses) + Cardinality(openConditions)*costOfPassage)
+  val x = Cardinality(openConditions)
+  val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses) + (x*costOfPassage))
 
   m.close()
 
@@ -176,17 +182,17 @@ object WareHouseLocationVisu extends App with StopWatch{
         Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
         Profile(AssignNeighborhood(edgeConditionArray, "SwitchConditions")),
         Profile(swapsK(20) guard(() => openWarehouses.value.size >= 5)), //we set a minimal size because the KNearest is very expensive if the size is small
+        Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditions")) guard(() => openWarehouses.value.size >= 5) name "combined"), //we set a minimal size because the KNearest is very expensive if the size is small
         Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
+ //     onExhaustRestartAfter(RandomizeNeighborhood(edgeConditionArray, () => openConditions.value.size/5), 2, obj)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 2, obj)
-      exhaust Profile(AssignNeighborhood(edgeConditionArray, "SwitchConditions2"))
     ) afterMove(
     if(obj.value < bestObj){
       bestObj = obj.value
-
-        visual.redraw(openConditions.value,openWarehouses.value,
-          trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => (v2.value)}))
-        lastDisplay = this.getWatch
+      visual.redraw(openConditions.value,openWarehouses.value,
+        trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => (v2.value)}),false,emphasizeEdges = vor.spanningTree(deliveryNodeList))
+      lastDisplay = this.getWatch
     })
 
   neighborhood.verbose = 2
@@ -194,7 +200,7 @@ object WareHouseLocationVisu extends App with StopWatch{
   neighborhood.doAllMoves(obj=obj)
 
   visual.redraw(openConditions.value,openWarehouses.value,
-    trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => (v2.value)}))
+    trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => (v2.value)}),hideClosedEdges = true,emphasizeEdges = vor.spanningTree(deliveryNodeList),hideRegularEdges = true,hideOpenEdges=false)
 
   println(neighborhood.profilingStatistics)
 

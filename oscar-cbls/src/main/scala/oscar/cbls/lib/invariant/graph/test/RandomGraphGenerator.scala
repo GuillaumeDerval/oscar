@@ -26,7 +26,6 @@ object RandomGraphGenerator {
 
     val scrambled = Random.shuffle(sortedDistances.take(totalEdges)).iterator
 
-
     val nodeArray = Array.tabulate(nbNodes)(nodeId =>
       new NodeWithIntegerCoordinates(
         nodeId,
