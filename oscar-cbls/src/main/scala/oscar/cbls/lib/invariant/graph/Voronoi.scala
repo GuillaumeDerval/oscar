@@ -1,6 +1,7 @@
 package oscar.cbls.lib.invariant.graph
 
 import oscar.cbls.CBLSIntVar
+import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.Checker
 
@@ -306,32 +307,35 @@ class VoronoiZones(graph:ConditionalGraph,
         val minDistance = orphanNodeLabeling.distance
         val centroidThrough = orphanNodeLabeling.centroid
 
-        def explore(node: Node) {
-          for (edge <- node.incidentEdges if isEdgeOpen(edge)) {
-            val otherNode = edge.otherNode(node)
+        markNodeUnreachableAndRemoveFromHeapIfPresent(orphanNode)
+
+
+        //we usse an iteratie approach here with explicit front
+        // because a recursive approach did lead to stack overflow in large graphs.
+        var toDevelop: QList[Node] = QList(orphanNode)
+
+        while (toDevelop != null) {
+          val currentNode = toDevelop.head
+          toDevelop = toDevelop.tail
+
+          for (edge <- currentNode.incidentEdges if isEdgeOpen(edge)) {
+            val otherNode = edge.otherNode(currentNode)
             val otherNodeID = otherNode.nodeId
 
             nodeLabeling(otherNodeID) match {
               case VoronoiZone(centroid: Node, distance: Int) =>
                 if (centroid == centroidThrough && distance >= minDistance) {
                   //still marking
-
                   markNodeUnreachableAndRemoveFromHeapIfPresent(otherNode)
-
-                  explore(otherNode)
+                  toDevelop = QList(otherNode, toDevelop)
                 } else {
-                  //we are at another centroid,or found a path from the same centroid that does not take the closed edge.
-
+                  //we are at another centroid, or found a path from the same centroid that does not take the closed edge.
                   loadOrCorrectNodeIDIntoHeap(otherNodeID)
                 }
               case x => ; //it can be unreachable, no worries
             }
           }
         }
-
-        markNodeUnreachableAndRemoveFromHeapIfPresent(orphanNode)
-
-        explore(orphanNode)
 
       case None => //no passing through centroid, nothing to do
 

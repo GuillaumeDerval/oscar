@@ -40,7 +40,7 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.language.postfixOps
 import scala.swing.Color
 
-object WareHouseLocationVisu extends App with StopWatch{
+object WLPGraph extends App with StopWatch{
 
   //the number of warehouses
   val W:Int = 1000
@@ -181,17 +181,18 @@ object WareHouseLocationVisu extends App with StopWatch{
       List(
         Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
         Profile(AssignNeighborhood(edgeConditionArray, "SwitchConditions")),
+        Profile(SwapsNeighborhood(edgeConditionArray, "SwapConditions")),
         Profile(swapsK(20) guard(() => openWarehouses.value.size >= 5)), //we set a minimal size because the KNearest is very expensive if the size is small
         Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditions")) guard(() => openWarehouses.value.size >= 5) name "combined"), //we set a minimal size because the KNearest is very expensive if the size is small
         Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
  //     onExhaustRestartAfter(RandomizeNeighborhood(edgeConditionArray, () => openConditions.value.size/5), 2, obj)
-      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 2, obj)
+      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 4, obj)
     ) afterMove(
     if(obj.value < bestObj){
       bestObj = obj.value
       visual.redraw(openConditions.value,openWarehouses.value,
-        trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => (v2.value)}),false,emphasizeEdges = vor.spanningTree(deliveryNodeList))
+        trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => (v2.value)}),hideClosedEdges = false,hideRegularEdges = false, hideOpenEdges=false,emphasizeEdges = vor.spanningTree(deliveryNodeList))
       lastDisplay = this.getWatch
     })
 
