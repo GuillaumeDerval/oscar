@@ -20,6 +20,7 @@ package oscar.examples.cbls.wlpGraph
 import java.awt.Color
 
 import oscar.cbls._
+import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.computation.ChangingSetValue
 import oscar.cbls.lib.invariant.graph.FloydWarshall.{buildAdjacencyMatrix, saturateAdjacencyMatrixToDistanceMatrix}
@@ -72,7 +73,7 @@ object WLPGraph extends App with StopWatch{
   val warehouseToNode =  Array.tabulate(W)(w => graph.nodeswithCoordinates(w))
   val deliveryToNode = Array.tabulate(D)(d => graph.nodeswithCoordinates(d + W))
 
-  val deliveryNodeList = deliveryToNode.toList
+  val deliveryNodeList = QList.buildFromIterable(deliveryToNode).asInstanceOf[QList[Node]]
 
   def distance(node1:NodeWithIntegerCoordinates,node2:NodeWithIntegerCoordinates):Int = {
     val dx = node1.x - node2.x
@@ -126,7 +127,7 @@ object WLPGraph extends App with StopWatch{
   val visual = new ConditionalGraphAndVoronoiZonesMapWindow(graph:ConditionalGraphWithIntegerNodeCoordinates,
     centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.nodeId,centroidColors(node.nodeId))))
 
-  var bestObj = Int.MaxValue
+  var bestDisplayedObj = Int.MaxValue
 
   //this is an array, that, for each warehouse, keeps the sorted closest warehouses in a lazy way.
   val closestWarehouses = Array.tabulate(W)(warehouse =>
@@ -186,13 +187,21 @@ object WLPGraph extends App with StopWatch{
         Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditions")) guard(() => openWarehouses.value.size >= 5) name "combined"), //we set a minimal size because the KNearest is very expensive if the size is small
         Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
- //     onExhaustRestartAfter(RandomizeNeighborhood(edgeConditionArray, () => openConditions.value.size/5), 2, obj)
+      //     onExhaustRestartAfter(RandomizeNeighborhood(edgeConditionArray, () => openConditions.value.size/5), 2, obj)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 4, obj)
     ) afterMove(
-    if(obj.value < bestObj){
-      bestObj = obj.value
-      visual.redraw(openConditions.value,openWarehouses.value,
-        trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => (v2.value)}),hideClosedEdges = false,hideRegularEdges = false, hideOpenEdges=false,emphasizeEdges = vor.spanningTree(deliveryNodeList))
+    if(lastDisplay + displayDelay <= this.getWatch && obj.value < bestDisplayedObj) {
+      bestDisplayedObj = obj.value
+
+      visual.redraw(
+        openConditions.value,
+        openWarehouses.value,
+        trackedNodeToDistanceAndCentroid.mapValues({ case (v1, v2) => (v2.value) }),
+        hideClosedEdges = false,
+        hideRegularEdges = false,
+        hideOpenEdges = false,
+        emphasizeEdges = vor.spanningTree(deliveryNodeList))
+
       lastDisplay = this.getWatch
     })
 

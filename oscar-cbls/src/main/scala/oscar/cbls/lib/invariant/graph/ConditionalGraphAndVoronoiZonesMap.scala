@@ -32,10 +32,10 @@ class ConditionalGraphAndVoronoiZonesMapWindow(graph:ConditionalGraphWithInteger
 
   def redraw(openConditions:SortedSet[Int],
              centroids:SortedSet[Int],
-             nodeToCentroid:SortedMap[Int,Int],hideClosedEdges:Boolean = false,hideRegularEdges:Boolean = false, hideOpenEdges:Boolean=false,emphasizeEdges:List[Edge] = List.empty){
+             nodeToCentroid:SortedMap[Int,Int],hideClosedEdges:Boolean = false,hideRegularEdges:Boolean = false, hideOpenEdges:Boolean=false,emphasizeEdges:Iterable[Edge] = List.empty){
     visual.redraw(openConditions:SortedSet[Int],
       centroids:SortedSet[Int],
-      nodeToCentroid:SortedMap[Int,Int],hideClosedEdges:Boolean,hideRegularEdges, hideOpenEdges,emphasizeEdges:List[Edge])
+      nodeToCentroid:SortedMap[Int,Int],hideClosedEdges:Boolean,hideRegularEdges, hideOpenEdges,emphasizeEdges)
   }
   val frame = new JFrame()
   frame.setTitle("ConditionalGraphAndVoronoiZonesMap")
@@ -72,14 +72,14 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
              hideClosedEdges:Boolean = false,
              hideRegularEdges:Boolean = false,
              hideOpenEdges:Boolean=false,
-             emphasizeEdges:List[Edge] = List.empty) {
+             emphasizeEdges:Iterable[Edge] = List.empty) {
 
     super.clear(false)
 
     xMultiplier = this.getWidth.toDouble / maxX.toDouble
     yMultiplier = this.getHeight.toDouble / maxY.toDouble
 
-    drawEdges(openConditions:SortedSet[Int],hideClosedEdges,hideRegularEdges, hideOpenEdges,emphasizeEdges:List[Edge])
+    drawEdges(openConditions:SortedSet[Int],hideClosedEdges,hideRegularEdges, hideOpenEdges,emphasizeEdges)
 
     drawNodes(centroids:SortedSet[Int],
       nodeToCentroid:SortedMap[Int,Int])
@@ -137,7 +137,7 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
                 hideClosedEdges:Boolean,
                 hideRegularEdges:Boolean = false,
                 hideOpenEdges:Boolean=false,
-                emphasizeEdges:List[Edge]): Unit = {
+                emphasizeEdges:Iterable[Edge]): Unit = {
     for (edge <- graph.edges){
       edge.conditionID match{
         case None => //permanent edge

@@ -120,14 +120,31 @@ class VoronoiZones(graph:ConditionalGraph,
   }
 
 
-  def spanningTree(nodes:List[Node]):List[Edge] = {
-    nodes.flatMap(pathToCentroid).flatten
+  def spanningTree(nodes:QList[Node]):QList[Edge] = {
+    var acc:QList[Edge] = null
+
+    var toDevelop = nodes
+    while(toDevelop!=null){
+      val p = pathToCentroid(toDevelop.head)
+      toDevelop = toDevelop.tail
+
+      p match{
+        case None => ;
+        case Some(l) =>
+          var toEnqueue = l
+          while(toEnqueue != null) {
+            acc = QList(toEnqueue.head, acc)
+            toEnqueue = toEnqueue.tail
+          }
+      }
+    }
+    acc
   }
 
-  def pathToCentroid(node:Node):Option[List[Edge]] = {
-    def pathToExistingCentroid(node:Node,zone:VoronoiZone):List[Edge] = {
+  def pathToCentroid(node:Node):Option[QList[Edge]] = {
+    def pathToExistingCentroid(node:Node,zone:VoronoiZone):QList[Edge] = {
       if(node == zone.centroid){
-        List.empty
+        null
       }else{
         for (edge <- node.incidentEdges if isEdgeOpen(edge)) {
           val otherNode = edge.otherNode(node)
@@ -135,7 +152,7 @@ class VoronoiZones(graph:ConditionalGraph,
             case z@VoronoiZone(centroid: Node, distance: Int) =>
               if (centroid == zone.centroid && distance + edge.length == zone.distance) {
                 //step backward
-                return edge :: pathToExistingCentroid(otherNode, z)
+                return QList(edge,pathToExistingCentroid(otherNode, z))
               }
             case _ => ;
           }
@@ -208,19 +225,23 @@ class VoronoiZones(graph:ConditionalGraph,
       val currentNode = graph.nodes(currentNodeId)
       val currentNodeLabeling = nodeLabeling(currentNodeId).asInstanceOf[VoronoiZone]
 
-      for (edge <- currentNode.incidentEdges if isEdgeOpen(edge)) {
-        val otherNode = edge.otherNode(currentNode)
-        val otherNodeID = otherNode.nodeId
-        val newLabelingForOtherNode = currentNodeLabeling + edge.length
+      var l = currentNode.incidentEdges
+      while(l != null){
+        val edge = l.head
+        l = l.tail
+        if (isEdgeOpen(edge)){
+          val otherNode = edge.otherNode(currentNode)
+          val otherNodeID = otherNode.nodeId
+          val newLabelingForOtherNode = currentNodeLabeling + edge.length
 
-        if (newLabelingForOtherNode < nodeLabeling(otherNodeID)) {
+          if (newLabelingForOtherNode < nodeLabeling(otherNodeID)) {
 
-          labelNode(otherNodeID,newLabelingForOtherNode)
-          loadOrCorrectNodeIntoHeap(otherNode)
-
+            labelNode(otherNodeID,newLabelingForOtherNode)
+            loadOrCorrectNodeIntoHeap(otherNode)
+          }
         }
       }
-    }
+     }
   }
 
   markAllNodesUnreachable()
@@ -344,6 +365,7 @@ class VoronoiZones(graph:ConditionalGraph,
 
   private def loadExternalBoundaryIntoHeapMarkInnerZone(removedCentroid:Node){
     //performed as a DFS, non-redundant exploration, so not very costly
+    //TODO: try an explicit tack to replace the recursion since there is a risk of stack overflow in large graphs.
     def explore(node:Node){
       for(edge <- node.incidentEdges if isEdgeOpen(edge)){
         val otherNode = edge.otherNode(node)
