@@ -132,13 +132,20 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
 
   //TODO Incremental computation
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
-    computeAllFromScratch(changes.newValue)
+    scheduleForPropagation()
+  }
+
+  //TODO: il faut également planifier un re-calcul quand une autre dimension change: durée des tâche, attribut e resoruces, etc. J'ai vu des variables dans des resources et tâches.
+
+  override def performInvariantPropagation(): Unit = {
+    computeAllFromScratch(priorityActivitiesList.value)
   }
 
   /**
     * Internal class that carries the state of a resource flow
     */
   private class ResourceFlowState(initialModeInd: Int, maxCapacity: Int) {
+    //TODO: je suis pas convaincu parce-que toutes les catégories de resrouces ont le mêm state du coup
     // Last activity that used this resource
     var lastActivityIndex: Int = -1
     // Forward flows after last activity that used this resource
@@ -162,6 +169,7 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
   * This case class represents a setup time
   */
 case class SetupTimeData(resourceIndex: Int, modeFromInd: Int, modeToInd: Int, startTime: Int, duration: Int)
+//TODO: je pense que les SetupTimeData devraient être dans la resource concernée
 
 /**
   * This is a container class for setup times

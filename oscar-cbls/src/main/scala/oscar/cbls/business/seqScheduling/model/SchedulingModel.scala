@@ -24,6 +24,8 @@ class SchedulingModel(val maxActivities: Int,
   // Precedences
   val precedences: Precedences = new Precedences(maxActivities)
 
+  //TODO: en général, je considèreque ceci est du sur-emballage. Tu peux mettre ces tableaux en paramètre de cette classe et te passer des "add"
+
   /**
     * Adds an activity to the model
     * @param act the activity to be added

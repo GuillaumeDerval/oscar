@@ -26,6 +26,7 @@ class SwapActivity(scm: SchedulingSolver,
     println(s"*** Call to explore neighborhood")
 
     // iteration zone on activities indices
+    //TODO: check the hotRestart in other neoghborhood; this really speeds up teh search in other contexts; possibly in scheduling as well?
     val iterationZone = searchIndices.getOrElse(() => 0 until scm.scModel.nbActivities)
 
     // Define checkpoint on sequence (activities list)
@@ -50,11 +51,14 @@ class SwapActivity(scm: SchedulingSolver,
         swappingIndex = insertableIterator.next()
         // Perform move on sequence
 
+        //TODO: how about symmetry elimination? swap a qnd b is the same as swap b and a, so impose that a<b (with parameter to deactivate it altogether of course)
+
+        //TODO: ceci déclenche unepropagation à chaque roll-back et prend donc du temps (ça double le temsp de calcul). on préfère éviter de faire des query de variables d'output entre les voisins.
         println(s"Current Index = $currentIndex | Swapping Index = $swappingIndex")
         println(s"Old obj = ${obj.value}")
         println(s"Sequence before = ${scm.activitiesSequence.value}")
         println(s"Makespan before = ${scm.makeSpan.value}")
-        println(s"Start Times before = ${scm.startTimes.foldLeft("[")((acc, stv) => s"$acc ${stv.value}")} ]")
+        println(s"Start Times before = ${scm.startTimes.foldLeft("[")((acc, stv) => s"$acc ${stv.value}")} ]")  //TODO: ce genre de pretty printing devrait avoir sa place dans le modèle de schedule ou qqchose du genre
         println(s"Setup Times before = ${scm.setupTimes}")
 
         performMove(currentIndex, swappingIndex)

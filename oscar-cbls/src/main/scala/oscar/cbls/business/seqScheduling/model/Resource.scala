@@ -21,6 +21,8 @@ class Resource(val m: Store,
   // index in resources array in the schM model
   var index: Int = Constants.NO_INDEX
   // CBLS var for the maximum capacity
+
+  //TODO: si il y a une variable, c'est un input ou un output? il faut la lier avec les algo de scheduling alors?
   val capacityCBLS = new CBLSIntVar(m, valCapacity, 0 to Int.MaxValue, s"${name}__capacity")
   // index of initial mode
   val initialModeIndex: Int = initialMode.index

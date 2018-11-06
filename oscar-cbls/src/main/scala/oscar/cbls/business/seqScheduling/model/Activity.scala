@@ -37,6 +37,7 @@ class Activity(val m: Store,
     * @param rm the running mode of the resource when used by the activity
     */
   def addResourceUsage(res: Resource, capacity: Int, rm: RunningMode): Unit = {
+    //TODO: je pense que les paramètre de la resource sont spécifiques à la classe de resource considérée. Donc cette mathode derait être dans la classe ressource, et chaque classe de resource pourrait donc avoir une méthode diférente
     resourceUsages(res.index) = Some(new ResourceUsage(res.index, capacity, rm))
   }
 

@@ -15,7 +15,9 @@ import oscar.cbls.core.computation.CBLSIntVar
 class RunningMode(val m: Store, val name: String, val valDefaultSetupTime: Int) {
   // index in the running modes array in the schM model
   var index: Int = Constants.NO_INDEX
-  // CBLS variable for the default setup time
+
+  // CBLS variable for the default setup timeµ
+  //TODO: a variable, so you must connect it to something in your algo?
   val defaultSetupTimeCBLS = new CBLSIntVar(m, valDefaultSetupTime, 0 to Int.MaxValue, s"${name}__default_setup_time")
 
   /**

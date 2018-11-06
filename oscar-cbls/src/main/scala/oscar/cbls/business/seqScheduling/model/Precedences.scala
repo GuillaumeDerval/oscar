@@ -2,6 +2,7 @@ package oscar.cbls.business.seqScheduling.model
 
 import scala.collection.mutable
 
+//TODO: je pense que cei pourrait être intégré dans la classe schedulingModel (autant éviter le suremballage)
 /**
   * This class is a container for the precedence constraints between activity indices
   *
