@@ -1,6 +1,7 @@
 package oscar.cbls.lib.invariant.graph.test
 
-import oscar.cbls.lib.invariant.graph.{ConditionalGraphWithIntegerNodeCoordinates, _}
+
+import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, Edge, NodeWithIntegerCoordinates}
 
 import scala.util.Random
 

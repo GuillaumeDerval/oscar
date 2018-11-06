@@ -2,13 +2,15 @@ package oscar.cbls.lib.invariant.graph
 
 import java.awt.geom.Line2D.Double
 import java.awt.geom.Rectangle2D
-import java.awt.{BorderLayout, Color, Dimension}
+import java.awt.{BorderLayout, Color, Dimension, Graphics}
 
 import javax.swing.JFrame
+import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, Edge, NodeWithIntegerCoordinates}
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualCircle, VisualLine, VisualRectangle, VisualShape}
 
 import scala.collection.immutable.{SortedMap, SortedSet}
+import scala.collection.mutable
 import scala.swing.Color
 
 
@@ -19,7 +21,8 @@ class ConditionalGraphAndVoronoiZonesMapWindow(graph:ConditionalGraphWithInteger
                                                colorForPermanentEdges:Color =Color.black,
                                                colorForOpenEdges:Color = Color.green,
                                                colorForClosedEdges:Color = Color.red,
-                                               colorForEmphasizedEdges:Color = Color.blue){
+                                               colorForEmphasizedEdges:Color = Color.blue,
+                                               title:String = "ConditionalGraphAndVoronoiZonesMap"){
 
   val visual = new ConditionalGraphAndVoronoiZonesMap(
     graph:ConditionalGraphWithIntegerNodeCoordinates,
@@ -38,13 +41,23 @@ class ConditionalGraphAndVoronoiZonesMapWindow(graph:ConditionalGraphWithInteger
       nodeToCentroid:SortedMap[Int,Int],hideClosedEdges:Boolean,hideRegularEdges, hideOpenEdges,emphasizeEdges)
   }
   val frame = new JFrame()
-  frame.setTitle("ConditionalGraphAndVoronoiZonesMap")
+  frame.setTitle(title)
   frame.setLayout(new BorderLayout())
   frame.setPreferredSize(new Dimension(960,960))
   frame.add(visual, BorderLayout.CENTER)
   frame.pack()
   frame.revalidate()
   frame.setVisible(true)
+}
+
+class DoubleBufferedDrawing(flipped: Boolean, scalable: Boolean) extends VisualDrawing(false,false){
+
+  override def paint(g: Graphics): Unit = {
+    val d = getSize()
+    val offScreenImageDrawed = createImage(d.width, d.height)
+    super.paint(offScreenImageDrawed.getGraphics())
+    g.drawImage(offScreenImageDrawed, 0, 0, null)
+  }
 }
 
 class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCoordinates,
@@ -56,7 +69,7 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
                                          colorForEmphasizedEdges:Color)
   extends VisualDrawing(false,false){
 
-  this.setDoubleBuffered(true)
+  this.setDoubleBuffered(true) //does not work.
 
   val maxX = graph.nodeswithCoordinates.map(_.x).max
   val maxY = graph.nodeswithCoordinates.map(_.y).max

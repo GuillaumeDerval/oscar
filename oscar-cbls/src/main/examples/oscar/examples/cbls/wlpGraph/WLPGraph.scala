@@ -18,6 +18,7 @@
 package oscar.examples.cbls.wlpGraph
 
 import oscar.cbls._
+import oscar.cbls.algo.graph.{ConditionalGraph, ConditionalGraphWithIntegerNodeCoordinates, Node, NodeWithIntegerCoordinates}
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.lib.invariant.graph._
@@ -93,7 +94,7 @@ object WLPGraph extends App with StopWatch{
 
   println("creating Voronoï zones invariant")
 
-  val vor = VoronoiZones(graph:ConditionalGraph,
+  val vor = VoronoiZones(graph,
     graphDiameterOverApprox = Int.MaxValue,
     openConditions = openConditions,
     centroids = openWarehouses,
@@ -119,7 +120,7 @@ object WLPGraph extends App with StopWatch{
   val centroidColors = ColorGenerator.generateRandomColors(W)
 
   val visual = new ConditionalGraphAndVoronoiZonesMapWindow(graph:ConditionalGraphWithIntegerNodeCoordinates,
-    centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.nodeId,centroidColors(node.nodeId))))
+    centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.nodeId,centroidColors(node.nodeId))),title = "Warehouse and new road location")
 
   var bestDisplayedObj = Int.MaxValue
 
@@ -183,7 +184,7 @@ object WLPGraph extends App with StopWatch{
       ),refresh = W/10)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 4, obj)
     ) afterMove(
-    if(lastDisplay + displayDelay <= this.getWatch && obj.value < bestDisplayedObj) {
+    if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {
       bestDisplayedObj = obj.value
 
       visual.redraw(

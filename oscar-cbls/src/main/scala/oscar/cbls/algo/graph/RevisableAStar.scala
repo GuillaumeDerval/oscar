@@ -2,20 +2,20 @@ package oscar.cbls.algo.graph
 
 import scala.collection.immutable.SortedSet
 
-abstract sealed class ConditionalDistance(from:Node,
-                                          to:Node)
+abstract sealed class RevisableDistance(from:Node,
+                                        to:Node)
 
 case class Distance(from:Node,
                     to:Node,
                     distance:Int,
                     requiredConditions:Set[Int],
-                    unlockingConditions:Set[Int]) extends ConditionalDistance(from,to)
+                    unlockingConditions:Set[Int]) extends RevisableDistance(from,to)
 
-case class NeverConnected(from:Node,to:Node) extends ConditionalDistance(from,to)
+case class NeverConnected(from:Node,to:Node) extends RevisableDistance(from,to)
 
 case class NotConnected(from:Node,
                         to:Node,
-                        unlockingConditions:Set[Int]) extends ConditionalDistance(from,to)
+                        unlockingConditions:Set[Int]) extends RevisableDistance(from,to)
 
 class RevisableAStar(g:ConditionalGraph,
             underApproximatingDistance:(Int,Int) => Option[Int]){
@@ -23,7 +23,7 @@ class RevisableAStar(g:ConditionalGraph,
   def search(from:Node,
              to:Node,
              isConditionalEdgeOpen:Int => Boolean
-            ):ConditionalDistance = {
+            ):RevisableDistance = {
 
     def isEdgeOpen(edge: Edge): Boolean =
       edge.conditionID match {
@@ -96,7 +96,7 @@ class RevisableAStar(g:ConditionalGraph,
                                               to:Node,
                                               isConditionalEdgeOpen:Option[Int] => Boolean,
                                               nodeToDistance:Array[Int],
-                                              reachedClosedEdges: SortedSet[Int]):ConditionalDistance = {
+                                              reachedClosedEdges: SortedSet[Int]):RevisableDistance = {
 
     if (nodeToDistance(to.nodeId) == Int.MaxValue) {
       // not reached
