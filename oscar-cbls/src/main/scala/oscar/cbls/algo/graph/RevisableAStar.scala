@@ -1,5 +1,7 @@
 package oscar.cbls.algo.graph
 
+import oscar.cbls.algo.quick.QList
+
 import scala.collection.immutable.SortedSet
 
 abstract sealed class RevisableDistance(from:Node,
@@ -18,7 +20,9 @@ case class NotConnected(from:Node,
                         unlockingConditions:Set[Int]) extends RevisableDistance(from,to)
 
 class RevisableAStar(g:ConditionalGraph,
-            underApproximatingDistance:(Int,Int) => Option[Int]){
+                     underApproximatingDistance:(Int,Int) => Option[Int]){
+
+  private val nodeToDistance = Array.fill[Int](g.nodes.length)(Int.MaxValue)
 
   def search(from:Node,
              to:Node,
@@ -36,8 +40,10 @@ class RevisableAStar(g:ConditionalGraph,
     }
 
     //TODO: this array might be time-consuming to allocate; store it permanently in the class for faster query time?
-    val nodeToDistance = Array.fill[Int](g.nodes.length)(Int.MaxValue)
+
     var reachedClosedEdges: SortedSet[Int] = SortedSet.empty
+
+    var reachedNodeIDs:QList[Int] = null
 
     //we can only put node with an existing under-approximated distance to the target, this only needs to be checked on the source node, actually
     val toDevelopHeap = new oscar.cbls.algo.heap.BinomialHeapWithMoveInt(
@@ -45,8 +51,10 @@ class RevisableAStar(g:ConditionalGraph,
       g.nodes.length,
       g.nodes.length - 1)
 
-    nodeToDistance(from.nodeId) = 0
-    toDevelopHeap.insert(from.nodeId)
+    val fromNodeID = from.nodeId
+    nodeToDistance(fromNodeID) = 0
+    reachedNodeIDs = QList(fromNodeID)
+    toDevelopHeap.insert(fromNodeID)
 
     while (true) {
 
@@ -55,7 +63,7 @@ class RevisableAStar(g:ConditionalGraph,
 
       if (currentNodeId == -1 || (nodeToDistance(currentNodeId) > nodeToDistance(to.nodeId))) {
         //this is the exit code
-        return extractAnswerFromFinishedSearch(
+        val toReturn = extractAnswerFromFinishedSearch(
           from:Node,
           to:Node,
           _ match{
@@ -63,6 +71,8 @@ class RevisableAStar(g:ConditionalGraph,
             case Some(c) => isConditionalEdgeOpen(c)},
           nodeToDistance:Array[Int],
           reachedClosedEdges: SortedSet[Int])
+        resetReachedNodes(reachedNodeIDs)
+        return toReturn
       }
 
       val currentNode = g.nodes(currentNodeId)
@@ -80,6 +90,7 @@ class RevisableAStar(g:ConditionalGraph,
           } else {
             val newDistance = currentNodeDistance + outgoingEdge.length
             nodeToDistance(otherNode.nodeId) = newDistance
+            reachedNodeIDs = QList(otherNode.nodeId,reachedNodeIDs)
             toDevelopHeap.insert(otherNode.nodeId)
           }
         } else {
@@ -91,6 +102,13 @@ class RevisableAStar(g:ConditionalGraph,
     throw new Error("should not be reached")
   }
 
+  private def resetReachedNodes(reachedNodes:QList[Int]): Unit ={
+    var remainingNodeIDs = reachedNodes
+    while(remainingNodeIDs != null){
+      nodeToDistance(remainingNodeIDs.head) = Int.MaxValue
+      remainingNodeIDs = remainingNodeIDs.tail
+    }
+  }
 
   private def extractAnswerFromFinishedSearch(from:Node,
                                               to:Node,

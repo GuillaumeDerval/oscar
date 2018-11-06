@@ -42,9 +42,9 @@ object FloydWarshall{
 
   def saturateAdjacencyMatrixToDistanceMatrix(w:Array[Array[Option[Int]]]){
     val n = w.length
-
+    val par0ToNm1 = (0 to n-1).par
     for (k <- 0 to n-1) {
-      for (i <- 0 to n-1) {
+      for (i <- par0ToNm1) {
         for (j <- i+1 to n-1) {
 
           if(w(i)(k).isDefined && w(k)(j).isDefined) {
