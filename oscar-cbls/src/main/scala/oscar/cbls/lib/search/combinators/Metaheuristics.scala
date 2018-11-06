@@ -21,12 +21,12 @@ object Restart{
    * @param obj the objective function
    */
   def apply(n:Neighborhood,randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Int, obj:Objective) = {
+    //TODO: in case of consecutive restart, we do not restart from the best solution. when a fruitless restart happened, we therefore drift away from the best solution.
     (n orElse (randomizationNeighborhood
       maxMoves maxRestartWithoutImprovement withoutImprovementOver obj improvementBeignMeasuredBeforeNeighborhoodExploration)
       ) saveBestAndRestoreOnExhaust obj
   }
 }
-
 
 /**
  * this combinator injects a metropolis acceptation function.

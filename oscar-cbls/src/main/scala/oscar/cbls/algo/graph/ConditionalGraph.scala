@@ -1,4 +1,4 @@
-package oscar.cbls.lib.invariant.graph
+package oscar.cbls.algo.graph
 
 import oscar.cbls.algo.quick.QList
 

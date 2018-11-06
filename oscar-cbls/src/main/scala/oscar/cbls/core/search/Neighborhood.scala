@@ -302,6 +302,30 @@ trait SupportForAndThenChaining[MoveType<:Move] extends Neighborhood{
 
   def instantiateCurrentMove(newObj:Int):MoveType
 
+
+  /**
+    * to build a composite neighborhood.
+    * the first neighborhood is used only to provide a round robin exploration on its possible moves
+    * you must ensure that this first neighborhood will perform a hotRestart, so that it will enumerate all its moves
+    * internally, this neighborhood will be called with a fully acceptant acceptanceCriteria,
+    *
+    * the move combinator for every move provided by the first neighborhood, the combinator calls the second one
+    * and we consider the composition of the two moves for the acceptance criteria.
+    * the returned move is the composition of the two found moves
+    *
+    * you must also ensure that the two neighborhood evaluate the same objective function,
+    * since this combinator needs to evaluate the whole composite move, and not only the last part of the composition
+    *
+    * A native composite neighborhood will probably be much faster than this combinator, so use this for prototyping
+    * for instance, this combinator does not allow for some form of symmetry breaking, unless you are really doing it the hard way.
+    *
+    * this move will reset the first neighborhood on every call, since it is probably bounded by the number of moves it can provide
+    *
+    * @param other given that the move returned by the first neighborhood is committed, we explore the globally improving moves of this one
+    *          you pass a method to instantiate b, based on,the currently explored move from a
+    * @param maximalIntermediaryDegradation the maximal degradation that is admitted for the intermediary step; the higher, the more moves will be considered
+    * @author renaud.delandtsheer@cetic.be
+    */
   def dynAndThen(other:MoveType => Neighborhood,maximalIntermediaryDegradation: Int = Int.MaxValue):DynAndThen[MoveType] = {
     new DynAndThen[MoveType](this,other,maximalIntermediaryDegradation)
   }

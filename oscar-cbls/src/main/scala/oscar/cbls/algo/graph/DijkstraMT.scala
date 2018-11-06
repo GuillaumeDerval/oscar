@@ -1,5 +1,6 @@
-package oscar.cbls.lib.invariant.graph
+package oscar.cbls.algo.graph
 
+import oscar.cbls.lib.invariant.graph.{ClosestCentroidLabeling, Unreachable, VoronoiZone}
 
 class DijkstraMT(g:ConditionalGraph){
 

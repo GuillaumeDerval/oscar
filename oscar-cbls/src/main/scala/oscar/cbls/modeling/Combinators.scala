@@ -412,7 +412,6 @@ class NeighborhoodOps(n:Neighborhood){
     Restart(n,randomizationNeighborhood,maxRestartWithoutImprovement,obj)
   }
 
-
   /**
    * alias for (this maxMoves 1) exhaust b
    * this wil be queried once, and then, queries will be forwarded to b.

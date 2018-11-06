@@ -37,6 +37,10 @@ object Domain{
     DomainSet(s)
   }
 
+  def setToRomainRange(s:Set[Int]):Domain = {
+    rangeToDomain(s.min to s.max)
+  }
+
   implicit def coupleToDomain(i:(Int,Int)):Domain = {
     if(i._1 == i._2) SingleValueDomain(i._1)
     else DomainRange(i._1,i._2)

@@ -17,27 +17,20 @@
 
 package oscar.examples.cbls.wlpGraph
 
-import java.awt.Color
-
 import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.core.computation.ChangingSetValue
-import oscar.cbls.lib.invariant.graph.FloydWarshall.{buildAdjacencyMatrix, saturateAdjacencyMatrixToDistanceMatrix}
 import oscar.cbls.lib.invariant.graph._
 import oscar.cbls.lib.invariant.graph.test.RandomGraphGenerator
 import oscar.cbls.lib.invariant.logic.Filter
-import oscar.cbls.lib.invariant.minmax.MinConstArrayValueWise
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.invariant.set.Cardinality
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.ColorGenerator
-import oscar.cbls.visual.wlp.WareHouseLocationWindow
-import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 
-import scala.collection.immutable.{SortedMap, SortedSet}
+import scala.collection.immutable.SortedMap
 import scala.language.postfixOps
 import scala.swing.Color
 
@@ -98,9 +91,10 @@ object WLPGraph extends App with StopWatch{
 
   val openConditions = Filter(edgeConditionArray).setName("openConditions")
 
-  println("creating Voronoi zones invariant")
+  println("creating Voronoï zones invariant")
 
   val vor = VoronoiZones(graph:ConditionalGraph,
+    graphDiameterOverApprox = Int.MaxValue,
     openConditions = openConditions,
     centroids = openWarehouses,
     trackedNodes = deliveryToNode.map(_.nodeId),
@@ -110,7 +104,7 @@ object WLPGraph extends App with StopWatch{
   val trackedNodeToDistanceAndCentroid: SortedMap[Int,(CBLSIntVar,CBLSIntVar)] = vor.trackedNodeToDistanceAndCentroidMap
 
 
-  println("done init voronoi zones")
+  println("done init voronoï zones")
 
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
     trackedNodeToDistanceAndCentroid(deliveryToNode(d).nodeId)._1)
@@ -133,7 +127,7 @@ object WLPGraph extends App with StopWatch{
   val closestWarehouses = Array.tabulate(W)(warehouse =>
     KSmallest.lazySort(
       Array.tabulate(W)(warehouse => warehouse),
-      otherwarehouse => warehouseToWarehouseDistances(warehouse)(otherwarehouse)
+      otherWarehouse => warehouseToWarehouseDistances(warehouse)(otherWarehouse)
     ))
 
   //this procedure returns the k closest closed warehouses
@@ -187,7 +181,6 @@ object WLPGraph extends App with StopWatch{
         Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditions")) guard(() => openWarehouses.value.size >= 5) name "combined"), //we set a minimal size because the KNearest is very expensive if the size is small
         Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
-      //     onExhaustRestartAfter(RandomizeNeighborhood(edgeConditionArray, () => openConditions.value.size/5), 2, obj)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 4, obj)
     ) afterMove(
     if(lastDisplay + displayDelay <= this.getWatch && obj.value < bestDisplayedObj) {

@@ -1,5 +1,4 @@
-package oscar.cbls.lib.invariant.graph
-
+package oscar.cbls.algo.graph
 
 object FloydWarshall{
 

@@ -56,6 +56,8 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
                                          colorForEmphasizedEdges:Color)
   extends VisualDrawing(false,false){
 
+  this.setDoubleBuffered(true)
+
   val maxX = graph.nodeswithCoordinates.map(_.x).max
   val maxY = graph.nodeswithCoordinates.map(_.y).max
 
@@ -83,6 +85,9 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
 
     drawNodes(centroids:SortedSet[Int],
       nodeToCentroid:SortedMap[Int,Int])
+
+    //double buffering still does not work!
+    super.repaint()
   }
 
   def drawNodes(centroids:SortedSet[Int],
