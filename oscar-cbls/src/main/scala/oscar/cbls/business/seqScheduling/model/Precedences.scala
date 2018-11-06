@@ -114,6 +114,11 @@ class Precedences(numActivities: Int) {
     descendants(List(indAct), Nil)
   }
 
+  /**
+    * To string
+    *
+    * @return a readable string for this precedence relation
+    */
   override def toString: String = {
     val strPrec = precArray.foldLeft("[")((str, s) => s"$str{$s} ")
     val strSucc = succArray.foldLeft("[")((str, s) => s"$str{$s} ")

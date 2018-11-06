@@ -14,17 +14,25 @@ class SwapActivity(scm: SchedulingSolver,
   var currentIndex: Int = Constants.NO_INDEX
   var swappingIndex: Int = Constants.NO_INDEX
 
+  println(s"Initial makespan = ${scm.makeSpan}")
+
   /**
     * This is the method you must implement and that performs the search of your neighborhood.
     * every time you explore a neighbor, you must perform the calls to notifyMoveExplored or moveRequested(newObj) && submitFoundMove(myMove)){
     * as explained in the documentation of this class
     */
   override def exploreNeighborhood(): Unit = {
+
+    println(s"*** Call to explore neighborhood")
+
     // iteration zone on activities indices
     val iterationZone = searchIndices.getOrElse(() => 0 until scm.scModel.nbActivities)
 
     // Define checkpoint on sequence (activities list)
     val seqValueCheckPoint = scm.activitiesSequence.defineCurrentValueAsCheckpoint(true)
+
+    println(s"Objective variable = $obj")
+    println(s"Current makespan = ${scm.makeSpan}")
 
     // iterating over the indices in the activity list
     val (indicesIterator, notifyIndexFound) = selectIndiceBehavior.toIterator(iterationZone())
@@ -33,7 +41,7 @@ class SwapActivity(scm: SchedulingSolver,
       // explore the insertable zone of the current indice
       val insertableZone = scm.insertableIndices(currentIndex)
 
-      print(s"Insertable zone for $currentIndex = [")
+      print(s"Insertable zone for $currentIndex = [ ")
       insertableZone.foreach(a => print(s"$a "))
       println("]")
 
@@ -41,19 +49,30 @@ class SwapActivity(scm: SchedulingSolver,
       while (insertableIterator.hasNext) {
         swappingIndex = insertableIterator.next()
         // Perform move on sequence
+
+        println(s"Current Index = $currentIndex | Swapping Index = $swappingIndex")
+        println(s"Old obj = ${obj.value}")
+        println(s"Sequence before = ${scm.activitiesSequence.value}")
+        println(s"Makespan before = ${scm.makeSpan.value}")
+        println(s"Start Times before = ${scm.startTimes.foldLeft("[")((acc, stv) => s"$acc ${stv.value}")} ]")
+        println(s"Setup Times before = ${scm.setupTimes}")
+
+        performMove(currentIndex, swappingIndex)
         val newObj = obj.value
 
         println(s"New obj = $newObj")
-        println(s"Current Index = $currentIndex | Swapping Index = $swappingIndex")
-
-        performMove(currentIndex, swappingIndex)
-
         println(s"Sequence after = ${scm.activitiesSequence.value}")
+        println(s"Makespan after = ${scm.makeSpan.value}")
+        println(s"Start Times after = ${scm.startTimes.foldLeft("[")((acc, stv) => s"$acc ${stv.value}")} ]")
+        println(s"Setup Times after = ${scm.setupTimes}")
 
         scm.activitiesSequence.rollbackToTopCheckpoint(seqValueCheckPoint)
 
         // Notification of finding indices
         if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
+
+          println(s"Notifying improving move on ${newObj}")
+
           notifyIndexFound()
           notifySwappingFound()
         }

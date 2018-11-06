@@ -32,18 +32,24 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
   finishInitialization()
 
   for {st <- startTimes} st.setDefiningInvariant(this)
+  makeSpan.setDefiningInvariant(this)
 
   computeAllFromScratch(priorityActivitiesList.value)
 
   def computeAllFromScratch(priorityList: IntSequence): Unit = {
+
+    println(s"*** Computing all from scratch for $priorityList")
+
     // Initialization
     makeSpan := 0
-    startTimes.foreach { stVar => stVar := 0}
+    //startTimes.foreach { stVar => stVar := 0 }
     setupTimes.reset()
     val resourceFlowStates: Array[ResourceFlowState] = Array.tabulate(schedulingModel.nbResources) { i =>
       new ResourceFlowState(schedulingModel.resources(i).initialModeIndex,
                             schedulingModel.resources(i).capacity)
     }
+    var makeSpanValue = 0
+    var startTimesArray: Array[Int] = Array.tabulate(schedulingModel.nbActivities)(_ => 0)
     // Main loop
     for {indAct <- priorityList} {
       val resIndexesActI = schedulingModel.activities(indAct).resourceUsages.flatten.map(_.resourceIndex)
@@ -80,12 +86,13 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
           setupTimes.addSetupTime(SetupTimeData(resInd, lastModeRes, newModeRes, lastEndTime, setupTimeMode))
         }
       }
-      // now we can update the start time for the activity and the
+      // now we can update the start time for the activity and the makespan
       val startTimeAct = math.max(maxEndTimePrecsActI, maxStartTimeAvailableResActI)
-      startTimes(indAct) := startTimeAct
+      //startTimes(indAct) := startTimeAct
+      startTimesArray(indAct) = startTimeAct
       val endTimeAct = startTimeAct + schedulingModel.activities(indAct).duration
-      if (endTimeAct > makeSpan.value) {
-        makeSpan := endTimeAct
+      if (endTimeAct > makeSpanValue) {
+        makeSpanValue = endTimeAct
       }
       // update map of resource flows for all resources. It requires another
       // loop on the resources
@@ -115,7 +122,12 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
         )
       }
     }
-
+    // Set makespan variable
+    makeSpan := makeSpanValue
+    // Set start times variables
+    for { i <- 0 until schedulingModel.nbActivities } {
+      startTimes(i) := startTimesArray(i)
+    }
   }
 
   //TODO Incremental computation
@@ -137,6 +149,13 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
     var changedRunningMode: Option[Int] = None
   }
 
+  /** To override whenever possible to spot errors in invariants.
+    * this will be called for each invariant after propagation is performed.
+    * It requires that the Model is instantiated with the variable debug set to true.
+    */
+  override def checkInternals(c: Checker): Unit = {
+    // To be implementes...
+  }
 }
 
 /**

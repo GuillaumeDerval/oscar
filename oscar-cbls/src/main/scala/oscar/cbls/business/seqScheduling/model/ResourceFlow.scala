@@ -7,8 +7,17 @@ import oscar.cbls.core.computation.IntValue
   * Abstract class representing the flow of a resource
   */
 abstract class ResourceFlow {
+  // quantity of consommed resource
   val quantity: Int
+  // ending time in the schadule for this resource flow
   val endTime: Int
+
+  /**
+    * Resource flow after changing the quantity of resource
+    *
+    * @param newQty the new quantity of the resource
+    * @return a new resource flow reflecting
+    */
   def changedQuantity(newQty: Int): ResourceFlow
 }
 

@@ -4,10 +4,11 @@ import oscar.cbls.Store
 import oscar.cbls.business.seqScheduling.invariants.StartTimesActivities
 import oscar.cbls.business.seqScheduling.model._
 import oscar.cbls.business.seqScheduling.neighborhood.SwapActivity
+import oscar.cbls.core.propagation.ErrorChecker
 
 object SeqScheduling {
   // CBLS store
-  val m = new Store()
+  val m = new Store(checker = Some(new ErrorChecker()))
   // Scheduling Model
   val scModel = new SchedulingModel(5, 2, 2)
   // Activities
@@ -16,11 +17,12 @@ object SeqScheduling {
   val c = new Activity(m, "c", 3, scModel)
   val d = new Activity(m, "d", 4, scModel)
   val e = new Activity(m, "e", 2, scModel)
-  scModel.addActivity(a)
-  scModel.addActivity(b)
-  scModel.addActivity(c)
   scModel.addActivity(d)
   scModel.addActivity(e)
+  scModel.addActivity(c)
+  scModel.addActivity(b)
+  scModel.addActivity(a)
+
   // Running Modes
   val rm0 = new RunningMode(m, "0", 0)
   val rm1 = new RunningMode(m, "1", 0)
@@ -54,12 +56,16 @@ object SeqScheduling {
   // Model closed
   m.close()
 
+  println("Model closed")
+  println(s"Makespan at closing = ${scSolver.makeSpan}")
+
   def main(args: Array[String]): Unit = {
     // Neighborhood
     val neighborhood = new SwapActivity(scSolver, "Swap")
     // This is the search strategy
     neighborhood.doAllMoves(obj = scSolver.mkspObj)
     // And let cross fingers!
+    println(s"*************** AFTER ALL ***********************************")
     println(s"Schedule makespan = ${scSolver.makeSpan.value}")
     println(s"Scheduling sequence = ${scSolver.activitiesSequence.value}")
     println("Scheduling start times = [  ")
