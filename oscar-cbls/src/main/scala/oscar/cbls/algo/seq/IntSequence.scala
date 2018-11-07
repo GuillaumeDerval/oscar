@@ -264,8 +264,8 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     )
   }
 
-  def size : Int = internalPositionToValue.size
-
+  override val size : Int = internalPositionToValue.size
+  
   override def isEmpty : Boolean = internalPositionToValue.isEmpty
 
   override def nbOccurrence(value : Int) : Int = valueToInternalPositions.get(value) match {

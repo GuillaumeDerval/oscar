@@ -137,9 +137,27 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
       }
 
     if(e3 > d3)
-      EmptyTransferFunction$
+      EmptyTransferFunction
     else
       DefinedTransferFunction(e3, d3, l3)
+    /*if(!earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2) EmptyTransferFunction
+   else{
+     val e3 =
+       if(latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2) f1.d
+       else if(earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2) f2.e - f1.l - m + f1.e
+       else f1.e
+     val d3 =
+       if(latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2) f1.d
+       else f2.d - f1.l - m + f1.e
+     if(e3 > d3)
+       EmptyTransferFunction
+     else {
+       val l3 =
+         if (earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2) f2.l
+         else f1.l + f2.l - f2.e + m
+       DefinedTransferFunction(e3, d3, l3)
+     }
+   }*/
   }
 
   private def segmentsInfo(segment: Segment[Array[TransferFunction]]): (Int, Int, TransferFunction) ={
@@ -179,7 +197,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
       //Either the explorer current value is < v or the explorer is empty or the transfer function is empty
       // So this while statement will be executed only if the transfer function is empty
       while(curExplorer.nonEmpty && curExplorer.get.value >= v){
-        preComputedVals(node)(curExplorer.get.value) = EmptyTransferFunction$
+        preComputedVals(node)(curExplorer.get.value) = EmptyTransferFunction
         curExplorer = curExplorer.get.next
       }
     }
@@ -193,7 +211,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
           if (elem.value < v && elem.value != vehicle){
             continue = false
           } else {
-            if(preComputedVals(elem.value) == null)preComputedVals(elem.value) = Array.fill(n)(EmptyTransferFunction$)
+            if(preComputedVals(elem.value) == null)preComputedVals(elem.value) = Array.fill(n)(EmptyTransferFunction)
             preComputedVals(elem.value)(elem.value) = transferFunctionOfNode(elem.value)
             performPreComputeOnNode(elem.value, elem.next)
           }
@@ -321,7 +339,7 @@ case class DefinedTransferFunction(override val e: Int, override val d: Int, ove
   override def isEmpty: Boolean = false
 }
 
-case object EmptyTransferFunction$ extends TransferFunction(1,-1,-1){
+case object EmptyTransferFunction extends TransferFunction(1,-1,-1){
   override def apply(t: Int): Option[Int] = None
 
   override def isEmpty: Boolean = true

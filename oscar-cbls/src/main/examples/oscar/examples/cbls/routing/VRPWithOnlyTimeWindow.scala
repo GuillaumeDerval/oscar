@@ -103,12 +103,12 @@ class VRPWithOnlyTimeWindow(oldVersion: Boolean){
 
   val closestRelevantPredecessorsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance,relevantPredecessorsOfNodes))
 
-  val insertPoint = profile(insertPointUnroutedFirst(
+  val insertPoint = insertPointUnroutedFirst(
     () => myVRP.unrouted.value,
     ()=> myVRP.kFirst(v*4,closestRelevantPredecessorsByDistance, postFilter),
     myVRP,
     //selectInsertionPointBehavior = Best(),
-    neighborhoodName = "InsertUF"))
+    neighborhoodName = "InsertUF")
 
   val onePtMove = profile(onePointMove(
     () => myVRP.routed.value,
@@ -120,11 +120,16 @@ class VRPWithOnlyTimeWindow(oldVersion: Boolean){
   def threeOptMove(k: Int) = profile(threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,closestRelevantPredecessorsByDistance,postFilter), myVRP,neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
 
-  val search = insertPoint exhaust /*threeOptMove(v*2) exhaust */onePtMove
+  //val search = andThen(insertPoint,onePtMove)
+  val search = profile(insertPoint)
+  //val search = profile(insertPoint) exhaust onePtMove
+  //val search = profile(insertPoint) exhaust threeOptMove(v*2) exhaust onePtMove
 
   search.verbose = 1
 
   search.doAllMoves(obj=obj)
+
+  println(myVRP.routes)
 
   println(obj)
 
