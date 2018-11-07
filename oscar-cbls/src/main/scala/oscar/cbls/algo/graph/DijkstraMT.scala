@@ -1,7 +1,5 @@
 package oscar.cbls.algo.graph
 
-import oscar.cbls.lib.invariant.graph.{ClosestCentroidLabeling, Unreachable, VoronoiZone}
-
 class DijkstraMT(g:ConditionalGraph){
 
   def search(from:Node,
@@ -22,6 +20,9 @@ class DijkstraMT(g:ConditionalGraph){
       isTarget(target.nodeId) = true
     }
 
+    if(isTarget(from.nodeId)){
+      return VoronoiZone(from, 0)
+    }
     //we can only put node with an existing under-approximated distance to the target, this only needs to be checked on the source node, actually
     val toDevelopHeap = new oscar.cbls.algo.heap.BinomialHeapWithMoveInt(
       nodeID => nodeToDistance(nodeID),

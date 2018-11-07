@@ -42,7 +42,7 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
       graph.nodes(to.value),
       {val o = openConditions.value; condition => o contains condition})
     match{
-      case Distance(from, to,distance:Int, requiredConditions:SortedSet[Int], unlockingConditions:SortedSet[Int]) =>
+      case Distance(from, to,distance:Int, requiredConditions, unlockingConditions) =>
         setListenedValueOnValueWiseKey(requiredConditions ++ unlockingConditions)
 
         this := distance
@@ -55,7 +55,7 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
 
         this := distanceIfNotConnected
 
-      case NotConnected(from, to, unlockingConditions:SortedSet[Int]) =>
+      case NotConnected(from, to, unlockingConditions) =>
         setListenedValueOnValueWiseKey(unlockingConditions)
 
         this := distanceIfNotConnected

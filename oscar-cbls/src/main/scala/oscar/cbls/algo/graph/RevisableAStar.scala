@@ -10,14 +10,14 @@ abstract sealed class RevisableDistance(from:Node,
 case class Distance(from:Node,
                     to:Node,
                     distance:Int,
-                    requiredConditions:Set[Int],
-                    unlockingConditions:Set[Int]) extends RevisableDistance(from,to)
+                    requiredConditions:SortedSet[Int],
+                    unlockingConditions:SortedSet[Int]) extends RevisableDistance(from,to)
 
 case class NeverConnected(from:Node,to:Node) extends RevisableDistance(from,to)
 
 case class NotConnected(from:Node,
                         to:Node,
-                        unlockingConditions:Set[Int]) extends RevisableDistance(from,to)
+                        unlockingConditions:SortedSet[Int]) extends RevisableDistance(from,to)
 
 class RevisableAStar(g:ConditionalGraph,
                      underApproximatingDistance:(Int,Int) => Option[Int]){
@@ -76,22 +76,26 @@ class RevisableAStar(g:ConditionalGraph,
       }
 
       val currentNode = g.nodes(currentNodeId)
-      val currentNodeDistance = nodeToDistance(currentNode.nodeId)
+      val currentNodeDistance = nodeToDistance(currentNodeId)
       for (outgoingEdge <- currentNode.incidentEdges) {
         if (isEdgeOpen(outgoingEdge)) {
           val otherNode = outgoingEdge.otherNode(currentNode)
-          if (toDevelopHeap.contains(otherNode.nodeId)) {
-            val oldDistance = nodeToDistance(otherNode.nodeId)
+          val otherNodeID = otherNode.nodeId
+
+          if (toDevelopHeap.contains(otherNodeID)) {
+            //Already to explore
+            val oldDistance = nodeToDistance(otherNodeID)
             val newDistance = currentNodeDistance + outgoingEdge.length
             if (newDistance < oldDistance) {
-              nodeToDistance(otherNode.nodeId) = newDistance
-              toDevelopHeap.notifyChange(otherNode.nodeId)
+              nodeToDistance(otherNodeID) = newDistance
+              toDevelopHeap.notifyChange(otherNodeID)
             }
           } else {
+            //not to explore yet
             val newDistance = currentNodeDistance + outgoingEdge.length
-            nodeToDistance(otherNode.nodeId) = newDistance
-            reachedNodeIDs = QList(otherNode.nodeId,reachedNodeIDs)
-            toDevelopHeap.insert(otherNode.nodeId)
+            nodeToDistance(otherNodeID) = newDistance
+            reachedNodeIDs = QList(otherNodeID,reachedNodeIDs)
+            toDevelopHeap.insert(otherNodeID)
           }
         } else {
           //it is closed, but might be open later one

@@ -53,11 +53,15 @@ class Edge(val edgeId:Int,
 }
 
 
-class NodeWithIntegerCoordinates(nodeID:Int,val x:Int,val y:Int) extends Node(nodeID)
+class NodeWithIntegerCoordinates(nodeID:Int,val x:Int,val y:Int) extends Node(nodeID){
+  override def toString: String = "NodeWithIntegerCoordinates(nodeId:" + nodeId + ")"
+}
 
 class Node(val nodeId:Int){
   var incidentEdges:QList[Edge] = null
   def registerEdge(edge:Edge) {incidentEdges = QList(edge,incidentEdges)}
+
+  override def toString: String = "Node(nodeId:" + nodeId + ")"
 }
 
 

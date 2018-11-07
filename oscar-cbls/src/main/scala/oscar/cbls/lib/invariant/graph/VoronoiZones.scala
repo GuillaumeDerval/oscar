@@ -1,6 +1,6 @@
 package oscar.cbls.lib.invariant.graph
 
-import oscar.cbls.algo.graph.{ConditionalGraph, DijkstraMT, Edge, Node}
+import oscar.cbls.algo.graph._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.Checker
@@ -38,37 +38,6 @@ object VoronoiZones{
   }
 }
 
-
-
-abstract sealed class ClosestCentroidLabeling{
-  def <(that:ClosestCentroidLabeling):Boolean
-  def equals(that:ClosestCentroidLabeling):Boolean
-}
-
-case class VoronoiZone(centroid:Node,distance:Int) extends ClosestCentroidLabeling{
-  override def <(that: ClosestCentroidLabeling): Boolean = that match{
-    case Unreachable => true
-    case that:VoronoiZone =>
-      this.distance < that.distance || (that.distance == this.distance && this.centroid.nodeId < that.centroid.nodeId)
-  }
-
-  override def equals(that: ClosestCentroidLabeling): Boolean = that match{
-    case Unreachable => false
-    case that:VoronoiZone => that.distance == this.distance && this.centroid == that.centroid
-  }
-
-  def + (length:Int):VoronoiZone = VoronoiZone(centroid,distance+length)
-}
-
-case object Unreachable extends ClosestCentroidLabeling{
-  override def <(that: ClosestCentroidLabeling): Boolean = false
-
-  override def equals(that: ClosestCentroidLabeling): Boolean = that match{
-    case Unreachable => true
-    case that:VoronoiZone => false
-  }
-}
-
 /**
   *
   * @param graph a graph, this is a constant. it is a conditional graph, so some edges have
@@ -88,8 +57,8 @@ class VoronoiZones(graph:ConditionalGraph,
                    defaultDistanceForUnreachableNodes:Int)
   extends Invariant with SetNotificationTarget {
 
-  //TODO: maxDistanceToCentroid:Int
 
+  //TODO: maxDistanceToCentroid:Int
   require(openConditions != centroids, "something absurd in the voronoi zone declaration")
 
   //this condition is needed because we use the distance to unmark the voronoi zones whe na conditional edge is closed
@@ -160,7 +129,6 @@ class VoronoiZones(graph:ConditionalGraph,
 
   private def labelNode(nodeID:Int,label:ClosestCentroidLabeling): Unit ={
     nodeLabeling(nodeID) = label
-
     if(trackedNodeToDistanceAndCentroid(nodeID) != null){
       trackedNodeToDistanceAndCentroid(nodeID).set(label)
     }
@@ -217,7 +185,6 @@ class VoronoiZones(graph:ConditionalGraph,
         Some(pathToExistingCentroid(node,z))
     }
   }
-
 
   override def notifySetChanges(v: ChangingSetValue,
                                 d: Int,
@@ -290,7 +257,7 @@ class VoronoiZones(graph:ConditionalGraph,
           }
         }
       }
-     }
+    }
   }
 
   markAllNodesUnreachable()
@@ -452,11 +419,14 @@ class VoronoiZones(graph:ConditionalGraph,
 
     //checking for each node the centroid (this is very costly: nbNodes*Dijkstra)
     for(node <- graph.nodes){
-      require(nodeLabeling(node.nodeId) equals
-        new DijkstraMT(this.graph).search(
-          node,
-          centroids,
-          isConditionalEdgeOpen))
+
+      val fromScratch = new DijkstraMT(this.graph).search(
+        node,
+        centroids,
+        isConditionalEdgeOpen)
+
+      val incremental = nodeLabeling(node.nodeId)
+      require(fromScratch equals incremental, "node:" + node + " incremental:" + incremental + " fromScratch:" + fromScratch)
     }
 
     //this is mostly a static check

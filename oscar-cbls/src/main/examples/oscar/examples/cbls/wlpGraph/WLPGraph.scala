@@ -18,11 +18,10 @@
 package oscar.examples.cbls.wlpGraph
 
 import oscar.cbls._
-import oscar.cbls.algo.graph.{ConditionalGraph, ConditionalGraphWithIntegerNodeCoordinates, Node, NodeWithIntegerCoordinates}
+import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, Node, NodeWithIntegerCoordinates}
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.lib.invariant.graph._
-import oscar.cbls.lib.invariant.graph.test.RandomGraphGenerator
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.invariant.set.Cardinality
@@ -199,7 +198,7 @@ object WLPGraph extends App with StopWatch{
       lastDisplay = this.getWatch
     })
 
-  neighborhood.verbose = 2
+  neighborhood.verbose = 1
 
   neighborhood.doAllMoves(obj=obj)
 
