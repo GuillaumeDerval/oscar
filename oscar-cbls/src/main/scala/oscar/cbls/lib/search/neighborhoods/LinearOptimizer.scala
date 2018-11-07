@@ -18,7 +18,7 @@ package oscar.cbls.lib.search.neighborhoods
   * this is a class that explores a range of value between 0 and maxValue.
   * It only needs to poll the value, not to return anything
   */
-abstract class LinearSelector{
+abstract class LinearOptimizer{
   /**
     * the method that linear selectors must implement.
     * it performs a search and has not other interface than this one.
@@ -35,7 +35,7 @@ abstract class LinearSelector{
 
 }
 
-class Exhaustive(step:Int = 1) extends LinearSelector{
+class Exhaustive(step:Int = 1) extends LinearOptimizer{
   override def search(evaluate: Int => Int,
                       minValue:Int,
                       maxValue: Int,
@@ -48,7 +48,7 @@ class Exhaustive(step:Int = 1) extends LinearSelector{
   }
 }
 
-class DicotomicLikeSlide(dividingRatio:Int)  extends LinearSelector{
+class ExponentialStepSlide(dividingRatio:Int)  extends LinearOptimizer{
 
   override def search(evaluate: Int => Int,
                       minValue: Int, maxValue: Int,
@@ -70,7 +70,7 @@ class DicotomicLikeSlide(dividingRatio:Int)  extends LinearSelector{
 }
 
 class SlideVaryingSteps(stepSequence:List[Int] = List(1), gradualIncrease:Boolean)
-  extends LinearSelector{
+  extends LinearOptimizer{
 
   override def search(evaluate: Int => Int,
                       minValue: Int, maxValue: Int,
@@ -147,7 +147,7 @@ class SlideVaryingSteps(stepSequence:List[Int] = List(1), gradualIncrease:Boolea
 }
 
 
-class Slide(step:Int = 1) extends LinearSelector{
+class Slide(step:Int = 1) extends LinearOptimizer{
   override def search(evaluate: Int => Int,
                       minValue:Int,
                       maxValue: Int,
@@ -195,7 +195,7 @@ class Slide(step:Int = 1) extends LinearSelector{
   }
 }
 
-class NewtonRaphson() extends LinearSelector{
+class NewtonRaphson() extends LinearOptimizer{
   override def search(evaluate: Int => Int,
                       minValue:Int,
                       maxValue: Int,

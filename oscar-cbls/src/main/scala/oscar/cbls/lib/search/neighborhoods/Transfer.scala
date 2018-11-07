@@ -25,7 +25,7 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
                                 name:String = "TransferNeighborhood",
                                 searchZone1:()=>Iterable[Int] = null,
                                 searchZone2:() => (Int,Int)=>Iterable[Int] = null,
-                                searchZoneForDelta:() => (Int,Int) => (Int,Int) => LinearSelector, //donne des delta à essayer (TOTO: faire un enwton raphson ou regula falsi ou dichotomoe ici!!!
+                                searchZoneForDelta:() => (Int,Int) => (Int,Int) => LinearOptimizer, //donne des delta à essayer (TOTO: faire un enwton raphson ou regula falsi ou dichotomoe ici!!!
                                 symmetryCanBeBrokenOnIndices:Boolean = true,
                                 selectFirstVariableBehavior:LoopBehavior = First(),
                                 selectSecondVariableBehavior:LoopBehavior = First(),
