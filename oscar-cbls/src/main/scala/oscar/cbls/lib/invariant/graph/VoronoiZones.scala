@@ -134,6 +134,30 @@ class VoronoiZones(graph:ConditionalGraph,
     }
   }
 
+  def centroidToReachedConditions:SortedMap[Int,SortedSet[Int]] = {
+    val a = conditionToClosestCentroid
+    var toReturn:SortedMap[Int,SortedSet[Int]] = SortedMap.empty
+    for(condition <- a.indices){
+      a(condition) match{
+        case None => ;
+        case Some(centroid) =>
+          toReturn += centroid->(toReturn.getOrElse(centroid,SortedSet.empty) + condition)
+      }
+    }
+    toReturn
+  }
+
+  def conditionToClosestCentroid:Array[Option[Int]] = {
+    Array.tabulate(graph.nbConditions)(c => {
+      val conditionalEdge = graph.conditionToConditionalEdges(c)
+      (nodeLabeling(conditionalEdge.nodeA.nodeId)
+        min nodeLabeling(conditionalEdge.nodeB.nodeId)) match{
+        case VoronoiZone(centroid,_) => Some(centroid.nodeId)
+        case _ => None
+      }
+    }
+    )
+  }
 
   def spanningTree(nodes:QList[Node]):QList[Edge] = {
     require(!isScheduled,"cannot invoke spanning tree when Voronoi is not up to date!")

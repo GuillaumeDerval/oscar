@@ -326,6 +326,7 @@ trait SetNotificationTarget extends PropagationElement{
 
 class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,var target:SetNotificationTarget){
 
+  require(originalKey != null)
   val sizeOfSet = setValue.max - setValue.min +1
   val offset = setValue.min
   var currentValueWisePropagationWaveIdentifier:ValueWisePropagationWaveIdentifier = null

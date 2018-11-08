@@ -588,7 +588,7 @@ trait AbstractVariable
   final def notifyChanged(){
     if(isScheduled) return
     //TODO: this is not good, should be much more straightforward code here; just scheduleForPropagation() (which should be inline btw)
-    if (this.model == null ||(!this.model.isClosed && this.getDynamicallyListeningElements.isEmpty)){
+    if (this.model == null){
       performPropagation()
     }else{
       assert(model.checkExecutingInvariantOK(definingInvariant),"variable [" + this + "] affected by non-controlling invariant")

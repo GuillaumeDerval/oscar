@@ -18,7 +18,7 @@
 package oscar.examples.cbls.wlpGraph
 
 import oscar.cbls._
-import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, Node, NodeWithIntegerCoordinates}
+import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, FloydWarshall, Node, NodeWithIntegerCoordinates}
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.lib.invariant.graph._
@@ -111,8 +111,23 @@ object WLPGraph extends App with StopWatch{
 
   val costOfPassage = 10
 
+  val straigntLineDistance = (a:Int,b:Int) => Some(distance(graph.nodeswithCoordinates(a),graph.nodeswithCoordinates(b)))
+
+  val graphDistanceFloyd = {
+    println("start floyd")
+    val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph, _ => true)
+    println("end floyd")
+    (a: Int, b: Int) => {
+      val tmp = underApproxDistanceMatrix(a)(b)
+      if (tmp == Int.MaxValue) None else Some(tmp)
+    }
+  }
+  val selectedDistances = Array.tabulate(20)(w =>
+    new DistanceInConditionalGraph(graph,0,w,openConditions,10000)(graphDistanceFloyd))
+  val totalDistanceToWs = sum(selectedDistances)
   val x = Cardinality(openConditions)
-  val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses) + (x*costOfPassage))
+
+  val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses) + (x*costOfPassage) + totalDistanceToWs)
 
   m.close()
 
@@ -171,6 +186,9 @@ object WLPGraph extends App with StopWatch{
 
   var lastDisplay = this.getWatch
 
+  println(selectedDistances.mkString("\n\t"))
+
+
   val neighborhood =(
     BestSlopeFirst(
       List(
@@ -193,7 +211,9 @@ object WLPGraph extends App with StopWatch{
         hideClosedEdges = false,
         hideRegularEdges = false,
         hideOpenEdges = false,
-        emphasizeEdges = vor.spanningTree(deliveryNodeList))
+        emphasizeEdges = vor.spanningTree(deliveryNodeList),
+        selectedDistances.map(_.getPath)
+      )
 
       lastDisplay = this.getWatch
     })
@@ -202,12 +222,20 @@ object WLPGraph extends App with StopWatch{
 
   neighborhood.doAllMoves(obj=obj)
 
-  visual.redraw(openConditions.value,openWarehouses.value,
-    trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => (v2.value)}),hideClosedEdges = true,emphasizeEdges = vor.spanningTree(deliveryNodeList),hideRegularEdges = true,hideOpenEdges=false)
+  visual.redraw(
+    openConditions.value,
+    openWarehouses.value,
+    trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => (v2.value)}),
+    hideClosedEdges = true,
+    emphasizeEdges = vor.spanningTree(deliveryNodeList),
+    hideRegularEdges = true,
+    hideOpenEdges=false,
+    extraPath = selectedDistances.map(_.getPath))
 
   println(neighborhood.profilingStatistics)
 
   println(openWarehouses)
   println(openConditions)
+  println(selectedDistances.mkString("\n\t"))
 }
 

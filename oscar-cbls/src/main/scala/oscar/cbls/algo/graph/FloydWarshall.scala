@@ -3,7 +3,7 @@ package oscar.cbls.algo.graph
 object FloydWarshall{
 
   def buildDistanceMatrix(g:ConditionalGraph,
-                           isConditionalEdgeOpen:Int => Boolean):Array[Array[Option[Int]]] = {
+                           isConditionalEdgeOpen:Int => Boolean):Array[Array[Int]] = {
     val m = buildAdjacencyMatrix(g:ConditionalGraph,
       isConditionalEdgeOpen:Int => Boolean)
     saturateAdjacencyMatrixToDistanceMatrix(m)
@@ -11,7 +11,7 @@ object FloydWarshall{
   }
 
   def buildAdjacencyMatrix(g:ConditionalGraph,
-                           isConditionalEdgeOpen:Int => Boolean):Array[Array[Option[Int]]] = {
+                           isConditionalEdgeOpen:Int => Boolean):Array[Array[Int]] = {
 
     def isEdgeOpen(edge: Edge): Boolean =
       edge.conditionID match {
@@ -20,38 +20,33 @@ object FloydWarshall{
       }
 
     val n = g.nbNodes
-    val matrix:Array[Array[Option[Int]]] = Array.tabulate(n)(_ => Array.fill(n)(None))
+    val matrix:Array[Array[Int]] = Array.tabulate(n)(_ => Array.fill(n)(Int.MaxValue))
 
     for(node <- g.nodes.indices){
-      matrix(node)(node) = Some(0)
+      matrix(node)(node) = 0
     }
 
     for(edge <- g.edges if isEdgeOpen(edge)){
-
-      val sl = matrix(edge.nodeA.nodeId)(edge.nodeB.nodeId) match{
-        case None => Some(edge.length)
-        case Some(d) => Some(edge.length min d)
-      }
-
+      val sl = edge.length min matrix(edge.nodeA.nodeId)(edge.nodeB.nodeId)
       matrix(edge.nodeA.nodeId)(edge.nodeB.nodeId) = sl
-      matrix(edge.nodeA.nodeId)(edge.nodeB.nodeId) = sl
+      matrix(edge.nodeB.nodeId)(edge.nodeA.nodeId) = sl
     }
 
     matrix
   }
 
-  def saturateAdjacencyMatrixToDistanceMatrix(w:Array[Array[Option[Int]]]){
+  def saturateAdjacencyMatrixToDistanceMatrix(w:Array[Array[Int]]){
     val n = w.length
-    val par0ToNm1 = (0 to n-1).par
-    for (k <- 0 to n-1) {
-      for (i <- par0ToNm1) {
-        for (j <- i+1 to n-1) {
 
-          if(w(i)(k).isDefined && w(k)(j).isDefined) {
-            val newDistance = w(i)(k).get + w(k)(j).get
-            if (w(i)(j).isEmpty || newDistance <= w(i)(j).get) {
-              w(i)(j) = Some(newDistance)
-              w(j)(i) = w(i)(j)
+    for (k <- 0 to n-1) {
+      for (i <- 0 to n-1) {
+        for (j <- i to n-1) {
+
+          if(w(i)(k) != Int.MaxValue && w(k)(j)!= Int.MaxValue) {
+            val newDistance = w(i)(k) + w(k)(j)
+            if (newDistance < w(i)(j)) {
+              w(i)(j) = newDistance
+              w(j)(i) = newDistance
             }
           }
         }

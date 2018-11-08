@@ -4,6 +4,9 @@ package oscar.cbls.algo.graph
 abstract sealed class ClosestCentroidLabeling{
   def <(that:ClosestCentroidLabeling):Boolean
   def equals(that:ClosestCentroidLabeling):Boolean
+  def min(that:ClosestCentroidLabeling):ClosestCentroidLabeling = {
+    if(this < that) this else that
+  }
 }
 
 case class VoronoiZone(centroid:Node,distance:Int) extends ClosestCentroidLabeling{
