@@ -1,19 +1,19 @@
 /**
- * *****************************************************************************
- * OscaR is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 2.1 of the License, or
- * (at your option) any later version.
- *
- * OscaR is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License  for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License along with OscaR.
- * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
- * ****************************************************************************
- */
+  * *****************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  * ****************************************************************************
+  */
 package oscar.visual
 
 import java.awt.{Color, Graphics, Graphics2D}
@@ -26,10 +26,10 @@ import oscar.visual.shapes.{VisualLine, VisualRectangle, VisualShape}
 import scala.collection.mutable.Queue
 
 /**
- * VisualDrawing
- *
- *  Contains and draws VisualShapes.
- */
+  * VisualDrawing
+  *
+  *  Contains and draws VisualShapes.
+  */
 class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel {
 
   setBackground(Color.white)
@@ -73,9 +73,9 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel {
   }
   var transform = new AffineTransform()
   var scale = 1.0
-  
+
   override def paint(g: Graphics): Unit = {
-	
+
     super.paintComponent(g)
     val g2d = g.asInstanceOf[Graphics2D]
     transform = new AffineTransform() // start with identity transform   
@@ -90,7 +90,7 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel {
       // Drawing size
       val dWidth = getWidth
       val dHeight = getHeight
-      
+
       // Flip
       if (flipped) {
         transform.translate(0, dHeight)
@@ -106,24 +106,24 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel {
         val ratioY = dHeight / (marginT + marginB + sHeight)
         val ratio = math.min(ratioX, ratioY) // Maintain proportions
         transform.scale(ratio, ratio)
-        
+
         // Translate
         val translateX: Int = (marginL - minX).toInt
-        val translateY: Int = ((if (flipped) marginB else marginT) - minY).toInt 
+        val translateY: Int = ((if (flipped) marginB else marginT) - minY).toInt
         transform.translate(translateX,translateY)
       }
-	  g2d.transform(transform)
+      g2d.transform(transform)
       for (s <- shapes) {
         s.draw(g2d)
       }
     }
   }
-  
+
   def invertTransform(p: Point2D): Point2D = {
     val clone = transform.clone().asInstanceOf[AffineTransform]
     clone.invert()
     clone.transform(new Point2D.Double(p.getX, p.getY), null)
-  } 
+  }
 
   /** Adds a new non null colored shape in the panel. */
   def addShape(shape: VisualShape, repaintAfter: Boolean = true): Unit = {
@@ -148,17 +148,17 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel {
         drawingPanel.setToolTipText("")
         for (s <- shapes) {
           s.showToolTip(e.getPoint)
-        }         
+        }
       }
       override def mouseDragged(e: MouseEvent) {}
     }
   }
-  
+
   private def scale(factor: Double) {
     scale = scale * factor
     repaint()
   }
-  
+
   addMouseListener {
     new MouseListener() {
       override def mouseClicked(e: MouseEvent) {
@@ -178,7 +178,7 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel {
       override def mousePressed(e: MouseEvent) {}
       override def mouseExited(e: MouseEvent) {}
       override def mouseReleased(e: MouseEvent) {}
-    }    
+    }
   }
 
   def showToolTip(text: String): Unit = {
@@ -187,7 +187,7 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel {
 }
 
 object VisualDrawing {
-  
+
   def apply(flipped: Boolean = true, scalable: Boolean = false): VisualDrawing = {
     new VisualDrawing(flipped, scalable)
   }

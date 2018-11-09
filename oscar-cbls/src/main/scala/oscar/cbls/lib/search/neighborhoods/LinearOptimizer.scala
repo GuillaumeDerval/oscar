@@ -1,4 +1,5 @@
 package oscar.cbls.lib.search.neighborhoods
+
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -31,7 +32,7 @@ abstract class LinearOptimizer{
              minValue:Int,
              maxValue:Int,
              objAtZero:Int,
-             shouldStop:() => Boolean)
+             maxIt:Int):Int
 
 }
 
@@ -40,11 +41,21 @@ class Exhaustive(step:Int = 1) extends LinearOptimizer{
                       minValue:Int,
                       maxValue: Int,
                       objAtZero: Int,
-                      shouldStop: () => Boolean): Unit = {
+                      maxIt:Int): Int = {
 
-    for(value <- minValue to maxValue by step if !shouldStop()){
-      evaluate(value)
+    var it = maxIt
+    var bestX = 0
+    var bestF = objAtZero
+
+    for(value <- minValue to maxValue by step if it > 0){
+      it = it - 1
+      val newF = evaluate(value)
+      if(newF < bestF){
+        bestF = newF
+        bestX = value
+      }
     }
+    bestX
   }
 }
 
@@ -53,12 +64,12 @@ class ExponentialStepSlide(dividingRatio:Int)  extends LinearOptimizer{
   override def search(evaluate: Int => Int,
                       minValue: Int, maxValue: Int,
                       objAtZero: Int,
-                      shouldStop: () => Boolean): Unit = {
-    new SlideVaryingSteps(generateStepSide(minValue.abs max maxValue.abs), false).
+                      maxIt:Int): Int = {
+    new SlideVaryingSteps(generateStepSide(minValue.abs max maxValue.abs).reverse, false).
       search(evaluate: Int => Int,
         minValue: Int, maxValue: Int,
         objAtZero: Int,
-        shouldStop: () => Boolean)
+        maxIt:Int)
   }
 
   def generateStepSide(maxStepSize:Int):List[Int] = {
@@ -71,11 +82,10 @@ class ExponentialStepSlide(dividingRatio:Int)  extends LinearOptimizer{
 
 class SlideVaryingSteps(stepSequence:List[Int] = List(1), gradualIncrease:Boolean)
   extends LinearOptimizer{
-
   override def search(evaluate: Int => Int,
                       minValue: Int, maxValue: Int,
                       objAtZero: Int,
-                      shouldStop: () => Boolean): Unit = {
+                      maxIt:Int): Int = {
 
     var didFind:Boolean = false
 
@@ -93,7 +103,6 @@ class SlideVaryingSteps(stepSequence:List[Int] = List(1), gradualIncrease:Boolea
     }
 
     def recurExploreNoGradualIncrease(toExploreSteps:List[Int]){
-      if(shouldStop()) return
       toExploreSteps match{
         case Nil => ;
         case head::tail =>
@@ -103,12 +112,11 @@ class SlideVaryingSteps(stepSequence:List[Int] = List(1), gradualIncrease:Boolea
           new Slide(head).search(
             shiftedEvaluate,
             minValue-currentOffset, maxValue-currentOffset,
-            bestObjSoFar, shouldStop)
+            bestObjSoFar, maxIt:Int)
       }
     }
 
     def recurExploreGradualIncrease(toExploreSteps:List[Int]):Boolean = {
-      if(shouldStop()) return false
       toExploreSteps match{
         case Nil => false
         case head::tail =>
@@ -117,7 +125,7 @@ class SlideVaryingSteps(stepSequence:List[Int] = List(1), gradualIncrease:Boolea
           new Slide(head).search(
             shiftedEvaluate,
             minValue-currentOffset, maxValue-currentOffset,
-            bestObjSoFar, shouldStop)
+            bestObjSoFar, maxIt:Int)
 
           if(currentOffset != positionOfBestSoFar) {
             //found something, no need to use bigger step
@@ -134,7 +142,7 @@ class SlideVaryingSteps(stepSequence:List[Int] = List(1), gradualIncrease:Boolea
           new Slide(head).search(
             shiftedEvaluate,
             minValue-currentOffset, maxValue-currentOffset,
-            bestObjSoFar, shouldStop)
+            bestObjSoFar, maxIt:Int)
           true
       }
     }
@@ -143,6 +151,8 @@ class SlideVaryingSteps(stepSequence:List[Int] = List(1), gradualIncrease:Boolea
     }else{
       recurExploreNoGradualIncrease(stepSequence)
     }
+
+    positionOfBestSoFar
   }
 }
 
@@ -152,7 +162,7 @@ class Slide(step:Int = 1) extends LinearOptimizer{
                       minValue:Int,
                       maxValue: Int,
                       objAtZero: Int,
-                      shouldStop: () => Boolean): Unit = {
+                      maxIt:Int): Int = {
 
     var currentPoint = 0
     var currentValue = objAtZero
@@ -163,44 +173,137 @@ class Slide(step:Int = 1) extends LinearOptimizer{
     val pointBelow = minValue max (currentPoint - step)
     val valueBelow = evaluate(pointBelow)
 
-    if((valueAbove min valueBelow) >= currentValue) return
+    if((valueAbove min valueBelow) >= currentValue) {
+      println("not moving")
+      return currentPoint
+    }
 
     val goingUp = valueAbove < valueBelow
 
     if(goingUp){
+      println("going up")
       currentPoint = pointAbove
       currentValue = valueAbove
     }else{
+      println("going down")
       currentPoint = pointBelow
       currentValue = valueBelow
     }
+    var it = maxIt
+    while(it > 0){
 
-    while(!shouldStop()){
+      println("nextPoint:" + currentPoint + " nextValue:" + currentValue)
+
+      it -= 1
       val nextPoint = if(goingUp){
-        if(currentPoint == maxValue) return
+        if(currentPoint == maxValue) return currentPoint
         maxValue min (currentPoint + step)
       }else{
-        if(currentPoint == minValue) return
+        if(currentPoint == minValue) return currentPoint
         minValue max (currentPoint - step)
       }
       val nextValue = evaluate(nextPoint)
 
+
+
       if(nextValue >= currentValue){
-        return
+        println("stopped")
+        return currentPoint
       } else{
         currentPoint = nextPoint
         currentValue = nextValue
       }
     }
+    currentPoint
   }
 }
 
-class NewtonRaphson() extends LinearOptimizer{
+//this one finds a root!!!
+class NewtonRaphsonRoot(dXForDetivativeEvalution:Int) extends LinearOptimizer{
   override def search(evaluate: Int => Int,
                       minValue:Int,
                       maxValue: Int,
                       objAtZero: Int,
-                      shouldStop: () => Boolean): Unit = {
+                      maxIt:Int): Int = {
 
+    var it = maxIt
+    var x = 0
+    while(it > 0) {
+      it -= 1
+      val f = evaluate(x)
+      println("iterate x:" + x + " f:" + f)
+
+      val fPdx = evaluate(x + dXForDetivativeEvalution)
+      val fMdx = evaluate(x - dXForDetivativeEvalution)
+      if (fPdx > f && fMdx > f) {
+        //best is closer to x than dx, we stop here.
+        println("best answer: " + x)
+        return x
+      }
+
+      val slope:Double = (fPdx - fMdx).toDouble / (2*dXForDetivativeEvalution)
+      println("slope:" + slope)
+      val newX = (x - (f / slope)).toInt
+      if(x == newX) return x
+      x = newX
+    }
+    x
   }
+}
+
+
+//this one finds a root!!!
+class NewtonRaphson(dXForDetivativeEvalution:Int) extends LinearOptimizer{
+  override def search(evaluate: Int => Int,
+                      minValue:Int,
+                      maxValue: Int,
+                      objAtZero: Int,
+                      maxIt:Int): Int = {
+
+    val evaluate2: Int => Int = x => {
+      val f = evaluate(x)
+      val fpdx = evaluate(x + dXForDetivativeEvalution)
+
+      ((fpdx - f).toDouble / dXForDetivativeEvalution) toInt
+    }
+
+    new NewtonRaphsonRoot(dXForDetivativeEvalution: Int).search(
+      evaluate2,
+      minValue: Int,
+      maxValue: Int,
+      evaluate2(0),
+      maxIt:Int)
+  }
+}
+
+
+class Composite(a:LinearOptimizer,b:LinearOptimizer) extends LinearOptimizer{
+  override def search(evaluate: Int => Int, minValue: Int, maxValue: Int, objAtZero: Int, maxIt:Int): Int = {
+
+    val newStartPoint = a.search(evaluate: Int => Int, minValue: Int, maxValue: Int, objAtZero: Int, maxIt:Int)
+    val newEval:Int => Int = x => evaluate(x + newStartPoint)
+
+    newStartPoint + b.search(evaluate = newEval, minValue + newStartPoint, maxValue+ newStartPoint, evaluate(newStartPoint), maxIt:Int)
+  }
+}
+
+object TestRN extends App{
+
+
+  def f:Int => Int = x => {x*x - 150*x + 5000}
+
+
+  println("NR: " + new NewtonRaphson(1).search(f,0, 40000, f(0),10))
+
+
+  println("slide:" + new Slide(step = 10).search(f,0, 40000, f(0),10))
+
+
+  println("exp:" + new ExponentialStepSlide(10).search(f,0, 40000, f(0),10))
+
+
+  println("NR,Slide:" + new Composite(
+    new NewtonRaphson(1),
+    new Slide(step = 1)).search(f,0, 40000, f(0),10))
+
 }
