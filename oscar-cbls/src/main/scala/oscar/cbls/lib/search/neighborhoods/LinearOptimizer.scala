@@ -290,19 +290,19 @@ class Composite(a:LinearOptimizer,b:LinearOptimizer) extends LinearOptimizer{
 object TestRN extends App{
 
 
-  def f:Int => Int = x => {x*x - 150*x + 5000}
+  def f:Int => Int = x => {x*x - 150*x + 5090}
 
 
-  println("NR: " + new NewtonRaphson(1).search(f,0, 40000, f(0),10))
+  println("newtonRaphson: " + new NewtonRaphson(1).search(f,0, 40000, f(0),10))
 
 
-  println("slide:" + new Slide(step = 10).search(f,0, 40000, f(0),10))
+  println("slide10:" + new Slide(step = 10).search(f,0, 40000, f(0),10))
 
 
-  println("exp:" + new ExponentialStepSlide(10).search(f,0, 40000, f(0),10))
+  println("expBy10:" + new ExponentialStepSlide(10).search(f,0, 40000, f(0),10))
 
 
-  println("NR,Slide:" + new Composite(
+  println("newtonRaphson andThen slide1:" + new Composite(
     new NewtonRaphson(1),
     new Slide(step = 1)).search(f,0, 40000, f(0),10))
 
