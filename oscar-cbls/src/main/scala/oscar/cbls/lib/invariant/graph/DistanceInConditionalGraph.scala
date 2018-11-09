@@ -12,11 +12,10 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
                                  to:Int,
                                  openConditions:SetValue,
                                  distanceIfNotConnected:Int)
-                                (underApproximatingDistance:(Int,Int) => Option[Int]
+                                (underApproximatingDistance:(Int,Int) => Int
                                  = {val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true);
                                   (a:Int,b:Int) =>{
-                                    val tmp = underApproxDistanceMatrix(a)(b)
-                                    if(tmp == Int.MaxValue) None else Some(tmp)
+                                    underApproxDistanceMatrix(a)(b)
                                   }})
   extends IntInvariant() with VaryingDependencies with SetNotificationTarget {
 

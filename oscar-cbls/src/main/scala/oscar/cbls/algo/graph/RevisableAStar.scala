@@ -20,8 +20,13 @@ case class NotConnected(from:Node,
                         to:Node,
                         unlockingConditions:SortedSet[Int]) extends RevisableDistance(from,to)
 
+/**
+  *
+  * @param graph
+  * @param underApproximatingDistance MaxInt is where thre is no connexion
+  */
 class RevisableAStar(graph:ConditionalGraph,
-                     underApproximatingDistance:(Int,Int) => Option[Int]){
+                     underApproximatingDistance:(Int,Int) => Int){
 
   private val nodeToDistance = Array.fill[Int](graph.nodes.length)(Int.MaxValue)
 
@@ -37,7 +42,7 @@ class RevisableAStar(graph:ConditionalGraph,
         case Some(condition) => isConditionalEdgeOpen(condition)
       }
 
-    if (underApproximatingDistance(from.nodeId, to.nodeId).isEmpty) {
+    if (underApproximatingDistance(from.nodeId, to.nodeId) == Int.MaxValue) {
       return NeverConnected(from, to)
     }
 
@@ -49,7 +54,7 @@ class RevisableAStar(graph:ConditionalGraph,
 
     //we can only put node with an existing under-approximated distance to the target, this only needs to be checked on the source node, actually
     val toDevelopHeap = new oscar.cbls.algo.heap.BinomialHeapWithMoveInt(
-      nodeID => nodeToDistance(nodeID) + underApproximatingDistance(nodeID, to.nodeId).get,
+      nodeID => nodeToDistance(nodeID) + underApproximatingDistance(nodeID, to.nodeId),
       graph.nodes.length,
       graph.nodes.length - 1)
 
@@ -119,7 +124,7 @@ class RevisableAStar(graph:ConditionalGraph,
 
       val (minDistance, closestNodeID, farNodeID) = if (distanceA < distanceB) (distanceA, nodeAID, nodeBID) else (distanceB, nodeBID, nodeAID)
 
-      minDistance + edge.length + underApproximatingDistance(farNodeID,to).get <= distance
+      minDistance + edge.length + underApproximatingDistance(farNodeID,to) <= distance
     })
   }
 

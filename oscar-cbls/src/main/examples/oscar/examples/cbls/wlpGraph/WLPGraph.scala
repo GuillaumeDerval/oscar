@@ -111,15 +111,14 @@ object WLPGraph extends App with StopWatch{
 
   val costOfPassage = 10
 
-  val straigntLineDistance = (a:Int,b:Int) => Some(distance(graph.nodeswithCoordinates(a),graph.nodeswithCoordinates(b)))
+  val straigntLineDistance = (a:Int,b:Int) => distance(graph.nodeswithCoordinates(a),graph.nodeswithCoordinates(b))
 
   val graphDistanceFloyd = {
     println("start floyd")
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph, _ => true)
     println("end floyd")
     (a: Int, b: Int) => {
-      val tmp = underApproxDistanceMatrix(a)(b)
-      if (tmp == Int.MaxValue) None else Some(tmp)
+      underApproxDistanceMatrix(a)(b)
     }
   }
   val selectedDistances = Array.tabulate(20)(w =>
@@ -199,7 +198,7 @@ object WLPGraph extends App with StopWatch{
         Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditions")) guard(() => openWarehouses.value.size >= 5) name "combined"), //we set a minimal size because the KNearest is very expensive if the size is small
         Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
-      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 4, obj)
+      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 2, obj)
     ) afterMove(
     if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {
       bestDisplayedObj = obj.value
