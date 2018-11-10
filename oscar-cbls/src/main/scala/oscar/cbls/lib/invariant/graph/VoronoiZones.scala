@@ -141,7 +141,7 @@ class VoronoiZones(graph:ConditionalGraph,
       a(condition) match{
         case None => ;
         case Some(centroid) =>
-          toReturn += centroid->(toReturn.getOrElse(centroid,SortedSet.empty) + condition)
+          toReturn = toReturn + (centroid->(toReturn.getOrElse(centroid,SortedSet.empty[Int]) + condition))
       }
     }
     toReturn
