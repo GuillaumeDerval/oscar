@@ -36,7 +36,9 @@ abstract class LinearOptimizer{
              obj: Int => Int,
              maxIt: Int):Int
 
-  def andThen(b:LinearOptimizer) = new Composite(this,b)
+  def carryOnTo(b:LinearOptimizer) = new Composite(this,b)
+
+  def andThen(b:LinearOptimizer) = new CrossProduct(this,b)
 }
 
 class Composite(a:LinearOptimizer,b:LinearOptimizer) extends LinearOptimizer{
@@ -45,6 +47,30 @@ class Composite(a:LinearOptimizer,b:LinearOptimizer) extends LinearOptimizer{
     val newStartPoint = a.search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int)
 
     b.search(newStartPoint, obj(newStartPoint), minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int)
+  }
+
+  override def toString: String = a + " andThen " + b
+}
+
+class CrossProduct(a:LinearOptimizer,b:LinearOptimizer) extends LinearOptimizer{
+  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int): Int = {
+
+    var bestX = startPos
+    var bestObj = startObj
+
+    def exploreB(x:Int):Int = {
+      val newX = b.search(x, obj(x), minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int)
+      val o = obj(newX)
+      if (o < bestObj){
+        bestX = newX
+        bestObj = o
+      }
+      o
+    }
+
+    val newStartPoint = a.search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, exploreB: Int => Int, maxIt: Int)
+
+    bestX
   }
 
   override def toString: String = a + " andThen " + b
@@ -165,25 +191,25 @@ class Slide(step:Int = 1) extends LinearOptimizer{
     val valueBelow = obj(pointBelow)
 
     if((valueAbove min valueBelow) >= currentValue) {
-      println("not moving")
+      //println("not moving")
       return currentPoint
     }
 
     val goingUp = valueAbove < valueBelow
 
     if(goingUp){
-      println("going up")
+      //println("going up")
       currentPoint = pointAbove
       currentValue = valueAbove
     }else{
-      println("going down")
+      //println("going down")
       currentPoint = pointBelow
       currentValue = valueBelow
     }
     var it = maxIt
     while(it > 0){
 
-      println("nextPoint:" + currentPoint + " nextValue:" + currentValue)
+      //println("nextPoint:" + currentPoint + " nextValue:" + currentValue)
 
       it -= 1
       val nextPoint = if(goingUp){
@@ -195,10 +221,8 @@ class Slide(step:Int = 1) extends LinearOptimizer{
       }
       val nextValue = obj(nextPoint)
 
-
-
       if(nextValue >= currentValue){
-        println("stopped")
+        //println("stopped")
         return currentPoint
       } else{
         currentPoint = nextPoint
@@ -221,18 +245,18 @@ class NewtonRaphsonRoot(dXForDetivativeEvalution:Int) extends LinearOptimizer{
     while(it > 0) {
       it -= 1
       val f = obj(x)
-      println("iterate x:" + x + " f:" + f)
+      //println("iterate x:" + x + " f:" + f)
 
       val fPdx = obj(x + dXForDetivativeEvalution)
       val fMdx = obj(x - dXForDetivativeEvalution)
       if (fPdx > f && fMdx > f) {
         //best is closer to x than dx, we stop here.
-        println("best answer: " + x)
+        //println("best answer: " + x)
         return x
       }
 
       val slope:Double = (fPdx - fMdx).toDouble / (2*dXForDetivativeEvalution)
-      println("slope:" + slope)
+      //println("slope:" + slope)
       val newX = (x - (f / slope)).toInt
       if(x == newX) return x
       x = newX
@@ -275,7 +299,7 @@ object TestRN extends App{
   val c = new ExponentialStepSlide(10)
   println(c + " " + c.search(0, f(0), -1000, 15000, f, 10))
 
-  val d = new Slide(step = 1000) andThen new NewtonRaphson(1) andThen new Slide(step = 1)
+  val d = new Exhaustive(step = 1000) andThen new NewtonRaphson(1) carryOnTo new Slide(step = 1)
   println(d + " " + d.search(0, f(0), -1000, 15000, f, 10))
 
 }
