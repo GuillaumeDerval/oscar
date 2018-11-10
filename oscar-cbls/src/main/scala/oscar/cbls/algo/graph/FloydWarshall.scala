@@ -69,7 +69,7 @@ object FloydWarshall{
     val n = w.length
 
     for (k <- 0 to n-1) {
-      for (i <- 0 to n-1) {
+      for (i <- (0 to n-1).par) {
         for (j <- i to n-1) {
 
           if(w(i)(k) != Int.MaxValue && w(k)(j)!= Int.MaxValue) {
@@ -83,4 +83,5 @@ object FloydWarshall{
       }
     }
   }
+
 }
