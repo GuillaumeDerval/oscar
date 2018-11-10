@@ -92,7 +92,7 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
           }
           val minValueForDelta = (secondVar.min - oldValOfSecondVar) min (oldValOfFirstVar - firstVar.max)
           val maxValueForDelta = (secondVar.max - oldValOfSecondVar) max (oldValOfFirstVar - firstVar.min)
-          iterationOnDelta.search(evaluate,minValueForDelta,maxValueForDelta,initialObj,1000)
+          //iterationOnDelta.search()
         }
       }
     }
