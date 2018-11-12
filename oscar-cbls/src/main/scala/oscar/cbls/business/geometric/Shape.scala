@@ -51,8 +51,6 @@ class Circle(val centreX:Int,val centreY:Int,val radius:Int) extends Shape{
       centreX * xyMultiplier,
       centreY * xyMultiplier,
       radius * xyMultiplier)
-
-  def interectLine(x1:Int,y1:Int,x2:Int,y2:Int):Boolean = ???
 }
 
 object Shape{
@@ -66,14 +64,21 @@ object Shape{
       case (r1:Rectangle,r2:Rectangle) =>
         isOverlapInBoundingBox(shape1:Shape,shape2:Shape)
       case (c:Circle,r:Rectangle) =>
-        r.isInside(c.centreX,c.centreY) || ???
+        //horizontal rect
+        (((math.abs(c.centreX - r.centreX)*2 < (2*c.radius + r.width)) &&
+          (math.abs(c.centreY - r.centreY)*2 <= r.height))
+        //vertical vert
+        || ((math.abs(c.centreX - r.centreX)*2 <= r.width) &&
+          (math.abs(c.centreY - r.centreY)*2 < (c.radius*2 + r.height)))
+          //four corners, rounded
+        || (((c.centreX - r.maxX)^2) + ((c.centreY - r.maxY)^2) < (c.radius^2))
+        || (((c.centreX - r.maxX)^2) + ((c.centreY - r.minY)^2) < (c.radius^2))
+        || (((c.centreX - r.minX)^2) + ((c.centreY - r.maxY)^2) < (c.radius^2))
+        || (((c.centreX - r.minX)^2) + ((c.centreY - r.minY)^2) < (c.radius^2)))
       case (r:Rectangle,c:Circle) =>
         isOverlap(c,r)
       case (c1:Circle,c2:Circle) =>
         ((c1.centreX - c2.centreX)^2) + ((c1.centreY - c2.centreY)^2) < ((c1.radius + c2.radius)^2)
     }
   }
-
-  def closestPoint(x1:Int,x2:Int,xl1:Int,yl1:Int,xl2:Int,yl2:Int):(Int,Int) = ???
 }
-
