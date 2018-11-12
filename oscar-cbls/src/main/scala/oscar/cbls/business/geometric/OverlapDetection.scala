@@ -7,8 +7,6 @@ object OverlapDetection {
     val shapesA = shapes.toArray
     for(i <- shapes.indices){
       for(j <- 0 until i){
-        require(Shape.isOverlap(shapesA(i), shapesA(j)) == Shape.isOverlap(shapesA(j), shapesA(i)),"inconsistent overlap:" + shapesA(j) + " " + shapesA(i))
-
         if (Shape.isOverlap(shapesA(i), shapesA(j))) {
           println(new OverlapError(shapesA(i), shapesA(j)))
           return true
