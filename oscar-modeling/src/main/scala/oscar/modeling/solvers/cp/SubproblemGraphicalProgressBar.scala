@@ -429,7 +429,7 @@ object SubproblemGraphicalProgressBar {
 
     Swing.onEDTWait {
       val frame = new JFrame(windowName)
-      frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
+      frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
       val newContentPane = new SubproblemGraphicalProgressBar[T](nbSubproblems, nbThreads)
       newContentPane.setOpaque(true)
       frame.setContentPane(newContentPane)
