@@ -71,7 +71,6 @@ object Shape{
         isOverlap(c,r)
       case (c1:Circle,c2:Circle) =>
         ((c1.centreX - c2.centreX)^2) + ((c1.centreY - c2.centreY)^2) < ((c1.radius + c2.radius)^2)
-
     }
   }
 
