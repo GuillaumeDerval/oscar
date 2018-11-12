@@ -1,6 +1,22 @@
 package oscar.cbls.business.geometric
 
-object LineSweepOverlapDetection {
+object OverlapDetection {
+
+  def isOverlapNaive(shapes:List[Shape]): Boolean = {
+
+    val shapesA = shapes.toArray
+    for(i <- shapes.indices){
+      for(j <- 0 until i){
+        require(Shape.isOverlap(shapesA(i), shapesA(j)) == Shape.isOverlap(shapesA(j), shapesA(i)),"inconsistent overlap:" + shapesA(j) + " " + shapesA(i))
+
+        if (Shape.isOverlap(shapesA(i), shapesA(j))) {
+          println(new OverlapError(shapesA(i), shapesA(j)))
+          return true
+        }
+      }
+    }
+    false
+  }
 
   def isOverlapByLineSweep(shapes:List[Shape]): Boolean = {
 
@@ -16,7 +32,8 @@ object LineSweepOverlapDetection {
         try {
           openShapesSortedByClosingX = checkOverlapAndInsertNewShapeIntoList(openShapesSortedByClosingX,nextOpeningShape)
         } catch {
-          case _: OverlapError =>
+          case o: OverlapError =>
+            println(o)
             return true
         }
         shapesSortedByMinX = shapesSortedByMinX.tail
@@ -28,12 +45,15 @@ object LineSweepOverlapDetection {
     false // no overlap detected
   }
 
-  class OverlapError extends Exception
+  class OverlapError(shape1:Shape,shape2:Shape) extends Exception{
+    override def toString: String = "OverlapError(" + shape1 + "," + shape2 + ")"
+  }
 
   def checkOverlapAndInsertNewShapeIntoList(openShapes: List[Shape],nextOpeningShape:Shape): List[Shape] = {
     openShapes match {
       case openShape :: tail =>
-        if (Shape.isOverlap(openShape, nextOpeningShape)) throw new OverlapError
+        if (Shape.isOverlap(openShape, nextOpeningShape))
+          throw new OverlapError(openShape,nextOpeningShape)
 
         checkOverlapAndInsertNewShapeIntoList(tail,nextOpeningShape) match {
           case h :: t =>
