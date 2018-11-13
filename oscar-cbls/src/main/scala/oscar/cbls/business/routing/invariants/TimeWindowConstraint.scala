@@ -179,40 +179,25 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     * @param preComputedVals The array of precomputed values
     */
   override def performPreCompute(vehicle: Int, routes: IntSequence, preComputedVals: Array[Array[TransferFunction]]): Unit = {
-    def performPreComputeOnNode(node: Int, explorer: Option[IntSequenceExplorer], exploredNodes: List[Int]): Unit ={
-      var curExplorer = explorer
+    def performPreComputeOnNode(route: List[Int]): Unit ={
+      val node = route.head
+      if(preComputedVals(node) == null)preComputedVals(node) = Array.fill(n)(EmptyTransferFunction)
+      preComputedVals(node)(node) = transferFunctionOfNode(node)
       var lastTF = preComputedVals(node)(node)
       var prevNode = node
-      while(curExplorer.nonEmpty && curExplorer.get.value >= v && !lastTF.isEmpty){
-        val curNode = curExplorer.get.value
-        val newTF = composeFunction(
-          lastTF,
-          transferFunctionOfNode(curNode),
-          travelTimeMatrix(prevNode)(curNode))
-        preComputedVals(node)(curNode) = newTF
-        prevNode = curNode
-        lastTF = newTF
-        curExplorer = curExplorer.get.next
-      }
-      lastTF = preComputedVals(node)(node)
-      prevNode = node
-      for(curNode <- exploredNodes){
+      for(curNode <- route.tail){
         val newTF = if(lastTF.isEmpty) lastTF else composeFunction(lastTF, transferFunctionOfNode(curNode), travelTimeMatrix(prevNode)(curNode))
         preComputedVals(node)(curNode) = newTF
         prevNode = curNode
         lastTF = newTF
       }
-      //Either the explorer current value is < v or the explorer is empty or the transfer function is empty
-      // So this while statement will be executed only if the transfer function is empty
-      while(curExplorer.nonEmpty && curExplorer.get.value >= v){
-        preComputedVals(node)(curExplorer.get.value) = EmptyTransferFunction
-        curExplorer = curExplorer.get.next
-      }
+      if(route.size > 1)
+        performPreComputeOnNode(route.tail)
     }
 
     var continue = true
     var vExplorer = routes.explorerAtAnyOccurrence(vehicle)
-    var exploredNodes: List[Int] = List.empty
+    var route: List[Int] = List.empty
     while(continue){
       vExplorer match {
         case None => continue = false
@@ -220,14 +205,14 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
           if (elem.value < v && elem.value != vehicle){
             continue = false
           } else {
-            if(preComputedVals(elem.value) == null)preComputedVals(elem.value) = Array.fill(n)(EmptyTransferFunction)
-            preComputedVals(elem.value)(elem.value) = transferFunctionOfNode(elem.value)
-            performPreComputeOnNode(elem.value, elem.next, exploredNodes)
-            exploredNodes = elem.value :: exploredNodes
+            route = elem.value :: route
           }
           vExplorer = elem.next
       }
     }
+
+    performPreComputeOnNode(route)
+    performPreComputeOnNode(route.reverse)
   }
 
   /**

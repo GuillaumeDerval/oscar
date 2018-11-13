@@ -8,7 +8,7 @@ import oscar.cbls.core.search.Best
 
 object VRPWithOnlyTimeWindow extends App {
 
-  new VRPWithOnlyTimeWindow(true)
+  new VRPWithOnlyTimeWindow(false)
 
 }
 
