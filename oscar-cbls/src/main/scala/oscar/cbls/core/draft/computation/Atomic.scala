@@ -16,8 +16,6 @@ package oscar.cbls.core.draft.computation
   ******************************************************************************/
 
 
-
-import oscar.cbls.core.computation.FullRange
 import oscar.cbls.core.draft.propagation.{KeyForDynamicDependencyRemoval, PropagationElement, VaryingDependencies}
 
 import scala.language.implicitConversions
@@ -155,10 +153,11 @@ class AtomicVarSnapshot[T](variable:CBLSAtomicVar[T],
 
 /**An AtomicVar is a variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.
   *
-  * @param givenModel is the model in s-which the variable is declared, can be null if the variable is actually a constant, see [[oscar.cbls.core.computation.CBLSAtomicConst]]
+  * @param givenModel is the model in s-which the variable is declared, can be null if the variable is actually a constant, see [[CBLSAtomicConst[T]]
   * @param initialDomain is the domain value of the variable. Some invariants exploit this value to declare fixed size arrays
   * @param initialValue is the initial value of the variable
   * @param n is the name of the variable, used for pretty printing only. if not set, a default will be used, based on the variable number
+  * @tparam T
   */
 class CBLSAtomicVar[T](store: Store,
                  initialValue: T,
@@ -192,7 +191,7 @@ class CBLSAtomicVar[T](store: Store,
 }
 
 /**
- * An AtomicConst is an [[oscar.cbls.core.computation.CBLSAtomicVar]] that has a constant value.
+ * An AtomicConst is an [[CBLSAtomicVar]] that has a constant value.
  * It has no associated model, as there is no need to incorporate it into any propagation process.
  * notice that you should not attempt to create a CBLSAtomicConst directly; use the companion object for an efficient memoïzation
 * @param value: the value of the constant
