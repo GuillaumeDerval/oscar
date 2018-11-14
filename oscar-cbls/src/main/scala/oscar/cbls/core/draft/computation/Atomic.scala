@@ -21,7 +21,7 @@ import oscar.cbls.core.draft.propagation.{KeyForDynamicDependencyRemoval, Propag
 import scala.language.implicitConversions
 
 
-trait AtomicNotificationTarget[T]{
+trait AtomicNotificationTarget[@specialized(Double) T]{
   def notifyAtomicChanged(v: ChangingAtomicValue[T], id: Int, OldVal: T, NewVal: T)
 }
 
@@ -30,7 +30,7 @@ trait AtomicNotificationTarget[T]{
   * @param initialDomain is the domain value of the variable. Some invariants exploit this value to declare fixed size arrays
   * @param initialValue is the value of the variable
   */
-abstract class ChangingAtomicValue[T](val store:Store,
+abstract class ChangingAtomicValue[@specialized(Double) T](val store:Store,
                                 initialValue:T)
   extends ChangingValue(store) {
 
@@ -133,7 +133,7 @@ abstract class ChangingAtomicValue[T](val store:Store,
   }
 }
 
-class ChangingAtomicValueSnapshot[T](val variable:ChangingAtomicValue[T],
+class ChangingAtomicValueSnapshot[@specialized(Double) T](val variable:ChangingAtomicValue[T],
                                val savedValue:T)
   extends ChangingValueSnapshot(variable){
 
@@ -141,7 +141,7 @@ class ChangingAtomicValueSnapshot[T](val variable:ChangingAtomicValue[T],
     throw new Error("cannot reload changing int values, only CBLSAtomicVar")
 }
 
-class AtomicVarSnapshot[T](variable:CBLSAtomicVar[T],
+class AtomicVarSnapshot[@specialized(Double) T](variable:CBLSAtomicVar[T],
                      savedValue:T)
   extends ChangingAtomicValueSnapshot[T](variable,savedValue){
 
@@ -159,7 +159,7 @@ class AtomicVarSnapshot[T](variable:CBLSAtomicVar[T],
   * @param n is the name of the variable, used for pretty printing only. if not set, a default will be used, based on the variable number
   * @tparam T
   */
-class CBLSAtomicVar[T](store: Store,
+class CBLSAtomicVar[@specialized(Double) T](store: Store,
                  initialValue: T,
                  givenName: String = null)
   extends ChangingAtomicValue[T](store, initialValue) with Variable{
@@ -197,7 +197,7 @@ class CBLSAtomicVar[T](store: Store,
 * @param value: the value of the constant
 * @author renaud.delandtsheer@cetic.be
 */
-class CBLSAtomicConst[T](store:Store, override val value:T)
+class CBLSAtomicConst[@specialized(Double) T](store:Store, override val value:T)
   extends CBLSAtomicVar[T](store, value, "constant_" + value) {
   override protected def setValue(v: T): Unit =
     throw new Error("you cannot change the value of a constant")
@@ -206,7 +206,7 @@ class CBLSAtomicConst[T](store:Store, override val value:T)
 /** this is a special case of invariant that has a single output variable, that is an AtomicVar
   * @author renaud.delandtsheer@cetic.be
   */
-abstract class AtomicInvariant[T](store:Store,
+abstract class AtomicInvariant[@specialized(Double) T](store:Store,
                             initialValue:T = 0)
   extends ChangingAtomicValue[T](store,initialValue)
   with InvariantTrait{
@@ -229,7 +229,7 @@ object IdentityAtomic{
 /** an invariant that is the identity function
   * @author renaud.delandtsheer@cetic.be
   */
-class IdentityAtomic[T](toValue:CBLSAtomicVar[T], fromValue:ChangingAtomicValue[T], store:Store)
+class IdentityAtomic[@specialized(Double) T](toValue:CBLSAtomicVar[T], fromValue:ChangingAtomicValue[T], store:Store)
   extends Invariant(store)
     with AtomicNotificationTarget[T]{
 
