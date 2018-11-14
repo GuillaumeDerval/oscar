@@ -64,7 +64,7 @@ abstract class ChangingAtomicValue[@specialized(Double) T](val store:Store,
   // setting value
 
   @inline
-  protected def setValue(v:T){
+  protected def value_=(v:T):Unit = {
     if (v != mNewValue){
       mNewValue = v
       scheduleMyselfForPropagation()
@@ -119,7 +119,7 @@ abstract class ChangingAtomicValue[@specialized(Double) T](val store:Store,
   // ////////////////////////////////////////////////////////////////////////////////////////////////
   //clean methods
   protected def :=(v: T) {
-    setValue(v)
+    this.value = v
   }
 
   def createClone:CBLSAtomicVar[T] = {
@@ -171,8 +171,11 @@ class CBLSAtomicVar[@specialized(Double) T](store: Store,
 
   override def name: String = if (givenName == null) super.name else givenName
 
+
+  override def value_=(v: T): Unit = super.value_=(v)
+
   override def :=(v: T) {
-    setValue(v)
+    this.value = v
   }
 
   /**this operator swaps the value of two AtomicVar*/
@@ -199,7 +202,7 @@ class CBLSAtomicVar[@specialized(Double) T](store: Store,
 */
 class CBLSAtomicConst[@specialized(Double) T](store:Store, override val value:T)
   extends CBLSAtomicVar[T](store, value, "constant_" + value) {
-  override protected def setValue(v: T): Unit =
+  override protected def value_=(v: T): Unit =
     throw new Error("you cannot change the value of a constant")
 }
 
