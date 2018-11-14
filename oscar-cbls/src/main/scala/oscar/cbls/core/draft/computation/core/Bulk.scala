@@ -19,7 +19,9 @@
   *            Yoann Guyot
   ******************************************************************************/
 
-package oscar.cbls.core.draft.computation
+package oscar.cbls.core.draft.computation.core
+
+import oscar.cbls.core.draft.computation.Store
 
 import scala.collection.immutable.SortedMap
 

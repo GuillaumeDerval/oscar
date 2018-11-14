@@ -1,5 +1,7 @@
-package oscar.cbls.core.draft.computation
+package oscar.cbls.core.draft.computation.core
 
+import oscar.cbls.core.draft.computation.ChangingSetValue
+import oscar.cbls.core.draft.computation.old.ChangingIntValue
 
 object InvariantHelper{
 

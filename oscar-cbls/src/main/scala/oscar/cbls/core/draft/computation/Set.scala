@@ -23,6 +23,7 @@ package oscar.cbls.core.draft.computation
 
 import oscar.cbls.algo.dll._
 import oscar.cbls.algo.quick.QList
+import oscar.cbls.core.draft.computation.core._
 import oscar.cbls.core.draft.propagation.{KeyForDynamicDependencyRemoval, PropagationElement, VaryingDependencies}
 
 import scala.collection.immutable.SortedSet

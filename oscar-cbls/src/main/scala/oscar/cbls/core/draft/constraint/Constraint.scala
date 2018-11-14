@@ -23,6 +23,8 @@ package oscar.cbls.core.draft.constraint
 import oscar.cbls.core.draft.objective.Objective
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.draft.computation._
+import oscar.cbls.core.draft.computation.core.ChangingValue
+import oscar.cbls.core.draft.computation.old.ChangingIntValue
 
 case class NamedConstraint(name:String, baseConstraint:Constraint) extends Constraint{
   /** returns the violation associated with variable v in this constraint

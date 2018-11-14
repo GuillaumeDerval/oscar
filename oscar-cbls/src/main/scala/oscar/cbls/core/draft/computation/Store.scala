@@ -21,6 +21,7 @@
 package oscar.cbls.core.draft.computation
 
 import oscar.cbls.algo.quick.QList
+import oscar.cbls.core.draft.computation.core._
 import oscar.cbls.core.draft.propagation._
 
 import scala.language.implicitConversions

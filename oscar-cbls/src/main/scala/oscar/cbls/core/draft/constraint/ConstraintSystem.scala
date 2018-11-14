@@ -22,6 +22,8 @@ package oscar.cbls.core.draft.constraint
 
 import oscar.cbls.algo.quick.{QList, QListBuilder}
 import oscar.cbls.core.draft.computation._
+import oscar.cbls.core.draft.computation.core.ChangingValue
+import oscar.cbls.core.draft.computation.old.ChangingIntValue
 import oscar.cbls.core.draft.objective.Objective
 import oscar.cbls.core.draft.propagation.{NodeDictionary, PropagationStructure, SourceFinderAlgo}
 import oscar.cbls.lib.invariant.numeric.{ExtendableSum, Prod, Prod2, Sum}

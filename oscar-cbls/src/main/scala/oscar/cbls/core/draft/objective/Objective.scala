@@ -21,6 +21,7 @@ package oscar.cbls.core.draft.objective
   ******************************************************************************/
 
 import oscar.cbls.core.draft.computation._
+import oscar.cbls.core.draft.computation.old.{CBLSIntConst, CBLSIntVar, ChangingIntValue}
 
 import scala.language.implicitConversions
 

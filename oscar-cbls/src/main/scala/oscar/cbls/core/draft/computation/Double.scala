@@ -17,30 +17,30 @@ package oscar.cbls.core.draft.computation
 
 import oscar.cbls.core.draft.computation.core.{AtomicInvariant, AtomicNotificationTarget, CBLSAtomicConst, CBLSAtomicVar}
 
-class IntVar(store: Store,
-                initialValue: Int,
-                minValue:Int = Int.MinValue,
-                maxValue:Int = Int.MaxValue,
+class DoubleVar(store: Store,
+                initialValue: Double,
+                minValue:Double = Double.MinValue,
+                maxValue:Double = Double.MaxValue,
                 givenName: String = null)
-  extends CBLSAtomicVar[Int](store: Store,
+  extends CBLSAtomicVar[Double](store: Store,
     initialValue,
     givenName: String ){
 
   require(minValue <= initialValue && initialValue <= maxValue,
     "initialValue:" + initialValue+ " is not between minValue:" + minValue + " and maxValue:" + maxValue)
 
-  override def value_=(v: Int): Unit = {
+  override def value_=(v: Double): Unit = {
     require(minValue <= v && v <= maxValue,
       "assigned value:" + v + " is not between minValue:" + minValue + " and maxValue:" + maxValue)
     super.value_=(v)
   }
 
-  override def createClone:IntVar = {
-    val clone = new IntVar(
+  override def createClone:DoubleVar = {
+    val clone = new DoubleVar(
       store,
       this.value,
-      minValue:Int,
-      maxValue:Int,
+      minValue:Double,
+      maxValue:Double,
       "clone of " + this.name)
 
     clone <== this
@@ -48,19 +48,19 @@ class IntVar(store: Store,
   }
 }
 
-trait IntNotificationTarget
-  extends AtomicNotificationTarget[Int]
+trait DoubleNotificationTarget
+  extends AtomicNotificationTarget[Double]
 
-class IntConst(store:Store, override val value:Int)
-  extends CBLSAtomicConst[Int](store, value){
-  override def createClone: CBLSAtomicVar[Int] = this
+class DoubleConst(store:Store, override val value:Double)
+  extends CBLSAtomicConst[Double](store, value){
+  override def createClone: CBLSAtomicVar[Double] = this
 }
 
-class IntInvariant(store:Store,
-                      initMinValue:Int = Int.MinValue,
-                      initMaxValue:Int = Int.MaxValue,
-                      initialValue:Int)
-  extends AtomicInvariant[Int](store:Store, initialValue){
+class DoubleInvariant(store:Store,
+                      initMinValue:Double = Double.MinValue,
+                      initMaxValue:Double = Double.MaxValue,
+                      initialValue:Double)
+  extends AtomicInvariant[Double](store:Store, initialValue){
 
   require(minValue <= initialValue && initialValue <= maxValue,
     "initialValue:" + initialValue+ " is not between minValue:" + minValue + " and maxValue:" + maxValue)
@@ -71,7 +71,7 @@ class IntInvariant(store:Store,
   def minValue = _minValue
   def maxValue = _maxValue
 
-  protected def restrictDomain(restrictMinValue:Int,restrictMaxValue:Int): Unit = {
+  protected def restrictDomain(restrictMinValue:Double,restrictMaxValue:Double): Unit = {
     _minValue = _minValue max restrictMinValue
     _maxValue = _maxValue min restrictMaxValue
 
@@ -79,17 +79,17 @@ class IntInvariant(store:Store,
       "value:" + newValue + " is not between minValue:" + minValue + " and maxValue:" + maxValue)
   }
 
-  override def value_=(v: Int): Unit = {
+  override def value_=(v: Double): Unit = {
     require(minValue <= v && v <= maxValue,
       "assigned value:" + v + " is not between minValue:" + minValue + " and maxValue:" + maxValue)
     super.value_=(v)
   }
 
-  override def createClone:IntVar = {
-    val clone = new IntVar(
+  override def createClone:DoubleVar = {
+    val clone = new DoubleVar(
       store,
-      minValue:Int,
-      maxValue:Int,
+      minValue:Double,
+      maxValue:Double,
       this.value,
       "clone of " + this.name)
 
