@@ -1,10 +1,9 @@
-package oscar.cbls.business.geometric
+package oscar.cbls.business.geometric.old
 
 import java.awt.geom.{Line2D, Rectangle2D}
 import java.awt.{BorderLayout, Color, Dimension}
 
 import javax.swing.JFrame
-import oscar.cbls.business.geometric.OverlapDetection.OverlapError
 import oscar.cbls.visual.ColorGenerator
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualCircle, VisualLine, VisualRectangle, VisualShape}

@@ -1,4 +1,4 @@
-package oscar.cbls.business.geometric
+package oscar.cbls.business.geometric.old
 
 object OverlapDetection {
 
