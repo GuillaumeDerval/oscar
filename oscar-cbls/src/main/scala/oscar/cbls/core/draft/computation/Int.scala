@@ -48,9 +48,6 @@ class IntVar(store: Store,
   }
 }
 
-trait IntNotificationTarget
-  extends AtomicNotificationTarget[Int]
-
 class IntConst(store:Store, override val value:Int)
   extends CBLSAtomicConst[Int](store, value){
   override def createClone: CBLSAtomicVar[Int] = this
