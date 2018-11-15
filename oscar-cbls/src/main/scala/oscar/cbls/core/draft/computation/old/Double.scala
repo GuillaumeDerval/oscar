@@ -1,4 +1,4 @@
-package oscar.cbls.core.draft.computation
+package oscar.cbls.core.draft.computation.old
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -15,6 +15,7 @@ package oscar.cbls.core.draft.computation
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import oscar.cbls.core.draft.computation.Store
 import oscar.cbls.core.draft.computation.core.{AtomicInvariant, AtomicNotificationTarget, CBLSAtomicConst, CBLSAtomicVar}
 
 class DoubleVar(store: Store,

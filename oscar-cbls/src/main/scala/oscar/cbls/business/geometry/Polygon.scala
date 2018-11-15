@@ -16,10 +16,14 @@ package oscar.cbls.business.geometry
   ******************************************************************************/
 
 import oscar.cbls.core.draft.computation.Store
-import oscar.cbls.core.draft.computation.core.{AtomicInvariant, AtomicNotificationTarget, CBLSAtomicConst, CBLSAtomicVar}
+import oscar.cbls.core.draft.computation.core._
 
 
 class Polygon {
+
+  def union(p:Polygon):Polygon = ???
+  def inter(p:Polygon):Polygon = ???
+  def overlap(p:Polygon):Boolean = ???
 
 }
 
@@ -46,12 +50,21 @@ class PolygonVar(store: Store,
 }
 
 trait PolygonNotificationTarget
-  extends AtomicNotificationTarget[Polygon]
+  extends AtomicNotificationTarget[Polygon]{
+
+  def notifyPolygonChanged(v: ChangingAtomicValue[Polygon], id: Int, OldVal: Polygon, NewVal: Polygon): Unit
+
+  override def notifyAtomicChanged(v: ChangingAtomicValue[Polygon], id: Int, OldVal: Polygon, NewVal: Polygon): Unit ={
+    notifyPolygonChanged(v: ChangingAtomicValue[Polygon], id: Int, OldVal: Polygon, NewVal: Polygon): Unit
+  }
+}
 
 class PolygonConst(store:Store, override val value:Polygon)
   extends CBLSAtomicConst[Polygon](store, value){
   override def createClone: CBLSAtomicVar[Polygon] = this
 }
+
+
 
 class PolygonInvariant(store:Store,
                       initialValue:Polygon)
@@ -67,4 +80,32 @@ class PolygonInvariant(store:Store,
     clone
   }
 }
+
+
+
+
+class Union(store:Store,a:ChangingAtomicValue[Polygon],b:ChangingAtomicValue[Polygon]) extends
+  PolygonInvariant(store:Store,
+    initialValue=a.value union b.value) with PolygonNotificationTarget {
+
+  override def notifyPolygonChanged(v: ChangingAtomicValue[Polygon], id: Int, OldVal: Polygon, NewVal: Polygon): Unit = {
+    this.scheduleMyselfForPropagation()
+  }
+
+  override def performInvariantPropagation(): Unit = {
+    this := a.value union b.value
+  }
+}
+
+object a {
+  val s:Store = ???
+  val x: ChangingAtomicValue[Polygon] = ???
+  val y: ChangingAtomicValue[Polygon] = ???
+
+
+  val t: ChangingAtomicValue[Polygon] = new Union(s,x,y)
+
+
+}
+
 

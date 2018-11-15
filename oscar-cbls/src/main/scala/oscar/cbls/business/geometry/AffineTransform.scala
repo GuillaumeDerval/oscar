@@ -19,12 +19,14 @@ package oscar.cbls.business.geometry
 
 
 import oscar.cbls.core.draft.computation.Store
-import oscar.cbls.core.draft.computation.core.{AtomicInvariant, AtomicNotificationTarget, CBLSAtomicConst, CBLSAtomicVar}
+import oscar.cbls.core.draft.computation.core._
 
 
 class AffineTransform {
 
+  def andThen(other:AffineTransform):AffineTransform = ???
 
+  def transform(p:Polygon):Polygon = ???
 }
 
 object AffineTransform {
@@ -36,8 +38,8 @@ object AffineTransform {
 
 
 class AffineTransformVar(store: Store,
-                 initialValue: AffineTransform,
-                 givenName: String = null)
+                         initialValue: AffineTransform,
+                         givenName: String = null)
   extends CBLSAtomicVar[AffineTransform](store: Store,
     initialValue,
     givenName: String ){
@@ -54,7 +56,19 @@ class AffineTransformVar(store: Store,
 }
 
 trait AffineTransformNotificationTarget
-  extends AtomicNotificationTarget[AffineTransform]
+  extends AtomicNotificationTarget[AffineTransform]{
+  def notifyAffineTransformChanged(v: ChangingAtomicValue[AffineTransform],
+                                   id: Int,
+                                   OldVal: AffineTransform,
+                                   NewVal: AffineTransform): Unit
+
+  override def notifyAtomicChanged(v: ChangingAtomicValue[AffineTransform], id: Int,
+                                   OldVal: AffineTransform,
+                                   NewVal: AffineTransform): Unit ={
+    notifyAffineTransformChanged(v: ChangingAtomicValue[AffineTransform],
+      id: Int, OldVal: AffineTransform, NewVal: AffineTransform): Unit
+  }
+}
 
 class AffineTransformConst(store:Store, override val value:AffineTransform)
   extends CBLSAtomicConst[AffineTransform](store, value){
@@ -62,7 +76,7 @@ class AffineTransformConst(store:Store, override val value:AffineTransform)
 }
 
 class AffineTransformInvariant(store:Store,
-                       initialValue:AffineTransform)
+                               initialValue:AffineTransform)
   extends AtomicInvariant[AffineTransform](store:Store, initialValue){
 
   override def createClone:AffineTransformVar = {
@@ -76,3 +90,40 @@ class AffineTransformInvariant(store:Store,
   }
 }
 
+class Compose(store:Store,a:ChangingAtomicValue[AffineTransform],b:ChangingAtomicValue[AffineTransform])
+  extends AffineTransformInvariant(
+    store:Store,
+    initialValue=a.value andThen b.value)
+    with AffineTransformNotificationTarget {
+
+  override def notifyAffineTransformChanged(v: ChangingAtomicValue[AffineTransform], id: Int, OldVal: AffineTransform, NewVal: AffineTransform): Unit = {
+    this.scheduleMyselfForPropagation()
+  }
+
+  override def performInvariantPropagation(): Unit = {
+    this := a.value andThen b.value
+  }
+}
+
+
+
+class Apply(store:Store,a:ChangingAtomicValue[AffineTransform],b:ChangingAtomicValue[Polygon])
+  extends PolygonInvariant(
+    store:Store,
+    initialValue=a.value.transform(b.value))
+    with AffineTransformNotificationTarget
+    with PolygonNotificationTarget {
+
+  override def notifyAffineTransformChanged(v: ChangingAtomicValue[AffineTransform], id: Int, OldVal: AffineTransform, NewVal: AffineTransform): Unit = {
+    this.scheduleMyselfForPropagation()
+  }
+
+
+  override def notifyPolygonChanged(v: ChangingAtomicValue[Polygon], id: Int, OldVal: Polygon, NewVal: Polygon): Unit = {
+    this.scheduleMyselfForPropagation()
+  }
+
+  override def performInvariantPropagation(): Unit = {
+    this := a.value.transform(b.value)
+  }
+}
