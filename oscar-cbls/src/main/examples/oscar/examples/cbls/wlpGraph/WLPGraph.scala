@@ -185,7 +185,7 @@ object WLPGraph extends App with StopWatch{
 
   var lastDisplay = this.getWatch
 
-  println(selectedDistances.mkString("\n\t"))
+  println("\t" + selectedDistances.mkString("\n\t"))
 
 
   val neighborhood =(
@@ -235,6 +235,6 @@ object WLPGraph extends App with StopWatch{
 
   println(openWarehouses)
   println(openConditions)
-  println(selectedDistances.mkString("\n\t"))
+  println("\t" + selectedDistances.mkString("\n\t"))
 }
 
