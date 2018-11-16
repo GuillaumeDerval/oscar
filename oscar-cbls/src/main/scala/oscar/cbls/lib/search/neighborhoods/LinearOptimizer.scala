@@ -33,8 +33,7 @@ abstract class LinearOptimizer{
              startObj: Int,
              minValue: Int,
              maxValue: Int,
-             obj: Int => Int,
-             maxIt: Int):Int
+             obj: Int => Int):Int
 
   def carryOnTo(b:LinearOptimizer) = new CarryOnTo(this,b)
 
@@ -42,23 +41,23 @@ abstract class LinearOptimizer{
 }
 
 class CarryOnTo(a:LinearOptimizer, b:LinearOptimizer) extends LinearOptimizer{
-  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int): Int = {
-    val newStartPoint = a.search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int)
+  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): Int = {
+    val newStartPoint = a.search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int)
     //println("CarryOnTo(newStartPoint:" + newStartPoint + ")")
-    b.search(newStartPoint, obj(newStartPoint), minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int)
+    b.search(newStartPoint, obj(newStartPoint), minValue: Int, maxValue: Int, obj: Int => Int)
   }
 
   override def toString: String = "(" + a + " carryOnTo " + b + ")"
 }
 
 case class AndThen(a:LinearOptimizer, b:LinearOptimizer) extends LinearOptimizer{
-  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int): Int = {
+  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): Int = {
 
     var bestX = startPos
     var bestObj = startObj
 
     def exploreB(x:Int):Int = {
-      val newX = b.search(x, obj(x), minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int)
+      val newX = b.search(x, obj(x), minValue: Int, maxValue: Int, obj: Int => Int)
       val o = obj(newX)
       if (o < bestObj){
         bestX = newX
@@ -67,7 +66,7 @@ case class AndThen(a:LinearOptimizer, b:LinearOptimizer) extends LinearOptimizer
       o
     }
 
-    val newStartPoint = a.search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, exploreB: Int => Int, maxIt: Int)
+    val newStartPoint = a.search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, exploreB: Int => Int)
 
     bestX
   }
@@ -75,8 +74,8 @@ case class AndThen(a:LinearOptimizer, b:LinearOptimizer) extends LinearOptimizer
 }
 
 
-class Exhaustive(step:Int = 1,skipInitial:Boolean = false) extends LinearOptimizer{
-  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int): Int = {
+class Exhaustive(step:Int = 1,skipInitial:Boolean = false, maxIt: Int) extends LinearOptimizer{
+  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): Int = {
 
     var it = maxIt
     var bestX = startPos
@@ -98,13 +97,13 @@ class Exhaustive(step:Int = 1,skipInitial:Boolean = false) extends LinearOptimiz
   override def toString: String = "Exhaustive(step:" + step + ")"
 }
 
-class NarrowingStepSlide(dividingRatio:Int)  extends LinearOptimizer{
+class NarrowingStepSlide(dividingRatio:Int, maxIt: Int)  extends LinearOptimizer{
 
   override def toString: String = "NarrowingStepSlide(dividingRatio:" + dividingRatio + ")"
 
-  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int): Int = {
-    new SlideVaryingSteps(generateSteps(minValue.abs max maxValue.abs).reverse, false).
-      search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int)
+  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): Int = {
+    new SlideVaryingSteps(generateSteps(minValue.abs max maxValue.abs).reverse, false,maxIt).
+      search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int)
   }
 
   def generateSteps(maxStepSize:Int):List[Int] = {
@@ -116,28 +115,28 @@ class NarrowingStepSlide(dividingRatio:Int)  extends LinearOptimizer{
 }
 
 
-class NarrowingExhaustive(dividingRatio:Int)  extends LinearOptimizer{
+class NarrowingExhaustive(dividingRatio:Int, maxIt: Int)  extends LinearOptimizer{
 
   override def toString: String = "NarrowingExhaustive(dividingRatio:" + dividingRatio + ")"
 
-  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int): Int = {
+  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): Int = {
     println("NarrowingExhaustive minValue:" + minValue + " maxValue:" + maxValue)
     val width = maxValue - minValue
     if(width < dividingRatio) {
-      val search = new Exhaustive(step = 1, skipInitial = true)
-      search.search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int)
+      val search = new Exhaustive(step = 1, skipInitial = true,maxIt = maxIt)
+      search.search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int)
     }else{
       val step = width/dividingRatio
-      val search = new Exhaustive(step = step, skipInitial = true)
-      val newVal = search.search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int)
-      this.search(newVal: Int, obj(newVal), minValue max (newVal - step), maxValue min (newVal + step), obj: Int => Int, maxIt: Int)
+      val search = new Exhaustive(step = step, skipInitial = true,maxIt = maxIt)
+      val newVal = search.search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int)
+      this.search(newVal: Int, obj(newVal), minValue max (newVal - step), maxValue min (newVal + step), obj: Int => Int)
     }
   }
 }
 
 
 class TryExtremes() extends LinearOptimizer {
-  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int): Int = {
+  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): Int = {
     val tries:List[(Int,Int)] = List((startPos,startObj),(minValue,obj(minValue)),(maxValue,obj(maxValue)))
     tries.minBy(_._2)._1
   }
@@ -145,9 +144,9 @@ class TryExtremes() extends LinearOptimizer {
   override def toString: String = "TryExtremes()"
 }
 
-class SlideVaryingSteps(stepSequence:List[Int] = List(1), gradualIncrease:Boolean)
+class SlideVaryingSteps(stepSequence:List[Int] = List(1), gradualIncrease:Boolean,maxIt:Int)
   extends LinearOptimizer{
-  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int): Int = {
+  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): Int = {
 
     var positionOfBestSoFar:Int = startPos
     var bestObjSoFar:Int = startObj
@@ -167,7 +166,7 @@ class SlideVaryingSteps(stepSequence:List[Int] = List(1), gradualIncrease:Boolea
         case head::tail =>
           recurExploreNoGradualIncrease(tail)
           //bigger step did improve, try again this one step
-          new Slide(head).search(positionOfBestSoFar, bestObjSoFar: Int, minValue: Int, maxValue: Int, myObj: Int => Int, maxIt: Int)
+          new Slide(head,maxIt = maxIt).search(positionOfBestSoFar, bestObjSoFar: Int, minValue: Int, maxValue: Int, myObj: Int => Int)
       }
     }
 
@@ -176,7 +175,7 @@ class SlideVaryingSteps(stepSequence:List[Int] = List(1), gradualIncrease:Boolea
         case Nil => false
         case head::tail =>
 
-          new Slide(head).search(positionOfBestSoFar: Int, bestObjSoFar: Int, minValue: Int, maxValue: Int, myObj: Int => Int, maxIt: Int)
+          new Slide(head,maxIt = maxIt).search(positionOfBestSoFar: Int, bestObjSoFar: Int, minValue: Int, maxValue: Int, myObj: Int => Int)
 
           if(positionOfBestSoFar != startPos) {
             //found something, no need to use bigger step
@@ -190,7 +189,7 @@ class SlideVaryingSteps(stepSequence:List[Int] = List(1), gradualIncrease:Boolea
 
           //bigger step did improve, try again this one step
 
-          new Slide(head).search(positionOfBestSoFar: Int, bestObjSoFar: Int, minValue: Int, maxValue: Int, myObj: Int => Int, maxIt: Int)
+          new Slide(head,maxIt = maxIt).search(positionOfBestSoFar: Int, bestObjSoFar: Int, minValue: Int, maxValue: Int, myObj: Int => Int)
           true
       }
     }
@@ -205,11 +204,11 @@ class SlideVaryingSteps(stepSequence:List[Int] = List(1), gradualIncrease:Boolea
 }
 
 
-class Slide(step:Int = 1) extends LinearOptimizer{
+class Slide(step:Int = 1, maxIt: Int) extends LinearOptimizer{
 
   override def toString: String = "Slide(step:" + step + ")"
 
-  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int): Int = {
+  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): Int = {
 
     var currentPoint = startPos
     var currentValue = startObj
@@ -264,11 +263,11 @@ class Slide(step:Int = 1) extends LinearOptimizer{
 }
 
 //this one finds a root!!!
-class NewtonRaphsonRoot(dXForDetivativeEvalution:Int) extends LinearOptimizer{
+class NewtonRaphsonRoot(dXForDetivativeEvalution:Int, maxIt: Int) extends LinearOptimizer{
 
   override def toString: String = "NewtonRaphsonRoot(dXForDetivativeEvalution:" + dXForDetivativeEvalution + ")"
 
-  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int): Int = {
+  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): Int = {
 
     var it = maxIt
     var x = 0
@@ -295,11 +294,11 @@ class NewtonRaphsonRoot(dXForDetivativeEvalution:Int) extends LinearOptimizer{
 
 
 //this one finds a min!!!
-class NewtonRaphson(dXForDetivativeEvalution:Int) extends LinearOptimizer{
+class NewtonRaphson(dXForDetivativeEvalution:Int, maxIt: Int) extends LinearOptimizer{
 
   override def toString: String = "NewtonRaphson(dXForDetivativeEvalution:" + dXForDetivativeEvalution + ")"
 
-  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int, maxIt: Int): Int = {
+  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): Int = {
     var positionOfBestSoFar:Int = startPos
     var bestObjSoFar:Int = startObj
 
@@ -319,7 +318,7 @@ class NewtonRaphson(dXForDetivativeEvalution:Int) extends LinearOptimizer{
       ((fpdx - f).toDouble / dXForDetivativeEvalution) toInt
     }
 
-    new NewtonRaphsonRoot(dXForDetivativeEvalution: Int).search(startPos: Int, evaluate2(startPos), minValue: Int, maxValue: Int, evaluate2, maxIt: Int)
+    new NewtonRaphsonRoot(dXForDetivativeEvalution: Int, maxIt: Int).search(startPos: Int, evaluate2(startPos), minValue: Int, maxValue: Int, evaluate2)
     positionOfBestSoFar
   }
 }
@@ -334,21 +333,21 @@ object TestRN extends App{
   val maxIt = 100
 
   def eval(l:LinearOptimizer): Unit ={
-    val aa = l.search(0, f(0), -1000, 15000, f, maxIt)
+    val aa = l.search(0, f(0), -1000, 15000, f)
     println(l + " " + aa + " obj:" + f(aa))
   }
 
   //slide should be avoided at all cost; cfr the stop criterion on numerical methods that stop earlier.
   //we should consider numbers as floats even if they are not because the range of value is very large.
-  eval(new Exhaustive(step = 50) carryOnTo new Slide(step = 1))
-  eval(new NewtonRaphson(1) carryOnTo new  TryExtremes())
-  eval(new Slide(step = 10))
-  eval(new NarrowingStepSlide(10))
-  eval(new NewtonRaphson(1) carryOnTo new Slide(step = 1))
-  eval(new Exhaustive(step = 50) carryOnTo new NewtonRaphson(1) carryOnTo new Slide(step = 1))
-  eval(new Exhaustive(step = 50) andThen (new NewtonRaphson(1) carryOnTo new Slide(step = 1)))
-  eval(new TryExtremes() carryOnTo new NewtonRaphson(1) carryOnTo new Slide(step=1))
-  eval(new NarrowingExhaustive(100))
+  eval(new Exhaustive(step = 50, maxIt = maxIt) carryOnTo new Slide(step = 1, maxIt: Int))
+  eval(new NewtonRaphson(1, maxIt: Int) carryOnTo new  TryExtremes())
+  eval(new Slide(step = 10, maxIt: Int))
+  eval(new NarrowingStepSlide(10, maxIt: Int))
+  eval(new NewtonRaphson(1, maxIt: Int) carryOnTo new Slide(step = 1, maxIt: Int))
+  eval(new Exhaustive(step = 50, maxIt = maxIt) carryOnTo new NewtonRaphson(1, maxIt: Int) carryOnTo new Slide(step = 1, maxIt: Int))
+  eval(new Exhaustive(step = 50, maxIt = maxIt) andThen (new NewtonRaphson(1, maxIt: Int) carryOnTo new Slide(step = 1, maxIt: Int)))
+  eval(new TryExtremes() carryOnTo new NewtonRaphson(1, maxIt: Int) carryOnTo new Slide(step=1, maxIt: Int))
+  eval(new NarrowingExhaustive(100, maxIt: Int))
 
 }
 

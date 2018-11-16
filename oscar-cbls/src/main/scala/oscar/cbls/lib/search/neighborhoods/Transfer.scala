@@ -77,7 +77,7 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
 
           this.secondVar = secondVar
 
-          val iterationOnDelta = searchZoneForDeltaL2(secondVarIndice,oldValOfSecondVar)
+          val iterationOnDelta:LinearOptimizer = searchZoneForDeltaL2(secondVarIndice,oldValOfSecondVar)
 
           //TODO: il faut cadrer dans le domaine des variables!!
 
@@ -92,7 +92,8 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
           }
           val minValueForDelta = (secondVar.min - oldValOfSecondVar) min (oldValOfFirstVar - firstVar.max)
           val maxValueForDelta = (secondVar.max - oldValOfSecondVar) max (oldValOfFirstVar - firstVar.min)
-          //iterationOnDelta.search()
+
+          iterationOnDelta.search(0,initialObj,minValueForDelta,maxValueForDelta,evaluate)
         }
       }
     }
