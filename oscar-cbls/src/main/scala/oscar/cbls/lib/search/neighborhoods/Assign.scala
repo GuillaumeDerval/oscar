@@ -54,6 +54,7 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
                               symmetryClassOfVariables:Option[Int => Int] = None,
                               symmetryClassOfValues:Option[Int => Int => Int] = None,
                               domain:(CBLSIntVar,Int) => Iterable[Int] = (v,i) => v.domain,
+                              domainExplorer:LinearOptimizer,
                               hotRestart:Boolean = true)
   extends EasyNeighborhoodMultiLevel[AssignMove](name){
   //the indice to start with for the exploration
@@ -92,19 +93,15 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
         case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(domain(currentVar, currentIndice), s(currentIndice))
       }
 
-      //iterating over the values of the variable
-      val (domainIterationSchemeIterator,notifyFound2) = selectValueBehavior.toIterator(domainIterationScheme)
-      while(domainIterationSchemeIterator.hasNext){
-        newVal = domainIterationSchemeIterator.next()
-        if (newVal != oldVal){
-          //testing newValue
-          val newObj = obj.assignVal(currentVar,newVal)
+      def eval(value:Int):Int = {
+        this.newVal = value
+        obj.assignVal(currentVar,value)
+      }
 
-          if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
-            notifyFound1()
-            notifyFound2()
-          }
-        }
+      val (newVal,bestObj) = domainExplorer.search(oldVal, initialObj, domainIterationScheme.min, domainIterationScheme.max, eval)
+
+      if (evaluateCurrentMoveObjTrueIfSomethingFound(bestObj)) {
+        notifyFound1()
       }
     }
 

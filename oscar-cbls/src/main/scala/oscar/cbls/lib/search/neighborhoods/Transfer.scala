@@ -84,16 +84,17 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
           def evaluate(delta:Int): Int ={
             this.delta = delta
             val newObj = obj.swapVal(firstVar, secondVar)
-            if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
-              notifyFound1()
-              notifyFound2()
-            }
             newObj
           }
           val minValueForDelta = (secondVar.min - oldValOfSecondVar) min (oldValOfFirstVar - firstVar.max)
           val maxValueForDelta = (secondVar.max - oldValOfSecondVar) max (oldValOfFirstVar - firstVar.min)
 
-          iterationOnDelta.search(0,initialObj,minValueForDelta,maxValueForDelta,evaluate)
+          val (bestDelta,objForDelta) = iterationOnDelta.search(0, initialObj, minValueForDelta, maxValueForDelta, evaluate)
+
+          if (evaluateCurrentMoveObjTrueIfSomethingFound(objForDelta)) {
+            notifyFound1()
+            notifyFound2()
+          }
         }
       }
     }
