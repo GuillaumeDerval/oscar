@@ -423,7 +423,7 @@ class VLSN(v:Int,
 
             updateZones(
               tail,
-              vehicleToRoutedNodesToMove + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty) + insertedNode)),
+              vehicleToRoutedNodesToMove + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty[Int]) + insertedNode)),
               unroutedNodesToInsert - insertedNode
             )
 
@@ -434,7 +434,7 @@ class VLSN(v:Int,
 
             updateZones(
               tail,
-              vehicleToRoutedNodesToMove + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty) + insertedNode - ejectedNode)),
+              vehicleToRoutedNodesToMove + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty[Int]) + insertedNode - ejectedNode)),
               unroutedNodesToInsert - insertedNode
             )
 
@@ -446,7 +446,7 @@ class VLSN(v:Int,
             updateZones(
               tail,
               vehicleToRoutedNodesToMove
-                + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty) + movedNode))
+                + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty[Int]) + movedNode))
                 + (fromVehicle -> (vehicleToRoutedNodesToMove(fromVehicle) - movedNode)),
               unroutedNodesToInsert
             )
@@ -459,7 +459,7 @@ class VLSN(v:Int,
             updateZones(
               tail,
               vehicleToRoutedNodesToMove
-                + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty) + movedNode - ejectedNode))
+                + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty[Int]) + movedNode - ejectedNode))
                 + (fromVehicle -> (vehicleToRoutedNodesToMove(fromVehicle) - movedNode)),
               unroutedNodesToInsert
             )

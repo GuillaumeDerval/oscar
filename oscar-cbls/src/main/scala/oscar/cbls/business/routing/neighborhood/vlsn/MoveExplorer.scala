@@ -103,7 +103,7 @@ class MoveExplorerAlgo(v:Int,
     nodeIDToNode = SortedMap.empty
 
     //noeuds symboliques pour les véhicules
-    relevantVehicles = SortedSet.empty ++ nodeToRelevantVehicles.flatMap(_._2)
+    relevantVehicles = SortedSet.empty[Int] ++ nodeToRelevantVehicles.flatMap(_._2)
 
     for (vehicle <- relevantVehicles) {
       val node = builder.addNode(vehicle, vehicle, vehicle, VLSNSNodeType.VehicleNode)

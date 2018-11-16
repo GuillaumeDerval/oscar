@@ -338,11 +338,13 @@ object TestRN extends App{
     println(l + " " + aa + " obj:" + f(aa))
   }
 
+  //slide should be avoided at all cost; cfr the stop criterion on numerical methods that stop earlier.
+  //we should consider numbers as floats even if they are not because the range of value is very large.
   eval(new Exhaustive(step = 50) carryOnTo new Slide(step = 1))
   eval(new NewtonRaphson(1) carryOnTo new  TryExtremes())
   eval(new Slide(step = 10))
   eval(new NarrowingStepSlide(10))
-  eval((new NewtonRaphson(1) carryOnTo new Slide(step = 1)))
+  eval(new NewtonRaphson(1) carryOnTo new Slide(step = 1))
   eval(new Exhaustive(step = 50) carryOnTo new NewtonRaphson(1) carryOnTo new Slide(step = 1))
   eval(new Exhaustive(step = 50) andThen (new NewtonRaphson(1) carryOnTo new Slide(step = 1)))
   eval(new TryExtremes() carryOnTo new NewtonRaphson(1) carryOnTo new Slide(step=1))
