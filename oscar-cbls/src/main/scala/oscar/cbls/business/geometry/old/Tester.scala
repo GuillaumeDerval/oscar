@@ -1,4 +1,4 @@
-package oscar.cbls.business.geometric
+package oscar.cbls.business.geometry
 
 import java.awt.{BorderLayout, Color, Polygon, Shape}
 import java.awt.geom.Rectangle2D
@@ -9,7 +9,7 @@ import org.locationtech.jts.awt.{PolygonShape, ShapeWriter}
 import org.locationtech.jts.geom._
 import org.locationtech.jts.geom.util.{AffineTransformation, PolygonExtracter}
 import org.locationtech.jts.io.WKTReader
-import oscar.cbls.business.geometric.Tester.polygon6
+import oscar.cbls.business.geometry.Tester.polygon6
 import oscar.cbls.visual.ColorGenerator
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualPolygon, VisualRectangle, VisualShape}

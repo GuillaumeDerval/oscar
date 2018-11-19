@@ -1,4 +1,4 @@
-package oscar.cbls.business.geometric.old
+package oscar.cbls.business.geometry.old
 
 import java.awt.geom.{Line2D, Rectangle2D}
 import java.awt.{BorderLayout, Color, Dimension}
