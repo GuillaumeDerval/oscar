@@ -8,6 +8,7 @@ import org.locationtech.jts.geom.Geometry
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualRectangle, VisualShape}
 
+
 class GeometryDrawing()
   extends VisualDrawing(false,false) {
 
@@ -23,12 +24,14 @@ class GeometryDrawing()
     super.addShape(shape,false)
   }
 
+  //TODO: il manque un zoom et un scroll!!!
+  //TODO: on ne voit pas le border!!
   /**
     *
     * @param boundingBoxOn
     * @param shapes shape,bordercolor,innercolor,toltipText
     */
-  def drawShapes(boundingBoxOn:Option[Geometry],shapes:List[(Geometry,Option[Color],Option[Color],String)]) ={
+  def drawShapes(boundingBoxOn:Option[Geometry] = None,shapes:List[(Geometry,Option[Color],Option[Color],String)]) ={
 
     val (minX,maxX,minY,maxY) = boundingBoxOn match {
       case None =>

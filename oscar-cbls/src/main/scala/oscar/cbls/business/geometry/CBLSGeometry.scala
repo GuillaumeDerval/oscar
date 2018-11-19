@@ -20,46 +20,15 @@ import org.locationtech.jts.geom.{Coordinate, Geometry}
 import oscar.cbls.Store
 import oscar.cbls.core.computation._
 
-
-object Geometry{
-  def createCircle(r:Double,nbEdges:Int = 16, ensureCorrectSurface:Boolean = true):Geometry = {
-    require(nbEdges >=4,"a circle is hard to approximate with less than four edges...")
-
-    val pointRotation = AffineTransformation.rotationInstance((2*math.Pi)/nbEdges)
-
-    val startPoint = new Coordinate(r, 0)
-    var currentPoint:Coordinate = startPoint
-    var allPoints:Array[Coordinate] = Array.fill(nbEdges+1)(null)
-    allPoints(0) = currentPoint
-    allPoints(nbEdges) = currentPoint
-
-    for(currentIndice <- 1 until nbEdges){
-      currentPoint = pointRotation.transform(currentPoint,new Coordinate(0, 0))
-      allPoints(currentIndice) = currentPoint
-    }
-
-    val c1 = factory.createPolygon(allPoints)
-
-    if(ensureCorrectSurface){
-      val s1 = c1.getArea
-      val factor = math.sqrt(math.Pi*r*r/s1)
-      val scaling = AffineTransformation.scaleInstance(factor,factor)
-      scaling.transform(c1)
-    }else{
-      c1
-    }
-  }
-}
-
-class GeometryVar(store: Store,
-                initialValue: Geometry,
-                givenName: String = null)
+class CBLSGeometryVar(store: Store,
+                      initialValue: Geometry,
+                      givenName: String = null)
   extends CBLSAtomicVar[Geometry](store: Store,
     initialValue,
     givenName: String ){
 
-  override def createClone:GeometryVar = {
-    val clone = new GeometryVar(
+  override def createClone:CBLSGeometryVar = {
+    val clone = new CBLSGeometryVar(
       store,
       this.value,
       "clone of " + this.name)
@@ -69,16 +38,16 @@ class GeometryVar(store: Store,
   }
 }
 
-class GeometryConst(store:Store, override val value:Geometry)
+class CBLSGeometryConst(store:Store, override val value:Geometry)
   extends CBLSAtomicConst[Geometry](value){
 }
 
-class GeometryInvariant(store:Store,
-                      initialValue:Geometry)
+class CBLSGeometryInvariant(store:Store,
+                            initialValue:Geometry)
   extends AtomicInvariant[Geometry](initialValue){
 
-  override def createClone:GeometryVar = {
-    val clone = new GeometryVar(
+  override def createClone:CBLSGeometryVar = {
+    val clone = new CBLSGeometryVar(
       store,
       this.value,
       "clone of " + this.name)
@@ -89,7 +58,7 @@ class GeometryInvariant(store:Store,
 }
 
 class Union(store:Store,a:ChangingAtomicValue[Geometry],b:ChangingAtomicValue[Geometry]) extends
-  GeometryInvariant(store:Store,
+  CBLSGeometryInvariant(store:Store,
     initialValue=a.value union b.value)
   with AtomicNotificationTarget[Geometry] {
 

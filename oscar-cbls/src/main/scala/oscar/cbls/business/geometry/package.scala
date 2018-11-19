@@ -1,6 +1,7 @@
 package oscar.cbls.business
 
-import org.locationtech.jts.geom.GeometryFactory
+import org.locationtech.jts.geom.{Coordinate, Geometry, GeometryFactory}
+import org.locationtech.jts.geom.util.AffineTransformation
 
 package object geometry {
 
@@ -9,4 +10,32 @@ package object geometry {
   //so better to keep it all in floats, and perform any conversion when geting things out of JTS
   val factory:GeometryFactory = new GeometryFactory()
 
+
+  def createCircle(r:Double,nbEdges:Int = 16, ensureCorrectSurface:Boolean = true):Geometry = {
+    require(nbEdges >=4,"a circle is hard to approximate with less than four edges...")
+
+    val pointRotation = AffineTransformation.rotationInstance((2*math.Pi)/nbEdges)
+
+    val startPoint = new Coordinate(r, 0)
+    var currentPoint:Coordinate = startPoint
+    var allPoints:Array[Coordinate] = Array.fill(nbEdges+1)(null)
+    allPoints(0) = currentPoint
+    allPoints(nbEdges) = currentPoint
+
+    for(currentIndice <- 1 until nbEdges){
+      currentPoint = pointRotation.transform(currentPoint,new Coordinate(0, 0))
+      allPoints(currentIndice) = currentPoint
+    }
+
+    val c1 = factory.createPolygon(allPoints)
+
+    if(ensureCorrectSurface){
+      val s1 = c1.getArea
+      val factor = math.sqrt(math.Pi*r*r/s1)
+      val scaling = AffineTransformation.scaleInstance(factor,factor)
+      scaling.transform(c1)
+    }else{
+      c1
+    }
+  }
 }

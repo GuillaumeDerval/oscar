@@ -15,16 +15,9 @@ package oscar.cbls.business.geometry
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.util.AffineTransformation
 import oscar.cbls.Store
 import oscar.cbls.core.computation._
-
-
-object AffineTransformationObj{
-  def translation(x:Int,y:Int):AffineTransformation = AffineTransformation.translationInstance(x,y)
-  def rotation(tensOfDegrees:Int):AffineTransformation = AffineTransformation.rotationInstance((2*math.Pi)/(tensOfDegrees.toDouble / 3600))
-}
 
 /**
   *
@@ -32,15 +25,15 @@ object AffineTransformationObj{
   * @param initialValue is the initial value of the variable
   * @param givenName
   */
-class AffineTransformVar(store: Store,
-                         initialValue: AffineTransformation,
-                         givenName: String = null)
+class CBLSAffineTransformVar(store: Store,
+                             initialValue: AffineTransformation,
+                             givenName: String = null)
   extends CBLSAtomicVar[AffineTransformation](store: Store,
     initialValue,
     givenName: String ){
 
-  override def createClone:AffineTransformVar = {
-    val clone = new AffineTransformVar(
+  override def createClone:CBLSAffineTransformVar = {
+    val clone = new CBLSAffineTransformVar(
       store,
       this.value,
       "clone of " + this.name)
@@ -50,15 +43,15 @@ class AffineTransformVar(store: Store,
   }
 }
 
-class AffineTransformConst(store:Store, override val value:AffineTransformation)
+class CBLSAffineTransformConst(store:Store, override val value:AffineTransformation)
   extends CBLSAtomicConst[AffineTransformation](value){
 }
 
-class AffineTransformInvariant(initialValue:AffineTransformation)
+class CBLSAffineTransformInvariant(initialValue:AffineTransformation)
   extends AtomicInvariant[AffineTransformation](initialValue){
 
-  override def createClone:AffineTransformVar = {
-    val clone = new AffineTransformVar(
+  override def createClone:CBLSAffineTransformVar = {
+    val clone = new CBLSAffineTransformVar(
       this.model,
       this.value,
       "clone of " + this.name)
@@ -69,7 +62,7 @@ class AffineTransformInvariant(initialValue:AffineTransformation)
 }
 
 class Compose(store:Store,a:ChangingAtomicValue[AffineTransformation],b:ChangingAtomicValue[AffineTransformation])
-  extends AffineTransformInvariant(
+  extends CBLSAffineTransformInvariant(
     initialValue = new AffineTransformation(a.value) compose b.value)
     with AtomicNotificationTarget[AffineTransformation] {
 
