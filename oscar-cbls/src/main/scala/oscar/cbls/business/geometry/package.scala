@@ -10,8 +10,8 @@ package object geometry {
   //so better to keep it all in floats, and perform any conversion when geting things out of JTS
   val factory:GeometryFactory = new GeometryFactory()
 
-
   def createCircle(r:Double,nbEdges:Int = 16, ensureCorrectSurface:Boolean = true):Geometry = {
+    println("creating circle ")
     require(nbEdges >=4,"a circle is hard to approximate with less than four edges...")
 
     val pointRotation = AffineTransformation.rotationInstance((2*math.Pi)/nbEdges)

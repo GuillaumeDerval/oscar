@@ -54,8 +54,6 @@ class CBLSAffineTransformVar(store: Store,
   }
 }
 
-
-
 /** an invariant that is the identity function
   * @author renaud.delandtsheer@cetic.be
   */
@@ -113,6 +111,7 @@ class Compose(store:Store,a:ChangingAtomicValue[AffineTransformation],b:Changing
   this.registerStaticAndDynamicDependency(a)
   this.registerStaticAndDynamicDependency(b)
 
+  finishInitialization(store)
 
   override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformation], id: Int, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
     this.scheduleForPropagation()
@@ -123,8 +122,27 @@ class Compose(store:Store,a:ChangingAtomicValue[AffineTransformation],b:Changing
   }
 }
 
+class Translation(store:Store,x:IntValue,y:IntValue)
+  extends CBLSAffineTransformInvariant(
+    initialValue = AffineTransformation.translationInstance(x.value.toDouble,y.value.toDouble))
+    with IntNotificationTarget {
 
-class Apply(store:Store,a:ChangingAtomicValue[AffineTransformation],b:ChangingAtomicValue[Geometry])
+  this.registerStaticAndDynamicDependency(x)
+  this.registerStaticAndDynamicDependency(y)
+  finishInitialization(store)
+
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
+    println("notified translation component changed")
+    this.scheduleForPropagation()
+  }
+
+  override def performInvariantPropagation(): Unit = {
+    println("updated translation")
+    this := AffineTransformation.translationInstance(x.value.toDouble,y.value.toDouble)
+  }
+}
+
+class Apply(store:Store,a:AtomicValue[AffineTransformation],b:AtomicValue[Geometry])
   extends CBLSGeometryInvariant(
     store:Store,
     initialValue=a.value.transform(b.value))
@@ -134,6 +152,7 @@ class Apply(store:Store,a:ChangingAtomicValue[AffineTransformation],b:ChangingAt
   this.registerStaticAndDynamicDependency(a)
   this.registerStaticAndDynamicDependency(b)
 
+  finishInitialization(store)
 
   override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()

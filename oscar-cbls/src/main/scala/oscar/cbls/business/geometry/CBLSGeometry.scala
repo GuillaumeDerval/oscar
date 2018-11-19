@@ -102,7 +102,7 @@ class CBLSGeometryInvariant(store:Store,
   }
 }
 
-case class IsWithin(inner:ChangingAtomicValue[Geometry], outer:ChangingAtomicValue[Geometry])
+case class IsWithin(inner:AtomicValue[Geometry], outer:AtomicValue[Geometry])
   extends Invariant with Constraint with GeometryNotificationTarget{
 
   this.registerStaticAndDynamicDependency(inner)
@@ -128,7 +128,7 @@ case class IsWithin(inner:ChangingAtomicValue[Geometry], outer:ChangingAtomicVal
 }
 
 
-case class NoOverlap(shapes:Array[ChangingAtomicValue[Geometry]])
+case class NoOverlap(shapes:Array[AtomicValue[Geometry]])
   extends Invariant with Constraint with GeometryNotificationTarget{
 
   for(shapeId <- shapes.indices){
@@ -141,8 +141,11 @@ case class NoOverlap(shapes:Array[ChangingAtomicValue[Geometry]])
 
   override val violation = new CBLSIntVar(model,0,0 to Int.MaxValue)
 
+  violation.setDefiningInvariant(this)
   val shapeViolation = Array.tabulate(shapes.length)(shapeID => {
-    new CBLSIntVar(model,0,0 to Int.MaxValue,"numberOfOverlappingShapesWith_" + shapes(shapeID).name)
+    val tmp = new CBLSIntVar(model,0,0 to Int.MaxValue,"numberOfOverlappingShapesWith_" + shapes(shapeID).name)
+    tmp.setDefiningInvariant(this)
+    tmp
   })
 
 
@@ -151,6 +154,7 @@ case class NoOverlap(shapes:Array[ChangingAtomicValue[Geometry]])
   }
 
   override def performInvariantPropagation(): Unit = {
+    //println("performing overlap algo")
     for(i <- shapes.indices) {
       shapeViolation(i) := 0
     }
@@ -162,7 +166,7 @@ case class NoOverlap(shapes:Array[ChangingAtomicValue[Geometry]])
       for(j <- 0 until i){
         val shapej = shapeValues(j)
 
-        if(shapei overlaps shapej){
+        if(shapei intersects shapej){
           val surfaceError = shapei.intersection(shapej).getArea.toInt
           shapeViolation(i) :+= surfaceError
           shapeViolation(j) :+= surfaceError
@@ -170,7 +174,11 @@ case class NoOverlap(shapes:Array[ChangingAtomicValue[Geometry]])
         }
       }
     }
+    //println("end overlap algo")
   }
+
+  //initial propagation
+  performInvariantPropagation()
 
   override def violation(v: Value):IntValue = {
     val shapeID = shapes.indexOf(v) //ok, this is crap
@@ -178,10 +186,14 @@ case class NoOverlap(shapes:Array[ChangingAtomicValue[Geometry]])
   }
 
   override def checkInternals(c: Checker): Unit = {}
+
+  override def toString: String = {
+    "NoOverlap(\t" + shapes.indices.map(i => shapes(i).name + "\t" + shapeViolation).mkString("\n\t") + "\n)"
+  }
 }
 
 
-class Union(store:Store,a:ChangingAtomicValue[Geometry],b:ChangingAtomicValue[Geometry])
+class Union(store:Store,a:AtomicValue[Geometry],b:AtomicValue[Geometry])
   extends CBLSGeometryInvariant(store:Store,
     initialValue=a.value union b.value)
     with GeometryNotificationTarget {
@@ -198,7 +210,7 @@ class Union(store:Store,a:ChangingAtomicValue[Geometry],b:ChangingAtomicValue[Ge
   }
 }
 
-class Area(store:Store,a:ChangingAtomicValue[Geometry])
+class Area(store:Store,a:AtomicValue[Geometry])
   extends IntInvariant(
     initialValue = a.value.getArea.toInt,
     initialDomain = 0 to Int.MaxValue)
