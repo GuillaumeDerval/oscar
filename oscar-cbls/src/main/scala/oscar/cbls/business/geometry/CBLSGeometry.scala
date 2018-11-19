@@ -16,9 +16,6 @@ package oscar.cbls.business.geometry
   ******************************************************************************/
 
 import org.locationtech.jts.geom.Geometry
-import org.locationtech.jts.geom.util.AffineTransformation
-import oscar.cbls.business.geometry.old.OverlapDetection.OverlapError
-import oscar.cbls.business.geometry.old.Shape
 import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.Constraint
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
@@ -31,7 +28,7 @@ class CBLSGeometryVar(store: Store,
     initialValue,
     givenName: String ){
 
-  override def createClone:CBLSGeometryVar = {
+  def createClone:CBLSGeometryVar = {
     val clone = new CBLSGeometryVar(
       store,
       this.value,
@@ -41,11 +38,39 @@ class CBLSGeometryVar(store: Store,
     clone
   }
 
+  def <== (g: ChangingAtomicValue[Geometry]): Unit ={
+    new IdentityGeometry(this, g)
+  }
+
   override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
     val target = inv.asInstanceOf[GeometryNotificationTarget]
     target.notifyGeometryChange(this,id,oldVal,newVal)
   }
 }
+
+/** an invariant that is the identity function
+  * @author renaud.delandtsheer@cetic.be
+  */
+class IdentityGeometry(toValue:CBLSGeometryVar, fromValue:ChangingAtomicValue[Geometry])
+  extends Invariant with GeometryNotificationTarget{
+  registerStaticAndDynamicDependency(fromValue)
+  toValue.setDefiningInvariant(this)
+  finishInitialization()
+
+  toValue := fromValue.value
+
+
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+    toValue := newVal
+  }
+
+  override def checkInternals(c:Checker){
+    c.check(toValue.value == fromValue.value)
+  }
+}
+
+
+
 
 
 trait GeometryNotificationTarget{
@@ -61,7 +86,7 @@ class CBLSGeometryInvariant(store:Store,
                             initialValue:Geometry)
   extends AtomicInvariant[Geometry](initialValue){
 
-  override def createClone:CBLSGeometryVar = {
+  def createClone:CBLSGeometryVar = {
     val clone = new CBLSGeometryVar(
       store,
       this.value,

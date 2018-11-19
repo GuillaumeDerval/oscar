@@ -20,12 +20,9 @@
 
 package oscar.cbls.core.computation
 
-import oscar.cbls._
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
 
-import scala.collection.mutable.{Map => MMap}
 import scala.language.implicitConversions
-import scala.util.Random
 
 /** this is something that has an integer value.
   * this value can be queried, and invariants can be posted on it,
@@ -110,12 +107,6 @@ abstract class ChangingAtomicValue[T](initialValue:T)
     setValue(v)
   }
 
-  def createClone:CBLSAtomicVar[T] = {
-    val clone = new CBLSAtomicVar(model, this.value, "clone of " + this.name)
-    clone <== this
-    clone
-  }
-
   def compare(that: ChangingAtomicValue[T]): Int = {
     assert(this.uniqueID != -1, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
     assert(that.uniqueID != -1, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
@@ -134,7 +125,7 @@ class ChangingAtomicValueSnapShot[T](val variable:ChangingAtomicValue[T],val sav
   * @param initialValue is the initial value of the variable
   * @param n is the name of the variable, used for pretty printing only. if not set, a default will be used, based on the variable number
   */
-class CBLSAtomicVar[T](givenModel: Store, initialValue: T, n: String = null)
+abstract class CBLSAtomicVar[T](givenModel: Store, initialValue: T, n: String = null)
   extends ChangingAtomicValue(initialValue) with Variable{
 
   require(givenModel != null)
@@ -158,14 +149,6 @@ class CBLSAtomicVar[T](givenModel: Store, initialValue: T, n: String = null)
   def swap(v: CBLSAtomicVar[T]) {
     this :=: v
   }
-
-  def <==(i: AtomicValue[T]) {IdentityAtomic[T](this,i)}
-}
-
-object CBLSAtomicVar{
-
-  def apply[T](model: Store, value:T ,name:String = null) =
-    new CBLSAtomicVar[T](model, value, name)
 }
 
 /**
@@ -218,31 +201,3 @@ abstract class AtomicInvariant[T](initialValue:T = 0)
   }
 }
 
-object IdentityAtomic{
-  def apply[T](toValue:CBLSAtomicVar[T], fromValue:AtomicValue[T]){
-    fromValue match{
-      case c:CBLSAtomicConst[T] => toValue := c.value
-      case c:ChangingAtomicValue[T] => new IdentityAtomic(toValue, c)
-    }
-  }
-}
-
-/** an invariant that is the identity function
-  * @author renaud.delandtsheer@cetic.be
-  */
-class IdentityAtomic[T](toValue:CBLSAtomicVar[T], fromValue:AtomicValue[T])
-  extends Invariant with AtomicNotificationTarget[T]{
-  registerStaticAndDynamicDependency(fromValue)
-  toValue.setDefiningInvariant(this)
-  finishInitialization()
-
-  toValue := fromValue.value
-
-  override def notifyAtomicChanged(v: ChangingAtomicValue[T], id:Int, OldVal: T, NewVal: T) {
-    toValue := NewVal
-  }
-
-  override def checkInternals(c:Checker){
-    c.check(toValue.value == fromValue.value)
-  }
-}

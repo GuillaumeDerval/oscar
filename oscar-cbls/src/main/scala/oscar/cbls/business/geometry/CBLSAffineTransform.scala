@@ -19,7 +19,7 @@ import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.util.AffineTransformation
 import oscar.cbls.Store
 import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.PropagationElement
+import oscar.cbls.core.propagation.{Checker, PropagationElement}
 
 /**
   *
@@ -34,7 +34,7 @@ class CBLSAffineTransformVar(store: Store,
     initialValue,
     givenName: String ){
 
-  override def createClone:CBLSAffineTransformVar = {
+  def createClone:CBLSAffineTransformVar = {
     val clone = new CBLSAffineTransformVar(
       store,
       this.value,
@@ -44,9 +44,36 @@ class CBLSAffineTransformVar(store: Store,
     clone
   }
 
+  def <== (g: ChangingAtomicValue[AffineTransformation]): Unit ={
+    new IdentityAffineTransformation(this, g)
+  }
+
   override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
     val target = inv.asInstanceOf[AffineTransformNotificationTarget]
     target.notifyAffineTransformChange(this,id,oldVal,newVal)
+  }
+}
+
+
+
+/** an invariant that is the identity function
+  * @author renaud.delandtsheer@cetic.be
+  */
+class IdentityAffineTransformation(toValue:CBLSAffineTransformVar, fromValue:ChangingAtomicValue[AffineTransformation])
+  extends Invariant with AffineTransformNotificationTarget{
+  registerStaticAndDynamicDependency(fromValue)
+  toValue.setDefiningInvariant(this)
+  finishInitialization()
+
+  toValue := fromValue.value
+
+
+  override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformation], id: Int, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
+    toValue := newVal
+  }
+
+  override def checkInternals(c:Checker){
+    c.check(toValue.value == fromValue.value)
   }
 }
 
@@ -62,7 +89,7 @@ class CBLSAffineTransformConst(store:Store, override val value:AffineTransformat
 class CBLSAffineTransformInvariant(initialValue:AffineTransformation)
   extends AtomicInvariant[AffineTransformation](initialValue){
 
-  override def createClone:CBLSAffineTransformVar = {
+  def createClone:CBLSAffineTransformVar = {
     val clone = new CBLSAffineTransformVar(
       this.model,
       this.value,
