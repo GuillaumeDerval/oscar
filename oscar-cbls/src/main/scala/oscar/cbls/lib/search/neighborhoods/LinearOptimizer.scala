@@ -138,8 +138,9 @@ class NarrowingExhaustive(dividingRatio:Int, maxIt: Int)  extends LinearOptimize
 
 class TryExtremes() extends LinearOptimizer {
   override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): (Int, Int) = {
-    //println("TryExtremes.search(startPos:" + startPos + " startObj:" + startObj +  " minValue:" + minValue + " maxValue:" + maxValue + ")")
+    println("TryExtremes.search(startPos:" + startPos + " startObj:" + startObj +  " minValue:" + minValue + " maxValue:" + maxValue + ")")
     val tries:List[(Int,Int)] = List((startPos,startObj),(minValue,obj(minValue)),(maxValue,obj(maxValue)))
+    println("found: " + tries)
     tries.minBy(_._2)
   }
 

@@ -52,8 +52,8 @@ object TesterCBLS extends App{
   SingleFrameWindow.show(drawing,"a drawing with the standard oscar drawing console")
 
   val search1 = NumericAssignNeighborhood(flattenedCoordArray,"moveByOneCoord",
-    domainExplorer = new TryExtremes() //new Exhaustive(step = 100,skipInitial = true,maxIt = 10) //// carryOnTo new NarrowingExhaustive(dividingRatio=10, maxIt=20),
-  ).afterMove{updateDisplay()}
+    domainExplorer = new Exhaustive(step = 50,skipInitial = true,maxIt = 20) //// carryOnTo new NarrowingExhaustive(dividingRatio=10, maxIt=20),
+  ).afterMove{updateDisplay(); store.propagate()}
 
   val search2 = AssignNeighborhood(flattenedCoordArray,"moveByOneCoord").afterMove{updateDisplay()}
 

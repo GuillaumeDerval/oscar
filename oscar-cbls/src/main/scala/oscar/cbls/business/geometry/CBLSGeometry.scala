@@ -53,6 +53,7 @@ class CBLSGeometryVar(store: Store,
   */
 class IdentityGeometry(toValue:CBLSGeometryVar, fromValue:ChangingAtomicValue[Geometry])
   extends Invariant with GeometryNotificationTarget{
+
   registerStaticAndDynamicDependency(fromValue)
   toValue.setDefiningInvariant(this)
   finishInitialization()
@@ -69,14 +70,9 @@ class IdentityGeometry(toValue:CBLSGeometryVar, fromValue:ChangingAtomicValue[Ge
   }
 }
 
-
-
-
-
 trait GeometryNotificationTarget{
   def notifyGeometryChange(a:ChangingAtomicValue[Geometry],id:Int,oldVal:Geometry,newVal:Geometry)
 }
-
 
 class CBLSGeometryConst(store:Store, override val value:Geometry)
   extends CBLSAtomicConst[Geometry](value){
@@ -140,21 +136,19 @@ case class NoOverlap(shapes:Array[AtomicValue[Geometry]])
   finishInitialization()
 
   override val violation = new CBLSIntVar(model,0,0 to Int.MaxValue)
-
   violation.setDefiningInvariant(this)
+
   val shapeViolation = Array.tabulate(shapes.length)(shapeID => {
     val tmp = new CBLSIntVar(model,0,0 to Int.MaxValue,"numberOfOverlappingShapesWith_" + shapes(shapeID).name)
     tmp.setDefiningInvariant(this)
     tmp
   })
 
-
   override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
   }
 
   override def performInvariantPropagation(): Unit = {
-    //println("performing overlap algo")
     for(i <- shapes.indices) {
       shapeViolation(i) := 0
     }
@@ -200,6 +194,7 @@ class Union(store:Store,a:AtomicValue[Geometry],b:AtomicValue[Geometry])
 
   this.registerStaticAndDynamicDependency(a)
   this.registerStaticAndDynamicDependency(b)
+  finishInitialization(store)
 
   override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
@@ -217,6 +212,7 @@ class Area(store:Store,a:AtomicValue[Geometry])
     with GeometryNotificationTarget{
 
   this.registerStaticAndDynamicDependency(a)
+  finishInitialization(store)
 
   override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()

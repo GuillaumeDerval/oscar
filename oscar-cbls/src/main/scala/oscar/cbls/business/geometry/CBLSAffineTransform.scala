@@ -59,6 +59,7 @@ class CBLSAffineTransformVar(store: Store,
   */
 class IdentityAffineTransformation(toValue:CBLSAffineTransformVar, fromValue:ChangingAtomicValue[AffineTransformation])
   extends Invariant with AffineTransformNotificationTarget{
+
   registerStaticAndDynamicDependency(fromValue)
   toValue.setDefiningInvariant(this)
   finishInitialization()
@@ -110,7 +111,6 @@ class Compose(store:Store,a:ChangingAtomicValue[AffineTransformation],b:Changing
 
   this.registerStaticAndDynamicDependency(a)
   this.registerStaticAndDynamicDependency(b)
-
   finishInitialization(store)
 
   override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformation], id: Int, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
@@ -149,7 +149,6 @@ class Apply(store:Store,a:AtomicValue[AffineTransformation],b:AtomicValue[Geomet
 
   this.registerStaticAndDynamicDependency(a)
   this.registerStaticAndDynamicDependency(b)
-
   finishInitialization(store)
 
   override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
