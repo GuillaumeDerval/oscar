@@ -51,7 +51,7 @@ class Visu()
     border.border = true
     border.outerCol = Color.black
 
-    val colors = ColorGenerator.generateRandomColors(shapes.length).toIterator
+    val colors = ColorGenerator.generateRandomTransparentColors(shapes.length,175).toIterator
 
     val w = new ShapeWriter()
     for(shape <- shapes){
@@ -142,7 +142,7 @@ object Tester extends App{
   val polygon7 = rotation.transform(translation.transform(translation.transform(polygon5.union(polygon4).convexHull().union(polygon6))))
   val polygon8 = translation.transform(polygon7.intersection(polygon6))
 
-  val circle1 = AffineTransformation.translationInstance(300, 100).transform(createCircle(100,16))
+  val circle1 = AffineTransformation.translationInstance(300, 100).transform(createCircle(130,16))
 
   println("area of polygon8:" + polygon8.getArea)
 

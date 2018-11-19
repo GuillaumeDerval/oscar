@@ -15,10 +15,10 @@ package oscar.cbls.business.geometry
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import org.locationtech.jts.geom.{Coordinate, Geometry, GeometryFactory}
 import org.locationtech.jts.geom.util.AffineTransformation
-import oscar.cbls.core.draft.computation.{IntInvariant, Store}
-import oscar.cbls.core.draft.computation.core._
+import org.locationtech.jts.geom.{Coordinate, Geometry}
+import oscar.cbls.Store
+import oscar.cbls.core.computation._
 
 
 object Geometry{
@@ -70,13 +70,12 @@ class GeometryVar(store: Store,
 }
 
 class GeometryConst(store:Store, override val value:Geometry)
-  extends CBLSAtomicConst[Geometry](store, value){
-  override def createClone: CBLSAtomicVar[Geometry] = this
+  extends CBLSAtomicConst[Geometry](value){
 }
 
 class GeometryInvariant(store:Store,
                       initialValue:Geometry)
-  extends AtomicInvariant[Geometry](store:Store, initialValue){
+  extends AtomicInvariant[Geometry](initialValue){
 
   override def createClone:GeometryVar = {
     val clone = new GeometryVar(
@@ -94,11 +93,11 @@ class Union(store:Store,a:ChangingAtomicValue[Geometry],b:ChangingAtomicValue[Ge
     initialValue=a.value union b.value)
   with AtomicNotificationTarget[Geometry] {
 
-  a.registerStaticAndPermanentDynamicDependency(this)
-  b.registerStaticAndPermanentDynamicDependency(this)
+  this.registerStaticAndDynamicDependency(a)
+  this.registerStaticAndDynamicDependency(b)
 
   override def notifyAtomicChanged(v: ChangingAtomicValue[Geometry], id: Int, OldVal: Geometry, NewVal: Geometry): Unit = {
-    this.scheduleMyselfForPropagation()
+    this.scheduleForPropagation()
   }
 
   override def performInvariantPropagation(): Unit = {
@@ -107,16 +106,15 @@ class Union(store:Store,a:ChangingAtomicValue[Geometry],b:ChangingAtomicValue[Ge
 }
 
 class Area(store:Store,a:ChangingAtomicValue[Geometry])
-  extends IntInvariant(store:Store,
-    0,
-    initialValue = a.value.getArea.toInt)
+  extends IntInvariant(
+    initialValue = a.value.getArea.toInt,
+    initialDomain = 0 to Int.MaxValue)
     with AtomicNotificationTarget[Geometry]{
 
-  a.registerStaticAndPermanentDynamicDependency(this)
-
+  this.registerStaticAndDynamicDependency(a)
 
   override def notifyAtomicChanged(v: ChangingAtomicValue[Geometry], id: Int, OldVal: Geometry, NewVal: Geometry): Unit = {
-    this.scheduleMyselfForPropagation()
+    this.scheduleForPropagation()
   }
 
   override def performInvariantPropagation(): Unit = {

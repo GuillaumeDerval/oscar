@@ -17,8 +17,8 @@ package oscar.cbls.business.geometry
 
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.util.AffineTransformation
-import oscar.cbls.core.draft.computation.Store
-import oscar.cbls.core.draft.computation.core._
+import oscar.cbls.Store
+import oscar.cbls.core.computation._
 
 
 object AffineTransformationObj{
@@ -51,17 +51,15 @@ class AffineTransformVar(store: Store,
 }
 
 class AffineTransformConst(store:Store, override val value:AffineTransformation)
-  extends CBLSAtomicConst[AffineTransformation](store, value){
-  override def createClone: CBLSAtomicVar[AffineTransformation] = this
+  extends CBLSAtomicConst[AffineTransformation](value){
 }
 
-class AffineTransformInvariant(store:Store,
-                               initialValue:AffineTransformation)
-  extends AtomicInvariant[AffineTransformation](store:Store, initialValue){
+class AffineTransformInvariant(initialValue:AffineTransformation)
+  extends AtomicInvariant[AffineTransformation](initialValue){
 
   override def createClone:AffineTransformVar = {
     val clone = new AffineTransformVar(
-      store,
+      this.model,
       this.value,
       "clone of " + this.name)
 
@@ -72,16 +70,14 @@ class AffineTransformInvariant(store:Store,
 
 class Compose(store:Store,a:ChangingAtomicValue[AffineTransformation],b:ChangingAtomicValue[AffineTransformation])
   extends AffineTransformInvariant(
-    store:Store,
-    initialValue= new AffineTransformation(a.value) compose b.value)
+    initialValue = new AffineTransformation(a.value) compose b.value)
     with AtomicNotificationTarget[AffineTransformation] {
 
-  a.registerStaticAndPermanentDynamicDependency(this)
-  b.registerStaticAndPermanentDynamicDependency(this)
-
+  this.registerStaticAndDynamicDependency(a)
+  this.registerStaticAndDynamicDependency(b)
 
   override def notifyAtomicChanged(v: ChangingAtomicValue[AffineTransformation], id: Int, OldVal: AffineTransformation, NewVal: AffineTransformation): Unit = {
-    this.scheduleMyselfForPropagation()
+    this.scheduleForPropagation()
   }
 
   override def performInvariantPropagation(): Unit = {
@@ -89,25 +85,27 @@ class Compose(store:Store,a:ChangingAtomicValue[AffineTransformation],b:Changing
   }
 }
 
+/*
 class Apply(store:Store,a:ChangingAtomicValue[AffineTransformation],b:ChangingAtomicValue[Geometry])
   extends GeometryInvariant(
     store:Store,
     initialValue=a.value.transform(b.value))
-    with GeometryNotificationTarget
-    with AffineTransformNotificationTarget {
+    with AtomicNotificationTarget[AffineTransformation]
+    with  AtomicNotificationTarget[Geometry] {
 
-  a.registerStaticAndPermanentDynamicDependency(this)  //TODO: check if we really cannot have multiple atomic notification target on the came class!!! (alternatively, atomic notifiation targer should accept anything and perform some manual cast)
-  b.registerStaticAndPermanentDynamicDependency(this)
+  this.registerStaticAndDynamicDependency(a)
+  this.registerStaticAndDynamicDependency(b)
 
-  override def notifyAffineTransformChanged(v: ChangingAtomicValue[AffineTransformation], id: Int, OldVal: AffineTransformation, NewVal: AffineTransformation): Unit = {
-    this.scheduleMyselfForPropagation()
+  override def notifyAtomicChanged(v: ChangingAtomicValue[AffineTransformation], id: Int, OldVal: AffineTransformation, NewVal: AffineTransformation): Unit = {
+    this.scheduleForPropagation()
   }
 
-  override def notifyGeometryChanged(v: ChangingAtomicValue[Geometry], id: Int, OldVal: Geometry, NewVal: Geometry): Unit = {
-    this.scheduleMyselfForPropagation()
+  override def notifyAtomicChanged(v: ChangingAtomicValue[Geometry], id: Int, OldVal: Geometry, NewVal: Geometry): Unit = {
+    this.scheduleForPropagation()
   }
 
   override def performInvariantPropagation(): Unit = {
     this := a.value.transform(b.value)
   }
 }
+*/

@@ -5,6 +5,7 @@ import java.util
 import org.locationtech.jts.geom._
 import org.locationtech.jts.geom.util.AffineTransformation
 import org.locationtech.jts.io.WKTReader
+import oscar.cbls.business.geometry.GeoVisuWindow
 
 object Tester extends App{
 

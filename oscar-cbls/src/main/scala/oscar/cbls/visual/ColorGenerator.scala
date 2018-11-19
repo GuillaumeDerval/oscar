@@ -44,6 +44,24 @@ object ColorGenerator {
     colorValues
   }
 
+  def generateRandomTransparentColors(number:Int,alpha:Int): Array[Color] ={
+    val maxColorNumber = getMaxColorNumber(number)
+    val colorValues = new Array[Color](Math.pow(maxColorNumber,3).toInt)
+    var i = 0
+    for(c1 <- if(Math.random()<0.5)0 until maxColorNumber else maxColorNumber-1 until -1 by -1){
+      val r = c1*(255/maxColorNumber)
+      for(c2 <- if(Math.random()<0.5)0 until maxColorNumber else maxColorNumber-1 until -1 by -1){
+        val g = c2*(255/maxColorNumber)
+        for(c3 <- if(Math.random()<0.5)0 until maxColorNumber else maxColorNumber-1 until -1 by -1){
+          val b = c3*(255/maxColorNumber)
+          colorValues(i) = new Color(r,g,b,alpha)
+          i += 1
+        }
+      }
+    }
+    colorValues
+  }
+
   /**
     *
     * @param number the number of colors needed
