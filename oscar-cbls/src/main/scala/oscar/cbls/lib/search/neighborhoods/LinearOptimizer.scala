@@ -297,7 +297,7 @@ class NewtonRaphsonRoot(dXForDetivativeEvalution:Int, maxIt: Int) extends Linear
 
 
 //this one finds a min!!!
-class NewtonRaphson(dXForDetivativeEvalution:Int, maxIt: Int) extends LinearOptimizer{
+class NewtonRaphsonMinimize(dXForDetivativeEvalution:Int, maxIt: Int) extends LinearOptimizer{
 
   override def toString: String = "NewtonRaphson(dXForDetivativeEvalution:" + dXForDetivativeEvalution + ")"
 
@@ -343,13 +343,13 @@ object TestRN extends App{
   //slide should be avoided at all cost; cfr the stop criterion on numerical methods that stop earlier.
   //we should consider numbers as floats even if they are not because the range of value is very large.
   eval(new Exhaustive(step = 50, maxIt = maxIt) carryOnTo new Slide(step = 1, maxIt: Int))
-  eval(new NewtonRaphson(1, maxIt: Int) carryOnTo new  TryExtremes())
+  eval(new NewtonRaphsonMinimize(1, maxIt: Int) carryOnTo new  TryExtremes())
   eval(new Slide(step = 10, maxIt: Int))
   eval(new NarrowingStepSlide(10, maxIt: Int))
-  eval(new NewtonRaphson(1, maxIt: Int) carryOnTo new Slide(step = 1, maxIt: Int))
-  eval(new Exhaustive(step = 50, maxIt = maxIt) carryOnTo new NewtonRaphson(1, maxIt: Int) carryOnTo new Slide(step = 1, maxIt: Int))
-  eval(new Exhaustive(step = 50, maxIt = maxIt) andThen (new NewtonRaphson(1, maxIt: Int) carryOnTo new Slide(step = 1, maxIt: Int)))
-  eval(new TryExtremes() carryOnTo new NewtonRaphson(1, maxIt: Int) carryOnTo new Slide(step=1, maxIt: Int))
+  eval(new NewtonRaphsonMinimize(1, maxIt: Int) carryOnTo new Slide(step = 1, maxIt: Int))
+  eval(new Exhaustive(step = 50, maxIt = maxIt) carryOnTo new NewtonRaphsonMinimize(1, maxIt: Int) carryOnTo new Slide(step = 1, maxIt: Int))
+  eval(new Exhaustive(step = 50, maxIt = maxIt) andThen (new NewtonRaphsonMinimize(1, maxIt: Int) carryOnTo new Slide(step = 1, maxIt: Int)))
+  eval(new TryExtremes() carryOnTo new NewtonRaphsonMinimize(1, maxIt: Int) carryOnTo new Slide(step=1, maxIt: Int))
   eval(new NarrowingExhaustive(100, maxIt: Int))
 
 }
