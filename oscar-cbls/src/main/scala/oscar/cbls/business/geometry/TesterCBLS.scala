@@ -52,13 +52,13 @@ object TesterCBLS extends App{
   SingleFrameWindow.show(drawing,"a drawing with the standard oscar drawing console")
 
   val search1 = NumericAssignNeighborhood(flattenedCoordArray,"moveByOneCoord",
-    domainExplorer = new TryExtremes()// carryOnTo new NarrowingExhaustive(dividingRatio=10, maxIt=20),
+    domainExplorer = new TryExtremes() //new Exhaustive(step = 100,skipInitial = true,maxIt = 10) //// carryOnTo new NarrowingExhaustive(dividingRatio=10, maxIt=20),
   ).afterMove{updateDisplay()}
 
   val search2 = AssignNeighborhood(flattenedCoordArray,"moveByOneCoord").afterMove{updateDisplay()}
 
   val search = search1
-  search.verbose = 4
+  search.verbose = 2
   search.doAllMoves(obj=obj)
 
   println("finished search" + c)

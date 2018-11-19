@@ -132,12 +132,10 @@ class Translation(store:Store,x:IntValue,y:IntValue)
   finishInitialization(store)
 
   override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
-    println("notified translation component changed")
     this.scheduleForPropagation()
   }
 
   override def performInvariantPropagation(): Unit = {
-    println("updated translation")
     this := AffineTransformation.translationInstance(x.value.toDouble,y.value.toDouble)
   }
 }
