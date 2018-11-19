@@ -21,7 +21,7 @@
 package oscar.cbls.core.computation
 
 import oscar.cbls._
-import oscar.cbls.core.propagation.Checker
+import oscar.cbls.core.propagation.{Checker, PropagationElement}
 
 import scala.collection.mutable.{Map => MMap}
 import scala.language.implicitConversions
@@ -36,10 +36,6 @@ sealed trait AtomicValue[T] extends Value{
 
   def name:String
   override def valueString: String = "" + value
-}
-
-trait AtomicNotificationTarget[T]{
-  def notifyAtomicChanged(v: ChangingAtomicValue[T], id: Int, OldVal: T, NewVal: T)
 }
 
 /**An AtomicVar is a variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.
@@ -96,16 +92,15 @@ abstract class ChangingAtomicValue[T](initialValue:T)
       var currentElement = headPhantom.next
       while(currentElement != headPhantom){
         val e = currentElement.elem
-        val inv:AtomicNotificationTarget[T] = e._1.asInstanceOf[AtomicNotificationTarget[T]]
-        assert({this.model.notifiedInvariant=inv.asInstanceOf[Invariant]; true})
-        inv.notifyAtomicChanged(this,e._2,old,mNewValue)
-        assert({this.model.notifiedInvariant=null; true})
+        performNotificationToListeningInv(e._1,e._2,old,mNewValue)
         //we go to the next to be robust against invariant that change their dependencies when notified
         //this might cause crash because dynamicallyListenedInvariants is a mutable data structure
         currentElement = currentElement.next
       }
     }
   }
+
+  def performNotificationToListeningInv(inv:PropagationElement,id:Int,oldVal:T,newVal:T)
 
   override def checkInternals(c:Checker){
     c.check(mOldValue == mNewValue)
@@ -141,7 +136,7 @@ class ChangingAtomicValueSnapShot[T](val variable:ChangingAtomicValue[T],val sav
   */
 class CBLSAtomicVar[T](givenModel: Store, initialValue: T, n: String = null)
   extends ChangingAtomicValue(initialValue) with Variable{
-  
+
   require(givenModel != null)
 
   model = givenModel
@@ -174,12 +169,12 @@ object CBLSAtomicVar{
 }
 
 /**
- * An AtomicConst is an [[oscar.cbls.core.computation.CBLSAtomicVar]] that has a constant value.
- * It has no associated model, as there is no need to incorporate it into any propagation process.
- * notice that you should not attempt to create a CBLSAtomicConst directly; use the companion object for an efficient memoïzation
-* @param value: the value of the constant
-* @author renaud.delandtsheer@cetic.be
-*/
+  * An AtomicConst is an [[oscar.cbls.core.computation.CBLSAtomicVar]] that has a constant value.
+  * It has no associated model, as there is no need to incorporate it into any propagation process.
+  * notice that you should not attempt to create a CBLSAtomicConst directly; use the companion object for an efficient memoïzation
+  * @param value: the value of the constant
+  * @author renaud.delandtsheer@cetic.be
+  */
 class CBLSAtomicConst[T](override val value:T)
   extends AtomicValue[T]{
   override def toString:String = "" + value
@@ -198,7 +193,7 @@ object CBLSAtomicConst{
   */
 abstract class AtomicInvariant[T](initialValue:T = 0)
   extends ChangingAtomicValue[T](initialValue)
-  with Invariant{
+    with Invariant{
 
   override def definingInvariant: Invariant = this
   override def isControlledVariable:Boolean = true

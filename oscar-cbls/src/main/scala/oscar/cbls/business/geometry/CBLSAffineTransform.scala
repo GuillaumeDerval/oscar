@@ -15,9 +15,11 @@ package oscar.cbls.business.geometry
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.util.AffineTransformation
 import oscar.cbls.Store
 import oscar.cbls.core.computation._
+import oscar.cbls.core.propagation.PropagationElement
 
 /**
   *
@@ -41,7 +43,17 @@ class CBLSAffineTransformVar(store: Store,
     clone <== this
     clone
   }
+
+  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
+    val target = inv.asInstanceOf[AffineTransformNotificationTarget]
+    target.notifyAffineTransformChange(this,id,oldVal,newVal)
+  }
 }
+
+trait AffineTransformNotificationTarget{
+  def notifyAffineTransformChange(a:ChangingAtomicValue[AffineTransformation],id:Int,oldVal:AffineTransformation,newVal:AffineTransformation)
+}
+
 
 class CBLSAffineTransformConst(store:Store, override val value:AffineTransformation)
   extends CBLSAtomicConst[AffineTransformation](value){
@@ -59,17 +71,23 @@ class CBLSAffineTransformInvariant(initialValue:AffineTransformation)
     clone <== this
     clone
   }
+
+  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
+    val target = inv.asInstanceOf[AffineTransformNotificationTarget]
+    target.notifyAffineTransformChange(this,id,oldVal,newVal)
+  }
 }
 
 class Compose(store:Store,a:ChangingAtomicValue[AffineTransformation],b:ChangingAtomicValue[AffineTransformation])
   extends CBLSAffineTransformInvariant(
     initialValue = new AffineTransformation(a.value) compose b.value)
-    with AtomicNotificationTarget[AffineTransformation] {
+    with AffineTransformNotificationTarget {
 
   this.registerStaticAndDynamicDependency(a)
   this.registerStaticAndDynamicDependency(b)
 
-  override def notifyAtomicChanged(v: ChangingAtomicValue[AffineTransformation], id: Int, OldVal: AffineTransformation, NewVal: AffineTransformation): Unit = {
+
+  override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformation], id: Int, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
     this.scheduleForPropagation()
   }
 
@@ -78,22 +96,23 @@ class Compose(store:Store,a:ChangingAtomicValue[AffineTransformation],b:Changing
   }
 }
 
-/*
+
 class Apply(store:Store,a:ChangingAtomicValue[AffineTransformation],b:ChangingAtomicValue[Geometry])
-  extends GeometryInvariant(
+  extends CBLSGeometryInvariant(
     store:Store,
     initialValue=a.value.transform(b.value))
-    with AtomicNotificationTarget[AffineTransformation]
-    with  AtomicNotificationTarget[Geometry] {
+    with GeometryNotificationTarget
+    with AffineTransformNotificationTarget{
 
   this.registerStaticAndDynamicDependency(a)
   this.registerStaticAndDynamicDependency(b)
 
-  override def notifyAtomicChanged(v: ChangingAtomicValue[AffineTransformation], id: Int, OldVal: AffineTransformation, NewVal: AffineTransformation): Unit = {
+
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
   }
 
-  override def notifyAtomicChanged(v: ChangingAtomicValue[Geometry], id: Int, OldVal: Geometry, NewVal: Geometry): Unit = {
+  override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformation], id: Int, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
     this.scheduleForPropagation()
   }
 
@@ -101,4 +120,3 @@ class Apply(store:Store,a:ChangingAtomicValue[AffineTransformation],b:ChangingAt
     this := a.value.transform(b.value)
   }
 }
-*/

@@ -16,10 +16,12 @@ package oscar.cbls.business.geometry
   ******************************************************************************/
 
 import org.locationtech.jts.geom.Geometry
+import org.locationtech.jts.geom.util.AffineTransformation
 import oscar.cbls.business.geometry.old.OverlapDetection.OverlapError
 import oscar.cbls.business.geometry.old.Shape
 import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.Constraint
+import oscar.cbls.core.propagation.{Checker, PropagationElement}
 import oscar.cbls.{IntValue, Store, Value}
 
 class CBLSGeometryVar(store: Store,
@@ -38,7 +40,18 @@ class CBLSGeometryVar(store: Store,
     clone <== this
     clone
   }
+
+  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+    val target = inv.asInstanceOf[GeometryNotificationTarget]
+    target.notifyGeometryChange(this,id,oldVal,newVal)
+  }
 }
+
+
+trait GeometryNotificationTarget{
+  def notifyGeometryChange(a:ChangingAtomicValue[Geometry],id:Int,oldVal:Geometry,newVal:Geometry)
+}
+
 
 class CBLSGeometryConst(store:Store, override val value:Geometry)
   extends CBLSAtomicConst[Geometry](value){
@@ -57,10 +70,15 @@ class CBLSGeometryInvariant(store:Store,
     clone <== this
     clone
   }
+
+  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+    val target = inv.asInstanceOf[GeometryNotificationTarget]
+    target.notifyGeometryChange(this,id,oldVal,newVal)
+  }
 }
 
 case class IsWithin(inner:ChangingAtomicValue[Geometry], outer:ChangingAtomicValue[Geometry])
-  extends Invariant with Constraint with AtomicNotificationTarget[Geometry]{
+  extends Invariant with Constraint with GeometryNotificationTarget{
 
   this.registerStaticAndDynamicDependency(inner)
   this.registerStaticAndDynamicDependency(outer)
@@ -70,7 +88,8 @@ case class IsWithin(inner:ChangingAtomicValue[Geometry], outer:ChangingAtomicVal
 
   override val violation = new CBLSIntVar(model,0,0 to Int.MaxValue)
 
-  override def notifyAtomicChanged(v: ChangingAtomicValue[Geometry], id: Int, OldVal: Geometry, NewVal: Geometry): Unit = {
+
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
   }
 
@@ -79,11 +98,13 @@ case class IsWithin(inner:ChangingAtomicValue[Geometry], outer:ChangingAtomicVal
   }
 
   override def violation(v: Value):IntValue = { if (inner == v || inner == v) violation else 0 }
+
+  override def checkInternals(c: Checker): Unit = {}
 }
 
 
 case class NoOverlap(shapes:Array[ChangingAtomicValue[Geometry]])
-  extends Invariant with Constraint with AtomicNotificationTarget[Geometry]{
+  extends Invariant with Constraint with GeometryNotificationTarget{
 
   for(shapeId <- shapes.indices){
     val shape = shapes(shapeId)
@@ -99,7 +120,8 @@ case class NoOverlap(shapes:Array[ChangingAtomicValue[Geometry]])
     new CBLSIntVar(model,0,0 to Int.MaxValue,"numberOfOverlappingShapesWith_" + shapes(shapeID).name)
   })
 
-  override def notifyAtomicChanged(v: ChangingAtomicValue[Geometry], id: Int, OldVal: Geometry, NewVal: Geometry): Unit = {
+
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
   }
 
@@ -129,18 +151,20 @@ case class NoOverlap(shapes:Array[ChangingAtomicValue[Geometry]])
     val shapeID = shapes.indexOf(v) //ok, this is crap
     if(shapeID == -1) 0 else shapeViolation(shapeID)
   }
+
+  override def checkInternals(c: Checker): Unit = {}
 }
 
 
 class Union(store:Store,a:ChangingAtomicValue[Geometry],b:ChangingAtomicValue[Geometry])
   extends CBLSGeometryInvariant(store:Store,
     initialValue=a.value union b.value)
-    with AtomicNotificationTarget[Geometry] {
+    with GeometryNotificationTarget {
 
   this.registerStaticAndDynamicDependency(a)
   this.registerStaticAndDynamicDependency(b)
 
-  override def notifyAtomicChanged(v: ChangingAtomicValue[Geometry], id: Int, OldVal: Geometry, NewVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
   }
 
@@ -153,11 +177,11 @@ class Area(store:Store,a:ChangingAtomicValue[Geometry])
   extends IntInvariant(
     initialValue = a.value.getArea.toInt,
     initialDomain = 0 to Int.MaxValue)
-    with AtomicNotificationTarget[Geometry]{
+    with GeometryNotificationTarget{
 
   this.registerStaticAndDynamicDependency(a)
 
-  override def notifyAtomicChanged(v: ChangingAtomicValue[Geometry], id: Int, OldVal: Geometry, NewVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
   }
 
