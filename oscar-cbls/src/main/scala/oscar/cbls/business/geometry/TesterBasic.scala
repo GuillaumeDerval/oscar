@@ -7,7 +7,7 @@ import oscar.cbls.business.geometry
 import oscar.cbls.business.geometry.GeometryDrawing
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 
-object Tester extends App{
+object TesterBasic extends App{
 
   val rdr = new WKTReader
   val line1 = rdr.read("LINESTRING (0 0, 10 10, 20 20)").asInstanceOf[LineString]
