@@ -139,7 +139,7 @@ case class NoOverlap(shapes:Array[AtomicValue[Geometry]])
   violation.setDefiningInvariant(this)
 
   val shapeViolation = Array.tabulate(shapes.length)(shapeID => {
-    val tmp = new CBLSIntVar(model,0,0 to Int.MaxValue,"numberOfOverlappingShapesWith_" + shapes(shapeID).name)
+    val tmp = new CBLSIntVar(model,0,0 to Int.MaxValue,"overlap(" + shapes(shapeID).name + ")")
     tmp.setDefiningInvariant(this)
     tmp
   })
@@ -182,7 +182,7 @@ case class NoOverlap(shapes:Array[AtomicValue[Geometry]])
   override def checkInternals(c: Checker): Unit = {}
 
   override def toString: String = {
-    "NoOverlap(\t" + shapes.indices.map(i => shapes(i).name + "\t" + shapeViolation).mkString("\n\t") + "\n)"
+    "NoOverlap(\n\t" + shapes.indices.map(i => shapeViolation(i)).mkString("\n\t") + "\n)"
   }
 }
 

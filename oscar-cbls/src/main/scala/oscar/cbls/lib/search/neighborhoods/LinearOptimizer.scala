@@ -119,8 +119,6 @@ class NarrowingExhaustive(dividingRatio:Int, maxIt: Int)  extends LinearOptimize
   override def toString: String = "NarrowingExhaustive(dividingRatio:" + dividingRatio + ")"
 
   override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): (Int, Int) = {
-
-    println("NarrowingExhaustive minValue:" + minValue + " maxValue:" + maxValue)
     val width = maxValue - minValue
     if(width < dividingRatio) {
       val search = new Exhaustive(step = 1, skipInitial = true,maxIt = maxIt)
@@ -230,7 +228,7 @@ class Slide(step:Int = 1, maxIt: Int) extends LinearOptimizer{
     val goingUp = valueAbove < valueBelow
 
     if(goingUp){
-      //println("going up")
+     // println("going up")
       currentPoint = pointAbove
       currentValue = valueAbove
     }else{
