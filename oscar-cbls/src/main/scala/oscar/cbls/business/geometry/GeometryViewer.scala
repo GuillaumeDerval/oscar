@@ -32,6 +32,7 @@ class GeometryDrawing()
     * @param shapes shape,bordercolor,innercolor,toltipText
     */
   def drawShapes(boundingBoxOn:Option[Geometry] = None,shapes:List[(Geometry,Option[Color],Option[Color],String)]) ={
+    super.clear(false)
 
     val (minX,maxX,minY,maxY) = boundingBoxOn match {
       case None =>
@@ -49,15 +50,11 @@ class GeometryDrawing()
     val width = maxX - minX
     val height = maxY - minY
 
-    val xyMultiplier = (this.getWidth.toDouble min this.getHeight.toDouble)/(width max height)
-
-    super.clear(false)
-
     val border = new VisualRectangle(this, new Rectangle2D.Double(
-      minX*xyMultiplier,
-      minY*xyMultiplier,
-      width*xyMultiplier,
-      height*xyMultiplier))
+      minX,
+      minY,
+      width,
+      height))
 
     border.fill = false
     border.border = true

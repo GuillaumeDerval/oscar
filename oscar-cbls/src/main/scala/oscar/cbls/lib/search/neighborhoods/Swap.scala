@@ -116,7 +116,7 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
           && firstVarIndice != secondVarIndice
           && (!symmetryCanBeBrokenOnValue || oldValOfFirstVar < oldValOfSecondVar) //we break symmetry on values
           && oldValOfFirstVar != oldValOfSecondVar
-          && secondVar.domain.contains(oldValOfFirstVar)
+          && secondVar.domain.contains(oldValOfFirstVar)//TODO: we should tolerate a slide if not in the domain...
           && firstVar.domain.contains(oldValOfSecondVar)) {
 
           if(evaluateCurrentMoveObjTrueIfSomethingFound(obj.swapVal(firstVar, secondVar))) {

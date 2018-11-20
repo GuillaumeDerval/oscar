@@ -6,7 +6,7 @@ import org.locationtech.jts.geom.{Coordinate, Geometry}
 import oscar.cbls.business.geometry
 import oscar.cbls.core.computation.AtomicValue
 import oscar.cbls.core.constraint.ConstraintSystem
-import oscar.cbls.lib.search.combinators.BestSlopeFirst
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 import oscar.cbls.{CBLSIntVar, Objective, Store}
@@ -59,10 +59,10 @@ object TesterCBLS extends App{
 
   updateDisplay()
 
-  SingleFrameWindow.show(drawing,"a drawing with the standard oscar drawing console")
+  SingleFrameWindow.show(drawing,"a drawing with the standard oscar drawing console",1300,1300)
 
   def moveOneCoordNumeric = NumericAssignNeighborhood(flattenedCoordArray,"moveByOneCoord",
-    domainExplorer = new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
+    domainExplorer = new NewtonRaphsonMinimize(20, 10) //new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
@@ -86,6 +86,11 @@ object TesterCBLS extends App{
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
+  def swapX = SwapsNeighborhood(coordArray.map(_._1), "swapXCoordinates")
+  def swapY(circle1:Int,circle2:Int) = SwapsNeighborhood(Array(coordArray(circle1)._2,coordArray(circle2)._2), "swapYCoordinates")
+
+  def swapPositions = swapX dynAndThen(swapMove => swapY(swapMove.idI,swapMove.idJ))
+
   def moveOneCircleXAndThenY = moveXNumeric dynAndThen (assignMode => smallSlideY(assignMode.id))
   def moveOneCircleYAndThenX = moveYNumeric dynAndThen (assignMode => smallSlideX(assignMode.id))
 
@@ -93,13 +98,15 @@ object TesterCBLS extends App{
 
   val search = BestSlopeFirst(
     List(
-      moveOneCoordNumeric,
-      moveOneCircleXAndThenY,
-      moveOneCircleYAndThenX),
+      Profile(moveOneCoordNumeric),
+      Profile(moveOneCircleXAndThenY),
+      Profile(swapPositions),
+      Profile(moveOneCircleYAndThenX)),
     refresh=nbCircle).afterMove{updateDisplay()}
 
   search.verbose = 2
   search.doAllMoves(obj=obj)
 
   println("finished search" + c)
+  println(search.profilingStatistics)
 }
