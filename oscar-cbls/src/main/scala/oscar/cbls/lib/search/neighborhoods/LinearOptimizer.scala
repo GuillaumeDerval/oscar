@@ -204,7 +204,6 @@ class SlideVaryingSteps(stepSequence:List[Int] = List(1), gradualIncrease:Boolea
   }
 }
 
-
 class Slide(step:Int = 1, maxIt: Int) extends LinearOptimizer{
 
   override def toString: String = "Slide(step:" + step + ")"

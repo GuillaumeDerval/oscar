@@ -71,7 +71,7 @@ object TesterCBLS extends App{
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
-  def moveYNumericSlave(circleID:Int) = NumericAssignNeighborhood(Array(coordArray(circleID)._2),"moveYSlave",
+  def smallSlideY(circleID:Int) = NumericAssignNeighborhood(Array(coordArray(circleID)._2),"moveYSlave",
     domainExplorer = new Slide(step=1,maxIt=10) // new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
@@ -81,13 +81,13 @@ object TesterCBLS extends App{
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
-  def moveXNumericSlave(circleID:Int) = NumericAssignNeighborhood(Array(coordArray(circleID)._1),"moveXSlave",
+  def smallSlideX(circleID:Int) = NumericAssignNeighborhood(Array(coordArray(circleID)._1),"moveXSlave",
     domainExplorer = new Slide(step=1,maxIt=10) // new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
-  def moveOneCircleXAndThenY = moveXNumeric dynAndThen (assignMode => moveYNumericSlave(assignMode.id))
-  def moveOneCircleYAndThenX = moveYNumeric dynAndThen (assignMode => moveXNumericSlave(assignMode.id))
+  def moveOneCircleXAndThenY = moveXNumeric dynAndThen (assignMode => smallSlideY(assignMode.id))
+  def moveOneCircleYAndThenX = moveYNumeric dynAndThen (assignMode => smallSlideX(assignMode.id))
 
   def moveOneCoordClassic = AssignNeighborhood(flattenedCoordArray,"moveByOneCoord")  //this one is awfully slow!!!
 
