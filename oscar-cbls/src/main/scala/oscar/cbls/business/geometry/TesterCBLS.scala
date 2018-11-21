@@ -4,6 +4,7 @@ import java.awt.Color
 
 import org.locationtech.jts.geom.{Coordinate, Geometry}
 import oscar.cbls.business.geometry
+import oscar.cbls.business.geometry.invariants._
 import oscar.cbls.core.computation.AtomicValue
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Profile}
