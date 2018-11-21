@@ -172,7 +172,7 @@ trait Objective {
   def assignVal(a: Iterable[(CBLSIntVar, Int)]): Int = {
     //memorize
     val oldvals: Iterable[(CBLSIntVar, Int)] = a.foldLeft(List.empty[(CBLSIntVar, Int)])(
-      (acc, IntVarAndInt) => ((IntVarAndInt._1, IntVarAndInt._1.value)) :: acc)
+      (acc, IntVarAndInt) => ((IntVarAndInt._1, IntVarAndInt._1.newValue)) :: acc)
     //excurse
     for (assign <- a)
       assign._1 := assign._2
@@ -220,7 +220,7 @@ trait Objective {
     * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
     */
   def removeVal(a: CBLSSetVar, i:Int): Int = {
-    if(!a.value.contains(i)) return value
+    if(!a.newValue.contains(i)) return value
     removeValAssumeIn(a, i)
   }
 }

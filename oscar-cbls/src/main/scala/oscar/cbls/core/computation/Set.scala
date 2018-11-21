@@ -414,6 +414,8 @@ class CBLSSetVar(givenModel: Store, initialValue: SortedSet[Int], initialDomain:
   override def setValue(v : SortedSet[Int]) : Unit = super.setValue(v)
 
   override def value : SortedSet[Int] = super.value
+
+  override def newValue:SortedSet[Int] = super.newValue
 }
 
 object CBLSSetVar{

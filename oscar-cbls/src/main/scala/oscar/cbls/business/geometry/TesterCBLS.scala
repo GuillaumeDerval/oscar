@@ -6,7 +6,7 @@ import org.locationtech.jts.geom.{Coordinate, Geometry}
 import oscar.cbls.business.geometry
 import oscar.cbls.core.computation.AtomicValue
 import oscar.cbls.core.constraint.ConstraintSystem
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
+import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 import oscar.cbls.{CBLSIntVar, Objective, Store}
@@ -45,6 +45,9 @@ object TesterCBLS extends App{
   c.add(overlapConstraint)
   c.close()
 
+
+  val convexHullOfCircle1And3 = new ConvexHull(store, new Union(store, placedCirles(1),placedCirles(3)))
+
   val obj:Objective = c.violation
   store.close()
 
@@ -54,7 +57,7 @@ object TesterCBLS extends App{
 
   def updateDisplay() {
     val colorsIt = randomColors.toIterator
-    drawing.drawShapes(shapes = (outerFrame,Some(Color.red),None,"")::placedCirles.toList.map(shape => (shape.value, None, Some(colorsIt.next), overlapConstraint.violation(shape).toString)))
+    drawing.drawShapes(shapes = (convexHullOfCircle1And3.value,Some(Color.blue),None,"convexHullOfCircle1And3")::(outerFrame,Some(Color.red),None,"")::placedCirles.toList.map(shape => (shape.value, None, Some(colorsIt.next), overlapConstraint.violation(shape).toString)))
   }
 
   updateDisplay()
@@ -89,7 +92,7 @@ object TesterCBLS extends App{
   def swapX = SwapsNeighborhood(coordArray.map(_._1), "swapXCoordinates")
   def swapY(circle1:Int,circle2:Int) = SwapsNeighborhood(Array(coordArray(circle1)._2,coordArray(circle2)._2), "swapYCoordinates")
 
-  def swapPositions = swapX dynAndThen(swapMove => swapY(swapMove.idI,swapMove.idJ))
+  def swapPositions = swapX dynAndThen(swapMove => swapY(swapMove.idI,swapMove.idJ)) dynAndThen(Atomic(slideCircle(swapMove.idI)))
 
   def moveOneCircleXAndThenY = moveXNumeric dynAndThen (assignMode => smallSlideY(assignMode.id))
   def moveOneCircleYAndThenX = moveYNumeric dynAndThen (assignMode => smallSlideX(assignMode.id))

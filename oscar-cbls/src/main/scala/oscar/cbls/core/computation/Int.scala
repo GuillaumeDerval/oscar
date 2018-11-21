@@ -239,8 +239,8 @@ class CBLSIntVar(givenModel: Store, initialValue: Int, initialDomain:Domain, n: 
 
   /**this operator swaps the value of two IntVar*/
   def :=:(v:CBLSIntVar){
-    val a:Int = v.value
-    v:=this.value
+    val a:Int = v.newValue
+    v:=this.newValue
     this := a
   }
 
