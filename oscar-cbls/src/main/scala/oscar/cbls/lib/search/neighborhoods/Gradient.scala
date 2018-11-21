@@ -16,7 +16,7 @@
 package oscar.cbls.lib.search.neighborhoods
 
 import oscar.cbls.core.computation.{CBLSIntVar, Variable}
-import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, Move}
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, Move}
 
 import scala.collection.immutable.SortedSet
 
@@ -32,7 +32,6 @@ case class GradientDescent(vars:Array[CBLSIntVar],
                            maxNbVars:Int,
                            selectVars:Iterable[Int],
                            variableIndiceToDeltaForGradientDefinition:Int => Int,
-                           domain:(CBLSIntVar,Int) => Iterable[Int] = (v,i) => v.domain,
                            hotRestart:Boolean = true,
                            linearSearch:LinearOptimizer)
   extends EasyNeighborhoodMultiLevel[GradientMove](name) {
@@ -103,7 +102,7 @@ case class GradientDescent(vars:Array[CBLSIntVar],
       obj.assignVal(gradientDefinition.map(component => (component.variable,component.initiValue + (component.slope * step).toInt)))
     }
 
-    //step2: newton-raphson pour trouver le pas
+    //step2: find proper step
     val (bestStep,newObj) = linearSearch.search(0,initialObj,minStep,maxStep,evaluateStep)
 
     evaluateCurrentMoveObjTrueIfSomethingFound(newObj: Int)
