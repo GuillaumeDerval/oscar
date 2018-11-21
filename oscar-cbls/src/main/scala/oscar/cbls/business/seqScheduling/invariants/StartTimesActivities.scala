@@ -7,20 +7,30 @@ import oscar.cbls.business.seqScheduling.model._
 
 object StartTimesActivities {
   def apply(priorityActivitiesList: ChangingSeqValue,
-            schedulingModel: SchedulingModel): (CBLSIntVar, Array[CBLSIntVar], SetupTimes) = {
+            schedulingProblem: SchedulingProblem): (CBLSIntVar, Array[CBLSIntVar], SetupTimes) = {
     val model = priorityActivitiesList.model
     val makeSpan = CBLSIntVar(model, 0, name="Schedule Makespan")
-    val startTimes: Array[CBLSIntVar] = Array.tabulate(schedulingModel.nbActivities)(node =>  CBLSIntVar(model, 0, name=s"Start Time of Activity $node"))
+    val startTimes: Array[CBLSIntVar] = Array.tabulate(schedulingProblem.activities.size)(node =>  CBLSIntVar(model, 0, name=s"Start Time of Activity $node"))
     val setupTimes = new SetupTimes
 
-    new StartTimesActivities(priorityActivitiesList, schedulingModel, makeSpan, startTimes, setupTimes)
+    new StartTimesActivities(priorityActivitiesList, schedulingProblem, makeSpan, startTimes, setupTimes)
 
     (makeSpan, startTimes, setupTimes)
   }
 }
 
+/**
+  * Main invariant of a scheduling problem: the start time of the activities
+  *
+  * @param priorityActivitiesList a sequence of the activities indicating the order in
+  *                               which the start time will be set (Pralet algorithm)
+  * @param schP the scheduling problem
+  * @param makeSpan the makeSpan (output)
+  * @param startTimes the start times for each activity (output)
+  * @param setupTimes the setup times (output)
+  */
 class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
-                           schedulingModel: SchedulingModel,
+                           schP: SchedulingProblem,
                            makeSpan: CBLSIntVar,
                            startTimes: Array[CBLSIntVar],
                            setupTimes: SetupTimes
@@ -28,6 +38,12 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
 
   // Invariant Initialization
   registerStaticAndDynamicDependency(priorityActivitiesList)
+  schP.activities.toIterable.foreach(act =>
+    registerStaticAndDynamicDependency(act.durationCBLS)
+  )
+  schP.resources.toIterable.foreach(res =>
+    registerStaticAndDynamicDependency(res.capacityCBLS)
+  )
 
   finishInitialization()
 
@@ -36,38 +52,52 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
 
   computeAllFromScratch(priorityActivitiesList.value)
 
+  /**
+    * Main algorithm to compute the start times, makespan and setup times
+    * for changing modes in the scheduling
+    *
+    * @param priorityList a sequence of activity indices, which indicates the
+    *                     order in which the start times will be set
+    */
   def computeAllFromScratch(priorityList: IntSequence): Unit = {
-
-    println(s"*** Computing all from scratch for $priorityList")
-
     // Initialization
-    makeSpan := 0
-    //startTimes.foreach { stVar => stVar := 0 }
     setupTimes.reset()
-    val resourceFlowStates: Array[ResourceFlowState] = Array.tabulate(schedulingModel.nbResources) { i =>
-      new ResourceFlowState(schedulingModel.resources(i).initialModeIndex,
-                            schedulingModel.resources(i).capacity)
+    val resourceFlowStates: Array[ResourceFlowState] = Array.tabulate(schP.resources.size) { i =>
+      new ResourceFlowState(schP.resources.elementAt(i).runningModes.initialModeIndex,
+                            schP.resources.elementAt(i).capacity)
     }
     var makeSpanValue = 0
-    var startTimesArray: Array[Int] = Array.tabulate(schedulingModel.nbActivities)(_ => 0)
+    val startTimesArray: Array[Int] = Array.tabulate(schP.activities.size)(_ => 0)
     // Main loop
     for {indAct <- priorityList} {
-      val resIndexesActI = schedulingModel.activities(indAct).resourceUsages.flatten.map(_.resourceIndex)
-      val precedencesActI = schedulingModel.precedences.precArray(indAct)
+      val resIndexesActI = schP
+        .activityResourceUsages
+        .resourceUsages(indAct)
+        .indices
+        .filter(indRes => schP.activityResourceUsages.resourceUsages(indAct)(indRes).isDefined)
+      val precedencesActI = schP.precedences.precArray(indAct)
       // compute maximum of start+duration for preceding activities
       val maxEndTimePrecsActI = if (precedencesActI.isEmpty) 0
-        else precedencesActI.map { precInd =>
-          startTimes(precInd).value + schedulingModel.activities(precInd).duration
-        }.max
+        else precedencesActI.map(precInd =>
+          startTimes(precInd).value + schP.activities.elementAt(precInd).valDuration
+        ).max
       // compute maximum of starting times for availability of resources
       var maxStartTimeAvailableResActI = 0
       for {resInd <- resIndexesActI} {
         // update last activity index
         resourceFlowStates(resInd).lastActivityIndex = indAct
         val lastModeRes = resourceFlowStates(resInd).lastRunningMode
-        val newModeRes = schedulingModel.activities(indAct).resourceUsages(resInd).get.runningMode.index
+        val newModeRes = schP
+          .activityResourceUsages
+          .resourceUsages(indAct)(resInd)
+          .get
+          .indexRM
         val lastResFlows = resourceFlowStates(resInd).forwardFlows
-        val resourceQty = schedulingModel.activities(indAct).resourceUsages(resInd).get.capacity
+        val resourceQty = schP
+          .activityResourceUsages
+          .resourceUsages(indAct)(resInd)
+          .get
+          .capacity
         if (lastModeRes == newModeRes) {
           // running mode for resource in activity has not changed
           maxStartTimeAvailableResActI = math.max(maxStartTimeAvailableResActI,
@@ -77,9 +107,11 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
           resourceFlowStates(resInd).changedRunningMode = Some(lastModeRes)
           resourceFlowStates(resInd).lastRunningMode = newModeRes
           val lastEndTime = ResourceFlow.getLastEndTimeResourceFlow(lastResFlows)
-          val setupTimeMode = schedulingModel.resources(resInd)
-                                             .setupTimeModes(lastModeRes)(newModeRes)
-                                             .get
+          val setupTimeMode = schP
+            .resources
+            .elementAt(resInd)
+            .runningModes
+            .setupTime(lastModeRes, newModeRes)
           maxStartTimeAvailableResActI = math.max(maxStartTimeAvailableResActI,
             lastEndTime + setupTimeMode)
           // a new setup activity must be added
@@ -88,9 +120,8 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
       }
       // now we can update the start time for the activity and the makespan
       val startTimeAct = math.max(maxEndTimePrecsActI, maxStartTimeAvailableResActI)
-      //startTimes(indAct) := startTimeAct
       startTimesArray(indAct) = startTimeAct
-      val endTimeAct = startTimeAct + schedulingModel.activities(indAct).duration
+      val endTimeAct = startTimeAct + schP.activities.elementAt(indAct).valDuration
       if (endTimeAct > makeSpanValue) {
         makeSpanValue = endTimeAct
       }
@@ -98,23 +129,28 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
       // loop on the resources
       for {resInd <- resIndexesActI} {
         val lastResFlows = resourceFlowStates(resInd).forwardFlows
-        val resourceQty = schedulingModel.activities(indAct).resourceUsages(resInd).get.capacity
+        val resourceQty = schP
+          .activityResourceUsages
+          .resourceUsages(indAct)(resInd)
+          .get
+          .capacity
         resourceFlowStates(resInd).forwardFlows = ResourceFlow.addResourceFlowToList(
           indAct,
           resourceQty,
-          schedulingModel.activities(indAct).duration,
-          startTimes,
+          schP.activities.elementAt(indAct).valDuration,
+          startTimesArray,
           ResourceFlow.flowQuantityResource(
             resourceQty,
             if (resourceFlowStates(resInd).changedRunningMode.isDefined) {
               // running mode has changed
               val lastEndTime = ResourceFlow.getLastEndTimeResourceFlow(lastResFlows)
-              val setupTimeMode = schedulingModel.resources(resInd)
-                                                 .setupTimeModes(resourceFlowStates(resInd).changedRunningMode.get)(resourceFlowStates(resInd).lastRunningMode)
-                                                 .get
-              List(SetupFlow(lastEndTime,
-                             setupTimeMode,
-                             schedulingModel.activities(indAct).resourceUsages(resInd).get.capacity))
+              val setupTimeMode = schP
+                .resources
+                .elementAt(resInd)
+                .runningModes
+                .setupTime(resourceFlowStates(resInd).changedRunningMode.get,
+                  resourceFlowStates(resInd).lastRunningMode)
+              List(SetupFlow(lastEndTime, setupTimeMode, resourceQty))
             } else {
               lastResFlows
             }
@@ -125,7 +161,7 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
     // Set makespan variable
     makeSpan := makeSpanValue
     // Set start times variables
-    for { i <- 0 until schedulingModel.nbActivities } {
+    for { i <- 0 until schP.activities.size} {
       startTimes(i) := startTimesArray(i)
     }
   }
@@ -141,11 +177,19 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
     computeAllFromScratch(priorityActivitiesList.value)
   }
 
+  /** To override whenever possible to spot errors in invariants.
+    * this will be called for each invariant after propagation is performed.
+    * It requires that the Model is instantiated with the variable debug set to true.
+    */
+  override def checkInternals(c: Checker): Unit = {
+    //TODO: Implement check internals
+  }
+
   /**
-    * Internal class that carries the state of a resource flow
+    * Internal class that carries the state of a resource flow in the scheduling
     */
   private class ResourceFlowState(initialModeInd: Int, maxCapacity: Int) {
-    //TODO: je suis pas convaincu parce-que toutes les catégories de resrouces ont le mêm state du coup
+    //TODO: je suis pas convaincu parce-que toutes les catégories de resources ont le même state du coup
     // Last activity that used this resource
     var lastActivityIndex: Int = -1
     // Forward flows after last activity that used this resource
@@ -154,19 +198,22 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
     var lastRunningMode: Int = initialModeInd
     // Checking whether running mode has changed
     var changedRunningMode: Option[Int] = None
-  }
 
-  /** To override whenever possible to spot errors in invariants.
-    * this will be called for each invariant after propagation is performed.
-    * It requires that the Model is instantiated with the variable debug set to true.
-    */
-  override def checkInternals(c: Checker): Unit = {
-    // To be implementes...
+    override def toString: String =
+      s"""****
+         |RFW:
+         |Initial mode : $initialModeInd
+         |Max capacity : $maxCapacity
+         |Last mode : $lastRunningMode
+         |Last activity : $lastActivityIndex
+         |Forward flows : $forwardFlows
+         |****
+       """.stripMargin
   }
 }
 
 /**
-  * This case class represents a setup time
+  * This case class represents a setup time for changing a running mode in a resource
   */
 case class SetupTimeData(resourceIndex: Int, modeFromInd: Int, modeToInd: Int, startTime: Int, duration: Int)
 //TODO: je pense que les SetupTimeData devraient être dans la resource concernée

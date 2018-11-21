@@ -87,7 +87,7 @@ object ResourceFlow {
   def addResourceFlowToList(indexAct: Int,
                             qtyAct: Int,
                             durAct: Int,
-                            startActs: Array[IntValue],
+                            startActs: Array[Int],
                             resourceFlows: List[ResourceFlow]): List[ResourceFlow] = {
     // Auxiliary Function
     def addResourceFlowToList(resFlow: ResourceFlow,
@@ -104,7 +104,7 @@ object ResourceFlow {
       }
     }
     /////
-    val flowToInsert = ActivityFlow(indexAct, startActs(indexAct).value, durAct, qtyAct)
+    val flowToInsert = ActivityFlow(indexAct, startActs(indexAct), durAct, qtyAct)
     addResourceFlowToList(flowToInsert, resourceFlows, AccList.empty()).toList
   }
 

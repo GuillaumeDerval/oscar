@@ -2,14 +2,13 @@ package oscar.cbls.business.seqScheduling.model
 
 import scala.collection.mutable
 
-//TODO: je pense que cei pourrait être intégré dans la classe schedulingModel (autant éviter le suremballage)
 /**
   * This class is a container for the precedence constraints between activity indices
   *
   * @param numActivities the number of activities
   */
 class Precedences(numActivities: Int) {
-  // Precedences array
+  // Precedents array
   val precArray: Array[mutable.SortedSet[Int]] = Array.tabulate(numActivities)(_ => mutable.SortedSet[Int]())
   // Successors array
   val succArray: Array[mutable.SortedSet[Int]] = Array.tabulate(numActivities)(_ => mutable.SortedSet[Int]())
@@ -28,6 +27,10 @@ class Precedences(numActivities: Int) {
     /////
     precArray(indB) += indA
     succArray(indA) += indB
+  }
+
+  def addPrecedence(actA: Activity, actB: Activity): Unit = {
+    addPrecedence(actA.index, actB.index)
   }
 
   /**

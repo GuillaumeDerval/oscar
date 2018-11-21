@@ -1,20 +1,20 @@
 package oscar.cbls.business.seqScheduling.neighborhood
 
-import oscar.cbls.business.seqScheduling.model.{Constants, SchedulingSolver}
+import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.business.seqScheduling.model.{Constants, SchedulingProblem}
 import oscar.cbls.core.computation.CBLSSeqVar
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
-class SwapActivity(scm: SchedulingSolver,
+class SwapActivity(schP: SchedulingProblem,
                    neighborhoodName: String,
                    selectIndiceBehavior:LoopBehavior = First(),
                    selectSwapBehavior:LoopBehavior = First(),
                    searchIndices: Option[() => Iterable[Int]] = None)
-  extends EasyNeighborhoodMultiLevel[SwapActivityMove](neighborhoodName){
+  extends EasyNeighborhoodMultiLevel[SwapActivityMove](neighborhoodName) {
 
   var currentIndex: Int = Constants.NO_INDEX
   var swappingIndex: Int = Constants.NO_INDEX
-
-  println(s"Initial makespan = ${scm.makeSpan}")
+  var doneMoves: Set[(IntSequence, Int, Int, IntSequence)] = Set()
 
   /**
     * This is the method you must implement and that performs the search of your neighborhood.
@@ -22,99 +22,77 @@ class SwapActivity(scm: SchedulingSolver,
     * as explained in the documentation of this class
     */
   override def exploreNeighborhood(): Unit = {
-
-    println(s"*** Call to explore neighborhood")
-
     // iteration zone on activities indices
-    //TODO: check the hotRestart in other neoghborhood; this really speeds up teh search in other contexts; possibly in scheduling as well?
-    val iterationZone = searchIndices.getOrElse(() => 0 until scm.scModel.nbActivities)
+    //TODO: check the hotRestart in other neighborhood; this really speeds up the search in other contexts; possibly in scheduling as well?
+    val iterationZone = searchIndices.getOrElse(() => 0 until schP.activities.size)
 
     // Define checkpoint on sequence (activities list)
-    val seqValueCheckPoint = scm.activitiesSequence.defineCurrentValueAsCheckpoint(true)
-
-    println(s"Objective variable = $obj")
-    println(s"Current makespan = ${scm.makeSpan}")
-
+    val seqValueCheckPoint = schP.activitiesPriorList.defineCurrentValueAsCheckpoint(true)
     // iterating over the indices in the activity list
     val (indicesIterator, notifyIndexFound) = selectIndiceBehavior.toIterator(iterationZone())
+
     while (indicesIterator.hasNext) {
       currentIndex = indicesIterator.next()
-      // explore the insertable zone of the current indice
-      val insertableZone = scm.insertableIndices(currentIndex)
-
-      print(s"Insertable zone for $currentIndex = [ ")
-      insertableZone.foreach(a => print(s"$a "))
-      println("]")
-
-      val (insertableIterator, notifySwappingFound) = selectSwapBehavior.toIterator(insertableZone)
-      while (insertableIterator.hasNext) {
-        swappingIndex = insertableIterator.next()
-        // Perform move on sequence
-
-        //TODO: how about symmetry elimination? swap a qnd b is the same as swap b and a, so impose that a<b (with parameter to deactivate it altogether of course)
-
-        //TODO: ceci déclenche unepropagation à chaque roll-back et prend donc du temps (ça double le temsp de calcul). on préfère éviter de faire des query de variables d'output entre les voisins.
-        println(s"Current Index = $currentIndex | Swapping Index = $swappingIndex")
-        println(s"Old obj = ${obj.value}")
-        println(s"Sequence before = ${scm.activitiesSequence.value}")
-        println(s"Makespan before = ${scm.makeSpan.value}")
-        println(s"Start Times before = ${scm.startTimes.foldLeft("[")((acc, stv) => s"$acc ${stv.value}")} ]")  //TODO: ce genre de pretty printing devrait avoir sa place dans le modèle de schedule ou qqchose du genre
-        println(s"Setup Times before = ${scm.setupTimes}")
-
-        performMove(currentIndex, swappingIndex)
-        val newObj = obj.value
-
-        println(s"New obj = $newObj")
-        println(s"Sequence after = ${scm.activitiesSequence.value}")
-        println(s"Makespan after = ${scm.makeSpan.value}")
-        println(s"Start Times after = ${scm.startTimes.foldLeft("[")((acc, stv) => s"$acc ${stv.value}")} ]")
-        println(s"Setup Times after = ${scm.setupTimes}")
-
-        scm.activitiesSequence.rollbackToTopCheckpoint(seqValueCheckPoint)
-
-        // Notification of finding indices
-        if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
-
-          println(s"Notifying improving move on ${newObj}")
-
-          notifyIndexFound()
-          notifySwappingFound()
+      // explore the swappable zone from the current index
+      val swappableZone = schP.swappableIndices(currentIndex)
+      val (swappableIterator, notifySwappingFound) = selectSwapBehavior.toIterator(swappableZone)
+      while (swappableIterator.hasNext) {
+        swappingIndex = swappableIterator.next()
+        // Check for eventual symmetry
+        val leadsToSymmetry = doneMoves.exists(move => {
+          // Condition 1 : a "back move" already explored
+          val cond1 = move._1.equals(seqValueCheckPoint) &&
+            move._3 == swappingIndex &&
+            move._2 == currentIndex
+          // Condition 2 : a dual swapping already done
+          val cond2 = move._4.equals(seqValueCheckPoint) &&
+            move._3 == swappingIndex &&
+            move._2 == currentIndex
+          cond1 || cond2
+        })
+        if (!leadsToSymmetry) {
+          // Perform move on sequence
+          performMove(currentIndex, swappingIndex)
+          val newObj = obj.value
+          // Adds the move to the symmetry structure
+          doneMoves += ((schP.activitiesPriorList.value, swappingIndex, currentIndex, seqValueCheckPoint))
+          // Notification of finding indices
+          if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
+            notifyIndexFound()
+            notifySwappingFound()
+          }
         }
-
+        // Rollback to checkpoint
+        schP.activitiesPriorList.rollbackToTopCheckpoint(seqValueCheckPoint)
       }
     }
-
-    scm.activitiesSequence.releaseTopCheckpoint()
+    schP.activitiesPriorList.releaseTopCheckpoint()
   }
 
   override def instantiateCurrentMove(newObj: Int): SwapActivityMove =
-    SwapActivityMove(scm, currentIndex, swappingIndex, this, neighborhoodNameToString, newObj)
+    SwapActivityMove(schP, currentIndex, swappingIndex, this, neighborhoodNameToString, newObj)
 
   def performMove(currentIndex: Int, swappingIndex: Int): Unit = {
     // Swap 1-segments in sequence
-    scm.activitiesSequence.swapSegments(currentIndex, currentIndex, false,
+    schP.activitiesPriorList.swapSegments(currentIndex, currentIndex, false,
       swappingIndex, swappingIndex, false)
   }
 }
 
-case class SwapActivityMove(scm: SchedulingSolver,
+case class SwapActivityMove(schP: SchedulingProblem,
                             firstIndex: Int,
                             secondIndex: Int,
                             override val neighborhood: SwapActivity,
                             override val neighborhoodName: String = "SwapActivityMove",
                             override val objAfter: Int)
-  extends SchedulingMove(scm, neighborhood, neighborhoodName, objAfter) {
+  extends SchedulingMove(schP, neighborhood, neighborhoodName, objAfter) {
   // The sequence variable
-  val activitiesSeq: CBLSSeqVar = scm.activitiesSequence
+  val activitiesSeq: CBLSSeqVar = schP.activitiesPriorList
 
   override def impactedActivities: Iterable[Int] = IndexedSeq(firstIndex, secondIndex)
 
   /** to actually take the move */
   override def commit(): Unit = {
-    // activity index changes from firstIndex to secondIndex
-    scm.scModel.activities(firstIndex).index = secondIndex
-    // activity index changes from secondIndex to firstIndex
-    scm.scModel.activities(secondIndex).index = firstIndex
     // swap the values in indices
     activitiesSeq.swapSegments(firstIndex, firstIndex, false, secondIndex, secondIndex, false)
   }
