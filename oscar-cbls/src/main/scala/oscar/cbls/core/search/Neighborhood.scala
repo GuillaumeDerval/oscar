@@ -280,14 +280,11 @@ abstract class Neighborhood(name:String = null) {
 
     var toReturn : List[Move] = List.empty
 
-    val instrumentedThis = this afterMoveOnMove(m => toReturn = m :: toReturn)
+    val instrumentedThis = this.afterMoveOnMove(m => toReturn = m :: toReturn)
     instrumentedThis.doAllMoves(shouldStop,obj,acceptanceCriterion)
 
     toReturn.reverse
   }
-
-
-
 }
 
 /**

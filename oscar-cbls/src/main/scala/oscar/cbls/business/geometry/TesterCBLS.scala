@@ -75,7 +75,7 @@ object TesterCBLS extends App{
   )
 
   def smallSlideY(circleID:Int) = NumericAssignNeighborhood(Array(coordArray(circleID)._2),"moveYSlave",
-    domainExplorer = new Slide(step=1,maxIt=10) // new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
+    domainExplorer = new NarrowingStepSlide(10,10) restrictDelta(100) //new Slide(step=1,maxIt=20) // new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
@@ -85,17 +85,18 @@ object TesterCBLS extends App{
   )
 
   def smallSlideX(circleID:Int) = NumericAssignNeighborhood(Array(coordArray(circleID)._1),"moveXSlave",
-    domainExplorer = new Slide(step=1,maxIt=10) // new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
+    domainExplorer = new NarrowingStepSlide(10,10) restrictDelta(100)// Slide(step=1,maxIt=20) // new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
-  def swapX = SwapsNeighborhood(coordArray.map(_._1), "swapXCoordinates")
-  def swapY(circle1:Int,circle2:Int) = SwapsNeighborhood(Array(coordArray(circle1)._2,coordArray(circle2)._2), "swapYCoordinates")
+  def swapX = SwapsNeighborhood(coordArray.map(_._1),symmetryCanBeBrokenOnIndices = false, adjustIfNotInProperDomain = true, name = "swapXCoordinates")
+  def swapY(circle1:Int,circle2:Int) = SwapsNeighborhood(Array(coordArray(circle1)._2,coordArray(circle2)._2), symmetryCanBeBrokenOnIndices = false, adjustIfNotInProperDomain = true, name ="swapYCoordinates")
 
-  def swapPositions = swapX dynAndThen(swapMove => swapY(swapMove.idI,swapMove.idJ)) dynAndThen(Atomic(slideCircle(swapMove.idI)))
+  def swapAndSlide = (swapX dynAndThen(swapMove => {
+    swapY(swapMove.idI,swapMove.idJ) andThen Atomic(BestSlopeFirst(List(smallSlideX(swapMove.idI),smallSlideY(swapMove.idI))),_>100)})) name "SwapAndGlide"
 
-  def moveOneCircleXAndThenY = moveXNumeric dynAndThen (assignMode => smallSlideY(assignMode.id))
-  def moveOneCircleYAndThenX = moveYNumeric dynAndThen (assignMode => smallSlideX(assignMode.id))
+  def moveOneCircleXAndThenY = moveXNumeric dynAndThen (assignMode => smallSlideY(assignMode.id)) name "moveOneCircleXAndThenY"
+  def moveOneCircleYAndThenX = moveYNumeric dynAndThen (assignMode => smallSlideX(assignMode.id)) name "moveOneCircleYAndThenX"
 
   def moveOneCoordClassic = AssignNeighborhood(flattenedCoordArray,"moveByOneCoord")  //this one is awfully slow!!!
 
@@ -103,7 +104,7 @@ object TesterCBLS extends App{
     List(
       Profile(moveOneCoordNumeric),
       Profile(moveOneCircleXAndThenY),
-      Profile(swapPositions),
+      Profile(swapAndSlide),
       Profile(moveOneCircleYAndThenX)),
     refresh=nbCircle).afterMove{updateDisplay()}
 

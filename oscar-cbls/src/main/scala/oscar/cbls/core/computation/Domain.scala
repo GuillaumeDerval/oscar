@@ -57,6 +57,7 @@ sealed abstract class Domain extends Iterable[Int]{
   def size: Int
   def contains(v:Int): Boolean
   //  def intersect(d:Domain):Domain
+  def adjust(v:Int):Int = (v max this.min) min this.max
   def values:Iterable[Int]
   def randomValue():Int
   def restrict(d:Domain):Domain = intersect(d)

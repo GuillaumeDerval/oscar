@@ -24,7 +24,7 @@ import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.objective.Objective.objToFun
 import oscar.cbls.core.search.{JumpNeighborhood, JumpNeighborhoodParam, Neighborhood}
 import oscar.cbls.lib.search.LinearSelectors
-import oscar.cbls.lib.search.combinators.Atomic
+import oscar.cbls.lib.search.combinators.{Atomic, AtomicJump}
 
 import scala.language.postfixOps
 
@@ -282,7 +282,7 @@ object SchedulingStrategies {
 
     val searchStep = (relax untilImprovement (p.makeSpan, nbRelax, maxIterationsForFlatten)) exhaust (flatten maxMoves 1)
 
-    (flatten sequence Atomic(searchStep) maxMoves stable withoutImprovementOver objective
+    (flatten sequence AtomicJump(searchStep) maxMoves stable withoutImprovementOver objective
       saveBest objective whenEmpty p.worseOvershotResource)
   }
 

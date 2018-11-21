@@ -38,6 +38,24 @@ abstract class LinearOptimizer{
   def carryOnTo(b:LinearOptimizer) = new CarryOnTo(this,b)
 
   def andThen(b:LinearOptimizer) = new AndThen(this,b)
+
+  def restrictRange(minValue:Int,maxValue:Int) = new RestrictRange(minValue,maxValue, this)
+
+  def restrictDelta(delta:Int) = new RestrictDelta(delta,this)
+}
+
+
+class RestrictRange(minValue:Int,maxValue:Int, origin:LinearOptimizer) extends LinearOptimizer{
+  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): (Int, Int) = {
+    origin.search(startPos, startObj, (minValue max this.minValue) min startPos, (maxValue min this.maxValue) max startPos, obj)
+  }
+}
+
+class RestrictDelta(delta:Int, origin:LinearOptimizer) extends LinearOptimizer{
+  require(delta >0)
+  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): (Int, Int) = {
+    origin.search(startPos, startObj, (minValue max (startPos-delta)) min startPos, (maxValue min (startPos + delta)) max startPos, obj)
+  }
 }
 
 class CarryOnTo(a:LinearOptimizer, b:LinearOptimizer) extends LinearOptimizer{
@@ -72,7 +90,6 @@ case class AndThen(a:LinearOptimizer, b:LinearOptimizer) extends LinearOptimizer
   override def toString: String = "(" + a + " andThen " + b + ")"
 }
 
-
 class Exhaustive(step:Int = 1,skipInitial:Boolean = false, maxIt: Int) extends LinearOptimizer{
   override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): (Int, Int) = {
 
@@ -101,7 +118,7 @@ class NarrowingStepSlide(dividingRatio:Int, maxIt: Int)  extends LinearOptimizer
   override def toString: String = "NarrowingStepSlide(dividingRatio:" + dividingRatio + ")"
 
   override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): (Int, Int) = {
-    new SlideVaryingSteps(generateSteps(minValue.abs max maxValue.abs).reverse, false,maxIt).
+    new SlideVaryingSteps(generateSteps((maxValue - minValue)/dividingRatio).reverse, false,maxIt).
           search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int)
   }
 

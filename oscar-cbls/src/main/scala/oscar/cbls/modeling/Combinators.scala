@@ -226,7 +226,7 @@ trait CompositionCombinators{
    *
    * @param a
    */
-  def atomic(a: Neighborhood, bound: Int = Int.MaxValue) = Atomic(a, bound)
+  def atomic(a: Neighborhood, bound: Int = Int.MaxValue) = Atomic(a, _ > bound)
 }
 
 
