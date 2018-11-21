@@ -16,8 +16,8 @@ package oscar.cbls.business.geometry
   ******************************************************************************/
 
 import org.locationtech.jts.geom.Geometry
-import oscar.cbls.core.computation._
-import oscar.cbls.core.constraint.Constraint
+import oscar.cbls.core.computation.{Store, _}
+import oscar.cbls.core.constraint.{Constraint, ConstraintSystem}
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
 import oscar.cbls.{IntValue, Store, Value}
 
@@ -124,7 +124,28 @@ case class IsWithin(inner:AtomicValue[Geometry], outer:AtomicValue[Geometry])
 }
 
 
-case class NoOverlap(shapes:Array[AtomicValue[Geometry]])
+object NoOverlap{
+
+  def apply(store:Store,shapes:Array[AtomicValue[Geometry]]):ConstraintSystem = {
+
+    val c = new ConstraintSystem(store)
+
+    for(i <- shapes.indices){
+      for(j <- 0 until i){
+        c.add(NoOverlapN2(Array(shapes(i),shapes(j))))
+      }
+    }
+    for(shape <- shapes) {
+      c.violation(shape)
+    }
+
+    c.close()
+    c
+  }
+
+}
+
+case class NoOverlapN2(shapes:Array[AtomicValue[Geometry]])
   extends Invariant with Constraint with GeometryNotificationTarget{
 
   for(shapeId <- shapes.indices){

@@ -179,7 +179,7 @@ case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Int, idJ:Int, adjust: Boolean
   }
 
   override def toString: String  = {
-    neighborhoodNameToString + "SwapMove(" + i + " swapped with " + j + objToString + ")"
+    neighborhoodNameToString + "SwapMove(" + i + " swapped with " + j + (if(adjust) " with adjust" else "") + objToString + ")"
   }
 
   override def touchedVariables: List[Variable] = List(i,j)
