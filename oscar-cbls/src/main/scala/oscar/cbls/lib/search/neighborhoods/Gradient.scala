@@ -15,8 +15,17 @@
 
 package oscar.cbls.lib.search.neighborhoods
 
-import oscar.cbls.core.computation.CBLSIntVar
-import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
+import oscar.cbls.core.computation.{CBLSIntVar, Variable}
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, Move}
+
+import scala.collection.immutable.SortedSet
+
+case class GradientComponent(variable:CBLSIntVar,
+                             initiValue:Int,
+                             indice:Int,
+                             slope:Double,
+                             maxStep:Int,
+                             minStep:Int)
 
 case class GradientDescent(vars:Array[CBLSIntVar],
                            name:String = "GradientDescent",
@@ -26,7 +35,10 @@ case class GradientDescent(vars:Array[CBLSIntVar],
                            domain:(CBLSIntVar,Int) => Iterable[Int] = (v,i) => v.domain,
                            hotRestart:Boolean = true,
                            linearSearch:LinearOptimizer)
-  extends EasyNeighborhoodMultiLevel[AssignMove](name) {
+  extends EasyNeighborhoodMultiLevel[GradientMove](name) {
+
+  var gradientDefinition:List[GradientComponent] = List.empty
+  var currentStep:Int = 0
 
   /**
     * This is the method you must implement and that performs the search of your neighborhood.
@@ -35,15 +47,86 @@ case class GradientDescent(vars:Array[CBLSIntVar],
     */
   override def exploreNeighborhood(initialObj: Int): Unit = {
     //step1: interroger le gradient dans toutes les directions de selectedVars
+    gradientDefinition = List.empty
+    var selectedVarSet:SortedSet[Int] = SortedSet.empty
+    currentStep  = 0
 
-    var varaibleAndDerivative:List[(CBLSIntVar,Int,Int)] = List.empty
+    val selectVarsIt = selectVars.iterator
+    while(selectedVarSet.size < maxNbVars && selectVarsIt.hasNext){
+      val currentVarIndice = selectVarsIt.next
+      if(! (selectedVarSet contains currentVarIndice)){
+        val currentVar = vars(currentVarIndice)
+        val deltaForVar = variableIndiceToDeltaForGradientDefinition(currentVarIndice)
 
+        val oldVal = currentVar.newValue
+
+        val slope:Double = {
+          //valueAbove
+          val valueAbove = oldVal + deltaForVar
+          if (valueAbove >= currentVar.max) {
+            //no point of increasing it; thy decreasing?
+            val valueBelow = (oldVal - deltaForVar) max currentVar.min
+            val objBelow = obj.assignVal(currentVar, valueBelow)
+
+            (valueBelow - oldVal) / (objBelow - initialObj)
+          } else {
+            val objAbove = obj.assignVal(currentVar, valueAbove)
+
+            (valueAbove - oldVal) / (objAbove - initialObj)
+          }
+        }
+
+        val bound1 = ((currentVar.max - oldVal) / slope).toInt
+        val bound2 = ((currentVar.min - oldVal) / slope).toInt
+
+        val (minStep,maxStep) = if (bound1 < bound2) (bound1,bound2) else (bound2,bound1)
+
+        if(slope != 0){
+          gradientDefinition =
+            GradientComponent(
+              currentVar,
+              oldVal,
+              currentVarIndice,
+              slope,
+              minStep,
+              maxStep) :: gradientDefinition
+          selectedVarSet += currentVarIndice
+        }
+      }
+    }
+
+    val minStep = gradientDefinition.map(_.minStep).max
+    val maxStep = gradientDefinition.map(_.maxStep).min
+
+    def evaluateStep(step:Int):Int = {
+      this.currentStep = step
+      obj.assignVal(gradientDefinition.map(component => (component.variable,component.initiValue + (component.slope * step).toInt)))
+    }
 
     //step2: newton-raphson pour trouver le pas
+    val (bestStep,newObj) = linearSearch.search(0,initialObj,minStep,maxStep,evaluateStep)
+
+    evaluateCurrentMoveObjTrueIfSomethingFound(newObj: Int)
   }
 
+  override def instantiateCurrentMove(newObj: Int): GradientMove = {
+    GradientMove(gradientDefinition, currentStep, newObj, name)
+  }
+}
 
+case class GradientMove(gradientDefinition : List[GradientComponent], step:Int, override val objAfter:Int, override val neighborhoodName:String = null)
+  extends Move(objAfter, neighborhoodName){
 
-  override def instantiateCurrentMove(newObj: Int): AssignMove = ???
+  override def commit() {
+    for(component <- gradientDefinition) {
+      component.variable := component.initiValue + (component.slope * step).toInt
+    }
+  }
+
+  override def toString: String = {
+    neighborhoodNameToString + "GradientMove(" + gradientDefinition.map(component => component.variable + ":=" + (component.initiValue + (component.slope * step).toInt)).mkString(";")  + objToString + ")"
+  }
+
+  override def touchedVariables: List[Variable] = gradientDefinition.map(_.variable)
 }
 
