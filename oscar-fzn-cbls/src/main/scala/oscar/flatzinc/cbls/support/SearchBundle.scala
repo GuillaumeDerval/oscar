@@ -163,6 +163,7 @@ class SearchControl(val m: FZCBLSModel, val objLB:Int, val MaxTimeMilli: Int,val
   val searchVariables = m.neighbourhoods.foldLeft(Set.empty[CBLSIntVar])((acc: Set[CBLSIntVar], x: Neighbourhood) => acc ++ x.getVariables().filterNot(_.isInstanceOf[StoredCBLSIntConst])).toArray
 
   var bestSolution = Array.empty[Int]
+  var foundSolution = false
 
   var lastBestKnownObjective = Int.MaxValue
   var bestKnownObjective = Int.MaxValue
@@ -196,6 +197,7 @@ class SearchControl(val m: FZCBLSModel, val objLB:Int, val MaxTimeMilli: Int,val
       bestKnownObjective = m.objective.getObjectiveValue();
       timeOfBestObjective = m.getWatch()
       saveBestSolution()
+      foundSolution = true
       m.handleSolution();
       if(bestKnownObjective==objLB && !stopOnSat)println("==========")//added !stopOnSat to not print it on Satisfaction problems.
       if(m.objective.getObjectiveValue() != bestKnownObjective){
@@ -222,6 +224,10 @@ class SearchControl(val m: FZCBLSModel, val objLB:Int, val MaxTimeMilli: Int,val
     for( i <- bestSolution.indices){
       searchVariables(i) := bestSolution(i)
     }
+  }
+
+  def forcePrintCurrentAssignment = {
+    m.printCurrentAssignment
   }
 
 }

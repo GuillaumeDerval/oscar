@@ -37,6 +37,7 @@ class Options(name: String, cbls: Boolean, args: Array[String]) {
   var help = false
   var freeSearch = false
   var useCP = true
+  var quietMode = false
   
   private val opts = Map.empty[String,String]
   def is(s: String): Boolean = {
@@ -87,9 +88,11 @@ class Options(name: String, cbls: Boolean, args: Array[String]) {
       }else if (oneOf("-vl", "--verbose-level")) {
         verbose = args(i+1).toInt
         i += 1
-      } else if (args(i).startsWith("-X")){
+      } else if (args(i).startsWith("-X")) {
         val parts = args(i).substring(2).split("=", 2)
-        opts(parts(0)) = if(parts.length==1) "true" else parts(1)
+        opts(parts(0)) = if (parts.length == 1) "true" else parts(1)
+      } else if (oneOf("-q", "--quiet")) {
+        quietMode = true
       } else {
         println(progName+": not recognized option " + args(i))
         help = true;
@@ -111,6 +114,8 @@ class Options(name: String, cbls: Boolean, args: Array[String]) {
         "    -s, --statistics\n" +
         "    -n <value>, --num-solutions <value>\n" +
         "        <value> - limit on solution number.\n"+
+        "    -q, --quiet\n" +
+        "        Print less solutions to output\n" +
         "    --useCp <bool>\n" +
         "        Use CP solver to improve variable bounds.\n" +
         "        Default: true.\n" +

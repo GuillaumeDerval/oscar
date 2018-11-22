@@ -35,6 +35,7 @@ import oscar.flatzinc.cbls.support.Helpers._
 
 class FZCBLSBuilder extends LinearSelectors with StopWatch {
 
+  var finalSearchControl:Option[SearchControl] = None
 
   def solve(opts: Options) {
     startWatch()
@@ -97,7 +98,7 @@ class FZCBLSBuilder extends LinearSelectors with StopWatch {
     log("Sorted " + invariants.length + " Invariants")
 
 
-    val cblsmodel = new FZCBLSModel(fzModel, log, () => getWatch) //This step creates all variables!
+    val cblsmodel = new FZCBLSModel(fzModel, log, () => getWatch, opts) //This step creates all variables!
 
     if (useCP) cblsmodel.useCPsolver(cpmodel)
     log("Created Model (Variables and Objective)")
@@ -215,6 +216,9 @@ class FZCBLSBuilder extends LinearSelectors with StopWatch {
     cblsmodel.neighbourhoods.foreach(_.reset())
 
     var sc:SearchControl = finalRun._1
+    // This is the Search control that will be used to print the last solution when in quiet mode.
+    finalSearchControl = Some(sc)
+
     var bestKnownObjective = Int.MaxValue
     if (opts.is("no-run")) {
       log("Not running the search...")
@@ -267,7 +271,7 @@ class FZCBLSBuilder extends LinearSelectors with StopWatch {
         println("% {" + "\"time\": " + getWatch + ",\"nbMoves\": " + finalRun._2.getNumIterations() + ", \"obj\": " + bestSolution+ ", \"timeOfBest\": " + sc.timeOfBestObjective+ "}")
       }
     }
-    System.exit(0)
+    //System.exit(0)
   }
 
   private def createSearchProcedure(timeout: Int, useCP: Boolean, log: Log,

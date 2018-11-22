@@ -25,7 +25,22 @@ object FznOscarCbls extends FznOscarMain {
   withCheck{
     val opts = options("fzn-oscar-cbls",cbls=true)
     try {
-      val solutions = new FZCBLSBuilder().solve(opts)
+      val builder = new FZCBLSBuilder()
+
+      if(opts.quietMode){
+        // Add shutdown hook for printing the best solution upon exiting.
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+          override def run() {
+            if(builder.finalSearchControl.isDefined &&
+              builder.finalSearchControl.get.foundSolution){
+              builder.finalSearchControl.get.restoreBestSolution()
+              builder.finalSearchControl.get.forcePrintCurrentAssignment
+            }
+          }
+        })
+      }
+      builder.solve(opts)
+      println("% Done")
     }catch{
       case e: NoSolutionException => {
         System.out.println("=====UNSATISFIABLE=====")

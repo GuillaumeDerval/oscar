@@ -22,7 +22,7 @@ import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.{Objective => CBLSObjective}
 import oscar.cbls.lib.constraint.GE
-import oscar.flatzinc.Log
+import oscar.flatzinc.{Log, Options}
 import oscar.flatzinc.cbls.support._
 import oscar.flatzinc.cp.FZCPModel
 import oscar.flatzinc.model.{BooleanVariable, Objective, Variable, _}
@@ -32,7 +32,7 @@ import scala.collection.mutable.{Map => MMap}
 import scala.util.Random
 
 
-class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long) {
+class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long, opts:Options) {
 
 
 
@@ -215,9 +215,12 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
 
     log("Found solution with objective: " + objective.getObjectiveValue())
     if(objective.getObjectiveValue() < bestKnownObjective) {
-      println("% time from start: "+getWatch())
+
       bestKnownObjective = objective.getObjectiveValue()
-      printCurrentAssignment
+      if(!opts.quietMode) {
+        println("% time from start: "+getWatch())
+        printCurrentAssignment
+      }
     }
     if(useCP && fzModel.search.obj != Objective.SATISFY){
       log("Calling the CP solver")
