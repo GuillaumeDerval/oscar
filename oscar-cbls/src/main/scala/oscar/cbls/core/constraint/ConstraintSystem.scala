@@ -184,7 +184,9 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
           //already registered
           CPStoredRecord.Violation
         }
-      case _ => 0
+      case _ =>
+        throw new Error("cannot provide violation for " + v)
+        0
     }
   }
 

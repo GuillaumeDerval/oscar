@@ -30,9 +30,13 @@ class Translation(store:Store,x:IntValue,y:IntValue)
     initialValue = AffineTransformation.translationInstance(x.value.toDouble,y.value.toDouble))
     with IntNotificationTarget {
 
+  setName("Translation")
+
   this.registerStaticAndDynamicDependency(x)
   this.registerStaticAndDynamicDependency(y)
   finishInitialization(store)
+
+  override def toString: String = "Translation"
 
   override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
     this.scheduleForPropagation()
@@ -49,6 +53,8 @@ class Apply(store:Store,a:AtomicValue[AffineTransformation],b:AtomicValue[Geomet
     initialValue=a.value.transform(b.value))
     with GeometryNotificationTarget
     with AffineTransformNotificationTarget{
+
+  setName(a + "(" + b + ")")
 
   this.registerStaticAndDynamicDependency(a)
   this.registerStaticAndDynamicDependency(b)

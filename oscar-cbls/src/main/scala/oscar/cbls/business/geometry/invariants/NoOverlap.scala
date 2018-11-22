@@ -1,12 +1,11 @@
 package oscar.cbls.business.geometry.invariants
 
 import org.locationtech.jts.geom.Geometry
-import oscar.cbls.{IntValue, Store, Value}
-import oscar.cbls.business.geometry.old.OverlapDetection.{OverlapError, checkOverlapAndInsertNewShapeIntoList}
-import oscar.cbls.business.geometry.old.Shape
+import oscar.cbls.business.geometry.GeometryNotificationTarget
 import oscar.cbls.core.computation.{AtomicValue, CBLSIntVar, ChangingAtomicValue, Invariant}
 import oscar.cbls.core.constraint.{Constraint, ConstraintSystem}
 import oscar.cbls.core.propagation.Checker
+import oscar.cbls.{IntValue, Store, Value}
 
 object NoOverlap{
 
@@ -19,14 +18,16 @@ object NoOverlap{
         c.add(NoOverlapN2(Array(shapes(i),shapes(j))))
       }
     }
+
+
     for(shape <- shapes) {
       c.violation(shape)
+      c.registerConstrainedVariable(shape)
     }
 
     c.close()
     c
   }
-
 }
 
 case class NoOverlapN2(shapes:Array[AtomicValue[Geometry]])
@@ -91,7 +92,7 @@ case class NoOverlapN2(shapes:Array[AtomicValue[Geometry]])
   }
 }
 
-
+/*
 case class NoOverlapSweep(shapes:Array[AtomicValue[Geometry]])
   extends Invariant with Constraint with GeometryNotificationTarget{
 
@@ -159,3 +160,6 @@ case class NoOverlapSweep(shapes:Array[AtomicValue[Geometry]])
     "NoOverlap(\n\t" + shapes.indices.map(i => shapeViolation(i)).mkString("\n\t") + "\n)"
   }
 }
+*/
+
+

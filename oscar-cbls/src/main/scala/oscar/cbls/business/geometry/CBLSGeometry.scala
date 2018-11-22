@@ -73,8 +73,10 @@ trait GeometryNotificationTarget{
   def notifyGeometryChange(a:ChangingAtomicValue[Geometry],id:Int,oldVal:Geometry,newVal:Geometry)
 }
 
-class CBLSGeometryConst(store:Store, override val value:Geometry)
+class CBLSGeometryConst(store:Store, override val value:Geometry, givenName:String = "")
   extends CBLSAtomicConst[Geometry](value){
+  override def name = if (givenName == null) value.toString else givenName
+  override def toString:String = if (givenName == null) value.toString else givenName
 }
 
 class CBLSGeometryInvariant(store:Store,

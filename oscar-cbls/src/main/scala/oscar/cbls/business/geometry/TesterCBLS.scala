@@ -5,6 +5,7 @@ import java.awt.Color
 import org.locationtech.jts.geom.{Coordinate, Geometry}
 import oscar.cbls.business.geometry
 import oscar.cbls.business.geometry.invariants._
+import oscar.cbls.business.geometry.visu.GeometryDrawing
 import oscar.cbls.core.computation.AtomicValue
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Profile}
@@ -36,14 +37,14 @@ object TesterCBLS extends App{
   val flattenedCoordArray:Array[CBLSIntVar] = coordArray.map(xy => List(xy._1,xy._2)).flatten.toArray
 
   val placedCirles = Array.tabulate(nbCircle){i =>
-    new Apply(store,new Translation(store:Store,coordArray(i)._1,coordArray(i)._2),new CBLSGeometryConst(store,circleArray(i))).setName("placedCircle" + i)
+    new Apply(store,new Translation(store:Store,coordArray(i)._1,coordArray(i)._2),new CBLSGeometryConst(store,circleArray(i),"circle_" + i))//
   }
 
   val overlapConstraint = NoOverlap(store,placedCirles.asInstanceOf[Array[AtomicValue[Geometry]]])
 
   val c = new ConstraintSystem(store)
   c.add(overlapConstraint)
-  c.violations(placedCirles) //to ensure it is generated
+  val circleViolation = c.violations(placedCirles) //to ensure it is generated
   c.close()
 
 
@@ -94,27 +95,27 @@ object TesterCBLS extends App{
   def swapY(circle1:Int,circle2:Int) = SwapsNeighborhood(Array(coordArray(circle1)._2,coordArray(circle2)._2), symmetryCanBeBrokenOnIndices = false, adjustIfNotInProperDomain = true, name ="swapYCoordinates")
 
   def swapAndSlide = (swapX dynAndThen(swapMove => {
-    swapY(swapMove.idI,swapMove.idJ) andThen Atomic(BestSlopeFirst(List(smallSlideX(swapMove.idI),smallSlideY(swapMove.idI))),_>100)})) name "SwapAndGlide"
+    swapY(swapMove.idI,swapMove.idJ) andThen Atomic(BestSlopeFirst(List(smallSlideX(swapMove.idI),smallSlideY(swapMove.idI))),_>100)})) name "SwapAndAdjustOne"
 
   def moveOneCircleXAndThenY = moveXNumeric dynAndThen (assignMode => smallSlideY(assignMode.id)) name "moveOneCircleXAndThenY"
   def moveOneCircleYAndThenX = moveYNumeric dynAndThen (assignMode => smallSlideX(assignMode.id)) name "moveOneCircleYAndThenX"
 
   def moveOneCoordClassic = AssignNeighborhood(flattenedCoordArray,"moveByOneCoord")  //this one is awfully slow!!!
 
-  val displayDelay:Long = 1000.toLong * 1000 * 1000 * 1 //1 seconds
+  val displayDelay:Long = 1000.toLong * 1000 * 100 //.1 seconds
   var lastDisplay = System.nanoTime()
-  val search = BestSlopeFirst(
+  val search = Profile(BestSlopeFirst(
     List(
       Profile(moveOneCoordNumeric),
       Profile(moveOneCircleXAndThenY),
       Profile(swapAndSlide),
       Profile(moveOneCircleYAndThenX)),
-    refresh=nbCircle).afterMove{
+    refresh=nbCircle)).afterMove{
     if(System.nanoTime() > lastDisplay + displayDelay) {
       updateDisplay()
       lastDisplay = System.nanoTime()
     }
-  }
+  } showObjectiveFunction(obj)
 
 
   updateDisplay() //before start
@@ -125,4 +126,5 @@ object TesterCBLS extends App{
   updateDisplay() //after finish
   println("finished search" + c)
   println(search.profilingStatistics)
+  println("\t" + circleViolation.mkString("\n\t"))
 }

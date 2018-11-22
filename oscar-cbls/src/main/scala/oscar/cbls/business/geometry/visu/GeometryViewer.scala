@@ -1,4 +1,4 @@
-package oscar.cbls.business.geometry
+package oscar.cbls.business.geometry.visu
 
 import java.awt.geom.Rectangle2D
 import java.awt.{Color, Shape}

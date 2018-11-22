@@ -109,3 +109,22 @@ class DistanceBetweenCentroids(store:Store,pointA:AtomicValue[Geometry],pointB:A
   }
 }
 
+class DistanceBetweenShapes(store:Store,pointA:AtomicValue[Geometry],pointB:AtomicValue[Geometry])
+  extends IntInvariant(
+    initialValue = pointA.value.distance(pointB.value).toInt,
+    initialDomain = 0 to Int.MaxValue)
+    with GeometryNotificationTarget{
+
+  this.registerStaticAndDynamicDependency(pointA)
+  this.registerStaticAndDynamicDependency(pointB)
+  finishInitialization(store)
+
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+    this.scheduleForPropagation()
+  }
+
+  override def performInvariantPropagation(): Unit = {
+    this := pointA.value.distance(pointB.value).toInt
+  }
+}
+

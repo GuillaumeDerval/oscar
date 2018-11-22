@@ -4,7 +4,7 @@ import org.locationtech.jts.geom._
 import org.locationtech.jts.geom.util.AffineTransformation
 import org.locationtech.jts.io.WKTReader
 import oscar.cbls.business.geometry
-import oscar.cbls.business.geometry.GeometryDrawing
+import oscar.cbls.business.geometry.visu.GeometryDrawing
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 
 object TesterBasic extends App{

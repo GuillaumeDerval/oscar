@@ -285,3 +285,4 @@ case class Atomic(a: Neighborhood, shouldStop:Int => Boolean) extends Neighborho
     }
   }
 }
+

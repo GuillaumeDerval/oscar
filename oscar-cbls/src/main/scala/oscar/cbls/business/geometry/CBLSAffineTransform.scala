@@ -81,8 +81,11 @@ trait AffineTransformNotificationTarget{
 }
 
 
-class CBLSAffineTransformConst(store:Store, override val value:AffineTransformation)
+class CBLSAffineTransformConst(store:Store, override val value:AffineTransformation, givenName:String = null)
   extends CBLSAtomicConst[AffineTransformation](value){
+
+  override def name = if (givenName == null) value.toString else givenName
+  override def toString:String = if (givenName == null) value.toString else givenName
 }
 
 class CBLSAffineTransformInvariant(initialValue:AffineTransformation)
