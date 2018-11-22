@@ -21,6 +21,7 @@ object OverlapDetection {
     var shapesSortedByMinX = shapes.sortBy(_.minX)
     var openShapesSortedByClosingX: List[Shape] = List.empty
 
+    
     while (shapesSortedByMinX.nonEmpty) {
       val nextOpeningShape = shapesSortedByMinX.head
       val nextClosingShapeOpt: Option[Shape] = openShapesSortedByClosingX.headOption
