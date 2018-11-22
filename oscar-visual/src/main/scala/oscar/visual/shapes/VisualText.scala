@@ -33,7 +33,7 @@ class VisualText(d: VisualDrawing, private var x: Double, private var y: Double,
     this(d, x, y, t, centered, new Rectangle2D.Double(x, y, 1, 1))
   }
 
-  var lines = text.trim.split("\n")
+  var lines = t.trim.split("\n")
   def nLines = lines.length
 
   val fm = d.getFontMetrics(d.getFont)
@@ -57,9 +57,9 @@ class VisualText(d: VisualDrawing, private var x: Double, private var y: Double,
     shape.setRect(x, y, shape.getWidth, shape.getHeight)
     drawing.repaint()
   }
-  
+
   def text = t
-  
+
   def text_=(t: String) {
     this.t = t
     lines = t.trim.split("\n")
