@@ -15,6 +15,7 @@
 
 package oscar.cbls.lib.search.neighborhoods
 
+import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.core.computation.{CBLSIntVar, Variable}
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, Move}
 
@@ -39,6 +40,8 @@ case class GradientDescent(vars:Array[CBLSIntVar],
   var gradientDefinition:List[GradientComponent] = List.empty
   var currentStep:Int = 0
 
+  var startIndiceForHotRestart:Int = 0
+
   /**
     * This is the method you must implement and that performs the search of your neighborhood.
     * every time you explore a neighbor, you must perform the calls to notifyMoveExplored or moveRequested(newObj) && submitFoundMove(myMove)){
@@ -50,9 +53,15 @@ case class GradientDescent(vars:Array[CBLSIntVar],
     var selectedVarSet:SortedSet[Int] = SortedSet.empty
     currentStep  = 0
 
-    val selectVarsIt = selectVars.iterator
+    val selectVarsWithHotRestart =
+      if (hotRestart) HotRestart(selectVars, startIndiceForHotRestart)
+      else selectVars
+
+    val selectVarsIt = selectVarsWithHotRestart.iterator
+
     while(selectedVarSet.size < maxNbVars && selectVarsIt.hasNext){
       val currentVarIndice = selectVarsIt.next
+      startIndiceForHotRestart = currentVarIndice
       if(! (selectedVarSet contains currentVarIndice)){
         val currentVar = vars(currentVarIndice)
         val deltaForVar = variableIndiceToDeltaForGradientDefinition(currentVarIndice)
@@ -75,12 +84,15 @@ case class GradientDescent(vars:Array[CBLSIntVar],
           }
         }
 
-        val bound1 = ((currentVar.max - oldVal) / slope).toInt
-        val bound2 = ((currentVar.min - oldVal) / slope).toInt
+        if(slope != 0 &&
+          (slope > 0 || oldVal - deltaForVar > currentVar.min)
+          && (slope < 0 || oldVal + deltaForVar < currentVar.max)){
 
-        val (minStep,maxStep) = if (bound1 < bound2) (bound1,bound2) else (bound2,bound1)
+          val bound1 = ((currentVar.max - oldVal) / slope).toInt
+          val bound2 = ((currentVar.min - oldVal) / slope).toInt
 
-        if(slope != 0){
+          val (minStep,maxStep) = if (bound1 < bound2) (bound1,bound2) else (bound2,bound1)
+
           gradientDefinition =
             GradientComponent(
               currentVar,
@@ -94,6 +106,12 @@ case class GradientDescent(vars:Array[CBLSIntVar],
       }
     }
 
+    if(selectVarsIt.hasNext){
+      startIndiceForHotRestart = selectVarsIt.next
+    }else{
+      startIndiceForHotRestart = startIndiceForHotRestart+1
+    }
+
     val minStep = gradientDefinition.map(_.minStep).max
     val maxStep = gradientDefinition.map(_.maxStep).min
 
@@ -102,10 +120,10 @@ case class GradientDescent(vars:Array[CBLSIntVar],
       obj.assignVal(gradientDefinition.map(component => (component.variable,component.initiValue + (component.slope * step).toInt)))
     }
 
-    //step2: find proper step
+    //step2: find proper step with numeric method considered
     val (bestStep,newObj) = linearSearch.search(0,initialObj,minStep,maxStep,evaluateStep)
 
-    evaluateCurrentMoveObjTrueIfSomethingFound(newObj: Int)
+    evaluateCurrentMoveObjTrueIfSomethingFound(newObj)
   }
 
   override def instantiateCurrentMove(newObj: Int): GradientMove = {
