@@ -8,7 +8,7 @@ import oscar.cbls.business.geometry.invariants._
 import oscar.cbls.business.geometry.visu.GeometryDrawing
 import oscar.cbls.core.computation.AtomicValue
 import oscar.cbls.core.constraint.ConstraintSystem
-import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Profile}
+import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Dyn, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 import oscar.cbls.{CBLSIntVar, Objective, Store}
@@ -72,7 +72,7 @@ object TesterCBLS extends App{
   )
 
   def moveXNumeric = NumericAssignNeighborhood(coordArray.map(_._1),"moveX",
-    domainExplorer = new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
+    domainExplorer = new NarrowingExhaustive(dividingRatio = 10, minStep = 1)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
@@ -82,7 +82,7 @@ object TesterCBLS extends App{
   )
 
   def moveYNumeric = NumericAssignNeighborhood(coordArray.map(_._2),"moveY",
-    domainExplorer = new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
+    domainExplorer = new NarrowingExhaustive(dividingRatio = 10, minStep = 1)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
@@ -109,7 +109,7 @@ object TesterCBLS extends App{
     selectVars = List(0,1),
     variableIndiceToDeltaForGradientDefinition = _ => 5,
     hotRestart = false,
-    linearSearch = new NarrowingStepSlide(dividingRatio = 10, maxIt = 10)) //new Slide(step=20,maxIt=100)) // new NewtonRaphsonMinimize(5,40))
+    linearSearch = new NarrowingStepSlide(dividingRatio = 10, minStep = 1)) //new Slide(step=20,maxIt=100)) // new NewtonRaphsonMinimize(5,40))
 
   def swapAndGradient = (swapX dynAndThen(swapMove => {
     swapY(swapMove.idI,swapMove.idJ) andThen new Atomic(gradientOnOneShape(swapMove.idI),_>10)})) name "SwapAndGradientOne"
