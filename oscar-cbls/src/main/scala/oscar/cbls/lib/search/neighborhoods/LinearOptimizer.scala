@@ -96,20 +96,19 @@ class Exhaustive(step:Int = 1,skipInitial:Boolean = false, maxIt: Int) extends L
   override def toString: String = "Exhaustive(step:" + step + ")"
 }
 
-class NarrowingStepSlide(dividingRatio:Int, maxIt: Int)  extends LinearOptimizer{
+class NarrowingStepSlide(dividingRatio:Int, minStep: Int)  extends LinearOptimizer{
 
   override def toString: String = "NarrowingStepSlide(dividingRatio:" + dividingRatio + ")"
 
   override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): (Int, Int) = {
-    new SlideVaryingSteps(generateSteps(minValue.abs max maxValue.abs).reverse, false,maxIt).
+    new SlideVaryingSteps(generateSteps(minValue.abs max maxValue.abs).reverse, false,Int.MaxValue).
           search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int)
   }
 
   def generateSteps(maxStepSize:Int):List[Int] = {
-    if(maxStepSize < dividingRatio) List(1)
-    else{
-      maxStepSize :: generateSteps(maxStepSize/dividingRatio)
-    }
+    if(maxStepSize < minStep) List.empty
+    else if(maxStepSize < dividingRatio) List(1)
+    else  maxStepSize :: generateSteps(maxStepSize/dividingRatio)
   }
 }
 
