@@ -95,10 +95,10 @@ object TesterCBLS extends App{
   def swapY(circle1:Int,circle2:Int) = SwapsNeighborhood(Array(coordArray(circle1)._2,coordArray(circle2)._2), symmetryCanBeBrokenOnIndices = false, adjustIfNotInProperDomain = true, name ="swapYCoordinates")
 
   def swapAndSlide = (swapX dynAndThen(swapMove => {
-    swapY(swapMove.idI,swapMove.idJ) andThen Atomic(BestSlopeFirst(List(smallSlideX(swapMove.idI),smallSlideY(swapMove.idI))),_>100)})) name "SwapAndAdjustOne"
+    swapY(swapMove.idI,swapMove.idJ) andThen Atomic(BestSlopeFirst(List(smallSlideX(swapMove.idI),smallSlideY(swapMove.idI))),_>100)})) name "SwapAndSlide"
 
-  def moveOneCircleXAndThenY = moveXNumeric dynAndThen (assignMode => smallSlideY(assignMode.id)) name "moveOneCircleXAndThenY"
-  def moveOneCircleYAndThenX = moveYNumeric dynAndThen (assignMode => smallSlideX(assignMode.id)) name "moveOneCircleYAndThenX"
+  def moveOneCircleXAndThenY = moveXNumeric dynAndThen (assignMode => smallSlideY(assignMode.id)) name "moveXAndThenY"
+  def moveOneCircleYAndThenX = moveYNumeric dynAndThen (assignMode => smallSlideX(assignMode.id)) name "moveYAndThenX"
 
   def moveOneCoordClassic = AssignNeighborhood(flattenedCoordArray,"moveByOneCoord")  //this one is awfully slow!!!
 
@@ -112,7 +112,7 @@ object TesterCBLS extends App{
     linearSearch = new NarrowingStepSlide(dividingRatio = 10, minStep = 1)) //new Slide(step=20,maxIt=100)) // new NewtonRaphsonMinimize(5,40))
 
   def swapAndGradient = (swapX dynAndThen(swapMove => {
-    swapY(swapMove.idI,swapMove.idJ) andThen new Atomic(gradientOnOneShape(swapMove.idI),_>10)})) name "SwapAndGradientOne"
+    swapY(swapMove.idI,swapMove.idJ) andThen new Atomic(gradientOnOneShape(swapMove.idI),_>10)})) name "SwapAndGradient"
 
   val displayDelay:Long = 1000.toLong * 1000 * 100 //.1 seconds
   var lastDisplay = System.nanoTime()
@@ -133,20 +133,20 @@ object TesterCBLS extends App{
       Profile(swapAndSlide),
       Profile(swapAndGradient),
       Profile(moveOneCircleYAndThenX)),
-    refresh=nbCircle)).afterMove{
+    refresh=nbCircle)) onExhaustRestartAfter (RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length/5),maxRestartWithoutImprovement = 4, obj) afterMove {
     if(System.nanoTime() > lastDisplay + displayDelay) {
       updateDisplay()
       lastDisplay = System.nanoTime()
     }
-  } //showObjectiveFunction(obj)
+  } showObjectiveFunction(obj)
 
   updateDisplay() //before start
 
-  search.verbose = 2
+  search.verbose = 1
   search.doAllMoves(obj=obj)
 
   updateDisplay() //after finish
-  println("finished search" + c)
+  //println("finished search" + c)
   println(search.profilingStatistics)
   println("\t" + circleViolation.mkString("\n\t"))
 }
