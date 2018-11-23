@@ -226,7 +226,7 @@ class Exhaust(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a
  * this combinator is reset on reset
  *
  * @param a a neighborhood
- * @param cond a stop criterion
+ * @param cond a stop criterion, which is evaluated before the neighborhood s explored
  * @author renaud.delandtsheer@cetic.be
  */
 case class StopWhen(a: Neighborhood, cond: () => Boolean) extends NeighborhoodCombinator(a) {

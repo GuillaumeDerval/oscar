@@ -25,8 +25,8 @@ case class GradientComponent(variable:CBLSIntVar,
                              initiValue:Int,
                              indice:Int,
                              slope:Double,
-                             maxStep:Int,
-                             minStep:Int)
+                             minStep:Int,
+                             maxStep:Int)
 
 case class GradientDescent(vars:Array[CBLSIntVar],
                            name:String = "GradientDescent",
@@ -66,7 +66,7 @@ case class GradientDescent(vars:Array[CBLSIntVar],
         val currentVar = vars(currentVarIndice)
         val deltaForVar = variableIndiceToDeltaForGradientDefinition(currentVarIndice)
 
-        val oldVal = currentVar.newValue
+        val oldVal = currentVar.value
 
         val slope:Double = {
           //valueAbove
@@ -76,22 +76,37 @@ case class GradientDescent(vars:Array[CBLSIntVar],
             val valueBelow = (oldVal - deltaForVar) max currentVar.min
             val objBelow = obj.assignVal(currentVar, valueBelow)
 
-            (valueBelow - oldVal) / (objBelow - initialObj)
+            (objBelow - initialObj) / (valueBelow - oldVal)
           } else {
             val objAbove = obj.assignVal(currentVar, valueAbove)
 
-            (valueAbove - oldVal) / (objAbove - initialObj)
+            (objAbove - initialObj) / (valueAbove - oldVal)
           }
         }
 
         if(slope != 0 &&
-          (slope > 0 || oldVal - deltaForVar > currentVar.min)
-          && (slope < 0 || oldVal + deltaForVar < currentVar.max)){
+          (slope < 0 || (oldVal - deltaForVar) > currentVar.min)
+          && (slope > 0 || (oldVal + deltaForVar) < currentVar.max)){
 
-          val bound1 = ((currentVar.max - oldVal) / slope).toInt
-          val bound2 = ((currentVar.min - oldVal) / slope).toInt
+          val (minStep,maxStep) = if(slope>0){
+            //minStep =
+            (((currentVar.min - oldVal) * slope).toInt,
+            //maxStep =
+            ((currentVar.max - oldVal) * slope).toInt)
+          }else{
+            //minStep =
+            (((currentVar.max - oldVal) * slope).toInt,
+            //maxStep =
+            ((currentVar.min - oldVal) * slope).toInt)
+          }
 
-          val (minStep,maxStep) = if (bound1 < bound2) (bound1,bound2) else (bound2,bound1)
+          //println("currentVar.max:" + currentVar.max)
+          //println("currentVar.min:" + currentVar.min)
+          //println("oldVal:" + oldVal)
+          //println("slope:" + slope)
+          //println("minStep:" + minStep)
+          //println("maxStep:" + maxStep)
+
 
           gradientDefinition =
             GradientComponent(
@@ -102,6 +117,8 @@ case class GradientDescent(vars:Array[CBLSIntVar],
               minStep,
               maxStep) :: gradientDefinition
           selectedVarSet += currentVarIndice
+        }else{
+          //println("got partial derivative, stuck against domain range")
         }
       }
     }
@@ -112,17 +129,35 @@ case class GradientDescent(vars:Array[CBLSIntVar],
       startIndiceForHotRestart = startIndiceForHotRestart+1
     }
 
+    if(gradientDefinition.isEmpty) {
+      ////println("no gradient found for " + name)
+      return
+    }
+
+    //println("gradient found:{")
+    //println("\t" + gradientDefinition.mkString("\n\t") + "\n}")
+
     val minStep = gradientDefinition.map(_.minStep).max
     val maxStep = gradientDefinition.map(_.maxStep).min
 
-    def evaluateStep(step:Int):Int = {
+    //println("minStep:" + minStep + " maxStep:" + maxStep)
+    require(minStep < maxStep)
+
+
+    def evaluateStep(step: Int): Int = {
       this.currentStep = step
-      obj.assignVal(gradientDefinition.map(component => (component.variable,component.initiValue + (component.slope * step).toInt)))
+      obj.assignVal(gradientDefinition.map(component => (component.variable, component.initiValue + ((step / component.slope).toInt))))
     }
 
     //step2: find proper step with numeric method considered
-    val (bestStep,newObj) = linearSearch.search(0,initialObj,minStep,maxStep,evaluateStep)
+    val (bestStep, newObj) = linearSearch.search(0, initialObj, minStep, maxStep, evaluateStep)
 
+
+    for (component <- gradientDefinition){
+      component.variable := component.initiValue //to be sure that we do not mess up the model
+    }
+
+    this.currentStep = bestStep //because this is now that the move is created, possibly
     evaluateCurrentMoveObjTrueIfSomethingFound(newObj)
   }
 
@@ -136,7 +171,7 @@ case class GradientMove(gradientDefinition : List[GradientComponent], step:Int, 
 
   override def commit() {
     for(component <- gradientDefinition) {
-      component.variable := component.initiValue + (component.slope * step).toInt
+      component.variable := component.initiValue + ((step / component.slope).toInt)
     }
   }
 

@@ -488,6 +488,13 @@ class NeighborhoodOps(n:Neighborhood){
   def stopWhen(cond: () => Boolean) = StopWhen(n, cond)
 
   /**
+    * no move if cond evaluates to false, otherwise ,it forwards the search request to a
+    *
+    * @param cond a stop criterion
+    */
+  def stopWhenObj(obj:Objective, cond: Int => Boolean) = StopWhen(n, () => cond(obj.value))
+
+  /**
    * if it is false,it returns NoMovesFound without exploring the neighborhood at all.
    *
    * @param cond

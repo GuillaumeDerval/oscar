@@ -1,5 +1,6 @@
 package oscar.cbls.business.geometry.old
 
+/*
 object OverlapDetection {
 
   def isOverlapNaive(shapes:List[Shape]): Boolean = {
@@ -64,3 +65,4 @@ object OverlapDetection {
     }
   }
 }
+*/

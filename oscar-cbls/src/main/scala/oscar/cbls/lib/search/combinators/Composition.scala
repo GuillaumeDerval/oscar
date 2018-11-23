@@ -267,11 +267,12 @@ case class AtomicJump(a: Neighborhood, bound: Int = Int.MaxValue) extends Neighb
   *
   * @param a
   */
-case class Atomic(a: Neighborhood, shouldStop:Int => Boolean) extends NeighborhoodCombinator(a) {
+case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAcceptable:Boolean = false) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
 
     val startSolution = obj.model.solution(true)
 
+    a.stopWhen()
     val allMoves = a.getAllMoves(shouldStop, obj, acceptanceCriterion)
 
     //restore the initial solution
@@ -285,4 +286,3 @@ case class Atomic(a: Neighborhood, shouldStop:Int => Boolean) extends Neighborho
     }
   }
 }
-

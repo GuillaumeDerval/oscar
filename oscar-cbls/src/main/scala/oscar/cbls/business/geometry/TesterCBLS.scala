@@ -102,21 +102,43 @@ object TesterCBLS extends App{
 
   def moveOneCoordClassic = AssignNeighborhood(flattenedCoordArray,"moveByOneCoord")  //this one is awfully slow!!!
 
+  def gradientOnOneShape(shapeID:Int) = new GradientDescent(
+    vars = Array(coordArray(shapeID)._1,coordArray(shapeID)._2),
+    name= "GradientMove(" + shapeID + ")",
+    maxNbVars = 2,
+    selectVars = List(0,1),
+    variableIndiceToDeltaForGradientDefinition = _ => 5,
+    hotRestart = false,
+    linearSearch = new NarrowingStepSlide(dividingRatio = 10, maxIt = 10)) //new Slide(step=20,maxIt=100)) // new NewtonRaphsonMinimize(5,40))
+
+  def swapAndGradient = (swapX dynAndThen(swapMove => {
+    swapY(swapMove.idI,swapMove.idJ) andThen new Atomic(gradientOnOneShape(swapMove.idI),_>10)})) name "SwapAndGradientOne"
+
   val displayDelay:Long = 1000.toLong * 1000 * 100 //.1 seconds
   var lastDisplay = System.nanoTime()
-  val search = Profile(BestSlopeFirst(
+  val search = Profile(BestSlopeFirst( //TODO: this is not adapted for single shot neighborhoods such as gradient
     List(
+      Profile(gradientOnOneShape(0)),  //TODO: try gradient on multiple shapes at the same time.
+      Profile(gradientOnOneShape(1)),
+      Profile(gradientOnOneShape(2)),
+      Profile(gradientOnOneShape(3)),
+      Profile(gradientOnOneShape(4)),
+      Profile(gradientOnOneShape(5)),
+      Profile(gradientOnOneShape(6)),
+      Profile(gradientOnOneShape(7)),
+      Profile(gradientOnOneShape(8)),
+      Profile(gradientOnOneShape(9)),
       Profile(moveOneCoordNumeric),
       Profile(moveOneCircleXAndThenY),
       Profile(swapAndSlide),
+      Profile(swapAndGradient),
       Profile(moveOneCircleYAndThenX)),
     refresh=nbCircle)).afterMove{
     if(System.nanoTime() > lastDisplay + displayDelay) {
       updateDisplay()
       lastDisplay = System.nanoTime()
     }
-  } showObjectiveFunction(obj)
-
+  } //showObjectiveFunction(obj)
 
   updateDisplay() //before start
 
