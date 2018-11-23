@@ -116,7 +116,7 @@ object TesterCBLS extends App{
 
   val displayDelay:Long = 1000.toLong * 1000 * 100 //.1 seconds
   var lastDisplay = System.nanoTime()
-  val search = Profile(BestSlopeFirst( //TODO: this is not adapted for single shot neighborhoods such as gradient
+  val search = (Profile(BestSlopeFirst( //TODO: this is not adapted for single shot neighborhoods such as gradient
     List(
       Profile(gradientOnOneShape(0)),  //TODO: try gradient on multiple shapes at the same time.
       Profile(gradientOnOneShape(1)),
@@ -133,12 +133,14 @@ object TesterCBLS extends App{
       Profile(swapAndSlide),
       Profile(swapAndGradient),
       Profile(moveOneCircleYAndThenX)),
-    refresh=nbCircle)) onExhaustRestartAfter (RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length/5),maxRestartWithoutImprovement = 4, obj) afterMove {
-    if(System.nanoTime() > lastDisplay + displayDelay) {
+    refresh=nbCircle))
+    onExhaustRestartAfter (RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length/5, name = "smallRandomize"),maxRestartWithoutImprovement = 2, obj)
+    onExhaustRestartAfter (RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length, name = "fullRandomize"),maxRestartWithoutImprovement = 2, obj)
+    afterMove {if(System.nanoTime() > lastDisplay + displayDelay) {
       updateDisplay()
       lastDisplay = System.nanoTime()
     }
-  } showObjectiveFunction(obj)
+  } showObjectiveFunction(obj))
 
   updateDisplay() //before start
 
