@@ -92,7 +92,15 @@ case class NoOverlapN2(shapes:Array[AtomicValue[Geometry]])
   }
 }
 
+
+
+
+
+
 /*
+
+
+
 case class NoOverlapSweep(shapes:Array[AtomicValue[Geometry]])
   extends Invariant with Constraint with GeometryNotificationTarget{
 

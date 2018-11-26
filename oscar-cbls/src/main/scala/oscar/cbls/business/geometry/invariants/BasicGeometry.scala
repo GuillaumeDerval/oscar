@@ -55,6 +55,26 @@ class Union(store:Store,a:AtomicValue[Geometry],b:AtomicValue[Geometry])
 }
 
 
+
+case class Intersection(store:Store,a:AtomicValue[Geometry],b:AtomicValue[Geometry])
+  extends CBLSGeometryInvariant(store:Store,
+    initialValue=a.value intersection b.value)
+    with GeometryNotificationTarget {
+
+  this.registerStaticAndDynamicDependency(a)
+  this.registerStaticAndDynamicDependency(b)
+  finishInitialization(store)
+
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+    this.scheduleForPropagation()
+  }
+
+  override def performInvariantPropagation(): Unit = {
+    this := a.value intersection b.value
+  }
+}
+
+
 class ConvexHull(store:Store,a:AtomicValue[Geometry])
   extends CBLSGeometryInvariant(store:Store,
     initialValue=a.value.convexHull())
@@ -72,7 +92,7 @@ class ConvexHull(store:Store,a:AtomicValue[Geometry])
   }
 }
 
-class Area(store:Store,a:AtomicValue[Geometry])
+case class Area(store:Store,a:AtomicValue[Geometry])
   extends IntInvariant(
     initialValue = a.value.getArea.toInt,
     initialDomain = 0 to Int.MaxValue)

@@ -79,7 +79,7 @@ class VisualText(d: VisualDrawing, private var x: Double, private var y: Double,
           lines(i),
           x.toInt,
           y.toInt +
-            i * fm.getHeight)
+            i * d.getFontMetrics(d.getFont).getHeight)
       }
     }
     shape.setRect(x, y, fm.stringWidth(text), fm.getHeight)

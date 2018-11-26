@@ -2,13 +2,13 @@ package oscar.cbls.business.geometry
 
 import java.awt.Color
 
-import org.locationtech.jts.geom.{Coordinate, Geometry}
+import org.locationtech.jts.geom.Coordinate
 import oscar.cbls.business.geometry
 import oscar.cbls.business.geometry.invariants._
 import oscar.cbls.business.geometry.visu.GeometryDrawing
-import oscar.cbls.core.computation.AtomicValue
-import oscar.cbls.core.constraint.ConstraintSystem
-import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Dyn, Profile}
+import oscar.cbls.core.computation.IntValue
+import oscar.cbls.lib.invariant.numeric.Sum
+import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 import oscar.cbls.{CBLSIntVar, Objective, Store}
@@ -37,20 +37,30 @@ object TesterCBLS extends App{
   val flattenedCoordArray:Array[CBLSIntVar] = coordArray.map(xy => List(xy._1,xy._2)).flatten.toArray
 
   val placedCirles = Array.tabulate(nbCircle){i =>
-    new Apply(store,new Translation(store:Store,coordArray(i)._1,coordArray(i)._2),new CBLSGeometryConst(store,circleArray(i),"circle_" + i))//
+    new Apply(store,new Translation(store:Store,coordArray(i)._1,coordArray(i)._2),new CBLSGeometryConst(store,circleArray(i),"circle_" + i))
   }
 
-  val overlapConstraint = NoOverlap(store,placedCirles.asInstanceOf[Array[AtomicValue[Geometry]]])
+  val intersectionSurfacesHalfMatrix:Array[Array[IntValue]] =
+    Array.tabulate(nbCircle)(cirleID1 =>
+      Array.tabulate(cirleID1)(cirleID2 =>
+        Area(store,Intersection(store,placedCirles(cirleID1),placedCirles(cirleID2)))))
 
-  val c = new ConstraintSystem(store)
-  c.add(overlapConstraint)
-  val circleViolation = c.violations(placedCirles) //to ensure it is generated
-  c.close()
 
+  val intersectionSurfaceFullMatrix:Array[Array[IntValue]] =
+    Array.tabulate(nbCircle)(cirleID1 =>
+      Array.tabulate(nbCircle)(cirleID2 =>
+        if(cirleID1 == cirleID2) 0
+        else intersectionSurfacesHalfMatrix(cirleID1 max cirleID2)(cirleID1 min cirleID2)))
+
+  val totalIntersectionSurface:IntValue = new Sum(intersectionSurfacesHalfMatrix.flatMap(_.toList))
+
+  val intersectionPerShape:Array[IntValue] = Array.tabulate(nbCircle)(circleID =>
+    Sum(intersectionSurfaceFullMatrix(circleID)).setName("overlap(circle_" + circleID + ")")
+  )
 
   val convexHullOfCircle1And3 = new ConvexHull(store, new Union(store, placedCirles(1),placedCirles(3)))
 
-  val obj:Objective = c.violation
+  val obj:Objective = totalIntersectionSurface
   store.close()
 
   val randomColors = ColorGenerator.generateRandomTransparentColors(nbCircle,175).toList
@@ -59,7 +69,10 @@ object TesterCBLS extends App{
 
   def updateDisplay() {
     val colorsIt = randomColors.toIterator
-    drawing.drawShapes(shapes = (convexHullOfCircle1And3.value,Some(Color.blue),None,"convexHullOfCircle1And3")::(outerFrame,Some(Color.red),None,"")::placedCirles.toList.map(shape => (shape.value, None, Some(colorsIt.next), c.violation(shape).toString)))
+    drawing.drawShapes(shapes = (
+      (convexHullOfCircle1And3.value,Some(Color.blue),None,"convexHullOfCircle1And3")::
+      (outerFrame,Some(Color.red),None,"")::
+        Array.tabulate(nbCircle)(circleID => (placedCirles(circleID).value,None, Some(colorsIt.next), intersectionPerShape(circleID).toString)).toList))
   }
 
   updateDisplay()
@@ -150,5 +163,5 @@ object TesterCBLS extends App{
   updateDisplay() //after finish
   //println("finished search" + c)
   println(search.profilingStatistics)
-  println("\t" + circleViolation.mkString("\n\t"))
+  println("\t" + intersectionPerShape.mkString("\n\t"))
 }
