@@ -34,9 +34,11 @@ object SeqSchedulingWithoutResources {
   def main(args: Array[String]): Unit = {
     // Neighborhood
     //val neighborhood = new SwapActivity(scProblem, "Swap")
-    val neighborhood = new ReinsertActivity(scProblem, "Reinsert")
+    val swapNH = new SwapActivity(scProblem, "Swap")
+    val reinsertNH = new ReinsertActivity(scProblem, "Reinsert")
+    val combinedNH = reinsertNH andThen swapNH
     // This is the search strategy
-    neighborhood.doAllMoves(obj = scProblem.mkspObj)
+    combinedNH.doAllMoves(obj = scProblem.mkspObj)
     // And here, the results
     println(s"*************** RESULTS ***********************************")
     println(s"Schedule makespan = ${scProblem.makeSpan.value}")

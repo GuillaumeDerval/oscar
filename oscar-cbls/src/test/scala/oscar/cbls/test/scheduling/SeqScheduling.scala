@@ -16,7 +16,7 @@ object SeqScheduling {
   val d = new Activity(m, "d", 4)
   val e = new Activity(m, "e", 2)
   val activities = new BoundedArray[Activity](5, Activity.setIndex)
-  activities.:::(List(d, e, c, b, a))
+  activities.:::(List(a, b, c, d, e))
   // Resource R
   // Running Modes for R
   val runningModesForR = new RunningModeResources(2)
@@ -63,11 +63,12 @@ object SeqScheduling {
   println(s"Makespan at closing = ${scProblem.makeSpan}")
 
   def main(args: Array[String]): Unit = {
-    // Neighborhood
-    val neighborhood = new SwapActivity(scProblem, "Swap")
-    //val neighborhood = new ReinsertActivity(scProblem, "Reinsert")
+    // Neighborhoods
+    val swapNH = new SwapActivity(scProblem, "Swap")
+    val reinsertNH = new ReinsertActivity(scProblem, "Reinsert")
+    val combinedNH = reinsertNH best swapNH
     // This is the search strategy
-    neighborhood.doAllMoves(obj = scProblem.mkspObj)
+    combinedNH.doAllMoves(obj = scProblem.mkspObj)
     // And here, the results
     println(s"*************** RESULTS ***********************************")
     println(s"Schedule makespan = ${scProblem.makeSpan.value}")
