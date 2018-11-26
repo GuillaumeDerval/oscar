@@ -168,7 +168,7 @@ object TesterCBLS extends App{
   search.doAllMoves(obj=obj)
 
   updateDisplay() //after finish
-  //println("finished search" + c)
+
   println(search.profilingStatistics)
   println("\t" + intersectionPerShape.mkString("\n\t"))
   println(totalIntersectionArea)

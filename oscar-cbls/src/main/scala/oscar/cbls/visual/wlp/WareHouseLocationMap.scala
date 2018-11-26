@@ -10,26 +10,6 @@ import oscar.visual.shapes.{VisualRectangle, VisualCircle, VisualLine, VisualSha
 
 import scala.collection.immutable.SortedSet
 
-class WareHouseLocationWindow(deliveryCoordinates:Array[(Int,Int)],
-                              wareHouseCoordinates:Array[(Int,Int)],
-                              distanceCostD2W:Array[Array[Int]],
-                              warehouseCosts:Array[Int]){
-
-  val visual = new WareHouseLocationMap(deliveryCoordinates,wareHouseCoordinates,distanceCostD2W,warehouseCosts)
-
-  def redraw(openWarehouses:SortedSet[Int],boldChanges:Boolean=true,hideClosedWarehouses:Boolean = false){
-    visual.redraw(openWarehouses,boldChanges,hideClosedWarehouses)
-  }
-  val frame = new JFrame()
-  frame.setTitle("Uncapacitated Warehouse Location Problem")
-  frame.setLayout(new BorderLayout())
-  frame.setPreferredSize(new Dimension(960,960))
-  frame.add(visual, BorderLayout.CENTER)
-  frame.pack()
-  frame.revalidate()
-  frame.setVisible(true)
-}
-
 class WareHouseLocationMap(deliveryCoordinates:Array[(Int,Int)],
                            wareHouseCoordinates:Array[(Int,Int)],
                            distanceCostD2W:Array[Array[Int]],
