@@ -1,7 +1,6 @@
 package oscar.cbls.business.seqScheduling.model
 
 import oscar.cbls.algo.accList.AccList
-import oscar.cbls.core.computation.IntValue
 
 /**
   * Abstract class representing the flow of a resource
@@ -124,7 +123,7 @@ object ResourceFlow {
         case Nil => Nil
         case rfl::rfls =>
           if (qty < rfl.quantity) rfl.changedQuantity(rfl.quantity-qty)::rfls
-          else flowQuantityResource(rfl.quantity-qty, rfls)
+          else flowQuantityResource(qty-rfl.quantity, rfls)
       }
     }
   }

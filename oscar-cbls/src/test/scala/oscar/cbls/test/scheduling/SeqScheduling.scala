@@ -16,7 +16,7 @@ object SeqScheduling {
   val d = new Activity(m, "d", 4)
   val e = new Activity(m, "e", 2)
   val activities = new BoundedArray[Activity](5, Activity.setIndex)
-  activities.:::(List(a, b, c, d, e))
+  activities.:::(List(e, d, c, b, a))
   // Resource R
   // Running Modes for R
   val runningModesForR = new RunningModeResources(2)

@@ -10,7 +10,7 @@ object StartTimesActivities {
             schedulingProblem: SchedulingProblem): (CBLSIntVar, Array[CBLSIntVar], SetupTimes) = {
     val model = priorityActivitiesList.model
     val makeSpan = CBLSIntVar(model, 0, name="Schedule Makespan")
-    val startTimes: Array[CBLSIntVar] = Array.tabulate(schedulingProblem.activities.size)(node =>  CBLSIntVar(model, 0, name=s"Start Time of Activity $node"))
+    val startTimes: Array[CBLSIntVar] = Array.tabulate(schedulingProblem.activities.size)(node =>  CBLSIntVar(model, 0, name=s"Start Time of Activity ${schedulingProblem.activities.elementAt(node).name}"))
     val setupTimes = new SetupTimes
 
     new StartTimesActivities(priorityActivitiesList, schedulingProblem, makeSpan, startTimes, setupTimes)

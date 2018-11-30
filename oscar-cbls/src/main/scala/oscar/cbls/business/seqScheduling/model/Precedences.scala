@@ -40,17 +40,16 @@ class Precedences(numActivities: Int) {
     *         to a consistent priority list (if A->B, index of A is before index of B in the list)
     */
   def getPriorityList: List[Int] = {
-    // Auxiliary function 1
-    def addIndicesToList(indices: List[Int], accList: List[Int]): List[Int] = indices match {
-      case Nil => accList
-      case i::is =>
-        if (accList.contains(i)) addIndicesToList(is, accList)
-        else addIndicesToList(precArray(i).toList:::is, i::accList)
-    }
-    // Auxiliary function 2
-    def addIndexToList(ind: Int, accList: List[Int]): List[Int] = {
-      if (accList.contains(ind)) accList
-      else addIndicesToList(precArray(ind).toList, accList:+ind)
+    // Auxiliary function
+    def addIndexToList(ind: Int, list: List[Int]): List[Int] = {
+      list match {
+        case Nil => List(ind)
+        case i::is =>
+          if (succArray(ind).contains(i))
+            ind::list
+          else
+            i::addIndexToList(ind, is)
+      }
     }
     /////
     var result: List[Int] = Nil

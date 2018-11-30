@@ -1,6 +1,6 @@
 package oscar.cbls.business.seqScheduling.model
 
-case class RunningMode(name: String, defaultSetupTime: Int) {
+case class RunningMode(name: String, defaultSetupTime: Int = 0) {
   // index in the running mode resource array
   var index: Int = Constants.NO_INDEX
 }

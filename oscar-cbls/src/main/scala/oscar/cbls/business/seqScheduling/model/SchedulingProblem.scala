@@ -33,7 +33,11 @@ class SchedulingProblem(val m: Store,
     *         each element (actI) is an activity index and all indices of successive
     *         activities of the element are found after actI
     */
-  def getPriorityList: List[Int] = precedences.getPriorityList
+  def getPriorityList: List[Int] = {
+    val prL = precedences.getPriorityList
+    println(s"Initial Priority List = $prL")
+    prL
+  } //precedences.getPriorityList
 
   /**
     * Given an activity index (indAct), obtain the sequence of indices that

@@ -53,7 +53,14 @@ class BoundedArray[T: ClassTag](maxElements: Int, postInserting: (T, Int) => Uni
   }
 
   def +:(elem: T): Unit = {
-    insertAt(elem, 0)
+    if (nbElements == 0) {
+      actualArray(0) = elem
+      postInserting(elem, 0)
+      nbElements = 1
+    }
+    else {
+      insertAt(elem, 0)
+    }
   }
 
   def deleteAt(pos: Int): Unit = {
