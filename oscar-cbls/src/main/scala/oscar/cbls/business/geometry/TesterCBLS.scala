@@ -56,7 +56,7 @@ object TesterCBLS extends App{
   val totalIntersectionArea:IntValue = new Sum(intersectionAreasHalfMatrix.flatMap(_.toList)).setName("totalOverlapArea")
 
   val intersectionPerShape:Array[IntValue] = Array.tabulate(nbCircle)(circleID =>
-    Sum(intersectionAreaFullMatrix(circleID)).setName("overlapArea(circle_" + circleID + ")")
+    Sum(intersectionAreaFullMatrix(circleID)).setName("overlapArea(shape_" + circleID + ")")
   )
 
   val convexHullOfCircle1And3 = new ConvexHull(store, new Union(store, placedCirles(1),placedCirles(3)))

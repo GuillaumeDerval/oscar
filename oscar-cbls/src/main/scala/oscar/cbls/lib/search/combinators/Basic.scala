@@ -61,8 +61,7 @@ class MaxMoves(a: Neighborhood, val maxMove: Int, cond: Option[Move => Boolean] 
         case x => x
       }
     } else {
-      if (verbose >= 1)
-        println("MaxMoves: reached " + (if (maxMove == 1) "1 move " else maxMove + " moves"))
+      //if (verbose >= 1) println("MaxMoves: reached " + (if (maxMove == 1) "1 move " else maxMove + " moves"))
       NoMoveFound
     }
   }
@@ -132,7 +131,7 @@ class MaxMovesWithoutImprovement(a: Neighborhood,
             NoMoveFound
         }
       } else {
-        if (verbose >= 1) println("MaxStepsWithoutImprovement: reached " + maxMovesWithoutImprovement + " moves without improvement of " + a)
+        //if (verbose >= 1) println("MaxStepsWithoutImprovement: reached " + maxMovesWithoutImprovement + " moves without improvement of " + a)
         NoMoveFound
       }
     } else{ //count after move

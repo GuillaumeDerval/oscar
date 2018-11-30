@@ -197,7 +197,26 @@ abstract class Neighborhood(name:String = null) {
     while (!shouldStop(moveCount)) {
       getMove(enrichedObj, obj.value, acceptanceCriterion) match {
         case NoMoveFound =>
+
+          if(printMoveSythesis && moveSynthesis.nonEmpty){
+            val finalObj = obj.value
+            val firstPrefix = if (finalObj < prevObj) "-"
+            else if (finalObj == prevObj) "="
+            else "+"
+            val smallPaddingLength = 20
+
+            val secondPrefix = (if (finalObj < bestObj) {
+              " # "
+            } else if (finalObj == bestObj) " ° "
+            else "   ") + padToLength(finalObj.toString,smallPaddingLength)
+            println(firstPrefix + secondPrefix + moveSynthesis.toList.map({case ((name,n)) => padToLength(trimToLength(name, smallPaddingLength-4)+ ":"+n, smallPaddingLength)}).mkString(" "))
+
+            moveSynthesis = SortedMap.empty[String,Int]
+            nanoTimeAtNextSynthesis = System.nanoTime() + (1000*1000*100) //100ms
+          }
           if (printTakenMoves || printMoveSythesis) println("no more move found after " + toReturn + " it, " + ((System.nanoTime() - startSearchNanotime)/1000000).toInt + " ms ")
+
+
           return toReturn;
         case m: MoveFound =>
           if(printMoveSythesis){
