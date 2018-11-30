@@ -23,10 +23,6 @@ object TesterCBLS extends App{
     i => 30*(i+1)
   }
 
-  var circleArray = Array.tabulate(nbCircle:Int){
-    i => geometry.createCircle(radiusArray(i),nbEdges = 60)
-  }
-
   val outerFrame = geometry.factory.createLinearRing(Array(
     new Coordinate(0,0),
     new Coordinate(0,1100),
@@ -42,14 +38,14 @@ object TesterCBLS extends App{
   }
 
   val placedCirles = Array.tabulate(nbCircle){i =>
-    new Apply(store,new Translation(store:Store,coordArray(i)._1,coordArray(i)._2),new CBLSGeometryConst(store,circleArray(i),"circle_" + i))
+    new Apply(store,new Translation(store:Store,coordArray(i)._1,coordArray(i)._2),
+      new CBLSGeometryConst(store,if(i%2 ==0) geometry.createSquare(radiusArray(i)*2) else geometry.createCircle(radiusArray(i),nbEdges = 40),"circle_" + i))
   }
 
   val intersectionAreasHalfMatrix:Array[Array[IntValue]] =
     Array.tabulate(nbCircle)(cirleID1 =>
       Array.tabulate(cirleID1)(cirleID2 =>
-        Area(store,Intersection(store,placedCirles(cirleID1),placedCirles(cirleID2)))))
-
+        Area(store,Intersection(store,placedCirles(cirleID1),placedCirles(cirleID2),true))))
 
   val intersectionAreaFullMatrix:Array[Array[IntValue]] =
     Array.tabulate(nbCircle)(cirleID1 =>
@@ -75,8 +71,8 @@ object TesterCBLS extends App{
   def updateDisplay() {
     val colorsIt = randomColors.toIterator
     drawing.drawShapes(shapes =
-      (convexHullOfCircle1And3.value,Some(Color.blue),None,"convexHullOfCircle1And3")::
       (outerFrame,Some(Color.red),None,"")::
+        (convexHullOfCircle1And3.value,Some(Color.blue),None,"convexHullOfCircle1And3")::
         Array.tabulate(nbCircle)(circleID => (placedCirles(circleID).value,None, Some(colorsIt.next), intersectionPerShape(circleID).toString)).toList)
   }
 
@@ -112,10 +108,10 @@ object TesterCBLS extends App{
   )
 
   def swapX = SwapsNeighborhood(coordArray.map(_._1),symmetryCanBeBrokenOnIndices = false, adjustIfNotInProperDomain = true, name = "swapXCoordinates")
-  def swapY(circle1:Int,circle2:Int) = SwapsNeighborhood(Array(coordArray(circle1)._2,coordArray(circle2)._2), symmetryCanBeBrokenOnIndices = false, adjustIfNotInProperDomain = true, name ="swapYCoordinates")
+  def swapYSlave(circle1:Int, circle2:Int) = SwapsNeighborhood(Array(coordArray(circle1)._2,coordArray(circle2)._2), symmetryCanBeBrokenOnIndices = false, adjustIfNotInProperDomain = true, name ="swapYCoordinates")
 
   def swapAndSlide = (swapX dynAndThen(swapMove => {
-    swapY(swapMove.idI,swapMove.idJ) andThen Atomic(BestSlopeFirst(List(smallSlideX(swapMove.idI),smallSlideY(swapMove.idI))),_>100)})) name "SwapAndSlide"
+    swapYSlave(swapMove.idI,swapMove.idJ) andThen Atomic(BestSlopeFirst(List(smallSlideX(swapMove.idI),smallSlideY(swapMove.idI))),_>100)})) name "SwapAndSlide"
 
   def moveOneCircleXAndThenY = moveXNumeric dynAndThen (assignMode => smallSlideY(assignMode.id)) name "moveXAndThenY"
   def moveOneCircleYAndThenX = moveYNumeric dynAndThen (assignMode => smallSlideX(assignMode.id)) name "moveYAndThenX"
@@ -131,10 +127,13 @@ object TesterCBLS extends App{
     hotRestart = false,
     linearSearch = new NarrowingStepSlide(dividingRatio = 10, minStep = 1)) //new Slide(step=20,maxIt=100)) // new NewtonRaphsonMinimize(5,40))
 
-  def swapAndGradient = (swapX dynAndThen(swapMove => {
-    swapY(swapMove.idI,swapMove.idJ) andThen new Atomic(gradientOnOneShape(swapMove.idI),_>10)})) name "SwapAndGradient"
+  def swapAndGradient = swapX dynAndThen(swapMove => (
+    swapYSlave(swapMove.idI,swapMove.idJ)
+    andThen new Atomic(gradientOnOneShape(swapMove.idI),
+                       _>10,
+                       stopAsSoonAsAcceptableMoves=true))) name "SwapAndGradient"
 
-  val displayDelay:Long = 1000.toLong * 1000 * 100 //.1 seconds
+  val displayDelay:Long = 1000.toLong * 1000 * 500 //.5 seconds
   var lastDisplay = System.nanoTime()
   val search = (Profile(BestSlopeFirst( //TODO: this is not adapted for single shot neighborhoods such as gradient
     List(
@@ -152,8 +151,9 @@ object TesterCBLS extends App{
       Profile(moveOneCircleXAndThenY),
       Profile(swapAndSlide),
       Profile(swapAndGradient),
-      Profile(moveOneCircleYAndThenX)),
-    refresh=nbCircle))
+      Profile(moveOneCircleYAndThenX)
+    ),
+    refresh=nbCircle*10))
     onExhaustRestartAfter (RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length/5, name = "smallRandomize"),maxRestartWithoutImprovement = 2, obj)
     onExhaustRestartAfter (RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length, name = "fullRandomize"),maxRestartWithoutImprovement = 2, obj)
     afterMove {if(System.nanoTime() > lastDisplay + displayDelay) {
@@ -162,7 +162,12 @@ object TesterCBLS extends App{
     }
   } showObjectiveFunction obj)
 
+
   updateDisplay() //before start
+
+  //Thread.sleep(10000)
+  //println("start")
+  //Thread.sleep(1000)
 
   search.verbose = 1
   search.doAllMoves(obj=obj)
@@ -170,6 +175,7 @@ object TesterCBLS extends App{
   updateDisplay() //after finish
 
   println(search.profilingStatistics)
-  println("\t" + intersectionPerShape.mkString("\n\t"))
+  println
+  println(intersectionPerShape.mkString("\n"))
   println(totalIntersectionArea)
 }

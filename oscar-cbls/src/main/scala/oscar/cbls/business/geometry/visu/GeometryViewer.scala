@@ -4,7 +4,7 @@ import java.awt.geom.Rectangle2D
 import java.awt.{Color, Shape}
 
 import org.locationtech.jts.awt.ShapeWriter
-import org.locationtech.jts.geom.Geometry
+import org.locationtech.jts.geom._
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualRectangle, VisualShape}
 
@@ -82,7 +82,75 @@ class GeometryDrawing()
       s.toolTip = toolTipText
     }
 
+
+    paintSomeHoles(shapes.map(_._1))
+
     repaint()
+  }
+
+  def paintSomeHoles(s:List[Geometry]): Unit ={
+    val w = new ShapeWriter()
+
+    val hh = outerHoles(s.tail, s.head).toArray
+
+    val areas = hh.map(_.getArea)
+    val maxArea = areas.max
+
+    for(i <- hh.indices){
+      val h = hh(i)
+      val s = new VisualShapeConcrete(this, w.toShape(h))
+      s.fill = true
+
+      if(areas(i) == maxArea){
+        s.innerCol = Color.RED
+      }else{
+        s.innerCol = Color.BLUE
+      }
+
+      s.toolTip = "hole_" + i
+    }
+  }
+
+  def holes(s:List[Geometry]):List[Geometry] = {
+    var acc = s.head
+    var t = s.tail
+    while(t.nonEmpty){
+      acc = acc union t.head
+      t = t.tail
+    }
+    extractHoles(acc)
+  }
+
+  def extractHoles(g:Geometry):List[Geometry] = {
+    g match {
+      case poly: Polygon =>
+        val holesArray = Array.tabulate(poly.getNumInteriorRing)(i => poly.getInteriorRingN(i))
+        holesArray.toList
+      case m: GeometryCollection =>
+        val components = Array.tabulate(m.getNumGeometries)(i => m.getGeometryN(i)).toList
+        components.flatMap(extractHoles)
+    }
+  }
+  def extractShapes(g:Geometry):List[Geometry] = {
+    g match {
+      case poly: Polygon =>
+        List(poly)
+      case m: GeometryCollection =>
+        val components = Array.tabulate(m.getNumGeometries)(i => m.getGeometryN(i)).toList
+        components.flatMap(extractShapes)
+    }
+  }
+
+  def outerHoles(s:List[Geometry], outer:Geometry):List[Geometry] = {
+    var acc = outer
+    var t = s
+
+    while(t.nonEmpty){
+      acc = acc difference t.head
+      t = t.tail
+    }
+
+    extractShapes(acc)
   }
 }
 

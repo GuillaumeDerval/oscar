@@ -11,6 +11,20 @@ package object geometry {
   //so better to keep it all in floats, and perform any conversion when geting things out of JTS
   val factory:GeometryFactory = new GeometryFactory()
 
+  val emptyPolygon = factory.createMultiPolygon(Array.empty)
+
+  def createSquare(side:Double):Geometry = {
+    val halfSide = side/2
+
+    geometry.factory.createLinearRing(Array(
+      new Coordinate(halfSide,halfSide),
+      new Coordinate(halfSide,-halfSide),
+      new Coordinate(-halfSide,-halfSide),
+      new Coordinate(-halfSide,halfSide),
+      new Coordinate(halfSide,halfSide))).convexHull()
+  }
+
+
   def createCircle(r:Double,nbEdges:Int = 16, ensureCorrectSurface:Boolean = true):Geometry = {
     println("creating circle ")
     require(nbEdges >=4,"a circle is hard to approximate with less than four edges...")

@@ -6,7 +6,6 @@ import oscar.cbls.Store
 import oscar.cbls.business.geometry.{AffineTransformNotificationTarget, CBLSAffineTransformInvariant, CBLSGeometryInvariant, GeometryNotificationTarget}
 import oscar.cbls.core.computation._
 
-
 class Compose(store:Store,a:ChangingAtomicValue[AffineTransformation],b:ChangingAtomicValue[AffineTransformation])
   extends CBLSAffineTransformInvariant(
     initialValue = new AffineTransformation(a.value) compose b.value)

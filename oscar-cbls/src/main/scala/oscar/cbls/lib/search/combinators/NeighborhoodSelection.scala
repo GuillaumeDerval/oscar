@@ -48,7 +48,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
                                      overrideTabuOnFullExhaust:Int,
                                      refresh:Int)
   extends NeighborhoodCombinator(l:_*) {
-  require(overrideTabuOnFullExhaust < tabuLength, "overrideTabuOnFullExhaust should be < tabuLength")
+  require(overrideTabuOnFullExhaust < tabuLength, "overrideTabuOnFullExhaust(" + overrideTabuOnFullExhaust + ") should be < tabuLength(" + tabuLength + ")")
 
   protected var it = 0
   protected def bestKey(p:Profile):Int

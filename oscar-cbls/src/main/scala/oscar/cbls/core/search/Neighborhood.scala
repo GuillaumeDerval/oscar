@@ -202,6 +202,29 @@ abstract class Neighborhood(name:String = null) {
         case m: MoveFound =>
           if(printMoveSythesis){
             //TODO: we should force print before a jump that degrades obj, and force print just after such moves so that they are on a single line
+
+
+            if(m.m.objAfter == Int.MaxValue && moveSynthesis.nonEmpty){
+              //flush the preceding moves before a jump
+              val firstPrefix = if (m.objAfter < prevObj) "-"
+              else if (m.objAfter == prevObj) "="
+              else "+"
+
+              prevObj = m.objAfter
+
+              val smallPaddingLength = 20
+
+              val secondPrefix = (if (m.objAfter < bestObj) {
+                bestObj = m.objAfter
+                " # "
+              } else if (m.objAfter == bestObj) " ° "
+              else "   ") + padToLength(m.objAfter.toString,smallPaddingLength)
+              println(firstPrefix + secondPrefix + moveSynthesis.toList.map({case ((name,n)) => padToLength(trimToLength(name, smallPaddingLength-4)+ ":"+n, smallPaddingLength)}).mkString(" "))
+
+              moveSynthesis = SortedMap.empty[String,Int]
+              nanoTimeAtNextSynthesis = System.nanoTime() + (1000*1000*100) //100ms
+            }
+
             val neighborhoodName = m.m.neighborhoodName
             moveSynthesis = moveSynthesis + ((neighborhoodName,moveSynthesis.getOrElse(neighborhoodName,0)+1))
 
