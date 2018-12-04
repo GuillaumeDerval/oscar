@@ -223,21 +223,24 @@ abstract class Neighborhood(name:String = null) {
             //TODO: we should force print before a jump that degrades obj, and force print just after such moves so that they are on a single line
 
 
+            var didPrintBefore:Boolean = false
             if(m.m.objAfter == Int.MaxValue && moveSynthesis.nonEmpty){
-              //flush the preceding moves before a jump
-              val firstPrefix = if (m.objAfter < prevObj) "-"
-              else if (m.objAfter == prevObj) "="
-              else "+"
+              didPrintBefore = true
+              //TODO: we should not consider m.objAfter!!! we should consider the obj BEFORE the move is taken
 
-              prevObj = m.objAfter
+              val currentObjValue = obj.value
+              //flush the preceding moves before a jump
+              val firstPrefix = if (currentObjValue  < prevObj) "-"
+              else if (currentObjValue  == prevObj) "="
+              else "+"
 
               val smallPaddingLength = 20
 
-              val secondPrefix = (if (m.objAfter < bestObj) {
-                bestObj = m.objAfter
+              val secondPrefix = (if (currentObjValue < bestObj) {
+                bestObj = currentObjValue
                 " # "
-              } else if (m.objAfter == bestObj) " ° "
-              else "   ") + padToLength(m.objAfter.toString,smallPaddingLength)
+              } else if (currentObjValue == bestObj) " ° "
+              else "   ") + padToLength(currentObjValue.toString,smallPaddingLength)
               println(firstPrefix + secondPrefix + moveSynthesis.toList.map({case ((name,n)) => padToLength(trimToLength(name, smallPaddingLength-4)+ ":"+n, smallPaddingLength)}).mkString(" "))
 
               moveSynthesis = SortedMap.empty[String,Int]
@@ -247,7 +250,7 @@ abstract class Neighborhood(name:String = null) {
             val neighborhoodName = m.m.neighborhoodName
             moveSynthesis = moveSynthesis + ((neighborhoodName,moveSynthesis.getOrElse(neighborhoodName,0)+1))
 
-            val printSynthesis = (System.nanoTime() >= nanoTimeAtNextSynthesis)
+            val printSynthesis = (System.nanoTime() >= nanoTimeAtNextSynthesis) || m.m.objAfter == Int.MaxValue
 
             if(printSynthesis){
 
@@ -268,6 +271,8 @@ abstract class Neighborhood(name:String = null) {
 
               moveSynthesis = SortedMap.empty[String,Int]
               nanoTimeAtNextSynthesis = System.nanoTime() + (1000*1000*100) //100ms
+            }else if(didPrintBefore){
+              prevObj = m.objAfter
             }
 
             m.commit()

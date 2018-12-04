@@ -14,7 +14,13 @@ object Overlap {
     extractHoles(acc)
   }
 
-  def freeSpacesIn(s:List[Geometry], outer:Geometry):List[Geometry] = {
+  def centroidsOfFreeSpacesIn(s:Iterable[Geometry], outer:Geometry):Iterable[(Int,Int)] = {
+    val frees = freeSpacesIn(s:Iterable[Geometry], outer:Geometry):Iterable[Geometry]
+    val centroids = frees.map(_.getCentroid)
+    centroids.map(centroid => (centroid.getX.toInt,centroid.getY.toInt))
+  }
+
+  def freeSpacesIn(s:Iterable[Geometry], outer:Geometry):Iterable[Geometry] = {
     var acc = outer
     var t = s
 

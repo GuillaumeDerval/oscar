@@ -20,33 +20,33 @@ import oscar.cbls.core.objective.Objective
 
 /** standard move template
   *
-  * @param objAfter the objective after this assignation will be performed
-  *                 in case you degrade the objective because you make a jump, and you do not want to compute it,
-  *                 you must set it to Int.MaxValue or just do not specify it, as it is the default value
-  *                 we did not use an option there because there would anyway be a need
-  *                 for arithmetic on this option in combinators suh as [[oscar.cbls.search.combinators.Best]]
-  *                 Many combinators actually rely on this value to take decisions (eg: [[oscar.cbls.search.combinators.SaveBest]] and [[oscar.cbls.search.combinators.Best]]
+  * @param objAfter         the objective after this assignation will be performed
+  *                         in case you degrade the objective because you make a jump, and you do not want to compute it,
+  *                         you must set it to Int.MaxValue or just do not specify it, as it is the default value
+  *                         we did not use an option there because there would anyway be a need
+  *                         for arithmetic on this option in combinators suh as [[Best]]
+  *                         Many combinators actually rely on this value to take decisions (eg: [[oscar.cbls.lib.search.combinators.SaveBest]] and [[Best]]
   * @param neighborhoodName the name of the neighborhood that generated this move, used for pretty printing purpose.
   *                         Notice that the name is not the type of the neighborhood.
   * @author renaud.delandtsheer@cetic.be
- */
+  */
 abstract class Move(val objAfter:Int = Int.MaxValue, val neighborhoodName:String = null){
   /**to actually take the move*/
   def commit()
 
   /**
-   * to get the list of variables that are modified by the move.
-   * use this to update a Tabu for instance
-   * notice that is a variable is touched twice by the move, it will appear twice in this list
-   * This can happen with a set where we add two elements in two distinct moves that are aggregated into a [[CompositeMove]]
+    * to get the list of variables that are modified by the move.
+    * use this to update a Tabu for instance
+    * notice that is a variable is touched twice by the move, it will appear twice in this list
+    * This can happen with a set where we add two elements in two distinct moves that are aggregated into a [[CompositeMove]]
     *
     * @return the list of touched variables.
-   */
+    */
   def touchedVariables:Iterable[Variable] = throw new Exception(this.getClass().getSimpleName + "cannot provide touched variables")
 
   /**
-   * @return a readable string of the objective after wit ha space before, or an empty string
-   */
+    * @return a readable string of the objective after wit ha space before, or an empty string
+    */
   def objToString:String = if(objAfter == Int.MaxValue) "" else " objAfter:" +objAfter
 
   protected def neighborhoodNameToString:String = if (neighborhoodName != null) neighborhoodName + ":" else ""
@@ -72,46 +72,61 @@ abstract class Move(val objAfter:Int = Int.MaxValue, val neighborhoodName:String
 }
 
 object Move{
-  def apply(objAfter:Int = 0, neighborhoodName:String = null)(code: =>Unit):EasyMove = new EasyMove(objAfter, neighborhoodName, code)
+  def apply(objAfter:Int = 0, neighborhoodName:String = null)(code: =>Unit):CodedMove = new CodedMove(code, objAfter, neighborhoodName)
 }
 /**
- * this class does not provide an implementation for touchedVariables,
- * since we are only inputting source code for executing the move
- * */
-class EasyMove(override val objAfter:Int, override val neighborhoodName:String = null, code: => Unit)
+  * this class does not provide an implementation for touchedVariables,
+  * since we are only inputting source code for executing the move
+  * */
+class CodedMove(code: => Unit, override val objAfter: Int, override val neighborhoodName: String = null)
   extends Move(objAfter, neighborhoodName){
 
   override def commit() {code}
 
-  override def toString: String = neighborhoodNameToString + "EasyMove"
 
+  override def toString: String = neighborhoodNameToString + "EasyMove"
 }
 
 /**
- * this move loads solution s
+  * this class does not provide an implementation for touchedVariables,
+  * since we are only inputting source code for executing the move
+  * */
+class EvaluableCodedMove(doAndUndo: () => (() => Unit),
+                         override val objAfter: Int = Int.MaxValue,
+                         override val neighborhoodName: String = null)
+  extends Move(objAfter, neighborhoodName){
+
+  override def commit() {doAndUndo()}
+
+  override def evaluate(obj: Objective): Int = {
+    val undoOp = doAndUndo()
+    val toReturn = obj.value
+    undoOp()
+    toReturn
+  }
+
+  override def toString: String = neighborhoodNameToString + "EasyMove"
+}
+
+/**
+  * this move loads solution s
   *
   * @param s the solution that is loaded when the move is comitted
- * @param objAfter the objective after this assignation will be performed
- *                 in case you degrade the objective because you make a jump, and you do not want to compute it,
- *                 you must set it to Int.MaxValue or just do not specify it, as it is the default value
- *                 we did not use an option there because there would anyway be a need
- *                 for arithmetic on this option in combinators suh as [[oscar.cbls.search.combinators.Best]]
- *                 Many combinators actually rely on this value to take decisions (eg: [[oscar.cbls.search.combinators.SaveBest]] and [[oscar.cbls.search.combinators.Best]]
- * @param neighborhoodName the name of the neighborhood that generated this move, used for pretty printing purpose.
- *                         Notice that the name is not the type of the neighborhood.
- */
+  * @param objAfter         the objective after this assignation will be performed
+  *                         in case you degrade the objective because you make a jump, and you do not want to compute it,
+  *                         you must set it to Int.MaxValue or just do not specify it, as it is the default value
+  *                         we did not use an option there because there would anyway be a need
+  *                         for arithmetic on this option in combinators suh as [[Best]]
+  *                         Many combinators actually rely on this value to take decisions (eg: [[oscar.cbls.lib.search.combinators.SaveBest]] and [[Best]]
+  * @param neighborhoodName the name of the neighborhood that generated this move, used for pretty printing purpose.
+  *                         Notice that the name is not the type of the neighborhood.
+  */
 case class LoadSolutionMove(s:Solution,override val objAfter:Int, override val neighborhoodName:String = null) extends Move(objAfter,neighborhoodName){
   /** to actually take the move */
   override def commit(): Unit = s.model.restoreSolution(s)
 
   override def toString : String = neighborhoodNameToString + "LoadSolutionMove(objAfter:" + objAfter + ")"
 }
-
-
-
-
-
-
 
 /** standard move that adds a value to a CBLSSetVar
   *
@@ -154,14 +169,71 @@ case class RemoveFromSetMove(s:CBLSSetVar,v:Int, override val objAfter:Int, over
 }
 
 /**
- * This neighborhood always returns the same move, given in the constructor
- *
- * @param m the move to return when the neighborhood is queried for a move
- */
-case class ConstantMoveNeighborhood(m: Move) extends Neighborhood {
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
-    m
+  * This neighborhood always returns the same move, given in the constructor
+  * it checks the objctive function before returning it, and adds the objective funtion value to the move
+  *
+  * this one canot be chained because there is no UNDO operation defined
+  *
+  * @param m the move to return when the neighborhood is queried for a move
+  */
+case class ConstantMoveNeighborhood(m: Move,
+                                    skipAcceptanceCriterion:Boolean = false,
+                                    neighborhoodName:String = null)
+  extends Neighborhood with SupportForAndThenChaining[Move] {
+  override def getMove(obj: Objective, initialObj: Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+    if (skipAcceptanceCriterion) {
+      MoveFound(m)
+    } else {
+      val newObj: Int = m.evaluate(obj)
+      if (acceptanceCriterion(initialObj, newObj)) {
+        MoveFound(new MoveWithOtherObj(m, newObj))
+      } else {
+        NoMoveFound
+      }
+    }
   }
+
+  override def instantiateCurrentMove(newObj: Int): Move =
+    new MoveWithOtherObj(m, newObj,neighborhoodName)
+}
+
+case class ConstantMovesNeighborhood(ms:() => Iterable[Move],
+                                     selectMoveBehavior:LoopBehavior = First(),
+                                     neighborhoodName:String = "ConstantMovesNeighborhood")
+  extends EasyNeighborhoodMultiLevel[Move](neighborhoodName) {
+
+  var currentMove:Move = null
+
+  /**
+    * This is the method you must implement and that performs the search of your neighborhood.
+    * every time you explore a neighbor, you must perform the calls to notifyMoveExplored or moveRequested(newObj) && submitFoundMove(myMove)){
+    * as explained in the documentation of this class
+    */
+  override def exploreNeighborhood(initialObj: Int): Unit = {
+    val (moveIterator, notifyFound1) = selectMoveBehavior.toIterator(ms())
+    while (moveIterator.hasNext) {
+      currentMove = moveIterator.next()
+
+      val newObj = currentMove.evaluate(obj)
+
+      if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
+        notifyFound1()
+      }
+    }
+    currentMove = null
+  }
+
+  override def instantiateCurrentMove(newObj: Int): Move =
+    new MoveWithOtherObj(currentMove, newObj,neighborhoodName)
+}
+
+
+class MoveWithOtherObj(initMove:Move,objAfter:Int, neighborhoodName:String = null)
+  extends Move(objAfter = objAfter, neighborhoodName = if(neighborhoodName != null) neighborhoodName else initMove.neighborhoodName){
+
+  override def commit(): Unit = initMove.commit()
+
+  override def toString: String = initMove.toString
 }
 
 case class DoNothingNeighborhood() extends Neighborhood with SupportForAndThenChaining[DoNothingMove]{
@@ -189,7 +261,9 @@ case class DoNothingMove(override val objAfter:Int,override val neighborhoodName
   * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
   * @author renaud.delandtsheer@cetic.be
   */
-case class CompositeMove(ml:List[Move], override val objAfter:Int, override val neighborhoodName:String = null)
+case class CompositeMove(ml:List[Move],
+                         override val objAfter:Int,
+                         override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
   def this(ml:List[Move]){
@@ -208,15 +282,15 @@ case class CompositeMove(ml:List[Move], override val objAfter:Int, override val 
 
   def globalSize:Int = {
     ml.map(
-    {case c:CompositeMove => c.globalSize
-    case d:DoNothingMove => 0
-    case m:Move => 1}).sum
+      {case c:CompositeMove => c.globalSize
+      case d:DoNothingMove => 0
+      case m:Move => 1}).sum
   }
 
   def simpleMLString:String = {
     "[" + ml.map(
-    {case c:CompositeMove => c.simpleMLString
-    case m:Move => m.shortString}).mkString(",") + "]"
+      {case c:CompositeMove => c.simpleMLString
+      case m:Move => m.shortString}).mkString(",") + "]"
   }
 
   override def shortString: String = "CompositeMove(" + ml.map(_.shortString).mkString(",")+ ")"
@@ -261,23 +335,23 @@ case class InstrumentedMove(initialMove:Move, callBack: () => Unit = null, after
 
 object CallBackMove{
   def apply(callBack: () => Unit, objAfter:Int, neighborhoodName:String, shortDescription:() => String)=
-    new CallBackMove[Unit](_ => {callBack()}, objAfter, neighborhoodName, shortDescription)
+    new CallBackMove[Null](_ => {callBack()}, objAfter, neighborhoodName, shortDescription)
 }
 
 /** a callBackMove when committed calls some method
   * this is how it takes its move
   *
   * @param callBack the method that is called when the move is committed it takes a parameter of type T, which is given in param
-  * @param objAfter the objective after this assignation will be performed
-  *                 in case you degrade the objective because you make a jump, and you do not want to compute it,
-  *                 you must set it to Int.MaxValue or just do not specify it, as it is the default value
-  *                 we did not use an option there because there would anyway be a need
-  *                 for arithmetic on this option in combinators suh as [[oscar.cbls.search.combinators.Best]]
-  *                 Many combinators actually rely on this value to take decisions (eg: [[oscar.cbls.search.combinators.SaveBest]] and [[oscar.cbls.search.combinators.Best]]
+  * @param objAfter         the objective after this assignation will be performed
+  *                         in case you degrade the objective because you make a jump, and you do not want to compute it,
+  *                         you must set it to Int.MaxValue or just do not specify it, as it is the default value
+  *                         we did not use an option there because there would anyway be a need
+  *                         for arithmetic on this option in combinators suh as [[Best]]
+  *                         Many combinators actually rely on this value to take decisions (eg: [[oscar.cbls.lib.search.combinators.SaveBest]] and [[Best]]
   * @param neighborhoodName the name of the neighborhood that generated this move, used for pretty printing purpose.
   *                         Notice that the name is not the type of the neighborhood.
-  * @param shortDescription a description of whet the move does (since it cannot be inferred from the name of the neighborhood as for [[AssignMove]] for instance)
-  * @param param the parameter that is passed to the callBack method when the move is committed
+  * @param shortDescription a description of whet the move does (since it cannot be inferred from the name of the neighborhood as for [[oscar.cbls.lib.search.neighborhoods.AssignMove]] for instance)
+  * @param param            the parameter that is passed to the callBack method when the move is committed
   * @tparam T
   */
 case class CallBackMove[T](callBack: T => Unit, override val objAfter:Int, override val neighborhoodName:String, shortDescription:() => String, param:T = null) extends Move{

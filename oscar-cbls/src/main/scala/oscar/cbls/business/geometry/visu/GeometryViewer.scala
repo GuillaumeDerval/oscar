@@ -5,6 +5,7 @@ import java.awt.{Color, Shape}
 
 import org.locationtech.jts.awt.ShapeWriter
 import org.locationtech.jts.geom._
+import oscar.cbls.business.geometry.Overlap
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualRectangle, VisualShape}
 
@@ -83,7 +84,7 @@ class GeometryDrawing()
     }
 
 
-    paintSomeHoles(shapes.map(_._1))
+    //paintSomeHoles(shapes.map(_._1))
 
     repaint()
   }
@@ -91,7 +92,7 @@ class GeometryDrawing()
   def paintSomeHoles(s:List[Geometry]): Unit ={
     val w = new ShapeWriter()
 
-    val hh = outerHoles(s.tail, s.head).toArray
+    val hh = Overlap.freeSpacesIn(s.tail, s.head).toArray
 
     val areas = hh.map(_.getArea)
     val maxArea = areas.max
@@ -108,50 +109,14 @@ class GeometryDrawing()
       }
 
       s.toolTip = "hole_" + i
+
+      val center = h.getCentroid
+      val centroidPoint = new VisualShapeConcrete(this, w.toShape(center))
+      centroidPoint.fill = true
+      centroidPoint.innerCol = Color.BLACK
     }
   }
 
-  def holes(s:List[Geometry]):List[Geometry] = {
-    var acc = s.head
-    var t = s.tail
-    while(t.nonEmpty){
-      acc = acc union t.head
-      t = t.tail
-    }
-    extractHoles(acc)
-  }
-
-  def extractHoles(g:Geometry):List[Geometry] = {
-    g match {
-      case poly: Polygon =>
-        val holesArray = Array.tabulate(poly.getNumInteriorRing)(i => poly.getInteriorRingN(i))
-        holesArray.toList
-      case m: GeometryCollection =>
-        val components = Array.tabulate(m.getNumGeometries)(i => m.getGeometryN(i)).toList
-        components.flatMap(extractHoles)
-    }
-  }
-  def extractShapes(g:Geometry):List[Geometry] = {
-    g match {
-      case poly: Polygon =>
-        List(poly)
-      case m: GeometryCollection =>
-        val components = Array.tabulate(m.getNumGeometries)(i => m.getGeometryN(i)).toList
-        components.flatMap(extractShapes)
-    }
-  }
-
-  def outerHoles(s:List[Geometry], outer:Geometry):List[Geometry] = {
-    var acc = outer
-    var t = s
-
-    while(t.nonEmpty){
-      acc = acc difference t.head
-      t = t.tail
-    }
-
-    extractShapes(acc)
-  }
 }
 
 

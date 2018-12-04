@@ -7,8 +7,10 @@ import oscar.cbls.business.geometry
 import oscar.cbls.business.geometry.invariants._
 import oscar.cbls.business.geometry.visu.GeometryDrawing
 import oscar.cbls.core.computation.IntValue
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.search._
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Profile}
+import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Dyn, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 import oscar.cbls.{CBLSIntVar, Objective, Store}
@@ -23,18 +25,21 @@ object TesterCBLS extends App{
     i => 30*(i+1)
   }
 
+  val maxX = 1100
+  val maxY = 1100
+
   val outerFrame = geometry.factory.createLinearRing(Array(
     new Coordinate(0,0),
-    new Coordinate(0,1100),
-    new Coordinate(1100,1100),
-    new Coordinate(1100,0),
+    new Coordinate(0,maxY),
+    new Coordinate(maxX,maxY),
+    new Coordinate(maxX,0),
     new Coordinate(0,0))).convexHull()
 
 
   //declaring the optimization model
   val coordArray = Array.tabulate(nbCircle){ i =>
-    (new CBLSIntVar(store,radiusArray(i),radiusArray(i) to 1100 - radiusArray(i),"circle_" + i + ".x"),
-      new CBLSIntVar(store,radiusArray(i),radiusArray(i) to 1100 - radiusArray(i),"circle_" + i + ".y"))
+    (new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxX - radiusArray(i),"circle_" + i + ".x"),
+      new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxY - radiusArray(i),"circle_" + i + ".y"))
   }
 
   val placedCirles = Array.tabulate(nbCircle){i =>
@@ -64,6 +69,8 @@ object TesterCBLS extends App{
   val obj:Objective = totalIntersectionArea
   store.close()
 
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   val randomColors = ColorGenerator.generateRandomTransparentColors(nbCircle,175).toList
 
   val drawing = new GeometryDrawing()
@@ -79,6 +86,8 @@ object TesterCBLS extends App{
   updateDisplay()
 
   SingleFrameWindow.show(drawing,"a drawing with the standard oscar drawing console",1300,1300)
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   val flattenedCoordArray:Array[CBLSIntVar] = coordArray.flatMap(xy => List(xy._1,xy._2))
 
@@ -108,6 +117,7 @@ object TesterCBLS extends App{
   )
 
   def swapX = SwapsNeighborhood(coordArray.map(_._1),symmetryCanBeBrokenOnIndices = false, adjustIfNotInProperDomain = true, name = "swapXCoordinates")
+
   def swapYSlave(circle1:Int, circle2:Int) = SwapsNeighborhood(Array(coordArray(circle1)._2,coordArray(circle2)._2), symmetryCanBeBrokenOnIndices = false, adjustIfNotInProperDomain = true, name ="swapYCoordinates")
 
   def swapAndSlide = (swapX dynAndThen(swapMove => {
@@ -117,6 +127,35 @@ object TesterCBLS extends App{
   def moveOneCircleYAndThenX = moveYNumeric dynAndThen (assignMode => smallSlideX(assignMode.id)) name "moveYAndThenX"
 
   def moveOneCoordClassic = AssignNeighborhood(flattenedCoordArray,"moveByOneCoord")  //this one is awfully slow!!!
+
+
+  def moveToHole = ConstantMovesNeighborhood(
+    () => {
+      val allCircles = placedCirles.map(_.value).toArray
+
+      val holes:Iterable[(Int,Int)] = Overlap.centroidsOfFreeSpacesIn(allCircles,outerFrame)
+
+      allCircles.indices.flatMap(circleID => {
+
+        val oldX = coordArray(circleID)._1.value
+        val oldY = coordArray(circleID)._2.value
+
+        holes.map(hole => {
+          new EvaluableCodedMove(() => {
+            coordArray(circleID)._1 := (hole._1 max radiusArray(circleID)) min (maxX - radiusArray(circleID))
+            coordArray(circleID)._2 := (hole._2 max radiusArray(circleID)) min (maxY - radiusArray(circleID))
+
+            () => {
+              coordArray(circleID)._1 := oldX
+              coordArray(circleID)._2 := oldY
+            }
+          })
+        })
+      })
+    },
+    neighborhoodName = "moveToHole"
+  )
+
 
   def gradientOnOneShape(shapeID:Int) = new GradientDescent(
     vars = Array(coordArray(shapeID)._1,coordArray(shapeID)._2),
@@ -129,9 +168,9 @@ object TesterCBLS extends App{
 
   def swapAndGradient = swapX dynAndThen(swapMove => (
     swapYSlave(swapMove.idI,swapMove.idJ)
-    andThen new Atomic(gradientOnOneShape(swapMove.idI),
-                       _>10,
-                       stopAsSoonAsAcceptableMoves=true))) name "SwapAndGradient"
+      andThen new Atomic(gradientOnOneShape(swapMove.idI),
+      _>10,
+      stopAsSoonAsAcceptableMoves=true))) name "SwapAndGradient"
 
   val displayDelay:Long = 1000.toLong * 1000 * 500 //.5 seconds
   var lastDisplay = System.nanoTime()
@@ -147,6 +186,7 @@ object TesterCBLS extends App{
       Profile(gradientOnOneShape(7)),
       Profile(gradientOnOneShape(8)),
       Profile(gradientOnOneShape(9)),
+      Profile(moveToHole),
       Profile(moveOneCoordNumeric),
       Profile(moveOneCircleXAndThenY),
       Profile(swapAndSlide),
@@ -157,13 +197,10 @@ object TesterCBLS extends App{
     onExhaustRestartAfter (RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length/5, name = "smallRandomize"),maxRestartWithoutImprovement = 2, obj)
     onExhaustRestartAfter (RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length, name = "fullRandomize"),maxRestartWithoutImprovement = 2, obj)
     afterMove {if(System.nanoTime() > lastDisplay + displayDelay) {
-      updateDisplay()
-      lastDisplay = System.nanoTime()
-    }
+    updateDisplay()
+    lastDisplay = System.nanoTime()
+  }
   } showObjectiveFunction obj)
-
-
-  updateDisplay() //before start
 
   //Thread.sleep(10000)
   //println("start")
