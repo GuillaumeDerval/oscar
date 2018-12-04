@@ -93,7 +93,7 @@ class CodedMove(code: => Unit, override val objAfter: Int, override val neighbor
   * */
 class EvaluableCodedMove(doAndUndo: () => (() => Unit),
                          override val objAfter: Int = Int.MaxValue,
-                         override val neighborhoodName: String = null)
+                         override val neighborhoodName: String = "EvaluableCodedMove")
   extends Move(objAfter, neighborhoodName){
 
   override def commit() {doAndUndo()}
@@ -197,12 +197,12 @@ case class ConstantMoveNeighborhood(m: Move,
     new MoveWithOtherObj(m, newObj,neighborhoodName)
 }
 
-case class ConstantMovesNeighborhood(ms:() => Iterable[Move],
+case class ConstantMovesNeighborhood[MoveType<:Move](ms:() => Iterable[Int => MoveType],
                                      selectMoveBehavior:LoopBehavior = First(),
                                      neighborhoodName:String = "ConstantMovesNeighborhood")
-  extends EasyNeighborhoodMultiLevel[Move](neighborhoodName) {
+  extends EasyNeighborhoodMultiLevel[MoveType](neighborhoodName) {
 
-  var currentMove:Move = null
+  var currentMove:(Int => MoveType) = null
 
   /**
     * This is the method you must implement and that performs the search of your neighborhood.
@@ -214,7 +214,7 @@ case class ConstantMovesNeighborhood(ms:() => Iterable[Move],
     while (moveIterator.hasNext) {
       currentMove = moveIterator.next()
 
-      val newObj = currentMove.evaluate(obj)
+      val newObj = currentMove(Int.MaxValue).evaluate(obj)
 
       if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
         notifyFound1()
@@ -223,8 +223,8 @@ case class ConstantMovesNeighborhood(ms:() => Iterable[Move],
     currentMove = null
   }
 
-  override def instantiateCurrentMove(newObj: Int): Move =
-    new MoveWithOtherObj(currentMove, newObj,neighborhoodName)
+  override def instantiateCurrentMove(newObj: Int): MoveType =
+    currentMove(newObj)
 }
 
 

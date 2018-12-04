@@ -84,7 +84,7 @@ class GeometryDrawing()
     }
 
 
-    //paintSomeHoles(shapes.map(_._1))
+    paintSomeHoles(shapes.map(_._1))
 
     repaint()
   }
@@ -97,16 +97,19 @@ class GeometryDrawing()
     val areas = hh.map(_.getArea)
     val maxArea = areas.max
 
+    val transparentGreen = new Color(0,255,0,100)
     for(i <- hh.indices){
       val h = hh(i)
       val s = new VisualShapeConcrete(this, w.toShape(h))
       s.fill = true
 
+      s.innerCol = transparentGreen
+      /*
       if(areas(i) == maxArea){
         s.innerCol = Color.RED
       }else{
         s.innerCol = Color.BLUE
-      }
+      }*/
 
       s.toolTip = "hole_" + i
 

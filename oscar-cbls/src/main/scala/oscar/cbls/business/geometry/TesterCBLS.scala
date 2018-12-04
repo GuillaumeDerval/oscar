@@ -129,9 +129,9 @@ object TesterCBLS extends App{
   def moveOneCoordClassic = AssignNeighborhood(flattenedCoordArray,"moveByOneCoord")  //this one is awfully slow!!!
 
 
-  def moveToHole = ConstantMovesNeighborhood(
+  def moveToHole = ConstantMovesNeighborhood[MoveCircleTo](
     () => {
-      val allCircles = placedCirles.map(_.value).toArray
+      val allCircles = placedCirles.map(_.value)
 
       val holes:Iterable[(Int,Int)] = Overlap.centroidsOfFreeSpacesIn(allCircles,outerFrame)
 
@@ -141,21 +141,32 @@ object TesterCBLS extends App{
         val oldY = coordArray(circleID)._2.value
 
         holes.map(hole => {
-          new EvaluableCodedMove(() => {
-            coordArray(circleID)._1 := (hole._1 max radiusArray(circleID)) min (maxX - radiusArray(circleID))
-            coordArray(circleID)._2 := (hole._2 max radiusArray(circleID)) min (maxY - radiusArray(circleID))
-
-            () => {
-              coordArray(circleID)._1 := oldX
-              coordArray(circleID)._2 := oldY
-            }
-          })
+          (newObj:Int) => new MoveCircleTo(circleID:Int,hole._1,hole._2,oldX:Int,oldY:Int,newObj)
         })
       })
     },
     neighborhoodName = "moveToHole"
   )
 
+  class MoveCircleTo(val circleID:Int,targetX:Int,targetY:Int,oldX:Int,oldY:Int,newObj:Int)
+    extends EvaluableCodedMove(() => {
+      coordArray(circleID)._1 := (targetX max radiusArray(circleID)) min (maxX - radiusArray(circleID))
+      coordArray(circleID)._2 := (targetY max radiusArray(circleID)) min (maxY - radiusArray(circleID))
+
+      () => {
+        coordArray(circleID)._1 := oldX
+        coordArray(circleID)._2 := oldY
+      }
+    },
+      neighborhoodName = "moveToHole",
+      objAfter = newObj){}
+
+
+  def moveToHoleAndGrandient =
+    moveToHole dynAndThen(moveCircleTo => new Atomic(
+      gradientOnOneShape(moveCircleTo.circleID),
+      _>10,
+      stopAsSoonAsAcceptableMoves=true)) name "moveToHoleAndGrandient"
 
   def gradientOnOneShape(shapeID:Int) = new GradientDescent(
     vars = Array(coordArray(shapeID)._1,coordArray(shapeID)._2),
@@ -172,6 +183,7 @@ object TesterCBLS extends App{
       _>10,
       stopAsSoonAsAcceptableMoves=true))) name "SwapAndGradient"
 
+
   val displayDelay:Long = 1000.toLong * 1000 * 500 //.5 seconds
   var lastDisplay = System.nanoTime()
   val search = (Profile(BestSlopeFirst( //TODO: this is not adapted for single shot neighborhoods such as gradient
@@ -187,6 +199,7 @@ object TesterCBLS extends App{
       Profile(gradientOnOneShape(8)),
       Profile(gradientOnOneShape(9)),
       Profile(moveToHole),
+      Profile(moveToHoleAndGrandient),
       Profile(moveOneCoordNumeric),
       Profile(moveOneCircleXAndThenY),
       Profile(swapAndSlide),
