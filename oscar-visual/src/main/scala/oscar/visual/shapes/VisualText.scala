@@ -34,7 +34,7 @@ class VisualText(d: VisualDrawing, private var x: Double, private var y: Double,
   }
 
   var lines = t.trim.split("\n")
-  def nLines = lines.length
+  def nLines = if(lines == null) 1 else lines.length //Sometime called before lines is initialized
 
   val fm = d.getFontMetrics(d.getFont)
   shape.setRect(x, y, lines.map(lineStr => fm.stringWidth(lineStr)).max, nLines * fm.getHeight)

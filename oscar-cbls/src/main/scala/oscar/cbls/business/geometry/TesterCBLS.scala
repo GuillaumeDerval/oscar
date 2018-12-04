@@ -7,10 +7,9 @@ import oscar.cbls.business.geometry
 import oscar.cbls.business.geometry.invariants._
 import oscar.cbls.business.geometry.visu.GeometryDrawing
 import oscar.cbls.core.computation.IntValue
-import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search._
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Dyn, Profile}
+import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 import oscar.cbls.{CBLSIntVar, Objective, Store}
@@ -141,7 +140,7 @@ object TesterCBLS extends App{
         val oldY = coordArray(circleID)._2.value
 
         holes.map(hole => {
-          (newObj:Int) => new MoveCircleTo(circleID:Int,hole._1,hole._2,oldX:Int,oldY:Int,newObj)
+          (newObj:Int) => new MoveCircleTo(circleID,hole._1,hole._2,oldX,oldY,newObj)
         })
       })
     },
@@ -162,11 +161,11 @@ object TesterCBLS extends App{
       objAfter = newObj){}
 
 
-  def moveToHoleAndGrandient =
+  def moveToHoleAndGradient =
     moveToHole dynAndThen(moveCircleTo => new Atomic(
       gradientOnOneShape(moveCircleTo.circleID),
       _>10,
-      stopAsSoonAsAcceptableMoves=true)) name "moveToHoleAndGrandient"
+      stopAsSoonAsAcceptableMoves=true)) name "moveToHoleAndGradient"
 
   def gradientOnOneShape(shapeID:Int) = new GradientDescent(
     vars = Array(coordArray(shapeID)._1,coordArray(shapeID)._2),
@@ -181,7 +180,7 @@ object TesterCBLS extends App{
     swapYSlave(swapMove.idI,swapMove.idJ)
       andThen new Atomic(gradientOnOneShape(swapMove.idI),
       _>10,
-      stopAsSoonAsAcceptableMoves=true))) name "SwapAndGradient"
+      stopAsSoonAsAcceptableMoves=true))) name "swapAndGradient"
 
 
   val displayDelay:Long = 1000.toLong * 1000 * 500 //.5 seconds
@@ -199,7 +198,7 @@ object TesterCBLS extends App{
       Profile(gradientOnOneShape(8)),
       Profile(gradientOnOneShape(9)),
       Profile(moveToHole),
-      Profile(moveToHoleAndGrandient),
+      Profile(moveToHoleAndGradient),
       Profile(moveOneCoordNumeric),
       Profile(moveOneCircleXAndThenY),
       Profile(swapAndSlide),

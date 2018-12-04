@@ -100,10 +100,16 @@ class GeometryDrawing()
     val transparentGreen = new Color(0,255,0,100)
     for(i <- hh.indices){
       val h = hh(i)
-      val s = new VisualShapeConcrete(this, w.toShape(h))
+
+      /*val s = new VisualShapeConcrete(this, w.toShape(h))
       s.fill = true
 
       s.innerCol = transparentGreen
+      s.border = true
+      s.outerCol = transparentGreen
+            s.toolTip = "hole_" + i
+
+      */
       /*
       if(areas(i) == maxArea){
         s.innerCol = Color.RED
@@ -111,7 +117,6 @@ class GeometryDrawing()
         s.innerCol = Color.BLUE
       }*/
 
-      s.toolTip = "hole_" + i
 
       val center = h.getCentroid
       val centroidPoint = new VisualShapeConcrete(this, w.toShape(center))
