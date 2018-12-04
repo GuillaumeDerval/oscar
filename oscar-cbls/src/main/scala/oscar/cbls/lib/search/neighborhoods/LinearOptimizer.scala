@@ -38,6 +38,10 @@ abstract class LinearOptimizer{
   def carryOnTo(b:LinearOptimizer) = new CarryOnTo(this,b)
 
   def andThen(b:LinearOptimizer) = new AndThen(this,b)
+
+  def restrictBounds(newMinValue:Int, newMaxValue:Int) =  new RestrictBounds(this, newMinValue:Int, newMaxValue:Int)
+
+  def restrictSlide(maxIncrease:Int, maxDecrease:Int) = new RestrictSlide(this, maxIncrease:Int, maxDecrease:Int)
 }
 
 class CarryOnTo(a:LinearOptimizer, b:LinearOptimizer) extends LinearOptimizer{
@@ -72,6 +76,15 @@ case class AndThen(a:LinearOptimizer, b:LinearOptimizer) extends LinearOptimizer
   override def toString: String = "(" + a + " andThen " + b + ")"
 }
 
+case class RestrictBounds(a:LinearOptimizer, newMinValue:Int, newMaxValue:Int) extends LinearOptimizer{
+  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): (Int, Int) =
+    a.search(startPos: Int, startObj: Int, minValue max newMaxValue, maxValue min newMaxValue, obj)
+}
+
+case class RestrictSlide(a:LinearOptimizer, maxIncrease:Int, maxDecrease:Int) extends LinearOptimizer{
+  override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): (Int, Int) =
+    a.search(startPos: Int, startObj: Int, minValue max (startPos - maxDecrease), maxValue min (startPos + maxIncrease), obj)
+}
 
 class Exhaustive(step:Int = 1,skipInitial:Boolean = false, maxIt: Int) extends LinearOptimizer{
   override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): (Int, Int) = {
