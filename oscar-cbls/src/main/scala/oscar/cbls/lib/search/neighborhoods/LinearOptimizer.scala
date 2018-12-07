@@ -1,5 +1,11 @@
 package oscar.cbls.lib.search.neighborhoods
 
+import oscar.cbls.Store
+import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.lib.invariant.numeric.Sum2
+import oscar.cbls.modeling.CBLSModel
+
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -114,7 +120,7 @@ class NarrowingStepSlide(dividingRatio:Int, minStep: Int)  extends LinearOptimiz
   override def toString: String = "NarrowingStepSlide(dividingRatio:" + dividingRatio + ")"
   override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): (Int, Int) = {
     new SlideVaryingSteps(generateSteps((maxValue - minValue)/dividingRatio).reverse, false,Int.MaxValue).
-          search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int)
+      search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int)
   }
 
   def generateSteps(maxStepSize:Int):List[Int] = {
@@ -243,7 +249,7 @@ class Slide(step:Int = 1, maxIt: Int) extends LinearOptimizer{
     val goingUp = valueAbove < valueBelow
 
     if(goingUp){
-     // println("going up")
+      // println("going up")
       currentPoint = pointAbove
       currentValue = valueAbove
     }else{
@@ -360,7 +366,7 @@ object TestRN extends App{
   eval(new Exhaustive(step = 50, maxIt = maxIt) carryOnTo new Slide(step = 1, maxIt: Int))
   eval(new NewtonRaphsonMinimize(1, maxIt: Int) carryOnTo new  TryExtremes())
   eval(new Slide(step = 10, maxIt: Int))
-  eval(new NarrowingStepSlide(10, maxIt: Int))
+  eval(new NarrowingStepSlide(10, minStep = 1))
   eval(new NewtonRaphsonMinimize(1, maxIt: Int) carryOnTo new Slide(step = 1, maxIt: Int))
   eval(new Exhaustive(step = 50, maxIt = maxIt) carryOnTo new NewtonRaphsonMinimize(1, maxIt: Int) carryOnTo new Slide(step = 1, maxIt: Int))
   eval(new Exhaustive(step = 50, maxIt = maxIt) andThen (new NewtonRaphsonMinimize(1, maxIt: Int) carryOnTo new Slide(step = 1, maxIt: Int)))
@@ -369,3 +375,35 @@ object TestRN extends App{
 
 }
 
+object Paraboloide extends App{
+
+  val m = new Store()
+
+  val x = new CBLSIntVar(m,10,0 to 1000,"x")
+  val y = new CBLSIntVar(m,10,0 to 1000,"y")
+
+  val a:IntValue = (x - 300) * (x - 300)
+  val b:IntValue = (y - 100) * (y - 100)
+  val f:IntValue = Sum2(a,b)
+  val obj = Objective(f)
+
+  m.close()
+  printModel()
+
+  def printModel(): Unit ={
+    println(x)
+    println(y)
+    println("f:" + f)
+  }
+  val search = GradientDescent(Array(x,y),
+    selectVars= 0 to 1,
+    variableIndiceToDeltaForGradientDefinition = _ => 10,
+    linearSearch = new NarrowingStepSlide(10, minStep = 1),
+    maxSlopeRatio = 3)
+
+  search.verbose = 3
+
+  search.doAllMoves(obj = obj)
+
+  printModel()
+}
