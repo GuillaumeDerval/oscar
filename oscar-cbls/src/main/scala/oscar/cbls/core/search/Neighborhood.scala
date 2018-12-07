@@ -503,6 +503,8 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
 
   def instantiateCurrentMove(newObj: Int): M
 
+  def moveHasBeenFound:Boolean = toReturnMove != null
+
   def evaluateCurrentMoveObjTrueIfSomethingFound(newObj: Int): Boolean = {
     //on teste l'acceptance criterion sur tout
     //on garde toujours le meilleur mouvement

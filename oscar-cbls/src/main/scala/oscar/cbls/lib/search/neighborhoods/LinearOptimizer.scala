@@ -4,6 +4,7 @@ import oscar.cbls.Store
 import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.invariant.numeric.Sum2
+import oscar.cbls.lib.search.neighborhoods.TestRN.maxIt
 import oscar.cbls.modeling.CBLSModel
 
 /*******************************************************************************
@@ -398,10 +399,11 @@ object Paraboloide extends App{
   val search = GradientDescent(Array(x,y),
     selectVars= 0 to 1,
     variableIndiceToDeltaForGradientDefinition = _ => 10,
-    linearSearch = new NarrowingStepSlide(10, minStep = 1),
-    maxSlopeRatio = 3)
+    linearSearch = new NarrowingStepSlide(3, minStep = 1),
+    maxSlopeRatio = 10,
+    trySubgradient = true)
 
-  search.verbose = 3
+  search.verbose = 2
 
   search.doAllMoves(obj = obj)
 

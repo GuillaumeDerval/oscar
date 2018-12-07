@@ -29,11 +29,11 @@ case class GradientComponent(variable:CBLSIntVar,
                              maxStep:Int){
   override def toString: String =
     "GradientComponent(variable:" + variable + "," +
-    "initiValue:" + initiValue + "," +
-    "indice:" + indice + "," +
-    "slope:" + slope+ ","+
-    "maxStep:" + maxStep + "," +
-    "minStep:" + minStep + ")"
+      "initiValue:" + initiValue + "," +
+      "indice:" + indice + "," +
+      "slope:" + slope+ ","+
+      "maxStep:" + maxStep + "," +
+      "minStep:" + minStep + ")"
 }
 
 case class GradientDescent(vars:Array[CBLSIntVar],
@@ -43,7 +43,8 @@ case class GradientDescent(vars:Array[CBLSIntVar],
                            variableIndiceToDeltaForGradientDefinition:Int => Int,
                            hotRestart:Boolean = true,
                            linearSearch:LinearOptimizer,
-                           maxSlopeRatio:Int)
+                           maxSlopeRatio:Int,
+                           trySubgradient:Boolean)
   extends EasyNeighborhoodMultiLevel[GradientMove](name) {
 
   var gradientDefinition:List[GradientComponent] = List.empty
@@ -67,12 +68,10 @@ case class GradientDescent(vars:Array[CBLSIntVar],
       else selectVars
 
     val selectVarsIt = selectVarsWithHotRestart.iterator
-    println("initialObj" + initialObj)
+
     while(selectedVarSet.size < maxNbVars && selectVarsIt.hasNext){
       val currentVarIndice = selectVarsIt.next
       startIndiceForHotRestart = currentVarIndice
-
-      println("analyzing " + currentVarIndice )
 
       if(! (selectedVarSet contains currentVarIndice)){
         val currentVar = vars(currentVarIndice)
@@ -85,31 +84,19 @@ case class GradientDescent(vars:Array[CBLSIntVar],
           val valueAbove = oldVal + deltaForVar
           if (valueAbove >= currentVar.max) {
             //no point of increasing it; thy decreasing?
-            println("no point of increasing it; thy decreasing?")
-
             val valueBelow = (oldVal - deltaForVar) max currentVar.min
             val objBelow = obj.assignVal(currentVar, valueBelow)
-            println("objBelow:" + objBelow)
             (valueBelow - oldVal).toDouble / (objBelow - initialObj).toDouble
           } else {
             val objAbove = obj.assignVal(currentVar, valueAbove)
-            println("objAbove:" + objAbove)
             (valueAbove - oldVal).toDouble / (objAbove - initialObj).toDouble
           }
         }
-
-        println("got slope" + slope)
-
-        println("cond1:" + (slope != 0))
-        println("cond2:" + (slope < 0 || ((oldVal - deltaForVar) > currentVar.min)))
-        println("cond3:" + (slope > 0 || (oldVal + deltaForVar < currentVar.max)))
-
 
         if(slope != 0 &&
           (slope < 0 || ((oldVal - deltaForVar) > currentVar.min))
           && (slope > 0 || ((oldVal + deltaForVar) < currentVar.max))){
 
-          println("keep for gradient")
           val bound1 = ((currentVar.max - oldVal) / slope).toInt
           val bound2 = ((currentVar.min - oldVal) / slope).toInt
 
@@ -134,35 +121,38 @@ case class GradientDescent(vars:Array[CBLSIntVar],
       startIndiceForHotRestart = startIndiceForHotRestart+1
     }
 
-    if(gradientDefinition.isEmpty){
-      println("no gradient found")
-      return
+    while(gradientDefinition.nonEmpty){
+
+      //println("\t" + gradientDefinition.mkString("\n\t"))
+
+      val minStep = gradientDefinition.map(_.minStep).max
+      val maxStep = gradientDefinition.map(_.maxStep).min
+
+      require(minStep < maxStep)
+      def evaluateStep(step:Int):Int = {
+        this.currentStep = step
+        val newObj = obj.assignVal(gradientDefinition.map(component => (component.variable, component.initiValue + (component.slope * step).toInt)))
+        evaluateCurrentMoveObjTrueIfSomethingFound(newObj)
+        newObj
+      }
+
+      //step2: find proper step with numeric method considered
+      val (bestStep,newObj) = linearSearch.search(0,initialObj,minStep,maxStep,evaluateStep)
+      //we do not consider the value because it is saved through the evaluateStep method.
+
+      if(moveHasBeenFound){
+        return
+      } else if (trySubgradient){
+
+        //we remove the steepest slope because the absence of move is possibly due to numerical artifacts
+
+        def abs(d:Double):Double = if (d < 0) -d else d
+        val maxSlope = gradientDefinition.map(s => abs(s.slope)).max
+
+        gradientDefinition = gradientDefinition.filter(c => abs(c.slope) != maxSlope)
+        //println("prune gradient")
+      }
     }
-
-    def abs(d:Double):Double = if (d < 0) -d else d
-    val maxSlope = gradientDefinition.map(s => abs(s.slope)).max
-
-    val minSlope = maxSlope / maxSlopeRatio
-    println("before filter:"  + gradientDefinition.length)
-    gradientDefinition = gradientDefinition.filter(c => (abs(c.slope) > minSlope))
-    println("after filter:"  +gradientDefinition.length)
-
-    println("\t" + gradientDefinition.mkString("\n\t"))
-
-    val minStep = gradientDefinition.map(_.minStep).max
-    val maxStep = gradientDefinition.map(_.maxStep).min
-
-    require(minStep < maxStep)
-    def evaluateStep(step:Int):Int = {
-      this.currentStep = step
-      val newObj = obj.assignVal(gradientDefinition.map(component => (component.variable, component.initiValue + (component.slope * step).toInt)))
-      evaluateCurrentMoveObjTrueIfSomethingFound(newObj)
-      newObj
-    }
-
-    //step2: find proper step with numeric method considered
-    val (bestStep,newObj) = linearSearch.search(0,initialObj,minStep,maxStep,evaluateStep)
-    //we do not consider the value because it is saved through the evaluateStep method.
   }
 
   override def instantiateCurrentMove(newObj: Int): GradientMove = {
