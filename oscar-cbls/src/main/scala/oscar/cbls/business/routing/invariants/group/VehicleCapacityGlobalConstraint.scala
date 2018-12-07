@@ -1,5 +1,5 @@
 package oscar.cbls.lib.invariant.routing.capa.stagequentinmeurisse
-
+/*
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.group.PreComputeInvariant
@@ -9,6 +9,8 @@ import oscar.cbls.core.propagation.Checker
 
 /**
   * @author Quentin Meurisse
+  *
+  *
 
 object VehicleCapacityGlobalConstraint {
   def apply(routes: ChangingSeqValue,
