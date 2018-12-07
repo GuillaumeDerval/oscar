@@ -587,8 +587,7 @@ class NeighborhoodOps(n:Neighborhood){
    */
   def showObjectiveFunction(obj: Objective,
                             stopWatch: StopWatch = new StopWatch {startWatch()},
-                            withZoom:Boolean = false
-                           ) = new ShowObjectiveFunction(n,obj,stopWatch,withZoom)
+                           ) = new ObjectiveFunctionTracer(n,obj,stopWatch)
 
   /**
    * this combinator attaches a custom code to a given neighborhood.

@@ -1,12 +1,12 @@
 package oscar.cbls.lib.search.combinators
 
-import java.awt.{Dimension, Color}
-import javax.swing.JFrame
+import java.awt.Dimension
 
 import oscar.cbls._
 import oscar.cbls.core.search._
 import oscar.cbls.util.StopWatch
-import oscar.cbls.visual.FunctionGraphic.{AdjustMaxValue, Zoom, ObjFunctionGraphicContainer}
+import oscar.cbls.visual.SingleFrameWindow
+import oscar.cbls.visual.obj.ObjFunctionGraphicContainer
 
 trait UtilityCombinators{
   /**
@@ -34,34 +34,17 @@ trait UtilityCombinators{
  * @param withZoom if true the Zoom thread will be used in stead of the AdjustMaxValues trait
  * @author fabian.germeau@student.vinci.be
  */
-class ShowObjectiveFunction(a: Neighborhood, obj: Objective, stopWatch: StopWatch, withZoom:Boolean) extends NeighborhoodCombinator(a){
+class ObjectiveFunctionTracer(a: Neighborhood, obj: Objective, stopWatch: StopWatch) extends NeighborhoodCombinator(a){
   //objGraphic is an internal frame that contains the curve itself and visualFrame is a basic frame that contains objGraphic
-  val objGraphic = if(withZoom) new ObjFunctionGraphicContainer(dimension = new Dimension(940,500)) with Zoom
-  else new ObjFunctionGraphicContainer(dimension = new Dimension(960,540)) with AdjustMaxValue
+  val objGraphic = new ObjFunctionGraphicContainer(dimension = new Dimension(960,540))
 
-  new Thread(objGraphic,"Graphic Thread").start()
-
-  val visualFrame = new JFrame()
-  visualFrame.setPreferredSize(new Dimension(960,540))
-  visualFrame.add(objGraphic)
-  visualFrame.pack()
-  visualFrame.setVisible(true)
+  SingleFrameWindow.show(objGraphic,"objective function", width = 960, height = 540)
 
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult ={
     a.getMove(obj, initialObj, acceptanceCriteria) match {
       case m: MoveFound =>
-        InstrumentedMove(m.m, null, () => notifyNewObjValue(m.m))
+        InstrumentedMove(m.m, null, () => objGraphic.appendData(obj.value,stopWatch.getWatch))
       case x => x
-    }
-  }
-
-  /*
-    After each move we send the new value and time to objGraphic who will register the value
-    and then we write the curve
-   */
-  def notifyNewObjValue(m:Move): Unit ={
-    objGraphic.objCurveDatas.synchronized{
-      objGraphic.objCurveDatas = (obj.value,stopWatch.getWatch,m.neighborhoodName) :: objGraphic.objCurveDatas
     }
   }
 }

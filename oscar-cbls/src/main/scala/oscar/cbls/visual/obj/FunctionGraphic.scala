@@ -1,4 +1,4 @@
-package oscar.cbls.visual.FunctionGraphic
+package oscar.cbls.visual.obj
 
 /**
   * *****************************************************************************
@@ -30,53 +30,41 @@ import scala.collection.mutable.ListBuffer
 
 /** This abstract class represent the base structure for
   * the classes who'll have the purpose of drawing the curve of a function.
-  * It has many variables :
-  * maxWidth : it represents the right horizontal drawing limit of the curve
-  * minWidth : it represents the left horizontal drawing limit of the curve
-  * diffWidth : the difference between the maxWidth and the minWidth
-  * maxHeight : it represents the bottom vertical drawing limit of the curve
-  * minHeight : it represents the top vertical drawing limit of the curve
-  * diffHeight : the difference between the maxHeight and the minHeight
-  * xValues : a ListBuffer that contains all the X values encountered so far
-  * yValues : a ListBuffer that contains all the Y values encountered so far
-  * maxXValueDisplayed : the maximum X value that will be displayed on the graphic
-  * minXValueDisplayed : the minimum X value that will be displayed on the graphic
-  * diffXValueDisplayed : the difference between the maxXValueDisplayed and the minXValueDisplayed
-  * maxYValueDisplayed : the maximum Y value that will be displayed on the graphic
-  * minYValueDisplayed : the minimum Y value that will be displayed on the graphic
-  * diffYValueDisplayed : the difference between the maxYValueDisplayed and the minYValueDisplayed
-  * maxXValue :  the maximum X value registered so far
-  * minXValue : the minimum X value registered so far
-  * diffXValue : the difference between the maxXValue and the minXValue
-  * maxYValue : the maximum Y value registered so far
-  * minYValue : the minimum Y value registered so far
-  * diffYValue : the difference between the maxYValue and the minYValue
-  * widthAdapter : an anonymous function that return the X position of a point in pixel
-  *                based on the minXValueDisplayed and the maxXValueDisplayed values
-  * heightAdapter : an anonymous function that return the Y position of a point in pixel
-  *                based on the minYValueDisplayed and the maxYValueDisplayed
-  *
   * @author fabian.germeau@student.vinci.be
   */
-
 abstract class FunctionGraphic() extends VisualDrawing(false,false) with StopWatch{
 
+  //the right horizontal drawing limit of the curve
   val maxWidth = () => getWidth -10
+  //the left horizontal drawing limit of the curve
   val minWidth = 70
+  //the difference between the maxWidth and the minWidth
   val diffWidth = () => maxWidth() - minWidth
+  //the bottom vertical drawing limit of the curve
   val maxHeight = () => getHeight - 30
+  //the top vertical drawing limit of the curve
   val minHeight = 10
+  //the difference between the maxHeight and the minHeight
   val diffHeight = () => maxHeight() - minHeight
 
-
+//all the X values encountered so far
   val xValues:ListBuffer[Long] = new ListBuffer[Long]
+  //all the Y values encountered so far
   val yValues:ListBuffer[Int] = new ListBuffer[Int]
 
+  //the maximum X value that will be displayed on the graphic
   var maxXValueDisplayed:Long = 0
+  //the minimum X value that will be displayed on the graphic
   var minXValueDisplayed:Long = 0
+
+  //the difference between the maxXValueDisplayed and the minXValueDisplayed
   val diffXValueDisplayed = () => maxXValueDisplayed - minXValueDisplayed
+
+  //the maximum Y value that will be displayed on the graphic
   var maxYValueDisplayed:Long = 0
+  //the minimum Y value that will be displayed on the graphic
   var minYValueDisplayed:Long = 0
+  //the difference between the maxYValueDisplayed and the minYValueDisplayed
   val diffYValueDisplayed = () => maxYValueDisplayed - minYValueDisplayed
 
   var minAbs:Long = 0
@@ -86,22 +74,30 @@ abstract class FunctionGraphic() extends VisualDrawing(false,false) with StopWat
   var maxOrd:Long = 0
   val diffOrd = () => maxOrd - minOrd
 
+  //the maximum X value registered so far
   val maxXValue = () => if(xValues.isEmpty)0 else xValues.max
+  //the minimum X value registered so far
   val minXValue = () => if(xValues.isEmpty)0 else xValues.min
+  //the difference between the maxXValue and the minXValue
   val diffXValue = () => maxXValue() - minXValue()
+  //the maximum Y value registered so far
   val maxYValue = () => if(yValues.isEmpty)0 else yValues.max
+  //the minimum Y value registered so far
   val minYValue = () => if(yValues.isEmpty)0 else yValues.min
+  //the difference between the maxYValue and the minYValue
   val diffYValue = () => maxYValue() - minYValue()
 
+  //an anonymous function that return the X position of a point in pixel
+  //based on the minXValueDisplayed and the maxXValueDisplayed values
   val widthAdapter = (value:Long) => {
     ((value - minXValueDisplayed)*diffWidth().toDouble/Math.max(diffWidth(),diffXValueDisplayed())).toInt
   }
+
+  //an anonymous function that return the Y position of a point in pixel
+   //based on the minYValueDisplayed and the maxYValueDisplayed
   val heightAdapter = (value:Long) => {
     (value - minYValueDisplayed)*diffHeight().toDouble/Math.max(diffHeight(),diffYValueDisplayed())
   }
-
-  //A list buffer that contains the color of the neighborhood that has found the current move
-  val xColorValues:ListBuffer[Color] = new ListBuffer[Color]
 
   setLayout(new BorderLayout())
 
@@ -110,10 +106,6 @@ abstract class FunctionGraphic() extends VisualDrawing(false,false) with StopWat
   removeMouseMotionListener(getMouseMotionListeners.head)
 
   def notifyNewObjectiveValue(objValue:Int, objTime:Long)
-
-  def clear(): Unit ={
-    super.clear()
-  }
 
   override def addShape(shape: VisualShape, repaintAfter: Boolean = true): Unit ={
     super.addShape(shape,false)
@@ -172,12 +164,11 @@ class ObjFunctionGraphic() extends FunctionGraphic(){
   /**
     * Clear the graphic and reset the different ListBuffers in order to begin another research
     */
-  override def clear(): Unit ={
-    super.clear()
+  def clear(): Unit ={
+    super.clear(false)
     yValues.clear()
     xValues.clear()
     bestValues.clear()
-    xColorValues.clear()
   }
 
   /**
@@ -208,7 +199,6 @@ class ObjFunctionGraphic() extends FunctionGraphic(){
     minOrd = bottom
     maxOrd = top
 
-    drawStatistics()
     drawCurve()
     drawAxis()
     super.drawGlobalCurve()
@@ -358,43 +348,5 @@ class ObjFunctionGraphic() extends FunctionGraphic(){
     val rectBottomLeft = new VisualRectangle(this, new Rectangle2D.Double(0,maxHeight(),minWidth,getHeight))
     val bestText = new VisualText(this,minWidth/2,maxHeight()+20,"Best",true,new Rectangle2D.Double(0,0,1,1))
     bestText.fontColor= if (displayBest) Color.green else Color.red
-  }
-
-  /**
-    * Draw the neighborhood statistics. For each time step, the method count the number of occurences of each neighborhood encountered
-    * And whit this information it draws small rectangles in the background representing the proportion of each neighborhood.
-    */
-  def drawStatistics(): Unit ={
-    val timeStep = diffAbs()/10
-    val colorSums:Array[Map[Color,Int]] = Array.tabulate(10)(n => Map[Color,Int]())
-    var i = 0
-
-    while(i < xColorValues.size && Math.floor((xValues(i) - minAbs)/timeStep).toInt < 10){
-      val columnNumber = Math.floor((xValues(i) - minAbs)/timeStep).toInt
-      if(columnNumber >= 0){
-        colorSums(columnNumber).get(xColorValues(i)) match{
-          case Some(s:Int) => colorSums(columnNumber) += xColorValues(i) -> (1 + s)
-          case None => colorSums(columnNumber) += xColorValues(i) -> 1
-        }
-      }
-      i += 1
-    }
-    val totalColors = colorSums.map(_.foldLeft(0)((c,d) => c + d._2))
-    val maxColor  = totalColors.max
-    for(i <- 1 to 10){
-      val leftBorder = Math.max(widthAdapter((i*timeStep) + minAbs),minWidth)
-      val rightBorder = widthAdapter(((i+1)*timeStep) + minAbs)-leftBorder
-      var previousHeight:Float = 0
-      for(color <- colorSums(i-1)){
-        val colorHeight:Float = color._2/maxColor.toFloat
-        previousHeight += colorHeight
-        val coloredHistogram = new VisualRectangle(this,new Rectangle2D.Double(
-            leftBorder, maxHeight() - previousHeight*diffHeight(),
-            rightBorder, colorHeight*diffHeight()))
-        coloredHistogram.innerCol = color._1
-        coloredHistogram.outerCol = color._1
-      }
-      new VisualLine(this,new Double(leftBorder,maxHeight(),leftBorder,minHeight)).outerCol = Color.white
-    }
   }
 }
