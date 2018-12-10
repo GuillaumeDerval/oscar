@@ -26,7 +26,7 @@ import javax.swing._
 
 import oscar.cbls.core.computation.IntValue
 import oscar.cbls.util.StopWatch
-import oscar.cbls.visual.obj.{ObjFunctionGraphicContainer, Zoom}
+import oscar.cbls.visual.obj.{ObjFunctionGraphicContainer}
 
 import scala.swing.{Dimension, Insets}
 /*

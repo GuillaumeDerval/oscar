@@ -503,7 +503,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
   //passing parameters, and getting return values from the search
   private var oldObj: Int = 0
   private var acceptanceCriterion: (Int, Int) => Boolean = null
-  private var toReturnMove: Move = null
+  protected var toReturnMove: Option[M] = None
   private var bestNewObj: Int = Int.MaxValue
   protected var obj: Objective = null
   private var exploring = false // to check that it is not called recursiely because it is not reentrant
@@ -515,7 +515,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
 
     oldObj = initialObj
     this.acceptanceCriterion = acceptanceCriterion
-    toReturnMove = null
+    toReturnMove = None
     bestNewObj = initialObj //because we do not want "no move" to be considered as an actual move.
     this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
     if (printExploredNeighborhoods)
@@ -525,7 +525,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
 
     exploring = false
 
-    if (toReturnMove == null) {
+    if (toReturnMove.isEmpty) {
       if (printExploredNeighborhoods) {
         println(neighborhoodNameToString + ": no move found")
       }
@@ -534,7 +534,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
       if (printExploredNeighborhoods) {
         println(neighborhoodNameToString + ": move found: " + toReturnMove)
       }
-      toReturnMove
+      toReturnMove.get
     }
   }
 
@@ -547,6 +547,8 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
 
   def instantiateCurrentMove(newObj: Int): M
 
+  def moveHasBeenFound:Boolean = toReturnMove.isDefined
+
   def evaluateCurrentMoveObjTrueIfSomethingFound(newObj: Int): Boolean = {
     //on teste l'acceptance criterion sur tout
     //on garde toujours le meilleur mouvement
@@ -556,9 +558,9 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
 
     if (newObj < bestNewObj && acceptanceCriterion(oldObj, newObj)) {
       bestNewObj = newObj
-      toReturnMove = instantiateCurrentMove(newObj)
+      toReturnMove = Some(instantiateCurrentMove(newObj))
       if (myPrintExploredNeighbors) {
-        println("Explored " + toReturnMove + ", new best accepted)")
+        println("Explored " + toReturnMove.get + ", new best accepted)")
         println(obj.asInstanceOf[LoggingObjective].getAndCleanEvaluationLog.mkString("\n"))
       }
       true

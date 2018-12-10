@@ -172,7 +172,7 @@ object TesterCBLS extends App{
     name= "GradientMove(" + shapeID + ")",
     maxNbVars = 2,
     selectVars = List(0,1),
-    variableIndiceToDeltaForGradientDefinition = _ => 5,
+    variableIndiceToDeltaForGradientDefinition = _ => 20,
     hotRestart = false,
     linearSearch = new NarrowingStepSlide(dividingRatio = 10, minStep = 1)) //new Slide(step=20,maxIt=100)) // new NewtonRaphsonMinimize(5,40))
 
