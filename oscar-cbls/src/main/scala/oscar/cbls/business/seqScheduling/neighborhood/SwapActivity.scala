@@ -1,5 +1,6 @@
 package oscar.cbls.business.seqScheduling.neighborhood
 
+import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.seqScheduling.model.{Constants, SchedulingProblem}
 import oscar.cbls.core.computation.CBLSSeqVar
@@ -23,13 +24,17 @@ class SwapActivity(schP: SchedulingProblem,
     */
   override def exploreNeighborhood(): Unit = {
     // iteration zone on activities indices
-    //TODO: check the hotRestart in other neighborhood; this really speeds up the search in other contexts; possibly in scheduling as well?
-    val iterationZone = searchIndices.getOrElse(() => 0 until schP.activities.size)
+    // Checking the Hot Restart
+    val iterationZone1 = searchIndices.getOrElse(() => 0 until schP.activities.size)
+    val hotRestart = true
+    val iterationZone =
+      if (hotRestart) HotRestart(iterationZone1(), currentIndex)
+      else iterationZone1()
 
     // Define checkpoint on sequence (activities list)
     val seqValueCheckPoint = schP.activitiesPriorList.defineCurrentValueAsCheckpoint(true)
     // iterating over the indices in the activity list
-    val (indicesIterator, notifyIndexFound) = selectIndiceBehavior.toIterator(iterationZone())
+    val (indicesIterator, notifyIndexFound) = selectIndiceBehavior.toIterator(iterationZone)
 
     while (indicesIterator.hasNext) {
       currentIndex = indicesIterator.next()

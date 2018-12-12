@@ -4,24 +4,28 @@ import oscar.cbls.algo.boundedArray.BoundedArray
 import oscar.cbls.business.seqScheduling.model._
 import oscar.cbls.business.seqScheduling.neighborhood.{ReinsertActivity, SwapActivity}
 import oscar.cbls.core.computation.Store
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
 import scala.util.Random
 
 object SeqSchedulingBig {
-  val nbAct = 150
-  val nbRes = 100
+  val nbAct = 60
+  val nbRes = 60
   val minDuration = 1
-  val maxDuration = 15
+  val maxDuration = 25
   val minCapacity = 1
-  val maxCapacity = 20
+  val maxCapacity = 25
   val minRMRes = 0
-  val maxRMRes = 50
+  val maxRMRes = 60
+  val densityUsageRes = 25
   val minSetupRes = 0
-  val maxSetupRes = 5
+  val maxSetupRes = 13
+  val densityPrecedencies = 5
   val randomGen = new Random()
 
-  def randomBoolean(): Boolean = {
-    randomGen.nextBoolean()
+  def randomBoolean(density: Int): Boolean = {
+    val rdVal = randomGen.nextInt(100)
+    rdVal < density
   }
 
   def randomInterval(inf: Int, sup: Int): Int = {
@@ -70,7 +74,7 @@ object SeqSchedulingBig {
       // Add precedence
       for { j <- 0 until i } {
         val actJ = activities.elementAt(j)
-        if (randomBoolean()) {
+        if (randomBoolean(densityPrecedencies)) {
           precedences.addPrecedence(act, actJ)
         }
       }
@@ -80,7 +84,7 @@ object SeqSchedulingBig {
         val capRes = res.valCapacity
         val rmRes = res.getRunningModes
         for { rm <- rmRes } {
-          if (randomBoolean()) {
+          if (randomBoolean(densityUsageRes)) {
             val usedCap = randomInterval(1, capRes)
             resourceUsages.addActivityResourceUsage(act, res, rm, usedCap)
           }
@@ -99,17 +103,19 @@ object SeqSchedulingBig {
     println("Model closed.")
     val swapNH = new SwapActivity(scProblem, "Swap")
     val reinsertNH = new ReinsertActivity(scProblem, "Reinsert")
-    val combinedNH = reinsertNH best swapNH
+    val combinedNH = BestSlopeFirst(List(Profile(reinsertNH), Profile(swapNH)))
     // This is the search strategy
     println("Computing solution...")
     val t0 = System.nanoTime()
+    combinedNH.verbose = 1
     combinedNH.doAllMoves(obj = scProblem.mkspObj)
     val t1 = System.nanoTime()
+    println(combinedNH.profilingStatistics)
     // And here, the results
     println(s"*************** RESULTS ***********************************")
     println(s"Elapsed time : ${t1-t0} ns")
     println(s"Schedule makespan = ${scProblem.makeSpan.value}")
-    println(s"Scheduling sequence = ${scProblem.activitiesPriorList.value}")
+    println(s"Scheduling sequence = ${scProblem.activitiesPriorList.value.toList}")
     println("Scheduling start times = [  ")
     scProblem.startTimes.foreach(v => println(s"    $v"))
     println("]")

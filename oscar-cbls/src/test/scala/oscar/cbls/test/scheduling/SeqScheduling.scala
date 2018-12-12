@@ -60,7 +60,7 @@ object SeqScheduling {
   m.close()
 
   println("Model closed")
-  println(s"Makespan at closing = ${scProblem.makeSpan}")
+  println(s"Makespan at closing = ${scProblem.makeSpan.value}")
 
   def main(args: Array[String]): Unit = {
     // Neighborhoods
@@ -72,7 +72,7 @@ object SeqScheduling {
     // And here, the results
     println(s"*************** RESULTS ***********************************")
     println(s"Schedule makespan = ${scProblem.makeSpan.value}")
-    println(s"Scheduling sequence = ${scProblem.activitiesPriorList.value}")
+    println(s"Scheduling sequence = ${scProblem.activitiesPriorList.value.toList}")
     println("Scheduling start times = [  ")
     scProblem.startTimes.foreach(v => println(s"    $v"))
     println("]")
