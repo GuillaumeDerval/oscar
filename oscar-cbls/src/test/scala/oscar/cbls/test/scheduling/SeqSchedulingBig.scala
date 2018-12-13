@@ -9,17 +9,17 @@ import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 import scala.util.Random
 
 object SeqSchedulingBig {
-  val nbAct = 60
-  val nbRes = 60
+  val nbAct = 100
+  val nbRes = 100
   val minDuration = 1
   val maxDuration = 25
   val minCapacity = 1
   val maxCapacity = 25
   val minRMRes = 0
-  val maxRMRes = 60
+  val maxRMRes = 100
   val densityUsageRes = 25
   val minSetupRes = 0
-  val maxSetupRes = 13
+  val maxSetupRes = 25
   val densityPrecedencies = 5
   val randomGen = new Random()
 
@@ -101,6 +101,7 @@ object SeqSchedulingBig {
     val scProblem = createRandomProblem(model)
     model.close()
     println("Model closed.")
+    // Neighborhoods
     val swapNH = new SwapActivity(scProblem, "Swap")
     val reinsertNH = new ReinsertActivity(scProblem, "Reinsert")
     val combinedNH = BestSlopeFirst(List(Profile(reinsertNH), Profile(swapNH)))

@@ -4,6 +4,7 @@ import oscar.cbls._
 import oscar.cbls.algo.boundedArray.BoundedArray
 import oscar.cbls.business.seqScheduling.model._
 import oscar.cbls.business.seqScheduling.neighborhood.{ReinsertActivity, SwapActivity}
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
 object SeqSchedulingWithoutResources {
   // CBLS Store
@@ -32,14 +33,14 @@ object SeqSchedulingWithoutResources {
   m.close()
 
   def main(args: Array[String]): Unit = {
-    // Neighborhood
-    //val neighborhood = new SwapActivity(scProblem, "Swap")
+    // Neighborhoods
     val swapNH = new SwapActivity(scProblem, "Swap")
     val reinsertNH = new ReinsertActivity(scProblem, "Reinsert")
-    val combinedNH = reinsertNH andThen swapNH
+    val combinedNH = BestSlopeFirst(List(Profile(reinsertNH), Profile(swapNH)))
     // This is the search strategy
     combinedNH.doAllMoves(obj = scProblem.mkspObj)
     // And here, the results
+    println(combinedNH.profilingStatistics)
     println(s"*************** RESULTS ***********************************")
     println(s"Schedule makespan = ${scProblem.makeSpan.value}")
     println(s"Scheduling sequence = ${scProblem.activitiesPriorList.value}")

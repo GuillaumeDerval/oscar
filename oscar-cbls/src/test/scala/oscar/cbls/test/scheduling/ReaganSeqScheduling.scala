@@ -4,6 +4,7 @@ import oscar.cbls.algo.boundedArray.BoundedArray
 import oscar.cbls.business.seqScheduling.model._
 import oscar.cbls.business.seqScheduling.neighborhood.{ReinsertActivity, SwapActivity}
 import oscar.cbls.core.computation.Store
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
 object ReaganSeqScheduling {
   val model = Store(checker = None, noCycle=false)
@@ -41,17 +42,17 @@ object ReaganSeqScheduling {
   val scProblem = new SchedulingProblem(model, activities, resources, precedences, resUsages)
   // Model closed
   model.close()
-
-  println("Model closed")
+  println("Model closed.")
 
   def main(args: Array[String]): Unit = {
     // Neighborhoods
     val swapNH = new SwapActivity(scProblem, "Swap")
     val reinsertNH = new ReinsertActivity(scProblem, "Reinsert")
-    val combinedNH = reinsertNH best swapNH
+    val combinedNH = BestSlopeFirst(List(Profile(reinsertNH), Profile(swapNH)))
     // This is the search strategy
     combinedNH.doAllMoves(obj = scProblem.mkspObj)
     // And here, the results
+    println(combinedNH.profilingStatistics)
     println(s"*************** RESULTS ***********************************")
     println(s"Schedule makespan = ${scProblem.makeSpan.value}")
     println(s"Scheduling sequence = ${scProblem.activitiesPriorList.value}")
