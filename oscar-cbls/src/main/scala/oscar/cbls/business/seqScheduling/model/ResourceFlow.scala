@@ -1,14 +1,12 @@
 package oscar.cbls.business.seqScheduling.model
 
-import oscar.cbls.algo.accList.AccList
-
 /**
   * Abstract class representing the flow of a resource
   */
 abstract class ResourceFlow {
-  // quantity of consommed resource
+  // quantity of consumed resource
   val quantity: Int
-  // ending time in the schadule for this resource flow
+  // ending time in the schedule for this resource flow
   val endTime: Int
 
   /**
@@ -91,41 +89,60 @@ object ResourceFlow {
     // Auxiliary Function
     def addResourceFlowToList(resFlow: ResourceFlow,
                               resourceFlows: List[ResourceFlow],
-                              accFlows: AccList[ResourceFlow]): AccList[ResourceFlow] = {
+                              yetAdded: Boolean,
+                              accFlows: List[ResourceFlow]): List[ResourceFlow] = {
       resourceFlows match {
-        case Nil => AccList.acc(accFlows, AccList.base(resFlow))
+        case Nil =>
+          if (yetAdded) accFlows else resFlow::accFlows
         case rfl::rfls =>
-          if (resFlow.endTime < rfl.endTime) {
-            AccList.acc(accFlows, AccList.fromList(resFlow::resourceFlows))
+          if (yetAdded) {
+            addResourceFlowToList(resFlow, rfls, yetAdded, rfl::accFlows)
+          } else if (resFlow.endTime < rfl.endTime) {
+            addResourceFlowToList(resFlow, rfls, true, resFlow::rfl::accFlows)
           } else {
-            addResourceFlowToList(resFlow, rfls, AccList.acc(accFlows, AccList.base(rfl)))
+            addResourceFlowToList(resFlow, rfls, yetAdded, rfl::accFlows)
           }
       }
     }
     /////
     val flowToInsert = ActivityFlow(indexAct, startActs(indexAct), durAct, qtyAct)
-    addResourceFlowToList(flowToInsert, resourceFlows, AccList.empty()).toList
+    addResourceFlowToList(flowToInsert, resourceFlows, false, Nil).reverse
   }
 
   /**
     * Consumes a quantity of resource in a flow list
     *
     * @param qty the quantity of resource to be consumed in the flow list
-    * @param resourceFlow a list of resource flows
+    * @param resourceFlows a list of resource flows
     * @return a new list of resource flows with qty consumed.
     */
   def flowQuantityResource(qty: Int,
-                           resourceFlow: List[ResourceFlow]): List[ResourceFlow] = {
+                           resourceFlows: List[ResourceFlow]): List[ResourceFlow] = {
     if (qty == 0)
-      resourceFlow
+      resourceFlows
     else {
-      resourceFlow match {
+      resourceFlows match {
         case Nil => Nil
         case rfl::rfls =>
           if (qty < rfl.quantity) rfl.changedQuantity(rfl.quantity-qty)::rfls
           else flowQuantityResource(qty-rfl.quantity, rfls)
       }
     }
+  }
+
+  /**
+    * Consumes a quantity of a resource and gives a flow list
+    *
+    * @param qty the quantity of resource to be consumed
+    * @param resourceFlow the resource
+    * @return a resource flow list containing the resource flow without the quantity
+    */
+  def flowQuantityResource(qty: Int,
+                           resourceFlow: ResourceFlow): List[ResourceFlow] = {
+    if (qty == resourceFlow.quantity)
+      Nil
+    else
+      List(resourceFlow.changedQuantity(resourceFlow.quantity-qty))
   }
 
   /**

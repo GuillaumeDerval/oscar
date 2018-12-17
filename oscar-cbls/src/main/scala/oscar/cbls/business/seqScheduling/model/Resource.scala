@@ -31,7 +31,7 @@ class Resource(m: Store,
     * Gets a list of the used running modes
     * @return the running modes used by this resource
     */
-  def getRunningModes: List[RunningMode] = runningModes.getRunningModes
+  def getRunningModes: Iterable[RunningMode] = runningModes.getRunningModes
 }
 
 object Resource {

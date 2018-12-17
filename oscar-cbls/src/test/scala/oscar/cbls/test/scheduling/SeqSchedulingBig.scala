@@ -18,9 +18,10 @@ object SeqSchedulingBig {
   val minRMRes = 0
   val maxRMRes = 100
   val densityUsageRes = 25
-  val minSetupRes = 0
-  val maxSetupRes = 25
+  val minSetupTimeRM = 0
+  val maxSetupTimeRM = 25
   val densityPrecedencies = 5
+  // Random Generator
   val randomGen = new Random()
 
   def randomBoolean(density: Int): Boolean = {
@@ -52,8 +53,8 @@ object SeqSchedulingBig {
         runModesRes.addRunningMode(rm)
         for { k <- 0 until j } {
           val rmk = runModesRes.getRunningModeAt(k)
-          val seTime1 = randomInterval(minSetupRes, maxSetupRes)
-          val seTime2 = randomInterval(minSetupRes, maxSetupRes)
+          val seTime1 = randomInterval(minSetupTimeRM, maxSetupTimeRM)
+          val seTime2 = randomInterval(minSetupTimeRM, maxSetupTimeRM)
           runModesRes.addSetupTime(rm, rmk, seTime1)
           runModesRes.addSetupTime(rmk, rm, seTime2)
         }

@@ -72,9 +72,7 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
     for {indAct <- priorityList} {
       val resIndexesActI = schP
         .activityResourceUsages
-        .resourceUsages(indAct)
-        .indices
-        .filter(indRes => schP.activityResourceUsages.resourceUsages(indAct)(indRes).isDefined)
+        .activityResources(indAct)
       val precedencesActI = schP.precedences.precArray(indAct)
       // compute maximum of start+duration for preceding activities
       val maxEndTimePrecsActI = if (precedencesActI.isEmpty) 0
@@ -128,34 +126,43 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
       // update map of resource flows for all resources. It requires another
       // loop on the resources
       for {resInd <- resIndexesActI} {
+        // last resource flows for this resource
         val lastResFlows = resourceFlowStates(resInd).forwardFlows
+        // how much capacity of this resource is used by this activity
         val resourceQty = schP
           .activityResourceUsages
           .resourceUsages(indAct)(resInd)
           .get
           .capacity
-        resourceFlowStates(resInd).forwardFlows = ResourceFlow.addResourceFlowToList(
-          indAct,
-          resourceQty,
-          schP.activities.elementAt(indAct).valDuration,
-          startTimesArray,
-          ResourceFlow.flowQuantityResource(
+        // In what resource flow list the resource is effectively consumed
+        if (resourceFlowStates(resInd).changedRunningMode.isDefined) {
+          // running mode has changed
+          val lastEndTime = ResourceFlow.getLastEndTimeResourceFlow(lastResFlows)
+          val setupTimeMode = schP
+            .resources
+            .elementAt(resInd)
+            .runningModes
+            .setupTime(resourceFlowStates(resInd).changedRunningMode.get,
+              resourceFlowStates(resInd).lastRunningMode)
+          // Update the forward flows for this resource
+          resourceFlowStates(resInd).forwardFlows = ResourceFlow.addResourceFlowToList(
+            indAct,
             resourceQty,
-            if (resourceFlowStates(resInd).changedRunningMode.isDefined) {
-              // running mode has changed
-              val lastEndTime = ResourceFlow.getLastEndTimeResourceFlow(lastResFlows)
-              val setupTimeMode = schP
-                .resources
-                .elementAt(resInd)
-                .runningModes
-                .setupTime(resourceFlowStates(resInd).changedRunningMode.get,
-                  resourceFlowStates(resInd).lastRunningMode)
-              List(SetupFlow(lastEndTime, setupTimeMode, resourceQty))
-            } else {
-              lastResFlows
-            }
+            schP.activities.elementAt(indAct).valDuration,
+            startTimesArray,
+            ResourceFlow.flowQuantityResource(resourceQty,
+              SetupFlow(lastEndTime, setupTimeMode, resourceQty))
           )
-        )
+        } else {
+          // Update the forward flows for this resource
+          resourceFlowStates(resInd).forwardFlows = ResourceFlow.addResourceFlowToList(
+            indAct,
+            resourceQty,
+            schP.activities.elementAt(indAct).valDuration,
+            startTimesArray,
+            ResourceFlow.flowQuantityResource(resourceQty, lastResFlows)
+          )
+        }
       }
     }
     // Set makespan variable
@@ -229,12 +236,12 @@ class SetupTimes {
   }
 
   def addSetupTime(st: SetupTimeData): Unit = {
-    setupTimesList :+= st
+    setupTimesList = st::setupTimesList
   }
 
   override def toString: String = {
     val stringBuilder = new StringBuilder
-    stringBuilder.append("SetupTimes: \n")
+    stringBuilder.append(s"SetupTimes (Total: ${setupTimesList.length}): \n")
     for {st <- setupTimesList} {
       stringBuilder.append(s"* $st \n")
     }

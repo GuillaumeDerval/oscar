@@ -1,21 +1,19 @@
 package oscar.cbls.business.seqScheduling.neighborhood
 
 import oscar.cbls.algo.search.HotRestart
-import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.seqScheduling.model.{Constants, SchedulingProblem}
 import oscar.cbls.core.computation.CBLSSeqVar
-import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
+import oscar.cbls.core.search.{Best, EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
 class SwapActivity(schP: SchedulingProblem,
                    neighborhoodName: String,
                    selectIndiceBehavior:LoopBehavior = First(),
-                   selectSwapBehavior:LoopBehavior = First(),
+                   selectSwapBehavior:LoopBehavior = Best(),
                    searchIndices: Option[() => Iterable[Int]] = None)
   extends EasyNeighborhoodMultiLevel[SwapActivityMove](neighborhoodName) {
 
   var currentIndex: Int = Constants.NO_INDEX
   var swappingIndex: Int = Constants.NO_INDEX
-  var doneMoves: Set[(IntSequence, Int, Int, IntSequence)] = Set()
 
   /**
     * This is the method you must implement and that performs the search of your neighborhood.
@@ -23,7 +21,7 @@ class SwapActivity(schP: SchedulingProblem,
     * as explained in the documentation of this class
     */
   override def exploreNeighborhood(): Unit = {
-    // iteration zone on activities indices
+    // Iteration zone on activities indices
     // Checking the Hot Restart
     val iterationZone1 = searchIndices.getOrElse(() => 0 until schP.activities.size)
     val hotRestart = true
@@ -43,29 +41,13 @@ class SwapActivity(schP: SchedulingProblem,
       val (swappableIterator, notifySwappingFound) = selectSwapBehavior.toIterator(swappableZone)
       while (swappableIterator.hasNext) {
         swappingIndex = swappableIterator.next()
-        // Check for eventual symmetry
-        val leadsToSymmetry = doneMoves.exists(move => {
-          // Condition 1 : a "back move" already explored
-          val cond1 = move._1.equals(seqValueCheckPoint) &&
-            move._3 == swappingIndex &&
-            move._2 == currentIndex
-          // Condition 2 : a dual swapping already done
-          val cond2 = move._4.equals(seqValueCheckPoint) &&
-            move._3 == swappingIndex &&
-            move._2 == currentIndex
-          cond1 || cond2
-        })
-        if (!leadsToSymmetry) {
-          // Perform move on sequence
-          performMove(currentIndex, swappingIndex)
-          val newObj = obj.value
-          // Adds the move to the symmetry structure
-          doneMoves += ((schP.activitiesPriorList.value, swappingIndex, currentIndex, seqValueCheckPoint))
-          // Notification of finding indices
-          if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
-            notifyIndexFound()
-            notifySwappingFound()
-          }
+        // Perform move on sequence
+        performMove(currentIndex, swappingIndex)
+        val newObj = obj.value
+        // Notification of finding indices
+        if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
+          notifyIndexFound()
+          notifySwappingFound()
         }
         // Rollback to checkpoint
         schP.activitiesPriorList.rollbackToTopCheckpoint(seqValueCheckPoint)

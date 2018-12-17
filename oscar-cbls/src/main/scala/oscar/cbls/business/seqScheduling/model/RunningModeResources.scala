@@ -101,7 +101,7 @@ class RunningModeResources(maxModes: Int) {
     *
     * @return the list of running modes in this container
     */
-  def getRunningModes: List[RunningMode] = runningModes.toIterable.toList
+  def getRunningModes: Iterable[RunningMode] = runningModes.toIterable
 
   /**
     * Size of this container

@@ -12,6 +12,8 @@ class ActivityResourceUsages(numActivities: Int, numResources: Int) {
   val resourceUsages: Array[Array[Option[ResourceUsage]]] = Array.tabulate(numActivities)(_ =>
     Array.tabulate(numResources)(_ => None)
   )
+  // Which resources are used by activities
+  val activityResources: Array[Set[Int]] = Array.tabulate(numActivities)(_ => Set())
 
   /**
     * Adds the usage of a resource by an activity
@@ -35,6 +37,7 @@ class ActivityResourceUsages(numActivities: Int, numResources: Int) {
     require(usedCapacity <= res.capacity)
     /////
     resourceUsages(act.index)(res.index) = Some(ResourceUsage(rm.index, usedCapacity))
+    activityResources(act.index) += res.index
   }
 
   /**
