@@ -80,7 +80,7 @@ class RunningModeResources(maxModes: Int) {
     * @return the setup time to change mode from rm1 to rm2
     */
   def setupTime(indexRM1: Int, indexRM2: Int): Int = {
-    setupTimes(indexRM1)(indexRM2).getOrElse(runningModes.elementAt(indexRM2).defaultSetupTime)
+    setupTimes(indexRM1)(indexRM2).getOrElse(runningModes(indexRM2).defaultSetupTime)
   }
 
   /**
@@ -93,7 +93,7 @@ class RunningModeResources(maxModes: Int) {
     require(0 <= indexRM)
     require(indexRM < runningModes.size)
     /////
-    runningModes.elementAt(indexRM)
+    runningModes(indexRM)
   }
 
   /**

@@ -10,7 +10,7 @@ object StartTimesActivities {
             schedulingProblem: SchedulingProblem): (CBLSIntVar, Array[CBLSIntVar], SetupTimes) = {
     val model = priorityActivitiesList.model
     val makeSpan = CBLSIntVar(model, 0, name="Schedule Makespan")
-    val startTimes: Array[CBLSIntVar] = Array.tabulate(schedulingProblem.activities.size)(node =>  CBLSIntVar(model, 0, name=s"Start Time of Activity ${schedulingProblem.activities.elementAt(node).name}"))
+    val startTimes: Array[CBLSIntVar] = Array.tabulate(schedulingProblem.activities.size)(node =>  CBLSIntVar(model, 0, name=s"Start Time of Activity ${schedulingProblem.activities(node).name}"))
     val setupTimes = new SetupTimes
 
     new StartTimesActivities(priorityActivitiesList, schedulingProblem, makeSpan, startTimes, setupTimes)
@@ -63,8 +63,8 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
     // Initialization
     setupTimes.reset()
     val resourceFlowStates: Array[ResourceFlowState] = Array.tabulate(schP.resources.size) { i =>
-      new ResourceFlowState(schP.resources.elementAt(i).runningModes.initialModeIndex,
-                            schP.resources.elementAt(i).capacity)
+      new ResourceFlowState(schP.resources(i).runningModes.initialModeIndex,
+                            schP.resources(i).capacity)
     }
     var makeSpanValue = 0
     val startTimesArray: Array[Int] = Array.tabulate(schP.activities.size)(_ => 0)
@@ -77,7 +77,7 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
       // compute maximum of start+duration for preceding activities
       val maxEndTimePrecsActI = if (precedencesActI.isEmpty) 0
         else precedencesActI.map(precInd =>
-          startTimes(precInd).value + schP.activities.elementAt(precInd).valDuration
+          startTimes(precInd).value + schP.activities(precInd).valDuration
         ).max
       // compute maximum of starting times for availability of resources
       var maxStartTimeAvailableResActI = 0
@@ -106,8 +106,7 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
           resourceFlowStates(resInd).lastRunningMode = newModeRes
           val lastEndTime = ResourceFlow.getLastEndTimeResourceFlow(lastResFlows)
           val setupTimeMode = schP
-            .resources
-            .elementAt(resInd)
+            .resources(resInd)
             .runningModes
             .setupTime(lastModeRes, newModeRes)
           maxStartTimeAvailableResActI = math.max(maxStartTimeAvailableResActI,
@@ -119,7 +118,7 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
       // now we can update the start time for the activity and the makespan
       val startTimeAct = math.max(maxEndTimePrecsActI, maxStartTimeAvailableResActI)
       startTimesArray(indAct) = startTimeAct
-      val endTimeAct = startTimeAct + schP.activities.elementAt(indAct).valDuration
+      val endTimeAct = startTimeAct + schP.activities(indAct).valDuration
       if (endTimeAct > makeSpanValue) {
         makeSpanValue = endTimeAct
       }
@@ -139,8 +138,7 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
           // running mode has changed
           val lastEndTime = ResourceFlow.getLastEndTimeResourceFlow(lastResFlows)
           val setupTimeMode = schP
-            .resources
-            .elementAt(resInd)
+            .resources(resInd)
             .runningModes
             .setupTime(resourceFlowStates(resInd).changedRunningMode.get,
               resourceFlowStates(resInd).lastRunningMode)
@@ -148,17 +146,18 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
           resourceFlowStates(resInd).forwardFlows = ResourceFlow.addResourceFlowToList(
             indAct,
             resourceQty,
-            schP.activities.elementAt(indAct).valDuration,
+            schP.activities(indAct).valDuration,
             startTimesArray,
             ResourceFlow.flowQuantityResource(resourceQty,
-              SetupFlow(lastEndTime, setupTimeMode, resourceQty))
+              SetupFlow(lastEndTime, setupTimeMode, resourceQty),
+              lastResFlows)
           )
         } else {
           // Update the forward flows for this resource
           resourceFlowStates(resInd).forwardFlows = ResourceFlow.addResourceFlowToList(
             indAct,
             resourceQty,
-            schP.activities.elementAt(indAct).valDuration,
+            schP.activities(indAct).valDuration,
             startTimesArray,
             ResourceFlow.flowQuantityResource(resourceQty, lastResFlows)
           )
@@ -190,61 +189,5 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
     */
   override def checkInternals(c: Checker): Unit = {
     //TODO: Implement check internals
-  }
-
-  /**
-    * Internal class that carries the state of a resource flow in the scheduling
-    */
-  private class ResourceFlowState(initialModeInd: Int, maxCapacity: Int) {
-    //TODO: je suis pas convaincu parce-que toutes les catégories de resources ont le même state du coup
-    // Last activity that used this resource
-    var lastActivityIndex: Int = -1
-    // Forward flows after last activity that used this resource
-    var forwardFlows: List[ResourceFlow] = List(SourceFlow(maxCapacity))
-    // Running mode of last activity that used this resource
-    var lastRunningMode: Int = initialModeInd
-    // Checking whether running mode has changed
-    var changedRunningMode: Option[Int] = None
-
-    override def toString: String =
-      s"""****
-         |RFW:
-         |Initial mode : $initialModeInd
-         |Max capacity : $maxCapacity
-         |Last mode : $lastRunningMode
-         |Last activity : $lastActivityIndex
-         |Forward flows : $forwardFlows
-         |****
-       """.stripMargin
-  }
-}
-
-/**
-  * This case class represents a setup time for changing a running mode in a resource
-  */
-case class SetupTimeData(resourceIndex: Int, modeFromInd: Int, modeToInd: Int, startTime: Int, duration: Int)
-//TODO: je pense que les SetupTimeData devraient être dans la resource concernée
-
-/**
-  * This is a container class for setup times
-  */
-class SetupTimes {
-  var setupTimesList: List[SetupTimeData] = List()
-
-  def reset(): Unit = {
-    setupTimesList = List()
-  }
-
-  def addSetupTime(st: SetupTimeData): Unit = {
-    setupTimesList = st::setupTimesList
-  }
-
-  override def toString: String = {
-    val stringBuilder = new StringBuilder
-    stringBuilder.append(s"SetupTimes (Total: ${setupTimesList.length}): \n")
-    for {st <- setupTimesList} {
-      stringBuilder.append(s"* $st \n")
-    }
-    stringBuilder.toString
   }
 }

@@ -21,7 +21,7 @@ class BoundedArray[T: ClassTag](maxElements: Int, postInserting: (T, Int) => Uni
 
   def isEmpty: Boolean = nbElements == 0
 
-  def elementAt(pos: Int): T = {
+  @inline final def apply(pos: Int): T = {
     require(0 <= pos)
     require(pos < nbElements)
     actualArray(pos)

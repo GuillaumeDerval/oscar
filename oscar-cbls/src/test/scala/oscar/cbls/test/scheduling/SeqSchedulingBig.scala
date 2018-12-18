@@ -74,14 +74,14 @@ object SeqSchedulingBig {
       activities :+ act
       // Add precedence
       for { j <- 0 until i } {
-        val actJ = activities.elementAt(j)
+        val actJ = activities(j)
         if (randomBoolean(densityPrecedencies)) {
           precedences.addPrecedence(act, actJ)
         }
       }
       // Add Resource Usages
       for { j <- 0 until nRes } {
-        val res = resources.elementAt(j)
+        val res = resources(j)
         val capRes = res.valCapacity
         val rmRes = res.getRunningModes
         for { rm <- rmRes } {
@@ -121,6 +121,6 @@ object SeqSchedulingBig {
     println("Scheduling start times = [  ")
     scProblem.startTimes.foreach(v => println(s"    $v"))
     println("]")
-    println(s"Scheduling setup times: ${scProblem.setupTimes}")
+    println(s"Scheduling number of setup times: ${scProblem.setupTimes.setupTimesList.length}")
   }
 }

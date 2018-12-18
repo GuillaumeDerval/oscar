@@ -1,5 +1,7 @@
 package oscar.cbls.business.seqScheduling.model
 
+import oscar.cbls.algo.heap.{AbstractHeap, BinomialHeap}
+
 /**
   * Abstract class representing the flow of a resource
   */
@@ -85,28 +87,9 @@ object ResourceFlow {
                             qtyAct: Int,
                             durAct: Int,
                             startActs: Array[Int],
-                            resourceFlows: List[ResourceFlow]): List[ResourceFlow] = {
-    // Auxiliary Function
-    def addResourceFlowToList(resFlow: ResourceFlow,
-                              resourceFlows: List[ResourceFlow],
-                              yetAdded: Boolean,
-                              accFlows: List[ResourceFlow]): List[ResourceFlow] = {
-      resourceFlows match {
-        case Nil =>
-          if (yetAdded) accFlows else resFlow::accFlows
-        case rfl::rfls =>
-          if (yetAdded) {
-            addResourceFlowToList(resFlow, rfls, yetAdded, rfl::accFlows)
-          } else if (resFlow.endTime < rfl.endTime) {
-            addResourceFlowToList(resFlow, rfls, true, resFlow::rfl::accFlows)
-          } else {
-            addResourceFlowToList(resFlow, rfls, yetAdded, rfl::accFlows)
-          }
-      }
-    }
-    /////
-    val flowToInsert = ActivityFlow(indexAct, startActs(indexAct), durAct, qtyAct)
-    addResourceFlowToList(flowToInsert, resourceFlows, false, Nil).reverse
+                            resourceFlows: AbstractHeap[ResourceFlow]): AbstractHeap[ResourceFlow] = {
+    resourceFlows.insert(ActivityFlow(indexAct, startActs(indexAct), durAct, qtyAct))
+    resourceFlows
   }
 
   /**
@@ -117,17 +100,18 @@ object ResourceFlow {
     * @return a new list of resource flows with qty consumed.
     */
   def flowQuantityResource(qty: Int,
-                           resourceFlows: List[ResourceFlow]): List[ResourceFlow] = {
-    if (qty == 0)
-      resourceFlows
-    else {
-      resourceFlows match {
-        case Nil => Nil
-        case rfl::rfls =>
-          if (qty < rfl.quantity) rfl.changedQuantity(rfl.quantity-qty)::rfls
-          else flowQuantityResource(qty-rfl.quantity, rfls)
+                           resourceFlows: AbstractHeap[ResourceFlow]): AbstractHeap[ResourceFlow] = {
+    var qtyToConsume = qty
+    while (qtyToConsume > 0) {
+      val resFlow = resourceFlows.popFirst()
+      if (resFlow.quantity > qtyToConsume) {
+        resourceFlows.insert(resFlow.changedQuantity(resFlow.quantity - qtyToConsume))
+        qtyToConsume = 0
+      } else {
+        qtyToConsume -= resFlow.quantity
       }
     }
+    resourceFlows
   }
 
   /**
@@ -138,11 +122,13 @@ object ResourceFlow {
     * @return a resource flow list containing the resource flow without the quantity
     */
   def flowQuantityResource(qty: Int,
-                           resourceFlow: ResourceFlow): List[ResourceFlow] = {
-    if (qty == resourceFlow.quantity)
-      Nil
-    else
-      List(resourceFlow.changedQuantity(resourceFlow.quantity-qty))
+                           resourceFlow: ResourceFlow,
+                           lastResFlows: AbstractHeap[ResourceFlow]): AbstractHeap[ResourceFlow] = {
+    lastResFlows.dropAll()
+    if (resourceFlow.quantity > qty) {
+      lastResFlows.insert(resourceFlow.changedQuantity(resourceFlow.quantity - qty))
+    }
+    lastResFlows
   }
 
   /**
@@ -153,15 +139,20 @@ object ResourceFlow {
     * @return the end time of the activity allowing to consume all the resQty
     *         of resource in resFlows
     */
-  def getEndTimeResourceFlows(resQty: Int, resFlows: List[ResourceFlow]): Int = {
-    resFlows match {
-      case Nil => 0
-      case rfl::rfls =>
-        if (resQty > rfl.quantity)
-          getEndTimeResourceFlows(resQty-rfl.quantity, rfls)
-        else
-          rfl.endTime
+  def getEndTimeResourceFlows(resQty: Int, resFlows: AbstractHeap[ResourceFlow]): Int = {
+    val it = resFlows.iterator
+    var endTime = 0
+    var qtyToConsume = resQty
+    while (qtyToConsume > 0 && it.hasNext) {
+      val resFlow = it.next()
+      endTime = resFlow.endTime
+      if (resFlow.quantity > qtyToConsume) {
+        qtyToConsume = 0
+      } else {
+        qtyToConsume -= resFlow.quantity
+      }
     }
+    endTime
   }
 
   /**
@@ -170,8 +161,43 @@ object ResourceFlow {
     * @param resFlows the list of resource flows
     * @return the endtime of the last resource flow in the list
     */
-  def getLastEndTimeResourceFlow(resFlows: List[ResourceFlow]): Int = {
-    if (resFlows.isEmpty) 0
-    else resFlows.last.endTime
+  def getLastEndTimeResourceFlow(resFlows: AbstractHeap[ResourceFlow]): Int = {
+    val it = resFlows.iterator
+    var endTime = 0
+    while (it.hasNext) {
+      endTime = it.next().endTime
+    }
+    endTime
   }
+}
+
+/**
+  * This class carries the state of a resource flow in the scheduling
+  *
+  * @param initialModeInd the index of the initial mode of the resource
+  * @param maxCapacity the maximum capacity of the resource
+  */
+class ResourceFlowState(initialModeInd: Int, maxCapacity: Int) {
+  //TODO: je suis pas convaincu parce-que toutes les catégories de resources ont le même state du coup
+
+  // Last activity that used this resource
+  var lastActivityIndex: Int = -1
+  // Forward flows after last activity that used this resource
+  var forwardFlows: AbstractHeap[ResourceFlow] = new BinomialHeap[ResourceFlow](_.endTime, maxCapacity)
+  forwardFlows.insert(SourceFlow(maxCapacity))
+  // Running mode of last activity that used this resource
+  var lastRunningMode: Int = initialModeInd
+  // Checking whether running mode has changed
+  var changedRunningMode: Option[Int] = None
+
+  override def toString: String =
+    s"""****
+       |RFW:
+       |Initial mode : $initialModeInd
+       |Max capacity : $maxCapacity
+       |Last mode : $lastRunningMode
+       |Last activity : $lastActivityIndex
+       |Forward flows : $forwardFlows
+       |****
+       """.stripMargin
 }
