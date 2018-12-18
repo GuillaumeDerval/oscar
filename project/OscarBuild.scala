@@ -30,7 +30,7 @@ object OscarBuild {
     unmanagedSourceDirectories in Test += baseDirectory.value / "src" / "main" / "examples",
     publishTo := {
       val artifactoryName = "Artifactory Realm"
-      val artifactoryUrl = "http://130.104.230.89/artifactory/"
+      val artifactoryUrl = "http://130.104.228.131/artifactory/"
       if (isSnapshot.value)
         Some(artifactoryName at artifactoryUrl + "libs-snapshot-local;build.timestamp=" + new java.util.Date().getTime)
       else
